@@ -32,10 +32,20 @@ public static class TrustServiceCollectionExtensions
     /// <param name="configPath">Optional path to persist boundary config (JSON). If null, in-memory only.</param>
     public static IServiceCollection AddAccessBoundary(this IServiceCollection services, string? configPath = null)
     {
+        services.TryAddSingleton<ITrustPolicyPackRegistry>(sp =>
+            new TrustPolicyPackRegistry(Environment.GetEnvironmentVariable("NEXO_TRUST_POLICY_PACKS_PATH")));
         services.TryAddSingleton<IAccessBoundary>(sp =>
         {
             var boundary = new AccessBoundary(configPath);
             var auditLog = sp.GetService<Nexo.Core.Application.Trust.Ports.IDataDecisionAuditLog>();
+            var packRegistry = sp.GetService<ITrustPolicyPackRegistry>();
+            var activePack = packRegistry?.GetActivePack();
+            if (activePack != null)
+            {
+                var packDefinition = packRegistry?.GetById(activePack.Id);
+                if (packDefinition != null)
+                    boundary.ApplyPolicyPack(packDefinition);
+            }
             if (auditLog != null)
                 boundary.BoundaryChanged += evt => auditLog.LogBoundaryChange(evt);
             return boundary;

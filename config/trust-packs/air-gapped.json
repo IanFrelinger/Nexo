@@ -1,0 +1,20 @@
+{
+  "id": "air-gapped",
+  "version": "1.0.0",
+  "displayName": "Air-gapped",
+  "description": "Default-deny profile for isolated environments with minimal observation footprint.",
+  "pauseObservationByDefault": false,
+  "recommendedFor": "air-gapped deployments",
+  "categoryRules": {
+    "file-contents": false,
+    "terminal-output": false,
+    "file-paths": false,
+    "git-metadata": false
+  },
+  "sourceRules": {
+    "shell": false,
+    "git": false,
+    "vscode": false
+  },
+  "projectRules": []
+}

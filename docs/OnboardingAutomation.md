@@ -56,10 +56,17 @@ These are automated by running container commands directly (or via guided wrappe
    - optional hero flow checks (`--help`, `doctor`, quickstart pipeline).
 2. Added `nexo doctor` command with a single pass/fail onboarding summary (machine-readable via `--json`).
 3. Added CI gate (`onboarding-quickstart-gate`) to validate first-run docs commands end-to-end in ephemeral jobs.
+4. Added `nexo doctor --fix` remediation mode for a safe subset of common onboarding failures.
+   - Requires explicit consent (`--yes`) before any remediation runs.
+   - Emits remediation attempts/results in JSON output for auditability.
+5. Expanded `onboarding-quickstart-gate` with weekly scheduled drift detection and taxonomy artifacts:
+   - `*-taxonomy.json` classifies lane/platform/root-cause class.
+   - `*-trend.json` captures run metadata signals for drift tracking over time.
+   - Summary artifacts now include troubleshooting doc pointers.
 
 ## Next recommended upgrades
 
 1. Add clearer platform-specific troubleshooting pages for missing required tools.
-2. Add a richer `nexo doctor --fix` mode that can execute safe remediations with explicit user confirmation.
-3. Add periodic scheduled onboarding gate runs to detect ecosystem drift early.
+2. Expand remediation catalog with additional safe fixers for platform-specific host issues.
+3. Add trend aggregation/reporting across multiple scheduled runs to surface regressions in one dashboard view.
 

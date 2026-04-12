@@ -258,6 +258,11 @@ public sealed class FailClosedTests : IDisposable
         public void SetCategoryAllowed(string category, bool allowed) => throw new InvalidOperationException("boundary unavailable");
         public void SetSourceAllowed(string sourceId, bool allowed) => throw new InvalidOperationException("boundary unavailable");
         public void SetProjectOverride(string projectPath, IReadOnlyDictionary<string, bool>? overrides) => throw new InvalidOperationException("boundary unavailable");
+        public void Reset() => throw new InvalidOperationException("boundary unavailable");
+        public void ApplyPolicyPack(TrustPolicyPack pack) => throw new InvalidOperationException("boundary unavailable");
+        public ActiveTrustPolicyPack? GetActivePolicyPack() => throw new InvalidOperationException("boundary unavailable");
+        public IReadOnlyDictionary<string, bool> GetCategoryAllowlistSnapshot() => throw new InvalidOperationException("boundary unavailable");
+        public IReadOnlyDictionary<string, bool> GetSourceAllowlistSnapshot() => throw new InvalidOperationException("boundary unavailable");
 #pragma warning disable CS0067
         public event Action<BoundaryChangeEvent>? BoundaryChanged;
 #pragma warning restore CS0067
@@ -273,6 +278,11 @@ public sealed class FailClosedTests : IDisposable
         public void SetCategoryAllowed(string category, bool allowed) { }
         public void SetSourceAllowed(string sourceId, bool allowed) { }
         public void SetProjectOverride(string projectPath, IReadOnlyDictionary<string, bool>? overrides) { }
+        public void Reset() { }
+        public void ApplyPolicyPack(TrustPolicyPack pack) { }
+        public ActiveTrustPolicyPack? GetActivePolicyPack() => null;
+        public IReadOnlyDictionary<string, bool> GetCategoryAllowlistSnapshot() => new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+        public IReadOnlyDictionary<string, bool> GetSourceAllowlistSnapshot() => new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
 #pragma warning disable CS0067
         public event Action<BoundaryChangeEvent>? BoundaryChanged;
 #pragma warning restore CS0067

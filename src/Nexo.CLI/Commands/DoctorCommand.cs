@@ -22,17 +22,23 @@ public sealed class DoctorCommand : Command
             () => "demo",
             "Doctor profile: demo | self-extend-functional | self-extend-aesthetic | self-extend-visual.");
         var jsonOpt = new Option<bool>("--json", () => false, "Emit JSON output.");
+        var fixOpt = new Option<bool>("--fix", () => false, "Attempt safe remediation for fixable onboarding failures.");
+        var yesOpt = new Option<bool>("--yes", () => false, "Auto-approve remediation actions when --fix is enabled.");
 
         AddOption(includeOptionalOpt);
         AddOption(profileOpt);
         AddOption(jsonOpt);
+        AddOption(fixOpt);
+        AddOption(yesOpt);
 
         this.SetHandler(async (InvocationContext ctx) =>
         {
             var includeOptional = ctx.ParseResult.GetValueForOption(includeOptionalOpt);
             var profile = ctx.ParseResult.GetValueForOption(profileOpt) ?? "demo";
             var json = ctx.ParseResult.GetValueForOption(jsonOpt);
-            ctx.ExitCode = await ExecuteAsync(profile, includeOptional, json, ctx.GetCancellationToken()).ConfigureAwait(false);
+            var fix = ctx.ParseResult.GetValueForOption(fixOpt);
+            var yes = ctx.ParseResult.GetValueForOption(yesOpt);
+            ctx.ExitCode = await ExecuteAsync(profile, includeOptional, json, fix, yes, ctx.GetCancellationToken()).ConfigureAwait(false);
         });
     }
 
@@ -40,6 +46,8 @@ public sealed class DoctorCommand : Command
         string profile,
         bool includeOptional,
         bool json,
+        bool fix,
+        bool autoApproveFixes,
         CancellationToken ct)
     {
         var dependencyAssessment = await BootstrapRuntime.AssessDemoAsync(profile, includeOptional, ct).ConfigureAwait(false);
@@ -58,6 +66,28 @@ public sealed class DoctorCommand : Command
         var containerSmokeError = containerSmokePassed ? string.Empty : containerStderr.Trim();
 
         var overallOk = osSupported && dependencyOk && cliSmokePassed;
+        var remediation = new DoctorRemediationReport();
+        if (fix)
+        {
+            remediation = await DoctorRemediation.RunAsync(
+                dependencyAssessment,
+                osSupported,
+                cliSmokePassed,
+                profile,
+                includeOptional,
+                autoApproveFixes,
+                json,
+                ct).ConfigureAwait(false);
+
+            var postAssessment = await BootstrapRuntime.AssessDemoAsync(profile, includeOptional, ct).ConfigureAwait(false);
+            dependencyAssessment = postAssessment;
+            dependencyOk = postAssessment.Supported && !postAssessment.MissingRequired.Any();
+
+            var (postCliExitCode, _, postCliStderr) = await RunShellCaptureAsync(cliCommand, ct).ConfigureAwait(false);
+            cliSmokePassed = postCliExitCode == 0;
+            cliSmokeError = cliSmokePassed ? string.Empty : postCliStderr.Trim();
+            overallOk = osSupported && dependencyOk && cliSmokePassed;
+        }
 
         if (json)
         {
@@ -86,12 +116,14 @@ public sealed class DoctorCommand : Command
                         passed = containerSmokePassed,
                         command = containerCommand,
                         error = containerSmokeError
-                    }
+                    },
+                    remediation = remediation
                 },
                 nextSteps = new
                 {
                     nativeInstall = "bash scripts/install/install.sh --yes",
-                    containerRun = "docker run --rm ghcr.io/ianfrelinger/nexo-cli:latest --help"
+                    containerRun = "docker run --rm ghcr.io/ianfrelinger/nexo-cli:latest --help",
+                    doctorFix = "dotnet run --project src/Nexo.CLI -- doctor --fix --yes"
                 }
             };
             Console.WriteLine(JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true }));
@@ -115,10 +147,30 @@ public sealed class DoctorCommand : Command
             if (!containerSmokePassed && !string.IsNullOrWhiteSpace(containerSmokeError))
                 Console.WriteLine($"  container smoke error: {containerSmokeError}");
 
+            if (fix)
+            {
+                Console.WriteLine("remediation:");
+                if (remediation.Attempts.Count == 0)
+                {
+                    Console.WriteLine("  no fixable issues were detected.");
+                }
+                else
+                {
+                    foreach (var attempt in remediation.Attempts)
+                    {
+                        Console.WriteLine(
+                            $"  - {attempt.Id}: {(attempt.Success ? "fixed" : "not-fixed")} ({attempt.Status})");
+                        if (!string.IsNullOrWhiteSpace(attempt.Message))
+                            Console.WriteLine($"      {attempt.Message}");
+                    }
+                }
+            }
+
             Console.WriteLine($"overall: {(overallOk ? "PASS" : "FAIL")}");
             Console.WriteLine("recommended next steps:");
             Console.WriteLine("  - native lane: bash scripts/install/install.sh --yes");
             Console.WriteLine("  - container lane: docker run --rm ghcr.io/ianfrelinger/nexo-cli:latest --help");
+            Console.WriteLine("  - remediation lane: dotnet run --project src/Nexo.CLI -- doctor --fix --yes");
         }
 
         return overallOk ? 0 : 1;

@@ -2,6 +2,11 @@
 # Validates Trust & Information Architecture features (sanitization, knowledge log, access boundary, audit).
 name: Trust Tests (Multi-Env Docker)
 
+permissions:
+  contents: read
+  checks: write
+  pull-requests: write
+
 on:
   push:
     branches: [ master, main ]
@@ -39,9 +44,12 @@ jobs:
              dotnet test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj -f net9.0 --filter 'FullyQualifiedName~Trust' --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=trust-bg-ubuntu.trx' --results-directory /workspace/test-results"
       - uses: EnricoMi/publish-unit-test-result-action@v2
         if: always()
+        continue-on-error: true
         with:
           files: test-results/trust/**/*.trx
           check_name: Trust Tests - Ubuntu
+          comment_mode: off
+          report_individual_runs: true
 
   trust-alpine:
     name: Trust - Alpine
@@ -58,9 +66,12 @@ jobs:
              dotnet test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj -f net9.0 --filter 'FullyQualifiedName~Trust' --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=trust-bg-alpine.trx' --results-directory /workspace/test-results"
       - uses: EnricoMi/publish-unit-test-result-action@v2
         if: always()
+        continue-on-error: true
         with:
           files: test-results/trust/**/*.trx
           check_name: Trust Tests - Alpine
+          comment_mode: off
+          report_individual_runs: true
 
   trust-debian:
     name: Trust - Debian
@@ -77,6 +88,9 @@ jobs:
              dotnet test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj -f net9.0 --filter 'FullyQualifiedName~Trust' --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=trust-bg-debian.trx' --results-directory /workspace/test-results"
       - uses: EnricoMi/publish-unit-test-result-action@v2
         if: always()
+        continue-on-error: true
         with:
           files: test-results/trust/**/*.trx
           check_name: Trust Tests - Debian
+          comment_mode: off
+          report_individual_runs: true

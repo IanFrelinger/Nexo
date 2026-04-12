@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Nexo.Core.Application.Trust.Models;
 using Nexo.Core.Application.Trust.Ports;
 
 namespace Nexo.CLI.Commands;
@@ -10,15 +11,18 @@ public class TrustCommand
 {
     private readonly IDataDecisionAuditLog? _auditLog;
     private readonly IAccessBoundary? _accessBoundary;
+    private readonly ITrustPolicyPackRegistry? _policyPackRegistry;
     private readonly ILogger<TrustCommand> _logger;
 
     public TrustCommand(
         IDataDecisionAuditLog? auditLog,
         IAccessBoundary? accessBoundary,
+        ITrustPolicyPackRegistry? policyPackRegistry,
         ILogger<TrustCommand> logger)
     {
         _auditLog = auditLog;
         _accessBoundary = accessBoundary;
+        _policyPackRegistry = policyPackRegistry;
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
@@ -91,10 +95,18 @@ public class TrustCommand
                 var dashboard = new Dictionary<string, object>();
                 if (_accessBoundary != null)
                 {
-                    dashboard["boundary"] = new Dictionary<string, object>
+                    var activePack = _accessBoundary.GetActivePolicyPack();
+                    dashboard["boundary"] = new Dictionary<string, object?>
                     {
                         ["isPaused"] = _accessBoundary.IsObservationPaused,
-                        ["status"] = _accessBoundary.IsObservationPaused ? "Observation paused" : "Observing"
+                        ["status"] = _accessBoundary.IsObservationPaused ? "Observation paused" : "Observing",
+                        ["activePolicyPack"] = activePack is null
+                            ? (object?)null
+                            : new Dictionary<string, object?>
+                            {
+                                ["id"] = activePack.Id,
+                                ["version"] = activePack.Version
+                            }
                     };
                 }
                 else
@@ -121,9 +133,11 @@ public class TrustCommand
             {
                 if (_accessBoundary != null)
                 {
+                    var activePack = _accessBoundary.GetActivePolicyPack();
                     Console.Out.WriteLine("Access Boundary:");
                     Console.Out.WriteLine($"  Paused: {(_accessBoundary.IsObservationPaused ? "Yes" : "No")}");
                     Console.Out.WriteLine($"  Status: {(_accessBoundary.IsObservationPaused ? "Observation halted" : "Observing")}");
+                    Console.Out.WriteLine($"  Active policy pack: {(activePack is null ? "none" : $"{activePack.Id}@{activePack.Version}")}");
                     Console.Out.WriteLine();
                 }
                 if (_auditLog != null)
@@ -314,18 +328,22 @@ public class TrustCommand
 
             if (formatJson)
             {
+                var activePack = _accessBoundary.GetActivePolicyPack();
                 var payload = new
                 {
                     isPaused = _accessBoundary.IsObservationPaused,
                     status = _accessBoundary.IsObservationPaused ? "Observation paused" : "Observing",
+                    activePolicyPack = activePack is null ? null : new { activePack.Id, activePack.Version },
                 };
                 Console.Out.WriteLine(System.Text.Json.JsonSerializer.Serialize(payload, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
             }
             else
             {
+                var activePack = _accessBoundary.GetActivePolicyPack();
                 Console.Out.WriteLine("Access Boundary:");
                 Console.Out.WriteLine($"  Paused: {(_accessBoundary.IsObservationPaused ? "Yes" : "No")}");
                 Console.Out.WriteLine($"  Status: {(_accessBoundary.IsObservationPaused ? "Observation halted" : "Observing (subject to category/source rules)")}");
+                Console.Out.WriteLine($"  Active policy pack: {(activePack is null ? "none" : $"{activePack.Id}@{activePack.Version}")}");
             }
 
             return Task.FromResult(0);
@@ -372,5 +390,146 @@ public class TrustCommand
         if (DateTimeOffset.TryParse(until, out var dt))
             return dt;
         return null;
+    }
+
+    public Task<int> ListPolicyPacksAsync(bool formatJson, CancellationToken ct = default)
+    {
+        try
+        {
+            if (_policyPackRegistry == null)
+            {
+                if (formatJson)
+                    Console.Out.WriteLine("{\"ok\":false,\"error\":\"Trust policy pack registry not registered\"}");
+                else
+                    Console.Error.WriteLine("Trust policy pack registry not registered.");
+                return Task.FromResult(1);
+            }
+
+            var packs = _policyPackRegistry.ListPacks();
+            if (formatJson)
+            {
+                Console.Out.WriteLine(System.Text.Json.JsonSerializer.Serialize(
+                    new
+                    {
+                        ok = true,
+                        count = packs.Count,
+                        packs = packs.Select(pack => new
+                        {
+                            pack.Id,
+                            pack.Version,
+                            pack.DisplayName,
+                            pack.Description
+                        }).ToArray()
+                    },
+                    new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+            }
+            else
+            {
+                Console.Out.WriteLine($"Trust policy packs ({packs.Count}):");
+                foreach (var pack in packs)
+                    Console.Out.WriteLine($"  - {pack.Id}@{pack.Version}: {pack.DisplayName}");
+            }
+
+            return Task.FromResult(0);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Trust pack list failed");
+            if (formatJson)
+                Console.Out.WriteLine($"{{\"ok\":false,\"error\":\"{ex.Message}\"}}");
+            else
+                Console.Error.WriteLine(ex.Message);
+            return Task.FromResult(1);
+        }
+    }
+
+    public Task<int> ApplyPolicyPackAsync(string packId, bool formatJson, CancellationToken ct = default)
+    {
+        try
+        {
+            if (_policyPackRegistry == null)
+            {
+                if (formatJson)
+                    Console.Out.WriteLine("{\"ok\":false,\"error\":\"Trust policy pack registry not registered\"}");
+                else
+                    Console.Error.WriteLine("Trust policy pack registry not registered.");
+                return Task.FromResult(1);
+            }
+
+            if (_accessBoundary == null)
+            {
+                if (formatJson)
+                    Console.Out.WriteLine("{\"ok\":false,\"error\":\"Access boundary not registered\"}");
+                else
+                    Console.Error.WriteLine("Access boundary not registered.");
+                return Task.FromResult(1);
+            }
+
+            if (string.IsNullOrWhiteSpace(packId))
+            {
+                if (formatJson)
+                    Console.Out.WriteLine("{\"ok\":false,\"error\":\"pack id is required\"}");
+                else
+                    Console.Error.WriteLine("pack id is required");
+                return Task.FromResult(1);
+            }
+
+            var pack = _policyPackRegistry.GetById(packId.Trim());
+            if (pack == null)
+            {
+                if (formatJson)
+                    Console.Out.WriteLine($"{{\"ok\":false,\"error\":\"unknown pack '{packId.Trim()}'\"}}");
+                else
+                    Console.Error.WriteLine($"unknown pack '{packId.Trim()}'");
+                return Task.FromResult(1);
+            }
+
+            var previousActive = _accessBoundary.GetActivePolicyPack();
+            var previousPackDefinition = previousActive is null
+                ? null
+                : _policyPackRegistry.GetById(previousActive.Id);
+
+            _accessBoundary.ApplyPolicyPack(pack);
+
+            ActiveTrustPolicyPack activated;
+            try
+            {
+                activated = _policyPackRegistry.ActivateAsync(pack.Id, ct).GetAwaiter().GetResult();
+            }
+            catch
+            {
+                // Keep runtime boundary aligned with persisted registry state on activation failures.
+                if (previousPackDefinition is not null)
+                    _accessBoundary.ApplyPolicyPack(previousPackDefinition);
+                else
+                    _accessBoundary.Reset();
+                throw;
+            }
+            if (formatJson)
+            {
+                Console.Out.WriteLine(System.Text.Json.JsonSerializer.Serialize(
+                    new
+                    {
+                        ok = true,
+                        applied = new { activated.Id, activated.Version, activated.ActivatedAtUtc, pack.DisplayName }
+                    },
+                    new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+            }
+            else
+            {
+                Console.Out.WriteLine($"Applied trust policy pack {activated.Id}@{activated.Version}.");
+            }
+
+            return Task.FromResult(0);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Trust pack apply failed");
+            if (formatJson)
+                Console.Out.WriteLine($"{{\"ok\":false,\"error\":\"{ex.Message}\"}}");
+            else
+                Console.Error.WriteLine(ex.Message);
+            return Task.FromResult(1);
+        }
     }
 }

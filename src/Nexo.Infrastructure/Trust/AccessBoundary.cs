@@ -12,6 +12,7 @@ public sealed class AccessBoundary : IAccessBoundary
 {
     private readonly string? _configPath;
     private readonly SemaphoreSlim _saveLock = new(1, 1);
+    private ActiveTrustPolicyPack? _activePolicyPack;
 
     private volatile bool _isPaused;
     private readonly ConcurrentDictionary<string, bool> _categoryAllowed = new(StringComparer.OrdinalIgnoreCase);
@@ -146,9 +147,90 @@ public sealed class AccessBoundary : IAccessBoundary
     /// <inheritdoc />
     public event Action<BoundaryChangeEvent>? BoundaryChanged;
 
+    /// <inheritdoc />
+    public void Reset()
+    {
+        _isPaused = false;
+        _categoryAllowed.Clear();
+        _sourceAllowed.Clear();
+        _projectOverrides.Clear();
+        _activePolicyPack = null;
+        RaiseBoundaryChanged(new BoundaryChangeEvent
+        {
+            ChangeType = "reset",
+            NewState = "default"
+        });
+        _ = SaveToFileAsync();
+    }
+
+    /// <inheritdoc />
+    public ActiveTrustPolicyPack? GetActivePolicyPack()
+    {
+        return _activePolicyPack;
+    }
+
+    /// <inheritdoc />
+    public IReadOnlyDictionary<string, bool> GetCategoryAllowlistSnapshot()
+    {
+        return new Dictionary<string, bool>(_categoryAllowed, StringComparer.OrdinalIgnoreCase);
+    }
+
+    /// <inheritdoc />
+    public IReadOnlyDictionary<string, bool> GetSourceAllowlistSnapshot()
+    {
+        return new Dictionary<string, bool>(_sourceAllowed, StringComparer.OrdinalIgnoreCase);
+    }
+
     private void RaiseBoundaryChanged(BoundaryChangeEvent evt)
     {
         BoundaryChanged?.Invoke(evt);
+    }
+
+    /// <inheritdoc />
+    public void ApplyPolicyPack(TrustPolicyPack pack)
+    {
+        if (pack == null)
+            throw new ArgumentNullException(nameof(pack));
+
+        var normalizedId = pack.Id.Trim();
+        if (string.IsNullOrWhiteSpace(normalizedId))
+            throw new ArgumentException("Trust policy pack id is required.", nameof(pack));
+
+        var previousPack = _activePolicyPack;
+
+        _isPaused = pack.PauseObservationByDefault;
+        _categoryAllowed.Clear();
+        _sourceAllowed.Clear();
+        _projectOverrides.Clear();
+
+        foreach (var kv in pack.CategoryRules)
+            _categoryAllowed[kv.Key] = kv.Value;
+
+        foreach (var kv in pack.SourceRules)
+            _sourceAllowed[kv.Key] = kv.Value;
+
+        foreach (var projectRule in pack.ProjectRules)
+        {
+            _projectOverrides[projectRule.ProjectPath] = new Dictionary<string, bool>(
+                projectRule.SourceRules,
+                StringComparer.OrdinalIgnoreCase);
+        }
+
+        _activePolicyPack = new ActiveTrustPolicyPack(
+            normalizedId,
+            string.IsNullOrWhiteSpace(pack.Version) ? "1.0.0" : pack.Version.Trim(),
+            DateTimeOffset.UtcNow);
+
+        RaiseBoundaryChanged(new BoundaryChangeEvent
+        {
+            ChangeType = "policy-pack",
+            PreviousState = previousPack is null
+                ? null
+                : $"{previousPack.Id}@{previousPack.Version}",
+            NewState = $"{_activePolicyPack.Id}@{_activePolicyPack.Version}",
+        });
+
+        _ = SaveToFileAsync();
     }
 
     private void LoadFromFile()
@@ -166,6 +248,13 @@ public sealed class AccessBoundary : IAccessBoundary
                 _sourceAllowed[kv.Key] = kv.Value;
             foreach (var kv in model.ProjectOverrides ?? new Dictionary<string, Dictionary<string, bool>>())
                 _projectOverrides[kv.Key] = kv.Value;
+            if (!string.IsNullOrWhiteSpace(model.ActivePolicyPackId))
+            {
+                _activePolicyPack = new ActiveTrustPolicyPack(
+                    model.ActivePolicyPackId.Trim(),
+                    string.IsNullOrWhiteSpace(model.ActivePolicyPackVersion) ? "1.0.0" : model.ActivePolicyPackVersion.Trim(),
+                    DateTimeOffset.UtcNow);
+            }
         }
         catch
         {
@@ -186,6 +275,8 @@ public sealed class AccessBoundary : IAccessBoundary
                 CategoryAllowed = new Dictionary<string, bool>(_categoryAllowed),
                 SourceAllowed = new Dictionary<string, bool>(_sourceAllowed),
                 ProjectOverrides = _projectOverrides.ToDictionary(kv => kv.Key, kv => new Dictionary<string, bool>(kv.Value ?? new Dictionary<string, bool>()), StringComparer.OrdinalIgnoreCase),
+                ActivePolicyPackId = _activePolicyPack?.Id,
+                ActivePolicyPackVersion = _activePolicyPack?.Version
             };
             var json = JsonSerializer.Serialize(model, JsonOptions);
             await File.WriteAllTextAsync(_configPath!, json).ConfigureAwait(false);
@@ -206,5 +297,7 @@ public sealed class AccessBoundary : IAccessBoundary
         public Dictionary<string, bool>? CategoryAllowed { get; set; }
         public Dictionary<string, bool>? SourceAllowed { get; set; }
         public Dictionary<string, Dictionary<string, bool>>? ProjectOverrides { get; set; }
+        public string? ActivePolicyPackId { get; set; }
+        public string? ActivePolicyPackVersion { get; set; }
     }
 }

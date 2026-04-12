@@ -118,6 +118,15 @@ public sealed class CompositionEngine : ICompositionEngine
         if (componentIds.Count == 0)
             return Task.FromResult<ComposedAgent?>(null);
 
+        var validationIssues = _registry.ValidateSelection(componentIds, available);
+        if (validationIssues.Count > 0)
+        {
+            var message = string.Join(
+                "; ",
+                validationIssues.Select(issue => $"{issue.Code} ({issue.ComponentId}): {issue.Message}"));
+            throw new InvalidOperationException($"Composition validation failed: {message}");
+        }
+
         return Task.FromResult<ComposedAgent?>(new ComposedAgent
         {
             Id = Guid.NewGuid().ToString("N"),

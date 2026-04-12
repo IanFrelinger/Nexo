@@ -1,0 +1,21 @@
+{
+  "id": "strict-enterprise",
+  "version": "1.0.0",
+  "displayName": "Strict enterprise",
+  "description": "Deny high-risk observation categories and keep shell-level sources blocked by default.",
+  "pauseObservationByDefault": false,
+  "recommendedFor": "regulated enterprise workloads",
+  "categoryRules": {
+    "file-contents": false,
+    "terminal-output": false,
+    "api-keys": false,
+    "file-paths": true,
+    "git-metadata": true
+  },
+  "sourceRules": {
+    "shell": false,
+    "git": true,
+    "vscode": true
+  },
+  "projectRules": []
+}

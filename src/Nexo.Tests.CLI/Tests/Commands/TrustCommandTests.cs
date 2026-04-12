@@ -56,7 +56,7 @@ public class TrustCommandTests : UnitTestBase
     {
         var auditLog = new Nexo.BackgroundAgents.Trust.DataDecisionAuditLog();
         var logger = new Mock<ILogger<TrustCommand>>();
-        var command = new TrustCommand(auditLog, null, logger.Object);
+        var command = new TrustCommand(auditLog, null, null, logger.Object);
 
         var exitCode = await command.AuditAsync(10, null, null, null, false, false, false);
 
@@ -66,7 +66,7 @@ public class TrustCommandTests : UnitTestBase
     private async Task TestAuditAsync_WithoutAuditLog_ReturnsOne()
     {
         var logger = new Mock<ILogger<TrustCommand>>();
-        var command = new TrustCommand(null, null, logger.Object);
+        var command = new TrustCommand(null, null, null, logger.Object);
 
         var exitCode = await command.AuditAsync(10, null, null, null, false, false, false);
 
@@ -77,7 +77,7 @@ public class TrustCommandTests : UnitTestBase
     {
         var boundary = new AccessBoundary();
         var logger = new Mock<ILogger<TrustCommand>>();
-        var command = new TrustCommand(null, boundary, logger.Object);
+        var command = new TrustCommand(null, boundary, null, logger.Object);
 
         var exitCode = await command.PauseAsync(false);
 
@@ -90,7 +90,7 @@ public class TrustCommandTests : UnitTestBase
         var boundary = new AccessBoundary();
         boundary.SetPause(true);
         var logger = new Mock<ILogger<TrustCommand>>();
-        var command = new TrustCommand(null, boundary, logger.Object);
+        var command = new TrustCommand(null, boundary, null, logger.Object);
 
         var exitCode = await command.ResumeAsync(false);
 
@@ -103,7 +103,7 @@ public class TrustCommandTests : UnitTestBase
         var mockBoundary = new Mock<IAccessBoundary>();
         mockBoundary.Setup(x => x.IsObservationPaused).Returns(false);
         var logger = new Mock<ILogger<TrustCommand>>();
-        var command = new TrustCommand(null, mockBoundary.Object, logger.Object);
+        var command = new TrustCommand(null, mockBoundary.Object, null, logger.Object);
 
         var exitCode = await command.AllowAsync("file-paths", null, null, false);
 
@@ -115,7 +115,7 @@ public class TrustCommandTests : UnitTestBase
     {
         var boundary = new AccessBoundary();
         var logger = new Mock<ILogger<TrustCommand>>();
-        var command = new TrustCommand(null, boundary, logger.Object);
+        var command = new TrustCommand(null, boundary, null, logger.Object);
 
         var exitCode = await command.BoundaryAsync(false);
 

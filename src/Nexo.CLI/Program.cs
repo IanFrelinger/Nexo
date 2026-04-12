@@ -683,6 +683,34 @@ static class Program
             trustDashboardCmd.Options[0] as Option<int> ?? throw new InvalidOperationException(),
             trustDashboardCmd.Options[1] as Option<bool> ?? throw new InvalidOperationException());
         trustCmd.AddCommand(trustDashboardCmd);
+
+        var trustPackCmd = new Command("pack", "Manage regulated trust policy packs");
+        var trustPackListCmd = new Command("list", "List available trust policy packs");
+        trustPackListCmd.AddOption(jsonOpt);
+        trustPackListCmd.SetHandler(
+            async (bool formatJson) =>
+            {
+                var cmd = ServiceProvider.GetRequiredService<TrustCommand>();
+                Environment.Exit(await cmd.ListPolicyPacksAsync(formatJson));
+            },
+            jsonOpt);
+        trustPackCmd.AddCommand(trustPackListCmd);
+
+        var trustPackApplyCmd = new Command("apply", "Apply a trust policy pack by id");
+        var trustPackIdOpt = new Option<string>("--id", "Policy pack id (strict-enterprise, internal-only, air-gapped)");
+        trustPackIdOpt.IsRequired = true;
+        trustPackApplyCmd.AddOption(trustPackIdOpt);
+        trustPackApplyCmd.AddOption(jsonOpt);
+        trustPackApplyCmd.SetHandler(
+            async (string id, bool formatJson) =>
+            {
+                var cmd = ServiceProvider.GetRequiredService<TrustCommand>();
+                Environment.Exit(await cmd.ApplyPolicyPackAsync(id, formatJson));
+            },
+            trustPackIdOpt,
+            jsonOpt);
+        trustPackCmd.AddCommand(trustPackApplyCmd);
+        trustCmd.AddCommand(trustPackCmd);
         root.AddCommand(trustCmd);
 
         // nexo test - Multi-platform test execution

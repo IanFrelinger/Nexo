@@ -123,6 +123,7 @@ public static class ServiceCollectionExtensions
             var audit = sp.GetService<ISanitizationAuditLog>();
             return new CloudSanitizationProxy(filter, taxonomy, audit);
         });
+        services.TryAddSingleton<ITrustPolicyPackRegistry, TrustPolicyPackRegistry>();
 
         if (useSanitizingProviderFactory && !skipProviderRegistration)
         {
