@@ -4,6 +4,7 @@ using Nexo.Core.Application.Workflows;
 using Nexo.Core.Domain.Agents;
 using Nexo.Core.Domain.Behaviors;
 using Nexo.Core.Domain.Bricks;
+using Nexo.Core.Domain.Clusters;
 using Nexo.Core.Domain.Execution;
 using Nexo.Core.Domain.Execution.Events;
 using Nexo.Core.Domain.Workflows;

@@ -9,23 +9,13 @@
     <IsPackable>true</IsPackable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
-    <PackageId>Nexo.Client</PackageId>
+    <PackageId>Nexo.Contracts</PackageId>
     <PackageVersion>1.0.0</PackageVersion>
-    <Title>Nexo Client</Title>
-    <Description>HTTP client for Nexo API. Used by mobile app and other remote clients.</Description>
-    <PackageTags>nexo;ai;client;sdk</PackageTags>
+    <Title>Nexo Contracts</Title>
+    <Description>Shared HTTP request/response DTOs for Nexo API and client.</Description>
+    <PackageTags>nexo;ai;contracts;dto</PackageTags>
     <RepositoryUrl>https://github.com/IanFrelinger/Nexo</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
   </PropertyGroup>
-
-  <ItemGroup>
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
-    <PackageReference Include="Microsoft.Extensions.Http" />
-    <PackageReference Include="Microsoft.Extensions.Options" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Nexo.Contracts\Nexo.Contracts.csproj" />
-  </ItemGroup>
 
 </Project>

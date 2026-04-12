@@ -400,11 +400,6 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
                 ["timestamp"] = DateTimeOffset.UtcNow
             }));
 
-            // Execute agent (this would need a toolbox and memory - simplified for now).
-            // When integrating: use BackgroundAgentPolicyEngineFactory.Create(registry, sensitivityRegistry)
-            // as the PolicyEngine for the host so tool calls are enforced by DataExfiltrationPolicy.
-            // var actions = await instance.Agent.ThinkAsync(observation, toolbox, memory, cancellationToken);
-
             instance.LastCompletedAt = DateTimeOffset.UtcNow;
             instance.SuccessCount++;
             _logStore?.Append(agentId, "Info", "Execution completed successfully.");

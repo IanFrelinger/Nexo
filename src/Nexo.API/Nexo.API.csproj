@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Nexo.BackgroundAgents.HostRunners\Nexo.BackgroundAgents.HostRunners.csproj" />
+    <ProjectReference Include="..\Nexo.Contracts\Nexo.Contracts.csproj" />
     <ProjectReference Include="..\Nexo.Hosting\Nexo.Hosting.csproj" />
   </ItemGroup>
 

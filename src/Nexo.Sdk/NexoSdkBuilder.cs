@@ -4,7 +4,7 @@ using Nexo.Client;
 namespace Nexo.Sdk;
 
 /// <summary>
-/// Builder for configuring Nexo SDK with optional adaptive (edge/server) routing.
+/// Builder for configuring Nexo SDK options.
 /// Use for Unity, Unreal, or embedded scenarios where local model or server can be used.
 /// </summary>
 public sealed class NexoSdkBuilder
@@ -14,18 +14,6 @@ public sealed class NexoSdkBuilder
     internal NexoSdkBuilder(IServiceCollection services)
     {
         _services = services;
-    }
-
-    /// <summary>
-    /// Configures the SDK to prefer edge (local) when available, falling back to server.
-    /// Reads NEXO_LOAD_PREFERENCE (edge|server|auto) when set.
-    /// </summary>
-    [Obsolete("Adaptive routing configuration is experimental and may change. Prefer explicit host integration for production use.")]
-    public NexoSdkBuilder UseAdaptiveRouting()
-    {
-        // When embedded in a host with AdaptiveProviderFactory, the host configures routing.
-        // This flag documents intent; actual routing is done by the host's IProviderFactory.
-        return this;
     }
 }
 
