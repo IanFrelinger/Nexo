@@ -28,6 +28,7 @@ public sealed class WorkflowCommandTests : UnitTestBase
             await TestOptimizeInvokesModelPullerWithResolvedModelsAsync(cancellationToken).ConfigureAwait(false);
             await TestOptimizeResolvesObjectiveFileAndReportsSearchMetadataAsync(cancellationToken).ConfigureAwait(false);
             await TestOptimizeHonorsBudgetAndEarlyStopAsync(cancellationToken).ConfigureAwait(false);
+            await TestGateIgnoresSkippedRunsInSuccessRateAsync().ConfigureAwait(false);
             return new TestResult
             {
                 Name = nameof(WorkflowCommandTests),
@@ -1330,6 +1331,70 @@ public sealed class WorkflowCommandTests : UnitTestBase
         finally
         {
             Environment.CurrentDirectory = previousCurrent;
+            if (Directory.Exists(repoRoot))
+                Directory.Delete(repoRoot, recursive: true);
+        }
+    }
+
+    private async Task TestGateIgnoresSkippedRunsInSuccessRateAsync()
+    {
+        var repoRoot = CreateTempRepoRoot();
+        try
+        {
+            WorkflowLabHistoryStore.Append(repoRoot, new WorkflowLabStressHistoryRow
+            {
+                RunId = "baseline",
+                ScenarioId = "req::comp::profile::iter-1",
+                RequestId = "req",
+                CompositionId = "comp",
+                ModelProfileId = "profile",
+                Iteration = 1,
+                Success = true,
+                Skipped = false,
+                Score = 100,
+                ElapsedMs = 100,
+                BenchmarkSet = "workflow-lab"
+            });
+
+            WorkflowLabHistoryStore.Append(repoRoot, new WorkflowLabStressHistoryRow
+            {
+                RunId = "candidate",
+                ScenarioId = "req::comp::profile::iter-1",
+                RequestId = "req",
+                CompositionId = "comp",
+                ModelProfileId = "profile",
+                Iteration = 1,
+                Success = false,
+                Skipped = true,
+                Score = 0,
+                ElapsedMs = 50,
+                BenchmarkSet = "workflow-lab",
+                FailureCategory = "skipped_infra",
+                Summary = "Skipped due to provider preflight failure"
+            });
+
+            var command = CreateCommand();
+            var (exitCode, output) = await CaptureConsoleAsync(
+                () => command.ExecuteGateAsync(
+                    repoRoot,
+                    benchmarkSet: "workflow-lab",
+                    runId: "candidate",
+                    baselineRunId: "baseline",
+                    policyFile: null,
+                    minSuccessRateDelta: -0.1,
+                    maxP95LatencyRegressionMs: 1000,
+                    maxAverageLatencyRegressionMs: 1000,
+                    minAverageScoreDelta: -100,
+                    maxRegressedScenarios: 10,
+                    json: true)).ConfigureAwait(false);
+
+            AssertEqual(1, exitCode);
+            AssertTrue(
+                output.Contains("\"valid\": false", StringComparison.OrdinalIgnoreCase),
+                "Expected gate result JSON to report invalid comparison for skipped-only candidate data.");
+        }
+        finally
+        {
             if (Directory.Exists(repoRoot))
                 Directory.Delete(repoRoot, recursive: true);
         }
