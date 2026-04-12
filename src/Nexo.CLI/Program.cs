@@ -1167,6 +1167,7 @@ static class Program
         root.AddCommand(new ObserveCommand());
         root.AddCommand(new AdaptCommand());
         root.AddCommand(new ImproveCommand());
+        root.AddCommand(new IngestFailuresCommand());
         root.AddCommand(new SelfContextCommand());
         root.AddCommand(new ChangelogCommand());
         root.AddCommand(new RollbackCommand());

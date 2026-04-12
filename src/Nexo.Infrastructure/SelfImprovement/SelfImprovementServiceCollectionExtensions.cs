@@ -33,6 +33,8 @@ public static class SelfImprovementServiceCollectionExtensions
     {
         services.AddAccessBoundary(null);
         services.TryAddSingleton<ISelfImprovementMetricsStore>(_ => new FileBasedSelfImprovementMetricsStore());
+        services.TryAddSingleton<TestFailureIngestionBridge>(sp =>
+            new TestFailureIngestionBridge(sp.GetRequiredService<ITestFailureStore>()));
         services.AddSingleton<ISelfImprovementLoop>(sp => new SelfImprovementLoop(
             sp.GetRequiredService<ITestFailureStore>(),
             sp.GetRequiredService<Nexo.Core.Application.Analysis.Ports.IBrickStaticAnalyzer>(),

@@ -380,6 +380,70 @@
     .settings-inner { padding: 18px; }
     .settings-inner h3 { margin: 0 0 12px 0; }
     .settings-inner footer { margin-top: 16px; display: flex; gap: 8px; flex-wrap: wrap; }
+    .pill.warn::before { background: var(--warn); }
+    .task-history-list {
+      max-height: 340px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+    }
+    .task-history-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-top: 1px solid var(--line);
+      cursor: pointer;
+      font-size: 13px;
+      transition: background 0.12s;
+    }
+    .task-history-item:first-child { border-top: none; }
+    .task-history-item:hover { background: var(--accent-soft); }
+    .task-history-item .task-id { font-family: monospace; color: var(--muted); min-width: 70px; }
+    .task-history-item .task-text { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .task-history-item .task-ts { color: var(--muted); font-size: 11px; white-space: nowrap; }
+    .task-detail-viewer {
+      margin-top: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--bg) 70%, var(--panel));
+      padding: 10px;
+      overflow: auto;
+      max-height: 320px;
+      white-space: pre-wrap;
+      font-size: 12px;
+    }
+    .welcome-msg {
+      padding: 14px;
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+      margin-top: 8px;
+    }
+    .audit-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 8px;
+      border-top: 1px solid var(--line);
+      font-size: 12px;
+    }
+    .audit-row:first-child { border-top: none; }
+    .audit-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .audit-dot.green { background: var(--ok); }
+    .audit-dot.yellow { background: var(--warn); }
+    .audit-dot.red { background: var(--bad); }
+    .audit-dot.grey { background: var(--muted); }
+    .audit-type { font-weight: 600; min-width: 140px; }
+    .audit-ts { color: var(--muted); min-width: 130px; }
+    .audit-detail { color: var(--muted); flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     @media (max-width: 900px) {
       .grid { grid-template-columns: 1fr; }
     }
@@ -406,6 +470,7 @@
       <div class="toolbar">
         <span id="connPill" class="pill dot" title="API reachability">Connecting…</span>
         <span id="modePill" class="pill" hidden></span>
+        <span id="trustPill" class="pill dot" hidden>Trust: …</span>
         <span style="flex:1"></span>
         <button type="button" class="icon" id="settingsBtn" aria-haspopup="dialog">Preferences</button>
       </div>
@@ -472,6 +537,13 @@
         <button type="button" class="primary" id="chatSendBtn">Send prompt</button>
         <button type="button" class="secondary" id="chatClearBtn">Clear transcript</button>
       </div>
+    </section>
+
+    <section class="panel">
+      <h2>Copilot task history</h2>
+      <p class="sub">Recent copilot tasks, newest first.</p>
+      <div id="copilotTaskList" class="task-history-list"></div>
+      <div id="copilotTaskDetail" class="task-detail-viewer" hidden></div>
     </section>
 
     <section class="panel">
@@ -592,6 +664,9 @@
       const auditTable = el("auditTable");
       const agentSummary = el("agentSummary");
       const knowledgeBlock = el("knowledgeBlock");
+      const trustPill = el("trustPill");
+      const copilotTaskList = el("copilotTaskList");
+      const copilotTaskDetail = el("copilotTaskDetail");
 
       const chipSets = {
         shape: [
@@ -944,7 +1019,8 @@
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ task: prompt, auditCount: 20 })
           });
-          chatEntries.push({ kind: "result", text: "Nexo: " + (result.summary || "Done") });
+          const taskLabel = result.taskId ? " [" + String(result.taskId).substring(0, 8) + "]" : "";
+          chatEntries.push({ kind: "result", text: "Nexo" + taskLabel + ": " + (result.summary || "Done") });
           chatEntries.push({ kind: "system", text: pretty(result.output ?? {}) });
           if (result.recentAudit && result.recentAudit.length) {
             chatEntries.push({ kind: "system", text: "Audit events captured: " + result.recentAudit.length });
@@ -952,6 +1028,8 @@
           renderChat();
           chatPrompt.value = "";
           setStatus("Chat turn completed.");
+          refreshCopilotTasks().catch(() => {});
+          if (result.isTrustPaused !== undefined) updateTrustPill(result.isTrustPaused, null);
         } catch (err) {
           chatEntries.push({ kind: "system", text: "Error: " + err.message });
           renderChat();
@@ -973,10 +1051,33 @@
             row.textContent = "No recent trust audit events.";
             auditTable.appendChild(row);
           } else {
-            events.slice(0, 8).forEach((e) => {
+            const greenTypes = ["ContextInitialized", "IdentityResolved"];
+            const yellowTypes = ["DefaultApplied"];
+            const redTypes = ["CeilingExceeded", "ValidationFailed", "ElevationDenied"];
+            function auditDotColor(eventType) {
+              if (greenTypes.includes(eventType)) return "green";
+              if (yellowTypes.includes(eventType)) return "yellow";
+              if (redTypes.includes(eventType)) return "red";
+              return "grey";
+            }
+            events.slice(0, 15).forEach((e) => {
               const row = document.createElement("div");
-              const ts = e.timestamp ? new Date(e.timestamp).toLocaleString() : "—";
-              row.textContent = ts + " · " + (e.eventType || "event") + " · " + (e.reason || e.changeType || e.dataType || "");
+              row.className = "audit-row";
+              const dot = document.createElement("span");
+              dot.className = "audit-dot " + auditDotColor(e.eventType || "");
+              const typeSpan = document.createElement("span");
+              typeSpan.className = "audit-type";
+              typeSpan.textContent = e.eventType || "event";
+              const tsSpan = document.createElement("span");
+              tsSpan.className = "audit-ts";
+              tsSpan.textContent = e.timestamp ? new Date(e.timestamp).toLocaleString() : "—";
+              const detailSpan = document.createElement("span");
+              detailSpan.className = "audit-detail";
+              detailSpan.textContent = e.reason || e.changeType || e.dataType || "";
+              row.appendChild(dot);
+              row.appendChild(typeSpan);
+              row.appendChild(tsSpan);
+              row.appendChild(detailSpan);
               auditTable.appendChild(row);
             });
           }
@@ -1051,6 +1152,72 @@
         }
       }
 
+      function updateTrustPill(isPaused, packName) {
+        trustPill.hidden = false;
+        if (isPaused) {
+          trustPill.className = "pill dot warn";
+          trustPill.textContent = "Trust: paused" + (packName ? " · " + packName : "");
+        } else {
+          trustPill.className = "pill dot ok";
+          trustPill.textContent = "Trust: active" + (packName ? " · " + packName : "");
+        }
+      }
+
+      async function refreshTrustPill() {
+        try {
+          const trust = await fetchJson("/api/trust/dashboard?count=1");
+          updateTrustPill(trust.isPaused, trust.activeTrustPack || null);
+        } catch { /* non-fatal */ }
+      }
+
+      async function refreshCopilotTasks() {
+        try {
+          const tasks = await fetchJson("/api/copilot/tasks?maxCount=20");
+          copilotTaskList.innerHTML = "";
+          if (!tasks || !tasks.length) {
+            const msg = document.createElement("div");
+            msg.className = "welcome-msg";
+            msg.textContent = "Welcome! Submit your first task using the chat above, or run an iteration to get started.";
+            copilotTaskList.appendChild(msg);
+            copilotTaskDetail.hidden = true;
+            return;
+          }
+          for (const t of tasks) {
+            const item = document.createElement("div");
+            item.className = "task-history-item";
+            const idSpan = document.createElement("span");
+            idSpan.className = "task-id";
+            idSpan.textContent = String(t.taskId || "").substring(0, 8);
+            const textSpan = document.createElement("span");
+            textSpan.className = "task-text";
+            const taskStr = t.task || t.prompt || "";
+            textSpan.textContent = taskStr.length > 60 ? taskStr.substring(0, 60) + "…" : taskStr;
+            const badge = document.createElement("span");
+            badge.className = "badge " + (t.success ? "ok" : "bad");
+            badge.textContent = t.success ? "ok" : "failed";
+            const tsSpan = document.createElement("span");
+            tsSpan.className = "task-ts";
+            tsSpan.textContent = t.submittedAt ? new Date(t.submittedAt).toLocaleString() : "";
+            item.appendChild(idSpan);
+            item.appendChild(textSpan);
+            item.appendChild(badge);
+            item.appendChild(tsSpan);
+            item.addEventListener("click", () => {
+              copilotTaskDetail.hidden = false;
+              copilotTaskDetail.textContent = pretty(t);
+            });
+            copilotTaskList.appendChild(item);
+          }
+        } catch (err) {
+          copilotTaskList.innerHTML = "";
+          const errDiv = document.createElement("div");
+          errDiv.className = "muted";
+          errDiv.style.padding = "10px";
+          errDiv.textContent = "Could not load copilot tasks: " + err.message;
+          copilotTaskList.appendChild(errDiv);
+        }
+      }
+
       el("runBtn").addEventListener("click", runIteration);
       el("refreshBtn").addEventListener("click", async () => {
         setStatus("Refreshing dailies…");
@@ -1082,11 +1249,14 @@
       refreshTrustDashboard().catch(() => {});
       refreshBackgroundAgents().catch(() => {});
       refreshKnowledge().catch(() => {});
+      refreshCopilotTasks().catch(() => {});
+      refreshTrustPill().catch(() => {});
 
       setInterval(() => {
         refreshStatus().catch(() => {});
         refreshTrustDashboard().catch(() => {});
         refreshBackgroundAgents().catch(() => {});
+        refreshTrustPill().catch(() => {});
       }, 60000);
     })();
   </script>
