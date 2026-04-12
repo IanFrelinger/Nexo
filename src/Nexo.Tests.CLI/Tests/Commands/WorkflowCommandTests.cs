@@ -1550,6 +1550,9 @@ public sealed class WorkflowCommandTests : UnitTestBase
             AssertTrue(output.Contains("\"targetAllocations\":", StringComparison.OrdinalIgnoreCase));
             AssertTrue(output.Contains("\"candidateAllocations\":", StringComparison.OrdinalIgnoreCase));
             AssertTrue(output.Contains("\"adaptiveSynthesizedCandidateCount\":", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(output.Contains("\"kind\": \"sample-size\"", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(output.Contains("minimum 2 run(s) required before promotion", StringComparison.OrdinalIgnoreCase));
+            AssertTrue(output.Contains("Promotion skipped: winner has 1 measured run(s), requires at least 2.", StringComparison.OrdinalIgnoreCase));
             AssertTrue(File.Exists(reportPath), "Expected adaptive optimize report to be written.");
 
             var report = await File.ReadAllTextAsync(reportPath, cancellationToken).ConfigureAwait(false);
