@@ -10,6 +10,7 @@ using Nexo.Core.Application.Validation.UseCases.RunValidation;
 using Nexo.Infrastructure.Testing.ExecutionPlatform;
 using Nexo.API.Security;
 using Nexo.Orchestration.Coordination;
+using Nexo.Orchestration.Models;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
 
