@@ -9,13 +9,17 @@ RUN apk add --no-cache \
         python3 \
         py3-pip \
         bash \
-        protobuf
+        protobuf \
+        grpc-plugins
 
 # Set working directory
 WORKDIR /workspace
 
 # Skip CopyAssemblies tool in container
 ENV DOTNET_RUNNING_IN_CONTAINER=true
+# Use Alpine-native protobuf/grpc plugins to avoid glibc binary incompatibility in Grpc.Tools.
+ENV PROTOBUF_PROTOC=/usr/bin/protoc
+ENV GRPC_PROTOC_PLUGIN=/usr/bin/grpc_csharp_plugin
 
 # Copy project files
 COPY . .
