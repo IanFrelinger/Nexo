@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Nexo.Core.Application.Mesh.Models;
 using Nexo.Core.Application.Mesh.Ports;
+using Nexo.Infrastructure.Execution.Routing;
 
 namespace Nexo.Infrastructure.Mesh;
 
@@ -10,10 +11,15 @@ namespace Nexo.Infrastructure.Mesh;
 public sealed class FileBasedInstanceDiscovery : IInstanceDiscovery
 {
     private readonly string _instancesPath;
+    private readonly PeerTrustPolicyResolver _trustPolicyResolver;
 
-    public FileBasedInstanceDiscovery(string? instancesPath = null)
+    public FileBasedInstanceDiscovery(
+        string? instancesPath = null,
+        string? trustedPeerIdsCsv = null,
+        string? untrustedPeerIdsCsv = null)
     {
         _instancesPath = instancesPath ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".nexo", "instances.json");
+        _trustPolicyResolver = new PeerTrustPolicyResolver("any", trustedPeerIdsCsv, untrustedPeerIdsCsv);
     }
 
     /// <inheritdoc />
@@ -38,7 +44,23 @@ public sealed class FileBasedInstanceDiscovery : IInstanceDiscovery
                     foreach (var c in capArr.EnumerateArray())
                         caps.Add(c.GetString() ?? "");
                 }
-                list.Add(new PeerInfo { PeerId = peerId, Endpoint = endpoint, Capabilities = caps });
+                var trustTier = PeerTrustTier.Unknown;
+                if (peer.TryGetProperty("trustTier", out var trustTierElement))
+                {
+                    var parsed = trustTierElement.GetString();
+                    if (Enum.TryParse<PeerTrustTier>(parsed, true, out var tier))
+                    {
+                        trustTier = tier;
+                    }
+                }
+                var effectiveTier = _trustPolicyResolver.ResolveTier(new PeerInfo
+                {
+                    PeerId = peerId,
+                    Endpoint = endpoint,
+                    Capabilities = caps,
+                    TrustTier = trustTier
+                });
+                list.Add(new PeerInfo { PeerId = peerId, Endpoint = endpoint, Capabilities = caps, TrustTier = effectiveTier });
             }
         }
         catch

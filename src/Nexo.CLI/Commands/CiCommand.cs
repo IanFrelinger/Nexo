@@ -111,7 +111,7 @@ public sealed class CiCommand : Command
         Console.WriteLine("=== CI Runtime Gate ===");
         var exit = await RunProcessAsync(
             "dotnet",
-            $"run --project \"{cliProject}\" -- runtime release-gate --repo-root \"{repoRoot}\" --mode full --core-min-total 3 --core-history-window 3 --visual-required-mode false --visual-min-total 3 --visual-history-window 3",
+            $"run --project \"{cliProject}\" -- runtime release-gate --repo-root \"{repoRoot}\" --mode full --core-min-total 3 --core-history-window 3 --visual-required-mode false --visual-min-total 3 --visual-history-window 3 --emit-slo-evidence --slo-evidence-path \"{Path.Combine(repoRoot, ".nexo", "runtime", "runtime-release-gate-slo.json")}\" --ncr-resolution-ms-slo 250 --ncr-load-ms-slo 1000 --ncr-outcome-ms-slo 1500 --ncr-failure-rate-slo 0.2",
             repoRoot);
         if (exit != 0)
             Console.Error.WriteLine($"ci runtime-gate: Failed (exit {exit})");
@@ -131,7 +131,7 @@ public sealed class CiCommand : Command
         Console.WriteLine("=== CI Runtime Promotion ===");
         var exit = await RunProcessAsync(
             "dotnet",
-            $"run --project \"{cliProject}\" -- runtime release-gate --repo-root \"{repoRoot}\" --mode full --lane-repetitions 3 --core-min-pass-rate 0.9 --core-min-total 9 --core-history-window 9 --visual-required-mode true --visual-min-pass-rate 0.85 --visual-min-total 9 --visual-history-window 9 --visual-promotion-streak 3",
+            $"run --project \"{cliProject}\" -- runtime release-gate --repo-root \"{repoRoot}\" --mode full --lane-repetitions 3 --core-min-pass-rate 0.9 --core-min-total 9 --core-history-window 9 --visual-required-mode true --visual-min-pass-rate 0.85 --visual-min-total 9 --visual-history-window 9 --visual-promotion-streak 3 --emit-slo-evidence --slo-evidence-path \"{Path.Combine(repoRoot, ".nexo", "runtime", "runtime-release-promotion-slo.json")}\" --ncr-resolution-ms-slo 200 --ncr-load-ms-slo 900 --ncr-outcome-ms-slo 1200 --ncr-failure-rate-slo 0.1",
             repoRoot);
         if (exit != 0)
             Console.Error.WriteLine($"ci runtime-promotion: Failed (exit {exit})");

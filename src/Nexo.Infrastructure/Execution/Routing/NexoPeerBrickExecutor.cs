@@ -20,6 +20,7 @@ public sealed class NexoPeerBrickExecutor : IPeerExecutor
     private readonly string _peerBrickId;
     private readonly int _queueDepthThreshold;
     private readonly TimeSpan _peerRequestTimeout;
+    private readonly PeerTrustPolicyResolver _trustPolicyResolver;
 
     public NexoPeerBrickExecutor(
         IHttpClientFactory httpClientFactory,
@@ -37,6 +38,10 @@ public sealed class NexoPeerBrickExecutor : IPeerExecutor
         _peerBrickId = string.IsNullOrWhiteSpace(config?.Value?.PeerRoutingBrickId)
             ? "generation.capability-routing"
             : config!.Value.PeerRoutingBrickId;
+        _trustPolicyResolver = new PeerTrustPolicyResolver(
+            config?.Value?.PeerTrustPolicy,
+            config?.Value?.TrustedPeerIdsCsv,
+            config?.Value?.UntrustedPeerIdsCsv);
     }
 
     public async Task<Result<GenerationExecutionResult>> ExecuteAsync(
@@ -204,6 +209,11 @@ public sealed class NexoPeerBrickExecutor : IPeerExecutor
 
     private bool IsEligible(PeerExecutionCandidate candidate, JobRequirements requirements)
     {
+        if (!_trustPolicyResolver.IsAllowed(candidate))
+        {
+            return false;
+        }
+
         if (!TryCreateEndpointUri(candidate.Endpoint, out _))
         {
             return false;

@@ -1,4 +1,5 @@
 using Nexo.Core.Application.Execution.Routing;
+using Nexo.Core.Application.Mesh.Models;
 
 namespace Nexo.Infrastructure.Execution.Routing;
 
@@ -17,5 +18,6 @@ public sealed record PeerExecutionCandidate
     public long AvailableVramBytes { get; init; }
     public GpuComputeClass ComputeClass { get; init; } = GpuComputeClass.None;
     public int QueueDepth { get; init; }
+    public PeerTrustTier TrustTier { get; init; } = PeerTrustTier.Unknown;
     public DateTimeOffset CapturedAt { get; init; } = DateTimeOffset.UtcNow;
 }

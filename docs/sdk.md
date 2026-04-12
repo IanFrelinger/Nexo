@@ -1,6 +1,34 @@
 # Nexo SDK
 
-The Nexo SDK enables **runtime registration** of bricks and agents without recompiling Nexo. Use `INexoSdkBuilder` to register custom components before calling `AddNexo()`.
+Nexo currently ships two similarly named integration surfaces:
+
+- **Host SDK surface (stable)**: `Nexo.Hosting.Sdk` extension methods + `INexoSdkBuilder` for registering bricks/agents in a host process.
+- **Client SDK surface (stable)**: `Nexo.Sdk` (`Nexo.Client`) for talking to a running Nexo API over HTTP.
+
+Use the host surface when embedding Nexo into your own service. Use the client surface when your app calls an external Nexo API.
+
+## Support boundary (v1)
+
+### Stable
+
+- `Nexo.Hosting.Sdk` (`AddNexoSdk(Action<INexoSdkBuilder>)` on `IServiceCollection`)
+- `Nexo.Core.Application.Sdk.Ports.INexoSdkBuilder`
+- `Nexo.Sdk` + `Nexo.Client` (`INexoClient`, `AddNexoSdk(baseUrl, ...)`)
+
+### Experimental (subject to faster change)
+
+- `Nexo.Sdk.NexoSdkBuilder.UseAdaptiveRouting()` intent flag behavior
+
+### Internal (not for external contracts)
+
+- Anything under `Nexo.Infrastructure.*`
+- Runtime execution internals and orchestration internals not exposed through the stable interfaces above
+
+## Breaking-change policy
+
+- Stable SDK APIs follow semantic versioning for package changes.
+- Breaking changes to stable surfaces are only introduced in major version bumps.
+- Experimental APIs may change in minor versions; avoid hard dependencies unless you pin package versions.
 
 ## Quick Start
 
@@ -20,6 +48,17 @@ builder.Services.AddNexoSdk(sdk => sdk
 builder.Services.AddNexo();
 
 var app = builder.Build();
+```
+
+## Client SDK quick start
+
+```csharp
+using Microsoft.Extensions.DependencyInjection;
+using Nexo.Sdk;
+
+var services = new ServiceCollection();
+services.AddNexoSdk("http://localhost:5000");
+var provider = services.BuildServiceProvider();
 ```
 
 ## RegisterBrick&lt;T&gt;
@@ -77,3 +116,11 @@ The SDK `RegisterBrick` and the existing `AddAdaptationBricks` both add brick ty
 - **AddAdaptationBricks**: For CLI commands or scenarios that add bricks after adaptation infrastructure is registered
 
 Both mechanisms merge into the same `AdaptationBrickOptions.AdditionalBrickTypes` list.
+
+## Reference sample
+
+A minimal, stable-only host integration sample is provided at:
+
+- `docs/samples/StableSdkHostSample/`
+
+The sample intentionally uses only `Nexo.Hosting.Sdk` + `INexoSdkBuilder` extension points and avoids internal namespaces.

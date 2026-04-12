@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Nexo.Core.Application.Mesh.Models;
 using Nexo.Core.Application.Mesh.Ports;
+using Nexo.Infrastructure.Execution.Routing;
 
 namespace Nexo.Infrastructure.Mesh;
 
@@ -12,12 +13,20 @@ public sealed class FileBasedCapabilityAdvertisement : ICapabilityAdvertisement
     private readonly IInstanceDiscovery _discovery;
     private readonly string _instancesPath;
     private readonly string _peerId;
+    private readonly PeerTrustTier _trustTier;
 
-    public FileBasedCapabilityAdvertisement(IInstanceDiscovery discovery, string? instancesPath = null, string? peerId = null)
+    public FileBasedCapabilityAdvertisement(
+        IInstanceDiscovery discovery,
+        string? instancesPath = null,
+        string? peerId = null,
+        string? trustedPeerIdsCsv = null,
+        string? untrustedPeerIdsCsv = null,
+        PeerTrustTier trustTier = PeerTrustTier.Unknown)
     {
         _discovery = discovery ?? throw new ArgumentNullException(nameof(discovery));
         _instancesPath = instancesPath ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".nexo", "instances.json");
         _peerId = peerId ?? Guid.NewGuid().ToString("N");
+        _trustTier = ResolveLocalTrustTier(_peerId, trustedPeerIdsCsv, untrustedPeerIdsCsv, trustTier);
     }
 
     /// <inheritdoc />
@@ -43,8 +52,9 @@ public sealed class FileBasedCapabilityAdvertisement : ICapabilityAdvertisement
                     if (entry.TryGetProperty("capabilities", out var ca))
                         foreach (var c in ca.EnumerateArray())
                             caps.Add(c.GetString() ?? string.Empty);
+                    var trustTier = ParseTrustTier(entry);
                     if (peerId != _peerId)
-                        entries.Add(new PeerEntry { PeerId = peerId, Endpoint = endpoint, Capabilities = caps });
+                        entries.Add(new PeerEntry { PeerId = peerId, Endpoint = endpoint, Capabilities = caps, TrustTier = trustTier });
                 }
             }
             catch
@@ -58,6 +68,7 @@ public sealed class FileBasedCapabilityAdvertisement : ICapabilityAdvertisement
             PeerId = _peerId,
             Endpoint = $"local:{_peerId}",
             Capabilities = capabilities.Select(c => c.Id).ToList(),
+            TrustTier = _trustTier
         });
 
         File.WriteAllText(_instancesPath, JsonSerializer.Serialize(entries, new JsonSerializerOptions { WriteIndented = true }));
@@ -72,6 +83,37 @@ public sealed class FileBasedCapabilityAdvertisement : ICapabilityAdvertisement
         public string Endpoint { get; set; } = "";
         [System.Text.Json.Serialization.JsonPropertyName("capabilities")]
         public List<string> Capabilities { get; set; } = new();
+        [System.Text.Json.Serialization.JsonPropertyName("trustTier")]
+        public PeerTrustTier TrustTier { get; set; } = PeerTrustTier.Unknown;
+    }
+
+    private static PeerTrustTier ParseTrustTier(JsonElement entry)
+    {
+        if (entry.TryGetProperty("trustTier", out var trustNode) &&
+            trustNode.ValueKind == JsonValueKind.String &&
+            Enum.TryParse<PeerTrustTier>(trustNode.GetString(), true, out var parsed))
+        {
+            return parsed;
+        }
+
+        return PeerTrustTier.Unknown;
+    }
+
+    private static PeerTrustTier ResolveLocalTrustTier(
+        string peerId,
+        string? trustedPeerIdsCsv,
+        string? untrustedPeerIdsCsv,
+        PeerTrustTier fallback)
+    {
+        var resolver = new PeerTrustPolicyResolver("any", trustedPeerIdsCsv, untrustedPeerIdsCsv);
+        var resolved = resolver.ResolveTier(new PeerInfo
+        {
+            PeerId = peerId,
+            Endpoint = string.Empty,
+            Capabilities = Array.Empty<string>(),
+            TrustTier = fallback
+        });
+        return resolved;
     }
 
     /// <inheritdoc />

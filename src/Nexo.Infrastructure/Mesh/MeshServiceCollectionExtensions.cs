@@ -24,11 +24,24 @@ public static class MeshServiceCollectionExtensions
         var path = instancesPath ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".nexo", "instances.json");
         var meshBasePath = Path.Combine(Path.GetDirectoryName(path) ?? path, "mesh");
         var resolvedPeerId = peerId ?? Environment.GetEnvironmentVariable("NEXO_MESH_PEER_ID") ?? Guid.NewGuid().ToString("N");
+        var trustedPeerIdsCsv = Environment.GetEnvironmentVariable("NEXO_TRUSTED_PEER_IDS");
+        var untrustedPeerIdsCsv = Environment.GetEnvironmentVariable("NEXO_UNTRUSTED_PEER_IDS");
+        var trustPolicy = Environment.GetEnvironmentVariable("NEXO_PEER_TRUST_POLICY");
 
-        services.AddSingleton(Options.Create(new MeshOptions { PeerId = resolvedPeerId }));
-        services.AddSingleton<IInstanceDiscovery>(sp => new FileBasedInstanceDiscovery(path));
+        services.AddSingleton(Options.Create(new MeshOptions
+        {
+            PeerId = resolvedPeerId,
+            TrustedPeerIdsCsv = trustedPeerIdsCsv,
+            UntrustedPeerIdsCsv = untrustedPeerIdsCsv
+        }));
+        services.AddSingleton<IInstanceDiscovery>(sp => new FileBasedInstanceDiscovery(path, trustedPeerIdsCsv, untrustedPeerIdsCsv));
         services.AddSingleton<ICapabilityAdvertisement>(sp =>
-            new FileBasedCapabilityAdvertisement(sp.GetRequiredService<IInstanceDiscovery>(), path, resolvedPeerId));
+            new FileBasedCapabilityAdvertisement(
+                sp.GetRequiredService<IInstanceDiscovery>(),
+                path,
+                resolvedPeerId,
+                trustedPeerIdsCsv,
+                untrustedPeerIdsCsv));
         services.AddSingleton<ILocalTransport>(sp => new FileBasedLocalTransport(meshBasePath, resolvedPeerId));
         services.AddSingleton<ICapabilityRequester>(sp =>
         {
@@ -36,7 +49,14 @@ public static class MeshServiceCollectionExtensions
             var transport = sp.GetRequiredService<ILocalTransport>();
             var options = sp.GetRequiredService<IOptions<MeshOptions>>();
             var logger = sp.GetService<ILogger<MeshCapabilityRequester>>();
-            return new MeshCapabilityRequester(adv, transport, options.Value.PeerId, logger);
+            return new MeshCapabilityRequester(
+                adv,
+                transport,
+                options.Value.PeerId,
+                trustPolicy,
+                trustedPeerIdsCsv,
+                untrustedPeerIdsCsv,
+                logger);
         });
         services.AddSingleton<ICapabilityFulfiller>(sp =>
         {

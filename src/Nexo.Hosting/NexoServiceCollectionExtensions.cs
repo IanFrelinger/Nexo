@@ -5,18 +5,23 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Nexo.BackgroundAgents;
 using Nexo.BackgroundAgents.Trust;
+using Nexo.Core.Application.Adaptation.Ports;
 using Nexo.Core.Application.Analysis.UseCases.AnalyzeCode;
 using Nexo.Core.Application.Ephemeral.Ports;
+using Nexo.Core.Application.Knowledge.Ports;
+using Nexo.Core.Application.Observation.Ports;
 using Nexo.Core.Application.Validation.UseCases.RunValidation;
 using Nexo.Core.Application.Testing.UseCases.RunTests;
 using Nexo.Core.Application.Common.Ports;
 using Nexo.Core.Application.Common.Services;
 using Nexo.Core.Application.Paths;
+using Nexo.Core.Application.Trust.Ports;
 using Nexo.Infrastructure;
 using Nexo.Infrastructure.Execution;
 using Nexo.Infrastructure.Execution.Routing;
 using Nexo.Infrastructure.Execution.Ephemeral;
 using Nexo.Infrastructure.Execution.LoadPolicy;
+using Nexo.Infrastructure.Knowledge;
 using Nexo.Infrastructure.Maintenance;
 using Nexo.Infrastructure.NodeCapabilityRuntime;
 using Nexo.Infrastructure.Pipelines;
@@ -144,6 +149,15 @@ public static class NexoServiceCollectionExtensions
 
         if (modules.IncludeAdaptation)
             services.AddAdaptationInfrastructure(options.PatternStorePath);
+
+        services.TryAddSingleton<IKnowledgeQueryService>(sp =>
+        {
+            var adaptationLog = sp.GetRequiredService<IAdaptationLog>();
+            var patternStore = sp.GetRequiredService<IPatternStore>();
+            var userKnowledgeStore = sp.GetService<IUserKnowledgeLogStore>()
+                ?? new Nexo.Infrastructure.Trust.InMemoryUserKnowledgeLogStore();
+            return new KnowledgeQueryService(adaptationLog, patternStore, userKnowledgeStore);
+        });
 
         if (modules.IncludePipelineComposition)
             services.AddPipelineCompositionLayer();
