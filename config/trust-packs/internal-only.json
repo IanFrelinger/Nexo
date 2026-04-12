@@ -1,0 +1,20 @@
+{
+  "id": "internal-only",
+  "version": "1.0.0",
+  "displayName": "Internal only",
+  "description": "Allow trusted internal workflows while denying external-facing data classes.",
+  "pauseObservationByDefault": false,
+  "recommendedFor": "internal engineering teams",
+  "categoryRules": {
+    "file-contents": true,
+    "terminal-output": true,
+    "api-keys": false,
+    "behavioral-patterns": false
+  },
+  "sourceRules": {
+    "shell": true,
+    "git": true,
+    "vscode": true
+  },
+  "projectRules": []
+}

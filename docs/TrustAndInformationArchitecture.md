@@ -242,6 +242,18 @@ The sections above define the target architecture. The phase list below reflects
 - Implemented compliance export (structured JSON, Markdown, CSV via `TrustCommand.AuditAsync`)
 - Implemented persistent boundary indicator and audit view (`TrustCommand.DashboardAsync`, `BoundaryAsync`)
 
+### Phase 5 — Regulated trust policy packs — Implemented
+- Added versioned trust policy pack schema (`TrustPolicyPack`) and activation status model.
+- Added pack registry + activation persistence (`ITrustPolicyPackRegistry`, `TrustPolicyPackRegistry`).
+- Added one-step operator workflows:
+  - `nexo trust pack list`
+  - `nexo trust pack apply --id <pack-id>`
+- Added default policy packs under `config/trust-packs/`:
+  - `strict-enterprise`
+  - `internal-only`
+  - `air-gapped`
+- Exposed active pack/version in trust status surfaces (`trust boundary/dashboard`, API `GET /api/trust/status`).
+
 ---
 
 ## Dependency Summary

@@ -6,6 +6,7 @@ using Nexo.BrickContracts.Capabilities;
 using Nexo.Core.Application.Agent.UseCases.RunAgent;
 using Nexo.Core.Application.NodeCapabilityRuntime.Models;
 using Nexo.Core.Application.NodeCapabilityRuntime.Ports;
+using Nexo.Core.Application.Trust.Ports;
 using Nexo.Core.Application.Validation.UseCases.RunValidation;
 using Nexo.Infrastructure.Testing.ExecutionPlatform;
 using Nexo.API.Security;
@@ -78,6 +79,11 @@ public static class NexoEndpoints
             .WithName("GetSecurityAdvisory")
             .WithSummary("Operator exposure profile and hints (user-configured; advisory only)")
             .Produces<SecurityAdvisoryResponse>(StatusCodes.Status200OK);
+
+        group.MapGet("/trust/status", GetTrustStatusAsync)
+            .WithName("GetTrustStatus")
+            .WithSummary("Get trust boundary status and active trust policy pack")
+            .Produces<TrustStatusResponse>(StatusCodes.Status200OK);
 
         group.MapPost("/director/run", RunDirectorWorkflowAsync)
             .WithName("RunDirectorWorkflow")
@@ -489,6 +495,21 @@ public static class NexoEndpoints
             custom,
             options.ShowAdvisoryInPortal));
     }
+
+    private static async Task<IResult> GetTrustStatusAsync(
+        [FromServices] IAccessBoundary accessBoundary,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        await Task.CompletedTask;
+
+        var activePack = accessBoundary.GetActivePolicyPack();
+        return Results.Ok(new TrustStatusResponse(
+            accessBoundary.IsObservationPaused,
+            accessBoundary.IsObservationPaused ? "Observation paused" : "Observing",
+            activePack?.Id,
+            activePack?.Version));
+    }
 }
 
 // Request/Response DTOs
@@ -508,6 +529,7 @@ public sealed record ExecutionBuildResponse(bool Success, string? ErrorMessage, 
 
 public sealed record ExecutionRunRequest(string ImageTag, string[] Command, Dictionary<string, string>? EnvironmentVariables = null, Dictionary<string, string>? VolumeMounts = null, string? WorkingDirectory = null);
 public sealed record ExecutionRunResponse(bool Success, int ExitCode, string StandardOutput, string StandardError, string? ContainerId, double DurationMs);
+public sealed record TrustStatusResponse(bool IsPaused, string Status, string? ActivePolicyPackId, string? ActivePolicyPackVersion);
 
 public sealed record DirectorRunRequest(
     string Goal,

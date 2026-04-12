@@ -33,4 +33,19 @@ public interface IAccessBoundary
 
     /// <summary>Raised when any boundary setting changes.</summary>
     event Action<BoundaryChangeEvent>? BoundaryChanged;
+
+    /// <summary>Reset all boundary rules and pause state to defaults (observe-all, not paused).</summary>
+    void Reset();
+
+    /// <summary>Apply a versioned trust policy pack in one step.</summary>
+    void ApplyPolicyPack(TrustPolicyPack pack);
+
+    /// <summary>Get the currently active trust policy pack, if any.</summary>
+    ActiveTrustPolicyPack? GetActivePolicyPack();
+
+    /// <summary>Snapshot of current category allow/deny rules.</summary>
+    IReadOnlyDictionary<string, bool> GetCategoryAllowlistSnapshot();
+
+    /// <summary>Snapshot of current source allow/deny rules.</summary>
+    IReadOnlyDictionary<string, bool> GetSourceAllowlistSnapshot();
 }
