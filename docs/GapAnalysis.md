@@ -12,10 +12,10 @@
 |------|--------|---------------|
 | Dogfood gates (Blocks 1–9 + Phase F) | All implemented in tests; `make dogfood-all` passes | Low |
 | CLI dogfood parity | `nexo dogfood` exposes `block1`–`block9`, `closedloop`, `phasef`, `all` | Resolved |
-| Observe → Improve integration | Observe and improve are separate; patterns don't drive analysis | Medium |
-| Test failure → adaptation trigger | Self-improvement loop exists; test failure ingestion unclear | Low |
-| Trust in improve flow | Trust phases 1–4 implemented; improve may not use sanitization | Low |
-| Documentation & discoverability | Changelog, dogfood, improve flows under-documented | Low |
+| Observe → Improve integration | `nexo improve --from-observation` reads `IPatternStore`; `nexo improve --continuous` runs observe → improve loop | Resolved |
+| Test failure → adaptation trigger | `nexo ingest-failures` + `TestFailureIngestionBridge` write TRX failures to `ITestFailureStore`; `self-improver` background role runs the loop | Resolved |
+| Trust in improve flow | When `NEXO_TRUST_ENABLED=1`, `ImproveCommand` registers `SanitizingProviderFactory` in its local DI graph | Resolved |
+| Documentation & discoverability | [ExecutionPlan.md](ExecutionPlan.md), [IntegratorGuide.md](IntegratorGuide.md), [SdkCompatibilityPolicy.md](SdkCompatibilityPolicy.md) added; README/GettingStarted still the main onboarding surface | Low |
 
 ---
 
@@ -45,13 +45,10 @@ Keep CLI parity marked as resolved; prioritize documentation examples that map e
 - **Full pipeline E2E:** `observe` → `analyze bricks` → `adapt` → `improve` → `self-context` run sequentially in tests.
 
 ### Gap
-- **Improve does not use observation patterns.** It analyzes a fixed path (`FindBlock1ObservationPath`) or user-specified `--path`. Observation patterns (e.g. repeated-edits on a file) do not drive which files are prioritized or selected for analysis.
-- **No single "observe → improve" command.** Users must run `observe` and `improve` separately. The doc says "Dogfood: observe → analyze → adapt" but the improve flow is effectively "analyze → adapt."
+- **Resolved.** `nexo improve --from-observation` queries `IPatternStore` and targets paths derived from recent patterns (staleness/window behavior as implemented in `ImproveCommand`). `nexo improve --continuous` runs repeated observe-then-improve iterations (`--observe-minutes`, `--interval-minutes`).
 
 ### Recommendation
-- Option A: Add `nexo improve --from-observation` to query recent patterns and prioritize analysis on frequently edited paths.
-- Option B: Document that the intended flow is sequential (`observe` then `improve`) and that patterns feed self-context, not the improve path selection.
-- Option C: Add a `nexo loop` or `nexo improve --continuous` that runs observe + improve in one process (e.g. observe for N minutes, then run improve on observed paths).
+- Keep [NorthStarGapAnalysis.md](NorthStarGapAnalysis.md) and dogfood docs aligned with `--from-observation` / `--continuous` as the supported integration path. Optional: add CLI help examples to README for operators who still run `observe` and `improve` as separate steps.
 
 ---
 
@@ -63,12 +60,11 @@ Keep CLI parity marked as resolved; prioritize documentation examples that map e
 - `DogfoodPhaseFTests` validates `TestFailureStore_RecordAndQuery_ReturnsStoredFailures`.
 
 ### Gap
-- **Test failure ingestion:** It is unclear how test failures are written to `ITestFailureStore` in production. The test seeds the store directly. A test runner integration (e.g. xUnit/dotnet test result listener) that records failures into the store may be missing or not documented.
-- **Background scheduling:** The self-improvement loop is run on-demand via `nexo improve --self`. A scheduled background agent that runs this loop periodically is not clearly documented.
+- **Resolved (ingestion path):** `nexo ingest-failures --trx-path <dir>` parses TRX files and records into `ITestFailureStore` via `TestFailureIngestionBridge` (wire this after `dotnet test` or in CI that publishes `.trx` artifacts).
+- **Resolved (background scheduling):** `BackgroundAgentRegistry` supports role `self-improver` (calls `ISelfImprovementLoop` when registered with runners and not skipped by aggressiveness mode). Document agent JSON/config in operator docs as needed.
 
 ### Recommendation
-- Document or implement the path from test execution (e.g. `nexo test local`, CI) to `ITestFailureStore`.
-- If a background agent exists for self-improvement, document it in README/GettingStarted.
+- Document a concrete CI recipe: `dotnet test` → TRX artifact → `nexo ingest-failures` → `nexo improve --self` (or a `self-improver` agent) for teams adopting the closed loop in production.
 
 ---
 
@@ -81,12 +77,10 @@ Keep CLI parity marked as resolved; prioritize documentation examples that map e
 - Default `FixGenerator` paths are rule-based; cloud LLM usage in improve is optional and configuration-dependent.
 
 ### Gap
-- **Trust wiring gap risk:** `ImproveCommand` does not inherit hosting-level Trust registration by default.
-- If future improve paths send prompts to cloud providers, they must explicitly include Trust sanitization registration in the CLI-local DI graph.
+- **Resolved.** When `NEXO_TRUST_ENABLED=1`, `ImproveCommand` registers `SanitizingProviderFactory` in its CLI-local service collection so cloud-backed fix generation uses the same sanitization path as hosting when Trust is on.
 
 ### Recommendation
-- Document the current improve wiring (local DI, default rule-based fix generation).
-- Add a focused test that validates Trust sanitization is active when improve is configured to use cloud-backed fix generation.
+- Add or extend a CLI test that asserts the improve DI graph resolves a sanitizing factory when `NEXO_TRUST_ENABLED=1` and a cloud provider is configured (if not already present).
 
 ---
 
@@ -112,14 +106,16 @@ Keep CLI parity marked as resolved; prioritize documentation examples that map e
 ### Current State
 - README lists CLI commands including `nexo changelog`, `nexo dogfood`, `nexo improve`.
 - DogfoodValidation.md documents gates and validation commands.
-- GettingStarted.md does not mention dogfood, changelog, or the improve flow.
+- [ExecutionPlan.md](ExecutionPlan.md), [IntegratorGuide.md](IntegratorGuide.md), and [SdkCompatibilityPolicy.md](SdkCompatibilityPolicy.md) document roadmap, external integration, and SDK semver expectations.
+- GettingStarted.md may still lag on dogfood, changelog, or improve-specific walkthroughs.
 
 ### Gap
-- New users may not discover `nexo changelog --since 7d` or `make dogfood-all`.
-- The North Star principle ("every capability used by Nexo on itself") is not prominent in README.
+- Onboarding docs may still under-link to the new planning/integration docs above.
+- The North Star principle ("every capability used by Nexo on itself") may still be easy to miss for first-time readers.
 
 ### Recommendation
-- Add a "North Star & Dogfood" subsection to README with links to DogfoodValidation.md and `make dogfood-all`.
+- Cross-link README / GettingStarted to ExecutionPlan, IntegratorGuide, and SdkCompatibilityPolicy where operators and integrators land first.
+- Add a short "North Star & Dogfood" subsection to README with links to DogfoodValidation.md and `make dogfood-all` if not already present.
 - Add "Changelog from promoted changes" to GettingStarted: `nexo changelog --since 7d`.
 
 ---
@@ -128,17 +124,19 @@ Keep CLI parity marked as resolved; prioritize documentation examples that map e
 
 | Priority | Gap | Effort | Impact |
 |----------|-----|--------|--------|
-| 1 | Observe → improve integration (pattern-driven analysis) | High | Medium – completes "observe → analyze → adapt" |
-| 2 | Trust in improve flow (sanitization when LLM used) | Low | High – security/compliance |
-| 3 | Test failure ingestion path documentation | Low | Medium – enables self-improvement in production |
-| 4 | Documentation (North Star, changelog, dogfood in README/GettingStarted) | Low | Medium – discoverability |
+| 1 | ~~Observe → improve integration~~ | — | Resolved (`--from-observation`, `--continuous`) |
+| 2 | ~~Trust in improve flow~~ | — | Resolved (`NEXO_TRUST_ENABLED=1` + `SanitizingProviderFactory` in improve DI) |
+| 3 | ~~Test failure ingestion~~ | — | Resolved (`nexo ingest-failures`, `TestFailureIngestionBridge`; `self-improver` role) |
+| 4 | Documentation cross-links (README/GettingStarted ↔ ExecutionPlan, IntegratorGuide, dogfood) | Low | Medium – discoverability |
+| 5 | Composition & mesh production workflows (see Section 5) | Medium | Medium – operational adoption beyond tests |
 
 ---
 
 ## Appendix: What’s Working Well
 
 - All dogfood gates pass; CI supports dogfood scope.
-- Observe, adapt, improve, self-context, changelog, compose, mesh are implemented and usable.
+- Observe, adapt, improve (`--from-observation`, `--continuous`), self-context, changelog, compose, mesh are implemented and usable.
+- `nexo ingest-failures` feeds `ITestFailureStore`; background `self-improver` role complements `nexo improve --self`.
 - Trust & Information Architecture phases 1–4 are implemented.
 - Full pipeline E2E runs observe → analyze → adapt → improve → self-context.
 - `nexo improve --self` runs the self-improvement loop from test failures.
