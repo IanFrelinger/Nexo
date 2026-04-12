@@ -28,7 +28,8 @@
 | Summarization | partial | ChangelogGenerator |
 | **Memory** | | |
 | Short-term context | exists | IAgentMemory (toolbox) |
-| Long-term query (RAG) | exists | IPatternStore, ITestFailureStore |
+| Long-term query (RAG) | exists | IPatternStore, RAGService, KnowledgeBaseIndexer |
+| Test failure ingestion | exists | ITestFailureStore (self-improvement pipeline) |
 | Episodic recall | stub | episodic-memory (CapabilityComponentRegistry placeholder) |
 | **Reporting** | | |
 | Structured output | partial | BrickOutput, ToolResult |

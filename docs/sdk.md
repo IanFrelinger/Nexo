@@ -15,9 +15,9 @@ Use the host surface when embedding Nexo into your own service. Use the client s
 - `Nexo.Core.Application.Sdk.Ports.INexoSdkBuilder`
 - `Nexo.Sdk` + `Nexo.Client` (`INexoClient`, `AddNexoSdk(baseUrl, ...)`)
 
-### Experimental (subject to faster change)
+### Deprecated
 
-- `Nexo.Sdk.NexoSdkBuilder.UseAdaptiveRouting()` intent flag behavior
+- `Nexo.Sdk.NexoSdkBuilder.UseAdaptiveRouting()` — marked `[Obsolete]` and is a no-op. Adaptive routing is configured on the host via `IProviderFactory`, not the client SDK.
 
 ### Internal (not for external contracts)
 
@@ -60,6 +60,23 @@ var services = new ServiceCollection();
 services.AddNexoSdk("http://localhost:5000");
 var provider = services.BuildServiceProvider();
 ```
+
+## Client SDK coverage
+
+`INexoClient` currently exposes these operations:
+
+| Method | API Path |
+|--------|----------|
+| `RunAgentAsync` | `POST /api/agent` |
+| `RunValidationAsync` | `POST /api/validate` |
+| `OrchestrateAsync` | `POST /api/orchestrate` |
+| `GetStatusAsync` | `GET /api/status` |
+| `BuildImageAsync` | `POST /api/execution/build` |
+| `RunContainerAsync` | `POST /api/execution/run` |
+
+The client does not yet cover copilot, director, trust mutation, knowledge query, capabilities, security advisory, or background-agent summary endpoints. Use direct HTTP calls for those (see `docs/api/index.md` for the full endpoint list).
+
+`AddNexoClient` accepts `BaseUrl`, optional `ApiKey` (sent as `X-Api-Key` header), and `Timeout`.
 
 ## RegisterBrick&lt;T&gt;
 

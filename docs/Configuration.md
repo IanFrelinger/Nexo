@@ -120,7 +120,6 @@ Suggested starting SLOs/alerts using `ncr.*` metrics:
 
 Operational guidance:
 - Treat stale capability fallback as degraded mode; prefer conservative routing and periodic refresh attempts.
-- Keep `NEXO_ENDPOINT_HEALTH_DEGRADED_LOG_THRESHOLD` > 1 in noisy environments to reduce transient probe warning noise.
 - Set `NEXO_OBSERVATION_FAIL_OPEN=1` for production-style hosts that must continue serving even if observation store permissions are restricted.
 
 ## Video (SmolVLM2)
@@ -136,12 +135,20 @@ Operational guidance:
 | `NEXO_TRUST_AUDIT_DB` | Path to LiteDB audit log | in-memory |
 | `NEXO_KNOWLEDGE_LOG_PATH` | Path to user knowledge log | in-memory |
 | `NEXO_ACCESS_BOUNDARY_CONFIG` | Path to access boundary JSON | unset |
+| `NEXO_TRUST_POLICY_PACKS_PATH` | Directory containing trust policy pack JSON files | `config/trust-packs` (repo root) |
+| `NEXO_ACTIVE_TRUST_POLICY_PACK_PATH` | Path to active pack selection file | `active-pack.json` in packs dir |
 
 ## Mesh
 
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `NEXO_MESH_PEER_ID` | Mesh peer identifier | random GUID |
+| `NEXO_MESH_INSTANCES_PATH` | Path to file-based mesh instance registry | unset |
+| `NEXO_TRUSTED_PEER_IDS` | Comma-separated peer IDs trusted for execution | unset (all peers trusted) |
+| `NEXO_UNTRUSTED_PEER_IDS` | Comma-separated peer IDs blocked from execution | unset |
+| `NEXO_MESH_TRUST_POLICY` | Mesh trust policy (`open`, `allowlist`, `denylist`) | `open` |
+| `NEXO_PEER_TRUST_POLICY` | Per-peer trust policy override | unset |
+| `NEXO_SHARED_ADAPTATIONS_PATH` | Path for shared adaptation artifacts across mesh | unset |
 
 ## RunPod + Capability Routing (`Nexo:RunPod:*`)
 
@@ -189,6 +196,28 @@ See `docs/runtime/ExecutionRouting.md` for detailed execution flow and resilienc
 | `NEXO_INCOMPLETE_BLOB_PATH` | Path to content-addressed blob storage for `incomplete-blobs` strategy | unset |
 | `NEXO_BLOB_LIFECYCLE` | `docker` = pause Docker Desktop before incomplete-blob cleanup | unset |
 
+## Background Agents
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `NEXO_BACKGROUND_AGENTS_CONFIG` | Path to background agent set JSON configuration | unset |
+| `NEXO_AGENT_MODE_PATH` | Path to file-based aggressiveness mode store | unset |
+| `NEXO_OBSERVATION_DEGRADED_MODE` | `1` = start observation pipeline in degraded mode | unset |
+| `NEXO_OBSERVATION_FAIL_OPEN` | `1` = observation pipeline continues on store errors | unset |
+| `NEXO_BARRIER_MIDDLEWARE_ENABLED` | `1` = enable HTTP barrier context middleware | unset |
+| `BING_SEARCH_KEY` | API key for Bing web search provider | unset (falls back to mock) |
+
+## Routing & Execution
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `NEXO_ALLOW_MOCK` | `1` = enable mock/offline/mock-json/echo providers | unset |
+| `NEXO_LOCAL_MODEL_PATH` | Path to local ONNX/LLamaSharp model for `local` provider | unset |
+| `NEXO_LOCAL_QUEUE_DEPTH` | Local execution queue depth for routing decisions | unset (auto) |
+| `NEXO_GPU_COMPUTE_CLASS` | GPU compute class label for NCR capability matching | unset |
+| `NEXO_LOAD_PREFERENCE` | Default load balancing preference | unset |
+| `NEXO_EXECUTION_REMOTE_URL` | Remote execution endpoint URL for hosting | unset |
+
 ## Config File
 
 `~/.nexo/config.json` (or path from `NEXO_CONFIG_PATH`):
@@ -200,5 +229,5 @@ See `docs/runtime/ExecutionRouting.md` for detailed execution flow and resilienc
 }
 ```
 
-- `provider`: `mock`, `offline`, `openai`, `azure`, `ollama`, `video`
+- `provider`: `openai`, `azure`, `ollama`, `local`, `video`, `mock`, `offline`, `mock-json`, `echo` (mock variants require `NEXO_ALLOW_MOCK=1`)
 - `model`: override for the selected provider

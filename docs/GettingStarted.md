@@ -83,7 +83,7 @@ dotnet run --project src/Nexo.CLI -- --help
 dotnet run --project src/Nexo.CLI -- doctor --json
 ```
 
-You should see commands including `analyze`, `validate`, `pipeline`, `trust`, `test`, and `orchestrate`.
+You should see commands including `analyze`, `validate`, `pipeline`, `trust`, `test`, `orchestrate`, `agent`, `chat`, `runtime`, `workflow`, `mesh`, `config`, `doctor`, `dogfood`, `escalate`, `metrics`, and more.
 
 ## 2b) Run background-agent daemon mode (optional)
 
@@ -220,7 +220,12 @@ Then resolve application ports from DI (analysis, validation, orchestration, etc
 
 ## Next documents to read
 
-- `README.md` — high-level orientation and command map.
+- `README.md` — high-level orientation and full CLI command map.
 - `docs/Architecture.md` — subsystem layout and flow.
+- `docs/Configuration.md` — environment variables and config reference.
+- `docs/api/index.md` — REST API endpoints and hosting options.
+- `docs/sdk.md` — SDK integration (host embedding and HTTP client).
 - `docs/TrustAndInformationArchitecture.md` — barrier/trust model.
+- `docs/Persistence.md` — persistence defaults and LiteDB options.
 - `docs/ProductionReadinessGate-v1.md` — release gate and operator checks.
+- `docs/DocsIndex.md` — full documentation index.

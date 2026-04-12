@@ -122,7 +122,7 @@ No overlap: policy controls *whether*; sanitization controls *what*.
 
 Purpose: Transparent, user-editable log of what Nexo has learned about the user (preferences, patterns, workflow habits). Not for sync; for trust and audit.
 
-- **Storage:** SQLite (query, versioning, relations)
+- **Storage:** LiteDB (query, versioning, relations)
 - **Schema:** Entries with Id, DataType, Content, SourceObservationIds (provenance), Version, CreatedAt, UpdatedAt, DeletedAt
 - **Provenance:** Each entry references source observation IDs; full chain traversable
 - **Versioning:** Updates create new versions; history retained
@@ -172,13 +172,15 @@ bool ShouldObserve(string category, string sourceId, string? projectPath = null)
 
 ## 6. Air-Gap — Use Existing
 
-### Reuse (No New Interfaces)
+### Reuse
 
 - **`IExecutionContext.IsAirGapped`** — already used by BehaviorExecutor, UnderstandingBrick, ProviderFactory, etc.
 - **Provider selection** — mock/offline/echo when air-gapped
 - **`--airgap` CLI flags** — already present
 
-**Enhancement:** Add optional `ICloudAvailabilityResolver` that sets/resolves air-gap at runtime:
+### Implemented: `ICloudAvailabilityResolver`
+
+`ICloudAvailabilityResolver` (`Nexo.Core.Application`) and `CloudAvailabilityResolver` (`Nexo.Infrastructure`) resolve air-gap status at runtime:
 - Sources (priority order): env var → config file → network probe
 - Used at startup and optionally before cloud calls to refresh
 - When cloud unavailable, inject/ensure `IsAirGapped = true` in context
