@@ -1,6 +1,8 @@
 name: onboarding-quickstart-gate
 
 on:
+  schedule:
+    - cron: "0 7 * * 1"
   push:
     branches:
       - master
@@ -45,23 +47,70 @@ jobs:
       - name: Native lane quickstart commands
         shell: bash
         run: |
+          set -o pipefail
+          mkdir -p "${RUNNER_TEMP}/onboarding"
+          LOG_FILE="${RUNNER_TEMP}/onboarding/native-linux.log"
+          {
+            bash scripts/setup/setup.sh check
+            bash scripts/setup/setup.sh restore
+            dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
+            dotnet run --project src/Nexo.CLI -- --help
+            dotnet run --project src/Nexo.CLI -- doctor --json
+          } 2>&1 | tee "${LOG_FILE}"
+
+      - name: Build native failure taxonomy
+        if: always()
+        shell: bash
+        run: |
           set -euo pipefail
-          bash scripts/setup/setup.sh check
-          bash scripts/setup/setup.sh restore
-          dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
-          dotnet run --project src/Nexo.CLI -- --help
-          dotnet run --project src/Nexo.CLI -- doctor --json
+          mkdir -p "${RUNNER_TEMP}/onboarding"
+          LOG_FILE="${RUNNER_TEMP}/onboarding/native-linux.log"
+          TAXONOMY_FILE="${RUNNER_TEMP}/onboarding/native-linux-taxonomy.json"
+          bash scripts/onboarding/failure-taxonomy.sh "quickstart-native-linux" "${LOG_FILE}" > "${TAXONOMY_FILE}"
+
+      - name: Build native trend summary
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "${RUNNER_TEMP}/onboarding"
+          TREND_FILE="${RUNNER_TEMP}/onboarding/onboarding-native-linux-trend.json"
+          TREND_FILE="${TREND_FILE}" python - <<'PY'
+import json
+import os
+from datetime import datetime, timezone
+run_attempt = int(os.getenv("GITHUB_RUN_ATTEMPT", "1"))
+run_number = int(os.getenv("GITHUB_RUN_NUMBER", "0"))
+trend = {
+  "workflow": os.getenv("GITHUB_WORKFLOW"),
+  "runId": os.getenv("GITHUB_RUN_ID"),
+  "runNumber": run_number,
+  "runAttempt": run_attempt,
+  "timestampUtc": datetime.now(timezone.utc).isoformat(),
+  "driftSignals": {
+    "isScheduledRun": os.getenv("GITHUB_EVENT_NAME") == "schedule",
+    "isRetry": run_attempt > 1
+  }
+}
+with open(os.environ["TREND_FILE"], "w", encoding="utf-8") as f:
+    json.dump(trend, f, indent=2)
+PY
 
       - name: Emit native quickstart summary
         if: always()
         shell: bash
         run: |
           SUMMARY_FILE="${RUNNER_TEMP}/onboarding-quickstart-native-linux-summary.txt"
+          TAXONOMY_FILE="${RUNNER_TEMP}/onboarding/native-linux-taxonomy.json"
+          TROUBLESHOOTING_DOC="docs/OnboardingAutomation.md#next-recommended-upgrades"
           {
             echo "onboarding-quickstart-gate native linux summary"
             echo "workflow=${GITHUB_WORKFLOW}"
             echo "run_id=${GITHUB_RUN_ID}"
+            echo "event=${GITHUB_EVENT_NAME}"
             echo "status=completed"
+            echo "failure_taxonomy=${TAXONOMY_FILE}"
+            echo "troubleshooting_doc=${TROUBLESHOOTING_DOC}"
           } > "${SUMMARY_FILE}"
 
       - name: Upload native quickstart artifacts
@@ -71,6 +120,9 @@ jobs:
           name: onboarding-quickstart-native-linux
           path: |
             ${{ runner.temp }}/onboarding-quickstart-native-linux-summary.txt
+            ${{ runner.temp }}/onboarding/native-linux.log
+            ${{ runner.temp }}/onboarding/native-linux-taxonomy.json
+            ${{ runner.temp }}/onboarding/onboarding-native-linux-trend.json
           retention-days: 14
 
   quickstart-linux-ephemeral-container:
@@ -87,22 +139,69 @@ jobs:
       - name: Run container lane in ephemeral container
         shell: bash
         run: |
-          set -euo pipefail
+          set -o pipefail
+          mkdir -p "${RUNNER_TEMP}/onboarding"
+          LOG_FILE="${RUNNER_TEMP}/onboarding/container-linux.log"
           IMAGE="ghcr.io/ianfrelinger/nexo-cli:latest"
-          docker pull "${IMAGE}"
-          docker run --rm "${IMAGE}" --help
-          docker run --rm -v "${GITHUB_WORKSPACE}:/work" -w /work "${IMAGE}" --help
+          {
+            docker pull "${IMAGE}"
+            docker run --rm "${IMAGE}" --help
+            docker run --rm -v "${GITHUB_WORKSPACE}:/work" -w /work "${IMAGE}" --help
+          } 2>&1 | tee "${LOG_FILE}"
+
+      - name: Build container failure taxonomy
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "${RUNNER_TEMP}/onboarding"
+          LOG_FILE="${RUNNER_TEMP}/onboarding/container-linux.log"
+          TAXONOMY_FILE="${RUNNER_TEMP}/onboarding/container-linux-taxonomy.json"
+          bash scripts/onboarding/failure-taxonomy.sh "quickstart-container-linux" "${LOG_FILE}" > "${TAXONOMY_FILE}"
+
+      - name: Build container trend summary
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "${RUNNER_TEMP}/onboarding"
+          TREND_FILE="${RUNNER_TEMP}/onboarding/onboarding-container-linux-trend.json"
+          TREND_FILE="${TREND_FILE}" python - <<'PY'
+import json
+import os
+from datetime import datetime, timezone
+run_attempt = int(os.getenv("GITHUB_RUN_ATTEMPT", "1"))
+run_number = int(os.getenv("GITHUB_RUN_NUMBER", "0"))
+trend = {
+  "workflow": os.getenv("GITHUB_WORKFLOW"),
+  "runId": os.getenv("GITHUB_RUN_ID"),
+  "runNumber": run_number,
+  "runAttempt": run_attempt,
+  "timestampUtc": datetime.now(timezone.utc).isoformat(),
+  "driftSignals": {
+    "isScheduledRun": os.getenv("GITHUB_EVENT_NAME") == "schedule",
+    "isRetry": run_attempt > 1
+  }
+}
+with open(os.environ["TREND_FILE"], "w", encoding="utf-8") as f:
+    json.dump(trend, f, indent=2)
+PY
 
       - name: Emit container quickstart summary
         if: always()
         shell: bash
         run: |
           SUMMARY_FILE="${RUNNER_TEMP}/onboarding-quickstart-container-linux-summary.txt"
+          TAXONOMY_FILE="${RUNNER_TEMP}/onboarding/container-linux-taxonomy.json"
+          TROUBLESHOOTING_DOC="docs/OnboardingAutomation.md#next-recommended-upgrades"
           {
             echo "onboarding-quickstart-gate container linux summary"
             echo "workflow=${GITHUB_WORKFLOW}"
             echo "run_id=${GITHUB_RUN_ID}"
+            echo "event=${GITHUB_EVENT_NAME}"
             echo "status=completed"
+            echo "failure_taxonomy=${TAXONOMY_FILE}"
+            echo "troubleshooting_doc=${TROUBLESHOOTING_DOC}"
           } > "${SUMMARY_FILE}"
 
       - name: Upload container quickstart artifacts
@@ -112,4 +211,7 @@ jobs:
           name: onboarding-quickstart-container-linux
           path: |
             ${{ runner.temp }}/onboarding-quickstart-container-linux-summary.txt
+            ${{ runner.temp }}/onboarding/container-linux.log
+            ${{ runner.temp }}/onboarding/container-linux-taxonomy.json
+            ${{ runner.temp }}/onboarding/onboarding-container-linux-trend.json
           retention-days: 14
