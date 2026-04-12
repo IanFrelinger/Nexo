@@ -10,6 +10,7 @@ using Nexo.Infrastructure.Adaptation;
 using Nexo.Infrastructure.Analysis;
 using Nexo.Infrastructure.Mesh;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 
 namespace Nexo.CLI.Commands;
 
@@ -223,17 +224,26 @@ public sealed class MeshCommand : Command
         if (!File.Exists(instancesPath))
             return false;
 
-        var root = JsonSerializer.Deserialize<List<PeerEntry>>(File.ReadAllText(instancesPath));
-        if (root == null)
-            return false;
+        try
+        {
+            var root = JsonNode.Parse(File.ReadAllText(instancesPath)) as JsonArray;
+            if (root == null)
+                return false;
 
-        var entry = root.FirstOrDefault(e => string.Equals(e.PeerId, peerId, StringComparison.OrdinalIgnoreCase));
-        if (entry == null)
-            return false;
+            var entry = root
+                .OfType<JsonObject>()
+                .FirstOrDefault(obj => string.Equals(obj["peerId"]?.GetValue<string>(), peerId, StringComparison.OrdinalIgnoreCase));
+            if (entry == null)
+                return false;
 
-        entry.TrustTier = tier.ToString();
-        File.WriteAllText(instancesPath, JsonSerializer.Serialize(root, new JsonSerializerOptions { WriteIndented = true }));
-        return true;
+            entry["trustTier"] = tier.ToString();
+            File.WriteAllText(instancesPath, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     private static string ResolveInstancesPath()
@@ -244,9 +254,4 @@ public sealed class MeshCommand : Command
         return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".nexo", "instances.json");
     }
 
-    private sealed class PeerEntry
-    {
-        public string PeerId { get; set; } = string.Empty;
-        public string TrustTier { get; set; } = "Unknown";
-    }
 }
