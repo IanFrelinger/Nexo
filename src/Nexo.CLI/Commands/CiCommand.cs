@@ -1,6 +1,7 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Diagnostics;
+using System.Text.Json;
 using Nexo.Core.Application.Paths;
 
 namespace Nexo.CLI.Commands;
@@ -36,6 +37,20 @@ public sealed class CiCommand : Command
             Environment.Exit(exitCode);
         });
         AddCommand(runtimePromotionCmd);
+
+        var releaseBundleCmd = new Command("release-bundle", "Run a single-shot release gate bundle and emit unified report.");
+        var profileOpt = new Option<string>("--profile", () => "default", "Bundle profile: default | quick.");
+        var outputDirOpt = new Option<string?>("--output-dir", "Optional output directory for unified report artifacts.");
+        releaseBundleCmd.AddOption(profileOpt);
+        releaseBundleCmd.AddOption(outputDirOpt);
+        releaseBundleCmd.SetHandler(async (InvocationContext ctx) =>
+        {
+            var profile = ctx.ParseResult.GetValueForOption(profileOpt) ?? "default";
+            var outputDir = ctx.ParseResult.GetValueForOption(outputDirOpt);
+            var exitCode = await ExecuteReleaseBundleAsync(profile, outputDir);
+            Environment.Exit(exitCode);
+        });
+        AddCommand(releaseBundleCmd);
     }
 
     /// <summary>
@@ -138,6 +153,71 @@ public sealed class CiCommand : Command
         return exit;
     }
 
+    public static async Task<int> ExecuteReleaseBundleAsync(string profile = "default", string? outputDirectory = null)
+    {
+        var repoRoot = RepoPathResolver.FindRepoRoot();
+        var cliProject = Path.Combine(repoRoot, "src", "Nexo.CLI", "Nexo.CLI.csproj");
+        if (!File.Exists(cliProject))
+        {
+            Console.Error.WriteLine($"ci release-bundle: Missing CLI project: {cliProject}");
+            return 1;
+        }
+
+        var normalizedProfile = string.IsNullOrWhiteSpace(profile) ? "default" : profile.Trim().ToLowerInvariant();
+        var steps = BuildReleaseBundleSteps(normalizedProfile, cliProject, repoRoot);
+        if (steps.Count == 0)
+        {
+            Console.Error.WriteLine($"ci release-bundle: Unknown profile '{profile}'. Supported profiles: default, quick.");
+            return 1;
+        }
+
+        var results = new List<ReleaseBundleStepResult>();
+        foreach (var step in steps)
+        {
+            Console.WriteLine($"=== Release Bundle: {step.Name} ===");
+            var startedUtc = DateTimeOffset.UtcNow;
+            var exitCode = await RunProcessAsync(step.FileName, step.Arguments, repoRoot);
+            var endedUtc = DateTimeOffset.UtcNow;
+            var artifactHints = step.ArtifactHints
+                .Select(hint => Path.GetFullPath(Path.Combine(repoRoot, hint)))
+                .ToArray();
+            results.Add(new ReleaseBundleStepResult(
+                step.Id,
+                step.Name,
+                step.FileName,
+                step.Arguments,
+                exitCode,
+                startedUtc,
+                endedUtc,
+                artifactHints));
+        }
+
+        var verdict = results.All(result => result.ExitCode == 0) ? "PASS" : "FAIL";
+        var reportDirectory = ResolveReleaseBundleOutputDirectory(repoRoot, outputDirectory);
+        Directory.CreateDirectory(reportDirectory);
+        var jsonPath = Path.Combine(reportDirectory, "release-bundle-report.json");
+        var markdownPath = Path.Combine(reportDirectory, "release-bundle-report.md");
+        var report = new ReleaseBundleReport(
+            normalizedProfile,
+            DateTimeOffset.UtcNow,
+            verdict,
+            results,
+            jsonPath,
+            markdownPath);
+
+        var json = JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true });
+        await File.WriteAllTextAsync(jsonPath, json).ConfigureAwait(false);
+
+        var markdown = BuildReleaseBundleMarkdown(report);
+        await File.WriteAllTextAsync(markdownPath, markdown).ConfigureAwait(false);
+
+        Console.WriteLine($"=== Release Bundle Verdict: {verdict} ===");
+        Console.WriteLine($"JSON report: {jsonPath}");
+        Console.WriteLine($"Markdown report: {markdownPath}");
+
+        return verdict == "PASS" ? 0 : 1;
+    }
+
     private static async Task<int> RunProcessAsync(string fileName, string arguments, string workingDirectory)
     {
         using var process = new Process
@@ -160,4 +240,109 @@ public sealed class CiCommand : Command
         await process.WaitForExitAsync();
         return process.ExitCode;
     }
+
+    private static List<ReleaseBundleStep> BuildReleaseBundleSteps(string profile, string cliProject, string repoRoot)
+    {
+        var defaultSteps = new List<ReleaseBundleStep>
+        {
+            new(
+                "verify",
+                "CI verify",
+                "dotnet",
+                $"run --project \"{cliProject}\" -- ci verify",
+                [
+                    ".nexo/runtime/release-gate/last-run/runtime-release-gate-slo.json",
+                    ".nexo/runtime/release-gate/last-run/runtime-release-gate-slo.md"
+                ]),
+            new(
+                "runtime-gate",
+                "Runtime gate",
+                "dotnet",
+                $"run --project \"{cliProject}\" -- ci runtime-gate",
+                [
+                    ".nexo/runtime/release-gate/last-run/runtime-release-gate-slo.json",
+                    ".nexo/runtime/release-gate/last-run/runtime-release-gate-slo.md"
+                ]),
+            new(
+                "doctor",
+                "Doctor check",
+                "dotnet",
+                $"run --project \"{cliProject}\" -- doctor --json",
+                [
+                    "docs/OnboardingAutomation.md"
+                ])
+        };
+
+        if (profile == "quick")
+            return defaultSteps.Where(step => step.Id != "verify").ToList();
+        if (profile == "default")
+            return defaultSteps;
+        return new List<ReleaseBundleStep>();
+    }
+
+    internal static IReadOnlyList<string> GetReleaseBundleStepIds(string profile)
+    {
+        var repoRoot = RepoPathResolver.FindRepoRoot();
+        var cliProject = Path.Combine(repoRoot, "src", "Nexo.CLI", "Nexo.CLI.csproj");
+        return BuildReleaseBundleSteps(profile.Trim().ToLowerInvariant(), cliProject, repoRoot)
+            .Select(step => step.Id)
+            .ToList();
+    }
+
+    private static string ResolveReleaseBundleOutputDirectory(string repoRoot, string? requestedOutputDirectory)
+    {
+        if (!string.IsNullOrWhiteSpace(requestedOutputDirectory))
+            return Path.GetFullPath(requestedOutputDirectory, repoRoot);
+        return Path.Combine(repoRoot, ".nexo", "release-bundle", "last-run");
+    }
+
+    private static string BuildReleaseBundleMarkdown(ReleaseBundleReport report)
+    {
+        var lines = new List<string>
+        {
+            "# Release bundle report",
+            string.Empty,
+            $"Profile: `{report.Profile}`",
+            $"Generated: `{report.GeneratedUtc:O}`",
+            $"Verdict: **{report.Verdict}**",
+            string.Empty,
+            "| Step | Exit code | Started (UTC) | Ended (UTC) | Artifacts |",
+            "|------|-----------|---------------|-------------|-----------|"
+        };
+
+        foreach (var step in report.Steps)
+        {
+            var artifacts = step.ArtifactHints.Length == 0
+                ? "n/a"
+                : string.Join("<br/>", step.ArtifactHints.Select(path => $"`{path}`"));
+            lines.Add($"| {step.Name} | {step.ExitCode} | {step.StartedUtc:O} | {step.EndedUtc:O} | {artifacts} |");
+        }
+
+        return string.Join(Environment.NewLine, lines);
+    }
+
+    private sealed record ReleaseBundleStep(
+        string Id,
+        string Name,
+        string FileName,
+        string Arguments,
+        IReadOnlyList<string> ArtifactHints);
+
+    private sealed record ReleaseBundleStepResult(
+        string Id,
+        string Name,
+        string FileName,
+        string Arguments,
+        int ExitCode,
+        DateTimeOffset StartedUtc,
+        DateTimeOffset EndedUtc,
+        string[] ArtifactHints);
+
+    private sealed record ReleaseBundleReport(
+        string Profile,
+        DateTimeOffset GeneratedUtc,
+        string Verdict,
+        IReadOnlyList<ReleaseBundleStepResult> Steps,
+        string JsonReportPath,
+        string MarkdownReportPath);
 }
