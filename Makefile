@@ -1,4 +1,4 @@
-.PHONY: build test test-local test-cross-platform test-portable test-multi-env test-all-platforms test-all-platforms-ephemeral ci-verify validate-safe review-summary package-cli clean-test-artifacts
+.PHONY: build test test-cross-platform test-portable test-multi-env test-all-platforms test-all-platforms-ephemeral ci-verify validate-safe review-summary package-cli clean-test-artifacts
 
 # Build the solution
 build:

@@ -15,12 +15,24 @@ Use this page as the navigation starting point for docs.
 ## Operator / Production Readiness
 
 - `docs/ProductionReadinessGate-v1.md` — production gate commands and expected assertions.
+- `.github/workflows/production-readiness-gate-v1.yml` — automated production readiness gate.
 - `.github/workflows/environment-setup-gate-v1.yml` — environment bootstrap + dependency setup gate (Linux/macOS/Windows).
 - `.github/workflows/compose-gate.yml` — validates `docker-compose.test.yml` and `docker-compose.ephemeral.yml` lanes.
 - `.github/workflows/onboarding-quickstart-gate.yml` — runs first-run onboarding commands in native + container lanes.
 - `.github/workflows/container-image-gate.yml` — container image buildability and smoke-run gate.
 - `.github/workflows/container-image-publish.yml` — publish official GHCR CLI image (latest + sha tags).
 - `.github/workflows/onboarding-docs-guard.yml` — prevent startup-doc regressions in quick-start commands.
+- `.github/workflows/cross-platform-tests.yml` — cross-platform tests on Ubuntu, macOS, and Windows.
+- `.github/workflows/runtime-release-gate.yml` — runtime release quality gate.
+- `.github/workflows/runtime-release-promotion.yml` — runtime release promotion workflow.
+- `.github/workflows/native-installer-packages.yml` — build native installer bundles per OS.
+- `.github/workflows/installer-bruteforce-gate.yml` — installer robustness gate.
+- `.github/workflows/perf-certification.yml` — performance certification workflow.
+- `.github/workflows/workflow-regression-gate.yml` — workflow regression gate.
+- `.github/workflows/test-trust-multi-env.yml` — trust tests across multiple Docker environments.
+- `.github/workflows/test-caching-multi-env.yml` — caching tests across multiple Docker environments.
+- `.github/workflows/test-persistence-multi-os.yml` — persistence tests across multiple OS targets.
+- `.github/workflows/test-air-gapped-no-network.yml` — air-gapped validation with zero network egress.
 - `docs/ReleaseCandidateChecklist-v1.md` — release candidate sign-off checklist.
 - `docs/Testing.md` — test guard rails, timeout policy, and workflow guidance.
 

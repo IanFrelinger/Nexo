@@ -10,7 +10,7 @@ Nexo is an AI-enhanced development orchestration platform with a layered archite
 │  (Commands, System.CommandLine, AddNexo)                          │
 ├─────────────────────────────────────────────────────────────────┤
 │  Core.Application (Use Cases)                                    │
-│  MediatR handlers, validation, analysis, validation, testing     │
+│  MediatR handlers, validation, analysis, agents, testing         │
 ├─────────────────────────────────────────────────────────────────┤
 │  Orchestration                                                   │
 │  Architect, agents, coordination, negotiation, orchestration     │
@@ -31,8 +31,14 @@ Nexo is an AI-enhanced development orchestration platform with a layered archite
 ### Core.Application
 
 - **Use cases** (MediatR): `AnalyzeCode`, `RunValidation`, `RunAgent`, `RunTests`
-- **Ports**: `IAnalysisService`, `IValidationService`, `IAgentExecutor`, `ITestRunner`, `IModel`, `IProviderFactory`
+- **Ports**: `IAnalysisService`, `IValidationService`, `IAgentExecutor`, `ITestRunner`
 - **Behaviors**: FluentValidation pipeline
+
+### Abstractions
+
+- **`IModel`**: Core model interface for agent execution
+- **`IAgent`**: Agent contract (Name, ThinkAsync)
+- **`IAgentMemory`**: Agent memory abstraction
 
 ### Orchestration
 
@@ -43,10 +49,11 @@ Nexo is an AI-enhanced development orchestration platform with a layered archite
 
 ### Infrastructure
 
-- **ProviderFactory**: Routes LLM calls to OpenAI, Azure, Ollama, or mock (with Polly retries)
-- **Persistence**: In-memory by default; LiteDB for pattern store, audit log
+- **ProviderFactory** (`IProviderFactory`): Routes LLM calls to OpenAI, Azure, Ollama, local (ONNX), video (SmolVLM2), or mock/offline/echo (with Polly retries)
+- **Persistence**: In-memory by default; LiteDB for pattern store, adaptation audit, copilot tasks, pipeline runs, execution traces, test failures
 - **Adaptation**: Brick decomposition, recompilation, fix generation
 - **Execution routing**: NCR-driven local/remote routing with peer-network and RunPod cloud execution paths
+- **Mesh**: File-based peer discovery, capability advertisement, local transport, trust policies
 
 #### Execution Routing (Generation)
 

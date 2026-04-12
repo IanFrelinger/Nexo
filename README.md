@@ -232,11 +232,34 @@ Pipeline runtime option precedence:
 | Show all commands | `dotnet run --project src/Nexo.CLI -- --help` |
 | Validate architecture/contracts | `dotnet run --project src/Nexo.CLI -- validate` |
 | Analyze source/assemblies | `dotnet run --project src/Nexo.CLI -- analyze --path .` |
+| Analyze bricks | `dotnet run --project src/Nexo.CLI -- analyze bricks` |
 | Run background-agent daemon mode | `dotnet run --project src/Nexo.CLI -- background-agent daemon --duration 10m` |
 | Run pipeline template | `dotnet run --project src/Nexo.CLI -- pipeline run --template <file>` |
+| Pipeline diagnostics | `dotnet run --project src/Nexo.CLI -- pipeline diagnostics --format-json` |
 | View trust boundary/audit | `dotnet run --project src/Nexo.CLI -- trust --help` |
+| Trust dashboard | `dotnet run --project src/Nexo.CLI -- trust dashboard` |
+| Apply a trust policy pack | `dotnet run --project src/Nexo.CLI -- trust pack apply --id strict-enterprise` |
 | Run local test entrypoint | `dotnet run --project src/Nexo.CLI -- test local` |
-| CI verification bundle | `dotnet run --project src/Nexo.CLI -- ci` |
+| Portable tests | `dotnet run --project src/Nexo.CLI -- test portable --scope persistence` |
+| Multi-environment tests | `dotnet run --project src/Nexo.CLI -- test multi-env --suite framework --all` |
+| CI verification bundle | `dotnet run --project src/Nexo.CLI -- ci verify` |
+| Onboarding doctor | `dotnet run --project src/Nexo.CLI -- doctor --json` |
+| Orchestrate a request | `dotnet run --project src/Nexo.CLI -- orchestrate "<request>"` |
+| Interactive chat | `dotnet run --project src/Nexo.CLI -- chat` |
+| Runtime execute | `dotnet run --project src/Nexo.CLI -- runtime execute --runtime-manifest <file>` |
+| Runtime release gate | `dotnet run --project src/Nexo.CLI -- runtime release-gate` |
+| Workflow scaffold/stress | `dotnet run --project src/Nexo.CLI -- workflow scaffold` |
+| Mesh sync/capabilities | `dotnet run --project src/Nexo.CLI -- mesh sync` |
+| Escalation management | `dotnet run --project src/Nexo.CLI -- escalate list` |
+| Metrics report | `dotnet run --project src/Nexo.CLI -- metrics report` |
+| Self-extend preflight | `dotnet run --project src/Nexo.CLI -- self-extend preflight` |
+| Observe/Adapt/Improve | `dotnet run --project src/Nexo.CLI -- observe` / `adapt` / `improve` |
+| Config management | `dotnet run --project src/Nexo.CLI -- config show` |
+| Docker management | `dotnet run --project src/Nexo.CLI -- docker build` / `run` / `clean` |
+| Dogfood validation | `dotnet run --project src/Nexo.CLI -- dogfood all` |
+| Compose pipelines | `dotnet run --project src/Nexo.CLI -- compose` |
+| Changelog generation | `dotnet run --project src/Nexo.CLI -- changelog` |
+| Maintenance cleanup | `dotnet run --project src/Nexo.CLI -- maintenance clean` |
 
 ## Demo Scripts (for rollout and live demos)
 
@@ -306,27 +329,40 @@ LLM/vision routing is provider-based:
 
 | Provider | Notes |
 |----------|-------|
-| `offline`, `mock`, `mock-json` | deterministic/local-friendly paths |
+| `offline`, `mock`, `mock-json`, `echo` | deterministic/local-friendly paths (require `NEXO_ALLOW_MOCK=1`) |
+| `local` | in-process ONNX/LLamaSharp; requires `NEXO_LOCAL_MODEL_PATH` |
 | `ollama` | local model runtime (`OLLAMA_BASE_URL`, `OLLAMA_MODEL`) |
 | `openai` | requires `OPENAI_API_KEY` |
 | `azure` | requires `AZURE_OPENAI_*` settings |
+| `video` | SmolVLM2-Video in Docker; requires `VIDEO_SERVICE_URL` |
 
 ## Project Layout
 
 ```text
 Nexo/
 ├── src/
-│   ├── Nexo.CLI/                 # CLI surface
+│   ├── Nexo.CLI/                 # CLI surface (System.CommandLine)
+│   ├── Nexo.API/                 # ASP.NET Core host with REST endpoints
 │   ├── Nexo.Hosting/             # AddNexo() integration entrypoint
-│   ├── Nexo.Infrastructure/      # execution, persistence, adapters
+│   ├── Nexo.Sdk/                 # Client SDK registration (AddNexoSdk)
+│   ├── Nexo.Client/              # HTTP client (INexoClient)
+│   ├── Nexo.Infrastructure/      # execution, persistence, adapters, mesh
 │   ├── Nexo.Orchestration/       # orchestrator, routing, coordination
 │   ├── Nexo.Runtime/             # runtime services and barrier plumbing
+│   ├── Nexo.BackgroundAgents/    # scheduler, RAG, web search, trust, tools
 │   ├── Nexo.Core.Application/    # use cases and ports
 │   ├── Nexo.Core.Domain/         # domain model
+│   ├── Nexo.Abstractions/        # shared interfaces (IAgent, IModel, etc.)
+│   ├── Nexo.Brick.Contracts/     # brick extension contracts
+│   ├── Nexo.Transport.Grpc*/     # gRPC transport layer
 │   └── Nexo.Tests.*/             # test suites
+├── apps/                         # application configs (runtime-studio, release-manager)
+├── config/                       # trust policy packs (air-gapped, internal-only, strict-enterprise)
 ├── docs/                         # docs, specs, guides
+├── scripts/                      # setup, install, demos, onboarding
 ├── .docker/                      # docker test/runtime definitions
-├── global.json                   # SDK pin
+├── .github/                      # CI workflows and templates
+├── global.json                   # SDK pin (.NET 9)
 └── Nexo.sln
 ```
 
