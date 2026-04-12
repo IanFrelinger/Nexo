@@ -36,6 +36,10 @@ public sealed record WorkflowLabStressHistoryRow
 public static class WorkflowLabHistoryStore
 {
     private const string RelativePath = ".nexo/runtime/workflow_lab_history.jsonl";
+    private static readonly JsonSerializerOptions DeserializeOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
 
     public static string GetPath(string repoRoot)
         => Path.GetFullPath(Path.Combine(repoRoot, RelativePath));
@@ -56,7 +60,7 @@ public static class WorkflowLabHistoryStore
                 continue;
             try
             {
-                var item = JsonSerializer.Deserialize<WorkflowLabStressHistoryRow>(line);
+                var item = JsonSerializer.Deserialize<WorkflowLabStressHistoryRow>(line, DeserializeOptions);
                 if (item != null)
                     parsed.Add(item);
             }
@@ -85,7 +89,7 @@ public static class WorkflowLabHistoryStore
                 continue;
             try
             {
-                var item = JsonSerializer.Deserialize<WorkflowLabStressHistoryRow>(line);
+                var item = JsonSerializer.Deserialize<WorkflowLabStressHistoryRow>(line, DeserializeOptions);
                 if (item != null)
                     parsed.Add(item);
             }
