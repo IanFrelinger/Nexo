@@ -4,6 +4,37 @@ Comprehensive execution plan derived from the 30/60/90 roadmap, North Star gap a
 
 **Guiding principle:** Every item is sequenced so that earlier work de-risks or enables later work. Items within the same phase can be parallelized unless a dependency is noted.
 
+## Completion Status
+
+Snapshot of this plan versus the repo today. **Implemented** = code exists; **Tested** = automated coverage called out in tests/CI where known; **Remaining work** = still open per codebase review.
+
+| Item | Status | Notes |
+|------|--------|-------|
+| 1.1 Secure Engineering Copilot MVP | Remaining work | Task persistence, authz, portal history, and onboarding still outstanding (see §1.1). |
+| 1.2 Wire Observe → Improve Integration | Implemented | `nexo improve --from-observation`, `--continuous`, `IPatternStore` in improve path; `nexo ingest-failures` + `TestFailureIngestionBridge`. |
+| 1.2 (tests / auto TRX) | Remaining work | Optional: bridge TRX directly from `dotnet test` tooling; broaden integration tests if desired. |
+| 1.3 Mesh Trust Tiers — Routing Policy Enforcement | Partially implemented | `PeerTrustTier`, `PeerTrustPolicyResolver`, CLI `--set-trust-tier`; verify audit/tier display and policy env surfacing end-to-end. |
+| 1.4 SDK and Port Stabilization v1 | Partially implemented | [SdkCompatibilityPolicy.md](SdkCompatibilityPolicy.md), `UseAdaptiveRouting()` obsolete; sample under `docs/samples/StableSdkHostSample/` (standalone csproj — add an explicit CI `dotnet build` step to gate it). |
+| 1.5 SLO Evidence Pipeline Hardening | Remaining work | Broader gate aggregation, RC checklist links, baseline compare (see §1.5). |
+| 2.1 Capability Component Registry Completion | Partially implemented | Stable `InputSchema`/`OutputSchema` enforced in `ComponentDescriptorValidator` ([ComponentDescriptorValidatorSchemaTests.cs](../src/Nexo.Tests.Infrastructure/Tests/Composition/ComponentDescriptorValidatorSchemaTests.cs)); CLI filters / `compose audit` still open. |
+| 2.2 Doctor `--fix` Remediation Hardening | Remaining work | See §2.2. |
+| 2.3 Onboarding Reliability Gate Expansion | Remaining work | See §2.3. |
+| 2.4 Release Gate Orchestration — Unified Reports | Remaining work | See §2.4. |
+| 2.5 Trust Policy Pack Maturation | Remaining work | See §2.5. |
+| 3.1 First Application-Suite Vertical | Remaining work | See §3.1. |
+| 3.2 Multi-Instance Mesh Governance | Partially implemented | `nexo mesh admit` / `nexo mesh revoke` and trust tiers landed; policy propagation / audit trail depth may remain. |
+| 3.3 Load/Performance Certification Lane | Partially implemented | [perf-certification.yml](../.github/workflows/perf-certification.yml) runs benchmark-scoped tests; formal harness/regression policy still expandable. |
+| 3.4 External Integrator Program | Remaining work | [IntegratorGuide.md](IntegratorGuide.md) exists; extra reference integrations and compatibility matrix still open. |
+| C.1 HttpBarrierContextMiddleware | Implemented | Resolves barrier context via `IBarrierIdentityResolverPipeline` when `NEXO_BARRIER_MIDDLEWARE_ENABLED` is `1`/`true`. |
+| C.1 (tests) | Tested | [HttpBarrierContextMiddlewareTests.cs](../src/Nexo.Tests.Infrastructure/Tests/Barriers/HttpBarrierContextMiddlewareTests.cs). |
+| C.2 PerfHeadroom Policy | Implemented | Enforces per-tool cumulative time budget via `WorldSnapshot` keys. |
+| C.2 (tests) | Remaining work | Confirm dedicated unit tests cover approve/reject paths. |
+| C.3 CI `continue-on-error` (test caching workflow) | Implemented | Docker build/test steps are gating; summary job fails on `test-caching` failure. |
+| C.4 PR / Issue Templates | Implemented | `.github/PULL_REQUEST_TEMPLATE.md` and `ISSUE_TEMPLATE/*.md` present. |
+| C.5 Self-Improvement as Background Agent | Implemented | `self-improver` role in `BackgroundAgentRegistry`. |
+| C.6 Trust Wiring in ImproveCommand | Implemented | `NEXO_TRUST_ENABLED=1` registers `SanitizingProviderFactory` in improve DI. |
+| C.6 (tests) | Remaining work | Add CLI test asserting sanitizing factory when trust + cloud provider configured, if missing. |
+
 ---
 
 ## Phase 1 — Foundation & Product Proof (Phase-30 items)
@@ -58,18 +89,17 @@ These items establish the first end-to-end product experience and close the most
 - `SelfImprovementLoop` already queries `repeated-edits` and `edit-then-build` patterns.
 
 **What remains:**
-- Default `nexo improve` (without `--self`) does not read `IPatternStore` at all — it targets a fixed path.
-- No `--from-observation` flag to query recent patterns and prioritize analysis.
-- No single `nexo loop` command that runs observe + improve sequentially.
-- Test failure ingestion into `ITestFailureStore` is not wired from real test runs (only seeded in tests).
+- Default `nexo improve` (without `--self` or `--from-observation`) still targets a fixed or explicit `--path`; only `--from-observation` / `--continuous` pull from `IPatternStore`.
+- Optional: auto-ingest TRX from the same process as `dotnet test` (today: `nexo ingest-failures` after tests produce `.trx` files).
+- Optional: broader integration tests for `--from-observation` / `--continuous` and CI recipes (ingest → `--self`).
 
-**Implementation tasks:**
-1. Add `--from-observation` option to `ImproveCommand`: when set, query `IPatternStore` for recent patterns, extract affected file paths, and use them as analysis targets instead of the default path.
-2. Register `IPatternStore` in the `ImproveCommand` service collection (currently only `ObserveCommand` registers it).
-3. Wire TRX → `ITestFailureStore`: after `dotnet test` via `DotnetTestTool` / `TrxTestResultParser`, bridge parsed `TestResult` failures into `ITestFailureStore.RecordAsync`. Add this bridge in `Nexo.Infrastructure` (e.g. `TestFailureIngestionBridge`).
-4. Add `nexo improve --continuous` that runs observe (N minutes configurable) then improve on observed paths, in a loop.
-5. Add integration tests validating the observe → improve → self-context pipeline with pattern-driven targeting.
-6. Document the wired flow in `docs/GapAnalysis.md` and update the recommendation section.
+**Implementation tasks:** *(largely complete — keep for history)*
+1. ~~Add `--from-observation` option to `ImproveCommand`~~ **Done.**
+2. ~~Register `IPatternStore` in the `ImproveCommand` service collection~~ **Done** (as needed for improve path).
+3. ~~TRX → `ITestFailureStore`~~ **`TestFailureIngestionBridge` + `nexo ingest-failures`** **Done.**
+4. ~~`nexo improve --continuous`~~ **Done** (`--observe-minutes`, `--interval-minutes`).
+5. Add integration tests validating the observe → improve → self-context pipeline with pattern-driven targeting (expand coverage as needed).
+6. ~~Document the wired flow in `docs/GapAnalysis.md`~~ **Done** (keep in sync with CLI flags).
 
 **Files to modify:**
 - `src/Nexo.CLI/Commands/ImproveCommand.cs` — add `--from-observation`, wire `IPatternStore`
@@ -124,17 +154,15 @@ These items establish the first end-to-end product experience and close the most
 - `Nexo.Abstractions` contains core port definitions.
 
 **What remains:**
-- No CI lane validates the reference sample builds and runs independently.
-- No explicit `[Stable]` / `[Experimental]` attributes on public APIs.
-- No breaking-change policy document.
-- `UseAdaptiveRouting()` is documented as a no-op / experimental.
+- Add an explicit CI step/workflow that `dotnet build` (and optionally `dotnet run`) `docs/samples/StableSdkHostSample/StableSdkHostSample.csproj` — the sample is not in `Nexo.sln`, so it is not built by default solution builds.
+- Full public-surface audit: explicit `[Stable]` / `[Experimental]` attributes and a complete classification table in `docs/sdk.md` (policy doc exists; table may still be partial).
 
 **Implementation tasks:**
-1. Add CI lane that builds and runs `StableSdkHostSample` in isolation (verify it compiles against published/local NuGet only — no project references to internals).
-2. Add `docs/SdkCompatibilityPolicy.md`: semver rules, deprecation process, breaking-change notification.
-3. Audit all public types in `Nexo.Sdk`, `Nexo.Client`, `Nexo.Abstractions`, `Nexo.Brick.Contracts` — classify each as Stable / Experimental / Internal. Add classification table to `docs/sdk.md`.
-4. Add XML doc comments indicating stability level on key public interfaces.
-5. Remove or clearly mark `UseAdaptiveRouting()` as experimental in `NexoSdkBuilder`.
+1. Add CI lane that builds and runs `StableSdkHostSample` in isolation (verify it compiles against published/local NuGet only — no project references to internals). **Remaining** (recommended explicit step).
+2. Add `docs/SdkCompatibilityPolicy.md`: semver rules, deprecation process, breaking-change notification. **Done** — see [SdkCompatibilityPolicy.md](SdkCompatibilityPolicy.md).
+3. Audit all public types in `Nexo.Sdk`, `Nexo.Client`, `Nexo.Abstractions`, `Nexo.Brick.Contracts` — classify each as Stable / Experimental / Internal. Add classification table to `docs/sdk.md`. **Ongoing.**
+4. Add XML doc comments indicating stability level on key public interfaces. **Ongoing.**
+5. Remove or clearly mark `UseAdaptiveRouting()` as experimental in `NexoSdkBuilder`. **Done** — `[Obsolete]` with rationale in XML doc.
 
 **Files to modify:**
 - `.github/workflows/` — new or extended workflow for SDK sample CI
@@ -194,12 +222,11 @@ These items deepen the framework's reliability, developer experience, and operat
 - Seed includes real components + North Star placeholders via `PlaceholderCapabilityComponent`.
 
 **What remains:**
-- `InputSchema` / `OutputSchema` are on the model but not validated by `ComponentDescriptorValidator`.
 - Composition-time filtering by capability/constraint is not fully exposed in CLI.
 - Placeholder components need replacement with real implementations or explicit exclusion from production composition.
 
 **Implementation tasks:**
-1. Add `InputSchema` / `OutputSchema` validation to `ComponentDescriptorValidator` (non-empty when `SupportLevel` is `Stable`).
+1. ~~Add `InputSchema` / `OutputSchema` validation to `ComponentDescriptorValidator` (non-empty when `SupportLevel` is `Stable`).~~ **Done.**
 2. Add `nexo compose --filter-capability <cap>` to filter components by capability during composition.
 3. Add `nexo compose --list-components` to show registry contents with metadata completeness indicators.
 4. Replace or remove `PlaceholderCapabilityComponent` entries that have real implementations.
@@ -389,17 +416,17 @@ These items push Nexo toward production use and external adoption. Start after P
 - `FileBasedInstanceDiscovery`, `FileBasedCapabilityAdvertisement`.
 
 **What remains:**
-- No peer admission workflow (peers are added by file manipulation).
-- No revocation with immediate routing effect.
-- No policy propagation between instances.
+- Rich admission state machine (`pending` → `admitted` → `active`) vs. boolean `admitted` flag in peer JSON.
+- Policy propagation between instances and versioned policy fields on advertisements.
+- Deeper governance audit trail beyond file updates and routing behavior.
 
 **Implementation tasks:**
-1. Design peer admission state machine: `pending` → `admitted` → `active` (or `rejected`).
-2. Implement admission workflow in `MeshCommand`: `nexo mesh admit <peerId>`, `nexo mesh revoke <peerId>`.
-3. Wire revocation into routing: revoked peers are immediately excluded from `NcrCapabilityRouter`.
-4. Add policy version field to mesh advertisements; receiving peers can detect and warn on mismatched policy versions.
-5. Add governance audit trail: all admission/revocation events logged.
-6. Add integration tests for admission → routing → revocation → routing-exclusion flow.
+1. Design peer admission state machine: `pending` → `admitted` → `active` (or `rejected`). **Partial** — today: `admitted` boolean via CLI.
+2. Implement admission workflow in `MeshCommand`: `nexo mesh admit <peerId>`, `nexo mesh revoke <peerId>`. **Done.**
+3. Wire revocation into routing: revoked peers are immediately excluded from `NcrCapabilityRouter`. **Done** (verify in tests as needed).
+4. Add policy version field to mesh advertisements; receiving peers can detect and warn on mismatched policy versions. **Remaining.**
+5. Add governance audit trail: all admission/revocation events logged. **Remaining / extend.**
+6. Add integration tests for admission → routing → revocation → routing-exclusion flow. **Ongoing.**
 
 **Files to modify:**
 - `src/Nexo.Core.Application/Mesh/` — admission models
@@ -419,16 +446,17 @@ These items push Nexo toward production use and external adoption. Start after P
 - Runtime benchmarks directory (`docs/runtime/benchmarks/README.md`).
 - SLO evidence with configurable thresholds.
 - `dotnet test` with blame-hang timeouts.
+- CI workflow [perf-certification.yml](../.github/workflows/perf-certification.yml) runs benchmark-scoped tests and uploads TRX/meta artifacts.
 
 **What remains:**
-- No formal load test harness.
-- No repeatable workload profiles.
-- No trend retention or regression detection.
+- No formal load test harness beyond benchmark-scoped test filters.
+- No repeatable workload profiles document tying CI runs to named scenarios.
+- No trend retention or automated regression detection against a stored baseline.
 
 **Implementation tasks:**
 1. Define 3 representative workload profiles: single-agent simple task, multi-agent orchestration, mesh-routed execution.
 2. Implement benchmark harness using BenchmarkDotNet or a custom runner that emits structured JSON results.
-3. Add CI workflow (`perf-certification.yml`) that runs workload profiles and stores results as artifacts.
+3. ~~Add CI workflow (`perf-certification.yml`)~~ **Done** (extend with richer profiles / baselines as needed).
 4. Add regression detection: compare current run against stored baseline; fail on >10% degradation (configurable).
 5. Add trend report generation: markdown summary with throughput/latency/error rates across recent runs.
 
@@ -446,6 +474,7 @@ These items push Nexo toward production use and external adoption. Start after P
 
 **What exists:**
 - `docs/sdk.md` with stability tiers.
+- [IntegratorGuide.md](IntegratorGuide.md) onboarding and patterns.
 - `StableSdkHostSample` reference integration.
 - `Nexo.Brick.Contracts` for plugin wire format.
 
@@ -481,27 +510,27 @@ These are smaller items that should be addressed opportunistically alongside the
 
 ### C.1 Fix `HttpBarrierContextMiddleware`
 
-**Current state:** No-op middleware — `InvokeAsync` just calls `next(context)`. The TODO says: populate `BarrierResolutionContext` from `HttpContext` and run `IBarrierIdentityResolverPipeline`.
+**Current state:** **Implemented** — middleware injects `IBarrierIdentityResolverPipeline`, builds `BarrierResolutionContext` from `HttpContext`, runs the pipeline, and initializes `IBarrierContextAccessor` when enabled. Gated by `NEXO_BARRIER_MIDDLEWARE_ENABLED` (`1` or `true`).
 
-**Tasks:**
-1. Inject `IBarrierIdentityResolverPipeline` into the middleware constructor.
-2. Build `BarrierResolutionContext` from `HttpContext` (extract claims, headers, request metadata).
-3. Call pipeline and handle results (block, allow, audit).
-4. Add integration test with mock pipeline.
+**Tasks:** *(complete; optional test hardening)*
+1. ~~Inject `IBarrierIdentityResolverPipeline`~~ **Done.**
+2. ~~Build `BarrierResolutionContext` from `HttpContext`~~ **Done.**
+3. ~~Call pipeline and handle results~~ **Done.**
+4. Add integration test with mock pipeline if not already covered.
 
 **Files:** `src/Nexo.Runtime/Barriers/Identity/HttpBarrierContextMiddleware.cs`  
-**Risk:** Breaking change if existing deployments rely on the no-op behavior. Add feature flag (`NEXO_BARRIER_MIDDLEWARE_ENABLED`).
+**Risk:** Low when flag is off (default passes through to `next`).
 
 ---
 
 ### C.2 Implement `PerfHeadroom` Policy
 
-**Current state:** Always returns `Approve = true`. `_maxPerTool` is stored but unused.
+**Current state:** **Implemented** — reads `ToolElapsed:{toolId}` from `WorldSnapshot.Data`, tracks cumulative time per tool, rejects when over `_maxPerTool`.
 
-**Tasks:**
-1. Implement time-budget tracking per tool invocation.
-2. Reject when cumulative tool time exceeds `_maxPerTool`.
-3. Add unit tests for approval and rejection paths.
+**Tasks:** *(implementation done; confirm test coverage)*
+1. ~~Implement time-budget tracking per tool invocation.~~ **Done.**
+2. ~~Reject when cumulative tool time exceeds `_maxPerTool`.~~ **Done.**
+3. Add unit tests for approval and rejection paths if not already present.
 
 **Files:** `src/Nexo.Policies/PerfHeadroom.cs`  
 **Risk:** Low. Policy is opt-in.
@@ -510,26 +539,28 @@ These are smaller items that should be addressed opportunistically alongside the
 
 ### C.3 Fix CI `continue-on-error` in Test Caching Workflow
 
-**Current state:** `test-caching-multi-env.yml` has `continue-on-error: true` on Docker build, test, and publish steps. The summary job always succeeds.
+**Current state:** **Addressed** — Docker build and test steps are gating; `continue-on-error: true` remains only on optional publish/reporting. Summary job fails when `needs.test-caching.result` is `failure` or `cancelled`.
 
-**Tasks:**
-1. Remove `continue-on-error: true` from build and test steps.
-2. Keep `continue-on-error: true` only on optional publish/reporting steps.
-3. Add proper failure aggregation in summary job: check `needs.test-caching.result`.
-4. Fix Windows `|| true` to use proper error handling.
+**Tasks:** *(complete)*
+1. ~~Remove `continue-on-error: true` from build and test steps.~~ **Done.**
+2. ~~Keep `continue-on-error: true` only on optional publish/reporting steps.~~ **Done.**
+3. ~~Add proper failure aggregation in summary job~~ **Done.**
+4. ~~Fix Windows `|| true`~~ **N/A / resolved** in current workflow layout.
 
 **Files:** `.github/workflows/test-caching-multi-env.yml`  
-**Risk:** May expose currently-hidden test failures. Run the workflow once before and after to understand impact.
+**Risk:** Low — failures now surface instead of being masked.
 
 ---
 
 ### C.4 Add PR Template and Issue Templates
 
-**Tasks:**
-1. Create `.github/PULL_REQUEST_TEMPLATE.md` with sections: Summary, Changes, Testing, Checklist.
-2. Create `.github/ISSUE_TEMPLATE/bug_report.md` with reproduction steps template.
-3. Create `.github/ISSUE_TEMPLATE/feature_request.md`.
-4. Create `.github/ISSUE_TEMPLATE/integrator_feedback.md` (for 3.4).
+**Current state:** **Done** — `.github/PULL_REQUEST_TEMPLATE.md` and `bug_report`, `feature_request`, `integrator_feedback` issue templates exist.
+
+**Tasks:** *(complete)*
+1. Create `.github/PULL_REQUEST_TEMPLATE.md` with sections: Summary, Changes, Testing, Checklist. **Done.**
+2. Create `.github/ISSUE_TEMPLATE/bug_report.md` with reproduction steps template. **Done.**
+3. Create `.github/ISSUE_TEMPLATE/feature_request.md`. **Done.**
+4. Create `.github/ISSUE_TEMPLATE/integrator_feedback.md` (for 3.4). **Done.**
 
 **Files:** `.github/PULL_REQUEST_TEMPLATE.md`, `.github/ISSUE_TEMPLATE/`  
 **Risk:** None.
@@ -538,13 +569,13 @@ These are smaller items that should be addressed opportunistically alongside the
 
 ### C.5 Add Self-Improvement as Background Agent
 
-**Current state:** `SelfImprovementLoop` is only triggered via `nexo improve --self`. Background agents support `optimizer`, `tester`, `extender` roles but not a `self-improver` role.
+**Current state:** **Implemented** — `BackgroundAgentRegistry` handles role `self-improver` and invokes `ISelfImprovementLoop` (with Passive/SemiActive skip behavior consistent with other roles).
 
-**Tasks:**
-1. Add `self-improver` role to `BackgroundAgentRegistry.ExecuteAgentAsync`.
-2. Wire role to call `ISelfImprovementLoop.RunOnceAsync`.
-3. Add sample agent config in `apps/runtime-studio/config/`.
-4. Document in `docs/Configuration.md`.
+**Tasks:** *(core complete; samples/docs optional)*
+1. Add `self-improver` role to `BackgroundAgentRegistry.ExecuteAgentAsync`. **Done.**
+2. Wire role to call `ISelfImprovementLoop.RunOnceAsync`. **Done.**
+3. Add sample agent config in `apps/runtime-studio/config/`. **Optional.**
+4. Document in `docs/Configuration.md`. **Optional.**
 
 **Files:** `src/Nexo.BackgroundAgents/Registry/BackgroundAgentRegistry.cs`, `apps/runtime-studio/config/`  
 **Risk:** Self-improvement running automatically requires safety guardrails. Use `SemiActive` aggressiveness mode by default (requires approval gate).
@@ -553,11 +584,11 @@ These are smaller items that should be addressed opportunistically alongside the
 
 ### C.6 Trust Wiring in `ImproveCommand`
 
-**Current state:** `ImproveCommand` builds its own service collection and registers `ProviderFactory` directly, bypassing hosting-level trust registration. If improve uses cloud LLM providers, trust sanitization may not be active.
+**Current state:** **Implemented** — when `NEXO_TRUST_ENABLED=1`, `ImproveCommand` registers `SanitizingProviderFactory` wrapping the inner `IProviderFactory`.
 
-**Tasks:**
-1. Conditionally register `SanitizingProviderFactory` in `ImproveCommand`'s DI graph when trust is enabled.
-2. Add a test that validates sanitization is active when improve is configured for cloud-backed fix generation.
+**Tasks:** *(wiring complete; tests optional)*
+1. Conditionally register `SanitizingProviderFactory` in `ImproveCommand`'s DI graph when trust is enabled. **Done** (`NEXO_TRUST_ENABLED` == `1`).
+2. Add a test that validates sanitization is active when improve is configured for cloud-backed fix generation. **Remaining** if not present.
 
 **Files:** `src/Nexo.CLI/Commands/ImproveCommand.cs`, `src/Nexo.Tests.CLI/`  
 **Risk:** Low. Defensive wiring.
@@ -575,7 +606,7 @@ Phase 1 (parallel tracks):
 └── Track E: 1.5 SLO Evidence ─────────────────┘
     + Cross-cutting: C.1–C.6 (opportunistic)    │
                                                  ▼
-Phase 2 (after 1.1 + 1.2 complete):
+Phase 2 (after 1.1 complete; 1.2 observe→improve wiring largely done):
 ├── 2.1 Registry Completion (needs 1.4)
 ├── 2.2 Doctor --fix Hardening
 ├── 2.3 Onboarding Gate Expansion (needs 2.2)

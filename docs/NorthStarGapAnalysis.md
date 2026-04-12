@@ -35,9 +35,9 @@
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| Domain Knowledge Store | PARTIAL | LiteDb stores exist; unified queryable store not confirmed. |
+| Domain Knowledge Store | RESOLVED | Unified read model via `IKnowledgeQueryService` / `KnowledgeQueryService` (adaptation log, pattern store, user knowledge); registered from hosting and self-context. |
 | Bricks (Adaptive Behavior Library) | EXISTS | BrickCatalog, BrickRegistry, demo bricks, OWASPScannerBrick, RemoteBrick. |
-| Agents | PARTIAL | AgentCard, BaseAgent, domain template agents exist. |
+| Agents | EXISTS | AgentCard, BaseAgent, domain template agents; `BackgroundAgentRegistry` runs dog-food roles including `optimizer`, `tester`, `extender`, and `self-improver`. |
 
 ---
 
@@ -64,8 +64,8 @@
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| Port Definitions | PARTIAL | Nexo.Abstractions contains core ports. |
-| SDK & External Registration | PARTIAL | AddNexoSdk, docs/sdk.md; external brick registration confirmed. |
+| Port Definitions | RESOLVED | Core ports in `Nexo.Abstractions`; breaking-change and stability expectations documented in [SdkCompatibilityPolicy.md](SdkCompatibilityPolicy.md) alongside [sdk.md](sdk.md). |
+| SDK & External Registration | RESOLVED | `AddNexoSdk`, [sdk.md](sdk.md); reference host `docs/samples/StableSdkHostSample/`; `NexoSdkBuilder.UseAdaptiveRouting()` marked `[Obsolete]` (experimental). The sample is a standalone project (not in `Nexo.sln`); add an explicit `dotnet build`/`run` step in CI if you want it enforced on every pipeline. |
 
 ---
 
@@ -86,7 +86,7 @@
 | Component | Status | Notes |
 |-----------|--------|-------|
 | Composition Engine | EXISTS | CompositionEngine, ComposedTestRunner, `nexo compose`. |
-| Capability Component Registry | PARTIAL | BrickCatalog, BrickRegistry. |
+| Capability Component Registry | RESOLVED | `CapabilityComponentRegistry` / `ComponentDescriptorValidator`; `InputSchema` and `OutputSchema` required when `SupportLevel` is Stable; seed descriptors carry schemas (see [SeedComponentLibraryAudit.md](SeedComponentLibraryAudit.md)). |
 | Seed Component Library | RESOLVED | [SeedComponentLibraryAudit.md](SeedComponentLibraryAudit.md); placeholder descriptors in CapabilityComponentRegistry. |
 
 ---
@@ -123,13 +123,15 @@
 
 ### P3 — Vision Completion
 - **Application suite:** Future work.
-- **Inter-instance trust tiers:** Trusted vs unknown peer distinction.
+- **Inter-instance trust tiers:** RESOLVED — `PeerTrustTier`, `PeerTrustPolicyResolver`, mesh routing; `nexo mesh admit` / `nexo mesh revoke` for peer admission state.
 
 ---
 
 ## Build Order (Recommended)
 
-1. **Phase 1 — Safety:** Adversarial scope escape tests.
-2. **Phase 2 — Agent Completeness:** SemiActive approval gate, Ambient silent implementation.
-3. **Phase 3 — Framework:** Seed component library audit, air-gapped test E2E.
+Phases 1–3 below are **complete** in the current codebase (safety tests, agent aggressiveness modes, seed library audit, air-gapped CI). Ongoing work is product and vision layers.
+
+1. ~~**Phase 1 — Safety:** Adversarial scope escape tests.~~ **Done.**
+2. ~~**Phase 2 — Agent Completeness:** SemiActive approval gate, Ambient silent implementation.~~ **Done.**
+3. ~~**Phase 3 — Framework:** Seed component library audit, air-gapped test E2E.~~ **Done.**
 4. **Phase 4 — Product:** Application suite.
