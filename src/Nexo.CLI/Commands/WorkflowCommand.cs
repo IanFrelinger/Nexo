@@ -1,9 +1,12 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Diagnostics;
+using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
+using Nexo.Core.Application.Mesh.Models;
+using Nexo.Core.Application.Mesh.Ports;
 using Nexo.CLI.Runtime;
 using Nexo.Infrastructure.Execution;
 using Nexo.Orchestration.Models;
@@ -23,10 +26,20 @@ public sealed class WorkflowCommand : Command
         bool outputJson,
         bool verbose,
         CancellationToken cancellationToken);
+    internal delegate Task<ScenarioExecutionResult> MeshScenarioExecutor(
+        string endpoint,
+        string request,
+        string runtimeSpecJson,
+        string? provider,
+        bool outputJson,
+        bool verbose,
+        CancellationToken cancellationToken);
 
     private readonly ScenarioExecutor _scenarioExecutor;
+    private readonly MeshScenarioExecutor _meshScenarioExecutor;
     private readonly Func<string, CancellationToken, Task<PreflightResult>> _providerPreflight;
     private readonly Func<IReadOnlyList<string>, CancellationToken, Task<ModelPullResult>> _ollamaModelPuller;
+    private readonly Func<CancellationToken, Task<IReadOnlyList<PeerInfo>>> _meshPeerDiscovery;
 
     public WorkflowCommand(Func<OrchestrateCommand> orchestrateFactory)
         : this(
@@ -35,7 +48,10 @@ public sealed class WorkflowCommand : Command
                 var orchestrate = orchestrateFactory();
                 return await ExecuteScenarioAsync(orchestrate, request, runtimeSpecJson, provider, outputJson, verbose, ct).ConfigureAwait(false);
             },
-            (provider, ct) => PreflightProviderAsync(provider, ct))
+            (provider, ct) => PreflightProviderAsync(provider, ct),
+            null,
+            _ => Task.FromResult<IReadOnlyList<PeerInfo>>(Array.Empty<PeerInfo>()),
+            ExecuteScenarioOnMeshPeerAsync)
     {
     }
 
@@ -54,7 +70,18 @@ public sealed class WorkflowCommand : Command
                     provider,
                     ct,
                     scope.ServiceProvider.GetService<IProviderFactory>()).ConfigureAwait(false);
-            })
+            },
+            null,
+            async ct =>
+            {
+                using var scope = orchestrationScopeFactory();
+                var discovery = scope.ServiceProvider.GetService<IInstanceDiscovery>();
+                if (discovery is null)
+                    return Array.Empty<PeerInfo>();
+                var peers = await discovery.DiscoverAsync(ct).ConfigureAwait(false);
+                return peers ?? Array.Empty<PeerInfo>();
+            },
+            ExecuteScenarioOnMeshPeerAsync)
     {
     }
 
@@ -71,14 +98,21 @@ public sealed class WorkflowCommand : Command
                     Ok: true,
                     Summary: $"Test model pull override: assumed available for {models.Count} model(s).",
                     Models: models.ToArray(),
-                    PulledModels: models.ToArray())))
+                    PulledModels: models.ToArray())),
+            _ => Task.FromResult<IReadOnlyList<PeerInfo>>(Array.Empty<PeerInfo>()),
+            ExecuteScenarioOnMeshPeerAsync)
     {
     }
 
     internal WorkflowCommand(
         ScenarioExecutor scenarioExecutor,
         Func<string, CancellationToken, Task<bool>>? providerPreflight)
-        : this(scenarioExecutor, providerPreflight, null)
+        : this(
+            scenarioExecutor,
+            providerPreflight,
+            null,
+            _ => Task.FromResult<IReadOnlyList<PeerInfo>>(Array.Empty<PeerInfo>()),
+            ExecuteScenarioOnMeshPeerAsync)
     {
     }
 
@@ -86,6 +120,21 @@ public sealed class WorkflowCommand : Command
         ScenarioExecutor scenarioExecutor,
         Func<string, CancellationToken, Task<bool>>? providerPreflight,
         Func<IReadOnlyList<string>, CancellationToken, Task<ModelPullResult>>? ollamaModelPuller)
+        : this(
+            scenarioExecutor,
+            providerPreflight,
+            ollamaModelPuller,
+            _ => Task.FromResult<IReadOnlyList<PeerInfo>>(Array.Empty<PeerInfo>()),
+            ExecuteScenarioOnMeshPeerAsync)
+    {
+    }
+
+    internal WorkflowCommand(
+        ScenarioExecutor scenarioExecutor,
+        Func<string, CancellationToken, Task<bool>>? providerPreflight,
+        Func<IReadOnlyList<string>, CancellationToken, Task<ModelPullResult>>? ollamaModelPuller,
+        Func<CancellationToken, Task<IReadOnlyList<PeerInfo>>>? meshPeerDiscovery,
+        MeshScenarioExecutor? meshScenarioExecutor)
         : this(
             scenarioExecutor,
             providerPreflight is null
@@ -102,19 +151,25 @@ public sealed class WorkflowCommand : Command
                         Provider: string.IsNullOrWhiteSpace(provider) ? "unset" : provider.Trim(),
                         Detail: ok ? "Provider available." : "Provider unavailable.");
                 },
-            ollamaModelPuller)
+            ollamaModelPuller,
+            meshPeerDiscovery,
+            meshScenarioExecutor)
     {
     }
 
     private WorkflowCommand(
         ScenarioExecutor scenarioExecutor,
         Func<string, CancellationToken, Task<PreflightResult>> providerPreflight,
-        Func<IReadOnlyList<string>, CancellationToken, Task<ModelPullResult>>? ollamaModelPuller = null)
+        Func<IReadOnlyList<string>, CancellationToken, Task<ModelPullResult>>? ollamaModelPuller = null,
+        Func<CancellationToken, Task<IReadOnlyList<PeerInfo>>>? meshPeerDiscovery = null,
+        MeshScenarioExecutor? meshScenarioExecutor = null)
         : base("workflow", "Scaffold and stress-test agentic workflow compositions.")
     {
         _scenarioExecutor = scenarioExecutor ?? throw new ArgumentNullException(nameof(scenarioExecutor));
         _providerPreflight = providerPreflight ?? throw new ArgumentNullException(nameof(providerPreflight));
         _ollamaModelPuller = ollamaModelPuller ?? PullOllamaModelsAsync;
+        _meshPeerDiscovery = meshPeerDiscovery ?? (_ => Task.FromResult<IReadOnlyList<PeerInfo>>(Array.Empty<PeerInfo>()));
+        _meshScenarioExecutor = meshScenarioExecutor ?? ExecuteScenarioOnMeshPeerAsync;
         ConfigureScaffoldCommand();
         ConfigureStressCommand();
         ConfigureHistoryCommand();
@@ -195,6 +250,14 @@ public sealed class WorkflowCommand : Command
             "--cooldown-ms",
             () => null,
             "Override cooldown delay between scenario executions in milliseconds.");
+        var includeMeshPeersOpt = new Option<bool>(
+            "--include-mesh-peers",
+            () => true,
+            "Treat discovered mesh peers as stress execution participants.");
+        var meshCapabilityOpt = new Option<string>(
+            "--mesh-capability",
+            () => "nexo-cli",
+            "Capability tag required for discovered mesh peers to participate.");
         var jsonOpt = new Option<bool>("--json", () => false, "Emit machine-readable JSON output.");
         var verboseOpt = new Option<bool>("--verbose", () => false, "Emit orchestrator progress output.");
 
@@ -210,6 +273,8 @@ public sealed class WorkflowCommand : Command
         stress.AddOption(shuffleScenariosOpt);
         stress.AddOption(randomSeedOpt);
         stress.AddOption(cooldownMsOpt);
+        stress.AddOption(includeMeshPeersOpt);
+        stress.AddOption(meshCapabilityOpt);
         stress.AddOption(jsonOpt);
         stress.AddOption(verboseOpt);
         stress.SetHandler((InvocationContext ctx) =>
@@ -227,6 +292,8 @@ public sealed class WorkflowCommand : Command
                 ctx.ParseResult.GetValueForOption(shuffleScenariosOpt),
                 ctx.ParseResult.GetValueForOption(randomSeedOpt),
                 ctx.ParseResult.GetValueForOption(cooldownMsOpt),
+                ctx.ParseResult.GetValueForOption(includeMeshPeersOpt),
+                ctx.ParseResult.GetValueForOption(meshCapabilityOpt),
                 ctx.ParseResult.GetValueForOption(jsonOpt),
                 ctx.ParseResult.GetValueForOption(verboseOpt),
                 ctx.GetCancellationToken()).GetAwaiter().GetResult();
@@ -484,6 +551,14 @@ public sealed class WorkflowCommand : Command
             "--early-stop-min-success-rate",
             () => 0.35,
             "Minimum measured success-rate required after early-stop minimum runs.");
+        var includeMeshPeersOpt = new Option<bool>(
+            "--include-mesh-peers",
+            () => true,
+            "Treat discovered mesh peers as optimize execution participants.");
+        var meshCapabilityOpt = new Option<string>(
+            "--mesh-capability",
+            () => "nexo-cli",
+            "Capability tag required for discovered mesh peers to participate.");
         var autoPullModelsOpt = new Option<bool>(
             "--auto-pull-models",
             () => true,
@@ -522,6 +597,8 @@ public sealed class WorkflowCommand : Command
         optimize.AddOption(searchStrategyOpt);
         optimize.AddOption(earlyStopMinRunsOpt);
         optimize.AddOption(earlyStopMinSuccessRateOpt);
+        optimize.AddOption(includeMeshPeersOpt);
+        optimize.AddOption(meshCapabilityOpt);
         optimize.AddOption(autoPullModelsOpt);
         optimize.AddOption(promoteWinnerOpt);
         optimize.AddOption(policyFileOpt);
@@ -550,6 +627,8 @@ public sealed class WorkflowCommand : Command
                 ctx.ParseResult.GetValueForOption(searchStrategyOpt),
                 ctx.ParseResult.GetValueForOption(earlyStopMinRunsOpt),
                 ctx.ParseResult.GetValueForOption(earlyStopMinSuccessRateOpt),
+                ctx.ParseResult.GetValueForOption(includeMeshPeersOpt),
+                ctx.ParseResult.GetValueForOption(meshCapabilityOpt),
                 ctx.ParseResult.GetValueForOption(autoPullModelsOpt),
                 ctx.ParseResult.GetValueForOption(promoteWinnerOpt),
                 ctx.ParseResult.GetValueForOption(policyFileOpt),
@@ -948,6 +1027,8 @@ public sealed class WorkflowCommand : Command
         bool? shuffleScenariosOverride,
         int? randomSeedOverride,
         int? cooldownMsOverride,
+        bool includeMeshPeers,
+        string? meshCapability,
         bool json,
         bool verbose,
         CancellationToken ct)
@@ -1000,18 +1081,27 @@ public sealed class WorkflowCommand : Command
             preflightByProvider[provider] = await _providerPreflight(provider, ct).ConfigureAwait(false);
         }
 
+        var executionTargets = await ResolveExecutionTargetsAsync(
+            includeMeshPeers,
+            meshCapability,
+            ct).ConfigureAwait(false);
+
         var scenarioPlans = BuildScenarioPlans(requests, compositions, profiles, iterations);
         if (shuffleScenarios && scenarioPlans.Count > 1)
             ShuffleScenarioPlans(scenarioPlans, rng ?? new Random());
 
         var runs = new List<WorkflowStressRunRecord>();
+        var executionTargetCursor = 0;
         foreach (var plan in scenarioPlans)
         {
             var request = plan.Request;
             var composition = plan.Composition;
             var profile = plan.Profile;
             var i = plan.Iteration;
-            var scenarioId = BuildScenarioId(request.Id, composition.Id, profile.Id, i);
+            var executionTarget = executionTargets[executionTargetCursor % executionTargets.Count];
+            executionTargetCursor++;
+            var scenarioId = BuildScenarioId(request.Id, composition.Id, profile.Id, i) +
+                             $"::target-{NormalizeScenarioTargetSegment(executionTarget.Id)}";
             var runtime = BuildRuntimeSpec(composition, profile);
             var runtimeJson = JsonSerializer.Serialize(runtime);
             var runtimeExecutionRequest = BuildExecutionRequest(request, composition, profile, sharedRequest);
@@ -1029,11 +1119,11 @@ public sealed class WorkflowCommand : Command
 
                 try
                 {
-                    _ = await _scenarioExecutor(
+                    _ = await ExecuteScenarioForTargetAsync(
+                        executionTarget,
                         runtimeExecutionRequest,
                         runtimeJson,
                         profile.Default.Provider,
-                        true,
                         verbose,
                         ct).ConfigureAwait(false);
                 }
@@ -1064,11 +1154,11 @@ public sealed class WorkflowCommand : Command
             {
                 try
                 {
-                    scenario = await _scenarioExecutor(
+                    scenario = await ExecuteScenarioForTargetAsync(
+                        executionTarget,
                         runtimeExecutionRequest,
                         runtimeJson,
                         profile.Default.Provider,
-                        true,
                         verbose,
                         ct).ConfigureAwait(false);
                 }
@@ -1085,6 +1175,7 @@ public sealed class WorkflowCommand : Command
             var elapsedMs = sw.ElapsedMilliseconds;
             var telemetry = CaptureRuntimeTelemetry(startedAt, cpuStart);
             var score = ComputeScore(scenario.Ok, elapsedMs, composition, profile);
+            var runSummary = $"{scenario.Summary} [target={executionTarget.Id}]";
             runs.Add(new WorkflowStressRunRecord(
                 runId,
                 gitSha,
@@ -1101,7 +1192,7 @@ public sealed class WorkflowCommand : Command
                 scenario.EscalationCount,
                 elapsedMs,
                 score,
-                scenario.Summary,
+                runSummary,
                 scenario.FailureCategory,
                 scenario.Skipped,
                 startedAt,
@@ -1220,6 +1311,8 @@ public sealed class WorkflowCommand : Command
         string? searchStrategy,
         int? earlyStopMinRuns,
         double? earlyStopMinSuccessRate,
+        bool includeMeshPeers,
+        string? meshCapability,
         bool autoPullModels,
         bool promoteWinner,
         string? policyFile,
@@ -1315,7 +1408,13 @@ public sealed class WorkflowCommand : Command
             preflightByProvider[provider] = await _providerPreflight(provider, ct).ConfigureAwait(false);
         }
 
+        var executionTargets = await ResolveExecutionTargetsAsync(
+            includeMeshPeers,
+            meshCapability,
+            ct).ConfigureAwait(false);
+
         var measuredRunsUsed = 0;
+        var executionTargetCursor = 0;
         var candidates = new List<WorkflowOptimizeCandidate>();
         var persistedRows = new List<WorkflowLabStressHistoryRow>();
         for (var candidateIndex = 0; candidateIndex < groupedCandidates.Count; candidateIndex++)
@@ -1347,7 +1446,10 @@ public sealed class WorkflowCommand : Command
                 var composition = plan.Composition;
                 var profile = plan.Profile;
                 var iteration = plan.Iteration;
-                var scenarioId = BuildScenarioId(request.Id, composition.Id, profile.Id, iteration);
+                var executionTarget = executionTargets[executionTargetCursor % executionTargets.Count];
+                executionTargetCursor++;
+                var scenarioId = BuildScenarioId(request.Id, composition.Id, profile.Id, iteration) +
+                                 $"::target-{NormalizeScenarioTargetSegment(executionTarget.Id)}";
                 var runtime = BuildRuntimeSpec(composition, profile);
                 var runtimeJson = JsonSerializer.Serialize(runtime);
                 var runtimeExecutionRequest = BuildExecutionRequest(request, composition, profile, sharedRequest);
@@ -1355,9 +1457,10 @@ public sealed class WorkflowCommand : Command
                 for (var warmup = 0; warmup < warmupRuns; warmup++)
                 {
                     ct.ThrowIfCancellationRequested();
-                    if (!pullResult.Ok)
+                    if (!pullResult.Ok && executionTarget.IsLocal)
                         break;
-                    if (!string.IsNullOrWhiteSpace(profileProvider) &&
+                    if (executionTarget.IsLocal &&
+                        !string.IsNullOrWhiteSpace(profileProvider) &&
                         preflightByProvider.TryGetValue(profileProvider, out var warmupPreflight) &&
                         !warmupPreflight.Ok)
                     {
@@ -1366,11 +1469,11 @@ public sealed class WorkflowCommand : Command
 
                     try
                     {
-                        _ = await _scenarioExecutor(
+                        _ = await ExecuteScenarioForTargetAsync(
+                            executionTarget,
                             runtimeExecutionRequest,
                             runtimeJson,
                             profile.Default.Provider,
-                            true,
                             verbose,
                             ct).ConfigureAwait(false);
                     }
@@ -1385,7 +1488,7 @@ public sealed class WorkflowCommand : Command
                 var cpuStart = Process.GetCurrentProcess().TotalProcessorTime;
                 var sw = Stopwatch.StartNew();
                 ScenarioExecutionResult scenario;
-                if (!pullResult.Ok)
+                if (!pullResult.Ok && executionTarget.IsLocal)
                 {
                     scenario = new ScenarioExecutionResult(
                         Ok: false,
@@ -1395,7 +1498,8 @@ public sealed class WorkflowCommand : Command
                         FailureCategory: "skipped_infra",
                         Skipped: true);
                 }
-                else if (!string.IsNullOrWhiteSpace(profileProvider) &&
+                else if (executionTarget.IsLocal &&
+                         !string.IsNullOrWhiteSpace(profileProvider) &&
                          preflightByProvider.TryGetValue(profileProvider, out var preflight) &&
                          !preflight.Ok)
                 {
@@ -1411,11 +1515,11 @@ public sealed class WorkflowCommand : Command
                 {
                     try
                     {
-                        scenario = await _scenarioExecutor(
+                        scenario = await ExecuteScenarioForTargetAsync(
+                            executionTarget,
                             runtimeExecutionRequest,
                             runtimeJson,
                             profile.Default.Provider,
-                            true,
                             verbose,
                             ct).ConfigureAwait(false);
                     }
@@ -1433,6 +1537,7 @@ public sealed class WorkflowCommand : Command
                 var elapsedMs = sw.ElapsedMilliseconds;
                 var telemetry = CaptureRuntimeTelemetry(startedAt, cpuStart);
                 var score = ComputeScore(scenario.Ok, elapsedMs, composition, profile);
+                var runSummary = $"{scenario.Summary} [target={executionTarget.Id}]";
                 var runRecord = new WorkflowStressRunRecord(
                     candidateRunId,
                     gitSha,
@@ -1449,7 +1554,7 @@ public sealed class WorkflowCommand : Command
                     scenario.EscalationCount,
                     elapsedMs,
                     score,
-                    scenario.Summary,
+                    runSummary,
                     scenario.FailureCategory,
                     scenario.Skipped,
                     startedAt,
@@ -2162,6 +2267,221 @@ public sealed class WorkflowCommand : Command
             ConflictCount: result.Conflicts ?? 0,
             EscalationCount: result.Escalations ?? 0,
             FailureCategory: category);
+    }
+
+    private async Task<ScenarioExecutionResult> ExecuteScenarioForTargetAsync(
+        ExecutionTarget target,
+        string request,
+        string runtimeSpecJson,
+        string? provider,
+        bool verbose,
+        CancellationToken ct)
+    {
+        if (target.IsLocal || string.IsNullOrWhiteSpace(target.Endpoint))
+        {
+            return await _scenarioExecutor(
+                request,
+                runtimeSpecJson,
+                provider,
+                true,
+                verbose,
+                ct).ConfigureAwait(false);
+        }
+
+        return await _meshScenarioExecutor(
+            target.Endpoint,
+            request,
+            runtimeSpecJson,
+            provider,
+            true,
+            verbose,
+            ct).ConfigureAwait(false);
+    }
+
+    private async Task<IReadOnlyList<ExecutionTarget>> ResolveExecutionTargetsAsync(
+        bool includeMeshPeers,
+        string? meshCapability,
+        CancellationToken ct)
+    {
+        var targets = new List<ExecutionTarget> { ExecutionTarget.Local };
+        if (!includeMeshPeers)
+            return targets;
+
+        IReadOnlyList<PeerInfo> discovered;
+        try
+        {
+            discovered = await _meshPeerDiscovery(ct).ConfigureAwait(false) ?? Array.Empty<PeerInfo>();
+        }
+        catch
+        {
+            return targets;
+        }
+
+        if (discovered.Count == 0)
+            return targets;
+
+        var capabilityFilter = string.IsNullOrWhiteSpace(meshCapability) ? null : meshCapability.Trim();
+        var seenEndpoints = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var peer in discovered)
+        {
+            ct.ThrowIfCancellationRequested();
+            if (peer is null)
+                continue;
+            var endpoint = peer.Endpoint?.Trim();
+            if (string.IsNullOrWhiteSpace(endpoint))
+                continue;
+            if (!string.IsNullOrWhiteSpace(capabilityFilter) &&
+                !peer.Capabilities.Any(x => string.Equals(x?.Trim(), capabilityFilter, StringComparison.OrdinalIgnoreCase)))
+                continue;
+            if (!TryNormalizeMeshEndpoint(endpoint, out var normalizedEndpoint))
+                continue;
+            if (!seenEndpoints.Add(normalizedEndpoint))
+                continue;
+
+            var peerId = string.IsNullOrWhiteSpace(peer.PeerId)
+                ? normalizedEndpoint
+                : peer.PeerId.Trim();
+            targets.Add(new ExecutionTarget(peerId, normalizedEndpoint, false));
+        }
+
+        return targets;
+    }
+
+    private static bool TryNormalizeMeshEndpoint(string endpoint, out string normalizedEndpoint)
+    {
+        normalizedEndpoint = string.Empty;
+        if (string.IsNullOrWhiteSpace(endpoint))
+            return false;
+        if (!Uri.TryCreate(endpoint.Trim(), UriKind.Absolute, out var uri))
+            return false;
+        if (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps)
+            return false;
+
+        normalizedEndpoint = uri.GetLeftPart(UriPartial.Authority).TrimEnd('/');
+        return !string.IsNullOrWhiteSpace(normalizedEndpoint);
+    }
+
+    private static string NormalizeScenarioTargetSegment(string targetId)
+    {
+        if (string.IsNullOrWhiteSpace(targetId))
+            return "unknown";
+        var buffer = new StringBuilder(targetId.Length);
+        foreach (var c in targetId.Trim())
+        {
+            if (char.IsLetterOrDigit(c) || c is '-' or '_')
+                buffer.Append(char.ToLowerInvariant(c));
+            else if (c is '.' or ':')
+                buffer.Append('-');
+        }
+
+        return buffer.Length == 0 ? "unknown" : buffer.ToString();
+    }
+
+    private sealed record ExecutionTarget(
+        string Id,
+        string? Endpoint,
+        bool IsLocal)
+    {
+        public static readonly ExecutionTarget Local = new("local", null, true);
+    }
+
+    private sealed record MeshOrchestrateRequest(
+        string Request,
+        string RuntimeSpecJson,
+        string? Provider,
+        bool Verbose,
+        bool Json);
+
+    private sealed record MeshOrchestrateResponse(
+        bool Success,
+        string? Summary,
+        object? Output,
+        int? Conflicts = null,
+        int? Escalations = null,
+        string? ErrorCode = null);
+
+    private static async Task<ScenarioExecutionResult> ExecuteScenarioOnMeshPeerAsync(
+        string endpoint,
+        string request,
+        string runtimeSpecJson,
+        string? provider,
+        bool outputJson,
+        bool verbose,
+        CancellationToken cancellationToken)
+    {
+        if (!TryNormalizeMeshEndpoint(endpoint, out var normalizedEndpoint))
+        {
+            return new ScenarioExecutionResult(
+                Ok: false,
+                Summary: $"Mesh peer endpoint is invalid: {endpoint}",
+                ConflictCount: 0,
+                EscalationCount: 0,
+                FailureCategory: "infra_unavailable");
+        }
+
+        try
+        {
+            using var client = new HttpClient { BaseAddress = new Uri($"{normalizedEndpoint}/"), Timeout = TimeSpan.FromMinutes(3) };
+            var payload = new MeshOrchestrateRequest(
+                Request: request,
+                RuntimeSpecJson: runtimeSpecJson,
+                Provider: provider,
+                Verbose: verbose,
+                Json: outputJson);
+            using var response = await client.PostAsJsonAsync("api/orchestrate", payload, cancellationToken).ConfigureAwait(false);
+            if (!response.IsSuccessStatusCode)
+            {
+                return new ScenarioExecutionResult(
+                    Ok: false,
+                    Summary: $"Mesh peer returned HTTP {(int)response.StatusCode} for {normalizedEndpoint}.",
+                    ConflictCount: 0,
+                    EscalationCount: 0,
+                    FailureCategory: "infra_unavailable");
+            }
+
+            var orchestrate = await response.Content.ReadFromJsonAsync<MeshOrchestrateResponse>(cancellationToken: cancellationToken).ConfigureAwait(false);
+            if (orchestrate is null)
+            {
+                return new ScenarioExecutionResult(
+                    Ok: false,
+                    Summary: $"Mesh peer response missing payload for {normalizedEndpoint}.",
+                    ConflictCount: 0,
+                    EscalationCount: 0,
+                    FailureCategory: "orchestration_failure");
+            }
+
+            if (orchestrate.Success)
+            {
+                return new ScenarioExecutionResult(
+                    Ok: true,
+                    Summary: string.IsNullOrWhiteSpace(orchestrate.Summary)
+                        ? $"Mesh peer run succeeded on {normalizedEndpoint}."
+                        : orchestrate.Summary!,
+                    ConflictCount: orchestrate.Conflicts ?? 0,
+                    EscalationCount: orchestrate.Escalations ?? 0,
+                    FailureCategory: "none");
+            }
+
+            var failureSummary = string.IsNullOrWhiteSpace(orchestrate.Summary)
+                ? $"Mesh peer run failed on {normalizedEndpoint}."
+                : $"Mesh peer run failed on {normalizedEndpoint}: {orchestrate.Summary}";
+            return new ScenarioExecutionResult(
+                Ok: false,
+                Summary: failureSummary,
+                ConflictCount: orchestrate.Conflicts ?? 0,
+                EscalationCount: orchestrate.Escalations ?? 0,
+                FailureCategory: ClassifyFailureCategory(failureSummary, orchestrate.ErrorCode));
+        }
+        catch (Exception ex)
+        {
+            var summary = $"Mesh peer request failed for {normalizedEndpoint}: {ex.Message}";
+            return new ScenarioExecutionResult(
+                Ok: false,
+                Summary: summary,
+                ConflictCount: 0,
+                EscalationCount: 0,
+                FailureCategory: ClassifyFailureCategory(summary));
+        }
     }
 
     private static string ClassifyFailureCategory(string output, string? parsedErrorCode = null)

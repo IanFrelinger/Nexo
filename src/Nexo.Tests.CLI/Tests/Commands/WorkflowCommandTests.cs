@@ -222,6 +222,8 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     shuffleScenariosOverride: null,
                     randomSeedOverride: null,
                     cooldownMsOverride: null,
+                    includeMeshPeers: false,
+                    meshCapability: "nexo-cli",
                     json: true,
                     verbose: false,
                     ct: cancellationToken)).ConfigureAwait(false);
@@ -318,6 +320,8 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     shuffleScenariosOverride: null,
                     randomSeedOverride: null,
                     cooldownMsOverride: null,
+                    includeMeshPeers: false,
+                    meshCapability: "nexo-cli",
                     json: true,
                     verbose: false,
                     ct: cancellationToken)).ConfigureAwait(false);
@@ -507,6 +511,8 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     shuffleScenariosOverride: null,
                     randomSeedOverride: null,
                     cooldownMsOverride: null,
+                    includeMeshPeers: false,
+                    meshCapability: "nexo-cli",
                     json: true,
                     verbose: false,
                     ct: cancellationToken)).ConfigureAwait(false);
@@ -577,6 +583,8 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     shuffleScenariosOverride: null,
                     randomSeedOverride: null,
                     cooldownMsOverride: null,
+                    includeMeshPeers: false,
+                    meshCapability: "nexo-cli",
                     json: true,
                     verbose: false,
                     ct: cancellationToken)).ConfigureAwait(false);
@@ -949,6 +957,8 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     searchStrategy: "successive-halving",
                     earlyStopMinRuns: 2,
                     earlyStopMinSuccessRate: 0.35,
+                    includeMeshPeers: false,
+                    meshCapability: "nexo-cli",
                     autoPullModels: false,
                     promoteWinner: false,
                     policyFile: null,
@@ -1041,6 +1051,8 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     searchStrategy: "successive-halving",
                     earlyStopMinRuns: 2,
                     earlyStopMinSuccessRate: 0.35,
+                    includeMeshPeers: false,
+                    meshCapability: "nexo-cli",
                     autoPullModels: false,
                     promoteWinner: true,
                     policyFile: null,
@@ -1139,6 +1151,8 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     searchStrategy: "successive-halving",
                     earlyStopMinRuns: 2,
                     earlyStopMinSuccessRate: 0.35,
+                    includeMeshPeers: false,
+                    meshCapability: "nexo-cli",
                     autoPullModels: true,
                     promoteWinner: false,
                     policyFile: null,
@@ -1150,8 +1164,9 @@ public sealed class WorkflowCommandTests : UnitTestBase
             AssertEqual(0, exitCode);
             AssertTrue(output.Contains("\"ok\": true", StringComparison.OrdinalIgnoreCase));
             AssertTrue(pulledModels is not null, "Expected optimize to invoke model puller.");
-            AssertTrue(pulledModels!.Contains("llama3.1", StringComparer.OrdinalIgnoreCase), "Expected default Ollama model to be pulled.");
-            AssertTrue((pulledModels ?? Array.Empty<string>()).Contains("qwen2.5:7b", StringComparer.OrdinalIgnoreCase), "Expected role-specific Ollama model to be pulled.");
+            var resolvedPulledModels = pulledModels ?? Array.Empty<string>();
+            AssertTrue(resolvedPulledModels.Contains("llama3.1", StringComparer.OrdinalIgnoreCase), "Expected default Ollama model to be pulled.");
+            AssertTrue(resolvedPulledModels.Contains("qwen2.5:7b", StringComparer.OrdinalIgnoreCase), "Expected role-specific Ollama model to be pulled.");
         }
         finally
         {
@@ -1223,6 +1238,8 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     searchStrategy: "objective-first",
                     earlyStopMinRuns: 2,
                     earlyStopMinSuccessRate: 0.0,
+                    includeMeshPeers: false,
+                    meshCapability: "nexo-cli",
                     autoPullModels: false,
                     promoteWinner: false,
                     policyFile: null,
@@ -1314,6 +1331,8 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     searchStrategy: "exhaustive",
                     earlyStopMinRuns: 2,
                     earlyStopMinSuccessRate: 0.8,
+                    includeMeshPeers: false,
+                    meshCapability: "nexo-cli",
                     autoPullModels: false,
                     promoteWinner: false,
                     policyFile: null,
