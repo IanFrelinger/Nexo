@@ -31,61 +31,82 @@ public sealed class KnowledgeQueryService : IKnowledgeQueryService
         var entries = new List<KnowledgeQueryEntry>();
         if (sources.Contains(KnowledgeSource.Adaptation))
         {
-            var adaptations = await _adaptationLog
-                .QueryAsync(normalized.Since, normalized.Until, null, cancellationToken)
-                .ConfigureAwait(false);
-            entries.AddRange(adaptations.Select(adaptation => new KnowledgeQueryEntry
+            try
             {
-                Id = adaptation.Id,
-                Source = KnowledgeSource.Adaptation,
-                Timestamp = adaptation.Timestamp,
-                DataType = adaptation.FailureType,
-                EventType = "adaptation",
-                Summary = $"{adaptation.FailureType}:{adaptation.FilePath ?? "-"} promoted={adaptation.Promoted}",
-                Provenance = BuildProvenance(
-                    ("brickId", adaptation.BrickId ?? string.Empty),
-                    ("fixApplied", adaptation.FixApplied.ToString()))
-            }));
+                var adaptations = await _adaptationLog
+                    .QueryAsync(normalized.Since, normalized.Until, null, cancellationToken)
+                    .ConfigureAwait(false);
+                entries.AddRange(adaptations.Select(adaptation => new KnowledgeQueryEntry
+                {
+                    Id = adaptation.Id,
+                    Source = KnowledgeSource.Adaptation,
+                    Timestamp = adaptation.Timestamp,
+                    DataType = adaptation.FailureType,
+                    EventType = "adaptation",
+                    Summary = $"{adaptation.FailureType}:{adaptation.FilePath ?? "-"} promoted={adaptation.Promoted}",
+                    Provenance = BuildProvenance(
+                        ("brickId", adaptation.BrickId ?? string.Empty),
+                        ("fixApplied", adaptation.FixApplied.ToString()))
+                }));
+            }
+            catch
+            {
+                // Keep partial results from healthy stores if one backend is unavailable.
+            }
         }
 
         if (sources.Contains(KnowledgeSource.Pattern))
         {
-            var patterns = await _patternStore
-                .QueryAsync(new PatternStoreQueryParams
-                {
-                    Since = normalized.Since,
-                    Until = normalized.Until,
-                    EventType = normalized.EventType,
-                    MaxCount = normalized.MaxCount + normalized.Offset + 20
-                }, cancellationToken)
-                .ConfigureAwait(false);
-            entries.AddRange(patterns.Select(pattern => new KnowledgeQueryEntry
+            try
             {
-                Id = pattern.PatternId,
-                Source = KnowledgeSource.Pattern,
-                Timestamp = pattern.LastSeen,
-                DataType = pattern.EventType,
-                EventType = "pattern",
-                Summary = $"frequency={pattern.Frequency} last={pattern.LastSeen:O}",
-                Provenance = BuildPatternProvenance(pattern)
-            }));
+                var patterns = await _patternStore
+                    .QueryAsync(new PatternStoreQueryParams
+                    {
+                        Since = normalized.Since,
+                        Until = normalized.Until,
+                        EventType = normalized.EventType,
+                        MaxCount = normalized.MaxCount + normalized.Offset + 20
+                    }, cancellationToken)
+                    .ConfigureAwait(false);
+                entries.AddRange(patterns.Select(pattern => new KnowledgeQueryEntry
+                {
+                    Id = pattern.PatternId,
+                    Source = KnowledgeSource.Pattern,
+                    Timestamp = pattern.LastSeen,
+                    DataType = pattern.EventType,
+                    EventType = "pattern",
+                    Summary = $"frequency={pattern.Frequency} last={pattern.LastSeen:O}",
+                    Provenance = BuildPatternProvenance(pattern)
+                }));
+            }
+            catch
+            {
+                // Keep partial results from healthy stores if one backend is unavailable.
+            }
         }
 
         if (sources.Contains(KnowledgeSource.UserKnowledge))
         {
-            var knowledgeEntries = await _knowledgeLogStore
-                .GetAsync(normalized.DataType, normalized.MaxCount + normalized.Offset + 20, cancellationToken)
-                .ConfigureAwait(false);
-            entries.AddRange(knowledgeEntries.Select(entry => new KnowledgeQueryEntry
+            try
             {
-                Id = entry.Id,
-                Source = KnowledgeSource.UserKnowledge,
-                Timestamp = entry.UpdatedAt,
-                DataType = entry.DataType,
-                EventType = "user-knowledge",
-                Summary = entry.Content,
-                Provenance = BuildKnowledgeProvenance(entry.SourceObservationIds)
-            }));
+                var knowledgeEntries = await _knowledgeLogStore
+                    .GetAsync(normalized.DataType, normalized.MaxCount + normalized.Offset + 20, cancellationToken)
+                    .ConfigureAwait(false);
+                entries.AddRange(knowledgeEntries.Select(entry => new KnowledgeQueryEntry
+                {
+                    Id = entry.Id,
+                    Source = KnowledgeSource.UserKnowledge,
+                    Timestamp = entry.UpdatedAt,
+                    DataType = entry.DataType,
+                    EventType = "user-knowledge",
+                    Summary = entry.Content,
+                    Provenance = BuildKnowledgeProvenance(entry.SourceObservationIds)
+                }));
+            }
+            catch
+            {
+                // Keep partial results from healthy stores if one backend is unavailable.
+            }
         }
 
         var filtered = entries

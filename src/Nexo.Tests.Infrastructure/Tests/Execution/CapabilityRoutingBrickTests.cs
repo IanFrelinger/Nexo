@@ -536,7 +536,7 @@ public sealed class CapabilityRoutingBrickTests
         target.Should().BeOfType<ExecutionTarget.Remote>();
         var remote = (ExecutionTarget.Remote)target;
         remote.Executor.Should().BeSameAs(runPod);
-        remote.Reason.Should().Contain("falling back", StringComparison.OrdinalIgnoreCase);
+        remote.Reason.ToLowerInvariant().Should().Contain("insufficient");
     }
 
 [Fact]
