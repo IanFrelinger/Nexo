@@ -48,10 +48,16 @@ public sealed class FileBasedInstanceDiscovery : IInstanceDiscovery
                 var trustTier = PeerTrustTier.Unknown;
                 if (peer.TryGetProperty("trustTier", out var trustTierElement))
                 {
-                    var parsed = trustTierElement.GetString();
-                    if (Enum.TryParse<PeerTrustTier>(parsed, true, out var tier))
+                    if (trustTierElement.ValueKind == JsonValueKind.String)
                     {
-                        trustTier = tier;
+                        if (Enum.TryParse<PeerTrustTier>(trustTierElement.GetString(), true, out var tier))
+                            trustTier = tier;
+                    }
+                    else if (trustTierElement.ValueKind == JsonValueKind.Number &&
+                             trustTierElement.TryGetInt32(out var numericTier) &&
+                             Enum.IsDefined(typeof(PeerTrustTier), numericTier))
+                    {
+                        trustTier = (PeerTrustTier)numericTier;
                     }
                 }
                 var effectiveTier = _trustPolicyResolver.ResolveTier(new PeerInfo

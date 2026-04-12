@@ -71,7 +71,12 @@ public sealed class FileBasedCapabilityAdvertisement : ICapabilityAdvertisement
             TrustTier = _trustTier
         });
 
-        File.WriteAllText(_instancesPath, JsonSerializer.Serialize(entries, new JsonSerializerOptions { WriteIndented = true }));
+        var serializerOptions = new JsonSerializerOptions
+        {
+            WriteIndented = true,
+            Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() }
+        };
+        File.WriteAllText(_instancesPath, JsonSerializer.Serialize(entries, serializerOptions));
         return Task.CompletedTask;
     }
 
