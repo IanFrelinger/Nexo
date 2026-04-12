@@ -27,6 +27,14 @@ internal static class ComponentDescriptorValidator
         if (!Version.TryParse(descriptor.Version, out _))
             issues.Add(new ComponentValidationIssue("metadata.invalid-version", descriptor.Id, $"Version '{descriptor.Version}' is not a valid semantic version."));
 
+        if (descriptor.SupportLevel == ComponentSupportLevel.Stable)
+        {
+            if (string.IsNullOrWhiteSpace(descriptor.InputSchema))
+                issues.Add(new ComponentValidationIssue("metadata.missing-input-schema", descriptor.Id, "InputSchema is required when SupportLevel is Stable."));
+            if (string.IsNullOrWhiteSpace(descriptor.OutputSchema))
+                issues.Add(new ComponentValidationIssue("metadata.missing-output-schema", descriptor.Id, "OutputSchema is required when SupportLevel is Stable."));
+        }
+
         return issues;
     }
 }

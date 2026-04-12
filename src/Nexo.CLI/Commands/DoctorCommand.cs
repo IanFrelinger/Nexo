@@ -23,12 +23,14 @@ public sealed class DoctorCommand : Command
             "Doctor profile: demo | self-extend-functional | self-extend-aesthetic | self-extend-visual.");
         var jsonOpt = new Option<bool>("--json", () => false, "Emit JSON output.");
         var fixOpt = new Option<bool>("--fix", () => false, "Attempt safe remediation for fixable onboarding failures.");
+        var dryRunOpt = new Option<bool>("--dry-run", () => false, "With --fix, list remediation actions without running them.");
         var yesOpt = new Option<bool>("--yes", () => false, "Auto-approve remediation actions when --fix is enabled.");
 
         AddOption(includeOptionalOpt);
         AddOption(profileOpt);
         AddOption(jsonOpt);
         AddOption(fixOpt);
+        AddOption(dryRunOpt);
         AddOption(yesOpt);
 
         this.SetHandler(async (InvocationContext ctx) =>
@@ -37,8 +39,9 @@ public sealed class DoctorCommand : Command
             var profile = ctx.ParseResult.GetValueForOption(profileOpt) ?? "demo";
             var json = ctx.ParseResult.GetValueForOption(jsonOpt);
             var fix = ctx.ParseResult.GetValueForOption(fixOpt);
+            var dryRun = ctx.ParseResult.GetValueForOption(dryRunOpt);
             var yes = ctx.ParseResult.GetValueForOption(yesOpt);
-            ctx.ExitCode = await ExecuteAsync(profile, includeOptional, json, fix, yes, ctx.GetCancellationToken()).ConfigureAwait(false);
+            ctx.ExitCode = await ExecuteAsync(profile, includeOptional, json, fix, dryRun, yes, ctx.GetCancellationToken()).ConfigureAwait(false);
         });
     }
 
@@ -47,6 +50,7 @@ public sealed class DoctorCommand : Command
         bool includeOptional,
         bool json,
         bool fix,
+        bool dryRun,
         bool autoApproveFixes,
         CancellationToken ct)
     {
@@ -69,6 +73,9 @@ public sealed class DoctorCommand : Command
         var remediation = new DoctorRemediationReport();
         if (fix)
         {
+            if (dryRun && !json)
+                Console.WriteLine("doctor --fix --dry-run: planned remediation (no commands executed):");
+
             remediation = await DoctorRemediation.RunAsync(
                 dependencyAssessment,
                 osSupported,
@@ -77,16 +84,20 @@ public sealed class DoctorCommand : Command
                 includeOptional,
                 autoApproveFixes,
                 json,
+                dryRun,
                 ct).ConfigureAwait(false);
 
-            var postAssessment = await BootstrapRuntime.AssessDemoAsync(profile, includeOptional, ct).ConfigureAwait(false);
-            dependencyAssessment = postAssessment;
-            dependencyOk = postAssessment.Supported && !postAssessment.MissingRequired.Any();
+            if (!dryRun)
+            {
+                var postAssessment = await BootstrapRuntime.AssessDemoAsync(profile, includeOptional, ct).ConfigureAwait(false);
+                dependencyAssessment = postAssessment;
+                dependencyOk = postAssessment.Supported && !postAssessment.MissingRequired.Any();
 
-            var (postCliExitCode, _, postCliStderr) = await RunShellCaptureAsync(cliCommand, ct).ConfigureAwait(false);
-            cliSmokePassed = postCliExitCode == 0;
-            cliSmokeError = cliSmokePassed ? string.Empty : postCliStderr.Trim();
-            overallOk = osSupported && dependencyOk && cliSmokePassed;
+                var (postCliExitCode, _, postCliStderr) = await RunShellCaptureAsync(cliCommand, ct).ConfigureAwait(false);
+                cliSmokePassed = postCliExitCode == 0;
+                cliSmokeError = cliSmokePassed ? string.Empty : postCliStderr.Trim();
+                overallOk = osSupported && dependencyOk && cliSmokePassed;
+            }
         }
 
         if (json)
@@ -149,7 +160,7 @@ public sealed class DoctorCommand : Command
 
             if (fix)
             {
-                Console.WriteLine("remediation:");
+                Console.WriteLine(dryRun ? "remediation (dry run):" : "remediation:");
                 if (remediation.Attempts.Count == 0)
                 {
                     Console.WriteLine("  no fixable issues were detected.");
@@ -158,8 +169,13 @@ public sealed class DoctorCommand : Command
                 {
                     foreach (var attempt in remediation.Attempts)
                     {
+                        var outcomeLabel = dryRun
+                            ? "would-run"
+                            : attempt.Success ? "fixed" : "not-fixed";
                         Console.WriteLine(
-                            $"  - {attempt.Id}: {(attempt.Success ? "fixed" : "not-fixed")} ({attempt.Status})");
+                            $"  - {attempt.Id}: {outcomeLabel} ({attempt.Status})");
+                        if (!string.IsNullOrWhiteSpace(attempt.Command))
+                            Console.WriteLine($"      command: {attempt.Command}");
                         if (!string.IsNullOrWhiteSpace(attempt.Message))
                             Console.WriteLine($"      {attempt.Message}");
                     }

@@ -2,6 +2,7 @@ using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Diagnostics;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Nexo.Core.Application.Paths;
 
 namespace Nexo.CLI.Commands;
@@ -39,7 +40,7 @@ public sealed class CiCommand : Command
         AddCommand(runtimePromotionCmd);
 
         var releaseBundleCmd = new Command("release-bundle", "Run a single-shot release gate bundle and emit unified report.");
-        var profileOpt = new Option<string>("--profile", () => "default", "Bundle profile: default | quick.");
+        var profileOpt = new Option<string>("--profile", () => "default", "Bundle profile: default | quick | full.");
         var outputDirOpt = new Option<string?>("--output-dir", "Optional output directory for unified report artifacts.");
         releaseBundleCmd.AddOption(profileOpt);
         releaseBundleCmd.AddOption(outputDirOpt);
@@ -167,11 +168,12 @@ public sealed class CiCommand : Command
         var steps = BuildReleaseBundleSteps(normalizedProfile, cliProject, repoRoot);
         if (steps.Count == 0)
         {
-            Console.Error.WriteLine($"ci release-bundle: Unknown profile '{profile}'. Supported profiles: default, quick.");
+            Console.Error.WriteLine($"ci release-bundle: Unknown profile '{profile}'. Supported profiles: default, quick, full.");
             return 1;
         }
 
         var results = new List<ReleaseBundleStepResult>();
+        var sloSummaries = new List<ReleaseBundleSloEvidenceSummary>();
         foreach (var step in steps)
         {
             Console.WriteLine($"=== Release Bundle: {step.Name} ===");
@@ -190,6 +192,12 @@ public sealed class CiCommand : Command
                 startedUtc,
                 endedUtc,
                 artifactHints));
+
+            foreach (var relativeSloPath in step.SloEvidenceRelativePaths)
+            {
+                var fullSloPath = Path.GetFullPath(Path.Combine(repoRoot, relativeSloPath));
+                sloSummaries.Add(TryParseSloEvidenceSummary(step.Id, step.Name, relativeSloPath, fullSloPath));
+            }
         }
 
         var verdict = results.All(result => result.ExitCode == 0) ? "PASS" : "FAIL";
@@ -202,6 +210,7 @@ public sealed class CiCommand : Command
             DateTimeOffset.UtcNow,
             verdict,
             results,
+            sloSummaries,
             jsonPath,
             markdownPath);
 
@@ -250,19 +259,18 @@ public sealed class CiCommand : Command
                 "CI verify",
                 "dotnet",
                 $"run --project \"{cliProject}\" -- ci verify",
-                [
-                    ".nexo/runtime/release-gate/last-run/runtime-release-gate-slo.json",
-                    ".nexo/runtime/release-gate/last-run/runtime-release-gate-slo.md"
-                ]),
+                [],
+                []),
             new(
                 "runtime-gate",
                 "Runtime gate",
                 "dotnet",
                 $"run --project \"{cliProject}\" -- ci runtime-gate",
                 [
-                    ".nexo/runtime/release-gate/last-run/runtime-release-gate-slo.json",
-                    ".nexo/runtime/release-gate/last-run/runtime-release-gate-slo.md"
-                ]),
+                    ".nexo/runtime/runtime-release-gate-slo.json",
+                    ".nexo/runtime/runtime-release-gate-slo.md"
+                ],
+                [".nexo/runtime/runtime-release-gate-slo.json"]),
             new(
                 "doctor",
                 "Doctor check",
@@ -270,13 +278,36 @@ public sealed class CiCommand : Command
                 $"run --project \"{cliProject}\" -- doctor --json",
                 [
                     "docs/OnboardingAutomation.md"
-                ])
+                ],
+                [])
         };
 
         if (profile == "quick")
             return defaultSteps.Where(step => step.Id != "verify").ToList();
         if (profile == "default")
             return defaultSteps;
+        if (profile == "full")
+        {
+            var fullSteps = new List<ReleaseBundleStep>(defaultSteps)
+            {
+                new(
+                    "trust-gate",
+                    "Trust gate",
+                    "dotnet",
+                    $"run --project \"{cliProject}\" -- trust boundary --format-json",
+                    [],
+                    []),
+                new(
+                    "cross-platform-smoke",
+                    "Cross-platform smoke",
+                    "dotnet",
+                    $"run --project \"{cliProject}\" -- test portable --scope smoke",
+                    [],
+                    [])
+            };
+            return fullSteps;
+        }
+
         return new List<ReleaseBundleStep>();
     }
 
@@ -318,7 +349,112 @@ public sealed class CiCommand : Command
             lines.Add($"| {step.Name} | {step.ExitCode} | {step.StartedUtc:O} | {step.EndedUtc:O} | {artifacts} |");
         }
 
+        lines.Add(string.Empty);
+        lines.Add("## SLO evidence summary");
+        lines.Add(string.Empty);
+        if (report.SloEvidenceSummaries.Count == 0)
+        {
+            lines.Add("_No SLO evidence paths configured for this profile._");
+        }
+        else
+        {
+            lines.Add("| Step | SLO artifact | Present | Parsed | Overall SLO | Mode | ncr.failure_rate | Failures (checks) |");
+            lines.Add("|------|--------------|---------|--------|-------------|------|-------------------|-------------------|");
+            foreach (var slo in report.SloEvidenceSummaries)
+            {
+                var present = slo.FileExists ? "yes" : "no";
+                var parsed = slo.Parsed ? "yes" : "no";
+                var overall = slo.OverallPassed.HasValue ? (slo.OverallPassed.Value ? "PASS" : "FAIL") : "n/a";
+                var mode = slo.Mode ?? "n/a";
+                var fr = slo.NcrFailureRate.HasValue ? slo.NcrFailureRate.Value.ToString("0.####") : "n/a";
+                var failures = slo.FailedCheckCount.HasValue ? slo.FailedCheckCount.Value.ToString() : "n/a";
+                lines.Add($"| {slo.StepName} | `{slo.RelativePath}` | {present} | {parsed} | {overall} | {mode} | {fr} | {failures} |");
+            }
+        }
+
         return string.Join(Environment.NewLine, lines);
+    }
+
+    private static ReleaseBundleSloEvidenceSummary TryParseSloEvidenceSummary(
+        string stepId,
+        string stepName,
+        string relativePath,
+        string fullPath)
+    {
+        if (!File.Exists(fullPath))
+        {
+            return new ReleaseBundleSloEvidenceSummary(
+                stepId,
+                stepName,
+                relativePath,
+                fullPath,
+                FileExists: false,
+                Parsed: false,
+                ParseError: null,
+                OverallPassed: null,
+                Mode: null,
+                NcrFailureRate: null,
+                FailedCheckCount: null);
+        }
+
+        try
+        {
+            var root = JsonNode.Parse(File.ReadAllText(fullPath));
+            if (root is null)
+            {
+                return new ReleaseBundleSloEvidenceSummary(
+                    stepId,
+                    stepName,
+                    relativePath,
+                    fullPath,
+                    FileExists: true,
+                    Parsed: false,
+                    ParseError: "empty document",
+                    OverallPassed: null,
+                    Mode: null,
+                    NcrFailureRate: null,
+                    FailedCheckCount: null);
+            }
+
+            var passed = root["passed"]?.GetValue<bool?>();
+            var mode = root["mode"]?.GetValue<string>();
+            var failureRate = root["metrics"]?["ncrFailureRate"]?.GetValue<double?>();
+            int? failedChecks = null;
+            if (root["checks"] is JsonArray checkArr)
+            {
+                failedChecks = checkArr
+                    .OfType<JsonObject>()
+                    .Count(c => c["passed"]?.GetValue<bool?>() == false);
+            }
+
+            return new ReleaseBundleSloEvidenceSummary(
+                stepId,
+                stepName,
+                relativePath,
+                fullPath,
+                FileExists: true,
+                Parsed: true,
+                ParseError: null,
+                OverallPassed: passed,
+                Mode: mode,
+                NcrFailureRate: failureRate,
+                FailedCheckCount: failedChecks);
+        }
+        catch (Exception ex)
+        {
+            return new ReleaseBundleSloEvidenceSummary(
+                stepId,
+                stepName,
+                relativePath,
+                fullPath,
+                FileExists: true,
+                Parsed: false,
+                ParseError: ex.Message,
+                OverallPassed: null,
+                Mode: null,
+                NcrFailureRate: null,
+                FailedCheckCount: null);
+        }
     }
 
     private sealed record ReleaseBundleStep(
@@ -326,7 +462,8 @@ public sealed class CiCommand : Command
         string Name,
         string FileName,
         string Arguments,
-        IReadOnlyList<string> ArtifactHints);
+        IReadOnlyList<string> ArtifactHints,
+        IReadOnlyList<string> SloEvidenceRelativePaths);
 
     private sealed record ReleaseBundleStepResult(
         string Id,
@@ -343,6 +480,20 @@ public sealed class CiCommand : Command
         DateTimeOffset GeneratedUtc,
         string Verdict,
         IReadOnlyList<ReleaseBundleStepResult> Steps,
+        IReadOnlyList<ReleaseBundleSloEvidenceSummary> SloEvidenceSummaries,
         string JsonReportPath,
         string MarkdownReportPath);
+
+    private sealed record ReleaseBundleSloEvidenceSummary(
+        string StepId,
+        string StepName,
+        string RelativePath,
+        string FullPath,
+        bool FileExists,
+        bool Parsed,
+        string? ParseError,
+        bool? OverallPassed,
+        string? Mode,
+        double? NcrFailureRate,
+        int? FailedCheckCount);
 }

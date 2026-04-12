@@ -20,6 +20,7 @@ public sealed class NexoSdkBuilder
     /// Configures the SDK to prefer edge (local) when available, falling back to server.
     /// Reads NEXO_LOAD_PREFERENCE (edge|server|auto) when set.
     /// </summary>
+    [Obsolete("Adaptive routing configuration is experimental and may change. Prefer explicit host integration for production use.")]
     public NexoSdkBuilder UseAdaptiveRouting()
     {
         // When embedded in a host with AdaptiveProviderFactory, the host configures routing.

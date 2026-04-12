@@ -64,7 +64,6 @@ jobs:
 
       - name: Build Docker image
         if: matrix.environment.type == 'docker'
-        continue-on-error: true
         run: |
           docker build \
             -f ${{ matrix.environment.dockerfile }} \
@@ -74,7 +73,6 @@ jobs:
 
       - name: Run Base Framework Tests (Docker)
         if: matrix.environment.type == 'docker'
-        continue-on-error: true
         run: |
           docker run --rm \
             -v ${{ github.workspace }}/test-results:/workspace/test-results \
@@ -89,7 +87,7 @@ jobs:
 
       - name: Run Base Framework Tests (Native)
         if: matrix.environment.type == 'native'
-        run: dotnet run --project src/Nexo.CLI -- test multi-env --suite caching --env ${{ matrix.environment.name }} || true
+        run: dotnet run --project src/Nexo.CLI -- test multi-env --suite caching --env ${{ matrix.environment.name }}
 
       - name: Publish Test Results
         if: always() && runner.os != 'Windows'
@@ -117,7 +115,13 @@ jobs:
     needs: test-caching
     if: always()
     steps:
-      - name: Check test results
+      - name: Aggregate results
         run: |
-          echo "All caching tests completed across all environments"
-          echo "Check individual job results for details"
+          if [ "${{ needs.test-caching.result }}" = "failure" ]; then
+            echo "::error::One or more caching test environments failed"
+            exit 1
+          elif [ "${{ needs.test-caching.result }}" = "cancelled" ]; then
+            echo "::warning::Caching tests were cancelled"
+            exit 1
+          fi
+          echo "All caching tests passed across all environments"

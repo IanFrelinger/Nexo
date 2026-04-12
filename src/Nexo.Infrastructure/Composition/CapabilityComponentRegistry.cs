@@ -153,6 +153,8 @@ public sealed class CapabilityComponentRegistry : ICapabilityComponentRegistry
             ImplementationType = "Nexo.Infrastructure.Analysis.BrickAnalyzer.RoslynBrickStaticAnalyzer, Nexo.Infrastructure",
             Version = "1.0.0",
             SupportLevel = ComponentSupportLevel.Stable,
+            InputSchema = "{\"type\":\"object\",\"properties\":{\"path\":{\"type\":\"string\"}}}",
+            OutputSchema = "{\"type\":\"object\",\"properties\":{\"passed\":{\"type\":\"boolean\"},\"violations\":{\"type\":\"array\"}}}",
         });
     }
 
@@ -171,6 +173,8 @@ public sealed class CapabilityComponentRegistry : ICapabilityComponentRegistry
             ImplementationType = "Nexo.Core.Application.ParallelTesting.Ports.IParameterMatrixGenerator",
             Version = "1.0.0",
             SupportLevel = ComponentSupportLevel.Stable,
+            InputSchema = "{\"type\":\"object\",\"properties\":{\"projectPath\":{\"type\":\"string\"}}}",
+            OutputSchema = "{\"type\":\"object\",\"properties\":{\"matrix\":{\"type\":\"array\"}}}",
         });
         Register(new ComponentDescriptor
         {
@@ -181,6 +185,8 @@ public sealed class CapabilityComponentRegistry : ICapabilityComponentRegistry
             ImplementationType = "Nexo.Core.Application.ParallelTesting.Ports.IInstanceSpawner",
             Version = "1.0.0",
             SupportLevel = ComponentSupportLevel.Stable,
+            InputSchema = "{\"type\":\"object\",\"properties\":{\"matrix\":{\"type\":\"array\"},\"filter\":{\"type\":\"string\"}}}",
+            OutputSchema = "{\"type\":\"object\",\"properties\":{\"runs\":{\"type\":\"array\"}}}",
             RequiredCapabilities = ["test-discovery"],
         });
         Register(new ComponentDescriptor
@@ -192,6 +198,8 @@ public sealed class CapabilityComponentRegistry : ICapabilityComponentRegistry
             ImplementationType = "Nexo.Core.Application.ParallelTesting.Ports.IResultCollector",
             Version = "1.0.0",
             SupportLevel = ComponentSupportLevel.Stable,
+            InputSchema = "{\"type\":\"object\",\"properties\":{\"runs\":{\"type\":\"array\"}}}",
+            OutputSchema = "{\"type\":\"object\",\"properties\":{\"summary\":{\"type\":\"string\"},\"passed\":{\"type\":\"boolean\"}}}",
             RequiredCapabilities = ["test-execution"],
         });
     }
@@ -214,6 +222,8 @@ public sealed class CapabilityComponentRegistry : ICapabilityComponentRegistry
             ImplementationType = "Nexo.Infrastructure.Observation.ObservationContextBrick, Nexo.Infrastructure",
             Version = "1.0.0",
             SupportLevel = ComponentSupportLevel.Stable,
+            InputSchema = "{\"type\":\"object\",\"properties\":{\"projectPath\":{\"type\":\"string\"},\"since\":{\"type\":\"string\"}}}",
+            OutputSchema = "{\"type\":\"object\",\"properties\":{\"patterns\":{\"type\":\"array\"},\"events\":{\"type\":\"array\"}}}",
         });
         Register(new ComponentDescriptor
         {
@@ -224,6 +234,8 @@ public sealed class CapabilityComponentRegistry : ICapabilityComponentRegistry
             ImplementationType = "Nexo.Infrastructure.Analysis.BrickAnalyzer.RoslynBrickStaticAnalyzer, Nexo.Infrastructure",
             Version = "1.0.0",
             SupportLevel = ComponentSupportLevel.Stable,
+            InputSchema = "{\"type\":\"object\",\"properties\":{\"path\":{\"type\":\"string\"}}}",
+            OutputSchema = "{\"type\":\"object\",\"properties\":{\"passed\":{\"type\":\"boolean\"},\"violations\":{\"type\":\"array\"}}}",
             RequiredCapabilities = ["perception"],
         });
         Register(new ComponentDescriptor
@@ -235,6 +247,8 @@ public sealed class CapabilityComponentRegistry : ICapabilityComponentRegistry
             ImplementationType = "Nexo.Infrastructure.SelfContext.ChangelogGenerator, Nexo.Infrastructure",
             Version = "1.0.0",
             SupportLevel = ComponentSupportLevel.Stable,
+            InputSchema = "{\"type\":\"object\",\"properties\":{\"since\":{\"type\":\"string\"},\"format\":{\"type\":\"string\"}}}",
+            OutputSchema = "{\"type\":\"object\",\"properties\":{\"report\":{\"type\":\"string\"}}}",
             RequiredCapabilities = ["validation"],
         });
         Register(new ComponentDescriptor
@@ -246,6 +260,8 @@ public sealed class CapabilityComponentRegistry : ICapabilityComponentRegistry
             ImplementationType = "Nexo.Infrastructure.Observation.ObservationContextBrick, Nexo.Infrastructure",
             Version = "1.0.0",
             SupportLevel = ComponentSupportLevel.Stable,
+            InputSchema = "{\"type\":\"object\",\"properties\":{\"context\":{\"type\":\"object\"}}}",
+            OutputSchema = "{\"type\":\"object\",\"properties\":{\"interpretation\":{\"type\":\"object\"}}}",
         });
 
         // Perception (specialized)

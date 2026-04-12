@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Nexo.BrickContracts.Capabilities;
+using Nexo.Core.Application.Copilot.Models;
+using Nexo.Core.Application.Copilot.Ports;
 using Nexo.Core.Application.Knowledge.Models;
 using Nexo.Core.Application.Knowledge.Ports;
 using Nexo.Core.Application.Agent.UseCases.RunAgent;
@@ -62,6 +64,11 @@ public static class NexoEndpoints
             .Produces<CopilotTaskResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
+
+        group.MapGet("/copilot/tasks", ListCopilotTasksAsync)
+            .WithName("ListCopilotTasks")
+            .WithSummary("List recent copilot tasks (newest first)")
+            .Produces<IReadOnlyList<CopilotTaskRecord>>(StatusCodes.Status200OK);
 
         group.MapGet("/status", GetStatusAsync)
             .WithName("GetStatus")
@@ -245,6 +252,7 @@ public static class NexoEndpoints
     private static async Task<IResult> RunCopilotTaskAsync(
         [FromBody] CopilotTaskRequest request,
         [FromServices] Orchestrator orchestrator,
+        [FromServices] ICopilotTaskStore copilotTaskStore,
         [FromServices] IDataDecisionAuditLog? auditLog,
         [FromServices] IAccessBoundary? accessBoundary,
         CancellationToken cancellationToken)
@@ -252,26 +260,73 @@ public static class NexoEndpoints
         if (string.IsNullOrWhiteSpace(request?.Task))
             return Results.BadRequest(new ProblemDetails { Title = "Task is required" });
 
+        var taskId = Guid.NewGuid().ToString("D");
+        var submittedAt = DateTimeOffset.UtcNow;
+        await copilotTaskStore.StoreAsync(new CopilotTaskRecord
+        {
+            TaskId = taskId,
+            Task = request.Task.Trim(),
+            SubmittedAt = submittedAt,
+            CompletedAt = null,
+            Success = false,
+            Summary = null,
+            Error = null
+        }, cancellationToken);
+
         try
         {
             var result = await orchestrator.OrchestrateAsync(request.Task, cancellationToken);
             var auditCount = Math.Clamp(request.AuditCount <= 0 ? 25 : request.AuditCount, 1, 200);
             var recentAudit = auditLog?.GetRecent(auditCount) ?? [];
+            var summary = result.IntegratedOutput != null ? $"{result.IntegratedOutput.AgentOutputs.Count} agent(s) executed" : null;
+            await copilotTaskStore.StoreAsync(new CopilotTaskRecord
+            {
+                TaskId = taskId,
+                Task = request.Task.Trim(),
+                SubmittedAt = submittedAt,
+                CompletedAt = DateTimeOffset.UtcNow,
+                Success = result.Success,
+                Summary = summary,
+                Error = null
+            }, cancellationToken);
             return Results.Ok(new CopilotTaskResponse(
+                taskId,
                 result.Success,
-                result.IntegratedOutput != null ? $"{result.IntegratedOutput.AgentOutputs.Count} agent(s) executed" : null,
+                summary,
                 result.IntegratedOutput?.IntegratedResults,
                 accessBoundary?.IsObservationPaused ?? false,
                 recentAudit));
         }
         catch (Exception ex)
         {
+            await copilotTaskStore.StoreAsync(new CopilotTaskRecord
+            {
+                TaskId = taskId,
+                Task = request.Task.Trim(),
+                SubmittedAt = submittedAt,
+                CompletedAt = DateTimeOffset.UtcNow,
+                Success = false,
+                Summary = null,
+                Error = ex.Message
+            }, cancellationToken);
             return Results.Problem(detail: ex.Message, statusCode: StatusCodes.Status500InternalServerError);
         }
     }
 
+    private static async Task<IResult> ListCopilotTasksAsync(
+        [FromServices] ICopilotTaskStore copilotTaskStore,
+        [FromQuery] int maxCount = 50,
+        [FromQuery] DateTimeOffset? since = null,
+        CancellationToken cancellationToken = default)
+    {
+        maxCount = Math.Clamp(maxCount <= 0 ? 50 : maxCount, 1, 500);
+        var tasks = await copilotTaskStore.QueryAsync(maxCount, since, cancellationToken);
+        return Results.Ok(tasks);
+    }
+
     private static async Task<IResult> GetStatusAsync(
         [FromServices] IServiceProvider services,
+        [FromServices] IAccessBoundary? accessBoundary,
         CancellationToken cancellationToken)
     {
         await Task.CompletedTask;
@@ -280,7 +335,14 @@ public static class NexoEndpoints
         var registry = services.GetService<IBackgroundAgentRegistry>();
         var activeAgents = registry?.GetAll().Count(a => a.State == BackgroundAgentState.Running) ?? 0;
         var totalAgents = registry?.GetAll().Count ?? 0;
-        return Results.Ok(new StatusResponse(mode.ToString(), "Nexo API is running", totalAgents, activeAgents));
+        var activePack = accessBoundary?.GetActivePolicyPack();
+        return Results.Ok(new StatusResponse(
+            mode.ToString(),
+            "Nexo API is running",
+            totalAgents,
+            activeAgents,
+            activePack?.Id,
+            activePack?.Version));
     }
 
     private static async Task<IResult> BuildImageAsync(
@@ -774,13 +836,20 @@ public sealed record OrchestrationResponse(
     string? ErrorCode = null);
 public sealed record CopilotTaskRequest(string Task, int AuditCount = 25);
 public sealed record CopilotTaskResponse(
+    string TaskId,
     bool Success,
     string? Summary,
     object? Output,
     bool IsTrustPaused,
     IReadOnlyList<Nexo.Core.Application.Trust.Models.DataDecisionAuditEntry> RecentAudit);
 
-public sealed record StatusResponse(string Mode, string Message, int TotalAgents, int ActiveAgents);
+public sealed record StatusResponse(
+    string Mode,
+    string Message,
+    int TotalAgents,
+    int ActiveAgents,
+    string? ActivePackId,
+    string? ActivePackVersion);
 
 public sealed record ExecutionBuildRequest(string DockerfilePath, string ImageTag, string ContextPath, Dictionary<string, string>? BuildArgs = null);
 public sealed record ExecutionBuildResponse(bool Success, string? ErrorMessage, double DurationMs);

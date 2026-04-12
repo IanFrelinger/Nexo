@@ -696,6 +696,20 @@ static class Program
             jsonOpt);
         trustPackCmd.AddCommand(trustPackListCmd);
 
+        var trustPackDescribeCmd = new Command("describe", "Show rules for a trust policy pack");
+        var trustPackDescribeIdArg = new Argument<string>("packId", "Policy pack id");
+        trustPackDescribeCmd.AddArgument(trustPackDescribeIdArg);
+        trustPackDescribeCmd.AddOption(jsonOpt);
+        trustPackDescribeCmd.SetHandler(
+            async (string packId, bool formatJson) =>
+            {
+                var cmd = ServiceProvider.GetRequiredService<TrustCommand>();
+                Environment.Exit(await cmd.DescribePolicyPackAsync(packId, formatJson));
+            },
+            trustPackDescribeIdArg,
+            jsonOpt);
+        trustPackCmd.AddCommand(trustPackDescribeCmd);
+
         var trustPackApplyCmd = new Command("apply", "Apply a trust policy pack by id");
         var trustPackIdOpt = new Option<string>("--id", "Policy pack id (strict-enterprise, internal-only, air-gapped)");
         trustPackIdOpt.IsRequired = true;

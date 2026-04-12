@@ -3,6 +3,7 @@ using System.CommandLine.Invocation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Adaptation.Ports;
+using Nexo.Core.Application.Mesh;
 using Nexo.Core.Application.Mesh.Models;
 using Nexo.Core.Application.Mesh.Ports;
 using Nexo.Infrastructure;
@@ -54,6 +55,42 @@ public sealed class MeshCommand : Command
             await ExecuteImportAsync(path);
         });
 
+        var admitPeerArg = new Argument<string>("peerId", "Peer id to admit in instances.json");
+        var admitCmd = new Command("admit", "Set admitted=true for a peer in instances.json");
+        admitCmd.AddArgument(admitPeerArg);
+        admitCmd.SetHandler((InvocationContext ctx) =>
+        {
+            var peerId = ctx.ParseResult.GetValueForArgument(admitPeerArg)!;
+            var ok = UpdatePeerAdmitted(peerId, admitted: true);
+            if (!ok)
+            {
+                Console.Error.WriteLine($"Peer '{peerId}' not found in instances.json.");
+                ctx.ExitCode = 1;
+                return;
+            }
+
+            Console.WriteLine($"Admitted peer '{peerId}' (admitted=true).");
+            ctx.ExitCode = 0;
+        });
+
+        var revokePeerArg = new Argument<string>("peerId", "Peer id to revoke in instances.json");
+        var revokeCmd = new Command("revoke", "Set admitted=false for a peer in instances.json");
+        revokeCmd.AddArgument(revokePeerArg);
+        revokeCmd.SetHandler((InvocationContext ctx) =>
+        {
+            var peerId = ctx.ParseResult.GetValueForArgument(revokePeerArg)!;
+            var ok = UpdatePeerAdmitted(peerId, admitted: false);
+            if (!ok)
+            {
+                Console.Error.WriteLine($"Peer '{peerId}' not found in instances.json.");
+                ctx.ExitCode = 1;
+                return;
+            }
+
+            Console.WriteLine($"Revoked peer '{peerId}' (admitted=false).");
+            ctx.ExitCode = 0;
+        });
+
         AddOption(discoverOpt);
         AddOption(advertiseOpt);
         AddOption(capabilityOpt);
@@ -62,6 +99,8 @@ public sealed class MeshCommand : Command
         AddCommand(capabilitiesCmd);
         AddCommand(exportCmd);
         AddCommand(importCmd);
+        AddCommand(admitCmd);
+        AddCommand(revokeCmd);
 
         this.SetHandler(async (InvocationContext ctx) =>
         {
@@ -179,6 +218,8 @@ public sealed class MeshCommand : Command
         {
             var discovery = services.GetRequiredService<IInstanceDiscovery>();
             var peers = await discovery.DiscoverAsync().ConfigureAwait(false);
+            var trustPolicy = MeshTrustPolicyConfiguration.ResolveDiscoveryPolicy();
+            Console.WriteLine($"Active mesh trust policy: {trustPolicy} (NEXO_MESH_TRUST_POLICY or NEXO_PEER_TRUST_POLICY; default any)");
             Console.WriteLine($"Discovered {peers.Count} peer(s):");
             foreach (var p in peers)
                 Console.WriteLine($"  - {p.PeerId} @ {p.Endpoint} tier={p.TrustTier} [{string.Join(", ", p.Capabilities)}]");
@@ -201,7 +242,7 @@ public sealed class MeshCommand : Command
         }
 
         if (!discover && !advertise && string.IsNullOrEmpty(capability) && string.IsNullOrWhiteSpace(setTrustTier))
-            Console.WriteLine("Use --discover, --advertise, --capability <name>, or --set-trust-tier <peerId>:<tier>");
+            Console.WriteLine("Use --discover, --advertise, --capability <name>, --set-trust-tier <peerId>:<tier>, mesh admit, or mesh revoke");
         Environment.ExitCode = 0;
     }
 
@@ -220,6 +261,16 @@ public sealed class MeshCommand : Command
 
     private static bool UpdatePeerTrustTier(string peerId, PeerTrustTier tier)
     {
+        return UpdatePeerJsonField(peerId, obj => obj["trustTier"] = tier.ToString());
+    }
+
+    private static bool UpdatePeerAdmitted(string peerId, bool admitted)
+    {
+        return UpdatePeerJsonField(peerId, obj => obj["admitted"] = admitted);
+    }
+
+    private static bool UpdatePeerJsonField(string peerId, Action<JsonObject> mutator)
+    {
         var instancesPath = ResolveInstancesPath();
         if (!File.Exists(instancesPath))
             return false;
@@ -236,7 +287,7 @@ public sealed class MeshCommand : Command
             if (entry == null)
                 return false;
 
-            entry["trustTier"] = tier.ToString();
+            mutator(entry);
             File.WriteAllText(instancesPath, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
             return true;
         }

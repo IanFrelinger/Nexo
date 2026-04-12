@@ -51,6 +51,13 @@ Use this page as the navigation starting point for docs.
 - `docs/SelfHostedAgentServer.md` — `docker-compose.agent-server.yml`: mounted workspace + env template `docs/config/agent-server.env.example`.
 - `docs/Phase1SecureCopilotWalkthrough.md` — first-success secure copilot MVP walkthrough using `docker-compose.agent-server.yml`.
 
+## Planning & Roadmap
+
+- `docs/ExecutionPlan.md` — phased execution plan with implementation tasks, dependencies, and success metrics.
+- `docs/IssueBatch_30-60-90_Roadmap.md` — 30/60/90 gap-closure issue batch (issue templates).
+- `docs/NorthStarGapAnalysis.md` — North Star vs codebase gap analysis with status tracking.
+- `docs/GapAnalysis.md` — dogfood, observe→improve, trust, and documentation gap analysis.
+
 ## Additional Material
 
 - `docs/Persistence.md` — persistence behavior and options.

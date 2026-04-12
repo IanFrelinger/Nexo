@@ -392,6 +392,105 @@ public class TrustCommand
         return null;
     }
 
+    public Task<int> DescribePolicyPackAsync(string? packId, bool formatJson, CancellationToken ct = default)
+    {
+        try
+        {
+            if (_policyPackRegistry == null)
+            {
+                if (formatJson)
+                    Console.Out.WriteLine("{\"ok\":false,\"error\":\"Trust policy pack registry not registered\"}");
+                else
+                    Console.Error.WriteLine("Trust policy pack registry not registered.");
+                return Task.FromResult(1);
+            }
+
+            if (string.IsNullOrWhiteSpace(packId))
+            {
+                if (formatJson)
+                    Console.Out.WriteLine("{\"ok\":false,\"error\":\"pack id is required\"}");
+                else
+                    Console.Error.WriteLine("pack id is required");
+                return Task.FromResult(1);
+            }
+
+            var pack = _policyPackRegistry.GetById(packId.Trim());
+            if (pack == null)
+            {
+                if (formatJson)
+                    Console.Out.WriteLine($"{{\"ok\":false,\"error\":\"unknown pack '{packId.Trim()}'\"}}");
+                else
+                    Console.Error.WriteLine($"unknown pack '{packId.Trim()}'");
+                return Task.FromResult(1);
+            }
+
+            if (formatJson)
+            {
+                Console.Out.WriteLine(System.Text.Json.JsonSerializer.Serialize(
+                    new
+                    {
+                        ok = true,
+                        pack = new
+                        {
+                            pack.Id,
+                            pack.Version,
+                            pack.DisplayName,
+                            pack.Description,
+                            pack.PauseObservationByDefault,
+                            pack.RecommendedFor,
+                            categoryRules = pack.CategoryRules,
+                            sourceRules = pack.SourceRules,
+                            projectRules = pack.ProjectRules.Select(rule => new
+                            {
+                                rule.ProjectPath,
+                                sourceRules = rule.SourceRules
+                            }).ToArray()
+                        }
+                    },
+                    new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+            }
+            else
+            {
+                Console.Out.WriteLine($"Trust policy pack: {pack.Id}@{pack.Version}");
+                Console.Out.WriteLine($"  {pack.DisplayName}");
+                if (!string.IsNullOrWhiteSpace(pack.Description))
+                    Console.Out.WriteLine($"  {pack.Description}");
+                Console.Out.WriteLine($"  Pause observation by default: {(pack.PauseObservationByDefault ? "yes" : "no")}");
+                if (!string.IsNullOrWhiteSpace(pack.RecommendedFor))
+                    Console.Out.WriteLine($"  Recommended for: {pack.RecommendedFor}");
+                Console.Out.WriteLine("  Category rules:");
+                foreach (var kv in pack.CategoryRules.OrderBy(kv => kv.Key, StringComparer.OrdinalIgnoreCase))
+                    Console.Out.WriteLine($"    - {kv.Key}: {(kv.Value ? "allow" : "deny")}");
+                Console.Out.WriteLine("  Source rules:");
+                foreach (var kv in pack.SourceRules.OrderBy(kv => kv.Key, StringComparer.OrdinalIgnoreCase))
+                    Console.Out.WriteLine($"    - {kv.Key}: {(kv.Value ? "allow" : "deny")}");
+                Console.Out.WriteLine("  Project rules:");
+                if (pack.ProjectRules.Count == 0)
+                    Console.Out.WriteLine("    (none)");
+                else
+                {
+                    foreach (var rule in pack.ProjectRules)
+                    {
+                        Console.Out.WriteLine($"    - Project: {rule.ProjectPath}");
+                        foreach (var skv in rule.SourceRules.OrderBy(kv => kv.Key, StringComparer.OrdinalIgnoreCase))
+                            Console.Out.WriteLine($"        {skv.Key}: {(skv.Value ? "allow" : "deny")}");
+                    }
+                }
+            }
+
+            return Task.FromResult(0);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Trust pack describe failed");
+            if (formatJson)
+                Console.Out.WriteLine($"{{\"ok\":false,\"error\":\"{ex.Message}\"}}");
+            else
+                Console.Error.WriteLine(ex.Message);
+            return Task.FromResult(1);
+        }
+    }
+
     public Task<int> ListPolicyPacksAsync(bool formatJson, CancellationToken ct = default)
     {
         try

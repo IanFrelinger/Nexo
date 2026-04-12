@@ -16,10 +16,11 @@ public sealed class FileBasedInstanceDiscovery : IInstanceDiscovery
     public FileBasedInstanceDiscovery(
         string? instancesPath = null,
         string? trustedPeerIdsCsv = null,
-        string? untrustedPeerIdsCsv = null)
+        string? untrustedPeerIdsCsv = null,
+        string? peerTrustPolicy = null)
     {
         _instancesPath = instancesPath ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".nexo", "instances.json");
-        _trustPolicyResolver = new PeerTrustPolicyResolver("any", trustedPeerIdsCsv, untrustedPeerIdsCsv);
+        _trustPolicyResolver = new PeerTrustPolicyResolver(peerTrustPolicy ?? "any", trustedPeerIdsCsv, untrustedPeerIdsCsv);
     }
 
     /// <inheritdoc />
