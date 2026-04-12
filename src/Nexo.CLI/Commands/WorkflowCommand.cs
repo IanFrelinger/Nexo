@@ -1758,7 +1758,23 @@ public sealed class WorkflowCommand : Command
         var winner = ranked[0];
         var winnerConfidence = ComputePromotionConfidence(winner, minRunsForEarlyStop);
         const double promotionConfidenceThreshold = 0.6;
+        var minimumPromotionSamples = Math.Max(2, minRunsForEarlyStop);
+        var winnerHasMinimumSamples = winner.TotalRuns >= minimumPromotionSamples;
         var recommendations = BuildOptimizeRecommendations(ranked);
+        if (!winnerHasMinimumSamples)
+        {
+            recommendations = recommendations
+                .Concat(new[]
+                {
+                    new WorkflowOptimizeRecommendation(
+                        Kind: "sample-size",
+                        Action: "collect-more-samples",
+                        CandidateId: winner.CandidateId,
+                        Rationale:
+                        $"Winner has {winner.TotalRuns} measured run(s); minimum {minimumPromotionSamples} run(s) required before promotion.")
+                })
+                .ToArray();
+        }
         if (winnerConfidence < promotionConfidenceThreshold)
         {
             recommendations = recommendations
@@ -1781,7 +1797,12 @@ public sealed class WorkflowCommand : Command
         string? promotedBaselineId = null;
         if (promoteWinner && persistHistory)
         {
-            if (winnerConfidence < promotionConfidenceThreshold)
+            if (!winnerHasMinimumSamples)
+            {
+                promotionSummary =
+                    $"Promotion skipped: winner has {winner.TotalRuns} measured run(s), requires at least {minimumPromotionSamples}.";
+            }
+            else if (winnerConfidence < promotionConfidenceThreshold)
             {
                 promotionSummary =
                     $"Promotion skipped: winner confidence {winnerConfidence:F2} below threshold {promotionConfidenceThreshold:F2}.";
@@ -2666,7 +2687,10 @@ public sealed class WorkflowCommand : Command
     private sealed record MeshOrchestrateResponse(
         bool Success,
         string? Summary,
-        object? Output);
+        object? Output,
+        int? Conflicts = null,
+        int? Escalations = null,
+        string? ErrorCode = null);
 
     private static async Task<ScenarioExecutionResult> ExecuteScenarioOnMeshPeerAsync(
         string endpoint,
@@ -2722,9 +2746,11 @@ public sealed class WorkflowCommand : Command
             {
                 return new ScenarioExecutionResult(
                     Ok: true,
-                    Summary: $"Mesh peer run succeeded on {normalizedEndpoint}.",
-                    ConflictCount: 0,
-                    EscalationCount: 0,
+                    Summary: string.IsNullOrWhiteSpace(orchestrate.Summary)
+                        ? $"Mesh peer run succeeded on {normalizedEndpoint}."
+                        : orchestrate.Summary!,
+                    ConflictCount: orchestrate.Conflicts ?? 0,
+                    EscalationCount: orchestrate.Escalations ?? 0,
                     FailureCategory: "none");
             }
 
@@ -2734,9 +2760,9 @@ public sealed class WorkflowCommand : Command
             return new ScenarioExecutionResult(
                 Ok: false,
                 Summary: failureSummary,
-                ConflictCount: 0,
-                EscalationCount: 0,
-                FailureCategory: ClassifyFailureCategory(failureSummary));
+                ConflictCount: orchestrate.Conflicts ?? 0,
+                EscalationCount: orchestrate.Escalations ?? 0,
+                FailureCategory: ClassifyFailureCategory(failureSummary, orchestrate.ErrorCode));
         }
         catch (Exception ex)
         {

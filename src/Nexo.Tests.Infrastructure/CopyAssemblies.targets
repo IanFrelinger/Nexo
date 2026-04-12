@@ -17,7 +17,7 @@
     
     <!-- Build the C# assembly copying tool (net9.0, runs in container on SDK 9 images) -->
     <MSBuild Projects="$(CopyScriptProj)" 
-             Targets="Build" 
+             Targets="Restore;Build" 
              Properties="Configuration=Debug;TargetFramework=$(TargetFramework)"
              Condition="Exists('$(CopyScriptProj)') AND '$(SkipCopyAssemblies)' != 'true'"
              ContinueOnError="false" />
