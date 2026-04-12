@@ -92,6 +92,6 @@ jobs:
           name: workflow-regression-gate
           path: |
             .nexo/runtime/workflow_lab_history.jsonl
-            .nexo/runtime/workflow_lab_baselines.jsonl
+            .nexo/runtime/workflow_lab_baselines.json
             ${{ runner.temp }}/workflow_report.md
           retention-days: 14

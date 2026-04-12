@@ -1143,7 +1143,7 @@ public sealed class WorkflowCommand : Command
                 !preflight.Ok)
             {
                 scenario = new ScenarioExecutionResult(
-                    Ok: true,
+                    Ok: false,
                     Summary: $"Skipped due to provider preflight failure ({profileProvider}): {preflight.Detail}",
                     ConflictCount: 0,
                     EscalationCount: 0,
@@ -1491,7 +1491,7 @@ public sealed class WorkflowCommand : Command
                 if (!pullResult.Ok && executionTarget.IsLocal)
                 {
                     scenario = new ScenarioExecutionResult(
-                        Ok: true,
+                        Ok: false,
                         Summary: $"Skipped due to model pull failure: {pullResult.Summary}",
                         ConflictCount: 0,
                         EscalationCount: 0,
@@ -1504,7 +1504,7 @@ public sealed class WorkflowCommand : Command
                          !preflight.Ok)
                 {
                     scenario = new ScenarioExecutionResult(
-                        Ok: true,
+                        Ok: false,
                         Summary: $"Skipped due to provider preflight failure ({profileProvider}): {preflight.Detail}",
                         ConflictCount: 0,
                         EscalationCount: 0,
@@ -2809,9 +2809,11 @@ public sealed class WorkflowCommand : Command
     private static WorkflowBenchmarkReport BuildBenchmarkReport(IReadOnlyList<WorkflowLabStressHistoryRow> rows)
     {
         var items = rows ?? Array.Empty<WorkflowLabStressHistoryRow>();
-        var totalRuns = items.Count;
-        var successRuns = items.Count(x => x.Success);
+        var measuredRuns = items.Where(x => !x.Skipped).ToArray();
+        var totalRuns = measuredRuns.Length;
+        var successRuns = measuredRuns.Count(x => x.Success);
         var failedRuns = totalRuns - successRuns;
+        var skippedRuns = items.Count(x => x.Skipped);
         var successRate = totalRuns == 0 ? 0d : Math.Round((double)successRuns / totalRuns, 4);
         var avgElapsed = totalRuns == 0 ? 0L : (long)Math.Round(items.Select(x => (double)x.ElapsedMs).DefaultIfEmpty(0d).Average());
         var p95Elapsed = ComputePercentile(items.Select(x => x.ElapsedMs), 0.95);
@@ -2831,7 +2833,7 @@ public sealed class WorkflowCommand : Command
             .ThenBy(x => x.Key, StringComparer.OrdinalIgnoreCase)
             .Select(x => x.Key)
             .FirstOrDefault() ?? "unknown";
-        var failuresByCategory = items
+        var failuresByCategory = measuredRuns
             .Where(x => !x.Success)
             .GroupBy(
                 x => string.IsNullOrWhiteSpace(x.FailureCategory) || string.Equals(x.FailureCategory, "none", StringComparison.OrdinalIgnoreCase)
@@ -2843,7 +2845,7 @@ public sealed class WorkflowCommand : Command
             .ThenBy(x => x.Category, StringComparer.OrdinalIgnoreCase)
             .ToArray();
 
-        var scenarioStats = items
+        var scenarioStats = measuredRuns
             .GroupBy(x => $"{x.RequestId}::{x.CompositionId}::{x.ModelProfileId}", StringComparer.OrdinalIgnoreCase)
             .Select(g =>
             {
@@ -3076,16 +3078,23 @@ public sealed class WorkflowCommand : Command
         if (baselineRows.Length == 0)
             return new WorkflowRunComparison(false, $"No history found for baseline-run-id '{baselineId}'.");
 
-        var candidateSuccessRate = candidateRows.Length == 0 ? 0d : Math.Round((double)candidateRows.Count(x => x.Success) / candidateRows.Length, 4);
-        var baselineSuccessRate = baselineRows.Length == 0 ? 0d : Math.Round((double)baselineRows.Count(x => x.Success) / baselineRows.Length, 4);
-        var candidateAvgLatency = (long)Math.Round(candidateRows.Select(x => (double)x.ElapsedMs).DefaultIfEmpty(0d).Average());
-        var baselineAvgLatency = (long)Math.Round(baselineRows.Select(x => (double)x.ElapsedMs).DefaultIfEmpty(0d).Average());
-        var candidateP95 = ComputePercentile(candidateRows.Select(x => x.ElapsedMs), 0.95);
-        var baselineP95 = ComputePercentile(baselineRows.Select(x => x.ElapsedMs), 0.95);
-        var candidateScore = Math.Round(candidateRows.Select(x => x.Score).DefaultIfEmpty(0d).Average(), 3);
-        var baselineScore = Math.Round(baselineRows.Select(x => x.Score).DefaultIfEmpty(0d).Average(), 3);
+        var candidateMeasuredRows = candidateRows.Where(x => !x.Skipped).ToArray();
+        var baselineMeasuredRows = baselineRows.Where(x => !x.Skipped).ToArray();
+        if (candidateMeasuredRows.Length == 0)
+            return new WorkflowRunComparison(false, $"No non-skipped history found for run-id '{candidateId}'.");
+        if (baselineMeasuredRows.Length == 0)
+            return new WorkflowRunComparison(false, $"No non-skipped history found for baseline-run-id '{baselineId}'.");
 
-        var candidateByScenario = candidateRows
+        var candidateSuccessRate = Math.Round((double)candidateMeasuredRows.Count(x => x.Success) / candidateMeasuredRows.Length, 4);
+        var baselineSuccessRate = Math.Round((double)baselineMeasuredRows.Count(x => x.Success) / baselineMeasuredRows.Length, 4);
+        var candidateAvgLatency = (long)Math.Round(candidateMeasuredRows.Select(x => (double)x.ElapsedMs).DefaultIfEmpty(0d).Average());
+        var baselineAvgLatency = (long)Math.Round(baselineMeasuredRows.Select(x => (double)x.ElapsedMs).DefaultIfEmpty(0d).Average());
+        var candidateP95 = ComputePercentile(candidateMeasuredRows.Select(x => x.ElapsedMs), 0.95);
+        var baselineP95 = ComputePercentile(baselineMeasuredRows.Select(x => x.ElapsedMs), 0.95);
+        var candidateScore = Math.Round(candidateMeasuredRows.Select(x => x.Score).DefaultIfEmpty(0d).Average(), 3);
+        var baselineScore = Math.Round(baselineMeasuredRows.Select(x => x.Score).DefaultIfEmpty(0d).Average(), 3);
+
+        var candidateByScenario = candidateMeasuredRows
             .GroupBy(x => $"{x.RequestId}::{x.CompositionId}::{x.ModelProfileId}", StringComparer.OrdinalIgnoreCase)
             .ToDictionary(
                 g => g.Key,
@@ -3097,7 +3106,7 @@ public sealed class WorkflowCommand : Command
                 },
                 StringComparer.OrdinalIgnoreCase);
 
-        var baselineByScenario = baselineRows
+        var baselineByScenario = baselineMeasuredRows
             .GroupBy(x => $"{x.RequestId}::{x.CompositionId}::{x.ModelProfileId}", StringComparer.OrdinalIgnoreCase)
             .ToDictionary(
                 g => g.Key,
@@ -3135,8 +3144,8 @@ public sealed class WorkflowCommand : Command
             $"Compared run {candidateId} against baseline {baselineId}.",
             candidateId,
             baselineId,
-            candidateRows.Length,
-            baselineRows.Length,
+            candidateMeasuredRows.Length,
+            baselineMeasuredRows.Length,
             candidateSuccessRate,
             baselineSuccessRate,
             candidateSuccessRate - baselineSuccessRate,
