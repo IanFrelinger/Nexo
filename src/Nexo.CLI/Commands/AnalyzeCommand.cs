@@ -3,7 +3,6 @@ using MediatR;
 using Microsoft.Extensions.Logging;
 using Nexo.CLI.Formatting;
 using Nexo.Core.Application.Analysis.UseCases.AnalyzeCode;
-using Nexo.Core.Application.Common.Models;
 using Nexo.Core.Domain.Exceptions;
 
 namespace Nexo.CLI.Commands;
@@ -58,26 +57,11 @@ public class AnalyzeCommand
 
         try
         {
-            Progress<ProgressReport>? progress = null;
-            if (verbose || !json)
-            {
-                progress = new Progress<ProgressReport>(report =>
-                {
-                    if (json)
-                    {
-                        // In JSON mode, only log to stderr
-                        _logger.LogInformation(
-                            "Progress: {Percentage}% - {Message}",
-                            report.Percentage,
-                            report.Message);
-                    }
-                    else
-                    {
-                        // In normal mode, show progress on stdout
-                        _renderer.RenderProgress(report);
-                    }
-                });
-            }
+            var progress = CommandExecutionSupport.CreateProgressReporter(
+                verbose,
+                json,
+                _logger,
+                _renderer);
 
             var command = new AnalyzeCodeCommand(path, progress);
             var result = await _mediator.Send(command);
@@ -93,7 +77,12 @@ public class AnalyzeCommand
         }
         catch (AnalysisException ex)
         {
-            return HandleAnalysisException(ex);
+            return CommandExecutionSupport.RenderDomainFailure(
+                _logger,
+                _renderer,
+                ex,
+                "Analysis failed",
+                (int)ExitCode.ValidationFailed);
         }
         catch (UnauthorizedAccessException ex)
         {
@@ -107,20 +96,6 @@ public class AnalyzeCommand
             _renderer.RenderError(ex.Message);
             return (int)ExitCode.UnexpectedError;
         }
-    }
-
-    private int HandleAnalysisException(AnalysisException ex)
-    {
-        _logger.LogError(ex, "Analysis failed");
-        if (!string.IsNullOrEmpty(ex.ErrorCode))
-        {
-            _renderer.RenderErrorWithCode(ex.Message, ex.ErrorCode, ex.Suggestion);
-        }
-        else
-        {
-            _renderer.RenderError(ex.Message);
-        }
-        return (int)ExitCode.ValidationFailed;
     }
 }
 
