@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Nexo.Core.Application.Trust.Models;
 using Nexo.Core.Application.Trust.Ports;
 
 namespace Nexo.CLI.Commands;
@@ -483,8 +484,27 @@ public class TrustCommand
                 return Task.FromResult(1);
             }
 
+            var previousActive = _accessBoundary.GetActivePolicyPack();
+            var previousPackDefinition = previousActive is null
+                ? null
+                : _policyPackRegistry.GetById(previousActive.Id);
+
             _accessBoundary.ApplyPolicyPack(pack);
-            var activated = _policyPackRegistry.ActivateAsync(pack.Id, ct).GetAwaiter().GetResult();
+
+            ActiveTrustPolicyPack activated;
+            try
+            {
+                activated = _policyPackRegistry.ActivateAsync(pack.Id, ct).GetAwaiter().GetResult();
+            }
+            catch
+            {
+                // Keep runtime boundary aligned with persisted registry state on activation failures.
+                if (previousPackDefinition is not null)
+                    _accessBoundary.ApplyPolicyPack(previousPackDefinition);
+                else
+                    _accessBoundary.Reset();
+                throw;
+            }
             if (formatJson)
             {
                 Console.Out.WriteLine(System.Text.Json.JsonSerializer.Serialize(
