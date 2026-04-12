@@ -472,6 +472,73 @@ public sealed class CapabilityRoutingBrickTests
         remote.Reason.ToLowerInvariant().Should().Contain("peer");
     }
 
+    [Fact]
+    public void PeerPreferred_FallsBackToCloud_WhenOnlyUntrustedPeersUnderTrustedOnlyPolicy()
+    {
+        var runPodConfig = Options.Create(new RunPodBrickConfig
+        {
+            Timeout = TimeSpan.FromSeconds(2),
+            PollingInterval = TimeSpan.FromMilliseconds(20),
+            QueueDepthThreshold = 4,
+            EnablePeerNetworkRouting = true,
+            PreferPeerNetworkOverCloud = true,
+            PeerTrustPolicy = "trusted-only",
+            OutputStagingPath = Path.Combine(Path.GetTempPath(), $"nexo-peer-trust-only-{Guid.NewGuid():N}")
+        });
+
+        var localExecutor = new StubLocalExecutor(_ => Result<GenerationExecutionResult>.Success(new GenerationExecutionResult
+        {
+            Payload = [1],
+            Provider = "local",
+            ModelId = "m",
+            IsRemote = false
+        }));
+        var runPod = new RunPodBrick(new StubRunPodClient(), runPodConfig, NullLogger<RunPodBrick>.Instance);
+        var peerExecutor = new StubPeerExecutor();
+        var peerSnapshot = new StubPeerSnapshot
+        {
+            Candidates =
+            [
+                new PeerExecutionCandidate
+                {
+                    PeerId = "peer-untrusted",
+                    Endpoint = "http://peer-untrusted",
+                    AvailableVramBytes = 16L * 1024 * 1024 * 1024,
+                    ComputeClass = GpuComputeClass.High,
+                    QueueDepth = 0,
+                    TrustTier = PeerTrustTier.Untrusted,
+                    CapturedAt = DateTimeOffset.UtcNow
+                }
+            ]
+        };
+        var router = new NcrCapabilityRouter(
+            new SnapshotStub
+            {
+                AvailableVramBytes = 128L * 1024 * 1024,
+                ComputeClass = GpuComputeClass.Low,
+                CurrentQueueDepth = 0
+            },
+            peerSnapshot,
+            peerExecutor,
+            localExecutor,
+            runPod,
+            runPodConfig,
+            NullLogger<NcrCapabilityRouter>.Instance);
+
+        var target = router.ResolveExecutionTarget(new JobRequirements
+        {
+            ModelId = "m",
+            MinimumVramBytes = 4L * 1024 * 1024 * 1024,
+            ComputeClass = GpuComputeClass.Medium,
+            RemoteExecutionPreference = RemoteExecutionPreference.PreferPeerNetwork
+        });
+
+        target.Should().BeOfType<ExecutionTarget.Remote>();
+        var remote = (ExecutionTarget.Remote)target;
+        remote.Executor.Should().BeSameAs(runPod);
+        remote.Reason.Should().Contain("falling back", StringComparison.OrdinalIgnoreCase);
+    }
+
 [Fact]
     public async Task PeerOnly_ReturnsErrorExecutor_WhenNoEligiblePeers()
     {

@@ -254,6 +254,46 @@ public sealed class PeerToPeerRoutingSmokeTests
         result.Error.Detail.Should().Contain("peer-bad-gateway");
     }
 
+    [Fact]
+    public async Task PeerExecutor_TrustedOnlyPolicy_RejectsUntrustedCandidates()
+    {
+        using var httpClient = new HttpClient(new FakeHttpMessageHandler((request, _) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK))));
+        var snapshot = new StaticPeerSnapshot(
+        [
+            new PeerExecutionCandidate
+            {
+                PeerId = "peer-untrusted",
+                Endpoint = "http://peer-untrusted:8080",
+                AvailableVramBytes = 16L * 1024 * 1024 * 1024,
+                ComputeClass = GpuComputeClass.High,
+                QueueDepth = 0,
+                TrustTier = Nexo.Core.Application.Mesh.Models.PeerTrustTier.Untrusted
+            }
+        ]);
+        var config = Options.Create(new RunPodBrickConfig
+        {
+            QueueDepthThreshold = 10,
+            PeerRequestTimeout = TimeSpan.FromSeconds(1),
+            PeerRoutingBrickId = "generation.capability-routing",
+            PeerTrustPolicy = "trusted-only"
+        });
+        var sut = new NexoPeerBrickExecutor(
+            new StaticHttpClientFactory(httpClient),
+            NullLogger<NexoPeerBrickExecutor>.Instance,
+            snapshot,
+            config);
+
+        var result = await sut.ExecuteAsync(
+            new RunPodJobPayload { ModelId = "model-trust", Prompt = "trust check" },
+            new JobRequirements { ModelId = "model-trust", MinimumVramBytes = 1, ComputeClass = GpuComputeClass.Low },
+            new TestExecutionContext());
+
+        result.IsFailure.Should().BeTrue();
+        result.Error.Should().NotBeNull();
+        result.Error!.Code.Should().Be("peer-routing.no_eligible_peers");
+    }
+
     [Fact(Timeout = TestTimeouts.Integration)]
     public async Task PeerExecutor_StressBurstConcurrency_MaintainsHighSuccessRate()
     {

@@ -94,6 +94,9 @@ public sealed class RunPodBrickConfig
     public string BaseUrl { get; set; } = "https://api.runpod.io";
     public bool EnablePeerNetworkRouting { get; set; }
     public bool PreferPeerNetworkOverCloud { get; set; } = true;
+    public string PeerTrustPolicy { get; set; } = "trusted-preferred";
+    public string TrustedPeerIdsCsv { get; set; } = string.Empty;
+    public string UntrustedPeerIdsCsv { get; set; } = string.Empty;
     public string PeerCapabilityId { get; set; } = "generation.capability-routing";
     public string PeerRoutingBrickId { get; set; } = "generation.capability-routing";
     public TimeSpan PeerRequestTimeout { get; set; } = TimeSpan.FromSeconds(30);

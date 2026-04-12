@@ -8,4 +8,12 @@ public record PeerInfo
     public required string PeerId { get; init; }
     public required string Endpoint { get; init; }
     public IReadOnlyList<string> Capabilities { get; init; } = Array.Empty<string>();
+    public PeerTrustTier TrustTier { get; init; } = PeerTrustTier.Unknown;
+}
+
+public enum PeerTrustTier
+{
+    Unknown = 0,
+    Untrusted = 1,
+    Trusted = 2
 }

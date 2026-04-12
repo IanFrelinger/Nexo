@@ -3,11 +3,13 @@ using System.CommandLine.Invocation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Adaptation.Ports;
+using Nexo.Core.Application.Mesh.Models;
 using Nexo.Core.Application.Mesh.Ports;
 using Nexo.Infrastructure;
 using Nexo.Infrastructure.Adaptation;
 using Nexo.Infrastructure.Analysis;
 using Nexo.Infrastructure.Mesh;
+using System.Text.Json;
 
 namespace Nexo.CLI.Commands;
 
@@ -22,6 +24,7 @@ public sealed class MeshCommand : Command
         var discoverOpt = new Option<bool>("--discover", () => false, "Discover peer instances");
         var advertiseOpt = new Option<bool>("--advertise", () => false, "Advertise this instance's capabilities");
         var capabilityOpt = new Option<string?>("--capability", "Find peers with capability");
+        var setTrustTierOpt = new Option<string?>("--set-trust-tier", "Update peer trust tier using <peerId>:<trusted|untrusted|unknown> in instances.json");
 
         var syncCmd = new Command("sync", "Pull shared adaptations from trusted peers and adopt after validation (P2.3)");
         syncCmd.SetHandler(async (InvocationContext ctx) => await ExecuteSyncAsync());
@@ -53,6 +56,7 @@ public sealed class MeshCommand : Command
         AddOption(discoverOpt);
         AddOption(advertiseOpt);
         AddOption(capabilityOpt);
+        AddOption(setTrustTierOpt);
         AddCommand(syncCmd);
         AddCommand(capabilitiesCmd);
         AddCommand(exportCmd);
@@ -63,7 +67,8 @@ public sealed class MeshCommand : Command
             var discover = ctx.ParseResult.GetValueForOption(discoverOpt);
             var advertise = ctx.ParseResult.GetValueForOption(advertiseOpt);
             var capability = ctx.ParseResult.GetValueForOption(capabilityOpt);
-            await ExecuteAsync(discover, advertise, capability);
+            var setTrustTier = ctx.ParseResult.GetValueForOption(setTrustTierOpt);
+            await ExecuteAsync(discover, advertise, capability, setTrustTier);
         });
     }
 
@@ -142,8 +147,28 @@ public sealed class MeshCommand : Command
         Environment.ExitCode = 0;
     }
 
-    private static async Task ExecuteAsync(bool discover, bool advertise, string? capability)
+    private static async Task ExecuteAsync(bool discover, bool advertise, string? capability, string? setTrustTier)
     {
+        if (!string.IsNullOrWhiteSpace(setTrustTier))
+        {
+            if (!TryParseTrustTierChange(setTrustTier, out var peerId, out var trustTier))
+            {
+                Console.Error.WriteLine("Invalid --set-trust-tier value. Use <peerId>:<trusted|untrusted|unknown>.");
+                Environment.ExitCode = 1;
+                return;
+            }
+
+            var updated = UpdatePeerTrustTier(peerId!, trustTier);
+            if (!updated)
+            {
+                Console.Error.WriteLine($"Peer '{peerId}' not found in instances.json.");
+                Environment.ExitCode = 1;
+                return;
+            }
+
+            Console.WriteLine($"Updated trust tier for peer '{peerId}' => {trustTier}.");
+        }
+
         var services = new ServiceCollection()
             .AddLogging(b => b.AddConsole())
             .AddMeshInfrastructure()
@@ -155,7 +180,7 @@ public sealed class MeshCommand : Command
             var peers = await discovery.DiscoverAsync().ConfigureAwait(false);
             Console.WriteLine($"Discovered {peers.Count} peer(s):");
             foreach (var p in peers)
-                Console.WriteLine($"  - {p.PeerId} @ {p.Endpoint} [{string.Join(", ", p.Capabilities)}]");
+                Console.WriteLine($"  - {p.PeerId} @ {p.Endpoint} tier={p.TrustTier} [{string.Join(", ", p.Capabilities)}]");
         }
 
         if (advertise)
@@ -174,8 +199,54 @@ public sealed class MeshCommand : Command
                 Console.WriteLine($"  - {p.PeerId} @ {p.Endpoint}");
         }
 
-        if (!discover && !advertise && string.IsNullOrEmpty(capability))
-            Console.WriteLine("Use --discover, --advertise, or --capability <name>");
+        if (!discover && !advertise && string.IsNullOrEmpty(capability) && string.IsNullOrWhiteSpace(setTrustTier))
+            Console.WriteLine("Use --discover, --advertise, --capability <name>, or --set-trust-tier <peerId>:<tier>");
         Environment.ExitCode = 0;
+    }
+
+    private static bool TryParseTrustTierChange(string value, out string? peerId, out PeerTrustTier tier)
+    {
+        peerId = null;
+        tier = PeerTrustTier.Unknown;
+        var split = value.Split(':', 2, StringSplitOptions.TrimEntries);
+        if (split.Length != 2 || string.IsNullOrWhiteSpace(split[0]))
+            return false;
+        if (!Enum.TryParse<PeerTrustTier>(split[1], true, out tier))
+            return false;
+        peerId = split[0];
+        return true;
+    }
+
+    private static bool UpdatePeerTrustTier(string peerId, PeerTrustTier tier)
+    {
+        var instancesPath = ResolveInstancesPath();
+        if (!File.Exists(instancesPath))
+            return false;
+
+        var root = JsonSerializer.Deserialize<List<PeerEntry>>(File.ReadAllText(instancesPath));
+        if (root == null)
+            return false;
+
+        var entry = root.FirstOrDefault(e => string.Equals(e.PeerId, peerId, StringComparison.OrdinalIgnoreCase));
+        if (entry == null)
+            return false;
+
+        entry.TrustTier = tier.ToString();
+        File.WriteAllText(instancesPath, JsonSerializer.Serialize(root, new JsonSerializerOptions { WriteIndented = true }));
+        return true;
+    }
+
+    private static string ResolveInstancesPath()
+    {
+        var configured = Environment.GetEnvironmentVariable("NEXO_MESH_INSTANCES_PATH");
+        if (!string.IsNullOrWhiteSpace(configured))
+            return Path.GetFullPath(configured.Trim());
+        return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".nexo", "instances.json");
+    }
+
+    private sealed class PeerEntry
+    {
+        public string PeerId { get; set; } = string.Empty;
+        public string TrustTier { get; set; } = "Unknown";
     }
 }

@@ -18,11 +18,15 @@ public sealed class MeshCapabilityRequester : ICapabilityRequester
     private readonly ILogger<MeshCapabilityRequester>? _logger;
     private readonly TimeSpan _receiveTimeout;
     private readonly int _pollIntervalMs;
+    private readonly PeerTrustPolicyResolver _trustPolicy;
 
     public MeshCapabilityRequester(
         ICapabilityAdvertisement advertisement,
         ILocalTransport transport,
         string requesterPeerId,
+        string? trustPolicy,
+        string? trustedPeerIdsCsv,
+        string? untrustedPeerIdsCsv,
         ILogger<MeshCapabilityRequester>? logger = null,
         TimeSpan? receiveTimeout = null,
         int pollIntervalMs = 100)
@@ -33,6 +37,7 @@ public sealed class MeshCapabilityRequester : ICapabilityRequester
         _logger = logger;
         _receiveTimeout = receiveTimeout ?? TimeSpan.FromSeconds(3);
         _pollIntervalMs = Math.Max(50, pollIntervalMs);
+        _trustPolicy = new PeerTrustPolicyResolver(trustPolicy, trustedPeerIdsCsv, untrustedPeerIdsCsv);
     }
 
     /// <inheritdoc />
@@ -41,6 +46,9 @@ public sealed class MeshCapabilityRequester : ICapabilityRequester
         cancellationToken.ThrowIfCancellationRequested();
         await _transport.ConnectAsync(cancellationToken);
         var peers = await _advertisement.FindPeersWithCapabilityAsync(capability, cancellationToken);
+        peers = peers
+            .Where(peer => _trustPolicy.IsAllowed(_trustPolicy.ResolveTier(peer)))
+            .ToArray();
         if (peers.Count == 0)
         {
             _logger?.LogDebug("No peers with capability {Capability}", capability);

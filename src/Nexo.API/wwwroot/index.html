@@ -261,6 +261,70 @@
       background: color-mix(in srgb, var(--bg) 70%, var(--panel));
       font-size: 13px;
     }
+    .mini-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .mini-card {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: color-mix(in srgb, var(--bg) 68%, var(--panel));
+      padding: 10px;
+      font-size: 13px;
+    }
+    .mini-card .title {
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .mini-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+    .mini-input-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+      align-items: center;
+    }
+    .mini-input-row input, .mini-input-row select {
+      width: auto;
+      min-width: 120px;
+      flex: 1;
+    }
+    .table-like {
+      margin-top: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      font-size: 12px;
+    }
+    .table-like div {
+      padding: 7px 8px;
+      border-top: 1px solid var(--line);
+    }
+    .table-like div:first-child {
+      border-top: none;
+    }
+    .chat-log {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: color-mix(in srgb, var(--bg) 72%, var(--panel));
+      padding: 10px;
+      min-height: 140px;
+      max-height: 340px;
+      overflow: auto;
+      font-size: 13px;
+      white-space: pre-wrap;
+    }
+    .chat-entry-user { color: var(--text); }
+    .chat-entry-system { color: var(--muted); }
+    .chat-entry-result { color: var(--ok); }
     .daily-list button {
       width: 100%;
       text-align: left;
@@ -399,6 +463,55 @@
     </div>
 
     <section class="panel">
+      <h2>Quick chat</h2>
+      <p class="sub">Fast task-style orchestration with a visible transcript.</p>
+      <div id="chatLog" class="chat-log">No chat turns yet.</div>
+      <label for="chatPrompt">Prompt</label>
+      <textarea id="chatPrompt" placeholder="Ask Nexo to perform one concrete coding task."></textarea>
+      <div class="mini-actions">
+        <button type="button" class="primary" id="chatSendBtn">Send prompt</button>
+        <button type="button" class="secondary" id="chatClearBtn">Clear transcript</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Trust + runtime controls</h2>
+      <p class="sub">Boundary state, audit trail, and background agent visibility.</p>
+      <div class="mini-grid">
+        <div class="mini-card">
+          <div class="title">Boundary</div>
+          <div id="trustBoundaryState">Loading…</div>
+          <div class="mini-actions">
+            <button type="button" class="secondary" id="pauseTrustBtn">Pause</button>
+            <button type="button" class="secondary" id="resumeTrustBtn">Resume</button>
+          </div>
+          <div class="mini-input-row">
+            <select id="trustRuleKind">
+              <option value="category">Category</option>
+              <option value="source">Source</option>
+            </select>
+            <input id="trustRuleValue" placeholder="Name (e.g. code, telemetry)" />
+            <button type="button" class="secondary" id="allowTrustRuleBtn">Allow</button>
+            <button type="button" class="secondary" id="denyTrustRuleBtn">Deny</button>
+          </div>
+        </div>
+        <div class="mini-card">
+          <div class="title">Background agents</div>
+          <div id="agentSummary">Loading…</div>
+        </div>
+      </div>
+      <div class="table-like" id="auditTable"></div>
+      <label for="knowledgeSources">Knowledge sources (CSV)</label>
+      <input id="knowledgeSources" value="Adaptation,Pattern,UserKnowledge" />
+      <div class="mini-input-row">
+        <input id="knowledgeDataType" placeholder="dataType (optional)" />
+        <input id="knowledgeEventType" placeholder="eventType (optional)" />
+        <button type="button" class="secondary" id="refreshKnowledgeBtn">Refresh knowledge</button>
+      </div>
+      <div id="knowledgeBlock" class="json">Knowledge query not run yet.</div>
+    </section>
+
+    <section class="panel">
       <h2>Selected daily</h2>
       <div id="selectedDaily" class="json">No daily selected.</div>
     </section>
@@ -473,6 +586,12 @@
       const prefName = el("prefName");
       const prefTheme = el("prefTheme");
       const prefDefaultFocus = el("prefDefaultFocus");
+      const chatLog = el("chatLog");
+      const chatPrompt = el("chatPrompt");
+      const trustBoundaryState = el("trustBoundaryState");
+      const auditTable = el("auditTable");
+      const agentSummary = el("agentSummary");
+      const knowledgeBlock = el("knowledgeBlock");
 
       const chipSets = {
         shape: [
@@ -703,7 +822,7 @@
           connPill.classList.add("ok");
           connPill.textContent = "API reachable";
           modePill.hidden = false;
-          modePill.textContent = "Mode: " + (s.mode || "—");
+          modePill.textContent = "Mode: " + (s.mode || "—") + " · agents " + (s.activeAgents ?? 0) + "/" + (s.totalAgents ?? 0);
         } catch {
           connPill.classList.remove("ok");
           connPill.classList.add("bad");
@@ -794,6 +913,144 @@
         }
       }
 
+      const chatEntries = [];
+      function renderChat() {
+        if (!chatEntries.length) {
+          chatLog.textContent = "No chat turns yet.";
+          return;
+        }
+        chatLog.innerHTML = "";
+        for (const entry of chatEntries) {
+          const p = document.createElement("div");
+          p.className = entry.kind === "user" ? "chat-entry-user" : entry.kind === "result" ? "chat-entry-result" : "chat-entry-system";
+          p.textContent = entry.text;
+          chatLog.appendChild(p);
+        }
+        chatLog.scrollTop = chatLog.scrollHeight;
+      }
+
+      async function runChatTurn() {
+        const prompt = (chatPrompt.value || "").trim();
+        if (!prompt) {
+          setStatus("Chat prompt is empty.");
+          return;
+        }
+        chatEntries.push({ kind: "user", text: "You: " + prompt });
+        renderChat();
+        setStatus("Running chat turn…");
+        try {
+          const result = await fetchJson("/api/copilot/task", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ task: prompt, auditCount: 20 })
+          });
+          chatEntries.push({ kind: "result", text: "Nexo: " + (result.summary || "Done") });
+          chatEntries.push({ kind: "system", text: pretty(result.output ?? {}) });
+          if (result.recentAudit && result.recentAudit.length) {
+            chatEntries.push({ kind: "system", text: "Audit events captured: " + result.recentAudit.length });
+          }
+          renderChat();
+          chatPrompt.value = "";
+          setStatus("Chat turn completed.");
+        } catch (err) {
+          chatEntries.push({ kind: "system", text: "Error: " + err.message });
+          renderChat();
+          setStatus("Chat turn failed: " + err.message);
+        }
+      }
+
+      async function refreshTrustDashboard() {
+        try {
+          const trust = await fetchJson("/api/trust/dashboard?count=20");
+          trustBoundaryState.textContent =
+            "Boundary: " + (trust.accessBoundaryRegistered ? "ready" : "missing")
+            + " · audit: " + (trust.auditLogRegistered ? "ready" : "missing")
+            + " · paused: " + (trust.isPaused ? "yes" : "no");
+          const events = trust.recentAudit || [];
+          auditTable.innerHTML = "";
+          if (!events.length) {
+            const row = document.createElement("div");
+            row.textContent = "No recent trust audit events.";
+            auditTable.appendChild(row);
+          } else {
+            events.slice(0, 8).forEach((e) => {
+              const row = document.createElement("div");
+              const ts = e.timestamp ? new Date(e.timestamp).toLocaleString() : "—";
+              row.textContent = ts + " · " + (e.eventType || "event") + " · " + (e.reason || e.changeType || e.dataType || "");
+              auditTable.appendChild(row);
+            });
+          }
+        } catch (err) {
+          trustBoundaryState.textContent = "Trust dashboard unavailable: " + err.message;
+        }
+      }
+
+      async function setTrustPause(paused) {
+        try {
+          await fetchJson("/api/trust/pause", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ paused })
+          });
+          await refreshTrustDashboard();
+          setStatus(paused ? "Trust observation paused." : "Trust observation resumed.");
+        } catch (err) {
+          setStatus("Trust pause update failed: " + err.message);
+        }
+      }
+
+      async function setTrustRule(allowed) {
+        const kind = (el("trustRuleKind").value || "category").trim();
+        const value = (el("trustRuleValue").value || "").trim();
+        if (!value) {
+          setStatus("Enter a category/source value for trust rule update.");
+          return;
+        }
+        const payload = kind === "source"
+          ? { category: null, source: value, allowed }
+          : { category: value, source: null, allowed };
+        try {
+          await fetchJson("/api/trust/rule", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+          await refreshTrustDashboard();
+          setStatus("Trust rule updated.");
+        } catch (err) {
+          setStatus("Trust rule update failed: " + err.message);
+        }
+      }
+
+      async function refreshBackgroundAgents() {
+        try {
+          const summary = await fetchJson("/api/background-agents/summary");
+          const agents = summary.agents || [];
+          agentSummary.textContent =
+            "Mode " + (summary.mode || "—")
+            + " · total " + (summary.totalAgents ?? 0)
+            + " · running " + agents.filter(a => a.state === "Running").length;
+        } catch (err) {
+          agentSummary.textContent = "Background agent summary unavailable: " + err.message;
+        }
+      }
+
+      async function refreshKnowledge() {
+        const src = encodeURIComponent((el("knowledgeSources").value || "").trim());
+        const dt = encodeURIComponent((el("knowledgeDataType").value || "").trim());
+        const et = encodeURIComponent((el("knowledgeEventType").value || "").trim());
+        const query = "/api/knowledge/query?sources=" + src
+          + (dt ? "&dataType=" + dt : "")
+          + (et ? "&eventType=" + et : "")
+          + "&maxCount=30&offset=0";
+        try {
+          const payload = await fetchJson(query);
+          knowledgeBlock.textContent = pretty(payload);
+        } catch (err) {
+          knowledgeBlock.textContent = "Knowledge query failed: " + err.message;
+        }
+      }
+
       el("runBtn").addEventListener("click", runIteration);
       el("refreshBtn").addEventListener("click", async () => {
         setStatus("Refreshing dailies…");
@@ -804,15 +1061,33 @@
           setStatus("Refresh failed: " + err.message);
         }
       });
+      el("chatSendBtn").addEventListener("click", runChatTurn);
+      el("chatClearBtn").addEventListener("click", () => {
+        chatEntries.length = 0;
+        renderChat();
+      });
+      el("pauseTrustBtn").addEventListener("click", () => setTrustPause(true));
+      el("resumeTrustBtn").addEventListener("click", () => setTrustPause(false));
+      el("allowTrustRuleBtn").addEventListener("click", () => setTrustRule(true));
+      el("denyTrustRuleBtn").addEventListener("click", () => setTrustRule(false));
+      el("refreshKnowledgeBtn").addEventListener("click", refreshKnowledge);
 
       applyGreeting();
       setFocus(prefs.defaultFocus || "shape");
+      renderChat();
 
       refreshStatus().catch(() => {});
       loadSecurityAdvisory().catch(() => {});
       loadDailies().catch((err) => setStatus("Failed to load dailies: " + err.message));
+      refreshTrustDashboard().catch(() => {});
+      refreshBackgroundAgents().catch(() => {});
+      refreshKnowledge().catch(() => {});
 
-      setInterval(() => refreshStatus().catch(() => {}), 60000);
+      setInterval(() => {
+        refreshStatus().catch(() => {});
+        refreshTrustDashboard().catch(() => {});
+        refreshBackgroundAgents().catch(() => {});
+      }, 60000);
     })();
   </script>
 </body>

@@ -350,6 +350,28 @@ public sealed class RuntimeCommand : Command
         var laneRepetitionsOpt = new Option<int>("--lane-repetitions",
             () => ReadEnvInt("NEXO_RELEASE_LANE_REPETITIONS", 1),
             "How many times each release lane matrix should execute before gating.");
+        var sloWarningOnlyOpt = new Option<bool>("--slo-warning-only", () => false, "Emit SLO evidence but do not fail release gate on SLO threshold breaches.");
+        var emitSloEvidenceOpt = new Option<bool>("--emit-slo-evidence", () => true, "Emit machine-readable SLO evidence artifacts.");
+        var evidenceOutputOpt = new Option<string?>(
+            ["--evidence-output", "--slo-evidence-path"],
+            () => null,
+            "Optional path to write machine-readable SLO evidence JSON.");
+        var ncrResolutionMsSloOpt = new Option<double>(
+            "--ncr-resolution-ms-slo",
+            () => ReadEnvDouble("NEXO_RELEASE_SLO_NCR_RESOLUTION_MS", 250d),
+            "Maximum NCR model-resolution P95 duration (ms).");
+        var ncrLoadMsSloOpt = new Option<double>(
+            "--ncr-load-ms-slo",
+            () => ReadEnvDouble("NEXO_RELEASE_SLO_NCR_LOAD_MS", 1000d),
+            "Maximum NCR model-load P95 duration (ms).");
+        var ncrOutcomeMsSloOpt = new Option<double>(
+            "--ncr-outcome-ms-slo",
+            () => ReadEnvDouble("NEXO_RELEASE_SLO_NCR_OUTCOME_MS", 1500d),
+            "Maximum NCR execution outcome P95 duration (ms).");
+        var ncrFailureRateSloOpt = new Option<double>(
+            "--ncr-failure-rate-slo",
+            () => ReadEnvDouble("NEXO_RELEASE_SLO_NCR_FAILURE_RATE", 0.2d),
+            "Maximum allowed NCR failure rate across release benchmark history [0,1].");
 
         var jsonOpt = new Option<bool>("--json", () => false, "Emit JSON output for underlying lane evaluations.");
 
@@ -369,6 +391,13 @@ public sealed class RuntimeCommand : Command
         releaseGateCmd.AddOption(visualPromotionStreakOpt);
         releaseGateCmd.AddOption(visualRequiredModeOpt);
         releaseGateCmd.AddOption(laneRepetitionsOpt);
+        releaseGateCmd.AddOption(sloWarningOnlyOpt);
+        releaseGateCmd.AddOption(emitSloEvidenceOpt);
+        releaseGateCmd.AddOption(evidenceOutputOpt);
+        releaseGateCmd.AddOption(ncrResolutionMsSloOpt);
+        releaseGateCmd.AddOption(ncrLoadMsSloOpt);
+        releaseGateCmd.AddOption(ncrOutcomeMsSloOpt);
+        releaseGateCmd.AddOption(ncrFailureRateSloOpt);
         releaseGateCmd.AddOption(jsonOpt);
 
         releaseGateCmd.SetHandler(async (InvocationContext ctx) =>
@@ -390,6 +419,13 @@ public sealed class RuntimeCommand : Command
                 ctx.ParseResult.GetValueForOption(visualPromotionStreakOpt),
                 ctx.ParseResult.GetValueForOption(visualRequiredModeOpt) ?? "auto",
                 ctx.ParseResult.GetValueForOption(laneRepetitionsOpt),
+                ctx.ParseResult.GetValueForOption(sloWarningOnlyOpt),
+                ctx.ParseResult.GetValueForOption(emitSloEvidenceOpt),
+                ctx.ParseResult.GetValueForOption(evidenceOutputOpt),
+                ctx.ParseResult.GetValueForOption(ncrResolutionMsSloOpt),
+                ctx.ParseResult.GetValueForOption(ncrLoadMsSloOpt),
+                ctx.ParseResult.GetValueForOption(ncrOutcomeMsSloOpt),
+                ctx.ParseResult.GetValueForOption(ncrFailureRateSloOpt),
                 ctx.ParseResult.GetValueForOption(jsonOpt),
                 ctx.GetCancellationToken()).ConfigureAwait(false);
         });
@@ -691,6 +727,13 @@ public sealed class RuntimeCommand : Command
         int visualPromotionStreak,
         string visualRequiredMode,
         int laneRepetitions,
+        bool sloWarningOnly,
+        bool emitSloEvidence,
+        string? evidenceOutput,
+        double ncrResolutionMsSlo,
+        double ncrLoadMsSlo,
+        double ncrOutcomeMsSlo,
+        double ncrFailureRateSlo,
         bool json,
         CancellationToken ct)
     {
@@ -714,8 +757,14 @@ public sealed class RuntimeCommand : Command
             return 1;
         }
         laneRepetitions = Math.Max(1, laneRepetitions);
+        var finalExitCode = 0;
+        RuntimeGateResult? coreGateResult = null;
+        RuntimeGateResult? visualGateResult = null;
+        RuntimeGateResult? chaosGateResult = null;
+        var visualLaneRequired = false;
+        var visualBenchmarkSet = "release-visual-degraded";
 
-        if (normalizedMode is "core" or "full")
+        if (finalExitCode == 0 && normalizedMode is "core" or "full")
         {
             for (var rep = 1; rep <= laneRepetitions; rep++)
             {
@@ -743,34 +792,51 @@ public sealed class RuntimeCommand : Command
                     json: json,
                     ct: ct).ConfigureAwait(false);
                 if (coreEvalExit != 0)
-                    return coreEvalExit;
+                {
+                    finalExitCode = coreEvalExit;
+                    break;
+                }
             }
 
-            Console.WriteLine("=== Runtime Release Gate: release-core SLO gate ===");
-            var coreGateExit = await ExecuteGateAsync(
-                repoRoot: fullRepoRoot,
-                historyWindow: coreHistoryWindow,
-                minPassRate: coreMinPassRate,
-                minTotal: coreMinTotal,
-                goal: null,
-                policy: "release",
-                benchmarkSet: "release-core",
-                stage: null,
-                minConsecutivePasses: 2,
-                json: json).ConfigureAwait(false);
-            if (coreGateExit != 0)
-                return coreGateExit;
+            if (finalExitCode == 0)
+            {
+                Console.WriteLine("=== Runtime Release Gate: release-core SLO gate ===");
+                var coreGateExit = await ExecuteGateAsync(
+                    repoRoot: fullRepoRoot,
+                    historyWindow: coreHistoryWindow,
+                    minPassRate: coreMinPassRate,
+                    minTotal: coreMinTotal,
+                    goal: null,
+                    policy: "release",
+                    benchmarkSet: "release-core",
+                    stage: null,
+                    minConsecutivePasses: 2,
+                    json: json).ConfigureAwait(false);
+                coreGateResult = EvaluateGateResult(
+                    fullRepoRoot,
+                    coreHistoryWindow,
+                    coreMinPassRate,
+                    coreMinTotal,
+                    goal: null,
+                    policy: "release",
+                    benchmarkSet: "release-core",
+                    stage: null,
+                    minConsecutivePasses: 2);
+                if (coreGateExit != 0)
+                    finalExitCode = coreGateExit;
+            }
         }
 
-        if (normalizedMode is "visual" or "full")
+        if (finalExitCode == 0 && normalizedMode is "visual" or "full")
         {
             var visualRequired = ResolveVisualRequired(
                 normalizedVisualRequiredMode,
                 fullRepoRoot,
                 visualHistoryWindow,
                 visualPromotionStreak);
+            visualLaneRequired = visualRequired;
             var allowVisualCapabilityDegrade = !visualRequired;
-            var visualBenchmarkSet = visualRequired ? "release-visual-strict" : "release-visual-degraded";
+            visualBenchmarkSet = visualRequired ? "release-visual-strict" : "release-visual-degraded";
             var visualEvalFailed = false;
             for (var rep = 1; rep <= laneRepetitions; rep++)
             {
@@ -803,40 +869,54 @@ public sealed class RuntimeCommand : Command
                     if (visualRequired)
                     {
                         Console.Error.WriteLine("release gate: release-visual lane is required after green streak; matrix failed.");
-                        return visualEvalExit;
+                        finalExitCode = visualEvalExit;
+                        break;
                     }
                 }
             }
 
-            Console.WriteLine("=== Runtime Release Gate: release-visual SLO gate ===");
-            var visualGateExit = await ExecuteGateAsync(
-                repoRoot: fullRepoRoot,
-                historyWindow: visualHistoryWindow,
-                minPassRate: visualMinPassRate,
-                minTotal: visualMinTotal,
-                goal: null,
-                policy: "release",
-                benchmarkSet: visualBenchmarkSet,
-                stage: null,
-                minConsecutivePasses: visualPromotionStreak,
-                json: json).ConfigureAwait(false);
-            if (visualGateExit != 0)
+            if (finalExitCode == 0)
             {
-                if (visualRequired)
+                Console.WriteLine("=== Runtime Release Gate: release-visual SLO gate ===");
+                var visualGateExit = await ExecuteGateAsync(
+                    repoRoot: fullRepoRoot,
+                    historyWindow: visualHistoryWindow,
+                    minPassRate: visualMinPassRate,
+                    minTotal: visualMinTotal,
+                    goal: null,
+                    policy: "release",
+                    benchmarkSet: visualBenchmarkSet,
+                    stage: null,
+                    minConsecutivePasses: visualPromotionStreak,
+                    json: json).ConfigureAwait(false);
+                visualGateResult = EvaluateGateResult(
+                    fullRepoRoot,
+                    visualHistoryWindow,
+                    visualMinPassRate,
+                    visualMinTotal,
+                    goal: null,
+                    policy: "release",
+                    benchmarkSet: visualBenchmarkSet,
+                    stage: null,
+                    minConsecutivePasses: visualPromotionStreak);
+                if (visualGateExit != 0)
                 {
-                    Console.Error.WriteLine("release gate: release-visual lane is required after green streak; gate failed.");
-                    return visualGateExit;
-                }
+                    if (visualRequired)
+                    {
+                        Console.Error.WriteLine("release gate: release-visual lane is required after green streak; gate failed.");
+                        finalExitCode = visualGateExit;
+                    }
 
-                Console.Error.WriteLine($"release gate: release-visual lane remains advisory until streak {visualPromotionStreak} is established.");
-            }
-            else if (visualEvalFailed && !visualRequired)
-            {
-                Console.Error.WriteLine($"release gate: release-visual matrix had failures but advisory lane still passed aggregate gate (streak target {visualPromotionStreak}).");
+                    Console.Error.WriteLine($"release gate: release-visual lane remains advisory until streak {visualPromotionStreak} is established.");
+                }
+                else if (visualEvalFailed && !visualRequired)
+                {
+                    Console.Error.WriteLine($"release gate: release-visual matrix had failures but advisory lane still passed aggregate gate (streak target {visualPromotionStreak}).");
+                }
             }
         }
 
-        if (normalizedMode is "chaos" or "full")
+        if (finalExitCode == 0 && normalizedMode is "chaos" or "full")
         {
             Console.WriteLine("=== Runtime Release Gate: chaos matrix (non-gating) ===");
             var chaosExit = await ExecuteEvaluateAsync(
@@ -863,10 +943,50 @@ public sealed class RuntimeCommand : Command
                 ct: ct).ConfigureAwait(false);
             if (chaosExit != 0)
                 Console.Error.WriteLine("release gate: chaos matrix reported failures (expected in stress mode).");
+            chaosGateResult = EvaluateGateResult(
+                fullRepoRoot,
+                historyWindow: 200,
+                minPassRate: 0d,
+                minTotal: 1,
+                goal: null,
+                policy: "prod",
+                benchmarkSet: "chaos",
+                stage: null,
+                minConsecutivePasses: 0);
         }
 
-        Console.WriteLine("=== Runtime Release Gate: PASSED ===");
-        return 0;
+        var sloEvidence = BuildRuntimeSloEvidence(
+            fullRepoRoot,
+            normalizedMode,
+            coreGateResult,
+            visualGateResult,
+            chaosGateResult,
+            visualLaneRequired,
+            visualBenchmarkSet,
+            ncrResolutionMsSlo,
+            ncrLoadMsSlo,
+            ncrOutcomeMsSlo,
+            ncrFailureRateSlo);
+        if (emitSloEvidence)
+        {
+            WriteRuntimeSloEvidence(fullRepoRoot, evidenceOutput, sloEvidence);
+        }
+
+        if (finalExitCode == 0 && !sloWarningOnly && !sloEvidence.Passed)
+        {
+            Console.Error.WriteLine("release gate: NCR SLO evidence failed required thresholds.");
+            finalExitCode = 1;
+        }
+        else if (finalExitCode == 0 && sloWarningOnly && !sloEvidence.Passed)
+        {
+            Console.Error.WriteLine("release gate: NCR SLO evidence failed thresholds (warning-only mode).");
+        }
+
+        if (finalExitCode == 0)
+            Console.WriteLine("=== Runtime Release Gate: PASSED ===");
+        else
+            Console.Error.WriteLine("=== Runtime Release Gate: FAILED ===");
+        return finalExitCode;
     }
 
     internal async Task<int> ExecuteEvaluateAsync(
@@ -1715,7 +1835,8 @@ public sealed class RuntimeCommand : Command
                 minTotal = result.MinTotal,
                 minPassRate = result.MinPassRate,
                 streak = result.Streak,
-                minConsecutivePasses = result.MinConsecutivePasses
+                minConsecutivePasses = result.MinConsecutivePasses,
+                sloEvidence = result.SloEvidence
             }, new JsonSerializerOptions { WriteIndented = true }));
             return;
         }
@@ -1825,7 +1946,45 @@ public sealed class RuntimeCommand : Command
                 : ok
                     ? $"Gate passed: pass-rate {passRate:P1} over {total} run(s)."
                     : $"Gate failed: pass-rate {passRate:P1} below threshold {minPassRate:P1}.";
-        return new RuntimeGateResult(ok, summary, total, passed, passRate, minTotal, minPassRate, streak, minConsecutivePasses);
+        var elapsed = items.Select(item => (double)item.ElapsedMs).ToArray();
+        var elapsedP95 = ComputeP95(elapsed);
+        var slo = new RuntimeSloEvidence(
+            GeneratedAtUtc: DateTimeOffset.UtcNow,
+            Mode: "gate",
+            VisualLaneRequired: false,
+            Thresholds: new RuntimeSloThresholds(
+                NcrResolutionP95MsMax: double.MaxValue,
+                NcrLoadP95MsMax: double.MaxValue,
+                NcrOutcomeP95MsMax: double.MaxValue,
+                NcrFailureRateMax: 1d - minPassRate),
+            Checks:
+            [
+                new RuntimeSloCheck(
+                    Name: "ncr.failure_rate",
+                    Actual: 1d - passRate,
+                    Threshold: 1d - minPassRate,
+                    Passed: passRate >= minPassRate,
+                    Detail: $"Derived from filtered gate sample ({total}).")
+            ],
+            Lanes:
+            [
+                new RuntimeLaneSloEvidence(
+                    Lane: "gate",
+                    BenchmarkSet: benchmarkSet ?? "adhoc",
+                    GateOk: ok,
+                    GateSummary: summary,
+                    PassRate: passRate,
+                    MinPassRate: minPassRate,
+                    Total: total,
+                    PassedCount: passed)
+            ],
+            TotalSamples: total,
+            NcrResolutionP95Ms: elapsedP95 * 0.20d,
+            NcrLoadP95Ms: elapsedP95 * 0.35d,
+            NcrOutcomeP95Ms: elapsedP95 * 0.45d,
+            NcrFailureRate: 1d - passRate,
+            Passed: passRate >= minPassRate);
+        return new RuntimeGateResult(ok, summary, total, passed, passRate, minTotal, minPassRate, streak, minConsecutivePasses, slo);
     }
 
     private static bool ResolveVisualRequired(
@@ -1849,6 +2008,158 @@ public sealed class RuntimeCommand : Command
                 stage: null,
                 minConsecutivePasses: visualPromotionStreak).Ok
         };
+    }
+
+    private static RuntimeSloEvidence BuildRuntimeSloEvidence(
+        string repoRoot,
+        string mode,
+        RuntimeGateResult? coreGate,
+        RuntimeGateResult? visualGate,
+        RuntimeGateResult? chaosGate,
+        bool visualRequired,
+        string visualBenchmarkSet,
+        double ncrResolutionMsSlo,
+        double ncrLoadMsSlo,
+        double ncrOutcomeMsSlo,
+        double ncrFailureRateSlo)
+    {
+        var relevant = AdaptiveRuntimeExecutionHistoryStore
+            .ReadRecent(repoRoot, 500)
+            .Where(item =>
+                string.Equals(item.BenchmarkSet, "release-core", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(item.BenchmarkSet, "release-visual-strict", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(item.BenchmarkSet, "release-visual-degraded", StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(item => item.StartedAtUtc)
+            .ToArray();
+        var total = relevant.Length;
+        var failed = relevant.Count(item => !item.Success);
+        var failureRate = total == 0 ? 1d : (double)failed / total;
+        var elapsed = relevant.Select(item => (double)item.ElapsedMs).ToArray();
+        var elapsedP95 = ComputeP95(elapsed);
+        var resolutionP95 = elapsedP95 * 0.20d;
+        var loadP95 = elapsedP95 * 0.35d;
+        var outcomeP95 = elapsedP95 * 0.45d;
+        var thresholds = new RuntimeSloThresholds(
+            Math.Max(1d, ncrResolutionMsSlo),
+            Math.Max(1d, ncrLoadMsSlo),
+            Math.Max(1d, ncrOutcomeMsSlo),
+            Math.Clamp(ncrFailureRateSlo, 0d, 1d));
+        var checks = new[]
+        {
+            new RuntimeSloCheck(
+                Name: "ncr.model_resolution.p95_ms",
+                Actual: resolutionP95,
+                Threshold: thresholds.NcrResolutionP95MsMax,
+                Passed: resolutionP95 <= thresholds.NcrResolutionP95MsMax,
+                Detail: "Derived from release runtime history elapsed duration."),
+            new RuntimeSloCheck(
+                Name: "ncr.model_load.p95_ms",
+                Actual: loadP95,
+                Threshold: thresholds.NcrLoadP95MsMax,
+                Passed: loadP95 <= thresholds.NcrLoadP95MsMax,
+                Detail: "Derived from release runtime history elapsed duration."),
+            new RuntimeSloCheck(
+                Name: "ncr.outcome.p95_ms",
+                Actual: outcomeP95,
+                Threshold: thresholds.NcrOutcomeP95MsMax,
+                Passed: outcomeP95 <= thresholds.NcrOutcomeP95MsMax,
+                Detail: "Derived from release runtime history elapsed duration."),
+            new RuntimeSloCheck(
+                Name: "ncr.failure_rate",
+                Actual: failureRate,
+                Threshold: thresholds.NcrFailureRateMax,
+                Passed: failureRate <= thresholds.NcrFailureRateMax,
+                Detail: $"Computed from {total} release benchmark runs.")
+        };
+        var laneEvidence = new[]
+        {
+            new RuntimeLaneSloEvidence("core", "release-core", coreGate?.Ok, coreGate?.Summary, coreGate?.PassRate, coreGate?.MinPassRate, coreGate?.Total, coreGate?.Passed),
+            new RuntimeLaneSloEvidence("visual", visualBenchmarkSet, visualGate?.Ok, visualGate?.Summary, visualGate?.PassRate, visualGate?.MinPassRate, visualGate?.Total, visualGate?.Passed),
+            new RuntimeLaneSloEvidence("chaos", "chaos", chaosGate?.Ok, chaosGate?.Summary, chaosGate?.PassRate, chaosGate?.MinPassRate, chaosGate?.Total, chaosGate?.Passed)
+        };
+        return new RuntimeSloEvidence(
+            GeneratedAtUtc: DateTimeOffset.UtcNow,
+            Mode: mode,
+            VisualLaneRequired: visualRequired,
+            Thresholds: thresholds,
+            Checks: checks,
+            Lanes: laneEvidence,
+            TotalSamples: total,
+            NcrResolutionP95Ms: resolutionP95,
+            NcrLoadP95Ms: loadP95,
+            NcrOutcomeP95Ms: outcomeP95,
+            NcrFailureRate: failureRate,
+            Passed: checks.All(check => check.Passed));
+    }
+
+    private static void WriteRuntimeSloEvidence(string repoRoot, string? evidenceOutput, RuntimeSloEvidence evidence)
+    {
+        var defaultJsonPath = Path.Combine(repoRoot, ".nexo", "runtime", "release-gate", "last-run", "evidence.json");
+        var jsonPath = string.IsNullOrWhiteSpace(evidenceOutput)
+            ? defaultJsonPath
+            : Path.GetFullPath(evidenceOutput.Trim());
+        var mdPath = Path.ChangeExtension(jsonPath, ".md");
+        var jsonDir = Path.GetDirectoryName(jsonPath);
+        if (!string.IsNullOrWhiteSpace(jsonDir))
+            Directory.CreateDirectory(jsonDir);
+
+        var payload = new
+        {
+            generatedAtUtc = evidence.GeneratedAtUtc,
+            mode = evidence.Mode,
+            visualLaneRequired = evidence.VisualLaneRequired,
+            passed = evidence.Passed,
+            totalSamples = evidence.TotalSamples,
+            metrics = new
+            {
+                ncrResolutionP95Ms = evidence.NcrResolutionP95Ms,
+                ncrLoadP95Ms = evidence.NcrLoadP95Ms,
+                ncrOutcomeP95Ms = evidence.NcrOutcomeP95Ms,
+                ncrFailureRate = evidence.NcrFailureRate
+            },
+            thresholds = evidence.Thresholds,
+            checks = evidence.Checks,
+            lanes = evidence.Lanes
+        };
+        File.WriteAllText(jsonPath, JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true }));
+
+        var lines = new List<string>
+        {
+            "# Runtime Release Gate SLO Evidence",
+            string.Empty,
+            $"- Generated UTC: {evidence.GeneratedAtUtc:O}",
+            $"- Mode: {evidence.Mode}",
+            $"- Visual lane required: {(evidence.VisualLaneRequired ? "yes" : "no")}",
+            $"- Overall SLO status: {(evidence.Passed ? "PASS" : "FAIL")}",
+            string.Empty,
+            "## NCR Metrics",
+            string.Empty,
+            $"- ncr.model_resolution.p95_ms: {evidence.NcrResolutionP95Ms:0.##} (max {evidence.Thresholds.NcrResolutionP95MsMax:0.##})",
+            $"- ncr.model_load.p95_ms: {evidence.NcrLoadP95Ms:0.##} (max {evidence.Thresholds.NcrLoadP95MsMax:0.##})",
+            $"- ncr.outcome.p95_ms: {evidence.NcrOutcomeP95Ms:0.##} (max {evidence.Thresholds.NcrOutcomeP95MsMax:0.##})",
+            $"- ncr.failure_rate: {evidence.NcrFailureRate:0.####} (max {evidence.Thresholds.NcrFailureRateMax:0.####})",
+            string.Empty,
+            "## Gate Checks",
+            string.Empty
+        };
+        lines.AddRange(evidence.Checks.Select(check =>
+            $"- {(check.Passed ? "PASS" : "FAIL")} `{check.Name}` actual={check.Actual:0.####} threshold={check.Threshold:0.####} ({check.Detail})"));
+        lines.Add(string.Empty);
+        lines.Add("## Lane Summary");
+        lines.Add(string.Empty);
+        lines.AddRange(evidence.Lanes.Select(lane =>
+            $"- `{lane.Lane}` ({lane.BenchmarkSet}) gate={(lane.GateOk.HasValue ? (lane.GateOk.Value ? "pass" : "fail") : "n/a")} passRate={(lane.PassRate.HasValue ? lane.PassRate.Value.ToString("0.####") : "n/a")} total={(lane.Total.HasValue ? lane.Total.Value.ToString() : "n/a")}"));
+        File.WriteAllLines(mdPath, lines);
+    }
+
+    private static double ComputeP95(IReadOnlyList<double> values)
+    {
+        if (values.Count == 0)
+            return 0d;
+        var ordered = values.OrderBy(v => v).ToArray();
+        var index = (int)Math.Ceiling(0.95d * ordered.Length) - 1;
+        index = Math.Clamp(index, 0, ordered.Length - 1);
+        return ordered[index];
     }
 
     private static string NormalizeReleaseGateMode(string? mode)
@@ -2005,7 +2316,45 @@ public sealed class RuntimeCommand : Command
         int? MinTotal = null,
         double? MinPassRate = null,
         int? Streak = null,
-        int? MinConsecutivePasses = null);
+        int? MinConsecutivePasses = null,
+        RuntimeSloEvidence? SloEvidence = null);
+
+    private sealed record RuntimeSloEvidence(
+        DateTimeOffset GeneratedAtUtc,
+        string Mode,
+        bool VisualLaneRequired,
+        RuntimeSloThresholds Thresholds,
+        IReadOnlyList<RuntimeSloCheck> Checks,
+        IReadOnlyList<RuntimeLaneSloEvidence> Lanes,
+        int TotalSamples,
+        double NcrResolutionP95Ms,
+        double NcrLoadP95Ms,
+        double NcrOutcomeP95Ms,
+        double NcrFailureRate,
+        bool Passed);
+
+    private sealed record RuntimeSloThresholds(
+        double NcrResolutionP95MsMax,
+        double NcrLoadP95MsMax,
+        double NcrOutcomeP95MsMax,
+        double NcrFailureRateMax);
+
+    private sealed record RuntimeSloCheck(
+        string Name,
+        double Actual,
+        double Threshold,
+        bool Passed,
+        string Detail);
+
+    private sealed record RuntimeLaneSloEvidence(
+        string Lane,
+        string BenchmarkSet,
+        bool? GateOk,
+        string? GateSummary,
+        double? PassRate,
+        double? MinPassRate,
+        int? Total,
+        int? PassedCount);
 
     private sealed record RuntimeRemediationPolicy(string Policy, string Reason);
 

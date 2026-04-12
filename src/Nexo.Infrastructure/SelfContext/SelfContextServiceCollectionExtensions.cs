@@ -1,8 +1,11 @@
 using Microsoft.Extensions.DependencyInjection;
 using Nexo.Core.Application.Adaptation.Ports;
+using Nexo.Core.Application.Knowledge.Ports;
 using Nexo.Core.Application.Observation.Ports;
 using Nexo.Core.Application.Paths;
 using Nexo.Core.Application.SelfContext.Ports;
+using Nexo.Core.Application.Trust.Ports;
+using Nexo.Infrastructure.Knowledge;
 using Nexo.Infrastructure.Observation;
 using Nexo.Infrastructure.SelfContext;
 
@@ -33,6 +36,14 @@ public static class SelfContextServiceCollectionExtensions
         services.AddSingleton<IExecutionTracer>(sp => new LiteDbExecutionTracer(tracerDbPath));
         services.AddSingleton<ITestFailureStore>(sp => new LiteDbTestFailureStore(testFailuresDbPath));
         services.AddSingleton<ISelfContextAssembler, SelfContextAssembler>();
+        services.AddSingleton<IKnowledgeQueryService>(sp =>
+        {
+            var adaptationLog = sp.GetRequiredService<IAdaptationLog>();
+            var patternStore = sp.GetRequiredService<IPatternStore>();
+            var userKnowledgeStore = sp.GetService<IUserKnowledgeLogStore>()
+                ?? new Nexo.Infrastructure.Trust.InMemoryUserKnowledgeLogStore();
+            return new KnowledgeQueryService(adaptationLog, patternStore, userKnowledgeStore);
+        });
         services.AddChangelogGenerator();
         services.AddDocumentationUpdater();
         return services;

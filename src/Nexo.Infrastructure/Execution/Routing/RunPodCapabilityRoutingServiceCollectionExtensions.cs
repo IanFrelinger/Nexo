@@ -4,9 +4,11 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Execution.Routing;
+using Nexo.Core.Application.Mesh.Models;
 using Nexo.Core.Application.Mesh.Ports;
 using Nexo.Core.Application.NodeCapabilityRuntime.Ports;
 using Nexo.Infrastructure.Adaptation;
+using Nexo.Infrastructure.Mesh;
 
 namespace Nexo.Infrastructure.Execution.Routing;
 
@@ -24,6 +26,17 @@ public static class RunPodCapabilityRoutingServiceCollectionExtensions
 
         services.AddOptions<RunPodBrickConfig>()
             .Bind(configuration.GetSection(RunPodBrickConfig.SectionName));
+
+        services.TryAddSingleton<IInstanceDiscovery>(sp =>
+        {
+            var instancesPath = Environment.GetEnvironmentVariable("NEXO_MESH_INSTANCES_PATH");
+            var trustedPeerIdsCsv = Environment.GetEnvironmentVariable("NEXO_TRUSTED_PEER_IDS");
+            var untrustedPeerIdsCsv = Environment.GetEnvironmentVariable("NEXO_UNTRUSTED_PEER_IDS");
+            return new FileBasedInstanceDiscovery(
+                string.IsNullOrWhiteSpace(instancesPath) ? null : instancesPath.Trim(),
+                trustedPeerIdsCsv,
+                untrustedPeerIdsCsv);
+        });
 
         services.AddHttpClient<IRunPodClient, RunPodHttpClient>((sp, client) =>
         {
@@ -43,6 +56,11 @@ public static class RunPodCapabilityRoutingServiceCollectionExtensions
             sp.GetServices<IHostedService>().OfType<PeerCapabilitySnapshotPoller>().First());
         services.TryAddSingleton<NexoPeerBrickExecutor>();
         services.TryAddSingleton<IPeerExecutor>(sp => sp.GetRequiredService<NexoPeerBrickExecutor>());
+        services.TryAddSingleton(sp =>
+        {
+            var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<RunPodBrickConfig>>().Value;
+            return new PeerTrustPolicyResolver(options.PeerTrustPolicy, options.TrustedPeerIdsCsv, options.UntrustedPeerIdsCsv);
+        });
 
         services.TryAddSingleton<ILocalExecutor, ProviderFactoryLocalExecutor>();
         services.TryAddSingleton<RunPodBrick>();

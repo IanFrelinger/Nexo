@@ -28,6 +28,16 @@ jobs:
       - name: Core promotion gate (strict)
         run: dotnet run --project src/Nexo.CLI -- runtime release-gate --repo-root . --mode core --lane-repetitions 3 --core-min-pass-rate 0.9 --core-min-total 9 --core-history-window 9
 
+      - name: Upload core promotion SLO evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: runtime-release-promotion-core-evidence
+          path: |
+            .nexo/runtime/release-gate/last-run/evidence.json
+            .nexo/runtime/release-gate/last-run/evidence.md
+          if-no-files-found: warn
+
   release-promotion-visual-strict:
     runs-on: ubuntu-latest
     steps:
@@ -50,6 +60,16 @@ jobs:
       - name: Visual promotion gate (strict, advisory until infra ready)
         run: dotnet run --project src/Nexo.CLI -- runtime release-gate --repo-root . --mode visual --lane-repetitions 3 --visual-required-mode true --visual-min-pass-rate 0.85 --visual-min-total 9 --visual-history-window 9 --visual-promotion-streak 3
 
+      - name: Upload visual promotion SLO evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: runtime-release-promotion-visual-evidence
+          path: |
+            .nexo/runtime/release-gate/last-run/evidence.json
+            .nexo/runtime/release-gate/last-run/evidence.md
+          if-no-files-found: warn
+
   release-promotion-chaos:
     runs-on: ubuntu-latest
     steps:
@@ -71,3 +91,13 @@ jobs:
 
       - name: Chaos observation lane
         run: dotnet run --project src/Nexo.CLI -- runtime release-gate --repo-root . --mode chaos
+
+      - name: Upload chaos promotion SLO evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: runtime-release-promotion-chaos-evidence
+          path: |
+            .nexo/runtime/release-gate/last-run/evidence.json
+            .nexo/runtime/release-gate/last-run/evidence.md
+          if-no-files-found: warn

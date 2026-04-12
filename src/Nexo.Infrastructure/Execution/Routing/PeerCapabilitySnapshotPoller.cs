@@ -17,6 +17,7 @@ public sealed class PeerCapabilitySnapshotPoller : BackgroundService, IPeerCapab
     private readonly object _gate = new();
     private IReadOnlyList<PeerExecutionCandidate> _candidates = Array.Empty<PeerExecutionCandidate>();
     private readonly string _capabilityId;
+    private readonly PeerTrustPolicyResolver _trustPolicyResolver;
 
     public PeerCapabilitySnapshotPoller(
         IInstanceDiscovery discovery,
@@ -30,6 +31,10 @@ public sealed class PeerCapabilitySnapshotPoller : BackgroundService, IPeerCapab
         _capabilityId = string.IsNullOrWhiteSpace(config?.Value?.PeerCapabilityId)
             ? "generation.capability-routing"
             : config!.Value.PeerCapabilityId;
+        _trustPolicyResolver = new PeerTrustPolicyResolver(
+            config?.Value?.PeerTrustPolicy,
+            config?.Value?.TrustedPeerIdsCsv,
+            config?.Value?.UntrustedPeerIdsCsv);
     }
 
     public IReadOnlyList<PeerExecutionCandidate> Candidates
@@ -80,6 +85,8 @@ public sealed class PeerCapabilitySnapshotPoller : BackgroundService, IPeerCapab
 
     private PeerExecutionCandidate MapPeer(Nexo.Core.Application.Mesh.Models.PeerInfo peer)
     {
+        var discoveredTier = ParseTrustTier(peer.Capabilities, peer.TrustTier);
+        var effectiveTier = _trustPolicyResolver.ResolveTier(peer with { TrustTier = discoveredTier });
         var vram = ParseLongCapability(peer.Capabilities, "vram");
         var queueDepth = ParseIntCapability(peer.Capabilities, "queue");
         var compute = ParseComputeClass(peer.Capabilities);
@@ -92,7 +99,27 @@ public sealed class PeerCapabilitySnapshotPoller : BackgroundService, IPeerCapab
             return new PeerExecutionCandidate
             {
                 PeerId = peer.PeerId,
-                Endpoint = string.Empty
+                Endpoint = string.Empty,
+                TrustTier = effectiveTier
+            };
+        }
+
+        if (!_trustPolicyResolver.IsAllowed(effectiveTier))
+        {
+            _logger.LogDebug(
+                "peer-capabilities candidate blocked by trust policy policy={Policy} peer={PeerId} tier={Tier}",
+                _trustPolicyResolver.Policy,
+                peer.PeerId,
+                effectiveTier);
+            return new PeerExecutionCandidate
+            {
+                PeerId = peer.PeerId,
+                Endpoint = string.Empty,
+                AvailableVramBytes = vram,
+                ComputeClass = compute,
+                QueueDepth = queueDepth,
+                TrustTier = effectiveTier,
+                CapturedAt = DateTimeOffset.UtcNow
             };
         }
 
@@ -103,6 +130,7 @@ public sealed class PeerCapabilitySnapshotPoller : BackgroundService, IPeerCapab
             AvailableVramBytes = vram,
             ComputeClass = compute,
             QueueDepth = queueDepth,
+            TrustTier = effectiveTier,
             CapturedAt = DateTimeOffset.UtcNow
         };
     }
@@ -156,5 +184,24 @@ public sealed class PeerCapabilitySnapshotPoller : BackgroundService, IPeerCapab
         }
 
         return GpuComputeClass.None;
+    }
+
+    private static Nexo.Core.Application.Mesh.Models.PeerTrustTier ParseTrustTier(
+        IEnumerable<string> capabilities,
+        Nexo.Core.Application.Mesh.Models.PeerTrustTier defaultTier)
+    {
+        foreach (var capability in capabilities)
+        {
+            if (capability.StartsWith("trust:", StringComparison.OrdinalIgnoreCase))
+            {
+                var value = capability["trust:".Length..];
+                if (Enum.TryParse<Nexo.Core.Application.Mesh.Models.PeerTrustTier>(value, true, out var parsed))
+                {
+                    return parsed;
+                }
+            }
+        }
+
+        return defaultTier;
     }
 }

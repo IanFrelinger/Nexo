@@ -17,6 +17,7 @@ public sealed class NcrCapabilityRouter : ICapabilityRouter
     private readonly RunPodBrick _runPodBrick;
     private readonly IOptions<RunPodBrickConfig> _config;
     private readonly ILogger<NcrCapabilityRouter> _logger;
+    private readonly PeerTrustPolicyResolver _peerTrustResolver;
 
     public NcrCapabilityRouter(
         INCRCapabilitySnapshot snapshot,
@@ -34,6 +35,10 @@ public sealed class NcrCapabilityRouter : ICapabilityRouter
         _runPodBrick = runPodBrick ?? throw new ArgumentNullException(nameof(runPodBrick));
         _config = config ?? throw new ArgumentNullException(nameof(config));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _peerTrustResolver = new PeerTrustPolicyResolver(
+            _config.Value.PeerTrustPolicy,
+            _config.Value.TrustedPeerIdsCsv,
+            _config.Value.UntrustedPeerIdsCsv);
     }
 
     public ExecutionTarget ResolveExecutionTarget(JobRequirements requirements)
@@ -148,6 +153,11 @@ public sealed class NcrCapabilityRouter : ICapabilityRouter
 
     private bool IsPeerEligible(PeerExecutionCandidate peer, JobRequirements requirements)
     {
+        if (!_peerTrustResolver.IsAllowed(peer))
+        {
+            return false;
+        }
+
         if (string.IsNullOrWhiteSpace(peer.Endpoint))
         {
             return false;

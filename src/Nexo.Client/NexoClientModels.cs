@@ -11,6 +11,6 @@ public sealed record ExecutionRunRequest(string ImageTag, string[] Command, Dict
 public sealed record AgentResponse(bool Success, string? Message, object? Output);
 public sealed record ValidationResponse(bool Passed, string? Message, int TotalTests, int PassedTests, int FailedTests);
 public sealed record OrchestrationResponse(bool Success, string? Summary, object? Output);
-public sealed record StatusResponse(string Mode, string Message);
+public sealed record StatusResponse(string Mode, string Message, int TotalAgents, int ActiveAgents);
 public sealed record ExecutionBuildResponse(bool Success, string? ErrorMessage, double DurationMs);
 public sealed record ExecutionRunResponse(bool Success, int ExitCode, string StandardOutput, string StandardError, string? ContainerId, double DurationMs);

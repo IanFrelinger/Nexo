@@ -16,6 +16,7 @@ public sealed class RuntimeCommandTests : UnitTestBase
         {
             await TestHistoryFiltersByBenchmarkSetAsync().ConfigureAwait(false);
             await TestGateRequiresConsecutivePassStreakAsync().ConfigureAwait(false);
+            await TestGateJsonIncludesSloEvidenceAsync().ConfigureAwait(false);
             await TestReleaseGateRejectsInvalidModeAsync().ConfigureAwait(false);
             TestVisualRequiredAutoUsesStrictBenchmarkSet();
 
@@ -183,6 +184,59 @@ public sealed class RuntimeCommandTests : UnitTestBase
             AssertEqual(1, exitCode);
             AssertTrue(output.Contains("unsupported mode", StringComparison.OrdinalIgnoreCase),
                 "Expected release-gate to reject unsupported mode values.");
+        }
+        finally
+        {
+            if (Directory.Exists(repoRoot))
+                Directory.Delete(repoRoot, recursive: true);
+        }
+    }
+
+    private async Task TestGateJsonIncludesSloEvidenceAsync()
+    {
+        var repoRoot = CreateTempRepoRoot();
+        try
+        {
+            var now = DateTimeOffset.UtcNow;
+            AdaptiveRuntimeExecutionHistoryStore.Append(repoRoot, new AdaptiveRuntimeExecutionReport
+            {
+                StartedAtUtc = now,
+                ElapsedMs = 120,
+                GoalFingerprint = "goal-slo-a",
+                GoalPreview = "goal-slo-a",
+                BenchmarkSet = "release-core",
+                RequestedQaPolicy = "release",
+                ResolvedQaPolicy = "release",
+                Success = true,
+                FailureStage = "none"
+            });
+            AdaptiveRuntimeExecutionHistoryStore.Append(repoRoot, new AdaptiveRuntimeExecutionReport
+            {
+                StartedAtUtc = now.AddSeconds(-1),
+                ElapsedMs = 250,
+                GoalFingerprint = "goal-slo-b",
+                GoalPreview = "goal-slo-b",
+                BenchmarkSet = "release-core",
+                RequestedQaPolicy = "release",
+                ResolvedQaPolicy = "release",
+                Success = false,
+                FailureStage = "self-extend"
+            });
+
+            var (exitCode, output) = await InvokeRuntimeAsync(
+                $"gate --repo-root \"{repoRoot}\" --benchmark-set release-core --policy release --history-window 20 --min-pass-rate 0 --min-total 1 --min-consecutive-passes 0 --json")
+                .ConfigureAwait(false);
+
+            AssertEqual(0, exitCode, "Gate should pass with relaxed thresholds.");
+            using var payload = ParseLastJsonObject(output);
+            var root = payload.RootElement;
+            AssertTrue(root.TryGetProperty("sloEvidence", out var evidence), "Gate JSON should include sloEvidence.");
+            AssertEqual(2, evidence.GetProperty("TotalSamples").GetInt32());
+            AssertTrue(evidence.GetProperty("NcrFailureRate").GetDouble() >= 0d, "Failure rate should be present.");
+            AssertTrue(evidence.TryGetProperty("Checks", out var checks), "Checks should be present.");
+            AssertTrue(checks.GetArrayLength() >= 1, "At least one SLO check should be emitted.");
+            AssertTrue(evidence.TryGetProperty("Lanes", out var lanes), "Lane evidence should be present.");
+            AssertTrue(lanes.GetArrayLength() >= 1, "At least one lane should be emitted.");
         }
         finally
         {

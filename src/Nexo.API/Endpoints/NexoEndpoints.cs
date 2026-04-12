@@ -3,10 +3,15 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Nexo.BrickContracts.Capabilities;
+using Nexo.Core.Application.Knowledge.Models;
+using Nexo.Core.Application.Knowledge.Ports;
 using Nexo.Core.Application.Agent.UseCases.RunAgent;
 using Nexo.Core.Application.NodeCapabilityRuntime.Models;
 using Nexo.Core.Application.NodeCapabilityRuntime.Ports;
+using Nexo.Core.Application.Trust.Ports;
 using Nexo.Core.Application.Validation.UseCases.RunValidation;
+using Nexo.BackgroundAgents.Configuration;
+using Nexo.BackgroundAgents.Registry;
 using Nexo.Infrastructure.Testing.ExecutionPlatform;
 using Nexo.API.Security;
 using Nexo.Orchestration.Coordination;
@@ -47,6 +52,13 @@ public static class NexoEndpoints
             .WithName("Orchestrate")
             .WithSummary("Run orchestration workflow")
             .Produces<OrchestrationResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
+
+        group.MapPost("/copilot/task", RunCopilotTaskAsync)
+            .WithName("RunCopilotTask")
+            .WithSummary("Run copilot task and return trust-auditable context")
+            .Produces<CopilotTaskResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
 
@@ -97,6 +109,33 @@ public static class NexoEndpoints
             .Produces<DirectorDailyEntry>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status404NotFound);
+
+        group.MapGet("/background-agents/summary", GetBackgroundAgentSummaryAsync)
+            .WithName("GetBackgroundAgentSummary")
+            .WithSummary("Get background agent health summary")
+            .Produces<BackgroundAgentSummaryResponse>(StatusCodes.Status200OK);
+
+        group.MapGet("/trust/dashboard", GetTrustDashboardAsync)
+            .WithName("GetTrustDashboard")
+            .WithSummary("Get trust boundary and recent audit events")
+            .Produces<TrustDashboardResponse>(StatusCodes.Status200OK);
+
+        group.MapPost("/trust/pause", SetTrustPauseAsync)
+            .WithName("SetTrustPause")
+            .WithSummary("Pause or resume trust observation boundary")
+            .Produces<TrustBoundaryMutationResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest);
+
+        group.MapPost("/trust/rule", SetTrustRuleAsync)
+            .WithName("SetTrustRule")
+            .WithSummary("Update trust allow/deny rules for category/source")
+            .Produces<TrustBoundaryMutationResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest);
+
+        group.MapGet("/knowledge/query", QueryKnowledgeAsync)
+            .WithName("QueryKnowledge")
+            .WithSummary("Query unified adaptation/pattern/knowledge timeline")
+            .Produces<KnowledgeQueryResult>(StatusCodes.Status200OK);
 
         return app;
     }
@@ -160,14 +199,45 @@ public static class NexoEndpoints
         }
     }
 
+    private static async Task<IResult> RunCopilotTaskAsync(
+        [FromBody] CopilotTaskRequest request,
+        [FromServices] Orchestrator orchestrator,
+        [FromServices] IDataDecisionAuditLog? auditLog,
+        [FromServices] IAccessBoundary? accessBoundary,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(request?.Task))
+            return Results.BadRequest(new ProblemDetails { Title = "Task is required" });
+
+        try
+        {
+            var result = await orchestrator.OrchestrateAsync(request.Task, cancellationToken);
+            var auditCount = Math.Clamp(request.AuditCount <= 0 ? 25 : request.AuditCount, 1, 200);
+            var recentAudit = auditLog?.GetRecent(auditCount) ?? [];
+            return Results.Ok(new CopilotTaskResponse(
+                result.Success,
+                result.IntegratedOutput != null ? $"{result.IntegratedOutput.AgentOutputs.Count} agent(s) executed" : null,
+                result.IntegratedOutput?.IntegratedResults,
+                accessBoundary?.IsObservationPaused ?? false,
+                recentAudit));
+        }
+        catch (Exception ex)
+        {
+            return Results.Problem(detail: ex.Message, statusCode: StatusCodes.Status500InternalServerError);
+        }
+    }
+
     private static async Task<IResult> GetStatusAsync(
         [FromServices] IServiceProvider services,
         CancellationToken cancellationToken)
     {
         await Task.CompletedTask;
-        var modeStore = services.GetService<Nexo.BackgroundAgents.Configuration.IAggressivenessModeStore>();
-        var mode = modeStore?.GetMode() ?? Nexo.BackgroundAgents.Configuration.BackgroundAgentAggressivenessMode.Active;
-        return Results.Ok(new StatusResponse(mode.ToString(), "Nexo API is running"));
+        var modeStore = services.GetService<IAggressivenessModeStore>();
+        var mode = modeStore?.GetMode() ?? BackgroundAgentAggressivenessMode.Active;
+        var registry = services.GetService<IBackgroundAgentRegistry>();
+        var activeAgents = registry?.GetAll().Count(a => a.State == BackgroundAgentState.Running) ?? 0;
+        var totalAgents = registry?.GetAll().Count ?? 0;
+        return Results.Ok(new StatusResponse(mode.ToString(), "Nexo API is running", totalAgents, activeAgents));
     }
 
     private static async Task<IResult> BuildImageAsync(
@@ -489,6 +559,138 @@ public static class NexoEndpoints
             custom,
             options.ShowAdvisoryInPortal));
     }
+
+    private static async Task<IResult> GetBackgroundAgentSummaryAsync(
+        [FromServices] IServiceProvider services,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        await Task.CompletedTask;
+
+        var registry = services.GetService<IBackgroundAgentRegistry>();
+        var modeStore = services.GetService<IAggressivenessModeStore>();
+        var mode = modeStore?.GetMode() ?? BackgroundAgentAggressivenessMode.Active;
+        var agents = registry?.GetAll() ?? [];
+        var summaries = agents.Select(agent => new BackgroundAgentSnapshot(
+            agent.Config.Id,
+            agent.Config.Name,
+            agent.Config.Role,
+            agent.State.ToString(),
+            agent.ExecutionCount,
+            agent.SuccessCount,
+            agent.FailureCount,
+            agent.LastStartedAt,
+            agent.LastCompletedAt,
+            agent.LastError))
+            .OrderBy(s => s.AgentId, StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        return Results.Ok(new BackgroundAgentSummaryResponse(mode.ToString(), summaries, summaries.Length));
+    }
+
+    private static async Task<IResult> GetTrustDashboardAsync(
+        [FromServices] IDataDecisionAuditLog? auditLog,
+        [FromServices] IAccessBoundary? accessBoundary,
+        [FromQuery] int count = 25,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        await Task.CompletedTask;
+        count = Math.Clamp(count, 1, 200);
+
+        var paused = accessBoundary?.IsObservationPaused ?? false;
+        var audit = auditLog?.GetRecent(count) ?? [];
+        var byType = audit
+            .GroupBy(entry => entry.EventType, StringComparer.OrdinalIgnoreCase)
+            .ToDictionary(group => group.Key, group => group.Count(), StringComparer.OrdinalIgnoreCase);
+
+        return Results.Ok(new TrustDashboardResponse(
+            AccessBoundaryRegistered: accessBoundary != null,
+            AuditLogRegistered: auditLog != null,
+            IsPaused: paused,
+            RecentAudit: audit,
+            AuditByType: byType));
+    }
+
+    private static async Task<IResult> SetTrustPauseAsync(
+        [FromBody] TrustPauseRequest request,
+        [FromServices] IAccessBoundary? accessBoundary,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        await Task.CompletedTask;
+        if (accessBoundary == null)
+            return Results.BadRequest(new ProblemDetails { Title = "Access boundary is not registered." });
+
+        accessBoundary.SetPause(request.Paused);
+        return Results.Ok(new TrustBoundaryMutationResponse(
+            true,
+            "pause",
+            request.Paused ? "paused" : "resumed"));
+    }
+
+    private static async Task<IResult> SetTrustRuleAsync(
+        [FromBody] TrustRuleRequest request,
+        [FromServices] IAccessBoundary? accessBoundary,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        await Task.CompletedTask;
+        if (accessBoundary == null)
+            return Results.BadRequest(new ProblemDetails { Title = "Access boundary is not registered." });
+
+        if (string.IsNullOrWhiteSpace(request.Category) && string.IsNullOrWhiteSpace(request.Source))
+            return Results.BadRequest(new ProblemDetails { Title = "Category or Source is required." });
+
+        if (!string.IsNullOrWhiteSpace(request.Category))
+        {
+            accessBoundary.SetCategoryAllowed(request.Category.Trim(), request.Allowed);
+            return Results.Ok(new TrustBoundaryMutationResponse(true, "category", request.Allowed ? "allowed" : "denied"));
+        }
+
+        accessBoundary.SetSourceAllowed(request.Source!.Trim(), request.Allowed);
+        return Results.Ok(new TrustBoundaryMutationResponse(true, "source", request.Allowed ? "allowed" : "denied"));
+    }
+
+    private static async Task<IResult> QueryKnowledgeAsync(
+        [FromServices] IKnowledgeQueryService queryService,
+        [FromQuery] string? sources = null,
+        [FromQuery] string? dataType = null,
+        [FromQuery] string? eventType = null,
+        [FromQuery] int maxCount = 100,
+        [FromQuery] int offset = 0,
+        [FromQuery] DateTimeOffset? since = null,
+        [FromQuery] DateTimeOffset? until = null,
+        CancellationToken cancellationToken = default)
+    {
+        var selectedSources = ParseKnowledgeSources(sources);
+        var request = new KnowledgeQueryRequest
+        {
+            Since = since,
+            Until = until,
+            DataType = dataType,
+            EventType = eventType,
+            MaxCount = maxCount,
+            Offset = offset,
+            Sources = selectedSources
+        };
+        var result = await queryService.QueryAsync(request, cancellationToken).ConfigureAwait(false);
+        return Results.Ok(result);
+    }
+
+    private static IReadOnlyList<KnowledgeSource> ParseKnowledgeSources(string? sources)
+    {
+        if (string.IsNullOrWhiteSpace(sources))
+            return Array.Empty<KnowledgeSource>();
+
+        return sources
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(token => Enum.TryParse<KnowledgeSource>(token, true, out var parsed) ? parsed : (KnowledgeSource?)null)
+            .Where(parsed => parsed.HasValue)
+            .Select(parsed => parsed!.Value)
+            .Distinct()
+            .ToArray();
+    }
 }
 
 // Request/Response DTOs
@@ -500,8 +702,15 @@ public sealed record ValidationResponse(bool Passed, string? Message, int TotalT
 
 public sealed record OrchestrationRequest(string Request);
 public sealed record OrchestrationResponse(bool Success, string? Summary, object? Output);
+public sealed record CopilotTaskRequest(string Task, int AuditCount = 25);
+public sealed record CopilotTaskResponse(
+    bool Success,
+    string? Summary,
+    object? Output,
+    bool IsTrustPaused,
+    IReadOnlyList<Nexo.Core.Application.Trust.Models.DataDecisionAuditEntry> RecentAudit);
 
-public sealed record StatusResponse(string Mode, string Message);
+public sealed record StatusResponse(string Mode, string Message, int TotalAgents, int ActiveAgents);
 
 public sealed record ExecutionBuildRequest(string DockerfilePath, string ImageTag, string ContextPath, Dictionary<string, string>? BuildArgs = null);
 public sealed record ExecutionBuildResponse(bool Success, string? ErrorMessage, double DurationMs);
@@ -545,3 +754,33 @@ public sealed record DirectorDailyEntry(
     string? IntegratedOutputJson,
     ValidationResponse? Validation,
     string? OrchestrationError);
+
+public sealed record BackgroundAgentSummaryResponse(
+    string Mode,
+    IReadOnlyList<BackgroundAgentSnapshot> Agents,
+    int TotalAgents);
+
+public sealed record BackgroundAgentSnapshot(
+    string AgentId,
+    string Name,
+    string Role,
+    string State,
+    int ExecutionCount,
+    int SuccessCount,
+    int FailureCount,
+    DateTimeOffset? LastStartedAt,
+    DateTimeOffset? LastCompletedAt,
+    string? LastError);
+
+public sealed record TrustDashboardResponse(
+    bool AccessBoundaryRegistered,
+    bool AuditLogRegistered,
+    bool IsPaused,
+    IReadOnlyList<Nexo.Core.Application.Trust.Models.DataDecisionAuditEntry> RecentAudit,
+    IReadOnlyDictionary<string, int> AuditByType);
+
+public sealed record TrustPauseRequest(bool Paused);
+
+public sealed record TrustRuleRequest(string? Category, string? Source, bool Allowed);
+
+public sealed record TrustBoundaryMutationResponse(bool Ok, string Target, string State);
