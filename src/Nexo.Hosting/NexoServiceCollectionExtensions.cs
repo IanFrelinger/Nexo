@@ -14,6 +14,7 @@ using Nexo.Core.Application.Validation.UseCases.RunValidation;
 using Nexo.Core.Application.Testing.UseCases.RunTests;
 using Nexo.Core.Application.Common.Ports;
 using Nexo.Core.Application.Common.Services;
+using Nexo.Core.Application.Copilot.Ports;
 using Nexo.Core.Application.Paths;
 using Nexo.Core.Application.Trust.Ports;
 using Nexo.Infrastructure;
@@ -27,6 +28,7 @@ using Nexo.Infrastructure.NodeCapabilityRuntime;
 using Nexo.Infrastructure.Pipelines;
 using Nexo.Infrastructure.Persistence.Ephemeral;
 using Nexo.Infrastructure.Persistence;
+using Nexo.Infrastructure.Copilot;
 using Nexo.Orchestration;
 using Nexo.Orchestration.Models;
 using Nexo.Abstractions.Routing;
@@ -149,6 +151,12 @@ public static class NexoServiceCollectionExtensions
 
         if (modules.IncludeAdaptation)
             services.AddAdaptationInfrastructure(options.PatternStorePath);
+
+        var copilotTasksBasePath = !string.IsNullOrEmpty(options.PatternStorePath)
+            ? Path.GetDirectoryName(options.PatternStorePath) ?? "."
+            : RepoPathResolver.FindRepoRoot();
+        var copilotTasksDbPath = Path.Combine(copilotTasksBasePath, "nexo-copilot-tasks.db");
+        services.TryAddSingleton<ICopilotTaskStore>(_ => new LiteDbCopilotTaskStore(copilotTasksDbPath));
 
         services.TryAddSingleton<IKnowledgeQueryService>(sp =>
         {

@@ -26,7 +26,8 @@ public static class MeshServiceCollectionExtensions
         var resolvedPeerId = peerId ?? Environment.GetEnvironmentVariable("NEXO_MESH_PEER_ID") ?? Guid.NewGuid().ToString("N");
         var trustedPeerIdsCsv = Environment.GetEnvironmentVariable("NEXO_TRUSTED_PEER_IDS");
         var untrustedPeerIdsCsv = Environment.GetEnvironmentVariable("NEXO_UNTRUSTED_PEER_IDS");
-        var trustPolicy = Environment.GetEnvironmentVariable("NEXO_PEER_TRUST_POLICY");
+        var meshTrustPolicy = Nexo.Core.Application.Mesh.MeshTrustPolicyConfiguration.ResolveDiscoveryPolicy();
+        var capabilityTrustPolicy = Nexo.Core.Application.Mesh.MeshTrustPolicyConfiguration.ResolveCapabilityRequestPolicy();
 
         services.AddSingleton(Options.Create(new MeshOptions
         {
@@ -34,7 +35,8 @@ public static class MeshServiceCollectionExtensions
             TrustedPeerIdsCsv = trustedPeerIdsCsv,
             UntrustedPeerIdsCsv = untrustedPeerIdsCsv
         }));
-        services.AddSingleton<IInstanceDiscovery>(sp => new FileBasedInstanceDiscovery(path, trustedPeerIdsCsv, untrustedPeerIdsCsv));
+        services.AddSingleton<IInstanceDiscovery>(sp =>
+            new FileBasedInstanceDiscovery(path, trustedPeerIdsCsv, untrustedPeerIdsCsv, meshTrustPolicy));
         services.AddSingleton<ICapabilityAdvertisement>(sp =>
             new FileBasedCapabilityAdvertisement(
                 sp.GetRequiredService<IInstanceDiscovery>(),
@@ -53,7 +55,7 @@ public static class MeshServiceCollectionExtensions
                 adv,
                 transport,
                 options.Value.PeerId,
-                trustPolicy,
+                capabilityTrustPolicy,
                 trustedPeerIdsCsv,
                 untrustedPeerIdsCsv,
                 logger);

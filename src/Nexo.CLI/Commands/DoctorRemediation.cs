@@ -31,11 +31,35 @@ internal static class DoctorRemediation
         bool includeOptional,
         bool autoApproveFixes,
         bool json,
+        bool dryRun,
         CancellationToken cancellationToken)
     {
-        var attempts = new List<DoctorRemediationAttempt>();
         var actions = BuildActionPlan(assessment, osSupported, cliSmokePassed, profile, includeOptional);
 
+        if (dryRun)
+        {
+            var dryAttempts = actions
+                .Select(action => new DoctorRemediationAttempt(
+                    action.Id,
+                    action.Problem,
+                    action.Command,
+                    Attempted: false,
+                    Success: false,
+                    Status: "dry-run",
+                    Message: "Would run remediation command (dry run; no action taken).",
+                    ExitCode: -1,
+                    FollowUp: action.FollowUp))
+                .OrderBy(a => a.Id, StringComparer.Ordinal)
+                .ToList();
+            return new DoctorRemediationReport
+            {
+                FixEnabled = true,
+                AutoApproveFixes = autoApproveFixes,
+                Attempts = dryAttempts,
+            };
+        }
+
+        var attempts = new List<DoctorRemediationAttempt>();
         foreach (var action in actions)
         {
             if (!autoApproveFixes && json)

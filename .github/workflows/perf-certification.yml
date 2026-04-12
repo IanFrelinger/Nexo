@@ -1,0 +1,45 @@
+name: perf-certification
+
+on:
+  workflow_dispatch:
+    inputs:
+      baseline:
+        description: "Baseline label for this certification run (e.g. release tag or commit SHA)"
+        required: false
+        default: "manual"
+
+jobs:
+  perf-tests:
+    name: perf-certification
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            9.0.x
+            8.0.x
+
+      - name: Run perf / benchmark-scoped tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p perf-results
+          echo "{\"baseline\":\"${{ github.event.inputs.baseline }}\",\"runId\":\"${{ github.run_id }}\",\"sha\":\"${{ github.sha }}\"}" > perf-results/perf-certification-meta.json
+          dotnet test Nexo.sln \
+            --configuration Release \
+            --logger "trx;LogFileName=perf-certification.trx" \
+            --results-directory perf-results \
+            --filter "FullyQualifiedName~Nexo.Tests.Orchestration.Performance|FullyQualifiedName~Benchmark" \
+            --verbosity minimal
+
+      - name: Upload perf certification results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: perf-certification-${{ github.run_id }}
+          path: perf-results/
+          retention-days: 30

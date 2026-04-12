@@ -52,6 +52,7 @@ public sealed class DoctorCommandTests : UnitTestBase
             includeOptional: false,
             json: false,
             fix: false,
+            dryRun: false,
             autoApproveFixes: false,
             CancellationToken.None).ConfigureAwait(false);
         AssertTrue(exitCode == 0 || exitCode == 1, "Doctor exit code should be deterministic (0 or 1).");
@@ -69,6 +70,7 @@ public sealed class DoctorCommandTests : UnitTestBase
                 includeOptional: false,
                 json: true,
                 fix: false,
+                dryRun: false,
                 autoApproveFixes: false,
                 CancellationToken.None).ConfigureAwait(false);
             AssertTrue(exitCode == 0 || exitCode == 1, "Doctor JSON exit code should be deterministic (0 or 1).");
@@ -94,6 +96,7 @@ public sealed class DoctorCommandTests : UnitTestBase
                 includeOptional: false,
                 json: true,
                 fix: true,
+                dryRun: false,
                 autoApproveFixes: false,
                 CancellationToken.None).ConfigureAwait(false);
             AssertTrue(exitCode == 0 || exitCode == 1, "Doctor JSON fix exit code should be deterministic (0 or 1).");

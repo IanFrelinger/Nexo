@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Execution.Routing;
+using Nexo.Core.Application.Mesh;
 using Nexo.Core.Application.Mesh.Models;
 using Nexo.Core.Application.Mesh.Ports;
 using Nexo.Core.Application.NodeCapabilityRuntime.Ports;
@@ -35,7 +36,8 @@ public static class RunPodCapabilityRoutingServiceCollectionExtensions
             return new FileBasedInstanceDiscovery(
                 string.IsNullOrWhiteSpace(instancesPath) ? null : instancesPath.Trim(),
                 trustedPeerIdsCsv,
-                untrustedPeerIdsCsv);
+                untrustedPeerIdsCsv,
+                MeshTrustPolicyConfiguration.ResolveDiscoveryPolicy());
         });
 
         services.AddHttpClient<IRunPodClient, RunPodHttpClient>((sp, client) =>

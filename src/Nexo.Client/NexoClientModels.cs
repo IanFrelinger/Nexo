@@ -23,7 +23,13 @@ public sealed record OrchestrationResponse(
     int? Conflicts = null,
     int? Escalations = null,
     string? ErrorCode = null);
-public sealed record StatusResponse(string Mode, string Message, int TotalAgents, int ActiveAgents);
+public sealed record StatusResponse(
+    string Mode,
+    string Message,
+    int TotalAgents,
+    int ActiveAgents,
+    string? ActivePackId = null,
+    string? ActivePackVersion = null);
 public sealed record ExecutionBuildResponse(bool Success, string? ErrorMessage, double DurationMs);
 public sealed record ExecutionRunResponse(bool Success, int ExitCode, string StandardOutput, string StandardError, string? ContainerId, double DurationMs);
 

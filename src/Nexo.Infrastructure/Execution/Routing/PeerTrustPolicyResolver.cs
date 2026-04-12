@@ -1,3 +1,4 @@
+using Nexo.Core.Application.Mesh;
 using Nexo.Core.Application.Mesh.Models;
 
 namespace Nexo.Infrastructure.Execution.Routing;
@@ -10,7 +11,7 @@ internal sealed class PeerTrustPolicyResolver
 
     public PeerTrustPolicyResolver(string? policy, string? trustedPeerIdsCsv, string? untrustedPeerIdsCsv)
     {
-        _policy = NormalizePolicy(policy);
+        _policy = MeshTrustPolicyConfiguration.NormalizePolicy(policy);
         _trustedPeerIds = ParseCsv(trustedPeerIdsCsv);
         _untrustedPeerIds = ParseCsv(untrustedPeerIdsCsv);
     }
@@ -43,18 +44,6 @@ internal sealed class PeerTrustPolicyResolver
     public bool IsAllowed(PeerExecutionCandidate candidate)
     {
         return IsAllowed(candidate.TrustTier);
-    }
-
-    private static string NormalizePolicy(string? policy)
-    {
-        var normalized = (policy ?? "trusted-preferred").Trim().ToLowerInvariant();
-        return normalized switch
-        {
-            "trusted-only" => "trusted-only",
-            "trusted-preferred" => "trusted-preferred",
-            "any" => "any",
-            _ => "trusted-preferred"
-        };
     }
 
     private static HashSet<string> ParseCsv(string? csv)

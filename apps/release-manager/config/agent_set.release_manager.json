@@ -1,0 +1,138 @@
+{
+  "BackgroundAgents": {
+    "Agents": [
+      {
+        "Id": "repo-monitor",
+        "Name": "Release Manager Repo Monitor",
+        "Role": "optimizer",
+        "ModelProvider": "deterministic",
+        "ModelName": "noop",
+        "Commands": [
+          "watch",
+          "summarize_changes"
+        ],
+        "Parameters": {
+          "RepoRoot": ".",
+          "Objective": "Monitor the repository for changes relevant to release readiness.",
+          "AgentName": "release-manager-repo-monitor"
+        },
+        "Schedule": {
+          "Type": "Interval",
+          "Interval": "00:05:00",
+          "InitialDelay": "00:00:15"
+        },
+        "Enabled": true,
+        "MaxDataSensitivity": "Internal",
+        "AllowedDataSensitivityLevels": [
+          "Public",
+          "Internal"
+        ],
+        "ExfiltrationPolicy": {
+          "BlockExternalLLMs": true,
+          "BlockWebSearch": true,
+          "BlockNetworkExports": true,
+          "RequireLocalOnly": true,
+          "MaxAllowedLevel": "Internal"
+        }
+      },
+      {
+        "Id": "test-runner",
+        "Name": "Release Manager Test Runner",
+        "Role": "tester",
+        "ModelProvider": "deterministic",
+        "Commands": [
+          "test"
+        ],
+        "Parameters": {
+          "Filter": "FullyQualifiedName~BaseFrameworkSmokeTests"
+        },
+        "Schedule": {
+          "Type": "Interval",
+          "Interval": "00:10:00",
+          "InitialDelay": "00:00:30"
+        },
+        "Enabled": true,
+        "MaxDataSensitivity": "Internal",
+        "AllowedDataSensitivityLevels": [
+          "Public",
+          "Internal"
+        ],
+        "ExfiltrationPolicy": {
+          "BlockExternalLLMs": true,
+          "BlockWebSearch": true,
+          "BlockNetworkExports": true,
+          "RequireLocalOnly": true,
+          "MaxAllowedLevel": "Internal"
+        }
+      },
+      {
+        "Id": "slo-collector",
+        "Name": "Release Manager SLO Evidence Collector",
+        "Role": "optimizer",
+        "ModelProvider": "deterministic",
+        "ModelName": "noop",
+        "Commands": [
+          "collect_slo",
+          "snapshot_evidence"
+        ],
+        "Parameters": {
+          "EvidencePaths": [
+            ".nexo/runtime/release-gate/last-run/runtime-release-gate-slo.json",
+            ".nexo/release-bundle/last-run/release-bundle-report.json"
+          ]
+        },
+        "Schedule": {
+          "Type": "Interval",
+          "Interval": "00:15:00",
+          "InitialDelay": "00:01:00"
+        },
+        "Enabled": true,
+        "MaxDataSensitivity": "Internal",
+        "AllowedDataSensitivityLevels": [
+          "Public",
+          "Internal"
+        ],
+        "ExfiltrationPolicy": {
+          "BlockExternalLLMs": true,
+          "BlockWebSearch": true,
+          "BlockNetworkExports": true,
+          "RequireLocalOnly": true,
+          "MaxAllowedLevel": "Internal"
+        }
+      },
+      {
+        "Id": "report-generator",
+        "Name": "Release Readiness Report Generator",
+        "Role": "optimizer",
+        "ModelProvider": "deterministic",
+        "ModelName": "noop",
+        "Commands": [
+          "generate_report",
+          "emit_summary"
+        ],
+        "Parameters": {
+          "ReportTemplate": "release-readiness",
+          "OutputDir": ".nexo/release-manager/reports"
+        },
+        "Schedule": {
+          "Type": "Interval",
+          "Interval": "00:20:00",
+          "InitialDelay": "00:01:30"
+        },
+        "Enabled": true,
+        "MaxDataSensitivity": "Internal",
+        "AllowedDataSensitivityLevels": [
+          "Public",
+          "Internal"
+        ],
+        "ExfiltrationPolicy": {
+          "BlockExternalLLMs": true,
+          "BlockWebSearch": true,
+          "BlockNetworkExports": true,
+          "RequireLocalOnly": true,
+          "MaxAllowedLevel": "Internal"
+        }
+      }
+    ]
+  }
+}

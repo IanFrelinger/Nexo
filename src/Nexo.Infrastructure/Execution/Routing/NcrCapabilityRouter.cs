@@ -155,6 +155,11 @@ public sealed class NcrCapabilityRouter : ICapabilityRouter
     {
         if (!_peerTrustResolver.IsAllowed(peer))
         {
+            _logger.LogWarning(
+                "capability-routing peer skipped: trust tier not allowed peerId={PeerId} tier={TrustTier} policy={PeerTrustPolicy}",
+                peer.PeerId,
+                peer.TrustTier,
+                _peerTrustResolver.Policy);
             return false;
         }
 
