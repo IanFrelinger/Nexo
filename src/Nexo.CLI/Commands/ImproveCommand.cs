@@ -15,6 +15,7 @@ using Nexo.Core.Application.Rollback.Ports;
 using Nexo.Infrastructure;
 using Nexo.Core.Application.SelfContext.Ports;
 using Nexo.Core.Application.Adaptation;
+using Nexo.BackgroundAgents.Observation;
 using Nexo.Infrastructure.Adaptation;
 using Nexo.Infrastructure.Analysis;
 using Nexo.Infrastructure.Observation;
@@ -40,6 +41,9 @@ public sealed class ImproveCommand : Command
         var holdoutFilterOpt = new Option<string?>("--holdout-filter", "xUnit filter for holdout tests (e.g. Category=Holdout). Excluded from per-fix regression; run at end (P3.4)");
         var fromObservationOpt = new Option<bool>("--from-observation", () => false, "Query recent observation patterns and prioritize analysis on affected file paths");
         var observationDaysOpt = new Option<int>("--observation-days", () => 7, "Number of days of observation history to consider (default: 7)");
+        var continuousOpt = new Option<bool>("--continuous", () => false, "Run observe → improve loop continuously until Ctrl+C");
+        var intervalMinutesOpt = new Option<int>("--interval-minutes", () => 5, "Minutes between continuous loop iterations (default: 5)");
+        var observeMinutesOpt = new Option<int>("--observe-minutes", () => 5, "Minutes to observe per continuous iteration (default: 5)");
 
         AddOption(pathOpt);
         AddOption(dryRunOpt);
@@ -51,6 +55,9 @@ public sealed class ImproveCommand : Command
         AddOption(holdoutFilterOpt);
         AddOption(fromObservationOpt);
         AddOption(observationDaysOpt);
+        AddOption(continuousOpt);
+        AddOption(intervalMinutesOpt);
+        AddOption(observeMinutesOpt);
 
         this.SetHandler(async (InvocationContext ctx) =>
         {
@@ -64,7 +71,18 @@ public sealed class ImproveCommand : Command
             var holdoutFilter = ctx.ParseResult.GetValueForOption(holdoutFilterOpt);
             var fromObservation = ctx.ParseResult.GetValueForOption(fromObservationOpt);
             var observationDays = ctx.ParseResult.GetValueForOption(observationDaysOpt);
-            await ExecuteAsync(path, dryRun, autonomy, yes, skipRegression, storePathOverride, self, holdoutFilter, fromObservation, observationDays);
+            var continuous = ctx.ParseResult.GetValueForOption(continuousOpt);
+            var intervalMinutes = ctx.ParseResult.GetValueForOption(intervalMinutesOpt);
+            var observeMinutes = ctx.ParseResult.GetValueForOption(observeMinutesOpt);
+
+            if (continuous)
+            {
+                await ExecuteContinuousAsync(path, dryRun, autonomy, yes, skipRegression, storePathOverride, self, holdoutFilter, observationDays, intervalMinutes, observeMinutes);
+            }
+            else
+            {
+                await ExecuteAsync(path, dryRun, autonomy, yes, skipRegression, storePathOverride, self, holdoutFilter, fromObservation, observationDays);
+            }
         });
     }
 
@@ -489,5 +507,142 @@ public sealed class ImproveCommand : Command
         var outcome = analysisResult.Passed ? "passed" : "violations";
         await executionTracer.TraceAsync("improve.end", null, targetPath, outcome).ConfigureAwait(false);
         Environment.ExitCode = analysisResult.Passed ? 0 : 1;
+    }
+
+    private static async Task ExecuteContinuousAsync(
+        string? path, bool dryRun, string autonomy, bool yes, bool skipRegression,
+        string? storePathOverride, bool self, string? holdoutFilter,
+        int observationDays, int intervalMinutes, int observeMinutes)
+    {
+        var repoRoot = path ?? RepoPathResolver.FindRepoRoot();
+        var storePath = !string.IsNullOrWhiteSpace(storePathOverride)
+            ? Path.Combine(Path.GetFullPath(storePathOverride), "nexo-patterns.db")
+            : Path.Combine(repoRoot, "nexo-patterns.db");
+
+        using var cts = new CancellationTokenSource();
+        Console.CancelKeyPress += (_, e) =>
+        {
+            e.Cancel = true;
+            cts.Cancel();
+        };
+
+        Console.WriteLine("Continuous self-improvement mode");
+        Console.WriteLine($"  Root: {repoRoot}");
+        Console.WriteLine($"  Observe: {observeMinutes}m per cycle, Interval: {intervalMinutes}m between cycles");
+        Console.WriteLine("  Press Ctrl+C to stop.");
+        Console.WriteLine();
+
+        var iteration = 0;
+        while (!cts.IsCancellationRequested)
+        {
+            iteration++;
+            Console.WriteLine($"=== Continuous iteration {iteration} ({DateTimeOffset.UtcNow:HH:mm:ss}) ===");
+
+            try
+            {
+                await RunObservationPhaseAsync(repoRoot, storePath, TimeSpan.FromMinutes(observeMinutes), cts.Token).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) { break; }
+
+            if (cts.IsCancellationRequested) break;
+
+            Console.WriteLine();
+            Console.WriteLine("Running improve --from-observation...");
+            try
+            {
+                await ExecuteAsync(path, dryRun, autonomy, yes, skipRegression, storePathOverride, self, holdoutFilter, true, observationDays).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) { break; }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Improve cycle error: {ex.Message}");
+            }
+
+            if (cts.IsCancellationRequested) break;
+
+            Console.WriteLine();
+            Console.WriteLine($"Sleeping {intervalMinutes}m before next cycle...");
+            try
+            {
+                await Task.Delay(TimeSpan.FromMinutes(intervalMinutes), cts.Token).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) { break; }
+        }
+
+        Console.WriteLine();
+        Console.WriteLine($"Continuous mode stopped after {iteration} iteration(s).");
+        Environment.ExitCode = 0;
+    }
+
+    private static async Task RunObservationPhaseAsync(string repoRoot, string storePath, TimeSpan duration, CancellationToken ct)
+    {
+        var services = new ServiceCollection()
+            .AddLogging(b => b.AddConsole())
+            .AddOptions()
+            .AddAdaptationInfrastructure(storePath)
+            .AddSelfContextInfrastructure(storePath)
+            .Configure<ObservationPipelineOptions>(opts =>
+            {
+                opts.RepoRoot = repoRoot;
+                opts.StorePath = Path.GetFileName(storePath);
+                opts.WatchPaths = new[] { "src", ".github", "tools" };
+                opts.ProcessFilters = new[] { "dotnet", "msbuild", "nexo" };
+            })
+            .AddSingleton<IPatternStore>(_ => new LiteDbPatternStore(storePath))
+            .AddSingleton<IContextAssembler, ContextAssembler>()
+            .BuildServiceProvider();
+
+        var loggerFactory = services.GetRequiredService<ILoggerFactory>();
+
+        var watchPaths = new[] { "src", ".github", "tools" }
+            .Select(p => Path.Combine(repoRoot, p.TrimStart('/', '\\')))
+            .Where(Directory.Exists)
+            .ToList();
+
+        if (watchPaths.Count == 0)
+        {
+            Console.WriteLine("No watch paths exist. Skipping observation phase.");
+            return;
+        }
+
+        Console.WriteLine($"Observing for {duration.TotalMinutes}m: {string.Join(", ", watchPaths.Select(Path.GetFileName))}");
+
+        var patternStore = services.GetRequiredService<IPatternStore>();
+        var patternDetector = new PatternDetector(
+            TimeSpan.FromMinutes(5),
+            3,
+            patternStore,
+            loggerFactory.CreateLogger<PatternDetector>());
+
+        var fileSource = new FileSystemEventSource(
+            watchPaths,
+            repoRoot,
+            new[] { "*" },
+            loggerFactory.CreateLogger<FileSystemEventSource>());
+        var processSource = new ProcessEventSource(
+            new[] { "dotnet", "msbuild", "nexo" },
+            repoRoot,
+            TimeSpan.FromSeconds(2),
+            loggerFactory.CreateLogger<ProcessEventSource>());
+        var compositeSource = new CompositeEventSource(new IObservableEventSource[] { fileSource, processSource });
+
+        using var observeCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        observeCts.CancelAfter(duration);
+
+        var eventCount = 0;
+        try
+        {
+            await foreach (var evt in compositeSource.SubscribeAsync(observeCts.Token).WithCancellation(observeCts.Token))
+            {
+                eventCount++;
+                await patternDetector.ProcessAsync(evt, observeCts.Token).ConfigureAwait(false);
+            }
+        }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        {
+            // Observation time elapsed (not the outer cancellation)
+        }
+
+        Console.WriteLine($"Observation phase complete: {eventCount} event(s) captured.");
     }
 }
