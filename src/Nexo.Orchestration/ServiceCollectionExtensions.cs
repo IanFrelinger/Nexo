@@ -103,17 +103,6 @@ public static class ServiceCollectionExtensions
         // Orchestrator
         services.AddScoped<Orchestrator>();
 
-        // Asset Storage (default to local storage)
-        // Note: IAssetStorage should be registered by consuming application
-        // services.AddSingleton<IAssetStorage, LocalAssetStorage>();
-
-        // Build Tools
-        // Note: IBuildTool should be registered by consuming application for build domains.
-
-        // Playtest Services
-        // Note: ITelemetryStore and IGameRunner should be registered by consuming application
-        // services.AddSingleton<ITelemetryStore, InMemoryTelemetryStore>();
-
         return services;
     }
 

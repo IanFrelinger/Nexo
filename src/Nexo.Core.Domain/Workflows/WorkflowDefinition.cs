@@ -1,4 +1,5 @@
 using Nexo.Core.Domain.Bricks;
+using Nexo.Core.Domain.Clusters;
 using Nexo.Core.Domain.Execution;
 
 namespace Nexo.Core.Domain.Workflows;
@@ -208,4 +209,3 @@ public enum OutputType { Display, File, Webhook, Database }
 public enum OutputFormat { Json, Xml, Csv, Markdown, Html, Pdf }
 public enum TransformOperation { Map, Filter, Reduce, Sort, GroupBy, Merge }
 public enum PortDirection { Input, Output }
-public enum ConnectionType { Data, Control, Event }
