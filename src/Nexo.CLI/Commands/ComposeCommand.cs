@@ -2,6 +2,7 @@ using System.CommandLine;
 using System.CommandLine.Invocation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Nexo.Core.Application.Composition.Models;
 using Nexo.Core.Application.Composition.Ports;
 using Nexo.Infrastructure;
 using Nexo.Infrastructure.Composition;
@@ -19,19 +20,26 @@ public sealed class ComposeCommand : Command
         problemOpt.IsRequired = true;
         var capabilitiesOpt = new Option<string[]>("--capabilities", "Available capabilities (default: perception, validation, reporting)");
         capabilitiesOpt.AllowMultipleArgumentsPerToken = true;
+        var supportLevelOpt = new Option<string[]>(
+            "--support-level",
+            () => new[] { "stable", "experimental", "placeholder" },
+            "Allowed component support levels (stable, experimental, placeholder).");
+        supportLevelOpt.AllowMultipleArgumentsPerToken = true;
 
         AddOption(problemOpt);
         AddOption(capabilitiesOpt);
+        AddOption(supportLevelOpt);
 
         this.SetHandler(async (InvocationContext ctx) =>
         {
             var problem = ctx.ParseResult.GetValueForOption(problemOpt)!;
             var capabilities = ctx.ParseResult.GetValueForOption(capabilitiesOpt) ?? Array.Empty<string>();
-            await ExecuteAsync(problem, capabilities);
+            var supportLevels = ctx.ParseResult.GetValueForOption(supportLevelOpt) ?? Array.Empty<string>();
+            await ExecuteAsync(problem, capabilities, supportLevels);
         });
     }
 
-    private static async Task ExecuteAsync(string problem, string[] capabilities)
+    private static async Task ExecuteAsync(string problem, string[] capabilities, string[] supportLevels)
     {
         var services = new ServiceCollection()
             .AddLogging(b => b.AddConsole())
@@ -41,11 +49,47 @@ public sealed class ComposeCommand : Command
         var engine = services.GetRequiredService<ICompositionEngine>();
         var registry = services.GetRequiredService<ICapabilityComponentRegistry>();
 
+        var parsedSupportLevels = ParseSupportLevels(supportLevels);
+        if (parsedSupportLevels.Count == 0)
+        {
+            Console.Error.WriteLine("No valid support levels selected. Choose from: stable, experimental, placeholder.");
+            Environment.ExitCode = 1;
+            return;
+        }
+
+        var allowedCapabilities = new HashSet<string>(
+            registry.GetAll()
+                .Where(descriptor => parsedSupportLevels.Contains(descriptor.SupportLevel))
+                .Select(descriptor => descriptor.Capability),
+            StringComparer.OrdinalIgnoreCase);
+
         var available = capabilities.Length > 0
             ? capabilities.ToList()
             : new List<string> { "perception", "validation", "reporting", "understanding", "code-analysis" };
+        available = available
+            .Where(capability => allowedCapabilities.Contains(capability))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
 
-        var composed = await engine.ComposeAsync(problem, available).ConfigureAwait(false);
+        if (available.Count == 0)
+        {
+            Console.Error.WriteLine("No capabilities remain after support-level filtering.");
+            Environment.ExitCode = 1;
+            return;
+        }
+
+        ComposedAgent? composed;
+        try
+        {
+            composed = await engine.ComposeAsync(problem, available).ConfigureAwait(false);
+        }
+        catch (InvalidOperationException ex)
+        {
+            Console.Error.WriteLine("Composition validation failed:");
+            Console.Error.WriteLine($"  {ex.Message}");
+            Environment.ExitCode = 1;
+            return;
+        }
 
         if (composed == null)
         {
@@ -65,5 +109,17 @@ public sealed class ComposeCommand : Command
             Console.WriteLine($"  - {id}: {desc?.Capability ?? "?"} ({desc?.ImplementationType ?? "?"})");
         }
         Environment.ExitCode = 0;
+    }
+
+    private static HashSet<ComponentSupportLevel> ParseSupportLevels(IEnumerable<string> values)
+    {
+        var parsed = new HashSet<ComponentSupportLevel>();
+        foreach (var value in values)
+        {
+            if (Enum.TryParse<ComponentSupportLevel>(value, ignoreCase: true, out var level))
+                parsed.Add(level);
+        }
+
+        return parsed;
     }
 }
