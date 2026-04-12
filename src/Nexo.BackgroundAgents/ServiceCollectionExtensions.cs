@@ -56,10 +56,11 @@ public static class ServiceCollectionExtensions
             var codeAnalysisRunner = sp.GetService<ICodeAnalysisRunner>();
             var testRunRunner = sp.GetService<ITestRunRunner>();
             var selfExtendRunner = sp.GetService<ISelfExtendRunner>();
+            var selfImprovementLoop = sp.GetService<Nexo.Core.Application.SelfImprovement.Ports.ISelfImprovementLoop>();
             var modeStore = sp.GetService<IAggressivenessModeStore>();
             var approvalGate = sp.GetService<IApprovalGate>();
             var auditLog = sp.GetService<IDataDecisionAuditLog>();
-            return new BackgroundAgentRegistry(scheduler, logger, logStore, codeAnalysisRunner, testRunRunner, selfExtendRunner, modeStore, approvalGate, auditLog);
+            return new BackgroundAgentRegistry(scheduler, logger, logStore, codeAnalysisRunner, testRunRunner, selfExtendRunner, selfImprovementLoop, modeStore, approvalGate, auditLog);
         });
         services.TryAddSingleton<BackgroundAgentConfigLoader>();
         services.TryAddSingleton<BackgroundAgentSpecBuilder>();

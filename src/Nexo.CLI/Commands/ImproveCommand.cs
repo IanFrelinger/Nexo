@@ -38,6 +38,8 @@ public sealed class ImproveCommand : Command
         var storePathOpt = new Option<string?>("--store-path", "Directory for nexo dbs (default: repo root)");
         var selfOpt = new Option<bool>("--self", () => false, "Run one cycle of the self-improvement loop (test failures → fix → validate → promote)");
         var holdoutFilterOpt = new Option<string?>("--holdout-filter", "xUnit filter for holdout tests (e.g. Category=Holdout). Excluded from per-fix regression; run at end (P3.4)");
+        var fromObservationOpt = new Option<bool>("--from-observation", () => false, "Query recent observation patterns and prioritize analysis on affected file paths");
+        var observationDaysOpt = new Option<int>("--observation-days", () => 7, "Number of days of observation history to consider (default: 7)");
 
         AddOption(pathOpt);
         AddOption(dryRunOpt);
@@ -47,6 +49,8 @@ public sealed class ImproveCommand : Command
         AddOption(storePathOpt);
         AddOption(selfOpt);
         AddOption(holdoutFilterOpt);
+        AddOption(fromObservationOpt);
+        AddOption(observationDaysOpt);
 
         this.SetHandler(async (InvocationContext ctx) =>
         {
@@ -58,11 +62,13 @@ public sealed class ImproveCommand : Command
             var storePathOverride = ctx.ParseResult.GetValueForOption(storePathOpt);
             var self = ctx.ParseResult.GetValueForOption(selfOpt);
             var holdoutFilter = ctx.ParseResult.GetValueForOption(holdoutFilterOpt);
-            await ExecuteAsync(path, dryRun, autonomy, yes, skipRegression, storePathOverride, self, holdoutFilter);
+            var fromObservation = ctx.ParseResult.GetValueForOption(fromObservationOpt);
+            var observationDays = ctx.ParseResult.GetValueForOption(observationDaysOpt);
+            await ExecuteAsync(path, dryRun, autonomy, yes, skipRegression, storePathOverride, self, holdoutFilter, fromObservation, observationDays);
         });
     }
 
-    private static async Task ExecuteAsync(string? path, bool dryRun, string autonomy = "supervised", bool yes = false, bool skipRegression = false, string? storePathOverride = null, bool self = false, string? holdoutFilter = null)
+    private static async Task ExecuteAsync(string? path, bool dryRun, string autonomy = "supervised", bool yes = false, bool skipRegression = false, string? storePathOverride = null, bool self = false, string? holdoutFilter = null, bool fromObservation = false, int observationDays = 7)
     {
         var repoRoot = RepoPathResolver.FindRepoRoot();
         var storePath = !string.IsNullOrWhiteSpace(storePathOverride)
@@ -70,14 +76,34 @@ public sealed class ImproveCommand : Command
             : Path.Combine(repoRoot, "nexo-patterns.db");
         var targetPath = path ?? RepoPathResolver.FindBlock1ObservationPath(repoRoot);
 
+        var trustEnabled = string.Equals(
+            Environment.GetEnvironmentVariable("NEXO_TRUST_ENABLED"), "1",
+            StringComparison.OrdinalIgnoreCase);
+
         var serviceCollection = new ServiceCollection()
             .AddLogging(b => b.AddConsole())
-            .AddSingleton<Nexo.Infrastructure.Execution.IProviderFactory, Nexo.Infrastructure.Execution.ProviderFactory>()
             .AddCodeAnalyzers()
             .AddAdaptationInfrastructure(storePath)
             .AddAdaptationBricks(typeof(OWASPScannerBrick))
             .AddSelfContextInfrastructure(storePath)
             .AddSharedAdaptationCache();
+
+        serviceCollection.AddSingleton<Nexo.Infrastructure.Execution.ProviderFactory>();
+        if (trustEnabled)
+        {
+            serviceCollection.AddSingleton<Nexo.BackgroundAgents.Trust.ICloudSanitizationProxy,
+                Nexo.BackgroundAgents.Trust.CloudSanitizationProxy>();
+            serviceCollection.AddSingleton<Nexo.Infrastructure.Execution.IProviderFactory>(sp =>
+                new Nexo.BackgroundAgents.Trust.SanitizingProviderFactory(
+                    sp.GetRequiredService<Nexo.Infrastructure.Execution.ProviderFactory>(),
+                    sp.GetRequiredService<Nexo.BackgroundAgents.Trust.ICloudSanitizationProxy>(),
+                    sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.BackgroundAgents.Trust.SanitizingProviderFactory>>()));
+        }
+        else
+        {
+            serviceCollection.AddSingleton<Nexo.Infrastructure.Execution.IProviderFactory>(
+                sp => sp.GetRequiredService<Nexo.Infrastructure.Execution.ProviderFactory>());
+        }
 
         if (self)
         {
@@ -90,7 +116,62 @@ public sealed class ImproveCommand : Command
         if (yes)
             serviceCollection.AddSingleton<IUserFeedbackCapture>(new AutoApproveUserFeedbackCapture());
 
+        if (fromObservation)
+        {
+            serviceCollection.AddSingleton<Nexo.Core.Application.Observation.Ports.IPatternStore>(
+                _ => new Nexo.Infrastructure.Observation.LiteDbPatternStore(storePath));
+        }
+
         var services = serviceCollection.BuildServiceProvider();
+
+        if (fromObservation && string.IsNullOrWhiteSpace(path))
+        {
+            var patternStore = services.GetService<Nexo.Core.Application.Observation.Ports.IPatternStore>();
+            if (patternStore != null)
+            {
+                var since = DateTimeOffset.UtcNow.AddDays(-observationDays);
+                var patternTypes = new[] { "repeated-edits", "edit-then-build" };
+                var affectedPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+                foreach (var eventType in patternTypes)
+                {
+                    var patterns = await patternStore.QueryAsync(
+                        new Nexo.Core.Application.Observation.Models.PatternStoreQueryParams
+                        {
+                            Since = since,
+                            EventType = eventType,
+                            MaxCount = 50
+                        }).ConfigureAwait(false);
+
+                    foreach (var pattern in patterns)
+                    {
+                        if (!string.IsNullOrWhiteSpace(pattern.ProjectPath))
+                            affectedPaths.Add(pattern.ProjectPath);
+                        if (pattern.Metadata?.ValueKind == System.Text.Json.JsonValueKind.Object &&
+                            pattern.Metadata.Value.TryGetProperty("path", out var pathProp) &&
+                            pathProp.ValueKind == System.Text.Json.JsonValueKind.String)
+                        {
+                            var p = pathProp.GetString();
+                            if (!string.IsNullOrWhiteSpace(p))
+                                affectedPaths.Add(p);
+                        }
+                    }
+                }
+
+                if (affectedPaths.Count > 0)
+                {
+                    Console.WriteLine($"Observation-driven improve: found {affectedPaths.Count} affected path(s) from last {observationDays} day(s):");
+                    foreach (var ap in affectedPaths.OrderBy(x => x))
+                        Console.WriteLine($"  - {ap}");
+                    Console.WriteLine();
+                    targetPath = affectedPaths.First();
+                }
+                else
+                {
+                    Console.WriteLine($"No observation patterns found in last {observationDays} day(s). Falling back to default path.");
+                }
+            }
+        }
 
         if (self)
         {

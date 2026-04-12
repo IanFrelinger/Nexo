@@ -7,6 +7,7 @@ using Nexo.BackgroundAgents.Logging;
 using Nexo.BackgroundAgents.Optimization;
 using Nexo.BackgroundAgents.Scheduling;
 using Nexo.BackgroundAgents.Testing;
+using Nexo.Core.Application.SelfImprovement.Ports;
 using Nexo.Core.Application.Trust.Ports;
 
 namespace Nexo.BackgroundAgents.Registry;
@@ -91,6 +92,7 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
     private readonly ICodeAnalysisRunner? _codeAnalysisRunner;
     private readonly ITestRunRunner? _testRunRunner;
     private readonly ISelfExtendRunner? _selfExtendRunner;
+    private readonly ISelfImprovementLoop? _selfImprovementLoop;
     private readonly IAggressivenessModeStore? _modeStore;
     private readonly IApprovalGate? _approvalGate;
     private readonly IDataDecisionAuditLog? _auditLog;
@@ -105,6 +107,7 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
     /// <param name="codeAnalysisRunner">Optional runner for optimizer agents (dog-food: run analysis on codebase).</param>
     /// <param name="testRunRunner">Optional runner for tester agents (dog-food: run framework tests).</param>
     /// <param name="selfExtendRunner">Optional runner for extender agents (dog-food: LLM-driven code/doc changes within policy).</param>
+    /// <param name="selfImprovementLoop">Optional self-improvement loop for self-improver agents (dog-food: test failures → fix → validate → promote).</param>
     /// <param name="modeStore">Optional aggressiveness mode store. When provided, Passive mode skips extender execution.</param>
     /// <param name="approvalGate">Optional approval gate for SemiActive mode. When provided and mode is SemiActive, execution requires approval.</param>
     /// <param name="auditLog">Optional audit log. When provided and mode is Ambient, actions are logged here (no user notification).</param>
@@ -115,6 +118,7 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
         ICodeAnalysisRunner? codeAnalysisRunner = null,
         ITestRunRunner? testRunRunner = null,
         ISelfExtendRunner? selfExtendRunner = null,
+        ISelfImprovementLoop? selfImprovementLoop = null,
         IAggressivenessModeStore? modeStore = null,
         IApprovalGate? approvalGate = null,
         IDataDecisionAuditLog? auditLog = null)
@@ -125,6 +129,7 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
         _codeAnalysisRunner = codeAnalysisRunner;
         _testRunRunner = testRunRunner;
         _selfExtendRunner = selfExtendRunner;
+        _selfImprovementLoop = selfImprovementLoop;
         _modeStore = modeStore;
         _approvalGate = approvalGate;
         _auditLog = auditLog;
@@ -336,6 +341,52 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
                     _logger?.LogDebug("Background agent {AgentId} self-extend: {Summary}", agentId, result.Summary);
                 }
 
+                instance.LastCompletedAt = DateTimeOffset.UtcNow;
+                instance.SuccessCount++;
+                _logStore?.Append(agentId, "Info", "Execution completed successfully.");
+                return;
+            }
+
+            // Self-improver agents run the self-improvement loop (test failures → fix → validate → promote)
+            if (string.Equals(instance.Config.Role, "self-improver", StringComparison.OrdinalIgnoreCase) &&
+                _selfImprovementLoop != null)
+            {
+                var mode = _modeStore?.GetMode() ?? BackgroundAgentAggressivenessMode.SemiActive;
+                if (mode == BackgroundAgentAggressivenessMode.Passive)
+                {
+                    _logStore?.Append(agentId, "Info", "Passive mode: skipping self-improver execution.");
+                    _logger?.LogDebug("Background agent {AgentId} in Passive mode: self-improver skipped", agentId);
+                    instance.LastCompletedAt = DateTimeOffset.UtcNow;
+                    instance.SuccessCount++;
+                    return;
+                }
+
+                if (mode == BackgroundAgentAggressivenessMode.SemiActive)
+                {
+                    var approvalResult = _approvalGate != null
+                        ? await _approvalGate.RequestApprovalAsync(
+                            $"Self-improver agent {agentId} requests approval to run improvement cycle.",
+                            TimeSpan.FromSeconds(30),
+                            cancellationToken).ConfigureAwait(false)
+                        : ApprovalResult.Denied;
+                    if (approvalResult != ApprovalResult.Approved)
+                    {
+                        var reason = approvalResult == ApprovalResult.TimedOut ? "timeout" : "denied";
+                        _logStore?.Append(agentId, "Info", $"SemiActive mode: self-improver skipped ({reason}).");
+                        _logger?.LogDebug("Background agent {AgentId} in SemiActive mode: self-improver skipped ({Reason})", agentId, reason);
+                        instance.LastCompletedAt = DateTimeOffset.UtcNow;
+                        instance.SuccessCount++;
+                        return;
+                    }
+                }
+
+                await _selfImprovementLoop.RunOnceAsync(cancellationToken).ConfigureAwait(false);
+                var report = await _selfImprovementLoop.GetLastRunReportAsync(cancellationToken).ConfigureAwait(false);
+                var summary = report != null
+                    ? $"Self-improvement: {report.FailuresProcessed} processed, {report.FixesPromoted} promoted, {report.FixesRejected} rejected"
+                    : "Self-improvement: completed (no report available)";
+                _logStore?.Append(agentId, "Info", summary);
+                _logger?.LogDebug("Background agent {AgentId} self-improvement: {Summary}", agentId, summary);
                 instance.LastCompletedAt = DateTimeOffset.UtcNow;
                 instance.SuccessCount++;
                 _logStore?.Append(agentId, "Info", "Execution completed successfully.");
