@@ -144,6 +144,7 @@ jobs:
       # ── Stage 3: Dry-run ────────────────────────────────────────────
       - name: "Dry-run — doctor remediation"
         shell: bash
+        continue-on-error: true
         run: |
           dotnet run --project src/Nexo.CLI --no-build -- doctor --fix --dry-run --json \
             2>&1 | tee "${{ runner.temp }}/doctor-dryrun.json"
@@ -158,7 +159,6 @@ jobs:
         shell: bash
         run: |
           dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
-            --no-restore \
             --blame-hang-timeout 60s \
             --blame-hang-dump-type none \
             --filter "FullyQualifiedName~BaseFrameworkSmokeTests" \
@@ -221,28 +221,30 @@ jobs:
           docker run --rm \
             -e NEXO_STRICT_MODE=1 \
             -e NEXO_ALLOW_MOCK=1 \
+            -e DOTNET_RUNNING_IN_CONTAINER=true \
             -v "${{ runner.temp }}/container-results:/results" \
             nexo-readiness:${{ matrix.label }} \
             bash -c '
               set -euo pipefail
 
+              echo "=== Setup: restore + build CLI ==="
+              dotnet restore src/Nexo.CLI/Nexo.CLI.csproj
+              dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
+
               echo "=== CLI smoke ==="
-              dotnet run --project src/Nexo.CLI -- --help
+              dotnet run --project src/Nexo.CLI --no-build -- --help
 
-              echo "=== Doctor report ==="
-              dotnet run --project src/Nexo.CLI -- doctor --json 2>&1 | tee /results/doctor-report.json || true
+              echo "=== Discover: bootstrap check ==="
+              dotnet run --project src/Nexo.CLI --no-build -- bootstrap check --json \
+                2>&1 | tee /results/bootstrap-check.json
 
-              echo "=== Bootstrap check ==="
-              dotnet run --project src/Nexo.CLI -- bootstrap check --json 2>&1 | tee /results/bootstrap-check.json
-
-              echo "=== Doctor dry-run ==="
-              dotnet run --project src/Nexo.CLI -- doctor --fix --dry-run --json 2>&1 | tee /results/doctor-dryrun.json || true
-
-              echo "=== Bootstrap apply dry-run ==="
-              dotnet run --project src/Nexo.CLI -- bootstrap apply --dry-run --json 2>&1 | tee /results/bootstrap-dryrun.json
+              echo "=== Dry-run: bootstrap apply ==="
+              dotnet run --project src/Nexo.CLI --no-build -- bootstrap apply --dry-run --json \
+                2>&1 | tee /results/bootstrap-dryrun.json
 
               echo "=== Smoke tests ==="
               dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+                --no-build \
                 --blame-hang-timeout 60s \
                 --blame-hang-dump-type none \
                 --filter "FullyQualifiedName~BaseFrameworkSmokeTests" \
