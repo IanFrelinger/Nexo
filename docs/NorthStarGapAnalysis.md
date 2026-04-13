@@ -1,6 +1,6 @@
 # North Star Gap Analysis
 
-**North Star:** Self-improving adaptive framework with immutable core, full productivity application suite, runtime agent composition, instance networking, and ambient intelligence.
+**North Star:** Private, traceable AI computing that extends itself. Modular capabilities with standardized contracts, composed into pipelines, generated autonomously under policy constraints. Data stays on hardware you control. Trust is structural. Everything produced is clean, auditable, and extractable. Capabilities federate across trusted .NET peers.
 
 **Last Updated:** Reconciliation with codebase — several items previously marked MISSING or PARTIAL are now implemented.
 

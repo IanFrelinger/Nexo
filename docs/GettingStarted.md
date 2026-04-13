@@ -1,6 +1,6 @@
 # Getting Started with Nexo
 
-This guide is for first-time users who want to run Nexo quickly and understand the core workflows.
+Nexo runs on your hardware, keeps your data private, and extends its own capabilities over time. This guide gets you from zero to a working setup with trust controls active and a first pipeline validated.
 
 ## What you will do
 

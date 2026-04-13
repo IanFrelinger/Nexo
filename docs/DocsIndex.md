@@ -1,6 +1,6 @@
 # Nexo Documentation Index
 
-Use this page as the navigation starting point for docs.
+Private AI computing that extends itself. Start here to find what you need.
 
 ## Start Here
 

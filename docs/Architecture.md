@@ -1,6 +1,6 @@
 # Architecture Overview
 
-Nexo is an AI-enhanced development orchestration platform with a layered architecture.
+Nexo is a private AI platform where capabilities are modular components (bricks) with standardized contracts, composed into pipelines, and extended autonomously under policy constraints. The trust layer is structural — data provenance, barrier enforcement, and audit logging are woven into the execution pipeline, not bolted on. The mesh layer federates capabilities across trusted .NET peers so any machine on the network can share what it has.
 
 ## Layers
 
