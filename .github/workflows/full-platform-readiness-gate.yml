@@ -246,14 +246,14 @@ jobs:
               set -euo pipefail
 
               echo "=== CLI smoke ==="
-              dotnet run --project src/Nexo.CLI --no-build -p:TargetFramework=net9.0 -- --help
+              dotnet run --project src/Nexo.CLI --no-build -- --help
 
               echo "=== Discover: bootstrap check ==="
-              dotnet run --project src/Nexo.CLI --no-build -p:TargetFramework=net9.0 -- bootstrap check --json \
+              dotnet run --project src/Nexo.CLI --no-build -- bootstrap check --json \
                 2>&1 | tee /results/bootstrap-check.json
 
               echo "=== Dry-run: bootstrap apply ==="
-              dotnet run --project src/Nexo.CLI --no-build -p:TargetFramework=net9.0 -- bootstrap apply --dry-run --json \
+              dotnet run --project src/Nexo.CLI --no-build -- bootstrap apply --dry-run --json \
                 2>&1 | tee /results/bootstrap-dryrun.json
 
               echo "=== Smoke tests ==="

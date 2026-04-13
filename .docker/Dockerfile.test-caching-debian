@@ -21,16 +21,20 @@ ENV DOTNET_RUNNING_IN_CONTAINER=true
 # Copy project files
 COPY . .
 
+# Install .NET 8.0 runtime for CLI (targets net8.0)
+RUN dotnet_channel="8.0" && \
+    curl -fsSL https://dot.net/v1/dotnet-install.sh | bash -s -- --channel "$dotnet_channel" --runtime dotnet --install-dir /usr/share/dotnet --no-path
+
 # Restore dependencies for test projects and CLI
 RUN dotnet restore src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj && \
     dotnet restore src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.csproj && \
     dotnet restore src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj && \
-    dotnet restore src/Nexo.CLI/Nexo.CLI.csproj -p:TargetFramework=net9.0
+    dotnet restore src/Nexo.CLI/Nexo.CLI.csproj
 
-# Build test projects for net9.0 only (Docker uses .NET 9 runtime; TreatWarningsAsErrors=false for portability)
+# Build test projects for net9.0 and CLI for net8.0
 RUN dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net9.0 --no-restore -p:TreatWarningsAsErrors=false && \
     dotnet build src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj -f net9.0 --no-restore -p:TreatWarningsAsErrors=false && \
-    dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal -p:TargetFramework=net9.0
+    dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
 
 # Default command: run base framework and Trust tests
 CMD ["bash", "-c", "dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --filter 'FullyQualifiedName~BaseFrameworkSmokeTests' --logger 'console;verbosity=normal' && dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --filter 'FullyQualifiedName~Trust' --logger 'console;verbosity=normal' && dotnet test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj --filter 'FullyQualifiedName~Trust' --logger 'console;verbosity=normal'"]
