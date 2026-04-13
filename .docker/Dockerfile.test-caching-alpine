@@ -28,7 +28,7 @@ COPY . .
 RUN dotnet restore src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj && \
     dotnet restore src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.csproj && \
     dotnet restore src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj && \
-    dotnet restore src/Nexo.CLI/Nexo.CLI.csproj
+    dotnet restore src/Nexo.CLI/Nexo.CLI.csproj -p:TargetFramework=net9.0
 
 # Build test projects for net9.0 only (Docker uses .NET 9 runtime; TreatWarningsAsErrors=false for portability)
 RUN dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net9.0 --no-restore -p:TreatWarningsAsErrors=false && \
