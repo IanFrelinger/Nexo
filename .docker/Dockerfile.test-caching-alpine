@@ -33,7 +33,7 @@ RUN dotnet restore src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.cspro
 # Build test projects for net9.0 only (Docker uses .NET 9 runtime; TreatWarningsAsErrors=false for portability)
 RUN dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net9.0 --no-restore -p:TreatWarningsAsErrors=false && \
     dotnet build src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj -f net9.0 --no-restore -p:TreatWarningsAsErrors=false && \
-    dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
+    dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal -p:TargetFramework=net9.0
 
 # Default command: run base framework and Trust tests
 CMD ["bash", "-c", "dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --filter 'FullyQualifiedName~BaseFrameworkSmokeTests' --logger 'console;verbosity=normal' && dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --filter 'FullyQualifiedName~Trust' --logger 'console;verbosity=normal' && dotnet test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj --filter 'FullyQualifiedName~Trust' --logger 'console;verbosity=normal'"]
