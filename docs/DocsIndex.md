@@ -2,10 +2,6 @@
 
 Use this page as the navigation starting point for docs.
 
-## Vision
-
-- `docs/Vision.md` — why Nexo exists: QGIS plugin ecosystems, DAW signal chains, RAND traceability, self-extending toolchains, and the mesh.
-
 ## Start Here
 
 1. `docs/GettingStarted.md` — install, first commands, first pipeline, and first trust checks.
