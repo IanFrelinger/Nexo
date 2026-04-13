@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Ephemeral.Ports;
+using Nexo.Core.Domain;
 using Nexo.Infrastructure.Execution.Ollama;
 using Polly;
 using Polly.Retry;
@@ -26,7 +27,7 @@ public class ProviderFactory : IProviderFactory
 
     private static AsyncRetryPolicy<HttpResponseMessage> CreateHttpRetryPolicy()
     {
-        var maxRetries = int.TryParse(Environment.GetEnvironmentVariable("NEXO_LLM_RETRY_COUNT"), out var c) && c >= 0 ? c : 3;
+        var maxRetries = int.TryParse(Environment.GetEnvironmentVariable("NEXO_LLM_RETRY_COUNT"), out var c) && c >= 0 ? c : NexoDefaults.LlmRetryCount;
 
         return Policy
             .HandleResult<HttpResponseMessage>(r => (int)r.StatusCode >= 500 || r.StatusCode == HttpStatusCode.TooManyRequests)
@@ -114,11 +115,11 @@ public class ProviderFactory : IProviderFactory
         {
             if (!AllowMock)
                 throw new ModelUnavailableException("Mock providers are disabled. Set NEXO_ALLOW_MOCK=1 for tests/demos, or use a real provider (ollama, openai, azure, local).");
-            await Task.Delay(30, cancellationToken);
+            await Task.Delay(NexoDefaults.MockDelayMs, cancellationToken);
             return GenerateMockJsonResponse(systemPrompt, userPrompt);
         }
 
-        await Task.Delay(30, cancellationToken);
+        await Task.Delay(NexoDefaults.MockDelayMs, cancellationToken);
         
         // Real providers: fail fast on misconfiguration or request failure (no mock fallback).
         if (provider is "openai")
@@ -150,8 +151,8 @@ public class ProviderFactory : IProviderFactory
 
     private async Task<string> ExecuteOpenAiAsync(string apiKey, string systemPrompt, string userPrompt, CancellationToken ct)
     {
-        var model = Environment.GetEnvironmentVariable("OPENAI_MODEL") ?? "gpt-4o-mini";
-        var url = Environment.GetEnvironmentVariable("OPENAI_BASE_URL") ?? "https://api.openai.com/v1/chat/completions";
+        var model = Environment.GetEnvironmentVariable("OPENAI_MODEL") ?? NexoDefaults.OpenAiDefaultModel;
+        var url = Environment.GetEnvironmentVariable("OPENAI_BASE_URL") ?? NexoDefaults.OpenAiDefaultBaseUrl;
 
         var payload = new
         {
@@ -161,7 +162,7 @@ public class ProviderFactory : IProviderFactory
                 new { role = "system", content = systemPrompt ?? "" },
                 new { role = "user", content = userPrompt ?? "" }
             },
-            temperature = 0.2
+            temperature = NexoDefaults.LlmTemperature
         };
         var json = JsonSerializer.Serialize(payload);
 
@@ -189,7 +190,7 @@ public class ProviderFactory : IProviderFactory
     private async Task<string> ExecuteAzureOpenAiAsync(string endpoint, string apiKey, string deployment, string systemPrompt, string userPrompt, CancellationToken ct)
     {
         endpoint = endpoint.TrimEnd('/');
-        var apiVersion = Environment.GetEnvironmentVariable("AZURE_OPENAI_API_VERSION") ?? "2024-06-01";
+        var apiVersion = Environment.GetEnvironmentVariable("AZURE_OPENAI_API_VERSION") ?? NexoDefaults.AzureOpenAiDefaultApiVersion;
         var url = $"{endpoint}/openai/deployments/{deployment}/chat/completions?api-version={apiVersion}";
 
         var payload = new
@@ -199,7 +200,7 @@ public class ProviderFactory : IProviderFactory
                 new { role = "system", content = systemPrompt ?? "" },
                 new { role = "user", content = userPrompt ?? "" }
             },
-            temperature = 0.2
+            temperature = NexoDefaults.LlmTemperature
         };
         var json = JsonSerializer.Serialize(payload);
 
@@ -226,7 +227,7 @@ public class ProviderFactory : IProviderFactory
 
     private async Task<string> ExecuteOpenAiVisionAsync(string apiKey, string systemPrompt, string userPrompt, byte[]? imageBytes, object? config, CancellationToken ct)
     {
-        var model = Environment.GetEnvironmentVariable("OPENAI_VISION_MODEL") ?? Environment.GetEnvironmentVariable("OPENAI_MODEL") ?? "gpt-4o-mini";
+        var model = Environment.GetEnvironmentVariable("OPENAI_VISION_MODEL") ?? Environment.GetEnvironmentVariable("OPENAI_MODEL") ?? NexoDefaults.OpenAiDefaultVisionModel;
         var baseUrl = Environment.GetEnvironmentVariable("OPENAI_BASE_URL") ?? "https://api.openai.com";
         var url = baseUrl.EndsWith("/v1/chat/completions", StringComparison.OrdinalIgnoreCase)
             ? baseUrl
@@ -251,7 +252,7 @@ public class ProviderFactory : IProviderFactory
             new { role = "system", content = systemPrompt ?? "" },
             new { role = "user", content = (object)contentParts }
         };
-        var payload = new { model, messages, temperature = 0.2, max_tokens = 4096 };
+        var payload = new { model, messages, temperature = NexoDefaults.LlmTemperature, max_tokens = NexoDefaults.LlmMaxTokens };
 
         req.Content = new StringContent(JsonSerializer.Serialize(payload));
         req.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
@@ -273,7 +274,7 @@ public class ProviderFactory : IProviderFactory
     private async Task<string> ExecuteAzureOpenAiVisionAsync(string endpoint, string apiKey, string deployment, string systemPrompt, string userPrompt, byte[]? imageBytes, object? config, CancellationToken ct)
     {
         endpoint = endpoint.TrimEnd('/');
-        var apiVersion = Environment.GetEnvironmentVariable("AZURE_OPENAI_API_VERSION") ?? "2024-06-01";
+        var apiVersion = Environment.GetEnvironmentVariable("AZURE_OPENAI_API_VERSION") ?? NexoDefaults.AzureOpenAiDefaultApiVersion;
         var url = $"{endpoint}/openai/deployments/{deployment}/chat/completions?api-version={apiVersion}";
 
         object[] contentParts;
@@ -295,7 +296,7 @@ public class ProviderFactory : IProviderFactory
             new { role = "system", content = systemPrompt ?? "" },
             new { role = "user", content = (object)contentParts }
         };
-        var payload = new { messages, temperature = 0.2, max_tokens = 4096 };
+        var payload = new { messages, temperature = NexoDefaults.LlmTemperature, max_tokens = NexoDefaults.LlmMaxTokens };
 
         req.Content = new StringContent(JsonSerializer.Serialize(payload));
         req.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
@@ -332,8 +333,8 @@ public class ProviderFactory : IProviderFactory
         var configModel = GetModelFromConfig(config);
         var requestedModel = configModel
             ?? (hasImages
-                ? (Environment.GetEnvironmentVariable("OLLAMA_VISION_MODEL") ?? Environment.GetEnvironmentVariable("OLLAMA_MODEL") ?? "richardyoung/smolvlm2-2.2b-instruct")
-                : (Environment.GetEnvironmentVariable("OLLAMA_MODEL") ?? "llama3.1"));
+                ? (Environment.GetEnvironmentVariable("OLLAMA_VISION_MODEL") ?? Environment.GetEnvironmentVariable("OLLAMA_MODEL") ?? NexoDefaults.OllamaDefaultVisionModel)
+                : (Environment.GetEnvironmentVariable("OLLAMA_MODEL") ?? NexoDefaults.OllamaDefaultModel));
         var ollamaProvider = GetOrCreateOllamaProvider(baseUrl);
 
         var validation = ollamaProvider.ValidateModel(requestedModel);
@@ -482,7 +483,7 @@ public class ProviderFactory : IProviderFactory
         if (string.IsNullOrEmpty(baseUrl))
             throw new InvalidOperationException("VIDEO_SERVICE_URL is not set. Start the SmolVLM2 video container and set VIDEO_SERVICE_URL.");
 
-        var fps = 5;
+        var fps = NexoDefaults.VideoDefaultFps;
         var tmpDir = Path.Combine(Path.GetTempPath(), "nexo-video-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(tmpDir);
         try
@@ -561,7 +562,7 @@ public class ProviderFactory : IProviderFactory
     {
         if (_ephemeralLifecycle != null)
             return await _ephemeralLifecycle.GetBaseUrlAsync(ct);
-        var url = Environment.GetEnvironmentVariable("OLLAMA_BASE_URL") ?? "http://localhost:11434";
+        var url = Environment.GetEnvironmentVariable("OLLAMA_BASE_URL") ?? NexoDefaults.OllamaDefaultBaseUrl;
         return url.TrimEnd('/');
     }
 

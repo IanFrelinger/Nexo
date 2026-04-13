@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Nexo.Core.Domain;
 
 namespace Nexo.BackgroundAgents.Trust;
 
@@ -8,7 +9,7 @@ namespace Nexo.BackgroundAgents.Trust;
 public sealed class InMemorySanitizationAuditLog : ISanitizationAuditLog
 {
     private readonly ConcurrentQueue<SanitizationAuditEntry> _entries = new();
-    private const int MaxEntries = 10_000;
+    private const int MaxEntries = NexoDefaults.SanitizationAuditMaxEntries;
 
     /// <inheritdoc />
     public void LogRedaction(DateTimeOffset timestamp, string ruleVersion, string fieldOrType, string disposition, string? reason)

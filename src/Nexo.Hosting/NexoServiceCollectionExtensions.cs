@@ -94,8 +94,11 @@ public static class NexoServiceCollectionExtensions
     {
         var options = new NexoHostingOptions();
         configure?.Invoke(options);
+        ResolveStrictMode(options);
         var deploymentProfile = ResolveDeploymentProfile(options);
         var modules = GetModuleSelection(deploymentProfile);
+
+        services.AddSingleton(options.StrictMode);
 
         services.AddHttpClient();
         var configuration = new ConfigurationBuilder()
@@ -121,7 +124,8 @@ public static class NexoServiceCollectionExtensions
         services.AddSingleton<Nexo.Core.Application.Configuration.Ports.IConfigurationService>(sp =>
         {
             var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Configuration.ConfigurationServiceAdapter>>();
-            return new Nexo.Infrastructure.Configuration.ConfigurationServiceAdapter(logger);
+            var strictMode = sp.GetService<StrictModeOptions>();
+            return new Nexo.Infrastructure.Configuration.ConfigurationServiceAdapter(logger, strictMode?.ShouldFailOnConfigurationWarnings ?? false);
         });
 
         services.AddSingleton<ILoopKernel>(sp =>
@@ -498,6 +502,12 @@ public static class NexoServiceCollectionExtensions
                 IncludeTestingAdapters: false),
             _ => throw new ArgumentOutOfRangeException(nameof(profile), profile, "Unknown Nexo deployment profile.")
         };
+    }
+
+    private static void ResolveStrictMode(NexoHostingOptions options)
+    {
+        if (!options.StrictMode.Enabled)
+            options.StrictMode.Enabled = ParseBooleanEnvironmentVariable("NEXO_STRICT_MODE");
     }
 
     private static bool ParseBooleanEnvironmentVariable(string key)

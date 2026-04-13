@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Text;
+using Nexo.Core.Domain;
 
 namespace Nexo.BackgroundAgents.RAG;
 
@@ -9,7 +10,7 @@ namespace Nexo.BackgroundAgents.RAG;
 /// </summary>
 public sealed class TokenEmbeddingGenerator : IEmbeddingGenerator
 {
-    private const int DefaultDimension = 64;
+    private const int DefaultDimension = NexoDefaults.EmbeddingDefaultDimension;
     private readonly int _dimension;
     private readonly ConcurrentDictionary<string, float[]> _tokenCache = new(StringComparer.OrdinalIgnoreCase);
 

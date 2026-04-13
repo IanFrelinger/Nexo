@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Text.Json;
 using Nexo.Core.Application.Trust.Models;
 using Nexo.Core.Application.Trust.Ports;
+using Nexo.Core.Domain;
 
 namespace Nexo.BackgroundAgents.Trust;
 
@@ -12,7 +13,7 @@ namespace Nexo.BackgroundAgents.Trust;
 public sealed class DataDecisionAuditLog : IDataDecisionAuditLog, ISanitizationAuditLog
 {
     private readonly ConcurrentQueue<DataDecisionAuditEntry> _entries = new();
-    private const int MaxEntries = 50_000;
+    private const int MaxEntries = NexoDefaults.DataDecisionAuditMaxEntries;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
