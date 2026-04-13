@@ -239,10 +239,6 @@ jobs:
             bash -c '
               set -euo pipefail
 
-              echo "=== Setup: restore + build CLI ==="
-              dotnet restore src/Nexo.CLI/Nexo.CLI.csproj
-              dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
-
               echo "=== CLI smoke ==="
               dotnet run --project src/Nexo.CLI --no-build -- --help
 

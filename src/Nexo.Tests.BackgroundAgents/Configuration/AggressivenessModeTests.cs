@@ -55,7 +55,7 @@ public sealed class AggressivenessModeTests
         var logStore = new InMemoryAgentLogStore();
         var scheduleExecutor = new ScheduleExecutor();
         var scheduler = new AgentScheduler(scheduleExecutor, null);
-        var registry = new BackgroundAgentRegistry(scheduler, null, logStore, null, null, mockExtend, modeStore);
+        var registry = new BackgroundAgentRegistry(scheduler, null, logStore, null, null, mockExtend, selfImprovementLoop: null, modeStore);
 
         var configs = await configLoader.LoadAsync(default);
         var agentConfig = configs[0];
@@ -104,7 +104,7 @@ public sealed class AggressivenessModeTests
         var logStore = new InMemoryAgentLogStore();
         var scheduleExecutor = new ScheduleExecutor();
         var scheduler = new AgentScheduler(scheduleExecutor, null);
-        var registry = new BackgroundAgentRegistry(scheduler, null, logStore, null, null, mockExtend, modeStore);
+        var registry = new BackgroundAgentRegistry(scheduler, null, logStore, null, null, mockExtend, selfImprovementLoop: null, modeStore);
 
         var configs = await configLoader.LoadAsync(default);
         var agentConfig = configs[0];
@@ -208,7 +208,7 @@ public sealed class AggressivenessModeTests
         var logStore = new InMemoryAgentLogStore();
         var scheduleExecutor = new ScheduleExecutor();
         var scheduler = new AgentScheduler(scheduleExecutor, null);
-        var registry = new BackgroundAgentRegistry(scheduler, null, logStore, null, null, mockExtend, modeStore, approvalGate: null);
+        var registry = new BackgroundAgentRegistry(scheduler, null, logStore, null, null, mockExtend, selfImprovementLoop: null, modeStore, approvalGate: null);
 
         var configs = await configLoader.LoadAsync(default);
         var agentConfig = configs[0];
@@ -258,7 +258,7 @@ public sealed class AggressivenessModeTests
         var logStore = new InMemoryAgentLogStore();
         var scheduleExecutor = new ScheduleExecutor();
         var scheduler = new AgentScheduler(scheduleExecutor, null);
-        var registry = new BackgroundAgentRegistry(scheduler, null, logStore, null, null, mockExtend, modeStore, approvalGate);
+        var registry = new BackgroundAgentRegistry(scheduler, null, logStore, null, null, mockExtend, selfImprovementLoop: null, modeStore, approvalGate);
 
         var configs = await configLoader.LoadAsync(default);
         var agentConfig = configs[0];
@@ -308,7 +308,7 @@ public sealed class AggressivenessModeTests
         var logStore = new InMemoryAgentLogStore();
         var scheduleExecutor = new ScheduleExecutor();
         var scheduler = new AgentScheduler(scheduleExecutor, null);
-        var registry = new BackgroundAgentRegistry(scheduler, null, logStore, null, null, mockExtend, modeStore, approvalGate);
+        var registry = new BackgroundAgentRegistry(scheduler, null, logStore, null, null, mockExtend, selfImprovementLoop: null, modeStore, approvalGate);
 
         var configs = await configLoader.LoadAsync(default);
         var agentConfig = configs[0];
@@ -358,7 +358,7 @@ public sealed class AggressivenessModeTests
         var logStore = new InMemoryAgentLogStore();
         var scheduleExecutor = new ScheduleExecutor();
         var scheduler = new AgentScheduler(scheduleExecutor, null);
-        var registry = new BackgroundAgentRegistry(scheduler, null, logStore, null, null, mockExtend, modeStore, approvalGate);
+        var registry = new BackgroundAgentRegistry(scheduler, null, logStore, null, null, mockExtend, selfImprovementLoop: null, modeStore, approvalGate);
 
         var configs = await configLoader.LoadAsync(default);
         var agentConfig = configs[0];
@@ -405,7 +405,7 @@ public sealed class AggressivenessModeTests
         var logStore = new InMemoryAgentLogStore();
         var scheduleExecutor = new ScheduleExecutor();
         var scheduler = new AgentScheduler(scheduleExecutor, null);
-        var registry = new BackgroundAgentRegistry(scheduler, null, logStore, null, null, mockExtend, modeStore);
+        var registry = new BackgroundAgentRegistry(scheduler, null, logStore, null, null, mockExtend, selfImprovementLoop: null, modeStore);
 
         var configs = await configLoader.LoadAsync(default);
         var agentConfig = configs[0];
@@ -455,7 +455,7 @@ public sealed class AggressivenessModeTests
         var logStore = new InMemoryAgentLogStore();
         var scheduleExecutor = new ScheduleExecutor();
         var scheduler = new AgentScheduler(scheduleExecutor, null);
-        var registry = new BackgroundAgentRegistry(scheduler, null, logStore, null, null, mockExtend, modeStore, approvalGate: null, auditLog: mockAuditLog);
+        var registry = new BackgroundAgentRegistry(scheduler, null, logStore, null, null, mockExtend, selfImprovementLoop: null, modeStore, approvalGate: null, auditLog: mockAuditLog);
 
         var configs = await configLoader.LoadAsync(default);
         var agentConfig = configs[0];
