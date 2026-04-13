@@ -159,7 +159,9 @@ jobs:
       - name: "Dry-run — build + run smoke tests"
         shell: bash
         run: |
-          dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -v minimal
+          dotnet restore src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj
+          dotnet restore src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.csproj
+          dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --no-restore -v minimal
           dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
             --no-build \
             --blame-hang-timeout 60s \
@@ -196,13 +198,13 @@ jobs:
         include:
           - dockerfile: .docker/Dockerfile.test-caching
             label: Ubuntu-Container
-            build_arg: "DOTNET_VERSION=8.0"
+            build_arg: "DOTNET_VERSION=9.0"
           - dockerfile: .docker/Dockerfile.test-caching-alpine
             label: Alpine-Container
-            build_arg: "DOTNET_VERSION=8.0"
+            build_arg: "DOTNET_VERSION=9.0"
           - dockerfile: .docker/Dockerfile.test-caching-debian
             label: Debian-Container
-            build_arg: "DOTNET_VERSION=8.0"
+            build_arg: "DOTNET_VERSION=9.0"
 
     steps:
       - name: Checkout
