@@ -1,15 +1,18 @@
 # Nexo
 
-Nexo is a .NET framework and CLI for building AI-enabled software with orchestration, trust controls, adaptive pipelines, and test automation.
+Private, traceable AI computing that runs on your hardware and extends itself.
+
+Nexo is a .NET platform where AI capabilities are modular components with standardized contracts. You compose them into pipelines, the platform generates new ones when it detects capability gaps, and everything it produces follows enforced standards so it's readable, auditable, and extractable from the core. No cloud dependency. No data leaves your machines unless you explicitly route it to a trusted peer.
 
 Repository: <https://github.com/IanFrelinger/Nexo>
 
 ## Why Nexo
 
-- Build AI-powered workflows as composable, testable runtime pipelines.
-- Mix deterministic and agentic execution with fallback chains.
-- Enforce trust boundaries (barriers, audit, routing policy).
-- Run validation and multi-environment checks from one CLI.
+- **Your data stays yours.** Runs entirely on hardware you control. Cloud providers are opt-in capabilities, not dependencies. Air-gapped mode works out of the box.
+- **It builds what you need.** Describe a capability. The platform generates it, validates it against regression, and adds it to its own registry — under policy constraints with a full audit trail.
+- **Everything it produces is clean.** Generated components follow configurable, enforced standards. They're readable, testable, and decoupled from the core. You can extract and use them independently.
+- **Trace where your data goes.** Every decision, every routing choice, every adaptation is logged with provenance. Barrier identity resolution determines trust level per-request. Audit sinks record everything.
+- **Share across trusted hardware.** Any machine running .NET can join the mesh, advertise its capabilities, and serve requests from peers — with trust tiers controlling who can send work where.
 
 ## Quick Start (5 minutes)
 
