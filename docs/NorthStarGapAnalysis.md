@@ -1,6 +1,6 @@
 # North Star Gap Analysis
 
-**North Star:** Private, traceable AI computing that extends itself. Modular capabilities with standardized contracts, composed into pipelines, generated autonomously under policy constraints. Data stays on hardware you control. Trust is structural. Everything produced is clean, auditable, and extractable. Capabilities federate across trusted .NET peers.
+**North Star:** Private, traceable AI computing with autonomous capability extension. Modular components with standardized contracts compose into execution pipelines and are generated autonomously under configurable policy constraints. Data remains on operator-controlled infrastructure. Trust enforcement is structural. All generated output is auditable, standards-compliant, and extractable. Capabilities federate across trusted .NET peers with policy-controlled routing.
 
 **Last Updated:** Reconciliation with codebase — several items previously marked MISSING or PARTIAL are now implemented.
 

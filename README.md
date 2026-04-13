@@ -1,18 +1,20 @@
 # Nexo
 
-Private, traceable AI computing that runs on your hardware and extends itself.
+Private, traceable AI computing with self-extending capabilities.
 
-Nexo is a .NET platform where AI capabilities are modular components with standardized contracts. You compose them into pipelines, the platform generates new ones when it detects capability gaps, and everything it produces follows enforced standards so it's readable, auditable, and extractable from the core. No cloud dependency. No data leaves your machines unless you explicitly route it to a trusted peer.
+Nexo is a .NET platform for composable AI workflows with structural trust enforcement. Capabilities are modular components with standardized contracts that compose into pipelines. The platform autonomously generates new components when it identifies capability gaps, validates them against regression, and promotes them under configurable policy constraints. All generated output follows enforced standards and remains readable, auditable, and extractable from the core.
+
+Nexo operates entirely on infrastructure you control. Cloud providers are opt-in execution targets, not dependencies. No data leaves the host unless explicitly routed to a trusted peer. Air-gapped deployment is supported without modification.
 
 Repository: <https://github.com/IanFrelinger/Nexo>
 
 ## Why Nexo
 
-- **Your data stays yours.** Runs entirely on hardware you control. Cloud providers are opt-in capabilities, not dependencies. Air-gapped mode works out of the box.
-- **It builds what you need.** Describe a capability. The platform generates it, validates it against regression, and adds it to its own registry — under policy constraints with a full audit trail.
-- **Everything it produces is clean.** Generated components follow configurable, enforced standards. They're readable, testable, and decoupled from the core. You can extract and use them independently.
-- **Trace where your data goes.** Every decision, every routing choice, every adaptation is logged with provenance. Barrier identity resolution determines trust level per-request. Audit sinks record everything.
-- **Share across trusted hardware.** Any machine running .NET can join the mesh, advertise its capabilities, and serve requests from peers — with trust tiers controlling who can send work where.
+- **Data sovereignty.** The platform runs on local infrastructure with no external dependencies. Cloud LLM providers are available as opt-in execution targets with sanitization at the boundary. Air-gapped deployment is supported out of the box.
+- **Autonomous capability extension.** The platform detects capability gaps through usage pattern analysis, generates new components, validates them against the existing test suite, and promotes them to the capability registry — all under policy constraints with a complete audit trail.
+- **Enforceable output standards.** Generated components conform to configurable quality and structural standards. They are testable, decoupled from the core, and independently extractable.
+- **Full data provenance.** Every execution decision, routing choice, and adaptation is logged. Barrier identity resolution determines trust level per request. Structured audit sinks provide a complete chain of custody.
+- **Federated capability mesh.** Any .NET-capable host can join the mesh, advertise available capabilities and models, and serve execution requests from trusted peers. Trust tiers and routing policies control which peers may receive which workloads.
 
 ## Quick Start (5 minutes)
 

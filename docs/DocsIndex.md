@@ -1,6 +1,6 @@
 # Nexo Documentation Index
 
-Private AI computing that extends itself. Start here to find what you need.
+Documentation index for the Nexo platform. Start here to find what you need.
 
 ## Start Here
 

@@ -1,6 +1,6 @@
 # Architecture Overview
 
-Nexo is a private AI platform where capabilities are modular components (bricks) with standardized contracts, composed into pipelines, and extended autonomously under policy constraints. The trust layer is structural — data provenance, barrier enforcement, and audit logging are woven into the execution pipeline, not bolted on. The mesh layer federates capabilities across trusted .NET peers so any machine on the network can share what it has.
+Nexo is a private AI platform built on modular, contract-based components (bricks) that compose into execution pipelines and extend autonomously under policy constraints. Trust enforcement is structural: data provenance, barrier identity resolution, and audit logging are integrated into the execution pipeline at the architectural level. The mesh layer federates capabilities across trusted .NET peers, enabling distributed execution with policy-controlled routing.
 
 ## Layers
 

@@ -1,6 +1,6 @@
 # Getting Started with Nexo
 
-Nexo runs on your hardware, keeps your data private, and extends its own capabilities over time. This guide gets you from zero to a working setup with trust controls active and a first pipeline validated.
+This guide covers initial setup, trust configuration, and first pipeline validation. Nexo operates on local infrastructure with no external service dependencies. Trust controls are active by default.
 
 ## What you will do
 
