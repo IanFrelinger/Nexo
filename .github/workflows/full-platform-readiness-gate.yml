@@ -163,9 +163,7 @@ jobs:
       - name: "Dry-run — build + run smoke tests"
         shell: bash
         run: |
-          dotnet restore src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj
-          dotnet restore src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.csproj
-          dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --no-restore -v minimal
+          dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -v minimal
           dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
             --no-build \
             --blame-hang-timeout 60s \

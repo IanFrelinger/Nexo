@@ -22,8 +22,10 @@ ENV DOTNET_RUNNING_IN_CONTAINER=true
 COPY . .
 
 # Install .NET 8.0 runtime for CLI (targets net8.0)
-RUN dotnet_channel="8.0" && \
-    curl -fsSL https://dot.net/v1/dotnet-install.sh | bash -s -- --channel "$dotnet_channel" --runtime dotnet --install-dir /usr/share/dotnet --no-path
+RUN curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh && \
+    bash /tmp/dotnet-install.sh --channel 8.0 --runtime aspnetcore --install-dir /usr/share/dotnet --no-path && \
+    bash /tmp/dotnet-install.sh --channel 8.0 --runtime dotnet --install-dir /usr/share/dotnet --no-path && \
+    rm /tmp/dotnet-install.sh
 
 # Restore dependencies for test projects and CLI
 RUN dotnet restore src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj && \
