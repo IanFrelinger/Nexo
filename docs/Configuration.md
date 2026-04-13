@@ -8,6 +8,7 @@ Nexo configures via environment variables and optional `~/.nexo/config.json`. Th
 |----------|-------------|---------|
 | `NEXO_CONFIG_PATH` | Path to config file | `~/.nexo/config.json` |
 | `NEXO_DEPLOYMENT_PROFILE` | Hosting dependency profile for `AddNexo()` module composition (`full`, `server`, `edge`, `air-gapped`, `system`) | `full` |
+| `NEXO_STRICT_MODE` | `1` or `true` = enable strict mode (fail-fast + verbose diagnostics for dev/CI; disable for production) | `false` |
 | `NEXO_AIRGAP` | `1` or `true` = air-gapped; no cloud calls | unset |
 | `NEXO_AIRGAP_PROBE` | `1` = probe network to detect air-gap | unset |
 | `NEXO_TRUST_ENABLED` | `1` = enable Trust & sanitization | `false` |
@@ -15,6 +16,40 @@ Nexo configures via environment variables and optional `~/.nexo/config.json`. Th
 | `NEXO_LOOP_PARALLEL` | `1` = parallel loop kernel | `false` |
 | `NEXO_LOOP_INSTRUMENT` | `1` = instrumented loop | `false` |
 | `NEXO_LLM_RETRY_COUNT` | Retries for cloud LLM (5xx/429) | `3` |
+
+## Strict Mode (`NEXO_STRICT_MODE`)
+
+Strict mode is designed for development and CI environments. When enabled, Nexo fails fast and emits verbose diagnostics instead of silently falling back to defaults or retrying on errors. Flip it to permissive (disabled) once confident in the agentic layer for production.
+
+**Master switch:** `NEXO_STRICT_MODE=1` enables all sub-flags below. Individual flags can override the master switch.
+
+| Variable / Config Key | Description | Default |
+|-----------------------|-------------|---------|
+| `NEXO_STRICT_MODE` | Master switch — enables all sub-flags | `false` |
+| `Nexo:StrictMode:FailFastOnValidationErrors` | Throw immediately on validation failures | follows master |
+| `Nexo:StrictMode:FailFastOnProviderErrors` | Throw on provider misconfiguration instead of fallback | follows master |
+| `Nexo:StrictMode:FailFastOnPipelineErrors` | Throw on pipeline stage errors instead of retrying | follows master |
+| `Nexo:StrictMode:VerboseDiagnostics` | Emit debug-level logging and detailed error messages | follows master |
+| `Nexo:StrictMode:FailOnConfigurationWarnings` | Treat missing config files / empty configs as hard errors | follows master |
+
+**Usage examples:**
+
+```bash
+# Development / CI — fail fast and verbose
+export NEXO_STRICT_MODE=1
+
+# Production — permissive (default)
+# unset NEXO_STRICT_MODE   (or NEXO_STRICT_MODE=0)
+
+# Fine-grained: strict for providers only
+export NEXO_STRICT_MODE=0
+# then in appsettings.json:
+# { "Nexo": { "StrictMode": { "FailFastOnProviderErrors": true } } }
+```
+
+## Centralized Defaults (`NexoDefaults`)
+
+All tunable constants are centralized in `Nexo.Core.Domain.NexoDefaults`. This eliminates hard-coded magic numbers scattered across the codebase. Override any value via environment variables or `appsettings.json` — keys are listed in the relevant sections below.
 
 ## Nexo.API exposure (`Nexo__Security__*`)
 

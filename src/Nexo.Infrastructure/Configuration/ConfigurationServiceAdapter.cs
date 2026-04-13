@@ -2,6 +2,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Configuration.Models;
 using Nexo.Core.Application.Configuration.Ports;
+using Nexo.Core.Domain;
 using Nexo.Core.Domain.Exceptions;
 
 namespace Nexo.Infrastructure.Configuration;
@@ -21,20 +22,29 @@ public class ConfigurationServiceAdapter : IConfigurationService
 {
     private readonly ILogger<ConfigurationServiceAdapter> _logger;
     private readonly string _configFilePath;
+    private readonly bool _failOnWarnings;
 
-    public ConfigurationServiceAdapter(ILogger<ConfigurationServiceAdapter> logger)
+    public ConfigurationServiceAdapter(ILogger<ConfigurationServiceAdapter> logger, bool failOnConfigWarnings = false)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _configFilePath = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-            ".nexo",
-            "config.json");
+        _failOnWarnings = failOnConfigWarnings;
+        var configPath = Environment.GetEnvironmentVariable("NEXO_CONFIG_PATH");
+        _configFilePath = !string.IsNullOrWhiteSpace(configPath)
+            ? configPath
+            : Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+                NexoDefaults.ConfigDirectoryName,
+                NexoDefaults.ConfigFileName);
     }
 
     public async Task<NexoConfiguration> LoadAsync(CancellationToken cancellationToken = default)
     {
         if (!File.Exists(_configFilePath))
         {
+            if (_failOnWarnings)
+                throw new ConfigurationException(
+                    $"Configuration file not found at {_configFilePath} (strict mode is enabled — create the file or set NEXO_CONFIG_PATH).",
+                    ErrorCodes.ConfigFileNotFound);
             _logger.LogInformation("Configuration file not found, using defaults");
             return GetDefault();
         }
@@ -49,6 +59,10 @@ public class ConfigurationServiceAdapter : IConfigurationService
 
             if (config == null)
             {
+                if (_failOnWarnings)
+                    throw new ConfigurationException(
+                        $"Configuration file at {_configFilePath} is empty or invalid (strict mode is enabled).",
+                        ErrorCodes.ConfigInvalidFormat);
                 _logger.LogWarning("Configuration file is empty or invalid, using defaults");
                 return GetDefault();
             }
@@ -112,13 +126,13 @@ public class ConfigurationServiceAdapter : IConfigurationService
             Analysis = new AnalysisConfiguration
             {
                 EnabledRules = new[] { "SecurityScan", "CodeQuality" },
-                MaxComplexityThreshold = 20,
+                MaxComplexityThreshold = NexoDefaults.AnalysisMaxComplexityThreshold,
                 EnableSecurityScan = true,
                 EnableCodeQuality = true
             },
             Validation = new ValidationConfiguration
             {
-                TimeoutSeconds = 300,
+                TimeoutSeconds = NexoDefaults.ValidationTimeoutSeconds,
                 FailOnNoTests = false,
                 TestProjectPatterns = new[] { "*Test*.csproj", "*Tests.csproj" }
             },

@@ -1,3 +1,5 @@
+using Nexo.Core.Domain;
+
 namespace Nexo.Infrastructure.Execution;
 
 /// <summary>
@@ -9,8 +11,8 @@ public class BrickUsageTrackerOptions
     public const string SectionName = "BrickUsageTracker";
 
     /// <summary>Maximum number of execution records to keep (rolling window). Default 10,000.</summary>
-    public int MaxEntries { get; set; } = 10_000;
+    public int MaxEntries { get; set; } = NexoDefaults.BrickUsageTrackerMaxEntries;
 
     /// <summary>Rolling window for ExecutionsPerHour (seconds). Default 3600 (1 hour).</summary>
-    public int RollingHourWindowSeconds { get; set; } = 3600;
+    public int RollingHourWindowSeconds { get; set; } = NexoDefaults.BrickUsageTrackerRollingHourWindowSeconds;
 }

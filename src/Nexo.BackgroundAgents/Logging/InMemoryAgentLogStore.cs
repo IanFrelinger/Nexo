@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using Nexo.Core.Domain;
 
 namespace Nexo.BackgroundAgents.Logging;
 
@@ -7,7 +8,7 @@ namespace Nexo.BackgroundAgents.Logging;
 /// </summary>
 public sealed class InMemoryAgentLogStore : IBackgroundAgentLogStore
 {
-    private const int DefaultMaxEntriesPerAgent = 1000;
+    private const int DefaultMaxEntriesPerAgent = NexoDefaults.AgentLogMaxEntriesPerAgent;
     private readonly ConcurrentDictionary<string, BoundedLogBuffer> _buffers = new(StringComparer.OrdinalIgnoreCase);
     private readonly int _maxEntriesPerAgent;
 

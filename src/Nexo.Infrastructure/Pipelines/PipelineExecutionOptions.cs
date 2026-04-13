@@ -1,3 +1,5 @@
+using Nexo.Core.Domain;
+
 namespace Nexo.Infrastructure.Pipelines;
 
 /// <summary>
@@ -13,12 +15,12 @@ public sealed class PipelineExecutionOptions
     /// <summary>
     /// Maximum retry attempts for failed stages.
     /// </summary>
-    public int MaxRetryAttempts { get; set; } = 2;
+    public int MaxRetryAttempts { get; set; } = NexoDefaults.PipelineMaxRetryAttempts;
 
     /// <summary>
     /// Delay in milliseconds before retrying a failed stage.
     /// </summary>
-    public int RetryDelayMs { get; set; } = 100;
+    public int RetryDelayMs { get; set; } = NexoDefaults.PipelineRetryDelayMs;
 
     /// <summary>
     /// Whether failed stages should be resumed from a prior run.

@@ -68,4 +68,12 @@ public sealed class NexoHostingOptions
     /// Default: from NEXO_EXECUTION_REMOTE_URL. Use when Docker is not available (e.g. mobile, CI).
     /// </summary>
     public string? ExecutionRemoteUrl { get; set; }
+
+    /// <summary>
+    /// Strict mode configuration. When enabled, the system fails fast with verbose
+    /// diagnostics during development. Set <c>NEXO_STRICT_MODE=1</c> or configure
+    /// individual sub-flags. Flip to permissive (disabled) for production.
+    /// Default: resolved from <c>NEXO_STRICT_MODE</c> env var, or disabled.
+    /// </summary>
+    public StrictModeOptions StrictMode { get; set; } = new();
 }

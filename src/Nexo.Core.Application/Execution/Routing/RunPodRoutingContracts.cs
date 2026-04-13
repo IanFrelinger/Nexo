@@ -1,3 +1,4 @@
+using Nexo.Core.Domain;
 using Nexo.Core.Domain.Execution;
 
 namespace Nexo.Core.Application.Execution.Routing;
@@ -86,21 +87,21 @@ public sealed class RunPodBrickConfig
     public const string SectionName = "Nexo:RunPod";
 
     public string ApiKey { get; set; } = string.Empty;
-    public string PreferredGpuTier { get; set; } = "NVIDIA_A4000";
-    public TimeSpan Timeout { get; set; } = TimeSpan.FromMinutes(10);
-    public TimeSpan PollingInterval { get; set; } = TimeSpan.FromSeconds(2);
+    public string PreferredGpuTier { get; set; } = NexoDefaults.RunPodDefaultGpuTier;
+    public TimeSpan Timeout { get; set; } = TimeSpan.FromMinutes(NexoDefaults.RunPodDefaultTimeoutMinutes);
+    public TimeSpan PollingInterval { get; set; } = TimeSpan.FromSeconds(NexoDefaults.RunPodDefaultPollingIntervalSeconds);
     public string OutputStagingPath { get; set; } = Path.Combine(Path.GetTempPath(), "nexo-runpod");
-    public int QueueDepthThreshold { get; set; } = 4;
-    public string BaseUrl { get; set; } = "https://api.runpod.io";
+    public int QueueDepthThreshold { get; set; } = NexoDefaults.RunPodDefaultQueueDepthThreshold;
+    public string BaseUrl { get; set; } = NexoDefaults.RunPodDefaultBaseUrl;
     public bool EnablePeerNetworkRouting { get; set; }
     public bool PreferPeerNetworkOverCloud { get; set; } = true;
-    public string PeerTrustPolicy { get; set; } = "trusted-preferred";
+    public string PeerTrustPolicy { get; set; } = NexoDefaults.RunPodDefaultPeerTrustPolicy;
     public string TrustedPeerIdsCsv { get; set; } = string.Empty;
     public string UntrustedPeerIdsCsv { get; set; } = string.Empty;
-    public string PeerCapabilityId { get; set; } = "generation.capability-routing";
-    public string PeerRoutingBrickId { get; set; } = "generation.capability-routing";
-    public TimeSpan PeerRequestTimeout { get; set; } = TimeSpan.FromSeconds(30);
-    public TimeSpan PeerDiscoveryInterval { get; set; } = TimeSpan.FromSeconds(10);
+    public string PeerCapabilityId { get; set; } = NexoDefaults.RunPodDefaultPeerCapabilityId;
+    public string PeerRoutingBrickId { get; set; } = NexoDefaults.RunPodDefaultPeerRoutingBrickId;
+    public TimeSpan PeerRequestTimeout { get; set; } = TimeSpan.FromSeconds(NexoDefaults.RunPodDefaultPeerRequestTimeoutSeconds);
+    public TimeSpan PeerDiscoveryInterval { get; set; } = TimeSpan.FromSeconds(NexoDefaults.RunPodDefaultPeerDiscoveryIntervalSeconds);
 }
 
 public interface IRunPodClient
