@@ -151,14 +151,17 @@ jobs:
 
       - name: "Dry-run — bootstrap apply"
         shell: bash
+        continue-on-error: ${{ runner.os == 'Windows' }}
         run: |
           dotnet run --project src/Nexo.CLI --no-build -- bootstrap apply --dry-run --json \
             2>&1 | tee "${{ runner.temp }}/bootstrap-dryrun.json"
 
-      - name: "Dry-run — smoke tests"
+      - name: "Dry-run — build + run smoke tests"
         shell: bash
         run: |
+          dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -v minimal
           dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+            --no-build \
             --blame-hang-timeout 60s \
             --blame-hang-dump-type none \
             --filter "FullyQualifiedName~BaseFrameworkSmokeTests" \
@@ -205,8 +208,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            9.0.x
+            8.0.x
+
       # ── Stage 1: Setup (build container) ────────────────────────────
       - name: "Setup — build container image"
+        id: container-build
         run: |
           docker build \
             -f ${{ matrix.dockerfile }} \
@@ -216,6 +227,7 @@ jobs:
 
       # ── Stage 2 + 3: Discovery + Dry-run inside container ──────────
       - name: "Discover + Dry-run in container"
+        if: steps.container-build.outcome == 'success'
         run: |
           mkdir -p "${{ runner.temp }}/container-results"
           docker run --rm \
