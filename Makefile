@@ -1,4 +1,4 @@
-.PHONY: build test test-cross-platform test-portable test-multi-env test-all-platforms test-all-platforms-ephemeral ci-verify validate-safe review-summary package-cli clean-test-artifacts
+.PHONY: build test test-cross-platform test-portable test-multi-env test-all-platforms test-all-platforms-ephemeral ci-verify validate-safe review-summary package-cli clean-test-artifacts test-readiness-gate
 
 # Build the solution
 build:
@@ -48,6 +48,12 @@ test-platform:
 # Requires: gh auth login. Usage: make test-cross-platform [SCOPE=smoke|persistence|full]
 test-cross-platform:
 	gh workflow run "Cross-Platform Tests" --ref master -f scope=$${SCOPE:-smoke}
+
+# Trigger full platform readiness gate: setup + discovery + dry-run on all target platforms.
+# Runs on Linux, macOS, Windows (native) + Ubuntu, Alpine, Debian (container) + Docker CLI image.
+# Requires: gh auth login
+test-readiness-gate:
+	gh workflow run "Full Platform Readiness Gate" --ref master
 
 # Portable tests: C#-driven (replaces scripts/portable-test.sh). Works on Windows, macOS, Linux, mobile.
 # Usage: make test-portable [SCOPE=persistence|smoke|all]. Use --list to see targets: dotnet run --project src/Nexo.CLI -- test portable --list
