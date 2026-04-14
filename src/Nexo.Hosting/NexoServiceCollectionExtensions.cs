@@ -41,12 +41,36 @@ using Nexo.Transport.Grpc;
 namespace Nexo.Hosting;
 
 /// <summary>
-/// Extension methods for registering the Nexo kernel in dependency injection.
-/// Call AddNexo() to register all kernel services (orchestration, adaptation, persistence, trust, etc.)
-/// with sensible defaults. Use options to override config path, pattern store, and trust settings.
+/// DI composition root for the Nexo kernel.  This is the single place that wires every
+/// subsystem together — orchestration, adaptation, persistence, trust, execution, etc.
+/// <para>
+/// <b>Architecture:</b> The method <see cref="AddNexo"/> follows a strict registration
+/// order because later registrations depend on services registered earlier (e.g. the
+/// model decorator chain wraps <c>ProviderBackedModel → HotSwappableModel →
+/// OrchestrationRuntimeModelDecorator</c>, so the provider factory must already exist).
+/// </para>
+/// <para>
+/// <b>Deployment profiles:</b> A <see cref="NexoDeploymentProfile"/> (resolved from
+/// <c>NEXO_DEPLOYMENT_PROFILE</c> or <see cref="NexoHostingOptions.DeploymentProfile"/>)
+/// controls which subsystem modules are included via <see cref="ModuleSelection"/>.
+/// Profiles range from <c>Full</c> (all modules) down to <c>System</c> (bare minimum
+/// for CLI/headless tooling).
+/// </para>
+/// <para>
+/// <b>Related files:</b>
+/// <see cref="NexoHostingOptions"/> — caller-facing option bag;
+/// <see cref="NexoDeploymentProfile"/> — deployment tier enum;
+/// <c>Nexo.Core.Domain.NexoDefaults</c> — all tuneable default constants.
+/// </para>
 /// </summary>
 public static class NexoServiceCollectionExtensions
 {
+    /// <summary>
+    /// Flags produced by <see cref="GetModuleSelection"/> that decide which subsystem
+    /// modules are registered.  Each flag maps 1-to-1 to a conditional block inside
+    /// <see cref="AddNexo"/>.  The mapping is intentionally explicit (no reflection)
+    /// so that trimming and ahead-of-time compilation remain safe.
+    /// </summary>
     private sealed record ModuleSelection(
         bool IncludeNodeCapabilityRuntime,
         bool IncludeRuntimeTransport,
@@ -80,18 +104,28 @@ public static class NexoServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Adds the Nexo kernel to the service collection. Registers orchestration, adaptation,
-    /// persistence, trust services, provider factory, workflow executor, analysis, validation,
-    /// and agent execution. Use <paramref name="configure"/> to override defaults, including
-    /// deployment profile selection for environment-specific dependency peeling.
+    /// Registers every Nexo subsystem into the DI container.  The registration order
+    /// matters: downstream registrations (model decorator chain, workflow executor)
+    /// resolve services registered in earlier blocks.
+    /// <para>
+    /// <b>Environment variables read here (see inline comments for each):</b>
+    /// <c>NEXO_STRICT_MODE</c>, <c>NEXO_DEPLOYMENT_PROFILE</c>,
+    /// <c>NEXO_LOOP_PARALLEL</c>, <c>NEXO_LOOP_INSTRUMENT</c>,
+    /// <c>NEXO_OBSERVATION_FAIL_OPEN</c>, <c>NEXO_EPHEMERAL</c>,
+    /// <c>NEXO_EPHEMERAL_MODELS</c>, <c>NEXO_EPHEMERAL_DB</c>,
+    /// <c>NEXO_TRUST_ENABLED</c>, <c>NEXO_LOAD_PREFERENCE</c>,
+    /// <c>NEXO_EXECUTION_REMOTE_URL</c>.
+    /// </para>
     /// </summary>
-    /// <param name="services">The service collection.</param>
-    /// <param name="configure">Optional action to configure NexoHostingOptions.</param>
-    /// <returns>The service collection for chaining.</returns>
     public static IServiceCollection AddNexo(
         this IServiceCollection services,
         Action<NexoHostingOptions>? configure = null)
     {
+        // ── Strict mode & deployment profile ───────────────────────────
+        // Strict mode is resolved first because the configuration service
+        // adapter (registered below) reads it to decide whether config
+        // warnings should throw.  Deployment profile gates every
+        // conditional module block that follows.
         var options = new NexoHostingOptions();
         configure?.Invoke(options);
         ResolveStrictMode(options);
@@ -100,6 +134,11 @@ public static class NexoServiceCollectionExtensions
 
         services.AddSingleton(options.StrictMode);
 
+        // ── Configuration & Node Capability Runtime ────────────────────
+        // Environment variables are the primary config source; appsettings
+        // is intentionally NOT loaded here so that containerised deployments
+        // stay 12-factor compliant.  RemoteCapabilitiesOptions binds from
+        // the "Nexo:RemoteCapabilities" section for RunPod/cloud routing.
         services.AddHttpClient();
         var configuration = new ConfigurationBuilder()
             .AddEnvironmentVariables()
@@ -112,6 +151,11 @@ public static class NexoServiceCollectionExtensions
             RegisterNodeCapabilityRuntime(services, configuration);
         }
 
+        // ── CQRS (MediatR) & FluentValidation ─────────────────────────
+        // MediatR handlers from both the Analysis and Testing assemblies
+        // are registered in one pass.  The ValidationBehavior pipeline
+        // behavior runs FluentValidation before each handler, so
+        // validators must also be registered here.
         services.AddMediatR(cfg =>
         {
             cfg.RegisterServicesFromAssembly(typeof(AnalyzeCodeCommand).Assembly);
@@ -121,6 +165,10 @@ public static class NexoServiceCollectionExtensions
         services.AddValidatorsFromAssembly(typeof(AnalyzeCodeValidator).Assembly);
         services.AddTransient(typeof(MediatR.IPipelineBehavior<,>), typeof(Nexo.Core.Application.Behaviors.ValidationBehavior<,>));
 
+        // ── Configuration service adapter ──────────────────────────────
+        // Bridges the domain-level IConfigurationService port to the
+        // infrastructure adapter.  Strict mode controls whether config
+        // warnings escalate to hard failures (useful in CI pipelines).
         services.AddSingleton<Nexo.Core.Application.Configuration.Ports.IConfigurationService>(sp =>
         {
             var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Configuration.ConfigurationServiceAdapter>>();
@@ -128,6 +176,17 @@ public static class NexoServiceCollectionExtensions
             return new Nexo.Infrastructure.Configuration.ConfigurationServiceAdapter(logger, strictMode?.ShouldFailOnConfigurationWarnings ?? false);
         });
 
+        // ── Loop kernel (decorator chain) ──────────────────────────────
+        // The loop kernel runs brick-level iterations.  It is composed via
+        // the decorator pattern:
+        //   SequentialLoopKernel  (always present — baseline)
+        //     → ParallelLoopKernel      (if NEXO_LOOP_PARALLEL=1)
+        //       → InstrumentedLoopKernel (if NEXO_LOOP_INSTRUMENT=1)
+        //
+        // NEXO_LOOP_PARALLEL ("1"): wraps in a parallelising decorator for
+        //   concurrent brick evaluation; useful on multi-core servers.
+        // NEXO_LOOP_INSTRUMENT ("1"): adds timing/counter telemetry around
+        //   each loop iteration; adds overhead, meant for dev profiling.
         services.AddSingleton<ILoopKernel>(sp =>
         {
             ILoopKernel k = new SequentialLoopKernel();
@@ -140,6 +199,12 @@ public static class NexoServiceCollectionExtensions
             return k;
         });
 
+        // ── Orchestration & transport ──────────────────────────────────
+        // Orchestration is always registered (it owns the runtime spec
+        // accessor used by the model decorator chain).  Transport is
+        // optional: when present it registers gRPC channels plus the
+        // dual in-process / gRPC agent transport pair used for peer
+        // communication.  See Nexo.Transport.Grpc for channel config.
         services.AddNexoOrchestration();
         if (modules.IncludeRuntimeTransport)
         {
@@ -150,18 +215,30 @@ public static class NexoServiceCollectionExtensions
             services.AddNexoRuntimeTransport<InProcessAgentTransport, GrpcAgentTransport>();
         }
 
+        // ── Persistence ────────────────────────────────────────────────
         if (modules.IncludePersistence)
             services.AddNexoPersistence();
 
+        // ── Adaptation ─────────────────────────────────────────────────
+        // Pattern store path is forwarded so the adaptation layer knows
+        // where to persist learned patterns on disk.
         if (modules.IncludeAdaptation)
             services.AddAdaptationInfrastructure(options.PatternStorePath);
 
+        // ── Copilot task store ──────────────────────────────────────────
+        // LiteDB file is co-located with the pattern store directory
+        // (or the repo root as fallback) to keep all Nexo-generated
+        // state in one discoverable location.
         var copilotTasksBasePath = !string.IsNullOrEmpty(options.PatternStorePath)
             ? Path.GetDirectoryName(options.PatternStorePath) ?? "."
             : RepoPathResolver.FindRepoRoot();
         var copilotTasksDbPath = Path.Combine(copilotTasksBasePath, "nexo-copilot-tasks.db");
         services.TryAddSingleton<ICopilotTaskStore>(_ => new LiteDbCopilotTaskStore(copilotTasksDbPath));
 
+        // ── Knowledge query service ────────────────────────────────────
+        // Aggregates adaptation logs, pattern store, and (optionally)
+        // user-knowledge logs into a single query façade.  Falls back to
+        // an in-memory knowledge log when the trust module is absent.
         services.TryAddSingleton<IKnowledgeQueryService>(sp =>
         {
             var adaptationLog = sp.GetRequiredService<IAdaptationLog>();
@@ -171,15 +248,22 @@ public static class NexoServiceCollectionExtensions
             return new KnowledgeQueryService(adaptationLog, patternStore, userKnowledgeStore);
         });
 
+        // ── Pipeline composition ───────────────────────────────────────
         if (modules.IncludePipelineComposition)
             services.AddPipelineCompositionLayer();
 
+        // ── Background agents & RAG ────────────────────────────────────
         if (modules.IncludeBackgroundAgents)
             services.AddBackgroundAgents(registerHostedService: options.RegisterBackgroundAgentHostedService);
 
         if (modules.IncludeBackgroundAgentRag)
             services.AddBackgroundAgentsRAG();
 
+        // ── Observation pipeline ───────────────────────────────────────
+        // Captures runtime telemetry and persists it alongside patterns.
+        // NEXO_OBSERVATION_FAIL_OPEN ("1" / "true"): when set, store I/O
+        //   errors are swallowed instead of failing the pipeline — safe
+        //   for edge nodes with unreliable storage.
         if (modules.IncludeObservationPipeline && !options.DisableObservationPipeline)
         {
             var repoRoot = RepoPathResolver.FindRepoRoot();
@@ -192,9 +276,26 @@ public static class NexoServiceCollectionExtensions
             }, registerHostedService: options.RegisterBackgroundAgentHostedService);
         }
 
+        // Mock web-search provider is registered as a fallback so
+        // background agents can be instantiated even when no real
+        // provider is configured.
         if (modules.IncludeBackgroundAgents)
             services.TryAddSingleton<Nexo.BackgroundAgents.WebSearch.IWebSearchProvider, Nexo.BackgroundAgents.WebSearch.MockWebSearchProvider>();
 
+        // ── Model decorator chain ──────────────────────────────────────
+        // The IModel abstraction is built as a three-layer decorator:
+        //
+        //   1. ProviderBackedModel     – delegates to IProviderFactory
+        //   2. HotSwappableModel       – allows runtime model switching
+        //                                without restarting the host
+        //   3. OrchestrationRuntimeModelDecorator
+        //                              – injects orchestration-level
+        //                                spec overrides (temperature,
+        //                                token limits, etc.) per-call
+        //
+        // HotSwappableModel is registered as a concrete singleton so that
+        // administrative endpoints can resolve it directly for hot-swap
+        // operations, while IModel always returns the fully decorated chain.
         services.AddSingleton<Nexo.Infrastructure.Execution.Models.HotSwappableModel>(sp =>
         {
             var providerFactory = sp.GetRequiredService<Nexo.Infrastructure.Execution.IProviderFactory>();
@@ -216,6 +317,16 @@ public static class NexoServiceCollectionExtensions
                 sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Orchestration.Models.OrchestrationRuntimeModelDecorator>>());
         });
 
+        // ── Ephemeral lifecycle ────────────────────────────────────────
+        // "Ephemeral" means Nexo can spin up and tear down backing
+        // resources on demand (Ollama models, Postgres databases).
+        //
+        // NEXO_EPHEMERAL ("1"): master switch — enables ALL ephemeral
+        //   subsystems.
+        // NEXO_EPHEMERAL_MODELS ("1"): enables only ephemeral model
+        //   lifecycle (Ollama pull/remove) without affecting databases.
+        // NEXO_EPHEMERAL_DB ("postgres"): enables ephemeral Postgres
+        //   database creation; only takes effect when persistence is on.
         var ephemeralAll = string.Equals(Environment.GetEnvironmentVariable("NEXO_EPHEMERAL"), "1", StringComparison.OrdinalIgnoreCase);
         var ephemeralModels = ephemeralAll || string.Equals(Environment.GetEnvironmentVariable("NEXO_EPHEMERAL_MODELS"), "1", StringComparison.OrdinalIgnoreCase);
         if (ephemeralModels)
@@ -225,6 +336,27 @@ public static class NexoServiceCollectionExtensions
         if (modules.IncludePersistence && string.Equals(ephemeralDb, "postgres", StringComparison.OrdinalIgnoreCase))
             services.AddSingleton<Nexo.Core.Application.Persistence.Ports.IEphemeralDatabaseLifecycle, PostgresEphemeralLifecycle>();
 
+        // ── Trust & provider factory (3-way branching) ─────────────────
+        // The provider factory is the gateway through which every LLM
+        // call flows.  Three mutually-exclusive wiring paths exist:
+        //
+        //   Path A — Adaptive load-balancing (NEXO_LOAD_PREFERENCE set):
+        //     ProviderFactory → (optional SanitizingProviderFactory if
+        //     trust is on) → AdaptiveProviderFactory.
+        //     Load policy is driven by NEXO_LOAD_PREFERENCE value.
+        //
+        //   Path B — Trust without adaptive (NEXO_TRUST_ENABLED=1,
+        //     no load pref):
+        //     Trust module registers its own SanitizingProviderFactory
+        //     via AddTrustServices (skipProviderRegistration: false).
+        //
+        //   Path C — Plain (neither trust nor adaptive):
+        //     Bare ProviderFactory is registered directly.
+        //
+        // NEXO_TRUST_ENABLED ("1"): activates the sanitization proxy
+        //   that scrubs PII before LLM calls leave the trust boundary.
+        // NEXO_LOAD_PREFERENCE (string, e.g. "latency" / "cost"):
+        //   activates adaptive load balancing and selects the policy.
         var trustEnabledByConfig = options.TrustEnabled ?? string.Equals(Environment.GetEnvironmentVariable("NEXO_TRUST_ENABLED"), "1", StringComparison.OrdinalIgnoreCase);
         var trustEnabled = modules.IncludeTrustServices && trustEnabledByConfig;
         var loadPref = Environment.GetEnvironmentVariable("NEXO_LOAD_PREFERENCE")?.Trim();
@@ -235,6 +367,7 @@ public static class NexoServiceCollectionExtensions
             services.AddTrustServices(useSanitizingProviderFactory: trustEnabled, ephemeralLifecycle: ephemeralModels, skipProviderRegistration: useAdaptive);
         }
 
+        // Path A: adaptive load-balancing wraps everything
         if (useAdaptive)
         {
             services.AddSingleton<ProviderFactory>(sp =>
@@ -256,6 +389,7 @@ public static class NexoServiceCollectionExtensions
                 return new AdaptiveProviderFactory(inner, policy, logger);
             });
         }
+        // Path C: plain provider (Path B is handled inside AddTrustServices)
         else if (!trustEnabled)
         {
             services.AddSingleton<IProviderFactory>(sp =>
@@ -266,8 +400,13 @@ public static class NexoServiceCollectionExtensions
             });
         }
 
+        // ── Execution core & workflow ──────────────────────────────────
         services.AddSingleton<Nexo.Core.Application.Common.Ports.ITextFileSystem, Nexo.Infrastructure.IO.LocalTextFileSystem>();
 
+        // Workflow integrations (PDF export, webhooks, DB read/write,
+        // cluster store) are only available in Full/Server profiles.
+        // WorkflowExecutor resolves them as optional dependencies so it
+        // can still execute pure in-memory workflows without them.
         if (modules.IncludeWorkflowIntegrations)
         {
             services.AddSingleton<Nexo.Core.Application.Common.Ports.IWorkflowPdfExporter, Nexo.Infrastructure.Workflows.QuestPdfWorkflowExporter>();
@@ -278,6 +417,10 @@ public static class NexoServiceCollectionExtensions
             services.AddSingleton<Nexo.Core.Application.Common.Ports.IClusterStore, Nexo.Infrastructure.Workflows.ClusterStoreAdapter>();
         }
 
+        // Semantic cache, behavior registry, step mode, and behavior
+        // executor form the brick execution pipeline.  TryAddSingleton
+        // is used so that test hosts or SDK consumers can substitute
+        // any of these before calling AddNexo.
         services.TryAddSingleton<Nexo.Infrastructure.Execution.ISemanticCache>(sp =>
             new Nexo.Infrastructure.Execution.SemanticCache(sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Execution.SemanticCache>>()));
         services.TryAddSingleton<Nexo.Core.Domain.Execution.IBehaviorRegistry>(_ =>
@@ -296,12 +439,20 @@ public static class NexoServiceCollectionExtensions
                 sp.GetService<Nexo.Core.Application.Execution.Ports.IAgenticBrickEngine>(),
                 sp.GetService<Nexo.Core.Application.Execution.Ports.IStepExecutionMode>(),
                 sp.GetService<IMetricsCollector>()));
+        // Agent registry is populated from SDK-provided AgentCards; if
+        // none are supplied the registry starts empty and agents can be
+        // registered later at runtime.
         services.TryAddSingleton<Nexo.Core.Domain.Execution.IAgentRegistry>(sp =>
         {
             var sdkOptions = sp.GetService<Nexo.Hosting.Sdk.NexoSdkOptions>();
             var cards = sdkOptions?.AgentCards?.ToList() ?? new List<Nexo.Core.Domain.Agents.AgentCard>();
             return new Nexo.Infrastructure.Execution.AgentRegistry(cards);
         });
+
+        // ── Workflow executor ──────────────────────────────────────────
+        // Scoped because a single workflow execution may accumulate
+        // state (e.g. cluster affinity) that should not leak across
+        // independent request scopes.
         services.AddScoped<Nexo.Core.Application.Workflows.WorkflowExecutor>(sp =>
             new Nexo.Core.Application.Workflows.WorkflowExecutor(
                 sp.GetRequiredService<Nexo.Core.Domain.Execution.IAgentRegistry>(),
@@ -320,6 +471,10 @@ public static class NexoServiceCollectionExtensions
         services.AddScoped<Nexo.Core.Application.Agent.Ports.IAgentRegistry, Nexo.Infrastructure.Agent.Adapters.AgentRegistryAdapter>();
         services.AddScoped<Nexo.Core.Application.Agent.Ports.IAgentExecutor, Nexo.Infrastructure.Agent.Adapters.AgentExecutorAdapter>();
 
+        // ── Analysis & validation ──────────────────────────────────────
+        // Both services use a caching decorator (CachedAnalysis/
+        // CachedValidation) to avoid re-running expensive analysis
+        // or parsing when the same input appears within a scope.
         services.AddScoped<Nexo.Core.Application.Analysis.Ports.IAnalysisService>(sp =>
         {
             var inner = new Nexo.Infrastructure.Analysis.Adapters.AnalysisServiceAdapter(
@@ -342,8 +497,13 @@ public static class NexoServiceCollectionExtensions
 
         services.AddSingleton<ICacheStrategy, Nexo.Infrastructure.Caching.MemoryCacheStrategy>();
         services.AddSingleton<IMetricsCollector, Nexo.Infrastructure.Metrics.MemoryMetricsCollector>();
+        // ── Testing adapters ───────────────────────────────────────────
         services.AddScoped<Nexo.Core.Application.Testing.Ports.ITestRunner, Nexo.Infrastructure.Testing.TestRunnerAdapter>();
 
+        // NEXO_EXECUTION_REMOTE_URL (URL string): when set, test
+        //   execution is delegated to a remote execution service via
+        //   HTTP instead of the local Docker-based platform.  Useful in
+        //   CI environments where Docker-in-Docker is unavailable.
         if (modules.IncludeTestingAdapters)
         {
             var executionRemoteUrl = options.ExecutionRemoteUrl ?? Environment.GetEnvironmentVariable("NEXO_EXECUTION_REMOTE_URL")?.Trim();
@@ -372,6 +532,10 @@ public static class NexoServiceCollectionExtensions
             services.AddArtifactCleanup();
         }
 
+        // ── Analysis rule engine ───────────────────────────────────────
+        // Rules are collected via DI multi-registration and fed into
+        // the engine.  Add new IAnalysisRule implementations to extend
+        // the static analysis suite without touching this file.
         services.AddScoped<Nexo.Infrastructure.Validation.Parsers.ITestResultParser, Nexo.Infrastructure.Validation.Parsers.TrxTestResultParser>();
         services.AddScoped<Nexo.Infrastructure.Analysis.Rules.IAnalysisRule, Nexo.Infrastructure.Analysis.Rules.SecurityAnalysisRule>();
         services.AddScoped<Nexo.Infrastructure.Analysis.Rules.IAnalysisRule, Nexo.Infrastructure.Analysis.Rules.CodeQualityRule>();
@@ -385,6 +549,13 @@ public static class NexoServiceCollectionExtensions
         return services;
     }
 
+    /// <summary>
+    /// Registers the platform-specific NCR (Node Capability Runtime) module.
+    /// NCR probes local hardware (GPU, RAM, accelerators) and exposes
+    /// capabilities used by <c>ICapabilityRouter</c> to decide
+    /// whether a job can run locally or must be routed to a peer/cloud.
+    /// Falls back to Linux when the OS is not recognised.
+    /// </summary>
     private static void RegisterNodeCapabilityRuntime(IServiceCollection services, IConfiguration configuration)
     {
         services.AddNodeCapabilityRuntimeCore(configuration);
@@ -402,6 +573,13 @@ public static class NexoServiceCollectionExtensions
             services.AddNodeCapabilityRuntimeLinux(configuration);
     }
 
+    /// <summary>
+    /// Resolves the deployment profile from (in priority order):
+    /// 1. Explicit <see cref="NexoHostingOptions.DeploymentProfile"/> set by the caller.
+    /// 2. <c>NEXO_DEPLOYMENT_PROFILE</c> environment variable (case-insensitive;
+    ///    accepts "full", "server", "edge", "airgapped"/"air-gapped", "system"/"core").
+    /// 3. Falls back to <see cref="NexoDeploymentProfile.Full"/>.
+    /// </summary>
     private static NexoDeploymentProfile ResolveDeploymentProfile(NexoHostingOptions options)
     {
         if (options.DeploymentProfile.HasValue)
@@ -436,6 +614,18 @@ public static class NexoServiceCollectionExtensions
         return normalized is "full" or "server" or "edge" or "airgapped" or "air-gapped" or "system" or "core";
     }
 
+    /// <summary>
+    /// Maps a deployment profile to the set of subsystem modules that should
+    /// be registered.  The peeling order (Full → Server → Edge → AirGapped
+    /// → System) progressively strips capabilities:
+    /// <list type="bullet">
+    ///   <item><c>Full</c>     — everything; used in development &amp; CI.</item>
+    ///   <item><c>Server</c>   — same as Full (reserved for future server-specific gating).</item>
+    ///   <item><c>Edge</c>     — persistence + pipelines only; no NCR, no agents.</item>
+    ///   <item><c>AirGapped</c>— NCR + adaptation + persistence; no network transport.</item>
+    ///   <item><c>System</c>   — bare minimum for CLI tooling; nothing optional.</item>
+    /// </list>
+    /// </summary>
     private static ModuleSelection GetModuleSelection(NexoDeploymentProfile profile)
     {
         return profile switch
@@ -504,6 +694,12 @@ public static class NexoServiceCollectionExtensions
         };
     }
 
+    /// <summary>
+    /// Applies the <c>NEXO_STRICT_MODE</c> ("1" / "true") environment variable
+    /// when the caller has not already enabled strict mode programmatically.
+    /// Strict mode turns configuration warnings into hard failures — intended
+    /// for CI gates where misconfiguration should break the build.
+    /// </summary>
     private static void ResolveStrictMode(NexoHostingOptions options)
     {
         if (!options.StrictMode.Enabled)
