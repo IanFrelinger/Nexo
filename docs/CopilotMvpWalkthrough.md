@@ -21,7 +21,7 @@ OLLAMA_BASE_URL=http://localhost:11434 dotnet run --project src/Nexo.API
 OPENAI_API_KEY=sk-... dotnet run --project src/Nexo.API
 ```
 
-The portal is available at `http://localhost:5000` (default Kestrel HTTP port).
+The portal is available at `http://localhost:5000` (default Kestrel HTTP port). Docker compose stacks use port `8080` instead — see section 6.
 
 ## 2. Submit a Copilot Task (Web Portal)
 
