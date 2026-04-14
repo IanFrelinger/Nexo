@@ -113,14 +113,40 @@ ensure_dotnet_ready() {
   fi
 
   if ! command -v dotnet >/dev/null 2>&1; then
-    die ".NET SDK 9+ is required but 'dotnet' was not found. Install it via your IDE and rerun."
+    echo ".NET SDK not found — installing .NET 9 via dotnet-install script..."
+    if command -v curl >/dev/null 2>&1; then
+      curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh
+    elif command -v wget >/dev/null 2>&1; then
+      wget -qO /tmp/dotnet-install.sh https://dot.net/v1/dotnet-install.sh
+    else
+      die ".NET SDK 9+ is required but 'dotnet' was not found and neither curl nor wget is available. Install .NET SDK 9 from https://dot.net and rerun."
+    fi
+    bash /tmp/dotnet-install.sh --channel 9.0
+    export PATH="${HOME}/.dotnet:${PATH}"
+    rm -f /tmp/dotnet-install.sh
+    if ! command -v dotnet >/dev/null 2>&1; then
+      die ".NET SDK installation failed. Install manually from https://dot.net and rerun."
+    fi
   fi
 
   local version major
   version="$(dotnet --version 2>/dev/null || true)"
   major="${version%%.*}"
   if [[ -z "${version}" || -z "${major}" || "${major}" -lt 9 ]]; then
-    die ".NET SDK 9+ is required (found: ${version:-none}). Install/update via your IDE and rerun."
+    echo ".NET SDK version too old (found: ${version:-none}) — upgrading to 9..."
+    if command -v curl >/dev/null 2>&1; then
+      curl -fsSL https://dot.net/v1/dotnet-install.sh | bash -s -- --channel 9.0
+    elif command -v wget >/dev/null 2>&1; then
+      wget -qO- https://dot.net/v1/dotnet-install.sh | bash -s -- --channel 9.0
+    else
+      die ".NET SDK 9+ is required (found: ${version:-none}). Install/update from https://dot.net and rerun."
+    fi
+    export PATH="${HOME}/.dotnet:${PATH}"
+    version="$(dotnet --version 2>/dev/null || true)"
+    major="${version%%.*}"
+    if [[ -z "${version}" || -z "${major}" || "${major}" -lt 9 ]]; then
+      die ".NET SDK 9+ is required (found: ${version:-none}). Install/update from https://dot.net and rerun."
+    fi
   fi
 }
 

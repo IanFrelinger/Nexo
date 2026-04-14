@@ -2,7 +2,16 @@
 
 This guide covers initial setup, trust configuration, and first pipeline validation. Nexo operates on local infrastructure with no external service dependencies. Trust controls are active by default.
 
-## What you will do
+## Quickest path (one command)
+
+```bash
+bash scripts/install/quickstart.sh
+# Opens http://localhost:8080 with mock provider — no API keys needed.
+```
+
+This handles Docker detection, .NET SDK installation, building, and starting the portal. See `scripts/install/quickstart.sh` for details.
+
+## What you will do (manual path)
 
 In ~10-15 minutes, you will:
 

@@ -25,25 +25,46 @@ Repository: <https://github.com/IanFrelinger/Nexo>
 - **Strict mode.** Set `NEXO_STRICT_MODE=1` for fail-fast + verbose diagnostics during development. Flip to permissive for production. See `docs/Configuration.md`.
 - **Centralized defaults.** All tunable constants live in `Nexo.Core.Domain.NexoDefaults` — no magic numbers scattered in the codebase.
 
-## Quick Start (5 minutes)
+## Quick Start
 
-### Choose your lane (recommended)
+### One command (recommended)
 
-**Lane A: fastest path (container runtime)**
+From a cloned repo:
+
+```bash
+bash scripts/install/quickstart.sh
+# Opens http://localhost:8080 — portal running with mock provider, no API keys needed.
+```
+
+The script detects Docker or .NET SDK, builds, and starts the portal. Works on Linux and macOS. Mock provider is enabled by default so the setup wizard and chat work immediately.
+
+Stop with `docker stop nexo-quickstart` (Docker path) or `Ctrl+C` (native path).
+
+### Other lanes
+
+**Docker only (portal + API):**
+
+```bash
+git clone https://github.com/IanFrelinger/Nexo.git && cd Nexo
+docker build -f .docker/Dockerfile.quickstart -t nexo:quickstart .
+docker run --rm -p 8080:8080 nexo:quickstart
+# Open http://localhost:8080
+```
+
+**Docker CLI only (no portal):**
 
 ```bash
 docker pull ghcr.io/ianfrelinger/nexo-cli:latest
 docker run --rm ghcr.io/ianfrelinger/nexo-cli:latest --help
 ```
 
-**Lane B: full local dev path (native SDK)**
+**Native SDK:**
 
 ```bash
-git clone https://github.com/IanFrelinger/Nexo.git
-cd Nexo
-bash scripts/setup/setup.sh all
-dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore
-dotnet run --project src/Nexo.CLI -- --help
+git clone https://github.com/IanFrelinger/Nexo.git && cd Nexo
+bash scripts/install/install.sh --yes
+NEXO_ALLOW_MOCK=1 dotnet run --project src/Nexo.API
+# Open http://localhost:5000
 ```
 
 Prefer this one-shot installer if you want fewer manual steps:

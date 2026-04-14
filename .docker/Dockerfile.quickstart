@@ -1,0 +1,22 @@
+# All-in-one Nexo quickstart image: API + portal + mock provider enabled.
+# Usage:
+#   docker build -f .docker/Dockerfile.quickstart -t nexo:latest .
+#   docker run --rm -p 8080:8080 nexo:latest
+#   Open http://localhost:8080
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+
+COPY . .
+RUN dotnet restore src/Nexo.API/Nexo.API.csproj
+RUN dotnet publish src/Nexo.API/Nexo.API.csproj -c Release -o /app/publish --no-restore
+
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+WORKDIR /app
+COPY --from=build /app/publish ./
+
+ENV ASPNETCORE_URLS=http://+:8080
+ENV NEXO_ALLOW_MOCK=1
+ENV DOTNET_NOLOGO=true
+EXPOSE 8080
+
+ENTRYPOINT ["dotnet", "Nexo.API.dll"]
