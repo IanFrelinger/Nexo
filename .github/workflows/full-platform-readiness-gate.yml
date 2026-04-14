@@ -166,6 +166,7 @@ jobs:
       - name: "Dry-run — build + run smoke tests"
         shell: bash
         run: |
+          rm -f src/Nexo.Tests.Infrastructure/scripts/obj/project.assets.json
           dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -v minimal
           dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
             --no-build \
