@@ -85,7 +85,23 @@ dotnet run --project src/Nexo.CLI -- doctor --json
 
 You should see commands including `analyze`, `validate`, `pipeline`, `trust`, `test`, `orchestrate`, `agent`, `chat`, `runtime`, `workflow`, `mesh`, `config`, `doctor`, `dogfood`, `escalate`, `metrics`, and more.
 
-## 2b) Run background-agent daemon mode (optional)
+## 2b) Try the copilot task flow (optional)
+
+Submit a coding task and receive output with an audit trail:
+
+```bash
+# Via API (mock provider for testing):
+NEXO_ALLOW_MOCK=1 dotnet run --project src/Nexo.API &
+curl -s http://localhost:5000/api/copilot/task \
+  -H "Content-Type: application/json" \
+  -d '{"task": "Analyze the security posture of this project"}' | jq .
+```
+
+Or open `http://localhost:5000` in a browser — the portal includes a setup wizard, Quick chat, activity feed, and changelog assistant.
+
+See `docs/CopilotMvpWalkthrough.md` for the full walkthrough.
+
+## 2c) Run background-agent daemon mode (optional)
 
 Use this when you want Nexo to run as a long-lived local process with hosted background agents.
 If your config does not define `Nexo:Barriers:Levels`, the daemon defaults to `["public","internal"]` for local bootstrap.

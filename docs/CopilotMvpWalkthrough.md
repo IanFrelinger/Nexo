@@ -4,9 +4,9 @@ This guide walks you through submitting your first coding task through the Nexo 
 
 ## Prerequisites
 
-- .NET 8+ SDK installed
+- .NET SDK 9.x (repo is pinned by `global.json`; the API project targets `net8.0` but requires the 9.x SDK to build)
 - Nexo repo cloned and built (`dotnet build src/Nexo.API/Nexo.API.csproj`)
-- An LLM provider configured (or `NEXO_ALLOW_MOCK=1` for local testing)
+- An LLM provider configured (or `NEXO_ALLOW_MOCK=1` for local testing without API keys)
 
 ## 1. Start the API
 
@@ -21,37 +21,41 @@ OLLAMA_BASE_URL=http://localhost:11434 dotnet run --project src/Nexo.API
 OPENAI_API_KEY=sk-... dotnet run --project src/Nexo.API
 ```
 
-The portal is available at `http://localhost:5000`.
+The portal is available at `http://localhost:5000` (default Kestrel HTTP port).
 
 ## 2. Submit a Copilot Task (Web Portal)
 
 1. Open `http://localhost:5000` in your browser.
-2. In the **Quick chat** panel, type a coding task: `Analyze the security posture of this codebase`.
-3. Click **Run** (or press Enter).
-4. The response includes:
+2. If this is your first visit, the **setup wizard** will guide you through provider configuration.
+3. In the **Quick chat** panel, type a coding task: `Analyze the security posture of this codebase`.
+4. Click **Send prompt**.
+5. The response includes:
    - The orchestrator's output (analysis, suggestions, code).
    - An **audit count** showing how many trust events were recorded.
-   - A **trust pill** indicating the current trust boundary status.
+   - A **trust pill** in the header showing the current trust boundary status.
 
 ## 3. Submit a Copilot Task (API)
 
 ```bash
 curl -s http://localhost:5000/api/copilot/task \
   -H "Content-Type: application/json" \
-  -d '{"prompt": "List the top 3 security findings in src/Nexo.Infrastructure"}' \
+  -d '{"task": "List the top 3 security findings in src/Nexo.Infrastructure"}' \
   | jq .
 ```
 
-Response includes:
+Response shape:
 ```json
 {
-  "taskId": "...",
-  "output": "...",
-  "status": "Completed",
-  "recentAudit": [ ... ],
-  "trustBoundaryActive": true
+  "taskId": "abc123...",
+  "success": true,
+  "summary": "...",
+  "output": { ... },
+  "isTrustPaused": false,
+  "recentAudit": [ ... ]
 }
 ```
+
+The request body field is `task` (not `prompt`). Optional field: `auditCount` (default 25).
 
 ## 4. Review Audit Trail
 
@@ -66,6 +70,8 @@ curl -s http://localhost:5000/api/trust/dashboard | jq .
 dotnet run --project src/Nexo.CLI -- trust audit --json
 dotnet run --project src/Nexo.CLI -- trust dashboard
 ```
+
+Note: CLI trust commands require `NEXO_TRUST_ENABLED=1` in the environment for full trust service registration.
 
 ## 5. Control Trust Boundary
 
@@ -87,13 +93,32 @@ dotnet run --project src/Nexo.CLI -- trust boundary
 
 ```bash
 docker compose -f docker-compose.agent-server.yml up -d
-# Portal at http://localhost:8080
+# Portal at http://localhost:8080 (compose maps to port 8080)
+```
+
+## 7. Activity Feed and Changelog
+
+The portal includes two additional product surfaces:
+
+- **Activity feed**: Shows recent background agent actions and audit events (auto-refreshes every 60s).
+- **Changelog assistant**: Generate a summary of recent project changes from adaptation, pattern, and audit stores.
+
+API endpoints:
+```bash
+# Activity feed (last 24h):
+curl -s http://localhost:5000/api/activity/feed | jq .
+
+# Generate changelog (last 7 days):
+curl -s http://localhost:5000/api/changelog/generate \
+  -H "Content-Type: application/json" \
+  -d '{"since": "2026-04-06"}' | jq .
 ```
 
 ## Verification Checklist
 
-- [ ] Task submitted and output received
+- [ ] Task submitted via portal or API and output received
 - [ ] Audit entries visible in response and/or trust dashboard
 - [ ] Trust boundary status accessible
 - [ ] Policy pack can be applied and takes effect
 - [ ] Works with mock provider (no external API keys)
+- [ ] Setup wizard appears on first visit (no prior copilot tasks)

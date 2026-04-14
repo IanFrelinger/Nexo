@@ -162,3 +162,45 @@ make clean-test-artifacts
 Removes all `TestResults/` dirs under `src/` and the root `test-results/` folder.
 
 **Procedural cleanup (before/after test runs):** Set `NEXO_CLEAN_BEFORE_TEST=1` or `NEXO_CLEAN_AFTER_TEST=1` to run test-artifacts cleanup automatically when using `nexo test local`.
+
+## Full Platform Readiness Gate
+
+The `full-platform-readiness-gate.yml` workflow runs setup → discovery → dry-run on all target platforms:
+
+- **Native:** Ubuntu, macOS, Windows (setup scripts, CLI build, `nexo doctor`, `nexo bootstrap check`, `ci verify`, smoke tests)
+- **Container:** Ubuntu, Alpine, Debian (Docker test images with CLI + test projects pre-built)
+- **Docker CLI image:** build from `Dockerfile.cli` + smoke + discover
+- **SDK sample:** `docs/samples/StableSdkHostSample/` built as compatibility smoke check
+
+Trigger manually: `make test-readiness-gate` or `gh workflow run "Full Platform Readiness Gate"`.
+
+Weekly schedule: Monday 06:00 UTC.
+
+## Docker Test Images
+
+Three Docker test images are maintained under `.docker/`:
+
+| Image | Base | Purpose |
+|-------|------|---------|
+| `Dockerfile.test-caching` | Ubuntu + .NET 9 SDK | Framework, trust, and smoke tests |
+| `Dockerfile.test-caching-alpine` | Alpine + .NET 9 SDK | Alpine-specific portability tests |
+| `Dockerfile.test-caching-debian` | Debian + .NET 9 SDK | Debian-specific portability tests |
+
+All three include the .NET 8 runtime (for CLI `net8.0` target) and pre-build test projects + CLI during image build.
+
+## E2E Test Coverage
+
+E2E tests are tagged with `[Trait("Category", "E2E")]` and must have explicit `[Fact(Timeout = N)]` (enforced by `TimeoutConventionTests`).
+
+Key E2E test files:
+
+| File | Tests | Coverage |
+|------|-------|----------|
+| `StrictModeE2ETests` | 8 | Strict mode flags, DI, config fail-fast |
+| `NexoDefaultsTests` | 13 | Golden tests for all centralized constants |
+| `ConfigurationAdapterEdgeCaseTests` | 8 | NEXO_CONFIG_PATH, malformed JSON, strict/permissive |
+| `ProviderFactoryEdgeCaseTests` | 11 | Provider selection, mock gating, concurrency |
+| `PipelineLifecycleE2ETests` | 9 | Pipeline lifecycle, resume, fan-in, concurrency |
+| `HostingDeploymentProfileTests` | 10 | All deployment profiles, env var resolution |
+| `BackgroundAgentLifecycleE2ETests` | 10 | Mode transitions, approval gates, audit bounds |
+| `HostingE2ESmokeTests` | 8 | AddNexo kernel resolution, validation, observation |

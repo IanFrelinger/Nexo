@@ -37,7 +37,7 @@ services.AddNexo(options =>
 | `IConfigurationService` | `Nexo.Core.Application` | Configuration management |
 | `IPatternStore` | `Nexo.Core.Application` | Pattern storage for adaptation |
 | `IKnowledgeQueryService` | `Nexo.Core.Application` | Cross-store knowledge queries |
-| `ICopilotTaskStore` | `Nexo.Infrastructure` | Copilot task persistence |
+| `ICopilotTaskStore` | `Nexo.Core.Application` | Copilot task persistence |
 
 ### Extension Points
 

@@ -16,6 +16,15 @@ Repository: <https://github.com/IanFrelinger/Nexo>
 - **Full data provenance.** Every execution decision, routing choice, and adaptation is logged. Barrier identity resolution determines trust level per request. Structured audit sinks provide a complete chain of custody.
 - **Federated capability mesh.** Any .NET-capable host can join the mesh, advertise available capabilities and models, and serve execution requests from trusted peers. Trust tiers and routing policies control which peers may receive which workloads.
 
+## Product Features
+
+- **Setup wizard.** On first visit, the web portal guides you through provider configuration and a test prompt — no terminal required.
+- **Copilot task flow.** Submit coding tasks via the portal or `POST /api/copilot/task` and receive output with an integrated audit trail. See `docs/CopilotMvpWalkthrough.md`.
+- **Activity feed.** Background agent actions and system events surface in the portal as a live feed.
+- **Changelog assistant.** Generate project change summaries from adaptation, pattern, and audit stores — in the portal or via `POST /api/changelog/generate`.
+- **Strict mode.** Set `NEXO_STRICT_MODE=1` for fail-fast + verbose diagnostics during development. Flip to permissive for production. See `docs/Configuration.md`.
+- **Centralized defaults.** All tunable constants live in `Nexo.Core.Domain.NexoDefaults` — no magic numbers scattered in the codebase.
+
 ## Quick Start (5 minutes)
 
 ### Choose your lane (recommended)

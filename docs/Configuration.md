@@ -1,6 +1,6 @@
 # Configuration Reference
 
-Nexo configures via environment variables and optional `~/.nexo/config.json`. This document lists all supported options.
+Nexo configures via environment variables and optional `~/.nexo/config.json`. This document lists the primary configuration options. Additional options may be available via `appsettings.json` binding — see inline code comments for the full set.
 
 ## Core
 

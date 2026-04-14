@@ -65,7 +65,7 @@
 | Component | Status | Notes |
 |-----------|--------|-------|
 | Port Definitions | RESOLVED | Core ports in `Nexo.Abstractions`; breaking-change and stability expectations documented in [SdkCompatibilityPolicy.md](SdkCompatibilityPolicy.md) alongside [sdk.md](sdk.md). |
-| SDK & External Registration | RESOLVED | `AddNexoSdk`, [sdk.md](sdk.md); reference host `docs/samples/StableSdkHostSample/`; `NexoSdkBuilder.UseAdaptiveRouting()` marked `[Obsolete]` (experimental). The sample is a standalone project (not in `Nexo.sln`); add an explicit `dotnet build`/`run` step in CI if you want it enforced on every pipeline. |
+| SDK & External Registration | RESOLVED | `AddNexoSdk`, [sdk.md](sdk.md); reference host `docs/samples/StableSdkHostSample/`; `NexoSdkBuilder.UseAdaptiveRouting()` marked `[Obsolete]` (experimental). The sample is built in CI via `full-platform-readiness-gate.yml` on every push. |
 
 ---
 

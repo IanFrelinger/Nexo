@@ -40,6 +40,11 @@ All endpoints are registered under `/api` via `MapNexoEndpoints()` in `Nexo.API`
 | GET | `/api/director/dailies/{dailyId}` | Get a specific daily |
 | GET | `/api/background-agents/summary` | Background agent health summary |
 | GET | `/api/knowledge/query` | Knowledge timeline query |
+| GET | `/api/preferences` | Get server-side user preferences |
+| POST | `/api/preferences` | Save server-side user preferences |
+| GET | `/api/activity/feed` | Recent background agent + audit activity |
+| POST | `/api/changelog/generate` | Generate project changelog summary |
+| GET | `/api/onboarding/status` | First-run setup status (provider availability) |
 
 ## Hosting Quick Start (Embedding)
 
@@ -69,5 +74,6 @@ var result = await validationService.ValidateAsync(filter: null, progress: null,
 | `ObservationFailOpen` | Continue on observation store errors | `false` |
 | `UseAdaptiveLoadBalancing` | Enable adaptive load balancing | `false` |
 | `ExecutionRemoteUrl` | Remote execution endpoint URL | unset |
+| `StrictMode` | Strict mode configuration (fail-fast + verbose diagnostics) | disabled |
 
-See [Getting Started](GettingStarted.md) and [Architecture](Architecture.md) for more.
+See [Getting Started](../GettingStarted.md) and [Architecture](../Architecture.md) for more.
