@@ -151,6 +151,32 @@ public static class NexoEndpoints
             .WithSummary("Query unified adaptation/pattern/knowledge timeline")
             .Produces<KnowledgeQueryResult>(StatusCodes.Status200OK);
 
+        group.MapGet("/preferences", GetPreferencesAsync)
+            .WithName("GetPreferences")
+            .WithSummary("Get server-side user preferences")
+            .Produces<PreferencesResponse>(StatusCodes.Status200OK);
+
+        group.MapPost("/preferences", SavePreferencesAsync)
+            .WithName("SavePreferences")
+            .WithSummary("Save server-side user preferences")
+            .Produces<PreferencesResponse>(StatusCodes.Status200OK);
+
+        group.MapGet("/activity/feed", GetActivityFeedAsync)
+            .WithName("GetActivityFeed")
+            .WithSummary("Get recent activity from background agents and system events")
+            .Produces<ActivityFeedResponse>(StatusCodes.Status200OK);
+
+        group.MapPost("/changelog/generate", GenerateChangelogAsync)
+            .WithName("GenerateChangelog")
+            .WithSummary("Generate project changelog summary from recent changes")
+            .Produces<ChangelogResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
+
+        group.MapGet("/onboarding/status", GetOnboardingStatusAsync)
+            .WithName("GetOnboardingStatus")
+            .WithSummary("Get setup status for first-run wizard (provider availability, config state)")
+            .Produces<OnboardingStatusResponse>(StatusCodes.Status200OK);
+
         return app;
     }
 
@@ -812,6 +838,151 @@ public static class NexoEndpoints
             activePack?.Id,
             activePack?.Version));
     }
+
+    private static readonly string PreferencesPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+        ".nexo", "preferences.json");
+
+    private static async Task<IResult> GetPreferencesAsync(CancellationToken cancellationToken)
+    {
+        if (!File.Exists(PreferencesPath))
+            return Results.Ok(new PreferencesResponse(null, null, null, null, null));
+
+        var json = await File.ReadAllTextAsync(PreferencesPath, cancellationToken);
+        var prefs = System.Text.Json.JsonSerializer.Deserialize<PreferencesResponse>(json, DailySerializerOptions);
+        return Results.Ok(prefs ?? new PreferencesResponse(null, null, null, null, null));
+    }
+
+    private static async Task<IResult> SavePreferencesAsync(
+        [FromBody] PreferencesRequest request,
+        CancellationToken cancellationToken)
+    {
+        var dir = Path.GetDirectoryName(PreferencesPath);
+        if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+            Directory.CreateDirectory(dir);
+
+        var prefs = new PreferencesResponse(
+            request.DisplayName, request.Theme, request.DefaultFocus, request.PreferredProvider, DateTimeOffset.UtcNow);
+        var json = System.Text.Json.JsonSerializer.Serialize(prefs, DailySerializerOptions);
+        await File.WriteAllTextAsync(PreferencesPath, json, cancellationToken);
+        return Results.Ok(prefs);
+    }
+
+    private static async Task<IResult> GetActivityFeedAsync(
+        [FromServices] Nexo.BackgroundAgents.Logging.IBackgroundAgentLogStore? logStore,
+        [FromServices] Nexo.Core.Application.Trust.Ports.IDataDecisionAuditLog? auditLog,
+        [FromServices] IBackgroundAgentRegistry? agentRegistry,
+        [FromQuery] int maxCount = 30,
+        CancellationToken cancellationToken = default)
+    {
+        await Task.CompletedTask;
+        var entries = new List<ActivityEntry>();
+
+        if (auditLog != null)
+        {
+            var auditEntries = auditLog.GetRecent(maxCount, since: DateTimeOffset.UtcNow.AddHours(-24));
+            foreach (var e in auditEntries)
+            {
+                entries.Add(new ActivityEntry(
+                    e.SourceId ?? "system",
+                    e.EventType ?? "audit",
+                    e.Reason ?? e.FieldOrType ?? e.DataType ?? "event recorded",
+                    e.Timestamp));
+            }
+        }
+
+        var sorted = entries.OrderByDescending(e => e.Timestamp).Take(maxCount).ToList();
+        return Results.Ok(new ActivityFeedResponse(sorted));
+    }
+
+    private static async Task<IResult> GenerateChangelogAsync(
+        [FromBody] ChangelogRequest? request,
+        [FromServices] IKnowledgeQueryService queryService,
+        [FromServices] Nexo.Core.Application.Trust.Ports.IDataDecisionAuditLog? auditLog,
+        CancellationToken cancellationToken)
+    {
+        var sinceDate = DateTimeOffset.TryParse(request?.Since, out var parsed)
+            ? parsed
+            : DateTimeOffset.UtcNow.AddDays(-7);
+        var maxEntries = request?.MaxEntries ?? 50;
+
+        var knowledgeRequest = new KnowledgeQueryRequest
+        {
+            Since = sinceDate,
+            MaxCount = maxEntries,
+            Sources = new[] { KnowledgeSource.Adaptation, KnowledgeSource.Pattern }
+        };
+        var knowledge = await queryService.QueryAsync(knowledgeRequest, cancellationToken);
+
+        var changeEntries = new List<ChangelogEntry>();
+        foreach (var item in knowledge.Entries)
+        {
+            var prov = item.Provenance.Count > 0 ? string.Join(", ", item.Provenance.Values) : null;
+            changeEntries.Add(new ChangelogEntry(
+                item.Source.ToString(),
+                item.Summary ?? item.DataType ?? "change recorded",
+                item.Timestamp,
+                prov));
+        }
+
+        if (auditLog != null)
+        {
+            var auditEntries = auditLog.GetRecent(maxEntries, since: sinceDate);
+            foreach (var e in auditEntries.Where(e => e.EventType is "BoundaryChange" or "AmbientAction"))
+            {
+                changeEntries.Add(new ChangelogEntry(
+                    e.EventType ?? "audit",
+                    e.Reason ?? e.ChangeType ?? "system event",
+                    e.Timestamp,
+                    e.SourceId));
+            }
+        }
+
+        var sorted = changeEntries.OrderByDescending(e => e.Timestamp).Take(maxEntries).ToList();
+        var summary = sorted.Count == 0
+            ? $"No changes recorded since {sinceDate:yyyy-MM-dd}."
+            : $"{sorted.Count} changes since {sinceDate:yyyy-MM-dd}: {sorted.GroupBy(e => e.Category).Select(g => $"{g.Count()} {g.Key}").Aggregate((a, b) => a + ", " + b)}.";
+
+        return Results.Ok(new ChangelogResponse(summary, sorted, DateTimeOffset.UtcNow));
+    }
+
+    private static async Task<IResult> GetOnboardingStatusAsync(
+        [FromServices] Nexo.Infrastructure.Execution.IProviderFactory providerFactory,
+        [FromServices] ICopilotTaskStore copilotTaskStore,
+        [FromServices] IAccessBoundary accessBoundary,
+        CancellationToken cancellationToken)
+    {
+        var providers = new List<ProviderStatus>();
+        foreach (var name in new[] { "ollama", "openai", "azure", "mock", "local" })
+        {
+            var available = providerFactory.IsProviderAvailable(name);
+            var reason = name switch
+            {
+                "openai" when !available => "Set OPENAI_API_KEY",
+                "azure" when !available => "Set AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_KEY, AZURE_OPENAI_DEPLOYMENT",
+                "mock" when !available => "Set NEXO_ALLOW_MOCK=1",
+                "local" when !available => "Set NEXO_LOCAL_MODEL_PATH",
+                _ => null
+            };
+            providers.Add(new ProviderStatus(name, available, reason));
+        }
+
+        var tasks = await copilotTaskStore.QueryAsync(1, null, cancellationToken);
+        var hasTasks = tasks.Count > 0;
+
+        var activePack = accessBoundary.GetActivePolicyPack();
+        var configPath = Environment.GetEnvironmentVariable("NEXO_CONFIG_PATH")
+            ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".nexo", "config.json");
+
+        return Results.Ok(new OnboardingStatusResponse(
+            IsFirstRun: !hasTasks,
+            ApiReachable: true,
+            Providers: providers,
+            HasCopilotTasks: hasTasks,
+            HasDailies: false,
+            ConfigPath: configPath,
+            ActiveTrustPack: activePack?.Id));
+    }
 }
 
 // API-only DTOs (shared DTOs live in Nexo.Contracts)
@@ -890,3 +1061,52 @@ public sealed record TrustPauseRequest(bool Paused);
 public sealed record TrustRuleRequest(string? Category, string? Source, bool Allowed);
 
 public sealed record TrustBoundaryMutationResponse(bool Ok, string Target, string State);
+
+// ── Preferences ─────────────────────────────────────────────────────
+
+public sealed record PreferencesRequest(string? DisplayName, string? Theme, string? DefaultFocus, string? PreferredProvider);
+
+public sealed record PreferencesResponse(
+    string? DisplayName,
+    string? Theme,
+    string? DefaultFocus,
+    string? PreferredProvider,
+    DateTimeOffset? LastSavedAt);
+
+// ── Activity Feed ───────────────────────────────────────────────────
+
+public sealed record ActivityFeedResponse(IReadOnlyList<ActivityEntry> Entries);
+
+public sealed record ActivityEntry(
+    string Source,
+    string EventType,
+    string Summary,
+    DateTimeOffset Timestamp);
+
+// ── Changelog ───────────────────────────────────────────────────────
+
+public sealed record ChangelogRequest(string? Since, int? MaxEntries);
+
+public sealed record ChangelogResponse(
+    string Summary,
+    IReadOnlyList<ChangelogEntry> Entries,
+    DateTimeOffset GeneratedAt);
+
+public sealed record ChangelogEntry(
+    string Category,
+    string Description,
+    DateTimeOffset Timestamp,
+    string? Source);
+
+// ── Onboarding ──────────────────────────────────────────────────────
+
+public sealed record OnboardingStatusResponse(
+    bool IsFirstRun,
+    bool ApiReachable,
+    IReadOnlyList<ProviderStatus> Providers,
+    bool HasCopilotTasks,
+    bool HasDailies,
+    string? ConfigPath,
+    string? ActiveTrustPack);
+
+public sealed record ProviderStatus(string Name, bool Available, string? Reason);

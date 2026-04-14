@@ -547,6 +547,27 @@
     </section>
 
     <section class="panel">
+      <h2>Activity feed</h2>
+      <p class="sub">Recent actions from background agents and system events (last 24h).</p>
+      <div id="activityFeed" class="table-like"><div>Loading activity…</div></div>
+      <div class="mini-actions" style="margin-top:8px;">
+        <button type="button" class="secondary" id="refreshActivityBtn">Refresh</button>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Changelog assistant</h2>
+      <p class="sub">Generate a summary of recent project changes from adaptation, patterns, and audit events.</p>
+      <div class="mini-input-row">
+        <label for="changelogSince" style="margin:0;white-space:nowrap;">Since</label>
+        <input id="changelogSince" type="date" style="width:auto;min-width:140px;" />
+        <button type="button" class="primary" id="generateChangelogBtn">Generate changelog</button>
+      </div>
+      <div id="changelogSummary" class="status" style="margin-top:8px;">No changelog generated yet.</div>
+      <div id="changelogEntries" class="table-like" style="margin-top:8px;" hidden></div>
+    </section>
+
+    <section class="panel">
       <h2>Trust + runtime controls</h2>
       <p class="sub">Boundary state, audit trail, and background agent visibility.</p>
       <div class="mini-grid">
@@ -588,6 +609,35 @@
       <div id="selectedDaily" class="json">No daily selected.</div>
     </section>
   </div>
+
+  <dialog class="settings" id="setupWizardDlg" aria-labelledby="setupTitle" style="max-width:min(520px,94vw);">
+    <div class="settings-inner">
+      <h3 id="setupTitle">Welcome to Nexo</h3>
+      <p class="muted">Let's get you set up. This takes about 30 seconds.</p>
+
+      <div id="setupStep1">
+        <label><strong>Step 1:</strong> What should we call you?</label>
+        <input id="setupName" placeholder="Your name (optional, stored locally)" autocomplete="off" />
+      </div>
+
+      <div id="setupStep2" style="margin-top:14px;">
+        <label><strong>Step 2:</strong> LLM Provider — pick one that's available</label>
+        <div id="setupProviders" class="mini-grid" style="gap:6px;"></div>
+      </div>
+
+      <div id="setupStep3" style="margin-top:14px;">
+        <label><strong>Step 3:</strong> Try it — send a test prompt</label>
+        <textarea id="setupTestPrompt" placeholder="What is 2 + 2?" style="min-height:60px;">What is 2 + 2?</textarea>
+        <button type="button" class="secondary" id="setupTestBtn" style="margin-top:6px;">Test connection</button>
+        <div id="setupTestResult" class="status" style="margin-top:6px;" hidden></div>
+      </div>
+
+      <footer style="margin-top:16px;">
+        <button type="button" class="primary" id="setupDoneBtn">Get started</button>
+        <button type="button" class="secondary" id="setupSkipBtn">Skip setup</button>
+      </footer>
+    </div>
+  </dialog>
 
   <dialog class="settings" id="settingsDlg" aria-labelledby="settingsTitle">
     <form method="dialog" class="settings-inner">
@@ -1252,11 +1302,171 @@
       refreshCopilotTasks().catch(() => {});
       refreshTrustPill().catch(() => {});
 
+      // ── Activity feed ────────────────────────────────────────────────
+      async function refreshActivityFeed() {
+        try {
+          const data = await fetchJson("/api/activity/feed?maxCount=20");
+          const feedEl = el("activityFeed");
+          feedEl.innerHTML = "";
+          if (!data.entries || !data.entries.length) {
+            const row = document.createElement("div");
+            row.textContent = "No recent activity. Background agents will show actions here.";
+            row.className = "muted";
+            row.style.padding = "10px";
+            feedEl.appendChild(row);
+            return;
+          }
+          for (const e of data.entries.slice(0, 15)) {
+            const row = document.createElement("div");
+            row.style.display = "flex";
+            row.style.gap = "8px";
+            row.style.alignItems = "center";
+            row.style.padding = "7px 8px";
+            row.style.borderTop = "1px solid var(--line)";
+            row.style.fontSize = "12px";
+            const dot = document.createElement("span");
+            dot.className = "audit-dot grey";
+            dot.style.flexShrink = "0";
+            const srcSpan = document.createElement("span");
+            srcSpan.style.fontWeight = "600";
+            srcSpan.style.minWidth = "100px";
+            srcSpan.textContent = e.source || "system";
+            const typeSpan = document.createElement("span");
+            typeSpan.style.color = "var(--muted)";
+            typeSpan.style.minWidth = "120px";
+            typeSpan.textContent = e.eventType || "";
+            const sumSpan = document.createElement("span");
+            sumSpan.style.flex = "1";
+            sumSpan.style.overflow = "hidden";
+            sumSpan.style.textOverflow = "ellipsis";
+            sumSpan.style.whiteSpace = "nowrap";
+            sumSpan.textContent = e.summary || "";
+            const tsSpan = document.createElement("span");
+            tsSpan.style.color = "var(--muted)";
+            tsSpan.style.fontSize = "11px";
+            tsSpan.style.whiteSpace = "nowrap";
+            tsSpan.textContent = e.timestamp ? new Date(e.timestamp).toLocaleString() : "";
+            row.appendChild(dot);
+            row.appendChild(srcSpan);
+            row.appendChild(typeSpan);
+            row.appendChild(sumSpan);
+            row.appendChild(tsSpan);
+            feedEl.appendChild(row);
+          }
+        } catch (err) {
+          el("activityFeed").innerHTML = "<div class='muted' style='padding:10px'>Activity feed unavailable: " + err.message + "</div>";
+        }
+      }
+      el("refreshActivityBtn").addEventListener("click", refreshActivityFeed);
+      refreshActivityFeed().catch(() => {});
+
+      // ── Changelog assistant ────────────────────────────────────────
+      const changelogSince = el("changelogSince");
+      const weekAgo = new Date(Date.now() - 7 * 86400000);
+      changelogSince.value = weekAgo.toISOString().split("T")[0];
+
+      el("generateChangelogBtn").addEventListener("click", async () => {
+        el("changelogSummary").textContent = "Generating…";
+        el("changelogEntries").hidden = true;
+        try {
+          const result = await fetchJson("/api/changelog/generate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ since: changelogSince.value, maxEntries: 50 })
+          });
+          el("changelogSummary").textContent = result.summary || "No changes.";
+          const entriesEl = el("changelogEntries");
+          entriesEl.innerHTML = "";
+          if (result.entries && result.entries.length) {
+            entriesEl.hidden = false;
+            for (const entry of result.entries) {
+              const row = document.createElement("div");
+              row.style.padding = "7px 8px";
+              row.style.borderTop = "1px solid var(--line)";
+              row.style.fontSize = "12px";
+              row.innerHTML =
+                "<strong>" + (entry.category || "") + "</strong> " +
+                (entry.description || "") +
+                " <span style='color:var(--muted);font-size:11px;'>" +
+                (entry.timestamp ? new Date(entry.timestamp).toLocaleDateString() : "") +
+                "</span>";
+              entriesEl.appendChild(row);
+            }
+          }
+        } catch (err) {
+          el("changelogSummary").textContent = "Changelog generation failed: " + err.message;
+        }
+      });
+
+      // ── Setup wizard ───────────────────────────────────────────────
+      const setupWizardDlg = el("setupWizardDlg");
+
+      async function checkOnboardingAndShowWizard() {
+        try {
+          const status = await fetchJson("/api/onboarding/status");
+          if (!status.isFirstRun) return;
+
+          const providersEl = el("setupProviders");
+          providersEl.innerHTML = "";
+          for (const p of (status.providers || [])) {
+            const card = document.createElement("div");
+            card.className = "mini-card";
+            card.style.padding = "8px";
+            const name = document.createElement("div");
+            name.style.fontWeight = "600";
+            name.textContent = p.name;
+            const statusDiv = document.createElement("div");
+            statusDiv.style.fontSize = "12px";
+            statusDiv.style.color = p.available ? "var(--ok)" : "var(--muted)";
+            statusDiv.textContent = p.available ? "✓ Available" : (p.reason || "Not configured");
+            card.appendChild(name);
+            card.appendChild(statusDiv);
+            providersEl.appendChild(card);
+          }
+
+          setupWizardDlg.showModal();
+        } catch { /* non-fatal */ }
+      }
+
+      el("setupTestBtn").addEventListener("click", async () => {
+        const resultEl = el("setupTestResult");
+        resultEl.hidden = false;
+        resultEl.textContent = "Testing…";
+        try {
+          const result = await fetchJson("/api/copilot/task", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ task: el("setupTestPrompt").value || "What is 2 + 2?" })
+          });
+          resultEl.textContent = "✓ Success! " + (result.summary || "Connection works.");
+          resultEl.style.color = "var(--ok)";
+        } catch (err) {
+          resultEl.textContent = "✗ " + err.message;
+          resultEl.style.color = "var(--bad)";
+        }
+      });
+
+      el("setupDoneBtn").addEventListener("click", () => {
+        const name = (el("setupName").value || "").trim();
+        if (name) {
+          prefs.callYou = name;
+          savePrefs(prefs);
+          applyGreeting();
+        }
+        setupWizardDlg.close();
+      });
+
+      el("setupSkipBtn").addEventListener("click", () => setupWizardDlg.close());
+
+      checkOnboardingAndShowWizard().catch(() => {});
+
+      // ── Periodic refresh ───────────────────────────────────────────
       setInterval(() => {
         refreshStatus().catch(() => {});
         refreshTrustDashboard().catch(() => {});
         refreshBackgroundAgents().catch(() => {});
         refreshTrustPill().catch(() => {});
+        refreshActivityFeed().catch(() => {});
       }, 60000);
     })();
   </script>
