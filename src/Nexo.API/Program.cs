@@ -1,3 +1,36 @@
+// ──────────────────────────────────────────────────────────────────────────────
+// Nexo.API — Self-hosted API + SPA portal host
+//
+// This is the HTTP entry-point for Nexo. It serves:
+//   1. A REST API (mapped via MapNexoEndpoints) for orchestration, analysis,
+//      configuration, and background-agent management.
+//   2. A static SPA portal (wwwroot/index.html) via UseStaticFiles +
+//      MapFallbackToFile, so the UI is co-located with the API.
+//
+// Startup sequence:
+//   • Optional agent config merge — if NEXO_BACKGROUND_AGENTS_CONFIG is set,
+//     the JSON file is merged into the host configuration so that background-
+//     agent definitions (schedules, models, policies) can live in a separate
+//     file managed independently of appsettings.json.
+//   • DI registration — AddNexo (shared with the CLI host) registers all
+//     kernel services. The key difference from the CLI: the API sets
+//     RegisterBackgroundAgentHostedService = true, which causes background
+//     agents to run as IHostedService instances inside this process rather
+//     than in a standalone daemon.
+//   • Security — NexoSecurityOptions controls an advisory exposure profile
+//     (Public / Lan / Tailnet / Local) that emits log warnings but does NOT
+//     enforce network policy. Optional built-in auth modes (ApiKey, Bearer,
+//     Basic, and composite OR-modes) protect mutating endpoints via
+//     UseNexoApiKeyAuth middleware.
+//   • Static files + endpoints — DefaultFiles/StaticFiles serve the SPA;
+//     MapNexoEndpoints wires the API; MapFallbackToFile routes unknown paths
+//     to index.html for client-side routing.
+//
+// Environment variables consumed here:
+//   NEXO_BACKGROUND_AGENTS_CONFIG — path to agent-definition JSON file
+//   (see also NexoSecurityOptions for auth-related env vars)
+// ──────────────────────────────────────────────────────────────────────────────
+
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
@@ -14,6 +47,7 @@ using Nexo.Transport.Grpc;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// --- Optional agent config merge ---
 var agentsConfigPath = Environment.GetEnvironmentVariable("NEXO_BACKGROUND_AGENTS_CONFIG");
 if (!string.IsNullOrWhiteSpace(agentsConfigPath))
 {
@@ -52,6 +86,7 @@ builder.Services.AddNexo(options =>
 
 var app = builder.Build();
 
+// --- Security: advisory exposure profile + optional built-in auth ---
 {
     var sec = app.Services.GetRequiredService<IOptions<NexoSecurityOptions>>().Value;
     var log = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Nexo.Security");
@@ -119,6 +154,7 @@ var app = builder.Build();
     }
 }
 
+// --- Middleware pipeline: SPA static files → auth → API endpoints ---
 app.UseDefaultFiles();
 app.UseStaticFiles();
 app.UseNexoApiKeyAuth();

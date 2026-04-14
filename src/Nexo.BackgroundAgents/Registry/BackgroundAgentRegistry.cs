@@ -13,75 +13,104 @@ using Nexo.Core.Application.Trust.Ports;
 namespace Nexo.BackgroundAgents.Registry;
 
 /// <summary>
-/// Registry for managing background agent instances.
+/// Registry that owns the lifecycle of all background agent instances.
 ///
-/// Provides:
-/// - Agent registration and lifecycle management
-/// - State tracking
-/// - Execution coordination
-/// - Agent lookup
+/// <para><b>Thread-safety:</b> All implementations must be safe for concurrent
+/// access — the host (<c>BackgroundAgentService</c>) may register agents on the
+/// startup thread while the scheduler invokes execution from timer callbacks.</para>
 ///
-/// Thread-safe implementation using concurrent collections.
+/// <para><b>Lifecycle ordering:</b>
+/// <c>RegisterAsync</c> → <c>StartAsync / StartAllAsync</c> →
+/// (scheduler-driven execution cycles) → <c>StopAsync / StopAllAsync</c>.
+/// Calling <c>ExecuteOnceAsync</c> on an unregistered agent ID is an error.
+/// Registration after <c>StartAllAsync</c> is permitted; newly registered agents
+/// must be started individually.</para>
+///
+/// <para><b>Aggressiveness modes</b> (see <see cref="IAggressivenessModeStore"/>):
+/// <list type="bullet">
+///   <item><b>Passive</b> — execution is skipped entirely for extender agents.</item>
+///   <item><b>SemiActive</b> — execution proceeds only after the
+///         <see cref="IApprovalGate"/> grants approval.</item>
+///   <item><b>Active</b> — execution runs without gating.</item>
+///   <item><b>Ambient</b> — execution runs silently; actions are written to the
+///         <see cref="IDataDecisionAuditLog"/> without user notification.</item>
+/// </list></para>
+///
+/// <para><b>Failure modes:</b> When an execution cycle fails, the failure is
+/// logged to <see cref="IBackgroundAgentLogStore"/> and the agent remains
+/// registered. The scheduler will attempt the next cycle on the normal cadence;
+/// there is no automatic back-off beyond what the scheduler itself applies.</para>
 /// </summary>
 public interface IBackgroundAgentRegistry
 {
     /// <summary>
-    /// Register a background agent.
+    /// Register a background agent. Must be called before the agent can be
+    /// started or executed. Duplicate registration for the same agent ID
+    /// overwrites the previous instance.
     /// </summary>
-    /// <param name="agent">The agent instance.</param>
-    /// <param name="config">The agent configuration.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
     Task RegisterAsync(IAgent agent, BackgroundAgentConfig config, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Get an agent instance by ID.
+    /// Look up a registered agent by ID. Returns <c>null</c> for unknown IDs
+    /// rather than throwing, so callers can probe availability cheaply.
     /// </summary>
-    /// <param name="agentId">The agent ID.</param>
-    /// <returns>The agent instance, or null if not found.</returns>
     BackgroundAgentInstance? GetAgent(string agentId);
 
     /// <summary>
-    /// Get all registered agents.
+    /// Snapshot of all currently registered agent instances. The returned list is
+    /// a point-in-time copy — concurrent registrations won't appear until the
+    /// next call.
     /// </summary>
-    /// <returns>All registered agent instances.</returns>
     IReadOnlyList<BackgroundAgentInstance> GetAll();
 
     /// <summary>
-    /// Start all registered agents.
+    /// Start all registered agents, delegating scheduling to the
+    /// <see cref="IAgentScheduler"/>.
     /// </summary>
-    /// <param name="cancellationToken">Cancellation token.</param>
     Task StartAllAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Stop all registered agents.
+    /// Gracefully stop all running agents. In-flight execution cycles are
+    /// cancelled via the token propagated through the scheduler.
     /// </summary>
-    /// <param name="cancellationToken">Cancellation token.</param>
     Task StopAllAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Start a specific agent.
+    /// Start a single agent by ID. Throws if the agent is not registered.
     /// </summary>
-    /// <param name="agentId">The agent ID.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
     Task StartAsync(string agentId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Stop a specific agent.
+    /// Stop a single agent by ID. No-op if the agent is already stopped.
     /// </summary>
-    /// <param name="agentId">The agent ID.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
     Task StopAsync(string agentId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Run one execution cycle for an agent (for manual/testing use).
+    /// Run exactly one execution cycle for an agent, bypassing the scheduler.
+    /// Intended for manual invocations and integration tests. Aggressiveness
+    /// mode gates still apply.
     /// </summary>
-    /// <param name="agentId">The agent ID.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
     Task ExecuteOnceAsync(string agentId, CancellationToken cancellationToken = default);
 }
 
 /// <summary>
-/// Implementation of IBackgroundAgentRegistry.
+/// Default implementation of <see cref="IBackgroundAgentRegistry"/>. Uses a
+/// <see cref="ConcurrentDictionary{TKey,TValue}"/> keyed by agent ID, so all
+/// registration and lookup operations are lock-free and safe for concurrent
+/// callers without external synchronization.
+///
+/// <para><b>Dependency philosophy:</b> Most dependencies are optional (nullable)
+/// because the registry must function in minimal deployments (e.g. the
+/// <see cref="NexoDeploymentProfile.System"/> profile) where background-agent
+/// infrastructure is not registered. Each execution path null-checks and
+/// gracefully degrades — e.g. no <c>logStore</c> simply means no execution
+/// history is persisted.</para>
+///
+/// <para><b>Dog-fooding runners:</b> The <c>codeAnalysisRunner</c>,
+/// <c>testRunRunner</c>, <c>selfExtendRunner</c>, and <c>selfImprovementLoop</c>
+/// dependencies let background agents execute Nexo's own analysis/test/extend
+/// pipelines against the host codebase. This is a deliberate dog-food design:
+/// the background agents use the same infrastructure they help build.</para>
 /// </summary>
 public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
 {
@@ -98,8 +127,10 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
     private readonly IDataDecisionAuditLog? _auditLog;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="BackgroundAgentRegistry"/> class.
-    /// Agent creation is done by the host (e.g. BackgroundAgentService) before RegisterAsync.
+    /// Initializes the registry. The host (typically <c>BackgroundAgentService</c>)
+    /// constructs agent instances and calls <see cref="RegisterAsync"/> before
+    /// starting the scheduler. Only <paramref name="scheduler"/> is required;
+    /// all other parameters degrade gracefully when <c>null</c>.
     /// </summary>
     /// <param name="scheduler">Scheduler for agent execution loops.</param>
     /// <param name="logger">Optional logger.</param>

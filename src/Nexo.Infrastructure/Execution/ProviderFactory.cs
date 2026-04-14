@@ -12,7 +12,37 @@ using System.Text.RegularExpressions;
 namespace Nexo.Infrastructure.Execution;
 
 /// <summary>
-/// Factory for creating and managing LLM providers.
+/// Central factory for resolving and instantiating LLM provider backends.
+///
+/// <para><b>Role in execution pipeline:</b> The orchestration layer calls
+/// <see cref="IProviderFactory"/> to obtain a provider for a given request.
+/// The factory decides which backend to use based on the provider name
+/// resolved through a precedence chain: explicit caller argument → environment
+/// variables (e.g. <c>NEXO_PROVIDER</c>) → user configuration → compile-time
+/// defaults in <see cref="NexoDefaults"/>.</para>
+///
+/// <para><b>Available providers:</b> openai, azure, ollama, local
+/// (in-process ONNX/LLamaSharp), video (SmolVLM2-Video in Docker), and the
+/// test-only mock/offline/mock-json/echo set. To add a new provider, add its
+/// key to <c>_availableProviders</c>, implement availability detection in
+/// <see cref="IsProviderAvailable"/>, and add instantiation logic in the
+/// provider-creation path.</para>
+///
+/// <para><b>Retry policy:</b> A static Polly <see cref="AsyncRetryPolicy{T}"/>
+/// applies exponential back-off (2^attempt seconds) for HTTP 5xx,
+/// <c>429 TooManyRequests</c>, <see cref="HttpRequestException"/>, and
+/// <see cref="TaskCanceledException"/>. The retry count is read once at type
+/// initialization from <c>NEXO_LLM_RETRY_COUNT</c> (non-negative int), falling
+/// back to <see cref="NexoDefaults.LlmRetryCount"/>.</para>
+///
+/// <para><b>Mock provider gating:</b> Mock/offline providers are only available
+/// when <c>NEXO_ALLOW_MOCK=1</c>. This prevents accidental use in production
+/// while allowing integration tests to opt-in.</para>
+///
+/// <para><b>Thread-safety:</b> <c>Http</c> and <c>HttpRetryPolicy</c> are static
+/// and safe for concurrent use. The Ollama provider instance is lazily cached
+/// behind <c>_ollamaProviderLock</c> and re-created only when the base URL
+/// changes (e.g. ephemeral container restart).</para>
 /// </summary>
 public class ProviderFactory : IProviderFactory
 {
@@ -24,6 +54,8 @@ public class ProviderFactory : IProviderFactory
     private HttpClient? _ollamaHttpClient;
     private static readonly HttpClient Http = new();
     private static readonly AsyncRetryPolicy<HttpResponseMessage> HttpRetryPolicy = CreateHttpRetryPolicy();
+
+    // --- Retry policy (static, initialized once per AppDomain) ---
 
     private static AsyncRetryPolicy<HttpResponseMessage> CreateHttpRetryPolicy()
     {
@@ -37,6 +69,9 @@ public class ProviderFactory : IProviderFactory
                 maxRetries,
                 attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt)));
     }
+
+    // --- Provider catalogue ---
+
     private readonly HashSet<string> _availableProviders = new()
     {
         "openai",
@@ -51,9 +86,14 @@ public class ProviderFactory : IProviderFactory
     };
 
     private static bool AllowMock => string.Equals(Environment.GetEnvironmentVariable("NEXO_ALLOW_MOCK"), "1", StringComparison.OrdinalIgnoreCase);
-    
+
     /// <summary>
-    /// Creates a new provider factory.
+    /// Creates a new <see cref="ProviderFactory"/> and eagerly initializes the
+    /// Ollama provider. Eager init is intentional: Ollama requires pulling a
+    /// model manifest on first contact, which is slow (~seconds). Doing this at
+    /// construction time avoids a latency spike on the first user request.
+    /// Failure is non-fatal — Ollama simply won't be available until the next
+    /// lazy attempt.
     /// </summary>
     /// <param name="logger">Logger for diagnostics.</param>
     /// <param name="ephemeralLifecycle">Optional ephemeral model lifecycle. When NEXO_EPHEMERAL_MODELS=1, use to resolve Ollama URL from container.</param>
