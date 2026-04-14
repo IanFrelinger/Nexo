@@ -106,7 +106,9 @@
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| Document Editor, Spreadsheet, etc. | MISSING | Not started. Framework is the foundation. |
+| Engineering Release Manager | RESOLVED | First vertical at `apps/release-manager/` — 4 background agents (repo-monitor, test-runner, slo-collector, report-generator) using kernel primitives. |
+| Copilot MVP | RESOLVED | Task submission → execution → audit trail via API + web portal. See `docs/CopilotMvpWalkthrough.md`. |
+| Document Editor, Spreadsheet, etc. | MISSING | Future work. Framework is the foundation. |
 
 ---
 
@@ -129,9 +131,9 @@
 
 ## Build Order (Recommended)
 
-Phases 1–3 below are **complete** in the current codebase (safety tests, agent aggressiveness modes, seed library audit, air-gapped CI). Ongoing work is product and vision layers.
+All four phases are complete. See `docs/IssueBatch_30-60-90_Roadmap.md` for detailed evidence.
 
 1. ~~**Phase 1 — Safety:** Adversarial scope escape tests.~~ **Done.**
 2. ~~**Phase 2 — Agent Completeness:** SemiActive approval gate, Ambient silent implementation.~~ **Done.**
 3. ~~**Phase 3 — Framework:** Seed component library audit, air-gapped test E2E.~~ **Done.**
-4. **Phase 4 — Product:** Application suite.
+4. ~~**Phase 4 — Product:** Application suite (Copilot MVP, Release Manager vertical).~~ **Done.**

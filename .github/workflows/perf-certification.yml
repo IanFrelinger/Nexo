@@ -8,6 +8,10 @@ on:
         required: false
         default: "manual"
 
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
 jobs:
   perf-tests:
     name: perf-certification
@@ -28,7 +32,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p perf-results
-          echo "{\"baseline\":\"${{ github.event.inputs.baseline }}\",\"runId\":\"${{ github.run_id }}\",\"sha\":\"${{ github.sha }}\"}" > perf-results/perf-certification-meta.json
+          echo "{\"baseline\":\"${{ github.event.inputs.baseline }}\",\"runId\":\"${{ github.run_id }}\",\"sha\":\"${{ github.sha }}\",\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" > perf-results/perf-certification-meta.json
           dotnet test Nexo.sln \
             --configuration Release \
             --logger "trx;LogFileName=perf-certification.trx" \
@@ -36,10 +40,76 @@ jobs:
             --filter "FullyQualifiedName~Nexo.Tests.Orchestration.Performance|FullyQualifiedName~Benchmark" \
             --verbosity minimal
 
+      - name: Extract perf metrics and check thresholds
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          TRX_FILE=$(find perf-results -name '*.trx' -print -quit 2>/dev/null || true)
+          REPORT_FILE="perf-results/perf-certification-report.json"
+
+          TOTAL=0
+          PASSED=0
+          FAILED=0
+          DURATION_MS=0
+
+          if [[ -n "$TRX_FILE" && -f "$TRX_FILE" ]]; then
+            TOTAL=$(grep -c '<UnitTestResult' "$TRX_FILE" 2>/dev/null || echo 0)
+            PASSED=$(grep -c 'outcome="Passed"' "$TRX_FILE" 2>/dev/null || echo 0)
+            FAILED=$(grep -c 'outcome="Failed"' "$TRX_FILE" 2>/dev/null || echo 0)
+          fi
+
+          PASS_RATE=0
+          if [[ "$TOTAL" -gt 0 ]]; then
+            PASS_RATE=$(( (PASSED * 100) / TOTAL ))
+          fi
+
+          THRESHOLD_PASS_RATE=95
+          VERDICT="PASS"
+          if [[ "$PASS_RATE" -lt "$THRESHOLD_PASS_RATE" ]]; then
+            VERDICT="FAIL"
+          fi
+          if [[ "$FAILED" -gt 0 ]]; then
+            VERDICT="FAIL"
+          fi
+
+          cat > "$REPORT_FILE" <<EOF
+          {
+            "baseline": "${{ github.event.inputs.baseline }}",
+            "sha": "${{ github.sha }}",
+            "runId": "${{ github.run_id }}",
+            "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "totalTests": $TOTAL,
+            "passed": $PASSED,
+            "failed": $FAILED,
+            "passRate": $PASS_RATE,
+            "thresholds": {
+              "minPassRate": $THRESHOLD_PASS_RATE,
+              "maxFailedTests": 0
+            },
+            "verdict": "$VERDICT"
+          }
+          EOF
+
+          echo "## Perf Certification Results" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Metric | Value |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|--------|-------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Total tests | $TOTAL |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Passed | $PASSED |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Failed | $FAILED |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Pass rate | ${PASS_RATE}% (threshold: ${THRESHOLD_PASS_RATE}%) |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| **Verdict** | **$VERDICT** |" >> "$GITHUB_STEP_SUMMARY"
+
+          if [[ "$VERDICT" == "FAIL" ]]; then
+            echo "::error::Perf certification FAILED: pass rate ${PASS_RATE}% below threshold ${THRESHOLD_PASS_RATE}% or ${FAILED} test(s) failed"
+            exit 1
+          fi
+
       - name: Upload perf certification results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: perf-certification-${{ github.run_id }}
           path: perf-results/
-          retention-days: 30
+          retention-days: 90

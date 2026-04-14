@@ -111,6 +111,9 @@ jobs:
       - name: "Setup — verify CLI starts"
         run: dotnet run --project src/Nexo.CLI --no-build -- --help
 
+      - name: "Setup — build SDK sample"
+        run: dotnet build docs/samples/StableSdkHostSample/StableSdkHostSample.csproj -v minimal
+
       # ── Stage 2: Discovery ──────────────────────────────────────────
       - name: "Discover — doctor report"
         shell: bash
