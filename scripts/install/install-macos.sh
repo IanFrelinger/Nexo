@@ -4,6 +4,7 @@ set -euo pipefail
 DEFAULT_REPO_URL="https://github.com/IanFrelinger/Nexo.git"
 DEFAULT_INSTALL_DIR="${HOME}/Nexo"
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_URL="${DEFAULT_REPO_URL}"
 INSTALL_DIR="${DEFAULT_INSTALL_DIR}"
 BRANCH=""
