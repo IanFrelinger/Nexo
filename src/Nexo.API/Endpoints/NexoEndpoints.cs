@@ -950,6 +950,7 @@ public static class NexoEndpoints
         [FromServices] Nexo.Infrastructure.Execution.IProviderFactory providerFactory,
         [FromServices] ICopilotTaskStore copilotTaskStore,
         [FromServices] IAccessBoundary accessBoundary,
+        [FromServices] IConfiguration configuration,
         CancellationToken cancellationToken)
     {
         var providers = new List<ProviderStatus>();
@@ -970,16 +971,19 @@ public static class NexoEndpoints
         var tasks = await copilotTaskStore.QueryAsync(1, null, cancellationToken);
         var hasTasks = tasks.Count > 0;
 
+        var dailiesPath = ResolveDailiesPath(configuration);
+        var hasDailies = Directory.Exists(dailiesPath) && Directory.EnumerateFiles(dailiesPath, "*.json").Any();
+
         var activePack = accessBoundary.GetActivePolicyPack();
         var configPath = Environment.GetEnvironmentVariable("NEXO_CONFIG_PATH")
             ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".nexo", "config.json");
 
         return Results.Ok(new OnboardingStatusResponse(
-            IsFirstRun: !hasTasks,
+            IsFirstRun: !hasTasks && !hasDailies,
             ApiReachable: true,
             Providers: providers,
             HasCopilotTasks: hasTasks,
-            HasDailies: false,
+            HasDailies: hasDailies,
             ConfigPath: configPath,
             ActiveTrustPack: activePack?.Id));
     }
