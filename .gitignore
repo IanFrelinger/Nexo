@@ -94,4 +94,7 @@ src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/
 tools/unity-demo-output/
 tools/ui-demo-output/
 .nexo/runtime/
+.nexo/setup-matrix-report.json
+.nexo/setup-matrix-report-sh.json
+.nexo/supervision/
 
