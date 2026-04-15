@@ -586,10 +586,15 @@ public static class NexoServiceCollectionExtensions
             return options.DeploymentProfile.Value;
 
         var raw = Environment.GetEnvironmentVariable("NEXO_DEPLOYMENT_PROFILE");
+        if (string.IsNullOrWhiteSpace(raw))
+            return NexoDeploymentProfile.Full;
+
         if (TryParseDeploymentProfile(raw, out var parsed))
             return parsed;
 
-        return NexoDeploymentProfile.Full;
+        throw new InvalidOperationException(
+            $"NEXO_DEPLOYMENT_PROFILE='{raw}' is not recognized. " +
+            "Valid values: full, server, edge, air-gapped, system.");
     }
 
     private static bool TryParseDeploymentProfile(string? raw, out NexoDeploymentProfile profile)

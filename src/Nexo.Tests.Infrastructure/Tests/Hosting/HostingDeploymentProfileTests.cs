@@ -171,4 +171,24 @@ public sealed class HostingDeploymentProfileTests
         var act = () => services.BuildServiceProvider();
         act.Should().NotThrow("AddNexo should be idempotent");
     }
+
+    [Fact(Timeout = TestTimeouts.E2E)]
+    public void DeploymentProfile_InvalidValue_Throws()
+    {
+        var prev = Environment.GetEnvironmentVariable("NEXO_DEPLOYMENT_PROFILE");
+        try
+        {
+            Environment.SetEnvironmentVariable("NEXO_DEPLOYMENT_PROFILE", "banana");
+            var services = new ServiceCollection();
+            services.AddLogging();
+
+            var act = () => services.AddNexo();
+            act.Should().Throw<InvalidOperationException>()
+                .WithMessage("*banana*not recognized*");
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("NEXO_DEPLOYMENT_PROFILE", prev);
+        }
+    }
 }

@@ -36,6 +36,11 @@ public static class NexoEndpoints
 
     public static IEndpointRouteBuilder MapNexoEndpoints(this IEndpointRouteBuilder app)
     {
+        app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTimeOffset.UtcNow }))
+            .WithName("HealthCheck")
+            .WithTags("Health")
+            .ExcludeFromDescription();
+
         var group = app.MapGroup("/api").WithTags("Nexo");
 
         group.MapPost("/agent", RunAgentAsync)
@@ -839,9 +844,23 @@ public static class NexoEndpoints
             activePack?.Version));
     }
 
-    private static readonly string PreferencesPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-        ".nexo", "preferences.json");
+    // Preferences file lives next to the config file so it survives Docker
+    // container restarts when the config directory is on a volume mount.
+    private static readonly string PreferencesPath = ResolvePreferencesPath();
+
+    private static string ResolvePreferencesPath()
+    {
+        var configPath = Environment.GetEnvironmentVariable("NEXO_CONFIG_PATH");
+        if (!string.IsNullOrWhiteSpace(configPath))
+        {
+            var dir = Path.GetDirectoryName(configPath);
+            if (!string.IsNullOrEmpty(dir))
+                return Path.Combine(dir, "preferences.json");
+        }
+        return Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            ".nexo", "preferences.json");
+    }
 
     private static async Task<IResult> GetPreferencesAsync(CancellationToken cancellationToken)
     {

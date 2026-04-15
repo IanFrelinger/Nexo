@@ -260,6 +260,27 @@ dotnet run --project src/Nexo.CLI -- pipeline diagnostics --format-json
 Pipeline runtime option precedence:
 1) defaults, 2) config under `Nexo:Pipelines:*`, 3) environment variables (`NEXO_PIPELINE_*`).
 
+## Security Defaults
+
+Out of the box, Nexo runs on **HTTP only** with **no authentication** on API endpoints. This is intentional for local development — the default `ExposureProfile` is `Localhost`.
+
+For any network-exposed deployment:
+
+```bash
+# Set API key auth for mutating endpoints:
+export Nexo__Security__AuthorizationMode=ApiKey
+export Nexo__Security__ApiKey=your-secret-key
+export Nexo__Security__AuthorizationScope=AllApi
+
+# Or use bearer token:
+export Nexo__Security__AuthorizationMode=BearerToken
+export Nexo__Security__BearerToken=your-token
+```
+
+For HTTPS, configure `ASPNETCORE_URLS=https://+:8443` with a certificate, or place Nexo behind a reverse proxy (nginx, Caddy, Traefik).
+
+See `docs/Configuration.md` for all security options and `docs/TailscaleAndNexo.md` for Tailnet deployment.
+
 ## Common CLI Workflows
 
 | Goal | Command |
