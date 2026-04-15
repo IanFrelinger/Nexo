@@ -56,7 +56,7 @@
 | Component | Status | Notes |
 |-----------|--------|-------|
 | Hot-Swap Depth | RESOLVED | BehaviorExecutor checks `IStepExecutionMode.GetMode(step.Id)` before step execution. |
-| Provider Abstraction | EXISTS | ProviderFactory, four providers. |
+| Provider Abstraction | EXISTS | ProviderFactory with multiple backends: openai, azure, ollama, local (ONNX/LLamaSharp), video (SmolVLM2), plus mock/offline/echo for testing. |
 
 ---
 

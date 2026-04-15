@@ -78,7 +78,7 @@ Use this file to create GitHub issues in the recommended execution order.
 
 **Status:** Implemented. `full-platform-readiness-gate.yml` runs setup → discovery → dry-run on 7 platforms (Linux, macOS, Windows native + Ubuntu/Alpine/Debian containers + Docker CLI image). Weekly schedule (Mon 06:00 UTC). `onboarding-quickstart-gate.yml` runs scheduled weekly with failure taxonomy.
 
-**Evidence:** CI run 24366157999 — all 7 platforms green.
+**Evidence:** `full-platform-readiness-gate.yml` validates all 7 platforms on every push (Linux, macOS, Windows, Ubuntu/Alpine/Debian containers, Docker CLI image).
 
 ---
 

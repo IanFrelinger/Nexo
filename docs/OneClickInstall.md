@@ -1,8 +1,21 @@
-# One-Click Install (Option 1)
+# One-Click Install
 
 This guide provides single-command install/bootstrap paths for each platform using wrappers in `scripts/install/`.
 
-For the most beginner-friendly onboarding (Anaconda-style guided prompts + package-manager setup guidance), use:
+## Quickstart (recommended)
+
+The fastest path to a working portal — detects Docker or .NET SDK, builds, and opens the browser:
+
+```bash
+bash scripts/install/quickstart.sh
+# Opens http://localhost:8080 with mock provider enabled
+```
+
+See `README.md` for details. The quickstart script handles .NET SDK installation if missing.
+
+## Full installer (Anaconda-style guided prompts)
+
+For the most beginner-friendly onboarding (guided prompts + package-manager setup guidance), use:
 
 ```bash
 bash scripts/install/one-click.sh --yes

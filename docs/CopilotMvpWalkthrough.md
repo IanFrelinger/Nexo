@@ -103,7 +103,7 @@ The portal includes two additional product surfaces:
 - **Activity feed**: Shows recent background agent actions and audit events (auto-refreshes every 60s).
 - **Changelog assistant**: Generate a summary of recent project changes from adaptation, pattern, and audit stores.
 
-API endpoints:
+API endpoints (use port `5000` for native `dotnet run`, or `8080` for Docker/compose):
 ```bash
 # Activity feed (last 24h):
 curl -s http://localhost:5000/api/activity/feed | jq .
@@ -112,6 +112,9 @@ curl -s http://localhost:5000/api/activity/feed | jq .
 curl -s http://localhost:5000/api/changelog/generate \
   -H "Content-Type: application/json" \
   -d '{"since": "2026-04-06"}' | jq .
+
+# Health check:
+curl -s http://localhost:5000/health | jq .
 ```
 
 ## Verification Checklist

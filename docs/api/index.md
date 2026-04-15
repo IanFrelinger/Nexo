@@ -17,10 +17,11 @@ API documentation for the Nexo AI-enhanced development orchestration platform.
 
 ## REST Endpoints
 
-All endpoints are registered under `/api` via `MapNexoEndpoints()` in `Nexo.API`.
+Endpoints are registered via `MapNexoEndpoints()` in `Nexo.API`. Most live under `/api`; the health check is at the root.
 
 | Method | Path | Description |
 |--------|------|-------------|
+| GET | `/health` | Health check (returns `{status, timestamp}`) |
 | POST | `/api/agent` | Run an agent |
 | POST | `/api/validate` | Run validation |
 | POST | `/api/orchestrate` | Run orchestration |
