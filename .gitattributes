@@ -1,4 +1,5 @@
 # Shell used inside Linux containers must stay LF (CRLF breaks bash).
+*.sh text eol=lf
 .devcontainer/post-create.sh text eol=lf
 scripts/start-nexo-api-dev.sh text eol=lf
 scripts/stop-nexo-api-dev.sh text eol=lf

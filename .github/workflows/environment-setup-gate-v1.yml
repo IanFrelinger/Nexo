@@ -122,8 +122,8 @@ jobs:
         include:
           - image: mcr.microsoft.com/dotnet/sdk:9.0
             image_id: dotnet-sdk-9-0
-          - image: mcr.microsoft.com/dotnet/sdk:9.0-jammy
-            image_id: dotnet-sdk-9-0-jammy
+          - image: mcr.microsoft.com/dotnet/sdk:9.0-bookworm-slim
+            image_id: dotnet-sdk-9-0-bookworm-slim
 
     steps:
       - name: Checkout

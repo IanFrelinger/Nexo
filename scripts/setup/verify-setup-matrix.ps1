@@ -241,7 +241,7 @@ else {
 if (-not $SkipDocker.IsPresent -and (Test-DockerCli)) {
     $images = @(
         @{ Tag = "mcr.microsoft.com/dotnet/sdk:9.0"; Id = "sdk-9-debian" },
-        @{ Tag = "mcr.microsoft.com/dotnet/sdk:9.0-jammy"; Id = "sdk-9-jammy" }
+        @{ Tag = "mcr.microsoft.com/dotnet/sdk:9.0-bookworm-slim"; Id = "sdk-9-bookworm-slim" }
     )
     foreach ($img in $images) {
         Invoke-Case -Tier "C" -Name "Linux container: $($img.Id) setup-linux check+restore+CLI build" -Action {

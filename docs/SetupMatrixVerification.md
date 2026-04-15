@@ -6,7 +6,7 @@ This repo’s bootstrap is already exercised in **`.github/workflows/environment
 - **Entrypoint**: `setup.ps1` vs direct `setup-windows.ps1`.
 - **Restore idempotency**: `restore` twice in a row.
 - **NuGet isolation**: fresh `NUGET_PACKAGES` cache directory, then `dotnet build --no-restore`.
-- **Docker**: every `docker-compose*.yml` **`docker compose config`** (validates interpolation), `docker-restore.ps1`, optional **image builds**, and **two** official SDK base images (`9.0` default Debian + `9.0-jammy`) running `setup-linux.sh` + CLI build *inside* the container.
+- **Docker**: every `docker-compose*.yml` **`docker compose config`** (validates interpolation), `docker-restore.ps1`, optional **image builds**, and **two** official SDK base images (`9.0` default Debian + `9.0-bookworm-slim`) running `setup-linux.sh` + CLI build *inside* the container.
 - **Strict optional deps**: only when you pass `-IncludeOptionalDependencyCheck` to the PowerShell verifier (requires Docker **and** Ollama on `PATH`).
 
 ## Windows (full matrix)
