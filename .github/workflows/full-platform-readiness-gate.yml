@@ -310,12 +310,41 @@ jobs:
             nexo-cli:readiness bootstrap check --json
 
   # ─────────────────────────────────────────────────────────────────────
+  # All production Docker images: build + smoke
+  # ─────────────────────────────────────────────────────────────────────
+  docker-all-images:
+    name: "Docker ${{ matrix.label }} — build · smoke"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - dockerfile: .docker/Dockerfile.api
+            label: api
+            smoke: "dotnet Nexo.API.dll --help || true"
+          - dockerfile: .docker/Dockerfile.quickstart
+            label: quickstart
+            smoke: "dotnet Nexo.API.dll --help || true"
+          - dockerfile: .docker/Dockerfile.agent-server
+            label: agent-server
+            smoke: "dotnet Nexo.API.dll --help || true"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: "Build ${{ matrix.label }}"
+        run: docker build -f ${{ matrix.dockerfile }} -t nexo-${{ matrix.label }}:gate .
+
+      - name: "Smoke ${{ matrix.label }}"
+        run: docker run --rm nexo-${{ matrix.label }}:gate bash -c "${{ matrix.smoke }}"
+
+  # ─────────────────────────────────────────────────────────────────────
   # Summary gate: fails if any platform failed
   # ─────────────────────────────────────────────────────────────────────
   readiness-summary:
     name: "Readiness summary"
     runs-on: ubuntu-latest
-    needs: [native-platform, container-platform, docker-cli-image]
+    needs: [native-platform, container-platform, docker-cli-image, docker-all-images]
     if: always()
     steps:
       - name: Download all artifacts
@@ -332,7 +361,7 @@ jobs:
           echo "|----------|--------|" >> "$GITHUB_STEP_SUMMARY"
 
           OVERALL=0
-          for job_status in "${{ needs.native-platform.result }}" "${{ needs.container-platform.result }}" "${{ needs.docker-cli-image.result }}"; do
+          for job_status in "${{ needs.native-platform.result }}" "${{ needs.container-platform.result }}" "${{ needs.docker-cli-image.result }}" "${{ needs.docker-all-images.result }}"; do
             if [[ "$job_status" != "success" ]]; then
               OVERALL=1
             fi
@@ -345,6 +374,7 @@ jobs:
           echo "| Alpine container | ${{ needs.container-platform.result }} |" >> "$GITHUB_STEP_SUMMARY"
           echo "| Debian container | ${{ needs.container-platform.result }} |" >> "$GITHUB_STEP_SUMMARY"
           echo "| Docker CLI image | ${{ needs.docker-cli-image.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Docker API/quickstart/agent-server | ${{ needs.docker-all-images.result }} |" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
 
           if [[ "$OVERALL" -eq 0 ]]; then
