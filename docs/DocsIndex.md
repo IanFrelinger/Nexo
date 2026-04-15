@@ -9,8 +9,9 @@ Documentation index for the Nexo platform. Start here to find what you need.
 3. `docs/OneClickInstall.md` — one-shot installer wrappers for Linux/macOS/Windows.
 4. `scripts/install/container-bootstrap.sh` and `scripts/install/container-bootstrap.ps1` — one-shot container bootstrap (Docker + image pull + smoke run).
 5. `scripts/setup/setup.sh` and `scripts/setup/setup.ps1` — cross-platform dependency bootstrap + restore helpers.
-6. `scripts/start-nexo-api-dev.ps1` / `scripts/start-nexo-api-dev.sh` — Docker Ollama + host `Nexo.API` dev stack (see `docs/Configuration.md` → Ollama).
-7. `docs/Architecture.md` — layered architecture and component boundaries.
+6. `docs/SetupMatrixVerification.md` + `scripts/setup/verify-setup-matrix.ps1` / `verify-setup-matrix.sh` — brute-force style setup combination checks (local + CI).
+7. `scripts/start-nexo-api-dev.ps1` / `scripts/start-nexo-api-dev.sh` — Docker Ollama + host `Nexo.API` dev stack (see `docs/Configuration.md` → Ollama).
+8. `docs/Architecture.md` — layered architecture and component boundaries.
 
 ## Operator / Production Readiness
 

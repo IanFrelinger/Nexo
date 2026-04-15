@@ -16,6 +16,7 @@ on:
       - "Directory.Packages.props"
       - "src/**"
       - "docs/EnvironmentSetupGate-v1.md"
+      - "docs/SetupMatrixVerification.md"
       - "docs/ReleaseCandidateChecklist-v1.md"
       - "README.md"
   pull_request:
@@ -29,6 +30,7 @@ on:
       - "Directory.Packages.props"
       - "src/**"
       - "docs/EnvironmentSetupGate-v1.md"
+      - "docs/SetupMatrixVerification.md"
       - "docs/ReleaseCandidateChecklist-v1.md"
       - "README.md"
   workflow_dispatch:
@@ -77,6 +79,11 @@ jobs:
         run: |
           ./scripts/setup/setup.ps1 -Mode restore
 
+      - name: Setup matrix verifier (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./scripts/setup/verify-setup-matrix.ps1 -SkipDockerBuild
+
       - name: Post-restore verification
         shell: bash
         run: |
@@ -115,6 +122,8 @@ jobs:
         include:
           - image: mcr.microsoft.com/dotnet/sdk:9.0
             image_id: dotnet-sdk-9-0
+          - image: mcr.microsoft.com/dotnet/sdk:9.0-jammy
+            image_id: dotnet-sdk-9-0-jammy
 
     steps:
       - name: Checkout
