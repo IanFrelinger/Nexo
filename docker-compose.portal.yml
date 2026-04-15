@@ -16,7 +16,7 @@ services:
     environment:
       ASPNETCORE_URLS: http://+:8080
       OLLAMA_BASE_URL: http://ollama:11434
-      OLLAMA_MODEL: llama3.2
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1}
       NEXO_DAILIES_PATH: /data/dailies
       # Optional: match portal advisory + startup logs to how you expose the API (see docs/TailscaleAndNexo.md).
       # Nexo__Security__ExposureProfile: Tailnet

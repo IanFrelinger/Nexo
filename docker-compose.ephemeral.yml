@@ -10,7 +10,7 @@ services:
   ollama:
     image: ollama/ollama
     ports:
-      - "11434:11434"
+      - "127.0.0.1:11434:11434"
     # No volumes - model blobs stay in container, discarded on remove
 
   postgres:
@@ -19,7 +19,7 @@ services:
       POSTGRES_PASSWORD: nexo_ephemeral
       POSTGRES_DB: nexo
     ports:
-      - "5432:5432"
+      - "127.0.0.1:5432:5432"
     profiles:
       - db
     # No volumes - data discarded on remove

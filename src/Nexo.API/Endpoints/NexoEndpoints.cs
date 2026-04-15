@@ -201,7 +201,9 @@ public static class NexoEndpoints
         }
         catch (Exception ex)
         {
-            return Results.Problem(detail: ex.Message, statusCode: StatusCodes.Status500InternalServerError);
+            return Results.Problem(
+                detail: IsDevelopment() ? ex.Message : "An internal error occurred. Check server logs for details.",
+                statusCode: StatusCodes.Status500InternalServerError);
         }
     }
 
@@ -218,7 +220,9 @@ public static class NexoEndpoints
         }
         catch (Exception ex)
         {
-            return Results.Problem(detail: ex.Message, statusCode: StatusCodes.Status500InternalServerError);
+            return Results.Problem(
+                detail: IsDevelopment() ? ex.Message : "An internal error occurred. Check server logs for details.",
+                statusCode: StatusCodes.Status500InternalServerError);
         }
     }
 
@@ -277,7 +281,9 @@ public static class NexoEndpoints
         }
         catch (Exception ex)
         {
-            return Results.Problem(detail: ex.Message, statusCode: StatusCodes.Status500InternalServerError);
+            return Results.Problem(
+                detail: IsDevelopment() ? ex.Message : "An internal error occurred. Check server logs for details.",
+                statusCode: StatusCodes.Status500InternalServerError);
         }
     }
 
@@ -341,7 +347,9 @@ public static class NexoEndpoints
                 Summary = null,
                 Error = ex.Message
             }, cancellationToken);
-            return Results.Problem(detail: ex.Message, statusCode: StatusCodes.Status500InternalServerError);
+            return Results.Problem(
+                detail: IsDevelopment() ? ex.Message : "An internal error occurred. Check server logs for details.",
+                statusCode: StatusCodes.Status500InternalServerError);
         }
     }
 
@@ -398,7 +406,9 @@ public static class NexoEndpoints
         }
         catch (Exception ex)
         {
-            return Results.Problem(detail: ex.Message, statusCode: StatusCodes.Status500InternalServerError);
+            return Results.Problem(
+                detail: IsDevelopment() ? ex.Message : "An internal error occurred. Check server logs for details.",
+                statusCode: StatusCodes.Status500InternalServerError);
         }
     }
 
@@ -423,7 +433,9 @@ public static class NexoEndpoints
         }
         catch (Exception ex)
         {
-            return Results.Problem(detail: ex.Message, statusCode: StatusCodes.Status500InternalServerError);
+            return Results.Problem(
+                detail: IsDevelopment() ? ex.Message : "An internal error occurred. Check server logs for details.",
+                statusCode: StatusCodes.Status500InternalServerError);
         }
     }
 
@@ -846,6 +858,10 @@ public static class NexoEndpoints
 
     // Preferences file lives next to the config file so it survives Docker
     // container restarts when the config directory is on a volume mount.
+    private static bool IsDevelopment() =>
+        string.Equals(Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT"), "Development", StringComparison.OrdinalIgnoreCase) ||
+        string.Equals(Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT"), "Development", StringComparison.OrdinalIgnoreCase);
+
     private static readonly string PreferencesPath = ResolvePreferencesPath();
 
     private static string ResolvePreferencesPath()

@@ -9,7 +9,7 @@ services:
     volumes:
       - ./test-results:/workspace/test-results
     environment:
-      - DOTNET_VERSION=8.0
+      - DOTNET_VERSION=9.0
     command: >
       bash -lc "dotnet test /workspace/src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj
       -f net9.0

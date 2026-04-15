@@ -37,16 +37,20 @@ public sealed class TimeoutConventionTests
             foreach (var method in type.GetMethods(BindingFlags.Public | BindingFlags.Instance))
             {
                 var fact = method.GetCustomAttribute<FactAttribute>();
-                if (fact == null) continue;
-
-                if (fact.Timeout == 0)
+                if (fact != null && fact.Timeout == 0)
                 {
                     violations.Add($"{type.Name}.{method.Name}: E2E test lacks [Fact(Timeout = N)]");
+                }
+
+                var theory = method.GetCustomAttribute<TheoryAttribute>();
+                if (theory != null && theory.Timeout == 0)
+                {
+                    violations.Add($"{type.Name}.{method.Name}: E2E test lacks [Theory(Timeout = N)]");
                 }
             }
         }
 
         Assert.True(violations.Count == 0,
-            "E2E tests must have [Fact(Timeout = N)]:\n" + string.Join("\n", violations));
+            "E2E tests must have explicit Timeout:\n" + string.Join("\n", violations));
     }
 }

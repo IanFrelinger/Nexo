@@ -57,9 +57,9 @@ public sealed class FileBasedCapabilityAdvertisement : ICapabilityAdvertisement
                         entries.Add(new PeerEntry { PeerId = peerId, Endpoint = endpoint, Capabilities = caps, TrustTier = trustTier });
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // Start fresh
+                System.Diagnostics.Debug.WriteLine($"FileBasedCapabilityAdvertisement: failed to parse {_instancesPath}: {ex.Message}");
             }
         }
 
@@ -122,11 +122,10 @@ public sealed class FileBasedCapabilityAdvertisement : ICapabilityAdvertisement
     }
 
     /// <inheritdoc />
-    public Task<IReadOnlyList<PeerInfo>> FindPeersWithCapabilityAsync(string capability, CancellationToken cancellationToken = default)
+    public async Task<IReadOnlyList<PeerInfo>> FindPeersWithCapabilityAsync(string capability, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
-        var all = _discovery.DiscoverAsync(cancellationToken).GetAwaiter().GetResult();
-        var filtered = all.Where(p => p.Capabilities.Contains(capability, StringComparer.OrdinalIgnoreCase)).ToList();
-        return Task.FromResult<IReadOnlyList<PeerInfo>>(filtered);
+        var all = await _discovery.DiscoverAsync(cancellationToken).ConfigureAwait(false);
+        return all.Where(p => p.Capabilities.Contains(capability, StringComparer.OrdinalIgnoreCase)).ToList();
     }
 }

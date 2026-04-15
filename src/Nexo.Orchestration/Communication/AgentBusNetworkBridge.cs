@@ -39,14 +39,13 @@ public sealed class AgentBusNetworkBridge : IHostedService, IDisposable
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public Task StartAsync(CancellationToken cancellationToken)
+    public async Task StartAsync(CancellationToken cancellationToken)
     {
-        _networkSubscription = _networkBus.SubscribeAsync(NetworkEventTypes.AgentMessage, OnNetworkEventAsync, cancellationToken)
-            .GetAwaiter().GetResult();
-        _agentSubscription = _agentBus.SubscribeAsync(null, OnAgentMessageAsync, null, cancellationToken)
-            .GetAwaiter().GetResult();
+        _networkSubscription = await _networkBus.SubscribeAsync(NetworkEventTypes.AgentMessage, OnNetworkEventAsync, cancellationToken)
+            .ConfigureAwait(false);
+        _agentSubscription = await _agentBus.SubscribeAsync(null, OnAgentMessageAsync, null, cancellationToken)
+            .ConfigureAwait(false);
         _logger.LogInformation("AgentBusNetworkBridge started: forwarding agent messages to network and delivering network agent messages locally.");
-        return Task.CompletedTask;
     }
 
     public Task StopAsync(CancellationToken cancellationToken)
