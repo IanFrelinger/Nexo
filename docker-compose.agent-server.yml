@@ -26,6 +26,9 @@ services:
     working_dir: ${NEXO_CONTAINER_WORKDIR:-/work}
     entrypoint: ["dotnet", "/app/Nexo.API.dll"]
     environment:
+      # Published app + wwwroot live under /app; working_dir is /work for mounted repo + agents.
+      # Without this, static portal 404s because wwwroot is not at /work/wwwroot.
+      ASPNETCORE_CONTENTROOT: /app
       ASPNETCORE_URLS: http://+:8080
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
       OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1}
