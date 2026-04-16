@@ -64,6 +64,47 @@ bash apps/runtime-studio/scripts/bootstrap_runtime_studio.sh
 bash apps/runtime-studio/scripts/run_agent_set_local.sh --duration 5m --disable-observation
 ```
 
+### Optimize for your hardware first (recommended)
+
+A single script bundles the full setup → optimize → run workflow:
+
+```bash
+# Benchmark compositions on your hardware, emit a report, then start the daemon.
+bash apps/runtime-studio/scripts/optimize_agent_cluster.sh \
+  --objective "Plan and deliver iterative runtime improvements" \
+  --report-output .nexo/workflow/optimize-report.md \
+  --duration 5m \
+  --verbose
+```
+
+The script executes three steps:
+
+1. **Bootstrap** — initialises the Runtime Studio sandbox (idempotent).
+2. **Optimize** — scaffolds a workflow lab spec if none exists, runs `nexo workflow optimize` to benchmark composition + model candidates against local hardware, selects and promotes a winner, and writes an optional recommendation report.
+3. **Daemon** — starts the background agent daemon with the agent-set config (only when `--duration` is provided).
+
+Run `--help` for the full option list:
+
+```bash
+bash apps/runtime-studio/scripts/optimize_agent_cluster.sh --help
+```
+
+Common flags:
+
+| Flag | Purpose |
+|------|---------|
+| `--objective <text>` | High-level objective used to prioritise candidates. |
+| `--spec <path>` | Custom workflow lab runtime spec JSON. |
+| `--search-strategy <name>` | `successive-halving` (default), `objective-first`, or `exhaustive`. |
+| `--max-candidates <n>` | Cap evaluated candidates (default 24). |
+| `--report-output <path>` | Write recommendation report (`.md`, `.json`, `.txt`). |
+| `--provider <name>` | Override LLM provider for all profiles. |
+| `--ollama-model <model>` | Override `OLLAMA_MODEL`. |
+| `--duration <dur>` | Daemon duration (e.g. `5m`, `1h`); omit to skip the daemon step. |
+| `--skip-optimize` | Bootstrap + daemon only (skip benchmarking). |
+| `--skip-daemon` | Bootstrap + optimize only (no daemon). |
+| `--verbose` | Emit optimizer progress output. |
+
 Game director quick start:
 
 ```bash
