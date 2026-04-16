@@ -1,0 +1,368 @@
+name: Optimize Agent Cluster Gate
+
+on:
+  push:
+    branches: [master, main, "cursor/**"]
+    paths:
+      - ".github/workflows/optimize-agent-cluster-gate.yml"
+      - "apps/runtime-studio/**"
+      - "scripts/sandbox/**"
+      - "src/Nexo.CLI/**"
+      - "src/Nexo.CLI/Runtime/**"
+  pull_request:
+    paths:
+      - ".github/workflows/optimize-agent-cluster-gate.yml"
+      - "apps/runtime-studio/**"
+      - "scripts/sandbox/**"
+      - "src/Nexo.CLI/**"
+      - "src/Nexo.CLI/Runtime/**"
+  workflow_dispatch:
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  NEXO_STRICT_MODE: 1
+  NEXO_ALLOW_MOCK: 1
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────────
+  # 1. Script interface tests (no .NET required — pure bash validation)
+  # ─────────────────────────────────────────────────────────────────────
+  script-interface:
+    name: "Script interface — help · args · flags"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: "--help exits 0 and prints usage header"
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUTPUT=$(bash apps/runtime-studio/scripts/optimize_agent_cluster.sh --help)
+          echo "$OUTPUT"
+          echo "$OUTPUT" | grep -q "Unified workflow"
+          echo "$OUTPUT" | grep -q "\-\-objective"
+          echo "$OUTPUT" | grep -q "\-\-duration"
+          echo "$OUTPUT" | grep -q "\-\-spec"
+
+      - name: "Unknown argument exits 2"
+        shell: bash
+        run: |
+          set +e
+          bash apps/runtime-studio/scripts/optimize_agent_cluster.sh --not-a-real-flag 2>&1
+          EXIT_CODE=$?
+          set -e
+          if [[ "$EXIT_CODE" -ne 2 ]]; then
+            echo "Expected exit code 2, got $EXIT_CODE"
+            exit 1
+          fi
+
+      - name: "-h is accepted as short help"
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUTPUT=$(bash apps/runtime-studio/scripts/optimize_agent_cluster.sh -h)
+          echo "$OUTPUT" | grep -q "Unified workflow"
+
+  # ─────────────────────────────────────────────────────────────────────
+  # 2. Bootstrap-only path (--skip-optimize, no --duration → no daemon)
+  # ─────────────────────────────────────────────────────────────────────
+  bootstrap-only:
+    name: "Bootstrap-only — skip optimize · skip daemon"
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run with --skip-optimize (daemon auto-skipped without --duration)
+        shell: bash
+        run: |
+          set -euo pipefail
+          OUTPUT=$(bash apps/runtime-studio/scripts/optimize_agent_cluster.sh --skip-optimize 2>&1)
+          echo "$OUTPUT"
+
+          echo "$OUTPUT" | grep -q "Bootstrap Runtime Studio"
+          echo "$OUTPUT" | grep -q "Optimize.*SKIPPED"
+          echo "$OUTPUT" | grep -q "Daemon.*SKIPPED"
+
+      - name: Sandbox directories exist after bootstrap
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -d .nexo/agents/workspaces/runtime-studio
+          test -d .nexo/tools/cache/tmp
+          test -d .nexo/tools/cache/nuget
+          test -d .nexo/tools/cache/npm
+
+  # ─────────────────────────────────────────────────────────────────────
+  # 3. Scaffold + Optimize path (provider unavailable — validates flow)
+  # ─────────────────────────────────────────────────────────────────────
+  scaffold-and-optimize:
+    name: "Scaffold + Optimize — workflow lab spec lifecycle"
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            9.0.x
+            8.0.x
+
+      - name: Restore and build CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          dotnet restore src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.csproj
+          dotnet build src/Nexo.CLI/Nexo.CLI.csproj -v minimal
+
+      - name: "Run optimize (no Ollama — expect scaffold success, optimize preflight failure)"
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # Optimize will fail because there is no Ollama server.
+          # We validate that bootstrap + scaffold succeed and the spec file
+          # is created, and that optimize is attempted (non-zero exit is expected).
+          set +e
+          bash apps/runtime-studio/scripts/optimize_agent_cluster.sh \
+            --skip-daemon \
+            --objective "CI validation" \
+            --verbose 2>&1 | tee "${{ runner.temp }}/optimize-output.txt"
+          OPTIMIZE_EXIT=${PIPESTATUS[0]}
+          set -e
+
+          echo "optimize exit code: $OPTIMIZE_EXIT"
+
+          # Scaffold must have created the spec file
+          test -f .nexo/workflow/workflow_lab.runtime.json
+          echo "PASS: workflow lab spec scaffolded"
+
+          # Output must show the optimize step was attempted
+          grep -q "Optimize agent cluster for local hardware" "${{ runner.temp }}/optimize-output.txt"
+          echo "PASS: optimize step was attempted"
+
+      - name: "Re-run skips scaffold (idempotent)"
+        shell: bash
+        run: |
+          set -euo pipefail
+          SPEC_MTIME_BEFORE=$(stat -c %Y .nexo/workflow/workflow_lab.runtime.json)
+
+          set +e
+          bash apps/runtime-studio/scripts/optimize_agent_cluster.sh \
+            --skip-daemon \
+            --objective "CI validation round 2" 2>&1 | tee "${{ runner.temp }}/optimize-output-2.txt"
+          set -e
+
+          SPEC_MTIME_AFTER=$(stat -c %Y .nexo/workflow/workflow_lab.runtime.json)
+
+          # Spec file must NOT have been re-scaffolded
+          if [[ "$SPEC_MTIME_BEFORE" != "$SPEC_MTIME_AFTER" ]]; then
+            echo "FAIL: spec file was re-scaffolded (mtime changed)"
+            exit 1
+          fi
+          echo "PASS: scaffold is idempotent"
+
+          # Must NOT contain the scaffold message
+          if grep -q "Scaffolding default workflow lab spec" "${{ runner.temp }}/optimize-output-2.txt"; then
+            echo "FAIL: scaffold message appeared on second run"
+            exit 1
+          fi
+          echo "PASS: no scaffold message on re-run"
+
+      - name: "Custom --spec path is honoured"
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "${{ runner.temp }}/custom-spec"
+
+          set +e
+          bash apps/runtime-studio/scripts/optimize_agent_cluster.sh \
+            --skip-daemon \
+            --spec "${{ runner.temp }}/custom-spec/my_spec.json" 2>&1 | tee "${{ runner.temp }}/custom-spec-output.txt"
+          set -e
+
+          test -f "${{ runner.temp }}/custom-spec/my_spec.json"
+          echo "PASS: custom spec path scaffolded"
+
+      - name: Upload optimize artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: optimize-agent-cluster-gate
+          path: |
+            .nexo/workflow/workflow_lab.runtime.json
+            ${{ runner.temp }}/optimize-output.txt
+            ${{ runner.temp }}/optimize-output-2.txt
+            ${{ runner.temp }}/custom-spec-output.txt
+            ${{ runner.temp }}/custom-spec/
+          retention-days: 14
+
+  # ─────────────────────────────────────────────────────────────────────
+  # 4. Daemon launch path (--skip-optimize --duration 1s)
+  # ─────────────────────────────────────────────────────────────────────
+  daemon-launch:
+    name: "Daemon launch — skip optimize · short duration"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            9.0.x
+            8.0.x
+
+      - name: Restore and build CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          dotnet restore src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.csproj
+          dotnet build src/Nexo.CLI/Nexo.CLI.csproj -v minimal
+
+      - name: "Launch daemon with --duration 2s --disable-observation"
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash apps/runtime-studio/scripts/optimize_agent_cluster.sh \
+            --skip-optimize \
+            --duration 2s \
+            --disable-observation 2>&1 | tee "${{ runner.temp }}/daemon-output.txt"
+
+          grep -q "Start background agent daemon" "${{ runner.temp }}/daemon-output.txt"
+          echo "PASS: daemon step was reached"
+
+          grep -q "Optimize.*SKIPPED" "${{ runner.temp }}/daemon-output.txt"
+          echo "PASS: optimize was skipped"
+
+      - name: Upload daemon artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: daemon-launch-gate
+          path: ${{ runner.temp }}/daemon-output.txt
+          retention-days: 14
+
+  # ─────────────────────────────────────────────────────────────────────
+  # 5. Flag combination matrix
+  # ─────────────────────────────────────────────────────────────────────
+  flag-combinations:
+    name: "Flag combo — ${{ matrix.label }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: "search-strategy-exhaustive"
+            flags: "--skip-daemon --search-strategy exhaustive --max-candidates 2 --objective test"
+            expect_optimize: true
+          - label: "search-strategy-objective-first"
+            flags: "--skip-daemon --search-strategy objective-first --max-candidates 2 --objective test"
+            expect_optimize: true
+          - label: "report-output-json"
+            flags: "--skip-daemon --report-output /tmp/report.json --objective test"
+            expect_optimize: true
+          - label: "provider-override"
+            flags: "--skip-daemon --provider ollama --prefer agentic --objective test"
+            expect_optimize: true
+          - label: "ollama-model-override"
+            flags: "--skip-daemon --ollama-model qwen2.5:7b --objective test"
+            expect_optimize: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            9.0.x
+            8.0.x
+
+      - name: Restore and build CLI
+        shell: bash
+        run: |
+          set -euo pipefail
+          dotnet restore src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.csproj
+          dotnet build src/Nexo.CLI/Nexo.CLI.csproj -v minimal
+
+      - name: "Run optimize_agent_cluster.sh ${{ matrix.flags }}"
+        shell: bash
+        run: |
+          set +e
+          bash apps/runtime-studio/scripts/optimize_agent_cluster.sh \
+            ${{ matrix.flags }} 2>&1 | tee "${{ runner.temp }}/combo-output.txt"
+          EXIT_CODE=${PIPESTATUS[0]}
+          set -e
+
+          echo "exit code: $EXIT_CODE"
+
+          # Spec must be scaffolded
+          test -f .nexo/workflow/workflow_lab.runtime.json
+          echo "PASS: spec exists"
+
+          if [[ "${{ matrix.expect_optimize }}" == "true" ]]; then
+            grep -q "Optimize agent cluster for local hardware" "${{ runner.temp }}/combo-output.txt"
+            echo "PASS: optimize step attempted"
+          fi
+
+      - name: Upload combo artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: flag-combo-${{ matrix.label }}
+          path: ${{ runner.temp }}/combo-output.txt
+          retention-days: 14
+
+  # ─────────────────────────────────────────────────────────────────────
+  # Summary gate
+  # ─────────────────────────────────────────────────────────────────────
+  summary:
+    name: "Optimize Agent Cluster — summary"
+    runs-on: ubuntu-latest
+    needs: [script-interface, bootstrap-only, scaffold-and-optimize, daemon-launch, flag-combinations]
+    if: always()
+    steps:
+      - name: Summarize results
+        shell: bash
+        run: |
+          echo "## Optimize Agent Cluster Gate" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Job | Status |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|-----|--------|" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Script interface | ${{ needs.script-interface.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Bootstrap-only | ${{ needs.bootstrap-only.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Scaffold + Optimize | ${{ needs.scaffold-and-optimize.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Daemon launch | ${{ needs.daemon-launch.result }} |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Flag combinations | ${{ needs.flag-combinations.result }} |" >> "$GITHUB_STEP_SUMMARY"
+
+          OVERALL=0
+          for status in \
+            "${{ needs.script-interface.result }}" \
+            "${{ needs.bootstrap-only.result }}" \
+            "${{ needs.scaffold-and-optimize.result }}" \
+            "${{ needs.daemon-launch.result }}" \
+            "${{ needs.flag-combinations.result }}"; do
+            if [[ "$status" != "success" ]]; then
+              OVERALL=1
+            fi
+          done
+
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          if [[ "$OVERALL" -eq 0 ]]; then
+            echo "**Result: ALL CHECKS PASSED**" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "**Result: ONE OR MORE CHECKS FAILED**" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+          exit $OVERALL
