@@ -4,13 +4,13 @@
   Start Ollama in Docker (Docker Desktop) and pull a model.
 
 .PARAMETER Model
-  Ollama model tag to pull (default: llama3.1).
+  Ollama model tag to pull (default: llama3.1:latest).
 
 .PARAMETER Port
   Host port mapped to Ollama (default: 11434).
 #>
 param(
-    [string] $Model = "llama3.1",
+    [string] $Model = "llama3.1:latest",
     [int] $Port = 11434
 )
 

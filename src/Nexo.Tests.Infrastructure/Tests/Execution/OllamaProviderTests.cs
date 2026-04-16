@@ -51,6 +51,26 @@ public sealed class OllamaProviderTests
     }
 
     [Fact]
+    public void ValidateModel_ResolvesBareFamilyName_ToLatestTag()
+    {
+        var handler = new FakeHttpMessageHandler(_ => JsonResponse("""
+        {
+          "models": [
+            { "name": "llama3.1:latest", "size": 1234 }
+          ]
+        }
+        """));
+        using var httpClient = new HttpClient(handler);
+        var sut = new OllamaProvider(httpClient, "http://localhost:11434");
+
+        var validation = sut.ValidateModel("llama3.1");
+
+        validation.IsSuccess.Should().BeTrue();
+        validation.Value.Should().NotBeNull();
+        validation.Value!.Name.Should().Be("llama3.1:latest");
+    }
+
+    [Fact]
     public void ValidateModel_WhenMissing_ReturnsStructuredResultError()
     {
         var handler = new FakeHttpMessageHandler(_ => JsonResponse("""

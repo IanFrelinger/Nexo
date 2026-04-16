@@ -1167,7 +1167,9 @@ public sealed class WorkflowCommandTests : UnitTestBase
             AssertTrue(output.Contains("\"ok\": true", StringComparison.OrdinalIgnoreCase));
             AssertTrue(pulledModels is not null, "Expected optimize to invoke model puller.");
             var resolvedPulledModels = pulledModels ?? Array.Empty<string>();
-            AssertTrue(resolvedPulledModels.Contains("llama3.1", StringComparer.OrdinalIgnoreCase), "Expected default Ollama model to be pulled.");
+            AssertTrue(
+                resolvedPulledModels.Any(m => m.StartsWith("llama3.1", StringComparison.OrdinalIgnoreCase)),
+                "Expected default Ollama model family to be pulled.");
             AssertTrue(resolvedPulledModels.Contains("qwen2.5:7b", StringComparer.OrdinalIgnoreCase), "Expected role-specific Ollama model to be pulled.");
         }
         finally
@@ -1360,8 +1362,10 @@ public sealed class WorkflowCommandTests : UnitTestBase
     private async Task TestGateIgnoresSkippedRunsInSuccessRateAsync()
     {
         var repoRoot = CreateTempRepoRoot();
+        var previousCurrent = Environment.CurrentDirectory;
         try
         {
+            Environment.CurrentDirectory = repoRoot;
             WorkflowLabHistoryStore.Append(repoRoot, new WorkflowLabStressHistoryRow
             {
                 RunId = "baseline",
@@ -1416,6 +1420,12 @@ public sealed class WorkflowCommandTests : UnitTestBase
         }
         finally
         {
+            Environment.CurrentDirectory = previousCurrent;
+            if (Directory.Exists(repoRoot))
+                Directory.Delete(repoRoot, recursive: true);
+        }
+    }
+
     private async Task TestOptimizeSynthesizesObjectiveCandidatesAndReportsProvenanceAsync(CancellationToken cancellationToken)
     {
         var repoRoot = CreateTempRepoRoot();

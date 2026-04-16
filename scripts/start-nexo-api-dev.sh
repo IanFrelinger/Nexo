@@ -8,7 +8,7 @@
 #   bash scripts/start-nexo-api-dev.sh --listen-lan   # phone / other devices on same Wi-Fi
 set -euo pipefail
 
-MODEL="llama3.1"
+MODEL="llama3.1:latest"
 OLLAMA_PORT="11434"
 API_PORT="8080"
 SKIP_OLLAMA=0

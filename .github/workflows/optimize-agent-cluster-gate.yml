@@ -46,6 +46,7 @@ jobs:
           echo "$OUTPUT" | grep -q "\-\-objective"
           echo "$OUTPUT" | grep -q "\-\-duration"
           echo "$OUTPUT" | grep -q "\-\-spec"
+          echo "$OUTPUT" | grep -q "\-\-budget-runs"
 
       - name: "Unknown argument exits 2"
         shell: bash

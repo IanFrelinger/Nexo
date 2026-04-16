@@ -54,7 +54,7 @@ export OLLAMA_BASE_URL="${OLLAMA_BASE_URL:-http://127.0.0.1:11434}"
 if [[ -n "${OLLAMA_MODEL_OVERRIDE}" ]]; then
   export OLLAMA_MODEL="${OLLAMA_MODEL_OVERRIDE}"
 else
-  export OLLAMA_MODEL="${OLLAMA_MODEL:-llama3.1}"
+  export OLLAMA_MODEL="${OLLAMA_MODEL:-llama3.1:latest}"
 fi
 
 TMP_CONFIG="${REPO_ROOT}/.nexo/agents/workspaces/runtime-studio/agent_set.game_director.runtime.json"

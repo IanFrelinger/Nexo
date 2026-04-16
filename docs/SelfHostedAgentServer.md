@@ -33,10 +33,10 @@ From the **repository root**:
 docker compose -f docker-compose.agent-server.yml up -d --build
 ```
 
-Pull the model referenced by your agent config (Runtime Studio default is **llama3.1**):
+Pull the model referenced by your agent config (Runtime Studio default is **llama3.1:latest**):
 
 ```bash
-docker compose -f docker-compose.agent-server.yml exec ollama ollama pull llama3.1
+docker compose -f docker-compose.agent-server.yml exec ollama ollama pull llama3.1:latest
 ```
 
 Smoke check:
@@ -49,7 +49,7 @@ curl -s "http://localhost:${NEXO_AGENT_SERVER_HTTP_PORT:-8080}/api/status"
 
 ```powershell
 docker compose -f docker-compose.agent-server.yml up -d --build
-docker compose -f docker-compose.agent-server.yml exec ollama ollama pull llama3.1
+docker compose -f docker-compose.agent-server.yml exec ollama ollama pull llama3.1:latest
 Invoke-RestMethod "http://localhost:8080/api/status"
 ```
 
@@ -79,7 +79,7 @@ Use **one `.env` per machine** or per environment (`dev`, `staging`) and swap `-
 | `NEXO_OLLAMA_HOST_PORT` | `11434` | Published host port for bundled Ollama. |
 | `NEXO_OLLAMA_IMAGE` | `ollama/ollama:latest` | Ollama image pin (tag for reproducibility). |
 | `OLLAMA_BASE_URL` | `http://ollama:11434` | Base URL **inside** the API container (service name when using bundled Ollama). |
-| `OLLAMA_MODEL` | `llama3.1` | Default model hint for providers (align with `ollama pull`). |
+| `OLLAMA_MODEL` | `llama3.1:latest` | Default model hint for providers (align with `ollama pull`). |
 | `NEXO_BACKGROUND_AGENTS_CONFIG` | `/work/apps/runtime-studio/config/agent_set.local.json` | JSON with `BackgroundAgents:Agents`. If you change `NEXO_CONTAINER_WORKDIR`, update this path to match. |
 | `NEXO_DAILIES_PATH` | `/data/dailies` | App path for director dailies. Default compose keeps a **named volume** at `/data/dailies`; if you change this path, add a matching volume in a local override file. |
 | `Nexo__Barriers__RequireExplicitBarrier` | `false` | Hosted-friendly barrier default; tighten for stricter deployments. |

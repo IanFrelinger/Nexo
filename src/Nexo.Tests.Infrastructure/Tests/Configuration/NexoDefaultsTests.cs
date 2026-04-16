@@ -44,7 +44,7 @@ public sealed class NexoDefaultsTests
     public void OllamaDefaults_AreStable()
     {
         NexoDefaults.OllamaDefaultBaseUrl.Should().Be("http://localhost:11434");
-        NexoDefaults.OllamaDefaultModel.Should().Be("llama3.1");
+        NexoDefaults.OllamaDefaultModel.Should().Be("llama3.1:latest");
         NexoDefaults.OllamaDefaultVisionModel.Should().Be("richardyoung/smolvlm2-2.2b-instruct");
         NexoDefaults.OllamaDefaultTimeoutSeconds.Should().Be(300);
     }

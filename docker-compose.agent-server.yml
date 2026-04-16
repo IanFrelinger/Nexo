@@ -3,7 +3,7 @@
 #
 # From repo root:
 #   docker compose -f docker-compose.agent-server.yml up -d --build
-#   docker compose -f docker-compose.agent-server.yml exec ollama ollama pull llama3.1
+#   docker compose -f docker-compose.agent-server.yml exec ollama ollama pull llama3.1:latest
 #
 # Env: docs/config/agent-server.env.example
 # Portal: http://localhost:${NEXO_AGENT_SERVER_HTTP_PORT:-8080}/
@@ -31,27 +31,19 @@ services:
       ASPNETCORE_CONTENTROOT: /app
       ASPNETCORE_URLS: http://+:8080
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1:latest}
       NEXO_DAILIES_PATH: ${NEXO_DAILIES_PATH:-/data/dailies}
       NEXO_BACKGROUND_AGENTS_CONFIG: ${NEXO_BACKGROUND_AGENTS_CONFIG:-/work/apps/runtime-studio/config/agent_set.local.json}
       Nexo__Barriers__RequireExplicitBarrier: ${Nexo__Barriers__RequireExplicitBarrier:-false}
       NEXO_OBSERVATION_DEGRADED_MODE: ${NEXO_OBSERVATION_DEGRADED_MODE:-1}
-      # Point LiteDB state to the named volume so it survives container restarts.
-      Nexo__PatternStorePath: /data/nexo-state/nexo-patterns.db
-      NEXO_TRUST_AUDIT_DB: /data/nexo-state/nexo-trust-audit.db
-      NEXO_KNOWLEDGE_LOG_PATH: /data/nexo-state/nexo-knowledge.db
-      NEXO_CONFIG_PATH: /data/nexo-state/config.json
     ports:
       - "127.0.0.1:${NEXO_AGENT_SERVER_HTTP_PORT:-8080}:8080"
     volumes:
       # Named volume; keep mount path aligned with NEXO_DAILIES_PATH (default /data/dailies).
       - nexo-dailies:/data/dailies
-      # LiteDB state files (copilot tasks, patterns, adaptation, trust audit, preferences).
-      - nexo-state:/data/nexo-state
       - ${NEXO_REPO_ROOT:-.}:${NEXO_CONTAINER_WORKDIR:-/work}${NEXO_REPO_MOUNT_SUFFIX:-}
     restart: unless-stopped
 
 volumes:
   ollama-models:
   nexo-dailies:
-  nexo-state:

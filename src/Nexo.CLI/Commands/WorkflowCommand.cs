@@ -1931,6 +1931,21 @@ public sealed class WorkflowCommand : Command
             candidateAllocations);
         File.WriteAllText(reportPath, reportContent);
 
+        WorkflowOptimizeLastStore.Write(
+            repoRoot,
+            new WorkflowOptimizeLastPayload
+            {
+                WrittenAtUtc = DateTimeOffset.UtcNow,
+                OptimizeRunId = optimizeRunId,
+                Ok = ranked.Any(x => x.Successes > 0),
+                WinnerCandidateId = winner.CandidateId,
+                WinnerRunId = winner.RunId,
+                ModelProfileId = winner.ModelProfileId,
+                CompositionId = winner.CompositionId,
+                RequestId = winner.RequestId,
+                OllamaModels = winner.Models.ToArray()
+            });
+
         var hasSuccess = ranked.Any(x => x.Successes > 0);
         var result = new WorkflowOptimizeResult(
             Ok: hasSuccess,

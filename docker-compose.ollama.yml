@@ -1,10 +1,10 @@
 # Ollama only — models run in Docker; Nexo CLI/API on the host talks to localhost:11434.
 #
 #   docker compose -f docker-compose.ollama.yml up -d
-#   docker compose -f docker-compose.ollama.yml exec ollama ollama pull llama3.1
+#   docker compose -f docker-compose.ollama.yml exec ollama ollama pull llama3.1:latest
 #
-# Or: powershell -File scripts/run-ollama-docker.ps1 -Model llama3.1
-#     bash scripts/run-ollama-docker.sh llama3.1
+# Or: powershell -File scripts/run-ollama-docker.ps1 -Model llama3.1:latest
+#     bash scripts/run-ollama-docker.sh llama3.1:latest
 #
 # Host env for Nexo: OLLAMA_BASE_URL=http://127.0.0.1:11434  OLLAMA_MODEL=<same tag>
 # NCR probe: Nexo__NodeCapabilityRuntime__Ollama__BaseUrl=http://127.0.0.1:11434

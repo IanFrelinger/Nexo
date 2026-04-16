@@ -1,13 +1,14 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 
 namespace Nexo.CLI.Commands;
 
 public sealed class BootstrapCommand : Command
 {
-    public BootstrapCommand() : base("bootstrap", "Linux-first environment bootstrap (check/install dependencies)")
+    public BootstrapCommand() : base("bootstrap", "Cross-platform environment bootstrap (check/install dependencies)")
     {
         AddAlias("doctor-legacy");
         var includeOptionalOpt = new Option<bool>(
@@ -249,6 +250,45 @@ internal static class BootstrapRuntime
             true),
     ];
 
+    private static readonly IReadOnlyList<BootstrapDependencySpec> WindowsDemoDependencies =
+    [
+        new(
+            "git",
+            "Git",
+            """if (Get-Command git -ErrorAction SilentlyContinue) { exit 0 } else { exit 1 }""",
+            """winget install --id Git.Git --exact --accept-package-agreements --accept-source-agreements --silent""",
+            true,
+            false),
+        new(
+            "curl",
+            "curl",
+            """if (Get-Command curl.exe -ErrorAction SilentlyContinue) { exit 0 } elseif (Get-Command curl -ErrorAction SilentlyContinue) { exit 0 } else { exit 1 }""",
+            """winget install -e --id cURL.cURL --accept-package-agreements --accept-source-agreements --silent""",
+            true,
+            false),
+        new(
+            "dotnet",
+            ".NET SDK",
+            """$v = dotnet --version 2>$null; if (-not $v) { exit 1 }; $major = [int](($v -split '\.')[0]); if ($major -ge 9) { exit 0 } else { exit 1 }""",
+            """winget install --id Microsoft.DotNet.SDK.9 --exact --accept-package-agreements --accept-source-agreements --silent""",
+            true,
+            false),
+        new(
+            "docker",
+            "Docker",
+            """if (-not (Get-Command docker -ErrorAction SilentlyContinue)) { exit 1 }; docker info *> $null; if ($LASTEXITCODE -eq 0) { exit 0 } else { exit 1 }""",
+            """winget install --id Docker.DockerDesktop --exact --accept-package-agreements --accept-source-agreements --silent""",
+            false,
+            true),
+        new(
+            "ollama",
+            "Ollama",
+            """if (Get-Command ollama -ErrorAction SilentlyContinue) { exit 0 } else { exit 1 }""",
+            """winget install --id Ollama.Ollama --exact --accept-package-agreements --accept-source-agreements --silent""",
+            false,
+            true),
+    ];
+
     public static async Task<BootstrapAssessment> AssessDemoAsync(
         string profile,
         bool includeOptional,
@@ -297,7 +337,9 @@ internal static class BootstrapRuntime
             return ("linux-demo", true, null, LinuxDemoDependencies);
         if (OperatingSystem.IsMacOS())
             return ("mac-demo", true, null, MacDemoDependencies);
-        return ("unsupported", false, "Bootstrap currently supports Linux and macOS.", Array.Empty<BootstrapDependencySpec>());
+        if (OperatingSystem.IsWindows())
+            return ("windows-demo", true, null, WindowsDemoDependencies);
+        return ("unsupported", false, "Bootstrap does not recognize this host OS.", Array.Empty<BootstrapDependencySpec>());
     }
 
     public static IReadOnlyList<BootstrapDependencyStatus> BuildInstallPlan(BootstrapAssessment assessment)
@@ -401,15 +443,7 @@ internal static class BootstrapRuntime
 
     public static async Task<int> RunShellStreamingAsync(string command, CancellationToken ct)
     {
-        var psi = new ProcessStartInfo
-        {
-            FileName = "bash",
-            UseShellExecute = false,
-        };
-        psi.ArgumentList.Add("-lc");
-        psi.ArgumentList.Add(command);
-
-        using var process = Process.Start(psi);
+        using var process = StartShellProcess(command, redirect: false);
         if (process == null)
             return 1;
 
@@ -419,17 +453,7 @@ internal static class BootstrapRuntime
 
     private static async Task<(int ExitCode, string StdOut, string StdErr)> RunShellCaptureAsync(string command, CancellationToken ct)
     {
-        var psi = new ProcessStartInfo
-        {
-            FileName = "bash",
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-        };
-        psi.ArgumentList.Add("-lc");
-        psi.ArgumentList.Add(command);
-
-        using var process = Process.Start(psi);
+        using var process = StartShellProcess(command, redirect: true);
         if (process == null)
             return (1, string.Empty, "Failed to start process.");
 
@@ -439,6 +463,36 @@ internal static class BootstrapRuntime
         var stdout = await stdOutTask.ConfigureAwait(false);
         var stderr = await stdErrTask.ConfigureAwait(false);
         return (process.ExitCode, stdout, stderr);
+    }
+
+    private static Process? StartShellProcess(string command, bool redirect)
+    {
+        var isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+        var psi = new ProcessStartInfo
+        {
+            FileName = isWindows ? "powershell.exe" : "bash",
+            UseShellExecute = false,
+        };
+
+        if (redirect)
+        {
+            psi.RedirectStandardOutput = true;
+            psi.RedirectStandardError = true;
+        }
+
+        if (isWindows)
+        {
+            psi.ArgumentList.Add("-NoProfile");
+            psi.ArgumentList.Add("-Command");
+            psi.ArgumentList.Add(command);
+        }
+        else
+        {
+            psi.ArgumentList.Add("-lc");
+            psi.ArgumentList.Add(command);
+        }
+
+        return Process.Start(psi);
     }
 }
 

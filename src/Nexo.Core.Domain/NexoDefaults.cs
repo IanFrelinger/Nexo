@@ -74,9 +74,9 @@ public static class NexoDefaults
     /// Defaults to localhost because Ollama typically runs as a local sidecar.</summary>
     public const string OllamaDefaultBaseUrl = "http://localhost:11434";
 
-    /// <summary>Default Ollama text model.
+    /// <summary>Default Ollama text model (tag form matches <c>ollama pull</c> / <c>ollama list</c>).
     /// Override: <c>NEXO_OLLAMA_MODEL</c> or <c>Nexo:Ollama:Model</c>.</summary>
-    public const string OllamaDefaultModel = "llama3.1";
+    public const string OllamaDefaultModel = "llama3.1:latest";
 
     /// <summary>Default Ollama vision model for image-input tasks.
     /// Override: <c>Nexo:Ollama:VisionModel</c>.</summary>

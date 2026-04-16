@@ -98,7 +98,7 @@ public sealed record WorkflowLabRuntimeSpec
                 {
                     Prefer = "agentic",
                     Provider = "ollama",
-                    Model = "llama3.1"
+                    Model = "llama3.1:latest"
                 }
             },
             new WorkflowLabModelProfileSpec
@@ -109,7 +109,7 @@ public sealed record WorkflowLabRuntimeSpec
                 {
                     Prefer = "agentic",
                     Provider = "ollama",
-                    Model = "llama3.1"
+                    Model = "llama3.1:latest"
                 },
                 Agents = new Dictionary<string, ModelRuntimeSpec>(StringComparer.OrdinalIgnoreCase)
                 {

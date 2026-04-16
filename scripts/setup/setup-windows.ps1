@@ -4,7 +4,8 @@ param(
     [ValidateSet("check", "restore", "all", "apply")]
     [string]$Mode = "check",
     [switch]$IncludeOptional,
-    [switch]$Yes
+    [switch]$Yes,
+    [switch]$SkipRuntimeStudioTune
 )
 
 Set-StrictMode -Version Latest
@@ -219,6 +220,81 @@ function Invoke-DependencyCheck {
     Write-Host "Dependency check passed."
 }
 
+function Invoke-RuntimeStudioAutoTune {
+    if ($SkipRuntimeStudioTune.IsPresent) {
+        Write-Host "Skipping Runtime Studio hardware tune (-SkipRuntimeStudioTune)."
+        return
+    }
+
+    if ($env:NEXO_SKIP_RUNTIME_STUDIO_TUNE -eq '1') {
+        Write-Host "Skipping Runtime Studio hardware tune (NEXO_SKIP_RUNTIME_STUDIO_TUNE=1)."
+        return
+    }
+
+    if ($env:CI -eq 'true' -or $env:GITHUB_ACTIONS -eq 'true') {
+        Write-Host "Skipping Runtime Studio hardware tune (CI environment)."
+        return
+    }
+
+    $tuneScript = Join-Path $RepoRoot "apps\runtime-studio\scripts\optimize_agent_cluster.sh"
+    if (-not (Test-Path $tuneScript)) {
+        return
+    }
+
+    if (-not (Test-CommandExists -Name "dotnet")) {
+        Write-Warning "dotnet not available; skipping Runtime Studio hardware tune."
+        return
+    }
+
+    $pf86 = ${env:ProgramFiles(x86)}
+    $bashCandidates = @(
+        (Join-Path $env:ProgramFiles "Git\bin\bash.exe"),
+        (Join-Path $pf86 "Git\bin\bash.exe")
+    )
+    $bash = $null
+    foreach ($candidate in $bashCandidates) {
+        if (Test-Path $candidate) {
+            $bash = $candidate
+            break
+        }
+    }
+
+    if (-not $bash -and (Test-CommandExists -Name "bash")) {
+        $bash = "bash"
+    }
+
+    if (-not $bash) {
+        Write-Warning @"
+Git Bash not found; skipping Runtime Studio hardware tune.
+Install Git for Windows, or run manually from repo root:
+  bash apps/runtime-studio/scripts/optimize_agent_cluster.sh --skip-daemon --budget-runs 48
+"@
+        return
+    }
+
+    Write-Host ""
+    Write-Host "Runtime Studio: benchmarking local models/compositions (bounded budget). This may take several minutes."
+    Write-Host "To skip next time: -SkipRuntimeStudioTune on setup.ps1, or set NEXO_SKIP_RUNTIME_STUDIO_TUNE=1."
+    Write-Host ""
+
+    Push-Location $RepoRoot
+    try {
+        if ($bash -eq "bash") {
+            & bash "apps/runtime-studio/scripts/optimize_agent_cluster.sh" --skip-daemon --budget-runs 24
+        }
+        else {
+            & $bash -c "bash 'apps/runtime-studio/scripts/optimize_agent_cluster.sh' --skip-daemon --budget-runs 24"
+        }
+
+        if ($LASTEXITCODE -ne 0) {
+            Write-Warning "Runtime Studio auto-tune finished with exit code $LASTEXITCODE (dependencies optional; you can re-run the script later)."
+        }
+    }
+    finally {
+        Pop-Location
+    }
+}
+
 function Disable-ApplyMode {
     throw "Disable-ApplyMode is deprecated and should not be called."
 }
@@ -239,6 +315,7 @@ switch ($Mode) {
         Invoke-ApplyDependencies
         Invoke-DependencyCheck
         Invoke-Restore
+        Invoke-RuntimeStudioAutoTune
     }
     default {
         throw "Unknown mode: $Mode"

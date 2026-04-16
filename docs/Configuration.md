@@ -7,7 +7,7 @@ Nexo configures via environment variables and optional `~/.nexo/config.json`. Th
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `NEXO_CONFIG_PATH` | Path to config file | `~/.nexo/config.json` |
-| `NEXO_DEPLOYMENT_PROFILE` | Hosting dependency profile for `AddNexo()` module composition (`full`, `server`, `edge`, `air-gapped`, `system`). Invalid values throw `InvalidOperationException` at startup. | `full` |
+| `NEXO_DEPLOYMENT_PROFILE` | Hosting dependency profile for `AddNexo()` module composition (`full`, `server`, `edge`, `air-gapped`, `system`) | `full` |
 | `NEXO_STRICT_MODE` | `1` or `true` = enable strict mode (fail-fast + verbose diagnostics for dev/CI; disable for production) | `false` |
 | `NEXO_AIRGAP` | `1` or `true` = air-gapped; no cloud calls | unset |
 | `NEXO_AIRGAP_PROBE` | `1` = probe network to detect air-gap | unset |
@@ -118,7 +118,7 @@ Pipeline options resolve in this order: defaults, config (`Nexo:Pipelines:*`), t
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `OLLAMA_BASE_URL` | Base URL | `http://localhost:11434` |
-| `OLLAMA_MODEL` | Text model | `llama3.1` |
+| `OLLAMA_MODEL` | Text model | `llama3.1:latest` |
 | `OLLAMA_VISION_MODEL` | Vision model | `richardyoung/smolvlm2-2.2b-instruct` |
 | `OLLAMA_TIMEOUT_SECONDS` | Request timeout | `300` |
 
@@ -252,21 +252,6 @@ See `docs/runtime/ExecutionRouting.md` for detailed execution flow and resilienc
 | `NEXO_GPU_COMPUTE_CLASS` | GPU compute class label for NCR capability matching | unset |
 | `NEXO_LOAD_PREFERENCE` | Default load balancing preference | unset |
 | `NEXO_EXECUTION_REMOTE_URL` | Remote execution endpoint URL for hosting | unset |
-
-## REST API Endpoints (product surfaces)
-
-The API host (`Nexo.API`) exposes these additional endpoints beyond the core `/api/*` surface:
-
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/health` | Health check (returns `{status, timestamp}`) — used by Docker HEALTHCHECK and load balancers |
-| GET | `/api/preferences` | Get server-side user preferences |
-| POST | `/api/preferences` | Save server-side user preferences |
-| GET | `/api/activity/feed` | Recent background agent + audit activity (last 24h) |
-| POST | `/api/changelog/generate` | Generate project changelog summary from knowledge stores |
-| GET | `/api/onboarding/status` | First-run status: provider availability, config path, trust pack |
-
-See `docs/api/index.md` for the full endpoint reference.
 
 ## Config File
 

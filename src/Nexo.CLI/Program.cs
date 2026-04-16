@@ -1161,6 +1161,7 @@ static class Program
         root.AddCommand(new DoctorCommand());
         root.AddCommand(new RuntimeCommand());
         root.AddCommand(new WorkflowCommand(() => ServiceProvider.CreateScope()));
+        root.AddCommand(new RuntimeStudioCommand());
         root.AddCommand(new ChatCommand(() => ServiceProvider.GetRequiredService<OrchestrateCommand>()));
         root.AddCommand(new SelfExtendCommand(
             () => ServiceProvider.GetRequiredService<Nexo.BackgroundAgents.HostRunners.SelfExtendRunnerAdapter>()));

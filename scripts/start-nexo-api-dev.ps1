@@ -11,7 +11,7 @@
   Linux/macOS: use scripts/start-nexo-api-dev.sh (same flags).
 
 .PARAMETER Model
-  Ollama model tag (default: llama3.1). Use -Pull on first run or after changing model.
+  Ollama model tag (default: llama3.1:latest). Use -Pull on first run or after changing model.
 
 .PARAMETER OllamaPort
   Host port published for Ollama (default: 11434).
@@ -37,7 +37,7 @@
   Sets Nexo__Security__ExposureProfile=Lan unless you already set it (use Tailnet when using Tailscale — see docs/TailscaleAndNexo.md).
 #>
 param(
-    [string] $Model = "llama3.1",
+    [string] $Model = "llama3.1:latest",
     [int] $OllamaPort = 11434,
     [int] $ApiPort = 8080,
     [switch] $SkipOllama,

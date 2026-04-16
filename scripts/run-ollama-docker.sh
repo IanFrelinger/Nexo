@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Start Ollama in Docker and pull a model. Usage: bash scripts/run-ollama-docker.sh [model] [port]
 set -euo pipefail
-MODEL="${1:-llama3.1}"
+MODEL="${1:-llama3.1:latest}"
 PORT="${2:-11434}"
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export NEXO_OLLAMA_HOST_PORT="${PORT}"

@@ -558,6 +558,33 @@ apply_dependencies() {
   check_dependencies
 }
 
+runtime_studio_auto_tune() {
+  if [[ "${NEXO_SKIP_RUNTIME_STUDIO_TUNE:-}" == "1" ]]; then
+    echo "Skipping Runtime Studio hardware tune (NEXO_SKIP_RUNTIME_STUDIO_TUNE=1)."
+    return 0
+  fi
+  if [[ "${CI:-}" == "true" || "${GITHUB_ACTIONS:-}" == "true" ]]; then
+    echo "Skipping Runtime Studio hardware tune (CI environment)."
+    return 0
+  fi
+
+  local tune_script="${REPO_ROOT}/apps/runtime-studio/scripts/optimize_agent_cluster.sh"
+  if [[ ! -f "${tune_script}" ]]; then
+    return 0
+  fi
+  if ! has_command dotnet; then
+    echo "Skipping Runtime Studio tune (dotnet not found)." >&2
+    return 0
+  fi
+
+  echo ""
+  echo "Runtime Studio: benchmarking local models/compositions (bounded budget). This may take several minutes."
+  echo "To skip: export NEXO_SKIP_RUNTIME_STUDIO_TUNE=1"
+  echo ""
+  (cd "${REPO_ROOT}" && bash "${tune_script}" --skip-daemon --budget-runs 24) \
+    || echo "Runtime Studio auto-tune finished with a non-zero exit (optional; re-run the script later)." >&2
+}
+
 main() {
   require_linux
   case "${MODE}" in
@@ -573,6 +600,7 @@ main() {
     all)
       apply_dependencies
       run_restore
+      runtime_studio_auto_tune
       ;;
     *)
       echo "Unknown mode: ${MODE}" >&2

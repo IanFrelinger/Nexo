@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text;
@@ -144,7 +145,7 @@ public sealed class OllamaProvider
 
         lock (_manifestLock)
         {
-            if (_manifestByName.TryGetValue(requestedModel, out var model))
+            if (TryResolveManifestModel(requestedModel, out var model))
             {
                 return Result<OllamaModelManifest>.Success(model);
             }
@@ -159,6 +160,50 @@ public sealed class OllamaProvider
                     ["availableModels"] = availableModels
                 }));
         }
+    }
+
+    /// <summary>
+    /// Resolves a requested tag to a manifest entry. Ollama lists models as <c>family:tag</c> (often <c>:latest</c>);
+    /// configs often use the short form <c>llama3.1</c> which must still match <c>llama3.1:latest</c>.
+    /// </summary>
+    private bool TryResolveManifestModel(string requestedModel, out OllamaModelManifest model)
+    {
+        model = default!;
+        var req = requestedModel.Trim();
+        if (req.Length == 0 || _manifestByName.Count == 0)
+            return false;
+
+        if (_manifestByName.TryGetValue(req, out var exact))
+        {
+            model = exact;
+            return true;
+        }
+
+        // Bare name → explicit :latest (common Ollama convention).
+        if (req.IndexOf(':', StringComparison.Ordinal) < 0)
+        {
+            var latestKey = req + ":latest";
+            if (_manifestByName.TryGetValue(latestKey, out var latest))
+            {
+                model = latest;
+                return true;
+            }
+        }
+
+        // Single family prefix (e.g. "llama3.2" → "llama3.2:3b" when it is the only tag).
+        var prefix = req + ":";
+        var candidates = _manifestByName.Keys
+            .Where(k => k.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(k => k, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (candidates.Count == 0)
+            return false;
+
+        var preferred = candidates.FirstOrDefault(c => c.EndsWith(":latest", StringComparison.OrdinalIgnoreCase));
+        var chosen = preferred ?? candidates[0];
+        model = _manifestByName[chosen];
+        return true;
     }
 
     public async Task<Result<string>> ExecuteChatAsync(

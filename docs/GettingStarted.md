@@ -47,6 +47,8 @@ docker run --rm -v "$PWD:/work" -w /work ghcr.io/ianfrelinger/nexo-cli:latest --
 
 ### Lane B (full local dev): native setup scripts + CLI build
 
+After **`scripts/setup/setup.sh`** / **`setup-linux.sh`** / **`setup-macos.sh`** **`all`**, or Windows **`powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode all`**, Nexo runs a **bounded** Runtime Studio **`workflow optimize`** and writes the winning **Ollama `ModelName` values** into `apps/runtime-studio/config/agent_set.local.json`. Skip with **`NEXO_SKIP_RUNTIME_STUDIO_TUNE=1`** (Unix), **`-SkipRuntimeStudioTune`** (Windows `setup.ps1`), or rely on automatic skip in **CI** (`CI` / `GITHUB_ACTIONS`).
+
 These scripts validate prerequisites and restore the setup-gate baseline NuGet graph for this repository:
 
 ```bash
@@ -202,7 +204,7 @@ export OPENAI_MODEL="gpt-4o-mini"
 
 ```bash
 export OLLAMA_BASE_URL="http://localhost:11434"
-export OLLAMA_MODEL="llama3.1"
+export OLLAMA_MODEL="llama3.1:latest"
 ```
 
 Provider behavior and full configuration are documented in `docs/Configuration.md`.
