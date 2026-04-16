@@ -280,7 +280,7 @@ $aFail = @($results | Where-Object { $_.Tier -eq "A" -and -not $_.Ok }).Count
 if ($failed.Count -gt 0) {
     Write-Host "`nFAILED cases (all tiers): $($failed.Count)" -ForegroundColor Red
     if ($aFail -gt 0) {
-        Write-Host "Tier A (native setup) failures: $aFail — core setup is NOT seamless." -ForegroundColor Red
+        Write-Host "Tier A (native setup) failures: $aFail - core setup is NOT seamless." -ForegroundColor Red
         exit 1
     }
     Write-Host "Tier A passed; failures were in optional Docker/container lanes only." -ForegroundColor Yellow
