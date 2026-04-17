@@ -306,4 +306,161 @@ public class Bar { }";
         optNames.Should().Contain("change");
         optNames.Should().Contain("system-dir");
     }
+
+    [Fact(Timeout = 15000)]
+    public void Init_Subcommand_Exists()
+    {
+        var cmd = new UnityDevCommand(() => null!);
+        cmd.Subcommands.Should().Contain(s => s.Name == "init");
+    }
+
+    [Fact(Timeout = 15000)]
+    public void ExecuteInit_CreatesProjectStructure()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), "nexo-unity-init-" + Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            var result = UnityDevCommand.ExecuteInit(tempDir, "TestGame", false);
+            result.Should().Be(0);
+
+            Directory.Exists(Path.Combine(tempDir, "Assets")).Should().BeTrue();
+            Directory.Exists(Path.Combine(tempDir, "Assets", "Scripts")).Should().BeTrue();
+            Directory.Exists(Path.Combine(tempDir, "Assets", "Scripts", "Generated")).Should().BeTrue();
+            Directory.Exists(Path.Combine(tempDir, "Assets", "Prefabs")).Should().BeTrue();
+            Directory.Exists(Path.Combine(tempDir, "Assets", "Tests", "EditMode")).Should().BeTrue();
+            Directory.Exists(Path.Combine(tempDir, "Packages")).Should().BeTrue();
+            Directory.Exists(Path.Combine(tempDir, "ProjectSettings")).Should().BeTrue();
+            Directory.Exists(Path.Combine(tempDir, ".nexo")).Should().BeTrue();
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact(Timeout = 15000)]
+    public void ExecuteInit_CreatesManifestWithDependencies()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), "nexo-unity-init-" + Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            UnityDevCommand.ExecuteInit(tempDir, "TestGame", false);
+
+            var manifestPath = Path.Combine(tempDir, "Packages", "manifest.json");
+            File.Exists(manifestPath).Should().BeTrue();
+            var json = File.ReadAllText(manifestPath);
+            json.Should().Contain("com.unity.inputsystem");
+            json.Should().Contain("com.unity.netcode.gameobjects");
+            json.Should().Contain("com.unity.test-framework");
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact(Timeout = 15000)]
+    public void ExecuteInit_CreatesAssemblyDefinitions()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), "nexo-unity-init-" + Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            UnityDevCommand.ExecuteInit(tempDir, "MyGame", false);
+
+            var asmdef = Path.Combine(tempDir, "Assets", "Scripts", "MyGame.asmdef");
+            File.Exists(asmdef).Should().BeTrue();
+            var asmJson = File.ReadAllText(asmdef);
+            asmJson.Should().Contain("\"name\": \"MyGame\"");
+
+            var testAsmdef = Path.Combine(tempDir, "Assets", "Tests", "EditMode", "MyGame.Tests.asmdef");
+            File.Exists(testAsmdef).Should().BeTrue();
+            var testJson = File.ReadAllText(testAsmdef);
+            testJson.Should().Contain("\"name\": \"MyGame.Tests\"");
+            testJson.Should().Contain("UNITY_INCLUDE_TESTS");
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact(Timeout = 15000)]
+    public void ExecuteInit_CreatesGitignore()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), "nexo-unity-init-" + Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            UnityDevCommand.ExecuteInit(tempDir, "TestGame", false);
+
+            var gitignore = Path.Combine(tempDir, ".gitignore");
+            File.Exists(gitignore).Should().BeTrue();
+            var content = File.ReadAllText(gitignore);
+            content.Should().Contain("/[Ll]ibrary/");
+            content.Should().Contain(".nexo/");
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact(Timeout = 15000)]
+    public void ExecuteInit_CreatesNexoConfig()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), "nexo-unity-init-" + Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            UnityDevCommand.ExecuteInit(tempDir, "TestGame", false);
+
+            var configPath = Path.Combine(tempDir, ".nexo", "config.json");
+            File.Exists(configPath).Should().BeTrue();
+            var json = File.ReadAllText(configPath);
+            json.Should().Contain("ollama");
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact(Timeout = 15000)]
+    public void ExecuteInit_IdempotentOnExistingProject()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), "nexo-unity-init-" + Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            UnityDevCommand.ExecuteInit(tempDir, "TestGame", false);
+            var firstManifest = File.ReadAllText(Path.Combine(tempDir, "Packages", "manifest.json"));
+
+            UnityDevCommand.ExecuteInit(tempDir, "TestGame", false);
+            var secondManifest = File.ReadAllText(Path.Combine(tempDir, "Packages", "manifest.json"));
+
+            firstManifest.Should().Be(secondManifest, "init should be idempotent");
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact(Timeout = 15000)]
+    public void ExecuteInit_JsonOutput_ReturnsStructuredResult()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), "nexo-unity-init-" + Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            var sw = new StringWriter();
+            Console.SetOut(sw);
+            UnityDevCommand.ExecuteInit(tempDir, "TestGame", true);
+            Console.SetOut(new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true });
+
+            var output = sw.ToString();
+            output.Should().Contain("\"ok\": true");
+            output.Should().Contain("\"projectName\": \"TestGame\"");
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
+        }
+    }
 }

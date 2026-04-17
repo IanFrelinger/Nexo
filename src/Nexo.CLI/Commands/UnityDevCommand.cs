@@ -42,9 +42,33 @@ Rules:
     {
         _runnerFactory = runnerFactory ?? throw new ArgumentNullException(nameof(runnerFactory));
 
+        AddCommand(CreateInitCommand());
         AddCommand(CreateGenerateCommand());
         AddCommand(CreateIterateCommand());
         AddCommand(CreateListCommand());
+    }
+
+    private Command CreateInitCommand()
+    {
+        var projectRootOpt = new Option<string>("--project-root", "Path where the Unity project should be created.") { IsRequired = true };
+        var nameOpt = new Option<string>("--name", () => "NexoForgeGame", "Project name (used for folder naming and Assembly Definitions).");
+        var jsonOpt = new Option<bool>("--format-json", () => false, "Emit machine-readable JSON output.");
+
+        var cmd = new Command("init", "Scaffold a new Unity project structure ready for Nexo Forge development.")
+        {
+            projectRootOpt, nameOpt, jsonOpt
+        };
+
+        cmd.SetHandler(async (InvocationContext ctx) =>
+        {
+            var projectRoot = ctx.ParseResult.GetValueForOption(projectRootOpt)!;
+            var name = ctx.ParseResult.GetValueForOption(nameOpt) ?? "NexoForgeGame";
+            var json = ctx.ParseResult.GetValueForOption(jsonOpt);
+
+            ctx.ExitCode = await Task.FromResult(ExecuteInit(projectRoot, name, json));
+        });
+
+        return cmd;
     }
 
     private Command CreateGenerateCommand()
@@ -137,6 +161,18 @@ Rules:
         CancellationToken ct)
     {
         var fullProjectRoot = Path.GetFullPath(projectRoot);
+
+        // Auto-scaffold the project if it doesn't exist or is missing Assets/
+        if (!Directory.Exists(fullProjectRoot) || !Directory.Exists(Path.Combine(fullProjectRoot, "Assets")))
+        {
+            var projectName = Path.GetFileName(fullProjectRoot);
+            if (string.IsNullOrWhiteSpace(projectName)) projectName = "NexoForgeGame";
+
+            if (!json) Console.WriteLine($"Project not found at {fullProjectRoot} — scaffolding new Unity project '{projectName}'...");
+            var initResult = ExecuteInit(projectRoot, projectName, json);
+            if (initResult != 0) return initResult;
+        }
+
         if (!ValidateProjectRoot(fullProjectRoot, json))
             return 1;
 
@@ -345,6 +381,170 @@ Rules:
         }
 
         return true;
+    }
+
+    internal static int ExecuteInit(string projectRoot, string projectName, bool json)
+    {
+        var fullPath = Path.GetFullPath(projectRoot);
+        Directory.CreateDirectory(fullPath);
+
+        var dirs = new[]
+        {
+            "Assets/Scenes",
+            "Assets/Scripts",
+            "Assets/Scripts/Generated",
+            "Assets/Prefabs",
+            "Assets/Materials",
+            "Assets/ScriptableObjects",
+            "Assets/Tests/EditMode",
+            "Assets/Tests/EditMode/Generated",
+            "Assets/Tests/PlayMode",
+            "Packages",
+            "ProjectSettings",
+            ".nexo"
+        };
+
+        foreach (var dir in dirs)
+            Directory.CreateDirectory(Path.Combine(fullPath, dir));
+
+        var manifestPath = Path.Combine(fullPath, "Packages", "manifest.json");
+        if (!File.Exists(manifestPath))
+        {
+            File.WriteAllText(manifestPath, JsonSerializer.Serialize(new
+            {
+                dependencies = new Dictionary<string, string>
+                {
+                    ["com.unity.inputsystem"] = "1.7.0",
+                    ["com.unity.textmeshpro"] = "3.0.6",
+                    ["com.unity.test-framework"] = "1.3.9",
+                    ["com.unity.netcode.gameobjects"] = "1.8.1"
+                }
+            }, new JsonSerializerOptions { WriteIndented = true }));
+        }
+
+        var projectSettingsPath = Path.Combine(fullPath, "ProjectSettings", "ProjectVersion.txt");
+        if (!File.Exists(projectSettingsPath))
+            File.WriteAllText(projectSettingsPath, "m_EditorVersion: 2022.3.0f1\n");
+
+        var gitignorePath = Path.Combine(fullPath, ".gitignore");
+        if (!File.Exists(gitignorePath))
+        {
+            File.WriteAllText(gitignorePath, @"# Unity
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+*.csproj
+*.sln
+*.suo
+*.tmp
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.unityproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+*.pidb.meta
+*.pdb.meta
+*.mdb.meta
+
+# Nexo
+.nexo/*.db
+.nexo/preferences.json
+");
+        }
+
+        var asmdefPath = Path.Combine(fullPath, "Assets", "Scripts", $"{projectName}.asmdef");
+        if (!File.Exists(asmdefPath))
+        {
+            File.WriteAllText(asmdefPath, JsonSerializer.Serialize(new
+            {
+                name = projectName,
+                rootNamespace = projectName,
+                references = new[] { "Unity.InputSystem", "Unity.Netcode.Runtime" },
+                includePlatforms = Array.Empty<string>(),
+                excludePlatforms = Array.Empty<string>(),
+                allowUnsafeCode = false,
+                overrideReferences = false,
+                precompiledReferences = Array.Empty<string>(),
+                autoReferenced = true,
+                defineConstraints = Array.Empty<string>(),
+                versionDefines = Array.Empty<string>(),
+                noEngineReferences = false
+            }, new JsonSerializerOptions { WriteIndented = true }));
+        }
+
+        var testAsmdefPath = Path.Combine(fullPath, "Assets", "Tests", "EditMode", $"{projectName}.Tests.asmdef");
+        if (!File.Exists(testAsmdefPath))
+        {
+            File.WriteAllText(testAsmdefPath, JsonSerializer.Serialize(new
+            {
+                name = $"{projectName}.Tests",
+                rootNamespace = $"{projectName}.Tests",
+                references = new[] { projectName, "UnityEngine.TestRunner", "UnityEditor.TestRunner" },
+                includePlatforms = new[] { "Editor" },
+                excludePlatforms = Array.Empty<string>(),
+                allowUnsafeCode = false,
+                overrideReferences = true,
+                precompiledReferences = new[] { "nunit.framework.dll" },
+                autoReferenced = false,
+                defineConstraints = new[] { "UNITY_INCLUDE_TESTS" },
+                versionDefines = Array.Empty<string>(),
+                noEngineReferences = false
+            }, new JsonSerializerOptions { WriteIndented = true }));
+        }
+
+        var nexoConfigPath = Path.Combine(fullPath, ".nexo", "config.json");
+        if (!File.Exists(nexoConfigPath))
+        {
+            File.WriteAllText(nexoConfigPath, JsonSerializer.Serialize(new
+            {
+                provider = "ollama",
+                model = "llama3.1"
+            }, new JsonSerializerOptions { WriteIndented = true }));
+        }
+
+        var createdFiles = new List<string>();
+        foreach (var dir in dirs) createdFiles.Add(dir + "/");
+        if (File.Exists(manifestPath)) createdFiles.Add("Packages/manifest.json");
+        if (File.Exists(asmdefPath)) createdFiles.Add($"Assets/Scripts/{projectName}.asmdef");
+        if (File.Exists(testAsmdefPath)) createdFiles.Add($"Assets/Tests/EditMode/{projectName}.Tests.asmdef");
+        createdFiles.Add(".gitignore");
+        createdFiles.Add(".nexo/config.json");
+        createdFiles.Add("ProjectSettings/ProjectVersion.txt");
+
+        if (json)
+        {
+            Console.WriteLine(JsonSerializer.Serialize(new
+            {
+                ok = true,
+                projectRoot = fullPath,
+                projectName,
+                filesCreated = createdFiles
+            }, new JsonSerializerOptions { WriteIndented = true }));
+        }
+        else
+        {
+            Console.WriteLine($"Unity project scaffolded at: {fullPath}");
+            Console.WriteLine($"  Project name: {projectName}");
+            Console.WriteLine($"  Directories: {dirs.Length}");
+            Console.WriteLine($"  Package manifest with InputSystem, Netcode, TestFramework");
+            Console.WriteLine($"  Assembly definitions for scripts and tests");
+            Console.WriteLine($"  .gitignore for Unity + Nexo");
+            Console.WriteLine($"  .nexo/config.json (default: Ollama provider)");
+            Console.WriteLine();
+            Console.WriteLine("Next: open this folder in Unity Hub, or run:");
+            Console.WriteLine($"  nexo unity-dev generate --project-root {projectRoot} --system \"your system description\"");
+        }
+
+        return 0;
     }
 
     internal static List<(string RelativePath, string Content)> ParseFiles(string rawOutput)
