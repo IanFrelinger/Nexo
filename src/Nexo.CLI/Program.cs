@@ -1165,6 +1165,8 @@ static class Program
         root.AddCommand(new ChatCommand(() => ServiceProvider.GetRequiredService<OrchestrateCommand>()));
         root.AddCommand(new SelfExtendCommand(
             () => ServiceProvider.GetRequiredService<Nexo.BackgroundAgents.HostRunners.SelfExtendRunnerAdapter>()));
+        root.AddCommand(new UnityDevCommand(
+            () => ServiceProvider.GetRequiredService<Nexo.BackgroundAgents.HostRunners.SelfExtendRunnerAdapter>()));
         root.AddCommand(new ObserveCommand());
         root.AddCommand(new AdaptCommand());
         root.AddCommand(new ImproveCommand());
