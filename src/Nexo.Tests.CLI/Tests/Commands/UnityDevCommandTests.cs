@@ -661,4 +661,137 @@ public class Bar { }";
         restored.Variations[0].VariantId.Should().Be("v1");
         restored.Tags.Should().HaveCount(2);
     }
+
+    [Fact(Timeout = 15000)]
+    public void Pin_Subcommand_Exists()
+    {
+        var cmd = new UnityDevCommand(() => null!);
+        var pin = cmd.Subcommands.SingleOrDefault(s => s.Name == "pin");
+        pin.Should().NotBeNull();
+
+        var optNames = pin!.Options.Select(o => o.Name).ToList();
+        optNames.Should().Contain("project-root");
+        optNames.Should().Contain("file");
+        optNames.Should().Contain("field");
+        optNames.Should().Contain("value");
+        optNames.Should().Contain("unpin");
+    }
+
+    [Fact(Timeout = 15000)]
+    public void Compose_Subcommand_Exists()
+    {
+        var cmd = new UnityDevCommand(() => null!);
+        var compose = cmd.Subcommands.SingleOrDefault(s => s.Name == "compose");
+        compose.Should().NotBeNull();
+
+        var optNames = compose!.Options.Select(o => o.Name).ToList();
+        optNames.Should().Contain("project-root");
+        optNames.Should().Contain("config");
+        optNames.Should().Contain("format-json");
+    }
+
+    [Fact(Timeout = 15000)]
+    public void Generate_Subcommand_HasTemplateOption()
+    {
+        var cmd = new UnityDevCommand(() => null!);
+        var gen = cmd.Subcommands.Single(s => s.Name == "generate");
+        var optNames = gen.Options.Select(o => o.Name).ToList();
+        optNames.Should().Contain("template");
+    }
+
+    [Fact(Timeout = 15000)]
+    public void ExecutePin_PinsField()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), $"nexo-pin-test-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDir);
+        var descriptorFile = Path.Combine("weapons", "rifle.json");
+        var fullDescriptorPath = Path.Combine(tempDir, descriptorFile);
+        Directory.CreateDirectory(Path.GetDirectoryName(fullDescriptorPath)!);
+        File.WriteAllText(fullDescriptorPath, "{}");
+        try
+        {
+            var sw = new StringWriter();
+            Console.SetOut(sw);
+            var code = UnityDevCommand.ExecutePin(tempDir, descriptorFile, "damage", "42", false, false);
+            Console.SetOut(new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true });
+
+            code.Should().Be(0);
+
+            var overridePath = Path.ChangeExtension(fullDescriptorPath, ".overrides.json");
+            File.Exists(overridePath).Should().BeTrue();
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact(Timeout = 15000)]
+    public void ExecutePin_UnpinsField()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), $"nexo-pin-test-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(tempDir);
+        var descriptorFile = Path.Combine("weapons", "rifle.json");
+        var fullDescriptorPath = Path.Combine(tempDir, descriptorFile);
+        Directory.CreateDirectory(Path.GetDirectoryName(fullDescriptorPath)!);
+        File.WriteAllText(fullDescriptorPath, "{}");
+        try
+        {
+            UnityDevCommand.ExecutePin(tempDir, descriptorFile, "damage", "42", false, false);
+
+            var sw = new StringWriter();
+            Console.SetOut(sw);
+            var code = UnityDevCommand.ExecutePin(tempDir, descriptorFile, "damage", null, true, false);
+            Console.SetOut(new StreamWriter(Console.OpenStandardOutput()) { AutoFlush = true });
+
+            code.Should().Be(0);
+
+            var overridePath = Path.ChangeExtension(fullDescriptorPath, ".overrides.json");
+            File.Exists(overridePath).Should().BeFalse();
+        }
+        finally
+        {
+            if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
+        }
+    }
+
+    [Fact(Timeout = 15000)]
+    public void ExecutePin_NoValue_ReturnsError()
+    {
+        var code = UnityDevCommand.ExecutePin("/tmp", "file.json", "field", null, false, false);
+        code.Should().Be(1);
+    }
+
+    [Fact(Timeout = 15000)]
+    public void BuildGeneratePrompt_InjectsConstraintFragment()
+    {
+        var prompt = UnityDevCommand.BuildGeneratePrompt(
+            "weapon system", "Assets/Scripts/Generated", "Assets/Tests",
+            constraintFragment: "\nProject constraints:\n- Max 200 lines per file");
+
+        prompt.Should().Contain("Max 200 lines per file");
+        prompt.Should().Contain("weapon system");
+    }
+
+    [Fact(Timeout = 15000)]
+    public void BuildGeneratePrompt_InjectsTemplateFragment()
+    {
+        var prompt = UnityDevCommand.BuildGeneratePrompt(
+            "weapon system", "Assets/Scripts/Generated", "Assets/Tests",
+            templateFragment: "\nFixed values from template:\n  name: Shotgun");
+
+        prompt.Should().Contain("Fixed values from template");
+        prompt.Should().Contain("name: Shotgun");
+    }
+
+    [Fact(Timeout = 15000)]
+    public void BuildGeneratePrompt_InjectsCompositionContext()
+    {
+        var prompt = UnityDevCommand.BuildGeneratePrompt(
+            "combat system", "Assets/Scripts/Generated", "Assets/Tests",
+            compositionContext: "Health system provides IDamageable interface");
+
+        prompt.Should().Contain("Context from upstream systems");
+        prompt.Should().Contain("Health system provides IDamageable interface");
+    }
 }
