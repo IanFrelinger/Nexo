@@ -1,37 +1,51 @@
 namespace Nexo.GameDomain.Assets;
 
 /// <summary>
-/// Data-only descriptor for a Unity audio clip's runtime settings.
+/// Comprehensive audio asset descriptor for Unity. Covers sound effects,
+/// music tracks, ambient soundscapes, and UI audio. Generates AudioClip
+/// configuration, AudioMixer groups, and spatial audio settings.
 /// </summary>
 public sealed record AudioDescriptor
 {
-    /// <summary>Stable identifier for this audio asset.</summary>
     public string Id { get; init; } = string.Empty;
-
-    /// <summary>Human-readable display name.</summary>
     public string Name { get; init; } = string.Empty;
+    public string Category { get; init; } = "sfx"; // sfx, music, ambient, ui, voice, foley
+    public string SubCategory { get; init; } = string.Empty; // weapon_fire, footstep, explosion, pickup, etc.
 
-    /// <summary>
-    /// Audio category for mixer routing.
-    /// Accepted values: <c>"sfx"</c>, <c>"music"</c>, <c>"ambient"</c>, <c>"ui"</c>.
-    /// </summary>
-    public string Category { get; init; } = "sfx";
-
-    /// <summary>Playback volume in the range [0, 1].</summary>
+    // Playback
     public double Volume { get; init; } = 1.0;
-
-    /// <summary>Pitch multiplier (1.0 = normal speed).</summary>
     public double Pitch { get; init; } = 1.0;
-
-    /// <summary>Spatial blend where 0 = fully 2D and 1 = fully 3D.</summary>
-    public double SpatialBlend { get; init; }
-
-    /// <summary>Minimum distance for 3D audio attenuation.</summary>
-    public double MinDistance { get; init; } = 1.0;
-
-    /// <summary>Maximum distance for 3D audio attenuation.</summary>
-    public double MaxDistance { get; init; } = 500.0;
-
-    /// <summary>Whether the clip should loop.</summary>
+    public double PitchVariance { get; init; } = 0.0;
     public bool Loop { get; init; }
+    public double FadeInSeconds { get; init; }
+    public double FadeOutSeconds { get; init; }
+    public int Priority { get; init; } = 128;
+
+    // Spatial
+    public double SpatialBlend { get; init; } = 1.0;
+    public double MinDistance { get; init; } = 1.0;
+    public double MaxDistance { get; init; } = 50.0;
+    public string RolloffMode { get; init; } = "logarithmic";
+    public double DopplerLevel { get; init; } = 1.0;
+    public double Spread { get; init; } = 0.0;
+
+    // Mixer
+    public string MixerGroup { get; init; } = "Master";
+    public double DuckingVolume { get; init; } = 1.0;
+    public bool BypassEffects { get; init; }
+    public bool BypassReverb { get; init; }
+
+    // Variations (for randomized playback)
+    public IReadOnlyList<AudioVariation> Variations { get; init; } = Array.Empty<AudioVariation>();
+
+    // Tags for querying and categorization
+    public IReadOnlyList<string> Tags { get; init; } = Array.Empty<string>();
+}
+
+public sealed record AudioVariation
+{
+    public string VariantId { get; init; } = string.Empty;
+    public double PitchOffset { get; init; }
+    public double VolumeOffset { get; init; }
+    public string? ClipSuffix { get; init; }
 }
