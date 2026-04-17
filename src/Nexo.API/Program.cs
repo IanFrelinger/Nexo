@@ -160,6 +160,7 @@ app.UseStaticFiles();
 app.UseNexoApiKeyAuth();
 
 app.MapNexoEndpoints();
+app.MapForgeEndpoints();
 app.MapFallbackToFile("index.html");
 
 app.Run();
