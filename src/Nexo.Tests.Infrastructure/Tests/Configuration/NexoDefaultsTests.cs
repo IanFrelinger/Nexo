@@ -125,4 +125,16 @@ public sealed class NexoDefaultsTests
         opts.MaxEntries.Should().Be(NexoDefaults.BrickUsageTrackerMaxEntries);
         opts.RollingHourWindowSeconds.Should().Be(NexoDefaults.BrickUsageTrackerRollingHourWindowSeconds);
     }
+
+    [Fact(Timeout = TestTimeouts.Quick)]
+    public void VideoDefaults_AreStable()
+    {
+        NexoDefaults.VideoDefaultFps.Should().Be(5);
+    }
+
+    [Fact(Timeout = TestTimeouts.Quick)]
+    public void EmbeddingDefaults_AreStable()
+    {
+        NexoDefaults.EmbeddingDefaultDimension.Should().Be(64);
+    }
 }
