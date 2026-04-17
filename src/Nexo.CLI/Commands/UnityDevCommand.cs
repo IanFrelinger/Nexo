@@ -203,18 +203,21 @@ Rules:
             return 1;
         }
 
-        var files = ParseFiles(result.Summary);
-        var writtenFiles = new List<string>();
+        // The runner writes files directly via repo.fs.write tool calls.
+        // Discover what was created by scanning the output directory.
+        Directory.CreateDirectory(fullOutputDir);
+        var writtenFiles = Directory.Exists(fullOutputDir)
+            ? Directory.GetFiles(fullOutputDir, "*.cs", SearchOption.AllDirectories)
+                .Select(f => Path.GetRelativePath(fullProjectRoot, f).Replace('\\', '/'))
+                .ToList()
+            : new List<string>();
 
-        foreach (var (relativePath, content) in files)
+        // Also check test directory
+        if (Directory.Exists(fullTestDir))
         {
-            var fullPath = Path.Combine(fullProjectRoot, relativePath);
-            var dir = Path.GetDirectoryName(fullPath);
-            if (!string.IsNullOrEmpty(dir))
-                Directory.CreateDirectory(dir);
-
-            await File.WriteAllTextAsync(fullPath, content, ct).ConfigureAwait(false);
-            writtenFiles.Add(relativePath);
+            writtenFiles.AddRange(
+                Directory.GetFiles(fullTestDir, "*.cs", SearchOption.AllDirectories)
+                    .Select(f => Path.GetRelativePath(fullProjectRoot, f).Replace('\\', '/')));
         }
 
         WriteManifest(fullOutputDir, systemDescription, writtenFiles);
@@ -274,19 +277,11 @@ Rules:
             return 1;
         }
 
-        var files = ParseFiles(result.Summary);
-        var writtenFiles = new List<string>();
-
-        foreach (var (relativePath, content) in files)
-        {
-            var fullPath = Path.Combine(fullProjectRoot, relativePath);
-            var dir = Path.GetDirectoryName(fullPath);
-            if (!string.IsNullOrEmpty(dir))
-                Directory.CreateDirectory(dir);
-
-            await File.WriteAllTextAsync(fullPath, content, ct).ConfigureAwait(false);
-            writtenFiles.Add(relativePath);
-        }
+        // The runner writes files directly via repo.fs.write tool calls.
+        // Discover what was modified by rescanning the system directory.
+        var writtenFiles = Directory.GetFiles(fullSystemDir, "*.cs", SearchOption.AllDirectories)
+            .Select(f => Path.GetRelativePath(fullProjectRoot, f).Replace('\\', '/'))
+            .ToList();
 
         WriteManifest(fullSystemDir, changeDescription, writtenFiles);
 
@@ -728,7 +723,7 @@ Output the complete modified files. Each file must start with a // FILE: marker 
     private Command CreateAssetsCommand()
     {
         var projectRootOpt = new Option<string>("--project-root", "Path to the Unity project root.") { IsRequired = true };
-        var typeOpt = new Option<string>("--type", "Asset type to generate (material|prefab|scene|audio|animation|soundbank|animationset|ui).") { IsRequired = true };
+        var typeOpt = new Option<string>("--type", "Asset type to generate (material|prefab|scene|audio|animation|soundbank|animationset|ui|vfx|physics|input|network|ainavigation|build).") { IsRequired = true };
         var descriptionOpt = new Option<string>("--description", "Description of the asset to generate.") { IsRequired = true };
         var jsonOpt = new Option<bool>("--format-json", () => false, "Emit machine-readable JSON output.");
 
@@ -763,7 +758,7 @@ Output the complete modified files. Each file must start with a // FILE: marker 
         if (!ValidateProjectRoot(fullProjectRoot, json))
             return 1;
 
-        var validTypes = new[] { "material", "prefab", "scene", "audio", "animation", "soundbank", "animationset", "ui" };
+        var validTypes = new[] { "material", "prefab", "scene", "audio", "animation", "soundbank", "animationset", "ui", "vfx", "physics", "input", "network", "ainavigation", "build" };
         var normalizedType = assetType.ToLowerInvariant();
         if (!validTypes.Contains(normalizedType))
         {
@@ -818,6 +813,12 @@ Output the complete modified files. Each file must start with a // FILE: marker 
             "soundbank" => "SoundBankDescriptor JSON with fields: Id, Name, Category (weapon|character|environment|ui|music), Events (list of {EventName (e.g. \"fire\", \"reload\", \"footstep_concrete\"), AudioDescriptorIds (list of IDs for random selection pool), SelectionMode (random|sequential|random_no_repeat), CooldownSeconds, MaxConcurrent, VolumeMultiplier, PitchMultiplier}), Tags. Map game events to audio responses — each event references one or more AudioDescriptor IDs. Use cooldowns to prevent audio spam and MaxConcurrent to limit simultaneous instances. Selection modes control how variants are picked: random for uniform, sequential for round-robin, random_no_repeat to avoid repeating the last played clip.",
             "animationset" => "AnimationSetDescriptor JSON with fields: Id, Name, Category (character|weapon|vehicle), Mappings (list of {GameplayState (idle|walk|run|jump|crouch|slide|ads|fire|reload|die|etc.), AnimationDescriptorId, CrossfadeDuration}), BlendTrees (list of {Name, BlendParameter (e.g. \"Speed\", \"Direction\"), BlendParameterY (for 2D trees, null for 1D), BlendType (1D|2DSimpleDirectional|2DFreeformDirectional|2DFreeformCartesian), Children [{AnimationDescriptorId, Threshold, ThresholdY, TimeScale}]}), Tags. Map gameplay states to animation descriptors with crossfade durations for smooth transitions. Use BlendTrees for locomotion blending — a 1D tree blends idle/walk/run by speed, a 2D tree adds directional strafing. Each BlendTreeChild positions an animation on the blend axis via Threshold.",
             "ui" => "UIDescriptor JSON with fields: Id, Name, CanvasMode (overlay|camera|worldspace), Elements (list of {Type (text|button|image|panel|slider|input), Name, Position (Vector3), Size (Vector2 with X,Y), Properties}).",
+            "vfx" => "VfxDescriptor JSON with fields: Id, Name, Category (muzzle_flash|impact|explosion|trail|ambient|shield|pickup|death), Duration, Loop, PlayOnAwake, Modules (list of {ModuleName (emission|shape|velocity|color|size|noise|collision|renderer), Properties (dict of string to value)}), Tags.",
+            "physics" => "PhysicsDescriptor JSON with fields: Id, Name, Category (material|collider|rigidbody|projectile), DynamicFriction (0-1), StaticFriction (0-1), Bounciness (0-1), FrictionCombine (average|minimum|maximum|multiply), BounceCombine, Mass, Drag, AngularDrag, UseGravity, IsKinematic, Interpolation (none|interpolate|extrapolate), CollisionDetection (discrete|continuous|continuous_dynamic|continuous_speculative), ColliderType (box|sphere|capsule|mesh|convex_mesh), ColliderCenter (Vector3), ColliderSize (Vector3), ColliderRadius, ColliderHeight, IsTrigger, ProjectileSpeed, GravityMultiplier, MaxLifetime, MaxBounces, BounceEnergyRetention, Tags.",
+            "input" => "InputDescriptor JSON with fields: Id, Name, ActionMaps (list of {Name, Actions (list of {Name, Type (button|value|passthrough), ControlType (Button|Vector2|Axis), Bindings (list of {Path, Composite (2DVector|1DAxis|null), CompositePart (up|down|left|right|null), Interactions (list), Processors (list)})})}), Tags.",
+            "network" => "NetworkDescriptor JSON with fields: Id, Name, Category (player|projectile|pickup|game_state|environment), IsPlayerObject, DontDestroyWithOwner, SyncedVariables (list of {Name, Type (float|int|bool|Vector3|Quaternion|string|custom), Permission (server|owner|everyone), DeliveryMode (reliable|unreliable), SendRate}), Rpcs (list of {Name, Direction (server|client), DeliveryMode, Parameters (list of {Name, Type})}), Spawning ({AutoSpawn, SpawnAuthority (server|owner), DespawnDelay, PoolId}), Tags.",
+            "ainavigation" => "AiNavigationDescriptor JSON with fields: Id, Name, PatrolRoutes (list of {Name, Waypoints (list of Vector3), Loop, WaitTimePerPoint, MoveSpeed}), CoverPoints (list of {Position (Vector3), CoverDirection (Vector3), CoverType (half|full|lean_left|lean_right), Rating (0-1)}), TacticalPositions (list of {Name, Position (Vector3), Role (sniper_nest|choke_point|flank_route|power_position|objective_watch|generic), ControlRadius, SightlineTargets (list of Vector3)}), Tags.",
+            "build" => "BuildDescriptor JSON with fields: Id, Name, TargetPlatform (StandaloneWindows64|StandaloneOSX|StandaloneLinux64|WebGL|Android|iOS), OutputPath, DevelopmentBuild, AllowDebugging, Scenes (list of scene paths), CompanyName, ProductName, BundleVersion, Quality ({VSyncCount, TargetFrameRate, ShadowQuality (disable|hard_only|all), ShadowResolution, ShadowDistance, AntiAliasing (disabled|2x|4x|8x), TextureQuality (full|half|quarter|eighth), MaxLod}), ScriptingDefines (list), Tags.",
             _ => ""
         };
 
