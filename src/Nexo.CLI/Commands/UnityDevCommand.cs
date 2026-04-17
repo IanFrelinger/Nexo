@@ -728,7 +728,7 @@ Output the complete modified files. Each file must start with a // FILE: marker 
     private Command CreateAssetsCommand()
     {
         var projectRootOpt = new Option<string>("--project-root", "Path to the Unity project root.") { IsRequired = true };
-        var typeOpt = new Option<string>("--type", "Asset type to generate (material|prefab|scene|audio|ui).") { IsRequired = true };
+        var typeOpt = new Option<string>("--type", "Asset type to generate (material|prefab|scene|audio|animation|soundbank|animationset|ui).") { IsRequired = true };
         var descriptionOpt = new Option<string>("--description", "Description of the asset to generate.") { IsRequired = true };
         var jsonOpt = new Option<bool>("--format-json", () => false, "Emit machine-readable JSON output.");
 
@@ -763,7 +763,7 @@ Output the complete modified files. Each file must start with a // FILE: marker 
         if (!ValidateProjectRoot(fullProjectRoot, json))
             return 1;
 
-        var validTypes = new[] { "material", "prefab", "scene", "audio", "ui" };
+        var validTypes = new[] { "material", "prefab", "scene", "audio", "animation", "soundbank", "animationset", "ui" };
         var normalizedType = assetType.ToLowerInvariant();
         if (!validTypes.Contains(normalizedType))
         {
@@ -813,7 +813,10 @@ Output the complete modified files. Each file must start with a // FILE: marker 
             "material" => "MaterialDescriptor JSON with fields: Id, Name, ShaderName, Color (hex), Metallic (0-1), Smoothness (0-1), EmissionColor (hex or null), RenderMode (Opaque|Cutout|Transparent), TextureSlots (dict of slot name to texture path).",
             "prefab" => "PrefabDescriptor JSON with fields: Id, Name, Components (list of {TypeName, Properties}), Children (nested PrefabDescriptors), Position/Rotation/Scale (Vector3 with X,Y,Z).",
             "scene" => "SceneDescriptor JSON with fields: Id, Name, RootObjects (list of PrefabDescriptors), AmbientLightColor (hex), SkyboxMaterial (string or null), NavMeshAreas (list of {Name, Center, Size} with Vector3).",
-            "audio" => "AudioDescriptor JSON with fields: Id, Name, Category (sfx|music|ambient|ui), Volume (0-1), Pitch, SpatialBlend (0-1), MinDistance, MaxDistance, Loop (bool).",
+            "audio" => "AudioDescriptor JSON with fields: Id, Name, Category (sfx|music|ambient|ui|voice|foley), SubCategory, Volume (0-1), Pitch, PitchVariance (random offset ±), Loop, FadeInSeconds, FadeOutSeconds, Priority (0-256), SpatialBlend (0=2D, 1=3D), MinDistance, MaxDistance, RolloffMode (linear|logarithmic|custom), DopplerLevel, Spread (0-360), MixerGroup (Master|SFX|Music|Ambient|UI|Voice), DuckingVolume, BypassEffects, BypassReverb, Variations (list of {VariantId, PitchOffset, VolumeOffset, ClipSuffix}), Tags.",
+            "animation" => "AnimationDescriptor JSON with fields: Id, Name, Category (character|weapon|environment|ui|camera), DefaultState, States (list of {Name, ClipName, Speed, Loop, Mirror, SpeedParameterName, Events [{Time (0-1), FunctionName, StringParameter, FloatParameter, IntParameter}], Position {X,Y}}), Transitions (list of {FromState (use \"Any\" for AnyState), ToState, TransitionDuration, ExitTime (0-1), HasExitTime, HasFixedDuration, Conditions [{ParameterName, Mode (equals|not_equal|greater|less|if_true|if_false), Threshold}]}), Parameters (list of {Name, Type (float|int|bool|trigger), DefaultValue}), Layers (list of {Name, Weight, BlendingMode (override|additive), AvatarMask (null for full body, e.g. \"UpperBody\"), IKPass}), Tags. Design the state machine with proper transitions between states — for example a character animator should have Idle, Walk, Run, Jump states with parameter-driven transitions. Use layers to separate upper/lower body animations. Add AnimationEvents for gameplay hooks like footstep sounds or weapon fire frames.",
+            "soundbank" => "SoundBankDescriptor JSON with fields: Id, Name, Category (weapon|character|environment|ui|music), Events (list of {EventName (e.g. \"fire\", \"reload\", \"footstep_concrete\"), AudioDescriptorIds (list of IDs for random selection pool), SelectionMode (random|sequential|random_no_repeat), CooldownSeconds, MaxConcurrent, VolumeMultiplier, PitchMultiplier}), Tags. Map game events to audio responses — each event references one or more AudioDescriptor IDs. Use cooldowns to prevent audio spam and MaxConcurrent to limit simultaneous instances. Selection modes control how variants are picked: random for uniform, sequential for round-robin, random_no_repeat to avoid repeating the last played clip.",
+            "animationset" => "AnimationSetDescriptor JSON with fields: Id, Name, Category (character|weapon|vehicle), Mappings (list of {GameplayState (idle|walk|run|jump|crouch|slide|ads|fire|reload|die|etc.), AnimationDescriptorId, CrossfadeDuration}), BlendTrees (list of {Name, BlendParameter (e.g. \"Speed\", \"Direction\"), BlendParameterY (for 2D trees, null for 1D), BlendType (1D|2DSimpleDirectional|2DFreeformDirectional|2DFreeformCartesian), Children [{AnimationDescriptorId, Threshold, ThresholdY, TimeScale}]}), Tags. Map gameplay states to animation descriptors with crossfade durations for smooth transitions. Use BlendTrees for locomotion blending — a 1D tree blends idle/walk/run by speed, a 2D tree adds directional strafing. Each BlendTreeChild positions an animation on the blend axis via Threshold.",
             "ui" => "UIDescriptor JSON with fields: Id, Name, CanvasMode (overlay|camera|worldspace), Elements (list of {Type (text|button|image|panel|slider|input), Name, Position (Vector3), Size (Vector2 with X,Y), Properties}).",
             _ => ""
         };

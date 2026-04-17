@@ -170,12 +170,26 @@ public class AssetDescriptorTests
         audio.Id.Should().BeEmpty();
         audio.Name.Should().BeEmpty();
         audio.Category.Should().Be("sfx");
+        audio.SubCategory.Should().BeEmpty();
         audio.Volume.Should().Be(1.0);
         audio.Pitch.Should().Be(1.0);
-        audio.SpatialBlend.Should().Be(0);
-        audio.MinDistance.Should().Be(1.0);
-        audio.MaxDistance.Should().Be(500.0);
+        audio.PitchVariance.Should().Be(0.0);
         audio.Loop.Should().BeFalse();
+        audio.FadeInSeconds.Should().Be(0);
+        audio.FadeOutSeconds.Should().Be(0);
+        audio.Priority.Should().Be(128);
+        audio.SpatialBlend.Should().Be(1.0);
+        audio.MinDistance.Should().Be(1.0);
+        audio.MaxDistance.Should().Be(50.0);
+        audio.RolloffMode.Should().Be("logarithmic");
+        audio.DopplerLevel.Should().Be(1.0);
+        audio.Spread.Should().Be(0.0);
+        audio.MixerGroup.Should().Be("Master");
+        audio.DuckingVolume.Should().Be(1.0);
+        audio.BypassEffects.Should().BeFalse();
+        audio.BypassReverb.Should().BeFalse();
+        audio.Variations.Should().BeEmpty();
+        audio.Tags.Should().BeEmpty();
     }
 
     [Fact]

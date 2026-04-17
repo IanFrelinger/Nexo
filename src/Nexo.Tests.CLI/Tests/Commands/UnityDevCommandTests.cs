@@ -527,7 +527,7 @@ public class Bar { }";
     [Fact(Timeout = 15000)]
     public void BuildAssetPrompt_AllTypesProduceSchemaHints()
     {
-        var types = new[] { "material", "prefab", "scene", "audio", "ui" };
+        var types = new[] { "material", "prefab", "scene", "audio", "animation", "soundbank", "animationset", "ui" };
         foreach (var type in types)
         {
             var prompt = UnityDevCommand.BuildAssetPrompt(type, "test");
@@ -555,6 +555,52 @@ public class Bar { }";
     {
         UnityDevCommand.Truncate("", 10).Should().Be("");
         UnityDevCommand.Truncate(null!, 10).Should().BeNull();
+    }
+
+    [Fact(Timeout = 15000)]
+    public void BuildAssetPrompt_Animation_ContainsSchemaHints()
+    {
+        var prompt = UnityDevCommand.BuildAssetPrompt("animation", "FPS character animator");
+        prompt.Should().Contain("AnimationDescriptor");
+        prompt.Should().Contain("state machine");
+        prompt.Should().Contain("Transitions");
+        prompt.Should().Contain("Layers");
+        prompt.Should().Contain("AvatarMask");
+        prompt.Should().Contain("AnimationEvents");
+    }
+
+    [Fact(Timeout = 15000)]
+    public void BuildAssetPrompt_SoundBank_ContainsSchemaHints()
+    {
+        var prompt = UnityDevCommand.BuildAssetPrompt("soundbank", "weapon sounds");
+        prompt.Should().Contain("SoundBankDescriptor");
+        prompt.Should().Contain("SelectionMode");
+        prompt.Should().Contain("CooldownSeconds");
+        prompt.Should().Contain("MaxConcurrent");
+        prompt.Should().Contain("AudioDescriptorIds");
+    }
+
+    [Fact(Timeout = 15000)]
+    public void BuildAssetPrompt_AnimationSet_ContainsSchemaHints()
+    {
+        var prompt = UnityDevCommand.BuildAssetPrompt("animationset", "FPS character locomotion");
+        prompt.Should().Contain("AnimationSetDescriptor");
+        prompt.Should().Contain("BlendTree");
+        prompt.Should().Contain("CrossfadeDuration");
+        prompt.Should().Contain("GameplayState");
+        prompt.Should().Contain("Threshold");
+    }
+
+    [Fact(Timeout = 15000)]
+    public void Animation_SoundBank_AnimationSet_AreValidAssetTypes()
+    {
+        var prompt1 = UnityDevCommand.BuildAssetPrompt("animation", "test");
+        var prompt2 = UnityDevCommand.BuildAssetPrompt("soundbank", "test");
+        var prompt3 = UnityDevCommand.BuildAssetPrompt("animationset", "test");
+
+        prompt1.Should().Contain("AnimationDescriptor");
+        prompt2.Should().Contain("SoundBankDescriptor");
+        prompt3.Should().Contain("AnimationSetDescriptor");
     }
 
     [Fact(Timeout = 15000)]
@@ -588,10 +634,18 @@ public class Bar { }";
             Id = "explosion",
             Name = "Explosion SFX",
             Category = "sfx",
+            SubCategory = "explosion",
             Volume = 0.8,
             Pitch = 0.9,
+            PitchVariance = 0.1,
             SpatialBlend = 1.0,
-            Loop = false
+            Loop = false,
+            MixerGroup = "SFX",
+            Variations = new[]
+            {
+                new Nexo.GameDomain.Assets.AudioVariation { VariantId = "v1", PitchOffset = 0.05, ClipSuffix = "_01" }
+            },
+            Tags = new[] { "combat", "explosion" }
         };
 
         var opts = new JsonSerializerOptions(JsonSerializerDefaults.Web) { PropertyNameCaseInsensitive = true };
@@ -600,6 +654,11 @@ public class Bar { }";
 
         restored.Should().NotBeNull();
         restored!.Id.Should().Be("explosion");
+        restored.SubCategory.Should().Be("explosion");
         restored.SpatialBlend.Should().Be(1.0);
+        restored.MixerGroup.Should().Be("SFX");
+        restored.Variations.Should().HaveCount(1);
+        restored.Variations[0].VariantId.Should().Be("v1");
+        restored.Tags.Should().HaveCount(2);
     }
 }
