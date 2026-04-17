@@ -1,6 +1,7 @@
 using System.Text.Json;
 using FluentAssertions;
 using Nexo.CLI.Commands;
+using Nexo.GameDomain.Assets;
 using Xunit;
 
 namespace Nexo.Tests.CLI.Tests.Commands;
@@ -281,6 +282,9 @@ public class Bar { }";
         subNames.Should().Contain("generate");
         subNames.Should().Contain("iterate");
         subNames.Should().Contain("list");
+        subNames.Should().Contain("assets");
+        subNames.Should().Contain("qa");
+        subNames.Should().Contain("fullstack");
     }
 
     [Fact(Timeout = 15000)]
@@ -462,5 +466,140 @@ public class Bar { }";
         {
             if (Directory.Exists(tempDir)) Directory.Delete(tempDir, true);
         }
+    }
+
+    [Fact(Timeout = 15000)]
+    public void Assets_Subcommand_HasExpectedOptions()
+    {
+        var cmd = new UnityDevCommand(() => null!);
+        var assets = cmd.Subcommands.Single(s => s.Name == "assets");
+        var optNames = assets.Options.Select(o => o.Name).ToList();
+        optNames.Should().Contain("project-root");
+        optNames.Should().Contain("type");
+        optNames.Should().Contain("description");
+        optNames.Should().Contain("format-json");
+    }
+
+    [Fact(Timeout = 15000)]
+    public void Qa_Subcommand_HasExpectedOptions()
+    {
+        var cmd = new UnityDevCommand(() => null!);
+        var qa = cmd.Subcommands.Single(s => s.Name == "qa");
+        var optNames = qa.Options.Select(o => o.Name).ToList();
+        optNames.Should().Contain("project-root");
+        optNames.Should().Contain("max-iterations");
+        optNames.Should().Contain("format-json");
+        optNames.Should().Contain("unity-path");
+    }
+
+    [Fact(Timeout = 15000)]
+    public void Fullstack_Subcommand_Exists()
+    {
+        var cmd = new UnityDevCommand(() => null!);
+        var fullstack = cmd.Subcommands.SingleOrDefault(s => s.Name == "fullstack");
+        fullstack.Should().NotBeNull();
+
+        var optNames = fullstack!.Options.Select(o => o.Name).ToList();
+        optNames.Should().Contain("project-root");
+        optNames.Should().Contain("game-description");
+        optNames.Should().Contain("format-json");
+    }
+
+    [Fact(Timeout = 15000)]
+    public void FindUnityEditor_ReturnsNullWhenNotInstalled()
+    {
+        var result = UnityDevCommand.FindUnityEditor();
+        // On CI/test machines without Unity, this should return null (or a valid path if installed)
+        // We just verify it doesn't throw
+        (result == null || File.Exists(result)).Should().BeTrue();
+    }
+
+    [Fact(Timeout = 15000)]
+    public void BuildAssetPrompt_ContainsAssetTypeAndDescription()
+    {
+        var prompt = UnityDevCommand.BuildAssetPrompt("material", "shiny gold material");
+        prompt.Should().Contain("material");
+        prompt.Should().Contain("shiny gold material");
+        prompt.Should().Contain("MaterialDescriptor");
+        prompt.Should().Contain("// FILE:");
+    }
+
+    [Fact(Timeout = 15000)]
+    public void BuildAssetPrompt_AllTypesProduceSchemaHints()
+    {
+        var types = new[] { "material", "prefab", "scene", "audio", "ui" };
+        foreach (var type in types)
+        {
+            var prompt = UnityDevCommand.BuildAssetPrompt(type, "test");
+            prompt.Should().Contain("Descriptor", $"type '{type}' should reference a descriptor schema");
+        }
+    }
+
+    [Fact(Timeout = 15000)]
+    public void Truncate_ShortText_ReturnsUnchanged()
+    {
+        UnityDevCommand.Truncate("hello", 100).Should().Be("hello");
+    }
+
+    [Fact(Timeout = 15000)]
+    public void Truncate_LongText_IsTruncated()
+    {
+        var long_text = new string('x', 200);
+        var result = UnityDevCommand.Truncate(long_text, 50);
+        result.Should().HaveLength(50 + "\n... (truncated)".Length);
+        result.Should().EndWith("(truncated)");
+    }
+
+    [Fact(Timeout = 15000)]
+    public void Truncate_NullOrEmpty_ReturnsInput()
+    {
+        UnityDevCommand.Truncate("", 10).Should().Be("");
+        UnityDevCommand.Truncate(null!, 10).Should().BeNull();
+    }
+
+    [Fact(Timeout = 15000)]
+    public void AssetDescriptor_JsonRoundTrip_Material()
+    {
+        var original = new Nexo.GameDomain.Assets.MaterialDescriptor
+        {
+            Id = "mat-1",
+            Name = "Test Mat",
+            ShaderName = "Standard",
+            Color = "#FF0000",
+            Metallic = 0.5,
+            Smoothness = 0.7,
+            RenderMode = "Transparent"
+        };
+
+        var opts = new JsonSerializerOptions(JsonSerializerDefaults.Web) { PropertyNameCaseInsensitive = true };
+        var json = JsonSerializer.Serialize(original, opts);
+        var restored = JsonSerializer.Deserialize<Nexo.GameDomain.Assets.MaterialDescriptor>(json, opts);
+
+        restored.Should().NotBeNull();
+        restored!.Id.Should().Be("mat-1");
+        restored.RenderMode.Should().Be("Transparent");
+    }
+
+    [Fact(Timeout = 15000)]
+    public void AssetDescriptor_JsonRoundTrip_Audio()
+    {
+        var original = new Nexo.GameDomain.Assets.AudioDescriptor
+        {
+            Id = "explosion",
+            Name = "Explosion SFX",
+            Category = "sfx",
+            Volume = 0.8,
+            Pitch = 0.9,
+            SpatialBlend = 1.0,
+            Loop = false
+        };
+
+        var opts = new JsonSerializerOptions(JsonSerializerDefaults.Web) { PropertyNameCaseInsensitive = true };
+        var json = JsonSerializer.Serialize(original, opts);
+        var restored = JsonSerializer.Deserialize<Nexo.GameDomain.Assets.AudioDescriptor>(json, opts);
+
+        restored.Should().NotBeNull();
+        restored!.Id.Should().Be("explosion");
+        restored.SpatialBlend.Should().Be(1.0);
     }
 }
