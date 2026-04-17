@@ -203,18 +203,21 @@ Rules:
             return 1;
         }
 
-        var files = ParseFiles(result.Summary);
-        var writtenFiles = new List<string>();
+        // The runner writes files directly via repo.fs.write tool calls.
+        // Discover what was created by scanning the output directory.
+        Directory.CreateDirectory(fullOutputDir);
+        var writtenFiles = Directory.Exists(fullOutputDir)
+            ? Directory.GetFiles(fullOutputDir, "*.cs", SearchOption.AllDirectories)
+                .Select(f => Path.GetRelativePath(fullProjectRoot, f).Replace('\\', '/'))
+                .ToList()
+            : new List<string>();
 
-        foreach (var (relativePath, content) in files)
+        // Also check test directory
+        if (Directory.Exists(fullTestDir))
         {
-            var fullPath = Path.Combine(fullProjectRoot, relativePath);
-            var dir = Path.GetDirectoryName(fullPath);
-            if (!string.IsNullOrEmpty(dir))
-                Directory.CreateDirectory(dir);
-
-            await File.WriteAllTextAsync(fullPath, content, ct).ConfigureAwait(false);
-            writtenFiles.Add(relativePath);
+            writtenFiles.AddRange(
+                Directory.GetFiles(fullTestDir, "*.cs", SearchOption.AllDirectories)
+                    .Select(f => Path.GetRelativePath(fullProjectRoot, f).Replace('\\', '/')));
         }
 
         WriteManifest(fullOutputDir, systemDescription, writtenFiles);
@@ -274,19 +277,11 @@ Rules:
             return 1;
         }
 
-        var files = ParseFiles(result.Summary);
-        var writtenFiles = new List<string>();
-
-        foreach (var (relativePath, content) in files)
-        {
-            var fullPath = Path.Combine(fullProjectRoot, relativePath);
-            var dir = Path.GetDirectoryName(fullPath);
-            if (!string.IsNullOrEmpty(dir))
-                Directory.CreateDirectory(dir);
-
-            await File.WriteAllTextAsync(fullPath, content, ct).ConfigureAwait(false);
-            writtenFiles.Add(relativePath);
-        }
+        // The runner writes files directly via repo.fs.write tool calls.
+        // Discover what was modified by rescanning the system directory.
+        var writtenFiles = Directory.GetFiles(fullSystemDir, "*.cs", SearchOption.AllDirectories)
+            .Select(f => Path.GetRelativePath(fullProjectRoot, f).Replace('\\', '/'))
+            .ToList();
 
         WriteManifest(fullSystemDir, changeDescription, writtenFiles);
 
