@@ -1,5 +1,8 @@
 using System.CommandLine;
 using System.Text.Json;
+using Nexo.BackgroundAgents.Forge;
+using Nexo.BackgroundAgents.Objectives;
+using Nexo.BackgroundAgents.RuntimeStudio;
 using Nexo.Core.Application.Paths;
 using Nexo.CLI.Runtime;
 
@@ -56,8 +59,54 @@ public sealed class RuntimeStudioCommand : Command
             jsonOpt,
             agentSetOpt);
 
+        var metricsCmd = new Command(
+            "metrics",
+            "Print runtime-studio backlog metrics (aligned with GET /api/runtime-studio/metrics).");
+        metricsCmd.AddOption(jsonOpt);
+        metricsCmd.SetHandler(
+            (bool json) => { Environment.Exit(ExecuteMetrics(json)); },
+            jsonOpt);
+
         AddCommand(applyTuneCmd);
         AddCommand(statusCmd);
+        AddCommand(metricsCmd);
+    }
+
+    private static int ExecuteMetrics(bool formatJson)
+    {
+        var repoRoot = RepoPathResolver.FindRepoRoot();
+        var paths = RuntimeStudioPathResolver.Resolve(repoRoot);
+        var objectives = new ObjectiveStore(paths.ObjectivesRoot);
+        var proposals = new ChangeProposalStore(paths.ForgeRoot);
+        var disk = RuntimeStudioMetricsCollector.Collect(objectives, proposals, paths.ObservationsPath);
+
+        if (formatJson)
+        {
+            Console.WriteLine(JsonSerializer.Serialize(new
+            {
+                ok = true,
+                objectivesRoot = objectives.Location,
+                forgeRoot = proposals.Location,
+                observationsPath = paths.ObservationsPath,
+                objectivesByStatus = disk.ObjectivesByStatus,
+                objectiveSla = disk.ObjectiveSla,
+                proposalsByStatus = disk.ProposalsByStatus,
+                observationsFileBytes = disk.ObservationsFileBytes
+            }, new JsonSerializerOptions { WriteIndented = true }));
+            return 0;
+        }
+
+        Console.WriteLine($"Objectives root:    {objectives.Location}");
+        Console.WriteLine($"Forge root:         {proposals.Location}");
+        Console.WriteLine($"Observations path: {paths.ObservationsPath}");
+        Console.WriteLine();
+        Console.WriteLine($"Pending: {disk.ObjectiveSla.PendingCount}  InProgress: {disk.ObjectiveSla.InProgressCount}  Blocked: {disk.ObjectiveSla.BlockedCount}");
+        if (disk.ObjectiveSla.OldestPendingAgeHours is { } oph)
+            Console.WriteLine($"Oldest pending age (h): {oph:F1}");
+        if (disk.ObjectiveSla.OldestInProgressAgeHours is { } oih)
+            Console.WriteLine($"Oldest in-progress age (h): {oih:F1}");
+        Console.WriteLine($"Observations file bytes: {disk.ObservationsFileBytes?.ToString() ?? "(missing)"}");
+        return 0;
     }
 
     private static string ResolveAgentSetPath(string repoRoot, string agentSetRelativeOrAbsolute)

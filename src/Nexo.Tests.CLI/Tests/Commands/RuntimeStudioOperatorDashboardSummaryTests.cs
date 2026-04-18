@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Nexo.BackgroundAgents.Forge;
 using Nexo.CLI.Commands.BackgroundAgent;
 using Xunit;
 
@@ -29,8 +30,14 @@ public sealed class RuntimeStudioOperatorDashboardSummaryTests : IDisposable
         File.WriteAllText(Path.Combine(objRoot, "in_progress", "b.md"), "id: b\ntitle: t\n");
 
         var forgeRoot = Path.Combine(_root, "forge");
-        Directory.CreateDirectory(Path.Combine(forgeRoot, "proposed"));
-        File.WriteAllText(Path.Combine(forgeRoot, "proposed", "x.json"), "{}");
+        var forgeStore = new ChangeProposalStore(forgeRoot);
+        forgeStore.Add(new ChangeProposal
+        {
+            Id = "x",
+            TargetPath = "src/X.cs",
+            NewContent = "//",
+            Summary = "s"
+        });
 
         var obsPath = Path.Combine(_root, "obs.jsonl");
         File.WriteAllText(obsPath, "{\"k\":1}\n");
@@ -46,5 +53,7 @@ public sealed class RuntimeStudioOperatorDashboardSummaryTests : IDisposable
         json.Should().Contain("\"Proposed\": 1");
         json.Should().Contain("Passive");
         json.Should().Contain("\"observationsTail\"");
+        json.Should().Contain("\"metrics\"");
+        json.Should().Contain("\"ObservationsFileBytes\"");
     }
 }

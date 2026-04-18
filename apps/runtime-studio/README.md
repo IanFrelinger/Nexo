@@ -145,3 +145,11 @@ Contributing note: avoid parallel full `dotnet build` on one clone (see `CONTRIB
 | **Dashboard auth + TLS notes** | `nexo background-agent dashboard --auth-token …` or `NEXO_DASHBOARD_AUTH_TOKEN`; `?token=` / `Authorization: Bearer`; reverse-proxy snippets in **[OPERATOR.md](./OPERATOR.md)**. |
 | **Play Internal testing** | **[PLAY_INTERNAL.md](./PLAY_INTERNAL.md)** — internal track checklist, CI artifact handoff, service-account automation pointers. |
 
+## Phase 5 (shipped)
+
+| Track | Status |
+|--------|--------|
+| **Shared metrics core** | `Nexo.BackgroundAgents.RuntimeStudio` — `RuntimeStudioPathResolver`, `RuntimeStudioMetricsCollector` (+ unit tests). API `GET /api/runtime-studio/metrics` and CLI/dashboard consume the same logic. |
+| **CLI parity** | `nexo runtime-studio metrics [--format-json]` — backlog counts, SLA ages, observation file size (paths from `NEXO_*` + repo root). |
+| **Dashboard JSON** | `background-agent dashboard` `/api/summary.json` includes a `metrics` object (`RuntimeStudioDiskMetrics`) alongside `observationsTail`. |
+

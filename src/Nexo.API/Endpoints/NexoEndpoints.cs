@@ -17,8 +17,8 @@ using Nexo.Abstractions;
 using Nexo.BackgroundAgents.Configuration;
 using Nexo.BackgroundAgents.Forge;
 using Nexo.BackgroundAgents.Objectives;
-using Nexo.BackgroundAgents.Observations;
 using Nexo.BackgroundAgents.Registry;
+using Nexo.BackgroundAgents.RuntimeStudio;
 using Nexo.Infrastructure.Testing.ExecutionPlatform;
 using Nexo.API.Security;
 using Nexo.Orchestration.Coordination;
@@ -756,56 +756,22 @@ public static class NexoEndpoints
         cancellationToken.ThrowIfCancellationRequested();
         await Task.CompletedTask;
 
-        var now = DateTimeOffset.UtcNow;
-        var allObjectives = objectives.List(null);
-        var objectivesByStatus = Enum.GetValues<ObjectiveStatus>()
-            .ToDictionary(s => s.ToString(), s => allObjectives.Count(o => o.Status == s), StringComparer.Ordinal);
-
-        var pending = allObjectives.Where(o => o.Status == ObjectiveStatus.Pending).ToList();
-        var inProgress = allObjectives.Where(o => o.Status == ObjectiveStatus.InProgress).ToList();
-        var blocked = allObjectives.Where(o => o.Status == ObjectiveStatus.Blocked).ToList();
-
-        double? oldestPendingAgeHours = pending.Count == 0
-            ? null
-            : pending.Select(o => (now - o.CreatedAt).TotalHours).Max();
-        double? oldestInProgressAgeHours = inProgress.Count == 0
-            ? null
-            : inProgress.Select(o => (now - o.UpdatedAt).TotalHours).Max();
-
-        var sla = new RuntimeStudioObjectiveSlaHints(
-            oldestPendingAgeHours,
-            oldestInProgressAgeHours,
-            pending.Count,
-            inProgress.Count,
-            blocked.Count);
-
-        var allProposals = proposals.List(null);
-        var proposalsByStatus = Enum.GetValues<ChangeProposalStatus>()
-            .ToDictionary(s => s.ToString(), s => allProposals.Count(p => p.Status == s), StringComparer.Ordinal);
-
-        var obsOverride = Environment.GetEnvironmentVariable("NEXO_OBSERVATIONS_PATH");
-        var obsPath = string.IsNullOrWhiteSpace(obsOverride)
-            ? Path.GetFullPath(Path.Combine(host.ContentRootPath, JsonlObservationStore.DefaultRelativePath))
-            : Path.GetFullPath(obsOverride.Trim());
-        long? obsBytes = null;
-        try
-        {
-            if (File.Exists(obsPath))
-                obsBytes = new FileInfo(obsPath).Length;
-        }
-        catch
-        {
-            /* best-effort */
-        }
+        var resolved = RuntimeStudioPathResolver.Resolve(host.ContentRootPath);
+        var disk = RuntimeStudioMetricsCollector.Collect(objectives, proposals, resolved.ObservationsPath);
 
         return Results.Ok(new RuntimeStudioMetricsResponse(
             objectives.Location,
             proposals.Location,
-            obsPath,
-            objectivesByStatus,
-            sla,
-            proposalsByStatus,
-            obsBytes));
+            resolved.ObservationsPath,
+            disk.ObjectivesByStatus,
+            new RuntimeStudioObjectiveSlaHints(
+                disk.ObjectiveSla.OldestPendingAgeHours,
+                disk.ObjectiveSla.OldestInProgressAgeHours,
+                disk.ObjectiveSla.PendingCount,
+                disk.ObjectiveSla.InProgressCount,
+                disk.ObjectiveSla.BlockedCount),
+            disk.ProposalsByStatus,
+            disk.ObservationsFileBytes));
     }
 
     private static async Task<IResult> GetTrustDashboardAsync(

@@ -16,6 +16,19 @@ From repo root, prefer:
 dotnet run --project src/Nexo.CLI -- background-agent <subcommand>
 ```
 
+**API metrics** (when Nexo.API is running, same shape as `runtime-studio metrics`):
+
+```bash
+curl -s http://localhost:5000/api/runtime-studio/metrics
+```
+
+**CLI metrics** (no API required; uses repo root + `NEXO_*`):
+
+```bash
+dotnet run --project src/Nexo.CLI -- runtime-studio metrics
+dotnet run --project src/Nexo.CLI -- runtime-studio metrics --format-json
+```
+
 ## Observations (structured log)
 
 ```bash
