@@ -335,4 +335,14 @@ public sealed class RuntimeStudioBlackBoxSmokeTests : E2ETestBase
         Assert.Contains("\"ok\": true", stdout, StringComparison.Ordinal);
         Assert.Contains("objectiveSla", stdout, StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact(Timeout = 120_000)]
+    public async Task Runtime_studio_doctor_format_json_exits_zero()
+    {
+        var (code, stdout, stderr) = await RunCliAsync("runtime-studio doctor --format-json", null, CliTimeout);
+        Assert.Equal(0, code);
+        Assert.Equal(string.Empty, stderr);
+        Assert.Contains("\"ok\": true", stdout, StringComparison.Ordinal);
+        Assert.Contains("agentSetPath", stdout, StringComparison.Ordinal);
+    }
 }

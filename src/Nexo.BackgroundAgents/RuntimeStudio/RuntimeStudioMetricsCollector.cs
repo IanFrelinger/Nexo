@@ -42,17 +42,30 @@ public static class RuntimeStudioMetricsCollector
             .ToDictionary(s => s.ToString(), s => allProposals.Count(p => p.Status == s), StringComparer.Ordinal);
 
         long? obsBytes = null;
+        int? obsTailLines = null;
+        DateTimeOffset? obsLastTs = null;
         try
         {
             if (File.Exists(observationsPath))
+            {
                 obsBytes = new FileInfo(observationsPath).Length;
+                var (tailLines, lastTs) = ObservationLogTailReader.ReadTail(observationsPath);
+                obsTailLines = tailLines;
+                obsLastTs = lastTs;
+            }
         }
         catch
         {
             /* best-effort */
         }
 
-        return new RuntimeStudioDiskMetrics(objectivesByStatus, sla, proposalsByStatus, obsBytes);
+        return new RuntimeStudioDiskMetrics(
+            objectivesByStatus,
+            sla,
+            proposalsByStatus,
+            obsBytes,
+            obsTailLines,
+            obsLastTs);
     }
 }
 
@@ -67,4 +80,6 @@ public sealed record RuntimeStudioDiskMetrics(
     IReadOnlyDictionary<string, int> ObjectivesByStatus,
     ObjectiveSlaSnapshot ObjectiveSla,
     IReadOnlyDictionary<string, int> ProposalsByStatus,
-    long? ObservationsFileBytes);
+    long? ObservationsFileBytes,
+    int? ObservationsTailLineCount,
+    DateTimeOffset? ObservationsLastTimestamp);

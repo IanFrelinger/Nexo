@@ -239,6 +239,9 @@ public sealed class OperatorDashboardBackgroundAgentCommand
       add('Blocked', by.Blocked ?? by.blocked ?? 0);
       add('Proposals (proposed)', pr.Proposed ?? pr.proposed ?? 0);
       add('Obs log (bytes)', obs === null || obs === undefined ? '—' : obs, '');
+      const lastTs = pick(m, 'observationsLastTimestamp', 'ObservationsLastTimestamp');
+      if (lastTs != null && lastTs !== undefined)
+        add('Last obs (UTC)', String(lastTs).slice(0, 24), '');
       const oph = pick(sla, 'oldestPendingAgeHours', 'OldestPendingAgeHours');
       const oih = pick(sla, 'oldestInProgressAgeHours', 'OldestInProgressAgeHours');
       if (oph != null) add('Oldest pending (h)', fmt(oph), '');

@@ -771,7 +771,9 @@ public static class NexoEndpoints
                 disk.ObjectiveSla.InProgressCount,
                 disk.ObjectiveSla.BlockedCount),
             disk.ProposalsByStatus,
-            disk.ObservationsFileBytes));
+            disk.ObservationsFileBytes,
+            disk.ObservationsTailLineCount,
+            disk.ObservationsLastTimestamp));
     }
 
     private static async Task<IResult> GetTrustDashboardAsync(
@@ -1097,7 +1099,9 @@ public sealed record RuntimeStudioMetricsResponse(
     IReadOnlyDictionary<string, int> ObjectivesByStatus,
     RuntimeStudioObjectiveSlaHints ObjectiveSla,
     IReadOnlyDictionary<string, int> ProposalsByStatus,
-    long? ObservationsFileBytes);
+    long? ObservationsFileBytes,
+    int? ObservationsTailLineCount,
+    DateTimeOffset? ObservationsLastTimestamp);
 
 /// <summary>Lightweight SLA-style hints derived from on-disk objective state.</summary>
 public sealed record RuntimeStudioObjectiveSlaHints(

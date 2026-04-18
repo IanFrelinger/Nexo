@@ -5,7 +5,9 @@ using Microsoft.Extensions.Hosting;
 using Nexo.API.Endpoints;
 using Nexo.BackgroundAgents.Forge;
 using Nexo.BackgroundAgents.Objectives;
+using Nexo.BackgroundAgents.Observations;
 using System.Reflection;
+using System.Text.Json;
 using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.API;
@@ -51,6 +53,10 @@ public sealed class RuntimeStudioMetricsEndpointTests : IDisposable
         });
 
         var host = new StubHostEnvironment { ContentRootPath = _root };
+        var defaultObs = Path.Combine(_root, JsonlObservationStore.DefaultRelativePath);
+        Directory.CreateDirectory(Path.GetDirectoryName(defaultObs)!);
+        var ts = new DateTimeOffset(2025, 2, 2, 12, 0, 0, TimeSpan.Zero);
+        File.WriteAllText(defaultObs, JsonSerializer.Serialize(new RuntimeObservation(ts, "api-test", ObservationKind.Build, "x")) + "\n");
 
         var method = typeof(NexoEndpoints).GetMethod(
             "GetRuntimeStudioMetricsAsync",
@@ -70,6 +76,8 @@ public sealed class RuntimeStudioMetricsEndpointTests : IDisposable
         dto.ProposalsByStatus.Should().ContainKey("Proposed");
         dto.ProposalsByStatus["Proposed"].Should().Be(1);
         dto.ObservationsPath.Should().Contain(_root);
+        dto.ObservationsTailLineCount.Should().Be(1);
+        dto.ObservationsLastTimestamp.Should().Be(ts);
     }
 
     private static T ExtractValue<T>(IResult result) where T : class

@@ -36,6 +36,16 @@ dotnet run --project src/Nexo.CLI -- runtime-studio status --with-metrics
 dotnet run --project src/Nexo.CLI -- runtime-studio status --format-json --with-metrics
 ```
 
+**Doctor** (CI / laptop sanity — exit 1 on hard failures):
+
+```bash
+dotnet run --project src/Nexo.CLI -- runtime-studio doctor
+dotnet run --project src/Nexo.CLI -- runtime-studio doctor --format-json
+dotnet run --project src/Nexo.CLI -- runtime-studio doctor --strict
+```
+
+`--strict` fails if `NEXO_OBJECTIVES_ROOT` / `NEXO_FORGE_ROOT` directories (after resolution) or the parent folder of the observations file does not exist yet.
+
 ## Observations (structured log)
 
 ```bash

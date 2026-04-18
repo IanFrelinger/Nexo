@@ -161,3 +161,11 @@ Contributing note: avoid parallel full `dotnet build` on one clone (see `CONTRIB
 | **Status + metrics** | `nexo runtime-studio status --with-metrics` (text block or JSON `runtimeStudioMetrics` when combined with `--format-json`). |
 | **Smoke** | `RuntimeStudioBlackBoxSmokeTests.Runtime_studio_metrics_format_json_exits_zero` — CLI metrics with isolated `NEXO_*` env. |
 
+## Phase 7 (shipped)
+
+| Track | Status |
+|--------|--------|
+| **Observation tail metrics** | `RuntimeStudioDiskMetrics` adds `ObservationsTailLineCount` (tail window) + `ObservationsLastTimestamp`; `ObservationLogTailReader` (+ tests). API, CLI, dashboard cards updated. |
+| **Runtime Studio doctor** | `nexo runtime-studio doctor [--format-json] [--strict]` — validates agent-set JSON (`BackgroundAgents.Agents`) and path layout; strict mode errors on missing objectives/forge dirs. |
+| **Smoke** | `Runtime_studio_doctor_format_json_exits_zero` — doctor against the real repo agent set. |
+

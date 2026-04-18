@@ -1,6 +1,8 @@
+using System.Text.Json;
 using FluentAssertions;
 using Nexo.BackgroundAgents.Forge;
 using Nexo.BackgroundAgents.Objectives;
+using Nexo.BackgroundAgents.Observations;
 using Nexo.BackgroundAgents.RuntimeStudio;
 using Xunit;
 
@@ -37,12 +39,16 @@ public sealed class RuntimeStudioMetricsCollectorTests : IDisposable
 
         var forge = new ChangeProposalStore(Path.Combine(_root, "forge"));
         var obsPath = Path.Combine(_root, "obs.jsonl");
-        File.WriteAllText(obsPath, "x");
+        var ts = new DateTimeOffset(2024, 3, 1, 8, 0, 0, TimeSpan.Zero);
+        var line = JsonSerializer.Serialize(new RuntimeObservation(ts, "unit", ObservationKind.Build, "ok"));
+        File.WriteAllText(obsPath, line + "\n");
 
         var disk = RuntimeStudioMetricsCollector.Collect(obj, forge, obsPath, nowUtc: now);
 
         disk.ObjectiveSla.PendingCount.Should().Be(1);
         disk.ObjectiveSla.OldestPendingAgeHours.Should().BeApproximately(5.0, 0.01);
-        disk.ObservationsFileBytes.Should().Be(1);
+        disk.ObservationsFileBytes.Should().BeGreaterThan(0);
+        disk.ObservationsTailLineCount.Should().Be(1);
+        disk.ObservationsLastTimestamp.Should().Be(ts);
     }
 }
