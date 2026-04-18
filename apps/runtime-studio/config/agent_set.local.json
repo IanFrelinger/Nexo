@@ -6,7 +6,7 @@
         "Name": "Runtime Studio Planner",
         "Role": "extender",
         "ModelProvider": "ollama",
-        "ModelName": "llama3.1:latest",
+        "ModelName": "qwen2.5:7b",
         "Commands": [
           "plan",
           "decompose",
