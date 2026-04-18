@@ -92,10 +92,11 @@ public sealed class CloudAvailabilityResolver : ICloudAvailabilityResolver
 
     private async Task<bool> ProbeCloudUnreachableAsync(CancellationToken ct)
     {
+        var ownsClient = _httpClient == null;
         var client = _httpClient ?? new HttpClient();
-        client.Timeout = TimeSpan.FromSeconds(3);
         try
         {
+            client.Timeout = TimeSpan.FromSeconds(3);
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
             cts.CancelAfter(TimeSpan.FromSeconds(3));
             var response = await client.GetAsync("https://api.openai.com/v1/models", HttpCompletionOption.ResponseHeadersRead, cts.Token);
@@ -105,6 +106,10 @@ public sealed class CloudAvailabilityResolver : ICloudAvailabilityResolver
         {
             _logger.LogDebug(ex, "Cloud probe failed; assuming air-gapped");
             return true; // Unreachable → air-gapped
+        }
+        finally
+        {
+            if (ownsClient) client.Dispose();
         }
     }
 }

@@ -17,6 +17,7 @@ namespace Nexo.Tests.Infrastructure.Tests.Hosting;
 /// configuration warnings-as-errors, and permissive defaults.
 /// </summary>
 [Trait("Category", "E2E")]
+[Collection("EnvironmentVariables")]
 public sealed class StrictModeE2ETests
 {
     [Fact(Timeout = TestTimeouts.E2E)]

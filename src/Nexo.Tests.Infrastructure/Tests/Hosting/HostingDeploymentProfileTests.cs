@@ -13,6 +13,7 @@ namespace Nexo.Tests.Infrastructure.Tests.Hosting;
 /// all deployment profiles and environment variable resolution paths.
 /// </summary>
 [Trait("Category", "E2E")]
+[Collection("EnvironmentVariables")]
 public sealed class HostingDeploymentProfileTests
 {
     [Theory(Timeout = TestTimeouts.E2E)]

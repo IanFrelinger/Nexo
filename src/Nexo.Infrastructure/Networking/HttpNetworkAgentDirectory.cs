@@ -40,7 +40,7 @@ public sealed class HttpNetworkAgentDirectory : INetworkAgentDirectory
                 var nodeId = new Uri(u).Host;
                 _peerUrlByNodeId[nodeId] = u;
             }
-            catch (UriFormatException) { /* skip */ }
+            catch (UriFormatException ex) { System.Diagnostics.Debug.WriteLine($"Skipping invalid peer URL: {ex.Message}"); }
         }
     }
 
