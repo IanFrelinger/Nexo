@@ -8,9 +8,9 @@ public class ApprovalBridgeTests
 {
     private static IReadOnlyList<ProposedFix> SampleFixes() => new[]
     {
-        new ProposedFix { FixNumber = 1, Description = "Fix collision", TargetFile = "Player.cs" },
-        new ProposedFix { FixNumber = 2, Description = "Fix animation", TargetFile = "Animator.cs" },
-        new ProposedFix { FixNumber = 3, Description = "Fix audio", TargetFile = "AudioManager.cs" }
+        new ProposedFix { FixNumber = 1, Description = "Fix collision", TargetSystem = "Player.cs" },
+        new ProposedFix { FixNumber = 2, Description = "Fix animation", TargetSystem = "Animator.cs" },
+        new ProposedFix { FixNumber = 3, Description = "Fix audio", TargetSystem = "AudioManager.cs" }
     };
 
     [Fact]

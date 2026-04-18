@@ -62,8 +62,8 @@ public class ForgeNotificationOrchestratorTests
         using var orchestrator = new ForgeNotificationOrchestrator(config, "/tmp");
         var fixes = new[]
         {
-            new ProposedFix { FixNumber = 1, Description = "Fix A", TargetFile = "A.cs" },
-            new ProposedFix { FixNumber = 2, Description = "Fix B", TargetFile = "B.cs" }
+            new ProposedFix { FixNumber = 1, Description = "Fix A", TargetSystem = "A.cs" },
+            new ProposedFix { FixNumber = 2, Description = "Fix B", TargetSystem = "B.cs" }
         };
 
         var result = await orchestrator.HandleApprovalAsync("msg-1", "✅", fixes);
@@ -81,7 +81,7 @@ public class ForgeNotificationOrchestratorTests
         using var orchestrator = new ForgeNotificationOrchestrator(config, "/tmp");
         var fixes = new[]
         {
-            new ProposedFix { FixNumber = 1, Description = "Fix A", TargetFile = "A.cs" }
+            new ProposedFix { FixNumber = 1, Description = "Fix A", TargetSystem = "A.cs" }
         };
 
         var result = await orchestrator.HandleApprovalAsync("msg-1", "❌", fixes);
@@ -98,7 +98,7 @@ public class ForgeNotificationOrchestratorTests
         using var orchestrator = new ForgeNotificationOrchestrator(config, "/tmp");
         var fixes = new[]
         {
-            new ProposedFix { FixNumber = 1, Description = "Fix A", TargetFile = "A.cs" }
+            new ProposedFix { FixNumber = 1, Description = "Fix A", TargetSystem = "A.cs" }
         };
 
         var result = await orchestrator.HandleApprovalAsync("msg-1", "🤷", fixes);
@@ -121,8 +121,8 @@ public class ForgeNotificationOrchestratorTests
         using var orchestrator = new ForgeNotificationOrchestrator(config, "/tmp");
         var fixes = new[]
         {
-            new ProposedFix { FixNumber = 1, Description = "Fix A", TargetFile = "A.cs" },
-            new ProposedFix { FixNumber = 2, Description = "Fix B", TargetFile = "B.cs" }
+            new ProposedFix { FixNumber = 1, Description = "Fix A", TargetSystem = "A.cs" },
+            new ProposedFix { FixNumber = 2, Description = "Fix B", TargetSystem = "B.cs" }
         };
 
         var result = await orchestrator.HandleApprovalAsync("msg-1", "2️⃣", fixes);
