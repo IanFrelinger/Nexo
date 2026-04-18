@@ -42,8 +42,6 @@
         "Name": "Runtime Studio Optimizer Worker",
         "Role": "optimizer",
         "ParentId": "runtime-planner",
-        "ModelProvider": "ollama",
-        "ModelName": "llama3.1:latest",
         "Commands": [
           "analyze",
           "suggest"
@@ -75,7 +73,6 @@
         "Name": "Runtime Studio Tester Worker",
         "Role": "tester",
         "ParentId": "runtime-planner",
-        "ModelProvider": "deterministic",
         "Commands": [
           "test"
         ],

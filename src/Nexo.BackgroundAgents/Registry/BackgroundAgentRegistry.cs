@@ -196,8 +196,36 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
         };
 
         _agents[config.Id] = instance;
+        WarnIfModelConfigUnused(config);
         _logger?.LogInformation("Registered background agent: {AgentId}", config.Id);
         return Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Roles that consume a real LLM via the self-extend path. Anything else with
+    /// <c>ModelProvider</c> set to a non-deterministic backend is almost certainly
+    /// dead config left over from copy/paste — log a warning so it gets cleaned up
+    /// instead of silently misleading operators into thinking the role uses the LLM.
+    /// </summary>
+    private static readonly HashSet<string> LlmConsumingRoles = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "extender"
+    };
+
+    private void WarnIfModelConfigUnused(BackgroundAgentConfig config)
+    {
+        if (LlmConsumingRoles.Contains(config.Role))
+            return;
+        var hasProvider = !string.IsNullOrWhiteSpace(config.ModelProvider) &&
+                          !string.Equals(config.ModelProvider, "deterministic", StringComparison.OrdinalIgnoreCase);
+        var hasName = !string.IsNullOrWhiteSpace(config.ModelName);
+        if (!hasProvider && !hasName)
+            return;
+        _logger?.LogWarning(
+            "Background agent {AgentId} has role '{Role}' which does not consume an LLM, " +
+            "but ModelProvider='{Provider}'/ModelName='{Name}' is configured and will be IGNORED. " +
+            "Drop these fields from the agent's config to avoid confusion.",
+            config.Id, config.Role, config.ModelProvider, config.ModelName ?? "<null>");
     }
 
     /// <summary>
