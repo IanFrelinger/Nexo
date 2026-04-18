@@ -129,5 +129,11 @@ Common changes:
 
 Contributing note: avoid parallel full `dotnet build` on one clone (see `CONTRIBUTING.md` — `*.deps.json` locks).
 
-**Optional next (Phase 3 ideas):** objective-claim cycle inside a timed daemon E2E; Android signing / store pipelines; operator dashboard.
+## Phase 3 (in progress)
+
+| Track | Status |
+|--------|--------|
+| **Objective claim in daemon (E2E)** | Black-box: `RuntimeStudioBlackBoxSmokeTests.Daemon_extender_claims_objective_from_store_increments_attempts` — timed extender with no pinned `Objective`, deterministic model, asserts backlog `Attempts` after release-on-no-action. |
+| **Android signing / store** | Not started (compile gate only today). |
+| **Operator dashboard** | Not started (CLI + `OPERATOR.md` today). |
 

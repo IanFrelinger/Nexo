@@ -38,6 +38,8 @@ dotnet run --project src/Nexo.CLI -- background-agent objectives report --format
 dotnet run --project src/Nexo.CLI -- background-agent objectives report --id my-id --format-json
 ```
 
+**Backlog-driven extender:** In `agent_set` JSON, an `extender` agent with **`RepoRoot`** but **no `Objective` / `Goal` parameter** (or omit those keys) will call `ClaimNext` each self-extend cycle and pull the highest-priority pending item into the run. If you leave a non-empty `Objective` string, that static goal is used instead and the store is not consulted for that field.
+
 ## Proposals (forge queue)
 
 ```bash

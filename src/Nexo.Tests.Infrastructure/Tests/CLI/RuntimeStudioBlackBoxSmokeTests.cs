@@ -252,4 +252,76 @@ public sealed class RuntimeStudioBlackBoxSmokeTests : E2ETestBase
         Assert.Contains(id, showOut, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("src/Seeded.cs", showOut, StringComparison.OrdinalIgnoreCase);
     }
+
+    /// <summary>
+    /// Phase 3: extender with no pinned <c>Objective</c> parameter claims the next pending
+    /// backlog item during a timed daemon run, executes one self-extend cycle, then releases
+    /// it back to pending with <c>Attempts</c> incremented (see <c>SelfExtendRunnerAdapter</c>).
+    /// </summary>
+    [Fact(Timeout = 300_000)]
+    public async Task Daemon_extender_claims_objective_from_store_increments_attempts()
+    {
+        var root = Path.Combine(TempDir, "studio-daemon-claim");
+        Directory.CreateDirectory(root);
+        var sandboxRepo = Path.Combine(root, "sandbox-repo");
+        Directory.CreateDirectory(sandboxRepo);
+
+        var envRoot = Path.Combine(root, "studio");
+        var env = StudioEnv(envRoot);
+        var id = "claim-" + Guid.NewGuid().ToString("N")[..8];
+
+        var (addCode, _, addErr) = await RunCliAsync(
+            $"background-agent objectives add --id {id} --title \"Daemon claim smoke\" --body \"black-box\" --priority 1",
+            env,
+            CliTimeout);
+        Assert.Equal(0, addCode);
+        Assert.Equal(string.Empty, addErr);
+
+        var cfgPath = Path.Combine(root, "daemon-claim.json");
+        var cfgPayload = new
+        {
+            BackgroundAgents = new
+            {
+                Agents = new[]
+                {
+                    new
+                    {
+                        Id = "claim-smoke",
+                        Name = "Objective Claim Smoke",
+                        Role = "extender",
+                        ModelProvider = "deterministic",
+                        Commands = new[] { "self_extend" },
+                        Parameters = new Dictionary<string, string>
+                        {
+                            ["RepoRoot"] = sandboxRepo,
+                            ["AgentName"] = "claim-smoke-owner"
+                        },
+                        Schedule = new
+                        {
+                            Type = "Interval",
+                            Interval = "01:00:00",
+                            InitialDelay = "00:00:02"
+                        },
+                        Enabled = true,
+                        MaxDataSensitivity = "Public"
+                    }
+                }
+            }
+        };
+        await File.WriteAllTextAsync(cfgPath, JsonSerializer.Serialize(cfgPayload, new JsonSerializerOptions { WriteIndented = true }));
+
+        var merged = new Dictionary<string, string?>(env) { ["NEXO_ALLOW_MOCK"] = "1" };
+        var (daemonCode, _, daemonErr) = await RunCliAsync(
+            $"background-agent daemon --config \"{cfgPath}\" --duration 20s --disable-observation",
+            merged,
+            TimeSpan.FromSeconds(120));
+        Assert.Equal(0, daemonCode);
+        Assert.Equal(string.Empty, daemonErr);
+
+        var (showCode, showOut, showErr) = await RunCliAsync($"background-agent objectives show {id}", env, CliTimeout);
+        Assert.Equal(0, showCode);
+        Assert.Equal(string.Empty, showErr);
+        Assert.Contains("Pending", showOut, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Attempts:   1", showOut, StringComparison.Ordinal);
+    }
 }
