@@ -99,7 +99,13 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
             var summary = $"{cycle.ToolCallsExecuted} tool call(s) executed, {cycle.ToolCallsDenied} denied " +
                           $"(iter={cycle.Iterations}, stopped={cycle.StoppedReason}).";
             _logger.LogInformation("Self-extend cycle ({Agent}): {Summary}", resolvedAgentName, summary);
-            return new SelfExtendRunResult(cycle.ToolCallsDenied == 0, cycle.ToolCallsExecuted, cycle.ToolCallsDenied, summary);
+            return new SelfExtendRunResult(
+                cycle.ToolCallsDenied == 0,
+                cycle.ToolCallsExecuted,
+                cycle.ToolCallsDenied,
+                summary,
+                cycle.Iterations,
+                cycle.StoppedReason);
         }
         catch (Exception ex)
         {

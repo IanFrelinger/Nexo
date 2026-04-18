@@ -33,10 +33,14 @@ public sealed class ToolCallingAgent : IAgent
     public const int DefaultMaxIterations = 5;
 
     /// <summary>
-    /// Default per-cycle wall-clock deadline. Sized comfortably above an Ollama llama3.1
-    /// generation on GPU (~10–20s) but well under the agent scheduler interval.
+    /// Default per-cycle wall-clock deadline. Sized for a multi-turn ReAct loop on local
+    /// hardware: a cold Ollama load can eat 30–60s on first request, then each turn adds
+    /// 10–30s for an 8B model on GPU, so 5 minutes leaves enough headroom for a full
+    /// list → read → write → reflect cycle without bumping into the scheduler interval.
+    /// Override per-agent via the <c>perCycleDeadline</c> constructor arg if you have
+    /// stricter timing requirements.
     /// </summary>
-    public static readonly TimeSpan DefaultPerCycleDeadline = TimeSpan.FromSeconds(90);
+    public static readonly TimeSpan DefaultPerCycleDeadline = TimeSpan.FromMinutes(5);
 
     /// <summary>
     /// Cap on serialized tool-result payload appended back into the conversation.

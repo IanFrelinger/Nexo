@@ -379,6 +379,25 @@ static class Program
             metricsBgIdOpt, jsonOpt);
         backgroundAgentCmd.AddCommand(metricsBgCmd);
 
+        // nexo background-agent stats
+        var statsAgentOpt = new Option<string?>("--agent", () => null, "Filter to a specific agent id");
+        var statsRoleOpt = new Option<string?>("--role", () => null, "Filter to a specific role (planner, optimizer, tester, extender, ...)");
+        var statsSinceOpt = new Option<double?>("--since-hours", () => null, "Only events newer than now-N hours");
+        var statsBgCmd = new Command("stats", "Aggregate the cycle event log (cycles.jsonl) into per-agent throughput / denial / error stats")
+        {
+            statsAgentOpt,
+            statsRoleOpt,
+            statsSinceOpt
+        };
+        statsBgCmd.SetHandler(
+            async (string? agent, string? role, double? since, bool formatJson) =>
+            {
+                var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.StatsBackgroundAgentCommand>();
+                Environment.Exit(await cmd.ExecuteAsync(agent, role, since, formatJson));
+            },
+            statsAgentOpt, statsRoleOpt, statsSinceOpt, jsonOpt);
+        backgroundAgentCmd.AddCommand(statsBgCmd);
+
         // nexo background-agent mode
         var modeCmd = new Command("mode", "Get or set aggressiveness mode (passive, semi-active, active, ambient)");
         var modeGetCmd = new Command("get", "Get current mode");
@@ -1165,8 +1184,6 @@ static class Program
         root.AddCommand(new ChatCommand(() => ServiceProvider.GetRequiredService<OrchestrateCommand>()));
         root.AddCommand(new SelfExtendCommand(
             () => ServiceProvider.GetRequiredService<Nexo.BackgroundAgents.HostRunners.SelfExtendRunnerAdapter>()));
-        root.AddCommand(new UnityDevCommand(
-            () => ServiceProvider.GetRequiredService<Nexo.BackgroundAgents.HostRunners.SelfExtendRunnerAdapter>()));
         root.AddCommand(new ObserveCommand());
         root.AddCommand(new AdaptCommand());
         root.AddCommand(new ImproveCommand());
@@ -1224,6 +1241,7 @@ static class Program
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.ExecuteBackgroundAgentCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.LogsBackgroundAgentCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.MetricsBackgroundAgentCommand>();
+        services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.StatsBackgroundAgentCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.ModeBackgroundAgentCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.SensitivityCommand>();
         services.AddScoped<TrustCommand>();

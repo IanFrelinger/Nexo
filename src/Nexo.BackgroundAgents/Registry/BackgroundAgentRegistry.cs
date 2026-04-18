@@ -6,6 +6,7 @@ using Nexo.BackgroundAgents.Extending;
 using Nexo.BackgroundAgents.Logging;
 using Nexo.BackgroundAgents.Optimization;
 using Nexo.BackgroundAgents.Scheduling;
+using Nexo.BackgroundAgents.Telemetry;
 using Nexo.BackgroundAgents.Testing;
 using Nexo.Core.Application.SelfImprovement.Ports;
 using Nexo.Core.Application.Trust.Ports;
@@ -133,6 +134,7 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
     private readonly IAggressivenessModeStore? _modeStore;
     private readonly IApprovalGate? _approvalGate;
     private readonly IDataDecisionAuditLog? _auditLog;
+    private readonly CycleEventStore? _cycleEvents;
     private readonly TimeSpan _shutdownGracePeriod;
 
     /// <summary>
@@ -162,6 +164,7 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
         IAggressivenessModeStore? modeStore = null,
         IApprovalGate? approvalGate = null,
         IDataDecisionAuditLog? auditLog = null,
+        CycleEventStore? cycleEvents = null,
         TimeSpan? shutdownGracePeriod = null)
     {
         _scheduler = scheduler ?? throw new ArgumentNullException(nameof(scheduler));
@@ -174,6 +177,7 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
         _modeStore = modeStore;
         _approvalGate = approvalGate;
         _auditLog = auditLog;
+        _cycleEvents = cycleEvents;
         _shutdownGracePeriod = shutdownGracePeriod ?? DefaultShutdownGracePeriod;
     }
 
@@ -409,6 +413,16 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
     {
         cancellationToken.ThrowIfCancellationRequested();
         var agentId = instance.Config.Id;
+        // Telemetry — populated in role branches, emitted in finally regardless of exit path.
+        var cycleStart = DateTimeOffset.UtcNow;
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        var telemExecuted = 0;
+        var telemDenied = 0;
+        int? telemIterations = null;
+        string? telemRationale = null;
+        string? telemStoppedReason = null;
+        var telemSuccess = true;
+        string? telemError = null;
         try
         {
             instance.ExecutionCount++;
@@ -430,6 +444,9 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
                 instance.LastCompletedAt = DateTimeOffset.UtcNow;
                 instance.SuccessCount++;
                 _logStore?.Append(agentId, "Info", "Execution completed successfully.");
+                telemSuccess = result.Success;
+                telemRationale = result.Summary;
+                telemStoppedReason = "code_analysis";
                 return;
             }
 
@@ -445,6 +462,9 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
                 instance.LastCompletedAt = DateTimeOffset.UtcNow;
                 instance.SuccessCount++;
                 _logStore?.Append(agentId, "Info", "Execution completed successfully.");
+                telemSuccess = result.Success;
+                telemRationale = result.Summary;
+                telemStoppedReason = "test_run";
                 return;
             }
 
@@ -510,6 +530,12 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
                 instance.LastCompletedAt = DateTimeOffset.UtcNow;
                 instance.SuccessCount++;
                 _logStore?.Append(agentId, "Info", "Execution completed successfully.");
+                telemSuccess = result.Success;
+                telemExecuted = result.ToolCallsExecuted;
+                telemDenied = result.ToolCallsDenied;
+                telemIterations = result.Iterations > 0 ? result.Iterations : null;
+                telemRationale = result.Summary;
+                telemStoppedReason = result.StoppedReason ?? "self_extend";
                 return;
             }
 
@@ -556,6 +582,8 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
                 instance.LastCompletedAt = DateTimeOffset.UtcNow;
                 instance.SuccessCount++;
                 _logStore?.Append(agentId, "Info", "Execution completed successfully.");
+                telemRationale = summary;
+                telemStoppedReason = "self_improvement";
                 return;
             }
 
@@ -574,6 +602,8 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
         }
         catch (OperationCanceledException)
         {
+            telemSuccess = false;
+            telemStoppedReason = "cancelled";
             throw;
         }
         catch (Exception ex)
@@ -582,7 +612,34 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
             instance.LastError = ex.Message;
             _logStore?.Append(agentId, "Error", $"Execution failed: {ex.Message}");
             _logger?.LogError(ex, "Background agent {AgentId} execution failed", agentId);
+            telemSuccess = false;
+            telemError = ex.Message;
+            telemStoppedReason ??= "error";
             return;
+        }
+        finally
+        {
+            sw.Stop();
+            if (_cycleEvents is not null)
+            {
+                var modelProviderTel = string.IsNullOrWhiteSpace(instance.Config.ModelProvider) ? null : instance.Config.ModelProvider;
+                var modelNameTel = string.IsNullOrWhiteSpace(instance.Config.ModelName) ? null : instance.Config.ModelName;
+                _cycleEvents.Append(new CycleEvent(
+                    cycleStart,
+                    agentId,
+                    instance.ExecutionCount,
+                    instance.Config.Role,
+                    sw.ElapsedMilliseconds,
+                    telemIterations,
+                    telemExecuted,
+                    telemDenied,
+                    modelNameTel,
+                    modelProviderTel,
+                    telemRationale,
+                    telemStoppedReason,
+                    telemSuccess,
+                    telemError));
+            }
         }
     }
 
