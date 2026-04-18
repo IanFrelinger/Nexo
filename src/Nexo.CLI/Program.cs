@@ -827,6 +827,24 @@ static class Program
             jsonOpt);
         backgroundAgentCmd.AddCommand(daemonCmd);
 
+        // nexo background-agent dashboard — localhost read-only operator UI
+        var dashboardPortOpt = new Option<int>("--port", () => 5055, "HTTP port (127.0.0.1 only).");
+        var dashboardOpenOpt = new Option<bool>("--open", () => false, "Open the default browser to the dashboard URL.");
+        var dashboardCmd = new Command("dashboard", "Read-only Runtime Studio operator dashboard (objectives, forge, observations)")
+        {
+            dashboardPortOpt,
+            dashboardOpenOpt
+        };
+        dashboardCmd.SetHandler(
+            async (int port, bool open) =>
+            {
+                var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.OperatorDashboardBackgroundAgentCommand>();
+                Environment.Exit(await cmd.RunAsync(port, open, CancellationToken.None));
+            },
+            dashboardPortOpt,
+            dashboardOpenOpt);
+        backgroundAgentCmd.AddCommand(dashboardCmd);
+
         // nexo trust - Audit and access boundary (Phase 4)
         var trustCmd = new Command("trust", "Trust & Information Architecture: audit log and access boundary");
         var trustAuditCmd = new Command("audit", "Show or export data decision audit log")
@@ -1470,6 +1488,7 @@ static class Program
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.ObjectivesBackgroundAgentCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.ProposalsBackgroundAgentCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.ModeBackgroundAgentCommand>();
+        services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.OperatorDashboardBackgroundAgentCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.SensitivityCommand>();
         services.AddScoped<TrustCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.RAGCommand>();

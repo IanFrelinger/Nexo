@@ -129,11 +129,15 @@ Common changes:
 
 Contributing note: avoid parallel full `dotnet build` on one clone (see `CONTRIBUTING.md` — `*.deps.json` locks).
 
-## Phase 3 (in progress)
+## Phase 3 (shipped)
 
 | Track | Status |
 |--------|--------|
 | **Objective claim in daemon (E2E)** | Black-box: `RuntimeStudioBlackBoxSmokeTests.Daemon_extender_claims_objective_from_store_increments_attempts` — timed extender with no pinned `Objective`, deterministic model, asserts backlog `Attempts` after release-on-no-action. |
-| **Android signing / store** | Not started (compile gate only today). |
-| **Operator dashboard** | Not started (CLI + `OPERATOR.md` today). |
+| **Android signing / store** | **[ANDROID_STORE.md](./ANDROID_STORE.md)** — Play-style AAB pipeline (`.github/workflows/maui-android-publish.yml`) + keystore secrets checklist. |
+| **Operator dashboard** | `nexo background-agent dashboard [--port 5055] [--open]` — read-only JSON + auto-refresh UI on **127.0.0.1** only (same `NEXO_*` paths as the CLI). |
+
+## Phase 4 (ideas)
+
+Play Internal testing automation; dashboard auth / TLS reverse proxy; objective SLA metrics in API.
 

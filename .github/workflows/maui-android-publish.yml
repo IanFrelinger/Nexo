@@ -1,0 +1,55 @@
+# Release-shaped Android App Bundle (AAB) — upload-ready artifact for Play Console workflows.
+# Uses the default debug signing profile when no release keystore secrets are configured.
+name: MAUI Android AAB Publish
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Weekly AAB artifact sanity (same paths as compile gate); avoids doubling every push.
+    - cron: '30 7 * * 3'
+  push:
+    branches: [master, main]
+    paths:
+      - '.github/workflows/maui-android-publish.yml'
+
+jobs:
+  publish-aab:
+    name: Publish Android AAB (Release)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - uses: android-actions/setup-android@v3
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Install MAUI Android workload
+        run: dotnet workload install maui-android --skip-sign-check
+
+      - name: Restore mobile project
+        run: dotnet restore src/Nexo.Client.Mobile/Nexo.Client.Mobile.csproj
+
+      - name: Publish AAB (Release)
+        run: |
+          dotnet publish src/Nexo.Client.Mobile/Nexo.Client.Mobile.csproj \
+            --no-restore \
+            -c Release \
+            -f net8.0-android \
+            -v minimal \
+            -p:AndroidPackageFormat=aab \
+            -p:RunAOTCompilation=false
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nexo-client-mobile-aab
+          path: src/Nexo.Client.Mobile/bin/Release/net8.0-android/**/*.aab
+          if-no-files-found: error
+          retention-days: 14

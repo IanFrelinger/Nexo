@@ -71,6 +71,21 @@ dotnet run --project src/Nexo.CLI -- background-agent daemon --config apps/runti
 
 Scripts: `apps/runtime-studio/scripts/run_agent_set_local.sh` (see [README](./README.md)).
 
+## Operator dashboard (local HTTP)
+
+Read-only snapshot (objective counts by folder, proposal counts, last lines of `observations.jsonl`, aggressiveness mode). **Listens on 127.0.0.1 only** — not for exposure to a network.
+
+```bash
+dotnet run --project src/Nexo.CLI -- background-agent dashboard --port 5055
+dotnet run --project src/Nexo.CLI -- background-agent dashboard --port 5055 --open
+```
+
+Set the same `NEXO_*` paths as the daemon before starting so the UI matches that sandbox.
+
+## Android AAB / Play Console
+
+See **[ANDROID_STORE.md](./ANDROID_STORE.md)** for `dotnet publish` AAB, CI artifact workflow, and release keystore secrets.
+
 ## Related docs
 
 - [README](./README.md) — layout, compose, tuning
