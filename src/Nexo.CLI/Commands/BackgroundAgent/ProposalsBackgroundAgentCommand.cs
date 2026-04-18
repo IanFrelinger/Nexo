@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Nexo.BackgroundAgents.Forge;
+using Nexo.Tools.Dev;
 
 namespace Nexo.CLI.Commands.BackgroundAgent;
 
@@ -148,16 +149,18 @@ public class ProposalsBackgroundAgentCommand
     /// Apply an Approved proposal: write its <c>NewContent</c> to disk and then
     /// transition to <c>Applied</c>. Re-reads the file and verifies the recorded
     /// <c>BaseSha256</c> still matches before writing — bails with a structured
-    /// error on drift so the operator can re-review.
+    /// error on drift so the operator can re-review. When <paramref name="verifyBuild"/> is true,
+    /// runs <c>dotnet build -c Release</c> from <paramref name="repoRoot"/> afterward and returns exit code **4** if the build fails (file remains applied).
     /// </summary>
-    public Task<int> ApplyAsync(string id, string repoRoot, bool force, bool formatJson, CancellationToken ct = default)
-        => ApplyAsync(id, repoRoot, force, formatJson, Console.Out, Console.Error, ct);
+    public Task<int> ApplyAsync(string id, string repoRoot, bool force, bool formatJson, bool verifyBuild = false, CancellationToken ct = default)
+        => ApplyAsync(id, repoRoot, force, formatJson, verifyBuild, Console.Out, Console.Error, ct);
 
-    public Task<int> ApplyAsync(
+    public async Task<int> ApplyAsync(
         string id,
         string repoRoot,
         bool force,
         bool formatJson,
+        bool verifyBuild,
         TextWriter stdout,
         TextWriter stderr,
         CancellationToken ct = default)
@@ -182,7 +185,7 @@ public class ProposalsBackgroundAgentCommand
                     var msg = $"Drift detected: {p.TargetPath} sha changed since proposal (was {p.BaseSha256[..12]}…, now {current[..12]}…). Re-review or pass --force.";
                     if (formatJson) stdout.WriteLine(JsonSerializer.Serialize(new { ok = false, id, error = msg }));
                     else stderr.WriteLine(msg);
-                    return Task.FromResult(3);
+                    return 3;
                 }
             }
 
@@ -190,15 +193,103 @@ public class ProposalsBackgroundAgentCommand
             File.WriteAllText(fullPath, p.NewContent);
             var applied = _store.MarkApplied(id, note: $"applied to {fullPath}");
 
-            if (formatJson)
-                stdout.WriteLine(JsonSerializer.Serialize(new { ok = true, action = "applied", proposal = Project(applied) }));
-            else
+            if (!verifyBuild)
+            {
+                if (formatJson)
+                    stdout.WriteLine(JsonSerializer.Serialize(new { ok = true, action = "applied", proposal = Project(applied) }));
+                else
+                    stdout.WriteLine($"Applied proposal '{applied.Id}' → {fullPath}");
+                return 0;
+            }
+
+            if (!formatJson)
                 stdout.WriteLine($"Applied proposal '{applied.Id}' → {fullPath}");
-            return Task.FromResult(0);
+
+            var (buildCode, buildOut, buildErr, timedOut) = await DotnetBuildTool.RunReleaseBuildAsync(repoRoot, ct)
+                .ConfigureAwait(false);
+            var buildOk = buildCode == 0 && !timedOut;
+            if (formatJson)
+            {
+                stdout.WriteLine(JsonSerializer.Serialize(new
+                {
+                    ok = buildOk,
+                    action = "applied",
+                    proposal = Project(applied),
+                    build = new
+                    {
+                        ok = buildOk,
+                        exit_code = buildCode,
+                        timed_out = timedOut,
+                        stdout = buildOut,
+                        stderr = buildErr
+                    }
+                }));
+            }
+            else
+            {
+                if (buildOk)
+                    stdout.WriteLine("dotnet build -c Release: succeeded.");
+                else
+                {
+                    stdout.WriteLine(timedOut ? "dotnet build -c Release: timed out." : $"dotnet build -c Release: failed (exit {buildCode}).");
+                    if (!string.IsNullOrWhiteSpace(buildErr)) stdout.WriteLine(buildErr);
+                }
+            }
+
+            return buildOk ? 0 : 4;
         }
         catch (Exception ex)
         {
-            return Fail("Apply proposal failed", ex, formatJson, stdout, stderr);
+            return await Fail("Apply proposal failed", ex, formatJson, stdout, stderr).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// Run <c>dotnet build -c Release</c> from <paramref name="repoRoot"/> (operator convenience
+    /// aligned with <c>forge.build</c> / <c>dotnet.build</c> agent tools).
+    /// </summary>
+    public Task<int> BuildAsync(string repoRoot, bool formatJson, CancellationToken ct = default)
+        => BuildAsync(repoRoot, formatJson, Console.Out, Console.Error, ct);
+
+    public async Task<int> BuildAsync(
+        string repoRoot,
+        bool formatJson,
+        TextWriter stdout,
+        TextWriter stderr,
+        CancellationToken ct = default)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(repoRoot))
+                throw new ArgumentException("--repo-root is required");
+
+            var (code, outText, errText, timedOut) = await DotnetBuildTool.RunReleaseBuildAsync(repoRoot, ct)
+                .ConfigureAwait(false);
+            var ok = code == 0 && !timedOut;
+            if (formatJson)
+            {
+                stdout.WriteLine(JsonSerializer.Serialize(new
+                {
+                    ok,
+                    exit_code = code,
+                    timed_out = timedOut,
+                    stdout = outText,
+                    stderr = errText
+                }));
+            }
+            else
+            {
+                if (ok) stdout.WriteLine("Build succeeded.");
+                else stdout.WriteLine(timedOut ? "Build timed out." : $"Build failed (exit {code}).");
+                if (!string.IsNullOrWhiteSpace(outText)) stdout.WriteLine(outText);
+                if (!string.IsNullOrWhiteSpace(errText)) stderr.WriteLine(errText);
+            }
+
+            return ok ? 0 : 1;
+        }
+        catch (Exception ex)
+        {
+            return await Fail("Build failed", ex, formatJson, stdout, stderr).ConfigureAwait(false);
         }
     }
 

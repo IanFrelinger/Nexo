@@ -588,16 +588,29 @@ static class Program
         var propApplyIdArg = new Argument<string>("id", "Approved proposal id");
         var propApplyRootOpt = new Option<string>("--repo-root", () => Directory.GetCurrentDirectory(), "Repo root the target_path is resolved against");
         var propApplyForceOpt = new Option<bool>("--force", () => false, "Apply even if the file's sha256 has drifted from the proposal's BaseSha256");
+        var propApplyVerifyBuildOpt = new Option<bool>("--verify-build", () => false, "After apply, run dotnet build -c Release from --repo-root (exit 4 if build fails; tree is still written)");
         var propApplyCmd = new Command("apply", "Write an Approved proposal to disk and mark it Applied")
         {
-            propApplyIdArg, propApplyRootOpt, propApplyForceOpt
+            propApplyIdArg, propApplyRootOpt, propApplyForceOpt, propApplyVerifyBuildOpt
         };
-        propApplyCmd.SetHandler(async (string id, string root, bool force, bool formatJson) =>
+        propApplyCmd.SetHandler(async (string id, string root, bool force, bool verifyBuild, bool formatJson) =>
         {
             var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ProposalsBackgroundAgentCommand>();
-            Environment.Exit(await cmd.ApplyAsync(id, root, force, formatJson));
-        }, propApplyIdArg, propApplyRootOpt, propApplyForceOpt, jsonOpt);
+            Environment.Exit(await cmd.ApplyAsync(id, root, force, formatJson, verifyBuild));
+        }, propApplyIdArg, propApplyRootOpt, propApplyForceOpt, propApplyVerifyBuildOpt, jsonOpt);
         proposalsBgCmd.AddCommand(propApplyCmd);
+
+        var propBuildRootOpt = new Option<string>("--repo-root", () => Directory.GetCurrentDirectory(), "Directory passed to dotnet build -c Release");
+        var propBuildCmd = new Command("build", "Run dotnet build -c Release (forge-aligned operator check)")
+        {
+            propBuildRootOpt
+        };
+        propBuildCmd.SetHandler(async (string root, bool formatJson) =>
+        {
+            var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ProposalsBackgroundAgentCommand>();
+            Environment.Exit(await cmd.BuildAsync(root, formatJson));
+        }, propBuildRootOpt, jsonOpt);
+        proposalsBgCmd.AddCommand(propBuildCmd);
 
         var propJanProposedOpt = new Option<double?>("--proposed-ttl-hours", () => null, "Override Proposed TTL (default 72h)");
         var propJanApprovedOpt = new Option<double?>("--approved-ttl-hours", () => null, "Override Approved TTL (default 24h)");

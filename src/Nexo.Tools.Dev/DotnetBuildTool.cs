@@ -20,14 +20,19 @@ public sealed class DotnetBuildTool : ITool
 
     private sealed record Args(string root);
 
+    /// <summary>
+    /// Shared implementation for <see cref="DotnetBuildTool"/>, <see cref="ForgeBuildTool"/>,
+    /// and operator CLIs that need the same <c>dotnet build -c Release</c> contract.
+    /// </summary>
+    public static Task<(int exitCode, string stdout, string stderr, bool timedOut)> RunReleaseBuildAsync(
+        string workingDirectory,
+        CancellationToken ct = default) =>
+        DotnetRunner.RunAsync(workingDirectory, "build -c Release", TimeSpan.FromMinutes(10), ct);
+
     public async Task<ToolResult> InvokeAsync(ToolCall call, WorldSnapshot s, CancellationToken ct)
     {
         var args = System.Text.Json.JsonSerializer.Deserialize<Args>(call.Arguments)!;
-        var (code, stdout, stderr, timedOut) = await DotnetRunner.RunAsync(
-            args.root,
-            "build -c Release",
-            timeout: TimeSpan.FromMinutes(10),
-            ct);
+        var (code, stdout, stderr, timedOut) = await RunReleaseBuildAsync(args.root, ct).ConfigureAwait(false);
         var delta = new RepoDelta { TickFrom = s.Tick, TickTo = s.Tick + 1 };
         delta.AddLog($"build:exit={code}");
         if (timedOut) delta.AddLog("build:timeout");

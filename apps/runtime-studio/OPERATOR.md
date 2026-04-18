@@ -78,9 +78,13 @@ dotnet run --project src/Nexo.CLI -- background-agent proposals list
 dotnet run --project src/Nexo.CLI -- background-agent proposals show <id>
 dotnet run --project src/Nexo.CLI -- background-agent proposals approve <id> --approver me --note "lgtm"
 dotnet run --project src/Nexo.CLI -- background-agent proposals reject <id> --note "not now"
+dotnet run --project src/Nexo.CLI -- background-agent proposals apply <id> --verify-build
+dotnet run --project src/Nexo.CLI -- background-agent proposals build --repo-root .
 dotnet run --project src/Nexo.CLI -- background-agent proposals stats
 dotnet run --project src/Nexo.CLI -- background-agent proposals janitor --format-json
 ```
+
+`proposals build` runs `dotnet build -c Release` from `--repo-root` (same contract as the planner tools `dotnet.build` and **`forge.build`**). With **`apply --verify-build`**, the proposal is written and marked **Applied** first; if the build fails, the CLI exits **4** so CI can fail while you revert in git — the working tree already contains the applied content.
 
 Proposals live on disk under `{forge}/proposed|approved|rejected|applied|stale/*.json` — useful for `ls` and emergency edits.
 
@@ -92,7 +96,7 @@ dotnet run --project src/Nexo.CLI -- background-agent mode set --value passive
 dotnet run --project src/Nexo.CLI -- background-agent mode set --value active
 ```
 
-In **passive** / **semi-active**, direct `repo.fs.write` / `search_replace` under `src/` or `tests/` is rejected; agents should use **`forge.propose_change`** and operators **`proposals approve`** / **`apply`**.
+In **passive** / **semi-active**, direct `repo.fs.write` / `search_replace` under `src/` or `tests/` is rejected; agents should use **`forge.propose_change`** and operators **`proposals approve`** / **`apply`**. When the forge queue is enabled, planners also get **`forge.build`** (same as `dotnet.build` for `dotnet build -c Release`, shared per-cycle build budget).
 
 ## Daemon (long-running)
 

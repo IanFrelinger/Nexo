@@ -4,7 +4,7 @@ using Nexo.Abstractions;
 namespace Nexo.Policies.Dev;
 
 /// <summary>
-/// Caps how many <c>dotnet.build</c> and <c>dotnet.test</c> tool calls a single
+/// Caps how many <c>dotnet.build</c>, <c>forge.build</c>, and <c>dotnet.test</c> tool calls a single
 /// agent cycle is allowed to issue. Without this, a confused planner can burn
 /// the entire 5-minute deadline on repeated build/test invocations and never
 /// reach the actual code change.
@@ -50,7 +50,8 @@ public sealed class BuildTestBudget : IPolicy
     public bool Approve(ToolCall call, WorldSnapshot s, out string reason)
     {
         reason = "OK";
-        if (string.Equals(call.Id, "dotnet.build", StringComparison.Ordinal))
+        if (string.Equals(call.Id, "dotnet.build", StringComparison.Ordinal)
+            || string.Equals(call.Id, "forge.build", StringComparison.Ordinal))
         {
             // Increment-and-test is intentional: the increment counts towards the
             // budget even if we deny so a runaway loop doesn't keep hammering the

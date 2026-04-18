@@ -94,6 +94,13 @@ internal static class RepoFsToolboxFactory
                 agentIdProvider: () => source,
                 objectiveIdProvider: () => objectiveId));
             tools.Register(new ForgeCheckPrTool(proposals));
+            ITool forgeBuild = new ForgeBuildTool();
+            if (observations is not null)
+            {
+                forgeBuild = new ObservingTool(forgeBuild, observations,
+                    ObservingTool.DotnetProjector(source, ObservationKind.Build, objectiveId));
+            }
+            tools.Register(forgeBuild);
         }
 
         var budget = new BuildTestBudget();

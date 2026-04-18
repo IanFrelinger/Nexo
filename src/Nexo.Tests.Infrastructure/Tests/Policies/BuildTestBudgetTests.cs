@@ -43,6 +43,15 @@ public sealed class BuildTestBudgetTests
     }
 
     [Fact]
+    public void Forge_build_shares_the_same_per_cycle_build_budget_as_dotnet_build()
+    {
+        var policy = new BuildTestBudget(buildBudget: 1, testBudget: 99);
+        policy.Approve(Call("forge.build"), EmptySnapshot, out _).Should().BeTrue();
+        policy.Approve(Call("dotnet.build"), EmptySnapshot, out var reason).Should().BeFalse();
+        reason.Should().Contain("Build budget exceeded");
+    }
+
+    [Fact]
     public void Rejects_when_test_budget_exceeded()
     {
         var policy = new BuildTestBudget(buildBudget: 99, testBudget: 1);

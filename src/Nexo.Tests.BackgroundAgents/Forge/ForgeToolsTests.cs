@@ -4,6 +4,7 @@ using Nexo.Abstractions;
 using Nexo.BackgroundAgents.Forge;
 using Nexo.BackgroundAgents.HostRunners;
 using Nexo.Policies.Dev;
+using Nexo.Tools.Dev;
 using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.Forge;
@@ -112,5 +113,33 @@ public class ForgeToolsTests : IDisposable
         var id = doc.RootElement.GetProperty("id").GetString()!;
         _store.Find(id)!.TargetPath.Should().Be("src/Mediated.cs");
         _store.Find(id)!.NewContent.Should().Be("// proposed");
+    }
+
+    [Fact]
+    public async Task Forge_build_matches_dotnet_build_contract_on_disk()
+    {
+        var projDir = Path.Combine(_repoRoot, "App");
+        Directory.CreateDirectory(projDir);
+        File.WriteAllText(
+            Path.Combine(projDir, "App.csproj"),
+            """
+            <Project Sdk="Microsoft.NET.Sdk">
+              <PropertyGroup>
+                <OutputType>Exe</OutputType>
+                <TargetFramework>net8.0</TargetFramework>
+                <ImplicitUsings>enable</ImplicitUsings>
+                <Nullable>enable</Nullable>
+              </PropertyGroup>
+            </Project>
+            """);
+        File.WriteAllText(Path.Combine(projDir, "Program.cs"), "System.Console.WriteLine(1);");
+        var snap = new WorldSnapshot(0, new Dictionary<string, object?> { ["RepoRoot"] = _repoRoot });
+        var tool = new ForgeBuildTool();
+        var result = await tool.InvokeAsync(
+            new ToolCall(tool.Id, JsonSerializer.SerializeToElement(new { root = projDir })),
+            snap,
+            default);
+        var doc = JsonDocument.Parse(JsonSerializer.Serialize(result.Payload));
+        doc.RootElement.GetProperty("ok").GetBoolean().Should().BeTrue();
     }
 }

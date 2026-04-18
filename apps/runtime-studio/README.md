@@ -122,7 +122,7 @@ Common changes:
 | Track | Status |
 |--------|--------|
 | **Daemon in CI** | Black-box: timed daemon with/without `--disable-observation` (`RuntimeStudioBlackBoxSmokeTests`). |
-| **Passive + forge** | `ForgeToolsTests.Passive_mode_blocks_src_write_forge_propose_change_still_succeeds` + existing policy tests. |
+| **Passive + forge** | `ForgeToolsTests` (propose/check/**forge.build**) + `ForgeMediatedWritesPolicy` tests + `ProposalsBackgroundAgentCommandTests` (`build`, `apply --verify-build`). |
 | **Operator UX** | **[OPERATOR.md](./OPERATOR.md)** — env vars, CLI one-liners for observations / objectives / proposals / mode / daemon. |
 | **Mobile / MAUI** | `.github/workflows/maui-client-build-gate.yml` — Windows, Mac Catalyst, **Android** compile jobs. |
 | **Performance** | `CliRunner` cross-process mutex + `CONTRIBUTING.md` guidance; smoke blame-hang 180s on Cross-Platform Tests. |
