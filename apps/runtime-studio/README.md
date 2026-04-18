@@ -55,6 +55,10 @@ Game director mode roles included:
 - `game-worker-code-optimizer` (`optimizer`) - static analysis / optimization sweeps
 - `game-worker-test-automation` (`tester`) - recurring automated test execution
 
+## Operator CLI quick reference
+
+See **[OPERATOR.md](./OPERATOR.md)** for copy-paste `background-agent` commands and env vars.
+
 ## Quick start
 
 From repo root:
@@ -113,17 +117,17 @@ Common changes:
 - adjust exfiltration policy boundaries
 - adjust each game worker `Objective` to match your project pillars (art style, encounter pacing, systems depth)
 
-## Phase 2 (next)
+## Phase 2 (shipped in tree)
 
-Operational and integration hardening on top of Streams A/B/C (observations, objectives, forge proposals):
-
-| Track | Goal |
-|--------|------|
-| **Daemon in CI** | Short timed `nexo background-agent daemon` runs with minimal config (see `RuntimeStudioBlackBoxSmokeTests.Daemon_minimal_config_timed_run_exits_zero` in Infrastructure tests). Extend with mock/offline LLM scenarios and objective claim cycles. |
-| **Passive + forge** | Automated E2E: aggressiveness `passive`, attempted `repo.fs.write` under `src/` rejected, `forge.propose_change` path exercised end-to-end in a sandbox repo. |
-| **Operator UX** | Single-page or CLI cheat sheet linking `observations`, `objectives report`, `proposals list/janitor`, and `mode` for on-call triage. |
-| **Mobile / MAUI** | Compile gate is in `.github/workflows/maui-client-build-gate.yml`; add Android TFMs or signing strategy when you need store-ready artifacts. |
-| **Performance** | Cap cold-start cost of daemon smoke on CI (shared host build, longer blame-hang only on daemon job if split). |
+| Track | Status |
+|--------|--------|
+| **Daemon in CI** | Black-box: timed daemon with/without `--disable-observation` (`RuntimeStudioBlackBoxSmokeTests`). |
+| **Passive + forge** | `ForgeToolsTests.Passive_mode_blocks_src_write_forge_propose_change_still_succeeds` + existing policy tests. |
+| **Operator UX** | **[OPERATOR.md](./OPERATOR.md)** — env vars, CLI one-liners for observations / objectives / proposals / mode / daemon. |
+| **Mobile / MAUI** | `.github/workflows/maui-client-build-gate.yml` — Windows, Mac Catalyst, **Android** compile jobs. |
+| **Performance** | `CliRunner` cross-process mutex + `CONTRIBUTING.md` guidance; smoke blame-hang 180s on Cross-Platform Tests. |
 
 Contributing note: avoid parallel full `dotnet build` on one clone (see `CONTRIBUTING.md` — `*.deps.json` locks).
+
+**Optional next (Phase 3 ideas):** objective-claim cycle inside a timed daemon E2E; Android signing / store pipelines; operator dashboard.
 

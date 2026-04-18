@@ -136,7 +136,7 @@ jobs:
         run: |
           dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
             --no-build \
-            --blame-hang-timeout 90s \
+            --blame-hang-timeout 180s \
             --filter "Category=E2E" \
             --logger "console;verbosity=minimal" \
             --logger "trx;LogFileName=e2e-${{ matrix.os }}.trx" \

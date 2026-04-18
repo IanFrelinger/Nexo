@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Nexo.Tests.Infrastructure.Helpers;
 using Xunit;
 
@@ -172,5 +173,83 @@ public sealed class RuntimeStudioBlackBoxSmokeTests : E2ETestBase
             daemonTimeout);
         Assert.Equal(0, code);
         Assert.Equal(string.Empty, stderr);
+    }
+
+    /// <summary>Daemon starts with observation pipeline enabled (heavier than <c>--disable-observation</c>).</summary>
+    [Fact(Timeout = 300_000)]
+    public async Task Daemon_minimal_config_timed_run_with_observation_pipeline_exits_zero()
+    {
+        var root = Path.Combine(TempDir, "studio-daemon-obs");
+        Directory.CreateDirectory(root);
+        var cfgPath = Path.Combine(root, "daemon-obs.json");
+        await File.WriteAllTextAsync(cfgPath, """
+            {
+              "BackgroundAgents": {
+                "Agents": [
+                  {
+                    "Id": "daemon-obs-smoke",
+                    "Name": "Daemon Obs Smoke",
+                    "Role": "optimizer",
+                    "ModelProvider": "deterministic",
+                    "Commands": [ "analyze" ],
+                    "Parameters": { "AnalysisPath": "." },
+                    "Schedule": {
+                      "Type": "Interval",
+                      "Interval": "24:00:00",
+                      "InitialDelay": "24:00:00"
+                    },
+                    "Enabled": true,
+                    "MaxDataSensitivity": "Public"
+                  }
+                ]
+              }
+            }
+            """);
+
+        var envRoot = Path.Combine(root, "studio");
+        var env = StudioEnv(envRoot);
+        var merged = new Dictionary<string, string?>(env) { ["NEXO_ALLOW_MOCK"] = "1" };
+
+        var (code, _, stderr) = await RunCliAsync(
+            $"background-agent daemon --config \"{cfgPath}\" --duration 5s",
+            merged,
+            TimeSpan.FromSeconds(150));
+        Assert.Equal(0, code);
+        Assert.Equal(string.Empty, stderr);
+    }
+
+    /// <summary>Operators can drop a JSON file into <c>forge/proposed</c> and list/show it via CLI.</summary>
+    [Fact(Timeout = 120_000)]
+    public async Task Proposals_disk_seed_lists_and_shows()
+    {
+        var root = Path.Combine(TempDir, "studio-proposals-seed");
+        var env = StudioEnv(root);
+        var forgeRoot = env["NEXO_FORGE_ROOT"]!;
+        var proposedDir = Path.Combine(forgeRoot, "proposed");
+        Directory.CreateDirectory(proposedDir);
+        var id = "seed-" + Guid.NewGuid().ToString("N")[..10];
+        var ts = DateTimeOffset.UtcNow;
+        var payload = JsonSerializer.Serialize(new
+        {
+            Id = id,
+            TargetPath = "src/Seeded.cs",
+            NewContent = "// seeded",
+            Summary = "disk seed",
+            Status = "Proposed",
+            CreatedAt = ts,
+            UpdatedAt = ts
+        });
+        await File.WriteAllTextAsync(Path.Combine(proposedDir, id + ".json"), payload);
+
+        var (listCode, listOut, listErr) = await RunCliAsync("background-agent proposals list", env, CliTimeout);
+        Assert.Equal(0, listCode);
+        Assert.Equal(string.Empty, listErr);
+        Assert.Contains(id, listOut, StringComparison.OrdinalIgnoreCase);
+
+        var (showCode, showOut, showErr) = await RunCliAsync($"background-agent proposals show {id}", env, CliTimeout);
+        Assert.Equal(0, showCode);
+        Assert.Equal(string.Empty, showErr);
+        Assert.Contains(id, showOut, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("src/Seeded.cs", showOut, StringComparison.OrdinalIgnoreCase);
     }
 }

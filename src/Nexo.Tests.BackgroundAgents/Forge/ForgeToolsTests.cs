@@ -3,10 +3,13 @@ using FluentAssertions;
 using Nexo.Abstractions;
 using Nexo.BackgroundAgents.Forge;
 using Nexo.BackgroundAgents.HostRunners;
+using Nexo.Policies.Dev;
 using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.Forge;
 
+/// <summary>Forge tool + policy integration (Streams C).</summary>
+[Trait("Category", "RuntimeStudio")]
 public class ForgeToolsTests : IDisposable
 {
     private readonly string _tempDir;
@@ -78,5 +81,36 @@ public class ForgeToolsTests : IDisposable
         var miss = await tool.InvokeAsync(new ToolCall(tool.Id, JsonSerializer.SerializeToElement(new { id = "nope" })), snap, default);
         var missDoc = JsonDocument.Parse(JsonSerializer.Serialize(miss.Payload));
         missDoc.RootElement.GetProperty("ok").GetBoolean().Should().BeFalse();
+    }
+
+    /// <summary>
+    /// Low-trust mode blocks <c>repo.fs.write</c> to <c>src/</c>, but <c>forge.propose_change</c>
+    /// still records an operator-reviewable proposal (full mediated-write story).
+    /// </summary>
+    [Fact]
+    public async Task Passive_mode_blocks_src_write_forge_propose_change_still_succeeds()
+    {
+        var policy = new ForgeMediatedWritesPolicy(() => BackgroundAgentAggressivenessMode.Passive);
+        var snap = new WorldSnapshot(0, new Dictionary<string, object?> { ["RepoRoot"] = _repoRoot });
+        var directWrite = new ToolCall("repo.fs.write", JsonSerializer.SerializeToElement(new { path = "src/Blocked.cs", content = "// no" }));
+        policy.Approve(directWrite, snap, out var deny).Should().BeFalse();
+        deny.Should().Contain("forge.propose_change");
+
+        var existing = Path.Combine(_repoRoot, "src", "Mediated.cs");
+        File.WriteAllText(existing, "// base");
+        var forge = new ForgeProposeChangeTool(_store, agentIdProvider: () => "planner");
+        var args = JsonSerializer.SerializeToElement(new
+        {
+            target_path = "src/Mediated.cs",
+            new_content = "// proposed",
+            summary = "phase2 forge",
+            reason = "smoke"
+        });
+        var result = await forge.InvokeAsync(new ToolCall(forge.Id, args), snap, default);
+        var doc = JsonDocument.Parse(JsonSerializer.Serialize(result.Payload));
+        doc.RootElement.GetProperty("ok").GetBoolean().Should().BeTrue();
+        var id = doc.RootElement.GetProperty("id").GetString()!;
+        _store.Find(id)!.TargetPath.Should().Be("src/Mediated.cs");
+        _store.Find(id)!.NewContent.Should().Be("// proposed");
     }
 }
