@@ -659,9 +659,16 @@ Output the complete modified files. Each file must start with a // FILE: marker 
         var paths = new List<string>();
         if (!string.IsNullOrWhiteSpace(existing))
             paths.Add(existing);
-        paths.Add(projectRoot);
-        paths.AddRange(additionalPaths);
-        Environment.SetEnvironmentVariable("NEXO_PATH_ALLOWLIST_EXTRA", string.Join(Path.PathSeparator.ToString(), paths));
+
+        // Add Unity-standard relative prefixes so the PathAllowlist policy
+        // approves writes to Assets/, Packages/, ProjectSettings/ etc.
+        paths.Add("Assets/");
+        paths.Add("Packages/");
+        paths.Add("ProjectSettings/");
+
+        // Also add the full project root as SandboxRoot for absolute path resolution
+        Environment.SetEnvironmentVariable("NEXO_SANDBOX_ROOT", projectRoot);
+        Environment.SetEnvironmentVariable("NEXO_PATH_ALLOWLIST_EXTRA", string.Join(",", paths));
     }
 
     private static void WriteError(string message, bool json)

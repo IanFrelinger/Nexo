@@ -200,7 +200,7 @@ Generate Unity bootstrap files (IGeneratedGameplaySystem, SystemContext, DashAbi
         AssertEqual("repo.fs.write", first.GetProperty("id").GetString());
         var firstArgs = first.GetProperty("arguments");
         AssertEqual("/workspace", firstArgs.GetProperty("root").GetString());
-        AssertEqual("docs/UnityBootstrapGenerated/IGeneratedGameplaySystem.cs", firstArgs.GetProperty("path").GetString());
+        AssertEqual("Assets/Scripts/Generated/IGeneratedGameplaySystem.cs", firstArgs.GetProperty("path").GetString());
     }
 
     private async Task TestExecuteLLMAsync_SelfExtendUnityBootstrapNuanced()
@@ -236,11 +236,11 @@ Generate a richer Unity gameplay extension layer for Mono compatibility. Require
         {
             var args = call.GetProperty("arguments");
             var path = args.GetProperty("path").GetString() ?? string.Empty;
-            if (path == "docs/UnityBootstrapGenerated/GeneratedSystemErrorState.cs")
+            if (path == "Assets/Scripts/Generated/GeneratedSystemErrorState.cs")
                 sawErrorState = true;
-            if (path == "docs/UnityBootstrapGenerated/GeneratedSystemInspectorSnapshot.cs")
+            if (path == "Assets/Scripts/Generated/GeneratedSystemInspectorSnapshot.cs")
                 sawInspectorSnapshot = true;
-            if (path == "docs/UnityBootstrapGenerated/DashAbilitySystem.cs")
+            if (path == "Assets/Scripts/Generated/DashAbilitySystem.cs")
             {
                 var content = args.GetProperty("content").GetString() ?? string.Empty;
                 sawCooldownInDash = content.Contains("DashCooldownSeconds", StringComparison.Ordinal);
@@ -266,7 +266,7 @@ Available tools:
 
         const string userPrompt = """
 Objective:
-Generate a broad Unity adaptation package for a movement-combat vertical slice. Required: IGeneratedGameplaySystem, SystemContext, DashAbilitySystem, JumpAbilitySystem, SprintAbilitySystem, AbilityRegistry, GeneratedSystemErrorState, GeneratedSystemInspectorSnapshot, and a short adaptation README. Include cooldowns, compile-failure fallback metadata, and inspector raw-code visibility. Keep code in docs/UnityBootstrapGenerated.
+Generate a broad Unity adaptation package for a movement-combat vertical slice. Required: IGeneratedGameplaySystem, SystemContext, DashAbilitySystem, JumpAbilitySystem, SprintAbilitySystem, AbilityRegistry, GeneratedSystemErrorState, GeneratedSystemInspectorSnapshot, and a short adaptation README. Include cooldowns, compile-failure fallback metadata, and inspector raw-code visibility. Keep code in Assets/Scripts/Generated.
 """;
 
         var result = await WithEnv("NEXO_ALLOW_MOCK", "1", async () =>
