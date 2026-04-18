@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using Nexo.BackgroundAgents.HostRunners;
+using Nexo.GameDomain.Pipeline;
 
 namespace Nexo.CLI.Commands;
 
@@ -51,6 +52,8 @@ Rules:
         AddCommand(CreateAssetsCommand());
         AddCommand(CreateQaCommand());
         AddCommand(CreateFullstackCommand());
+        AddCommand(CreatePinCommand());
+        AddCommand(CreateComposeCommand());
     }
 
     private Command CreateInitCommand()
@@ -84,10 +87,11 @@ Rules:
         var testDirOpt = new Option<string>("--test-dir", () => DefaultTestDir, "Relative path under project-root for generated tests.");
         var dryRunOpt = new Option<bool>("--dry-run", () => false, "Show what would be generated without writing files.");
         var jsonOpt = new Option<bool>("--format-json", () => false, "Emit machine-readable JSON output.");
+        var templateOpt = new Option<string?>("--template", () => null, "Path to a .template.json file for fixed/generated field control.");
 
         var cmd = new Command("generate", "Generate a new Unity gameplay system.")
         {
-            projectRootOpt, systemOpt, outputDirOpt, testDirOpt, dryRunOpt, jsonOpt
+            projectRootOpt, systemOpt, outputDirOpt, testDirOpt, dryRunOpt, jsonOpt, templateOpt
         };
 
         cmd.SetHandler(async (InvocationContext ctx) =>
@@ -98,10 +102,11 @@ Rules:
             var testDir = ctx.ParseResult.GetValueForOption(testDirOpt) ?? DefaultTestDir;
             var dryRun = ctx.ParseResult.GetValueForOption(dryRunOpt);
             var json = ctx.ParseResult.GetValueForOption(jsonOpt);
+            var template = ctx.ParseResult.GetValueForOption(templateOpt);
 
             ctx.ExitCode = await ExecuteGenerateAsync(
                 projectRoot, system, outputDir, testDir, dryRun, json,
-                ctx.GetCancellationToken()).ConfigureAwait(false);
+                ct: ctx.GetCancellationToken(), templatePath: template).ConfigureAwait(false);
         });
 
         return cmd;
@@ -163,7 +168,9 @@ Rules:
         string testDir,
         bool dryRun,
         bool json,
-        CancellationToken ct)
+        CancellationToken ct,
+        string? templatePath = null,
+        string? compositionContext = null)
     {
         var fullProjectRoot = Path.GetFullPath(projectRoot);
 
@@ -186,7 +193,13 @@ Rules:
 
         SetPathAllowlist(fullProjectRoot, fullOutputDir, fullTestDir);
 
-        var prompt = BuildGeneratePrompt(systemDescription, outputDir, testDir);
+        var constraints = ProjectConstraints.LoadFromFile(fullProjectRoot);
+        var template = templatePath != null ? GenerationTemplate.LoadFromFile(templatePath) : null;
+
+        var prompt = BuildGeneratePrompt(systemDescription, outputDir, testDir,
+            constraints.ToPromptFragment(),
+            template?.ToPromptFragment() ?? "",
+            compositionContext ?? "");
 
         if (dryRun)
         {
@@ -264,6 +277,10 @@ Rules:
             contextBuilder.AppendLine($"// FILE: {relativePath}");
             contextBuilder.AppendLine(content);
             contextBuilder.AppendLine();
+
+            var overrideFragment = DescriptorOverrides.ToPromptFragment(file);
+            if (!string.IsNullOrEmpty(overrideFragment))
+                contextBuilder.AppendLine(overrideFragment);
         }
 
         var prompt = BuildIteratePrompt(changeDescription, systemDir, contextBuilder.ToString());
@@ -604,13 +621,19 @@ Rules:
         }
     }
 
-    private static string BuildGeneratePrompt(string systemDescription, string outputDir, string testDir)
+    internal static string BuildGeneratePrompt(
+        string systemDescription,
+        string outputDir,
+        string testDir,
+        string constraintFragment = "",
+        string templateFragment = "",
+        string compositionContext = "")
     {
-        return $@"{UnitySystemPrompt}
+        return $@"{UnitySystemPrompt}{constraintFragment}{templateFragment}
 
 Generate a Unity gameplay system based on the following description:
 {systemDescription}
-
+{(string.IsNullOrEmpty(compositionContext) ? "" : $"\nContext from upstream systems:\n{compositionContext}\n")}
 Place script files under: {outputDir}/
 Place test files under: {testDir}/
 Each file must start with a // FILE: marker with the relative path from the project root.";
@@ -714,6 +737,175 @@ Output the complete modified files. Each file must start with a // FILE: marker 
             foreach (var f in files)
                 Console.WriteLine($"  {f}");
         }
+    }
+
+    // ───────────────────────────────────────────────────────────────────
+    //  pin subcommand
+    // ───────────────────────────────────────────────────────────────────
+
+    private Command CreatePinCommand()
+    {
+        var projectRootOpt = new Option<string>("--project-root", "Path to the Unity project root.") { IsRequired = true };
+        var fileOpt = new Option<string>("--file", "Descriptor path relative to the project root.") { IsRequired = true };
+        var fieldOpt = new Option<string>("--field", "Field name to pin or unpin.") { IsRequired = true };
+        var valueOpt = new Option<string?>("--value", () => null, "Value to pin. Required unless --unpin is set.");
+        var unpinOpt = new Option<bool>("--unpin", () => false, "Remove the pin for the given field.");
+        var jsonOpt = new Option<bool>("--format-json", () => false, "Emit machine-readable JSON output.");
+
+        var cmd = new Command("pin", "Pin or unpin a field value on a descriptor to preserve it across regeneration.")
+        {
+            projectRootOpt, fileOpt, fieldOpt, valueOpt, unpinOpt, jsonOpt
+        };
+
+        cmd.SetHandler((InvocationContext ctx) =>
+        {
+            var projectRoot = ctx.ParseResult.GetValueForOption(projectRootOpt)!;
+            var file = ctx.ParseResult.GetValueForOption(fileOpt)!;
+            var field = ctx.ParseResult.GetValueForOption(fieldOpt)!;
+            var value = ctx.ParseResult.GetValueForOption(valueOpt);
+            var unpin = ctx.ParseResult.GetValueForOption(unpinOpt);
+            var json = ctx.ParseResult.GetValueForOption(jsonOpt);
+
+            ctx.ExitCode = ExecutePin(projectRoot, file, field, value, unpin, json);
+        });
+
+        return cmd;
+    }
+
+    internal static int ExecutePin(string projectRoot, string file, string field, string? value, bool unpin, bool json)
+    {
+        var fullProjectRoot = Path.GetFullPath(projectRoot);
+        var descriptorPath = Path.Combine(fullProjectRoot, file);
+
+        if (unpin)
+        {
+            DescriptorOverrides.Unpin(descriptorPath, field);
+            if (json)
+                Console.WriteLine(JsonSerializer.Serialize(new { ok = true, action = "unpin", file, field }));
+            else
+                Console.WriteLine($"Unpinned '{field}' from {file}");
+        }
+        else
+        {
+            if (value == null)
+            {
+                WriteError("--value is required when pinning a field.", json);
+                return 1;
+            }
+            DescriptorOverrides.Pin(descriptorPath, field, value);
+            if (json)
+                Console.WriteLine(JsonSerializer.Serialize(new { ok = true, action = "pin", file, field, value }));
+            else
+                Console.WriteLine($"Pinned '{field}' = '{value}' on {file}");
+        }
+
+        return 0;
+    }
+
+    // ───────────────────────────────────────────────────────────────────
+    //  compose subcommand
+    // ───────────────────────────────────────────────────────────────────
+
+    private Command CreateComposeCommand()
+    {
+        var projectRootOpt = new Option<string>("--project-root", "Path to the Unity project root.") { IsRequired = true };
+        var configOpt = new Option<string>("--config", () => ".nexo/composition.json", "Path to the composition graph JSON file (relative to project root).");
+        var jsonOpt = new Option<bool>("--format-json", () => false, "Emit machine-readable JSON output.");
+
+        var cmd = new Command("compose", "Run multi-system generation using a composition dependency graph.")
+        {
+            projectRootOpt, configOpt, jsonOpt
+        };
+
+        cmd.SetHandler(async (InvocationContext ctx) =>
+        {
+            var projectRoot = ctx.ParseResult.GetValueForOption(projectRootOpt)!;
+            var config = ctx.ParseResult.GetValueForOption(configOpt) ?? ".nexo/composition.json";
+            var json = ctx.ParseResult.GetValueForOption(jsonOpt);
+
+            ctx.ExitCode = await ExecuteComposeAsync(
+                projectRoot, config, json,
+                ctx.GetCancellationToken()).ConfigureAwait(false);
+        });
+
+        return cmd;
+    }
+
+    internal async Task<int> ExecuteComposeAsync(
+        string projectRoot,
+        string configPath,
+        bool json,
+        CancellationToken ct)
+    {
+        var fullProjectRoot = Path.GetFullPath(projectRoot);
+        if (!ValidateProjectRoot(fullProjectRoot, json))
+            return 1;
+
+        var fullConfigPath = Path.Combine(fullProjectRoot, configPath);
+        var graph = CompositionGraph.LoadFromFile(fullConfigPath);
+        if (graph == null || graph.Systems.Count == 0)
+        {
+            WriteError($"Composition graph not found or empty: {fullConfigPath}", json);
+            return 1;
+        }
+
+        IReadOnlyList<CompositionNode> executionOrder;
+        try
+        {
+            executionOrder = graph.GetExecutionOrder();
+        }
+        catch (InvalidOperationException ex)
+        {
+            WriteError(ex.Message, json);
+            return 1;
+        }
+
+        var completedOutputs = new Dictionary<string, string>();
+        var steps = new List<object>();
+
+        foreach (var node in executionOrder)
+        {
+            if (!json) Console.WriteLine($"compose: generating system '{node.Id}'...");
+
+            var upstreamContext = new StringBuilder();
+            foreach (var dep in node.Depends)
+            {
+                if (completedOutputs.TryGetValue(dep, out var output))
+                {
+                    upstreamContext.AppendLine($"--- Output from '{dep}' ---");
+                    upstreamContext.AppendLine(output);
+                }
+            }
+
+            var code = await ExecuteGenerateAsync(
+                projectRoot, node.Prompt, DefaultOutputDir, DefaultTestDir,
+                false, json, ct,
+                compositionContext: upstreamContext.ToString()).ConfigureAwait(false);
+
+            completedOutputs[node.Id] = node.Prompt;
+            steps.Add(new { systemId = node.Id, exitCode = code });
+
+            if (code != 0)
+            {
+                WriteError($"Composition step '{node.Id}' failed.", json);
+                if (json)
+                    Console.WriteLine(JsonSerializer.Serialize(new { ok = false, action = "compose", steps },
+                        new JsonSerializerOptions { WriteIndented = true }));
+                return code;
+            }
+        }
+
+        if (json)
+        {
+            Console.WriteLine(JsonSerializer.Serialize(new { ok = true, action = "compose", steps },
+                new JsonSerializerOptions { WriteIndented = true }));
+        }
+        else
+        {
+            Console.WriteLine($"compose: completed {executionOrder.Count} systems.");
+        }
+
+        return 0;
     }
 
     // ───────────────────────────────────────────────────────────────────
