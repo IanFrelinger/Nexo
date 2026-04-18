@@ -5,7 +5,7 @@ namespace Nexo.Tests.Infrastructure.Tests.CLI;
 
 /// <summary>
 /// Black-box smoke for runtime-studio CLI surfaces: observations, objectives,
-/// proposals, and mode. Spawns the real <c>Nexo.CLI.dll</c> via <see cref="CliRunner"/>
+/// proposals, mode, and a short <c>daemon</c> run. Spawns the real <c>Nexo.CLI.dll</c> via <see cref="CliRunner"/>
 /// with isolated env paths (no unit-test references to command handlers).
 /// </summary>
 [Collection("E2E")]
@@ -126,5 +126,51 @@ public sealed class RuntimeStudioBlackBoxSmokeTests : E2ETestBase
         // Restore active so subsequent tests on shared CI workers are not left in passive.
         var (restoreCode, _, _) = await RunCliAsync("background-agent mode set --value active", env, CliTimeout);
         Assert.Equal(0, restoreCode);
+    }
+
+    /// <summary>
+    /// Phase 2 slice: prove the hosted background-agent process starts and shuts down cleanly
+    /// (timed <c>--duration</c>) with a minimal agent config — no agent tick required.
+    /// </summary>
+    [Fact(Timeout = 300_000)]
+    public async Task Daemon_minimal_config_timed_run_exits_zero()
+    {
+        var root = Path.Combine(TempDir, "studio-daemon");
+        Directory.CreateDirectory(root);
+        var cfgPath = Path.Combine(root, "daemon-smoke.json");
+        await File.WriteAllTextAsync(cfgPath, """
+            {
+              "BackgroundAgents": {
+                "Agents": [
+                  {
+                    "Id": "daemon-smoke",
+                    "Name": "Daemon Smoke",
+                    "Role": "optimizer",
+                    "ModelProvider": "deterministic",
+                    "Commands": [ "analyze" ],
+                    "Parameters": { "AnalysisPath": "." },
+                    "Schedule": {
+                      "Type": "Interval",
+                      "Interval": "24:00:00",
+                      "InitialDelay": "24:00:00"
+                    },
+                    "Enabled": true,
+                    "MaxDataSensitivity": "Public"
+                  }
+                ]
+              }
+            }
+            """);
+
+        var env = StudioEnv(Path.Combine(root, "studio"));
+        var merged = new Dictionary<string, string?>(env) { ["NEXO_ALLOW_MOCK"] = "1" };
+
+        var daemonTimeout = TimeSpan.FromSeconds(150);
+        var (code, _, stderr) = await RunCliAsync(
+            $"background-agent daemon --config \"{cfgPath}\" --duration 5s --disable-observation",
+            merged,
+            daemonTimeout);
+        Assert.Equal(0, code);
+        Assert.Equal(string.Empty, stderr);
     }
 }

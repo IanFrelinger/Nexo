@@ -113,3 +113,17 @@ Common changes:
 - adjust exfiltration policy boundaries
 - adjust each game worker `Objective` to match your project pillars (art style, encounter pacing, systems depth)
 
+## Phase 2 (next)
+
+Operational and integration hardening on top of Streams A/B/C (observations, objectives, forge proposals):
+
+| Track | Goal |
+|--------|------|
+| **Daemon in CI** | Short timed `nexo background-agent daemon` runs with minimal config (see `RuntimeStudioBlackBoxSmokeTests.Daemon_minimal_config_timed_run_exits_zero` in Infrastructure tests). Extend with mock/offline LLM scenarios and objective claim cycles. |
+| **Passive + forge** | Automated E2E: aggressiveness `passive`, attempted `repo.fs.write` under `src/` rejected, `forge.propose_change` path exercised end-to-end in a sandbox repo. |
+| **Operator UX** | Single-page or CLI cheat sheet linking `observations`, `objectives report`, `proposals list/janitor`, and `mode` for on-call triage. |
+| **Mobile / MAUI** | Compile gate is in `.github/workflows/maui-client-build-gate.yml`; add Android TFMs or signing strategy when you need store-ready artifacts. |
+| **Performance** | Cap cold-start cost of daemon smoke on CI (shared host build, longer blame-hang only on daemon job if split). |
+
+Contributing note: avoid parallel full `dotnet build` on one clone (see `CONTRIBUTING.md` — `*.deps.json` locks).
+
