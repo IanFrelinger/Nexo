@@ -1,3 +1,5 @@
+using Nexo.Abstractions;
+
 namespace Nexo.BackgroundAgents.Configuration;
 
 /// <summary>

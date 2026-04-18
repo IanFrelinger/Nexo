@@ -1,7 +1,6 @@
 using System.Text.Json;
 using FluentAssertions;
 using Nexo.Abstractions;
-using Nexo.BackgroundAgents.Configuration;
 using Nexo.Policies.Dev;
 using Xunit;
 

@@ -43,6 +43,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Nexo.Abstractions\Nexo.Abstractions.csproj" />
     <ProjectReference Include="..\Nexo.Core.Application\Nexo.Core.Application.csproj" />
     <ProjectReference Include="..\Nexo.Tests.Contracts\Nexo.Tests.Contracts.csproj" />
     <ProjectReference Include="..\Nexo.Infrastructure\Nexo.Infrastructure.csproj" />

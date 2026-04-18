@@ -14,7 +14,8 @@ namespace Nexo.BackgroundAgents.Observations;
 ///
 /// <para>The type is named <c>RuntimeObservation</c> rather than
 /// <c>Observation</c> because the existing <c>Nexo.BackgroundAgents.Observation</c>
-/// namespace (the OS-level event/pattern pipeline) shadows the unqualified name.</para>
+/// namespace (the OS-level event/pattern pipeline) and the orchestration-layer
+/// <c>AgentObservation</c> type would otherwise collide on short names.</para>
 ///
 /// <para>Field names are short and snake_case to keep JSONL lines compact when
 /// hundreds of observations land in a single day.</para>
@@ -63,4 +64,3 @@ public enum ObservationSeverity
     Warn,
     Error
 }
-

@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Nexo.Abstractions;
 using Nexo.BackgroundAgents.Configuration;
 using Nexo.BackgroundAgents.DataSensitivity;
 using Nexo.BackgroundAgents.Forge;

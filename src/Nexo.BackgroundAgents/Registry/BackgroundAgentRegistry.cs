@@ -4,6 +4,7 @@ using Nexo.Abstractions;
 using Nexo.BackgroundAgents.Configuration;
 using Nexo.BackgroundAgents.Extending;
 using Nexo.BackgroundAgents.Logging;
+using Nexo.BackgroundAgents.Observations;
 using Nexo.BackgroundAgents.Optimization;
 using Nexo.BackgroundAgents.Scheduling;
 using Nexo.BackgroundAgents.Telemetry;
@@ -448,14 +449,14 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
                 // Severity is escalated when the analyser reports any violations, which is a
                 // stronger signal than analyser exit-success (a clean run on a broken codebase
                 // would still be Success=true with violations).
-                _observations?.Append(new Observations.RuntimeObservation(
+                _observations?.Append(new RuntimeObservation(
                     ts: DateTimeOffset.UtcNow,
                     source: agentId,
-                    kind: Observations.ObservationKind.Analysis,
+                    kind: ObservationKind.Analysis,
                     summary: $"{result.Summary} (violations: {result.ViolationCount})",
                     severity: result.ViolationCount > 0
-                        ? Observations.ObservationSeverity.Warn
-                        : Observations.ObservationSeverity.Info,
+                        ? ObservationSeverity.Warn
+                        : ObservationSeverity.Info,
                     facts: new Dictionary<string, string>
                     {
                         ["path"] = analysisPath,
@@ -484,14 +485,14 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
                 // Publish observation so the planner sees test failures in its next snapshot.
                 // Failed > 0 is always Error severity even if Success=true, so the planner can
                 // react to a single regression without waiting for a fully red run.
-                _observations?.Append(new Observations.RuntimeObservation(
+                _observations?.Append(new RuntimeObservation(
                     ts: DateTimeOffset.UtcNow,
                     source: agentId,
-                    kind: Observations.ObservationKind.Test,
+                    kind: ObservationKind.Test,
                     summary: $"{result.Summary} (total: {result.TotalTests}, failed: {result.FailedTests})",
                     severity: result.FailedTests > 0
-                        ? Observations.ObservationSeverity.Error
-                        : (result.Success ? Observations.ObservationSeverity.Info : Observations.ObservationSeverity.Warn),
+                        ? ObservationSeverity.Error
+                        : (result.Success ? ObservationSeverity.Info : ObservationSeverity.Warn),
                     facts: new Dictionary<string, string>
                     {
                         ["filter"] = filter ?? string.Empty,
@@ -572,12 +573,12 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
                 // did this cycle (tool counts + stopped reason). This is intentionally
                 // emitted even in Ambient mode — observations are an internal substrate,
                 // not user-facing notifications.
-                _observations?.Append(new Observations.RuntimeObservation(
+                _observations?.Append(new RuntimeObservation(
                     ts: DateTimeOffset.UtcNow,
                     source: agentId,
-                    kind: Observations.ObservationKind.AgentAction,
+                    kind: ObservationKind.AgentAction,
                     summary: $"Self-extend: {result.Summary} (executed: {result.ToolCallsExecuted}, denied: {result.ToolCallsDenied})",
-                    severity: result.Success ? Observations.ObservationSeverity.Info : Observations.ObservationSeverity.Warn,
+                    severity: result.Success ? ObservationSeverity.Info : ObservationSeverity.Warn,
                     facts: new Dictionary<string, string>
                     {
                         ["repo_root"] = repoRoot,
@@ -649,12 +650,6 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
             }
 
             // Default: simple success (full agent ThinkAsync + toolbox can be wired later)
-            var observation = new AgentObservation(new WorldSnapshot(0, new Dictionary<string, object?>
-            {
-                ["agentId"] = agentId,
-                ["timestamp"] = DateTimeOffset.UtcNow
-            }));
-
             instance.LastCompletedAt = DateTimeOffset.UtcNow;
             instance.SuccessCount++;
             _logStore?.Append(agentId, "Info", "Execution completed successfully.");
@@ -720,5 +715,3 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
         return false;
     }
 }
-
-

@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Moq;
+using Nexo.Abstractions;
 using Nexo.CLI.Commands.BackgroundAgent;
 using Nexo.BackgroundAgents.Configuration;
 using Nexo.Core.Application.Testing.Abstractions;

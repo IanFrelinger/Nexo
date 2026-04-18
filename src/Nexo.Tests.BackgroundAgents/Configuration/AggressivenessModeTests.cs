@@ -3,6 +3,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Nexo.Abstractions;
 using Nexo.BackgroundAgents.Configuration;
 using Nexo.BackgroundAgents.DataSensitivity;
 using Nexo.BackgroundAgents.Extending;

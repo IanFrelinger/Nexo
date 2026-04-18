@@ -13,6 +13,7 @@ using Nexo.Core.Application.NodeCapabilityRuntime.Models;
 using Nexo.Core.Application.NodeCapabilityRuntime.Ports;
 using Nexo.Core.Application.Trust.Ports;
 using Nexo.Core.Application.Validation.UseCases.RunValidation;
+using Nexo.Abstractions;
 using Nexo.BackgroundAgents.Configuration;
 using Nexo.BackgroundAgents.Registry;
 using Nexo.Infrastructure.Testing.ExecutionPlatform;

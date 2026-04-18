@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using Nexo.Abstractions;
 using Nexo.BackgroundAgents.Configuration;
 
 namespace Nexo.CLI.Commands.BackgroundAgent;

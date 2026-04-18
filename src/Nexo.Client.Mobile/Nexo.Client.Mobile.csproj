@@ -65,6 +65,8 @@
 	</ItemGroup>
 	<ItemGroup>
 		<ProjectReference Include="..\Nexo.Client\Nexo.Client.csproj" />
+		<!-- API DTOs (OrchestrationRequest, etc.); global usings do not flow from Nexo.Client. -->
+		<ProjectReference Include="..\Nexo.Contracts\Nexo.Contracts.csproj" />
 	</ItemGroup>
 
 </Project>

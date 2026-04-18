@@ -1,4 +1,4 @@
-namespace Nexo.BackgroundAgents.Configuration;
+namespace Nexo.Abstractions;
 
 /// <summary>
 /// Aggressiveness level for background agent autonomous action.
