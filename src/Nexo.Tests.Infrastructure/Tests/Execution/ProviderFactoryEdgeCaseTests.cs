@@ -12,6 +12,7 @@ namespace Nexo.Tests.Infrastructure.Tests.Execution;
 /// mock behavior, environment variable handling, and concurrent execution safety.
 /// </summary>
 [Trait("Category", "E2E")]
+[Collection("EnvironmentVariables")]
 public sealed class ProviderFactoryEdgeCaseTests
 {
     private ProviderFactory CreateFactory()

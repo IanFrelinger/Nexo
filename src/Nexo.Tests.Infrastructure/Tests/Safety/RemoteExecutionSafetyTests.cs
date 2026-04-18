@@ -13,6 +13,7 @@ namespace Nexo.Tests.Infrastructure.Tests.Safety;
 /// </summary>
 [Trait("Category", "Safety")]
 [Trait("Category", "Unit")]
+[Collection("EnvironmentVariables")]
 public sealed class RemoteExecutionSafetyTests
 {
     [Fact]
@@ -78,15 +79,23 @@ public sealed class RemoteExecutionSafetyTests
     [Fact]
     public async Task AdaptiveProviderFactory_NeverFallsBackToMock_WhenMockNotExplicitlyEnabled()
     {
-        Environment.SetEnvironmentVariable("NEXO_ALLOW_MOCK", null);
-        var failingInner = new FailingProviderFactory();
-        var loadPolicy = new PreferEdgeLoadPolicy();
-        var factory = new AdaptiveProviderFactory(failingInner, loadPolicy, null);
+        var prev = Environment.GetEnvironmentVariable("NEXO_ALLOW_MOCK");
+        try
+        {
+            Environment.SetEnvironmentVariable("NEXO_ALLOW_MOCK", null);
+            var failingInner = new FailingProviderFactory();
+            var loadPolicy = new PreferEdgeLoadPolicy();
+            var factory = new AdaptiveProviderFactory(failingInner, loadPolicy, null);
 
-        var ex = await Assert.ThrowsAsync<ModelUnavailableException>(
-            () => factory.ExecuteLLMAsync("ollama", "sys", "user", new { }, default));
+            var ex = await Assert.ThrowsAsync<ModelUnavailableException>(
+                () => factory.ExecuteLLMAsync("ollama", "sys", "user", new { }, default));
 
-        ex.Message.Contains("mock", StringComparison.OrdinalIgnoreCase).Should().BeFalse("must not fall back to mock");
+            ex.Message.Contains("mock", StringComparison.OrdinalIgnoreCase).Should().BeFalse("must not fall back to mock");
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("NEXO_ALLOW_MOCK", prev);
+        }
     }
 
     private sealed class FailAfterFirstCallProvider : IProviderFactory

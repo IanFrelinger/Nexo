@@ -20,6 +20,7 @@ namespace Nexo.Tests.Infrastructure.Tests.Onboarding;
 /// first-run state detection, and the full bootstrap-to-ready path.
 /// </summary>
 [Trait("Category", "E2E")]
+[Collection("EnvironmentVariables")]
 public sealed class OnboardingE2ETests : IDisposable
 {
     private readonly string _tempDir;

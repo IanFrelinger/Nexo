@@ -414,12 +414,18 @@ public static class ForgeEndpoints
 
 /// <summary>
 /// Static in-memory store for the current Forge session and macro registry.
-/// This is a prototype-only construct — persistence will be introduced in a later workstream.
+/// <para>
+/// PROTOTYPE ONLY — This static mutable state is not suitable for production.
+/// Replace with proper persistence (e.g., database-backed session store) in a future workstream.
+/// The <c>_session</c> field uses <see langword="volatile"/> to ensure atomic reference swaps
+/// are visible across threads. <c>MacroRegistry</c> is backed by <c>ConcurrentDictionary</c>
+/// and is inherently thread-safe for individual operations.
+/// </para>
 /// </summary>
 internal static class ForgeSessionStore
 {
-    private static SessionState _session = CreateDefaultSession();
-    private static MacroRegistry _registry = new();
+    private static volatile SessionState _session = CreateDefaultSession();
+    private static volatile MacroRegistry _registry = new();
 
     internal static SessionState Session
     {

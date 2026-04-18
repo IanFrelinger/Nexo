@@ -39,7 +39,7 @@ public sealed class HttpKnowledgeSyncService : IKnowledgeSyncService
                 var nodeId = new Uri(u).Host;
                 _peerUrlByNodeId[nodeId] = u;
             }
-            catch (UriFormatException) { /* skip invalid */ }
+            catch (UriFormatException ex) { System.Diagnostics.Debug.WriteLine($"Skipping invalid peer URL: {ex.Message}"); }
         }
     }
 
