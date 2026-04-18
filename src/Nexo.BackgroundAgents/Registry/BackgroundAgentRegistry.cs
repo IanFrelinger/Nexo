@@ -114,7 +114,15 @@ public interface IBackgroundAgentRegistry
 /// </summary>
 public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
 {
+    /// <summary>
+    /// Default grace period to wait for in-flight cycles to drain on shutdown.
+    /// Sized to comfortably accommodate a typical ReAct cycle (~90s deadline) without
+    /// blocking the host indefinitely; can be tuned via the constructor overload.
+    /// </summary>
+    public static readonly TimeSpan DefaultShutdownGracePeriod = TimeSpan.FromSeconds(30);
+
     private readonly ConcurrentDictionary<string, BackgroundAgentInstance> _agents = new();
+    private readonly ConcurrentDictionary<string, Task> _inFlight = new();
     private readonly IAgentScheduler _scheduler;
     private readonly ILogger<BackgroundAgentRegistry>? _logger;
     private readonly IBackgroundAgentLogStore? _logStore;
@@ -125,6 +133,7 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
     private readonly IAggressivenessModeStore? _modeStore;
     private readonly IApprovalGate? _approvalGate;
     private readonly IDataDecisionAuditLog? _auditLog;
+    private readonly TimeSpan _shutdownGracePeriod;
 
     /// <summary>
     /// Initializes the registry. The host (typically <c>BackgroundAgentService</c>)
@@ -152,7 +161,8 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
         ISelfImprovementLoop? selfImprovementLoop = null,
         IAggressivenessModeStore? modeStore = null,
         IApprovalGate? approvalGate = null,
-        IDataDecisionAuditLog? auditLog = null)
+        IDataDecisionAuditLog? auditLog = null,
+        TimeSpan? shutdownGracePeriod = null)
     {
         _scheduler = scheduler ?? throw new ArgumentNullException(nameof(scheduler));
         _logger = logger;
@@ -164,6 +174,7 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
         _modeStore = modeStore;
         _approvalGate = approvalGate;
         _auditLog = auditLog;
+        _shutdownGracePeriod = shutdownGracePeriod ?? DefaultShutdownGracePeriod;
     }
 
     /// <summary>
@@ -218,11 +229,62 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
 
     /// <summary>
     /// Stop all registered agents.
+    ///
+    /// <para>Shutdown ordering:
+    /// <list type="number">
+    ///   <item>Cancel each scheduler so no new cycles are dispatched.</item>
+    ///   <item>Wait for in-flight cycles to drain, bounded by
+    ///         <see cref="DefaultShutdownGracePeriod"/> (or the value supplied to
+    ///         the constructor) and/or the supplied <paramref name="cancellationToken"/>.
+    ///         Whichever fires first wins.</item>
+    ///   <item>If cycles are still running after the grace window, log a warning
+    ///         and return — the host's process exit will tear down the AppDomain.</item>
+    /// </list></para>
     /// </summary>
-    public Task StopAllAsync(CancellationToken cancellationToken = default)
+    public async Task StopAllAsync(CancellationToken cancellationToken = default)
     {
-        var tasks = _agents.Values.Select(a => StopAsync(a.Config.Id, cancellationToken));
-        return Task.WhenAll(tasks);
+        // Stop scheduling first so no new cycles can start while we drain.
+        foreach (var instance in _agents.Values)
+        {
+            await StopAsync(instance.Config.Id, cancellationToken).ConfigureAwait(false);
+        }
+
+        await DrainInFlightAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task DrainInFlightAsync(CancellationToken cancellationToken)
+    {
+        var inFlight = _inFlight.Values.ToArray();
+        if (inFlight.Length == 0)
+            return;
+
+        _logger?.LogInformation(
+            "Waiting up to {GraceSeconds:F0}s for {Count} in-flight agent cycle(s) to drain",
+            _shutdownGracePeriod.TotalSeconds,
+            inFlight.Length);
+
+        try
+        {
+            using var graceCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            graceCts.CancelAfter(_shutdownGracePeriod);
+            // WaitAsync rethrows if the token cancels first; we swallow because timeout/host-cancel is expected.
+            await Task.WhenAll(inFlight).WaitAsync(graceCts.Token).ConfigureAwait(false);
+            _logger?.LogInformation("All in-flight agent cycles drained cleanly");
+        }
+        catch (OperationCanceledException)
+        {
+            var stillRunning = _inFlight.Count;
+            if (stillRunning > 0)
+            {
+                _logger?.LogWarning(
+                    "Shutdown grace period elapsed with {Count} in-flight cycle(s) still running; abandoning",
+                    stillRunning);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger?.LogWarning(ex, "Error while draining in-flight agent cycles");
+        }
     }
 
     /// <summary>
@@ -244,7 +306,7 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
         instance.State = BackgroundAgentState.Starting;
         instance.LastStartedAt = DateTimeOffset.UtcNow;
 
-        _scheduler.StartAsync(instance, ExecuteAgentAsync, cancellationToken);
+        _scheduler.StartAsync(instance, TrackedExecuteAgentAsync, cancellationToken);
 
         instance.State = BackgroundAgentState.Running;
         _logger?.LogInformation("Started background agent: {AgentId}", agentId);
@@ -280,8 +342,40 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
     {
         if (!_agents.TryGetValue(agentId, out var instance))
             throw new InvalidOperationException($"Agent {agentId} not found");
-        await ExecuteAgentAsync(instance, cancellationToken).ConfigureAwait(false);
+        await TrackedExecuteAgentAsync(instance, cancellationToken).ConfigureAwait(false);
     }
+
+    /// <summary>
+    /// Wraps <see cref="ExecuteAgentAsync"/> so the in-flight task is registered in
+    /// <see cref="_inFlight"/> for the duration of the cycle. This lets
+    /// <see cref="StopAllAsync"/> await graceful drain instead of returning while
+    /// LLM calls are still in progress.
+    ///
+    /// <para>The scheduler may invoke this concurrently with prior cycles in degenerate
+    /// cases (timer overlap), so we key by agent ID + Interlocked counter to avoid
+    /// dictionary collisions.</para>
+    /// </summary>
+    private Task TrackedExecuteAgentAsync(BackgroundAgentInstance instance, CancellationToken cancellationToken)
+    {
+        var key = $"{instance.Config.Id}#{Interlocked.Increment(ref _cycleSeq)}";
+        var task = RemoveWhenDoneAsync(key, ExecuteAgentAsync(instance, cancellationToken));
+        _inFlight[key] = task;
+        return task;
+    }
+
+    private async Task RemoveWhenDoneAsync(string key, Task inner)
+    {
+        try
+        {
+            await inner.ConfigureAwait(false);
+        }
+        finally
+        {
+            _inFlight.TryRemove(key, out _);
+        }
+    }
+
+    private long _cycleSeq;
 
     private async Task ExecuteAgentAsync(BackgroundAgentInstance instance, CancellationToken cancellationToken)
     {
