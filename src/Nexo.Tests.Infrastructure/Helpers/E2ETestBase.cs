@@ -29,12 +29,14 @@ public abstract class E2ETestBase : TempDirTestBase
     /// <summary>
     /// Runs the CLI with timeout to avoid orphaned processes and blame-hang.
     /// </summary>
+    /// <param name="cliBuildConfiguration">Pass <c>Release</c> to exercise production-shaped CLI binaries.</param>
     protected Task<(int ExitCode, string StdOut, string StdErr)> RunCliAsync(
         string args,
         IReadOnlyDictionary<string, string?>? envOverrides = null,
         TimeSpan? timeout = null,
-        CancellationToken ct = default)
+        CancellationToken ct = default,
+        string cliBuildConfiguration = "Debug")
     {
-        return CliRunner.RunAsync(RepoRoot, args, envOverrides, timeout ?? DefaultCliTimeout, ct);
+        return CliRunner.RunAsync(RepoRoot, args, envOverrides, timeout ?? DefaultCliTimeout, ct, cliBuildConfiguration);
     }
 }

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Threading;
 
 namespace Nexo.Tests.Infrastructure.Helpers;
 
@@ -9,7 +10,14 @@ namespace Nexo.Tests.Infrastructure.Helpers;
 public static class CliRunner
 {
     private static readonly object _cliBuildLock = new();
-    private static string? _cachedCliPath;
+    private static readonly Dictionary<string, string> _cachedCliPaths = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Serializes <c>dotnet build</c> across parallel test hosts (e.g. net8.0 + net9.0) so
+    /// concurrent MSBuild invocations do not corrupt shared <c>obj</c> trees.
+    /// </summary>
+    private static readonly Mutex s_crossProcessBuild =
+        new(initiallyOwned: false, name: "Nexo.CliRunner.EnsureCliBuilt.v1");
 
     /// <summary>
     /// Runs the prebuilt Nexo CLI with the given arguments.
@@ -20,12 +28,14 @@ public static class CliRunner
     /// <param name="timeout">Optional timeout. When provided, cancels and kills the process if it exceeds the limit.</param>
     /// <param name="ct">Optional cancellation token.</param>
     /// <returns>Exit code, stdout, and stderr.</returns>
+    /// <param name="buildConfiguration">MSBuild configuration for the CLI project (e.g. Debug, Release). Cached separately per configuration.</param>
     public static async Task<(int ExitCode, string StdOut, string StdErr)> RunAsync(
         string workingDir,
         string args,
         IReadOnlyDictionary<string, string?>? envOverrides = null,
         TimeSpan? timeout = null,
-        CancellationToken ct = default)
+        CancellationToken ct = default,
+        string buildConfiguration = "Debug")
     {
         using var timeoutCts = timeout.HasValue ? CancellationTokenSource.CreateLinkedTokenSource(ct) : null;
         if (timeout.HasValue && timeoutCts != null)
@@ -33,7 +43,7 @@ public static class CliRunner
 
         var effectiveCt = timeoutCts?.Token ?? ct;
 
-        var cliPath = await EnsureCliBuiltAsync(workingDir);
+        var cliPath = await EnsureCliBuiltAsync(workingDir, buildConfiguration);
         var fullArgs = $"\"{cliPath}\" {args}";
 
         var psi = new ProcessStartInfo
@@ -84,42 +94,69 @@ public static class CliRunner
     /// Builds once and caches the path for subsequent calls.
     /// </summary>
     /// <param name="repoRoot">Repository root (contains src/Nexo.CLI).</param>
+    /// <param name="buildConfiguration">Debug (default) or Release for production-shaped binaries.</param>
     /// <returns>Path to Nexo.CLI.dll.</returns>
-    public static Task<string> EnsureCliBuiltAsync(string repoRoot)
+    public static Task<string> EnsureCliBuiltAsync(string repoRoot, string buildConfiguration = "Debug")
     {
-        var cliDll = Path.Combine(repoRoot, "src", "Nexo.CLI", "bin", "Debug", "net8.0", "Nexo.CLI.dll");
+        if (string.IsNullOrWhiteSpace(buildConfiguration))
+            buildConfiguration = "Debug";
+
+        var cliDll = Path.Combine(repoRoot, "src", "Nexo.CLI", "bin", buildConfiguration, "net8.0", "Nexo.CLI.dll");
 
         lock (_cliBuildLock)
         {
-            if (_cachedCliPath != null && File.Exists(_cachedCliPath))
-                return Task.FromResult(_cachedCliPath);
+            if (_cachedCliPaths.TryGetValue(buildConfiguration, out var cached) && File.Exists(cached))
+                return Task.FromResult(cached);
+        }
 
-            var psi = new ProcessStartInfo
+        var acquired = false;
+        try
+        {
+            acquired = s_crossProcessBuild.WaitOne(TimeSpan.FromMinutes(15));
+            if (!acquired)
+                throw new TimeoutException("Timed out waiting for Nexo CLI build mutex (another test host is building).");
+
+            lock (_cliBuildLock)
             {
-                FileName = "dotnet",
-                Arguments = "build src/Nexo.CLI/Nexo.CLI.csproj --verbosity quiet",
-                WorkingDirectory = repoRoot,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
+                if (_cachedCliPaths.TryGetValue(buildConfiguration, out var hit) && File.Exists(hit))
+                    return Task.FromResult(hit);
 
-            using var p = Process.Start(psi) ?? throw new InvalidOperationException("Failed to start dotnet build");
-            var stderrTask = p.StandardError.ReadToEndAsync();
-            p.WaitForExit();
+                var psi = new ProcessStartInfo
+                {
+                    FileName = "dotnet",
+                    Arguments =
+                        $"build src/Nexo.CLI/Nexo.CLI.csproj -c {buildConfiguration} --verbosity quiet -p:TreatWarningsAsErrors=false",
+                    WorkingDirectory = repoRoot,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                };
 
-            if (p.ExitCode != 0)
-            {
-                var err = stderrTask.GetAwaiter().GetResult();
-                throw new InvalidOperationException($"CLI build failed (exit {p.ExitCode}): {err}");
+                using var p = Process.Start(psi) ?? throw new InvalidOperationException("Failed to start dotnet build");
+                var stderrTask = p.StandardError.ReadToEndAsync();
+                var stdoutTask = p.StandardOutput.ReadToEndAsync();
+                p.WaitForExit();
+
+                if (p.ExitCode != 0)
+                {
+                    var err = stderrTask.GetAwaiter().GetResult();
+                    var outp = stdoutTask.GetAwaiter().GetResult();
+                    throw new InvalidOperationException(
+                        $"CLI build failed (exit {p.ExitCode}). stderr: {err}. stdout: {outp}");
+                }
+
+                if (!File.Exists(cliDll))
+                    throw new InvalidOperationException($"CLI DLL not found at {cliDll} after build");
+
+                _cachedCliPaths[buildConfiguration] = cliDll;
+                return Task.FromResult(cliDll);
             }
-
-            if (!File.Exists(cliDll))
-                throw new InvalidOperationException($"CLI DLL not found at {cliDll} after build");
-
-            _cachedCliPath = cliDll;
-            return Task.FromResult(cliDll);
+        }
+        finally
+        {
+            if (acquired)
+                s_crossProcessBuild.ReleaseMutex();
         }
     }
 }
