@@ -43,6 +43,41 @@ public class ProposalsBackgroundAgentCommandTests : IDisposable
         File.WriteAllText(Path.Combine(_repoRoot, "Program.cs"), "System.Console.WriteLine(1);");
     }
 
+    private void WriteMinimalXunitTestProjectAtRepoRoot()
+    {
+        File.WriteAllText(
+            Path.Combine(_repoRoot, "Smoke.csproj"),
+            """
+            <Project Sdk="Microsoft.NET.Sdk">
+              <PropertyGroup>
+                <TargetFramework>net8.0</TargetFramework>
+                <ImplicitUsings>enable</ImplicitUsings>
+                <Nullable>enable</Nullable>
+                <IsPackable>false</IsPackable>
+              </PropertyGroup>
+              <ItemGroup>
+                <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+                <PackageReference Include="xunit" Version="2.6.6" />
+                <PackageReference Include="xunit.runner.visualstudio" Version="2.5.6">
+                  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+                  <PrivateAssets>all</PrivateAssets>
+                </PackageReference>
+              </ItemGroup>
+            </Project>
+            """);
+        File.WriteAllText(
+            Path.Combine(_repoRoot, "UnitTest1.cs"),
+            """
+            using Xunit;
+
+            public class UnitTest1
+            {
+                [Fact]
+                public void Ok() => Assert.True(true);
+            }
+            """);
+    }
+
     [Fact]
     public async Task BuildAsync_runs_dotnet_build_from_repo_root()
     {
@@ -71,10 +106,52 @@ public class ProposalsBackgroundAgentCommandTests : IDisposable
         var cmd = NewCmd();
         var stdout = new StringWriter();
         var stderr = new StringWriter();
-        var rc = await cmd.ApplyAsync("break-build", _repoRoot, force: false, formatJson: false, verifyBuild: true, stdout, stderr);
+        var rc = await cmd.ApplyAsync("break-build", _repoRoot, force: false, formatJson: false, verifyBuild: true, verifyTest: false, stdout, stderr);
         rc.Should().Be(4);
         File.ReadAllText(Path.Combine(_repoRoot, "Program.cs")).Should().Be("this is not valid csharp");
         _store.Find("break-build")!.Status.Should().Be(ChangeProposalStatus.Applied);
+    }
+
+    [Fact]
+    public async Task TestAsync_builds_then_tests_minimal_xunit_project()
+    {
+        WriteMinimalXunitTestProjectAtRepoRoot();
+        var cmd = NewCmd();
+        var stdout = new StringWriter();
+        var stderr = new StringWriter();
+        var rc = await cmd.TestAsync(_repoRoot, formatJson: false, stdout, stderr, default);
+        rc.Should().Be(0);
+        stdout.ToString().Should().Contain("Tests succeeded");
+    }
+
+    [Fact]
+    public async Task Apply_with_verify_test_returns_5_when_tests_fail_after_apply()
+    {
+        WriteMinimalXunitTestProjectAtRepoRoot();
+        _store.Add(new ChangeProposal
+        {
+            Id = "break-test",
+            TargetPath = "UnitTest1.cs",
+            NewContent =
+                """
+                using Xunit;
+
+                public class UnitTest1
+                {
+                    [Fact]
+                    public void Bad() => Assert.True(false);
+                }
+                """,
+            Summary = "break tests"
+        });
+        _store.Approve("break-test");
+
+        var cmd = NewCmd();
+        var stdout = new StringWriter();
+        var stderr = new StringWriter();
+        var rc = await cmd.ApplyAsync("break-test", _repoRoot, force: false, formatJson: false, verifyBuild: false, verifyTest: true, stdout, stderr);
+        rc.Should().Be(5);
+        _store.Find("break-test")!.Status.Should().Be(ChangeProposalStatus.Applied);
     }
 
     [Fact]
@@ -92,7 +169,7 @@ public class ProposalsBackgroundAgentCommandTests : IDisposable
         var stdout = new StringWriter(); var stderr = new StringWriter();
         (await cmd.ApproveAsync(saved.Id, "alice", "lgtm", formatJson: false)).Should().Be(0);
 
-        var rc = await cmd.ApplyAsync(saved.Id, _repoRoot, force: false, formatJson: false, verifyBuild: false, stdout, stderr);
+        var rc = await cmd.ApplyAsync(saved.Id, _repoRoot, force: false, formatJson: false, verifyBuild: false, verifyTest: false, stdout, stderr);
         rc.Should().Be(0);
         File.ReadAllText(Path.Combine(_repoRoot, "src", "A.cs")).Should().Be("// hello");
         _store.Find(saved.Id)!.Status.Should().Be(ChangeProposalStatus.Applied);
@@ -118,11 +195,11 @@ public class ProposalsBackgroundAgentCommandTests : IDisposable
         File.WriteAllText(path, "// drifted by someone else");
         var cmd = NewCmd();
         var stdout = new StringWriter(); var stderr = new StringWriter();
-        var rc = await cmd.ApplyAsync("drift", _repoRoot, force: false, formatJson: false, verifyBuild: false, stdout, stderr);
+        var rc = await cmd.ApplyAsync("drift", _repoRoot, force: false, formatJson: false, verifyBuild: false, verifyTest: false, stdout, stderr);
         rc.Should().Be(3);
         stderr.ToString().Should().Contain("Drift");
 
-        var rcForce = await cmd.ApplyAsync("drift", _repoRoot, force: true, formatJson: false, verifyBuild: false, new StringWriter(), new StringWriter());
+        var rcForce = await cmd.ApplyAsync("drift", _repoRoot, force: true, formatJson: false, verifyBuild: false, verifyTest: false, new StringWriter(), new StringWriter());
         rcForce.Should().Be(0);
         File.ReadAllText(path).Should().Be("// rewritten");
     }

@@ -142,4 +142,52 @@ public class ForgeToolsTests : IDisposable
         var doc = JsonDocument.Parse(JsonSerializer.Serialize(result.Payload));
         doc.RootElement.GetProperty("ok").GetBoolean().Should().BeTrue();
     }
+
+    [Fact]
+    public async Task Forge_test_matches_dotnet_test_contract_on_disk()
+    {
+        var testDir = Path.Combine(_repoRoot, "Tests");
+        Directory.CreateDirectory(testDir);
+        File.WriteAllText(
+            Path.Combine(testDir, "Smoke.csproj"),
+            """
+            <Project Sdk="Microsoft.NET.Sdk">
+              <PropertyGroup>
+                <TargetFramework>net8.0</TargetFramework>
+                <ImplicitUsings>enable</ImplicitUsings>
+                <Nullable>enable</Nullable>
+                <IsPackable>false</IsPackable>
+              </PropertyGroup>
+              <ItemGroup>
+                <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+                <PackageReference Include="xunit" Version="2.6.6" />
+                <PackageReference Include="xunit.runner.visualstudio" Version="2.5.6">
+                  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+                  <PrivateAssets>all</PrivateAssets>
+                </PackageReference>
+              </ItemGroup>
+            </Project>
+            """);
+        File.WriteAllText(
+            Path.Combine(testDir, "T.cs"),
+            """
+            using Xunit;
+            public class T { [Fact] public void One() => Assert.True(true); }
+            """);
+        var snap = new WorldSnapshot(0, new Dictionary<string, object?> { ["RepoRoot"] = _repoRoot });
+        var build = new DotnetBuildTool();
+        var buildResult = await build.InvokeAsync(
+            new ToolCall(build.Id, JsonSerializer.SerializeToElement(new { root = testDir })),
+            snap,
+            default);
+        JsonDocument.Parse(JsonSerializer.Serialize(buildResult.Payload)).RootElement.GetProperty("ok").GetBoolean().Should().BeTrue();
+
+        var tool = new ForgeTestTool();
+        var result = await tool.InvokeAsync(
+            new ToolCall(tool.Id, JsonSerializer.SerializeToElement(new { root = testDir })),
+            snap,
+            default);
+        var doc = JsonDocument.Parse(JsonSerializer.Serialize(result.Payload));
+        doc.RootElement.GetProperty("ok").GetBoolean().Should().BeTrue();
+    }
 }

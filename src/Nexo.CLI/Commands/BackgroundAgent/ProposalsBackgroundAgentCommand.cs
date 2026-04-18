@@ -149,11 +149,19 @@ public class ProposalsBackgroundAgentCommand
     /// Apply an Approved proposal: write its <c>NewContent</c> to disk and then
     /// transition to <c>Applied</c>. Re-reads the file and verifies the recorded
     /// <c>BaseSha256</c> still matches before writing — bails with a structured
-    /// error on drift so the operator can re-review. When <paramref name="verifyBuild"/> is true,
-    /// runs <c>dotnet build -c Release</c> from <paramref name="repoRoot"/> afterward and returns exit code **4** if the build fails (file remains applied).
+    /// error on drift so the operator can re-review. Optional verification: <paramref name="verifyBuild"/>
+    /// runs <c>dotnet build -c Release</c>; <paramref name="verifyTest"/> runs that build then
+    /// <c>dotnet test</c> (TRX, <c>--no-build</c>). Exit **4** if the build fails, **5** if tests fail after a successful build (file remains applied).
     /// </summary>
-    public Task<int> ApplyAsync(string id, string repoRoot, bool force, bool formatJson, bool verifyBuild = false, CancellationToken ct = default)
-        => ApplyAsync(id, repoRoot, force, formatJson, verifyBuild, Console.Out, Console.Error, ct);
+    public Task<int> ApplyAsync(
+        string id,
+        string repoRoot,
+        bool force,
+        bool formatJson,
+        bool verifyBuild = false,
+        bool verifyTest = false,
+        CancellationToken ct = default)
+        => ApplyAsync(id, repoRoot, force, formatJson, verifyBuild, verifyTest, Console.Out, Console.Error, ct);
 
     public async Task<int> ApplyAsync(
         string id,
@@ -161,6 +169,7 @@ public class ProposalsBackgroundAgentCommand
         bool force,
         bool formatJson,
         bool verifyBuild,
+        bool verifyTest,
         TextWriter stdout,
         TextWriter stderr,
         CancellationToken ct = default)
@@ -193,7 +202,8 @@ public class ProposalsBackgroundAgentCommand
             File.WriteAllText(fullPath, p.NewContent);
             var applied = _store.MarkApplied(id, note: $"applied to {fullPath}");
 
-            if (!verifyBuild)
+            var needBuild = verifyBuild || verifyTest;
+            if (!needBuild)
             {
                 if (formatJson)
                     stdout.WriteLine(JsonSerializer.Serialize(new { ok = true, action = "applied", proposal = Project(applied) }));
@@ -205,38 +215,94 @@ public class ProposalsBackgroundAgentCommand
             if (!formatJson)
                 stdout.WriteLine($"Applied proposal '{applied.Id}' → {fullPath}");
 
-            var (buildCode, buildOut, buildErr, timedOut) = await DotnetBuildTool.RunReleaseBuildAsync(repoRoot, ct)
+            var (buildCode, buildOut, buildErr, buildTimedOut) = await DotnetBuildTool.RunReleaseBuildAsync(repoRoot, ct)
                 .ConfigureAwait(false);
-            var buildOk = buildCode == 0 && !timedOut;
+            var buildOk = buildCode == 0 && !buildTimedOut;
+            object buildObj = new
+            {
+                ok = buildOk,
+                exit_code = buildCode,
+                timed_out = buildTimedOut,
+                stdout = buildOut,
+                stderr = buildErr
+            };
+
+            if (!buildOk)
+            {
+                if (formatJson)
+                {
+                    stdout.WriteLine(JsonSerializer.Serialize(new
+                    {
+                        ok = false,
+                        action = "applied",
+                        proposal = Project(applied),
+                        build = buildObj
+                    }));
+                }
+                else
+                {
+                    stdout.WriteLine(buildTimedOut ? "dotnet build -c Release: timed out." : $"dotnet build -c Release: failed (exit {buildCode}).");
+                    if (!string.IsNullOrWhiteSpace(buildErr)) stdout.WriteLine(buildErr);
+                }
+
+                return 4;
+            }
+
+            if (!verifyTest)
+            {
+                if (formatJson)
+                {
+                    stdout.WriteLine(JsonSerializer.Serialize(new
+                    {
+                        ok = true,
+                        action = "applied",
+                        proposal = Project(applied),
+                        build = buildObj
+                    }));
+                }
+                else
+                    stdout.WriteLine("dotnet build -c Release: succeeded.");
+
+                return 0;
+            }
+
+            var (testCode, testOut, testErr, testTimedOut) = await DotnetTestTool.RunTrxTestsNoBuildAsync(repoRoot, ct)
+                .ConfigureAwait(false);
+            var testOk = testCode == 0 && !testTimedOut;
+            object testObj = new
+            {
+                ok = testOk,
+                exit_code = testCode,
+                timed_out = testTimedOut,
+                stdout = testOut,
+                stderr = testErr
+            };
+            var overallOk = testOk;
+
             if (formatJson)
             {
                 stdout.WriteLine(JsonSerializer.Serialize(new
                 {
-                    ok = buildOk,
+                    ok = overallOk,
                     action = "applied",
                     proposal = Project(applied),
-                    build = new
-                    {
-                        ok = buildOk,
-                        exit_code = buildCode,
-                        timed_out = timedOut,
-                        stdout = buildOut,
-                        stderr = buildErr
-                    }
+                    build = buildObj,
+                    test = testObj
                 }));
             }
             else
             {
-                if (buildOk)
-                    stdout.WriteLine("dotnet build -c Release: succeeded.");
+                stdout.WriteLine("dotnet build -c Release: succeeded.");
+                if (testOk)
+                    stdout.WriteLine("dotnet test: succeeded.");
                 else
                 {
-                    stdout.WriteLine(timedOut ? "dotnet build -c Release: timed out." : $"dotnet build -c Release: failed (exit {buildCode}).");
-                    if (!string.IsNullOrWhiteSpace(buildErr)) stdout.WriteLine(buildErr);
+                    stdout.WriteLine(testTimedOut ? "dotnet test: timed out." : $"dotnet test: failed (exit {testCode}).");
+                    if (!string.IsNullOrWhiteSpace(testErr)) stdout.WriteLine(testErr);
                 }
             }
 
-            return buildOk ? 0 : 4;
+            return overallOk ? 0 : 5;
         }
         catch (Exception ex)
         {
@@ -290,6 +356,83 @@ public class ProposalsBackgroundAgentCommand
         catch (Exception ex)
         {
             return await Fail("Build failed", ex, formatJson, stdout, stderr).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// Runs <c>dotnet build -c Release</c> then the same TRX <c>dotnet test --no-build</c> as
+    /// <see cref="DotnetTestTool"/> (aligned with <c>forge.test</c> / <c>dotnet.test</c>).
+    /// </summary>
+    public Task<int> TestAsync(string repoRoot, bool formatJson, CancellationToken ct = default)
+        => TestAsync(repoRoot, formatJson, Console.Out, Console.Error, ct);
+
+    public async Task<int> TestAsync(
+        string repoRoot,
+        bool formatJson,
+        TextWriter stdout,
+        TextWriter stderr,
+        CancellationToken ct = default)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(repoRoot))
+                throw new ArgumentException("--repo-root is required");
+
+            var (bCode, bOut, bErr, bTimedOut) = await DotnetBuildTool.RunReleaseBuildAsync(repoRoot, ct).ConfigureAwait(false);
+            var buildOk = bCode == 0 && !bTimedOut;
+            object buildObj = new
+            {
+                ok = buildOk,
+                exit_code = bCode,
+                timed_out = bTimedOut,
+                stdout = bOut,
+                stderr = bErr
+            };
+
+            if (!buildOk)
+            {
+                if (formatJson)
+                    stdout.WriteLine(JsonSerializer.Serialize(new { ok = false, build = buildObj, test = (object?)null }));
+                else
+                {
+                    stdout.WriteLine(bTimedOut ? "Build timed out." : $"Build failed (exit {bCode}).");
+                    if (!string.IsNullOrWhiteSpace(bErr)) stderr.WriteLine(bErr);
+                }
+
+                return 1;
+            }
+
+            var (tCode, tOut, tErr, tTimedOut) = await DotnetTestTool.RunTrxTestsNoBuildAsync(repoRoot, ct).ConfigureAwait(false);
+            var testOk = tCode == 0 && !tTimedOut;
+            object testObj = new
+            {
+                ok = testOk,
+                exit_code = tCode,
+                timed_out = tTimedOut,
+                stdout = tOut,
+                stderr = tErr
+            };
+            var ok = testOk;
+
+            if (formatJson)
+                stdout.WriteLine(JsonSerializer.Serialize(new { ok, build = buildObj, test = testObj }));
+            else
+            {
+                stdout.WriteLine("Build succeeded.");
+                if (testOk)
+                    stdout.WriteLine("Tests succeeded.");
+                else
+                {
+                    stdout.WriteLine(tTimedOut ? "Tests timed out." : $"Tests failed (exit {tCode}).");
+                    if (!string.IsNullOrWhiteSpace(tErr)) stderr.WriteLine(tErr);
+                }
+            }
+
+            return ok ? 0 : 1;
+        }
+        catch (Exception ex)
+        {
+            return await Fail("Test failed", ex, formatJson, stdout, stderr).ConfigureAwait(false);
         }
     }
 

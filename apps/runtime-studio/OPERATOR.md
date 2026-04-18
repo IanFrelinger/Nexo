@@ -79,12 +79,16 @@ dotnet run --project src/Nexo.CLI -- background-agent proposals show <id>
 dotnet run --project src/Nexo.CLI -- background-agent proposals approve <id> --approver me --note "lgtm"
 dotnet run --project src/Nexo.CLI -- background-agent proposals reject <id> --note "not now"
 dotnet run --project src/Nexo.CLI -- background-agent proposals apply <id> --verify-build
+dotnet run --project src/Nexo.CLI -- background-agent proposals apply <id> --verify-test
 dotnet run --project src/Nexo.CLI -- background-agent proposals build --repo-root .
+dotnet run --project src/Nexo.CLI -- background-agent proposals test --repo-root .
 dotnet run --project src/Nexo.CLI -- background-agent proposals stats
 dotnet run --project src/Nexo.CLI -- background-agent proposals janitor --format-json
 ```
 
-`proposals build` runs `dotnet build -c Release` from `--repo-root` (same contract as the planner tools `dotnet.build` and **`forge.build`**). With **`apply --verify-build`**, the proposal is written and marked **Applied** first; if the build fails, the CLI exits **4** so CI can fail while you revert in git — the working tree already contains the applied content.
+`proposals build` runs `dotnet build -c Release` from `--repo-root` (same contract as **`dotnet.build`** / **`forge.build`**). **`proposals test`** runs that build, then the same TRX **`dotnet test --no-build`** as **`dotnet.test`** / **`forge.test`**.
+
+With **`apply --verify-build`**, the proposal is applied first; if the build fails, exit **4**. With **`apply --verify-test`**, a release build runs then tests; exit **4** if the build fails, **5** if tests fail (the tree is still applied — revert in git if needed).
 
 Proposals live on disk under `{forge}/proposed|approved|rejected|applied|stale/*.json` — useful for `ls` and emergency edits.
 
@@ -96,7 +100,7 @@ dotnet run --project src/Nexo.CLI -- background-agent mode set --value passive
 dotnet run --project src/Nexo.CLI -- background-agent mode set --value active
 ```
 
-In **passive** / **semi-active**, direct `repo.fs.write` / `search_replace` under `src/` or `tests/` is rejected; agents should use **`forge.propose_change`** and operators **`proposals approve`** / **`apply`**. When the forge queue is enabled, planners also get **`forge.build`** (same as `dotnet.build` for `dotnet build -c Release`, shared per-cycle build budget).
+In **passive** / **semi-active**, direct `repo.fs.write` / `search_replace` under `src/` or `tests/` is rejected; agents should use **`forge.propose_change`** and operators **`proposals approve`** / **`apply`**. When the forge queue is enabled, planners also get **`forge.build`** and **`forge.test`** (same `dotnet` contracts as **`dotnet.build`** / **`dotnet.test`**, with shared per-cycle budgets).
 
 ## Daemon (long-running)
 

@@ -589,15 +589,16 @@ static class Program
         var propApplyRootOpt = new Option<string>("--repo-root", () => Directory.GetCurrentDirectory(), "Repo root the target_path is resolved against");
         var propApplyForceOpt = new Option<bool>("--force", () => false, "Apply even if the file's sha256 has drifted from the proposal's BaseSha256");
         var propApplyVerifyBuildOpt = new Option<bool>("--verify-build", () => false, "After apply, run dotnet build -c Release from --repo-root (exit 4 if build fails; tree is still written)");
+        var propApplyVerifyTestOpt = new Option<bool>("--verify-test", () => false, "After apply, run build then dotnet test (TRX, --no-build); implies build; exit 5 if tests fail (exit 4 if build fails)");
         var propApplyCmd = new Command("apply", "Write an Approved proposal to disk and mark it Applied")
         {
-            propApplyIdArg, propApplyRootOpt, propApplyForceOpt, propApplyVerifyBuildOpt
+            propApplyIdArg, propApplyRootOpt, propApplyForceOpt, propApplyVerifyBuildOpt, propApplyVerifyTestOpt
         };
-        propApplyCmd.SetHandler(async (string id, string root, bool force, bool verifyBuild, bool formatJson) =>
+        propApplyCmd.SetHandler(async (string id, string root, bool force, bool verifyBuild, bool verifyTest, bool formatJson) =>
         {
             var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ProposalsBackgroundAgentCommand>();
-            Environment.Exit(await cmd.ApplyAsync(id, root, force, formatJson, verifyBuild));
-        }, propApplyIdArg, propApplyRootOpt, propApplyForceOpt, propApplyVerifyBuildOpt, jsonOpt);
+            Environment.Exit(await cmd.ApplyAsync(id, root, force, formatJson, verifyBuild, verifyTest));
+        }, propApplyIdArg, propApplyRootOpt, propApplyForceOpt, propApplyVerifyBuildOpt, propApplyVerifyTestOpt, jsonOpt);
         proposalsBgCmd.AddCommand(propApplyCmd);
 
         var propBuildRootOpt = new Option<string>("--repo-root", () => Directory.GetCurrentDirectory(), "Directory passed to dotnet build -c Release");
@@ -611,6 +612,18 @@ static class Program
             Environment.Exit(await cmd.BuildAsync(root, formatJson));
         }, propBuildRootOpt, jsonOpt);
         proposalsBgCmd.AddCommand(propBuildCmd);
+
+        var propTestRootOpt = new Option<string>("--repo-root", () => Directory.GetCurrentDirectory(), "Directory for dotnet build then dotnet test (TRX, --no-build)");
+        var propTestCmd = new Command("test", "Run dotnet build -c Release then dotnet test (forge-aligned operator check)")
+        {
+            propTestRootOpt
+        };
+        propTestCmd.SetHandler(async (string root, bool formatJson) =>
+        {
+            var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ProposalsBackgroundAgentCommand>();
+            Environment.Exit(await cmd.TestAsync(root, formatJson));
+        }, propTestRootOpt, jsonOpt);
+        proposalsBgCmd.AddCommand(propTestCmd);
 
         var propJanProposedOpt = new Option<double?>("--proposed-ttl-hours", () => null, "Override Proposed TTL (default 72h)");
         var propJanApprovedOpt = new Option<double?>("--approved-ttl-hours", () => null, "Override Approved TTL (default 24h)");

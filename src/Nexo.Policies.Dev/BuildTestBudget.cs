@@ -4,7 +4,7 @@ using Nexo.Abstractions;
 namespace Nexo.Policies.Dev;
 
 /// <summary>
-/// Caps how many <c>dotnet.build</c>, <c>forge.build</c>, and <c>dotnet.test</c> tool calls a single
+/// Caps how many <c>dotnet.build</c>, <c>forge.build</c>, <c>dotnet.test</c>, and <c>forge.test</c> tool calls a single
 /// agent cycle is allowed to issue. Without this, a confused planner can burn
 /// the entire 5-minute deadline on repeated build/test invocations and never
 /// reach the actual code change.
@@ -63,7 +63,8 @@ public sealed class BuildTestBudget : IPolicy
                 return false;
             }
         }
-        else if (string.Equals(call.Id, "dotnet.test", StringComparison.Ordinal))
+        else if (string.Equals(call.Id, "dotnet.test", StringComparison.Ordinal)
+                 || string.Equals(call.Id, "forge.test", StringComparison.Ordinal))
         {
             var n = System.Threading.Interlocked.Increment(ref _tests);
             if (n > _testBudget)

@@ -101,6 +101,14 @@ internal static class RepoFsToolboxFactory
                     ObservingTool.DotnetProjector(source, ObservationKind.Build, objectiveId));
             }
             tools.Register(forgeBuild);
+
+            ITool forgeTest = new ForgeTestTool();
+            if (observations is not null)
+            {
+                forgeTest = new ObservingTool(forgeTest, observations,
+                    ObservingTool.DotnetProjector(source, ObservationKind.Test, objectiveId));
+            }
+            tools.Register(forgeTest);
         }
 
         var budget = new BuildTestBudget();
