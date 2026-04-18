@@ -1,7 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <!-- Single TFM: parent tests may target net9.0 but this helper always builds as net8.0 so restore/build cannot fail with NETSDK1005 when assets.json lacks net9.0. -->
+    <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <AssemblyName>copy-assemblies</AssemblyName>

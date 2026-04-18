@@ -1,0 +1,33 @@
+# Lightweight gate: Runtime Studio doctor + forge-aligned proposals build (same dotnet CLI as forge.build).
+name: Runtime Studio forge smoke
+
+on:
+  pull_request:
+    paths:
+      - 'src/Nexo.CLI/**'
+      - 'src/Nexo.BackgroundAgents/**'
+      - 'src/Nexo.BackgroundAgents.HostRunners/**'
+      - 'src/Nexo.Tools.Dev/**'
+      - 'src/Nexo.Policies.Dev/**'
+      - 'apps/runtime-studio/**'
+      - '.github/workflows/runtime-studio-forge-smoke.yml'
+  workflow_dispatch:
+
+jobs:
+  forge-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Build CLI (Release)
+        run: dotnet build src/Nexo.CLI/Nexo.CLI.csproj -c Release -v minimal
+
+      - name: runtime-studio doctor
+        run: dotnet run --project src/Nexo.CLI -c Release --no-build -- runtime-studio doctor --format-json
+
+      - name: proposals build (repo root)
+        run: dotnet run --project src/Nexo.CLI -c Release --no-build -- background-agent proposals build --repo-root . --format-json

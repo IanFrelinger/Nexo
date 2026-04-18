@@ -11,14 +11,16 @@
       <CopyScriptDir>$(MSBuildThisFileDirectory)scripts</CopyScriptDir>
       <CopyScriptProj>$(CopyScriptDir)\copy-assemblies.csproj</CopyScriptProj>
       <CopyScriptProj Condition="'$(OS)' != 'Windows_NT'">$(CopyScriptDir)/copy-assemblies.csproj</CopyScriptProj>
-      <CopyScriptExe>$(CopyScriptDir)\bin\Debug\$(TargetFramework)\copy-assemblies.dll</CopyScriptExe>
-      <CopyScriptExe Condition="'$(OS)' != 'Windows_NT'">$(CopyScriptDir)/bin/Debug/$(TargetFramework)/copy-assemblies.dll</CopyScriptExe>
+      <!-- Always net8.0 — see scripts/copy-assemblies.csproj (avoids NETSDK1005 when parent is net9.0). -->
+      <CopyAssemblyToolTfm>net8.0</CopyAssemblyToolTfm>
+      <CopyScriptExe>$(CopyScriptDir)\bin\Debug\$(CopyAssemblyToolTfm)\copy-assemblies.dll</CopyScriptExe>
+      <CopyScriptExe Condition="'$(OS)' != 'Windows_NT'">$(CopyScriptDir)/bin/Debug/$(CopyAssemblyToolTfm)/copy-assemblies.dll</CopyScriptExe>
     </PropertyGroup>
     
-    <!-- Build the C# assembly copying tool (net9.0, runs in container on SDK 9 images) -->
+    <!-- Build the C# assembly copying tool (always net8.0; runs under any SDK that supports net8). -->
     <MSBuild Projects="$(CopyScriptProj)" 
              Targets="Restore;Build" 
-             Properties="Configuration=Debug;TargetFramework=$(TargetFramework)"
+             Properties="Configuration=Debug;TargetFramework=$(CopyAssemblyToolTfm)"
              Condition="Exists('$(CopyScriptProj)') AND '$(SkipCopyAssemblies)' != 'true'"
              ContinueOnError="false" />
     
@@ -28,7 +30,7 @@
           ContinueOnError="true" />
     
     <!-- Alternative: Use dotnet run if the DLL doesn't exist yet (builds on first run) -->
-    <Exec Command="dotnet run --project &quot;$(CopyScriptProj)&quot; -- &quot;$(DepsJsonPath)&quot; &quot;$(NormalizedOutputPath)&quot; &quot;$(NuGetPackageRoot)&quot;" 
+    <Exec Command="dotnet run --project &quot;$(CopyScriptProj)&quot; -f $(CopyAssemblyToolTfm) -- &quot;$(DepsJsonPath)&quot; &quot;$(NormalizedOutputPath)&quot; &quot;$(NuGetPackageRoot)&quot;" 
           Condition="!Exists('$(CopyScriptExe)') AND Exists('$(CopyScriptProj)') AND Exists('$(DepsJsonPath)') AND '$(SkipCopyAssemblies)' != 'true'"
           ContinueOnError="true" />
     

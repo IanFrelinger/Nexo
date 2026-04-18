@@ -13,12 +13,17 @@ using Nexo.Core.Application.NodeCapabilityRuntime.Models;
 using Nexo.Core.Application.NodeCapabilityRuntime.Ports;
 using Nexo.Core.Application.Trust.Ports;
 using Nexo.Core.Application.Validation.UseCases.RunValidation;
+using Nexo.Abstractions;
 using Nexo.BackgroundAgents.Configuration;
+using Nexo.BackgroundAgents.Forge;
+using Nexo.BackgroundAgents.Objectives;
 using Nexo.BackgroundAgents.Registry;
+using Nexo.BackgroundAgents.RuntimeStudio;
 using Nexo.Infrastructure.Testing.ExecutionPlatform;
 using Nexo.API.Security;
 using Nexo.Orchestration.Coordination;
 using Nexo.Orchestration.Models;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
 
@@ -133,6 +138,11 @@ public static class NexoEndpoints
             .WithName("GetBackgroundAgentSummary")
             .WithSummary("Get background agent health summary")
             .Produces<BackgroundAgentSummaryResponse>(StatusCodes.Status200OK);
+
+        group.MapGet("/runtime-studio/metrics", GetRuntimeStudioMetricsAsync)
+            .WithName("GetRuntimeStudioMetrics")
+            .WithSummary("Runtime Studio backlog metrics (objectives, forge, observations path size)")
+            .Produces<RuntimeStudioMetricsResponse>(StatusCodes.Status200OK);
 
         group.MapGet("/trust/dashboard", GetTrustDashboardAsync)
             .WithName("GetTrustDashboard")
@@ -737,6 +747,35 @@ public static class NexoEndpoints
         return Results.Ok(new BackgroundAgentSummaryResponse(mode.ToString(), summaries, summaries.Length));
     }
 
+    private static async Task<IResult> GetRuntimeStudioMetricsAsync(
+        [FromServices] IObjectiveStore objectives,
+        [FromServices] IChangeProposalStore proposals,
+        [FromServices] IHostEnvironment host,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        await Task.CompletedTask;
+
+        var resolved = RuntimeStudioPathResolver.Resolve(host.ContentRootPath);
+        var disk = RuntimeStudioMetricsCollector.Collect(objectives, proposals, resolved.ObservationsPath);
+
+        return Results.Ok(new RuntimeStudioMetricsResponse(
+            objectives.Location,
+            proposals.Location,
+            resolved.ObservationsPath,
+            disk.ObjectivesByStatus,
+            new RuntimeStudioObjectiveSlaHints(
+                disk.ObjectiveSla.OldestPendingAgeHours,
+                disk.ObjectiveSla.OldestInProgressAgeHours,
+                disk.ObjectiveSla.PendingCount,
+                disk.ObjectiveSla.InProgressCount,
+                disk.ObjectiveSla.BlockedCount),
+            disk.ProposalsByStatus,
+            disk.ObservationsFileBytes,
+            disk.ObservationsTailLineCount,
+            disk.ObservationsLastTimestamp));
+    }
+
     private static async Task<IResult> GetTrustDashboardAsync(
         [FromServices] IDataDecisionAuditLog? auditLog,
         [FromServices] IAccessBoundary? accessBoundary,
@@ -1050,6 +1089,27 @@ public sealed record DirectorRunResponse(
     ValidationResponse? Validation,
     string? OrchestrationError,
     string? ContinuedFromDailyId);
+
+// ── Runtime Studio (operator metrics) ───────────────────────────────
+
+public sealed record RuntimeStudioMetricsResponse(
+    string ObjectivesRootLocation,
+    string ForgeRootLocation,
+    string ObservationsPath,
+    IReadOnlyDictionary<string, int> ObjectivesByStatus,
+    RuntimeStudioObjectiveSlaHints ObjectiveSla,
+    IReadOnlyDictionary<string, int> ProposalsByStatus,
+    long? ObservationsFileBytes,
+    int? ObservationsTailLineCount,
+    DateTimeOffset? ObservationsLastTimestamp);
+
+/// <summary>Lightweight SLA-style hints derived from on-disk objective state.</summary>
+public sealed record RuntimeStudioObjectiveSlaHints(
+    double? OldestPendingAgeHours,
+    double? OldestInProgressAgeHours,
+    int PendingCount,
+    int InProgressCount,
+    int BlockedCount);
 
 public sealed record DirectorDailySummary(
     string DailyId,

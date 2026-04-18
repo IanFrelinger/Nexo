@@ -13,6 +13,7 @@ on:
         type: choice
         options:
           - smoke
+          - playground
           - integration
           - persistence
           - trust
@@ -29,6 +30,7 @@ on:
       - 'src/Nexo.Core.Application/**'
       - 'src/Nexo.Infrastructure/**'
       - 'src/Nexo.BackgroundAgents/**'
+      - 'src/Nexo.CLI/**'
 
 jobs:
   cross-platform:
@@ -55,15 +57,41 @@ jobs:
         run: dotnet build --no-restore -v minimal
 
       - name: Run tests (smoke)
-        if: github.event.inputs.scope != 'persistence' && github.event.inputs.scope != 'trust' && github.event.inputs.scope != 'full' && github.event.inputs.scope != 'integration' && github.event.inputs.scope != 'e2e' && github.event.inputs.scope != 'dogfood' && github.event.inputs.scope != 'adaptation'
+        if: github.event.inputs.scope != 'persistence' && github.event.inputs.scope != 'trust' && github.event.inputs.scope != 'full' && github.event.inputs.scope != 'integration' && github.event.inputs.scope != 'e2e' && github.event.inputs.scope != 'dogfood' && github.event.inputs.scope != 'adaptation' && github.event.inputs.scope != 'playground'
         shell: bash
         run: |
           dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
             --no-build \
-            --blame-hang-timeout 30s \
-            --filter "FullyQualifiedName~BaseFrameworkSmokeTests" \
+            --blame-hang-timeout 180s \
+            --filter "(FullyQualifiedName~BaseFrameworkSmokeTests|FullyQualifiedName~RuntimeStudioBlackBoxSmokeTests)" \
             --logger "console;verbosity=minimal" \
             --logger "trx;LogFileName=smoke-${{ matrix.os }}.trx" \
+            --results-directory test-results
+          dotnet test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj \
+            --no-build \
+            --blame-hang-timeout 60s \
+            --filter "FullyQualifiedName~RuntimeStudioWhiteBoxSmokeTests" \
+            --logger "console;verbosity=minimal" \
+            --logger "trx;LogFileName=smoke-whitebox-${{ matrix.os }}.trx" \
+            --results-directory test-results
+
+      - name: Run tests (playground)
+        if: github.event.inputs.scope == 'playground'
+        shell: bash
+        run: |
+          dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+            --no-build \
+            --blame-hang-timeout 600s \
+            --filter "Category=Playground" \
+            --logger "console;verbosity=minimal" \
+            --logger "trx;LogFileName=playground-infra-${{ matrix.os }}.trx" \
+            --results-directory test-results
+          dotnet test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj \
+            --no-build \
+            --blame-hang-timeout 300s \
+            --filter "Category=Playground" \
+            --logger "console;verbosity=minimal" \
+            --logger "trx;LogFileName=playground-bg-${{ matrix.os }}.trx" \
             --results-directory test-results
 
       - name: Run tests (dogfood)
@@ -108,7 +136,7 @@ jobs:
         run: |
           dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
             --no-build \
-            --blame-hang-timeout 90s \
+            --blame-hang-timeout 180s \
             --filter "Category=E2E" \
             --logger "console;verbosity=minimal" \
             --logger "trx;LogFileName=e2e-${{ matrix.os }}.trx" \

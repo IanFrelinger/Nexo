@@ -1,3 +1,4 @@
+using Nexo.Abstractions;
 using Nexo.BackgroundAgents.Configuration;
 
 namespace Nexo.BackgroundAgents.Metrics;

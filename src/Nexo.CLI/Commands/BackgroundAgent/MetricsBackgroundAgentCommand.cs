@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using Nexo.Abstractions;
 using Nexo.BackgroundAgents.Configuration;
 using Nexo.BackgroundAgents.Metrics;
 using Nexo.BackgroundAgents.Registry;
@@ -90,14 +91,14 @@ public class MetricsBackgroundAgentCommand
             modeStore.GetMode());
     }
 
-    private static string ToModeString(Nexo.BackgroundAgents.Configuration.BackgroundAgentAggressivenessMode mode)
+    private static string ToModeString(BackgroundAgentAggressivenessMode mode)
     {
         return mode switch
         {
-            Nexo.BackgroundAgents.Configuration.BackgroundAgentAggressivenessMode.Passive => "passive",
-            Nexo.BackgroundAgents.Configuration.BackgroundAgentAggressivenessMode.SemiActive => "semi-active",
-            Nexo.BackgroundAgents.Configuration.BackgroundAgentAggressivenessMode.Active => "active",
-            Nexo.BackgroundAgents.Configuration.BackgroundAgentAggressivenessMode.Ambient => "ambient",
+            BackgroundAgentAggressivenessMode.Passive => "passive",
+            BackgroundAgentAggressivenessMode.SemiActive => "semi-active",
+            BackgroundAgentAggressivenessMode.Active => "active",
+            BackgroundAgentAggressivenessMode.Ambient => "ambient",
             _ => mode.ToString().ToLowerInvariant()
         };
     }

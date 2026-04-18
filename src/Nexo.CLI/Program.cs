@@ -398,6 +398,256 @@ static class Program
             statsAgentOpt, statsRoleOpt, statsSinceOpt, jsonOpt);
         backgroundAgentCmd.AddCommand(statsBgCmd);
 
+        // nexo background-agent observations — read the structured observations log.
+        // Companion to `stats`: where stats summarises agent execution, observations
+        // surfaces the *facts* agents collectively published (build/test outcomes,
+        // analysis violations, agent actions). Useful for quickly answering
+        // "what does the daemon currently know about the codebase?".
+        var obsSourceOpt = new Option<string?>("--source", () => null, "Filter to a specific source (typically the agent id)");
+        var obsKindOpt = new Option<string?>("--kind", () => null, "Filter by kind (Build, Test, Analysis, AgentAction, UserSignal)");
+        var obsSinceOpt = new Option<double?>("--since-hours", () => null, "Only observations newer than now-N hours");
+        var obsTailOpt = new Option<int?>("--tail", () => null, "Show only the most recent N rows after filtering");
+        var obsSummaryOpt = new Option<bool>("--summary", () => false, "Group counts by source/kind/severity instead of listing rows");
+        var observationsBgCmd = new Command("observations", "Inspect the structured observations log (observations.jsonl)")
+        {
+            obsSourceOpt, obsKindOpt, obsSinceOpt, obsTailOpt, obsSummaryOpt
+        };
+        observationsBgCmd.SetHandler(
+            async (string? source, string? kind, double? since, int? tail, bool summary, bool formatJson) =>
+            {
+                var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ObservationsBackgroundAgentCommand>();
+                Environment.Exit(await cmd.ExecuteAsync(source, kind, since, tail, summary, formatJson));
+            },
+            obsSourceOpt, obsKindOpt, obsSinceOpt, obsTailOpt, obsSummaryOpt, jsonOpt);
+        backgroundAgentCmd.AddCommand(observationsBgCmd);
+
+        // nexo background-agent objectives — operator front door for the structured backlog.
+        // Mirrors the same store the planner reads from, so adds here are picked up by the
+        // next planner cycle automatically. Subcommands: list / show / add / complete /
+        // block / unblock / stats. Kept under background-agent (not a top-level group)
+        // because the backlog is meaningful only in the context of a daemon that consumes it.
+        var objectivesBgCmd = new Command("objectives", "Manage the planner's objective backlog");
+
+        var objListStatusOpt = new Option<string?>("--status", () => null, "Filter by status (Pending, InProgress, Done, Blocked)");
+        var objListTagOpt = new Option<string?>("--tag", () => null, "Filter by tag (case-insensitive exact match)");
+        var objListCmd = new Command("list", "List backlog items, sorted by status then priority")
+        {
+            objListStatusOpt, objListTagOpt
+        };
+        objListCmd.SetHandler(async (string? status, string? tag, bool formatJson) =>
+        {
+            var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ObjectivesBackgroundAgentCommand>();
+            Environment.Exit(await cmd.ListAsync(status, tag, formatJson));
+        }, objListStatusOpt, objListTagOpt, jsonOpt);
+        objectivesBgCmd.AddCommand(objListCmd);
+
+        var objShowIdArg = new Argument<string>("id", "Objective id");
+        var objShowCmd = new Command("show", "Show one objective's full body and metadata") { objShowIdArg };
+        objShowCmd.SetHandler(async (string id, bool formatJson) =>
+        {
+            var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ObjectivesBackgroundAgentCommand>();
+            Environment.Exit(await cmd.ShowAsync(id, formatJson));
+        }, objShowIdArg, jsonOpt);
+        objectivesBgCmd.AddCommand(objShowCmd);
+
+        var objAddIdOpt = new Option<string>("--id", "Stable slug used as the filename") { IsRequired = true };
+        var objAddTitleOpt = new Option<string>("--title", "One-line human-readable title") { IsRequired = true };
+        var objAddPriorityOpt = new Option<int>("--priority", () => 100, "Lower number = higher priority (1 highest)");
+        var objAddTagsOpt = new Option<string[]>("--tag", () => Array.Empty<string>(), "Tag (repeatable)") { AllowMultipleArgumentsPerToken = true };
+        var objAddBodyOpt = new Option<string?>("--body", () => null, "Inline markdown body (mutually exclusive with --body-file)");
+        var objAddBodyFileOpt = new Option<string?>("--body-file", () => null, "Read markdown body from this file");
+        var objAddCmd = new Command("add", "Add a new pending objective")
+        {
+            objAddIdOpt, objAddTitleOpt, objAddPriorityOpt, objAddTagsOpt, objAddBodyOpt, objAddBodyFileOpt
+        };
+        objAddCmd.SetHandler(async (string id, string title, int priority, string[] tags, string? body, string? bodyFile, bool formatJson) =>
+        {
+            var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ObjectivesBackgroundAgentCommand>();
+            Environment.Exit(await cmd.AddAsync(id, title, priority, tags, body, bodyFile, formatJson));
+        }, objAddIdOpt, objAddTitleOpt, objAddPriorityOpt, objAddTagsOpt, objAddBodyOpt, objAddBodyFileOpt, jsonOpt);
+        objectivesBgCmd.AddCommand(objAddCmd);
+
+        var objCompleteIdArg = new Argument<string>("id", "Objective id (must currently be InProgress)");
+        var objCompleteNoteOpt = new Option<string?>("--note", () => null, "Optional note appended to the body");
+        var objCompleteCmd = new Command("complete", "Mark an in-progress objective as Done")
+        {
+            objCompleteIdArg, objCompleteNoteOpt
+        };
+        objCompleteCmd.SetHandler(async (string id, string? note, bool formatJson) =>
+        {
+            var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ObjectivesBackgroundAgentCommand>();
+            Environment.Exit(await cmd.CompleteAsync(id, note, formatJson));
+        }, objCompleteIdArg, objCompleteNoteOpt, jsonOpt);
+        objectivesBgCmd.AddCommand(objCompleteCmd);
+
+        var objBlockIdArg = new Argument<string>("id", "Objective id");
+        var objBlockReasonOpt = new Option<string>("--reason", "Why the objective is blocked") { IsRequired = true };
+        var objBlockCmd = new Command("block", "Mark an objective as Blocked")
+        {
+            objBlockIdArg, objBlockReasonOpt
+        };
+        objBlockCmd.SetHandler(async (string id, string reason, bool formatJson) =>
+        {
+            var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ObjectivesBackgroundAgentCommand>();
+            Environment.Exit(await cmd.BlockAsync(id, reason, formatJson));
+        }, objBlockIdArg, objBlockReasonOpt, jsonOpt);
+        objectivesBgCmd.AddCommand(objBlockCmd);
+
+        var objUnblockIdArg = new Argument<string>("id", "Objective id");
+        var objUnblockCmd = new Command("unblock", "Move a blocked objective back to Pending") { objUnblockIdArg };
+        objUnblockCmd.SetHandler(async (string id, bool formatJson) =>
+        {
+            var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ObjectivesBackgroundAgentCommand>();
+            Environment.Exit(await cmd.UnblockAsync(id, formatJson));
+        }, objUnblockIdArg, jsonOpt);
+        objectivesBgCmd.AddCommand(objUnblockCmd);
+
+        var objReportIdOpt = new Option<string?>("--id", () => null, "Limit report to one objective");
+        var objReportStatusOpt = new Option<string?>("--status", () => null, "Filter by status (Pending, InProgress, Done, Blocked)");
+        var objReportSinceOpt = new Option<double?>("--since-hours", () => null, "Only count observations newer than now-N hours");
+        var objReportCmd = new Command("report", "Cross-correlate objectives with observations (per-objective build/test/error counts)")
+        {
+            objReportIdOpt, objReportStatusOpt, objReportSinceOpt
+        };
+        objReportCmd.SetHandler(async (string? id, string? status, double? since, bool formatJson) =>
+        {
+            var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ObjectivesBackgroundAgentCommand>();
+            Environment.Exit(await cmd.ReportAsync(id, status, since, formatJson));
+        }, objReportIdOpt, objReportStatusOpt, objReportSinceOpt, jsonOpt);
+        objectivesBgCmd.AddCommand(objReportCmd);
+
+        var objStatsCmd = new Command("stats", "Per-status counts and per-tag breakdown of the backlog");
+        objStatsCmd.SetHandler(async (bool formatJson) =>
+        {
+            var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ObjectivesBackgroundAgentCommand>();
+            Environment.Exit(await cmd.StatsAsync(formatJson));
+        }, jsonOpt);
+        objectivesBgCmd.AddCommand(objStatsCmd);
+
+        backgroundAgentCmd.AddCommand(objectivesBgCmd);
+
+        // nexo background-agent proposals — operator front door for the forge change
+        // proposal queue. Mirrors the objectives CLI shape so operators only learn
+        // one mental model. Subcommands: list / show / approve / reject / apply / stats.
+        var proposalsBgCmd = new Command("proposals", "Manage forge-mediated change proposals");
+
+        var propListStatusOpt = new Option<string?>("--status", () => null, "Filter by status (Proposed, Approved, Rejected, Applied, Stale)");
+        var propListTargetOpt = new Option<string?>("--target-prefix", () => null, "Filter by target path prefix");
+        var propListCmd = new Command("list", "List proposals, sorted by status then most-recent update")
+        {
+            propListStatusOpt, propListTargetOpt
+        };
+        propListCmd.SetHandler(async (string? status, string? targetPrefix, bool formatJson) =>
+        {
+            var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ProposalsBackgroundAgentCommand>();
+            Environment.Exit(await cmd.ListAsync(status, targetPrefix, formatJson));
+        }, propListStatusOpt, propListTargetOpt, jsonOpt);
+        proposalsBgCmd.AddCommand(propListCmd);
+
+        var propShowIdArg = new Argument<string>("id", "Proposal id");
+        var propShowDiffOpt = new Option<bool>("--show-diff", () => false, "Include the proposed file content in the output");
+        var propShowCmd = new Command("show", "Show one proposal's metadata (and optionally its proposed content)")
+        {
+            propShowIdArg, propShowDiffOpt
+        };
+        propShowCmd.SetHandler(async (string id, bool showDiff, bool formatJson) =>
+        {
+            var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ProposalsBackgroundAgentCommand>();
+            Environment.Exit(await cmd.ShowAsync(id, showDiff, formatJson));
+        }, propShowIdArg, propShowDiffOpt, jsonOpt);
+        proposalsBgCmd.AddCommand(propShowCmd);
+
+        var propApproveIdArg = new Argument<string>("id", "Proposal id (must currently be Proposed)");
+        var propApproveByOpt = new Option<string?>("--approver", () => null, "Operator approving the change");
+        var propApproveNoteOpt = new Option<string?>("--note", () => null, "Optional approval note");
+        var propApproveCmd = new Command("approve", "Approve a Proposed change so it can be applied")
+        {
+            propApproveIdArg, propApproveByOpt, propApproveNoteOpt
+        };
+        propApproveCmd.SetHandler(async (string id, string? approver, string? note, bool formatJson) =>
+        {
+            var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ProposalsBackgroundAgentCommand>();
+            Environment.Exit(await cmd.ApproveAsync(id, approver, note, formatJson));
+        }, propApproveIdArg, propApproveByOpt, propApproveNoteOpt, jsonOpt);
+        proposalsBgCmd.AddCommand(propApproveCmd);
+
+        var propRejectIdArg = new Argument<string>("id", "Proposal id (must currently be Proposed)");
+        var propRejectByOpt = new Option<string?>("--reviewer", () => null, "Operator rejecting the change");
+        var propRejectNoteOpt = new Option<string?>("--note", () => null, "Why the change was rejected");
+        var propRejectCmd = new Command("reject", "Reject a Proposed change")
+        {
+            propRejectIdArg, propRejectByOpt, propRejectNoteOpt
+        };
+        propRejectCmd.SetHandler(async (string id, string? reviewer, string? note, bool formatJson) =>
+        {
+            var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ProposalsBackgroundAgentCommand>();
+            Environment.Exit(await cmd.RejectAsync(id, reviewer, note, formatJson));
+        }, propRejectIdArg, propRejectByOpt, propRejectNoteOpt, jsonOpt);
+        proposalsBgCmd.AddCommand(propRejectCmd);
+
+        var propApplyIdArg = new Argument<string>("id", "Approved proposal id");
+        var propApplyRootOpt = new Option<string>("--repo-root", () => Directory.GetCurrentDirectory(), "Repo root the target_path is resolved against");
+        var propApplyForceOpt = new Option<bool>("--force", () => false, "Apply even if the file's sha256 has drifted from the proposal's BaseSha256");
+        var propApplyVerifyBuildOpt = new Option<bool>("--verify-build", () => false, "After apply, run dotnet build -c Release from --repo-root (exit 4 if build fails; tree is still written)");
+        var propApplyVerifyTestOpt = new Option<bool>("--verify-test", () => false, "After apply, run build then dotnet test (TRX, --no-build); implies build; exit 5 if tests fail (exit 4 if build fails)");
+        var propApplyCmd = new Command("apply", "Write an Approved proposal to disk and mark it Applied")
+        {
+            propApplyIdArg, propApplyRootOpt, propApplyForceOpt, propApplyVerifyBuildOpt, propApplyVerifyTestOpt
+        };
+        propApplyCmd.SetHandler(async (string id, string root, bool force, bool verifyBuild, bool verifyTest, bool formatJson) =>
+        {
+            var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ProposalsBackgroundAgentCommand>();
+            Environment.Exit(await cmd.ApplyAsync(id, root, force, formatJson, verifyBuild, verifyTest));
+        }, propApplyIdArg, propApplyRootOpt, propApplyForceOpt, propApplyVerifyBuildOpt, propApplyVerifyTestOpt, jsonOpt);
+        proposalsBgCmd.AddCommand(propApplyCmd);
+
+        var propBuildRootOpt = new Option<string>("--repo-root", () => Directory.GetCurrentDirectory(), "Directory passed to dotnet build -c Release");
+        var propBuildCmd = new Command("build", "Run dotnet build -c Release (forge-aligned operator check)")
+        {
+            propBuildRootOpt
+        };
+        propBuildCmd.SetHandler(async (string root, bool formatJson) =>
+        {
+            var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ProposalsBackgroundAgentCommand>();
+            Environment.Exit(await cmd.BuildAsync(root, formatJson));
+        }, propBuildRootOpt, jsonOpt);
+        proposalsBgCmd.AddCommand(propBuildCmd);
+
+        var propTestRootOpt = new Option<string>("--repo-root", () => Directory.GetCurrentDirectory(), "Directory for dotnet build then dotnet test (TRX, --no-build)");
+        var propTestCmd = new Command("test", "Run dotnet build -c Release then dotnet test (forge-aligned operator check)")
+        {
+            propTestRootOpt
+        };
+        propTestCmd.SetHandler(async (string root, bool formatJson) =>
+        {
+            var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ProposalsBackgroundAgentCommand>();
+            Environment.Exit(await cmd.TestAsync(root, formatJson));
+        }, propTestRootOpt, jsonOpt);
+        proposalsBgCmd.AddCommand(propTestCmd);
+
+        var propJanProposedOpt = new Option<double?>("--proposed-ttl-hours", () => null, "Override Proposed TTL (default 72h)");
+        var propJanApprovedOpt = new Option<double?>("--approved-ttl-hours", () => null, "Override Approved TTL (default 24h)");
+        var propJanitorCmd = new Command("janitor", "Run the janitor sweep once: stale anything past its TTL")
+        {
+            propJanProposedOpt, propJanApprovedOpt
+        };
+        propJanitorCmd.SetHandler(async (double? proposedTtl, double? approvedTtl, bool formatJson) =>
+        {
+            var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ProposalsBackgroundAgentCommand>();
+            Environment.Exit(await cmd.JanitorAsync(proposedTtl, approvedTtl, formatJson));
+        }, propJanProposedOpt, propJanApprovedOpt, jsonOpt);
+        proposalsBgCmd.AddCommand(propJanitorCmd);
+
+        var propStatsCmd = new Command("stats", "Per-status counts of the proposal queue");
+        propStatsCmd.SetHandler(async (bool formatJson) =>
+        {
+            var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ProposalsBackgroundAgentCommand>();
+            Environment.Exit(await cmd.StatsAsync(formatJson));
+        }, jsonOpt);
+        proposalsBgCmd.AddCommand(propStatsCmd);
+
+        backgroundAgentCmd.AddCommand(proposalsBgCmd);
+
         // nexo background-agent mode
         var modeCmd = new Command("mode", "Get or set aggressiveness mode (passive, semi-active, active, ambient)");
         var modeGetCmd = new Command("get", "Get current mode");
@@ -602,6 +852,27 @@ static class Program
             daemonDisableObservationOpt,
             jsonOpt);
         backgroundAgentCmd.AddCommand(daemonCmd);
+
+        // nexo background-agent dashboard — localhost read-only operator UI
+        var dashboardPortOpt = new Option<int>("--port", () => 5055, "HTTP port (127.0.0.1 only).");
+        var dashboardOpenOpt = new Option<bool>("--open", () => false, "Open the default browser to the dashboard URL.");
+        var dashboardAuthOpt = new Option<string?>("--auth-token", "Optional shared secret; also read from NEXO_DASHBOARD_AUTH_TOKEN. When set, require ?token= or Bearer header.");
+        var dashboardCmd = new Command("dashboard", "Read-only Runtime Studio operator dashboard (objectives, forge, observations)")
+        {
+            dashboardPortOpt,
+            dashboardOpenOpt,
+            dashboardAuthOpt
+        };
+        dashboardCmd.SetHandler(
+            async (int port, bool open, string? authToken) =>
+            {
+                var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.OperatorDashboardBackgroundAgentCommand>();
+                Environment.Exit(await cmd.RunAsync(port, open, authToken, CancellationToken.None));
+            },
+            dashboardPortOpt,
+            dashboardOpenOpt,
+            dashboardAuthOpt);
+        backgroundAgentCmd.AddCommand(dashboardCmd);
 
         // nexo trust - Audit and access boundary (Phase 4)
         var trustCmd = new Command("trust", "Trust & Information Architecture: audit log and access boundary");
@@ -1242,7 +1513,11 @@ static class Program
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.LogsBackgroundAgentCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.MetricsBackgroundAgentCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.StatsBackgroundAgentCommand>();
+        services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.ObservationsBackgroundAgentCommand>();
+        services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.ObjectivesBackgroundAgentCommand>();
+        services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.ProposalsBackgroundAgentCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.ModeBackgroundAgentCommand>();
+        services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.OperatorDashboardBackgroundAgentCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.SensitivityCommand>();
         services.AddScoped<TrustCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.RAGCommand>();

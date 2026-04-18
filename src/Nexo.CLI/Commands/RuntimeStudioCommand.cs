@@ -1,5 +1,8 @@
 using System.CommandLine;
 using System.Text.Json;
+using Nexo.BackgroundAgents.Forge;
+using Nexo.BackgroundAgents.Objectives;
+using Nexo.BackgroundAgents.RuntimeStudio;
 using Nexo.Core.Application.Paths;
 using Nexo.CLI.Runtime;
 
@@ -43,21 +46,176 @@ public sealed class RuntimeStudioCommand : Command
             agentSetOpt,
             dryRunOpt);
 
+        var withMetricsOpt = new Option<bool>(
+            "--with-metrics",
+            () => false,
+            "Append runtime-studio backlog metrics (same collector as `runtime-studio metrics`).");
+
         var statusCmd = new Command(
             "status",
             "Show last workflow optimize tune snapshot and current Ollama ModelName entries in the agent-set config.");
         statusCmd.AddOption(jsonOpt);
         statusCmd.AddOption(agentSetOpt);
+        statusCmd.AddOption(withMetricsOpt);
         statusCmd.SetHandler(
-            (bool json, string agentSet) =>
+            (bool json, string agentSet, bool withMetrics) =>
             {
-                Environment.Exit(ExecuteStatus(json, agentSet));
+                Environment.Exit(ExecuteStatus(json, agentSet, withMetrics));
             },
             jsonOpt,
-            agentSetOpt);
+            agentSetOpt,
+            withMetricsOpt);
+
+        var metricsCmd = new Command(
+            "metrics",
+            "Print runtime-studio backlog metrics (aligned with GET /api/runtime-studio/metrics).");
+        metricsCmd.AddOption(jsonOpt);
+        metricsCmd.SetHandler(
+            (bool json) => { Environment.Exit(ExecuteMetrics(json)); },
+            jsonOpt);
+
+        var strictDoctorOpt = new Option<bool>(
+            "--strict",
+            () => false,
+            "Treat missing objectives/forge directories as errors (not just warnings).");
+
+        var doctorCmd = new Command(
+            "doctor",
+            "Validate agent-set JSON and runtime-studio paths (exit 1 on hard failures).");
+        doctorCmd.AddOption(jsonOpt);
+        doctorCmd.AddOption(agentSetOpt);
+        doctorCmd.AddOption(strictDoctorOpt);
+        doctorCmd.SetHandler(
+            (bool json, string agentSet, bool strict) => { Environment.Exit(ExecuteDoctor(json, agentSet, strict)); },
+            jsonOpt,
+            agentSetOpt,
+            strictDoctorOpt);
 
         AddCommand(applyTuneCmd);
         AddCommand(statusCmd);
+        AddCommand(metricsCmd);
+        AddCommand(doctorCmd);
+    }
+
+    private static int ExecuteDoctor(bool formatJson, string agentSet, bool strict)
+    {
+        var repoRoot = RepoPathResolver.FindRepoRoot();
+        var agentSetPath = ResolveAgentSetPath(repoRoot, agentSet);
+        var issues = new List<string>();
+        var warnings = new List<string>();
+
+        if (!File.Exists(agentSetPath))
+            issues.Add($"agent_set_not_found:{agentSetPath}");
+        else
+        {
+            try
+            {
+                using var doc = JsonDocument.Parse(File.ReadAllText(agentSetPath));
+                var root = doc.RootElement;
+                if (!root.TryGetProperty("BackgroundAgents", out var bg) || bg.ValueKind != JsonValueKind.Object)
+                    issues.Add("agent_set_missing_background_agents");
+                else if (!bg.TryGetProperty("Agents", out var agents) || agents.ValueKind != JsonValueKind.Array)
+                    issues.Add("agent_set_missing_agents_array");
+                else if (agents.GetArrayLength() == 0)
+                    warnings.Add("agent_set_agents_empty");
+            }
+            catch (JsonException)
+            {
+                issues.Add("agent_set_invalid_json");
+            }
+        }
+
+        var paths = RuntimeStudioPathResolver.Resolve(repoRoot);
+        void CheckDir(string label, string path)
+        {
+            if (Directory.Exists(path))
+                return;
+            var msg = $"{label}_missing:{path}";
+            if (strict)
+                issues.Add(msg);
+            else
+                warnings.Add(msg);
+        }
+
+        CheckDir("objectives_root", paths.ObjectivesRoot);
+        CheckDir("forge_root", paths.ForgeRoot);
+        var obsDir = Path.GetDirectoryName(paths.ObservationsPath);
+        if (!string.IsNullOrEmpty(obsDir) && !Directory.Exists(obsDir))
+        {
+            var msg = $"observations_parent_missing:{obsDir}";
+            if (strict)
+                issues.Add(msg);
+            else
+                warnings.Add(msg);
+        }
+
+        var ok = issues.Count == 0;
+        if (formatJson)
+        {
+            Console.WriteLine(JsonSerializer.Serialize(new
+            {
+                ok,
+                repoRoot,
+                agentSetPath,
+                objectivesRoot = paths.ObjectivesRoot,
+                forgeRoot = paths.ForgeRoot,
+                observationsPath = paths.ObservationsPath,
+                issues,
+                warnings
+            }, new JsonSerializerOptions { WriteIndented = true }));
+        }
+        else
+        {
+            Console.WriteLine(ok ? "Runtime Studio doctor: OK" : "Runtime Studio doctor: FAILED");
+            Console.WriteLine($"Repository: {repoRoot}");
+            Console.WriteLine($"Agent set:  {agentSetPath}");
+            foreach (var w in warnings)
+                Console.WriteLine($"  warning: {w}");
+            foreach (var e in issues)
+                Console.WriteLine($"  error:   {e}");
+        }
+
+        return ok ? 0 : 1;
+    }
+
+    private static int ExecuteMetrics(bool formatJson)
+    {
+        var repoRoot = RepoPathResolver.FindRepoRoot();
+        var (paths, disk) = CollectDiskMetricsWithPaths(repoRoot);
+
+        if (formatJson)
+        {
+            Console.WriteLine(JsonSerializer.Serialize(new
+            {
+                ok = true,
+                objectivesRoot = paths.ObjectivesRoot,
+                forgeRoot = paths.ForgeRoot,
+                observationsPath = paths.ObservationsPath,
+                objectivesByStatus = disk.ObjectivesByStatus,
+                objectiveSla = disk.ObjectiveSla,
+                proposalsByStatus = disk.ProposalsByStatus,
+                observationsFileBytes = disk.ObservationsFileBytes,
+                observationsTailLineCount = disk.ObservationsTailLineCount,
+                observationsLastTimestamp = disk.ObservationsLastTimestamp
+            }, new JsonSerializerOptions { WriteIndented = true }));
+            return 0;
+        }
+
+        Console.WriteLine($"Objectives root:    {paths.ObjectivesRoot}");
+        Console.WriteLine($"Forge root:         {paths.ForgeRoot}");
+        Console.WriteLine($"Observations path: {paths.ObservationsPath}");
+        Console.WriteLine();
+        Console.WriteLine($"Pending: {disk.ObjectiveSla.PendingCount}  InProgress: {disk.ObjectiveSla.InProgressCount}  Blocked: {disk.ObjectiveSla.BlockedCount}");
+        if (disk.ObjectiveSla.OldestPendingAgeHours is { } oph)
+            Console.WriteLine($"Oldest pending age (h): {oph:F1}");
+        if (disk.ObjectiveSla.OldestInProgressAgeHours is { } oih)
+            Console.WriteLine($"Oldest in-progress age (h): {oih:F1}");
+        Console.WriteLine($"Observations file bytes: {disk.ObservationsFileBytes?.ToString() ?? "(missing)"}");
+        if (disk.ObservationsTailLineCount is { } tlc)
+            Console.WriteLine($"Observations tail lines (sample): {tlc}");
+        if (disk.ObservationsLastTimestamp is { } olt)
+            Console.WriteLine($"Observations last event (UTC): {olt:u}");
+        return 0;
     }
 
     private static string ResolveAgentSetPath(string repoRoot, string agentSetRelativeOrAbsolute)
@@ -67,7 +225,7 @@ public sealed class RuntimeStudioCommand : Command
             : Path.GetFullPath(Path.Combine(repoRoot, agentSetRelativeOrAbsolute));
     }
 
-    private static int ExecuteStatus(bool json, string agentSet)
+    private static int ExecuteStatus(bool json, string agentSet, bool withMetrics)
     {
         var repoRoot = RepoPathResolver.FindRepoRoot();
         var agentSetPath = ResolveAgentSetPath(repoRoot, agentSet);
@@ -94,16 +252,34 @@ public sealed class RuntimeStudioCommand : Command
             return 1;
         }
 
+        var disk = withMetrics ? CollectDiskMetrics(repoRoot) : null;
+
         if (json)
         {
-            Console.WriteLine(JsonSerializer.Serialize(new
+            if (withMetrics)
             {
-                ok = true,
-                repoRoot,
-                lastTune = last,
-                agentSetPath,
-                ollamaAgents = ollamaAgents.Select(a => new { id = a.Id, modelName = a.ModelName }).ToArray()
-            }, new JsonSerializerOptions { WriteIndented = true }));
+                Console.WriteLine(JsonSerializer.Serialize(new
+                {
+                    ok = true,
+                    repoRoot,
+                    lastTune = last,
+                    agentSetPath,
+                    ollamaAgents = ollamaAgents.Select(a => new { id = a.Id, modelName = a.ModelName }).ToArray(),
+                    runtimeStudioMetrics = disk
+                }, new JsonSerializerOptions { WriteIndented = true }));
+            }
+            else
+            {
+                Console.WriteLine(JsonSerializer.Serialize(new
+                {
+                    ok = true,
+                    repoRoot,
+                    lastTune = last,
+                    agentSetPath,
+                    ollamaAgents = ollamaAgents.Select(a => new { id = a.Id, modelName = a.ModelName }).ToArray()
+                }, new JsonSerializerOptions { WriteIndented = true }));
+            }
+
             return 0;
         }
 
@@ -141,7 +317,36 @@ public sealed class RuntimeStudioCommand : Command
                 Console.WriteLine($"  {row.Id}: {row.ModelName}");
         }
 
+        if (withMetrics && disk is not null)
+        {
+            Console.WriteLine();
+            Console.WriteLine("--- Backlog metrics ---");
+            Console.WriteLine($"Pending: {disk.ObjectiveSla.PendingCount}  InProgress: {disk.ObjectiveSla.InProgressCount}  Blocked: {disk.ObjectiveSla.BlockedCount}");
+            if (disk.ObjectiveSla.OldestPendingAgeHours is { } oph)
+                Console.WriteLine($"Oldest pending age (h): {oph:F1}");
+            if (disk.ObjectiveSla.OldestInProgressAgeHours is { } oih)
+                Console.WriteLine($"Oldest in-progress age (h): {oih:F1}");
+            Console.WriteLine($"Observations file bytes: {disk.ObservationsFileBytes?.ToString() ?? "(missing)"}");
+            if (disk.ObservationsTailLineCount is { } tlc2)
+                Console.WriteLine($"Observations tail lines (sample): {tlc2}");
+            if (disk.ObservationsLastTimestamp is { } olt2)
+                Console.WriteLine($"Observations last event (UTC): {olt2:u}");
+        }
+
         return 0;
+    }
+
+    private static RuntimeStudioDiskMetrics CollectDiskMetrics(string repoRoot) =>
+        CollectDiskMetricsWithPaths(repoRoot).disk;
+
+    private static (RuntimeStudioPathResolver.ResolvedPaths paths, RuntimeStudioDiskMetrics disk) CollectDiskMetricsWithPaths(
+        string repoRoot)
+    {
+        var paths = RuntimeStudioPathResolver.Resolve(repoRoot);
+        var objectives = new ObjectiveStore(paths.ObjectivesRoot);
+        var proposals = new ChangeProposalStore(paths.ForgeRoot);
+        var disk = RuntimeStudioMetricsCollector.Collect(objectives, proposals, paths.ObservationsPath);
+        return (paths, disk);
     }
 
     private static int ExecuteApplyTune(bool json, string spec, string agentSet, bool dryRun)

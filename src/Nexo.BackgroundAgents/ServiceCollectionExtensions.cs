@@ -1,10 +1,14 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Nexo.Abstractions;
 using Nexo.BackgroundAgents.Configuration;
 using Nexo.BackgroundAgents.DataSensitivity;
+using Nexo.BackgroundAgents.Forge;
 using Nexo.BackgroundAgents.Logging;
 using Nexo.BackgroundAgents.Extending;
+using Nexo.BackgroundAgents.Objectives;
+using Nexo.BackgroundAgents.Observations;
 using Nexo.BackgroundAgents.Optimization;
 using Nexo.BackgroundAgents.Registry;
 using Nexo.BackgroundAgents.Testing;
@@ -58,6 +62,35 @@ public static class ServiceCollectionExtensions
                 ? new CycleEventStore()
                 : new CycleEventStore(overridePath.Trim());
         });
+        services.TryAddSingleton<IObservationStore>(sp =>
+        {
+            // Companion to cycles.jsonl: structured facts agents publish for each other to read.
+            // Override location with NEXO_OBSERVATIONS_PATH for tests / sandboxed runs.
+            var overridePath = Environment.GetEnvironmentVariable("NEXO_OBSERVATIONS_PATH");
+            return string.IsNullOrWhiteSpace(overridePath)
+                ? new JsonlObservationStore()
+                : new JsonlObservationStore(overridePath.Trim());
+        });
+        services.TryAddSingleton<IObjectiveStore>(sp =>
+        {
+            // Filesystem-backed backlog under .nexo/runtime-studio/objectives/
+            // by default. NEXO_OBJECTIVES_ROOT points at an absolute path for
+            // sandboxed test runs so we don't pollute the working tree.
+            var overridePath = Environment.GetEnvironmentVariable("NEXO_OBJECTIVES_ROOT");
+            return string.IsNullOrWhiteSpace(overridePath)
+                ? new ObjectiveStore()
+                : new ObjectiveStore(overridePath.Trim());
+        });
+        services.TryAddSingleton<IChangeProposalStore>(sp =>
+        {
+            // Filesystem-backed forge proposal queue under .nexo/runtime-studio/forge/
+            // by default. NEXO_FORGE_ROOT lets sandboxed runs (and tests) point at
+            // an isolated temp directory.
+            var overridePath = Environment.GetEnvironmentVariable("NEXO_FORGE_ROOT");
+            return string.IsNullOrWhiteSpace(overridePath)
+                ? new ChangeProposalStore()
+                : new ChangeProposalStore(overridePath.Trim());
+        });
         services.AddSingleton<IBackgroundAgentRegistry>(sp =>
         {
             var scheduler = sp.GetRequiredService<IAgentScheduler>();
@@ -71,7 +104,8 @@ public static class ServiceCollectionExtensions
             var approvalGate = sp.GetService<IApprovalGate>();
             var auditLog = sp.GetService<IDataDecisionAuditLog>();
             var cycleEvents = sp.GetService<CycleEventStore>();
-            return new BackgroundAgentRegistry(scheduler, logger, logStore, codeAnalysisRunner, testRunRunner, selfExtendRunner, selfImprovementLoop, modeStore, approvalGate, auditLog, cycleEvents);
+            var observations = sp.GetService<IObservationStore>();
+            return new BackgroundAgentRegistry(scheduler, logger, logStore, codeAnalysisRunner, testRunRunner, selfExtendRunner, selfImprovementLoop, modeStore, approvalGate, auditLog, cycleEvents, observations);
         });
         services.TryAddSingleton<BackgroundAgentConfigLoader>();
         services.TryAddSingleton<BackgroundAgentSpecBuilder>();

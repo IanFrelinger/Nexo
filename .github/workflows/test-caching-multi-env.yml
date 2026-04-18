@@ -79,9 +79,14 @@ jobs:
             nexo-caching-test:${{ matrix.environment.name }} \
             bash -c "
               dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
-                --filter 'FullyQualifiedName~BaseFrameworkSmokeTests' \
+                --filter '(FullyQualifiedName~BaseFrameworkSmokeTests|FullyQualifiedName~RuntimeStudioBlackBoxSmokeTests)' \
                 --logger 'console;verbosity=minimal' \
                 --logger 'trx;LogFileName=${{ matrix.environment.name }}-base.trx' \
+                --results-directory /workspace/test-results && \
+              dotnet test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj \
+                --filter 'FullyQualifiedName~RuntimeStudioWhiteBoxSmokeTests' \
+                --logger 'console;verbosity=minimal' \
+                --logger 'trx;LogFileName=${{ matrix.environment.name }}-whitebox.trx' \
                 --results-directory /workspace/test-results
             "
 

@@ -1,0 +1,70 @@
+# Weekly + manual Runtime Studio playground: Release CLI black-box matrix + CsCheck white-box.
+# Does not run on every push (too slow / spawns many processes).
+name: Runtime Studio Playground
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 6 * * 1' # Monday 06:00 UTC
+
+jobs:
+  playground:
+    name: Playground - ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build (solution)
+        run: dotnet build --no-restore -v minimal
+
+      - name: Run playground tests (Infrastructure — Release CLI)
+        shell: bash
+        run: |
+          dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+            --no-build \
+            --blame-hang-timeout 600s \
+            --filter "Category=Playground" \
+            --logger "console;verbosity=minimal" \
+            --logger "trx;LogFileName=playground-infra-${{ matrix.os }}.trx" \
+            --results-directory test-results
+
+      - name: Run playground tests (BackgroundAgents — in-process)
+        shell: bash
+        run: |
+          dotnet test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj \
+            --no-build \
+            --blame-hang-timeout 300s \
+            --filter "Category=Playground" \
+            --logger "console;verbosity=minimal" \
+            --logger "trx;LogFileName=playground-bg-${{ matrix.os }}.trx" \
+            --results-directory test-results
+
+      - name: Publish test results
+        if: always()
+        uses: EnricoMi/publish-unit-test-result-action@v2
+        with:
+          files: test-results/**/*.trx
+          check_name: Runtime Studio Playground - ${{ matrix.os }}
+          report_individual_runs: true
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playground-results-${{ matrix.os }}
+          path: test-results/
+          retention-days: 14

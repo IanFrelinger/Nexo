@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Nexo.Abstractions;
 
 namespace Nexo.BackgroundAgents.Configuration;
 

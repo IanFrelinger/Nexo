@@ -55,6 +55,10 @@ Game director mode roles included:
 - `game-worker-code-optimizer` (`optimizer`) - static analysis / optimization sweeps
 - `game-worker-test-automation` (`tester`) - recurring automated test execution
 
+## Operator CLI quick reference
+
+See **[OPERATOR.md](./OPERATOR.md)** for copy-paste `background-agent` commands and env vars.
+
 ## Quick start
 
 From repo root:
@@ -112,4 +116,56 @@ Common changes:
 - change tester filter
 - adjust exfiltration policy boundaries
 - adjust each game worker `Objective` to match your project pillars (art style, encounter pacing, systems depth)
+
+## Phase 2 (shipped in tree)
+
+| Track | Status |
+|--------|--------|
+| **Daemon in CI** | Black-box: timed daemon with/without `--disable-observation` (`RuntimeStudioBlackBoxSmokeTests`). |
+| **Passive + forge** | `ForgeToolsTests` (propose/check/**forge.build**/**forge.test**) + `ForgeMediatedWritesPolicy` + `ProposalsBackgroundAgentCommandTests` (`build`, `test`, `apply --verify-build` / `--verify-test`). |
+| **Operator UX** | **[OPERATOR.md](./OPERATOR.md)** — env vars, CLI one-liners for observations / objectives / proposals / mode / daemon. |
+| **Mobile / MAUI** | `.github/workflows/maui-client-build-gate.yml` — Windows, Mac Catalyst, **Android** compile jobs. |
+| **Performance** | `CliRunner` cross-process mutex + `CONTRIBUTING.md` guidance; smoke blame-hang 180s on Cross-Platform Tests. |
+
+Contributing note: avoid parallel full `dotnet build` on one clone (see `CONTRIBUTING.md` — `*.deps.json` locks).
+
+## Phase 3 (shipped)
+
+| Track | Status |
+|--------|--------|
+| **Objective claim in daemon (E2E)** | Black-box: `RuntimeStudioBlackBoxSmokeTests.Daemon_extender_claims_objective_from_store_increments_attempts` — timed extender with no pinned `Objective`, deterministic model, asserts backlog `Attempts` after release-on-no-action. |
+| **Android signing / store** | **[ANDROID_STORE.md](./ANDROID_STORE.md)** — Play-style AAB pipeline (`.github/workflows/maui-android-publish.yml`) + keystore secrets checklist. |
+| **Operator dashboard** | `nexo background-agent dashboard [--port 5055] [--open]` — read-only JSON + auto-refresh UI on **127.0.0.1** only (same `NEXO_*` paths as the CLI). |
+
+## Phase 4 (shipped)
+
+| Track | Status |
+|--------|--------|
+| **Objective SLA-style metrics in API** | `GET /api/runtime-studio/metrics` — counts by objective/proposal status, `OldestPendingAgeHours` / `OldestInProgressAgeHours`, observation log path + file size. |
+| **Dashboard auth + TLS notes** | `nexo background-agent dashboard --auth-token …` or `NEXO_DASHBOARD_AUTH_TOKEN`; `?token=` / `Authorization: Bearer`; reverse-proxy snippets in **[OPERATOR.md](./OPERATOR.md)**. |
+| **Play Internal testing** | **[PLAY_INTERNAL.md](./PLAY_INTERNAL.md)** — internal track checklist, CI artifact handoff, service-account automation pointers. |
+
+## Phase 5 (shipped)
+
+| Track | Status |
+|--------|--------|
+| **Shared metrics core** | `Nexo.BackgroundAgents.RuntimeStudio` — `RuntimeStudioPathResolver`, `RuntimeStudioMetricsCollector` (+ unit tests). API `GET /api/runtime-studio/metrics` and CLI/dashboard consume the same logic. |
+| **CLI parity** | `nexo runtime-studio metrics [--format-json]` — backlog counts, SLA ages, observation file size (paths from `NEXO_*` + repo root). |
+| **Dashboard JSON** | `background-agent dashboard` `/api/summary.json` includes a `metrics` object (`RuntimeStudioDiskMetrics`) alongside `observationsTail`. |
+
+## Phase 6 (shipped)
+
+| Track | Status |
+|--------|--------|
+| **Operator dashboard UI** | HTML **at-a-glance** cards + paths summary + collapsible raw JSON (reads `metrics` / PascalCase-safe). |
+| **Status + metrics** | `nexo runtime-studio status --with-metrics` (text block or JSON `runtimeStudioMetrics` when combined with `--format-json`). |
+| **Smoke** | `RuntimeStudioBlackBoxSmokeTests.Runtime_studio_metrics_format_json_exits_zero` — CLI metrics with isolated `NEXO_*` env. |
+
+## Phase 7 (shipped)
+
+| Track | Status |
+|--------|--------|
+| **Observation tail metrics** | `RuntimeStudioDiskMetrics` adds `ObservationsTailLineCount` (tail window) + `ObservationsLastTimestamp`; `ObservationLogTailReader` (+ tests). API, CLI, dashboard cards updated. |
+| **Runtime Studio doctor** | `nexo runtime-studio doctor [--format-json] [--strict]` — validates agent-set JSON (`BackgroundAgents.Agents`) and path layout; strict mode errors on missing objectives/forge dirs. |
+| **Smoke** | `Runtime_studio_doctor_format_json_exits_zero` — doctor against the real repo agent set. |
 
