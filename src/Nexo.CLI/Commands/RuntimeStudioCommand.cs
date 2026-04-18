@@ -46,18 +46,25 @@ public sealed class RuntimeStudioCommand : Command
             agentSetOpt,
             dryRunOpt);
 
+        var withMetricsOpt = new Option<bool>(
+            "--with-metrics",
+            () => false,
+            "Append runtime-studio backlog metrics (same collector as `runtime-studio metrics`).");
+
         var statusCmd = new Command(
             "status",
             "Show last workflow optimize tune snapshot and current Ollama ModelName entries in the agent-set config.");
         statusCmd.AddOption(jsonOpt);
         statusCmd.AddOption(agentSetOpt);
+        statusCmd.AddOption(withMetricsOpt);
         statusCmd.SetHandler(
-            (bool json, string agentSet) =>
+            (bool json, string agentSet, bool withMetrics) =>
             {
-                Environment.Exit(ExecuteStatus(json, agentSet));
+                Environment.Exit(ExecuteStatus(json, agentSet, withMetrics));
             },
             jsonOpt,
-            agentSetOpt);
+            agentSetOpt,
+            withMetricsOpt);
 
         var metricsCmd = new Command(
             "metrics",
@@ -75,18 +82,15 @@ public sealed class RuntimeStudioCommand : Command
     private static int ExecuteMetrics(bool formatJson)
     {
         var repoRoot = RepoPathResolver.FindRepoRoot();
-        var paths = RuntimeStudioPathResolver.Resolve(repoRoot);
-        var objectives = new ObjectiveStore(paths.ObjectivesRoot);
-        var proposals = new ChangeProposalStore(paths.ForgeRoot);
-        var disk = RuntimeStudioMetricsCollector.Collect(objectives, proposals, paths.ObservationsPath);
+        var (paths, disk) = CollectDiskMetricsWithPaths(repoRoot);
 
         if (formatJson)
         {
             Console.WriteLine(JsonSerializer.Serialize(new
             {
                 ok = true,
-                objectivesRoot = objectives.Location,
-                forgeRoot = proposals.Location,
+                objectivesRoot = paths.ObjectivesRoot,
+                forgeRoot = paths.ForgeRoot,
                 observationsPath = paths.ObservationsPath,
                 objectivesByStatus = disk.ObjectivesByStatus,
                 objectiveSla = disk.ObjectiveSla,
@@ -96,8 +100,8 @@ public sealed class RuntimeStudioCommand : Command
             return 0;
         }
 
-        Console.WriteLine($"Objectives root:    {objectives.Location}");
-        Console.WriteLine($"Forge root:         {proposals.Location}");
+        Console.WriteLine($"Objectives root:    {paths.ObjectivesRoot}");
+        Console.WriteLine($"Forge root:         {paths.ForgeRoot}");
         Console.WriteLine($"Observations path: {paths.ObservationsPath}");
         Console.WriteLine();
         Console.WriteLine($"Pending: {disk.ObjectiveSla.PendingCount}  InProgress: {disk.ObjectiveSla.InProgressCount}  Blocked: {disk.ObjectiveSla.BlockedCount}");
@@ -116,7 +120,7 @@ public sealed class RuntimeStudioCommand : Command
             : Path.GetFullPath(Path.Combine(repoRoot, agentSetRelativeOrAbsolute));
     }
 
-    private static int ExecuteStatus(bool json, string agentSet)
+    private static int ExecuteStatus(bool json, string agentSet, bool withMetrics)
     {
         var repoRoot = RepoPathResolver.FindRepoRoot();
         var agentSetPath = ResolveAgentSetPath(repoRoot, agentSet);
@@ -143,16 +147,34 @@ public sealed class RuntimeStudioCommand : Command
             return 1;
         }
 
+        var disk = withMetrics ? CollectDiskMetrics(repoRoot) : null;
+
         if (json)
         {
-            Console.WriteLine(JsonSerializer.Serialize(new
+            if (withMetrics)
             {
-                ok = true,
-                repoRoot,
-                lastTune = last,
-                agentSetPath,
-                ollamaAgents = ollamaAgents.Select(a => new { id = a.Id, modelName = a.ModelName }).ToArray()
-            }, new JsonSerializerOptions { WriteIndented = true }));
+                Console.WriteLine(JsonSerializer.Serialize(new
+                {
+                    ok = true,
+                    repoRoot,
+                    lastTune = last,
+                    agentSetPath,
+                    ollamaAgents = ollamaAgents.Select(a => new { id = a.Id, modelName = a.ModelName }).ToArray(),
+                    runtimeStudioMetrics = disk
+                }, new JsonSerializerOptions { WriteIndented = true }));
+            }
+            else
+            {
+                Console.WriteLine(JsonSerializer.Serialize(new
+                {
+                    ok = true,
+                    repoRoot,
+                    lastTune = last,
+                    agentSetPath,
+                    ollamaAgents = ollamaAgents.Select(a => new { id = a.Id, modelName = a.ModelName }).ToArray()
+                }, new JsonSerializerOptions { WriteIndented = true }));
+            }
+
             return 0;
         }
 
@@ -190,7 +212,32 @@ public sealed class RuntimeStudioCommand : Command
                 Console.WriteLine($"  {row.Id}: {row.ModelName}");
         }
 
+        if (withMetrics && disk is not null)
+        {
+            Console.WriteLine();
+            Console.WriteLine("--- Backlog metrics ---");
+            Console.WriteLine($"Pending: {disk.ObjectiveSla.PendingCount}  InProgress: {disk.ObjectiveSla.InProgressCount}  Blocked: {disk.ObjectiveSla.BlockedCount}");
+            if (disk.ObjectiveSla.OldestPendingAgeHours is { } oph)
+                Console.WriteLine($"Oldest pending age (h): {oph:F1}");
+            if (disk.ObjectiveSla.OldestInProgressAgeHours is { } oih)
+                Console.WriteLine($"Oldest in-progress age (h): {oih:F1}");
+            Console.WriteLine($"Observations file bytes: {disk.ObservationsFileBytes?.ToString() ?? "(missing)"}");
+        }
+
         return 0;
+    }
+
+    private static RuntimeStudioDiskMetrics CollectDiskMetrics(string repoRoot) =>
+        CollectDiskMetricsWithPaths(repoRoot).disk;
+
+    private static (RuntimeStudioPathResolver.ResolvedPaths paths, RuntimeStudioDiskMetrics disk) CollectDiskMetricsWithPaths(
+        string repoRoot)
+    {
+        var paths = RuntimeStudioPathResolver.Resolve(repoRoot);
+        var objectives = new ObjectiveStore(paths.ObjectivesRoot);
+        var proposals = new ChangeProposalStore(paths.ForgeRoot);
+        var disk = RuntimeStudioMetricsCollector.Collect(objectives, proposals, paths.ObservationsPath);
+        return (paths, disk);
     }
 
     private static int ExecuteApplyTune(bool json, string spec, string agentSet, bool dryRun)

@@ -324,4 +324,15 @@ public sealed class RuntimeStudioBlackBoxSmokeTests : E2ETestBase
         Assert.Contains("Pending", showOut, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("Attempts:   1", showOut, StringComparison.Ordinal);
     }
+
+    [Fact(Timeout = 120_000)]
+    public async Task Runtime_studio_metrics_format_json_exits_zero()
+    {
+        var env = StudioEnv(Path.Combine(TempDir, "studio-rs-metrics"));
+        var (code, stdout, stderr) = await RunCliAsync("runtime-studio metrics --format-json", env, CliTimeout);
+        Assert.Equal(0, code);
+        Assert.Equal(string.Empty, stderr);
+        Assert.Contains("\"ok\": true", stdout, StringComparison.Ordinal);
+        Assert.Contains("objectiveSla", stdout, StringComparison.OrdinalIgnoreCase);
+    }
 }

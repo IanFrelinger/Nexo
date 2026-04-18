@@ -153,3 +153,11 @@ Contributing note: avoid parallel full `dotnet build` on one clone (see `CONTRIB
 | **CLI parity** | `nexo runtime-studio metrics [--format-json]` — backlog counts, SLA ages, observation file size (paths from `NEXO_*` + repo root). |
 | **Dashboard JSON** | `background-agent dashboard` `/api/summary.json` includes a `metrics` object (`RuntimeStudioDiskMetrics`) alongside `observationsTail`. |
 
+## Phase 6 (shipped)
+
+| Track | Status |
+|--------|--------|
+| **Operator dashboard UI** | HTML **at-a-glance** cards + paths summary + collapsible raw JSON (reads `metrics` / PascalCase-safe). |
+| **Status + metrics** | `nexo runtime-studio status --with-metrics` (text block or JSON `runtimeStudioMetrics` when combined with `--format-json`). |
+| **Smoke** | `RuntimeStudioBlackBoxSmokeTests.Runtime_studio_metrics_format_json_exits_zero` — CLI metrics with isolated `NEXO_*` env. |
+

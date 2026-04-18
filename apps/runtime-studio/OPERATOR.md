@@ -29,6 +29,13 @@ dotnet run --project src/Nexo.CLI -- runtime-studio metrics
 dotnet run --project src/Nexo.CLI -- runtime-studio metrics --format-json
 ```
 
+Combine with agent-set status (optional backlog block / JSON field `runtimeStudioMetrics`):
+
+```bash
+dotnet run --project src/Nexo.CLI -- runtime-studio status --with-metrics
+dotnet run --project src/Nexo.CLI -- runtime-studio status --format-json --with-metrics
+```
+
 ## Observations (structured log)
 
 ```bash

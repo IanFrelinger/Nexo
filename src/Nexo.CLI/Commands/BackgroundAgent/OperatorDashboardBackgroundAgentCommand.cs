@@ -193,30 +193,85 @@ public sealed class OperatorDashboardBackgroundAgentCommand
     :root { font-family: system-ui, sans-serif; background: #0f1419; color: #e6edf3; }
     body { max-width: 960px; margin: 2rem auto; padding: 0 1rem; }
     h1 { font-size: 1.25rem; }
+    h2 { font-size: 1rem; margin-top: 1.25rem; }
     pre { background: #161b22; padding: 1rem; overflow: auto; border-radius: 8px; font-size: 12px; }
     .muted { color: #8b949e; font-size: 0.85rem; }
-    button { margin-top: 0.5rem; padding: 0.4rem 0.8rem; cursor: pointer; border-radius: 6px; border: 1px solid #30363d; background: #21262d; color: #e6edf3; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.5rem; margin: 0.75rem 0; }
+    .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 0.6rem 0.75rem; }
+    .card b { display: block; font-size: 1.1rem; }
+    .card span { font-size: 0.75rem; color: #8b949e; }
+    button { margin-top: 0.5rem; margin-right: 0.5rem; padding: 0.4rem 0.8rem; cursor: pointer; border-radius: 6px; border: 1px solid #30363d; background: #21262d; color: #e6edf3; }
+    #summary { white-space: pre-wrap; background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 0.75rem 1rem; font-size: 0.9rem; line-height: 1.45; }
   </style>
 </head>
 <body>
   <h1>Runtime Studio — operator dashboard</h1>
   <p class="muted">Read-only view of local paths (same as <code>NEXO_*</code> env). Binds to 127.0.0.1 only. With auth, use <code>?token=</code> once or set the Authorization header.</p>
   <button type="button" id="refresh">Refresh</button>
-  <pre id="out">Loading…</pre>
+  <h2>At a glance</h2>
+  <div class="cards" id="cards"></div>
+  <div id="summary">Loading…</div>
+  <h2>Raw JSON</h2>
+  <details>
+    <summary style="cursor:pointer;color:#8b949e;">Expand</summary>
+    <pre id="out"></pre>
+  </details>
   <script>
+    function pick(obj, a, b) { return (obj && obj[a] !== undefined) ? obj[a] : (obj && obj[b]); }
+    function fmt(n) { return n === null || n === undefined ? '—' : (typeof n === 'number' ? n.toFixed(1) : String(n)); }
+    function renderCards(j) {
+      const m = pick(j, 'metrics', 'Metrics');
+      const el = document.getElementById('cards');
+      el.innerHTML = '';
+      if (!m) return;
+      const obs = pick(m, 'observationsFileBytes', 'ObservationsFileBytes');
+      const by = pick(m, 'objectivesByStatus', 'ObjectivesByStatus') || {};
+      const pr = pick(m, 'proposalsByStatus', 'ProposalsByStatus') || {};
+      const sla = pick(m, 'objectiveSla', 'ObjectiveSla') || {};
+      const add = (label, val, sub) => {
+        const d = document.createElement('div');
+        d.className = 'card';
+        d.innerHTML = '<b>' + val + '</b><span>' + label + '</span>' + (sub ? '<div style="font-size:0.7rem;margin-top:0.25rem;color:#6e7681;">' + sub + '</div>' : '');
+        el.appendChild(d);
+      };
+      add('Pending', by.Pending ?? by.pending ?? 0);
+      add('In progress', by.InProgress ?? by.inProgress ?? 0);
+      add('Blocked', by.Blocked ?? by.blocked ?? 0);
+      add('Proposals (proposed)', pr.Proposed ?? pr.proposed ?? 0);
+      add('Obs log (bytes)', obs === null || obs === undefined ? '—' : obs, '');
+      const oph = pick(sla, 'oldestPendingAgeHours', 'OldestPendingAgeHours');
+      const oih = pick(sla, 'oldestInProgressAgeHours', 'OldestInProgressAgeHours');
+      if (oph != null) add('Oldest pending (h)', fmt(oph), '');
+      if (oih != null) add('Oldest in-prog (h)', fmt(oih), '');
+    }
+    function renderSummary(j) {
+      const el = document.getElementById('summary');
+      const mode = pick(j, 'mode', 'Mode') || '—';
+      const paths = pick(j, 'paths', 'Paths') || {};
+      const lines = ['Mode: ' + mode, 'Objectives: ' + (paths.objectivesRoot || paths.ObjectivesRoot || '—'), 'Forge: ' + (paths.forgeRoot || paths.ForgeRoot || '—'), 'Observations: ' + (paths.observationsPath || paths.ObservationsPath || '—')];
+      el.textContent = lines.join('\n');
+    }
     async function load() {
-      const el = document.getElementById('out');
+      const raw = document.getElementById('out');
+      const sum = document.getElementById('summary');
       try {
         const q = new URLSearchParams(location.search);
         const tok = q.get('token');
         const headers = {};
         if (tok) headers['Authorization'] = 'Bearer ' + tok;
         const r = await fetch('/api/summary.json', { cache: 'no-store', headers });
-        if (r.status === 401) { el.textContent = '401 Unauthorized — open this page with ?token=YOUR_TOKEN if auth is enabled.'; return; }
+        if (r.status === 401) {
+          sum.textContent = '401 Unauthorized — add ?token=YOUR_TOKEN to the URL if auth is enabled.';
+          raw.textContent = '';
+          return;
+        }
         const j = await r.json();
-        el.textContent = JSON.stringify(j, null, 2);
+        renderCards(j);
+        renderSummary(j);
+        raw.textContent = JSON.stringify(j, null, 2);
       } catch (e) {
-        el.textContent = String(e);
+        sum.textContent = String(e);
+        raw.textContent = '';
       }
     }
     document.getElementById('refresh').onclick = load;
