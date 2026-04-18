@@ -41,9 +41,10 @@ public class CodeQualityRule : IAnalysisRule
             var analyzeTool = new AssemblyAnalyzeTool();
             var snapshot = new WorldSnapshot(0, new Dictionary<string, object?>());
 
-            var analyzeCall = new ToolCall(
-                "assembly.analyze",
-                JsonDocument.Parse($$"""{"path":"{{assemblyFile.FullName}}"}""").RootElement);
+            // Use JsonSerializer to safely encode the path. Raw string interpolation breaks
+            // on Windows paths because the backslashes (\U, \b, \n …) become invalid JSON escapes.
+            var argsElement = JsonSerializer.SerializeToElement(new { path = assemblyFile.FullName });
+            var analyzeCall = new ToolCall("assembly.analyze", argsElement);
 
             var result = await analyzeTool.InvokeAsync(analyzeCall, snapshot, cancellationToken);
 
@@ -67,6 +68,14 @@ public class CodeQualityRule : IAnalysisRule
                     }
                 }
             }
+        }
+        catch (BadImageFormatException)
+        {
+            // Native or non-managed file — not a .NET assembly. Skip silently; this is expected
+            // when scanning bin/obj output that contains native interop DLLs (e.g. libllama, e_sqlite3).
+            _logger.LogDebug(
+                "Skipping non-managed assembly: {Path}",
+                assemblyFile.FullName);
         }
         catch (Exception ex)
         {

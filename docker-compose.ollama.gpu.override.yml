@@ -1,0 +1,21 @@
+# GPU override for docker-compose.ollama.yml — adds NVIDIA GPU passthrough.
+# Requires: NVIDIA driver on host, Docker Desktop with WSL2 + GPU support enabled.
+#
+# Usage (Windows / Linux / macOS):
+#   docker compose -f docker-compose.ollama.yml -f docker-compose.ollama.gpu.override.yml up -d
+#
+# Verify GPU access from inside the container:
+#   docker exec nexo-ollama-1 sh -c 'ls /dev/nvidia* 2>/dev/null; echo "---"; cat /proc/driver/nvidia/version 2>/dev/null | head -1'
+#
+# Verify model is offloaded to VRAM after first generate:
+#   curl -s http://127.0.0.1:11434/api/ps  # look for size_vram > 0
+
+services:
+  ollama:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

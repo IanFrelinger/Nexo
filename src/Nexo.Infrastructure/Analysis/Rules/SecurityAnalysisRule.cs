@@ -41,9 +41,10 @@ public class SecurityAnalysisRule : IAnalysisRule
             var securityTool = new AssemblySecurityScanTool();
             var snapshot = new WorldSnapshot(0, new Dictionary<string, object?>());
 
-            var securityCall = new ToolCall(
-                "assembly.security_scan",
-                JsonDocument.Parse($$"""{"path":"{{assemblyFile.FullName}}"}""").RootElement);
+            // Use JsonSerializer to safely encode the path. Raw string interpolation breaks
+            // on Windows paths because the backslashes (\U, \b, \n …) become invalid JSON escapes.
+            var argsElement = JsonSerializer.SerializeToElement(new { path = assemblyFile.FullName });
+            var securityCall = new ToolCall("assembly.security_scan", argsElement);
 
             var result = await securityTool.InvokeAsync(securityCall, snapshot, cancellationToken);
 
@@ -61,6 +62,14 @@ public class SecurityAnalysisRule : IAnalysisRule
                     });
                 }
             }
+        }
+        catch (BadImageFormatException)
+        {
+            // Native or non-managed file — Mono.Cecil cannot read it. Skip silently; this is
+            // expected when scanning bin/obj output that contains native interop DLLs.
+            _logger.LogDebug(
+                "Skipping non-managed assembly: {Path}",
+                assemblyFile.FullName);
         }
         catch (Exception ex)
         {
