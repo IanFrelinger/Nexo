@@ -830,19 +830,22 @@ static class Program
         // nexo background-agent dashboard — localhost read-only operator UI
         var dashboardPortOpt = new Option<int>("--port", () => 5055, "HTTP port (127.0.0.1 only).");
         var dashboardOpenOpt = new Option<bool>("--open", () => false, "Open the default browser to the dashboard URL.");
+        var dashboardAuthOpt = new Option<string?>("--auth-token", "Optional shared secret; also read from NEXO_DASHBOARD_AUTH_TOKEN. When set, require ?token= or Bearer header.");
         var dashboardCmd = new Command("dashboard", "Read-only Runtime Studio operator dashboard (objectives, forge, observations)")
         {
             dashboardPortOpt,
-            dashboardOpenOpt
+            dashboardOpenOpt,
+            dashboardAuthOpt
         };
         dashboardCmd.SetHandler(
-            async (int port, bool open) =>
+            async (int port, bool open, string? authToken) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.OperatorDashboardBackgroundAgentCommand>();
-                Environment.Exit(await cmd.RunAsync(port, open, CancellationToken.None));
+                Environment.Exit(await cmd.RunAsync(port, open, authToken, CancellationToken.None));
             },
             dashboardPortOpt,
-            dashboardOpenOpt);
+            dashboardOpenOpt,
+            dashboardAuthOpt);
         backgroundAgentCmd.AddCommand(dashboardCmd);
 
         // nexo trust - Audit and access boundary (Phase 4)

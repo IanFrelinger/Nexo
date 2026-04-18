@@ -8,6 +8,7 @@ Quick reference when triaging a background-agent daemon or sandboxed repo. Env o
 | `NEXO_OBJECTIVES_ROOT` | Objectives store root |
 | `NEXO_FORGE_ROOT` | Forge proposal queue root |
 | `NEXO_AGENT_MODE_PATH` | Aggressiveness mode JSON (`passive`, `semi-active`, `active`, `ambient`) |
+| `NEXO_DASHBOARD_AUTH_TOKEN` | Optional shared secret for `background-agent dashboard` (same as `--auth-token`) |
 
 From repo root, prefer:
 
@@ -78,9 +79,34 @@ Read-only snapshot (objective counts by folder, proposal counts, last lines of `
 ```bash
 dotnet run --project src/Nexo.CLI -- background-agent dashboard --port 5055
 dotnet run --project src/Nexo.CLI -- background-agent dashboard --port 5055 --open
+dotnet run --project src/Nexo.CLI -- background-agent dashboard --auth-token "your-secret"
 ```
 
 Set the same `NEXO_*` paths as the daemon before starting so the UI matches that sandbox.
+
+### TLS reverse proxy (tailnet / LAN)
+
+The dashboard binds **127.0.0.1** only. To reach it from another machine over HTTPS, terminate TLS on a reverse proxy and forward to localhost (do not expose the raw HttpListener to the internet).
+
+**Caddy** (example):
+
+```text
+dashboard.example.ts.net {
+  reverse_proxy 127.0.0.1:5055
+}
+```
+
+**nginx** (example):
+
+```nginx
+location / {
+    proxy_pass http://127.0.0.1:5055;
+    proxy_set_header Host $host;
+    proxy_set_header Authorization $http_authorization;
+}
+```
+
+With `--auth-token` set, configure the browser bookmark as `https://…/?token=…` or inject `Authorization` at the proxy (narrow ACLs on who can reach the vhost).
 
 ## Android AAB / Play Console
 

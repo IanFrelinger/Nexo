@@ -12,19 +12,27 @@ namespace Nexo.CLI.Commands.BackgroundAgent;
 public sealed class OperatorDashboardBackgroundAgentCommand
 {
     private readonly ILogger<OperatorDashboardBackgroundAgentCommand> _logger;
+    private string? _expectedAuthToken;
 
     public OperatorDashboardBackgroundAgentCommand(ILogger<OperatorDashboardBackgroundAgentCommand> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task<int> RunAsync(int port, bool openBrowser, CancellationToken cancellationToken = default)
+    public async Task<int> RunAsync(int port, bool openBrowser, string? authToken, CancellationToken cancellationToken = default)
     {
         if (port is < 1 or > 65535)
         {
             Console.Error.WriteLine("Invalid --port (use 1-65535).");
             return 2;
         }
+
+        var fromEnv = Environment.GetEnvironmentVariable("NEXO_DASHBOARD_AUTH_TOKEN");
+        _expectedAuthToken = string.IsNullOrWhiteSpace(authToken)
+            ? (string.IsNullOrWhiteSpace(fromEnv) ? null : fromEnv.Trim())
+            : authToken.Trim();
+        if (_expectedAuthToken is { Length: 0 })
+            _expectedAuthToken = null;
 
         var prefix = $"http://127.0.0.1:{port}/";
         using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -49,6 +57,8 @@ public sealed class OperatorDashboardBackgroundAgentCommand
         };
 
         Console.WriteLine($"Runtime Studio operator dashboard: {prefix}");
+        if (_expectedAuthToken is not null)
+            Console.WriteLine("Auth is enabled: pass ?token=... in the URL or Authorization: Bearer <token>.");
         Console.WriteLine("Press Ctrl+C to stop.");
 
         if (openBrowser)
@@ -58,7 +68,8 @@ public sealed class OperatorDashboardBackgroundAgentCommand
                 try
                 {
                     await Task.Delay(400, cts.Token).ConfigureAwait(false);
-                    Process.Start(new ProcessStartInfo { FileName = prefix, UseShellExecute = true });
+                    var url = prefix + (_expectedAuthToken is null ? "" : "?token=" + Uri.EscapeDataString(_expectedAuthToken));
+                    Process.Start(new ProcessStartInfo { FileName = url, UseShellExecute = true });
                 }
                 catch (Exception ex)
                 {
@@ -104,11 +115,41 @@ public sealed class OperatorDashboardBackgroundAgentCommand
         return 0;
     }
 
-    private static async Task HandleRequestAsync(HttpListenerContext ctx)
+    private bool IsAuthorized(HttpListenerRequest req)
+    {
+        if (_expectedAuthToken is null)
+            return true;
+
+        var q = req.QueryString["token"];
+        if (!string.IsNullOrEmpty(q) && string.Equals(q, _expectedAuthToken, StringComparison.Ordinal))
+            return true;
+
+        var auth = req.Headers["Authorization"];
+        if (!string.IsNullOrEmpty(auth) &&
+            auth.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        {
+            var t = auth["Bearer ".Length..].Trim();
+            if (string.Equals(t, _expectedAuthToken, StringComparison.Ordinal))
+                return true;
+        }
+
+        return false;
+    }
+
+    private async Task HandleRequestAsync(HttpListenerContext ctx)
     {
         var path = ctx.Request.Url?.AbsolutePath ?? "/";
         try
         {
+            if (!IsAuthorized(ctx.Request))
+            {
+                ctx.Response.StatusCode = 401;
+                var msg = Encoding.UTF8.GetBytes("Unauthorized");
+                ctx.Response.ContentLength64 = msg.Length;
+                await ctx.Response.OutputStream.WriteAsync(msg).ConfigureAwait(false);
+                return;
+            }
+
             if (string.Equals(path, "/api/summary.json", StringComparison.OrdinalIgnoreCase))
             {
                 var json = RuntimeStudioOperatorDashboardSummary.BuildJson(
@@ -159,14 +200,19 @@ public sealed class OperatorDashboardBackgroundAgentCommand
 </head>
 <body>
   <h1>Runtime Studio — operator dashboard</h1>
-  <p class="muted">Read-only view of local paths (same as <code>NEXO_*</code> env). Binds to 127.0.0.1 only.</p>
+  <p class="muted">Read-only view of local paths (same as <code>NEXO_*</code> env). Binds to 127.0.0.1 only. With auth, use <code>?token=</code> once or set the Authorization header.</p>
   <button type="button" id="refresh">Refresh</button>
   <pre id="out">Loading…</pre>
   <script>
     async function load() {
       const el = document.getElementById('out');
       try {
-        const r = await fetch('/api/summary.json', { cache: 'no-store' });
+        const q = new URLSearchParams(location.search);
+        const tok = q.get('token');
+        const headers = {};
+        if (tok) headers['Authorization'] = 'Bearer ' + tok;
+        const r = await fetch('/api/summary.json', { cache: 'no-store', headers });
+        if (r.status === 401) { el.textContent = '401 Unauthorized — open this page with ?token=YOUR_TOKEN if auth is enabled.'; return; }
         const j = await r.json();
         el.textContent = JSON.stringify(j, null, 2);
       } catch (e) {

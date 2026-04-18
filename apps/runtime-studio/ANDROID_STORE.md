@@ -43,6 +43,8 @@ Output is under `src/Nexo.Client.Mobile/bin/Release/net8.0-android/publish/`.
 
 Do **not** commit keystores or passwords. Prefer [Play App Signing](https://support.google.com/googleplay/android-developer/answer/9842756) so Google holds the app signing key.
 
+For **Play internal testing** (track, testers, optional CI upload), see **[PLAY_INTERNAL.md](./PLAY_INTERNAL.md)**.
+
 ## Store checklist (manual)
 
 - Bump `ApplicationVersion` / `ApplicationDisplayVersion` in `Nexo.Client.Mobile.csproj`.

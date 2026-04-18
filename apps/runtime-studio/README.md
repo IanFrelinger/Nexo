@@ -137,7 +137,11 @@ Contributing note: avoid parallel full `dotnet build` on one clone (see `CONTRIB
 | **Android signing / store** | **[ANDROID_STORE.md](./ANDROID_STORE.md)** — Play-style AAB pipeline (`.github/workflows/maui-android-publish.yml`) + keystore secrets checklist. |
 | **Operator dashboard** | `nexo background-agent dashboard [--port 5055] [--open]` — read-only JSON + auto-refresh UI on **127.0.0.1** only (same `NEXO_*` paths as the CLI). |
 
-## Phase 4 (ideas)
+## Phase 4 (shipped)
 
-Play Internal testing automation; dashboard auth / TLS reverse proxy; objective SLA metrics in API.
+| Track | Status |
+|--------|--------|
+| **Objective SLA-style metrics in API** | `GET /api/runtime-studio/metrics` — counts by objective/proposal status, `OldestPendingAgeHours` / `OldestInProgressAgeHours`, observation log path + file size. |
+| **Dashboard auth + TLS notes** | `nexo background-agent dashboard --auth-token …` or `NEXO_DASHBOARD_AUTH_TOKEN`; `?token=` / `Authorization: Bearer`; reverse-proxy snippets in **[OPERATOR.md](./OPERATOR.md)**. |
+| **Play Internal testing** | **[PLAY_INTERNAL.md](./PLAY_INTERNAL.md)** — internal track checklist, CI artifact handoff, service-account automation pointers. |
 
