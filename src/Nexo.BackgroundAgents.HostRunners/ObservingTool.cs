@@ -57,7 +57,8 @@ internal sealed class ObservingTool : ITool
     /// </summary>
     public static Func<ToolCall, ToolResult, RuntimeObservation?> DotnetProjector(
         string source,
-        ObservationKind kind)
+        ObservationKind kind,
+        string? objectiveId = null)
     {
         return (call, result) =>
         {
@@ -82,6 +83,14 @@ internal sealed class ObservingTool : ITool
                 root.ValueKind == JsonValueKind.String)
             {
                 facts["root"] = root.GetString() ?? string.Empty;
+            }
+            // Tag observations with the objective the agent was working on so
+            // downstream reports (e.g. nexo background-agent objectives report)
+            // can group "what happened while pursuing X?" without needing a
+            // separate join table.
+            if (!string.IsNullOrWhiteSpace(objectiveId))
+            {
+                facts["objective_id"] = objectiveId;
             }
 
             return new RuntimeObservation(

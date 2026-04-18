@@ -5,6 +5,7 @@ using Nexo.BackgroundAgents.Configuration;
 using Nexo.BackgroundAgents.DataSensitivity;
 using Nexo.BackgroundAgents.Logging;
 using Nexo.BackgroundAgents.Extending;
+using Nexo.BackgroundAgents.Objectives;
 using Nexo.BackgroundAgents.Observations;
 using Nexo.BackgroundAgents.Optimization;
 using Nexo.BackgroundAgents.Registry;
@@ -67,6 +68,16 @@ public static class ServiceCollectionExtensions
             return string.IsNullOrWhiteSpace(overridePath)
                 ? new JsonlObservationStore()
                 : new JsonlObservationStore(overridePath.Trim());
+        });
+        services.TryAddSingleton<IObjectiveStore>(sp =>
+        {
+            // Filesystem-backed backlog under .nexo/runtime-studio/objectives/
+            // by default. NEXO_OBJECTIVES_ROOT points at an absolute path for
+            // sandboxed test runs so we don't pollute the working tree.
+            var overridePath = Environment.GetEnvironmentVariable("NEXO_OBJECTIVES_ROOT");
+            return string.IsNullOrWhiteSpace(overridePath)
+                ? new ObjectiveStore()
+                : new ObjectiveStore(overridePath.Trim());
         });
         services.AddSingleton<IBackgroundAgentRegistry>(sp =>
         {

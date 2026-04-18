@@ -58,7 +58,8 @@ internal static class RepoFsToolboxFactory
     /// at cycle boundaries.</returns>
     public static (CapabilityRegistry tools, PolicyEngine policies, BuildTestBudget budget) CreateWithBuildTest(
         IObservationStore? observations = null,
-        string source = "self-extend")
+        string source = "self-extend",
+        string? objectiveId = null)
     {
         var tools = new CapabilityRegistry();
         tools.Register(new RepoFsListTool());
@@ -71,9 +72,9 @@ internal static class RepoFsToolboxFactory
         if (observations is not null)
         {
             buildTool = new ObservingTool(buildTool, observations,
-                ObservingTool.DotnetProjector(source, ObservationKind.Build));
+                ObservingTool.DotnetProjector(source, ObservationKind.Build, objectiveId));
             testTool = new ObservingTool(testTool, observations,
-                ObservingTool.DotnetProjector(source, ObservationKind.Test));
+                ObservingTool.DotnetProjector(source, ObservationKind.Test, objectiveId));
         }
         tools.Register(buildTool);
         tools.Register(testTool);

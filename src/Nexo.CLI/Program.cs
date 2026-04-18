@@ -421,6 +421,111 @@ static class Program
             obsSourceOpt, obsKindOpt, obsSinceOpt, obsTailOpt, obsSummaryOpt, jsonOpt);
         backgroundAgentCmd.AddCommand(observationsBgCmd);
 
+        // nexo background-agent objectives — operator front door for the structured backlog.
+        // Mirrors the same store the planner reads from, so adds here are picked up by the
+        // next planner cycle automatically. Subcommands: list / show / add / complete /
+        // block / unblock / stats. Kept under background-agent (not a top-level group)
+        // because the backlog is meaningful only in the context of a daemon that consumes it.
+        var objectivesBgCmd = new Command("objectives", "Manage the planner's objective backlog");
+
+        var objListStatusOpt = new Option<string?>("--status", () => null, "Filter by status (Pending, InProgress, Done, Blocked)");
+        var objListTagOpt = new Option<string?>("--tag", () => null, "Filter by tag (case-insensitive exact match)");
+        var objListCmd = new Command("list", "List backlog items, sorted by status then priority")
+        {
+            objListStatusOpt, objListTagOpt
+        };
+        objListCmd.SetHandler(async (string? status, string? tag, bool formatJson) =>
+        {
+            var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ObjectivesBackgroundAgentCommand>();
+            Environment.Exit(await cmd.ListAsync(status, tag, formatJson));
+        }, objListStatusOpt, objListTagOpt, jsonOpt);
+        objectivesBgCmd.AddCommand(objListCmd);
+
+        var objShowIdArg = new Argument<string>("id", "Objective id");
+        var objShowCmd = new Command("show", "Show one objective's full body and metadata") { objShowIdArg };
+        objShowCmd.SetHandler(async (string id, bool formatJson) =>
+        {
+            var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ObjectivesBackgroundAgentCommand>();
+            Environment.Exit(await cmd.ShowAsync(id, formatJson));
+        }, objShowIdArg, jsonOpt);
+        objectivesBgCmd.AddCommand(objShowCmd);
+
+        var objAddIdOpt = new Option<string>("--id", "Stable slug used as the filename") { IsRequired = true };
+        var objAddTitleOpt = new Option<string>("--title", "One-line human-readable title") { IsRequired = true };
+        var objAddPriorityOpt = new Option<int>("--priority", () => 100, "Lower number = higher priority (1 highest)");
+        var objAddTagsOpt = new Option<string[]>("--tag", () => Array.Empty<string>(), "Tag (repeatable)") { AllowMultipleArgumentsPerToken = true };
+        var objAddBodyOpt = new Option<string?>("--body", () => null, "Inline markdown body (mutually exclusive with --body-file)");
+        var objAddBodyFileOpt = new Option<string?>("--body-file", () => null, "Read markdown body from this file");
+        var objAddCmd = new Command("add", "Add a new pending objective")
+        {
+            objAddIdOpt, objAddTitleOpt, objAddPriorityOpt, objAddTagsOpt, objAddBodyOpt, objAddBodyFileOpt
+        };
+        objAddCmd.SetHandler(async (string id, string title, int priority, string[] tags, string? body, string? bodyFile, bool formatJson) =>
+        {
+            var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ObjectivesBackgroundAgentCommand>();
+            Environment.Exit(await cmd.AddAsync(id, title, priority, tags, body, bodyFile, formatJson));
+        }, objAddIdOpt, objAddTitleOpt, objAddPriorityOpt, objAddTagsOpt, objAddBodyOpt, objAddBodyFileOpt, jsonOpt);
+        objectivesBgCmd.AddCommand(objAddCmd);
+
+        var objCompleteIdArg = new Argument<string>("id", "Objective id (must currently be InProgress)");
+        var objCompleteNoteOpt = new Option<string?>("--note", () => null, "Optional note appended to the body");
+        var objCompleteCmd = new Command("complete", "Mark an in-progress objective as Done")
+        {
+            objCompleteIdArg, objCompleteNoteOpt
+        };
+        objCompleteCmd.SetHandler(async (string id, string? note, bool formatJson) =>
+        {
+            var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ObjectivesBackgroundAgentCommand>();
+            Environment.Exit(await cmd.CompleteAsync(id, note, formatJson));
+        }, objCompleteIdArg, objCompleteNoteOpt, jsonOpt);
+        objectivesBgCmd.AddCommand(objCompleteCmd);
+
+        var objBlockIdArg = new Argument<string>("id", "Objective id");
+        var objBlockReasonOpt = new Option<string>("--reason", "Why the objective is blocked") { IsRequired = true };
+        var objBlockCmd = new Command("block", "Mark an objective as Blocked")
+        {
+            objBlockIdArg, objBlockReasonOpt
+        };
+        objBlockCmd.SetHandler(async (string id, string reason, bool formatJson) =>
+        {
+            var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ObjectivesBackgroundAgentCommand>();
+            Environment.Exit(await cmd.BlockAsync(id, reason, formatJson));
+        }, objBlockIdArg, objBlockReasonOpt, jsonOpt);
+        objectivesBgCmd.AddCommand(objBlockCmd);
+
+        var objUnblockIdArg = new Argument<string>("id", "Objective id");
+        var objUnblockCmd = new Command("unblock", "Move a blocked objective back to Pending") { objUnblockIdArg };
+        objUnblockCmd.SetHandler(async (string id, bool formatJson) =>
+        {
+            var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ObjectivesBackgroundAgentCommand>();
+            Environment.Exit(await cmd.UnblockAsync(id, formatJson));
+        }, objUnblockIdArg, jsonOpt);
+        objectivesBgCmd.AddCommand(objUnblockCmd);
+
+        var objReportIdOpt = new Option<string?>("--id", () => null, "Limit report to one objective");
+        var objReportStatusOpt = new Option<string?>("--status", () => null, "Filter by status (Pending, InProgress, Done, Blocked)");
+        var objReportSinceOpt = new Option<double?>("--since-hours", () => null, "Only count observations newer than now-N hours");
+        var objReportCmd = new Command("report", "Cross-correlate objectives with observations (per-objective build/test/error counts)")
+        {
+            objReportIdOpt, objReportStatusOpt, objReportSinceOpt
+        };
+        objReportCmd.SetHandler(async (string? id, string? status, double? since, bool formatJson) =>
+        {
+            var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ObjectivesBackgroundAgentCommand>();
+            Environment.Exit(await cmd.ReportAsync(id, status, since, formatJson));
+        }, objReportIdOpt, objReportStatusOpt, objReportSinceOpt, jsonOpt);
+        objectivesBgCmd.AddCommand(objReportCmd);
+
+        var objStatsCmd = new Command("stats", "Per-status counts and per-tag breakdown of the backlog");
+        objStatsCmd.SetHandler(async (bool formatJson) =>
+        {
+            var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ObjectivesBackgroundAgentCommand>();
+            Environment.Exit(await cmd.StatsAsync(formatJson));
+        }, jsonOpt);
+        objectivesBgCmd.AddCommand(objStatsCmd);
+
+        backgroundAgentCmd.AddCommand(objectivesBgCmd);
+
         // nexo background-agent mode
         var modeCmd = new Command("mode", "Get or set aggressiveness mode (passive, semi-active, active, ambient)");
         var modeGetCmd = new Command("get", "Get current mode");
@@ -1266,6 +1371,7 @@ static class Program
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.MetricsBackgroundAgentCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.StatsBackgroundAgentCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.ObservationsBackgroundAgentCommand>();
+        services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.ObjectivesBackgroundAgentCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.ModeBackgroundAgentCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.SensitivityCommand>();
         services.AddScoped<TrustCommand>();

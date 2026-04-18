@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Nexo.Abstractions;
 using Nexo.BackgroundAgents.Agents;
 using Nexo.BackgroundAgents.Extending;
+using Nexo.BackgroundAgents.Objectives;
 using Nexo.BackgroundAgents.Observations;
 using Nexo.Runtime;
 
@@ -26,17 +27,20 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
     private readonly ILogger<SelfExtendRunnerAdapter> _logger;
     private readonly ILoggerFactory _loggerFactory;
     private readonly IObservationStore? _observations;
+    private readonly IObjectiveStore? _objectives;
 
     public SelfExtendRunnerAdapter(
         IModel model,
         ILogger<SelfExtendRunnerAdapter> logger,
         ILoggerFactory loggerFactory,
-        IObservationStore? observations = null)
+        IObservationStore? observations = null,
+        IObjectiveStore? objectives = null)
     {
         _model = model ?? throw new ArgumentNullException(nameof(model));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
         _observations = observations;
+        _objectives = objectives;
     }
 
     /// <inheritdoc />
@@ -72,24 +76,60 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
             return new SelfExtendRunResult(false, 0, 0, errorMessage!);
         }
 
+        var resolvedAgentName = string.IsNullOrWhiteSpace(agentName) ? "self-extend" : agentName!.Trim();
+
+        // Claim a backlog item for this cycle when an objective store is wired and
+        // the caller hasn't pinned an explicit objective string. Without this the
+        // planner would keep re-using the static objective from agent_set.local.json
+        // every cycle, which is exactly the rut Stream B is meant to fix.
+        ObjectiveDocument? claimed = null;
+        var effectiveObjective = objective;
+        if (_objectives is not null && string.IsNullOrWhiteSpace(objective))
+        {
+            try
+            {
+                claimed = _objectives.ClaimNext(resolvedAgentName);
+                if (claimed is not null)
+                {
+                    effectiveObjective = $"[{claimed.Id}] {claimed.Title}\n\n{claimed.Body}";
+                    _logger.LogInformation(
+                        "Self-extend cycle ({Agent}) claimed objective '{Id}' (priority {Priority}, attempt #{Attempt}).",
+                        resolvedAgentName, claimed.Id, claimed.Priority, claimed.Attempts);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Objective claim failed; proceeding without an objective override.");
+            }
+        }
+
         try
         {
             var (tools, policies, budget) = RepoFsToolboxFactory.CreateWithBuildTest(
                 observations: _observations,
-                source: string.IsNullOrWhiteSpace(agentName) ? "self-extend" : agentName!.Trim());
+                source: resolvedAgentName,
+                objectiveId: claimed?.Id);
             budget.Reset();
+            // Register objective lifecycle tools only when a store is wired — the
+            // tools cannot operate without one and must not be advertised to the LLM
+            // in their absence (would result in confusing "tool failed: store missing"
+            // observations).
+            if (_objectives is not null)
+            {
+                tools.Register(new ObjectiveCompleteTool(_objectives));
+                tools.Register(new ObjectiveBlockTool(_objectives));
+            }
 
-            var resolvedAgentName = string.IsNullOrWhiteSpace(agentName) ? "self-extend" : agentName.Trim();
             var agent = new ToolCallingAgent(
                 resolvedAgentName,
                 _model,
                 _loggerFactory.CreateLogger<ToolCallingAgent>(),
-                objective,
+                effectiveObjective,
                 modelProvider,
                 modelName);
             var scratchpadPath = ResolveScratchpadPath(repoRoot!, resolvedAgentName);
             var recent = LoadRecentObservations();
-            var snapshot = BuildSnapshot(repoRoot!, resolvedAgentName, objective, scratchpadPath, recent);
+            var snapshot = BuildSnapshot(repoRoot!, resolvedAgentName, effectiveObjective, scratchpadPath, recent, claimed);
 
             // Multi-turn ReAct: agent loops up to MaxIterations, executing tool calls inline
             // through the policy engine and feeding observations back into the conversation.
@@ -113,6 +153,16 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
                 cycle.FinalRationale,
                 writePaths));
 
+            // Release-on-no-action: if we claimed an objective but the agent didn't
+            // call objective.complete or objective.block, the objective is still in
+            // the InProgress folder. Move it back to Pending so another cycle (or
+            // operator) can pick it up. The Attempts counter is preserved so the
+            // store's auto-block still fires after MaxAttempts.
+            if (claimed is not null && _objectives is not null)
+            {
+                ReleaseClaimIfStillInProgress(claimed.Id, cycle);
+            }
+
             var summary = $"{cycle.ToolCallsExecuted} tool call(s) executed, {cycle.ToolCallsDenied} denied " +
                           $"(iter={cycle.Iterations}, stopped={cycle.StoppedReason}).";
             _logger.LogInformation("Self-extend cycle ({Agent}): {Summary}", resolvedAgentName, summary);
@@ -126,6 +176,12 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
         }
         catch (Exception ex)
         {
+            // Best-effort release on hard failure too — we don't want a crashed
+            // cycle to permanently park an objective in InProgress.
+            if (claimed is not null && _objectives is not null)
+            {
+                try { ReleaseClaimIfStillInProgress(claimed.Id, cycle: null); } catch { /* swallow */ }
+            }
             return new SelfExtendRunResult(false, 0, 0, BackgroundAgentAdapterFailure.LogAndMessage(_logger, ex, $"Run failed: {ex.Message}"));
         }
     }
@@ -144,7 +200,8 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
         string agentName,
         string? objective,
         string? scratchpadPath = null,
-        IReadOnlyList<RuntimeObservation>? recentObservations = null)
+        IReadOnlyList<RuntimeObservation>? recentObservations = null,
+        ObjectiveDocument? claimed = null)
     {
         var data = new Dictionary<string, object?>
         {
@@ -155,6 +212,22 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
 
         if (!string.IsNullOrWhiteSpace(objective))
             data["Objective"] = objective.Trim();
+
+        // Surface the claimed objective as structured metadata so the LLM can
+        // call objective.complete / objective.block with the right id without
+        // having to parse the free-form Objective string.
+        if (claimed is not null)
+        {
+            data["ObjectiveId"] = claimed.Id;
+            data["ObjectiveMeta"] = new
+            {
+                id = claimed.Id,
+                title = claimed.Title,
+                priority = claimed.Priority,
+                attempts = claimed.Attempts,
+                tags = claimed.Tags
+            };
+        }
 
         if (!string.IsNullOrWhiteSpace(scratchpadPath))
         {
@@ -249,6 +322,55 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
         catch
         {
             return Array.Empty<RuntimeObservation>();
+        }
+    }
+
+    /// <summary>
+    /// If the agent claimed an objective but didn't explicitly complete or block it
+    /// during the cycle, move it back to <c>Pending</c> so the next cycle (or
+    /// operator) can pick it up. Attempts counter is preserved so the store's
+    /// auto-block heuristic still fires after <see cref="ObjectiveStore.MaxAttemptsBeforeBlock"/>
+    /// stuck cycles.
+    /// </summary>
+    private void ReleaseClaimIfStillInProgress(string objectiveId, Nexo.BackgroundAgents.Agents.AgentCycleResult? cycle)
+    {
+        try
+        {
+            var current = _objectives!.Find(objectiveId);
+            if (current is null || current.Status != ObjectiveStatus.InProgress)
+                return; // Agent must have called objective.complete / objective.block — nothing to do.
+
+            // Re-block defensively if the cycle errored hard (cycle == null) since
+            // a hard crash strongly suggests the objective is fragile and shouldn't
+            // be re-claimed immediately. Otherwise just release back to Pending.
+            if (cycle is null)
+            {
+                _objectives.Block(objectiveId, "cycle_crashed");
+                _logger.LogWarning("Objective '{Id}' auto-blocked after cycle crash.", objectiveId);
+                return;
+            }
+
+            // We can't directly call Unblock (objective is InProgress, not Blocked),
+            // and the store doesn't expose a "release" verb. The cleanest way is to
+            // serialize a Pending copy on top of the in-progress file via a fresh
+            // Add. Use the same id so the file move is a no-op rename across folders.
+            // (ObjectiveStore.Add overwrites a same-id file in pending/.)
+            var released = current with
+            {
+                Status = ObjectiveStatus.Pending,
+                Owner = null,
+                UpdatedAt = DateTimeOffset.UtcNow
+            };
+            _objectives.Add(released);
+
+            // Best-effort: clean up the leftover file in the in_progress folder
+            // since Add only writes to pending/.
+            var inProgressPath = System.IO.Path.Combine(_objectives.Location, "in_progress", objectiveId + ".md");
+            if (File.Exists(inProgressPath)) File.Delete(inProgressPath);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Best-effort objective release failed for '{Id}'", objectiveId);
         }
     }
 
