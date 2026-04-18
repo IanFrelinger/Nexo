@@ -398,6 +398,29 @@ static class Program
             statsAgentOpt, statsRoleOpt, statsSinceOpt, jsonOpt);
         backgroundAgentCmd.AddCommand(statsBgCmd);
 
+        // nexo background-agent observations — read the structured observations log.
+        // Companion to `stats`: where stats summarises agent execution, observations
+        // surfaces the *facts* agents collectively published (build/test outcomes,
+        // analysis violations, agent actions). Useful for quickly answering
+        // "what does the daemon currently know about the codebase?".
+        var obsSourceOpt = new Option<string?>("--source", () => null, "Filter to a specific source (typically the agent id)");
+        var obsKindOpt = new Option<string?>("--kind", () => null, "Filter by kind (Build, Test, Analysis, AgentAction, UserSignal)");
+        var obsSinceOpt = new Option<double?>("--since-hours", () => null, "Only observations newer than now-N hours");
+        var obsTailOpt = new Option<int?>("--tail", () => null, "Show only the most recent N rows after filtering");
+        var obsSummaryOpt = new Option<bool>("--summary", () => false, "Group counts by source/kind/severity instead of listing rows");
+        var observationsBgCmd = new Command("observations", "Inspect the structured observations log (observations.jsonl)")
+        {
+            obsSourceOpt, obsKindOpt, obsSinceOpt, obsTailOpt, obsSummaryOpt
+        };
+        observationsBgCmd.SetHandler(
+            async (string? source, string? kind, double? since, int? tail, bool summary, bool formatJson) =>
+            {
+                var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ObservationsBackgroundAgentCommand>();
+                Environment.Exit(await cmd.ExecuteAsync(source, kind, since, tail, summary, formatJson));
+            },
+            obsSourceOpt, obsKindOpt, obsSinceOpt, obsTailOpt, obsSummaryOpt, jsonOpt);
+        backgroundAgentCmd.AddCommand(observationsBgCmd);
+
         // nexo background-agent mode
         var modeCmd = new Command("mode", "Get or set aggressiveness mode (passive, semi-active, active, ambient)");
         var modeGetCmd = new Command("get", "Get current mode");
@@ -1242,6 +1265,7 @@ static class Program
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.LogsBackgroundAgentCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.MetricsBackgroundAgentCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.StatsBackgroundAgentCommand>();
+        services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.ObservationsBackgroundAgentCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.ModeBackgroundAgentCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.SensitivityCommand>();
         services.AddScoped<TrustCommand>();

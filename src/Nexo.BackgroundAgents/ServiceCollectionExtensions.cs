@@ -5,6 +5,7 @@ using Nexo.BackgroundAgents.Configuration;
 using Nexo.BackgroundAgents.DataSensitivity;
 using Nexo.BackgroundAgents.Logging;
 using Nexo.BackgroundAgents.Extending;
+using Nexo.BackgroundAgents.Observations;
 using Nexo.BackgroundAgents.Optimization;
 using Nexo.BackgroundAgents.Registry;
 using Nexo.BackgroundAgents.Testing;
@@ -58,6 +59,15 @@ public static class ServiceCollectionExtensions
                 ? new CycleEventStore()
                 : new CycleEventStore(overridePath.Trim());
         });
+        services.TryAddSingleton<IObservationStore>(sp =>
+        {
+            // Companion to cycles.jsonl: structured facts agents publish for each other to read.
+            // Override location with NEXO_OBSERVATIONS_PATH for tests / sandboxed runs.
+            var overridePath = Environment.GetEnvironmentVariable("NEXO_OBSERVATIONS_PATH");
+            return string.IsNullOrWhiteSpace(overridePath)
+                ? new JsonlObservationStore()
+                : new JsonlObservationStore(overridePath.Trim());
+        });
         services.AddSingleton<IBackgroundAgentRegistry>(sp =>
         {
             var scheduler = sp.GetRequiredService<IAgentScheduler>();
@@ -71,7 +81,8 @@ public static class ServiceCollectionExtensions
             var approvalGate = sp.GetService<IApprovalGate>();
             var auditLog = sp.GetService<IDataDecisionAuditLog>();
             var cycleEvents = sp.GetService<CycleEventStore>();
-            return new BackgroundAgentRegistry(scheduler, logger, logStore, codeAnalysisRunner, testRunRunner, selfExtendRunner, selfImprovementLoop, modeStore, approvalGate, auditLog, cycleEvents);
+            var observations = sp.GetService<IObservationStore>();
+            return new BackgroundAgentRegistry(scheduler, logger, logStore, codeAnalysisRunner, testRunRunner, selfExtendRunner, selfImprovementLoop, modeStore, approvalGate, auditLog, cycleEvents, observations);
         });
         services.TryAddSingleton<BackgroundAgentConfigLoader>();
         services.TryAddSingleton<BackgroundAgentSpecBuilder>();

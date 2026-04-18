@@ -135,6 +135,7 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
     private readonly IApprovalGate? _approvalGate;
     private readonly IDataDecisionAuditLog? _auditLog;
     private readonly CycleEventStore? _cycleEvents;
+    private readonly Observations.IObservationStore? _observations;
     private readonly TimeSpan _shutdownGracePeriod;
 
     /// <summary>
@@ -165,6 +166,7 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
         IApprovalGate? approvalGate = null,
         IDataDecisionAuditLog? auditLog = null,
         CycleEventStore? cycleEvents = null,
+        Observations.IObservationStore? observations = null,
         TimeSpan? shutdownGracePeriod = null)
     {
         _scheduler = scheduler ?? throw new ArgumentNullException(nameof(scheduler));
@@ -178,6 +180,7 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
         _approvalGate = approvalGate;
         _auditLog = auditLog;
         _cycleEvents = cycleEvents;
+        _observations = observations;
         _shutdownGracePeriod = shutdownGracePeriod ?? DefaultShutdownGracePeriod;
     }
 
@@ -441,6 +444,25 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
                 _logStore?.Append(agentId, result.Success ? "Info" : "Warning",
                     $"Code analysis: {result.Summary} (violations: {result.ViolationCount})");
                 _logger?.LogInformation("Background agent {AgentId} code analysis: {Summary}", agentId, result.Summary);
+                // Publish observation so the planner can react to violations next cycle.
+                // Severity is escalated when the analyser reports any violations, which is a
+                // stronger signal than analyser exit-success (a clean run on a broken codebase
+                // would still be Success=true with violations).
+                _observations?.Append(new Observations.RuntimeObservation(
+                    ts: DateTimeOffset.UtcNow,
+                    source: agentId,
+                    kind: Observations.ObservationKind.Analysis,
+                    summary: $"{result.Summary} (violations: {result.ViolationCount})",
+                    severity: result.ViolationCount > 0
+                        ? Observations.ObservationSeverity.Warn
+                        : Observations.ObservationSeverity.Info,
+                    facts: new Dictionary<string, string>
+                    {
+                        ["path"] = analysisPath,
+                        ["violations"] = result.ViolationCount.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                        ["success"] = result.Success ? "true" : "false"
+                    },
+                    agentCycle: instance.ExecutionCount));
                 instance.LastCompletedAt = DateTimeOffset.UtcNow;
                 instance.SuccessCount++;
                 _logStore?.Append(agentId, "Info", "Execution completed successfully.");
@@ -459,6 +481,25 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
                 _logStore?.Append(agentId, result.Success ? "Info" : "Warning",
                     $"Tests: {result.Summary} (total: {result.TotalTests}, failed: {result.FailedTests})");
                 _logger?.LogInformation("Background agent {AgentId} test run: {Summary}", agentId, result.Summary);
+                // Publish observation so the planner sees test failures in its next snapshot.
+                // Failed > 0 is always Error severity even if Success=true, so the planner can
+                // react to a single regression without waiting for a fully red run.
+                _observations?.Append(new Observations.RuntimeObservation(
+                    ts: DateTimeOffset.UtcNow,
+                    source: agentId,
+                    kind: Observations.ObservationKind.Test,
+                    summary: $"{result.Summary} (total: {result.TotalTests}, failed: {result.FailedTests})",
+                    severity: result.FailedTests > 0
+                        ? Observations.ObservationSeverity.Error
+                        : (result.Success ? Observations.ObservationSeverity.Info : Observations.ObservationSeverity.Warn),
+                    facts: new Dictionary<string, string>
+                    {
+                        ["filter"] = filter ?? string.Empty,
+                        ["total"] = result.TotalTests.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                        ["failed"] = result.FailedTests.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                        ["success"] = result.Success ? "true" : "false"
+                    },
+                    agentCycle: instance.ExecutionCount));
                 instance.LastCompletedAt = DateTimeOffset.UtcNow;
                 instance.SuccessCount++;
                 _logStore?.Append(agentId, "Info", "Execution completed successfully.");
@@ -527,6 +568,26 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
                     _logger?.LogInformation("Background agent {AgentId} self-extend: {Summary}", agentId, result.Summary);
                 }
 
+                // Publish an AgentAction observation so the planner sees what the extender
+                // did this cycle (tool counts + stopped reason). This is intentionally
+                // emitted even in Ambient mode — observations are an internal substrate,
+                // not user-facing notifications.
+                _observations?.Append(new Observations.RuntimeObservation(
+                    ts: DateTimeOffset.UtcNow,
+                    source: agentId,
+                    kind: Observations.ObservationKind.AgentAction,
+                    summary: $"Self-extend: {result.Summary} (executed: {result.ToolCallsExecuted}, denied: {result.ToolCallsDenied})",
+                    severity: result.Success ? Observations.ObservationSeverity.Info : Observations.ObservationSeverity.Warn,
+                    facts: new Dictionary<string, string>
+                    {
+                        ["repo_root"] = repoRoot,
+                        ["executed"] = result.ToolCallsExecuted.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                        ["denied"] = result.ToolCallsDenied.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                        ["iterations"] = (result.Iterations > 0 ? result.Iterations : 0).ToString(System.Globalization.CultureInfo.InvariantCulture),
+                        ["stopped_reason"] = result.StoppedReason ?? "self_extend",
+                        ["mode"] = mode.ToString()
+                    },
+                    agentCycle: instance.ExecutionCount));
                 instance.LastCompletedAt = DateTimeOffset.UtcNow;
                 instance.SuccessCount++;
                 _logStore?.Append(agentId, "Info", "Execution completed successfully.");
@@ -659,3 +720,5 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
         return false;
     }
 }
+
+

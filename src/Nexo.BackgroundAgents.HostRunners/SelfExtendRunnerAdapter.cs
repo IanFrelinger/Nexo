@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Nexo.Abstractions;
 using Nexo.BackgroundAgents.Agents;
 using Nexo.BackgroundAgents.Extending;
+using Nexo.BackgroundAgents.Observations;
 using Nexo.Runtime;
 
 namespace Nexo.BackgroundAgents.HostRunners;
@@ -12,18 +13,30 @@ namespace Nexo.BackgroundAgents.HostRunners;
 /// </summary>
 public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
 {
+    /// <summary>
+    /// Maximum number of most-recent observations surfaced to the planner each cycle.
+    /// Sized to keep the snapshot under typical model context budgets while still
+    /// giving the planner several test/build/PR signals to react to. If callers find
+    /// they need a longer tail, expose this via configuration rather than raising it
+    /// blindly — large observation tails dilute the model's attention on the objective.
+    /// </summary>
+    private const int RecentObservationsLimit = 10;
+
     private readonly IModel _model;
     private readonly ILogger<SelfExtendRunnerAdapter> _logger;
     private readonly ILoggerFactory _loggerFactory;
+    private readonly IObservationStore? _observations;
 
     public SelfExtendRunnerAdapter(
         IModel model,
         ILogger<SelfExtendRunnerAdapter> logger,
-        ILoggerFactory loggerFactory)
+        ILoggerFactory loggerFactory,
+        IObservationStore? observations = null)
     {
         _model = model ?? throw new ArgumentNullException(nameof(model));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
+        _observations = observations;
     }
 
     /// <inheritdoc />
@@ -61,7 +74,10 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
 
         try
         {
-            var (tools, policies) = RepoFsToolboxFactory.CreateMinimal();
+            var (tools, policies, budget) = RepoFsToolboxFactory.CreateWithBuildTest(
+                observations: _observations,
+                source: string.IsNullOrWhiteSpace(agentName) ? "self-extend" : agentName!.Trim());
+            budget.Reset();
 
             var resolvedAgentName = string.IsNullOrWhiteSpace(agentName) ? "self-extend" : agentName.Trim();
             var agent = new ToolCallingAgent(
@@ -72,7 +88,8 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
                 modelProvider,
                 modelName);
             var scratchpadPath = ResolveScratchpadPath(repoRoot!, resolvedAgentName);
-            var snapshot = BuildSnapshot(repoRoot!, resolvedAgentName, objective, scratchpadPath);
+            var recent = LoadRecentObservations();
+            var snapshot = BuildSnapshot(repoRoot!, resolvedAgentName, objective, scratchpadPath, recent);
 
             // Multi-turn ReAct: agent loops up to MaxIterations, executing tool calls inline
             // through the policy engine and feeding observations back into the conversation.
@@ -122,7 +139,12 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
     ///   model has bootstrap context without having to call <c>repo.fs.list .</c> first. With
     ///   the previous bare snapshot the planner was being asked to write blind.
     /// </summary>
-    private static WorldSnapshot BuildSnapshot(string repoRoot, string agentName, string? objective, string? scratchpadPath = null)
+    private static WorldSnapshot BuildSnapshot(
+        string repoRoot,
+        string agentName,
+        string? objective,
+        string? scratchpadPath = null,
+        IReadOnlyList<RuntimeObservation>? recentObservations = null)
     {
         var data = new Dictionary<string, object?>
         {
@@ -139,6 +161,24 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
             var tail = PlannerScratchpad.LoadTail(scratchpadPath);
             if (!string.IsNullOrWhiteSpace(tail))
                 data["RecentNotes"] = tail;
+        }
+
+        // Surface recent facts other agents have published as a compact, model-friendly
+        // projection. We deliberately project to anonymous primitives (string ts, kind,
+        // source, summary, severity) rather than the full record so the snapshot dictionary
+        // stays JSON-friendly when serialised into the system prompt.
+        if (recentObservations is { Count: > 0 })
+        {
+            data["RecentObservations"] = recentObservations
+                .Select(o => new
+                {
+                    ts = o.ts.ToString("u", System.Globalization.CultureInfo.InvariantCulture),
+                    source = o.source,
+                    kind = o.kind.ToString(),
+                    severity = o.severity.ToString(),
+                    summary = o.summary
+                })
+                .ToArray();
         }
 
         try
@@ -187,6 +227,31 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
     /// is sanitised so that values like "runtime-planner" or "self-extend" produce predictable
     /// filenames without filesystem-illegal characters.
     /// </summary>
+    /// <summary>
+    /// Pulls the tail of the observation log so the planner sees what the tester /
+    /// optimizer / extender saw in their most recent runs. Best-effort: a missing or
+    /// unreadable store yields an empty list, never an exception.
+    /// </summary>
+    private IReadOnlyList<RuntimeObservation> LoadRecentObservations()
+    {
+        if (_observations is null) return Array.Empty<RuntimeObservation>();
+        try
+        {
+            // Pull a slightly larger window then take the tail — ReadSince streams in
+            // append order, and the planner cares about the *most recent* events.
+            var window = _observations
+                .ReadSince(since: DateTimeOffset.UtcNow - TimeSpan.FromHours(24))
+                .ToList();
+            if (window.Count <= RecentObservationsLimit)
+                return window;
+            return window.GetRange(window.Count - RecentObservationsLimit, RecentObservationsLimit);
+        }
+        catch
+        {
+            return Array.Empty<RuntimeObservation>();
+        }
+    }
+
     private static string ResolveScratchpadPath(string repoRoot, string agentName)
     {
         var safe = string.Concat(agentName.Select(c =>
