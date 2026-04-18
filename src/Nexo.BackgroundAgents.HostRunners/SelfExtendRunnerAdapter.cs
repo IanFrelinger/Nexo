@@ -73,26 +73,19 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
                 modelName);
             var snapshot = BuildSnapshot(repoRoot!, resolvedAgentName, objective);
 
-            var deniedCount = 0;
-            ChainRejectionCallback onRejected = (_, _, _) => Interlocked.Increment(ref deniedCount);
+            // Multi-turn ReAct: agent loops up to MaxIterations, executing tool calls inline
+            // through the policy engine and feeding observations back into the conversation.
+            // The previous single-turn AgentHost path was unable to chain list → read → write
+            // because tool results never reached the LLM after the first round.
+            var memory = tools.MemoryFor(agent);
+            var cycle = await agent
+                .RunCycleAsync(snapshot, tools, policies, onRejected: null, memory, cancellationToken)
+                .ConfigureAwait(false);
 
-            var host = new AgentHost(new[] { agent }, tools, policies, onRejected);
-            var delta = await host.StepAsync(snapshot, cancellationToken).ConfigureAwait(false);
-
-            // Count every tool log line emitted by the toolbox (read/list/write/search-replace) —
-            // not just mutating ones. Inspection calls are real, useful work and should be reflected
-            // in the cycle summary so operators can tell "the agent thought and inspected the repo"
-            // apart from "the agent silently no-op'd".
-            var executed = delta?.Log.Count(l =>
-                l.StartsWith("read:", StringComparison.Ordinal) ||
-                l.StartsWith("list:", StringComparison.Ordinal) ||
-                l.StartsWith("write:", StringComparison.Ordinal) ||
-                l.StartsWith("s&r:", StringComparison.Ordinal)) ?? 0;
-            var summary = delta == null && deniedCount == 0
-                ? "No tool calls executed."
-                : $"{executed} tool call(s) executed, {deniedCount} denied.";
+            var summary = $"{cycle.ToolCallsExecuted} tool call(s) executed, {cycle.ToolCallsDenied} denied " +
+                          $"(iter={cycle.Iterations}, stopped={cycle.StoppedReason}).";
             _logger.LogInformation("Self-extend cycle ({Agent}): {Summary}", resolvedAgentName, summary);
-            return new SelfExtendRunResult(deniedCount == 0, executed, deniedCount, summary);
+            return new SelfExtendRunResult(cycle.ToolCallsDenied == 0, cycle.ToolCallsExecuted, cycle.ToolCallsDenied, summary);
         }
         catch (Exception ex)
         {
