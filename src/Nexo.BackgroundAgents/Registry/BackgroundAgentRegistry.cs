@@ -291,7 +291,10 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
         {
             instance.ExecutionCount++;
             _logStore?.Append(agentId, "Info", "Executing background agent.");
-            _logger?.LogDebug("Executing background agent: {AgentId}", agentId);
+            // Info-level so daemon operators see scheduled cycles firing without enabling Debug logs.
+            _logger?.LogInformation(
+                "Executing background agent: {AgentId} (role={Role}, cycle #{Cycle})",
+                agentId, instance.Config.Role, instance.ExecutionCount);
 
             // Dog-food: optimizer agents run code analysis when Path/AnalysisPath is set and runner is registered
             if (string.Equals(instance.Config.Role, "optimizer", StringComparison.OrdinalIgnoreCase) &&
@@ -301,7 +304,7 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
                 var result = await _codeAnalysisRunner.RunAsync(analysisPath, cancellationToken).ConfigureAwait(false);
                 _logStore?.Append(agentId, result.Success ? "Info" : "Warning",
                     $"Code analysis: {result.Summary} (violations: {result.ViolationCount})");
-                _logger?.LogDebug("Background agent {AgentId} code analysis: {Summary}", agentId, result.Summary);
+                _logger?.LogInformation("Background agent {AgentId} code analysis: {Summary}", agentId, result.Summary);
                 instance.LastCompletedAt = DateTimeOffset.UtcNow;
                 instance.SuccessCount++;
                 _logStore?.Append(agentId, "Info", "Execution completed successfully.");
@@ -316,7 +319,7 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
                 var result = await _testRunRunner.RunAsync(filter, cancellationToken).ConfigureAwait(false);
                 _logStore?.Append(agentId, result.Success ? "Info" : "Warning",
                     $"Tests: {result.Summary} (total: {result.TotalTests}, failed: {result.FailedTests})");
-                _logger?.LogDebug("Background agent {AgentId} test run: {Summary}", agentId, result.Summary);
+                _logger?.LogInformation("Background agent {AgentId} test run: {Summary}", agentId, result.Summary);
                 instance.LastCompletedAt = DateTimeOffset.UtcNow;
                 instance.SuccessCount++;
                 _logStore?.Append(agentId, "Info", "Execution completed successfully.");
@@ -357,7 +360,17 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
                     }
                 }
 
-                var result = await _selfExtendRunner.RunAsync(repoRoot, cancellationToken).ConfigureAwait(false);
+                // Surface the agent's configured Objective, AgentName, ModelProvider, and ModelName
+                // so the LLM has goal context and the model chain routes to the configured backend.
+                // Without provider routing the HotSwappableModel falls through to a deterministic
+                // echo and the planner appears to "do nothing" because the LLM is never called.
+                var objective = TryGetParameter(instance.Config, new[] { "Objective", "Goal" }, out var obj) ? obj : null;
+                var agentName = TryGetParameter(instance.Config, new[] { "AgentName" }, out var an) ? an : agentId;
+                var modelProvider = string.IsNullOrWhiteSpace(instance.Config.ModelProvider) ? null : instance.Config.ModelProvider;
+                var modelName = string.IsNullOrWhiteSpace(instance.Config.ModelName) ? null : instance.Config.ModelName;
+                var result = await _selfExtendRunner
+                    .RunAsync(repoRoot, objective, agentName, modelProvider, modelName, cancellationToken)
+                    .ConfigureAwait(false);
 
                 if (mode == BackgroundAgentAggressivenessMode.Ambient)
                 {
@@ -369,7 +382,7 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
                 {
                     _logStore?.Append(agentId, result.Success ? "Info" : "Warning",
                         $"Self-extend: {result.Summary} (executed: {result.ToolCallsExecuted}, denied: {result.ToolCallsDenied})");
-                    _logger?.LogDebug("Background agent {AgentId} self-extend: {Summary}", agentId, result.Summary);
+                    _logger?.LogInformation("Background agent {AgentId} self-extend: {Summary}", agentId, result.Summary);
                 }
 
                 instance.LastCompletedAt = DateTimeOffset.UtcNow;
@@ -417,7 +430,7 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
                     ? $"Self-improvement: {report.FailuresProcessed} processed, {report.FixesPromoted} promoted, {report.FixesRejected} rejected"
                     : "Self-improvement: completed (no report available)";
                 _logStore?.Append(agentId, "Info", summary);
-                _logger?.LogDebug("Background agent {AgentId} self-improvement: {Summary}", agentId, summary);
+                _logger?.LogInformation("Background agent {AgentId} self-improvement: {Summary}", agentId, summary);
                 instance.LastCompletedAt = DateTimeOffset.UtcNow;
                 instance.SuccessCount++;
                 _logStore?.Append(agentId, "Info", "Execution completed successfully.");

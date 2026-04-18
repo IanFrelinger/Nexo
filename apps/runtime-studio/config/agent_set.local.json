@@ -6,7 +6,7 @@
         "Name": "Runtime Studio Planner",
         "Role": "extender",
         "ModelProvider": "ollama",
-        "ModelName": "llama3.1",
+        "ModelName": "llama3.1:latest",
         "Commands": [
           "plan",
           "decompose",
@@ -43,7 +43,7 @@
         "Role": "optimizer",
         "ParentId": "runtime-planner",
         "ModelProvider": "ollama",
-        "ModelName": "llama3.1",
+        "ModelName": "llama3.1:latest",
         "Commands": [
           "analyze",
           "suggest"
