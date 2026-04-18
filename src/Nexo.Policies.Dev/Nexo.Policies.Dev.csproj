@@ -6,5 +6,6 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Nexo.Abstractions\Nexo.Abstractions.csproj" />
+    <ProjectReference Include="..\Nexo.BackgroundAgents\Nexo.BackgroundAgents.csproj" />
   </ItemGroup>
 </Project>

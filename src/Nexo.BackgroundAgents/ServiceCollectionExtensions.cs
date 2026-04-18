@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Nexo.BackgroundAgents.Configuration;
 using Nexo.BackgroundAgents.DataSensitivity;
+using Nexo.BackgroundAgents.Forge;
 using Nexo.BackgroundAgents.Logging;
 using Nexo.BackgroundAgents.Extending;
 using Nexo.BackgroundAgents.Objectives;
@@ -78,6 +79,16 @@ public static class ServiceCollectionExtensions
             return string.IsNullOrWhiteSpace(overridePath)
                 ? new ObjectiveStore()
                 : new ObjectiveStore(overridePath.Trim());
+        });
+        services.TryAddSingleton<IChangeProposalStore>(sp =>
+        {
+            // Filesystem-backed forge proposal queue under .nexo/runtime-studio/forge/
+            // by default. NEXO_FORGE_ROOT lets sandboxed runs (and tests) point at
+            // an isolated temp directory.
+            var overridePath = Environment.GetEnvironmentVariable("NEXO_FORGE_ROOT");
+            return string.IsNullOrWhiteSpace(overridePath)
+                ? new ChangeProposalStore()
+                : new ChangeProposalStore(overridePath.Trim());
         });
         services.AddSingleton<IBackgroundAgentRegistry>(sp =>
         {

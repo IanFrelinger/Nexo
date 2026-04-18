@@ -526,6 +526,102 @@ static class Program
 
         backgroundAgentCmd.AddCommand(objectivesBgCmd);
 
+        // nexo background-agent proposals — operator front door for the forge change
+        // proposal queue. Mirrors the objectives CLI shape so operators only learn
+        // one mental model. Subcommands: list / show / approve / reject / apply / stats.
+        var proposalsBgCmd = new Command("proposals", "Manage forge-mediated change proposals");
+
+        var propListStatusOpt = new Option<string?>("--status", () => null, "Filter by status (Proposed, Approved, Rejected, Applied, Stale)");
+        var propListTargetOpt = new Option<string?>("--target-prefix", () => null, "Filter by target path prefix");
+        var propListCmd = new Command("list", "List proposals, sorted by status then most-recent update")
+        {
+            propListStatusOpt, propListTargetOpt
+        };
+        propListCmd.SetHandler(async (string? status, string? targetPrefix, bool formatJson) =>
+        {
+            var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ProposalsBackgroundAgentCommand>();
+            Environment.Exit(await cmd.ListAsync(status, targetPrefix, formatJson));
+        }, propListStatusOpt, propListTargetOpt, jsonOpt);
+        proposalsBgCmd.AddCommand(propListCmd);
+
+        var propShowIdArg = new Argument<string>("id", "Proposal id");
+        var propShowDiffOpt = new Option<bool>("--show-diff", () => false, "Include the proposed file content in the output");
+        var propShowCmd = new Command("show", "Show one proposal's metadata (and optionally its proposed content)")
+        {
+            propShowIdArg, propShowDiffOpt
+        };
+        propShowCmd.SetHandler(async (string id, bool showDiff, bool formatJson) =>
+        {
+            var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ProposalsBackgroundAgentCommand>();
+            Environment.Exit(await cmd.ShowAsync(id, showDiff, formatJson));
+        }, propShowIdArg, propShowDiffOpt, jsonOpt);
+        proposalsBgCmd.AddCommand(propShowCmd);
+
+        var propApproveIdArg = new Argument<string>("id", "Proposal id (must currently be Proposed)");
+        var propApproveByOpt = new Option<string?>("--approver", () => null, "Operator approving the change");
+        var propApproveNoteOpt = new Option<string?>("--note", () => null, "Optional approval note");
+        var propApproveCmd = new Command("approve", "Approve a Proposed change so it can be applied")
+        {
+            propApproveIdArg, propApproveByOpt, propApproveNoteOpt
+        };
+        propApproveCmd.SetHandler(async (string id, string? approver, string? note, bool formatJson) =>
+        {
+            var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ProposalsBackgroundAgentCommand>();
+            Environment.Exit(await cmd.ApproveAsync(id, approver, note, formatJson));
+        }, propApproveIdArg, propApproveByOpt, propApproveNoteOpt, jsonOpt);
+        proposalsBgCmd.AddCommand(propApproveCmd);
+
+        var propRejectIdArg = new Argument<string>("id", "Proposal id (must currently be Proposed)");
+        var propRejectByOpt = new Option<string?>("--reviewer", () => null, "Operator rejecting the change");
+        var propRejectNoteOpt = new Option<string?>("--note", () => null, "Why the change was rejected");
+        var propRejectCmd = new Command("reject", "Reject a Proposed change")
+        {
+            propRejectIdArg, propRejectByOpt, propRejectNoteOpt
+        };
+        propRejectCmd.SetHandler(async (string id, string? reviewer, string? note, bool formatJson) =>
+        {
+            var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ProposalsBackgroundAgentCommand>();
+            Environment.Exit(await cmd.RejectAsync(id, reviewer, note, formatJson));
+        }, propRejectIdArg, propRejectByOpt, propRejectNoteOpt, jsonOpt);
+        proposalsBgCmd.AddCommand(propRejectCmd);
+
+        var propApplyIdArg = new Argument<string>("id", "Approved proposal id");
+        var propApplyRootOpt = new Option<string>("--repo-root", () => Directory.GetCurrentDirectory(), "Repo root the target_path is resolved against");
+        var propApplyForceOpt = new Option<bool>("--force", () => false, "Apply even if the file's sha256 has drifted from the proposal's BaseSha256");
+        var propApplyCmd = new Command("apply", "Write an Approved proposal to disk and mark it Applied")
+        {
+            propApplyIdArg, propApplyRootOpt, propApplyForceOpt
+        };
+        propApplyCmd.SetHandler(async (string id, string root, bool force, bool formatJson) =>
+        {
+            var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ProposalsBackgroundAgentCommand>();
+            Environment.Exit(await cmd.ApplyAsync(id, root, force, formatJson));
+        }, propApplyIdArg, propApplyRootOpt, propApplyForceOpt, jsonOpt);
+        proposalsBgCmd.AddCommand(propApplyCmd);
+
+        var propJanProposedOpt = new Option<double?>("--proposed-ttl-hours", () => null, "Override Proposed TTL (default 72h)");
+        var propJanApprovedOpt = new Option<double?>("--approved-ttl-hours", () => null, "Override Approved TTL (default 24h)");
+        var propJanitorCmd = new Command("janitor", "Run the janitor sweep once: stale anything past its TTL")
+        {
+            propJanProposedOpt, propJanApprovedOpt
+        };
+        propJanitorCmd.SetHandler(async (double? proposedTtl, double? approvedTtl, bool formatJson) =>
+        {
+            var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ProposalsBackgroundAgentCommand>();
+            Environment.Exit(await cmd.JanitorAsync(proposedTtl, approvedTtl, formatJson));
+        }, propJanProposedOpt, propJanApprovedOpt, jsonOpt);
+        proposalsBgCmd.AddCommand(propJanitorCmd);
+
+        var propStatsCmd = new Command("stats", "Per-status counts of the proposal queue");
+        propStatsCmd.SetHandler(async (bool formatJson) =>
+        {
+            var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ProposalsBackgroundAgentCommand>();
+            Environment.Exit(await cmd.StatsAsync(formatJson));
+        }, jsonOpt);
+        proposalsBgCmd.AddCommand(propStatsCmd);
+
+        backgroundAgentCmd.AddCommand(proposalsBgCmd);
+
         // nexo background-agent mode
         var modeCmd = new Command("mode", "Get or set aggressiveness mode (passive, semi-active, active, ambient)");
         var modeGetCmd = new Command("get", "Get current mode");
@@ -1372,6 +1468,7 @@ static class Program
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.StatsBackgroundAgentCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.ObservationsBackgroundAgentCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.ObjectivesBackgroundAgentCommand>();
+        services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.ProposalsBackgroundAgentCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.ModeBackgroundAgentCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.SensitivityCommand>();
         services.AddScoped<TrustCommand>();

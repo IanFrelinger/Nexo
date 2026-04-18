@@ -1,7 +1,9 @@
 using Microsoft.Extensions.Logging;
 using Nexo.Abstractions;
 using Nexo.BackgroundAgents.Agents;
+using Nexo.BackgroundAgents.Configuration;
 using Nexo.BackgroundAgents.Extending;
+using Nexo.BackgroundAgents.Forge;
 using Nexo.BackgroundAgents.Objectives;
 using Nexo.BackgroundAgents.Observations;
 using Nexo.Runtime;
@@ -28,19 +30,25 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
     private readonly ILoggerFactory _loggerFactory;
     private readonly IObservationStore? _observations;
     private readonly IObjectiveStore? _objectives;
+    private readonly IChangeProposalStore? _proposals;
+    private readonly IAggressivenessModeStore? _modeStore;
 
     public SelfExtendRunnerAdapter(
         IModel model,
         ILogger<SelfExtendRunnerAdapter> logger,
         ILoggerFactory loggerFactory,
         IObservationStore? observations = null,
-        IObjectiveStore? objectives = null)
+        IObjectiveStore? objectives = null,
+        IChangeProposalStore? proposals = null,
+        IAggressivenessModeStore? modeStore = null)
     {
         _model = model ?? throw new ArgumentNullException(nameof(model));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _loggerFactory = loggerFactory ?? throw new ArgumentNullException(nameof(loggerFactory));
         _observations = observations;
         _objectives = objectives;
+        _proposals = proposals;
+        _modeStore = modeStore;
     }
 
     /// <inheritdoc />
@@ -108,7 +116,9 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
             var (tools, policies, budget) = RepoFsToolboxFactory.CreateWithBuildTest(
                 observations: _observations,
                 source: resolvedAgentName,
-                objectiveId: claimed?.Id);
+                objectiveId: claimed?.Id,
+                proposals: _proposals,
+                modeStore: _modeStore);
             budget.Reset();
             // Register objective lifecycle tools only when a store is wired — the
             // tools cannot operate without one and must not be advertised to the LLM

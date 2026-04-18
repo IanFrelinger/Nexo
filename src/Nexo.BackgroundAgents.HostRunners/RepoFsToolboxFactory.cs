@@ -1,4 +1,6 @@
 using Nexo.Abstractions;
+using Nexo.BackgroundAgents.Configuration;
+using Nexo.BackgroundAgents.Forge;
 using Nexo.BackgroundAgents.Observations;
 using Nexo.Policies.Dev;
 using Nexo.Runtime;
@@ -59,7 +61,9 @@ internal static class RepoFsToolboxFactory
     public static (CapabilityRegistry tools, PolicyEngine policies, BuildTestBudget budget) CreateWithBuildTest(
         IObservationStore? observations = null,
         string source = "self-extend",
-        string? objectiveId = null)
+        string? objectiveId = null,
+        IChangeProposalStore? proposals = null,
+        IAggressivenessModeStore? modeStore = null)
     {
         var tools = new CapabilityRegistry();
         tools.Register(new RepoFsListTool());
@@ -79,13 +83,35 @@ internal static class RepoFsToolboxFactory
         tools.Register(buildTool);
         tools.Register(testTool);
 
+        // Forge: when a proposal store is supplied, register the propose/check
+        // tools so the LLM has a non-write path to suggest changes. The policy
+        // is registered only when a mode store is also supplied so the *enforcement*
+        // can be toggled by operators without code changes.
+        if (proposals is not null)
+        {
+            tools.Register(new ForgeProposeChangeTool(
+                proposals,
+                agentIdProvider: () => source,
+                objectiveIdProvider: () => objectiveId));
+            tools.Register(new ForgeCheckPrTool(proposals));
+        }
+
         var budget = new BuildTestBudget();
-        var policies = new PolicyEngine(new IPolicy[]
+        var policyList = new List<IPolicy>
         {
             new PathAllowlist(),
             new MaxWriteSize(),
             budget
-        });
+        };
+        if (modeStore is not null)
+        {
+            // ForgeMediatedWritesPolicy is mode-aware and lives next to the other
+            // dev policies. It only kicks in for low-trust modes (Passive,
+            // SemiActive); at Active/Ambient it's a no-op so existing flows
+            // continue to write directly.
+            policyList.Add(new ForgeMediatedWritesPolicy(modeStore));
+        }
+        var policies = new PolicyEngine(policyList.ToArray());
 
         return (tools, policies, budget);
     }
