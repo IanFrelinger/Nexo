@@ -15,6 +15,7 @@
     <ProjectReference Include="..\Nexo.BackgroundAgents\Nexo.BackgroundAgents.csproj" />
     <ProjectReference Include="..\Nexo.Orchestration\Nexo.Orchestration.csproj" />
     <ProjectReference Include="..\Nexo.Tests.Contracts\Nexo.Tests.Contracts.csproj" />
+    <ProjectReference Include="..\Nexo.Tools.Dev\Nexo.Tools.Dev.csproj" />
   </ItemGroup>
 
   <ItemGroup>
