@@ -168,13 +168,22 @@ jobs:
         run: |
           rm -f src/Nexo.Tests.Infrastructure/scripts/obj/project.assets.json
           dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -v minimal
+          dotnet build src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj -v minimal
           dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+            --no-build \
+            --blame-hang-timeout 180s \
+            --blame-hang-dump-type none \
+            --filter "(FullyQualifiedName~BaseFrameworkSmokeTests|FullyQualifiedName~RuntimeStudioBlackBoxSmokeTests)" \
+            --logger "console;verbosity=minimal" \
+            --logger "trx;LogFileName=smoke-${{ matrix.label }}.trx" \
+            --results-directory "${{ runner.temp }}/test-results"
+          dotnet test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj \
             --no-build \
             --blame-hang-timeout 60s \
             --blame-hang-dump-type none \
-            --filter "FullyQualifiedName~BaseFrameworkSmokeTests" \
+            --filter "FullyQualifiedName~RuntimeStudioWhiteBoxSmokeTests" \
             --logger "console;verbosity=minimal" \
-            --logger "trx;LogFileName=smoke-${{ matrix.label }}.trx" \
+            --logger "trx;LogFileName=smoke-whitebox-${{ matrix.label }}.trx" \
             --results-directory "${{ runner.temp }}/test-results"
 
       # ── Artifacts ───────────────────────────────────────────────────
@@ -261,11 +270,19 @@ jobs:
               echo "=== Smoke tests ==="
               dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
                 --no-build \
-                --blame-hang-timeout 60s \
+                --blame-hang-timeout 180s \
                 --blame-hang-dump-type none \
-                --filter "FullyQualifiedName~BaseFrameworkSmokeTests" \
+                --filter "(FullyQualifiedName~BaseFrameworkSmokeTests|FullyQualifiedName~RuntimeStudioBlackBoxSmokeTests)" \
                 --logger "console;verbosity=minimal" \
                 --logger "trx;LogFileName=smoke.trx" \
+                --results-directory /results/test-results
+              dotnet test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj \
+                --no-build \
+                --blame-hang-timeout 60s \
+                --blame-hang-dump-type none \
+                --filter "FullyQualifiedName~RuntimeStudioWhiteBoxSmokeTests" \
+                --logger "console;verbosity=minimal" \
+                --logger "trx;LogFileName=smoke-whitebox.trx" \
                 --results-directory /results/test-results
 
               echo "=== All stages completed ==="

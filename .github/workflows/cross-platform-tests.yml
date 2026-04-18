@@ -29,6 +29,7 @@ on:
       - 'src/Nexo.Core.Application/**'
       - 'src/Nexo.Infrastructure/**'
       - 'src/Nexo.BackgroundAgents/**'
+      - 'src/Nexo.CLI/**'
 
 jobs:
   cross-platform:
@@ -60,10 +61,17 @@ jobs:
         run: |
           dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
             --no-build \
-            --blame-hang-timeout 30s \
-            --filter "FullyQualifiedName~BaseFrameworkSmokeTests" \
+            --blame-hang-timeout 180s \
+            --filter "(FullyQualifiedName~BaseFrameworkSmokeTests|FullyQualifiedName~RuntimeStudioBlackBoxSmokeTests)" \
             --logger "console;verbosity=minimal" \
             --logger "trx;LogFileName=smoke-${{ matrix.os }}.trx" \
+            --results-directory test-results
+          dotnet test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj \
+            --no-build \
+            --blame-hang-timeout 60s \
+            --filter "FullyQualifiedName~RuntimeStudioWhiteBoxSmokeTests" \
+            --logger "console;verbosity=minimal" \
+            --logger "trx;LogFileName=smoke-whitebox-${{ matrix.os }}.trx" \
             --results-directory test-results
 
       - name: Run tests (dogfood)
