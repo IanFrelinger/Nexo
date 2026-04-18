@@ -58,4 +58,5 @@ If your fork uses a different default branch, replace `master` accordingly.
 ## Resource safety
 
 - Run heavy validations sequentially (avoid parallel `dotnet test`/`dogfood` runs in multiple terminals).
+- Avoid kicking off **two full `dotnet build` / `dotnet test` runs at the same time** on the same clone: MSBuild can hit file locks (for example `*.deps.json` under `bin`/`obj`, including projects like `Nexo.BackgroundAgents.HostRunners`). Prefer **one** restore/build, then **`dotnet test --no-build`** in other terminals, or run test projects one after another.
 - Use `--blame-hang-dump-type none` for local test loops to avoid very large dump files.
