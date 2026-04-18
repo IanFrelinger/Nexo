@@ -71,7 +71,8 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
                 objective,
                 modelProvider,
                 modelName);
-            var snapshot = BuildSnapshot(repoRoot!, resolvedAgentName, objective);
+            var scratchpadPath = ResolveScratchpadPath(repoRoot!, resolvedAgentName);
+            var snapshot = BuildSnapshot(repoRoot!, resolvedAgentName, objective, scratchpadPath);
 
             // Multi-turn ReAct: agent loops up to MaxIterations, executing tool calls inline
             // through the policy engine and feeding observations back into the conversation.
@@ -81,6 +82,19 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
             var cycle = await agent
                 .RunCycleAsync(snapshot, tools, policies, onRejected: null, memory, cancellationToken)
                 .ConfigureAwait(false);
+
+            var writePaths = cycle.MergedDelta is null
+                ? Array.Empty<string>()
+                : ExtractWritePaths(cycle.MergedDelta.Log);
+            PlannerScratchpad.Append(scratchpadPath, new ScratchpadEntry(
+                DateTimeOffset.UtcNow,
+                resolvedAgentName,
+                cycle.Iterations,
+                cycle.ToolCallsExecuted,
+                cycle.ToolCallsDenied,
+                cycle.StoppedReason,
+                cycle.FinalRationale,
+                writePaths));
 
             var summary = $"{cycle.ToolCallsExecuted} tool call(s) executed, {cycle.ToolCallsDenied} denied " +
                           $"(iter={cycle.Iterations}, stopped={cycle.StoppedReason}).";
@@ -102,7 +116,7 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
     ///   model has bootstrap context without having to call <c>repo.fs.list .</c> first. With
     ///   the previous bare snapshot the planner was being asked to write blind.
     /// </summary>
-    private static WorldSnapshot BuildSnapshot(string repoRoot, string agentName, string? objective)
+    private static WorldSnapshot BuildSnapshot(string repoRoot, string agentName, string? objective, string? scratchpadPath = null)
     {
         var data = new Dictionary<string, object?>
         {
@@ -113,6 +127,13 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
 
         if (!string.IsNullOrWhiteSpace(objective))
             data["Objective"] = objective.Trim();
+
+        if (!string.IsNullOrWhiteSpace(scratchpadPath))
+        {
+            var tail = PlannerScratchpad.LoadTail(scratchpadPath);
+            if (!string.IsNullOrWhiteSpace(tail))
+                data["RecentNotes"] = tail;
+        }
 
         try
         {
@@ -152,5 +173,40 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
         }
 
         return new WorldSnapshot(0, data);
+    }
+
+    /// <summary>
+    /// Default scratchpad location: <c>&lt;repoRoot&gt;/.nexo/runtime-studio/&lt;agent&gt;-notes.md</c>.
+    /// The directory is created lazily by <see cref="PlannerScratchpad.Append"/>; the agent name
+    /// is sanitised so that values like "runtime-planner" or "self-extend" produce predictable
+    /// filenames without filesystem-illegal characters.
+    /// </summary>
+    private static string ResolveScratchpadPath(string repoRoot, string agentName)
+    {
+        var safe = string.Concat(agentName.Select(c =>
+            char.IsLetterOrDigit(c) || c == '-' || c == '_' ? c : '-'));
+        return Path.Combine(repoRoot, ".nexo", "runtime-studio", $"{safe}-notes.md");
+    }
+
+    private static IReadOnlyList<string> ExtractWritePaths(IReadOnlyList<string> log)
+    {
+        // Both repo.fs.write and repo.fs.search_replace tools log entries shaped like
+        // "write:relative/path bytes=NNN" / "s&r:relative/path …". Pull the first
+        // whitespace-bounded token after the prefix so the scratchpad records what
+        // actually changed on disk.
+        var result = new List<string>();
+        foreach (var line in log)
+        {
+            string? prefix = null;
+            if (line.StartsWith("write:", StringComparison.Ordinal)) prefix = "write:";
+            else if (line.StartsWith("s&r:", StringComparison.Ordinal)) prefix = "s&r:";
+            if (prefix is null) continue;
+            var rest = line[prefix.Length..];
+            var space = rest.IndexOf(' ');
+            var path = space < 0 ? rest : rest[..space];
+            if (!string.IsNullOrWhiteSpace(path))
+                result.Add(path);
+        }
+        return result;
     }
 }
