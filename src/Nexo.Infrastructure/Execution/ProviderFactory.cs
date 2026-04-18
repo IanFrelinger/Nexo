@@ -843,7 +843,16 @@ public class ProviderFactory : IProviderFactory
         return objective.Contains("unity", StringComparison.OrdinalIgnoreCase)
             || objective.Contains("mono", StringComparison.OrdinalIgnoreCase)
             || objective.Contains("dash ability", StringComparison.OrdinalIgnoreCase)
-            || objective.Contains("gameplay system", StringComparison.OrdinalIgnoreCase);
+            || objective.Contains("gameplay system", StringComparison.OrdinalIgnoreCase)
+            || objective.Contains("weapon system", StringComparison.OrdinalIgnoreCase)
+            || objective.Contains("movement system", StringComparison.OrdinalIgnoreCase)
+            || objective.Contains("health system", StringComparison.OrdinalIgnoreCase)
+            || objective.Contains("fps", StringComparison.OrdinalIgnoreCase)
+            || objective.Contains("monobehaviour", StringComparison.OrdinalIgnoreCase)
+            || objective.Contains("scriptableobject", StringComparison.OrdinalIgnoreCase)
+            || objective.Contains("weapon", StringComparison.OrdinalIgnoreCase)
+            || objective.Contains("shooter", StringComparison.OrdinalIgnoreCase)
+            || objective.Contains("multiplayer", StringComparison.OrdinalIgnoreCase);
     }
 
     private static bool LooksLikeNuancedUnityObjective(string objective)
@@ -1173,22 +1182,22 @@ public interface IGeneratedGameplaySystem
 
         var calls = new List<object>
         {
-            CreateWriteCall(root, "docs/UnityBootstrapGenerated/IGeneratedGameplaySystem.cs", interfaceContent),
-            CreateWriteCall(root, "docs/UnityBootstrapGenerated/SystemContext.cs", contextContent),
-            CreateWriteCall(root, "docs/UnityBootstrapGenerated/DashAbilitySystem.cs", dashContent),
+            CreateWriteCall(root, "Assets/Scripts/Generated/IGeneratedGameplaySystem.cs", interfaceContent),
+            CreateWriteCall(root, "Assets/Scripts/Generated/SystemContext.cs", contextContent),
+            CreateWriteCall(root, "Assets/Scripts/Generated/DashAbilitySystem.cs", dashContent),
         };
 
         if (includeJump)
-            calls.Add(CreateWriteCall(root, "docs/UnityBootstrapGenerated/JumpAbilitySystem.cs", jumpContent));
+            calls.Add(CreateWriteCall(root, "Assets/Scripts/Generated/JumpAbilitySystem.cs", jumpContent));
         if (includeSprint)
-            calls.Add(CreateWriteCall(root, "docs/UnityBootstrapGenerated/SprintAbilitySystem.cs", sprintContent));
+            calls.Add(CreateWriteCall(root, "Assets/Scripts/Generated/SprintAbilitySystem.cs", sprintContent));
         if (includeRegistry)
-            calls.Add(CreateWriteCall(root, "docs/UnityBootstrapGenerated/AbilityRegistry.cs", registryContent));
+            calls.Add(CreateWriteCall(root, "Assets/Scripts/Generated/AbilityRegistry.cs", registryContent));
 
         if (nuanced)
         {
-            calls.Add(CreateWriteCall(root, "docs/UnityBootstrapGenerated/GeneratedSystemErrorState.cs", errorStateContent));
-            calls.Add(CreateWriteCall(root, "docs/UnityBootstrapGenerated/GeneratedSystemInspectorSnapshot.cs", inspectorSnapshotContent));
+            calls.Add(CreateWriteCall(root, "Assets/Scripts/Generated/GeneratedSystemErrorState.cs", errorStateContent));
+            calls.Add(CreateWriteCall(root, "Assets/Scripts/Generated/GeneratedSystemInspectorSnapshot.cs", inspectorSnapshotContent));
         }
 
         // Command-structure scaffolding for composition.
