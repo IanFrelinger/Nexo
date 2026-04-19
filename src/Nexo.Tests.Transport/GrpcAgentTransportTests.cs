@@ -8,6 +8,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Nexo.Abstractions.Barriers;
+using Nexo.Abstractions.Execution;
 using Nexo.Abstractions.Transport;
 using Nexo.Runtime.Barriers;
 using Nexo.Transport.Grpc;
@@ -97,6 +98,43 @@ public sealed class GrpcAgentTransportTests
     }
 
     [Fact]
+    public async Task SendAsync_MetadataRoundTrip_IncludesExecutionIsolationOnInvocation()
+    {
+        AgentInvocationRequest? captured = null;
+        await using var fixture = await GrpcServerFixture.StartAsync(new CaptureInvocationTransport(r => captured = r));
+
+        using var env = new EnvironmentVariableScope("DOTNET_ENVIRONMENT", "Development");
+        var factory = new DefaultGrpcChannelFactory(
+            Options.Create(new GrpcTransportOptions { AllowInsecure = true }),
+            NullLogger<DefaultGrpcChannelFactory>.Instance);
+        using var transport = new GrpcAgentTransport(factory, NullLogger<GrpcAgentTransport>.Instance);
+
+        var request = new AgentInvocationRequest(
+            AgentName: "agent-1",
+            CorrelationId: "corr-meta",
+            SpanId: "span-meta",
+            Payload: new Dictionary<string, object?> { ["k"] = 1 },
+            Options: new AgentInvocationOptions(
+                Timeout: TimeSpan.FromSeconds(2),
+                MaxRetries: 0,
+                TargetEndpoint: fixture.Endpoint),
+            Metadata: new Dictionary<string, string>
+            {
+                [AgentExecutionIsolation.MetadataKey] = AgentExecutionIsolation.Format(
+                    AgentExecutionIsolationLevel.ContainerPerAgent),
+                ["domain"] = "General",
+            });
+
+        var result = await transport.SendAsync(request);
+
+        result.Success.Should().BeTrue();
+        captured.Should().NotBeNull();
+        captured!.Metadata.Should().NotBeNull();
+        captured.Metadata![AgentExecutionIsolation.MetadataKey].Should().Be("ContainerPerAgent");
+        captured.Metadata["domain"].Should().Be("General");
+    }
+
+    [Fact]
     public async Task SendAsync_PayloadRoundTrip_PreservesNestedValues()
     {
         await using var fixture = await GrpcServerFixture.StartAsync(
@@ -131,6 +169,29 @@ public sealed class GrpcAgentTransportTests
         output.Should().ContainKey("nested");
         output.Should().ContainKey("list");
         output.Should().ContainKey("nullValue");
+    }
+
+    private sealed class CaptureInvocationTransport : IAgentTransport
+    {
+        private readonly Action<AgentInvocationRequest> _onInvoke;
+
+        public CaptureInvocationTransport(Action<AgentInvocationRequest> onInvoke)
+        {
+            _onInvoke = onInvoke;
+        }
+
+        public Task<AgentResult> SendAsync(AgentInvocationRequest request, CancellationToken cancellationToken = default)
+        {
+            _onInvoke(request);
+            return Task.FromResult(new AgentResult(
+                Success: true,
+                Output: request.Payload ?? new Dictionary<string, object?>(),
+                CorrelationId: request.CorrelationId,
+                SpanId: request.SpanId));
+        }
+
+        public Task<TransportHealth> CheckHealthAsync(CancellationToken cancellationToken = default)
+            => Task.FromResult(new TransportHealth(true, "capture"));
     }
 
     private sealed class EchoTransport : IAgentTransport

@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Text.Json;
 using System.Security.Cryptography.X509Certificates;
 using Grpc.Core;
@@ -149,6 +150,18 @@ public sealed class AgentTransportServiceImpl : AgentTransportService.AgentTrans
             DateTimeOffset.UtcNow));
 
         var payload = DeserializePayload(request.Payload);
+        IReadOnlyDictionary<string, string>? metadata = null;
+        if (request.Metadata.Count > 0)
+        {
+            var meta = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var kv in request.Metadata)
+            {
+                meta[kv.Key] = kv.Value;
+            }
+
+            metadata = meta;
+        }
+
         var invocation = new AgentInvocationRequest(
             AgentName: request.AgentName,
             CorrelationId: correlationId ?? request.CorrelationId,
@@ -157,7 +170,8 @@ public sealed class AgentTransportServiceImpl : AgentTransportService.AgentTrans
             Options: new AgentInvocationOptions(
                 Timeout: TimeSpan.FromMilliseconds(Math.Max(1, request.TimeoutMs)),
                 MaxRetries: Math.Max(0, request.MaxRetries),
-                TargetEndpoint: string.IsNullOrWhiteSpace(request.TargetEndpoint) ? null : request.TargetEndpoint));
+                TargetEndpoint: string.IsNullOrWhiteSpace(request.TargetEndpoint) ? null : request.TargetEndpoint),
+            Metadata: metadata);
 
         var result = await _transport.SendAsync(invocation, context.CancellationToken);
         var output = SerializeOutput(result.Output);

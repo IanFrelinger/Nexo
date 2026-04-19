@@ -45,6 +45,10 @@ Helpers: `Nexo.Abstractions.Execution.AgentExecutionIsolation` (`Format`, `TryPa
 
 Orchestrator: `Nexo.Orchestration.Coordination.Orchestrator` (metadata dictionary alongside `domain`, `goal`, `ollamaModel`, etc.).
 
+### gRPC transport
+
+`InvokeRequest` includes a **`metadata`** map (field `8` in `Protos/agent_transport.proto`). `GrpcAgentTransport` copies `AgentInvocationRequest.Metadata` into that map; `AgentTransportServiceImpl` reconstructs `AgentInvocationRequest.Metadata` before calling the inner `IAgentTransport`.
+
 ## Implementing a transport or host
 
 1. Read `AgentExecutionIsolation.TryParse(request.Metadata, out var level)` (or `GetEffective` with a fallback).

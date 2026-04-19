@@ -196,6 +196,19 @@ public sealed class GrpcAgentTransport : IAgentTransport, IDisposable
             invokeRequest.Payload[key] = SerializeToJson(value);
         }
 
+        if (request.Metadata is { Count: > 0 })
+        {
+            foreach (var (key, value) in request.Metadata)
+            {
+                if (string.IsNullOrWhiteSpace(key))
+                {
+                    continue;
+                }
+
+                invokeRequest.Metadata[key] = value ?? string.Empty;
+            }
+        }
+
         return invokeRequest;
     }
 

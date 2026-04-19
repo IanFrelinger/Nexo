@@ -16,6 +16,8 @@ message InvokeRequest {
   map<string, string> payload = 5;
   int32 timeout_ms = 6;
   int32 max_retries = 7;
+  // Wire-level metadata (e.g. nexo.execution.isolation) for transports that honor AgentInvocationRequest.Metadata.
+  map<string, string> metadata = 8;
 }
 
 message InvokeResponse {
