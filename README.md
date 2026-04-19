@@ -27,18 +27,22 @@ Repository: <https://github.com/IanFrelinger/Nexo>
 - **Strict mode.** Set `NEXO_STRICT_MODE=1` for fail-fast + verbose diagnostics during development. Flip to permissive for production. See `docs/Configuration.md`.
 - **Centralized defaults.** All tunable constants live in `Nexo.Core.Domain.NexoDefaults` — no magic numbers scattered in the codebase.
 
-## Quick Start
+## Quick Start (5 minutes)
+
+Choose your lane (recommended):
+
+### Lane A: fastest path (container runtime)
 
 Standard flow: **run Nexo inside a container** (dev container or compose), and use the **CLI** for builds, validation, and operators. Prefer published **GHCR** images for production-like runs; build from `Dockerfile.*` when you need a local image.
 
-### 1) Prerequisites (container-first path)
+#### 1) Prerequisites (container-first path)
 
 - **Docker** (Desktop or Engine) and **Git**
 - Optional: Ollama/OpenAI/Azure credentials for live model backends
 
 You do **not** need a host-installed .NET SDK for the paths below. Install **.NET SDK 9.x** only if you choose the native escape hatch (see end of this section).
 
-### 2) Recommended: Dev Container (Cursor / VS Code)
+#### 2) Recommended: Dev Container (Cursor / VS Code)
 
 1. Install the [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension.
 2. Open this repository, then run **Dev Containers: Reopen in Container**.
@@ -54,7 +58,7 @@ dotnet run --project src/Nexo.CLI -- --help
 
 **Remote SSH:** connect to a host that already has Docker (or your chosen toolchain), open the repo there, then use **Reopen in Container** on the remote so the environment still comes from the image.
 
-### 3) Run the portal (Docker quickstart image)
+#### 3) Run the portal (Docker quickstart image)
 
 ```bash
 git clone https://github.com/IanFrelinger/Nexo.git && cd Nexo
@@ -65,7 +69,7 @@ docker run --rm -p 8080:8080 nexo:quickstart
 
 Stop with `Ctrl+C` or `docker stop` on the container ID.
 
-### 4) Published CLI image (CI, agents, minimal host)
+#### 4) Published CLI image (CI, agents, minimal host)
 
 ```bash
 docker pull ghcr.io/ianfrelinger/nexo-cli:latest
@@ -100,11 +104,13 @@ docker build \
   -t nexo-cli:net8 .
 ```
 
-### 5) Compose stacks (director portal, agent server, dependencies)
+#### 5) Compose stacks (director portal, agent server, dependencies)
 
 For multi-service deployment on a host you control, start from the files in the repository root (`docker-compose.portal.yml`, `docker-compose.agent-server.yml`, `docker-compose.ephemeral.yml`, etc.) and the operator guides in `docs/SelfHostedAgentServer.md` and `apps/runtime-studio/README.md`.
 
-### 6) Escape hatches (no Docker)
+### Lane B: full local dev path (native SDK)
+
+#### 6) Escape hatches (no Docker)
 
 Use these only when containers are not an option:
 
@@ -123,7 +129,7 @@ bash scripts/install/container-bootstrap.sh --yes
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install\container-bootstrap.ps1 -Yes
 ```
 
-### 7) Clone and build (native SDK only)
+#### 7) Clone and build (native SDK only)
 
 ```bash
 git clone https://github.com/IanFrelinger/Nexo.git
@@ -132,19 +138,19 @@ bash scripts/setup/setup.sh all
 dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore
 ```
 
-### 8) Confirm CLI is working
+#### 8) Confirm CLI is working
 
 ```bash
 dotnet run --project src/Nexo.CLI -- --help
 ```
 
-### 8b) Run onboarding doctor (single pass/fail report)
+#### 8b) Run onboarding doctor (single pass/fail report)
 
 ```bash
 dotnet run --project src/Nexo.CLI -- doctor --json
 ```
 
-### 9) Run a first high-signal command
+#### 9) Run a first high-signal command
 
 `validate` can execute a broad architecture/test sweep and may be heavier on constrained hosts. For first-run confidence, start with CLI help and a pipeline validate command:
 
@@ -218,6 +224,35 @@ For HTTPS, configure `ASPNETCORE_URLS=https://+:8443` with a certificate, or pla
 
 See `docs/Configuration.md` for all security options and `docs/TailscaleAndNexo.md` for Tailnet deployment.
 
+## Deploy (operators)
+
+Ship Nexo from **published container images** and **compose** files. Do not rely on host-native installers for production paths.
+
+**Images**
+
+| Image | Use |
+|-------|-----|
+| `ghcr.io/ianfrelinger/nexo-cli:latest` | Automation, agents, `docker run` with a workspace mount for `pipeline validate`, `ci verify`, etc. |
+| Build from `.docker/Dockerfile.quickstart` | Single-container API + portal (mock-friendly smoke). |
+| Build from `.docker/Dockerfile.api` | API image used by compose stacks (see `docker-compose.portal.yml`). |
+
+**Compose (recommended stacks)**
+
+| File | Purpose |
+|------|---------|
+| `docker-compose.portal.yml` | Director portal + `nexo-api` + Ollama on a host you control. |
+| `docker-compose.agent-server.yml` | Same lineage plus **mounted workspace** and default background agents (`apps/runtime-studio/config/agent_set.local.json`). |
+
+```bash
+# Director + API + Ollama (localhost bindings; tune for your exposure profile)
+docker compose -f docker-compose.portal.yml up -d --build
+
+# Full Runtime Studio agent-server stack
+docker compose -f docker-compose.agent-server.yml up -d --build
+```
+
+Copy and adjust env from `docs/config/agent-server.env.example`. Operator runbooks: `docs/SelfHostedAgentServer.md`, `apps/runtime-studio/README.md`. Readiness: `docs/ProductionReadinessGate-v1.md` and workflow `.github/workflows/production-readiness-gate-v1.yml`.
+
 ## Common CLI Workflows
 
 | Goal | Command |
@@ -277,44 +312,29 @@ References:
 - `scripts/unity-sidecar-demo.sh`
 - `docs/UnitySidecarDemo.md`
 
-## Docker Compose Workflows
+## Docker Compose (CI and local extras)
 
-The repository includes optional compose definitions for test and ephemeral runtime scenarios.
+Production-oriented compose is under **[Deploy (operators)](#deploy-operators)** above. Additional files are for **tests** and **local dependencies**:
 
 CI validation:
+
 - `.github/workflows/compose-gate.yml` runs compose-based checks on every relevant PR/push.
-- You can trigger manually with:
-  - `gh workflow run "Compose Gate" --ref master`
+- `gh workflow run "Compose Gate" --ref master`
 
 ```bash
-# run Ubuntu test service and write JSON/log output into ./test-results
+# Ubuntu test service → ./test-results
 docker compose -f docker-compose.test.yml up --build test-ubuntu
 
-# Ollama in Docker only (models in a named volume; use with host-run Nexo — see scripts/run-ollama-docker.ps1)
 docker compose -f docker-compose.ollama.yml up -d
-
-# One-shot dev: Docker Ollama → wait for health → run Nexo.API (Windows / PowerShell)
-# powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start-nexo-api-dev.ps1 -Pull   # first time or new model
-# powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\start-nexo-api-dev.ps1
-# Phone on same Wi‑Fi: add -ListenLan (Windows) or --listen-lan (bash); open http://<pc-ip>:8080 — allow firewall
-# Linux/macOS/WSL: bash scripts/start-nexo-api-dev.sh --pull
-# Stop Ollama: scripts/stop-nexo-api-dev.ps1 | scripts/stop-nexo-api-dev.sh
-
-# start ephemeral Ollama container (and optional Postgres profile)
 docker compose -f docker-compose.ephemeral.yml up ollama
 docker compose -f docker-compose.ephemeral.yml --profile db up postgres
-
-# start self-hosted director portal (API + dailies + Ollama)
-docker compose -f docker-compose.portal.yml up -d --build
-
-# full portal stack: mounted workspace + background agents (see apps/runtime-studio README)
-docker compose -f docker-compose.agent-server.yml up -d --build
 ```
 
 Notes:
-- `docker-compose.test.yml` mounts `./test-results` and runs `BaseFrameworkSmokeTests` (`net9.0`) in container, writing log/summary artifacts there.
-- `docker-compose.ephemeral.yml` is for disposable local orchestration dependencies.
-- **Portal stacks:** `docker-compose.portal.yml` = Director UI + API + Ollama. `docker-compose.agent-server.yml` = same plus **mounted repo** + default background agents from `apps/runtime-studio/config/agent_set.local.json`. Relationship diagram: `apps/runtime-studio/README.md#how-runtime-studio-fits-with-nexo-api`. Docker tuning: `docs/SelfHostedAgentServer.md`, `docs/config/agent-server.env.example`.
+
+- `docker-compose.test.yml` runs `BaseFrameworkSmokeTests` in container.
+- `docker-compose.ephemeral.yml` is for disposable local orchestration.
+- Relationship diagram for portal vs agent-server: `apps/runtime-studio/README.md#how-runtime-studio-fits-with-nexo-api`.
 
 ## Providers
 
@@ -373,6 +393,7 @@ dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --fil
 ## Documentation Map
 
 Start here:
+- `README.md` → **[Deploy (operators)](#deploy-operators)** — GHCR images and compose stacks for production-style hosts.
 - `docs/GettingStarted.md` – guided first-hour setup and usage
 - `docs/DocsIndex.md` – where to find docs by task
 - `apps/runtime-studio/README.md` – Runtime Studio agent-set JSON; hub for CLI vs compose vs Director portal (see “How this fits” there).

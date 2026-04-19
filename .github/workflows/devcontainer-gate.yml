@@ -1,0 +1,56 @@
+name: Dev Container Gate
+
+on:
+  push:
+    branches:
+      - master
+      - main
+      - "cursor/**"
+    paths:
+      - ".github/workflows/devcontainer-gate.yml"
+      - ".devcontainer/**"
+      - "global.json"
+      - "Directory.Build.props"
+      - "Directory.Packages.props"
+      - "src/Nexo.CLI/**"
+      - "src/Nexo.Core.Application/**"
+      - "src/Nexo.Infrastructure/**"
+      - "src/Nexo.Tests.Infrastructure/**"
+  pull_request:
+    paths:
+      - ".github/workflows/devcontainer-gate.yml"
+      - ".devcontainer/**"
+      - "global.json"
+      - "Directory.Build.props"
+      - "Directory.Packages.props"
+      - "src/Nexo.CLI/**"
+      - "src/Nexo.Core.Application/**"
+      - "src/Nexo.Infrastructure/**"
+      - "src/Nexo.Tests.Infrastructure/**"
+  workflow_dispatch:
+
+jobs:
+  devcontainer-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Post-create + CLI build inside dev image
+        shell: bash
+        run: |
+          set -euo pipefail
+          image="mcr.microsoft.com/devcontainers/dotnet:9.0-bookworm"
+          docker pull "$image"
+          # Run as container root (default): same restore/build commands as post-create + local dev smoke.
+          docker run --rm \
+            -v "${GITHUB_WORKSPACE}:/workspace:rw" \
+            -w /workspace \
+            "$image" \
+            bash -lc '
+              set -euo pipefail
+              bash .devcontainer/post-create.sh
+              dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
+              dotnet run --project src/Nexo.CLI -- --help >/dev/null
+              echo "devcontainer-gate: ok"
+            '

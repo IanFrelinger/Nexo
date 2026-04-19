@@ -36,7 +36,7 @@ In ~10-15 minutes, you will:
 
 ## 1) Choose your startup lane
 
-### Lane A (recommended): Dev Container + `dotnet` CLI
+### Lane A (fastest): container-first — Dev Container + `dotnet` CLI
 
 Use **Dev Containers: Reopen in Container** (see `README.md`). Then:
 
