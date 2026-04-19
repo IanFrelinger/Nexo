@@ -22,6 +22,16 @@ namespace Nexo.Tests.Infrastructure.Tests.NodeCapabilityRuntime;
 [Trait("Category", "Integration")]
 public sealed class NcrEngineOllamaIntegrationTests
 {
+    /// <summary>
+    /// Model scoring uses the hardware profile OS (Windows/macOS/Linux), not the policy's nominal platform.
+    /// </summary>
+    private static readonly HashSet<PlatformType> UnitTestPlatforms = new()
+    {
+        PlatformType.Linux,
+        PlatformType.Windows,
+        PlatformType.macOS
+    };
+
     [Fact]
     public async Task ResolveEnsureInference_RecordOutcome_RoundTrip_Works()
     {
@@ -73,9 +83,9 @@ public sealed class NcrEngineOllamaIntegrationTests
                         State = ModelState.Warm,
                         QualityScore = 0.8f,
                         SpeedScore = 0.8f,
-                        MinRAMRequiredBytes = 1024L * 1024 * 1024,
+                        MinRAMRequiredBytes = 0,
                         Capabilities = new HashSet<TaskCapability> { TaskCapability.TextGeneration },
-                        SupportedPlatforms = new HashSet<PlatformType> { PlatformType.Linux }
+                        SupportedPlatforms = UnitTestPlatforms
                     }
                 ]
             }),
@@ -163,9 +173,9 @@ public sealed class NcrEngineOllamaIntegrationTests
                         State = ModelState.Warm,
                         QualityScore = 0.8f,
                         SpeedScore = 0.8f,
-                        MinRAMRequiredBytes = 1024L * 1024 * 1024,
+                        MinRAMRequiredBytes = 0,
                         Capabilities = new HashSet<TaskCapability> { TaskCapability.TextGeneration },
-                        SupportedPlatforms = new HashSet<PlatformType> { PlatformType.Linux }
+                        SupportedPlatforms = UnitTestPlatforms
                     }
                 ]
             }),

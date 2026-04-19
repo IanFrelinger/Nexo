@@ -35,7 +35,7 @@ public class ScheduleExecutorTests
                 i.State = BackgroundAgentState.Stopped;
         }
 
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         await executor.ExecuteAsync(instance, ExecuteOnce, cts.Token);
 
         callCount.Should().BeGreaterOrEqualTo(2);

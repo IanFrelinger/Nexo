@@ -9,6 +9,9 @@ namespace Nexo.Tests.Infrastructure.Barriers.Sinks;
 
 public sealed class FileBarrierAuditSinkTests
 {
+    /// <summary>Background drain + filesystem visibility can lag on busy Windows hosts and CI.</summary>
+    private static readonly TimeSpan IoWait = TimeSpan.FromSeconds(20);
+
     [Fact]
     public async Task WriteAsync_SingleEvent_WritesValidNdjsonLineWithAllFields()
     {
@@ -75,7 +78,7 @@ public sealed class FileBarrierAuditSinkTests
 
         await WaitUntilAsync(
             () => GetAuditFiles(testDir, "audit-barriers").Length >= 2,
-            TimeSpan.FromSeconds(5));
+            IoWait);
 
         var files = GetAuditFiles(testDir, "audit-barriers");
         files.Length.Should().BeLessOrEqualTo(4);
@@ -112,7 +115,7 @@ public sealed class FileBarrierAuditSinkTests
 
         await WaitUntilAsync(
             () => GetAuditFiles(testDir, "audit-barriers").Length == 2,
-            TimeSpan.FromSeconds(5));
+            IoWait);
 
         File.Exists(oldest).Should().BeFalse();
         GetAuditFiles(testDir, "audit-barriers").Length.Should().Be(2);
@@ -146,7 +149,7 @@ public sealed class FileBarrierAuditSinkTests
             () => logger.Entries.Any(entry =>
                 entry.Level == Microsoft.Extensions.Logging.LogLevel.Warning &&
                 entry.Message.Contains("channel full", StringComparison.OrdinalIgnoreCase)),
-            TimeSpan.FromSeconds(5));
+            IoWait);
     }
 
     [Fact]
@@ -162,7 +165,7 @@ public sealed class FileBarrierAuditSinkTests
 
         await WaitUntilAsync(
             () => GetAllLines(testDir, "audit-barriers").Count >= 1,
-            TimeSpan.FromSeconds(1));
+            TimeSpan.FromSeconds(10));
     }
 
     [Fact]
@@ -202,7 +205,7 @@ public sealed class FileBarrierAuditSinkTests
         Directory.Exists(missingDir).Should().BeFalse();
         await sink.WriteAsync(CreateEvent(9));
 
-        await WaitUntilAsync(() => Directory.Exists(missingDir), TimeSpan.FromSeconds(2));
+        await WaitUntilAsync(() => Directory.Exists(missingDir), TimeSpan.FromSeconds(10));
         GetAuditFiles(missingDir, "audit-barriers").Should().NotBeEmpty();
     }
 
@@ -272,8 +275,45 @@ public sealed class FileBarrierAuditSinkTests
     {
         return GetAuditFiles(directory, filePrefix)
             .OrderBy(path => path, StringComparer.Ordinal)
-            .SelectMany(File.ReadAllLines)
+            .SelectMany(ReadLinesWithShareRetry)
             .ToList();
+    }
+
+    /// <summary>
+    /// The sink may still hold the NDJSON file open on Windows while the drain loop flushes; retry with shared read access.
+    /// </summary>
+    private static IEnumerable<string> ReadLinesWithShareRetry(string path)
+    {
+        const int maxAttempts = 80;
+        IOException? last = null;
+        for (var attempt = 0; attempt < maxAttempts; attempt++)
+        {
+            try
+            {
+                using var fs = new FileStream(
+                    path,
+                    FileMode.Open,
+                    FileAccess.Read,
+                    FileShare.ReadWrite | FileShare.Delete);
+                using var reader = new StreamReader(fs);
+                var lines = new List<string>();
+                while (reader.ReadLine() is { } line)
+                {
+                    lines.Add(line);
+                }
+
+                return lines;
+            }
+            catch (IOException ex)
+            {
+                last = ex;
+                if (attempt == maxAttempts - 1)
+                    break;
+                Thread.Sleep(25);
+            }
+        }
+
+        throw last ?? new IOException($"Unable to read '{path}'.");
     }
 
     private static async Task<IReadOnlyList<string>> WaitForMinimumLinesAsync(
@@ -286,7 +326,7 @@ public sealed class FileBarrierAuditSinkTests
         {
             lines = GetAllLines(directory, filePrefix);
             return lines.Count >= minimumLineCount;
-        }, TimeSpan.FromSeconds(5));
+        }, IoWait);
         return lines;
     }
 

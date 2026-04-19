@@ -3,9 +3,6 @@ using Nexo.Core.Application.Validation.Models;
 using Nexo.Core.Application.Validation.Ports;
 using Nexo.Core.Application.Common.Models;
 using Nexo.Infrastructure.Validation.Parsers;
-using Nexo.Tools.Dev;
-using Nexo.Abstractions;
-using System.Text.Json;
 using System.Diagnostics;
 
 namespace Nexo.Infrastructure.Validation.Adapters;
@@ -86,10 +83,6 @@ public class ValidationServiceAdapter : IValidationService
                 TotalSteps = testProjects.Count
             });
 
-            // Use DotnetTestTool to run tests
-            var testTool = new DotnetTestTool();
-            var snapshot = new WorldSnapshot(0, new Dictionary<string, object?>());
-
             var allTestResults = new List<TestResult>();
             int totalTestsRun = 0;
             int totalTestsPassed = 0;
@@ -119,21 +112,34 @@ public class ValidationServiceAdapter : IValidationService
                 try
                 {
                     var projectDir = testProject.Directory?.FullName ?? currentDir.FullName;
+                    var csprojPath = testProject.FullName;
 
-                    int exitCode;
-                    if (progress != null)
+                    // `dotnet test --no-build` requires outputs on disk. Multi-target test projects
+                    // often have no DLL until an explicit build; CI `nexo validate` previously failed
+                    // with "test source file ... was not found" when only the CLI had been built.
+                    var buildExit = await RunDotnetBuildProjectAsync(csprojPath, cancellationToken).ConfigureAwait(false);
+                    if (buildExit != 0)
                     {
-                        // Stream dotnet test output so user can see progress
-                        exitCode = await RunDotnetTestWithStreamingAsync(projectDir, cancellationToken);
+                        _logger.LogWarning(
+                            "Skipping tests for {Project}: dotnet build exited {ExitCode}",
+                            testProject.Name,
+                            buildExit);
+                        totalTestsFailed++;
+                        totalTestsRun++;
+                        allTestResults.Add(new TestResult
+                        {
+                            Name = testProject.Name,
+                            Passed = false,
+                            Message = $"dotnet build failed (exit {buildExit})"
+                        });
+                        continue;
                     }
-                    else
-                    {
-                        var testCall = new ToolCall(
-                            "dotnet.test",
-                            JsonDocument.Parse($$"""{"root":"{{projectDir}}"}""").RootElement);
-                        var result = await testTool.InvokeAsync(testCall, snapshot, cancellationToken);
-                        exitCode = result.Payload is System.Text.Json.JsonElement je && je.TryGetProperty("ok", out var okEl) && okEl.GetBoolean() ? 0 : 1;
-                    }
+
+                    // Single net8.0 run avoids duplicate net8+net9 hosts under load (validate is not a full matrix run).
+                    var exitCode = await RunDotnetTestForValidateAsync(
+                        csprojPath,
+                        streamOutput: progress != null,
+                        cancellationToken).ConfigureAwait(false);
 
                     // Try to find and parse TRX files
                     var trxFiles = Directory.GetFiles(
@@ -223,37 +229,88 @@ public class ValidationServiceAdapter : IValidationService
         }
     }
 
-    /// <summary>
-    /// Runs dotnet test with stdout/stderr streamed to the console so the user can see progress.
-    /// </summary>
-    private static async Task<int> RunDotnetTestWithStreamingAsync(string workingDirectory, CancellationToken ct)
+    private static async Task<int> RunDotnetBuildProjectAsync(string csprojPath, CancellationToken ct)
     {
-        var args = "test . --no-build --blame-hang-timeout 120s --blame-hang-dump-type none --verbosity normal";
+        var args = $"build \"{csprojPath}\" --verbosity quiet";
         var psi = new ProcessStartInfo("dotnet", args)
         {
-            WorkingDirectory = workingDirectory,
+            WorkingDirectory = Path.GetDirectoryName(csprojPath) ?? Directory.GetCurrentDirectory(),
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false
         };
 
-        using var p = Process.Start(psi);
-        if (p == null) return -1;
-
-        p.OutputDataReceived += (_, e) => { if (e.Data != null) Console.Out.WriteLine(e.Data); };
-        p.ErrorDataReceived += (_, e) => { if (e.Data != null) Console.Error.WriteLine(e.Data); };
-        p.BeginOutputReadLine();
-        p.BeginErrorReadLine();
-
-        try
-        {
-            await p.WaitForExitAsync(ct);
-            return p.ExitCode;
-        }
-        catch (OperationCanceledException)
-        {
-            try { p.Kill(entireProcessTree: true); } catch { /* ignore */ }
+        var p = Process.Start(psi);
+        if (p is null)
             return -1;
+
+        using (p)
+        {
+            p.OutputDataReceived += (_, _) => { };
+            p.ErrorDataReceived += (_, e) => { if (e.Data is not null) Console.Error.WriteLine(e.Data); };
+            p.BeginOutputReadLine();
+            p.BeginErrorReadLine();
+
+            try
+            {
+                await p.WaitForExitAsync(ct).ConfigureAwait(false);
+                return p.ExitCode;
+            }
+            catch (OperationCanceledException)
+            {
+                try { p.Kill(entireProcessTree: true); } catch { /* ignore */ }
+                return -1;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Runs <c>dotnet test</c> for validate: net8.0 only, TRX for parsing, optional console streaming.
+    /// </summary>
+    private static async Task<int> RunDotnetTestForValidateAsync(string csprojPath, bool streamOutput, CancellationToken ct)
+    {
+        var verbosity = streamOutput ? "normal" : "minimal";
+        var args =
+            $"test \"{csprojPath}\" --framework net8.0 --no-build --logger trx --blame-hang-timeout 120s --blame-hang-dump-type none --verbosity {verbosity}";
+        var workDir = Path.GetDirectoryName(csprojPath) ?? Directory.GetCurrentDirectory();
+        var psi = new ProcessStartInfo("dotnet", args)
+        {
+            WorkingDirectory = workDir,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false
+        };
+
+        var p = Process.Start(psi);
+        if (p is null)
+            return -1;
+
+        using (p)
+        {
+            if (streamOutput)
+            {
+                p.OutputDataReceived += (_, e) => { if (e.Data is not null) Console.Out.WriteLine(e.Data); };
+                p.ErrorDataReceived += (_, e) => { if (e.Data is not null) Console.Error.WriteLine(e.Data); };
+            }
+            else
+            {
+                p.OutputDataReceived += (_, _) => { };
+                p.ErrorDataReceived += (_, e) => { if (e.Data is not null) Console.Error.WriteLine(e.Data); };
+            }
+
+            p.BeginOutputReadLine();
+            p.BeginErrorReadLine();
+
+            try
+            {
+                await p.WaitForExitAsync(ct).ConfigureAwait(false);
+                return p.ExitCode;
+            }
+            catch (OperationCanceledException)
+            {
+                try { p.Kill(entireProcessTree: true); } catch { /* ignore */ }
+                return -1;
+            }
         }
     }
 }
