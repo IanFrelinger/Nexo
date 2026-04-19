@@ -8,7 +8,7 @@ on:
       - "cursor/**"
     paths:
       - ".github/workflows/devcontainer-gate.yml"
-      - "scripts/ci/devcontainer-smoke.sh"
+      - "scripts/Verify-DevContainer.ps1"
       - ".devcontainer/**"
       - "global.json"
       - "Directory.Build.props"
@@ -20,7 +20,7 @@ on:
   pull_request:
     paths:
       - ".github/workflows/devcontainer-gate.yml"
-      - "scripts/ci/devcontainer-smoke.sh"
+      - "scripts/Verify-DevContainer.ps1"
       - ".devcontainer/**"
       - "global.json"
       - "Directory.Build.props"
@@ -39,5 +39,5 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Post-create + CLI build inside dev image
-        shell: bash
-        run: bash scripts/ci/devcontainer-smoke.sh "${GITHUB_WORKSPACE}"
+        shell: pwsh
+        run: pwsh -NoProfile -File ./scripts/Verify-DevContainer.ps1 -RepoRoot "${{ github.workspace }}"

@@ -57,6 +57,14 @@ You do **not** need a host-installed .NET SDK for the paths below. Install **.NE
 
 The dev container uses **.NET 9**, mounts a named volume at `nexo-nuget-packages` for the NuGet cache, and runs **`.devcontainer/post-create.sh`** after the container is created. That script restores the **same setup-gate project graph** as `scripts/docker-restore.ps1` (not full `Nexo.sln`, which requires MAUI/Android workloads inside a plain SDK image).
 
+**Headless check (no IDE):** from the repo root, with Docker running:
+
+```powershell
+pwsh -NoProfile -ExecutionPolicy Bypass -File ./scripts/Verify-DevContainer.ps1
+```
+
+That is the same restore + `Nexo.CLI` build + `--help` smoke CI runs in `devcontainer-gate.yml`—one script, no extra shell toolchain on Windows.
+
 From the integrated terminal inside the container:
 
 ```bash
