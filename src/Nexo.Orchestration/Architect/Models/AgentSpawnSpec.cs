@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Nexo.Abstractions.Execution;
 
 namespace Nexo.Orchestration.Architect.Models;
 
@@ -103,6 +104,13 @@ public sealed record AgentSpawnSpec
     /// </summary>
     public IReadOnlyDictionary<string, object?> Metadata { get; init; } =
         new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// How strongly this agent's invocations should be isolated at the transport/execution boundary.
+    /// Defaults to <see cref="AgentExecutionIsolationLevel.InProcess"/>; hosts map higher tiers to
+    /// processes, pooled containers, or dedicated containers per agent.
+    /// </summary>
+    public AgentExecutionIsolationLevel ExecutionIsolation { get; init; } = AgentExecutionIsolationLevel.InProcess;
 
     /// <summary>
     /// Resolved target endpoint for remote execution. Null means in-process.

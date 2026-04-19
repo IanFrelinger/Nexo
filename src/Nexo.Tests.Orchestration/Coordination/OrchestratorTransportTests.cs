@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
+using Nexo.Abstractions.Execution;
 using Nexo.Abstractions.Transport;
 using Nexo.Core.Application.Common.Ports;
 using Nexo.Core.Application.Common.Services;
@@ -158,6 +159,43 @@ public sealed class OrchestratorTransportTests
         capturedRequest.Metadata["commandChain"].Should().Be("commander-1|lead-2");
         capturedRequest.Metadata["goals"].Should().Be("primary objective|secondary objective");
         capturedRequest.Metadata["ollamaModel"].Should().Be("qwen2.5:7b");
+        capturedRequest.Metadata[AgentExecutionIsolation.MetadataKey].Should().Be("InProcess");
+    }
+
+    [Fact]
+    public async Task OrchestrateAsync_PropagatesExecutionIsolationMetadata()
+    {
+        AgentInvocationRequest? capturedRequest = null;
+        var transportMock = new Mock<IAgentTransport>(MockBehavior.Strict);
+        transportMock
+            .Setup(t => t.SendAsync(It.IsAny<AgentInvocationRequest>(), It.IsAny<CancellationToken>()))
+            .Callback<AgentInvocationRequest, CancellationToken>((request, _) => capturedRequest = request)
+            .ReturnsAsync(new AgentResult(
+                Success: true,
+                Output: new { ok = true }));
+
+        var decomposition = new DecompositionResult
+        {
+            OriginalRequest = "request",
+            Agents =
+            [
+                new AgentSpawnSpec
+                {
+                    AgentId = "agent-1",
+                    Domain = "General",
+                    Goal = "Execute mission",
+                    ExecutionIsolation = AgentExecutionIsolationLevel.ContainerPerAgent
+                }
+            ]
+        };
+
+        var sut = CreateOrchestrator(CreateArchitectMock(decomposition).Object, transportMock.Object);
+        var result = await sut.OrchestrateAsync("isolation metadata");
+
+        result.Success.Should().BeTrue();
+        capturedRequest.Should().NotBeNull();
+        capturedRequest!.Metadata.Should().NotBeNull();
+        capturedRequest.Metadata![AgentExecutionIsolation.MetadataKey].Should().Be("ContainerPerAgent");
     }
 
     private static Mock<IArchitectAgent> CreateArchitectMock(DecompositionResult decomposition)

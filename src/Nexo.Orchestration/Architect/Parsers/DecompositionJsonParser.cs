@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using Nexo.Abstractions.Execution;
 using Nexo.Orchestration.Architect.Models;
 
 namespace Nexo.Orchestration.Architect.Parsers;
@@ -237,6 +238,8 @@ public sealed class DecompositionJsonParser
                 ? ParseMetadata(metadataProp)
                 : new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase);
 
+            var executionIsolation = ParseExecutionIsolation(agentElement);
+
             return new AgentSpawnSpec
             {
                 AgentId = agentId,
@@ -255,7 +258,8 @@ public sealed class DecompositionJsonParser
                 ResourceRequirements = resourceRequirements,
                 Priority = priority,
                 RequiredCapabilities = requiredCapabilities,
-                Metadata = metadata
+                Metadata = metadata,
+                ExecutionIsolation = executionIsolation
             };
         }
         catch (KeyNotFoundException ex)
@@ -263,6 +267,39 @@ public sealed class DecompositionJsonParser
             _logger.LogWarning(ex, "Agent missing required property");
             return null;
         }
+    }
+
+    private AgentExecutionIsolationLevel ParseExecutionIsolation(JsonElement agentElement)
+    {
+        if (!agentElement.TryGetProperty("executionIsolation", out var prop))
+            return AgentExecutionIsolationLevel.InProcess;
+
+        try
+        {
+            switch (prop.ValueKind)
+            {
+                case JsonValueKind.Number:
+                    if (prop.TryGetInt32(out var n) && Enum.IsDefined(typeof(AgentExecutionIsolationLevel), n))
+                        return (AgentExecutionIsolationLevel)n;
+                    break;
+                case JsonValueKind.String:
+                    var s = prop.GetString();
+                    if (!string.IsNullOrWhiteSpace(s) &&
+                        Enum.TryParse(s, ignoreCase: true, out AgentExecutionIsolationLevel parsed))
+                        return parsed;
+                    break;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to parse executionIsolation");
+            return AgentExecutionIsolationLevel.InProcess;
+        }
+
+        _logger.LogWarning(
+            "Invalid executionIsolation value; using InProcess. Raw={Raw}",
+            prop.ValueKind == JsonValueKind.String ? prop.GetString() : prop.GetRawText());
+        return AgentExecutionIsolationLevel.InProcess;
     }
 
     private IReadOnlyList<AgentConstraint> ParseConstraints(JsonElement constraintsArray)

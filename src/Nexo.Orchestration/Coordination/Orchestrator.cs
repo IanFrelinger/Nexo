@@ -1,6 +1,7 @@
 using Nexo.Abstractions.Barriers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Nexo.Abstractions.Execution;
 using Nexo.Abstractions.Routing;
 using Nexo.Abstractions.Transport;
 using Nexo.Orchestration.Agents;
@@ -351,7 +352,9 @@ public sealed class Orchestrator
                             ["clusterId"] = container.Agent.Spec.ClusterId ?? string.Empty,
                             ["reportsToAgentId"] = container.Agent.Spec.ReportsToAgentId ?? string.Empty,
                             ["commandChain"] = string.Join("|", container.Agent.Spec.CommandChain),
-                            ["ollamaModel"] = container.Agent.Spec.OllamaModel ?? string.Empty
+                            ["ollamaModel"] = container.Agent.Spec.OllamaModel ?? string.Empty,
+                            [AgentExecutionIsolation.MetadataKey] =
+                                AgentExecutionIsolation.Format(container.Agent.Spec.ExecutionIsolation)
                         },
                         DependencyOutputs: dependencyOutputs);
 
