@@ -4,6 +4,12 @@ This guide provides single-command install/bootstrap paths for each platform usi
 
 Repository default onboarding is **container-first** (Dev Container, `Dockerfile.quickstart`, GHCR CLI, compose). The scripts here are **native escape hatches** when Docker is impractical or you want guided host SDK installation.
 
+**Fewer entry points (same behavior):**
+
+- **Native install:** prefer **`scripts/install/install.sh`** (dispatches to Linux/macOS). Platform-specific **`install-linux.sh`** / **`install-macos.sh`** remain for direct use and CI.
+- **Container bootstrap:** prefer **`scripts/install/container-bootstrap.sh`**. **`container-one-click.sh`** is a thin wrapper (banner + optional daemon smoke) over the same bootstrap scripts.
+- **Guided native “hero” flow:** **`scripts/install/one-click.sh`** runs install with `--yes --hero`. **`nexo-zero-to-hero-*`** launchers call **`install.sh`** the same way.
+
 ## Quickstart (recommended)
 
 The fastest path to a working portal — detects Docker or .NET SDK, builds, and opens the browser:

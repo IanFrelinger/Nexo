@@ -25,14 +25,14 @@ echo "This will run one-click setup, verify CLI, and run"
 echo "a first pipeline validate command."
 echo ""
 
-if [[ ! -f "${REPO_ROOT}/scripts/install/install-macos.sh" ]]; then
-  echo "Error: expected installer at scripts/install/install-macos.sh"
+if [[ ! -f "${REPO_ROOT}/scripts/install/install.sh" ]]; then
+  echo "Error: expected installer at scripts/install/install.sh"
   echo "Please run this file from a full Nexo repository checkout."
   exit 1
 fi
 
 EXIT_CODE=0
-if ! bash "${REPO_ROOT}/scripts/install/install-macos.sh" --yes --hero "${FORWARD_ARGS[@]}"; then
+if ! bash "${REPO_ROOT}/scripts/install/install.sh" --yes --hero "${FORWARD_ARGS[@]}"; then
   EXIT_CODE=$?
   echo ""
   echo "Setup finished with errors. Scroll up in this window for details."

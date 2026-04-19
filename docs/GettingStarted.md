@@ -60,7 +60,7 @@ docker run --rm -v "$PWD:/work" -w /work ghcr.io/ianfrelinger/nexo-cli:latest --
 
 ### Lane C (escape hatch): native setup scripts + CLI build
 
-After **`scripts/setup/setup.sh`** / **`setup-linux.sh`** / **`setup-macos.sh`** **`all`**, or Windows **`powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode all`**, Nexo runs a **bounded** Runtime Studio **`workflow optimize`** and writes the winning **Ollama `ModelName` values** into `apps/runtime-studio/config/agent_set.local.json`. Skip with **`NEXO_SKIP_RUNTIME_STUDIO_TUNE=1`** (Unix), **`-SkipRuntimeStudioTune`** (Windows `setup.ps1`), or rely on automatic skip in **CI** (`CI` / `GITHUB_ACTIONS`).
+After **`bash scripts/setup/setup.sh all`** (same as **`bash scripts/setup/setup-unix.sh all`** on macOS/Linux; those dispatch to `setup-linux.sh` / `setup-macos.sh`), or Windows **`powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode all`**, Nexo runs a **bounded** Runtime Studio **`workflow optimize`** and writes the winning **Ollama `ModelName` values** into `apps/runtime-studio/config/agent_set.local.json`. Skip with **`NEXO_SKIP_RUNTIME_STUDIO_TUNE=1`** (Unix), **`-SkipRuntimeStudioTune`** (Windows `setup.ps1`), or rely on automatic skip in **CI** (`CI` / `GITHUB_ACTIONS`).
 
 These scripts validate prerequisites and restore the setup-gate baseline NuGet graph for this repository:
 

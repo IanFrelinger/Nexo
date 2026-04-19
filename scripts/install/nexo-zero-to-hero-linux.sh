@@ -12,13 +12,13 @@ echo "This runs one-click setup, verifies CLI, and runs"
 echo "a first pipeline validate/run flow."
 echo ""
 
-if [[ ! -f "${REPO_ROOT}/scripts/install/install-linux.sh" ]]; then
-  echo "Error: expected installer at scripts/install/install-linux.sh"
+if [[ ! -f "${REPO_ROOT}/scripts/install/install.sh" ]]; then
+  echo "Error: expected installer at scripts/install/install.sh"
   echo "Please run this file from a full Nexo repository checkout."
   exit 1
 fi
 
-bash "${REPO_ROOT}/scripts/install/install-linux.sh" --yes --hero "$@"
+bash "${REPO_ROOT}/scripts/install/install.sh" --yes --hero "$@"
 echo ""
 echo "Done. Next commands:"
 echo "  cd \"${HOME}/Nexo\""

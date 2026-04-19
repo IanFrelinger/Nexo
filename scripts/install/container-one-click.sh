@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# Thin wrapper: same behavior as container-bootstrap.sh with a friendlier banner.
+# Prefer: bash scripts/install/container-bootstrap.sh
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -11,15 +13,20 @@ WITH_SDK=true
 IMAGE=""
 SDK_IMAGE=""
 DAEMON_DURATION=""
+INCLUDE_OPTIONAL=false
 
 usage() {
   echo "Usage: scripts/install/container-one-click.sh [options]"
+  echo ""
+  echo "This is a thin wrapper over container-bootstrap (same flags). Prefer:"
+  echo "  bash scripts/install/container-bootstrap.sh"
   echo ""
   echo "Options:"
   echo "  --workspace <path>        Workspace mount path (default: current directory)"
   echo "  --image <ref>             Override CLI container image"
   echo "  --sdk-image <ref>         Override SDK container image"
-  echo "  --skip-sdk                Skip SDK image smoke checks"
+  echo "  --include-optional        Forward to Linux bootstrap (optional host deps note)"
+  echo "  --skip-sdk                Skip SDK image smoke checks (Linux only; macOS always pulls SDK)"
   echo "  --start-daemon <duration> Start a bounded background-agent daemon smoke run"
   echo "  --yes                     Auto-confirm prompts"
   echo "  --dry-run                 Print actions without executing"
@@ -51,6 +58,9 @@ while [[ $# -gt 0 ]]; do
       require_value "$1" "${2:-}"
       SDK_IMAGE="$2"
       shift
+      ;;
+    --include-optional)
+      INCLUDE_OPTIONAL=true
       ;;
     --skip-sdk)
       WITH_SDK=false
@@ -118,15 +128,24 @@ fi
 if [[ -n "${IMAGE}" ]]; then
   bootstrap_args+=(--image "${IMAGE}")
 fi
-if [[ "${WITH_SDK}" == "true" && -n "${SDK_IMAGE}" ]]; then
-  bootstrap_args+=(--sdk-image "${SDK_IMAGE}")
+if [[ "${INCLUDE_OPTIONAL}" == "true" ]]; then
+  bootstrap_args+=(--include-optional)
 fi
 
 case "${OS}" in
   Linux)
+    if [[ "${WITH_SDK}" == "true" && -n "${SDK_IMAGE}" ]]; then
+      bootstrap_args+=(--sdk-image "${SDK_IMAGE}")
+    fi
     exec bash "${SCRIPT_DIR}/container-bootstrap-linux.sh" "${bootstrap_args[@]}"
     ;;
   Darwin)
+    if [[ -n "${SDK_IMAGE}" ]]; then
+      bootstrap_args+=(--sdk-image "${SDK_IMAGE}")
+    fi
+    if [[ "${WITH_SDK}" == "false" ]]; then
+      echo "note: --skip-sdk is ignored on macOS; SDK image smoke is always run." >&2
+    fi
     exec bash "${SCRIPT_DIR}/container-bootstrap-macos.sh" "${bootstrap_args[@]}"
     ;;
   *)
