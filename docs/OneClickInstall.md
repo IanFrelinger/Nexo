@@ -6,7 +6,8 @@ Repository default onboarding is **container-first** (Dev Container, `Dockerfile
 
 **Fewer entry points (same behavior):**
 
-- **Native install:** **`scripts/install/install.sh`** (Linux/macOS) or **`scripts/install/install.ps1`** (Windows). Use **`--yes --hero`** for the full first-run check (doctor + quickstart pipeline). Platform-specific **`install-linux.sh`** / **`install-macos.sh`** remain for CI and advanced flags.
+- **Native install (Unix):** **`scripts/install/install.sh`** only (dispatches to **`install_common.sh`**). Thin **`install-linux.sh`** / **`install-macos.sh`** wrappers exist for CI and explicit OS checks; prefer **`install.sh`**.
+- **Native install (Windows):** **`scripts/install/install.ps1`** only. Use **`--yes --hero`** for the full first-run check (doctor + quickstart pipeline).
 - **Container bootstrap (host Docker, no dev container):** **`scripts/install/container-bootstrap.sh`** only. Optional bounded daemon smoke: **`--start-daemon 30s`** (Linux/macOS scripts) or **`-StartDaemonDuration 30s`** on Windows **`container-bootstrap.ps1`** (requires a workspace mount / repo path).
 
 ## Quickstart (recommended)
@@ -144,22 +145,10 @@ Unified entrypoint (auto-detects OS):
 bash scripts/install/install.sh --yes
 ```
 
-First-run **hero** checks (same as older “zero-to-hero” launchers):
+First-run **hero** checks:
 
 ```bash
 bash scripts/install/install.sh --yes --hero
-```
-
-Linux-specific entrypoint:
-
-```bash
-bash scripts/install/install-linux.sh --yes
-```
-
-macOS-specific entrypoint:
-
-```bash
-bash scripts/install/install-macos.sh --yes
 ```
 
 ## Windows PowerShell
@@ -176,12 +165,6 @@ First-run **hero** checks:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install\install.ps1 -Yes -Hero
-```
-
-Windows thin wrapper (forwards to `install.ps1`):
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install\install-windows.ps1 -Yes
 ```
 
 ## Common options
@@ -206,14 +189,10 @@ Install into custom path and run daemon for 30 seconds:
 bash scripts/install/install.sh --install-dir "$HOME/NexoProd" --yes --start-daemon --daemon-duration 30s
 ```
 
-**Hero** flow (install + doctor + quickstart pipeline) by platform:
+**Hero** flow (install + doctor + quickstart pipeline):
 
 ```bash
-bash scripts/install/install-macos.sh --yes --hero
-```
-
-```bash
-bash scripts/install/install-linux.sh --yes --hero
+bash scripts/install/install.sh --yes --hero
 ```
 
 ```powershell

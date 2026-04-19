@@ -61,6 +61,7 @@ run_case "bash syntax all setup/install scripts" "pass" \
   "bash -n ${REPO_ROOT}/scripts/setup/setup-linux.sh && \
    bash -n ${REPO_ROOT}/scripts/setup/setup-macos.sh && \
    bash -n ${REPO_ROOT}/scripts/install/install.sh && \
+   bash -n ${REPO_ROOT}/scripts/install/install_common.sh && \
    bash -n ${REPO_ROOT}/scripts/install/install-linux.sh && \
    bash -n ${REPO_ROOT}/scripts/install/install-macos.sh && \
    bash -n ${REPO_ROOT}/scripts/install/container-bootstrap-linux.sh && \

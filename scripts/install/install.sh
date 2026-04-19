@@ -6,10 +6,10 @@ OS="$(uname -s)"
 
 case "${OS}" in
   Linux)
-    exec "${SCRIPT_DIR}/install-linux.sh" "$@"
+    exec env NEXO_INSTALL_PLATFORM=linux bash "${SCRIPT_DIR}/install_common.sh" "$@"
     ;;
   Darwin)
-    exec "${SCRIPT_DIR}/install-macos.sh" "$@"
+    exec env NEXO_INSTALL_PLATFORM=darwin bash "${SCRIPT_DIR}/install_common.sh" "$@"
     ;;
   *)
     echo "Unsupported OS for install.sh: ${OS}" >&2
