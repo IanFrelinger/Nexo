@@ -4,6 +4,12 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+# Named volume at ~/.nuget/packages can leave ~/.nuget (or parents) owned by root; dotnet then cannot create ~/.nuget/NuGet.
+mkdir -p "${HOME}/.nuget"
+if command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then
+  sudo -n chown -R "$(id -un)":"$(id -gn)" "${HOME}/.nuget"
+fi
+
 echo "post-create: restoring NuGet graph..."
 dotnet restore src/Nexo.Core.Application/Nexo.Core.Application.csproj --verbosity minimal
 dotnet restore src/Nexo.Infrastructure/Nexo.Infrastructure.csproj --verbosity minimal
