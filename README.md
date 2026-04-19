@@ -394,11 +394,13 @@ dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --fil
 
 Start here:
 - `README.md` → **[Deploy (operators)](#deploy-operators)** — GHCR images and compose stacks for production-style hosts.
+- `docs/CiFirstHardwareSecond.md` — run **Setup Smoke Suite** in GitHub Actions before iterating on slow target hardware.
 - `docs/GettingStarted.md` – guided first-hour setup and usage
 - `docs/DocsIndex.md` – where to find docs by task
 - `apps/runtime-studio/README.md` – Runtime Studio agent-set JSON; hub for CLI vs compose vs Director portal (see “How this fits” there).
 
 Core references:
+- `docs/CiFirstHardwareSecond.md` – CI smoke before target-hardware setup loops
 - `docs/Configuration.md` – environment/config options
 - `docs/Architecture.md` – architecture and subsystem overview
 - `docs/Testing.md` – test strategy, guard rails, and commands

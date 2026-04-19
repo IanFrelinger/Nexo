@@ -11,6 +11,7 @@ on:
       - "docs/GettingStarted.md"
       - "docs/DocsIndex.md"
       - "docs/OneClickInstall.md"
+      - "docs/CiFirstHardwareSecond.md"
       - ".devcontainer/**"
       - ".github/workflows/onboarding-docs-guard.yml"
   pull_request:
@@ -19,6 +20,7 @@ on:
       - "docs/GettingStarted.md"
       - "docs/DocsIndex.md"
       - "docs/OneClickInstall.md"
+      - "docs/CiFirstHardwareSecond.md"
       - ".devcontainer/**"
       - ".github/workflows/onboarding-docs-guard.yml"
   workflow_dispatch:
@@ -71,6 +73,7 @@ jobs:
 
           # Operator deploy section stays container-first.
           grep -nE "## Deploy \\(operators\\)" README.md
+          grep -nE "docs/CiFirstHardwareSecond\\.md" README.md
 
       - name: Emit onboarding docs guard summary
         if: always()

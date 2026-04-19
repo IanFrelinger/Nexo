@@ -8,6 +8,7 @@ on:
       - "cursor/**"
     paths:
       - ".github/workflows/devcontainer-gate.yml"
+      - "scripts/ci/devcontainer-smoke.sh"
       - ".devcontainer/**"
       - "global.json"
       - "Directory.Build.props"
@@ -19,6 +20,7 @@ on:
   pull_request:
     paths:
       - ".github/workflows/devcontainer-gate.yml"
+      - "scripts/ci/devcontainer-smoke.sh"
       - ".devcontainer/**"
       - "global.json"
       - "Directory.Build.props"
@@ -38,19 +40,4 @@ jobs:
 
       - name: Post-create + CLI build inside dev image
         shell: bash
-        run: |
-          set -euo pipefail
-          image="mcr.microsoft.com/devcontainers/dotnet:9.0-bookworm"
-          docker pull "$image"
-          # Run as container root (default): same restore/build commands as post-create + local dev smoke.
-          docker run --rm \
-            -v "${GITHUB_WORKSPACE}:/workspace:rw" \
-            -w /workspace \
-            "$image" \
-            bash -lc '
-              set -euo pipefail
-              bash .devcontainer/post-create.sh
-              dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
-              dotnet run --project src/Nexo.CLI -- --help >/dev/null
-              echo "devcontainer-gate: ok"
-            '
+        run: bash scripts/ci/devcontainer-smoke.sh "${GITHUB_WORKSPACE}"
