@@ -1,6 +1,9 @@
 {
   "name": "Nexo",
   "image": "mcr.microsoft.com/devcontainers/dotnet:9.0-bookworm",
+  "containerEnv": {
+    "DOTNET_ROLL_FORWARD": "LatestMajor"
+  },
   "remoteUser": "vscode",
   "mounts": [
     "source=nexo-nuget-packages,target=/home/vscode/.nuget/packages,type=volume"
