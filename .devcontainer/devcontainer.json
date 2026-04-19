@@ -1,0 +1,14 @@
+{
+  "name": "Nexo",
+  "image": "mcr.microsoft.com/devcontainers/dotnet:9.0-bookworm",
+  "remoteUser": "vscode",
+  "mounts": [
+    "source=nexo-nuget-packages,target=/home/vscode/.nuget/packages,type=volume"
+  ],
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-dotnettools.csharp"]
+    }
+  }
+}

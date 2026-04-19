@@ -2,13 +2,28 @@
 
 Thanks for contributing.
 
-## Prerequisites
+## Recommended dev workflow (container + CLI)
+
+1. **Docker** and **Git** on the host.
+2. In **Cursor** or **VS Code**, install [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers), open the repo, then **Dev Containers: Reopen in Container**. The first open runs `.devcontainer/post-create.sh` (setup-gate `dotnet restore` graph; not full `Nexo.sln`).
+3. In the dev-container terminal, build and use the CLI:
+
+```bash
+dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore
+dotnet run --project src/Nexo.CLI -- --help
+```
+
+**Remote:** connect over **Remote SSH**, open the repo on the remote machine, then **Reopen in Container** there so the toolchain comes from the image, not from manual packages on the host.
+
+## Prerequisites (native escape hatch)
+
+Use this only when you cannot use the dev container or other Docker workflows:
 
 - .NET SDK `9.x` (pinned by `global.json`)
 - Git
 - Optional: Docker (for multi-environment and compose-based test lanes)
 
-## Local setup
+## Local setup (native)
 
 From repository root:
 

@@ -6,6 +6,8 @@ Nexo is a .NET platform for composable AI workflows with structural trust enforc
 
 Nexo operates entirely on infrastructure you control. Cloud providers are opt-in execution targets, not dependencies. No data leaves the host unless explicitly routed to a trusted peer. Air-gapped deployment is supported without modification.
 
+**Development and deployment** default to **containers** (published images on GHCR, `Dockerfile.*` in `.docker/`, and `docker-compose*.y` stacks) plus the **Nexo CLI** (`dotnet run --project src/Nexo.CLI`). Shell installers under `scripts/install/` remain optional escape hatches for hosts where Docker is not available.
+
 Repository: <https://github.com/IanFrelinger/Nexo>
 
 ## Why Nexo
@@ -27,142 +29,64 @@ Repository: <https://github.com/IanFrelinger/Nexo>
 
 ## Quick Start
 
-### One command (recommended)
+Standard flow: **run Nexo inside a container** (dev container or compose), and use the **CLI** for builds, validation, and operators. Prefer published **GHCR** images for production-like runs; build from `Dockerfile.*` when you need a local image.
 
-From a cloned repo:
+### 1) Prerequisites (container-first path)
+
+- **Docker** (Desktop or Engine) and **Git**
+- Optional: Ollama/OpenAI/Azure credentials for live model backends
+
+You do **not** need a host-installed .NET SDK for the paths below. Install **.NET SDK 9.x** only if you choose the native escape hatch (see end of this section).
+
+### 2) Recommended: Dev Container (Cursor / VS Code)
+
+1. Install the [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension.
+2. Open this repository, then run **Dev Containers: Reopen in Container**.
+
+The dev container uses **.NET 9**, mounts a named volume at `nexo-nuget-packages` for the NuGet cache, and runs **`.devcontainer/post-create.sh`** after the container is created. That script restores the **same setup-gate project graph** as `scripts/docker-restore.ps1` (not full `Nexo.sln`, which requires MAUI/Android workloads inside a plain SDK image).
+
+From the integrated terminal inside the container:
 
 ```bash
-bash scripts/install/quickstart.sh
-# Opens http://localhost:8080 — portal running with mock provider, no API keys needed.
+dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore
+dotnet run --project src/Nexo.CLI -- --help
 ```
 
-The script detects Docker or .NET SDK, builds, and starts the portal. Works on Linux and macOS. Mock provider is enabled by default so the setup wizard and chat work immediately.
+**Remote SSH:** connect to a host that already has Docker (or your chosen toolchain), open the repo there, then use **Reopen in Container** on the remote so the environment still comes from the image.
 
-Stop with `docker stop nexo-quickstart` (Docker path) or `Ctrl+C` (native path).
-
-### Other lanes
-
-**Docker only (portal + API):**
+### 3) Run the portal (Docker quickstart image)
 
 ```bash
 git clone https://github.com/IanFrelinger/Nexo.git && cd Nexo
 docker build -f .docker/Dockerfile.quickstart -t nexo:quickstart .
 docker run --rm -p 8080:8080 nexo:quickstart
-# Open http://localhost:8080
+# Open http://localhost:8080 — mock provider; no API keys required.
 ```
 
-**Docker CLI only (no portal):**
+Stop with `Ctrl+C` or `docker stop` on the container ID.
+
+### 4) Published CLI image (CI, agents, minimal host)
 
 ```bash
 docker pull ghcr.io/ianfrelinger/nexo-cli:latest
 docker run --rm ghcr.io/ianfrelinger/nexo-cli:latest --help
 ```
 
-**Native SDK:**
+Validate a pipeline template from your workspace:
 
 ```bash
-git clone https://github.com/IanFrelinger/Nexo.git && cd Nexo
-bash scripts/install/install.sh --yes
-NEXO_ALLOW_MOCK=1 dotnet run --project src/Nexo.API
-# Open http://localhost:5000
+docker run --rm \
+  -v "$PWD:/work" \
+  -w /work \
+  ghcr.io/ianfrelinger/nexo-cli:latest \
+  pipeline validate --template /work/path/to/template.json
 ```
 
-Prefer this one-shot installer if you want fewer manual steps:
-
-```bash
-bash scripts/install/install.sh --yes
-```
-
-### 1) Prerequisites
-
-- .NET SDK 9.x (the repo is pinned by `global.json`)
-- Git
-- Optional: Docker (for containerized test workflows)
-- Optional: Ollama/OpenAI/Azure credentials (for live model backends)
-
-### Environment setup scripts (Windows/macOS/Linux)
-
-Use the setup scripts to validate required tooling and restore baseline NuGet packages used by the core CI gates.
-The CI setup gate also validates these scripts in an ephemeral Linux container (`mcr.microsoft.com/dotnet/sdk:9.0`) on every run:
-
-```bash
-# Linux/macOS: check required dependencies
-bash scripts/setup/setup.sh check
-
-# Linux/macOS: restore NuGet packages/solutions
-bash scripts/setup/setup.sh restore
-
-# Linux/macOS: run check + restore
-bash scripts/setup/setup.sh all
-```
-
-```powershell
-# Windows PowerShell: check required dependencies
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode check
-
-# Windows PowerShell: restore NuGet packages/solutions
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode restore
-
-# Windows PowerShell: run check + restore
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode all
-```
-
-**Windows + Docker (no local .NET SDK):** restoring the full `Nexo.sln` in a plain Linux SDK container fails on MAUI/Android workloads. Use the setup-gate restore (same projects as `setup.sh restore`) inside one container, with a persistent NuGet volume:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\docker-restore.ps1
-# optional: also build Nexo.CLI in-container
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\docker-restore.ps1 -Build
-```
-
-### Remote development (Cursor / VS Code)
-
-**Dev Container (recommended):** install the [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension, open this repo, then **Dev Containers: Reopen in Container**. The container uses .NET 9, persists NuGet packages in a named volume, and runs the same setup-gate `dotnet restore` graph as `scripts/docker-restore.ps1` (not full `Nexo.sln`, which requires MAUI workloads).
-
-**Remote SSH:** on the Linux/macOS host, install prerequisites (`bash scripts/setup/setup.sh all` or your usual bootstrap), clone the repo, then in Cursor use **Remote-SSH: Connect to Host…** and open the folder. Cursor installs its server component on first connect; you only need a normal user account, SSH, and the toolchain on the machine.
-
-### One-click bootstrap installers (Option 1)
-
-For single-command install/bootstrap wrappers, see:
-
-- `docs/OneClickInstall.md`
-
-These wrappers can auto-install missing required prerequisites (including `.NET SDK 9`) in guided mode, then run restore/build checks.
-
-Quick examples:
-
-```bash
-bash scripts/install/install.sh --yes
-```
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install\install.ps1 -Yes
-```
-
-Container-first one-shot bootstrap (installs Docker if needed, pulls CLI + SDK images, smoke-runs both):
-
-```bash
-bash scripts/install/container-bootstrap.sh --yes
-```
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install\container-bootstrap.ps1 -Yes
-```
-
-### Container image usage (flexible deployability)
-
-Build local CLI image:
+Build a local CLI image (optional):
 
 ```bash
 docker build -f .docker/Dockerfile.cli -t nexo-cli:local .
 docker run --rm nexo-cli:local --help
-```
-
-Pull published image (GHCR):
-
-```bash
-docker pull ghcr.io/ianfrelinger/nexo-cli:latest
-docker run --rm ghcr.io/ianfrelinger/nexo-cli:latest --help
 ```
 
 Build with explicit framework/runtime versions:
@@ -176,17 +100,30 @@ docker build \
   -t nexo-cli:net8 .
 ```
 
-Validate a pipeline template from your current workspace using the published image:
+### 5) Compose stacks (director portal, agent server, dependencies)
+
+For multi-service deployment on a host you control, start from the files in the repository root (`docker-compose.portal.yml`, `docker-compose.agent-server.yml`, `docker-compose.ephemeral.yml`, etc.) and the operator guides in `docs/SelfHostedAgentServer.md` and `apps/runtime-studio/README.md`.
+
+### 6) Escape hatches (no Docker)
+
+Use these only when containers are not an option:
+
+- **One command portal (script):** `bash scripts/install/quickstart.sh` — detects Docker or a local SDK, builds, starts the portal.
+- **Native SDK + setup scripts:** `bash scripts/install/install.sh --yes` then `NEXO_ALLOW_MOCK=1 dotnet run --project src/Nexo.API` — see `docs/OneClickInstall.md`.
+- **Cross-platform setup / restore helpers:** `bash scripts/setup/setup.sh all` or `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode all` — same graph CI validates in `mcr.microsoft.com/dotnet/sdk:9.0`.
+- **Windows + Docker without host SDK:** `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\docker-restore.ps1` (optional `-Build`).
+
+Container bootstrap (install Docker if needed, pull images, smoke-run):
 
 ```bash
-docker run --rm \
-  -v "$PWD:/work" \
-  -w /work \
-  ghcr.io/ianfrelinger/nexo-cli:latest \
-  pipeline validate --template /work/path/to/template.json
+bash scripts/install/container-bootstrap.sh --yes
 ```
 
-### 2) Clone and build
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install\container-bootstrap.ps1 -Yes
+```
+
+### 7) Clone and build (native SDK only)
 
 ```bash
 git clone https://github.com/IanFrelinger/Nexo.git
@@ -195,19 +132,19 @@ bash scripts/setup/setup.sh all
 dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore
 ```
 
-### 3) Confirm CLI is working
+### 8) Confirm CLI is working
 
 ```bash
 dotnet run --project src/Nexo.CLI -- --help
 ```
 
-### 3b) Run onboarding doctor (single pass/fail report)
+### 8b) Run onboarding doctor (single pass/fail report)
 
 ```bash
 dotnet run --project src/Nexo.CLI -- doctor --json
 ```
 
-### 4) Run a first high-signal command
+### 9) Run a first high-signal command
 
 `validate` can execute a broad architecture/test sweep and may be heavier on constrained hosts. For first-run confidence, start with CLI help and a pipeline validate command:
 
@@ -415,7 +352,8 @@ Nexo/
 ├── apps/                         # application configs (runtime-studio, release-manager)
 ├── config/                       # trust policy packs (air-gapped, internal-only, strict-enterprise)
 ├── docs/                         # docs, specs, guides
-├── scripts/                      # setup, install, demos, onboarding
+├── scripts/                      # setup, install, demos, onboarding (escape hatches + CI)
+├── .devcontainer/                # default Dev Container (Cursor / VS Code)
 ├── .docker/                      # docker test/runtime definitions
 ├── .github/                      # CI workflows and templates
 ├── global.json                   # SDK pin (.NET 9)
