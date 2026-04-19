@@ -2,6 +2,8 @@
 
 This guide provides single-command install/bootstrap paths for each platform using wrappers in `scripts/install/`.
 
+Repository default onboarding is **container-first** (Dev Container, `Dockerfile.quickstart`, GHCR CLI, compose). The scripts here are **native escape hatches** when Docker is impractical or you want guided host SDK installation.
+
 ## Quickstart (recommended)
 
 The fastest path to a working portal — detects Docker or .NET SDK, builds, and opens the browser:

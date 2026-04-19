@@ -4,14 +4,16 @@ Documentation index for the Nexo platform. Start here to find what you need.
 
 ## Start Here
 
-1. `docs/GettingStarted.md` — install, first commands, first pipeline, and first trust checks.
-2. `README.md` — two-lane quickstart (container-first and native setup).
-3. `docs/OneClickInstall.md` — one-shot installer wrappers for Linux/macOS/Windows.
-4. `scripts/install/container-bootstrap.sh` and `scripts/install/container-bootstrap.ps1` — one-shot container bootstrap (Docker + image pull + smoke run).
-5. `scripts/setup/setup-unix.sh` (macOS/Linux; `setup.sh` forwards here) and `scripts/setup/setup.ps1` — cross-platform dependency bootstrap + restore helpers.
-6. `docs/SetupMatrixVerification.md` + `scripts/setup/verify-setup-matrix.ps1` / `verify-setup-matrix.sh` — brute-force style setup combination checks (local + CI).
-7. `scripts/start-nexo-api-dev.ps1` / `scripts/start-nexo-api-dev.sh` — Docker Ollama + host `Nexo.API` dev stack (see `docs/Configuration.md` → Ollama).
-8. `docs/Architecture.md` — layered architecture and component boundaries.
+1. `README.md` — **container-first** quickstart (Dev Container, quickstart image, GHCR CLI, compose); native paths are documented as escape hatches.
+2. `.devcontainer/devcontainer.json` — default development environment (Cursor / VS Code).
+3. `docs/GettingStarted.md` — first commands, first pipeline, and first trust checks (aligned with container + CLI).
+4. `CONTRIBUTING.md` — recommended **Dev Container** workflow and PR checks.
+5. `docs/OneClickInstall.md` — optional one-shot **native** installer wrappers when Docker is unavailable.
+6. `scripts/install/container-bootstrap.sh` and `scripts/install/container-bootstrap.ps1` — one-shot container bootstrap (Docker + image pull + smoke run).
+7. `scripts/setup/setup.sh` (forwards to `setup-unix.sh` on macOS/Linux), `scripts/setup/setup-unix.sh`, and `scripts/setup/setup.ps1` — cross-platform **native** dependency bootstrap + restore helpers (CI and escape hatch).
+8. `docs/SetupMatrixVerification.md` + `scripts/setup/verify-setup-matrix.ps1` / `verify-setup-matrix.sh` — brute-force style setup combination checks (local + CI).
+9. `scripts/start-nexo-api-dev.ps1` / `scripts/start-nexo-api-dev.sh` — Docker Ollama + host `Nexo.API` dev stack (see `docs/Configuration.md` → Ollama).
+10. `docs/Architecture.md` — layered architecture and component boundaries.
 
 ## Operator / Production Readiness
 
@@ -19,6 +21,9 @@ Documentation index for the Nexo platform. Start here to find what you need.
 - `.github/workflows/production-readiness-gate-v1.yml` — automated production readiness gate.
 - `.github/workflows/environment-setup-gate-v1.yml` — environment bootstrap + dependency setup gate (Linux/macOS/Windows).
 - `.github/workflows/compose-gate.yml` — validates `docker-compose.test.yml` and `docker-compose.ephemeral.yml` lanes.
+- `.github/workflows/devcontainer-gate.yml` — validates `.devcontainer/post-create.sh` restore + `Nexo.CLI` build inside the dev image.
+- `.github/workflows/setup-smoke-suite.yml` — **parallel** dev container + compose `config` + native Ubuntu `setup.sh`; run manually before target-hardware iteration (`docs/CiFirstHardwareSecond.md`).
+- `docs/CiFirstHardwareSecond.md` — **CI first, hardware second**: which workflows to run and what still needs a physical host.
 - `.github/workflows/onboarding-quickstart-gate.yml` — runs first-run onboarding commands in native + container lanes.
 - `.github/workflows/container-image-gate.yml` — container image buildability and smoke-run gate.
 - `.github/workflows/container-image-publish.yml` — publish official GHCR CLI image (latest + sha tags).

@@ -1,0 +1,120 @@
+# Fast parallel checks: dev container restore + compose file validity + native Ubuntu setup.
+# Run from Actions → "Setup Smoke Suite" → Run workflow before burning time on target hardware.
+# See docs/CiFirstHardwareSecond.md
+name: Setup Smoke Suite
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+      - main
+      - "cursor/**"
+    paths:
+      - ".github/workflows/setup-smoke-suite.yml"
+      - "docs/CiFirstHardwareSecond.md"
+      - "scripts/ci/devcontainer-smoke.sh"
+      - ".devcontainer/**"
+      - "docker-compose.portal.yml"
+      - "docker-compose.agent-server.yml"
+      - "docker-compose.ephemeral.yml"
+      - "docker-compose.test.yml"
+      - "docker-compose.ollama.yml"
+      - "scripts/setup/**"
+      - "scripts/install/**"
+      - "global.json"
+      - "Directory.Build.props"
+      - "Directory.Packages.props"
+  pull_request:
+    paths:
+      - ".github/workflows/setup-smoke-suite.yml"
+      - "docs/CiFirstHardwareSecond.md"
+      - "scripts/ci/devcontainer-smoke.sh"
+      - ".devcontainer/**"
+      - "docker-compose.portal.yml"
+      - "docker-compose.agent-server.yml"
+      - "docker-compose.ephemeral.yml"
+      - "docker-compose.test.yml"
+      - "docker-compose.ollama.yml"
+      - "scripts/setup/**"
+      - "scripts/install/**"
+      - "global.json"
+      - "Directory.Build.props"
+      - "Directory.Packages.props"
+
+concurrency:
+  group: setup-smoke-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  devcontainer-smoke:
+    name: Dev container — post-create + CLI
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Post-create + CLI build inside dev image
+        shell: bash
+        run: bash scripts/ci/devcontainer-smoke.sh "${GITHUB_WORKSPACE}"
+
+  compose-config-smoke:
+    name: Compose — config (deploy + test stacks)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate compose files
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p "${RUNNER_TEMP}/compose-smoke"
+          validate() {
+            local f="$1"
+            shift
+            echo "=== ${f} $@ ==="
+            docker compose -f "$f" "$@" config >"${RUNNER_TEMP}/compose-smoke/$(basename "$f" .yml).rendered.yaml"
+          }
+          validate docker-compose.portal.yml
+          validate docker-compose.agent-server.yml
+          validate docker-compose.ephemeral.yml
+          validate docker-compose.ephemeral.yml --profile db
+          validate docker-compose.test.yml
+          validate docker-compose.ollama.yml
+          echo "setup-smoke-suite compose-config: ok"
+
+      - name: Upload rendered compose (debug)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: setup-smoke-compose-rendered
+          path: ${{ runner.temp }}/compose-smoke/
+          retention-days: 7
+
+  native-setup-ubuntu:
+    name: Native Ubuntu — setup.sh + CLI build
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            9.0.x
+            8.0.x
+
+      - name: Setup gate check + restore + CLI build
+        shell: bash
+        run: |
+          set -euo pipefail
+          bash scripts/setup/setup.sh check
+          bash scripts/setup/setup.sh restore
+          dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
+          dotnet run --project src/Nexo.CLI -- --help >/dev/null
+          echo "setup-smoke-suite native-ubuntu: ok"

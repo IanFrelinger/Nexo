@@ -2,37 +2,50 @@
 
 This guide covers initial setup, trust configuration, and first pipeline validation. Nexo operates on local infrastructure with no external service dependencies. Trust controls are available but disabled by default — enable with `NEXO_TRUST_ENABLED=1`.
 
-## Quickest path (one command)
+The **default** path is **containers + CLI**: develop inside the **Dev Container** (or run published **GHCR** images / **compose** stacks). Use **native** installers and `scripts/setup/*` only when Docker is not an option. See `README.md` for the full map.
+
+## Quickest path (recommended)
+
+**Cursor / VS Code:** install [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers), open the repo, **Dev Containers: Reopen in Container**. The first open restores the setup-gate NuGet graph via `.devcontainer/post-create.sh`.
+
+**Portal in Docker only** (no IDE):
 
 ```bash
-bash scripts/install/quickstart.sh
-# Opens http://localhost:8080 with mock provider — no API keys needed.
+git clone https://github.com/IanFrelinger/Nexo.git && cd Nexo
+docker build -f .docker/Dockerfile.quickstart -t nexo:quickstart .
+docker run --rm -p 8080:8080 nexo:quickstart
+# Open http://localhost:8080 — mock provider; no API keys needed.
 ```
 
-This handles Docker detection, .NET SDK installation, building, and starting the portal. See `scripts/install/quickstart.sh` for details.
+**One-command script** (uses Docker when present, otherwise tries a local SDK): `bash scripts/install/quickstart.sh` — see `scripts/install/quickstart.sh`.
 
 ## What you will do (manual path)
 
 In ~10-15 minutes, you will:
 
-1. Pick one startup lane (container-first or native).
+1. Pick one startup lane (**Dev Container**, **GHCR CLI**, **quickstart image**, or **native** escape hatch).
 2. Verify CLI is working.
 3. Validate and run a minimal pipeline.
 4. Move to deeper validation/testing only after first success.
 
 ## Prerequisites
 
-- .NET SDK **9.x** (repo is pinned in `global.json`).
-- Git.
-- Optional:
-  - Docker (multi-environment testing workflows)
-  - Ollama/OpenAI/Azure credentials (model-backed commands)
+- **Default:** Docker (Desktop or Engine) and Git. You do **not** need a host .NET SDK for Dev Container, quickstart image, or `docker run … ghcr.io/ianfrelinger/nexo-cli`.
+- **Native lane:** .NET SDK **9.x** (repo is pinned in `global.json`).
+- Optional: Ollama/OpenAI/Azure credentials (model-backed commands).
 
 ## 1) Choose your startup lane
 
-### Lane A (fastest): container-first
+### Lane A (fastest): container-first — Dev Container + `dotnet` CLI
 
-Use this when local SDK/workload setup is causing friction.
+Use **Dev Containers: Reopen in Container** (see `README.md`). Then:
+
+```bash
+dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore
+dotnet run --project src/Nexo.CLI -- --help
+```
+
+### Lane B: published CLI image (minimal host)
 
 ```bash
 docker pull ghcr.io/ianfrelinger/nexo-cli:latest
@@ -45,7 +58,7 @@ With workspace mount:
 docker run --rm -v "$PWD:/work" -w /work ghcr.io/ianfrelinger/nexo-cli:latest --help
 ```
 
-### Lane B (full local dev): native setup scripts + CLI build
+### Lane C (escape hatch): native setup scripts + CLI build
 
 After **`scripts/setup/setup.sh`** / **`setup-linux.sh`** / **`setup-macos.sh`** **`all`**, or Windows **`powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode all`**, Nexo runs a **bounded** Runtime Studio **`workflow optimize`** and writes the winning **Ollama `ModelName` values** into `apps/runtime-studio/config/agent_set.local.json`. Skip with **`NEXO_SKIP_RUNTIME_STUDIO_TUNE=1`** (Unix), **`-SkipRuntimeStudioTune`** (Windows `setup.ps1`), or rely on automatic skip in **CI** (`CI` / `GITHUB_ACTIONS`).
 
