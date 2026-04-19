@@ -1,4 +1,4 @@
-.PHONY: build test test-cross-platform test-portable test-multi-env test-all-platforms test-all-platforms-ephemeral ci-verify validate-safe review-summary package-cli clean-test-artifacts test-readiness-gate
+.PHONY: build test test-cross-platform test-portable test-multi-env test-all-platforms test-all-platforms-ephemeral ci-verify validate-safe review-summary clean-test-artifacts test-readiness-gate
 
 # Build the solution
 build:
@@ -189,19 +189,6 @@ clean-test-artifacts:
 	@find src -type d -name "TestResults" -exec rm -rf {} + 2>/dev/null; true
 	@rm -rf test-results
 	@echo "Done."
-
-# Package CLI as native installer bundles (linux/macos/windows)
-package-cli:
-	mkdir -p dist/native-installer
-	bash scripts/install/package-native-bundle.sh --rid linux-x64 --platform linux --version dev --output-dir dist/native-installer
-	bash scripts/install/package-native-bundle.sh --rid osx-x64 --platform macos --version dev --output-dir dist/native-installer
-	@if command -v pwsh >/dev/null 2>&1; then \
-		pwsh -NoProfile -ExecutionPolicy Bypass -File ./scripts/install/package-native-bundle.ps1 -Rid win-x64 -Version dev -OutputDir dist/native-installer; \
-	elif command -v powershell >/dev/null 2>&1; then \
-		powershell -NoProfile -ExecutionPolicy Bypass -File ./scripts/install/package-native-bundle.ps1 -Rid win-x64 -Version dev -OutputDir dist/native-installer; \
-	else \
-		echo "Skipping windows native installer bundle (PowerShell not found in PATH)."; \
-	fi
 
 # Pack NuGet library packages (Nexo.Hosting, Nexo.CLI tool)
 pack:

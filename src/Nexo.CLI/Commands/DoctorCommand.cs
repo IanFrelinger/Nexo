@@ -132,7 +132,7 @@ public sealed class DoctorCommand : Command
                 },
                 nextSteps = new
                 {
-                    nativeInstall = "bash scripts/install/install.sh --yes",
+                    devContainer = "Open repo in Cursor/VS Code → Dev Containers: Reopen in Container",
                     containerRun = "docker run --rm ghcr.io/ianfrelinger/nexo-cli:latest --help",
                     doctorFix = "dotnet run --project src/Nexo.CLI -- doctor --fix --yes"
                 }
@@ -184,7 +184,7 @@ public sealed class DoctorCommand : Command
 
             Console.WriteLine($"overall: {(overallOk ? "PASS" : "FAIL")}");
             Console.WriteLine("recommended next steps:");
-            Console.WriteLine("  - native lane: bash scripts/install/install.sh --yes");
+            Console.WriteLine("  - dev container: Reopen in Container (.devcontainer/)");
             Console.WriteLine("  - container lane: docker run --rm ghcr.io/ianfrelinger/nexo-cli:latest --help");
             Console.WriteLine("  - remediation lane: dotnet run --project src/Nexo.CLI -- doctor --fix --yes");
         }

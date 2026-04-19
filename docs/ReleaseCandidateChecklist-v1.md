@@ -9,7 +9,6 @@ Use this checklist to move from "locally passing" to "release-ready with evidenc
 - [ ] Trigger `runtime-release-gate` in GitHub Actions (core + visual required, chaos non-gating).
 - [ ] Trigger `runtime-release-promotion` in GitHub Actions (strict thresholds).
 - [ ] Trigger `installer-bruteforce-gate` in GitHub Actions.
-- [ ] Trigger `native-installer-packages` in GitHub Actions.
 - [ ] Trigger `container-image-gate` in GitHub Actions.
 - [ ] Trigger `container-image-publish` in GitHub Actions (or verify latest successful publish on `master`).
 - [ ] Trigger `onboarding-docs-guard` in GitHub Actions.

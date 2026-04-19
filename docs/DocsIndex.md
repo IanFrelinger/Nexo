@@ -8,12 +8,11 @@ Documentation index for the Nexo platform. Start here to find what you need.
 2. `.devcontainer/devcontainer.json` — default development environment (Cursor / VS Code).
 3. `docs/GettingStarted.md` — first commands, first pipeline, and first trust checks (aligned with container + CLI).
 4. `CONTRIBUTING.md` — recommended **Dev Container** workflow and PR checks.
-5. `docs/OneClickInstall.md` — optional one-shot **native** installer wrappers when Docker is unavailable.
-6. `scripts/install/container-bootstrap.sh` and `scripts/install/container-bootstrap.ps1` — one-shot container bootstrap (Docker + image pull + smoke run).
-7. `scripts/setup/setup.sh` (forwards to `setup-unix.sh` on macOS/Linux), `scripts/setup/setup-unix.sh`, and `scripts/setup/setup.ps1` — cross-platform **native** dependency bootstrap + restore helpers (CI and escape hatch).
-8. `docs/SetupMatrixVerification.md` + `scripts/setup/verify-setup-matrix.ps1` / `verify-setup-matrix.sh` — brute-force style setup combination checks (local + CI).
-9. `scripts/start-nexo-api-dev.ps1` / `scripts/start-nexo-api-dev.sh` — Docker Ollama + host `Nexo.API` dev stack (see `docs/Configuration.md` → Ollama).
-10. `docs/Architecture.md` — layered architecture and component boundaries.
+5. `scripts/install/container-bootstrap.sh` and `scripts/install/container-bootstrap.ps1` — one-shot container bootstrap (Docker + image pull + smoke run).
+6. `scripts/setup/setup.sh` (forwards to `setup-unix.sh` on macOS/Linux), `scripts/setup/setup-unix.sh`, and `scripts/setup/setup.ps1` — cross-platform **native** dependency bootstrap + restore helpers (CI and escape hatch).
+7. `docs/SetupMatrixVerification.md` + `scripts/setup/verify-setup-matrix.ps1` / `verify-setup-matrix.sh` — brute-force style setup combination checks (local + CI).
+8. `scripts/start-nexo-api-dev.ps1` / `scripts/start-nexo-api-dev.sh` — Docker Ollama + host `Nexo.API` dev stack (see `docs/Configuration.md` → Ollama).
+9. `docs/Architecture.md` — layered architecture and component boundaries.
 
 ## Operator / Production Readiness
 
@@ -31,7 +30,6 @@ Documentation index for the Nexo platform. Start here to find what you need.
 - `.github/workflows/cross-platform-tests.yml` — cross-platform tests on Ubuntu, macOS, and Windows.
 - `.github/workflows/runtime-release-gate.yml` — runtime release quality gate.
 - `.github/workflows/runtime-release-promotion.yml` — runtime release promotion workflow.
-- `.github/workflows/native-installer-packages.yml` — build native installer bundles per OS.
 - `.github/workflows/installer-bruteforce-gate.yml` — installer robustness gate.
 - `.github/workflows/perf-certification.yml` — performance certification workflow.
 - `.github/workflows/workflow-regression-gate.yml` — workflow regression gate.

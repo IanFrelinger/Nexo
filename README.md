@@ -123,7 +123,7 @@ For multi-service deployment on a host you control, start from the files in the 
 Use these only when containers are not an option:
 
 - **One command portal (script):** `bash scripts/install/quickstart.sh` — detects Docker or a local SDK, builds, starts the portal.
-- **Native SDK + setup scripts:** `bash scripts/install/install.sh --yes` then `NEXO_ALLOW_MOCK=1 dotnet run --project src/Nexo.API` — see `docs/OneClickInstall.md`.
+- **Native SDK + setup (no repo clone installer):** `bash scripts/setup/setup.sh all` then `dotnet build` / `dotnet run` — or use **`scripts/docker-restore.ps1`** on Windows without a local SDK.
 - **Cross-platform setup / restore helpers:** on Linux/macOS use **`scripts/setup/setup-unix.sh`** (POSIX args or PowerShell-style flags such as `-Mode check`); **`scripts/setup/setup.sh`** forwards there. On Windows use **`scripts/setup/setup.ps1`**. Same graph CI validates in `mcr.microsoft.com/dotnet/sdk:9.0`.
 - **Windows + Docker without host SDK:** `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\docker-restore.ps1` (optional `-Build`).
 
@@ -412,7 +412,6 @@ Core references:
 - `docs/Configuration.md` – environment/config options
 - `docs/Architecture.md` – architecture and subsystem overview
 - `docs/Testing.md` – test strategy, guard rails, and commands
-- `docs/OneClickInstall.md` – one-shot install wrappers for Linux/macOS/Windows
 - `docs/OnboardingAutomation.md` – what setup is automated vs. still manual
 - `docs/TrustAndInformationArchitecture.md` – trust model, barriers, audit
 - `docs/ProductionReadinessGate-v1.md` – production gate procedure

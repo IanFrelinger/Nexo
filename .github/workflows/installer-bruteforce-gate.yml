@@ -10,14 +10,12 @@ on:
       - ".github/workflows/installer-bruteforce-gate.yml"
       - "scripts/install/**"
       - "scripts/setup/**"
-      - "docs/OneClickInstall.md"
       - "docs/OnboardingAutomation.md"
   pull_request:
     paths:
       - ".github/workflows/installer-bruteforce-gate.yml"
       - "scripts/install/**"
       - "scripts/setup/**"
-      - "docs/OneClickInstall.md"
       - "docs/OnboardingAutomation.md"
   workflow_dispatch:
 

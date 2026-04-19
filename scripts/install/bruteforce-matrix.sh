@@ -57,13 +57,9 @@ run_case() {
   return 1
 }
 
-run_case "bash syntax all setup/install scripts" "pass" \
+run_case "bash syntax setup + container bootstrap scripts" "pass" \
   "bash -n ${REPO_ROOT}/scripts/setup/setup-linux.sh && \
    bash -n ${REPO_ROOT}/scripts/setup/setup-macos.sh && \
-   bash -n ${REPO_ROOT}/scripts/install/install.sh && \
-   bash -n ${REPO_ROOT}/scripts/install/install_common.sh && \
-   bash -n ${REPO_ROOT}/scripts/install/install-linux.sh && \
-   bash -n ${REPO_ROOT}/scripts/install/install-macos.sh && \
    bash -n ${REPO_ROOT}/scripts/install/container-bootstrap-linux.sh && \
    bash -n ${REPO_ROOT}/scripts/install/container-bootstrap-macos.sh"
 
@@ -81,15 +77,6 @@ run_case "setup-linux noninteractive no-yes missing deps path" "fail" \
 run_case "setup-linux guided apply with yes" "pass" \
   "bash ${REPO_ROOT}/scripts/setup/setup-linux.sh apply --yes --guided"
 
-run_case "install-linux dry-run standard" "pass" \
-  "bash ${REPO_ROOT}/scripts/install/install-linux.sh --dry-run --yes"
-
-run_case "install-linux dry-run hero and daemon" "pass" \
-  "bash ${REPO_ROOT}/scripts/install/install-linux.sh --dry-run --yes --hero --start-daemon --daemon-duration 30s"
-
-run_case "install.sh dry-run minimal (unix dispatcher)" "pass" \
-  "bash ${REPO_ROOT}/scripts/install/install.sh --dry-run --yes"
-
 run_case "container-bootstrap-linux dry-run" "pass" \
   "bash ${REPO_ROOT}/scripts/install/container-bootstrap-linux.sh --dry-run --yes"
 
@@ -98,9 +85,6 @@ run_case "container-bootstrap-linux guided dry-run workspace" "pass" \
 
 run_case "container-bootstrap-linux start-daemon dry-run" "pass" \
   "bash ${REPO_ROOT}/scripts/install/container-bootstrap-linux.sh --dry-run --yes --workspace ${REPO_ROOT} --start-daemon 20s | grep -q 'background-agent daemon --duration'"
-
-run_case "install dispatcher unsupported os via uname override" "fail" \
-  "uname(){ echo FreeBSD; }; export -f uname; ${REPO_ROOT}/scripts/install/install.sh --dry-run"
 
 run_case "container dispatcher unsupported os via uname override" "fail" \
   "uname(){ echo FreeBSD; }; export -f uname; ${REPO_ROOT}/scripts/install/container-bootstrap.sh --dry-run"

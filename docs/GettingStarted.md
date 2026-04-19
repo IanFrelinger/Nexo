@@ -2,7 +2,7 @@
 
 This guide covers initial setup, trust configuration, and first pipeline validation. Nexo operates on local infrastructure with no external service dependencies. Trust controls are available but disabled by default — enable with `NEXO_TRUST_ENABLED=1`.
 
-The **default** path is **containers + CLI**: develop inside the **Dev Container** (or run published **GHCR** images / **compose** stacks). Use **native** installers and `scripts/setup/*` only when Docker is not an option. See `README.md` for the full map.
+The **default** path is **containers + CLI**: develop inside the **Dev Container** (or run published **GHCR** images / **compose** stacks). If you cannot use Docker at all, use **`scripts/setup/*`** on a machine with **.NET SDK 9** (no separate repo “installer” scripts). See `README.md` for the full map.
 
 ## Quickest path (recommended)
 
@@ -62,35 +62,31 @@ docker run --rm -v "$PWD:/work" -w /work ghcr.io/ianfrelinger/nexo-cli:latest --
 
 After **`bash scripts/setup/setup.sh all`** (same as **`bash scripts/setup/setup-unix.sh all`** on macOS/Linux; those dispatch to `setup-linux.sh` / `setup-macos.sh`), or Windows **`powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode all`**, Nexo runs a **bounded** Runtime Studio **`workflow optimize`** and writes the winning **Ollama `ModelName` values** into `apps/runtime-studio/config/agent_set.local.json`. Skip with **`NEXO_SKIP_RUNTIME_STUDIO_TUNE=1`** (Unix), **`-SkipRuntimeStudioTune`** (Windows `setup.ps1`), or rely on automatic skip in **CI** (`CI` / `GITHUB_ACTIONS`).
 
-These scripts validate prerequisites and restore the setup-gate baseline NuGet graph for this repository:
+Clone the repo, then run setup and build (same graph CI uses):
 
 ```bash
 git clone https://github.com/IanFrelinger/Nexo.git
 cd Nexo
-bash scripts/install/install.sh --yes
+bash scripts/setup/setup.sh all
+dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore
 ```
 
 ```powershell
 git clone https://github.com/IanFrelinger/Nexo.git
 Set-Location Nexo
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install\install.ps1 -Yes
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode all
+dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore
 ```
 
-Native **hero** flow (install + doctor + first pipeline) in one command:
+After the CLI builds, optional **hero** checks (doctor + quickstart pipeline):
 
 ```bash
-bash scripts/install/install.sh --yes --hero
+dotnet run --project src/Nexo.CLI -- doctor --json
+# then run pipeline validate/run/diagnostics per README “First Successful Pipeline Run”
 ```
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install\install.ps1 -Yes -Hero
-```
-
-If you prefer the lower-level setup script flow instead of one-shot installer wrappers:
-
-```bash
-bash scripts/setup/setup.sh all
-dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore
+dotnet run --project src/Nexo.CLI -- doctor --json
 ```
 
 ## 2) Verify CLI is available
