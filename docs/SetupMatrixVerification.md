@@ -46,6 +46,8 @@ chmod +x scripts/setup/verify-setup-matrix.sh   # once
 SKIP_DOCKER_BUILD=1 bash scripts/setup/verify-setup-matrix.sh
 ```
 
+The matrix exercises `scripts/setup/setup-unix.sh` (bash entry for macOS/Linux, flag-compatible with `setup.ps1` on Windows). `scripts/setup/setup.sh` forwards to the same implementation.
+
 Environment:
 
 - `SKIP_DOCKER=1` — Tier B/C off.

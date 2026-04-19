@@ -9,6 +9,14 @@ SKIP_DOCKER="${SKIP_DOCKER:-0}"
 SKIP_DOCKER_BUILD="${SKIP_DOCKER_BUILD:-0}"
 FAIL_A=0
 
+# grpc.tools bundled protoc can segfault on linux_arm64 inside some Debian slim SDK
+# images (exit 139). GitHub-hosted runners are amd64; on Apple Silicon, match that so
+# Tier C container builds stay reliable.
+MATRIX_CONTAINER_PLATFORM=()
+case "$(uname -m 2>/dev/null || true)" in
+  arm64 | aarch64) MATRIX_CONTAINER_PLATFORM=(--platform linux/amd64) ;;
+esac
+
 log() { echo ""; echo "=== $1 ==="; echo "$2"; }
 
 run_a() {
@@ -25,14 +33,15 @@ run_b() {
   if (cd "${REPO_ROOT}" && "$@"); then echo "OK  ${name}"; else echo "FAIL ${name} (non-fatal tier B)"; fi
 }
 
-run_a "setup.sh check" bash scripts/setup/setup.sh check
-run_a "setup.sh restore" bash scripts/setup/setup.sh restore
-run_a "setup.sh restore (repeat)" bash scripts/setup/setup.sh restore
+run_a "setup-unix.sh check" bash scripts/setup/setup-unix.sh check
+run_a "setup-unix.sh -Mode check (pwsh-style)" bash scripts/setup/setup-unix.sh -Mode check
+run_a "setup-unix.sh restore" bash scripts/setup/setup-unix.sh restore
+run_a "setup-unix.sh restore (repeat)" bash scripts/setup/setup-unix.sh restore
 run_a "dotnet build Nexo.CLI --no-restore" dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
 
 ISO_NUGET="$(mktemp -d 2>/dev/null || mktemp -d -t nexo-nuget)"
 export NUGET_PACKAGES="${ISO_NUGET}"
-run_a "setup.sh restore (isolated NUGET_PACKAGES)" bash scripts/setup/setup.sh restore
+run_a "setup-unix.sh restore (isolated NUGET_PACKAGES)" bash scripts/setup/setup-unix.sh restore
 run_a "dotnet build (isolated NUGET_PACKAGES)" dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
 unset NUGET_PACKAGES
 
@@ -60,7 +69,7 @@ else
   for tag in mcr.microsoft.com/dotnet/sdk:9.0 mcr.microsoft.com/dotnet/sdk:9.0-bookworm-slim; do
     log "C :: container ${tag}" "docker pull + setup-linux + build"
     docker pull "${tag}" >/dev/null
-    if docker run --rm -v "${REPO_ROOT}:/repo" -w /repo "${tag}" bash -lc '
+    if docker run --rm "${MATRIX_CONTAINER_PLATFORM[@]}" -v "${REPO_ROOT}:/repo" -w /repo "${tag}" bash -lc '
       set -euo pipefail
       export DEBIAN_FRONTEND=noninteractive
       if command -v apt-get >/dev/null 2>&1; then

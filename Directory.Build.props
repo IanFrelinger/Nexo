@@ -27,4 +27,9 @@
   <PropertyGroup Condition="'$(IsTestProject)' == 'true'">
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
   </PropertyGroup>
+
+  <!-- Override transitive System.Text.Encodings.Web 4.5.x (NU1904 / GHSA-ghhp-997w-qr28). -->
+  <ItemGroup>
+    <PackageReference Include="System.Text.Encodings.Web" />
+  </ItemGroup>
 </Project>

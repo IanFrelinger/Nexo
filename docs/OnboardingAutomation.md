@@ -13,7 +13,7 @@ Make first-run setup predictable with minimal decisions:
 
 ### Native lane (`scripts/setup/*`)
 
-These are automated by `scripts/setup/setup.sh` (Linux/macOS) and `scripts/setup/setup.ps1` (Windows):
+These are automated by `scripts/setup/setup-unix.sh` (Linux/macOS; `setup.sh` forwards to it) and `scripts/setup/setup.ps1` (Windows):
 
 1. Dependency checks (`check` mode): verifies required tools and SDK version.
 2. Optional dependency checks (Docker/Ollama/zstd where applicable).

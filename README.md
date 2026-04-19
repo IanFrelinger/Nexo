@@ -85,15 +85,21 @@ bash scripts/install/install.sh --yes
 Use the setup scripts to validate required tooling and restore baseline NuGet packages used by the core CI gates.
 The CI setup gate also validates these scripts in an ephemeral Linux container (`mcr.microsoft.com/dotnet/sdk:9.0`) on every run:
 
+**Linux/macOS (bash, same behavior as `setup.ps1` on Windows):** use `scripts/setup/setup-unix.sh`. It accepts either POSIX-style arguments or PowerShell-style flags (for example `-Mode check`, `-Yes`, `-SkipRuntimeStudioTune`). `scripts/setup/setup.sh` is a thin wrapper that forwards to `setup-unix.sh`.
+
 ```bash
 # Linux/macOS: check required dependencies
-bash scripts/setup/setup.sh check
+bash scripts/setup/setup-unix.sh check
+# equivalent: bash scripts/setup/setup.sh check
+# PowerShell-style flags also work:
+bash scripts/setup/setup-unix.sh -Mode check
 
 # Linux/macOS: restore NuGet packages/solutions
-bash scripts/setup/setup.sh restore
+bash scripts/setup/setup-unix.sh restore
 
-# Linux/macOS: run check + restore
-bash scripts/setup/setup.sh all
+# Linux/macOS: run apply + restore (+ optional Runtime Studio tune unless skipped)
+bash scripts/setup/setup-unix.sh all --yes
+bash scripts/setup/setup-unix.sh -Mode all -Yes -SkipRuntimeStudioTune
 ```
 
 ```powershell
