@@ -3,6 +3,7 @@ param(
     [string]$Image = "ghcr.io/ianfrelinger/nexo-cli:latest",
     [string]$SdkImage = "mcr.microsoft.com/dotnet/sdk:9.0",
     [string]$Workspace,
+    [string]$StartDaemonDuration,
     [switch]$Guided,
     [switch]$WithSdk,
     [switch]$Yes,
@@ -84,6 +85,25 @@ function Ensure-DockerDaemon {
     }
 }
 
+function Run-OptionalDaemonSmoke {
+    if ([string]::IsNullOrWhiteSpace($StartDaemonDuration)) {
+        return
+    }
+
+    $resolvedWorkspace = $Workspace
+    if ([string]::IsNullOrWhiteSpace($resolvedWorkspace)) {
+        $resolvedWorkspace = "."
+    }
+
+    if ($DryRun.IsPresent) {
+        Write-Host "[dry-run] docker run --rm -v `"$resolvedWorkspace:/work`" -w /work $Image background-agent daemon --duration $StartDaemonDuration"
+        return
+    }
+
+    $abs = (Resolve-Path $resolvedWorkspace).Path
+    Invoke-Step "docker run --rm -v `"$abs:/work`" -w /work $Image background-agent daemon --duration $StartDaemonDuration"
+}
+
 function Run-ContainerSmoke {
     Invoke-Step "docker pull $Image"
     Invoke-Step "docker run --rm $Image --help"
@@ -131,6 +151,7 @@ if ($Guided.IsPresent) {
 Ensure-Docker
 Ensure-DockerDaemon
 Run-ContainerSmoke
+Run-OptionalDaemonSmoke
 
 Write-Host ""
 Write-Host "Container bootstrap complete."

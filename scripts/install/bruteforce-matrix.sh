@@ -64,8 +64,7 @@ run_case "bash syntax all setup/install scripts" "pass" \
    bash -n ${REPO_ROOT}/scripts/install/install-macos.sh && \
    bash -n ${REPO_ROOT}/scripts/install/one-click.sh && \
    bash -n ${REPO_ROOT}/scripts/install/container-bootstrap-linux.sh && \
-   bash -n ${REPO_ROOT}/scripts/install/container-bootstrap-macos.sh && \
-   bash -n ${REPO_ROOT}/scripts/install/container-one-click.sh"
+   bash -n ${REPO_ROOT}/scripts/install/container-bootstrap-macos.sh"
 
 run_case "setup-linux help" "pass" \
   "bash ${REPO_ROOT}/scripts/setup/setup-linux.sh --help"
@@ -96,11 +95,8 @@ run_case "container-bootstrap-linux dry-run" "pass" \
 run_case "container-bootstrap-linux guided dry-run workspace" "pass" \
   "bash ${REPO_ROOT}/scripts/install/container-bootstrap-linux.sh --dry-run --yes --guided --workspace ${REPO_ROOT}"
 
-run_case "container-one-click dry-run default" "pass" \
-  "bash ${REPO_ROOT}/scripts/install/container-one-click.sh --dry-run --yes --workspace ${REPO_ROOT}"
-
-run_case "container-one-click start-daemon emits command" "pass" \
-  "bash ${REPO_ROOT}/scripts/install/container-one-click.sh --dry-run --yes --workspace ${REPO_ROOT} --start-daemon 20s | grep -q 'background-agent daemon --duration'"
+run_case "container-bootstrap-linux start-daemon dry-run" "pass" \
+  "bash ${REPO_ROOT}/scripts/install/container-bootstrap-linux.sh --dry-run --yes --workspace ${REPO_ROOT} --start-daemon 20s | grep -q 'background-agent daemon --duration'"
 
 run_case "install dispatcher unsupported os via uname override" "fail" \
   "uname(){ echo FreeBSD; }; export -f uname; ${REPO_ROOT}/scripts/install/install.sh --dry-run"

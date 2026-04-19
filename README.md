@@ -6,9 +6,17 @@ Nexo is a .NET platform for composable AI workflows with structural trust enforc
 
 Nexo operates entirely on infrastructure you control. Cloud providers are opt-in execution targets, not dependencies. No data leaves the host unless explicitly routed to a trusted peer. Air-gapped deployment is supported without modification.
 
-**Development and deployment** default to **containers** (published images on GHCR, `Dockerfile.*` in `.docker/`, and `docker-compose*.y` stacks) plus the **Nexo CLI** (`dotnet run --project src/Nexo.CLI`). Shell installers under `scripts/install/` remain optional escape hatches for hosts where Docker is not available.
+**Primary development** uses the **Dev Container** (`.devcontainer/`): open the repo in Cursor or VS Code, **Reopen in Container**, then use **`dotnet`** in the integrated terminal—no host-installed .NET SDK.
+
+**Deployment** defaults to **containers** only: published images on **GHCR**, `Dockerfile.*` under `.docker/`, and **`docker-compose*.yml`** stacks, plus the **Nexo CLI** inside those environments. Shell installers under `scripts/install/` and `scripts/setup/` are **escape hatches** when Docker is impossible.
 
 Repository: <https://github.com/IanFrelinger/Nexo>
+
+## Default workflow
+
+1. **Develop** — [Quick Start (5 minutes)](#quick-start-5-minutes) → **Lane A** → **Dev Container** (first subsection).
+2. **Deploy / operate** — [Deploy (operators)](#deploy-operators) (GHCR + compose).
+3. **No Docker** — **Lane B** (native SDK + `scripts/setup/*` / `scripts/install/*`).
 
 ## Why Nexo
 
@@ -31,9 +39,9 @@ Repository: <https://github.com/IanFrelinger/Nexo>
 
 Choose your lane (recommended):
 
-### Lane A: fastest path (container runtime)
+### Lane A: dev container + container deployment (recommended)
 
-Standard flow: **run Nexo inside a container** (dev container or compose), and use the **CLI** for builds, validation, and operators. Prefer published **GHCR** images for production-like runs; build from `Dockerfile.*` when you need a local image.
+**Local development** should be the **Dev Container** below. **Running Nexo as a service** (portal, agent server, CI) uses the same container discipline: **compose** and/or **GHCR** images—see [Deploy (operators)](#deploy-operators). Use the **CLI** (`dotnet run --project src/Nexo.CLI`) for builds, validation, and operators inside the dev container or a mounted workspace in `docker run`.
 
 #### 1) Prerequisites (container-first path)
 

@@ -9,6 +9,7 @@ WORKSPACE_DIR=""
 YES=false
 DRY_RUN=false
 GUIDED=false
+DAEMON_DURATION=""
 
 usage() {
   echo "Usage: scripts/install/container-bootstrap-macos.sh [options]"
@@ -17,6 +18,7 @@ usage() {
   echo "  --image <ref>            Container image to pull/run (default: ${DEFAULT_IMAGE})"
   echo "  --workspace <path>       Optional host workspace to mount at /work"
   echo "  --sdk-image <ref>        SDK container image for build/restore tasks (default: ${DEFAULT_SDK_IMAGE})"
+  echo "  --start-daemon <dur>     After smoke checks, run background-agent daemon in container (requires --workspace or cwd as repo root)"
   echo "  --yes                    Auto-confirm install prompts"
   echo "  --guided                 Explain each step in plain language for non-technical users"
   echo "  --dry-run                Print actions without executing"
@@ -51,6 +53,11 @@ while [[ $# -gt 0 ]]; do
     --sdk-image)
       require_value "$1" "${2:-}"
       SDK_IMAGE="$2"
+      shift
+      ;;
+    --start-daemon)
+      require_value "$1" "${2:-}"
+      DAEMON_DURATION="$2"
       shift
       ;;
     --yes)
@@ -166,6 +173,37 @@ TXT
   exit 1
 }
 
+run_optional_daemon_smoke() {
+  if [[ -z "${DAEMON_DURATION}" ]]; then
+    return
+  fi
+
+  local ws="${WORKSPACE_DIR}"
+  if [[ -z "${ws}" ]]; then
+    ws="${PWD}"
+  fi
+
+  local abs_workspace="$ws"
+  if [[ "${abs_workspace}" == "~" ]]; then
+    abs_workspace="$HOME"
+  elif [[ "${abs_workspace}" == ~/* ]]; then
+    abs_workspace="$HOME/${abs_workspace#~/}"
+  fi
+
+  if [[ "$DRY_RUN" == "true" ]]; then
+    echo "[dry-run] docker run --rm -v \"${abs_workspace}:/work\" -w /work \"${IMAGE}\" background-agent daemon --duration \"${DAEMON_DURATION}\""
+    return
+  fi
+
+  if [[ ! -d "${abs_workspace}" ]]; then
+    die "Workspace path does not exist for daemon smoke: ${abs_workspace}"
+  fi
+
+  echo "Running container background-agent daemon smoke (${DAEMON_DURATION})..."
+  run_cmd docker run --rm -v "${abs_workspace}:/work" -w /work "${IMAGE}" background-agent daemon --duration "${DAEMON_DURATION}"
+  echo ""
+}
+
 run_container_smoke() {
   run_cmd docker pull "$IMAGE"
   run_cmd docker pull "$SDK_IMAGE"
@@ -195,6 +233,7 @@ main() {
   install_docker_if_missing
   ensure_docker_daemon
   run_container_smoke
+  run_optional_daemon_smoke
 
   echo ""
   echo "Container bootstrap complete."

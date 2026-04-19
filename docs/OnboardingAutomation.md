@@ -24,7 +24,7 @@ These are automated by `scripts/setup/setup-unix.sh` (Linux/macOS; `setup.sh` fo
 
 ### Container lane (Docker commands)
 
-These are automated by running container commands directly (or via guided wrappers under `scripts/install/container-one-click.*`):
+These are automated by running **`scripts/install/container-bootstrap.*`** (or equivalent `docker` / `docker compose` commands from `README.md`):
 
 1. Ensure Docker is installed where possible (Linux package manager / Homebrew / winget).
 2. Validate Docker daemon reachability.

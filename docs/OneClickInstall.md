@@ -7,7 +7,7 @@ Repository default onboarding is **container-first** (Dev Container, `Dockerfile
 **Fewer entry points (same behavior):**
 
 - **Native install:** prefer **`scripts/install/install.sh`** (dispatches to Linux/macOS). Platform-specific **`install-linux.sh`** / **`install-macos.sh`** remain for direct use and CI.
-- **Container bootstrap:** prefer **`scripts/install/container-bootstrap.sh`**. **`container-one-click.sh`** is a thin wrapper (banner + optional daemon smoke) over the same bootstrap scripts.
+- **Container bootstrap (host Docker, no dev container):** **`scripts/install/container-bootstrap.sh`** only. Optional bounded daemon smoke: **`--start-daemon 30s`** (Linux/macOS scripts) or **`-StartDaemonDuration 30s`** on Windows **`container-bootstrap.ps1`** (requires a workspace mount / repo path).
 - **Guided native “hero” flow:** **`scripts/install/one-click.sh`** runs install with `--yes --hero`. **`nexo-zero-to-hero-*`** launchers call **`install.sh`** the same way.
 
 ## Quickstart (recommended)
@@ -47,14 +47,20 @@ For Linux, macOS, and Windows installers:
 
 If you want to run Nexo purely via container, use container bootstrap wrappers under `scripts/install/`.
 
-For the most beginner-friendly container onboarding:
+For beginner-friendly container onboarding on the host (installs Docker where supported, pulls images, smoke-checks):
 
 ```bash
-bash scripts/install/container-one-click.sh --yes --workspace "$PWD"
+bash scripts/install/container-bootstrap.sh --yes --workspace "$PWD"
 ```
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install\container-one-click.ps1 -Yes -Workspace .
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install\container-bootstrap.ps1 -Yes -Workspace .
+```
+
+Optional daemon smoke after bootstrap (Linux/macOS; requires `--workspace` or run from repo root):
+
+```bash
+bash scripts/install/container-bootstrap.sh --yes --workspace "$PWD" --start-daemon 30s
 ```
 
 ### Linux / macOS
