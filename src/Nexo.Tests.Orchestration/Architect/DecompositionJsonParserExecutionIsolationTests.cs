@@ -17,6 +17,8 @@ public sealed class DecompositionJsonParserExecutionIsolationTests
     }
 
     [Theory]
+    [InlineData("InProcess", AgentExecutionIsolationLevel.InProcess)]
+    [InlineData("inprocess", AgentExecutionIsolationLevel.InProcess)]
     [InlineData("ContainerPerAgent", AgentExecutionIsolationLevel.ContainerPerAgent)]
     [InlineData("container_per_agent", AgentExecutionIsolationLevel.InProcess)] // invalid token -> default
     [InlineData("OutOfProcess", AgentExecutionIsolationLevel.OutOfProcess)]
