@@ -6,9 +6,8 @@ Repository default onboarding is **container-first** (Dev Container, `Dockerfile
 
 **Fewer entry points (same behavior):**
 
-- **Native install:** prefer **`scripts/install/install.sh`** (dispatches to Linux/macOS). Platform-specific **`install-linux.sh`** / **`install-macos.sh`** remain for direct use and CI.
+- **Native install:** **`scripts/install/install.sh`** (Linux/macOS) or **`scripts/install/install.ps1`** (Windows). Use **`--yes --hero`** for the full first-run check (doctor + quickstart pipeline). Platform-specific **`install-linux.sh`** / **`install-macos.sh`** remain for CI and advanced flags.
 - **Container bootstrap (host Docker, no dev container):** **`scripts/install/container-bootstrap.sh`** only. Optional bounded daemon smoke: **`--start-daemon 30s`** (Linux/macOS scripts) or **`-StartDaemonDuration 30s`** on Windows **`container-bootstrap.ps1`** (requires a workspace mount / repo path).
-- **Guided native “hero” flow:** **`scripts/install/one-click.sh`** runs install with `--yes --hero`. **`nexo-zero-to-hero-*`** launchers call **`install.sh`** the same way.
 
 ## Quickstart (recommended)
 
@@ -21,16 +20,16 @@ bash scripts/install/quickstart.sh
 
 See `README.md` for details. The quickstart script handles .NET SDK installation if missing.
 
-## Full installer (Anaconda-style guided prompts)
+## Full native installer (guided prompts)
 
-For the most beginner-friendly onboarding (guided prompts + package-manager setup guidance), use:
+For guided prompts + package-manager setup on the host (no Dev Container):
 
 ```bash
-bash scripts/install/one-click.sh --yes
+bash scripts/install/install.sh --yes
 ```
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install\one-click.ps1 -Yes
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install\install.ps1 -Yes
 ```
 
 ## What these installers do
@@ -145,30 +144,16 @@ Unified entrypoint (auto-detects OS):
 bash scripts/install/install.sh --yes
 ```
 
-Guided one-click wrapper (recommended for non-technical users):
+First-run **hero** checks (same as older “zero-to-hero” launchers):
 
 ```bash
-bash scripts/install/one-click.sh --yes
+bash scripts/install/install.sh --yes --hero
 ```
-
-macOS non-CLI one-click launcher (double-click in Finder):
-
-```bash
-scripts/install/nexo-zero-to-hero-macos.command
-```
-
-This launcher opens Terminal, runs install + doctor + quickstart pipeline validation, and leaves a success/failure summary on screen.
 
 Linux-specific entrypoint:
 
 ```bash
 bash scripts/install/install-linux.sh --yes
-```
-
-Linux non-CLI one-click launcher:
-
-```bash
-bash scripts/install/nexo-zero-to-hero-linux.sh
 ```
 
 macOS-specific entrypoint:
@@ -187,22 +172,16 @@ Script path reference: `scripts/install/install.ps1`
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install\install.ps1 -Yes
 ```
 
-Guided one-click wrapper:
+First-run **hero** checks:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install\one-click.ps1 -Yes
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install\install.ps1 -Yes -Hero
 ```
 
-Windows wrapper alias:
+Windows thin wrapper (forwards to `install.ps1`):
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install\install-windows.ps1 -Yes
-```
-
-Windows non-CLI one-click launcher:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install\nexo-zero-to-hero-windows.ps1
 ```
 
 ## Common options
@@ -227,19 +206,15 @@ Install into custom path and run daemon for 30 seconds:
 bash scripts/install/install.sh --install-dir "$HOME/NexoProd" --yes --start-daemon --daemon-duration 30s
 ```
 
-Run complete zero-to-hero macOS flow (install + doctor + pipeline validate/run):
+**Hero** flow (install + doctor + quickstart pipeline) by platform:
 
 ```bash
 bash scripts/install/install-macos.sh --yes --hero
 ```
 
-Run complete zero-to-hero Linux flow:
-
 ```bash
 bash scripts/install/install-linux.sh --yes --hero
 ```
-
-Run complete zero-to-hero Windows flow:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install\install.ps1 -Yes -Hero

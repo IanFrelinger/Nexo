@@ -60,9 +60,9 @@ run_case() {
 run_case "bash syntax all setup/install scripts" "pass" \
   "bash -n ${REPO_ROOT}/scripts/setup/setup-linux.sh && \
    bash -n ${REPO_ROOT}/scripts/setup/setup-macos.sh && \
+   bash -n ${REPO_ROOT}/scripts/install/install.sh && \
    bash -n ${REPO_ROOT}/scripts/install/install-linux.sh && \
    bash -n ${REPO_ROOT}/scripts/install/install-macos.sh && \
-   bash -n ${REPO_ROOT}/scripts/install/one-click.sh && \
    bash -n ${REPO_ROOT}/scripts/install/container-bootstrap-linux.sh && \
    bash -n ${REPO_ROOT}/scripts/install/container-bootstrap-macos.sh"
 
@@ -86,8 +86,8 @@ run_case "install-linux dry-run standard" "pass" \
 run_case "install-linux dry-run hero and daemon" "pass" \
   "bash ${REPO_ROOT}/scripts/install/install-linux.sh --dry-run --yes --hero --start-daemon --daemon-duration 30s"
 
-run_case "one-click dry-run minimal" "pass" \
-  "bash ${REPO_ROOT}/scripts/install/one-click.sh --dry-run --yes"
+run_case "install.sh dry-run minimal (unix dispatcher)" "pass" \
+  "bash ${REPO_ROOT}/scripts/install/install.sh --dry-run --yes"
 
 run_case "container-bootstrap-linux dry-run" "pass" \
   "bash ${REPO_ROOT}/scripts/install/container-bootstrap-linux.sh --dry-run --yes"
