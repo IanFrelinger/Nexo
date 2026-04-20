@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Nexo.Abstractions;
 using Nexo.Core.Application.Common.Ports;
 using Nexo.Core.Application.Common.Services;
@@ -16,10 +18,12 @@ using Nexo.Orchestration.Metrics;
 using Nexo.Orchestration.Negotiation;
 using Nexo.Orchestration.Barriers;
 using Nexo.Orchestration.Routing;
+using Nexo.Orchestration.Transport;
 using Nexo.Orchestration.Validation;
 using Nexo.Orchestration.Models;
 using Nexo.Abstractions.Barriers;
 using Nexo.Abstractions.Routing;
+using Nexo.Abstractions.Transport;
 
 namespace Nexo.Orchestration;
 
@@ -35,6 +39,7 @@ namespace Nexo.Orchestration;
 /// - Metrics and orchestrator
 /// 
 /// Call AddNexoOrchestration() to register all orchestration services.
+/// Register optional <c>IAgentTransportInvocationHook</c> implementations (singleton or scoped) to extend transport invocations.
 /// </summary>
 public static class ServiceCollectionExtensions
 {
@@ -100,8 +105,29 @@ public static class ServiceCollectionExtensions
         // Metrics
         services.AddSingleton<OrchestrationMetrics>();
 
-        // Orchestrator
-        services.AddScoped<Orchestrator>();
+        // Orchestrator (resolve invocation hooks from DI so hosts can add policy/metadata pipelines)
+        services.AddScoped(sp => new Orchestrator(
+            sp.GetRequiredService<IArchitectAgent>(),
+            sp.GetRequiredService<AgentFactory>(),
+            sp.GetRequiredService<LifecycleManager>(),
+            sp.GetRequiredService<DependencyResolver>(),
+            sp.GetRequiredService<ConflictDetector>(),
+            sp.GetRequiredService<ResourceAllocator>(),
+            sp.GetRequiredService<ProgressTracker>(),
+            sp.GetRequiredService<EscalationManager>(),
+            sp.GetRequiredService<OutputIntegrator>(),
+            sp.GetRequiredService<IAgentBus>(),
+            sp.GetRequiredService<IAgentTransport>(),
+            sp.GetRequiredService<ILoopKernel>(),
+            sp.GetRequiredService<ILogger<Orchestrator>>(),
+            negotiationProtocol: sp.GetService<NegotiationProtocol>(),
+            metrics: sp.GetService<OrchestrationMetrics>(),
+            runtimeSpecAccessor: sp.GetService<IOrchestrationRuntimeSpecAccessor>(),
+            barrierContextAccessor: sp.GetService<IBarrierContextAccessor>(),
+            barrierHierarchy: sp.GetService<BarrierHierarchy>(),
+            barrierAuditLog: sp.GetService<IBarrierAuditLog>(),
+            barrierOptions: sp.GetService<IOptions<BarrierOptions>>(),
+            invocationHooks: sp.GetServices<IAgentTransportInvocationHook>()));
 
         return services;
     }

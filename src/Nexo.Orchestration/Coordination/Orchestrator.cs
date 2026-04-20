@@ -15,6 +15,7 @@ using Nexo.Orchestration.Negotiation;
 using Nexo.Orchestration.Barriers;
 using Nexo.Orchestration.Resilience;
 using Nexo.Orchestration.Models;
+using Nexo.Orchestration.Transport;
 using Nexo.Core.Application.Common.Ports;
 
 namespace Nexo.Orchestration.Coordination;
@@ -62,6 +63,7 @@ public sealed class Orchestrator
     private readonly IBarrierContextAccessor? _barrierContextAccessor;
     private readonly BarrierHierarchy? _barrierHierarchy;
     private readonly BarrierGuard? _barrierGuard;
+    private readonly IReadOnlyList<IAgentTransportInvocationHook> _invocationHooks;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Orchestrator"/> class.
@@ -85,6 +87,7 @@ public sealed class Orchestrator
     /// <param name="barrierHierarchy">Optional barrier hierarchy for fallback/default routing context.</param>
     /// <param name="barrierAuditLog">Optional barrier audit log for invocation events.</param>
     /// <param name="barrierOptions">Optional barrier options for guard behavior.</param>
+    /// <param name="invocationHooks">Optional hooks that run before each transport send and after successful invocations.</param>
     public Orchestrator(
         IArchitectAgent architect,
         AgentFactory agentFactory,
@@ -105,7 +108,8 @@ public sealed class Orchestrator
         IBarrierContextAccessor? barrierContextAccessor = null,
         BarrierHierarchy? barrierHierarchy = null,
         IBarrierAuditLog? barrierAuditLog = null,
-        IOptions<BarrierOptions>? barrierOptions = null)
+        IOptions<BarrierOptions>? barrierOptions = null,
+        IEnumerable<IAgentTransportInvocationHook>? invocationHooks = null)
     {
         _architect = architect ?? throw new ArgumentNullException(nameof(architect));
         _agentFactory = agentFactory ?? throw new ArgumentNullException(nameof(agentFactory));
@@ -144,6 +148,7 @@ public sealed class Orchestrator
                 barrierHierarchy,
                 barrierOptions.Value)
             : null;
+        _invocationHooks = invocationHooks?.ToArray() ?? Array.Empty<IAgentTransportInvocationHook>();
     }
 
     /// <summary>
@@ -358,7 +363,21 @@ public sealed class Orchestrator
                         },
                         DependencyOutputs: dependencyOutputs);
 
-                    var result = await SendThroughTransportAsync(invocation, token);
+                    var transportRequest = invocation;
+                    if (_invocationHooks.Count > 0)
+                    {
+                        foreach (var hook in _invocationHooks)
+                        {
+                            var hookContext = new AgentInvocationContext(
+                                correlationId,
+                                request,
+                                container.Agent.Spec,
+                                transportRequest);
+                            transportRequest = await hook.BeforeSendAsync(hookContext, token).ConfigureAwait(false);
+                        }
+                    }
+
+                    var result = await SendThroughTransportAsync(transportRequest, token);
                     if (!result.Success)
                     {
                         var errorCode = GetErrorCode(result) ?? "UNKNOWN";
@@ -377,6 +396,19 @@ public sealed class Orchestrator
                     }
 
                     var output = result.Output ?? new { };
+                    if (_invocationHooks.Count > 0)
+                    {
+                        var hookContext = new AgentInvocationContext(
+                            correlationId,
+                            request,
+                            container.Agent.Spec,
+                            transportRequest);
+                        foreach (var hook in _invocationHooks)
+                        {
+                            output = await hook.AfterSuccessAsync(hookContext, output, token).ConfigureAwait(false);
+                        }
+                    }
+
                     var agentDuration = result.Duration ?? (DateTimeOffset.UtcNow - agentStartTime);
                     
                     outputs[agentId] = output;
