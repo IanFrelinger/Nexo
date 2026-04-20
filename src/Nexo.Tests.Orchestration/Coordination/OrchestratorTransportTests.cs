@@ -13,6 +13,7 @@ using Nexo.Orchestration.Communication;
 using Nexo.Orchestration.Coordination;
 using Nexo.Orchestration.Coordination.Conflicts;
 using Nexo.Orchestration.Metrics;
+using Nexo.Orchestration.Transport;
 using Xunit;
 
 namespace Nexo.Tests.Orchestration.Coordination;
@@ -297,7 +298,78 @@ public sealed class OrchestratorTransportTests
         };
     }
 
-    private static Orchestrator CreateOrchestrator(IArchitectAgent architect, IAgentTransport transport)
+    [Fact]
+    public async Task OrchestrateAsync_InvocationHooks_BeforeSendRunsInOrder_AndEnrichesTransportRequest()
+    {
+        AgentInvocationRequest? capturedRequest = null;
+        var transportMock = new Mock<IAgentTransport>(MockBehavior.Strict);
+        transportMock
+            .Setup(t => t.SendAsync(It.IsAny<AgentInvocationRequest>(), It.IsAny<CancellationToken>()))
+            .Callback<AgentInvocationRequest, CancellationToken>((request, _) => capturedRequest = request)
+            .ReturnsAsync(new AgentResult(Success: true, Output: new { v = 1 }));
+
+        var hook1 = new MetadataAppendHook("hookOrder", "1");
+        var hook2 = new MetadataAppendHook("hookOrder", "2", append: false);
+
+        var sut = CreateOrchestrator(
+            CreateArchitectMock(CreateSingleAgentDecomposition()).Object,
+            transportMock.Object,
+            new IAgentTransportInvocationHook[] { hook1, hook2 });
+
+        var result = await sut.OrchestrateAsync("hooks");
+
+        result.Success.Should().BeTrue();
+        capturedRequest.Should().NotBeNull();
+        capturedRequest!.Metadata!["hookOrder"].Should().Be("2");
+    }
+
+    [Fact]
+    public async Task OrchestrateAsync_InvocationHooks_AfterSuccessTransformsOutput()
+    {
+        var transportMock = new Mock<IAgentTransport>(MockBehavior.Strict);
+        transportMock
+            .Setup(t => t.SendAsync(It.IsAny<AgentInvocationRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AgentResult(Success: true, Output: new { n = 3 }));
+
+        var sut = CreateOrchestrator(
+            CreateArchitectMock(CreateSingleAgentDecomposition()).Object,
+            transportMock.Object,
+            new IAgentTransportInvocationHook[] { new OutputWrapHook() });
+
+        var result = await sut.OrchestrateAsync("wrap");
+
+        result.Success.Should().BeTrue();
+        result.IntegratedOutput.Should().NotBeNull();
+        result.IntegratedOutput!.AgentOutputs["agent-1"].GetType().GetProperty("wrapped").Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task OrchestrateAsync_InvocationHooks_AfterSuccessNotCalled_WhenTransportFails()
+    {
+        var transportMock = new Mock<IAgentTransport>(MockBehavior.Strict);
+        transportMock
+            .Setup(t => t.SendAsync(It.IsAny<AgentInvocationRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AgentResult(
+                Success: false,
+                ErrorMessage: "fail",
+                Metadata: new Dictionary<string, string> { ["errorCode"] = "AGENT_NOT_FOUND" }));
+
+        var counter = new CountingInvocationHook();
+        var sut = CreateOrchestrator(
+            CreateArchitectMock(CreateSingleAgentDecomposition()).Object,
+            transportMock.Object,
+            new IAgentTransportInvocationHook[] { counter });
+
+        await sut.OrchestrateAsync("fail");
+
+        counter.BeforeSendCount.Should().Be(1);
+        counter.AfterSuccessCount.Should().Be(0);
+    }
+
+    private static Orchestrator CreateOrchestrator(
+        IArchitectAgent architect,
+        IAgentTransport transport,
+        IReadOnlyList<IAgentTransportInvocationHook>? invocationHooks = null)
     {
         var provider = new ServiceCollection()
             .AddLogging()
@@ -341,6 +413,72 @@ public sealed class OrchestratorTransportTests
             transport,
             loops,
             provider.GetRequiredService<ILogger<Orchestrator>>(),
-            metrics: metrics);
+            metrics: metrics,
+            invocationHooks: invocationHooks);
+    }
+
+    private sealed class MetadataAppendHook : IAgentTransportInvocationHook
+    {
+        private readonly string _key;
+        private readonly string _value;
+        private readonly bool _append;
+
+        public MetadataAppendHook(string key, string value, bool append = true)
+        {
+            _key = key;
+            _value = value;
+            _append = append;
+        }
+
+        public Task<AgentInvocationRequest> BeforeSendAsync(
+            AgentInvocationContext context,
+            CancellationToken cancellationToken = default)
+        {
+            var md = context.Request.Metadata != null
+                ? new Dictionary<string, string>(context.Request.Metadata, StringComparer.OrdinalIgnoreCase)
+                : new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            if (_append && md.TryGetValue(_key, out var existing))
+            {
+                md[_key] = existing + "," + _value;
+            }
+            else
+            {
+                md[_key] = _value;
+            }
+
+            return Task.FromResult(context.Request with { Metadata = md });
+        }
+    }
+
+    private sealed class OutputWrapHook : IAgentTransportInvocationHook
+    {
+        public Task<object> AfterSuccessAsync(
+            AgentInvocationContext context,
+            object output,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<object>(new { wrapped = output });
+    }
+
+    private sealed class CountingInvocationHook : IAgentTransportInvocationHook
+    {
+        public int BeforeSendCount;
+        public int AfterSuccessCount;
+
+        public Task<AgentInvocationRequest> BeforeSendAsync(
+            AgentInvocationContext context,
+            CancellationToken cancellationToken = default)
+        {
+            BeforeSendCount++;
+            return Task.FromResult(context.Request);
+        }
+
+        public Task<object> AfterSuccessAsync(
+            AgentInvocationContext context,
+            object output,
+            CancellationToken cancellationToken = default)
+        {
+            AfterSuccessCount++;
+            return Task.FromResult(output);
+        }
     }
 }
