@@ -1,7 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Nexo.Abstractions;
 using Nexo.Orchestration.Agents;
-using Nexo.Orchestration.Agents.Models;
+using Nexo.Abstractions.Agents;
 using Nexo.Orchestration.Architect.Models;
 using System.Text.Json;
 using ModelInput = Nexo.Abstractions.ModelInput;

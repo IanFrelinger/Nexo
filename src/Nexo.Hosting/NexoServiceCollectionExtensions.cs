@@ -217,7 +217,10 @@ public static class NexoServiceCollectionExtensions
 
         // ── Persistence ────────────────────────────────────────────────
         if (modules.IncludePersistence)
+        {
             services.AddNexoPersistence();
+            services.AddPostgresIsolatedDatabaseProvisioner();
+        }
 
         // ── Adaptation ─────────────────────────────────────────────────
         // Pattern store path is forwarded so the adaptation layer knows

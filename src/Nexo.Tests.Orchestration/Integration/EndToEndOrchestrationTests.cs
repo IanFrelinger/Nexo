@@ -6,7 +6,7 @@ using Nexo.Abstractions;
 using Nexo.Abstractions.Routing;
 using Nexo.Core.Application.Common.Ports;
 using Nexo.Orchestration.Agents;
-using Nexo.Orchestration.Agents.Models;
+using Nexo.Abstractions.Agents;
 using Nexo.Orchestration.Architect;
 using Nexo.Orchestration.Architect.Models;
 using Nexo.Orchestration.Architect.Parsers;

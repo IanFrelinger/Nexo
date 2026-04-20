@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Logging;
-using Nexo.Orchestration.Agents.Models;
+using Nexo.Abstractions.Agents;
 using Nexo.Orchestration.Architect.Models;
 
 namespace Nexo.Orchestration.Agents;

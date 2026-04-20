@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Nexo.Abstractions.Agents;
 using Nexo.Orchestration.Agents;
 using System.Collections.Concurrent;
 
@@ -196,8 +197,8 @@ public sealed class AgentHealthCheck : IHealthCheck
 
     public Task<HealthStatus> CheckAsync(CancellationToken cancellationToken = default)
     {
-        var isHealthy = _agent.State != Agents.Models.AgentState.Failed &&
-                        _agent.Health != Agents.Models.AgentHealth.Unhealthy;
+        var isHealthy = _agent.State != AgentState.Failed &&
+                        _agent.Health != AgentHealth.Unhealthy;
 
         var status = isHealthy ? "Healthy" : "Unhealthy";
         var message = $"Agent {_agent.AgentId} is {status}";

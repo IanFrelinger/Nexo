@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using Nexo.Orchestration.Agents;
-using Nexo.Orchestration.Agents.Models;
+using Nexo.Abstractions.Agents;
 
 namespace Nexo.Orchestration.Coordination;
 

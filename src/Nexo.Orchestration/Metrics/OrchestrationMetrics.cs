@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Common.Ports;
-using Nexo.Orchestration.Agents.Models;
+using Nexo.Abstractions.Agents;
 
 namespace Nexo.Orchestration.Metrics;
 

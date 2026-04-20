@@ -1,5 +1,5 @@
 using Microsoft.Extensions.Logging;
-using Nexo.Orchestration.Agents.Models;
+using Nexo.Abstractions.Agents;
 
 namespace Nexo.Orchestration.Agents;
 
@@ -40,24 +40,29 @@ public sealed class LifecycleManager
     /// Registers the agent in the active agents dictionary, initializes it,
     /// and registers it with the health monitor for health tracking.
     /// </summary>
-    /// <param name="container">The agent container to register.</param>
+    /// <param name="handle">The agent handle to register (in-process handles wrap <see cref="AgentContainer"/>).</param>
     /// <param name="cancellationToken">A token to observe while waiting for the task to complete.</param>
     /// <returns>The registered agent container.</returns>
-    /// <exception cref="ArgumentNullException">Thrown if container is null.</exception>
+    /// <exception cref="ArgumentNullException">Thrown if handle is null.</exception>
+    /// <exception cref="InvalidOperationException">Thrown if the handle is not backed by an in-process container.</exception>
     public async Task<AgentContainer> RegisterAgentAsync(
-        AgentContainer container,
+        IAgentHandle handle,
         CancellationToken cancellationToken = default)
     {
-        if (container == null)
+        if (handle == null)
         {
-            throw new ArgumentNullException(nameof(container));
+            throw new ArgumentNullException(nameof(handle));
         }
+
+        var container = handle.TryGetInProcessContainer()
+            ?? throw new InvalidOperationException(
+                "Only in-process agent handles are supported by LifecycleManager; use InProcessAgentHandle.");
 
         _logger.LogInformation("Registering agent {AgentId}", container.AgentId);
 
         try
         {
-            await container.InitializeAsync(cancellationToken);
+            await handle.InitializeAsync(cancellationToken);
             _activeAgents[container.AgentId] = container;
             _healthMonitor.RegisterAgent(container);
             
@@ -70,6 +75,14 @@ public sealed class LifecycleManager
             throw;
         }
     }
+
+    /// <summary>
+    /// Registers an in-process agent from its <see cref="AgentContainer"/>.
+    /// </summary>
+    public Task<AgentContainer> RegisterAgentAsync(
+        AgentContainer container,
+        CancellationToken cancellationToken = default) =>
+        RegisterAgentAsync(new InProcessAgentHandle(container), cancellationToken);
 
     /// <summary>
     /// Executes an agent with dependency outputs.

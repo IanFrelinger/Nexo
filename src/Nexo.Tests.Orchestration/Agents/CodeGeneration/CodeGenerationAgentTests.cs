@@ -1,7 +1,7 @@
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Nexo.Orchestration.Agents.CodeGeneration;
-using Nexo.Orchestration.Agents.Models;
+using Nexo.Abstractions.Agents;
 using Nexo.Orchestration.Architect.Models;
 using Xunit;
 

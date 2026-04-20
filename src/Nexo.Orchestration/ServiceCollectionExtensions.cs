@@ -71,6 +71,7 @@ public static class ServiceCollectionExtensions
 
         // Agents
         services.AddSingleton<AgentFactory>();
+        services.AddSingleton<IAgentRuntimeFactory>(sp => sp.GetRequiredService<AgentFactory>());
         services.AddSingleton<LifecycleManager>();
         services.AddSingleton<HealthMonitor>();
 

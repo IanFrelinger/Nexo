@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Nexo.BackgroundAgents.Agents;
 using Nexo.Orchestration.Agents;
-using Nexo.Orchestration.Agents.Models;
+using Nexo.Abstractions.Agents;
 using Nexo.Orchestration.Architect.Models;
 using Xunit;
 

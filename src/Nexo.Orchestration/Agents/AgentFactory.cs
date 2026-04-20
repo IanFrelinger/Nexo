@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Nexo.Abstractions;
+using Nexo.Abstractions.Agents;
 using Nexo.Orchestration.Architect.Models;
 using Nexo.Orchestration.Agents.Assets;
 using Nexo.Orchestration.Agents.Playtest;
@@ -22,7 +23,7 @@ namespace Nexo.Orchestration.Agents;
 /// 
 /// Uses dependency injection to resolve agent dependencies (loggers, adapters, etc.).
 /// </summary>
-public sealed class AgentFactory
+public sealed class AgentFactory : IAgentRuntimeFactory
 {
     private readonly ILogger<AgentFactory> _logger;
     private readonly IServiceProvider _serviceProvider;
@@ -107,6 +108,9 @@ public sealed class AgentFactory
             ?? throw new InvalidOperationException("ILogger<AgentContainer> not registered");
         return new AgentContainer(agent, containerLogger);
     }
+
+    /// <inheritdoc />
+    public IAgentHandle Spawn(AgentSpawnSpec spec) => new InProcessAgentHandle(CreateContainer(spec));
 
     private BaseAgent CreateCombatAgent(AgentSpawnSpec spec)
     {

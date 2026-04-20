@@ -42,7 +42,7 @@ namespace Nexo.Orchestration.Coordination;
 public sealed class Orchestrator
 {
     private readonly IArchitectAgent _architect;
-    private readonly AgentFactory _agentFactory;
+    private readonly IAgentRuntimeFactory _agentRuntimeFactory;
     private readonly LifecycleManager _lifecycleManager;
     private readonly DependencyResolver _dependencyResolver;
     private readonly ConflictDetector _conflictDetector;
@@ -67,7 +67,7 @@ public sealed class Orchestrator
     /// Initializes a new instance of the <see cref="Orchestrator"/> class.
     /// </summary>
     /// <param name="architect">The architect agent for request decomposition.</param>
-    /// <param name="agentFactory">The factory for creating agents.</param>
+    /// <param name="agentRuntimeFactory">The factory for spawning agent runtime handles.</param>
     /// <param name="lifecycleManager">The lifecycle manager for agent registration and execution.</param>
     /// <param name="dependencyResolver">The dependency resolver for managing agent dependencies.</param>
     /// <param name="conflictDetector">The conflict detector for identifying conflicts between agents.</param>
@@ -87,7 +87,7 @@ public sealed class Orchestrator
     /// <param name="barrierOptions">Optional barrier options for guard behavior.</param>
     public Orchestrator(
         IArchitectAgent architect,
-        AgentFactory agentFactory,
+        IAgentRuntimeFactory agentRuntimeFactory,
         LifecycleManager lifecycleManager,
         DependencyResolver dependencyResolver,
         ConflictDetector conflictDetector,
@@ -108,7 +108,7 @@ public sealed class Orchestrator
         IOptions<BarrierOptions>? barrierOptions = null)
     {
         _architect = architect ?? throw new ArgumentNullException(nameof(architect));
-        _agentFactory = agentFactory ?? throw new ArgumentNullException(nameof(agentFactory));
+        _agentRuntimeFactory = agentRuntimeFactory ?? throw new ArgumentNullException(nameof(agentRuntimeFactory));
         _lifecycleManager = lifecycleManager ?? throw new ArgumentNullException(nameof(lifecycleManager));
         _dependencyResolver = dependencyResolver ?? throw new ArgumentNullException(nameof(dependencyResolver));
         _conflictDetector = conflictDetector ?? throw new ArgumentNullException(nameof(conflictDetector));
@@ -204,11 +204,17 @@ public sealed class Orchestrator
             }
 
             // Step 2: Detect conflicts before spawning
-            var containers = _loops.SelectToList(
+            var handles = _loops.SelectToList(
                 decomposition.Agents,
-                (spec, _, _) => _agentFactory.CreateContainer(spec),
+                (spec, _, _) => _agentRuntimeFactory.Spawn(spec),
                 new LoopOptions { Name = "spawn-containers" },
                 cancellationToken).ToList();
+
+            var containers = handles
+                .Select(h => h.TryGetInProcessContainer()
+                    ?? throw new InvalidOperationException(
+                        "Only in-process agent handles are supported by this orchestrator build."))
+                .ToList();
 
             var conflicts = _conflictDetector.DetectConflicts(containers);
             
