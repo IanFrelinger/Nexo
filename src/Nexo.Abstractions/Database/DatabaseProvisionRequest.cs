@@ -10,9 +10,18 @@ namespace Nexo.Abstractions.Database;
 /// <param name="AdminConnectionString">
 /// Admin connection string to the Postgres server (required for shared-server and shared-schema isolation).
 /// </param>
+/// <param name="PostgresReadinessTimeout">
+/// Max time to wait for Postgres to accept connections after provision.
+/// Null uses a default of 60 seconds. <see cref="TimeSpan.Zero"/> skips readiness polling (tests only).
+/// </param>
+/// <param name="PostProvisionSqlBatches">
+/// Optional SQL batches executed on the application connection string after readiness (DDL/DML for schema seeding).
+/// </param>
 public sealed record DatabaseProvisionRequest(
     DatabaseIsolationLevel Isolation,
     string? DatabaseName = null,
     string? ImageTag = null,
     string? Password = null,
-    string? AdminConnectionString = null);
+    string? AdminConnectionString = null,
+    TimeSpan? PostgresReadinessTimeout = null,
+    IReadOnlyList<string>? PostProvisionSqlBatches = null);

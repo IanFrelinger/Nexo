@@ -7,18 +7,24 @@ namespace Nexo.Infrastructure.Persistence;
 
 /// <summary>
 /// Provisions isolated Postgres instances for tests and ephemeral workflows.
+/// After provision: optional readiness polling, optional post-provision SQL, then <see cref="IDatabaseProvisioningHook"/> in registration order.
 /// </summary>
 public sealed class PostgresDatabaseProvisioner : IDatabaseProvisioner
 {
+    private static readonly TimeSpan DefaultReadinessTimeout = TimeSpan.FromSeconds(60);
+
     private readonly IEphemeralDatabaseLifecycle? _ephemeralLifecycle;
+    private readonly IReadOnlyList<IDatabaseProvisioningHook> _hooks;
     private readonly ILogger<PostgresDatabaseProvisioner> _logger;
 
     public PostgresDatabaseProvisioner(
         ILogger<PostgresDatabaseProvisioner> logger,
-        IEphemeralDatabaseLifecycle? ephemeralLifecycle = null)
+        IEphemeralDatabaseLifecycle? ephemeralLifecycle = null,
+        IEnumerable<IDatabaseProvisioningHook>? provisioningHooks = null)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _ephemeralLifecycle = ephemeralLifecycle;
+        _hooks = provisioningHooks?.ToArray() ?? Array.Empty<IDatabaseProvisioningHook>();
     }
 
     /// <inheritdoc />
@@ -26,13 +32,97 @@ public sealed class PostgresDatabaseProvisioner : IDatabaseProvisioner
         DatabaseProvisionRequest request,
         CancellationToken cancellationToken = default)
     {
-        return request.Isolation switch
+        var db = request.Isolation switch
         {
             DatabaseIsolationLevel.DedicatedContainer => await CreateDedicatedAsync(request, cancellationToken),
             DatabaseIsolationLevel.SharedServerNewDatabase => await CreateNewDatabaseAsync(request, cancellationToken),
             DatabaseIsolationLevel.SharedSchemaNamespaced => await CreateSchemaAsync(request, cancellationToken),
             _ => throw new ArgumentOutOfRangeException(nameof(request), request.Isolation, "Unsupported isolation level.")
         };
+
+        try
+        {
+            var readiness = request.PostgresReadinessTimeout ?? DefaultReadinessTimeout;
+            if (readiness > TimeSpan.Zero)
+            {
+                await WaitForPostgresReadyAsync(db.ConnectionString, readiness, cancellationToken).ConfigureAwait(false);
+            }
+
+            if (request.PostProvisionSqlBatches is { Count: > 0 })
+            {
+                await RunPostProvisionSqlAsync(db.ConnectionString, request.PostProvisionSqlBatches, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+
+            foreach (var hook in _hooks)
+            {
+                await hook.AfterProvisionAsync(db, request, cancellationToken).ConfigureAwait(false);
+            }
+
+            return db;
+        }
+        catch
+        {
+            try
+            {
+                await db.DisposeAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to dispose database after provisioning error");
+            }
+
+            throw;
+        }
+    }
+
+    private static async Task WaitForPostgresReadyAsync(
+        string connectionString,
+        TimeSpan overallTimeout,
+        CancellationToken cancellationToken)
+    {
+        var deadline = DateTime.UtcNow + overallTimeout;
+        Exception? last = null;
+        while (DateTime.UtcNow < deadline)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            try
+            {
+                await using var conn = new NpgsqlConnection(connectionString);
+                await conn.OpenAsync(cancellationToken).ConfigureAwait(false);
+                await using var cmd = new NpgsqlCommand("SELECT 1", conn) { CommandTimeout = 30 };
+                await cmd.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
+                return;
+            }
+            catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
+            {
+                last = ex;
+                await Task.Delay(250, cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        throw new TimeoutException(
+            $"Postgres did not become ready within {overallTimeout.TotalSeconds:0}s.",
+            last);
+    }
+
+    private static async Task RunPostProvisionSqlAsync(
+        string connectionString,
+        IReadOnlyList<string> batches,
+        CancellationToken cancellationToken)
+    {
+        await using var conn = new NpgsqlConnection(connectionString);
+        await conn.OpenAsync(cancellationToken).ConfigureAwait(false);
+        foreach (var batch in batches)
+        {
+            if (string.IsNullOrWhiteSpace(batch))
+            {
+                continue;
+            }
+
+            await using var cmd = new NpgsqlCommand(batch, conn) { CommandTimeout = 120 };
+            await cmd.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        }
     }
 
     private async Task<IIsolatedDatabase> CreateDedicatedAsync(
