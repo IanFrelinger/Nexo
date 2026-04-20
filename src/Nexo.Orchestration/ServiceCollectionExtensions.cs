@@ -18,6 +18,7 @@ using Nexo.Orchestration.Metrics;
 using Nexo.Orchestration.Negotiation;
 using Nexo.Orchestration.Barriers;
 using Nexo.Orchestration.Routing;
+using Nexo.Orchestration.Resources;
 using Nexo.Orchestration.Transport;
 using Nexo.Orchestration.Validation;
 using Nexo.Orchestration.Models;
@@ -79,6 +80,12 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IAgentRuntimeFactory>(sp => sp.GetRequiredService<AgentFactory>());
         services.AddSingleton<LifecycleManager>();
         services.AddSingleton<HealthMonitor>();
+
+        // Unified provisioned resources (scoped per orchestration scope / request)
+        services.AddOptions<OrchestrationResourceOptions>();
+        services.AddScoped(sp => new OrchestrationResourceScope(
+            sp.GetRequiredService<IOptions<OrchestrationResourceOptions>>().Value.TeardownPolicy,
+            sp.GetService<ILogger<OrchestrationResourceScope>>()));
 
         // Communication
         services.AddSingleton<IAgentBus, AgentBus>();
