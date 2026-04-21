@@ -178,6 +178,7 @@ Existing capabilities (portal, copilot task API, changelog assistant, activity f
 | Doc | Role |
 |-----|------|
 | **This file** | Product lines + business plan + sequencing |
+| [`ProductFleetImplementationRoadmap.md`](./ProductFleetImplementationRoadmap.md) | Phased engineering and GTM steps to ship each SKU |
 | [`MonetizationProductDesign.md`](./MonetizationProductDesign.md) | Tiers, prices, entitlements, billing mechanics |
 | [`commercial-workbook/`](./commercial-workbook/) | Financial templates and KPI skeleton |
 
