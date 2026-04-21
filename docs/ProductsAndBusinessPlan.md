@@ -131,7 +131,7 @@ Become the **default runtime** for teams that need **structured, auditable AI wo
 | **Top-down** | C, B | Outbound to security-conscious eng leaders; design partner pilots |
 | **Partner** | B, C | MSPs and consultancies implement Nexo Private for clients (rev-share or referral later) |
 
-**ICP (primary):** software engineering organizations (roughly 50–2000 engineers) in regulated or security-sensitive industries **or** vendors building **customer-facing** AI features who need an internal “compliance-ready” execution layer.
+**ICP (primary):** treat this as a **hypothesis** until validated; see [`ICPResearchMemo.md`](./ICPResearchMemo.md) for ranked segments (regulated internal AI platform, security-first SaaS vendors, mid-market platform engineering) and a 30-day discovery plan. The previous one-line summary was: software engineering organizations (roughly 50–2000 engineers) in regulated or security-sensitive industries **or** vendors building **customer-facing** AI features who need an internal “compliance-ready” execution layer.
 
 ### 5.5 Operating model
 
@@ -180,6 +180,7 @@ Existing capabilities (portal, copilot task API, changelog assistant, activity f
 | **This file** | Product lines + business plan + sequencing |
 | [`ProductFleetImplementationRoadmap.md`](./ProductFleetImplementationRoadmap.md) | Phased engineering and GTM steps to ship each SKU |
 | [`MarketingAndDeploymentPlaybook.md`](./MarketingAndDeploymentPlaybook.md) | How to market each SKU and how to deploy Cloud / Private / Enterprise / Automation / Mesh |
+| [`ICPResearchMemo.md`](./ICPResearchMemo.md) | Evidence-based ICP hypotheses, anti-ICPs, and a 30-day validation plan |
 | [`MonetizationProductDesign.md`](./MonetizationProductDesign.md) | Tiers, prices, entitlements, billing mechanics |
 | [`commercial-workbook/`](./commercial-workbook/) | Financial templates and KPI skeleton |
 
