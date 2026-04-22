@@ -228,6 +228,9 @@ public static class NexoServiceCollectionExtensions
         if (modules.IncludeAdaptation)
             services.AddAdaptationInfrastructure(options.PatternStorePath);
 
+        if (modules.IncludeAdaptation)
+            services.AddNexoFederatedBrickMesh(configuration);
+
         // ── Copilot task store ──────────────────────────────────────────
         // LiteDB file is co-located with the pattern store directory
         // (or the repo root as fallback) to keep all Nexo-generated
