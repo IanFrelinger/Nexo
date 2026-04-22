@@ -105,6 +105,8 @@ Targets are **defaults for a first internal mesh**; tighten per environment.
 
 **Next step (Phase 2):** Implemented — see [MeshPhase2TransportAndAuth.md](MeshPhase2TransportAndAuth.md) (`Nexo:Security:Mesh`, middleware before built-in API auth).
 
+**Next step (Phase 3):** Implemented — see [MeshPhase3DistributedExecution.md](MeshPhase3DistributedExecution.md) (correlation, idempotency, result handles).
+
 Optional tracking issue batch in [IssueBatch_30-60-90_Roadmap.md](IssueBatch_30-60-90_Roadmap.md).
 
 ---

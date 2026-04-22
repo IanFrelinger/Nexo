@@ -27,9 +27,10 @@ Base path: **`/api/mesh`** (same auth middleware as other `/api/*` routes when e
 | `GET` | `/tasks` | List tasks |
 | `POST` | `/tasks` | Create task (`MeshTaskCreateRequest`) |
 | `GET` | `/tasks/{taskId}` | Get task |
-| `POST` | `/tasks/{taskId}/schedule` | Run placement |
-| `POST` | `/tasks/{taskId}/retry` | Re-place on different peer when possible |
-| `PATCH` | `/tasks/{taskId}/status` | Worker reports `Running` / `Succeeded` / `Failed` / `Pending` |
+| `POST` | `/tasks/{taskId}/schedule` | Run placement (optional body: `scheduleIdempotencyKey`, `correlationId`) |
+| `POST` | `/tasks/{taskId}/retry` | Re-place on different peer when possible (same optional body) |
+| `GET` | `/tasks/{taskId}/result` | Phase 3: stream bytes when `resultHandle` is a file path on director |
+| `PATCH` | `/tasks/{taskId}/status` | Worker reports `Running` / `Succeeded` / `Failed` / `Pending` (optional `resultSummary`, `resultHandle`) |
 
 ## Worker registration example
 
@@ -63,6 +64,7 @@ Then `POST /api/mesh/tasks/{taskId}/schedule`. Response includes `assignedPeerId
 ## Explicit limitations (next phases)
 
 - **Transport/auth** — see [MeshPhase2TransportAndAuth.md](MeshPhase2TransportAndAuth.md) for optional mesh tokens, body caps, and rate limits on `/api/mesh` and brick execute.
+- **Correlation / idempotency / results** — see [MeshPhase3DistributedExecution.md](MeshPhase3DistributedExecution.md).
 - **In-memory only** — restart loses registry; Phase 4+ may persist to LiteDB/SQL.
 - **Placement does not invoke bricks** — it only **chooses** a node; the caller must dispatch.
 - **No global fairness queue** — simple greedy ordering by heartbeat recency.

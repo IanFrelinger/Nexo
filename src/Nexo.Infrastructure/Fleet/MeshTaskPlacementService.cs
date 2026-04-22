@@ -23,19 +23,29 @@ public sealed class MeshTaskPlacementService : IMeshTaskPlacementService
         _logger = logger;
     }
 
-    public Task<(bool Ok, MeshTaskState? Task, string? Error)> TryScheduleAsync(string taskId, CancellationToken cancellationToken = default)
-        => TryPlaceAsync(taskId, skipPreviousPeerId: null, cancellationToken);
+    public Task<(bool Ok, MeshTaskState? Task, string? Error)> TryScheduleAsync(
+        string taskId,
+        string? scheduleIdempotencyKey = null,
+        string? correlationId = null,
+        CancellationToken cancellationToken = default)
+        => TryPlaceAsync(taskId, skipPreviousPeerId: null, scheduleIdempotencyKey, correlationId, cancellationToken);
 
-    public async Task<(bool Ok, MeshTaskState? Task, string? Error)> TryRetryAsync(string taskId, CancellationToken cancellationToken = default)
+    public async Task<(bool Ok, MeshTaskState? Task, string? Error)> TryRetryAsync(
+        string taskId,
+        string? scheduleIdempotencyKey = null,
+        string? correlationId = null,
+        CancellationToken cancellationToken = default)
     {
         var current = await _tasks.GetAsync(taskId, cancellationToken).ConfigureAwait(false);
         var skip = current?.AssignedPeerId;
-        return await TryPlaceAsync(taskId, skipPreviousPeerId: skip, cancellationToken).ConfigureAwait(false);
+        return await TryPlaceAsync(taskId, skipPreviousPeerId: skip, scheduleIdempotencyKey, correlationId, cancellationToken).ConfigureAwait(false);
     }
 
     private async Task<(bool Ok, MeshTaskState? Task, string? Error)> TryPlaceAsync(
         string taskId,
         string? skipPreviousPeerId,
+        string? scheduleIdempotencyKey,
+        string? correlationId,
         CancellationToken cancellationToken)
     {
         var task = await _tasks.GetAsync(taskId, cancellationToken).ConfigureAwait(false);
@@ -53,10 +63,22 @@ public sealed class MeshTaskPlacementService : IMeshTaskPlacementService
         }
 
         var isRetry = !string.IsNullOrEmpty(skipPreviousPeerId);
+        var scheduleKey = string.IsNullOrWhiteSpace(scheduleIdempotencyKey) ? null : scheduleIdempotencyKey.Trim();
+        var corr = string.IsNullOrWhiteSpace(correlationId)
+            ? task.CorrelationId
+            : correlationId.Trim();
 
-        // Idempotent: already assigned and first schedule only
-        if (!isRetry && task.Status == MeshTaskStatus.Assigned && !string.IsNullOrEmpty(task.AssignedPeerId))
-            return (true, task, null);
+        // Idempotent schedule: same key + already assigned => same response (Phase 3).
+        if (!isRetry &&
+            task.Status == MeshTaskStatus.Assigned &&
+            !string.IsNullOrEmpty(task.AssignedPeerId))
+        {
+            if (scheduleKey is null)
+                return (true, task with { CorrelationId = corr ?? task.CorrelationId }, null);
+            if (string.Equals(task.LastScheduleIdempotencyKey, scheduleKey, StringComparison.Ordinal))
+                return (true, task with { CorrelationId = corr ?? task.CorrelationId }, null);
+            return (false, task with { CorrelationId = corr ?? task.CorrelationId }, "schedule.idempotency_conflict");
+        }
 
         var work = isRetry
             ? task with
@@ -64,9 +86,10 @@ public sealed class MeshTaskPlacementService : IMeshTaskPlacementService
                 Status = MeshTaskStatus.Pending,
                 AssignedPeerId = null,
                 AssignedApiBaseUrl = null,
-                PlacementReason = null
+                PlacementReason = null,
+                CorrelationId = corr ?? task.CorrelationId
             }
-            : task;
+            : task with { CorrelationId = corr ?? task.CorrelationId };
 
         if (work.Status != MeshTaskStatus.Pending)
             work = work with { Status = MeshTaskStatus.Pending };
@@ -103,16 +126,18 @@ public sealed class MeshTaskPlacementService : IMeshTaskPlacementService
             AssignedApiBaseUrl = NormalizeBaseUrl(pick.ApiBaseUrl),
             PlacementReason = "placement.ok",
             AttemptCount = work.AttemptCount + 1,
-            LastScheduledAtUtc = DateTimeOffset.UtcNow
+            LastScheduledAtUtc = DateTimeOffset.UtcNow,
+            LastScheduleIdempotencyKey = scheduleKey
         };
 
         await _tasks.UpdateAsync(assigned, cancellationToken).ConfigureAwait(false);
         _logger?.LogInformation(
-            "mesh placement task={TaskId} peer={PeerId} attempt={Attempt} retry={Retry}",
+            "mesh placement task={TaskId} peer={PeerId} attempt={Attempt} retry={Retry} correlationId={CorrelationId}",
             taskId,
             pick.PeerId,
             assigned.AttemptCount,
-            isRetry);
+            isRetry,
+            assigned.CorrelationId ?? "");
 
         return (true, assigned, null);
     }

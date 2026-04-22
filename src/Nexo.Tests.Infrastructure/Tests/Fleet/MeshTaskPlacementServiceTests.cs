@@ -77,4 +77,40 @@ public sealed class MeshTaskPlacementServiceTests
         ok2.Should().BeTrue();
         t2!.AssignedPeerId.Should().Be("peer-2");
     }
+
+    [Fact]
+    public async Task Schedule_with_same_idempotency_key_is_idempotent()
+    {
+        var nodes = new InMemoryFleetNodeRegistry();
+        var tasks = new InMemoryMeshTaskRegistry();
+        var placement = new MeshTaskPlacementService(nodes, tasks, NullLogger<MeshTaskPlacementService>.Instance);
+        await nodes.RegisterOrUpdateAsync(new MeshFleetNodeState(
+            "p", "https://p/", new Dictionary<string, string>(), new[] { "b" },
+            false, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow));
+        var task = await tasks.CreateAsync(new MeshTaskCreateSpec(null, 1, new[] { "b" }, null, 0, null));
+        var (ok1, t1, _) = await placement.TryScheduleAsync(task.TaskId, "sched-key", null);
+        ok1.Should().BeTrue();
+        var (ok2, t2, _) = await placement.TryScheduleAsync(task.TaskId, "sched-key", null);
+        ok2.Should().BeTrue();
+        t2!.AssignedPeerId.Should().Be(t1!.AssignedPeerId);
+        t2.AttemptCount.Should().Be(t1.AttemptCount);
+    }
+
+    [Fact]
+    public async Task Schedule_with_different_idempotency_key_while_assigned_returns_conflict()
+    {
+        var nodes = new InMemoryFleetNodeRegistry();
+        var tasks = new InMemoryMeshTaskRegistry();
+        var placement = new MeshTaskPlacementService(nodes, tasks, NullLogger<MeshTaskPlacementService>.Instance);
+        await nodes.RegisterOrUpdateAsync(new MeshFleetNodeState(
+            "p", "https://p/", new Dictionary<string, string>(), new[] { "b" },
+            false, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow));
+        var task = await tasks.CreateAsync(new MeshTaskCreateSpec(null, 1, new[] { "b" }, null, 0, null));
+        var (ok1, _, _) = await placement.TryScheduleAsync(task.TaskId, "key-a", null);
+        ok1.Should().BeTrue();
+        var (ok2, _, err) = await placement.TryScheduleAsync(task.TaskId, "key-b", null);
+        ok2.Should().BeFalse();
+        err.Should().Be("schedule.idempotency_conflict");
+    }
 }
+

@@ -190,12 +190,21 @@ public static class NexoEndpoints
             .WithSummary("Phase 1: assign task to an eligible worker")
             .Produces<MeshTaskResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
-            .ProducesProblem(StatusCodes.Status404NotFound);
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status409Conflict);
 
         mesh.MapPost("/tasks/{taskId}/retry", RetryMeshTaskAsync)
             .WithName("RetryMeshTask")
             .WithSummary("Phase 1: re-place task on a different worker when possible")
             .Produces<MeshTaskResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .Produces(StatusCodes.Status409Conflict);
+
+        mesh.MapGet("/tasks/{taskId}/result", DownloadMeshTaskResultAsync)
+            .WithName("DownloadMeshTaskResult")
+            .WithSummary("Phase 3: download result bytes when ResultHandle is a file path on this host")
+            .Produces(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
@@ -617,6 +626,7 @@ public static class NexoEndpoints
     private static async Task<IResult> CreateMeshTaskAsync(
         [FromBody] MeshTaskCreateRequest? body,
         [FromServices] IMeshTaskRegistry tasks,
+        [FromServices] IHttpContextAccessor httpContextAccessor,
         CancellationToken cancellationToken)
     {
         if (body is null)
@@ -624,13 +634,23 @@ public static class NexoEndpoints
         if (body.Steps < 1)
             return Results.BadRequest(new ProblemDetails { Title = "Steps must be at least 1" });
 
+        var correlation = ResolveMeshCorrelationId(httpContextAccessor, body.CorrelationId);
+        if (!string.IsNullOrWhiteSpace(body.IdempotencyKey))
+        {
+            var existing = await tasks.TryGetByIdempotencyKeyAsync(body.IdempotencyKey, cancellationToken).ConfigureAwait(false);
+            if (existing is not null)
+                return Results.Ok(ToTaskResponse(existing with { CorrelationId = correlation ?? existing.CorrelationId }));
+        }
+
         var spec = new MeshTaskCreateSpec(
             Name: body.Name,
             Steps: body.Steps,
             RequiredBrickIds: body.RequiredBrickIds ?? Array.Empty<string>(),
             Affinity: body.Affinity,
             Priority: body.Priority,
-            DeadlineUtc: body.DeadlineUtc);
+            DeadlineUtc: body.DeadlineUtc,
+            CorrelationId: correlation,
+            IdempotencyKey: string.IsNullOrWhiteSpace(body.IdempotencyKey) ? null : body.IdempotencyKey.Trim());
 
         var created = await tasks.CreateAsync(spec, cancellationToken).ConfigureAwait(false);
         return Results.Ok(ToTaskResponse(created));
@@ -649,14 +669,23 @@ public static class NexoEndpoints
 
     private static async Task<IResult> ScheduleMeshTaskAsync(
         string taskId,
+        [FromBody] MeshScheduleRequest? body,
         [FromServices] IMeshTaskPlacementService placement,
+        [FromServices] IHttpContextAccessor httpContextAccessor,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(taskId))
             return Results.BadRequest(new ProblemDetails { Title = "taskId is required" });
-        var (ok, task, error) = await placement.TryScheduleAsync(taskId, cancellationToken).ConfigureAwait(false);
+        var correlation = ResolveMeshCorrelationId(httpContextAccessor, body?.CorrelationId);
+        var (ok, task, error) = await placement.TryScheduleAsync(
+            taskId,
+            body?.ScheduleIdempotencyKey,
+            correlation,
+            cancellationToken).ConfigureAwait(false);
         if (task is null)
             return Results.NotFound();
+        if (!ok && string.Equals(error, "schedule.idempotency_conflict", StringComparison.Ordinal))
+            return Results.Conflict(ToTaskResponse(task));
         if (!ok)
             return Results.BadRequest(new ProblemDetails { Title = error ?? "placement.failed", Detail = error });
         return Results.Ok(ToTaskResponse(task));
@@ -664,23 +693,53 @@ public static class NexoEndpoints
 
     private static async Task<IResult> RetryMeshTaskAsync(
         string taskId,
+        [FromBody] MeshScheduleRequest? body,
         [FromServices] IMeshTaskPlacementService placement,
+        [FromServices] IHttpContextAccessor httpContextAccessor,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(taskId))
             return Results.BadRequest(new ProblemDetails { Title = "taskId is required" });
-        var (ok, task, error) = await placement.TryRetryAsync(taskId, cancellationToken).ConfigureAwait(false);
+        var correlation = ResolveMeshCorrelationId(httpContextAccessor, body?.CorrelationId);
+        var (ok, task, error) = await placement.TryRetryAsync(
+            taskId,
+            body?.ScheduleIdempotencyKey,
+            correlation,
+            cancellationToken).ConfigureAwait(false);
         if (task is null)
             return Results.NotFound();
+        if (!ok && string.Equals(error, "schedule.idempotency_conflict", StringComparison.Ordinal))
+            return Results.Conflict(ToTaskResponse(task));
         if (!ok)
             return Results.BadRequest(new ProblemDetails { Title = error ?? "placement.failed", Detail = error });
         return Results.Ok(ToTaskResponse(task));
+    }
+
+    private static async Task<IResult> DownloadMeshTaskResultAsync(
+        string taskId,
+        [FromServices] IMeshTaskRegistry tasks,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(taskId))
+            return Results.BadRequest(new ProblemDetails { Title = "taskId is required" });
+        var t = await tasks.GetAsync(taskId, cancellationToken).ConfigureAwait(false);
+        if (t is null)
+            return Results.NotFound();
+        if (string.IsNullOrWhiteSpace(t.ResultHandle))
+            return Results.BadRequest(new ProblemDetails { Title = "No result handle recorded for this task" });
+
+        var path = Path.GetFullPath(t.ResultHandle.Trim());
+        if (!File.Exists(path))
+            return Results.NotFound();
+
+        return Results.File(path, contentType: "application/octet-stream", fileDownloadName: Path.GetFileName(path));
     }
 
     private static async Task<IResult> PatchMeshTaskStatusAsync(
         string taskId,
         [FromBody] MeshTaskStatusPatchRequest? body,
         [FromServices] IMeshTaskRegistry tasks,
+        [FromServices] IHttpContextAccessor httpContextAccessor,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(taskId))
@@ -692,18 +751,60 @@ public static class NexoEndpoints
         if (t is null)
             return Results.NotFound();
 
+        var correlation = ResolveMeshCorrelationId(httpContextAccessor, body.CorrelationId);
         var next = body.Status switch
         {
-            MeshTaskStatus.Running => t with { Status = MeshTaskStatus.Running, PlacementReason = body.Reason ?? t.PlacementReason },
-            MeshTaskStatus.Succeeded => t with { Status = MeshTaskStatus.Succeeded, PlacementReason = body.Reason ?? t.PlacementReason },
-            MeshTaskStatus.Failed => t with { Status = MeshTaskStatus.Failed, PlacementReason = body.Reason ?? t.PlacementReason },
-            MeshTaskStatus.Pending => t with { Status = MeshTaskStatus.Pending, AssignedPeerId = null, AssignedApiBaseUrl = null, PlacementReason = body.Reason },
-            MeshTaskStatus.Assigned => t with { Status = MeshTaskStatus.Assigned, PlacementReason = body.Reason ?? t.PlacementReason },
+            MeshTaskStatus.Running => t with
+            {
+                Status = MeshTaskStatus.Running,
+                PlacementReason = body.Reason ?? t.PlacementReason,
+                CorrelationId = correlation ?? t.CorrelationId
+            },
+            MeshTaskStatus.Succeeded => t with
+            {
+                Status = MeshTaskStatus.Succeeded,
+                PlacementReason = body.Reason ?? t.PlacementReason,
+                CorrelationId = correlation ?? t.CorrelationId,
+                ResultSummary = body.ResultSummary ?? t.ResultSummary,
+                ResultHandle = body.ResultHandle ?? t.ResultHandle
+            },
+            MeshTaskStatus.Failed => t with
+            {
+                Status = MeshTaskStatus.Failed,
+                PlacementReason = body.Reason ?? t.PlacementReason,
+                CorrelationId = correlation ?? t.CorrelationId,
+                ResultSummary = body.ResultSummary ?? t.ResultSummary,
+                ResultHandle = body.ResultHandle ?? t.ResultHandle
+            },
+            MeshTaskStatus.Pending => t with
+            {
+                Status = MeshTaskStatus.Pending,
+                AssignedPeerId = null,
+                AssignedApiBaseUrl = null,
+                PlacementReason = body.Reason,
+                CorrelationId = correlation ?? t.CorrelationId
+            },
+            MeshTaskStatus.Assigned => t with
+            {
+                Status = MeshTaskStatus.Assigned,
+                PlacementReason = body.Reason ?? t.PlacementReason,
+                CorrelationId = correlation ?? t.CorrelationId
+            },
             _ => t
         };
 
         await tasks.UpdateAsync(next, cancellationToken).ConfigureAwait(false);
         return Results.Ok(ToTaskResponse(next));
+    }
+
+    private static string? ResolveMeshCorrelationId(IHttpContextAccessor? accessor, string? fromBody)
+    {
+        if (!string.IsNullOrWhiteSpace(fromBody))
+            return fromBody.Trim();
+        var ctx = accessor?.HttpContext;
+        if (ctx?.Items.TryGetValue(MeshCorrelationMiddleware.HttpContextItemKey, out var v) == true && v is string s && !string.IsNullOrWhiteSpace(s))
+            return s.Trim();
+        return null;
     }
 
     private static MeshFleetNodeResponse ToFleetResponse(MeshFleetNodeState n) =>
@@ -731,7 +832,12 @@ public static class NexoEndpoints
             t.PlacementReason,
             t.AttemptCount,
             t.CreatedAtUtc,
-            t.LastScheduledAtUtc);
+            t.LastScheduledAtUtc,
+            t.CorrelationId,
+            t.IdempotencyKey,
+            t.LastScheduleIdempotencyKey,
+            t.ResultSummary,
+            t.ResultHandle);
 
     private static async Task<IResult> RunDirectorWorkflowAsync(
         [FromBody] DirectorRunRequest request,
@@ -1365,7 +1471,13 @@ public sealed record MeshTaskCreateRequest(
     IReadOnlyList<string>? RequiredBrickIds,
     IReadOnlyDictionary<string, string>? Affinity,
     int Priority = 0,
-    DateTimeOffset? DeadlineUtc = null);
+    DateTimeOffset? DeadlineUtc = null,
+    string? CorrelationId = null,
+    string? IdempotencyKey = null);
+
+public sealed record MeshScheduleRequest(
+    string? ScheduleIdempotencyKey = null,
+    string? CorrelationId = null);
 
 public sealed record MeshTaskResponse(
     string TaskId,
@@ -1381,9 +1493,19 @@ public sealed record MeshTaskResponse(
     string? PlacementReason,
     int AttemptCount,
     DateTimeOffset CreatedAtUtc,
-    DateTimeOffset? LastScheduledAtUtc);
+    DateTimeOffset? LastScheduledAtUtc,
+    string? CorrelationId,
+    string? IdempotencyKey,
+    string? LastScheduleIdempotencyKey,
+    string? ResultSummary,
+    string? ResultHandle);
 
-public sealed record MeshTaskStatusPatchRequest(MeshTaskStatus Status, string? Reason = null);
+public sealed record MeshTaskStatusPatchRequest(
+    MeshTaskStatus Status,
+    string? Reason = null,
+    string? CorrelationId = null,
+    string? ResultSummary = null,
+    string? ResultHandle = null);
 
 public sealed record CopilotTaskRequest(string Task, int AuditCount = 25);
 public sealed record CopilotTaskResponse(

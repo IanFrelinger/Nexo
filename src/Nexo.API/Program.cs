@@ -22,6 +22,8 @@
 //     enforce network policy. Optional built-in auth modes (ApiKey, Bearer,
 //     Basic, and composite OR-modes) protect mutating endpoints via
 //     UseNexoApiKeyAuth middleware.
+//   • Mesh correlation — UseNexoMeshCorrelation assigns / echoes X-Nexo-Correlation-Id
+//     for /api/mesh and brick execute (Phase 3).
 //   • MeshSecurityOptions — optional Nexo:Security:Mesh tokens, body size cap,
 //     and rate limits for /api/mesh and POST /api/bricks/*/execute (Phase 2);
 //     UseNexoMeshSecurity runs before UseNexoApiKeyAuth.
@@ -68,6 +70,7 @@ if (!string.IsNullOrWhiteSpace(agentsConfigPath))
 }
 
 builder.Services.AddLogging(b => b.AddConsole());
+builder.Services.AddHttpContextAccessor();
 builder.Services.Configure<GrpcTransportOptions>(
     builder.Configuration.GetSection("Nexo:GrpcTransport"));
 builder.Services.Configure<NexoSecurityOptions>(
@@ -162,6 +165,7 @@ var app = builder.Build();
 // --- Middleware pipeline: SPA static files → auth → API endpoints ---
 app.UseDefaultFiles();
 app.UseStaticFiles();
+app.UseNexoMeshCorrelation();
 app.UseNexoMeshSecurity();
 app.UseNexoApiKeyAuth();
 

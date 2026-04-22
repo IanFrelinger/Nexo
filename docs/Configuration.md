@@ -96,6 +96,10 @@ When **`BrickExecuteToken`** is unset but **`MeshMutatingToken`** is set, brick 
 
 Combine with **`Nexo__Security__AuthorizationMode`** and TLS termination for production meshes. See **`docs/MeshPhase2TransportAndAuth.md`**.
 
+## Mesh correlation header (Phase 3)
+
+For **`/api/mesh/*`** and **`POST /api/bricks/*/execute`**, the API assigns or echoes **`X-Nexo-Correlation-Id`** (see [MeshPhase3DistributedExecution.md](MeshPhase3DistributedExecution.md)). Clients may send their own correlation id to align logs across hops.
+
 ## Pipelines (`NEXO_PIPELINE_*`)
 
 Pipeline options resolve in this order: defaults, config (`Nexo:Pipelines:*`), then environment variables.
