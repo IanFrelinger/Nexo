@@ -22,6 +22,9 @@
 //     enforce network policy. Optional built-in auth modes (ApiKey, Bearer,
 //     Basic, and composite OR-modes) protect mutating endpoints via
 //     UseNexoApiKeyAuth middleware.
+//   • MeshSecurityOptions — optional Nexo:Security:Mesh tokens, body size cap,
+//     and rate limits for /api/mesh and POST /api/bricks/*/execute (Phase 2);
+//     UseNexoMeshSecurity runs before UseNexoApiKeyAuth.
 //   • Static files + endpoints — DefaultFiles/StaticFiles serve the SPA;
 //     MapNexoEndpoints wires the API; MapFallbackToFile routes unknown paths
 //     to index.html for client-side routing.
@@ -69,6 +72,8 @@ builder.Services.Configure<GrpcTransportOptions>(
     builder.Configuration.GetSection("Nexo:GrpcTransport"));
 builder.Services.Configure<NexoSecurityOptions>(
     builder.Configuration.GetSection(NexoSecurityOptions.SectionPath));
+builder.Services.Configure<MeshSecurityOptions>(
+    builder.Configuration.GetSection(MeshSecurityOptions.SectionPath));
 builder.Services.AddNexoRuntimeRouting(builder.Configuration);
 
 // Planner / optimizer / tester background agents need the same runners as `nexo background-agent daemon`.
@@ -157,6 +162,7 @@ var app = builder.Build();
 // --- Middleware pipeline: SPA static files → auth → API endpoints ---
 app.UseDefaultFiles();
 app.UseStaticFiles();
+app.UseNexoMeshSecurity();
 app.UseNexoApiKeyAuth();
 
 app.MapNexoEndpoints();

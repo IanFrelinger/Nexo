@@ -101,7 +101,11 @@ Targets are **defaults for a first internal mesh**; tighten per environment.
 - [x] **Trust boundary** documented (mesh + remote execute + residency).
 - [x] **SLOs** and failure modes stated with initial numeric targets.
 
-**Next step (Phase 1):** Implemented — see [MeshPhase1ControlPlane.md](MeshPhase1ControlPlane.md) (`/api/mesh`, in-memory fleet + task placement). Optional tracking issue batch in [IssueBatch_30-60-90_Roadmap.md](IssueBatch_30-60-90_Roadmap.md).
+**Next step (Phase 1):** Implemented — see [MeshPhase1ControlPlane.md](MeshPhase1ControlPlane.md) (`/api/mesh`, in-memory fleet + task placement).
+
+**Next step (Phase 2):** Implemented — see [MeshPhase2TransportAndAuth.md](MeshPhase2TransportAndAuth.md) (`Nexo:Security:Mesh`, middleware before built-in API auth).
+
+Optional tracking issue batch in [IssueBatch_30-60-90_Roadmap.md](IssueBatch_30-60-90_Roadmap.md).
 
 ---
 

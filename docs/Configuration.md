@@ -78,6 +78,24 @@ Notes:
 - If `AuthorizationMode` is set to anything except `None`, built-in auth mode takes precedence over legacy `RequireApiKeyForMutatingEndpoints`.
 - `RequireApiKeyForMutatingEndpoints` remains for backward compatibility with existing deployments.
 
+## Mesh and brick HTTP hardening (`Nexo__Security__Mesh__*`, Phase 2)
+
+Optional middleware runs **before** built-in API auth. It applies to **`/api/mesh/*`** and **`POST /api/bricks/*/execute`**. When all options are unset or zero, behavior matches previous releases (no extra mesh checks).
+
+| Variable / config key | Description | Default |
+|------------------------|-------------|---------|
+| `Nexo__Security__Mesh__MeshMutatingToken` | When set, **POST/PATCH/DELETE** under `/api/mesh` must send this exact value in the mesh token header | unset |
+| `Nexo__Security__Mesh__MeshTokenHeaderName` | Header for mesh mutating token | `X-Nexo-Mesh-Token` |
+| `Nexo__Security__Mesh__BrickExecuteToken` | When set, brick execute requires this value in the brick header only | unset |
+| `Nexo__Security__Mesh__BrickExecuteTokenHeaderName` | Header for brick execute token | `X-Nexo-Brick-Execute-Token` |
+| `Nexo__Security__Mesh__MaxJsonBodyBytes` | Reject POST/PUT/PATCH when `Content-Length` exceeds this (0 = off) | `524288` |
+| `Nexo__Security__Mesh__RateLimitPermitLimit` | Max mutating requests per client IP per window for mesh + brick execute (0 = off) | `120` |
+| `Nexo__Security__Mesh__RateLimitWindowSeconds` | Window length in seconds | `60` |
+
+When **`BrickExecuteToken`** is unset but **`MeshMutatingToken`** is set, brick execute accepts the mesh secret in **`BrickExecuteTokenHeaderName`** *or* **`MeshTokenHeaderName`**.
+
+Combine with **`Nexo__Security__AuthorizationMode`** and TLS termination for production meshes. See **`docs/MeshPhase2TransportAndAuth.md`**.
+
 ## Pipelines (`NEXO_PIPELINE_*`)
 
 Pipeline options resolve in this order: defaults, config (`Nexo:Pipelines:*`), then environment variables.
