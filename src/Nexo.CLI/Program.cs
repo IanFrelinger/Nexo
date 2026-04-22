@@ -1463,7 +1463,9 @@ static class Program
         root.AddCommand(new ChangelogCommand());
         root.AddCommand(new RollbackCommand());
         root.AddCommand(new ComposeCommand());
-        root.AddCommand(new MeshCommand());
+        var meshCmd = new MeshCommand();
+        meshCmd.AddCommand(new MeshDirectorCommand());
+        root.AddCommand(meshCmd);
         root.AddCommand(backgroundAgentCmd);
         root.AddCommand(testCmd);
         root.AddCommand(escalateCmd);

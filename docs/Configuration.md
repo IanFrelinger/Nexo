@@ -78,6 +78,16 @@ Notes:
 - If `AuthorizationMode` is set to anything except `None`, built-in auth mode takes precedence over legacy `RequireApiKeyForMutatingEndpoints`.
 - `RequireApiKeyForMutatingEndpoints` remains for backward compatibility with existing deployments.
 
+## Mesh director CLI (`NEXO_MESH_*`, Phase 7)
+
+Used by **`nexo mesh director`** when a worker or script talks to a remote **`Nexo.API`** mesh control plane. See **`docs/MeshPhase7EdgeAlignment.md`**.
+
+| Variable | Description |
+|----------|-------------|
+| `NEXO_MESH_DIRECTOR_BASE_URL` | Director base URL (e.g. `https://hub:8080`) |
+| `NEXO_MESH_API_KEY` | Optional **`X-Nexo-Api-Key`** when the hub enforces API key auth |
+| `NEXO_MESH_MUTATING_TOKEN` | Optional **`X-Nexo-Mesh-Token`** for mutating **`/api/mesh`** requests |
+
 ## Pipelines (`NEXO_PIPELINE_*`)
 
 Pipeline options resolve in this order: defaults, config (`Nexo:Pipelines:*`), then environment variables.
