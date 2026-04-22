@@ -15,6 +15,7 @@ public interface IMeshTaskPlacementService
         string taskId,
         string? scheduleIdempotencyKey = null,
         string? correlationId = null,
+        int? leaseSecondsOverride = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -24,5 +25,6 @@ public interface IMeshTaskPlacementService
         string taskId,
         string? scheduleIdempotencyKey = null,
         string? correlationId = null,
+        int? leaseSecondsOverride = null,
         CancellationToken cancellationToken = default);
 }

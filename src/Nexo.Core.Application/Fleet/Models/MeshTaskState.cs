@@ -1,7 +1,8 @@
 namespace Nexo.Core.Application.Fleet.Models;
 
 /// <summary>
-/// A schedulable task tracked by the Phase 1 director (in-memory); Phase 3 adds correlation, schedule idempotency, and result handles.
+/// A schedulable task tracked by the Phase 1 director (in-memory); Phase 3 adds correlation, schedule idempotency, and result handles;
+/// Phase 6 adds optional execution lease and checkpoint handle for migrate flows.
 /// </summary>
 public sealed record MeshTaskState(
     string TaskId,
@@ -22,4 +23,8 @@ public sealed record MeshTaskState(
     string? IdempotencyKey,
     string? LastScheduleIdempotencyKey,
     string? ResultSummary,
-    string? ResultHandle);
+    string? ResultHandle,
+    string? LeaseToken,
+    string? LeaseOwnerPeerId,
+    DateTimeOffset? LeaseExpiresUtc,
+    string? CheckpointHandle);

@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Nexo.Core.Application.Fleet.Models;
 using Nexo.Core.Application.Fleet.Ports;
 
@@ -11,15 +12,18 @@ public sealed class MeshTaskPlacementService : IMeshTaskPlacementService
 {
     private readonly IFleetNodeRegistry _nodes;
     private readonly IMeshTaskRegistry _tasks;
+    private readonly MeshCheckpointOptions _checkpointOptions;
     private readonly ILogger<MeshTaskPlacementService>? _logger;
 
     public MeshTaskPlacementService(
         IFleetNodeRegistry nodes,
         IMeshTaskRegistry tasks,
+        IOptions<MeshCheckpointOptions> checkpointOptions,
         ILogger<MeshTaskPlacementService>? logger = null)
     {
         _nodes = nodes ?? throw new ArgumentNullException(nameof(nodes));
         _tasks = tasks ?? throw new ArgumentNullException(nameof(tasks));
+        _checkpointOptions = checkpointOptions?.Value ?? throw new ArgumentNullException(nameof(checkpointOptions));
         _logger = logger;
     }
 
@@ -27,18 +31,20 @@ public sealed class MeshTaskPlacementService : IMeshTaskPlacementService
         string taskId,
         string? scheduleIdempotencyKey = null,
         string? correlationId = null,
+        int? leaseSecondsOverride = null,
         CancellationToken cancellationToken = default)
-        => TryPlaceAsync(taskId, skipPreviousPeerId: null, scheduleIdempotencyKey, correlationId, cancellationToken);
+        => TryPlaceAsync(taskId, skipPreviousPeerId: null, scheduleIdempotencyKey, correlationId, leaseSecondsOverride, cancellationToken);
 
     public async Task<(bool Ok, MeshTaskState? Task, string? Error)> TryRetryAsync(
         string taskId,
         string? scheduleIdempotencyKey = null,
         string? correlationId = null,
+        int? leaseSecondsOverride = null,
         CancellationToken cancellationToken = default)
     {
         var current = await _tasks.GetAsync(taskId, cancellationToken).ConfigureAwait(false);
         var skip = current?.AssignedPeerId;
-        return await TryPlaceAsync(taskId, skipPreviousPeerId: skip, scheduleIdempotencyKey, correlationId, cancellationToken).ConfigureAwait(false);
+        return await TryPlaceAsync(taskId, skipPreviousPeerId: skip, scheduleIdempotencyKey, correlationId, leaseSecondsOverride, cancellationToken).ConfigureAwait(false);
     }
 
     private async Task<(bool Ok, MeshTaskState? Task, string? Error)> TryPlaceAsync(
@@ -46,6 +52,7 @@ public sealed class MeshTaskPlacementService : IMeshTaskPlacementService
         string? skipPreviousPeerId,
         string? scheduleIdempotencyKey,
         string? correlationId,
+        int? leaseSecondsOverride,
         CancellationToken cancellationToken)
     {
         var task = await _tasks.GetAsync(taskId, cancellationToken).ConfigureAwait(false);
@@ -68,16 +75,42 @@ public sealed class MeshTaskPlacementService : IMeshTaskPlacementService
             ? task.CorrelationId
             : correlationId.Trim();
 
-        // Idempotent schedule: same key + already assigned => same response (Phase 3).
-        if (!isRetry &&
-            task.Status == MeshTaskStatus.Assigned &&
+        // Active lease + idempotent schedule (Phase 3) or reclaim expired lease (Phase 6).
+        if ((task.Status == MeshTaskStatus.Assigned || task.Status == MeshTaskStatus.Running) &&
             !string.IsNullOrEmpty(task.AssignedPeerId))
         {
-            if (scheduleKey is null)
-                return (true, task with { CorrelationId = corr ?? task.CorrelationId }, null);
-            if (string.Equals(task.LastScheduleIdempotencyKey, scheduleKey, StringComparison.Ordinal))
-                return (true, task with { CorrelationId = corr ?? task.CorrelationId }, null);
-            return (false, task with { CorrelationId = corr ?? task.CorrelationId }, "schedule.idempotency_conflict");
+            var nowUtc = DateTimeOffset.UtcNow;
+            if (task.LeaseExpiresUtc is { } exp && nowUtc > exp)
+            {
+                var reclaimed = task with
+                {
+                    Status = MeshTaskStatus.Pending,
+                    AssignedPeerId = null,
+                    AssignedApiBaseUrl = null,
+                    LeaseToken = null,
+                    LeaseOwnerPeerId = null,
+                    LeaseExpiresUtc = null,
+                    PlacementReason = "lease.expired_before_reschedule"
+                };
+                await _tasks.UpdateAsync(reclaimed, cancellationToken).ConfigureAwait(false);
+                task = await _tasks.GetAsync(taskId, cancellationToken).ConfigureAwait(false) ?? reclaimed;
+            }
+            else if (!isRetry && task.Status == MeshTaskStatus.Assigned)
+            {
+                if (scheduleKey is null)
+                    return (true, task with { CorrelationId = corr ?? task.CorrelationId }, null);
+                if (string.Equals(task.LastScheduleIdempotencyKey, scheduleKey, StringComparison.Ordinal))
+                    return (true, task with { CorrelationId = corr ?? task.CorrelationId }, null);
+                return (false, task with { CorrelationId = corr ?? task.CorrelationId }, "schedule.idempotency_conflict");
+            }
+            else if (!isRetry && task.Status == MeshTaskStatus.Running)
+            {
+                if (scheduleKey is null)
+                    return (true, task with { CorrelationId = corr ?? task.CorrelationId }, null);
+                if (string.Equals(task.LastScheduleIdempotencyKey, scheduleKey, StringComparison.Ordinal))
+                    return (true, task with { CorrelationId = corr ?? task.CorrelationId }, null);
+                return (false, task with { CorrelationId = corr ?? task.CorrelationId }, "schedule.idempotency_conflict");
+            }
         }
 
         var work = isRetry
@@ -87,7 +120,10 @@ public sealed class MeshTaskPlacementService : IMeshTaskPlacementService
                 AssignedPeerId = null,
                 AssignedApiBaseUrl = null,
                 PlacementReason = null,
-                CorrelationId = corr ?? task.CorrelationId
+                CorrelationId = corr ?? task.CorrelationId,
+                LeaseToken = null,
+                LeaseOwnerPeerId = null,
+                LeaseExpiresUtc = null
             }
             : task with { CorrelationId = corr ?? task.CorrelationId };
 
@@ -120,6 +156,12 @@ public sealed class MeshTaskPlacementService : IMeshTaskPlacementService
             candidates = eligible;
 
         var pick = candidates[0];
+        var leaseSeconds = leaseSecondsOverride.HasValue
+            ? Math.Clamp(leaseSecondsOverride.Value, 60, 86_400)
+            : Math.Max(60, _checkpointOptions.LeaseSeconds);
+        var leaseToken = Guid.NewGuid().ToString("N");
+        var leaseUntil = DateTimeOffset.UtcNow.AddSeconds(leaseSeconds);
+
         var assigned = work with
         {
             Status = MeshTaskStatus.Assigned,
@@ -128,7 +170,11 @@ public sealed class MeshTaskPlacementService : IMeshTaskPlacementService
             PlacementReason = "placement.ok",
             AttemptCount = work.AttemptCount + 1,
             LastScheduledAtUtc = DateTimeOffset.UtcNow,
-            LastScheduleIdempotencyKey = scheduleKey
+            LastScheduleIdempotencyKey = scheduleKey,
+            LeaseToken = leaseToken,
+            LeaseOwnerPeerId = pick.PeerId,
+            LeaseExpiresUtc = leaseUntil,
+            CheckpointHandle = null
         };
 
         await _tasks.UpdateAsync(assigned, cancellationToken).ConfigureAwait(false);

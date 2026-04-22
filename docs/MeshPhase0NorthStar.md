@@ -111,6 +111,8 @@ Targets are **defaults for a first internal mesh**; tighten per environment.
 
 **Next step (Phase 5):** Implemented — see [MeshPhase5ElasticScheduling.md](MeshPhase5ElasticScheduling.md) (queue-aware placement + stale pending rebalancer).
 
+**Next step (Phase 6):** Implemented — see [MeshPhase6LeasesAndCheckpoints.md](MeshPhase6LeasesAndCheckpoints.md) (leases, extend/migrate, sweep).
+
 Optional tracking issue batch in [IssueBatch_30-60-90_Roadmap.md](IssueBatch_30-60-90_Roadmap.md).
 
 ---
