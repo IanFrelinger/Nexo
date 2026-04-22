@@ -158,9 +158,14 @@ public static class NexoEndpoints
 
         mesh.MapPost("/fleet/nodes/{peerId}/heartbeat", FleetNodeHeartbeatAsync)
             .WithName("FleetNodeHeartbeat")
-            .WithSummary("Phase 1: record worker heartbeat")
+            .WithSummary("Phase 1/5: record worker heartbeat; optional body queueDepth for elastic placement")
             .Produces(StatusCodes.Status204NoContent)
             .ProducesProblem(StatusCodes.Status404NotFound);
+
+        mesh.MapGet("/elastic/status", GetMeshElasticStatusAsync)
+            .WithName("GetMeshElasticStatus")
+            .WithSummary("Phase 5: mesh task counts and fleet queue snapshot")
+            .Produces<MeshElasticStatusResponse>(StatusCodes.Status200OK);
 
         mesh.MapPost("/fleet/nodes/{peerId}/drain", SetFleetNodeDrainAsync)
             .WithName("SetFleetNodeDrain")
@@ -575,6 +580,8 @@ public static class NexoEndpoints
         }
 
         var existing = await registry.GetAsync(body.PeerId, cancellationToken).ConfigureAwait(false);
+        var queue = body.ReportedQueueDepth ?? existing?.ReportedQueueDepth ?? 0;
+        if (queue < 0) queue = 0;
         var state = new MeshFleetNodeState(
             PeerId: body.PeerId.Trim(),
             ApiBaseUrl: body.ApiBaseUrl.Trim(),
@@ -582,7 +589,8 @@ public static class NexoEndpoints
             AdvertisedBrickIds: body.AdvertisedBrickIds ?? Array.Empty<string>(),
             Drained: body.Drained,
             LastHeartbeatUtc: DateTimeOffset.UtcNow,
-            RegisteredAtUtc: existing?.RegisteredAtUtc ?? DateTimeOffset.UtcNow);
+            RegisteredAtUtc: existing?.RegisteredAtUtc ?? DateTimeOffset.UtcNow,
+            ReportedQueueDepth: queue);
 
         await registry.RegisterOrUpdateAsync(state, cancellationToken).ConfigureAwait(false);
         return Results.Ok(ToFleetResponse(state));
@@ -601,6 +609,7 @@ public static class NexoEndpoints
 
     private static async Task<IResult> FleetNodeHeartbeatAsync(
         string peerId,
+        [FromBody] MeshHeartbeatRequest? body,
         [FromServices] IFleetNodeRegistry registry,
         CancellationToken cancellationToken)
     {
@@ -609,8 +618,38 @@ public static class NexoEndpoints
         var existing = await registry.GetAsync(peerId, cancellationToken).ConfigureAwait(false);
         if (existing is null)
             return Results.NotFound();
-        await registry.HeartbeatAsync(peerId, cancellationToken).ConfigureAwait(false);
+        await registry.HeartbeatAsync(peerId, body?.QueueDepth, cancellationToken).ConfigureAwait(false);
         return Results.NoContent();
+    }
+
+    private static async Task<IResult> GetMeshElasticStatusAsync(
+        [FromServices] IFleetNodeRegistry fleet,
+        [FromServices] IMeshTaskRegistry tasks,
+        CancellationToken cancellationToken)
+    {
+        var nodes = await fleet.ListAsync(cancellationToken).ConfigureAwait(false);
+        var taskList = await tasks.ListAsync(cancellationToken).ConfigureAwait(false);
+        var counts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        foreach (var s in Enum.GetNames<MeshTaskStatus>())
+            counts[s] = 0;
+        foreach (var t in taskList)
+        {
+            var key = t.Status.ToString();
+            counts[key] = counts.GetValueOrDefault(key) + 1;
+        }
+
+        var workers = nodes
+            .Where(n => !n.Drained)
+            .Select(n => new MeshElasticWorkerSnapshot(
+                n.PeerId,
+                n.ReportedQueueDepth,
+                n.LastHeartbeatUtc))
+            .ToList();
+
+        return Results.Ok(new MeshElasticStatusResponse(
+            counts,
+            workers,
+            DateTimeOffset.UtcNow));
     }
 
     private static async Task<IResult> SetFleetNodeDrainAsync(
@@ -854,7 +893,8 @@ public static class NexoEndpoints
             n.AdvertisedBrickIds,
             n.Drained,
             n.LastHeartbeatUtc,
-            n.RegisteredAtUtc);
+            n.RegisteredAtUtc,
+            n.ReportedQueueDepth);
 
     private static MeshTaskResponse ToTaskResponse(MeshTaskState t) =>
         new(
@@ -1491,7 +1531,10 @@ public sealed record MeshFleetNodeRequest(
     string ApiBaseUrl,
     IReadOnlyDictionary<string, string>? Labels = null,
     IReadOnlyList<string>? AdvertisedBrickIds = null,
-    bool Drained = false);
+    bool Drained = false,
+    int? ReportedQueueDepth = null);
+
+public sealed record MeshHeartbeatRequest(int? QueueDepth = null);
 
 public sealed record MeshFleetDrainRequest(bool Drained);
 
@@ -1502,7 +1545,15 @@ public sealed record MeshFleetNodeResponse(
     IReadOnlyList<string> AdvertisedBrickIds,
     bool Drained,
     DateTimeOffset? LastHeartbeatUtc,
-    DateTimeOffset RegisteredAtUtc);
+    DateTimeOffset RegisteredAtUtc,
+    int ReportedQueueDepth);
+
+public sealed record MeshElasticWorkerSnapshot(string PeerId, int ReportedQueueDepth, DateTimeOffset? LastHeartbeatUtc);
+
+public sealed record MeshElasticStatusResponse(
+    IReadOnlyDictionary<string, int> TaskCountsByStatus,
+    IReadOnlyList<MeshElasticWorkerSnapshot> Workers,
+    DateTimeOffset GeneratedAtUtc);
 
 public sealed record MeshTaskCreateRequest(
     string? Name,

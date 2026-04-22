@@ -115,6 +115,16 @@ Only active when **`AddNexo`** registers adaptation (Full/Server/AirGapped profi
 
 See [MeshPhase4KnowledgeSync.md](MeshPhase4KnowledgeSync.md).
 
+## Mesh elastic scheduling (`Nexo__Mesh__Elastic__*`, Phase 5)
+
+| Variable / config key | Description | Default |
+|------------------------|-------------|---------|
+| `Nexo__Mesh__Elastic__Enabled` | `true` to run periodic re-placement for stale **Pending** tasks | `false` |
+| `Nexo__Mesh__Elastic__IntervalMinutes` | Minutes between rebalancer rounds | `2` |
+| `Nexo__Mesh__Elastic__PendingStaleSeconds` | Pending tasks older than this get `TryScheduleAsync` again | `120` |
+
+Workers should POST heartbeat with **`queueDepth`** (local backlog) so placement prefers idle nodes. See [MeshPhase5ElasticScheduling.md](MeshPhase5ElasticScheduling.md).
+
 ## Pipelines (`NEXO_PIPELINE_*`)
 
 Pipeline options resolve in this order: defaults, config (`Nexo:Pipelines:*`), then environment variables.

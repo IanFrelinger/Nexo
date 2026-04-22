@@ -22,7 +22,8 @@ Base path: **`/api/mesh`** (same auth middleware as other `/api/*` routes when e
 | `GET` | `/fleet/nodes` | List registered workers |
 | `POST` | `/fleet/nodes` | Register or update worker (`MeshFleetNodeRequest`) |
 | `DELETE` | `/fleet/nodes/{peerId}` | Remove worker |
-| `POST` | `/fleet/nodes/{peerId}/heartbeat` | Heartbeat |
+| `POST` | `/fleet/nodes/{peerId}/heartbeat` | Heartbeat; optional body `{ "queueDepth": n }` (Phase 5) |
+| `GET` | `/elastic/status` | Phase 5: task counts + worker queue snapshot |
 | `POST` | `/fleet/nodes/{peerId}/drain` | Body `{ "drained": true/false }` |
 | `GET` | `/tasks` | List tasks |
 | `POST` | `/tasks` | Create task (`MeshTaskCreateRequest`) |

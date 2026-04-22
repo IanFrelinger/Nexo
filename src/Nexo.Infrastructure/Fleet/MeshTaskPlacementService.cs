@@ -99,7 +99,8 @@ public sealed class MeshTaskPlacementService : IMeshTaskPlacementService
             .Where(n => !n.Drained && !string.IsNullOrWhiteSpace(n.ApiBaseUrl))
             .Where(n => MatchesAffinity(n, work.Affinity))
             .Where(n => HasBricks(n, work.RequiredBrickIds))
-            .OrderByDescending(n => n.LastHeartbeatUtc ?? DateTimeOffset.MinValue)
+            .OrderBy(n => n.ReportedQueueDepth)
+            .ThenByDescending(n => n.LastHeartbeatUtc ?? DateTimeOffset.MinValue)
             .ThenBy(n => n.PeerId, StringComparer.OrdinalIgnoreCase)
             .ToList();
 

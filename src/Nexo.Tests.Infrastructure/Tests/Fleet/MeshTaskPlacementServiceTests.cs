@@ -71,7 +71,7 @@ public sealed class MeshTaskPlacementServiceTests
         var task = await tasks.CreateAsync(new MeshTaskCreateSpec(null, 1, new[] { "b" }, null, 0, null));
         var (ok1, t1, _) = await placement.TryScheduleAsync(task.TaskId);
         ok1.Should().BeTrue();
-        t1!.AssignedPeerId.Should().Be("peer-1", "newer heartbeat wins");
+        t1!.AssignedPeerId.Should().Be("peer-1", "same queue depth; newer heartbeat then stable peer id tie-break");
 
         var (ok2, t2, _) = await placement.TryRetryAsync(task.TaskId);
         ok2.Should().BeTrue();

@@ -80,13 +80,21 @@ public sealed class InMemoryFleetNodeRegistry : IFleetNodeRegistry
         }
     }
 
-    public async Task HeartbeatAsync(string peerId, CancellationToken cancellationToken = default)
+    public async Task HeartbeatAsync(string peerId, int? reportedQueueDepth = null, CancellationToken cancellationToken = default)
     {
         await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             if (_nodes.TryGetValue(peerId, out var existing))
-                _nodes[peerId] = existing with { LastHeartbeatUtc = DateTimeOffset.UtcNow };
+            {
+                var depth = reportedQueueDepth ?? existing.ReportedQueueDepth;
+                if (depth < 0) depth = 0;
+                _nodes[peerId] = existing with
+                {
+                    LastHeartbeatUtc = DateTimeOffset.UtcNow,
+                    ReportedQueueDepth = depth
+                };
+            }
         }
         finally
         {

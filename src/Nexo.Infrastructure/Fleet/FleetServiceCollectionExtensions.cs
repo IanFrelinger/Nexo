@@ -19,6 +19,17 @@ public static class FleetServiceCollectionExtensions
     }
 
     /// <summary>
+    /// Phase 5: optional periodic re-placement of stale pending mesh tasks.
+    /// </summary>
+    public static IServiceCollection AddNexoMeshElasticScheduling(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddOptions<MeshElasticSchedulingOptions>()
+            .Bind(configuration.GetSection(MeshElasticSchedulingOptions.SectionPath));
+        services.AddHostedService<MeshPendingTaskRebalancerBackgroundService>();
+        return services;
+    }
+
+    /// <summary>
     /// Phase 4: mesh knowledge export/import and optional peer pull (requires adaptation + pattern stores).
     /// </summary>
     public static IServiceCollection AddNexoMeshKnowledgeReplication(

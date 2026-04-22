@@ -109,6 +109,8 @@ Targets are **defaults for a first internal mesh**; tighten per environment.
 
 **Next step (Phase 4):** Implemented — see [MeshPhase4KnowledgeSync.md](MeshPhase4KnowledgeSync.md) (adaptation + pattern mesh sync).
 
+**Next step (Phase 5):** Implemented — see [MeshPhase5ElasticScheduling.md](MeshPhase5ElasticScheduling.md) (queue-aware placement + stale pending rebalancer).
+
 Optional tracking issue batch in [IssueBatch_30-60-90_Roadmap.md](IssueBatch_30-60-90_Roadmap.md).
 
 ---

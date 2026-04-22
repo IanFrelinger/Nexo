@@ -17,5 +17,8 @@ public interface IFleetNodeRegistry
 
     Task<bool> SetDrainedAsync(string peerId, bool drained, CancellationToken cancellationToken = default);
 
-    Task HeartbeatAsync(string peerId, CancellationToken cancellationToken = default);
+    /// <param name="peerId">Worker peer id.</param>
+    /// <param name="reportedQueueDepth">Optional worker-reported queue depth for elastic placement (Phase 5).</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    Task HeartbeatAsync(string peerId, int? reportedQueueDepth = null, CancellationToken cancellationToken = default);
 }

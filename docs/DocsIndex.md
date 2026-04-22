@@ -75,6 +75,7 @@ Documentation index for the Nexo platform. Start here to find what you need.
 - `docs/MeshPhase2TransportAndAuth.md` — **Phase 2:** mesh + brick-execute service tokens, body size cap, per-IP rate limits (`Nexo:Security:Mesh`).
 - `docs/MeshPhase3DistributedExecution.md` — **Phase 3:** correlation id, task/schedule idempotency, result handle + download.
 - `docs/MeshPhase4KnowledgeSync.md` — **Phase 4:** adaptation + pattern export/import between peers, optional background pull.
+- `docs/MeshPhase5ElasticScheduling.md` — **Phase 5:** queue-aware placement, heartbeat queue depth, elastic status, pending rebalancer.
 - `docs/ExecutionPlan.md` — phased execution plan with implementation tasks, dependencies, and success metrics.
 - `docs/IssueBatch_30-60-90_Roadmap.md` — 30/60/90 gap-closure issue batch (issue templates).
 - `docs/NorthStarGapAnalysis.md` — North Star vs codebase gap analysis with status tracking.
