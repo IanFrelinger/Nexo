@@ -100,6 +100,21 @@ Combine with **`Nexo__Security__AuthorizationMode`** and TLS termination for pro
 
 For **`/api/mesh/*`** and **`POST /api/bricks/*/execute`**, the API assigns or echoes **`X-Nexo-Correlation-Id`** (see [MeshPhase3DistributedExecution.md](MeshPhase3DistributedExecution.md)). Clients may send their own correlation id to align logs across hops.
 
+## Mesh knowledge sync (`Nexo__Mesh__KnowledgeSync__*`, Phase 4)
+
+Only active when **`AddNexo`** registers adaptation (Full/Server/AirGapped profiles with pattern store). Binds section **`Nexo:Mesh:KnowledgeSync`**.
+
+| Variable / config key | Description | Default |
+|------------------------|-------------|---------|
+| `Nexo__Mesh__KnowledgeSync__Enabled` | `true` to run periodic peer pull | `false` |
+| `Nexo__Mesh__KnowledgeSync__PeerBaseUrls__0` | First peer API base URL (https, trailing slash optional) | unset |
+| `Nexo__Mesh__KnowledgeSync__IntervalMinutes` | Minutes between pull rounds | `15` |
+| `Nexo__Mesh__KnowledgeSync__SinceLookbackMultiplier` | `since = now - interval * multiplier` for export window | `2` |
+| `Nexo__Mesh__KnowledgeSync__MaxAdaptations` | Cap per export GET | `500` |
+| `Nexo__Mesh__KnowledgeSync__MaxPatterns` | Cap per export GET | `500` |
+
+See [MeshPhase4KnowledgeSync.md](MeshPhase4KnowledgeSync.md).
+
 ## Pipelines (`NEXO_PIPELINE_*`)
 
 Pipeline options resolve in this order: defaults, config (`Nexo:Pipelines:*`), then environment variables.

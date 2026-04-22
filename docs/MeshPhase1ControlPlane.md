@@ -31,6 +31,8 @@ Base path: **`/api/mesh`** (same auth middleware as other `/api/*` routes when e
 | `POST` | `/tasks/{taskId}/retry` | Re-place on different peer when possible (same optional body) |
 | `GET` | `/tasks/{taskId}/result` | Phase 3: stream bytes when `resultHandle` is a file path on director |
 | `PATCH` | `/tasks/{taskId}/status` | Worker reports `Running` / `Succeeded` / `Failed` / `Pending` (optional `resultSummary`, `resultHandle`) |
+| `GET` | `/knowledge/export` | Phase 4: JSON export of adaptations + patterns |
+| `POST` | `/knowledge/import` | Phase 4: import payload into local stores |
 
 ## Worker registration example
 

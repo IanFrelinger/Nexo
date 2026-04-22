@@ -26,6 +26,7 @@ Request bodies for schedule/retry are optional JSON: **`{ "scheduleIdempotencyKe
 
 ## What is still not done
 
+- **Knowledge replication** — see [MeshPhase4KnowledgeSync.md](MeshPhase4KnowledgeSync.md) for adaptation + pattern sync between peers.
 - **Automatic** brick execution from the director after schedule (caller still dispatches to **`assignedApiBaseUrl`**).
 - **Distributed** idempotency or correlation store (in-memory only).
 - **Brick execute** request body correlation injection (clients should forward **`X-Nexo-Correlation-Id`** to workers).

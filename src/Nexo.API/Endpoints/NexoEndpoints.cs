@@ -22,6 +22,7 @@ using Nexo.BackgroundAgents.Objectives;
 using Nexo.BackgroundAgents.Registry;
 using Nexo.BackgroundAgents.RuntimeStudio;
 using Nexo.Infrastructure.Testing.ExecutionPlatform;
+using Nexo.Infrastructure.Fleet;
 using Nexo.API.Security;
 using Nexo.Orchestration.Coordination;
 using Nexo.Orchestration.Models;
@@ -214,6 +215,17 @@ public static class NexoEndpoints
             .Produces<MeshTaskResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status404NotFound);
+
+        mesh.MapGet("/knowledge/export", ExportMeshKnowledgeAsync)
+            .WithName("ExportMeshKnowledge")
+            .WithSummary("Phase 4: export adaptation + pattern records for peer sync")
+            .Produces<Nexo.Core.Application.Fleet.Models.MeshKnowledgeExportPayload>(StatusCodes.Status200OK);
+
+        mesh.MapPost("/knowledge/import", ImportMeshKnowledgeAsync)
+            .WithName("ImportMeshKnowledge")
+            .WithSummary("Phase 4: import adaptation + pattern payload from a peer")
+            .Produces<MeshKnowledgeImportResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest);
 
         group.MapGet("/background-agents/summary", GetBackgroundAgentSummaryAsync)
             .WithName("GetBackgroundAgentSummary")
@@ -713,6 +725,33 @@ public static class NexoEndpoints
         if (!ok)
             return Results.BadRequest(new ProblemDetails { Title = error ?? "placement.failed", Detail = error });
         return Results.Ok(ToTaskResponse(task));
+    }
+
+    private static async Task<IResult> ExportMeshKnowledgeAsync(
+        [FromServices] MeshKnowledgeExportService export,
+        [FromQuery] DateTimeOffset? since = null,
+        [FromQuery] int maxAdaptations = 500,
+        [FromQuery] int maxPatterns = 500,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var payload = await export.ExportAsync(since, maxAdaptations, maxPatterns, cancellationToken).ConfigureAwait(false);
+        return Results.Json(payload);
+    }
+
+    private static async Task<IResult> ImportMeshKnowledgeAsync(
+        [FromBody] Nexo.Core.Application.Fleet.Models.MeshKnowledgeExportPayload? body,
+        [FromServices] MeshKnowledgeImportService import,
+        CancellationToken cancellationToken)
+    {
+        if (body is null)
+            return Results.BadRequest(new ProblemDetails { Title = "Request body is required" });
+        var result = await import.ImportAsync(body, cancellationToken).ConfigureAwait(false);
+        return Results.Ok(new MeshKnowledgeImportResponse(
+            result.AdaptationsApplied,
+            result.AdaptationsSkipped,
+            result.PatternsApplied,
+            result.PatternsSkipped));
     }
 
     private static async Task<IResult> DownloadMeshTaskResultAsync(
@@ -1506,6 +1545,12 @@ public sealed record MeshTaskStatusPatchRequest(
     string? CorrelationId = null,
     string? ResultSummary = null,
     string? ResultHandle = null);
+
+public sealed record MeshKnowledgeImportResponse(
+    int AdaptationsApplied,
+    int AdaptationsSkipped,
+    int PatternsApplied,
+    int PatternsSkipped);
 
 public sealed record CopilotTaskRequest(string Task, int AuditCount = 25);
 public sealed record CopilotTaskResponse(

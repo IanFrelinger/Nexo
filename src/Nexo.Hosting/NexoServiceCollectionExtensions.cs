@@ -227,7 +227,10 @@ public static class NexoServiceCollectionExtensions
         // Pattern store path is forwarded so the adaptation layer knows
         // where to persist learned patterns on disk.
         if (modules.IncludeAdaptation)
+        {
             services.AddAdaptationInfrastructure(options.PatternStorePath);
+            services.AddNexoMeshKnowledgeReplication(configuration);
+        }
 
         // ── Copilot task store ──────────────────────────────────────────
         // LiteDB file is co-located with the pattern store directory
