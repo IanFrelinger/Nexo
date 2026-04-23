@@ -45,8 +45,13 @@ If your Nexo build exposes **`/api/mesh/*`**, each friend can run a worker and r
 - **In-memory mesh state** (when enabled) lives in the director process; restarting the container clears fleet/task registries unless you add persistence later.
 - **`Nexo.API` feature set** depends on your branch; this prefab only configures **security posture** for the shipped API.
 
+## CI regression gate
+
+GitHub Actions workflow **`.github/workflows/friend-mesh-prefab-gate.yml`** validates **`docker compose … config`**, builds the stack, waits for **`GET /health`**, and checks that **`POST /api/preferences`** returns **401** without **`X-Nexo-Api-Key`** and **200** with the configured key.
+
 ## Revision history
 
 | Date | Change |
 |------|--------|
 | 2026-04-23 | Initial friend-mesh compose + env example + runbook. |
+| 2026-04-23 | Add friend-mesh-prefab GitHub Actions gate. |
