@@ -9,6 +9,12 @@ public record PeerInfo
     public required string Endpoint { get; init; }
     public IReadOnlyList<string> Capabilities { get; init; } = Array.Empty<string>();
     public PeerTrustTier TrustTier { get; init; } = PeerTrustTier.Unknown;
+
+    /// <summary>When false, peer is excluded from discovery under <c>allowlist</c> admission policy. Defaults to true when omitted in instances.json.</summary>
+    public bool Admitted { get; init; } = true;
+
+    /// <summary>When true, peer is excluded from discovery (operator drain).</summary>
+    public bool Drained { get; init; }
 }
 
 public enum PeerTrustTier

@@ -33,6 +33,8 @@ curl -sS -H "X-Nexo-Api-Key: YOUR_KEY" -H "Content-Type: application/json" \
 2. **WireGuard** — same idea, manual peers.
 3. **Public internet** — only with **TLS** (Caddy, nginx, Traefik, cloud LB) in front of Nexo; never expose plain HTTP to `0.0.0.0` on the raw internet.
 
+**Host TLS example:** copy **`docs/config/friend-mesh.Caddyfile.example`**, set your DNS name, run Caddy on the host, and keep Compose publishing **`127.0.0.1:8080`** so Nexo stays off the public bind until the proxy is in place.
+
 Default **`NEXO_FRIEND_MESH_PORT_PUBLISH`** is **`127.0.0.1:8080`** so the container is not wide open until you change it on purpose.
 
 ## Workers and mesh director

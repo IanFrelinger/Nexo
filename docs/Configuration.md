@@ -7,6 +7,11 @@ Nexo configures via environment variables and optional `~/.nexo/config.json`. Th
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `NEXO_CONFIG_PATH` | Path to config file | `~/.nexo/config.json` |
+| `NEXO_MESH_INSTANCES_PATH` | Path to **`instances.json`** for **`nexo mesh`** discovery | `~/.nexo/instances.json` |
+| `NEXO_MESH_TRUST_POLICY` | Discovery filter: **`any`**, **`allowlist`** (only **`admitted: true`** peers), **`trusted-only`**, **`trusted-preferred`** | **`any`** for discovery (see **`MeshTrustPolicyConfiguration`**) |
+| `NEXO_MESH_DIRECTOR_BASE_URL` | Base URL for **`nexo mesh director`** HTTP calls | unset |
+| `NEXO_MESH_API_KEY` | Optional **`X-Nexo-Api-Key`** for director CLI | unset |
+| `NEXO_MESH_MUTATING_TOKEN` | Optional **`X-Nexo-Mesh-Token`** for mutating mesh routes on the hub | unset |
 | `NEXO_DEPLOYMENT_PROFILE` | Hosting dependency profile for `AddNexo()` module composition (`full`, `server`, `edge`, `air-gapped`, `system`) | `full` |
 | `NEXO_STRICT_MODE` | `1` or `true` = enable strict mode (fail-fast + verbose diagnostics for dev/CI; disable for production) | `false` |
 | `NEXO_AIRGAP` | `1` or `true` = air-gapped; no cloud calls | unset |

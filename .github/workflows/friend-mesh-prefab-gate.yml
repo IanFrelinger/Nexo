@@ -11,7 +11,9 @@ on:
       - "docker-compose.friend-mesh.yml"
       - ".docker/Dockerfile.api"
       - "docs/config/friend-mesh.env.example"
+      - "docs/config/friend-mesh.Caddyfile.example"
       - "docs/FriendMeshPrefab.md"
+      - "docs/MeshPhase8OperatorHardening.md"
       - "src/Nexo.API/**"
   pull_request:
     paths:
@@ -19,7 +21,9 @@ on:
       - "docker-compose.friend-mesh.yml"
       - ".docker/Dockerfile.api"
       - "docs/config/friend-mesh.env.example"
+      - "docs/config/friend-mesh.Caddyfile.example"
       - "docs/FriendMeshPrefab.md"
+      - "docs/MeshPhase8OperatorHardening.md"
       - "src/Nexo.API/**"
   workflow_dispatch:
 
