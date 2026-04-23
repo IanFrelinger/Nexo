@@ -25,7 +25,8 @@ services:
       Nexo__Security__AuthorizationScope: ${Nexo__Security__AuthorizationScope:-MutatingApi}
       Nexo__Security__ApiKey: ${Nexo__Security__ApiKey}
       Nexo__Security__ApiKeyHeaderName: ${Nexo__Security__ApiKeyHeaderName:-X-Nexo-Api-Key}
-      Nexo__Security__CustomAdvisory: ${Nexo__Security__CustomAdvisory:-Friend mesh: share secrets only out-of-band; use TLS or Tailscale.}
+      # Quoted default — unquoted "Friend mesh: ..." breaks YAML (colon in flow context).
+      Nexo__Security__CustomAdvisory: "${Nexo__Security__CustomAdvisory:-Friend mesh — share secrets only out-of-band; use TLS or Tailscale.}"
       Nexo__Security__ShowAdvisoryInPortal: ${Nexo__Security__ShowAdvisoryInPortal:-true}
       # Optional: when mesh HTTP hardening is enabled in your Nexo build, set these to the same or distinct secrets.
       Nexo__Security__Mesh__MeshMutatingToken: ${Nexo__Security__Mesh__MeshMutatingToken:-}
