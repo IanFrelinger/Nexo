@@ -25,6 +25,7 @@ using Nexo.Infrastructure.Execution.LoadPolicy;
 using Nexo.Infrastructure.Knowledge;
 using Nexo.Infrastructure.Maintenance;
 using Nexo.Infrastructure.NodeCapabilityRuntime;
+using Nexo.Infrastructure.ModelArtifacts;
 using Nexo.Infrastructure.Pipelines;
 using Nexo.Infrastructure.Persistence.Ephemeral;
 using Nexo.Infrastructure.Persistence;
@@ -574,6 +575,12 @@ public static class NexoServiceCollectionExtensions
             services.AddNodeCapabilityRuntimeAndroid(configuration);
         else
             services.AddNodeCapabilityRuntimeLinux(configuration);
+
+        services.AddModelArtifactCatalog(configuration);
+        if (OperatingSystem.IsWindows() || OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
+        {
+            services.AddDockerOllamaModelArtifactCatalogSource();
+        }
     }
 
     /// <summary>
