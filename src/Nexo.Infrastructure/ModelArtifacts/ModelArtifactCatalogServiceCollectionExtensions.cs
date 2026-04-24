@@ -24,6 +24,8 @@ public static class ModelArtifactCatalogServiceCollectionExtensions
             .Bind(configuration.GetSection(OllamaBackendOptions.SectionName));
         services.AddOptions<DockerOllamaModelArtifactCatalogOptions>()
             .Bind(configuration.GetSection(DockerOllamaModelArtifactCatalogOptions.SectionName));
+        services.AddOptions<OllamaRemoteLibraryCatalogOptions>()
+            .Bind(configuration.GetSection(OllamaRemoteLibraryCatalogOptions.SectionName));
 
         services.AddHttpClient(OllamaTagsModelArtifactCatalogSource.HttpClientName, (sp, client) =>
         {
@@ -37,7 +39,16 @@ public static class ModelArtifactCatalogServiceCollectionExtensions
             client.Timeout = TimeSpan.FromSeconds(12);
         });
 
+        services.AddHttpClient(OllamaRemoteLibraryModelArtifactCatalogSource.HttpClientName, (sp, client) =>
+        {
+            var opts = sp.GetRequiredService<IOptionsMonitor<OllamaRemoteLibraryCatalogOptions>>().CurrentValue;
+            var baseUrl = string.IsNullOrWhiteSpace(opts.BaseUrl) ? "https://ollama.com" : opts.BaseUrl.Trim();
+            client.BaseAddress = new Uri(baseUrl.TrimEnd('/') + "/", UriKind.Absolute);
+            client.Timeout = opts.RequestTimeout <= TimeSpan.Zero ? TimeSpan.FromSeconds(60) : opts.RequestTimeout;
+        });
+
         services.TryAddEnumerable(ServiceDescriptor.Singleton<IModelArtifactCatalogSource, OllamaTagsModelArtifactCatalogSource>());
+        services.TryAddEnumerable(ServiceDescriptor.Singleton<IModelArtifactCatalogSource, OllamaRemoteLibraryModelArtifactCatalogSource>());
         services.TryAddSingleton<IModelArtifactCatalogService, ModelArtifactCatalogService>();
         return services;
     }

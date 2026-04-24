@@ -10,6 +10,28 @@ namespace Nexo.Tests.Infrastructure.Tests.ModelArtifacts;
 public sealed class ModelArtifactCatalogServiceTests
 {
     [Fact]
+    public async Task ListAllAsync_ExcludesRemoteInstallableSources()
+    {
+        var local = new StubSource("local", true, [new ModelArtifactRecord("m1", "local", ModelArtifactKind.OllamaModel, 1)]);
+        var remote = new StubRemoteSource(
+            "remote",
+            true,
+            [new ModelArtifactRecord("big", "remote", ModelArtifactKind.OllamaRemoteLibraryModel, 999)]);
+
+        var sut = new ModelArtifactCatalogService(
+            new IModelArtifactCatalogSource[] { remote, local },
+            NullLogger<ModelArtifactCatalogService>.Instance);
+
+        var all = await sut.ListAllAsync();
+        all.Should().ContainSingle();
+        all[0].Id.Should().Be("m1");
+
+        var installable = await sut.ListInstallableAsync();
+        installable.Should().ContainSingle();
+        installable[0].Id.Should().Be("big");
+    }
+
+    [Fact]
     public async Task ListAllAsync_MergesAllAvailableSources()
     {
         var a = new StubSource("a", true, [new ModelArtifactRecord("m1", "a", ModelArtifactKind.OllamaModel, 1)]);
@@ -26,7 +48,15 @@ public sealed class ModelArtifactCatalogServiceTests
         all.Select(x => x.Id).Should().BeEquivalentTo("m1", "m3");
     }
 
-    private sealed class StubSource : IModelArtifactCatalogSource
+    private sealed class StubRemoteSource : StubSource, IRemoteInstallableModelArtifactSource
+    {
+        public StubRemoteSource(string sourceId, bool available, IReadOnlyList<ModelArtifactRecord> items)
+            : base(sourceId, available, items)
+        {
+        }
+    }
+
+    private class StubSource : IModelArtifactCatalogSource
     {
         private readonly bool _available;
         private readonly IReadOnlyList<ModelArtifactRecord> _items;

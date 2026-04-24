@@ -21,11 +21,24 @@ public sealed class ModelArtifactCatalogService : IModelArtifactCatalogService
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task<IReadOnlyList<ModelArtifactRecord>> ListAllAsync(CancellationToken cancellationToken = default)
+    public Task<IReadOnlyList<ModelArtifactRecord>> ListAllAsync(CancellationToken cancellationToken = default) =>
+        ListFromSourcesAsync(static s => s is not IRemoteInstallableModelArtifactSource, cancellationToken);
+
+    public Task<IReadOnlyList<ModelArtifactRecord>> ListInstallableAsync(CancellationToken cancellationToken = default) =>
+        ListFromSourcesAsync(static s => s is IRemoteInstallableModelArtifactSource, cancellationToken);
+
+    private async Task<IReadOnlyList<ModelArtifactRecord>> ListFromSourcesAsync(
+        Func<IModelArtifactCatalogSource, bool> predicate,
+        CancellationToken cancellationToken)
     {
         var list = new List<ModelArtifactRecord>();
         foreach (var source in _sources)
         {
+            if (!predicate(source))
+            {
+                continue;
+            }
+
             try
             {
                 if (!await source.IsAvailableAsync(cancellationToken).ConfigureAwait(false))
