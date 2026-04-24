@@ -13,6 +13,7 @@ on:
       - "docs/config/mesh-lab.env.example"
       - "docs/MeshVirtualLab.md"
       - "scripts/mesh-lab-verify.sh"
+      - "scripts/mesh-lab-stress-ramp.sh"
       - "src/Nexo.API/**"
   pull_request:
     paths:
@@ -22,6 +23,7 @@ on:
       - "docs/config/mesh-lab.env.example"
       - "docs/MeshVirtualLab.md"
       - "scripts/mesh-lab-verify.sh"
+      - "scripts/mesh-lab-stress-ramp.sh"
       - "src/Nexo.API/**"
   workflow_dispatch:
 

@@ -1,6 +1,6 @@
 # Virtual mesh lab (multi-node on one machine)
 
-Use **`docker-compose.mesh-lab.yml`** to run **two Nexo.API containers** on an isolated Docker bridge. This replaces **two physical hosts** for HTTP reachability, API-key behavior, and **`nexo mesh director`** / **`nexo mesh hub health`** checks.
+Use **`docker-compose.mesh-lab.yml`** to run **two fixed Nexo.API peers** on an isolated Docker bridge, plus an optional **scalable `worker` service** (Compose profile **`workers`**) for load / ramp testing without extra hardware.
 
 ## Prerequisites
 
@@ -25,6 +25,24 @@ Default **host** URLs (loopback):
 | **peer-b** | `http://127.0.0.1:18082` |
 
 Inside the lab network, containers resolve **`http://peer-a:8080`** and **`http://peer-b:8080`**.
+
+With profile **`workers`**, **`http://worker:8080`** resolves to **N** replicas (Docker DNS round-robin). Start workers:
+
+```bash
+docker compose --profile workers -f docker-compose.mesh-lab.yml --env-file .env.mesh-lab up -d --scale worker=2 worker
+```
+
+## Dynamic scale / stress ramp
+
+After **`peer-a`** / **`peer-b`** are healthy, ramp replica count and hit **`/health`** in parallel from inside the lab network:
+
+```bash
+chmod +x scripts/mesh-lab-stress-ramp.sh
+# .env.mesh-lab max_workers step requests_per_step pause_seconds
+./scripts/mesh-lab-stress-ramp.sh .env.mesh-lab 12 2 40 5
+```
+
+This uses **`docker compose up --scale worker=N`** between steps and **`curlimages/curl`** containers on the **`mesh_lab`** network. It stress-tests **HTTP + container scheduling**, not a built-in Nexo mesh control plane (unless you add one).
 
 ## Automated verify
 
@@ -91,3 +109,4 @@ Workflow **`.github/workflows/mesh-lab-gate.yml`** runs **`compose config`**, **
 | Date | Change |
 |------|--------|
 | 2026-04-23 | Initial virtual mesh lab compose, verify script, and docs. |
+| 2026-04-24 | Scalable worker profile + mesh-lab-stress-ramp.sh for dynamic replica ramp. |

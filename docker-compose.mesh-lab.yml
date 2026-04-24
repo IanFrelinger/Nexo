@@ -1,4 +1,4 @@
-# Virtual multi-node lab: two Nexo.API instances on an isolated Docker network.
+# Virtual multi-node lab: two fixed Nexo.API peers + optional scalable "worker" replicas on one Docker network.
 # Use this instead of physical machines for cross-host HTTP / mesh CLI checks.
 #
 #   cp docs/config/mesh-lab.env.example .env.mesh-lab
@@ -6,8 +6,10 @@
 #   docker compose -f docker-compose.mesh-lab.yml --env-file .env.mesh-lab up -d --build
 #   ./scripts/mesh-lab-verify.sh
 #
+# Dynamic scale (stress): after lab is up, run ./scripts/mesh-lab-stress-ramp.sh (see docs/MeshVirtualLab.md).
+#
 # Host loopback (optional): peer-a → 127.0.0.1:18081, peer-b → 127.0.0.1:18082
-# In-container DNS: http://peer-a:8080, http://peer-b:8080
+# In-container DNS: http://peer-a:8080, http://peer-b:8080, http://worker:8080 (round-robin across replicas)
 
 networks:
   mesh_lab:
@@ -56,4 +58,27 @@ services:
       Nexo__Security__ShowAdvisoryInPortal: "true"
     ports:
       - "${MESH_LAB_PEER_B_PUBLISH:-127.0.0.1:18082}:8080"
+    restart: unless-stopped
+
+  # Scalable tier: same image as peers; no host ports. DNS `worker` round-robins replicas.
+  # Not started unless profile `workers` is enabled (keeps default `up` = peer-a + peer-b only for CI).
+  #   docker compose --profile workers -f ... --env-file .env.mesh-lab up -d --scale worker=4 worker
+  worker:
+    profiles:
+      - workers
+    build:
+      context: ${NEXO_BUILD_CONTEXT:-.}
+      dockerfile: ${MESH_LAB_DOCKERFILE:-.docker/Dockerfile.api}
+    networks:
+      - mesh_lab
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      ASPNETCORE_CONTENTROOT: /app
+      Nexo__Security__ExposureProfile: ${Nexo__Security__ExposureProfile:-Lan}
+      Nexo__Security__AuthorizationMode: ${Nexo__Security__AuthorizationMode:-ApiKey}
+      Nexo__Security__AuthorizationScope: ${Nexo__Security__AuthorizationScope:-MutatingApi}
+      Nexo__Security__ApiKey: ${Nexo__Security__ApiKey}
+      Nexo__Security__ApiKeyHeaderName: ${Nexo__Security__ApiKeyHeaderName:-X-Nexo-Api-Key}
+      Nexo__Security__CustomAdvisory: "Mesh lab worker (scalable)"
+      Nexo__Security__ShowAdvisoryInPortal: "true"
     restart: unless-stopped
