@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
-# Verify the virtual mesh lab: host-published /health + cross-container HTTP via ephemeral curl.
-# Prerequisites: Docker Compose v2, lab already `up` (see docs/MeshVirtualLab.md).
+# Verify heterogeneous mesh lab: peer-a (ApiKey), peer-b (ApiKey or Bearer), optional worker /health.
 #
-#   cp docs/config/mesh-lab.env.example .env.mesh-lab
-#   docker compose -f docker-compose.mesh-lab.yml --env-file .env.mesh-lab up -d --build
 #   ./scripts/mesh-lab-verify.sh .env.mesh-lab
 
 set -euo pipefail
@@ -19,12 +16,27 @@ CURL_IMAGE="${MESH_LAB_CURL_IMAGE:-curlimages/curl:8.5.0}"
 
 if [[ ! -f "$COMPOSE_ENV_FILE" ]]; then
   echo "Missing env file: $COMPOSE_ENV_FILE" >&2
-  echo "Copy docs/config/mesh-lab.env.example to .env.mesh-lab and set Nexo__Security__ApiKey." >&2
+  echo "Copy docs/config/mesh-lab.env.example to .env.mesh-lab and set secrets." >&2
   exit 1
 fi
 
+# shellcheck disable=SC1090
+source_env_kv() {
+  local key=$1
+  grep -E "^${key}=" "$COMPOSE_ENV_FILE" 2>/dev/null | head -1 | cut -d= -f2- | tr -d '\r' || true
+}
+
+API_KEY="$(source_env_kv Nexo__Security__ApiKey)"
+BEARER="$(source_env_kv Nexo__Security__PeerB__BearerToken)"
+BASIC_USER="$(source_env_kv Nexo__Security__Worker__BasicAuthUsername)"
+BASIC_PASS="$(source_env_kv Nexo__Security__Worker__BasicAuthPassword)"
+
 compose() {
   docker compose -f "$COMPOSE_FILE" --env-file "$COMPOSE_ENV_FILE" "$@"
+}
+
+compose_workers() {
+  docker compose --profile workers -f "$COMPOSE_FILE" --env-file "$COMPOSE_ENV_FILE" "$@"
 }
 
 lab_network() {
@@ -34,7 +46,6 @@ lab_network() {
     echo "peer-a container not running" >&2
     exit 1
   fi
-  # First attached network (lab compose attaches only to the mesh_lab bridge).
   docker inspect "$cid" --format '{{range $k,$v := .NetworkSettings.Networks}}{{$k}} {{end}}' | awk '{print $1; exit}'
 }
 
@@ -49,7 +60,7 @@ curl_on_lab_net() {
   docker run --rm --network "$net" "$CURL_IMAGE" -fsS "$url"
 }
 
-echo "== Wait: host → peer-a ($PEER_A_HOST/health) =="
+echo "== Wait: host → peer-a ($PEER_A_HOST/health) [expect ApiKey path optional for GET] =="
 for i in $(seq 1 90); do
   if curl -fsS "http://${PEER_A_HOST}/health" >/dev/null 2>&1; then
     echo "peer-a reachable on host after ${i} attempt(s)"
@@ -65,8 +76,16 @@ done
 
 echo "== Wait: host → peer-b ($PEER_B_HOST/health) =="
 for i in $(seq 1 90); do
+  if [[ -n "$API_KEY" ]] && curl -fsS -H "X-Nexo-Api-Key: ${API_KEY}" "http://${PEER_B_HOST}/health" >/dev/null 2>&1; then
+    echo "peer-b reachable (API key) after ${i} attempt(s)"
+    break
+  fi
+  if [[ -n "$BEARER" ]] && curl -fsS -H "Authorization: Bearer ${BEARER}" "http://${PEER_B_HOST}/health" >/dev/null 2>&1; then
+    echo "peer-b reachable (Bearer) after ${i} attempt(s)"
+    break
+  fi
   if curl -fsS "http://${PEER_B_HOST}/health" >/dev/null 2>&1; then
-    echo "peer-b reachable on host after ${i} attempt(s)"
+    echo "peer-b reachable (no auth) after ${i} attempt(s)"
     break
   fi
   if [[ "$i" -eq 90 ]]; then
@@ -77,24 +96,26 @@ for i in $(seq 1 90); do
   sleep 2
 done
 
-echo "== Cross-container: ephemeral curl → peer-a:8080/health =="
+echo "== Cross-container: curl → peer-a:8080/health =="
 curl_on_lab_net "http://peer-a:8080/health" | head -c 240
 echo
 
-echo "== Cross-container: ephemeral curl → peer-b:8080/health =="
+echo "== Cross-container: curl → peer-b:8080/health =="
 curl_on_lab_net "http://peer-b:8080/health" | head -c 240
 echo
 
-echo "== Cross-container: peer-b service name from same network (peer-b → peer-a) =="
-# Re-use peer-b's network namespace via a one-off exec on peer-b if wget/curl exists; else skip.
-if compose exec -T peer-b sh -c 'command -v wget >/dev/null 2>&1' 2>/dev/null; then
-  compose exec -T peer-b wget -qO- "http://peer-a:8080/health" | head -c 240
+if [[ -n "$BEARER" ]]; then
+  echo "== Host → peer-b /health with Bearer only (validates second auth path) =="
+  curl -fsS -H "Authorization: Bearer ${BEARER}" "http://${PEER_B_HOST}/health" | head -c 200
   echo
-elif compose exec -T peer-b sh -c 'command -v curl >/dev/null 2>&1' 2>/dev/null; then
-  compose exec -T peer-b curl -fsS "http://peer-a:8080/health" | head -c 240
+fi
+
+if compose_workers ps -q worker 2>/dev/null | grep -q .; then
+  echo "== Worker tier: in-network /health (GET, no auth) =="
+  curl_on_lab_net "http://worker:8080/health" | head -c 200
   echo
 else
-  echo "(skipped: no wget/curl inside peer-b image; ephemeral curl checks above are sufficient)"
+  echo "(worker tier not running; use --profile workers to include workers)"
 fi
 
 echo "== Mesh lab verify: OK =="

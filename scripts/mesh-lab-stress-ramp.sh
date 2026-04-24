@@ -9,6 +9,7 @@
 # Defaults: max_workers=8 step=2 requests_per_step=30 pause_sec=4
 #
 # "worker" is a scalable service (no host ports). Docker DNS round-robins http://worker:8080 across replicas.
+# GET /health is usually unauthenticated (MutatingApi scope); ramp still stress-tests connections + replica churn.
 
 set -euo pipefail
 

@@ -1,112 +1,73 @@
-# Virtual mesh lab (multi-node on one machine)
+# Virtual mesh lab (heterogeneous images + auth)
 
-Use **`docker-compose.mesh-lab.yml`** to run **two fixed Nexo.API peers** on an isolated Docker bridge, plus an optional **scalable `worker` service** (Compose profile **`workers`**) for load / ramp testing without extra hardware.
+The lab runs **multiple Nexo.API containers** on one Docker bridge so you can test **different images and security configurations** together without extra hardware.
+
+## What runs by default
+
+| Role | Dockerfile (override) | Runtime / env highlights | Auth (override) |
+|------|-------------------------|---------------------------|-----------------|
+| **peer-a** | `MESH_LAB_PEER_A_DOCKERFILE` → **`.docker/Dockerfile.api`** | `ASPNETCORE_ENVIRONMENT` = Production (default) | **ApiKey** (`Nexo__Security__ApiKey`) |
+| **peer-b** | `MESH_LAB_PEER_B_DOCKERFILE` → **`.docker/Dockerfile.quickstart`** | **`NEXO_ALLOW_MOCK=1`**, Staging | **ApiKeyOrBearerToken** — same **`Nexo__Security__ApiKey`** *or* **`Nexo__Security__PeerB__BearerToken`** |
+| **worker** (profile **`workers`**) | `MESH_LAB_WORKER_DOCKERFILE` → **`.docker/Dockerfile.api`** | Development, `ShowAdvisoryInPortal` off by default | **ApiKeyOrBasic** — API key *or* Basic (**`nexo`** + **`Nexo__Security__Worker__BasicAuthPassword`**) |
+
+**Optional heavier worker image:** set `MESH_LAB_WORKER_DOCKERFILE=.docker/Dockerfile.agent-server` (SDK-based final image; slower CI/build, richer for local soak tests).
+
+All **`Nexo__Security__*`** keys map to the same binding as production (`Nexo:Security`); see **`docs/Configuration.md`**.
 
 ## Prerequisites
 
 - Docker Engine + Compose v2
-- Enough RAM/disk to build **`Nexo.API`** twice (images are shared after first build)
+- RAM for **two** full image builds (`api` + `quickstart` differ in final stage); workers reuse the **`api`** image by default
 
-## Start the lab
+## Start
 
 ```bash
-cd /path/to/Nexo
 cp docs/config/mesh-lab.env.example .env.mesh-lab
-# Edit Nexo__Security__ApiKey
+# Set Nexo__Security__ApiKey, Nexo__Security__PeerB__BearerToken, Nexo__Security__Worker__BasicAuthPassword
 
 docker compose -f docker-compose.mesh-lab.yml --env-file .env.mesh-lab up -d --build
-```
-
-Default **host** URLs (loopback):
-
-| Service | URL |
-|---------|-----|
-| **peer-a** | `http://127.0.0.1:18081` |
-| **peer-b** | `http://127.0.0.1:18082` |
-
-Inside the lab network, containers resolve **`http://peer-a:8080`** and **`http://peer-b:8080`**.
-
-With profile **`workers`**, **`http://worker:8080`** resolves to **N** replicas (Docker DNS round-robin). Start workers:
-
-```bash
-docker compose --profile workers -f docker-compose.mesh-lab.yml --env-file .env.mesh-lab up -d --scale worker=2 worker
-```
-
-## Dynamic scale / stress ramp
-
-After **`peer-a`** / **`peer-b`** are healthy, ramp replica count and hit **`/health`** in parallel from inside the lab network:
-
-```bash
-chmod +x scripts/mesh-lab-stress-ramp.sh
-# .env.mesh-lab max_workers step requests_per_step pause_seconds
-./scripts/mesh-lab-stress-ramp.sh .env.mesh-lab 12 2 40 5
-```
-
-This uses **`docker compose up --scale worker=N`** between steps and **`curlimages/curl`** containers on the **`mesh_lab`** network. It stress-tests **HTTP + container scheduling**, not a built-in Nexo mesh control plane (unless you add one).
-
-## Automated verify
-
-```bash
-chmod +x scripts/mesh-lab-verify.sh
 ./scripts/mesh-lab-verify.sh .env.mesh-lab
 ```
 
-The script waits for **`/health`** on the published ports, then checks **cross-container** HTTP using a short-lived **`curlimages/curl`** container on the same Docker network (no dependency on `curl` inside the ASP.NET image).
+Host URLs: **`http://127.0.0.1:18081`** (peer-a), **`http://127.0.0.1:18082`** (peer-b).
 
-## Try the mesh CLI against the lab
+## Workers + stress ramp
 
-From the host (same API key in both peers):
+```bash
+docker compose --profile workers -f docker-compose.mesh-lab.yml --env-file .env.mesh-lab up -d --scale worker=2 worker
+./scripts/mesh-lab-stress-ramp.sh .env.mesh-lab 8 2 30 4
+```
+
+## Try the mesh CLI
 
 ```bash
 export NEXO_MESH_DIRECTOR_BASE_URL=http://127.0.0.1:18081
-export NEXO_MESH_API_KEY='your-key-from-.env.mesh-lab'
+export NEXO_MESH_API_KEY='your-key'
 dotnet run --project src/Nexo.CLI -- mesh director get /health --json
-dotnet run --project src/Nexo.CLI -- mesh hub health --url http://127.0.0.1:18082
+
+export NEXO_MESH_DIRECTOR_BASE_URL=http://127.0.0.1:18082
+# peer-b accepts Bearer OR same API key:
+dotnet run --project src/Nexo.CLI -- mesh director get /health --json
 ```
 
-## instances.json for discovery (optional)
+## instances.json (optional)
 
-Point **`NEXO_MESH_INSTANCES_PATH`** at a JSON file listing **`peer-a`** / **`peer-b`** using **host** URLs above (or use a host-only DNS name if you add one). Example:
+Use host URLs from above; see previous revision of this doc for a JSON template (`mesh hub list`).
 
-```json
-[
-  {
-    "peerId": "lab-a",
-    "endpoint": "http://127.0.0.1:18081/",
-    "capabilities": ["nexo-cli"],
-    "trustTier": "Trusted",
-    "admitted": true
-  },
-  {
-    "peerId": "lab-b",
-    "endpoint": "http://127.0.0.1:18082/",
-    "capabilities": ["nexo-cli"],
-    "trustTier": "Trusted",
-    "admitted": true
-  }
-]
-```
-
-Then:
+## Stop
 
 ```bash
-export NEXO_MESH_INSTANCES_PATH=/absolute/path/to/lab-instances.json
-dotnet run --project src/Nexo.CLI -- mesh hub list
-```
-
-## Stop and clean
-
-```bash
-docker compose -f docker-compose.mesh-lab.yml --env-file .env.mesh-lab down -v
+docker compose --profile workers -f docker-compose.mesh-lab.yml --env-file .env.mesh-lab down -v
 ```
 
 ## CI
 
-Workflow **`.github/workflows/mesh-lab-gate.yml`** runs **`compose config`**, **`up`**, and **`scripts/mesh-lab-verify.sh`** on **`ubuntu-latest`** (same pattern as the friend-mesh gate).
+**`.github/workflows/mesh-lab-gate.yml`** writes **`Nexo__Security__ApiKey`**, **`PeerB__BearerToken`**, and **`Worker__BasicAuthPassword`**, then runs **`mesh-lab-verify.sh`**.
 
 ## Revision history
 
 | Date | Change |
 |------|--------|
-| 2026-04-23 | Initial virtual mesh lab compose, verify script, and docs. |
-| 2026-04-24 | Scalable worker profile + mesh-lab-stress-ramp.sh for dynamic replica ramp. |
+| 2026-04-23 | Initial virtual mesh lab. |
+| 2026-04-24 | Scalable workers + stress ramp. |
+| 2026-04-24 | Heterogeneous Dockerfiles + auth modes per role. |
