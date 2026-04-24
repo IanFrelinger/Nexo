@@ -86,6 +86,7 @@ backup/
 /test-reports/
 appsettings.local.json
 .env.friend-mesh
+.env.mesh-lab
 
 /NEXO_AGENT_NOTES.md
 

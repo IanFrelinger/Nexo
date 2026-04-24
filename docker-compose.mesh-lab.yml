@@ -1,0 +1,59 @@
+# Virtual multi-node lab: two Nexo.API instances on an isolated Docker network.
+# Use this instead of physical machines for cross-host HTTP / mesh CLI checks.
+#
+#   cp docs/config/mesh-lab.env.example .env.mesh-lab
+#   # set Nexo__Security__ApiKey (shared by both peers for simplicity)
+#   docker compose -f docker-compose.mesh-lab.yml --env-file .env.mesh-lab up -d --build
+#   ./scripts/mesh-lab-verify.sh
+#
+# Host loopback (optional): peer-a → 127.0.0.1:18081, peer-b → 127.0.0.1:18082
+# In-container DNS: http://peer-a:8080, http://peer-b:8080
+
+networks:
+  mesh_lab:
+    driver: bridge
+
+services:
+  peer-a:
+    build:
+      context: ${NEXO_BUILD_CONTEXT:-.}
+      dockerfile: ${MESH_LAB_DOCKERFILE:-.docker/Dockerfile.api}
+    networks:
+      mesh_lab:
+        aliases:
+          - peer-a
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      ASPNETCORE_CONTENTROOT: /app
+      Nexo__Security__ExposureProfile: ${Nexo__Security__ExposureProfile:-Lan}
+      Nexo__Security__AuthorizationMode: ${Nexo__Security__AuthorizationMode:-ApiKey}
+      Nexo__Security__AuthorizationScope: ${Nexo__Security__AuthorizationScope:-MutatingApi}
+      Nexo__Security__ApiKey: ${Nexo__Security__ApiKey}
+      Nexo__Security__ApiKeyHeaderName: ${Nexo__Security__ApiKeyHeaderName:-X-Nexo-Api-Key}
+      Nexo__Security__CustomAdvisory: "Mesh lab peer-a"
+      Nexo__Security__ShowAdvisoryInPortal: "true"
+    ports:
+      - "${MESH_LAB_PEER_A_PUBLISH:-127.0.0.1:18081}:8080"
+    restart: unless-stopped
+
+  peer-b:
+    build:
+      context: ${NEXO_BUILD_CONTEXT:-.}
+      dockerfile: ${MESH_LAB_DOCKERFILE:-.docker/Dockerfile.api}
+    networks:
+      mesh_lab:
+        aliases:
+          - peer-b
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      ASPNETCORE_CONTENTROOT: /app
+      Nexo__Security__ExposureProfile: ${Nexo__Security__ExposureProfile:-Lan}
+      Nexo__Security__AuthorizationMode: ${Nexo__Security__AuthorizationMode:-ApiKey}
+      Nexo__Security__AuthorizationScope: ${Nexo__Security__AuthorizationScope:-MutatingApi}
+      Nexo__Security__ApiKey: ${Nexo__Security__ApiKey}
+      Nexo__Security__ApiKeyHeaderName: ${Nexo__Security__ApiKeyHeaderName:-X-Nexo-Api-Key}
+      Nexo__Security__CustomAdvisory: "Mesh lab peer-b"
+      Nexo__Security__ShowAdvisoryInPortal: "true"
+    ports:
+      - "${MESH_LAB_PEER_B_PUBLISH:-127.0.0.1:18082}:8080"
+    restart: unless-stopped

@@ -50,6 +50,7 @@ Documentation index for the Nexo platform. Start here to find what you need.
 
 - `docs/FriendMeshPrefab.md` — prefab Docker Compose + env template for a small shared **Nexo.API** hub (friends / tailnet).
 - `docs/MeshPhase8OperatorHardening.md` — **Mesh Phase 8:** discovery admission, trust alias, `nexo mesh hub` / `mesh director`, TLS example.
+- `docs/MeshVirtualLab.md` — **Virtual mesh lab:** two Nexo.API nodes in Docker + verify script (no extra hardware).
 - `docs/TrustAndInformationArchitecture.md` — sanitization, audit, access boundaries.
 - `docs/TailscaleAndNexo.md` — Tailscale + Nexo exposure profile, ACL guidance, advisory endpoint.
 - `docs/config/security-exposure.env.example` — `Nexo__Security__*` env template for operators.
