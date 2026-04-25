@@ -24,10 +24,25 @@ on:
       - "scripts/install/**"
       - "src/Nexo.CLI/**"
       - "src/Nexo.Hosting/**"
+      - "src/Nexo.Abstractions/**"
+      - "src/Nexo.Core/**"
       - "src/Nexo.Core.Domain/**"
       - "src/Nexo.Core.Application/**"
+      - "src/Nexo.Brick.Contracts/**"
+      - "src/Nexo.Policies/**"
+      - "src/Nexo.Tools.Assembly/**"
+      - "src/Nexo.Tools.Dev/**"
+      - "src/Nexo.Transport.Grpc/**"
+      - "src/Nexo.Runtime/**"
       - "src/Nexo.Infrastructure/**"
+      - "src/Nexo.Orchestration/**"
+      - "src/Nexo.BackgroundAgents/**"
       - "src/Nexo.Tests.BackgroundAgents/**"
+      - "scripts/pack-nexo-hosting-graph.sh"
+      - "scripts/pack-nexo-hosting-graph.ps1"
+      - "scripts/verify-stable-sdk-host-sample-packages.sh"
+      - "scripts/verify-stable-sdk-host-sample-packages.ps1"
+      - "docs/samples/StableSdkHostSample/**"
       - "global.json"
       - "Directory.Build.props"
       - "Directory.Packages.props"
@@ -39,10 +54,25 @@ on:
       - "scripts/install/**"
       - "src/Nexo.CLI/**"
       - "src/Nexo.Hosting/**"
+      - "src/Nexo.Abstractions/**"
+      - "src/Nexo.Core/**"
       - "src/Nexo.Core.Domain/**"
       - "src/Nexo.Core.Application/**"
+      - "src/Nexo.Brick.Contracts/**"
+      - "src/Nexo.Policies/**"
+      - "src/Nexo.Tools.Assembly/**"
+      - "src/Nexo.Tools.Dev/**"
+      - "src/Nexo.Transport.Grpc/**"
+      - "src/Nexo.Runtime/**"
       - "src/Nexo.Infrastructure/**"
+      - "src/Nexo.Orchestration/**"
+      - "src/Nexo.BackgroundAgents/**"
       - "src/Nexo.Tests.BackgroundAgents/**"
+      - "scripts/pack-nexo-hosting-graph.sh"
+      - "scripts/pack-nexo-hosting-graph.ps1"
+      - "scripts/verify-stable-sdk-host-sample-packages.sh"
+      - "scripts/verify-stable-sdk-host-sample-packages.ps1"
+      - "docs/samples/StableSdkHostSample/**"
       - "global.json"
       - "Directory.Build.props"
       - "Directory.Packages.props"
@@ -113,6 +143,17 @@ jobs:
 
       - name: "Setup — build SDK sample"
         run: dotnet build docs/samples/StableSdkHostSample/StableSdkHostSample.csproj -v minimal
+
+      - name: "Setup — verify SDK sample consumes local NuGet graph"
+        shell: bash
+        env:
+          NEXO_SDK_PACKAGE_VERSION: 1.0.0-ci
+        run: |
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            pwsh -NoProfile -File scripts/verify-stable-sdk-host-sample-packages.ps1 -Version "${NEXO_SDK_PACKAGE_VERSION}"
+          else
+            bash scripts/verify-stable-sdk-host-sample-packages.sh
+          fi
 
       # ── Stage 2: Discovery ──────────────────────────────────────────
       - name: "Discover — doctor report"

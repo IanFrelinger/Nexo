@@ -5,6 +5,7 @@ docs/api/api/
 # Build artifacts
 **/bin/
 **/obj/
+artifacts/
 # Nested helper tool under Nexo.Tests.Infrastructure (never commit its build output)
 src/Nexo.Tests.Infrastructure/scripts/bin/
 src/Nexo.Tests.Infrastructure/scripts/obj/

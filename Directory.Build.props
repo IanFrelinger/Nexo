@@ -29,7 +29,13 @@
   </PropertyGroup>
 
   <!-- Override transitive System.Text.Encodings.Web 4.5.x (NU1904 / GHSA-ghhp-997w-qr28). -->
-  <ItemGroup>
+  <!-- Skip for package-only SDK sample: uses explicit versions + local Directory.Packages.props (see docs/samples/.../package-consumer). -->
+  <ItemGroup Condition="'$(MSBuildProjectName)' != 'StableSdkHostSample.Package'">
     <PackageReference Include="System.Text.Encodings.Web" />
+  </ItemGroup>
+
+  <!-- NuGet pack: README at repo root (NU5039 if only PackageReadmeFile without packed file). -->
+  <ItemGroup Condition="'$(IsPackable)' == 'true'">
+    <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 </Project>

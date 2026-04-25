@@ -138,6 +138,7 @@ Both mechanisms merge into the same `AdaptationBrickOptions.AdditionalBrickTypes
 
 A minimal, stable-only host integration sample is provided at:
 
-- `docs/samples/StableSdkHostSample/`
+- `docs/samples/StableSdkHostSample/` — **project-reference** mode (`StableSdkHostSample.csproj`) for contributors working inside the repo.
+- `docs/samples/StableSdkHostSample/package-consumer/` — **package-only** mode (`StableSdkHostSample.Package.csproj`): references `Nexo.Hosting` from NuGet; verified by `scripts/verify-stable-sdk-host-sample-packages.sh` against a local feed after `scripts/pack-nexo-hosting-graph.sh`.
 
 The sample intentionally uses only `Nexo.Hosting.Sdk` + `INexoSdkBuilder` extension points and avoids internal namespaces.
