@@ -269,6 +269,8 @@ docker compose -f docker-compose.agent-server.yml up -d --build
 
 Copy and adjust env from `docs/config/agent-server.env.example`. Operator runbooks: `docs/SelfHostedAgentServer.md`, `apps/runtime-studio/README.md`. Readiness: `docs/ProductionReadinessGate-v1.md` and workflow `.github/workflows/production-readiness-gate-v1.yml`.
 
+**Cutting a versioned release (NuGet + GHCR):** run **`bash scripts/release-preflight-local.sh X.Y.Z`** (or **`make release-preflight VERSION=X.Y.Z`**), then push Git tag **`vX.Y.Z`** — GitHub runs **`.github/workflows/release.yml`**. One-page checklist: **`docs/RELEASE_RUNBOOK.md`**; NuGet/GitHub variables: **`docs/PUBLISHING.md`**.
+
 ## Common CLI Workflows
 
 | Goal | Command |

@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# One command before you cut a release: graph alignment + NuGet consumer sample (isolated cache).
+# Usage: bash scripts/release-preflight-local.sh 1.2.3
+# Optional: NEXO_RELEASE_PREFLIGHT_TRIGGER_GATE=1  →  gh workflow run "Runtime Release Gate" --ref <branch>
+#           NEXO_RELEASE_PREFLIGHT_REF=master     (default: current branch from git)
+set -euo pipefail
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+VER="${1:?usage: release-preflight-local.sh <semver>   example: bash scripts/release-preflight-local.sh 1.2.3}"
+VER="${VER#v}"
+
+echo "== 1/2 Pack graph vs MSBuild (Nexo.Hosting) =="
+python3 "${ROOT}/scripts/verify-pack-nexo-hosting-graph-alignment.py"
+
+echo "== 2/2 NuGet consumer sample (local feed + isolated cache) =="
+export NEXO_SDK_PACKAGE_VERSION="${VER}"
+bash "${ROOT}/scripts/verify-stable-sdk-host-sample-packages.sh"
+
+if [[ "${NEXO_RELEASE_PREFLIGHT_TRIGGER_GATE:-}" == "1" ]]; then
+  REF="${NEXO_RELEASE_PREFLIGHT_REF:-$(git -C "${ROOT}" rev-parse --abbrev-ref HEAD)}"
+  if command -v gh >/dev/null 2>&1; then
+    echo "== Optional: triggering Runtime Release Gate on origin/${REF} =="
+    gh workflow run "Runtime Release Gate" --ref "${REF}" || {
+      echo "::warning::gh workflow run failed (auth or repo?). Continue without CI gate."
+    }
+  else
+    echo "::notice::NEXO_RELEASE_PREFLIGHT_TRIGGER_GATE=1 but gh not installed; skip."
+  fi
+fi
+
+echo ""
+echo "Preflight OK for version ${VER}."
+echo "Next (pick one):"
+echo "  • Ship GHCR + NuGet:  git tag v${VER} && git push origin v${VER}"
+echo "  • Open Actions:       gh workflow run Release --ref \$(git rev-parse --abbrev-ref HEAD) -f version=${VER}"
+echo "  • Docs:               docs/RELEASE_RUNBOOK.md  and  docs/PUBLISHING.md"

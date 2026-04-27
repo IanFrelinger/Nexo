@@ -2,6 +2,8 @@
 
 This document describes how to **produce** and **publish** the .NET packages that external repos (for example game tooling) consume. CI already **verifies** NuGet-only consumption locally; publishing to a feed is an operator step.
 
+**Minimal local preflight (one command):** `bash scripts/release-preflight-local.sh X.Y.Z` or `make release-preflight VERSION=X.Y.Z` — then push **`vX.Y.Z`** for **`release.yml`**. Checklist: **`docs/RELEASE_RUNBOOK.md`**.
+
 ## What gets published
 
 Embedding the Nexo kernel from another .NET app uses **`Nexo.Hosting`**, which depends on other **`Nexo.*`** packages built from this repo. Publish **all of them with the same semantic version** (for example `1.2.3`).
