@@ -1,4 +1,5 @@
 #requires -Version 7.0
+# Optional: $env:NEXO_SDK_PACKAGE_FEED = folder of *.nupkg to skip pack-nexo-hosting-graph
 param(
     [string] $Version = $env:NEXO_SDK_PACKAGE_VERSION
 )
@@ -9,16 +10,26 @@ if ([string]::IsNullOrWhiteSpace($Version)) {
 
 $ErrorActionPreference = "Stop"
 $Root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+$Feed = $env:NEXO_SDK_PACKAGE_FEED
 $Out = Join-Path $Root "artifacts/nuget-verify/packages"
 $CfgDir = Join-Path $Root "artifacts/nuget-verify"
 $Cfg = Join-Path $CfgDir "NuGet.Config"
 
-if (Test-Path $Out) { Remove-Item -Recurse -Force $Out }
-New-Item -ItemType Directory -Path $Out -Force | Out-Null
-New-Item -ItemType Directory -Path $CfgDir -Force | Out-Null
+if (-not [string]::IsNullOrWhiteSpace($Feed)) {
+    if (-not (Test-Path -LiteralPath $Feed -PathType Container)) {
+        throw "NEXO_SDK_PACKAGE_FEED is not a directory: $Feed"
+    }
+    $Out = (Resolve-Path -LiteralPath $Feed).Path
+    Write-Host "Using pre-packed feed at $Out (version $Version); skipping pack-nexo-hosting-graph."
+}
+else {
+    if (Test-Path $Out) { Remove-Item -Recurse -Force $Out }
+    New-Item -ItemType Directory -Path $Out -Force | Out-Null
+    Write-Host "Packing Nexo.Hosting dependency graph as version $Version..."
+    & (Join-Path $Root "scripts/pack-nexo-hosting-graph.ps1") -Version $Version -OutputDir $Out
+}
 
-Write-Host "Packing Nexo.Hosting dependency graph as version $Version..."
-& (Join-Path $Root "scripts/pack-nexo-hosting-graph.ps1") -Version $Version -OutputDir $Out
+New-Item -ItemType Directory -Path $CfgDir -Force | Out-Null
 
 $outUri = ([Uri]$Out).AbsoluteUri.TrimEnd('/')
 @"

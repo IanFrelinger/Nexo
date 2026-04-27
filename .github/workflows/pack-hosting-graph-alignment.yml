@@ -1,0 +1,47 @@
+# Ensures scripts/pack-nexo-hosting-graph.{sh,ps1} match the transitive Nexo.* graph from Nexo.Hosting (+ optional allowlist).
+name: Pack hosting graph alignment
+
+on:
+  pull_request:
+    paths:
+      - "src/**/*.csproj"
+      - "scripts/pack-nexo-hosting-graph.sh"
+      - "scripts/pack-nexo-hosting-graph.ps1"
+      - "scripts/pack-nexo-hosting-graph.allowlist.txt"
+      - "scripts/verify-pack-nexo-hosting-graph-alignment.py"
+      - "scripts/verify-nuget-org-packages-visible.sh"
+      - "scripts/verify-nuget-org-restore-published-version.sh"
+      - "docs/samples/NugetOrgRestoreVerify/**"
+      - "Directory.Build.props"
+      - ".github/workflows/pack-hosting-graph-alignment.yml"
+      - ".github/workflows/reusable-release-nuget.yml"
+  push:
+    branches: [master, main]
+    paths:
+      - "src/**/*.csproj"
+      - "scripts/pack-nexo-hosting-graph.sh"
+      - "scripts/pack-nexo-hosting-graph.ps1"
+      - "scripts/pack-nexo-hosting-graph.allowlist.txt"
+      - "scripts/verify-pack-nexo-hosting-graph-alignment.py"
+      - "scripts/verify-nuget-org-packages-visible.sh"
+      - "scripts/verify-nuget-org-restore-published-version.sh"
+      - "docs/samples/NugetOrgRestoreVerify/**"
+      - "Directory.Build.props"
+      - ".github/workflows/pack-hosting-graph-alignment.yml"
+      - ".github/workflows/reusable-release-nuget.yml"
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            9.0.x
+            8.0.x
+
+      - name: Verify pack list vs MSBuild graph
+        run: python3 scripts/verify-pack-nexo-hosting-graph-alignment.py

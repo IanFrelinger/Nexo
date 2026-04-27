@@ -1,17 +1,30 @@
 #!/usr/bin/env bash
 # Pack Nexo.Hosting to a local directory, restore StableSdkHostSample.Package.csproj against that feed only (+ nuget.org for dependencies), and build.
+#
+# Optional: NEXO_SDK_PACKAGE_FEED=/path/to/folder-of-nupkg skips pack-nexo-hosting-graph (e.g. unpacked CI artifact).
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 VERSION="${NEXO_SDK_PACKAGE_VERSION:-1.0.0-ci}"
+FEED="${NEXO_SDK_PACKAGE_FEED:-}"
 OUT="${ROOT}/artifacts/nuget-verify/packages"
 CFG_DIR="${ROOT}/artifacts/nuget-verify"
 CFG="${CFG_DIR}/NuGet.Config"
 
-rm -rf "${OUT}"
-mkdir -p "${OUT}" "${CFG_DIR}"
+if [[ -n "${FEED}" ]]; then
+  if [[ ! -d "${FEED}" ]]; then
+    echo "NEXO_SDK_PACKAGE_FEED is not a directory: ${FEED}" >&2
+    exit 1
+  fi
+  OUT="$(cd "${FEED}" && pwd)"
+  echo "Using pre-packed feed at ${OUT} (version ${VERSION}); skipping pack-nexo-hosting-graph."
+else
+  rm -rf "${OUT}"
+  mkdir -p "${OUT}" "${CFG_DIR}"
+  echo "Packing Nexo.Hosting dependency graph as version ${VERSION}..."
+  bash "${ROOT}/scripts/pack-nexo-hosting-graph.sh" "${VERSION}" "${OUT}"
+fi
 
-echo "Packing Nexo.Hosting dependency graph as version ${VERSION}..."
-bash "${ROOT}/scripts/pack-nexo-hosting-graph.sh" "${VERSION}" "${OUT}"
+mkdir -p "${CFG_DIR}"
 
 cat > "${CFG}" <<EOF
 <?xml version="1.0" encoding="utf-8"?>

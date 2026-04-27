@@ -50,6 +50,19 @@ dotnet run --project src/Nexo.CLI -- --help
 dotnet run --project src/Nexo.CLI -- pipeline validate --template <template.json>
 ```
 
+If you touch **`Nexo.Hosting`** project references or **`scripts/pack-nexo-hosting-graph.*`**, also run:
+
+```bash
+python3 scripts/verify-pack-nexo-hosting-graph-alignment.py
+```
+
+(Optional) Install [pre-commit](https://pre-commit.com/) once per clone, then hooks run on commit:
+
+```bash
+pip install pre-commit   # or brew install pre-commit
+pre-commit install
+```
+
 For broader checks:
 
 ```bash
