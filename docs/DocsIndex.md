@@ -16,6 +16,7 @@ Documentation index for the Nexo platform. Start here to find what you need.
 
 ## Operator / Production Readiness
 
+- `docs/DEPLOYMENT.md` — **golden paths** (portal stack, CLI image, agent server), **pinning** images vs `latest`, NuGet/CI notes.
 - `docs/ProductionReadinessGate-v1.md` — production gate commands and expected assertions.
 - `.github/workflows/production-readiness-gate-v1.yml` — automated production readiness gate.
 - `.github/workflows/environment-setup-gate-v1.yml` — environment bootstrap + dependency setup gate (Linux/macOS/Windows).
@@ -25,7 +26,8 @@ Documentation index for the Nexo platform. Start here to find what you need.
 - `docs/CiFirstHardwareSecond.md` — **CI first, hardware second**: which workflows to run and what still needs a physical host.
 - `.github/workflows/onboarding-quickstart-gate.yml` — runs first-run onboarding commands in native + container lanes.
 - `.github/workflows/container-image-gate.yml` — container image buildability and smoke-run gate.
-- `.github/workflows/container-image-publish.yml` — publish official GHCR CLI image (latest + sha tags).
+- `.github/workflows/container-image-publish.yml` — publish **GHCR** `nexo-cli` and **`nexo-api`** (`sha-*`, `latest` on main, semver on `v*` tags).
+- `.github/workflows/release-nuget.yml` — pack and optionally push **NuGet** packages (variable `NUGET_PUBLISH_MODE`: `none` | `oidc` | `apikey`).
 - `.github/workflows/onboarding-docs-guard.yml` — prevent startup-doc regressions in quick-start commands.
 - `.github/workflows/cross-platform-tests.yml` — cross-platform tests on Ubuntu, macOS, and Windows.
 - `.github/workflows/runtime-release-gate.yml` — runtime release quality gate.

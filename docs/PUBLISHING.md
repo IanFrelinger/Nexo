@@ -16,6 +16,8 @@ bash scripts/pack-nexo-hosting-graph.sh 1.2.3 ./artifacts/nuget-release
 
 **Consumer recommendation:** reference **`Nexo.Hosting.Bundle`** at version `1.2.3` (same as the graph). **`Nexo.Hosting`** remains the real assembly package; the bundle only pulls the graph.
 
+**Note:** `Nexo.Hosting.Bundle` is **not** part of `Nexo.sln` — it only restores after the graph exists on a feed. CI packs it via `scripts/pack-nexo-hosting-graph.*`; local `dotnet build` of the repo does not need it.
+
 Stable **client** surface (HTTP) is documented in `docs/sdk.md` (`Nexo.Sdk` / `Nexo.Client`); pack those separately if you publish them to the same feed:
 
 ```bash
@@ -35,6 +37,19 @@ bash scripts/verify-stable-sdk-host-sample-packages.sh
 This packs the graph to `artifacts/nuget-verify/packages`, restores `docs/samples/StableSdkHostSample/package-consumer/` against **only** that folder + nuget.org, builds, and runs the sample.
 
 ## Publish to nuget.org (you do this)
+
+### Option A — GitHub Actions (recommended)
+
+Workflow: **`.github/workflows/release-nuget.yml`**
+
+1. **Repository variable** `NUGET_PUBLISH_MODE`:
+   - `none` — build only; download **`nuget-packages-<version>`** artifact and push manually.
+   - `oidc` — [Trusted Publishing](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing): add a policy on nuget.org for workflow file **`release-nuget.yml`** (filename only). Set repository secret **`NUGET_USER`** to your **nuget.org profile name** (not email).
+   - `apikey` — set repository secret **`NUGET_API_KEY`** to a long-lived push key.
+2. **Trigger:** push an annotated tag **`v1.2.3`**, or **Actions → Release NuGet packages → Run workflow** with input `1.2.3`.
+3. Write **GitHub Release** notes and verify packages on nuget.org.
+
+### Option B — Manual from your machine
 
 1. Create a **NuGet.org** account (if needed) and an **API key** with scope **Push** for the `Nexo.*` package IDs (or org-owned IDs).
 2. Locally: `dotnet nuget push "artifacts/nuget-release/*.nupkg" --api-key <KEY> --source https://api.nuget.org/v3/index.json`

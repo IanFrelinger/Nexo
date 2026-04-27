@@ -180,26 +180,18 @@ jobs:
 
       - name: "Discover — ci verify (build + smoke + arch)"
         shell: bash
-        continue-on-error: true
         run: |
           dotnet run --project src/Nexo.CLI --no-build -- ci verify
-          CI_EXIT=$?
-          if [ $CI_EXIT -ne 0 ]; then
-            echo "::warning::ci verify exited with $CI_EXIT — check pre-existing test project build issues"
-          fi
-          exit $CI_EXIT
 
       # ── Stage 3: Dry-run ────────────────────────────────────────────
       - name: "Dry-run — doctor remediation"
         shell: bash
-        continue-on-error: true
         run: |
           dotnet run --project src/Nexo.CLI --no-build -- doctor --fix --dry-run --json \
             2>&1 | tee "${{ runner.temp }}/doctor-dryrun.json"
 
       - name: "Dry-run — bootstrap apply"
         shell: bash
-        continue-on-error: ${{ runner.os == 'Windows' }}
         run: |
           dotnet run --project src/Nexo.CLI --no-build -- bootstrap apply --dry-run --json \
             2>&1 | tee "${{ runner.temp }}/bootstrap-dryrun.json"
