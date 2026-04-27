@@ -34,4 +34,14 @@ public interface INexoClient
     /// Run a container.
     /// </summary>
     Task<ExecutionRunResponse> RunContainerAsync(ExecutionRunRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Escape hatch for API paths not yet exposed as typed methods (see <c>docs/api/index.md</c>).
+    /// <paramref name="relativeUri"/> is appended to the client's base URL (leading slash optional).
+    /// </summary>
+    Task<HttpResponseMessage> InvokeAsync(
+        HttpMethod method,
+        string relativeUri,
+        HttpContent? content = null,
+        CancellationToken cancellationToken = default);
 }

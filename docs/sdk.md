@@ -73,10 +73,26 @@ var provider = services.BuildServiceProvider();
 | `GetStatusAsync` | `GET /api/status` |
 | `BuildImageAsync` | `POST /api/execution/build` |
 | `RunContainerAsync` | `POST /api/execution/run` |
+| `InvokeAsync` | Any path (escape hatch; same `HttpClient`, base URL, and `X-Api-Key` as typed methods) |
 
-The client does not yet cover copilot, director, trust mutation, knowledge query, capabilities, security advisory, or background-agent summary endpoints. Use direct HTTP calls for those (see `docs/api/index.md` for the full endpoint list).
+Endpoints not yet wrapped as typed methods (copilot, director, trust mutation, knowledge query, capabilities, etc.) can be called with **`InvokeAsync`** using the paths in `docs/api/index.md`, or with your own `HttpClient` against the same base URL.
 
 `AddNexoClient` accepts `BaseUrl`, optional `ApiKey` (sent as `X-Api-Key` header), and `Timeout`.
+
+### `InvokeAsync` example
+
+```csharp
+using var json = new StringContent("{}", System.Text.Encoding.UTF8, "application/json");
+using var resp = await client.InvokeAsync(HttpMethod.Post, "api/copilot/task", json, ct);
+resp.EnsureSuccessStatusCode();
+var body = await resp.Content.ReadAsStringAsync(ct);
+```
+
+## Unity and other game engines
+
+- **Recommended:** run Nexo as a **separate .NET host** (local or mesh) and call it with **`Nexo.Client`** / **`InvokeAsync`** from an **Editor** assembly (HTTP + optional API key). Keep the **player build** free of the full hosting stack unless you explicitly need it.
+- **Embed `Nexo.Hosting` in-process** is possible for **.NET** hosts (tools, servers); for Unity it is usually heavier and version-sensitive than HTTP.
+- **Unreal / non-.NET:** use the **HTTP API** (same paths as `docs/api/index.md`); generate clients from OpenAPI if you add a spec to your release pipeline.
 
 ## RegisterBrick&lt;T&gt;
 
@@ -139,6 +155,6 @@ Both mechanisms merge into the same `AdaptationBrickOptions.AdditionalBrickTypes
 A minimal, stable-only host integration sample is provided at:
 
 - `docs/samples/StableSdkHostSample/` — **project-reference** mode (`StableSdkHostSample.csproj`) for contributors working inside the repo.
-- `docs/samples/StableSdkHostSample/package-consumer/` — **package-only** mode (`StableSdkHostSample.Package.csproj`): references `Nexo.Hosting` from NuGet; verified by `scripts/verify-stable-sdk-host-sample-packages.sh` against a local feed after `scripts/pack-nexo-hosting-graph.sh`.
+- `docs/samples/StableSdkHostSample/package-consumer/` — **package-only** mode (`StableSdkHostSample.Package.csproj`): references **`Nexo.Hosting.Bundle`** from NuGet; verified by `scripts/verify-stable-sdk-host-sample-packages.sh` against a local feed after `scripts/pack-nexo-hosting-graph.sh`.
 
 The sample intentionally uses only `Nexo.Hosting.Sdk` + `INexoSdkBuilder` extension points and avoids internal namespaces.

@@ -31,4 +31,24 @@ pack src/Nexo.Orchestration/Nexo.Orchestration.csproj
 pack src/Nexo.BackgroundAgents/Nexo.BackgroundAgents.csproj
 pack src/Nexo.Hosting/Nexo.Hosting.csproj
 
+CFG="${OUT}/PackBundle.NuGet.Config"
+cat > "${CFG}" <<EOF
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <packageSources>
+    <clear />
+    <add key="nexo-graph-local" value="${OUT}" />
+    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" />
+  </packageSources>
+</configuration>
+EOF
+
+echo "==> dotnet pack src/Nexo.Hosting.Bundle/Nexo.Hosting.Bundle.csproj"
+dotnet pack "${ROOT}/src/Nexo.Hosting.Bundle/Nexo.Hosting.Bundle.csproj" \
+  -c Release \
+  -o "${OUT}" \
+  -p:PackageVersion="${VERSION}" \
+  --configfile "${CFG}" \
+  -v minimal
+
 echo "pack-nexo-hosting-graph: OK (${OUT}, version ${VERSION})"

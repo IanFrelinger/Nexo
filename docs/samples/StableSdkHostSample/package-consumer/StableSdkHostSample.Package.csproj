@@ -16,6 +16,6 @@
     <Compile Include="..\Program.cs" Link="Program.cs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Nexo.Hosting" Version="$(NexoSdkPackageVersion)" />
+    <PackageReference Include="Nexo.Hosting.Bundle" Version="$(NexoSdkPackageVersion)" />
   </ItemGroup>
 </Project>

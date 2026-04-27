@@ -4,7 +4,7 @@ This document describes how to **produce** and **publish** the .NET packages tha
 
 ## What gets published
 
-Embedding the Nexo kernel from another .NET app uses **`Nexo.Hosting`**. That package depends on other **`Nexo.*`** packages built from this repo. Publish **all of them with the same semantic version** (for example `1.2.3`).
+Embedding the Nexo kernel from another .NET app uses **`Nexo.Hosting`**, which depends on other **`Nexo.*`** packages built from this repo. Publish **all of them with the same semantic version** (for example `1.2.3`).
 
 Use:
 
@@ -12,9 +12,16 @@ Use:
 bash scripts/pack-nexo-hosting-graph.sh 1.2.3 ./artifacts/nuget-release
 ```
 
-(or `scripts/pack-nexo-hosting-graph.ps1` on Windows). Output is a folder of `*.nupkg` / `*.snupkg` files.
+(or `scripts/pack-nexo-hosting-graph.ps1` on Windows). Output is a folder of `*.nupkg` / `*.snupkg` files, including **`Nexo.Hosting.Bundle`** — a **metapackage** so consumers can add **one** `PackageReference` instead of chasing transitive versions manually.
 
-Stable **client** surface (HTTP) is documented in `docs/sdk.md` (`Nexo.Sdk` / `Nexo.Client`); pack those separately if you publish them to the same feed.
+**Consumer recommendation:** reference **`Nexo.Hosting.Bundle`** at version `1.2.3` (same as the graph). **`Nexo.Hosting`** remains the real assembly package; the bundle only pulls the graph.
+
+Stable **client** surface (HTTP) is documented in `docs/sdk.md` (`Nexo.Sdk` / `Nexo.Client`); pack those separately if you publish them to the same feed:
+
+```bash
+dotnet pack src/Nexo.Client/Nexo.Client.csproj -c Release -o ./artifacts/nuget-release -p:PackageVersion=1.2.3
+dotnet pack src/Nexo.Sdk/Nexo.Sdk.csproj -c Release -o ./artifacts/nuget-release -p:PackageVersion=1.2.3
+```
 
 ## Verify before you push
 

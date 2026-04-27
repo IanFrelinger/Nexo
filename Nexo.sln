@@ -77,6 +77,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.GameDomain", "src\Nexo
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.Tests.GameDomain", "src\Nexo.Tests.GameDomain\Nexo.Tests.GameDomain.csproj", "{4B61FAA0-FF33-4EDF-A4C2-FCE7DAAB5361}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.Hosting.Bundle", "src\Nexo.Hosting.Bundle\Nexo.Hosting.Bundle.csproj", "{F4F5598F-FA23-433B-A5CE-AD7E9F356A40}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -519,6 +521,18 @@ Global
 		{4B61FAA0-FF33-4EDF-A4C2-FCE7DAAB5361}.Release|x64.Build.0 = Release|Any CPU
 		{4B61FAA0-FF33-4EDF-A4C2-FCE7DAAB5361}.Release|x86.ActiveCfg = Release|Any CPU
 		{4B61FAA0-FF33-4EDF-A4C2-FCE7DAAB5361}.Release|x86.Build.0 = Release|Any CPU
+		{F4F5598F-FA23-433B-A5CE-AD7E9F356A40}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F4F5598F-FA23-433B-A5CE-AD7E9F356A40}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F4F5598F-FA23-433B-A5CE-AD7E9F356A40}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{F4F5598F-FA23-433B-A5CE-AD7E9F356A40}.Debug|x64.Build.0 = Debug|Any CPU
+		{F4F5598F-FA23-433B-A5CE-AD7E9F356A40}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{F4F5598F-FA23-433B-A5CE-AD7E9F356A40}.Debug|x86.Build.0 = Debug|Any CPU
+		{F4F5598F-FA23-433B-A5CE-AD7E9F356A40}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F4F5598F-FA23-433B-A5CE-AD7E9F356A40}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F4F5598F-FA23-433B-A5CE-AD7E9F356A40}.Release|x64.ActiveCfg = Release|Any CPU
+		{F4F5598F-FA23-433B-A5CE-AD7E9F356A40}.Release|x64.Build.0 = Release|Any CPU
+		{F4F5598F-FA23-433B-A5CE-AD7E9F356A40}.Release|x86.ActiveCfg = Release|Any CPU
+		{F4F5598F-FA23-433B-A5CE-AD7E9F356A40}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -559,6 +573,7 @@ Global
 		{F2A54F4C-34A8-49AC-A620-1B75EBA4424A} = {9D4F8B1A-0B6E-4A3E-8A6A-0DE12C7C6E2F}
 		{C2C2E5F6-85B8-4CC9-BF24-7190EF12B14F} = {9D4F8B1A-0B6E-4A3E-8A6A-0DE12C7C6E2F}
 		{4B61FAA0-FF33-4EDF-A4C2-FCE7DAAB5361} = {9D4F8B1A-0B6E-4A3E-8A6A-0DE12C7C6E2F}
+		{F4F5598F-FA23-433B-A5CE-AD7E9F356A40} = {9D4F8B1A-0B6E-4A3E-8A6A-0DE12C7C6E2F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {12345678-1234-1234-1234-123456789ABC}

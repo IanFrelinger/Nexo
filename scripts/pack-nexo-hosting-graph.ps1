@@ -35,4 +35,24 @@ Pack-Project "src/Nexo.Orchestration/Nexo.Orchestration.csproj"
 Pack-Project "src/Nexo.BackgroundAgents/Nexo.BackgroundAgents.csproj"
 Pack-Project "src/Nexo.Hosting/Nexo.Hosting.csproj"
 
+$cfg = Join-Path $OutputDir "PackBundle.NuGet.Config"
+@"
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <packageSources>
+    <clear />
+    <add key="nexo-graph-local" value="$OutputDir" />
+    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" />
+  </packageSources>
+</configuration>
+"@ | Set-Content -Path $cfg -Encoding utf8
+
+Write-Host "==> dotnet pack src/Nexo.Hosting.Bundle/Nexo.Hosting.Bundle.csproj"
+dotnet pack (Join-Path $Root "src/Nexo.Hosting.Bundle/Nexo.Hosting.Bundle.csproj") `
+    -c Release `
+    -o $OutputDir `
+    -p:PackageVersion=$Version `
+    --configfile $cfg `
+    -v minimal
+
 Write-Host "pack-nexo-hosting-graph: OK ($OutputDir, version $Version)"
