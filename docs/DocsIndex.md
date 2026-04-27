@@ -26,8 +26,9 @@ Documentation index for the Nexo platform. Start here to find what you need.
 - `docs/CiFirstHardwareSecond.md` — **CI first, hardware second**: which workflows to run and what still needs a physical host.
 - `.github/workflows/onboarding-quickstart-gate.yml` — runs first-run onboarding commands in native + container lanes.
 - `.github/workflows/container-image-gate.yml` — container image buildability and smoke-run gate.
-- `.github/workflows/container-image-publish.yml` — publish **GHCR** `nexo-cli` and **`nexo-api`** (`sha-*`, `latest` on main, semver on `v*` tags).
-- `.github/workflows/release-nuget.yml` — pack and optionally push **NuGet** packages (variable `NUGET_PUBLISH_MODE`: `none` | `oidc` | `apikey`).
+- `.github/workflows/release.yml` — **one entry**: tag `v*.*.*` → GHCR (`nexo-cli`, `nexo-api`) + NuGet; run summary with pin lines.
+- `.github/workflows/container-image-publish.yml` — GHCR on **main** path-filtered pushes + manual (tags use `release.yml` only).
+- `.github/workflows/release-nuget.yml` — **NuGet-only** manual dispatch.
 - `.github/workflows/onboarding-docs-guard.yml` — prevent startup-doc regressions in quick-start commands.
 - `.github/workflows/cross-platform-tests.yml` — cross-platform tests on Ubuntu, macOS, and Windows.
 - `.github/workflows/runtime-release-gate.yml` — runtime release quality gate.

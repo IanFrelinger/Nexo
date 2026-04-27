@@ -1,10 +1,13 @@
+# Publishes GHCR images on pushes to main (path-filtered) or manual dispatch.
+# Release tags (v*.*.*) use **release.yml** so images + NuGet run once.
+
 name: Container Image Publish
 
 on:
   workflow_dispatch:
     inputs:
       skip_multi_arch:
-        description: "Skip linux/arm64 multi-arch build (faster; amd64 only for latest on main)"
+        description: "Skip linux/arm64 for nexo-cli :latest (amd64 only)"
         required: false
         default: false
         type: boolean
@@ -12,10 +15,9 @@ on:
     branches:
       - master
       - main
-    tags:
-      - "v*.*.*"
     paths:
       - ".github/workflows/container-image-publish.yml"
+      - ".github/workflows/reusable-container-publish.yml"
       - ".docker/**"
       - ".dockerignore"
       - "src/Nexo.CLI/**"
@@ -42,160 +44,9 @@ permissions:
   contents: read
   packages: write
 
-concurrency:
-  group: container-publish-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
-  publish-cli:
-    name: GHCR nexo-cli
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Define image metadata
-        shell: bash
-        run: |
-          OWNER_LC="${GITHUB_REPOSITORY_OWNER,,}"
-          IMAGE="ghcr.io/${OWNER_LC}/nexo-cli"
-          SHA_TAG="${IMAGE}:sha-${GITHUB_SHA::12}"
-          echo "IMAGE=${IMAGE}" >> "${GITHUB_ENV}"
-          echo "SHA_TAG=${SHA_TAG}" >> "${GITHUB_ENV}"
-          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
-            SEMVER="${GITHUB_REF_NAME#v}"
-            echo "SEMVER_TAG=${IMAGE}:${SEMVER}" >> "${GITHUB_ENV}"
-            echo "Also tagging semver: ${SEMVER}"
-          else
-            echo "SEMVER_TAG=" >> "${GITHUB_ENV}"
-          fi
-
-      - name: Build and push linux/amd64 (immutable sha tag)
-        shell: bash
-        run: |
-          docker buildx build \
-            --file .docker/Dockerfile.cli \
-            --platform linux/amd64 \
-            --tag "${SHA_TAG}" \
-            --push \
-            .
-
-      - name: Smoke test published image
-        shell: bash
-        run: |
-          docker run --rm "${SHA_TAG}" --help
-
-      - name: Publish latest (amd64 + arm64) on main
-        if: >-
-          (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
-          && (github.event_name != 'workflow_dispatch' || inputs.skip_multi_arch == false)
-        timeout-minutes: 35
-        shell: bash
-        run: |
-          docker buildx build \
-            --file .docker/Dockerfile.cli \
-            --platform linux/amd64,linux/arm64 \
-            --tag "${IMAGE}:latest" \
-            --push \
-            .
-
-      - name: Publish latest (amd64 only) when multi-arch skipped
-        if: >-
-          (github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main')
-          && github.event_name == 'workflow_dispatch'
-          && inputs.skip_multi_arch == true
-        shell: bash
-        run: |
-          docker buildx build \
-            --file .docker/Dockerfile.cli \
-            --platform linux/amd64 \
-            --tag "${IMAGE}:latest" \
-            --push \
-            .
-
-      - name: Tag semver on release tag
-        if: startsWith(github.ref, 'refs/tags/v')
-        shell: bash
-        run: |
-          docker buildx build \
-            --file .docker/Dockerfile.cli \
-            --platform linux/amd64 \
-            --tag "${SEMVER_TAG}" \
-            --push \
-            .
-
-  publish-api:
-    name: GHCR nexo-api
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Define image metadata
-        shell: bash
-        run: |
-          OWNER_LC="${GITHUB_REPOSITORY_OWNER,,}"
-          IMAGE="ghcr.io/${OWNER_LC}/nexo-api"
-          SHA_TAG="${IMAGE}:sha-${GITHUB_SHA::12}"
-          echo "IMAGE=${IMAGE}" >> "${GITHUB_ENV}"
-          echo "SHA_TAG=${SHA_TAG}" >> "${GITHUB_ENV}"
-          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
-            SEMVER="${GITHUB_REF_NAME#v}"
-            echo "SEMVER_TAG=${IMAGE}:${SEMVER}" >> "${GITHUB_ENV}"
-          else
-            echo "SEMVER_TAG=" >> "${GITHUB_ENV}"
-          fi
-
-      - name: Build and push linux/amd64 (immutable sha tag)
-        shell: bash
-        run: |
-          docker buildx build \
-            --file .docker/Dockerfile.api \
-            --platform linux/amd64 \
-            --tag "${SHA_TAG}" \
-            --push \
-            .
-
-      - name: Publish latest on main
-        if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'
-        shell: bash
-        run: |
-          docker buildx build \
-            --file .docker/Dockerfile.api \
-            --platform linux/amd64 \
-            --tag "${IMAGE}:latest" \
-            --push \
-            .
-
-      - name: Tag semver on release tag
-        if: startsWith(github.ref, 'refs/tags/v')
-        shell: bash
-        run: |
-          docker buildx build \
-            --file .docker/Dockerfile.api \
-            --platform linux/amd64 \
-            --tag "${SEMVER_TAG}" \
-            --push \
-            .
+  publish:
+    uses: ./.github/workflows/reusable-container-publish.yml
+    secrets: inherit
+    with:
+      skip_multi_arch: ${{ github.event_name == 'workflow_dispatch' && inputs.skip_multi_arch || false }}

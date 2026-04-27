@@ -40,13 +40,16 @@ This packs the graph to `artifacts/nuget-verify/packages`, restores `docs/sample
 
 ### Option A — GitHub Actions (recommended)
 
-Workflow: **`.github/workflows/release-nuget.yml`**
+Workflows:
+
+- **`.github/workflows/release.yml`** — **tag `v*.*.*`**: GHCR **and** NuGet in one run. Configure Trusted Publishing for workflow file **`release.yml`** (filename only).
+- **`.github/workflows/release-nuget.yml`** — **manual NuGet-only** dispatch (version input).
 
 1. **Repository variable** `NUGET_PUBLISH_MODE`:
    - `none` — build only; download **`nuget-packages-<version>`** artifact and push manually.
-   - `oidc` — [Trusted Publishing](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing): add a policy on nuget.org for workflow file **`release-nuget.yml`** (filename only). Set repository secret **`NUGET_USER`** to your **nuget.org profile name** (not email).
-   - `apikey` — set repository secret **`NUGET_API_KEY`** to a long-lived push key.
-2. **Trigger:** push an annotated tag **`v1.2.3`**, or **Actions → Release NuGet packages → Run workflow** with input `1.2.3`.
+   - `oidc` — [Trusted Publishing](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing): policy must include **`release.yml`** (for tag releases). Secret **`NUGET_USER`** = nuget.org **profile name** (not email).
+   - `apikey` — secret **`NUGET_API_KEY`**.
+2. **Trigger:** push tag **`v1.2.3`** (preferred), or **Actions → Release** / **Release NuGet packages** for partial flows.
 3. Write **GitHub Release** notes and verify packages on nuget.org.
 
 ### Option B — Manual from your machine
