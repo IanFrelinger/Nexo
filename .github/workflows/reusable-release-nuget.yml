@@ -120,4 +120,4 @@ jobs:
         shell: bash
         env:
           NEXO_NUGET_RESTORE_VERIFY_VERSION: ${{ env.PACKAGE_VERSION }}
-        run: bash scripts/verify-nuget-org-restore-published-version.sh
+        run: bash scripts/verify-nuget-org-restore-with-isolated-cache.sh

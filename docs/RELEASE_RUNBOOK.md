@@ -14,7 +14,7 @@ Trusted Publishing on nuget.org is bound to the **top-level** workflow file: reg
 
 1. **Green CI on the commit you will ship** — run **`runtime-release-gate`** (and any other gates you rely on) on that ref; default branch green can omit path-filtered workflows.
 2. **Hosting graph vs pack script** — `python3 scripts/verify-pack-nexo-hosting-graph-alignment.py` (also **Pack hosting graph alignment** CI). Rare extras go in **`scripts/pack-nexo-hosting-graph.allowlist.txt`** with a comment.
-3. **Consumer sample (local feed)** — `bash scripts/verify-stable-sdk-host-sample-packages.sh` with `NEXO_SDK_PACKAGE_VERSION` (or `NEXO_SDK_PACKAGE_FEED` after packing).
+3. **Consumer sample (local feed)** — `bash scripts/verify-stable-sdk-host-sample-packages.sh` with `NEXO_SDK_PACKAGE_VERSION` (or `NEXO_SDK_PACKAGE_FEED` after packing). Uses **isolated NuGet cache** + **`--force-evaluate`** so a bad graph is not hidden by `~/.nuget/packages`.
 
 ## Cut the release
 

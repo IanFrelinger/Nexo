@@ -1,5 +1,6 @@
 #requires -Version 7.0
 # Optional: $env:NEXO_SDK_PACKAGE_FEED = folder of *.nupkg to skip pack-nexo-hosting-graph
+# By default sets NUGET_PACKAGES + DOTNET_CLI_HOME to a fresh temp dir (first-time consumer). Set NEXO_SDK_VERIFY_NO_ISOLATED_CACHE=1 to skip.
 param(
     [string] $Version = $env:NEXO_SDK_PACKAGE_VERSION
 )
@@ -31,6 +32,28 @@ else {
 
 New-Item -ItemType Directory -Path $CfgDir -Force | Out-Null
 
+$isolCleanup = $null
+if ([string]::IsNullOrWhiteSpace($env:NEXO_SDK_VERIFY_NO_ISOLATED_CACHE)) {
+    $isolBase = if (-not [string]::IsNullOrWhiteSpace($env:NEXO_SDK_VERIFY_ISOLATED_ROOT)) {
+        New-Item -ItemType Directory -Path $env:NEXO_SDK_VERIFY_ISOLATED_ROOT -Force | Out-Null
+        $env:NEXO_SDK_VERIFY_ISOLATED_ROOT
+    } else {
+        $p = Join-Path $CfgDir ("isolated-" + [Guid]::NewGuid().ToString("n"))
+        New-Item -ItemType Directory -Path $p -Force | Out-Null
+        $isolCleanup = $p
+        $p
+    }
+    $pkgDir = Join-Path $isolBase "packages"
+    $cliHome = Join-Path $isolBase "cli-home"
+    New-Item -ItemType Directory -Path $pkgDir -Force | Out-Null
+    New-Item -ItemType Directory -Path $cliHome -Force | Out-Null
+    $env:NUGET_PACKAGES = $pkgDir
+    $env:DOTNET_CLI_HOME = $cliHome
+    Write-Host "Isolated restore: NUGET_PACKAGES=$($env:NUGET_PACKAGES) DOTNET_CLI_HOME=$($env:DOTNET_CLI_HOME)"
+} else {
+    Write-Host "Skipping isolated package cache (NEXO_SDK_VERIFY_NO_ISOLATED_CACHE is set)."
+}
+
 $outUri = ([Uri]$Out).AbsoluteUri.TrimEnd('/')
 @"
 <?xml version="1.0" encoding="utf-8"?>
@@ -46,6 +69,7 @@ $outUri = ([Uri]$Out).AbsoluteUri.TrimEnd('/')
 Write-Host "Restoring and building package-consumption sample (NexoSdkPackageVersion=$Version)..."
 dotnet restore (Join-Path $Root "docs/samples/StableSdkHostSample/package-consumer/StableSdkHostSample.Package.csproj") `
     --configfile $Cfg `
+    --force-evaluate `
     -p:NexoSdkPackageVersion=$Version `
     -v minimal
 
@@ -58,5 +82,9 @@ Write-Host "Running package-consumption sample..."
 dotnet run --project (Join-Path $Root "docs/samples/StableSdkHostSample/package-consumer/StableSdkHostSample.Package.csproj") `
     -c Release `
     --no-build
+
+if ($null -ne $isolCleanup -and (Test-Path -LiteralPath $isolCleanup)) {
+    Remove-Item -LiteralPath $isolCleanup -Recurse -Force
+}
 
 Write-Host "verify-stable-sdk-host-sample-packages: OK"

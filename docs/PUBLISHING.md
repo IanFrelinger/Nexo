@@ -34,7 +34,7 @@ export NEXO_SDK_PACKAGE_VERSION=1.2.3
 bash scripts/verify-stable-sdk-host-sample-packages.sh
 ```
 
-This packs the graph to `artifacts/nuget-verify/packages`, restores `docs/samples/StableSdkHostSample/package-consumer/` against **only** that folder + nuget.org, builds, and runs the sample.
+This packs the graph to `artifacts/nuget-verify/packages`, restores `docs/samples/StableSdkHostSample/package-consumer/` against **only** that folder + nuget.org, builds, and runs the sample. Restore uses **`--force-evaluate`** and, by default, an **empty `NUGET_PACKAGES` + `DOTNET_CLI_HOME`** under `artifacts/nuget-verify/isolated-*` so a stale user/global cache cannot mask a bad graph (set **`NEXO_SDK_VERIFY_NO_ISOLATED_CACHE=1`** to opt out; **`NEXO_SDK_VERIFY_ISOLATED_ROOT`** to reuse a fixed directory).
 
 To verify an **unpacked** CI artifact folder without re-packing:
 
@@ -96,7 +96,7 @@ The CLI image is published by `.github/workflows/container-image-publish.yml` to
 When **`NUGET_PUBLISH_MODE`** is **`oidc`** or **`apikey`**, **`reusable-release-nuget.yml`** (unless disabled below):
 
 1. Polls the nuget.org **flat container** until these ids are visible: **`Nexo.Hosting.Bundle`**, **`Nexo.Hosting`**, **`Nexo.Sdk`** (override with repo variable **`NUGET_POST_PUSH_VERIFY_PACKAGE_IDS`** as a comma-separated list).
-2. Runs **`scripts/verify-nuget-org-restore-published-version.sh`**: `dotnet restore` of **`docs/samples/NugetOrgRestoreVerify`** using **only** `https://api.nuget.org/v3/index.json`, so transitive resolution must succeed on the public feed.
+2. Runs **`scripts/verify-nuget-org-restore-with-isolated-cache.sh`**: same as **`verify-nuget-org-restore-published-version.sh`** but with an **empty package cache** and CLI home so the restore matches a **first-time machine** (no masked dependencies from `~/.nuget/packages`).
 
 **Repository variables** (all optional except where noted):
 
