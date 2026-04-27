@@ -102,7 +102,7 @@ services.AddNexoProfile(NexoDeploymentProfile.AirGapped, opts =>
 The readiness gate builds the **project-reference** sample and then verifies **NuGet-only** consumption:
 
 1. `dotnet build docs/samples/StableSdkHostSample/StableSdkHostSample.csproj` (in-repo references).
-2. `scripts/verify-stable-sdk-host-sample-packages.sh` (POSIX) or `scripts/verify-stable-sdk-host-sample-packages.ps1` (Windows): packs the `Nexo.Hosting` dependency graph to a local feed, restores `docs/samples/StableSdkHostSample/package-consumer/StableSdkHostSample.Package.csproj`, builds, and runs.
+2. `scripts/verify-stable-sdk-host-sample-packages.sh` (POSIX) or `scripts/verify-stable-sdk-host-sample-packages.ps1` (Windows): packs the `Nexo.Hosting` dependency graph to a local feed, restores `docs/samples/StableSdkHostSample/package-consumer/StableSdkHostSample.Package.csproj` with **`--force-evaluate`** and an **empty package cache** by default, builds, and runs.
 
 See `.github/workflows/full-platform-readiness-gate.yml` (steps **Setup — build SDK sample** and **Setup — verify SDK sample consumes local NuGet graph**).
 

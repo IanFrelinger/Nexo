@@ -8,6 +8,8 @@ Verify locally (from repo root):
 NEXO_SDK_PACKAGE_VERSION=1.0.0-local bash scripts/verify-stable-sdk-host-sample-packages.sh
 ```
 
+The script uses an **empty `NUGET_PACKAGES`** by default (set **`NEXO_SDK_VERIFY_NO_ISOLATED_CACHE=1`** to use your user cache).
+
 Override package version at restore time:
 
 ```bash

@@ -1,5 +1,5 @@
-# Reusable: pack and optionally push Nexo.* NuGet packages.
-# Called from release.yml or standalone release-nuget.yml (workflow_dispatch).
+# Reusable: pack and optionally push Nexo.* NuGet packages (+ extended publish verification).
+# Called from release.yml or release-nuget.yml.
 
 on:
   workflow_call:
@@ -8,6 +8,10 @@ on:
         description: "Semver with or without v prefix (e.g. 1.2.3 or v1.2.3)"
         type: string
         required: true
+    outputs:
+      package_version:
+        description: "Resolved semver without v prefix"
+        value: ${{ jobs.pack-and-publish.outputs.package_version }}
 
 permissions:
   contents: read
@@ -16,11 +20,25 @@ permissions:
 jobs:
   pack-and-publish:
     runs-on: ubuntu-latest
+    outputs:
+      package_version: ${{ steps.resolve.outputs.package_version }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            9.0.x
+            8.0.x
+
+      - name: Verify pack script matches Nexo.Hosting MSBuild graph
+        shell: bash
+        run: python3 scripts/verify-pack-nexo-hosting-graph-alignment.py
+
       - name: Resolve version
+        id: resolve
         shell: bash
         run: |
           V="${{ inputs.package_version }}"
@@ -30,14 +48,8 @@ jobs:
             exit 1
           fi
           echo "PACKAGE_VERSION=$V" >> "$GITHUB_ENV"
+          echo "package_version=$V" >> "$GITHUB_OUTPUT"
           echo "Publishing NuGet version: $V"
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: |
-            9.0.x
-            8.0.x
 
       - name: Pack hosting graph + bundle + client SDK
         shell: bash
@@ -49,11 +61,68 @@ jobs:
           dotnet pack src/Nexo.Sdk/Nexo.Sdk.csproj -c Release -o "$OUT" -p:PackageVersion="${PACKAGE_VERSION}" -v minimal
           ls -la "$OUT"
 
-      - name: Upload packages artifact
+      - name: Release manifest (SHA-256 per nupkg)
+        shell: bash
+        env:
+          PACKAGE_VERSION: ${{ env.PACKAGE_VERSION }}
+        run: bash scripts/render-nuget-release-manifest.sh "${{ runner.temp }}/nuget-release"
+
+      - name: Pre-upload consumer sample (local feed, isolated cache)
+        shell: bash
+        env:
+          NEXO_SDK_PACKAGE_VERSION: ${{ env.PACKAGE_VERSION }}
+          NEXO_SDK_PACKAGE_FEED: ${{ runner.temp }}/nuget-release
+        run: bash scripts/verify-stable-sdk-host-sample-packages.sh
+
+      - name: Upload NuGet packages + manifest
         uses: actions/upload-artifact@v4
         with:
           name: nuget-packages-${{ env.PACKAGE_VERSION }}
-          path: ${{ runner.temp }}/nuget-release/*.nupkg
+          path: |
+            ${{ runner.temp }}/nuget-release/*.nupkg
+            ${{ runner.temp }}/nuget-release/*.sha256.txt
+            ${{ runner.temp }}/nuget-release/nuget-publish-manifest.json
+
+      - name: Install Syft + Grype (SBOM / vuln scan)
+        if: vars.NUGET_RELEASE_SBOM == 'true' || vars.NUGET_RELEASE_GRYPE == 'true'
+        shell: bash
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b "${RUNNER_TEMP}/anchore"
+          if [[ "${{ vars.NUGET_RELEASE_GRYPE }}" == "true" ]]; then
+            curl -sSfL https://raw.githubusercontent.com/anchore/grype/main/install.sh | sh -s -- -b "${RUNNER_TEMP}/anchore"
+          fi
+          echo "${RUNNER_TEMP}/anchore" >> "$GITHUB_PATH"
+
+      - name: SBOM for nupkgs (Syft)
+        if: vars.NUGET_RELEASE_SBOM == 'true'
+        shell: bash
+        run: |
+          mkdir -p "${{ runner.temp }}/sbom"
+          for f in "${{ runner.temp }}"/nuget-release/*.nupkg; do
+            b="$(basename "$f" .nupkg)"
+            syft "$f" -o "spdx-json=${{ runner.temp }}/sbom/${b}.spdx.json"
+          done
+          ( cd "${{ runner.temp }}/sbom" && sha256sum *.spdx.json > SHA256SUMS )
+          ls -la "${{ runner.temp }}/sbom"
+
+      - name: Grype scan (SBOMs)
+        if: vars.NUGET_RELEASE_SBOM == 'true' && vars.NUGET_RELEASE_GRYPE == 'true'
+        continue-on-error: true
+        shell: bash
+        run: |
+          for f in "${{ runner.temp }}/sbom"/*.spdx.json; do
+            echo "=== grype $(basename "$f") ==="
+            grype "sbom:$f" -o table || true
+          done
+
+      - name: Upload SBOM artifact
+        if: vars.NUGET_RELEASE_SBOM == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-sbom-${{ env.PACKAGE_VERSION }}
+          path: |
+            ${{ runner.temp }}/sbom/*.spdx.json
+            ${{ runner.temp }}/sbom/SHA256SUMS
 
       - name: NuGet login (Trusted Publishing OIDC)
         id: nuget_login
@@ -93,3 +162,45 @@ jobs:
         shell: bash
         run: |
           echo "::notice::NUGET_PUBLISH_MODE is not 'oidc' or 'apikey' (artifact-only). Set repo variable NUGET_PUBLISH_MODE per docs/PUBLISHING.md"
+
+      - name: Post-push — flat-container visibility
+        if: (vars.NUGET_PUBLISH_MODE == 'oidc' || vars.NUGET_PUBLISH_MODE == 'apikey') && vars.NUGET_POST_PUSH_VERIFY != 'false'
+        shell: bash
+        env:
+          NEXO_NUGET_VERIFY_VERSION: ${{ env.PACKAGE_VERSION }}
+          NEXO_NUGET_VERIFY_PACKAGE_IDS: ${{ vars.NUGET_POST_PUSH_VERIFY_PACKAGE_IDS }}
+          NEXO_NUGET_VERIFY_ATTEMPTS: ${{ vars.NUGET_POST_PUSH_ATTEMPTS }}
+          NEXO_NUGET_VERIFY_SLEEP_SEC: ${{ vars.NUGET_POST_PUSH_SLEEP_SEC }}
+        run: bash scripts/verify-nuget-org-packages-visible.sh
+
+      - name: Post-push — registration API lists version
+        if: (vars.NUGET_PUBLISH_MODE == 'oidc' || vars.NUGET_PUBLISH_MODE == 'apikey') && vars.NUGET_POST_PUSH_VERIFY != 'false'
+        shell: bash
+        env:
+          NEXO_NUGET_VERIFY_VERSION: ${{ env.PACKAGE_VERSION }}
+          NEXO_NUGET_VERIFY_PACKAGE_IDS: ${{ vars.NUGET_POST_PUSH_VERIFY_PACKAGE_IDS }}
+          NEXO_NUGET_VERIFY_ATTEMPTS: ${{ vars.NUGET_POST_PUSH_ATTEMPTS }}
+          NEXO_NUGET_VERIFY_SLEEP_SEC: ${{ vars.NUGET_POST_PUSH_SLEEP_SEC }}
+        run: bash scripts/verify-nuget-org-registration-versions.sh
+
+      - name: Post-push — downloaded bytes match manifest SHA-256
+        if: (vars.NUGET_PUBLISH_MODE == 'oidc' || vars.NUGET_PUBLISH_MODE == 'apikey') && vars.NUGET_POST_PUSH_VERIFY != 'false'
+        shell: bash
+        env:
+          NEXO_MANIFEST_JSON: ${{ runner.temp }}/nuget-release/nuget-publish-manifest.json
+          NEXO_NUGET_VERIFY_VERSION: ${{ env.PACKAGE_VERSION }}
+        run: bash scripts/verify-nuget-published-sha256-matches-manifest.sh
+
+      - name: Post-push — nuget.org restore (bundle + isolated cache)
+        if: (vars.NUGET_PUBLISH_MODE == 'oidc' || vars.NUGET_PUBLISH_MODE == 'apikey') && vars.NUGET_POST_PUSH_VERIFY != 'false'
+        shell: bash
+        env:
+          NEXO_NUGET_RESTORE_VERIFY_VERSION: ${{ env.PACKAGE_VERSION }}
+        run: bash scripts/verify-nuget-org-restore-with-isolated-cache.sh
+
+      - name: Post-push — nuget.org restore (Nexo.Hosting only, isolated)
+        if: (vars.NUGET_PUBLISH_MODE == 'oidc' || vars.NUGET_PUBLISH_MODE == 'apikey') && vars.NUGET_POST_PUSH_VERIFY != 'false'
+        shell: bash
+        env:
+          NEXO_NUGET_RESTORE_VERIFY_VERSION: ${{ env.PACKAGE_VERSION }}
+        run: bash scripts/verify-nuget-org-restore-hosting-only-isolated.sh

@@ -9,6 +9,13 @@ on:
         type: boolean
         required: false
         default: false
+    outputs:
+      cli_sha_tag:
+        description: "Immutable GHCR tag for nexo-cli (sha-...)"
+        value: ${{ jobs.publish-cli.outputs.cli_sha_tag }}
+      api_sha_tag:
+        description: "Immutable GHCR tag for nexo-api (sha-...)"
+        value: ${{ jobs.publish-api.outputs.api_sha_tag }}
 
 permissions:
   contents: read
@@ -23,6 +30,8 @@ jobs:
     name: GHCR nexo-cli
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    outputs:
+      cli_sha_tag: ${{ steps.meta.outputs.sha_tag }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -38,11 +47,13 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Define image metadata
+        id: meta
         shell: bash
         run: |
           OWNER_LC="${GITHUB_REPOSITORY_OWNER,,}"
           IMAGE="ghcr.io/${OWNER_LC}/nexo-cli"
           SHA_TAG="${IMAGE}:sha-${GITHUB_SHA::12}"
+          echo "sha_tag=${SHA_TAG}" >> "$GITHUB_OUTPUT"
           echo "IMAGE=${IMAGE}" >> "${GITHUB_ENV}"
           echo "SHA_TAG=${SHA_TAG}" >> "${GITHUB_ENV}"
           if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
@@ -109,6 +120,8 @@ jobs:
     name: GHCR nexo-api
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    outputs:
+      api_sha_tag: ${{ steps.meta.outputs.sha_tag }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -124,11 +137,13 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Define image metadata
+        id: meta
         shell: bash
         run: |
           OWNER_LC="${GITHUB_REPOSITORY_OWNER,,}"
           IMAGE="ghcr.io/${OWNER_LC}/nexo-api"
           SHA_TAG="${IMAGE}:sha-${GITHUB_SHA::12}"
+          echo "sha_tag=${SHA_TAG}" >> "$GITHUB_OUTPUT"
           echo "IMAGE=${IMAGE}" >> "${GITHUB_ENV}"
           echo "SHA_TAG=${SHA_TAG}" >> "${GITHUB_ENV}"
           if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
@@ -147,6 +162,19 @@ jobs:
             --tag "${SHA_TAG}" \
             --push \
             .
+
+      - name: Smoke test published API image (/health)
+        shell: bash
+        run: |
+          cid="$(docker run -d -p 127.0.0.1:18081:8080 "${SHA_TAG}")"
+          trap 'docker rm -f "${cid}" >/dev/null 2>&1 || true' EXIT
+          for i in $(seq 1 30); do
+            if curl -fsS "http://127.0.0.1:18081/health" >/dev/null 2>&1; then
+              exit 0
+            fi
+            sleep 2
+          done
+          exit 1
 
       - name: Publish latest on main
         if: github.ref == 'refs/heads/master' || github.ref == 'refs/heads/main'

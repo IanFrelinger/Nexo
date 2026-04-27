@@ -51,7 +51,9 @@ This document is the **default “what do I run in production?”** map. Other c
 
 1. **Tag** `vX.Y.Z` on the commit you want to ship and **push the tag**.
 2. GitHub runs **`.github/workflows/release.yml`**: **GHCR** `nexo-cli` + `nexo-api` (sha + semver tags) and **NuGet** pack/push (per `NUGET_PUBLISH_MODE`).
-3. Open the workflow run **Summary** for copy-paste **pin lines** (sha + semver + NuGet version).
+3. Open the workflow run **Summary** for copy-paste **pin lines** (sha + semver + NuGet version), NuGet **manifest** artifact, and optional **GHCR re-pull smoke** result.
+
+**Which workflow?** **`docs/RELEASE_RUNBOOK.md`**.
 
 **NuGet-only** (e.g. hotfix packages without retagging images): **Actions → Release NuGet packages** (`release-nuget.yml`).
 
@@ -60,7 +62,7 @@ This document is the **default “what do I run in production?”** map. Other c
 ## CI vs production
 
 - **Green on `master`** does not imply every optional workflow gate ran (path filters). For a release, run **`runtime-release-gate`** (and your own smoke) on the **tag** you intend to ship.
-- **Forks** cannot push to GHCR with default `GITHUB_TOKEN`; image publish jobs may be skipped or fail until run in the upstream repo or with a PAT.
+- **Forks** — Default **`GITHUB_TOKEN`** in a fork usually cannot publish to **`ghcr.io/<upstream-owner>/...`**. Run release workflows in **upstream**, retarget GHCR, or use a **PAT** with `packages: write`.
 
 ## Secrets checklist
 
@@ -70,4 +72,4 @@ This document is the **default “what do I run in production?”** map. Other c
 | `NUGET_API_KEY` | Optional **fallback** long-lived key if Trusted Publishing is not configured yet |
 | `GITHUB_TOKEN` | Provided by Actions; used for GHCR push in `container-image-publish` |
 
-Configure **Trusted Publishing** on nuget.org for workflow file **`release.yml`** (filename only: `release.yml`) per [NuGet trusted publishing](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing). The NuGet-only dispatch workflow **`release-nuget.yml`** is optional; OIDC is bound to **`release.yml`** for tag releases.
+Configure **Trusted Publishing** on nuget.org per [NuGet trusted publishing](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing): **`release.yml`** for tag releases and **`release-nuget.yml`** if you use NuGet-only dispatch with OIDC. See **`docs/PUBLISHING.md`**.

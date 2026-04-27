@@ -1,4 +1,5 @@
 #requires -Version 7.0
+# Align Pack-Project list: python3 scripts/verify-pack-nexo-hosting-graph-alignment.py (+ optional pack-nexo-hosting-graph.allowlist.txt)
 param(
     [Parameter(Mandatory = $true)][string] $Version,
     [string] $OutputDir = ""
