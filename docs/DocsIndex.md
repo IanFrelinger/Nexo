@@ -17,6 +17,8 @@ Documentation index for the Nexo platform. Start here to find what you need.
 ## Operator / Production Readiness
 
 - `docs/DEPLOYMENT.md` — **golden paths** (portal stack, CLI image, agent server), **pinning** images vs `latest`, NuGet/CI notes.
+- `docs/RELEASE_RUNBOOK.md` — **one-page** operator checklist for tags, `release.yml`, NuGet/GHCR, and failure notes.
+- `.github/workflows/pack-hosting-graph-alignment.yml` — fails if `pack-nexo-hosting-graph` diverges from the `Nexo.Hosting` MSBuild graph.
 - `docs/ProductionReadinessGate-v1.md` — production gate commands and expected assertions.
 - `.github/workflows/production-readiness-gate-v1.yml` — automated production readiness gate.
 - `.github/workflows/environment-setup-gate-v1.yml` — environment bootstrap + dependency setup gate (Linux/macOS/Windows).

@@ -53,6 +53,8 @@ This document is the **default “what do I run in production?”** map. Other c
 2. GitHub runs **`.github/workflows/release.yml`**: **GHCR** `nexo-cli` + `nexo-api` (sha + semver tags) and **NuGet** pack/push (per `NUGET_PUBLISH_MODE`).
 3. Open the workflow run **Summary** for copy-paste **pin lines** (sha + semver + NuGet version).
 
+Step-by-step checklist: **`docs/RELEASE_RUNBOOK.md`**.
+
 **NuGet-only** (e.g. hotfix packages without retagging images): **Actions → Release NuGet packages** (`release-nuget.yml`).
 
 **Images on `master` without a release:** still driven by **Container Image Publish** on path-filtered pushes.

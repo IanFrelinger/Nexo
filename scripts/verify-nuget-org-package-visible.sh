@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Poll nuget.org flat container until a package version is visible (handles index lag after push).
+# Usage: NEXO_NUGET_VERIFY_PACKAGE_ID=Nexo.Hosting.Bundle NEXO_NUGET_VERIFY_VERSION=1.2.3 bash scripts/verify-nuget-org-package-visible.sh
+set -euo pipefail
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ID="${NEXO_NUGET_VERIFY_PACKAGE_ID:-Nexo.Hosting.Bundle}"
+VER="${NEXO_NUGET_VERIFY_VERSION:?set NEXO_NUGET_VERIFY_VERSION (semver, no v prefix)}"
+VER="${VER#v}"
+ATTEMPTS="${NEXO_NUGET_VERIFY_ATTEMPTS:-12}"
+SLEEP_SEC="${NEXO_NUGET_VERIFY_SLEEP_SEC:-15}"
+
+id_lc="$(echo "$ID" | tr '[:upper:]' '[:lower:]')"
+ver_lc="$(echo "$VER" | tr '[:upper:]' '[:lower:]')"
+url="https://api.nuget.org/v3-flatcontainer/${id_lc}/${ver_lc}/${id_lc}.${ver_lc}.nupkg"
+
+echo "Checking nuget.org visibility: ${ID} ${VER}"
+echo "URL: ${url}"
+
+for i in $(seq 1 "${ATTEMPTS}"); do
+  code="$(curl -sS -o /dev/null -w "%{http_code}" -I --max-time 30 "$url" || true)"
+  if [[ "$code" == "200" ]]; then
+    echo "verify-nuget-org-package-visible: OK (attempt ${i}/${ATTEMPTS})"
+    exit 0
+  fi
+  echo "  attempt ${i}/${ATTEMPTS}: HTTP ${code} (waiting ${SLEEP_SEC}s)"
+  if [[ "$i" -lt "${ATTEMPTS}" ]]; then
+    sleep "${SLEEP_SEC}"
+  fi
+done
+
+echo "::error::Package ${ID} version ${VER} not visible on nuget.org after ${ATTEMPTS} attempts (last HTTP ${code})."
+exit 1
