@@ -13,6 +13,8 @@ on:
       - "docs/DEPLOYMENT.md"
       - "docs/PUBLISHING.md"
       - "docs/RELEASE_RUNBOOK.md"
+      - "docs/GitHubRepoVariables.md"
+      - "docs/GitHubBranchProtection.md"
       - "docs/CiFirstHardwareSecond.md"
       - ".devcontainer/**"
       - ".github/workflows/onboarding-docs-guard.yml"
@@ -24,6 +26,8 @@ on:
       - "docs/DEPLOYMENT.md"
       - "docs/PUBLISHING.md"
       - "docs/RELEASE_RUNBOOK.md"
+      - "docs/GitHubRepoVariables.md"
+      - "docs/GitHubBranchProtection.md"
       - "docs/CiFirstHardwareSecond.md"
       - ".devcontainer/**"
       - ".github/workflows/onboarding-docs-guard.yml"
@@ -72,6 +76,8 @@ jobs:
           grep -nE "devcontainer-gate\\.yml" docs/DocsIndex.md
           grep -nE "docs/RELEASE_RUNBOOK\\.md" docs/DocsIndex.md
           grep -nE "pack-hosting-graph-alignment\\.yml" docs/DocsIndex.md
+          grep -nE "docs/GitHubRepoVariables\\.md" docs/DocsIndex.md
+          grep -nE "docs/GitHubBranchProtection\\.md" docs/DocsIndex.md
 
           # Operator deploy section stays container-first.
           grep -nE "## Deploy \\(operators\\)" README.md

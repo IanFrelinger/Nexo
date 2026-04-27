@@ -62,6 +62,12 @@ If you change **`Nexo.Hosting`** project references or **`scripts/pack-nexo-host
 python3 scripts/verify-pack-nexo-hosting-graph-alignment.py
 ```
 
+Before a **versioned** NuGet/GHCR release:
+
+```bash
+dotnet run --project src/Nexo.CLI -- release preflight 1.2.3
+```
+
 Optional [pre-commit](https://pre-commit.com/): `pip install pre-commit && pre-commit install` then use `.pre-commit-config.yaml` (graph alignment hook).
 
 ## Command style in docs

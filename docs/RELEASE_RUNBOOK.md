@@ -7,6 +7,7 @@ From repo root, with the **semver you are about to ship** (no `v`):
 ```bash
 bash scripts/release-preflight-local.sh 1.2.3
 # or:  make release-preflight VERSION=1.2.3
+# or:  dotnet run --project src/Nexo.CLI -- release preflight 1.2.3
 ```
 
 That runs **pack-graph alignment** + **NuGet consumer sample** (isolated cache). Then push tag **`v1.2.3`** so **`release.yml`** runs (see table below).
@@ -15,7 +16,8 @@ Optional: also fire CI **`Runtime Release Gate`** from your machine (needs **`gh
 
 ```bash
 NEXO_RELEASE_PREFLIGHT_TRIGGER_GATE=1 NEXO_RELEASE_PREFLIGHT_REF=master bash scripts/release-preflight-local.sh 1.2.3
-# or anytime:  make release-gate
+# or:  dotnet run --project src/Nexo.CLI -- release preflight 1.2.3 --trigger-gate --gate-ref master
+# or anytime:  make release-gate   /   dotnet run --project src/Nexo.CLI -- release gate
 ```
 
 ---
@@ -29,6 +31,10 @@ Which workflow do I run?
 | **Images from `main` only** | **`container-image-publish.yml`** | Rolling `sha-*` / `latest`; no NuGet. |
 
 Trusted Publishing: register **`release.yml`** and **`release-nuget.yml`** as needed — see `docs/PUBLISHING.md`.
+
+**Repo variables & branch protection:** `docs/GitHubRepoVariables.md`, `docs/GitHubBranchProtection.md`.
+
+**Tracking:** open **New issue → Release checklist** (`.github/ISSUE_TEMPLATE/release_checklist.md`) or use the **Release** section in the PR template when this PR ships a version.
 
 ## Before you tag
 

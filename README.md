@@ -269,7 +269,7 @@ docker compose -f docker-compose.agent-server.yml up -d --build
 
 Copy and adjust env from `docs/config/agent-server.env.example`. Operator runbooks: `docs/SelfHostedAgentServer.md`, `apps/runtime-studio/README.md`. Readiness: `docs/ProductionReadinessGate-v1.md` and workflow `.github/workflows/production-readiness-gate-v1.yml`.
 
-**Cutting a versioned release (NuGet + GHCR):** run **`bash scripts/release-preflight-local.sh X.Y.Z`** (or **`make release-preflight VERSION=X.Y.Z`**), then push Git tag **`vX.Y.Z`** — GitHub runs **`.github/workflows/release.yml`**. One-page checklist: **`docs/RELEASE_RUNBOOK.md`**; NuGet/GitHub variables: **`docs/PUBLISHING.md`**.
+**Cutting a versioned release (NuGet + GHCR):** run **`bash scripts/release-preflight-local.sh X.Y.Z`**, **`make release-preflight VERSION=X.Y.Z`**, or **`dotnet run --project src/Nexo.CLI -- release preflight X.Y.Z`**, then push Git tag **`vX.Y.Z`** — GitHub runs **`.github/workflows/release.yml`**. Checklists: **`docs/RELEASE_RUNBOOK.md`**, **`.github/ISSUE_TEMPLATE/release_checklist.md`**; variables: **`docs/GitHubRepoVariables.md`**.
 
 ## Common CLI Workflows
 
@@ -294,6 +294,8 @@ Copy and adjust env from `docs/config/agent-server.env.example`. Operator runboo
 | Interactive chat | `dotnet run --project src/Nexo.CLI -- chat` |
 | Runtime execute | `dotnet run --project src/Nexo.CLI -- runtime execute --runtime-manifest <file>` |
 | Runtime release gate | `dotnet run --project src/Nexo.CLI -- runtime release-gate` |
+| Release preflight (local) | `dotnet run --project src/Nexo.CLI -- release preflight <semver>` |
+| Trigger Runtime Release Gate (CI) | `dotnet run --project src/Nexo.CLI -- release gate` (needs `gh auth login`) |
 | Workflow scaffold/stress | `dotnet run --project src/Nexo.CLI -- workflow scaffold` |
 | Mesh sync/capabilities | `dotnet run --project src/Nexo.CLI -- mesh sync` |
 | Escalation management | `dotnet run --project src/Nexo.CLI -- escalate list` |

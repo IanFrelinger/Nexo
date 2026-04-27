@@ -17,7 +17,10 @@ Documentation index for the Nexo platform. Start here to find what you need.
 ## Operator / Production Readiness
 
 - `docs/DEPLOYMENT.md` — **golden paths** (portal stack, CLI image, agent server), **pinning** images vs `latest`, NuGet/CI notes.
-- `docs/RELEASE_RUNBOOK.md` — release **decision table** (tag vs NuGet-only vs branch images); **`scripts/release-preflight-local.sh`** / **`make release-preflight`** for one-command local preflight.
+- `docs/RELEASE_RUNBOOK.md` — release **decision table** (tag vs NuGet-only vs branch images); **`scripts/release-preflight-local.sh`** / **`make release-preflight`** / **`dotnet run … release preflight`** for one-command local preflight.
+- `docs/GitHubRepoVariables.md` — **Actions variables** for NuGet publish mode, post-push verify, SBOM, cross-verify.
+- `docs/GitHubBranchProtection.md` — **branch protection** guidance (merge gates vs tag releases).
+- `.github/ISSUE_TEMPLATE/release_checklist.md` — **GitHub issue template** for a release ticket.
 - `docs/PUBLISHING.md` — NuGet pack/push, **post-push verification** (registration API, SHA-256 match, SBOM/Grype vars), operator checklist.
 - `.github/workflows/pack-hosting-graph-alignment.yml` — pack script vs `Nexo.Hosting` MSBuild graph.
 - `docs/ProductionReadinessGate-v1.md` — production gate commands and expected assertions.
