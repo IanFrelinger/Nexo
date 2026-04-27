@@ -36,19 +36,38 @@ bash scripts/verify-stable-sdk-host-sample-packages.sh
 
 This packs the graph to `artifacts/nuget-verify/packages`, restores `docs/samples/StableSdkHostSample/package-consumer/` against **only** that folder + nuget.org, builds, and runs the sample.
 
+To verify **exactly** the folder you are about to push (for example after unpacking the **`nuget-packages-<version>`** workflow artifact), point the script at that directory so it does not re-pack:
+
+```bash
+export NEXO_SDK_PACKAGE_VERSION=1.2.3
+export NEXO_SDK_PACKAGE_FEED=/path/to/unpacked/nuget-packages
+bash scripts/verify-stable-sdk-host-sample-packages.sh
+```
+
+GitHub Actions **`.github/workflows/reusable-release-nuget.yml`** runs the same verification **after** packing and **before** uploading the artifact or pushing to nuget.org, so a broken graph fails the job before anything leaves the runner.
+
 ## Publish to nuget.org (you do this)
 
 ### Option A — GitHub Actions (recommended)
 
 Workflows:
 
-- **`.github/workflows/release.yml`** — **tag `v*.*.*`**: GHCR **and** NuGet in one run. Configure Trusted Publishing for workflow file **`release.yml`** (filename only).
+- **`.github/workflows/release.yml`** — **tag `v*.*.*`**: GHCR **and** NuGet in one run.
 - **`.github/workflows/release-nuget.yml`** — **manual NuGet-only** dispatch (version input).
 
+**Trusted Publishing (OIDC)** on nuget.org is bound to the **caller** workflow file, not the reusable `reusable-release-nuget.yml`. Register every entry point you use:
+
+| If you publish via | Register this workflow file on nuget.org |
+|--------------------|---------------------------------------------|
+| Tag push → **Release** | **`release.yml`** |
+| **Actions → Release NuGet packages** with `NUGET_PUBLISH_MODE=oidc` | **`release-nuget.yml`** |
+
+If you only ever use tag releases, **`release.yml`** alone is enough. If operators also run **`release-nuget.yml`** with OIDC, add a second Trusted Publishing policy (or equivalent) for **`release-nuget.yml`** or those pushes will be denied.
+
 1. **Repository variable** `NUGET_PUBLISH_MODE`:
-   - `none` — build only; download **`nuget-packages-<version>`** artifact and push manually.
-   - `oidc` — [Trusted Publishing](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing): policy must include **`release.yml`** (for tag releases). Secret **`NUGET_USER`** = nuget.org **profile name** (not email).
-   - `apikey` — secret **`NUGET_API_KEY`**.
+   - unset, empty, or **`none`** — pack + verify + artifact only; download **`nuget-packages-<version>`** and push manually if desired.
+   - **`oidc`** — [Trusted Publishing](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing) for the workflow files above. Secret **`NUGET_USER`** = nuget.org **profile name** (not email).
+   - **`apikey`** — secret **`NUGET_API_KEY`**.
 2. **Trigger:** push tag **`v1.2.3`** (preferred), or **Actions → Release** / **Release NuGet packages** for partial flows.
 3. Write **GitHub Release** notes and verify packages on nuget.org.
 
