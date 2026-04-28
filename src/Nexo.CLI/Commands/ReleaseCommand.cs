@@ -9,7 +9,7 @@ namespace Nexo.CLI.Commands;
 /// </summary>
 public sealed class ReleaseCommand : Command
 {
-    public ReleaseCommand() : base("release", "Release helpers: local NuGet preflight, trigger CI release gate")
+    public ReleaseCommand() : base("release", "Release helpers: local NuGet preflight, trigger CI workflows")
     {
         var versionArg = new Argument<string>("version", "Semver to ship (e.g. 1.2.3), with or without v prefix");
 
@@ -31,16 +31,41 @@ public sealed class ReleaseCommand : Command
         AddCommand(preflightCmd);
 
         var gateCmd = new Command("gate", "Trigger GitHub Action \"Runtime Release Gate\" (requires gh CLI + auth).");
-        var refOpt = new Option<string>("--ref", () => "master", "Branch or tag to run the workflow against");
-        gateCmd.AddOption(refOpt);
+        var gateRefOnly = new Option<string>("--ref", () => "master", "Branch or tag to run the workflow against");
+        gateCmd.AddOption(gateRefOnly);
         gateCmd.SetHandler(
             async (string @ref) =>
             {
                 var code = await RunGhWorkflowAsync("Runtime Release Gate", @ref).ConfigureAwait(false);
                 Environment.Exit(code);
             },
-            refOpt);
+            gateRefOnly);
         AddCommand(gateCmd);
+
+        var dispatchCmd = new Command("dispatch", "Trigger GitHub Action \"Release\" (workflow_dispatch: GHCR + NuGet for a version). Requires gh auth.");
+        dispatchCmd.AddArgument(versionArg);
+        var refOpt = new Option<string>("--ref", () => "master", "Branch to run the workflow against");
+        var skipMultiArchOpt = new Option<bool>("--skip-multi-arch", "Pass skip_multi_arch=true (nexo-cli latest amd64 only on main)");
+        dispatchCmd.AddOption(refOpt);
+        dispatchCmd.AddOption(skipMultiArchOpt);
+        dispatchCmd.SetHandler(
+            async (string version, string @ref, bool skipMultiArch) =>
+            {
+                var ver = NormalizeVersion(version);
+                var skip = skipMultiArch ? "true" : "false";
+                var code = await RunProcessAsync(
+                        "gh",
+                        $"workflow run Release --ref {@ref} -f version={ver} -f skip_multi_arch={skip}",
+                        RepoPathResolver.FindRepoRoot())
+                    .ConfigureAwait(false);
+                if (code != 0)
+                    Console.Error.WriteLine("release dispatch: ensure gh is installed and authenticated (gh auth login).");
+                Environment.Exit(code);
+            },
+            versionArg,
+            refOpt,
+            skipMultiArchOpt);
+        AddCommand(dispatchCmd);
     }
 
     private static async Task<int> RunPreflightAsync(string version, bool triggerGate, string gateRef)

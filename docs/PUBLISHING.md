@@ -2,7 +2,7 @@
 
 This document describes how to **produce** and **publish** the .NET packages that external repos (for example game tooling) consume. CI already **verifies** NuGet-only consumption locally; publishing to a feed is an operator step.
 
-**Minimal local preflight (one command):** `bash scripts/release-preflight-local.sh X.Y.Z`, `make release-preflight VERSION=X.Y.Z`, or `dotnet run --project src/Nexo.CLI -- release preflight X.Y.Z` — then push **`vX.Y.Z`** for **`release.yml`**. Checklist: **`docs/RELEASE_RUNBOOK.md`**. GitHub **variables**: **`docs/GitHubRepoVariables.md`**.
+**Minimal local preflight (one command):** `bash scripts/release-preflight-local.sh X.Y.Z`, `make release-preflight VERSION=X.Y.Z`, or `dotnet run --project src/Nexo.CLI -- release preflight X.Y.Z` — then push **`vX.Y.Z`** for **`release.yml`** (or **`release dispatch`** / **`make release-dispatch`**). Hub: **`docs/RELEASE.md`**. Checklist: **`docs/RELEASE_RUNBOOK.md`**. GitHub **variables**: **`docs/GitHubRepoVariables.md`**.
 
 ## What gets published
 
@@ -91,6 +91,10 @@ When **`NUGET_PUBLISH_MODE`** is **`oidc`** or **`apikey`** (and **`NUGET_POST_P
 | **`NUGET_RELEASE_SBOM`** | Set to **`true`** to generate SPDX JSON per `.nupkg` with **Syft** and upload artifact **`nuget-sbom-<version>`**. |
 | **`NUGET_RELEASE_GRYPE`** | With **`NUGET_RELEASE_SBOM`**, run **Grype** on each SBOM (reports only; **`continue-on-error`** so vuln data does not fail the release). |
 | **`RELEASE_CROSS_VERIFY`** | Set to **`false`** to skip **`release.yml`** job that re-pulls GHCR **`sha-*`** images and runs **`scripts/release-smoke-published-docker.sh`**. |
+| **`NUGET_STAGING_FEED_URL`** | Staging v3 feed URL | Push **before** nuget.org; requires secret **`NUGET_STAGING_API_KEY`** — `docs/StagingFeed.md`. |
+| **`RELEASE_CREATE_GITHUB_RELEASE`** | Set **`false`** to skip **draft GitHub Release** on tag runs. |
+
+Webhook: set secret **`RELEASE_NOTIFICATION_WEBHOOK_URL`** (not a variable) — `docs/GitHubRepoVariables.md`.
 
 **Not atomic:** nuget.org accepts packages one-by-one; a mid-run failure can leave a **partial** set until you fix and re-push with **`--skip-duplicate`**.
 

@@ -1,0 +1,38 @@
+name: Release checklist
+description: Track a versioned ship (NuGet + GHCR) with the minimum operator steps
+title: "Release: vX.Y.Z"
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Replace **X.Y.Z** in the title. Hub doc: **`docs/RELEASE.md`** (in the repo root).
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Preflight (local)
+      options:
+        - label: Ran `bash scripts/release-preflight-local.sh X.Y.Z` or `dotnet run --project src/Nexo.CLI -- release preflight X.Y.Z`
+        - label: "(Optional) Triggered Runtime Release Gate — `dotnet run --project src/Nexo.CLI -- release gate`"
+  - type: checkboxes
+    id: github_setup
+    attributes:
+      label: GitHub / nuget.org (one-time or per repo)
+      options:
+        - label: Trusted Publishing registered for `release.yml` (and `release-nuget.yml` if NuGet-only OIDC) — see `docs/PUBLISHING.md`
+        - label: Repo variables set (`NUGET_PUBLISH_MODE`, optional staging/post-push/SBOM) — `docs/GitHubRepoVariables.md`
+        - label: Secrets present (`NUGET_USER` for OIDC, `NUGET_API_KEY` if apikey mode, optional `NUGET_STAGING_API_KEY`, `RELEASE_NOTIFICATION_WEBHOOK_URL`)
+  - type: checkboxes
+    id: ship
+    attributes:
+      label: Ship
+      options:
+        - label: Pushed tag `vX.Y.Z` on the release commit (`release.yml`) or ran `release dispatch` from CLI
+        - label: Checked workflow Summary + `nuget-packages-X.Y.Z` artifact
+        - label: Published or finalized GitHub Release notes (link `docs/SdkCompatibilityPolicy.md` if HTTP surface changed)
+  - type: checkboxes
+    id: post
+    attributes:
+      label: Post-ship
+      options:
+        - label: Spot-checked packages on nuget.org at X.Y.Z
+        - label: Pinned `ghcr.io/.../nexo-cli:sha-…` / `nexo-api:sha-…` from Summary where needed

@@ -12,6 +12,8 @@ Set these under **Repository → Settings → Secrets and variables → Actions 
 | **`NUGET_RELEASE_SBOM`** | `true` / unset | When **`true`**, Syft generates SPDX JSON per `.nupkg` and uploads **`nuget-sbom-<version>`**. |
 | **`NUGET_RELEASE_GRYPE`** | `true` / unset | With SBOM, runs Grype (non-blocking for the workflow). |
 | **`RELEASE_CROSS_VERIFY`** | unset / `true` / `false` | Set **`false`** to skip **`release.yml`** job that re-pulls GHCR **`sha-*`** images for CLI/API smoke. |
+| **`NUGET_STAGING_FEED_URL`** | e.g. `https://nuget.pkg.github.com/Org/index.json` | Optional **staging** feed; packages push here **before** nuget.org (`docs/StagingFeed.md`). |
+| **`RELEASE_CREATE_GITHUB_RELEASE`** | unset / `true` / `false` | Set **`false`** to skip **draft GitHub Release** creation on **tag** runs of **`release.yml`**. |
 
 **Secrets** (same settings page → Secrets):
 
@@ -19,6 +21,8 @@ Set these under **Repository → Settings → Secrets and variables → Actions 
 |--------|---------|
 | **`NUGET_USER`** | nuget.org **profile name** (OIDC + `NuGet/login@v1`). |
 | **`NUGET_API_KEY`** | Push when `NUGET_PUBLISH_MODE=apikey`. |
+| **`NUGET_STAGING_API_KEY`** | Push to **`NUGET_STAGING_FEED_URL`** when that variable is set. |
+| **`RELEASE_NOTIFICATION_WEBHOOK_URL`** | Optional HTTPS URL for a **JSON POST** when **`release.yml`** finishes (success if validate+images+nuget all succeeded). Payload: `repository`, `version`, `status`, `run_id`, `run_url`, `workflow`. |
 
 ## Org / new repository template
 

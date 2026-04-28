@@ -20,6 +20,13 @@ NEXO_RELEASE_PREFLIGHT_TRIGGER_GATE=1 NEXO_RELEASE_PREFLIGHT_REF=master bash scr
 # or anytime:  make release-gate   /   dotnet run --project src/Nexo.CLI -- release gate
 ```
 
+**Dispatch without a tag** (same workflow as tag, from a branch; needs `gh auth login`):
+
+```bash
+dotnet run --project src/Nexo.CLI -- release dispatch 1.2.3 --ref master
+# or:  make release-dispatch VERSION=1.2.3 REF=master
+```
+
 ---
 
 Which workflow do I run?
@@ -34,7 +41,7 @@ Trusted Publishing: register **`release.yml`** and **`release-nuget.yml`** as ne
 
 **Repo variables & branch protection:** `docs/GitHubRepoVariables.md`, `docs/GitHubBranchProtection.md`.
 
-**Tracking:** open **New issue → Release checklist** (`.github/ISSUE_TEMPLATE/release_checklist.md`) or use the **Release** section in the PR template when this PR ships a version.
+**Tracking:** open **New issue → Release checklist** (`.github/ISSUE_TEMPLATE/release_checklist.yml`) or use the **Release** section in the PR template when this PR ships a version.
 
 ## Before you tag
 

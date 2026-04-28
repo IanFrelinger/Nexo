@@ -1,4 +1,4 @@
-.PHONY: build test test-cross-platform test-portable test-multi-env test-all-platforms test-all-platforms-ephemeral ci-verify validate-safe review-summary clean-test-artifacts test-readiness-gate release-preflight release-gate
+.PHONY: build test test-cross-platform test-portable test-multi-env test-all-platforms test-all-platforms-ephemeral ci-verify validate-safe review-summary clean-test-artifacts test-readiness-gate release-preflight release-gate release-dispatch
 
 # Local checks before tagging a release (graph alignment + NuGet sample). Usage: make release-preflight VERSION=1.2.3
 release-preflight:
@@ -8,6 +8,11 @@ release-preflight:
 # Trigger Runtime Release Gate in CI (requires: gh auth login)
 release-gate:
 	gh workflow run "Runtime Release Gate" --ref $${NEXO_RELEASE_PREFLIGHT_REF:-master}
+
+# Trigger full Release workflow (GHCR + NuGet). Requires: gh auth login. Usage: make release-dispatch VERSION=1.2.3 REF=master
+release-dispatch:
+	@test -n "$(VERSION)" || (echo "Set VERSION=1.2.3"; exit 1)
+	gh workflow run Release --ref $${REF:-master} -f version="$(VERSION)" -f skip_multi_arch=false
 
 # Build the solution
 build:

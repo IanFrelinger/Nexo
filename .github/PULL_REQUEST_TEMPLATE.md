@@ -25,5 +25,5 @@
 
 - [ ] Not a versioned release — skip
 - [ ] **Preflight:** `dotnet run --project src/Nexo.CLI -- release preflight <semver>` (or `make release-preflight VERSION=<semver>`)
-- [ ] **Track:** open a **Release checklist** issue (GitHub → New issue → *Release checklist*) or link an existing release issue
+- [ ] **Track:** open a **Release checklist** issue (GitHub → New issue → *Release checklist* form) or link an existing release issue
 - [ ] **After merge:** tag `v<semver>` and push (runs `release.yml`) — see `docs/RELEASE_RUNBOOK.md`

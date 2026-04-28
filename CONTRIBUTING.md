@@ -66,6 +66,8 @@ Before a **versioned** NuGet/GHCR release:
 
 ```bash
 dotnet run --project src/Nexo.CLI -- release preflight 1.2.3
+# optional: trigger CI Release without a tag (needs gh auth)
+dotnet run --project src/Nexo.CLI -- release dispatch 1.2.3 --ref master
 ```
 
 Optional [pre-commit](https://pre-commit.com/): `pip install pre-commit && pre-commit install` then use `.pre-commit-config.yaml` (graph alignment hook).

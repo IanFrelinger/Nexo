@@ -83,6 +83,25 @@ jobs:
             ${{ runner.temp }}/nuget-release/*.sha256.txt
             ${{ runner.temp }}/nuget-release/nuget-publish-manifest.json
 
+      - name: dotnet nuget push (staging feed, optional)
+        if: vars.NUGET_STAGING_FEED_URL != ''
+        shell: bash
+        env:
+          NUGET_STAGING_API_KEY: ${{ secrets.NUGET_STAGING_API_KEY }}
+          STAGING_URL: ${{ vars.NUGET_STAGING_FEED_URL }}
+        run: |
+          if [[ -z "${NUGET_STAGING_API_KEY:-}" ]]; then
+            echo "::error::NUGET_STAGING_FEED_URL is set but secret NUGET_STAGING_API_KEY is missing (see docs/StagingFeed.md)"
+            exit 1
+          fi
+          shopt -s nullglob
+          for f in "${{ runner.temp }}"/nuget-release/*.nupkg; do
+            dotnet nuget push "$f" \
+              --api-key "$NUGET_STAGING_API_KEY" \
+              --source "$STAGING_URL" \
+              --skip-duplicate
+          done
+
       - name: Install Syft + Grype (SBOM / vuln scan)
         if: vars.NUGET_RELEASE_SBOM == 'true' || vars.NUGET_RELEASE_GRYPE == 'true'
         shell: bash
