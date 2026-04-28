@@ -56,6 +56,12 @@ public abstract class UnitTestBase : TestBase
         {
             // Expected
         }
+        catch (Exception ex) when (ex is not AssertionException)
+        {
+            throw new AssertionException(
+                message ?? $"Assertion failed: expected {typeof(TException).Name}, but {ex.GetType().Name} was thrown: {ex.Message}",
+                ex);
+        }
     }
 
     protected async Task AssertThrowsAsync<TException>(Func<Task> action, string? message = null) where TException : Exception
@@ -68,6 +74,12 @@ public abstract class UnitTestBase : TestBase
         catch (TException)
         {
             // Expected
+        }
+        catch (Exception ex) when (ex is not AssertionException)
+        {
+            throw new AssertionException(
+                message ?? $"Assertion failed: expected {typeof(TException).Name}, but {ex.GetType().Name} was thrown: {ex.Message}",
+                ex);
         }
     }
 }

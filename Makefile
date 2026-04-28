@@ -1,8 +1,15 @@
-.PHONY: build test test-cross-platform test-portable test-multi-env test-all-platforms test-all-platforms-ephemeral ci-verify validate-safe review-summary clean-test-artifacts test-readiness-gate
+.PHONY: build build-core restore-core test test-cross-platform test-portable test-multi-env test-all-platforms test-all-platforms-ephemeral ci-verify validate-safe review-summary clean-test-artifacts test-readiness-gate
 
 # Build the solution
 build:
 	dotnet build
+
+# Restore/build a small slice (CLI + domain tests + infra tests) — avoids full Nexo.sln workload requirements
+restore-core:
+	dotnet restore Nexo.LocalDevCore.slnf
+
+build-core:
+	dotnet build Nexo.LocalDevCore.slnf -v minimal
 
 # Run tests locally (blame-hang-timeout prevents indefinite freeze from hung tests)
 # --blame-hang-dump-type none avoids 6GB+ hang dumps that accumulate in TestResults/

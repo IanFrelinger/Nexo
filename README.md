@@ -12,6 +12,8 @@ Nexo operates entirely on infrastructure you control. Cloud providers are opt-in
 
 Repository: <https://github.com/IanFrelinger/Nexo>
 
+Architecture notes for contributors and reviewers: **`docs/architecture/`** (trust boundaries, testing model, .NET SDK vs. target frameworks).
+
 ## Default workflow
 
 1. **Develop** — [Quick Start (5 minutes)](#quick-start-5-minutes) → **Lane A** → **Dev Container** (first subsection).

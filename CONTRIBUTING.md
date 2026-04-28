@@ -15,6 +15,22 @@ dotnet run --project src/Nexo.CLI -- --help
 
 **Remote:** connect over **Remote SSH**, open the repo on the remote machine, then **Reopen in Container** there so the toolchain comes from the image, not from manual packages on the host.
 
+## Faster local restore (subset solution)
+
+Full `Nexo.sln` can require optional workloads (for example MAUI). For CLI plus core tests without opening every project, use the solution filter **`Nexo.LocalDevCore.slnf`**:
+
+```bash
+dotnet restore Nexo.LocalDevCore.slnf
+dotnet build Nexo.LocalDevCore.slnf -v minimal
+```
+
+## Testing: xUnit vs. `UnitTestBase`
+
+- **xUnit** suites (for example `Nexo.Tests.Infrastructure`) run with normal `dotnet test` filters.
+- **`UnitTestBase`** tests are executed by **`ITestRunner`** / **`TestRunnerAdapter`** (same path as the CLI). In **`Nexo.Tests.Domain`**, an xUnit **theory** bridges each `UnitTestBase` type so **`dotnet test src/Nexo.Tests.Domain/Nexo.Tests.Domain.csproj`** always runs those tests.
+
+High-level architecture notes: `docs/architecture/README.md`. SDK vs. `net8.0` / `net9.0`: `docs/architecture/DotnetVersions.md`.
+
 ## Prerequisites (native escape hatch)
 
 Use this only when you cannot use the dev container or other Docker workflows:
@@ -46,6 +62,7 @@ Run the minimal local quality bar:
 
 ```bash
 make test
+dotnet test src/Nexo.Tests.Domain/Nexo.Tests.Domain.csproj
 dotnet run --project src/Nexo.CLI -- --help
 dotnet run --project src/Nexo.CLI -- pipeline validate --template <template.json>
 ```
