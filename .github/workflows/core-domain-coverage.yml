@@ -8,8 +8,11 @@ on:
       - ".github/workflows/core-domain-coverage.yml"
       - "src/Nexo.Core.Domain/**"
       - "src/Nexo.Core.Application/Testing/**"
-      - "src/Nexo.Infrastructure/Testing/**"
+      - "src/Nexo.Infrastructure/**"
       - "src/Nexo.Tests.Domain/**"
+      - "src/Nexo.Tests.Application/**"
+      - "src/Nexo.Tests.Infrastructure/**"
+      - "src/Nexo.Tests.CLI/**"
       - "Directory.Packages.props"
       - "Directory.Build.props"
   pull_request:
@@ -17,13 +20,17 @@ on:
       - ".github/workflows/core-domain-coverage.yml"
       - "src/Nexo.Core.Domain/**"
       - "src/Nexo.Core.Application/Testing/**"
-      - "src/Nexo.Infrastructure/Testing/**"
+      - "src/Nexo.Infrastructure/**"
       - "src/Nexo.Tests.Domain/**"
+      - "src/Nexo.Tests.Application/**"
+      - "src/Nexo.Tests.Infrastructure/**"
+      - "src/Nexo.Tests.CLI/**"
       - "Directory.Packages.props"
       - "Directory.Build.props"
 
 jobs:
-  coverage:
+  domain-coverage:
+    name: domain-coverage
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -42,5 +49,5 @@ jobs:
             /p:CoverletOutput="$(pwd)/CoverageReports/domain.opencover.xml" \
             /p:CoverletOutputFormat=opencover \
             /p:Include="[Nexo.Core.Domain]*" \
-            /p:Threshold=55 \
+            /p:Threshold=60 \
             /p:ThresholdType=line

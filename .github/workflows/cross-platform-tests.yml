@@ -32,6 +32,8 @@ on:
       - 'src/Nexo.BackgroundAgents/**'
       - 'src/Nexo.CLI/**'
       - 'src/Nexo.Tests.Domain/**'
+      - 'src/Nexo.Tests.Application/**'
+      - 'src/Nexo.Tests.CLI/**'
 
 jobs:
   cross-platform:

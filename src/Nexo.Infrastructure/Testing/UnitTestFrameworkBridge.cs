@@ -1,36 +1,51 @@
+using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Testing.Abstractions;
 using Nexo.Core.Application.Testing.Ports;
-using Nexo.Infrastructure.Testing;
 using Xunit;
 
-namespace Nexo.Tests.Domain.Framework;
+namespace Nexo.Infrastructure.Testing;
 
 /// <summary>
-/// Runs <see cref="UnitTestBase"/> tests through <see cref="ITestRunner"/> so they participate in VSTest/xUnit.
+/// Runs concrete <see cref="UnitTestBase"/> types through <see cref="ITestRunner"/> so they appear in VSTest/xUnit.
 /// </summary>
-public static class FrameworkTestExecutor
+public static class UnitTestFrameworkBridge
 {
     /// <summary>
-    /// Discovers concrete <see cref="UnitTestBase"/> types in this assembly (excludes nested helper types).
+    /// Discovers concrete <see cref="UnitTestBase"/> types in <paramref name="assembly"/> (public only; skips nested private types).
     /// </summary>
-    public static IReadOnlyList<Type> DiscoverUnitTestTypes()
+    public static IReadOnlyList<Type> DiscoverUnitTestTypesFromAssembly(Assembly assembly)
     {
-        return typeof(FrameworkTestExecutor).Assembly
+        ArgumentNullException.ThrowIfNull(assembly);
+
+        var types = assembly
             .GetTypes()
             .Where(t =>
                 t is { IsClass: true, IsAbstract: false } &&
                 t.IsSubclassOf(typeof(UnitTestBase)) &&
                 (!t.IsNested || t.IsNestedPublic))
-            .OrderBy(t => t.FullName, StringComparer.Ordinal)
-            .ToList();
+            .AsEnumerable();
+
+        if (string.Equals(assembly.GetName().Name, "Nexo.Tests.Infrastructure", StringComparison.Ordinal))
+        {
+            types = types.Where(t =>
+                !string.Equals(t.Name, "SimpleTestForRunner", StringComparison.Ordinal) &&
+                !string.Equals(t.Name, "DependencyWrappingArchitectureTests", StringComparison.Ordinal));
+        }
+
+        if (string.Equals(assembly.GetName().Name, "Nexo.Tests.CLI", StringComparison.Ordinal))
+        {
+            types = types.Where(t => !string.Equals(t.Name, "DoctorCommandTests", StringComparison.Ordinal));
+        }
+
+        return types.OrderBy(t => t.FullName, StringComparer.Ordinal).ToList();
     }
 
     /// <summary>
-    /// Executes a single framework test type using the same discovery path as the CLI <c>ITestRunner</c>.
+    /// Executes one <see cref="UnitTestBase"/> type using the same path as the CLI-hosted <see cref="ITestRunner"/>.
     /// </summary>
-    public static async Task ExecuteAsync(Type testType, CancellationToken cancellationToken = default)
+    public static async Task ExecuteUnitTestAsync(Type testType, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(testType);
         if (!testType.IsSubclassOf(typeof(UnitTestBase)) || testType.IsAbstract)

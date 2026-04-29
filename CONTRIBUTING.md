@@ -27,7 +27,7 @@ dotnet build Nexo.LocalDevCore.slnf -v minimal
 ## Testing: xUnit vs. `UnitTestBase`
 
 - **xUnit** suites (for example `Nexo.Tests.Infrastructure`) run with normal `dotnet test` filters.
-- **`UnitTestBase`** tests are executed by **`ITestRunner`** / **`TestRunnerAdapter`** (same path as the CLI). In **`Nexo.Tests.Domain`**, an xUnit **theory** bridges each `UnitTestBase` type so **`dotnet test src/Nexo.Tests.Domain/Nexo.Tests.Domain.csproj`** always runs those tests.
+- **`UnitTestBase`** tests are executed by **`ITestRunner`** / **`TestRunnerAdapter`** (same path as the CLI). **`UnitTestFrameworkBridge`** (in `Nexo.Infrastructure`) exposes **`UnitTestBridgeTests`** in **`Nexo.Tests.Domain`**, **`Nexo.Tests.Application`**, **`Nexo.Tests.Infrastructure`**, and **`Nexo.Tests.CLI`** so `dotnet test` on those projects runs most framework suites. A few types are skipped when they need a special layout or host (see `docs/architecture/TestingModel.md`).
 
 High-level architecture notes: `docs/architecture/README.md`. SDK vs. `net8.0` / `net9.0`: `docs/architecture/DotnetVersions.md`.
 
@@ -63,6 +63,9 @@ Run the minimal local quality bar:
 ```bash
 make test
 dotnet test src/Nexo.Tests.Domain/Nexo.Tests.Domain.csproj
+dotnet test src/Nexo.Tests.Application/Nexo.Tests.Application.csproj
+dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net8.0
+dotnet test src/Nexo.Tests.CLI/Nexo.Tests.CLI.csproj
 dotnet run --project src/Nexo.CLI -- --help
 dotnet run --project src/Nexo.CLI -- pipeline validate --template <template.json>
 ```

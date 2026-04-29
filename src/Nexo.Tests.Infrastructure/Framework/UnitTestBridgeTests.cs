@@ -2,11 +2,11 @@ using System.Reflection;
 using Nexo.Infrastructure.Testing;
 using Xunit;
 
-namespace Nexo.Tests.Domain.Framework;
+namespace Nexo.Tests.Infrastructure.Framework;
 
 /// <summary>
-/// Bridges Nexo <c>UnitTestBase</c> tests to xUnit so <c>dotnet test src/Nexo.Tests.Domain</c> runs the same
-/// logic as the infrastructure <c>ITestRunner</c> used by the CLI.
+/// Bridges <c>UnitTestBase</c> suites in this assembly to xUnit / VSTest via <see cref="UnitTestFrameworkBridge"/>.
+/// Excludes <c>SimpleTestForRunner</c> (helper exercised only from <c>TestRunnerAdapterTests</c>).
 /// </summary>
 public sealed class UnitTestBridgeTests
 {
