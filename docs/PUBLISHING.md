@@ -36,6 +36,8 @@ bash scripts/verify-stable-sdk-host-sample-packages.sh
 
 This packs the graph to `artifacts/nuget-verify/packages`, restores `docs/samples/StableSdkHostSample/package-consumer/` against **only** that folder + nuget.org, builds, and runs the sample.
 
+**After packages are on nuget.org (or a private feed):** use `scripts/verify-stable-sdk-host-sample-published-feed.sh` — see **`docs/NuGetConsumerVerify.md`** and workflow **`.github/workflows/nuget-consumer-verify.yml`**.
+
 ## Publish to nuget.org (you do this)
 
 ### Option A — GitHub Actions (recommended)
