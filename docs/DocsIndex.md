@@ -16,8 +16,9 @@ Documentation index for the Nexo platform. Start here to find what you need.
 
 ## Operator / Production Readiness
 
+- **`docs/production-readiness/README.md`** — **hub** for supporting SMB, enterprise, SaaS, and air-gapped production: release, security, ops, data/compliance, reliability, testing, operator deployment; includes [catalog by deployment type](production-readiness/CatalogByDeploymentType.md) and [runbook template](production-readiness/RunbookTemplate.md).
 - `docs/DEPLOYMENT.md` — **golden paths** (portal stack, CLI image, agent server), **pinning** images vs `latest`, NuGet/CI notes.
-- `docs/ProductionReadinessGate-v1.md` — production gate commands and expected assertions.
+- `docs/ProductionReadinessGate-v1.md` — production gate commands and expected assertions (binary PASS/FAIL technical gate).
 - `.github/workflows/production-readiness-gate-v1.yml` — automated production readiness gate.
 - `.github/workflows/environment-setup-gate-v1.yml` — environment bootstrap + dependency setup gate (Linux/macOS/Windows).
 - `.github/workflows/compose-gate.yml` — validates `docker-compose.test.yml` and `docker-compose.ephemeral.yml` lanes.

@@ -14,6 +14,8 @@ Repository: <https://github.com/IanFrelinger/Nexo>
 
 Architecture notes for contributors and reviewers: **`docs/architecture/`** (trust boundaries, testing model, .NET SDK vs. target frameworks).
 
+**Production readiness (all audiences):** structured checklists and runbooks in **`docs/production-readiness/`** — use with **`docs/ProductionReadinessGate-v1.md`** and **`docs/DEPLOYMENT.md`**.
+
 ## Default workflow
 
 1. **Develop** — [Quick Start (5 minutes)](#quick-start-5-minutes) → **Lane A** → **Dev Container** (first subsection).
