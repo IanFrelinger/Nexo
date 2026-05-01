@@ -52,7 +52,8 @@ Workflows:
    - `oidc` — [Trusted Publishing](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing): policy must include **`release.yml`** (for tag releases). Secret **`NUGET_USER`** = nuget.org **profile name** (not email).
    - `apikey` — secret **`NUGET_API_KEY`**.
 2. **Trigger:** push tag **`v1.2.3`** (preferred), or **Actions → Release** / **Release NuGet packages** for partial flows.
-3. Write **GitHub Release** notes and verify packages on nuget.org.
+3. **After push to nuget.org:** **`release.yml`** runs **Verify NuGet consumer (nuget.org)** when **`NUGET_PUBLISH_MODE`** is **`oidc`** or **`apikey`** (restores the sample from nuget.org only, with retries for index lag). See **`docs/NuGetConsumerVerify.md`**.
+4. Write **GitHub Release** notes and verify packages on nuget.org.
 
 ### Option B — Manual from your machine
 
