@@ -42,7 +42,7 @@ pwsh -NoProfile -File scripts/verify-stable-sdk-host-sample-published-feed.ps1 -
 
 ## Automation in GitHub Actions
 
-Workflow **`.github/workflows/release.yml`** runs **`verify-nuget-consumer`** after **`NUGET_PUBLISH_MODE`** is **`oidc`** or **`apikey`** (packages were pushed to nuget.org): it restores the sample from **nuget.org only** with retries for index lag.
+Workflow **`.github/workflows/release.yml`** runs **`verify-nuget-consumer`** after **`NUGET_PUBLISH_MODE`** is **`oidc`** or **`apikey`** (packages were pushed to nuget.org): it restores the sample from **nuget.org only** with retries for index lag. The same step is reused from **`.github/workflows/release-nuget.yml`** (manual NuGet-only) via **`.github/workflows/reusable-verify-nuget-consumer.yml`**.
 
 Workflow **`.github/workflows/nuget-consumer-verify.yml`** (standalone):
 

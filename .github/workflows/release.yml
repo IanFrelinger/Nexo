@@ -52,47 +52,9 @@ jobs:
     name: Verify NuGet consumer (nuget.org)
     needs: [nuget]
     if: success() && (vars.NUGET_PUBLISH_MODE == 'oidc' || vars.NUGET_PUBLISH_MODE == 'apikey')
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: "8.0.x"
-
-      - name: Resolve semver (strip v prefix)
-        shell: bash
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            VER="${{ inputs.version }}"
-          else
-            VER="${GITHUB_REF_NAME}"
-          fi
-          VER="${VER#v}"
-          echo "VERIFY_NUGET_VERSION=$VER" >> "$GITHUB_ENV"
-          echo "Verifying consumer install for Nexo.Hosting.Bundle **$VER** on nuget.org"
-
-      - name: Restore sample from nuget.org (retry for index lag)
-        shell: bash
-        run: |
-          set -euo pipefail
-          max=12
-          delay=20
-          for i in $(seq 1 "$max"); do
-            echo "Attempt $i/$max ..."
-            if bash scripts/verify-stable-sdk-host-sample-published-feed.sh "${VERIFY_NUGET_VERSION}"; then
-              echo "verify-nuget-consumer: OK"
-              exit 0
-            fi
-            if [ "$i" -lt "$max" ]; then
-              echo "Retry in ${delay}s (nuget.org index may not list the new version yet) ..."
-              sleep "$delay"
-            fi
-          done
-          echo "verify-nuget-consumer: FAILED after $max attempts"
-          exit 1
+    uses: ./.github/workflows/reusable-verify-nuget-consumer.yml
+    with:
+      package_version: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
 
   summarize:
     name: Release summary

@@ -44,8 +44,8 @@ This packs the graph to `artifacts/nuget-verify/packages`, restores `docs/sample
 
 Workflows:
 
-- **`.github/workflows/release.yml`** — **tag `v*.*.*`**: GHCR **and** NuGet in one run. Configure Trusted Publishing for workflow file **`release.yml`** (filename only).
-- **`.github/workflows/release-nuget.yml`** — **manual NuGet-only** dispatch (version input).
+- **`.github/workflows/release.yml`** — **tag `v*.*.*`**: GHCR **and** NuGet in one run. Configure Trusted Publishing for workflow file **`release.yml`** (filename only). After a successful push to nuget.org, runs **Verify NuGet consumer** (shared with **release-nuget**).
+- **`.github/workflows/release-nuget.yml`** — **manual NuGet-only** dispatch (version input). After push to nuget.org, runs the same **Verify NuGet consumer** job when **`NUGET_PUBLISH_MODE`** is **`oidc`** or **`apikey`**.
 
 1. **Repository variable** `NUGET_PUBLISH_MODE`:
    - `none` — build only; download **`nuget-packages-<version>`** artifact and push manually.
