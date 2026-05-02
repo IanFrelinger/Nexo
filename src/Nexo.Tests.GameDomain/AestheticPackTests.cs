@@ -17,6 +17,7 @@ public class AestheticPackTests
         pack.DefaultPaletteColors.Should().BeEmpty();
         pack.LodLevels.Should().BeEmpty();
         pack.PostProcessEffects.Should().BeEmpty();
+        pack.EnvironmentManifestId.Should().BeNull();
     }
 
     [Fact]
@@ -33,7 +34,8 @@ public class AestheticPackTests
                 new LodLevel(0, 1.0),
                 new LodLevel(1, 0.5),
             ],
-            PostProcessEffects = ["vignette"]
+            PostProcessEffects = ["vignette"],
+            EnvironmentManifestId = "terrain/osm-demo"
         };
 
         var options = new JsonSerializerOptions(JsonSerializerDefaults.Web)
@@ -54,6 +56,7 @@ public class AestheticPackTests
         restored.LodLevels[0].DetailFactor.Should().Be(1.0);
         restored.LodLevels[1].DetailFactor.Should().Be(0.5);
         restored.PostProcessEffects.Should().ContainSingle().Which.Should().Be("vignette");
+        restored.EnvironmentManifestId.Should().Be("terrain/osm-demo");
     }
 
     [Fact]

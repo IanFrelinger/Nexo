@@ -39,6 +39,14 @@ public sealed record AestheticPack
     /// <c>"chromatic_aberration"</c>, <c>"vignette"</c>).
     /// </summary>
     public IReadOnlyList<string> PostProcessEffects { get; init; } = [];
+
+    /// <summary>
+    /// Optional reference to a <see cref="Environments.VoxelEnvironmentManifest"/> <c>Id</c> when
+    /// <see cref="GeometryStrategy"/> is <c>"voxel"</c>. The engine adaptation layer resolves this
+    /// to composable LOD tiers (voxel pitch, chunk shape, tile-store layers)—the 3D analogue of a
+    /// multi-resolution tile map database.
+    /// </summary>
+    public string? EnvironmentManifestId { get; init; }
 }
 
 /// <summary>
@@ -51,7 +59,8 @@ public sealed record AestheticPack
 /// Normalised detail multiplier in <c>[0, 1]</c>.
 /// Interpretation varies by geometry strategy:
 /// <list type="bullet">
-///   <item><c>voxel</c> — voxel resolution relative to max grid density.</item>
+///   <item><c>voxel</c> — voxel resolution relative to max grid density; see also
+///   <see cref="Environments.VoxelLodTier"/> for explicit tier definitions.</item>
 ///   <item><c>low_poly</c> — triangle budget as a fraction of the base mesh.</item>
 ///   <item><c>pixel_art</c> — sprite resolution multiplier.</item>
 ///   <item><c>pbr</c> — texture mip level / mesh decimation factor.</item>

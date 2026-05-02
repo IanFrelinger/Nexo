@@ -445,7 +445,8 @@ internal static class ForgeSessionStore
         {
             Id = "voxel", Name = "Voxel", GeometryStrategy = "voxel",
             DefaultPaletteColors = ["#4CAF50", "#2196F3", "#FF9800", "#9C27B0"],
-            LodLevels = [new LodLevel(0, 1.0), new LodLevel(1, 0.5), new LodLevel(2, 0.25)]
+            LodLevels = [new LodLevel(0, 1.0), new LodLevel(1, 0.5), new LodLevel(2, 0.25)],
+            EnvironmentManifestId = "default-voxel-pyramid"
         },
         new AestheticPack
         {
