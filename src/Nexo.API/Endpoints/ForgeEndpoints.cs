@@ -386,6 +386,11 @@ public static class ForgeEndpoints
         if (pack is null)
             return Results.BadRequest(new ProblemDetails { Title = $"Unknown aesthetic pack '{request.AestheticId}'" });
 
+        var profileOverride = string.IsNullOrWhiteSpace(request.MapRenderingProfile)
+            ? null
+            : request.MapRenderingProfile.Trim();
+        var appliedPack = profileOverride is null ? pack : pack with { MapRenderingProfile = profileOverride };
+
         var setting = new ScopedSetting
         {
             SettingId = "aesthetic",
@@ -402,8 +407,8 @@ public static class ForgeEndpoints
             s.Scope.Target == setting.Scope.Target);
         session.ScopedSettings.Add(setting);
 
-        if (!session.AestheticPacks.Any(a => a.Id == pack.Id))
-            session.AestheticPacks.Add(pack);
+        session.AestheticPacks.RemoveAll(a => a.Id == pack.Id);
+        session.AestheticPacks.Add(appliedPack);
 
         session.LastModifiedAtUtc = DateTimeOffset.UtcNow;
         return Results.Ok(session);
@@ -444,24 +449,28 @@ internal static class ForgeSessionStore
         new AestheticPack
         {
             Id = "voxel", Name = "Voxel", GeometryStrategy = "voxel",
+            MapRenderingProfile = MapRenderingProfiles.VoxelGrid,
             DefaultPaletteColors = ["#4CAF50", "#2196F3", "#FF9800", "#9C27B0"],
             LodLevels = [new LodLevel(0, 1.0), new LodLevel(1, 0.5), new LodLevel(2, 0.25)]
         },
         new AestheticPack
         {
             Id = "low_poly", Name = "Low Poly", GeometryStrategy = "low_poly",
+            MapRenderingProfile = MapRenderingProfiles.FlatShadedPolys,
             DefaultPaletteColors = ["#81C784", "#64B5F6", "#FFB74D", "#CE93D8"],
             LodLevels = [new LodLevel(0, 1.0), new LodLevel(1, 0.5)]
         },
         new AestheticPack
         {
             Id = "pixel_art", Name = "Pixel Art", GeometryStrategy = "pixel_art",
+            MapRenderingProfile = MapRenderingProfiles.OrthographicTile,
             DefaultPaletteColors = ["#388E3C", "#1976D2", "#F57C00", "#7B1FA2"],
             LodLevels = [new LodLevel(0, 1.0)]
         },
         new AestheticPack
         {
             Id = "pbr", Name = "PBR", GeometryStrategy = "pbr",
+            MapRenderingProfile = MapRenderingProfiles.HeightfieldMesh,
             DefaultPaletteColors = ["#E0E0E0", "#BDBDBD", "#9E9E9E"],
             LodLevels = [new LodLevel(0, 1.0), new LodLevel(1, 0.75), new LodLevel(2, 0.5), new LodLevel(3, 0.25)],
             PostProcessEffects = ["bloom", "ambient_occlusion", "tone_mapping"]
@@ -469,12 +478,14 @@ internal static class ForgeSessionStore
         new AestheticPack
         {
             Id = "wireframe", Name = "Wireframe", GeometryStrategy = "wireframe",
+            MapRenderingProfile = MapRenderingProfiles.VectorOverlay,
             DefaultPaletteColors = ["#00E676", "#00B0FF"],
             LodLevels = [new LodLevel(0, 1.0), new LodLevel(1, 0.5)]
         },
         new AestheticPack
         {
             Id = "sketch", Name = "Sketch", GeometryStrategy = "sketch",
+            MapRenderingProfile = MapRenderingProfiles.VectorOverlay,
             DefaultPaletteColors = ["#212121", "#FAFAFA"],
             LodLevels = [new LodLevel(0, 1.0)],
             PostProcessEffects = ["vignette", "chromatic_aberration"]
@@ -523,6 +534,10 @@ public sealed record ForgeMacroExportResponse(string MacroId, string Json);
 
 public sealed record ForgeMacroImportRequest(string Json);
 
+/// <param name="AestheticId">Identifier of the aesthetic pack to apply.</param>
+/// <param name="Scope">Scope at which the aesthetic should take effect.</param>
+/// <param name="MapRenderingProfile">Optional override for <see cref="AestheticPack.MapRenderingProfile"/>; see <see cref="MapRenderingProfiles"/>.</param>
 public sealed record ForgeApplyAestheticRequest(
     string AestheticId,
-    SettingScope? Scope = null);
+    SettingScope? Scope = null,
+    string? MapRenderingProfile = null);

@@ -203,6 +203,8 @@ public sealed class ForgeEndpointsTests : IDisposable
         var packs = ExtractOkValue<IReadOnlyList<AestheticPack>>(result);
         packs.Should().HaveCount(6);
         packs.Select(p => p.Id).Should().Contain(new[] { "voxel", "low_poly", "pixel_art", "pbr", "wireframe", "sketch" });
+        packs.Single(p => p.Id == "voxel").MapRenderingProfile.Should().Be(MapRenderingProfiles.VoxelGrid);
+        packs.Single(p => p.Id == "pbr").MapRenderingProfile.Should().Be(MapRenderingProfiles.HeightfieldMesh);
     }
 
     [Fact(Timeout = 15000)]
@@ -218,6 +220,24 @@ public sealed class ForgeEndpointsTests : IDisposable
         var session = ExtractOkValue<SessionState>(result);
         session.ScopedSettings.Should().Contain(s => s.SettingId == "aesthetic" && s.Value.ToString() == "voxel");
         session.AestheticPacks.Should().Contain(a => a.Id == "voxel");
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task ApplyAesthetic_MapProfileOverride_StoredOnPack()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"),
+            new ForgeCreateSessionRequest("MapStyleTest"));
+
+        var request = new ForgeApplyAestheticRequest(
+            "voxel",
+            Scope: null,
+            MapRenderingProfile: MapRenderingProfiles.VectorOverlay);
+        var handler = GetHandler("ApplyAestheticAsync");
+        var result = await InvokeAsync(handler, request);
+
+        var session = ExtractOkValue<SessionState>(result);
+        session.AestheticPacks.Should().ContainSingle(a =>
+            a.Id == "voxel" && a.MapRenderingProfile == MapRenderingProfiles.VectorOverlay);
     }
 
     [Fact(Timeout = 15000)]

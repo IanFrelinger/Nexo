@@ -14,6 +14,7 @@ public class AestheticPackTests
         pack.Id.Should().BeEmpty();
         pack.Name.Should().BeEmpty();
         pack.GeometryStrategy.Should().Be("low_poly");
+        pack.MapRenderingProfile.Should().Be(MapRenderingProfiles.Auto);
         pack.DefaultPaletteColors.Should().BeEmpty();
         pack.LodLevels.Should().BeEmpty();
         pack.PostProcessEffects.Should().BeEmpty();
@@ -27,6 +28,7 @@ public class AestheticPackTests
             Id = "retro-pixel",
             Name = "Retro Pixel",
             GeometryStrategy = "pixel_art",
+            MapRenderingProfile = MapRenderingProfiles.VectorOverlay,
             DefaultPaletteColors = ["#00FF00", "#FF0000"],
             LodLevels =
             [
@@ -48,6 +50,7 @@ public class AestheticPackTests
         restored.Should().NotBeNull();
         restored!.Id.Should().Be("retro-pixel");
         restored.GeometryStrategy.Should().Be("pixel_art");
+        restored.MapRenderingProfile.Should().Be(MapRenderingProfiles.VectorOverlay);
         restored.DefaultPaletteColors.Should().HaveCount(2);
         restored.LodLevels.Should().HaveCount(2);
         restored.LodLevels[0].Level.Should().Be(0);

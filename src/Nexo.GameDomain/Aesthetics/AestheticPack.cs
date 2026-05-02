@@ -24,6 +24,14 @@ public sealed record AestheticPack
     public string GeometryStrategy { get; init; } = "low_poly";
 
     /// <summary>
+    /// How geographic / OpenStreetMap-style source data is turned into renderable map content.
+    /// Use <see cref="MapRenderingProfiles"/> constants (e.g. <c>"voxel_grid"</c>, <c>"vector_overlay"</c>).
+    /// <c>"auto"</c> lets the host infer a pipeline from <see cref="GeometryStrategy"/>.
+    /// Independent from geometry strategy so you can pair e.g. PBR shading with vector-overlay map features.
+    /// </summary>
+    public string MapRenderingProfile { get; init; } = MapRenderingProfiles.Auto;
+
+    /// <summary>
     /// Default colour palette as a list of hex colour values (e.g. <c>"#FF5733"</c>).
     /// Used for procedural material assignment when explicit textures are absent.
     /// </summary>
@@ -58,6 +66,8 @@ public sealed record AestheticPack
 ///   <item><c>wireframe</c> — edge density ratio.</item>
 ///   <item><c>sketch</c> — stroke density / hatching frequency.</item>
 /// </list>
+/// For map-backed scenes, combine tiers with <see cref="AestheticPack.MapRenderingProfile"/> so LOD steps
+/// can switch voxel resolution, overlay density, or terrain mesh decimation consistently.
 /// </param>
 public sealed record LodLevel(
     int Level = 0,
