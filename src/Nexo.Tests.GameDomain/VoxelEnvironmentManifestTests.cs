@@ -55,7 +55,14 @@ public sealed class VoxelEnvironmentManifestTests
                 Options: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
                 {
                     ["local_root"] = "/var/lib/nexo/voxels/demo-city"
-                })
+                }),
+            Intelligence = new MapIntelligenceOptions
+            {
+                RefineVectorWithEmbeddedAi = true,
+                SuggestMaterialsWithEmbeddedAi = true,
+                VerifyPerLodTier = true,
+                TilingDownVerification = true
+            }
         };
 
         var options = new JsonSerializerOptions(JsonSerializerDefaults.Web)
@@ -79,5 +86,8 @@ public sealed class VoxelEnvironmentManifestTests
         restored.VectorData.BaseUrl.Should().Contain("overpass.mycompany");
         restored.TerrainData!.Kind.Should().Be(MapDataSourceKinds.TerrainTiles);
         restored.VoxelChunkStore!.Options.Should().ContainKey("local_root");
+        restored.Intelligence.Should().NotBeNull();
+        restored.Intelligence!.RefineVectorWithEmbeddedAi.Should().BeTrue();
+        restored.Intelligence.TilingDownVerification.Should().BeTrue();
     }
 }

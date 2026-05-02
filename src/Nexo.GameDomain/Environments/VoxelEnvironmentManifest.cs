@@ -70,4 +70,10 @@ public sealed record VoxelEnvironmentManifest
     /// <see cref="MapDataSourceKinds.File"/> options).
     /// </summary>
     public MapDataSourceBinding? VoxelChunkStore { get; init; }
+
+/// <summary>
+/// Optional stages for embedded AI / verification (vector cleanup, material prompts, tiered QA).
+/// Host reads flags and invokes vector/material/verification services when registered.
+/// </summary>
+    public MapIntelligenceOptions? Intelligence { get; init; }
 }
