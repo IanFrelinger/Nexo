@@ -1,3 +1,5 @@
+using Nexo.Core.Application.Environments;
+
 namespace Nexo.GameDomain.Environments;
 
 /// <summary>
@@ -50,4 +52,22 @@ public sealed record VoxelEnvironmentManifest
     /// </summary>
     public IReadOnlyDictionary<string, string> AdaptationHints { get; init; }
         = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Optional binding for vector map data (OSM extracts, GeoJSON services). When null, hosts pull
+    /// from defaults or generate offline. Use <see cref="MapDataSourceBinding.BaseUrl"/> for a
+    /// self-hosted Overpass mirror or internal GIS API.
+    /// </summary>
+    public MapDataSourceBinding? VectorData { get; init; }
+
+    /// <summary>
+    /// Optional binding for terrain / elevation (DEM, AWS Terrain Tiles, or self-hosted terrain API).
+    /// </summary>
+    public MapDataSourceBinding? TerrainData { get; init; }
+
+    /// <summary>
+    /// Optional binding for prebuilt voxel chunk storage (HTTP tile store, S3, local path via
+    /// <see cref="MapDataSourceKinds.File"/> options).
+    /// </summary>
+    public MapDataSourceBinding? VoxelChunkStore { get; init; }
 }

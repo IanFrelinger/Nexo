@@ -1,5 +1,6 @@
 using System.Text.Json;
 using FluentAssertions;
+using Nexo.Core.Application.Environments;
 using Nexo.GameDomain.Environments;
 
 namespace Nexo.Tests.GameDomain;
@@ -34,7 +35,27 @@ public sealed class VoxelEnvironmentManifestTests
             AdaptationHints = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 ["unity.streaming_root"] = "Assets/StreamingAssets/Voxels/demo-city"
-            }
+            },
+            VectorData = new MapDataSourceBinding(
+                Kind: MapDataSourceKinds.Overpass,
+                BaseUrl: "https://overpass.mycompany.internal/api/interpreter",
+                Headers: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["Authorization"] = "Bearer ***"
+                },
+                Options: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["timeout_seconds"] = "120"
+                }),
+            TerrainData = new MapDataSourceBinding(
+                Kind: MapDataSourceKinds.TerrainTiles,
+                BaseUrl: "https://terrain.mycompany.internal"),
+            VoxelChunkStore = new MapDataSourceBinding(
+                Kind: MapDataSourceKinds.VoxelStore,
+                Options: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["local_root"] = "/var/lib/nexo/voxels/demo-city"
+                })
         };
 
         var options = new JsonSerializerOptions(JsonSerializerDefaults.Web)
@@ -53,5 +74,10 @@ public sealed class VoxelEnvironmentManifestTests
         restored.LodTiers[0].VoxelSizeMeters.Should().Be(0.25);
         restored.LodTiers[2].ChunkEdgeVoxels.Should().Be(32);
         restored.AdaptationHints["unity.streaming_root"].Should().Contain("demo-city");
+        restored.VectorData.Should().NotBeNull();
+        restored.VectorData!.Kind.Should().Be(MapDataSourceKinds.Overpass);
+        restored.VectorData.BaseUrl.Should().Contain("overpass.mycompany");
+        restored.TerrainData!.Kind.Should().Be(MapDataSourceKinds.TerrainTiles);
+        restored.VoxelChunkStore!.Options.Should().ContainKey("local_root");
     }
 }
