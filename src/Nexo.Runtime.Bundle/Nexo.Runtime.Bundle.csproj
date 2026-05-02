@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Metapackage: embed Nexo execution kernel without Hosting composition (AddNexo lives in Nexo.Hosting).
+    Pack after runtime graph packages exist on the feed (same workflow as Nexo.Hosting.Bundle).
+    Pack with: dotnet pack -p:PackageVersion=1.2.3
+  -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>true</IsPackable>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+    <NoDefaultExcludes>true</NoDefaultExcludes>
+    <PackageId>Nexo.Runtime.Bundle</PackageId>
+    <PackageVersion>1.0.0</PackageVersion>
+    <Title>Nexo runtime kernel (bundle)</Title>
+    <Description>
+      Metapackage for the Nexo execution kernel: abstractions, domain, application ports, infrastructure,
+      orchestration, agent runtime, background agents, and dev tools. Does not reference Nexo.Hosting —
+      pull Nexo.Hosting separately or compose DI in your application repository.
+    </Description>
+    <PackageTags>nexo;runtime;kernel;metapackage</PackageTags>
+    <RepositoryUrl>https://github.com/IanFrelinger/Nexo</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Nexo.Abstractions" Version="$(PackageVersion)" />
+    <PackageReference Include="Nexo.Core.Domain" Version="$(PackageVersion)" />
+    <PackageReference Include="Nexo.Core" Version="$(PackageVersion)" />
+    <PackageReference Include="Nexo.Core.Application" Version="$(PackageVersion)" />
+    <PackageReference Include="Nexo.Brick.Contracts" Version="$(PackageVersion)" />
+    <PackageReference Include="Nexo.Policies" Version="$(PackageVersion)" />
+    <PackageReference Include="Nexo.Policies.Dev" Version="$(PackageVersion)" />
+    <PackageReference Include="Nexo.Tools.Assembly" Version="$(PackageVersion)" />
+    <PackageReference Include="Nexo.Tools.Dev" Version="$(PackageVersion)" />
+    <PackageReference Include="Nexo.Transport.Grpc" Version="$(PackageVersion)" />
+    <PackageReference Include="Nexo.Runtime" Version="$(PackageVersion)" />
+    <PackageReference Include="Nexo.Infrastructure" Version="$(PackageVersion)" />
+    <PackageReference Include="Nexo.Orchestration" Version="$(PackageVersion)" />
+    <PackageReference Include="Nexo.BackgroundAgents" Version="$(PackageVersion)" />
+  </ItemGroup>
+</Project>
