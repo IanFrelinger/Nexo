@@ -241,6 +241,102 @@ public sealed class ForgeEndpointsTests : IDisposable
     }
 
     [Fact(Timeout = 15000)]
+    public async Task ListAesthetics_BuiltInPacks_HaveExpectedMapRenderingProfiles()
+    {
+        var handler = GetHandler("GetAestheticsAsync");
+        var result = await InvokeAsync(handler);
+
+        var packs = ExtractOkValue<IReadOnlyList<AestheticPack>>(result);
+        var byId = packs.ToDictionary(p => p.Id, StringComparer.Ordinal);
+
+        byId["voxel"].MapRenderingProfile.Should().Be(MapRenderingProfiles.VoxelGrid);
+        byId["low_poly"].MapRenderingProfile.Should().Be(MapRenderingProfiles.FlatShadedPolys);
+        byId["pixel_art"].MapRenderingProfile.Should().Be(MapRenderingProfiles.OrthographicTile);
+        byId["pbr"].MapRenderingProfile.Should().Be(MapRenderingProfiles.HeightfieldMesh);
+        byId["wireframe"].MapRenderingProfile.Should().Be(MapRenderingProfiles.VectorOverlay);
+        byId["sketch"].MapRenderingProfile.Should().Be(MapRenderingProfiles.VectorOverlay);
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task ApplyAesthetic_NoOverride_UsesBuiltInMapRenderingProfile()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"),
+            new ForgeCreateSessionRequest("DefaultProfileTest"));
+
+        var request = new ForgeApplyAestheticRequest("voxel");
+        var result = await InvokeAsync(GetHandler("ApplyAestheticAsync"), request);
+
+        var session = ExtractOkValue<SessionState>(result);
+        session.AestheticPacks.Should().ContainSingle(a =>
+            a.Id == "voxel" && a.MapRenderingProfile == MapRenderingProfiles.VoxelGrid);
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task ApplyAesthetic_ReapplyWithoutOverride_RestoresBuiltInMapProfile()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"),
+            new ForgeCreateSessionRequest("ReapplyTest"));
+
+        await InvokeAsync(GetHandler("ApplyAestheticAsync"),
+            new ForgeApplyAestheticRequest("voxel", MapRenderingProfile: MapRenderingProfiles.VectorOverlay));
+
+        var second = await InvokeAsync(GetHandler("ApplyAestheticAsync"),
+            new ForgeApplyAestheticRequest("voxel"));
+
+        var session = ExtractOkValue<SessionState>(second);
+        session.AestheticPacks.Should().ContainSingle(a =>
+            a.Id == "voxel" && a.MapRenderingProfile == MapRenderingProfiles.VoxelGrid);
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task ExportImport_PreservesMapRenderingProfileOnAppliedPack()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"),
+            new ForgeCreateSessionRequest("ExportMapProfile"));
+
+        await InvokeAsync(GetHandler("ApplyAestheticAsync"),
+            new ForgeApplyAestheticRequest("pbr", MapRenderingProfile: MapRenderingProfiles.VectorOverlay));
+
+        var exportResult = await InvokeAsync(GetHandler("ExportSessionAsync"));
+        var exported = ExtractOkValue<ForgeSessionExportResponse>(exportResult);
+
+        ResetStore();
+
+        var importResult = await InvokeAsync(GetHandler("ImportSessionAsync"),
+            new ForgeSessionImportRequest(exported.Json));
+        var imported = ExtractOkValue<SessionState>(importResult);
+
+        imported.AestheticPacks.Should().ContainSingle(a =>
+            a.Id == "pbr" && a.MapRenderingProfile == MapRenderingProfiles.VectorOverlay);
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task ApplyAesthetic_UnknownPack_ReturnsBadRequest()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"),
+            new ForgeCreateSessionRequest("UnknownPack"));
+
+        var result = await InvokeAsync(GetHandler("ApplyAestheticAsync"),
+            new ForgeApplyAestheticRequest("not-a-real-pack"));
+
+        AssertStatusCode(result, StatusCodes.Status400BadRequest);
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task ApplyAesthetic_WhitespaceOnlyOverride_KeepsBuiltInMapProfile()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"),
+            new ForgeCreateSessionRequest("WhitespaceOverride"));
+
+        var request = new ForgeApplyAestheticRequest("low_poly", MapRenderingProfile: "   \t  ");
+        var result = await InvokeAsync(GetHandler("ApplyAestheticAsync"), request);
+
+        var session = ExtractOkValue<SessionState>(result);
+        session.AestheticPacks.Should().ContainSingle(a =>
+            a.Id == "low_poly" && a.MapRenderingProfile == MapRenderingProfiles.FlatShadedPolys);
+    }
+
+    [Fact(Timeout = 15000)]
     public async Task GenerateStub_ReturnsDescriptor()
     {
         var request = new ForgeGenerateRequest("Plasma Rifle", "weapon");
@@ -281,6 +377,13 @@ public sealed class ForgeEndpointsTests : IDisposable
         var value = valueProp!.GetValue(result);
         value.Should().BeAssignableTo<T>();
         return (T)value!;
+    }
+
+    private static void AssertStatusCode(IResult result, int expected)
+    {
+        var status = result as IStatusCodeHttpResult;
+        status.Should().NotBeNull($"result type {result.GetType().FullName} should expose HTTP status");
+        status!.StatusCode.Should().Be(expected);
     }
 
     private static void ResetStore()
