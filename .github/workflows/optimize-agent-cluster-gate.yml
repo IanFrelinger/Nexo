@@ -7,15 +7,15 @@ on:
       - ".github/workflows/optimize-agent-cluster-gate.yml"
       - "apps/runtime-studio/**"
       - "scripts/sandbox/**"
-      - "src/Nexo.CLI/**"
-      - "src/Nexo.CLI/Runtime/**"
+      - "application/src/Nexo.CLI/**"
+      - "application/src/Nexo.CLI/Runtime/**"
   pull_request:
     paths:
       - ".github/workflows/optimize-agent-cluster-gate.yml"
       - "apps/runtime-studio/**"
       - "scripts/sandbox/**"
-      - "src/Nexo.CLI/**"
-      - "src/Nexo.CLI/Runtime/**"
+      - "application/src/Nexo.CLI/**"
+      - "application/src/Nexo.CLI/Runtime/**"
   workflow_dispatch:
 
 env:
@@ -121,7 +121,7 @@ jobs:
         run: |
           set -euo pipefail
           dotnet restore src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.csproj
-          dotnet build src/Nexo.CLI/Nexo.CLI.csproj -v minimal
+          dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj -v minimal
 
       - name: "Run optimize (no Ollama — expect scaffold success, optimize preflight failure)"
         shell: bash
@@ -228,7 +228,7 @@ jobs:
         run: |
           set -euo pipefail
           dotnet restore src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.csproj
-          dotnet build src/Nexo.CLI/Nexo.CLI.csproj -v minimal
+          dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj -v minimal
 
       - name: "Launch daemon with --duration 2s --disable-observation"
         shell: bash
@@ -295,7 +295,7 @@ jobs:
         run: |
           set -euo pipefail
           dotnet restore src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.csproj
-          dotnet build src/Nexo.CLI/Nexo.CLI.csproj -v minimal
+          dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj -v minimal
 
       - name: "Run optimize_agent_cluster.sh ${{ matrix.flags }}"
         shell: bash

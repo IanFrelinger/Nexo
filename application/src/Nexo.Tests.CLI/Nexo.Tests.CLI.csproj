@@ -21,12 +21,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Nexo.Abstractions\Nexo.Abstractions.csproj" />
-    <ProjectReference Include="..\Nexo.Core.Application\Nexo.Core.Application.csproj" />
+    <ProjectReference Include="../../../src/Nexo.Abstractions/Nexo.Abstractions.csproj" />
+    <ProjectReference Include="../../../src/Nexo.Core.Application/Nexo.Core.Application.csproj" />
     <ProjectReference Include="..\Nexo.CLI\Nexo.CLI.csproj" />
-    <ProjectReference Include="..\Nexo.Infrastructure\Nexo.Infrastructure.csproj" />
+    <ProjectReference Include="../../../src/Nexo.Infrastructure/Nexo.Infrastructure.csproj" />
     <ProjectReference Include="..\Nexo.GameDomain\Nexo.GameDomain.csproj" />
   </ItemGroup>
 
 </Project>
-

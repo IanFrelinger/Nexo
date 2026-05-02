@@ -149,7 +149,7 @@ internal static class DoctorRemediation
                 "bootstrap-apply",
                 "Install missing required dependencies",
                 "Required dependencies are missing from the current host profile.",
-                $"dotnet run --project src/Nexo.CLI -- bootstrap apply --profile {profile} {(includeOptional ? "--include-optional " : string.Empty)}--yes",
+                $"dotnet run --project application/src/Nexo.CLI -- bootstrap apply --profile {profile} {(includeOptional ? "--include-optional " : string.Empty)}--yes",
                 RequiresExplicitConfirmation: true,
                 "Re-run doctor after install to verify dependencies and smoke checks."));
         }
@@ -160,7 +160,7 @@ internal static class DoctorRemediation
                 "cli-build",
                 "Build CLI project",
                 "CLI smoke check failed and often indicates stale build outputs or restore issues.",
-                "dotnet build src/Nexo.CLI/Nexo.CLI.csproj",
+                "dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj",
                 RequiresExplicitConfirmation: true,
                 "Re-run doctor to confirm cli smoke passes."));
         }

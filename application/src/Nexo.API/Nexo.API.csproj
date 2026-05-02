@@ -19,9 +19,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Nexo.BackgroundAgents.HostRunners\Nexo.BackgroundAgents.HostRunners.csproj" />
-    <ProjectReference Include="..\Nexo.Contracts\Nexo.Contracts.csproj" />
-    <ProjectReference Include="..\Nexo.Hosting\Nexo.Hosting.csproj" />
+    <ProjectReference Include="../../../src/Nexo.BackgroundAgents.HostRunners/Nexo.BackgroundAgents.HostRunners.csproj" />
+    <ProjectReference Include="../../../src/Nexo.Contracts/Nexo.Contracts.csproj" />
+    <ProjectReference Include="../../../src/Nexo.Hosting/Nexo.Hosting.csproj" />
     <ProjectReference Include="..\Nexo.GameDomain\Nexo.GameDomain.csproj" />
   </ItemGroup>
 

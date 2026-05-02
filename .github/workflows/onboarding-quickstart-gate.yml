@@ -15,7 +15,7 @@ on:
       - 'docs/OnboardingAutomation.md'
       - 'scripts/setup/**'
       - 'scripts/install/**'
-      - 'src/Nexo.CLI/**'
+      - 'application/src/Nexo.CLI/**'
       - 'global.json'
   pull_request:
     paths:
@@ -25,7 +25,7 @@ on:
       - 'docs/OnboardingAutomation.md'
       - 'scripts/setup/**'
       - 'scripts/install/**'
-      - 'src/Nexo.CLI/**'
+      - 'application/src/Nexo.CLI/**'
       - 'global.json'
   workflow_dispatch:
 
@@ -53,9 +53,9 @@ jobs:
           {
             bash scripts/setup/setup.sh check
             bash scripts/setup/setup.sh restore
-            dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
-            dotnet run --project src/Nexo.CLI -- --help
-            dotnet run --project src/Nexo.CLI -- doctor --json
+            dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
+            dotnet run --project application/src/Nexo.CLI -- --help
+            dotnet run --project application/src/Nexo.CLI -- doctor --json
           } 2>&1 | tee "${LOG_FILE}"
 
       - name: Build native failure taxonomy

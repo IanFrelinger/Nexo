@@ -30,10 +30,10 @@ on:
       - 'src/Nexo.Core.Application/**'
       - 'src/Nexo.Infrastructure/**'
       - 'src/Nexo.BackgroundAgents/**'
-      - 'src/Nexo.CLI/**'
+      - 'application/src/Nexo.CLI/**'
       - 'src/Nexo.Tests.Domain/**'
       - 'src/Nexo.Tests.Application/**'
-      - 'src/Nexo.Tests.CLI/**'
+      - 'application/src/Nexo.Tests.CLI/**'
 
 jobs:
   cross-platform:

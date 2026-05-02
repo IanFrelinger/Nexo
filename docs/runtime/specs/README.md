@@ -16,7 +16,7 @@ Use with `nexo orchestrate --runtime-spec ...`.
 
 Example:
 
-- `dotnet run --project src/Nexo.CLI -- orchestrate "analyze this test failure" --runtime-spec docs/runtime/specs/small_task.orchestration.runtime-spec.json --format-json`
+- `dotnet run --project application/src/Nexo.CLI -- orchestrate "analyze this test failure" --runtime-spec docs/runtime/specs/small_task.orchestration.runtime-spec.json --format-json`
 
 ## 2) Adaptive runtime manifests (personal software context)
 
@@ -29,7 +29,7 @@ Use with `nexo runtime execute --runtime-manifest ...`.
 
 Example:
 
-- `dotnet run --project src/Nexo.CLI -- runtime execute --goal "scaffold a personal planning app extension" --runtime-manifest docs/runtime/specs/creative_director.runtime-manifest.json --provider ollama --run-tests`
+- `dotnet run --project application/src/Nexo.CLI -- runtime execute --goal "scaffold a personal planning app extension" --runtime-manifest docs/runtime/specs/creative_director.runtime-manifest.json --provider ollama --run-tests`
 
 ## 3) Self-extend workflow runtime specs (pipeline behavior)
 
@@ -39,7 +39,7 @@ Use with `nexo self-extend run --runtime-spec ...`.
 
 Example:
 
-- `dotnet run --project src/Nexo.CLI -- self-extend run --goal "design and scaffold a polished dashboard feature" --runtime-spec docs/runtime/specs/creative_director.self-extend.runtime-spec.json --provider ollama --run-tests`
+- `dotnet run --project application/src/Nexo.CLI -- self-extend run --goal "design and scaffold a polished dashboard feature" --runtime-spec docs/runtime/specs/creative_director.self-extend.runtime-spec.json --provider ollama --run-tests`
 
 ## Notes on model choice
 

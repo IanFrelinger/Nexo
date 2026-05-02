@@ -11,13 +11,13 @@ on:
     paths:
       - 'src/Nexo.Tests.Infrastructure/**'
       - '.docker/Dockerfile.test-caching*'
-      - 'src/Nexo.CLI/Commands/TestMultiEnvCommand.cs'
+      - 'application/src/Nexo.CLI/Commands/TestMultiEnvCommand.cs'
   pull_request:
     branches: [ master, main ]
     paths:
       - 'src/Nexo.Tests.Infrastructure/**'
       - '.docker/Dockerfile.test-caching*'
-      - 'src/Nexo.CLI/Commands/TestMultiEnvCommand.cs'
+      - 'application/src/Nexo.CLI/Commands/TestMultiEnvCommand.cs'
   workflow_dispatch:
 
 jobs:
@@ -92,7 +92,7 @@ jobs:
 
       - name: Run Base Framework Tests (Native)
         if: matrix.environment.type == 'native'
-        run: dotnet run --project src/Nexo.CLI -- test multi-env --suite caching --env ${{ matrix.environment.name }}
+        run: dotnet run --project application/src/Nexo.CLI -- test multi-env --suite caching --env ${{ matrix.environment.name }}
 
       - name: Publish Test Results
         if: always() && runner.os != 'Windows'

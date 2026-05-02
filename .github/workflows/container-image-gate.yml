@@ -9,7 +9,7 @@ on:
     paths:
       - ".github/workflows/container-image-gate.yml"
       - ".docker/Dockerfile.cli"
-      - "src/Nexo.CLI/**"
+      - "application/src/Nexo.CLI/**"
       - "src/Nexo.Core.Application/**"
       - "src/Nexo.Infrastructure/**"
       - "src/Nexo.Hosting/**"
@@ -22,7 +22,7 @@ on:
     paths:
       - ".github/workflows/container-image-gate.yml"
       - ".docker/Dockerfile.cli"
-      - "src/Nexo.CLI/**"
+      - "application/src/Nexo.CLI/**"
       - "src/Nexo.Core.Application/**"
       - "src/Nexo.Infrastructure/**"
       - "src/Nexo.Hosting/**"

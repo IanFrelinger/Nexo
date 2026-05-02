@@ -40,4 +40,4 @@ jobs:
 
       - name: Run multi-env with --no-network
         run: |
-          dotnet run --project src/Nexo.CLI -- test multi-env --suite ${{ github.event.inputs.suite || 'framework' }} --env ubuntu-8.0 --no-network
+          dotnet run --project application/src/Nexo.CLI -- test multi-env --suite ${{ github.event.inputs.suite || 'framework' }} --env ubuntu-8.0 --no-network

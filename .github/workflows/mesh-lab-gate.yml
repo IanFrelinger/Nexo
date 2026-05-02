@@ -15,7 +15,7 @@ on:
       - "docs/MeshVirtualLab.md"
       - "scripts/mesh-lab-verify.sh"
       - "scripts/mesh-lab-stress-ramp.sh"
-      - "src/Nexo.API/**"
+      - "application/src/Nexo.API/**"
   pull_request:
     paths:
       - ".github/workflows/mesh-lab-gate.yml"
@@ -26,7 +26,7 @@ on:
       - "docs/MeshVirtualLab.md"
       - "scripts/mesh-lab-verify.sh"
       - "scripts/mesh-lab-stress-ramp.sh"
-      - "src/Nexo.API/**"
+      - "application/src/Nexo.API/**"
   workflow_dispatch:
 
 jobs:

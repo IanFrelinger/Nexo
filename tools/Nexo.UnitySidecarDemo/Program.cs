@@ -58,7 +58,7 @@ internal static class Program
 
         var dogfoodResult = await RunCommandCaptureAsync(
             "dotnet",
-            "run --project src/Nexo.CLI --no-build -- dogfood block1 --format-json",
+            "run --project application/src/Nexo.CLI --no-build -- dogfood block1 --format-json",
             repoRoot);
 
         var payload = new
@@ -215,7 +215,7 @@ internal static class Program
 
         var nexoResult = await RunCommandCaptureAsync(
             "dotnet",
-            $"run --project src/Nexo.CLI --no-build -- chat --prompt \"{EscapeForShell(prompt)}\"",
+            $"run --project application/src/Nexo.CLI --no-build -- chat --prompt \"{EscapeForShell(prompt)}\"",
             repoRoot,
             env: new Dictionary<string, string> { ["NEXO_ALLOW_MOCK"] = "1" });
 

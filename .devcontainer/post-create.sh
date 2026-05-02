@@ -13,7 +13,7 @@ fi
 echo "post-create: restoring NuGet graph..."
 dotnet restore src/Nexo.Core.Application/Nexo.Core.Application.csproj --verbosity minimal
 dotnet restore src/Nexo.Infrastructure/Nexo.Infrastructure.csproj --verbosity minimal
-dotnet restore src/Nexo.CLI/Nexo.CLI.csproj --verbosity minimal
+dotnet restore application/src/Nexo.CLI/Nexo.CLI.csproj --verbosity minimal
 dotnet restore src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.csproj --verbosity minimal
 dotnet restore src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --verbosity minimal
 echo "post-create: ok"

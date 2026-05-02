@@ -12,7 +12,7 @@ on:
       - "src/Nexo.Tests.Domain/**"
       - "src/Nexo.Tests.Application/**"
       - "src/Nexo.Tests.Infrastructure/**"
-      - "src/Nexo.Tests.CLI/**"
+      - "application/src/Nexo.Tests.CLI/**"
       - "Directory.Packages.props"
       - "Directory.Build.props"
   pull_request:
@@ -24,7 +24,7 @@ on:
       - "src/Nexo.Tests.Domain/**"
       - "src/Nexo.Tests.Application/**"
       - "src/Nexo.Tests.Infrastructure/**"
-      - "src/Nexo.Tests.CLI/**"
+      - "application/src/Nexo.Tests.CLI/**"
       - "Directory.Packages.props"
       - "Directory.Build.props"
 

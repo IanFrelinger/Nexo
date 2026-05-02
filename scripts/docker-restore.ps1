@@ -7,7 +7,7 @@
   Optional: -Build to compile Nexo.CLI after restore.
 
 .PARAMETER RepoRoot
-  Path to Nexo repository root (contains src/Nexo.CLI).
+  Path to Nexo repository root (contains application/src/Nexo.CLI).
 
 .EXAMPLE
   powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\docker-restore.ps1
@@ -26,7 +26,7 @@ docker pull $image 2>&1 | Out-Host
 
 $buildLine = if ($Build) {
     # Matches .docker/Dockerfile.cli — avoids copy-assemblies helper needing net8 runtime in slim SDK images.
-    "dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -c Release -v minimal -p:SkipCopyAssemblies=true"
+    "dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore -c Release -v minimal -p:SkipCopyAssemblies=true"
 } else {
     "true"
 }
@@ -35,7 +35,7 @@ $bashCmd = @"
 set -e
 dotnet restore src/Nexo.Core.Application/Nexo.Core.Application.csproj --verbosity minimal
 dotnet restore src/Nexo.Infrastructure/Nexo.Infrastructure.csproj --verbosity minimal
-dotnet restore src/Nexo.CLI/Nexo.CLI.csproj --verbosity minimal
+dotnet restore application/src/Nexo.CLI/Nexo.CLI.csproj --verbosity minimal
 dotnet restore src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.csproj --verbosity minimal
 dotnet restore src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --verbosity minimal
 $buildLine

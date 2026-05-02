@@ -42,18 +42,18 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../Nexo.Core.Domain/Nexo.Core.Domain.csproj" />
-    <ProjectReference Include="../Nexo.Core.Application/Nexo.Core.Application.csproj" />
-    <ProjectReference Include="../Nexo.Core/Nexo.Core.csproj" />
-    <ProjectReference Include="../Nexo.Adapters.Models/Nexo.Adapters.Models.csproj" />
-    <ProjectReference Include="../Nexo.Hosting/Nexo.Hosting.csproj" />
-    <ProjectReference Include="../Nexo.Infrastructure/Nexo.Infrastructure.csproj" />
-    <ProjectReference Include="../Nexo.Bricks.Owasp/Nexo.Bricks.Owasp.csproj" />
-    <ProjectReference Include="../Nexo.Orchestration/Nexo.Orchestration.csproj" />
-    <ProjectReference Include="../Nexo.BackgroundAgents/Nexo.BackgroundAgents.csproj" />
-    <ProjectReference Include="../Nexo.BackgroundAgents.HostRunners/Nexo.BackgroundAgents.HostRunners.csproj" />
-    <ProjectReference Include="../Nexo.Policies.Dev/Nexo.Policies.Dev.csproj" />
-    <ProjectReference Include="../Nexo.Tools.Dev/Nexo.Tools.Dev.csproj" />
+    <ProjectReference Include="../../../src/Nexo.Core.Domain/Nexo.Core.Domain.csproj" />
+    <ProjectReference Include="../../../src/Nexo.Core.Application/Nexo.Core.Application.csproj" />
+    <ProjectReference Include="../../../src/Nexo.Core/Nexo.Core.csproj" />
+    <ProjectReference Include="../../../src/Nexo.Adapters.Models/Nexo.Adapters.Models.csproj" />
+    <ProjectReference Include="../../../src/Nexo.Hosting/Nexo.Hosting.csproj" />
+    <ProjectReference Include="../../../src/Nexo.Infrastructure/Nexo.Infrastructure.csproj" />
+    <ProjectReference Include="../../../src/Nexo.Bricks.Owasp/Nexo.Bricks.Owasp.csproj" />
+    <ProjectReference Include="../../../src/Nexo.Orchestration/Nexo.Orchestration.csproj" />
+    <ProjectReference Include="../../../src/Nexo.BackgroundAgents/Nexo.BackgroundAgents.csproj" />
+    <ProjectReference Include="../../../src/Nexo.BackgroundAgents.HostRunners/Nexo.BackgroundAgents.HostRunners.csproj" />
+    <ProjectReference Include="../../../src/Nexo.Policies.Dev/Nexo.Policies.Dev.csproj" />
+    <ProjectReference Include="../../../src/Nexo.Tools.Dev/Nexo.Tools.Dev.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -62,9 +62,9 @@
 
   <ItemGroup Condition="'$(IncludeTestProjectReferences)' != 'false'">
     <!-- Test projects for runtime discovery (excluding CLI to avoid circular dependency) -->
-    <ProjectReference Include="../Nexo.Tests.Domain/Nexo.Tests.Domain.csproj" />
-    <ProjectReference Include="../Nexo.Tests.Application/Nexo.Tests.Application.csproj" />
-    <ProjectReference Include="../Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj" />
+    <ProjectReference Include="../../../src/Nexo.Tests.Domain/Nexo.Tests.Domain.csproj" />
+    <ProjectReference Include="../../../src/Nexo.Tests.Application/Nexo.Tests.Application.csproj" />
+    <ProjectReference Include="../../../src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj" />
   </ItemGroup>
   
 

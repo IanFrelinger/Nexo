@@ -4,9 +4,9 @@ on:
   pull_request:
     paths:
       - ".github/workflows/workflow-regression-gate.yml"
-      - "src/Nexo.CLI/**"
-      - "src/Nexo.Tests.CLI/**"
-      - "src/Nexo.CLI/Runtime/**"
+      - "application/src/Nexo.CLI/**"
+      - "application/src/Nexo.Tests.CLI/**"
+      - "application/src/Nexo.CLI/Runtime/**"
   workflow_dispatch:
 
 jobs:
@@ -28,13 +28,13 @@ jobs:
         run: |
           set -euo pipefail
           dotnet restore src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.csproj
-          dotnet build src/Nexo.Tests.CLI/Nexo.Tests.CLI.csproj
+          dotnet build application/src/Nexo.Tests.CLI/Nexo.Tests.CLI.csproj
 
       - name: Run workflow command test suite
         shell: bash
         run: |
           set -euo pipefail
-          dotnet run --project src/Nexo.CLI -- test local --filter WorkflowCommandTests --format-json
+          dotnet run --project application/src/Nexo.CLI -- test local --filter WorkflowCommandTests --format-json
 
       - name: Seed workflow history and baseline
         shell: bash
@@ -57,7 +57,7 @@ jobs:
           }
           JSON
 
-          dotnet run --project src/Nexo.CLI -- workflow baseline promote \
+          dotnet run --project application/src/Nexo.CLI -- workflow baseline promote \
             --repo-root . \
             --benchmark-set workflow-lab \
             --run-id baseline-run \
@@ -68,7 +68,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          dotnet run --project src/Nexo.CLI -- workflow report \
+          dotnet run --project application/src/Nexo.CLI -- workflow report \
             --repo-root . \
             --benchmark-set workflow-lab \
             --run-id candidate-run \
@@ -79,7 +79,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          dotnet run --project src/Nexo.CLI -- workflow gate \
+          dotnet run --project application/src/Nexo.CLI -- workflow gate \
             --repo-root . \
             --benchmark-set workflow-lab \
             --run-id candidate-run \

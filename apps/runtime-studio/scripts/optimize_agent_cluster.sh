@@ -127,13 +127,13 @@ if [[ "${SKIP_OPTIMIZE}" -eq 0 ]]; then
   # Scaffold the spec file if it doesn't exist yet so optimize has input.
   if [[ ! -f "${RESOLVED_SPEC}" ]]; then
     echo "Scaffolding default workflow lab spec → ${RESOLVED_SPEC}"
-    dotnet run --project "${REPO_ROOT}/src/Nexo.CLI" -- workflow scaffold \
+    dotnet run --project "${REPO_ROOT}/application/src/Nexo.CLI" -- workflow scaffold \
       --output "${RESOLVED_SPEC}"
     echo
   fi
 
   OPTIMIZE_CMD=(
-    dotnet run --project "${REPO_ROOT}/src/Nexo.CLI" -- workflow optimize
+    dotnet run --project "${REPO_ROOT}/application/src/Nexo.CLI" -- workflow optimize
     --spec "${RESOLVED_SPEC}"
     --search-strategy "${SEARCH_STRATEGY}"
     --max-candidates "${MAX_CANDIDATES}"
@@ -186,7 +186,7 @@ if [[ "${SKIP_OPTIMIZE}" -eq 0 ]]; then
     echo "  Apply tuned models → agent-set config"
     echo "═══════════════════════════════════════════════════════════════"
     APPLY_CMD=(
-      dotnet run --project "${REPO_ROOT}/src/Nexo.CLI" -- runtime-studio apply-tune
+      dotnet run --project "${REPO_ROOT}/application/src/Nexo.CLI" -- runtime-studio apply-tune
       --spec "${RESOLVED_SPEC}"
       --agent-set "${AGENT_SET_CONFIG}"
     )
@@ -219,7 +219,7 @@ if [[ "${SKIP_DAEMON}" -eq 0 ]]; then
   fi
 
   DAEMON_CMD=(
-    dotnet run --project "${REPO_ROOT}/src/Nexo.CLI" -- background-agent daemon
+    dotnet run --project "${REPO_ROOT}/application/src/Nexo.CLI" -- background-agent daemon
     --config "${AGENT_SET_CONFIG}"
     --duration "${DURATION}"
   )

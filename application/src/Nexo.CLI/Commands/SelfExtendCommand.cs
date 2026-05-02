@@ -571,7 +571,7 @@ public sealed class SelfExtendCommand : Command
             {
                 "run",
                 "--project",
-                "src/Nexo.CLI",
+                "application/src/Nexo.CLI",
                 "--",
                 "test",
                 "local",
@@ -760,7 +760,7 @@ public sealed class SelfExtendCommand : Command
             {
                 "run",
                 "--project",
-                "src/Nexo.CLI",
+                "application/src/Nexo.CLI",
                 "--",
                 "test",
                 "--visual",
@@ -871,7 +871,7 @@ public sealed class SelfExtendCommand : Command
         var build = await RunProcessAsync(
             "dotnet",
             repoRoot,
-            new[] { "build", "src/Nexo.Tests.CLI/Nexo.Tests.CLI.csproj", "-m:1" },
+            new[] { "build", "application/src/Nexo.Tests.CLI/Nexo.Tests.CLI.csproj", "-m:1" },
             ct).ConfigureAwait(false);
         if (build.ExitCode != 0)
             return build;
@@ -883,7 +883,7 @@ public sealed class SelfExtendCommand : Command
             {
                 "run",
                 "--project",
-                "src/Nexo.CLI",
+                "application/src/Nexo.CLI",
                 "--",
                 "test",
                 "local",

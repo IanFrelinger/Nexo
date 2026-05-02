@@ -58,7 +58,7 @@ public sealed class DoctorCommand : Command
         var hostOs = RuntimeInformation.OSDescription;
         var osSupported = OperatingSystem.IsLinux() || OperatingSystem.IsMacOS() || OperatingSystem.IsWindows();
         var dependencyOk = dependencyAssessment.Supported && !dependencyAssessment.MissingRequired.Any();
-        var cliCommand = "dotnet run --project src/Nexo.CLI -- --help";
+        var cliCommand = "dotnet run --project application/src/Nexo.CLI -- --help";
         var containerCommand = "docker run --rm ghcr.io/ianfrelinger/nexo-cli:latest --help";
 
         var (cliExitCode, _, cliStderr) = await RunShellCaptureAsync(cliCommand, ct).ConfigureAwait(false);
@@ -134,7 +134,7 @@ public sealed class DoctorCommand : Command
                 {
                     devContainer = "Open repo in Cursor/VS Code → Dev Containers: Reopen in Container",
                     containerRun = "docker run --rm ghcr.io/ianfrelinger/nexo-cli:latest --help",
-                    doctorFix = "dotnet run --project src/Nexo.CLI -- doctor --fix --yes"
+                    doctorFix = "dotnet run --project application/src/Nexo.CLI -- doctor --fix --yes"
                 }
             };
             Console.WriteLine(JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true }));
@@ -186,7 +186,7 @@ public sealed class DoctorCommand : Command
             Console.WriteLine("recommended next steps:");
             Console.WriteLine("  - dev container: Reopen in Container (.devcontainer/)");
             Console.WriteLine("  - container lane: docker run --rm ghcr.io/ianfrelinger/nexo-cli:latest --help");
-            Console.WriteLine("  - remediation lane: dotnet run --project src/Nexo.CLI -- doctor --fix --yes");
+            Console.WriteLine("  - remediation lane: dotnet run --project application/src/Nexo.CLI -- doctor --fix --yes");
         }
 
         return overallOk ? 0 : 1;

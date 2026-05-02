@@ -1579,7 +1579,7 @@ public sealed class RuntimeCommand : Command
         if (!string.IsNullOrWhiteSpace(entry) && File.Exists(entry))
             return ("dotnet", new[] { entry });
 
-        return ("dotnet", new[] { "run", "--project", "src/Nexo.CLI", "--" });
+        return ("dotnet", new[] { "run", "--project", "application/src/Nexo.CLI", "--" });
     }
 
     private static JsonElement? TryExtractLastJsonObject(string text)

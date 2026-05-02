@@ -10,7 +10,7 @@ on:
       - 'src/Nexo.Core.Application/Persistence/**'
       - 'src/Nexo.Infrastructure/Persistence/**'
       - 'src/Nexo.Tests.Infrastructure/Tests/Persistence/**'
-      - 'src/Nexo.CLI/Commands/TestMultiEnvCommand.cs'
+      - 'application/src/Nexo.CLI/Commands/TestMultiEnvCommand.cs'
       - '.docker/Dockerfile.test-caching-windows'
   pull_request:
     branches: [ master, main ]
@@ -18,7 +18,7 @@ on:
       - 'src/Nexo.Core.Application/Persistence/**'
       - 'src/Nexo.Infrastructure/Persistence/**'
       - 'src/Nexo.Tests.Infrastructure/Tests/Persistence/**'
-      - 'src/Nexo.CLI/Commands/TestMultiEnvCommand.cs'
+      - 'application/src/Nexo.CLI/Commands/TestMultiEnvCommand.cs'
       - '.docker/Dockerfile.test-caching-windows'
   workflow_dispatch:
 

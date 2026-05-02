@@ -132,11 +132,11 @@ fi
 
 cd "$REPO_ROOT"
 info "Building API..."
-dotnet build src/Nexo.API/Nexo.API.csproj -v minimal
+dotnet build application/src/Nexo.API/Nexo.API.csproj -v minimal
 
 info "Starting Nexo portal on port ${NEXO_PORT}..."
 NEXO_ALLOW_MOCK=1 ASPNETCORE_URLS="http://localhost:${NEXO_PORT}" \
-  dotnet run --project src/Nexo.API --no-build &
+  dotnet run --project application/src/Nexo.API --no-build &
 NEXO_PID=$!
 
 sleep 3

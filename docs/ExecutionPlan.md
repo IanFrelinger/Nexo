@@ -70,8 +70,8 @@ These items establish the first end-to-end product experience and close the most
 **Files to modify:**
 - `src/Nexo.Core.Application/` — new port `ICopilotTaskStore`
 - `src/Nexo.Infrastructure/` — LiteDB implementation
-- `src/Nexo.API/Endpoints/NexoEndpoints.cs` — history endpoint, correlation IDs
-- `src/Nexo.API/wwwroot/index.html` — portal UI enhancements
+- `application/src/Nexo.API/Endpoints/NexoEndpoints.cs` — history endpoint, correlation IDs
+- `application/src/Nexo.API/wwwroot/index.html` — portal UI enhancements
 - `src/Nexo.Hosting/NexoServiceCollectionExtensions.cs` — register new services
 - `docs/Phase1SecureCopilotWalkthrough.md`
 
@@ -102,7 +102,7 @@ These items establish the first end-to-end product experience and close the most
 6. ~~Document the wired flow in `docs/GapAnalysis.md`~~ **Done** (keep in sync with CLI flags).
 
 **Files to modify:**
-- `src/Nexo.CLI/Commands/ImproveCommand.cs` — add `--from-observation`, wire `IPatternStore`
+- `application/src/Nexo.CLI/Commands/ImproveCommand.cs` — add `--from-observation`, wire `IPatternStore`
 - `src/Nexo.Infrastructure/SelfImprovement/` — `TestFailureIngestionBridge`
 - `src/Nexo.Infrastructure/Validation/` — bridge from `TrxTestResultParser` to `ITestFailureStore`
 - `src/Nexo.Tests.Infrastructure/` — integration tests
@@ -137,8 +137,8 @@ These items establish the first end-to-end product experience and close the most
 **Files to modify:**
 - `src/Nexo.Infrastructure/Execution/Routing/` — policy enforcement, audit
 - `src/Nexo.Infrastructure/Mesh/` — status display
-- `src/Nexo.CLI/Commands/MeshCommand.cs` — tier display
-- `src/Nexo.Tests.Infrastructure/` and `src/Nexo.Tests.CLI/` — tests
+- `application/src/Nexo.CLI/Commands/MeshCommand.cs` — tier display
+- `src/Nexo.Tests.Infrastructure/` and `application/src/Nexo.Tests.CLI/` — tests
 
 **Dependencies:** None — can be done in parallel with 1.1 and 1.2.  
 **Risks:** Low. The data model and CLI surface already exist; this is mostly wiring and verification.
@@ -197,10 +197,10 @@ These items establish the first end-to-end product experience and close the most
 5. Add test for forced SLO threshold violation → promotion failure.
 
 **Files to modify:**
-- `src/Nexo.CLI/Commands/CiCommand.cs` — extend release-bundle SLO collection
-- `src/Nexo.CLI/Commands/RuntimeCommand.cs` — baseline comparison
+- `application/src/Nexo.CLI/Commands/CiCommand.cs` — extend release-bundle SLO collection
+- `application/src/Nexo.CLI/Commands/RuntimeCommand.cs` — baseline comparison
 - `docs/ReleaseCandidateChecklist-v1.md`
-- `src/Nexo.Tests.CLI/` — threshold violation test
+- `application/src/Nexo.Tests.CLI/` — threshold violation test
 
 **Dependencies:** Lightweight dependency on 1.1 (copilot MVP may inform which SLO metrics matter most).  
 **Risks:** Low. SLO infrastructure is already functional; this is extension and documentation.
@@ -236,7 +236,7 @@ These items deepen the framework's reliability, developer experience, and operat
 **Files to modify:**
 - `src/Nexo.Infrastructure/Composition/ComponentDescriptorValidator.cs`
 - `src/Nexo.Infrastructure/Composition/CapabilityComponentRegistry.cs`
-- `src/Nexo.CLI/` — compose subcommands
+- `application/src/Nexo.CLI/` — compose subcommands
 - `src/Nexo.Tests.Infrastructure/`
 
 **Dependencies:** Benefits from 1.4 (SDK stabilization clarifies which components are stable).  
@@ -266,9 +266,9 @@ These items deepen the framework's reliability, developer experience, and operat
 6. Align `failure-taxonomy.sh` categories with `DoctorRemediation` problem taxonomy.
 
 **Files to modify:**
-- `src/Nexo.CLI/Commands/DoctorCommand.cs`
-- `src/Nexo.CLI/Commands/DoctorRemediation.cs`
-- `src/Nexo.Tests.CLI/` — remediation integration tests
+- `application/src/Nexo.CLI/Commands/DoctorCommand.cs`
+- `application/src/Nexo.CLI/Commands/DoctorRemediation.cs`
+- `application/src/Nexo.Tests.CLI/` — remediation integration tests
 - `scripts/onboarding/failure-taxonomy.sh`
 - `docs/GettingStarted.md`
 
@@ -327,8 +327,8 @@ These items deepen the framework's reliability, developer experience, and operat
 6. Update `docs/ReleaseCandidateChecklist-v1.md` to reference `ci release-bundle --profile full`.
 
 **Files to modify:**
-- `src/Nexo.CLI/Commands/CiCommand.cs` — profiles, steps, report format
-- `src/Nexo.Tests.CLI/` — integration tests
+- `application/src/Nexo.CLI/Commands/CiCommand.cs` — profiles, steps, report format
+- `application/src/Nexo.Tests.CLI/` — integration tests
 - `docs/ReleaseCandidateChecklist-v1.md`
 
 **Dependencies:** Benefits from 1.5 (SLO evidence feeds into release report).  
@@ -358,8 +358,8 @@ These items deepen the framework's reliability, developer experience, and operat
 
 **Files to modify:**
 - `src/Nexo.Tests.Infrastructure/` — trust pack integration tests
-- `src/Nexo.API/Endpoints/NexoEndpoints.cs` — status enrichment
-- `src/Nexo.CLI/Commands/TrustCommand.cs` — `describe` subcommand
+- `application/src/Nexo.API/Endpoints/NexoEndpoints.cs` — status enrichment
+- `application/src/Nexo.CLI/Commands/TrustCommand.cs` — `describe` subcommand
 - `docs/` — operator pack selection guide
 
 **Dependencies:** None.  
@@ -399,7 +399,7 @@ These items push Nexo toward production use and external adoption. Start after P
 
 **Files to modify:**
 - `apps/` — new `release-manager/` directory with agent configs
-- `src/Nexo.API/` — release-specific endpoints or views
+- `application/src/Nexo.API/` — release-specific endpoints or views
 - `src/Nexo.BackgroundAgents/` — release monitor agent role
 - `docs/` — vertical docs
 
@@ -432,8 +432,8 @@ These items push Nexo toward production use and external adoption. Start after P
 - `src/Nexo.Core.Application/Mesh/` — admission models
 - `src/Nexo.Infrastructure/Mesh/` — admission state persistence
 - `src/Nexo.Infrastructure/Execution/Routing/` — revocation enforcement
-- `src/Nexo.CLI/Commands/MeshCommand.cs`
-- `src/Nexo.Tests.Infrastructure/` and `src/Nexo.Tests.CLI/`
+- `application/src/Nexo.CLI/Commands/MeshCommand.cs`
+- `src/Nexo.Tests.Infrastructure/` and `application/src/Nexo.Tests.CLI/`
 
 **Dependencies:** 1.3 (mesh trust tiers provide the trust model that governance builds on).  
 **Risks:** Distributed state consistency. Keep it simple: file-based state with eventual consistency, not distributed consensus.
@@ -590,7 +590,7 @@ These are smaller items that should be addressed opportunistically alongside the
 1. Conditionally register `SanitizingProviderFactory` in `ImproveCommand`'s DI graph when trust is enabled. **Done** (`NEXO_TRUST_ENABLED` == `1`).
 2. Add a test that validates sanitization is active when improve is configured for cloud-backed fix generation. **Remaining** if not present.
 
-**Files:** `src/Nexo.CLI/Commands/ImproveCommand.cs`, `src/Nexo.Tests.CLI/`  
+**Files:** `application/src/Nexo.CLI/Commands/ImproveCommand.cs`, `application/src/Nexo.Tests.CLI/`  
 **Risk:** Low. Defensive wiring.
 
 ---

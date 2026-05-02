@@ -132,7 +132,7 @@ Invoke-Case -Tier "A" -Name "setup.ps1 -Mode restore (repeat / idempotent)" -Act
 Invoke-Case -Tier "A" -Name "dotnet build Nexo.CLI --no-restore (default NuGet cache)" -Action {
     Push-Location $repo
     try {
-        & dotnet build "src/Nexo.CLI/Nexo.CLI.csproj" --no-restore -v minimal
+        & dotnet build "application/src/Nexo.CLI/Nexo.CLI.csproj" --no-restore -v minimal
         if ($LASTEXITCODE -ne 0) { throw "exit $LASTEXITCODE" }
     }
     finally { Pop-Location }
@@ -148,7 +148,7 @@ Invoke-Case -Tier "A" -Name "restore + build with isolated NUGET_PACKAGES" -Acti
         try {
             & powershell -NoProfile -ExecutionPolicy Bypass -File $setupPs1 -Mode restore
             if ($LASTEXITCODE -ne 0) { throw "setup restore exit $LASTEXITCODE" }
-            & dotnet build "src/Nexo.CLI/Nexo.CLI.csproj" --no-restore -v minimal
+            & dotnet build "application/src/Nexo.CLI/Nexo.CLI.csproj" --no-restore -v minimal
             if ($LASTEXITCODE -ne 0) { throw "build exit $LASTEXITCODE" }
         }
         finally {
@@ -254,7 +254,7 @@ if command -v apt-get >/dev/null 2>&1; then
 fi
 bash scripts/setup/setup-linux.sh check
 bash scripts/setup/setup-linux.sh restore
-dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
+dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
 '@
             & docker pull $img.Tag 2>&1 | Out-Host
             & docker run --rm -v "${repo}:/repo" -w /repo $img.Tag bash -lc $bash

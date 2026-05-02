@@ -99,6 +99,6 @@ export npm_config_cache="$PWD/.nexo/tools/cache/npm"
 Then run:
 
 ```bash
-dotnet run --project src/Nexo.CLI -- background-agent daemon --duration 2h
+dotnet run --project application/src/Nexo.CLI -- background-agent daemon --duration 2h
 ```
 

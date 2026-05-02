@@ -151,7 +151,7 @@ The forge bar is a persistent command palette (CLI today, Unity editor panel in 
 Start the forge background-agent daemon:
 
 ```bash
-dotnet run --project src/Nexo.CLI -- background-agent daemon \
+dotnet run --project application/src/Nexo.CLI -- background-agent daemon \
   --config apps/nexo-forge/config/agent_set.forge.json
 ```
 
@@ -195,7 +195,7 @@ Forge workflows typically use `/api/agent` to invoke forge-specific commands (e.
 
 Nexo Forge is designed to integrate with the Unity game engine via the **Unity sidecar** pattern (see `tools/Nexo.UnitySidecarDemo`):
 
-1. **Sidecar process** — `dotnet run --project src/Nexo.CLI` runs alongside the Unity editor, exposing the API on localhost.
+1. **Sidecar process** — `dotnet run --project application/src/Nexo.CLI` runs alongside the Unity editor, exposing the API on localhost.
 2. **Editor script** — a C# editor window in Unity calls the sidecar API to push/pull `SessionState` snapshots.
 3. **Live preview** — weapon, map, and ability descriptors are mapped to Unity `ScriptableObject` assets. Changes made in the forge bar propagate to the editor in near-real-time.
 4. **LOD control** — the performance-monitor agent's LOD suggestions are applied to Unity's `LODGroup` components via the sidecar bridge.

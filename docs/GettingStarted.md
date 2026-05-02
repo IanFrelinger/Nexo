@@ -41,8 +41,8 @@ In ~10-15 minutes, you will:
 Use **Dev Containers: Reopen in Container** (see `README.md`). Then:
 
 ```bash
-dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore
-dotnet run --project src/Nexo.CLI -- --help
+dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore
+dotnet run --project application/src/Nexo.CLI -- --help
 ```
 
 ### Lane B: published CLI image (minimal host)
@@ -68,32 +68,32 @@ Clone the repo, then run setup and build (same graph CI uses):
 git clone https://github.com/IanFrelinger/Nexo.git
 cd Nexo
 bash scripts/setup/setup.sh all
-dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore
+dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore
 ```
 
 ```powershell
 git clone https://github.com/IanFrelinger/Nexo.git
 Set-Location Nexo
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode all
-dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore
+dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore
 ```
 
 After the CLI builds, optional **hero** checks (doctor + quickstart pipeline):
 
 ```bash
-dotnet run --project src/Nexo.CLI -- doctor --json
+dotnet run --project application/src/Nexo.CLI -- doctor --json
 # then run pipeline validate/run/diagnostics per README “First Successful Pipeline Run”
 ```
 
 ```powershell
-dotnet run --project src/Nexo.CLI -- doctor --json
+dotnet run --project application/src/Nexo.CLI -- doctor --json
 ```
 
 ## 2) Verify CLI is available
 
 ```bash
-dotnet run --project src/Nexo.CLI -- --help
-dotnet run --project src/Nexo.CLI -- doctor --json
+dotnet run --project application/src/Nexo.CLI -- --help
+dotnet run --project application/src/Nexo.CLI -- doctor --json
 ```
 
 You should see commands including `analyze`, `validate`, `pipeline`, `trust`, `test`, `orchestrate`, `agent`, `chat`, `runtime`, `workflow`, `mesh`, `config`, `doctor`, `dogfood`, `escalate`, `metrics`, and more.
@@ -104,7 +104,7 @@ Submit a coding task and receive output with an audit trail:
 
 ```bash
 # Via API (mock provider for testing):
-NEXO_ALLOW_MOCK=1 dotnet run --project src/Nexo.API &
+NEXO_ALLOW_MOCK=1 dotnet run --project application/src/Nexo.API &
 curl -s http://localhost:5000/api/copilot/task \
   -H "Content-Type: application/json" \
   -d '{"task": "Analyze the security posture of this project"}' | jq .
@@ -121,13 +121,13 @@ If your config does not define `Nexo:Barriers:Levels`, the daemon defaults to `[
 
 ```bash
 # run for 30 seconds (smoke test)
-dotnet run --project src/Nexo.CLI -- background-agent daemon --duration 30s
+dotnet run --project application/src/Nexo.CLI -- background-agent daemon --duration 30s
 
 # run until Ctrl+C
-dotnet run --project src/Nexo.CLI -- background-agent daemon
+dotnet run --project application/src/Nexo.CLI -- background-agent daemon
 
 # use an explicit background-agent config file
-dotnet run --project src/Nexo.CLI -- background-agent daemon --config docs/background-agents/examples/minimal-agent.json
+dotnet run --project application/src/Nexo.CLI -- background-agent daemon --config docs/background-agents/examples/minimal-agent.json
 ```
 
 ## 3) First success command (high confidence, low friction)
@@ -148,7 +148,7 @@ cat > "$template_path" <<'JSON'
   ]
 }
 JSON
-dotnet run --project src/Nexo.CLI -- pipeline validate --template "$template_path"
+dotnet run --project application/src/Nexo.CLI -- pipeline validate --template "$template_path"
 ```
 
 ## 4) Run first high-signal commands
@@ -157,10 +157,10 @@ Run these from the repository root:
 
 ```bash
 # code and assembly analysis
-dotnet run --project src/Nexo.CLI -- analyze --path .
+dotnet run --project application/src/Nexo.CLI -- analyze --path .
 
 # optional (heavier) architecture/test validation
-dotnet run --project src/Nexo.CLI -- validate
+dotnet run --project application/src/Nexo.CLI -- validate
 ```
 
 ## 5) Run your first pipeline
@@ -186,9 +186,9 @@ JSON
 Validate + run:
 
 ```bash
-dotnet run --project src/Nexo.CLI -- pipeline validate --template /tmp/nexo_pipeline_demo.json
-dotnet run --project src/Nexo.CLI -- pipeline run --template /tmp/nexo_pipeline_demo.json --run-id demo-run --format-json
-dotnet run --project src/Nexo.CLI -- pipeline diagnostics --format-json
+dotnet run --project application/src/Nexo.CLI -- pipeline validate --template /tmp/nexo_pipeline_demo.json
+dotnet run --project application/src/Nexo.CLI -- pipeline run --template /tmp/nexo_pipeline_demo.json --run-id demo-run --format-json
+dotnet run --project application/src/Nexo.CLI -- pipeline diagnostics --format-json
 ```
 
 ## 6) Optional provider setup
@@ -222,7 +222,7 @@ dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
   --filter "FullyQualifiedName~PeerToPeerRoutingSmokeTests|FullyQualifiedName~CapabilityRoutingBrickTests"
 
 # broader local test command
-dotnet run --project src/Nexo.CLI -- test local
+dotnet run --project application/src/Nexo.CLI -- test local
 ```
 
 For timeout policy and anti-hang guidance, see `docs/Testing.md`.

@@ -4,7 +4,7 @@ name: Runtime Studio forge smoke
 on:
   pull_request:
     paths:
-      - 'src/Nexo.CLI/**'
+      - 'application/src/Nexo.CLI/**'
       - 'src/Nexo.BackgroundAgents/**'
       - 'src/Nexo.BackgroundAgents.HostRunners/**'
       - 'src/Nexo.Tools.Dev/**'
@@ -24,10 +24,10 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Build CLI (Release)
-        run: dotnet build src/Nexo.CLI/Nexo.CLI.csproj -c Release -v minimal
+        run: dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj -c Release -v minimal
 
       - name: runtime-studio doctor
-        run: dotnet run --project src/Nexo.CLI -c Release --no-build -- runtime-studio doctor --format-json
+        run: dotnet run --project application/src/Nexo.CLI -c Release --no-build -- runtime-studio doctor --format-json
 
       - name: proposals build (repo root)
-        run: dotnet run --project src/Nexo.CLI -c Release --no-build -- background-agent proposals build --repo-root . --format-json
+        run: dotnet run --project application/src/Nexo.CLI -c Release --no-build -- background-agent proposals build --repo-root . --format-json

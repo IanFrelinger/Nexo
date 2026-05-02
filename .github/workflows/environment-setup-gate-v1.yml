@@ -88,7 +88,7 @@ jobs:
         shell: bash
         run: |
           dotnet --info
-          dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
+          dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
 
       - name: Emit setup gate summary
         if: always()
@@ -151,7 +151,7 @@ jobs:
               fi
               bash scripts/setup/setup-linux.sh check
               bash scripts/setup/setup-linux.sh restore
-              dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
+              dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
             '
 
       - name: Emit ephemeral setup summary

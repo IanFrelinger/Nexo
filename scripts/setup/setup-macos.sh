@@ -128,7 +128,7 @@ ensure_repo_files() {
     echo "Nexo.Infrastructure.csproj not found at ${REPO_ROOT}" >&2
     exit 1
   fi
-  if [[ ! -f "${REPO_ROOT}/src/Nexo.CLI/Nexo.CLI.csproj" ]]; then
+  if [[ ! -f "${REPO_ROOT}/application/src/Nexo.CLI/Nexo.CLI.csproj" ]]; then
     echo "Nexo.CLI.csproj not found at ${REPO_ROOT}" >&2
     exit 1
   fi
@@ -151,7 +151,7 @@ run_restore() {
 
   dotnet restore "${REPO_ROOT}/src/Nexo.Core.Application/Nexo.Core.Application.csproj"
   dotnet restore "${REPO_ROOT}/src/Nexo.Infrastructure/Nexo.Infrastructure.csproj"
-  dotnet restore "${REPO_ROOT}/src/Nexo.CLI/Nexo.CLI.csproj"
+  dotnet restore "${REPO_ROOT}/application/src/Nexo.CLI/Nexo.CLI.csproj"
   dotnet restore "${REPO_ROOT}/src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj"
   dotnet restore "${REPO_ROOT}/src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.csproj"
 }

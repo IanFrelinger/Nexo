@@ -22,7 +22,7 @@ on:
       - ".docker/Dockerfile.*"
       - "scripts/setup/**"
       - "scripts/install/**"
-      - "src/Nexo.CLI/**"
+      - "application/src/Nexo.CLI/**"
       - "src/Nexo.Hosting/**"
       - "src/Nexo.Abstractions/**"
       - "src/Nexo.Core/**"
@@ -52,7 +52,7 @@ on:
       - ".docker/Dockerfile.*"
       - "scripts/setup/**"
       - "scripts/install/**"
-      - "src/Nexo.CLI/**"
+      - "application/src/Nexo.CLI/**"
       - "src/Nexo.Hosting/**"
       - "src/Nexo.Abstractions/**"
       - "src/Nexo.Core/**"
@@ -136,10 +136,10 @@ jobs:
           fi
 
       - name: "Setup — build CLI"
-        run: dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
+        run: dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
 
       - name: "Setup — verify CLI starts"
-        run: dotnet run --project src/Nexo.CLI --no-build -- --help
+        run: dotnet run --project application/src/Nexo.CLI --no-build -- --help
 
       - name: "Setup — build SDK sample"
         run: dotnet build docs/samples/StableSdkHostSample/StableSdkHostSample.csproj -v minimal
@@ -160,40 +160,40 @@ jobs:
         shell: bash
         run: |
           set +e
-          dotnet run --project src/Nexo.CLI --no-build -- doctor --json \
+          dotnet run --project application/src/Nexo.CLI --no-build -- doctor --json \
             2>&1 | tee "${{ runner.temp }}/doctor-report.json"
           echo "doctor_exit=$?" >> "$GITHUB_ENV"
 
       - name: "Discover — bootstrap check"
         shell: bash
         run: |
-          dotnet run --project src/Nexo.CLI --no-build -- bootstrap check --json \
+          dotnet run --project application/src/Nexo.CLI --no-build -- bootstrap check --json \
             2>&1 | tee "${{ runner.temp }}/bootstrap-check.json"
 
       - name: "Discover — pipeline diagnostics"
         shell: bash
         run: |
           set +e
-          dotnet run --project src/Nexo.CLI --no-build -- pipeline diagnostics --format-json \
+          dotnet run --project application/src/Nexo.CLI --no-build -- pipeline diagnostics --format-json \
             2>&1 | tee "${{ runner.temp }}/pipeline-diagnostics.json"
           true  # pipeline diagnostics may fail without a template; non-fatal
 
       - name: "Discover — ci verify (build + smoke + arch)"
         shell: bash
         run: |
-          dotnet run --project src/Nexo.CLI --no-build -- ci verify
+          dotnet run --project application/src/Nexo.CLI --no-build -- ci verify
 
       # ── Stage 3: Dry-run ────────────────────────────────────────────
       - name: "Dry-run — doctor remediation"
         shell: bash
         run: |
-          dotnet run --project src/Nexo.CLI --no-build -- doctor --fix --dry-run --json \
+          dotnet run --project application/src/Nexo.CLI --no-build -- doctor --fix --dry-run --json \
             2>&1 | tee "${{ runner.temp }}/doctor-dryrun.json"
 
       - name: "Dry-run — bootstrap apply"
         shell: bash
         run: |
-          dotnet run --project src/Nexo.CLI --no-build -- bootstrap apply --dry-run --json \
+          dotnet run --project application/src/Nexo.CLI --no-build -- bootstrap apply --dry-run --json \
             2>&1 | tee "${{ runner.temp }}/bootstrap-dryrun.json"
 
       - name: "Dry-run — build + run smoke tests"
@@ -290,14 +290,14 @@ jobs:
               set -euo pipefail
 
               echo "=== CLI smoke ==="
-              dotnet run --project src/Nexo.CLI --no-build -- --help
+              dotnet run --project application/src/Nexo.CLI --no-build -- --help
 
               echo "=== Discover: bootstrap check ==="
-              dotnet run --project src/Nexo.CLI --no-build -- bootstrap check --json \
+              dotnet run --project application/src/Nexo.CLI --no-build -- bootstrap check --json \
                 2>&1 | tee /results/bootstrap-check.json
 
               echo "=== Dry-run: bootstrap apply ==="
-              dotnet run --project src/Nexo.CLI --no-build -- bootstrap apply --dry-run --json \
+              dotnet run --project application/src/Nexo.CLI --no-build -- bootstrap apply --dry-run --json \
                 2>&1 | tee /results/bootstrap-dryrun.json
 
               echo "=== Smoke tests ==="

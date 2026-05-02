@@ -14,7 +14,7 @@ on:
       - "docs/config/friend-mesh.Caddyfile.example"
       - "docs/FriendMeshPrefab.md"
       - "docs/MeshPhase8OperatorHardening.md"
-      - "src/Nexo.API/**"
+      - "application/src/Nexo.API/**"
   pull_request:
     paths:
       - ".github/workflows/friend-mesh-prefab-gate.yml"
@@ -24,7 +24,7 @@ on:
       - "docs/config/friend-mesh.Caddyfile.example"
       - "docs/FriendMeshPrefab.md"
       - "docs/MeshPhase8OperatorHardening.md"
-      - "src/Nexo.API/**"
+      - "application/src/Nexo.API/**"
   workflow_dispatch:
 
 jobs:
