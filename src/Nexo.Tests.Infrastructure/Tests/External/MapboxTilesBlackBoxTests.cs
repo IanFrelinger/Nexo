@@ -14,7 +14,8 @@ namespace Nexo.Tests.Infrastructure.Tests.External;
 /// </para>
 /// When disabled or token missing, tests return immediately so CI and offline runs stay green.
 /// URL construction and response rules are white-box tested in <see cref="MapboxTileUrlsTests"/> and
-/// <see cref="MapboxTileResponseValidatorsTests"/>.
+/// <see cref="MapboxTileResponseValidatorsTests"/>. Geography-driven URLs with real Mapbox responses are in
+/// <see cref="MapboxTilesWhiteBoxRealDataTests"/> (same env gate).
 /// </summary>
 [Trait("Category", "External")]
 public sealed class MapboxTilesBlackBoxTests
