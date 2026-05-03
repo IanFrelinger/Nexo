@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Nexo.GameDomain.Aesthetics;
 using Nexo.GameDomain.Descriptors;
 using Nexo.GameDomain.Macros;
+using Nexo.GameDomain.Mapping;
 using Nexo.GameDomain.Scoping;
 using Nexo.GameDomain.Session;
 
@@ -112,6 +113,17 @@ public static class ForgeEndpoints
             .WithName("ApplyForgeAesthetic")
             .WithSummary("Apply an aesthetic pack at a given scope")
             .Produces<SessionState>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest);
+
+        group.MapGet("/map/adaptation-plan", GetMapAdaptationPlanAsync)
+            .WithName("GetForgeMapAdaptationPlan")
+            .WithSummary("Resolve effective map rendering profile and pipeline stages for the active aesthetic")
+            .Produces<MapAdaptationPlan>(StatusCodes.Status200OK);
+
+        group.MapGet("/map/vector-source/preview", PreviewVectorMapSourceAsync)
+            .WithName("PreviewForgeVectorMapSource")
+            .WithSummary("Verify a sandboxed vector map file exists under root (OSM / GeoJSON); returns length and content-type")
+            .Produces<VectorMapFetchResult>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest);
 
         return app;
@@ -412,6 +424,31 @@ public static class ForgeEndpoints
 
         session.LastModifiedAtUtc = DateTimeOffset.UtcNow;
         return Results.Ok(session);
+    }
+
+    private static async Task<IResult> GetMapAdaptationPlanAsync()
+    {
+        await Task.CompletedTask;
+        var plan = MapAdaptationPlanner.BuildPlan(
+            ForgeSessionStore.Session,
+            ForgeSessionStore.BuiltInAesthetics);
+        return Results.Ok(plan);
+    }
+
+    private static async Task<IResult> PreviewVectorMapSourceAsync(
+        string root,
+        string path,
+        CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(root) || string.IsNullOrWhiteSpace(path))
+            return Results.BadRequest(new ProblemDetails { Title = "root and path query parameters are required" });
+
+        var result = await FileVectorMapSource.InspectAsync(root.Trim(), path.Trim(), ct).ConfigureAwait(false);
+
+        if (!result.Ok)
+            return Results.BadRequest(new ProblemDetails { Title = result.Error ?? "preview failed" });
+
+        return Results.Ok(result);
     }
 }
 

@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Nexo.API.Endpoints;
 using Nexo.GameDomain.Aesthetics;
 using Nexo.GameDomain.Descriptors;
+using Nexo.GameDomain.Mapping;
 using Nexo.GameDomain.Macros;
 using Nexo.GameDomain.Scoping;
 using Nexo.GameDomain.Session;
@@ -334,6 +335,73 @@ public sealed class ForgeEndpointsTests : IDisposable
         var session = ExtractOkValue<SessionState>(result);
         session.AestheticPacks.Should().ContainSingle(a =>
             a.Id == "low_poly" && a.MapRenderingProfile == MapRenderingProfiles.FlatShadedPolys);
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task GetMapAdaptationPlan_AfterApplyAesthetic_MatchesVoxelPipeline()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"),
+            new ForgeCreateSessionRequest("MapPlanTest"));
+        await InvokeAsync(GetHandler("ApplyAestheticAsync"),
+            new ForgeApplyAestheticRequest("voxel"));
+
+        var result = await InvokeAsync(GetHandler("GetMapAdaptationPlanAsync"));
+        var plan = ExtractOkValue<MapAdaptationPlan>(result);
+        plan.ActiveAestheticId.Should().Be("voxel");
+        plan.EffectiveMapRenderingProfile.Should().Be(MapRenderingProfiles.VoxelGrid);
+        plan.PipelineStages.Should().Contain("voxel_rasterize");
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task GetMapAdaptationPlan_WithoutAesthetic_NotesNoSetting()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"),
+            new ForgeCreateSessionRequest("NoAestheticPlan"));
+
+        var result = await InvokeAsync(GetHandler("GetMapAdaptationPlanAsync"));
+        var plan = ExtractOkValue<MapAdaptationPlan>(result);
+        plan.ActiveAestheticId.Should().BeEmpty();
+        plan.Notes.Should().NotBeNullOrEmpty();
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task PreviewVectorMapSource_GeoJsonOk()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "forge-geojson-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        try
+        {
+            const string rel = "x.geojson";
+            await File.WriteAllTextAsync(
+                Path.Combine(root, rel),
+                """{"type":"FeatureCollection","features":[]}""");
+
+            var result = await InvokeAsync(
+                GetHandler("PreviewVectorMapSourceAsync"),
+                root,
+                rel,
+                CancellationToken.None);
+
+            var preview = ExtractOkValue<VectorMapInspectResult>(result);
+            preview.Ok.Should().BeTrue();
+            preview.FormatHint.Should().Be("geojson");
+        }
+        finally
+        {
+            try { Directory.Delete(root, recursive: true); } catch { /* ignore */ }
+        }
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task PreviewVectorMapSource_Traversal_ReturnsBadRequest()
+    {
+        var result = await InvokeAsync(
+            GetHandler("PreviewVectorMapSourceAsync"),
+            Path.GetTempPath(),
+            "../etc/passwd",
+            CancellationToken.None);
+
+        AssertStatusCode(result, StatusCodes.Status400BadRequest);
     }
 
     [Fact(Timeout = 15000)]
