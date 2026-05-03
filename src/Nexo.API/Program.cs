@@ -36,6 +36,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nexo.API.Endpoints;
+using Nexo.API.Forge;
 using Nexo.API.Security;
 using Nexo.BackgroundAgents.Extending;
 using Nexo.BackgroundAgents.HostRunners;
@@ -69,7 +70,22 @@ builder.Services.Configure<GrpcTransportOptions>(
     builder.Configuration.GetSection("Nexo:GrpcTransport"));
 builder.Services.Configure<NexoSecurityOptions>(
     builder.Configuration.GetSection(NexoSecurityOptions.SectionPath));
+builder.Services.Configure<ForgeSessionOptions>(
+    builder.Configuration.GetSection(ForgeSessionOptions.SectionPath));
 builder.Services.AddNexoRuntimeRouting(builder.Configuration);
+
+builder.Services.AddSingleton<IForgeStateService>(sp =>
+{
+    var opts = sp.GetRequiredService<IOptions<ForgeSessionOptions>>().Value;
+    var path = opts.LiteDbPath?.Trim();
+    if (string.IsNullOrEmpty(path))
+        return new InMemoryForgeStateService();
+
+    var resolved = Path.IsPathRooted(path)
+        ? path
+        : Path.GetFullPath(Path.Combine(sp.GetRequiredService<IWebHostEnvironment>().ContentRootPath, path));
+    return new LiteDbForgeStateService(resolved, sp.GetRequiredService<ILoggerFactory>());
+});
 
 // Planner / optimizer / tester background agents need the same runners as `nexo background-agent daemon`.
 builder.Services.TryAddSingleton<ICodeAnalysisRunner, CodeAnalysisRunnerAdapter>();

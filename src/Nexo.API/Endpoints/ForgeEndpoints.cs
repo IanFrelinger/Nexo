@@ -3,6 +3,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Nexo.API.Forge;
 using Nexo.GameDomain.Aesthetics;
 using Nexo.GameDomain.Contracts;
 using Nexo.GameDomain.Descriptors;
@@ -15,23 +16,65 @@ namespace Nexo.API.Endpoints;
 /// <summary>
 /// Extension methods for mapping Nexo Forge API endpoints.
 /// <para>
-/// The Forge endpoints expose a prototyping surface for game design sessions, including
-/// session management, procedural content generation stubs, scoped-setting resolution,
-/// macro orchestration, and aesthetic-pack application.  All state is held in-memory via
-/// <see cref="ForgeSessionStore"/> — persistence is deferred to a future workstream.
+/// Forge exposes a prototyping surface for game design sessions: session management,
+/// procedural content stubs, scoped-setting resolution, macro orchestration, and aesthetic
+/// packs. Session and macro state come from <see cref="IForgeStateService"/> (in-memory
+/// by default, or LiteDB when <see cref="ForgeSessionOptions.LiteDbPath"/> is configured).
 /// </para>
 /// </summary>
 public static class ForgeEndpoints
 {
+    private static readonly IReadOnlyList<AestheticPack> BuiltInAesthetics =
+    [
+        new AestheticPack
+        {
+            Id = "voxel", Name = "Voxel", GeometryStrategy = "voxel",
+            DefaultPaletteColors = ["#4CAF50", "#2196F3", "#FF9800", "#9C27B0"],
+            LodLevels = [new LodLevel(0, 1.0), new LodLevel(1, 0.5), new LodLevel(2, 0.25)]
+        },
+        new AestheticPack
+        {
+            Id = "low_poly", Name = "Low Poly", GeometryStrategy = "low_poly",
+            RenderingPipelineKind = RenderingPipelineKinds.ForwardStylized,
+            DefaultPaletteColors = ["#81C784", "#64B5F6", "#FFB74D", "#CE93D8"],
+            LodLevels = [new LodLevel(0, 1.0), new LodLevel(1, 0.5)]
+        },
+        new AestheticPack
+        {
+            Id = "pixel_art", Name = "Pixel Art", GeometryStrategy = "pixel_art",
+            DefaultPaletteColors = ["#388E3C", "#1976D2", "#F57C00", "#7B1FA2"],
+            LodLevels = [new LodLevel(0, 1.0)]
+        },
+        new AestheticPack
+        {
+            Id = "pbr", Name = "PBR", GeometryStrategy = "pbr",
+            RenderingPipelineKind = RenderingPipelineKinds.ForwardPbr,
+            DefaultPaletteColors = ["#E0E0E0", "#BDBDBD", "#9E9E9E"],
+            LodLevels = [new LodLevel(0, 1.0), new LodLevel(1, 0.75), new LodLevel(2, 0.5), new LodLevel(3, 0.25)],
+            PostProcessEffects = ["bloom", "ambient_occlusion", "tone_mapping"]
+        },
+        new AestheticPack
+        {
+            Id = "wireframe", Name = "Wireframe", GeometryStrategy = "wireframe",
+            DefaultPaletteColors = ["#00E676", "#00B0FF"],
+            LodLevels = [new LodLevel(0, 1.0), new LodLevel(1, 0.5)]
+        },
+        new AestheticPack
+        {
+            Id = "sketch", Name = "Sketch", GeometryStrategy = "sketch",
+            DefaultPaletteColors = ["#212121", "#FAFAFA"],
+            LodLevels = [new LodLevel(0, 1.0)],
+            PostProcessEffects = ["vignette", "chromatic_aberration"]
+        }
+    ];
+
     public static IEndpointRouteBuilder MapForgeEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/forge").WithTags("Forge");
 
-        // ── Session management ──────────────────────────────────────────
-
         group.MapGet("/session", GetSessionAsync)
             .WithName("GetForgeSession")
-            .WithSummary("Return the current in-memory session state")
+            .WithSummary("Return the current Forge session state")
             .Produces<SessionState>(StatusCodes.Status200OK);
 
         group.MapPost("/session/create", CreateSessionAsync)
@@ -51,15 +94,11 @@ public static class ForgeEndpoints
             .Produces<SessionState>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest);
 
-        // ── Content generation ──────────────────────────────────────────
-
         group.MapPost("/generate", GenerateContentAsync)
             .WithName("ForgeGenerate")
             .WithSummary("Generate a stub descriptor from a prompt (LLM wired later)")
             .Produces<ForgeGenerateResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest);
-
-        // ── Scoped settings ─────────────────────────────────────────────
 
         group.MapPost("/setting", ApplySettingAsync)
             .WithName("ApplyForgeSetting")
@@ -78,8 +117,6 @@ public static class ForgeEndpoints
             .WithSummary("Resolve all settings for a given scope context")
             .Produces<ForgeResolvedSettingsResponse>(StatusCodes.Status200OK);
 
-        // ── Macros ──────────────────────────────────────────────────────
-
         group.MapGet("/macros", ListMacrosAsync)
             .WithName("ListForgeMacros")
             .WithSummary("List all registered macros")
@@ -87,7 +124,7 @@ public static class ForgeEndpoints
 
         group.MapPost("/macro", RegisterMacroAsync)
             .WithName("RegisterForgeMacro")
-            .WithSummary("Register a new macro in the in-memory registry")
+            .WithSummary("Register a new macro in the macro registry")
             .Produces<MacroDefinition>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest);
 
@@ -102,8 +139,6 @@ public static class ForgeEndpoints
             .WithSummary("Import a macro from a JSON body")
             .Produces<MacroDefinition>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest);
-
-        // ── Aesthetics ──────────────────────────────────────────────────
 
         group.MapGet("/aesthetics", GetAestheticsAsync)
             .WithName("GetForgeAesthetics")
@@ -125,15 +160,14 @@ public static class ForgeEndpoints
         return app;
     }
 
-    // ── Session handlers ────────────────────────────────────────────────
-
-    private static async Task<IResult> GetSessionAsync()
+    private static async Task<IResult> GetSessionAsync(IForgeStateService forge)
     {
         await Task.CompletedTask;
-        return Results.Ok(ForgeSessionStore.Session);
+        return Results.Ok(forge.Session);
     }
 
     private static async Task<IResult> CreateSessionAsync(
+        IForgeStateService forge,
         [FromBody] ForgeCreateSessionRequest request)
     {
         await Task.CompletedTask;
@@ -153,19 +187,21 @@ public static class ForgeEndpoints
                 : new GameRuleDescriptor { Id = Guid.NewGuid().ToString("D"), Name = "Default", Mode = "deathmatch" }
         };
 
-        ForgeSessionStore.Session = session;
-        ForgeSessionStore.Registry = new MacroRegistry();
+        forge.Session = session;
+        forge.Registry = new MacroRegistry();
+        forge.Save();
         return Results.Ok(session);
     }
 
-    private static async Task<IResult> ExportSessionAsync()
+    private static async Task<IResult> ExportSessionAsync(IForgeStateService forge)
     {
         await Task.CompletedTask;
-        var json = SessionExporter.ExportToJson(ForgeSessionStore.Session);
+        var json = SessionExporter.ExportToJson(forge.Session);
         return Results.Ok(new ForgeSessionExportResponse(json));
     }
 
     private static async Task<IResult> ImportSessionAsync(
+        IForgeStateService forge,
         [FromBody] ForgeSessionImportRequest request)
     {
         await Task.CompletedTask;
@@ -176,7 +212,8 @@ public static class ForgeEndpoints
         try
         {
             var session = SessionExporter.ImportFromJson(request.Json);
-            ForgeSessionStore.Session = session;
+            forge.Session = session;
+            forge.Save();
             return Results.Ok(session);
         }
         catch (JsonException ex)
@@ -188,8 +225,6 @@ public static class ForgeEndpoints
             });
         }
     }
-
-    // ── Content generation handler ──────────────────────────────────────
 
     private static async Task<IResult> GenerateContentAsync(
         [FromBody] ForgeGenerateRequest request)
@@ -264,9 +299,8 @@ public static class ForgeEndpoints
         return Results.Ok(new ForgeGenerateResponse(request.Prompt.Trim(), category, descriptor));
     }
 
-    // ── Scoped settings handlers ────────────────────────────────────────
-
     private static async Task<IResult> ApplySettingAsync(
+        IForgeStateService forge,
         [FromBody] ScopedSetting? setting)
     {
         await Task.CompletedTask;
@@ -274,26 +308,31 @@ public static class ForgeEndpoints
         if (setting is null || string.IsNullOrWhiteSpace(setting.SettingId))
             return Results.BadRequest(new ProblemDetails { Title = "A valid ScopedSetting with a SettingId is required" });
 
-        var session = ForgeSessionStore.Session;
+        var session = forge.Session;
         session.ScopedSettings.Add(setting);
         session.LastModifiedAtUtc = DateTimeOffset.UtcNow;
+        forge.Save();
         return Results.Ok(session);
     }
 
-    private static async Task<IResult> RemoveSettingAsync(string settingId)
+    private static async Task<IResult> RemoveSettingAsync(
+        IForgeStateService forge,
+        string settingId)
     {
         await Task.CompletedTask;
 
-        var session = ForgeSessionStore.Session;
+        var session = forge.Session;
         var removed = session.ScopedSettings.RemoveAll(s => s.SettingId == settingId);
         if (removed == 0)
             return Results.NotFound(new ProblemDetails { Title = $"No setting found with id '{settingId}'" });
 
         session.LastModifiedAtUtc = DateTimeOffset.UtcNow;
+        forge.Save();
         return Results.Ok(session);
     }
 
     private static async Task<IResult> ResolveSettingsAsync(
+        IForgeStateService forge,
         [FromQuery] string? playerId,
         [FromQuery] string? teamId,
         [FromQuery] string? zoneId,
@@ -311,20 +350,19 @@ public static class ForgeEndpoints
             ActiveMoment = moment
         };
 
-        var resolver = new ScopeResolver(ForgeSessionStore.Session.ScopedSettings);
+        var resolver = new ScopeResolver(forge.Session.ScopedSettings);
         var resolved = resolver.ResolveAll(context);
         return Results.Ok(new ForgeResolvedSettingsResponse(context, resolved));
     }
 
-    // ── Macro handlers ──────────────────────────────────────────────────
-
-    private static async Task<IResult> ListMacrosAsync()
+    private static async Task<IResult> ListMacrosAsync(IForgeStateService forge)
     {
         await Task.CompletedTask;
-        return Results.Ok(ForgeSessionStore.Registry.List());
+        return Results.Ok(forge.Registry.List());
     }
 
     private static async Task<IResult> RegisterMacroAsync(
+        IForgeStateService forge,
         [FromBody] MacroDefinition? macro)
     {
         await Task.CompletedTask;
@@ -332,15 +370,18 @@ public static class ForgeEndpoints
         if (macro is null || string.IsNullOrWhiteSpace(macro.MacroId))
             return Results.BadRequest(new ProblemDetails { Title = "A valid MacroDefinition with a MacroId is required" });
 
-        ForgeSessionStore.Registry.Register(macro);
+        forge.Registry.Register(macro);
+        forge.Save();
         return Results.Ok(macro);
     }
 
-    private static async Task<IResult> ExportMacroAsync(string macroId)
+    private static async Task<IResult> ExportMacroAsync(
+        IForgeStateService forge,
+        string macroId)
     {
         await Task.CompletedTask;
 
-        var macro = ForgeSessionStore.Registry.Export(macroId);
+        var macro = forge.Registry.Export(macroId);
         if (macro is null)
             return Results.NotFound(new ProblemDetails { Title = $"Macro '{macroId}' not found" });
 
@@ -349,6 +390,7 @@ public static class ForgeEndpoints
     }
 
     private static async Task<IResult> ImportMacroAsync(
+        IForgeStateService forge,
         [FromBody] ForgeMacroImportRequest request)
     {
         await Task.CompletedTask;
@@ -359,7 +401,8 @@ public static class ForgeEndpoints
         try
         {
             var macro = MacroExporter.ImportFromJson(request.Json);
-            ForgeSessionStore.Registry.Import(macro);
+            forge.Registry.Import(macro);
+            forge.Save();
             return Results.Ok(macro);
         }
         catch (JsonException ex)
@@ -372,15 +415,14 @@ public static class ForgeEndpoints
         }
     }
 
-    // ── Aesthetics handlers ─────────────────────────────────────────────
-
     private static async Task<IResult> GetAestheticsAsync()
     {
         await Task.CompletedTask;
-        return Results.Ok(ForgeSessionStore.BuiltInAesthetics);
+        return Results.Ok(BuiltInAesthetics);
     }
 
     private static async Task<IResult> ApplyAestheticAsync(
+        IForgeStateService forge,
         [FromBody] ForgeApplyAestheticRequest request)
     {
         await Task.CompletedTask;
@@ -388,7 +430,7 @@ public static class ForgeEndpoints
         if (string.IsNullOrWhiteSpace(request?.AestheticId))
             return Results.BadRequest(new ProblemDetails { Title = "AestheticId is required" });
 
-        var pack = ForgeSessionStore.BuiltInAesthetics
+        var pack = BuiltInAesthetics
             .FirstOrDefault(a => a.Id == request.AestheticId);
 
         if (pack is null)
@@ -413,7 +455,7 @@ public static class ForgeEndpoints
             CreatedAt = DateTimeOffset.UtcNow
         };
 
-        var session = ForgeSessionStore.Session;
+        var session = forge.Session;
         session.ScopedSettings.RemoveAll(s =>
             s.SettingId == "aesthetic" &&
             s.Scope.Type == setting.Scope.Type &&
@@ -424,10 +466,12 @@ public static class ForgeEndpoints
             session.AestheticPacks.Add(pack);
 
         session.LastModifiedAtUtc = DateTimeOffset.UtcNow;
+        forge.Save();
         return Results.Ok(session);
     }
 
     private static async Task<IResult> ApplyCustomAestheticPackAsync(
+        IForgeStateService forge,
         [FromBody] ForgeApplyCustomAestheticPackRequest? request)
     {
         await Task.CompletedTask;
@@ -463,7 +507,7 @@ public static class ForgeEndpoints
             CreatedAt = DateTimeOffset.UtcNow
         };
 
-        var session = ForgeSessionStore.Session;
+        var session = forge.Session;
         session.ScopedSettings.RemoveAll(s =>
             s.SettingId == "aesthetic" &&
             s.Scope.Type == setting.Scope.Type &&
@@ -474,99 +518,8 @@ public static class ForgeEndpoints
         session.AestheticPacks.Add(pack);
 
         session.LastModifiedAtUtc = DateTimeOffset.UtcNow;
+        forge.Save();
         return Results.Ok(session);
-    }
-}
-
-// ── In-memory store ─────────────────────────────────────────────────────
-
-/// <summary>
-/// Static in-memory store for the current Forge session and macro registry.
-/// <para>
-/// PROTOTYPE ONLY — This static mutable state is not suitable for production.
-/// Replace with proper persistence (e.g., database-backed session store) in a future workstream.
-/// The <c>_session</c> field uses <see langword="volatile"/> to ensure atomic reference swaps
-/// are visible across threads. <c>MacroRegistry</c> is backed by <c>ConcurrentDictionary</c>
-/// and is inherently thread-safe for individual operations.
-/// </para>
-/// </summary>
-internal static class ForgeSessionStore
-{
-    private static volatile SessionState _session = CreateDefaultSession();
-    private static volatile MacroRegistry _registry = new();
-
-    internal static SessionState Session
-    {
-        get => _session;
-        set => _session = value ?? throw new ArgumentNullException(nameof(value));
-    }
-
-    internal static MacroRegistry Registry
-    {
-        get => _registry;
-        set => _registry = value ?? throw new ArgumentNullException(nameof(value));
-    }
-
-    internal static readonly IReadOnlyList<AestheticPack> BuiltInAesthetics =
-    [
-        new AestheticPack
-        {
-            Id = "voxel", Name = "Voxel", GeometryStrategy = "voxel",
-            DefaultPaletteColors = ["#4CAF50", "#2196F3", "#FF9800", "#9C27B0"],
-            LodLevels = [new LodLevel(0, 1.0), new LodLevel(1, 0.5), new LodLevel(2, 0.25)]
-        },
-        new AestheticPack
-        {
-            Id = "low_poly", Name = "Low Poly", GeometryStrategy = "low_poly",
-            RenderingPipelineKind = RenderingPipelineKinds.ForwardStylized,
-            DefaultPaletteColors = ["#81C784", "#64B5F6", "#FFB74D", "#CE93D8"],
-            LodLevels = [new LodLevel(0, 1.0), new LodLevel(1, 0.5)]
-        },
-        new AestheticPack
-        {
-            Id = "pixel_art", Name = "Pixel Art", GeometryStrategy = "pixel_art",
-            DefaultPaletteColors = ["#388E3C", "#1976D2", "#F57C00", "#7B1FA2"],
-            LodLevels = [new LodLevel(0, 1.0)]
-        },
-        new AestheticPack
-        {
-            Id = "pbr", Name = "PBR", GeometryStrategy = "pbr",
-            RenderingPipelineKind = RenderingPipelineKinds.ForwardPbr,
-            DefaultPaletteColors = ["#E0E0E0", "#BDBDBD", "#9E9E9E"],
-            LodLevels = [new LodLevel(0, 1.0), new LodLevel(1, 0.75), new LodLevel(2, 0.5), new LodLevel(3, 0.25)],
-            PostProcessEffects = ["bloom", "ambient_occlusion", "tone_mapping"]
-        },
-        new AestheticPack
-        {
-            Id = "wireframe", Name = "Wireframe", GeometryStrategy = "wireframe",
-            DefaultPaletteColors = ["#00E676", "#00B0FF"],
-            LodLevels = [new LodLevel(0, 1.0), new LodLevel(1, 0.5)]
-        },
-        new AestheticPack
-        {
-            Id = "sketch", Name = "Sketch", GeometryStrategy = "sketch",
-            DefaultPaletteColors = ["#212121", "#FAFAFA"],
-            LodLevels = [new LodLevel(0, 1.0)],
-            PostProcessEffects = ["vignette", "chromatic_aberration"]
-        }
-    ];
-
-    private static SessionState CreateDefaultSession()
-    {
-        return new SessionState
-        {
-            SessionId = Guid.NewGuid().ToString("D"),
-            Name = "Default Forge Session",
-            CreatedAtUtc = DateTimeOffset.UtcNow,
-            LastModifiedAtUtc = DateTimeOffset.UtcNow,
-            MaxPlayers = 8,
-            GameRules = new GameRuleDescriptor
-            {
-                Id = Guid.NewGuid().ToString("D"),
-                Name = "Default",
-                Mode = "deathmatch"
-            }
-        };
     }
 }
 

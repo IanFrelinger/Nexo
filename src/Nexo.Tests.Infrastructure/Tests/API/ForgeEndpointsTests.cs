@@ -3,6 +3,7 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Nexo.API.Endpoints;
+using Nexo.API.Forge;
 using Nexo.GameDomain.Aesthetics;
 using Nexo.GameDomain.Descriptors;
 using Nexo.GameDomain.Macros;
@@ -15,6 +16,8 @@ namespace Nexo.Tests.Infrastructure.Tests.API;
 [Trait("Category", "E2E")]
 public sealed class ForgeEndpointsTests : IDisposable
 {
+    private static readonly InMemoryForgeStateService Forge = new();
+
     public ForgeEndpointsTests()
     {
         ResetStore();
@@ -308,7 +311,20 @@ public sealed class ForgeEndpointsTests : IDisposable
 
     private static async Task<IResult> InvokeAsync(MethodInfo handler, params object?[] args)
     {
-        var task = (Task<IResult>)handler.Invoke(null, args)!;
+        var parameters = handler.GetParameters();
+        object?[] merged;
+        if (parameters.Length > 0 && parameters[0].ParameterType == typeof(IForgeStateService))
+        {
+            merged = new object?[args.Length + 1];
+            merged[0] = Forge;
+            Array.Copy(args, 0, merged, 1, args.Length);
+        }
+        else
+        {
+            merged = args;
+        }
+
+        var task = (Task<IResult>)handler.Invoke(null, merged)!;
         return await task;
     }
 
@@ -321,31 +337,5 @@ public sealed class ForgeEndpointsTests : IDisposable
         return (T)value!;
     }
 
-    private static void ResetStore()
-    {
-        var storeType = typeof(ForgeEndpoints).Assembly
-            .GetType("Nexo.API.Endpoints.ForgeSessionStore");
-        if (storeType is null) return;
-
-        var sessionProp = storeType.GetProperty("Session", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
-        var registryProp = storeType.GetProperty("Registry", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
-
-        var defaultSession = new SessionState
-        {
-            SessionId = Guid.NewGuid().ToString("D"),
-            Name = "Default Forge Session",
-            CreatedAtUtc = DateTimeOffset.UtcNow,
-            LastModifiedAtUtc = DateTimeOffset.UtcNow,
-            MaxPlayers = 8,
-            GameRules = new GameRuleDescriptor
-            {
-                Id = Guid.NewGuid().ToString("D"),
-                Name = "Default",
-                Mode = "deathmatch"
-            }
-        };
-
-        sessionProp?.SetValue(null, defaultSession);
-        registryProp?.SetValue(null, new MacroRegistry());
-    }
+    private static void ResetStore() => Forge.Reset();
 }
