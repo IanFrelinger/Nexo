@@ -87,4 +87,23 @@ public class MapAdaptationPlannerTests
         plan.EffectiveMapRenderingProfile.Should().Be(MapRenderingProfiles.HeightfieldMesh);
         plan.PipelineStages.Should().Contain("mesh_emit");
     }
+
+    [Fact]
+    public void BuildPlan_UnknownAestheticWithNoCatalog_ReturnsResolveNotes()
+    {
+        var session = new SessionState();
+        session.ScopedSettings.Add(new ScopedSetting
+        {
+            SettingId = "aesthetic",
+            Value = "phantom-pack",
+            Scope = new SettingScope { Type = SettingScopeType.Server },
+            CreatedBy = "t",
+            CreatedAt = DateTimeOffset.UtcNow
+        });
+
+        var plan = MapAdaptationPlanner.BuildPlan(session, builtInCatalog: []);
+        plan.ActiveAestheticId.Should().Be("phantom-pack");
+        plan.Notes.Should().Contain("phantom-pack");
+        plan.PipelineStages.Should().Contain("resolve_aesthetic_pack");
+    }
 }

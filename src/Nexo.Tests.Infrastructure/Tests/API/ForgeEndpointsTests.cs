@@ -1,6 +1,7 @@
 using System.Reflection;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Nexo.API.Endpoints;
 using Nexo.GameDomain.Aesthetics;
 using Nexo.GameDomain.Descriptors;
@@ -405,6 +406,268 @@ public sealed class ForgeEndpointsTests : IDisposable
     }
 
     [Fact(Timeout = 15000)]
+    public async Task CreateSession_EmptyName_ReturnsBadRequest()
+    {
+        var result = await InvokeAsync(GetHandler("CreateSessionAsync"),
+            new ForgeCreateSessionRequest("   "));
+
+        AssertStatusCode(result, StatusCodes.Status400BadRequest);
+        ExtractProblemTitle(result).Should().Be("Name is required");
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task ApplySetting_NullBody_ReturnsBadRequest()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"), new ForgeCreateSessionRequest("X"));
+
+        var result = await InvokeAsync(GetHandler("ApplySettingAsync"), (ScopedSetting?)null);
+
+        AssertStatusCode(result, StatusCodes.Status400BadRequest);
+        ExtractProblemTitle(result).Should().Contain("SettingId");
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task ApplySetting_EmptySettingId_ReturnsBadRequest()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"), new ForgeCreateSessionRequest("X"));
+
+        var bad = new ScopedSetting
+        {
+            SettingId = "  ",
+            Value = 1,
+            Scope = new SettingScope { Type = SettingScopeType.Server },
+            CreatedBy = "t",
+            CreatedAt = DateTimeOffset.UtcNow
+        };
+
+        var result = await InvokeAsync(GetHandler("ApplySettingAsync"), bad);
+
+        AssertStatusCode(result, StatusCodes.Status400BadRequest);
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task GenerateContent_EmptyPrompt_ReturnsBadRequest()
+    {
+        var result = await InvokeAsync(GetHandler("GenerateContentAsync"),
+            new ForgeGenerateRequest("   ", null));
+
+        AssertStatusCode(result, StatusCodes.Status400BadRequest);
+        ExtractProblemTitle(result).Should().Be("Prompt is required");
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task GenerateContent_MapElementCategory_ReturnsMapElementDescriptor()
+    {
+        var result = await InvokeAsync(GetHandler("GenerateContentAsync"),
+            new ForgeGenerateRequest("Stone barrier", "map_element"));
+
+        var response = ExtractOkValue<ForgeGenerateResponse>(result);
+        response.Category.Should().Be("map_element");
+        response.Descriptor.Should().BeOfType<MapElementDescriptor>();
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task ImportSession_EmptyJson_ReturnsBadRequest()
+    {
+        var result = await InvokeAsync(GetHandler("ImportSessionAsync"),
+            new ForgeSessionImportRequest("   "));
+
+        AssertStatusCode(result, StatusCodes.Status400BadRequest);
+        ExtractProblemTitle(result).Should().Contain("JSON");
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task ImportSession_InvalidJson_ReturnsBadRequest()
+    {
+        var result = await InvokeAsync(GetHandler("ImportSessionAsync"),
+            new ForgeSessionImportRequest("{ not json"));
+
+        AssertStatusCode(result, StatusCodes.Status400BadRequest);
+        ExtractProblemTitle(result).Should().Contain("Invalid");
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task RegisterMacro_Null_ReturnsBadRequest()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"), new ForgeCreateSessionRequest("Mac"));
+
+        var result = await InvokeAsync(GetHandler("RegisterMacroAsync"), (MacroDefinition?)null);
+
+        AssertStatusCode(result, StatusCodes.Status400BadRequest);
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task RegisterMacro_EmptyMacroId_ReturnsBadRequest()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"), new ForgeCreateSessionRequest("Mac"));
+
+        var macro = new MacroDefinition { MacroId = "  ", DisplayName = "X", Author = "a" };
+        var result = await InvokeAsync(GetHandler("RegisterMacroAsync"), macro);
+
+        AssertStatusCode(result, StatusCodes.Status400BadRequest);
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task ExportMacro_UnknownId_ReturnsNotFound()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"), new ForgeCreateSessionRequest("Mac"));
+
+        var result = await InvokeAsync(GetHandler("ExportMacroAsync"), "missing-macro");
+
+        AssertStatusCode(result, StatusCodes.Status404NotFound);
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task ImportMacro_EmptyJson_ReturnsBadRequest()
+    {
+        var result = await InvokeAsync(GetHandler("ImportMacroAsync"),
+            new ForgeMacroImportRequest("  "));
+
+        AssertStatusCode(result, StatusCodes.Status400BadRequest);
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task ImportMacro_InvalidJson_ReturnsBadRequest()
+    {
+        var result = await InvokeAsync(GetHandler("ImportMacroAsync"),
+            new ForgeMacroImportRequest("{"));
+
+        AssertStatusCode(result, StatusCodes.Status400BadRequest);
+        ExtractProblemTitle(result).Should().Contain("Invalid");
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task MacroExportImport_RoundTrips()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"), new ForgeCreateSessionRequest("MacroRt"));
+
+        var macro = new MacroDefinition
+        {
+            MacroId = "rt-macro",
+            DisplayName = "Round Trip",
+            Description = "test",
+            Author = "t"
+        };
+        await InvokeAsync(GetHandler("RegisterMacroAsync"), macro);
+
+        var exportResult = await InvokeAsync(GetHandler("ExportMacroAsync"), "rt-macro");
+        var export = ExtractOkValue<ForgeMacroExportResponse>(exportResult);
+        export.Json.Should().NotBeNullOrWhiteSpace();
+
+        await InvokeAsync(GetHandler("CreateSessionAsync"), new ForgeCreateSessionRequest("Fresh"));
+
+        var importResult = await InvokeAsync(GetHandler("ImportMacroAsync"),
+            new ForgeMacroImportRequest(export.Json));
+        var imported = ExtractOkValue<MacroDefinition>(importResult);
+        imported.MacroId.Should().Be("rt-macro");
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task GetMapAdaptationPlan_ScopedAestheticOnly_FallsBackToBuiltInCatalog()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"), new ForgeCreateSessionRequest("CatalogFallback"));
+
+        await InvokeAsync(GetHandler("ApplySettingAsync"), new ScopedSetting
+        {
+            SettingId = "aesthetic",
+            Value = "pbr",
+            Scope = new SettingScope { Type = SettingScopeType.Server },
+            CreatedBy = "test",
+            CreatedAt = DateTimeOffset.UtcNow
+        });
+
+        var result = await InvokeAsync(GetHandler("GetMapAdaptationPlanAsync"));
+        var plan = ExtractOkValue<MapAdaptationPlan>(result);
+        plan.ActiveAestheticId.Should().Be("pbr");
+        plan.EffectiveMapRenderingProfile.Should().Be(MapRenderingProfiles.HeightfieldMesh);
+        plan.PipelineStages.Should().Contain("mesh_emit");
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task GetMapAdaptationPlan_VectorOverlayOverride_UsesOverlayPipeline()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"), new ForgeCreateSessionRequest("OverlayPlan"));
+        await InvokeAsync(GetHandler("ApplyAestheticAsync"),
+            new ForgeApplyAestheticRequest("voxel", MapRenderingProfile: MapRenderingProfiles.VectorOverlay));
+
+        var result = await InvokeAsync(GetHandler("GetMapAdaptationPlanAsync"));
+        var plan = ExtractOkValue<MapAdaptationPlan>(result);
+        plan.EffectiveMapRenderingProfile.Should().Be(MapRenderingProfiles.VectorOverlay);
+        plan.PipelineStages.Should().Contain("overlay_rasterize");
+        plan.PipelineStages.Should().NotContain("voxel_rasterize");
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task PreviewVectorMapSource_MissingFile_ReturnsBadRequest()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "forge-missing-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        try
+        {
+            var result = await InvokeAsync(
+                GetHandler("PreviewVectorMapSourceAsync"),
+                root,
+                "nope.geojson",
+                CancellationToken.None);
+
+            AssertStatusCode(result, StatusCodes.Status400BadRequest);
+        }
+        finally
+        {
+            try { Directory.Delete(root, recursive: true); } catch { /* ignore */ }
+        }
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task PreviewVectorMapSource_EmptyRoot_ReturnsBadRequest()
+    {
+        var result = await InvokeAsync(
+            GetHandler("PreviewVectorMapSourceAsync"),
+            "   ",
+            "x.geojson",
+            CancellationToken.None);
+
+        AssertStatusCode(result, StatusCodes.Status400BadRequest);
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task PreviewVectorMapSource_OsmXml_SniffsFormat()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "forge-osm-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        try
+        {
+            const string rel = "sample.osm";
+            await File.WriteAllTextAsync(Path.Combine(root, rel),
+                """<?xml version="1.0"?><osm version="0.6"><node id="1"/></osm>""");
+
+            var result = await InvokeAsync(
+                GetHandler("PreviewVectorMapSourceAsync"),
+                root,
+                rel,
+                CancellationToken.None);
+
+            var preview = ExtractOkValue<VectorMapInspectResult>(result);
+            preview.FormatHint.Should().Be("osm_xml");
+        }
+        finally
+        {
+            try { Directory.Delete(root, recursive: true); } catch { /* ignore */ }
+        }
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task ApplyAesthetic_EmptyAestheticId_ReturnsBadRequest()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"), new ForgeCreateSessionRequest("BadAesthetic"));
+
+        var result = await InvokeAsync(GetHandler("ApplyAestheticAsync"),
+            new ForgeApplyAestheticRequest("  "));
+
+        AssertStatusCode(result, StatusCodes.Status400BadRequest);
+    }
+
+    [Fact(Timeout = 15000)]
     public async Task GenerateStub_ReturnsDescriptor()
     {
         var request = new ForgeGenerateRequest("Plasma Rifle", "weapon");
@@ -452,6 +715,16 @@ public sealed class ForgeEndpointsTests : IDisposable
         var status = result as IStatusCodeHttpResult;
         status.Should().NotBeNull($"result type {result.GetType().FullName} should expose HTTP status");
         status!.StatusCode.Should().Be(expected);
+    }
+
+    private static string ExtractProblemTitle(IResult result)
+    {
+        var valueProp = result.GetType().GetProperty("Value", BindingFlags.Instance | BindingFlags.Public);
+        var value = valueProp?.GetValue(result);
+        if (value is ProblemDetails p && !string.IsNullOrEmpty(p.Title))
+            return p.Title;
+        throw new InvalidOperationException(
+            $"Expected ProblemDetails in IResult; got {value?.GetType().FullName ?? "null"} for {result.GetType().FullName}.");
     }
 
     private static void ResetStore()

@@ -123,7 +123,7 @@ public static class ForgeEndpoints
         group.MapGet("/map/vector-source/preview", PreviewVectorMapSourceAsync)
             .WithName("PreviewForgeVectorMapSource")
             .WithSummary("Verify a sandboxed vector map file exists under root (OSM / GeoJSON); returns length and content-type")
-            .Produces<VectorMapFetchResult>(StatusCodes.Status200OK)
+            .Produces<VectorMapInspectResult>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest);
 
         return app;
