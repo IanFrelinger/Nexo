@@ -1,8 +1,10 @@
+using System.Linq;
 using System.Text.Json;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Nexo.GameDomain.Aesthetics;
+using Nexo.GameDomain.Contracts;
 using Nexo.GameDomain.Descriptors;
 using Nexo.GameDomain.Macros;
 using Nexo.GameDomain.Scoping;
@@ -111,6 +113,12 @@ public static class ForgeEndpoints
         group.MapPost("/aesthetic/apply", ApplyAestheticAsync)
             .WithName("ApplyForgeAesthetic")
             .WithSummary("Apply an aesthetic pack at a given scope")
+            .Produces<SessionState>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest);
+
+        group.MapPost("/aesthetic/apply-pack", ApplyCustomAestheticPackAsync)
+            .WithName("ApplyForgeCustomAestheticPack")
+            .WithSummary("Apply a full AestheticPack JSON (custom id, bindings, pipeline kind) after validation")
             .Produces<SessionState>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest);
 
@@ -386,6 +394,16 @@ public static class ForgeEndpoints
         if (pack is null)
             return Results.BadRequest(new ProblemDetails { Title = $"Unknown aesthetic pack '{request.AestheticId}'" });
 
+        var builtInIssues = AestheticPackValidation.Validate(pack);
+        if (!AestheticPackValidation.IsValid(builtInIssues))
+        {
+            var detail = string.Join("; ", builtInIssues.Select(i => $"{i.Code}: {i.Message}"));
+            return Results.BadRequest(new ProblemDetails
+            {
+                Title = "Built-in aesthetic pack failed validation",
+                Detail = detail
+            });
+        }
         var setting = new ScopedSetting
         {
             SettingId = "aesthetic",
@@ -404,6 +422,56 @@ public static class ForgeEndpoints
 
         if (!session.AestheticPacks.Any(a => a.Id == pack.Id))
             session.AestheticPacks.Add(pack);
+
+        session.LastModifiedAtUtc = DateTimeOffset.UtcNow;
+        return Results.Ok(session);
+    }
+
+    private static async Task<IResult> ApplyCustomAestheticPackAsync(
+        [FromBody] ForgeApplyCustomAestheticPackRequest? request)
+    {
+        await Task.CompletedTask;
+
+        if (request?.Pack is null)
+            return Results.BadRequest(new ProblemDetails { Title = "Pack is required" });
+
+        var pack = request.Pack;
+        if (string.IsNullOrWhiteSpace(pack.Id))
+            return Results.BadRequest(new ProblemDetails { Title = "AestheticPack.Id is required" });
+
+        var validationOptions = new AestheticPackValidationOptions
+        {
+            RequireKnownEngineIds = request.RequireKnownEngineIds ?? false
+        };
+        var issues = AestheticPackValidation.Validate(pack, validationOptions);
+        if (!AestheticPackValidation.IsValid(issues, treatUndocumentedAsNonBlocking: true))
+        {
+            var detail = string.Join("; ", issues.Select(i => $"{i.Code}: {i.Message}"));
+            return Results.BadRequest(new ProblemDetails
+            {
+                Title = "Aesthetic pack validation failed",
+                Detail = detail
+            });
+        }
+
+        var setting = new ScopedSetting
+        {
+            SettingId = "aesthetic",
+            Value = pack.Id,
+            Scope = request.Scope ?? new SettingScope(),
+            CreatedBy = "forge",
+            CreatedAt = DateTimeOffset.UtcNow
+        };
+
+        var session = ForgeSessionStore.Session;
+        session.ScopedSettings.RemoveAll(s =>
+            s.SettingId == "aesthetic" &&
+            s.Scope.Type == setting.Scope.Type &&
+            s.Scope.Target == setting.Scope.Target);
+        session.ScopedSettings.Add(setting);
+
+        session.AestheticPacks.RemoveAll(a => a.Id == pack.Id);
+        session.AestheticPacks.Add(pack);
 
         session.LastModifiedAtUtc = DateTimeOffset.UtcNow;
         return Results.Ok(session);

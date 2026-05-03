@@ -1,6 +1,7 @@
 using System.Reflection;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Nexo.API.Endpoints;
 using Nexo.GameDomain.Aesthetics;
 using Nexo.GameDomain.Descriptors;
@@ -220,6 +221,61 @@ public sealed class ForgeEndpointsTests : IDisposable
         var session = ExtractOkValue<SessionState>(result);
         session.ScopedSettings.Should().Contain(s => s.SettingId == "aesthetic" && s.Value.ToString() == "voxel");
         session.AestheticPacks.Should().Contain(a => a.Id == "voxel");
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task ApplyCustomAestheticPack_ValidPack_ReplacesSessionPack()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"),
+            new ForgeCreateSessionRequest("CustomPackTest"));
+
+        var custom = new AestheticPack
+        {
+            Id = "studio_stylized",
+            Name = "Studio Stylized",
+            GeometryStrategy = GeometryStrategies.LowPoly,
+            RenderingPipelineKind = RenderingPipelineKinds.ForwardStylized,
+            EngineSurfaceBindings =
+            [
+                new EngineRenderingSurfaceBinding
+                {
+                    EngineId = GameEngines.Unity,
+                    Role = RenderingSurfaceRoles.WorldPrimary,
+                    MaterialSurfaceId = MaterialSurfaceIds.StylizedLit,
+                    AssetOrShaderHint = "Universal Render Pipeline/Lit",
+                },
+            ]
+        };
+
+        var req = new Nexo.GameDomain.Contracts.ForgeApplyCustomAestheticPackRequest(custom);
+        var result = await InvokeAsync(GetHandler("ApplyCustomAestheticPackAsync"), req);
+
+        var session = ExtractOkValue<SessionState>(result);
+        session.ScopedSettings.Should().Contain(s => s.SettingId == "aesthetic" && s.Value.ToString() == "studio_stylized");
+        session.AestheticPacks.Should().ContainSingle(a => a.Id == "studio_stylized");
+        session.AestheticPacks.Single(a => a.Id == "studio_stylized").EngineSurfaceBindings.Should().HaveCount(1);
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task ApplyCustomAestheticPack_InvalidGeometry_ReturnsBadRequest()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"),
+            new ForgeCreateSessionRequest("BadPack"));
+
+        var bad = new AestheticPack
+        {
+            Id = "bad",
+            Name = "Bad",
+            GeometryStrategy = "totally_unknown",
+            RenderingPipelineKind = RenderingPipelineKinds.Auto,
+        };
+
+        var result = await InvokeAsync(GetHandler("ApplyCustomAestheticPackAsync"),
+            new Nexo.GameDomain.Contracts.ForgeApplyCustomAestheticPackRequest(bad));
+
+        var status = result as IStatusCodeHttpResult;
+        status.Should().NotBeNull();
+        status!.StatusCode.Should().Be(StatusCodes.Status400BadRequest);
     }
 
     [Fact(Timeout = 15000)]

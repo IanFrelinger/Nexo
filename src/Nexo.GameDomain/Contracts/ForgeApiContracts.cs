@@ -1,3 +1,4 @@
+using Nexo.GameDomain.Aesthetics;
 using Nexo.GameDomain.Scoping;
 
 namespace Nexo.GameDomain.Contracts;
@@ -61,3 +62,11 @@ public sealed record ForgeMacroRunRequest(
 /// <param name="AestheticId">Identifier of the aesthetic pack to apply.</param>
 /// <param name="Scope">Scope at which the aesthetic should take effect.</param>
 public sealed record ForgeAestheticApplyRequest(string AestheticId, SettingScope Scope);
+
+/// <summary>
+/// Request to apply a full custom <see cref="AestheticPack"/> (cross-engine bindings) at a scope.
+/// </summary>
+public sealed record ForgeApplyCustomAestheticPackRequest(
+    AestheticPack Pack,
+    SettingScope? Scope = null,
+    bool? RequireKnownEngineIds = null);
