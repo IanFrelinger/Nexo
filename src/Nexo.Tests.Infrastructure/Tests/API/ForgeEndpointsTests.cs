@@ -203,6 +203,8 @@ public sealed class ForgeEndpointsTests : IDisposable
         var packs = ExtractOkValue<IReadOnlyList<AestheticPack>>(result);
         packs.Should().HaveCount(6);
         packs.Select(p => p.Id).Should().Contain(new[] { "voxel", "low_poly", "pixel_art", "pbr", "wireframe", "sketch" });
+        packs.Single(p => p.Id == "low_poly").RenderingPipelineKind.Should().Be(RenderingPipelineKinds.ForwardStylized);
+        packs.Single(p => p.Id == "pbr").RenderingPipelineKind.Should().Be(RenderingPipelineKinds.ForwardPbr);
     }
 
     [Fact(Timeout = 15000)]

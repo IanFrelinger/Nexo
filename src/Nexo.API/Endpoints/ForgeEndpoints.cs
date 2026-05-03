@@ -450,6 +450,7 @@ internal static class ForgeSessionStore
         new AestheticPack
         {
             Id = "low_poly", Name = "Low Poly", GeometryStrategy = "low_poly",
+            RenderingPipelineKind = RenderingPipelineKinds.ForwardStylized,
             DefaultPaletteColors = ["#81C784", "#64B5F6", "#FFB74D", "#CE93D8"],
             LodLevels = [new LodLevel(0, 1.0), new LodLevel(1, 0.5)]
         },
@@ -462,6 +463,7 @@ internal static class ForgeSessionStore
         new AestheticPack
         {
             Id = "pbr", Name = "PBR", GeometryStrategy = "pbr",
+            RenderingPipelineKind = RenderingPipelineKinds.ForwardPbr,
             DefaultPaletteColors = ["#E0E0E0", "#BDBDBD", "#9E9E9E"],
             LodLevels = [new LodLevel(0, 1.0), new LodLevel(1, 0.75), new LodLevel(2, 0.5), new LodLevel(3, 0.25)],
             PostProcessEffects = ["bloom", "ambient_occlusion", "tone_mapping"]
