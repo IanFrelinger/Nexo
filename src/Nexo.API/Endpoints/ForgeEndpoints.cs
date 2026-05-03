@@ -142,7 +142,7 @@ public static class ForgeEndpoints
     {
         await Task.CompletedTask;
 
-        if (string.IsNullOrWhiteSpace(request?.Name))
+        if (request is null || string.IsNullOrWhiteSpace(request.Name))
             return Results.BadRequest(new ProblemDetails { Title = "Name is required" });
 
         var session = new SessionState
@@ -174,7 +174,7 @@ public static class ForgeEndpoints
     {
         await Task.CompletedTask;
 
-        if (string.IsNullOrWhiteSpace(request?.Json))
+        if (request is null || string.IsNullOrWhiteSpace(request.Json))
             return Results.BadRequest(new ProblemDetails { Title = "JSON body is required" });
 
         try
@@ -200,7 +200,7 @@ public static class ForgeEndpoints
     {
         await Task.CompletedTask;
 
-        if (string.IsNullOrWhiteSpace(request?.Prompt))
+        if (request is null || string.IsNullOrWhiteSpace(request.Prompt))
             return Results.BadRequest(new ProblemDetails { Title = "Prompt is required" });
 
         var category = (request.Category ?? "weapon").ToLowerInvariant();
@@ -357,7 +357,7 @@ public static class ForgeEndpoints
     {
         await Task.CompletedTask;
 
-        if (string.IsNullOrWhiteSpace(request?.Json))
+        if (request is null || string.IsNullOrWhiteSpace(request.Json))
             return Results.BadRequest(new ProblemDetails { Title = "JSON body is required" });
 
         try
@@ -389,7 +389,7 @@ public static class ForgeEndpoints
     {
         await Task.CompletedTask;
 
-        if (string.IsNullOrWhiteSpace(request?.AestheticId))
+        if (request is null || string.IsNullOrWhiteSpace(request.AestheticId))
             return Results.BadRequest(new ProblemDetails { Title = "AestheticId is required" });
 
         var pack = ForgeSessionStore.BuiltInAesthetics

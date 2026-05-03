@@ -33,16 +33,24 @@ public static class FileVectorMapSource
         fullPath = string.Empty;
         error = string.Empty;
 
-        var normalized = relativePath.Replace('\\', '/').TrimStart('/');
-        if (normalized.Contains("..", StringComparison.Ordinal))
+        var trimmed = relativePath.Trim();
+        if (string.IsNullOrEmpty(trimmed))
         {
-            error = "path traversal not permitted";
+            error = "path is required";
             return false;
         }
 
-        if (Path.IsPathRooted(normalized))
+        // Must reject rooted paths before stripping leading slashes ("/etc/passwd" would otherwise become relative).
+        if (Path.IsPathRooted(trimmed))
         {
             error = "absolute paths not permitted";
+            return false;
+        }
+
+        var normalized = trimmed.Replace('\\', '/').TrimStart('/');
+        if (normalized.Contains("..", StringComparison.Ordinal))
+        {
+            error = "path traversal not permitted";
             return false;
         }
 

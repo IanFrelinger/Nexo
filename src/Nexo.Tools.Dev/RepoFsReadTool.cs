@@ -78,7 +78,20 @@ public sealed class RepoFsReadTool : ITool
             return false;
         }
 
-        var normalized = path.Replace('\\', '/').TrimStart('/');
+        var trimmed = path.Trim();
+        if (string.IsNullOrEmpty(trimmed))
+        {
+            error = "path is required";
+            return false;
+        }
+
+        if (Path.IsPathRooted(trimmed))
+        {
+            error = "absolute paths not permitted";
+            return false;
+        }
+
+        var normalized = trimmed.Replace('\\', '/').TrimStart('/');
         if (normalized.Contains("..", StringComparison.Ordinal))
         {
             error = "path traversal not permitted";

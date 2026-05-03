@@ -55,4 +55,12 @@ public class FileVectorMapSourceTests
         FileVectorMapSource.TryResolveUnderRoot(root, "../secret", out _, out var err).Should().BeFalse();
         err.Should().Contain("traversal");
     }
+
+    [Fact]
+    public void TryResolveUnderRoot_RejectsUnixAbsolutePath()
+    {
+        var root = Path.GetTempPath();
+        FileVectorMapSource.TryResolveUnderRoot(root, "/etc/passwd", out _, out var err).Should().BeFalse();
+        err.Should().Contain("absolute");
+    }
 }

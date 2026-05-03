@@ -657,6 +657,221 @@ public sealed class ForgeEndpointsTests : IDisposable
     }
 
     [Fact(Timeout = 15000)]
+    public async Task CreateSession_NullBody_ReturnsBadRequest()
+    {
+        var result = await InvokeAsync(GetHandler("CreateSessionAsync"), (ForgeCreateSessionRequest?)null);
+
+        AssertStatusCode(result, StatusCodes.Status400BadRequest);
+        ExtractProblemTitle(result).Should().Be("Name is required");
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task GenerateContent_NullBody_ReturnsBadRequest()
+    {
+        var result = await InvokeAsync(GetHandler("GenerateContentAsync"), (ForgeGenerateRequest?)null);
+
+        AssertStatusCode(result, StatusCodes.Status400BadRequest);
+        ExtractProblemTitle(result).Should().Be("Prompt is required");
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task ImportSession_NullBody_ReturnsBadRequest()
+    {
+        var result = await InvokeAsync(GetHandler("ImportSessionAsync"), (ForgeSessionImportRequest?)null);
+
+        AssertStatusCode(result, StatusCodes.Status400BadRequest);
+        ExtractProblemTitle(result).Should().Contain("JSON");
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task ImportMacro_NullBody_ReturnsBadRequest()
+    {
+        var result = await InvokeAsync(GetHandler("ImportMacroAsync"), (ForgeMacroImportRequest?)null);
+
+        AssertStatusCode(result, StatusCodes.Status400BadRequest);
+        ExtractProblemTitle(result).Should().Contain("JSON");
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task ApplyAesthetic_NullBody_ReturnsBadRequest()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"), new ForgeCreateSessionRequest("NullBody"));
+
+        var result = await InvokeAsync(GetHandler("ApplyAestheticAsync"), (ForgeApplyAestheticRequest?)null);
+
+        AssertStatusCode(result, StatusCodes.Status400BadRequest);
+        ExtractProblemTitle(result).Should().Be("AestheticId is required");
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task RemoveSetting_UnknownId_ReturnsNotFound()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"), new ForgeCreateSessionRequest("RmUnknown"));
+
+        var result = await InvokeAsync(GetHandler("RemoveSettingAsync"), "nonexistent");
+
+        AssertStatusCode(result, StatusCodes.Status404NotFound);
+        ExtractProblemTitle(result).Should().Contain("nonexistent");
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task GenerateContent_AbilityCategory_ReturnsAbilityDescriptor()
+    {
+        var result = await InvokeAsync(GetHandler("GenerateContentAsync"),
+            new ForgeGenerateRequest("Blink", "ability"));
+
+        var response = ExtractOkValue<ForgeGenerateResponse>(result);
+        response.Category.Should().Be("ability");
+        response.Descriptor.Should().BeOfType<AbilityDescriptor>();
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task GenerateContent_GameRuleCategory_ReturnsGameRuleDescriptor()
+    {
+        var result = await InvokeAsync(GetHandler("GenerateContentAsync"),
+            new ForgeGenerateRequest("Oddball", "game_rule"));
+
+        var response = ExtractOkValue<ForgeGenerateResponse>(result);
+        response.Category.Should().Be("game_rule");
+        response.Descriptor.Should().BeOfType<GameRuleDescriptor>();
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task GenerateContent_AiBehaviorCategory_ReturnsAiBehaviorDescriptor()
+    {
+        var result = await InvokeAsync(GetHandler("GenerateContentAsync"),
+            new ForgeGenerateRequest("Sniper bot", "ai_behavior"));
+
+        var response = ExtractOkValue<ForgeGenerateResponse>(result);
+        response.Category.Should().Be("ai_behavior");
+        response.Descriptor.Should().BeOfType<AiBehaviorDescriptor>();
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task GenerateContent_UnknownCategory_FallsBackToWeapon()
+    {
+        var result = await InvokeAsync(GetHandler("GenerateContentAsync"),
+            new ForgeGenerateRequest("Odd category", "totally_unknown_xyz"));
+
+        var response = ExtractOkValue<ForgeGenerateResponse>(result);
+        response.Category.Should().Be("totally_unknown_xyz");
+        response.Descriptor.Should().BeOfType<WeaponDescriptor>();
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task GenerateContent_CategoryIsCaseInsensitive()
+    {
+        var result = await InvokeAsync(GetHandler("GenerateContentAsync"),
+            new ForgeGenerateRequest("Shield", "ABILITY"));
+
+        var response = ExtractOkValue<ForgeGenerateResponse>(result);
+        response.Category.Should().Be("ability");
+        response.Descriptor.Should().BeOfType<AbilityDescriptor>();
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task CreateSession_MaxPlayersZero_DefaultsToEight()
+    {
+        var result = await InvokeAsync(GetHandler("CreateSessionAsync"),
+            new ForgeCreateSessionRequest("MaxZero", MaxPlayers: 0));
+
+        var session = ExtractOkValue<SessionState>(result);
+        session.MaxPlayers.Should().Be(8);
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task ResolveSettings_ResponseIncludesScopeContext()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"), new ForgeCreateSessionRequest("Ctx"));
+
+        var result = await InvokeAsync(GetHandler("ResolveSettingsAsync"),
+            "p1", "team-a", "zone-9", "obj-2", "overtime");
+
+        var response = ExtractOkValue<ForgeResolvedSettingsResponse>(result);
+        response.Context.PlayerId.Should().Be("p1");
+        response.Context.TeamId.Should().Be("team-a");
+        response.Context.ZoneId.Should().Be("zone-9");
+        response.Context.ObjectId.Should().Be("obj-2");
+        response.Context.ActiveMoment.Should().Be("overtime");
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task ListMacros_AfterCreate_IsEmpty()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"), new ForgeCreateSessionRequest("EmptyMacros"));
+
+        var result = await InvokeAsync(GetHandler("ListMacrosAsync"));
+        var macros = ExtractOkValue<IReadOnlyList<MacroDefinition>>(result);
+
+        macros.Should().BeEmpty();
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task ApplyAesthetic_PerZone_AllowsDistinctActivePerZone()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"), new ForgeCreateSessionRequest("ZoneAesthetic"));
+
+        await InvokeAsync(GetHandler("ApplyAestheticAsync"),
+            new ForgeApplyAestheticRequest("voxel", new SettingScope { Type = SettingScopeType.Zone, Target = "a" }));
+        await InvokeAsync(GetHandler("ApplyAestheticAsync"),
+            new ForgeApplyAestheticRequest("pbr", new SettingScope { Type = SettingScopeType.Zone, Target = "b" }));
+
+        var sessionResult = await InvokeAsync(GetHandler("GetSessionAsync"));
+        var session = ExtractOkValue<SessionState>(sessionResult);
+
+        session.ScopedSettings.Should().Contain(s =>
+            s.SettingId == "aesthetic" && s.Scope.Type == SettingScopeType.Zone && s.Scope.Target == "a" &&
+            s.Value.ToString() == "voxel");
+        session.ScopedSettings.Should().Contain(s =>
+            s.SettingId == "aesthetic" && s.Scope.Type == SettingScopeType.Zone && s.Scope.Target == "b" &&
+            s.Value.ToString() == "pbr");
+        session.AestheticPacks.Should().Contain(a => a.Id == "voxel");
+        session.AestheticPacks.Should().Contain(a => a.Id == "pbr");
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task PreviewVectorMapSource_AbsolutePath_ReturnsBadRequest()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "forge-abs-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        try
+        {
+            var result = await InvokeAsync(
+                GetHandler("PreviewVectorMapSourceAsync"),
+                root,
+                "/etc/passwd",
+                CancellationToken.None);
+
+            AssertStatusCode(result, StatusCodes.Status400BadRequest);
+        }
+        finally
+        {
+            try { Directory.Delete(root, recursive: true); } catch { /* ignore */ }
+        }
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task PreviewVectorMapSource_EmptyPath_ReturnsBadRequest()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "forge-emptypath-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        try
+        {
+            var result = await InvokeAsync(
+                GetHandler("PreviewVectorMapSourceAsync"),
+                root,
+                "   ",
+                CancellationToken.None);
+
+            AssertStatusCode(result, StatusCodes.Status400BadRequest);
+        }
+        finally
+        {
+            try { Directory.Delete(root, recursive: true); } catch { /* ignore */ }
+        }
+    }
+
+    [Fact(Timeout = 15000)]
     public async Task ApplyAesthetic_EmptyAestheticId_ReturnsBadRequest()
     {
         await InvokeAsync(GetHandler("CreateSessionAsync"), new ForgeCreateSessionRequest("BadAesthetic"));
