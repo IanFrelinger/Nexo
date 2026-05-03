@@ -6,6 +6,7 @@ Nexo uses in-memory stores by default. For durable storage, configure LiteDB-bac
 
 | Service | Default | Durable Option |
 |---------|--------|----------------|
+| Forge session / macros (`Nexo.API`) | `InMemoryForgeStateService` | `LiteDbForgeStateService` when `Nexo:ForgeSession:LiteDbPath` is set (relative paths resolve under the API content root) |
 | `IUnitOfWork` | `InMemoryUnitOfWork` | Replace with adapter (e.g. SQLite) |
 | `IPatternStore` | none (when `PatternStorePath` not set) | `LiteDbPatternStore` via `AddAdaptationInfrastructure(path)` |
 | `IAdaptationLog` | in-memory | `LiteDbAdaptationLog` when pattern store path set |
