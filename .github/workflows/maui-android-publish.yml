@@ -4,13 +4,6 @@ name: MAUI Android AAB Publish
 
 on:
   workflow_dispatch:
-  schedule:
-    # Weekly AAB artifact sanity (same paths as compile gate); avoids doubling every push.
-    - cron: '30 7 * * 3'
-  push:
-    branches: [master, main]
-    paths:
-      - '.github/workflows/maui-android-publish.yml'
 
 jobs:
   publish-aab:

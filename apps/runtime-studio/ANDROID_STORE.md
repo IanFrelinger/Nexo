@@ -5,7 +5,7 @@ The repo ships two CI lanes:
 | Workflow | Purpose |
 |----------|---------|
 | [`.github/workflows/maui-client-build-gate.yml`](../../.github/workflows/maui-client-build-gate.yml) | Fast **compile** checks (Windows, Mac Catalyst, Android). |
-| [`.github/workflows/maui-android-publish.yml`](../../.github/workflows/maui-android-publish.yml) | **Release AAB** artifact (`dotnet publish` with `AndroidPackageFormat=aab`). Runs on **workflow_dispatch**, weekly schedule, or when this workflow file changes on `main`/`master`. |
+| [`.github/workflows/maui-android-publish.yml`](../../.github/workflows/maui-android-publish.yml) | **Release AAB** artifact (`dotnet publish` with `AndroidPackageFormat=aab`). Runs on **workflow_dispatch** only. |
 
 ## Local AAB
 

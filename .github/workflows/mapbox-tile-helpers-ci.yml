@@ -1,11 +1,9 @@
 # Optional Mapbox tile integration tests (no secrets in repo).
-# Set repository secrets MAPBOX_ACCESS_TOKEN and enable by dispatch or schedule.
+# Set repository secret MAPBOX_ACCESS_TOKEN, then run manually — see .github/workflows/README.md
 name: Mapbox Tile Helpers (optional)
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 6 * * 0'
 
 jobs:
   mapbox-tiles:

@@ -52,13 +52,14 @@ test-platform:
 	dotnet run --project src/Nexo.CLI -- test --platforms $(PLATFORM)
 
 # Trigger cross-platform tests in CI (Mac, Windows, Linux from one place)
-# Requires: gh auth login. Usage: make test-cross-platform [SCOPE=smoke|persistence|full]
+# Requires: gh auth login. Workflows are manual-first — see .github/workflows/README.md
+# Usage: make test-cross-platform [SCOPE=smoke|persistence|full]
 test-cross-platform:
 	gh workflow run "Cross-Platform Tests" --ref master -f scope=$${SCOPE:-smoke}
 
 # Trigger full platform readiness gate: setup + discovery + dry-run on all target platforms.
 # Runs on Linux, macOS, Windows (native) + Ubuntu, Alpine, Debian (container) + Docker CLI image.
-# Requires: gh auth login
+# Requires: gh auth login. Manual-first — see .github/workflows/README.md
 test-readiness-gate:
 	gh workflow run "Full Platform Readiness Gate" --ref master
 

@@ -4,13 +4,6 @@ name: MAUI Client Build Gate
 
 on:
   workflow_dispatch:
-  push:
-    branches: [master, main]
-    paths:
-      - '.github/workflows/maui-client-build-gate.yml'
-      - 'src/Nexo.Client.Mobile/**'
-      - 'src/Nexo.Client/**'
-      - 'src/Nexo.Contracts/**'
 
 jobs:
   maui-windows:
