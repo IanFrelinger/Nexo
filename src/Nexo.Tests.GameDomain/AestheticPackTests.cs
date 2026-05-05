@@ -14,6 +14,8 @@ public class AestheticPackTests
         pack.Id.Should().BeEmpty();
         pack.Name.Should().BeEmpty();
         pack.GeometryStrategy.Should().Be("low_poly");
+        pack.MapRenderingProfile.Should().Be(MapRenderingProfiles.Auto);
+        pack.EngineSurfaceBindings.Should().BeEmpty();
         pack.DefaultPaletteColors.Should().BeEmpty();
         pack.LodLevels.Should().BeEmpty();
         pack.PostProcessEffects.Should().BeEmpty();

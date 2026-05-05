@@ -2,9 +2,11 @@ using System.Reflection;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Nexo.API.Endpoints;
+using Nexo.API.Forge;
 using Nexo.GameDomain.Aesthetics;
 using Nexo.GameDomain.Descriptors;
 using Nexo.GameDomain.Macros;
+using Nexo.GameDomain.Mapping;
 using Nexo.GameDomain.Scoping;
 using Nexo.GameDomain.Session;
 using Xunit;
@@ -14,6 +16,8 @@ namespace Nexo.Tests.Infrastructure.Tests.API;
 [Trait("Category", "E2E")]
 public sealed class ForgeEndpointsTests : IDisposable
 {
+    private static readonly InMemoryForgeStateService Forge = new();
+
     public ForgeEndpointsTests()
     {
         ResetStore();
@@ -221,6 +225,38 @@ public sealed class ForgeEndpointsTests : IDisposable
     }
 
     [Fact(Timeout = 15000)]
+    public async Task GetMapAdaptationPlan_ReturnsPlan()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"), new ForgeCreateSessionRequest("PlanTest"));
+        await InvokeAsync(GetHandler("ApplyAestheticAsync"), new ForgeApplyAestheticRequest("voxel"));
+
+        var result = await InvokeAsync(GetHandler("GetMapAdaptationPlanAsync"));
+        var plan = ExtractOkValue<MapAdaptationPlan>(result);
+        plan.EffectiveMapRenderingProfile.Should().Be(MapRenderingProfiles.VoxelGrid);
+        plan.PipelineStages.Should().Contain("voxel_rasterize");
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task RunMapPipeline_DryRun_Succeeds()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"), new ForgeCreateSessionRequest("PipeTest"));
+        var body = new MapPipelineRunRequest(DryRun: true);
+        var result = await InvokeAsync(GetHandler("RunMapPipelineAsync"), body);
+        var run = ExtractOkValue<MapPipelineRunResult>(result);
+        run.Success.Should().BeTrue();
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task EngineManifest_ReturnsJson()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"), new ForgeCreateSessionRequest("ManTest"));
+        var result = await InvokeAsync(GetHandler("GetEngineAestheticManifestAsync"), "unity");
+        var wrap = ExtractOkValue<ForgeEngineManifestResponse>(result);
+        wrap.Json.Should().Contain("\"engineId\"");
+        wrap.Json.Should().Contain("unity");
+    }
+
+    [Fact(Timeout = 15000)]
     public async Task GenerateStub_ReturnsDescriptor()
     {
         var request = new ForgeGenerateRequest("Plasma Rifle", "weapon");
@@ -250,7 +286,20 @@ public sealed class ForgeEndpointsTests : IDisposable
 
     private static async Task<IResult> InvokeAsync(MethodInfo handler, params object?[] args)
     {
-        var task = (Task<IResult>)handler.Invoke(null, args)!;
+        var parameters = handler.GetParameters();
+        object?[] merged;
+        if (parameters.Length > 0 && parameters[0].ParameterType == typeof(IForgeStateService))
+        {
+            merged = new object?[args.Length + 1];
+            merged[0] = Forge;
+            Array.Copy(args, 0, merged, 1, args.Length);
+        }
+        else
+        {
+            merged = args;
+        }
+
+        var task = (Task<IResult>)handler.Invoke(null, merged)!;
         return await task;
     }
 
@@ -263,31 +312,5 @@ public sealed class ForgeEndpointsTests : IDisposable
         return (T)value!;
     }
 
-    private static void ResetStore()
-    {
-        var storeType = typeof(ForgeEndpoints).Assembly
-            .GetType("Nexo.API.Endpoints.ForgeSessionStore");
-        if (storeType is null) return;
-
-        var sessionProp = storeType.GetProperty("Session", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
-        var registryProp = storeType.GetProperty("Registry", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
-
-        var defaultSession = new SessionState
-        {
-            SessionId = Guid.NewGuid().ToString("D"),
-            Name = "Default Forge Session",
-            CreatedAtUtc = DateTimeOffset.UtcNow,
-            LastModifiedAtUtc = DateTimeOffset.UtcNow,
-            MaxPlayers = 8,
-            GameRules = new GameRuleDescriptor
-            {
-                Id = Guid.NewGuid().ToString("D"),
-                Name = "Default",
-                Mode = "deathmatch"
-            }
-        };
-
-        sessionProp?.SetValue(null, defaultSession);
-        registryProp?.SetValue(null, new MacroRegistry());
-    }
+    private static void ResetStore() => Forge.Reset();
 }
