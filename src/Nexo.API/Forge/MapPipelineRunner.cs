@@ -6,7 +6,8 @@ using Nexo.GameDomain.Mapping;
 namespace Nexo.API.Forge;
 
 /// <summary>
-/// Executes map adaptation stages with bounded HTTP fetches and optional vector intelligence.
+/// Executes map adaptation stages with bounded HTTP fetches, SSRF validation, payload heuristics,
+/// and optional vector intelligence.
 /// </summary>
 public sealed class MapPipelineRunner
 {
@@ -38,8 +39,9 @@ public sealed class MapPipelineRunner
         if (request.TimeoutMs <= 0)
             return new MapPipelineRunResult(false, [], "TimeoutMs must be positive.");
 
-        var maxBytes = _forgeOptions.Value.MaxFetchResponseBytes > 0
-            ? _forgeOptions.Value.MaxFetchResponseBytes
+        var opts = _forgeOptions.Value;
+        var maxBytes = opts.MaxFetchResponseBytes > 0
+            ? opts.MaxFetchResponseBytes
             : 2_097_152;
 
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
@@ -69,9 +71,13 @@ public sealed class MapPipelineRunner
                     {
                         stages.Add(new MapPipelineStageResult(stage, "skipped", "No TerrainDataUrl on request."));
                     }
+                    else if (!ForgeMapFetchUrlValidator.TryValidate(request.TerrainDataUrl, opts, out var terrErr))
+                    {
+                        stages.Add(new MapPipelineStageResult(stage, "error", terrErr));
+                    }
                     else
                     {
-                        var r = await FetchBytesAsync(client, request.TerrainDataUrl, maxBytes, linked.Token)
+                        var r = await FetchBytesAsync(client, request.TerrainDataUrl!, maxBytes, linked.Token)
                             .ConfigureAwait(false);
                         stages.Add(new MapPipelineStageResult(stage, r.Success ? "ok" : "error",
                             r.Success ? $"Fetched {r.ByteLength} bytes" : r.Error));
@@ -83,9 +89,13 @@ public sealed class MapPipelineRunner
                     {
                         stages.Add(new MapPipelineStageResult(stage, "skipped", "No VectorDataUrl on request."));
                     }
+                    else if (!ForgeMapFetchUrlValidator.TryValidate(request.VectorDataUrl, opts, out var vecErr))
+                    {
+                        stages.Add(new MapPipelineStageResult(stage, "error", vecErr));
+                    }
                     else
                     {
-                        var r = await FetchBytesAsync(client, request.VectorDataUrl, maxBytes, linked.Token)
+                        var r = await FetchBytesAsync(client, request.VectorDataUrl!, maxBytes, linked.Token)
                             .ConfigureAwait(false);
                         if (!r.Success)
                         {
@@ -93,8 +103,9 @@ public sealed class MapPipelineRunner
                             break;
                         }
 
-                        var detail = $"Fetched {r.ByteLength} bytes";
-                        if (_forgeOptions.Value.EnableVectorIntelligence && r.ByteLength > 0)
+                        var insp = VectorMapPayloadInspector.Inspect(new ReadOnlyMemory<byte>(r.Body), r.ContentType);
+                        var detail = $"Fetched {r.ByteLength} bytes; format={insp.FormatGuess}";
+                        if (opts.EnableVectorIntelligence && r.ByteLength > 0)
                         {
                             try
                             {

@@ -82,8 +82,6 @@ builder.Services.AddHttpClient("forge-map")
     {
         AutomaticDecompression = DecompressionMethods.All
     });
-builder.Services.AddSingleton<IVectorMapIntelligenceService, NoOpVectorMapIntelligenceService>();
-builder.Services.AddSingleton<MapPipelineRunner>();
 builder.Services.AddSingleton<IForgeStateService, TenantPartitionedForgeStateService>();
 
 // Planner / optimizer / tester background agents need the same runners as `nexo background-agent daemon`.
@@ -98,6 +96,15 @@ builder.Services.AddNexo(options =>
     options.PatternStorePath = builder.Configuration["Nexo:PatternStorePath"];
     options.RegisterBackgroundAgentHostedService = true;
 });
+
+builder.Services.AddSingleton<HeuristicVectorMapIntelligenceService>();
+builder.Services.AddSingleton<IVectorMapIntelligenceService>(sp =>
+    new ModelAugmentedVectorMapIntelligenceService(
+        sp.GetRequiredService<Nexo.Abstractions.IModel>(),
+        sp.GetRequiredService<HeuristicVectorMapIntelligenceService>(),
+        sp.GetRequiredService<IOptions<ForgeSessionOptions>>(),
+        sp.GetRequiredService<ILogger<ModelAugmentedVectorMapIntelligenceService>>()));
+builder.Services.AddSingleton<MapPipelineRunner>();
 
 var app = builder.Build();
 

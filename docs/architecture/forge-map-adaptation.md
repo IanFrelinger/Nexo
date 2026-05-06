@@ -15,10 +15,16 @@ the session.
 
 - **`dryRun: true`** — **`MapPipelineDryRun`** simulates every stage (no network).
 - **`dryRun: false`** — **`MapPipelineRunner`** executes bounded HTTP **`fetch_vector`** /
-  **`fetch_terrain`** when **`VectorDataUrl`** / **`TerrainDataUrl`** are set. Responses are
-  capped by **`Nexo:ForgeSession:MaxFetchResponseBytes`**. When
-  **`Nexo:ForgeSession:EnableVectorIntelligence`** is true, **`IVectorMapIntelligenceService`**
-  runs on fetched vector bytes (default: **`NoOpVectorMapIntelligenceService`**).
+  **`fetch_terrain`** when **`VectorDataUrl`** / **`TerrainDataUrl`** are set. URLs must pass
+  **`ForgeMapFetchUrlValidator`**: https (or http only if **`AllowInsecureMapFetch`**), no userinfo,
+  DNS must not resolve to loopback/private/link-local, and the host must match
+  **`AllowedMapFetchHosts`** unless **`AllowMapFetchWhenAllowedHostsEmpty`** is true (dev/tests).
+  Responses are capped by **`MaxFetchResponseBytes`**. **`VectorMapPayloadInspector`** adds a
+  lightweight format guess on **`fetch_vector`**.
+- When **`EnableVectorIntelligence`** is true, **`IVectorMapIntelligenceService`** runs on fetched
+  vector bytes. The default implementation is **`ModelAugmentedVectorMapIntelligenceService`**, which
+  uses **`HeuristicVectorMapIntelligenceService`** and optionally **`IModel`** when
+  **`EnableVectorModel`** is true (bounded prompt size and **`VectorModelTimeoutMs`**).
 
 ## Multi-tenant isolation
 

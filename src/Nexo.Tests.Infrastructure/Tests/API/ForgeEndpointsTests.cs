@@ -24,10 +24,11 @@ public sealed class ForgeEndpointsTests : IDisposable
     {
         var services = new ServiceCollection();
         services.AddLogging();
-        services.Configure<ForgeSessionOptions>(_ => { });
+        services.Configure<ForgeSessionOptions>(_ => { _.AllowMapFetchWhenAllowedHostsEmpty = true; });
         services.AddHttpClient("forge-map")
             .ConfigurePrimaryHttpMessageHandler(static () => new HttpClientHandler());
-        services.AddSingleton<IVectorMapIntelligenceService, NoOpVectorMapIntelligenceService>();
+        services.AddSingleton<HeuristicVectorMapIntelligenceService>();
+        services.AddSingleton<IVectorMapIntelligenceService>(sp => sp.GetRequiredService<HeuristicVectorMapIntelligenceService>());
         services.AddSingleton<MapPipelineRunner>();
         return services.BuildServiceProvider().GetRequiredService<MapPipelineRunner>();
     });

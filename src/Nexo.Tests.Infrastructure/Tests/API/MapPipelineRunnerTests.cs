@@ -31,10 +31,13 @@ public sealed class MapPipelineRunnerTests
         {
             o.MaxFetchResponseBytes = 1024;
             o.EnableVectorIntelligence = false;
+            o.AllowMapFetchWhenAllowedHostsEmpty = false;
+            o.AllowedMapFetchHosts = ["example.com"];
         });
         services.AddHttpClient("forge-map")
             .ConfigurePrimaryHttpMessageHandler(() => new OkHandler());
-        services.AddSingleton<IVectorMapIntelligenceService, NoOpVectorMapIntelligenceService>();
+        services.AddSingleton<HeuristicVectorMapIntelligenceService>();
+        services.AddSingleton<IVectorMapIntelligenceService>(sp => sp.GetRequiredService<HeuristicVectorMapIntelligenceService>());
         services.AddSingleton<MapPipelineRunner>();
 
         await using var sp = services.BuildServiceProvider();
@@ -49,7 +52,7 @@ public sealed class MapPipelineRunnerTests
         var req = new MapPipelineRunRequest(
             DryRun: false,
             TimeoutMs: 5000,
-            VectorDataUrl: "https://example.test/data.bin");
+            VectorDataUrl: "https://example.com/data.bin");
 
         var result = await runner.RunAsync(plan, req);
         result.Success.Should().BeTrue();
@@ -61,10 +64,11 @@ public sealed class MapPipelineRunnerTests
     {
         var services = new ServiceCollection();
         services.AddLogging();
-        services.Configure<ForgeSessionOptions>(_ => { });
+        services.Configure<ForgeSessionOptions>(o => { o.AllowMapFetchWhenAllowedHostsEmpty = true; });
         services.AddHttpClient("forge-map")
             .ConfigurePrimaryHttpMessageHandler(() => new OkHandler());
-        services.AddSingleton<IVectorMapIntelligenceService, NoOpVectorMapIntelligenceService>();
+        services.AddSingleton<HeuristicVectorMapIntelligenceService>();
+        services.AddSingleton<IVectorMapIntelligenceService>(sp => sp.GetRequiredService<HeuristicVectorMapIntelligenceService>());
         services.AddSingleton<MapPipelineRunner>();
         await using var sp = services.BuildServiceProvider();
         var runner = sp.GetRequiredService<MapPipelineRunner>();
