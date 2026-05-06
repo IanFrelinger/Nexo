@@ -31,6 +31,7 @@
 //   (see also NexoSecurityOptions for auth-related env vars)
 // ──────────────────────────────────────────────────────────────────────────────
 
+using System.Net;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
@@ -38,6 +39,7 @@ using Microsoft.Extensions.Options;
 using Nexo.API.Endpoints;
 using Nexo.API.Forge;
 using Nexo.API.Security;
+using Nexo.GameDomain.Mapping;
 using Nexo.BackgroundAgents.Extending;
 using Nexo.BackgroundAgents.HostRunners;
 using Nexo.BackgroundAgents.Optimization;
@@ -74,18 +76,15 @@ builder.Services.Configure<ForgeSessionOptions>(
     builder.Configuration.GetSection(ForgeSessionOptions.SectionPath));
 builder.Services.AddNexoRuntimeRouting(builder.Configuration);
 
-builder.Services.AddSingleton<IForgeStateService>(sp =>
-{
-    var opts = sp.GetRequiredService<IOptions<ForgeSessionOptions>>().Value;
-    var path = opts.LiteDbPath?.Trim();
-    if (string.IsNullOrEmpty(path))
-        return new InMemoryForgeStateService();
-
-    var resolved = Path.IsPathRooted(path)
-        ? path
-        : Path.GetFullPath(Path.Combine(sp.GetRequiredService<IWebHostEnvironment>().ContentRootPath, path));
-    return new LiteDbForgeStateService(resolved, sp.GetRequiredService<ILoggerFactory>());
-});
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddHttpClient("forge-map")
+    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
+    {
+        AutomaticDecompression = DecompressionMethods.All
+    });
+builder.Services.AddSingleton<IVectorMapIntelligenceService, NoOpVectorMapIntelligenceService>();
+builder.Services.AddSingleton<MapPipelineRunner>();
+builder.Services.AddSingleton<IForgeStateService, TenantPartitionedForgeStateService>();
 
 // Planner / optimizer / tester background agents need the same runners as `nexo background-agent daemon`.
 builder.Services.TryAddSingleton<ICodeAnalysisRunner, CodeAnalysisRunnerAdapter>();
@@ -173,6 +172,7 @@ var app = builder.Build();
 // --- Middleware pipeline: SPA static files → auth → API endpoints ---
 app.UseDefaultFiles();
 app.UseStaticFiles();
+app.UseMiddleware<ForgeTenantMiddleware>();
 app.UseNexoApiKeyAuth();
 
 app.MapNexoEndpoints();

@@ -1,6 +1,8 @@
 using System.Reflection;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Nexo.API.Endpoints;
 using Nexo.API.Forge;
 using Nexo.GameDomain.Aesthetics;
@@ -17,6 +19,18 @@ namespace Nexo.Tests.Infrastructure.Tests.API;
 public sealed class ForgeEndpointsTests : IDisposable
 {
     private static readonly InMemoryForgeStateService Forge = new();
+
+    private static readonly Lazy<MapPipelineRunner> PipelineRunner = new(() =>
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.Configure<ForgeSessionOptions>(_ => { });
+        services.AddHttpClient("forge-map")
+            .ConfigurePrimaryHttpMessageHandler(static () => new HttpClientHandler());
+        services.AddSingleton<IVectorMapIntelligenceService, NoOpVectorMapIntelligenceService>();
+        services.AddSingleton<MapPipelineRunner>();
+        return services.BuildServiceProvider().GetRequiredService<MapPipelineRunner>();
+    });
 
     public ForgeEndpointsTests()
     {
@@ -287,17 +301,23 @@ public sealed class ForgeEndpointsTests : IDisposable
     private static async Task<IResult> InvokeAsync(MethodInfo handler, params object?[] args)
     {
         var parameters = handler.GetParameters();
-        object?[] merged;
-        if (parameters.Length > 0 && parameters[0].ParameterType == typeof(IForgeStateService))
+        var merged = new object?[parameters.Length];
+        var argIdx = 0;
+        for (var i = 0; i < parameters.Length; i++)
         {
-            merged = new object?[args.Length + 1];
-            merged[0] = Forge;
-            Array.Copy(args, 0, merged, 1, args.Length);
+            var pt = parameters[i].ParameterType;
+            if (pt == typeof(IForgeStateService))
+                merged[i] = Forge;
+            else if (pt == typeof(MapPipelineRunner))
+                merged[i] = PipelineRunner.Value;
+            else
+            {
+                merged[i] = argIdx < args.Length ? args[argIdx] : Type.Missing;
+                argIdx++;
+            }
         }
-        else
-        {
-            merged = args;
-        }
+
+        argIdx.Should().Be(args.Length, "argument count must match handler signature after injected services");
 
         var task = (Task<IResult>)handler.Invoke(null, merged)!;
         return await task;

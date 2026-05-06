@@ -479,18 +479,20 @@ public static class ForgeEndpoints
 
     private static async Task<IResult> RunMapPipelineAsync(
         IForgeStateService forge,
+        MapPipelineRunner pipeline,
         [FromBody] MapPipelineRunRequest? body)
     {
-        await Task.CompletedTask;
         var req = body ?? new MapPipelineRunRequest();
-        if (!req.DryRun)
-            return Results.BadRequest(new ProblemDetails
-            {
-                Title = "Only dryRun=true is supported in the reference API host"
-            });
-
         var plan = MapAdaptationPlanner.Plan(forge.Session, BuiltInAesthetics);
-        var result = MapPipelineDryRun.Execute(plan, req);
+
+        if (req.DryRun)
+        {
+            await Task.CompletedTask;
+            var dry = MapPipelineDryRun.Execute(plan, req);
+            return Results.Ok(dry);
+        }
+
+        var result = await pipeline.RunAsync(plan, req).ConfigureAwait(false);
         return Results.Ok(result);
     }
 

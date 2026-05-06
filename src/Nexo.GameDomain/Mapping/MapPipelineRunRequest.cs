@@ -5,4 +5,6 @@ namespace Nexo.GameDomain.Mapping;
 /// </summary>
 public sealed record MapPipelineRunRequest(
     bool DryRun = true,
-    int TimeoutMs = 30_000);
+    int TimeoutMs = 30_000,
+    string? VectorDataUrl = null,
+    string? TerrainDataUrl = null);
