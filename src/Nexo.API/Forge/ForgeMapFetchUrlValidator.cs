@@ -69,7 +69,7 @@ public static class ForgeMapFetchUrlValidator
 
         if (IPAddress.TryParse(host, out var literal))
         {
-            if (IsBlockedIp(literal))
+            if (IsBlockedAddress(literal))
             {
                 error = "IP literal resolves to a loopback, link-local, or private address.";
                 return false;
@@ -96,7 +96,7 @@ public static class ForgeMapFetchUrlValidator
 
             foreach (var a in addresses)
             {
-                if (IsBlockedIp(a))
+                if (IsBlockedAddress(a))
                 {
                     error = "Host resolves to a loopback, link-local, or private address.";
                     return false;
@@ -106,6 +106,9 @@ public static class ForgeMapFetchUrlValidator
 
         return true;
     }
+
+    /// <summary>True if the address must not be used for outbound map fetches (loopback, RFC1918, etc.).</summary>
+    public static bool IsBlockedIp(IPAddress ip) => IsBlockedAddress(ip);
 
     private static bool HostMatchesAllowlist(string host, IReadOnlyList<string> allowed)
     {
@@ -131,7 +134,7 @@ public static class ForgeMapFetchUrlValidator
         return false;
     }
 
-    private static bool IsBlockedIp(IPAddress ip)
+    private static bool IsBlockedAddress(IPAddress ip)
     {
         if (IPAddress.IsLoopback(ip))
             return true;
@@ -149,7 +152,7 @@ public static class ForgeMapFetchUrlValidator
         if (ip.AddressFamily == AddressFamily.InterNetworkV6)
         {
             if (ip.IsIPv4MappedToIPv6)
-                return IsBlockedIp(ip.MapToIPv4());
+                return IsBlockedAddress(ip.MapToIPv4());
             if (ip.IsIPv6LinkLocal)
                 return true;
             var s = ip.ToString();

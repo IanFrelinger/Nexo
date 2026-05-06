@@ -78,10 +78,10 @@ builder.Services.AddNexoRuntimeRouting(builder.Configuration);
 
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddHttpClient("forge-map")
-    .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler
-    {
-        AutomaticDecompression = DecompressionMethods.All
-    });
+    .ConfigurePrimaryHttpMessageHandler(sp =>
+        ForgeMapHttpSocketsHandlerFactory.Create(
+            sp.GetRequiredService<IOptionsMonitor<ForgeSessionOptions>>(),
+            sp.GetRequiredService<ILoggerFactory>()));
 builder.Services.AddSingleton<IForgeStateService, TenantPartitionedForgeStateService>();
 
 // Planner / optimizer / tester background agents need the same runners as `nexo background-agent daemon`.
@@ -179,8 +179,9 @@ var app = builder.Build();
 // --- Middleware pipeline: SPA static files → auth → API endpoints ---
 app.UseDefaultFiles();
 app.UseStaticFiles();
-app.UseMiddleware<ForgeTenantMiddleware>();
 app.UseNexoApiKeyAuth();
+app.UseMiddleware<ForgeAuthenticationMiddleware>();
+app.UseMiddleware<ForgeTenantMiddleware>();
 
 app.MapNexoEndpoints();
 app.MapForgeEndpoints();

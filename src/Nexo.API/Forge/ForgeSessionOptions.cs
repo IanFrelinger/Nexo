@@ -47,6 +47,34 @@ public sealed class ForgeSessionOptions
     /// <summary>When true, allows http:// URLs for map fetches (default https only).</summary>
     public bool AllowInsecureMapFetch { get; set; }
 
+    /// <summary>When true, follows HTTP redirects for map fetches (default false).</summary>
+    public bool AllowHttpRedirectsForMapFetch { get; set; }
+
+    /// <summary>
+    /// When true and the caller is authenticated, the Forge tenant id is taken from the claim
+    /// <see cref="TenantClaimType"/> instead of the tenant header.
+    /// </summary>
+    public bool BindTenantFromClaims { get; set; }
+
+    /// <summary>Claim type for <see cref="BindTenantFromClaims"/> (e.g. <c>tid</c>).</summary>
+    public string? TenantClaimType { get; set; }
+
+    /// <summary>
+    /// When <see cref="BindTenantFromClaims"/> is true and this is false (default), unauthenticated callers
+    /// cannot fall back to <see cref="TenantHeaderName"/>; they receive 401 instead.
+    /// </summary>
+    public bool AllowTenantHeaderWhenClaimsBindingEnabled { get; set; }
+
+    /// <summary>
+    /// When true, requests under <c>/api/forge</c> must be authenticated (via Nexo built-in auth).
+    /// </summary>
+    public bool RequireForgeAuthentication { get; set; }
+
+    /// <summary>
+    /// When true (default), <see cref="MapPipelineRunner"/> records lightweight GeoJSON / OSM / MVT parse stats on <c>fetch_vector</c>.
+    /// </summary>
+    public bool EnableVectorPayloadParsing { get; set; } = true;
+
     /// <summary>
     /// When set, session and macros persist via LiteDB at this path (absolute or relative to content root).
     /// </summary>

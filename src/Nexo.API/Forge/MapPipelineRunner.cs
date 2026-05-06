@@ -105,6 +105,20 @@ public sealed class MapPipelineRunner
 
                         var insp = VectorMapPayloadInspector.Inspect(new ReadOnlyMemory<byte>(r.Body), r.ContentType);
                         var detail = $"Fetched {r.ByteLength} bytes; format={insp.FormatGuess}";
+                        if (opts.EnableVectorPayloadParsing && r.ByteLength > 0)
+                        {
+                            var parse = VectorMapPayloadSummarizer.Summarize(
+                                new ReadOnlyMemory<byte>(r.Body),
+                                insp,
+                                r.ContentType,
+                                request.MvtTileZoom < 0
+                                    ? VectorMapPayloadSummarizer.DefaultMvtTileZoom
+                                    : Math.Clamp(request.MvtTileZoom, 0, 22));
+                            detail += $"; parse={parse.ParserKind}: {parse.Summary}";
+                            if (parse.Details.Count > 0)
+                                detail += " (" + string.Join("; ", parse.Details) + ")";
+                        }
+
                         if (opts.EnableVectorIntelligence && r.ByteLength > 0)
                         {
                             try

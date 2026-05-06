@@ -19,8 +19,13 @@ the session.
   **`ForgeMapFetchUrlValidator`**: https (or http only if **`AllowInsecureMapFetch`**), no userinfo,
   DNS must not resolve to loopback/private/link-local, and the host must match
   **`AllowedMapFetchHosts`** unless **`AllowMapFetchWhenAllowedHostsEmpty`** is true (dev/tests).
+  The **`forge-map`** **`HttpClient`** uses **`SocketsHttpHandler.ConnectCallback`** so the TCP connection
+  is opened only to addresses that pass the same private-range checks (mitigates DNS rebinding).
   Responses are capped by **`MaxFetchResponseBytes`**. **`VectorMapPayloadInspector`** adds a
-  lightweight format guess on **`fetch_vector`**.
+  lightweight format guess on **`fetch_vector`**. When **`EnableVectorPayloadParsing`** is true (default),
+  **`VectorMapPayloadSummarizer`** parses GeoJSON, OSM XML, or Mapbox MVT just far enough to record
+  feature counts and layer names in the stage detail (full tessellation stays host-side). **`MvtTileZoom`**
+  on the request selects the projection tile for MVT decoding (0–22).
 - When **`EnableVectorIntelligence`** is true, **`IVectorMapIntelligenceService`** runs on fetched
   vector bytes. The default implementation is **`ModelAugmentedVectorMapIntelligenceService`**, which
   uses **`HeuristicVectorMapIntelligenceService`** and optionally **`IModel`** when
@@ -31,6 +36,11 @@ the session.
 Send **`X-Forge-Tenant`** (configurable via **`Nexo:ForgeSession:TenantHeaderName`**) to isolate
 Forge session and macro state per tenant. With LiteDB, each tenant gets a file under
 `<base>-tenants/<tenant>/forge.db` next to the configured root path.
+
+With **`BindTenantFromClaims`** and **`TenantClaimType`**, authenticated callers use the tenant id from
+that claim. When claims binding is enabled, unauthenticated callers cannot fall back to the header unless
+**`AllowTenantHeaderWhenClaimsBindingEnabled`** is true (otherwise **401**). Set **`RequireForgeAuthentication`**
+to require Nexo built-in auth for all **`/api/forge`** routes.
 
 ## Engine manifest
 
