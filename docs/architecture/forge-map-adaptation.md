@@ -60,3 +60,7 @@ in **`Program.cs`** (per-tenant in-memory or per-tenant LiteDB files).
 ## GitHub Actions
 
 If workflows are manual-only, align branch protection with **`.github/workflows/README.md`**.
+
+## Host integration (engines)
+
+See **`docs/architecture/forge-map-host-integration.md`** and the **`docs/samples/ForgeMapHostSample`** project for milestone M1–M3 wiring.
