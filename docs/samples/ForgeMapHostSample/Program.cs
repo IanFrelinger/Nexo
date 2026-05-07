@@ -7,13 +7,14 @@ var engineId = Environment.GetEnvironmentVariable("FORGE_ENGINE_ID") ?? "unity";
 var mapboxToken = Environment.GetEnvironmentVariable("MAPBOX_ACCESS_TOKEN");
 var tileset = Environment.GetEnvironmentVariable("MAPBOX_TILESET_ID") ?? "mapbox.mapbox-streets-v8";
 
-Console.WriteLine("=== Nexo Forge map host integration sample (M1–M3) ===");
+Console.WriteLine("=== Nexo Forge map host integration sample (M1–M4) ===");
 Console.WriteLine($"API base: {baseUrl}");
 Console.WriteLine($"Engine id: {engineId}");
 
 using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(120) };
 
 await RunManifestStep(http, baseUrl, engineId).ConfigureAwait(false);
+await RunPyramidStep(http, baseUrl).ConfigureAwait(false);
 
 if (!string.IsNullOrWhiteSpace(mapboxToken))
 {
@@ -62,6 +63,41 @@ static int ParseIntEnv(string name, int fallback)
         System.Globalization.CultureInfo.InvariantCulture, out var v)
         ? v
         : fallback;
+}
+
+static async Task RunPyramidStep(HttpClient http, string baseUrl)
+{
+    Console.WriteLine();
+    Console.WriteLine("=== LOD tile pyramid (M4) ===");
+    var finest = ParseIntEnv("PYRAMID_FINEST_ZOOM", 14);
+    var url = $"{baseUrl}/api/forge/map/tile-pyramid?finestZoom={finest}";
+    Console.WriteLine($"GET {url}");
+    try
+    {
+        using var resp = await http.GetAsync(url).ConfigureAwait(false);
+        var body = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
+        if (!resp.IsSuccessStatusCode)
+        {
+            Console.WriteLine($"HTTP {(int)resp.StatusCode}: {body}");
+            return;
+        }
+
+        using var doc = JsonDocument.Parse(body);
+        var root = doc.RootElement;
+        var fz = root.GetProperty("finestZoom").GetInt32();
+        var tiers = root.GetProperty("tiers");
+        Console.WriteLine($"  finestZoom={fz}, tiers={tiers.GetArrayLength()}");
+        foreach (var t in tiers.EnumerateArray())
+        {
+            var lod = t.GetProperty("lodLevel").GetInt32();
+            var z = t.GetProperty("zoom").GetInt32();
+            Console.WriteLine($"  LOD {lod}: zoom={z}, detailFactor={t.GetProperty("detailFactor").GetDouble()}");
+        }
+    }
+    catch (HttpRequestException ex)
+    {
+        Console.WriteLine($"Request failed: {ex.Message}");
+    }
 }
 
 static async Task RunManifestStep(HttpClient http, string baseUrl, string engineId)

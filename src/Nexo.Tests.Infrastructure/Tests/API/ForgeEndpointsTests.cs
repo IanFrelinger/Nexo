@@ -253,6 +253,20 @@ public sealed class ForgeEndpointsTests : IDisposable
     }
 
     [Fact(Timeout = 15000)]
+    public async Task GetTilePyramid_ReturnsTiers()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"), new ForgeCreateSessionRequest("PyrTest"));
+        await InvokeAsync(GetHandler("ApplyAestheticAsync"), new ForgeApplyAestheticRequest("voxel"));
+
+        var result = await InvokeAsync(GetHandler("GetTilePyramidAsync"), (int?)14);
+        var wrap = ExtractOkValue<ForgeTilePyramidResponse>(result);
+        wrap.FinestZoom.Should().Be(14);
+        wrap.Tiers.Should().HaveCountGreaterThan(1);
+        wrap.Tiers[0].Zoom.Should().Be(14);
+        wrap.Tiers[1].Zoom.Should().Be(13);
+    }
+
+    [Fact(Timeout = 15000)]
     public async Task RunMapPipeline_DryRun_Succeeds()
     {
         await InvokeAsync(GetHandler("CreateSessionAsync"), new ForgeCreateSessionRequest("PipeTest"));

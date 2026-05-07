@@ -32,7 +32,17 @@ This document tracks **host-side** work that sits next to runtime types in **`Ne
 - **`MapHostImportHints`** returns actionable bullet text per **`VectorMapParseSummary.ParserKind`** (`geojson`, `osm_xml`, `mvt`).
 - Actual tessellation / voxel fill remains **in the engine**; hints narrow what importers should prioritize.
 
-## Next steps (not automated here)
+## M4 — LOD tile pyramid (implemented)
+
+**Goal:** Deterministic **zoom per aesthetic LOD tier** so hosts prefetch/stream the right tiles by distance.
+
+**Implemented in-repo:**
+
+- **`MapLodPyramidPlanner`** + **`MapTilePyramidTier`** — given **`LodLevels`** and **`finestZoom`**, yields zoom **14→13→12…** (one step per LOD level).
+- **`GET /api/forge/map/tile-pyramid?finestZoom=14`** — JSON `{ finestZoom, tiers[] }` for the active aesthetic.
+- Sample prints tiers after the manifest step (**`PYRAMID_FINEST_ZOOM`** env).
+
+## Next steps (later milestones)
 
 - Import **`surfaceBindings`** into engine shaders/material slots.
 - Cache tiles by **`z/x/y`** under a content folder keyed by aesthetic id.

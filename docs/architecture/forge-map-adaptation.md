@@ -34,6 +34,10 @@ the session. The API uses **`BuiltInAestheticPacks.Catalog`** as the default bui
   uses **`HeuristicVectorMapIntelligenceService`** and optionally **`IModel`** when
   **`EnableVectorModel`** is true (bounded prompt size and **`VectorModelTimeoutMs`**).
 
+## LOD tile pyramid
+
+`GET /api/forge/map/tile-pyramid?finestZoom=14` returns **`ForgeTilePyramidResponse`**: zoom steps per **`LodLevel`** for streaming/prefetch (see **`MapLodPyramidPlanner`**).
+
 ## Multi-tenant isolation
 
 Send **`X-Forge-Tenant`** (configurable via **`Nexo:ForgeSession:TenantHeaderName`**) to isolate
@@ -63,4 +67,4 @@ If workflows are manual-only, align branch protection with **`.github/workflows/
 
 ## Host integration (engines)
 
-See **`docs/architecture/forge-map-host-integration.md`** and the **`docs/samples/ForgeMapHostSample`** project for milestone M1–M3 wiring.
+See **`docs/architecture/forge-map-host-integration.md`** and the **`docs/samples/ForgeMapHostSample`** project for milestone M1–M4 wiring.

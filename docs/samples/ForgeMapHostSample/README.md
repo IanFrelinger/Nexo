@@ -1,10 +1,11 @@
-# Forge map host sample (M1–M3)
+# Forge map host sample (M1–M4)
 
-Runnable **.NET 8** console app that demonstrates:
+Runnable **.NET 8** console app that demonstrates **M1–M4**:
 
 1. **M1 — Manifest consumption:** `GET /api/forge/engine/{engineId}/aesthetic-manifest`, unwraps the JSON envelope, prints pack id / profile / binding count.
 2. **M2 — Tile orchestration:** Uses **`WebMercatorTileMath`** + **`VectorTileUrlBuilder`** (from `Nexo.GameDomain`) to build a Mapbox vector tile URL from lon/lat/zoom + **`MAPBOX_ACCESS_TOKEN`**.
 3. **M3 — Pipeline + hints:** `POST /api/forge/map/pipeline/run` with the tile URL and tile indices; prints **`MapHostImportHints`** for engine importers.
+4. **M4 — LOD pyramid:** `GET /api/forge/map/tile-pyramid` — prints zoom tier(s) from **`LodLevels`** vs **`PYRAMID_FINEST_ZOOM`**.
 
 ## Prerequisites
 
@@ -37,7 +38,7 @@ dotnet run
 | `FORGE_ENGINE_ID` | `unity` | Path segment for manifest endpoint |
 | `MAPBOX_ACCESS_TOKEN` | _(empty)_ | Enables M2/M3 Mapbox URL + pipeline fetch |
 | `MAPBOX_TILESET_ID` | `mapbox.mapbox-streets-v8` | Mapbox tileset path |
-| `SAMPLE_LAT` / `SAMPLE_LON` / `SAMPLE_ZOOM` | SF / `14` | Tile selection |
+| `PYRAMID_FINEST_ZOOM` | `14` | Query param for **`GET /api/forge/map/tile-pyramid`** (M4 LOD pyramid). |
 
 ## Security
 

@@ -107,6 +107,11 @@ public static class ForgeEndpoints
             .WithSummary("Return map adaptation plan for the active aesthetic")
             .Produces<MapAdaptationPlan>(StatusCodes.Status200OK);
 
+        group.MapGet("/map/tile-pyramid", GetTilePyramidAsync)
+            .WithName("GetForgeMapTilePyramid")
+            .WithSummary("LOD tile pyramid (zoom per tier) from active aesthetic LodLevels and finestZoom")
+            .Produces<ForgeTilePyramidResponse>(StatusCodes.Status200OK);
+
         group.MapPost("/map/pipeline/run", RunMapPipelineAsync)
             .WithName("RunForgeMapPipeline")
             .WithSummary("Run (or dry-run) the map adaptation pipeline for the current plan")
@@ -460,6 +465,17 @@ public static class ForgeEndpoints
         var json = EngineAestheticManifestBuilder.BuildJson(engineId, pack);
         return Results.Ok(new ForgeEngineManifestResponse(json));
     }
+
+    private static async Task<IResult> GetTilePyramidAsync(
+        IForgeStateService forge,
+        [FromQuery] int? finestZoom)
+    {
+        await Task.CompletedTask;
+        var z = finestZoom is >= 0 and <= 22 ? finestZoom.Value : MapLodPyramidPlanner.DefaultFinestZoom;
+        var pack = MapAdaptationPlanner.GetActivePack(forge.Session, BuiltInAestheticPacks.Catalog);
+        var tiers = MapLodPyramidPlanner.Build(pack.LodLevels, z);
+        return Results.Ok(new ForgeTilePyramidResponse(z, tiers));
+    }
 }
 
 public sealed record ForgeCreateSessionRequest(
@@ -488,3 +504,5 @@ public sealed record ForgeApplyAestheticRequest(
     SettingScope? Scope = null);
 
 public sealed record ForgeEngineManifestResponse(string Json);
+
+public sealed record ForgeTilePyramidResponse(int FinestZoom, IReadOnlyList<MapTilePyramidTier> Tiers);
