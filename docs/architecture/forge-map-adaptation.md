@@ -38,6 +38,13 @@ the session. The API uses **`BuiltInAestheticPacks.Catalog`** as the default bui
 
 `GET /api/forge/map/tile-pyramid?finestZoom=14` returns **`ForgeTilePyramidResponse`**: zoom steps per **`LodLevel`** for streaming/prefetch (see **`MapLodPyramidPlanner`**).
 
+## Map verification (M5)
+
+When **`Nexo:ForgeSession:EnableMapVerification`** is true (default), **`MapPipelineRunner`** runs **`IMapVerificationService`**
+after **`VectorMapPayloadSummarizer`**. The default implementation is **`HeuristicMapVerificationService`**, which emits **info/warning**
+codes (transport/water hints for MVT, feature counts for GeoJSON, tagged-way stats for OSM XML) into the **`fetch_vector`** stage detail as **`verify=…`**.
+Verification does not fail the HTTP pipeline by itself; hosts may scan **`Issues`** if you extend the service later.
+
 ## Multi-tenant isolation
 
 Send **`X-Forge-Tenant`** (configurable via **`Nexo:ForgeSession:TenantHeaderName`**) to isolate
@@ -67,4 +74,4 @@ If workflows are manual-only, align branch protection with **`.github/workflows/
 
 ## Host integration (engines)
 
-See **`docs/architecture/forge-map-host-integration.md`** and the **`docs/samples/ForgeMapHostSample`** project for milestone M1–M4 wiring.
+See **`docs/architecture/forge-map-host-integration.md`** and the **`docs/samples/ForgeMapHostSample`** project for milestone M1–M5 wiring.

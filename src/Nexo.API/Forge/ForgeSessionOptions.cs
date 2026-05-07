@@ -76,6 +76,11 @@ public sealed class ForgeSessionOptions
     public bool EnableVectorPayloadParsing { get; set; } = true;
 
     /// <summary>
+    /// When true (default), <see cref="MapPipelineRunner"/> runs <see cref="Nexo.GameDomain.Mapping.IMapVerificationService"/> after vector parse.
+    /// </summary>
+    public bool EnableMapVerification { get; set; } = true;
+
+    /// <summary>
     /// When set, session and macros persist via LiteDB at this path (absolute or relative to content root).
     /// </summary>
     public string? LiteDbPath { get; set; }

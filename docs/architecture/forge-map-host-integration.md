@@ -42,11 +42,21 @@ This document tracks **host-side** work that sits next to runtime types in **`Ne
 - **`GET /api/forge/map/tile-pyramid?finestZoom=14`** — JSON `{ finestZoom, tiers[] }` for the active aesthetic.
 - Sample prints tiers after the manifest step (**`PYRAMID_FINEST_ZOOM`** env).
 
+## M5 — Map verification (implemented)
+
+**Goal:** Rule-based sanity checks on parsed vector payloads for LOD / QA workflows.
+
+**Implemented in-repo:**
+
+- **`IMapVerificationService`**, **`HeuristicMapVerificationService`**, **`MapVerificationResult`** / **`MapVerificationIssue`**.
+- **`MapPipelineRunner`** appends **`verify=…`** after parse when **`EnableMapVerification`** is true (**`Nexo:ForgeSession`**).
+- Unit tests in **`HeuristicMapVerificationServiceTests`**.
+
 ## Next steps (later milestones)
 
 - Import **`surfaceBindings`** into engine shaders/material slots.
 - Cache tiles by **`z/x/y`** under a content folder keyed by aesthetic id.
-- Add **`IMapVerificationService`** rules when you need CI fixtures on canned tiles.
+- Optional model-augmented verification (off by default; keep latency bounded).
 
 ## Related
 

@@ -98,6 +98,7 @@ builder.Services.AddNexo(options =>
 });
 
 builder.Services.AddSingleton<HeuristicVectorMapIntelligenceService>();
+builder.Services.AddSingleton<IMapVerificationService, HeuristicMapVerificationService>();
 builder.Services.AddSingleton<IVectorMapIntelligenceService>(sp =>
     new ModelAugmentedVectorMapIntelligenceService(
         sp.GetRequiredService<Nexo.Abstractions.IModel>(),

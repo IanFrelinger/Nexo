@@ -51,6 +51,7 @@ public sealed class MapPipelineRunnerTests
             .ConfigurePrimaryHttpMessageHandler(() => new OkHandler());
         services.AddSingleton<HeuristicVectorMapIntelligenceService>();
         services.AddSingleton<IVectorMapIntelligenceService>(sp => sp.GetRequiredService<HeuristicVectorMapIntelligenceService>());
+        services.AddSingleton<IMapVerificationService, HeuristicMapVerificationService>();
         services.AddSingleton<IForgeStateService>(new InMemoryForgeStateService());
         services.AddSingleton<MapPipelineRunner>();
 
@@ -72,6 +73,7 @@ public sealed class MapPipelineRunnerTests
         result.Success.Should().BeTrue();
         var vec = result.Stages.Should().Contain(s => s.Stage == "fetch_vector" && s.Status == "ok").Subject;
         vec.Detail.Should().Contain("parse=skipped");
+        vec.Detail.Should().Contain("verify=");
     }
 
     [Fact]
@@ -91,6 +93,7 @@ public sealed class MapPipelineRunnerTests
             .ConfigurePrimaryHttpMessageHandler(() => new JsonOkHandler());
         services.AddSingleton<HeuristicVectorMapIntelligenceService>();
         services.AddSingleton<IVectorMapIntelligenceService>(sp => sp.GetRequiredService<HeuristicVectorMapIntelligenceService>());
+        services.AddSingleton<IMapVerificationService, HeuristicMapVerificationService>();
         services.AddSingleton<IForgeStateService>(new InMemoryForgeStateService());
         services.AddSingleton<MapPipelineRunner>();
         await using var sp = services.BuildServiceProvider();
@@ -108,6 +111,7 @@ public sealed class MapPipelineRunnerTests
             VectorDataUrl: "https://example.com/tiles.geojson"));
 
         result.Stages.Single().Detail.Should().Contain("parse=geojson");
+        result.Stages.Single().Detail.Should().Contain("verify=");
     }
 
     [Fact]
@@ -120,6 +124,7 @@ public sealed class MapPipelineRunnerTests
             .ConfigurePrimaryHttpMessageHandler(() => new OkHandler());
         services.AddSingleton<HeuristicVectorMapIntelligenceService>();
         services.AddSingleton<IVectorMapIntelligenceService>(sp => sp.GetRequiredService<HeuristicVectorMapIntelligenceService>());
+        services.AddSingleton<IMapVerificationService, HeuristicMapVerificationService>();
         services.AddSingleton<IForgeStateService>(new InMemoryForgeStateService());
         services.AddSingleton<MapPipelineRunner>();
         await using var sp = services.BuildServiceProvider();

@@ -15,6 +15,7 @@ public sealed class MapPipelineRunner
     private readonly IHttpClientFactory _httpFactory;
     private readonly IVectorMapIntelligenceService _intelligence;
     private readonly IForgeStateService _forge;
+    private readonly IMapVerificationService _verification;
     private readonly IOptions<ForgeSessionOptions> _forgeOptions;
     private readonly ILogger<MapPipelineRunner> _log;
 
@@ -22,12 +23,14 @@ public sealed class MapPipelineRunner
         IHttpClientFactory httpFactory,
         IVectorMapIntelligenceService intelligence,
         IForgeStateService forge,
+        IMapVerificationService verification,
         IOptions<ForgeSessionOptions> forgeOptions,
         ILogger<MapPipelineRunner> log)
     {
         _httpFactory = httpFactory;
         _intelligence = intelligence;
         _forge = forge;
+        _verification = verification;
         _forgeOptions = forgeOptions;
         _log = log;
     }
@@ -135,9 +138,10 @@ public sealed class MapPipelineRunner
 
                         var insp = VectorMapPayloadInspector.Inspect(new ReadOnlyMemory<byte>(r.Body), r.ContentType);
                         var detail = $"Fetched {r.ByteLength} bytes; format={insp.FormatGuess}";
+                        VectorMapParseSummary? parse = null;
                         if (opts.EnableVectorPayloadParsing && r.ByteLength > 0)
                         {
-                            var parse = VectorMapPayloadSummarizer.Summarize(
+                            parse = VectorMapPayloadSummarizer.Summarize(
                                 new ReadOnlyMemory<byte>(r.Body),
                                 insp,
                                 r.ContentType,
@@ -148,6 +152,20 @@ public sealed class MapPipelineRunner
                             detail += $"; parse={parse.ParserKind}: {parse.Summary}";
                             if (parse.Details.Count > 0)
                                 detail += " (" + string.Join("; ", parse.Details) + ")";
+                        }
+
+                        if (opts.EnableMapVerification && parse is not null)
+                        {
+                            try
+                            {
+                                var ver = await _verification.VerifyAsync(insp, parse, linked.Token).ConfigureAwait(false);
+                                detail += $"; verify={ver.Summary}";
+                            }
+                            catch (Exception ex)
+                            {
+                                _log.LogWarning(ex, "Map verification failed; continuing.");
+                                detail += "; verify failed (see logs)";
+                            }
                         }
 
                         if (opts.EnableVectorIntelligence && r.ByteLength > 0)
