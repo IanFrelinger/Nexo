@@ -50,7 +50,8 @@ This document tracks **host-side** work that sits next to runtime types in **`Ne
 
 - **`IMapVerificationService`**, **`HeuristicMapVerificationService`**, **`MapVerificationResult`** / **`MapVerificationIssue`**.
 - **`MapPipelineRunner`** appends **`verify=…`** after parse when **`EnableMapVerification`** is true (**`Nexo:ForgeSession`**).
-- Unit tests in **`HeuristicMapVerificationServiceTests`**.
+- Optional **`MapVerificationFailsPipeline`**: when **`true`**, verification **Warning+** marks **`fetch_vector`** as **`error`** (`Success=false` on the run).
+- Unit tests in **`HeuristicMapVerificationServiceTests`** and pipeline strict-mode tests.
 
 ## Next steps (later milestones)
 

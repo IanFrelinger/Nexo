@@ -128,6 +128,7 @@ public sealed class MapPipelineRunner
                     }
                     else
                     {
+                        var verificationFatal = false;
                         var r = await FetchBytesAsync(client, request.VectorDataUrl!, maxBytes, linked.Token)
                             .ConfigureAwait(false);
                         if (!r.Success)
@@ -160,11 +161,16 @@ public sealed class MapPipelineRunner
                             {
                                 var ver = await _verification.VerifyAsync(insp, parse, linked.Token).ConfigureAwait(false);
                                 detail += $"; verify={ver.Summary}";
+                                if (opts.MapVerificationFailsPipeline &&
+                                    ver.Issues.Any(i => i.Severity >= MapVerificationSeverity.Warning))
+                                    verificationFatal = true;
                             }
                             catch (Exception ex)
                             {
                                 _log.LogWarning(ex, "Map verification failed; continuing.");
                                 detail += "; verify failed (see logs)";
+                                if (opts.MapVerificationFailsPipeline)
+                                    verificationFatal = true;
                             }
                         }
 
@@ -185,7 +191,7 @@ public sealed class MapPipelineRunner
                             }
                         }
 
-                        stages.Add(new MapPipelineStageResult(stage, "ok", detail));
+                        stages.Add(new MapPipelineStageResult(stage, verificationFatal ? "error" : "ok", detail));
                     }
 
                     break;

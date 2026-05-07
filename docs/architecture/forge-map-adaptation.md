@@ -43,7 +43,7 @@ the session. The API uses **`BuiltInAestheticPacks.Catalog`** as the default bui
 When **`Nexo:ForgeSession:EnableMapVerification`** is true (default), **`MapPipelineRunner`** runs **`IMapVerificationService`**
 after **`VectorMapPayloadSummarizer`**. The default implementation is **`HeuristicMapVerificationService`**, which emits **info/warning**
 codes (transport/water hints for MVT, feature counts for GeoJSON, tagged-way stats for OSM XML) into the **`fetch_vector`** stage detail as **`verify=…`**.
-Verification does not fail the HTTP pipeline by itself; hosts may scan **`Issues`** if you extend the service later.
+With **`MapVerificationFailsPipeline`** **`false`** (default), verification notes are advisory only. When **`true`**, any issue at **Warning** severity or higher marks **`fetch_vector`** as **`error`** and sets **`MapPipelineRunResult.Success`** to **`false`** (CI / strict QA).
 
 ## Multi-tenant isolation
 

@@ -34,6 +34,18 @@ public sealed class MapPipelineRunnerTests
         }
     }
 
+    private sealed class EmptyGeoJsonHandler : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            const string json = """{"type":"FeatureCollection","features":[]}""";
+            return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            {
+                Content = new StringContent(json, System.Text.Encoding.UTF8, "application/geo+json")
+            });
+        }
+    }
+
     [Fact]
     public async Task RunAsync_FetchesVectorBytes_WhenUrlProvided()
     {
@@ -139,5 +151,87 @@ public sealed class MapPipelineRunnerTests
         var result = await runner.RunAsync(plan, new MapPipelineRunRequest(DryRun: false, TimeoutMs: 5000));
         result.Success.Should().BeTrue();
         result.Stages.Single().Status.Should().Be("skipped");
+    }
+
+    [Fact]
+    public async Task RunAsync_FetchVector_Error_When_MapVerificationFailsPipeline_And_VerificationWarning()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.Configure<ForgeSessionOptions>(o =>
+        {
+            o.MaxFetchResponseBytes = 4096;
+            o.MapVerificationFailsPipeline = true;
+            o.EnableMapVerification = true;
+            o.EnableVectorPayloadParsing = true;
+            o.EnableVectorIntelligence = false;
+            o.AllowMapFetchWhenAllowedHostsEmpty = false;
+            o.AllowedMapFetchHosts = ["example.com"];
+        });
+        services.AddHttpClient("forge-map")
+            .ConfigurePrimaryHttpMessageHandler(() => new EmptyGeoJsonHandler());
+        services.AddSingleton<HeuristicVectorMapIntelligenceService>();
+        services.AddSingleton<IVectorMapIntelligenceService>(sp => sp.GetRequiredService<HeuristicVectorMapIntelligenceService>());
+        services.AddSingleton<IMapVerificationService, HeuristicMapVerificationService>();
+        services.AddSingleton<IForgeStateService>(new InMemoryForgeStateService());
+        services.AddSingleton<MapPipelineRunner>();
+        await using var sp = services.BuildServiceProvider();
+        var runner = sp.GetRequiredService<MapPipelineRunner>();
+
+        var plan = new MapAdaptationPlan(
+            MapRenderingProfiles.VoxelGrid,
+            "voxel",
+            ["fetch_vector"],
+            []);
+
+        var result = await runner.RunAsync(plan, new MapPipelineRunRequest(
+            DryRun: false,
+            TimeoutMs: 5000,
+            VectorDataUrl: "https://example.com/empty.geojson"));
+
+        result.Success.Should().BeFalse();
+        var vec = result.Stages.Should().Contain(s => s.Stage == "fetch_vector").Subject;
+        vec.Status.Should().Be("error");
+        vec.Detail.Should().Contain("verify=");
+    }
+
+    [Fact]
+    public async Task RunAsync_FetchVector_Ok_When_MapVerificationFailsPipeline_False_EmptyGeoJson()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.Configure<ForgeSessionOptions>(o =>
+        {
+            o.MaxFetchResponseBytes = 4096;
+            o.MapVerificationFailsPipeline = false;
+            o.EnableMapVerification = true;
+            o.EnableVectorPayloadParsing = true;
+            o.EnableVectorIntelligence = false;
+            o.AllowMapFetchWhenAllowedHostsEmpty = false;
+            o.AllowedMapFetchHosts = ["example.com"];
+        });
+        services.AddHttpClient("forge-map")
+            .ConfigurePrimaryHttpMessageHandler(() => new EmptyGeoJsonHandler());
+        services.AddSingleton<HeuristicVectorMapIntelligenceService>();
+        services.AddSingleton<IVectorMapIntelligenceService>(sp => sp.GetRequiredService<HeuristicVectorMapIntelligenceService>());
+        services.AddSingleton<IMapVerificationService, HeuristicMapVerificationService>();
+        services.AddSingleton<IForgeStateService>(new InMemoryForgeStateService());
+        services.AddSingleton<MapPipelineRunner>();
+        await using var sp = services.BuildServiceProvider();
+        var runner = sp.GetRequiredService<MapPipelineRunner>();
+
+        var plan = new MapAdaptationPlan(
+            MapRenderingProfiles.VoxelGrid,
+            "voxel",
+            ["fetch_vector"],
+            []);
+
+        var result = await runner.RunAsync(plan, new MapPipelineRunRequest(
+            DryRun: false,
+            TimeoutMs: 5000,
+            VectorDataUrl: "https://example.com/empty.geojson"));
+
+        result.Success.Should().BeTrue();
+        result.Stages.Single(s => s.Stage == "fetch_vector").Status.Should().Be("ok");
     }
 }

@@ -81,6 +81,12 @@ public sealed class ForgeSessionOptions
     public bool EnableMapVerification { get; set; } = true;
 
     /// <summary>
+    /// When true, any verification issue at Warning severity or higher marks <c>fetch_vector</c> as failed
+    /// (and the overall pipeline as unsuccessful). Info-only issues never fail. Default off for backward compatibility; enable for CI.
+    /// </summary>
+    public bool MapVerificationFailsPipeline { get; set; }
+
+    /// <summary>
     /// When set, session and macros persist via LiteDB at this path (absolute or relative to content root).
     /// </summary>
     public string? LiteDbPath { get; set; }
