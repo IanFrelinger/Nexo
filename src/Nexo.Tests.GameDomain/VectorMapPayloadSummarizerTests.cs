@@ -36,4 +36,16 @@ public sealed class VectorMapPayloadSummarizerTests
         s.Summary.Should().Contain("ways-with-tags=1");
         s.Details.Should().NotBeEmpty();
     }
+
+    [Fact]
+    public void Summarize_GeoJsonArray_CountsBareGeometries()
+    {
+        var utf8 =
+            """[{"type":"Point","coordinates":[1,2]},{"type":"LineString","coordinates":[[0,0],[1,1]]}]"""u8.ToArray();
+        var insp = VectorMapPayloadInspector.Inspect(utf8, "application/json");
+        var s = VectorMapPayloadSummarizer.Summarize(utf8, insp, null);
+        s.ParserKind.Should().Be("geojson");
+        s.Summary.Should().Contain("Point");
+        s.Summary.Should().Contain("LineString");
+    }
 }

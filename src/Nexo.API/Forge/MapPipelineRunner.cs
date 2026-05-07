@@ -1,6 +1,7 @@
 using System.Net;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Nexo.GameDomain.Aesthetics;
 using Nexo.GameDomain.Mapping;
 
 namespace Nexo.API.Forge;
@@ -13,17 +14,20 @@ public sealed class MapPipelineRunner
 {
     private readonly IHttpClientFactory _httpFactory;
     private readonly IVectorMapIntelligenceService _intelligence;
+    private readonly IForgeStateService _forge;
     private readonly IOptions<ForgeSessionOptions> _forgeOptions;
     private readonly ILogger<MapPipelineRunner> _log;
 
     public MapPipelineRunner(
         IHttpClientFactory httpFactory,
         IVectorMapIntelligenceService intelligence,
+        IForgeStateService forge,
         IOptions<ForgeSessionOptions> forgeOptions,
         ILogger<MapPipelineRunner> log)
     {
         _httpFactory = httpFactory;
         _intelligence = intelligence;
+        _forge = forge;
         _forgeOptions = forgeOptions;
         _log = log;
     }
@@ -57,13 +61,38 @@ public sealed class MapPipelineRunner
             switch (stage)
             {
                 case "resolve_aesthetic":
+                    stages.Add(new MapPipelineStageResult(stage, "ok",
+                        MapPipelineGeometryStageHints.ResolveStageDetail(stage, plan)));
+                    break;
+
                 case "resolve_map_profile":
+                    stages.Add(new MapPipelineStageResult(stage, "ok",
+                        MapPipelineGeometryStageHints.ResolveStageDetail(stage, plan)));
+                    break;
+
                 case "emit_host_manifest":
+                    try
+                    {
+                        var pack = MapAdaptationPlanner.GetActivePack(_forge.Session, BuiltInAestheticPacks.Catalog);
+                        var engineId = pack.EngineSurfaceBindings.FirstOrDefault()?.EngineId ?? "unity";
+                        var json = EngineAestheticManifestBuilder.BuildJson(engineId, pack);
+                        stages.Add(new MapPipelineStageResult(stage, "ok",
+                            $"aesthetic={pack.Id}; engineHint={engineId}; manifest_json_chars={json.Length}; GET /api/forge/engine/{{engineId}}/aesthetic-manifest"));
+                    }
+                    catch (Exception ex)
+                    {
+                        _log.LogWarning(ex, "emit_host_manifest stage failed.");
+                        stages.Add(new MapPipelineStageResult(stage, "error", ex.Message));
+                    }
+
+                    break;
+
                 case "voxel_rasterize":
                 case "mesh_displace":
                 case "vector_tessellate":
                 case "rasterize_overlay":
-                    stages.Add(new MapPipelineStageResult(stage, "ok", "Host-side geometry deferred."));
+                    stages.Add(new MapPipelineStageResult(stage, "ok",
+                        MapPipelineGeometryStageHints.ResolveStageDetail(stage, plan)));
                     break;
 
                 case "fetch_terrain":
@@ -82,6 +111,7 @@ public sealed class MapPipelineRunner
                         stages.Add(new MapPipelineStageResult(stage, r.Success ? "ok" : "error",
                             r.Success ? $"Fetched {r.ByteLength} bytes" : r.Error));
                     }
+
                     break;
 
                 case "fetch_vector":
@@ -111,9 +141,10 @@ public sealed class MapPipelineRunner
                                 new ReadOnlyMemory<byte>(r.Body),
                                 insp,
                                 r.ContentType,
-                                request.MvtTileZoom < 0
-                                    ? VectorMapPayloadSummarizer.DefaultMvtTileZoom
-                                    : Math.Clamp(request.MvtTileZoom, 0, 22));
+                                request.MvtTileZoom,
+                                request.VectorDataUrl,
+                                request.MvtTileX,
+                                request.MvtTileY);
                             detail += $"; parse={parse.ParserKind}: {parse.Summary}";
                             if (parse.Details.Count > 0)
                                 detail += " (" + string.Join("; ", parse.Details) + ")";
@@ -138,6 +169,7 @@ public sealed class MapPipelineRunner
 
                         stages.Add(new MapPipelineStageResult(stage, "ok", detail));
                     }
+
                     break;
 
                 default:

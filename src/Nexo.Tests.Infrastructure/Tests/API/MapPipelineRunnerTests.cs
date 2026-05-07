@@ -51,6 +51,7 @@ public sealed class MapPipelineRunnerTests
             .ConfigurePrimaryHttpMessageHandler(() => new OkHandler());
         services.AddSingleton<HeuristicVectorMapIntelligenceService>();
         services.AddSingleton<IVectorMapIntelligenceService>(sp => sp.GetRequiredService<HeuristicVectorMapIntelligenceService>());
+        services.AddSingleton<IForgeStateService>(new InMemoryForgeStateService());
         services.AddSingleton<MapPipelineRunner>();
 
         await using var sp = services.BuildServiceProvider();
@@ -90,6 +91,7 @@ public sealed class MapPipelineRunnerTests
             .ConfigurePrimaryHttpMessageHandler(() => new JsonOkHandler());
         services.AddSingleton<HeuristicVectorMapIntelligenceService>();
         services.AddSingleton<IVectorMapIntelligenceService>(sp => sp.GetRequiredService<HeuristicVectorMapIntelligenceService>());
+        services.AddSingleton<IForgeStateService>(new InMemoryForgeStateService());
         services.AddSingleton<MapPipelineRunner>();
         await using var sp = services.BuildServiceProvider();
         var runner = sp.GetRequiredService<MapPipelineRunner>();
@@ -118,6 +120,7 @@ public sealed class MapPipelineRunnerTests
             .ConfigurePrimaryHttpMessageHandler(() => new OkHandler());
         services.AddSingleton<HeuristicVectorMapIntelligenceService>();
         services.AddSingleton<IVectorMapIntelligenceService>(sp => sp.GetRequiredService<HeuristicVectorMapIntelligenceService>());
+        services.AddSingleton<IForgeStateService>(new InMemoryForgeStateService());
         services.AddSingleton<MapPipelineRunner>();
         await using var sp = services.BuildServiceProvider();
         var runner = sp.GetRequiredService<MapPipelineRunner>();

@@ -19,54 +19,6 @@ namespace Nexo.API.Endpoints;
 /// </summary>
 public static class ForgeEndpoints
 {
-    private static readonly IReadOnlyList<AestheticPack> BuiltInAesthetics =
-    [
-        new AestheticPack
-        {
-            Id = "voxel", Name = "Voxel", GeometryStrategy = "voxel",
-            MapRenderingProfile = MapRenderingProfiles.VoxelGrid,
-            DefaultPaletteColors = ["#4CAF50", "#2196F3", "#FF9800", "#9C27B0"],
-            LodLevels = [new LodLevel(0, 1.0), new LodLevel(1, 0.5), new LodLevel(2, 0.25)]
-        },
-        new AestheticPack
-        {
-            Id = "low_poly", Name = "Low Poly", GeometryStrategy = "low_poly",
-            MapRenderingProfile = MapRenderingProfiles.FlatShadedPolys,
-            DefaultPaletteColors = ["#81C784", "#64B5F6", "#FFB74D", "#CE93D8"],
-            LodLevels = [new LodLevel(0, 1.0), new LodLevel(1, 0.5)]
-        },
-        new AestheticPack
-        {
-            Id = "pixel_art", Name = "Pixel Art", GeometryStrategy = "pixel_art",
-            MapRenderingProfile = MapRenderingProfiles.OrthographicTile,
-            DefaultPaletteColors = ["#388E3C", "#1976D2", "#F57C00", "#7B1FA2"],
-            LodLevels = [new LodLevel(0, 1.0)]
-        },
-        new AestheticPack
-        {
-            Id = "pbr", Name = "PBR", GeometryStrategy = "pbr",
-            MapRenderingProfile = MapRenderingProfiles.HeightfieldMesh,
-            DefaultPaletteColors = ["#E0E0E0", "#BDBDBD", "#9E9E9E"],
-            LodLevels = [new LodLevel(0, 1.0), new LodLevel(1, 0.75), new LodLevel(2, 0.5), new LodLevel(3, 0.25)],
-            PostProcessEffects = ["bloom", "ambient_occlusion", "tone_mapping"]
-        },
-        new AestheticPack
-        {
-            Id = "wireframe", Name = "Wireframe", GeometryStrategy = "wireframe",
-            MapRenderingProfile = MapRenderingProfiles.VectorOverlay,
-            DefaultPaletteColors = ["#00E676", "#00B0FF"],
-            LodLevels = [new LodLevel(0, 1.0), new LodLevel(1, 0.5)]
-        },
-        new AestheticPack
-        {
-            Id = "sketch", Name = "Sketch", GeometryStrategy = "sketch",
-            MapRenderingProfile = MapRenderingProfiles.VectorOverlay,
-            DefaultPaletteColors = ["#212121", "#FAFAFA"],
-            LodLevels = [new LodLevel(0, 1.0)],
-            PostProcessEffects = ["vignette", "chromatic_aberration"]
-        }
-    ];
-
     public static IEndpointRouteBuilder MapForgeEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/forge").WithTags("Forge");
@@ -428,7 +380,7 @@ public static class ForgeEndpoints
     private static async Task<IResult> GetAestheticsAsync()
     {
         await Task.CompletedTask;
-        return Results.Ok(BuiltInAesthetics);
+        return Results.Ok(BuiltInAestheticPacks.Catalog);
     }
 
     private static async Task<IResult> ApplyAestheticAsync(
@@ -440,7 +392,7 @@ public static class ForgeEndpoints
         if (string.IsNullOrWhiteSpace(request?.AestheticId))
             return Results.BadRequest(new ProblemDetails { Title = "AestheticId is required" });
 
-        var pack = BuiltInAesthetics
+        var pack = BuiltInAestheticPacks.Catalog
             .FirstOrDefault(a => a.Id == request.AestheticId);
 
         if (pack is null)
@@ -473,7 +425,7 @@ public static class ForgeEndpoints
     private static async Task<IResult> GetMapAdaptationPlanAsync(IForgeStateService forge)
     {
         await Task.CompletedTask;
-        var plan = MapAdaptationPlanner.Plan(forge.Session, BuiltInAesthetics);
+        var plan = MapAdaptationPlanner.Plan(forge.Session, BuiltInAestheticPacks.Catalog);
         return Results.Ok(plan);
     }
 
@@ -483,7 +435,7 @@ public static class ForgeEndpoints
         [FromBody] MapPipelineRunRequest? body)
     {
         var req = body ?? new MapPipelineRunRequest();
-        var plan = MapAdaptationPlanner.Plan(forge.Session, BuiltInAesthetics);
+        var plan = MapAdaptationPlanner.Plan(forge.Session, BuiltInAestheticPacks.Catalog);
 
         if (req.DryRun)
         {
@@ -504,7 +456,7 @@ public static class ForgeEndpoints
         if (string.IsNullOrWhiteSpace(engineId))
             return Results.BadRequest(new ProblemDetails { Title = "engineId is required" });
 
-        var pack = MapAdaptationPlanner.GetActivePack(forge.Session, BuiltInAesthetics);
+        var pack = MapAdaptationPlanner.GetActivePack(forge.Session, BuiltInAestheticPacks.Catalog);
         var json = EngineAestheticManifestBuilder.BuildJson(engineId, pack);
         return Results.Ok(new ForgeEngineManifestResponse(json));
     }

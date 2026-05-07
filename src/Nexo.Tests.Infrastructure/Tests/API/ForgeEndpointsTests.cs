@@ -29,6 +29,7 @@ public sealed class ForgeEndpointsTests : IDisposable
             .ConfigurePrimaryHttpMessageHandler(static () => new HttpClientHandler());
         services.AddSingleton<HeuristicVectorMapIntelligenceService>();
         services.AddSingleton<IVectorMapIntelligenceService>(sp => sp.GetRequiredService<HeuristicVectorMapIntelligenceService>());
+        services.AddSingleton<IForgeStateService>(Forge);
         services.AddSingleton<MapPipelineRunner>();
         return services.BuildServiceProvider().GetRequiredService<MapPipelineRunner>();
     });

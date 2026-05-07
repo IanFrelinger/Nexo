@@ -25,11 +25,21 @@ public static class VectorMapPayloadSummarizer
     /// Builds a short summary; never throws — failures become <see cref="VectorMapParseSummary"/> with
     /// <see cref="VectorMapParseSummary.ParserKind"/> <c>error</c> or <c>skipped</c>.
     /// </summary>
+    /// <param name="data">Raw payload bytes.</param>
+    /// <param name="inspection">Output from <see cref="VectorMapPayloadInspector"/>.</param>
+    /// <param name="contentTypeHint">Optional HTTP content-type.</param>
+    /// <param name="mvtTileZoom">Zoom used with explicit tile coordinates or when URL does not specify z/x/y.</param>
+    /// <param name="vectorDataUrl">When set, used to infer MVT z/x/y from common tile URL patterns.</param>
+    /// <param name="mvtTileX">Optional MVT column index (with <paramref name="mvtTileY"/> and zoom).</param>
+    /// <param name="mvtTileY">Optional MVT row index.</param>
     public static VectorMapParseSummary Summarize(
         ReadOnlyMemory<byte> data,
         VectorPayloadInspection inspection,
         string? contentTypeHint,
-        int mvtTileZoom = DefaultMvtTileZoom)
+        int mvtTileZoom = DefaultMvtTileZoom,
+        string? vectorDataUrl = null,
+        int? mvtTileX = null,
+        int? mvtTileY = null)
     {
         if (data.Length == 0)
             return new VectorMapParseSummary("skipped", "empty payload", []);
@@ -44,7 +54,10 @@ public static class VectorMapPayloadSummarizer
                 return SummarizeOsmXml(data);
 
             if (fmt is "mapbox_vector_tile_or_binary")
-                return SummarizeMvt(data, mvtTileZoom);
+            {
+                var (tz, tx, ty) = ResolveMvtTileIndices(vectorDataUrl, mvtTileZoom, mvtTileX, mvtTileY);
+                return SummarizeMvt(data, tz, tx, ty);
+            }
 
             // Content-type hints when magic bytes were ambiguous
             var ct = contentTypeHint ?? string.Empty;
@@ -76,6 +89,28 @@ public static class VectorMapPayloadSummarizer
         }
     }
 
+    private static (int z, int x, int y) ResolveMvtTileIndices(
+        string? vectorDataUrl,
+        int mvtTileZoom,
+        int? mvtTileX,
+        int? mvtTileY)
+    {
+        var fallbackZ = mvtTileZoom < 0 ? DefaultMvtTileZoom : Math.Clamp(mvtTileZoom, 0, 22);
+        if (mvtTileX is >= 0 && mvtTileY is >= 0)
+        {
+            var xi = mvtTileX.Value;
+            var yi = mvtTileY.Value;
+            var dim = 1 << fallbackZ;
+            if ((uint)xi < dim && (uint)yi < dim)
+                return (fallbackZ, xi, yi);
+        }
+
+        if (VectorTileUrlParser.TryParseTile(vectorDataUrl, out var pz, out var px, out var py))
+            return (pz, px, py);
+
+        return (fallbackZ, 0, 0);
+    }
+
     private static VectorMapParseSummary SummarizeGeoJson(ReadOnlyMemory<byte> data)
     {
         using var doc = JsonDocument.Parse(data);
@@ -105,7 +140,35 @@ public static class VectorMapPayloadSummarizer
             geomCounts[t] = c + 1;
         }
 
-        if (root.TryGetProperty("type", out var type) && type.ValueKind == JsonValueKind.String)
+        void CountBareGeometry(JsonElement geomEl)
+        {
+            total++;
+            if (!geomEl.TryGetProperty("type", out var typeEl) || typeEl.ValueKind != JsonValueKind.String)
+            {
+                geomCounts.TryGetValue("unknown", out var u);
+                geomCounts["unknown"] = u + 1;
+                return;
+            }
+
+            var t = typeEl.GetString() ?? "unknown";
+            geomCounts.TryGetValue(t, out var c);
+            geomCounts[t] = c + 1;
+        }
+
+        if (root.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var el in root.EnumerateArray())
+            {
+                if (el.ValueKind != JsonValueKind.Object)
+                    continue;
+                if (el.TryGetProperty("geometry", out _))
+                    CountFeature(el);
+                else if (el.TryGetProperty("type", out var gt) && gt.ValueKind == JsonValueKind.String &&
+                         el.TryGetProperty("coordinates", out _))
+                    CountBareGeometry(el);
+            }
+        }
+        else if (root.TryGetProperty("type", out var type) && type.ValueKind == JsonValueKind.String)
         {
             var kind = type.GetString();
             if (kind is null)
@@ -221,7 +284,7 @@ public static class VectorMapPayloadSummarizer
         return new VectorMapParseSummary("osm_xml", summary, details);
     }
 
-    private static VectorMapParseSummary SummarizeMvt(ReadOnlyMemory<byte> data, int zoom)
+    private static VectorMapParseSummary SummarizeMvt(ReadOnlyMemory<byte> data, int z, int x, int y)
     {
         Stream stream;
         if (data.Length >= 2 && data.Span[0] == 0x1f && data.Span[1] == 0x8b)
@@ -231,7 +294,8 @@ public static class VectorMapPayloadSummarizer
 
         using (stream)
         {
-            var tile = new VectorTile(0, 0, Math.Clamp(zoom, 0, 22));
+            z = Math.Clamp(z, 0, 22);
+            var tile = new VectorTile(x, y, z);
             var reader = new MapboxTileReader();
             var vt = reader.Read(stream, tile);
             var lines = new List<string>();
@@ -243,11 +307,12 @@ public static class VectorMapPayloadSummarizer
                 lines.Add($"{layer.Name}:{c}");
             }
 
-            var summary = $"MVT: {total} feature(s) in {vt.Layers.Count} layer(s)";
-            var details = lines.Count > 0
-                ? (IReadOnlyList<string>)[$"layers: {string.Join(", ", lines.Take(12))}"]
-                : [];
-            return new VectorMapParseSummary("mvt", summary, details);
+            var summary = $"MVT: {total} feature(s) in {vt.Layers.Count} layer(s) [tile z/x/y={z}/{x}/{y}]";
+            var detailParts = new List<string> { $"tile_zxy={z}/{x}/{y}" };
+            if (lines.Count > 0)
+                detailParts.Add($"layers: {string.Join(", ", lines.Take(12))}");
+
+            return new VectorMapParseSummary("mvt", summary, detailParts);
         }
     }
 }

@@ -7,7 +7,7 @@ Runtime types live in **`Nexo.GameDomain`**; HTTP surface in **`Nexo.API`** (`Fo
 `MapAdaptationPlanner.Plan(session, builtInCatalog)` returns a **`MapAdaptationPlan`**: effective
 `MapRenderingProfile`, geometry strategy, ordered **`PipelineStages`**, and notes. It resolves the
 active aesthetic from the server-scoped `aesthetic` setting when set, otherwise the first pack on
-the session.
+the session. The API uses **`BuiltInAestheticPacks.Catalog`** as the default built-in list.
 
 ## Dry-run and live pipeline
 
@@ -24,8 +24,11 @@ the session.
   Responses are capped by **`MaxFetchResponseBytes`**. **`VectorMapPayloadInspector`** adds a
   lightweight format guess on **`fetch_vector`**. When **`EnableVectorPayloadParsing`** is true (default),
   **`VectorMapPayloadSummarizer`** parses GeoJSON, OSM XML, or Mapbox MVT just far enough to record
-  feature counts and layer names in the stage detail (full tessellation stays host-side). **`MvtTileZoom`**
-  on the request selects the projection tile for MVT decoding (0–22).
+  feature counts and layer names in the stage detail (full tessellation stays host-side). For MVT,
+  **`VectorTileUrlParser`** reads **z/x/y** from common tile URLs (path segments or **`?z=&x=&y=`**); you can
+  override with **`MvtTileX`** / **`MvtTileY`** plus **`MvtTileZoom`** when the URL has no tile indices.
+  Non-fetch stages (**`resolve_*`**, **`emit_host_manifest`**, geometry hints) return actionable detail text;
+  **`emit_host_manifest`** includes active aesthetic id and manifest size from **`EngineAestheticManifestBuilder`**.
 - When **`EnableVectorIntelligence`** is true, **`IVectorMapIntelligenceService`** runs on fetched
   vector bytes. The default implementation is **`ModelAugmentedVectorMapIntelligenceService`**, which
   uses **`HeuristicVectorMapIntelligenceService`** and optionally **`IModel`** when
