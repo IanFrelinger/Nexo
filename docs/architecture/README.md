@@ -8,4 +8,4 @@ High-level maps of how Nexo is structured. For day-to-day commands, see the repo
 | [Testing model](TestingModel.md) | Relationship between xUnit tests, `UnitTestBase` / `ITestRunner`, and CI. |
 | [.NET SDK and target frameworks](DotnetVersions.md) | Why `global.json` pins SDK 9.x while many libraries target `net8.0`. |
 | [Forge map adaptation](forge-map-adaptation.md) | `MapAdaptationPlanner`, dry-run pipeline, engine manifest JSON, and Forge persistence options. |
-| [Forge map host integration](forge-map-host-integration.md) | Milestones M1–M5: manifest, tiles, hints, LOD pyramid, heuristic map verification. |
+| [Forge map host integration](forge-map-host-integration.md) | Milestones M1–M6: manifest, tiles, hints, LOD pyramid, heuristic map verification, material hints; tile cache; engine-bridge snippets. |

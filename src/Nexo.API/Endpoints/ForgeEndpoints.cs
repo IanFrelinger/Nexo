@@ -8,6 +8,7 @@ using Nexo.GameDomain.Aesthetics;
 using Nexo.GameDomain.Descriptors;
 using Nexo.GameDomain.Macros;
 using Nexo.GameDomain.Mapping;
+using Nexo.GameDomain.Materials;
 using Nexo.GameDomain.Scoping;
 using Nexo.GameDomain.Session;
 
@@ -111,6 +112,11 @@ public static class ForgeEndpoints
             .WithName("GetForgeMapTilePyramid")
             .WithSummary("LOD tile pyramid (zoom per tier) from active aesthetic LodLevels and finestZoom")
             .Produces<ForgeTilePyramidResponse>(StatusCodes.Status200OK);
+
+        group.MapGet("/map/material-hints", GetMaterialHintsAsync)
+            .WithName("GetForgeMapMaterialHints")
+            .WithSummary("Heuristic material / surface hints from the active aesthetic and optional vector parse kind")
+            .Produces<ForgeMaterialHintsResponse>(StatusCodes.Status200OK);
 
         group.MapPost("/map/pipeline/run", RunMapPipelineAsync)
             .WithName("RunForgeMapPipeline")
@@ -476,6 +482,16 @@ public static class ForgeEndpoints
         var tiers = MapLodPyramidPlanner.Build(pack.LodLevels, z);
         return Results.Ok(new ForgeTilePyramidResponse(z, tiers));
     }
+
+    private static async Task<IResult> GetMaterialHintsAsync(
+        IForgeStateService forge,
+        IMaterialIntelligenceService materials,
+        [FromQuery] string? parseKind)
+    {
+        var pack = MapAdaptationPlanner.GetActivePack(forge.Session, BuiltInAestheticPacks.Catalog);
+        var result = await materials.SuggestAsync(pack, parseKind).ConfigureAwait(false);
+        return Results.Ok(new ForgeMaterialHintsResponse(result.Summary, result.Hints));
+    }
 }
 
 public sealed record ForgeCreateSessionRequest(
@@ -506,3 +522,5 @@ public sealed record ForgeApplyAestheticRequest(
 public sealed record ForgeEngineManifestResponse(string Json);
 
 public sealed record ForgeTilePyramidResponse(int FinestZoom, IReadOnlyList<MapTilePyramidTier> Tiers);
+
+public sealed record ForgeMaterialHintsResponse(string Summary, IReadOnlyList<MaterialSurfaceHint> Hints);

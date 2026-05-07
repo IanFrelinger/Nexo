@@ -53,11 +53,40 @@ This document tracks **host-side** work that sits next to runtime types in **`Ne
 - Optional **`MapVerificationFailsPipeline`**: when **`true`**, verification **Warning+** marks **`fetch_vector`** as **`error`** (`Success=false` on the run).
 - Unit tests in **`HeuristicMapVerificationServiceTests`** and pipeline strict-mode tests.
 
-## Next steps (later milestones)
+## M6 — Material / aesthetic assist (implemented)
 
-- Import **`surfaceBindings`** into engine shaders/material slots.
-- Cache tiles by **`z/x/y`** under a content folder keyed by aesthetic id.
-- Optional model-augmented verification (off by default; keep latency bounded).
+**Goal:** Surface procedural colours and shader-parameter hints aligned with **`EngineSurfaceBinding`** roles without requiring tessellation in Nexo.API.
+
+**Implemented in-repo:**
+
+- **`IMaterialIntelligenceService`**, **`HeuristicMaterialIntelligenceService`**, **`MaterialSuggestionResult`** / **`MaterialSurfaceHint`**.
+- **`GET /api/forge/map/material-hints`** — JSON hints for the active aesthetic (optional **`parseKind`** query).
+- Unit tests in **`HeuristicMaterialIntelligenceServiceTests`** and API coverage in **`ForgeEndpointsTests`**.
+
+## Tile cache and reproducibility (phase B)
+
+**Goal:** Stable on-disk identity for raw tile bytes so hosts can prefetch once and replay imports.
+
+**Implemented in-repo:**
+
+- **`MapTileCacheKey`** — sanitised path segments from aesthetic id, provider id, and **`z/x/y`**.
+- **`MapTileDiskCache`** — async read/write under a root directory.
+- Sample: set **`NEXO_TILE_CACHE_DIR`** in **`ForgeMapHostSample`** to exercise cache after building a Mapbox URL.
+
+## Engine bridge (phase C)
+
+**Goal:** Copy-paste starters for Unity/Godot that consume the same HTTP contracts as the sample.
+
+**Implemented in-repo:**
+
+- **`docs/engine-bridge/README.md`** — overview.
+- **`docs/engine-bridge/snippets/UnitySample.cs`** — manifest + material hints via **`HttpClient`**.
+- **`docs/engine-bridge/snippets/GodotTileBridge.gd`** — tile pyramid JSON via **`HTTPRequest`**.
+
+## Next steps (optional)
+
+- Optional model-augmented material suggestions (bounded latency; off by default).
+- Deeper engine-specific importers (addressables, GLTF export, etc.).
 
 ## Related
 

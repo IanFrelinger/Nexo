@@ -9,6 +9,7 @@ using Nexo.GameDomain.Aesthetics;
 using Nexo.GameDomain.Descriptors;
 using Nexo.GameDomain.Macros;
 using Nexo.GameDomain.Mapping;
+using Nexo.GameDomain.Materials;
 using Nexo.GameDomain.Scoping;
 using Nexo.GameDomain.Session;
 using Xunit;
@@ -34,6 +35,8 @@ public sealed class ForgeEndpointsTests : IDisposable
         services.AddSingleton<MapPipelineRunner>();
         return services.BuildServiceProvider().GetRequiredService<MapPipelineRunner>();
     });
+
+    private static readonly Lazy<IMaterialIntelligenceService> MaterialIntel = new(() => new HeuristicMaterialIntelligenceService());
 
     public ForgeEndpointsTests()
     {
@@ -268,6 +271,18 @@ public sealed class ForgeEndpointsTests : IDisposable
     }
 
     [Fact(Timeout = 15000)]
+    public async Task GetMaterialHints_ReturnsHints()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"), new ForgeCreateSessionRequest("MatTest"));
+        await InvokeAsync(GetHandler("ApplyAestheticAsync"), new ForgeApplyAestheticRequest("voxel"));
+
+        var result = await InvokeAsync(GetHandler("GetMaterialHintsAsync"), "mvt");
+        var hints = ExtractOkValue<ForgeMaterialHintsResponse>(result);
+        hints.Summary.Should().Contain("hint");
+        hints.Hints.Should().NotBeEmpty();
+    }
+
+    [Fact(Timeout = 15000)]
     public async Task RunMapPipeline_DryRun_Succeeds()
     {
         await InvokeAsync(GetHandler("CreateSessionAsync"), new ForgeCreateSessionRequest("PipeTest"));
@@ -327,6 +342,8 @@ public sealed class ForgeEndpointsTests : IDisposable
                 merged[i] = Forge;
             else if (pt == typeof(MapPipelineRunner))
                 merged[i] = PipelineRunner.Value;
+            else if (pt == typeof(IMaterialIntelligenceService))
+                merged[i] = MaterialIntel.Value;
             else
             {
                 merged[i] = argIdx < args.Length ? args[argIdx] : Type.Missing;

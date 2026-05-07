@@ -62,6 +62,12 @@ to require Nexo built-in auth for all **`/api/forge`** routes.
 with JSON from **`EngineAestheticManifestBuilder`**, including `EngineSurfaceBinding` entries filtered
 by `engineId`.
 
+## Material hints (M6)
+
+`GET /api/forge/map/material-hints` returns **`ForgeMaterialHintsResponse`**: suggested procedural colours
+and surface-role bindings from **`IMaterialIntelligenceService`** (default **`HeuristicMaterialIntelligenceService`**),
+keyed off the active aesthetic and optional **`parseKind`** query (`mvt`, `geojson`, `osm_xml`, `unknown`).
+
 ## Persistence
 
 Optional LiteDB for Forge session and macros: **`Nexo:ForgeSession:LiteDbPath`** (see
@@ -74,4 +80,4 @@ If workflows are manual-only, align branch protection with **`.github/workflows/
 
 ## Host integration (engines)
 
-See **`docs/architecture/forge-map-host-integration.md`** and the **`docs/samples/ForgeMapHostSample`** project for milestone M1–M5 wiring.
+See **`docs/architecture/forge-map-host-integration.md`**, **`docs/engine-bridge/README.md`**, and the **`docs/samples/ForgeMapHostSample`** project for milestones M1–M6 plus tile cache and engine-bridge snippets.

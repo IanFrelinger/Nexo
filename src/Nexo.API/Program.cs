@@ -40,6 +40,7 @@ using Nexo.API.Endpoints;
 using Nexo.API.Forge;
 using Nexo.API.Security;
 using Nexo.GameDomain.Mapping;
+using Nexo.GameDomain.Materials;
 using Nexo.BackgroundAgents.Extending;
 using Nexo.BackgroundAgents.HostRunners;
 using Nexo.BackgroundAgents.Optimization;
@@ -97,6 +98,7 @@ builder.Services.AddNexo(options =>
     options.RegisterBackgroundAgentHostedService = true;
 });
 
+builder.Services.AddSingleton<IMaterialIntelligenceService, HeuristicMaterialIntelligenceService>();
 builder.Services.AddSingleton<HeuristicVectorMapIntelligenceService>();
 builder.Services.AddSingleton<IMapVerificationService, HeuristicMapVerificationService>();
 builder.Services.AddSingleton<IVectorMapIntelligenceService>(sp =>

@@ -6,15 +6,18 @@ var baseUrl = (Environment.GetEnvironmentVariable("NEXO_API_BASE_URL") ?? "http:
 var engineId = Environment.GetEnvironmentVariable("FORGE_ENGINE_ID") ?? "unity";
 var mapboxToken = Environment.GetEnvironmentVariable("MAPBOX_ACCESS_TOKEN");
 var tileset = Environment.GetEnvironmentVariable("MAPBOX_TILESET_ID") ?? "mapbox.mapbox-streets-v8";
+var aestheticId = Environment.GetEnvironmentVariable("FORGE_AESTHETIC_ID") ?? "voxel";
 
-Console.WriteLine("=== Nexo Forge map host integration sample (M1–M4) ===");
+Console.WriteLine("=== Nexo Forge host sample (phases A/B/C: material hints, tile cache, pipeline) ===");
 Console.WriteLine($"API base: {baseUrl}");
 Console.WriteLine($"Engine id: {engineId}");
+Console.WriteLine($"Aesthetic id (cache key): {aestheticId}");
 
 using var http = new HttpClient { Timeout = TimeSpan.FromSeconds(120) };
 
 await RunManifestStep(http, baseUrl, engineId).ConfigureAwait(false);
 await RunPyramidStep(http, baseUrl).ConfigureAwait(false);
+await RunMaterialHintsStep(http, baseUrl).ConfigureAwait(false);
 
 if (!string.IsNullOrWhiteSpace(mapboxToken))
 {
@@ -29,6 +32,9 @@ if (!string.IsNullOrWhiteSpace(mapboxToken))
     Console.WriteLine($"Sample lon/lat/zoom: {lon}, {lat}, z{zoom} → tile {zoom}/{x}/{y}");
     Console.WriteLine($"Vector URL (token redacted): https://api.mapbox.com/v4/{tileset}/{zoom}/{x}/{y}.vector.pbf?access_token=<secret>");
 
+    var cacheDir = Environment.GetEnvironmentVariable("NEXO_TILE_CACHE_DIR");
+    await RunTileCacheStep(http, cacheDir, aestheticId, "mapbox", zoom, x, y, vectorUrl).ConfigureAwait(false);
+
     await RunPipelineStep(http, baseUrl, vectorUrl, zoom, x, y).ConfigureAwait(false);
 
     Console.WriteLine();
@@ -40,10 +46,11 @@ if (!string.IsNullOrWhiteSpace(mapboxToken))
 else
 {
     Console.WriteLine();
-    Console.WriteLine("Set MAPBOX_ACCESS_TOKEN to exercise tile URL build + pipeline run (M2).");
+    Console.WriteLine("Set MAPBOX_ACCESS_TOKEN to exercise tile cache, URL build, and pipeline run.");
 }
 
 Console.WriteLine();
+Console.WriteLine("Engine bridge (phase C): see docs/engine-bridge/README.md + snippets.");
 Console.WriteLine("Done.");
 return;
 
@@ -63,6 +70,75 @@ static int ParseIntEnv(string name, int fallback)
         System.Globalization.CultureInfo.InvariantCulture, out var v)
         ? v
         : fallback;
+}
+
+static async Task RunTileCacheStep(
+    HttpClient http,
+    string? cacheDir,
+    string aestheticId,
+    string providerId,
+    int z,
+    int x,
+    int y,
+    string vectorUrl)
+{
+    if (string.IsNullOrWhiteSpace(cacheDir))
+    {
+        Console.WriteLine();
+        Console.WriteLine("(Tile cache) Set NEXO_TILE_CACHE_DIR to demo MapTileDiskCache.");
+        return;
+    }
+
+    Console.WriteLine();
+    Console.WriteLine("=== Tile disk cache (phase B) ===");
+    var cache = new MapTileDiskCache(Path.GetFullPath(cacheDir.Trim()));
+    var key = MapTileCacheKey.Create(aestheticId, providerId, z, x, y);
+    var cached = await cache.TryReadAsync(key);
+    if (cached is not null)
+    {
+        Console.WriteLine($"Cache hit: {cache.GetFullPath(key)} ({cached.Length} bytes)");
+        return;
+    }
+
+    Console.WriteLine($"Cache miss → GET tile ({cache.GetFullPath(key)})");
+    try
+    {
+        var bytes = await http.GetByteArrayAsync(vectorUrl);
+        await cache.WriteAsync(key, bytes);
+        Console.WriteLine($"Stored {bytes.Length} bytes.");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Cache fetch failed: {ex.Message}");
+    }
+}
+
+static async Task RunMaterialHintsStep(HttpClient http, string baseUrl)
+{
+    Console.WriteLine();
+    Console.WriteLine("=== Material hints (phase A / M6) ===");
+    var url = $"{baseUrl}/api/forge/map/material-hints?parseKind=mvt";
+    Console.WriteLine($"GET {url}");
+    try
+    {
+        using var resp = await http.GetAsync(url).ConfigureAwait(false);
+        var body = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
+        if (!resp.IsSuccessStatusCode)
+        {
+            Console.WriteLine($"HTTP {(int)resp.StatusCode}: {body}");
+            return;
+        }
+
+        using var doc = JsonDocument.Parse(body);
+        var root = doc.RootElement;
+        Console.WriteLine($"  summary={root.GetProperty("summary").GetString()}");
+        var hints = root.GetProperty("hints");
+        Console.WriteLine($"  hints={hints.GetArrayLength()}");
+    }
+    catch (HttpRequestException ex)
+    {
+        Console.WriteLine($"Request failed: {ex.Message}");
+    }
 }
 
 static async Task RunPyramidStep(HttpClient http, string baseUrl)
