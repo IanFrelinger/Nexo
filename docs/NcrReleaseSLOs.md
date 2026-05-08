@@ -11,6 +11,10 @@ Applies to:
 - Ollama backend integration (`ncr.ollama.*`)
 - Agentic escalation signals (`ncr.execution.escalated.*`)
 
+### Virtual production harness (routing stack)
+
+For CI and local soak without GPUs or real peers, **`VirtualProductionNcrRoutingHost`** (`Nexo.Tests.Infrastructure/Helpers/Ncr/VirtualProductionNcrRoutingHost.cs`) boots a generic **`IHost`** with the same **`AddRunPodCapabilityRouting`** registration as production (including **`NCRCapabilityPoller`** and **`PeerCapabilitySnapshotPoller`**), binding **`Nexo:RunPod`** / **`Nexo:NodeCapabilityRuntime`** options while substituting **`IHardwareProfiler`**, **`IInstanceDiscovery`**, **`ILocalQueueDepthProvider`**, **`IRunPodClient`**, and **`ILocalExecutor`**. Integration tests: **`VirtualProductionNcrRoutingTests`**.
+
 ## SLO targets (first release)
 
 Evaluate over 1h rolling windows in production-like environments.
