@@ -8,7 +8,8 @@ Nexo uses multiple mechanisms to prevent tests from hanging indefinitely and kee
 
 | Scope | blame-hang-timeout | Per-test timeout | Notes |
 |-------|--------------------|------------------|-------|
-| prod-style | 120s | varies | **Category=ProdStyle** — production-like DI / hosts (`make test-prod-style`) |
+| prime-time | 300s | varies | **`Nexo.PrimeTime.slnf`** — ProdStyle then full (`make test-prime-time` / `make test-prime-time-full`) |
+| prod-style | 120s | varies | **Category=ProdStyle** — Infrastructure-only (`make test-prod-style`) |
 | smoke | 30s | — | BaseFrameworkSmokeTests; local `make test` |
 | integration | 60s | 15s (Integration tests) | Category=Integration |
 | persistence | 60s | — | InMemoryPersistenceTests |
@@ -36,12 +37,14 @@ Nexo uses multiple mechanisms to prevent tests from hanging indefinitely and kee
 
 ## Running Tests
 
-**Production-like gate first** (when validating hosting, routing, adaptation, Forge — matches **`Category=ProdStyle`**):
+**Prime-time (whole automated framework slice):**  
 
 ```bash
-make test-prod-style
-make test-framework-prod-first   # ProdStyle + full Nexo.LocalDevCore.slnf slice (ProdStyle runs twice)
+make test-prime-time          # Category=ProdStyle across Nexo.PrimeTime.slnf (nine test projects; skips MAUI/Android workloads from full Nexo.sln)
+make test-prime-time-full    # ProdStyle gate then full test count on the same slice (ProdStyle runs twice)
 ```
+
+**Faster Infrastructure-only ProdStyle:** `make test-prod-style`
 
 `nexo` command note:
 - Commands shown as `nexo ...` assume the CLI tool is installed on your PATH.

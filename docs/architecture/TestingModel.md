@@ -14,7 +14,9 @@ Some suites inherit **`UnitTestBase`** (which extends **`TestBase`**) and implem
 
 ## Production-like tests (`Category=ProdStyle`)
 
-Use **`[Trait("Category", "ProdStyle")]`** on xUnit classes that mirror production wiring: **`AddNexo`**, **`AddRunPodCapabilityRouting`**, adaptation/composition stacks, Forge HTTP surfaces, capability routing, barriers, etc. These are intended to run **before** lighter smoke (`BaseFrameworkSmokeTests`) and full matrices — see **`make test-prod-style`**, **`make test-framework-prod-first`**, and **`nexo ci verify`** (ProdStyle runs after Infrastructure build, before smoke).
+Use **`[Trait("Category", "ProdStyle")]`** on xUnit classes that mirror production wiring: **`AddNexo`**, **`AddRunPodCapabilityRouting`**, adaptation/composition stacks, Forge HTTP surfaces, capability routing, barriers, etc. **`UnitTestBridgeTests`** in Application / Domain / Infrastructure / CLI is tagged so every **`UnitTestBase`** suite participates. **`Nexo.Tests.GameDomain`** and **`Nexo.Tests.Transport`** use **`[assembly: AssemblyTrait("Category", "ProdStyle")]`** so the full assembly runs under **`Category=ProdStyle`**.
+
+Run **before** lighter smoke (`BaseFrameworkSmokeTests`) and full matrices — see **`make test-prod-style`**, **`make test-prime-time`** (**`Nexo.PrimeTime.slnf`**), **`make test-framework-prod-first`**, and **`nexo ci verify`** (ProdStyle runs after Infrastructure build, before smoke).
 
 ## Merge policy (GitHub)
 
@@ -28,5 +30,6 @@ To block merges when domain line coverage regresses, in GitHub go to **Settings 
   `dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj`  
   `dotnet test src/Nexo.Tests.CLI/Nexo.Tests.CLI.csproj`
 - **Broader local bar:** `make test` (see `Makefile`; uses blame-hang options)
-- **Production-like integration first:** `make test-prod-style` then optionally `make test-framework-prod-first`
+- **Production-like integration first (Infrastructure only):** `make test-prod-style` then optionally `make test-framework-prod-first`
+- **Prime-time gate (all test projects in `Nexo.PrimeTime.slnf`):** `make test-prime-time` — **`Category=ProdStyle`** across Application, Domain, Infrastructure, CLI, Orchestration, BackgroundAgents, GameDomain, Transport; then **`make test-prime-time-full`** for the full slice.
 - **CI-style verification:** `make ci-verify` or `dotnet run --project src/Nexo.CLI -- ci verify`

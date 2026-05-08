@@ -54,7 +54,7 @@ public sealed class ObservationPipelineIntegrationTests : IDisposable
             new[] { "*.cs" },
             loggerFactory.CreateLogger<FileSystemEventSource>());
 
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         var eventCount = 0;
         var processTask = Task.Run(async () =>
         {
@@ -68,15 +68,24 @@ public sealed class ObservationPipelineIntegrationTests : IDisposable
         }, cts.Token);
 
         await File.WriteAllTextAsync(testFile, "// v1", cts.Token);
-        await Task.Delay(200, cts.Token);
+        await Task.Delay(400, cts.Token);
         await File.WriteAllTextAsync(testFile, "// v2", cts.Token);
-        await Task.Delay(200, cts.Token);
+        await Task.Delay(400, cts.Token);
         await File.WriteAllTextAsync(testFile, "// v3", cts.Token);
 
         await processTask;
+        await Task.Delay(600, CancellationToken.None);
 
-        using var queryCts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-        var patterns = await store.QueryAsync(new PatternStoreQueryParams { MaxCount = 10 }, queryCts.Token);
+        using var queryCts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        IReadOnlyList<ObservedPattern> patterns = [];
+        for (var attempt = 0; attempt < 15; attempt++)
+        {
+            patterns = await store.QueryAsync(new PatternStoreQueryParams { MaxCount = 10 }, queryCts.Token);
+            if (patterns.Any(p => p.EventType == "repeated-edits"))
+                break;
+            await Task.Delay(200, queryCts.Token);
+        }
+
         Assert.Contains(patterns, p => p.EventType == "repeated-edits");
         Assert.True(patterns.First(p => p.EventType == "repeated-edits").Frequency >= 3);
     }

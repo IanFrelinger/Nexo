@@ -15,6 +15,7 @@ namespace Nexo.Tests.BackgroundAgents.Smoke;
 /// </summary>
 [Trait("Category", "Smoke")]
 [Trait("Category", "RuntimeStudio")]
+[Trait("Category", "ProdStyle")]
 public sealed class RuntimeStudioWhiteBoxSmokeTests : IDisposable
 {
     private readonly string _root;

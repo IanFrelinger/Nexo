@@ -1,4 +1,7 @@
-.PHONY: build build-core restore-core test test-prod-style test-framework-prod-first test-cross-platform test-portable test-multi-env test-all-platforms test-all-platforms-ephemeral ci-verify validate-safe review-summary clean-test-artifacts test-readiness-gate
+.PHONY: build build-core restore-core test test-prod-style test-framework-prod-first test-prime-time test-prime-time-full test-cross-platform test-portable test-multi-env test-all-platforms test-all-platforms-ephemeral ci-verify validate-safe review-summary clean-test-artifacts test-readiness-gate
+
+# All automated test projects (excludes MAUI/Android workloads required by full Nexo.sln).
+PRIME_TIME_SLNF := Nexo.PrimeTime.slnf
 
 # Build the solution
 build:
@@ -23,6 +26,18 @@ test-prod-style: restore-core build-core
 test-framework-prod-first: test-prod-style
 	dotnet test Nexo.LocalDevCore.slnf --no-build \
 	  --blame-hang-timeout 30s --blame-hang-dump-type none
+
+# Prime-time gate: Category=ProdStyle across Nexo.PrimeTime.slnf (all test assemblies; no MAUI workloads).
+test-prime-time:
+	dotnet build $(PRIME_TIME_SLNF) -v minimal
+	dotnet test $(PRIME_TIME_SLNF) --no-build \
+	  --filter "Category=ProdStyle" \
+	  --blame-hang-timeout 300s --blame-hang-dump-type none
+
+# Full PrimeTime matrix after ProdStyle gate (runs everything including ProdStyle twice).
+test-prime-time-full: test-prime-time
+	dotnet test $(PRIME_TIME_SLNF) --no-build \
+	  --blame-hang-timeout 300s --blame-hang-dump-type none
 
 # Run tests locally (blame-hang-timeout prevents indefinite freeze from hung tests)
 # --blame-hang-dump-type none avoids 6GB+ hang dumps that accumulate in TestResults/
