@@ -111,8 +111,25 @@ public sealed class MapPipelineRunner
                     {
                         var r = await FetchBytesAsync(client, request.TerrainDataUrl!, maxBytes, linked.Token)
                             .ConfigureAwait(false);
-                        stages.Add(new MapPipelineStageResult(stage, r.Success ? "ok" : "error",
-                            r.Success ? $"Fetched {r.ByteLength} bytes" : r.Error));
+                        if (!r.Success)
+                        {
+                            stages.Add(new MapPipelineStageResult(stage, "error", r.Error));
+                            break;
+                        }
+
+                        var sniff = TerrainPayloadInspector.InspectFormat(new ReadOnlySpan<byte>(r.Body));
+                        var detail = $"Fetched {r.ByteLength} bytes; format={sniff}";
+                        if (opts.EnableTerrainPayloadParsing && r.ByteLength > 0)
+                        {
+                            var parse = TerrainPayloadSummarizer.Summarize(
+                                new ReadOnlyMemory<byte>(r.Body),
+                                r.ContentType);
+                            detail += $"; parse={parse.ParserKind}: {parse.Summary}";
+                            if (parse.Details.Count > 0)
+                                detail += " (" + string.Join("; ", parse.Details) + ")";
+                        }
+
+                        stages.Add(new MapPipelineStageResult(stage, "ok", detail));
                     }
 
                     break;

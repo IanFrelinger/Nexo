@@ -29,6 +29,8 @@ the session. The API uses **`BuiltInAestheticPacks.Catalog`** as the default bui
   override with **`MvtTileX`** / **`MvtTileY`** plus **`MvtTileZoom`** when the URL has no tile indices.
   Non-fetch stages (**`resolve_*`**, **`emit_host_manifest`**, geometry hints) return actionable detail text;
   **`emit_host_manifest`** includes active aesthetic id and manifest size from **`EngineAestheticManifestBuilder`**.
+  **`fetch_terrain`** records byte length, **`TerrainPayloadInspector`** format sniff, and when **`EnableTerrainPayloadParsing`** is true (default),
+  **`TerrainPayloadSummarizer`** adds PNG IHDR dimensions / MIME-oriented hints (full DEM decode stays host-side).
 - When **`EnableVectorIntelligence`** is true, **`IVectorMapIntelligenceService`** runs on fetched
   vector bytes. The default implementation is **`ModelAugmentedVectorMapIntelligenceService`**, which
   uses **`HeuristicVectorMapIntelligenceService`** and optionally **`IModel`** when
@@ -65,8 +67,9 @@ by `engineId`.
 ## Material hints (M6)
 
 `GET /api/forge/map/material-hints` returns **`ForgeMaterialHintsResponse`**: suggested procedural colours
-and surface-role bindings from **`IMaterialIntelligenceService`** (default **`HeuristicMaterialIntelligenceService`**),
-keyed off the active aesthetic and optional **`parseKind`** query (`mvt`, `geojson`, `osm_xml`, `unknown`).
+and surface-role bindings from **`IMaterialIntelligenceService`** (default **`ModelAugmentedMaterialIntelligenceService`**
+wrapping **`HeuristicMaterialIntelligenceService`**). Optional **`parseKind`** query (`mvt`, `geojson`, `osm_xml`, `unknown`).
+With **`Nexo:ForgeSession:EnableMaterialModel`** **`true`**, a bounded **`IModel`** prompt may append **`model_notes`** (latency capped via **`MaterialModelTimeoutMs`**).
 
 ## Persistence
 

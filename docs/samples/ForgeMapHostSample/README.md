@@ -1,14 +1,14 @@
-# Forge map host sample (M1–M6 + phases A/B/C)
+# Forge map host sample (through phase D)
 
-Runnable **.NET 8** console app that walks through **M1–M5** plus **phase A (M6)**, **phase B (tile cache)**, and points at **phase C (engine bridge)** docs:
+Runnable **.NET 8** console app that walks through **M1–M5**, **phases A–C** (material hints, tile cache, engine bridge layouts), and **phase D** (Mapbox Terrain-RGB + **`fetch_terrain`** parse detail in the pipeline).
 
 1. **M1 — Manifest consumption:** `GET /api/forge/engine/{engineId}/aesthetic-manifest`, unwraps the JSON envelope, prints pack id / profile / binding count.
 2. **M4 — LOD pyramid:** `GET /api/forge/map/tile-pyramid` — prints zoom tier(s) from **`LodLevels`** vs **`PYRAMID_FINEST_ZOOM`** (runs early so you see pyramid without Mapbox).
 3. **Phase A / M6 — Material hints:** `GET /api/forge/map/material-hints` — procedural surface hints for the active aesthetic.
 4. **M2 — Tile orchestration:** Uses **`WebMercatorTileMath`** + **`VectorTileUrlBuilder`** (from `Nexo.GameDomain`) to build a Mapbox vector tile URL from lon/lat/zoom + **`MAPBOX_ACCESS_TOKEN`**.
 5. **Phase B — Tile disk cache:** When **`NEXO_TILE_CACHE_DIR`** is set, writes raw MVT bytes under **`MapTileDiskCache`** keyed by **`MapTileCacheKey`** (aesthetic + provider + **`z/x/y`**).
-6. **M3 — Pipeline:** `POST /api/forge/map/pipeline/run` with the tile URL and tile indices; prints parse/verification detail from the API.
-7. **Phase C — Engine bridge:** After run, prints a pointer to **`docs/engine-bridge/README.md`** and Unity/Godot snippets.
+6. **M3 + terrain parity:** `POST /api/forge/map/pipeline/run` with **vector** and **Terrain-RGB** URLs (`TerrainTileUrlBuilder` / **`terrainDataUrl`**); prints vector parse/verify plus **`fetch_terrain`** PNG summary from the API.
+7. **Engine bridge:** **`docs/engine-bridge/`** — **`unity-package`**, **`godot-addon`**, and **`snippets/`**.
 
 ## Prerequisites
 

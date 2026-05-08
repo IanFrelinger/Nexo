@@ -98,7 +98,13 @@ builder.Services.AddNexo(options =>
     options.RegisterBackgroundAgentHostedService = true;
 });
 
-builder.Services.AddSingleton<IMaterialIntelligenceService, HeuristicMaterialIntelligenceService>();
+builder.Services.AddSingleton<HeuristicMaterialIntelligenceService>();
+builder.Services.AddSingleton<IMaterialIntelligenceService>(sp =>
+    new ModelAugmentedMaterialIntelligenceService(
+        sp.GetRequiredService<Nexo.Abstractions.IModel>(),
+        sp.GetRequiredService<HeuristicMaterialIntelligenceService>(),
+        sp.GetRequiredService<IOptions<ForgeSessionOptions>>(),
+        sp.GetRequiredService<ILogger<ModelAugmentedMaterialIntelligenceService>>()));
 builder.Services.AddSingleton<HeuristicVectorMapIntelligenceService>();
 builder.Services.AddSingleton<IMapVerificationService, HeuristicMapVerificationService>();
 builder.Services.AddSingleton<IVectorMapIntelligenceService>(sp =>

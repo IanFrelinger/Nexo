@@ -46,6 +46,22 @@ public sealed class MapPipelineRunnerTests
         }
     }
 
+    private sealed class Png1x1Handler : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            var png = Convert.FromBase64String(
+                "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==");
+            return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            {
+                Content = new ByteArrayContent(png)
+                {
+                    Headers = { ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("image/png") }
+                }
+            });
+        }
+    }
+
     [Fact]
     public async Task RunAsync_FetchesVectorBytes_WhenUrlProvided()
     {
@@ -86,6 +102,46 @@ public sealed class MapPipelineRunnerTests
         var vec = result.Stages.Should().Contain(s => s.Stage == "fetch_vector" && s.Status == "ok").Subject;
         vec.Detail.Should().Contain("parse=skipped");
         vec.Detail.Should().Contain("verify=");
+    }
+
+    [Fact]
+    public async Task RunAsync_FetchTerrain_IncludesPngParse_WhenEnabled()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.Configure<ForgeSessionOptions>(o =>
+        {
+            o.MaxFetchResponseBytes = 4096;
+            o.EnableTerrainPayloadParsing = true;
+            o.AllowMapFetchWhenAllowedHostsEmpty = false;
+            o.AllowedMapFetchHosts = ["example.com"];
+        });
+        services.AddHttpClient("forge-map")
+            .ConfigurePrimaryHttpMessageHandler(() => new Png1x1Handler());
+        services.AddSingleton<HeuristicVectorMapIntelligenceService>();
+        services.AddSingleton<IVectorMapIntelligenceService>(sp => sp.GetRequiredService<HeuristicVectorMapIntelligenceService>());
+        services.AddSingleton<IMapVerificationService, HeuristicMapVerificationService>();
+        services.AddSingleton<IForgeStateService>(new InMemoryForgeStateService());
+        services.AddSingleton<MapPipelineRunner>();
+        await using var sp = services.BuildServiceProvider();
+        var runner = sp.GetRequiredService<MapPipelineRunner>();
+
+        var plan = new MapAdaptationPlan(
+            MapRenderingProfiles.VoxelGrid,
+            "voxel",
+            ["fetch_terrain"],
+            []);
+
+        var result = await runner.RunAsync(plan, new MapPipelineRunRequest(
+            DryRun: false,
+            TimeoutMs: 5000,
+            TerrainDataUrl: "https://example.com/t.png"));
+
+        result.Success.Should().BeTrue();
+        var terr = result.Stages.Should().Contain(s => s.Stage == "fetch_terrain" && s.Status == "ok").Subject;
+        terr.Detail.Should().Contain("format=png");
+        terr.Detail.Should().Contain("parse=png:");
+        terr.Detail.Should().Contain("1x1");
     }
 
     [Fact]

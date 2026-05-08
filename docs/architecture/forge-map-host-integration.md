@@ -59,8 +59,7 @@ This document tracks **host-side** work that sits next to runtime types in **`Ne
 
 **Implemented in-repo:**
 
-- **`IMaterialIntelligenceService`**, **`HeuristicMaterialIntelligenceService`**, **`MaterialSuggestionResult`** / **`MaterialSurfaceHint`**.
-- **`GET /api/forge/map/material-hints`** — JSON hints for the active aesthetic (optional **`parseKind`** query).
+- **`IMaterialIntelligenceService`** via **`ModelAugmentedMaterialIntelligenceService`** ( **`HeuristicMaterialIntelligenceService`** baseline ); **`GET /api/forge/map/material-hints`** — JSON hints for the active aesthetic (optional **`parseKind`** query). Optional **`Nexo:ForgeSession:EnableMaterialModel`** for **`IModel`** augmentation.
 - Unit tests in **`HeuristicMaterialIntelligenceServiceTests`** and API coverage in **`ForgeEndpointsTests`**.
 
 ## Tile cache and reproducibility (phase B)
@@ -75,17 +74,31 @@ This document tracks **host-side** work that sits next to runtime types in **`Ne
 
 ## Engine bridge (phase C)
 
-**Goal:** Copy-paste starters for Unity/Godot that consume the same HTTP contracts as the sample.
+**Goal:** Copy-paste starters and folder layouts for Unity/Godot that consume the same HTTP contracts as the sample.
 
 **Implemented in-repo:**
 
 - **`docs/engine-bridge/README.md`** — overview.
 - **`docs/engine-bridge/snippets/UnitySample.cs`** — manifest + material hints via **`HttpClient`**.
 - **`docs/engine-bridge/snippets/GodotTileBridge.gd`** — tile pyramid JSON via **`HTTPRequest`**.
+- **`docs/engine-bridge/unity-package/`** — UPM-style **`package.json`** + **`Runtime/ForgeMapBridge.cs`**.
+- **`docs/engine-bridge/godot-addon/addons/forge_map_bridge/`** — optional EditorPlugin + **`godot_tile_bridge.gd`**.
+
+## Terrain parity + optional material model (phase D)
+
+**Goal:** Treat **`fetch_terrain`** like **`fetch_vector`** for diagnostics (bytes + lightweight header summary), align Mapbox Terrain-RGB URLs with vector tiles, and optionally augment material hints with **`IModel`**.
+
+**Implemented in-repo:**
+
+- **`TerrainTileUrlBuilder.MapboxTerrainRgbTileUrl`** — **`mapbox.terrain-rgb`** **`pngraw`** tiles for **`z/x/y`**.
+- **`TerrainPayloadInspector`**, **`TerrainPayloadSummarizer`**, **`TerrainHostImportHints`** — PNG IHDR dimensions when possible; JPEG/TIFF/WebP sniffing.
+- **`MapPipelineRunner`** — **`fetch_terrain`** detail includes **`parse=…`** when **`EnableTerrainPayloadParsing`** is true (**`Nexo:ForgeSession`**).
+- **`ModelAugmentedMaterialIntelligenceService`** registered as **`IMaterialIntelligenceService`**; enable **`Nexo:ForgeSession:EnableMaterialModel`** for bounded prompts (**`MaterialModelTimeoutMs`**).
+- **`ForgeMapHostSample`** — passes **`terrainDataUrl`** (Terrain-RGB) with vector URLs when **`MAPBOX_ACCESS_TOKEN`** is set.
 
 ## Next steps (optional)
 
-- Optional model-augmented material suggestions (bounded latency; off by default).
+- Terrain-specific verification rules (nodata elevation bands) alongside **`IMapVerificationService`**.
 - Deeper engine-specific importers (addressables, GLTF export, etc.).
 
 ## Related
