@@ -15,6 +15,7 @@ namespace Nexo.Tests.Infrastructure.Tests.Observation;
 /// </summary>
 [Collection("Integration")]
 [Trait("Category", "Integration")]
+[Trait("Category", "ProdStyle")]
 public sealed class ObservationPipelineIntegrationTests : IDisposable
 {
     private readonly string _tempDir;

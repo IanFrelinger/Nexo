@@ -1,4 +1,4 @@
-.PHONY: build build-core restore-core test test-cross-platform test-portable test-multi-env test-all-platforms test-all-platforms-ephemeral ci-verify validate-safe review-summary clean-test-artifacts test-readiness-gate
+.PHONY: build build-core restore-core test test-prod-style test-framework-prod-first test-cross-platform test-portable test-multi-env test-all-platforms test-all-platforms-ephemeral ci-verify validate-safe review-summary clean-test-artifacts test-readiness-gate
 
 # Build the solution
 build:
@@ -10,6 +10,19 @@ restore-core:
 
 build-core:
 	dotnet build Nexo.LocalDevCore.slnf -v minimal
+
+# Production-like integration (Category=ProdStyle): Nexo.Tests.Infrastructure only — real DI hosts / graphs.
+# Run this before the full suite when validating framework behaviour locally or in CI-style gates.
+test-prod-style: restore-core build-core
+	dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --no-build \
+	  --filter "Category=ProdStyle" \
+	  --blame-hang-timeout 120s --blame-hang-dump-type none
+
+# Runs test-prod-style then the full LocalDevCore test slice (Domain + Infrastructure + CLI harness).
+# Note: ProdStyle tests execute twice (once filtered, once inside the full run).
+test-framework-prod-first: test-prod-style
+	dotnet test Nexo.LocalDevCore.slnf --no-build \
+	  --blame-hang-timeout 30s --blame-hang-dump-type none
 
 # Run tests locally (blame-hang-timeout prevents indefinite freeze from hung tests)
 # --blame-hang-dump-type none avoids 6GB+ hang dumps that accumulate in TestResults/

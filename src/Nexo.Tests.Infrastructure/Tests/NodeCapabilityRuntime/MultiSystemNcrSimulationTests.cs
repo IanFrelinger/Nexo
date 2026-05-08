@@ -16,6 +16,7 @@ namespace Nexo.Tests.Infrastructure.Tests.NodeCapabilityRuntime;
 /// asynchronous brick execution (<see cref="CapabilityRoutingBrick.ExecuteAsync"/>).
 /// </summary>
 [Trait("Category", "NCR")]
+[Trait("Category", "ProdStyle")]
 public sealed class MultiSystemNcrSimulationTests
 {
     [Fact]

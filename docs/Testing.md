@@ -8,6 +8,7 @@ Nexo uses multiple mechanisms to prevent tests from hanging indefinitely and kee
 
 | Scope | blame-hang-timeout | Per-test timeout | Notes |
 |-------|--------------------|------------------|-------|
+| prod-style | 120s | varies | **Category=ProdStyle** — production-like DI / hosts (`make test-prod-style`) |
 | smoke | 30s | — | BaseFrameworkSmokeTests; local `make test` |
 | integration | 60s | 15s (Integration tests) | Category=Integration |
 | persistence | 60s | — | InMemoryPersistenceTests |
@@ -28,11 +29,19 @@ Nexo uses multiple mechanisms to prevent tests from hanging indefinitely and kee
 
 ### Adding New Integration Tests
 
-1. Add `[Collection("Integration")]` and `[Trait("Category", "Integration")]` to the test class
-2. Add `[Fact(Timeout = 15000)]` (or appropriate value) to async/I/O tests
-3. Integration tests run sequentially (DisableParallelization) to avoid file watcher and temp dir contention
+1. Add `[Collection("Integration")]` and `[Trait("Category", "Integration")]` to the test class when appropriate.
+2. For suites that exercise production DI graphs or **`Host`** wiring, also add **`[Trait("Category", "ProdStyle")]`** so they participate in **`make test-prod-style`** / **`nexo ci verify`** ordering.
+3. Add `[Fact(Timeout = 15000)]` (or appropriate value) to async/I/O tests
+4. Integration tests run sequentially (DisableParallelization) to avoid file watcher and temp dir contention
 
 ## Running Tests
+
+**Production-like gate first** (when validating hosting, routing, adaptation, Forge — matches **`Category=ProdStyle`**):
+
+```bash
+make test-prod-style
+make test-framework-prod-first   # ProdStyle + full Nexo.LocalDevCore.slnf slice (ProdStyle runs twice)
+```
 
 `nexo` command note:
 - Commands shown as `nexo ...` assume the CLI tool is installed on your PATH.

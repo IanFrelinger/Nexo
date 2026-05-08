@@ -17,6 +17,7 @@ namespace Nexo.Tests.Infrastructure.Tests.NodeCapabilityRuntime;
 /// </summary>
 [Trait("Category", "NCR")]
 [Trait("Category", "VirtualProduction")]
+[Trait("Category", "ProdStyle")]
 public sealed class VirtualProductionNcrRoutingTests
 {
     [Fact]
