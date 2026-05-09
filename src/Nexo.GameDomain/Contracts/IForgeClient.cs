@@ -5,7 +5,7 @@ using Nexo.GameDomain.Session;
 namespace Nexo.GameDomain.Contracts;
 
 /// <summary>
-/// Contract for a Unity client communicating with the Nexo Forge backend.
+/// Contract for a game-engine client (Unity, Unreal, Godot, or custom) communicating with the Nexo Forge backend.
 /// Implementations handle transport (HTTP, gRPC, WebSocket) without exposing
 /// framework-specific dependencies.
 /// </summary>

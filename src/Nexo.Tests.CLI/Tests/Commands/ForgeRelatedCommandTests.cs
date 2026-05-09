@@ -9,6 +9,7 @@ using Xunit;
 namespace Nexo.Tests.CLI.Tests.Commands;
 
 [Trait("Category", "E2E")]
+[Trait("Category", "ProdStyle")]
 public sealed class ForgeRelatedCommandTests
 {
     [Fact(Timeout = 15000)]

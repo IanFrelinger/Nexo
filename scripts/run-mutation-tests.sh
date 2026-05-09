@@ -6,7 +6,7 @@ set -e
 cd "$(dirname "$0")/.."
 mkdir -p mutation-reports
 
-# Use Nexo.Kernel.sln to avoid building Nexo.Client.Mobile/Nexo.Lite (Android SDK required)
+# Use Nexo.Kernel.sln for a focused kernel graph (Stryker / mutation tooling).
 SOLUTION="Nexo.Kernel.sln"
 
 echo "=== Mutation testing: Nexo.Policies.Dev (PathAllowlist, MaxWriteSize) ==="

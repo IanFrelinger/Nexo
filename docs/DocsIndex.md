@@ -16,10 +16,11 @@ Documentation index for the Nexo platform. Start here to find what you need.
 
 ## Operator / Production Readiness
 
+- **`docs/production-readiness/README.md`** — **hub** for supporting SMB, enterprise, SaaS, and air-gapped production: release, security, ops, data/compliance, reliability, testing, operator deployment; includes [catalog by deployment type](production-readiness/CatalogByDeploymentType.md) and [runbook template](production-readiness/RunbookTemplate.md).
 - `docs/DEPLOYMENT.md` — **golden paths** (portal stack, CLI image, agent server), **pinning** images vs `latest`, NuGet/CI notes.
 - `docs/RELEASE_RUNBOOK.md` — **decision table** (tag vs NuGet-only vs branch images), Trusted Publishing, fork GHCR notes.
 - `.github/workflows/pack-hosting-graph-alignment.yml` — fails if `pack-nexo-hosting-graph` diverges from the `Nexo.Hosting` MSBuild graph (optional **`scripts/pack-nexo-hosting-graph.allowlist.txt`**).
-- `docs/ProductionReadinessGate-v1.md` — production gate commands and expected assertions.
+- `docs/ProductionReadinessGate-v1.md` — production gate commands and expected assertions (binary PASS/FAIL technical gate).
 - `.github/workflows/production-readiness-gate-v1.yml` — automated production readiness gate.
 - `.github/workflows/environment-setup-gate-v1.yml` — environment bootstrap + dependency setup gate (Linux/macOS/Windows).
 - `.github/workflows/compose-gate.yml` — validates `docker-compose.test.yml` and `docker-compose.ephemeral.yml` lanes.
@@ -30,7 +31,7 @@ Documentation index for the Nexo platform. Start here to find what you need.
 - `.github/workflows/container-image-gate.yml` — container image buildability and smoke-run gate.
 - `.github/workflows/release.yml` — **one entry**: tag `v*.*.*` → GHCR (`nexo-cli`, `nexo-api`) + NuGet; run summary with pin lines.
 - `.github/workflows/container-image-publish.yml` — GHCR on **main** path-filtered pushes + manual (tags use `release.yml` only).
-- `.github/workflows/release-nuget.yml` — **NuGet-only** manual dispatch.
+- `.github/workflows/release-nuget.yml` — **NuGet-only** manual dispatch; after push to nuget.org, **Verify NuGet consumer** (same reusable job as **release.yml**).
 - `.github/workflows/onboarding-docs-guard.yml` — prevent startup-doc regressions in quick-start commands.
 - `.github/workflows/cross-platform-tests.yml` — cross-platform tests on Ubuntu, macOS, and Windows.
 - `.github/workflows/runtime-release-gate.yml` — runtime release quality gate.
@@ -67,6 +68,7 @@ Documentation index for the Nexo platform. Start here to find what you need.
 - `docs/api/index.md` — API docs index.
 - `docs/sdk.md` — SDK integration guidance.
 - `docs/PUBLISHING.md` — pack and publish `Nexo.Hosting` (and its `Nexo.*` graph) to NuGet / GitHub Packages; operator checklist.
+- `docs/NuGetConsumerVerify.md` — validate NuGet-only consumption (local pack vs published feed); workflow **`.github/workflows/nuget-consumer-verify.yml`**.
 - `docs/samples/StableSdkHostSample/Program.cs` — reference host integration that only uses stable SDK extension points.
 - `docs/runtime/ExecutionRouting.md` — NCR-based generation routing (local, peer network, RunPod), preferences, and resilience behavior.
 - `docs/AgentExecutionIsolation.md` — per-agent isolation tiers (in-process through container-per-agent), JSON field, and invocation metadata for transports.
@@ -79,6 +81,7 @@ Documentation index for the Nexo platform. Start here to find what you need.
 
 ## Planning & Roadmap
 
+- `docs/MeshPhase0NorthStar.md` — **Phase 0 (executed):** federated mesh north star, capability matrix by profile, trust boundary, SLOs (feeds mesh Phases 1–7).
 - `docs/ExecutionPlan.md` — phased execution plan with implementation tasks, dependencies, and success metrics.
 - `docs/IssueBatch_30-60-90_Roadmap.md` — 30/60/90 gap-closure issue batch (issue templates).
 - `docs/NorthStarGapAnalysis.md` — North Star vs codebase gap analysis with status tracking.
