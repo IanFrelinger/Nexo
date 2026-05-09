@@ -17,7 +17,7 @@ dotnet run --project src/Nexo.CLI -- --help
 
 ## Faster local restore (subset solution)
 
-Full `Nexo.sln` can require optional workloads (for example MAUI). For CLI plus core tests without opening every project, use the solution filter **`Nexo.LocalDevCore.slnf`**:
+Full **`Nexo.sln`** is intended to build on **Linux** with a stock .NET SDK (no optional workloads). For a faster subset (**CLI** plus core tests), use the solution filter **`Nexo.LocalDevCore.slnf`**:
 
 ```bash
 dotnet restore Nexo.LocalDevCore.slnf

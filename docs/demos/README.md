@@ -1,6 +1,6 @@
-# Nexo client demos (no MAUI workloads)
+# Nexo client demos
 
-Three minimal **`net8.0`** samples that call **`Nexo.API`** through **`Nexo.Client`** (`GET api/status`). Use them on Linux CI or dev boxes without Android/iOS/MAUI workloads.
+Three minimal **`net8.0`** samples under **`Nexo.Demos.sln`** that call **`Nexo.API`** through **`Nexo.Client`** (`GET api/status`). They build on **Linux** with a stock .NET SDK.
 
 Build everything:
 
@@ -37,7 +37,3 @@ dotnet run --project docs/demos/Nexo.Demos.Avalonia
 ```
 
 Headless/Linux servers without a display cannot open the Avalonia window; use the **Console** or **Blazor** demo there instead.
-
-## Relation to MAUI
-
-**`Nexo.Client.Mobile`** remains the MAUI-based optional client. These demos replace **nothing** automatically—they show workload-free alternatives you can run in constrained environments.
