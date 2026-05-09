@@ -6,6 +6,7 @@ using Nexo.Infrastructure.Observation;
 using Nexo.Infrastructure.Trust;
 using Nexo.Tests.Application.Helpers;
 using Nexo.Tests.Infrastructure.Helpers;
+using Nexo.Tests.Infrastructure.Locking;
 using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Observation;
@@ -33,38 +34,17 @@ public sealed class ObservationPipelineIntegrationTests : IDisposable
         _tempDirCleanup.Dispose();
     }
 
-    /// <summary>Cross-process lock: Linux does not block on <see cref="FileShare.None"/>; other hosts get <see cref="IOException"/> and must poll.</summary>
-    private static async Task<FileStream> AcquireCrossHostFileLockAsync(string path, TimeSpan maxWait, CancellationToken cancellationToken = default)
-    {
-        var deadline = DateTimeOffset.UtcNow + maxWait;
-        while (DateTimeOffset.UtcNow < deadline)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            try
-            {
-                return new FileStream(
-                    path,
-                    FileMode.OpenOrCreate,
-                    FileAccess.ReadWrite,
-                    FileShare.None,
-                    bufferSize: 1,
-                    FileOptions.DeleteOnClose);
-            }
-            catch (IOException)
-            {
-                await Task.Delay(150, cancellationToken).ConfigureAwait(false);
-            }
-        }
-
-        throw new TimeoutException($"Could not acquire exclusive lock for {path} within {maxWait}.");
-    }
-
     [Fact(Timeout = TestTimeouts.FileSystemPipelineIntegration)]
     public async Task FullPipeline_FileSystemToPatternStore_StoresPatterns()
     {
         // Multi-target `dotnet test` runs net8 + net9 hosts in parallel; Linux inotify/FileSystemWatcher can drop events when both run this test at once.
-        var gatePath = Path.Combine(Path.GetTempPath(), "nexo-observation-fs-pipeline.integration.lock");
-        await using var crossHostGate = await AcquireCrossHostFileLockAsync(gatePath, TimeSpan.FromMinutes(3));
+        await using var crossHostGate = await CrossProcessLockDefaults.SharedProvider.AcquireAsync(
+            "observation-fs-pipeline.integration",
+            new CrossProcessLockOptions
+            {
+                FileNamePrefix = "nexo-observation",
+                FileNameSuffix = ".lock",
+            });
         var watchPath = Path.Combine(_tempDir, "src");
         Directory.CreateDirectory(watchPath);
         var testFile = Path.Combine(watchPath, "foo.cs");
