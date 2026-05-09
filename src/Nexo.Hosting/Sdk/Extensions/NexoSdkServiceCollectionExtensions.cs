@@ -1,6 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Nexo.Abstractions;
-using Nexo.Core.Application.Sdk.Ports;
+using Nexo.Infrastructure.Sdk.Ports;
 using Nexo.Infrastructure.Adaptation;
 
 namespace Nexo.Hosting.Sdk;

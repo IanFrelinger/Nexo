@@ -9,6 +9,7 @@ using Nexo.Core.Domain.Execution;
 using Nexo.Infrastructure.Adaptation;
 using Nexo.Infrastructure.Execution;
 using Nexo.Infrastructure.Observation;
+using Nexo.Infrastructure.Sdk.Observation;
 using Nexo.Infrastructure.Rollback;
 
 namespace Nexo.Infrastructure;

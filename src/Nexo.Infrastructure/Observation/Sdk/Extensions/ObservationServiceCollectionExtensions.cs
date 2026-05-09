@@ -1,7 +1,8 @@
 using Microsoft.Extensions.DependencyInjection;
 using Nexo.Core.Application.Observation.Ports;
+using Nexo.Infrastructure.Observation;
 
-namespace Nexo.Infrastructure.Observation;
+namespace Nexo.Infrastructure.Sdk.Observation;
 
 /// <summary>
 /// DI extension methods for the observation pipeline (Infrastructure layer).

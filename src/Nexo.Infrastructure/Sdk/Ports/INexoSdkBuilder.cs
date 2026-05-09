@@ -1,11 +1,12 @@
 using Nexo.Core.Domain.Agents;
 using Nexo.Core.Domain.Bricks;
 
-namespace Nexo.Core.Application.Sdk.Ports;
+namespace Nexo.Infrastructure.Sdk.Ports;
 
 /// <summary>
 /// Fluent builder for registering external components (bricks, agents) with Nexo at runtime.
-/// Call before AddNexo(). Enables runtime registration without recompiling Nexo.
+/// Call before <c>AddNexo()</c>. Enables runtime registration without recompiling Nexo.
+/// Default implementation in the Nexo.Hosting.Sdk assembly (<c>HostNexoSdkBuilder</c>).
 /// </summary>
 public interface INexoSdkBuilder
 {

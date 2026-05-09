@@ -1,5 +1,17 @@
 # Plan: close remaining SDK-style layout gaps
 
+## Execution status (branch)
+
+| Item | Status |
+| ---- | ------ |
+| **Track A — Hosting partials** | **Partial:** `NexoServiceCollectionExtensions.Deployment.cs` holds deployment/module helpers + `RegisterNodeCapabilityRuntime`; main file is `partial` with full `AddNexo` body (further slices optional). |
+| **Track B — Infrastructure `Sdk/`** | **Pilot:** `Observation/Sdk/Extensions/` + namespace `Nexo.Infrastructure.Sdk.Observation` for observation DI extensions; remaining areas follow the same pattern incrementally. |
+| **Non-goal — ports** | **`INexoSdkBuilder`** moved to **`Nexo.Infrastructure.Sdk.Ports`** (removed from `Nexo.Core.Application`). Hosting references updated. |
+| **Non-goal — megapackage** | **`Nexo.Framework.Sdk`** project added with **`AddNexoFramework`** (optional client URL + `AddNexo`). |
+| **Non-goal — full `Sdk.*` rename** | **Not applied globally** to Infrastructure (would touch every subsystem); Observation establishes the pattern. |
+
+---
+
 This document turns the “remaining gaps” from [`SdkStructure.md`](SdkStructure.md) into **ordered, low-risk work** with clear completion criteria. No calendar estimates — only **what must change**, **dependencies**, and **risk**.
 
 ---

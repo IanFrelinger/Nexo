@@ -12,7 +12,7 @@ Use the host surface when embedding Nexo into your own service. Use the client s
 ### Stable
 
 - `Nexo.Hosting.Sdk` (`AddNexoSdk(Action<INexoSdkBuilder>)` on `IServiceCollection`; builder implementation `HostNexoSdkBuilder`)
-- `Nexo.Core.Application.Sdk.Ports.INexoSdkBuilder`
+- `Nexo.Infrastructure.Sdk.Ports.INexoSdkBuilder`
 - `Nexo.Sdk.Client` (`AddNexoClientSdk(baseUrl, ...)`, `NexoClientSdkBuilder`) + `Nexo.Client` (`INexoClient`)
 - Obsolete compat: `AddNexoSdk(baseUrl, ...)` / `NexoSdkBuilder` on the client package (same assembly as `Nexo.Sdk`)
 

@@ -1,5 +1,5 @@
 using Nexo.Abstractions;
-using Nexo.Core.Application.Sdk.Ports;
+using Nexo.Infrastructure.Sdk.Ports;
 using Nexo.Core.Domain.Agents;
 using Nexo.Core.Domain.Bricks;
 
