@@ -11,5 +11,8 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="SixLabors.ImageSharp" />
+    <PackageReference Include="SixLabors.ImageSharp.Drawing" />
+    <PackageReference Include="OsmSharp" />
   </ItemGroup>
 </Project>

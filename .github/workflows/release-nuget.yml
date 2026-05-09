@@ -20,3 +20,11 @@ jobs:
     secrets: inherit
     with:
       package_version: ${{ inputs.version }}
+
+  verify-nuget-consumer:
+    name: Verify NuGet consumer (nuget.org)
+    needs: [nuget]
+    if: success() && (vars.NUGET_PUBLISH_MODE == 'oidc' || vars.NUGET_PUBLISH_MODE == 'apikey')
+    uses: ./.github/workflows/reusable-verify-nuget-consumer.yml
+    with:
+      package_version: ${{ inputs.version }}

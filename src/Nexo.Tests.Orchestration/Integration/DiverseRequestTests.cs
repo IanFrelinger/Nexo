@@ -16,6 +16,8 @@ namespace Nexo.Tests.Orchestration.Integration;
 /// <summary>
 /// Tests the Architect Agent with diverse request types to ensure it handles various scenarios.
 /// </summary>
+[Trait("Category", "Integration")]
+[Trait("Category", "ProdStyle")]
 public class DiverseRequestTests
 {
     private readonly Mock<IModel> _modelMock;

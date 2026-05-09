@@ -21,6 +21,8 @@ namespace Nexo.Tests.Orchestration.Integration;
 /// <summary>
 /// End-to-end tests for the complete orchestration flow: request → Architect → spawn agents → outputs.
 /// </summary>
+[Trait("Category", "Integration")]
+[Trait("Category", "ProdStyle")]
 public class EndToEndOrchestrationTests
 {
     private readonly IServiceProvider _serviceProvider;

@@ -30,6 +30,10 @@
 
 - [ ] Tests that need copied assemblies, GPU, or cloud credentials are isolated in named jobs with clear docs so they are not skipped silently.
 
+### Package publish (NuGet)
+
+- [ ] **NuGet deploy smoke:** after each publish, run `verify-stable-sdk-host-sample-published-feed` for the released version (manual, scheduled workflow, or post-release job). See `docs/NuGetConsumerVerify.md`.
+
 ## Repo pointers
 
 - `CONTRIBUTING.md` — local commands and resource safety.

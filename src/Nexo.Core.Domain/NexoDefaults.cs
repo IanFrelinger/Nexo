@@ -60,6 +60,14 @@ public static class NexoDefaults
     /// Override: <c>Nexo:OpenAi:VisionModel</c>.</summary>
     public const string OpenAiDefaultVisionModel = "gpt-4o-mini";
 
+    // ── OpenAI-compatible (vLLM, LiteLLM, llama.cpp server, etc.) ─────
+
+    /// <summary>Default model id when <c>provider=openai_compat</c> and <c>OPENAI_COMPAT_MODEL</c> is unset.</summary>
+    public const string OpenAiCompatDefaultModel = "default";
+
+    /// <summary>Default vision model when <c>OPENAI_COMPAT_VISION_MODEL</c> and <c>OPENAI_COMPAT_MODEL</c> are unset.</summary>
+    public const string OpenAiCompatDefaultVisionModel = "default";
+
     // ── Azure OpenAI ──────────────────────────────────────────────────
 
     /// <summary>API version sent in Azure OpenAI requests.
