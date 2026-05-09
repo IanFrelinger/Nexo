@@ -33,16 +33,38 @@ public sealed class ObservationPipelineIntegrationTests : IDisposable
         _tempDirCleanup.Dispose();
     }
 
-#if NET9_0
-    [Fact(Skip = "Parallel net8+net9 hosts contend for Linux FileSystemWatcher/inotify; covered on net8 and PatternDetectorTests.")]
-#else
-    [Fact(Timeout = TestTimeouts.Integration)]
-#endif
+    /// <summary>Cross-process lock: Linux does not block on <see cref="FileShare.None"/>; other hosts get <see cref="IOException"/> and must poll.</summary>
+    private static async Task<FileStream> AcquireCrossHostFileLockAsync(string path, TimeSpan maxWait, CancellationToken cancellationToken = default)
+    {
+        var deadline = DateTimeOffset.UtcNow + maxWait;
+        while (DateTimeOffset.UtcNow < deadline)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            try
+            {
+                return new FileStream(
+                    path,
+                    FileMode.OpenOrCreate,
+                    FileAccess.ReadWrite,
+                    FileShare.None,
+                    bufferSize: 1,
+                    FileOptions.DeleteOnClose);
+            }
+            catch (IOException)
+            {
+                await Task.Delay(150, cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        throw new TimeoutException($"Could not acquire exclusive lock for {path} within {maxWait}.");
+    }
+
+    [Fact(Timeout = TestTimeouts.FileSystemPipelineIntegration)]
     public async Task FullPipeline_FileSystemToPatternStore_StoresPatterns()
     {
-#if NET9_0
-        await Task.CompletedTask;
-#else
+        // Multi-target `dotnet test` runs net8 + net9 hosts in parallel; Linux inotify/FileSystemWatcher can drop events when both run this test at once.
+        var gatePath = Path.Combine(Path.GetTempPath(), "nexo-observation-fs-pipeline.integration.lock");
+        await using var crossHostGate = await AcquireCrossHostFileLockAsync(gatePath, TimeSpan.FromMinutes(3));
         var watchPath = Path.Combine(_tempDir, "src");
         Directory.CreateDirectory(watchPath);
         var testFile = Path.Combine(watchPath, "foo.cs");
@@ -96,7 +118,6 @@ public sealed class ObservationPipelineIntegrationTests : IDisposable
 
         Assert.Contains(patterns, p => p.EventType == "repeated-edits");
         Assert.True(patterns.First(p => p.EventType == "repeated-edits").Frequency >= 3);
-#endif
     }
 
     [Fact(Timeout = TestTimeouts.Integration)]
