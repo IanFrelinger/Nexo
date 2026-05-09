@@ -60,6 +60,10 @@
     <InternalsVisibleTo Include="Nexo.Tests.CLI" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Include="../Nexo.Hosting/GlobalUsings.Infrastructure.Sdk.cs" Link="GlobalUsings.Infrastructure.Sdk.cs" />
+  </ItemGroup>
+
   <ItemGroup Condition="'$(IncludeTestProjectReferences)' != 'false'">
     <!-- Test projects for runtime discovery (excluding CLI to avoid circular dependency) -->
     <ProjectReference Include="../Nexo.Tests.Domain/Nexo.Tests.Domain.csproj" />

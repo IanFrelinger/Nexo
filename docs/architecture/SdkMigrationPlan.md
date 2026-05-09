@@ -4,11 +4,11 @@
 
 | Item | Status |
 | ---- | ------ |
-| **Track A — Hosting partials** | **Partial:** `NexoServiceCollectionExtensions.Deployment.cs` holds deployment/module helpers + `RegisterNodeCapabilityRuntime`; main file is `partial` with full `AddNexo` body (further slices optional). |
-| **Track B — Infrastructure `Sdk/`** | **Pilot:** `Observation/Sdk/Extensions/` + namespace `Nexo.Infrastructure.Sdk.Observation` for observation DI extensions; remaining areas follow the same pattern incrementally. |
-| **Non-goal — ports** | **`INexoSdkBuilder`** moved to **`Nexo.Infrastructure.Sdk.Ports`** (removed from `Nexo.Core.Application`). Hosting references updated. |
-| **Non-goal — megapackage** | **`Nexo.Framework.Sdk`** project added with **`AddNexoFramework`** (optional client URL + `AddNexo`). |
-| **Non-goal — full `Sdk.*` rename** | **Not applied globally** to Infrastructure (would touch every subsystem); Observation establishes the pattern. |
+| **Track A — Hosting partials** | **`AddNexo`** delegates to **`NexoKernelRegistrar.Register`** (`NexoKernelRegistrar.cs`). **`ModuleSelection`** in **`NexoKernelRegistrationModels.cs`**. **`NexoServiceCollectionExtensions.Deployment.cs`** holds deployment helpers + **`RegisterNodeCapabilityRuntime`** (internal). Optional: slice **`NexoKernelRegistrar`** by **`// ──`** sections. |
+| **Track B — Infrastructure `Sdk/`** | **Done:** `*ServiceCollectionExtensions` under **`Feature/Sdk/Extensions/`** with **`Nexo.Infrastructure.Sdk.<Area>`** namespaces. Collision-safe: **`Nexo.Infrastructure.NodeCapabilityRuntime.Sdk`**, **`Nexo.Infrastructure.Execution.Sdk`**, **`Nexo.Infrastructure.Execution.Routing.Sdk`**, **`Nexo.Infrastructure.Mesh.Sdk`**. |
+| **Consumer projects** | **`GlobalUsings.Infrastructure.Sdk.cs`** in **`Nexo.Hosting`**; **`Nexo.CLI`** and **`Nexo.Tests.Infrastructure`** link it for Sdk extension resolution. |
+| **Non-goal — ports** | **`INexoSdkBuilder`** in **`Nexo.Infrastructure.Sdk.Ports`**. |
+| **Non-goal — megapackage** | **`Nexo.Framework.Sdk`** + **`AddNexoFramework`**. |
 
 ---
 
@@ -22,13 +22,13 @@ This document turns the “remaining gaps” from [`SdkStructure.md`](SdkStructu
    Split the monolithic `AddNexo` registration into **partial static classes** so each subsystem is navigable without changing behavior or public API.
 
 2. **`Nexo.Infrastructure`**  
-   Progressively adopt **`Sdk/Options`**, **`Sdk/Extensions`** (and **`Builders`** where fluent registration exists) **per feature area**, preserving existing **`namespace`** declarations so downstream projects do not break.
+   Adopt **`Sdk/Extensions/`** (and optional **`Sdk/Options`**, **`Sdk/Builders`**) **per feature area**. DI extension namespaces use **`Nexo.Infrastructure.Sdk.<Subsystem>`** (with collision-safe variants noted in [`SdkMigrationPlan.md`](SdkMigrationPlan.md) execution status).
 
 ---
 
 ## Principle (non-negotiable)
 
-- **Namespaces stay stable** — only **folder moves** and optional **partial class** splits.
+- **Sdk extension namespaces** — `*ServiceCollectionExtensions` for DI use **`Nexo.Infrastructure.Sdk.*`** (see [`SdkStructure.md`](SdkStructure.md)). Application/runtime types keep existing **`Nexo.Infrastructure.<Feature>`** namespaces. Consumer apps may use **`GlobalUsings.Infrastructure.Sdk.cs`** (or explicit `using` lines) to bring extension methods into scope.
 - **One mechanical theme per PR** — easier review, bisection, and rollback.
 - **`dotnet build Nexo.sln` + relevant `dotnet test` filters** after each merge.
 

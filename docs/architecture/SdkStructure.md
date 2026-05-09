@@ -20,6 +20,11 @@ These conventions usually **preserve** existing namespaces for bulk moves; **new
 - **`Sdk/Builders/`** — fluent builders implementing port interfaces (`HostNexoSdkBuilder` implements `INexoSdkBuilder`).
 - **`Sdk/Extensions/`** — `*ServiceCollectionExtensions`, OpenTelemetry hooks, etc.
 - **`Observation/Sdk/Extensions/`** — DI extensions use namespace **`Nexo.Infrastructure.Sdk.Observation`** (`AddObservationCore`, `AddObservationInfrastructure`).
+- **Other feature areas** — same physical layout; namespaces follow **`Nexo.Infrastructure.Sdk.<Subsystem>`** unless a **name collision** with runtime types forces **`Nexo.Infrastructure.<Subsystem>.Sdk`** (see **`NodeCapabilityRuntime`**, **`Execution`**, **`Execution.Routing`**, **`Mesh`**).
+
+### Bringing Sdk extensions into scope
+
+Extension methods require their namespace in scope. **`src/Nexo.Hosting/GlobalUsings.Infrastructure.Sdk.cs`** centralizes **`global using`** lines for Sdk namespaces; **`Nexo.CLI`** and **`Nexo.Tests.Infrastructure`** **link** that file in their `.csproj` to avoid duplicating imports across commands and tests.
 
 ## Naming
 

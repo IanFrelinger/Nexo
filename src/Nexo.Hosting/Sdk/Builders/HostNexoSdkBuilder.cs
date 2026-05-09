@@ -1,7 +1,7 @@
 using Nexo.Abstractions;
-using Nexo.Infrastructure.Sdk.Ports;
 using Nexo.Core.Domain.Agents;
 using Nexo.Core.Domain.Bricks;
+using Nexo.Infrastructure.Sdk.Ports;
 
 namespace Nexo.Hosting.Sdk;
 
@@ -34,7 +34,10 @@ public class HostNexoSdkBuilder : INexoSdkBuilder
     public INexoSdkBuilder RegisterAgent<T>() where T : class
     {
         if (!typeof(IAgent).IsAssignableFrom(typeof(T)))
+        {
             throw new ArgumentException($"Type {typeof(T).Name} must implement {nameof(IAgent)}", nameof(T));
+        }
+
         _options.AgentTypes.Add(typeof(T));
         return this;
     }
@@ -43,7 +46,10 @@ public class HostNexoSdkBuilder : INexoSdkBuilder
     public INexoSdkBuilder RegisterAgentCard(AgentCard card)
     {
         if (card == null)
+        {
             throw new ArgumentNullException(nameof(card));
+        }
+
         _options.AgentCards.Add(card);
         return this;
     }

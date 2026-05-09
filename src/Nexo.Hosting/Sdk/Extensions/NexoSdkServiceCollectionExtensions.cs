@@ -1,7 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Nexo.Abstractions;
-using Nexo.Infrastructure.Sdk.Ports;
 using Nexo.Infrastructure.Adaptation;
+using Nexo.Infrastructure.Sdk.Ports;
 
 namespace Nexo.Hosting.Sdk;
 
@@ -35,10 +35,14 @@ public static class NexoSdkServiceCollectionExtensions
         services.AddSingleton(options);
 
         if (options.BrickTypes.Count > 0)
+        {
             services.Configure<AdaptationBrickOptions>(o => o.AdditionalBrickTypes.AddRange(options.BrickTypes));
+        }
 
         foreach (var agentType in options.AgentTypes)
+        {
             services.AddSingleton(typeof(IAgent), agentType);
+        }
 
         return services;
     }

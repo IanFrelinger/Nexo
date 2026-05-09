@@ -14,21 +14,33 @@ public static partial class NexoServiceCollectionExtensions
     /// whether a job can run locally or must be routed to a peer/cloud.
     /// Falls back to Linux when the OS is not recognised.
     /// </summary>
-    private static void RegisterNodeCapabilityRuntime(IServiceCollection services, IConfiguration configuration)
+    internal static void RegisterNodeCapabilityRuntime(IServiceCollection services, IConfiguration configuration)
     {
         services.AddNodeCapabilityRuntimeCore(configuration);
         if (OperatingSystem.IsWindows())
+        {
             services.AddNodeCapabilityRuntimeWindows(configuration);
+        }
         else if (OperatingSystem.IsMacOS())
+        {
             services.AddNodeCapabilityRuntimeMacOS(configuration);
+        }
         else if (OperatingSystem.IsLinux())
+        {
             services.AddNodeCapabilityRuntimeLinux(configuration);
+        }
         else if (OperatingSystem.IsIOS())
+        {
             services.AddNodeCapabilityRuntimeiOS(configuration);
+        }
         else if (OperatingSystem.IsAndroid())
+        {
             services.AddNodeCapabilityRuntimeAndroid(configuration);
+        }
         else
+        {
             services.AddNodeCapabilityRuntimeLinux(configuration);
+        }
 
         services.AddModelArtifactCatalog(configuration);
         if (OperatingSystem.IsWindows() || OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
@@ -47,14 +59,20 @@ public static partial class NexoServiceCollectionExtensions
     private static NexoDeploymentProfile ResolveDeploymentProfile(NexoHostingOptions options)
     {
         if (options.DeploymentProfile.HasValue)
+        {
             return options.DeploymentProfile.Value;
+        }
 
         var raw = Environment.GetEnvironmentVariable("NEXO_DEPLOYMENT_PROFILE");
         if (string.IsNullOrWhiteSpace(raw))
+        {
             return NexoDeploymentProfile.Full;
+        }
 
         if (TryParseDeploymentProfile(raw, out var parsed))
+        {
             return parsed;
+        }
 
         throw new InvalidOperationException(
             $"NEXO_DEPLOYMENT_PROFILE='{raw}' is not recognized. " +
@@ -65,7 +83,9 @@ public static partial class NexoServiceCollectionExtensions
     {
         profile = NexoDeploymentProfile.Full;
         if (string.IsNullOrWhiteSpace(raw))
+        {
             return false;
+        }
 
         var normalized = raw.Trim().ToLowerInvariant();
         profile = normalized switch
@@ -172,10 +192,12 @@ public static partial class NexoServiceCollectionExtensions
     private static void ResolveStrictMode(NexoHostingOptions options)
     {
         if (!options.StrictMode.Enabled)
+        {
             options.StrictMode.Enabled = ParseBooleanEnvironmentVariable("NEXO_STRICT_MODE");
+        }
     }
 
-    private static bool ParseBooleanEnvironmentVariable(string key)
+    internal static bool ParseBooleanEnvironmentVariable(string key)
     {
         var value = Environment.GetEnvironmentVariable(key);
         if (string.IsNullOrWhiteSpace(value))
