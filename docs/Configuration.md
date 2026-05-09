@@ -106,8 +106,21 @@ Pipeline options resolve in this order: defaults, config (`Nexo:Pipelines:*`), t
 |----------|-------------|---------|
 | `OPENAI_API_KEY` | API key | required for `openai` provider |
 | `OPENAI_MODEL` | Model name | `gpt-4o-mini` |
-| `OPENAI_BASE_URL` | Base URL | `https://api.openai.com/v1/chat/completions` |
+| `OPENAI_BASE_URL` | Chat completions URL or API root (`https://api.openai.com`, `https://api.openai.com/v1`, or full `.../v1/chat/completions`); normalized to `POST .../v1/chat/completions` | `https://api.openai.com/v1/chat/completions` |
 | `OPENAI_VISION_MODEL` | Vision model | `OPENAI_MODEL` |
+
+## OpenAI-compatible (`openai_compat` provider)
+
+Use **`openai_compat`** when the backend implements OpenAI-style **`POST /v1/chat/completions`** with **`Authorization: Bearer`** (vLLM, LiteLLM, llama.cpp server, etc.). Separate from **`openai`** so local gateways do not overwrite official OpenAI env vars.
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `OPENAI_COMPAT_API_KEY` | Bearer token (required for this provider; use a placeholder if the server ignores auth) | unset |
+| `OPENAI_COMPAT_BASE_URL` | Origin (`http://127.0.0.1:8000`), API root (`.../v1`), or full completions URL; normalized like `OPENAI_BASE_URL` | unset |
+| `OPENAI_COMPAT_MODEL` | Text model id | `default` (see `NexoDefaults.OpenAiCompatDefaultModel`) |
+| `OPENAI_COMPAT_VISION_MODEL` | Vision model when `OPENAI_COMPAT_MODEL` is not suitable for image input | `OPENAI_COMPAT_MODEL` |
+
+Per-request **`config.model`** overrides the vision model when set.
 
 ## Azure OpenAI
 
