@@ -8,7 +8,7 @@ var mapboxToken = Environment.GetEnvironmentVariable("MAPBOX_ACCESS_TOKEN");
 var tileset = Environment.GetEnvironmentVariable("MAPBOX_TILESET_ID") ?? "mapbox.mapbox-streets-v8";
 var aestheticId = Environment.GetEnvironmentVariable("FORGE_AESTHETIC_ID") ?? "voxel";
 
-Console.WriteLine("=== Nexo Forge host sample (phases A/B/C: material hints, tile cache, pipeline) ===");
+Console.WriteLine("=== Nexo Forge host sample (terrain parity + material model option + engine packages) ===");
 Console.WriteLine($"API base: {baseUrl}");
 Console.WriteLine($"Engine id: {engineId}");
 Console.WriteLine($"Aesthetic id (cache key): {aestheticId}");
@@ -26,16 +26,18 @@ if (!string.IsNullOrWhiteSpace(mapboxToken))
     var zoom = ParseIntEnv("SAMPLE_ZOOM", 14);
     var (x, y) = WebMercatorTileMath.LonLatToTileXY(lon, lat, zoom);
     var vectorUrl = VectorTileUrlBuilder.MapboxVectorTileUrl(tileset, zoom, x, y, mapboxToken);
+    var terrainUrl = TerrainTileUrlBuilder.MapboxTerrainRgbTileUrl(zoom, x, y, mapboxToken);
 
     Console.WriteLine();
     Console.WriteLine("=== Tile orchestration (M2) ===");
     Console.WriteLine($"Sample lon/lat/zoom: {lon}, {lat}, z{zoom} → tile {zoom}/{x}/{y}");
     Console.WriteLine($"Vector URL (token redacted): https://api.mapbox.com/v4/{tileset}/{zoom}/{x}/{y}.vector.pbf?access_token=<secret>");
+    Console.WriteLine($"Terrain-RGB URL (token redacted): https://api.mapbox.com/v4/mapbox.terrain-rgb/{zoom}/{x}/{y}.pngraw?access_token=<secret>");
 
     var cacheDir = Environment.GetEnvironmentVariable("NEXO_TILE_CACHE_DIR");
     await RunTileCacheStep(http, cacheDir, aestheticId, "mapbox", zoom, x, y, vectorUrl).ConfigureAwait(false);
 
-    await RunPipelineStep(http, baseUrl, vectorUrl, zoom, x, y).ConfigureAwait(false);
+    await RunPipelineStep(http, baseUrl, vectorUrl, terrainUrl, zoom, x, y).ConfigureAwait(false);
 
     Console.WriteLine();
     Console.WriteLine("=== Import hints (M3) ===");
@@ -50,7 +52,7 @@ else
 }
 
 Console.WriteLine();
-Console.WriteLine("Engine bridge (phase C): see docs/engine-bridge/README.md + snippets.");
+Console.WriteLine("Engine bridge: docs/engine-bridge/README.md (Unity UPM + Godot addon folders).");
 Console.WriteLine("Done.");
 return;
 
@@ -228,16 +230,17 @@ static async Task RunManifestStep(HttpClient http, string baseUrl, string engine
     }
 }
 
-static async Task RunPipelineStep(HttpClient http, string baseUrl, string vectorUrl, int z, int x, int y)
+static async Task RunPipelineStep(HttpClient http, string baseUrl, string vectorUrl, string terrainUrl, int z, int x, int y)
 {
     Console.WriteLine();
-    Console.WriteLine("=== Map pipeline run (live fetch) ===");
+    Console.WriteLine("=== Map pipeline run (live fetch: vector + terrain) ===");
     var url = $"{baseUrl}/api/forge/map/pipeline/run";
     var payload = new
     {
         dryRun = false,
         timeoutMs = 60_000,
         vectorDataUrl = vectorUrl,
+        terrainDataUrl = terrainUrl,
         mvtTileZoom = z,
         mvtTileX = x,
         mvtTileY = y

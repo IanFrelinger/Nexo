@@ -29,6 +29,17 @@ public sealed class ForgeSessionOptions
     public int VectorModelTimeoutMs { get; set; } = 15_000;
 
     /// <summary>
+    /// When true and material hints run through <see cref="ModelAugmentedMaterialIntelligenceService"/>, sends a short prompt after heuristics.
+    /// </summary>
+    public bool EnableMaterialModel { get; set; }
+
+    /// <summary>Max characters of heuristic summary sent to the model for material hints.</summary>
+    public int MaxMaterialModelPromptChars { get; set; } = 3000;
+
+    /// <summary>Timeout for material model augmentation (milliseconds).</summary>
+    public int MaterialModelTimeoutMs { get; set; } = 15_000;
+
+    /// <summary>
     /// Maximum response body size (bytes) for HTTP <c>fetch_*</c> stages in <see cref="MapPipelineRunner"/>.
     /// </summary>
     public int MaxFetchResponseBytes { get; set; } = 2_097_152;
@@ -74,6 +85,11 @@ public sealed class ForgeSessionOptions
     /// When true (default), <see cref="MapPipelineRunner"/> records lightweight GeoJSON / OSM / MVT parse stats on <c>fetch_vector</c>.
     /// </summary>
     public bool EnableVectorPayloadParsing { get; set; } = true;
+
+    /// <summary>
+    /// When true (default), <see cref="MapPipelineRunner"/> records PNG/JPEG/TIFF header summaries on <c>fetch_terrain</c>.
+    /// </summary>
+    public bool EnableTerrainPayloadParsing { get; set; } = true;
 
     /// <summary>
     /// When true (default), <see cref="MapPipelineRunner"/> runs <see cref="Nexo.GameDomain.Mapping.IMapVerificationService"/> after vector parse.
