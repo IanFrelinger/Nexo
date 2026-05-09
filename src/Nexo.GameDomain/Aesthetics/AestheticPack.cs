@@ -4,8 +4,8 @@ namespace Nexo.GameDomain.Aesthetics;
 /// Describes the visual style applied to a session, controlling geometry strategy, colour
 /// palette, LOD configuration, and post-processing effects.
 /// <para>
-/// The Unity rendering pipeline reads the active <see cref="AestheticPack"/> to select
-/// mesh generators, material shaders, and camera post-process volumes at scene load time.
+/// Host runtimes read the active <see cref="AestheticPack"/> to select mesh generators,
+/// materials, and camera post-process configuration at scene load time.
 /// </para>
 /// </summary>
 public sealed record AestheticPack
@@ -22,6 +22,16 @@ public sealed record AestheticPack
     /// <c>"pbr"</c>, <c>"wireframe"</c>, <c>"sketch"</c>.
     /// </summary>
     public string GeometryStrategy { get; init; } = "low_poly";
+
+    /// <summary>
+    /// How geographic data should be processed for rendering (see <see cref="MapRenderingProfiles"/>).
+    /// </summary>
+    public string MapRenderingProfile { get; init; } = MapRenderingProfiles.Auto;
+
+    /// <summary>
+    /// Optional per-engine surface bindings for importers and tooling.
+    /// </summary>
+    public IReadOnlyList<EngineSurfaceBinding> EngineSurfaceBindings { get; init; } = [];
 
     /// <summary>
     /// Default colour palette as a list of hex colour values (e.g. <c>"#FF5733"</c>).

@@ -1,10 +1,15 @@
 using System.Reflection;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Nexo.API.Endpoints;
+using Nexo.API.Forge;
 using Nexo.GameDomain.Aesthetics;
 using Nexo.GameDomain.Descriptors;
 using Nexo.GameDomain.Macros;
+using Nexo.GameDomain.Mapping;
+using Nexo.GameDomain.Materials;
 using Nexo.GameDomain.Scoping;
 using Nexo.GameDomain.Session;
 using Xunit;
@@ -14,6 +19,25 @@ namespace Nexo.Tests.Infrastructure.Tests.API;
 [Trait("Category", "E2E")]
 public sealed class ForgeEndpointsTests : IDisposable
 {
+    private static readonly InMemoryForgeStateService Forge = new();
+
+    private static readonly Lazy<MapPipelineRunner> PipelineRunner = new(() =>
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.Configure<ForgeSessionOptions>(_ => { _.AllowMapFetchWhenAllowedHostsEmpty = true; });
+        services.AddHttpClient("forge-map")
+            .ConfigurePrimaryHttpMessageHandler(static () => new HttpClientHandler());
+        services.AddSingleton<HeuristicVectorMapIntelligenceService>();
+        services.AddSingleton<IVectorMapIntelligenceService>(sp => sp.GetRequiredService<HeuristicVectorMapIntelligenceService>());
+        services.AddSingleton<IMapVerificationService, HeuristicMapVerificationService>();
+        services.AddSingleton<IForgeStateService>(Forge);
+        services.AddSingleton<MapPipelineRunner>();
+        return services.BuildServiceProvider().GetRequiredService<MapPipelineRunner>();
+    });
+
+    private static readonly Lazy<IMaterialIntelligenceService> MaterialIntel = new(() => new HeuristicMaterialIntelligenceService());
+
     public ForgeEndpointsTests()
     {
         ResetStore();
@@ -221,6 +245,64 @@ public sealed class ForgeEndpointsTests : IDisposable
     }
 
     [Fact(Timeout = 15000)]
+    public async Task GetMapAdaptationPlan_ReturnsPlan()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"), new ForgeCreateSessionRequest("PlanTest"));
+        await InvokeAsync(GetHandler("ApplyAestheticAsync"), new ForgeApplyAestheticRequest("voxel"));
+
+        var result = await InvokeAsync(GetHandler("GetMapAdaptationPlanAsync"));
+        var plan = ExtractOkValue<MapAdaptationPlan>(result);
+        plan.EffectiveMapRenderingProfile.Should().Be(MapRenderingProfiles.VoxelGrid);
+        plan.PipelineStages.Should().Contain("voxel_rasterize");
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task GetTilePyramid_ReturnsTiers()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"), new ForgeCreateSessionRequest("PyrTest"));
+        await InvokeAsync(GetHandler("ApplyAestheticAsync"), new ForgeApplyAestheticRequest("voxel"));
+
+        var result = await InvokeAsync(GetHandler("GetTilePyramidAsync"), (int?)14);
+        var wrap = ExtractOkValue<ForgeTilePyramidResponse>(result);
+        wrap.FinestZoom.Should().Be(14);
+        wrap.Tiers.Should().HaveCountGreaterThan(1);
+        wrap.Tiers[0].Zoom.Should().Be(14);
+        wrap.Tiers[1].Zoom.Should().Be(13);
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task GetMaterialHints_ReturnsHints()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"), new ForgeCreateSessionRequest("MatTest"));
+        await InvokeAsync(GetHandler("ApplyAestheticAsync"), new ForgeApplyAestheticRequest("voxel"));
+
+        var result = await InvokeAsync(GetHandler("GetMaterialHintsAsync"), "mvt");
+        var hints = ExtractOkValue<ForgeMaterialHintsResponse>(result);
+        hints.Summary.Should().Contain("hint");
+        hints.Hints.Should().NotBeEmpty();
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task RunMapPipeline_DryRun_Succeeds()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"), new ForgeCreateSessionRequest("PipeTest"));
+        var body = new MapPipelineRunRequest(DryRun: true);
+        var result = await InvokeAsync(GetHandler("RunMapPipelineAsync"), body);
+        var run = ExtractOkValue<MapPipelineRunResult>(result);
+        run.Success.Should().BeTrue();
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task EngineManifest_ReturnsJson()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"), new ForgeCreateSessionRequest("ManTest"));
+        var result = await InvokeAsync(GetHandler("GetEngineAestheticManifestAsync"), "unity");
+        var wrap = ExtractOkValue<ForgeEngineManifestResponse>(result);
+        wrap.Json.Should().Contain("\"engineId\"");
+        wrap.Json.Should().Contain("unity");
+    }
+
+    [Fact(Timeout = 15000)]
     public async Task GenerateStub_ReturnsDescriptor()
     {
         var request = new ForgeGenerateRequest("Plasma Rifle", "weapon");
@@ -250,7 +332,28 @@ public sealed class ForgeEndpointsTests : IDisposable
 
     private static async Task<IResult> InvokeAsync(MethodInfo handler, params object?[] args)
     {
-        var task = (Task<IResult>)handler.Invoke(null, args)!;
+        var parameters = handler.GetParameters();
+        var merged = new object?[parameters.Length];
+        var argIdx = 0;
+        for (var i = 0; i < parameters.Length; i++)
+        {
+            var pt = parameters[i].ParameterType;
+            if (pt == typeof(IForgeStateService))
+                merged[i] = Forge;
+            else if (pt == typeof(MapPipelineRunner))
+                merged[i] = PipelineRunner.Value;
+            else if (pt == typeof(IMaterialIntelligenceService))
+                merged[i] = MaterialIntel.Value;
+            else
+            {
+                merged[i] = argIdx < args.Length ? args[argIdx] : Type.Missing;
+                argIdx++;
+            }
+        }
+
+        argIdx.Should().Be(args.Length, "argument count must match handler signature after injected services");
+
+        var task = (Task<IResult>)handler.Invoke(null, merged)!;
         return await task;
     }
 
@@ -263,31 +366,5 @@ public sealed class ForgeEndpointsTests : IDisposable
         return (T)value!;
     }
 
-    private static void ResetStore()
-    {
-        var storeType = typeof(ForgeEndpoints).Assembly
-            .GetType("Nexo.API.Endpoints.ForgeSessionStore");
-        if (storeType is null) return;
-
-        var sessionProp = storeType.GetProperty("Session", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
-        var registryProp = storeType.GetProperty("Registry", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
-
-        var defaultSession = new SessionState
-        {
-            SessionId = Guid.NewGuid().ToString("D"),
-            Name = "Default Forge Session",
-            CreatedAtUtc = DateTimeOffset.UtcNow,
-            LastModifiedAtUtc = DateTimeOffset.UtcNow,
-            MaxPlayers = 8,
-            GameRules = new GameRuleDescriptor
-            {
-                Id = Guid.NewGuid().ToString("D"),
-                Name = "Default",
-                Mode = "deathmatch"
-            }
-        };
-
-        sessionProp?.SetValue(null, defaultSession);
-        registryProp?.SetValue(null, new MacroRegistry());
-    }
+    private static void ResetStore() => Forge.Reset();
 }

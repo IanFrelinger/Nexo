@@ -91,6 +91,9 @@ gh workflow run "Cross-Platform Tests" --ref master -f scope=smoke
 
 If your fork uses a different default branch, replace `master` accordingly.
 
+**Branch protection:** If required checks reference workflows that only run on manual dispatch,
+update protection rules or add an always-on check. See `.github/workflows/README.md`.
+
 ## Resource safety
 
 - Run heavy validations sequentially (avoid parallel `dotnet test`/`dogfood` runs in multiple terminals).
