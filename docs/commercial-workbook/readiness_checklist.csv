@@ -1,0 +1,26 @@
+area,item,priority,status_blank_todo_done,owner_blank,notes
+Legal,Entity formation and cap table,P0,,,Where you incorporate affects tax and contracts
+Legal,MSA and order form templates,P0,,,Limitation of liability indemnities SLA credits
+Legal,DPA and subprocessors list if you host data,P0,,,GDPR and state privacy laws
+Legal,Terms of Service and Privacy Policy for SaaS site,P0,,,Cookie consent if EU traffic
+Legal,Export classification if applicable,P2,,,Cryptography and dual-use when relevant
+Product,Multi-tenant isolation model documented,P0,,,Row-level vs schema vs cluster per tenant
+Product,Authentication SSO SAML OIDC,P1,,,Enterprise table stakes
+Product,Billing metering and entitlements,P0,,,Stripe Billing or equivalent usage aggregation
+Product,Usage dashboards for customer,P1,,,Transparency reduces disputes
+Security,SOC2 roadmap or ISO27001 if enterprise,P1,,,Many buyers require attestation or detailed SIG
+Security,Incident response runbook,P0,,,Who pages whom customer comms template
+Security,Secrets management rotation,P0,,,Per-tenant secrets if hosted
+Security,Vulnerability disclosure policy,P1,,,
+Operations,Backups restore tested,P0,,,RPO RTO documented
+Operations,Status page and comms templates,P1,,,
+Operations,Support tiers and SLAs,P0,,,Response times by severity
+Operations,On-call rotation if 24x7 promised,P1,,,
+Finance,Chart of accounts and revenue recognition,P0,,,Annual vs monthly ASC606 basics with counsel
+Finance,Sales tax VAT GST if applicable,P1,,,Stripe Tax or Avalara
+Finance,Runway model linked to hiring plan,P0,,,Use Monthly_P_L tab
+People,Founder employment agreement IP assignment,P0,,,Clean chain of title to code
+People,Offer letters and equity templates,P1,,,
+GTM,Pricing page and packaging,P0,,,See Pricing tab
+GTM,Security FAQ and architecture one-pager,P0,,,Shortens enterprise cycles
+GTM,Reference customers and case studies,P1,,,Even one strong logo helps

@@ -10,6 +10,7 @@ namespace Nexo.Tests.Infrastructure.Tests.Mesh;
 /// P2.2: Artifact format negotiation tests.
 /// </summary>
 [Trait("Category", "Integration")]
+[Trait("Category", "ProdStyle")]
 public sealed class ArtifactNegotiatorTests
 {
     private readonly IArtifactNegotiator _negotiator = new ArtifactNegotiator();

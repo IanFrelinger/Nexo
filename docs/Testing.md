@@ -8,6 +8,8 @@ Nexo uses multiple mechanisms to prevent tests from hanging indefinitely and kee
 
 | Scope | blame-hang-timeout | Per-test timeout | Notes |
 |-------|--------------------|------------------|-------|
+| prime-time | 300s | varies | **`Nexo.PrimeTime.slnf`** — ProdStyle then full (`make test-prime-time` / `make test-prime-time-full`) |
+| prod-style | 120s | varies | **Category=ProdStyle** — Infrastructure-only (`make test-prod-style`) |
 | smoke | 30s | — | BaseFrameworkSmokeTests; local `make test` |
 | integration | 60s | 15s (Integration tests) | Category=Integration |
 | persistence | 60s | — | InMemoryPersistenceTests |
@@ -28,11 +30,23 @@ Nexo uses multiple mechanisms to prevent tests from hanging indefinitely and kee
 
 ### Adding New Integration Tests
 
-1. Add `[Collection("Integration")]` and `[Trait("Category", "Integration")]` to the test class
-2. Add `[Fact(Timeout = 15000)]` (or appropriate value) to async/I/O tests
-3. Integration tests run sequentially (DisableParallelization) to avoid file watcher and temp dir contention
+1. Add `[Collection("Integration")]` and `[Trait("Category", "Integration")]` to the test class when appropriate.
+2. For suites that exercise production DI graphs or **`Host`** wiring, also add **`[Trait("Category", "ProdStyle")]`** so they participate in **`make test-prod-style`** / **`nexo ci verify`** ordering.
+3. Add `[Fact(Timeout = 15000)]` (or appropriate value) to async/I/O tests
+4. Integration tests run sequentially (DisableParallelization) to avoid file watcher and temp dir contention
 
 ## Running Tests
+
+**Prime-time (whole automated framework slice):**  
+
+```bash
+make test-prime-time          # Category=ProdStyle across Nexo.PrimeTime.slnf (nine test projects)
+make test-prime-time-full    # ProdStyle gate then full test count on the same slice (ProdStyle runs twice)
+```
+
+**Faster Infrastructure-only ProdStyle:** `make test-prod-style`
+
+**Production-shaped containers (Linux dry run):** `make prod-dry-run` or `make prod-dry-run-agent-server` — see **`docs/prod-dry-run.md`** (Compose + published API image, `/health` + `/api/status`).
 
 `nexo` command note:
 - Commands shown as `nexo ...` assume the CLI tool is installed on your PATH.

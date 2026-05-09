@@ -1,0 +1,8 @@
+{
+  "name": "com.nexo.forge-map-bridge",
+  "version": "0.1.0",
+  "displayName": "Nexo Forge Map Bridge",
+  "description": "Starter scripts that call Nexo.API Forge endpoints (manifest + material hints). Copy HttpClient usage into your gameplay assemblies.",
+  "unity": "2021.3",
+  "author": { "name": "Nexo", "url": "https://github.com/IanFrelinger/Nexo" }
+}

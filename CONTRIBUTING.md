@@ -17,7 +17,7 @@ dotnet run --project src/Nexo.CLI -- --help
 
 ## Faster local restore (subset solution)
 
-Full `Nexo.sln` can require optional workloads (for example MAUI). For CLI plus core tests without opening every project, use the solution filter **`Nexo.LocalDevCore.slnf`**:
+Full **`Nexo.sln`** is intended to build on **Linux** with a stock .NET SDK (no optional workloads). For a faster subset (**CLI** plus core tests), use the solution filter **`Nexo.LocalDevCore.slnf`**:
 
 ```bash
 dotnet restore Nexo.LocalDevCore.slnf
@@ -90,6 +90,9 @@ gh workflow run "Cross-Platform Tests" --ref master -f scope=smoke
 ```
 
 If your fork uses a different default branch, replace `master` accordingly.
+
+**Branch protection:** If required checks reference workflows that only run on manual dispatch,
+update protection rules or add an always-on check. See `.github/workflows/README.md`.
 
 ## Resource safety
 
