@@ -1,4 +1,4 @@
-.PHONY: build build-core restore-core test test-prod-style test-framework-prod-first test-prime-time test-prime-time-full test-cross-platform test-portable test-multi-env test-all-platforms test-all-platforms-ephemeral ci-verify validate-safe review-summary clean-test-artifacts test-readiness-gate
+.PHONY: build build-core build-demos restore-core test test-prod-style test-framework-prod-first test-prime-time test-prime-time-full test-cross-platform test-portable test-multi-env test-all-platforms test-all-platforms-ephemeral ci-verify validate-safe review-summary clean-test-artifacts test-readiness-gate
 
 # All automated test projects (excludes MAUI/Android workloads required by full Nexo.sln).
 PRIME_TIME_SLNF := Nexo.PrimeTime.slnf
@@ -13,6 +13,10 @@ restore-core:
 
 build-core:
 	dotnet build Nexo.LocalDevCore.slnf -v minimal
+
+# Workload-free client samples (console, Blazor, Avalonia) — see docs/demos/README.md
+build-demos:
+	dotnet build Nexo.Demos.sln -v minimal
 
 # Production-like integration (Category=ProdStyle): Nexo.Tests.Infrastructure only — real DI hosts / graphs.
 # Run this before the full suite when validating framework behaviour locally or in CI-style gates.
