@@ -4,7 +4,7 @@
 
 | Item | Status |
 | ---- | ------ |
-| **Track A — Hosting partials** | **`AddNexo`** delegates to **`NexoKernelRegistrar.Register`** (`NexoKernelRegistrar.cs`). **`ModuleSelection`** in **`NexoKernelRegistrationModels.cs`**. **`NexoServiceCollectionExtensions.Deployment.cs`** holds deployment helpers + **`RegisterNodeCapabilityRuntime`** (internal). Optional: slice **`NexoKernelRegistrar`** by **`// ──`** sections. |
+| **Track A — Hosting partials** | **`AddNexo`** → **`NexoKernelRegistrar.Register`**; **`NexoKernelRegistrationContext`** + **20 private phase methods** in **`NexoKernelRegistrar.Phases.cs`** (same **`// ──`** sections). **`ModuleSelection`** in **`NexoKernelRegistrationModels.cs`**. **`NexoServiceCollectionExtensions.Deployment.cs`** holds deployment helpers + **`RegisterNodeCapabilityRuntime`**. |
 | **Track B — Infrastructure `Sdk/`** | **Done:** `*ServiceCollectionExtensions` under **`Feature/Sdk/Extensions/`** with **`Nexo.Infrastructure.Sdk.<Area>`** namespaces. Collision-safe: **`Nexo.Infrastructure.NodeCapabilityRuntime.Sdk`**, **`Nexo.Infrastructure.Execution.Sdk`**, **`Nexo.Infrastructure.Execution.Routing.Sdk`**, **`Nexo.Infrastructure.Mesh.Sdk`**. |
 | **Consumer projects** | **`GlobalUsings.Infrastructure.Sdk.cs`** in **`Nexo.Hosting`**; **`Nexo.CLI`** and **`Nexo.Tests.Infrastructure`** link it for Sdk extension resolution. |
 | **Non-goal — ports** | **`INexoSdkBuilder`** in **`Nexo.Infrastructure.Sdk.Ports`**. |
