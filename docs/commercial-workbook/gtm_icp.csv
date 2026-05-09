@@ -1,0 +1,11 @@
+topic,field,draft_content
+ICP,Primary segment (pick one first),"Security-conscious software teams needing auditable internal AI workflows on infrastructure they control"
+ICP,Secondary segment,Managed service providers packaging Nexo for clients
+Positioning,One-liner,"Private traceable AI workflows with enforced standards—not another generic chat wrapper"
+Proof,Design partner offer,"Paid pilot: scope success metrics deployment model support hours"
+Channels,Outbound,"LinkedIn email warm intros from users of air-gapped or compliance-heavy stacks"
+Channels,Inbound,"Technical content on audit trails BYOC deployment patterns"
+Channels,Community,"Open source users upgrading to support SLA"
+Sales motion,Low touch,Self-serve Starter with Stripe and clear limits
+Sales motion,High touch,Enterprise security review architecture workshop
+Success criteria,Pilot complete,Time-to-first audited job run in customer environment under policy X

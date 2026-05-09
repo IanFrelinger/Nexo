@@ -26,6 +26,11 @@ public sealed record AestheticPack
     public string GeometryStrategy { get; init; } = "low_poly";
 
     /// <summary>
+    /// How geographic data should be processed for rendering (see <see cref="MapRenderingProfiles"/>).
+    /// </summary>
+    public string MapRenderingProfile { get; init; } = MapRenderingProfiles.Auto;
+
+    /// <summary>
     /// Default colour palette as a list of hex colour values (e.g. <c>"#FF5733"</c>).
     /// Used for procedural material assignment when explicit textures are absent.
     /// </summary>

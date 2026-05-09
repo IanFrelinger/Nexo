@@ -5,69 +5,22 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Nexo.API.Forge;
 using Nexo.GameDomain.Aesthetics;
-using Nexo.GameDomain.Contracts;
 using Nexo.GameDomain.Descriptors;
 using Nexo.GameDomain.Macros;
+using Nexo.GameDomain.Mapping;
+using Nexo.GameDomain.Materials;
 using Nexo.GameDomain.Scoping;
 using Nexo.GameDomain.Session;
+using Nexo.GameDomain.Contracts;
 
 namespace Nexo.API.Endpoints;
 
 /// <summary>
-/// Extension methods for mapping Nexo Forge API endpoints.
-/// <para>
-/// Forge exposes a prototyping surface for game design sessions: session management,
-/// procedural content stubs, scoped-setting resolution, macro orchestration, and aesthetic
-/// packs. Session and macro state come from <see cref="IForgeStateService"/> (in-memory
-/// by default, or LiteDB when <see cref="ForgeSessionOptions.LiteDbPath"/> is configured).
-/// </para>
+/// Nexo Forge HTTP API: sessions, settings, macros, aesthetics, map adaptation planning,
+/// and optional LiteDB-backed persistence via <see cref="IForgeStateService"/>.
 /// </summary>
 public static class ForgeEndpoints
 {
-    private static readonly IReadOnlyList<AestheticPack> BuiltInAesthetics =
-    [
-        new AestheticPack
-        {
-            Id = "voxel", Name = "Voxel", GeometryStrategy = "voxel",
-            DefaultPaletteColors = ["#4CAF50", "#2196F3", "#FF9800", "#9C27B0"],
-            LodLevels = [new LodLevel(0, 1.0), new LodLevel(1, 0.5), new LodLevel(2, 0.25)]
-        },
-        new AestheticPack
-        {
-            Id = "low_poly", Name = "Low Poly", GeometryStrategy = "low_poly",
-            RenderingPipelineKind = RenderingPipelineKinds.ForwardStylized,
-            DefaultPaletteColors = ["#81C784", "#64B5F6", "#FFB74D", "#CE93D8"],
-            LodLevels = [new LodLevel(0, 1.0), new LodLevel(1, 0.5)]
-        },
-        new AestheticPack
-        {
-            Id = "pixel_art", Name = "Pixel Art", GeometryStrategy = "pixel_art",
-            DefaultPaletteColors = ["#388E3C", "#1976D2", "#F57C00", "#7B1FA2"],
-            LodLevels = [new LodLevel(0, 1.0)]
-        },
-        new AestheticPack
-        {
-            Id = "pbr", Name = "PBR", GeometryStrategy = "pbr",
-            RenderingPipelineKind = RenderingPipelineKinds.ForwardPbr,
-            DefaultPaletteColors = ["#E0E0E0", "#BDBDBD", "#9E9E9E"],
-            LodLevels = [new LodLevel(0, 1.0), new LodLevel(1, 0.75), new LodLevel(2, 0.5), new LodLevel(3, 0.25)],
-            PostProcessEffects = ["bloom", "ambient_occlusion", "tone_mapping"]
-        },
-        new AestheticPack
-        {
-            Id = "wireframe", Name = "Wireframe", GeometryStrategy = "wireframe",
-            DefaultPaletteColors = ["#00E676", "#00B0FF"],
-            LodLevels = [new LodLevel(0, 1.0), new LodLevel(1, 0.5)]
-        },
-        new AestheticPack
-        {
-            Id = "sketch", Name = "Sketch", GeometryStrategy = "sketch",
-            DefaultPaletteColors = ["#212121", "#FAFAFA"],
-            LodLevels = [new LodLevel(0, 1.0)],
-            PostProcessEffects = ["vignette", "chromatic_aberration"]
-        }
-    ];
-
     public static IEndpointRouteBuilder MapForgeEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/forge").WithTags("Forge");
@@ -155,6 +108,33 @@ public static class ForgeEndpoints
             .WithName("ApplyForgeCustomAestheticPack")
             .WithSummary("Apply a full AestheticPack JSON (custom id, bindings, pipeline kind) after validation")
             .Produces<SessionState>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest);
+
+        group.MapGet("/map/adaptation-plan", GetMapAdaptationPlanAsync)
+            .WithName("GetForgeMapAdaptationPlan")
+            .WithSummary("Return map adaptation plan for the active aesthetic")
+            .Produces<MapAdaptationPlan>(StatusCodes.Status200OK);
+
+        group.MapGet("/map/tile-pyramid", GetTilePyramidAsync)
+            .WithName("GetForgeMapTilePyramid")
+            .WithSummary("LOD tile pyramid (zoom per tier) from active aesthetic LodLevels and finestZoom")
+            .Produces<ForgeTilePyramidResponse>(StatusCodes.Status200OK);
+
+        group.MapGet("/map/material-hints", GetMaterialHintsAsync)
+            .WithName("GetForgeMapMaterialHints")
+            .WithSummary("Heuristic material / surface hints from the active aesthetic and optional vector parse kind")
+            .Produces<ForgeMaterialHintsResponse>(StatusCodes.Status200OK);
+
+        group.MapPost("/map/pipeline/run", RunMapPipelineAsync)
+            .WithName("RunForgeMapPipeline")
+            .WithSummary("Run (or dry-run) the map adaptation pipeline for the current plan")
+            .Produces<MapPipelineRunResult>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest);
+
+        group.MapGet("/engine/{engineId}/aesthetic-manifest", GetEngineAestheticManifestAsync)
+            .WithName("GetForgeEngineAestheticManifest")
+            .WithSummary("JSON manifest for an engine from the active aesthetic pack")
+            .Produces<ForgeEngineManifestResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest);
 
         return app;
@@ -418,7 +398,7 @@ public static class ForgeEndpoints
     private static async Task<IResult> GetAestheticsAsync()
     {
         await Task.CompletedTask;
-        return Results.Ok(BuiltInAesthetics);
+        return Results.Ok(BuiltInAestheticPacks.Catalog);
     }
 
     private static async Task<IResult> ApplyAestheticAsync(
@@ -430,22 +410,12 @@ public static class ForgeEndpoints
         if (string.IsNullOrWhiteSpace(request?.AestheticId))
             return Results.BadRequest(new ProblemDetails { Title = "AestheticId is required" });
 
-        var pack = BuiltInAesthetics
+        var pack = BuiltInAestheticPacks.Catalog
             .FirstOrDefault(a => a.Id == request.AestheticId);
 
         if (pack is null)
             return Results.BadRequest(new ProblemDetails { Title = $"Unknown aesthetic pack '{request.AestheticId}'" });
 
-        var builtInIssues = AestheticPackValidation.Validate(pack);
-        if (!AestheticPackValidation.IsValid(builtInIssues))
-        {
-            var detail = string.Join("; ", builtInIssues.Select(i => $"{i.Code}: {i.Message}"));
-            return Results.BadRequest(new ProblemDetails
-            {
-                Title = "Built-in aesthetic pack failed validation",
-                Detail = detail
-            });
-        }
         var setting = new ScopedSetting
         {
             SettingId = "aesthetic",
@@ -521,9 +491,67 @@ public static class ForgeEndpoints
         forge.Save();
         return Results.Ok(session);
     }
-}
 
-// ── DTOs ────────────────────────────────────────────────────────────────
+    private static async Task<IResult> GetMapAdaptationPlanAsync(IForgeStateService forge)
+    {
+        await Task.CompletedTask;
+        var plan = MapAdaptationPlanner.Plan(forge.Session, BuiltInAestheticPacks.Catalog);
+        return Results.Ok(plan);
+    }
+
+    private static async Task<IResult> RunMapPipelineAsync(
+        IForgeStateService forge,
+        MapPipelineRunner pipeline,
+        [FromBody] MapPipelineRunRequest? body)
+    {
+        var req = body ?? new MapPipelineRunRequest();
+        var plan = MapAdaptationPlanner.Plan(forge.Session, BuiltInAestheticPacks.Catalog);
+
+        if (req.DryRun)
+        {
+            await Task.CompletedTask;
+            var dry = MapPipelineDryRun.Execute(plan, req);
+            return Results.Ok(dry);
+        }
+
+        var result = await pipeline.RunAsync(plan, req).ConfigureAwait(false);
+        return Results.Ok(result);
+    }
+
+    private static async Task<IResult> GetEngineAestheticManifestAsync(
+        IForgeStateService forge,
+        string engineId)
+    {
+        await Task.CompletedTask;
+        if (string.IsNullOrWhiteSpace(engineId))
+            return Results.BadRequest(new ProblemDetails { Title = "engineId is required" });
+
+        var pack = MapAdaptationPlanner.GetActivePack(forge.Session, BuiltInAestheticPacks.Catalog);
+        var json = EngineAestheticManifestBuilder.BuildJson(engineId, pack);
+        return Results.Ok(new ForgeEngineManifestResponse(json));
+    }
+
+    private static async Task<IResult> GetTilePyramidAsync(
+        IForgeStateService forge,
+        [FromQuery] int? finestZoom)
+    {
+        await Task.CompletedTask;
+        var z = finestZoom is >= 0 and <= 22 ? finestZoom.Value : MapLodPyramidPlanner.DefaultFinestZoom;
+        var pack = MapAdaptationPlanner.GetActivePack(forge.Session, BuiltInAestheticPacks.Catalog);
+        var tiers = MapLodPyramidPlanner.Build(pack.LodLevels, z);
+        return Results.Ok(new ForgeTilePyramidResponse(z, tiers));
+    }
+
+    private static async Task<IResult> GetMaterialHintsAsync(
+        IForgeStateService forge,
+        IMaterialIntelligenceService materials,
+        [FromQuery] string? parseKind)
+    {
+        var pack = MapAdaptationPlanner.GetActivePack(forge.Session, BuiltInAestheticPacks.Catalog);
+        var result = await materials.SuggestAsync(pack, parseKind).ConfigureAwait(false);
+        return Results.Ok(new ForgeMaterialHintsResponse(result.Summary, result.Hints));
+    }
+}
 
 public sealed record ForgeCreateSessionRequest(
     string Name,
@@ -549,3 +577,9 @@ public sealed record ForgeMacroImportRequest(string Json);
 public sealed record ForgeApplyAestheticRequest(
     string AestheticId,
     SettingScope? Scope = null);
+
+public sealed record ForgeEngineManifestResponse(string Json);
+
+public sealed record ForgeTilePyramidResponse(int FinestZoom, IReadOnlyList<MapTilePyramidTier> Tiers);
+
+public sealed record ForgeMaterialHintsResponse(string Summary, IReadOnlyList<MaterialSurfaceHint> Hints);

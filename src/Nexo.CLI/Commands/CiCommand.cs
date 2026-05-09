@@ -55,7 +55,7 @@ public sealed class CiCommand : Command
     }
 
     /// <summary>
-    /// Runs: dotnet build → dotnet test (smoke) → nexo validate.
+    /// Runs: dotnet build → dotnet test (ProdStyle) → dotnet test (smoke) → nexo validate.
     /// Exits 0 only if all succeed.
     /// </summary>
     public static async Task<int> ExecuteVerifyAsync()
@@ -86,7 +86,19 @@ public sealed class CiCommand : Command
             return buildInfraExit;
         }
 
-        // Step 2: Smoke tests (BaseFrameworkSmokeTests)
+        // Step 2: Production-like integration (real DI graphs / hosts; fail fast before lighter smoke)
+        Console.WriteLine("=== CI Verify: Production-like tests (Category=ProdStyle) ===");
+        var prodStyleExit = await RunProcessAsync(
+            "dotnet",
+            $"test \"{infraTestsProject}\" --no-build --blame-hang-timeout 120s --blame-hang-dump-type none --filter \"Category=ProdStyle\" --verbosity minimal",
+            repoRoot);
+        if (prodStyleExit != 0)
+        {
+            Console.Error.WriteLine($"ci verify: Production-like tests failed (exit {prodStyleExit})");
+            return prodStyleExit;
+        }
+
+        // Step 3: Smoke tests (BaseFrameworkSmokeTests)
         Console.WriteLine("=== CI Verify: Smoke Tests ===");
         var testExit = await RunProcessAsync(
             "dotnet",
@@ -98,7 +110,7 @@ public sealed class CiCommand : Command
             return testExit;
         }
 
-        // Step 3: Architecture validation (nexo validate)
+        // Step 4: Architecture validation (nexo validate)
         Console.WriteLine("=== CI Verify: Architecture Validation ===");
         var validateExit = await RunProcessAsync(
             "dotnet",

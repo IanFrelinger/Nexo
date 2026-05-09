@@ -1,0 +1,46 @@
+Commercial readiness workbook (CSV tabs)
+=========================================
+
+What you have
+-------------
+These files import into Excel or Google Sheets as separate tabs. Together they cover: operating assumptions, monthly P&L skeleton, unit economics (per tenant / per job), pricing and packaging, go-to-market, readiness checklist, and risks.
+
+Suggested tab names (rename after import)
+-----------------------------------------
+  assumptions.csv           -> Assumptions
+  monthly_pl_template.csv   -> Monthly_P_L
+  unit_economics.csv        -> Unit_Economics
+  pricing_packaging.csv     -> Pricing
+  gtm_icp.csv               -> GTM_ICP
+  readiness_checklist.csv   -> Readiness
+  risks_mitigations.csv     -> Risks
+  kpi_dashboard.csv         -> KPIs
+
+How to wire formulas (Excel / Sheets)
+--------------------------------------
+1. Import assumptions.csv first. Keep column A = parameter_key, column B = value (numbers you edit).
+2. On Monthly_P_L, replace "example_usd" with formulas that multiply Assumptions!B values, or use LET/XLOOKUP if you prefer key-based lookup:
+     Example (Google Sheets): =INDEX(Assumptions!B:B, MATCH("tenants", Assumptions!A:A, 0)) * INDEX(Assumptions!B:B, MATCH("revenue_per_tenant_month", Assumptions!A:A, 0))
+   Excel 365: same with XLOOKUP("tenants", Assumptions!A:A, Assumptions!B:B).
+3. Unit_Economics sheet: formulas reference the same assumption keys (tenant_count, jobs_per_tenant_per_day, etc.).
+
+Parameter keys are stable snake_case so you can MATCH/INDEX on column A.
+
+Optional: link to scripts/saas_cost_model.py
+---------------------------------------------
+Defaults in assumptions.csv align with that script. After editing assumptions, you can cross-check COGS with:
+  python3 scripts/saas_cost_model.py --help
+
+Merged Excel workbook (.xlsx)
+-----------------------------
+Regenerate the single-file workbook (all tabs + live P&L and unit formulas):
+
+  pip install -r docs/commercial-workbook/requirements-workbook.txt
+  python3 scripts/build_commercial_workbook.py
+
+Output: docs/commercial-workbook/Commercial_Readiness_Workbook.xlsx
+
+Notes
+-----
+- "example_usd" in monthly_pl_template.csv is illustrative only until you replace with formulas.
+- Legal, tax, and insurance numbers vary by jurisdiction; placeholders are flags to fill with your counsel and accountant.

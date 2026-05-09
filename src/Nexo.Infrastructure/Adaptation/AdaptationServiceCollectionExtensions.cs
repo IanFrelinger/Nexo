@@ -31,7 +31,7 @@ public static class AdaptationServiceCollectionExtensions
 
         services.AddOptions<AdaptationBrickOptions>();
 
-        services.AddSingleton<Nexo.Core.Domain.Execution.IBrickRegistry>(sp =>
+        services.AddSingleton<Nexo.Infrastructure.Execution.BrickRegistry>(sp =>
         {
             var bricks = new List<Brick>();
             if (patternStorePath != null)
@@ -60,6 +60,8 @@ public static class AdaptationServiceCollectionExtensions
 
             return new Nexo.Infrastructure.Execution.BrickRegistry(bricks);
         });
+        services.AddSingleton<Nexo.Core.Domain.Execution.IBrickRegistry>(sp =>
+            sp.GetRequiredService<Nexo.Infrastructure.Execution.BrickRegistry>());
 
         services.AddSingleton<IBrickDecomposer, BrickDecomposer>();
         services.AddSingleton<IFixGenerator, FixGenerator>();

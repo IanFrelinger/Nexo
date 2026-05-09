@@ -1,0 +1,21 @@
+section,line_item,example_usd,driver_or_formula_notes
+Revenue,Subscription MRR (tenants * price per tenant),9800,tenant_count * revenue_per_tenant_month
+Revenue,Professional services (one-time),0,Separate tab if needed
+Revenue,Other (marketplace usage markup),0,Optional
+COGS,LLM API (if you absorb),480,tenant_count * jobs_per_tenant_per_day * days_per_month * ((tokens_in_per_job/1e6)*llm_price_in_per_million_tokens + (tokens_out_per_job/1e6)*llm_price_out_per_million_tokens)
+COGS,Object storage,57.5,tenant_count * storage_gb_per_tenant_month * storage_usd_per_gb_month
+COGS,Egress,45,tenant_count * egress_gb_per_tenant_month * egress_usd_per_gb
+COGS,Compute (shared pool),460.8,shared_vcpu_for_app_pool * 24 * days_per_month * vcpu_hour_usd
+COGS,Managed database,200,managed_db_usd_month
+COGS,Fixed vendor overhead (alloc to COGS if desired),500,fixed_saas_overhead_usd_month (split COGS vs OpEx in your real model)
+COGS,Payment processing fees,314.2,tenant_count * (stripe_fee_percent * revenue_per_tenant_month + stripe_fixed_usd_per_charge)
+Gross profit,Gross profit (rev - COGS incl payment fees if you treat fees below GM),7742.5,Revenue - sum(COGS) per your accounting policy
+OpEx,Payroll (fully loaded),22500,(headcount_fte_sales+headcount_fte_engineering+headcount_fte_support)*fully_loaded_cost_usd_per_fte_month
+OpEx,Legal,0,legal_retainer_usd_month
+OpEx,Accounting,500,accounting_bookkeeping_usd_month
+OpEx,Insurance,200,insurance_usd_month
+OpEx,Marketing and demand gen,0,Add campaigns events content
+OpEx,Travel and customer visits,0,
+OpEx,Software and tooling (non-COGS),0,"GitHub, CI, design, CRM"
+EBITDA,EBITDA (simplified),-15457.5,Gross profit - OpEx (example: 7742.5 - 23200 = -15457.5 with default OpEx rows)
+Cash,Cash burn after founder draw,,-EBITDA + founder_draw_usd_month (signs depend on convention)

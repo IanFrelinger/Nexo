@@ -12,49 +12,42 @@ public sealed class LiteDbForgeStateServiceTests
     [Fact]
     public void RoundTrip_PersistsSessionAndMacros()
     {
-        var path = Path.Combine(Path.GetTempPath(), $"nexo-forge-test-{Guid.NewGuid():N}.db");
+        var path = Path.Combine(Path.GetTempPath(), $"nexo-forge-{Guid.NewGuid():N}.db");
         try
         {
-            SessionState createdSession;
             using (var first = new LiteDbForgeStateService(path, NullLoggerFactory.Instance))
             {
-                createdSession = new SessionState
+                first.Session = new SessionState
                 {
-                    SessionId = "persist-1",
-                    Name = "LiteDb Session",
+                    SessionId = "s1",
+                    Name = "Persisted",
                     CreatedAtUtc = DateTimeOffset.UtcNow,
                     LastModifiedAtUtc = DateTimeOffset.UtcNow,
-                    MaxPlayers = 12,
+                    MaxPlayers = 11,
                 };
-                first.Session = createdSession;
                 first.Registry.Register(new MacroDefinition { MacroId = "m1", DisplayName = "One" });
                 first.Save();
             }
 
             using (var second = new LiteDbForgeStateService(path, NullLoggerFactory.Instance))
             {
-                second.Session.SessionId.Should().Be("persist-1");
-                second.Session.Name.Should().Be("LiteDb Session");
-                second.Session.MaxPlayers.Should().Be(12);
+                second.Session.SessionId.Should().Be("s1");
+                second.Session.Name.Should().Be("Persisted");
+                second.Session.MaxPlayers.Should().Be(11);
                 second.Registry.List().Should().ContainSingle(m => m.MacroId == "m1");
             }
         }
         finally
         {
-            TryDelete(path);
-        }
-    }
-
-    private static void TryDelete(string path)
-    {
-        try
-        {
-            if (File.Exists(path))
-                File.Delete(path);
-        }
-        catch
-        {
-            // Best-effort cleanup in temp.
+            try
+            {
+                if (File.Exists(path))
+                    File.Delete(path);
+            }
+            catch
+            {
+                // best-effort
+            }
         }
     }
 }

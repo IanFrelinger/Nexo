@@ -1,22 +1,19 @@
 using LiteDB;
 using Microsoft.Extensions.Logging;
+using Nexo.GameDomain.Descriptors;
 using Nexo.GameDomain.Macros;
 using Nexo.GameDomain.Session;
 
 namespace Nexo.API.Forge;
 
-/// <summary>
-/// LiteDB-backed Forge session and macro registry. Thread-safe for typical API concurrency.
-/// </summary>
 public sealed class LiteDbForgeStateService : IForgeStateService, IDisposable
 {
-    private const string CollectionName = "forge_state";
+    private const string Collection = "forge_state";
     private const string DocId = "singleton";
 
     private readonly ILogger _log;
-    private readonly string _resolvedPath;
     private readonly LiteDatabase _db;
-    private readonly ILiteCollection<ForgeStateDocument> _col;
+    private readonly ILiteCollection<ForgeStateDoc> _col;
     private readonly object _gate = new();
 
     private SessionState _session;
@@ -29,13 +26,13 @@ public sealed class LiteDbForgeStateService : IForgeStateService, IDisposable
         if (string.IsNullOrWhiteSpace(liteDbPath))
             throw new ArgumentException("LiteDB path is required.", nameof(liteDbPath));
 
-        _resolvedPath = liteDbPath.Trim();
-        var dir = Path.GetDirectoryName(Path.GetFullPath(_resolvedPath));
+        var path = liteDbPath.Trim();
+        var dir = Path.GetDirectoryName(Path.GetFullPath(path));
         if (!string.IsNullOrEmpty(dir))
             Directory.CreateDirectory(dir);
 
-        _db = new LiteDatabase(_resolvedPath);
-        _col = _db.GetCollection<ForgeStateDocument>(CollectionName);
+        _db = new LiteDatabase(path);
+        _col = _db.GetCollection<ForgeStateDoc>(Collection);
         _col.EnsureIndex(x => x.Id, unique: true);
 
         lock (_gate)
@@ -46,7 +43,7 @@ public sealed class LiteDbForgeStateService : IForgeStateService, IDisposable
                 _session = InMemoryForgeStateService.CreateDefaultSession();
                 _registry = new MacroRegistry();
                 PersistUnlocked();
-                _log.LogInformation("Initialized new Forge session store at {Path}.", _resolvedPath);
+                _log.LogInformation("Forge LiteDB store initialized at {Path}.", path);
             }
             else
             {
@@ -56,19 +53,19 @@ public sealed class LiteDbForgeStateService : IForgeStateService, IDisposable
                 }
                 catch (Exception ex)
                 {
-                    _log.LogWarning(ex, "Failed to deserialize Forge session; using default session.");
+                    _log.LogWarning(ex, "Failed to deserialize Forge session; using default.");
                     _session = InMemoryForgeStateService.CreateDefaultSession();
                 }
 
                 _registry = new MacroRegistry();
                 try
                 {
-                    foreach (var macro in MacroExporter.ImportMany(doc.MacrosJson))
-                        _registry.Register(macro);
+                    foreach (var m in MacroExporter.ImportMany(doc.MacrosJson))
+                        _registry.Register(m);
                 }
                 catch (Exception ex)
                 {
-                    _log.LogWarning(ex, "Failed to deserialize Forge macros; starting with an empty registry.");
+                    _log.LogWarning(ex, "Failed to deserialize macros; empty registry.");
                 }
 
                 AlignSessionMacrosUnlocked();
@@ -133,21 +130,17 @@ public sealed class LiteDbForgeStateService : IForgeStateService, IDisposable
 
     private void PersistUnlocked()
     {
-        var doc = new ForgeStateDocument
+        _col.Upsert(new ForgeStateDoc
         {
             Id = DocId,
             SessionJson = SessionExporter.ExportToJson(_session),
             MacrosJson = MacroExporter.ExportMany(_registry.List())
-        };
-        _col.Upsert(doc);
+        });
     }
 
-    public void Dispose()
-    {
-        _db.Dispose();
-    }
+    public void Dispose() => _db.Dispose();
 
-    private sealed class ForgeStateDocument
+    private sealed class ForgeStateDoc
     {
         public string Id { get; set; } = string.Empty;
         public string SessionJson { get; set; } = "{}";

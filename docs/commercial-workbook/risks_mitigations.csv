@@ -1,0 +1,7 @@
+risk,impact,likelihood,mitigation,owner_blank
+Heavy users erase margin on included LLM,High,Medium,"Meter jobs and tokens; BYOK tier; monthly minimums",Product
+Security incident erodes trust,High,Low,"Least privilege logging encryption IR plan insurance",Security
+Long enterprise sales cycles burn cash,High,Medium,"Paid pilots annual prepay services revenue",GTM
+Vendor lock-in to single LLM provider price spikes,Medium,Medium,"Multi-provider abstraction pass-through pricing",Engineering
+Scope creep on custom deployments,Medium,High,"Fixed SOWs change orders clear support boundaries",CS
+Key person dependency,High,Medium,"Documentation runbooks hire or contractor bench",Ops

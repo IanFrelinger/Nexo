@@ -59,7 +59,7 @@ You do **not** need a host-installed .NET SDK for the paths below. Install **.NE
 1. Install the [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension.
 2. Open this repository, then run **Dev Containers: Reopen in Container**.
 
-The dev container uses **.NET 9**, mounts a named volume at `nexo-nuget-packages` for the NuGet cache, and runs **`.devcontainer/post-create.sh`** after the container is created. That script restores the **same setup-gate project graph** as `scripts/docker-restore.ps1` (not full `Nexo.sln`, which requires MAUI/Android workloads inside a plain SDK image).
+The dev container uses **.NET 9**, mounts a named volume at `nexo-nuget-packages` for the NuGet cache, and runs **`.devcontainer/post-create.sh`** after the container is created. That script restores the **same setup-gate project graph** as `scripts/docker-restore.ps1` (not the full **`Nexo.sln`** graph when you want the smallest restore for CI smoke).
 
 **Headless check (no IDE):** from the repo root, with Docker running:
 

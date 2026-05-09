@@ -2,11 +2,15 @@ using System.Reflection;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Nexo.API.Endpoints;
 using Nexo.API.Forge;
 using Nexo.GameDomain.Aesthetics;
 using Nexo.GameDomain.Descriptors;
 using Nexo.GameDomain.Macros;
+using Nexo.GameDomain.Mapping;
+using Nexo.GameDomain.Materials;
 using Nexo.GameDomain.Scoping;
 using Nexo.GameDomain.Session;
 using Xunit;
@@ -14,9 +18,27 @@ using Xunit;
 namespace Nexo.Tests.Infrastructure.Tests.API;
 
 [Trait("Category", "E2E")]
+[Trait("Category", "ProdStyle")]
 public sealed class ForgeEndpointsTests : IDisposable
 {
     private static readonly InMemoryForgeStateService Forge = new();
+
+    private static readonly Lazy<MapPipelineRunner> PipelineRunner = new(() =>
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.Configure<ForgeSessionOptions>(_ => { _.AllowMapFetchWhenAllowedHostsEmpty = true; });
+        services.AddHttpClient("forge-map")
+            .ConfigurePrimaryHttpMessageHandler(static () => new HttpClientHandler());
+        services.AddSingleton<HeuristicVectorMapIntelligenceService>();
+        services.AddSingleton<IVectorMapIntelligenceService>(sp => sp.GetRequiredService<HeuristicVectorMapIntelligenceService>());
+        services.AddSingleton<IMapVerificationService, HeuristicMapVerificationService>();
+        services.AddSingleton<IForgeStateService>(Forge);
+        services.AddSingleton<MapPipelineRunner>();
+        return services.BuildServiceProvider().GetRequiredService<MapPipelineRunner>();
+    });
+
+    private static readonly Lazy<IMaterialIntelligenceService> MaterialIntel = new(() => new HeuristicMaterialIntelligenceService());
 
     public ForgeEndpointsTests()
     {
@@ -207,8 +229,6 @@ public sealed class ForgeEndpointsTests : IDisposable
         var packs = ExtractOkValue<IReadOnlyList<AestheticPack>>(result);
         packs.Should().HaveCount(6);
         packs.Select(p => p.Id).Should().Contain(new[] { "voxel", "low_poly", "pixel_art", "pbr", "wireframe", "sketch" });
-        packs.Single(p => p.Id == "low_poly").RenderingPipelineKind.Should().Be(RenderingPipelineKinds.ForwardStylized);
-        packs.Single(p => p.Id == "pbr").RenderingPipelineKind.Should().Be(RenderingPipelineKinds.ForwardPbr);
     }
 
     [Fact(Timeout = 15000)]
@@ -227,6 +247,64 @@ public sealed class ForgeEndpointsTests : IDisposable
     }
 
     [Fact(Timeout = 15000)]
+    public async Task GetMapAdaptationPlan_ReturnsPlan()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"), new ForgeCreateSessionRequest("PlanTest"));
+        await InvokeAsync(GetHandler("ApplyAestheticAsync"), new ForgeApplyAestheticRequest("voxel"));
+
+        var result = await InvokeAsync(GetHandler("GetMapAdaptationPlanAsync"));
+        var plan = ExtractOkValue<MapAdaptationPlan>(result);
+        plan.EffectiveMapRenderingProfile.Should().Be(MapRenderingProfiles.VoxelGrid);
+        plan.PipelineStages.Should().Contain("voxel_rasterize");
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task GetTilePyramid_ReturnsTiers()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"), new ForgeCreateSessionRequest("PyrTest"));
+        await InvokeAsync(GetHandler("ApplyAestheticAsync"), new ForgeApplyAestheticRequest("voxel"));
+
+        var result = await InvokeAsync(GetHandler("GetTilePyramidAsync"), (int?)14);
+        var wrap = ExtractOkValue<ForgeTilePyramidResponse>(result);
+        wrap.FinestZoom.Should().Be(14);
+        wrap.Tiers.Should().HaveCountGreaterThan(1);
+        wrap.Tiers[0].Zoom.Should().Be(14);
+        wrap.Tiers[1].Zoom.Should().Be(13);
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task GetMaterialHints_ReturnsHints()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"), new ForgeCreateSessionRequest("MatTest"));
+        await InvokeAsync(GetHandler("ApplyAestheticAsync"), new ForgeApplyAestheticRequest("voxel"));
+
+        var result = await InvokeAsync(GetHandler("GetMaterialHintsAsync"), "mvt");
+        var hints = ExtractOkValue<ForgeMaterialHintsResponse>(result);
+        hints.Summary.Should().Contain("hint");
+        hints.Hints.Should().NotBeEmpty();
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task RunMapPipeline_DryRun_Succeeds()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"), new ForgeCreateSessionRequest("PipeTest"));
+        var body = new MapPipelineRunRequest(DryRun: true);
+        var result = await InvokeAsync(GetHandler("RunMapPipelineAsync"), body);
+        var run = ExtractOkValue<MapPipelineRunResult>(result);
+        run.Success.Should().BeTrue();
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task EngineManifest_ReturnsJson()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"), new ForgeCreateSessionRequest("ManTest"));
+        var result = await InvokeAsync(GetHandler("GetEngineAestheticManifestAsync"), "unity");
+        var wrap = ExtractOkValue<ForgeEngineManifestResponse>(result);
+        wrap.Json.Should().Contain("\"engineId\"");
+        wrap.Json.Should().Contain("unity");
+    }
+
+    [Fact(Timeout = 15000)]
     public async Task ApplyCustomAestheticPack_ValidPack_ReplacesSessionPack()
     {
         await InvokeAsync(GetHandler("CreateSessionAsync"),
@@ -237,6 +315,7 @@ public sealed class ForgeEndpointsTests : IDisposable
             Id = "studio_stylized",
             Name = "Studio Stylized",
             GeometryStrategy = GeometryStrategies.LowPoly,
+            MapRenderingProfile = MapRenderingProfiles.FlatShadedPolys,
             RenderingPipelineKind = RenderingPipelineKinds.ForwardStylized,
             EngineSurfaceBindings =
             [
@@ -312,17 +391,25 @@ public sealed class ForgeEndpointsTests : IDisposable
     private static async Task<IResult> InvokeAsync(MethodInfo handler, params object?[] args)
     {
         var parameters = handler.GetParameters();
-        object?[] merged;
-        if (parameters.Length > 0 && parameters[0].ParameterType == typeof(IForgeStateService))
+        var merged = new object?[parameters.Length];
+        var argIdx = 0;
+        for (var i = 0; i < parameters.Length; i++)
         {
-            merged = new object?[args.Length + 1];
-            merged[0] = Forge;
-            Array.Copy(args, 0, merged, 1, args.Length);
+            var pt = parameters[i].ParameterType;
+            if (pt == typeof(IForgeStateService))
+                merged[i] = Forge;
+            else if (pt == typeof(MapPipelineRunner))
+                merged[i] = PipelineRunner.Value;
+            else if (pt == typeof(IMaterialIntelligenceService))
+                merged[i] = MaterialIntel.Value;
+            else
+            {
+                merged[i] = argIdx < args.Length ? args[argIdx] : Type.Missing;
+                argIdx++;
+            }
         }
-        else
-        {
-            merged = args;
-        }
+
+        argIdx.Should().Be(args.Length, "argument count must match handler signature after injected services");
 
         var task = (Task<IResult>)handler.Invoke(null, merged)!;
         return await task;

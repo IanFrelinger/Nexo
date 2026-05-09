@@ -1,11 +1,9 @@
+using Nexo.GameDomain.Descriptors;
 using Nexo.GameDomain.Macros;
 using Nexo.GameDomain.Session;
 
 namespace Nexo.API.Forge;
 
-/// <summary>
-/// In-memory Forge state (default). Suitable for tests and single-process prototyping.
-/// </summary>
 public sealed class InMemoryForgeStateService : IForgeStateService
 {
     private SessionState _session = CreateDefaultSession();
@@ -25,33 +23,26 @@ public sealed class InMemoryForgeStateService : IForgeStateService
 
     public void Save()
     {
-        // No durable backing store.
     }
 
-    /// <summary>
-    /// Resets session and macro registry (for tests).
-    /// </summary>
     public void Reset()
     {
         _session = CreateDefaultSession();
         _registry = new MacroRegistry();
     }
 
-    internal static SessionState CreateDefaultSession()
+    internal static SessionState CreateDefaultSession() => new()
     {
-        return new SessionState
+        SessionId = Guid.NewGuid().ToString("D"),
+        Name = "Default Forge Session",
+        CreatedAtUtc = DateTimeOffset.UtcNow,
+        LastModifiedAtUtc = DateTimeOffset.UtcNow,
+        MaxPlayers = 8,
+        GameRules = new GameRuleDescriptor
         {
-            SessionId = Guid.NewGuid().ToString("D"),
-            Name = "Default Forge Session",
-            CreatedAtUtc = DateTimeOffset.UtcNow,
-            LastModifiedAtUtc = DateTimeOffset.UtcNow,
-            MaxPlayers = 8,
-            GameRules = new Nexo.GameDomain.Descriptors.GameRuleDescriptor
-            {
-                Id = Guid.NewGuid().ToString("D"),
-                Name = "Default",
-                Mode = "deathmatch"
-            }
-        };
-    }
+            Id = Guid.NewGuid().ToString("D"),
+            Name = "Default",
+            Mode = "deathmatch"
+        }
+    };
 }
