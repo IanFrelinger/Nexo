@@ -21,7 +21,7 @@ namespace Nexo.Infrastructure.Execution;
 /// variables (e.g. <c>NEXO_PROVIDER</c>) → user configuration → compile-time
 /// defaults in <see cref="NexoDefaults"/>.</para>
 ///
-/// <para><b>Available providers:</b> openai, azure, ollama, local
+/// <para><b>Available providers:</b> openai, openai_compat, azure, ollama, local
 /// (in-process ONNX/LLamaSharp), video (SmolVLM2-Video in Docker), and the
 /// test-only mock/offline/mock-json/echo set. To add a new provider, add its
 /// key to <c>_availableProviders</c>, implement availability detection in
@@ -75,6 +75,7 @@ public class ProviderFactory : IProviderFactory
     private readonly HashSet<string> _availableProviders = new()
     {
         "openai",
+        "openai_compat",
         "azure",
         "ollama",
         "local", // In-process ONNX/LLamaSharp; requires NEXO_LOCAL_MODEL_PATH
@@ -128,6 +129,8 @@ public class ProviderFactory : IProviderFactory
         return provider switch
         {
             "openai" => !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("OPENAI_API_KEY")),
+            "openai_compat" => !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("OPENAI_COMPAT_API_KEY"))
+                             && !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("OPENAI_COMPAT_BASE_URL")),
             "azure" => !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT"))
                        && !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("AZURE_OPENAI_API_KEY"))
                        && !string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("AZURE_OPENAI_DEPLOYMENT")),
@@ -154,7 +157,7 @@ public class ProviderFactory : IProviderFactory
         if (provider is "mock" or "offline" or "mock-json" or "echo")
         {
             if (!AllowMock)
-                throw new ModelUnavailableException("Mock providers are disabled. Set NEXO_ALLOW_MOCK=1 for tests/demos, or use a real provider (ollama, openai, azure, local).");
+                throw new ModelUnavailableException("Mock providers are disabled. Set NEXO_ALLOW_MOCK=1 for tests/demos, or use a real provider (ollama, openai, openai_compat, azure, local).");
             await Task.Delay(NexoDefaults.MockDelayMs, cancellationToken);
             return GenerateMockJsonResponse(systemPrompt, userPrompt);
         }
@@ -168,6 +171,21 @@ public class ProviderFactory : IProviderFactory
             if (string.IsNullOrWhiteSpace(apiKey))
                 throw new InvalidOperationException("OPENAI_API_KEY is not set. Set it or use provider mock/offline.");
             return await ExecuteOpenAiAsync(apiKey, systemPrompt, userPrompt, cancellationToken);
+        }
+
+        if (provider is "openai_compat")
+        {
+            var apiKey = Environment.GetEnvironmentVariable("OPENAI_COMPAT_API_KEY");
+            var baseUrl = Environment.GetEnvironmentVariable("OPENAI_COMPAT_BASE_URL");
+            if (string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(baseUrl))
+            {
+                throw new InvalidOperationException(
+                    "OPENAI_COMPAT_API_KEY and OPENAI_COMPAT_BASE_URL must be set for provider openai_compat (e.g. vLLM, LiteLLM, llama.cpp server).");
+            }
+
+            var model = Environment.GetEnvironmentVariable("OPENAI_COMPAT_MODEL") ?? NexoDefaults.OpenAiCompatDefaultModel;
+            var url = OpenAiCompatibleEndpoint.NormalizeChatCompletionsUrl(baseUrl).ToString();
+            return await ExecuteOpenAiChatCompletionAsync(url, apiKey, model, systemPrompt, userPrompt, cancellationToken);
         }
 
         if (provider is "azure")
@@ -186,14 +204,25 @@ public class ProviderFactory : IProviderFactory
         if (provider is "local")
             return await LocalModelProvider.ExecuteAsync(systemPrompt, userPrompt, config, cancellationToken);
 
-        throw new InvalidOperationException($"Unknown or unsupported provider: {provider}. Use ollama, openai, azure, local, or mock (NEXO_ALLOW_MOCK=1).");
+        throw new InvalidOperationException($"Unknown or unsupported provider: {provider}. Use ollama, openai, openai_compat, azure, local, or mock (NEXO_ALLOW_MOCK=1).");
     }
 
     private async Task<string> ExecuteOpenAiAsync(string apiKey, string systemPrompt, string userPrompt, CancellationToken ct)
     {
         var model = Environment.GetEnvironmentVariable("OPENAI_MODEL") ?? NexoDefaults.OpenAiDefaultModel;
-        var url = Environment.GetEnvironmentVariable("OPENAI_BASE_URL") ?? NexoDefaults.OpenAiDefaultBaseUrl;
+        var rawUrl = Environment.GetEnvironmentVariable("OPENAI_BASE_URL") ?? NexoDefaults.OpenAiDefaultBaseUrl;
+        var url = OpenAiCompatibleEndpoint.NormalizeChatCompletionsUrl(rawUrl).ToString();
+        return await ExecuteOpenAiChatCompletionAsync(url, apiKey, model, systemPrompt, userPrompt, ct);
+    }
 
+    private static async Task<string> ExecuteOpenAiChatCompletionAsync(
+        string requestUrl,
+        string apiKey,
+        string model,
+        string systemPrompt,
+        string userPrompt,
+        CancellationToken ct)
+    {
         var payload = new
         {
             model,
@@ -208,7 +237,7 @@ public class ProviderFactory : IProviderFactory
 
         using var resp = await HttpRetryPolicy.ExecuteAsync(() =>
         {
-            using var req = new HttpRequestMessage(HttpMethod.Post, url);
+            using var req = new HttpRequestMessage(HttpMethod.Post, requestUrl);
             req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
             req.Content = new StringContent(json);
             req.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
@@ -224,7 +253,7 @@ public class ProviderFactory : IProviderFactory
             .GetProperty("content")
             .GetString();
 
-        return content ?? throw new InvalidOperationException("OpenAI response content was null");
+        return content ?? throw new InvalidOperationException("OpenAI-compatible response content was null");
     }
 
     private async Task<string> ExecuteAzureOpenAiAsync(string endpoint, string apiKey, string deployment, string systemPrompt, string userPrompt, CancellationToken ct)
@@ -265,13 +294,16 @@ public class ProviderFactory : IProviderFactory
         return content ?? throw new InvalidOperationException("Azure OpenAI response content was null");
     }
 
-    private async Task<string> ExecuteOpenAiVisionAsync(string apiKey, string systemPrompt, string userPrompt, byte[]? imageBytes, object? config, CancellationToken ct)
+    private async Task<string> ExecuteOpenAiVisionAsync(
+        string apiKey,
+        string openAiBaseUrl,
+        string model,
+        string systemPrompt,
+        string userPrompt,
+        byte[]? imageBytes,
+        CancellationToken ct)
     {
-        var model = Environment.GetEnvironmentVariable("OPENAI_VISION_MODEL") ?? Environment.GetEnvironmentVariable("OPENAI_MODEL") ?? NexoDefaults.OpenAiDefaultVisionModel;
-        var baseUrl = Environment.GetEnvironmentVariable("OPENAI_BASE_URL") ?? "https://api.openai.com";
-        var url = baseUrl.EndsWith("/v1/chat/completions", StringComparison.OrdinalIgnoreCase)
-            ? baseUrl
-            : baseUrl.TrimEnd('/') + "/v1/chat/completions";
+        var url = OpenAiCompatibleEndpoint.NormalizeChatCompletionsUrl(openAiBaseUrl).ToString();
 
         object[] contentParts;
         if (imageBytes is { Length: > 0 })
@@ -423,7 +455,7 @@ public class ProviderFactory : IProviderFactory
         if (provider is "mock" or "offline" or "mock-json" or "echo")
         {
             if (!AllowMock)
-                throw new ModelUnavailableException("Mock providers are disabled. Set NEXO_ALLOW_MOCK=1 or use ollama, openai, azure.");
+                throw new ModelUnavailableException("Mock providers are disabled. Set NEXO_ALLOW_MOCK=1 or use ollama, openai, openai_compat, azure.");
             return GenerateMockJsonResponse(systemPrompt, userPrompt);
         }
 
@@ -435,7 +467,29 @@ public class ProviderFactory : IProviderFactory
             var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
             if (string.IsNullOrWhiteSpace(apiKey))
                 throw new InvalidOperationException("OPENAI_API_KEY is not set. Set it or use provider ollama.");
-            return await ExecuteOpenAiVisionAsync(apiKey, systemPrompt, userPrompt, imageBytes, config, cancellationToken);
+            var baseUrl = Environment.GetEnvironmentVariable("OPENAI_BASE_URL") ?? "https://api.openai.com";
+            var model = GetModelFromConfig(config)
+                ?? Environment.GetEnvironmentVariable("OPENAI_VISION_MODEL")
+                ?? Environment.GetEnvironmentVariable("OPENAI_MODEL")
+                ?? NexoDefaults.OpenAiDefaultVisionModel;
+            return await ExecuteOpenAiVisionAsync(apiKey, baseUrl, model, systemPrompt, userPrompt, imageBytes, cancellationToken);
+        }
+
+        if (provider is "openai_compat")
+        {
+            var apiKey = Environment.GetEnvironmentVariable("OPENAI_COMPAT_API_KEY");
+            var baseUrl = Environment.GetEnvironmentVariable("OPENAI_COMPAT_BASE_URL");
+            if (string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(baseUrl))
+            {
+                throw new InvalidOperationException(
+                    "OPENAI_COMPAT_API_KEY and OPENAI_COMPAT_BASE_URL must be set for provider openai_compat.");
+            }
+
+            var model = GetModelFromConfig(config)
+                ?? Environment.GetEnvironmentVariable("OPENAI_COMPAT_VISION_MODEL")
+                ?? Environment.GetEnvironmentVariable("OPENAI_COMPAT_MODEL")
+                ?? NexoDefaults.OpenAiCompatDefaultVisionModel;
+            return await ExecuteOpenAiVisionAsync(apiKey, baseUrl, model, systemPrompt, userPrompt, imageBytes, cancellationToken);
         }
 
         if (provider is "azure")
@@ -448,7 +502,7 @@ public class ProviderFactory : IProviderFactory
             return await ExecuteAzureOpenAiVisionAsync(endpoint, apiKey, deployment, systemPrompt, userPrompt, imageBytes, config, cancellationToken);
         }
 
-        throw new InvalidOperationException($"Unknown or unsupported vision provider: {provider}. Use ollama, openai, azure, auto, or local.");
+        throw new InvalidOperationException($"Unknown or unsupported vision provider: {provider}. Use ollama, openai, openai_compat, azure, auto, or local.");
     }
 
     /// <inheritdoc />
@@ -476,7 +530,7 @@ public class ProviderFactory : IProviderFactory
         if (provider is "mock" or "offline" or "mock-json" or "echo")
         {
             if (!AllowMock)
-                throw new ModelUnavailableException("Mock providers are disabled. Set NEXO_ALLOW_MOCK=1 or use ollama, openai, azure.");
+                throw new ModelUnavailableException("Mock providers are disabled. Set NEXO_ALLOW_MOCK=1 or use ollama, openai, openai_compat, azure.");
             return await ExecuteVisionAsync(provider, systemPrompt, userPrompt + $"\n[Note: {frames.Count} frames provided, analyzing most recent.]", frames[^1], config, cancellationToken);
         }
 
@@ -491,7 +545,29 @@ public class ProviderFactory : IProviderFactory
             var apiKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
             if (string.IsNullOrWhiteSpace(apiKey))
                 throw new InvalidOperationException("OPENAI_API_KEY is not set. Set it or use provider ollama.");
-            return await ExecuteOpenAiVisionAsync(apiKey, systemPrompt, userPrompt, frames[^1], config, cancellationToken);
+            var baseUrl = Environment.GetEnvironmentVariable("OPENAI_BASE_URL") ?? "https://api.openai.com";
+            var model = GetModelFromConfig(config)
+                ?? Environment.GetEnvironmentVariable("OPENAI_VISION_MODEL")
+                ?? Environment.GetEnvironmentVariable("OPENAI_MODEL")
+                ?? NexoDefaults.OpenAiDefaultVisionModel;
+            return await ExecuteOpenAiVisionAsync(apiKey, baseUrl, model, systemPrompt, userPrompt, frames[^1], cancellationToken);
+        }
+
+        if (provider is "openai_compat")
+        {
+            var apiKey = Environment.GetEnvironmentVariable("OPENAI_COMPAT_API_KEY");
+            var baseUrl = Environment.GetEnvironmentVariable("OPENAI_COMPAT_BASE_URL");
+            if (string.IsNullOrWhiteSpace(apiKey) || string.IsNullOrWhiteSpace(baseUrl))
+            {
+                throw new InvalidOperationException(
+                    "OPENAI_COMPAT_API_KEY and OPENAI_COMPAT_BASE_URL must be set for provider openai_compat.");
+            }
+
+            var model = GetModelFromConfig(config)
+                ?? Environment.GetEnvironmentVariable("OPENAI_COMPAT_VISION_MODEL")
+                ?? Environment.GetEnvironmentVariable("OPENAI_COMPAT_MODEL")
+                ?? NexoDefaults.OpenAiCompatDefaultVisionModel;
+            return await ExecuteOpenAiVisionAsync(apiKey, baseUrl, model, systemPrompt, userPrompt, frames[^1], cancellationToken);
         }
 
         if (provider is "azure")
@@ -2151,7 +2227,7 @@ public interface IFeatureScaffolder
 public static class CrossFrameworkCompatibility
 {
     public const string ContractNotes =
-        "Adapters implement IUiFrameworkAdapter<TControl> per framework (Avalonia, MAUI, etc.) while sharing UiNode contracts.";
+        "Adapters implement IUiFrameworkAdapter<TControl> per framework (Avalonia, WPF, etc.) while sharing UiNode contracts.";
 }
 """;
 
@@ -2749,7 +2825,7 @@ public sealed class MainWindow : Window
         if (q.Contains("what is nexo", StringComparison.Ordinal))
             return "Nexo is an orchestration system that scaffolds features and validates them with tests.";
         if (q.Contains("framework", StringComparison.Ordinal))
-            return "UI abstractions keep feature descriptors framework-neutral so adapters can target Avalonia or MAUI.";
+            return "UI abstractions keep feature descriptors framework-neutral so adapters can target Avalonia or other hosts.";
         return "Ask about Nexo, or scaffold a feature to see live extension loading.";
     }
 }

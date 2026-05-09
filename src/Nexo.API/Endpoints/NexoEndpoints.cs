@@ -2,6 +2,7 @@ using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Nexo.BrickContracts;
 using Nexo.BrickContracts.Capabilities;
 using Nexo.Contracts;
 using Nexo.Core.Application.Copilot.Models;
@@ -22,12 +23,15 @@ using Nexo.BackgroundAgents.Objectives;
 using Nexo.BackgroundAgents.Registry;
 using Nexo.BackgroundAgents.RuntimeStudio;
 using Nexo.Infrastructure.Testing.ExecutionPlatform;
+using Nexo.Infrastructure.Execution;
 using Nexo.API.Security;
 using Nexo.Orchestration.Coordination;
 using Nexo.Orchestration.Models;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
+using Nexo.Core.Domain.Bricks;
+using Nexo.Core.Domain.Execution;
 
 namespace Nexo.API.Endpoints;
 
@@ -106,6 +110,24 @@ public static class NexoEndpoints
             .WithName("GetCapabilities")
             .WithSummary("Get node capability manifest for brick routing")
             .Produces<NodeCapabilityManifestDto>(StatusCodes.Status200OK);
+
+        group.MapGet("/bricks", ListBricksAsync)
+            .WithName("ListBricks")
+            .WithSummary("List bricks on this node (catalog for federated mesh)")
+            .Produces<BrickCatalogResponseDto>(StatusCodes.Status200OK);
+
+        group.MapGet("/bricks/{brickId}", GetBrickAsync)
+            .WithName("GetBrick")
+            .WithSummary("Get one brick catalog entry")
+            .Produces<BrickCatalogEntryDto>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
+        group.MapPost("/bricks/{brickId}/execute", ExecuteBrickAsync)
+            .WithName("ExecuteBrick")
+            .WithSummary("Execute a brick on this node (used by RemoteBrick from peers)")
+            .Produces<BrickExecuteResponseDto>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
         group.MapGet("/security/advisory", GetSecurityAdvisory)
             .WithName("GetSecurityAdvisory")
@@ -531,6 +553,85 @@ public static class NexoEndpoints
         return Results.Ok(ToDto(manifest));
     }
 
+    private static async Task<IResult> ListBricksAsync(
+        [FromServices] IBrickRegistry brickRegistry,
+        [FromServices] INodeCapabilityRuntime runtime,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        await Task.CompletedTask;
+        var hostCaps = ToDto(runtime.GetCapabilityManifest());
+        var bricks = brickRegistry.GetAllBricks()
+            .Select(b => BrickCatalogWireMapper.ToEntry(b, hostCaps))
+            .ToList();
+        return Results.Ok(new BrickCatalogResponseDto { Bricks = bricks });
+    }
+
+    private static async Task<IResult> GetBrickAsync(
+        string brickId,
+        [FromServices] IBrickRegistry brickRegistry,
+        [FromServices] INodeCapabilityRuntime runtime,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        await Task.CompletedTask;
+        if (string.IsNullOrWhiteSpace(brickId))
+            return Results.BadRequest(new ProblemDetails { Title = "brickId is required" });
+
+        var brick = brickRegistry.GetBrick(brickId);
+        if (brick is null)
+            return Results.NotFound();
+
+        var hostCaps = ToDto(runtime.GetCapabilityManifest());
+        return Results.Ok(BrickCatalogWireMapper.ToEntry(brick, hostCaps));
+    }
+
+    private static async Task<IResult> ExecuteBrickAsync(
+        string brickId,
+        [FromBody] BrickExecuteRequestDto? request,
+        [FromServices] IBrickRegistry brickRegistry,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(brickId))
+            return Results.BadRequest(new ProblemDetails { Title = "brickId is required" });
+        if (request is null)
+            return Results.BadRequest(new ProblemDetails { Title = "Request body is required" });
+        if (!string.IsNullOrEmpty(request.BrickId) &&
+            !string.Equals(request.BrickId, brickId, StringComparison.OrdinalIgnoreCase))
+        {
+            return Results.BadRequest(new ProblemDetails { Title = "BrickId in body must match route" });
+        }
+
+        var brick = brickRegistry.GetBrick(brickId);
+        if (brick is null)
+            return Results.NotFound();
+
+        if (!Enum.TryParse<ImplementationType>(request.Implementation, true, out var implementation))
+            implementation = ImplementationType.Deterministic;
+
+        var context = BrickCatalogWireMapper.ToExecutionContext(request.ExecutionContext);
+        var input = BrickValueSerializer.FromWireToBrickInput(request.Input);
+
+        try
+        {
+            var output = await brick.ExecuteAsync(input, implementation, context, cancellationToken).ConfigureAwait(false);
+            return Results.Ok(new BrickExecuteResponseDto
+            {
+                Success = true,
+                Summary = output.Summary,
+                Output = BrickValueSerializer.ToWireDictionary(output)
+            });
+        }
+        catch (Exception ex)
+        {
+            return Results.Ok(new BrickExecuteResponseDto
+            {
+                Success = false,
+                Error = ex.Message
+            });
+        }
+    }
+
     private static async Task<IResult> ListFleetNodesAsync(
         [FromServices] IFleetNodeRegistry registry,
         CancellationToken cancellationToken)
@@ -732,7 +833,6 @@ public static class NexoEndpoints
             t.AttemptCount,
             t.CreatedAtUtc,
             t.LastScheduledAtUtc);
-
     private static async Task<IResult> RunDirectorWorkflowAsync(
         [FromBody] DirectorRunRequest request,
         [FromServices] Orchestrator orchestrator,

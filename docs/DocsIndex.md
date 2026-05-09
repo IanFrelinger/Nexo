@@ -16,7 +16,9 @@ Documentation index for the Nexo platform. Start here to find what you need.
 
 ## Operator / Production Readiness
 
-- `docs/ProductionReadinessGate-v1.md` — production gate commands and expected assertions.
+- **`docs/production-readiness/README.md`** — **hub** for supporting SMB, enterprise, SaaS, and air-gapped production: release, security, ops, data/compliance, reliability, testing, operator deployment; includes [catalog by deployment type](production-readiness/CatalogByDeploymentType.md) and [runbook template](production-readiness/RunbookTemplate.md).
+- `docs/DEPLOYMENT.md` — **golden paths** (portal stack, CLI image, agent server), **pinning** images vs `latest`, NuGet/CI notes.
+- `docs/ProductionReadinessGate-v1.md` — production gate commands and expected assertions (binary PASS/FAIL technical gate).
 - `.github/workflows/production-readiness-gate-v1.yml` — automated production readiness gate.
 - `.github/workflows/environment-setup-gate-v1.yml` — environment bootstrap + dependency setup gate (Linux/macOS/Windows).
 - `.github/workflows/compose-gate.yml` — validates `docker-compose.test.yml` and `docker-compose.ephemeral.yml` lanes.
@@ -25,7 +27,9 @@ Documentation index for the Nexo platform. Start here to find what you need.
 - `docs/CiFirstHardwareSecond.md` — **CI first, hardware second**: which workflows to run and what still needs a physical host.
 - `.github/workflows/onboarding-quickstart-gate.yml` — runs first-run onboarding commands in native + container lanes.
 - `.github/workflows/container-image-gate.yml` — container image buildability and smoke-run gate.
-- `.github/workflows/container-image-publish.yml` — publish official GHCR CLI image (latest + sha tags).
+- `.github/workflows/release.yml` — **one entry**: tag `v*.*.*` → GHCR (`nexo-cli`, `nexo-api`) + NuGet; run summary with pin lines.
+- `.github/workflows/container-image-publish.yml` — GHCR on **main** path-filtered pushes + manual (tags use `release.yml` only).
+- `.github/workflows/release-nuget.yml` — **NuGet-only** manual dispatch; after push to nuget.org, **Verify NuGet consumer** (same reusable job as **release.yml**).
 - `.github/workflows/onboarding-docs-guard.yml` — prevent startup-doc regressions in quick-start commands.
 - `.github/workflows/cross-platform-tests.yml` — cross-platform tests on Ubuntu, macOS, and Windows.
 - `.github/workflows/runtime-release-gate.yml` — runtime release quality gate.
@@ -48,6 +52,9 @@ Documentation index for the Nexo platform. Start here to find what you need.
 
 ## Security / Trust
 
+- `docs/FriendMeshPrefab.md` — prefab Docker Compose + env template for a small shared **Nexo.API** hub (friends / tailnet).
+- `docs/MeshPhase8OperatorHardening.md` — **Mesh Phase 8:** discovery admission, trust alias, `nexo mesh hub` / `mesh director`, TLS example.
+- `docs/MeshVirtualLab.md` — **Virtual mesh lab:** two Nexo.API nodes in Docker + verify script (no extra hardware).
 - `docs/TrustAndInformationArchitecture.md` — sanitization, audit, access boundaries.
 - `docs/TailscaleAndNexo.md` — Tailscale + Nexo exposure profile, ACL guidance, advisory endpoint.
 - `docs/config/security-exposure.env.example` — `Nexo__Security__*` env template for operators.
@@ -58,6 +65,8 @@ Documentation index for the Nexo platform. Start here to find what you need.
 
 - `docs/api/index.md` — API docs index.
 - `docs/sdk.md` — SDK integration guidance.
+- `docs/PUBLISHING.md` — pack and publish `Nexo.Hosting` (and its `Nexo.*` graph) to NuGet / GitHub Packages; operator checklist.
+- `docs/NuGetConsumerVerify.md` — validate NuGet-only consumption (local pack vs published feed); workflow **`.github/workflows/nuget-consumer-verify.yml`**.
 - `docs/samples/StableSdkHostSample/Program.cs` — reference host integration that only uses stable SDK extension points.
 - `docs/runtime/ExecutionRouting.md` — NCR-based generation routing (local, peer network, RunPod), preferences, and resilience behavior.
 - `docs/AgentExecutionIsolation.md` — per-agent isolation tiers (in-process through container-per-agent), JSON field, and invocation metadata for transports.

@@ -1,0 +1,54 @@
+# Reusable: restore StableSdkHostSample from nuget.org only (post-publish smoke).
+# Retries for nuget.org index lag after push.
+
+on:
+  workflow_call:
+    inputs:
+      package_version:
+        description: "Semver with optional v prefix (e.g. 1.2.3 or v1.2.3)"
+        type: string
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify-nuget-consumer:
+    name: Verify NuGet consumer (nuget.org)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Resolve semver (strip v prefix)
+        shell: bash
+        run: |
+          VER="${{ inputs.package_version }}"
+          VER="${VER#v}"
+          echo "VERIFY_NUGET_VERSION=$VER" >> "$GITHUB_ENV"
+          echo "Verifying consumer install for Nexo.Hosting.Bundle **$VER** on nuget.org"
+
+      - name: Restore sample from nuget.org (retry for index lag)
+        shell: bash
+        run: |
+          set -euo pipefail
+          max=12
+          delay=20
+          for i in $(seq 1 "$max"); do
+            echo "Attempt $i/$max ..."
+            if bash scripts/verify-stable-sdk-host-sample-published-feed.sh "${VERIFY_NUGET_VERSION}"; then
+              echo "verify-nuget-consumer: OK"
+              exit 0
+            fi
+            if [ "$i" -lt "$max" ]; then
+              echo "Retry in ${delay}s (nuget.org index may not list the new version yet) ..."
+              sleep "$delay"
+            fi
+          done
+          echo "verify-nuget-consumer: FAILED after $max attempts"
+          exit 1

@@ -15,7 +15,7 @@ public class ExecutionContext : IExecutionContext
     public bool IsAirGapped { get; init; }
     /// <summary>When true, log decisions for audit trail.</summary>
     public bool AuditMode { get; init; }
-    /// <summary>LLM provider name: ollama, openai, azure, mock, offline, video.</summary>
+    /// <summary>LLM provider name: ollama, openai, openai_compat, azure, mock, offline, video.</summary>
     public string Provider { get; init; } = "openai";
     /// <summary>Key-value variables for this execution (e.g. brick outputs).</summary>
     public Dictionary<string, object> Variables { get; init; } = new();

@@ -99,10 +99,19 @@ services.AddNexoProfile(NexoDeploymentProfile.AirGapped, opts =>
 
 ## CI Validation
 
-The SDK sample is built in the readiness gate workflow to catch breaking changes:
+The readiness gate builds the **project-reference** sample and then verifies **NuGet-only** consumption:
 
-```yaml
-# .github/workflows/full-platform-readiness-gate.yml
-- name: "Build SDK sample"
-  run: dotnet build docs/samples/StableSdkHostSample/StableSdkHostSample.csproj
+1. `dotnet build docs/samples/StableSdkHostSample/StableSdkHostSample.csproj` (in-repo references).
+2. `scripts/verify-stable-sdk-host-sample-packages.sh` (POSIX) or `scripts/verify-stable-sdk-host-sample-packages.ps1` (Windows): packs the `Nexo.Hosting` dependency graph to a local feed, restores `docs/samples/StableSdkHostSample/package-consumer/StableSdkHostSample.Package.csproj`, builds, and runs.
+
+See `.github/workflows/full-platform-readiness-gate.yml` (steps **Setup — build SDK sample** and **Setup — verify SDK sample consumes local NuGet graph**).
+
+## Publishing `Nexo.Hosting` for external repos
+
+`Nexo.Hosting` depends on other `Nexo.*` projects; publish **the same `PackageVersion`** for the whole graph before pushing to a feed:
+
+```bash
+bash scripts/pack-nexo-hosting-graph.sh 1.2.3 /path/to/output
 ```
+
+Then push `*.nupkg` from that folder to **nuget.org** or **GitHub Packages**. External hosts reference **`Nexo.Hosting`** only; NuGet resolves the matching versions of transitive `Nexo.*` packages from the same feed.

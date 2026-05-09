@@ -1,0 +1,30 @@
+# NuGet-only release (manual). For tags + images together, use **release.yml**.
+
+name: Release NuGet packages
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Semver without v prefix (e.g. 1.2.3)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  nuget:
+    uses: ./.github/workflows/reusable-release-nuget.yml
+    secrets: inherit
+    with:
+      package_version: ${{ inputs.version }}
+
+  verify-nuget-consumer:
+    name: Verify NuGet consumer (nuget.org)
+    needs: [nuget]
+    if: success() && (vars.NUGET_PUBLISH_MODE == 'oidc' || vars.NUGET_PUBLISH_MODE == 'apikey')
+    uses: ./.github/workflows/reusable-verify-nuget-consumer.yml
+    with:
+      package_version: ${{ inputs.version }}

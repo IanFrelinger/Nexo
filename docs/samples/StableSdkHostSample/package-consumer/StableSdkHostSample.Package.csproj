@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- Standalone sample: do not inherit repo central package management (Nexo.Hosting version is local feed). -->
+    <!-- ManagePackageVersionsCentrally: see Directory.Build.props in this folder -->
+    <!-- Transitive advisory noise when resolving against local feed only; hosting graph pins safe versions. -->
+    <NoWarn>$(NoWarn);NU1904;NU1903;NU1902</NoWarn>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>StableSdkHostSamplePackage</AssemblyName>
+    <RootNamespace>StableSdkHostSample</RootNamespace>
+    <NexoSdkPackageVersion Condition="'$(NexoSdkPackageVersion)' == ''">1.0.0</NexoSdkPackageVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="..\Program.cs" Link="Program.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Nexo.Hosting.Bundle" Version="$(NexoSdkPackageVersion)" />
+  </ItemGroup>
+</Project>

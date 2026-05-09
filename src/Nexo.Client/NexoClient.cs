@@ -67,4 +67,23 @@ public sealed class NexoClient : INexoClient
         response.EnsureSuccessStatusCode();
         return (await response.Content.ReadFromJsonAsync<ExecutionRunResponse>(_jsonOptions, cancellationToken))!;
     }
+
+    /// <inheritdoc />
+    public async Task<HttpResponseMessage> InvokeAsync(
+        HttpMethod method,
+        string relativeUri,
+        HttpContent? content = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(relativeUri))
+        {
+            throw new ArgumentException("Relative URI is required.", nameof(relativeUri));
+        }
+
+        var path = relativeUri.TrimStart('/');
+        using var request = new HttpRequestMessage(method, path) { Content = content };
+        return await _httpClient
+            .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken)
+            .ConfigureAwait(false);
+    }
 }

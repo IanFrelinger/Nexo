@@ -158,7 +158,7 @@ These items establish the first end-to-end product experience and close the most
 - Full public-surface audit: explicit `[Stable]` / `[Experimental]` attributes and a complete classification table in `docs/sdk.md` (policy doc exists; table may still be partial).
 
 **Implementation tasks:**
-1. Add CI lane that builds and runs `StableSdkHostSample` in isolation (verify it compiles against published/local NuGet only — no project references to internals). **Remaining** (recommended explicit step).
+1. ~~Add CI lane that builds and runs `StableSdkHostSample` in isolation (verify it compiles against published/local NuGet only — no project references to internals).~~ **Done** — `package-consumer/StableSdkHostSample.Package.csproj` + `scripts/verify-stable-sdk-host-sample-packages.*` + readiness gate step **Setup — verify SDK sample consumes local NuGet graph**.
 2. Add `docs/SdkCompatibilityPolicy.md`: semver rules, deprecation process, breaking-change notification. **Done** — see [SdkCompatibilityPolicy.md](SdkCompatibilityPolicy.md).
 3. Audit all public types in `Nexo.Sdk`, `Nexo.Client`, `Nexo.Abstractions`, `Nexo.Brick.Contracts` — classify each as Stable / Experimental / Internal. Add classification table to `docs/sdk.md`. **Ongoing.**
 4. Add XML doc comments indicating stability level on key public interfaces. **Ongoing.**
