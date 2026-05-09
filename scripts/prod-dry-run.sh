@@ -47,6 +47,11 @@ BASE_URL="http://${HOST}:${PORT}"
 
 DC=(docker compose -f "$COMPOSE_FILE")
 
+if ! command -v docker >/dev/null 2>&1; then
+  echo "prod-dry-run requires Docker (docker compose). Install Docker Engine and the Compose plugin, then retry." >&2
+  exit 2
+fi
+
 echo "=== Prod-shaped dry run ==="
 echo "Compose: $COMPOSE_FILE"
 echo "URL:     $BASE_URL"
