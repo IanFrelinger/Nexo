@@ -24,7 +24,7 @@ This gate does **not** replace:
 - Full load/performance certification.
 - Regulatory/compliance audits.
 
-Those should run as additional gates (v2+).
+Those should run as additional gates (v2+). For a **structured program** covering release, security, operations, compliance, and reliability—with checklists you can track—see **`docs/production-readiness/README.md`**.
 
 ---
 

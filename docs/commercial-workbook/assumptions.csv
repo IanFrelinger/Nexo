@@ -1,0 +1,32 @@
+parameter_key,value,unit,notes
+tenant_count,100,count,Paying customers (example)
+days_per_month,30,days,
+jobs_per_tenant_per_day,50,count,Agent/copilot jobs per tenant per day
+tokens_in_per_job,4000,tokens,
+tokens_out_per_job,800,tokens,
+llm_price_in_per_million_tokens,0.50,USD_per_1M_tokens,Your blended cost if you pay the provider
+llm_price_out_per_million_tokens,1.50,USD_per_1M_tokens,
+storage_gb_per_tenant_month,25,GB_month,Audit logs artifacts embeddings (illustrative)
+storage_usd_per_gb_month,0.023,USD_per_GB_month,Object storage class blended
+egress_gb_per_tenant_month,5,GB_month,Exports portal downloads
+egress_usd_per_gb,0.09,USD_per_GB,Internet egress illustrative
+shared_vcpu_for_app_pool,16,vCPU,Shared multitenant app and workers (illustrative)
+vcpu_hour_usd,0.04,USD_per_vcpu_hour,Simplify: flat rate times vCPU-hours
+managed_db_usd_month,200,USD_month,Postgres or equivalent managed primary
+fixed_saas_overhead_usd_month,500,USD_month,"Auth, email, CI, observability, misc vendors"
+revenue_per_tenant_month,98,USD_month,"Illustrative: e.g. 2 seats at 49"
+stripe_fee_percent,0.029,ratio,Card processing percent
+stripe_fixed_usd_per_charge,0.30,USD_per_successful_charge,
+headcount_fte_sales,0,count,FTE equivalents
+headcount_fte_engineering,1,count,
+headcount_fte_support,0.25,count,
+fully_loaded_cost_usd_per_fte_month,18000,USD_month_per_FTE,"Salary+benefits+payroll tax+tools; adjust hard"
+legal_retainer_usd_month,0,USD_month,Outside counsel placeholder
+accounting_bookkeeping_usd_month,500,USD_month,
+insurance_usd_month,200,USD_month,GL+E&O placeholder
+runway_months_cash,6,months,Cash you can burn without new revenue
+founder_draw_usd_month,8000,USD_month,Personal burn covered from business or savings
+customer_acquisition_cost_usd,500,USD_per_customer,Blended CAC placeholder
+annual_churn_percent,15,percent_per_year,Logo churn illustrative
+support_tickets_per_tenant_month,2,count,For staffing model
+minutes_per_ticket,25,minutes,Handle time illustrative

@@ -20,6 +20,7 @@ namespace Nexo.Tests.Infrastructure.Tests.Workflows;
 /// </summary>
 [Collection("Integration")]
 [Trait("Category", "Integration")]
+[Trait("Category", "ProdStyle")]
 public sealed class WorkflowExecutorIntegrationTests
 {
     private static WorkflowExecutor CreateExecutor(IBrickRegistry brickRegistry)

@@ -37,6 +37,7 @@ internal sealed class PeerTrustPolicyResolver
         {
             "trusted-only" => tier == PeerTrustTier.Trusted,
             "trusted-preferred" => tier != PeerTrustTier.Untrusted,
+            "allowlist" => tier == PeerTrustTier.Trusted,
             _ => true
         };
     }

@@ -1,0 +1,6 @@
+<Project>
+  <!-- Closest Directory.Packages.props wins: opt this sample out of repo central package management. -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+</Project>

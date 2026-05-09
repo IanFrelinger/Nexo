@@ -1,0 +1,10 @@
+metric,formula_using_assumption_keys,example_value_or_notes
+Jobs per tenant per month,jobs_per_tenant_per_day * days_per_month,1500
+Token cost per job,(tokens_in_per_job/1e6)*llm_price_in_per_million_tokens + (tokens_out_per_job/1e6)*llm_price_out_per_million_tokens,0.0032 USD
+LLM COGS per tenant per month,jobs_per_tenant_per_day * days_per_month * token_cost_per_job,4.80 USD (if you pay LLM)
+Fleet LLM COGS per month,tenant_count * llm_cogs_per_tenant_per_month,480 USD
+COGS per tenant per month (full stack illustrative),SUM(llm storage egress allocated_compute) / tenant_count,17.43 USD (see prior model)
+Gross margin after payment fees,(MRR - COGS_incl_or_excl_fees) / MRR,Depends on whether Stripe sits above or below gross profit
+LTV (simple),revenue_per_tenant_month / (annual_churn_percent/12/100),Months lifetime * monthly if churn is monthly equivalent — use cohort model for real LTV
+CAC payback months,customer_acquisition_cost_usd / (revenue_per_tenant_month - variable_cogs_per_tenant),Variable COGS often LLM+usage; use your definition
+Contribution margin per tenant,revenue_per_tenant_month - variable_cogs_per_tenant,Define variable: LLM storage egress incremental compute

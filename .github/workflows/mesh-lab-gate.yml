@@ -1,0 +1,91 @@
+name: Mesh virtual lab gate
+
+on:
+  push:
+    branches:
+      - master
+      - main
+      - "cursor/**"
+    paths:
+      - ".github/workflows/mesh-lab-gate.yml"
+      - "docker-compose.mesh-lab.yml"
+      - ".docker/Dockerfile.api"
+      - ".docker/Dockerfile.quickstart"
+      - "docs/config/mesh-lab.env.example"
+      - "docs/MeshVirtualLab.md"
+      - "scripts/mesh-lab-verify.sh"
+      - "scripts/mesh-lab-stress-ramp.sh"
+      - "src/Nexo.API/**"
+  pull_request:
+    paths:
+      - ".github/workflows/mesh-lab-gate.yml"
+      - "docker-compose.mesh-lab.yml"
+      - ".docker/Dockerfile.api"
+      - ".docker/Dockerfile.quickstart"
+      - "docs/config/mesh-lab.env.example"
+      - "docs/MeshVirtualLab.md"
+      - "scripts/mesh-lab-verify.sh"
+      - "scripts/mesh-lab-stress-ramp.sh"
+      - "src/Nexo.API/**"
+  workflow_dispatch:
+
+jobs:
+  mesh-lab:
+    name: Two-node mesh lab + verify script
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      COMPOSE_PROJECT_NAME: nexo_mesh_lab_ci
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify Docker
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker --version
+          docker compose version
+
+      - name: Write lab env
+        shell: bash
+        run: |
+          set -euo pipefail
+          KEY="mesh-lab-ci-${GITHUB_RUN_ID}-${GITHUB_SHA}"
+          KEY="${KEY:0:64}"
+          BEARER="${KEY}-bearer"
+          BASIC="${KEY}-basic"
+          {
+            echo "Nexo__Security__ApiKey=${KEY}"
+            echo "Nexo__Security__PeerB__BearerToken=${BEARER}"
+            echo "Nexo__Security__Worker__BasicAuthPassword=${BASIC}"
+            echo "MESH_LAB_PEER_A_PUBLISH=127.0.0.1:18081"
+            echo "MESH_LAB_PEER_B_PUBLISH=127.0.0.1:18082"
+          } > .env.mesh-lab.ci
+
+      - name: Compose config
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker compose -f docker-compose.mesh-lab.yml --env-file .env.mesh-lab.ci config -q
+
+      - name: Start mesh lab
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker compose -f docker-compose.mesh-lab.yml --env-file .env.mesh-lab.ci up -d --build
+
+      - name: Run verify script
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x scripts/mesh-lab-verify.sh
+          ./scripts/mesh-lab-verify.sh .env.mesh-lab.ci
+
+      - name: Tear down
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker compose -f docker-compose.mesh-lab.yml --env-file .env.mesh-lab.ci down -v || true
+          rm -f .env.mesh-lab.ci

@@ -1,0 +1,123 @@
+name: Friend mesh prefab gate
+
+on:
+  push:
+    branches:
+      - master
+      - main
+      - "cursor/**"
+    paths:
+      - ".github/workflows/friend-mesh-prefab-gate.yml"
+      - "docker-compose.friend-mesh.yml"
+      - ".docker/Dockerfile.api"
+      - "docs/config/friend-mesh.env.example"
+      - "docs/config/friend-mesh.Caddyfile.example"
+      - "docs/FriendMeshPrefab.md"
+      - "docs/MeshPhase8OperatorHardening.md"
+      - "src/Nexo.API/**"
+  pull_request:
+    paths:
+      - ".github/workflows/friend-mesh-prefab-gate.yml"
+      - "docker-compose.friend-mesh.yml"
+      - ".docker/Dockerfile.api"
+      - "docs/config/friend-mesh.env.example"
+      - "docs/config/friend-mesh.Caddyfile.example"
+      - "docs/FriendMeshPrefab.md"
+      - "docs/MeshPhase8OperatorHardening.md"
+      - "src/Nexo.API/**"
+  workflow_dispatch:
+
+jobs:
+  friend-mesh-smoke:
+    name: Friend mesh Compose build + auth smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      COMPOSE_PROJECT_NAME: nexo_friend_mesh_ci
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify Docker and Compose
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker --version
+          docker compose version
+
+      - name: Write CI env file for friend-mesh stack
+        shell: bash
+        run: |
+          set -euo pipefail
+          KEY="ci-friend-mesh-${GITHUB_RUN_ID}-${GITHUB_SHA}"
+          KEY="${KEY:0:64}"
+          {
+            echo "NEXO_FRIEND_MESH_PORT_PUBLISH=127.0.0.1:18080"
+            echo "Nexo__Security__ExposureProfile=Tailnet"
+            echo "Nexo__Security__AuthorizationMode=ApiKey"
+            echo "Nexo__Security__AuthorizationScope=MutatingApi"
+            echo "Nexo__Security__ApiKey=${KEY}"
+            echo "Nexo__Security__ApiKeyHeaderName=X-Nexo-Api-Key"
+            echo "Nexo__Security__CustomAdvisory=CI friend-mesh gate"
+            echo "Nexo__Security__ShowAdvisoryInPortal=true"
+          } > .env.friend-mesh.ci
+          echo "FRIEND_MESH_CI_API_KEY=${KEY}" >> "$GITHUB_ENV"
+
+      - name: Validate compose file
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker compose -f docker-compose.friend-mesh.yml --env-file .env.friend-mesh.ci config -q
+
+      - name: Build and start friend-mesh stack
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker compose -f docker-compose.friend-mesh.yml --env-file .env.friend-mesh.ci up -d --build
+
+      - name: Wait for health endpoint
+        shell: bash
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 60); do
+            if curl -fsS "http://127.0.0.1:18080/health" >/dev/null; then
+              echo "health ok after ${i} attempts"
+              exit 0
+            fi
+            echo "waiting for health ($i/60)..."
+            sleep 5
+          done
+          echo "::error::Nexo.API did not become healthy in time"
+          docker compose -f docker-compose.friend-mesh.yml --env-file .env.friend-mesh.ci logs
+          exit 1
+
+      - name: Mutating request without API key is rejected
+        shell: bash
+        run: |
+          set -euo pipefail
+          code=$(curl -sS -o /tmp/body.txt -w "%{http_code}" \
+            -X POST "http://127.0.0.1:18080/api/preferences" \
+            -H "Content-Type: application/json" \
+            -d '{"displayName":"ci","theme":"dark","defaultFocus":null,"preferredProvider":null}')
+          echo "HTTP ${code}"; cat /tmp/body.txt
+          test "${code}" = "401"
+
+      - name: Mutating request with API key succeeds
+        shell: bash
+        run: |
+          set -euo pipefail
+          code=$(curl -sS -o /tmp/body2.txt -w "%{http_code}" \
+            -X POST "http://127.0.0.1:18080/api/preferences" \
+            -H "Content-Type: application/json" \
+            -H "X-Nexo-Api-Key: ${FRIEND_MESH_CI_API_KEY}" \
+            -d '{"displayName":"ci-gate","theme":"dark","defaultFocus":null,"preferredProvider":null}')
+          echo "HTTP ${code}"; cat /tmp/body2.txt
+          test "${code}" = "200"
+
+      - name: Stop friend-mesh stack
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker compose -f docker-compose.friend-mesh.yml --env-file .env.friend-mesh.ci down -v || true
+          rm -f .env.friend-mesh.ci
