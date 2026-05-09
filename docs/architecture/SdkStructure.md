@@ -22,9 +22,50 @@ These conventions usually **preserve** existing namespaces for bulk moves; **new
 - **`Observation/Sdk/Extensions/`** — DI extensions use namespace **`Nexo.Infrastructure.Sdk.Observation`** (`AddObservationCore`, `AddObservationInfrastructure`).
 - **Other feature areas** — same physical layout; namespaces follow **`Nexo.Infrastructure.Sdk.<Subsystem>`** unless a **name collision** with runtime types forces **`Nexo.Infrastructure.<Subsystem>.Sdk`** (see **`NodeCapabilityRuntime`**, **`Execution`**, **`Execution.Routing`**, **`Mesh`**).
 
+### Mechanical sweep (`*ServiceCollectionExtensions`)
+
+Every **`Nexo.Infrastructure`** DI extension file is under **`Feature/Sdk/Extensions/`** (filename pattern **`*ServiceCollectionExtensions*.cs`**). There are no parallel copies under legacy paths.
+
+### Completed areas (DI extensions)
+
+Extension entry points and namespaces (collision-safe variants where noted):
+
+| Feature folder | Extension namespace |
+| -------------- | ------------------- |
+| **Adaptation** (`Adaptation/Sdk/Extensions/`) | `Nexo.Infrastructure.Sdk.Adaptation` |
+| **Analysis** (`Analysis/BrickAnalyzer/Sdk/Extensions/`) | `Nexo.Infrastructure.Sdk.Analysis` |
+| **Composition** (`Composition/Sdk/Extensions/`) | `Nexo.Infrastructure.Sdk.Composition` |
+| **Execution** (`Execution/Sdk/Extensions/`) | `Nexo.Infrastructure.Execution.Sdk` |
+| **Execution/Routing** (`Execution/Routing/Sdk/Extensions/`) | `Nexo.Infrastructure.Execution.Routing.Sdk` |
+| **Maintenance** (`Maintenance/Sdk/Extensions/`) | `Nexo.Infrastructure.Sdk.Maintenance` |
+| **Mesh** (`Mesh/Sdk/Extensions/`) | `Nexo.Infrastructure.Mesh.Sdk` |
+| **ModelArtifacts** (`ModelArtifacts/Sdk/Extensions/`) | `Nexo.Infrastructure.Sdk.ModelArtifacts` |
+| **NodeCapabilityRuntime** (`NodeCapabilityRuntime/Sdk/Extensions/`) | `Nexo.Infrastructure.NodeCapabilityRuntime.Sdk` |
+| **Observation** (`Observation/Sdk/Extensions/`) | `Nexo.Infrastructure.Sdk.Observation` |
+| **ParallelTesting** (`ParallelTesting/Sdk/Extensions/`) | `Nexo.Infrastructure.Sdk.ParallelTesting` |
+| **Persistence** (`Persistence/Sdk/Extensions/`) | `Nexo.Infrastructure.Sdk.Persistence` |
+| **Pipelines** (`Pipelines/Sdk/Extensions/`) | `Nexo.Infrastructure.Sdk.Pipelines` |
+| **Rollback** (`Rollback/Sdk/Extensions/`) | `Nexo.Infrastructure.Sdk.Rollback` |
+| **SelfContext** (`SelfContext/Sdk/Extensions/`) | `Nexo.Infrastructure.Sdk.SelfContext` |
+| **SelfImprovement** (`SelfImprovement/Sdk/Extensions/`) | `Nexo.Infrastructure.Sdk.SelfImprovement` |
+| **Trust** (`Trust/Sdk/Extensions/`) | `Nexo.Infrastructure.Sdk.Trust` |
+
+### Optional `Sdk/Options` pilot
+
+**Pipelines:** **`PipelineExecutionOptions`**, **`PipelinePersistenceOptions`**, **`PipelineExecutionAdapterOptions`** live under **`Pipelines/Sdk/Options/`** with namespaces unchanged (**`Nexo.Infrastructure.Pipelines`**).
+
 ### Bringing Sdk extensions into scope
 
-Extension methods require their namespace in scope. **`src/Nexo.Hosting/GlobalUsings.Infrastructure.Sdk.cs`** centralizes **`global using`** lines for Sdk namespaces; **`Nexo.CLI`** and **`Nexo.Tests.Infrastructure`** **link** that file in their `.csproj` to avoid duplicating imports across commands and tests.
+Extension methods require their namespace in scope.
+
+| Approach | When to use |
+| -------- | ----------- |
+| **Link `src/Nexo.Hosting/GlobalUsings.Infrastructure.Sdk.cs`** from your `.csproj` (`<Compile Include="..\Nexo.Hosting\GlobalUsings.Infrastructure.Sdk.cs" Link="GlobalUsings.Infrastructure.Sdk.cs" />`) | Projects that **wire `IServiceCollection` manually** and call Infrastructure Sdk extensions (**same pattern as `Nexo.CLI`** and **`Nexo.Tests.Infrastructure`**). Keeps one source of truth when Hosting adds Sdk namespaces. |
+| **Explicit `using Nexo.Infrastructure.Sdk.*`** (or feature-specific Sdk namespaces) | Libraries that **cannot** reference Hosting paths; small surface area. |
+| **Neither** | Apps that only call **`services.AddNexo(...)`** (**e.g. `Nexo.API`**) — kernel registration pulls in dependencies; no Infrastructure Sdk `using` needed for typical **`Program.cs`**. |
+| **Types only** | Projects like **`Nexo.Bricks.Owasp`** that reference Infrastructure for **adapters / types** but not registration extensions — **no** global Sdk usings file. |
+
+**`src/Nexo.Hosting/GlobalUsings.Infrastructure.Sdk.cs`** lists **`global using`** lines for Sdk namespaces used by the host.
 
 ## Naming
 

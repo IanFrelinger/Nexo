@@ -380,9 +380,7 @@ internal static partial class NexoKernelRegistrar
         //   lifecycle (Ollama pull/remove) without affecting databases.
         // NEXO_EPHEMERAL_DB ("postgres"): enables ephemeral Postgres
         //   database creation; only takes effect when persistence is on.
-        var ephemeralAll = string.Equals(Environment.GetEnvironmentVariable("NEXO_EPHEMERAL"), "1", StringComparison.OrdinalIgnoreCase);
-        var ephemeralModels = ephemeralAll || string.Equals(Environment.GetEnvironmentVariable("NEXO_EPHEMERAL_MODELS"), "1", StringComparison.OrdinalIgnoreCase);
-        if (ephemeralModels)
+        if (EphemeralModelsEnabled())
         {
             services.AddSingleton<IEphemeralModelLifecycle, OllamaEphemeralLifecycle>();
         }
@@ -423,8 +421,7 @@ internal static partial class NexoKernelRegistrar
         //   that scrubs PII before LLM calls leave the trust boundary.
         // NEXO_LOAD_PREFERENCE (string, e.g. "latency" / "cost"):
         //   activates adaptive load balancing and selects the policy.
-        var ephemeralAll = string.Equals(Environment.GetEnvironmentVariable("NEXO_EPHEMERAL"), "1", StringComparison.OrdinalIgnoreCase);
-        var ephemeralModels = ephemeralAll || string.Equals(Environment.GetEnvironmentVariable("NEXO_EPHEMERAL_MODELS"), "1", StringComparison.OrdinalIgnoreCase);
+        var ephemeralModels = EphemeralModelsEnabled();
         var trustEnabledByConfig = options.TrustEnabled ?? string.Equals(Environment.GetEnvironmentVariable("NEXO_TRUST_ENABLED"), "1", StringComparison.OrdinalIgnoreCase);
         var trustEnabled = modules.IncludeTrustServices && trustEnabledByConfig;
         var loadPref = Environment.GetEnvironmentVariable("NEXO_LOAD_PREFERENCE")?.Trim();

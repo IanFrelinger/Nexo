@@ -24,6 +24,18 @@ dotnet restore Nexo.LocalDevCore.slnf
 dotnet build Nexo.LocalDevCore.slnf -v minimal
 ```
 
+## Solution filters, Makefile targets, and CI
+
+| Artifact | Typical use |
+| -------- | ----------- |
+| **`Nexo.sln`** | Full repository build — run locally after **`Nexo.Hosting`**, **`Nexo.Infrastructure`** Sdk surface, or registrar phase edits. |
+| **`Nexo.LocalDevCore.slnf`** | Faster slice (CLI + core tests); **`make restore-core`** / **`make build-core`**. |
+| **`Nexo.PrimeTime.slnf`** | Nine **`Nexo.Tests.*`** assemblies — **`make test-prime-time`** runs **`Category=ProdStyle`** across this filter; **`make test-prime-time-full`** runs the full test matrix after that gate. |
+
+**Cross-platform workflow:** `.github/workflows/cross-platform-tests.yml` triggers on changes under **`src/Nexo.Infrastructure/**`** (among other paths) and runs **`dotnet restore`** / **`dotnet build`** on **`Nexo.sln`** (implicit via repo root). **Prod-shaped Compose:** `.github/workflows/prod-dry-run-pr.yml` runs **`scripts/prod-dry-run.sh`** on PRs to **`master`**, **`main`**, and **`cursor/**`** branches.
+
+For Infrastructure Sdk / Hosting registration changes, prefer **`dotnet build Nexo.sln`** then **`make test-framework-prod-first`** or **`make test-prime-time`** when validating framework-wide behaviour (see also **`Makefile`** targets **`test-prod-style`**, **`ci-verify`**).
+
 ## Testing: xUnit vs. `UnitTestBase`
 
 - **xUnit** suites (for example `Nexo.Tests.Infrastructure`) run with normal `dotnet test` filters.

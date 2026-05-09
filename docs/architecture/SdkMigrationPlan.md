@@ -4,7 +4,7 @@
 
 | Item | Status |
 | ---- | ------ |
-| **Track A — Hosting partials** | **`AddNexo`** → **`NexoKernelRegistrar.Register`**; **`NexoKernelRegistrationContext`** + **20 private phase methods** in **`NexoKernelRegistrar.Phases.cs`** (same **`// ──`** sections). **`ModuleSelection`** in **`NexoKernelRegistrationModels.cs`**. **`NexoServiceCollectionExtensions.Deployment.cs`** holds deployment helpers + **`RegisterNodeCapabilityRuntime`**. |
+| **Track A — Hosting partials** | **`AddNexo`** → **`NexoKernelRegistrar.Register`**; **`NexoKernelRegistrationContext`** + **20 phase methods** in **`NexoKernelRegistrar.Phases.cs`** + **`NexoKernelRegistrar.Ephemeral.cs`** (`EphemeralModelsEnabled`). **`ModuleSelection`** in **`NexoKernelRegistrationModels.cs`**. **`NexoServiceCollectionExtensions.Deployment.cs`** — deployment profile helpers; **`NexoServiceCollectionExtensions.NodeCapabilityRuntime.cs`** — **`RegisterNodeCapabilityRuntime`**. |
 | **Track B — Infrastructure `Sdk/`** | **Done:** `*ServiceCollectionExtensions` under **`Feature/Sdk/Extensions/`** with **`Nexo.Infrastructure.Sdk.<Area>`** namespaces. Collision-safe: **`Nexo.Infrastructure.NodeCapabilityRuntime.Sdk`**, **`Nexo.Infrastructure.Execution.Sdk`**, **`Nexo.Infrastructure.Execution.Routing.Sdk`**, **`Nexo.Infrastructure.Mesh.Sdk`**. |
 | **Consumer projects** | **`GlobalUsings.Infrastructure.Sdk.cs`** in **`Nexo.Hosting`**; **`Nexo.CLI`** and **`Nexo.Tests.Infrastructure`** link it for Sdk extension resolution. |
 | **Non-goal — ports** | **`INexoSdkBuilder`** in **`Nexo.Infrastructure.Sdk.Ports`**. |
@@ -18,11 +18,11 @@ This document turns the “remaining gaps” from [`SdkStructure.md`](SdkStructu
 
 ## Goal
 
-1. **`Nexo.Hosting` — `NexoServiceCollectionExtensions`**  
-   Split the monolithic `AddNexo` registration into **partial static classes** so each subsystem is navigable without changing behavior or public API.
+1. **`Nexo.Hosting` — kernel registration**  
+   Keep **`AddNexo`** as the public entry point while making wiring **navigable**: deployment/profile resolution stays in **`NexoServiceCollectionExtensions`** partials (**`Deployment`**, **`NodeCapabilityRuntime`**); all subsystem registration runs through **`NexoKernelRegistrar`** (**`Register`** → **`NexoKernelRegistrationContext`** → **`RegisterPhase01`–`RegisterPhase20`** in **`NexoKernelRegistrar.Phases.cs`**). Behavior and order remain unchanged.
 
 2. **`Nexo.Infrastructure`**  
-   Adopt **`Sdk/Extensions/`** (and optional **`Sdk/Options`**, **`Sdk/Builders`**) **per feature area**. DI extension namespaces use **`Nexo.Infrastructure.Sdk.<Subsystem>`** (with collision-safe variants noted in [`SdkMigrationPlan.md`](SdkMigrationPlan.md) execution status).
+   DI registration surface lives under **`Feature/Sdk/Extensions/`** with **`Nexo.Infrastructure.Sdk.*`** extension namespaces (collision-safe **`Nexo.Infrastructure.<Feature>.Sdk`** where needed). Implementation types stay under **`Nexo.Infrastructure.<Feature>`**. Optional physical **`Sdk/Options/`** groups option types without renaming namespaces (see **`Pipelines/Sdk/Options/`** pilot).
 
 ---
 
@@ -34,38 +34,28 @@ This document turns the “remaining gaps” from [`SdkStructure.md`](SdkStructu
 
 ---
 
-## Track A — Split `NexoServiceCollectionExtensions` (Hosting)
+## Track A — Hosting composition (supersedes old “slice AddNexo into many partials” plan)
 
-### A.1 Inventory
+### A.1 Files (current)
 
-Target file: `src/Nexo.Hosting/NexoServiceCollectionExtensions.cs` (~700+ lines).
-
-Identify natural seams (already commented in source):
-
-| Partial file (proposed) | Contents |
-| ----------------------- | -------- |
-| `NexoServiceCollectionExtensions.cs` | Public `AddNexo`, `AddNexoProfile`; delegate to internals |
-| `NexoServiceCollectionExtensions.Deployment.cs` | `ModuleSelection`, `GetModuleSelection`, `ResolveDeploymentProfile`, `TryParseDeploymentProfile`, `ResolveStrictMode`, `ParseBooleanEnvironmentVariable` |
-| `NexoServiceCollectionExtensions.NodeCapabilityRuntime.cs` | `RegisterNodeCapabilityRuntime` |
-| `NexoServiceCollectionExtensions.AddNexo.Core.cs` | Strict mode, configuration, MediatR, config adapter, loop kernel start |
-| `NexoServiceCollectionExtensions.AddNexo.Orchestration.cs` | Orchestration + optional transport |
-| `NexoServiceCollectionExtensions.AddNexo.PersistenceAdaptation.cs` | Persistence, adaptation, federated mesh, copilot store |
-| `NexoServiceCollectionExtensions.AddNexo.KnowledgePipeline.cs` | Knowledge query, pipeline composition |
-| `NexoServiceCollectionExtensions.AddNexo.AgentsObservation.cs` | Background agents, RAG, observation pipeline |
-| `NexoServiceCollectionExtensions.AddNexo.ModelExecution.cs` | Model decorator chain, provider factory branches |
-| `NexoServiceCollectionExtensions.AddNexo.WorkflowTesting.cs` | Workflow executor, analysis/validation, testing adapters |
-
-Exact slice boundaries can follow the **`// ── Section ──`** comments already in the file; adjust partial names if a slice is still too large.
+| File | Role |
+| ---- | ---- |
+| `NexoServiceCollectionExtensions.cs` | **`AddNexo`**, **`AddNexoProfile`** → builds **`NexoKernelRegistrationContext`** and calls **`NexoKernelRegistrar.Register`**. |
+| `NexoServiceCollectionExtensions.Deployment.cs` | **`ResolveDeploymentProfile`**, **`GetModuleSelection`**, **`ResolveStrictMode`**, **`ParseBooleanEnvironmentVariable`** (internal). |
+| `NexoServiceCollectionExtensions.NodeCapabilityRuntime.cs` | **`RegisterNodeCapabilityRuntime`** (internal) — NCR + model artifact catalog wiring when NCR is enabled. |
+| `NexoKernelRegistrationModels.cs` | **`ModuleSelection`**, **`NexoKernelRegistrationContext`**. |
+| `NexoKernelRegistrar.cs` | **`Register`** dispatches phases **01–20**. |
+| `NexoKernelRegistrar.Phases.cs` | One private method per **`// ──`** section (kernel subsystems). |
+| `NexoKernelRegistrar.Ephemeral.cs` | **`EphemeralModelsEnabled()`** shared by ephemeral lifecycle + trust phases. |
 
 ### A.2 Completion criteria
 
-- All partials use **`partial static class NexoServiceCollectionExtensions`** in namespace **`Nexo.Hosting`**.
-- **No** duplicate static helper names across partials (private methods stay private per partial).
-- **Zero** behavior change: same registration order and conditional branches.
+- **Zero** behavior change vs monolithic registration: same order, env vars, and deployment-profile gates.
+- Reviewers can open **`NexoKernelRegistrar.Phases.cs`** and jump by section comment.
 
 ### A.3 Risks
 
-- **Merge conflicts** if many branches touch `AddNexo` — mitigate by completing Track A in one focused PR after a short freeze or rebasing feature branches.
+- **Merge conflicts** if many branches touch **`NexoKernelRegistrar.Phases.cs`** or **`NexoServiceCollectionExtensions`** entry points — coordinate kernel wiring changes in focused PRs.
 
 ---
 
@@ -78,13 +68,14 @@ Under each **top-level feature folder** (e.g. `Observation/`, `NodeCapabilityRun
 ```
 Feature/
   Sdk/
-    Options/          # *Options.cs already co-located — move here if not
-    Extensions/       # *ServiceCollectionExtensions.cs for this feature
+    Options/          # optional — registration-related *Options.cs (namespaces often unchanged)
+    Extensions/       # *ServiceCollectionExtensions.cs — DI registration surface
   ... existing impl files ...
 ```
 
-- Keep **`namespace Nexo.Infrastructure.<Feature>`** on moved files.
-- **Do not** force every subfolder into `Sdk/` — only types that are clearly **registration surface** or **options bags**.
+- **DI extension classes** (`*ServiceCollectionExtensions`) use **`Nexo.Infrastructure.Sdk.<Subsystem>`** (or **`Nexo.Infrastructure.<Subsystem>.Sdk`** when the simple name collides with runtime types).
+- **Implementation types** (stores, adapters, domain-ish infrastructure services) keep **`Nexo.Infrastructure.<Feature>`** (or deeper sub-namespaces). Physical folder may differ from namespace by design.
+- **Do not** force every type into `Sdk/` — only **registration entry points** and, optionally, **options bags** under **`Sdk/Options/`**.
 
 ### B.2 Suggested order (dependency / churn)
 
@@ -103,9 +94,9 @@ Lower phases can proceed in parallel **only** if they touch disjoint paths (sepa
 
 ### B.3 Completion criteria (per phase)
 
-- Files compile with **unchanged namespaces**.
+- Types compile with **stable public namespaces** (extensions moved to **`Nexo.Infrastructure.Sdk.*`** as agreed; options moved physically may keep **`Nexo.Infrastructure.<Feature>`** namespace).
 - No new public API unless explicitly intended (prefer moves only).
-- **`dotnet build`** + **`dotnet test Nexo.LocalDevCore.slnf`** (or narrower filter if area-specific tests exist).
+- **`dotnet build Nexo.sln`** + targeted tests when touching DI.
 
 ### B.4 Risks
 
@@ -168,6 +159,10 @@ Ordered for **low risk** first; each phase can be its own PR.
 | D4.1 | Pick **one** feature (e.g. **Pipelines** or **NodeCapabilityRuntime**) and move **registration-related option types** into **`Feature/Sdk/Options/`** without changing **public type names** or namespaces unless deliberate. | Pattern validated; tests/build green. |
 | D4.2 | Repeat per feature **only** where readability wins; otherwise list **explicitly descoped** areas in this plan. | No forced churn for marginal benefit. |
 
+**D4.1 pilot (done):** `PipelineExecutionOptions`, `PipelinePersistenceOptions`, and `PipelineExecutionAdapterOptions` live under **`src/Nexo.Infrastructure/Pipelines/Sdk/Options/`**; namespaces remain **`Nexo.Infrastructure.Pipelines`**.
+
+**D4.2 descoped (for now):** bulk moves for NodeCapabilityRuntime options, Trust, Adaptation, Persistence DB options — defer until a feature owner requests clearer separation.
+
 ### Phase D5 — Hosting polish (optional)
 
 | Step | Action | Done when |
@@ -189,8 +184,21 @@ Ordered for **low risk** first; each phase can be its own PR.
 
 ---
 
+### Phase D — execution checklist
+
+| Phase | Summary |
+| ----- | ------- |
+| **D1** | Done — Goal / Track A / Track B §B.1 aligned with **`NexoKernelRegistrar`** and Sdk extension namespaces; **`SdkStructure.md`** lists completed areas and consumer guidance. |
+| **D2** | Done — All **`src/Nexo.Infrastructure/**/*ServiceCollectionExtensions*.cs`** files live under **`Sdk/Extensions/`**; **`dotnet build Nexo.sln`** verified. |
+| **D3** | Done — Audit documented in **`SdkStructure.md`**: **`GlobalUsings.Infrastructure.Sdk.cs`** linked from **CLI** and **Tests.Infrastructure**; **`AddNexo`** hosts (**e.g. Nexo.API**) need no separate Sdk usings; projects that only reference Infrastructure **types** skip the link. |
+| **D4** | Done — **`Pipelines/Sdk/Options/`** pilot; further option-folder moves descoped in **D4.2** above. |
+| **D5** | Done — **`NexoServiceCollectionExtensions.NodeCapabilityRuntime.cs`**; shared **`EphemeralModelsEnabled()`** in **`NexoKernelRegistrar.Ephemeral.cs`**. |
+| **D6** | Done — **`CONTRIBUTING.md`** — solution filters, **PrimeTime** / **LocalDevCore**, **Makefile** targets, workflow pointers. |
+
+---
+
 ## Explicit non-goals (unless product asks)
 
-- Renaming **`Nexo.Infrastructure`** namespaces to `Nexo.Infrastructure.Sdk.*` (breaking).
+- **Mass-renaming** of **implementation** types from **`Nexo.Infrastructure.<Feature>`** to **`Nexo.Infrastructure.Sdk.*`** (breaking; extension **classes** already use Sdk-style namespaces by design).
 - Introducing a **single mega-package** that re-exports all extensions (maintenance burden).
 - Moving **port interfaces** out of `Nexo.Core.Application` into Infrastructure.
