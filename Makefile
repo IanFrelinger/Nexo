@@ -1,6 +1,6 @@
 .PHONY: build build-core build-demos restore-core test test-prod-style test-framework-prod-first test-prime-time test-prime-time-full test-cross-platform test-portable test-multi-env test-all-platforms test-all-platforms-ephemeral ci-verify validate-safe review-summary clean-test-artifacts test-readiness-gate
 
-# All automated test projects (excludes MAUI/Android workloads required by full Nexo.sln).
+# All automated test projects in Nexo.PrimeTime.slnf (nine Nexo.Tests.* assemblies).
 PRIME_TIME_SLNF := Nexo.PrimeTime.slnf
 
 # Build the solution
@@ -31,7 +31,7 @@ test-framework-prod-first: test-prod-style
 	dotnet test Nexo.LocalDevCore.slnf --no-build \
 	  --blame-hang-timeout 30s --blame-hang-dump-type none
 
-# Prime-time gate: Category=ProdStyle across Nexo.PrimeTime.slnf (all test assemblies; no MAUI workloads).
+# Prime-time gate: Category=ProdStyle across Nexo.PrimeTime.slnf (all test assemblies).
 test-prime-time:
 	dotnet build $(PRIME_TIME_SLNF) -v minimal
 	dotnet test $(PRIME_TIME_SLNF) --no-build \

@@ -40,7 +40,7 @@ Nexo uses multiple mechanisms to prevent tests from hanging indefinitely and kee
 **Prime-time (whole automated framework slice):**  
 
 ```bash
-make test-prime-time          # Category=ProdStyle across Nexo.PrimeTime.slnf (nine test projects; skips MAUI/Android workloads from full Nexo.sln)
+make test-prime-time          # Category=ProdStyle across Nexo.PrimeTime.slnf (nine test projects)
 make test-prime-time-full    # ProdStyle gate then full test count on the same slice (ProdStyle runs twice)
 ```
 

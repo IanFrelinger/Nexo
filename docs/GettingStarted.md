@@ -242,7 +242,7 @@ Then resolve application ports from DI (analysis, validation, orchestration, etc
 ## Common pitfalls
 
 - If commands fail due to SDK mismatch, ensure your local SDK honors `global.json` (`9.x`).
-- `dotnet build Nexo.sln` can require mobile workloads depending on host; use setup scripts + CLI project build first.
+- **`dotnet build Nexo.sln`** should succeed on Linux with a stock .NET SDK; use **`Nexo.LocalDevCore.slnf`** or **`Nexo.PrimeTime.slnf`** when you want a smaller/faster slice.
 - Prefer running heavy validations sequentially (not in parallel terminals) to avoid resource pressure.
 - For CI parity, use the documented gate workflows under `.github/workflows/`.
 - If native setup is blocking, switch to container lane first and continue there.
