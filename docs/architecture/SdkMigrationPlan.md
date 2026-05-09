@@ -125,9 +125,67 @@ After each Track A/B milestone:
 
 ## Definition of “done” for the overall initiative
 
-- **Track A** merged: `AddNexo` is split into partials; reviewers can navigate by subsystem file.
-- **Track B** merged through **B.2.8** (or explicitly descoped areas listed with reason).
-- CI green on **`Nexo.sln`** and **`Nexo.LocalDevCore.slnf`** (and **`Nexo.PrimeTime.slnf`** if present on branch).
+This initiative is **functionally complete** for kernel DI and Infrastructure Sdk extensions (see **Execution status** above). Remaining work is **documentation alignment**, **optional layout polish**, **consumer ergonomics**, and **CI clarity** — tracked in **[Plan: close remaining gaps](#plan-close-remaining-gaps-post-migration)** below.
+
+Historical bullets (superseded where noted):
+
+- **Track A — achieved differently:** `AddNexo` delegates to **`NexoKernelRegistrar`** with phase partials (`NexoKernelRegistrar.Phases.cs`), not multiple `NexoServiceCollectionExtensions.*` partial files. Navigation goal is met via registrar phases + `Deployment` partial.
+- **Track B — DI extensions:** `*ServiceCollectionExtensions` live under **`Feature/Sdk/Extensions/`** with **`Nexo.Infrastructure.Sdk.*`** (and collision-safe `*.Sdk` namespaces). Optional **`Sdk/Options`** physical grouping remains incremental.
+- CI green on **`Nexo.sln`**; **`Nexo.LocalDevCore.slnf`** / **`Nexo.PrimeTime.slnf`** as documented in repo CI / contributor docs (see closing plan).
+
+---
+
+## Plan: close remaining gaps (post-migration)
+
+Ordered for **low risk** first; each phase can be its own PR.
+
+### Phase D1 — Documentation alignment (required)
+
+| Step | Action | Done when |
+| ---- | ------ | --------- |
+| D1.1 | Rewrite **Goal**, **Track A §A.1–A.2**, and **Definition of done** in this file so they describe **`NexoKernelRegistrar`** + **`NexoKernelRegistrationContext`** + **`NexoKernelRegistrar.Phases.cs`**, not hypothetical `NexoServiceCollectionExtensions.AddNexo.*` partials. | Text matches repo; no contradictory inventory tables. |
+| D1.2 | Fix **Track B §B.1**: state that **DI extension types** use **`Nexo.Infrastructure.Sdk.*`** (and **`Nexo.Infrastructure.<Feature>.Sdk`** where collision-safe), while **implementation types** remain **`Nexo.Infrastructure.<Feature>`**. Remove “keep namespace on moved files” if it implies zero namespace change for extensions. | Single coherent rule for extensions vs runtime types. |
+| D1.3 | Add a short **“Completed areas”** table to [`SdkStructure.md`](SdkStructure.md) (folders + extension namespace pattern), or a bullet list linking to feature folders under **`Sdk/Extensions/`**. | Readers see what’s migrated without reading git history. |
+
+### Phase D2 — Mechanical repo sweep (required)
+
+| Step | Action | Done when |
+| ---- | ------ | --------- |
+| D2.1 | Search for **`*ServiceCollectionExtensions.cs`** outside **`**/Sdk/Extensions/`** under `src/Nexo.Infrastructure`. Either move stragglers into **`Sdk/Extensions/`** or document why they stay (e.g. generated, exceptional). | No unexplained duplicates at old paths. |
+| D2.2 | Confirm **Observation** and other pilots still compile and tests touching DI registration pass (narrow filters acceptable). | `dotnet build Nexo.sln` green. |
+
+### Phase D3 — Consumer ergonomics (recommended)
+
+| Step | Action | Done when |
+| ---- | ------ | --------- |
+| D3.1 | Audit **`*.csproj`** files that **reference `Nexo.Infrastructure`** and call Sdk extension methods **without** going through **`AddNexo`**. For each: add **`<Compile Link="...GlobalUsings.Infrastructure.Sdk.cs">`** (same pattern as CLI / Tests.Infrastructure) **or** explicit **`using Nexo.Infrastructure.Sdk.*`** in a single `Usings.cs`. | No CS1061 surprises when adding new Sdk namespaces to Hosting’s global-usings file. |
+| D3.2 | Document the **recommended pattern** in [`SdkStructure.md`](SdkStructure.md) (“link Hosting `GlobalUsings.Infrastructure.Sdk.cs` vs explicit usings”). | Contributors have a default choice. |
+
+### Phase D4 — Optional `Sdk/Options` layout (incremental, descoping allowed)
+
+| Step | Action | Done when |
+| ---- | ------ | --------- |
+| D4.1 | Pick **one** feature (e.g. **Pipelines** or **NodeCapabilityRuntime**) and move **registration-related option types** into **`Feature/Sdk/Options/`** without changing **public type names** or namespaces unless deliberate. | Pattern validated; tests/build green. |
+| D4.2 | Repeat per feature **only** where readability wins; otherwise list **explicitly descoped** areas in this plan. | No forced churn for marginal benefit. |
+
+### Phase D5 — Hosting polish (optional)
+
+| Step | Action | Done when |
+| ---- | ------ | --------- |
+| D5.1 | Extract **`RegisterNodeCapabilityRuntime`** into a dedicated **`NexoServiceCollectionExtensions.NodeCapabilityRuntime.cs`** partial **or** leave as-is with a one-line comment pointing to **`NexoKernelRegistrar`** phase 01. | Clear ownership of NCR registration story. |
+| D5.2 | Optionally deduplicate **`ephemeralModels`** computation between **`RegisterPhase14_EphemeralLifecycle`** and **`RegisterPhase15_TrustProviderFactory3wayBranching`** via a private static helper or a small value on **`NexoKernelRegistrationContext`** (only if behavior stays identical). | One env-read path or documented equivalence. |
+
+### Phase D6 — CI / “definition of done” clarity (recommended)
+
+| Step | Action | Done when |
+| ---- | ------ | --------- |
+| D6.1 | Align **contributor / CI docs** (e.g. `.github` workflows, `CONTRIBUTING.md` if present) with which solution filters run on PRs: **`Nexo.sln`**, **`Nexo.LocalDevCore.slnf`**, **`Nexo.PrimeTime.slnf`**. | Expectations match automation. |
+| D6.2 | If **`PrimeTime`** is PR-gated, note **minimum test command** for SDK-touching PRs in one place. | Authors know what to run locally. |
+
+### Risks and mitigations
+
+- **D3 wide linking** — Linking global usings into many projects can hide missing imports; mitigation: keep Hosting file as **single source of truth** and review link list when adding Sdk namespaces.
+- **D4 options moves** — Namespace or folder churn can break analyzers; mitigation: **one feature per PR**, namespace-stable moves only.
 
 ---
 
