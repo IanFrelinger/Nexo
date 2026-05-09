@@ -7,6 +7,8 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Barriers.Identity;
 
+[Trait("Category", "Integration")]
+[Trait("Category", "ProdStyle")]
 public sealed class BarrierResolutionIntegrationTests
 {
     [Fact]

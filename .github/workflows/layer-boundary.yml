@@ -1,0 +1,88 @@
+# Enforces separation between kernel/runtime (`src/`) and application (`application/`).
+#
+# Enable required check: Settings → Rules → require status check "layer-boundary / verify".
+# See docs/contributing/Branch-layer-rules.md
+name: layer-boundary
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+concurrency:
+  group: layer-boundary-${{ github.repository }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    name: verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Enforce layer rules
+        env:
+          BASE_REF: ${{ github.base_ref }}
+          HEAD_REF: ${{ github.head_ref }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          if [ -z "${BASE_SHA:-}" ] || [ -z "${HEAD_SHA:-}" ]; then
+            echo "::error::Missing PR base or head SHA."
+            exit 1
+          fi
+
+          CHANGED=$(git diff --name-only "$BASE_SHA" "$HEAD_SHA" || true)
+          echo "Base: $BASE_REF  Head: $HEAD_REF"
+          echo "Changed files:"
+          echo "$CHANGED"
+
+          # --- Runtime bases: no application/ ---
+          case "$BASE_REF" in
+            master|main|runtime/*)
+              if echo "$CHANGED" | grep -q '^application/'; then
+                echo "::error::Base branch '$BASE_REF' is runtime/kernel-first. This PR changes application/ — retarget or remove those paths."
+                exit 1
+              fi
+              ;;
+          esac
+
+          # --- Application bases: no kernel src/ ---
+          case "$BASE_REF" in
+            application/*)
+              if echo "$CHANGED" | grep -q '^src/'; then
+                echo "::error::Base branch '$BASE_REF' is application-only. This PR changes src/ — open kernel changes against master/main instead."
+                exit 1
+              fi
+              ;;
+          esac
+
+          # --- Branch naming: avoid application/* → runtime base ---
+          case "$BASE_REF" in
+            master|main|runtime/*)
+              case "$HEAD_REF" in
+                application/*)
+                  echo "::error::Head branch '$HEAD_REF' is application-scoped; do not PR directly into '$BASE_REF'."
+                  exit 1
+                  ;;
+              esac
+              ;;
+          esac
+
+          # --- Branch naming: avoid runtime/* → application base ---
+          case "$BASE_REF" in
+            application/*)
+              case "$HEAD_REF" in
+                runtime/*)
+                  echo "::error::Head branch '$HEAD_REF' is runtime-scoped; do not PR into application base '$BASE_REF'."
+                  exit 1
+                  ;;
+              esac
+              ;;
+          esac
+
+          echo "Layer boundary checks passed."

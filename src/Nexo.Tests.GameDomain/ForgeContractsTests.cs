@@ -119,4 +119,24 @@ public class ForgeContractsTests
         aesthetic.Scope.Target.Should().BeNull();
         aesthetic.MapRenderingProfile.Should().BeNull();
     }
+
+    [Fact]
+    public void ForgeApplyCustomAestheticPackRequest_Serialization()
+    {
+        var pack = new AestheticPack
+        {
+            Id = "custom",
+            Name = "Custom",
+            GeometryStrategy = GeometryStrategies.LowPoly,
+            RenderingPipelineKind = RenderingPipelineKinds.ForwardStylized,
+        };
+        var request = new ForgeApplyCustomAestheticPackRequest(pack, new SettingScope(), RequireKnownEngineIds: true);
+
+        var json = JsonSerializer.Serialize(request, JsonOptions);
+        var restored = JsonSerializer.Deserialize<ForgeApplyCustomAestheticPackRequest>(json, JsonOptions);
+
+        restored.Should().NotBeNull();
+        restored!.Pack.Id.Should().Be("custom");
+        restored.RequireKnownEngineIds.Should().BeTrue();
+    }
 }

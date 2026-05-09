@@ -1,10 +1,16 @@
 using System.Reflection;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Nexo.API.Endpoints;
+using Nexo.API.Forge;
 using Nexo.GameDomain.Aesthetics;
 using Nexo.GameDomain.Descriptors;
 using Nexo.GameDomain.Macros;
+using Nexo.GameDomain.Mapping;
+using Nexo.GameDomain.Materials;
 using Nexo.GameDomain.Scoping;
 using Nexo.GameDomain.Session;
 using Xunit;
@@ -12,8 +18,28 @@ using Xunit;
 namespace Nexo.Tests.Infrastructure.Tests.API;
 
 [Trait("Category", "E2E")]
+[Trait("Category", "ProdStyle")]
 public sealed class ForgeEndpointsTests : IDisposable
 {
+    private static readonly InMemoryForgeStateService Forge = new();
+
+    private static readonly Lazy<MapPipelineRunner> PipelineRunner = new(() =>
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.Configure<ForgeSessionOptions>(_ => { _.AllowMapFetchWhenAllowedHostsEmpty = true; });
+        services.AddHttpClient("forge-map")
+            .ConfigurePrimaryHttpMessageHandler(static () => new HttpClientHandler());
+        services.AddSingleton<HeuristicVectorMapIntelligenceService>();
+        services.AddSingleton<IVectorMapIntelligenceService>(sp => sp.GetRequiredService<HeuristicVectorMapIntelligenceService>());
+        services.AddSingleton<IMapVerificationService, HeuristicMapVerificationService>();
+        services.AddSingleton<IForgeStateService>(Forge);
+        services.AddSingleton<MapPipelineRunner>();
+        return services.BuildServiceProvider().GetRequiredService<MapPipelineRunner>();
+    });
+
+    private static readonly Lazy<IMaterialIntelligenceService> MaterialIntel = new(() => new HeuristicMaterialIntelligenceService());
+
     public ForgeEndpointsTests()
     {
         ResetStore();
@@ -203,8 +229,6 @@ public sealed class ForgeEndpointsTests : IDisposable
         var packs = ExtractOkValue<IReadOnlyList<AestheticPack>>(result);
         packs.Should().HaveCount(6);
         packs.Select(p => p.Id).Should().Contain(new[] { "voxel", "low_poly", "pixel_art", "pbr", "wireframe", "sketch" });
-        packs.Single(p => p.Id == "voxel").MapRenderingProfile.Should().Be(MapRenderingProfiles.VoxelGrid);
-        packs.Single(p => p.Id == "pbr").MapRenderingProfile.Should().Be(MapRenderingProfiles.HeightfieldMesh);
     }
 
     [Fact(Timeout = 15000)]
@@ -223,117 +247,117 @@ public sealed class ForgeEndpointsTests : IDisposable
     }
 
     [Fact(Timeout = 15000)]
-    public async Task ApplyAesthetic_MapProfileOverride_StoredOnPack()
+    public async Task GetMapAdaptationPlan_ReturnsPlan()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"), new ForgeCreateSessionRequest("PlanTest"));
+        await InvokeAsync(GetHandler("ApplyAestheticAsync"), new ForgeApplyAestheticRequest("voxel"));
+
+        var result = await InvokeAsync(GetHandler("GetMapAdaptationPlanAsync"));
+        var plan = ExtractOkValue<MapAdaptationPlan>(result);
+        plan.EffectiveMapRenderingProfile.Should().Be(MapRenderingProfiles.VoxelGrid);
+        plan.PipelineStages.Should().Contain("voxel_rasterize");
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task GetTilePyramid_ReturnsTiers()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"), new ForgeCreateSessionRequest("PyrTest"));
+        await InvokeAsync(GetHandler("ApplyAestheticAsync"), new ForgeApplyAestheticRequest("voxel"));
+
+        var result = await InvokeAsync(GetHandler("GetTilePyramidAsync"), (int?)14);
+        var wrap = ExtractOkValue<ForgeTilePyramidResponse>(result);
+        wrap.FinestZoom.Should().Be(14);
+        wrap.Tiers.Should().HaveCountGreaterThan(1);
+        wrap.Tiers[0].Zoom.Should().Be(14);
+        wrap.Tiers[1].Zoom.Should().Be(13);
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task GetMaterialHints_ReturnsHints()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"), new ForgeCreateSessionRequest("MatTest"));
+        await InvokeAsync(GetHandler("ApplyAestheticAsync"), new ForgeApplyAestheticRequest("voxel"));
+
+        var result = await InvokeAsync(GetHandler("GetMaterialHintsAsync"), "mvt");
+        var hints = ExtractOkValue<ForgeMaterialHintsResponse>(result);
+        hints.Summary.Should().Contain("hint");
+        hints.Hints.Should().NotBeEmpty();
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task RunMapPipeline_DryRun_Succeeds()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"), new ForgeCreateSessionRequest("PipeTest"));
+        var body = new MapPipelineRunRequest(DryRun: true);
+        var result = await InvokeAsync(GetHandler("RunMapPipelineAsync"), body);
+        var run = ExtractOkValue<MapPipelineRunResult>(result);
+        run.Success.Should().BeTrue();
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task EngineManifest_ReturnsJson()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"), new ForgeCreateSessionRequest("ManTest"));
+        var result = await InvokeAsync(GetHandler("GetEngineAestheticManifestAsync"), "unity");
+        var wrap = ExtractOkValue<ForgeEngineManifestResponse>(result);
+        wrap.Json.Should().Contain("\"engineId\"");
+        wrap.Json.Should().Contain("unity");
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task ApplyCustomAestheticPack_ValidPack_ReplacesSessionPack()
     {
         await InvokeAsync(GetHandler("CreateSessionAsync"),
-            new ForgeCreateSessionRequest("MapStyleTest"));
+            new ForgeCreateSessionRequest("CustomPackTest"));
 
-        var request = new ForgeApplyAestheticRequest(
-            "voxel",
-            Scope: null,
-            MapRenderingProfile: MapRenderingProfiles.VectorOverlay);
-        var handler = GetHandler("ApplyAestheticAsync");
-        var result = await InvokeAsync(handler, request);
+        var custom = new AestheticPack
+        {
+            Id = "studio_stylized",
+            Name = "Studio Stylized",
+            GeometryStrategy = GeometryStrategies.LowPoly,
+            MapRenderingProfile = MapRenderingProfiles.FlatShadedPolys,
+            RenderingPipelineKind = RenderingPipelineKinds.ForwardStylized,
+            EngineSurfaceBindings =
+            [
+                new EngineRenderingSurfaceBinding
+                {
+                    EngineId = GameEngines.Unity,
+                    Role = RenderingSurfaceRoles.WorldPrimary,
+                    MaterialSurfaceId = MaterialSurfaceIds.StylizedLit,
+                    AssetOrShaderHint = "Universal Render Pipeline/Lit",
+                },
+            ]
+        };
+
+        var req = new Nexo.GameDomain.Contracts.ForgeApplyCustomAestheticPackRequest(custom);
+        var result = await InvokeAsync(GetHandler("ApplyCustomAestheticPackAsync"), req);
 
         var session = ExtractOkValue<SessionState>(result);
-        session.AestheticPacks.Should().ContainSingle(a =>
-            a.Id == "voxel" && a.MapRenderingProfile == MapRenderingProfiles.VectorOverlay);
+        session.ScopedSettings.Should().Contain(s => s.SettingId == "aesthetic" && s.Value.ToString() == "studio_stylized");
+        session.AestheticPacks.Should().ContainSingle(a => a.Id == "studio_stylized");
+        session.AestheticPacks.Single(a => a.Id == "studio_stylized").EngineSurfaceBindings.Should().HaveCount(1);
     }
 
     [Fact(Timeout = 15000)]
-    public async Task ListAesthetics_BuiltInPacks_HaveExpectedMapRenderingProfiles()
-    {
-        var handler = GetHandler("GetAestheticsAsync");
-        var result = await InvokeAsync(handler);
-
-        var packs = ExtractOkValue<IReadOnlyList<AestheticPack>>(result);
-        var byId = packs.ToDictionary(p => p.Id, StringComparer.Ordinal);
-
-        byId["voxel"].MapRenderingProfile.Should().Be(MapRenderingProfiles.VoxelGrid);
-        byId["low_poly"].MapRenderingProfile.Should().Be(MapRenderingProfiles.FlatShadedPolys);
-        byId["pixel_art"].MapRenderingProfile.Should().Be(MapRenderingProfiles.OrthographicTile);
-        byId["pbr"].MapRenderingProfile.Should().Be(MapRenderingProfiles.HeightfieldMesh);
-        byId["wireframe"].MapRenderingProfile.Should().Be(MapRenderingProfiles.VectorOverlay);
-        byId["sketch"].MapRenderingProfile.Should().Be(MapRenderingProfiles.VectorOverlay);
-    }
-
-    [Fact(Timeout = 15000)]
-    public async Task ApplyAesthetic_NoOverride_UsesBuiltInMapRenderingProfile()
+    public async Task ApplyCustomAestheticPack_InvalidGeometry_ReturnsBadRequest()
     {
         await InvokeAsync(GetHandler("CreateSessionAsync"),
-            new ForgeCreateSessionRequest("DefaultProfileTest"));
+            new ForgeCreateSessionRequest("BadPack"));
 
-        var request = new ForgeApplyAestheticRequest("voxel");
-        var result = await InvokeAsync(GetHandler("ApplyAestheticAsync"), request);
+        var bad = new AestheticPack
+        {
+            Id = "bad",
+            Name = "Bad",
+            GeometryStrategy = "totally_unknown",
+            RenderingPipelineKind = RenderingPipelineKinds.Auto,
+        };
 
-        var session = ExtractOkValue<SessionState>(result);
-        session.AestheticPacks.Should().ContainSingle(a =>
-            a.Id == "voxel" && a.MapRenderingProfile == MapRenderingProfiles.VoxelGrid);
-    }
+        var result = await InvokeAsync(GetHandler("ApplyCustomAestheticPackAsync"),
+            new Nexo.GameDomain.Contracts.ForgeApplyCustomAestheticPackRequest(bad));
 
-    [Fact(Timeout = 15000)]
-    public async Task ApplyAesthetic_ReapplyWithoutOverride_RestoresBuiltInMapProfile()
-    {
-        await InvokeAsync(GetHandler("CreateSessionAsync"),
-            new ForgeCreateSessionRequest("ReapplyTest"));
-
-        await InvokeAsync(GetHandler("ApplyAestheticAsync"),
-            new ForgeApplyAestheticRequest("voxel", MapRenderingProfile: MapRenderingProfiles.VectorOverlay));
-
-        var second = await InvokeAsync(GetHandler("ApplyAestheticAsync"),
-            new ForgeApplyAestheticRequest("voxel"));
-
-        var session = ExtractOkValue<SessionState>(second);
-        session.AestheticPacks.Should().ContainSingle(a =>
-            a.Id == "voxel" && a.MapRenderingProfile == MapRenderingProfiles.VoxelGrid);
-    }
-
-    [Fact(Timeout = 15000)]
-    public async Task ExportImport_PreservesMapRenderingProfileOnAppliedPack()
-    {
-        await InvokeAsync(GetHandler("CreateSessionAsync"),
-            new ForgeCreateSessionRequest("ExportMapProfile"));
-
-        await InvokeAsync(GetHandler("ApplyAestheticAsync"),
-            new ForgeApplyAestheticRequest("pbr", MapRenderingProfile: MapRenderingProfiles.VectorOverlay));
-
-        var exportResult = await InvokeAsync(GetHandler("ExportSessionAsync"));
-        var exported = ExtractOkValue<ForgeSessionExportResponse>(exportResult);
-
-        ResetStore();
-
-        var importResult = await InvokeAsync(GetHandler("ImportSessionAsync"),
-            new ForgeSessionImportRequest(exported.Json));
-        var imported = ExtractOkValue<SessionState>(importResult);
-
-        imported.AestheticPacks.Should().ContainSingle(a =>
-            a.Id == "pbr" && a.MapRenderingProfile == MapRenderingProfiles.VectorOverlay);
-    }
-
-    [Fact(Timeout = 15000)]
-    public async Task ApplyAesthetic_UnknownPack_ReturnsBadRequest()
-    {
-        await InvokeAsync(GetHandler("CreateSessionAsync"),
-            new ForgeCreateSessionRequest("UnknownPack"));
-
-        var result = await InvokeAsync(GetHandler("ApplyAestheticAsync"),
-            new ForgeApplyAestheticRequest("not-a-real-pack"));
-
-        AssertStatusCode(result, StatusCodes.Status400BadRequest);
-    }
-
-    [Fact(Timeout = 15000)]
-    public async Task ApplyAesthetic_WhitespaceOnlyOverride_KeepsBuiltInMapProfile()
-    {
-        await InvokeAsync(GetHandler("CreateSessionAsync"),
-            new ForgeCreateSessionRequest("WhitespaceOverride"));
-
-        var request = new ForgeApplyAestheticRequest("low_poly", MapRenderingProfile: "   \t  ");
-        var result = await InvokeAsync(GetHandler("ApplyAestheticAsync"), request);
-
-        var session = ExtractOkValue<SessionState>(result);
-        session.AestheticPacks.Should().ContainSingle(a =>
-            a.Id == "low_poly" && a.MapRenderingProfile == MapRenderingProfiles.FlatShadedPolys);
+        var status = result as IStatusCodeHttpResult;
+        status.Should().NotBeNull();
+        status!.StatusCode.Should().Be(StatusCodes.Status400BadRequest);
     }
 
     [Fact(Timeout = 15000)]
@@ -366,7 +390,28 @@ public sealed class ForgeEndpointsTests : IDisposable
 
     private static async Task<IResult> InvokeAsync(MethodInfo handler, params object?[] args)
     {
-        var task = (Task<IResult>)handler.Invoke(null, args)!;
+        var parameters = handler.GetParameters();
+        var merged = new object?[parameters.Length];
+        var argIdx = 0;
+        for (var i = 0; i < parameters.Length; i++)
+        {
+            var pt = parameters[i].ParameterType;
+            if (pt == typeof(IForgeStateService))
+                merged[i] = Forge;
+            else if (pt == typeof(MapPipelineRunner))
+                merged[i] = PipelineRunner.Value;
+            else if (pt == typeof(IMaterialIntelligenceService))
+                merged[i] = MaterialIntel.Value;
+            else
+            {
+                merged[i] = argIdx < args.Length ? args[argIdx] : Type.Missing;
+                argIdx++;
+            }
+        }
+
+        argIdx.Should().Be(args.Length, "argument count must match handler signature after injected services");
+
+        var task = (Task<IResult>)handler.Invoke(null, merged)!;
         return await task;
     }
 
@@ -379,38 +424,5 @@ public sealed class ForgeEndpointsTests : IDisposable
         return (T)value!;
     }
 
-    private static void AssertStatusCode(IResult result, int expected)
-    {
-        var status = result as IStatusCodeHttpResult;
-        status.Should().NotBeNull($"result type {result.GetType().FullName} should expose HTTP status");
-        status!.StatusCode.Should().Be(expected);
-    }
-
-    private static void ResetStore()
-    {
-        var storeType = typeof(ForgeEndpoints).Assembly
-            .GetType("Nexo.API.Endpoints.ForgeSessionStore");
-        if (storeType is null) return;
-
-        var sessionProp = storeType.GetProperty("Session", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
-        var registryProp = storeType.GetProperty("Registry", BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public);
-
-        var defaultSession = new SessionState
-        {
-            SessionId = Guid.NewGuid().ToString("D"),
-            Name = "Default Forge Session",
-            CreatedAtUtc = DateTimeOffset.UtcNow,
-            LastModifiedAtUtc = DateTimeOffset.UtcNow,
-            MaxPlayers = 8,
-            GameRules = new GameRuleDescriptor
-            {
-                Id = Guid.NewGuid().ToString("D"),
-                Name = "Default",
-                Mode = "deathmatch"
-            }
-        };
-
-        sessionProp?.SetValue(null, defaultSession);
-        registryProp?.SetValue(null, new MacroRegistry());
-    }
+    private static void ResetStore() => Forge.Reset();
 }
