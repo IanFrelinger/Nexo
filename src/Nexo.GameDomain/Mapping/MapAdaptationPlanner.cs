@@ -1,3 +1,4 @@
+using System.Linq;
 using Nexo.GameDomain.Aesthetics;
 using Nexo.GameDomain.Scoping;
 using Nexo.GameDomain.Session;
@@ -5,130 +6,120 @@ using Nexo.GameDomain.Session;
 namespace Nexo.GameDomain.Mapping;
 
 /// <summary>
-/// Derives the effective map rendering profile and a ordered pipeline stage list from the current session.
+/// Derives <see cref="MapAdaptationPlan"/> from session aesthetics and built-in catalog entries.
 /// </summary>
 public static class MapAdaptationPlanner
 {
     /// <summary>
-    /// Resolves <see cref="AestheticPack.MapRenderingProfile"/> when set to <see cref="MapRenderingProfiles.Auto"/>.
+    /// Resolves the active <see cref="AestheticPack"/> (same rules as <see cref="Plan"/>).
     /// </summary>
-    public static string ResolveEffectiveProfile(AestheticPack pack)
+    public static AestheticPack GetActivePack(SessionState session, IReadOnlyList<AestheticPack> builtInCatalog)
     {
-        if (!string.Equals(pack.MapRenderingProfile, MapRenderingProfiles.Auto, StringComparison.Ordinal))
-            return pack.MapRenderingProfile;
-
-        return InferFromGeometryStrategy(pack.GeometryStrategy);
+        ArgumentNullException.ThrowIfNull(session);
+        ArgumentNullException.ThrowIfNull(builtInCatalog);
+        var aestheticId = ResolveActiveAestheticId(session);
+        return ResolvePack(session, builtInCatalog, aestheticId);
     }
 
     /// <summary>
-    /// Builds an adaptation plan using the server-scoped <c>aesthetic</c> setting and packs on the session,
-    /// falling back to <paramref name="builtInCatalog"/> when the applied id is not yet materialised in <see cref="SessionState.AestheticPacks"/>.
+    /// Resolves the active aesthetic pack using server-scoped <c>aesthetic</c> setting when present,
+    /// otherwise the first pack in <paramref name="session"/>.<see cref="SessionState.AestheticPacks"/>.
     /// </summary>
-    public static MapAdaptationPlan BuildPlan(
-        SessionState session,
-        IReadOnlyList<AestheticPack>? builtInCatalog = null)
+    public static MapAdaptationPlan Plan(SessionState session, IReadOnlyList<AestheticPack> builtInCatalog)
     {
-        var resolver = new ScopeResolver(session.ScopedSettings);
-        var raw = resolver.Resolve("aesthetic", new ScopeContext());
-        var aestheticId = raw?.ToString()?.Trim();
+        ArgumentNullException.ThrowIfNull(session);
+        ArgumentNullException.ThrowIfNull(builtInCatalog);
 
-        if (string.IsNullOrEmpty(aestheticId))
+        var pack = GetActivePack(session, builtInCatalog);
+
+        var profile = string.IsNullOrWhiteSpace(pack.MapRenderingProfile)
+            ? MapRenderingProfiles.Auto
+            : pack.MapRenderingProfile.Trim();
+
+        var effective = profile.Equals(MapRenderingProfiles.Auto, StringComparison.OrdinalIgnoreCase)
+            ? InferProfileFromGeometry(pack.GeometryStrategy)
+            : profile;
+
+        var stages = BuildStages(effective, pack.GeometryStrategy);
+        var notes = new List<string>
         {
-            return new MapAdaptationPlan(
-                ActiveAestheticId: string.Empty,
-                GeometryStrategy: "low_poly",
-                EffectiveMapRenderingProfile: MapRenderingProfiles.Auto,
-                ProfileWasInferred: false,
-                PipelineStages: ["configure_session", "apply_aesthetic"],
-                Notes: "No aesthetic setting; hosts should use defaults or prompt the user.");
-        }
+            $"Active aesthetic: {pack.Id} ({pack.Name})",
+            $"Geometry strategy: {pack.GeometryStrategy}"
+        };
 
-        var pack = session.AestheticPacks.FirstOrDefault(p => p.Id == aestheticId)
-                   ?? builtInCatalog?.FirstOrDefault(p => p.Id == aestheticId);
-
-        if (pack is null)
-        {
-            return new MapAdaptationPlan(
-                ActiveAestheticId: aestheticId,
-                GeometryStrategy: "low_poly",
-                EffectiveMapRenderingProfile: MapRenderingProfiles.Auto,
-                ProfileWasInferred: false,
-                PipelineStages: ["resolve_aesthetic_pack"],
-                Notes: $"Aesthetic '{aestheticId}' is set but no matching pack was found on the session or catalog.");
-        }
-
-        var inferred = string.Equals(pack.MapRenderingProfile, MapRenderingProfiles.Auto, StringComparison.Ordinal);
-        var effective = inferred ? InferFromGeometryStrategy(pack.GeometryStrategy) : pack.MapRenderingProfile;
-
-        return new MapAdaptationPlan(
-            ActiveAestheticId: aestheticId,
-            GeometryStrategy: pack.GeometryStrategy,
-            EffectiveMapRenderingProfile: effective,
-            ProfileWasInferred: inferred,
-            PipelineStages: BuildPipelineStages(effective),
-            Notes: null);
+        return new MapAdaptationPlan(effective, pack.GeometryStrategy, stages, notes);
     }
 
-    internal static string InferFromGeometryStrategy(string geometryStrategy)
+    private static string? ResolveActiveAestheticId(SessionState session)
     {
-        return geometryStrategy.ToLowerInvariant() switch
+        var server = session.ScopedSettings
+            .LastOrDefault(s =>
+                s.SettingId == "aesthetic" &&
+                s.Scope.Type == SettingScopeType.Server);
+
+        return server?.Value?.ToString();
+    }
+
+    private static AestheticPack ResolvePack(
+        SessionState session,
+        IReadOnlyList<AestheticPack> builtInCatalog,
+        string? aestheticId)
+    {
+        if (!string.IsNullOrWhiteSpace(aestheticId))
+        {
+            var fromSession = session.AestheticPacks.FirstOrDefault(p =>
+                p.Id.Equals(aestheticId.Trim(), StringComparison.OrdinalIgnoreCase));
+            if (fromSession is not null)
+                return fromSession;
+
+            var fromBuiltIn = builtInCatalog.FirstOrDefault(p =>
+                p.Id.Equals(aestheticId.Trim(), StringComparison.OrdinalIgnoreCase));
+            if (fromBuiltIn is not null)
+                return fromBuiltIn;
+        }
+
+        return session.AestheticPacks.FirstOrDefault()
+               ?? builtInCatalog.FirstOrDefault()
+               ?? new AestheticPack { Id = "default", Name = "Default", GeometryStrategy = "low_poly" };
+    }
+
+    private static string InferProfileFromGeometry(string geometry)
+    {
+        return geometry.ToLowerInvariant() switch
         {
             "voxel" => MapRenderingProfiles.VoxelGrid,
+            "pbr" => MapRenderingProfiles.HeightfieldMesh,
             "low_poly" => MapRenderingProfiles.FlatShadedPolys,
             "pixel_art" => MapRenderingProfiles.OrthographicTile,
-            "pbr" => MapRenderingProfiles.HeightfieldMesh,
-            "wireframe" => MapRenderingProfiles.VectorOverlay,
-            "sketch" => MapRenderingProfiles.VectorOverlay,
-            _ => MapRenderingProfiles.VectorOverlay
+            "wireframe" or "sketch" => MapRenderingProfiles.VectorOverlay,
+            _ => MapRenderingProfiles.HeightfieldMesh
         };
     }
 
-    private static IReadOnlyList<string> BuildPipelineStages(string effectiveProfile)
+    private static IReadOnlyList<string> BuildStages(string profile, string geometry)
     {
-        return effectiveProfile switch
+        var list = new List<string> { "resolve_aesthetic", "resolve_map_profile" };
+
+        if (profile is MapRenderingProfiles.VoxelGrid or MapRenderingProfiles.HeightfieldMesh)
         {
-            MapRenderingProfiles.VoxelGrid => new[]
-            {
-                "fetch_vector",
-                "optional_intelligence",
-                "verify_topology",
-                "voxel_rasterize",
-                "emit_chunk_payload"
-            },
-            MapRenderingProfiles.HeightfieldMesh => new[]
-            {
-                "fetch_terrain",
-                "fetch_vector",
-                "optional_intelligence",
-                "drape_linear_features",
-                "mesh_emit"
-            },
-            MapRenderingProfiles.FlatShadedPolys => new[]
-            {
-                "fetch_vector",
-                "optional_intelligence",
-                "extrude_buildings",
-                "mesh_emit"
-            },
-            MapRenderingProfiles.VectorOverlay => new[]
-            {
-                "fetch_vector",
-                "optional_intelligence",
-                "overlay_rasterize"
-            },
-            MapRenderingProfiles.OrthographicTile => new[]
-            {
-                "fetch_vector",
-                "optional_intelligence",
-                "stamp_orthographic_tile"
-            },
-            MapRenderingProfiles.BillboardFeatures => new[]
-            {
-                "fetch_vector",
-                "optional_intelligence",
-                "scatter_billboards"
-            },
-            _ => new[] { "fetch_vector", "optional_intelligence", "host_defined" }
-        };
+            list.Add("fetch_terrain");
+            list.Add("fetch_vector");
+            list.Add(geometry.Equals("voxel", StringComparison.OrdinalIgnoreCase)
+                ? "voxel_rasterize"
+                : "mesh_displace");
+        }
+        else if (profile is MapRenderingProfiles.VectorOverlay or MapRenderingProfiles.FlatShadedPolys)
+        {
+            list.Add("fetch_vector");
+            list.Add("vector_tessellate");
+        }
+        else
+        {
+            list.Add("fetch_vector");
+            list.Add("rasterize_overlay");
+        }
+
+        list.Add("emit_host_manifest");
+        return list;
     }
 }

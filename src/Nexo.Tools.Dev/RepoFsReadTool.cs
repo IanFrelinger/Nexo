@@ -67,7 +67,8 @@ public sealed class RepoFsReadTool : ITool
         });
     }
 
-    private static bool TryResolveRelative(string root, string path, out string full, out string error)
+    /// <summary>Path sandbox helper shared by repo filesystem tools.</summary>
+    internal static bool TryResolveRelative(string root, string path, out string full, out string error)
     {
         full = string.Empty;
         error = string.Empty;

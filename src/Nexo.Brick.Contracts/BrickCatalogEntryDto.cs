@@ -22,6 +22,9 @@ public class BrickCatalogEntryDto
     public bool HasAgentic { get; set; }
     public BrickMetadataDto Metadata { get; set; } = new();
 
+    /// <summary>Codified domain knowledge for federation and operator UIs.</summary>
+    public DomainKnowledgeDto? DomainKnowledge { get; set; }
+
     /// <summary>Network-wide usage statistics (populated by central catalog when available).</summary>
     public BrickUsageStatsDto? UsageStats { get; set; }
 

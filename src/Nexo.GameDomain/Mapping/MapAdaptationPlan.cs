@@ -1,13 +1,10 @@
 namespace Nexo.GameDomain.Mapping;
 
 /// <summary>
-/// Describes how a host should adapt geographic vector data and terrain for the active Forge aesthetic.
-/// Returned by <see cref="MapAdaptationPlanner"/> for Unity or other runtimes to branch pipelines.
+/// Describes how a host should adapt map data for the active aesthetic.
 /// </summary>
 public sealed record MapAdaptationPlan(
-    string ActiveAestheticId,
-    string GeometryStrategy,
     string EffectiveMapRenderingProfile,
-    bool ProfileWasInferred,
+    string GeometryStrategy,
     IReadOnlyList<string> PipelineStages,
-    string? Notes);
+    IReadOnlyList<string> Notes);

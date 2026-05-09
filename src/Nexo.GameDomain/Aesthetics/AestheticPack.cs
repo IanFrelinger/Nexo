@@ -4,8 +4,10 @@ namespace Nexo.GameDomain.Aesthetics;
 /// Describes the visual style applied to a session, controlling geometry strategy, colour
 /// palette, LOD configuration, and post-processing effects.
 /// <para>
-/// The Unity rendering pipeline reads the active <see cref="AestheticPack"/> to select
-/// mesh generators, material shaders, and camera post-process volumes at scene load time.
+/// Game engines (Unity, Unreal, Godot, or custom hosts) read the active <see cref="AestheticPack"/> to select
+/// mesh generators, materials, shaders, and camera post-process volumes at scene load time.
+/// Use <see cref="AestheticPack.EngineSurfaceBindings"/> to map logical roles to engine-specific surfaces while keeping
+/// <see cref="GeometryStrategy"/> and palettes engine-neutral.
 /// </para>
 /// </summary>
 public sealed record AestheticPack
@@ -24,10 +26,7 @@ public sealed record AestheticPack
     public string GeometryStrategy { get; init; } = "low_poly";
 
     /// <summary>
-    /// How geographic / OpenStreetMap-style source data is turned into renderable map content.
-    /// Use <see cref="MapRenderingProfiles"/> constants (e.g. <c>"voxel_grid"</c>, <c>"vector_overlay"</c>).
-    /// <c>"auto"</c> lets the host infer a pipeline from <see cref="GeometryStrategy"/>.
-    /// Independent from geometry strategy so you can pair e.g. PBR shading with vector-overlay map features.
+    /// How geographic data should be processed for rendering (see <see cref="MapRenderingProfiles"/>).
     /// </summary>
     public string MapRenderingProfile { get; init; } = MapRenderingProfiles.Auto;
 
@@ -47,6 +46,18 @@ public sealed record AestheticPack
     /// <c>"chromatic_aberration"</c>, <c>"vignette"</c>).
     /// </summary>
     public IReadOnlyList<string> PostProcessEffects { get; init; } = [];
+
+    /// <summary>
+    /// Semantic render pipeline hint (e.g. <see cref="RenderingPipelineKinds.ForwardStylized"/>).
+    /// Hosts translate this to engine-specific renderer features (URP Forward+, Unreal Forward Shading, etc.).
+    /// </summary>
+    public string RenderingPipelineKind { get; init; } = RenderingPipelineKinds.Auto;
+
+    /// <summary>
+    /// Optional per-engine bindings from logical surface roles to concrete shader/material hints.
+    /// Empty means hosts infer surfaces from <see cref="GeometryStrategy"/> alone.
+    /// </summary>
+    public IReadOnlyList<EngineRenderingSurfaceBinding> EngineSurfaceBindings { get; init; } = [];
 }
 
 /// <summary>
@@ -66,8 +77,6 @@ public sealed record AestheticPack
 ///   <item><c>wireframe</c> — edge density ratio.</item>
 ///   <item><c>sketch</c> — stroke density / hatching frequency.</item>
 /// </list>
-/// For map-backed scenes, combine tiers with <see cref="AestheticPack.MapRenderingProfile"/> so LOD steps
-/// can switch voxel resolution, overlay density, or terrain mesh decimation consistently.
 /// </param>
 public sealed record LodLevel(
     int Level = 0,

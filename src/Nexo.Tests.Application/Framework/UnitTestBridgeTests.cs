@@ -7,6 +7,7 @@ namespace Nexo.Tests.Application.Framework;
 /// <summary>
 /// Bridges <c>UnitTestBase</c> suites in this assembly to xUnit / VSTest via <see cref="UnitTestFrameworkBridge"/>.
 /// </summary>
+[Trait("Category", "ProdStyle")]
 public sealed class UnitTestBridgeTests
 {
     public static TheoryData<Type> UnitTestTypes { get; } = BuildTheoryData();

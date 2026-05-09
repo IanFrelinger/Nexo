@@ -81,22 +81,6 @@ public class ForgeContractsTests
         restored!.AestheticId.Should().Be("neon-glow");
         restored.Scope.Type.Should().Be(SettingScopeType.Zone);
         restored.Scope.Target.Should().Be("arena-1");
-        restored.MapRenderingProfile.Should().BeNull();
-    }
-
-    [Fact]
-    public void ForgeAestheticApplyRequest_WithMapProfile_Serializes()
-    {
-        var request = new ForgeAestheticApplyRequest(
-            "pbr",
-            new SettingScope { Type = SettingScopeType.Server },
-            MapRenderingProfiles.VectorOverlay);
-
-        var json = JsonSerializer.Serialize(request, JsonOptions);
-        var restored = JsonSerializer.Deserialize<ForgeAestheticApplyRequest>(json, JsonOptions);
-
-        restored.Should().NotBeNull();
-        restored!.MapRenderingProfile.Should().Be(MapRenderingProfiles.VectorOverlay);
     }
 
     [Fact]
@@ -117,6 +101,25 @@ public class ForgeContractsTests
         aesthetic.AestheticId.Should().Be("pack-1");
         aesthetic.Scope.Type.Should().Be(SettingScopeType.Server);
         aesthetic.Scope.Target.Should().BeNull();
-        aesthetic.MapRenderingProfile.Should().BeNull();
+    }
+
+    [Fact]
+    public void ForgeApplyCustomAestheticPackRequest_Serialization()
+    {
+        var pack = new AestheticPack
+        {
+            Id = "custom",
+            Name = "Custom",
+            GeometryStrategy = GeometryStrategies.LowPoly,
+            RenderingPipelineKind = RenderingPipelineKinds.ForwardStylized,
+        };
+        var request = new ForgeApplyCustomAestheticPackRequest(pack, new SettingScope(), RequireKnownEngineIds: true);
+
+        var json = JsonSerializer.Serialize(request, JsonOptions);
+        var restored = JsonSerializer.Deserialize<ForgeApplyCustomAestheticPackRequest>(json, JsonOptions);
+
+        restored.Should().NotBeNull();
+        restored!.Pack.Id.Should().Be("custom");
+        restored.RequireKnownEngineIds.Should().BeTrue();
     }
 }
