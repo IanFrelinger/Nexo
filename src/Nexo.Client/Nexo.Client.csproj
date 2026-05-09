@@ -12,7 +12,7 @@
     <PackageId>Nexo.Client</PackageId>
     <PackageVersion>1.0.0</PackageVersion>
     <Title>Nexo Client</Title>
-    <Description>HTTP client for Nexo API. Used by mobile app and other remote clients.</Description>
+    <Description>HTTP client for Nexo API. Used by CLI, demos, and other remote clients.</Description>
     <PackageTags>nexo;ai;client;sdk</PackageTags>
     <RepositoryUrl>https://github.com/IanFrelinger/Nexo</RepositoryUrl>
     <RepositoryType>git</RepositoryType>

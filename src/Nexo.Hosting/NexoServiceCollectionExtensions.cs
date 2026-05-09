@@ -26,6 +26,7 @@ using Nexo.Infrastructure.Execution.LoadPolicy;
 using Nexo.Infrastructure.Knowledge;
 using Nexo.Infrastructure.Maintenance;
 using Nexo.Infrastructure.NodeCapabilityRuntime;
+using Nexo.Infrastructure.ModelArtifacts;
 using Nexo.Infrastructure.Pipelines;
 using Nexo.Infrastructure.Persistence.Ephemeral;
 using Nexo.Infrastructure.Persistence;
@@ -228,6 +229,9 @@ public static class NexoServiceCollectionExtensions
         // where to persist learned patterns on disk.
         if (modules.IncludeAdaptation)
             services.AddAdaptationInfrastructure(options.PatternStorePath);
+
+        if (modules.IncludeAdaptation)
+            services.AddNexoFederatedBrickMesh(configuration);
 
         // ── Copilot task store ──────────────────────────────────────────
         // LiteDB file is co-located with the pattern store directory
@@ -576,6 +580,12 @@ public static class NexoServiceCollectionExtensions
             services.AddNodeCapabilityRuntimeAndroid(configuration);
         else
             services.AddNodeCapabilityRuntimeLinux(configuration);
+
+        services.AddModelArtifactCatalog(configuration);
+        if (OperatingSystem.IsWindows() || OperatingSystem.IsLinux() || OperatingSystem.IsMacOS())
+        {
+            services.AddDockerOllamaModelArtifactCatalogSource();
+        }
     }
 
     /// <summary>

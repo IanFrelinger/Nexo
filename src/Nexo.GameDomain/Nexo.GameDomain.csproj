@@ -14,4 +14,11 @@
         <ProjectReference Include="../Nexo.Core.Domain/Nexo.Core.Domain.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <PackageReference Include="OsmSharp" />
+        <PackageReference Include="NetTopologySuite" />
+        <PackageReference Include="NetTopologySuite.IO.VectorTiles" />
+        <PackageReference Include="NetTopologySuite.IO.VectorTiles.Mapbox" />
+    </ItemGroup>
+
 </Project>

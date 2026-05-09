@@ -1,0 +1,14 @@
+kpi,frequency,target_blank,actual_blank,formula_or_data_source
+MRR,Monthly,,,Sum of subscription revenue
+Net new MRR,Monthly,,,New + expansion - contraction - churn
+Logo churn,Monthly,,,Customers lost / starting customers
+Revenue churn,Monthly,,,MRR lost from churned downsell / starting MRR
+Gross margin percent,Monthly,,,(Revenue - COGS) / Revenue define COGS consistently
+CAC,Quarterly,,,Sales+marketing spend / new customers in period
+LTV to CAC ratio,Quarterly,,,Cohort LTV / CAC
+Months payback,Quarterly,,,CAC / monthly gross margin per customer
+NPS or CSAT,Quarterly,,,Survey after key workflow
+P0 incidents,Monthly,,,Count from incident tracker
+Mean time to restore,Monthly,,,From incident data
+Gross burn,Monthly,,,Cash out excluding fundraising
+Runway months,Monthly,,,Cash / gross burn
