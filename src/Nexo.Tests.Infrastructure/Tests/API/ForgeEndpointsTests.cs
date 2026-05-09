@@ -17,6 +17,7 @@ using Xunit;
 namespace Nexo.Tests.Infrastructure.Tests.API;
 
 [Trait("Category", "E2E")]
+[Trait("Category", "ProdStyle")]
 public sealed class ForgeEndpointsTests : IDisposable
 {
     private static readonly InMemoryForgeStateService Forge = new();

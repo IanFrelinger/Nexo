@@ -11,6 +11,7 @@ namespace Nexo.Tests.BackgroundAgents.Forge;
 
 /// <summary>Forge tool + policy integration (Streams C).</summary>
 [Trait("Category", "RuntimeStudio")]
+[Trait("Category", "ProdStyle")]
 public class ForgeToolsTests : IDisposable
 {
     private readonly string _tempDir;
