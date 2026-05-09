@@ -31,12 +31,16 @@
 //   (see also NexoSecurityOptions for auth-related env vars)
 // ──────────────────────────────────────────────────────────────────────────────
 
+using System.Net;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nexo.API.Endpoints;
+using Nexo.API.Forge;
 using Nexo.API.Security;
+using Nexo.GameDomain.Mapping;
+using Nexo.GameDomain.Materials;
 using Nexo.BackgroundAgents.Extending;
 using Nexo.BackgroundAgents.HostRunners;
 using Nexo.BackgroundAgents.Optimization;
@@ -69,7 +73,17 @@ builder.Services.Configure<GrpcTransportOptions>(
     builder.Configuration.GetSection("Nexo:GrpcTransport"));
 builder.Services.Configure<NexoSecurityOptions>(
     builder.Configuration.GetSection(NexoSecurityOptions.SectionPath));
+builder.Services.Configure<ForgeSessionOptions>(
+    builder.Configuration.GetSection(ForgeSessionOptions.SectionPath));
 builder.Services.AddNexoRuntimeRouting(builder.Configuration);
+
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddHttpClient("forge-map")
+    .ConfigurePrimaryHttpMessageHandler(sp =>
+        ForgeMapHttpSocketsHandlerFactory.Create(
+            sp.GetRequiredService<IOptionsMonitor<ForgeSessionOptions>>(),
+            sp.GetRequiredService<ILoggerFactory>()));
+builder.Services.AddSingleton<IForgeStateService, TenantPartitionedForgeStateService>();
 
 // Planner / optimizer / tester background agents need the same runners as `nexo background-agent daemon`.
 builder.Services.TryAddSingleton<ICodeAnalysisRunner, CodeAnalysisRunnerAdapter>();
@@ -81,8 +95,26 @@ builder.Services.TryAddSingleton<ISelfExtendRunner>(sp =>
 builder.Services.AddNexo(options =>
 {
     options.PatternStorePath = builder.Configuration["Nexo:PatternStorePath"];
-    options.RegisterBackgroundAgentHostedService = true;
+    options.RegisterBackgroundAgentHostedService =
+        builder.Configuration.GetValue("Nexo:RegisterBackgroundAgentHostedService", defaultValue: true);
 });
+
+builder.Services.AddSingleton<HeuristicMaterialIntelligenceService>();
+builder.Services.AddSingleton<IMaterialIntelligenceService>(sp =>
+    new ModelAugmentedMaterialIntelligenceService(
+        sp.GetRequiredService<Nexo.Abstractions.IModel>(),
+        sp.GetRequiredService<HeuristicMaterialIntelligenceService>(),
+        sp.GetRequiredService<IOptions<ForgeSessionOptions>>(),
+        sp.GetRequiredService<ILogger<ModelAugmentedMaterialIntelligenceService>>()));
+builder.Services.AddSingleton<HeuristicVectorMapIntelligenceService>();
+builder.Services.AddSingleton<IMapVerificationService, HeuristicMapVerificationService>();
+builder.Services.AddSingleton<IVectorMapIntelligenceService>(sp =>
+    new ModelAugmentedVectorMapIntelligenceService(
+        sp.GetRequiredService<Nexo.Abstractions.IModel>(),
+        sp.GetRequiredService<HeuristicVectorMapIntelligenceService>(),
+        sp.GetRequiredService<IOptions<ForgeSessionOptions>>(),
+        sp.GetRequiredService<ILogger<ModelAugmentedVectorMapIntelligenceService>>()));
+builder.Services.AddSingleton<MapPipelineRunner>();
 
 var app = builder.Build();
 
@@ -158,9 +190,18 @@ var app = builder.Build();
 app.UseDefaultFiles();
 app.UseStaticFiles();
 app.UseNexoApiKeyAuth();
+app.UseMiddleware<ForgeAuthenticationMiddleware>();
+app.UseMiddleware<ForgeTenantMiddleware>();
 
 app.MapNexoEndpoints();
 app.MapForgeEndpoints();
 app.MapFallbackToFile("index.html");
 
 app.Run();
+
+/// <summary>
+/// Exposes the implicit Program entry point for ASP.NET Core integration tests (<c>WebApplicationFactory&lt;Program&gt;</c>).
+/// </summary>
+public partial class Program
+{
+}

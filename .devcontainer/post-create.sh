@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Setup-gate restore graph (same projects as scripts/docker-restore.ps1).
-# Full Nexo.sln restore is skipped here: MAUI/Android workloads are not installed in this image.
+# Full Nexo.sln restore is skipped here in favor of the same minimal graph as scripts/docker-restore.ps1 (fast dev-container bootstrap).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 

@@ -95,6 +95,30 @@ public class ProviderFactoryTests : UnitTestBase
             AssertFalse(factory.IsProviderAvailable("openai"));
         });
 
+        WithEnv("OPENAI_COMPAT_API_KEY", null, () =>
+        {
+            WithEnv("OPENAI_COMPAT_BASE_URL", null, () =>
+            {
+                AssertFalse(factory.IsProviderAvailable("openai_compat"));
+            });
+        });
+
+        WithEnv("OPENAI_COMPAT_API_KEY", "k", () =>
+        {
+            WithEnv("OPENAI_COMPAT_BASE_URL", null, () =>
+            {
+                AssertFalse(factory.IsProviderAvailable("openai_compat"));
+            });
+        });
+
+        WithEnv("OPENAI_COMPAT_API_KEY", "k", () =>
+        {
+            WithEnv("OPENAI_COMPAT_BASE_URL", "http://localhost:8000", () =>
+            {
+                AssertTrue(factory.IsProviderAvailable("openai_compat"));
+            });
+        });
+
         WithEnv("AZURE_OPENAI_ENDPOINT", null, () =>
         {
             WithEnv("AZURE_OPENAI_API_KEY", null, () =>

@@ -1,0 +1,11 @@
+{
+  "name": "devlog-ghost-publish",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "publish": "node publish.mjs"
+  }
+}

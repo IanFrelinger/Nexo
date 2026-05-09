@@ -17,6 +17,7 @@ namespace Nexo.Tests.Infrastructure.Tests.SelfContext;
 /// Integration tests for SelfContextAssembler with seeded IAdaptationLog, IExecutionTracer, IPatternStore.
 /// </summary>
 [Trait("Category", "Integration")]
+[Trait("Category", "ProdStyle")]
 public sealed class SelfContextIntegrationTests : IDisposable
 {
     private readonly IDisposable _tempDirCleanup;

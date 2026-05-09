@@ -19,11 +19,17 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../../src/Nexo.BackgroundAgents.HostRunners/Nexo.BackgroundAgents.HostRunners.csproj" />
-    <ProjectReference Include="../../../src/Nexo.Contracts/Nexo.Contracts.csproj" />
-    <ProjectReference Include="../../../src/Nexo.Hosting/Nexo.Hosting.csproj" />
-    <ProjectReference Include="..\Nexo.GameDomain\Nexo.GameDomain.csproj" />
+    <InternalsVisibleTo Include="Nexo.Tests.Infrastructure" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="LiteDB" />
+    <ProjectReference Include="../../../src/Nexo.BackgroundAgents.HostRunners/Nexo.BackgroundAgents.HostRunners.csproj" />
+    <ProjectReference Include="../../../src/Nexo.Brick.Contracts/Nexo.Brick.Contracts.csproj" />
+    <ProjectReference Include="../../../src/Nexo.Contracts/Nexo.Contracts.csproj" />
+    <ProjectReference Include="../../../src/Nexo.Hosting/Nexo.Hosting.csproj" />
+    <ProjectReference Include="../../../src/Nexo.Infrastructure/Nexo.Infrastructure.csproj" />
+    <ProjectReference Include="..\Nexo.GameDomain\Nexo.GameDomain.csproj" />
+  </ItemGroup>
 
 </Project>

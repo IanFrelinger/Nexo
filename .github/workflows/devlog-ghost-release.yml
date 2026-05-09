@@ -1,0 +1,76 @@
+# Pushes a Ghost draft when a GitHub Release is published (optional).
+# Automated runs: set repository variable DEVLOG_GHOST_ENABLED=true
+# Secrets: GHOST_URL, GHOST_ADMIN_API_KEY (see tools/devlog-ghost-publish/README.md)
+#
+# Manual test: Actions → Devlog Ghost publish → Run workflow (no variable required).
+
+name: Devlog Ghost publish
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      title:
+        description: "Post title"
+        required: true
+        default: "Devlog update"
+      body:
+        description: "Post body (HTML). Leave default for a short placeholder."
+        required: false
+        default: "<p>Milestone update (edit in Ghost).</p>"
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    if: github.event_name == 'workflow_dispatch' || vars.DEVLOG_GHOST_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Write release notes (release event)
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view "${{ github.event.release.tag_name }}" --repo "${{ github.repository }}" \
+            --json body -q .body > "${{ runner.temp }}/release-notes.md"
+
+      - name: Write manual body (workflow_dispatch)
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          BODY: ${{ github.event.inputs.body }}
+        run: |
+          printf '%s\n' "$BODY" > "${{ runner.temp }}/release-notes.html"
+
+      - name: Publish draft to Ghost
+        env:
+          GHOST_URL: ${{ secrets.GHOST_URL }}
+          GHOST_ADMIN_API_KEY: ${{ secrets.GHOST_ADMIN_API_KEY }}
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TITLE="${{ github.event.inputs.title }}"
+          else
+            NAME="${{ github.event.release.name }}"
+            TAG="${{ github.event.release.tag_name }}"
+            if [ -n "$NAME" ] && [ "$NAME" != "$TAG" ]; then
+              TITLE="$NAME"
+            else
+              TITLE="Release: $TAG"
+            fi
+          fi
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            node tools/devlog-ghost-publish/publish.mjs \
+              --title "$TITLE" \
+              --html-file "${{ runner.temp }}/release-notes.html" \
+              --status draft
+          else
+            node tools/devlog-ghost-publish/publish.mjs \
+              --title "$TITLE" \
+              --markdown-file "${{ runner.temp }}/release-notes.md" \
+              --status draft
+          fi
