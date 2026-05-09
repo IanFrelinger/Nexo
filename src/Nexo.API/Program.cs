@@ -95,7 +95,8 @@ builder.Services.TryAddSingleton<ISelfExtendRunner>(sp =>
 builder.Services.AddNexo(options =>
 {
     options.PatternStorePath = builder.Configuration["Nexo:PatternStorePath"];
-    options.RegisterBackgroundAgentHostedService = true;
+    options.RegisterBackgroundAgentHostedService =
+        builder.Configuration.GetValue("Nexo:RegisterBackgroundAgentHostedService", defaultValue: true);
 });
 
 builder.Services.AddSingleton<HeuristicMaterialIntelligenceService>();
@@ -197,3 +198,10 @@ app.MapForgeEndpoints();
 app.MapFallbackToFile("index.html");
 
 app.Run();
+
+/// <summary>
+/// Exposes the implicit Program entry point for ASP.NET Core integration tests (<c>WebApplicationFactory&lt;Program&gt;</c>).
+/// </summary>
+public partial class Program
+{
+}
