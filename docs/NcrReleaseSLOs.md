@@ -13,7 +13,7 @@ Applies to:
 
 ### Virtual production harness (routing stack)
 
-For CI and local soak without GPUs or real peers, **`VirtualProductionNcrRoutingHost`** (`Nexo.Tests.Infrastructure/Helpers/Ncr/VirtualProductionNcrRoutingHost.cs`) boots a generic **`IHost`** with the same **`AddRunPodCapabilityRouting`** registration as production (including **`NCRCapabilityPoller`** and **`PeerCapabilitySnapshotPoller`**), binding **`Nexo:RunPod`** / **`Nexo:NodeCapabilityRuntime`** options while substituting **`IHardwareProfiler`**, **`IInstanceDiscovery`**, **`ILocalQueueDepthProvider`**, **`IRunPodClient`**, and **`ILocalExecutor`**. Integration tests: **`VirtualProductionNcrRoutingTests`**.
+For CI and local soak without GPUs or live peer meshes, **`VirtualProductionNcrRoutingHost`** (`Nexo.Tests.Infrastructure/Helpers/Ncr/VirtualProductionNcrRoutingHost.cs`) boots a generic **`IHost`** with **`AddRunPodCapabilityRouting`** wiring production types: **`RunPodHttpClient`** (HTTP to **`RunPodLoopbackApiServer`** — same `/v2/*` paths as cloud), **`ProviderFactoryLocalExecutor`** + **`ProviderFactory`**, **`EnvironmentHardwareProfiler`**, **`EnvironmentQueueDepthProvider`**, **`FileBasedInstanceDiscovery`** (temp mesh JSON), and **`BrickRegistry`**. Integration tests: **`VirtualProductionNcrRoutingTests`**.
 
 ## SLO targets (first release)
 

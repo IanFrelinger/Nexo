@@ -11,9 +11,9 @@ using Xunit;
 namespace Nexo.Tests.Infrastructure.Tests.NodeCapabilityRuntime;
 
 /// <summary>
-/// Integration-style tests using the real capability-routing DI graph (pollers + router + bricks)
-/// inside a generic host, with deterministic substitutes for hardware and mesh — closest virtual
-/// analogue to production wiring without GPUs or real peers.
+/// Uses production DI registrations (<see cref="RunPodHttpClient"/>, <see cref="ProviderFactoryLocalExecutor"/>,
+/// <see cref="EnvironmentHardwareProfiler"/>, <see cref="FileBasedInstanceDiscovery"/>) inside a generic host.
+/// RunPod traffic goes to <see cref="RunPodLoopbackApiServer"/> (same REST paths as cloud API).
 /// </summary>
 [Trait("Category", "NCR")]
 [Trait("Category", "VirtualProduction")]
@@ -21,25 +21,19 @@ namespace Nexo.Tests.Infrastructure.Tests.NodeCapabilityRuntime;
 public sealed class VirtualProductionNcrRoutingTests
 {
     [Fact]
-    public async Task NcrCapabilityPoller_exposes_simulated_hardware_snapshot()
+    public async Task NcrCapabilityPoller_exposes_environment_hardware_profiler_snapshot()
     {
         const long expectedVram = 24L * 1024 * 1024 * 1024;
 
         await using var env = await VirtualProductionNcrRoutingHost.StartAsync(o =>
         {
-            o.HardwareProfiler.Profile = new NodeProfile
-            {
-                AvailableVRAMBytes = expectedVram,
-                TotalVRAMBytes = expectedVram,
-                Tier = NodeTier.Standard,
-                CapturedAt = DateTimeOffset.UtcNow
-            };
+            o.SetVramBytes(expectedVram, expectedVram);
             o.PostStartDelay = TimeSpan.FromMilliseconds(300);
         });
 
         var snap = env.GetNcrSnapshot();
         snap.AvailableVramBytes.Should().Be(expectedVram);
-        snap.ComputeClass.Should().Be(GpuComputeClass.High);
+        snap.ComputeClass.Should().Be(GpuComputeClass.Extreme);
     }
 
     [Fact]
@@ -47,26 +41,11 @@ public sealed class VirtualProductionNcrRoutingTests
     {
         await using var env = await VirtualProductionNcrRoutingHost.StartAsync(o =>
         {
-            o.HardwareProfiler.Profile = new NodeProfile
-            {
-                AvailableVRAMBytes = 512L * 1024 * 1024,
-                TotalVRAMBytes = 512L * 1024 * 1024,
-                Tier = NodeTier.Nano,
-                CapturedAt = DateTimeOffset.UtcNow
-            };
-            o.RunPodStub.SpinUpResult = Result<RunPodInstance>.Success(new RunPodInstance
-            {
-                InstanceId = "cloud-inst",
-                ModelId = "m",
-                GpuType = "SIM"
-            });
-            o.RunPodStub.DispatchResult = Result<JobHandle>.Success(new JobHandle { InstanceId = "cloud-inst", JobId = "j1" });
-            o.RunPodStub.StatusSequence = new Queue<JobStatus>(
-            [
-                new JobStatus { State = RunPodJobState.Completed }
-            ]);
-            o.RunPodStub.PullResult = Result<byte[]>.Success([1]);
-            o.RunPodStub.TerminateResult = Result<Unit>.Success(Unit.Value);
+            o.SetVramBytes(512L * 1024 * 1024, 512L * 1024 * 1024);
+            o.RunPodCloud.InstanceId = "cloud-inst";
+            o.RunPodCloud.JobId = "j1";
+            o.RunPodCloud.PullBytes = [1];
+            o.RunPodCloud.PollStatuses.Enqueue(new RunPodLoopbackPollStatus { status = "completed" });
             o.PostStartDelay = TimeSpan.FromMilliseconds(350);
         });
 
@@ -83,7 +62,7 @@ public sealed class VirtualProductionNcrRoutingTests
         beforePeer.Should().BeOfType<ExecutionTarget.Remote>();
         ((ExecutionTarget.Remote)beforePeer).Executor.Should().BeOfType<RunPodBrick>();
 
-        env.Mesh.SetPeers(
+        env.WriteMeshPeers(
         [
             new PeerInfo
             {
@@ -109,17 +88,11 @@ public sealed class VirtualProductionNcrRoutingTests
     }
 
     [Fact]
-    public async Task CapabilityRoutingBrick_executes_locally_when_ncr_snapshot_satisfies_job()
+    public async Task CapabilityRoutingBrick_executes_locally_via_ProviderFactory_when_ncr_snapshot_satisfies_job()
     {
         await using var env = await VirtualProductionNcrRoutingHost.StartAsync(o =>
         {
-            o.HardwareProfiler.Profile = new NodeProfile
-            {
-                AvailableVRAMBytes = 96L * 1024 * 1024 * 1024,
-                TotalVRAMBytes = 96L * 1024 * 1024 * 1024,
-                Tier = NodeTier.Core,
-                CapturedAt = DateTimeOffset.UtcNow
-            };
+            o.SetVramBytes(96L * 1024 * 1024 * 1024, 96L * 1024 * 1024 * 1024);
             o.PostStartDelay = TimeSpan.FromMilliseconds(300);
         });
 
@@ -134,11 +107,11 @@ public sealed class VirtualProductionNcrRoutingTests
         var result = await brick.ExecuteAsync(
             new RunPodJobPayload { ModelId = "small", Prompt = "virtual prod" },
             reqs,
-            new VirtualProdExecutionContext());
+            new VirtualProdExecutionContext { Provider = "mock-json" });
 
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().NotBeNull();
-        result.Value!.Provider.Should().Be("virtual-local");
+        result.Value!.Provider.Should().Be("mock-json");
         result.Value.IsRemote.Should().BeFalse();
     }
 }
