@@ -31,6 +31,15 @@ Optional: link to scripts/saas_cost_model.py
 Defaults in assumptions.csv align with that script. After editing assumptions, you can cross-check COGS with:
   python3 scripts/saas_cost_model.py --help
 
+Merged Excel workbook (.xlsx)
+-----------------------------
+Regenerate the single-file workbook (all tabs + live P&L and unit formulas):
+
+  pip install -r docs/commercial-workbook/requirements-workbook.txt
+  python3 scripts/build_commercial_workbook.py
+
+Output: docs/commercial-workbook/Commercial_Readiness_Workbook.xlsx
+
 Notes
 -----
 - "example_usd" in monthly_pl_template.csv is illustrative only until you replace with formulas.
