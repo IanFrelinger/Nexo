@@ -124,7 +124,7 @@ Common changes:
 | **Daemon in CI** | Black-box: timed daemon with/without `--disable-observation` (`RuntimeStudioBlackBoxSmokeTests`). |
 | **Passive + forge** | `ForgeToolsTests` (propose/check/**forge.build**/**forge.test**) + `ForgeMediatedWritesPolicy` + `ProposalsBackgroundAgentCommandTests` (`build`, `test`, `apply --verify-build` / `--verify-test`). |
 | **Operator UX** | **[OPERATOR.md](./OPERATOR.md)** — env vars, CLI one-liners for observations / objectives / proposals / mode / daemon. |
-| **Mobile / MAUI** | `.github/workflows/maui-client-build-gate.yml` — Windows, Mac Catalyst, **Android** compile jobs. |
+| **HTTP client demos** | **`docs/demos/README.md`**, **`Nexo.Demos.sln`** — Console, Blazor, Avalonia (`net8.0`, Linux-friendly). |
 | **Performance** | `CliRunner` cross-process mutex + `CONTRIBUTING.md` guidance; smoke blame-hang 180s on Cross-Platform Tests. |
 
 Contributing note: avoid parallel full `dotnet build` on one clone (see `CONTRIBUTING.md` — `*.deps.json` locks).
@@ -134,7 +134,6 @@ Contributing note: avoid parallel full `dotnet build` on one clone (see `CONTRIB
 | Track | Status |
 |--------|--------|
 | **Objective claim in daemon (E2E)** | Black-box: `RuntimeStudioBlackBoxSmokeTests.Daemon_extender_claims_objective_from_store_increments_attempts` — timed extender with no pinned `Objective`, deterministic model, asserts backlog `Attempts` after release-on-no-action. |
-| **Android signing / store** | **[ANDROID_STORE.md](./ANDROID_STORE.md)** — Play-style AAB pipeline (`.github/workflows/maui-android-publish.yml`) + keystore secrets checklist. |
 | **Operator dashboard** | `nexo background-agent dashboard [--port 5055] [--open]` — read-only JSON + auto-refresh UI on **127.0.0.1** only (same `NEXO_*` paths as the CLI). |
 
 ## Phase 4 (shipped)
@@ -143,7 +142,7 @@ Contributing note: avoid parallel full `dotnet build` on one clone (see `CONTRIB
 |--------|--------|
 | **Objective SLA-style metrics in API** | `GET /api/runtime-studio/metrics` — counts by objective/proposal status, `OldestPendingAgeHours` / `OldestInProgressAgeHours`, observation log path + file size. |
 | **Dashboard auth + TLS notes** | `nexo background-agent dashboard --auth-token …` or `NEXO_DASHBOARD_AUTH_TOKEN`; `?token=` / `Authorization: Bearer`; reverse-proxy snippets in **[OPERATOR.md](./OPERATOR.md)**. |
-| **Play Internal testing** | **[PLAY_INTERNAL.md](./PLAY_INTERNAL.md)** — internal track checklist, CI artifact handoff, service-account automation pointers. |
+| **Play Internal testing** | **[PLAY_INTERNAL.md](./PLAY_INTERNAL.md)** — packaging lives outside this repo; API/client integration only. |
 
 ## Phase 5 (shipped)
 

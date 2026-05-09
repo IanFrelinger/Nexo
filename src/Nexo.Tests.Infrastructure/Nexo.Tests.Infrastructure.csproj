@@ -5,6 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
@@ -28,7 +29,13 @@
   <ItemGroup>
     <Compile Remove="scripts/**/*.cs" />
   </ItemGroup>
+  <!-- Virtual in-process Nexo.API host (WebApplicationFactory): Nexo.API is net8; ASP.NET Core TestHost + JSON on net9 test TFM hits PipeWriter.UnflushedBytes — compile these only for net8.0. -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net9.0'">
+    <Compile Remove="Helpers/VirtualProduction/**/*.cs" />
+    <Compile Remove="Tests/VirtualProduction/**/*.cs" />
+  </ItemGroup>
   <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="Microsoft.Extensions.Http" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" />
@@ -40,6 +47,10 @@
     <PackageReference Include="CsCheck" />
     <PackageReference Include="FluentAssertions" />
     <PackageReference Include="Docker.DotNet" />
+    <PackageReference Include="coverlet.msbuild">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>

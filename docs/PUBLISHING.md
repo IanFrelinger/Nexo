@@ -46,14 +46,16 @@ bash scripts/verify-stable-sdk-host-sample-packages.sh
 
 GitHub Actions **`.github/workflows/reusable-release-nuget.yml`** runs the same verification **after** packing and **before** uploading the artifact or pushing to nuget.org, so a broken graph fails the job before anything leaves the runner.
 
+**After packages are on nuget.org (or a private feed):** use `scripts/verify-stable-sdk-host-sample-published-feed.sh` — see **`docs/NuGetConsumerVerify.md`** and workflow **`.github/workflows/nuget-consumer-verify.yml`**.
+
 ## Publish to nuget.org (you do this)
 
 ### Option A — GitHub Actions (recommended)
 
 Workflows:
 
-- **`.github/workflows/release.yml`** — **tag `v*.*.*`**: GHCR **and** NuGet in one run.
-- **`.github/workflows/release-nuget.yml`** — **manual NuGet-only** dispatch (version input).
+- **`.github/workflows/release.yml`** — **tag `v*.*.*`**: GHCR **and** NuGet in one run. Configure Trusted Publishing for workflow file **`release.yml`** (filename only). After a successful push to nuget.org, runs **Verify NuGet consumer** (shared with **release-nuget**).
+- **`.github/workflows/release-nuget.yml`** — **manual NuGet-only** dispatch (version input). After push to nuget.org, runs the same **Verify NuGet consumer** job when **`NUGET_PUBLISH_MODE`** is **`oidc`** or **`apikey`**.
 
 **Trusted Publishing (OIDC)** on nuget.org is bound to the **caller** workflow file, not the reusable `reusable-release-nuget.yml`. Register every entry point you use:
 
@@ -69,7 +71,8 @@ If you only ever use tag releases, **`release.yml`** alone is enough. If operato
    - **`oidc`** — [Trusted Publishing](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing) for the workflow files above. Secret **`NUGET_USER`** = nuget.org **profile name** (not email).
    - **`apikey`** — secret **`NUGET_API_KEY`**.
 2. **Trigger:** push tag **`v1.2.3`** (preferred), or **Actions → Release** / **Release NuGet packages** for partial flows.
-3. Write **GitHub Release** notes and verify packages on nuget.org.
+3. **After push to nuget.org:** **`release.yml`** runs **Verify NuGet consumer (nuget.org)** when **`NUGET_PUBLISH_MODE`** is **`oidc`** or **`apikey`** (restores the sample from nuget.org only, with retries for index lag). See **`docs/NuGetConsumerVerify.md`**.
+4. Write **GitHub Release** notes and verify packages on nuget.org.
 
 ### Option B — Manual from your machine
 
