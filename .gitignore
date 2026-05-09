@@ -44,10 +44,13 @@ Thumbs.db
 
 # Test results
 TestResults/
+CoverageReports/
 test-results/
 test-reports/
 *.trx
 *.coverage
+coverage.opencover.xml
+*.opencover.xml
 *.dmp
 
 # Package files

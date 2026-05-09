@@ -112,8 +112,21 @@ public class AgentRegistryAdapter : IAgentRegistry
             .OrderByDescending(c => c.GetParameters().Length)
             .FirstOrDefault();
         if (ctor == null) return new Dictionary<string, string>();
-        return ctor.GetParameters()
-            .ToDictionary(p => p.Name ?? "param", p => p.ParameterType.Name, StringComparer.OrdinalIgnoreCase);
+        var dict = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var p in ctor.GetParameters())
+        {
+            var baseName = string.IsNullOrEmpty(p.Name) ? "param" : p.Name;
+            var key = baseName;
+            var n = 0;
+            while (dict.ContainsKey(key))
+            {
+                key = $"{baseName}_{++n}";
+            }
+
+            dict[key] = p.ParameterType.Name;
+        }
+
+        return dict;
     }
 }
 

@@ -1,4 +1,4 @@
-.PHONY: build test test-cross-platform test-portable test-multi-env test-all-platforms test-all-platforms-ephemeral ci-verify validate-safe review-summary clean-test-artifacts test-readiness-gate release-preflight release-gate release-dispatch
+.PHONY: build build-core build-demos prod-dry-run prod-dry-run-agent-server restore-core test test-prod-style test-framework-prod-first test-prime-time test-prime-time-full test-cross-platform test-portable test-multi-env test-all-platforms test-all-platforms-ephemeral ci-verify validate-safe review-summary clean-test-artifacts test-readiness-gate release-preflight release-gate release-dispatch
 
 # Local checks before tagging a release (graph alignment + NuGet sample). Usage: make release-preflight VERSION=1.2.3
 release-preflight:
@@ -14,9 +14,55 @@ release-dispatch:
 	@test -n "$(VERSION)" || (echo "Set VERSION=1.2.3"; exit 1)
 	gh workflow run Release --ref $${REF:-master} -f version="$(VERSION)" -f skip_multi_arch=false
 
+# All automated test projects in Nexo.PrimeTime.slnf (nine Nexo.Tests.* assemblies).
+PRIME_TIME_SLNF := Nexo.PrimeTime.slnf
+
 # Build the solution
 build:
 	dotnet build
+
+# Restore/build a small slice (CLI + domain tests + infra tests) — avoids full Nexo.sln workload requirements
+restore-core:
+	dotnet restore Nexo.LocalDevCore.slnf
+
+build-core:
+	dotnet build Nexo.LocalDevCore.slnf -v minimal
+
+# Workload-free client samples (console, Blazor, Avalonia) — see docs/demos/README.md
+build-demos:
+	dotnet build Nexo.Demos.sln -v minimal
+
+# Production-shaped Compose dry run (portal or agent-server) — see docs/prod-dry-run.md
+prod-dry-run:
+	bash scripts/prod-dry-run.sh --portal
+
+prod-dry-run-agent-server:
+	bash scripts/prod-dry-run.sh --agent-server
+
+# Production-like integration (Category=ProdStyle): Nexo.Tests.Infrastructure only — real DI hosts / graphs.
+# Run this before the full suite when validating framework behaviour locally or in CI-style gates.
+test-prod-style: restore-core build-core
+	dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --no-build \
+	  --filter "Category=ProdStyle" \
+	  --blame-hang-timeout 120s --blame-hang-dump-type none
+
+# Runs test-prod-style then the full LocalDevCore test slice (Domain + Infrastructure + CLI harness).
+# Note: ProdStyle tests execute twice (once filtered, once inside the full run).
+test-framework-prod-first: test-prod-style
+	dotnet test Nexo.LocalDevCore.slnf --no-build \
+	  --blame-hang-timeout 30s --blame-hang-dump-type none
+
+# Prime-time gate: Category=ProdStyle across Nexo.PrimeTime.slnf (all test assemblies).
+test-prime-time:
+	dotnet build $(PRIME_TIME_SLNF) -v minimal
+	dotnet test $(PRIME_TIME_SLNF) --no-build \
+	  --filter "Category=ProdStyle" \
+	  --blame-hang-timeout 300s --blame-hang-dump-type none
+
+# Full PrimeTime matrix after ProdStyle gate (runs everything including ProdStyle twice).
+test-prime-time-full: test-prime-time
+	dotnet test $(PRIME_TIME_SLNF) --no-build \
+	  --blame-hang-timeout 300s --blame-hang-dump-type none
 
 # Run tests locally (blame-hang-timeout prevents indefinite freeze from hung tests)
 # --blame-hang-dump-type none avoids 6GB+ hang dumps that accumulate in TestResults/

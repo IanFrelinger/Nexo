@@ -21,6 +21,7 @@ namespace Nexo.Tests.Infrastructure.Tests.Adaptation;
 /// </summary>
 [Trait("Category", "Integration")]
 [Trait("Category", "Adaptation")]
+[Trait("Category", "ProdStyle")]
 public sealed class AdaptationPipelineIntegrationTests : IDisposable
 {
     private readonly string _tempDir;

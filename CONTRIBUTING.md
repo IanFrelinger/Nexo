@@ -15,6 +15,22 @@ dotnet run --project src/Nexo.CLI -- --help
 
 **Remote:** connect over **Remote SSH**, open the repo on the remote machine, then **Reopen in Container** there so the toolchain comes from the image, not from manual packages on the host.
 
+## Faster local restore (subset solution)
+
+Full **`Nexo.sln`** is intended to build on **Linux** with a stock .NET SDK (no optional workloads). For a faster subset (**CLI** plus core tests), use the solution filter **`Nexo.LocalDevCore.slnf`**:
+
+```bash
+dotnet restore Nexo.LocalDevCore.slnf
+dotnet build Nexo.LocalDevCore.slnf -v minimal
+```
+
+## Testing: xUnit vs. `UnitTestBase`
+
+- **xUnit** suites (for example `Nexo.Tests.Infrastructure`) run with normal `dotnet test` filters.
+- **`UnitTestBase`** tests are executed by **`ITestRunner`** / **`TestRunnerAdapter`** (same path as the CLI). **`UnitTestFrameworkBridge`** (in `Nexo.Infrastructure`) exposes **`UnitTestBridgeTests`** in **`Nexo.Tests.Domain`**, **`Nexo.Tests.Application`**, **`Nexo.Tests.Infrastructure`**, and **`Nexo.Tests.CLI`** so `dotnet test` on those projects runs most framework suites. A few types are skipped when they need a special layout or host (see `docs/architecture/TestingModel.md`).
+
+High-level architecture notes: `docs/architecture/README.md`. SDK vs. `net8.0` / `net9.0`: `docs/architecture/DotnetVersions.md`.
+
 ## Prerequisites (native escape hatch)
 
 Use this only when you cannot use the dev container or other Docker workflows:
@@ -46,6 +62,10 @@ Run the minimal local quality bar:
 
 ```bash
 make test
+dotnet test src/Nexo.Tests.Domain/Nexo.Tests.Domain.csproj
+dotnet test src/Nexo.Tests.Application/Nexo.Tests.Application.csproj
+dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net8.0
+dotnet test src/Nexo.Tests.CLI/Nexo.Tests.CLI.csproj
 dotnet run --project src/Nexo.CLI -- --help
 dotnet run --project src/Nexo.CLI -- pipeline validate --template <template.json>
 ```
@@ -86,6 +106,9 @@ gh workflow run "Cross-Platform Tests" --ref master -f scope=smoke
 ```
 
 If your fork uses a different default branch, replace `master` accordingly.
+
+**Branch protection:** If required checks reference workflows that only run on manual dispatch,
+update protection rules or add an always-on check. See `.github/workflows/README.md`.
 
 ## Resource safety
 

@@ -12,6 +12,10 @@ Nexo operates entirely on infrastructure you control. Cloud providers are opt-in
 
 Repository: <https://github.com/IanFrelinger/Nexo>
 
+Architecture notes for contributors and reviewers: **`docs/architecture/`** (trust boundaries, testing model, .NET SDK vs. target frameworks).
+
+**Production readiness (all audiences):** structured checklists and runbooks in **`docs/production-readiness/`** — use with **`docs/ProductionReadinessGate-v1.md`** and **`docs/DEPLOYMENT.md`**.
+
 ## Default workflow
 
 1. **Develop** — [Quick Start (5 minutes)](#quick-start-5-minutes) → **Lane A** → **Dev Container** (first subsection).
@@ -55,7 +59,7 @@ You do **not** need a host-installed .NET SDK for the paths below. Install **.NE
 1. Install the [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension.
 2. Open this repository, then run **Dev Containers: Reopen in Container**.
 
-The dev container uses **.NET 9**, mounts a named volume at `nexo-nuget-packages` for the NuGet cache, and runs **`.devcontainer/post-create.sh`** after the container is created. That script restores the **same setup-gate project graph** as `scripts/docker-restore.ps1` (not full `Nexo.sln`, which requires MAUI/Android workloads inside a plain SDK image).
+The dev container uses **.NET 9**, mounts a named volume at `nexo-nuget-packages` for the NuGet cache, and runs **`.devcontainer/post-create.sh`** after the container is created. That script restores the **same setup-gate project graph** as `scripts/docker-restore.ps1` (not the full **`Nexo.sln`** graph when you want the smallest restore for CI smoke).
 
 **Headless check (no IDE):** from the repo root, with Docker running:
 

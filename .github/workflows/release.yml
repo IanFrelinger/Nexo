@@ -82,6 +82,15 @@ jobs:
     with:
       package_version: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
 
+  # After packages are pushed to nuget.org, confirm an external-style restore works (indexing can lag).
+  verify-nuget-consumer:
+    name: Verify NuGet consumer (nuget.org)
+    needs: [nuget]
+    if: success() && (vars.NUGET_PUBLISH_MODE == 'oidc' || vars.NUGET_PUBLISH_MODE == 'apikey')
+    uses: ./.github/workflows/reusable-verify-nuget-consumer.yml
+    with:
+      package_version: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
+
   verify-published:
     name: Cross-check published GHCR images
     needs: [images, nuget]
@@ -126,7 +135,7 @@ jobs:
 
   summarize:
     name: Release summary
-    needs: [validate, images, nuget, verify-published]
+    needs: [validate, images, nuget, verify-published, verify-nuget-consumer]
     if: always()
     runs-on: ubuntu-latest
     steps:
