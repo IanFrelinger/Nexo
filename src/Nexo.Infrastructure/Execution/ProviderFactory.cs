@@ -2151,7 +2151,7 @@ public interface IFeatureScaffolder
 public static class CrossFrameworkCompatibility
 {
     public const string ContractNotes =
-        "Adapters implement IUiFrameworkAdapter<TControl> per framework (Avalonia, MAUI, etc.) while sharing UiNode contracts.";
+        "Adapters implement IUiFrameworkAdapter<TControl> per framework (Avalonia, WPF, etc.) while sharing UiNode contracts.";
 }
 """;
 
@@ -2749,7 +2749,7 @@ public sealed class MainWindow : Window
         if (q.Contains("what is nexo", StringComparison.Ordinal))
             return "Nexo is an orchestration system that scaffolds features and validates them with tests.";
         if (q.Contains("framework", StringComparison.Ordinal))
-            return "UI abstractions keep feature descriptors framework-neutral so adapters can target Avalonia or MAUI.";
+            return "UI abstractions keep feature descriptors framework-neutral so adapters can target Avalonia or other hosts.";
         return "Ask about Nexo, or scaffold a feature to see live extension loading.";
     }
 }
