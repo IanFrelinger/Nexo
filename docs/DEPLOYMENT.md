@@ -59,6 +59,10 @@ Step-by-step checklist: **`docs/RELEASE_RUNBOOK.md`**.
 
 **Images on `master` without a release:** still driven by **Container Image Publish** on path-filtered pushes.
 
+## Production-shaped dry run on Linux (containers)
+
+For an operations-level dry run—**same Compose topology and images** as the golden paths above—see **`docs/prod-dry-run.md`** and run **`make prod-dry-run`** or **`./scripts/prod-dry-run.sh`**.
+
 ## CI vs production
 
 - **Green on `master`** does not imply every optional workflow gate ran (path filters). For a release, run **`runtime-release-gate`** (and your own smoke) on the **tag** you intend to ship.

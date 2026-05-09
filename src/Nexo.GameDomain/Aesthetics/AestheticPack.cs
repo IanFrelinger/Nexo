@@ -4,8 +4,10 @@ namespace Nexo.GameDomain.Aesthetics;
 /// Describes the visual style applied to a session, controlling geometry strategy, colour
 /// palette, LOD configuration, and post-processing effects.
 /// <para>
-/// The Unity rendering pipeline reads the active <see cref="AestheticPack"/> to select
-/// mesh generators, material shaders, and camera post-process volumes at scene load time.
+/// Game engines (Unity, Unreal, Godot, or custom hosts) read the active <see cref="AestheticPack"/> to select
+/// mesh generators, materials, shaders, and camera post-process volumes at scene load time.
+/// Use <see cref="AestheticPack.EngineSurfaceBindings"/> to map logical roles to engine-specific surfaces while keeping
+/// <see cref="GeometryStrategy"/> and palettes engine-neutral.
 /// </para>
 /// </summary>
 public sealed record AestheticPack
@@ -24,6 +26,11 @@ public sealed record AestheticPack
     public string GeometryStrategy { get; init; } = "low_poly";
 
     /// <summary>
+    /// How geographic data should be processed for rendering (see <see cref="MapRenderingProfiles"/>).
+    /// </summary>
+    public string MapRenderingProfile { get; init; } = MapRenderingProfiles.Auto;
+
+    /// <summary>
     /// Default colour palette as a list of hex colour values (e.g. <c>"#FF5733"</c>).
     /// Used for procedural material assignment when explicit textures are absent.
     /// </summary>
@@ -39,6 +46,18 @@ public sealed record AestheticPack
     /// <c>"chromatic_aberration"</c>, <c>"vignette"</c>).
     /// </summary>
     public IReadOnlyList<string> PostProcessEffects { get; init; } = [];
+
+    /// <summary>
+    /// Semantic render pipeline hint (e.g. <see cref="RenderingPipelineKinds.ForwardStylized"/>).
+    /// Hosts translate this to engine-specific renderer features (URP Forward+, Unreal Forward Shading, etc.).
+    /// </summary>
+    public string RenderingPipelineKind { get; init; } = RenderingPipelineKinds.Auto;
+
+    /// <summary>
+    /// Optional per-engine bindings from logical surface roles to concrete shader/material hints.
+    /// Empty means hosts infer surfaces from <see cref="GeometryStrategy"/> alone.
+    /// </summary>
+    public IReadOnlyList<EngineRenderingSurfaceBinding> EngineSurfaceBindings { get; init; } = [];
 }
 
 /// <summary>
