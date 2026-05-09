@@ -1,0 +1,5 @@
+tier,target_buyer,price_anchor,billing_model,what_is_included,hard_limits_or_caps,notes
+Starter,Individual or small team self-serve,49,per seat per month,Core portal + N jobs included,Concurrency seats GB retention,Define overage for jobs and tokens
+Pro,Team with SSO and audit needs,149,per seat per month,SSO audit export longer retention,Higher included credits,Annual discount column in your real sheet
+Enterprise,Regulated or large org,custom,annual contract + minimum,BYOC or dedicated VPC SLA named support,Negotiated limits,Maps to Nexo sovereignty story
+Usage add-on,Any,0.00,per 1k tokens or per job,Pass-through or marked up,Rate card,Decide absorb vs BYOK

@@ -17,6 +17,7 @@ public static class MeshTrustPolicyConfiguration
             "trusted-only" => "trusted-only",
             "trusted-preferred" => "trusted-preferred",
             "any" => "any",
+            "allowlist" => "allowlist",
             _ => "trusted-preferred"
         };
     }

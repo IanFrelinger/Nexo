@@ -1,0 +1,11 @@
+{
+  "solution": {
+    "path": "Nexo.sln",
+    "projects": [
+      "src/Nexo.CLI/Nexo.CLI.csproj",
+      "src/Nexo.Tests.Domain/Nexo.Tests.Domain.csproj",
+      "src/Nexo.Tests.GameDomain/Nexo.Tests.GameDomain.csproj",
+      "src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj"
+    ]
+  }
+}

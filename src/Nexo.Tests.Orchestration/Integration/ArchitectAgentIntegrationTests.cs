@@ -13,6 +13,8 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration.Integration;
 
+[Trait("Category", "Integration")]
+[Trait("Category", "ProdStyle")]
 public class ArchitectAgentIntegrationTests
 {
     private readonly Mock<IModel> _modelMock;

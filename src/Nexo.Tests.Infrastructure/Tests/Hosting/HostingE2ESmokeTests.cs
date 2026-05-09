@@ -18,6 +18,7 @@ namespace Nexo.Tests.Infrastructure.Tests.Hosting;
 /// Validates that the full kernel (orchestration, adaptation, persistence, validation) can be resolved and used.
 /// </summary>
 [Trait("Category", "E2E")]
+[Trait("Category", "ProdStyle")]
 public sealed class HostingE2ESmokeTests
 {
     [Fact(Timeout = TestTimeouts.E2E)]
