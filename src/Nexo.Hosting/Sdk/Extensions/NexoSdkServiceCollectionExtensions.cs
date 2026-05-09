@@ -30,7 +30,7 @@ public static class NexoSdkServiceCollectionExtensions
         Action<INexoSdkBuilder> configure)
     {
         var options = new NexoSdkOptions();
-        configure(new NexoSdkBuilder(options));
+        configure(new HostNexoSdkBuilder(options));
 
         services.AddSingleton(options);
 

@@ -4,7 +4,9 @@ This guide is for teams embedding Nexo, extending bricks, or hosting custom back
 
 ## Getting started with the Nexo SDK
 
-The managed SDK entry point is the `Nexo.Sdk` project (`src/Nexo.Sdk/Nexo.Sdk.csproj`). Add a project reference from your integrator assembly:
+The slim **HTTP client** package is the `Nexo.Sdk` project (`src/Nexo.Sdk/Nexo.Sdk.csproj`). Register it with **`AddNexoClientSdk(baseUrl, ...)`** (`Nexo.Sdk.Client`). The obsolete **`AddNexoSdk(string baseUrl, ...)`** name remains as a compat shim. For **host-side** brick/agent registration, use **`Nexo.Hosting.Sdk.AddNexoSdk`** (before `AddNexo`). See [`docs/architecture/SdkStructure.md`](architecture/SdkStructure.md).
+
+Add a project reference from your integrator assembly:
 
 ```xml
 <ItemGroup>

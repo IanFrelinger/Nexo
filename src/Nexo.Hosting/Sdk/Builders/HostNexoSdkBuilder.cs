@@ -1,4 +1,3 @@
-using Microsoft.Extensions.DependencyInjection;
 using Nexo.Abstractions;
 using Nexo.Core.Application.Sdk.Ports;
 using Nexo.Core.Domain.Agents;
@@ -6,10 +5,12 @@ using Nexo.Core.Domain.Bricks;
 
 namespace Nexo.Hosting.Sdk;
 
+#pragma warning disable CS0618 // NexoSdkBuilder is an obsolete type forwarder in this file
+
 /// <summary>
-/// Implementation of INexoSdkBuilder. Configures NexoSdkOptions for runtime registration.
+/// Default implementation of <see cref="INexoSdkBuilder"/>. Configures <see cref="NexoSdkOptions"/> for kernel registration.
 /// </summary>
-public sealed class NexoSdkBuilder : INexoSdkBuilder
+public class HostNexoSdkBuilder : INexoSdkBuilder
 {
     private readonly NexoSdkOptions _options;
 
@@ -17,7 +18,7 @@ public sealed class NexoSdkBuilder : INexoSdkBuilder
     /// Creates a new SDK builder with the given options.
     /// </summary>
     /// <param name="options">Options to populate.</param>
-    public NexoSdkBuilder(NexoSdkOptions options)
+    public HostNexoSdkBuilder(NexoSdkOptions options)
     {
         _options = options ?? throw new ArgumentNullException(nameof(options));
     }
@@ -45,5 +46,18 @@ public sealed class NexoSdkBuilder : INexoSdkBuilder
             throw new ArgumentNullException(nameof(card));
         _options.AgentCards.Add(card);
         return this;
+    }
+}
+
+/// <summary>
+/// Back-compat type name for <see cref="HostNexoSdkBuilder"/>.
+/// </summary>
+[Obsolete("Renamed to HostNexoSdkBuilder.", error: false)]
+public sealed class NexoSdkBuilder : HostNexoSdkBuilder
+{
+    /// <inheritdoc cref="HostNexoSdkBuilder(NexoSdkOptions)"/>
+    public NexoSdkBuilder(NexoSdkOptions options)
+        : base(options)
+    {
     }
 }
