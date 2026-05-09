@@ -21,6 +21,7 @@ public static class BuiltInAestheticPacks
         {
             Id = "low_poly", Name = "Low Poly", GeometryStrategy = "low_poly",
             MapRenderingProfile = MapRenderingProfiles.FlatShadedPolys,
+            RenderingPipelineKind = RenderingPipelineKinds.ForwardStylized,
             DefaultPaletteColors = ["#81C784", "#64B5F6", "#FFB74D", "#CE93D8"],
             LodLevels = [new LodLevel(0, 1.0), new LodLevel(1, 0.5)]
         },
@@ -35,6 +36,7 @@ public static class BuiltInAestheticPacks
         {
             Id = "pbr", Name = "PBR", GeometryStrategy = "pbr",
             MapRenderingProfile = MapRenderingProfiles.HeightfieldMesh,
+            RenderingPipelineKind = RenderingPipelineKinds.ForwardPbr,
             DefaultPaletteColors = ["#E0E0E0", "#BDBDBD", "#9E9E9E"],
             LodLevels =
             [

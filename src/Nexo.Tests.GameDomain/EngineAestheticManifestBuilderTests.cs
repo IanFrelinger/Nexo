@@ -17,14 +17,14 @@ public sealed class EngineAestheticManifestBuilderTests
             MapRenderingProfile = MapRenderingProfiles.FlatShadedPolys,
             EngineSurfaceBindings =
             [
-                new EngineSurfaceBinding
+                new EngineRenderingSurfaceBinding
                 {
                     EngineId = "unity",
                     Role = "world_primary",
                     MaterialSurfaceId = "lit",
-                    AssetOrShaderHint = "HDRP/Lit"
+                    AssetOrShaderHint = "HDRP/Lit",
                 },
-                new EngineSurfaceBinding
+                new EngineRenderingSurfaceBinding
                 {
                     EngineId = "godot",
                     Role = "world_primary",

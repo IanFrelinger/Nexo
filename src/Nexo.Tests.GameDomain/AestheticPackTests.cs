@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Text.Json;
 using FluentAssertions;
 using Nexo.GameDomain.Aesthetics;
@@ -15,6 +16,7 @@ public class AestheticPackTests
         pack.Name.Should().BeEmpty();
         pack.GeometryStrategy.Should().Be("low_poly");
         pack.MapRenderingProfile.Should().Be(MapRenderingProfiles.Auto);
+        pack.RenderingPipelineKind.Should().Be(RenderingPipelineKinds.Auto);
         pack.EngineSurfaceBindings.Should().BeEmpty();
         pack.DefaultPaletteColors.Should().BeEmpty();
         pack.LodLevels.Should().BeEmpty();
@@ -35,7 +37,26 @@ public class AestheticPackTests
                 new LodLevel(0, 1.0),
                 new LodLevel(1, 0.5),
             ],
-            PostProcessEffects = ["vignette"]
+            PostProcessEffects = ["vignette"],
+            RenderingPipelineKind = RenderingPipelineKinds.ForwardStylized,
+            EngineSurfaceBindings =
+            [
+                new EngineRenderingSurfaceBinding
+                {
+                    EngineId = GameEngines.Unity,
+                    Role = "world_primary",
+                    MaterialSurfaceId = "stylized_lit",
+                    AssetOrShaderHint = "Universal Render Pipeline/Lit",
+                    Parameters = new Dictionary<string, string> { ["workflow"] = "Specular" },
+                },
+                new EngineRenderingSurfaceBinding
+                {
+                    EngineId = GameEngines.Unreal,
+                    Role = "world_primary",
+                    MaterialSurfaceId = "stylized_lit",
+                    AssetOrShaderHint = "/Game/Materials/M_StylizedWorld",
+                },
+            ]
         };
 
         var options = new JsonSerializerOptions(JsonSerializerDefaults.Web)
@@ -56,6 +77,32 @@ public class AestheticPackTests
         restored.LodLevels[0].DetailFactor.Should().Be(1.0);
         restored.LodLevels[1].DetailFactor.Should().Be(0.5);
         restored.PostProcessEffects.Should().ContainSingle().Which.Should().Be("vignette");
+        restored.RenderingPipelineKind.Should().Be(RenderingPipelineKinds.ForwardStylized);
+        restored.EngineSurfaceBindings.Should().HaveCount(2);
+        restored.EngineSurfaceBindings[0].EngineId.Should().Be(GameEngines.Unity);
+        restored.EngineSurfaceBindings[0].Parameters.Should().ContainKey("workflow");
+    }
+
+    [Fact]
+    public void EngineSurfaceBindingResolver_ReturnsMatchingBinding()
+    {
+        var pack = new AestheticPack
+        {
+            EngineSurfaceBindings =
+            [
+                new EngineRenderingSurfaceBinding
+                {
+                    EngineId = GameEngines.Godot,
+                    Role = "ui_default",
+                    MaterialSurfaceId = "unlit",
+                    AssetOrShaderHint = "res://ui.tres",
+                },
+            ]
+        };
+
+        var b = EngineSurfaceBindingResolver.TryGetBinding(pack, "GODOT", "ui_default");
+        b.Should().NotBeNull();
+        b!.MaterialSurfaceId.Should().Be("unlit");
     }
 
     [Fact]

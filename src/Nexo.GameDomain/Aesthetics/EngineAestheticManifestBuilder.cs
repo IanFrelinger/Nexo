@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -47,7 +48,7 @@ public static class EngineAestheticManifestBuilder
                 ["materialSurfaceId"] = b.MaterialSurfaceId,
                 ["assetOrShaderHint"] = b.AssetOrShaderHint ?? ""
             };
-            if (b.Parameters.Count > 0)
+            if (b.Parameters is { Count: > 0 })
                 o["parameters"] = JsonSerializer.SerializeToNode(b.Parameters, JsonOptions)!;
             arr.Add(o);
         }
