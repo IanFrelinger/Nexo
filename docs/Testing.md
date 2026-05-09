@@ -46,6 +46,8 @@ make test-prime-time-full    # ProdStyle gate then full test count on the same s
 
 **Faster Infrastructure-only ProdStyle:** `make test-prod-style`
 
+**Production-shaped containers (Linux dry run):** `make prod-dry-run` or `make prod-dry-run-agent-server` — see **`docs/prod-dry-run.md`** (Compose + published API image, `/health` + `/api/status`).
+
 `nexo` command note:
 - Commands shown as `nexo ...` assume the CLI tool is installed on your PATH.
 - If you have not installed the global tool, use the equivalent project invocation:
