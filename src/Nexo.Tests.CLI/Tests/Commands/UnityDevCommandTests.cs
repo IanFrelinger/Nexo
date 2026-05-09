@@ -10,15 +10,17 @@ namespace Nexo.Tests.CLI.Tests.Commands;
 public sealed class UnityDevCommandTests
 {
     [Fact(Timeout = 15000)]
-    public void ParseFiles_EmptyInput_ReturnsEmpty()
+    public async Task ParseFiles_EmptyInput_ReturnsEmpty()
     {
+        await Task.CompletedTask;
         UnityDevCommand.ParseFiles("").Should().BeEmpty();
         UnityDevCommand.ParseFiles("   ").Should().BeEmpty();
     }
 
     [Fact(Timeout = 15000)]
-    public void ParseFiles_SingleFile_ParsesCorrectly()
+    public async Task ParseFiles_SingleFile_ParsesCorrectly()
     {
+        await Task.CompletedTask;
         var input = @"// FILE: Assets/Scripts/Player.cs
 using UnityEngine;
 
@@ -35,8 +37,9 @@ public class Player : MonoBehaviour
     }
 
     [Fact(Timeout = 15000)]
-    public void ParseFiles_MultipleFiles_SplitsCorrectly()
+    public async Task ParseFiles_MultipleFiles_SplitsCorrectly()
     {
+        await Task.CompletedTask;
         var input = @"// FILE: Assets/Scripts/Weapons/IWeapon.cs
 public interface IWeapon
 {
@@ -67,8 +70,9 @@ public class PistolTests
     }
 
     [Fact(Timeout = 15000)]
-    public void ParseFiles_IgnoresContentBeforeFirstMarker()
+    public async Task ParseFiles_IgnoresContentBeforeFirstMarker()
     {
+        await Task.CompletedTask;
         var input = @"Here is some preamble text from the LLM.
 This should be ignored.
 
@@ -83,8 +87,9 @@ public class Foo { }";
     }
 
     [Fact(Timeout = 15000)]
-    public void ParseFiles_HandlesBackslashPaths()
+    public async Task ParseFiles_HandlesBackslashPaths()
     {
+        await Task.CompletedTask;
         var input = @"// FILE: Assets\Scripts\Bar.cs
 public class Bar { }";
         var result = UnityDevCommand.ParseFiles(input);
@@ -94,8 +99,9 @@ public class Bar { }";
     }
 
     [Fact(Timeout = 15000)]
-    public void ValidateProjectRoot_MissingDirectory_ReturnsFalse()
+    public async Task ValidateProjectRoot_MissingDirectory_ReturnsFalse()
     {
+        await Task.CompletedTask;
         var originalErr = Console.Error;
         using var errWriter = new StringWriter();
         Console.SetError(errWriter);
@@ -112,8 +118,9 @@ public class Bar { }";
     }
 
     [Fact(Timeout = 15000)]
-    public void ValidateProjectRoot_MissingAssetsFolder_ReturnsFalse()
+    public async Task ValidateProjectRoot_MissingAssetsFolder_ReturnsFalse()
     {
+        await Task.CompletedTask;
         var tempDir = Path.Combine(Path.GetTempPath(), $"nexo-unity-test-{Guid.NewGuid():N}");
         Directory.CreateDirectory(tempDir);
         try
@@ -139,8 +146,9 @@ public class Bar { }";
     }
 
     [Fact(Timeout = 15000)]
-    public void ValidateProjectRoot_ValidProject_ReturnsTrue()
+    public async Task ValidateProjectRoot_ValidProject_ReturnsTrue()
     {
+        await Task.CompletedTask;
         var tempDir = Path.Combine(Path.GetTempPath(), $"nexo-unity-test-{Guid.NewGuid():N}");
         Directory.CreateDirectory(Path.Combine(tempDir, "Assets"));
         try
@@ -154,8 +162,9 @@ public class Bar { }";
     }
 
     [Fact(Timeout = 15000)]
-    public void ValidateProjectRoot_Json_MissingDirectory_EmitsJsonError()
+    public async Task ValidateProjectRoot_Json_MissingDirectory_EmitsJsonError()
     {
+        await Task.CompletedTask;
         var originalOut = Console.Out;
         using var outWriter = new StringWriter();
         Console.SetOut(outWriter);
@@ -176,8 +185,9 @@ public class Bar { }";
     }
 
     [Fact(Timeout = 15000)]
-    public void WriteManifest_CreatesValidJsonManifest()
+    public async Task WriteManifest_CreatesValidJsonManifest()
     {
+        await Task.CompletedTask;
         var tempDir = Path.Combine(Path.GetTempPath(), $"nexo-unity-manifest-{Guid.NewGuid():N}");
         Directory.CreateDirectory(tempDir);
         try
@@ -208,8 +218,9 @@ public class Bar { }";
     }
 
     [Fact(Timeout = 15000)]
-    public void ExecuteList_EmptyProject_ReturnsZeroSystems()
+    public async Task ExecuteList_EmptyProject_ReturnsZeroSystems()
     {
+        await Task.CompletedTask;
         var tempDir = Path.Combine(Path.GetTempPath(), $"nexo-unity-list-{Guid.NewGuid():N}");
         Directory.CreateDirectory(Path.Combine(tempDir, "Assets"));
         try
@@ -239,8 +250,9 @@ public class Bar { }";
     }
 
     [Fact(Timeout = 15000)]
-    public void ExecuteList_WithGeneratedSystems_ListsThem()
+    public async Task ExecuteList_WithGeneratedSystems_ListsThem()
     {
+        await Task.CompletedTask;
         var tempDir = Path.Combine(Path.GetTempPath(), $"nexo-unity-list-{Guid.NewGuid():N}");
         var genDir = Path.Combine(tempDir, "Assets", "Scripts", "Generated", "Weapons");
         Directory.CreateDirectory(genDir);
@@ -275,8 +287,9 @@ public class Bar { }";
     }
 
     [Fact(Timeout = 15000)]
-    public void UnityDevCommand_HasExpectedSubcommands()
+    public async Task UnityDevCommand_HasExpectedSubcommands()
     {
+        await Task.CompletedTask;
         var cmd = new UnityDevCommand(() => null!);
         var subNames = cmd.Subcommands.Select(s => s.Name).ToList();
         subNames.Should().Contain("generate");
@@ -288,8 +301,9 @@ public class Bar { }";
     }
 
     [Fact(Timeout = 15000)]
-    public void Generate_Subcommand_HasExpectedOptions()
+    public async Task Generate_Subcommand_HasExpectedOptions()
     {
+        await Task.CompletedTask;
         var cmd = new UnityDevCommand(() => null!);
         var gen = cmd.Subcommands.Single(s => s.Name == "generate");
         var optNames = gen.Options.Select(o => o.Name).ToList();
@@ -301,8 +315,9 @@ public class Bar { }";
     }
 
     [Fact(Timeout = 15000)]
-    public void Iterate_Subcommand_HasExpectedOptions()
+    public async Task Iterate_Subcommand_HasExpectedOptions()
     {
+        await Task.CompletedTask;
         var cmd = new UnityDevCommand(() => null!);
         var iter = cmd.Subcommands.Single(s => s.Name == "iterate");
         var optNames = iter.Options.Select(o => o.Name).ToList();
@@ -312,15 +327,17 @@ public class Bar { }";
     }
 
     [Fact(Timeout = 15000)]
-    public void Init_Subcommand_Exists()
+    public async Task Init_Subcommand_Exists()
     {
+        await Task.CompletedTask;
         var cmd = new UnityDevCommand(() => null!);
         cmd.Subcommands.Should().Contain(s => s.Name == "init");
     }
 
     [Fact(Timeout = 15000)]
-    public void ExecuteInit_CreatesProjectStructure()
+    public async Task ExecuteInit_CreatesProjectStructure()
     {
+        await Task.CompletedTask;
         var tempDir = Path.Combine(Path.GetTempPath(), "nexo-unity-init-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
@@ -343,8 +360,9 @@ public class Bar { }";
     }
 
     [Fact(Timeout = 15000)]
-    public void ExecuteInit_CreatesManifestWithDependencies()
+    public async Task ExecuteInit_CreatesManifestWithDependencies()
     {
+        await Task.CompletedTask;
         var tempDir = Path.Combine(Path.GetTempPath(), "nexo-unity-init-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
@@ -364,8 +382,9 @@ public class Bar { }";
     }
 
     [Fact(Timeout = 15000)]
-    public void ExecuteInit_CreatesAssemblyDefinitions()
+    public async Task ExecuteInit_CreatesAssemblyDefinitions()
     {
+        await Task.CompletedTask;
         var tempDir = Path.Combine(Path.GetTempPath(), "nexo-unity-init-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
@@ -389,8 +408,9 @@ public class Bar { }";
     }
 
     [Fact(Timeout = 15000)]
-    public void ExecuteInit_CreatesGitignore()
+    public async Task ExecuteInit_CreatesGitignore()
     {
+        await Task.CompletedTask;
         var tempDir = Path.Combine(Path.GetTempPath(), "nexo-unity-init-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
@@ -409,8 +429,9 @@ public class Bar { }";
     }
 
     [Fact(Timeout = 15000)]
-    public void ExecuteInit_CreatesNexoConfig()
+    public async Task ExecuteInit_CreatesNexoConfig()
     {
+        await Task.CompletedTask;
         var tempDir = Path.Combine(Path.GetTempPath(), "nexo-unity-init-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
@@ -428,8 +449,9 @@ public class Bar { }";
     }
 
     [Fact(Timeout = 15000)]
-    public void ExecuteInit_IdempotentOnExistingProject()
+    public async Task ExecuteInit_IdempotentOnExistingProject()
     {
+        await Task.CompletedTask;
         var tempDir = Path.Combine(Path.GetTempPath(), "nexo-unity-init-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
@@ -448,8 +470,9 @@ public class Bar { }";
     }
 
     [Fact(Timeout = 15000)]
-    public void ExecuteInit_JsonOutput_ReturnsStructuredResult()
+    public async Task ExecuteInit_JsonOutput_ReturnsStructuredResult()
     {
+        await Task.CompletedTask;
         var tempDir = Path.Combine(Path.GetTempPath(), "nexo-unity-init-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
@@ -469,8 +492,9 @@ public class Bar { }";
     }
 
     [Fact(Timeout = 15000)]
-    public void Assets_Subcommand_HasExpectedOptions()
+    public async Task Assets_Subcommand_HasExpectedOptions()
     {
+        await Task.CompletedTask;
         var cmd = new UnityDevCommand(() => null!);
         var assets = cmd.Subcommands.Single(s => s.Name == "assets");
         var optNames = assets.Options.Select(o => o.Name).ToList();
@@ -481,8 +505,9 @@ public class Bar { }";
     }
 
     [Fact(Timeout = 15000)]
-    public void Qa_Subcommand_HasExpectedOptions()
+    public async Task Qa_Subcommand_HasExpectedOptions()
     {
+        await Task.CompletedTask;
         var cmd = new UnityDevCommand(() => null!);
         var qa = cmd.Subcommands.Single(s => s.Name == "qa");
         var optNames = qa.Options.Select(o => o.Name).ToList();
@@ -493,8 +518,9 @@ public class Bar { }";
     }
 
     [Fact(Timeout = 15000)]
-    public void Fullstack_Subcommand_Exists()
+    public async Task Fullstack_Subcommand_Exists()
     {
+        await Task.CompletedTask;
         var cmd = new UnityDevCommand(() => null!);
         var fullstack = cmd.Subcommands.SingleOrDefault(s => s.Name == "fullstack");
         fullstack.Should().NotBeNull();
@@ -506,8 +532,9 @@ public class Bar { }";
     }
 
     [Fact(Timeout = 15000)]
-    public void FindUnityEditor_ReturnsNullWhenNotInstalled()
+    public async Task FindUnityEditor_ReturnsNullWhenNotInstalled()
     {
+        await Task.CompletedTask;
         var result = UnityDevCommand.FindUnityEditor();
         // On CI/test machines without Unity, this should return null (or a valid path if installed)
         // We just verify it doesn't throw
@@ -515,8 +542,9 @@ public class Bar { }";
     }
 
     [Fact(Timeout = 15000)]
-    public void BuildAssetPrompt_ContainsAssetTypeAndDescription()
+    public async Task BuildAssetPrompt_ContainsAssetTypeAndDescription()
     {
+        await Task.CompletedTask;
         var prompt = UnityDevCommand.BuildAssetPrompt("material", "shiny gold material");
         prompt.Should().Contain("material");
         prompt.Should().Contain("shiny gold material");
@@ -525,8 +553,9 @@ public class Bar { }";
     }
 
     [Fact(Timeout = 15000)]
-    public void BuildAssetPrompt_AllTypesProduceSchemaHints()
+    public async Task BuildAssetPrompt_AllTypesProduceSchemaHints()
     {
+        await Task.CompletedTask;
         var types = new[] { "material", "prefab", "scene", "audio", "animation", "soundbank", "animationset", "ui" };
         foreach (var type in types)
         {
@@ -536,14 +565,16 @@ public class Bar { }";
     }
 
     [Fact(Timeout = 15000)]
-    public void Truncate_ShortText_ReturnsUnchanged()
+    public async Task Truncate_ShortText_ReturnsUnchanged()
     {
+        await Task.CompletedTask;
         UnityDevCommand.Truncate("hello", 100).Should().Be("hello");
     }
 
     [Fact(Timeout = 15000)]
-    public void Truncate_LongText_IsTruncated()
+    public async Task Truncate_LongText_IsTruncated()
     {
+        await Task.CompletedTask;
         var long_text = new string('x', 200);
         var result = UnityDevCommand.Truncate(long_text, 50);
         result.Should().HaveLength(50 + "\n... (truncated)".Length);
@@ -551,15 +582,17 @@ public class Bar { }";
     }
 
     [Fact(Timeout = 15000)]
-    public void Truncate_NullOrEmpty_ReturnsInput()
+    public async Task Truncate_NullOrEmpty_ReturnsInput()
     {
+        await Task.CompletedTask;
         UnityDevCommand.Truncate("", 10).Should().Be("");
         UnityDevCommand.Truncate(null!, 10).Should().BeNull();
     }
 
     [Fact(Timeout = 15000)]
-    public void BuildAssetPrompt_Animation_ContainsSchemaHints()
+    public async Task BuildAssetPrompt_Animation_ContainsSchemaHints()
     {
+        await Task.CompletedTask;
         var prompt = UnityDevCommand.BuildAssetPrompt("animation", "FPS character animator");
         prompt.Should().Contain("AnimationDescriptor");
         prompt.Should().Contain("state machine");
@@ -570,8 +603,9 @@ public class Bar { }";
     }
 
     [Fact(Timeout = 15000)]
-    public void BuildAssetPrompt_SoundBank_ContainsSchemaHints()
+    public async Task BuildAssetPrompt_SoundBank_ContainsSchemaHints()
     {
+        await Task.CompletedTask;
         var prompt = UnityDevCommand.BuildAssetPrompt("soundbank", "weapon sounds");
         prompt.Should().Contain("SoundBankDescriptor");
         prompt.Should().Contain("SelectionMode");
@@ -581,8 +615,9 @@ public class Bar { }";
     }
 
     [Fact(Timeout = 15000)]
-    public void BuildAssetPrompt_AnimationSet_ContainsSchemaHints()
+    public async Task BuildAssetPrompt_AnimationSet_ContainsSchemaHints()
     {
+        await Task.CompletedTask;
         var prompt = UnityDevCommand.BuildAssetPrompt("animationset", "FPS character locomotion");
         prompt.Should().Contain("AnimationSetDescriptor");
         prompt.Should().Contain("BlendTree");
@@ -592,8 +627,9 @@ public class Bar { }";
     }
 
     [Fact(Timeout = 15000)]
-    public void Animation_SoundBank_AnimationSet_AreValidAssetTypes()
+    public async Task Animation_SoundBank_AnimationSet_AreValidAssetTypes()
     {
+        await Task.CompletedTask;
         var prompt1 = UnityDevCommand.BuildAssetPrompt("animation", "test");
         var prompt2 = UnityDevCommand.BuildAssetPrompt("soundbank", "test");
         var prompt3 = UnityDevCommand.BuildAssetPrompt("animationset", "test");
@@ -604,8 +640,9 @@ public class Bar { }";
     }
 
     [Fact(Timeout = 15000)]
-    public void AssetDescriptor_JsonRoundTrip_Material()
+    public async Task AssetDescriptor_JsonRoundTrip_Material()
     {
+        await Task.CompletedTask;
         var original = new Nexo.GameDomain.Assets.MaterialDescriptor
         {
             Id = "mat-1",
@@ -627,8 +664,9 @@ public class Bar { }";
     }
 
     [Fact(Timeout = 15000)]
-    public void AssetDescriptor_JsonRoundTrip_Audio()
+    public async Task AssetDescriptor_JsonRoundTrip_Audio()
     {
+        await Task.CompletedTask;
         var original = new Nexo.GameDomain.Assets.AudioDescriptor
         {
             Id = "explosion",
@@ -663,8 +701,9 @@ public class Bar { }";
     }
 
     [Fact(Timeout = 15000)]
-    public void Pin_Subcommand_Exists()
+    public async Task Pin_Subcommand_Exists()
     {
+        await Task.CompletedTask;
         var cmd = new UnityDevCommand(() => null!);
         var pin = cmd.Subcommands.SingleOrDefault(s => s.Name == "pin");
         pin.Should().NotBeNull();
@@ -678,8 +717,9 @@ public class Bar { }";
     }
 
     [Fact(Timeout = 15000)]
-    public void Compose_Subcommand_Exists()
+    public async Task Compose_Subcommand_Exists()
     {
+        await Task.CompletedTask;
         var cmd = new UnityDevCommand(() => null!);
         var compose = cmd.Subcommands.SingleOrDefault(s => s.Name == "compose");
         compose.Should().NotBeNull();
@@ -691,8 +731,9 @@ public class Bar { }";
     }
 
     [Fact(Timeout = 15000)]
-    public void Generate_Subcommand_HasTemplateOption()
+    public async Task Generate_Subcommand_HasTemplateOption()
     {
+        await Task.CompletedTask;
         var cmd = new UnityDevCommand(() => null!);
         var gen = cmd.Subcommands.Single(s => s.Name == "generate");
         var optNames = gen.Options.Select(o => o.Name).ToList();
@@ -700,8 +741,9 @@ public class Bar { }";
     }
 
     [Fact(Timeout = 15000)]
-    public void ExecutePin_PinsField()
+    public async Task ExecutePin_PinsField()
     {
+        await Task.CompletedTask;
         var tempDir = Path.Combine(Path.GetTempPath(), $"nexo-pin-test-{Guid.NewGuid():N}");
         Directory.CreateDirectory(tempDir);
         var descriptorFile = Path.Combine("weapons", "rifle.json");
@@ -727,8 +769,9 @@ public class Bar { }";
     }
 
     [Fact(Timeout = 15000)]
-    public void ExecutePin_UnpinsField()
+    public async Task ExecutePin_UnpinsField()
     {
+        await Task.CompletedTask;
         var tempDir = Path.Combine(Path.GetTempPath(), $"nexo-pin-test-{Guid.NewGuid():N}");
         Directory.CreateDirectory(tempDir);
         var descriptorFile = Path.Combine("weapons", "rifle.json");
@@ -756,15 +799,17 @@ public class Bar { }";
     }
 
     [Fact(Timeout = 15000)]
-    public void ExecutePin_NoValue_ReturnsError()
+    public async Task ExecutePin_NoValue_ReturnsError()
     {
+        await Task.CompletedTask;
         var code = UnityDevCommand.ExecutePin("/tmp", "file.json", "field", null, false, false);
         code.Should().Be(1);
     }
 
     [Fact(Timeout = 15000)]
-    public void BuildGeneratePrompt_InjectsConstraintFragment()
+    public async Task BuildGeneratePrompt_InjectsConstraintFragment()
     {
+        await Task.CompletedTask;
         var prompt = UnityDevCommand.BuildGeneratePrompt(
             "weapon system", "Assets/Scripts/Generated", "Assets/Tests",
             constraintFragment: "\nProject constraints:\n- Max 200 lines per file");
@@ -774,8 +819,9 @@ public class Bar { }";
     }
 
     [Fact(Timeout = 15000)]
-    public void BuildGeneratePrompt_InjectsTemplateFragment()
+    public async Task BuildGeneratePrompt_InjectsTemplateFragment()
     {
+        await Task.CompletedTask;
         var prompt = UnityDevCommand.BuildGeneratePrompt(
             "weapon system", "Assets/Scripts/Generated", "Assets/Tests",
             templateFragment: "\nFixed values from template:\n  name: Shotgun");
@@ -785,8 +831,9 @@ public class Bar { }";
     }
 
     [Fact(Timeout = 15000)]
-    public void BuildGeneratePrompt_InjectsCompositionContext()
+    public async Task BuildGeneratePrompt_InjectsCompositionContext()
     {
+        await Task.CompletedTask;
         var prompt = UnityDevCommand.BuildGeneratePrompt(
             "combat system", "Assets/Scripts/Generated", "Assets/Tests",
             compositionContext: "Health system provides IDamageable interface");

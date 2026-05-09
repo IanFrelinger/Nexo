@@ -22,16 +22,18 @@ public sealed class HotSwapTests : TempDirTestBase
     public HotSwapTests() : base("nexo-hotswap") { }
 
     [Fact(Timeout = 10000)]
-    public void HotSwap_Orchestrator_ChecksMode_BeforeEachStep()
+    public async Task HotSwap_Orchestrator_ChecksMode_BeforeEachStep()
     {
+        await Task.CompletedTask;
         var store = new StepExecutionModeStore(Path.Combine(TempDir, $"mode-{Guid.NewGuid():N}.json"));
         var mode = store.GetMode("step-1");
         mode.Should().Be(ExecutionMode.Deterministic, "default mode is Deterministic");
     }
 
     [Fact(Timeout = 10000)]
-    public void HotSwap_DeterministicStep_ExecutesBrick()
+    public async Task HotSwap_DeterministicStep_ExecutesBrick()
     {
+        await Task.CompletedTask;
         var configPath = Path.Combine(TempDir, $"det-{Guid.NewGuid():N}.json");
         var store = new StepExecutionModeStore(configPath);
         var mode = store.GetMode("step-1");

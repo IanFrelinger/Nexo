@@ -21,8 +21,9 @@ namespace Nexo.Tests.Infrastructure.Tests.Hosting;
 public sealed class StrictModeE2ETests
 {
     [Fact(Timeout = TestTimeouts.E2E)]
-    public void StrictMode_Disabled_ByDefault()
+    public async Task StrictMode_Disabled_ByDefault()
     {
+        await Task.CompletedTask;
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddNexo();
@@ -38,8 +39,9 @@ public sealed class StrictModeE2ETests
     }
 
     [Fact(Timeout = TestTimeouts.E2E)]
-    public void StrictMode_Enabled_AllSubFlagsFollowMaster()
+    public async Task StrictMode_Enabled_AllSubFlagsFollowMaster()
     {
+        await Task.CompletedTask;
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddNexo(opts => opts.StrictMode.Enabled = true);
@@ -55,8 +57,9 @@ public sealed class StrictModeE2ETests
     }
 
     [Fact(Timeout = TestTimeouts.E2E)]
-    public void StrictMode_IndividualOverrides_TakePrecedence()
+    public async Task StrictMode_IndividualOverrides_TakePrecedence()
     {
+        await Task.CompletedTask;
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddNexo(opts =>
@@ -76,8 +79,9 @@ public sealed class StrictModeE2ETests
     }
 
     [Fact(Timeout = TestTimeouts.E2E)]
-    public void StrictMode_SelectiveEnable_WhenMasterDisabled()
+    public async Task StrictMode_SelectiveEnable_WhenMasterDisabled()
     {
+        await Task.CompletedTask;
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddNexo(opts =>
@@ -134,8 +138,9 @@ public sealed class StrictModeE2ETests
     }
 
     [Fact(Timeout = TestTimeouts.E2E)]
-    public void StrictMode_RegisteredAsSingleton_SameInstanceEverywhere()
+    public async Task StrictMode_RegisteredAsSingleton_SameInstanceEverywhere()
     {
+        await Task.CompletedTask;
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddNexo(opts => opts.StrictMode.Enabled = true);

@@ -18,8 +18,9 @@ public sealed class OrchestrationMetricsTests
     }
 
     [Fact(Timeout = 15000)]
-    public void RecordOperation_StoresMetrics()
+    public async Task RecordOperation_StoresMetrics()
     {
+        await Task.CompletedTask;
         _sut.RecordOperation("test-op", TimeSpan.FromMilliseconds(100));
 
         var report = _sut.GetPerformanceReport();
@@ -30,8 +31,9 @@ public sealed class OrchestrationMetricsTests
     }
 
     [Fact(Timeout = 15000)]
-    public void RecordOperation_MultipleCalls_AggregatesCorrectly()
+    public async Task RecordOperation_MultipleCalls_AggregatesCorrectly()
     {
+        await Task.CompletedTask;
         _sut.RecordOperation("op", TimeSpan.FromMilliseconds(100));
         _sut.RecordOperation("op", TimeSpan.FromMilliseconds(200));
         _sut.RecordOperation("op", TimeSpan.FromMilliseconds(50));
@@ -46,8 +48,9 @@ public sealed class OrchestrationMetricsTests
     }
 
     [Fact(Timeout = 15000)]
-    public void RecordAgentExecution_StoresAndRetrieves()
+    public async Task RecordAgentExecution_StoresAndRetrieves()
     {
+        await Task.CompletedTask;
         _sut.RecordAgentExecution(
             "agent-1", "code-gen",
             TimeSpan.FromSeconds(5),
@@ -66,14 +69,16 @@ public sealed class OrchestrationMetricsTests
     }
 
     [Fact(Timeout = 15000)]
-    public void GetAgentMetrics_NonExistent_ReturnsNull()
+    public async Task GetAgentMetrics_NonExistent_ReturnsNull()
     {
+        await Task.CompletedTask;
         _sut.GetAgentMetrics("does-not-exist").Should().BeNull();
     }
 
     [Fact(Timeout = 15000)]
-    public void StartSpan_EndSpan_RecordsTrace()
+    public async Task StartSpan_EndSpan_RecordsTrace()
     {
+        await Task.CompletedTask;
         var spanId = _sut.StartSpan("my-op", tags: new Dictionary<string, string>
         {
             ["correlationId"] = "corr-1"
@@ -88,8 +93,9 @@ public sealed class OrchestrationMetricsTests
     }
 
     [Fact(Timeout = 15000)]
-    public void GetTraces_FiltersByOperationName()
+    public async Task GetTraces_FiltersByOperationName()
     {
+        await Task.CompletedTask;
         var s1 = _sut.StartSpan("alpha");
         var s2 = _sut.StartSpan("beta");
         _sut.EndSpan(s1);
@@ -101,8 +107,9 @@ public sealed class OrchestrationMetricsTests
     }
 
     [Fact(Timeout = 15000)]
-    public void Clear_RemovesAllMetrics()
+    public async Task Clear_RemovesAllMetrics()
     {
+        await Task.CompletedTask;
         _sut.RecordOperation("op", TimeSpan.FromMilliseconds(10));
         _sut.RecordAgentExecution("a1", "d", TimeSpan.FromSeconds(1), AgentState.Completed);
         _sut.StartSpan("span");
@@ -116,8 +123,9 @@ public sealed class OrchestrationMetricsTests
     }
 
     [Fact(Timeout = 15000)]
-    public void PerformanceReport_AgentsOrderedByExecutionCount()
+    public async Task PerformanceReport_AgentsOrderedByExecutionCount()
     {
+        await Task.CompletedTask;
         _sut.RecordAgentExecution("few", "d", TimeSpan.FromSeconds(1), AgentState.Completed);
         _sut.RecordAgentExecution("many", "d", TimeSpan.FromSeconds(1), AgentState.Completed);
         _sut.RecordAgentExecution("many", "d", TimeSpan.FromSeconds(1), AgentState.Completed);

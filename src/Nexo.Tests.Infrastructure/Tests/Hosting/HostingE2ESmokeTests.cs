@@ -22,8 +22,9 @@ namespace Nexo.Tests.Infrastructure.Tests.Hosting;
 public sealed class HostingE2ESmokeTests
 {
     [Fact(Timeout = TestTimeouts.E2E)]
-    public void AddNexo_ShouldBuildServiceProvider()
+    public async Task AddNexo_ShouldBuildServiceProvider()
     {
+        await Task.CompletedTask;
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddNexo();
@@ -54,8 +55,9 @@ public sealed class HostingE2ESmokeTests
     }
 
     [Fact(Timeout = TestTimeouts.E2E)]
-    public void AddNexo_ShouldResolveAnalysisService()
+    public async Task AddNexo_ShouldResolveAnalysisService()
     {
+        await Task.CompletedTask;
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddNexo();
@@ -66,8 +68,9 @@ public sealed class HostingE2ESmokeTests
     }
 
     [Fact(Timeout = TestTimeouts.E2E)]
-    public void AddNexo_RegistersObservationPipeline_ByDefault()
+    public async Task AddNexo_RegistersObservationPipeline_ByDefault()
     {
+        await Task.CompletedTask;
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddNexo();
@@ -78,8 +81,9 @@ public sealed class HostingE2ESmokeTests
     }
 
     [Fact(Timeout = TestTimeouts.E2E)]
-    public void AddNexo_WithDisableObservationPipeline_DoesNotRegister()
+    public async Task AddNexo_WithDisableObservationPipeline_DoesNotRegister()
     {
+        await Task.CompletedTask;
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddNexo(o => o.DisableObservationPipeline = true);
@@ -90,8 +94,9 @@ public sealed class HostingE2ESmokeTests
     }
 
     [Fact(Timeout = TestTimeouts.E2E)]
-    public void AddNexoProfile_Edge_PeelsOffOptionalServices()
+    public async Task AddNexoProfile_Edge_PeelsOffOptionalServices()
     {
+        await Task.CompletedTask;
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddNexoProfile(NexoDeploymentProfile.Edge);
@@ -104,8 +109,9 @@ public sealed class HostingE2ESmokeTests
     }
 
     [Fact(Timeout = TestTimeouts.E2E)]
-    public void AddNexo_UsesEnvironmentDeploymentProfile_WhenOptionsDoNotOverride()
+    public async Task AddNexo_UsesEnvironmentDeploymentProfile_WhenOptionsDoNotOverride()
     {
+        await Task.CompletedTask;
         const string profileKey = "NEXO_DEPLOYMENT_PROFILE";
         var previous = Environment.GetEnvironmentVariable(profileKey);
         Environment.SetEnvironmentVariable(profileKey, "edge");

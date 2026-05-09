@@ -8,8 +8,9 @@ namespace Nexo.Tests.BackgroundAgents.Tests;
 public sealed class InMemorySanitizationAuditLogTests
 {
     [Fact(Timeout = 15000)]
-    public void LogRedaction_StoresEntry()
+    public async Task LogRedaction_StoresEntry()
     {
+        await Task.CompletedTask;
         var log = new InMemorySanitizationAuditLog();
         var now = DateTimeOffset.UtcNow;
 
@@ -25,8 +26,9 @@ public sealed class InMemorySanitizationAuditLogTests
     }
 
     [Fact(Timeout = 15000)]
-    public void GetRecent_FiltersBySince()
+    public async Task GetRecent_FiltersBySince()
     {
+        await Task.CompletedTask;
         var log = new InMemorySanitizationAuditLog();
         var old = DateTimeOffset.UtcNow.AddHours(-2);
         var recent = DateTimeOffset.UtcNow;
@@ -42,8 +44,9 @@ public sealed class InMemorySanitizationAuditLogTests
     }
 
     [Fact(Timeout = 15000)]
-    public void MaxEntries_EnforcesLimit()
+    public async Task MaxEntries_EnforcesLimit()
     {
+        await Task.CompletedTask;
         var log = new InMemorySanitizationAuditLog();
         var max = NexoDefaults.SanitizationAuditMaxEntries;
 
@@ -57,8 +60,9 @@ public sealed class InMemorySanitizationAuditLogTests
     }
 
     [Fact(Timeout = 15000)]
-    public void GetRecent_OrdersByTimestampDescending()
+    public async Task GetRecent_OrdersByTimestampDescending()
     {
+        await Task.CompletedTask;
         var log = new InMemorySanitizationAuditLog();
         var t1 = DateTimeOffset.UtcNow.AddMinutes(-3);
         var t2 = DateTimeOffset.UtcNow.AddMinutes(-1);

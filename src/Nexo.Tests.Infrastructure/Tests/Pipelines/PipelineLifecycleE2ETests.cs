@@ -67,8 +67,9 @@ public sealed class PipelineLifecycleE2ETests
         };
 
     [Fact(Timeout = TestTimeouts.E2E)]
-    public void DefaultOptions_UseNexoDefaults()
+    public async Task DefaultOptions_UseNexoDefaults()
     {
+        await Task.CompletedTask;
         var opts = new PipelineExecutionOptions();
         opts.MaxRetryAttempts.Should().Be(NexoDefaults.PipelineMaxRetryAttempts);
         opts.RetryDelayMs.Should().Be(NexoDefaults.PipelineRetryDelayMs);
@@ -228,8 +229,9 @@ public sealed class PipelineLifecycleE2ETests
     }
 
     [Fact(Timeout = TestTimeouts.E2E)]
-    public void CompletionPolicy_EnumValues()
+    public async Task CompletionPolicy_EnumValues()
     {
+        await Task.CompletedTask;
         Enum.GetValues<PipelineCompletionPolicy>().Should().HaveCount(2);
     }
 

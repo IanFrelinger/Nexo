@@ -40,8 +40,9 @@ public sealed class OnboardingE2ETests : IDisposable
     // ── Provider Availability ────────────────────────────────────────
 
     [Fact(Timeout = TestTimeouts.E2E)]
-    public void ProviderDetection_MockDisabledByDefault()
+    public async Task ProviderDetection_MockDisabledByDefault()
     {
+        await Task.CompletedTask;
         var prev = Environment.GetEnvironmentVariable("NEXO_ALLOW_MOCK");
         try
         {
@@ -59,8 +60,9 @@ public sealed class OnboardingE2ETests : IDisposable
     }
 
     [Fact(Timeout = TestTimeouts.E2E)]
-    public void ProviderDetection_MockEnabledByEnvVar()
+    public async Task ProviderDetection_MockEnabledByEnvVar()
     {
+        await Task.CompletedTask;
         var prev = Environment.GetEnvironmentVariable("NEXO_ALLOW_MOCK");
         try
         {
@@ -78,8 +80,9 @@ public sealed class OnboardingE2ETests : IDisposable
     }
 
     [Fact(Timeout = TestTimeouts.E2E)]
-    public void ProviderDetection_OpenAiRequiresApiKey()
+    public async Task ProviderDetection_OpenAiRequiresApiKey()
     {
+        await Task.CompletedTask;
         var prevKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
         try
         {
@@ -98,8 +101,9 @@ public sealed class OnboardingE2ETests : IDisposable
     }
 
     [Fact(Timeout = TestTimeouts.E2E)]
-    public void ProviderDetection_AzureRequiresAllThreeVars()
+    public async Task ProviderDetection_AzureRequiresAllThreeVars()
     {
+        await Task.CompletedTask;
         var prevE = Environment.GetEnvironmentVariable("AZURE_OPENAI_ENDPOINT");
         var prevK = Environment.GetEnvironmentVariable("AZURE_OPENAI_API_KEY");
         var prevD = Environment.GetEnvironmentVariable("AZURE_OPENAI_DEPLOYMENT");
@@ -124,8 +128,9 @@ public sealed class OnboardingE2ETests : IDisposable
     }
 
     [Fact(Timeout = TestTimeouts.E2E)]
-    public void ProviderDetection_LocalRequiresModelPath()
+    public async Task ProviderDetection_LocalRequiresModelPath()
     {
+        await Task.CompletedTask;
         var prevPath = Environment.GetEnvironmentVariable("NEXO_LOCAL_MODEL_PATH");
         try
         {
@@ -140,8 +145,9 @@ public sealed class OnboardingE2ETests : IDisposable
     }
 
     [Fact(Timeout = TestTimeouts.E2E)]
-    public void ProviderDetection_AllProviderNames_DoNotThrow()
+    public async Task ProviderDetection_AllProviderNames_DoNotThrow()
     {
+        await Task.CompletedTask;
         var factory = CreateProviderFactory();
         var names = new[] { "openai", "azure", "ollama", "local", "video", "mock", "offline", "mock-json", "echo", "", "   ", "nonexistent" };
         foreach (var name in names)
@@ -306,8 +312,9 @@ public sealed class OnboardingE2ETests : IDisposable
     // ── DI Host Onboarding ───────────────────────────────────────────
 
     [Fact(Timeout = TestTimeouts.E2E)]
-    public void HostBootstrap_FullProfile_ResolvesAllOnboardingServices()
+    public async Task HostBootstrap_FullProfile_ResolvesAllOnboardingServices()
     {
+        await Task.CompletedTask;
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddNexo();
@@ -319,8 +326,9 @@ public sealed class OnboardingE2ETests : IDisposable
     }
 
     [Fact(Timeout = TestTimeouts.E2E)]
-    public void HostBootstrap_StrictModeEnabled_PropagatesConfigFailure()
+    public async Task HostBootstrap_StrictModeEnabled_PropagatesConfigFailure()
     {
+        await Task.CompletedTask;
         var prev = Environment.GetEnvironmentVariable("NEXO_CONFIG_PATH");
         try
         {
@@ -332,7 +340,7 @@ public sealed class OnboardingE2ETests : IDisposable
 
             var configService = sp.GetRequiredService<IConfigurationService>();
             var act = async () => await configService.LoadAsync();
-            act.Should().ThrowAsync<ConfigurationException>();
+            await act.Should().ThrowAsync<ConfigurationException>();
         }
         finally
         {
@@ -370,8 +378,9 @@ public sealed class OnboardingE2ETests : IDisposable
     [InlineData(NexoDeploymentProfile.Edge)]
     [InlineData(NexoDeploymentProfile.AirGapped)]
     [InlineData(NexoDeploymentProfile.System)]
-    public void HostBootstrap_AllProfiles_ResolveConfigService(NexoDeploymentProfile profile)
+    public async Task HostBootstrap_AllProfiles_ResolveConfigService(NexoDeploymentProfile profile)
     {
+        await Task.CompletedTask;
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddNexoProfile(profile);
@@ -385,8 +394,9 @@ public sealed class OnboardingE2ETests : IDisposable
     // ── Defaults Alignment ───────────────────────────────────────────
 
     [Fact(Timeout = TestTimeouts.E2E)]
-    public void Defaults_ConfigService_MatchesNexoDefaults()
+    public async Task Defaults_ConfigService_MatchesNexoDefaults()
     {
+        await Task.CompletedTask;
         var logger = new LoggerFactory().CreateLogger<ConfigurationServiceAdapter>();
         var adapter = new ConfigurationServiceAdapter(logger);
         var defaults = adapter.GetDefault();
@@ -398,8 +408,9 @@ public sealed class OnboardingE2ETests : IDisposable
     }
 
     [Fact(Timeout = TestTimeouts.E2E)]
-    public void Defaults_StrictMode_DisabledByDefault()
+    public async Task Defaults_StrictMode_DisabledByDefault()
     {
+        await Task.CompletedTask;
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddNexo();
@@ -413,8 +424,9 @@ public sealed class OnboardingE2ETests : IDisposable
     }
 
     [Fact(Timeout = TestTimeouts.E2E)]
-    public void Defaults_StrictMode_FromEnvVar()
+    public async Task Defaults_StrictMode_FromEnvVar()
     {
+        await Task.CompletedTask;
         var prev = Environment.GetEnvironmentVariable("NEXO_STRICT_MODE");
         try
         {

@@ -13,24 +13,27 @@ namespace Nexo.Tests.CLI.Tests.Commands;
 public sealed class ForgeRelatedCommandTests
 {
     [Fact(Timeout = 15000)]
-    public void RuntimeStudioCommand_HasApplyTuneSubcommand()
+    public async Task RuntimeStudioCommand_HasApplyTuneSubcommand()
     {
+        await Task.CompletedTask;
         var cmd = new RuntimeStudioCommand();
         var subcommands = cmd.Subcommands.Select(s => s.Name).ToList();
         subcommands.Should().Contain("apply-tune");
     }
 
     [Fact(Timeout = 15000)]
-    public void RuntimeStudioCommand_HasStatusSubcommand()
+    public async Task RuntimeStudioCommand_HasStatusSubcommand()
     {
+        await Task.CompletedTask;
         var cmd = new RuntimeStudioCommand();
         var subcommands = cmd.Subcommands.Select(s => s.Name).ToList();
         subcommands.Should().Contain("status");
     }
 
     [Fact(Timeout = 15000)]
-    public void RuntimeStudioCommand_ApplyTune_HasExpectedOptions()
+    public async Task RuntimeStudioCommand_ApplyTune_HasExpectedOptions()
     {
+        await Task.CompletedTask;
         var cmd = new RuntimeStudioCommand();
         var applyTune = cmd.Subcommands.Single(s => s.Name == "apply-tune");
         var optionNames = applyTune.Options.Select(o => o.Name).ToList();
@@ -42,8 +45,9 @@ public sealed class ForgeRelatedCommandTests
     }
 
     [Fact(Timeout = 15000)]
-    public void RuntimeStudioCommand_Status_HasExpectedOptions()
+    public async Task RuntimeStudioCommand_Status_HasExpectedOptions()
     {
+        await Task.CompletedTask;
         var cmd = new RuntimeStudioCommand();
         var status = cmd.Subcommands.Single(s => s.Name == "status");
         var optionNames = status.Options.Select(o => o.Name).ToList();
@@ -53,8 +57,9 @@ public sealed class ForgeRelatedCommandTests
     }
 
     [Fact(Timeout = 15000)]
-    public void RuntimeStudioCommand_ParsesApplyTuneWithDryRun()
+    public async Task RuntimeStudioCommand_ParsesApplyTuneWithDryRun()
     {
+        await Task.CompletedTask;
         var cmd = new RuntimeStudioCommand();
         var parseResult = cmd.Parse("apply-tune --dry-run --format-json");
 
@@ -62,8 +67,9 @@ public sealed class ForgeRelatedCommandTests
     }
 
     [Fact(Timeout = 15000)]
-    public void RuntimeStudioCommand_ParsesStatusWithJson()
+    public async Task RuntimeStudioCommand_ParsesStatusWithJson()
     {
+        await Task.CompletedTask;
         var cmd = new RuntimeStudioCommand();
         var parseResult = cmd.Parse("status --format-json");
 
@@ -71,8 +77,9 @@ public sealed class ForgeRelatedCommandTests
     }
 
     [Fact(Timeout = 15000)]
-    public void TuneApplier_Apply_RejectsFailedOptimizePayload()
+    public async Task TuneApplier_Apply_RejectsFailedOptimizePayload()
     {
+        await Task.CompletedTask;
         var tempDir = CreateTempDirectory();
         try
         {
@@ -96,8 +103,9 @@ public sealed class ForgeRelatedCommandTests
     }
 
     [Fact(Timeout = 15000)]
-    public void TuneApplier_Apply_RejectsMissingModelProfileId()
+    public async Task TuneApplier_Apply_RejectsMissingModelProfileId()
     {
+        await Task.CompletedTask;
         var tempDir = CreateTempDirectory();
         try
         {
@@ -123,8 +131,9 @@ public sealed class ForgeRelatedCommandTests
     }
 
     [Fact(Timeout = 15000)]
-    public void TuneApplier_ResolveOllamaModelForLabAgent_ReturnsMixedProfileModel()
+    public async Task TuneApplier_ResolveOllamaModelForLabAgent_ReturnsMixedProfileModel()
     {
+        await Task.CompletedTask;
         var spec = WorkflowLabRuntimeSpec.Default();
         var composition = spec.Compositions.First(c => c.Id == "hierarchy-squad");
         var profile = spec.ModelProfiles.First(p => p.Id == "ollama-mixed");
@@ -139,8 +148,9 @@ public sealed class ForgeRelatedCommandTests
     }
 
     [Fact(Timeout = 15000)]
-    public void TuneApplier_ResolveOllamaModelForLabAgent_FallsBackToDefault()
+    public async Task TuneApplier_ResolveOllamaModelForLabAgent_FallsBackToDefault()
     {
+        await Task.CompletedTask;
         var spec = WorkflowLabRuntimeSpec.Default();
         var composition = spec.Compositions.First(c => c.Id == "hierarchy-squad");
         var profile = spec.ModelProfiles.First(p => p.Id == "ollama-balanced");
@@ -151,15 +161,17 @@ public sealed class ForgeRelatedCommandTests
     }
 
     [Fact(Timeout = 15000)]
-    public void AgentSetReader_ReturnsEmpty_ForMissingFile()
+    public async Task AgentSetReader_ReturnsEmpty_ForMissingFile()
     {
+        await Task.CompletedTask;
         var rows = RuntimeStudioAgentSetReader.TryListOllamaAgents("/nonexistent/path/agents.json");
         rows.Should().BeEmpty();
     }
 
     [Fact(Timeout = 15000)]
-    public void AgentSetReader_ParsesOllamaAgents_SortedById()
+    public async Task AgentSetReader_ParsesOllamaAgents_SortedById()
     {
+        await Task.CompletedTask;
         var tempDir = CreateTempDirectory();
         try
         {
@@ -191,8 +203,9 @@ public sealed class ForgeRelatedCommandTests
     }
 
     [Fact(Timeout = 90000)]
-    public void TuneApplier_Apply_DryRun_ReportsPlannedChanges()
+    public async Task TuneApplier_Apply_DryRun_ReportsPlannedChanges()
     {
+        await Task.CompletedTask;
         var tempDir = CreateTempDirectory();
         try
         {
@@ -243,8 +256,9 @@ public sealed class ForgeRelatedCommandTests
     }
 
     [Fact(Timeout = 15000)]
-    public void WorkflowLabRuntimeSpec_Default_HasExpectedCompositions()
+    public async Task WorkflowLabRuntimeSpec_Default_HasExpectedCompositions()
     {
+        await Task.CompletedTask;
         var spec = WorkflowLabRuntimeSpec.Default();
 
         spec.Compositions.Should().HaveCount(2);

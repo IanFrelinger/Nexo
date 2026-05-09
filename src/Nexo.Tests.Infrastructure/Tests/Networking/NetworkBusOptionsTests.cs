@@ -9,8 +9,9 @@ namespace Nexo.Tests.Infrastructure.Tests.Networking;
 public sealed class NetworkBusOptionsTests
 {
     [Fact(Timeout = TestTimeouts.Quick)]
-    public void DefaultValues_MatchNexoDefaults()
+    public async Task DefaultValues_MatchNexoDefaults()
     {
+        await Task.CompletedTask;
         var opts = new NetworkBusOptions();
 
         opts.HeartbeatIntervalSeconds.Should().Be(NexoDefaults.NetworkBusHeartbeatIntervalSeconds);
@@ -19,24 +20,27 @@ public sealed class NetworkBusOptionsTests
     }
 
     [Fact(Timeout = TestTimeouts.Quick)]
-    public void DefaultNodeId_IsMachineName()
+    public async Task DefaultNodeId_IsMachineName()
     {
+        await Task.CompletedTask;
         var opts = new NetworkBusOptions();
 
         opts.NodeId.Should().Be(Environment.MachineName);
     }
 
     [Fact(Timeout = TestTimeouts.Quick)]
-    public void DefaultPeerUrls_IsEmpty()
+    public async Task DefaultPeerUrls_IsEmpty()
     {
+        await Task.CompletedTask;
         var opts = new NetworkBusOptions();
 
         opts.PeerUrls.Should().BeEmpty();
     }
 
     [Fact(Timeout = TestTimeouts.Quick)]
-    public void CustomValues_OverrideDefaults()
+    public async Task CustomValues_OverrideDefaults()
     {
+        await Task.CompletedTask;
         var opts = new NetworkBusOptions
         {
             NodeId = "custom-node",
@@ -54,8 +58,9 @@ public sealed class NetworkBusOptionsTests
     }
 
     [Fact(Timeout = TestTimeouts.Quick)]
-    public void SectionName_IsNetworkBus()
+    public async Task SectionName_IsNetworkBus()
     {
+        await Task.CompletedTask;
         NetworkBusOptions.SectionName.Should().Be("NetworkBus");
     }
 }

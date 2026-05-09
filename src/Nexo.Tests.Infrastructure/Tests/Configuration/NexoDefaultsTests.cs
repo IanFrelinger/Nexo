@@ -18,8 +18,9 @@ namespace Nexo.Tests.Infrastructure.Tests.Configuration;
 public sealed class NexoDefaultsTests
 {
     [Fact(Timeout = TestTimeouts.Quick)]
-    public void LlmDefaults_AreStable()
+    public async Task LlmDefaults_AreStable()
     {
+        await Task.CompletedTask;
         NexoDefaults.LlmRetryCount.Should().Be(3);
         NexoDefaults.LlmTemperature.Should().Be(0.2);
         NexoDefaults.LlmMaxTokens.Should().Be(4096);
@@ -27,22 +28,25 @@ public sealed class NexoDefaultsTests
     }
 
     [Fact(Timeout = TestTimeouts.Quick)]
-    public void OpenAiDefaults_AreStable()
+    public async Task OpenAiDefaults_AreStable()
     {
+        await Task.CompletedTask;
         NexoDefaults.OpenAiDefaultModel.Should().Be("gpt-4o-mini");
         NexoDefaults.OpenAiDefaultBaseUrl.Should().Be("https://api.openai.com/v1/chat/completions");
         NexoDefaults.OpenAiDefaultVisionModel.Should().Be("gpt-4o-mini");
     }
 
     [Fact(Timeout = TestTimeouts.Quick)]
-    public void AzureDefaults_AreStable()
+    public async Task AzureDefaults_AreStable()
     {
+        await Task.CompletedTask;
         NexoDefaults.AzureOpenAiDefaultApiVersion.Should().Be("2024-06-01");
     }
 
     [Fact(Timeout = TestTimeouts.Quick)]
-    public void OllamaDefaults_AreStable()
+    public async Task OllamaDefaults_AreStable()
     {
+        await Task.CompletedTask;
         NexoDefaults.OllamaDefaultBaseUrl.Should().Be("http://localhost:11434");
         NexoDefaults.OllamaDefaultModel.Should().Be("llama3.1:latest");
         NexoDefaults.OllamaDefaultVisionModel.Should().Be("richardyoung/smolvlm2-2.2b-instruct");
@@ -50,15 +54,17 @@ public sealed class NexoDefaultsTests
     }
 
     [Fact(Timeout = TestTimeouts.Quick)]
-    public void PipelineDefaults_AreStable()
+    public async Task PipelineDefaults_AreStable()
     {
+        await Task.CompletedTask;
         NexoDefaults.PipelineMaxRetryAttempts.Should().Be(3);
         NexoDefaults.PipelineRetryDelayMs.Should().Be(100);
     }
 
     [Fact(Timeout = TestTimeouts.Quick)]
-    public void ConfigDefaults_AreStable()
+    public async Task ConfigDefaults_AreStable()
     {
+        await Task.CompletedTask;
         NexoDefaults.AnalysisMaxComplexityThreshold.Should().Be(20);
         NexoDefaults.ValidationTimeoutSeconds.Should().Be(300);
         NexoDefaults.ConfigFileName.Should().Be("config.json");
@@ -66,16 +72,18 @@ public sealed class NexoDefaultsTests
     }
 
     [Fact(Timeout = TestTimeouts.Quick)]
-    public void AuditDefaults_AreStable()
+    public async Task AuditDefaults_AreStable()
     {
+        await Task.CompletedTask;
         NexoDefaults.SanitizationAuditMaxEntries.Should().Be(10_000);
         NexoDefaults.DataDecisionAuditMaxEntries.Should().Be(50_000);
         NexoDefaults.AgentLogMaxEntriesPerAgent.Should().Be(1_000);
     }
 
     [Fact(Timeout = TestTimeouts.Quick)]
-    public void RunPodDefaults_AreStable()
+    public async Task RunPodDefaults_AreStable()
     {
+        await Task.CompletedTask;
         NexoDefaults.RunPodDefaultBaseUrl.Should().Be("https://api.runpod.io");
         NexoDefaults.RunPodDefaultGpuTier.Should().Be("NVIDIA_A4000");
         NexoDefaults.RunPodDefaultTimeoutMinutes.Should().Be(10);
@@ -83,24 +91,27 @@ public sealed class NexoDefaultsTests
     }
 
     [Fact(Timeout = TestTimeouts.Quick)]
-    public void NetworkingDefaults_AreStable()
+    public async Task NetworkingDefaults_AreStable()
     {
+        await Task.CompletedTask;
         NexoDefaults.NetworkBusHeartbeatIntervalSeconds.Should().Be(30);
         NexoDefaults.NetworkBusMaxEventHistory.Should().Be(10_000);
         NexoDefaults.NetworkBusDefaultMaxHops.Should().Be(3);
     }
 
     [Fact(Timeout = TestTimeouts.Quick)]
-    public void PipelineExecutionOptions_UsesNexoDefaults()
+    public async Task PipelineExecutionOptions_UsesNexoDefaults()
     {
+        await Task.CompletedTask;
         var opts = new PipelineExecutionOptions();
         opts.MaxRetryAttempts.Should().Be(NexoDefaults.PipelineMaxRetryAttempts);
         opts.RetryDelayMs.Should().Be(NexoDefaults.PipelineRetryDelayMs);
     }
 
     [Fact(Timeout = TestTimeouts.Quick)]
-    public void RunPodBrickConfig_UsesNexoDefaults()
+    public async Task RunPodBrickConfig_UsesNexoDefaults()
     {
+        await Task.CompletedTask;
         var cfg = new RunPodBrickConfig();
         cfg.BaseUrl.Should().Be(NexoDefaults.RunPodDefaultBaseUrl);
         cfg.PreferredGpuTier.Should().Be(NexoDefaults.RunPodDefaultGpuTier);
@@ -110,8 +121,9 @@ public sealed class NexoDefaultsTests
     }
 
     [Fact(Timeout = TestTimeouts.Quick)]
-    public void NetworkBusOptions_UsesNexoDefaults()
+    public async Task NetworkBusOptions_UsesNexoDefaults()
     {
+        await Task.CompletedTask;
         var opts = new NetworkBusOptions();
         opts.HeartbeatIntervalSeconds.Should().Be(NexoDefaults.NetworkBusHeartbeatIntervalSeconds);
         opts.MaxEventHistory.Should().Be(NexoDefaults.NetworkBusMaxEventHistory);
@@ -119,22 +131,25 @@ public sealed class NexoDefaultsTests
     }
 
     [Fact(Timeout = TestTimeouts.Quick)]
-    public void BrickUsageTrackerOptions_UsesNexoDefaults()
+    public async Task BrickUsageTrackerOptions_UsesNexoDefaults()
     {
+        await Task.CompletedTask;
         var opts = new BrickUsageTrackerOptions();
         opts.MaxEntries.Should().Be(NexoDefaults.BrickUsageTrackerMaxEntries);
         opts.RollingHourWindowSeconds.Should().Be(NexoDefaults.BrickUsageTrackerRollingHourWindowSeconds);
     }
 
     [Fact(Timeout = TestTimeouts.Quick)]
-    public void VideoDefaults_AreStable()
+    public async Task VideoDefaults_AreStable()
     {
+        await Task.CompletedTask;
         NexoDefaults.VideoDefaultFps.Should().Be(5);
     }
 
     [Fact(Timeout = TestTimeouts.Quick)]
-    public void EmbeddingDefaults_AreStable()
+    public async Task EmbeddingDefaults_AreStable()
     {
+        await Task.CompletedTask;
         NexoDefaults.EmbeddingDefaultDimension.Should().Be(64);
     }
 }

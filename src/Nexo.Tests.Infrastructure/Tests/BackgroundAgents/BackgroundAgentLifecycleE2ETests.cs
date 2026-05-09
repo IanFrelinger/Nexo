@@ -177,8 +177,9 @@ public sealed class BackgroundAgentLifecycleE2ETests
     }
 
     [Fact(Timeout = TestTimeouts.E2E)]
-    public void InMemorySanitizationAuditLog_Bounds()
+    public async Task InMemorySanitizationAuditLog_Bounds()
     {
+        await Task.CompletedTask;
         var auditLog = new InMemorySanitizationAuditLog();
         for (var i = 0; i < NexoDefaults.SanitizationAuditMaxEntries + 500; i++)
             auditLog.LogRedaction(DateTimeOffset.UtcNow, "v1", "field", "redact", null);
@@ -188,8 +189,9 @@ public sealed class BackgroundAgentLifecycleE2ETests
     }
 
     [Fact(Timeout = TestTimeouts.E2E)]
-    public void DataDecisionAuditLog_Bounds()
+    public async Task DataDecisionAuditLog_Bounds()
     {
+        await Task.CompletedTask;
         var auditLog = new DataDecisionAuditLog();
         for (var i = 0; i < NexoDefaults.DataDecisionAuditMaxEntries + 500; i++)
             auditLog.LogClassification("type", "level", "reason");

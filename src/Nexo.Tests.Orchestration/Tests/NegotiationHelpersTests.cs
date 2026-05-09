@@ -25,8 +25,9 @@ public sealed class NegotiationHelpersTests
     // ── ParetoOptimizer ────────────────────────────────────────────
 
     [Fact(Timeout = 15000)]
-    public void ParetoOptimizer_WithinBudget_ReturnsNoConflict()
+    public async Task ParetoOptimizer_WithinBudget_ReturnsNoConflict()
     {
+        await Task.CompletedTask;
         var optimizer = CreateParetoOptimizer();
         var agents = CreateAgentsWithResources(
             ("a1", compute: 100, memory: 200),
@@ -44,8 +45,9 @@ public sealed class NegotiationHelpersTests
     }
 
     [Fact(Timeout = 15000)]
-    public void ParetoOptimizer_ExceedsBudget_ReturnsParetoFrontier()
+    public async Task ParetoOptimizer_ExceedsBudget_ReturnsParetoFrontier()
     {
+        await Task.CompletedTask;
         var optimizer = CreateParetoOptimizer();
         var agents = CreateAgentsWithResources(
             ("a1", compute: 600, memory: 400),
@@ -66,8 +68,9 @@ public sealed class NegotiationHelpersTests
     }
 
     [Fact(Timeout = 15000)]
-    public void ParetoOptimizer_RecommendedAllocation_RespectsBudget()
+    public async Task ParetoOptimizer_RecommendedAllocation_RespectsBudget()
     {
+        await Task.CompletedTask;
         var optimizer = CreateParetoOptimizer();
         var agents = CreateAgentsWithResources(
             ("a1", compute: 800, memory: 600),
@@ -93,8 +96,9 @@ public sealed class NegotiationHelpersTests
     // ── ConstraintRelaxer ──────────────────────────────────────────
 
     [Fact(Timeout = 15000)]
-    public void ConstraintRelaxer_HardConflict_ReturnsUnresolvable()
+    public async Task ConstraintRelaxer_HardConflict_ReturnsUnresolvable()
     {
+        await Task.CompletedTask;
         var relaxer = CreateConstraintRelaxer();
 
         var positions = new List<NegotiationPosition>
@@ -129,8 +133,9 @@ public sealed class NegotiationHelpersTests
     }
 
     [Fact(Timeout = 15000)]
-    public void ConstraintRelaxer_FlexibleSoftConstraints_RelaxesSuccessfully()
+    public async Task ConstraintRelaxer_FlexibleSoftConstraints_RelaxesSuccessfully()
     {
+        await Task.CompletedTask;
         var relaxer = CreateConstraintRelaxer();
 
         var positions = new List<NegotiationPosition>
@@ -174,8 +179,9 @@ public sealed class NegotiationHelpersTests
     }
 
     [Fact(Timeout = 15000)]
-    public void ConstraintRelaxer_LowFlexibility_SkipsConstraint()
+    public async Task ConstraintRelaxer_LowFlexibility_SkipsConstraint()
     {
+        await Task.CompletedTask;
         var relaxer = CreateConstraintRelaxer();
 
         var positions = new List<NegotiationPosition>
