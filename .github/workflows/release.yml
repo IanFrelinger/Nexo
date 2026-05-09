@@ -1,0 +1,90 @@
+# One entry point: GHCR images + NuGet for a release.
+#
+# - Push tag v*.*.* → images from tag commit + NuGet version from tag name
+# - workflow_dispatch → images from current ref + NuGet version you enter
+#
+# NuGet Trusted Publishing: register workflow file **release.yml** on nuget.org.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "NuGet semver (e.g. 1.2.3) — for dispatch from a branch; use tag push for aligned releases"
+        required: true
+        type: string
+      skip_multi_arch:
+        description: "Skip arm64 for nexo-cli :latest (only when ref is master/main)"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  id-token: write
+  packages: write
+
+concurrency:
+  group: release-${{ github.repository }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  images:
+    name: Container images (GHCR)
+    uses: ./.github/workflows/reusable-container-publish.yml
+    secrets: inherit
+    with:
+      skip_multi_arch: ${{ github.event_name == 'workflow_dispatch' && inputs.skip_multi_arch || false }}
+
+  nuget:
+    name: NuGet packages
+    uses: ./.github/workflows/reusable-release-nuget.yml
+    secrets: inherit
+    with:
+      package_version: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
+
+  # After packages are pushed to nuget.org, confirm an external-style restore works (indexing can lag).
+  verify-nuget-consumer:
+    name: Verify NuGet consumer (nuget.org)
+    needs: [nuget]
+    if: success() && (vars.NUGET_PUBLISH_MODE == 'oidc' || vars.NUGET_PUBLISH_MODE == 'apikey')
+    uses: ./.github/workflows/reusable-verify-nuget-consumer.yml
+    with:
+      package_version: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
+
+  summarize:
+    name: Release summary
+    needs: [images, nuget, verify-nuget-consumer]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Summary
+        shell: bash
+        run: |
+          OWNER="${{ github.repository_owner }}"
+          OWNER_LC="${OWNER,,}"
+          SHA12="${GITHUB_SHA::12}"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VER="${{ inputs.version }}"
+            VER="${VER#v}"
+          else
+            VER="${GITHUB_REF_NAME#v}"
+          fi
+          {
+            echo "## Release"
+            echo ""
+            echo "| Item | Pin |"
+            echo "|------|-----|"
+            echo "| nexo-cli | \`ghcr.io/${OWNER_LC}/nexo-cli:sha-${SHA12}\` |"
+            echo "| nexo-api | \`ghcr.io/${OWNER_LC}/nexo-api:sha-${SHA12}\` |"
+            if [ "${{ github.ref_type }}" = "tag" ]; then
+              echo "| semver (tags) | \`:${VER}\` |"
+            fi
+            echo "| NuGet | \`Nexo.Hosting.Bundle\` **${VER}** (+ graph, Client, Sdk) |"
+            echo ""
+            echo "NuGet artifact: **nuget-packages-${VER}** (if push skipped, download from this run)."
+          } >> "$GITHUB_STEP_SUMMARY"

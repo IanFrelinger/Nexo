@@ -47,6 +47,10 @@
     <PackageReference Include="Polly" />
     <PackageReference Include="LlamaSharp" />
     <PackageReference Include="LLamaSharp.Backend.Cpu" />
+    <PackageReference Include="xunit">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>compile</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
 </Project>

@@ -11,6 +11,7 @@ namespace Nexo.Tests.Infrastructure.Tests.Composition;
 /// Integration tests for composition engine with AddCompositionInfrastructure.
 /// </summary>
 [Trait("Category", "Integration")]
+[Trait("Category", "ProdStyle")]
 public sealed class CompositionIntegrationTests
 {
     [Fact(Timeout = TestTimeouts.Integration)]

@@ -242,7 +242,7 @@ public sealed class MeshCommand : Command
         }
 
         if (!discover && !advertise && string.IsNullOrEmpty(capability) && string.IsNullOrWhiteSpace(setTrustTier))
-            Console.WriteLine("Use --discover, --advertise, --capability <name>, --set-trust-tier <peerId>:<tier>, mesh admit, or mesh revoke");
+            Console.WriteLine("Use --discover, --advertise, --capability <name>, --set-trust-tier <peerId>:<tier>, mesh admit, mesh revoke, mesh hub, or mesh director.");
         Environment.ExitCode = 0;
     }
 

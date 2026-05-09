@@ -1,0 +1,6 @@
+<Project>
+  <!-- Explicit transitive pin for local-feed restore (repo root adds versionless ref; skipped via root condition). -->
+  <ItemGroup>
+    <PackageReference Include="System.Text.Encodings.Web" Version="9.0.8" />
+  </ItemGroup>
+</Project>

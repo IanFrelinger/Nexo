@@ -15,6 +15,7 @@ These packages are intended for external integration. Breaking changes require a
 - `Nexo.Sdk`
 - `Nexo.Client`
 - `Nexo.Brick.Contracts`
+- `Nexo.Hosting.Bundle` (metapackage: references the `Nexo.Hosting` graph at a single version)
 
 ### Experimental
 

@@ -1,0 +1,95 @@
+# Reusable: pack and optionally push Nexo.* NuGet packages.
+# Called from release.yml or standalone release-nuget.yml (workflow_dispatch).
+
+on:
+  workflow_call:
+    inputs:
+      package_version:
+        description: "Semver with or without v prefix (e.g. 1.2.3 or v1.2.3)"
+        type: string
+        required: true
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  pack-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve version
+        shell: bash
+        run: |
+          V="${{ inputs.package_version }}"
+          V="${V#v}"
+          if ! [[ "$V" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$ ]]; then
+            echo "Invalid semver: ${{ inputs.package_version }} -> $V"
+            exit 1
+          fi
+          echo "PACKAGE_VERSION=$V" >> "$GITHUB_ENV"
+          echo "Publishing NuGet version: $V"
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            9.0.x
+            8.0.x
+
+      - name: Pack hosting graph + bundle + client SDK
+        shell: bash
+        run: |
+          OUT="${{ runner.temp }}/nuget-release"
+          mkdir -p "$OUT"
+          bash scripts/pack-nexo-hosting-graph.sh "${PACKAGE_VERSION}" "$OUT"
+          dotnet pack src/Nexo.Client/Nexo.Client.csproj -c Release -o "$OUT" -p:PackageVersion="${PACKAGE_VERSION}" -v minimal
+          dotnet pack src/Nexo.Sdk/Nexo.Sdk.csproj -c Release -o "$OUT" -p:PackageVersion="${PACKAGE_VERSION}" -v minimal
+          ls -la "$OUT"
+
+      - name: Upload packages artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-packages-${{ env.PACKAGE_VERSION }}
+          path: ${{ runner.temp }}/nuget-release/*.nupkg
+
+      - name: NuGet login (Trusted Publishing OIDC)
+        id: nuget_login
+        if: vars.NUGET_PUBLISH_MODE == 'oidc'
+        uses: NuGet/login@v1
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
+      - name: dotnet nuget push (OIDC)
+        if: vars.NUGET_PUBLISH_MODE == 'oidc'
+        shell: bash
+        run: |
+          shopt -s nullglob
+          for f in "${{ runner.temp }}"/nuget-release/*.nupkg; do
+            dotnet nuget push "$f" \
+              --api-key "${{ steps.nuget_login.outputs.NUGET_API_KEY }}" \
+              --source https://api.nuget.org/v3/index.json \
+              --skip-duplicate
+          done
+
+      - name: dotnet nuget push (API key)
+        if: vars.NUGET_PUBLISH_MODE == 'apikey'
+        shell: bash
+        env:
+          NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+        run: |
+          shopt -s nullglob
+          for f in "${{ runner.temp }}"/nuget-release/*.nupkg; do
+            dotnet nuget push "$f" \
+              --api-key "$NUGET_API_KEY" \
+              --source https://api.nuget.org/v3/index.json \
+              --skip-duplicate
+          done
+
+      - name: Publish skipped (configure repo)
+        if: vars.NUGET_PUBLISH_MODE != 'oidc' && vars.NUGET_PUBLISH_MODE != 'apikey'
+        shell: bash
+        run: |
+          echo "::notice::NUGET_PUBLISH_MODE is not 'oidc' or 'apikey' (artifact-only). Set repo variable NUGET_PUBLISH_MODE per docs/PUBLISHING.md"

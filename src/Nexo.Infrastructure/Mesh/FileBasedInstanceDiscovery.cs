@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Nexo.Core.Application.Mesh;
 using Nexo.Core.Application.Mesh.Models;
 using Nexo.Core.Application.Mesh.Ports;
 using Nexo.Infrastructure.Execution.Routing;
@@ -6,10 +7,12 @@ using Nexo.Infrastructure.Execution.Routing;
 namespace Nexo.Infrastructure.Mesh;
 
 /// <summary>
-/// File-based instance discovery. Reads ~/.nexo/instances.json.
+/// File-based instance discovery. Reads ~/.nexo/instances.json or the path in NEXO_MESH_INSTANCES_PATH.
 /// </summary>
 public sealed class FileBasedInstanceDiscovery : IInstanceDiscovery
 {
+    private const string InstancesPathEnv = "NEXO_MESH_INSTANCES_PATH";
+
     private readonly string _instancesPath;
     private readonly PeerTrustPolicyResolver _trustPolicyResolver;
 
@@ -30,6 +33,8 @@ public sealed class FileBasedInstanceDiscovery : IInstanceDiscovery
         var list = new List<PeerInfo>();
         if (!File.Exists(_instancesPath))
             return Task.FromResult<IReadOnlyList<PeerInfo>>(list);
+
+        var discoveryPolicy = MeshTrustPolicyConfiguration.ResolveDiscoveryPolicy();
 
         try
         {
@@ -60,14 +65,39 @@ public sealed class FileBasedInstanceDiscovery : IInstanceDiscovery
                         trustTier = (PeerTrustTier)numericTier;
                     }
                 }
+
+                var admitted = true;
+                if (peer.TryGetProperty("admitted", out var admittedEl) && admittedEl.ValueKind is JsonValueKind.True or JsonValueKind.False)
+                    admitted = admittedEl.GetBoolean();
+
+                var drained = false;
+                if (peer.TryGetProperty("drained", out var drainedEl) && drainedEl.ValueKind is JsonValueKind.True or JsonValueKind.False)
+                    drained = drainedEl.GetBoolean();
+
+                if (drained)
+                    continue;
+
+                if (string.Equals(discoveryPolicy, "allowlist", StringComparison.OrdinalIgnoreCase) && !admitted)
+                    continue;
+
                 var effectiveTier = _trustPolicyResolver.ResolveTier(new PeerInfo
                 {
                     PeerId = peerId,
                     Endpoint = endpoint,
                     Capabilities = caps,
-                    TrustTier = trustTier
+                    TrustTier = trustTier,
+                    Admitted = admitted,
+                    Drained = drained
                 });
-                list.Add(new PeerInfo { PeerId = peerId, Endpoint = endpoint, Capabilities = caps, TrustTier = effectiveTier });
+                list.Add(new PeerInfo
+                {
+                    PeerId = peerId,
+                    Endpoint = endpoint,
+                    Capabilities = caps,
+                    TrustTier = effectiveTier,
+                    Admitted = admitted,
+                    Drained = false
+                });
             }
         }
         catch

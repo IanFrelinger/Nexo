@@ -1,0 +1,96 @@
+# Virtual multi-node lab: heterogeneous Nexo.API images + security modes on one Docker network.
+#
+# Default image mix (override with MESH_LAB_*_DOCKERFILE):
+#   peer-a  → .docker/Dockerfile.api         (slim aspnet runtime)
+#   peer-b  → .docker/Dockerfile.quickstart  (aspnet + NEXO_ALLOW_MOCK=1)
+#   worker  → .docker/Dockerfile.api         (set MESH_LAB_WORKER_DOCKERFILE to Dockerfile.agent-server locally for SDK-heavy image)
+#
+# Default auth mix (override Nexo__Security__* per role via env file):
+#   peer-a  → API key, MutatingApi, Lan
+#   peer-b  → Bearer token, MutatingApi, Tailnet
+#   worker  → ApiKeyOrBasic, MutatingApi, Public (Basic user nexo + password from env)
+#
+#   cp docs/config/mesh-lab.env.example .env.mesh-lab
+#   docker compose -f docker-compose.mesh-lab.yml --env-file .env.mesh-lab up -d --build
+#   ./scripts/mesh-lab-verify.sh .env.mesh-lab
+#
+# Host: peer-a → 127.0.0.1:18081, peer-b → 127.0.0.1:18082
+
+networks:
+  mesh_lab:
+    driver: bridge
+
+services:
+  peer-a:
+    build:
+      context: ${NEXO_BUILD_CONTEXT:-.}
+      dockerfile: ${MESH_LAB_PEER_A_DOCKERFILE:-.docker/Dockerfile.api}
+    networks:
+      mesh_lab:
+        aliases:
+          - peer-a
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${MESH_LAB_PEER_A_ASPNETCORE_ENVIRONMENT:-Production}
+      ASPNETCORE_URLS: http://+:8080
+      ASPNETCORE_CONTENTROOT: /app
+      Nexo__Security__ExposureProfile: ${MESH_LAB_PEER_A_EXPOSURE:-Lan}
+      Nexo__Security__AuthorizationMode: ${MESH_LAB_PEER_A_AUTH_MODE:-ApiKey}
+      Nexo__Security__AuthorizationScope: ${MESH_LAB_PEER_A_AUTH_SCOPE:-MutatingApi}
+      Nexo__Security__ApiKey: ${Nexo__Security__ApiKey}
+      Nexo__Security__ApiKeyHeaderName: ${Nexo__Security__ApiKeyHeaderName:-X-Nexo-Api-Key}
+      Nexo__Security__CustomAdvisory: "${MESH_LAB_PEER_A_ADVISORY:-Mesh lab peer-a (Dockerfile.api + ApiKey)}"
+      Nexo__Security__ShowAdvisoryInPortal: "${MESH_LAB_PEER_A_SHOW_ADVISORY:-true}"
+    ports:
+      - "${MESH_LAB_PEER_A_PUBLISH:-127.0.0.1:18081}:8080"
+    restart: unless-stopped
+
+  peer-b:
+    build:
+      context: ${NEXO_BUILD_CONTEXT:-.}
+      dockerfile: ${MESH_LAB_PEER_B_DOCKERFILE:-.docker/Dockerfile.quickstart}
+    networks:
+      mesh_lab:
+        aliases:
+          - peer-b
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${MESH_LAB_PEER_B_ASPNETCORE_ENVIRONMENT:-Staging}
+      ASPNETCORE_URLS: http://+:8080
+      ASPNETCORE_CONTENTROOT: /app
+      NEXO_ALLOW_MOCK: "${MESH_LAB_PEER_B_NEXO_ALLOW_MOCK:-1}"
+      Nexo__Security__ExposureProfile: ${MESH_LAB_PEER_B_EXPOSURE:-Tailnet}
+      Nexo__Security__AuthorizationMode: ${MESH_LAB_PEER_B_AUTH_MODE:-ApiKeyOrBearerToken}
+      Nexo__Security__AuthorizationScope: ${MESH_LAB_PEER_B_AUTH_SCOPE:-MutatingApi}
+      Nexo__Security__ApiKey: ${Nexo__Security__ApiKey}
+      Nexo__Security__ApiKeyHeaderName: ${Nexo__Security__ApiKeyHeaderName:-X-Nexo-Api-Key}
+      Nexo__Security__BearerToken: ${Nexo__Security__PeerB__BearerToken}
+      Nexo__Security__BearerTokenHeaderName: ${Nexo__Security__BearerTokenHeaderName:-Authorization}
+      Nexo__Security__BearerTokenScheme: ${Nexo__Security__BearerTokenScheme:-Bearer}
+      Nexo__Security__CustomAdvisory: "${MESH_LAB_PEER_B_ADVISORY:-Mesh lab peer-b (Dockerfile.quickstart + Bearer)}"
+      Nexo__Security__ShowAdvisoryInPortal: "${MESH_LAB_PEER_B_SHOW_ADVISORY:-true}"
+    ports:
+      - "${MESH_LAB_PEER_B_PUBLISH:-127.0.0.1:18082}:8080"
+    restart: unless-stopped
+
+  worker:
+    profiles:
+      - workers
+    build:
+      context: ${NEXO_BUILD_CONTEXT:-.}
+      dockerfile: ${MESH_LAB_WORKER_DOCKERFILE:-.docker/Dockerfile.api}
+    networks:
+      - mesh_lab
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${MESH_LAB_WORKER_ASPNETCORE_ENVIRONMENT:-Development}
+      ASPNETCORE_URLS: http://+:8080
+      ASPNETCORE_CONTENTROOT: /app
+      Nexo__Security__ExposureProfile: ${MESH_LAB_WORKER_EXPOSURE:-Public}
+      Nexo__Security__AuthorizationMode: ${MESH_LAB_WORKER_AUTH_MODE:-ApiKeyOrBasic}
+      Nexo__Security__AuthorizationScope: ${MESH_LAB_WORKER_AUTH_SCOPE:-MutatingApi}
+      Nexo__Security__ApiKey: ${Nexo__Security__ApiKey}
+      Nexo__Security__ApiKeyHeaderName: ${Nexo__Security__ApiKeyHeaderName:-X-Nexo-Api-Key}
+      Nexo__Security__BasicAuthUsername: ${Nexo__Security__Worker__BasicAuthUsername:-nexo}
+      Nexo__Security__BasicAuthPassword: ${Nexo__Security__Worker__BasicAuthPassword}
+      Nexo__Security__BasicAuthHeaderName: ${Nexo__Security__BasicAuthHeaderName:-Authorization}
+      Nexo__Security__CustomAdvisory: "${MESH_LAB_WORKER_ADVISORY:-Mesh lab worker (ApiKeyOrBasic)}"
+      Nexo__Security__ShowAdvisoryInPortal: "${MESH_LAB_WORKER_SHOW_ADVISORY:-false}"
+    restart: unless-stopped
