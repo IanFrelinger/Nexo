@@ -36,8 +36,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.OpenApi.Models;
 using Nexo.API.Endpoints;
 using Nexo.API.Forge;
+using Nexo.API.Middleware.Ingress;
 using Nexo.API.Security;
 using Nexo.GameDomain.Mapping;
 using Nexo.GameDomain.Materials;
@@ -75,6 +77,12 @@ builder.Services.Configure<NexoSecurityOptions>(
     builder.Configuration.GetSection(NexoSecurityOptions.SectionPath));
 builder.Services.Configure<ForgeSessionOptions>(
     builder.Configuration.GetSection(ForgeSessionOptions.SectionPath));
+builder.Services.Configure<NexoMiddlewareIngressOptions>(
+    builder.Configuration.GetSection(NexoMiddlewareIngressOptions.SectionPath));
+builder.Services.AddSingleton<ISmsIngressApprovalStore, MemorySmsIngressApprovalStore>();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(static options =>
+    options.SwaggerDoc("v1", new OpenApiInfo { Title = "Nexo.API", Version = "v1" }));
 builder.Services.AddNexoRuntimeRouting(builder.Configuration);
 
 builder.Services.AddHttpContextAccessor();
@@ -117,6 +125,10 @@ builder.Services.AddSingleton<IVectorMapIntelligenceService>(sp =>
 builder.Services.AddSingleton<MapPipelineRunner>();
 
 var app = builder.Build();
+
+app.UseMiddleware<CorrelationIdMiddleware>();
+app.UseMiddleware<IngressEnvelopeMiddleware>();
+app.UseWebSockets();
 
 // --- Security: advisory exposure profile + optional built-in auth ---
 {
@@ -193,7 +205,10 @@ app.UseNexoApiKeyAuth();
 app.UseMiddleware<ForgeAuthenticationMiddleware>();
 app.UseMiddleware<ForgeTenantMiddleware>();
 
+app.UseSwagger();
+app.UseSwaggerUI(static c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Nexo.API v1"));
 app.MapNexoEndpoints();
+app.MapIngressEndpoints();
 app.MapForgeEndpoints();
 app.MapFallbackToFile("index.html");
 
