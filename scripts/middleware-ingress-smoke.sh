@@ -22,6 +22,10 @@ echo "== GET /api/middleware/correlation-echo (X-Correlation-Id: $CID) =="
 curl -fsS -H "X-Correlation-Id: $CID" "$BASE/api/middleware/correlation-echo"
 echo ""
 
+echo "== GET /api/middleware/ingress-context (with X-Correlation-Id) =="
+curl -fsS -H "X-Correlation-Id: $CID" "$BASE/api/middleware/ingress-context"
+echo ""
+
 echo "== GET /swagger/v1/swagger.json (grep IngressCorrelationEcho) =="
 curl -fsS "$BASE/swagger/v1/swagger.json" | grep -q "IngressCorrelationEcho" && echo "ok: swagger mentions IngressCorrelationEcho"
 

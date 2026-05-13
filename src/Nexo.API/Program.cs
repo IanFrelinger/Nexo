@@ -41,6 +41,7 @@ using Nexo.API.Endpoints;
 using Nexo.API.Forge;
 using Nexo.API.Middleware.Ingress;
 using Nexo.API.Security;
+using Nexo.Core.Application.Middleware.Ports;
 using Nexo.GameDomain.Mapping;
 using Nexo.GameDomain.Materials;
 using Nexo.BackgroundAgents.Extending;
@@ -86,6 +87,7 @@ builder.Services.AddSwaggerGen(static options =>
 builder.Services.AddNexoRuntimeRouting(builder.Configuration);
 
 builder.Services.AddHttpContextAccessor();
+builder.Services.AddSingleton<INexoIngressAccessor, HttpNexoIngressAccessor>();
 builder.Services.AddHttpClient("forge-map")
     .ConfigurePrimaryHttpMessageHandler(sp =>
         ForgeMapHttpSocketsHandlerFactory.Create(

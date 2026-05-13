@@ -34,6 +34,27 @@ public sealed class MiddlewareIngressIntegrationTests : IClassFixture<NexoApiWeb
     }
 
     [Fact(Timeout = 60000)]
+    public async Task Ingress_context_reflects_optional_headers()
+    {
+        var client = _factory.CreateClient();
+        client.DefaultRequestHeaders.Add("X-Correlation-Id", "corr-ctx-1");
+        client.DefaultRequestHeaders.Add("X-Nexo-Tenant", "tenant-x");
+        client.DefaultRequestHeaders.Add("X-Nexo-App-Id", "app-y");
+        client.DefaultRequestHeaders.Add("X-Idempotency-Key", "idem-z");
+        client.DefaultRequestHeaders.Add("X-Nexo-Payload-Version", "v2");
+        using var resp = await client.GetAsync(new Uri("api/middleware/ingress-context", UriKind.Relative));
+        resp.EnsureSuccessStatusCode();
+        var dto = await resp.Content.ReadFromJsonAsync<IngressContextResponse>();
+        dto.Should().NotBeNull();
+        dto!.CorrelationId.Should().Be("corr-ctx-1");
+        dto.Transport.Should().Be(NexoIngressTransports.Http);
+        dto.TenantId.Should().Be("tenant-x");
+        dto.AppId.Should().Be("app-y");
+        dto.IdempotencyKey.Should().Be("idem-z");
+        dto.PayloadVersion.Should().Be("v2");
+    }
+
+    [Fact(Timeout = 60000)]
     public async Task Swagger_document_lists_middleware_ingress_operations()
     {
         var client = _factory.CreateClient();
@@ -42,6 +63,7 @@ public sealed class MiddlewareIngressIntegrationTests : IClassFixture<NexoApiWeb
         var json = await resp.Content.ReadAsStringAsync();
         json.Should().Contain("IngressCorrelationEcho");
         json.Should().Contain("SmsInboundSimulate");
+        json.Should().Contain("IngressContext");
     }
 
     [Fact(Timeout = 60000)]

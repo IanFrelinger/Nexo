@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Nexo.Contracts;
+using Nexo.Core.Application.Middleware.Ports;
 
 namespace Nexo.API.Middleware.Ingress;
 
@@ -29,6 +30,17 @@ public static class IngressEndpoints
         ingressGroup.MapGet("/ingress-catalog", () => Results.Ok(IngressCatalog.Current))
             .WithName("IngressCatalog")
             .WithSummary("Operator inventory of ingress seams (Phase A)");
+
+        ingressGroup.MapGet("/ingress-context", (INexoIngressAccessor ingress) =>
+                Results.Ok(new IngressContextResponse(
+                    ingress.CorrelationId,
+                    ingress.Transport,
+                    ingress.TenantId,
+                    ingress.AppId,
+                    ingress.IdempotencyKey,
+                    ingress.PayloadVersion)))
+            .WithName("IngressContext")
+            .WithSummary("Snapshot of ingress headers mapped for this request (MediatR logging scope source)");
 
         app.MapPost("/api/ingress/sms/simulate", HandleSmsSimulateAsync)
             .WithTags("MiddlewareIngress")

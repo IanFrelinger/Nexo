@@ -164,7 +164,9 @@ public static class NexoServiceCollectionExtensions
         });
 
         services.AddValidatorsFromAssembly(typeof(AnalyzeCodeValidator).Assembly);
+        services.AddTransient(typeof(MediatR.IPipelineBehavior<,>), typeof(Nexo.Core.Application.Behaviors.IngressLoggingPipelineBehavior<,>));
         services.AddTransient(typeof(MediatR.IPipelineBehavior<,>), typeof(Nexo.Core.Application.Behaviors.ValidationBehavior<,>));
+        services.TryAddSingleton<Nexo.Core.Application.Middleware.Ports.INexoIngressAccessor, Nexo.Core.Application.Middleware.NoOpNexoIngressAccessor>();
 
         // ── Configuration service adapter ──────────────────────────────
         // Bridges the domain-level IConfigurationService port to the

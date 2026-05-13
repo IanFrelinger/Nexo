@@ -39,3 +39,12 @@ public sealed record SmsInboundSimulationResponse(
 public sealed record IngressCatalogEntry(string Kind, string Route, string Notes);
 
 public sealed record IngressCatalogResponse(IReadOnlyList<IngressCatalogEntry> EntryPoints);
+
+/// <summary>Snapshot of the current HTTP ingress context (for operators and tests).</summary>
+public sealed record IngressContextResponse(
+    string? CorrelationId,
+    string? Transport,
+    string? TenantId,
+    string? AppId,
+    string? IdempotencyKey,
+    string? PayloadVersion);
