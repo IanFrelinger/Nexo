@@ -31,6 +31,7 @@
     <ProjectReference Include="..\Nexo.Hosting\Nexo.Hosting.csproj" />
     <ProjectReference Include="..\Nexo.GameDomain\Nexo.GameDomain.csproj" />
     <ProjectReference Include="..\Nexo.Infrastructure\Nexo.Infrastructure.csproj" />
+    <ProjectReference Include="..\Nexo.Ingress.AwsSns\Nexo.Ingress.AwsSns.csproj" />
   </ItemGroup>
 
 

@@ -1,7 +1,6 @@
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
-using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Nexo.Contracts;
@@ -11,8 +10,6 @@ namespace Nexo.API.Middleware.Ingress;
 
 public static class IngressEndpoints
 {
-    private static readonly Regex YesTokenPattern = new(@"^\s*YES\s+(?<token>\S+)\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
-
     public static WebApplication MapIngressEndpoints(this WebApplication app)
     {
         var ingressGroup = app.MapGroup("/api/middleware").WithTags("MiddlewareIngress");
@@ -48,6 +45,7 @@ public static class IngressEndpoints
             .WithSummary("Lab-only simulated inbound SMS approval line (keyword YES &lt;token&gt;)");
 
         app.Map("/ws/v1/echo", HandleWebSocketEchoAsync);
+        app.MapAwsSnsSmsWebhook();
 
         return app;
     }
@@ -63,11 +61,11 @@ public static class IngressEndpoints
         if (!options.EnableSmsSimulationIngress)
             return Results.NotFound();
 
-        if (IsCapabilityDisabled(options, IngressCapability.SmsSimulation))
+        if (IngressEndpointPolicies.IsCapabilityDisabled(options, IngressCapability.SmsSimulation))
             return Results.StatusCode(StatusCodes.Status403Forbidden);
 
         var tenantId = httpContext.Request.Headers["X-Nexo-Tenant"].FirstOrDefault();
-        if (!TenantAllowsCapability(options, tenantId, IngressCapability.SmsSimulation))
+        if (!IngressEndpointPolicies.TenantAllowsCapability(options, tenantId, IngressCapability.SmsSimulation))
             return Results.StatusCode(StatusCodes.Status403Forbidden);
 
         if (body is null || string.IsNullOrWhiteSpace(body.From) || string.IsNullOrWhiteSpace(body.Body))
@@ -83,43 +81,27 @@ public static class IngressEndpoints
             }
         }
 
-        var match = YesTokenPattern.Match(body.Body);
-        if (!match.Success)
+        if (!SmsYesTokenParser.TryParse(body.Body, out var token))
         {
             return Results.Ok(new SmsInboundSimulationResponse(false, null, "Body must match \"YES <token>\".", false));
         }
 
-        var token = match.Groups["token"].Value.Trim();
         var response = await smsStore.TryRecordApprovalAsync(body.From.Trim(), token, body.MessageSid, cancellationToken)
             .ConfigureAwait(false);
         return Results.Ok(response);
     }
 
-    private static bool IsCapabilityDisabled(NexoMiddlewareIngressOptions options, string capability) =>
-        options.DisabledCapabilities.Contains(capability, StringComparer.OrdinalIgnoreCase);
-
-    private static bool TenantAllowsCapability(NexoMiddlewareIngressOptions options, string? tenantId, string capability)
-    {
-        if (options.TenantCapabilityAllowlists.Count == 0 || string.IsNullOrWhiteSpace(tenantId))
-            return true;
-
-        if (!options.TenantCapabilityAllowlists.TryGetValue(tenantId.Trim(), out var allow))
-            return true;
-
-        return allow.Contains(capability, StringComparer.OrdinalIgnoreCase);
-    }
-
     private static async Task HandleWebSocketEchoAsync(HttpContext context)
     {
         var opts = context.RequestServices.GetRequiredService<IOptionsMonitor<NexoMiddlewareIngressOptions>>().CurrentValue;
-        if (!opts.EnableWebSocketIngress || IsCapabilityDisabled(opts, IngressCapability.WebSocket))
+        if (!opts.EnableWebSocketIngress || IngressEndpointPolicies.IsCapabilityDisabled(opts, IngressCapability.WebSocket))
         {
             context.Response.StatusCode = StatusCodes.Status404NotFound;
             return;
         }
 
         var tenantHeader = context.Request.Headers["X-Nexo-Tenant"].FirstOrDefault();
-        if (!TenantAllowsCapability(opts, tenantHeader, IngressCapability.WebSocket))
+        if (!IngressEndpointPolicies.TenantAllowsCapability(opts, tenantHeader, IngressCapability.WebSocket))
         {
             context.Response.StatusCode = StatusCodes.Status403Forbidden;
             return;

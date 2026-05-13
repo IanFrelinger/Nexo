@@ -49,6 +49,7 @@ using Nexo.BackgroundAgents.HostRunners;
 using Nexo.BackgroundAgents.Optimization;
 using Nexo.BackgroundAgents.Testing;
 using Nexo.Hosting;
+using Nexo.Ingress.AwsSns;
 using Nexo.Runtime;
 using Nexo.Transport.Grpc;
 
@@ -93,6 +94,8 @@ builder.Services.AddHttpClient("forge-map")
         ForgeMapHttpSocketsHandlerFactory.Create(
             sp.GetRequiredService<IOptionsMonitor<ForgeSessionOptions>>(),
             sp.GetRequiredService<ILoggerFactory>()));
+builder.Services.AddHttpClient("nexo-sns-signing", c => c.Timeout = TimeSpan.FromSeconds(15));
+builder.Services.AddSingleton<ISnsSignatureVerifier, SnsRsaSignatureVerifier>();
 builder.Services.AddSingleton<IForgeStateService, TenantPartitionedForgeStateService>();
 
 // Planner / optimizer / tester background agents need the same runners as `nexo background-agent daemon`.

@@ -63,6 +63,7 @@ public sealed class MiddlewareIngressIntegrationTests : IClassFixture<NexoApiWeb
         var json = await resp.Content.ReadAsStringAsync();
         json.Should().Contain("IngressCorrelationEcho");
         json.Should().Contain("SmsInboundSimulate");
+        json.Should().Contain("AwsSnsSmsWebhook");
         json.Should().Contain("IngressContext");
     }
 
@@ -80,6 +81,38 @@ public sealed class MiddlewareIngressIntegrationTests : IClassFixture<NexoApiWeb
         dto.IdempotentReplay.Should().BeFalse();
 
         using var resp2 = await client.PostAsJsonAsync(new Uri("api/ingress/sms/simulate", UriKind.Relative), body);
+        resp2.EnsureSuccessStatusCode();
+        var dto2 = await resp2.Content.ReadFromJsonAsync<SmsInboundSimulationResponse>();
+        dto2!.IdempotentReplay.Should().BeTrue();
+    }
+
+    [Fact(Timeout = 60000)]
+    public async Task Aws_sns_webhook_accepts_notification_with_signature_skip_in_testing()
+    {
+        var client = _factory.CreateClient();
+        const string snsBody = """
+            {
+              "Type": "Notification",
+              "MessageId": "sns-itest-1",
+              "TopicArn": "arn:aws:sns:us-east-1:123456789012:test",
+              "Message": "YES sns-yes-1",
+              "Timestamp": "2024-01-01T00:00:00.000Z",
+              "SignatureVersion": "2",
+              "Signature": "dGVzdA==",
+              "SigningCertURL": "https://sns.us-east-1.amazonaws.com/SimpleNotificationService-nonexistent.pem"
+            }
+            """;
+        using var content = new StringContent(snsBody, Encoding.UTF8, "application/json");
+        using var resp = await client.PostAsync(new Uri("api/ingress/sms/sns", UriKind.Relative), content);
+        resp.EnsureSuccessStatusCode();
+        var dto = await resp.Content.ReadFromJsonAsync<SmsInboundSimulationResponse>();
+        dto.Should().NotBeNull();
+        dto!.Accepted.Should().BeTrue();
+        dto.ApprovalToken.Should().Be("sns-yes-1");
+        dto.IdempotentReplay.Should().BeFalse();
+
+        using var content2 = new StringContent(snsBody, Encoding.UTF8, "application/json");
+        using var resp2 = await client.PostAsync(new Uri("api/ingress/sms/sns", UriKind.Relative), content2);
         resp2.EnsureSuccessStatusCode();
         var dto2 = await resp2.Content.ReadFromJsonAsync<SmsInboundSimulationResponse>();
         dto2!.IdempotentReplay.Should().BeTrue();
