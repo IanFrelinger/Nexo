@@ -36,6 +36,8 @@ Optional **`AwsSnsAllowedAppIds`** enforces `X-Nexo-App-Id` on the SNS route (pa
 - **`DynamoDb`** — set `SmsIngressApprovalStore` to `DynamoDb` and `Nexo:SmsIngressDynamoDb:TableName`. Table uses string keys **`pk`** (constant `NexoSmsIngress`) and **`sk`** (idempotency key from `SmsIngressExternalIds`). Grant the runtime identity `dynamodb:PutItem` and `dynamodb:GetItem`.
 - **`UnsupportedSmsIngressApprovalStore`** — registered via `TryAddSingleton` in `AddNexo()` when no host-specific store is configured (e.g. CLI). Nexo.API replaces this with Memory or DynamoDB.
 
+**Optional end-to-end check (DynamoDB Local in Docker):** `Nexo.Tests.Infrastructure` includes `DynamoDbSmsIngressDockerTests` (Testcontainers, trait `DockerOptional`). Set **`NEXO_RUN_DYNAMODB_CONTAINER=1`** and run tests with Docker available to exercise `DynamoDbSmsIngressApprovalStore` against a real DynamoDB Local process (no AWS account). Default CI runs skip this (no env set).
+
 The interface lives in **`Nexo.Contracts`** so Lambda workers can share the contract without referencing `Nexo.API`.
 
 ## MediatR command
