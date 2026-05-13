@@ -32,10 +32,13 @@
 // ──────────────────────────────────────────────────────────────────────────────
 
 using System.Net;
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using MediatR;
 using Microsoft.OpenApi.Models;
 using Nexo.API.Endpoints;
 using Nexo.API.Forge;
@@ -109,6 +112,39 @@ builder.Services.AddHttpClient("forge-map")
             sp.GetRequiredService<ILoggerFactory>()));
 builder.Services.AddHttpClient("nexo-sns-signing", c => c.Timeout = TimeSpan.FromSeconds(15));
 builder.Services.AddSingleton<ISnsSignatureVerifier, SnsRsaSignatureVerifier>();
+builder.Services.AddRateLimiter(static o =>
+{
+    o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    o.OnRejected = static (_, _) => ValueTask.CompletedTask;
+    o.AddPolicy<string>("nexo-sms-ingress-posts", static httpContext =>
+    {
+        var opts = httpContext.RequestServices.GetRequiredService<IOptionsMonitor<NexoMiddlewareIngressOptions>>().CurrentValue;
+        if (opts.IngressSmsPostRateLimitPermitLimit <= 0)
+        {
+            return RateLimitPartition.GetFixedWindowLimiter(
+                "off",
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = int.MaxValue,
+                    Window = TimeSpan.FromDays(1),
+                    QueueLimit = 0,
+                    AutoReplenishment = true,
+                });
+        }
+
+        var key = httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous";
+        var windowSeconds = opts.IngressSmsPostRateLimitWindowSeconds > 0 ? opts.IngressSmsPostRateLimitWindowSeconds : 60;
+        return RateLimitPartition.GetFixedWindowLimiter(
+            key,
+            _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = opts.IngressSmsPostRateLimitPermitLimit,
+                Window = TimeSpan.FromSeconds(windowSeconds),
+                QueueLimit = 0,
+                AutoReplenishment = true,
+            });
+    });
+});
 builder.Services.AddSingleton<IForgeStateService, TenantPartitionedForgeStateService>();
 
 // Planner / optimizer / tester background agents need the same runners as `nexo background-agent daemon`.
@@ -124,6 +160,9 @@ builder.Services.AddNexo(options =>
     options.RegisterBackgroundAgentHostedService =
         builder.Configuration.GetValue("Nexo:RegisterBackgroundAgentHostedService", defaultValue: true);
 });
+
+builder.Services.AddMediatR(cfg =>
+    cfg.RegisterServicesFromAssembly(typeof(RecordSmsYesApprovalCommand).Assembly));
 
 builder.Services.AddSingleton<HeuristicMaterialIntelligenceService>();
 builder.Services.AddSingleton<IMaterialIntelligenceService>(sp =>
@@ -222,6 +261,8 @@ app.UseStaticFiles();
 app.UseNexoApiKeyAuth();
 app.UseMiddleware<ForgeAuthenticationMiddleware>();
 app.UseMiddleware<ForgeTenantMiddleware>();
+
+app.UseRateLimiter();
 
 app.UseSwagger();
 app.UseSwaggerUI(static c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Nexo.API v1"));

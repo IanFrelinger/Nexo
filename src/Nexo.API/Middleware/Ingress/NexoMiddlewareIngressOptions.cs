@@ -51,6 +51,19 @@ public sealed class NexoMiddlewareIngressOptions
     public bool AwsSnsSkipSignatureVerification { get; set; }
 
     /// <summary>
+    /// Certificate revocation policy for SNS signing certificate chain builds: <c>NoCheck</c> (default), <c>Online</c>, or <c>Offline</c>.
+    /// </summary>
+    public string AwsSnsSigningCertificateRevocationMode { get; set; } = "NoCheck";
+
+    /// <summary>
+    /// When greater than zero, applies a per-IP fixed-window rate limit to <c>POST /api/ingress/sms/simulate</c> and <c>POST /api/ingress/sms/sns</c>.
+    /// </summary>
+    public int IngressSmsPostRateLimitPermitLimit { get; set; }
+
+    /// <summary>Window length in seconds for <see cref="IngressSmsPostRateLimitPermitLimit"/> (default 60).</summary>
+    public int IngressSmsPostRateLimitWindowSeconds { get; set; } = 60;
+
+    /// <summary>
     /// Backing store for SMS approvals: <see cref="SmsIngressApprovalStoreKind.Memory"/> or <see cref="SmsIngressApprovalStoreKind.DynamoDb"/>.
     /// </summary>
     public string SmsIngressApprovalStore { get; set; } = SmsIngressApprovalStoreKind.Memory;

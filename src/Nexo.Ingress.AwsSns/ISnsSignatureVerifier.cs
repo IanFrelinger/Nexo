@@ -1,3 +1,4 @@
+using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 
 namespace Nexo.Ingress.AwsSns;
@@ -14,5 +15,6 @@ public interface ISnsSignatureVerifier
         JsonElement snsMessage,
         HttpClient httpClient,
         bool skipVerification,
+        X509RevocationMode signingCertificateRevocationMode,
         CancellationToken cancellationToken = default);
 }

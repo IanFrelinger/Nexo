@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Nexo.BackgroundAgents;
 using Nexo.BackgroundAgents.Trust;
 using Nexo.Core.Application.Adaptation.Ports;
+using Nexo.Contracts;
 using Nexo.Core.Application.Analysis.UseCases.AnalyzeCode;
 using Nexo.Core.Application.Ephemeral.Ports;
 using Nexo.Core.Application.Knowledge.Ports;
@@ -162,6 +163,8 @@ public static class NexoServiceCollectionExtensions
             cfg.RegisterServicesFromAssembly(typeof(AnalyzeCodeCommand).Assembly);
             cfg.RegisterServicesFromAssembly(typeof(RunTestsCommand).Assembly);
         });
+
+        services.TryAddSingleton<ISmsIngressApprovalStore, UnsupportedSmsIngressApprovalStore>();
 
         services.AddValidatorsFromAssembly(typeof(AnalyzeCodeValidator).Assembly);
         services.AddTransient(typeof(MediatR.IPipelineBehavior<,>), typeof(Nexo.Core.Application.Behaviors.IngressLoggingPipelineBehavior<,>));

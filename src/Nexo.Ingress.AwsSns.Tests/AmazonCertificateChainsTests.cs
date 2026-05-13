@@ -17,6 +17,6 @@ public sealed class AmazonCertificateChainsTests
             HashAlgorithmName.SHA256,
             RSASignaturePadding.Pkcs1);
         using var cert = req.CreateSelfSigned(DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddDays(1));
-        AmazonCertificateChains.TryValidateSnsSigningCertificate(cert).Should().BeFalse();
+        AmazonCertificateChains.TryValidateSnsSigningCertificate(cert, X509RevocationMode.NoCheck).Should().BeFalse();
     }
 }

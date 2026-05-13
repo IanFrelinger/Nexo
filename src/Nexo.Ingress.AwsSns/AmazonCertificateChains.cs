@@ -12,13 +12,15 @@ public static class AmazonCertificateChains
     /// <summary>
     /// Returns true when the leaf looks AWS-issued and builds a trusted chain to an Amazon public CA.
     /// </summary>
-    public static bool TryValidateSnsSigningCertificate(X509Certificate2 leaf)
+    /// <param name="leaf">SNS signing certificate parsed from <c>SigningCertURL</c>.</param>
+    /// <param name="revocationMode">Passed to <see cref="X509Chain.ChainPolicy"/> (Online can add latency / flakiness).</param>
+    public static bool TryValidateSnsSigningCertificate(X509Certificate2 leaf, X509RevocationMode revocationMode)
     {
         if (!LooksAwsIssued(leaf))
             return false;
 
         using var chain = new X509Chain();
-        chain.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck;
+        chain.ChainPolicy.RevocationMode = revocationMode;
         if (chain.Build(leaf))
         {
             using var root = chain.ChainElements[^1].Certificate;
@@ -26,7 +28,7 @@ public static class AmazonCertificateChains
         }
 
         using var custom = new X509Chain();
-        custom.ChainPolicy.RevocationMode = X509RevocationMode.NoCheck;
+        custom.ChainPolicy.RevocationMode = revocationMode;
         custom.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
         custom.ChainPolicy.CustomTrustStore.Add(new X509Certificate2(AmazonRootCa1.RawData));
         return custom.Build(leaf);

@@ -16,14 +16,14 @@ This document closes the operational gaps around **multi-transport middleware**:
 | SMS lab | `POST /api/ingress/sms/simulate` | Parses `YES <token>`; in-memory idempotent store. **Not** signed AWS callbacks. |
 | AWS SNS webhook | `POST /api/ingress/sms/sns` | Optional signed SNS → same approval store (`Nexo.Ingress.AwsSns` helpers). |
 
-Configuration: `Nexo:MiddlewareIngress` (`EnableWebSocketIngress`, `EnableSmsSimulationIngress`, `SmsSimulationAllowedAppIds`, `SmsIngressApprovalStore`, `EnableAwsSnsSmsWebhook`, `AwsSnsAllowedTopicArnPrefixes`, `AwsSnsAllowedAppIds`, `AwsSnsAutoConfirmSubscription`, `AwsSnsSkipSignatureVerification`, `DisabledCapabilities`, `TenantCapabilityAllowlists`) and `Nexo:SmsIngressDynamoDb` (`TableName` when using DynamoDB).
+Configuration: `Nexo:MiddlewareIngress` (`EnableWebSocketIngress`, `EnableSmsSimulationIngress`, `SmsSimulationAllowedAppIds`, `SmsIngressApprovalStore`, `EnableAwsSnsSmsWebhook`, `AwsSnsAllowedTopicArnPrefixes`, `AwsSnsAllowedAppIds`, `AwsSnsAutoConfirmSubscription`, `AwsSnsSkipSignatureVerification`, `AwsSnsSigningCertificateRevocationMode`, `IngressSmsPostRateLimitPermitLimit`, `IngressSmsPostRateLimitWindowSeconds`, `DisabledCapabilities`, `TenantCapabilityAllowlists`) and `Nexo:SmsIngressDynamoDb` (`TableName` when using DynamoDB).
 
 ## `Nexo.Ingress.AwsSns` (library)
 
 Small helpers used by Nexo.API (not AWS SDK–heavy):
 
 - **`SnsCanonicalStringBuilder`** — builds the SNS string-to-sign for `Notification` and subscription handshake types.
-- **`SnsRsaSignatureVerifier`** — downloads the PEM from `SigningCertURL` (HTTPS + `*.amazonaws.com` host allowlist), validates an **Amazon-anchored X.509 chain** (system trust first, then **Amazon Root CA 1** embedded as a custom root fallback), and verifies `SignatureVersion` 1 (SHA-1) or 2 (SHA-256).
+- **`SnsRsaSignatureVerifier`** — downloads the PEM from `SigningCertURL` (HTTPS + `*.amazonaws.com` host allowlist), validates an **Amazon-anchored X.509 chain** (system trust first, then **Amazon Root CA 1** embedded as a custom root fallback; revocation mode from `AwsSnsSigningCertificateRevocationMode`), and verifies `SignatureVersion` 1 (SHA-1) or 2 (SHA-256).
 - **`SnsSmsMessageExtractor`** — unwraps plain text or JSON `Message` bodies (e.g. `originationNumber` + `messageBody`).
 
 `AwsSnsSkipSignatureVerification` is honored **only** when `IHostEnvironment.EnvironmentName` is `Testing` (integration tests). Outside `Testing`, if `EnableAwsSnsSmsWebhook` is **true**, **`AwsSnsAllowedTopicArnPrefixes` must be non-empty** or the host fails `ValidateOnStart` (fail-closed against open-ended topic acceptance).
@@ -34,8 +34,26 @@ Optional **`AwsSnsAllowedAppIds`** enforces `X-Nexo-App-Id` on the SNS route (pa
 
 - **`Memory`** (default) — process-local `ConcurrentDictionary` for labs and CI.
 - **`DynamoDb`** — set `SmsIngressApprovalStore` to `DynamoDb` and `Nexo:SmsIngressDynamoDb:TableName`. Table uses string keys **`pk`** (constant `NexoSmsIngress`) and **`sk`** (idempotency key from `SmsIngressExternalIds`). Grant the runtime identity `dynamodb:PutItem` and `dynamodb:GetItem`.
+- **`UnsupportedSmsIngressApprovalStore`** — registered via `TryAddSingleton` in `AddNexo()` when no host-specific store is configured (e.g. CLI). Nexo.API replaces this with Memory or DynamoDB.
 
 The interface lives in **`Nexo.Contracts`** so Lambda workers can share the contract without referencing `Nexo.API`.
+
+## MediatR command
+
+`RecordSmsYesApprovalCommand` / `RecordSmsYesApprovalHandler` (in `Nexo.API`) record approvals through **MediatR** so pipeline behaviors (ingress logging, validation) apply consistently. `POST /api/ingress/sms/simulate` and SNS `Notification` handling both dispatch this command.
+
+## Rate limiting and revocation
+
+- **`IngressSmsPostRateLimitPermitLimit`** / **`IngressSmsPostRateLimitWindowSeconds`** — per-IP fixed window on both SMS POST routes. When the permit limit is **0**, an effectively unlimited partition is used (no practical throttling).
+- **`AwsSnsSigningCertificateRevocationMode`** — `NoCheck` (default), `Online`, or `Offline` for SNS signing certificate chain builds (`X509Chain.ChainPolicy.RevocationMode`). `Online` can add latency or fail closed if OCSP/CRL endpoints are unreachable.
+
+## Terraform and WAF
+
+`infra/terraform/nexo-sms-ingress/` provisions the DynamoDB table and an **optional** regional WAFv2 Web ACL with a rate-based rule (`create_waf` + `alb_arn`). Tune limits for your traffic.
+
+## Step Functions sample
+
+`samples/approval-workflow/` contains a minimal ASL file and README for a **callback-token** style gate that could invoke GitHub from Lambda (replace placeholders).
 
 ## Sample Lambda forwarder
 

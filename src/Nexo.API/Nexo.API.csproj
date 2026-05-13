@@ -23,6 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="MediatR" />
     <PackageReference Include="Swashbuckle.AspNetCore" />
     <PackageReference Include="LiteDB" />
     <ProjectReference Include="..\Nexo.BackgroundAgents.HostRunners\Nexo.BackgroundAgents.HostRunners.csproj" />

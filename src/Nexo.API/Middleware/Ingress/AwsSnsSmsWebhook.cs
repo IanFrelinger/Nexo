@@ -1,3 +1,4 @@
+using MediatR;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Hosting;
@@ -15,16 +16,17 @@ public static class AwsSnsSmsWebhook
         app.MapPost("/api/ingress/sms/sns", HandleAwsSnsAsync)
             .WithTags("MiddlewareIngress")
             .WithName("AwsSnsSmsWebhook")
-            .WithSummary("Amazon SNS HTTP(S) webhook for SMS-derived approvals (signature verification + YES token)");
+            .WithSummary("Amazon SNS HTTP(S) webhook for SMS-derived approvals (signature verification + YES token)")
+            .RequireRateLimiting("nexo-sms-ingress-posts");
     }
 
     private static async Task<IResult> HandleAwsSnsAsync(
         HttpContext httpContext,
         [FromServices] IOptionsMonitor<NexoMiddlewareIngressOptions> optsMonitor,
-        [FromServices] ISmsIngressApprovalStore smsStore,
         [FromServices] ISnsSignatureVerifier signatureVerifier,
         [FromServices] IHttpClientFactory httpClientFactory,
         [FromServices] IHostEnvironment hostEnvironment,
+        [FromServices] IMediator mediator,
         CancellationToken cancellationToken)
     {
         var options = optsMonitor.CurrentValue;
@@ -68,7 +70,12 @@ public static class AwsSnsSmsWebhook
             var type = typeEl.GetString() ?? string.Empty;
             var http = httpClientFactory.CreateClient("nexo-sns-signing");
             var skipSig = options.AwsSnsSkipSignatureVerification && hostEnvironment.IsEnvironment("Testing");
-            if (!await signatureVerifier.IsAuthenticAsync(root, http, skipSig, cancellationToken).ConfigureAwait(false))
+            if (!await signatureVerifier.IsAuthenticAsync(
+                root,
+                http,
+                skipSig,
+                SnsRevocationModeParser.Parse(options.AwsSnsSigningCertificateRevocationMode),
+                cancellationToken).ConfigureAwait(false))
                 return Results.Unauthorized();
 
             if (root.TryGetProperty("TopicArn", out var topicProp) && topicProp.ValueKind == JsonValueKind.String)
@@ -90,7 +97,7 @@ public static class AwsSnsSmsWebhook
                     options,
                     http,
                     cancellationToken).ConfigureAwait(false),
-                "Notification" => await HandleNotificationAsync(root, smsStore, cancellationToken).ConfigureAwait(false),
+                "Notification" => await HandleNotificationAsync(root, mediator, cancellationToken).ConfigureAwait(false),
                 _ => Results.Ok(new { acknowledged = true, type })
             };
         }
@@ -122,7 +129,7 @@ public static class AwsSnsSmsWebhook
 
     private static async Task<IResult> HandleNotificationAsync(
         JsonElement root,
-        ISmsIngressApprovalStore smsStore,
+        IMediator mediator,
         CancellationToken cancellationToken)
     {
         if (!root.TryGetProperty("Message", out var msgEl) || msgEl.ValueKind != JsonValueKind.String)
@@ -142,7 +149,9 @@ public static class AwsSnsSmsWebhook
         }
 
         var from = string.IsNullOrWhiteSpace(fromAddr) ? "sns" : fromAddr.Trim();
-        var response = await smsStore.TryRecordApprovalAsync(from, token, sid, cancellationToken).ConfigureAwait(false);
+        var response = await mediator
+            .Send(new RecordSmsYesApprovalCommand(from, token, sid), cancellationToken)
+            .ConfigureAwait(false);
         return Results.Ok(response);
     }
 

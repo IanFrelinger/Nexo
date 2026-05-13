@@ -14,6 +14,7 @@ public sealed class SnsRsaSignatureVerifier : ISnsSignatureVerifier
         JsonElement snsMessage,
         HttpClient httpClient,
         bool skipVerification,
+        X509RevocationMode signingCertificateRevocationMode,
         CancellationToken cancellationToken = default)
     {
         if (skipVerification)
@@ -58,7 +59,7 @@ public sealed class SnsRsaSignatureVerifier : ISnsSignatureVerifier
         }
 
         using var cert = X509Certificate2.CreateFromPem(pemText);
-        if (!AmazonCertificateChains.TryValidateSnsSigningCertificate(cert))
+        if (!AmazonCertificateChains.TryValidateSnsSigningCertificate(cert, signingCertificateRevocationMode))
             return false;
 
         using var rsa = cert.GetRSAPublicKey();

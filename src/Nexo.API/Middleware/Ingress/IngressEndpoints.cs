@@ -1,6 +1,7 @@
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
 using Nexo.Contracts;
@@ -42,7 +43,8 @@ public static class IngressEndpoints
         app.MapPost("/api/ingress/sms/simulate", HandleSmsSimulateAsync)
             .WithTags("MiddlewareIngress")
             .WithName("SmsInboundSimulate")
-            .WithSummary("Lab-only simulated inbound SMS approval line (keyword YES &lt;token&gt;)");
+            .WithSummary("Lab-only simulated inbound SMS approval line (keyword YES &lt;token&gt;)")
+            .RequireRateLimiting("nexo-sms-ingress-posts");
 
         app.Map("/ws/v1/echo", HandleWebSocketEchoAsync);
         app.MapAwsSnsSmsWebhook();
@@ -53,7 +55,7 @@ public static class IngressEndpoints
     private static async Task<IResult> HandleSmsSimulateAsync(
         HttpContext httpContext,
         [FromServices] IOptionsMonitor<NexoMiddlewareIngressOptions> optsMonitor,
-        [FromServices] ISmsIngressApprovalStore smsStore,
+        [FromServices] IMediator mediator,
         [FromBody] SmsInboundSimulationRequest? body,
         CancellationToken cancellationToken)
     {
@@ -86,7 +88,8 @@ public static class IngressEndpoints
             return Results.Ok(new SmsInboundSimulationResponse(false, null, "Body must match \"YES <token>\".", false));
         }
 
-        var response = await smsStore.TryRecordApprovalAsync(body.From.Trim(), token, body.MessageSid, cancellationToken)
+        var response = await mediator
+            .Send(new RecordSmsYesApprovalCommand(body.From.Trim(), token, body.MessageSid), cancellationToken)
             .ConfigureAwait(false);
         return Results.Ok(response);
     }
