@@ -58,6 +58,9 @@ public sealed class SnsRsaSignatureVerifier : ISnsSignatureVerifier
         }
 
         using var cert = X509Certificate2.CreateFromPem(pemText);
+        if (!AmazonCertificateChains.TryValidateSnsSigningCertificate(cert))
+            return false;
+
         using var rsa = cert.GetRSAPublicKey();
         if (rsa is null)
             return false;

@@ -9,14 +9,20 @@
     <IsPackable>true</IsPackable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
-    <PackageId>Nexo.Ingress.AwsSns</PackageId>
+    <PackageId>Nexo.Ingress.DynamoDb</PackageId>
     <PackageVersion>1.0.0</PackageVersion>
-    <Title>Nexo AWS SNS ingress helpers</Title>
-    <Description>Canonical string construction, RSA signature verification, and SMS payload extraction for Amazon SNS HTTP(S) webhooks.</Description>
+    <Title>Nexo DynamoDB ingress stores</Title>
+    <Description>DynamoDB-backed SMS approval idempotency for Nexo ingress adapters.</Description>
   </PropertyGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Resources\AmazonRootCA1.pem" />
+    <PackageReference Include="AWSSDK.DynamoDBv2" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Nexo.Contracts\Nexo.Contracts.csproj" />
   </ItemGroup>
 
 </Project>

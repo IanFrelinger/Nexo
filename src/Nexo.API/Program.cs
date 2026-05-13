@@ -42,6 +42,7 @@ using Nexo.API.Forge;
 using Nexo.API.Middleware.Ingress;
 using Nexo.API.Security;
 using Nexo.Core.Application.Middleware.Ports;
+using Nexo.Contracts;
 using Nexo.GameDomain.Mapping;
 using Nexo.GameDomain.Materials;
 using Nexo.BackgroundAgents.Extending;
@@ -50,6 +51,7 @@ using Nexo.BackgroundAgents.Optimization;
 using Nexo.BackgroundAgents.Testing;
 using Nexo.Hosting;
 using Nexo.Ingress.AwsSns;
+using Nexo.Ingress.DynamoDb;
 using Nexo.Runtime;
 using Nexo.Transport.Grpc;
 
@@ -79,9 +81,20 @@ builder.Services.Configure<NexoSecurityOptions>(
     builder.Configuration.GetSection(NexoSecurityOptions.SectionPath));
 builder.Services.Configure<ForgeSessionOptions>(
     builder.Configuration.GetSection(ForgeSessionOptions.SectionPath));
-builder.Services.Configure<NexoMiddlewareIngressOptions>(
-    builder.Configuration.GetSection(NexoMiddlewareIngressOptions.SectionPath));
-builder.Services.AddSingleton<ISmsIngressApprovalStore, MemorySmsIngressApprovalStore>();
+builder.Services.Configure<SmsIngressDynamoDbOptions>(
+    builder.Configuration.GetSection(SmsIngressDynamoDbOptions.SectionPath));
+builder.Services.AddOptions<NexoMiddlewareIngressOptions>()
+    .Bind(builder.Configuration.GetSection(NexoMiddlewareIngressOptions.SectionPath))
+    .ValidateOnStart();
+builder.Services.AddSingleton<IValidateOptions<NexoMiddlewareIngressOptions>, ValidateNexoMiddlewareIngressOptions>();
+
+var smsIngressPreview = builder.Configuration.GetSection(NexoMiddlewareIngressOptions.SectionPath)
+    .Get<NexoMiddlewareIngressOptions>() ?? new NexoMiddlewareIngressOptions();
+if (string.Equals(smsIngressPreview.SmsIngressApprovalStore, SmsIngressApprovalStoreKind.DynamoDb, StringComparison.OrdinalIgnoreCase))
+    builder.Services.AddDynamoDbSmsIngressApprovalStore();
+else
+    builder.Services.AddSingleton<ISmsIngressApprovalStore, MemorySmsIngressApprovalStore>();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(static options =>
     options.SwaggerDoc("v1", new OpenApiInfo { Title = "Nexo.API", Version = "v1" }));

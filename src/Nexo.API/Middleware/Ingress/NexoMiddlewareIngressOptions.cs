@@ -1,3 +1,5 @@
+using Nexo.Contracts;
+
 namespace Nexo.API.Middleware.Ingress;
 
 /// <summary>
@@ -34,6 +36,11 @@ public sealed class NexoMiddlewareIngressOptions
     public string[] AwsSnsAllowedTopicArnPrefixes { get; set; } = [];
 
     /// <summary>
+    /// When non-empty, <c>X-Nexo-App-Id</c> must match one of these values for the SNS webhook (parity with SMS simulation).
+    /// </summary>
+    public string[] AwsSnsAllowedAppIds { get; set; } = [];
+
+    /// <summary>
     /// When true, after a valid signature on Subscription/Unsubscribe confirmation, performs HTTPS GET on <c>SubscribeURL</c> (use with care).
     /// </summary>
     public bool AwsSnsAutoConfirmSubscription { get; set; }
@@ -42,6 +49,11 @@ public sealed class NexoMiddlewareIngressOptions
     /// When true and the host environment name is <c>Testing</c>, skips SNS RSA verification (integration tests only).
     /// </summary>
     public bool AwsSnsSkipSignatureVerification { get; set; }
+
+    /// <summary>
+    /// Backing store for SMS approvals: <see cref="SmsIngressApprovalStoreKind.Memory"/> or <see cref="SmsIngressApprovalStoreKind.DynamoDb"/>.
+    /// </summary>
+    public string SmsIngressApprovalStore { get; set; } = SmsIngressApprovalStoreKind.Memory;
 
     /// <summary>
     /// Optional per-tenant allowlists for guarded capabilities (fail closed when the tenant header matches a key).

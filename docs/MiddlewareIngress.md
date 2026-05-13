@@ -16,17 +16,30 @@ This document closes the operational gaps around **multi-transport middleware**:
 | SMS lab | `POST /api/ingress/sms/simulate` | Parses `YES <token>`; in-memory idempotent store. **Not** signed AWS callbacks. |
 | AWS SNS webhook | `POST /api/ingress/sms/sns` | Optional signed SNS → same approval store (`Nexo.Ingress.AwsSns` helpers). |
 
-Configuration: `Nexo:MiddlewareIngress` in `appsettings.json` (`EnableWebSocketIngress`, `EnableSmsSimulationIngress`, `SmsSimulationAllowedAppIds`, `EnableAwsSnsSmsWebhook`, `AwsSnsAllowedTopicArnPrefixes`, `AwsSnsAutoConfirmSubscription`, `AwsSnsSkipSignatureVerification`, `DisabledCapabilities`, `TenantCapabilityAllowlists`).
+Configuration: `Nexo:MiddlewareIngress` (`EnableWebSocketIngress`, `EnableSmsSimulationIngress`, `SmsSimulationAllowedAppIds`, `SmsIngressApprovalStore`, `EnableAwsSnsSmsWebhook`, `AwsSnsAllowedTopicArnPrefixes`, `AwsSnsAllowedAppIds`, `AwsSnsAutoConfirmSubscription`, `AwsSnsSkipSignatureVerification`, `DisabledCapabilities`, `TenantCapabilityAllowlists`) and `Nexo:SmsIngressDynamoDb` (`TableName` when using DynamoDB).
 
 ## `Nexo.Ingress.AwsSns` (library)
 
 Small helpers used by Nexo.API (not AWS SDK–heavy):
 
 - **`SnsCanonicalStringBuilder`** — builds the SNS string-to-sign for `Notification` and subscription handshake types.
-- **`SnsRsaSignatureVerifier`** — downloads the PEM from `SigningCertURL` (HTTPS + `*.amazonaws.com` host allowlist) and verifies `SignatureVersion` 1 (SHA-1) or 2 (SHA-256).
+- **`SnsRsaSignatureVerifier`** — downloads the PEM from `SigningCertURL` (HTTPS + `*.amazonaws.com` host allowlist), validates an **Amazon-anchored X.509 chain** (system trust first, then **Amazon Root CA 1** embedded as a custom root fallback), and verifies `SignatureVersion` 1 (SHA-1) or 2 (SHA-256).
 - **`SnsSmsMessageExtractor`** — unwraps plain text or JSON `Message` bodies (e.g. `originationNumber` + `messageBody`).
 
-`AwsSnsSkipSignatureVerification` is honored **only** when `IHostEnvironment.EnvironmentName` is `Testing` (integration tests). Production must leave it false and enforce `AwsSnsAllowedTopicArnPrefixes` when possible.
+`AwsSnsSkipSignatureVerification` is honored **only** when `IHostEnvironment.EnvironmentName` is `Testing` (integration tests). Outside `Testing`, if `EnableAwsSnsSmsWebhook` is **true**, **`AwsSnsAllowedTopicArnPrefixes` must be non-empty** or the host fails `ValidateOnStart` (fail-closed against open-ended topic acceptance).
+
+Optional **`AwsSnsAllowedAppIds`** enforces `X-Nexo-App-Id` on the SNS route (parity with SMS simulation app allowlists).
+
+## Approval storage (`ISmsIngressApprovalStore`)
+
+- **`Memory`** (default) — process-local `ConcurrentDictionary` for labs and CI.
+- **`DynamoDb`** — set `SmsIngressApprovalStore` to `DynamoDb` and `Nexo:SmsIngressDynamoDb:TableName`. Table uses string keys **`pk`** (constant `NexoSmsIngress`) and **`sk`** (idempotency key from `SmsIngressExternalIds`). Grant the runtime identity `dynamodb:PutItem` and `dynamodb:GetItem`.
+
+The interface lives in **`Nexo.Contracts`** so Lambda workers can share the contract without referencing `Nexo.API`.
+
+## Sample Lambda forwarder
+
+See **`samples/aws-sns-nexo-lambda/`** — minimal Node.js Lambda that reshapes SNS subscription events into the HTTP JSON document Nexo verifies, then `POST`s to `NEXO_SMS_URL`.
 
 ## MediatR and `INexoIngressAccessor`
 
@@ -48,7 +61,7 @@ The lab endpoint exists to **parse and unit-test** approval keywords. A producti
 
 Wire contract: treat Lambda’s normalized payload as the same conceptual shape as `SmsInboundSimulationRequest` (from, body, stable external id for idempotency) and map into your approval store interface in application code **outside** Nexo.API if you want strict network boundaries.
 
-For HTTP(S) subscriptions directly to Nexo.API, **`POST /api/ingress/sms/sns`** reuses **`ISmsIngressApprovalStore`** after signature verification. Prefer a dedicated Lambda in front for least attack surface when exposing only an internal API.
+For HTTP(S) subscriptions directly to Nexo.API, **`POST /api/ingress/sms/sns`** reuses **`ISmsIngressApprovalStore`** after signature verification. Prefer a dedicated Lambda (see `samples/aws-sns-nexo-lambda/`) or private networking in front of Nexo when the API is not meant to be Internet-exposed.
 
 ## GitHub approval without SMS
 

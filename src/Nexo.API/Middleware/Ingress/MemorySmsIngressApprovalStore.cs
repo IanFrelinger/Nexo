@@ -14,9 +14,7 @@ public sealed class MemorySmsIngressApprovalStore : ISmsIngressApprovalStore
         string? messageSid,
         CancellationToken cancellationToken)
     {
-        var externalId = !string.IsNullOrWhiteSpace(messageSid)
-            ? $"sid:{messageSid.Trim()}"
-            : $"hash:{from}:{approvalToken}";
+        var externalId = SmsIngressExternalIds.Build(from, approvalToken, messageSid);
 
         if (_byExternalId.TryGetValue(externalId, out var existing))
             return Task.FromResult(existing with { IdempotentReplay = true });

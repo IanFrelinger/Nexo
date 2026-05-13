@@ -38,6 +38,16 @@ public static class AwsSnsSmsWebhook
         if (!IngressEndpointPolicies.TenantAllowsCapability(options, tenantId, IngressCapability.AwsSnsSms))
             return Results.StatusCode(StatusCodes.Status403Forbidden);
 
+        var appId = httpContext.Request.Headers["X-Nexo-App-Id"].FirstOrDefault();
+        if (options.AwsSnsAllowedAppIds.Length > 0)
+        {
+            if (string.IsNullOrWhiteSpace(appId)
+                || !options.AwsSnsAllowedAppIds.Contains(appId.Trim(), StringComparer.Ordinal))
+            {
+                return Results.StatusCode(StatusCodes.Status403Forbidden);
+            }
+        }
+
         JsonDocument doc;
         try
         {
