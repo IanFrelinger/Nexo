@@ -36,6 +36,16 @@ bash scripts/verify-stable-sdk-host-sample-packages.sh
 
 This packs the graph to `artifacts/nuget-verify/packages`, restores `docs/samples/StableSdkHostSample/package-consumer/` against **only** that folder + nuget.org, builds, and runs the sample.
 
+To verify **exactly** the folder you are about to push (for example after unpacking the **`nuget-packages-<version>`** workflow artifact), point the script at that directory so it does not re-pack:
+
+```bash
+export NEXO_SDK_PACKAGE_VERSION=1.2.3
+export NEXO_SDK_PACKAGE_FEED=/path/to/unpacked/nuget-packages
+bash scripts/verify-stable-sdk-host-sample-packages.sh
+```
+
+GitHub Actions **`.github/workflows/reusable-release-nuget.yml`** runs the same verification **after** packing and **before** uploading the artifact or pushing to nuget.org, so a broken graph fails the job before anything leaves the runner.
+
 **After packages are on nuget.org (or a private feed):** use `scripts/verify-stable-sdk-host-sample-published-feed.sh` — see **`docs/NuGetConsumerVerify.md`** and workflow **`.github/workflows/nuget-consumer-verify.yml`**.
 
 ## Publish to nuget.org (you do this)
@@ -47,10 +57,19 @@ Workflows:
 - **`.github/workflows/release.yml`** — **tag `v*.*.*`**: GHCR **and** NuGet in one run. Configure Trusted Publishing for workflow file **`release.yml`** (filename only). After a successful push to nuget.org, runs **Verify NuGet consumer** (shared with **release-nuget**).
 - **`.github/workflows/release-nuget.yml`** — **manual NuGet-only** dispatch (version input). After push to nuget.org, runs the same **Verify NuGet consumer** job when **`NUGET_PUBLISH_MODE`** is **`oidc`** or **`apikey`**.
 
+**Trusted Publishing (OIDC)** on nuget.org is bound to the **caller** workflow file, not the reusable `reusable-release-nuget.yml`. Register every entry point you use:
+
+| If you publish via | Register this workflow file on nuget.org |
+|--------------------|---------------------------------------------|
+| Tag push → **Release** | **`release.yml`** |
+| **Actions → Release NuGet packages** with `NUGET_PUBLISH_MODE=oidc` | **`release-nuget.yml`** |
+
+If you only ever use tag releases, **`release.yml`** alone is enough. If operators also run **`release-nuget.yml`** with OIDC, add a second Trusted Publishing policy (or equivalent) for **`release-nuget.yml`** or those pushes will be denied.
+
 1. **Repository variable** `NUGET_PUBLISH_MODE`:
-   - `none` — build only; download **`nuget-packages-<version>`** artifact and push manually.
-   - `oidc` — [Trusted Publishing](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing): policy must include **`release.yml`** (for tag releases). Secret **`NUGET_USER`** = nuget.org **profile name** (not email).
-   - `apikey` — secret **`NUGET_API_KEY`**.
+   - unset, empty, or **`none`** — pack + verify + artifact only; download **`nuget-packages-<version>`** and push manually if desired.
+   - **`oidc`** — [Trusted Publishing](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing) for the workflow files above. Secret **`NUGET_USER`** = nuget.org **profile name** (not email).
+   - **`apikey`** — secret **`NUGET_API_KEY`**.
 2. **Trigger:** push tag **`v1.2.3`** (preferred), or **Actions → Release** / **Release NuGet packages** for partial flows.
 3. **After push to nuget.org:** **`release.yml`** runs **Verify NuGet consumer (nuget.org)** when **`NUGET_PUBLISH_MODE`** is **`oidc`** or **`apikey`** (restores the sample from nuget.org only, with retries for index lag). See **`docs/NuGetConsumerVerify.md`**.
 4. Write **GitHub Release** notes and verify packages on nuget.org.
@@ -76,5 +95,13 @@ The CLI image is published by `.github/workflows/container-image-publish.yml` to
 
 ## What you must maintain over time
 
-- When `Nexo.Hosting` gains a **new project reference** to another in-repo `Nexo.*` project, add that project to **`scripts/pack-nexo-hosting-graph.sh`** / **`.ps1`** so the graph stays publishable.
+- When `Nexo.Hosting` gains a **new project reference** to another in-repo `Nexo.*` project, add that project to **`scripts/pack-nexo-hosting-graph.sh`** / **`.ps1`** so the graph stays publishable. CI runs **`python3 scripts/verify-pack-nexo-hosting-graph-alignment.py`**, which compares the pack list to the **transitive** `ProjectReference` closure from `Nexo.Hosting` (and checks `.sh` matches `.ps1`).
 - Keep **`PackageVersion`** in sync across the graph for a given release (the scripts pass one version to every `dotnet pack`).
+
+## Post-push nuget.org check (optional)
+
+After a successful push, **`reusable-release-nuget.yml`** can poll the [flat container](https://api.nuget.org/v3-flatcontainer/) for **`Nexo.Hosting.Bundle`** until the `.nupkg` returns HTTP 200 (handles index lag). Set repository variable **`NUGET_POST_PUSH_VERIFY`** to **`false`** to skip this step. Tune **`NEXO_NUGET_VERIFY_ATTEMPTS`** / **`NEXO_NUGET_VERIFY_SLEEP_SEC`** in `scripts/verify-nuget-org-package-visible.sh` if needed.
+
+## Operator checklist
+
+See **`docs/RELEASE_RUNBOOK.md`** for a one-page release sequence (tag, workflows, secrets, rollback notes).

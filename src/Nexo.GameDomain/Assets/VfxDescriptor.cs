@@ -1,8 +1,8 @@
 namespace Nexo.GameDomain.Assets;
 
 /// <summary>
-/// Visual effect descriptor for Unity. Covers particle systems and VFX Graph
-/// configurations for muzzle flash, impacts, explosions, trails, ambient effects.
+/// Visual effect descriptor (particles, ribbons, GPU VFX). Covers configurations for
+/// muzzle flash, impacts, explosions, trails, ambient effects.
 /// </summary>
 public sealed record VfxDescriptor
 {

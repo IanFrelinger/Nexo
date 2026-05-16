@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>12.0</LangVersion>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <IsPackable>true</IsPackable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+    <PackageId>Nexo.Ingress.AwsSns</PackageId>
+    <PackageVersion>1.0.0</PackageVersion>
+    <Title>Nexo AWS SNS ingress helpers</Title>
+    <Description>Canonical string construction, RSA signature verification, and SMS payload extraction for Amazon SNS HTTP(S) webhooks.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\AmazonRootCA1.pem" />
+  </ItemGroup>
+
+</Project>

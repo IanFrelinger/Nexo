@@ -1,5 +1,4 @@
-# Publishes GHCR images on pushes to main (path-filtered) or manual dispatch.
-# Release tags (v*.*.*) use **release.yml** so images + NuGet run once.
+# Publishes GHCR images on manual dispatch. Release tags (v*.*.*) use **release.yml**.
 
 name: Container Image Publish
 
@@ -11,34 +10,6 @@ on:
         required: false
         default: false
         type: boolean
-  push:
-    branches:
-      - master
-      - main
-    paths:
-      - ".github/workflows/container-image-publish.yml"
-      - ".github/workflows/reusable-container-publish.yml"
-      - ".docker/**"
-      - ".dockerignore"
-      - "src/Nexo.CLI/**"
-      - "src/Nexo.API/**"
-      - "src/Nexo.Core.Application/**"
-      - "src/Nexo.Infrastructure/**"
-      - "src/Nexo.Hosting/**"
-      - "src/Nexo.Runtime/**"
-      - "src/Nexo.Abstractions/**"
-      - "src/Nexo.Core/**"
-      - "src/Nexo.Core.Domain/**"
-      - "src/Nexo.Brick.Contracts/**"
-      - "src/Nexo.Orchestration/**"
-      - "src/Nexo.BackgroundAgents/**"
-      - "src/Nexo.Transport.Grpc/**"
-      - "src/Nexo.Policies/**"
-      - "src/Nexo.Tools.Assembly/**"
-      - "src/Nexo.Tools.Dev/**"
-      - "Directory.Build.props"
-      - "Directory.Packages.props"
-      - "global.json"
 
 permissions:
   contents: read

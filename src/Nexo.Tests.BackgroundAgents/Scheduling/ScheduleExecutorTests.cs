@@ -38,7 +38,7 @@ public class ScheduleExecutorTests
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         await executor.ExecuteAsync(instance, ExecuteOnce, cts.Token);
 
-        callCount.Should().BeGreaterOrEqualTo(2);
+        callCount.Should().BeGreaterThanOrEqualTo(2);
     }
 
     [Fact]
