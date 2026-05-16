@@ -101,7 +101,19 @@ Targets are **defaults for a first internal mesh**; tighten per environment.
 - [x] **Trust boundary** documented (mesh + remote execute + residency).
 - [x] **SLOs** and failure modes stated with initial numeric targets.
 
-**Next step (Phase 1):** Implement minimal **director + placement** (job model, assign peer, retry) without migration — see gap-closure plan in prior design discussion; optional tracking issue batch in [IssueBatch_30-60-90_Roadmap.md](IssueBatch_30-60-90_Roadmap.md).
+**Next step (Phase 1):** Implemented — see [MeshPhase1ControlPlane.md](MeshPhase1ControlPlane.md) (`/api/mesh`, in-memory fleet + task placement).
+
+**Next step (Phase 2):** Implemented — see [MeshPhase2TransportAndAuth.md](MeshPhase2TransportAndAuth.md) (`Nexo:Security:Mesh`, middleware before built-in API auth).
+
+**Next step (Phase 3):** Implemented — see [MeshPhase3DistributedExecution.md](MeshPhase3DistributedExecution.md) (correlation, idempotency, result handles).
+
+**Next step (Phase 4):** Implemented — see [MeshPhase4KnowledgeSync.md](MeshPhase4KnowledgeSync.md) (adaptation + pattern mesh sync).
+
+**Next step (Phase 5):** Implemented — see [MeshPhase5ElasticScheduling.md](MeshPhase5ElasticScheduling.md) (queue-aware placement + stale pending rebalancer).
+
+**Next step (Phase 6):** Implemented — see [MeshPhase6LeasesAndCheckpoints.md](MeshPhase6LeasesAndCheckpoints.md) (leases, extend/migrate, sweep).
+
+Optional tracking issue batch in [IssueBatch_30-60-90_Roadmap.md](IssueBatch_30-60-90_Roadmap.md).
 
 ---
 

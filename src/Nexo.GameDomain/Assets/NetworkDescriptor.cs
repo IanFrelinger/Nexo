@@ -1,9 +1,8 @@
 namespace Nexo.GameDomain.Assets;
 
 /// <summary>
-/// Network object descriptor for Unity Netcode for GameObjects. Defines
-/// which components replicate, synchronization mode, ownership rules,
-/// and RPC patterns for multiplayer FPS gameplay.
+/// Network-replicated object descriptor. Defines which components replicate, synchronization mode,
+/// ownership rules, and remote-call patterns for multiplayer gameplay.
 /// </summary>
 public sealed record NetworkDescriptor
 {

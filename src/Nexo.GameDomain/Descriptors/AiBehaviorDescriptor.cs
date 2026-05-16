@@ -3,7 +3,7 @@ namespace Nexo.GameDomain.Descriptors;
 /// <summary>
 /// Data-only descriptor for an AI combatant behaviour profile.
 /// <para>
-/// The Unity AI controller reads these descriptors to configure perception, decision-making,
+/// The host AI controller reads these descriptors to configure perception, decision-making,
 /// and engagement parameters for non-player characters during prototype playtesting.
 /// </para>
 /// </summary>

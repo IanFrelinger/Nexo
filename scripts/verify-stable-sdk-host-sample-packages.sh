@@ -2,6 +2,7 @@
 # Pack Nexo.Hosting to a local directory, restore StableSdkHostSample.Package.csproj against that feed only (+ nuget.org for dependencies), and build.
 #
 # Optional: NEXO_SDK_PACKAGE_FEED=/path/to/folder-of-nupkg skips pack-nexo-hosting-graph (e.g. unpacked CI artifact).
+# Same layout as after pack-nexo-hosting-graph plus Client/Sdk packs when you point at a pre-packed folder.
 #
 # By default uses an empty NUGET_PACKAGES + DOTNET_CLI_HOME so restore cannot pick up stale packages from
 # your user/global cache (closer to a first-time consumer). Set NEXO_SDK_VERIFY_NO_ISOLATED_CACHE=1 to skip.

@@ -19,6 +19,7 @@ pack() {
 }
 
 pack src/Nexo.Abstractions/Nexo.Abstractions.csproj
+pack src/Nexo.Contracts/Nexo.Contracts.csproj
 pack src/Nexo.Core.Domain/Nexo.Core.Domain.csproj
 pack src/Nexo.Core/Nexo.Core.csproj
 pack src/Nexo.Core.Application/Nexo.Core.Application.csproj

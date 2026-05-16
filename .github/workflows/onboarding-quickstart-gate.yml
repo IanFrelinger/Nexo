@@ -1,32 +1,6 @@
 name: onboarding-quickstart-gate
 
 on:
-  schedule:
-    - cron: "0 7 * * 1"
-  push:
-    branches:
-      - master
-      - main
-      - "cursor/**"
-    paths:
-      - '.github/workflows/onboarding-quickstart-gate.yml'
-      - 'README.md'
-      - 'docs/GettingStarted.md'
-      - 'docs/OnboardingAutomation.md'
-      - 'scripts/setup/**'
-      - 'scripts/install/**'
-      - 'src/Nexo.CLI/**'
-      - 'global.json'
-  pull_request:
-    paths:
-      - '.github/workflows/onboarding-quickstart-gate.yml'
-      - 'README.md'
-      - 'docs/GettingStarted.md'
-      - 'docs/OnboardingAutomation.md'
-      - 'scripts/setup/**'
-      - 'scripts/install/**'
-      - 'src/Nexo.CLI/**'
-      - 'global.json'
   workflow_dispatch:
 
 jobs:

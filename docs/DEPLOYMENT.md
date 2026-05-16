@@ -53,7 +53,7 @@ This document is the **default “what do I run in production?”** map. Other c
 2. GitHub runs **`.github/workflows/release.yml`**: **GHCR** `nexo-cli` + `nexo-api` (sha + semver tags) and **NuGet** pack/push (per `NUGET_PUBLISH_MODE`).
 3. Open the workflow run **Summary** for copy-paste **pin lines** (sha + semver + NuGet version).
 
-**Which workflow?** See the decision table in **`docs/RELEASE_RUNBOOK.md`**.
+**Which workflow?** See **`docs/RELEASE_RUNBOOK.md`** for the one-page checklist and the workflow decision table.
 
 **NuGet-only** (e.g. hotfix packages without retagging images): **Actions → Release NuGet packages** (`release-nuget.yml`).
 
@@ -76,4 +76,4 @@ For an operations-level dry run—**same Compose topology and images** as the go
 | `NUGET_API_KEY` | Optional **fallback** long-lived key if Trusted Publishing is not configured yet |
 | `GITHUB_TOKEN` | Provided by Actions; used for GHCR push in `container-image-publish` |
 
-Configure **Trusted Publishing** on nuget.org per [NuGet trusted publishing](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing): register **`release.yml`** for tag releases and **`release-nuget.yml`** if you use NuGet-only dispatch with OIDC. Details: **`docs/PUBLISHING.md`** and **`docs/RELEASE_RUNBOOK.md`**.
+Configure **Trusted Publishing** on nuget.org per [NuGet trusted publishing](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing): register **`release.yml`** for tag releases and **`release-nuget.yml`** if you use NuGet-only dispatch with OIDC. See **`docs/PUBLISHING.md`** for the full matrix and **`docs/RELEASE_RUNBOOK.md`** for operator steps.

@@ -1,5 +1,5 @@
 #requires -Version 7.0
-# Optional: $env:NEXO_SDK_PACKAGE_FEED = folder of *.nupkg to skip pack-nexo-hosting-graph
+# Optional: $env:NEXO_SDK_PACKAGE_FEED = folder of *.nupkg to skip pack-nexo-hosting-graph (same layout as after pack + Client/Sdk).
 # By default sets NUGET_PACKAGES + DOTNET_CLI_HOME to a fresh temp dir (first-time consumer). Set NEXO_SDK_VERIFY_NO_ISOLATED_CACHE=1 to skip.
 param(
     [string] $Version = $env:NEXO_SDK_PACKAGE_VERSION

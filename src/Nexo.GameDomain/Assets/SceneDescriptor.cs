@@ -1,7 +1,7 @@
 namespace Nexo.GameDomain.Assets;
 
 /// <summary>
-/// Data-only descriptor for a Unity scene, including root objects, lighting, and navigation areas.
+/// Data-only descriptor for a level or scene: root objects, lighting, and navigation areas.
 /// </summary>
 public sealed record SceneDescriptor
 {

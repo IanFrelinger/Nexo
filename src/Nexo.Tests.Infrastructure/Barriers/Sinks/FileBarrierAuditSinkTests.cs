@@ -81,8 +81,8 @@ public sealed class FileBarrierAuditSinkTests
             IoWait);
 
         var files = GetAuditFiles(testDir, "audit-barriers");
-        files.Length.Should().BeLessOrEqualTo(4);
-        files.Length.Should().BeGreaterOrEqualTo(2);
+        files.Length.Should().BeLessThanOrEqualTo(4);
+        files.Length.Should().BeGreaterThanOrEqualTo(2);
     }
 
     [Fact]
