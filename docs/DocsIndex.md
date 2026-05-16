@@ -89,6 +89,7 @@ Documentation index for the Nexo platform. Start here to find what you need.
 - `docs/MeshPhase4KnowledgeSync.md` — **Phase 4:** adaptation + pattern export/import between peers, optional background pull.
 - `docs/MeshPhase5ElasticScheduling.md` — **Phase 5:** queue-aware placement, heartbeat queue depth, elastic status, pending rebalancer.
 - `docs/MeshPhase6LeasesAndCheckpoints.md` — **Phase 6:** execution leases, lease extend, migrate-for-checkpoint, optional lease sweep.
+- `docs/MeshPhase7EdgeAlignment.md` — **Mesh Phase 7:** headless `nexo mesh director` HTTP client and edge/mobile notes for the mesh control plane.
 - `docs/ExecutionPlan.md` — phased execution plan with implementation tasks, dependencies, and success metrics.
 - `docs/IssueBatch_30-60-90_Roadmap.md` — 30/60/90 gap-closure issue batch (issue templates).
 - `docs/NorthStarGapAnalysis.md` — North Star vs codebase gap analysis with status tracking.

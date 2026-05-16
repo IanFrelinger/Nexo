@@ -140,6 +140,16 @@ Binds section **`Nexo:Mesh:Checkpoint`**. See [MeshPhase6LeasesAndCheckpoints.md
 | `Nexo__Mesh__Checkpoint__SweepEnabled` | `true` to periodically move **Assigned**/**Running** tasks with expired leases to **Pending** | `false` |
 | `Nexo__Mesh__Checkpoint__SweepIntervalMinutes` | Minutes between sweep passes | `1` |
 
+## Mesh director CLI (`NEXO_MESH_*`, Phase 7)
+
+Used by **`nexo mesh director`** when a worker or script talks to a remote **`Nexo.API`** mesh control plane. See **`docs/MeshPhase7EdgeAlignment.md`**. Discovery-related `NEXO_MESH_*` values also appear under **Core** above; this section summarizes hub HTTP access from the CLI.
+
+| Variable | Description |
+|----------|-------------|
+| `NEXO_MESH_DIRECTOR_BASE_URL` | Director base URL (e.g. `https://hub:8080`) |
+| `NEXO_MESH_API_KEY` | Optional **`X-Nexo-Api-Key`** when the hub enforces API key auth |
+| `NEXO_MESH_MUTATING_TOKEN` | Optional **`X-Nexo-Mesh-Token`** for mutating **`/api/mesh`** requests |
+
 ## Pipelines (`NEXO_PIPELINE_*`)
 
 Pipeline options resolve in this order: defaults, config (`Nexo:Pipelines:*`), then environment variables.
