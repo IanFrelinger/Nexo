@@ -12,7 +12,7 @@ Nexo operates entirely on infrastructure you control. Cloud providers are opt-in
 
 Repository: <https://github.com/IanFrelinger/Nexo>
 
-Architecture notes for contributors and reviewers: **`docs/architecture/`** (trust boundaries, testing model, .NET SDK vs. target frameworks).
+Architecture notes for contributors and reviewers: **`docs/architecture/`** (trust boundaries, testing model, .NET SDK vs. target frameworks, **[runtime vs application split](docs/architecture/runtime-vs-application.md)**).
 
 **Production readiness (all audiences):** structured checklists and runbooks in **`docs/production-readiness/`** — use with **`docs/ProductionReadinessGate-v1.md`** and **`docs/DEPLOYMENT.md`**.
 

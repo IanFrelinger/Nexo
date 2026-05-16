@@ -78,8 +78,7 @@ public sealed record AestheticPack
 /// Normalised detail multiplier in <c>[0, 1]</c>.
 /// Interpretation varies by geometry strategy:
 /// <list type="bullet">
-///   <item><c>voxel</c> — voxel resolution relative to max grid density; see also
-///   <see cref="Environments.VoxelLodTier"/> for explicit tier definitions.</item>
+///   <item><c>voxel</c> — voxel resolution relative to max grid density.</item>
 ///   <item><c>low_poly</c> — triangle budget as a fraction of the base mesh.</item>
 ///   <item><c>pixel_art</c> — sprite resolution multiplier.</item>
 ///   <item><c>pbr</c> — texture mip level / mesh decimation factor.</item>

@@ -21,7 +21,6 @@ public class AestheticPackTests
         pack.DefaultPaletteColors.Should().BeEmpty();
         pack.LodLevels.Should().BeEmpty();
         pack.PostProcessEffects.Should().BeEmpty();
-        pack.EnvironmentManifestId.Should().BeNull();
     }
 
     [Fact]

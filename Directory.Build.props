@@ -25,12 +25,12 @@
 
   <!-- Override transitive System.Text.Encodings.Web 4.5.x (NU1904 / GHSA-ghhp-997w-qr28). -->
   <!-- Skip for package-only SDK sample: uses explicit versions + local Directory.Packages.props (see docs/samples/.../package-consumer). -->
-  <ItemGroup Condition="'$(MSBuildProjectName)' != 'StableSdkHostSample.Package' AND '$(MSBuildProjectName)' != 'Nexo.Hosting.Bundle' AND '$(MSBuildProjectName)' != 'Nexo.NugetOrgRestoreVerify' AND '$(MSBuildProjectName)' != 'Nexo.NugetOrgRestoreHostingOnly'">
+  <ItemGroup Condition="'$(MSBuildProjectName)' != 'StableSdkHostSample.Package' AND '$(MSBuildProjectName)' != 'Nexo.Hosting.Bundle' AND '$(MSBuildProjectName)' != 'Nexo.Runtime.Bundle' AND '$(MSBuildProjectName)' != 'Nexo.NugetOrgRestoreVerify' AND '$(MSBuildProjectName)' != 'Nexo.NugetOrgRestoreHostingOnly'">
     <PackageReference Include="System.Text.Encodings.Web" />
   </ItemGroup>
 
   <!-- NuGet pack: README at repo root (NU5039 if only PackageReadmeFile without packed file). -->
-  <ItemGroup Condition="'$(IsPackable)' == 'true' AND '$(MSBuildProjectName)' != 'Nexo.Hosting.Bundle'">
+  <ItemGroup Condition="'$(IsPackable)' == 'true' AND '$(MSBuildProjectName)' != 'Nexo.Hosting.Bundle' AND '$(MSBuildProjectName)' != 'Nexo.Runtime.Bundle'">
     <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 </Project>
