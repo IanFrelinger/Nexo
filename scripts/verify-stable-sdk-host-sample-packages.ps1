@@ -1,5 +1,6 @@
 #requires -Version 7.0
-# Optional: $env:NEXO_SDK_PACKAGE_FEED, isolated cache (see .sh). NEXO_SDK_VERIFY_NO_ISOLATED_CACHE=1 opts out.
+# Optional: $env:NEXO_SDK_PACKAGE_FEED = folder of *.nupkg to skip pack-nexo-hosting-graph (same layout as after pack + Client/Sdk).
+# By default sets NUGET_PACKAGES + DOTNET_CLI_HOME to a fresh temp dir (first-time consumer). Set NEXO_SDK_VERIFY_NO_ISOLATED_CACHE=1 to skip.
 param(
     [string] $Version = $env:NEXO_SDK_PACKAGE_VERSION
 )
@@ -14,15 +15,15 @@ $Feed = $env:NEXO_SDK_PACKAGE_FEED
 $Out = Join-Path $Root "artifacts/nuget-verify/packages"
 $CfgDir = Join-Path $Root "artifacts/nuget-verify"
 $Cfg = Join-Path $CfgDir "NuGet.Config"
-$isolCleanup = $null
 
 if (-not [string]::IsNullOrWhiteSpace($Feed)) {
     if (-not (Test-Path -LiteralPath $Feed -PathType Container)) {
         throw "NEXO_SDK_PACKAGE_FEED is not a directory: $Feed"
     }
     $Out = (Resolve-Path -LiteralPath $Feed).Path
-    Write-Host "Using pre-packed feed at $Out; skipping pack."
-} else {
+    Write-Host "Using pre-packed feed at $Out (version $Version); skipping pack-nexo-hosting-graph."
+}
+else {
     if (Test-Path $Out) { Remove-Item -Recurse -Force $Out }
     New-Item -ItemType Directory -Path $Out -Force | Out-Null
     Write-Host "Packing Nexo.Hosting dependency graph as version $Version..."
@@ -31,6 +32,7 @@ if (-not [string]::IsNullOrWhiteSpace($Feed)) {
 
 New-Item -ItemType Directory -Path $CfgDir -Force | Out-Null
 
+$isolCleanup = $null
 if ([string]::IsNullOrWhiteSpace($env:NEXO_SDK_VERIFY_NO_ISOLATED_CACHE)) {
     $isolBase = if (-not [string]::IsNullOrWhiteSpace($env:NEXO_SDK_VERIFY_ISOLATED_ROOT)) {
         New-Item -ItemType Directory -Path $env:NEXO_SDK_VERIFY_ISOLATED_ROOT -Force | Out-Null
@@ -47,9 +49,9 @@ if ([string]::IsNullOrWhiteSpace($env:NEXO_SDK_VERIFY_NO_ISOLATED_CACHE)) {
     New-Item -ItemType Directory -Path $cliHome -Force | Out-Null
     $env:NUGET_PACKAGES = $pkgDir
     $env:DOTNET_CLI_HOME = $cliHome
-    Write-Host "Isolated restore: NUGET_PACKAGES=$($env:NUGET_PACKAGES)"
+    Write-Host "Isolated restore: NUGET_PACKAGES=$($env:NUGET_PACKAGES) DOTNET_CLI_HOME=$($env:DOTNET_CLI_HOME)"
 } else {
-    Write-Host "Skipping isolated cache (NEXO_SDK_VERIFY_NO_ISOLATED_CACHE)."
+    Write-Host "Skipping isolated package cache (NEXO_SDK_VERIFY_NO_ISOLATED_CACHE is set)."
 }
 
 $outUri = ([Uri]$Out).AbsoluteUri.TrimEnd('/')

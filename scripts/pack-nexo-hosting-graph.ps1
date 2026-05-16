@@ -1,5 +1,6 @@
 #requires -Version 7.0
-# Align Pack-Project list: python3 scripts/verify-pack-nexo-hosting-graph-alignment.py (+ optional pack-nexo-hosting-graph.allowlist.txt)
+# Align Pack-Project list with MSBuild closure from Nexo.Hosting (+ optional scripts/pack-nexo-hosting-graph.allowlist.txt):
+#   python3 scripts/verify-pack-nexo-hosting-graph-alignment.py
 param(
     [Parameter(Mandatory = $true)][string] $Version,
     [string] $OutputDir = ""
@@ -22,6 +23,7 @@ function Pack-Project([string] $RelativePath) {
 }
 
 Pack-Project "src/Nexo.Abstractions/Nexo.Abstractions.csproj"
+Pack-Project "src/Nexo.Contracts/Nexo.Contracts.csproj"
 Pack-Project "src/Nexo.Core.Domain/Nexo.Core.Domain.csproj"
 Pack-Project "src/Nexo.Core/Nexo.Core.csproj"
 Pack-Project "src/Nexo.Core.Application/Nexo.Core.Application.csproj"

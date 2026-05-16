@@ -59,7 +59,7 @@ These are automated by running **`scripts/install/container-bootstrap.*`** (or e
 4. Added `nexo doctor --fix` remediation mode for a safe subset of common onboarding failures.
    - Requires explicit consent (`--yes`) before any remediation runs.
    - Emits remediation attempts/results in JSON output for auditability.
-5. Expanded `onboarding-quickstart-gate` with weekly scheduled drift detection and taxonomy artifacts:
+5. Expanded `onboarding-quickstart-gate` with taxonomy artifacts (manual runs):
    - `*-taxonomy.json` classifies lane/platform/root-cause class.
    - `*-trend.json` captures run metadata signals for drift tracking over time.
    - Summary artifacts now include troubleshooting doc pointers.
@@ -68,5 +68,5 @@ These are automated by running **`scripts/install/container-bootstrap.*`** (or e
 
 1. Add clearer platform-specific troubleshooting pages for missing required tools.
 2. Expand remediation catalog with additional safe fixers for platform-specific host issues.
-3. Add trend aggregation/reporting across multiple scheduled runs to surface regressions in one dashboard view.
+3. Add trend aggregation/reporting across multiple workflow runs to surface regressions in one dashboard view.
 

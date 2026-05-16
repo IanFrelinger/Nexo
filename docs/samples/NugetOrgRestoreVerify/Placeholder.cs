@@ -1,3 +1,6 @@
 namespace Nexo.NugetOrgRestoreVerify;
 
-internal static class Placeholder { }
+internal static class Placeholder
+{
+    // Restore-only project for CI: no runtime entry point.
+}

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Packs the Nexo.* project graph required for a consumable Nexo.Hosting package (same PackageVersion on all).
-# Align with MSBuild closure: python3 scripts/verify-pack-nexo-hosting-graph-alignment.py (+ optional pack-nexo-hosting-graph.allowlist.txt)
+# Align with MSBuild closure from Nexo.Hosting (+ optional scripts/pack-nexo-hosting-graph.allowlist.txt):
+#   python3 scripts/verify-pack-nexo-hosting-graph-alignment.py
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 VERSION="${1:?usage: pack-nexo-hosting-graph.sh <PackageVersion> [output-dir]}"
@@ -18,6 +19,7 @@ pack() {
 }
 
 pack src/Nexo.Abstractions/Nexo.Abstractions.csproj
+pack src/Nexo.Contracts/Nexo.Contracts.csproj
 pack src/Nexo.Core.Domain/Nexo.Core.Domain.csproj
 pack src/Nexo.Core/Nexo.Core.csproj
 pack src/Nexo.Core.Application/Nexo.Core.Application.csproj

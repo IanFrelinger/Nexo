@@ -1,21 +1,6 @@
 name: Optimize Agent Cluster Gate
 
 on:
-  push:
-    branches: [master, main, "cursor/**"]
-    paths:
-      - ".github/workflows/optimize-agent-cluster-gate.yml"
-      - "apps/runtime-studio/**"
-      - "scripts/sandbox/**"
-      - "src/Nexo.CLI/**"
-      - "src/Nexo.CLI/Runtime/**"
-  pull_request:
-    paths:
-      - ".github/workflows/optimize-agent-cluster-gate.yml"
-      - "apps/runtime-studio/**"
-      - "scripts/sandbox/**"
-      - "src/Nexo.CLI/**"
-      - "src/Nexo.CLI/Runtime/**"
   workflow_dispatch:
 
 env:

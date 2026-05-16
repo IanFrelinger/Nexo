@@ -21,6 +21,7 @@ public class AestheticPackTests
         pack.DefaultPaletteColors.Should().BeEmpty();
         pack.LodLevels.Should().BeEmpty();
         pack.PostProcessEffects.Should().BeEmpty();
+        pack.EnvironmentManifestId.Should().BeNull();
     }
 
     [Fact]
@@ -38,6 +39,7 @@ public class AestheticPackTests
                 new LodLevel(1, 0.5),
             ],
             PostProcessEffects = ["vignette"],
+            EnvironmentManifestId = "terrain/osm-demo",
             RenderingPipelineKind = RenderingPipelineKinds.ForwardStylized,
             EngineSurfaceBindings =
             [
@@ -81,6 +83,7 @@ public class AestheticPackTests
         restored.EngineSurfaceBindings.Should().HaveCount(2);
         restored.EngineSurfaceBindings[0].EngineId.Should().Be(GameEngines.Unity);
         restored.EngineSurfaceBindings[0].Parameters.Should().ContainKey("workflow");
+        restored.EnvironmentManifestId.Should().Be("terrain/osm-demo");
     }
 
     [Fact]

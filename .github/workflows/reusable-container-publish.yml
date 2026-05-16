@@ -1,5 +1,5 @@
 # Reusable: build and push nexo-cli + nexo-api to GHCR.
-# Called from release.yml (tags / manual) or container-image-publish.yml (main pushes).
+# Called from release.yml (tags / manual) or container-image-publish.yml (manual dispatch).
 
 on:
   workflow_call:

@@ -61,7 +61,11 @@ public sealed record ForgeMacroRunRequest(
 /// </summary>
 /// <param name="AestheticId">Identifier of the aesthetic pack to apply.</param>
 /// <param name="Scope">Scope at which the aesthetic should take effect.</param>
-public sealed record ForgeAestheticApplyRequest(string AestheticId, SettingScope Scope);
+/// <param name="MapRenderingProfile">Optional override for geographic map pipeline; see <see cref="Aesthetics.MapRenderingProfiles"/>.</param>
+public sealed record ForgeAestheticApplyRequest(
+    string AestheticId,
+    SettingScope Scope,
+    string? MapRenderingProfile = null);
 
 /// <summary>
 /// Request to apply a full custom <see cref="AestheticPack"/> (cross-engine bindings) at a scope.

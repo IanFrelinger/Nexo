@@ -1,10 +1,8 @@
 namespace Nexo.GameDomain.Assets;
 
 /// <summary>
-/// Animation asset descriptor for Unity. Covers character animations,
-/// weapon animations, environment animations, and UI transitions.
-/// Generates Animator Controller configurations, Animation Clip
-/// definitions, and state machine topology.
+/// Animation asset descriptor: character, weapon, environment, and UI motion.
+/// Hosts map this to animation clips, skeletal rigs, and state machine topology.
 /// </summary>
 public sealed record AnimationDescriptor
 {

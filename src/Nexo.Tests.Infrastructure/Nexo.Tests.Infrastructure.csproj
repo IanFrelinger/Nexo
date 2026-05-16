@@ -42,6 +42,7 @@
     <PackageReference Include="Moq" />
     <PackageReference Include="Castle.Core" />
     <PackageReference Include="Mono.Cecil" />
+    <PackageReference Include="Testcontainers.DynamoDb" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />
     <PackageReference Include="CsCheck" />
@@ -65,6 +66,7 @@
     <ProjectReference Include="..\Nexo.Runtime\Nexo.Runtime.csproj" />
     <ProjectReference Include="..\Nexo.Bricks.Owasp\Nexo.Bricks.Owasp.csproj" />
     <ProjectReference Include="..\Nexo.Hosting\Nexo.Hosting.csproj" />
+    <ProjectReference Include="..\Nexo.Ingress.DynamoDb\Nexo.Ingress.DynamoDb.csproj" />
     <ProjectReference Include="..\Nexo.Client\Nexo.Client.csproj" />
   </ItemGroup>
 

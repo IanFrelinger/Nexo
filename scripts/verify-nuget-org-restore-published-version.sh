@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
-# Restore NugetOrgRestoreVerify against nuget.org only.
+# Restore docs/samples/NugetOrgRestoreVerify against nuget.org only (validates published graph + transitive resolution).
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-VER="${NEXO_NUGET_RESTORE_VERIFY_VERSION:?set NEXO_NUGET_RESTORE_VERIFY_VERSION}"
+VER="${NEXO_NUGET_RESTORE_VERIFY_VERSION:?set NEXO_NUGET_RESTORE_VERIFY_VERSION (semver, no v prefix)}"
 VER="${VER#v}"
 CFG_DIR="${ROOT}/artifacts/nuget-org-restore-verify"
 CFG="${CFG_DIR}/NuGet.Config"
 mkdir -p "${CFG_DIR}"
+
 cat > "${CFG}" <<EOF
 <?xml version="1.0" encoding="utf-8"?>
 <configuration>
@@ -16,9 +17,12 @@ cat > "${CFG}" <<EOF
   </packageSources>
 </configuration>
 EOF
+
+echo "dotnet restore (nuget.org only) Nexo.Hosting.Bundle @ ${VER}..."
 dotnet restore "${ROOT}/docs/samples/NugetOrgRestoreVerify/Nexo.NugetOrgRestoreVerify.csproj" \
   --configfile "${CFG}" \
   --force-evaluate \
   -p:NexoPublishedVerifyVersion="${VER}" \
   -v minimal
+
 echo "verify-nuget-org-restore-published-version: OK"

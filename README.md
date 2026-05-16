@@ -343,8 +343,7 @@ Production-oriented compose is under **[Deploy (operators)](#deploy-operators)**
 
 CI validation:
 
-- `.github/workflows/compose-gate.yml` runs compose-based checks on every relevant PR/push.
-- `gh workflow run "Compose Gate" --ref master`
+- `.github/workflows/compose-gate.yml` — compose-based checks (run manually: `gh workflow run "Compose Gate" --ref <branch>`). See `.github/workflows/README.md`.
 
 ```bash
 # Ubuntu test service → ./test-results

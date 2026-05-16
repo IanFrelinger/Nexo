@@ -36,7 +36,7 @@ export NEXO_SDK_PACKAGE_VERSION=1.2.3
 bash scripts/verify-stable-sdk-host-sample-packages.sh
 ```
 
-This packs the graph to `artifacts/nuget-verify/packages`, restores `docs/samples/StableSdkHostSample/package-consumer/` against **only** that folder + nuget.org, builds, and runs the sample. Restore uses **`--force-evaluate`** and, by default, an **empty `NUGET_PACKAGES` + `DOTNET_CLI_HOME`** so a stale user cache cannot mask a bad graph (`NEXO_SDK_VERIFY_NO_ISOLATED_CACHE=1` to opt out).
+This packs the graph to `artifacts/nuget-verify/packages`, restores `docs/samples/StableSdkHostSample/package-consumer/` against **only** that folder + nuget.org, builds, and runs the sample. Restore uses **`--force-evaluate`** and, by default, an **empty `NUGET_PACKAGES` + `DOTNET_CLI_HOME`** under `artifacts/nuget-verify/isolated-*` so a stale user/global cache cannot mask a bad graph (set **`NEXO_SDK_VERIFY_NO_ISOLATED_CACHE=1`** to opt out; **`NEXO_SDK_VERIFY_ISOLATED_ROOT`** to reuse a fixed directory).
 
 To verify an **unpacked** CI artifact folder without re-packing:
 
@@ -59,16 +59,18 @@ Workflows:
 - **`.github/workflows/release.yml`** — **tag `v*.*.*`**: GHCR **and** NuGet in one run. Configure Trusted Publishing for workflow file **`release.yml`** (filename only). After a successful push to nuget.org, runs **Verify NuGet consumer** (shared with **release-nuget**).
 - **`.github/workflows/release-nuget.yml`** — **manual NuGet-only** dispatch (version input). After push to nuget.org, runs the same **Verify NuGet consumer** job when **`NUGET_PUBLISH_MODE`** is **`oidc`** or **`apikey`**.
 
-**Trusted Publishing (OIDC)** is bound to the **caller** workflow file. Register every entry point you use on nuget.org:
+**Trusted Publishing (OIDC)** on nuget.org is bound to the **caller** workflow file, not the reusable `reusable-release-nuget.yml`. Register every entry point you use:
 
-| If you publish via | Register this workflow file |
-|--------------------|-----------------------------|
+| If you publish via | Register this workflow file on nuget.org |
+|--------------------|---------------------------------------------|
 | Tag push → **Release** | **`release.yml`** |
 | **Actions → Release NuGet packages** with `NUGET_PUBLISH_MODE=oidc` | **`release-nuget.yml`** |
 
+If you only ever use tag releases, **`release.yml`** alone is enough. If operators also run **`release-nuget.yml`** with OIDC, add a second Trusted Publishing policy (or equivalent) for **`release-nuget.yml`** or those pushes will be denied.
+
 1. **Repository variable** `NUGET_PUBLISH_MODE`:
-   - unset, empty, or **`none`** — pack + artifact only; download **`nuget-packages-<version>`** and push manually if desired.
-   - **`oidc`** — [Trusted Publishing](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing). Secret **`NUGET_USER`** = nuget.org **profile name** (not email).
+   - unset, empty, or **`none`** — pack + verify + artifact only; download **`nuget-packages-<version>`** and push manually if desired.
+   - **`oidc`** — [Trusted Publishing](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing) for the workflow files above. Secret **`NUGET_USER`** = nuget.org **profile name** (not email).
    - **`apikey`** — secret **`NUGET_API_KEY`**.
 2. **Trigger:** push tag **`v1.2.3`** (preferred), or **Actions → Release** / **Release NuGet packages** for partial flows.
 3. **After push to nuget.org:** **`release.yml`** runs **Verify NuGet consumer (nuget.org)** when **`NUGET_PUBLISH_MODE`** is **`oidc`** or **`apikey`** (restores the sample from nuget.org only, with retries for index lag). See **`docs/NuGetConsumerVerify.md`**.

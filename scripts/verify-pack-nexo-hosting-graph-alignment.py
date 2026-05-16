@@ -1,5 +1,14 @@
 #!/usr/bin/env python3
-"""Compare pack-nexo-hosting-graph.{sh,ps1} to transitive Nexo.* refs from Nexo.Hosting (+ optional allowlist)."""
+"""
+Ensure scripts/pack-nexo-hosting-graph.{sh,ps1} list the same Nexo.* projects as the
+transitive ProjectReference closure from src/Nexo.Hosting, plus optional allowlisted extras.
+
+Optional file scripts/pack-nexo-hosting-graph.allowlist.txt: one relative csproj path per line
+(lines starting with # ignored). Paths there may appear in the pack script without being
+reachable from Nexo.Hosting (rare; document why in the allowlist file).
+
+Exit 1 with a diff if validation fails.
+"""
 from __future__ import annotations
 
 import json
@@ -20,8 +29,9 @@ def read_allowlist(root: Path) -> set[str]:
     out: set[str] = set()
     for line in path.read_text(encoding="utf-8").splitlines():
         s = line.split("#", 1)[0].strip()
-        if s:
-            out.add(s.replace("\\", "/"))
+        if not s:
+            continue
+        out.add(s.replace("\\", "/"))
     return out
 
 
@@ -66,6 +76,7 @@ def msbuild_project_refs(csproj: Path) -> list[Path]:
 
 
 def transitive_nexo_csprojs(root: Path, start: Path) -> set[str]:
+    """Relative posix paths under repo for Nexo.*.csproj reachable from Hosting."""
     rel_set: set[str] = set()
     queue: list[Path] = [start.resolve()]
     seen: set[Path] = set()
@@ -92,11 +103,13 @@ def main() -> int:
     sh_paths = set(extract_from_sh(root))
     ps1_paths = set(extract_from_ps1(root))
     if sh_paths != ps1_paths:
-        print("pack-nexo-hosting-graph.sh and .ps1 disagree:", file=sys.stderr)
-        for p in sorted(sh_paths - ps1_paths):
-            print(f"  only .sh: {p}", file=sys.stderr)
-        for p in sorted(ps1_paths - sh_paths):
-            print(f"  only .ps1: {p}", file=sys.stderr)
+        print("pack-nexo-hosting-graph.sh and .ps1 disagree on which projects to pack:", file=sys.stderr)
+        only_sh = sorted(sh_paths - ps1_paths)
+        only_ps1 = sorted(ps1_paths - sh_paths)
+        if only_sh:
+            print("  only in .sh:", only_sh, file=sys.stderr)
+        if only_ps1:
+            print("  only in .ps1:", only_ps1, file=sys.stderr)
         return 1
 
     hosting = root / "src/Nexo.Hosting/Nexo.Hosting.csproj"
@@ -108,21 +121,31 @@ def main() -> int:
     allow_extra = read_allowlist(root)
     expected = msbuild_set | allow_extra
 
-    missing = sorted(msbuild_set - sh_paths)
-    if missing:
-        print("MSBuild graph not in pack script:", file=sys.stderr)
-        for p in missing:
+    missing_from_script = sorted(msbuild_set - sh_paths)
+    if missing_from_script:
+        print(
+            "MSBuild graph has Nexo.* projects not listed in pack-nexo-hosting-graph (add to .sh/.ps1):",
+            file=sys.stderr,
+        )
+        for p in missing_from_script:
             print(f"  {p}", file=sys.stderr)
         return 1
 
-    extra = sorted(sh_paths - expected)
-    if extra:
-        print("Pack script entries not in graph or allowlist:", file=sys.stderr)
-        for p in extra:
+    only_script = sorted(sh_paths - expected)
+    if only_script:
+        print(
+            "pack-nexo-hosting-graph lists projects not in Nexo.Hosting closure and not in "
+            "scripts/pack-nexo-hosting-graph.allowlist.txt:",
+            file=sys.stderr,
+        )
+        for p in only_script:
             print(f"  {p}", file=sys.stderr)
         return 1
 
-    print(f"verify-pack-nexo-hosting-graph-alignment: OK ({len(sh_paths)} projects)")
+    print(
+        "verify-pack-nexo-hosting-graph-alignment: OK (%d packed, %d from MSBuild, %d allowlisted extra)"
+        % (len(sh_paths), len(msbuild_set), len(allow_extra & sh_paths))
+    )
     return 0
 
 
