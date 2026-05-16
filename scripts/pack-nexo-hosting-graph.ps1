@@ -1,4 +1,5 @@
 #requires -Version 7.0
+# Keep Pack-Project list aligned with MSBuild refs from Nexo.Hosting: python3 scripts/verify-pack-nexo-hosting-graph-alignment.py
 param(
     [Parameter(Mandatory = $true)][string] $Version,
     [string] $OutputDir = ""

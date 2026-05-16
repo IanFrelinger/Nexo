@@ -95,5 +95,13 @@ The CLI image is published by `.github/workflows/container-image-publish.yml` to
 
 ## What you must maintain over time
 
-- When `Nexo.Hosting` gains a **new project reference** to another in-repo `Nexo.*` project, add that project to **`scripts/pack-nexo-hosting-graph.sh`** / **`.ps1`** so the graph stays publishable.
+- When `Nexo.Hosting` gains a **new project reference** to another in-repo `Nexo.*` project, add that project to **`scripts/pack-nexo-hosting-graph.sh`** / **`.ps1`** so the graph stays publishable. CI runs **`python3 scripts/verify-pack-nexo-hosting-graph-alignment.py`**, which compares the pack list to the **transitive** `ProjectReference` closure from `Nexo.Hosting` (and checks `.sh` matches `.ps1`).
 - Keep **`PackageVersion`** in sync across the graph for a given release (the scripts pass one version to every `dotnet pack`).
+
+## Post-push nuget.org check (optional)
+
+After a successful push, **`reusable-release-nuget.yml`** can poll the [flat container](https://api.nuget.org/v3-flatcontainer/) for **`Nexo.Hosting.Bundle`** until the `.nupkg` returns HTTP 200 (handles index lag). Set repository variable **`NUGET_POST_PUSH_VERIFY`** to **`false`** to skip this step. Tune **`NEXO_NUGET_VERIFY_ATTEMPTS`** / **`NEXO_NUGET_VERIFY_SLEEP_SEC`** in `scripts/verify-nuget-org-package-visible.sh` if needed.
+
+## Operator checklist
+
+See **`docs/RELEASE_RUNBOOK.md`** for a one-page release sequence (tag, workflows, secrets, rollback notes).

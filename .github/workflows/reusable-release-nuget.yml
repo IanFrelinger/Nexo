@@ -20,6 +20,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Verify pack script matches Nexo.Hosting MSBuild graph
+        shell: bash
+        run: python3 scripts/verify-pack-nexo-hosting-graph-alignment.py
+
       - name: Resolve version
         shell: bash
         run: |
@@ -122,3 +126,11 @@ jobs:
         shell: bash
         run: |
           echo "::notice::NUGET_PUBLISH_MODE is not 'oidc' or 'apikey' (artifact-only). Set repo variable NUGET_PUBLISH_MODE per docs/PUBLISHING.md"
+
+      - name: NuGet.org visibility (bundle; post-index lag)
+        if: (vars.NUGET_PUBLISH_MODE == 'oidc' || vars.NUGET_PUBLISH_MODE == 'apikey') && vars.NUGET_POST_PUSH_VERIFY != 'false'
+        shell: bash
+        env:
+          NEXO_NUGET_VERIFY_PACKAGE_ID: Nexo.Hosting.Bundle
+          NEXO_NUGET_VERIFY_VERSION: ${{ env.PACKAGE_VERSION }}
+        run: bash scripts/verify-nuget-org-package-visible.sh

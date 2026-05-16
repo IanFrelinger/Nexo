@@ -44,6 +44,7 @@ jobs:
           grep -nE "scripts/setup/setup\\.sh" docs/DocsIndex.md
           grep -nE "onboarding-quickstart-gate\\.yml" docs/DocsIndex.md
           grep -nE "devcontainer-gate\\.yml" docs/DocsIndex.md
+          grep -nE "docs/RELEASE_RUNBOOK\\.md" docs/DocsIndex.md
 
           # Operator deploy section stays container-first.
           grep -nE "## Deploy \\(operators\\)" README.md
