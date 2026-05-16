@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Metapackage: embed Nexo execution kernel without Hosting composition (AddNexo lives in Nexo.Hosting).
+    Uses ProjectReference so `dotnet build Nexo.sln` works without a preseeded local feed; `dotnet pack`
+    still emits NuGet dependencies on the referenced package ids (same version as -p:PackageVersion).
+    Pack after runtime graph: scripts/pack-nexo-runtime-graph.sh (local feed + configfile, like Hosting.Bundle).
+  -->
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>true</IsPackable>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+    <NoDefaultExcludes>true</NoDefaultExcludes>
+    <PackageId>Nexo.Runtime.Bundle</PackageId>
+    <PackageVersion>1.0.0</PackageVersion>
+    <Title>Nexo runtime kernel (bundle)</Title>
+    <Description>
+      Metapackage for the Nexo execution kernel: abstractions, domain, application ports, infrastructure,
+      orchestration, agent runtime, and dev tools. Does not reference Nexo.Hosting —
+      pull Nexo.Hosting separately or compose DI in your application repository.
+    </Description>
+    <PackageTags>nexo;runtime;kernel;metapackage</PackageTags>
+    <RepositoryUrl>https://github.com/IanFrelinger/Nexo</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Nexo.Abstractions\Nexo.Abstractions.csproj" />
+    <ProjectReference Include="..\Nexo.Core.Domain\Nexo.Core.Domain.csproj" />
+    <ProjectReference Include="..\Nexo.Core\Nexo.Core.csproj" />
+    <ProjectReference Include="..\Nexo.Core.Application\Nexo.Core.Application.csproj" />
+    <ProjectReference Include="..\Nexo.Brick.Contracts\Nexo.Brick.Contracts.csproj" />
+    <ProjectReference Include="..\Nexo.Policies\Nexo.Policies.csproj" />
+    <ProjectReference Include="..\Nexo.Policies.Dev\Nexo.Policies.Dev.csproj" />
+    <ProjectReference Include="..\Nexo.Tools.Assembly\Nexo.Tools.Assembly.csproj" />
+    <ProjectReference Include="..\Nexo.Tools.Dev\Nexo.Tools.Dev.csproj" />
+    <ProjectReference Include="..\Nexo.Transport.Grpc\Nexo.Transport.Grpc.csproj" />
+    <ProjectReference Include="..\Nexo.Runtime\Nexo.Runtime.csproj" />
+    <ProjectReference Include="..\Nexo.Infrastructure\Nexo.Infrastructure.csproj" />
+    <ProjectReference Include="..\Nexo.Orchestration\Nexo.Orchestration.csproj" />
+    <ProjectReference Include="..\Nexo.BackgroundAgents\Nexo.BackgroundAgents.csproj" />
+  </ItemGroup>
+</Project>

@@ -5,24 +5,25 @@ using System.Text.Json;
 namespace Nexo.CLI.Commands;
 
 /// <summary>
-/// HTTP client for calling a remote Nexo.API from headless hosts (optional mesh director routes when present on the hub).
+/// Phase 7: HTTP client for the mesh director API from headless CLI hosts (no in-process Nexo.API).
 /// </summary>
 public sealed class MeshDirectorCommand : Command
 {
     internal const string DirectorBaseUrlEnv = "NEXO_MESH_DIRECTOR_BASE_URL";
     internal const string MeshApiKeyEnv = "NEXO_MESH_API_KEY";
+    internal const string MeshMutatingTokenEnv = "NEXO_MESH_MUTATING_TOKEN";
 
     private const string DefaultApiKeyHeader = "X-Nexo-Api-Key";
     private const string DefaultMeshTokenHeader = "X-Nexo-Mesh-Token";
 
     private static readonly JsonSerializerOptions PrettyJson = new() { WriteIndented = true };
 
-    public MeshDirectorCommand() : base("director", "Call a remote Nexo.API over HTTP (GET/POST/PATCH).")
+    public MeshDirectorCommand() : base("director", "Call mesh director HTTP API (Phase 7 — headless / edge workers).")
     {
         var baseUrlOpt = new Option<string?>(
             "--base-url",
             () => null,
-            $"Director base URL. Defaults to {DirectorBaseUrlEnv}.");
+            $"Director base URL (e.g. https://hub.example:8080). Defaults to {DirectorBaseUrlEnv}.");
 
         var apiKeyOpt = new Option<string?>(
             "--api-key",
@@ -32,14 +33,14 @@ public sealed class MeshDirectorCommand : Command
         var meshTokenOpt = new Option<string?>(
             "--mesh-token",
             () => null,
-            $"Optional {DefaultMeshTokenHeader} for mutating /api/mesh when the hub enforces mesh tokens.");
+            $"Optional {DefaultMeshTokenHeader} for mutating /api/mesh (defaults to {MeshMutatingTokenEnv}).");
 
         var timeoutOpt = new Option<int>("--timeout-seconds", () => 120, "HTTP timeout");
         var jsonOpt = new Option<bool>("--json", () => false, "Pretty-print JSON response bodies when possible");
 
-        var pathArg = new Argument<string>("path", "Path from server root, e.g. /api/mesh/fleet/nodes or /health");
+        var pathArg = new Argument<string>("path", "Request path from server root, e.g. /api/mesh/fleet/nodes");
 
-        var getCmd = new Command("get", "GET from hub");
+        var getCmd = new Command("get", "GET from director");
         getCmd.Add(baseUrlOpt);
         getCmd.Add(apiKeyOpt);
         getCmd.Add(meshTokenOpt);
@@ -48,11 +49,11 @@ public sealed class MeshDirectorCommand : Command
         getCmd.AddArgument(pathArg);
         getCmd.SetHandler(InvokeGetAsync, baseUrlOpt, apiKeyOpt, meshTokenOpt, timeoutOpt, jsonOpt, pathArg);
 
-        var pathPostArg = new Argument<string>("path", "Path, e.g. /api/mesh/fleet/nodes");
+        var pathPostArg = new Argument<string>("path", "Request path, e.g. /api/mesh/fleet/nodes");
         var bodyFileOpt = new Option<string?>("--body-file", "UTF-8 JSON body file");
         var bodyOpt = new Option<string?>("--body", "Inline JSON body");
 
-        var postCmd = new Command("post", "POST to hub");
+        var postCmd = new Command("post", "POST to director");
         postCmd.Add(baseUrlOpt);
         postCmd.Add(apiKeyOpt);
         postCmd.Add(meshTokenOpt);
@@ -63,8 +64,8 @@ public sealed class MeshDirectorCommand : Command
         postCmd.Add(bodyOpt);
         postCmd.SetHandler(InvokePostAsync, baseUrlOpt, apiKeyOpt, meshTokenOpt, timeoutOpt, jsonOpt, pathPostArg, bodyFileOpt, bodyOpt);
 
-        var pathPatchArg = new Argument<string>("path", "Path, e.g. /api/mesh/tasks/{id}/status");
-        var patchCmd = new Command("patch", "PATCH on hub");
+        var pathPatchArg = new Argument<string>("path", "Request path, e.g. /api/mesh/tasks/{id}/status");
+        var patchCmd = new Command("patch", "PATCH on director");
         patchCmd.Add(baseUrlOpt);
         patchCmd.Add(apiKeyOpt);
         patchCmd.Add(meshTokenOpt);
@@ -84,7 +85,7 @@ public sealed class MeshDirectorCommand : Command
         string.IsNullOrWhiteSpace(fromOption) ? Environment.GetEnvironmentVariable(MeshApiKeyEnv) : fromOption.Trim();
 
     private static string? ResolveMeshToken(string? fromOption) =>
-        string.IsNullOrWhiteSpace(fromOption) ? Environment.GetEnvironmentVariable("NEXO_MESH_MUTATING_TOKEN") : fromOption.Trim();
+        string.IsNullOrWhiteSpace(fromOption) ? Environment.GetEnvironmentVariable(MeshMutatingTokenEnv) : fromOption.Trim();
 
     private static string ResolveBaseUrl(string? fromOption)
     {

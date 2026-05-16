@@ -73,11 +73,8 @@ public sealed class RepoFsReadToolTests : IDisposable
         var result = await Invoke(abs);
         var payload = ParsePayload(result);
         payload.GetProperty("exists").GetBoolean().Should().BeFalse();
-        // On Linux, TrimStart('/') strips the leading slash so the path resolves
-        // inside the root but the file doesn't exist. On Windows, the drive letter
-        // makes it rooted and the tool returns an explicit error.
-        if (OperatingSystem.IsWindows())
-            payload.GetProperty("error").GetString().Should().Contain("absolute");
+        payload.GetProperty("error").GetString().Should().Contain("absolute");
+        result.Delta.Log.Single().Should().Contain("REJECTED");
     }
 
     [Fact]

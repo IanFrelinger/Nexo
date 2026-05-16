@@ -1,21 +1,58 @@
-# Runtime vs application repository boundary
+# Runtime vs application boundary
 
-This repository keeps **kernel/runtime libraries** under `src/` and **application surfaces** under `application/src/` (CLI, HTTP API, Forge/game descriptors).
+This monorepo keeps **kernel/runtime libraries** under `src/` and **application surfaces** under `application/src/` (CLI, HTTP API, Forge/game descriptors). The same split matters when you consume Nexo as **NuGet packages** from another repository.
 
-## Layout
+## Layout in this repository
 
 | Location | Role |
 |----------|------|
-| `src/` | Execution kernel: Abstractions, Core, Hosting library, Infrastructure, Orchestration, Runtime, agents, tests for kernel |
-| `application/src/` | Product hosts: `Nexo.API`, `Nexo.CLI`, `Nexo.GameDomain`, plus `Nexo.Tests.CLI` / `Nexo.Tests.GameDomain` |
+| `src/` | Execution kernel: abstractions, core, hosting library, infrastructure, orchestration, runtime, agents, ingress adapters, and tests for the kernel graph |
+| `application/src/` | Product hosts: `Nexo.API`, `Nexo.CLI`, `Nexo.GameDomain`, plus tests such as `Nexo.Tests.GameDomain` |
+
+## Runtime layer (NuGet / embeddable graph)
+
+Use **`Nexo.Runtime.sln`** at the repository root to build and validate only the kernel graph (no `application/` projects).
+
+Conceptually **runtime** includes:
+
+| Concern | Projects (examples) |
+|--------|---------------------|
+| Contracts | `Nexo.Abstractions`, `Nexo.Brick.Contracts`, `Nexo.Contracts` |
+| Shared primitives | `Nexo.Core` |
+| Domain rules | `Nexo.Core.Domain` |
+| Application ports and use cases | `Nexo.Core.Application` |
+| Policy primitives | `Nexo.Policies`, `Nexo.Policies.Dev` |
+| Agent execution and transport | `Nexo.Runtime`, `Nexo.Transport.Grpc`, `Nexo.Transport.Grpc.Server` |
+| Default adapters | `Nexo.Infrastructure` |
+| Orchestration | `Nexo.Orchestration` |
+| Background agents (library) | `Nexo.BackgroundAgents` |
+| Tooling for agents | `Nexo.Tools.Assembly`, `Nexo.Tools.Dev` |
+| SMS ingress (optional) | `Nexo.Ingress.AwsSns`, `Nexo.Ingress.DynamoDb` and their test projects |
+
+**Composition helper (still a library, not your app):**
+
+- **`Nexo.Hosting`** — `AddNexo` and DI wiring. Many hosts consume it from NuGet; strict splits may reimplement registration in the application repo.
+
+## NuGet metapackages
+
+| Package | Purpose |
+|---------|---------|
+| `Nexo.Runtime.Bundle` | Kernel libraries without `Nexo.Hosting` (compose DI yourself or add `Nexo.Hosting` separately). |
+| `Nexo.Hosting.Bundle` | Kernel plus `Nexo.Hosting` for turnkey embedding. |
+
+Version all packages from the same release (same `PackageVersion` when packing). Application-specific deployment (API container, CLI publish) can reference paths under `application/src/` or consume published `Nexo.API` / `Nexo.CLI` packages after pack.
+
+## Application layer
+
+Product-specific deployables and descriptors stay under **`application/src/`** in this repo. If you maintain a **separate** product repository, keep private integrations, bespoke DTOs, and composition overrides there and reference the runtime packages above.
 
 ## Solution files
 
-| File | Contents |
-|------|----------|
-| `Nexo.Runtime.sln` | Kernel packages only (no application folder) |
-| `Nexo.Application.sln` | `application/src/*` projects |
-| `Nexo.sln` | Full monorepo (kernel + clients + tests); **does not** list application projects as top-level entries — reference via project refs when needed |
+| File | Purpose |
+|------|---------|
+| `Nexo.Runtime.sln` | Runtime kernel graph for CI and publishing libraries (and `Nexo.Runtime.Bundle`). |
+| `application/Nexo.Application.sln` | `application/src/*` projects (CLI, API, GameDomain, application tests). |
+| `Nexo.sln` | Full monorepo: kernel, clients, infrastructure tests, `Nexo.Runtime.Bundle`, ingress projects, etc. Application code is built via **`dotnet build application/Nexo.Application.sln`** when you only need product surfaces. |
 
 Build application layer:
 
@@ -23,9 +60,4 @@ Build application layer:
 dotnet build application/Nexo.Application.sln
 ```
 
-## NuGet consumers
-
-- **`Nexo.Runtime.Bundle`** — kernel libraries without composing your product.
-- **`Nexo.Hosting.Bundle`** — kernel + `AddNexo` composition helper.
-
-Application-specific deployment (API container, CLI tool publish) should reference paths under `application/src/` or consume published `Nexo.API` / `Nexo.CLI` packages after pack.
+`Nexo.Kernel.sln` (when present) is a mid-sized kernel-focused subset for workflows that do not need the entire `Nexo.sln` graph.

@@ -161,6 +161,8 @@ The daemon loads the five agents defined in `agent_set.forge.json` and schedules
 
 The base Nexo API (mapped in `NexoEndpoints.cs`) exposes the endpoints below. Forge-specific workflows compose these generic endpoints with forge-domain data.
 
+**Forge HTTP API** (`ForgeEndpoints.cs`, prefix `/api/forge`): session create/import/export, scoped settings, macros, aesthetics (`GET /aesthetics`, `POST /aesthetic/apply`, `POST /aesthetic/apply-pack`). Session and macro state use `IForgeStateService`: in-process memory by default, or LiteDB when `Nexo:ForgeSession:LiteDbPath` is configured (see `docs/Persistence.md`).
+
 | Method | Path | Summary |
 |---|---|---|
 | `GET` | `/health` | Health check |

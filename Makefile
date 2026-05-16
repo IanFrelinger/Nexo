@@ -1,4 +1,18 @@
-.PHONY: build build-core build-demos prod-dry-run prod-dry-run-agent-server restore-core test test-prod-style test-framework-prod-first test-prime-time test-prime-time-full test-cross-platform test-portable test-multi-env test-all-platforms test-all-platforms-ephemeral ci-verify validate-safe review-summary clean-test-artifacts test-readiness-gate
+.PHONY: build build-core build-demos prod-dry-run prod-dry-run-agent-server restore-core test test-prod-style test-framework-prod-first test-prime-time test-prime-time-full test-cross-platform test-portable test-multi-env test-all-platforms test-all-platforms-ephemeral ci-verify validate-safe review-summary clean-test-artifacts test-readiness-gate release-preflight release-gate release-dispatch
+
+# Local checks before tagging a release (graph alignment + NuGet sample). Usage: make release-preflight VERSION=1.2.3
+release-preflight:
+	@test -n "$(VERSION)" || (echo "Set VERSION=1.2.3 (semver, no v prefix)"; exit 1)
+	bash scripts/release-preflight-local.sh "$(VERSION)"
+
+# Trigger Runtime Release Gate in CI (requires: gh auth login)
+release-gate:
+	gh workflow run "Runtime Release Gate" --ref $${NEXO_RELEASE_PREFLIGHT_REF:-master}
+
+# Trigger full Release workflow (GHCR + NuGet). Requires: gh auth login. Usage: make release-dispatch VERSION=1.2.3 REF=master
+release-dispatch:
+	@test -n "$(VERSION)" || (echo "Set VERSION=1.2.3"; exit 1)
+	gh workflow run Release --ref $${REF:-master} -f version="$(VERSION)" -f skip_multi_arch=false
 
 # All automated test projects in Nexo.PrimeTime.slnf (nine Nexo.Tests.* assemblies).
 PRIME_TIME_SLNF := Nexo.PrimeTime.slnf
@@ -52,8 +66,9 @@ test-prime-time-full: test-prime-time
 
 # Run tests locally (blame-hang-timeout prevents indefinite freeze from hung tests)
 # --blame-hang-dump-type none avoids 6GB+ hang dumps that accumulate in TestResults/
+# NEXO_ALLOW_MOCK=1 matches CI so ProviderFactory / mock-provider tests pass on net9.0.
 test:
-	dotnet test --blame-hang-timeout 30s --blame-hang-dump-type none
+	NEXO_ALLOW_MOCK=1 dotnet test Nexo.sln --blame-hang-timeout 120s --blame-hang-dump-type none
 
 # Run tests on all target platforms: local + Docker (ubuntu, alpine, debian).
 # For native macOS/Windows/Linux use: make test-cross-platform (triggers CI).
@@ -91,13 +106,14 @@ test-platform:
 	dotnet run --project application/src/Nexo.CLI -- test --platforms $(PLATFORM)
 
 # Trigger cross-platform tests in CI (Mac, Windows, Linux from one place)
-# Requires: gh auth login. Usage: make test-cross-platform [SCOPE=smoke|persistence|full]
+# Requires: gh auth login. Workflows are manual-first — see .github/workflows/README.md
+# Usage: make test-cross-platform [SCOPE=smoke|persistence|full]
 test-cross-platform:
 	gh workflow run "Cross-Platform Tests" --ref master -f scope=$${SCOPE:-smoke}
 
 # Trigger full platform readiness gate: setup + discovery + dry-run on all target platforms.
 # Runs on Linux, macOS, Windows (native) + Ubuntu, Alpine, Debian (container) + Docker CLI image.
-# Requires: gh auth login
+# Requires: gh auth login. Manual-first — see .github/workflows/README.md
 test-readiness-gate:
 	gh workflow run "Full Platform Readiness Gate" --ref master
 

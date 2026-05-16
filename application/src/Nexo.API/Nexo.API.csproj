@@ -23,11 +23,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="MediatR" />
+    <PackageReference Include="Swashbuckle.AspNetCore" />
     <PackageReference Include="LiteDB" />
     <ProjectReference Include="../../../src/Nexo.BackgroundAgents.HostRunners/Nexo.BackgroundAgents.HostRunners.csproj" />
     <ProjectReference Include="../../../src/Nexo.Brick.Contracts/Nexo.Brick.Contracts.csproj" />
     <ProjectReference Include="../../../src/Nexo.Contracts/Nexo.Contracts.csproj" />
     <ProjectReference Include="../../../src/Nexo.Hosting/Nexo.Hosting.csproj" />
+    <ProjectReference Include="../../../src/Nexo.Ingress.DynamoDb/Nexo.Ingress.DynamoDb.csproj" />
+    <ProjectReference Include="../../../src/Nexo.Ingress.AwsSns/Nexo.Ingress.AwsSns.csproj" />
     <ProjectReference Include="../../../src/Nexo.Infrastructure/Nexo.Infrastructure.csproj" />
     <ProjectReference Include="..\Nexo.GameDomain\Nexo.GameDomain.csproj" />
   </ItemGroup>

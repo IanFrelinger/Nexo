@@ -15,9 +15,6 @@ on:
           - caching
           - trust
           - adaptation
-  schedule:
-    # Weekly on Sunday 00:00 UTC
-    - cron: '0 0 * * 0'
 
 jobs:
   air-gapped:

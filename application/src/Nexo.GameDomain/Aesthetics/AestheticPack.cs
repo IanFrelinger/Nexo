@@ -31,6 +31,14 @@ public sealed record AestheticPack
     public string MapRenderingProfile { get; init; } = MapRenderingProfiles.Auto;
 
     /// <summary>
+    /// Optional reference to a voxel environment manifest <c>Id</c> when
+    /// <see cref="GeometryStrategy"/> is <c>"voxel"</c>. The engine adaptation layer resolves this
+    /// to composable LOD tiers (voxel pitch, chunk shape, tile-store layers)—the 3D analogue of a
+    /// multi-resolution tile map database.
+    /// </summary>
+    public string? EnvironmentManifestId { get; init; }
+
+    /// <summary>
     /// Default colour palette as a list of hex colour values (e.g. <c>"#FF5733"</c>).
     /// Used for procedural material assignment when explicit textures are absent.
     /// </summary>

@@ -1,7 +1,7 @@
 namespace Nexo.GameDomain.Assets;
 
 /// <summary>
-/// Data-only descriptor for a Unity UI canvas and its child elements.
+/// Data-only descriptor for a screen-space or world-space UI canvas and its child elements.
 /// </summary>
 public sealed record UIDescriptor
 {
