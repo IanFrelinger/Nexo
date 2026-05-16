@@ -19,6 +19,7 @@ using Nexo.Core.Application.Copilot.Ports;
 using Nexo.Core.Application.Paths;
 using Nexo.Core.Application.Trust.Ports;
 using Nexo.Infrastructure;
+using Nexo.Infrastructure.Environments;
 using Nexo.Infrastructure.Execution;
 using Nexo.Infrastructure.Execution.Routing;
 using Nexo.Infrastructure.Execution.Ephemeral;
@@ -415,6 +416,7 @@ public static class NexoServiceCollectionExtensions
 
         // ── Execution core & workflow ──────────────────────────────────
         services.AddSingleton<Nexo.Core.Application.Common.Ports.ITextFileSystem, Nexo.Infrastructure.IO.LocalTextFileSystem>();
+        services.AddMapDataProviderRouting();
 
         // Workflow integrations (PDF export, webhooks, DB read/write,
         // cluster store) are only available in Full/Server profiles.
