@@ -22,14 +22,18 @@ Base path: **`/api/mesh`** (same auth middleware as other `/api/*` routes when e
 | `GET` | `/fleet/nodes` | List registered workers |
 | `POST` | `/fleet/nodes` | Register or update worker (`MeshFleetNodeRequest`) |
 | `DELETE` | `/fleet/nodes/{peerId}` | Remove worker |
-| `POST` | `/fleet/nodes/{peerId}/heartbeat` | Heartbeat |
+| `POST` | `/fleet/nodes/{peerId}/heartbeat` | Heartbeat; optional body `{ "queueDepth": n }` (Phase 5) |
+| `GET` | `/elastic/status` | Phase 5: task counts + worker queue snapshot |
 | `POST` | `/fleet/nodes/{peerId}/drain` | Body `{ "drained": true/false }` |
 | `GET` | `/tasks` | List tasks |
 | `POST` | `/tasks` | Create task (`MeshTaskCreateRequest`) |
 | `GET` | `/tasks/{taskId}` | Get task |
-| `POST` | `/tasks/{taskId}/schedule` | Run placement |
-| `POST` | `/tasks/{taskId}/retry` | Re-place on different peer when possible |
-| `PATCH` | `/tasks/{taskId}/status` | Worker reports `Running` / `Succeeded` / `Failed` / `Pending` |
+| `POST` | `/tasks/{taskId}/schedule` | Run placement (optional body: `scheduleIdempotencyKey`, `correlationId`) |
+| `POST` | `/tasks/{taskId}/retry` | Re-place on different peer when possible (same optional body) |
+| `GET` | `/tasks/{taskId}/result` | Phase 3: stream bytes when `resultHandle` is a file path on director |
+| `PATCH` | `/tasks/{taskId}/status` | Worker reports `Running` / `Succeeded` / `Failed` / `Pending` (optional `resultSummary`, `resultHandle`) |
+| `GET` | `/knowledge/export` | Phase 4: JSON export of adaptations + patterns |
+| `POST` | `/knowledge/import` | Phase 4: import payload into local stores |
 
 ## Worker registration example
 
@@ -62,6 +66,8 @@ Then `POST /api/mesh/tasks/{taskId}/schedule`. Response includes `assignedPeerId
 
 ## Explicit limitations (next phases)
 
+- **Transport/auth** — see [MeshPhase2TransportAndAuth.md](MeshPhase2TransportAndAuth.md) for optional mesh tokens, body caps, and rate limits on `/api/mesh` and brick execute.
+- **Correlation / idempotency / results** — see [MeshPhase3DistributedExecution.md](MeshPhase3DistributedExecution.md).
 - **In-memory only** — restart loses registry; Phase 4+ may persist to LiteDB/SQL.
 - **Placement does not invoke bricks** — it only **chooses** a node; the caller must dispatch.
 - **No global fairness queue** — simple greedy ordering by heartbeat recency.

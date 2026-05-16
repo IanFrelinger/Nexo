@@ -2,6 +2,7 @@ namespace Nexo.Core.Application.Fleet.Models;
 
 /// <summary>
 /// Operator-managed worker registered with the in-process fleet registry.
+/// <see cref="ReportedQueueDepth"/> is the last-reported local queue depth from heartbeat (0 = unknown / idle).
 /// </summary>
 public sealed record MeshFleetNodeState(
     string PeerId,
@@ -10,4 +11,5 @@ public sealed record MeshFleetNodeState(
     IReadOnlyList<string> AdvertisedBrickIds,
     bool Drained,
     DateTimeOffset? LastHeartbeatUtc,
-    DateTimeOffset RegisteredAtUtc);
+    DateTimeOffset RegisteredAtUtc,
+    int ReportedQueueDepth = 0);

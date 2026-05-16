@@ -1,7 +1,7 @@
 namespace Nexo.Core.Application.Fleet.Models;
 
 /// <summary>
-/// A schedulable task tracked by the Phase 1 director (in-memory).
+/// A schedulable task tracked by the Phase 1 director (in-memory); Phase 3 adds correlation, schedule idempotency, and result handles.
 /// </summary>
 public sealed record MeshTaskState(
     string TaskId,
@@ -17,4 +17,9 @@ public sealed record MeshTaskState(
     string? PlacementReason,
     int AttemptCount,
     DateTimeOffset CreatedAtUtc,
-    DateTimeOffset? LastScheduledAtUtc);
+    DateTimeOffset? LastScheduledAtUtc,
+    string? CorrelationId,
+    string? IdempotencyKey,
+    string? LastScheduleIdempotencyKey,
+    string? ResultSummary,
+    string? ResultHandle);

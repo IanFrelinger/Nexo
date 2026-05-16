@@ -83,6 +83,53 @@ Notes:
 - If `AuthorizationMode` is set to anything except `None`, built-in auth mode takes precedence over legacy `RequireApiKeyForMutatingEndpoints`.
 - `RequireApiKeyForMutatingEndpoints` remains for backward compatibility with existing deployments.
 
+## Mesh and brick HTTP hardening (`Nexo__Security__Mesh__*`, Phase 2)
+
+Optional middleware runs **before** built-in API auth. It applies to **`/api/mesh/*`** and **`POST /api/bricks/*/execute`**. When all options are unset or zero, behavior matches previous releases (no extra mesh checks).
+
+| Variable / config key | Description | Default |
+|------------------------|-------------|---------|
+| `Nexo__Security__Mesh__MeshMutatingToken` | When set, **POST/PATCH/DELETE** under `/api/mesh` must send this exact value in the mesh token header | unset |
+| `Nexo__Security__Mesh__MeshTokenHeaderName` | Header for mesh mutating token | `X-Nexo-Mesh-Token` |
+| `Nexo__Security__Mesh__BrickExecuteToken` | When set, brick execute requires this value in the brick header only | unset |
+| `Nexo__Security__Mesh__BrickExecuteTokenHeaderName` | Header for brick execute token | `X-Nexo-Brick-Execute-Token` |
+| `Nexo__Security__Mesh__MaxJsonBodyBytes` | Reject POST/PUT/PATCH when `Content-Length` exceeds this (0 = off) | `524288` |
+| `Nexo__Security__Mesh__RateLimitPermitLimit` | Max mutating requests per client IP per window for mesh + brick execute (0 = off) | `120` |
+| `Nexo__Security__Mesh__RateLimitWindowSeconds` | Window length in seconds | `60` |
+
+When **`BrickExecuteToken`** is unset but **`MeshMutatingToken`** is set, brick execute accepts the mesh secret in **`BrickExecuteTokenHeaderName`** *or* **`MeshTokenHeaderName`**.
+
+Combine with **`Nexo__Security__AuthorizationMode`** and TLS termination for production meshes. See **`docs/MeshPhase2TransportAndAuth.md`**.
+
+## Mesh correlation header (Phase 3)
+
+For **`/api/mesh/*`** and **`POST /api/bricks/*/execute`**, the API assigns or echoes **`X-Nexo-Correlation-Id`** (see [MeshPhase3DistributedExecution.md](MeshPhase3DistributedExecution.md)). Clients may send their own correlation id to align logs across hops.
+
+## Mesh knowledge sync (`Nexo__Mesh__KnowledgeSync__*`, Phase 4)
+
+Only active when **`AddNexo`** registers adaptation (Full/Server/AirGapped profiles with pattern store). Binds section **`Nexo:Mesh:KnowledgeSync`**.
+
+| Variable / config key | Description | Default |
+|------------------------|-------------|---------|
+| `Nexo__Mesh__KnowledgeSync__Enabled` | `true` to run periodic peer pull | `false` |
+| `Nexo__Mesh__KnowledgeSync__PeerBaseUrls__0` | First peer API base URL (https, trailing slash optional) | unset |
+| `Nexo__Mesh__KnowledgeSync__IntervalMinutes` | Minutes between pull rounds | `15` |
+| `Nexo__Mesh__KnowledgeSync__SinceLookbackMultiplier` | `since = now - interval * multiplier` for export window | `2` |
+| `Nexo__Mesh__KnowledgeSync__MaxAdaptations` | Cap per export GET | `500` |
+| `Nexo__Mesh__KnowledgeSync__MaxPatterns` | Cap per export GET | `500` |
+
+See [MeshPhase4KnowledgeSync.md](MeshPhase4KnowledgeSync.md).
+
+## Mesh elastic scheduling (`Nexo__Mesh__Elastic__*`, Phase 5)
+
+| Variable / config key | Description | Default |
+|------------------------|-------------|---------|
+| `Nexo__Mesh__Elastic__Enabled` | `true` to run periodic re-placement for stale **Pending** tasks | `false` |
+| `Nexo__Mesh__Elastic__IntervalMinutes` | Minutes between rebalancer rounds | `2` |
+| `Nexo__Mesh__Elastic__PendingStaleSeconds` | Pending tasks older than this get `TryScheduleAsync` again | `120` |
+
+Workers should POST heartbeat with **`queueDepth`** (local backlog) so placement prefers idle nodes. See [MeshPhase5ElasticScheduling.md](MeshPhase5ElasticScheduling.md).
+
 ## Pipelines (`NEXO_PIPELINE_*`)
 
 Pipeline options resolve in this order: defaults, config (`Nexo:Pipelines:*`), then environment variables.

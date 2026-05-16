@@ -234,7 +234,10 @@ public static class NexoServiceCollectionExtensions
         // Pattern store path is forwarded so the adaptation layer knows
         // where to persist learned patterns on disk.
         if (modules.IncludeAdaptation)
+        {
             services.AddAdaptationInfrastructure(options.PatternStorePath);
+            services.AddNexoMeshKnowledgeReplication(configuration);
+        }
 
         if (modules.IncludeAdaptation)
             services.AddNexoFederatedBrickMesh(configuration);
@@ -563,6 +566,7 @@ public static class NexoServiceCollectionExtensions
 
         // Phase 1 mesh director (in-memory fleet + task placement). See docs/MeshPhase0NorthStar.md.
         services.AddNexoFleetDirector();
+        services.AddNexoMeshElasticScheduling(configuration);
 
         return services;
     }

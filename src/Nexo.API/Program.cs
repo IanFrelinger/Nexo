@@ -22,6 +22,11 @@
 //     enforce network policy. Optional built-in auth modes (ApiKey, Bearer,
 //     Basic, and composite OR-modes) protect mutating endpoints via
 //     UseNexoApiKeyAuth middleware.
+//   • Mesh correlation — UseNexoMeshCorrelation assigns / echoes X-Nexo-Correlation-Id
+//     for /api/mesh and brick execute (Phase 3).
+//   • MeshSecurityOptions — optional Nexo:Security:Mesh tokens, body size cap,
+//     and rate limits for /api/mesh and POST /api/bricks/*/execute (Phase 2);
+//     UseNexoMeshSecurity runs before UseNexoApiKeyAuth.
 //   • Static files + endpoints — DefaultFiles/StaticFiles serve the SPA;
 //     MapNexoEndpoints wires the API; MapFallbackToFile routes unknown paths
 //     to index.html for client-side routing.
@@ -78,12 +83,15 @@ if (!string.IsNullOrWhiteSpace(agentsConfigPath))
 }
 
 builder.Services.AddLogging(b => b.AddConsole());
+builder.Services.AddHttpContextAccessor();
 builder.Services.Configure<GrpcTransportOptions>(
     builder.Configuration.GetSection("Nexo:GrpcTransport"));
 builder.Services.Configure<NexoSecurityOptions>(
     builder.Configuration.GetSection(NexoSecurityOptions.SectionPath));
 builder.Services.Configure<ForgeSessionOptions>(
     builder.Configuration.GetSection(ForgeSessionOptions.SectionPath));
+builder.Services.Configure<MeshSecurityOptions>(
+    builder.Configuration.GetSection(MeshSecurityOptions.SectionPath));
 builder.Services.Configure<SmsIngressDynamoDbOptions>(
     builder.Configuration.GetSection(SmsIngressDynamoDbOptions.SectionPath));
 builder.Services.AddOptions<NexoMiddlewareIngressOptions>()
@@ -103,7 +111,6 @@ builder.Services.AddSwaggerGen(static options =>
     options.SwaggerDoc("v1", new OpenApiInfo { Title = "Nexo.API", Version = "v1" }));
 builder.Services.AddNexoRuntimeRouting(builder.Configuration);
 
-builder.Services.AddHttpContextAccessor();
 builder.Services.AddSingleton<INexoIngressAccessor, HttpNexoIngressAccessor>();
 builder.Services.AddHttpClient("forge-map")
     .ConfigurePrimaryHttpMessageHandler(sp =>
@@ -258,6 +265,8 @@ app.UseWebSockets();
 // --- Middleware pipeline: SPA static files → auth → API endpoints ---
 app.UseDefaultFiles();
 app.UseStaticFiles();
+app.UseNexoMeshCorrelation();
+app.UseNexoMeshSecurity();
 app.UseNexoApiKeyAuth();
 app.UseMiddleware<ForgeAuthenticationMiddleware>();
 app.UseMiddleware<ForgeTenantMiddleware>();

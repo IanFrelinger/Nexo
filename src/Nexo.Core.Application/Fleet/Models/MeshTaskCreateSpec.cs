@@ -9,4 +9,6 @@ public sealed record MeshTaskCreateSpec(
     IReadOnlyList<string> RequiredBrickIds,
     IReadOnlyDictionary<string, string>? Affinity,
     int Priority,
-    DateTimeOffset? DeadlineUtc);
+    DateTimeOffset? DeadlineUtc,
+    string? CorrelationId = null,
+    string? IdempotencyKey = null);
