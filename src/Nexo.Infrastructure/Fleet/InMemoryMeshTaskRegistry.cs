@@ -38,7 +38,11 @@ public sealed class InMemoryMeshTaskRegistry : IMeshTaskRegistry
             IdempotencyKey: idem,
             LastScheduleIdempotencyKey: null,
             ResultSummary: null,
-            ResultHandle: null);
+            ResultHandle: null,
+            LeaseToken: null,
+            LeaseOwnerPeerId: null,
+            LeaseExpiresUtc: null,
+            CheckpointHandle: null);
 
         await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try

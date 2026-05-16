@@ -567,6 +567,7 @@ public static class NexoServiceCollectionExtensions
         // Phase 1 mesh director (in-memory fleet + task placement). See docs/MeshPhase0NorthStar.md.
         services.AddNexoFleetDirector();
         services.AddNexoMeshElasticScheduling(configuration);
+        services.AddNexoMeshCheckpointScheduling(configuration);
 
         return services;
     }

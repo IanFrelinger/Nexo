@@ -28,10 +28,12 @@ Base path: **`/api/mesh`** (same auth middleware as other `/api/*` routes when e
 | `GET` | `/tasks` | List tasks |
 | `POST` | `/tasks` | Create task (`MeshTaskCreateRequest`) |
 | `GET` | `/tasks/{taskId}` | Get task |
-| `POST` | `/tasks/{taskId}/schedule` | Run placement (optional body: `scheduleIdempotencyKey`, `correlationId`) |
+| `POST` | `/tasks/{taskId}/schedule` | Run placement (optional body: `scheduleIdempotencyKey`, `correlationId`, `leaseSeconds`) |
 | `POST` | `/tasks/{taskId}/retry` | Re-place on different peer when possible (same optional body) |
+| `POST` | `/tasks/{taskId}/lease/extend` | Phase 6: extend lease (`leaseToken`, optional `extendSeconds`) |
+| `POST` | `/tasks/{taskId}/migrate-for-checkpoint` | Phase 6: record `checkpointHandle`, release assignment |
 | `GET` | `/tasks/{taskId}/result` | Phase 3: stream bytes when `resultHandle` is a file path on director |
-| `PATCH` | `/tasks/{taskId}/status` | Worker reports `Running` / `Succeeded` / `Failed` / `Pending` (optional `resultSummary`, `resultHandle`) |
+| `PATCH` | `/tasks/{taskId}/status` | Worker reports `Running` / `Succeeded` / `Failed` / `Pending` (optional `resultSummary`, `resultHandle`; Phase 6: `leaseToken` when task has a lease) |
 | `GET` | `/knowledge/export` | Phase 4: JSON export of adaptations + patterns |
 | `POST` | `/knowledge/import` | Phase 4: import payload into local stores |
 
@@ -68,6 +70,7 @@ Then `POST /api/mesh/tasks/{taskId}/schedule`. Response includes `assignedPeerId
 
 - **Transport/auth** — see [MeshPhase2TransportAndAuth.md](MeshPhase2TransportAndAuth.md) for optional mesh tokens, body caps, and rate limits on `/api/mesh` and brick execute.
 - **Correlation / idempotency / results** — see [MeshPhase3DistributedExecution.md](MeshPhase3DistributedExecution.md).
+- **Leases / checkpoints** — see [MeshPhase6LeasesAndCheckpoints.md](MeshPhase6LeasesAndCheckpoints.md).
 - **In-memory only** — restart loses registry; Phase 4+ may persist to LiteDB/SQL.
 - **Placement does not invoke bricks** — it only **chooses** a node; the caller must dispatch.
 - **No global fairness queue** — simple greedy ordering by heartbeat recency.

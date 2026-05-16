@@ -17,11 +17,13 @@ Phase 3 adds **correlation propagation**, **idempotency** for mesh task creation
 | **`POST /api/mesh/tasks/{id}/schedule`** with **`ScheduleIdempotencyKey`** | If the task is already **Assigned** and the key matches **`LastScheduleIdempotencyKey`**, returns the same assignment (no second placement). If the task is **Assigned** but a **different** key is sent, returns **409 Conflict** with the current task body. |
 | **`POST .../retry`** | Same schedule key semantics after reassignment. |
 
-Request bodies for schedule/retry are optional JSON: **`{ "scheduleIdempotencyKey": "...", "correlationId": "..." }`**.
+Request bodies for schedule/retry are optional JSON: **`{ "scheduleIdempotencyKey": "...", "correlationId": "...", "leaseSeconds": 600 }`** (Phase 6 **`leaseSeconds`** optional, 60–86400).
+
+Task responses include Phase 6 lease fields when assigned: **`leaseToken`**, **`leaseOwnerPeerId`**, **`leaseExpiresUtc`**, **`checkpointHandle`** (see [MeshPhase6LeasesAndCheckpoints.md](MeshPhase6LeasesAndCheckpoints.md)).
 
 ## Result handles (artifact pointers)
 
-- **`PATCH /api/mesh/tasks/{id}/status`** accepts optional **`resultSummary`** and **`resultHandle`** when moving to **Succeeded** or **Failed**.
+- **`PATCH /api/mesh/tasks/{id}/status`** accepts optional **`resultSummary`** and **`resultHandle`** when moving to **Succeeded** or **Failed**. When the task is **Assigned** or **Running** and has a **`leaseToken`**, the body must include a matching **`leaseToken`** (otherwise **409 Conflict**).
 - **`GET /api/mesh/tasks/{id}/result`** — If **`resultHandle`** is an **absolute file path** on the **director host** and the file exists, streams it as `application/octet-stream`. This is a **convenience** for small artifacts; large blobs should use object storage outside Nexo (Phase 3 scope).
 
 ## What is still not done

@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using Nexo.Core.Application.Fleet.Models;
 using Nexo.Core.Application.Fleet.Ports;
 using Nexo.Infrastructure.Fleet;
@@ -9,12 +10,15 @@ namespace Nexo.Tests.Infrastructure.Tests.Fleet;
 
 public sealed class MeshTaskPlacementServiceTests
 {
+    private static MeshTaskPlacementService CreatePlacement(InMemoryFleetNodeRegistry nodes, InMemoryMeshTaskRegistry tasks) =>
+        new(nodes, tasks, Options.Create(new MeshCheckpointOptions()), NullLogger<MeshTaskPlacementService>.Instance);
+
     [Fact]
     public async Task Schedule_assigns_node_with_required_brick_and_respects_drain()
     {
         var nodes = new InMemoryFleetNodeRegistry();
         var tasks = new InMemoryMeshTaskRegistry();
-        var placement = new MeshTaskPlacementService(nodes, tasks, NullLogger<MeshTaskPlacementService>.Instance);
+        var placement = CreatePlacement(nodes, tasks);
 
         await nodes.RegisterOrUpdateAsync(new MeshFleetNodeState(
             "peer-a",
@@ -59,7 +63,7 @@ public sealed class MeshTaskPlacementServiceTests
     {
         var nodes = new InMemoryFleetNodeRegistry();
         var tasks = new InMemoryMeshTaskRegistry();
-        var placement = new MeshTaskPlacementService(nodes, tasks, NullLogger<MeshTaskPlacementService>.Instance);
+        var placement = CreatePlacement(nodes, tasks);
 
         await nodes.RegisterOrUpdateAsync(new MeshFleetNodeState(
             "peer-1", "https://1.example/", new Dictionary<string, string>(), new[] { "b" },
@@ -83,7 +87,7 @@ public sealed class MeshTaskPlacementServiceTests
     {
         var nodes = new InMemoryFleetNodeRegistry();
         var tasks = new InMemoryMeshTaskRegistry();
-        var placement = new MeshTaskPlacementService(nodes, tasks, NullLogger<MeshTaskPlacementService>.Instance);
+        var placement = CreatePlacement(nodes, tasks);
         await nodes.RegisterOrUpdateAsync(new MeshFleetNodeState(
             "p", "https://p/", new Dictionary<string, string>(), new[] { "b" },
             false, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow));
@@ -101,7 +105,7 @@ public sealed class MeshTaskPlacementServiceTests
     {
         var nodes = new InMemoryFleetNodeRegistry();
         var tasks = new InMemoryMeshTaskRegistry();
-        var placement = new MeshTaskPlacementService(nodes, tasks, NullLogger<MeshTaskPlacementService>.Instance);
+        var placement = CreatePlacement(nodes, tasks);
         await nodes.RegisterOrUpdateAsync(new MeshFleetNodeState(
             "p", "https://p/", new Dictionary<string, string>(), new[] { "b" },
             false, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow));
@@ -111,6 +115,51 @@ public sealed class MeshTaskPlacementServiceTests
         var (ok2, _, err) = await placement.TryScheduleAsync(task.TaskId, "key-b", null);
         ok2.Should().BeFalse();
         err.Should().Be("schedule.idempotency_conflict");
+    }
+
+    [Fact]
+    public async Task Schedule_while_running_with_different_idempotency_key_returns_conflict()
+    {
+        var nodes = new InMemoryFleetNodeRegistry();
+        var tasks = new InMemoryMeshTaskRegistry();
+        var placement = CreatePlacement(nodes, tasks);
+        await nodes.RegisterOrUpdateAsync(new MeshFleetNodeState(
+            "p", "https://p/", new Dictionary<string, string>(), new[] { "b" },
+            false, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow));
+        var task = await tasks.CreateAsync(new MeshTaskCreateSpec(null, 1, new[] { "b" }, null, 0, null));
+        var (ok1, placed, _) = await placement.TryScheduleAsync(task.TaskId, "key-a", null);
+        ok1.Should().BeTrue();
+        var running = placed! with { Status = MeshTaskStatus.Running };
+        await tasks.UpdateAsync(running);
+
+        var (ok2, _, err) = await placement.TryScheduleAsync(task.TaskId, "key-b", null);
+        ok2.Should().BeFalse();
+        err.Should().Be("schedule.idempotency_conflict");
+    }
+
+    [Fact]
+    public async Task Schedule_reclaims_expired_lease_on_running_task()
+    {
+        var nodes = new InMemoryFleetNodeRegistry();
+        var tasks = new InMemoryMeshTaskRegistry();
+        var placement = CreatePlacement(nodes, tasks);
+        await nodes.RegisterOrUpdateAsync(new MeshFleetNodeState(
+            "p", "https://p/", new Dictionary<string, string>(), new[] { "b" },
+            false, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow));
+        var task = await tasks.CreateAsync(new MeshTaskCreateSpec(null, 1, new[] { "b" }, null, 0, null));
+        var (ok1, placed, _) = await placement.TryScheduleAsync(task.TaskId, null, null, leaseSecondsOverride: 60);
+        ok1.Should().BeTrue();
+        var stale = placed! with
+        {
+            Status = MeshTaskStatus.Running,
+            LeaseExpiresUtc = DateTimeOffset.UtcNow.AddSeconds(-10)
+        };
+        await tasks.UpdateAsync(stale);
+
+        var (ok2, next, _) = await placement.TryScheduleAsync(task.TaskId, "new-key", null);
+        ok2.Should().BeTrue();
+        next!.Status.Should().Be(MeshTaskStatus.Assigned);
+        next.LastScheduleIdempotencyKey.Should().Be("new-key");
     }
 }
 

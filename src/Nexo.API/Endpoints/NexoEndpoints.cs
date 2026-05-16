@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -215,7 +217,7 @@ public static class NexoEndpoints
 
         mesh.MapPost("/tasks/{taskId}/schedule", ScheduleMeshTaskAsync)
             .WithName("ScheduleMeshTask")
-            .WithSummary("Phase 1: assign task to an eligible worker")
+            .WithSummary("Phase 1/6: assign task to an eligible worker (optional leaseSeconds in body)")
             .Produces<MeshTaskResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status404NotFound)
@@ -223,11 +225,25 @@ public static class NexoEndpoints
 
         mesh.MapPost("/tasks/{taskId}/retry", RetryMeshTaskAsync)
             .WithName("RetryMeshTask")
-            .WithSummary("Phase 1: re-place task on a different worker when possible")
+            .WithSummary("Phase 1/6: re-place task on a different worker when possible (optional leaseSeconds in body)")
             .Produces<MeshTaskResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status404NotFound)
             .Produces(StatusCodes.Status409Conflict);
+
+        mesh.MapPost("/tasks/{taskId}/lease/extend", ExtendMeshTaskLeaseAsync)
+            .WithName("ExtendMeshTaskLease")
+            .WithSummary("Phase 6: extend execution lease for an assigned task (requires lease token)")
+            .Produces<MeshTaskResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
+        mesh.MapPost("/tasks/{taskId}/migrate-for-checkpoint", MigrateMeshTaskForCheckpointAsync)
+            .WithName("MigrateMeshTaskForCheckpoint")
+            .WithSummary("Phase 6: record checkpoint handle and release assignment for re-scheduling")
+            .Produces<MeshTaskResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
         mesh.MapGet("/tasks/{taskId}/result", DownloadMeshTaskResultAsync)
             .WithName("DownloadMeshTaskResult")
@@ -238,10 +254,11 @@ public static class NexoEndpoints
 
         mesh.MapPatch("/tasks/{taskId}/status", PatchMeshTaskStatusAsync)
             .WithName("PatchMeshTaskStatus")
-            .WithSummary("Phase 1: update task status (worker reports running/succeeded/failed)")
+            .WithSummary("Phase 1/6: update task status; Assigned/Running updates require matching leaseToken")
             .Produces<MeshTaskResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
-            .ProducesProblem(StatusCodes.Status404NotFound);
+            .ProducesProblem(StatusCodes.Status404NotFound)
+            .ProducesProblem(StatusCodes.Status409Conflict);
 
         mesh.MapGet("/knowledge/export", ExportMeshKnowledgeAsync)
             .WithName("ExportMeshKnowledge")
@@ -683,7 +700,6 @@ public static class NexoEndpoints
         var existing = await registry.GetAsync(body.PeerId, cancellationToken).ConfigureAwait(false);
         var queue = body.ReportedQueueDepth ?? existing?.ReportedQueueDepth ?? 0;
         if (queue < 0) queue = 0;
-
         var state = new MeshFleetNodeState(
             PeerId: body.PeerId.Trim(),
             ApiBaseUrl: body.ApiBaseUrl.Trim(),
@@ -693,7 +709,6 @@ public static class NexoEndpoints
             LastHeartbeatUtc: DateTimeOffset.UtcNow,
             RegisteredAtUtc: existing?.RegisteredAtUtc ?? DateTimeOffset.UtcNow,
             ReportedQueueDepth: queue);
-
 
         await registry.RegisterOrUpdateAsync(state, cancellationToken).ConfigureAwait(false);
         return Results.Ok(ToFleetResponse(state));
@@ -755,7 +770,6 @@ public static class NexoEndpoints
             DateTimeOffset.UtcNow));
     }
 
-
     private static async Task<IResult> SetFleetNodeDrainAsync(
         string peerId,
         [FromBody] MeshFleetDrainRequest? body,
@@ -782,7 +796,6 @@ public static class NexoEndpoints
         [FromBody] MeshTaskCreateRequest? body,
         [FromServices] IMeshTaskRegistry tasks,
         [FromServices] IHttpContextAccessor httpContextAccessor,
-
         CancellationToken cancellationToken)
     {
         if (body is null)
@@ -798,7 +811,6 @@ public static class NexoEndpoints
                 return Results.Ok(ToTaskResponse(existing with { CorrelationId = correlation ?? existing.CorrelationId }));
         }
 
-
         var spec = new MeshTaskCreateSpec(
             Name: body.Name,
             Steps: body.Steps,
@@ -808,7 +820,6 @@ public static class NexoEndpoints
             DeadlineUtc: body.DeadlineUtc,
             CorrelationId: correlation,
             IdempotencyKey: string.IsNullOrWhiteSpace(body.IdempotencyKey) ? null : body.IdempotencyKey.Trim());
-
 
         var created = await tasks.CreateAsync(spec, cancellationToken).ConfigureAwait(false);
         return Results.Ok(ToTaskResponse(created));
@@ -830,7 +841,6 @@ public static class NexoEndpoints
         [FromBody] MeshScheduleRequest? body,
         [FromServices] IMeshTaskPlacementService placement,
         [FromServices] IHttpContextAccessor httpContextAccessor,
-
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(taskId))
@@ -840,12 +850,12 @@ public static class NexoEndpoints
             taskId,
             body?.ScheduleIdempotencyKey,
             correlation,
+            body?.LeaseSeconds,
             cancellationToken).ConfigureAwait(false);
         if (task is null)
             return Results.NotFound();
         if (!ok && string.Equals(error, "schedule.idempotency_conflict", StringComparison.Ordinal))
             return Results.Conflict(ToTaskResponse(task));
-
         if (!ok)
             return Results.BadRequest(new ProblemDetails { Title = error ?? "placement.failed", Detail = error });
         return Results.Ok(ToTaskResponse(task));
@@ -856,7 +866,6 @@ public static class NexoEndpoints
         [FromBody] MeshScheduleRequest? body,
         [FromServices] IMeshTaskPlacementService placement,
         [FromServices] IHttpContextAccessor httpContextAccessor,
-
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(taskId))
@@ -866,12 +875,12 @@ public static class NexoEndpoints
             taskId,
             body?.ScheduleIdempotencyKey,
             correlation,
+            body?.LeaseSeconds,
             cancellationToken).ConfigureAwait(false);
         if (task is null)
             return Results.NotFound();
         if (!ok && string.Equals(error, "schedule.idempotency_conflict", StringComparison.Ordinal))
             return Results.Conflict(ToTaskResponse(task));
-
         if (!ok)
             return Results.BadRequest(new ProblemDetails { Title = error ?? "placement.failed", Detail = error });
         return Results.Ok(ToTaskResponse(task));
@@ -924,13 +933,49 @@ public static class NexoEndpoints
         return Results.File(path, contentType: "application/octet-stream", fileDownloadName: Path.GetFileName(path));
     }
 
+    private static async Task<IResult> ExtendMeshTaskLeaseAsync(
+        string taskId,
+        [FromBody] MeshLeaseExtendRequest? body,
+        [FromServices] MeshTaskExecutionService execution,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(taskId))
+            return Results.BadRequest(new ProblemDetails { Title = "taskId is required" });
+        if (body is null || string.IsNullOrWhiteSpace(body.LeaseToken))
+            return Results.BadRequest(new ProblemDetails { Title = "leaseToken is required" });
+
+        var (ok, task, error) = await execution.ExtendLeaseAsync(taskId, body.LeaseToken, body.ExtendSeconds, cancellationToken).ConfigureAwait(false);
+        if (task is null)
+            return Results.NotFound();
+        if (!ok)
+            return Results.BadRequest(new ProblemDetails { Title = error ?? "lease.extend_failed" });
+        return Results.Ok(ToTaskResponse(task));
+    }
+
+    private static async Task<IResult> MigrateMeshTaskForCheckpointAsync(
+        string taskId,
+        [FromBody] MeshMigrateForCheckpointRequest? body,
+        [FromServices] MeshTaskExecutionService execution,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(taskId))
+            return Results.BadRequest(new ProblemDetails { Title = "taskId is required" });
+        if (body is null || string.IsNullOrWhiteSpace(body.LeaseToken) || string.IsNullOrWhiteSpace(body.CheckpointHandle))
+            return Results.BadRequest(new ProblemDetails { Title = "leaseToken and checkpointHandle are required" });
+
+        var (ok, task, error) = await execution.MigrateForCheckpointAsync(taskId, body.LeaseToken, body.CheckpointHandle, cancellationToken).ConfigureAwait(false);
+        if (task is null)
+            return Results.NotFound();
+        if (!ok)
+            return Results.BadRequest(new ProblemDetails { Title = error ?? "migrate.failed" });
+        return Results.Ok(ToTaskResponse(task));
+    }
 
     private static async Task<IResult> PatchMeshTaskStatusAsync(
         string taskId,
         [FromBody] MeshTaskStatusPatchRequest? body,
         [FromServices] IMeshTaskRegistry tasks,
         [FromServices] IHttpContextAccessor httpContextAccessor,
-
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(taskId))
@@ -941,6 +986,14 @@ public static class NexoEndpoints
         var t = await tasks.GetAsync(taskId, cancellationToken).ConfigureAwait(false);
         if (t is null)
             return Results.NotFound();
+
+        if (body.Status is MeshTaskStatus.Running or MeshTaskStatus.Assigned &&
+            !string.IsNullOrWhiteSpace(t.LeaseToken))
+        {
+            if (string.IsNullOrWhiteSpace(body.LeaseToken) ||
+                !MeshLeaseTokensEqual(t.LeaseToken, body.LeaseToken))
+                return Results.Conflict(new ProblemDetails { Title = "lease.token_mismatch_or_missing" });
+        }
 
         var correlation = ResolveMeshCorrelationId(httpContextAccessor, body.CorrelationId);
         var next = body.Status switch
@@ -957,7 +1010,12 @@ public static class NexoEndpoints
                 PlacementReason = body.Reason ?? t.PlacementReason,
                 CorrelationId = correlation ?? t.CorrelationId,
                 ResultSummary = body.ResultSummary ?? t.ResultSummary,
-                ResultHandle = body.ResultHandle ?? t.ResultHandle
+                ResultHandle = body.ResultHandle ?? t.ResultHandle,
+                AssignedPeerId = null,
+                AssignedApiBaseUrl = null,
+                LeaseToken = null,
+                LeaseOwnerPeerId = null,
+                LeaseExpiresUtc = null
             },
             MeshTaskStatus.Failed => t with
             {
@@ -965,7 +1023,12 @@ public static class NexoEndpoints
                 PlacementReason = body.Reason ?? t.PlacementReason,
                 CorrelationId = correlation ?? t.CorrelationId,
                 ResultSummary = body.ResultSummary ?? t.ResultSummary,
-                ResultHandle = body.ResultHandle ?? t.ResultHandle
+                ResultHandle = body.ResultHandle ?? t.ResultHandle,
+                AssignedPeerId = null,
+                AssignedApiBaseUrl = null,
+                LeaseToken = null,
+                LeaseOwnerPeerId = null,
+                LeaseExpiresUtc = null
             },
             MeshTaskStatus.Pending => t with
             {
@@ -973,7 +1036,10 @@ public static class NexoEndpoints
                 AssignedPeerId = null,
                 AssignedApiBaseUrl = null,
                 PlacementReason = body.Reason,
-                CorrelationId = correlation ?? t.CorrelationId
+                CorrelationId = correlation ?? t.CorrelationId,
+                LeaseToken = null,
+                LeaseOwnerPeerId = null,
+                LeaseExpiresUtc = null
             },
             MeshTaskStatus.Assigned => t with
             {
@@ -981,7 +1047,6 @@ public static class NexoEndpoints
                 PlacementReason = body.Reason ?? t.PlacementReason,
                 CorrelationId = correlation ?? t.CorrelationId
             },
-
             _ => t
         };
 
@@ -999,7 +1064,6 @@ public static class NexoEndpoints
         return null;
     }
 
-
     private static MeshFleetNodeResponse ToFleetResponse(MeshFleetNodeState n) =>
         new(
             n.PeerId,
@@ -1010,7 +1074,6 @@ public static class NexoEndpoints
             n.LastHeartbeatUtc,
             n.RegisteredAtUtc,
             n.ReportedQueueDepth);
-
 
     private static MeshTaskResponse ToTaskResponse(MeshTaskState t) =>
         new(
@@ -1032,7 +1095,18 @@ public static class NexoEndpoints
             t.IdempotencyKey,
             t.LastScheduleIdempotencyKey,
             t.ResultSummary,
-            t.ResultHandle);
+            t.ResultHandle,
+            t.LeaseToken,
+            t.LeaseOwnerPeerId,
+            t.LeaseExpiresUtc,
+            t.CheckpointHandle);
+
+    private static bool MeshLeaseTokensEqual(string expected, string provided)
+    {
+        var a = Encoding.UTF8.GetBytes(expected.Trim());
+        var b = Encoding.UTF8.GetBytes(provided.Trim());
+        return a.Length == b.Length && CryptographicOperations.FixedTimeEquals(a, b);
+    }
 
     private static async Task<IResult> RunDirectorWorkflowAsync(
         [FromBody] DirectorRunRequest request,
@@ -1683,7 +1757,8 @@ public sealed record MeshTaskCreateRequest(
 
 public sealed record MeshScheduleRequest(
     string? ScheduleIdempotencyKey = null,
-    string? CorrelationId = null);
+    string? CorrelationId = null,
+    int? LeaseSeconds = null);
 
 public sealed record MeshTaskResponse(
     string TaskId,
@@ -1704,14 +1779,23 @@ public sealed record MeshTaskResponse(
     string? IdempotencyKey,
     string? LastScheduleIdempotencyKey,
     string? ResultSummary,
-    string? ResultHandle);
+    string? ResultHandle,
+    string? LeaseToken,
+    string? LeaseOwnerPeerId,
+    DateTimeOffset? LeaseExpiresUtc,
+    string? CheckpointHandle);
+
+public sealed record MeshLeaseExtendRequest(string LeaseToken, int? ExtendSeconds = null);
+
+public sealed record MeshMigrateForCheckpointRequest(string LeaseToken, string CheckpointHandle);
 
 public sealed record MeshTaskStatusPatchRequest(
     MeshTaskStatus Status,
     string? Reason = null,
     string? CorrelationId = null,
     string? ResultSummary = null,
-    string? ResultHandle = null);
+    string? ResultHandle = null,
+    string? LeaseToken = null);
 
 public sealed record MeshKnowledgeImportResponse(
     int AdaptationsApplied,

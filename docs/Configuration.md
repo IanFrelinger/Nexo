@@ -130,6 +130,16 @@ See [MeshPhase4KnowledgeSync.md](MeshPhase4KnowledgeSync.md).
 
 Workers should POST heartbeat with **`queueDepth`** (local backlog) so placement prefers idle nodes. See [MeshPhase5ElasticScheduling.md](MeshPhase5ElasticScheduling.md).
 
+## Mesh execution leases (`Nexo__Mesh__Checkpoint__*`, Phase 6)
+
+Binds section **`Nexo:Mesh:Checkpoint`**. See [MeshPhase6LeasesAndCheckpoints.md](MeshPhase6LeasesAndCheckpoints.md).
+
+| Variable / config key | Description | Default |
+|------------------------|-------------|---------|
+| `Nexo__Mesh__Checkpoint__LeaseSeconds` | Default lease duration after assignment (seconds) when schedule body omits **`leaseSeconds`** | `1800` |
+| `Nexo__Mesh__Checkpoint__SweepEnabled` | `true` to periodically move **Assigned**/**Running** tasks with expired leases to **Pending** | `false` |
+| `Nexo__Mesh__Checkpoint__SweepIntervalMinutes` | Minutes between sweep passes | `1` |
+
 ## Pipelines (`NEXO_PIPELINE_*`)
 
 Pipeline options resolve in this order: defaults, config (`Nexo:Pipelines:*`), then environment variables.

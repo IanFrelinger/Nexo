@@ -30,6 +30,18 @@ public static class FleetServiceCollectionExtensions
     }
 
     /// <summary>
+    /// Phase 6: execution leases, migrate-for-checkpoint, optional lease sweep.
+    /// </summary>
+    public static IServiceCollection AddNexoMeshCheckpointScheduling(this IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddOptions<MeshCheckpointOptions>()
+            .Bind(configuration.GetSection(MeshCheckpointOptions.SectionPath));
+        services.TryAddSingleton<MeshTaskExecutionService>();
+        services.AddHostedService<MeshLeaseSweepBackgroundService>();
+        return services;
+    }
+
+    /// <summary>
     /// Phase 4: mesh knowledge export/import and optional peer pull (requires adaptation + pattern stores).
     /// </summary>
     public static IServiceCollection AddNexoMeshKnowledgeReplication(

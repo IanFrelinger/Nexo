@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
+using Microsoft.Extensions.Options;
 using Nexo.Core.Application.Fleet.Models;
 using Nexo.Core.Application.Fleet.Ports;
 using Nexo.Infrastructure.Fleet;
@@ -14,7 +15,11 @@ public sealed class MeshElasticPlacementTests
     {
         var nodes = new InMemoryFleetNodeRegistry();
         var tasks = new InMemoryMeshTaskRegistry();
-        var placement = new MeshTaskPlacementService(nodes, tasks, NullLogger<MeshTaskPlacementService>.Instance);
+        var placement = new MeshTaskPlacementService(
+            nodes,
+            tasks,
+            Options.Create(new MeshCheckpointOptions()),
+            NullLogger<MeshTaskPlacementService>.Instance);
 
         var t = DateTimeOffset.UtcNow;
         await nodes.RegisterOrUpdateAsync(new MeshFleetNodeState(
