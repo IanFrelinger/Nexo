@@ -24,8 +24,8 @@
   </ItemGroup>
   <!-- System Packages -->
   <ItemGroup>
-    <PackageVersion Include="System.Text.Encodings.Web" Version="9.0.8" />
-    <PackageVersion Include="System.Text.Json" Version="9.0.8" />
+    <PackageVersion Include="System.Text.Encodings.Web" Version="10.0.8" />
+    <PackageVersion Include="System.Text.Json" Version="10.0.8" />
     <PackageVersion Include="System.Xml.XmlDocument" Version="4.3.0" />
     <PackageVersion Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
     <PackageVersion Include="System.Reactive" Version="6.0.1" />
