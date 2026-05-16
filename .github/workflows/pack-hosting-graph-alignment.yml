@@ -1,4 +1,4 @@
-# Ensures scripts/pack-nexo-hosting-graph.{sh,ps1} match the transitive Nexo.* graph from Nexo.Hosting.
+# Ensures scripts/pack-nexo-hosting-graph.{sh,ps1} match the transitive Nexo.* graph from Nexo.Hosting (+ optional allowlist).
 name: Pack hosting graph alignment
 
 on:
@@ -7,16 +7,30 @@ on:
       - "src/**/*.csproj"
       - "scripts/pack-nexo-hosting-graph.sh"
       - "scripts/pack-nexo-hosting-graph.ps1"
+      - "scripts/pack-nexo-hosting-graph.allowlist.txt"
       - "scripts/verify-pack-nexo-hosting-graph-alignment.py"
+      - "scripts/verify-nuget-org-packages-visible.sh"
+      - "scripts/verify-nuget-org-restore-published-version.sh"
+      - "scripts/verify-nuget-org-restore-with-isolated-cache.sh"
+      - "docs/samples/NugetOrgRestoreVerify/**"
+      - "Directory.Build.props"
       - ".github/workflows/pack-hosting-graph-alignment.yml"
+      - ".github/workflows/reusable-release-nuget.yml"
   push:
     branches: [master, main]
     paths:
       - "src/**/*.csproj"
       - "scripts/pack-nexo-hosting-graph.sh"
       - "scripts/pack-nexo-hosting-graph.ps1"
+      - "scripts/pack-nexo-hosting-graph.allowlist.txt"
       - "scripts/verify-pack-nexo-hosting-graph-alignment.py"
+      - "scripts/verify-nuget-org-packages-visible.sh"
+      - "scripts/verify-nuget-org-restore-published-version.sh"
+      - "scripts/verify-nuget-org-restore-with-isolated-cache.sh"
+      - "docs/samples/NugetOrgRestoreVerify/**"
+      - "Directory.Build.props"
       - ".github/workflows/pack-hosting-graph-alignment.yml"
+      - ".github/workflows/reusable-release-nuget.yml"
   workflow_dispatch:
 
 jobs:

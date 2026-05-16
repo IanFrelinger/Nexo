@@ -34,7 +34,15 @@ export NEXO_SDK_PACKAGE_VERSION=1.2.3
 bash scripts/verify-stable-sdk-host-sample-packages.sh
 ```
 
-This packs the graph to `artifacts/nuget-verify/packages`, restores `docs/samples/StableSdkHostSample/package-consumer/` against **only** that folder + nuget.org, builds, and runs the sample.
+This packs the graph to `artifacts/nuget-verify/packages`, restores `docs/samples/StableSdkHostSample/package-consumer/` against **only** that folder + nuget.org, builds, and runs the sample. Restore uses **`--force-evaluate`** and, by default, an **empty `NUGET_PACKAGES` + `DOTNET_CLI_HOME`** under `artifacts/nuget-verify/isolated-*` so a stale user/global cache cannot mask a bad graph (set **`NEXO_SDK_VERIFY_NO_ISOLATED_CACHE=1`** to opt out; **`NEXO_SDK_VERIFY_ISOLATED_ROOT`** to reuse a fixed directory).
+
+To verify an **unpacked** CI artifact folder without re-packing:
+
+```bash
+export NEXO_SDK_PACKAGE_VERSION=1.2.3
+export NEXO_SDK_PACKAGE_FEED=/path/to/unpacked/nuget-packages
+bash scripts/verify-stable-sdk-host-sample-packages.sh
+```
 
 To verify **exactly** the folder you are about to push (for example after unpacking the **`nuget-packages-<version>`** workflow artifact), point the script at that directory so it does not re-pack:
 
@@ -95,13 +103,27 @@ The CLI image is published by `.github/workflows/container-image-publish.yml` to
 
 ## What you must maintain over time
 
-- When `Nexo.Hosting` gains a **new project reference** to another in-repo `Nexo.*` project, add that project to **`scripts/pack-nexo-hosting-graph.sh`** / **`.ps1`** so the graph stays publishable. CI runs **`python3 scripts/verify-pack-nexo-hosting-graph-alignment.py`**, which compares the pack list to the **transitive** `ProjectReference` closure from `Nexo.Hosting` (and checks `.sh` matches `.ps1`).
+- When `Nexo.Hosting` gains a **new project reference** to another in-repo `Nexo.*` project, add that project to **`scripts/pack-nexo-hosting-graph.sh`** / **`.ps1`** so the graph stays publishable. CI runs **`python3 scripts/verify-pack-nexo-hosting-graph-alignment.py`**, which compares the pack list to the **transitive** `ProjectReference` closure from `Nexo.Hosting` (and checks `.sh` matches `.ps1`). If you must pack extra `Nexo.*` projects **not** in that closure, list them (one path per line) in **`scripts/pack-nexo-hosting-graph.allowlist.txt`** with a short comment.
 - Keep **`PackageVersion`** in sync across the graph for a given release (the scripts pass one version to every `dotnet pack`).
 
-## Post-push nuget.org check (optional)
+## After push (CI): visibility + restore
 
-After a successful push, **`reusable-release-nuget.yml`** can poll the [flat container](https://api.nuget.org/v3-flatcontainer/) for **`Nexo.Hosting.Bundle`** until the `.nupkg` returns HTTP 200 (handles index lag). Set repository variable **`NUGET_POST_PUSH_VERIFY`** to **`false`** to skip this step. Tune **`NEXO_NUGET_VERIFY_ATTEMPTS`** / **`NEXO_NUGET_VERIFY_SLEEP_SEC`** in `scripts/verify-nuget-org-package-visible.sh` if needed.
+When **`NUGET_PUBLISH_MODE`** is **`oidc`** or **`apikey`**, **`reusable-release-nuget.yml`** (unless disabled below):
+
+1. Polls the nuget.org **flat container** until these ids are visible: **`Nexo.Hosting.Bundle`**, **`Nexo.Hosting`**, **`Nexo.Sdk`** (override with repo variable **`NUGET_POST_PUSH_VERIFY_PACKAGE_IDS`** as a comma-separated list).
+2. Runs **`scripts/verify-nuget-org-restore-with-isolated-cache.sh`**: same as **`verify-nuget-org-restore-published-version.sh`** but with an **empty package cache** and CLI home so the restore matches a **first-time machine** (no masked dependencies from `~/.nuget/packages`).
+
+**Repository variables** (all optional except where noted):
+
+| Variable | Purpose |
+|----------|---------|
+| **`NUGET_POST_PUSH_VERIFY`** | Set to **`false`** to skip steps 1–2 after push. |
+| **`NUGET_POST_PUSH_VERIFY_PACKAGE_IDS`** | Comma-separated package ids for flat-container HEAD checks (default: `Nexo.Hosting.Bundle,Nexo.Hosting,Nexo.Sdk`). |
+| **`NUGET_POST_PUSH_ATTEMPTS`** | Max poll rounds (default **12**; empty uses default). |
+| **`NUGET_POST_PUSH_SLEEP_SEC`** | Seconds between rounds (default **15**; empty uses default). |
+
+**Not atomic:** nuget.org still accepts packages one at a time; a failed push mid-loop can leave a **partial** set on the feed until you fix and re-run with **`--skip-duplicate`**.
 
 ## Operator checklist
 
-See **`docs/RELEASE_RUNBOOK.md`** for a one-page release sequence (tag, workflows, secrets, rollback notes).
+See **`docs/RELEASE_RUNBOOK.md`** for the one-page release sequence and the workflow decision table (tag vs NuGet-only vs branch images).
