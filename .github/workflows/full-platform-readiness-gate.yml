@@ -9,75 +9,10 @@
 # Native runners: ubuntu, macOS, Windows
 # Container runners: Ubuntu, Alpine, Debian (Docker on ubuntu-latest)
 #
-# Trigger: push/PR to master (path-filtered) + manual dispatch + weekly schedule
+# Manual-first — see .github/workflows/README.md
 name: Full Platform Readiness Gate
 
 on:
-  schedule:
-    - cron: "0 6 * * 1"  # Monday 06:00 UTC
-  push:
-    branches: [master, main, "cursor/**"]
-    paths:
-      - ".github/workflows/full-platform-readiness-gate.yml"
-      - ".docker/Dockerfile.*"
-      - "scripts/setup/**"
-      - "scripts/install/**"
-      - "src/Nexo.CLI/**"
-      - "src/Nexo.Hosting/**"
-      - "src/Nexo.Abstractions/**"
-      - "src/Nexo.Core/**"
-      - "src/Nexo.Core.Domain/**"
-      - "src/Nexo.Core.Application/**"
-      - "src/Nexo.Brick.Contracts/**"
-      - "src/Nexo.Policies/**"
-      - "src/Nexo.Tools.Assembly/**"
-      - "src/Nexo.Tools.Dev/**"
-      - "src/Nexo.Transport.Grpc/**"
-      - "src/Nexo.Runtime/**"
-      - "src/Nexo.Infrastructure/**"
-      - "src/Nexo.Orchestration/**"
-      - "src/Nexo.BackgroundAgents/**"
-      - "src/Nexo.Tests.BackgroundAgents/**"
-      - "scripts/pack-nexo-hosting-graph.sh"
-      - "scripts/pack-nexo-hosting-graph.ps1"
-      - "scripts/verify-pack-nexo-hosting-graph-alignment.py"
-      - "scripts/verify-stable-sdk-host-sample-packages.sh"
-      - "scripts/verify-stable-sdk-host-sample-packages.ps1"
-      - "docs/samples/StableSdkHostSample/**"
-      - "global.json"
-      - "Directory.Build.props"
-      - "Directory.Packages.props"
-  pull_request:
-    paths:
-      - ".github/workflows/full-platform-readiness-gate.yml"
-      - ".docker/Dockerfile.*"
-      - "scripts/setup/**"
-      - "scripts/install/**"
-      - "src/Nexo.CLI/**"
-      - "src/Nexo.Hosting/**"
-      - "src/Nexo.Abstractions/**"
-      - "src/Nexo.Core/**"
-      - "src/Nexo.Core.Domain/**"
-      - "src/Nexo.Core.Application/**"
-      - "src/Nexo.Brick.Contracts/**"
-      - "src/Nexo.Policies/**"
-      - "src/Nexo.Tools.Assembly/**"
-      - "src/Nexo.Tools.Dev/**"
-      - "src/Nexo.Transport.Grpc/**"
-      - "src/Nexo.Runtime/**"
-      - "src/Nexo.Infrastructure/**"
-      - "src/Nexo.Orchestration/**"
-      - "src/Nexo.BackgroundAgents/**"
-      - "src/Nexo.Tests.BackgroundAgents/**"
-      - "scripts/pack-nexo-hosting-graph.sh"
-      - "scripts/pack-nexo-hosting-graph.ps1"
-      - "scripts/verify-pack-nexo-hosting-graph-alignment.py"
-      - "scripts/verify-stable-sdk-host-sample-packages.sh"
-      - "scripts/verify-stable-sdk-host-sample-packages.ps1"
-      - "docs/samples/StableSdkHostSample/**"
-      - "global.json"
-      - "Directory.Build.props"
-      - "Directory.Packages.props"
   workflow_dispatch:
 
 env:

@@ -1,8 +1,7 @@
 namespace Nexo.GameDomain.Assets;
 
 /// <summary>
-/// Input action map descriptor for Unity Input System. Defines action maps,
-/// actions, bindings, and composite bindings for FPS controls.
+/// Input action map descriptor: action maps, actions, bindings, and composite bindings (e.g. FPS controls).
 /// </summary>
 public sealed record InputDescriptor
 {

@@ -99,7 +99,7 @@ public class BrickUsageTrackerTests
             tracker.RecordExecution(Record($"brick-{i}"));
 
         var hot = tracker.GetHotBricks(20);
-        hot.Should().HaveCountLessOrEqualTo(5);
+        hot.Should().HaveCountLessThanOrEqualTo(5);
     }
 
     [Fact]

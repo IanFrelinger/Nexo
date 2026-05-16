@@ -144,7 +144,20 @@ public sealed class RepoFsListTool : ITool
             return false;
         }
 
-        var normalized = (path ?? "").Replace('\\', '/').TrimStart('/');
+        var raw = (path ?? "").Trim();
+        if (raw == "." || raw.Length == 0)
+        {
+            full = Path.GetFullPath(root);
+            return true;
+        }
+
+        if (Path.IsPathRooted(raw))
+        {
+            error = "absolute paths not permitted";
+            return false;
+        }
+
+        var normalized = raw.Replace('\\', '/').TrimStart('/');
         if (normalized == "." || normalized.Length == 0)
         {
             full = Path.GetFullPath(root);
@@ -153,11 +166,6 @@ public sealed class RepoFsListTool : ITool
         if (normalized.Contains("..", StringComparison.Ordinal))
         {
             error = "path traversal not permitted";
-            return false;
-        }
-        if (Path.IsPathRooted(normalized))
-        {
-            error = "absolute paths not permitted";
             return false;
         }
 

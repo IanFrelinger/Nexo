@@ -31,7 +31,7 @@ Documentation index for the Nexo platform. Start here to find what you need.
 - `.github/workflows/container-image-gate.yml` — container image buildability and smoke-run gate.
 - `.github/workflows/release.yml` — **one entry**: tag `v*.*.*` → GHCR (`nexo-cli`, `nexo-api`) + NuGet; run summary with pin lines.
 - `.github/workflows/container-image-publish.yml` — GHCR on **main** path-filtered pushes + manual (tags use `release.yml` only).
-- `.github/workflows/release-nuget.yml` — **NuGet-only** manual dispatch; after push to nuget.org, **Verify NuGet consumer** (same reusable job as **release.yml**).
+- `.github/workflows/release-nuget.yml` — **NuGet-only** manual dispatch (register on nuget.org for OIDC if you use it; see `docs/PUBLISHING.md`); after push to nuget.org, **Verify NuGet consumer** (same reusable job as **release.yml**).
 - `.github/workflows/onboarding-docs-guard.yml` — prevent startup-doc regressions in quick-start commands.
 - `.github/workflows/cross-platform-tests.yml` — cross-platform tests on Ubuntu, macOS, and Windows.
 - `.github/workflows/runtime-release-gate.yml` — runtime release quality gate.
@@ -57,6 +57,7 @@ Documentation index for the Nexo platform. Start here to find what you need.
 - `docs/FriendMeshPrefab.md` — prefab Docker Compose + env template for a small shared **Nexo.API** hub (friends / tailnet).
 - `docs/MeshPhase8OperatorHardening.md` — **Mesh Phase 8:** discovery admission, trust alias, `nexo mesh hub` / `mesh director`, TLS example.
 - `docs/MeshVirtualLab.md` — **Virtual mesh lab:** two Nexo.API nodes in Docker + verify script (no extra hardware).
+- `docs/MeshAgentSetupCapabilityBreakdown.md` — mesh agent setup **tear sheet**: capability tiers, ports, and ops checklist mapped to mesh DI surfaces.
 - `docs/TrustAndInformationArchitecture.md` — sanitization, audit, access boundaries.
 - `docs/TailscaleAndNexo.md` — Tailscale + Nexo exposure profile, ACL guidance, advisory endpoint.
 - `docs/config/security-exposure.env.example` — `Nexo__Security__*` env template for operators.
@@ -82,6 +83,7 @@ Documentation index for the Nexo platform. Start here to find what you need.
 ## Planning & Roadmap
 
 - `docs/MeshPhase0NorthStar.md` — **Phase 0 (executed):** federated mesh north star, capability matrix by profile, trust boundary, SLOs (feeds mesh Phases 1–7).
+- `docs/MeshPhase1ControlPlane.md` — **Phase 1:** in-memory fleet + mesh task registry, placement, `/api/mesh` routes on Nexo.API.
 - `docs/ExecutionPlan.md` — phased execution plan with implementation tasks, dependencies, and success metrics.
 - `docs/IssueBatch_30-60-90_Roadmap.md` — 30/60/90 gap-closure issue batch (issue templates).
 - `docs/NorthStarGapAnalysis.md` — North Star vs codebase gap analysis with status tracking.

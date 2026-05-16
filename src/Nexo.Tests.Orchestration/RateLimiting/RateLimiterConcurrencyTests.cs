@@ -57,6 +57,6 @@ public class RateLimiterConcurrencyTests
         await Task.WhenAll(tasks);
 
         // Assert - Should never exceed limit
-        allowedCount.Should().BeLessOrEqualTo(5, "rate limiter should never exceed its limit");
+        allowedCount.Should().BeLessThanOrEqualTo(5, "rate limiter should never exceed its limit");
     }
 }

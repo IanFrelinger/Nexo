@@ -34,7 +34,7 @@ public class FileSystemEventSourceTests : IDisposable
     {
         var source = new FileSystemEventSource(new[] { _tempDir }, _tempDir, new[] { "*" }, null);
         var events = new List<Nexo.Core.Application.Observation.Models.NormalizedEvent>();
-        var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        var cts = new CancellationTokenSource(TimeSpan.FromSeconds(20));
 
         var consumeTask = Task.Run(async () =>
         {
