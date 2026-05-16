@@ -80,6 +80,7 @@ Documentation index for the Nexo platform. Start here to find what you need.
 ## Planning & Roadmap
 
 - `docs/MeshPhase0NorthStar.md` — **Phase 0 (executed):** federated mesh north star, capability matrix by profile, trust boundary, SLOs (feeds mesh Phases 1–7).
+- `docs/MeshPhase1ControlPlane.md` — **Phase 1:** in-memory fleet + mesh task registry, placement, `/api/mesh` routes on Nexo.API.
 - `docs/ExecutionPlan.md` — phased execution plan with implementation tasks, dependencies, and success metrics.
 - `docs/IssueBatch_30-60-90_Roadmap.md` — 30/60/90 gap-closure issue batch (issue templates).
 - `docs/NorthStarGapAnalysis.md` — North Star vs codebase gap analysis with status tracking.

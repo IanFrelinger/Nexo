@@ -31,6 +31,7 @@ using Nexo.Infrastructure.Pipelines;
 using Nexo.Infrastructure.Persistence.Ephemeral;
 using Nexo.Infrastructure.Persistence;
 using Nexo.Infrastructure.Copilot;
+using Nexo.Infrastructure.Fleet;
 using Nexo.Orchestration;
 using Nexo.Orchestration.Models;
 using Nexo.Abstractions.Routing;
@@ -557,6 +558,9 @@ public static class NexoServiceCollectionExtensions
             var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Analysis.Rules.AnalysisRuleEngine>>();
             return new Nexo.Infrastructure.Analysis.Rules.AnalysisRuleEngine(rules, logger);
         });
+
+        // Phase 1 mesh director (in-memory fleet + task placement). See docs/MeshPhase0NorthStar.md.
+        services.AddNexoFleetDirector();
 
         return services;
     }
