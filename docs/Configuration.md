@@ -193,6 +193,8 @@ Operational guidance:
 
 ## Mesh
 
+For a **layered breakdown** of mesh capabilities (identity, registry, transport, trust, request/fulfill, sync, WAN gaps), see [`MeshAgentSetupCapabilityBreakdown.md`](./MeshAgentSetupCapabilityBreakdown.md).
+
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `NEXO_MESH_PEER_ID` | Mesh peer identifier | random GUID |

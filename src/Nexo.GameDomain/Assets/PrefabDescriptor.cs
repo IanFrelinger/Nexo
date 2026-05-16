@@ -1,7 +1,7 @@
 namespace Nexo.GameDomain.Assets;
 
 /// <summary>
-/// Data-only descriptor for a Unity prefab, including component list, child hierarchy,
+/// Data-only descriptor for an instantiable prefab or entity template: components, child hierarchy,
 /// and transform values.
 /// </summary>
 public sealed record PrefabDescriptor
@@ -33,7 +33,7 @@ public sealed record PrefabDescriptor
 /// </summary>
 public sealed record ComponentEntry
 {
-    /// <summary>Fully-qualified or short Unity component type name.</summary>
+    /// <summary>Component type identifier (often a fully-qualified type name for the host runtime).</summary>
     public string TypeName { get; init; } = string.Empty;
 
     /// <summary>Serialized field values keyed by property name.</summary>
