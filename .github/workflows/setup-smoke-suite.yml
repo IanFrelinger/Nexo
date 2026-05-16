@@ -5,42 +5,6 @@ name: Setup Smoke Suite
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - master
-      - main
-      - "cursor/**"
-    paths:
-      - ".github/workflows/setup-smoke-suite.yml"
-      - "docs/CiFirstHardwareSecond.md"
-      - "scripts/Verify-DevContainer.ps1"
-      - ".devcontainer/**"
-      - "docker-compose.portal.yml"
-      - "docker-compose.agent-server.yml"
-      - "docker-compose.ephemeral.yml"
-      - "docker-compose.test.yml"
-      - "docker-compose.ollama.yml"
-      - "scripts/setup/**"
-      - "scripts/install/**"
-      - "global.json"
-      - "Directory.Build.props"
-      - "Directory.Packages.props"
-  pull_request:
-    paths:
-      - ".github/workflows/setup-smoke-suite.yml"
-      - "docs/CiFirstHardwareSecond.md"
-      - "scripts/Verify-DevContainer.ps1"
-      - ".devcontainer/**"
-      - "docker-compose.portal.yml"
-      - "docker-compose.agent-server.yml"
-      - "docker-compose.ephemeral.yml"
-      - "docker-compose.test.yml"
-      - "docker-compose.ollama.yml"
-      - "scripts/setup/**"
-      - "scripts/install/**"
-      - "global.json"
-      - "Directory.Build.props"
-      - "Directory.Packages.props"
 
 concurrency:
   group: setup-smoke-${{ github.workflow }}-${{ github.ref }}

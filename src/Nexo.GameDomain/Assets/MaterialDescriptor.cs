@@ -1,8 +1,8 @@
 namespace Nexo.GameDomain.Assets;
 
 /// <summary>
-/// Data-only descriptor for a Unity material asset.
-/// The Unity-side loader reads these values to configure shaders, colours, and texture slots.
+/// Data-only descriptor for a surface material (shader, colours, texture slots).
+/// Host runtimes map these values to engine-specific materials and assets.
 /// </summary>
 public sealed record MaterialDescriptor
 {
@@ -12,7 +12,7 @@ public sealed record MaterialDescriptor
     /// <summary>Human-readable display name.</summary>
     public string Name { get; init; } = string.Empty;
 
-    /// <summary>Unity shader name (e.g. "Standard", "Universal Render Pipeline/Lit").</summary>
+    /// <summary>Logical shader identifier or engine-specific shader path (e.g. built-in lit, URP lit).</summary>
     public string ShaderName { get; init; } = "Standard";
 
     /// <summary>Main colour as a hex string (e.g. "#FFFFFF").</summary>
