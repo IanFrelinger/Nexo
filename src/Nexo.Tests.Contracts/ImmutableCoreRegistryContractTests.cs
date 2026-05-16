@@ -25,7 +25,7 @@ public abstract class ImmutableCoreRegistryContractTests
     public void IsInImmutableCore_NonCorePath_ReturnsFalse()
     {
         var registry = CreateInstance();
-        var nonCorePath = "src/Nexo.CLI/Commands/ImproveCommand.cs";
+        var nonCorePath = "application/src/Nexo.CLI/Commands/ImproveCommand.cs";
 
         registry.IsInImmutableCore(nonCorePath).Should().BeFalse();
     }

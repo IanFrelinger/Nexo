@@ -1,6 +1,32 @@
 name: Mesh virtual lab gate
 
 on:
+  push:
+    branches:
+      - master
+      - main
+      - "cursor/**"
+    paths:
+      - ".github/workflows/mesh-lab-gate.yml"
+      - "docker-compose.mesh-lab.yml"
+      - ".docker/Dockerfile.api"
+      - ".docker/Dockerfile.quickstart"
+      - "docs/config/mesh-lab.env.example"
+      - "docs/MeshVirtualLab.md"
+      - "scripts/mesh-lab-verify.sh"
+      - "scripts/mesh-lab-stress-ramp.sh"
+      - "application/src/Nexo.API/**"
+  pull_request:
+    paths:
+      - ".github/workflows/mesh-lab-gate.yml"
+      - "docker-compose.mesh-lab.yml"
+      - ".docker/Dockerfile.api"
+      - ".docker/Dockerfile.quickstart"
+      - "docs/config/mesh-lab.env.example"
+      - "docs/MeshVirtualLab.md"
+      - "scripts/mesh-lab-verify.sh"
+      - "scripts/mesh-lab-stress-ramp.sh"
+      - "application/src/Nexo.API/**"
   workflow_dispatch:
 
 jobs:

@@ -1,6 +1,30 @@
 name: Friend mesh prefab gate
 
 on:
+  push:
+    branches:
+      - master
+      - main
+      - "cursor/**"
+    paths:
+      - ".github/workflows/friend-mesh-prefab-gate.yml"
+      - "docker-compose.friend-mesh.yml"
+      - ".docker/Dockerfile.api"
+      - "docs/config/friend-mesh.env.example"
+      - "docs/config/friend-mesh.Caddyfile.example"
+      - "docs/FriendMeshPrefab.md"
+      - "docs/MeshPhase8OperatorHardening.md"
+      - "application/src/Nexo.API/**"
+  pull_request:
+    paths:
+      - ".github/workflows/friend-mesh-prefab-gate.yml"
+      - "docker-compose.friend-mesh.yml"
+      - ".docker/Dockerfile.api"
+      - "docs/config/friend-mesh.env.example"
+      - "docs/config/friend-mesh.Caddyfile.example"
+      - "docs/FriendMeshPrefab.md"
+      - "docs/MeshPhase8OperatorHardening.md"
+      - "application/src/Nexo.API/**"
   workflow_dispatch:
 
 jobs:

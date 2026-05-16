@@ -37,12 +37,12 @@ run_a "setup-unix.sh check" bash scripts/setup/setup-unix.sh check
 run_a "setup-unix.sh -Mode check (pwsh-style)" bash scripts/setup/setup-unix.sh -Mode check
 run_a "setup-unix.sh restore" bash scripts/setup/setup-unix.sh restore
 run_a "setup-unix.sh restore (repeat)" bash scripts/setup/setup-unix.sh restore
-run_a "dotnet build Nexo.CLI --no-restore" dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
+run_a "dotnet build Nexo.CLI --no-restore" dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
 
 ISO_NUGET="$(mktemp -d 2>/dev/null || mktemp -d -t nexo-nuget)"
 export NUGET_PACKAGES="${ISO_NUGET}"
 run_a "setup-unix.sh restore (isolated NUGET_PACKAGES)" bash scripts/setup/setup-unix.sh restore
-run_a "dotnet build (isolated NUGET_PACKAGES)" dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
+run_a "dotnet build (isolated NUGET_PACKAGES)" dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
 unset NUGET_PACKAGES
 
 if [[ "${SKIP_DOCKER}" == "1" ]] || ! command -v docker >/dev/null 2>&1 || ! docker info >/dev/null 2>&1; then
@@ -78,7 +78,7 @@ else
       fi
       bash scripts/setup/setup-linux.sh check
       bash scripts/setup/setup-linux.sh restore
-      dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
+      dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
     '; then
       echo "OK  container ${tag}"
     else

@@ -5,20 +5,20 @@ This guide walks you through submitting your first coding task through the Nexo 
 ## Prerequisites
 
 - .NET SDK 9.x (repo is pinned by `global.json`; the API project targets `net8.0` but requires the 9.x SDK to build)
-- Nexo repo cloned and built (`dotnet build src/Nexo.API/Nexo.API.csproj`)
+- Nexo repo cloned and built (`dotnet build application/src/Nexo.API/Nexo.API.csproj`)
 - An LLM provider configured (or `NEXO_ALLOW_MOCK=1` for local testing without API keys)
 
 ## 1. Start the API
 
 ```bash
 # With mock provider (no API keys needed):
-NEXO_ALLOW_MOCK=1 dotnet run --project src/Nexo.API
+NEXO_ALLOW_MOCK=1 dotnet run --project application/src/Nexo.API
 
 # With Ollama:
-OLLAMA_BASE_URL=http://localhost:11434 dotnet run --project src/Nexo.API
+OLLAMA_BASE_URL=http://localhost:11434 dotnet run --project application/src/Nexo.API
 
 # With OpenAI:
-OPENAI_API_KEY=sk-... dotnet run --project src/Nexo.API
+OPENAI_API_KEY=sk-... dotnet run --project application/src/Nexo.API
 ```
 
 The portal is available at `http://localhost:5000` (default Kestrel HTTP port). Docker compose stacks use port `8080` instead — see section 6.
@@ -67,8 +67,8 @@ curl -s http://localhost:5000/api/copilot/tasks | jq .
 curl -s http://localhost:5000/api/trust/dashboard | jq .
 
 # Or via CLI:
-dotnet run --project src/Nexo.CLI -- trust audit --json
-dotnet run --project src/Nexo.CLI -- trust dashboard
+dotnet run --project application/src/Nexo.CLI -- trust audit --json
+dotnet run --project application/src/Nexo.CLI -- trust dashboard
 ```
 
 Note: CLI trust commands require `NEXO_TRUST_ENABLED=1` in the environment for full trust service registration.
@@ -77,16 +77,16 @@ Note: CLI trust commands require `NEXO_TRUST_ENABLED=1` in the environment for f
 
 ```bash
 # Apply strict enterprise policy pack:
-dotnet run --project src/Nexo.CLI -- trust pack apply --id strict-enterprise
+dotnet run --project application/src/Nexo.CLI -- trust pack apply --id strict-enterprise
 
 # Pause observation (halt data collection):
-dotnet run --project src/Nexo.CLI -- trust pause
+dotnet run --project application/src/Nexo.CLI -- trust pause
 
 # Resume:
-dotnet run --project src/Nexo.CLI -- trust resume
+dotnet run --project application/src/Nexo.CLI -- trust resume
 
 # View boundary status:
-dotnet run --project src/Nexo.CLI -- trust boundary
+dotnet run --project application/src/Nexo.CLI -- trust boundary
 ```
 
 ## 6. Docker Compose Launch

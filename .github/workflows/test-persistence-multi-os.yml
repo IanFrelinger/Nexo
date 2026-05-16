@@ -4,6 +4,22 @@
 name: Persistence Tests (Multi-OS)
 
 on:
+  push:
+    branches: [ master, main ]
+    paths:
+      - 'src/Nexo.Core.Application/Persistence/**'
+      - 'src/Nexo.Infrastructure/Persistence/**'
+      - 'src/Nexo.Tests.Infrastructure/Tests/Persistence/**'
+      - 'application/src/Nexo.CLI/Commands/TestMultiEnvCommand.cs'
+      - '.docker/Dockerfile.test-caching-windows'
+  pull_request:
+    branches: [ master, main ]
+    paths:
+      - 'src/Nexo.Core.Application/Persistence/**'
+      - 'src/Nexo.Infrastructure/Persistence/**'
+      - 'src/Nexo.Tests.Infrastructure/Tests/Persistence/**'
+      - 'application/src/Nexo.CLI/Commands/TestMultiEnvCommand.cs'
+      - '.docker/Dockerfile.test-caching-windows'
   workflow_dispatch:
 
 jobs:

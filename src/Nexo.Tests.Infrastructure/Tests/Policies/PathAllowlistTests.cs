@@ -46,7 +46,7 @@ public sealed class PathAllowlistTests
     [Fact]
     public void Approve_RepoFsWrite_WithSrcSubPath_ReturnsTrue()
     {
-        var call = CreateToolCall("repo.fs.write", "src/Nexo.CLI/Program.cs");
+        var call = CreateToolCall("repo.fs.write", "application/src/Nexo.CLI/Program.cs");
         var result = _policy.Approve(call, EmptySnapshot, out var reason);
 
         result.Should().BeTrue();

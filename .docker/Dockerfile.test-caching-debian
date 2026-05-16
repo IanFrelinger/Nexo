@@ -31,12 +31,12 @@ RUN curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh &&
 RUN dotnet restore src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj && \
     dotnet restore src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.csproj && \
     dotnet restore src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj && \
-    dotnet restore src/Nexo.CLI/Nexo.CLI.csproj
+    dotnet restore application/src/Nexo.CLI/Nexo.CLI.csproj
 
 # Build test projects for net9.0 and CLI for net8.0
 RUN dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net9.0 --no-restore -p:TreatWarningsAsErrors=false && \
     dotnet build src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj -f net9.0 --no-restore -p:TreatWarningsAsErrors=false && \
-    dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
+    dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
 
 # Default command: run base framework and Trust tests
 CMD ["bash", "-c", "dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --filter '(FullyQualifiedName~BaseFrameworkSmokeTests|FullyQualifiedName~RuntimeStudioBlackBoxSmokeTests)' --logger 'console;verbosity=normal' && dotnet test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj --filter 'FullyQualifiedName~RuntimeStudioWhiteBoxSmokeTests' --logger 'console;verbosity=normal' && dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --filter 'FullyQualifiedName~Trust' --logger 'console;verbosity=normal' && dotnet test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj --filter 'FullyQualifiedName~Trust' --logger 'console;verbosity=normal'"]

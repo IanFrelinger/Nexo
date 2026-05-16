@@ -51,10 +51,10 @@ make test-prime-time-full    # ProdStyle gate then full test count on the same s
 `nexo` command note:
 - Commands shown as `nexo ...` assume the CLI tool is installed on your PATH.
 - If you have not installed the global tool, use the equivalent project invocation:
-  - `dotnet run --project src/Nexo.CLI -- <subcommand>`
+  - `dotnet run --project application/src/Nexo.CLI -- <subcommand>`
 - Example:
   - `nexo validate`
-  - `dotnet run --project src/Nexo.CLI -- validate`
+  - `dotnet run --project application/src/Nexo.CLI -- validate`
 
 ```bash
 # Local (all tests, 30s blame-hang)
@@ -68,14 +68,14 @@ dotnet test --blame-hang-timeout 30s --blame-hang-dump-type none
 # Prefer running after setup scripts and initial CLI smoke checks.
 nexo validate
 # equivalent:
-dotnet run --project src/Nexo.CLI -- validate
+dotnet run --project application/src/Nexo.CLI -- validate
 
 # nexo dogfood: add --verbose to stream build/test output
 nexo dogfood block2 --verbose
 nexo dogfood all --verbose
 # equivalent:
-dotnet run --project src/Nexo.CLI -- dogfood block2 --verbose
-dotnet run --project src/Nexo.CLI -- dogfood all --verbose
+dotnet run --project application/src/Nexo.CLI -- dogfood block2 --verbose
+dotnet run --project application/src/Nexo.CLI -- dogfood all --verbose
 
 # Integration tests only
 dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
@@ -89,7 +89,7 @@ dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
 make test-adaptation-all-envs
 # Or: nexo test multi-env --suite adaptation --all
 # equivalent:
-dotnet run --project src/Nexo.CLI -- test multi-env --suite adaptation --all
+dotnet run --project application/src/Nexo.CLI -- test multi-env --suite adaptation --all
 
 # Cross-platform (CI)
 make test-cross-platform SCOPE=integration

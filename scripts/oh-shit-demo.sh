@@ -66,30 +66,30 @@ fi
 
 echo "=== OH SH*T DEMO: build ==="
 if [[ "$NO_BUILD" -eq 0 ]]; then
-  dotnet build src/Nexo.CLI/Nexo.CLI.csproj -v minimal
+  dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj -v minimal
 else
   echo "Skipping build (--no-build)."
 fi
 
 echo
 echo "=== OH SH*T DEMO: bootstrap readiness (linux-demo) ==="
-dotnet run --project src/Nexo.CLI --no-build -- bootstrap check --json
+dotnet run --project application/src/Nexo.CLI --no-build -- bootstrap check --json
 
 echo
 echo "=== OH SH*T DEMO: chat one-shot (local demo mode) ==="
-dotnet run --project src/Nexo.CLI --no-build -- chat --prompt "Give me three high-impact improvements for this repository."
+dotnet run --project application/src/Nexo.CLI --no-build -- chat --prompt "Give me three high-impact improvements for this repository."
 
 echo
 echo "=== OH SH*T DEMO: explicit orchestrate JSON ==="
-NEXO_ALLOW_MOCK=1 dotnet run --project src/Nexo.CLI --no-build -- orchestrate "Create a practical plan to harden this codebase for release." --provider mock-json --prefer-model deterministic --format-json
+NEXO_ALLOW_MOCK=1 dotnet run --project application/src/Nexo.CLI --no-build -- orchestrate "Create a practical plan to harden this codebase for release." --provider mock-json --prefer-model deterministic --format-json
 
 echo
 if [[ "$QUICK" -eq 1 ]]; then
   echo "=== OH SH*T DEMO: north star gate (quick) ==="
-  run_with_retry 2 dotnet run --project src/Nexo.CLI --no-build -- dogfood block1 --format-json
+  run_with_retry 2 dotnet run --project application/src/Nexo.CLI --no-build -- dogfood block1 --format-json
 else
   echo "=== OH SH*T DEMO: north star gates (full) ==="
-  run_with_retry 2 dotnet run --project src/Nexo.CLI --no-build -- dogfood all --format-json
+  run_with_retry 2 dotnet run --project application/src/Nexo.CLI --no-build -- dogfood all --format-json
 fi
 
 echo

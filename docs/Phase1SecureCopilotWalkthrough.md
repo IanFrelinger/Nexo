@@ -4,7 +4,7 @@ This walkthrough demonstrates the Phase 1 product pilot flow on top of the exist
 
 ## Prerequisites
 
-- Start the API host (`src/Nexo.API`) with a workspace mounted via `docker-compose.agent-server.yml`, or run it locally with equivalent environment.
+- Start the API host (`application/src/Nexo.API`) with a workspace mounted via `docker-compose.agent-server.yml`, or run it locally with equivalent environment.
 - Ensure trust services are enabled if you want live boundary controls and audit history:
   - `NEXO_TRUST_ENABLED=1`
   - optional persistence settings for trust/audit stores.

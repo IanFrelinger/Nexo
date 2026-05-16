@@ -2,6 +2,18 @@ name: Runtime Release Gate
 
 on:
   workflow_dispatch:
+  push:
+    branches: [ master, main ]
+    paths:
+      - '.github/workflows/runtime-release-gate.yml'
+      - 'application/src/Nexo.CLI/Commands/RuntimeCommand.cs'
+      - 'application/src/Nexo.CLI/Commands/SelfExtendCommand.cs'
+      - 'application/src/Nexo.CLI/Commands/BootstrapCommand.cs'
+      - 'application/src/Nexo.CLI/Commands/CiCommand.cs'
+      - 'application/src/Nexo.CLI/Nexo.CLI.csproj'
+      - 'application/src/Nexo.CLI/Runtime/**'
+      - 'application/src/Nexo.Tests.CLI/**'
+      - 'docs/runtime/benchmarks/**'
 
 jobs:
   runtime-release-lanes:
@@ -20,16 +32,16 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore
-        run: dotnet restore src/Nexo.CLI/Nexo.CLI.csproj
+        run: dotnet restore application/src/Nexo.CLI/Nexo.CLI.csproj
 
       - name: Restore copy-assemblies helper
         run: dotnet restore src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.csproj
 
       - name: Build
-        run: dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
+        run: dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
 
       - name: Runtime release lane gate
-        run: dotnet run --project src/Nexo.CLI -- runtime release-gate --repo-root . --mode ${{ matrix.lane }} --core-min-total 3 --core-history-window 3 --visual-required-mode true --visual-min-total 3 --visual-history-window 3 --lane-repetitions 1
+        run: dotnet run --project application/src/Nexo.CLI -- runtime release-gate --repo-root . --mode ${{ matrix.lane }} --core-min-total 3 --core-history-window 3 --visual-required-mode true --visual-min-total 3 --visual-history-window 3 --lane-repetitions 1
       - name: Upload runtime SLO evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -52,16 +64,16 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore
-        run: dotnet restore src/Nexo.CLI/Nexo.CLI.csproj
+        run: dotnet restore application/src/Nexo.CLI/Nexo.CLI.csproj
 
       - name: Restore copy-assemblies helper
         run: dotnet restore src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.csproj
 
       - name: Build
-        run: dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
+        run: dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
 
       - name: Runtime chaos lane (non-gating)
-        run: dotnet run --project src/Nexo.CLI -- runtime release-gate --repo-root . --mode chaos
+        run: dotnet run --project application/src/Nexo.CLI -- runtime release-gate --repo-root . --mode chaos
       - name: Upload runtime SLO evidence
         if: always()
         uses: actions/upload-artifact@v4

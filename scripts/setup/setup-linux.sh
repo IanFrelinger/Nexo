@@ -406,7 +406,7 @@ ensure_repo_files() {
   local restore_targets=(
     "src/Nexo.Core.Application/Nexo.Core.Application.csproj"
     "src/Nexo.Infrastructure/Nexo.Infrastructure.csproj"
-    "src/Nexo.CLI/Nexo.CLI.csproj"
+    "application/src/Nexo.CLI/Nexo.CLI.csproj"
     "src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.csproj"
     "src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj"
   )
@@ -441,7 +441,7 @@ run_restore() {
 
   dotnet restore "${REPO_ROOT}/src/Nexo.Core.Application/Nexo.Core.Application.csproj"
   dotnet restore "${REPO_ROOT}/src/Nexo.Infrastructure/Nexo.Infrastructure.csproj"
-  dotnet restore "${REPO_ROOT}/src/Nexo.CLI/Nexo.CLI.csproj"
+  dotnet restore "${REPO_ROOT}/application/src/Nexo.CLI/Nexo.CLI.csproj"
   dotnet restore "${REPO_ROOT}/src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.csproj"
   dotnet restore "${REPO_ROOT}/src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj"
 }

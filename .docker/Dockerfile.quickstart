@@ -7,8 +7,8 @@ FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
 COPY . .
-RUN dotnet restore src/Nexo.API/Nexo.API.csproj
-RUN dotnet publish src/Nexo.API/Nexo.API.csproj -c Release -o /app/publish --no-restore
+RUN dotnet restore application/src/Nexo.API/Nexo.API.csproj
+RUN dotnet publish application/src/Nexo.API/Nexo.API.csproj -c Release -o /app/publish --no-restore
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app

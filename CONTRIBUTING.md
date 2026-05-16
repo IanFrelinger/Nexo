@@ -9,8 +9,8 @@ Thanks for contributing.
 3. In the dev-container terminal, build and use the CLI:
 
 ```bash
-dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore
-dotnet run --project src/Nexo.CLI -- --help
+dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore
+dotnet run --project application/src/Nexo.CLI -- --help
 ```
 
 **Remote:** connect over **Remote SSH**, open the repo on the remote machine, then **Reopen in Container** there so the toolchain comes from the image, not from manual packages on the host.
@@ -58,14 +58,14 @@ From repository root:
 ```bash
 # Linux/macOS: setup.sh forwards to setup-unix.sh (POSIX or -Mode flags)
 bash scripts/setup/setup.sh all
-dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore
+dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore
 ```
 
 Windows PowerShell:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode all
-dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore
+dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore
 ```
 
 ## Required pre-PR checks
@@ -77,9 +77,9 @@ make test
 dotnet test src/Nexo.Tests.Domain/Nexo.Tests.Domain.csproj
 dotnet test src/Nexo.Tests.Application/Nexo.Tests.Application.csproj
 dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net8.0
-dotnet test src/Nexo.Tests.CLI/Nexo.Tests.CLI.csproj
-dotnet run --project src/Nexo.CLI -- --help
-dotnet run --project src/Nexo.CLI -- pipeline validate --template <template.json>
+dotnet test application/src/Nexo.Tests.CLI/Nexo.Tests.CLI.csproj
+dotnet run --project application/src/Nexo.CLI -- --help
+dotnet run --project application/src/Nexo.CLI -- pipeline validate --template <template.json>
 ```
 
 If you touch **`Nexo.Hosting`** project references or **`scripts/pack-nexo-hosting-graph.*`**, also run:
@@ -119,7 +119,7 @@ Optional [pre-commit](https://pre-commit.com/): `pip install pre-commit && pre-c
 
 ## Command style in docs
 
-- Prefer `dotnet run --project src/Nexo.CLI -- <subcommand>` in docs so commands work without global tool installation.
+- Prefer `dotnet run --project application/src/Nexo.CLI -- <subcommand>` in docs so commands work without global tool installation.
 - If using `nexo <subcommand>`, make sure the doc also includes a `dotnet run` equivalent.
 
 ## Cross-platform CI trigger

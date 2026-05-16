@@ -1110,20 +1110,20 @@ public class ProviderFactory : IProviderFactory
             CreateWriteCall(root, "docs/UiDomainDemoGenerated/avalonia/Nexo.Ui.AvaloniaHost/README.md", BuildAvaloniaHostReadmeSource()),
 
             // Command-structure scaffolding for composable extension commands.
-            CreateWriteCall(root, "src/Nexo.CLI/Commands/SelfExtendGenerated/IComposableExtensionCommand.cs", BuildComposableCommandContractSource()),
+            CreateWriteCall(root, "application/src/Nexo.CLI/Commands/SelfExtendGenerated/IComposableExtensionCommand.cs", BuildComposableCommandContractSource()),
         };
 
         foreach (var ext in extensionCommands)
         {
             calls.Add(CreateWriteCall(
                 root,
-                $"src/Nexo.CLI/Commands/SelfExtendGenerated/{ext.ClassName}.cs",
+                $"application/src/Nexo.CLI/Commands/SelfExtendGenerated/{ext.ClassName}.cs",
                 BuildExtensionCommandSource(ext.ClassName, ext.CommandName, ext.ExtensionId, ext.Dependencies)));
         }
 
         calls.Add(CreateWriteCall(
             root,
-            "src/Nexo.CLI/Commands/SelfExtendGenerated/SelfExtendUiDemoBundleCommand.cs",
+            "application/src/Nexo.CLI/Commands/SelfExtendGenerated/SelfExtendUiDemoBundleCommand.cs",
             BuildBundleCommandSource(
                 bundleClassName: "SelfExtendUiDemoBundleCommand",
                 bundleCommandName: "self-extend-ui-demo-bundle",
@@ -1134,13 +1134,13 @@ public class ProviderFactory : IProviderFactory
         {
             calls.Add(CreateWriteCall(
                 root,
-                $"src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/{ext.ClassName}StructureTests.cs",
+                $"application/src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/{ext.ClassName}StructureTests.cs",
                 BuildExtensionCommandStructureTestSource($"{ext.ClassName}StructureTests", ext.ClassName, ext.CommandName, ext.ExtensionId, ext.Dependencies)));
         }
 
         calls.Add(CreateWriteCall(
             root,
-            "src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/SelfExtendUiDemoBundleCommandStructureTests.cs",
+            "application/src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/SelfExtendUiDemoBundleCommandStructureTests.cs",
             BuildBundleCommandStructureTestSource(
                 testClassName: "SelfExtendUiDemoBundleCommandStructureTests",
                 bundleClassName: "SelfExtendUiDemoBundleCommand",
@@ -1149,10 +1149,10 @@ public class ProviderFactory : IProviderFactory
 
         calls.Add(CreateWriteCall(
             root,
-            "src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/UiDomainKnowledgeRetentionTests.cs",
+            "application/src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/UiDomainKnowledgeRetentionTests.cs",
             LoadCanonicalGeneratedSource(
                 root,
-                "src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/UiDomainKnowledgeRetentionTests.cs")));
+                "application/src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/UiDomainKnowledgeRetentionTests.cs")));
 
         return JsonSerializer.Serialize(new { tool_calls = calls });
     }
@@ -1179,20 +1179,20 @@ public class ProviderFactory : IProviderFactory
             CreateWriteCall(root, "docs/PersonalAppGenerated/README.md", BuildPersonalAppReadmeSource()),
 
             // Command-structure scaffolding for composable extension commands.
-            CreateWriteCall(root, "src/Nexo.CLI/Commands/SelfExtendGenerated/IComposableExtensionCommand.cs", BuildComposableCommandContractSource()),
+            CreateWriteCall(root, "application/src/Nexo.CLI/Commands/SelfExtendGenerated/IComposableExtensionCommand.cs", BuildComposableCommandContractSource()),
         };
 
         foreach (var ext in extensionCommands)
         {
             calls.Add(CreateWriteCall(
                 root,
-                $"src/Nexo.CLI/Commands/SelfExtendGenerated/{ext.ClassName}.cs",
+                $"application/src/Nexo.CLI/Commands/SelfExtendGenerated/{ext.ClassName}.cs",
                 BuildExtensionCommandSource(ext.ClassName, ext.CommandName, ext.ExtensionId, ext.Dependencies)));
         }
 
         calls.Add(CreateWriteCall(
             root,
-            "src/Nexo.CLI/Commands/SelfExtendGenerated/SelfExtendPersonalBundleCommand.cs",
+            "application/src/Nexo.CLI/Commands/SelfExtendGenerated/SelfExtendPersonalBundleCommand.cs",
             BuildBundleCommandSource(
                 bundleClassName: "SelfExtendPersonalBundleCommand",
                 bundleCommandName: "self-extend-personal-bundle",
@@ -1203,13 +1203,13 @@ public class ProviderFactory : IProviderFactory
         {
             calls.Add(CreateWriteCall(
                 root,
-                $"src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/{ext.ClassName}StructureTests.cs",
+                $"application/src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/{ext.ClassName}StructureTests.cs",
                 BuildExtensionCommandStructureTestSource($"{ext.ClassName}StructureTests", ext.ClassName, ext.CommandName, ext.ExtensionId, ext.Dependencies)));
         }
 
         calls.Add(CreateWriteCall(
             root,
-            "src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/SelfExtendPersonalBundleCommandStructureTests.cs",
+            "application/src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/SelfExtendPersonalBundleCommandStructureTests.cs",
             BuildBundleCommandStructureTestSource(
                 testClassName: "SelfExtendPersonalBundleCommandStructureTests",
                 bundleClassName: "SelfExtendPersonalBundleCommand",
@@ -1277,17 +1277,17 @@ public interface IGeneratedGameplaySystem
         }
 
         // Command-structure scaffolding for composition.
-        calls.Add(CreateWriteCall(root, "src/Nexo.CLI/Commands/SelfExtendGenerated/IComposableExtensionCommand.cs", BuildComposableCommandContractSource()));
+        calls.Add(CreateWriteCall(root, "application/src/Nexo.CLI/Commands/SelfExtendGenerated/IComposableExtensionCommand.cs", BuildComposableCommandContractSource()));
         foreach (var ext in extensionCommands)
         {
             calls.Add(CreateWriteCall(
                 root,
-                $"src/Nexo.CLI/Commands/SelfExtendGenerated/{ext.ClassName}.cs",
+                $"application/src/Nexo.CLI/Commands/SelfExtendGenerated/{ext.ClassName}.cs",
                 BuildExtensionCommandSource(ext.ClassName, ext.CommandName, ext.ExtensionId, ext.Dependencies)));
         }
         calls.Add(CreateWriteCall(
             root,
-            "src/Nexo.CLI/Commands/SelfExtendGenerated/SelfExtendBundleCommand.cs",
+            "application/src/Nexo.CLI/Commands/SelfExtendGenerated/SelfExtendBundleCommand.cs",
             BuildBundleCommandSource(extensionCommands.Select(e => (e.ClassName, e.CommandName)).ToArray())));
 
         // Generated tests that validate extension command structure.
@@ -1295,12 +1295,12 @@ public interface IGeneratedGameplaySystem
         {
             calls.Add(CreateWriteCall(
                 root,
-                $"src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/{ext.ClassName}StructureTests.cs",
+                $"application/src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/{ext.ClassName}StructureTests.cs",
                 BuildExtensionCommandStructureTestSource($"{ext.ClassName}StructureTests", ext.ClassName, ext.CommandName, ext.ExtensionId, ext.Dependencies)));
         }
         calls.Add(CreateWriteCall(
             root,
-            "src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/SelfExtendBundleCommandStructureTests.cs",
+            "application/src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/SelfExtendBundleCommandStructureTests.cs",
             BuildBundleCommandStructureTestSource(
                 "SelfExtendBundleCommandStructureTests",
                 extensionCommands.Select(e => e.CommandName).ToArray())));
@@ -2054,7 +2054,7 @@ static async Task<(int ExitCode, string StdOut, string StdErr)> RunSelfExtendAsy
     };
     psi.ArgumentList.Add("run");
     psi.ArgumentList.Add("--project");
-    psi.ArgumentList.Add("src/Nexo.CLI");
+    psi.ArgumentList.Add("application/src/Nexo.CLI");
     psi.ArgumentList.Add("--");
     psi.ArgumentList.Add("self-extend");
     psi.ArgumentList.Add("run");
@@ -2933,7 +2933,7 @@ public sealed class AvaloniaFeatureScaffolder : IFeatureScaffolder
         };
         psi.ArgumentList.Add("run");
         psi.ArgumentList.Add("--project");
-        psi.ArgumentList.Add("src/Nexo.CLI");
+        psi.ArgumentList.Add("application/src/Nexo.CLI");
         psi.ArgumentList.Add("--");
         psi.ArgumentList.Add("self-extend");
         psi.ArgumentList.Add("run");

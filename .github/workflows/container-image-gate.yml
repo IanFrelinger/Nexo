@@ -1,6 +1,36 @@
 name: Container Image Gate
 
 on:
+  push:
+    branches:
+      - master
+      - main
+      - "cursor/**"
+    paths:
+      - ".github/workflows/container-image-gate.yml"
+      - ".docker/Dockerfile.cli"
+      - "application/src/Nexo.CLI/**"
+      - "src/Nexo.Core.Application/**"
+      - "src/Nexo.Infrastructure/**"
+      - "src/Nexo.Hosting/**"
+      - "src/Nexo.Runtime/**"
+      - "Directory.Build.props"
+      - "Directory.Packages.props"
+      - "global.json"
+      - "README.md"
+  pull_request:
+    paths:
+      - ".github/workflows/container-image-gate.yml"
+      - ".docker/Dockerfile.cli"
+      - "application/src/Nexo.CLI/**"
+      - "src/Nexo.Core.Application/**"
+      - "src/Nexo.Infrastructure/**"
+      - "src/Nexo.Hosting/**"
+      - "src/Nexo.Runtime/**"
+      - "Directory.Build.props"
+      - "Directory.Packages.props"
+      - "global.json"
+      - "README.md"
   workflow_dispatch:
 
 jobs:
