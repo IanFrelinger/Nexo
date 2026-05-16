@@ -103,7 +103,7 @@ public class ConcurrentExecutionTests
         // Assert
         var report = allocator.GetUsageReport();
         report.TotalAllocatedComputeSeconds.Should().Be(2000); // 20 * 100
-        report.UtilizationCompute.Should().BeLessOrEqualTo(1.0);
+        report.UtilizationCompute.Should().BeLessThanOrEqualTo(1.0);
     }
 
     [Fact]
