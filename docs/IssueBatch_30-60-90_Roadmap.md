@@ -76,9 +76,9 @@ Use this file to create GitHub issues in the recommended execution order.
 
 ## 8) [Phase 60] Onboarding reliability gate expansion — ✅ COMPLETE
 
-**Status:** Implemented. `full-platform-readiness-gate.yml` runs setup → discovery → dry-run on 7 platforms (Linux, macOS, Windows native + Ubuntu/Alpine/Debian containers + Docker CLI image). Weekly schedule (Mon 06:00 UTC). `onboarding-quickstart-gate.yml` runs scheduled weekly with failure taxonomy.
+**Status:** Implemented. `full-platform-readiness-gate.yml` runs setup → discovery → dry-run on 7 platforms (Linux, macOS, Windows native + Ubuntu/Alpine/Debian containers + Docker CLI image). `onboarding-quickstart-gate.yml` provides failure taxonomy on manual runs.
 
-**Evidence:** `full-platform-readiness-gate.yml` validates all 7 platforms on every push (Linux, macOS, Windows, Ubuntu/Alpine/Debian containers, Docker CLI image).
+**Evidence:** `full-platform-readiness-gate.yml` validates all 7 platforms when dispatched (Linux, macOS, Windows, Ubuntu/Alpine/Debian containers, Docker CLI image).
 
 ---
 

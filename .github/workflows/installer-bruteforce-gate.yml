@@ -1,22 +1,6 @@
 name: Installer Bruteforce Gate
 
 on:
-  push:
-    branches:
-      - master
-      - main
-      - "cursor/**"
-    paths:
-      - ".github/workflows/installer-bruteforce-gate.yml"
-      - "scripts/install/**"
-      - "scripts/setup/**"
-      - "docs/OnboardingAutomation.md"
-  pull_request:
-    paths:
-      - ".github/workflows/installer-bruteforce-gate.yml"
-      - "scripts/install/**"
-      - "scripts/setup/**"
-      - "docs/OnboardingAutomation.md"
   workflow_dispatch:
 
 jobs:

@@ -2,18 +2,6 @@ name: Runtime Release Gate
 
 on:
   workflow_dispatch:
-  push:
-    branches: [ master, main ]
-    paths:
-      - '.github/workflows/runtime-release-gate.yml'
-      - 'src/Nexo.CLI/Commands/RuntimeCommand.cs'
-      - 'src/Nexo.CLI/Commands/SelfExtendCommand.cs'
-      - 'src/Nexo.CLI/Commands/BootstrapCommand.cs'
-      - 'src/Nexo.CLI/Commands/CiCommand.cs'
-      - 'src/Nexo.CLI/Nexo.CLI.csproj'
-      - 'src/Nexo.CLI/Runtime/**'
-      - 'src/Nexo.Tests.CLI/**'
-      - 'docs/runtime/benchmarks/**'
 
 jobs:
   runtime-release-lanes:

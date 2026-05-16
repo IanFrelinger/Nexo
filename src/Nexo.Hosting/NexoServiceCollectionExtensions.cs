@@ -19,6 +19,7 @@ using Nexo.Core.Application.Copilot.Ports;
 using Nexo.Core.Application.Paths;
 using Nexo.Core.Application.Trust.Ports;
 using Nexo.Infrastructure;
+using Nexo.Infrastructure.Environments;
 using Nexo.Infrastructure.Execution;
 using Nexo.Infrastructure.Execution.Routing;
 using Nexo.Infrastructure.Execution.Ephemeral;
@@ -31,6 +32,7 @@ using Nexo.Infrastructure.Pipelines;
 using Nexo.Infrastructure.Persistence.Ephemeral;
 using Nexo.Infrastructure.Persistence;
 using Nexo.Infrastructure.Copilot;
+using Nexo.Infrastructure.Fleet;
 using Nexo.Orchestration;
 using Nexo.Orchestration.Models;
 using Nexo.Abstractions.Routing;
@@ -414,6 +416,7 @@ public static class NexoServiceCollectionExtensions
 
         // ── Execution core & workflow ──────────────────────────────────
         services.AddSingleton<Nexo.Core.Application.Common.Ports.ITextFileSystem, Nexo.Infrastructure.IO.LocalTextFileSystem>();
+        services.AddMapDataProviderRouting();
 
         // Workflow integrations (PDF export, webhooks, DB read/write,
         // cluster store) are only available in Full/Server profiles.
@@ -557,6 +560,9 @@ public static class NexoServiceCollectionExtensions
             var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Analysis.Rules.AnalysisRuleEngine>>();
             return new Nexo.Infrastructure.Analysis.Rules.AnalysisRuleEngine(rules, logger);
         });
+
+        // Phase 1 mesh director (in-memory fleet + task placement). See docs/MeshPhase0NorthStar.md.
+        services.AddNexoFleetDirector();
 
         return services;
     }
