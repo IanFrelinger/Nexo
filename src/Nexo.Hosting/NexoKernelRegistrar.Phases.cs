@@ -19,7 +19,10 @@ using Nexo.Core.Application.Paths;
 using Nexo.Core.Application.Testing.UseCases.RunTests;
 using Nexo.Core.Application.Trust.Ports;
 using Nexo.Core.Application.Validation.UseCases.RunValidation;
+using Nexo.Contracts;
 using Nexo.Infrastructure;
+using Nexo.Infrastructure.Environments;
+using Nexo.Infrastructure.Fleet;
 using Nexo.Infrastructure.Copilot;
 using Nexo.Infrastructure.Execution;
 using Nexo.Infrastructure.Execution.Ephemeral;
@@ -83,8 +86,12 @@ internal static partial class NexoKernelRegistrar
             cfg.RegisterServicesFromAssembly(typeof(RunTestsCommand).Assembly);
         });
 
+        services.TryAddSingleton<ISmsIngressApprovalStore, UnsupportedSmsIngressApprovalStore>();
+
         services.AddValidatorsFromAssembly(typeof(AnalyzeCodeValidator).Assembly);
+        services.AddTransient(typeof(MediatR.IPipelineBehavior<,>), typeof(Nexo.Core.Application.Behaviors.IngressLoggingPipelineBehavior<,>));
         services.AddTransient(typeof(MediatR.IPipelineBehavior<,>), typeof(Nexo.Core.Application.Behaviors.ValidationBehavior<,>));
+        services.TryAddSingleton<Nexo.Core.Application.Middleware.Ports.INexoIngressAccessor, Nexo.Core.Application.Middleware.NoOpNexoIngressAccessor>();
 
     }
 
@@ -476,6 +483,7 @@ internal static partial class NexoKernelRegistrar
 
         // ── Execution core & workflow ──────────────────────────────────
         services.AddSingleton<Nexo.Core.Application.Common.Ports.ITextFileSystem, Nexo.Infrastructure.IO.LocalTextFileSystem>();
+        services.AddMapDataProviderRouting();
 
         // Workflow integrations (PDF export, webhooks, DB read/write,
         // cluster store) are only available in Full/Server profiles.
@@ -655,6 +663,10 @@ internal static partial class NexoKernelRegistrar
             var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Analysis.Rules.AnalysisRuleEngine>>();
             return new Nexo.Infrastructure.Analysis.Rules.AnalysisRuleEngine(rules, logger);
         });
+
+        services.AddNexoFleetDirector();
+        services.AddNexoMeshElasticScheduling(configuration);
+        services.AddNexoMeshCheckpointScheduling(configuration);
 
     }
 

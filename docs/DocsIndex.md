@@ -5,19 +5,29 @@ Documentation index for the Nexo platform. Start here to find what you need.
 ## Start Here
 
 1. `README.md` — **container-first** quickstart (Dev Container, quickstart image, GHCR CLI, compose); native paths are documented as escape hatches.
-2. `.devcontainer/devcontainer.json` — default development environment (Cursor / VS Code).
-3. `docs/GettingStarted.md` — first commands, first pipeline, and first trust checks (aligned with container + CLI).
-4. `CONTRIBUTING.md` — recommended **Dev Container** workflow and PR checks.
-5. `scripts/install/container-bootstrap.sh` and `scripts/install/container-bootstrap.ps1` — one-shot container bootstrap (Docker + image pull + smoke run).
-6. `scripts/setup/setup.sh` (forwards to `setup-unix.sh` on macOS/Linux), `scripts/setup/setup-unix.sh`, and `scripts/setup/setup.ps1` — cross-platform **native** dependency bootstrap + restore helpers (CI and escape hatch).
-7. `docs/SetupMatrixVerification.md` + `scripts/setup/verify-setup-matrix.ps1` / `verify-setup-matrix.sh` — brute-force style setup combination checks (local + CI).
-8. `scripts/start-nexo-api-dev.ps1` / `scripts/start-nexo-api-dev.sh` — Docker Ollama + host `Nexo.API` dev stack (see `docs/Configuration.md` → Ollama).
-9. `docs/Architecture.md` — layered architecture and component boundaries.
+2. `docs/RELEASE.md` — **shipping** NuGet + GHCR (one hub linking runbook, publishing, variables, staging, signing).
+3. `.devcontainer/devcontainer.json` — default development environment (Cursor / VS Code).
+4. `docs/GettingStarted.md` — first commands, first pipeline, and first trust checks (aligned with container + CLI).
+5. `CONTRIBUTING.md` — recommended **Dev Container** workflow and PR checks.
+6. `scripts/install/container-bootstrap.sh` and `scripts/install/container-bootstrap.ps1` — one-shot container bootstrap (Docker + image pull + smoke run).
+7. `scripts/setup/setup.sh` (forwards to `setup-unix.sh` on macOS/Linux), `scripts/setup/setup-unix.sh`, and `scripts/setup/setup.ps1` — cross-platform **native** dependency bootstrap + restore helpers (CI and escape hatch).
+8. `docs/SetupMatrixVerification.md` + `scripts/setup/verify-setup-matrix.ps1` / `verify-setup-matrix.sh` — brute-force style setup combination checks (local + CI).
+9. `scripts/start-nexo-api-dev.ps1` / `scripts/start-nexo-api-dev.sh` — Docker Ollama + host `Nexo.API` dev stack (see `docs/Configuration.md` → Ollama).
+10. `docs/Architecture.md` — layered architecture and component boundaries.
 
 ## Operator / Production Readiness
 
 - **`docs/production-readiness/README.md`** — **hub** for supporting SMB, enterprise, SaaS, and air-gapped production: release, security, ops, data/compliance, reliability, testing, operator deployment; includes [catalog by deployment type](production-readiness/CatalogByDeploymentType.md) and [runbook template](production-readiness/RunbookTemplate.md).
 - `docs/DEPLOYMENT.md` — **golden paths** (portal stack, CLI image, agent server), **pinning** images vs `latest`, NuGet/CI notes.
+- `docs/RELEASE.md` — **release hub** (preflight, dispatch, tag, deep links).
+- `docs/RELEASE_RUNBOOK.md` — release **decision table** (tag vs NuGet-only vs branch images); **`scripts/release-preflight-local.sh`** / **`make release-preflight`** / **`dotnet run … release preflight`** for one-command local preflight.
+- `docs/GitHubRepoVariables.md` — **Actions variables** for NuGet publish mode, post-push verify, SBOM, cross-verify.
+- `docs/GitHubBranchProtection.md` — **branch protection** guidance (merge gates vs tag releases).
+- `.github/ISSUE_TEMPLATE/release_checklist.yml` — **GitHub issue form** for a release ticket.
+- `docs/StagingFeed.md` — optional **NuGet staging** push before nuget.org.
+- `docs/NuGetPackageSigning.md` — optional **package signing** notes.
+- `docs/PUBLISHING.md` — NuGet pack/push, **post-push verification** (registration API, SHA-256 match, SBOM/Grype vars), operator checklist.
+- `.github/workflows/pack-hosting-graph-alignment.yml` — pack script vs `Nexo.Hosting` MSBuild graph.
 - `docs/ProductionReadinessGate-v1.md` — production gate commands and expected assertions (binary PASS/FAIL technical gate).
 - `.github/workflows/production-readiness-gate-v1.yml` — automated production readiness gate.
 - `.github/workflows/environment-setup-gate-v1.yml` — environment bootstrap + dependency setup gate (Linux/macOS/Windows).
@@ -55,6 +65,7 @@ Documentation index for the Nexo platform. Start here to find what you need.
 - `docs/FriendMeshPrefab.md` — prefab Docker Compose + env template for a small shared **Nexo.API** hub (friends / tailnet).
 - `docs/MeshPhase8OperatorHardening.md` — **Mesh Phase 8:** discovery admission, trust alias, `nexo mesh hub` / `mesh director`, TLS example.
 - `docs/MeshVirtualLab.md` — **Virtual mesh lab:** two Nexo.API nodes in Docker + verify script (no extra hardware); **`scripts/bootstrap-cloud-mesh-lab.sh`** for Ubuntu/Debian cloud VMs.
+- `docs/MeshAgentSetupCapabilityBreakdown.md` — mesh agent setup **tear sheet**: capability tiers, ports, and ops checklist mapped to mesh DI surfaces.
 - `docs/TrustAndInformationArchitecture.md` — sanitization, audit, access boundaries.
 - `docs/TailscaleAndNexo.md` — Tailscale + Nexo exposure profile, ACL guidance, advisory endpoint.
 - `docs/config/security-exposure.env.example` — `Nexo__Security__*` env template for operators.

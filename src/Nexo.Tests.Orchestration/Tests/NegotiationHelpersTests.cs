@@ -89,8 +89,8 @@ public sealed class NegotiationHelpersTests
         var totalCompute = allocation.Allocations.Values.Sum(a => a.ComputeSeconds);
         var totalMemory = allocation.Allocations.Values.Sum(a => a.MemoryMb);
 
-        totalCompute.Should().BeLessOrEqualTo(600);
-        totalMemory.Should().BeLessOrEqualTo(500);
+        totalCompute.Should().BeLessThanOrEqualTo(600);
+        totalMemory.Should().BeLessThanOrEqualTo(500);
     }
 
     // ── ConstraintRelaxer ──────────────────────────────────────────

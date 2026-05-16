@@ -1442,6 +1442,7 @@ static class Program
         root.AddCommand(maintenanceCmd);
 
         root.AddCommand(new CiCommand());
+        root.AddCommand(new ReleaseCommand());
         root.AddCommand(analyzeCmd);
         root.AddCommand(validateCmd);
         root.AddCommand(agentCmd);

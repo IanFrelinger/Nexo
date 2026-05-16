@@ -173,7 +173,7 @@ public sealed class BackgroundAgentLifecycleE2ETests
             logStore.Append("log-bound-test", "Info", $"msg-{i}");
 
         var logs = logStore.GetRecent("log-bound-test", int.MaxValue);
-        logs.Count.Should().BeLessOrEqualTo(NexoDefaults.AgentLogMaxEntriesPerAgent);
+        logs.Count.Should().BeLessThanOrEqualTo(NexoDefaults.AgentLogMaxEntriesPerAgent);
     }
 
     [Fact(Timeout = TestTimeouts.E2E)]
@@ -185,7 +185,7 @@ public sealed class BackgroundAgentLifecycleE2ETests
             auditLog.LogRedaction(DateTimeOffset.UtcNow, "v1", "field", "redact", null);
 
         var recent = auditLog.GetRecent(int.MaxValue);
-        recent.Count.Should().BeLessOrEqualTo(NexoDefaults.SanitizationAuditMaxEntries);
+        recent.Count.Should().BeLessThanOrEqualTo(NexoDefaults.SanitizationAuditMaxEntries);
     }
 
     [Fact(Timeout = TestTimeouts.E2E)]
@@ -197,7 +197,7 @@ public sealed class BackgroundAgentLifecycleE2ETests
             auditLog.LogClassification("type", "level", "reason");
 
         var recent = auditLog.GetRecent(int.MaxValue);
-        recent.Count.Should().BeLessOrEqualTo(NexoDefaults.DataDecisionAuditMaxEntries);
+        recent.Count.Should().BeLessThanOrEqualTo(NexoDefaults.DataDecisionAuditMaxEntries);
     }
 
     // ── Test helpers ────────────────────────────────────────────────

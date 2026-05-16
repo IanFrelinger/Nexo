@@ -1,12 +1,11 @@
 namespace Nexo.GameDomain.Descriptors;
 
 /// <summary>
-/// Data-only descriptor for a weapon archetype consumed by the Unity weapon system.
+/// Data-only descriptor for a weapon archetype consumed by the host combat system.
 /// <para>
 /// Instances are purely declarative — they carry no behaviour and are safe to
-/// serialise across the Nexo ↔ Unity boundary.  The Unity-side weapon controller
-/// reads these values at spawn time to configure fire rate, projectile type,
-/// reload animations, and VFX hooks.
+/// serialise across the Nexo ↔ host boundary. The host weapon controller reads these
+/// values at spawn time to configure fire rate, projectile type, reload timing, and VFX hooks.
 /// </para>
 /// </summary>
 public sealed record WeaponDescriptor
