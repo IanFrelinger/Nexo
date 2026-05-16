@@ -4,7 +4,7 @@ namespace Nexo.GameDomain.Descriptors;
 /// Data-only descriptor for a game rule set that governs match flow, scoring, and respawn behaviour.
 /// <para>
 /// A single <see cref="GameRuleDescriptor"/> is active per session and is consumed by the
-/// Unity game-mode controller to enforce win conditions, round timers, and team structure.
+/// host game-mode logic to enforce win conditions, round timers, and team structure.
 /// </para>
 /// </summary>
 public sealed record GameRuleDescriptor

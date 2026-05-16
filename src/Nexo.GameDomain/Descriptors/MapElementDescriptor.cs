@@ -3,8 +3,8 @@ namespace Nexo.GameDomain.Descriptors;
 /// <summary>
 /// Data-only descriptor for a placeable map element such as a wall, hazard, or pickup.
 /// <para>
-/// The Unity level editor reads these descriptors to instantiate prefabs with the correct
-/// scale, collision layers, material assignments, and interaction scripts.
+/// The host authoring or level pipeline reads these descriptors to instantiate content with the correct
+/// scale, collision layers, material assignments, and interaction hooks.
 /// </para>
 /// </summary>
 public sealed record MapElementDescriptor

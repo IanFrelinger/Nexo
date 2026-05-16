@@ -186,9 +186,7 @@ The `full-platform-readiness-gate.yml` workflow runs setup → discovery → dry
 - **Docker CLI image:** build from `Dockerfile.cli` + smoke + discover
 - **SDK sample:** `docs/samples/StableSdkHostSample/` built as compatibility smoke check
 
-Trigger manually: `make test-readiness-gate` or `gh workflow run "Full Platform Readiness Gate"`.
-
-Weekly schedule: Monday 06:00 UTC.
+Trigger manually: `make test-readiness-gate` or `gh workflow run "Full Platform Readiness Gate" --ref <branch>`. Most repo workflows are **manual-first**; see `.github/workflows/README.md`.
 
 ## Docker Test Images
 

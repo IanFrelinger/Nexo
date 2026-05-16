@@ -8,24 +8,6 @@ permissions:
   pull-requests: write
 
 on:
-  push:
-    branches: [ master, main ]
-    paths:
-      - 'src/Nexo.BackgroundAgents/**'
-      - 'src/Nexo.Infrastructure/Trust/**'
-      - 'src/Nexo.Core.Application/Trust/**'
-      - 'src/Nexo.Tests.BackgroundAgents/Trust/**'
-      - 'src/Nexo.Tests.Infrastructure/Tests/Trust/**'
-      - '.docker/Dockerfile.test-caching*'
-  pull_request:
-    branches: [ master, main ]
-    paths:
-      - 'src/Nexo.BackgroundAgents/**'
-      - 'src/Nexo.Infrastructure/Trust/**'
-      - 'src/Nexo.Core.Application/Trust/**'
-      - 'src/Nexo.Tests.BackgroundAgents/Trust/**'
-      - 'src/Nexo.Tests.Infrastructure/Tests/Trust/**'
-      - '.docker/Dockerfile.test-caching*'
   workflow_dispatch:
 
 jobs:

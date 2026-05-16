@@ -1,26 +1,6 @@
 name: Onboarding Docs Guard
 
 on:
-  push:
-    branches:
-      - master
-      - main
-      - "cursor/**"
-    paths:
-      - "README.md"
-      - "docs/GettingStarted.md"
-      - "docs/DocsIndex.md"
-      - "docs/CiFirstHardwareSecond.md"
-      - ".devcontainer/**"
-      - ".github/workflows/onboarding-docs-guard.yml"
-  pull_request:
-    paths:
-      - "README.md"
-      - "docs/GettingStarted.md"
-      - "docs/DocsIndex.md"
-      - "docs/CiFirstHardwareSecond.md"
-      - ".devcontainer/**"
-      - ".github/workflows/onboarding-docs-guard.yml"
   workflow_dispatch:
 
 jobs:
@@ -64,6 +44,7 @@ jobs:
           grep -nE "scripts/setup/setup\\.sh" docs/DocsIndex.md
           grep -nE "onboarding-quickstart-gate\\.yml" docs/DocsIndex.md
           grep -nE "devcontainer-gate\\.yml" docs/DocsIndex.md
+          grep -nE "docs/RELEASE_RUNBOOK\\.md" docs/DocsIndex.md
 
           # Operator deploy section stays container-first.
           grep -nE "## Deploy \\(operators\\)" README.md

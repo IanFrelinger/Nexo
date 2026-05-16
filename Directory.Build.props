@@ -1,7 +1,6 @@
 <Project>
   <PropertyGroup>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <WarningsNotAsErrors></WarningsNotAsErrors>
     <AnalysisLevel>latest</AnalysisLevel>
     <LangVersion>12.0</LangVersion>
     <Nullable>enable</Nullable>
@@ -19,11 +18,7 @@
   <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETStandard'">
     <Compile Include="$(MSBuildThisFileDirectory)src/Nexo.Compat/Polyfills/*.cs" />
   </ItemGroup>
-  
-  <PropertyGroup Condition="'$(IsTestProject)' != 'true'">
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-  </PropertyGroup>
-  
+
   <PropertyGroup Condition="'$(IsTestProject)' == 'true'">
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
   </PropertyGroup>

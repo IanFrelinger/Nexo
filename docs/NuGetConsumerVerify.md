@@ -47,9 +47,8 @@ Workflow **`.github/workflows/release.yml`** runs **`verify-nuget-consumer`** af
 Workflow **`.github/workflows/nuget-consumer-verify.yml`** (standalone):
 
 - **`workflow_dispatch`**: input **version** (e.g. `1.2.3`); verifies against **nuget.org** only (no secrets).
-- **`schedule`**: weekly smoke against a repo variable **`NEXO_VERIFY_NUGET_VERSION`** (set in **Settings → Variables**). If unset, the job skips so scheduled runs stay quiet.
 
-For private feeds, add a scheduled or manual workflow in your org that sets `NEXO_NUGET_USERNAME` / `NEXO_NUGET_PASSWORD` from secrets and calls the same script with your feed URL.
+For private feeds, add a manual workflow in your org that sets `NEXO_NUGET_USERNAME` / `NEXO_NUGET_PASSWORD` from secrets and calls the same script with your feed URL.
 
 ## Related
 

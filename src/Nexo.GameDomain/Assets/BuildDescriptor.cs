@@ -1,9 +1,8 @@
 namespace Nexo.GameDomain.Assets;
 
 /// <summary>
-/// Unity build configuration descriptor. Defines target platform,
-/// quality settings, player settings, and build options for
-/// producing a playable game executable.
+/// Host build configuration descriptor: target platform, quality settings, player settings,
+/// and options for producing a playable build.
 /// </summary>
 public sealed record BuildDescriptor
 {
