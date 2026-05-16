@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Nexo.BackgroundAgents;
 using Nexo.BackgroundAgents.Trust;
 using Nexo.Core.Application.Adaptation.Ports;
+using Nexo.Contracts;
 using Nexo.Core.Application.Analysis.UseCases.AnalyzeCode;
 using Nexo.Core.Application.Ephemeral.Ports;
 using Nexo.Core.Application.Knowledge.Ports;
@@ -31,6 +32,7 @@ using Nexo.Infrastructure.Pipelines;
 using Nexo.Infrastructure.Persistence.Ephemeral;
 using Nexo.Infrastructure.Persistence;
 using Nexo.Infrastructure.Copilot;
+using Nexo.Infrastructure.Fleet;
 using Nexo.Orchestration;
 using Nexo.Orchestration.Models;
 using Nexo.Abstractions.Routing;
@@ -164,8 +166,12 @@ public static class NexoServiceCollectionExtensions
             cfg.RegisterServicesFromAssembly(typeof(RunTestsCommand).Assembly);
         });
 
+        services.TryAddSingleton<ISmsIngressApprovalStore, UnsupportedSmsIngressApprovalStore>();
+
         services.AddValidatorsFromAssembly(typeof(AnalyzeCodeValidator).Assembly);
+        services.AddTransient(typeof(MediatR.IPipelineBehavior<,>), typeof(Nexo.Core.Application.Behaviors.IngressLoggingPipelineBehavior<,>));
         services.AddTransient(typeof(MediatR.IPipelineBehavior<,>), typeof(Nexo.Core.Application.Behaviors.ValidationBehavior<,>));
+        services.TryAddSingleton<Nexo.Core.Application.Middleware.Ports.INexoIngressAccessor, Nexo.Core.Application.Middleware.NoOpNexoIngressAccessor>();
 
         // ── Configuration service adapter ──────────────────────────────
         // Bridges the domain-level IConfigurationService port to the
@@ -228,7 +234,10 @@ public static class NexoServiceCollectionExtensions
         // Pattern store path is forwarded so the adaptation layer knows
         // where to persist learned patterns on disk.
         if (modules.IncludeAdaptation)
+        {
             services.AddAdaptationInfrastructure(options.PatternStorePath);
+            services.AddNexoMeshKnowledgeReplication(configuration);
+        }
 
         if (modules.IncludeAdaptation)
             services.AddNexoFederatedBrickMesh(configuration);
@@ -554,6 +563,11 @@ public static class NexoServiceCollectionExtensions
             var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Analysis.Rules.AnalysisRuleEngine>>();
             return new Nexo.Infrastructure.Analysis.Rules.AnalysisRuleEngine(rules, logger);
         });
+
+        // Phase 1 mesh director (in-memory fleet + task placement). See docs/MeshPhase0NorthStar.md.
+        services.AddNexoFleetDirector();
+        services.AddNexoMeshElasticScheduling(configuration);
+        services.AddNexoMeshCheckpointScheduling(configuration);
 
         return services;
     }

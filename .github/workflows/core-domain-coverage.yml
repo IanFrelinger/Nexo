@@ -2,31 +2,7 @@
 name: Core domain coverage
 
 on:
-  push:
-    branches: [master, main, "cursor/**"]
-    paths:
-      - ".github/workflows/core-domain-coverage.yml"
-      - "src/Nexo.Core.Domain/**"
-      - "src/Nexo.Core.Application/Testing/**"
-      - "src/Nexo.Infrastructure/**"
-      - "src/Nexo.Tests.Domain/**"
-      - "src/Nexo.Tests.Application/**"
-      - "src/Nexo.Tests.Infrastructure/**"
-      - "src/Nexo.Tests.CLI/**"
-      - "Directory.Packages.props"
-      - "Directory.Build.props"
-  pull_request:
-    paths:
-      - ".github/workflows/core-domain-coverage.yml"
-      - "src/Nexo.Core.Domain/**"
-      - "src/Nexo.Core.Application/Testing/**"
-      - "src/Nexo.Infrastructure/**"
-      - "src/Nexo.Tests.Domain/**"
-      - "src/Nexo.Tests.Application/**"
-      - "src/Nexo.Tests.Infrastructure/**"
-      - "src/Nexo.Tests.CLI/**"
-      - "Directory.Packages.props"
-      - "Directory.Build.props"
+  workflow_dispatch:
 
 jobs:
   domain-coverage:

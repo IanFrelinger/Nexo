@@ -9,7 +9,7 @@
 # Native runners: ubuntu, macOS, Windows
 # Container runners: Ubuntu, Alpine, Debian (Docker on ubuntu-latest)
 #
-# Trigger: push/PR to master (path-filtered) + manual dispatch + weekly schedule
+# Manual-first — see .github/workflows/README.md
 name: Full Platform Readiness Gate
 
 on:
@@ -43,6 +43,7 @@ on:
       - "scripts/verify-stable-sdk-host-sample-packages.sh"
       - "scripts/verify-stable-sdk-host-sample-packages.ps1"
       - "docs/samples/StableSdkHostSample/**"
+      - "docs/samples/NugetOrgRestoreVerify/**"
       - "global.json"
       - "Directory.Build.props"
       - "Directory.Packages.props"
@@ -73,6 +74,7 @@ on:
       - "scripts/verify-stable-sdk-host-sample-packages.sh"
       - "scripts/verify-stable-sdk-host-sample-packages.ps1"
       - "docs/samples/StableSdkHostSample/**"
+      - "docs/samples/NugetOrgRestoreVerify/**"
       - "global.json"
       - "Directory.Build.props"
       - "Directory.Packages.props"
@@ -115,6 +117,9 @@ jobs:
           dotnet-version: |
             9.0.x
             8.0.x
+
+      - name: "Setup — verify hosting pack graph consistency"
+        run: python3 scripts/verify-pack-nexo-hosting-graph-alignment.py
 
       # ── Stage 1: Setup ──────────────────────────────────────────────
       - name: "Setup — check environment"

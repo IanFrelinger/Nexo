@@ -137,6 +137,9 @@ public class TestRunnerAdapterTests : UnitTestBase
 
         await runner.RunTestsAsync("SimpleTestForRunner", progress, CancellationToken.None);
 
+        // Progress<T> may post callbacks asynchronously; allow the queue to drain before asserting.
+        await Task.Delay(300, CancellationToken.None).ConfigureAwait(false);
+
         // Should have progress reports
         AssertTrue(progressReports.Count > 0, "Should have progress reports");
         AssertTrue(progressReports.Any(r => r.Message.Contains("Discovering", StringComparison.OrdinalIgnoreCase) ||
