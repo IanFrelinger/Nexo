@@ -61,7 +61,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="../Nexo.Hosting/GlobalUsings.Infrastructure.Sdk.cs" Link="GlobalUsings.Infrastructure.Sdk.cs" />
+    <Compile Include="../../../src/Nexo.Hosting/GlobalUsings.Infrastructure.Sdk.cs" Link="GlobalUsings.Infrastructure.Sdk.cs" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(IncludeTestProjectReferences)' != 'false'">
