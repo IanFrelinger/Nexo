@@ -32,8 +32,8 @@ To block merges when domain line coverage regresses, in GitHub go to **Settings 
   `dotnet test src/Nexo.Tests.Domain/Nexo.Tests.Domain.csproj`  
   `dotnet test src/Nexo.Tests.Application/Nexo.Tests.Application.csproj`  
   `dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj`  
-  `dotnet test src/Nexo.Tests.CLI/Nexo.Tests.CLI.csproj`
+  `dotnet test application/src/Nexo.Tests.CLI/Nexo.Tests.CLI.csproj`
 - **Broader local bar:** `make test` (see `Makefile`; uses blame-hang options)
 - **Production-like integration first (Infrastructure only):** `make test-prod-style` then optionally `make test-framework-prod-first`
 - **Prime-time gate (all test projects in `Nexo.PrimeTime.slnf`):** `make test-prime-time` — **`Category=ProdStyle`** across Application, Domain, Infrastructure, CLI, Orchestration, BackgroundAgents, GameDomain, Transport; then **`make test-prime-time-full`** for the full slice.
-- **CI-style verification:** `make ci-verify` or `dotnet run --project src/Nexo.CLI -- ci verify`
+- **CI-style verification:** `make ci-verify` or `dotnet run --project application/src/Nexo.CLI -- ci verify`

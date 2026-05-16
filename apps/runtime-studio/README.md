@@ -101,7 +101,7 @@ The script forwards **`--budget-runs`** to `nexo workflow optimize` (default **4
 
 Windows **`scripts/setup/setup.ps1 -Mode all`** runs the same optimize + apply flow after dependencies restore (skip with **`-SkipRuntimeStudioTune`** or **`NEXO_SKIP_RUNTIME_STUDIO_TUNE=1`**).
 
-Inspect current state anytime: **`dotnet run --project src/Nexo.CLI -- runtime-studio status`** (or **`--format-json`**).
+Inspect current state anytime: **`dotnet run --project application/src/Nexo.CLI -- runtime-studio status`** (or **`--format-json`**).
 
 ## Customize the agent set
 

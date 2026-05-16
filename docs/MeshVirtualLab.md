@@ -43,11 +43,11 @@ docker compose --profile workers -f docker-compose.mesh-lab.yml --env-file .env.
 ```bash
 export NEXO_MESH_DIRECTOR_BASE_URL=http://127.0.0.1:18081
 export NEXO_MESH_API_KEY='your-key'
-dotnet run --project src/Nexo.CLI -- mesh director get /health --json
+dotnet run --project application/src/Nexo.CLI -- mesh director get /health --json
 
 export NEXO_MESH_DIRECTOR_BASE_URL=http://127.0.0.1:18082
 # peer-b accepts Bearer OR same API key:
-dotnet run --project src/Nexo.CLI -- mesh director get /health --json
+dotnet run --project application/src/Nexo.CLI -- mesh director get /health --json
 ```
 
 ## instances.json (optional)

@@ -223,7 +223,7 @@ run_container_smoke() {
     fi
 
     run_cmd docker run --rm -v "$abs_workspace:/work" -w /work "$IMAGE" --help
-    run_cmd docker run --rm -v "$abs_workspace:/work" -w /work "$SDK_IMAGE" dotnet restore src/Nexo.CLI/Nexo.CLI.csproj
+    run_cmd docker run --rm -v "$abs_workspace:/work" -w /work "$SDK_IMAGE" dotnet restore application/src/Nexo.CLI/Nexo.CLI.csproj
   fi
 }
 
@@ -245,7 +245,7 @@ main() {
   echo "  docker run --rm $SDK_IMAGE dotnet --info"
   if [[ -n "$WORKSPACE_DIR" ]]; then
     echo "  docker run --rm -v \"$WORKSPACE_DIR:/work\" -w /work $IMAGE pipeline validate --template /work/path/to/template.json"
-    echo "  docker run --rm -v \"$WORKSPACE_DIR:/work\" -w /work $SDK_IMAGE dotnet build src/Nexo.CLI/Nexo.CLI.csproj"
+    echo "  docker run --rm -v \"$WORKSPACE_DIR:/work\" -w /work $SDK_IMAGE dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj"
   fi
 }
 

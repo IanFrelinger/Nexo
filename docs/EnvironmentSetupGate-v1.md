@@ -32,7 +32,7 @@ Each matrix job performs:
    - Linux/macOS: `bash scripts/setup/setup.sh restore`
    - Windows: `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode restore`
 4. Verify post-restore build readiness:
-   - `dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal`
+   - `dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal`
 
 Ephemeral container lanes perform:
 
@@ -40,13 +40,13 @@ Ephemeral container lanes perform:
 2. Execute:
    - `bash scripts/setup/setup-linux.sh check`
    - `bash scripts/setup/setup-linux.sh restore`
-   - `dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal`
+   - `dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal`
 
 Additionally, ephemeral Linux container jobs run in fresh containers and execute:
 
 1. `bash scripts/setup/setup-linux.sh check`
 2. `bash scripts/setup/setup-linux.sh restore`
-3. `dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal`
+3. `dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal`
 
 ## Local usage
 
@@ -70,7 +70,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -M
 - NuGet restore succeeds for the setup baseline project set:
   - `src/Nexo.Core.Application/Nexo.Core.Application.csproj`
   - `src/Nexo.Infrastructure/Nexo.Infrastructure.csproj`
-  - `src/Nexo.CLI/Nexo.CLI.csproj`
+  - `application/src/Nexo.CLI/Nexo.CLI.csproj`
   - `src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.csproj`
   - `src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj`
 - CLI project builds with `--no-restore` after restore.

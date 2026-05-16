@@ -57,8 +57,8 @@ $bashPayload = @'
 set -euo pipefail
 export DOTNET_ROLL_FORWARD=LatestMajor
 bash .devcontainer/post-create.sh
-dotnet build src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
-dotnet run --project src/Nexo.CLI -- --help >/dev/null
+dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
+dotnet run --project application/src/Nexo.CLI -- --help >/dev/null
 echo "Verify-DevContainer: ok"
 '@
 $bashPayload = ($bashPayload -replace "`r`n", "`n") -replace "`r", ""

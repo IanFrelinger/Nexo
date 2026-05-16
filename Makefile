@@ -95,15 +95,15 @@ test-all-platforms:
 test-all-platforms-ephemeral:
 	@echo "=== Ephemeral multi-platform tests (no host artifacts) ==="
 	dotnet build -v minimal
-	dotnet run --project src/Nexo.CLI -- test --platforms ubuntu alpine debian --ephemeral
+	dotnet run --project application/src/Nexo.CLI -- test --platforms ubuntu alpine debian --ephemeral
 
 # Run tests on all platforms (C#-driven; works on Windows, macOS, Linux, mobile)
 test-all:
-	dotnet run --project src/Nexo.CLI -- test --platforms ubuntu alpine debian android ios unity windows
+	dotnet run --project application/src/Nexo.CLI -- test --platforms ubuntu alpine debian android ios unity windows
 
 # Run tests on specific platform
 test-platform:
-	dotnet run --project src/Nexo.CLI -- test --platforms $(PLATFORM)
+	dotnet run --project application/src/Nexo.CLI -- test --platforms $(PLATFORM)
 
 # Trigger cross-platform tests in CI (Mac, Windows, Linux from one place)
 # Requires: gh auth login. Workflows are manual-first — see .github/workflows/README.md
@@ -118,30 +118,30 @@ test-readiness-gate:
 	gh workflow run "Full Platform Readiness Gate" --ref master
 
 # Portable tests: C#-driven (replaces scripts/portable-test.sh). Works on Windows, macOS, Linux, mobile.
-# Usage: make test-portable [SCOPE=persistence|smoke|all]. Use --list to see targets: dotnet run --project src/Nexo.CLI -- test portable --list
+# Usage: make test-portable [SCOPE=persistence|smoke|all]. Use --list to see targets: dotnet run --project application/src/Nexo.CLI -- test portable --list
 test-portable:
-	dotnet run --project src/Nexo.CLI -- test portable --scope $${SCOPE:-persistence}
+	dotnet run --project application/src/Nexo.CLI -- test portable --scope $${SCOPE:-persistence}
 
 # Multi-env framework/caching/persistence tests (C#-driven; replaces test-framework-multi-env.sh etc.)
 test-multi-env:
-	dotnet run --project src/Nexo.CLI -- test multi-env --suite framework --all
+	dotnet run --project application/src/Nexo.CLI -- test multi-env --suite framework --all
 
 # Air-gapped multi-env: run containers with --network none (no egress). Validates air-gapped deployment.
 test-multi-env-no-network:
-	dotnet run --project src/Nexo.CLI -- test multi-env --suite framework --all --no-network
+	dotnet run --project application/src/Nexo.CLI -- test multi-env --suite framework --all --no-network
 
 # Air-gapped CI validation: framework + adaptation suites with zero network egress (ubuntu-8.0).
 test-airgapped:
-	dotnet run --project src/Nexo.CLI -- test multi-env --suite framework --env ubuntu-8.0 --no-network
-	dotnet run --project src/Nexo.CLI -- test multi-env --suite adaptation --env ubuntu-8.0 --no-network
+	dotnet run --project application/src/Nexo.CLI -- test multi-env --suite framework --env ubuntu-8.0 --no-network
+	dotnet run --project application/src/Nexo.CLI -- test multi-env --suite adaptation --env ubuntu-8.0 --no-network
 
 # Linear adaptation tests across all Docker environments
 test-adaptation-all-envs:
-	dotnet run --project src/Nexo.CLI -- test multi-env --suite adaptation --all
+	dotnet run --project application/src/Nexo.CLI -- test multi-env --suite adaptation --all
 
 # CI verification: build + checks (C#-driven; replaces scripts/ci-verify.sh)
 ci-verify:
-	dotnet run --project src/Nexo.CLI -- ci verify
+	dotnet run --project application/src/Nexo.CLI -- ci verify
 
 # Safe validation: sequential, minimal memory. Run from external terminal to avoid Cursor memory explosion.
 # Equivalent to ci-verify but via shell script; use when ci-verify causes high memory usage.
@@ -237,7 +237,7 @@ dogfood-all:
 
 # Review summary Markdown from JSON (C#-driven; replaces scripts/review-summary-md.sh)
 review-summary:
-	dotnet run --project src/Nexo.CLI -- review summary
+	dotnet run --project application/src/Nexo.CLI -- review summary
 
 # Mutation testing: validates tests catch deliberate bugs. Install: dotnet tool install -g dotnet-stryker
 mutation-test:
@@ -255,7 +255,7 @@ clean-test-artifacts:
 # Pack NuGet library packages (Nexo.Hosting, Nexo.CLI tool)
 pack:
 	dotnet pack src/Nexo.Hosting/Nexo.Hosting.csproj -c Release -o dist/nuget
-	dotnet pack src/Nexo.CLI/Nexo.CLI.csproj -c Release -o dist/nuget
+	dotnet pack application/src/Nexo.CLI/Nexo.CLI.csproj -c Release -o dist/nuget
 
 # Build CLI Docker image (linux/amd64 for portability)
 docker-cli:

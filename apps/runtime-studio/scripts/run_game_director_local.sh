@@ -84,7 +84,7 @@ PY
 fi
 
 DAEMON_CMD=(
-  dotnet run --project src/Nexo.CLI -- background-agent daemon
+  dotnet run --project application/src/Nexo.CLI -- background-agent daemon
   --config "${TMP_CONFIG}"
   --duration "${DURATION}"
 )

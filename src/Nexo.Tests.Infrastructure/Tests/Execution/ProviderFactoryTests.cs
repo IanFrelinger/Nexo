@@ -304,11 +304,11 @@ Generate a broad Unity adaptation package for a movement-combat vertical slice. 
             paths.Add(call.GetProperty("arguments").GetProperty("path").GetString() ?? string.Empty);
         }
 
-        AssertTrue(paths.Contains("src/Nexo.CLI/Commands/SelfExtendGenerated/IComposableExtensionCommand.cs"),
+        AssertTrue(paths.Contains("application/src/Nexo.CLI/Commands/SelfExtendGenerated/IComposableExtensionCommand.cs"),
             "Expected composable command contract scaffold.");
-        AssertTrue(paths.Contains("src/Nexo.CLI/Commands/SelfExtendGenerated/SelfExtendBundleCommand.cs"),
+        AssertTrue(paths.Contains("application/src/Nexo.CLI/Commands/SelfExtendGenerated/SelfExtendBundleCommand.cs"),
             "Expected composed bundle command scaffold.");
-        AssertTrue(paths.Contains("src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/DashExtensionCommandStructureTests.cs"),
+        AssertTrue(paths.Contains("application/src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/DashExtensionCommandStructureTests.cs"),
             "Expected generated test scaffold for extension command structure.");
     }
 
@@ -344,13 +344,13 @@ Scaffold a personalized productivity application for an individual user with pro
             "Expected personal app user profile scaffold.");
         AssertTrue(paths.Contains("docs/PersonalAppGenerated/ProgressDashboard.cs"),
             "Expected personal app dashboard scaffold.");
-        AssertTrue(paths.Contains("src/Nexo.CLI/Commands/SelfExtendGenerated/ProfileExtensionCommand.cs"),
+        AssertTrue(paths.Contains("application/src/Nexo.CLI/Commands/SelfExtendGenerated/ProfileExtensionCommand.cs"),
             "Expected generated profile extension command scaffold.");
-        AssertTrue(paths.Contains("src/Nexo.CLI/Commands/SelfExtendGenerated/SelfExtendPersonalBundleCommand.cs"),
+        AssertTrue(paths.Contains("application/src/Nexo.CLI/Commands/SelfExtendGenerated/SelfExtendPersonalBundleCommand.cs"),
             "Expected composed personal bundle command scaffold.");
-        AssertTrue(paths.Contains("src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/ProfileExtensionCommandStructureTests.cs"),
+        AssertTrue(paths.Contains("application/src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/ProfileExtensionCommandStructureTests.cs"),
             "Expected generated test scaffold for profile extension command structure.");
-        AssertTrue(paths.Contains("src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/SelfExtendPersonalBundleCommandStructureTests.cs"),
+        AssertTrue(paths.Contains("application/src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/SelfExtendPersonalBundleCommandStructureTests.cs"),
             "Expected generated test scaffold for personal bundle composition.");
     }
 
@@ -412,9 +412,9 @@ Create an interactive demo app with a chatbot interface that explains Nexo, reta
             "Expected generated Avalonia UI abstraction contracts.");
         AssertTrue(paths.Contains("docs/UiDomainDemoGenerated/avalonia/Nexo.Ui.AvaloniaHost/Program.cs"),
             "Expected generated Avalonia host program scaffold.");
-        AssertTrue(paths.Contains("src/Nexo.CLI/Commands/SelfExtendGenerated/SelfExtendUiDemoBundleCommand.cs"),
+        AssertTrue(paths.Contains("application/src/Nexo.CLI/Commands/SelfExtendGenerated/SelfExtendUiDemoBundleCommand.cs"),
             "Expected generated UI demo bundle command.");
-        AssertTrue(paths.Contains("src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/UiDomainKnowledgeRetentionTests.cs"),
+        AssertTrue(paths.Contains("application/src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/UiDomainKnowledgeRetentionTests.cs"),
             "Expected generated test for UI/domain knowledge retention.");
         AssertTrue(htmlContent.Contains("Nexo Chatbot", StringComparison.Ordinal),
             "Expected chatbot interface in generated UI HTML.");

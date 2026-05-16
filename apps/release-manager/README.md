@@ -18,7 +18,7 @@ This mirrors the structure of `apps/runtime-studio/config/agent_set.local.json` 
 Point the Nexo background-agent daemon at this config file, for example:
 
 ```bash
-dotnet run --project src/Nexo.CLI -- background-agent daemon --config apps/release-manager/config/agent_set.release_manager.json
+dotnet run --project application/src/Nexo.CLI -- background-agent daemon --config apps/release-manager/config/agent_set.release_manager.json
 ```
 
 Ensure the repo root is correct when starting the daemon so paths in `Parameters` resolve.

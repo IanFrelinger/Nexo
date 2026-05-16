@@ -41,7 +41,7 @@ export OLLAMA_BASE_URL="${OLLAMA_BASE_URL:-http://127.0.0.1:11434}"
 export OLLAMA_MODEL="${OLLAMA_MODEL:-llama3.1:latest}"
 
 DAEMON_CMD=(
-  dotnet run --project src/Nexo.CLI -- background-agent daemon
+  dotnet run --project application/src/Nexo.CLI -- background-agent daemon
   --config "${CONFIG_PATH}"
   --duration "${DURATION}"
 )

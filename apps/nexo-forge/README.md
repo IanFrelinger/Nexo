@@ -19,7 +19,7 @@ This mirrors the structure of `apps/runtime-studio/config/agent_set.local.json` 
 Point the Nexo background-agent daemon at this config file:
 
 ```bash
-dotnet run --project src/Nexo.CLI -- background-agent daemon \
+dotnet run --project application/src/Nexo.CLI -- background-agent daemon \
   --config apps/nexo-forge/config/agent_set.forge.json
 ```
 

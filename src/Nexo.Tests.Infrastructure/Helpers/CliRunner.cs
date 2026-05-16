@@ -93,7 +93,7 @@ public static class CliRunner
     /// Ensures the Nexo CLI is built and returns the path to Nexo.CLI.dll.
     /// Builds once and caches the path for subsequent calls.
     /// </summary>
-    /// <param name="repoRoot">Repository root (contains src/Nexo.CLI).</param>
+    /// <param name="repoRoot">Repository root (contains application/src/Nexo.CLI).</param>
     /// <param name="buildConfiguration">Debug (default) or Release for production-shaped binaries.</param>
     /// <returns>Path to Nexo.CLI.dll.</returns>
     public static Task<string> EnsureCliBuiltAsync(string repoRoot, string buildConfiguration = "Debug")
@@ -125,7 +125,7 @@ public static class CliRunner
                 {
                     FileName = "dotnet",
                     Arguments =
-                        $"build src/Nexo.CLI/Nexo.CLI.csproj -c {buildConfiguration} --verbosity quiet -p:TreatWarningsAsErrors=false",
+                        $"build application/src/Nexo.CLI/Nexo.CLI.csproj -c {buildConfiguration} --verbosity quiet -p:TreatWarningsAsErrors=false",
                     WorkingDirectory = repoRoot,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,

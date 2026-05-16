@@ -3,7 +3,7 @@
 # Run from Nexo repo root. Prefer running in external terminal (not Cursor) to avoid memory explosion.
 #
 # Phase 0: Build + smoke tests + nexo validate (equivalent to make ci-verify)
-# Phase 1 (dogfood): Run separately: make dogfood-all or: dotnet run --project src/Nexo.CLI -- dogfood all
+# Phase 1 (dogfood): Run separately: make dogfood-all or: dotnet run --project application/src/Nexo.CLI -- dogfood all
 
 set -e
 
@@ -27,10 +27,10 @@ dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
   --verbosity minimal
 
 echo "=== Validate Safe: Architecture Validation ==="
-dotnet run --project src/Nexo.CLI -- validate
+dotnet run --project application/src/Nexo.CLI -- validate
 
 echo "=== Validate Safe: All checks passed ==="
 echo ""
 echo "Optional: Run dogfood separately (not in parallel):"
 echo "  make dogfood-all"
-echo "  or: dotnet run --project src/Nexo.CLI -- dogfood all"
+echo "  or: dotnet run --project application/src/Nexo.CLI -- dogfood all"

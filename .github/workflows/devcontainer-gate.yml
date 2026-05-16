@@ -1,6 +1,36 @@
 name: Dev Container Gate
 
 on:
+  push:
+    branches:
+      - master
+      - main
+      - "cursor/**"
+    paths:
+      - ".github/workflows/devcontainer-gate.yml"
+      - "scripts/Verify-DevContainer.ps1"
+      - ".devcontainer/**"
+      - "global.json"
+      - "Directory.Build.props"
+      - "Directory.Packages.props"
+      - "application/src/Nexo.CLI/**"
+      - "src/Nexo.Core.Application/**"
+      - "src/Nexo.Infrastructure/**"
+      - "src/Nexo.Tests.Infrastructure/**"
+      - "Nexo.LocalDevCore.slnf"
+  pull_request:
+    paths:
+      - ".github/workflows/devcontainer-gate.yml"
+      - "scripts/Verify-DevContainer.ps1"
+      - ".devcontainer/**"
+      - "global.json"
+      - "Directory.Build.props"
+      - "Directory.Packages.props"
+      - "application/src/Nexo.CLI/**"
+      - "src/Nexo.Core.Application/**"
+      - "src/Nexo.Infrastructure/**"
+      - "src/Nexo.Tests.Infrastructure/**"
+      - "Nexo.LocalDevCore.slnf"
   workflow_dispatch:
 
 jobs:
