@@ -89,6 +89,22 @@ For broader checks:
 make ci-verify
 ```
 
+If you change **`Nexo.Hosting`** project references or **`scripts/pack-nexo-hosting-graph.*`**:
+
+```bash
+python3 scripts/verify-pack-nexo-hosting-graph-alignment.py
+```
+
+Before a **versioned** NuGet/GHCR release:
+
+```bash
+dotnet run --project src/Nexo.CLI -- release preflight 1.2.3
+# optional: trigger CI Release without a tag (needs gh auth)
+dotnet run --project src/Nexo.CLI -- release dispatch 1.2.3 --ref master
+```
+
+Optional [pre-commit](https://pre-commit.com/): `pip install pre-commit && pre-commit install` then use `.pre-commit-config.yaml` (graph alignment hook).
+
 ## Command style in docs
 
 - Prefer `dotnet run --project src/Nexo.CLI -- <subcommand>` in docs so commands work without global tool installation.

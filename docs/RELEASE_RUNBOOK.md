@@ -1,38 +1,61 @@
 # Release runbook (operator)
 
-Short checklist for cutting a Nexo release (GHCR images + NuGet). Details live in `docs/PUBLISHING.md` and `docs/DEPLOYMENT.md`.
+## Fastest path (local, one command)
 
-## Which workflow do I run?
+From repo root, with the **semver you are about to ship** (no `v`):
+
+```bash
+bash scripts/release-preflight-local.sh 1.2.3
+# or:  make release-preflight VERSION=1.2.3
+# or:  dotnet run --project src/Nexo.CLI -- release preflight 1.2.3
+```
+
+That runs **pack-graph alignment** + **NuGet consumer sample** (isolated cache). Then push tag **`v1.2.3`** so **`release.yml`** runs (see table below).
+
+Optional: also fire CI **`Runtime Release Gate`** from your machine (needs **`gh auth login`**):
+
+```bash
+NEXO_RELEASE_PREFLIGHT_TRIGGER_GATE=1 NEXO_RELEASE_PREFLIGHT_REF=master bash scripts/release-preflight-local.sh 1.2.3
+# or:  dotnet run --project src/Nexo.CLI -- release preflight 1.2.3 --trigger-gate --gate-ref master
+# or anytime:  make release-gate   /   dotnet run --project src/Nexo.CLI -- release gate
+```
+
+**Dispatch without a tag** (same workflow as tag, from a branch; needs `gh auth login`):
+
+```bash
+dotnet run --project src/Nexo.CLI -- release dispatch 1.2.3 --ref master
+# or:  make release-dispatch VERSION=1.2.3 REF=master
+```
+
+---
+
+Which workflow do I run?
 
 | Goal | Workflow | Notes |
 |------|-----------|--------|
-| **Ship everything** (GHCR images + NuGet) for a version | Push Git tag **`vX.Y.Z`** → **`.github/workflows/release.yml`** | Preferred. |
-| **NuGet only** (e.g. package hotfix, no image retag) | **Actions → Release NuGet packages** → **`release-nuget.yml`** | Register **`release-nuget.yml`** for OIDC on nuget.org if you use Trusted Publishing here. |
-| **Images from `main`** (rolling `sha-*`, not a semver release) | **`container-image-publish.yml`** on path-filtered pushes to default branch | No NuGet. |
+| **Ship everything** (GHCR + NuGet) | Push **`vX.Y.Z`** → **`release.yml`** | Preferred. Post-push NuGet checks + optional GHCR re-pull smoke. |
+| **NuGet only** | **Actions → Release NuGet packages** → **`release-nuget.yml`** | Register **`release-nuget.yml`** for OIDC if you use it. |
+| **Images from `main` only** | **`container-image-publish.yml`** | Rolling `sha-*` / `latest`; no NuGet. |
 
-Trusted Publishing on nuget.org is bound to the **top-level** workflow file: register **`release.yml`** for tag releases and **`release-nuget.yml`** if you use NuGet-only dispatch with OIDC. See `docs/PUBLISHING.md`.
+Trusted Publishing: register **`release.yml`** and **`release-nuget.yml`** as needed — see `docs/PUBLISHING.md`.
+
+**Repo variables & branch protection:** `docs/GitHubRepoVariables.md`, `docs/GitHubBranchProtection.md`.
+
+**Tracking:** open **New issue → Release checklist** (`.github/ISSUE_TEMPLATE/release_checklist.yml`) or use the **Release** section in the PR template when this PR ships a version.
 
 ## Before you tag
 
-1. **Green CI on the commit you will ship** — run **`runtime-release-gate`** (and any other gates you rely on) on that ref; default branch green can omit path-filtered workflows.
-2. **Hosting graph vs pack script** — `python3 scripts/verify-pack-nexo-hosting-graph-alignment.py` (also **Pack hosting graph alignment** CI). Rare extras go in **`scripts/pack-nexo-hosting-graph.allowlist.txt`** with a comment.
-3. **Consumer sample** — `bash scripts/verify-stable-sdk-host-sample-packages.sh` with `NEXO_SDK_PACKAGE_VERSION` (or `NEXO_SDK_PACKAGE_FEED` after packing). By default uses **isolated NuGet cache** + **`--force-evaluate`** so a bad graph is not hidden by `~/.nuget/packages` (set **`NEXO_SDK_VERIFY_NO_ISOLATED_CACHE=1`** to opt out).
+1. **Green CI** on the commit — run **`runtime-release-gate`** on that ref.
+2. **`python3 scripts/verify-pack-nexo-hosting-graph-alignment.py`** after changing `Nexo.Hosting` refs or pack scripts.
+3. **`bash scripts/verify-stable-sdk-host-sample-packages.sh`** with `NEXO_SDK_PACKAGE_VERSION` (isolated cache + `--force-evaluate` by default).
 
-## Cut the release
+## After `release.yml`
 
-1. **Tag** `vX.Y.Z` on the chosen commit and **push the tag**.
-2. **`release.yml`** runs images + NuGet per **`NUGET_PUBLISH_MODE`** (`none` | `oidc` | `apikey`).
-3. **Trusted Publishing** — register **`release.yml`** on nuget.org for OIDC tag releases; register **`release-nuget.yml`** too if you use NuGet-only dispatch with OIDC (`docs/PUBLISHING.md`).
-4. **Secrets / variables** — `NUGET_USER` (OIDC), `NUGET_API_KEY` (apikey). Optional repo variables for post-push (see `docs/PUBLISHING.md`): **`NUGET_POST_PUSH_VERIFY`**, **`NUGET_POST_PUSH_VERIFY_PACKAGE_IDS`**, **`NUGET_POST_PUSH_ATTEMPTS`**, **`NUGET_POST_PUSH_SLEEP_SEC`**.
-
-## After the workflow finishes
-
-1. Open the workflow **Summary** for image digests and NuGet version lines.
-2. On nuget.org, confirm **`Nexo.Hosting.Bundle`** (and siblings) at **X.Y.Z**. CI may poll flat-container URLs for **Bundle + Hosting + Sdk** and run a **nuget.org-only** restore of `docs/samples/NugetOrgRestoreVerify` (validates transitive graph after index lag).
-3. **GitHub Release** notes: version, migration pointers, and `docs/SdkCompatibilityPolicy.md` if the HTTP surface changed.
+1. Workflow **Summary** — image `sha-*` tags, NuGet version, cross-verify status.
+2. Artifact **`nuget-packages-<version>`** — includes **`nuget-publish-manifest.json`** and per-`.nupkg` **`.sha256.txt`** for audit / manual hash checks.
+3. Optional **`nuget-sbom-<version>`** if **`NUGET_RELEASE_SBOM=true`** on the repo.
 
 ## If something went wrong
 
-- **NuGet partial push** — Pushes are per-package; fix the root cause and re-run with **`--skip-duplicate`** (CI already uses it). Unlist bad versions on nuget.org per your policy.
-- **Images only** — Branch pushes still publish **`sha-*`** via `container-image-publish.yml`; semver tags on GHCR come from **tag** runs via `release.yml`.
-- **Forks** — The default **`GITHUB_TOKEN`** in a **fork** usually **cannot** push packages to **`ghcr.io/<upstream-owner>/...`**. Expect image publish jobs to **fail or skip** unless you run them in the **upstream** repo, retarget to your fork’s GHCR namespace, or use a **PAT** with `packages: write` and login steps that match your registry path. NuGet pushes from forks are also uncommon; use upstream for releases.
+- **Partial NuGet push** — Re-run with **`--skip-duplicate`**; unlist bad versions per policy.
+- **Forks** — Default **`GITHUB_TOKEN`** in forks often cannot push to **`ghcr.io/<upstream>/...`**; run releases in **upstream** or use a **PAT** with `packages: write`.

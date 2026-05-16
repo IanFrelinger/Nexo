@@ -33,8 +33,41 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  validate:
+    name: Validate release inputs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            9.0.x
+            8.0.x
+
+      - name: Verify global.json SDK pin matches installed SDKs
+        shell: bash
+        run: bash scripts/verify-release-sdk-pin.sh
+
+      - name: Dispatch on tag must match version input
+        if: github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          IN="${{ inputs.version }}"
+          IN="${IN#v}"
+          if [ "$TAG" != "$IN" ]; then
+            echo "::error::When running Release from workflow_dispatch on tag ${GITHUB_REF_NAME}, input version must be **${TAG}** (you entered **${IN}**)."
+            exit 1
+          fi
+          echo "OK: version input matches tag."
+
   images:
     name: Container images (GHCR)
+    needs: [validate]
+    if: needs.validate.result == 'success'
     uses: ./.github/workflows/reusable-container-publish.yml
     secrets: inherit
     with:
@@ -42,6 +75,8 @@ jobs:
 
   nuget:
     name: NuGet packages
+    needs: [validate]
+    if: needs.validate.result == 'success'
     uses: ./.github/workflows/reusable-release-nuget.yml
     secrets: inherit
     with:
@@ -56,9 +91,51 @@ jobs:
     with:
       package_version: ${{ github.event_name == 'workflow_dispatch' && inputs.version || github.ref_name }}
 
+  verify-published:
+    name: Cross-check published GHCR images
+    needs: [images, nuget]
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Skip cross-verify (prior jobs failed or disabled)
+        if: >-
+          needs.images.result != 'success' || needs.nuget.result != 'success' ||
+          vars.RELEASE_CROSS_VERIFY == 'false'
+        run: |
+          echo "Skipping GHCR re-pull smoke (images=${{ needs.images.result }} nuget=${{ needs.nuget.result }} RELEASE_CROSS_VERIFY=${{ vars.RELEASE_CROSS_VERIFY }})."
+
+      - name: Checkout
+        if: >-
+          needs.images.result == 'success' && needs.nuget.result == 'success' &&
+          vars.RELEASE_CROSS_VERIFY != 'false'
+        uses: actions/checkout@v4
+
+      - name: Login to GHCR
+        if: >-
+          needs.images.result == 'success' && needs.nuget.result == 'success' &&
+          vars.RELEASE_CROSS_VERIFY != 'false'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Smoke published images by digest tag
+        if: >-
+          needs.images.result == 'success' && needs.nuget.result == 'success' &&
+          vars.RELEASE_CROSS_VERIFY != 'false'
+        shell: bash
+        env:
+          RELEASE_SMOKE_CLI_IMAGE: ${{ needs.images.outputs.cli_sha_tag }}
+          RELEASE_SMOKE_API_IMAGE: ${{ needs.images.outputs.api_sha_tag }}
+        run: bash scripts/release-smoke-published-docker.sh
+
   summarize:
     name: Release summary
-    needs: [images, nuget, verify-nuget-consumer]
+    needs: [validate, images, nuget, verify-published, verify-nuget-consumer]
     if: always()
     runs-on: ubuntu-latest
     steps:
@@ -79,12 +156,96 @@ jobs:
             echo ""
             echo "| Item | Pin |"
             echo "|------|-----|"
-            echo "| nexo-cli | \`ghcr.io/${OWNER_LC}/nexo-cli:sha-${SHA12}\` |"
-            echo "| nexo-api | \`ghcr.io/${OWNER_LC}/nexo-api:sha-${SHA12}\` |"
+            echo "| nexo-cli | \`${{ needs.images.outputs.cli_sha_tag }}\` |"
+            echo "| nexo-api | \`${{ needs.images.outputs.api_sha_tag }}\` |"
             if [ "${{ github.ref_type }}" = "tag" ]; then
               echo "| semver (tags) | \`:${VER}\` |"
             fi
             echo "| NuGet | \`Nexo.Hosting.Bundle\` **${VER}** (+ graph, Client, Sdk) |"
             echo ""
-            echo "NuGet artifact: **nuget-packages-${VER}** (if push skipped, download from this run)."
+            echo "NuGet artifact: **nuget-packages-${VER}** (includes \`nuget-publish-manifest.json\` + per-package \`.sha256.txt\` when built from this workflow)."
+            echo ""
+            echo "| Validate | ${{ needs.validate.result }} |"
+            echo "| Cross-verify | ${{ needs.verify-published.result }} |"
+            echo ""
+            echo "Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           } >> "$GITHUB_STEP_SUMMARY"
+
+  github-release:
+    name: Draft GitHub Release
+    needs: [validate, images, nuget]
+    if: >-
+      success() &&
+      github.ref_type == 'tag' &&
+      vars.RELEASE_CREATE_GITHUB_RELEASE != 'false'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create or skip draft release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          if gh release view "$TAG" --repo "${{ github.repository }}" >/dev/null 2>&1; then
+            echo "Release $TAG already exists; skipping create."
+            exit 0
+          fi
+          VER="${TAG#v}"
+          NOTES_FILE="$(mktemp)"
+          SNIP="$(mktemp)"
+          bash scripts/changelog-snippet-for-release.sh > "$SNIP" || true
+          {
+            echo "Automated draft for **${TAG}**."
+            echo ""
+            echo "- Workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            echo "- NuGet: \`Nexo.Hosting.Bundle\` **${VER}** (+ graph). Artifact: \`nuget-packages-${VER}\`."
+            echo "- Images: \`${{ needs.images.outputs.cli_sha_tag }}\`, \`${{ needs.images.outputs.api_sha_tag }}\`"
+            echo ""
+            cat "$SNIP"
+            echo ""
+            echo "Edit notes and publish when ready. See \`docs/RELEASE.md\` and \`docs/SdkCompatibilityPolicy.md\`."
+          } > "$NOTES_FILE"
+          rm -f "$SNIP"
+          gh release create "$TAG" --repo "${{ github.repository }}" --draft --title "Release ${TAG}" --notes-file "$NOTES_FILE"
+          rm -f "$NOTES_FILE"
+
+  notify:
+    name: Release notification
+    needs: [validate, images, nuget, verify-published]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: POST workflow status
+        shell: bash
+        env:
+          URL: ${{ secrets.RELEASE_NOTIFICATION_WEBHOOK_URL }}
+        run: |
+          if [ -z "${URL}" ]; then
+            echo "No RELEASE_NOTIFICATION_WEBHOOK_URL secret; skip notify."
+            exit 0
+          fi
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VER="${{ inputs.version }}"
+            VER="${VER#v}"
+          else
+            VER="${GITHUB_REF_NAME#v}"
+          fi
+          STATUS="failure"
+          if [ "${{ needs.validate.result }}" = "success" ] && [ "${{ needs.images.result }}" = "success" ] && [ "${{ needs.nuget.result }}" = "success" ]; then
+            STATUS="success"
+          fi
+          PAYLOAD="$(jq -nc \
+            --arg repo "${{ github.repository }}" \
+            --arg ver "$VER" \
+            --arg st "$STATUS" \
+            --arg run "${{ github.run_id }}" \
+            --arg html "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}" \
+            '{repository:$repo, version:$ver, status:$st, run_id:$run, run_url:$html, workflow:"Release"}')"
+          curl -sS -X POST -H "Content-Type: application/json" -d "$PAYLOAD" "$URL" || echo "::warning::Webhook POST failed (non-fatal)"

@@ -1,4 +1,18 @@
-.PHONY: build build-core build-demos prod-dry-run prod-dry-run-agent-server restore-core test test-prod-style test-framework-prod-first test-prime-time test-prime-time-full test-cross-platform test-portable test-multi-env test-all-platforms test-all-platforms-ephemeral ci-verify validate-safe review-summary clean-test-artifacts test-readiness-gate
+.PHONY: build build-core build-demos prod-dry-run prod-dry-run-agent-server restore-core test test-prod-style test-framework-prod-first test-prime-time test-prime-time-full test-cross-platform test-portable test-multi-env test-all-platforms test-all-platforms-ephemeral ci-verify validate-safe review-summary clean-test-artifacts test-readiness-gate release-preflight release-gate release-dispatch
+
+# Local checks before tagging a release (graph alignment + NuGet sample). Usage: make release-preflight VERSION=1.2.3
+release-preflight:
+	@test -n "$(VERSION)" || (echo "Set VERSION=1.2.3 (semver, no v prefix)"; exit 1)
+	bash scripts/release-preflight-local.sh "$(VERSION)"
+
+# Trigger Runtime Release Gate in CI (requires: gh auth login)
+release-gate:
+	gh workflow run "Runtime Release Gate" --ref $${NEXO_RELEASE_PREFLIGHT_REF:-master}
+
+# Trigger full Release workflow (GHCR + NuGet). Requires: gh auth login. Usage: make release-dispatch VERSION=1.2.3 REF=master
+release-dispatch:
+	@test -n "$(VERSION)" || (echo "Set VERSION=1.2.3"; exit 1)
+	gh workflow run Release --ref $${REF:-master} -f version="$(VERSION)" -f skip_multi_arch=false
 
 # All automated test projects in Nexo.PrimeTime.slnf (nine Nexo.Tests.* assemblies).
 PRIME_TIME_SLNF := Nexo.PrimeTime.slnf
