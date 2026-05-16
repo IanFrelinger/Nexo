@@ -9,6 +9,11 @@ public static class TestTimeouts
     /// <summary>60 seconds for Integration tests.</summary>
     public const int Integration = 60_000;
 
+    /// <summary>
+    /// FileSystemWatcher integration: parallel net8+net9 test hosts must serialize; the waiter polls until the lock is free.
+    /// </summary>
+    public const int FileSystemPipelineIntegration = 240_000;
+
     /// <summary>90 seconds for E2E tests.</summary>
     public const int E2E = 90_000;
 

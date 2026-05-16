@@ -6,6 +6,7 @@ using Nexo.Infrastructure.Observation;
 using Nexo.Infrastructure.Trust;
 using Nexo.Tests.Application.Helpers;
 using Nexo.Tests.Infrastructure.Helpers;
+using Nexo.Tests.Infrastructure.Locking;
 using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Observation;
@@ -33,9 +34,17 @@ public sealed class ObservationPipelineIntegrationTests : IDisposable
         _tempDirCleanup.Dispose();
     }
 
-    [Fact(Timeout = TestTimeouts.Integration)]
+    [Fact(Timeout = TestTimeouts.FileSystemPipelineIntegration)]
     public async Task FullPipeline_FileSystemToPatternStore_StoresPatterns()
     {
+        // Multi-target `dotnet test` runs net8 + net9 hosts in parallel; Linux inotify/FileSystemWatcher can drop events when both run this test at once.
+        await using var crossHostGate = await CrossProcessLockDefaults.SharedProvider.AcquireAsync(
+            "observation-fs-pipeline.integration",
+            new CrossProcessLockOptions
+            {
+                FileNamePrefix = "nexo-observation",
+                FileNameSuffix = ".lock",
+            });
         var watchPath = Path.Combine(_tempDir, "src");
         Directory.CreateDirectory(watchPath);
         var testFile = Path.Combine(watchPath, "foo.cs");
@@ -54,7 +63,7 @@ public sealed class ObservationPipelineIntegrationTests : IDisposable
             new[] { "*.cs" },
             loggerFactory.CreateLogger<FileSystemEventSource>());
 
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(45));
         var eventCount = 0;
         var processTask = Task.Run(async () =>
         {
@@ -62,23 +71,24 @@ public sealed class ObservationPipelineIntegrationTests : IDisposable
             {
                 eventCount++;
                 await patternDetector.ProcessAsync(evt, cts.Token);
-                if (eventCount >= 3)
+                if (eventCount >= 12)
                     break;
             }
         }, cts.Token);
 
+        await Task.Delay(500, CancellationToken.None);
         await File.WriteAllTextAsync(testFile, "// v1", cts.Token);
-        await Task.Delay(400, cts.Token);
+        await Task.Delay(500, cts.Token);
         await File.WriteAllTextAsync(testFile, "// v2", cts.Token);
-        await Task.Delay(400, cts.Token);
+        await Task.Delay(500, cts.Token);
         await File.WriteAllTextAsync(testFile, "// v3", cts.Token);
 
         await processTask;
-        await Task.Delay(600, CancellationToken.None);
+        await Task.Delay(1000, CancellationToken.None);
 
-        using var queryCts = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        using var queryCts = new CancellationTokenSource(TimeSpan.FromSeconds(20));
         IReadOnlyList<ObservedPattern> patterns = [];
-        for (var attempt = 0; attempt < 15; attempt++)
+        for (var attempt = 0; attempt < 30; attempt++)
         {
             patterns = await store.QueryAsync(new PatternStoreQueryParams { MaxCount = 10 }, queryCts.Token);
             if (patterns.Any(p => p.EventType == "repeated-edits"))

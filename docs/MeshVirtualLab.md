@@ -31,6 +31,31 @@ docker compose -f docker-compose.mesh-lab.yml --env-file .env.mesh-lab up -d --b
 
 Host URLs: **`http://127.0.0.1:18081`** (peer-a), **`http://127.0.0.1:18082`** (peer-b).
 
+## Cloud VM (one-shot bootstrap)
+
+This Cursor/workspace cannot provision cloud VMs or run Docker for you. On **any fresh Ubuntu/Debian VM** (AWS/GCP/Azure/Linode):
+
+1. **SSH** into the VM and install Git if needed.
+2. **Clone** this repository and `cd` to the repo root.
+3. Run:
+
+   ```bash
+   chmod +x scripts/bootstrap-cloud-mesh-lab.sh
+   ./scripts/bootstrap-cloud-mesh-lab.sh --install-docker
+   ```
+
+   `--install-docker` uses **`apt-get`** to install **`docker.io`** and **`docker-compose-v2`**, then creates **`.env.mesh-lab`** from **`docs/config/mesh-lab.env.example`** (random lab secrets), **`docker compose up --build`**, and **`scripts/mesh-lab-verify.sh`**.
+
+4. From your laptop, **tunnel** the peer ports if the VM has no public listener:
+
+   ```bash
+   ssh -L 18081:127.0.0.1:18081 -L 18082:127.0.0.1:18082 user@your-vm
+   ```
+
+   Then open **`http://127.0.0.1:18081`** / **`18082`** locally.
+
+If Docker is already installed, omit **`--install-docker`**. For non-apt Linux, install Docker + Compose v2 manually ([Docker Engine install](https://docs.docker.com/engine/install/)), then run **`./scripts/bootstrap-cloud-mesh-lab.sh`** without **`--install-docker`**.
+
 ## Workers + stress ramp
 
 ```bash

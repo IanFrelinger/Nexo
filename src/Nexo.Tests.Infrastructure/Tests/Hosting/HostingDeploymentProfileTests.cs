@@ -23,8 +23,9 @@ public sealed class HostingDeploymentProfileTests
     [InlineData(NexoDeploymentProfile.Edge)]
     [InlineData(NexoDeploymentProfile.AirGapped)]
     [InlineData(NexoDeploymentProfile.System)]
-    public void AllProfiles_BuildWithoutException(NexoDeploymentProfile profile)
+    public async Task AllProfiles_BuildWithoutException(NexoDeploymentProfile profile)
     {
+        await Task.CompletedTask;
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddNexoProfile(profile);
@@ -34,8 +35,9 @@ public sealed class HostingDeploymentProfileTests
     }
 
     [Fact(Timeout = TestTimeouts.E2E)]
-    public void FullProfile_ResolvesConfigurationService()
+    public async Task FullProfile_ResolvesConfigurationService()
     {
+        await Task.CompletedTask;
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddNexo();
@@ -45,8 +47,9 @@ public sealed class HostingDeploymentProfileTests
     }
 
     [Fact(Timeout = TestTimeouts.E2E)]
-    public void SystemProfile_MinimalRegistration_StillResolvesCore()
+    public async Task SystemProfile_MinimalRegistration_StillResolvesCore()
     {
+        await Task.CompletedTask;
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddNexoProfile(NexoDeploymentProfile.System);
@@ -57,8 +60,9 @@ public sealed class HostingDeploymentProfileTests
     }
 
     [Fact(Timeout = TestTimeouts.E2E)]
-    public void EdgeProfile_OmitsBackgroundAgents()
+    public async Task EdgeProfile_OmitsBackgroundAgents()
     {
+        await Task.CompletedTask;
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddNexoProfile(NexoDeploymentProfile.Edge);
@@ -69,8 +73,9 @@ public sealed class HostingDeploymentProfileTests
     }
 
     [Fact(Timeout = TestTimeouts.E2E)]
-    public void AirGappedProfile_OmitsTrustServices()
+    public async Task AirGappedProfile_OmitsTrustServices()
     {
+        await Task.CompletedTask;
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddNexoProfile(NexoDeploymentProfile.AirGapped);
@@ -81,8 +86,9 @@ public sealed class HostingDeploymentProfileTests
     }
 
     [Fact(Timeout = TestTimeouts.E2E)]
-    public void DeploymentProfile_FromEnvironmentVariable()
+    public async Task DeploymentProfile_FromEnvironmentVariable()
     {
+        await Task.CompletedTask;
         var prev = Environment.GetEnvironmentVariable("NEXO_DEPLOYMENT_PROFILE");
         try
         {
@@ -102,8 +108,9 @@ public sealed class HostingDeploymentProfileTests
     }
 
     [Fact(Timeout = TestTimeouts.E2E)]
-    public void DeploymentProfile_ExplicitOverridesEnvVar()
+    public async Task DeploymentProfile_ExplicitOverridesEnvVar()
     {
+        await Task.CompletedTask;
         var prev = Environment.GetEnvironmentVariable("NEXO_DEPLOYMENT_PROFILE");
         try
         {
@@ -122,8 +129,9 @@ public sealed class HostingDeploymentProfileTests
     }
 
     [Fact(Timeout = TestTimeouts.E2E)]
-    public void StrictMode_FromEnvironmentVariable()
+    public async Task StrictMode_FromEnvironmentVariable()
     {
+        await Task.CompletedTask;
         var prev = Environment.GetEnvironmentVariable("NEXO_STRICT_MODE");
         try
         {
@@ -142,8 +150,9 @@ public sealed class HostingDeploymentProfileTests
     }
 
     [Fact(Timeout = TestTimeouts.E2E)]
-    public void StrictMode_ExplicitOverridesEnvVar()
+    public async Task StrictMode_ExplicitOverridesEnvVar()
     {
+        await Task.CompletedTask;
         var prev = Environment.GetEnvironmentVariable("NEXO_STRICT_MODE");
         try
         {
@@ -163,8 +172,9 @@ public sealed class HostingDeploymentProfileTests
     }
 
     [Fact(Timeout = TestTimeouts.E2E)]
-    public void AddNexo_CalledTwice_DoesNotThrow()
+    public async Task AddNexo_CalledTwice_DoesNotThrow()
     {
+        await Task.CompletedTask;
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddNexo();
@@ -175,8 +185,9 @@ public sealed class HostingDeploymentProfileTests
     }
 
     [Fact(Timeout = TestTimeouts.E2E)]
-    public void DeploymentProfile_InvalidValue_Throws()
+    public async Task DeploymentProfile_InvalidValue_Throws()
     {
+        await Task.CompletedTask;
         var prev = Environment.GetEnvironmentVariable("NEXO_DEPLOYMENT_PROFILE");
         try
         {

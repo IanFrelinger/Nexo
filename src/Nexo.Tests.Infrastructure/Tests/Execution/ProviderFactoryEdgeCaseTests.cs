@@ -22,8 +22,9 @@ public sealed class ProviderFactoryEdgeCaseTests
     }
 
     [Fact(Timeout = TestTimeouts.Quick)]
-    public void MockProvider_WhenNotAllowed_IsUnavailable()
+    public async Task MockProvider_WhenNotAllowed_IsUnavailable()
     {
+        await Task.CompletedTask;
         var prev = Environment.GetEnvironmentVariable("NEXO_ALLOW_MOCK");
         try
         {
@@ -42,8 +43,9 @@ public sealed class ProviderFactoryEdgeCaseTests
     }
 
     [Fact(Timeout = TestTimeouts.Quick)]
-    public void MockProvider_WhenAllowed_IsAvailable()
+    public async Task MockProvider_WhenAllowed_IsAvailable()
     {
+        await Task.CompletedTask;
         var prev = Environment.GetEnvironmentVariable("NEXO_ALLOW_MOCK");
         try
         {
@@ -62,8 +64,9 @@ public sealed class ProviderFactoryEdgeCaseTests
     }
 
     [Fact(Timeout = TestTimeouts.Quick)]
-    public void UnknownProvider_IsNotAvailable()
+    public async Task UnknownProvider_IsNotAvailable()
     {
+        await Task.CompletedTask;
         var factory = CreateFactory();
 
         factory.IsProviderAvailable("unknown").Should().BeFalse();
@@ -72,8 +75,9 @@ public sealed class ProviderFactoryEdgeCaseTests
     }
 
     [Fact(Timeout = TestTimeouts.Quick)]
-    public void ProviderAvailability_IsCaseInsensitive()
+    public async Task ProviderAvailability_IsCaseInsensitive()
     {
+        await Task.CompletedTask;
         var prev = Environment.GetEnvironmentVariable("NEXO_ALLOW_MOCK");
         try
         {

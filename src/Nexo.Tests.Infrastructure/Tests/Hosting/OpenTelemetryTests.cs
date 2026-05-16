@@ -12,8 +12,9 @@ namespace Nexo.Tests.Infrastructure.Tests.Hosting;
 public sealed class OpenTelemetryTests
 {
     [Fact(Timeout = TestTimeouts.E2E)]
-    public void AddNexoOpenTelemetry_BuildsProvider_WithoutError()
+    public async Task AddNexoOpenTelemetry_BuildsProvider_WithoutError()
     {
+        await Task.CompletedTask;
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddNexo();

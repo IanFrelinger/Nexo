@@ -8,8 +8,9 @@ namespace Nexo.Tests.Infrastructure.Tests.Runtime;
 public sealed class InMemoryAgentMemoryTests
 {
     [Fact(Timeout = 15000)]
-    public void Write_ThenQuery_ReturnsMatchingEvents()
+    public async Task Write_ThenQuery_ReturnsMatchingEvents()
     {
+        await Task.CompletedTask;
         var memory = new InMemoryAgentMemory();
 
         memory.Write(new EventRecord(DateTimeOffset.UtcNow, "agent-1", "info", "Hello world"));
@@ -22,8 +23,9 @@ public sealed class InMemoryAgentMemoryTests
     }
 
     [Fact(Timeout = 15000)]
-    public void Query_IsCaseInsensitive()
+    public async Task Query_IsCaseInsensitive()
     {
+        await Task.CompletedTask;
         var memory = new InMemoryAgentMemory();
         memory.Write(new EventRecord(DateTimeOffset.UtcNow, "a", "info", "Build Succeeded"));
 
@@ -33,8 +35,9 @@ public sealed class InMemoryAgentMemoryTests
     }
 
     [Fact(Timeout = 15000)]
-    public void Query_RespectsKLimit()
+    public async Task Query_RespectsKLimit()
     {
+        await Task.CompletedTask;
         var memory = new InMemoryAgentMemory();
 
         for (var i = 0; i < 10; i++)
@@ -49,8 +52,9 @@ public sealed class InMemoryAgentMemoryTests
     }
 
     [Fact(Timeout = 15000)]
-    public void Query_OrdersByTimestampDescending()
+    public async Task Query_OrdersByTimestampDescending()
     {
+        await Task.CompletedTask;
         var memory = new InMemoryAgentMemory();
         var t1 = DateTimeOffset.UtcNow.AddMinutes(-5);
         var t2 = DateTimeOffset.UtcNow.AddMinutes(-1);
@@ -69,8 +73,9 @@ public sealed class InMemoryAgentMemoryTests
     }
 
     [Fact(Timeout = 15000)]
-    public void Query_NoMatches_ReturnsEmpty()
+    public async Task Query_NoMatches_ReturnsEmpty()
     {
+        await Task.CompletedTask;
         var memory = new InMemoryAgentMemory();
         memory.Write(new EventRecord(DateTimeOffset.UtcNow, "a", "info", "Alpha"));
 
