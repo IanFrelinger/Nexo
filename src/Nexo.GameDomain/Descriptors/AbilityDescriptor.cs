@@ -4,7 +4,7 @@ namespace Nexo.GameDomain.Descriptors;
 /// Data-only descriptor for a player ability.
 /// <para>
 /// Abilities represent cooldown-gated actions such as dashes, shields, or area-of-effect
-/// attacks.  The Unity ability manager reads these descriptors at runtime to wire up
+/// attacks. The host ability system reads these descriptors at runtime to wire up
 /// input bindings, cooldown timers, and visual feedback.
 /// </para>
 /// </summary>

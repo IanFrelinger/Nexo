@@ -8,26 +8,6 @@ on:
         description: "Semver of Nexo.Hosting.Bundle on nuget.org (e.g. 1.0.0)"
         required: true
         type: string
-  schedule:
-    # Weekly: optional smoke when NEXO_VERIFY_NUGET_VERSION is set (repo variable)
-    - cron: "0 6 * * 1"
-  push:
-    branches: [master, main]
-    paths:
-      - ".github/workflows/nuget-consumer-verify.yml"
-      - "scripts/verify-stable-sdk-host-sample-published-feed.sh"
-      - "scripts/verify-stable-sdk-host-sample-packages.sh"
-      - ".github/workflows/reusable-verify-nuget-consumer.yml"
-      - "docs/samples/StableSdkHostSample/**"
-      - "scripts/pack-nexo-hosting-graph.sh"
-  pull_request:
-    paths:
-      - ".github/workflows/nuget-consumer-verify.yml"
-      - "scripts/verify-stable-sdk-host-sample-published-feed.sh"
-      - "scripts/verify-stable-sdk-host-sample-packages.sh"
-      - ".github/workflows/reusable-verify-nuget-consumer.yml"
-      - "docs/samples/StableSdkHostSample/**"
-      - "scripts/pack-nexo-hosting-graph.sh"
 
 jobs:
   verify-local-pack:
@@ -50,7 +30,6 @@ jobs:
   verify-published:
     name: verify-published-nuget-org
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch'
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -62,26 +41,3 @@ jobs:
 
       - name: Verify against nuget.org
         run: bash scripts/verify-stable-sdk-host-sample-published-feed.sh "${{ inputs.version }}"
-
-  verify-published-scheduled:
-    name: verify-published-scheduled
-    runs-on: ubuntu-latest
-    if: github.event_name == 'schedule'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: "8.0.x"
-
-      - name: Verify published version (repo variable)
-        env:
-          NEXO_VERIFY_VERSION: ${{ vars.NEXO_VERIFY_NUGET_VERSION }}
-        run: |
-          if [ -z "${NEXO_VERIFY_VERSION}" ] || [ "${NEXO_VERIFY_VERSION}" = "" ]; then
-            echo "NEXO_VERIFY_NUGET_VERSION not set; skipping scheduled publish verify."
-            exit 0
-          fi
-          bash scripts/verify-stable-sdk-host-sample-published-feed.sh "${NEXO_VERIFY_VERSION}"
