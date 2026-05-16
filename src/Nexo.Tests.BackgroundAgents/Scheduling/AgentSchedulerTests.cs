@@ -42,7 +42,7 @@ public class AgentSchedulerTests
         await scheduler.StartAsync(instance, ExecuteOnce);
         await Task.Delay(TimeSpan.FromMilliseconds(1500));
 
-        callCount.Should().BeGreaterOrEqualTo(1);
+        callCount.Should().BeGreaterThanOrEqualTo(1);
     }
 
     [Fact]

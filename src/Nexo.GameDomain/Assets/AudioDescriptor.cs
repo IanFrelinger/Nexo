@@ -1,9 +1,8 @@
 namespace Nexo.GameDomain.Assets;
 
 /// <summary>
-/// Comprehensive audio asset descriptor for Unity. Covers sound effects,
-/// music tracks, ambient soundscapes, and UI audio. Generates AudioClip
-/// configuration, AudioMixer groups, and spatial audio settings.
+/// Audio asset descriptor: sound effects, music, ambient soundscapes, and UI audio,
+/// including playback, bus routing, and spatial settings for the host audio engine.
 /// </summary>
 public sealed record AudioDescriptor
 {

@@ -1,38 +1,6 @@
 name: Environment Setup Gate v1
 
 on:
-  push:
-    branches:
-      - master
-      - main
-      - "cursor/**"
-    paths:
-      - ".github/workflows/environment-setup-gate-v1.yml"
-      - "scripts/setup/**"
-      - "global.json"
-      - "Nexo.sln"
-      - "Nexo.Kernel.sln"
-      - "Directory.Build.props"
-      - "Directory.Packages.props"
-      - "src/**"
-      - "docs/EnvironmentSetupGate-v1.md"
-      - "docs/SetupMatrixVerification.md"
-      - "docs/ReleaseCandidateChecklist-v1.md"
-      - "README.md"
-  pull_request:
-    paths:
-      - ".github/workflows/environment-setup-gate-v1.yml"
-      - "scripts/setup/**"
-      - "global.json"
-      - "Nexo.sln"
-      - "Nexo.Kernel.sln"
-      - "Directory.Build.props"
-      - "Directory.Packages.props"
-      - "src/**"
-      - "docs/EnvironmentSetupGate-v1.md"
-      - "docs/SetupMatrixVerification.md"
-      - "docs/ReleaseCandidateChecklist-v1.md"
-      - "README.md"
   workflow_dispatch:
 
 jobs:

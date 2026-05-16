@@ -683,6 +683,7 @@ public static class NexoEndpoints
         var existing = await registry.GetAsync(body.PeerId, cancellationToken).ConfigureAwait(false);
         var queue = body.ReportedQueueDepth ?? existing?.ReportedQueueDepth ?? 0;
         if (queue < 0) queue = 0;
+
         var state = new MeshFleetNodeState(
             PeerId: body.PeerId.Trim(),
             ApiBaseUrl: body.ApiBaseUrl.Trim(),
@@ -692,6 +693,7 @@ public static class NexoEndpoints
             LastHeartbeatUtc: DateTimeOffset.UtcNow,
             RegisteredAtUtc: existing?.RegisteredAtUtc ?? DateTimeOffset.UtcNow,
             ReportedQueueDepth: queue);
+
 
         await registry.RegisterOrUpdateAsync(state, cancellationToken).ConfigureAwait(false);
         return Results.Ok(ToFleetResponse(state));
@@ -753,6 +755,7 @@ public static class NexoEndpoints
             DateTimeOffset.UtcNow));
     }
 
+
     private static async Task<IResult> SetFleetNodeDrainAsync(
         string peerId,
         [FromBody] MeshFleetDrainRequest? body,
@@ -779,6 +782,7 @@ public static class NexoEndpoints
         [FromBody] MeshTaskCreateRequest? body,
         [FromServices] IMeshTaskRegistry tasks,
         [FromServices] IHttpContextAccessor httpContextAccessor,
+
         CancellationToken cancellationToken)
     {
         if (body is null)
@@ -794,6 +798,7 @@ public static class NexoEndpoints
                 return Results.Ok(ToTaskResponse(existing with { CorrelationId = correlation ?? existing.CorrelationId }));
         }
 
+
         var spec = new MeshTaskCreateSpec(
             Name: body.Name,
             Steps: body.Steps,
@@ -803,6 +808,7 @@ public static class NexoEndpoints
             DeadlineUtc: body.DeadlineUtc,
             CorrelationId: correlation,
             IdempotencyKey: string.IsNullOrWhiteSpace(body.IdempotencyKey) ? null : body.IdempotencyKey.Trim());
+
 
         var created = await tasks.CreateAsync(spec, cancellationToken).ConfigureAwait(false);
         return Results.Ok(ToTaskResponse(created));
@@ -824,6 +830,7 @@ public static class NexoEndpoints
         [FromBody] MeshScheduleRequest? body,
         [FromServices] IMeshTaskPlacementService placement,
         [FromServices] IHttpContextAccessor httpContextAccessor,
+
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(taskId))
@@ -838,6 +845,7 @@ public static class NexoEndpoints
             return Results.NotFound();
         if (!ok && string.Equals(error, "schedule.idempotency_conflict", StringComparison.Ordinal))
             return Results.Conflict(ToTaskResponse(task));
+
         if (!ok)
             return Results.BadRequest(new ProblemDetails { Title = error ?? "placement.failed", Detail = error });
         return Results.Ok(ToTaskResponse(task));
@@ -848,6 +856,7 @@ public static class NexoEndpoints
         [FromBody] MeshScheduleRequest? body,
         [FromServices] IMeshTaskPlacementService placement,
         [FromServices] IHttpContextAccessor httpContextAccessor,
+
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(taskId))
@@ -862,6 +871,7 @@ public static class NexoEndpoints
             return Results.NotFound();
         if (!ok && string.Equals(error, "schedule.idempotency_conflict", StringComparison.Ordinal))
             return Results.Conflict(ToTaskResponse(task));
+
         if (!ok)
             return Results.BadRequest(new ProblemDetails { Title = error ?? "placement.failed", Detail = error });
         return Results.Ok(ToTaskResponse(task));
@@ -914,11 +924,13 @@ public static class NexoEndpoints
         return Results.File(path, contentType: "application/octet-stream", fileDownloadName: Path.GetFileName(path));
     }
 
+
     private static async Task<IResult> PatchMeshTaskStatusAsync(
         string taskId,
         [FromBody] MeshTaskStatusPatchRequest? body,
         [FromServices] IMeshTaskRegistry tasks,
         [FromServices] IHttpContextAccessor httpContextAccessor,
+
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(taskId))
@@ -969,6 +981,7 @@ public static class NexoEndpoints
                 PlacementReason = body.Reason ?? t.PlacementReason,
                 CorrelationId = correlation ?? t.CorrelationId
             },
+
             _ => t
         };
 
@@ -986,6 +999,7 @@ public static class NexoEndpoints
         return null;
     }
 
+
     private static MeshFleetNodeResponse ToFleetResponse(MeshFleetNodeState n) =>
         new(
             n.PeerId,
@@ -996,6 +1010,7 @@ public static class NexoEndpoints
             n.LastHeartbeatUtc,
             n.RegisteredAtUtc,
             n.ReportedQueueDepth);
+
 
     private static MeshTaskResponse ToTaskResponse(MeshTaskState t) =>
         new(
@@ -1018,6 +1033,7 @@ public static class NexoEndpoints
             t.LastScheduleIdempotencyKey,
             t.ResultSummary,
             t.ResultHandle);
+
     private static async Task<IResult> RunDirectorWorkflowAsync(
         [FromBody] DirectorRunRequest request,
         [FromServices] Orchestrator orchestrator,

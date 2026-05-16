@@ -79,7 +79,7 @@ public class DiscordIntegrationTests
         embed.Description.Should().Contain("session-001");
         embed.Color.Should().NotBeNull();
         embed.Fields.Should().NotBeNull();
-        embed.Fields!.Count.Should().BeGreaterOrEqualTo(3);
+        embed.Fields!.Count.Should().BeGreaterThanOrEqualTo(3);
         embed.Footer.Should().NotBeNull();
         embed.Footer!.Text.Should().Contain("Nexo Forge");
         embed.Timestamp.Should().NotBeNullOrEmpty();

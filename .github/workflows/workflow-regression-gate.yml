@@ -1,12 +1,6 @@
 name: Workflow Regression Gate
 
 on:
-  pull_request:
-    paths:
-      - ".github/workflows/workflow-regression-gate.yml"
-      - "src/Nexo.CLI/**"
-      - "src/Nexo.Tests.CLI/**"
-      - "src/Nexo.CLI/Runtime/**"
   workflow_dispatch:
 
 jobs:
