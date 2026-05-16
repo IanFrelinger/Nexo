@@ -1,6 +1,6 @@
 # Cross-platform test server: one trigger runs build + test on Mac, Windows, and Linux.
-# Use this when you want to run tests on all platforms without changing hosts.
-# Trigger: Actions → Cross-Platform Tests → Run workflow, or: gh workflow run "Cross-Platform Tests"
+# Manual-first — see .github/workflows/README.md. Run from Actions or:
+#   gh workflow run "Cross-Platform Tests" --ref <branch> -f scope=smoke
 name: Cross-Platform Tests
 
 on:
@@ -21,19 +21,6 @@ on:
           - e2e
           - dogfood
           - full
-  push:
-    branches: [ master, main ]
-    paths:
-      - '.github/workflows/cross-platform-tests.yml'
-      - 'src/Nexo.Tests.Infrastructure/**'
-      - 'src/Nexo.Tests.BackgroundAgents/**'
-      - 'src/Nexo.Core.Application/**'
-      - 'src/Nexo.Infrastructure/**'
-      - 'src/Nexo.BackgroundAgents/**'
-      - 'src/Nexo.CLI/**'
-      - 'src/Nexo.Tests.Domain/**'
-      - 'src/Nexo.Tests.Application/**'
-      - 'src/Nexo.Tests.CLI/**'
 
 jobs:
   cross-platform:

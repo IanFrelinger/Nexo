@@ -1,11 +1,9 @@
 # Weekly + manual Runtime Studio playground: Release CLI black-box matrix + CsCheck white-box.
-# Does not run on every push (too slow / spawns many processes).
+# Manual-first — see .github/workflows/README.md
 name: Runtime Studio Playground
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: '0 6 * * 1' # Monday 06:00 UTC
 
 jobs:
   playground:

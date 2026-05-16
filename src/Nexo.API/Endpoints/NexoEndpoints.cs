@@ -12,6 +12,8 @@ using Nexo.Core.Application.Knowledge.Ports;
 using Nexo.Core.Application.Agent.UseCases.RunAgent;
 using Nexo.Core.Application.NodeCapabilityRuntime.Models;
 using Nexo.Core.Application.NodeCapabilityRuntime.Ports;
+using Nexo.Core.Application.Fleet.Models;
+using Nexo.Core.Application.Fleet.Ports;
 using Nexo.Core.Application.Trust.Ports;
 using Nexo.Core.Application.Validation.UseCases.RunValidation;
 using Nexo.Abstractions;
@@ -153,6 +155,76 @@ public static class NexoEndpoints
             .WithName("GetDirectorDaily")
             .WithSummary("Get one persisted directorial daily")
             .Produces<DirectorDailyEntry>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
+        var mesh = group.MapGroup("/mesh").WithTags("Mesh");
+
+        mesh.MapGet("/fleet/nodes", ListFleetNodesAsync)
+            .WithName("ListFleetNodes")
+            .WithSummary("Phase 1: list registered mesh worker nodes (in-memory director)")
+            .Produces<IReadOnlyList<MeshFleetNodeResponse>>(StatusCodes.Status200OK);
+
+        mesh.MapPost("/fleet/nodes", RegisterFleetNodeAsync)
+            .WithName("RegisterFleetNode")
+            .WithSummary("Phase 1: register or update a worker node")
+            .Produces<MeshFleetNodeResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest);
+
+        mesh.MapDelete("/fleet/nodes/{peerId}", RemoveFleetNodeAsync)
+            .WithName("RemoveFleetNode")
+            .WithSummary("Phase 1: remove a worker from the fleet registry")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
+        mesh.MapPost("/fleet/nodes/{peerId}/heartbeat", FleetNodeHeartbeatAsync)
+            .WithName("FleetNodeHeartbeat")
+            .WithSummary("Phase 1: record worker heartbeat")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
+        mesh.MapPost("/fleet/nodes/{peerId}/drain", SetFleetNodeDrainAsync)
+            .WithName("SetFleetNodeDrain")
+            .WithSummary("Phase 1: set drained flag (excluded from new placements)")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
+        mesh.MapGet("/tasks", ListMeshTasksAsync)
+            .WithName("ListMeshTasks")
+            .WithSummary("Phase 1: list mesh tasks")
+            .Produces<IReadOnlyList<MeshTaskResponse>>(StatusCodes.Status200OK);
+
+        mesh.MapPost("/tasks", CreateMeshTaskAsync)
+            .WithName("CreateMeshTask")
+            .WithSummary("Phase 1: create a pending mesh task")
+            .Produces<MeshTaskResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest);
+
+        mesh.MapGet("/tasks/{taskId}", GetMeshTaskAsync)
+            .WithName("GetMeshTask")
+            .WithSummary("Phase 1: get one mesh task")
+            .Produces<MeshTaskResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
+        mesh.MapPost("/tasks/{taskId}/schedule", ScheduleMeshTaskAsync)
+            .WithName("ScheduleMeshTask")
+            .WithSummary("Phase 1: assign task to an eligible worker")
+            .Produces<MeshTaskResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
+        mesh.MapPost("/tasks/{taskId}/retry", RetryMeshTaskAsync)
+            .WithName("RetryMeshTask")
+            .WithSummary("Phase 1: re-place task on a different worker when possible")
+            .Produces<MeshTaskResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
+        mesh.MapPatch("/tasks/{taskId}/status", PatchMeshTaskStatusAsync)
+            .WithName("PatchMeshTaskStatus")
+            .WithSummary("Phase 1: update task status (worker reports running/succeeded/failed)")
+            .Produces<MeshTaskResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
@@ -560,6 +632,207 @@ public static class NexoEndpoints
         }
     }
 
+    private static async Task<IResult> ListFleetNodesAsync(
+        [FromServices] IFleetNodeRegistry registry,
+        CancellationToken cancellationToken)
+    {
+        var nodes = await registry.ListAsync(cancellationToken).ConfigureAwait(false);
+        return Results.Ok(nodes.Select(ToFleetResponse).ToList());
+    }
+
+    private static async Task<IResult> RegisterFleetNodeAsync(
+        [FromBody] MeshFleetNodeRequest? body,
+        [FromServices] IFleetNodeRegistry registry,
+        CancellationToken cancellationToken)
+    {
+        if (body is null || string.IsNullOrWhiteSpace(body.PeerId) || string.IsNullOrWhiteSpace(body.ApiBaseUrl))
+            return Results.BadRequest(new ProblemDetails { Title = "PeerId and ApiBaseUrl are required" });
+
+        if (!Uri.TryCreate(body.ApiBaseUrl.Trim(), UriKind.Absolute, out var uri) ||
+            (uri.Scheme != Uri.UriSchemeHttp && uri.Scheme != Uri.UriSchemeHttps))
+        {
+            return Results.BadRequest(new ProblemDetails { Title = "ApiBaseUrl must be an absolute http or https URL" });
+        }
+
+        var existing = await registry.GetAsync(body.PeerId, cancellationToken).ConfigureAwait(false);
+        var state = new MeshFleetNodeState(
+            PeerId: body.PeerId.Trim(),
+            ApiBaseUrl: body.ApiBaseUrl.Trim(),
+            Labels: body.Labels ?? new Dictionary<string, string>(),
+            AdvertisedBrickIds: body.AdvertisedBrickIds ?? Array.Empty<string>(),
+            Drained: body.Drained,
+            LastHeartbeatUtc: DateTimeOffset.UtcNow,
+            RegisteredAtUtc: existing?.RegisteredAtUtc ?? DateTimeOffset.UtcNow);
+
+        await registry.RegisterOrUpdateAsync(state, cancellationToken).ConfigureAwait(false);
+        return Results.Ok(ToFleetResponse(state));
+    }
+
+    private static async Task<IResult> RemoveFleetNodeAsync(
+        string peerId,
+        [FromServices] IFleetNodeRegistry registry,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(peerId))
+            return Results.BadRequest(new ProblemDetails { Title = "peerId is required" });
+        var ok = await registry.RemoveAsync(peerId, cancellationToken).ConfigureAwait(false);
+        return ok ? Results.NoContent() : Results.NotFound();
+    }
+
+    private static async Task<IResult> FleetNodeHeartbeatAsync(
+        string peerId,
+        [FromServices] IFleetNodeRegistry registry,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(peerId))
+            return Results.BadRequest(new ProblemDetails { Title = "peerId is required" });
+        var existing = await registry.GetAsync(peerId, cancellationToken).ConfigureAwait(false);
+        if (existing is null)
+            return Results.NotFound();
+        await registry.HeartbeatAsync(peerId, cancellationToken).ConfigureAwait(false);
+        return Results.NoContent();
+    }
+
+    private static async Task<IResult> SetFleetNodeDrainAsync(
+        string peerId,
+        [FromBody] MeshFleetDrainRequest? body,
+        [FromServices] IFleetNodeRegistry registry,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(peerId))
+            return Results.BadRequest(new ProblemDetails { Title = "peerId is required" });
+        if (body is null)
+            return Results.BadRequest(new ProblemDetails { Title = "Request body with Drained boolean is required" });
+        var ok = await registry.SetDrainedAsync(peerId, body.Drained, cancellationToken).ConfigureAwait(false);
+        return ok ? Results.NoContent() : Results.NotFound();
+    }
+
+    private static async Task<IResult> ListMeshTasksAsync(
+        [FromServices] IMeshTaskRegistry tasks,
+        CancellationToken cancellationToken)
+    {
+        var list = await tasks.ListAsync(cancellationToken).ConfigureAwait(false);
+        return Results.Ok(list.Select(ToTaskResponse).ToList());
+    }
+
+    private static async Task<IResult> CreateMeshTaskAsync(
+        [FromBody] MeshTaskCreateRequest? body,
+        [FromServices] IMeshTaskRegistry tasks,
+        CancellationToken cancellationToken)
+    {
+        if (body is null)
+            return Results.BadRequest(new ProblemDetails { Title = "Request body is required" });
+        if (body.Steps < 1)
+            return Results.BadRequest(new ProblemDetails { Title = "Steps must be at least 1" });
+
+        var spec = new MeshTaskCreateSpec(
+            Name: body.Name,
+            Steps: body.Steps,
+            RequiredBrickIds: body.RequiredBrickIds ?? Array.Empty<string>(),
+            Affinity: body.Affinity,
+            Priority: body.Priority,
+            DeadlineUtc: body.DeadlineUtc);
+
+        var created = await tasks.CreateAsync(spec, cancellationToken).ConfigureAwait(false);
+        return Results.Ok(ToTaskResponse(created));
+    }
+
+    private static async Task<IResult> GetMeshTaskAsync(
+        string taskId,
+        [FromServices] IMeshTaskRegistry tasks,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(taskId))
+            return Results.BadRequest(new ProblemDetails { Title = "taskId is required" });
+        var t = await tasks.GetAsync(taskId, cancellationToken).ConfigureAwait(false);
+        return t is null ? Results.NotFound() : Results.Ok(ToTaskResponse(t));
+    }
+
+    private static async Task<IResult> ScheduleMeshTaskAsync(
+        string taskId,
+        [FromServices] IMeshTaskPlacementService placement,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(taskId))
+            return Results.BadRequest(new ProblemDetails { Title = "taskId is required" });
+        var (ok, task, error) = await placement.TryScheduleAsync(taskId, cancellationToken).ConfigureAwait(false);
+        if (task is null)
+            return Results.NotFound();
+        if (!ok)
+            return Results.BadRequest(new ProblemDetails { Title = error ?? "placement.failed", Detail = error });
+        return Results.Ok(ToTaskResponse(task));
+    }
+
+    private static async Task<IResult> RetryMeshTaskAsync(
+        string taskId,
+        [FromServices] IMeshTaskPlacementService placement,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(taskId))
+            return Results.BadRequest(new ProblemDetails { Title = "taskId is required" });
+        var (ok, task, error) = await placement.TryRetryAsync(taskId, cancellationToken).ConfigureAwait(false);
+        if (task is null)
+            return Results.NotFound();
+        if (!ok)
+            return Results.BadRequest(new ProblemDetails { Title = error ?? "placement.failed", Detail = error });
+        return Results.Ok(ToTaskResponse(task));
+    }
+
+    private static async Task<IResult> PatchMeshTaskStatusAsync(
+        string taskId,
+        [FromBody] MeshTaskStatusPatchRequest? body,
+        [FromServices] IMeshTaskRegistry tasks,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(taskId))
+            return Results.BadRequest(new ProblemDetails { Title = "taskId is required" });
+        if (body is null || !Enum.IsDefined(typeof(MeshTaskStatus), body.Status))
+            return Results.BadRequest(new ProblemDetails { Title = "Valid Status is required" });
+
+        var t = await tasks.GetAsync(taskId, cancellationToken).ConfigureAwait(false);
+        if (t is null)
+            return Results.NotFound();
+
+        var next = body.Status switch
+        {
+            MeshTaskStatus.Running => t with { Status = MeshTaskStatus.Running, PlacementReason = body.Reason ?? t.PlacementReason },
+            MeshTaskStatus.Succeeded => t with { Status = MeshTaskStatus.Succeeded, PlacementReason = body.Reason ?? t.PlacementReason },
+            MeshTaskStatus.Failed => t with { Status = MeshTaskStatus.Failed, PlacementReason = body.Reason ?? t.PlacementReason },
+            MeshTaskStatus.Pending => t with { Status = MeshTaskStatus.Pending, AssignedPeerId = null, AssignedApiBaseUrl = null, PlacementReason = body.Reason },
+            MeshTaskStatus.Assigned => t with { Status = MeshTaskStatus.Assigned, PlacementReason = body.Reason ?? t.PlacementReason },
+            _ => t
+        };
+
+        await tasks.UpdateAsync(next, cancellationToken).ConfigureAwait(false);
+        return Results.Ok(ToTaskResponse(next));
+    }
+
+    private static MeshFleetNodeResponse ToFleetResponse(MeshFleetNodeState n) =>
+        new(
+            n.PeerId,
+            n.ApiBaseUrl,
+            n.Labels,
+            n.AdvertisedBrickIds,
+            n.Drained,
+            n.LastHeartbeatUtc,
+            n.RegisteredAtUtc);
+
+    private static MeshTaskResponse ToTaskResponse(MeshTaskState t) =>
+        new(
+            t.TaskId,
+            t.Name,
+            t.Steps,
+            t.RequiredBrickIds,
+            t.Affinity,
+            t.Priority,
+            t.DeadlineUtc,
+            t.Status.ToString(),
+            t.AssignedPeerId,
+            t.AssignedApiBaseUrl,
+            t.PlacementReason,
+            t.AttemptCount,
+            t.CreatedAtUtc,
+            t.LastScheduledAtUtc);
     private static async Task<IResult> RunDirectorWorkflowAsync(
         [FromBody] DirectorRunRequest request,
         [FromServices] Orchestrator orchestrator,
@@ -1165,6 +1438,53 @@ public static class NexoEndpoints
 }
 
 // API-only DTOs (shared DTOs live in Nexo.Contracts)
+
+// ── Phase 1 mesh director (in-memory) ───────────────────────────────
+
+public sealed record MeshFleetNodeRequest(
+    string PeerId,
+    string ApiBaseUrl,
+    IReadOnlyDictionary<string, string>? Labels = null,
+    IReadOnlyList<string>? AdvertisedBrickIds = null,
+    bool Drained = false);
+
+public sealed record MeshFleetDrainRequest(bool Drained);
+
+public sealed record MeshFleetNodeResponse(
+    string PeerId,
+    string ApiBaseUrl,
+    IReadOnlyDictionary<string, string> Labels,
+    IReadOnlyList<string> AdvertisedBrickIds,
+    bool Drained,
+    DateTimeOffset? LastHeartbeatUtc,
+    DateTimeOffset RegisteredAtUtc);
+
+public sealed record MeshTaskCreateRequest(
+    string? Name,
+    int Steps,
+    IReadOnlyList<string>? RequiredBrickIds,
+    IReadOnlyDictionary<string, string>? Affinity,
+    int Priority = 0,
+    DateTimeOffset? DeadlineUtc = null);
+
+public sealed record MeshTaskResponse(
+    string TaskId,
+    string? Name,
+    int Steps,
+    IReadOnlyList<string> RequiredBrickIds,
+    IReadOnlyDictionary<string, string> Affinity,
+    int Priority,
+    DateTimeOffset? DeadlineUtc,
+    string Status,
+    string? AssignedPeerId,
+    string? AssignedApiBaseUrl,
+    string? PlacementReason,
+    int AttemptCount,
+    DateTimeOffset CreatedAtUtc,
+    DateTimeOffset? LastScheduledAtUtc);
+
+public sealed record MeshTaskStatusPatchRequest(MeshTaskStatus Status, string? Reason = null);
+
 public sealed record CopilotTaskRequest(string Task, int AuditCount = 25);
 public sealed record CopilotTaskResponse(
     string TaskId,

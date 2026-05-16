@@ -46,6 +46,7 @@
     <PackageReference Include="Npgsql" />
     <PackageReference Include="Microsoft.Data.Sqlite" />
     <PackageReference Include="Polly" />
+    <PackageReference Include="OsmSharp" />
     <PackageReference Include="LlamaSharp" />
     <PackageReference Include="LLamaSharp.Backend.Cpu" />
     <PackageReference Include="xunit">

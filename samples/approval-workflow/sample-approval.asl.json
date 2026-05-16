@@ -1,0 +1,28 @@
+{
+  "Comment": "Sample approval gate: parse SNS/Lambda input, call GitHub (replace Resource with your Lambda ARN).",
+  "StartAt": "ParseInput",
+  "States": {
+    "ParseInput": {
+      "Type": "Pass",
+      "Parameters": {
+        "approvalToken.$": "$.detail.approvalToken"
+      },
+      "ResultPath": "$.ctx",
+      "Next": "ApproveViaGitHub"
+    },
+    "ApproveViaGitHub": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke.waitForTaskToken",
+      "Parameters": {
+        "FunctionName": "REPLACE_WITH_LAMBDA_NAME",
+        "Payload": {
+          "action": "create_deployment_review",
+          "token.$": "$.ctx.approvalToken",
+          "taskToken.$": "$$.Task.Token"
+        }
+      },
+      "TimeoutSeconds": 3600,
+      "End": true
+    }
+  }
+}

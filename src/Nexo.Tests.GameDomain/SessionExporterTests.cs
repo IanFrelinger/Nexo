@@ -199,4 +199,34 @@ public class SessionExporterTests
         restored.Macros[0].Steps.Should().HaveCount(1);
         restored.Macros[0].Steps[0].Action.Should().Be("spawn_weapon");
     }
+
+    [Fact]
+    public void ExportImport_AestheticPackWithMapRenderingProfile_RoundTrips()
+    {
+        var session = new SessionState
+        {
+            SessionId = "map-style-session",
+            Name = "Map Styles",
+            AestheticPacks =
+            [
+                new AestheticPack
+                {
+                    Id = "pbr",
+                    Name = "PBR",
+                    GeometryStrategy = "pbr",
+                    MapRenderingProfile = MapRenderingProfiles.HeightfieldMesh,
+                    DefaultPaletteColors = ["#AAA"],
+                    LodLevels = [new LodLevel(0, 1.0)],
+                },
+            ],
+        };
+
+        var json = SessionExporter.ExportToJson(session);
+        json.Should().Contain("mapRenderingProfile");
+
+        var restored = SessionExporter.ImportFromJson(json);
+        restored.AestheticPacks.Should().ContainSingle();
+        restored.AestheticPacks[0].MapRenderingProfile.Should().Be(MapRenderingProfiles.HeightfieldMesh);
+        restored.AestheticPacks[0].GeometryStrategy.Should().Be("pbr");
+    }
 }
