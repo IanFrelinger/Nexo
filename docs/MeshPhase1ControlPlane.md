@@ -71,7 +71,7 @@ Then `POST /api/mesh/tasks/{taskId}/schedule`. Response includes `assignedPeerId
 - **Transport/auth** — see [MeshPhase2TransportAndAuth.md](MeshPhase2TransportAndAuth.md) for optional mesh tokens, body caps, and rate limits on `/api/mesh` and brick execute.
 - **Correlation / idempotency / results** — see [MeshPhase3DistributedExecution.md](MeshPhase3DistributedExecution.md).
 - **Leases / checkpoints** — see [MeshPhase6LeasesAndCheckpoints.md](MeshPhase6LeasesAndCheckpoints.md).
-- **In-memory only** — restart loses registry; Phase 4+ may persist to LiteDB/SQL.
+- **In-memory by default** — restart loses registry unless `Nexo:Mesh:Persistence:Provider=LiteDb` (see [MeshPhase9DirectorPersistence.md](MeshPhase9DirectorPersistence.md)).
 - **Placement does not invoke bricks** — it only **chooses** a node; the caller must dispatch.
 - **No global fairness queue** — simple greedy ordering by heartbeat recency.
 - **Affinity** is exact string match on node labels.

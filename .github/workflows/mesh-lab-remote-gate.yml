@@ -1,0 +1,42 @@
+name: Mesh lab remote gate (self-hosted / tailnet)
+
+# Runs mesh-lab-verify-remote.sh against a director that is already reachable on your tailnet.
+# Configure repository secrets (or environment secrets) then run workflow_dispatch.
+#
+# Required secrets:
+#   NEXO_MESH_DIRECTOR_BASE_URL  e.g. https://100.x.y.z:8080
+#   NEXO_MESH_API_KEY
+#   MESH_LAB_PEER_REGISTRATION_KEY
+#   MESH_LAB_REMOTE_WORKER_URL   e.g. http://100.x.w.z:8080
+# Optional:
+#   NEXO_MESH_TLS_INSECURE       set to 1 for self-signed HTTPS
+
+on:
+  workflow_dispatch:
+
+jobs:
+  mesh-remote:
+    name: Remote director mesh smoke
+  # Use labels for a runner on your tailnet, or ubuntu-latest if secrets point to a public URL.
+    runs-on: ${{ vars.NEXO_MESH_REMOTE_RUNNER || 'ubuntu-latest' }}
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Remote mesh verify
+        shell: bash
+        env:
+          NEXO_MESH_DIRECTOR_BASE_URL: ${{ secrets.NEXO_MESH_DIRECTOR_BASE_URL }}
+          NEXO_MESH_API_KEY: ${{ secrets.NEXO_MESH_API_KEY }}
+          MESH_LAB_PEER_REGISTRATION_KEY: ${{ secrets.MESH_LAB_PEER_REGISTRATION_KEY }}
+          MESH_LAB_REMOTE_WORKER_URL: ${{ secrets.MESH_LAB_REMOTE_WORKER_URL }}
+          NEXO_MESH_TLS_INSECURE: ${{ secrets.NEXO_MESH_TLS_INSECURE }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${NEXO_MESH_DIRECTOR_BASE_URL:-}" ]]; then
+            echo "::notice::Skipping: configure NEXO_MESH_DIRECTOR_BASE_URL secret to enable remote gate"
+            exit 0
+          fi
+          chmod +x scripts/mesh-lab-verify-remote.sh scripts/mesh-lab-fleet.sh
+          ./scripts/mesh-lab-verify-remote.sh

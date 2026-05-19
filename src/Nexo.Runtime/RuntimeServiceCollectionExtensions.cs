@@ -65,6 +65,7 @@ public static class RuntimeServiceCollectionExtensions
             return new BarrierHierarchy(options.Levels.Select((name, index) => new BarrierLevel(name, index)));
         });
 
+        services.TryAddSingleton<IBarrierContextAmbient, BarrierContextAmbient>();
         services.TryAddScoped<IBarrierContextAccessor, ScopedBarrierContextAccessor>();
         services.TryAddSingleton<IBarrierAuditLog, StructuredBarrierAuditLog>();
         services.TryAddSingleton<IEndpointRegistry, InMemoryEndpointRegistry>();

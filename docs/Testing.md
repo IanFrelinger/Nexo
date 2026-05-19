@@ -48,6 +48,14 @@ make test-prime-time-full    # ProdStyle gate then full test count on the same s
 
 **Production-shaped containers (Linux dry run):** `make prod-dry-run` or `make prod-dry-run-agent-server` — see **`docs/prod-dry-run.md`** (Compose + published API image, `/health` + `/api/status`).
 
+**Multi-node mesh (Docker bridge):** `make mesh-lab-e2e` or `make mesh-lab-e2e-workers` — see **`docs/MeshVirtualLab.md`** (peer-a / peer-b / optional worker, scripted HTTP + mesh API checks). Deep checkpoint/migrate: `make mesh-lab-verify-deep` or `MESH_LAB_VERIFY_DEEP=1 make mesh-lab-e2e-workers`. Network failure modes: **`mesh-lab-verify-network-negative.sh`** (included in standard verify); see **`docs/MeshPhase11NetworkNegative.md`**.
+
+**Same checks via dotnet (optional):** `make test-mesh-lab` or `NEXO_RUN_MESH_LAB=1 dotnet test … --filter Category=MeshLab` — runs **`MeshLabDockerE2ETests`** (Compose + `mesh-lab-verify.sh` / deep script). Skipped by default; set **`NEXO_MESH_LAB_SKIP_DEEP=1`** for standard verify only.
+
+**Stress (workers scale + health bursts):** `make mesh-lab-e2e-stress` locally (verify + deep + ramp + post-stress director checks); CI weekly via **`mesh-lab-stress-gate.yml`** (`workflow_dispatch` also available). See **`docs/MeshPhase10LabStressHardening.md`**.
+
+**Entitlements (CopilotScoped + hourly quota):** included in `make mesh-lab-verify` when workers are up; standalone `make mesh-lab-verify-entitlements` (requires `Nexo__Security__CopilotScopedApiKey` in `.env.mesh-lab`).
+
 `nexo` command note:
 - Commands shown as `nexo ...` assume the CLI tool is installed on your PATH.
 - If you have not installed the global tool, use the equivalent project invocation:

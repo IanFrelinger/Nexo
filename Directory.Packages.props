@@ -25,6 +25,8 @@
   <!-- System Packages -->
   <ItemGroup>
     <PackageVersion Include="System.Text.Encodings.Web" Version="10.0.8" />
+    <!-- Override transitive 4.3.0 (NU1903 / GHSA-cmhx-cq75-c4mj). -->
+    <PackageVersion Include="System.Text.RegularExpressions" Version="4.3.1" />
     <PackageVersion Include="System.Text.Json" Version="10.0.8" />
     <PackageVersion Include="System.Xml.XmlDocument" Version="4.3.0" />
     <PackageVersion Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
@@ -138,10 +140,9 @@
   <ItemGroup>
     <PackageVersion Include="CsCheck" Version="4.6.2" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.5.1" />
-    <!-- xUnit 2.7+ enforces async-only [Fact(Timeout=...)]; keep 2.6.x until sync tests are migrated. -->
-    <PackageVersion Include="xunit" Version="2.6.6" />
-    <PackageVersion Include="xunit.runner.visualstudio" Version="2.5.8" />
-    <PackageVersion Include="coverlet.collector" Version="6.0.0" />
+    <PackageVersion Include="xunit" Version="2.9.3" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="3.1.5" />
+    <PackageVersion Include="coverlet.collector" Version="10.0.0" />
     <PackageVersion Include="coverlet.msbuild" Version="10.0.0" />
     <PackageVersion Include="FluentAssertions" Version="8.10.0" />
     <PackageVersion Include="Moq" Version="4.20.70" />
@@ -159,13 +160,13 @@
     <PackageVersion Include="Avalonia.ReactiveUI" Version="12.0.3" />
     <PackageVersion Include="CommunityToolkit.Mvvm" Version="8.2.2" />
   </ItemGroup>
-  <!-- OpenTelemetry Packages -->
+  <!-- OpenTelemetry Packages (>=1.15.3: NU1902 / GHSA-g94r-2vxg-569j) -->
   <ItemGroup>
-    <PackageVersion Include="OpenTelemetry" Version="1.7.0" />
-    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.7.0" />
-    <PackageVersion Include="OpenTelemetry.Exporter.Console" Version="1.7.0" />
-    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.7.0" />
-    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.7.0" />
+    <PackageVersion Include="OpenTelemetry" Version="1.15.3" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.15.3" />
+    <PackageVersion Include="OpenTelemetry.Exporter.Console" Version="1.15.3" />
+    <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.3" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.3" />
   </ItemGroup>
   <!-- Code Analysis -->
   <ItemGroup>

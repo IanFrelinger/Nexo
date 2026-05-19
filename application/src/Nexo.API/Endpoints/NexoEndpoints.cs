@@ -85,6 +85,13 @@ public static class NexoEndpoints
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status500InternalServerError);
 
+        group.MapGet("/copilot/tasks/{taskId}", GetCopilotTaskByIdAsync)
+            .WithName("GetCopilotTask")
+            .WithSummary("Get one copilot task record for the resolved tenant")
+            .Produces<CopilotTaskRecord>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
         group.MapGet("/copilot/tasks", ListCopilotTasksAsync)
             .WithName("ListCopilotTasks")
             .WithSummary("List recent copilot tasks (newest first)")
@@ -196,6 +203,18 @@ public static class NexoEndpoints
             .WithSummary("Phase 1: set drained flag (excluded from new placements)")
             .Produces(StatusCodes.Status204NoContent)
             .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
+        mesh.MapPost("/fleet/nodes/{peerId}/admit", AdmitFleetNodeAsync)
+            .WithName("AdmitFleetNode")
+            .WithSummary("Phase 6: mark peer admitted (eligible for placement)")
+            .Produces(StatusCodes.Status204NoContent)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
+        mesh.MapPost("/fleet/nodes/{peerId}/revoke", RevokeFleetNodeAsync)
+            .WithName("RevokeFleetNode")
+            .WithSummary("Phase 6: revoke peer admission (excluded from new placements)")
+            .Produces(StatusCodes.Status204NoContent)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
         mesh.MapGet("/tasks", ListMeshTasksAsync)
@@ -435,20 +454,33 @@ public static class NexoEndpoints
     }
 
     private static async Task<IResult> RunCopilotTaskAsync(
+        HttpContext httpContext,
         [FromBody] CopilotTaskRequest request,
         [FromServices] Orchestrator orchestrator,
         [FromServices] ICopilotTaskStore copilotTaskStore,
         [FromServices] IDataDecisionAuditLog? auditLog,
         [FromServices] IAccessBoundary? accessBoundary,
+        [FromServices] IOptions<NexoProductOptions> productOptions,
+        [FromServices] ICopilotSubmissionQuota copilotSubmissionQuota,
+        [FromServices] ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(request?.Task))
             return Results.BadRequest(new ProblemDetails { Title = "Task is required" });
 
+        if (!NexoHttpTenant.TryResolve(httpContext.Request, productOptions.Value, out var tenantId, out var tenantError))
+            return Results.BadRequest(new ProblemDetails { Title = "Invalid tenant", Detail = tenantError });
+
+        if (!copilotSubmissionQuota.TryConsume(tenantId, out var quotaMsg))
+            return Results.Json(new ProblemDetails { Title = "Too Many Requests", Detail = quotaMsg }, statusCode: StatusCodes.Status429TooManyRequests);
+
+        var usageLogger = loggerFactory.CreateLogger("Nexo.Usage");
+
         var taskId = Guid.NewGuid().ToString("D");
         var submittedAt = DateTimeOffset.UtcNow;
         await copilotTaskStore.StoreAsync(new CopilotTaskRecord
         {
+            TenantId = tenantId,
             TaskId = taskId,
             Task = request.Task.Trim(),
             SubmittedAt = submittedAt,
@@ -466,6 +498,7 @@ public static class NexoEndpoints
             var summary = result.IntegratedOutput != null ? $"{result.IntegratedOutput.AgentOutputs.Count} agent(s) executed" : null;
             await copilotTaskStore.StoreAsync(new CopilotTaskRecord
             {
+                TenantId = tenantId,
                 TaskId = taskId,
                 Task = request.Task.Trim(),
                 SubmittedAt = submittedAt,
@@ -474,8 +507,14 @@ public static class NexoEndpoints
                 Summary = summary,
                 Error = null
             }, cancellationToken);
+            usageLogger.LogInformation(
+                "NexoUsage metric=copilot_job_completed tenant={TenantId} taskId={TaskId} success={Success}",
+                tenantId,
+                taskId,
+                result.Success);
             return Results.Ok(new CopilotTaskResponse(
                 taskId,
+                tenantId,
                 result.Success,
                 summary,
                 result.IntegratedOutput?.IntegratedResults,
@@ -486,6 +525,7 @@ public static class NexoEndpoints
         {
             await copilotTaskStore.StoreAsync(new CopilotTaskRecord
             {
+                TenantId = tenantId,
                 TaskId = taskId,
                 Task = request.Task.Trim(),
                 SubmittedAt = submittedAt,
@@ -494,6 +534,11 @@ public static class NexoEndpoints
                 Summary = null,
                 Error = ex.Message
             }, cancellationToken);
+            usageLogger.LogInformation(
+                "NexoUsage metric=copilot_job_completed tenant={TenantId} taskId={TaskId} success={Success}",
+                tenantId,
+                taskId,
+                false);
             return Results.Problem(
                 detail: IsDevelopment() ? ex.Message : "An internal error occurred. Check server logs for details.",
                 statusCode: StatusCodes.Status500InternalServerError);
@@ -501,14 +546,39 @@ public static class NexoEndpoints
     }
 
     private static async Task<IResult> ListCopilotTasksAsync(
+        HttpContext httpContext,
         [FromServices] ICopilotTaskStore copilotTaskStore,
+        [FromServices] IOptions<NexoProductOptions> productOptions,
         [FromQuery] int maxCount = 50,
         [FromQuery] DateTimeOffset? since = null,
         CancellationToken cancellationToken = default)
     {
+        if (!NexoHttpTenant.TryResolve(httpContext.Request, productOptions.Value, out var tenantId, out var tenantError))
+            return Results.BadRequest(new ProblemDetails { Title = "Invalid tenant", Detail = tenantError });
+
         maxCount = Math.Clamp(maxCount <= 0 ? 50 : maxCount, 1, 500);
-        var tasks = await copilotTaskStore.QueryAsync(maxCount, since, cancellationToken);
+        var tasks = await copilotTaskStore.QueryAsync(maxCount, since, tenantId, cancellationToken);
         return Results.Ok(tasks);
+    }
+
+    private static async Task<IResult> GetCopilotTaskByIdAsync(
+        HttpContext httpContext,
+        string taskId,
+        [FromServices] ICopilotTaskStore copilotTaskStore,
+        [FromServices] IOptions<NexoProductOptions> productOptions,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(taskId))
+            return Results.BadRequest(new ProblemDetails { Title = "taskId is required" });
+
+        if (!NexoHttpTenant.TryResolve(httpContext.Request, productOptions.Value, out var tenantId, out var tenantError))
+            return Results.BadRequest(new ProblemDetails { Title = "Invalid tenant", Detail = tenantError });
+
+        var task = await copilotTaskStore.GetByIdAsync(taskId.Trim(), cancellationToken);
+        if (task is null || !string.Equals(task.TenantId, tenantId, StringComparison.Ordinal))
+            return Results.NotFound();
+
+        return Results.Ok(task);
     }
 
     private static async Task<IResult> GetStatusAsync(
@@ -686,6 +756,8 @@ public static class NexoEndpoints
     private static async Task<IResult> RegisterFleetNodeAsync(
         [FromBody] MeshFleetNodeRequest? body,
         [FromServices] IFleetNodeRegistry registry,
+        [FromServices] IOptions<MeshFleetRegistrationOptions> registrationOptions,
+        [FromServices] IOptions<NexoSecurityOptions> securityOptions,
         CancellationToken cancellationToken)
     {
         if (body is null || string.IsNullOrWhiteSpace(body.PeerId) || string.IsNullOrWhiteSpace(body.ApiBaseUrl))
@@ -700,6 +772,37 @@ public static class NexoEndpoints
         var existing = await registry.GetAsync(body.PeerId, cancellationToken).ConfigureAwait(false);
         var queue = body.ReportedQueueDepth ?? existing?.ReportedQueueDepth ?? 0;
         if (queue < 0) queue = 0;
+        var trustTier = ParseFleetTrustTier(body.TrustTier) ?? existing?.TrustTier ?? MeshFleetTrustTier.Trusted;
+        var admitted = body.Admitted ?? existing?.Admitted ?? true;
+
+        var regOpts = registrationOptions.Value;
+        var fingerprint = existing?.RegistrationKeyFingerprint;
+        if (regOpts.RequirePeerRegistrationKey)
+        {
+            if (string.IsNullOrWhiteSpace(body.PeerRegistrationKey) ||
+                body.PeerRegistrationKey.Trim().Length < regOpts.MinRegistrationKeyLength)
+            {
+                return Results.BadRequest(new ProblemDetails
+                {
+                    Title = "peerRegistrationKey is required and must meet minimum length when fleet registration policy is enabled."
+                });
+            }
+
+            if (!MeshFleetRegistrationKeys.IsDistinctFromDirectorKey(body.PeerRegistrationKey, securityOptions.Value.ApiKey))
+            {
+                return Results.BadRequest(new ProblemDetails
+                {
+                    Title = "peerRegistrationKey must differ from the director operator API key."
+                });
+            }
+
+            fingerprint = MeshFleetRegistrationKeys.Fingerprint(body.PeerRegistrationKey);
+        }
+        else if (!string.IsNullOrWhiteSpace(body.PeerRegistrationKey))
+        {
+            fingerprint = MeshFleetRegistrationKeys.Fingerprint(body.PeerRegistrationKey);
+        }
+
         var state = new MeshFleetNodeState(
             PeerId: body.PeerId.Trim(),
             ApiBaseUrl: body.ApiBaseUrl.Trim(),
@@ -708,10 +811,35 @@ public static class NexoEndpoints
             Drained: body.Drained,
             LastHeartbeatUtc: DateTimeOffset.UtcNow,
             RegisteredAtUtc: existing?.RegisteredAtUtc ?? DateTimeOffset.UtcNow,
-            ReportedQueueDepth: queue);
+            ReportedQueueDepth: queue,
+            TrustTier: trustTier,
+            Admitted: admitted,
+            RegistrationKeyFingerprint: fingerprint);
 
         await registry.RegisterOrUpdateAsync(state, cancellationToken).ConfigureAwait(false);
         return Results.Ok(ToFleetResponse(state));
+    }
+
+    private static async Task<IResult> AdmitFleetNodeAsync(
+        string peerId,
+        [FromServices] IFleetNodeRegistry registry,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(peerId))
+            return Results.BadRequest(new ProblemDetails { Title = "peerId is required" });
+        var ok = await registry.SetAdmittedAsync(peerId, admitted: true, cancellationToken).ConfigureAwait(false);
+        return ok ? Results.NoContent() : Results.NotFound();
+    }
+
+    private static async Task<IResult> RevokeFleetNodeAsync(
+        string peerId,
+        [FromServices] IFleetNodeRegistry registry,
+        CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(peerId))
+            return Results.BadRequest(new ProblemDetails { Title = "peerId is required" });
+        var ok = await registry.SetAdmittedAsync(peerId, admitted: false, cancellationToken).ConfigureAwait(false);
+        return ok ? Results.NoContent() : Results.NotFound();
     }
 
     private static async Task<IResult> RemoveFleetNodeAsync(
@@ -1064,6 +1192,13 @@ public static class NexoEndpoints
         return null;
     }
 
+    private static MeshFleetTrustTier? ParseFleetTrustTier(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+        return Enum.TryParse<MeshFleetTrustTier>(value.Trim(), true, out var tier) ? tier : null;
+    }
+
     private static MeshFleetNodeResponse ToFleetResponse(MeshFleetNodeState n) =>
         new(
             n.PeerId,
@@ -1073,7 +1208,10 @@ public static class NexoEndpoints
             n.Drained,
             n.LastHeartbeatUtc,
             n.RegisteredAtUtc,
-            n.ReportedQueueDepth);
+            n.ReportedQueueDepth,
+            n.TrustTier.ToString(),
+            n.Admitted,
+            n.RegistrationKeyFingerprint);
 
     private static MeshTaskResponse ToTaskResponse(MeshTaskState t) =>
         new(
@@ -1669,11 +1807,58 @@ public static class NexoEndpoints
         return Results.Ok(new ChangelogResponse(summary, sorted, DateTimeOffset.UtcNow));
     }
 
+    private static bool IsBuiltInAuthActive(NexoSecurityOptions sec)
+    {
+        if (Enum.TryParse<NexoAuthorizationMode>(sec.AuthorizationMode, true, out var mode)
+            && mode != NexoAuthorizationMode.None)
+            return true;
+        return sec.RequireApiKeyForMutatingEndpoints;
+    }
+
+    private static bool AreBuiltInAuthCredentialsConfigured(NexoSecurityOptions sec)
+    {
+        if (!Enum.TryParse<NexoAuthorizationMode>(sec.AuthorizationMode, true, out var mode))
+            mode = NexoAuthorizationMode.None;
+
+        if (mode == NexoAuthorizationMode.None && !sec.RequireApiKeyForMutatingEndpoints)
+            return true;
+
+        if (mode == NexoAuthorizationMode.None && sec.RequireApiKeyForMutatingEndpoints)
+            mode = NexoAuthorizationMode.ApiKey;
+
+        return mode switch
+        {
+            NexoAuthorizationMode.ApiKey =>
+                !string.IsNullOrWhiteSpace(sec.ApiKey) || !string.IsNullOrWhiteSpace(sec.CopilotScopedApiKey),
+            NexoAuthorizationMode.BearerToken => !string.IsNullOrWhiteSpace(sec.BearerToken),
+            NexoAuthorizationMode.Basic =>
+                !string.IsNullOrWhiteSpace(sec.BasicAuthUsername) && !string.IsNullOrWhiteSpace(sec.BasicAuthPassword),
+            NexoAuthorizationMode.ApiKeyOrBearerToken =>
+                (!string.IsNullOrWhiteSpace(sec.ApiKey) || !string.IsNullOrWhiteSpace(sec.CopilotScopedApiKey))
+                || !string.IsNullOrWhiteSpace(sec.BearerToken),
+            NexoAuthorizationMode.ApiKeyOrBasic =>
+                (!string.IsNullOrWhiteSpace(sec.ApiKey) || !string.IsNullOrWhiteSpace(sec.CopilotScopedApiKey))
+                || (!string.IsNullOrWhiteSpace(sec.BasicAuthUsername) && !string.IsNullOrWhiteSpace(sec.BasicAuthPassword)),
+            NexoAuthorizationMode.BearerTokenOrBasic =>
+                !string.IsNullOrWhiteSpace(sec.BearerToken)
+                || (!string.IsNullOrWhiteSpace(sec.BasicAuthUsername) && !string.IsNullOrWhiteSpace(sec.BasicAuthPassword)),
+            NexoAuthorizationMode.Any =>
+                !string.IsNullOrWhiteSpace(sec.ApiKey)
+                || !string.IsNullOrWhiteSpace(sec.CopilotScopedApiKey)
+                || !string.IsNullOrWhiteSpace(sec.BearerToken)
+                || (!string.IsNullOrWhiteSpace(sec.BasicAuthUsername) && !string.IsNullOrWhiteSpace(sec.BasicAuthPassword)),
+            _ => !string.IsNullOrWhiteSpace(sec.ApiKey) || !string.IsNullOrWhiteSpace(sec.CopilotScopedApiKey)
+        };
+    }
+
     private static async Task<IResult> GetOnboardingStatusAsync(
+        HttpContext httpContext,
         [FromServices] Nexo.Infrastructure.Execution.IProviderFactory providerFactory,
         [FromServices] ICopilotTaskStore copilotTaskStore,
         [FromServices] IAccessBoundary accessBoundary,
         [FromServices] IConfiguration configuration,
+        [FromServices] IOptions<NexoSecurityOptions> securityOptions,
+        [FromServices] IOptions<NexoProductOptions> productOptions,
         CancellationToken cancellationToken)
     {
         var providers = new List<ProviderStatus>();
@@ -1691,7 +1876,10 @@ public static class NexoEndpoints
             providers.Add(new ProviderStatus(name, available, reason));
         }
 
-        var tasks = await copilotTaskStore.QueryAsync(1, null, cancellationToken);
+        if (!NexoHttpTenant.TryResolve(httpContext.Request, productOptions.Value, out var tenantId, out var tenantError))
+            return Results.BadRequest(new ProblemDetails { Title = "Invalid tenant", Detail = tenantError });
+
+        var tasks = await copilotTaskStore.QueryAsync(1, null, tenantId, cancellationToken);
         var hasTasks = tasks.Count > 0;
 
         var dailiesPath = ResolveDailiesPath(configuration);
@@ -1701,6 +1889,9 @@ public static class NexoEndpoints
         var configPath = Environment.GetEnvironmentVariable("NEXO_CONFIG_PATH")
             ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".nexo", "config.json");
 
+        var sec = securityOptions.Value;
+        var authActive = IsBuiltInAuthActive(sec);
+
         return Results.Ok(new OnboardingStatusResponse(
             IsFirstRun: !hasTasks && !hasDailies,
             ApiReachable: true,
@@ -1708,7 +1899,12 @@ public static class NexoEndpoints
             HasCopilotTasks: hasTasks,
             HasDailies: hasDailies,
             ConfigPath: configPath,
-            ActiveTrustPack: activePack?.Id));
+            ActiveTrustPack: activePack?.Id,
+            BuiltInAuthActive: authActive,
+            BuiltInCredentialsConfigured: AreBuiltInAuthCredentialsConfigured(sec),
+            RequireAuthForCopilotReads: sec.RequireAuthForCopilotReadApis,
+            CopilotScopedKeyConfigured: !string.IsNullOrWhiteSpace(sec.CopilotScopedApiKey),
+            ResolvedTenantId: tenantId));
     }
 }
 
@@ -1722,7 +1918,10 @@ public sealed record MeshFleetNodeRequest(
     IReadOnlyDictionary<string, string>? Labels = null,
     IReadOnlyList<string>? AdvertisedBrickIds = null,
     bool Drained = false,
-    int? ReportedQueueDepth = null);
+    int? ReportedQueueDepth = null,
+    string? TrustTier = null,
+    bool? Admitted = null,
+    string? PeerRegistrationKey = null);
 
 public sealed record MeshHeartbeatRequest(int? QueueDepth = null);
 
@@ -1736,7 +1935,10 @@ public sealed record MeshFleetNodeResponse(
     bool Drained,
     DateTimeOffset? LastHeartbeatUtc,
     DateTimeOffset RegisteredAtUtc,
-    int ReportedQueueDepth);
+    int ReportedQueueDepth,
+    string TrustTier,
+    bool Admitted,
+    string? RegistrationKeyFingerprint);
 
 public sealed record MeshElasticWorkerSnapshot(string PeerId, int ReportedQueueDepth, DateTimeOffset? LastHeartbeatUtc);
 
@@ -1806,6 +2008,7 @@ public sealed record MeshKnowledgeImportResponse(
 public sealed record CopilotTaskRequest(string Task, int AuditCount = 25);
 public sealed record CopilotTaskResponse(
     string TaskId,
+    string TenantId,
     bool Success,
     string? Summary,
     object? Output,
@@ -1945,6 +2148,11 @@ public sealed record OnboardingStatusResponse(
     bool HasCopilotTasks,
     bool HasDailies,
     string? ConfigPath,
-    string? ActiveTrustPack);
+    string? ActiveTrustPack,
+    bool BuiltInAuthActive,
+    bool BuiltInCredentialsConfigured,
+    bool RequireAuthForCopilotReads,
+    bool CopilotScopedKeyConfigured,
+    string ResolvedTenantId);
 
 public sealed record ProviderStatus(string Name, bool Available, string? Reason);

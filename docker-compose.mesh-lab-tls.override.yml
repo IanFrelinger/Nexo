@@ -1,0 +1,20 @@
+# Merge with docker-compose.mesh-lab.yml for HTTPS director checks (Caddy + self-signed certs).
+#
+#   docker compose -f docker-compose.mesh-lab.yml \
+#     -f docker-compose.mesh-lab-tls.override.yml --env-file .env.mesh-lab up -d
+
+services:
+  mesh-tls-proxy:
+    image: caddy:2.8-alpine
+    networks:
+      mesh_lab:
+        aliases:
+          - mesh-tls-proxy
+    ports:
+      - "${MESH_LAB_TLS_PUBLISH:-127.0.0.1:18443}:443"
+    volumes:
+      - ./docs/config/mesh-lab-caddy.Caddyfile:/etc/caddy/Caddyfile:ro
+      - ${MESH_LAB_TLS_CERT_DIR:-./.mesh-lab-tls-certs}:/certs:ro
+    depends_on:
+      - peer-a
+    restart: unless-stopped

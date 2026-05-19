@@ -34,74 +34,82 @@ public sealed class HttpBarrierContextMiddleware : IMiddleware
 
     public async Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
-        var enabled = Environment.GetEnvironmentVariable("NEXO_BARRIER_MIDDLEWARE_ENABLED");
-        if (!string.Equals(enabled, "true", StringComparison.OrdinalIgnoreCase) &&
-            !string.Equals(enabled, "1", StringComparison.OrdinalIgnoreCase))
-        {
-            await next(context);
-            return;
-        }
-
-        var correlationId = context.TraceIdentifier;
-        var resolutionContext = BuildResolutionContext(context, correlationId);
-
-        BarrierResolutionResult? result;
+        var ambient = context.RequestServices.GetService(typeof(IBarrierContextAmbient)) as IBarrierContextAmbient;
         try
         {
-            result = await _pipeline.ResolveAsync(resolutionContext, context.RequestAborted);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Barrier identity resolution failed for {CorrelationId}", correlationId);
-            await next(context);
-            return;
-        }
-
-        if (result is not null)
-        {
-            var accessor = context.RequestServices.GetService(typeof(IBarrierContextAccessor)) as IBarrierContextAccessor;
-            if (accessor is not null)
+            var enabled = Environment.GetEnvironmentVariable("NEXO_BARRIER_MIDDLEWARE_ENABLED");
+            if (!string.Equals(enabled, "true", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(enabled, "1", StringComparison.OrdinalIgnoreCase))
             {
-                try
-                {
-                    var barrierContext = BarrierContext.Create(
-                        result.ResolvedLevel,
-                        result.AuthoritySource,
-                        issuedTo: string.Empty,
-                        correlationId,
-                        _hierarchy,
-                        result.Detail);
-                    accessor.Initialize(barrierContext);
-                }
-                catch (BarrierCeilingExceededException ceilingEx)
-                {
-                    _logger.LogWarning("Barrier ceiling exceeded: {Message}", ceilingEx.Message);
-                    await _auditLog.RecordAsync(new BarrierAuditEvent(
-                        BarrierAuditEventType.CeilingExceeded,
-                        result.ResolvedLevel,
-                        result.AuthoritySource,
-                        AgentName: string.Empty,
-                        correlationId,
-                        SpanId: string.Empty,
-                        DateTimeOffset.UtcNow,
-                        ceilingEx.Message), context.RequestAborted);
-                    context.Response.StatusCode = StatusCodes.Status403Forbidden;
-                    return;
-                }
+                await next(context);
+                return;
             }
 
-            await _auditLog.RecordAsync(new BarrierAuditEvent(
-                BarrierAuditEventType.ContextInitialized,
-                result.ResolvedLevel,
-                result.AuthoritySource,
-                AgentName: string.Empty,
-                correlationId,
-                SpanId: string.Empty,
-                DateTimeOffset.UtcNow,
-                result.Detail), context.RequestAborted);
-        }
+            var correlationId = context.TraceIdentifier;
+            var resolutionContext = BuildResolutionContext(context, correlationId);
 
-        await next(context);
+            BarrierResolutionResult? result;
+            try
+            {
+                result = await _pipeline.ResolveAsync(resolutionContext, context.RequestAborted);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Barrier identity resolution failed for {CorrelationId}", correlationId);
+                await next(context);
+                return;
+            }
+
+            if (result is not null)
+            {
+                var accessor = context.RequestServices.GetService(typeof(IBarrierContextAccessor)) as IBarrierContextAccessor;
+                if (accessor is not null)
+                {
+                    try
+                    {
+                        var barrierContext = BarrierContext.Create(
+                            result.ResolvedLevel,
+                            result.AuthoritySource,
+                            issuedTo: string.Empty,
+                            correlationId,
+                            _hierarchy,
+                            result.Detail);
+                        accessor.Initialize(barrierContext);
+                    }
+                    catch (BarrierCeilingExceededException ceilingEx)
+                    {
+                        _logger.LogWarning("Barrier ceiling exceeded: {Message}", ceilingEx.Message);
+                        await _auditLog.RecordAsync(new BarrierAuditEvent(
+                            BarrierAuditEventType.CeilingExceeded,
+                            result.ResolvedLevel,
+                            result.AuthoritySource,
+                            AgentName: string.Empty,
+                            correlationId,
+                            SpanId: string.Empty,
+                            DateTimeOffset.UtcNow,
+                            ceilingEx.Message), context.RequestAborted);
+                        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                        return;
+                    }
+                }
+
+                await _auditLog.RecordAsync(new BarrierAuditEvent(
+                    BarrierAuditEventType.ContextInitialized,
+                    result.ResolvedLevel,
+                    result.AuthoritySource,
+                    AgentName: string.Empty,
+                    correlationId,
+                    SpanId: string.Empty,
+                    DateTimeOffset.UtcNow,
+                    result.Detail), context.RequestAborted);
+            }
+
+            await next(context);
+        }
+        finally
+        {
+            ambient?.SetCurrent(null);
+        }
     }
 
     private static BarrierResolutionContext BuildResolutionContext(HttpContext context, string correlationId)

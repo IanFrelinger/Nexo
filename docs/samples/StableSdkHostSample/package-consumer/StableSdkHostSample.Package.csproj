@@ -1,9 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <!-- Standalone sample: do not inherit repo central package management (Nexo.Hosting version is local feed). -->
-    <!-- ManagePackageVersionsCentrally: see Directory.Build.props in this folder -->
-    <!-- Transitive advisory noise when resolving against local feed only; hosting graph pins safe versions. -->
-    <NoWarn>$(NoWarn);NU1904;NU1903;NU1902</NoWarn>
+    <!-- ManagePackageVersionsCentrally: see Directory.Packages.props in this folder -->
+    <!-- Transitive advisories: pinned in package-consumer/Directory.Build.props -->
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>

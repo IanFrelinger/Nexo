@@ -1,0 +1,4 @@
+# Merged by scripts/mesh-lab-stress-ramp.sh so scaled worker replicas do not bind the same host port.
+services:
+  worker:
+    ports: !reset []

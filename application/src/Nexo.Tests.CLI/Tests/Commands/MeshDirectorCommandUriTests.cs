@@ -13,4 +13,11 @@ public sealed class MeshDirectorCommandUriTests
         var uri = MeshDirectorCommand.BuildRequestUri(baseUrl, path);
         Assert.Equal(expected, uri.ToString());
     }
+
+    [Fact]
+    public void BuildFleetNodePath_escapes_peer_id()
+    {
+        var path = MeshDirectorCommand.BuildFleetNodePath("peer/a", "admit");
+        Assert.Equal("/api/mesh/fleet/nodes/peer%2Fa/admit", path);
+    }
 }

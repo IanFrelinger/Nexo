@@ -11,15 +11,18 @@ public sealed class ScopedBarrierContextAccessor : IBarrierContextAccessor
 {
     private readonly BarrierHierarchy _hierarchy;
     private readonly BarrierOptions _options;
+    private readonly IBarrierContextAmbient? _ambient;
     private BarrierContext? _context;
     private int _initialized;
 
     public ScopedBarrierContextAccessor(
         BarrierHierarchy hierarchy,
-        IOptions<BarrierOptions> options)
+        IOptions<BarrierOptions> options,
+        IBarrierContextAmbient? ambient = null)
     {
         _hierarchy = hierarchy ?? throw new ArgumentNullException(nameof(hierarchy));
         _options = options?.Value ?? throw new ArgumentNullException(nameof(options));
+        _ambient = ambient;
     }
 
     public BarrierContext? Current => _context;
@@ -45,5 +48,6 @@ public sealed class ScopedBarrierContextAccessor : IBarrierContextAccessor
         }
 
         _context = context;
+        _ambient?.SetCurrent(context);
     }
 }

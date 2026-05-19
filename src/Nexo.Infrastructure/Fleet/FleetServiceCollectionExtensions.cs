@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Nexo.Core.Application.Fleet.Ports;
+using Nexo.Infrastructure.Fleet.MeshLab;
 
 namespace Nexo.Infrastructure.Fleet;
 
@@ -10,10 +11,47 @@ namespace Nexo.Infrastructure.Fleet;
 /// </summary>
 public static class FleetServiceCollectionExtensions
 {
-    public static IServiceCollection AddNexoFleetDirector(this IServiceCollection services)
+    public static IServiceCollection AddNexoFleetDirector(
+        this IServiceCollection services,
+        IConfiguration? configuration = null)
     {
-        services.TryAddSingleton<IFleetNodeRegistry, InMemoryFleetNodeRegistry>();
-        services.TryAddSingleton<IMeshTaskRegistry, InMemoryMeshTaskRegistry>();
+        var persistence = new MeshPersistenceOptions();
+        if (configuration is not null)
+        {
+            services.AddOptions<MeshPlacementTrustOptions>()
+                .Bind(configuration.GetSection(MeshPlacementTrustOptions.SectionPath));
+            services.AddOptions<MeshFleetRegistrationOptions>()
+                .Bind(configuration.GetSection(MeshFleetRegistrationOptions.SectionPath));
+            services.AddOptions<MeshPersistenceOptions>()
+                .Bind(configuration.GetSection(MeshPersistenceOptions.SectionPath));
+            configuration.GetSection(MeshPersistenceOptions.SectionPath).Bind(persistence);
+        }
+        else
+        {
+            services.AddOptions<MeshPlacementTrustOptions>();
+            services.AddOptions<MeshFleetRegistrationOptions>();
+            services.AddOptions<MeshPersistenceOptions>();
+        }
+
+        if (!MeshPersistenceOptions.IsKnownProvider(persistence.Provider))
+        {
+            throw new InvalidOperationException(
+                $"Unknown mesh persistence provider '{persistence.Provider}'. Supported: InMemory, LiteDb.");
+        }
+
+        if (MeshPersistenceOptions.IsLiteDb(persistence.Provider))
+        {
+            var dbPath = string.IsNullOrWhiteSpace(persistence.DatabasePath)
+                ? "mesh-director.db"
+                : persistence.DatabasePath.Trim();
+            services.TryAddSingleton<IFleetNodeRegistry>(_ => new LiteDbFleetNodeRegistry(dbPath));
+            services.TryAddSingleton<IMeshTaskRegistry>(_ => new LiteDbMeshTaskRegistry(dbPath));
+        }
+        else
+        {
+            services.TryAddSingleton<IFleetNodeRegistry, InMemoryFleetNodeRegistry>();
+            services.TryAddSingleton<IMeshTaskRegistry, InMemoryMeshTaskRegistry>();
+        }
         services.TryAddSingleton<IMeshTaskPlacementService, MeshTaskPlacementService>();
         return services;
     }
@@ -53,6 +91,28 @@ public static class FleetServiceCollectionExtensions
         services.TryAddSingleton<MeshKnowledgeExportService>();
         services.TryAddSingleton<MeshKnowledgeImportService>();
         services.AddHostedService<MeshPeerKnowledgePullBackgroundService>();
+        return services;
+    }
+
+    /// <summary>
+    /// Virtual mesh lab: optional background worker that completes assigned tasks via the director HTTP API.
+    /// </summary>
+    public static IServiceCollection AddNexoMeshLabWorkerExecutor(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        services.AddOptions<MeshLabWorkerExecutorOptions>()
+            .Bind(configuration.GetSection(MeshLabWorkerExecutorOptions.SectionPath));
+
+        var enabled = configuration.GetValue(
+            $"{MeshLabWorkerExecutorOptions.SectionPath}:Enabled",
+            defaultValue: false);
+        if (!enabled)
+            return services;
+
+        services.AddHttpClient(MeshLabWorkerExecutorClient.HttpClientName);
+        services.TryAddSingleton<MeshLabWorkerExecutorClient>();
+        services.AddHostedService<MeshLabWorkerExecutorBackgroundService>();
         return services;
     }
 }

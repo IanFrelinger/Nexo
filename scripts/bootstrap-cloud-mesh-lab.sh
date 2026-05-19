@@ -16,17 +16,23 @@ cd "${REPO_ROOT}"
 
 INSTALL_DOCKER=false
 SKIP_VERIFY=false
+WITH_WORKERS=false
+WITH_DEEP=false
 
 usage() {
-  echo "Usage: $0 [--install-docker] [--skip-verify]"
-  echo "  --install-docker   On Debian/Ubuntu: apt-get install docker.io docker-compose-v2 (requires sudo)."
+  echo "Usage: $0 [--install-docker] [--skip-verify] [--workers] [--deep]"
+  echo "  --install-docker   On Debian/Ubuntu: apt-get install docker.io + compose v2 (requires sudo)."
   echo "  --skip-verify      Only docker compose up (no mesh-lab-verify.sh)."
+  echo "  --workers          Include Compose profile workers (executor + auth checks in verify)."
+  echo "  --deep             After standard verify, run mesh-lab-verify-deep.sh (requires --workers for full CI parity)."
 }
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --install-docker) INSTALL_DOCKER=true ;;
     --skip-verify) SKIP_VERIFY=true ;;
+    --workers) WITH_WORKERS=true ;;
+    --deep) WITH_DEEP=true; WITH_WORKERS=true ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown option: $1" >&2; usage; exit 1 ;;
   esac
@@ -106,7 +112,11 @@ main() {
   ensure_env_file
 
   echo "Building and starting mesh lab (docker-compose.mesh-lab.yml)..."
-  docker compose -f docker-compose.mesh-lab.yml --env-file .env.mesh-lab up -d --build
+  WORKERS_PROFILE_ARGS=()
+  if [[ "${WITH_WORKERS}" == "true" ]]; then
+    WORKERS_PROFILE_ARGS=(--profile workers)
+  fi
+  docker compose "${WORKERS_PROFILE_ARGS[@]}" -f docker-compose.mesh-lab.yml --env-file .env.mesh-lab up -d --build
 
   if [[ "${SKIP_VERIFY}" == "true" ]]; then
     echo "Skip verify (--skip-verify). Peers: http://127.0.0.1:18081 and :18082 on this host."
@@ -116,12 +126,17 @@ main() {
   echo "Running mesh-lab-verify.sh ..."
   bash "${REPO_ROOT}/scripts/mesh-lab-verify.sh" "${REPO_ROOT}/.env.mesh-lab"
 
+  if [[ "${WITH_DEEP}" == "true" ]]; then
+    echo "Running mesh-lab-verify-deep.sh ..."
+    bash "${REPO_ROOT}/scripts/mesh-lab-verify-deep.sh" "${REPO_ROOT}/.env.mesh-lab"
+  fi
+
   echo ""
   echo "Mesh lab is up. On this machine:"
   echo "  peer-a: http://127.0.0.1:18081"
   echo "  peer-b: http://127.0.0.1:18082"
   echo "SSH tunnel from laptop: ssh -L 18081:127.0.0.1:18081 -L 18082:127.0.0.1:18082 user@vm"
-  echo "Stop: docker compose -f docker-compose.mesh-lab.yml --env-file .env.mesh-lab down -v"
+  echo "Stop: docker compose --profile workers -f docker-compose.mesh-lab.yml --env-file .env.mesh-lab down -v"
 }
 
 main

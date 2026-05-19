@@ -1,0 +1,106 @@
+name: Mesh lab stress gate
+
+# Heavier than mesh-lab-gate: full verify + deep + worker scale/health burst + post-stress director checks.
+# PR path filters intentionally omit this workflow so default PRs stay fast.
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+    inputs:
+      max_workers:
+        description: "Max worker replicas for stress ramp"
+        required: false
+        default: "4"
+      requests_per_step:
+        description: "Parallel /health requests per ramp step"
+        required: false
+        default: "15"
+
+jobs:
+  mesh-lab-stress:
+    name: Mesh lab stress (full verify + deep + ramp + post-stress)
+    runs-on: ubuntu-latest
+    timeout-minutes: 75
+    env:
+      COMPOSE_PROJECT_NAME: nexo_mesh_lab_stress_ci
+      DOCKER_DEFAULT_PLATFORM: linux/amd64
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify Docker
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker --version
+          docker compose version
+
+      - name: Write lab env
+        shell: bash
+        run: |
+          set -euo pipefail
+          KEY="mesh-lab-stress-${GITHUB_RUN_ID}-${GITHUB_SHA}"
+          KEY="${KEY:0:64}"
+          BEARER="${KEY}-bearer"
+          BASIC="${KEY}-basic"
+          COPILOT="${KEY}-copilot-scoped"
+          PEER_REG="${KEY}-peer-registration"
+          {
+            echo "Nexo__Security__ApiKey=${KEY}"
+            echo "Nexo__Security__PeerB__BearerToken=${BEARER}"
+            echo "Nexo__Security__Worker__BasicAuthPassword=${BASIC}"
+            echo "Nexo__Security__CopilotScopedApiKey=${COPILOT}"
+            echo "Nexo__Entitlements__MaxCopilotSubmissionsPerHour=2"
+            echo "MESH_LAB_PEER_REGISTRATION_KEY=${PEER_REG}"
+            echo "Nexo__Mesh__Persistence__Provider=LiteDb"
+            echo "MESH_LAB_PEER_A_PUBLISH=127.0.0.1:18081"
+            echo "MESH_LAB_PEER_B_PUBLISH=127.0.0.1:18082"
+          } > .env.mesh-lab.ci
+
+      - name: Compose config
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker compose --profile workers -f docker-compose.mesh-lab.yml --env-file .env.mesh-lab.ci config -q
+
+      - name: Start mesh lab (workers profile)
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker compose --profile workers -f docker-compose.mesh-lab.yml --env-file .env.mesh-lab.ci up -d --build
+
+      - name: Run verify scripts (standard + deep)
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x scripts/mesh-lab-verify.sh scripts/mesh-lab-verify-deep.sh \
+            scripts/mesh-lab-verify-entitlements.sh scripts/mesh-lab-verify-trust.sh \
+            scripts/mesh-lab-verify-governance.sh scripts/mesh-lab-verify-director-cli.sh \
+            scripts/mesh-lab-verify-persistence.sh scripts/mesh-lab-verify-network-negative.sh \
+            scripts/mesh-lab-verify-post-stress.sh \
+            scripts/mesh-lab-net.sh scripts/mesh-lab-fleet.sh scripts/mesh-lab-stress-ramp.sh
+          ./scripts/mesh-lab-verify.sh .env.mesh-lab.ci
+          ./scripts/mesh-lab-verify-deep.sh .env.mesh-lab.ci
+
+      - name: Stress ramp (worker replicas)
+        shell: bash
+        run: |
+          set -euo pipefail
+          MAX_W="${{ github.event.inputs.max_workers || '4' }}"
+          REQS="${{ github.event.inputs.requests_per_step || '15' }}"
+          ./scripts/mesh-lab-stress-ramp.sh .env.mesh-lab.ci "$MAX_W" 2 "$REQS" 2
+
+      - name: Post-stress director verify
+        shell: bash
+        run: |
+          set -euo pipefail
+          ./scripts/mesh-lab-verify-post-stress.sh .env.mesh-lab.ci
+
+      - name: Tear down
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker compose --profile workers -f docker-compose.mesh-lab.yml --env-file .env.mesh-lab.ci down -v || true
+          rm -f .env.mesh-lab.ci

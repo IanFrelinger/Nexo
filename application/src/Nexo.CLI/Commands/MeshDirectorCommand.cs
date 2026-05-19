@@ -1,4 +1,5 @@
 using System.CommandLine;
+using System.CommandLine.Invocation;
 using System.Text;
 using System.Text.Json;
 
@@ -12,6 +13,7 @@ public sealed class MeshDirectorCommand : Command
     internal const string DirectorBaseUrlEnv = "NEXO_MESH_DIRECTOR_BASE_URL";
     internal const string MeshApiKeyEnv = "NEXO_MESH_API_KEY";
     internal const string MeshMutatingTokenEnv = "NEXO_MESH_MUTATING_TOKEN";
+    internal const string MeshPeerRegistrationKeyEnv = "NEXO_MESH_PEER_REGISTRATION_KEY";
 
     private const string DefaultApiKeyHeader = "X-Nexo-Api-Key";
     private const string DefaultMeshTokenHeader = "X-Nexo-Mesh-Token";
@@ -76,16 +78,80 @@ public sealed class MeshDirectorCommand : Command
         patchCmd.Add(bodyOpt);
         patchCmd.SetHandler(InvokePatchAsync, baseUrlOpt, apiKeyOpt, meshTokenOpt, timeoutOpt, jsonOpt, pathPatchArg, bodyFileOpt, bodyOpt);
 
+        var peerIdArg = new Argument<string>("peerId", "Fleet peer id");
+        var apiBaseOpt = new Option<string>("--api-base-url", "Worker API base URL (http/https)") { IsRequired = true };
+        var trustTierOpt = new Option<string>("--trust-tier", () => "Trusted", "Trusted or Untrusted");
+        var peerRegKeyOpt = new Option<string?>(
+            "--peer-registration-key",
+            () => null,
+            $"Per-peer registration secret (defaults to {MeshPeerRegistrationKeyEnv}).");
+
+        var registerCmd = new Command("register", "POST /api/mesh/fleet/nodes (fleet register)");
+        registerCmd.Add(baseUrlOpt);
+        registerCmd.Add(apiKeyOpt);
+        registerCmd.Add(meshTokenOpt);
+        registerCmd.Add(timeoutOpt);
+        registerCmd.Add(jsonOpt);
+        registerCmd.Add(peerIdArg);
+        registerCmd.Add(apiBaseOpt);
+        registerCmd.Add(trustTierOpt);
+        registerCmd.Add(peerRegKeyOpt);
+        registerCmd.SetHandler(async (InvocationContext ctx) =>
+        {
+            await InvokeRegisterAsync(
+                ctx.ParseResult.GetValueForOption(baseUrlOpt),
+                ctx.ParseResult.GetValueForOption(apiKeyOpt),
+                ctx.ParseResult.GetValueForOption(meshTokenOpt),
+                ctx.ParseResult.GetValueForOption(timeoutOpt),
+                ctx.ParseResult.GetValueForOption(jsonOpt),
+                ctx.ParseResult.GetValueForArgument(peerIdArg),
+                ctx.ParseResult.GetValueForOption(apiBaseOpt)!,
+                ctx.ParseResult.GetValueForOption(trustTierOpt)!,
+                ctx.ParseResult.GetValueForOption(peerRegKeyOpt)).ConfigureAwait(false);
+        });
+
+        var admitCmd = new Command("admit", "POST /api/mesh/fleet/nodes/{peerId}/admit");
+        admitCmd.Add(baseUrlOpt);
+        admitCmd.Add(apiKeyOpt);
+        admitCmd.Add(meshTokenOpt);
+        admitCmd.Add(timeoutOpt);
+        admitCmd.Add(jsonOpt);
+        admitCmd.AddArgument(peerIdArg);
+        admitCmd.SetHandler(InvokeAdmitAsync, baseUrlOpt, apiKeyOpt, meshTokenOpt, timeoutOpt, jsonOpt, peerIdArg);
+
+        var revokeCmd = new Command("revoke", "POST /api/mesh/fleet/nodes/{peerId}/revoke");
+        revokeCmd.Add(baseUrlOpt);
+        revokeCmd.Add(apiKeyOpt);
+        revokeCmd.Add(meshTokenOpt);
+        revokeCmd.Add(timeoutOpt);
+        revokeCmd.Add(jsonOpt);
+        revokeCmd.AddArgument(peerIdArg);
+        revokeCmd.SetHandler(InvokeRevokeAsync, baseUrlOpt, apiKeyOpt, meshTokenOpt, timeoutOpt, jsonOpt, peerIdArg);
+
         AddCommand(getCmd);
         AddCommand(postCmd);
         AddCommand(patchCmd);
+        AddCommand(registerCmd);
+        AddCommand(admitCmd);
+        AddCommand(revokeCmd);
     }
+
+    internal static string BuildFleetNodePath(string peerId, string action) =>
+        $"/api/mesh/fleet/nodes/{Uri.EscapeDataString(peerId)}/{action}";
 
     private static string? ResolveApiKey(string? fromOption) =>
         string.IsNullOrWhiteSpace(fromOption) ? Environment.GetEnvironmentVariable(MeshApiKeyEnv) : fromOption.Trim();
 
     private static string? ResolveMeshToken(string? fromOption) =>
         string.IsNullOrWhiteSpace(fromOption) ? Environment.GetEnvironmentVariable(MeshMutatingTokenEnv) : fromOption.Trim();
+
+    private static string? ResolvePeerRegistrationKey(string? fromOption)
+    {
+        if (!string.IsNullOrWhiteSpace(fromOption))
+            return fromOption.Trim();
+        var env = Environment.GetEnvironmentVariable(MeshPeerRegistrationKeyEnv);
+        return string.IsNullOrWhiteSpace(env) ? null : env.Trim();
+    }
 
     private static string ResolveBaseUrl(string? fromOption)
     {
@@ -166,6 +232,90 @@ public sealed class MeshDirectorCommand : Command
         string? bodyFile,
         string? bodyJson) =>
         SendWithBodyAsync(HttpMethod.Patch, baseUrlOpt, apiKeyOpt, meshTokenOpt, timeoutSeconds, json, path, bodyFile, bodyJson);
+
+    private static Task InvokeRegisterAsync(
+        string? baseUrlOpt,
+        string? apiKeyOpt,
+        string? meshTokenOpt,
+        int timeoutSeconds,
+        bool json,
+        string peerId,
+        string apiBaseUrl,
+        string trustTier,
+        string? peerRegistrationKeyOpt)
+    {
+        var body = new Dictionary<string, object?>
+        {
+            ["peerId"] = peerId.Trim(),
+            ["apiBaseUrl"] = apiBaseUrl.Trim(),
+            ["trustTier"] = trustTier.Trim(),
+        };
+        var regKey = ResolvePeerRegistrationKey(peerRegistrationKeyOpt);
+        if (!string.IsNullOrEmpty(regKey))
+            body["peerRegistrationKey"] = regKey;
+
+        var payload = JsonSerializer.Serialize(body);
+        return SendWithBodyAsync(
+            HttpMethod.Post,
+            baseUrlOpt,
+            apiKeyOpt,
+            meshTokenOpt,
+            timeoutSeconds,
+            json,
+            "/api/mesh/fleet/nodes",
+            bodyFile: null,
+            bodyJson: payload);
+    }
+
+    private static Task InvokeAdmitAsync(
+        string? baseUrlOpt,
+        string? apiKeyOpt,
+        string? meshTokenOpt,
+        int timeoutSeconds,
+        bool json,
+        string peerId) =>
+        SendEmptyPostAsync(baseUrlOpt, apiKeyOpt, meshTokenOpt, timeoutSeconds, json, BuildFleetNodePath(peerId, "admit"));
+
+    private static Task InvokeRevokeAsync(
+        string? baseUrlOpt,
+        string? apiKeyOpt,
+        string? meshTokenOpt,
+        int timeoutSeconds,
+        bool json,
+        string peerId) =>
+        SendEmptyPostAsync(baseUrlOpt, apiKeyOpt, meshTokenOpt, timeoutSeconds, json, BuildFleetNodePath(peerId, "revoke"));
+
+    private static async Task SendEmptyPostAsync(
+        string? baseUrlOpt,
+        string? apiKeyOpt,
+        string? meshTokenOpt,
+        int timeoutSeconds,
+        bool printJson,
+        string path)
+    {
+        var baseUrl = ResolveBaseUrl(baseUrlOpt);
+        if (string.IsNullOrWhiteSpace(baseUrl))
+        {
+            Console.Error.WriteLine($"Set --base-url or environment variable {DirectorBaseUrlEnv}.");
+            Environment.ExitCode = 1;
+            return;
+        }
+
+        try
+        {
+            using var client = CreateHttpClient(timeoutSeconds);
+            var uri = BuildRequestUri(baseUrl, path);
+            using var req = new HttpRequestMessage(HttpMethod.Post, uri);
+            ApplyHeaders(req, ResolveApiKey(apiKeyOpt), ResolveMeshToken(meshTokenOpt), HttpMethod.Post);
+            using var resp = await client.SendAsync(req).ConfigureAwait(false);
+            await WriteResponseAsync(resp, printJson).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine(ex.Message);
+            Environment.ExitCode = 1;
+        }
+    }
 
     private static async Task SendWithBodyAsync(
         HttpMethod method,

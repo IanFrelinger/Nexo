@@ -79,6 +79,7 @@ backup/
 appsettings.local.json
 .env.friend-mesh
 .env.mesh-lab
+.mesh-lab-tls-certs/
 
 /NEXO_AGENT_NOTES.md
 

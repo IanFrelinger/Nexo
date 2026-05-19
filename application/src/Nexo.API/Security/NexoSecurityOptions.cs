@@ -110,4 +110,15 @@ public sealed class NexoSecurityOptions
     /// Defaults to Authorization (expects "Basic &lt;base64(username:password)&gt;").
     /// </summary>
     public string BasicAuthHeaderName { get; set; } = "Authorization";
+
+    /// <summary>
+    /// Optional API key that may only call copilot history/onboarding/status endpoints (see middleware).
+    /// When omitted, only <see cref="ApiKey"/> grants access.
+    /// </summary>
+    public string? CopilotScopedApiKey { get; set; }
+
+    /// <summary>
+    /// When built-in auth is active and true, GET <c>/api/copilot/tasks*</c> requires the same credentials as mutating routes.
+    /// </summary>
+    public bool RequireAuthForCopilotReadApis { get; set; } = true;
 }

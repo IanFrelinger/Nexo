@@ -19,6 +19,7 @@ public sealed class MeshElasticPlacementTests
             nodes,
             tasks,
             Options.Create(new MeshCheckpointOptions()),
+            Options.Create(new MeshPlacementTrustOptions()),
             NullLogger<MeshTaskPlacementService>.Instance);
 
         var t = DateTimeOffset.UtcNow;

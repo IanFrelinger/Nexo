@@ -1,4 +1,4 @@
-.PHONY: build build-core build-demos prod-dry-run prod-dry-run-agent-server restore-core test test-prod-style test-framework-prod-first test-prime-time test-prime-time-full test-cross-platform test-portable test-multi-env test-all-platforms test-all-platforms-ephemeral ci-verify validate-safe review-summary clean-test-artifacts test-readiness-gate release-preflight release-gate release-dispatch
+.PHONY: build build-core build-demos prod-dry-run prod-dry-run-agent-server restore-core test test-prod-style test-framework-prod-first test-prime-time test-prime-time-full test-cross-platform test-portable test-multi-env test-all-platforms test-all-platforms-ephemeral ci-verify validate-safe review-summary clean-test-artifacts test-readiness-gate release-preflight release-gate release-dispatch mesh-lab-e2e mesh-lab-e2e-workers mesh-lab-e2e-deep mesh-lab-e2e-stress mesh-lab-up mesh-lab-verify mesh-lab-verify-deep mesh-lab-verify-entitlements mesh-lab-verify-governance mesh-lab-verify-director-cli mesh-lab-verify-persistence mesh-lab-verify-network-negative mesh-lab-verify-post-stress mesh-lab-stress mesh-lab-down test-mesh-lab
 
 # Local checks before tagging a release (graph alignment + NuGet sample). Usage: make release-preflight VERSION=1.2.3
 release-preflight:
@@ -256,6 +256,91 @@ clean-test-artifacts:
 pack:
 	dotnet pack src/Nexo.Hosting/Nexo.Hosting.csproj -c Release -o dist/nuget
 	dotnet pack application/src/Nexo.CLI/Nexo.CLI.csproj -c Release -o dist/nuget
+
+# ── Mesh virtual lab (Docker bridge network; automated HTTP checks) ────────────
+# Full cycle: compose up → scripts/mesh-lab-verify.sh → compose down -v.
+# Requires Docker running. Optional: COMPOSE_PROJECT_NAME=… mesh-lab-e2e
+mesh-lab-e2e:
+	bash scripts/run-mesh-lab-e2e.sh
+
+# Same as mesh-lab-e2e but starts the Compose `workers` profile (Basic + API key paths on worker).
+mesh-lab-e2e-workers:
+	MESH_LAB_E2E_WORKERS=1 bash scripts/run-mesh-lab-e2e.sh
+
+# Workers profile + standard verify + mesh-lab-verify-deep (checkpoint / migrate / reschedule).
+mesh-lab-e2e-deep:
+	MESH_LAB_E2E_WORKERS=1 MESH_LAB_VERIFY_DEEP=1 bash scripts/run-mesh-lab-e2e.sh
+
+# Full lab gate + deep + worker stress ramp (scale replicas + parallel /health bursts).
+mesh-lab-e2e-stress:
+	MESH_LAB_E2E_WORKERS=1 MESH_LAB_VERIFY_DEEP=1 MESH_LAB_RUN_STRESS=1 bash scripts/run-mesh-lab-e2e.sh
+
+# HTTPS director via Caddy + scripts/mesh-lab-tls-certs.sh — see docker-compose.mesh-lab-tls.override.yml
+mesh-lab-e2e-tls:
+	bash scripts/run-mesh-lab-e2e-tls.sh
+
+# Long-lived lab using gitignored .env.mesh-lab (copy docs/config/mesh-lab.env.example).
+# Optional: MESH_LAB_WORKERS=1 make mesh-lab-up  →  includes --profile workers
+mesh-lab-up:
+	@test -f .env.mesh-lab || (echo "Missing .env.mesh-lab — cp docs/config/mesh-lab.env.example .env.mesh-lab && edit secrets"; exit 1)
+ifeq ($(strip $(MESH_LAB_WORKERS)),1)
+	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=nexo_mesh_lab_local docker compose --profile workers -f docker-compose.mesh-lab.yml --env-file .env.mesh-lab up -d --build
+else
+	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=nexo_mesh_lab_local docker compose -f docker-compose.mesh-lab.yml --env-file .env.mesh-lab up -d --build
+endif
+
+mesh-lab-verify:
+	@test -f .env.mesh-lab || (echo "Missing .env.mesh-lab"; exit 1)
+	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=nexo_mesh_lab_local ./scripts/mesh-lab-verify.sh .env.mesh-lab
+
+mesh-lab-verify-deep:
+	@test -f .env.mesh-lab || (echo "Missing .env.mesh-lab"; exit 1)
+	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=nexo_mesh_lab_local ./scripts/mesh-lab-verify-deep.sh .env.mesh-lab
+
+mesh-lab-verify-entitlements:
+	@test -f .env.mesh-lab || (echo "Missing .env.mesh-lab"; exit 1)
+	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=nexo_mesh_lab_local ./scripts/mesh-lab-verify-entitlements.sh .env.mesh-lab
+
+mesh-lab-verify-governance:
+	@test -f .env.mesh-lab || (echo "Missing .env.mesh-lab"; exit 1)
+	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=nexo_mesh_lab_local ./scripts/mesh-lab-verify-governance.sh .env.mesh-lab
+
+mesh-lab-verify-director-cli:
+	@test -f .env.mesh-lab || (echo "Missing .env.mesh-lab"; exit 1)
+	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=nexo_mesh_lab_local ./scripts/mesh-lab-verify-director-cli.sh .env.mesh-lab
+
+mesh-lab-verify-persistence:
+	@test -f .env.mesh-lab || (echo "Missing .env.mesh-lab"; exit 1)
+	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=nexo_mesh_lab_local ./scripts/mesh-lab-verify-persistence.sh .env.mesh-lab
+
+mesh-lab-verify-network-negative:
+	@test -f .env.mesh-lab || (echo "Missing .env.mesh-lab"; exit 1)
+	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=nexo_mesh_lab_local ./scripts/mesh-lab-verify-network-negative.sh .env.mesh-lab
+
+mesh-lab-verify-tls:
+	@test -f .env.mesh-lab || (echo "Missing .env.mesh-lab"; exit 1)
+	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=nexo_mesh_lab_tls_local \
+		docker compose -f docker-compose.mesh-lab.yml -f docker-compose.mesh-lab-tls.override.yml --env-file .env.mesh-lab up -d
+	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} ./scripts/mesh-lab-verify-tls.sh .env.mesh-lab
+
+mesh-lab-verify-post-stress:
+	@test -f .env.mesh-lab || (echo "Missing .env.mesh-lab"; exit 1)
+	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=nexo_mesh_lab_local ./scripts/mesh-lab-verify-post-stress.sh .env.mesh-lab
+
+# Requires lab up with workers: MESH_LAB_WORKERS=1 make mesh-lab-up
+mesh-lab-stress:
+	@test -f .env.mesh-lab || (echo "Missing .env.mesh-lab"; exit 1)
+	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=nexo_mesh_lab_local ./scripts/mesh-lab-stress-ramp.sh .env.mesh-lab
+
+mesh-lab-down:
+	@test -f .env.mesh-lab || (echo "Missing .env.mesh-lab"; exit 1)
+	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=nexo_mesh_lab_local docker compose --profile workers -f docker-compose.mesh-lab.yml --env-file .env.mesh-lab down -v
+
+# Optional dotnet gate mirroring mesh-lab-gate (compose + mesh-lab-verify*.sh). Requires Docker + python3.
+test-mesh-lab:
+	NEXO_RUN_MESH_LAB=1 dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net8.0 \
+	  --filter "Category=MeshLab" \
+	  --blame-hang-timeout 2700s --blame-hang-dump-type none
 
 # Build CLI Docker image (linux/amd64 for portability)
 docker-cli:

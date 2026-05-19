@@ -664,9 +664,11 @@ internal static partial class NexoKernelRegistrar
             return new Nexo.Infrastructure.Analysis.Rules.AnalysisRuleEngine(rules, logger);
         });
 
-        services.AddNexoFleetDirector();
+        services.AddNexoFleetDirector(configuration);
         services.AddNexoMeshElasticScheduling(configuration);
         services.AddNexoMeshCheckpointScheduling(configuration);
+        services.AddNexoMeshKnowledgeReplication(configuration);
+        services.AddNexoMeshLabWorkerExecutor(configuration);
 
     }
 

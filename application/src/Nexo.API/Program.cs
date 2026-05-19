@@ -88,6 +88,12 @@ builder.Services.Configure<GrpcTransportOptions>(
     builder.Configuration.GetSection("Nexo:GrpcTransport"));
 builder.Services.Configure<NexoSecurityOptions>(
     builder.Configuration.GetSection(NexoSecurityOptions.SectionPath));
+builder.Services.Configure<NexoProductOptions>(
+    builder.Configuration.GetSection(NexoProductOptions.SectionPath));
+builder.Services.Configure<NexoEntitlementsOptions>(
+    builder.Configuration.GetSection(NexoEntitlementsOptions.SectionPath));
+builder.Services.AddMemoryCache();
+builder.Services.AddSingleton<ICopilotSubmissionQuota, CopilotSubmissionQuota>();
 builder.Services.Configure<ForgeSessionOptions>(
     builder.Configuration.GetSection(ForgeSessionOptions.SectionPath));
 builder.Services.Configure<MeshSecurityOptions>(
@@ -268,6 +274,7 @@ app.UseStaticFiles();
 app.UseNexoMeshCorrelation();
 app.UseNexoMeshSecurity();
 app.UseNexoApiKeyAuth();
+app.UseNexoCopilotScopedAuthorization();
 app.UseMiddleware<ForgeAuthenticationMiddleware>();
 app.UseMiddleware<ForgeTenantMiddleware>();
 

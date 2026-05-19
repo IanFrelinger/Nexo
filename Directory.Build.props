@@ -24,9 +24,11 @@
   </PropertyGroup>
 
   <!-- Override transitive System.Text.Encodings.Web 4.5.x (NU1904 / GHSA-ghhp-997w-qr28). -->
+  <!-- Override transitive System.Text.RegularExpressions 4.3.0 (NU1903 / GHSA-cmhx-cq75-c4mj). -->
   <!-- Skip for package-only SDK sample: uses explicit versions + local Directory.Packages.props (see docs/samples/.../package-consumer). -->
   <ItemGroup Condition="'$(MSBuildProjectName)' != 'StableSdkHostSample.Package' AND '$(MSBuildProjectName)' != 'Nexo.Hosting.Bundle' AND '$(MSBuildProjectName)' != 'Nexo.Runtime.Bundle' AND '$(MSBuildProjectName)' != 'Nexo.NugetOrgRestoreVerify' AND '$(MSBuildProjectName)' != 'Nexo.NugetOrgRestoreHostingOnly'">
     <PackageReference Include="System.Text.Encodings.Web" />
+    <PackageReference Include="System.Text.RegularExpressions" />
   </ItemGroup>
 
   <!-- NuGet pack: README at repo root (NU5039 if only PackageReadmeFile without packed file). -->

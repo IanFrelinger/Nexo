@@ -27,6 +27,7 @@ public sealed class LiteDbCopilotTaskStore : ICopilotTaskStore
         using var db = new LiteDatabase(_connectionString);
         var col = db.GetCollection<CopilotTaskDoc>(CollectionName);
         col.EnsureIndex(x => x.SubmittedAt);
+        col.EnsureIndex(x => x.TenantId);
         col.Upsert(ToDoc(record));
         return Task.FromResult(record);
     }
@@ -45,13 +46,17 @@ public sealed class LiteDbCopilotTaskStore : ICopilotTaskStore
     }
 
     /// <inheritdoc />
-    public Task<IReadOnlyList<CopilotTaskRecord>> QueryAsync(int maxCount = 50, DateTimeOffset? since = null, CancellationToken ct = default)
+    public Task<IReadOnlyList<CopilotTaskRecord>> QueryAsync(int maxCount = 50, DateTimeOffset? since = null, string tenantId = "default", CancellationToken ct = default)
     {
         ct.ThrowIfCancellationRequested();
         var limit = maxCount <= 0 ? 50 : Math.Min(maxCount, 500);
+        var tid = NormalizeTenantId(tenantId);
         using var db = new LiteDatabase(_connectionString);
         var col = db.GetCollection<CopilotTaskDoc>(CollectionName);
-        var query = col.Query();
+        ILiteQueryable<CopilotTaskDoc> query = col.Query();
+        query = tid == "default"
+            ? query.Where(x => x.TenantId == "default" || x.TenantId == null || x.TenantId == "")
+            : query.Where(x => x.TenantId == tid);
         if (since.HasValue)
             query = query.Where(x => x.SubmittedAt >= since.Value);
         var docs = query.OrderByDescending(x => x.SubmittedAt).Limit(limit).ToList();
@@ -59,8 +64,15 @@ public sealed class LiteDbCopilotTaskStore : ICopilotTaskStore
         return Task.FromResult<IReadOnlyList<CopilotTaskRecord>>(records);
     }
 
+    private static string NormalizeTenantId(string tenantId)
+    {
+        var t = string.IsNullOrWhiteSpace(tenantId) ? "default" : tenantId.Trim();
+        return t.Length > 128 ? t[..128] : t;
+    }
+
     private static CopilotTaskDoc ToDoc(CopilotTaskRecord r) => new()
     {
+        TenantId = NormalizeTenantId(r.TenantId),
         TaskId = r.TaskId,
         Task = r.Task,
         SubmittedAt = r.SubmittedAt,
@@ -72,6 +84,7 @@ public sealed class LiteDbCopilotTaskStore : ICopilotTaskStore
 
     private static CopilotTaskRecord ToRecord(CopilotTaskDoc d) => new()
     {
+        TenantId = string.IsNullOrWhiteSpace(d.TenantId) ? "default" : NormalizeTenantId(d.TenantId),
         TaskId = d.TaskId,
         Task = d.Task,
         SubmittedAt = d.SubmittedAt,
@@ -83,6 +96,8 @@ public sealed class LiteDbCopilotTaskStore : ICopilotTaskStore
 
     private sealed class CopilotTaskDoc
     {
+        public string TenantId { get; set; } = "default";
+
         [BsonId]
         public string TaskId { get; set; } = string.Empty;
         public string Task { get; set; } = string.Empty;

@@ -42,6 +42,7 @@ public sealed class NexoApiKeyAuthMiddleware
             return;
         }
 
+        AssignAuthTier(context);
         await _next(context);
     }
 
@@ -66,30 +67,58 @@ public sealed class NexoApiKeyAuthMiddleware
 
     private bool ShouldProtect(HttpRequest request, NexoAuthorizationMode mode)
     {
+        if (!request.Path.StartsWithSegments("/api", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        if (IsExcludedPath(request.Path))
+            return false;
+
         if (mode == NexoAuthorizationMode.None)
             return false;
 
-        if (!request.Path.StartsWithSegments("/api", StringComparison.OrdinalIgnoreCase))
-        {
-            return false;
-        }
-
-        if (IsExcludedPath(request.Path))
-        {
-            return false;
-        }
-
         var scope = ResolveAuthorizationScope();
-        if (scope == NexoAuthorizationScope.AllApi)
-        {
-            return true;
-        }
-
         var method = request.Method;
+
+        if (_options.RequireAuthForCopilotReadApis &&
+            HttpMethods.IsGet(method) &&
+            IsCopilotTaskHistoryPath(request.Path))
+            return true;
+
+        if (scope == NexoAuthorizationScope.AllApi)
+            return true;
+
         return HttpMethods.IsPost(method) ||
                HttpMethods.IsPut(method) ||
                HttpMethods.IsPatch(method) ||
                HttpMethods.IsDelete(method);
+    }
+
+    private static bool IsCopilotTaskHistoryPath(PathString path)
+    {
+        var value = path.Value ?? string.Empty;
+        return value.StartsWith("/api/copilot/tasks", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private void AssignAuthTier(HttpContext context)
+    {
+        var headerName = string.IsNullOrWhiteSpace(_options.ApiKeyHeaderName)
+            ? DefaultApiKeyHeaderName
+            : _options.ApiKeyHeaderName.Trim();
+        var provided = context.Request.Headers[headerName].ToString().Trim();
+
+        var primary = string.IsNullOrWhiteSpace(_options.ApiKey) ? null : _options.ApiKey.Trim();
+        var copilot = string.IsNullOrWhiteSpace(_options.CopilotScopedApiKey) ? null : _options.CopilotScopedApiKey.Trim();
+
+        if (!string.IsNullOrEmpty(provided) &&
+            copilot != null &&
+            SecureEquals(copilot, provided) &&
+            (primary == null || !SecureEquals(primary, provided)))
+        {
+            context.Items[NexoAuthContextKeys.AuthTier] = NexoApiAuthTier.CopilotScoped;
+            return;
+        }
+
+        context.Items[NexoAuthContextKeys.AuthTier] = NexoApiAuthTier.Full;
     }
 
     private bool TryAuthorize(
@@ -143,7 +172,28 @@ public sealed class NexoApiKeyAuthMiddleware
 
     private bool TryAuthorizeApiKey(HttpRequest request, bool allowWhenUnconfigured, out string failureDetail)
     {
-        if (string.IsNullOrWhiteSpace(_options.ApiKey))
+        var headerName = string.IsNullOrWhiteSpace(_options.ApiKeyHeaderName)
+            ? DefaultApiKeyHeaderName
+            : _options.ApiKeyHeaderName.Trim();
+
+        var provided = request.Headers[headerName].ToString().Trim();
+
+        var primary = string.IsNullOrWhiteSpace(_options.ApiKey) ? null : _options.ApiKey.Trim();
+        var copilot = string.IsNullOrWhiteSpace(_options.CopilotScopedApiKey) ? null : _options.CopilotScopedApiKey.Trim();
+
+        if (primary != null && SecureEquals(primary, provided))
+        {
+            failureDetail = string.Empty;
+            return true;
+        }
+
+        if (copilot != null && SecureEquals(copilot, provided))
+        {
+            failureDetail = string.Empty;
+            return true;
+        }
+
+        if (primary == null && copilot == null)
         {
             if (allowWhenUnconfigured)
             {
@@ -155,20 +205,8 @@ public sealed class NexoApiKeyAuthMiddleware
             return false;
         }
 
-        var headerName = string.IsNullOrWhiteSpace(_options.ApiKeyHeaderName)
-            ? DefaultApiKeyHeaderName
-            : _options.ApiKeyHeaderName.Trim();
-
-        var configured = _options.ApiKey.Trim();
-        var provided = request.Headers[headerName].ToString().Trim();
-        if (!SecureEquals(configured, provided))
-        {
-            failureDetail = $"Missing or invalid API key header '{headerName}'.";
-            return false;
-        }
-
-        failureDetail = string.Empty;
-        return true;
+        failureDetail = $"Missing or invalid API key header '{headerName}'.";
+        return false;
     }
 
     private bool TryAuthorizeBearerToken(HttpRequest request, out string failureDetail)

@@ -1,0 +1,42 @@
+name: gRPC transport gate
+
+on:
+  push:
+    branches:
+      - master
+      - main
+      - "cursor/**"
+    paths:
+      - ".github/workflows/grpc-transport-gate.yml"
+      - "src/Nexo.Tests.Transport/**"
+      - "src/Nexo.Transport.Grpc/**"
+      - "src/Nexo.Abstractions/**"
+  pull_request:
+    paths:
+      - ".github/workflows/grpc-transport-gate.yml"
+      - "src/Nexo.Tests.Transport/**"
+      - "src/Nexo.Transport.Grpc/**"
+      - "src/Nexo.Abstractions/**"
+  workflow_dispatch:
+
+jobs:
+  grpc-transport:
+    name: gRPC agent transport (Kestrel integration)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Test Transport (ProdStyle)
+        shell: bash
+        run: |
+          set -euo pipefail
+          dotnet test src/Nexo.Tests.Transport/Nexo.Tests.Transport.csproj \
+            --filter "Category=ProdStyle" \
+            --blame-hang-timeout 120s

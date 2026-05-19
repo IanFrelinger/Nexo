@@ -10,8 +10,16 @@ namespace Nexo.Tests.Infrastructure.Tests.Fleet;
 
 public sealed class MeshTaskPlacementServiceTests
 {
-    private static MeshTaskPlacementService CreatePlacement(InMemoryFleetNodeRegistry nodes, InMemoryMeshTaskRegistry tasks) =>
-        new(nodes, tasks, Options.Create(new MeshCheckpointOptions()), NullLogger<MeshTaskPlacementService>.Instance);
+    private static MeshTaskPlacementService CreatePlacement(
+        InMemoryFleetNodeRegistry nodes,
+        InMemoryMeshTaskRegistry tasks,
+        string peerTrustPolicy = "any") =>
+        new(
+            nodes,
+            tasks,
+            Options.Create(new MeshCheckpointOptions()),
+            Options.Create(new MeshPlacementTrustOptions { PeerTrustPolicy = peerTrustPolicy }),
+            NullLogger<MeshTaskPlacementService>.Instance);
 
     [Fact]
     public async Task Schedule_assigns_node_with_required_brick_and_respects_drain()
@@ -160,6 +168,73 @@ public sealed class MeshTaskPlacementServiceTests
         ok2.Should().BeTrue();
         next!.Status.Should().Be(MeshTaskStatus.Assigned);
         next.LastScheduleIdempotencyKey.Should().Be("new-key");
+    }
+
+    [Fact]
+    public async Task Schedule_trusted_only_policy_skips_untrusted_peers()
+    {
+        var nodes = new InMemoryFleetNodeRegistry();
+        var tasks = new InMemoryMeshTaskRegistry();
+        var placement = CreatePlacement(nodes, tasks, peerTrustPolicy: "trusted-only");
+
+        await nodes.RegisterOrUpdateAsync(new MeshFleetNodeState(
+            "untrusted-peer",
+            "https://u.example/",
+            new Dictionary<string, string>(),
+            Array.Empty<string>(),
+            false,
+            DateTimeOffset.UtcNow,
+            DateTimeOffset.UtcNow,
+            0,
+            MeshFleetTrustTier.Untrusted));
+        await nodes.RegisterOrUpdateAsync(new MeshFleetNodeState(
+            "trusted-peer",
+            "https://t.example/",
+            new Dictionary<string, string>(),
+            Array.Empty<string>(),
+            false,
+            DateTimeOffset.UtcNow,
+            DateTimeOffset.UtcNow,
+            0,
+            MeshFleetTrustTier.Trusted));
+
+        var task = await tasks.CreateAsync(new MeshTaskCreateSpec("trust-test", 1, Array.Empty<string>(), null, 0, null));
+        var (ok, placed, _) = await placement.TryScheduleAsync(task.TaskId);
+        ok.Should().BeTrue();
+        placed!.AssignedPeerId.Should().Be("trusted-peer");
+
+        await nodes.RemoveAsync("trusted-peer");
+        var task2 = await tasks.CreateAsync(new MeshTaskCreateSpec("trust-blocked", 1, Array.Empty<string>(), null, 0, null));
+        var (ok2, pending, err) = await placement.TryScheduleAsync(task2.TaskId);
+        ok2.Should().BeFalse();
+        err.Should().Be("placement.trust_policy_blocked");
+        pending!.PlacementReason.Should().Be("placement.trust_policy_blocked");
+    }
+
+    [Fact]
+    public async Task Schedule_revoked_peer_not_placed()
+    {
+        var nodes = new InMemoryFleetNodeRegistry();
+        var tasks = new InMemoryMeshTaskRegistry();
+        var placement = CreatePlacement(nodes, tasks);
+
+        await nodes.RegisterOrUpdateAsync(new MeshFleetNodeState(
+            "revoked-peer",
+            "https://r.example/",
+            new Dictionary<string, string>(),
+            Array.Empty<string>(),
+            false,
+            DateTimeOffset.UtcNow,
+            DateTimeOffset.UtcNow,
+            0,
+            MeshFleetTrustTier.Trusted,
+            Admitted: false));
+
+        var task = await tasks.CreateAsync(new MeshTaskCreateSpec("gov-test", 1, Array.Empty<string>(), null, 0, null));
+        var (ok, pending, err) = await placement.TryScheduleAsync(task.TaskId);
+        ok.Should().BeFalse();
+        err.Should().Be("placement.peer_not_admitted");
+        pending!.PlacementReason.Should().Be("placement.peer_not_admitted");
     }
 }
 

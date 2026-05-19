@@ -20,7 +20,20 @@ Use **`[Trait("Category", "ProdStyle")]`** on xUnit classes that mirror producti
 
 **Virtual API stack (`FrameworkVirtualProdDemosTests`):** **`WebApplicationFactory&lt;Program&gt;`** spins up **`Nexo.API`** in-process (environment **`Testing`** → **`appsettings.Testing.json`**, background-agent **`IHostedService`** off). Requests hit the **same** minimal API endpoints as production — no fake route handlers. This matches **`docs/demos/`** (`GET /api/status`, **`NexoClient`**). These sources compile **only for `net8.0`** in **`Nexo.Tests.Infrastructure`** (`Nexo.API` is net8; ASP.NET Core TestHost + **`WriteAsJsonAsync`** on **`net9.0`** test TFMs can hit known **`PipeWriter`** incompatibilities).
 
+<｜tool▁sep｜>new_string
 Run **before** lighter smoke (`BaseFrameworkSmokeTests`) and full matrices — see **`make test-prod-style`**, **`make test-prime-time`** (**`Nexo.PrimeTime.slnf`**), **`make test-framework-prod-first`**, and **`nexo ci verify`** (ProdStyle runs after Infrastructure build, before smoke).
+
+## Docker mesh virtual lab (multi-container HTTP)
+
+For **real bridge networking**, heterogeneous **`Nexo.API`** images, and per-role auth (API key, Bearer, Basic), use the **virtual mesh lab** — it complements in-process **`WebApplicationFactory`** tests:
+
+| Style | What it proves | How to run |
+|-------|----------------|------------|
+| **`WebApplicationFactory`** | Single-process API, full DI graph, route delegates | `dotnet test` — **`FrameworkVirtualProdDemosTests`**, **`ApiDevelopmentHostDiTests`** |
+| **Docker mesh lab** | Compose DNS, published ports, cross-container HTTP, mesh director placement + lease lifecycle, optional worker tier | **`make mesh-lab-e2e`** or **`make mesh-lab-e2e-workers`**; CI: **`mesh-lab-gate.yml`** |
+| **dotnet mesh lab (optional)** | Same bash verify scripts as CI, orchestrated by **`MeshLabDockerFixture`** | **`NEXO_RUN_MESH_LAB=1`** + **`make test-mesh-lab`** or **`--filter Category=MeshLab`** |
+
+See **[`docs/MeshVirtualLab.md`](../MeshVirtualLab.md)** for compose layout, verify scripts (**`mesh-lab-verify.sh`**, optional **`mesh-lab-verify-deep.sh`**), and stress ramp. Requires **Docker** and **`python3`** on the host running verify scripts.
 
 ## Merge policy (GitHub)
 

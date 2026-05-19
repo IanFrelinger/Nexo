@@ -12,4 +12,7 @@ public sealed record MeshFleetNodeState(
     bool Drained,
     DateTimeOffset? LastHeartbeatUtc,
     DateTimeOffset RegisteredAtUtc,
-    int ReportedQueueDepth = 0);
+    int ReportedQueueDepth = 0,
+    MeshFleetTrustTier TrustTier = MeshFleetTrustTier.Trusted,
+    bool Admitted = true,
+    string? RegistrationKeyFingerprint = null);

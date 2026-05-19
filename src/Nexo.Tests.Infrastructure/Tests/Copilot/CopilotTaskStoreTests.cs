@@ -162,4 +162,35 @@ public sealed class CopilotTaskStoreTests : TempDirTestBase
         var missing = await store.GetByIdAsync("nonexistent");
         missing.Should().BeNull();
     }
+
+    [Fact]
+    public async Task Query_FiltersByTenant()
+    {
+        var store = new LiteDbCopilotTaskStore(_dbPath);
+        var now = DateTimeOffset.UtcNow;
+
+        await store.StoreAsync(new CopilotTaskRecord
+        {
+            TenantId = "tenant-a",
+            TaskId = "a1",
+            Task = "A task",
+            SubmittedAt = now,
+            Success = true
+        });
+        await store.StoreAsync(new CopilotTaskRecord
+        {
+            TenantId = "tenant-b",
+            TaskId = "b1",
+            Task = "B task",
+            SubmittedAt = now.AddMinutes(1),
+            Success = true
+        });
+
+        var aOnly = await store.QueryAsync(maxCount: 10, since: null, tenantId: "tenant-a");
+        aOnly.Should().ContainSingle();
+        aOnly[0].TaskId.Should().Be("a1");
+
+        var defaultTenant = await store.QueryAsync(maxCount: 10, since: null, tenantId: "default");
+        defaultTenant.Should().BeEmpty();
+    }
 }

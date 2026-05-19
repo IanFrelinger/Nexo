@@ -1,0 +1,14 @@
+# TLS front for mesh-lab peer-a (mounted cert from scripts/mesh-lab-tls-certs.sh).
+{
+	admin off
+	auto_https off
+	# HTTP/3/QUIC breaks macOS LibreSSL curl against Docker-published :443 (bad decrypt).
+	servers {
+		protocols h1 h2
+	}
+}
+
+:443 {
+	tls /certs/cert.pem /certs/key.pem
+	reverse_proxy peer-a:8080
+}

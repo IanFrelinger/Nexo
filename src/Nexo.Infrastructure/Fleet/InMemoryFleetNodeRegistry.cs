@@ -80,6 +80,22 @@ public sealed class InMemoryFleetNodeRegistry : IFleetNodeRegistry
         }
     }
 
+    public async Task<bool> SetAdmittedAsync(string peerId, bool admitted, CancellationToken cancellationToken = default)
+    {
+        await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            if (!_nodes.TryGetValue(peerId, out var existing))
+                return false;
+            _nodes[peerId] = existing with { Admitted = admitted };
+            return true;
+        }
+        finally
+        {
+            _lock.Release();
+        }
+    }
+
     public async Task HeartbeatAsync(string peerId, int? reportedQueueDepth = null, CancellationToken cancellationToken = default)
     {
         await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);

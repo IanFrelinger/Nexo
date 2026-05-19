@@ -13,17 +13,20 @@ public sealed class MeshTaskPlacementService : IMeshTaskPlacementService
     private readonly IFleetNodeRegistry _nodes;
     private readonly IMeshTaskRegistry _tasks;
     private readonly MeshCheckpointOptions _checkpointOptions;
+    private readonly string _placementTrustPolicy;
     private readonly ILogger<MeshTaskPlacementService>? _logger;
 
     public MeshTaskPlacementService(
         IFleetNodeRegistry nodes,
         IMeshTaskRegistry tasks,
         IOptions<MeshCheckpointOptions> checkpointOptions,
+        IOptions<MeshPlacementTrustOptions> placementTrustOptions,
         ILogger<MeshTaskPlacementService>? logger = null)
     {
         _nodes = nodes ?? throw new ArgumentNullException(nameof(nodes));
         _tasks = tasks ?? throw new ArgumentNullException(nameof(tasks));
         _checkpointOptions = checkpointOptions?.Value ?? throw new ArgumentNullException(nameof(checkpointOptions));
+        _placementTrustPolicy = MeshFleetTrustPolicy.NormalizePolicy(placementTrustOptions?.Value.PeerTrustPolicy);
         _logger = logger;
     }
 
@@ -132,7 +135,8 @@ public sealed class MeshTaskPlacementService : IMeshTaskPlacementService
 
         var nodes = await _nodes.ListAsync(cancellationToken).ConfigureAwait(false);
         var eligible = nodes
-            .Where(n => !n.Drained && !string.IsNullOrWhiteSpace(n.ApiBaseUrl))
+            .Where(n => n.Admitted && !n.Drained && !string.IsNullOrWhiteSpace(n.ApiBaseUrl))
+            .Where(n => MeshFleetTrustPolicy.IsEligible(n.TrustTier, _placementTrustPolicy))
             .Where(n => MatchesAffinity(n, work.Affinity))
             .Where(n => HasBricks(n, work.RequiredBrickIds))
             .OrderBy(n => n.ReportedQueueDepth)
@@ -142,7 +146,11 @@ public sealed class MeshTaskPlacementService : IMeshTaskPlacementService
 
         if (eligible.Count == 0)
         {
-            const string reason = "placement.no_eligible_nodes";
+            var reason = nodes.Any(n => n.Admitted && !n.Drained && !MeshFleetTrustPolicy.IsEligible(n.TrustTier, _placementTrustPolicy))
+                ? "placement.trust_policy_blocked"
+                : nodes.Any(n => !n.Admitted && !n.Drained)
+                    ? "placement.peer_not_admitted"
+                    : "placement.no_eligible_nodes";
             _logger?.LogWarning("mesh placement task={TaskId} reason={Reason}", taskId, reason);
             var pending = work with { Status = MeshTaskStatus.Pending, PlacementReason = reason };
             await _tasks.UpdateAsync(pending, cancellationToken).ConfigureAwait(false);

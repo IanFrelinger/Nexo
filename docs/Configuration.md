@@ -12,6 +12,7 @@ Nexo configures via environment variables and optional `~/.nexo/config.json`. Th
 | `NEXO_MESH_DIRECTOR_BASE_URL` | Base URL for **`nexo mesh director`** HTTP calls | unset |
 | `NEXO_MESH_API_KEY` | Optional **`X-Nexo-Api-Key`** for director CLI | unset |
 | `NEXO_MESH_MUTATING_TOKEN` | Optional **`X-Nexo-Mesh-Token`** for mutating mesh routes on the hub | unset |
+| `NEXO_MESH_PEER_REGISTRATION_KEY` | Per-peer fleet registration secret for **`nexo mesh director register`** (when director requires distinct key) | unset |
 | `NEXO_DEPLOYMENT_PROFILE` | Hosting dependency profile for `AddNexo()` module composition (`full`, `server`, `edge`, `air-gapped`, `system`) | `full` |
 | `NEXO_STRICT_MODE` | `1` or `true` = enable strict mode (fail-fast + verbose diagnostics for dev/CI; disable for production) | `false` |
 | `NEXO_AIRGAP` | `1` or `true` = air-gapped; no cloud calls | unset |
@@ -140,6 +141,15 @@ Binds section **`Nexo:Mesh:Checkpoint`**. See [MeshPhase6LeasesAndCheckpoints.md
 | `Nexo__Mesh__Checkpoint__SweepEnabled` | `true` to periodically move **Assigned**/**Running** tasks with expired leases to **Pending** | `false` |
 | `Nexo__Mesh__Checkpoint__SweepIntervalMinutes` | Minutes between sweep passes | `1` |
 
+## Mesh director persistence (`Nexo__Mesh__Persistence__*`, Phase 9)
+
+Binds section **`Nexo:Mesh:Persistence`**. See [MeshPhase9DirectorPersistence.md](MeshPhase9DirectorPersistence.md).
+
+| Variable / config key | Description | Default |
+|------------------------|-------------|---------|
+| `Nexo__Mesh__Persistence__Provider` | `InMemory` or `LiteDb` | `InMemory` |
+| `Nexo__Mesh__Persistence__DatabasePath` | LiteDB file path when provider is LiteDb | `mesh-director.db` |
+
 ## Mesh director CLI (`NEXO_MESH_*`, Phase 7)
 
 Used by **`nexo mesh director`** when a worker or script talks to a remote **`Nexo.API`** mesh control plane. See **`docs/MeshPhase7EdgeAlignment.md`**. Discovery-related `NEXO_MESH_*` values also appear under **Core** above; this section summarizes hub HTTP access from the CLI.
@@ -149,6 +159,7 @@ Used by **`nexo mesh director`** when a worker or script talks to a remote **`Ne
 | `NEXO_MESH_DIRECTOR_BASE_URL` | Director base URL (e.g. `https://hub:8080`) |
 | `NEXO_MESH_API_KEY` | Optional **`X-Nexo-Api-Key`** when the hub enforces API key auth |
 | `NEXO_MESH_MUTATING_TOKEN` | Optional **`X-Nexo-Mesh-Token`** for mutating **`/api/mesh`** requests |
+| `NEXO_MESH_PEER_REGISTRATION_KEY` | Per-peer registration secret for **`nexo mesh director register`** |
 
 ## Pipelines (`NEXO_PIPELINE_*`)
 

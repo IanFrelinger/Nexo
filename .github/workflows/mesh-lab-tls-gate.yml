@@ -1,0 +1,89 @@
+name: Mesh lab TLS gate
+
+on:
+  schedule:
+    - cron: "0 7 * * 2"
+  workflow_dispatch:
+
+jobs:
+  mesh-lab-tls:
+    name: Mesh lab HTTPS (Caddy → peer-a)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      COMPOSE_PROJECT_NAME: nexo_mesh_lab_tls_ci
+      DOCKER_DEFAULT_PLATFORM: linux/amd64
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify Docker
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker compose version
+
+      - name: Write lab env
+        shell: bash
+        run: |
+          set -euo pipefail
+          KEY="mesh-lab-tls-${GITHUB_RUN_ID}-${GITHUB_SHA}"
+          KEY="${KEY:0:64}"
+          {
+            echo "Nexo__Security__ApiKey=${KEY}"
+            echo "Nexo__Security__PeerB__BearerToken=${KEY}-bearer"
+            echo "Nexo__Security__Worker__BasicAuthPassword=${KEY}-basic"
+            echo "MESH_LAB_PEER_REGISTRATION_KEY=${KEY}-peer-registration"
+            echo "Nexo__Mesh__Persistence__Provider=LiteDb"
+            echo "MESH_LAB_PEER_A_PUBLISH=127.0.0.1:18081"
+            echo "MESH_LAB_PEER_B_PUBLISH=127.0.0.1:18082"
+            echo "MESH_LAB_TLS_PUBLISH=127.0.0.1:18443"
+          } > .env.mesh-lab.ci
+
+      - name: Generate TLS certificates
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x scripts/mesh-lab-tls-certs.sh
+          MESH_LAB_TLS_FORCE_REGEN=1 ./scripts/mesh-lab-tls-certs.sh
+
+      - name: Start mesh lab with TLS proxy
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker compose -f docker-compose.mesh-lab.yml \
+            -f docker-compose.mesh-lab-tls.override.yml \
+            --env-file .env.mesh-lab.ci up -d --build
+
+      - name: Wait for HTTPS health
+        shell: bash
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 60); do
+            if curl -fsSk --http1.1 "https://127.0.0.1:18443/health" >/dev/null; then
+              echo "TLS health ok after ${i} attempts"
+              exit 0
+            fi
+            sleep 2
+          done
+          docker compose -f docker-compose.mesh-lab.yml \
+            -f docker-compose.mesh-lab-tls.override.yml \
+            --env-file .env.mesh-lab.ci logs
+          exit 1
+
+      - name: Run TLS verify script
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x scripts/mesh-lab-verify-tls.sh
+          ./scripts/mesh-lab-verify-tls.sh .env.mesh-lab.ci
+
+      - name: Tear down
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker compose -f docker-compose.mesh-lab.yml \
+            -f docker-compose.mesh-lab-tls.override.yml \
+            --env-file .env.mesh-lab.ci down -v || true
+          rm -f .env.mesh-lab.ci

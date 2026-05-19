@@ -14,7 +14,40 @@ on:
       - "docs/config/mesh-lab.env.example"
       - "docs/MeshVirtualLab.md"
       - "scripts/mesh-lab-verify.sh"
+      - "scripts/mesh-lab-verify-deep.sh"
+      - "scripts/mesh-lab-verify-entitlements.sh"
+      - "scripts/mesh-lab-verify-trust.sh"
+      - "scripts/mesh-lab-verify-governance.sh"
+      - "scripts/mesh-lab-verify-director-cli.sh"
+      - "scripts/mesh-lab-verify-persistence.sh"
+      - "docs/MeshPhase9DirectorPersistence.md"
+      - "scripts/mesh-lab-verify-post-stress.sh"
+      - "docs/MeshPhase10LabStressHardening.md"
+      - "scripts/mesh-lab-verify-network-negative.sh"
+      - "scripts/mesh-lab-net.sh"
+      - "docs/MeshPhase11NetworkNegative.md"
+      - "scripts/mesh-lab-verify-knowledge.sh"
+      - "scripts/mesh-lab-verify-federation.sh"
+      - "scripts/mesh-lab-verify-retry-result.sh"
+      - "scripts/mesh-lab-verify-elastic.sh"
+      - "docs/MeshPhase13DataPlaneFederation.md"
+      - ".github/workflows/mesh-lab-stress-gate.yml"
+      - "scripts/mesh-lab-fleet.sh"
+      - "application/src/Nexo.CLI/**"
+      - "application/src/Nexo.Tests.CLI/**"
+      - "docs/runbooks/mesh-lab-operations.md"
+      - "src/Nexo.Core.Application/Fleet/**"
+      - "src/Nexo.Infrastructure/Fleet/**"
+      - "src/Nexo.Hosting/**"
+      - "src/Nexo.Infrastructure/Execution/**"
+      - "scripts/run-mesh-lab-e2e.sh"
       - "scripts/mesh-lab-stress-ramp.sh"
+      - "src/Nexo.Abstractions/Barriers/**"
+      - "src/Nexo.Runtime/**"
+      - "src/Nexo.Transport.Grpc/**"
+      - "src/Nexo.Tests.Infrastructure/Tests/API/ApiDevelopmentHostDiTests.cs"
+      - "src/Nexo.Tests.Infrastructure/Tests/Mesh/**"
+      - "src/Nexo.Tests.Infrastructure/Helpers/MeshLabProcessRunner.cs"
       - "application/src/Nexo.API/**"
   pull_request:
     paths:
@@ -25,13 +58,46 @@ on:
       - "docs/config/mesh-lab.env.example"
       - "docs/MeshVirtualLab.md"
       - "scripts/mesh-lab-verify.sh"
+      - "scripts/mesh-lab-verify-deep.sh"
+      - "scripts/mesh-lab-verify-entitlements.sh"
+      - "scripts/mesh-lab-verify-trust.sh"
+      - "scripts/mesh-lab-verify-governance.sh"
+      - "scripts/mesh-lab-verify-director-cli.sh"
+      - "scripts/mesh-lab-verify-persistence.sh"
+      - "docs/MeshPhase9DirectorPersistence.md"
+      - "scripts/mesh-lab-verify-post-stress.sh"
+      - "docs/MeshPhase10LabStressHardening.md"
+      - "scripts/mesh-lab-verify-network-negative.sh"
+      - "scripts/mesh-lab-net.sh"
+      - "docs/MeshPhase11NetworkNegative.md"
+      - "scripts/mesh-lab-verify-knowledge.sh"
+      - "scripts/mesh-lab-verify-federation.sh"
+      - "scripts/mesh-lab-verify-retry-result.sh"
+      - "scripts/mesh-lab-verify-elastic.sh"
+      - "docs/MeshPhase13DataPlaneFederation.md"
+      - ".github/workflows/mesh-lab-stress-gate.yml"
+      - "scripts/mesh-lab-fleet.sh"
+      - "application/src/Nexo.CLI/**"
+      - "application/src/Nexo.Tests.CLI/**"
+      - "docs/runbooks/mesh-lab-operations.md"
+      - "src/Nexo.Core.Application/Fleet/**"
+      - "src/Nexo.Infrastructure/Fleet/**"
+      - "src/Nexo.Hosting/**"
+      - "src/Nexo.Infrastructure/Execution/**"
+      - "scripts/run-mesh-lab-e2e.sh"
       - "scripts/mesh-lab-stress-ramp.sh"
+      - "src/Nexo.Abstractions/Barriers/**"
+      - "src/Nexo.Runtime/**"
+      - "src/Nexo.Transport.Grpc/**"
+      - "src/Nexo.Tests.Infrastructure/Tests/API/ApiDevelopmentHostDiTests.cs"
+      - "src/Nexo.Tests.Infrastructure/Tests/Mesh/**"
+      - "src/Nexo.Tests.Infrastructure/Helpers/MeshLabProcessRunner.cs"
       - "application/src/Nexo.API/**"
   workflow_dispatch:
 
 jobs:
   mesh-lab:
-    name: Two-node mesh lab + verify script
+    name: Mesh lab (peers + worker profile) + verify
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
@@ -55,10 +121,16 @@ jobs:
           KEY="${KEY:0:64}"
           BEARER="${KEY}-bearer"
           BASIC="${KEY}-basic"
+          COPILOT="${KEY}-copilot-scoped"
+          PEER_REG="${KEY}-peer-registration"
           {
             echo "Nexo__Security__ApiKey=${KEY}"
             echo "Nexo__Security__PeerB__BearerToken=${BEARER}"
             echo "Nexo__Security__Worker__BasicAuthPassword=${BASIC}"
+            echo "Nexo__Security__CopilotScopedApiKey=${COPILOT}"
+            echo "Nexo__Entitlements__MaxCopilotSubmissionsPerHour=2"
+            echo "MESH_LAB_PEER_REGISTRATION_KEY=${PEER_REG}"
+            echo "Nexo__Mesh__Persistence__Provider=LiteDb"
             echo "MESH_LAB_PEER_A_PUBLISH=127.0.0.1:18081"
             echo "MESH_LAB_PEER_B_PUBLISH=127.0.0.1:18082"
           } > .env.mesh-lab.ci
@@ -67,25 +139,26 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          docker compose -f docker-compose.mesh-lab.yml --env-file .env.mesh-lab.ci config -q
+          docker compose --profile workers -f docker-compose.mesh-lab.yml --env-file .env.mesh-lab.ci config -q
 
       - name: Start mesh lab
         shell: bash
         run: |
           set -euo pipefail
-          docker compose -f docker-compose.mesh-lab.yml --env-file .env.mesh-lab.ci up -d --build
+          docker compose --profile workers -f docker-compose.mesh-lab.yml --env-file .env.mesh-lab.ci up -d --build
 
-      - name: Run verify script
+      - name: Run verify scripts
         shell: bash
         run: |
           set -euo pipefail
-          chmod +x scripts/mesh-lab-verify.sh
+          chmod +x scripts/mesh-lab-verify.sh scripts/mesh-lab-verify-deep.sh scripts/mesh-lab-verify-entitlements.sh scripts/mesh-lab-verify-trust.sh scripts/mesh-lab-verify-governance.sh scripts/mesh-lab-verify-director-cli.sh scripts/mesh-lab-verify-persistence.sh scripts/mesh-lab-verify-network-negative.sh scripts/mesh-lab-net.sh scripts/mesh-lab-fleet.sh
           ./scripts/mesh-lab-verify.sh .env.mesh-lab.ci
+          ./scripts/mesh-lab-verify-deep.sh .env.mesh-lab.ci
 
       - name: Tear down
         if: always()
         shell: bash
         run: |
           set -euo pipefail
-          docker compose -f docker-compose.mesh-lab.yml --env-file .env.mesh-lab.ci down -v || true
+          docker compose --profile workers -f docker-compose.mesh-lab.yml --env-file .env.mesh-lab.ci down -v || true
           rm -f .env.mesh-lab.ci

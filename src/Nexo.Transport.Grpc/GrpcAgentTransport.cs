@@ -14,19 +14,19 @@ public sealed class GrpcAgentTransport : IAgentTransport, IDisposable
 {
     private readonly IGrpcChannelFactory _channelFactory;
     private readonly ILogger<GrpcAgentTransport> _logger;
-    private readonly IBarrierContextAccessor? _barrierContextAccessor;
+    private readonly IBarrierContextAmbient? _barrierContextAmbient;
     private readonly IBarrierAuditLog? _barrierAuditLog;
     private readonly ConcurrentDictionary<string, byte> _activeEndpoints = new(StringComparer.OrdinalIgnoreCase);
 
     public GrpcAgentTransport(
         IGrpcChannelFactory channelFactory,
         ILogger<GrpcAgentTransport> logger,
-        IBarrierContextAccessor? barrierContextAccessor = null,
+        IBarrierContextAmbient? barrierContextAmbient = null,
         IBarrierAuditLog? barrierAuditLog = null)
     {
         _channelFactory = channelFactory ?? throw new ArgumentNullException(nameof(channelFactory));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _barrierContextAccessor = barrierContextAccessor;
+        _barrierContextAmbient = barrierContextAmbient;
         _barrierAuditLog = barrierAuditLog;
     }
 
@@ -219,7 +219,7 @@ public sealed class GrpcAgentTransport : IAgentTransport, IDisposable
             { "x-nexo-correlation-id", request.CorrelationId ?? string.Empty }
         };
 
-        var barrier = _barrierContextAccessor?.Current;
+        var barrier = _barrierContextAmbient?.Current;
         if (barrier == null)
             return headers;
 

@@ -620,6 +620,13 @@
         <input id="setupName" placeholder="Your name (optional, stored locally)" autocomplete="off" />
       </div>
 
+      <div id="setupStepAuthLocal" style="margin-top:14px;">
+        <label><strong>Optional:</strong> API access for this browser</label>
+        <p class="muted" style="margin:6px 0;font-size:12px;">If your operator enabled API keys or tenant headers, paste them here — they stay in local storage only.</p>
+        <input id="setupApiKey" type="password" autocomplete="off" placeholder="X-Nexo-Api-Key (optional)" />
+        <input id="setupTenantId" autocomplete="off" placeholder="X-Nexo-Tenant (optional)" style="margin-top:8px;" />
+      </div>
+
       <div id="setupStep2" style="margin-top:14px;">
         <label><strong>Step 2:</strong> LLM Provider — pick one that's available</label>
         <div id="setupProviders" class="mini-grid" style="gap:6px;"></div>
@@ -656,6 +663,10 @@
         <option value="review">Review my trail</option>
         <option value="explore">Explore this node</option>
       </select>
+      <label for="prefApiKey">Nexo API key (optional, stored only in this browser)</label>
+      <input id="prefApiKey" type="password" autocomplete="off" placeholder="Matches Nexo:Security:ApiKey when auth is enabled" />
+      <label for="prefTenantId">Tenant id (optional)</label>
+      <input id="prefTenantId" autocomplete="off" placeholder="Sent as X-Nexo-Tenant — defaults to server configuration" />
       <p class="muted" style="margin-top:12px;">Clearing resets themes and names on this browser only.</p>
       <footer>
         <button type="submit" class="primary" value="save">Save</button>
@@ -671,7 +682,9 @@
         version: 1,
         callYou: "",
         theme: "night",
-        defaultFocus: "shape"
+        defaultFocus: "shape",
+        apiKey: "",
+        tenantId: ""
       });
 
       function loadPrefs() {
@@ -707,7 +720,8 @@
       const settingsDlg = el("settingsDlg");
       const prefName = el("prefName");
       const prefTheme = el("prefTheme");
-      const prefDefaultFocus = el("prefDefaultFocus");
+      const prefApiKey = el("prefApiKey");
+      const prefTenantId = el("prefTenantId");
       const chatLog = el("chatLog");
       const chatPrompt = el("chatPrompt");
       const trustBoundaryState = el("trustBoundaryState");
@@ -790,13 +804,21 @@
       prefName.value = prefs.callYou || "";
       prefTheme.value = prefs.theme || "night";
       prefDefaultFocus.value = prefs.defaultFocus || "shape";
+      prefApiKey.value = prefs.apiKey || "";
+      prefTenantId.value = prefs.tenantId || "";
 
-      el("settingsBtn").addEventListener("click", () => settingsDlg.showModal());
+      el("settingsBtn").addEventListener("click", () => {
+        prefApiKey.value = prefs.apiKey || "";
+        prefTenantId.value = prefs.tenantId || "";
+        settingsDlg.showModal();
+      });
       settingsDlg.addEventListener("close", () => {
         if (settingsDlg.returnValue !== "save") return;
         prefs.callYou = prefName.value.trim();
         prefs.theme = prefTheme.value || "night";
         prefs.defaultFocus = prefDefaultFocus.value || "shape";
+        prefs.apiKey = prefApiKey.value.trim();
+        prefs.tenantId = prefTenantId.value.trim();
         savePrefs(prefs);
         document.documentElement.dataset.theme = prefs.theme;
         applyGreeting();
@@ -836,15 +858,32 @@
         return JSON.stringify(value, null, 2);
       }
 
+      function nexoPortalHeaders() {
+        const h = {};
+        const k = (prefs.apiKey || "").trim();
+        if (k) h["X-Nexo-Api-Key"] = k;
+        const t = (prefs.tenantId || "").trim();
+        if (t) h["X-Nexo-Tenant"] = t;
+        return h;
+      }
+
       async function fetchJson(url, options) {
-        const res = await fetch(url, options);
+        const o = options ? { ...options } : {};
+        const headers = new Headers(o.headers || {});
+        Object.entries(nexoPortalHeaders()).forEach(([key, val]) => {
+          if (val) headers.set(key, val);
+        });
+        o.headers = headers;
+        const res = await fetch(url, o);
         const text = await res.text();
         let body = text;
         try {
           body = text ? JSON.parse(text) : null;
         } catch {}
         if (!res.ok) {
-          throw new Error(body && body.title ? body.title : "HTTP " + res.status);
+          const detail = body && body.detail ? body.detail : "";
+          const title = body && body.title ? body.title : "HTTP " + res.status;
+          throw new Error(detail ? title + ": " + detail : title);
         }
         return body;
       }
@@ -1404,6 +1443,17 @@
       async function checkOnboardingAndShowWizard() {
         try {
           const status = await fetchJson("/api/onboarding/status");
+          el("setupApiKey").value = (prefs.apiKey || "").trim();
+          el("setupTenantId").value = (prefs.tenantId || "").trim();
+
+          let hint = "";
+          if (status.builtInAuthActive && !status.builtInCredentialsConfigured)
+            hint += "Your server has authentication enabled but credentials look incomplete — ask your operator to finish Nexo:Security configuration.\n";
+          if (status.builtInAuthActive && status.requireAuthForCopilotReads && !(prefs.apiKey || "").trim())
+            hint += "Copilot history requests require credentials — add an API key under Optional API access.\n";
+          if (hint)
+            console.warn("[Nexo onboarding]", hint.trim());
+
           if (!status.isFirstRun) return;
 
           const providersEl = el("setupProviders");
@@ -1453,6 +1503,11 @@
           savePrefs(prefs);
           applyGreeting();
         }
+        prefs.apiKey = (el("setupApiKey").value || "").trim();
+        prefs.tenantId = (el("setupTenantId").value || "").trim();
+        savePrefs(prefs);
+        prefApiKey.value = prefs.apiKey || "";
+        prefTenantId.value = prefs.tenantId || "";
         setupWizardDlg.close();
       });
 
