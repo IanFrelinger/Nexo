@@ -7,6 +7,12 @@
 
 ## Checklist
 
+### Kernel gate (pre-application)
+
+- [ ] `make kernel-gate-full` passes locally before major application work on `application/src/`.
+- [ ] [Kernel Readiness v1](KernelReadiness-v1.md) updated after gate runs.
+- [ ] `make kernel-gate-tier-d` or release preflight before publishing NuGet packages.
+
 ### Required status checks
 
 - [ ] Branch protection on default branch requires: build, primary test workflow, and any coverage or security gate you adopt.

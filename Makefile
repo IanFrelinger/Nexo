@@ -1,4 +1,4 @@
-.PHONY: build build-core build-demos prod-dry-run prod-dry-run-agent-server restore-core test test-prod-style test-framework-prod-first test-prime-time test-prime-time-full test-cross-platform test-portable test-multi-env test-all-platforms test-all-platforms-ephemeral ci-verify validate-safe review-summary clean-test-artifacts test-readiness-gate release-preflight release-gate release-dispatch mesh-lab-e2e mesh-lab-e2e-workers mesh-lab-e2e-deep mesh-lab-e2e-stress mesh-lab-up mesh-lab-verify mesh-lab-verify-deep mesh-lab-verify-entitlements mesh-lab-verify-governance mesh-lab-verify-director-cli mesh-lab-verify-persistence mesh-lab-verify-network-negative mesh-lab-verify-post-stress mesh-lab-stress mesh-lab-down test-mesh-lab
+.PHONY: build build-core build-demos prod-dry-run prod-dry-run-agent-server restore-core test test-prod-style test-framework-prod-first test-prime-time test-prime-time-full test-cross-platform test-portable test-multi-env test-all-platforms test-all-platforms-ephemeral ci-verify kernel-gate kernel-gate-tier-b kernel-gate-tier-c kernel-gate-tier-d kernel-gate-tier-e kernel-gate-full application-gate application-gate-tier-a application-gate-tier-b application-gate-tier-c application-gate-tier-d application-gate-full composition-mesh-gate composition-mesh-gate-tier-a composition-mesh-gate-tier-b composition-mesh-gate-tier-c composition-mesh-gate-tier-d composition-mesh-gate-full ship-gate ship-gate-tier-a ship-gate-tier-b ship-gate-tier-c ship-gate-tier-d ship-gate-full ops-gate ops-gate-tier-a ops-gate-tier-b ops-gate-tier-c ops-gate-tier-d ops-gate-tier-e ops-gate-full security-gate security-gate-tier-a security-gate-tier-b security-gate-tier-c security-gate-tier-d security-gate-tier-e security-gate-full rc-gate rc-gate-tier-a rc-gate-tier-b rc-gate-tier-c rc-gate-tier-d rc-gate-tier-e rc-gate-full perf-gate perf-gate-tier-a perf-gate-tier-b perf-gate-tier-c perf-gate-tier-d perf-gate-full compat-gate compat-gate-tier-a compat-gate-tier-b compat-gate-tier-c compat-gate-full dr-gate dr-gate-tier-a dr-gate-tier-b dr-gate-tier-c dr-gate-full waterproofing-gate-full nexo-ready-gate bootstrap-mesh-lab-env validate-safe review-summary clean-test-artifacts test-readiness-gate release-preflight release-gate release-dispatch mesh-lab-e2e mesh-lab-e2e-workers mesh-lab-e2e-deep mesh-lab-e2e-stress mesh-lab-up mesh-lab-verify mesh-lab-verify-deep mesh-lab-verify-entitlements mesh-lab-verify-governance mesh-lab-verify-director-cli mesh-lab-verify-persistence mesh-lab-verify-network-negative mesh-lab-verify-post-stress mesh-lab-stress mesh-lab-down test-mesh-lab
 
 # Local checks before tagging a release (graph alignment + NuGet sample). Usage: make release-preflight VERSION=1.2.3
 release-preflight:
@@ -41,9 +41,10 @@ prod-dry-run-agent-server:
 
 # Production-like integration (Category=ProdStyle): Nexo.Tests.Infrastructure only — real DI hosts / graphs.
 # Run this before the full suite when validating framework behaviour locally or in CI-style gates.
-test-prod-style: restore-core build-core
-	dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --no-build \
-	  --filter "Category=ProdStyle" \
+test-prod-style:
+	dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -v minimal
+	NEXO_ALLOW_MOCK=1 dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net8.0 --no-build \
+	  --filter "Category=ProdStyle&FullyQualifiedName!~ForgeEndpointsTests&FullyQualifiedName!~FrameworkVirtualProdDemosTests" \
 	  --blame-hang-timeout 120s --blame-hang-dump-type none
 
 # Runs test-prod-style then the full LocalDevCore test slice (Domain + Infrastructure + CLI harness).
@@ -142,6 +143,244 @@ test-adaptation-all-envs:
 # CI verification: build + checks (C#-driven; replaces scripts/ci-verify.sh)
 ci-verify:
 	dotnet run --project application/src/Nexo.CLI -- ci verify
+
+# Pre-application kernel gate: runtime graph build + hosting resolution matrix + pipeline tests.
+# Optional: KERNEL_GATE_MESH=1 (Docker mesh-lab-verify), KERNEL_GATE_PRODSTYLE=1 (full ProdStyle slice).
+kernel-gate:
+	dotnet build Nexo.Runtime.sln -v minimal
+	dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -v minimal
+	NEXO_ALLOW_MOCK=1 dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net8.0 --no-build \
+	  --filter "FullyQualifiedName~KernelPhaseResolutionTests|FullyQualifiedName~HostingDeploymentProfileTests|FullyQualifiedName~HostingE2ESmokeTests" \
+	  --blame-hang-timeout 120s --blame-hang-dump-type none
+	NEXO_ALLOW_MOCK=1 dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net8.0 --no-build \
+	  --filter "FullyQualifiedName~PipelineTemplateValidatorTests|FullyQualifiedName~PipelineLifecycleE2ETests" \
+	  --blame-hang-timeout 120s --blame-hang-dump-type none
+	@if [ "$${KERNEL_GATE_PRODSTYLE:-0}" = "1" ]; then $(MAKE) test-prod-style; fi
+	@if [ "$${KERNEL_GATE_MESH:-0}" = "1" ]; then $(MAKE) mesh-lab-verify; fi
+
+# Tier B: CLI pipeline ops + cross-process LiteDB resume (see scripts/kernel-gate-tier-b.sh).
+kernel-gate-tier-b:
+	bash scripts/kernel-gate-tier-b.sh
+
+# Tier C: ProdStyle + workflow + transport + air-gapped profile (+ mesh if .env.mesh-lab).
+kernel-gate-tier-c:
+	bash scripts/kernel-gate-tier-c.sh
+
+bootstrap-mesh-lab-env:
+	bash scripts/bootstrap-mesh-lab-env.sh
+
+# Tier D: NuGet pack alignment + StableSdkHostSample consumer (local feed).
+kernel-gate-tier-d:
+	bash scripts/kernel-gate-tier-d.sh
+
+# Tier E: observability + perf-scoped tests + prod Compose dry run (Docker).
+kernel-gate-tier-e:
+	bash scripts/kernel-gate-tier-e.sh
+
+# Tier A–E (skip tiers with KERNEL_GATE_SKIP_TIER_*=1).
+kernel-gate-full: kernel-gate kernel-gate-tier-b
+	@if [ "$${KERNEL_GATE_SKIP_TIER_C:-0}" != "1" ]; then $(MAKE) kernel-gate-tier-c; fi
+	@if [ "$${KERNEL_GATE_SKIP_TIER_D:-0}" != "1" ]; then $(MAKE) kernel-gate-tier-d; fi
+	@if [ "$${KERNEL_GATE_SKIP_TIER_E:-0}" != "1" ]; then $(MAKE) kernel-gate-tier-e; fi
+
+# Application gate (after kernel): product solution, CLI, API HTTP, agent-server dry run.
+# Prerequisite: make kernel-gate-full (or APPLICATION_GATE_REQUIRE_KERNEL=1 on application-gate-full).
+application-gate-tier-a:
+	bash scripts/application-gate-tier-a.sh
+
+application-gate-tier-b:
+	bash scripts/application-gate-tier-b.sh
+
+application-gate-tier-c:
+	bash scripts/application-gate-tier-c.sh
+
+application-gate-tier-d:
+	bash scripts/application-gate-tier-d.sh
+
+application-gate: application-gate-tier-a
+
+application-gate-full:
+	@if [ "$${APPLICATION_GATE_REQUIRE_KERNEL:-0}" = "1" ]; then $(MAKE) kernel-gate-full; fi
+	APPLICATION_GATE_SKIP_KERNEL=1 $(MAKE) application-gate-tier-a
+	$(MAKE) application-gate-tier-b
+	$(MAKE) application-gate-tier-c
+	@if [ "$${APPLICATION_GATE_SKIP_TIER_D:-0}" != "1" ]; then $(MAKE) application-gate-tier-d; fi
+
+# Composition + mesh gate: pipeline templates/orchestration + clustered mesh tasks.
+# Prerequisite: make application-gate-full (or kernel-gate-full minimum).
+composition-mesh-gate-tier-a:
+	bash scripts/composition-mesh-gate-tier-a.sh
+
+composition-mesh-gate-tier-b:
+	bash scripts/composition-mesh-gate-tier-b.sh
+
+composition-mesh-gate-tier-c:
+	bash scripts/composition-mesh-gate-tier-c.sh
+
+composition-mesh-gate-tier-d:
+	bash scripts/composition-mesh-gate-tier-d.sh
+
+composition-mesh-gate: composition-mesh-gate-tier-a composition-mesh-gate-tier-b composition-mesh-gate-tier-c
+
+composition-mesh-gate-full: composition-mesh-gate
+	@if [ "$${COMPOSITION_MESH_GATE_STRESS:-0}" = "1" ]; then \
+	  MESH_LAB_E2E_WORKERS=1 MESH_LAB_VERIFY_DEEP=1 MESH_LAB_RUN_STRESS=1 bash scripts/run-mesh-lab-e2e.sh; \
+	elif [ "$${COMPOSITION_MESH_GATE_SKIP_TIER_D:-0}" != "1" ]; then \
+	  $(MAKE) composition-mesh-gate-tier-d; \
+	fi
+
+# Ship gate: production readiness CLI + ci verify + release preflight + release bundle.
+ship-gate-tier-a:
+	bash scripts/ship-gate-tier-a.sh
+
+ship-gate-tier-b:
+	bash scripts/ship-gate-tier-b.sh
+
+ship-gate-tier-c:
+	bash scripts/ship-gate-tier-c.sh
+
+ship-gate-tier-d:
+	bash scripts/ship-gate-tier-d.sh
+
+ship-gate: ship-gate-tier-a
+
+ship-gate-full:
+	@if [ "$${SHIP_GATE_SKIP_PRIOR:-0}" != "1" ]; then \
+	  COMPOSITION_MESH_GATE_SKIP_TIER_D=1 $(MAKE) composition-mesh-gate; \
+	fi
+	$(MAKE) ship-gate-tier-a
+	@if [ "$${SHIP_GATE_SKIP_TIER_B:-0}" != "1" ]; then $(MAKE) ship-gate-tier-b; fi
+	@if [ "$${SHIP_GATE_SKIP_TIER_C:-0}" != "1" ]; then $(MAKE) ship-gate-tier-c; fi
+	@if [ "$${SHIP_GATE_SKIP_TIER_D:-0}" != "1" ]; then $(MAKE) ship-gate-tier-d; fi
+
+# Ops gate: dogfood self-improvement + optional mesh chaos + oh-shit demo.
+ops-gate-tier-a:
+	bash scripts/ops-gate-tier-a.sh
+
+ops-gate-tier-b:
+	bash scripts/ops-gate-tier-b.sh
+
+ops-gate-tier-c:
+	bash scripts/ops-gate-tier-c.sh
+
+ops-gate-tier-d:
+	bash scripts/ops-gate-tier-d.sh
+
+ops-gate-tier-e:
+	bash scripts/ops-gate-tier-e.sh
+
+ops-gate: ops-gate-tier-a ops-gate-tier-b ops-gate-tier-c ops-gate-tier-e
+
+# Security & trust gate: trust boundary, API auth, mesh security, supply chain, air-gapped.
+security-gate-tier-a:
+	bash scripts/security-gate-tier-a.sh
+
+security-gate-tier-b:
+	bash scripts/security-gate-tier-b.sh
+
+security-gate-tier-c:
+	bash scripts/security-gate-tier-c.sh
+
+security-gate-tier-d:
+	bash scripts/security-gate-tier-d.sh
+
+security-gate-tier-e:
+	bash scripts/security-gate-tier-e.sh
+
+security-gate: security-gate-tier-a security-gate-tier-b security-gate-tier-c
+
+security-gate-full:
+	@if [ "$${SECURITY_GATE_SKIP_PRIOR:-0}" != "1" ]; then SHIP_GATE_SKIP_PRIOR=1 $(MAKE) ship-gate-full; fi
+	$(MAKE) security-gate-tier-a
+	$(MAKE) security-gate-tier-b
+	$(MAKE) security-gate-tier-c
+	@if [ "$${SECURITY_GATE_SKIP_TIER_D:-0}" != "1" ]; then $(MAKE) security-gate-tier-d; fi
+	@if [ "$${SECURITY_GATE_SKIP_TIER_E:-0}" != "1" ]; then $(MAKE) security-gate-tier-e; fi
+
+# RC gate: release candidate (ship bundle + evidence + GitHub workflows).
+rc-gate-tier-a:
+	bash scripts/rc-gate-tier-a.sh
+
+rc-gate-tier-b:
+	bash scripts/rc-gate-tier-b.sh
+
+rc-gate-tier-c:
+	bash scripts/rc-gate-tier-c.sh
+
+rc-gate-tier-d:
+	bash scripts/rc-gate-tier-d.sh
+
+rc-gate: rc-gate-tier-b rc-gate-tier-c rc-gate-tier-d
+
+rc-gate-full:
+	bash scripts/rc-gate.sh
+
+rc-gate-tier-e:
+	bash scripts/rc-gate-tier-e.sh
+
+# Perf gate: regression backstop (after RC).
+perf-gate-tier-a:
+	bash scripts/perf-gate-tier-a.sh
+
+perf-gate-tier-b:
+	bash scripts/perf-gate-tier-b.sh
+
+perf-gate-tier-c:
+	bash scripts/perf-gate-tier-c.sh
+
+perf-gate-tier-d:
+	bash scripts/perf-gate-tier-d.sh
+
+perf-gate: perf-gate-tier-a perf-gate-tier-b perf-gate-tier-c
+
+perf-gate-full:
+	bash scripts/perf-gate.sh
+
+# Compat gate: migration + CLI durability + config/doctor.
+compat-gate-tier-a:
+	bash scripts/compat-gate-tier-a.sh
+
+compat-gate-tier-b:
+	bash scripts/compat-gate-tier-b.sh
+
+compat-gate-tier-c:
+	bash scripts/compat-gate-tier-c.sh
+
+compat-gate: compat-gate-tier-a compat-gate-tier-b compat-gate-tier-c
+
+compat-gate-full:
+	bash scripts/compat-gate.sh
+
+# DR gate: backup/restore for pipeline + knowledge + mesh.
+dr-gate-tier-a:
+	bash scripts/dr-gate-tier-a.sh
+
+dr-gate-tier-b:
+	bash scripts/dr-gate-tier-b.sh
+
+dr-gate-tier-c:
+	bash scripts/dr-gate-tier-c.sh
+
+dr-gate: dr-gate-tier-a dr-gate-tier-b dr-gate-tier-c
+
+dr-gate-full:
+	bash scripts/dr-gate.sh
+
+# Post-RC waterproofing: perf → compat → DR → RC policy.
+waterproofing-gate-full:
+	bash scripts/waterproofing-gate.sh
+
+ops-gate-full:
+	@if [ "$${OPS_GATE_SKIP_PRIOR:-0}" != "1" ]; then SHIP_GATE_SKIP_PRIOR=1 $(MAKE) ship-gate-full; fi
+	$(MAKE) ops-gate-tier-a
+	$(MAKE) ops-gate-tier-b
+	$(MAKE) ops-gate-tier-c
+	@if [ "$${OPS_GATE_SKIP_TIER_D:-0}" != "1" ]; then $(MAKE) ops-gate-tier-d; fi
+	$(MAKE) ops-gate-tier-e
+
+# Meta gate: full readiness stack (skip Docker tiers with NEXO_READY_SKIP_DOCKER=1).
+nexo-ready-gate:
+	bash scripts/nexo-ready-gate.sh
 
 # Safe validation: sequential, minimal memory. Run from external terminal to avoid Cursor memory explosion.
 # Equivalent to ci-verify but via shell script; use when ci-verify causes high memory usage.

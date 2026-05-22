@@ -1,0 +1,51 @@
+# Ship gate: production readiness + ci verify + release preflight.
+# See docs/production-readiness/ShipHardeningPlan-v1.md
+name: Ship Gate
+
+on:
+  workflow_dispatch:
+    inputs:
+      tier:
+        description: "Gate tier"
+        required: false
+        default: "a"
+        type: choice
+        options:
+          - a
+          - b
+          - c
+          - d
+          - full
+
+jobs:
+  ship-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Tier A (production readiness CLI)
+        if: inputs.tier == 'a' || inputs.tier == 'full'
+        run: make ship-gate-tier-a
+        env:
+          NEXO_ALLOW_MOCK: "1"
+
+      - name: Tier B (ProdStyle + smoke + doctor)
+        if: inputs.tier == 'b' || inputs.tier == 'full'
+        run: make ship-gate-tier-b
+        env:
+          NEXO_ALLOW_MOCK: "1"
+
+      - name: Tier C (release preflight)
+        if: inputs.tier == 'c' || inputs.tier == 'full'
+        run: make ship-gate-tier-c
+
+      - name: Tier D (doctor sign-off)
+        if: inputs.tier == 'd' || inputs.tier == 'full'
+        run: make ship-gate-tier-d
+        env:
+          NEXO_ALLOW_MOCK: "1"

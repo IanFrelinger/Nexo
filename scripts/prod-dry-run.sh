@@ -39,6 +39,9 @@ done
 REPO_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$REPO_ROOT"
 
+# grpc.tools protoc may segfault on linux_arm64; amd64 build is CI-default (QEMU on ARM Macs).
+export DOCKER_DEFAULT_PLATFORM="${DOCKER_DEFAULT_PLATFORM:-linux/amd64}"
+
 export NEXO_REPO_ROOT="${NEXO_REPO_ROOT:-$REPO_ROOT}"
 
 PORT="${NEXO_AGENT_SERVER_HTTP_PORT:-8080}"
