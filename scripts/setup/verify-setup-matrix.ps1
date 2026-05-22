@@ -284,7 +284,8 @@ if ($failed.Count -gt 0) {
         exit 1
     }
     Write-Host "Tier A passed; failures were in optional Docker/container lanes only." -ForegroundColor Yellow
-    exit 2
+    if ($CiStrict.IsPresent) { exit 2 }
+    exit 0
 }
 
 if ($CiStrict.IsPresent -and $skipDockerBuildEffective -and -not $SkipDocker.IsPresent -and (Test-DockerCli)) {
