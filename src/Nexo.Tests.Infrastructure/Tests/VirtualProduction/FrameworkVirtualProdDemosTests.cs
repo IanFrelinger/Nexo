@@ -33,8 +33,8 @@ public sealed class FrameworkVirtualProdDemosTests : IClassFixture<NexoApiWebApp
         dto.Should().NotBeNull();
         dto!.Mode.Should().NotBeNullOrWhiteSpace();
         dto.Message.Should().NotBeNull();
-        dto.TotalAgents.Should().BeGreaterThanOrEqualTo(0);
-        dto.ActiveAgents.Should().BeGreaterThanOrEqualTo(0);
+        Assert.True(dto.TotalAgents >= 0);
+        Assert.True(dto.ActiveAgents >= 0);
     }
 
     [Fact(Timeout = 120000)]

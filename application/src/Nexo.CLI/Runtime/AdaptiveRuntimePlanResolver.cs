@@ -81,7 +81,7 @@ public static class AdaptiveRuntimePlanResolver
         switch (qaPolicy)
         {
             case "release":
-                maxIterations = 2;
+                maxIterations = 4;
                 stopOnFirstPass = true;
                 visualFallbackPolicy = "strict";
                 break;

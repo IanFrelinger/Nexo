@@ -49,9 +49,9 @@ public sealed class HostingE2ESmokeTests
         var result = await validationService.ValidateAsync(filter: null, progress: null, CancellationToken.None);
 
         result.Should().NotBeNull();
-        result.TestsRun.Should().BeGreaterThanOrEqualTo(0);
-        result.TestsPassed.Should().BeGreaterThanOrEqualTo(0);
-        result.TestsFailed.Should().BeGreaterThanOrEqualTo(0);
+        Assert.True(result.TestsRun >= 0);
+        Assert.True(result.TestsPassed >= 0);
+        Assert.True(result.TestsFailed >= 0);
     }
 
     [Fact(Timeout = TestTimeouts.E2E)]

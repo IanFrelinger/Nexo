@@ -69,7 +69,7 @@ public sealed class PipelineDecomposerTests
         var graph = sut.Decompose(template);
 
         graph.TemplateId.Should().Be("compose-ok");
-        graph.Nodes.Should().HaveCount(3);
+        Assert.Equal(3, graph.Nodes.Count);
 
         var ingest = graph.Nodes.Single(n => n.StageId == "ingest");
         ingest.Predecessors.Should().BeEmpty();
@@ -80,7 +80,7 @@ public sealed class PipelineDecomposerTests
         fanin.Predecessors.Should().ContainSingle("fanout-a");
         fanin.Successors.Should().BeEmpty();
         fanin.JoinStrategy.Should().Be(PipelineJoinStrategy.Quorum);
-        fanin.QuorumCount.Should().Be(1);
+        Assert.Equal(1, fanin.QuorumCount);
         fanin.FallbackChain.Should().ContainInOrder(PipelineWorkerType.Deterministic, PipelineWorkerType.Agentic);
     }
 }

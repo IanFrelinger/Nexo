@@ -46,11 +46,9 @@ public sealed class NexoApiOpenInternetReadinessTests
         var context = CreateContext(path, method);
         await middleware.InvokeAsync(context);
 
-        context.Response.StatusCode.Should().Be(
-            StatusCodes.Status401Unauthorized,
-            "{0} {1} should be protected when built-in auth is configured for all API routes",
-            method,
-            path);
+        Assert.True(
+            context.Response.StatusCode == StatusCodes.Status401Unauthorized,
+            $"{method} {path} should be protected when built-in auth is configured for all API routes (got {context.Response.StatusCode})");
     }
 
     [Theory]
@@ -129,11 +127,11 @@ public sealed class NexoApiOpenInternetReadinessTests
 
         var excluded = CreateContext("/api/status", HttpMethods.Get);
         await middleware.InvokeAsync(excluded);
-        excluded.Response.StatusCode.Should().NotBe(StatusCodes.Status401Unauthorized);
+        Assert.NotEqual(StatusCodes.Status401Unauthorized, excluded.Response.StatusCode);
 
         var protectedContext = CreateContext("/api/capabilities", HttpMethods.Get);
         await middleware.InvokeAsync(protectedContext);
-        protectedContext.Response.StatusCode.Should().Be(StatusCodes.Status401Unauthorized);
+        Assert.Equal(StatusCodes.Status401Unauthorized, protectedContext.Response.StatusCode);
     }
 
     [Fact]
@@ -151,8 +149,8 @@ public sealed class NexoApiOpenInternetReadinessTests
         var context = CreateContext("/api/orchestrate", HttpMethods.Post);
         await middleware.InvokeAsync(context);
 
-        context.Response.StatusCode.Should().Be(
-            StatusCodes.Status401Unauthorized,
+        Assert.True(
+            context.Response.StatusCode == StatusCodes.Status401Unauthorized,
             "when built-in auth is enabled but credentials are missing, middleware should fail closed");
     }
 

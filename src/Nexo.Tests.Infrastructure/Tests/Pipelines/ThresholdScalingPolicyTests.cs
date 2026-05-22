@@ -28,8 +28,8 @@ public sealed class ThresholdScalingPolicyTests
             CurrentAgenticWorkers = 2
         });
 
-        decision.DeterministicWorkers.Should().Be(3);
-        decision.DeterministicMaxDegreeOfParallelism.Should().Be(3);
+        Assert.Equal(3, decision.DeterministicWorkers);
+        Assert.Equal(3, decision.DeterministicMaxDegreeOfParallelism);
     }
 
     [Fact]
@@ -53,7 +53,7 @@ public sealed class ThresholdScalingPolicyTests
             CurrentAgenticWorkers = 2
         });
 
-        decision.DeterministicWorkers.Should().Be(2);
+        Assert.Equal(2, decision.DeterministicWorkers);
     }
 
     [Fact]
@@ -77,8 +77,8 @@ public sealed class ThresholdScalingPolicyTests
             CurrentAgenticWorkers = 3
         });
 
-        decision.AgenticWorkers.Should().Be(2, "high error rate should throttle agentic workers first");
-        decision.AgenticMaxDegreeOfParallelism.Should().Be(2);
+        Assert.Equal(2, decision.AgenticWorkers);
+        Assert.Equal(2, decision.AgenticMaxDegreeOfParallelism);
     }
 
     [Fact]
@@ -102,6 +102,6 @@ public sealed class ThresholdScalingPolicyTests
             CurrentAgenticWorkers = 2
         });
 
-        decision.AgenticWorkers.Should().Be(3);
+        Assert.Equal(3, decision.AgenticWorkers);
     }
 }

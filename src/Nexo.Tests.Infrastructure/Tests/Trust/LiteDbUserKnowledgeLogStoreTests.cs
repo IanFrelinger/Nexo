@@ -51,11 +51,11 @@ public class LiteDbUserKnowledgeLogStoreTests : TempDirTestBase
         await store.UpsertAsync(entry);
 
         var retrieved = await store.GetByIdAsync("lite-1");
-        retrieved.Should().NotBeNull();
-        retrieved!.Id.Should().Be("lite-1");
-        retrieved.DataType.Should().Be("inferred-preferences");
-        retrieved.Content.Should().Be("Prefers dark mode");
-        retrieved.Version.Should().Be(1);
+        Assert.NotNull(retrieved);
+        Assert.Equal("lite-1", retrieved!.Id);
+        Assert.Equal("inferred-preferences", retrieved.DataType);
+        Assert.Equal("Prefers dark mode", retrieved.Content);
+        Assert.Equal(1, retrieved.Version);
     }
 
     [Fact]
@@ -66,9 +66,9 @@ public class LiteDbUserKnowledgeLogStoreTests : TempDirTestBase
         await store.UpsertAsync(new UserKnowledgeLogEntry { Id = "v1", DataType = "x", Content = "v2" });
 
         var retrieved = await store.GetByIdAsync("v1");
-        retrieved.Should().NotBeNull();
-        retrieved!.Version.Should().Be(2);
-        retrieved.Content.Should().Be("v2");
+        Assert.NotNull(retrieved);
+        Assert.Equal(2, retrieved!.Version);
+        Assert.Equal("v2", retrieved.Content);
     }
 
     [Fact]
@@ -91,8 +91,8 @@ public class LiteDbUserKnowledgeLogStoreTests : TempDirTestBase
 
         var results = await store.GetAsync("type-a", maxCount: 10);
 
-        results.Should().HaveCount(1);
-        results[0].Id.Should().Be("a");
+        Assert.Single(results);
+        Assert.Equal("a", results[0].Id);
     }
 
     [Fact]

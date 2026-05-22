@@ -8,6 +8,7 @@ Unit and integration tests (`Category=ProdStyle`, `VirtualProductionNcrRoutingHo
 
 - Docker Engine + **Compose V2** (`docker compose`).
 - From repository root (paths in compose files assume this).
+- On **Apple Silicon**, builds default to `DOCKER_DEFAULT_PLATFORM=linux/amd64` (avoids grpc `protoc` segfault on `linux_arm64`; same as mesh-lab).
 
 ## Quick path — portal stack (minimal prod shape)
 

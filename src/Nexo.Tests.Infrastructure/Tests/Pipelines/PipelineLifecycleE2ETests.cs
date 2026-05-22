@@ -71,8 +71,8 @@ public sealed class PipelineLifecycleE2ETests
     {
         await Task.CompletedTask;
         var opts = new PipelineExecutionOptions();
-        opts.MaxRetryAttempts.Should().Be(NexoDefaults.PipelineMaxRetryAttempts);
-        opts.RetryDelayMs.Should().Be(NexoDefaults.PipelineRetryDelayMs);
+        Assert.Equal(NexoDefaults.PipelineMaxRetryAttempts, opts.MaxRetryAttempts);
+        Assert.Equal(NexoDefaults.PipelineRetryDelayMs, opts.RetryDelayMs);
         opts.ResumeFailedStages.Should().BeTrue();
         opts.CompletionPolicy.Should().Be(PipelineCompletionPolicy.FailOnAnyStageFailure);
     }

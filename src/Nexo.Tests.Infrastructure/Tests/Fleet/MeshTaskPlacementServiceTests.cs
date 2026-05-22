@@ -105,7 +105,7 @@ public sealed class MeshTaskPlacementServiceTests
         var (ok2, t2, _) = await placement.TryScheduleAsync(task.TaskId, "sched-key", null);
         ok2.Should().BeTrue();
         t2!.AssignedPeerId.Should().Be(t1!.AssignedPeerId);
-        t2.AttemptCount.Should().Be(t1.AttemptCount);
+        Assert.Equal(t1.AttemptCount, t2.AttemptCount);
     }
 
     [Fact]

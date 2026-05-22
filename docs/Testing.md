@@ -37,6 +37,100 @@ Nexo uses multiple mechanisms to prevent tests from hanging indefinitely and kee
 
 ## Running Tests
 
+### Kernel gate (pre-application)
+
+Run before building product features on top of the kernel. Builds `Nexo.Runtime.sln`, runs hosting phase/profile resolution tests, and pipeline tests.
+
+```bash
+make kernel-gate              # Tier A: runtime build + hosting matrix + pipeline lifecycle
+make kernel-gate-tier-b       # Tier B: CLI validate/run/fallback + LiteDB cross-process resume
+make kernel-gate-tier-c       # Tier C: ProdStyle + workflow + gRPC transport + air-gapped profile
+make kernel-gate-tier-d       # Tier D: pack graph alignment + NuGet consumer sample
+make kernel-gate-full         # Tier A + B + C + D
+make bootstrap-mesh-lab-env   # create .env.mesh-lab from example (gitignored)
+KERNEL_GATE_MESH_E2E=1 make kernel-gate-tier-c   # adds ~2min Docker mesh E2E
+make mesh-lab-e2e .env.mesh-lab                   # or run mesh E2E directly
+# Skip tiers on full run:
+make kernel-gate-tier-e       # Tier E: OpenTelemetry + perf tests + prod Compose dry run
+KERNEL_GATE_CHAOS_LITE=1 make kernel-gate-tier-e   # optional mesh network-negative
+KERNEL_GATE_SKIP_TIER_E=1 make kernel-gate-full   # skip Docker prod dry run
+```
+
+See **`docs/production-readiness/KernelHardeningPlan-v1.md`**, **`docs/architecture/KernelPhaseMatrix.md`**, and track sign-off in **`docs/production-readiness/KernelReadiness-v1.md`**.
+
+### Application gate (after kernel)
+
+Validates `application/Nexo.Application.sln` (CLI, API, optional agent-server Compose). Assumes `make kernel-gate-full` has passed (or set `APPLICATION_GATE_REQUIRE_KERNEL=1` on full run).
+
+```bash
+make application-gate-tier-a    # build product sln + CLI smoke (runs kernel-gate unless APPLICATION_GATE_SKIP_KERNEL=1)
+make application-gate-tier-b    # focused CLI tests + doctor --json
+make application-gate-tier-c    # in-process API WebApplicationFactory tests
+make application-gate-tier-d    # agent-server prod dry run (Docker)
+make application-gate-full      # A–D (skips re-running kernel by default)
+APPLICATION_GATE_SKIP_TIER_D=1 make application-gate-full   # skip Docker agent-server
+APPLICATION_GATE_GAMEDOMAIN=1 make application-gate-tier-d    # include GameDomain tests
+```
+
+See **`docs/production-readiness/ApplicationHardeningPlan-v1.md`** and **`docs/production-readiness/ApplicationReadiness-v1.md`**.
+
+### Composition & mesh gate
+
+Pipeline composition (fan-out/fan-in, agentic stages) and async clustered mesh tasks:
+
+```bash
+make composition-mesh-gate-tier-a    # pipeline validator/decomposer/orchestrator/lifecycle
+make composition-mesh-gate-tier-b    # CLI pipeline + mesh command suites
+make composition-mesh-gate-tier-c    # mesh fleet placement/execution (in-process)
+make composition-mesh-gate-tier-d    # Docker mesh lab with workers (schedule→placement)
+make composition-mesh-gate-full
+COMPOSITION_MESH_GATE_SKIP_TIER_D=1 make composition-mesh-gate-full   # in-process only
+COMPOSITION_MESH_GATE_STRESS=1 make composition-mesh-gate-full        # workers + stress ramp
+```
+
+See **`docs/production-readiness/CompositionMeshHardeningPlan-v1.md`**.
+
+### Ship gate
+
+Production CLI flows, `ci verify`, release preflight, release bundle:
+
+```bash
+make ship-gate-full
+SHIP_GATE_SKIP_TIER_B=1 make ship-gate-full   # skip heavy ProdStyle ci verify
+```
+
+See **`docs/production-readiness/ShipHardeningPlan-v1.md`**.
+
+### Ops & dogfood gate
+
+Self-improvement dogfood blocks, optional mesh chaos, oh-shit demo:
+
+```bash
+make ops-gate-full
+OPS_GATE_MESH_DEEP=1 make ops-gate-tier-d    # mesh checkpoint/migrate E2E
+make nexo-ready-gate                         # full stack
+NEXO_READY_SKIP_DOCKER=1 make nexo-ready-gate   # skip Docker tiers (~faster)
+```
+
+See **`docs/production-readiness/OpsHardeningPlan-v1.md`**.
+
+### Security & trust gate
+
+Trust boundary, API auth, mesh security, supply chain, air-gapped:
+
+```bash
+make security-gate-tier-a    # trust core + audit + policy packs
+make security-gate-tier-b    # API security middleware
+make security-gate-tier-c    # trust CLI surfaces
+make security-gate-tier-d    # dotnet list package --vulnerable / --deprecated (artifacts in .nexo/security-gate/)
+make security-gate-tier-e    # air-gapped + safety
+make security-gate-full
+SECURITY_GATE_STRICT_SUPPLY_CHAIN=1 make security-gate-tier-d
+SECURITY_GATE_AIRGAPPED_CONTAINER=1 make security-gate-tier-e
+```
+
+See **`docs/production-readiness/SecurityHardeningPlan-v1.md`**.
+
 **Prime-time (whole automated framework slice):**  
 
 ```bash
