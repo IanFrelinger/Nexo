@@ -11,17 +11,18 @@ mkdir -p "$REPORT_DIR"
 GH_REPORT="$REPORT_DIR/github-workflows.txt"
 : >"$GH_REPORT"
 
+# gh accepts workflow display name or .github/workflows/<file>.yml
 WORKFLOWS=(
-  production-readiness-gate-v1
-  environment-setup-gate-v1
-  runtime-release-gate
-  installer-bruteforce-gate
-  container-image-gate
-  onboarding-docs-guard
+  "Production Readiness Gate v1"
+  "Environment Setup Gate v1"
+  "Runtime Release Gate"
+  "Installer Bruteforce Gate"
+  "Container Image Gate"
+  "Onboarding Docs Guard"
 )
 
 OPTIONAL_WORKFLOWS=(
-  runtime-release-promotion
+  "Runtime Release Promotion"
 )
 
 if ! command -v gh >/dev/null 2>&1; then
@@ -92,7 +93,7 @@ for wf in "${OPTIONAL_WORKFLOWS[@]}"; do
 done
 
 if [ "${RC_GATE_RUN_PUBLISH:-0}" = "1" ]; then
-  verify_workflow "container-image-publish" 1 || fail=1
+  verify_workflow "Container Image Publish" 1 || fail=1
 else
   echo "SKIP container-image-publish (RC_GATE_RUN_PUBLISH=1 to require)" | tee -a "$GH_REPORT"
 fi

@@ -10,10 +10,10 @@ make rc-gate-full
 
 ## Sign-off
 
-- [ ] `rc-gate-full` green
-- [ ] GitHub tier D workflows green (or `RC_GATE_GH_ADVISORY_ONLY=1` with owner)
-- [ ] `make waterproofing-gate-full` (perf → compat → DR → RC policy)
-- [ ] Manual checklist sections 3–5 in [Release candidate checklist v1](../ReleaseCandidateChecklist-v1.md)
+- [x] `make waterproofing-gate-full` green (local, SHA `bec2a6ed`)
+- [x] [Release sign-off v1](ReleaseSignOff-v1.md) and [Rollback drill v1](RollbackDrill-v1.md) recorded
+- [ ] `rc-gate-tier-d` strict on `master` (`RC_GATE_TRIGGER_GH=1 make rc-gate-tier-d`)
+- [ ] GitHub RC workflows green on `master` (see `.nexo/rc-gate/github-workflows.txt`)
 
 ## Next: post-RC waterproofing
 
