@@ -895,6 +895,10 @@ public class ProviderFactory : IProviderFactory
             {
                 return BuildPersonalAppToolCallsJson(systemPrompt);
             }
+            if (LooksLikeComposableBackendObjective(objective))
+            {
+                return BuildComposableBackendToolCallsJson(systemPrompt);
+            }
 
             // Explicitly return an empty tool call envelope for schema consistency.
             return JsonSerializer.Serialize(new { tool_calls = Array.Empty<object>() });
@@ -953,6 +957,19 @@ public class ProviderFactory : IProviderFactory
             || objective.Contains("tasks", StringComparison.OrdinalIgnoreCase)
             || objective.Contains("reminders", StringComparison.OrdinalIgnoreCase)
             || objective.Contains("dashboard", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool LooksLikeComposableBackendObjective(string objective)
+    {
+        if (string.IsNullOrWhiteSpace(objective))
+            return false;
+        var hasComposable = objective.Contains("composable", StringComparison.OrdinalIgnoreCase);
+        return hasComposable && (
+            objective.Contains("backend", StringComparison.OrdinalIgnoreCase)
+            || objective.Contains("extension command", StringComparison.OrdinalIgnoreCase)
+            || objective.Contains("qa gate", StringComparison.OrdinalIgnoreCase)
+            || objective.Contains("adaptive command", StringComparison.OrdinalIgnoreCase)
+            || objective.Contains("non-visual", StringComparison.OrdinalIgnoreCase));
     }
 
     private static bool LooksLikeUiDemoObjective(string objective)
@@ -1215,6 +1232,57 @@ public class ProviderFactory : IProviderFactory
                 bundleClassName: "SelfExtendPersonalBundleCommand",
                 expectedBundleCommandName: "self-extend-personal-bundle",
                 extensionCommands.Select(e => e.CommandName).ToArray())));
+
+        return JsonSerializer.Serialize(new { tool_calls = calls });
+    }
+
+    private static string BuildComposableBackendToolCallsJson(string systemPrompt)
+    {
+        var root = ResolveRepoRootFromSystemPrompt(systemPrompt);
+        var extensionCommands = new List<(string ClassName, string CommandName, string ExtensionId, string[] Dependencies)>
+        {
+            ("PipelineValidateExtensionCommand", "ext-pipeline-validate", "pipeline-validate", Array.Empty<string>()),
+            ("PipelineRunExtensionCommand", "ext-pipeline-run", "pipeline-run", new[] { "pipeline-validate" }),
+            ("MeshScheduleExtensionCommand", "ext-mesh-schedule", "mesh-schedule", new[] { "pipeline-run" }),
+        };
+
+        var calls = new List<object>
+        {
+            CreateWriteCall(root, "application/src/Nexo.CLI/Commands/SelfExtendGenerated/IComposableExtensionCommand.cs", BuildComposableCommandContractSource()),
+        };
+
+        foreach (var ext in extensionCommands)
+        {
+            calls.Add(CreateWriteCall(
+                root,
+                $"application/src/Nexo.CLI/Commands/SelfExtendGenerated/{ext.ClassName}.cs",
+                BuildExtensionCommandSource(ext.ClassName, ext.CommandName, ext.ExtensionId, ext.Dependencies)));
+        }
+
+        calls.Add(CreateWriteCall(
+            root,
+            "application/src/Nexo.CLI/Commands/SelfExtendGenerated/SelfExtendBackendBundleCommand.cs",
+            BuildBundleCommandSource(
+                bundleClassName: "SelfExtendBackendBundleCommand",
+                bundleCommandName: "self-extend-backend-bundle",
+                extensionCommands: extensionCommands.Select(e => (e.ClassName, e.CommandName)).ToArray())));
+
+        foreach (var ext in extensionCommands)
+        {
+            calls.Add(CreateWriteCall(
+                root,
+                $"application/src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/{ext.ClassName}StructureTests.cs",
+                BuildExtensionCommandStructureTestSource($"{ext.ClassName}StructureTests", ext.ClassName, ext.CommandName, ext.ExtensionId, ext.Dependencies)));
+        }
+
+        calls.Add(CreateWriteCall(
+            root,
+            "application/src/Nexo.Tests.CLI/Tests/Commands/SelfExtendGenerated/SelfExtendBackendBundleCommandStructureTests.cs",
+            BuildBundleCommandStructureTestSource(
+                testClassName: "SelfExtendBackendBundleCommandStructureTests",
+                bundleClassName: "SelfExtendBackendBundleCommand",
+                expectedBundleCommandName: "self-extend-backend-bundle",
+                expectedCommands: extensionCommands.Select(e => e.CommandName).ToArray())));
 
         return JsonSerializer.Serialize(new { tool_calls = calls });
     }

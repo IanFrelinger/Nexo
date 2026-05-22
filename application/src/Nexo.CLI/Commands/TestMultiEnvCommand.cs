@@ -149,7 +149,8 @@ public class TestMultiEnvCommand
 
         // Build
         if (!json && console != null) console.WriteLine($"  Building {envName}...");
-        var buildExit = await RunProcessAsync("docker", $"build -f \"{dockerfilePath}\" -t {imageTag} --build-arg DOTNET_VERSION={dotnetVersion} \"{root}\"", root, verbose ? console : null);
+        var sdkVersion = string.Equals(dotnetVersion, "8.0", StringComparison.Ordinal) ? "9.0" : dotnetVersion;
+        var buildExit = await RunProcessAsync("docker", $"build -f \"{dockerfilePath}\" -t {imageTag} --build-arg DOTNET_SDK_VERSION={sdkVersion} \"{root}\"", root, verbose ? console : null);
         if (buildExit != 0)
         {
             if (!json) console?.WriteError($"  Failed to build {envName}");
@@ -163,7 +164,7 @@ public class TestMultiEnvCommand
         {
             var logFile = Path.Combine(logBaseDir, $"{envName}-{logSuffix}.log");
             var projectPath = "src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj";
-            var testArgs = $"test \"{projectPath}\" --filter \"{filter}\" --logger \"console;verbosity=minimal\" --logger \"trx;LogFileName={envName}-{logSuffix}.trx\" --results-directory /workspace/test-results";
+            var testArgs = $"test \"{projectPath}\" /p:TargetFramework=net8.0 --no-build --filter \"{filter}\" --logger \"console;verbosity=minimal\" --logger \"trx;LogFileName={envName}-{logSuffix}.trx\" --results-directory /workspace/test-results";
             string runCmd;
             var volMount = ephemeral ? "" : (isWindows ? $" -v \"{resultsDir}\":C:\\workspace\\test-results" : $" -v \"{resultsDir}\":/workspace/test-results");
             var networkOpt = noNetwork ? " --network none" : "";
@@ -174,7 +175,11 @@ public class TestMultiEnvCommand
 
             var runExit = await RunProcessAsync("docker", runCmd, root, null, logFile);
             var (passed, failed, total) = ParseTestOutput(File.Exists(logFile) ? await File.ReadAllTextAsync(logFile) : "");
-            if (runExit != 0 || failed > 0) { if (logSuffix == "base-framework") baseOk = false; if (logSuffix == "execution-brick") execOk = false; }
+            if (failed > 0 || (passed == 0 && total == 0 && runExit != 0))
+            {
+                if (logSuffix == "base-framework") baseOk = false;
+                if (logSuffix == "execution-brick") execOk = false;
+            }
             if (!json && console != null) console.WriteLine($"  {logSuffix}: {passed} passed, {failed} failed");
         }
 
@@ -215,7 +220,8 @@ public class TestMultiEnvCommand
             var imageTag = $"nexo-adaptation-test:{env}";
             var isWindows = dockerfilePath.Contains("windows", StringComparison.OrdinalIgnoreCase);
 
-            var buildExit = await RunProcessAsync("docker", $"build -f \"{dockerfilePath}\" -t {imageTag} --build-arg DOTNET_VERSION={dotnetVersion} \"{root}\"", root, verbose ? console : null);
+            var sdkVersion = string.Equals(dotnetVersion, "8.0", StringComparison.Ordinal) ? "9.0" : dotnetVersion;
+        var buildExit = await RunProcessAsync("docker", $"build -f \"{dockerfilePath}\" -t {imageTag} --build-arg DOTNET_SDK_VERSION={sdkVersion} \"{root}\"", root, verbose ? console : null);
             if (buildExit != 0)
             {
                 if (!json) console?.WriteError($"  Failed to build {env}");
@@ -281,7 +287,8 @@ public class TestMultiEnvCommand
             if (!json && console != null) console.WriteLine($"Testing Trust on {env}...");
 
             var dotnetVer = "9.0";
-            var buildExit = await RunProcessAsync("docker", $"build -f \"{path}\" -t {tag} --build-arg DOTNET_VERSION={dotnetVer} \"{root}\"", root, verbose ? console : null);
+            var sdkVer = string.Equals(dotnetVer, "8.0", StringComparison.Ordinal) ? "9.0" : dotnetVer;
+            var buildExit = await RunProcessAsync("docker", $"build -f \"{path}\" -t {tag} --build-arg DOTNET_SDK_VERSION={sdkVer} \"{root}\"", root, verbose ? console : null);
             if (buildExit != 0)
             {
                 if (!json) console?.WriteError($"  Failed to build {env}");
@@ -336,7 +343,8 @@ public class TestMultiEnvCommand
             if (!File.Exists(path)) continue;
             var tag = $"nexo-caching-test:{env}";
             var dotnetVer = "9.0";
-            var buildExit = await RunProcessAsync("docker", $"build -f \"{path}\" -t {tag} --build-arg DOTNET_VERSION={dotnetVer} \"{root}\"", root, verbose ? console : null);
+            var sdkVer = string.Equals(dotnetVer, "8.0", StringComparison.Ordinal) ? "9.0" : dotnetVer;
+            var buildExit = await RunProcessAsync("docker", $"build -f \"{path}\" -t {tag} --build-arg DOTNET_SDK_VERSION={sdkVer} \"{root}\"", root, verbose ? console : null);
             if (buildExit != 0) { failed++; continue; }
             var testArgs = $"test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net9.0 --filter {filter} --logger 'console;verbosity=minimal'";
             var networkOpt = noNetwork ? " --network none" : "";

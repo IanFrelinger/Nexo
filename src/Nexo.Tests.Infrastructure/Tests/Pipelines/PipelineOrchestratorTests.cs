@@ -232,8 +232,8 @@ public sealed class PipelineOrchestratorTests
         });
 
         run.State.Should().Be(PipelineRunState.Completed);
-        run.StageRuns.Should().OnlyContain(x => x.State == PipelineStageRunState.Completed);
-        run.StageRuns.Single(x => x.StageId == "a").Attempt.Should().Be(1);
+        Assert.All(run.StageRuns, s => Assert.Equal(PipelineStageRunState.Completed, s.State));
+        Assert.Equal(1, run.StageRuns.Single(x => x.StageId == "a").Attempt);
     }
 
     [Fact]

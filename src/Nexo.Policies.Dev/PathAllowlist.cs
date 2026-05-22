@@ -21,6 +21,7 @@ public sealed class PathAllowlist : IPolicy
         "src/",
         "tests/",
         "docs/",
+        "application/",
         ".nexo/"
     };
 
