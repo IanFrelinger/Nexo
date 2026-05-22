@@ -1,0 +1,26 @@
+name: waterproofing-gate
+
+on:
+  workflow_dispatch:
+
+jobs:
+  waterproofing:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            9.0.x
+            8.0.x
+      - name: Run waterproofing gate
+        run: bash scripts/waterproofing-gate.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: waterproofing-gate-${{ github.run_id }}
+          path: |
+            .nexo/perf/
+            .nexo/compat/
+            .nexo/dr-gate/
+            .nexo/rc-gate/

@@ -1,0 +1,22 @@
+name: compat-gate
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+    paths:
+      - 'scripts/compat-gate*.sh'
+      - 'scripts/kernel-gate-tier-b.sh'
+
+jobs:
+  compat-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            9.0.x
+            8.0.x
+      - name: Run compat gate
+        run: COMPAT_GATE_SKIP_PRIOR=1 bash scripts/compat-gate.sh
