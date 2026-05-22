@@ -1,0 +1,82 @@
+# Kernel gate: pre-application hardening (tiers A–C).
+# See docs/production-readiness/KernelHardeningPlan-v1.md
+name: Kernel Gate
+
+on:
+  pull_request:
+    paths:
+      - "src/Nexo.Hosting/**"
+      - "src/Nexo.Infrastructure/**"
+      - "src/Nexo.Orchestration/**"
+      - "src/Nexo.Runtime/**"
+      - "src/Nexo.Core.Application/**"
+      - "src/Nexo.Tests.Infrastructure/**"
+      - "src/Nexo.Tests.Transport/**"
+      - "docs/architecture/KernelPhaseMatrix.md"
+      - "docs/production-readiness/**"
+      - "scripts/kernel-gate*.sh"
+      - "Makefile"
+      - ".github/workflows/kernel-gate.yml"
+  push:
+    branches: [master, main]
+    paths:
+      - "src/Nexo.Hosting/**"
+      - "src/Nexo.Tests.Infrastructure/Tests/Hosting/**"
+      - ".github/workflows/kernel-gate.yml"
+  workflow_dispatch:
+    inputs:
+      tier:
+        description: "Gate tier"
+        required: false
+        default: "a"
+        type: choice
+        options:
+          - a
+          - b
+          - c
+          - d
+          - e
+          - full
+
+jobs:
+  kernel-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Tier A
+        if: github.event_name != 'workflow_dispatch' || inputs.tier == 'a'
+        run: make kernel-gate
+        env:
+          NEXO_ALLOW_MOCK: "1"
+
+      - name: Tier B
+        if: github.event_name == 'workflow_dispatch' && inputs.tier == 'b'
+        run: make kernel-gate-tier-b
+        env:
+          NEXO_ALLOW_MOCK: "1"
+
+      - name: Tier C
+        if: github.event_name == 'workflow_dispatch' && inputs.tier == 'c'
+        run: make kernel-gate-tier-c
+        env:
+          NEXO_ALLOW_MOCK: "1"
+
+      - name: Tier D (NuGet consumer)
+        if: github.event_name == 'workflow_dispatch' && inputs.tier == 'd'
+        run: make kernel-gate-tier-d
+
+      - name: Tier E (ops)
+        if: github.event_name == 'workflow_dispatch' && inputs.tier == 'e'
+        run: make kernel-gate-tier-e
+
+      - name: Tier A–E (full)
+        if: github.event_name == 'workflow_dispatch' && inputs.tier == 'full'
+        run: make kernel-gate-full
+        env:
+          NEXO_ALLOW_MOCK: "1"

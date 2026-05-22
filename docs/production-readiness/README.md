@@ -6,6 +6,18 @@ This folder helps you **support every major production concern** in one place: r
 
 | Area | Guide | One-line goal |
 | ---- | ----- | --------------- |
+| **Kernel hardening** | [Kernel hardening plan v1](KernelHardeningPlan-v1.md) · [Kernel readiness](KernelReadiness-v1.md) · [Chaos drill](KernelChaosDrill-v1.md) | `make kernel-gate-full` (A–E) before application work |
+| **Application hardening** | [Application hardening plan v1](ApplicationHardeningPlan-v1.md) · [Application readiness](ApplicationReadiness-v1.md) | `make application-gate-full` (A–D) after kernel |
+| **Composition & mesh** | [Composition & mesh plan v1](CompositionMeshHardeningPlan-v1.md) · [Readiness](CompositionMeshReadiness-v1.md) | `make composition-mesh-gate-full` (pipelines + mesh tasks) |
+| **Ship readiness** | [Ship hardening plan v1](ShipHardeningPlan-v1.md) · [Ship readiness](ShipReadiness-v1.md) | `make ship-gate-full` (prod gate + ci verify + release) |
+| **Ops & dogfood** | [Ops hardening plan v1](OpsHardeningPlan-v1.md) · [Ops readiness](OpsReadiness-v1.md) | `make ops-gate-full` (self-improvement + demo) |
+| **Security & trust** | [Security hardening plan v1](SecurityHardeningPlan-v1.md) · [Security readiness](SecurityReadiness-v1.md) | `make security-gate-full` (auth + supply chain + air-gapped) |
+| **Release candidate** | [RC hardening plan v1](RCHardeningPlan-v1.md) · [RC readiness](RCReadiness-v1.md) | `make rc-gate-full` (bundle + GH workflow evidence) |
+| **Performance** | [Perf hardening plan v1](PerfHardeningPlan-v1.md) · [Perf readiness](PerfReadiness-v1.md) | `make perf-gate-full` |
+| **Compatibility** | [Compat hardening plan v1](CompatHardeningPlan-v1.md) · [Compat readiness](CompatReadiness-v1.md) | `make compat-gate-full` |
+| **Disaster recovery** | [DR hardening plan v1](DRHardeningPlan-v1.md) · [DR readiness](DRReadiness-v1.md) | `make dr-gate-full` |
+| **Post-RC waterproofing** | [Rollback drill](RollbackDrill-v1.md) · [Release sign-off](ReleaseSignOff-v1.md) | `make waterproofing-gate-full` |
+| **Full stack** | — | `make nexo-ready-gate` (`NEXO_READY_SKIP_DOCKER=1` for fast local) |
 | Release & promotion | [Release and promotion](ReleaseAndPromotion.md) | Reproducible versions, artifacts, rollback, one promotion path |
 | Security & trust | [Security and trust](SecurityAndTrust.md) | Secrets, threat model, supply chain, dependency risk |
 | Operations | [Operations and observability](OperationsAndObservability.md) | SLOs, alerting, health, capacity, runbooks |

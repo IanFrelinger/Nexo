@@ -1,0 +1,68 @@
+# Application gate: product layer after kernel (tiers A–D).
+# See docs/production-readiness/ApplicationHardeningPlan-v1.md
+name: Application Gate
+
+on:
+  pull_request:
+    paths:
+      - "application/**"
+      - "src/Nexo.Tests.Infrastructure/Tests/VirtualProduction/**"
+      - "docs/production-readiness/Application*.md"
+      - "scripts/application-gate*.sh"
+      - "scripts/prod-dry-run.sh"
+      - "Makefile"
+      - ".github/workflows/application-gate.yml"
+  workflow_dispatch:
+    inputs:
+      tier:
+        description: "Gate tier"
+        required: false
+        default: "full"
+        type: choice
+        options:
+          - a
+          - b
+          - c
+          - d
+          - full
+
+jobs:
+  application-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Tier A
+        if: github.event_name != 'workflow_dispatch' || inputs.tier == 'a'
+        run: make application-gate-tier-a
+        env:
+          NEXO_ALLOW_MOCK: "1"
+          APPLICATION_GATE_SKIP_KERNEL: "1"
+
+      - name: Tier B
+        if: github.event_name == 'workflow_dispatch' && inputs.tier == 'b'
+        run: make application-gate-tier-b
+        env:
+          NEXO_ALLOW_MOCK: "1"
+
+      - name: Tier C
+        if: github.event_name == 'workflow_dispatch' && inputs.tier == 'c'
+        run: make application-gate-tier-c
+        env:
+          NEXO_ALLOW_MOCK: "1"
+
+      - name: Tier D (agent-server dry run)
+        if: github.event_name == 'workflow_dispatch' && inputs.tier == 'd'
+        run: make application-gate-tier-d
+
+      - name: Tier A–D (full)
+        if: github.event_name == 'workflow_dispatch' && inputs.tier == 'full'
+        run: make application-gate-full
+        env:
+          NEXO_ALLOW_MOCK: "1"
+          APPLICATION_GATE_SKIP_TIER_D: "1"
