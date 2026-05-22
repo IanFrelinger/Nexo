@@ -20,7 +20,7 @@ public sealed class MeshSecurityMiddlewareTests
         var app = BuildApp(new MeshSecurityOptions { MeshMutatingToken = "secret-mesh" });
         var ctx = CreateContext(HttpMethods.Post, "/api/mesh/tasks", body: "{}");
         await app.Invoke(ctx);
-        ctx.Response.StatusCode.Should().Be(StatusCodes.Status401Unauthorized);
+        Assert.Equal(StatusCodes.Status401Unauthorized, ctx.Response.StatusCode);
     }
 
     [Fact]
@@ -30,7 +30,7 @@ public sealed class MeshSecurityMiddlewareTests
         var ctx = CreateContext(HttpMethods.Post, "/api/mesh/tasks", body: "{}");
         ctx.Request.Headers["X-Nexo-Mesh-Token"] = "secret-mesh";
         await app.Invoke(ctx);
-        ctx.Response.StatusCode.Should().Be(StatusCodes.Status200OK);
+        Assert.Equal(StatusCodes.Status200OK, ctx.Response.StatusCode);
     }
 
     [Fact]
@@ -40,7 +40,7 @@ public sealed class MeshSecurityMiddlewareTests
         var ctx = CreateContext(HttpMethods.Post, "/api/bricks/foo/execute", body: "{}");
         ctx.Request.Headers["X-Nexo-Mesh-Token"] = "shared-secret";
         await app.Invoke(ctx);
-        ctx.Response.StatusCode.Should().Be(StatusCodes.Status200OK);
+        Assert.Equal(StatusCodes.Status200OK, ctx.Response.StatusCode);
     }
 
     [Fact]
@@ -49,12 +49,12 @@ public sealed class MeshSecurityMiddlewareTests
         var app = BuildApp(new MeshSecurityOptions { BrickExecuteToken = "brick-only" });
         var ctx = CreateContext(HttpMethods.Post, "/api/bricks/foo/execute", body: "{}");
         await app.Invoke(ctx);
-        ctx.Response.StatusCode.Should().Be(StatusCodes.Status401Unauthorized);
+        Assert.Equal(StatusCodes.Status401Unauthorized, ctx.Response.StatusCode);
 
         ctx = CreateContext(HttpMethods.Post, "/api/bricks/foo/execute", body: "{}");
         ctx.Request.Headers["X-Nexo-Brick-Execute-Token"] = "brick-only";
         await app.Invoke(ctx);
-        ctx.Response.StatusCode.Should().Be(StatusCodes.Status200OK);
+        Assert.Equal(StatusCodes.Status200OK, ctx.Response.StatusCode);
     }
 
     [Fact]
@@ -64,7 +64,7 @@ public sealed class MeshSecurityMiddlewareTests
         var ctx = CreateContext(HttpMethods.Post, "/api/mesh/tasks", body: new string('x', 100));
         ctx.Request.ContentLength = 100;
         await app.Invoke(ctx);
-        ctx.Response.StatusCode.Should().Be(StatusCodes.Status413PayloadTooLarge);
+        Assert.Equal(StatusCodes.Status413PayloadTooLarge, ctx.Response.StatusCode);
     }
 
     private static RequestDelegate BuildApp(MeshSecurityOptions opts)

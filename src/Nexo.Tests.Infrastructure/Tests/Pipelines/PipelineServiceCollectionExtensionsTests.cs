@@ -112,8 +112,8 @@ public sealed class PipelineServiceCollectionExtensionsTests
         using var provider = services.BuildServiceProvider();
 
         var options = provider.GetRequiredService<IOptions<PipelineExecutionOptions>>().Value;
-        options.MaxRetryAttempts.Should().Be(5);
-        options.RetryDelayMs.Should().Be(15);
+        Assert.Equal(5, options.MaxRetryAttempts);
+        Assert.Equal(15, options.RetryDelayMs);
         options.CompletionPolicy.Should().Be(PipelineCompletionPolicy.AllowNonCriticalStageFailures);
         options.AllowMissingResumeSource.Should().BeTrue();
         options.EnableTestHooks.Should().BeTrue();
@@ -138,7 +138,7 @@ public sealed class PipelineServiceCollectionExtensionsTests
             using var provider = services.BuildServiceProvider();
 
             var options = provider.GetRequiredService<IOptions<PipelineExecutionOptions>>().Value;
-            options.MaxRetryAttempts.Should().Be(7);
+            Assert.Equal(7, options.MaxRetryAttempts);
         }
         finally
         {

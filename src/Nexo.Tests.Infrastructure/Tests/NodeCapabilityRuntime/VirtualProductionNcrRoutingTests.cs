@@ -32,8 +32,8 @@ public sealed class VirtualProductionNcrRoutingTests
         });
 
         var snap = env.GetNcrSnapshot();
-        snap.AvailableVramBytes.Should().Be(expectedVram);
-        snap.ComputeClass.Should().Be(GpuComputeClass.Extreme);
+        Assert.Equal(expectedVram, snap.AvailableVramBytes);
+        Assert.Equal(GpuComputeClass.Extreme, snap.ComputeClass);
     }
 
     [Fact]

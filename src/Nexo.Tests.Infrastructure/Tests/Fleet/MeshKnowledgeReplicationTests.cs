@@ -71,11 +71,11 @@ public sealed class MeshKnowledgeReplicationTests : IDisposable
 
         var import = new MeshKnowledgeImportService(logB, storeB);
         var r1 = await import.ImportAsync(payload);
-        r1.AdaptationsApplied.Should().Be(1);
-        r1.PatternsApplied.Should().Be(1);
+        Assert.Equal(1, r1.AdaptationsApplied);
+        Assert.Equal(1, r1.PatternsApplied);
 
         var r2 = await import.ImportAsync(payload);
-        r2.AdaptationsSkipped.Should().BeGreaterThan(0);
-        r2.PatternsSkipped.Should().BeGreaterThan(0);
+        Assert.True(r2.AdaptationsSkipped > 0);
+        Assert.True(r2.PatternsSkipped > 0);
     }
 }

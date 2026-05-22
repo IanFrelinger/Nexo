@@ -73,8 +73,9 @@ public sealed class PipelineSchedulerTests
 
         var ready = sut.GetReadyStages(graph, states);
 
-        ready.Should().Contain(new[] { "root", "peer" });
-        ready.Should().NotContain("fanin-first");
+        Assert.Contains("root", ready);
+        Assert.Contains("peer", ready);
+        Assert.DoesNotContain("fanin-first", ready);
     }
 
     [Fact]
@@ -87,9 +88,9 @@ public sealed class PipelineSchedulerTests
 
         var ready = sut.GetReadyStages(graph, states);
 
-        ready.Should().Contain("fanin-first");
-        ready.Should().NotContain("fanin-quorum");
-        ready.Should().NotContain("fanin-all");
+        Assert.Contains("fanin-first", ready);
+        Assert.DoesNotContain("fanin-quorum", ready);
+        Assert.DoesNotContain("fanin-all", ready);
     }
 
     [Fact]

@@ -6,6 +6,7 @@ High-level maps of how Nexo is structured. For day-to-day commands, see the repo
 | -------- | -------- |
 | [Trust and execution boundaries](TrustAndExecutionBoundaries.md) | Where trust is decided, how requests cross layers, and what runs locally vs. on peers. |
 | [Testing model](TestingModel.md) | Relationship between xUnit tests, `UnitTestBase` / `ITestRunner`, and CI. |
+| [Kernel phase matrix](KernelPhaseMatrix.md) | `NexoKernelRegistrar` phases, module flags, and `make kernel-gate` proof. |
 | [.NET SDK and target frameworks](DotnetVersions.md) | Why `global.json` pins SDK 9.x while many libraries target `net8.0`. |
 | [Runtime vs application layout](runtime-vs-application.md) | `src/` kernel vs `application/src/` hosts; `Nexo.Runtime.sln`, `Nexo.Runtime.Bundle`, NuGet metapackages, and packing scripts. |
 | [Forge map adaptation](forge-map-adaptation.md) | `MapAdaptationPlanner`, dry-run pipeline, engine manifest JSON, and Forge persistence options. |
