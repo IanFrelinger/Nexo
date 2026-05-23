@@ -56,7 +56,7 @@ public abstract class MultiPlatformTestBase : TestBase
         
         while (dir != null)
         {
-            if (File.Exists(Path.Combine(dir.FullName, "src", "Nexo.CLI", "Nexo.CLI.csproj")))
+            if (File.Exists(Path.Combine(dir.FullName, "application", "src", "Nexo.CLI", "Nexo.CLI.csproj")))
             {
                 return dir.FullName;
             }

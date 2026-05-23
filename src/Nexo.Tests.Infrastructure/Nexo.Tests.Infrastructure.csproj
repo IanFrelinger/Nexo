@@ -29,13 +29,22 @@
   <ItemGroup>
     <Compile Remove="scripts/**/*.cs" />
   </ItemGroup>
-  <!-- Virtual in-process Nexo.API host (WebApplicationFactory): Nexo.API is net8; ASP.NET Core TestHost + JSON on net9 test TFM hits PipeWriter.UnflushedBytes — compile these only for net8.0. -->
-  <ItemGroup Condition="'$(TargetFramework)' == 'net9.0'">
+  <!-- Virtual in-process Nexo.API host (WebApplicationFactory).
+       Microsoft.AspNetCore.TestHost / Mvc.Testing 8.0 ResponseBodyPipeWriter
+       does not override PipeWriter.UnflushedBytes, which System.Text.Json 9+
+       (transitively pulled by other 10.x packages) requires. We therefore run
+       the in-process API tests on net9 only, and use the 9.0 TestHost there
+       (which adds the missing override). On net8 these files are excluded. -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
     <Compile Remove="Helpers/VirtualProduction/**/*.cs" />
     <Compile Remove="Tests/VirtualProduction/**/*.cs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing"
+                      VersionOverride="9.0.0"
+                      Condition="'$(TargetFramework)' == 'net9.0'" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing"
+                      Condition="'$(TargetFramework)' != 'net9.0'" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="Microsoft.Extensions.Http" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" />

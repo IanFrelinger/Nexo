@@ -667,7 +667,11 @@ internal static partial class NexoKernelRegistrar
         services.AddNexoFleetDirector(configuration);
         services.AddNexoMeshElasticScheduling(configuration);
         services.AddNexoMeshCheckpointScheduling(configuration);
-        services.AddNexoMeshKnowledgeReplication(configuration);
+        // Mesh knowledge export/import requires IPatternStore (observation pipeline).
+        if (modules.IncludeObservationPipeline && !options.DisableObservationPipeline)
+        {
+            services.AddNexoMeshKnowledgeReplication(configuration);
+        }
         services.AddNexoMeshLabWorkerExecutor(configuration);
 
     }

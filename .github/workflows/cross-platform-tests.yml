@@ -54,10 +54,10 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore
-        run: dotnet restore
+        run: dotnet restore Nexo.sln
 
       - name: Build
-        run: dotnet build --no-restore -v minimal
+        run: dotnet build Nexo.sln --no-restore -v minimal
 
       - name: Run tests (smoke)
         if: github.event.inputs.scope != 'persistence' && github.event.inputs.scope != 'trust' && github.event.inputs.scope != 'full' && github.event.inputs.scope != 'integration' && github.event.inputs.scope != 'e2e' && github.event.inputs.scope != 'dogfood' && github.event.inputs.scope != 'adaptation' && github.event.inputs.scope != 'playground'
@@ -188,7 +188,7 @@ jobs:
             --results-directory test-results
 
       - name: Publish test results
-        if: always()
+        if: always() && runner.os == 'Linux'
         uses: EnricoMi/publish-unit-test-result-action@v2
         with:
           files: test-results/**/*.trx

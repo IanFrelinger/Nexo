@@ -101,7 +101,7 @@ public static class CliRunner
         if (string.IsNullOrWhiteSpace(buildConfiguration))
             buildConfiguration = "Debug";
 
-        var cliDll = Path.Combine(repoRoot, "src", "Nexo.CLI", "bin", buildConfiguration, "net8.0", "Nexo.CLI.dll");
+        var cliDll = Path.Combine(repoRoot, "application", "src", "Nexo.CLI", "bin", buildConfiguration, "net8.0", "Nexo.CLI.dll");
 
         lock (_cliBuildLock)
         {

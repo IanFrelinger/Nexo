@@ -30,10 +30,10 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore
-        run: dotnet restore
+        run: dotnet restore Nexo.sln
 
       - name: Build
-        run: dotnet build --no-restore -v minimal
+        run: dotnet build Nexo.sln --no-restore -v minimal
 
       - name: Run multi-env with --no-network
         run: |

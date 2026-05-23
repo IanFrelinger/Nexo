@@ -34,7 +34,7 @@ public sealed class HttpBarrierContextMiddleware : IMiddleware
 
     public async Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
-        var ambient = context.RequestServices.GetService(typeof(IBarrierContextAmbient)) as IBarrierContextAmbient;
+        var ambient = context.RequestServices?.GetService(typeof(IBarrierContextAmbient)) as IBarrierContextAmbient;
         try
         {
             var enabled = Environment.GetEnvironmentVariable("NEXO_BARRIER_MIDDLEWARE_ENABLED");
@@ -62,7 +62,7 @@ public sealed class HttpBarrierContextMiddleware : IMiddleware
 
             if (result is not null)
             {
-                var accessor = context.RequestServices.GetService(typeof(IBarrierContextAccessor)) as IBarrierContextAccessor;
+                var accessor = context.RequestServices?.GetService(typeof(IBarrierContextAccessor)) as IBarrierContextAccessor;
                 if (accessor is not null)
                 {
                     try

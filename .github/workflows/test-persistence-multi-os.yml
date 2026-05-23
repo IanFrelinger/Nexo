@@ -41,10 +41,10 @@ jobs:
           dotnet-version: '8.0.x'
 
       - name: Restore
-        run: dotnet restore
+        run: dotnet restore Nexo.sln
 
       - name: Build
-        run: dotnet build --no-restore -v minimal
+        run: dotnet build Nexo.sln --no-restore -v minimal
 
       - name: Run persistence tests
         shell: bash
@@ -57,7 +57,7 @@ jobs:
             --results-directory test-results/persistence
 
       - name: Publish test results
-        if: always()
+        if: always() && runner.os == 'Linux'
         uses: EnricoMi/publish-unit-test-result-action@v2
         with:
           files: test-results/persistence/**/*.trx
@@ -73,10 +73,14 @@ jobs:
           retention-days: 14
 
   # Docker option for Windows: run persistence tests inside the Windows container.
-  # Only possible on a Windows host (windows-latest); Linux/macOS cannot run Windows containers.
+  # Disabled on hosted runners: GitHub windows-latest is now Windows Server 2025
+  # (build 26100), and the public mcr.microsoft.com/dotnet/sdk Windows manifest
+  # list has no matching variant for that build, causing buildx setup to fail.
+  # Re-enable behind a self-hosted Windows Server 2022 runner if needed.
   persistence-tests-windows-docker:
     name: Persistence - Windows (Docker)
-    runs-on: windows-latest
+    if: ${{ vars.NEXO_WINDOWS_DOCKER_PERSISTENCE == '1' }}
+    runs-on: [self-hosted, Windows, X64]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -99,14 +103,6 @@ jobs:
             -v "${env:GITHUB_WORKSPACE}/test-results/persistence:C:\workspace\test-results" `
             nexo-persistence-test:windows-8.0 `
             cmd /c "cd /d C:\workspace && dotnet test src\Nexo.Tests.Infrastructure\Nexo.Tests.Infrastructure.csproj --filter \"FullyQualifiedName~InMemoryPersistenceTests\" --logger \"console;verbosity=minimal\" --logger \"trx;LogFileName=windows-8.0-persistence.trx\" --results-directory C:\workspace\test-results"
-
-      - name: Publish test results
-        if: always()
-        uses: EnricoMi/publish-unit-test-result-action@v2
-        with:
-          files: test-results/persistence/**/*.trx
-          check_name: Persistence Tests - Windows (Docker)
-          report_individual_runs: true
 
       - name: Upload test results
         if: always()

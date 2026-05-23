@@ -94,6 +94,24 @@ public sealed class HostingE2ESmokeTests
     }
 
     [Fact(Timeout = TestTimeouts.E2E)]
+    public async Task AddNexo_WithDisableObservationPipeline_StartsBackgroundAgentHost()
+    {
+        using var host = Host.CreateDefaultBuilder()
+            .ConfigureServices(services =>
+            {
+                services.AddNexo(o =>
+                {
+                    o.DisableObservationPipeline = true;
+                    o.RegisterBackgroundAgentHostedService = true;
+                });
+            })
+            .Build();
+
+        await host.StartAsync();
+        await host.StopAsync();
+    }
+
+    [Fact(Timeout = TestTimeouts.E2E)]
     public async Task AddNexoProfile_Edge_PeelsOffOptionalServices()
     {
         await Task.CompletedTask;
