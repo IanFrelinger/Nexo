@@ -89,7 +89,7 @@ for wf in "${WORKFLOWS[@]}"; do
 done
 
 for wf in "${OPTIONAL_WORKFLOWS[@]}"; do
-  verify_workflow "$wf" 0 || echo "::warning::optional workflow not green: $wf" | tee -a "$GH_REPORT"
+  verify_workflow "$wf" 0 || echo "NOTE optional workflow not green: $wf (informational)" | tee -a "$GH_REPORT"
 done
 
 if [ "${RC_GATE_RUN_PUBLISH:-0}" = "1" ]; then

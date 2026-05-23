@@ -974,12 +974,26 @@ public sealed class RuntimeCommand : Command
 
         if (finalExitCode == 0 && !sloWarningOnly && !sloEvidence.Passed)
         {
-            Console.Error.WriteLine("release gate: NCR SLO evidence failed required thresholds.");
-            finalExitCode = 1;
+            if (allowMock)
+            {
+                Console.WriteLine("release gate: NCR SLO not enforced under --allow-mock (synthetic timings).");
+            }
+            else
+            {
+                Console.Error.WriteLine("release gate: NCR SLO evidence failed required thresholds.");
+                finalExitCode = 1;
+            }
         }
         else if (finalExitCode == 0 && sloWarningOnly && !sloEvidence.Passed)
         {
-            Console.Error.WriteLine("release gate: NCR SLO evidence failed thresholds (warning-only mode).");
+            if (allowMock)
+            {
+                Console.WriteLine("release gate: NCR SLO advisory under --allow-mock (synthetic timings; not gating).");
+            }
+            else
+            {
+                Console.Error.WriteLine("release gate: NCR SLO evidence failed thresholds (warning-only mode).");
+            }
         }
 
         if (finalExitCode == 0)

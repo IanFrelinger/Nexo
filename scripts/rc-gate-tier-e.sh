@@ -23,17 +23,78 @@ if [ ! -f "$EXCEPTIONS_FILE" ]; then
   fi
 else
   python3 - "$EXCEPTIONS_FILE" <<'PY'
-import sys, datetime
+import sys, datetime, re
 from pathlib import Path
 
-try:
-    import yaml
-except ImportError:
-    print("exceptions: PyYAML not installed — skipping structured validation")
-    raise SystemExit(0)
-
 path = Path(sys.argv[1])
-data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
+text = path.read_text(encoding="utf-8")
+
+def parse_with_yaml(src):
+    try:
+        import yaml  # type: ignore
+    except ImportError:
+        return None
+    return yaml.safe_load(src) or {}
+
+def parse_minimal(src):
+    """Tiny YAML subset parser sufficient for docs/exceptions.yaml.
+
+    Supports:
+      key: value
+      key: []            (empty inline list)
+      key:               (block list of mappings)
+        - foo: bar
+          baz: qux
+    """
+    lines = [ln.rstrip() for ln in src.splitlines()
+             if ln.strip() and not ln.lstrip().startswith("#")]
+    root = {}
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        m = re.match(r"^(\S+):\s*(.*)$", line)
+        if not m:
+            i += 1
+            continue
+        key, rest = m.group(1), m.group(2).strip()
+        if rest == "[]":
+            root[key] = []
+            i += 1
+            continue
+        if rest:
+            root[key] = rest
+            i += 1
+            continue
+        items = []
+        i += 1
+        while i < len(lines) and lines[i].startswith(" "):
+            block = lines[i]
+            if block.lstrip().startswith("- "):
+                item = {}
+                kv = block.lstrip()[2:]
+                if ":" in kv:
+                    k, v = kv.split(":", 1)
+                    item[k.strip()] = v.strip()
+                items.append(item)
+                i += 1
+                while i < len(lines) and lines[i].startswith(" ") \
+                        and not lines[i].lstrip().startswith("- "):
+                    inner = lines[i].strip()
+                    if ":" in inner:
+                        k, v = inner.split(":", 1)
+                        item[k.strip()] = v.strip()
+                    i += 1
+            else:
+                i += 1
+        root[key] = items
+    return root
+
+data = parse_with_yaml(text)
+parser_used = "PyYAML"
+if data is None:
+    data = parse_minimal(text)
+    parser_used = "fallback"
+
 items = data.get("exceptions") or []
 today = datetime.date.today()
 blocked = []
@@ -59,7 +120,7 @@ if blocked:
     for b in blocked:
         print(f"exceptions BLOCK: {b}")
     raise SystemExit(1)
-print(f"exceptions: {len(items)} entries, High/Critical policy OK")
+print(f"exceptions: {len(items)} entries, High/Critical policy OK ({parser_used})")
 PY
   rc=$?
   if [ "$rc" -ne 0 ]; then

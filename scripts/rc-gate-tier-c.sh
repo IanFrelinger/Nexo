@@ -45,15 +45,20 @@ else
 fi
 
 echo "== RC Tier C: runtime SLO evidence =="
-for slo in \
-  ".nexo/runtime/runtime-release-gate-slo.json" \
-  ".nexo/runtime/release-gate/last-run/evidence.json"; do
+SLO_CANDIDATES=(
+  ".nexo/runtime/runtime-release-gate-slo.json"
+  ".nexo/runtime/release-gate/last-run/evidence.json"
+)
+slo_found=0
+for slo in "${SLO_CANDIDATES[@]}"; do
   if [ -f "$slo" ]; then
     note "runtime SLO artifact: present ($slo)"
-  else
-    warn "runtime SLO artifact: missing ($slo)"
+    slo_found=1
   fi
 done
+if [ "$slo_found" -eq 0 ]; then
+  warn "runtime SLO artifact: none of ${SLO_CANDIDATES[*]} present"
+fi
 
 echo "== RC Tier C: rollback readiness doc =="
 ROLLBACK_CANDIDATES=(
