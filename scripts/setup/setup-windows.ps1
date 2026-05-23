@@ -123,7 +123,7 @@ function Ensure-RepoFiles {
         (Join-Path $RepoRoot "Nexo.sln"),
         (Join-Path $RepoRoot "src\Nexo.Core.Application\Nexo.Core.Application.csproj"),
         (Join-Path $RepoRoot "src\Nexo.Infrastructure\Nexo.Infrastructure.csproj"),
-        (Join-Path $RepoRoot "src\Nexo.CLI\Nexo.CLI.csproj"),
+        (Join-Path $RepoRoot "application\src\Nexo.CLI\Nexo.CLI.csproj"),
         (Join-Path $RepoRoot "src\Nexo.Tests.Infrastructure\scripts\copy-assemblies.csproj"),
         (Join-Path $RepoRoot "src\Nexo.Tests.Infrastructure\Nexo.Tests.Infrastructure.csproj")
     )
@@ -143,7 +143,7 @@ function Invoke-Restore {
     $restoreTargets = @(
         (Join-Path $RepoRoot "src\Nexo.Core.Application\Nexo.Core.Application.csproj"),
         (Join-Path $RepoRoot "src\Nexo.Infrastructure\Nexo.Infrastructure.csproj"),
-        (Join-Path $RepoRoot "src\Nexo.CLI\Nexo.CLI.csproj"),
+        (Join-Path $RepoRoot "application\src\Nexo.CLI\Nexo.CLI.csproj"),
         (Join-Path $RepoRoot "src\Nexo.Tests.Infrastructure\scripts\copy-assemblies.csproj"),
         (Join-Path $RepoRoot "src\Nexo.Tests.Infrastructure\Nexo.Tests.Infrastructure.csproj")
     )

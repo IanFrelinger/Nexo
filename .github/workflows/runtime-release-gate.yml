@@ -73,6 +73,7 @@ jobs:
         run: dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
 
       - name: Runtime chaos lane (non-gating)
+        continue-on-error: true
         run: dotnet run --project application/src/Nexo.CLI -- runtime release-gate --repo-root . --mode chaos
       - name: Upload runtime SLO evidence
         if: always()
