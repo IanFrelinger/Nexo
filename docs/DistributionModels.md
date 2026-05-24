@@ -41,7 +41,7 @@ The workflow **`.github/workflows/distribution-matrix-gate.yml`** runs **in para
 | Matrix job | What it proves |
 |------------|----------------|
 | **nuget-local-pack-consumer** | Local pack → **`scripts/verify-stable-sdk-host-sample-packages.sh`** (isolated NuGet cache, sample restores from folder feed + nuget.org). |
-| **cli-image-smoke** | **`.docker/Dockerfile.cli`** builds; container runs **`--help`** and **`doctor --json`** with **`NEXO_ALLOW_MOCK=1`**. |
+| **cli-image-smoke** | **`.docker/Dockerfile.cli`** builds; container runs **`--help`** and **`pipeline validate --help`** (runtime image has no git/curl, so **`doctor`** is not used here). |
 | **api-image-http-smoke** | **`.docker/Dockerfile.api`** builds; container serves **`/health`** and **`/api/status`** (host **`curl`** — HTTP-only consumer path). Script: **`scripts/ci/distribution-matrix-api-http-smoke.sh`**. |
 | **nexo-client-inprocess-test** | **`Nexo.Client`** `GetStatusAsync` against in-process **`Nexo.API`** (same pipeline as production; **`net9.0`** test filter). |
 | **pack-hosting-graph-alignment** | **`scripts/verify-pack-nexo-hosting-graph-alignment.py`** — pack allowlist matches **`Nexo.Hosting`** MSBuild graph. |
