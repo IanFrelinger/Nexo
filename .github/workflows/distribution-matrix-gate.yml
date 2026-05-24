@@ -91,10 +91,9 @@ jobs:
       - name: Smoke (--help)
         run: docker run --rm nexo-cli:dist-matrix --help
 
-      - name: Smoke (doctor, mock)
-        env:
-          NEXO_ALLOW_MOCK: "1"
-        run: docker run --rm -e NEXO_ALLOW_MOCK=1 nexo-cli:dist-matrix doctor --json
+      # doctor --json expects git/curl and a dev-style host; the CLI image is aspnet runtime-only.
+      - name: Smoke (pipeline validate --help)
+        run: docker run --rm nexo-cli:dist-matrix pipeline validate --help
 
   api-image-http-smoke:
     name: API image + curl /health + /api/status
