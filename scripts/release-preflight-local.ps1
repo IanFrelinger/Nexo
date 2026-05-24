@@ -30,4 +30,4 @@ if ($env:NEXO_RELEASE_PREFLIGHT_TRIGGER_GATE -eq "1") {
 Write-Host ""
 Write-Host "Preflight OK for version $Version."
 Write-Host "Next: git tag v$Version && git push origin v$Version"
-Write-Host "      dotnet run --project src/Nexo.CLI -- release preflight $Version"
+Write-Host "      dotnet run --project application/src/Nexo.CLI -- release preflight $Version"

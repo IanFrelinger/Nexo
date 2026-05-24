@@ -58,6 +58,8 @@ With workspace mount:
 docker run --rm -v "$PWD:/work" -w /work ghcr.io/ianfrelinger/nexo-cli:latest --help
 ```
 
+The published **`nexo-cli`** image is **runtime-only** (no `git`/`curl` in the container OS), so **`nexo doctor --json`** is expected to report missing host tools there. Run **`doctor`** on your workstation or inside the **Dev Container** for a full dependency check; CI validates the image with **`--help`** and **`pipeline validate --help`** instead (see **`docs/DistributionModels.md`**).
+
 ### Lane C (escape hatch): native setup scripts + CLI build
 
 After **`bash scripts/setup/setup.sh all`** (same as **`bash scripts/setup/setup-unix.sh all`** on macOS/Linux; those dispatch to `setup-linux.sh` / `setup-macos.sh`), or Windows **`powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode all`**, Nexo runs a **bounded** Runtime Studio **`workflow optimize`** and writes the winning **Ollama `ModelName` values** into `apps/runtime-studio/config/agent_set.local.json`. Skip with **`NEXO_SKIP_RUNTIME_STUDIO_TUNE=1`** (Unix), **`-SkipRuntimeStudioTune`** (Windows `setup.ps1`), or rely on automatic skip in **CI** (`CI` / `GITHUB_ACTIONS`).

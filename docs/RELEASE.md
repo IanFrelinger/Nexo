@@ -4,8 +4,8 @@ One page that points to everything you need to ship **NuGet + GHCR** from this r
 
 ## Do this (happy path)
 
-1. **Local preflight** — `bash scripts/release-preflight-local.sh X.Y.Z` or `dotnet run --project src/Nexo.CLI -- release preflight X.Y.Z`
-2. **Trigger CI release** (optional instead of tag) — `dotnet run --project src/Nexo.CLI -- release dispatch X.Y.Z --ref master` (needs `gh auth login`)
+1. **Local preflight** — `bash scripts/release-preflight-local.sh X.Y.Z` or `dotnet run --project application/src/Nexo.CLI -- release preflight X.Y.Z`
+2. **Trigger CI release** (optional instead of tag) — `dotnet run --project application/src/Nexo.CLI -- release dispatch X.Y.Z --ref master` (needs `gh auth login`)
 3. **Ship** — push **`vX.Y.Z`** on the commit you want (runs **`.github/workflows/release.yml`**)
 4. **Track** — open a **Release checklist** issue (GitHub → New issue)
 
@@ -24,9 +24,9 @@ One page that points to everything you need to ship **NuGet + GHCR** from this r
 ## CLI shortcuts
 
 ```text
-dotnet run --project src/Nexo.CLI -- release preflight <semver>
-dotnet run --project src/Nexo.CLI -- release dispatch <semver> [--ref branch] [--skip-multi-arch]
-dotnet run --project src/Nexo.CLI -- release gate [--ref branch]
+dotnet run --project application/src/Nexo.CLI -- release preflight <semver>
+dotnet run --project application/src/Nexo.CLI -- release dispatch <semver> [--ref branch] [--skip-multi-arch]
+dotnet run --project application/src/Nexo.CLI -- release gate [--ref branch]
 ```
 
 ## Automation you get from `release.yml` (tag push)

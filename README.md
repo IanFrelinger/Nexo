@@ -4,6 +4,8 @@ Private, traceable AI computing with self-extending capabilities.
 
 Nexo is a .NET platform for composable AI workflows with structural trust enforcement. Capabilities are modular components with standardized contracts that compose into pipelines. The platform autonomously generates new components when it identifies capability gaps, validates them against regression, and promotes them under configurable policy constraints. All generated output follows enforced standards and remains readable, auditable, and extractable from the core.
 
+**Documentation map:** start from **`docs/DocsIndex.md`**. For how Nexo is **consumed and shipped** (NuGet, HTTP, CLI, compose, mesh) and which **CI gates** validate each path, see **`docs/DistributionModels.md`**.
+
 Nexo operates entirely on infrastructure you control. Cloud providers are opt-in execution targets, not dependencies. No data leaves the host unless explicitly routed to a trusted peer. Air-gapped deployment is supported without modification.
 
 The deployable **CLI** (`nexo`) and **HTTP API** live under **`application/src/`** — build them with `dotnet build application/Nexo.Application.sln`. Kernel libraries remain under **`src/`** — see **`docs/architecture/runtime-vs-application.md`**.

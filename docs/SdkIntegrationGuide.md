@@ -1,6 +1,6 @@
 # SDK Integration Guide
 
-This guide covers building external integrations against the stable Nexo SDK surface.
+This guide covers building external integrations against the stable Nexo SDK surface. For packaging, pinning, and per-channel CI validation, see **`docs/DistributionModels.md`**.
 
 ## Stability Tiers
 

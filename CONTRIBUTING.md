@@ -110,17 +110,19 @@ python3 scripts/verify-pack-nexo-hosting-graph-alignment.py
 Before a **versioned** NuGet/GHCR release:
 
 ```bash
-dotnet run --project src/Nexo.CLI -- release preflight 1.2.3
+dotnet run --project application/src/Nexo.CLI -- release preflight 1.2.3
 # optional: trigger CI Release without a tag (needs gh auth)
-dotnet run --project src/Nexo.CLI -- release dispatch 1.2.3 --ref master
+dotnet run --project application/src/Nexo.CLI -- release dispatch 1.2.3 --ref master
 ```
 
 Optional [pre-commit](https://pre-commit.com/): `pip install pre-commit && pre-commit install` then use `.pre-commit-config.yaml` (graph alignment hook).
 
-## Command style in docs
+## Command style and paths in docs
 
-- Prefer `dotnet run --project application/src/Nexo.CLI -- <subcommand>` in docs so commands work without global tool installation.
-- If using `nexo <subcommand>`, make sure the doc also includes a `dotnet run` equivalent.
+- Prefer **`dotnet run --project application/src/Nexo.CLI -- <subcommand>`** so commands work without a global `nexo` tool. The CLI project lives only under **`application/src/Nexo.CLI`** (not `src/Nexo.CLI`).
+- For **`Nexo.API`**, prefer **`dotnet run --project application/src/Nexo.API`** (see **`docs/architecture/runtime-vs-application.md`**).
+- If using `nexo <subcommand>`, include a `dotnet run --project application/src/Nexo.CLI -- …` equivalent when the audience is contributors cloning the repo.
+- Canonical doc index: **`docs/DocsIndex.md`**.
 
 ## Cross-platform CI trigger
 

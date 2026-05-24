@@ -8,12 +8,13 @@ Documentation index for the Nexo platform. Start here to find what you need.
 2. `docs/RELEASE.md` — **shipping** NuGet + GHCR (one hub linking runbook, publishing, variables, staging, signing).
 3. `.devcontainer/devcontainer.json` — default development environment (Cursor / VS Code).
 4. `docs/GettingStarted.md` — first commands, first pipeline, and first trust checks (aligned with container + CLI).
-5. `CONTRIBUTING.md` — recommended **Dev Container** workflow and PR checks.
-6. `scripts/install/container-bootstrap.sh` and `scripts/install/container-bootstrap.ps1` — one-shot container bootstrap (Docker + image pull + smoke run).
-7. `scripts/setup/setup.sh` (forwards to `setup-unix.sh` on macOS/Linux), `scripts/setup/setup-unix.sh`, and `scripts/setup/setup.ps1` — cross-platform **native** dependency bootstrap + restore helpers (CI and escape hatch).
-8. `docs/SetupMatrixVerification.md` + `scripts/setup/verify-setup-matrix.ps1` / `verify-setup-matrix.sh` — brute-force style setup combination checks (local + CI).
-9. `scripts/start-nexo-api-dev.ps1` / `scripts/start-nexo-api-dev.sh` — Docker Ollama + host `Nexo.API` dev stack (see `docs/Configuration.md` → Ollama).
-10. `docs/Architecture.md` — layered architecture and component boundaries.
+5. `docs/DistributionModels.md` — how to **consume and ship** Nexo (NuGet, HTTP, CLI, compose, mesh) and the **distribution-matrix** CI workflow.
+6. `CONTRIBUTING.md` — recommended **Dev Container** workflow and PR checks.
+7. `scripts/install/container-bootstrap.sh` and `scripts/install/container-bootstrap.ps1` — one-shot container bootstrap (Docker + image pull + smoke run).
+8. `scripts/setup/setup.sh` (forwards to `setup-unix.sh` on macOS/Linux), `scripts/setup/setup-unix.sh`, and `scripts/setup/setup.ps1` — cross-platform **native** dependency bootstrap + restore helpers (CI and escape hatch).
+9. `docs/SetupMatrixVerification.md` + `scripts/setup/verify-setup-matrix.ps1` / `verify-setup-matrix.sh` — brute-force style setup combination checks (local + CI).
+10. `scripts/start-nexo-api-dev.ps1` / `scripts/start-nexo-api-dev.sh` — Docker Ollama + host `Nexo.API` dev stack (see `docs/Configuration.md` → Ollama).
+11. `docs/Architecture.md` — layered architecture and component boundaries.
 
 ## Operator / Production Readiness
 

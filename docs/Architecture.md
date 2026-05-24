@@ -64,7 +64,7 @@ Nexo is a private AI platform built on modular, contract-based components (brick
 - **Cloud path**: `RunPodBrick` executes full RunPod lifecycle (spin up, dispatch, poll, pull, teardown).
 - **Policy controls**: job-level `RemoteExecutionPreference` plus system-level peer routing options.
 
-### Trust &amp; Information Architecture
+### Trust and information architecture
 
 - **SanitizingProviderFactory**: Wraps `IProviderFactory`, sanitizes prompts before cloud
 - **CloudSanitizationProxy**: PII checks, `ISensitiveContentFilter` (email, phone, SSN, API keys)
@@ -87,5 +87,5 @@ Nexo is a private AI platform built on modular, contract-based components (brick
 ## Dependencies
 
 - **Nexo.Hosting** → Infrastructure, Orchestration, BackgroundAgents
-- **Nexo.CLI** → Nexo.Hosting, Demo.Bricks, Test projects (runtime discovery)
+- **Nexo.CLI** (`application/src/Nexo.CLI`) → Nexo.Hosting, bricks, and test projects for CLI composition (see **`docs/architecture/runtime-vs-application.md`**)
 - **Nexo.Infrastructure** → Core.Application, Core.Domain, Abstractions
