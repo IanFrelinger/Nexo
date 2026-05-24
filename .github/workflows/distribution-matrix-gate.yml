@@ -1,0 +1,139 @@
+# Validates multiple consumer/distribution channels in parallel.
+# See docs/DistributionModels.md for the mapping.
+name: Distribution Matrix Gate
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Weekly full matrix on default branch (path filters on PRs may skip jobs).
+    - cron: "0 10 * * 1"
+  push:
+    branches:
+      - master
+      - main
+      - "cursor/**"
+    paths:
+      - ".github/workflows/distribution-matrix-gate.yml"
+      - "scripts/ci/distribution-matrix-api-http-smoke.sh"
+      - ".docker/Dockerfile.api"
+      - ".docker/Dockerfile.cli"
+      - "scripts/verify-stable-sdk-host-sample-packages.sh"
+      - "scripts/pack-nexo-hosting-graph.sh"
+      - "scripts/pack-nexo-hosting-graph.ps1"
+      - "scripts/pack-nexo-hosting-graph.allowlist.txt"
+      - "scripts/verify-pack-nexo-hosting-graph-alignment.py"
+      - "application/src/Nexo.API/**"
+      - "application/src/Nexo.CLI/**"
+      - "src/Nexo.Client/**"
+      - "src/Nexo.Hosting/**"
+      - "docs/samples/StableSdkHostSample/**"
+      - "src/Nexo.Tests.Infrastructure/Tests/VirtualProduction/**"
+      - "src/Nexo.Tests.Infrastructure/Helpers/VirtualProduction/**"
+  pull_request:
+    paths:
+      - ".github/workflows/distribution-matrix-gate.yml"
+      - "scripts/ci/distribution-matrix-api-http-smoke.sh"
+      - ".docker/Dockerfile.api"
+      - ".docker/Dockerfile.cli"
+      - "scripts/verify-stable-sdk-host-sample-packages.sh"
+      - "scripts/pack-nexo-hosting-graph.sh"
+      - "scripts/pack-nexo-hosting-graph.ps1"
+      - "scripts/pack-nexo-hosting-graph.allowlist.txt"
+      - "scripts/verify-pack-nexo-hosting-graph-alignment.py"
+      - "application/src/Nexo.API/**"
+      - "application/src/Nexo.CLI/**"
+      - "src/Nexo.Client/**"
+      - "src/Nexo.Hosting/**"
+      - "docs/samples/StableSdkHostSample/**"
+      - "src/Nexo.Tests.Infrastructure/Tests/VirtualProduction/**"
+      - "src/Nexo.Tests.Infrastructure/Helpers/VirtualProduction/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: distribution-matrix-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  nuget-local-pack-consumer:
+    name: NuGet local pack → StableSdkHostSample
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Verify package-consumer build (isolated cache)
+        env:
+          NEXO_SDK_PACKAGE_VERSION: "9.9.9-ci-${{ github.run_id }}"
+        run: bash scripts/verify-stable-sdk-host-sample-packages.sh
+
+  cli-image-smoke:
+    name: CLI image build + smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build CLI image
+        run: |
+          docker build \
+            --file .docker/Dockerfile.cli \
+            --tag nexo-cli:dist-matrix \
+            .
+
+      - name: Smoke (--help)
+        run: docker run --rm nexo-cli:dist-matrix --help
+
+      - name: Smoke (doctor, mock)
+        env:
+          NEXO_ALLOW_MOCK: "1"
+        run: docker run --rm -e NEXO_ALLOW_MOCK=1 nexo-cli:dist-matrix doctor --json
+
+  api-image-http-smoke:
+    name: API image + curl /health + /api/status
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Build, run API, curl smoke
+        run: bash scripts/ci/distribution-matrix-api-http-smoke.sh
+
+  nexo-client-inprocess-test:
+    name: Nexo.Client ↔ in-process Nexo.API (net9)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: dotnet test (VirtualProduction INexoClient)
+        env:
+          NEXO_ALLOW_MOCK: "1"
+        run: |
+          dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+            -f net9.0 \
+            --filter "FullyQualifiedName~Nexo.Tests.Infrastructure.Tests.VirtualProduction.FrameworkVirtualProdDemosTests.Virtual_prod_INexoClient_GetStatusAsync_matches_console_and_blazor_demos" \
+            --verbosity minimal
+
+  pack-hosting-graph-alignment:
+    name: Pack script vs Nexo.Hosting graph
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: verify-pack-nexo-hosting-graph-alignment
+        run: python3 scripts/verify-pack-nexo-hosting-graph-alignment.py

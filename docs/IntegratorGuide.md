@@ -2,6 +2,8 @@
 
 This guide is for teams embedding Nexo, extending bricks, or hosting custom background agents alongside the core platform.
 
+For **how all distribution channels fit together** (NuGet, HTTP, CLI, compose, source, mesh), **pinning**, and the **CI matrix** that validates each channel, see **`docs/DistributionModels.md`**.
+
 ## Getting started with the Nexo SDK
 
 The slim **HTTP client** package is the `Nexo.Sdk` project (`src/Nexo.Sdk/Nexo.Sdk.csproj`). Register it with **`AddNexoClientSdk(baseUrl, ...)`** (`Nexo.Sdk.Client`). The obsolete **`AddNexoSdk(string baseUrl, ...)`** name remains as a compat shim. For **host-side** brick/agent registration, use **`Nexo.Hosting.Sdk.AddNexoSdk`** (before `AddNexo`). See [`docs/architecture/SdkStructure.md`](architecture/SdkStructure.md).
@@ -59,7 +61,7 @@ Match sensitivity and exfiltration settings to your deployment tier. For mesh-re
 |--------------|--------------|--------|
 | _TBD_        | .NET 8 / 9   | Fill in after your release qualification. |
 
-Update this table when you pin Nexo packages or CLI images for production.
+Update this table when you pin Nexo packages or CLI images for production. Release owners: keep this table aligned with **`docs/DistributionModels.md`** (single place integrators look for “what we support”).
 
 ## Troubleshooting
 

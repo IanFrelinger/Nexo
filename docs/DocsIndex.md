@@ -17,6 +17,7 @@ Documentation index for the Nexo platform. Start here to find what you need.
 
 ## Operator / Production Readiness
 
+- **`docs/DistributionModels.md`** — how Nexo is **distributed** (NuGet, HTTP, CLI, compose, source, mesh), **pinning**, and the **distribution matrix** CI workflow that gates each channel.
 - **`docs/production-readiness/README.md`** — **hub** for supporting SMB, enterprise, SaaS, and air-gapped production: release, security, ops, data/compliance, reliability, testing, operator deployment; includes [catalog by deployment type](production-readiness/CatalogByDeploymentType.md) and [runbook template](production-readiness/RunbookTemplate.md).
 - `docs/DEPLOYMENT.md` — **golden paths** (portal stack, CLI image, agent server), **pinning** images vs `latest`, NuGet/CI notes.
 - `docs/RELEASE.md` — **release hub** (preflight, dispatch, tag, deep links).
@@ -37,6 +38,7 @@ Documentation index for the Nexo platform. Start here to find what you need.
 - `docs/CiFirstHardwareSecond.md` — **CI first, hardware second**: which workflows to run and what still needs a physical host.
 - `.github/workflows/onboarding-quickstart-gate.yml` — runs first-run onboarding commands in native + container lanes.
 - `.github/workflows/container-image-gate.yml` — container image buildability and smoke-run gate.
+- `.github/workflows/distribution-matrix-gate.yml` — **parallel** gates: NuGet local-pack consumer, CLI image + doctor, API image + `curl` `/health` + `/api/status`, `Nexo.Client` in-process test, pack-graph alignment (plus **weekly** schedule).
 - `.github/workflows/release.yml` — **one entry**: tag `v*.*.*` → GHCR (`nexo-cli`, `nexo-api`) + NuGet; run summary with pin lines.
 - `.github/workflows/container-image-publish.yml` — GHCR on **main** path-filtered pushes + manual (tags use `release.yml` only).
 - `.github/workflows/release-nuget.yml` — **NuGet-only** manual dispatch; after push to nuget.org, **Verify NuGet consumer** (same reusable job as **release.yml**).
