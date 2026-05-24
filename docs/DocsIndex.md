@@ -102,6 +102,7 @@ Documentation index for the Nexo platform. Start here to find what you need.
 
 ## Additional Material
 
+- `docs/communications/linkedin-distribution-channels.md` — optional **LinkedIn** copy emphasizing **distribution channels** (NuGet, HTTP, CLI, Compose, mesh) with pointers to **`docs/DistributionModels.md`**.
 - `docs/Persistence.md` — persistence behavior and options.
 - `docs/ComponentLibrary.md` — component catalog references.
 - `docker-compose.test.yml` — containerized test lane (`test-ubuntu`) with mounted test artifacts.
