@@ -21,4 +21,4 @@ This repo’s default packages are **unsigned**; `dotnet nuget verify` will repo
 ## Further reading
 
 - [Sign a package](https://learn.microsoft.com/nuget/create-packages/sign-a-package) (Microsoft)
-- [Trusted packages](https://learn.microsoft.com/nuget/concepts/trusted-packages) (client policy)
+- [Signed packages and client trust policies](https://learn.microsoft.com/en-us/nuget/consume-packages/installing-signed-packages)
