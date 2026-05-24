@@ -55,13 +55,14 @@ dotnet run --project application/src/Nexo.CLI -- background-agent daemon --confi
 
 Match sensitivity and exfiltration settings to your deployment tier. For mesh-related peer lists used at runtime, see `nexo mesh` commands and `NEXO_MESH_INSTANCES_PATH` if you relocate `instances.json`. To call a remote mesh **director** HTTP API from a headless host (CI, bare metal worker), use **`nexo mesh director`** with **`NEXO_MESH_DIRECTOR_BASE_URL`** and optional **`NEXO_MESH_MUTATING_TOKEN`** / **`NEXO_MESH_API_KEY`** — see **`docs/MeshPhase7EdgeAlignment.md`** when that doc exists on your branch. For a **prefab two-person hub** (Compose + API key defaults), see **`docs/FriendMeshPrefab.md`** and **`docker-compose.friend-mesh.yml`**.
 
-## Compatibility matrix (placeholder)
+## Compatibility matrix
 
-| Nexo version | .NET runtime | Notes |
-|--------------|--------------|--------|
-| _TBD_        | .NET 8 / 9   | Fill in after your release qualification. |
+| Nexo line | .NET / toolchain | Notes |
+|-----------|------------------|--------|
+| **Monorepo / source (`master`)** | **SDK 9.x** (`global.json`); **API & CLI** target **`net8.0`**; libraries and tests may use **`net8.0`** / **`net9.0`** (see **`docs/architecture/DotnetVersions.md`**) | You build from **`application/Nexo.Application.sln`** or **`Nexo.sln`**; no single “repo version” until you tag. |
+| **Published NuGet + GHCR** | Same **semver** across packages and release images | Cut with **`docs/RELEASE.md`** / **`docs/RELEASE_RUNBOOK.md`**; consumer verify scripts in **`docs/PUBLISHING.md`** and **`docs/NuGetConsumerVerify.md`**. |
 
-Update this table when you pin Nexo packages or CLI images for production. Release owners: keep this table aligned with **`docs/DistributionModels.md`** (single place integrators look for “what we support”).
+After each **tagged release**, add a row for that **semver** (packages + `nexo-cli` / `nexo-api` digest pins) so integrators can copy known-good pins. Keep **`docs/DistributionModels.md`** in sync when channels or golden paths change.
 
 ## Troubleshooting
 

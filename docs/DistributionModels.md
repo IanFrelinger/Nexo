@@ -25,6 +25,19 @@ Release automation is summarized in **`docs/RELEASE.md`** (NuGet + GHCR from one
 | **Source / monorepo** | `ProjectReference` into **`src/`** | Git commit / branch | **`docs/IntegratorGuide.md`** (project reference example) |
 | **Mesh / federation** | Peer config, director URL, tokens | `instances.json`, env vars | **`docs/IntegratorGuide.md`**, **`docs/FriendMeshPrefab.md`**, mesh phase docs |
 
+## Golden reference pins (copy/paste)
+
+Use these as **stable entrypoints** when writing runbooks or samples; replace image digests and package versions with whatever you shipped (`docs/RELEASE.md`).
+
+| Channel | Golden artifact / path |
+|--------|-------------------------|
+| **NuGet host sample (local pack)** | `docs/samples/StableSdkHostSample/package-consumer/StableSdkHostSample.Package.csproj` + **`scripts/verify-stable-sdk-host-sample-packages.sh`** |
+| **NuGet metapackage (consumers)** | **`Nexo.Hosting.Bundle`** at the release semver (see **`docs/PUBLISHING.md`**) |
+| **HTTP / API container** | Build **`.docker/Dockerfile.api`**; container listens on **`8080`** (`ASPNETCORE_URLS=http://+:8080`). Smoke script: **`scripts/ci/distribution-matrix-api-http-smoke.sh`**. |
+| **CLI container (public)** | **`ghcr.io/ianfrelinger/nexo-cli:latest`** — smoke with **`--help`** and **`pipeline validate --help`** (not **`doctor`**, see **`docs/GettingStarted.md`**). |
+| **Compose (operator lab)** | **`docker-compose.ephemeral.yml`** (light deps) or **`docker-compose.portal.yml`** (Director stack) — hub **`docs/DEPLOYMENT.md`**. |
+| **Mesh prefab** | **`docker-compose.friend-mesh.yml`** + **`docs/FriendMeshPrefab.md`** |
+
 ## Contract boundaries
 
 - **Host SDK (stable):** `Nexo.Hosting.Sdk` — register bricks/agents before **`AddNexo`**. See **`docs/sdk.md`**.

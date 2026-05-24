@@ -22,7 +22,7 @@ One-shot (CI parity): `make mesh-lab-e2e-workers`, `make mesh-lab-e2e-deep`, `ma
 | **`POST /api/mesh/fleet/nodes/{id}/admit|revoke`** | **Director** in-memory fleet (peer-a in lab) | HTTP mesh placement only |
 | **`nexo mesh director admit|revoke`** | Same as HTTP above from headless hosts | CI scripts, workers without curl |
 
-Lab verify runs **both** HTTP governance ([`mesh-lab-verify-governance.sh`](../scripts/mesh-lab-verify-governance.sh)) and CLI ([`mesh-lab-verify-director-cli.sh`](../scripts/mesh-lab-verify-director-cli.sh)).
+Lab verify runs **both** HTTP governance ([`mesh-lab-verify-governance.sh`](../../scripts/mesh-lab-verify-governance.sh)) and CLI ([`mesh-lab-verify-director-cli.sh`](../../scripts/mesh-lab-verify-director-cli.sh)).
 
 ## Upgrade order (lab)
 
@@ -69,7 +69,7 @@ There is **no distributed consensus** in the MVP director—last writer wins on 
 
 ## Network negative (automated)
 
-[`scripts/mesh-lab-verify-network-negative.sh`](../scripts/mesh-lab-verify-network-negative.sh) runs after trust checks in standard verify. Covers:
+[`scripts/mesh-lab-verify-network-negative.sh`](../../scripts/mesh-lab-verify-network-negative.sh) runs after trust checks in standard verify. Covers:
 
 - Assigned peer with **unreachable** `apiBaseUrl` (director does not HTTP preflight workers)
 - **Drained-only** fleet → schedule blocked
@@ -78,7 +78,7 @@ There is **no distributed consensus** in the MVP director—last writer wins on 
 
 **Automated TLS:** `make mesh-lab-e2e-tls` or weekly **`mesh-lab-tls-gate.yml`**. **gRPC:** **`grpc-transport-gate.yml`** / `make test-prime-time`.
 
-**Tailscale / two physical hosts:** [`mesh-lab-verify-remote.sh`](../scripts/mesh-lab-verify-remote.sh) + optional **`mesh-lab-remote-gate.yml`** (repository secrets). See [`MeshPhase12RemoteNetworkingAutomation.md`](../MeshPhase12RemoteNetworkingAutomation.md).
+**Tailscale / two physical hosts:** [`mesh-lab-verify-remote.sh`](../../scripts/mesh-lab-verify-remote.sh) + optional **`mesh-lab-remote-gate.yml`** (repository secrets). See [`MeshPhase12RemoteNetworkingAutomation.md`](../MeshPhase12RemoteNetworkingAutomation.md).
 
 ## Headless director CLI
 
