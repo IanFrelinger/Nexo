@@ -61,3 +61,7 @@ dotnet build application/Nexo.Application.sln
 ```
 
 `Nexo.Kernel.sln` (when present) is a mid-sized kernel-focused subset for workflows that do not need the entire `Nexo.sln` graph.
+
+## See also
+
+- **`docs/DistributionModels.md`** — how external hosts and operators consume Nexo (NuGet, HTTP, CLI, compose, mesh) and which **CI gates** prove each path.

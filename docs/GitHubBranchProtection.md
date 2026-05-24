@@ -12,7 +12,7 @@ Branch protection cannot run **`release.yml`** (that workflow is triggered by **
 
 ## Release-specific checks
 
-- Treat **`runtime-release-gate`** as a **manual or scheduled** quality bar before a big release (or wire it into your process): `dotnet run --project src/Nexo.CLI -- release gate` after `gh auth login`.
+- Treat **`runtime-release-gate`** as a **manual or scheduled** quality bar before a big release (or wire it into your process): `dotnet run --project application/src/Nexo.CLI -- release gate` after `gh auth login`.
 - The **tag** `v*.*.*` is the contract for **`release.yml`**; protect **`master`** so that tag usually points at a merged, reviewed commit.
 
 ## Forks

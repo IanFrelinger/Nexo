@@ -2,7 +2,7 @@
 
 This document describes how to **produce** and **publish** the .NET packages that external repos (for example game tooling) consume. CI already **verifies** NuGet-only consumption locally; publishing to a feed is an operator step.
 
-**Minimal local preflight (one command):** `bash scripts/release-preflight-local.sh X.Y.Z`, `make release-preflight VERSION=X.Y.Z`, or `dotnet run --project src/Nexo.CLI -- release preflight X.Y.Z` — then push **`vX.Y.Z`** for **`release.yml`** (or **`release dispatch`** / **`make release-dispatch`**). Hub: **`docs/RELEASE.md`**. Checklist: **`docs/RELEASE_RUNBOOK.md`**. GitHub **variables**: **`docs/GitHubRepoVariables.md`**.
+**Minimal local preflight (one command):** `bash scripts/release-preflight-local.sh X.Y.Z`, `make release-preflight VERSION=X.Y.Z`, or `dotnet run --project application/src/Nexo.CLI -- release preflight X.Y.Z` — then push **`vX.Y.Z`** for **`release.yml`** (or **`release dispatch`** / **`make release-dispatch`**). Hub: **`docs/RELEASE.md`**. Checklist: **`docs/RELEASE_RUNBOOK.md`**. GitHub **variables**: **`docs/GitHubRepoVariables.md`**.
 
 ## What gets published
 

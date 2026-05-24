@@ -151,10 +151,10 @@ JSON
 Validate and run:
 
 ```bash
-dotnet run --project application/src/Nexo.CLI/Nexo.CLI.csproj -- pipeline validate --template /tmp/pipeline_gate_demo.json
-dotnet run --project application/src/Nexo.CLI/Nexo.CLI.csproj -- pipeline run --template /tmp/pipeline_gate_demo.json --run-id gate-run-success --format-json
-NEXO_PIPELINE_ENABLE_TEST_HOOKS=1 NEXO_PIPELINE_COMPLETION_POLICY=AllowNonCriticalStageFailures dotnet run --project application/src/Nexo.CLI/Nexo.CLI.csproj -- pipeline run --template /tmp/pipeline_gate_demo.json --run-id gate-run-fallback --input "fail:hybrid:deterministic=true" --format-json
-dotnet run --project application/src/Nexo.CLI/Nexo.CLI.csproj -- pipeline diagnostics --format-json
+dotnet run --project application/src/Nexo.CLI -- pipeline validate --template /tmp/pipeline_gate_demo.json
+dotnet run --project application/src/Nexo.CLI -- pipeline run --template /tmp/pipeline_gate_demo.json --run-id gate-run-success --format-json
+NEXO_PIPELINE_ENABLE_TEST_HOOKS=1 NEXO_PIPELINE_COMPLETION_POLICY=AllowNonCriticalStageFailures dotnet run --project application/src/Nexo.CLI -- pipeline run --template /tmp/pipeline_gate_demo.json --run-id gate-run-fallback --input "fail:hybrid:deterministic=true" --format-json
+dotnet run --project application/src/Nexo.CLI -- pipeline diagnostics --format-json
 ```
 
 ### 4.4 Durable resume checks (LiteDb)
@@ -162,10 +162,10 @@ dotnet run --project application/src/Nexo.CLI/Nexo.CLI.csproj -- pipeline diagno
 ```bash
 NEXO_PIPELINE_STORE_PROVIDER=LiteDb NEXO_PIPELINE_STORE_PATH=/tmp/nexo_pipeline_gate_resume.db \
 NEXO_PIPELINE_ENABLE_TEST_HOOKS=1 \
-dotnet run --project application/src/Nexo.CLI/Nexo.CLI.csproj -- pipeline run --template /tmp/pipeline_gate_demo.json --run-id gate-resume-source --input "fail:ingest:deterministic=true" --format-json
+dotnet run --project application/src/Nexo.CLI -- pipeline run --template /tmp/pipeline_gate_demo.json --run-id gate-resume-source --input "fail:ingest:deterministic=true" --format-json
 
 NEXO_PIPELINE_STORE_PROVIDER=LiteDb NEXO_PIPELINE_STORE_PATH=/tmp/nexo_pipeline_gate_resume.db \
-dotnet run --project application/src/Nexo.CLI/Nexo.CLI.csproj -- pipeline run --template /tmp/pipeline_gate_demo.json --run-id gate-resume-target --resume-run-id gate-resume-source --resume-failed-stages --format-json
+dotnet run --project application/src/Nexo.CLI -- pipeline run --template /tmp/pipeline_gate_demo.json --run-id gate-resume-target --resume-run-id gate-resume-source --resume-failed-stages --format-json
 ```
 
 Cleanup:
