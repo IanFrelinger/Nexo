@@ -69,6 +69,18 @@ public sealed class NexoClient : INexoClient
     }
 
     /// <inheritdoc />
+    public async Task<JsonElement> QueryKnowledgeAsync(string relativeQuery, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(relativeQuery))
+            throw new ArgumentException("Query path is required.", nameof(relativeQuery));
+
+        var path = relativeQuery.TrimStart('/');
+        var response = await _httpClient.GetAsync(path, cancellationToken).ConfigureAwait(false);
+        response.EnsureSuccessStatusCode();
+        return (await response.Content.ReadFromJsonAsync<JsonElement>(_jsonOptions, cancellationToken).ConfigureAwait(false))!;
+    }
+
+    /// <inheritdoc />
     public async Task<HttpResponseMessage> InvokeAsync(
         HttpMethod method,
         string relativeUri,

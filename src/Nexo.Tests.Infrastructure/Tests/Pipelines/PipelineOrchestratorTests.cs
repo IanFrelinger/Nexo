@@ -399,6 +399,11 @@ public sealed class PipelineOrchestratorTests
         run.StageRuns.Single(x => x.StageId == "only").State.Should().Be(PipelineStageRunState.Completed);
     }
 
+    internal static PipelineOrchestrator BuildOrchestratorForGap(
+        out IPipelineRunStore runStore,
+        PipelineExecutionOptions? executionOptions = null) =>
+        BuildOrchestrator(out runStore, executionOptions);
+
     private static PipelineOrchestrator BuildOrchestrator(
         out IPipelineRunStore runStore,
         PipelineExecutionOptions? executionOptions = null)

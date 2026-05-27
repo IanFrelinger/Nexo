@@ -158,6 +158,74 @@ public sealed class PkiCertificateBarrierResolverTests
         result!.ResolvedLevel.Should().Be("internal");
     }
 
+    [Fact]
+    public async Task TryResolveAsync_NullContext_ReturnsNull()
+    {
+        var sut = CreateResolver(new PkiCertificateResolverOptions());
+
+        var result = await sut.TryResolveAsync(null!);
+
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task TryResolveAsync_NullRule_IsSkipped()
+    {
+        var sut = CreateResolver(new PkiCertificateResolverOptions
+        {
+            Rules = [null!],
+        });
+
+        var result = await sut.TryResolveAsync(CreateContext(subjects: ["CN=svc-a,O=Acme"]));
+
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task TryResolveAsync_UnknownMatchField_ReturnsNull()
+    {
+        var sut = CreateResolver(new PkiCertificateResolverOptions
+        {
+            Rules =
+            [
+                new CertificateBarrierRule
+                {
+                    Name = "unknown-field",
+                    MatchField = "Thumbprint",
+                    MatchPattern = "*",
+                    BarrierLevel = "internal",
+                },
+            ],
+        });
+
+        var result = await sut.TryResolveAsync(CreateContext(subjects: ["CN=svc-a,O=Acme"]));
+
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task TryResolveAsync_SanMatch_UsesSanDetail()
+    {
+        var sut = CreateResolver(new PkiCertificateResolverOptions
+        {
+            Rules =
+            [
+                new CertificateBarrierRule
+                {
+                    Name = "san-detail",
+                    MatchField = "SAN",
+                    MatchPattern = "api.internal",
+                    BarrierLevel = "internal",
+                },
+            ],
+        });
+
+        var result = await sut.TryResolveAsync(CreateContext(sans: ["api.internal"]));
+
+        result.Should().NotBeNull();
+        result!.Detail.Should().Contain("SAN 'api.internal'");
+    }
+
     private static PkiCertificateBarrierResolver CreateResolver(PkiCertificateResolverOptions options)
         => new(options, CreateHierarchy(), new TestLogger<PkiCertificateBarrierResolver>());
 

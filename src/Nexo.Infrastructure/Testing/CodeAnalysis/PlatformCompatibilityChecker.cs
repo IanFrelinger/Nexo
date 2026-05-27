@@ -1,5 +1,3 @@
-using System.Runtime.InteropServices;
-
 namespace Nexo.Infrastructure.Testing.CodeAnalysis;
 
 /// <summary>
@@ -72,57 +70,21 @@ public static class PlatformCompatibilityChecker
 
     private static bool CheckRoslynAvailable()
     {
-        try
-        {
-            // Try to use Roslyn types
-            var syntaxTreeType = Type.GetType("Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree, Microsoft.CodeAnalysis.CSharp");
-            return syntaxTreeType != null;
-        }
-        catch
-        {
-            return false;
-        }
+        var syntaxTreeType = CompatibilityTestHooks.ResolveType(
+            "Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree, Microsoft.CodeAnalysis.CSharp");
+        return syntaxTreeType != null;
     }
 
     private static bool CheckDecompilerAvailable()
     {
-        try
-        {
-            // Try to use ICSharpCode.Decompiler types
-            var decompilerType = Type.GetType("ICSharpCode.Decompiler.CSharp.CSharpDecompiler, ICSharpCode.Decompiler");
-            return decompilerType != null;
-        }
-        catch
-        {
-            return false;
-        }
+        var decompilerType = CompatibilityTestHooks.ResolveType(
+            "ICSharpCode.Decompiler.CSharp.CSharpDecompiler, ICSharpCode.Decompiler");
+        return decompilerType != null;
     }
 
-    private static bool CheckReflectionAvailable()
-    {
-        try
-        {
-            // Check if basic reflection works
-            var testType = typeof(object);
-            var methods = testType.GetMethods();
-            return methods.Length > 0;
-        }
-        catch
-        {
-            return false;
-        }
-    }
+    private static bool CheckReflectionAvailable() => CompatibilityTestHooks.ProbeReflection();
 
-    private static string GetPlatformName()
-    {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            return "Windows";
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            return "Linux";
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            return "macOS";
-        return "Unknown";
-    }
+    private static string GetPlatformName() => CompatibilityTestHooks.ResolvePlatformName();
 }
 
 /// <summary>

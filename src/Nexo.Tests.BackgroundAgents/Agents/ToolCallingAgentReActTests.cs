@@ -148,6 +148,209 @@ public sealed class ToolCallingAgentReActTests
         await act.Should().ThrowAsync<OperationCanceledException>();
     }
 
+    [Fact]
+    public async Task RunCycleAsync_null_tools_or_policies_throw()
+    {
+        var agent = new ToolCallingAgent("planner", new EmptyMockModel(), NullLogger<ToolCallingAgent>.Instance);
+        var snapshot = WorldSnapshot.ForRepo("/repo", "/repo/out");
+        var (tools, policies) = BuildHarness(allowAll: true, out _);
+
+        var actTools = () => agent.RunCycleAsync(snapshot, null!, policies, null, null, CancellationToken.None);
+        var actPolicies = () => agent.RunCycleAsync(snapshot, tools, null!, null, null, CancellationToken.None);
+
+        await actTools.Should().ThrowAsync<ArgumentNullException>();
+        await actPolicies.Should().ThrowAsync<ArgumentNullException>();
+    }
+
+    [Fact]
+    public async Task RunCycleAsync_with_no_tools_returns_empty_cycle()
+    {
+        var agent = new ToolCallingAgent("planner", new EmptyMockModel(), NullLogger<ToolCallingAgent>.Instance);
+        var cycle = await agent.RunCycleAsync(
+            WorldSnapshot.ForRepo("/repo", "/repo/out"),
+            new EmptyToolbox(),
+            new PolicyEngine(Array.Empty<IPolicy>()),
+            null,
+            null,
+            CancellationToken.None);
+
+        cycle.StoppedReason.Should().Be("empty");
+        cycle.Iterations.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task RunCycleAsync_tool_failure_stops_with_error_reason()
+    {
+        var model = ScriptedModel.Of(ResponseWithCalls("boom", ("boom", "{}")));
+        var tb = new CapabilityRegistry();
+        tb.Register(new ThrowingTool());
+        var policies = new PolicyEngine(new IPolicy[] { new PredicatePolicy(_ => true) });
+
+        var agent = new ToolCallingAgent("planner", model, NullLogger<ToolCallingAgent>.Instance);
+        var cycle = await agent.RunCycleAsync(
+            WorldSnapshot.ForRepo("/repo", "/repo/out"),
+            tb,
+            policies,
+            null,
+            null,
+            CancellationToken.None);
+
+        cycle.StoppedReason.Should().Be("error");
+    }
+
+    [Fact]
+    public async Task RunCycleAsync_truncates_non_serializable_tool_payload()
+    {
+        var model = ScriptedModel.Of(
+            ResponseWithCalls("call", ("weird", "{}")),
+            ResponseEmpty("done"));
+        var tb = new CapabilityRegistry();
+        tb.Register(new CircularPayloadTool());
+        var policies = new PolicyEngine(new IPolicy[] { new PredicatePolicy(_ => true) });
+
+        var agent = new ToolCallingAgent("planner", model, NullLogger<ToolCallingAgent>.Instance);
+        var cycle = await agent.RunCycleAsync(
+            WorldSnapshot.ForRepo("/repo", "/repo/out"),
+            tb,
+            policies,
+            null,
+            null,
+            CancellationToken.None);
+
+        cycle.StoppedReason.Should().Be("empty");
+        model.SeenMessages[1].Should().Contain(m => m.content.Contains("payload_serialization_failed"));
+    }
+
+    [Fact]
+    public async Task RunCycleAsync_truncates_large_tool_payload_in_conversation()
+    {
+        var model = ScriptedModel.Of(
+            ResponseWithCalls("read", ("big", "{}")),
+            ResponseEmpty("done"));
+        var tb = new CapabilityRegistry();
+        tb.Register(new LargePayloadTool());
+        var policies = new PolicyEngine(new IPolicy[] { new PredicatePolicy(_ => true) });
+
+        var agent = new ToolCallingAgent("planner", model, NullLogger<ToolCallingAgent>.Instance);
+        await agent.RunCycleAsync(
+            WorldSnapshot.ForRepo("/repo", "/repo/out"),
+            tb,
+            policies,
+            null,
+            null,
+            CancellationToken.None);
+
+        model.SeenMessages[1].Should().ContainSingle(m => m.content.Contains('…'));
+    }
+
+    [Fact]
+    public async Task RunCycleAsync_policy_denial_invokes_callback_and_continues()
+    {
+        var model = ScriptedModel.Of(
+            ResponseWithCalls("try write", ("noop", "{}")),
+            ResponseEmpty("give up"));
+        var (tools, policies) = BuildHarness(allowAll: false, out _);
+        string? rejectedReason = null;
+
+        var agent = new ToolCallingAgent("planner", model, NullLogger<ToolCallingAgent>.Instance);
+        var cycle = await agent.RunCycleAsync(
+            WorldSnapshot.ForRepo("/repo", "/repo/out"),
+            tools,
+            policies,
+            (calls, index, reason) => rejectedReason = reason,
+            null,
+            CancellationToken.None);
+
+        cycle.ToolCallsDenied.Should().Be(1);
+        rejectedReason.Should().Contain("predicate");
+        model.SeenMessages[1].Should().Contain(m => m.content.Contains("DENIED"));
+    }
+
+    [Fact]
+    public async Task RunCycleAsync_skips_tool_calls_with_blank_ids()
+    {
+        var model = ScriptedModel.Of(new ScriptedModel.Turn("""
+            {"tool_calls":[{"id":"","arguments":{}},{"id":"noop","arguments":{}}],"rationale":"mixed"}
+            """));
+        var (tools, policies) = BuildHarness(allowAll: true, out var noop);
+
+        var agent = new ToolCallingAgent("planner", model, NullLogger<ToolCallingAgent>.Instance);
+        await agent.RunCycleAsync(
+            WorldSnapshot.ForRepo("/repo", "/repo/out"),
+            tools,
+            policies,
+            null,
+            null,
+            CancellationToken.None);
+
+        noop.Invocations.Should().Be(1);
+    }
+
+    [Fact]
+    public async Task RunCycleAsync_invalid_json_from_model_stops_on_empty()
+    {
+        var model = ScriptedModel.Of(new ScriptedModel.Turn("not-json-at-all"));
+        var (tools, policies) = BuildHarness(allowAll: true, out _);
+
+        var agent = new ToolCallingAgent("planner", model, NullLogger<ToolCallingAgent>.Instance);
+        var cycle = await agent.RunCycleAsync(
+            WorldSnapshot.ForRepo("/repo", "/repo/out"),
+            tools,
+            policies,
+            null,
+            null,
+            CancellationToken.None);
+
+        cycle.StoppedReason.Should().Be("empty");
+        cycle.ToolCallsExecuted.Should().Be(0);
+    }
+
+    private sealed class LargePayloadTool : ITool
+    {
+        public string Id => "big";
+        public ToolSchema Schema => new(Id, "big", "{\"type\":\"object\"}");
+        public Task<ToolResult> InvokeAsync(ToolCall call, WorldSnapshot s, CancellationToken ct)
+        {
+            var delta = new SimpleDelta(s.Tick, s.Tick + 1, "big");
+            return Task.FromResult(new ToolResult(delta, new { blob = new string('x', 5000) }));
+        }
+    }
+
+    private sealed class EmptyToolbox : IToolbox
+    {
+        public IEnumerable<ToolSchema> Schemas() => Array.Empty<ToolSchema>();
+        public Task<ToolResult> InvokeAsync(ToolCall call, WorldSnapshot s, CancellationToken ct) =>
+            throw new NotSupportedException();
+        public IAgentMemory MemoryFor(IAgent agent) => throw new NotSupportedException();
+    }
+
+    private sealed class ThrowingTool : ITool
+    {
+        public string Id => "boom";
+        public ToolSchema Schema => new(Id, "boom", "{\"type\":\"object\"}");
+        public Task<ToolResult> InvokeAsync(ToolCall call, WorldSnapshot s, CancellationToken ct) =>
+            throw new InvalidOperationException("tool exploded");
+    }
+
+    private sealed class CircularPayloadTool : ITool
+    {
+        public string Id => "weird";
+        public ToolSchema Schema => new(Id, "weird", "{\"type\":\"object\"}");
+        public Task<ToolResult> InvokeAsync(ToolCall call, WorldSnapshot s, CancellationToken ct)
+        {
+            var dict = new Dictionary<string, object>();
+            dict["self"] = dict;
+            var delta = new SimpleDelta(s.Tick, s.Tick + 1, "weird");
+            return Task.FromResult(new ToolResult(delta, dict));
+        }
+    }
+
+    private sealed class EmptyMockModel : IModel
+    {
+        public Task<ModelOutput> CompleteAsync(ModelInput input, CancellationToken ct) =>
+            Task.FromResult(new ModelOutput("{}"));
+    }
+
     private static (CapabilityRegistry tools, PolicyEngine policies) BuildHarness(
         bool allowAll,
         out RecordingTool noop)

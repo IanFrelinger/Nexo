@@ -129,21 +129,7 @@ public sealed class HttpBarrierContextMiddleware : IMiddleware
         if (clientCert is not null)
         {
             certSubjects.Add(clientCert.Subject);
-            try
-            {
-                foreach (var ext in clientCert.Extensions)
-                {
-                    if (ext is X509SubjectAlternativeNameExtension sanExt)
-                    {
-                        foreach (var dns in sanExt.EnumerateDnsNames())
-                            certSans.Add(dns);
-                    }
-                }
-            }
-            catch
-            {
-                // SAN parsing is best-effort
-            }
+            ClientCertificateSanExtractor.ExtractDnsSans(clientCert, certSans);
         }
 
         string? rawJwt = null;

@@ -99,4 +99,95 @@ public sealed class OsmSharpMapVerificationServiceTests
             i.Message.Contains("Parent tier", StringComparison.OrdinalIgnoreCase) &&
             i.Severity == MapVerificationSeverity.Warning);
     }
+
+    [Fact]
+    public async Task Missing_vector_payload_emits_info_issue_only()
+    {
+        var req = new MapVerificationRequest(
+            new MapDataGeographicBounds(-1, -1, 1, 1),
+            TierIndex: 0,
+            null,
+            null,
+            null,
+            null,
+            new MapDataRequestContext());
+
+        var report = await _svc.VerifyAsync(req, default);
+
+        report.Issues.Should().ContainSingle(i =>
+            i.Category == MapVerificationCategories.Topology &&
+            i.Severity == MapVerificationSeverity.Info &&
+            i.Message.Contains("No vector sample payload"));
+    }
+
+    [Fact]
+    public async Task Non_osm_format_hint_skips_geometry_checks()
+    {
+        var req = new MapVerificationRequest(
+            new MapDataGeographicBounds(-1, -1, 1, 1),
+            TierIndex: 0,
+            null,
+            null,
+            Encoding.UTF8.GetBytes("plain text"),
+            "text/plain",
+            new MapDataRequestContext());
+
+        var report = await _svc.VerifyAsync(req, default);
+
+        report.Issues.Should().Contain(i => i.Message.Contains("OsmSharp checks skipped"));
+    }
+
+    [Fact]
+    public async Task Invalid_osm_xml_emits_parse_warning()
+    {
+        var req = new MapVerificationRequest(
+            new MapDataGeographicBounds(-1, -1, 1, 1),
+            TierIndex: 0,
+            null,
+            null,
+            Encoding.UTF8.GetBytes("<osm><broken"),
+            "osm-xml",
+            new MapDataRequestContext());
+
+        var report = await _svc.VerifyAsync(req, default);
+
+        report.Issues.Should().Contain(i =>
+            i.Category == MapVerificationCategories.Topology &&
+            i.Severity == MapVerificationSeverity.Warning &&
+            i.Message.Contains("OSM parse failed"));
+    }
+
+    [Fact]
+    public async Task Building_and_road_issues_are_reported()
+    {
+        var xml = """
+            <?xml version="1.0"?>
+            <osm version="0.6">
+              <node id="1" lat="0" lon="0"/>
+              <node id="2" lat="0.001" lon="0"/>
+              <node id="3" lat="0.001" lon="0.001"/>
+              <way id="20">
+                <nd ref="1"/><nd ref="2"/>
+                <tag k="highway" v="primary"/>
+              </way>
+              <way id="21">
+                <nd ref="1"/><nd ref="2"/><nd ref="3"/>
+                <tag k="building" v="yes"/>
+              </way>
+            </osm>
+            """;
+        var req = new MapVerificationRequest(
+            new MapDataGeographicBounds(-1, -1, 1, 1),
+            TierIndex: 2,
+            null,
+            null,
+            Encoding.UTF8.GetBytes(xml),
+            "osm-xml",
+            new MapDataRequestContext());
+
+        var report = await _svc.VerifyAsync(req, default);
+
+        report.Issues.Should().Contain(i => i.Category == MapVerificationCategories.Road);
+        report.Issues.Should().Contain(i => i.Category == MapVerificationCategories.Building);
+    }
 }

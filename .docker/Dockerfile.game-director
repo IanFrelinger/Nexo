@@ -1,0 +1,18 @@
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+WORKDIR /src
+COPY . .
+RUN dotnet restore application/src/GameDirector.Host/GameDirector.Host.csproj
+RUN dotnet publish application/src/GameDirector.Host/GameDirector.Host.csproj -c Release -o /app/publish --no-restore
+
+FROM mcr.microsoft.com/dotnet/sdk:9.0
+WORKDIR /app
+RUN curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh \
+    && chmod +x /tmp/dotnet-install.sh \
+    && /tmp/dotnet-install.sh --channel 8.0 --runtime aspnetcore --install-dir /usr/share/dotnet \
+    && rm /tmp/dotnet-install.sh
+COPY --from=build /app/publish ./
+ENV ASPNETCORE_URLS=http://+:8080
+EXPOSE 8080
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD curl -f http://localhost:8080/health || exit 1
+ENTRYPOINT ["dotnet", "GameDirector.Host.dll"]

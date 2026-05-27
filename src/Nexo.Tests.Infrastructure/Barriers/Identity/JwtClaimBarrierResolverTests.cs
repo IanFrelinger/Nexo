@@ -90,6 +90,34 @@ public sealed class JwtClaimBarrierResolverTests
             entry.Message.Contains("unknown barrier level", StringComparison.OrdinalIgnoreCase));
     }
 
+    [Fact]
+    public async Task TryResolveAsync_NullContext_ReturnsNull()
+    {
+        var sut = CreateResolver(new JwtClaimResolverOptions
+        {
+            ClaimName = "tier",
+            ClaimValueMapping = new Dictionary<string, string> { ["pro"] = "internal" },
+        });
+
+        var result = await sut.TryResolveAsync(null!);
+
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task TryResolveAsync_EmptyClaimName_ReturnsNull()
+    {
+        var sut = CreateResolver(new JwtClaimResolverOptions
+        {
+            ClaimName = "  ",
+            ClaimValueMapping = new Dictionary<string, string> { ["pro"] = "internal" },
+        });
+
+        var result = await sut.TryResolveAsync(CreateContext(rawJwt: "token", claims: new Dictionary<string, string> { ["tier"] = "pro" }));
+
+        result.Should().BeNull();
+    }
+
     private static JwtClaimBarrierResolver CreateResolver(JwtClaimResolverOptions options)
         => new(options, CreateHierarchy(), new TestLogger<JwtClaimBarrierResolver>());
 

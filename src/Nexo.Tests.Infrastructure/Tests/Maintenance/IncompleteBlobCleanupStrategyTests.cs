@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using Nexo.Core.Application.Maintenance.Models;
 using Nexo.Infrastructure.Maintenance;
 using Nexo.Infrastructure.Maintenance.Strategies;
+using System.Diagnostics;
 using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Maintenance;
@@ -137,5 +138,89 @@ public class IncompleteBlobCleanupStrategyTests : IDisposable
 
         result.BytesReclaimed.Should().Be(0);
         result.PathsDeleted.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Constructor_rejects_null_dependencies()
+    {
+        var options = Options.Create(new IncompleteBlobCleanupOptions { BlobStoragePath = _blobPath });
+        var actLogger = () => new IncompleteBlobCleanupStrategy(null!, options);
+        var actOptions = () => new IncompleteBlobCleanupStrategy(
+            NullLogger<IncompleteBlobCleanupStrategy>.Instance,
+            null!);
+
+        actLogger.Should().Throw<ArgumentNullException>();
+        actOptions.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
+    public async Task CleanAsync_WhenDeleteFails_records_error_and_continues()
+    {
+        var incompletePath = Path.Combine(_blobPath, "locked.incomplete");
+        await File.WriteAllBytesAsync(incompletePath, new byte[64]);
+        MakeUndeletable(incompletePath);
+        try
+        {
+            var result = await _strategy.CleanAsync(new ArtifactCleanupContext());
+
+            result.PathsDeleted.Should().BeEmpty();
+            result.Errors.Should().ContainSingle(e => e.StartsWith(incompletePath, StringComparison.Ordinal));
+            File.Exists(incompletePath).Should().BeTrue();
+        }
+        finally
+        {
+            MakeDeletable(incompletePath);
+        }
+    }
+
+    private static void MakeUndeletable(string path)
+    {
+        if (OperatingSystem.IsMacOS())
+        {
+            RunShell("chflags", $"uchg \"{path}\"");
+            return;
+        }
+
+        if (OperatingSystem.IsWindows())
+        {
+            File.SetAttributes(path, FileAttributes.ReadOnly);
+            return;
+        }
+
+        RunShell("chmod", $"000 \"{path}\"");
+    }
+
+    private static void MakeDeletable(string path)
+    {
+        if (!File.Exists(path))
+            return;
+
+        if (OperatingSystem.IsMacOS())
+        {
+            RunShell("chflags", $"nouchg \"{path}\"");
+            return;
+        }
+
+        if (OperatingSystem.IsWindows())
+        {
+            File.SetAttributes(path, FileAttributes.Normal);
+            return;
+        }
+
+        RunShell("chmod", $"644 \"{path}\"");
+    }
+
+    private static void RunShell(string file, string args)
+    {
+        using var process = Process.Start(new ProcessStartInfo
+        {
+            FileName = file,
+            Arguments = args,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+        });
+        process!.WaitForExit();
+        process.ExitCode.Should().Be(0);
     }
 }

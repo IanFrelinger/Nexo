@@ -47,6 +47,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.Transport.Grpc.Server"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.Tests.Transport", "src\Nexo.Tests.Transport\Nexo.Tests.Transport.csproj", "{8816B647-980B-4BBC-A529-1EE7AA9C7C54}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.Tests.Kernel", "src\Nexo.Tests.Kernel\Nexo.Tests.Kernel.csproj", "{A73ED765-F53E-42A3-B5C4-8FB41BF0EFF8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -309,6 +311,18 @@ Global
 		{8816B647-980B-4BBC-A529-1EE7AA9C7C54}.Release|x64.Build.0 = Release|Any CPU
 		{8816B647-980B-4BBC-A529-1EE7AA9C7C54}.Release|x86.ActiveCfg = Release|Any CPU
 		{8816B647-980B-4BBC-A529-1EE7AA9C7C54}.Release|x86.Build.0 = Release|Any CPU
+		{A73ED765-F53E-42A3-B5C4-8FB41BF0EFF8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A73ED765-F53E-42A3-B5C4-8FB41BF0EFF8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A73ED765-F53E-42A3-B5C4-8FB41BF0EFF8}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{A73ED765-F53E-42A3-B5C4-8FB41BF0EFF8}.Debug|x64.Build.0 = Debug|Any CPU
+		{A73ED765-F53E-42A3-B5C4-8FB41BF0EFF8}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{A73ED765-F53E-42A3-B5C4-8FB41BF0EFF8}.Debug|x86.Build.0 = Debug|Any CPU
+		{A73ED765-F53E-42A3-B5C4-8FB41BF0EFF8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A73ED765-F53E-42A3-B5C4-8FB41BF0EFF8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A73ED765-F53E-42A3-B5C4-8FB41BF0EFF8}.Release|x64.ActiveCfg = Release|Any CPU
+		{A73ED765-F53E-42A3-B5C4-8FB41BF0EFF8}.Release|x64.Build.0 = Release|Any CPU
+		{A73ED765-F53E-42A3-B5C4-8FB41BF0EFF8}.Release|x86.ActiveCfg = Release|Any CPU
+		{A73ED765-F53E-42A3-B5C4-8FB41BF0EFF8}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -335,5 +349,6 @@ Global
 		{3985541E-808A-4691-AE0F-94F42FD3B4E6} = {31297073-3FD6-401C-A313-89BE7C850D6B}
 		{494D224D-244A-46A7-AA97-F0F8B2D3F331} = {31297073-3FD6-401C-A313-89BE7C850D6B}
 		{8816B647-980B-4BBC-A529-1EE7AA9C7C54} = {31297073-3FD6-401C-A313-89BE7C850D6B}
+		{A73ED765-F53E-42A3-B5C4-8FB41BF0EFF8} = {31297073-3FD6-401C-A313-89BE7C850D6B}
 	EndGlobalSection
 EndGlobal

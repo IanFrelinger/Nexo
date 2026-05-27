@@ -205,9 +205,9 @@ public class AgentExecutorAdapter : IAgentExecutor
 
             // Try to find in loaded assemblies
             var loadedAgents = AppDomain.CurrentDomain.GetAssemblies()
-                .SelectMany(a => a.GetTypes())
-                .Where(t => typeof(IAgent).IsAssignableFrom(t) && 
-                           !t.IsInterface && 
+                .SelectMany(GetLoadableTypes)
+                .Where(t => typeof(IAgent).IsAssignableFrom(t) &&
+                           !t.IsInterface &&
                            !t.IsAbstract)
                 .Select(t =>
                 {
@@ -247,6 +247,22 @@ public class AgentExecutorAdapter : IAgentExecutor
         {
             _logger.LogError(ex, "Error finding agent: {AgentName}", agentName);
             return null;
+        }
+    }
+
+    private static IEnumerable<Type> GetLoadableTypes(Assembly assembly)
+    {
+        try
+        {
+            return assembly.GetTypes();
+        }
+        catch (ReflectionTypeLoadException ex)
+        {
+            return ex.Types.Where(t => t is not null)!;
+        }
+        catch
+        {
+            return Array.Empty<Type>();
         }
     }
 }

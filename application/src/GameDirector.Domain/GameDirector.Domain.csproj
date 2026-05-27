@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>GameDirector.Domain</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Nexo.GameDomain\Nexo.GameDomain.csproj" />
+    <ProjectReference Include="..\..\..\src\Nexo.Core.Application\Nexo.Core.Application.csproj" />
+  </ItemGroup>
+</Project>

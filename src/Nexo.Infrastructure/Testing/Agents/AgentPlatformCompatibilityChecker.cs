@@ -1,5 +1,3 @@
-using System.Runtime.InteropServices;
-
 namespace Nexo.Infrastructure.Testing.Agents;
 
 /// <summary>
@@ -55,42 +53,19 @@ public static class AgentPlatformCompatibilityChecker
 
     private static bool CheckLoggingAvailable()
     {
-        try
-        {
-            // Check if Microsoft.Extensions.Logging is available
-            var loggingType = Type.GetType("Microsoft.Extensions.Logging.ILogger, Microsoft.Extensions.Logging.Abstractions");
-            return loggingType != null;
-        }
-        catch
-        {
-            return false;
-        }
+        var loggingType = CompatibilityTestHooks.ResolveType(
+            "Microsoft.Extensions.Logging.ILogger, Microsoft.Extensions.Logging.Abstractions");
+        return loggingType != null;
     }
 
     private static bool CheckPlaywrightAvailable()
     {
-        try
-        {
-            // Check if Microsoft.Playwright is available (optional dependency)
-            var playwrightType = Type.GetType("Microsoft.Playwright.IPage, Microsoft.Playwright");
-            return playwrightType != null;
-        }
-        catch
-        {
-            return false;
-        }
+        var playwrightType = CompatibilityTestHooks.ResolveType(
+            "Microsoft.Playwright.IPage, Microsoft.Playwright");
+        return playwrightType != null;
     }
 
-    private static string GetPlatformName()
-    {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            return "Windows";
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            return "Linux";
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            return "macOS";
-        return "Unknown";
-    }
+    private static string GetPlatformName() => CompatibilityTestHooks.ResolvePlatformName();
 }
 
 /// <summary>

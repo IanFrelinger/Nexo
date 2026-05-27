@@ -1,0 +1,117 @@
+using FluentAssertions;
+using Microsoft.Extensions.Logging;
+using Nexo.Abstractions;
+using Nexo.Infrastructure.Execution;
+using Nexo.Infrastructure.Execution.Models;
+using Xunit;
+
+namespace Nexo.Tests.Infrastructure.Tests.Execution;
+
+public sealed class HotSwappableModelGapCoverageTests
+{
+    [Fact]
+    public async Task CompleteAsync_prefers_deterministic_echo_without_provider()
+    {
+        var model = CreateModel();
+        var input = new ModelInput(new List<(string role, string content)>
+        {
+            ("system", "nexo.model.prefer=deterministic"),
+            ("user", "ping"),
+        });
+
+        var output = await model.CompleteAsync(input, CancellationToken.None);
+
+        output.Text.Should().Be("ping");
+    }
+
+    [Fact]
+    public async Task CompleteAsync_uses_system_provider_directive()
+    {
+        await WithEnv("NEXO_ALLOW_MOCK", "1", async () =>
+        {
+            var model = CreateModel();
+            var input = new ModelInput(new List<(string role, string content)>
+            {
+                ("system", "nexo.model.provider=offline"),
+                ("user", "hello"),
+            });
+
+            var output = await model.CompleteAsync(input, CancellationToken.None);
+
+            output.Text.Should().NotBeNullOrWhiteSpace();
+        });
+    }
+
+    [Fact]
+    public async Task CompleteAsync_uses_env_provider_when_no_directive()
+    {
+        await WithEnv("NEXO_ALLOW_MOCK", "1", async () =>
+        {
+            await WithEnv("NEXO_MODEL_PROVIDER", "offline", async () =>
+            {
+                var model = CreateModel();
+                var input = new ModelInput(new List<(string role, string content)> { ("user", "hello") });
+
+                var output = await model.CompleteAsync(input, CancellationToken.None);
+
+                output.Text.Should().NotBeNullOrWhiteSpace();
+            });
+        });
+    }
+
+    [Fact]
+    public async Task CompleteAsync_deterministic_with_provider_falls_back_to_echo_on_failure()
+    {
+        var model = CreateModel();
+        var input = new ModelInput(new List<(string role, string content)>
+        {
+            ("system", "nexo.model.prefer=deterministic\nnexo.model.provider=openai"),
+            ("user", "fallback"),
+        });
+
+        await WithEnv("OPENAI_API_KEY", null, async () =>
+        {
+            var output = await model.CompleteAsync(input, CancellationToken.None);
+            output.Text.Should().Be("fallback");
+        });
+    }
+
+    [Fact]
+    public async Task CompleteAsync_injects_provider_when_no_system_message_exists()
+    {
+        await WithEnv("NEXO_ALLOW_MOCK", "1", async () =>
+        {
+            await WithEnv("NEXO_MODEL_PROVIDER", "offline", async () =>
+            {
+                var model = CreateModel();
+                var input = new ModelInput(new List<(string role, string content)> { ("user", "route-me") });
+
+                var output = await model.CompleteAsync(input, CancellationToken.None);
+
+                output.Text.Should().NotBeNullOrWhiteSpace();
+            });
+        });
+    }
+
+    private static HotSwappableModel CreateModel()
+    {
+        var loggerFactory = LoggerFactory.Create(_ => { });
+        var providerFactory = new ProviderFactory(loggerFactory.CreateLogger<ProviderFactory>());
+        var providerBacked = new ProviderBackedModel(providerFactory, loggerFactory.CreateLogger<ProviderBackedModel>());
+        return new HotSwappableModel(providerBacked, loggerFactory.CreateLogger<HotSwappableModel>());
+    }
+
+    private static async Task WithEnv(string key, string? value, Func<Task> action)
+    {
+        var prior = Environment.GetEnvironmentVariable(key);
+        Environment.SetEnvironmentVariable(key, value);
+        try
+        {
+            await action();
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(key, prior);
+        }
+    }
+}

@@ -49,7 +49,7 @@ public class CodeQualityRule : IAnalysisRule
             var result = await analyzeTool.InvokeAsync(analyzeCall, snapshot, cancellationToken);
 
             // Parse analysis results for quality metrics
-            if (result.Payload is System.Text.Json.JsonElement jsonElement)
+            if (TryGetPayloadElement(result.Payload, out var jsonElement))
             {
                 // Check for high complexity or low maintainability
                 // This is a placeholder - actual implementation would parse detailed metrics
@@ -86,6 +86,24 @@ public class CodeQualityRule : IAnalysisRule
         }
 
         return violations;
+    }
+
+    private static bool TryGetPayloadElement(object? payload, out JsonElement jsonElement)
+    {
+        if (payload is JsonElement element)
+        {
+            jsonElement = element;
+            return true;
+        }
+
+        if (payload is null)
+        {
+            jsonElement = default;
+            return false;
+        }
+
+        jsonElement = JsonSerializer.SerializeToElement(payload);
+        return true;
     }
 }
 

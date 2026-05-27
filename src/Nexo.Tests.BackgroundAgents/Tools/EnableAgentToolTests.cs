@@ -45,4 +45,32 @@ public class EnableAgentToolTests
         result.Delta.Log.Should().Contain(l => l.Contains("Started"));
         registry.Verify(r => r.StartAsync("test-agent", It.IsAny<CancellationToken>()), Times.Once);
     }
+
+    [Fact]
+    public async Task InvokeAsync_RegistryFailure_ReturnsErrorPayload()
+    {
+        var registry = new Mock<IBackgroundAgentRegistry>();
+        registry.Setup(r => r.StartAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("start failed"));
+        var tool = new EnableAgentTool(registry.Object);
+        var args = JsonSerializer.SerializeToElement(new { agentId = "bad-agent" });
+        var call = new ToolCall("enable_agent", args);
+        var snapshot = new WorldSnapshot(0, new Dictionary<string, object?>());
+
+        var result = await tool.InvokeAsync(call, snapshot, default);
+
+        result.Delta.Log.Should().Contain(l => l.Contains("start failed"));
+    }
+
+    [Fact]
+    public async Task InvokeAsync_InvalidJsonArgs_TreatedAsMissingAgentId()
+    {
+        var tool = new EnableAgentTool(Mock.Of<IBackgroundAgentRegistry>());
+        var call = new ToolCall("enable_agent", JsonSerializer.SerializeToElement("{not-json"));
+        var snapshot = new WorldSnapshot(0, new Dictionary<string, object?>());
+
+        var result = await tool.InvokeAsync(call, snapshot, default);
+
+        result.Delta.Log.Should().Contain(l => l.Contains("agentId is required"));
+    }
 }

@@ -23,7 +23,7 @@ public static class ServiceCollectionExtensions
             client.BaseAddress = new Uri(options.BaseUrl.TrimEnd('/') + "/");
             client.Timeout = options.Timeout;
             if (!string.IsNullOrWhiteSpace(options.ApiKey))
-                client.DefaultRequestHeaders.Add("X-Api-Key", options.ApiKey);
+                client.DefaultRequestHeaders.Add("X-Nexo-Api-Key", options.ApiKey);
         });
         return services;
     }

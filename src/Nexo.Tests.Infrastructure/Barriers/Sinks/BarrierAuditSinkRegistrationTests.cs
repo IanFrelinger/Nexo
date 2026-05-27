@@ -61,6 +61,31 @@ public sealed class BarrierAuditSinkRegistrationTests
         sinks.Should().Contain(sink => sink is StructuredLogBarrierAuditSink);
     }
 
+    [Fact]
+    public async Task AddBarrierAuditSinks_FileSink_RegistersHostedLifetime()
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), "nexo-audit-reg-tests", Guid.NewGuid().ToString("N"));
+        var configuration = BuildConfiguration(new Dictionary<string, string?>
+        {
+            ["Nexo:Audit:Sinks:0"] = "File",
+            ["Nexo:Audit:File:Directory"] = tempDir,
+        });
+
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddBarrierAuditSinks(configuration);
+
+        await using var provider = services.BuildServiceProvider();
+        var lifetime = provider.GetServices<Microsoft.Extensions.Hosting.IHostedService>()
+            .OfType<FileBarrierAuditSinkLifetime>()
+            .Should()
+            .ContainSingle()
+            .Subject;
+
+        await lifetime.StartAsync(CancellationToken.None);
+        await lifetime.StopAsync(CancellationToken.None);
+    }
+
     private static IConfiguration BuildConfiguration(IDictionary<string, string?> values)
         => new ConfigurationBuilder()
             .AddInMemoryCollection(values)

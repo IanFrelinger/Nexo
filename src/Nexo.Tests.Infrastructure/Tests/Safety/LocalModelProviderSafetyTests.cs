@@ -1,8 +1,14 @@
 using FluentAssertions;
 using Nexo.Infrastructure.Execution;
+using System.Reflection;
 using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Safety;
+
+[CollectionDefinition("LocalModelProviderState", DisableParallelization = true)]
+public sealed class LocalModelProviderStateCollection;
+
+[Collection("LocalModelProviderState")]
 
 /// <summary>
 /// Safety tests for LocalModelProvider.
@@ -56,6 +62,50 @@ public sealed class LocalModelProviderSafetyTests
     }
 
     [Fact]
+    public void LocalModelProvider_WhenRelativePathExists_IsAvailableReturnsTrue()
+    {
+        var original = Environment.GetEnvironmentVariable("NEXO_LOCAL_MODEL_PATH");
+        var tempDir = Path.Combine(Path.GetTempPath(), "nexo-local-model-" + Guid.NewGuid());
+        Directory.CreateDirectory(tempDir);
+        var modelFile = Path.Combine(tempDir, "model.gguf");
+        File.WriteAllBytes(modelFile, [0x1]);
+
+        try
+        {
+            Environment.SetEnvironmentVariable("NEXO_LOCAL_MODEL_PATH", modelFile);
+            LocalModelProvider.IsAvailable().Should().BeTrue();
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("NEXO_LOCAL_MODEL_PATH", original);
+            if (Directory.Exists(tempDir)) Directory.Delete(tempDir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void LocalModelProvider_resolves_relative_model_path_from_current_directory()
+    {
+        var originalEnv = Environment.GetEnvironmentVariable("NEXO_LOCAL_MODEL_PATH");
+        var originalCwd = Directory.GetCurrentDirectory();
+        var tempDir = Path.Combine(Path.GetTempPath(), "nexo-local-model-rel-" + Guid.NewGuid());
+        Directory.CreateDirectory(tempDir);
+        File.WriteAllBytes(Path.Combine(tempDir, "model.gguf"), [0x1]);
+
+        try
+        {
+            Directory.SetCurrentDirectory(tempDir);
+            Environment.SetEnvironmentVariable("NEXO_LOCAL_MODEL_PATH", "model.gguf");
+            LocalModelProvider.IsAvailable().Should().BeTrue();
+        }
+        finally
+        {
+            Directory.SetCurrentDirectory(originalCwd);
+            Environment.SetEnvironmentVariable("NEXO_LOCAL_MODEL_PATH", originalEnv);
+            if (Directory.Exists(tempDir)) Directory.Delete(tempDir, recursive: true);
+        }
+    }
+
+    [Fact]
     public void LocalModelProvider_WhenPathNotSet_IsAvailableReturnsFalse()
     {
         var previous = Environment.GetEnvironmentVariable("NEXO_LOCAL_MODEL_PATH");
@@ -71,5 +121,94 @@ public sealed class LocalModelProviderSafetyTests
         {
             Environment.SetEnvironmentVariable("NEXO_LOCAL_MODEL_PATH", previous);
         }
+    }
+
+    [Fact]
+    public async Task LocalModelProvider_WhenInvalidGgufFile_ExecuteAsyncThrowsLoadFailure()
+    {
+        ResetLoadedModelState();
+        var previousPath = Environment.GetEnvironmentVariable("NEXO_LOCAL_MODEL_PATH");
+        var previousContext = Environment.GetEnvironmentVariable("NEXO_LOCAL_CONTEXT_SIZE");
+        var tempDir = Path.Combine(Path.GetTempPath(), "nexo-invalid-gguf-" + Guid.NewGuid());
+        Directory.CreateDirectory(tempDir);
+        var modelFile = Path.Combine(tempDir, "invalid.gguf");
+        await File.WriteAllBytesAsync(modelFile, [0x1, 0x2, 0x3, 0x4]);
+
+        try
+        {
+            Environment.SetEnvironmentVariable("NEXO_LOCAL_MODEL_PATH", modelFile);
+            Environment.SetEnvironmentVariable("NEXO_LOCAL_CONTEXT_SIZE", "512");
+
+            var act = () => LocalModelProvider.ExecuteAsync("sys", "user", null, default);
+
+            await act.Should().ThrowAsync<ModelUnavailableException>()
+                .WithMessage("*Failed to load local model*");
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("NEXO_LOCAL_MODEL_PATH", previousPath);
+            Environment.SetEnvironmentVariable("NEXO_LOCAL_CONTEXT_SIZE", previousContext);
+            ResetLoadedModelState();
+            if (Directory.Exists(tempDir)) Directory.Delete(tempDir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void LocalModelProvider_expands_environment_variables_in_model_path()
+    {
+        var original = Environment.GetEnvironmentVariable("NEXO_LOCAL_MODEL_PATH");
+        var tempDir = Path.Combine(Path.GetTempPath(), "nexo-local-model-env-" + Guid.NewGuid());
+        Directory.CreateDirectory(tempDir);
+        var modelFile = Path.Combine(tempDir, "model.gguf");
+        File.WriteAllBytes(modelFile, [0x1]);
+        Environment.SetEnvironmentVariable("NEXO_LOCAL_MODEL_ENV_DIR", tempDir);
+
+        try
+        {
+            Environment.SetEnvironmentVariable("NEXO_LOCAL_MODEL_PATH", "%NEXO_LOCAL_MODEL_ENV_DIR%/model.gguf");
+            LocalModelProvider.IsAvailable().Should().BeTrue();
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("NEXO_LOCAL_MODEL_PATH", original);
+            Environment.SetEnvironmentVariable("NEXO_LOCAL_MODEL_ENV_DIR", null);
+            if (Directory.Exists(tempDir)) Directory.Delete(tempDir, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task LocalModelProvider_invalid_context_size_falls_back_to_default_load_failure()
+    {
+        ResetLoadedModelState();
+        var previousPath = Environment.GetEnvironmentVariable("NEXO_LOCAL_MODEL_PATH");
+        var previousContext = Environment.GetEnvironmentVariable("NEXO_LOCAL_CONTEXT_SIZE");
+        var tempDir = Path.Combine(Path.GetTempPath(), "nexo-local-context-" + Guid.NewGuid());
+        Directory.CreateDirectory(tempDir);
+        var modelFile = Path.Combine(tempDir, "invalid.gguf");
+        await File.WriteAllBytesAsync(modelFile, [0x1, 0x2, 0x3, 0x4]);
+
+        try
+        {
+            Environment.SetEnvironmentVariable("NEXO_LOCAL_MODEL_PATH", modelFile);
+            Environment.SetEnvironmentVariable("NEXO_LOCAL_CONTEXT_SIZE", "not-a-number");
+
+            var act = () => LocalModelProvider.ExecuteAsync("", "user only", null, default);
+            await act.Should().ThrowAsync<ModelUnavailableException>()
+                .WithMessage("*Failed to load local model*");
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("NEXO_LOCAL_MODEL_PATH", previousPath);
+            Environment.SetEnvironmentVariable("NEXO_LOCAL_CONTEXT_SIZE", previousContext);
+            ResetLoadedModelState();
+            if (Directory.Exists(tempDir)) Directory.Delete(tempDir, recursive: true);
+        }
+    }
+
+    private static void ResetLoadedModelState()
+    {
+        var type = typeof(LocalModelProvider);
+        type.GetField("_weights", BindingFlags.Static | BindingFlags.NonPublic)?.SetValue(null, null);
+        type.GetField("_context", BindingFlags.Static | BindingFlags.NonPublic)?.SetValue(null, null);
     }
 }

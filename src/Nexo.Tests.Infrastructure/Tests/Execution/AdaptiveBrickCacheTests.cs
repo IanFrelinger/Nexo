@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Microsoft.Extensions.Options;
+using Nexo.BrickContracts;
 using Nexo.Core.Application.Networking.Models;
 using Nexo.Core.Application.Networking.Ports;
 using Nexo.Core.Domain.Bricks;
@@ -70,6 +71,71 @@ public class AdaptiveBrickCacheTests
 
         stats.Entries.Should().Be(0);
         stats.EvictionCount.Should().Be(0);
+    }
+
+    [Fact]
+    public void GetBrick_empty_id_returns_null()
+    {
+        var inner = new StubBrickRegistry();
+        var tracker = new BrickUsageTracker(Options.Create(new BrickUsageTrackerOptions()));
+        var cache = new AdaptiveBrickCache(inner, tracker, Options.Create(new AdaptiveBrickCacheOptions()));
+
+        cache.GetBrick("").Should().BeNull();
+        cache.GetBrick("   ").Should().BeNull();
+    }
+
+    [Fact]
+    public void GetBrick_caches_remote_bricks_and_reports_hits()
+    {
+        var inner = new StubBrickRegistry();
+        inner.Add(CreateRemoteBrick("remote-1"));
+
+        var tracker = new BrickUsageTracker(Options.Create(new BrickUsageTrackerOptions()));
+        var cache = new AdaptiveBrickCache(inner, tracker, Options.Create(new AdaptiveBrickCacheOptions
+        {
+            ColdBrickTtlSeconds = 60,
+            HotBrickTtlSeconds = 120,
+        }));
+
+        cache.GetBrick("remote-1").Should().NotBeNull();
+        cache.GetBrick("remote-1").Should().NotBeNull();
+
+        var stats = cache.GetCacheStats();
+        stats.Entries.Should().Be(1);
+        stats.HitRate.Should().BeGreaterThan(0);
+    }
+
+    [Fact]
+    public async Task GetBrick_evicts_expired_remote_entries()
+    {
+        var inner = new StubBrickRegistry();
+        inner.Add(CreateRemoteBrick("remote-expire"));
+
+        var tracker = new BrickUsageTracker(Options.Create(new BrickUsageTrackerOptions()));
+        var cache = new AdaptiveBrickCache(inner, tracker, Options.Create(new AdaptiveBrickCacheOptions
+        {
+            ColdBrickTtlSeconds = 0,
+            HotBrickTtlSeconds = 0,
+        }));
+
+        cache.GetBrick("remote-expire");
+        await Task.Delay(15);
+        cache.GetBrick("remote-expire");
+
+        cache.GetCacheStats().EvictionCount.Should().BeGreaterThan(0);
+    }
+
+    private static RemoteBrick CreateRemoteBrick(string id)
+    {
+        var entry = new Nexo.BrickContracts.BrickCatalogEntryDto
+        {
+            Id = id,
+            Name = id,
+            Category = "Control",
+            Description = "remote test brick",
+            HostBaseUrl = "http://127.0.0.1:9",
+        };
+        return new RemoteBrick(entry, new HttpClient(), "http://127.0.0.1:9");
     }
 
     private sealed class TestBrick : Brick

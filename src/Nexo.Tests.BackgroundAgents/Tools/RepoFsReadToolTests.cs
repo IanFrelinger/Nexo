@@ -91,6 +91,23 @@ public sealed class RepoFsReadToolTests : IDisposable
         payload.GetProperty("content").GetString()!.Length.Should().Be(64);
     }
 
+    [Fact]
+    public async Task Rejects_whitespace_only_path()
+    {
+        var result = await Invoke("   ");
+        var payload = ParsePayload(result);
+        payload.GetProperty("exists").GetBoolean().Should().BeFalse();
+        payload.GetProperty("error").GetString().Should().Contain("required");
+    }
+
+    [Fact]
+    public async Task Rejects_missing_root()
+    {
+        var args = JsonSerializer.SerializeToElement(new { root = "  ", path = "file.txt" });
+        var result = await _tool.InvokeAsync(new ToolCall(_tool.Id, args), WorldSnapshot.ForRepo(_root, _root), CancellationToken.None);
+        ParsePayload(result).GetProperty("error").GetString().Should().Contain("root and path are required");
+    }
+
     private async Task<ToolResult> Invoke(string relPath, int? maxBytes = null)
     {
         var argsObj = maxBytes is null

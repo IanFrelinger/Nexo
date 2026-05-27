@@ -120,4 +120,58 @@ public sealed class PostgresDatabaseProvisionerTests
 
         lifecycle.Verify(x => x.StopAsync("cid-timeout", It.IsAny<CancellationToken>()), Times.Once);
     }
+
+    [Fact]
+    public async Task CreateAsync_UnsupportedIsolation_Throws()
+    {
+        var sut = new PostgresDatabaseProvisioner(NullLogger<PostgresDatabaseProvisioner>.Instance);
+
+        var act = () => sut.CreateAsync(
+            new DatabaseProvisionRequest(
+                (DatabaseIsolationLevel)999,
+                PostgresReadinessTimeout: TimeSpan.Zero));
+
+        await act.Should().ThrowAsync<ArgumentOutOfRangeException>();
+    }
+
+    [Fact]
+    public async Task CreateAsync_SharedSchemaWithoutAdminConnection_Throws()
+    {
+        var sut = new PostgresDatabaseProvisioner(NullLogger<PostgresDatabaseProvisioner>.Instance);
+
+        var act = () => sut.CreateAsync(
+            new DatabaseProvisionRequest(
+                DatabaseIsolationLevel.SharedSchemaNamespaced,
+                PostgresReadinessTimeout: TimeSpan.Zero));
+
+        await act.Should().ThrowAsync<ArgumentException>()
+            .WithMessage("*AdminConnectionString*");
+    }
+
+    [Fact]
+    public async Task CreateAsync_PostProvisionSqlFailure_disposes_ephemeral_backend()
+    {
+        var lifecycle = new Mock<IEphemeralDatabaseLifecycle>(MockBehavior.Strict);
+        lifecycle
+            .Setup(x => x.StartAsync(It.IsAny<EphemeralDbOptions>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new EphemeralDbResult(
+                "Host=127.0.0.1;Port=65432;Database=nexo;Username=u;Password=p",
+                "cid-sql-fail",
+                65432));
+        lifecycle
+            .Setup(x => x.StopAsync("cid-sql-fail", It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+
+        var sut = new PostgresDatabaseProvisioner(NullLogger<PostgresDatabaseProvisioner>.Instance, lifecycle.Object);
+
+        var act = () => sut.CreateAsync(
+            new DatabaseProvisionRequest(
+                DatabaseIsolationLevel.DedicatedContainer,
+                PostgresReadinessTimeout: TimeSpan.Zero,
+                PostProvisionSqlBatches: new[] { "SELECT 1" }));
+
+        await act.Should().ThrowAsync<Exception>();
+
+        lifecycle.Verify(x => x.StopAsync("cid-sql-fail", It.IsAny<CancellationToken>()), Times.Once);
+    }
 }

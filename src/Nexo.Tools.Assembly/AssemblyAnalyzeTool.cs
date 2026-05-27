@@ -1,3 +1,4 @@
+using Mono.Cecil;
 using Nexo.Abstractions;
 using System.Reflection;
 using System.Text.Json;
@@ -27,14 +28,29 @@ public sealed class AssemblyAnalyzeTool : ITool
     {
         var args = JsonSerializer.Deserialize<Args>(call.Arguments)!;
         var assemblyName = AssemblyName.GetAssemblyName(args.path);
+        var complexity = EstimateMethodCount(args.path);
         var payload = new
         {
             assemblyName.Name,
             assemblyName.Version,
             CultureName = assemblyName.CultureName ?? "",
-            Flags = assemblyName.Flags.ToString()
+            Flags = assemblyName.Flags.ToString(),
+            Complexity = complexity
         };
         var delta = new ActionDelta(s.Tick, s.Tick + 1, new[] { $"analyze:{assemblyName.Name} v{assemblyName.Version}" });
         return Task.FromResult(new ToolResult(delta, payload));
+    }
+
+    private static int EstimateMethodCount(string path)
+    {
+        try
+        {
+            using var module = ModuleDefinition.ReadModule(path, new ReaderParameters { InMemory = true });
+            return module.Types.Sum(type => type.Methods.Count(method => method.HasBody));
+        }
+        catch
+        {
+            return 0;
+        }
     }
 }

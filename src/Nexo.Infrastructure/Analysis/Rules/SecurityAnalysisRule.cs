@@ -48,7 +48,7 @@ public class SecurityAnalysisRule : IAnalysisRule
 
             var result = await securityTool.InvokeAsync(securityCall, snapshot, cancellationToken);
 
-            if (result.Payload is System.Text.Json.JsonElement jsonElement)
+            if (TryGetPayloadElement(result.Payload, out var jsonElement))
             {
                 if (jsonElement.TryGetProperty("Count", out var countElement) &&
                     countElement.GetInt32() > 0)
@@ -88,6 +88,24 @@ public class SecurityAnalysisRule : IAnalysisRule
         }
 
         return violations;
+    }
+
+    private static bool TryGetPayloadElement(object? payload, out JsonElement jsonElement)
+    {
+        if (payload is JsonElement element)
+        {
+            jsonElement = element;
+            return true;
+        }
+
+        if (payload is null)
+        {
+            jsonElement = default;
+            return false;
+        }
+
+        jsonElement = JsonSerializer.SerializeToElement(payload);
+        return true;
     }
 }
 

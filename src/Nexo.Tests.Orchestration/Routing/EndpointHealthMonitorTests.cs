@@ -159,6 +159,102 @@ public sealed class EndpointHealthMonitorTests
         sw.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(2));
     }
 
+    [Fact]
+    public async Task ExecuteAsync_SkipsEndpointsWithBlankUri()
+    {
+        using var env = new EnvironmentVariableScope("DOTNET_ENVIRONMENT", "Development");
+        var registry = new TestEndpointRegistry([
+            new EndpointDescriptor(
+                Endpoint: "   ",
+                Name: "blank",
+                SupportedCapabilities: ["CodeGeneration"],
+                AcceptedBarrierLevels: [],
+                Region: null,
+                Priority: 1,
+                IsHealthy: true),
+        ]);
+
+        using var transport = CreateGrpcTransport();
+        var monitor = new EndpointHealthMonitor(
+            registry,
+            transport,
+            Options.Create(new RoutingOptions { HealthCheckIntervalSeconds = 30 }),
+            NullLogger<EndpointHealthMonitor>.Instance);
+
+        await monitor.StartAsync(CancellationToken.None);
+        await Task.Delay(200);
+        await monitor.StopAsync(CancellationToken.None);
+
+        registry.Updates.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenUpdateHealthThrows_LogsWarningAfterThreshold()
+    {
+        using var env = new EnvironmentVariableScope("DOTNET_ENVIRONMENT", "Development");
+        await using var fixture = await GrpcServerFixture.StartAsync(health: true);
+        var registry = new ThrowingUpdateEndpointRegistry([
+            new EndpointDescriptor(
+                Endpoint: fixture.Endpoint,
+                Name: "throws",
+                SupportedCapabilities: ["CodeGeneration"],
+                AcceptedBarrierLevels: [],
+                Region: null,
+                Priority: 1,
+                IsHealthy: true),
+        ]);
+
+        using var transport = CreateGrpcTransport();
+        var logger = new Mock<ILogger<EndpointHealthMonitor>>();
+        var monitor = new EndpointHealthMonitor(
+            registry,
+            transport,
+            Options.Create(new RoutingOptions
+            {
+                HealthCheckIntervalSeconds = 1,
+                DegradedLogFailureThreshold = 1,
+            }),
+            logger.Object);
+
+        await monitor.StartAsync(CancellationToken.None);
+        await Task.Delay(2500);
+        await monitor.StopAsync(CancellationToken.None);
+
+        logger.Verify(
+            x => x.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.IsAny<It.IsAnyType>(),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.AtLeastOnce);
+    }
+
+    private sealed class ThrowingUpdateEndpointRegistry : IEndpointRegistry
+    {
+        private readonly ConcurrentDictionary<string, EndpointDescriptor> _endpoints =
+            new(StringComparer.OrdinalIgnoreCase);
+
+        public ThrowingUpdateEndpointRegistry(IReadOnlyList<EndpointDescriptor> endpoints)
+        {
+            foreach (var endpoint in endpoints)
+                _endpoints[endpoint.Endpoint] = endpoint;
+        }
+
+        public List<(string endpoint, bool isHealthy)> Updates { get; } = [];
+
+        public IReadOnlyList<EndpointDescriptor> GetAll() => _endpoints.Values.ToList();
+
+        public void Register(EndpointDescriptor descriptor) => _endpoints[descriptor.Endpoint] = descriptor;
+
+        public void UpdateHealth(string endpoint, bool isHealthy)
+        {
+            Updates.Add((endpoint, isHealthy));
+            if (isHealthy)
+                throw new InvalidOperationException("update failed");
+        }
+    }
+
     private static GrpcAgentTransport CreateGrpcTransport()
     {
         var factory = new DefaultGrpcChannelFactory(

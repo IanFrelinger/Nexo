@@ -56,7 +56,12 @@ public sealed class PathAllowlist : IPolicy
             if (call.Arguments.ValueKind == JsonValueKind.Object &&
                 call.Arguments.TryGetProperty("path", out var p))
             {
-                var raw = (p.ValueKind == JsonValueKind.Null ? "" : (p.GetString() ?? "")).Replace('\\', '/');
+                var raw = (p.ValueKind switch
+                {
+                    JsonValueKind.Null => "",
+                    JsonValueKind.String => p.GetString() ?? "",
+                    _ => ""
+                }).Replace('\\', '/');
                 var rel = raw.TrimStart('/');
                 if (string.IsNullOrEmpty(rel))
                 {
