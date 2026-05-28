@@ -49,5 +49,5 @@ jobs:
             /p:CoverletOutput="$(pwd)/CoverageReports/domain.opencover.xml" \
             /p:CoverletOutputFormat=opencover \
             /p:Include="[Nexo.Core.Domain]*" \
-            /p:Threshold=60 \
+            /p:Threshold=100 \
             /p:ThresholdType=line
