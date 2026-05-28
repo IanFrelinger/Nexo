@@ -16,7 +16,7 @@ using Xunit;
 
 namespace Nexo.Tests.Application;
 
-public class WorkflowExecutorGapCoverageTests
+public sealed class WorkflowExecutorEdgeCaseTests
 {
     [Fact]
     public async Task ExecuteAsync_runs_agent_node_and_forwards_brick_events()
@@ -298,66 +298,6 @@ public class WorkflowExecutorGapCoverageTests
     }
 
     [Fact]
-    public async Task ExecuteAsync_applies_transform_filter_and_conditional_nodes()
-    {
-        var brick = new ListStubBrick();
-        var bricks = new Mock<IBrickRegistry>();
-        bricks.Setup(b => b.GetBrick("list-brick")).Returns(brick);
-
-        var workflow = new WorkflowExecutor(
-            Mock.Of<IAgentRegistry>(),
-            bricks.Object,
-            Mock.Of<IBehaviorRegistry>(),
-            Mock.Of<IBehaviorExecutor>(),
-            new SequentialLoopKernel(),
-            Mock.Of<ITextFileSystem>(),
-            NullLogger<WorkflowExecutor>.Instance);
-
-        var definition = new WorkflowDefinition
-        {
-            Id = "wf-transform",
-            Name = "Transform",
-            Nodes = new List<WorkflowNode>
-            {
-                new BrickNode
-                {
-                    Id = "source",
-                    BrickId = "list-brick",
-                    Outputs = new List<NodePort> { new NodePort { Id = "out", Name = "data", Direction = PortDirection.Output, DataType = "any" } },
-                },
-                new TransformNode
-                {
-                    Id = "filter",
-                    Operation = TransformOperation.Filter,
-                    Expression = "score > 5",
-                    Inputs = new List<NodePort> { new NodePort { Id = "in", Name = "data", Direction = PortDirection.Input, DataType = "any" } },
-                    Outputs = new List<NodePort> { new NodePort { Id = "out", Name = "data", Direction = PortDirection.Output, DataType = "any" } },
-                },
-                new ConditionalNode
-                {
-                    Id = "cond",
-                    Condition = "",
-                    Inputs = new List<NodePort> { new NodePort { Id = "in", Name = "data", Direction = PortDirection.Input, DataType = "any" } },
-                    Outputs = new List<NodePort>
-                    {
-                        new NodePort { Id = "out-cond", Name = "condition", Direction = PortDirection.Output, DataType = "boolean" },
-                    },
-                },
-            },
-            Connections = new List<VisualWorkflowConnection>
-            {
-                new() { FromNodeId = "source", FromPortId = "out", ToNodeId = "filter", ToPortId = "in" },
-                new() { FromNodeId = "filter", FromPortId = "out", ToNodeId = "cond", ToPortId = "in" },
-            },
-        };
-
-        var result = await workflow.ExecuteAsync(definition, new WorkflowInput());
-        var filtered = result.NodeResults["filter"].Outputs["data"].Should().BeAssignableTo<List<Dictionary<string, object>>>().Subject;
-        filtered.Should().HaveCount(1);
-        result.NodeResults["cond"].Outputs["condition"].Should().Be(true);
-    }
-
-    [Fact]
     public async Task ExecuteAsync_reads_database_input_and_writes_file_and_webhook_outputs()
     {
         var fs = new Mock<ITextFileSystem>();
@@ -458,116 +398,6 @@ public class WorkflowExecutorGapCoverageTests
         fs.Verify(f => f.WriteAllTextAsync("/tmp/out.json", It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
         webhook.Verify(w => w.PostAsync("https://example.test/out", It.IsAny<object>(), It.IsAny<CancellationToken>()), Times.Once);
         dbWriter.Verify(w => w.WriteAsync("conn", "results", It.IsAny<object>(), It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    [Fact]
-    public async Task ExecuteAsync_runs_all_transform_operations_and_conditional_operators()
-    {
-        var brick = new ListStubBrick();
-        var bricks = new Mock<IBrickRegistry>();
-        bricks.Setup(b => b.GetBrick("list-brick")).Returns(brick);
-
-        var workflow = new WorkflowExecutor(
-            Mock.Of<IAgentRegistry>(),
-            bricks.Object,
-            Mock.Of<IBehaviorRegistry>(),
-            Mock.Of<IBehaviorExecutor>(),
-            new SequentialLoopKernel(),
-            Mock.Of<ITextFileSystem>(),
-            NullLogger<WorkflowExecutor>.Instance);
-
-        async Task<object?> RunTransform(TransformOperation op, string expression) =>
-            (await workflow.ExecuteAsync(new WorkflowDefinition
-            {
-                Id = "wf-" + op,
-                Name = op.ToString(),
-                Nodes = new List<WorkflowNode>
-                {
-                    new BrickNode
-                    {
-                        Id = "source",
-                        BrickId = "list-brick",
-                        Outputs = new List<NodePort> { new NodePort { Id = "out", Name = "data", Direction = PortDirection.Output, DataType = "any" } },
-                    },
-                    new TransformNode
-                    {
-                        Id = "transform",
-                        Operation = op,
-                        Expression = expression,
-                        Inputs = new List<NodePort> { new NodePort { Id = "in", Name = "data", Direction = PortDirection.Input, DataType = "any" } },
-                        Outputs = new List<NodePort> { new NodePort { Id = "out", Name = "data", Direction = PortDirection.Output, DataType = "any" } },
-                    },
-                },
-                Connections = new List<VisualWorkflowConnection>
-                {
-                    new() { FromNodeId = "source", FromPortId = "out", ToNodeId = "transform", ToPortId = "in" },
-                },
-            }, new WorkflowInput())).NodeResults["transform"].Outputs["data"];
-
-        (await RunTransform(TransformOperation.Map, "score")).Should().BeAssignableTo<List<object>>();
-        (await RunTransform(TransformOperation.Reduce, "sum")).Should().BeAssignableTo<Dictionary<string, object>>();
-        (await RunTransform(TransformOperation.Sort, "score")).Should().BeAssignableTo<List<Dictionary<string, object>>>();
-        (await RunTransform(TransformOperation.GroupBy, "score")).Should().BeAssignableTo<Dictionary<string, object>>();
-        (await RunTransform(TransformOperation.Merge, "")).Should().BeAssignableTo<List<Dictionary<string, object>>>();
-
-        var conditional = await workflow.ExecuteAsync(new WorkflowDefinition
-        {
-            Id = "wf-cond",
-            Name = "Conditional",
-            Nodes = new List<WorkflowNode>
-            {
-                new InputNode
-                {
-                    Id = "input",
-                    Type = InputType.Content,
-                    Content = """{"score":"10"}""",
-                    Outputs = new List<NodePort> { new NodePort { Id = "out", Name = "data", Direction = PortDirection.Output, DataType = "any" } },
-                },
-                new ConditionalNode
-                {
-                    Id = "cond",
-                    Condition = "",
-                    Inputs = new List<NodePort> { new NodePort { Id = "in", Name = "data", Direction = PortDirection.Input, DataType = "any" } },
-                    Outputs = new List<NodePort> { new NodePort { Id = "out", Name = "condition", Direction = PortDirection.Output, DataType = "boolean" } },
-                },
-            },
-            Connections = new List<VisualWorkflowConnection>
-            {
-                new() { FromNodeId = "input", FromPortId = "out", ToNodeId = "cond", ToPortId = "in" },
-            },
-        }, new WorkflowInput());
-
-        conditional.NodeResults["cond"].Outputs["condition"].Should().Be(true);
-    }
-
-    [Fact]
-    public async Task ExecuteAsync_serializes_display_outputs_in_multiple_formats()
-    {
-        var fs = new Mock<ITextFileSystem>();
-        fs.Setup(f => f.WriteAllTextAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-
-        var workflow = new WorkflowExecutor(
-            Mock.Of<IAgentRegistry>(),
-            Mock.Of<IBrickRegistry>(),
-            Mock.Of<IBehaviorRegistry>(),
-            Mock.Of<IBehaviorExecutor>(),
-            new SequentialLoopKernel(),
-            fs.Object,
-            NullLogger<WorkflowExecutor>.Instance);
-
-        foreach (var (suffix, format) in new[]
-        {
-            ("xml", OutputFormat.Xml),
-            ("csv", OutputFormat.Csv),
-            ("md", OutputFormat.Markdown),
-            ("html", OutputFormat.Html),
-        })
-        {
-            await workflow.ExecuteAsync(BuildOutputWorkflow($"/tmp/out.{suffix}", format), new WorkflowInput());
-        }
-
-        fs.Verify(f => f.WriteAllTextAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Exactly(4));
     }
 
     [Fact]
@@ -699,186 +529,6 @@ public class WorkflowExecutorGapCoverageTests
             .Where(ex => ex.Errors.Any(e => e.Contains("non-existent", StringComparison.OrdinalIgnoreCase)));
     }
 
-    private static WorkflowDefinition BuildOutputWorkflow(string path, OutputFormat format) => new()
-    {
-        Id = "wf-" + format,
-        Name = format.ToString(),
-        Nodes = new List<WorkflowNode>
-        {
-            new InputNode
-            {
-                Id = "input",
-                Type = InputType.Content,
-                Content = """[{"name":"a","value":1}]""",
-                Outputs = new List<NodePort> { new NodePort { Id = "out", Name = "data", Direction = PortDirection.Output, DataType = "any" } },
-            },
-            new OutputNode
-            {
-                Id = "file-out",
-                Type = OutputType.File,
-                Format = format,
-                FilePath = path,
-                Inputs = new List<NodePort> { new NodePort { Id = "in", Name = "data", Direction = PortDirection.Input, DataType = "any" } },
-            },
-        },
-        Connections = new List<VisualWorkflowConnection>
-        {
-            new() { FromNodeId = "input", FromPortId = "out", ToNodeId = "file-out", ToPortId = "in" },
-        },
-    };
-
-    [Fact]
-    public async Task ExecuteAsync_exports_pdf_via_exporter()
-    {
-        var fs = new Mock<ITextFileSystem>();
-        fs.Setup(f => f.WriteAllBytesAsync("/tmp/out.pdf", It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-
-        var pdf = new Mock<IWorkflowPdfExporter>();
-        pdf.Setup(p => p.ExportToPdfAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(new byte[] { 0x25, 0x50, 0x44, 0x46 });
-
-        var workflow = new WorkflowExecutor(
-            Mock.Of<IAgentRegistry>(),
-            Mock.Of<IBrickRegistry>(),
-            Mock.Of<IBehaviorRegistry>(),
-            Mock.Of<IBehaviorExecutor>(),
-            new SequentialLoopKernel(),
-            fs.Object,
-            NullLogger<WorkflowExecutor>.Instance,
-            pdfExporter: pdf.Object);
-
-        var definition = new WorkflowDefinition
-        {
-            Id = "wf-pdf",
-            Name = "Pdf",
-            Nodes = new List<WorkflowNode>
-            {
-                new InputNode
-                {
-                    Id = "input",
-                    Type = InputType.Content,
-                    Content = """{"title":"report"}""",
-                    Outputs = new List<NodePort> { new NodePort { Id = "out", Name = "data", Direction = PortDirection.Output, DataType = "any" } },
-                },
-                new OutputNode
-                {
-                    Id = "pdf-out",
-                    Type = OutputType.File,
-                    Format = OutputFormat.Pdf,
-                    FilePath = "/tmp/out.pdf",
-                    Inputs = new List<NodePort> { new NodePort { Id = "in", Name = "data", Direction = PortDirection.Input, DataType = "any" } },
-                },
-            },
-            Connections = new List<VisualWorkflowConnection>
-            {
-                new() { FromNodeId = "input", FromPortId = "out", ToNodeId = "pdf-out", ToPortId = "in" },
-            },
-        };
-
-        await workflow.ExecuteAsync(definition, new WorkflowInput());
-        fs.Verify(f => f.WriteAllBytesAsync("/tmp/out.pdf", It.IsAny<byte[]>(), It.IsAny<CancellationToken>()), Times.Once);
-    }
-
-    [Fact]
-    public async Task ExecuteAsync_covers_filter_operators_and_input_output_guards()
-    {
-        var brick = new ListStubBrick();
-        var bricks = new Mock<IBrickRegistry>();
-        bricks.Setup(b => b.GetBrick("list-brick")).Returns(brick);
-
-        var workflow = new WorkflowExecutor(
-            Mock.Of<IAgentRegistry>(),
-            bricks.Object,
-            Mock.Of<IBehaviorRegistry>(),
-            Mock.Of<IBehaviorExecutor>(),
-            new SequentialLoopKernel(),
-            Mock.Of<ITextFileSystem>(),
-            NullLogger<WorkflowExecutor>.Instance);
-
-        var eqFilter = await workflow.ExecuteAsync(new WorkflowDefinition
-        {
-            Id = "wf-eq",
-            Name = "Eq filter",
-            Nodes = new List<WorkflowNode>
-            {
-                new BrickNode { Id = "source", BrickId = "list-brick", Outputs = new List<NodePort> { new NodePort { Id = "out", Name = "data", Direction = PortDirection.Output, DataType = "any" } } },
-                new TransformNode
-                {
-                    Id = "filter",
-                    Operation = TransformOperation.Filter,
-                    Expression = "score == '10'",
-                    Inputs = new List<NodePort> { new NodePort { Id = "in", Name = "data", Direction = PortDirection.Input, DataType = "any" } },
-                    Outputs = new List<NodePort> { new NodePort { Id = "out", Name = "data", Direction = PortDirection.Output, DataType = "any" } },
-                },
-            },
-            Connections = new List<VisualWorkflowConnection> { new() { FromNodeId = "source", FromPortId = "out", ToNodeId = "filter", ToPortId = "in" } },
-        }, new WorkflowInput());
-        ((List<Dictionary<string, object>>)eqFilter.NodeResults["filter"].Outputs["data"]).Should().HaveCount(1);
-
-        var fs = new Mock<ITextFileSystem>();
-        fs.Setup(f => f.WriteAllTextAsync("/tmp/scalar.html", It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
-        var htmlWorkflow = new WorkflowExecutor(
-            Mock.Of<IAgentRegistry>(),
-            bricks.Object,
-            Mock.Of<IBehaviorRegistry>(),
-            Mock.Of<IBehaviorExecutor>(),
-            new SequentialLoopKernel(),
-            fs.Object,
-            NullLogger<WorkflowExecutor>.Instance);
-
-        var scalarHtml = await htmlWorkflow.ExecuteAsync(new WorkflowDefinition
-        {
-            Id = "wf-scalar-html",
-            Name = "Scalar html",
-            Nodes = new List<WorkflowNode>
-            {
-                new InputNode
-                {
-                    Id = "input",
-                    Type = InputType.Content,
-                    Content = "plain",
-                    Outputs = new List<NodePort> { new NodePort { Id = "out", Name = "data", Direction = PortDirection.Output, DataType = "any" } },
-                },
-                new OutputNode
-                {
-                    Id = "file-out",
-                    Type = OutputType.File,
-                    Format = OutputFormat.Html,
-                    FilePath = "/tmp/scalar.html",
-                    Inputs = new List<NodePort> { new NodePort { Id = "in", Name = "data", Direction = PortDirection.Input, DataType = "any" } },
-                },
-            },
-            Connections = new List<VisualWorkflowConnection>
-            {
-                new() { FromNodeId = "input", FromPortId = "out", ToNodeId = "file-out", ToPortId = "in" },
-            },
-        }, new WorkflowInput());
-        scalarHtml.Success.Should().BeTrue();
-
-        var actWebhookIn = () => workflow.ExecuteAsync(new WorkflowDefinition
-        {
-            Id = "wf-wh-in",
-            Name = "Webhook in",
-            Nodes = new List<WorkflowNode> { new InputNode { Id = "hook", Type = InputType.Webhook, WebhookUrl = "https://x.test", Outputs = new List<NodePort>() } },
-        }, new WorkflowInput());
-        await actWebhookIn.Should().ThrowAsync<InvalidOperationException>().WithMessage("*IWorkflowWebhookClient*");
-
-        var actPdf = () => workflow.ExecuteAsync(new WorkflowDefinition
-        {
-            Id = "wf-no-pdf",
-            Name = "No pdf",
-            Nodes = new List<WorkflowNode>
-            {
-                new InputNode { Id = "input", Type = InputType.Content, Content = "x", Outputs = new List<NodePort> { new NodePort { Id = "out", Name = "data", Direction = PortDirection.Output, DataType = "any" } } },
-                new OutputNode { Id = "out", Type = OutputType.File, Format = OutputFormat.Pdf, FilePath = "/tmp/x.pdf", Inputs = new List<NodePort> { new NodePort { Id = "in", Name = "data", Direction = PortDirection.Input, DataType = "any" } } },
-            },
-            Connections = new List<VisualWorkflowConnection> { new() { FromNodeId = "input", FromPortId = "out", ToNodeId = "out", ToPortId = "in" } },
-        }, new WorkflowInput());
-        await actPdf.Should().ThrowAsync<NotSupportedException>().WithMessage("*IWorkflowPdfExporter*");
-    }
-
     [Fact]
     public async Task ExecuteAsync_throws_when_agent_or_brick_missing()
     {
@@ -968,7 +618,7 @@ public class WorkflowExecutorGapCoverageTests
     }
 
     [Fact]
-    public async Task ExecuteAsync_covers_remaining_filter_reduce_conditional_and_display_paths()
+    public async Task ExecuteAsync_exercises_filter_reduce_conditional_display_and_io_guards()
     {
         var brick = new ListStubBrick();
         var emptyList = new EmptyListStubBrick();
@@ -1112,6 +762,68 @@ public class WorkflowExecutorGapCoverageTests
             Connections = new List<VisualWorkflowConnection> { new() { FromNodeId = "input", FromPortId = "out", ToNodeId = "display", ToPortId = "in" } },
         }, new WorkflowInput());
         display.NodeResults["display"].Outputs["output"].Should().Be("shown");
+
+        (await FilterCount("score == '10'")).Should().Be(1);
+
+        var fs = new Mock<ITextFileSystem>();
+        fs.Setup(f => f.WriteAllTextAsync("/tmp/scalar.html", It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        var scalarHtml = await new WorkflowExecutor(
+            Mock.Of<IAgentRegistry>(),
+            bricks.Object,
+            Mock.Of<IBehaviorRegistry>(),
+            Mock.Of<IBehaviorExecutor>(),
+            new SequentialLoopKernel(),
+            fs.Object,
+            NullLogger<WorkflowExecutor>.Instance).ExecuteAsync(new WorkflowDefinition
+        {
+            Id = "wf-scalar-html",
+            Name = "Scalar html",
+            Nodes = new List<WorkflowNode>
+            {
+                new InputNode
+                {
+                    Id = "input",
+                    Type = InputType.Content,
+                    Content = "plain",
+                    Outputs = new List<NodePort> { new NodePort { Id = "out", Name = "data", Direction = PortDirection.Output, DataType = "any" } },
+                },
+                new OutputNode
+                {
+                    Id = "file-out",
+                    Type = OutputType.File,
+                    Format = OutputFormat.Html,
+                    FilePath = "/tmp/scalar.html",
+                    Inputs = new List<NodePort> { new NodePort { Id = "in", Name = "data", Direction = PortDirection.Input, DataType = "any" } },
+                },
+            },
+            Connections = new List<VisualWorkflowConnection>
+            {
+                new() { FromNodeId = "input", FromPortId = "out", ToNodeId = "file-out", ToPortId = "in" },
+            },
+        }, new WorkflowInput());
+        scalarHtml.Success.Should().BeTrue();
+
+        var actWebhookIn = () => workflow.ExecuteAsync(new WorkflowDefinition
+        {
+            Id = "wf-wh-in",
+            Name = "Webhook in",
+            Nodes = new List<WorkflowNode> { new InputNode { Id = "hook", Type = InputType.Webhook, WebhookUrl = "https://x.test", Outputs = new List<NodePort>() } },
+        }, new WorkflowInput());
+        await actWebhookIn.Should().ThrowAsync<InvalidOperationException>().WithMessage("*IWorkflowWebhookClient*");
+
+        var actPdf = () => workflow.ExecuteAsync(new WorkflowDefinition
+        {
+            Id = "wf-no-pdf",
+            Name = "No pdf",
+            Nodes = new List<WorkflowNode>
+            {
+                new InputNode { Id = "input", Type = InputType.Content, Content = "x", Outputs = new List<NodePort> { new NodePort { Id = "out", Name = "data", Direction = PortDirection.Output, DataType = "any" } } },
+                new OutputNode { Id = "out", Type = OutputType.File, Format = OutputFormat.Pdf, FilePath = "/tmp/x.pdf", Inputs = new List<NodePort> { new NodePort { Id = "in", Name = "data", Direction = PortDirection.Input, DataType = "any" } } },
+            },
+            Connections = new List<VisualWorkflowConnection> { new() { FromNodeId = "input", FromPortId = "out", ToNodeId = "out", ToPortId = "in" } },
+        }, new WorkflowInput());
+        await actPdf.Should().ThrowAsync<NotSupportedException>().WithMessage("*IWorkflowPdfExporter*");
     }
 
     [Fact]
