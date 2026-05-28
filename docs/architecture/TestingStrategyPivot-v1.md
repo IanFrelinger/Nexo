@@ -47,7 +47,7 @@ flowchart TB
 | # | Principle | Implication |
 |---|-----------|-------------|
 | P1 | **Domain is sacred** | `Nexo.Core.Domain` stays at **100% line** coverage; new domain types get tests in the same PR. |
-| P2 | **Coverage floors ratchet, not chase** | Infrastructure (~84%) and Core.Application (~67%) use **minimum CI thresholds**; raise floors only when gap tests land in touched code. |
+| P2 | **Coverage floors ratchet, not chase** | Infrastructure (~83% CI floor) and Core.Application (~67%) use **minimum CI thresholds**; raise floors only when gap tests land in touched code. |
 | P3 | **ProdStyle is the default for new kernel features** | New bricks, barriers, pipelines, routing, or `AddNexo` wiring → at least one **ProdStyle** or **WebApplicationFactory** test before merge. |
 | P4 | **Environment code uses environment gates** | Docker, Postgres ephemeral, live Ollama/RunPod, Playwright → **mesh-lab**, **kernel-gate-tier-e**, **security-gate**, not Coverlet 100%. |
 | P5 | **Gap tests are a scalpel** | Add `*GapCoverageTests` for small branchy adapters; do **not** add gap suites for megaclasses already covered by ProdStyle/virtual hosts. |

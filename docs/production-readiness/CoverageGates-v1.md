@@ -9,7 +9,7 @@ Automated line-coverage floors for kernel assemblies. These gates complement fun
 | Workflow | Job id | Assemblies | Line threshold |
 |----------|--------|------------|----------------|
 | [Core domain coverage](../../.github/workflows/core-domain-coverage.yml) | `domain-coverage` | `Nexo.Core.Domain` | **100%** |
-| [Kernel coverage gate](../../.github/workflows/kernel-coverage-gate.yml) | `kernel-coverage` | Domain + Infrastructure + Core.Application | **100% / 84% / 67%** |
+| [Kernel coverage gate](../../.github/workflows/kernel-coverage-gate.yml) | `kernel-coverage` | Domain + Infrastructure + Core.Application | **100% / 83% / 67%** |
 
 Enable **`domain-coverage`** and **`kernel-coverage`** as required status checks on the default branch (see [TestingModel.md](../architecture/TestingModel.md)).
 

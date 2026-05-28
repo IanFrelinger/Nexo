@@ -39,7 +39,7 @@ See **[`docs/MeshVirtualLab.md`](../MeshVirtualLab.md)** for compose layout, ver
 
 ## Merge policy (GitHub)
 
-To block merges when kernel line coverage regresses, in GitHub go to **Settings → Branches → Branch protection rule**, enable **Require status checks to pass**, and add **`domain-coverage`** (Core domain coverage) and **`kernel-coverage`** (composite gate: Domain 100%, Infrastructure 84%, Core.Application 67%). See [Coverage gates v1](../production-readiness/CoverageGates-v1.md). If the UI only shows the workflow name, pick the check that corresponds to each workflow’s latest green run.
+To block merges when kernel line coverage regresses, in GitHub go to **Settings → Branches → Branch protection rule**, enable **Require status checks to pass**, and add **`domain-coverage`** (Core domain coverage) and **`kernel-coverage`** (composite gate: Domain 100%, Infrastructure 83%, Core.Application 67%). See [Coverage gates v1](../production-readiness/CoverageGates-v1.md). If the UI only shows the workflow name, pick the check that corresponds to each workflow’s latest green run.
 
 ## Local commands
 

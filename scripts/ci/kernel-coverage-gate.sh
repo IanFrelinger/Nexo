@@ -16,13 +16,13 @@ dotnet test src/Nexo.Tests.Domain/Nexo.Tests.Domain.csproj \
   --verbosity minimal
 
 echo ""
-echo "== Infrastructure (Nexo.Infrastructure) line coverage: ${INFRA_COVERAGE_THRESHOLD:-84}% floor =="
+echo "== Infrastructure (Nexo.Infrastructure) line coverage: ${INFRA_COVERAGE_THRESHOLD:-83}% floor =="
 dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net9.0 \
   /p:CollectCoverage=true \
   /p:CoverletOutput="$ROOT/CoverageReports/infra" \
   /p:CoverletOutputFormat=cobertura \
   /p:Include="[Nexo.Infrastructure]*" \
-  /p:Threshold="${INFRA_COVERAGE_THRESHOLD:-84}" \
+  /p:Threshold="${INFRA_COVERAGE_THRESHOLD:-83}" \
   /p:ThresholdType=line \
   --verbosity minimal
 

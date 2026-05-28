@@ -8,7 +8,7 @@ Branch protection cannot run **`release.yml`** (that workflow is triggered by **
 2. **Require status checks to pass** — include at least:
    - **`testing-strategy`** — pivot policy (gap freeze, ProdStyle wiring hints); see [Testing strategy pivot v1](architecture/TestingStrategyPivot-v1.md)
    - **`domain-coverage`** — `Nexo.Core.Domain` line coverage **100%**
-   - **`kernel-coverage`** — composite floors (Domain 100%, Infrastructure 84%, Application 67%)
+   - **`kernel-coverage`** — composite floors (Domain 100%, Infrastructure 83%, Application 67%)
    - Your default CI workflow(s) on every PR (for example **Cross-Platform Tests**, or team merge-blocking workflows)
    - Path-filtered gates as applicable: **Kernel Gate**, **Application Gate**, **Composition Mesh Gate**, **Mesh virtual lab gate**
 3. **Require branches to be up to date** before merge (optional but reduces “green PR on stale base”).

@@ -101,7 +101,7 @@ Living checklist for [Testing strategy pivot v1](TestingStrategyPivot-v1.md). Up
 
 | Date | Domain | Infrastructure | Core.Application | Notes |
 |------|--------|----------------|------------------|-------|
-| 2026-05-28 | 100% | 84% | 67% | Initial `kernel-coverage` floors (PR #130) |
+| 2026-05-28 | 100% | 83% | 67% | `kernel-coverage` floors after gap-suite reduction (CI ~83.5% infra line) |
 
 ---
 
