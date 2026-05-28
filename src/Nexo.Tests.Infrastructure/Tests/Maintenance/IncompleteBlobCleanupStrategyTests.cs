@@ -159,6 +159,12 @@ public class IncompleteBlobCleanupStrategyTests : IDisposable
         var incompletePath = Path.Combine(_blobPath, "locked.incomplete");
         await File.WriteAllBytesAsync(incompletePath, new byte[64]);
         MakeUndeletable(incompletePath);
+        if (!DeleteIsBlocked(incompletePath))
+        {
+            MakeDeletable(incompletePath);
+            return;
+        }
+
         try
         {
             var result = await _strategy.CleanAsync(new ArtifactCleanupContext());
@@ -170,6 +176,19 @@ public class IncompleteBlobCleanupStrategyTests : IDisposable
         finally
         {
             MakeDeletable(incompletePath);
+        }
+    }
+
+    private static bool DeleteIsBlocked(string path)
+    {
+        try
+        {
+            File.Delete(path);
+            return false;
+        }
+        catch
+        {
+            return File.Exists(path);
         }
     }
 

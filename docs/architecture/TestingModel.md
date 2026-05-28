@@ -1,5 +1,7 @@
 # Testing model
 
+**North-star strategy:** [Testing strategy pivot v1](TestingStrategyPivot-v1.md) (layered gates, domain 100%, ProdStyle for wiring, mesh/RC for environment). **Progress:** [Testing strategy tracking v1](TestingStrategyTracking-v1.md).
+
 Nexo uses **two complementary styles** of automated tests.
 
 ## xUnit (VSTest)
@@ -37,7 +39,7 @@ See **[`docs/MeshVirtualLab.md`](../MeshVirtualLab.md)** for compose layout, ver
 
 ## Merge policy (GitHub)
 
-To block merges when domain line coverage regresses, in GitHub go to **Settings → Branches → Branch protection rule**, enable **Require status checks to pass**, and add **`domain-coverage`** (the job id from **Core domain coverage**). If the UI only shows the workflow name, pick the check that corresponds to that workflow’s latest green run.
+To block merges when kernel line coverage regresses, in GitHub go to **Settings → Branches → Branch protection rule**, enable **Require status checks to pass**, and add **`domain-coverage`** (Core domain coverage) and **`kernel-coverage`** (composite gate: Domain 100%, Infrastructure 83%, Core.Application 67%). See [Coverage gates v1](../production-readiness/CoverageGates-v1.md). If the UI only shows the workflow name, pick the check that corresponds to each workflow’s latest green run.
 
 ## Local commands
 
@@ -46,6 +48,7 @@ To block merges when domain line coverage regresses, in GitHub go to **Settings 
   `dotnet test src/Nexo.Tests.Application/Nexo.Tests.Application.csproj`  
   `dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj`  
   `dotnet test application/src/Nexo.Tests.CLI/Nexo.Tests.CLI.csproj`
+- **Coverage floors:** `make kernel-coverage-gate` or `bash scripts/ci/kernel-coverage-gate.sh`
 - **Broader local bar:** `make test` (see `Makefile`; uses blame-hang options)
 - **Production-like integration first (Infrastructure only):** `make test-prod-style` then optionally `make test-framework-prod-first`
 - **Prime-time gate (all test projects in `Nexo.PrimeTime.slnf`):** `make test-prime-time` — **`Category=ProdStyle`** across Application, Domain, Infrastructure, CLI, Orchestration, BackgroundAgents, GameDomain, Transport; then **`make test-prime-time-full`** for the full slice.

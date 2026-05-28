@@ -1,3 +1,4 @@
+using System.Text.Json;
 using FluentAssertions;
 using Nexo.Core.Domain.Execution;
 using Nexo.Infrastructure.Execution;
@@ -57,5 +58,49 @@ public class BrickValueSerializerTests
 
         output.Get<string>("out1").Should().Be("value1");
         output.Summary.Should().Be("Done");
+    }
+
+    [Fact]
+    public void ToWireDictionary_handles_null_and_empty_inputs()
+    {
+        BrickValueSerializer.ToWireDictionary((BrickInput)null!).Should().BeEmpty();
+        BrickValueSerializer.ToWireDictionary((BrickOutput)null!).Should().BeEmpty();
+        BrickValueSerializer.ToWireDictionary((IReadOnlyDictionary<string, object>)null!).Should().BeEmpty();
+        BrickValueSerializer.ToWireDictionary(new Dictionary<string, object>()).Should().BeEmpty();
+    }
+
+    [Fact]
+    public void ToWireDictionary_output_includes_summary_and_nested_dict()
+    {
+        var output = new BrickOutput { Summary = "ok" };
+        output.Set("nested", new Dictionary<string, object> { ["k"] = new byte[] { 9 } });
+
+        var wire = BrickValueSerializer.ToWireDictionary(output);
+        wire.Should().ContainKey("Summary").WhoseValue.Should().Be("ok");
+        wire.Should().ContainKey("nested");
+    }
+
+    [Fact]
+    public void FromJsonToWireDictionary_parses_json_element_values()
+    {
+        var json = """{"flag":true,"count":3,"payload":{"__type":"bytes","base64":"AQID"}}""";
+        var wire = BrickValueSerializer.FromJsonToWireDictionary(json);
+        var input = BrickValueSerializer.FromWireToBrickInput(wire);
+
+        input.Get<bool>("flag").Should().BeTrue();
+        input.Get<byte[]>("payload").Should().Equal(1, 2, 3);
+    }
+
+    [Fact]
+    public void FromWireDictionary_skips_summary_key_for_output_payload()
+    {
+        var wire = new Dictionary<string, object>
+        {
+            ["Summary"] = "ignored-in-dict",
+            ["value"] = "x",
+        };
+        var dict = BrickValueSerializer.FromWireDictionary(wire);
+        dict.Should().ContainKey("value");
+        dict.Should().NotContainKey("Summary");
     }
 }

@@ -27,4 +27,14 @@ public sealed class NoOpBarrierAuditSinkTests
 
         await act.Should().NotThrowAsync();
     }
+
+    [Fact]
+    public async Task WriteAsync_AcceptsNullEvent()
+    {
+        var sink = new NoOpBarrierAuditSink();
+
+        var act = async () => await sink.WriteAsync(null!, CancellationToken.None);
+
+        await act.Should().NotThrowAsync();
+    }
 }

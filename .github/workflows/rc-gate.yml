@@ -3,6 +3,15 @@
 name: RC Gate
 
 on:
+  schedule:
+    # Monthly RC evidence on master (Phase 5 pivot); failures notify via GitHub Actions.
+    - cron: "0 6 1 * *"
+  push:
+    branches: [master, main]
+    paths:
+      - "docs/production-readiness/RCHardeningPlan-v1.md"
+      - "scripts/rc-gate*.sh"
+      - ".github/workflows/rc-gate.yml"
   workflow_dispatch:
     inputs:
       tier:
@@ -34,24 +43,24 @@ jobs:
           global-json-file: global.json
 
       - name: Tier A (nexo-ready)
-        if: github.event_name != 'workflow_dispatch' || inputs.tier == 'a' || inputs.tier == 'full'
+        if: github.event_name == 'workflow_dispatch' && (inputs.tier == 'a' || inputs.tier == 'full')
         run: make rc-gate-tier-a
         env:
           NEXO_ALLOW_MOCK: "1"
           RC_GATE_SKIP_DOCKER: "1"
 
       - name: Tier B (ship + release bundle)
-        if: github.event_name != 'workflow_dispatch' || inputs.tier == 'b' || inputs.tier == 'full'
+        if: github.event_name == 'workflow_dispatch' && (inputs.tier == 'b' || inputs.tier == 'full')
         run: make rc-gate-tier-b
         env:
           NEXO_ALLOW_MOCK: "1"
 
       - name: Tier C (evidence)
-        if: github.event_name != 'workflow_dispatch' || inputs.tier == 'c' || inputs.tier == 'full'
+        if: github.event_name == 'schedule' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && (inputs.tier == 'c' || inputs.tier == 'full'))
         run: make rc-gate-tier-c
 
       - name: Tier D (GitHub workflows)
-        if: github.event_name != 'workflow_dispatch' || inputs.tier == 'd' || inputs.tier == 'full'
+        if: github.event_name == 'workflow_dispatch' && (inputs.tier == 'd' || inputs.tier == 'full')
         env:
           RC_GATE_TRIGGER_GH: ${{ github.event_name == 'workflow_dispatch' && inputs.trigger_gh && '1' || '0' }}
           RC_GATE_GH_BRANCH: ${{ github.ref_name }}

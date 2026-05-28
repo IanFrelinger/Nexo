@@ -1,5 +1,7 @@
 # Nexo Testing Guide
 
+**Strategy (layered proof, coverage ratchets, ProdStyle-first):** [Testing strategy pivot v1](architecture/TestingStrategyPivot-v1.md) · [Tracking checklist](architecture/TestingStrategyTracking-v1.md) · [Review guide](architecture/TestingReviewGuide-v1.md)
+
 ## Test Guard Rails (Anti-Hang)
 
 Nexo uses multiple mechanisms to prevent tests from hanging indefinitely and keep CI/dev loops responsive.
@@ -135,7 +137,7 @@ See **`docs/production-readiness/SecurityHardeningPlan-v1.md`**.
 
 ```bash
 make test-prime-time          # Category=ProdStyle across Nexo.PrimeTime.slnf (nine test projects)
-make test-prime-time-full    # ProdStyle gate then full test count on the same slice (ProdStyle runs twice)
+make test-prime-time-full    # ProdStyle gate then full slice excluding Category=ProdStyle
 ```
 
 **Faster Infrastructure-only ProdStyle:** `make test-prod-style`

@@ -48,9 +48,10 @@ test-prod-style:
 	  --blame-hang-timeout 120s --blame-hang-dump-type none
 
 # Runs test-prod-style then the full LocalDevCore test slice (Domain + Infrastructure + CLI harness).
-# Note: ProdStyle tests execute twice (once filtered, once inside the full run).
+# ProdStyle runs once in test-prod-style; the second pass excludes Category=ProdStyle.
 test-framework-prod-first: test-prod-style
 	dotnet test Nexo.LocalDevCore.slnf --no-build \
+	  --filter "Category!=ProdStyle" \
 	  --blame-hang-timeout 30s --blame-hang-dump-type none
 
 # Prime-time gate: Category=ProdStyle across Nexo.PrimeTime.slnf (all test assemblies).
@@ -60,9 +61,10 @@ test-prime-time:
 	  --filter "Category=ProdStyle" \
 	  --blame-hang-timeout 300s --blame-hang-dump-type none
 
-# Full PrimeTime matrix after ProdStyle gate (runs everything including ProdStyle twice).
+# Full PrimeTime matrix after ProdStyle gate (ProdStyle excluded on this pass).
 test-prime-time-full: test-prime-time
 	dotnet test $(PRIME_TIME_SLNF) --no-build \
+	  --filter "Category!=ProdStyle" \
 	  --blame-hang-timeout 300s --blame-hang-dump-type none
 
 # Run tests locally (blame-hang-timeout prevents indefinite freeze from hung tests)
@@ -146,6 +148,14 @@ ci-verify:
 
 # Pre-application kernel gate: runtime graph build + hosting resolution matrix + pipeline tests.
 # Optional: KERNEL_GATE_MESH=1 (Docker mesh-lab-verify), KERNEL_GATE_PRODSTYLE=1 (full ProdStyle slice).
+# Coverlet floors: Domain 100%, Infrastructure 84%, Core.Application 67% (see docs/production-readiness/CoverageGates-v1.md).
+kernel-coverage-gate:
+	bash scripts/ci/kernel-coverage-gate.sh
+
+# PR policy: gap freeze, ProdStyle wiring (see docs/architecture/TestingStrategyPivot-v1.md).
+testing-strategy-gate:
+	bash scripts/ci/pr-testing-strategy-gate.sh origin/master
+
 kernel-gate:
 	dotnet build Nexo.Runtime.sln -v minimal
 	dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -v minimal

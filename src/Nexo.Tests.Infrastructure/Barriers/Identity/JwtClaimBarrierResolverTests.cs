@@ -9,6 +9,23 @@ namespace Nexo.Tests.Infrastructure.Barriers.Identity;
 public sealed class JwtClaimBarrierResolverTests
 {
     [Fact]
+    public void Constructor_throws_for_null_dependencies()
+    {
+        var options = new JwtClaimResolverOptions();
+        var hierarchy = CreateHierarchy();
+        var logger = new TestLogger<JwtClaimBarrierResolver>();
+
+        var act = () => new JwtClaimBarrierResolver(null!, hierarchy, logger);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("options");
+
+        act = () => new JwtClaimBarrierResolver(options, null!, logger);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("hierarchy");
+
+        act = () => new JwtClaimBarrierResolver(options, hierarchy, null!);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
+    }
+
+    [Fact]
     public async Task TryResolveAsync_ClaimPresentAndMapped_ReturnsLevel()
     {
         var sut = CreateResolver(new JwtClaimResolverOptions
@@ -116,6 +133,50 @@ public sealed class JwtClaimBarrierResolverTests
         var result = await sut.TryResolveAsync(CreateContext(rawJwt: "token", claims: new Dictionary<string, string> { ["tier"] = "pro" }));
 
         result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task TryResolveAsync_NullClaimNameInOptions_ReturnsNull()
+    {
+        var sut = CreateResolver(new JwtClaimResolverOptions
+        {
+            ClaimName = null!,
+            ClaimValueMapping = new Dictionary<string, string> { ["pro"] = "internal" },
+        });
+
+        var result = await sut.TryResolveAsync(CreateContext(rawJwt: "token", claims: new Dictionary<string, string> { ["tier"] = "pro" }));
+
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task TryResolveAsync_WhitespaceRawJwt_ReturnsNull()
+    {
+        var sut = CreateResolver(new JwtClaimResolverOptions
+        {
+            ClaimName = "tier",
+            ClaimValueMapping = new Dictionary<string, string> { ["pro"] = "internal" },
+        });
+
+        var result = await sut.TryResolveAsync(CreateContext(rawJwt: "   ", claims: new Dictionary<string, string> { ["tier"] = "pro" }));
+
+        result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task TryResolveAsync_Success_IncludesClaimDetail()
+    {
+        var sut = CreateResolver(new JwtClaimResolverOptions
+        {
+            ClaimName = "tier",
+            ClaimValueMapping = new Dictionary<string, string> { ["pro"] = "internal" },
+        });
+
+        var result = await sut.TryResolveAsync(CreateContext(rawJwt: "token", claims: new Dictionary<string, string> { ["tier"] = "pro" }));
+
+        result.Should().NotBeNull();
+        result!.Detail.Should().Contain("tier=pro");
+        result.ResolverName.Should().Be("JwtClaim");
     }
 
     private static JwtClaimBarrierResolver CreateResolver(JwtClaimResolverOptions options)
