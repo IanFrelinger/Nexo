@@ -146,9 +146,13 @@ ci-verify:
 
 # Pre-application kernel gate: runtime graph build + hosting resolution matrix + pipeline tests.
 # Optional: KERNEL_GATE_MESH=1 (Docker mesh-lab-verify), KERNEL_GATE_PRODSTYLE=1 (full ProdStyle slice).
-# Coverlet floors: Domain 100%, Infrastructure 84%, Core.Application 63% (see docs/production-readiness/CoverageGates-v1.md).
+# Coverlet floors: Domain 100%, Infrastructure 84%, Core.Application 67% (see docs/production-readiness/CoverageGates-v1.md).
 kernel-coverage-gate:
 	bash scripts/ci/kernel-coverage-gate.sh
+
+# PR policy: gap freeze, ProdStyle wiring (see docs/architecture/TestingStrategyPivot-v1.md).
+testing-strategy-gate:
+	bash scripts/ci/pr-testing-strategy-gate.sh origin/master
 
 kernel-gate:
 	dotnet build Nexo.Runtime.sln -v minimal

@@ -2,10 +2,16 @@
 
 Track after [Security readiness v1](SecurityReadiness-v1.md). **Plan:** [RC hardening plan v1](RCHardeningPlan-v1.md)
 
+**Testing strategy:** RC proof is **workflow evidence + gates**, not repo-wide line coverage. See [Testing strategy pivot v1](../architecture/TestingStrategyPivot-v1.md) and the RC → workflow map in [Testing strategy tracking v1](../architecture/TestingStrategyTracking-v1.md#release-candidate-checklist--automation).
+
 ## Command
 
 ```bash
 make rc-gate-full
+# Faster local stack (skips Docker tiers):
+NEXO_READY_SKIP_DOCKER=1 make nexo-ready-gate
+# Kernel coverage evidence before RC:
+make kernel-coverage-gate
 ```
 
 ## Sign-off

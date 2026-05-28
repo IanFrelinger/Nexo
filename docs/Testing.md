@@ -1,6 +1,6 @@
 # Nexo Testing Guide
 
-**Strategy (layered proof, coverage ratchets, ProdStyle-first):** [Testing strategy pivot v1](architecture/TestingStrategyPivot-v1.md) · [Tracking checklist](architecture/TestingStrategyTracking-v1.md)
+**Strategy (layered proof, coverage ratchets, ProdStyle-first):** [Testing strategy pivot v1](architecture/TestingStrategyPivot-v1.md) · [Tracking checklist](architecture/TestingStrategyTracking-v1.md) · [Review guide](architecture/TestingReviewGuide-v1.md)
 
 ## Test Guard Rails (Anti-Hang)
 

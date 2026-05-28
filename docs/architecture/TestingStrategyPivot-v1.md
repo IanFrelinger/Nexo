@@ -226,11 +226,14 @@ Phases are **ordered by dependency**. Complete phase N sign-off in [Testing stra
 
 ---
 
-## 10. Next actions (immediate)
+## 10. Execution status
 
-1. Merge [PR #130](https://github.com/IanFrelinger/Nexo/pull/130) (coverage floors + domain 100%) if not already on `master`.
-2. Enable branch protection: `domain-coverage`, `kernel-coverage`.
-3. Complete **Phase 0** links and PR template (this pivot PR).
-4. Schedule **Phase 4.1** in team review norms (freeze new gap files).
+Pivot automation is **implemented** on branch `cursor/close-coverage-gaps-7a7c` (PR #130):
 
-Track progress in [Testing strategy tracking v1](TestingStrategyTracking-v1.md).
+- `testing-strategy-gate.yml` + `scripts/ci/pr-testing-strategy-gate.sh`
+- `make testing-strategy-gate` for local PR checks
+- [Testing review guide v1](TestingReviewGuide-v1.md)
+- [Testing strategy tracking v1](TestingStrategyTracking-v1.md) (checklist + RC map)
+- Monthly `rc-gate` Tier C on schedule
+
+**Manual (org):** enable branch protection checks per `docs/GitHubBranchProtection.md`.

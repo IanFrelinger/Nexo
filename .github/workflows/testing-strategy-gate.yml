@@ -1,0 +1,30 @@
+# Policy gate for testing strategy pivot (gap freeze, ProdStyle wiring, command hints).
+# See docs/architecture/TestingStrategyPivot-v1.md
+name: Testing strategy gate
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+    paths:
+      - "src/**"
+      - "application/**"
+      - "scripts/**"
+      - ".github/**"
+      - "Makefile"
+      - "docs/architecture/TestingStrategy*.md"
+
+jobs:
+  testing-strategy:
+    name: testing-strategy
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Enforce pivot rules on PR diff
+        env:
+          GITHUB_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: bash scripts/ci/pr-testing-strategy-gate.sh "$GITHUB_BASE_SHA"

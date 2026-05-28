@@ -17,8 +17,13 @@
 
 ### Required status checks
 
-- [ ] Branch protection on default branch requires: build, primary test workflow, and any coverage or security gate you adopt.
-- [ ] Check names documented for contributors (see `docs/architecture/TestingModel.md` if you use the `domain-coverage` workflow).
+- [ ] Branch protection on default branch requires: **`testing-strategy`**, **`domain-coverage`**, **`kernel-coverage`**, plus path-filtered gates (see `docs/GitHubBranchProtection.md`).
+- [x] Check names documented for contributors — `docs/architecture/TestingModel.md`, `docs/GitHubBranchProtection.md`.
+
+### RC workflows (before tag; not every PR)
+
+- [ ] `production-readiness-gate-v1` · `environment-setup-gate-v1` · `runtime-release-gate` · `container-image-gate`
+- [ ] Local: `make rc-gate-full` — map in [Testing strategy tracking § RC](../architecture/TestingStrategyTracking-v1.md#release-candidate-checklist--automation)
 
 ### Test types
 

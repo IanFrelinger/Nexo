@@ -42,6 +42,10 @@ For Infrastructure Sdk / Hosting registration changes, prefer **`dotnet build Ne
 
 **New kernel features** (bricks, barriers, pipelines, routing, `AddNexo` wiring): add at least one **`[Trait("Category", "ProdStyle")]`** or `WebApplicationFactory` test; do not rely on gap coverage alone.
 
+**Do not add new `*GapCoverageTests.cs` files** without `gap-coverage-justify: <reason>` in the PR description (enforced by `testing-strategy-gate` CI).
+
+**Before opening a PR:** `make testing-strategy-gate` (diff vs `origin/master`).
+
 **Coverage:** `make kernel-coverage-gate` before PRs that touch `src/Nexo.Core.Domain`, `src/Nexo.Core.Application`, or `src/Nexo.Infrastructure`.
 
 ## Testing: xUnit vs. `UnitTestBase`
