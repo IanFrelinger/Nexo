@@ -228,12 +228,11 @@ Phases are **ordered by dependency**. Complete phase N sign-off in [Testing stra
 
 ## 10. Execution status
 
-Pivot automation is **implemented** on branch `cursor/close-coverage-gaps-7a7c` (PR #130):
+Pivot automation is **in repo** (see [Testing strategy tracking v1](TestingStrategyTracking-v1.md)):
 
-- `testing-strategy-gate.yml` + `scripts/ci/pr-testing-strategy-gate.sh`
-- `make testing-strategy-gate` for local PR checks
+- `testing-strategy-gate.yml` + `scripts/ci/pr-testing-strategy-gate.sh` · `make testing-strategy-gate`
+- `kernel-coverage-gate.yml` + `make kernel-coverage-gate` (domain 100%, infra/app floors)
 - [Testing review guide v1](TestingReviewGuide-v1.md)
-- [Testing strategy tracking v1](TestingStrategyTracking-v1.md) (checklist + RC map)
-- Monthly `rc-gate` Tier C on schedule
+- Test-reduction hygiene: merged duplicate `*GapCoverageTests` pairs; `WorkflowExecutorEdgeCaseTests` replaces the gap megaclass
 
 **Manual (org):** enable branch protection checks per `docs/GitHubBranchProtection.md`.

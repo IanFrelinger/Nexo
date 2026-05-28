@@ -59,6 +59,8 @@ Living checklist for [Testing strategy pivot v1](TestingStrategyPivot-v1.md). Up
 - [x] Freeze: `testing-strategy-gate` fails on new `*GapCoverageTests.cs` without `gap-coverage-justify:` in PR body
 - [x] Megaclass allow list (below)
 - [x] Review guide: prefer ProdStyle over gap megaclass edits
+- [x] Redundant gap suite reduction (JWT/middleware/domain/barriers; ProdStyle dedup in Makefile; `WorkflowExecutorEdgeCaseTests`)
+- [x] Dogfood Block 8 matrix tests skip on CI (`DogfoodCiSkip`; nested `dotnet test` is flaky on runners)
 - [ ] Optional backlog: PR Coverlet diff script (`scripts/ci/coverage-changed-files.sh`)
 - [ ] Quarterly ratchet: bump `INFRA_COVERAGE_THRESHOLD` / `APP_COVERAGE_THRESHOLD` when justified
 
