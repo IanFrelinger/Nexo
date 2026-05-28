@@ -36,6 +36,14 @@ dotnet build Nexo.LocalDevCore.slnf -v minimal
 
 For Infrastructure Sdk / Hosting registration changes, prefer **`dotnet build Nexo.sln`** then **`make test-framework-prod-first`** or **`make test-prime-time`** when validating framework-wide behaviour (see also **`Makefile`** targets **`test-prod-style`**, **`ci-verify`**).
 
+## Testing strategy
+
+**North star:** [Testing strategy pivot v1](docs/architecture/TestingStrategyPivot-v1.md) — domain at 100% line coverage, ratcheted floors on Infrastructure/Application, **ProdStyle** for production wiring, mesh/RC gates for environment truth. Track progress: [Testing strategy tracking v1](docs/architecture/TestingStrategyTracking-v1.md).
+
+**New kernel features** (bricks, barriers, pipelines, routing, `AddNexo` wiring): add at least one **`[Trait("Category", "ProdStyle")]`** or `WebApplicationFactory` test; do not rely on gap coverage alone.
+
+**Coverage:** `make kernel-coverage-gate` before PRs that touch `src/Nexo.Core.Domain`, `src/Nexo.Core.Application`, or `src/Nexo.Infrastructure`.
+
 ## Testing: xUnit vs. `UnitTestBase`
 
 - **xUnit** suites (for example `Nexo.Tests.Infrastructure`) run with normal `dotnet test` filters.

@@ -5,6 +5,8 @@
 - Default branch merges only when **agreed checks** pass.
 - Test layout matches how operators deploy (containers, optional air-gapped).
 
+**Strategy:** layered proof model in [Testing strategy pivot v1](../architecture/TestingStrategyPivot-v1.md) (domain 100%, coverage ratchets, ProdStyle-first, mesh/RC for environment). Track execution in [Testing strategy tracking v1](../architecture/TestingStrategyTracking-v1.md).
+
 ## Checklist
 
 ### Kernel gate (pre-application)

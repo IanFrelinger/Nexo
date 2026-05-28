@@ -14,6 +14,22 @@
 
 -
 
+### Testing strategy (blast radius)
+
+See [Testing strategy pivot v1](docs/architecture/TestingStrategyPivot-v1.md).
+
+| Change type | Minimum proof (check what applies) |
+|-------------|-------------------------------------|
+| `Nexo.Core.Domain` | `dotnet test src/Nexo.Tests.Domain` · `make kernel-coverage-gate` |
+| Infrastructure adapter (small / branchy) | Focused unit or gap test in touched file · coverage gate |
+| Hosting / API / routing / barriers / `AddNexo` | `make test-prod-style` and/or `make application-gate-tier-c` |
+| Docker / mesh / fleet / trust | `make mesh-lab-e2e` or relevant `*-gate` tier (see pivot doc) |
+| Megaclass (`ProviderFactory`, Docker provisioners, …) | **ProdStyle / virtual host** — do not add new `*GapCoverageTests` files |
+
+- [ ] `make kernel-coverage-gate` (if touching `src/Nexo.Core.*` or `src/Nexo.Infrastructure`)
+- [ ] `make kernel-gate` (if touching kernel hosting / pipeline / profiles)
+- [ ] `make test-prod-style` (if touching production DI / API / routing)
+
 ## Checklist
 
 - [ ] `make test` passes locally

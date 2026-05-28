@@ -1,5 +1,7 @@
 # Testing model
 
+**North-star strategy:** [Testing strategy pivot v1](TestingStrategyPivot-v1.md) (layered gates, domain 100%, ProdStyle for wiring, mesh/RC for environment). **Progress:** [Testing strategy tracking v1](TestingStrategyTracking-v1.md).
+
 Nexo uses **two complementary styles** of automated tests.
 
 ## xUnit (VSTest)

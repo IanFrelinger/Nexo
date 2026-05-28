@@ -2,6 +2,8 @@
 
 Automated line-coverage floors for kernel assemblies. These gates complement functional workflows (`kernel-gate`, `rc-gate`, `production-readiness-gate-v1`) and block coverage regressions on merge.
 
+**Strategy context:** floors are one layer in the [testing strategy pivot v1](../architecture/TestingStrategyPivot-v1.md) — not a substitute for ProdStyle, mesh-lab, or RC evidence.
+
 ## CI workflows
 
 | Workflow | Job id | Assemblies | Line threshold |
