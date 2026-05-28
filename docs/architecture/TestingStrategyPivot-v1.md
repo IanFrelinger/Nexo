@@ -61,7 +61,7 @@ flowchart TB
 | Area | Today | Pivot stance |
 |------|--------|--------------|
 | `Nexo.Core.Domain` | **100%** line (CI) | Keep |
-| `Nexo.Infrastructure` | ~**84%** line, 1783+ xUnit tests | Floor + ProdStyle; no 100% goal |
+| `Nexo.Infrastructure` | ~**83–84%** line, 1770+ xUnit tests | Floor + ProdStyle; no 100% goal |
 | `Nexo.Core.Application` | ~**68%** line | Floor ratchet on change |
 | `*GapCoverageTests` | Large volume (Transport, Orchestration, Infrastructure, …) | **Freeze scope**; grow only with touched files |
 | ProdStyle | `make test-prod-style`, prime-time | **Mandatory** for routing/hosting/API PRs |
