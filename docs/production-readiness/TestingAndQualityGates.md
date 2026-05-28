@@ -25,7 +25,8 @@
 
 ### Coverage and quality
 
-- [ ] Line or branch coverage thresholds on critical assemblies (if you use Coverlet or similar).
+- [x] Line coverage thresholds on critical kernel assemblies — see [Coverage gates v1](CoverageGates-v1.md) (`domain-coverage` 100%, `kernel-coverage` composite gate).
+- [ ] Branch coverage thresholds (optional ratchet; line floors enforced in CI today).
 - [ ] Static analysis or security scan in CI for appropriate components.
 
 ### Performance

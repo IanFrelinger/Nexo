@@ -23,7 +23,7 @@ This folder helps you **support every major production concern** in one place: r
 | Operations | [Operations and observability](OperationsAndObservability.md) | SLOs, alerting, health, capacity, runbooks |
 | Data & compliance | [Data privacy and compliance](DataPrivacyAndCompliance.md) | Classification, retention, encryption, control mapping |
 | Reliability | [Reliability and chaos](ReliabilityAndChaos.md) | Failure modes, limits, idempotency, drills |
-| Testing & CI | [Testing and quality gates](TestingAndQualityGates.md) | Required checks, coverage, perf budgets |
+| Testing & CI | [Testing and quality gates](TestingAndQualityGates.md) · [Coverage gates v1](CoverageGates-v1.md) | Required checks; line floors (Domain 100%, Infra 84%, App 67%) |
 | Operators | [Operator deployment](OperatorDeployment.md) | Production install, upgrades, backups pointer |
 | Audience fit | [Catalog by deployment type](CatalogByDeploymentType.md) | SMB vs enterprise vs SaaS: which items matter most |
 

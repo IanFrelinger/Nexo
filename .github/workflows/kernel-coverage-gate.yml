@@ -1,0 +1,45 @@
+# Line coverage floors for kernel assemblies (domain 100%, infrastructure + application ratchet).
+name: Kernel coverage gate
+
+on:
+  push:
+    branches: [master, main, "cursor/**"]
+    paths:
+      - ".github/workflows/kernel-coverage-gate.yml"
+      - "scripts/ci/kernel-coverage-gate.sh"
+      - "src/Nexo.Core.Domain/**"
+      - "src/Nexo.Core.Application/**"
+      - "src/Nexo.Infrastructure/**"
+      - "src/Nexo.Tests.Domain/**"
+      - "src/Nexo.Tests.Application/**"
+      - "src/Nexo.Tests.Infrastructure/**"
+      - "Directory.Packages.props"
+      - "Directory.Build.props"
+  pull_request:
+    paths:
+      - ".github/workflows/kernel-coverage-gate.yml"
+      - "scripts/ci/kernel-coverage-gate.sh"
+      - "src/Nexo.Core.Domain/**"
+      - "src/Nexo.Core.Application/**"
+      - "src/Nexo.Infrastructure/**"
+      - "src/Nexo.Tests.Domain/**"
+      - "src/Nexo.Tests.Application/**"
+      - "src/Nexo.Tests.Infrastructure/**"
+      - "Directory.Packages.props"
+      - "Directory.Build.props"
+
+jobs:
+  kernel-coverage:
+    name: kernel-coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Run kernel coverage gate
+        run: bash scripts/ci/kernel-coverage-gate.sh
