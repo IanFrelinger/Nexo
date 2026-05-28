@@ -137,7 +137,7 @@ See **`docs/production-readiness/SecurityHardeningPlan-v1.md`**.
 
 ```bash
 make test-prime-time          # Category=ProdStyle across Nexo.PrimeTime.slnf (nine test projects)
-make test-prime-time-full    # ProdStyle gate then full test count on the same slice (ProdStyle runs twice)
+make test-prime-time-full    # ProdStyle gate then full slice excluding Category=ProdStyle
 ```
 
 **Faster Infrastructure-only ProdStyle:** `make test-prod-style`
