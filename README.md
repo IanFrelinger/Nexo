@@ -379,32 +379,49 @@ LLM/vision routing is provider-based:
 
 ## Project Layout
 
+~62 projects: kernel spine under `src/`, deployable hosts under `application/src/`, plus satellites. Tier map: **`docs/ProjectTiers.md`**.
+
 ```text
 Nexo/
-├── src/
-│   ├── Nexo.CLI/                 # CLI surface (System.CommandLine)
-│   ├── Nexo.API/                 # ASP.NET Core host with REST endpoints
-│   ├── Nexo.Hosting/             # AddNexo() integration entrypoint
-│   ├── Nexo.Sdk/                 # Client SDK registration (AddNexoSdk)
-│   ├── Nexo.Client/              # HTTP client (INexoClient)
-│   ├── Nexo.Infrastructure/      # execution, persistence, adapters, mesh
-│   ├── Nexo.Orchestration/       # orchestrator, routing, coordination
-│   ├── Nexo.Runtime/             # runtime services and barrier plumbing
-│   ├── Nexo.BackgroundAgents/    # scheduler, RAG, web search, trust, tools
-│   ├── Nexo.Core.Application/    # use cases and ports
-│   ├── Nexo.Core.Domain/         # domain model
-│   ├── Nexo.Abstractions/        # shared interfaces (IAgent, IModel, etc.)
-│   ├── Nexo.Brick.Contracts/     # brick extension contracts
-│   ├── Nexo.Transport.Grpc*/     # gRPC transport layer
-│   └── Nexo.Tests.*/             # test suites
-├── apps/                         # application configs (runtime-studio, release-manager)
-├── config/                       # trust policy packs (air-gapped, internal-only, strict-enterprise)
-├── docs/                         # docs, specs, guides
-├── scripts/                      # setup, install, demos, onboarding (escape hatches + CI)
-├── .devcontainer/                # default Dev Container (Cursor / VS Code)
-├── .docker/                      # docker test/runtime definitions
-├── .github/                      # CI workflows and templates
-├── global.json                   # SDK pin (.NET 9)
+├── src/                          # kernel spine + distribution + transport + tests
+│   ├── Nexo.Abstractions/
+│   ├── Nexo.Core/                # Nexo.Core.Domain/, Nexo.Core.Application/
+│   ├── Nexo.Contracts/
+│   ├── Nexo.Brick.Contracts/
+│   ├── Nexo.Policies/
+│   ├── Nexo.Infrastructure/
+│   ├── Nexo.Orchestration/
+│   ├── Nexo.BackgroundAgents/    # Nexo.BackgroundAgents.HostRunners/
+│   ├── Nexo.Adapters.Models/
+│   ├── Nexo.Hosting/
+│   ├── Nexo.Sdk/                 # distribution: Sdk, Framework.Sdk, Client, Lite, Compat
+│   ├── Nexo.Framework.Sdk/
+│   ├── Nexo.Client/
+│   ├── Nexo.Lite/
+│   ├── Nexo.Compat/
+│   ├── Nexo.Hosting.Bundle/    # *.Bundle, Nexo.Runtime/, Nexo.Runtime.Bundle/
+│   ├── Nexo.Runtime/
+│   ├── Nexo.Runtime.Bundle/
+│   ├── Nexo.Transport.Grpc*/     # .Server/, .Server.Host/
+│   ├── Nexo.Ingress.*/          # AwsSns, DynamoDb (+ *.Tests)
+│   ├── Nexo.Tools.Assembly/    # ValidationUtilities/
+│   └── Nexo.Tests.*/             # kernel test suites
+├── application/src/              # deployable hosts + product surface
+│   ├── Nexo.CLI/                 # entrypoint (nexo)
+│   ├── Nexo.API/                 # ASP.NET Core REST host
+│   ├── GameDirector.*/           # Domain, Agents, Bricks, Host, Mcp
+│   ├── Nexo.GameDomain/
+│   └── Nexo.Tests.{CLI,GameDirector,GameDomain}/
+├── apps/                         # runtime-studio, nexo-forge, game-director, release-manager
+├── docs/                         # guides, demos/, samples/, ProjectTiers.md
+├── config/                       # trust policy packs
+├── scripts/                      # setup, install, CI helpers
+├── tools/                        # Unity sidecar, ApplyFeedbackChanges, etc.
+├── .devcontainer/
+├── .docker/
+├── .github/
+├── global.json
+├── Nexo.LocalDevCore.slnf        # minimal clone-to-run subset
 └── Nexo.sln
 ```
 
