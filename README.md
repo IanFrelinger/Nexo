@@ -421,7 +421,8 @@ Nexo/
 ├── .docker/
 ├── .github/
 ├── global.json
-├── Nexo.LocalDevCore.slnf        # minimal clone-to-run subset
+├── Nexo.LocalDevCore.slnf        # CLI + core tests (clone-to-run)
+├── Nexo.Core.slnf                # Tier 0 spine + CLI/API hosts only
 └── Nexo.sln
 ```
 

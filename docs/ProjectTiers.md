@@ -95,15 +95,15 @@ dotnet build Nexo.LocalDevCore.slnf
 
 That graph includes `Nexo.CLI`, core domain/infrastructure tests, and related dependencies — enough for local dev smoke without restoring all of `Nexo.sln`.
 
-## Suggested `Nexo.Core.slnf`
+## `Nexo.Core.slnf`
 
-Consider adding **`Nexo.Core.slnf`** at the repo root containing **only Tier 0 + Tier 0b** projects so a first compile builds the spine and hosts alone (no distribution bundles, transport, demos, or test projects). Example project list:
+**`Nexo.Core.slnf`** at the repo root lists **Tier 0 + Tier 0b** only so a first compile builds the spine and hosts without distribution bundles, transport, demos, or test projects:
 
-- All Tier 0 rows above (paths under `src/`)
-- `application/src/Nexo.CLI/Nexo.CLI.csproj`
-- `application/src/Nexo.API/Nexo.API.csproj`
+```bash
+dotnet build Nexo.Core.slnf
+```
 
-Pack references pulled transitively by the CLI (`Nexo.Bricks.Owasp`, `Nexo.Policies.Dev`, `Nexo.Tools.Dev`) still restore when building the CLI; the filter file can omit them if you only need `dotnet build` on libraries first.
+Pack references pulled transitively by the CLI (`Nexo.Bricks.Owasp`, `Nexo.Policies.Dev`, `Nexo.Tools.Dev`) still restore when building the CLI; the filter omits them if you only need `dotnet build` on libraries first.
 
 ## See also
 
