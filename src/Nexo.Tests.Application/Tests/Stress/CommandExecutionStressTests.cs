@@ -10,6 +10,7 @@ namespace Nexo.Tests.Application.Tests.Stress;
 /// <summary>
 /// Stress tests for command execution under high load.
 /// </summary>
+[Trait("Category", "Stress")]
 public class CommandExecutionStressTests
 {
     [Fact]
@@ -73,8 +74,8 @@ public class CommandExecutionStressTests
         );
         stopwatch.Stop();
 
-        // Assert
-        stopwatch.ElapsedMilliseconds.Should().BeLessThan(workloadSize * 10, 
+        // Assert — generous bound for CI runners (macOS/Windows) with variable CPU share
+        stopwatch.ElapsedMilliseconds.Should().BeLessThan(workloadSize * 20,
             "Parallel execution should be faster than sequential");
     }
 

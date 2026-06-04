@@ -307,6 +307,7 @@ jobs:
 
               echo "=== Smoke tests ==="
               dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+                -f net9.0 \
                 --no-build \
                 --blame-hang-timeout 180s \
                 --blame-hang-dump-type none \
@@ -315,6 +316,7 @@ jobs:
                 --logger "trx;LogFileName=smoke.trx" \
                 --results-directory /results/test-results
               dotnet test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj \
+                -f net9.0 \
                 --no-build \
                 --blame-hang-timeout 60s \
                 --blame-hang-dump-type none \

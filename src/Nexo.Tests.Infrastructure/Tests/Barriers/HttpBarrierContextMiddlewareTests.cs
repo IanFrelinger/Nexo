@@ -1,5 +1,6 @@
 #if NET8_0_OR_GREATER
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
@@ -849,47 +850,41 @@ public sealed class HttpBarrierContextMiddlewareTests : IDisposable
         ]);
 
     private static X509Certificate2 CreateCertificateWithSan(string commonName, string dnsName)
-        => CreateOpenSslCertificate(
-            commonName,
-            $"-addext \"subjectAltName=DNS:{commonName},DNS:{dnsName}\"");
+    {
+        using var rsa = RSA.Create(2048);
+        var request = new CertificateRequest(
+            $"CN={commonName}",
+            rsa,
+            HashAlgorithmName.SHA256,
+            RSASignaturePadding.Pkcs1);
+        var sanBuilder = new SubjectAlternativeNameBuilder();
+        sanBuilder.AddDnsName(commonName);
+        sanBuilder.AddDnsName(dnsName);
+        request.CertificateExtensions.Add(sanBuilder.Build());
+        return CreateSelfSignedCertificate(request);
+    }
 
     private static X509Certificate2 CreateCertificateWithoutSan(string commonName)
-        => CreateOpenSslCertificate(commonName, argumentsSuffix: string.Empty);
-
-    private static X509Certificate2 CreateOpenSslCertificate(string commonName, string argumentsSuffix)
     {
-        var dir = Path.Combine(Path.GetTempPath(), "nexo-middleware-cert-" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(dir);
-        var certPem = Path.Combine(dir, "cert.pem");
-        var keyPem = Path.Combine(dir, "key.pem");
+        using var rsa = RSA.Create(2048);
+        var request = new CertificateRequest(
+            $"CN={commonName}",
+            rsa,
+            HashAlgorithmName.SHA256,
+            RSASignaturePadding.Pkcs1);
+        return CreateSelfSignedCertificate(request);
+    }
 
-        try
-        {
-            var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-            {
-                FileName = "openssl",
-                Arguments =
-                    $"req -x509 -newkey rsa:2048 -nodes -keyout \"{keyPem}\" -out \"{certPem}\" -days 1 " +
-                    $"-subj /CN={commonName} {argumentsSuffix}".TrimEnd(),
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-            });
-            process.Should().NotBeNull();
-            process!.WaitForExit(10_000).Should().BeTrue();
-            process.ExitCode.Should().Be(0);
-
+    private static X509Certificate2 CreateSelfSignedCertificate(CertificateRequest request)
+    {
+        var notBefore = DateTimeOffset.UtcNow.AddDays(-1);
+        var notAfter = DateTimeOffset.UtcNow.AddDays(1);
 #if NET9_0_OR_GREATER
-            return X509CertificateLoader.LoadCertificateFromFile(certPem);
+        return request.CreateSelfSigned(notBefore, notAfter);
 #else
-            return new X509Certificate2(certPem);
+        using var cert = request.CreateSelfSigned(notBefore, notAfter);
+        return new X509Certificate2(cert.Export(X509ContentType.Pfx), (string?)null, X509KeyStorageFlags.Exportable);
 #endif
-        }
-        finally
-        {
-            if (Directory.Exists(dir))
-                Directory.Delete(dir, recursive: true);
-        }
     }
 
     private sealed class StubPipeline(BarrierResolutionResult? result) : IBarrierIdentityResolverPipeline
