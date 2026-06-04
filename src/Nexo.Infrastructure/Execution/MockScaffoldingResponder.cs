@@ -672,4 +672,33 @@ public interface IGeneratedGameplaySystem
         return match.Success ? match.Groups["id"].Value.Trim() : "wait";
     }
 
+    /// <summary>
+    /// Writes the UI domain demo baseline under <c>docs/UiDomainDemoGenerated/</c> when missing
+    /// (e.g. <c>nexo validate</c> / UnitTestBridge without a prior <c>self-extend</c> run).
+    /// </summary>
+    internal static void EnsureUiDomainDemoBaseline(string repoRoot)
+    {
+        var marker = Path.Combine(repoRoot, "docs", "UiDomainDemoGenerated", "app", "index.html");
+        if (File.Exists(marker))
+            return;
+
+        void Write(string relativePath, string content)
+        {
+            var full = Path.Combine(repoRoot, relativePath.Replace('/', Path.DirectorySeparatorChar));
+            var dir = Path.GetDirectoryName(full);
+            if (!string.IsNullOrEmpty(dir))
+                Directory.CreateDirectory(dir);
+            File.WriteAllText(full, content);
+        }
+
+        Write("docs/UiDomainDemoGenerated/app/index.html", BuildUiDemoHtmlSource());
+        Write("docs/UiDomainDemoGenerated/app/app.js", BuildUiDemoJsSource());
+        Write("docs/UiDomainDemoGenerated/app/domain-knowledge.json", BuildUiDomainKnowledgeJsonSource());
+        Write("docs/UiDomainDemoGenerated/host/Program.cs", BuildUiDemoHostProgramSource());
+        Write("docs/UiDomainDemoGenerated/host/UiDemoHost.csproj", BuildUiDemoHostProjectSource());
+        Write("docs/UiDomainDemoGenerated/host/SmokeProgram.cs", BuildUiDemoSmokeProgramSource());
+        Write("docs/UiDomainDemoGenerated/avalonia/Nexo.Ui.Abstractions/UiContracts.cs", BuildAvaloniaUiContractsSource());
+        Write("docs/UiDomainDemoGenerated/avalonia/Nexo.Ui.AvaloniaHost/Program.cs", BuildAvaloniaHostProgramSource());
+    }
+
 }

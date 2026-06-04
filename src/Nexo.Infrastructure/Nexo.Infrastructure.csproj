@@ -2,6 +2,7 @@
 
     <ItemGroup>
         <InternalsVisibleTo Include="Nexo.Tests.Infrastructure" />
+        <InternalsVisibleTo Include="Nexo.Tests.CLI" />
     </ItemGroup>
 
     <PropertyGroup>

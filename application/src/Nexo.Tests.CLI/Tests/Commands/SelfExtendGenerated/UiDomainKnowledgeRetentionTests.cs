@@ -1,5 +1,6 @@
 using Nexo.Core.Application.Testing.Abstractions;
 using Nexo.Core.Application.Testing.Models;
+using Nexo.Infrastructure.Execution;
 using System.Text.Json;
 
 namespace Nexo.Tests.CLI.Tests.Commands.SelfExtendGenerated;
@@ -23,6 +24,8 @@ public sealed class UiDomainKnowledgeRetentionTests : UnitTestBase
                 dir = dir.Parent;
             }
             AssertTrue(!string.IsNullOrWhiteSpace(repoRoot), "Unable to resolve repository root from test context.");
+
+            MockScaffoldingResponder.EnsureUiDomainDemoBaseline(repoRoot!);
 
             var uiRoot = Path.Combine(repoRoot!, "docs", "UiDomainDemoGenerated", "app");
             var hostRoot = Path.Combine(repoRoot!, "docs", "UiDomainDemoGenerated", "host");
