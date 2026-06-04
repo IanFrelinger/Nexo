@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Testing.Abstractions;
 using Nexo.Core.Application.Testing.Ports;
+using Nexo.Infrastructure.Execution;
 using Xunit;
 
 namespace Nexo.Infrastructure.Testing;
@@ -53,6 +54,8 @@ public static class UnitTestFrameworkBridge
             throw new ArgumentException($"Type must be a concrete subclass of {nameof(UnitTestBase)}.", nameof(testType));
         }
 
+        PrepareUnitTestEnvironment(testType);
+
         var services = new ServiceCollection();
         services.AddLogging(b => b.SetMinimumLevel(LogLevel.Warning));
         services.AddSingleton<ITestRunner, TestRunnerAdapter>();
@@ -87,5 +90,32 @@ public static class UnitTestFrameworkBridge
             : match.ErrorMessage;
         var trace = string.IsNullOrEmpty(match.StackTrace) ? "" : Environment.NewLine + match.StackTrace;
         Assert.Fail($"Framework test '{match.Name}' failed: {detail}{trace}");
+    }
+
+    private static void PrepareUnitTestEnvironment(Type testType)
+    {
+        if (!string.Equals(testType.Name, "UiDomainKnowledgeRetentionTests", StringComparison.Ordinal))
+            return;
+
+        var repoRoot = FindRepoRootFromTestContext();
+        if (repoRoot is not null)
+            MockScaffoldingResponder.EnsureUiDomainDemoBaseline(repoRoot);
+    }
+
+    private static string? FindRepoRootFromTestContext()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir is not null)
+        {
+            if (Directory.Exists(Path.Combine(dir.FullName, "src")) &&
+                Directory.Exists(Path.Combine(dir.FullName, "docs")))
+            {
+                return dir.FullName;
+            }
+
+            dir = dir.Parent;
+        }
+
+        return null;
     }
 }
