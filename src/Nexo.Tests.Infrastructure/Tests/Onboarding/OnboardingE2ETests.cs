@@ -411,6 +411,7 @@ public sealed class OnboardingE2ETests : IDisposable
     public async Task Defaults_StrictMode_DisabledByDefault()
     {
         await Task.CompletedTask;
+        using var _ = EnvironmentVariableScope.Unset("NEXO_STRICT_MODE");
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddNexo();

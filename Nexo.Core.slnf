@@ -1,0 +1,22 @@
+{
+  "solution": {
+    "path": "Nexo.sln",
+    "projects": [
+      "src/Nexo.Abstractions/Nexo.Abstractions.csproj",
+      "src/Nexo.Core/Nexo.Core.csproj",
+      "src/Nexo.Core.Domain/Nexo.Core.Domain.csproj",
+      "src/Nexo.Core.Application/Nexo.Core.Application.csproj",
+      "src/Nexo.Contracts/Nexo.Contracts.csproj",
+      "src/Nexo.Brick.Contracts/Nexo.Brick.Contracts.csproj",
+      "src/Nexo.Policies/Nexo.Policies.csproj",
+      "src/Nexo.Infrastructure/Nexo.Infrastructure.csproj",
+      "src/Nexo.Orchestration/Nexo.Orchestration.csproj",
+      "src/Nexo.BackgroundAgents/Nexo.BackgroundAgents.csproj",
+      "src/Nexo.BackgroundAgents.HostRunners/Nexo.BackgroundAgents.HostRunners.csproj",
+      "src/Nexo.Adapters.Models/Nexo.Adapters.Models.csproj",
+      "src/Nexo.Hosting/Nexo.Hosting.csproj",
+      "application/src/Nexo.CLI/Nexo.CLI.csproj",
+      "application/src/Nexo.API/Nexo.API.csproj"
+    ]
+  }
+}

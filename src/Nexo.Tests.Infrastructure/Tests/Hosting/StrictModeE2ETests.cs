@@ -24,6 +24,7 @@ public sealed class StrictModeE2ETests
     public async Task StrictMode_Disabled_ByDefault()
     {
         await Task.CompletedTask;
+        using var _ = EnvironmentVariableScope.Unset("NEXO_STRICT_MODE");
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddNexo();
@@ -82,6 +83,7 @@ public sealed class StrictModeE2ETests
     public async Task StrictMode_SelectiveEnable_WhenMasterDisabled()
     {
         await Task.CompletedTask;
+        using var _ = EnvironmentVariableScope.Unset("NEXO_STRICT_MODE");
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddNexo(opts =>
