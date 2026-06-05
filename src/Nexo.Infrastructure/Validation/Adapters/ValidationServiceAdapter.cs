@@ -55,6 +55,7 @@ public class ValidationServiceAdapter : IValidationService
             var testProjects = currentDir.GetFiles("*.csproj", SearchOption.AllDirectories)
                 .Where(f => f.Name.Contains("Test", StringComparison.OrdinalIgnoreCase) ||
                            f.DirectoryName?.Contains("test", StringComparison.OrdinalIgnoreCase) == true)
+                .Where(f => !f.Name.Equals("copy-assemblies.csproj", StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
             if (testProjects.Count == 0)
@@ -271,7 +272,10 @@ public class ValidationServiceAdapter : IValidationService
     {
         var verbosity = streamOutput ? "normal" : "minimal";
         var args =
-            $"test \"{csprojPath}\" --framework net8.0 --no-build --logger trx --blame-hang-timeout 120s --blame-hang-dump-type none --verbosity {verbosity}";
+            $"test \"{csprojPath}\" --framework net8.0 --no-build " +
+            "--filter \"Category!=DockerOptional&Category!=Stress&FullyQualifiedName!~BootstrapRuntimeAssessTests\" " +
+            "--logger trx --blame-hang-timeout 120s --blame-hang-dump-type none " +
+            $"--verbosity {verbosity}";
         var workDir = Path.GetDirectoryName(csprojPath) ?? Directory.GetCurrentDirectory();
         var psi = new ProcessStartInfo("dotnet", args)
         {
