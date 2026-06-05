@@ -37,9 +37,7 @@ public static class UnitTestFrameworkBridge
 
         if (string.Equals(assembly.GetName().Name, "Nexo.Tests.CLI", StringComparison.Ordinal))
         {
-            types = types.Where(t =>
-                !string.Equals(t.Name, "DoctorCommandTests", StringComparison.Ordinal) &&
-                !string.Equals(t.Name, "BootstrapRuntimeAssessTests", StringComparison.Ordinal));
+            types = types.Where(t => !string.Equals(t.Name, "DoctorCommandTests", StringComparison.Ordinal));
         }
 
         return types.OrderBy(t => t.FullName, StringComparer.Ordinal).ToList();
