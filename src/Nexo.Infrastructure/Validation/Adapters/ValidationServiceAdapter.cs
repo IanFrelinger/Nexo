@@ -273,7 +273,7 @@ public class ValidationServiceAdapter : IValidationService
         var verbosity = streamOutput ? "normal" : "minimal";
         var args =
             $"test \"{csprojPath}\" --framework net8.0 --no-build " +
-            "--filter \"Category!=DockerOptional&Category!=Stress&FullyQualifiedName!~BootstrapRuntimeAssessTests\" " +
+            "--filter \"Category!=DockerOptional&Category!=Stress\" " +
             "--logger trx --blame-hang-timeout 120s --blame-hang-dump-type none " +
             $"--verbosity {verbosity}";
         var workDir = Path.GetDirectoryName(csprojPath) ?? Directory.GetCurrentDirectory();
