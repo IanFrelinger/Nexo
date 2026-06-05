@@ -60,7 +60,10 @@ public sealed class BootstrapRuntimeAssessTests : UnitTestBase
         AssertTrue(assessment.Supported, "supported");
         var ids = assessment.Dependencies.Select(d => d.Id).ToHashSet(StringComparer.OrdinalIgnoreCase);
         AssertTrue(ids.Contains("git"), "expected git dependency probe");
-        AssertTrue(ids.Contains("curl"), "expected curl dependency probe");
         AssertTrue(ids.Contains("dotnet"), "expected dotnet dependency probe");
+        if (OperatingSystem.IsMacOS())
+            AssertTrue(ids.Contains("brew"), "expected Homebrew dependency probe on macOS");
+        else
+            AssertTrue(ids.Contains("curl"), "expected curl dependency probe on Linux and Windows");
     }
 }
