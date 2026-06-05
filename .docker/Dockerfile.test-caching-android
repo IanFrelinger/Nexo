@@ -32,8 +32,17 @@ RUN yes | sdkmanager --licenses || true && \
 # Set working directory
 WORKDIR /workspace
 
+# Skip CopyAssemblies tool in container
+ENV DOTNET_RUNNING_IN_CONTAINER=true
+
 # Copy project files
 COPY . .
+
+# Install .NET 8.0 runtime for CLI and net8.0 test host (SDK image is 9.x)
+RUN curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh && \
+    bash /tmp/dotnet-install.sh --channel 8.0 --runtime aspnetcore --install-dir /usr/share/dotnet --no-path && \
+    bash /tmp/dotnet-install.sh --channel 8.0 --runtime dotnet --install-dir /usr/share/dotnet --no-path && \
+    rm /tmp/dotnet-install.sh
 
 # Restore dependencies for test projects
 RUN dotnet restore src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj && \

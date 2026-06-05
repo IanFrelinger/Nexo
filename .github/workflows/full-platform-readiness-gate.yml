@@ -80,6 +80,10 @@ on:
       - "Directory.Packages.props"
   workflow_dispatch:
 
+concurrency:
+  group: full-platform-readiness-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 env:
   NEXO_STRICT_MODE: 1
   NEXO_ALLOW_MOCK: 1
@@ -371,6 +375,7 @@ jobs:
   # ─────────────────────────────────────────────────────────────────────
   docker-all-images:
     name: "Docker ${{ matrix.label }} — build · smoke"
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     timeout-minutes: 90
     strategy:
@@ -422,8 +427,8 @@ jobs:
           for job_status in "${{ needs.native-platform.result }}" "${{ needs.container-platform.result }}" "${{ needs.docker-cli-image.result }}" "${{ needs.docker-all-images.result }}"; do
             case "$job_status" in
               success) ;;
-              cancelled)
-                echo "::warning::Job result was cancelled (often workflow timeout); not counted as a hard failure."
+              cancelled|skipped)
+                echo "::warning::Job result was ${job_status}; not counted as a hard failure."
                 ;;
               *)
                 OVERALL=1

@@ -11,6 +11,7 @@ using Xunit;
 
 namespace Nexo.Tests.Transport;
 
+[Collection("GrpcTransportEnvironment")]
 public sealed class GrpcAgentTransportGapCoverageTests
 {
     [Fact]
