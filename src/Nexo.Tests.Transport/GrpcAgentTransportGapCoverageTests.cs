@@ -262,6 +262,7 @@ public sealed class GrpcAgentTransportGapCoverageTests
     [Fact]
     public void Constructor_rejects_null_dependencies()
     {
+        using var env = new EnvironmentVariableScope("DOTNET_ENVIRONMENT", "Development");
         var factory = new DefaultGrpcChannelFactory(
             Options.Create(new GrpcTransportOptions { AllowInsecure = true }),
             NullLogger<DefaultGrpcChannelFactory>.Instance);
