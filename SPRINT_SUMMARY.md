@@ -27,16 +27,25 @@ Observation to keep out of this sprint's scope: `application/Nexo.Application.sl
 
 - **Task 0 — Recon:** Added this summary and captured the true repo scope: adaptive orchestration kernel, trust controls, mesh/federation, transport/ingress, apps, hosts, and distribution channels.
 - **Task 1 — License:** Added Apache-2.0 `LICENSE`, added `LICENSING.md`, and updated the README license section to point at both the license and the open-core boundary inventory.
+- **Task 2 — README rewrite:** Reframed the README around adaptive orchestration and the “ChatGPT is a calculator; Nexo is an autopilot panel” positioning, added reader routing and subsystem maps, preserved container-first quick start commands, and kept the barrier/security notes.
+- **Task 3 — Coherence / start here:** Promoted `docs/ProjectTiers.md` as the canonical repo map from both the README and docs index, added the README “Where to start” table, and created `docs/CiGateInventory.md` with one row per workflow and recommendation-only consolidation notes.
+- **Task 4 — Architecture honesty:** Added `docs/Conventions.md` to describe current error handling, interfaces, abstract classes, generics, and the gap between aspiration and current implementation without changing code.
 
 ## Open decisions for owner
 
 - **Open-core boundary:** `LICENSING.md` records candidate open-core and future commercial-tier projects only as `ASSUMPTION:` entries. The owner must decide the definitive boundary before any project is relicensed, moved behind commercial terms, dual-licensed, or marketed as part of a paid tier.
 - **Mesh/federation packaging:** Technical docs and product docs both reference mesh, but the owner must decide whether mesh remains Apache open core, becomes a paid add-on, is dual-licensed, or is separated into another module.
 - **Ingress/app packaging:** AWS ingress adapters and the four `apps/` configurations need an owner decision: open integrations/samples, commercial connectors/SKU templates, or something else.
+- **CI consolidation and branch protection:** `docs/CiGateInventory.md` identifies blocking candidates, advisory/manual workflows, release gates, and consolidation candidates. The owner must decide which checks are truly required for branch protection before any workflow cleanup is attempted.
 
 ## Suggested follow-up issues
 
 - Define and approve the legal open-core/commercial licensing boundary.
+- Decide whether mesh/federation is open core, commercial add-on, dual-licensed, or a separate module.
+- Decide whether AWS ingress adapters and app configurations are open examples, commercial connectors/SKU templates, or internal presets.
+- Consolidate CI gates and update branch-protection policy around a smaller required-check set.
+- Plan an errors-as-values migration for recoverable operational boundaries while preserving exception-based guard/framework paths where appropriate.
+- Review inheritance-heavy agent/value/test base patterns and decide where composition would improve traceability.
 
 ## Validation
 

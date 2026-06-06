@@ -1,5 +1,7 @@
 # Nexo project tiers
 
+This is the canonical repository map for contributors and reviewers. Use it with [`README.md`](../README.md) for orientation and [`DistributionModels.md`](DistributionModels.md) for how each surface is consumed or shipped.
+
 The monorepo has **~62** `.csproj` projects. The **runnable product** is roughly **15 projects** (Tiers **0** and **1**): kernel libraries, distribution/SDK packs, and the two deployable hosts. Everything else is packaging, optional transport/mesh, product experiments, demos/samples, and tests.
 
 Tiers depend **inward** only (satellites reference the spine, not the reverse). The **`layer-boundary`** CI gate enforces this.

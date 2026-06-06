@@ -1,47 +1,60 @@
 # Nexo
 
-Private, traceable AI computing with self-extending capabilities.
+Nexo is an **adaptive orchestration framework** for private, auditable software workflows. It watches how teams build, test, release, and operate software; learns repeatable patterns; and improves automations over time with built-in privacy controls such as pause/resume, local-first model routing, policy gates, and audit trails.
 
-Nexo is a .NET platform for composable AI workflows with structural trust enforcement. Capabilities are modular components with standardized contracts that compose into pipelines. The platform autonomously generates new components when it identifies capability gaps, validates them against regression, and promotes them under configurable policy constraints. All generated output follows enforced standards and remains readable, auditable, and extractable from the core.
+**ChatGPT is a calculator; Nexo is an autopilot panel.** A calculator answers the prompt in front of it. An autopilot panel observes the whole flight, keeps the route visible, applies policy, hands control back to the operator, and records what happened.
 
-**Documentation map:** start from **`docs/DocsIndex.md`**. For how Nexo is **consumed and shipped** (NuGet, HTTP, CLI, compose, mesh) and which **CI gates** validate each path, see **`docs/DistributionModels.md`**.
-
-Nexo operates entirely on infrastructure you control. Cloud providers are opt-in execution targets, not dependencies. No data leaves the host unless explicitly routed to a trusted peer. Air-gapped deployment is supported without modification.
-
-The deployable **CLI** (`nexo`) and **HTTP API** live under **`application/src/`** — build them with `dotnet build application/Nexo.Application.sln`. Kernel libraries remain under **`src/`** — see **`docs/architecture/runtime-vs-application.md`**.
-
-**Primary development** uses the **Dev Container** (`.devcontainer/`): open the repo in Cursor or VS Code, **Reopen in Container**, then use **`dotnet`** in the integrated terminal—no host-installed .NET SDK.
-
-**Deployment** defaults to **containers** only: published images on **GHCR**, `Dockerfile.*` under `.docker/`, and **`docker-compose*.yml`** stacks, plus the **Nexo CLI** inside those environments. Shell installers under `scripts/install/` and `scripts/setup/` are **escape hatches** when Docker is impossible.
+In this repo, that panel is a .NET runtime plus deployable hosts and app-level configurations: kernel libraries, observe/adapt/improve loops, mesh/federation, gRPC transport, AWS ingress, `Nexo.CLI`, `Nexo.API`, four `apps/` configurations, and NuGet/GHCR/compose distribution paths.
 
 Repository: <https://github.com/IanFrelinger/Nexo>
 
-Architecture notes for contributors and reviewers: **`docs/architecture/`** (trust boundaries, testing model, .NET SDK vs. target frameworks, **[runtime vs application layout](docs/architecture/runtime-vs-application.md)**).
+## Where to start
 
-**Production readiness (all audiences):** structured checklists and runbooks in **`docs/production-readiness/`** — use with **`docs/ProductionReadinessGate-v1.md`** and **`docs/DEPLOYMENT.md`**.
+| Reader | Start here | First command or artifact |
+|--------|------------|---------------------------|
+| **Evaluator** | [Quick Start](#quick-start-5-minutes), then [`docs/GettingStarted.md`](docs/GettingStarted.md) | `dotnet run --project application/src/Nexo.CLI -- doctor --json` or the quickstart Docker image |
+| **Contributor** | [`docs/ProjectTiers.md`](docs/ProjectTiers.md) — canonical repo map, then [`CONTRIBUTING.md`](CONTRIBUTING.md) | `dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore` |
+| **Integrator** | [`docs/DistributionModels.md`](docs/DistributionModels.md), [`docs/sdk.md`](docs/sdk.md), [`docs/SdkIntegrationGuide.md`](docs/SdkIntegrationGuide.md) | NuGet host embed, `Nexo.Client`, HTTP API, CLI image, compose, or source integration |
+
+## Scope in 30 seconds
+
+- **Kernel:** observe → adapt → improve loops, component/brick contracts, policy, persistence, orchestration, runtime routing, background agents.
+- **Trust:** data classification, sanitization before cloud calls, barrier identity resolution, local-first defaults, pause/resume controls, structured audit sinks.
+- **Mesh:** peer discovery, capability advertisement, director/hub flows, trust-tier placement, virtual labs, and phase docs for federation.
+- **Transport and ingress:** optional gRPC transport plus AWS SNS and DynamoDB ingress adapters.
+- **Hosts:** `application/src/Nexo.CLI` (`nexo`) and `application/src/Nexo.API` (ASP.NET Core HTTP/portal host).
+- **Apps:** `apps/game-director`, `apps/nexo-forge`, `apps/release-manager`, and `apps/runtime-studio` are application-level agent-set/configuration surfaces.
+- **Distribution:** NuGet packages (`Nexo.Hosting`, bundles, SDK/client/lite/runtime packages), GHCR images, Dockerfiles, compose stacks, and source/monorepo integration.
+
+For the canonical tier-by-tier project map, see [`docs/ProjectTiers.md`](docs/ProjectTiers.md). For distribution channels and their validation gates, see [`docs/DistributionModels.md`](docs/DistributionModels.md).
+
+## Subsystem map
+
+| Area | What it contains | Where to look |
+|------|------------------|---------------|
+| Kernel spine | Abstractions, core/domain/application, contracts, policies, infrastructure, orchestration, background agents, hosting | [`src/`](src/), [`docs/ProjectTiers.md`](docs/ProjectTiers.md) |
+| Observe/adapt/improve | Pattern observation, analysis, adaptation, self-improvement, changelog, dogfood gates | [`docs/GapAnalysis.md`](docs/GapAnalysis.md), [`docs/DogfoodValidation.md`](docs/DogfoodValidation.md) |
+| Mesh/federation | Mesh phases, virtual lab, friend mesh prefab, trust-tier placement, leases/checkpoints | [`docs/MeshPhase0NorthStar.md`](docs/MeshPhase0NorthStar.md), [`docs/MeshVirtualLab.md`](docs/MeshVirtualLab.md) |
+| gRPC transport | Transport contracts, server, standalone host | `src/Nexo.Transport.Grpc*` |
+| AWS ingress | SNS and DynamoDB adapters | `src/Nexo.Ingress.AwsSns`, `src/Nexo.Ingress.DynamoDb`, [`docs/MiddlewareIngress.md`](docs/MiddlewareIngress.md) |
+| App surfaces | Game Director, Nexo Forge, Release Manager, Runtime Studio agent sets and operator scripts | [`apps/`](apps/), [`docs/GameDirectorStudio.md`](docs/GameDirectorStudio.md), [`apps/runtime-studio/README.md`](apps/runtime-studio/README.md) |
+| Trust architecture | Barrier identity, data sensitivity, audit, policy packs, local-first controls | [`docs/TrustAndInformationArchitecture.md`](docs/TrustAndInformationArchitecture.md), [`docs/Architecture.md`](docs/Architecture.md) |
+| Distribution | NuGet, HTTP/API, CLI image, compose, source, mesh/federation | [`docs/DistributionModels.md`](docs/DistributionModels.md), [`docs/RELEASE.md`](docs/RELEASE.md) |
 
 ## Default workflow
 
-1. **Develop** — [Quick Start (5 minutes)](#quick-start-5-minutes) → **Lane A** → **Dev Container** (first subsection).
-2. **Deploy / operate** — [Deploy (operators)](#deploy-operators) (GHCR + compose).
-3. **No Docker** — **Lane B** (native SDK + `scripts/setup/*` / `scripts/install/*`).
+1. **Evaluate / develop** — [Quick Start](#quick-start-5-minutes) → **Lane A** → Dev Container or container-first commands.
+2. **Deploy / operate** — [Deploy (operators)](#deploy-operators) for GHCR images and compose stacks.
+3. **Integrate** — [`docs/DistributionModels.md`](docs/DistributionModels.md) for NuGet, HTTP, CLI, compose, source, and mesh.
+4. **Understand repo shape** — [`docs/ProjectTiers.md`](docs/ProjectTiers.md) for the canonical tier map.
 
 ## Why Nexo
 
-- **Data sovereignty.** The platform runs on local infrastructure with no external dependencies. Cloud LLM providers are available as opt-in execution targets with sanitization at the boundary. Air-gapped deployment is supported out of the box.
-- **Autonomous capability extension.** The platform detects capability gaps through usage pattern analysis, generates new components, validates them against the existing test suite, and promotes them to the capability registry — all under policy constraints with a complete audit trail.
-- **Enforceable output standards.** Generated components conform to configurable quality and structural standards. They are testable, decoupled from the core, and independently extractable.
-- **Full data provenance.** Every execution decision, routing choice, and adaptation is logged. Barrier identity resolution determines trust level per request. Structured audit sinks provide a complete chain of custody.
-- **Federated capability mesh.** Any .NET-capable host can join the mesh, advertise available capabilities and models, and serve execution requests from trusted peers. Trust tiers and routing policies control which peers may receive which workloads.
-
-## Product Features
-
-- **Setup wizard.** On first visit, the web portal guides you through provider configuration and a test prompt — no terminal required.
-- **Copilot task flow.** Submit coding tasks via the portal or `POST /api/copilot/task` and receive output with an integrated audit trail. See `docs/CopilotMvpWalkthrough.md`.
-- **Activity feed.** Background agent actions and system events surface in the portal as a live feed.
-- **Changelog assistant.** Generate project change summaries from adaptation, pattern, and audit stores — in the portal or via `POST /api/changelog/generate`.
-- **Strict mode.** Set `NEXO_STRICT_MODE=1` for fail-fast + verbose diagnostics during development. Flip to permissive for production. See `docs/Configuration.md`.
-- **Centralized defaults.** All tunable constants live in `Nexo.Core.Domain.NexoDefaults` — no magic numbers scattered in the codebase.
+- **Adaptive orchestration.** Nexo observes workflow signals, composes repeatable automations, and improves them under policy rather than treating every prompt as an isolated one-off.
+- **Operator control.** Pause observation, keep execution local-first, route work by trust tier, and make every automation inspectable.
+- **Data sovereignty.** Cloud providers are opt-in execution targets, not dependencies. Air-gapped and self-hosted deployments are first-class.
+- **Traceability.** Decisions, routing, sanitization, adaptation, and promoted outputs are recorded for review.
+- **Composable distribution.** Use the kernel via NuGet, run the CLI/API directly, deploy containers/compose, or federate trusted peers through mesh.
 
 ## Quick Start (5 minutes)
 
@@ -49,40 +62,36 @@ Choose your lane (recommended):
 
 ### Lane A: dev container + container deployment (recommended)
 
-**Local development** should be the **Dev Container** below. **Running Nexo as a service** (portal, agent server, CI) uses the same container discipline: **compose** and/or **GHCR** images—see [Deploy (operators)](#deploy-operators). Use the **CLI** (`dotnet run --project application/src/Nexo.CLI`) for builds, validation, and operators inside the dev container or a mounted workspace in `docker run`.
+**Local development** should use the Dev Container. **Running Nexo as a service** uses the same container discipline: quickstart image, GHCR CLI image, compose, and/or published API images.
 
-#### 1) Prerequisites (container-first path)
+#### 1) Prerequisites
 
-- **Docker** (Desktop or Engine) and **Git**
-- Optional: Ollama/OpenAI/Azure credentials for live model backends
+- Docker (Desktop or Engine) and Git.
+- Optional: Ollama/OpenAI/Azure credentials for live model backends.
 
-You do **not** need a host-installed .NET SDK for the paths below. Install **.NET SDK 9.x** only if you choose the native escape hatch (see end of this section).
+You do **not** need a host-installed .NET SDK for the Dev Container or published container paths. Install .NET SDK 9.x only for the native escape hatch in Lane B.
 
-#### 2) Recommended: Dev Container (Cursor / VS Code)
+#### 2) Dev Container (Cursor / VS Code)
 
 1. Install the [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension.
-2. Open this repository, then run **Dev Containers: Reopen in Container**.
+2. Open this repository.
+3. Run **Dev Containers: Reopen in Container**.
 
-The dev container uses **.NET 9**, mounts a named volume at `nexo-nuget-packages` for the NuGet cache, and runs **`.devcontainer/post-create.sh`** after the container is created. That script restores the **same setup-gate project graph** as `scripts/docker-restore.ps1` (not the full **`Nexo.sln`** graph when you want the smallest restore for CI smoke).
+From the integrated terminal:
 
-**Headless check (no IDE):** from the repo root, with Docker running:
+```bash
+dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore
+dotnet run --project application/src/Nexo.CLI -- --help
+dotnet run --project application/src/Nexo.CLI -- doctor --json
+```
+
+Headless dev-container check:
 
 ```powershell
 pwsh -NoProfile -ExecutionPolicy Bypass -File ./scripts/Verify-DevContainer.ps1
 ```
 
-That is the same restore + `Nexo.CLI` build + `--help` smoke CI runs in `devcontainer-gate.yml`—one script, no extra shell toolchain on Windows.
-
-From the integrated terminal inside the container:
-
-```bash
-dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore
-dotnet run --project application/src/Nexo.CLI -- --help
-```
-
-**Remote SSH:** connect to a host that already has Docker (or your chosen toolchain), open the repo there, then use **Reopen in Container** on the remote so the environment still comes from the image.
-
-#### 3) Run the portal (Docker quickstart image)
+#### 3) Run the portal quickstart image
 
 ```bash
 git clone https://github.com/IanFrelinger/Nexo.git && cd Nexo
@@ -91,9 +100,7 @@ docker run --rm -p 8080:8080 nexo:quickstart
 # Open http://localhost:8080 — mock provider; no API keys required.
 ```
 
-Stop with `Ctrl+C` or `docker stop` on the container ID.
-
-#### 4) Published CLI image (CI, agents, minimal host)
+#### 4) Published CLI image
 
 ```bash
 docker pull ghcr.io/ianfrelinger/nexo-cli:latest
@@ -110,76 +117,66 @@ docker run --rm \
   pipeline validate --template /work/path/to/template.json
 ```
 
-Build a local CLI image (optional):
+Build a local CLI image:
 
 ```bash
 docker build -f .docker/Dockerfile.cli -t nexo-cli:local .
 docker run --rm nexo-cli:local --help
 ```
 
-Build with explicit framework/runtime versions:
+#### 5) Compose stacks
+
+For multi-service deployment on a host you control, start from the root compose files and operator guides:
+
+| File | Purpose |
+|------|---------|
+| `docker-compose.portal.yml` | Director portal + `nexo-api` + Ollama. |
+| `docker-compose.agent-server.yml` | Portal + API + Ollama + mounted workspace + default Runtime Studio agent set. |
+| `docker-compose.game-director.yml` | Game Director sidecar and MCP-facing workflow. |
+| `docker-compose.ephemeral.yml` | Disposable local dependencies for tests and labs. |
 
 ```bash
-docker build \
-  --build-arg DOTNET_SDK_VERSION=9.0 \
-  --build-arg TARGETFRAMEWORK=net8.0 \
-  --build-arg DOTNET_RUNTIME_VERSION=8.0 \
-  -f .docker/Dockerfile.cli \
-  -t nexo-cli:net8 .
+docker compose -f docker-compose.portal.yml up -d --build
+docker compose -f docker-compose.agent-server.yml up -d --build
 ```
-
-#### 5) Compose stacks (director portal, agent server, dependencies)
-
-For multi-service deployment on a host you control, start from the files in the repository root (`docker-compose.portal.yml`, `docker-compose.agent-server.yml`, `docker-compose.ephemeral.yml`, etc.) and the operator guides in `docs/SelfHostedAgentServer.md` and `apps/runtime-studio/README.md`.
 
 ### Lane B: full local dev path (native SDK)
 
-#### 6) Escape hatches (no Docker)
+Use this only when containers are not an option.
 
-Use these only when containers are not an option:
-
-- **One command portal (script):** `bash scripts/install/quickstart.sh` — detects Docker or a local SDK, builds, starts the portal.
-- **Native SDK + setup (no repo clone installer):** `bash scripts/setup/setup.sh all` then `dotnet build` / `dotnet run` — or use **`scripts/docker-restore.ps1`** on Windows without a local SDK.
-- **Cross-platform setup / restore helpers:** on Linux/macOS use **`scripts/setup/setup-unix.sh`** (POSIX args or PowerShell-style flags such as `-Mode check`); **`scripts/setup/setup.sh`** forwards there. On Windows use **`scripts/setup/setup.ps1`**. Same graph CI validates in `mcr.microsoft.com/dotnet/sdk:9.0`.
-- **Windows + Docker without host SDK:** `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\docker-restore.ps1` (optional `-Build`).
-
-Container bootstrap (install Docker if needed, pull images, smoke-run):
-
-```bash
-bash scripts/install/container-bootstrap.sh --yes
-```
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\install\container-bootstrap.ps1 -Yes
-```
-
-#### 7) Clone and build (native SDK only)
+#### 6) Native setup
 
 ```bash
 git clone https://github.com/IanFrelinger/Nexo.git
 cd Nexo
 bash scripts/setup/setup.sh all
 dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore
-```
-
-#### 8) Confirm CLI is working
-
-```bash
 dotnet run --project application/src/Nexo.CLI -- --help
-```
-
-#### 8b) Run onboarding doctor (single pass/fail report)
-
-```bash
 dotnet run --project application/src/Nexo.CLI -- doctor --json
 ```
 
-#### 9) Run a first high-signal command
+Windows PowerShell:
 
-`validate` can execute a broad architecture/test sweep and may be heavier on constrained hosts. For first-run confidence, start with CLI help and a pipeline validate command:
+```powershell
+git clone https://github.com/IanFrelinger/Nexo.git
+Set-Location Nexo
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode all
+dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore
+dotnet run --project application/src/Nexo.CLI -- --help
+dotnet run --project application/src/Nexo.CLI -- doctor --json
+```
+
+No-Docker install/bootstrap escape hatches:
+
+- `bash scripts/install/quickstart.sh`
+- `bash scripts/setup/setup.sh all`
+- `bash scripts/setup/setup-unix.sh`
+- `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode all`
+- `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\docker-restore.ps1`
+
+#### 7) Run a first high-signal command
 
 ```bash
-dotnet run --project application/src/Nexo.CLI -- --help
 tmp_dir="$(mktemp -d)"
 template_path="$tmp_dir/nexo_pipeline_quickstart.json"
 cat > "$template_path" <<'JSON'
@@ -195,37 +192,163 @@ cat > "$template_path" <<'JSON'
   ]
 }
 JSON
-dotnet run --project application/src/Nexo.CLI -- pipeline validate --template "$template_path"
-dotnet run --project application/src/Nexo.CLI -- validate
-```
-
-## First Successful Pipeline Run
-
-```bash
-tmp_dir="$(mktemp -d)"
-template_path="$tmp_dir/nexo_pipeline_demo.json"
-
-cat > "$template_path" <<'JSON'
-{
-  "templateId": "demo",
-  "version": "1.0",
-  "stages": [
-    { "id": "ingest", "name": "Ingest", "mode": "Deterministic" },
-    { "id": "hybrid", "name": "Hybrid", "mode": "Hybrid", "fallbackChain": ["Deterministic", "Agentic"] }
-  ],
-  "edges": [
-    { "fromStageId": "ingest", "toStageId": "hybrid" }
-  ]
-}
-JSON
 
 dotnet run --project application/src/Nexo.CLI -- pipeline validate --template "$template_path"
-dotnet run --project application/src/Nexo.CLI -- pipeline run --template "$template_path" --run-id demo-run --format-json
+dotnet run --project application/src/Nexo.CLI -- pipeline run --template "$template_path" --run-id quickstart-run --format-json
 dotnet run --project application/src/Nexo.CLI -- pipeline diagnostics --format-json
 ```
 
-Pipeline runtime option precedence:
-1) defaults, 2) config under `Nexo:Pipelines:*`, 3) environment variables (`NEXO_PIPELINE_*`).
+`validate` can execute a broader architecture/test sweep and may be heavier on constrained hosts:
+
+```bash
+dotnet run --project application/src/Nexo.CLI -- validate
+```
+
+## Common CLI workflows
+
+| Goal | Command |
+|------|---------|
+| Show all commands | `dotnet run --project application/src/Nexo.CLI -- --help` |
+| Onboarding doctor | `dotnet run --project application/src/Nexo.CLI -- doctor --json` |
+| Validate architecture/contracts | `dotnet run --project application/src/Nexo.CLI -- validate` |
+| Analyze source/assemblies | `dotnet run --project application/src/Nexo.CLI -- analyze --path .` |
+| Validate a pipeline | `dotnet run --project application/src/Nexo.CLI -- pipeline validate --template <file>` |
+| Run a pipeline | `dotnet run --project application/src/Nexo.CLI -- pipeline run --template <file>` |
+| Pipeline diagnostics | `dotnet run --project application/src/Nexo.CLI -- pipeline diagnostics --format-json` |
+| Orchestrate a request | `dotnet run --project application/src/Nexo.CLI -- orchestrate "<request>"` |
+| Interactive chat | `dotnet run --project application/src/Nexo.CLI -- chat` |
+| Observe / adapt / improve | `dotnet run --project application/src/Nexo.CLI -- observe` / `adapt` / `improve` |
+| Dogfood validation | `dotnet run --project application/src/Nexo.CLI -- dogfood all` |
+| Trust dashboard | `dotnet run --project application/src/Nexo.CLI -- trust dashboard` |
+| Apply a trust policy pack | `dotnet run --project application/src/Nexo.CLI -- trust pack apply --id strict-enterprise` |
+| Background-agent daemon | `dotnet run --project application/src/Nexo.CLI -- background-agent daemon --duration 10m` |
+| Runtime Studio status | `dotnet run --project application/src/Nexo.CLI -- runtime-studio status` |
+| Mesh sync/capabilities | `dotnet run --project application/src/Nexo.CLI -- mesh sync` |
+| gRPC/runtime execution | `dotnet run --project application/src/Nexo.CLI -- runtime execute --runtime-manifest <file>` |
+| CI verification bundle | `dotnet run --project application/src/Nexo.CLI -- ci verify` |
+| Release preflight | `dotnet run --project application/src/Nexo.CLI -- release preflight <semver>` |
+| Trigger release workflow | `dotnet run --project application/src/Nexo.CLI -- release dispatch <semver> [--ref master]` |
+| Metrics report | `dotnet run --project application/src/Nexo.CLI -- metrics report` |
+| Config management | `dotnet run --project application/src/Nexo.CLI -- config show` |
+| Docker management | `dotnet run --project application/src/Nexo.CLI -- docker build` / `run` / `clean` |
+| Changelog generation | `dotnet run --project application/src/Nexo.CLI -- changelog` |
+| Maintenance cleanup | `dotnet run --project application/src/Nexo.CLI -- maintenance clean` |
+
+## Application surfaces
+
+| App | What it is | First doc |
+|-----|------------|-----------|
+| `apps/game-director` | Self-hosted, MCP-exposed AI sidecar for game balance, map validation, and content generation. | [`apps/game-director/README.md`](apps/game-director/README.md) |
+| `apps/nexo-forge` | Vertical agent-set configuration for adaptive multiplayer FPS prototyping. | [`apps/nexo-forge/README.md`](apps/nexo-forge/README.md) |
+| `apps/release-manager` | Release-readiness automation agent set for repo monitoring, tests, SLO evidence, and reports. | [`apps/release-manager/README.md`](apps/release-manager/README.md) |
+| `apps/runtime-studio` | Planner/worker Runtime Studio agent set and operator scripts hosted by CLI or API. | [`apps/runtime-studio/README.md`](apps/runtime-studio/README.md) |
+
+## Deploy (operators)
+
+Ship Nexo from published container images and compose files. Host-native scripts are escape hatches for development or constrained environments, not the default production path.
+
+**Images**
+
+| Image | Use |
+|-------|-----|
+| `ghcr.io/ianfrelinger/nexo-cli:latest` | Automation, agents, validation, release preflight, and mounted-workspace commands. |
+| Build from `.docker/Dockerfile.quickstart` | Single-container API + portal smoke path with mock-friendly defaults. |
+| Build from `.docker/Dockerfile.api` | API image used by compose stacks. |
+
+**Compose**
+
+```bash
+# Director portal + API + Ollama
+docker compose -f docker-compose.portal.yml up -d --build
+
+# Full agent-server stack with mounted workspace and Runtime Studio config
+docker compose -f docker-compose.agent-server.yml up -d --build
+```
+
+Operator runbooks and deployment references:
+
+- [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md)
+- [`docs/SelfHostedAgentServer.md`](docs/SelfHostedAgentServer.md)
+- [`apps/runtime-studio/README.md`](apps/runtime-studio/README.md)
+- [`docs/ProductionReadinessGate-v1.md`](docs/ProductionReadinessGate-v1.md)
+- [`docs/CiFirstHardwareSecond.md`](docs/CiFirstHardwareSecond.md)
+- [`docs/RELEASE.md`](docs/RELEASE.md)
+
+## Providers
+
+Model routing is provider-based and local-first by default.
+
+| Provider | Notes |
+|----------|-------|
+| `offline`, `mock`, `mock-json`, `echo` | Deterministic/local-friendly paths; mock paths require explicit opt-in where applicable. |
+| `local` | In-process local model path. |
+| `ollama` | Local Ollama runtime (`OLLAMA_BASE_URL`, `OLLAMA_MODEL`). |
+| `openai` | Requires `OPENAI_API_KEY`; use trust/sanitization controls for sensitive workloads. |
+| `azure` | Requires `AZURE_OPENAI_*` settings. |
+| `video` | Video model service path where configured. |
+
+See [`docs/Configuration.md`](docs/Configuration.md).
+
+## Project layout
+
+The canonical repo map is [`docs/ProjectTiers.md`](docs/ProjectTiers.md). Use it to understand which projects are kernel spine, deployable hosts, distribution packages, optional transport/mesh, product satellites, and tests.
+
+```text
+Nexo/
+├── src/                          # kernel spine, runtime, distribution, optional transport/ingress, tests
+├── application/src/              # CLI/API hosts, Game Director projects, app tests
+├── apps/                         # runtime-studio, nexo-forge, game-director, release-manager configs
+├── docs/                         # architecture, operations, mesh, release, SDK, samples, runbooks
+├── config/                       # trust policy packs
+├── scripts/                      # setup, install, CI, release helpers
+├── tools/                        # sidecars and repo tools
+├── .devcontainer/
+├── .docker/
+├── .github/
+├── Nexo.sln                      # full repository solution
+├── Nexo.Kernel.sln               # kernel-focused solution
+├── Nexo.Runtime.sln              # runtime-focused solution
+├── Nexo.Core.slnf                # Tier 0 + CLI/API hosts
+├── Nexo.LocalDevCore.slnf        # fast local CLI + core test slice
+└── Nexo.PrimeTime.slnf           # selected high-signal test projects
+```
+
+## Testing
+
+For this repo, prefer focused validation first, then broaden only when the changed area requires it.
+
+```bash
+# CLI smoke
+dotnet run --project application/src/Nexo.CLI -- --help
+
+# focused pipeline tests
+dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --filter "FullyQualifiedName~Pipelines"
+
+# broader local CLI test runner path
+dotnet run --project application/src/Nexo.CLI -- test local
+```
+
+Testing strategy and guard rails:
+
+- [`docs/Testing.md`](docs/Testing.md)
+- [`docs/architecture/TestingModel.md`](docs/architecture/TestingModel.md)
+- [`docs/architecture/TestingStrategyPivot-v1.md`](docs/architecture/TestingStrategyPivot-v1.md)
+
+## Documentation map
+
+Start here:
+
+- [`docs/DocsIndex.md`](docs/DocsIndex.md) — documentation hub.
+- [`docs/ProjectTiers.md`](docs/ProjectTiers.md) — canonical repo/project tier map.
+- [`docs/GettingStarted.md`](docs/GettingStarted.md) — guided first-hour setup and first pipeline.
+- [`docs/DistributionModels.md`](docs/DistributionModels.md) — NuGet, HTTP, CLI, compose, source, mesh distribution channels.
+- [`docs/Architecture.md`](docs/Architecture.md) — architecture and subsystem overview.
+- [`docs/Conventions.md`](docs/Conventions.md) — current code conventions and migration honesty.
+- [`docs/CiGateInventory.md`](docs/CiGateInventory.md) — CI workflow inventory and consolidation recommendations.
+- [`docs/TrustAndInformationArchitecture.md`](docs/TrustAndInformationArchitecture.md) — trust model, barriers, audit, sensitivity.
+- [`docs/Configuration.md`](docs/Configuration.md) — environment/config options.
+- [`docs/ProductionReadinessGate-v1.md`](docs/ProductionReadinessGate-v1.md) — production gate procedure.
+- [`docs/RELEASE.md`](docs/RELEASE.md) — NuGet + GHCR release hub.
 
 ## Security Defaults
 
@@ -244,223 +367,17 @@ export Nexo__Security__AuthorizationMode=BearerToken
 export Nexo__Security__BearerToken=your-token
 ```
 
-For HTTPS, configure `ASPNETCORE_URLS=https://+:8443` with a certificate, or place Nexo behind a reverse proxy (nginx, Caddy, Traefik).
+For HTTPS, configure `ASPNETCORE_URLS=https://+:8443` with a certificate, or place Nexo behind a reverse proxy such as nginx, Caddy, or Traefik.
 
-See `docs/Configuration.md` for all security options and `docs/TailscaleAndNexo.md` for Tailnet deployment.
+See [`docs/Configuration.md`](docs/Configuration.md) for security options and [`docs/TailscaleAndNexo.md`](docs/TailscaleAndNexo.md) for Tailnet deployment.
 
-## Deploy (operators)
-
-Ship Nexo from **published container images** and **compose** files. Do not rely on host-native installers for production paths.
-
-**Images**
-
-| Image | Use |
-|-------|-----|
-| `ghcr.io/ianfrelinger/nexo-cli:latest` | Automation, agents, `docker run` with a workspace mount for `pipeline validate`, `ci verify`, etc. |
-| Build from `.docker/Dockerfile.quickstart` | Single-container API + portal (mock-friendly smoke). |
-| Build from `.docker/Dockerfile.api` | API image used by compose stacks (see `docker-compose.portal.yml`). |
-
-**Compose (recommended stacks)**
-
-| File | Purpose |
-|------|---------|
-| `docker-compose.portal.yml` | Director portal + `nexo-api` + Ollama on a host you control. |
-| `docker-compose.agent-server.yml` | Same lineage plus **mounted workspace** and default background agents (`apps/runtime-studio/config/agent_set.local.json`). |
-
-```bash
-# Director + API + Ollama (localhost bindings; tune for your exposure profile)
-docker compose -f docker-compose.portal.yml up -d --build
-
-# Full Runtime Studio agent-server stack
-docker compose -f docker-compose.agent-server.yml up -d --build
-```
-
-Copy and adjust env from `docs/config/agent-server.env.example`. Operator runbooks: `docs/SelfHostedAgentServer.md`, `apps/runtime-studio/README.md`. Readiness: `docs/ProductionReadinessGate-v1.md` and workflow `.github/workflows/production-readiness-gate-v1.yml`.
-
-**Cutting a versioned release (NuGet + GHCR):** hub **`docs/RELEASE.md`**. Preflight: **`bash scripts/release-preflight-local.sh X.Y.Z`**, **`make release-preflight VERSION=X.Y.Z`**, or **`dotnet run --project application/src/Nexo.CLI -- release preflight X.Y.Z`**. Ship: push **`vX.Y.Z`** or **`make release-dispatch VERSION=X.Y.Z`** / **`dotnet run --project application/src/Nexo.CLI -- release dispatch X.Y.Z`** (`gh` auth). Issue form: **`.github/ISSUE_TEMPLATE/release_checklist.yml`**; variables: **`docs/GitHubRepoVariables.md`**.
-
-## Common CLI Workflows
-
-| Goal | Command |
-|------|---------|
-| Show all commands | `dotnet run --project application/src/Nexo.CLI -- --help` |
-| Validate architecture/contracts | `dotnet run --project application/src/Nexo.CLI -- validate` |
-| Analyze source/assemblies | `dotnet run --project application/src/Nexo.CLI -- analyze --path .` |
-| Analyze bricks | `dotnet run --project application/src/Nexo.CLI -- analyze bricks` |
-| Run background-agent daemon mode | `dotnet run --project application/src/Nexo.CLI -- background-agent daemon --duration 10m` |
-| Run pipeline template | `dotnet run --project application/src/Nexo.CLI -- pipeline run --template <file>` |
-| Pipeline diagnostics | `dotnet run --project application/src/Nexo.CLI -- pipeline diagnostics --format-json` |
-| View trust boundary/audit | `dotnet run --project application/src/Nexo.CLI -- trust --help` |
-| Trust dashboard | `dotnet run --project application/src/Nexo.CLI -- trust dashboard` |
-| Apply a trust policy pack | `dotnet run --project application/src/Nexo.CLI -- trust pack apply --id strict-enterprise` |
-| Run local test entrypoint | `dotnet run --project application/src/Nexo.CLI -- test local` |
-| Portable tests | `dotnet run --project application/src/Nexo.CLI -- test portable --scope persistence` |
-| Multi-environment tests | `dotnet run --project application/src/Nexo.CLI -- test multi-env --suite framework --all` |
-| CI verification bundle | `dotnet run --project application/src/Nexo.CLI -- ci verify` |
-| Onboarding doctor | `dotnet run --project application/src/Nexo.CLI -- doctor --json` |
-| Orchestrate a request | `dotnet run --project application/src/Nexo.CLI -- orchestrate "<request>"` |
-| Interactive chat | `dotnet run --project application/src/Nexo.CLI -- chat` |
-| Runtime execute | `dotnet run --project application/src/Nexo.CLI -- runtime execute --runtime-manifest <file>` |
-| Runtime release gate | `dotnet run --project application/src/Nexo.CLI -- runtime release-gate` |
-| Release preflight (local) | `dotnet run --project application/src/Nexo.CLI -- release preflight <semver>` |
-| Trigger Release workflow (CI, no tag) | `dotnet run --project application/src/Nexo.CLI -- release dispatch <semver> [--ref master]` or `make release-dispatch VERSION=<semver>` |
-| Trigger Runtime Release Gate (CI) | `dotnet run --project application/src/Nexo.CLI -- release gate` (needs `gh auth login`) |
-| Workflow scaffold/stress | `dotnet run --project application/src/Nexo.CLI -- workflow scaffold` |
-| Mesh sync/capabilities | `dotnet run --project application/src/Nexo.CLI -- mesh sync` |
-| Escalation management | `dotnet run --project application/src/Nexo.CLI -- escalate list` |
-| Metrics report | `dotnet run --project application/src/Nexo.CLI -- metrics report` |
-| Self-extend preflight | `dotnet run --project application/src/Nexo.CLI -- self-extend preflight` |
-| Observe/Adapt/Improve | `dotnet run --project application/src/Nexo.CLI -- observe` / `adapt` / `improve` |
-| Config management | `dotnet run --project application/src/Nexo.CLI -- config show` |
-| Docker management | `dotnet run --project application/src/Nexo.CLI -- docker build` / `run` / `clean` |
-| Dogfood validation | `dotnet run --project application/src/Nexo.CLI -- dogfood all` |
-| Compose pipelines | `dotnet run --project application/src/Nexo.CLI -- compose` |
-| Changelog generation | `dotnet run --project application/src/Nexo.CLI -- changelog` |
-| Maintenance cleanup | `dotnet run --project application/src/Nexo.CLI -- maintenance clean` |
-
-## Demo Scripts (for rollout and live demos)
-
-Use these when you need an end-to-end walkthrough without manually stitching commands together.
-
-```bash
-# high-signal demo flow (build, bootstrap, chat, orchestration, dogfood)
-bash scripts/oh-shit-demo.sh --quick
-
-# skip build if CLI is already built
-bash scripts/oh-shit-demo.sh --quick --no-build
-
-# unity sidecar demo (generate + compile validation + dogfood block1)
-bash scripts/unity-sidecar-demo.sh run-demo --prompt "add a dash ability"
-
-# supervisor loop (gameplay/combat/economy/ai) with iterative validation
-bash scripts/unity-sidecar-demo.sh supervise --game "co-op dungeon crawler" --iterations 2
-```
-
-References:
-- `scripts/oh-shit-demo.sh`
-- `scripts/unity-sidecar-demo.sh`
-- `docs/UnitySidecarDemo.md`
-
-## Docker Compose (CI and local extras)
-
-Production-oriented compose is under **[Deploy (operators)](#deploy-operators)** above. Additional files are for **tests** and **local dependencies**:
-
-CI validation:
-
-- `.github/workflows/compose-gate.yml` — compose-based checks (run manually: `gh workflow run "Compose Gate" --ref <branch>`). See `.github/workflows/README.md`.
-
-```bash
-# Ubuntu test service → ./test-results
-docker compose -f docker-compose.test.yml up --build test-ubuntu
-
-docker compose -f docker-compose.ollama.yml up -d
-docker compose -f docker-compose.ephemeral.yml up ollama
-docker compose -f docker-compose.ephemeral.yml --profile db up postgres
-```
-
-Notes:
-
-- `docker-compose.test.yml` runs `BaseFrameworkSmokeTests` in container.
-- `docker-compose.ephemeral.yml` is for disposable local orchestration.
-- Relationship diagram for portal vs agent-server: `apps/runtime-studio/README.md#how-runtime-studio-fits-with-nexo-api`.
-
-## Providers
-
-LLM/vision routing is provider-based:
-
-| Provider | Notes |
-|----------|-------|
-| `offline`, `mock`, `mock-json`, `echo` | deterministic/local-friendly paths (require `NEXO_ALLOW_MOCK=1`) |
-| `local` | in-process ONNX/LLamaSharp; requires `NEXO_LOCAL_MODEL_PATH` |
-| `ollama` | local model runtime (`OLLAMA_BASE_URL`, `OLLAMA_MODEL`) |
-| `openai` | requires `OPENAI_API_KEY` |
-| `azure` | requires `AZURE_OPENAI_*` settings |
-| `video` | SmolVLM2-Video in Docker; requires `VIDEO_SERVICE_URL` |
-
-## Project Layout
-
-~62 projects: kernel spine under `src/`, deployable hosts under `application/src/`, plus satellites. Tier map: **`docs/ProjectTiers.md`**.
-
-```text
-Nexo/
-├── src/                          # kernel spine + distribution + transport + tests
-│   ├── Nexo.Abstractions/
-│   ├── Nexo.Core/                # Nexo.Core.Domain/, Nexo.Core.Application/
-│   ├── Nexo.Contracts/
-│   ├── Nexo.Brick.Contracts/
-│   ├── Nexo.Policies/
-│   ├── Nexo.Infrastructure/
-│   ├── Nexo.Orchestration/
-│   ├── Nexo.BackgroundAgents/    # Nexo.BackgroundAgents.HostRunners/
-│   ├── Nexo.Adapters.Models/
-│   ├── Nexo.Hosting/
-│   ├── Nexo.Sdk/                 # distribution: Sdk, Framework.Sdk, Client, Lite, Compat
-│   ├── Nexo.Framework.Sdk/
-│   ├── Nexo.Client/
-│   ├── Nexo.Lite/
-│   ├── Nexo.Compat/
-│   ├── Nexo.Hosting.Bundle/    # *.Bundle, Nexo.Runtime/, Nexo.Runtime.Bundle/
-│   ├── Nexo.Runtime/
-│   ├── Nexo.Runtime.Bundle/
-│   ├── Nexo.Transport.Grpc*/     # .Server/, .Server.Host/
-│   ├── Nexo.Ingress.*/          # AwsSns, DynamoDb (+ *.Tests)
-│   ├── Nexo.Tools.Assembly/    # ValidationUtilities/
-│   └── Nexo.Tests.*/             # kernel test suites
-├── application/src/              # deployable hosts + product surface
-│   ├── Nexo.CLI/                 # entrypoint (nexo)
-│   ├── Nexo.API/                 # ASP.NET Core REST host
-│   ├── GameDirector.*/           # Domain, Agents, Bricks, Host, Mcp
-│   ├── Nexo.GameDomain/
-│   └── Nexo.Tests.{CLI,GameDirector,GameDomain}/
-├── apps/                         # runtime-studio, nexo-forge, game-director, release-manager
-├── docs/                         # guides, demos/, samples/, ProjectTiers.md
-├── config/                       # trust policy packs
-├── scripts/                      # setup, install, CI helpers
-├── tools/                        # Unity sidecar, ApplyFeedbackChanges, etc.
-├── .devcontainer/
-├── .docker/
-├── .github/
-├── global.json
-├── Nexo.LocalDevCore.slnf        # CLI + core tests (clone-to-run)
-├── Nexo.Core.slnf                # Tier 0 spine + CLI/API hosts only
-└── Nexo.sln
-```
-
-## Testing
-
-```bash
-# full solution tests
-dotnet test Nexo.sln
-
-# focused pipeline tests
-dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --filter "FullyQualifiedName~Pipelines"
-```
-
-## Documentation Map
-
-Start here:
-- `README.md` → **[Deploy (operators)](#deploy-operators)** — GHCR images and compose stacks for production-style hosts.
-- `docs/CiFirstHardwareSecond.md` — run **Setup Smoke Suite** in GitHub Actions before iterating on slow target hardware.
-- `docs/GettingStarted.md` – guided first-hour setup and usage
-- `docs/DocsIndex.md` – where to find docs by task
-- `apps/runtime-studio/README.md` – Runtime Studio agent-set JSON; hub for CLI vs compose vs Director portal (see “How this fits” there).
-
-Core references:
-- `docs/CiFirstHardwareSecond.md` – CI smoke before target-hardware setup loops
-- `docs/Configuration.md` – environment/config options
-- `docs/Architecture.md` – architecture and subsystem overview
-- `docs/Testing.md` – test strategy, guard rails, and commands
-- `docs/OnboardingAutomation.md` – what setup is automated vs. still manual
-- `docs/TrustAndInformationArchitecture.md` – trust model, barriers, audit
-- `docs/ProductionReadinessGate-v1.md` – production gate procedure
-- `docs/EnvironmentSetupGate-v1.md` – cross-platform dependency/bootstrap gate
-- `docs/ReleaseCandidateChecklist-v1.md` – RC readiness checklist
-
-## Trust Notes
+## Barrier Identity Resolution Notes
 
 - JWT barrier resolution reads pre-validated claims from host auth middleware.
 - API keys are stored as SHA-256 hashes, not plaintext.
 - Audit details never include full API key values.
+- Trust policy packs (`strict-enterprise`, `internal-only`, `air-gapped`) can be listed, described, and applied through `nexo trust pack ...`.
+- Observation can be paused and resumed through `nexo trust pause` / `nexo trust resume`.
 
 ## License
 

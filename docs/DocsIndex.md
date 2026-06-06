@@ -5,16 +5,18 @@ Documentation index for the Nexo platform. Start here to find what you need.
 ## Start Here
 
 1. `README.md` — **container-first** quickstart (Dev Container, quickstart image, GHCR CLI, compose); native paths are documented as escape hatches.
-2. `docs/RELEASE.md` — **shipping** NuGet + GHCR (one hub linking runbook, publishing, variables, staging, signing).
-3. `.devcontainer/devcontainer.json` — default development environment (Cursor / VS Code).
-4. `docs/GettingStarted.md` — first commands, first pipeline, and first trust checks (aligned with container + CLI).
-5. `docs/DistributionModels.md` — how to **consume and ship** Nexo (NuGet, HTTP, CLI, compose, mesh) and the **distribution-matrix** CI workflow.
-6. `CONTRIBUTING.md` — recommended **Dev Container** workflow and PR checks.
-7. `scripts/install/container-bootstrap.sh` and `scripts/install/container-bootstrap.ps1` — one-shot container bootstrap (Docker + image pull + smoke run).
-8. `scripts/setup/setup.sh` (forwards to `setup-unix.sh` on macOS/Linux), `scripts/setup/setup-unix.sh`, and `scripts/setup/setup.ps1` — cross-platform **native** dependency bootstrap + restore helpers (CI and escape hatch).
-9. `docs/SetupMatrixVerification.md` + `scripts/setup/verify-setup-matrix.ps1` / `verify-setup-matrix.sh` — brute-force style setup combination checks (local + CI).
-10. `scripts/start-nexo-api-dev.ps1` / `scripts/start-nexo-api-dev.sh` — Docker Ollama + host `Nexo.API` dev stack (see `docs/Configuration.md` → Ollama).
-11. `docs/Architecture.md` — layered architecture and component boundaries.
+2. `docs/ProjectTiers.md` — **canonical repo map** by project tier: kernel, hosts, distribution, transport/mesh, app surfaces, and tests.
+3. `docs/RELEASE.md` — **shipping** NuGet + GHCR (one hub linking runbook, publishing, variables, staging, signing).
+4. `.devcontainer/devcontainer.json` — default development environment (Cursor / VS Code).
+5. `docs/GettingStarted.md` — first commands, first pipeline, and first trust checks (aligned with container + CLI).
+6. `docs/DistributionModels.md` — how to **consume and ship** Nexo (NuGet, HTTP, CLI, compose, mesh) and the **distribution-matrix** CI workflow.
+7. `CONTRIBUTING.md` — recommended **Dev Container** workflow and PR checks.
+8. `scripts/install/container-bootstrap.sh` and `scripts/install/container-bootstrap.ps1` — one-shot container bootstrap (Docker + image pull + smoke run).
+9. `scripts/setup/setup.sh` (forwards to `setup-unix.sh` on macOS/Linux), `scripts/setup/setup-unix.sh`, and `scripts/setup/setup.ps1` — cross-platform **native** dependency bootstrap + restore helpers (CI and escape hatch).
+10. `docs/SetupMatrixVerification.md` + `scripts/setup/verify-setup-matrix.ps1` / `verify-setup-matrix.sh` — brute-force style setup combination checks (local + CI).
+11. `scripts/start-nexo-api-dev.ps1` / `scripts/start-nexo-api-dev.sh` — Docker Ollama + host `Nexo.API` dev stack (see `docs/Configuration.md` → Ollama).
+12. `docs/Architecture.md` — layered architecture and component boundaries.
+13. `docs/Conventions.md` — current code conventions as practiced today.
 
 ## Operator / Production Readiness
 
@@ -40,6 +42,7 @@ Documentation index for the Nexo platform. Start here to find what you need.
 - `.github/workflows/onboarding-quickstart-gate.yml` — runs first-run onboarding commands in native + container lanes.
 - `.github/workflows/container-image-gate.yml` — container image buildability and smoke-run gate.
 - `.github/workflows/distribution-matrix-gate.yml` — **parallel** gates: NuGet local-pack consumer, CLI image + subcommand help smoke, API image + `curl` `/health` + `/api/status`, `Nexo.Client` in-process test, pack-graph alignment (plus **weekly** schedule).
+- `docs/CiGateInventory.md` — one-row-per-workflow inventory with blocking/advisory/release-tier notes and consolidation recommendations.
 - `.github/workflows/release.yml` — **one entry**: tag `v*.*.*` → GHCR (`nexo-cli`, `nexo-api`) + NuGet; run summary with pin lines.
 - `.github/workflows/container-image-publish.yml` — GHCR on **main** path-filtered pushes + manual (tags use `release.yml` only).
 - `.github/workflows/release-nuget.yml` — **NuGet-only** manual dispatch; after push to nuget.org, **Verify NuGet consumer** (same reusable job as **release.yml**).
@@ -78,6 +81,7 @@ Documentation index for the Nexo platform. Start here to find what you need.
 
 ## API / SDK / Runtime
 
+- `docs/ProjectTiers.md` — canonical repository map by project tier.
 - `docs/api/index.md` — API docs index.
 - `docs/sdk.md` — SDK integration guidance.
 - `docs/PUBLISHING.md` — pack and publish `Nexo.Hosting` (and its `Nexo.*` graph) to NuGet / GitHub Packages; operator checklist.
@@ -94,6 +98,7 @@ Documentation index for the Nexo platform. Start here to find what you need.
 
 ## Planning & Roadmap
 
+- `docs/Conventions.md` — current conventions for errors, interfaces, abstract classes, and generics.
 - `docs/MeshPhase0NorthStar.md` — **Phase 0 (executed):** federated mesh north star, capability matrix by profile, trust boundary, SLOs (feeds mesh Phases 1–7).
 - `docs/ExecutionPlan.md` — phased execution plan with implementation tasks, dependencies, and success metrics.
 - `docs/IssueBatch_30-60-90_Roadmap.md` — 30/60/90 gap-closure issue batch (issue templates).
