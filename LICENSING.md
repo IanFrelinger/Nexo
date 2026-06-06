@@ -1,65 +1,153 @@
 # Licensing and open-core boundary
 
-Nexo is licensed under the Apache License, Version 2.0. See [`LICENSE`](LICENSE).
+Nexo uses an open-core boundary:
 
-This document records the intended open-core split as it can be inferred from the current repository documentation, especially [`docs/DistributionModels.md`](docs/DistributionModels.md). It is **not** a relicensing action and does **not** finalize a commercial boundary. Ambiguous projects remain ambiguous until the owner makes an explicit product/licensing decision.
+- **Single-node + inspectable = OPEN (Apache-2.0).**
+- **Fleet-scale + governance + vertical product packaging = COMMERCIAL.**
+- **Trust primitives are always open.** Nexo monetizes trust at the operational layer, not by hiding policy, audit, sanitization, or SDK primitives behind a paywall.
 
-## Current license
+The repository root license is Apache-2.0. See [`LICENSE`](LICENSE).
 
-The repository contents are covered by Apache-2.0 unless a file or directory later receives an explicit, owner-approved notice stating otherwise. No such alternate notice is introduced in this sprint.
+## Tier 1 — OPEN (Apache-2.0)
 
-## Candidate open-core projects
+Tier 1 is the adoption and trust surface: SDKs, contracts, single-node runtime/hosts, trust primitives, tests, samples, and inspectable extension points. These projects carry `<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>` where they have a `.csproj`.
 
-The projects below look like candidates for the open core because they are documented as reusable runtime, SDK, client, or package surfaces in the current distribution model.
+Rationale: this tier protects two moats at once — an extensible SDK and a single runtime across surfaces. `Nexo.Policies`, `Nexo.Policies.Dev`, and `Nexo.Bricks.Owasp` are open on purpose: trust-by-design fails if the trust primitives are a paywalled black box.
 
-| Candidate | Rationale |
-|-----------|-----------|
-| `ASSUMPTION:` `src/Nexo.Abstractions` | Shared agent/model abstractions used by the reusable kernel. |
-| `ASSUMPTION:` `src/Nexo.Core` | Shared primitives that support the kernel spine. |
-| `ASSUMPTION:` `src/Nexo.Core.Domain` | Domain model and defaults for the core runtime. |
-| `ASSUMPTION:` `src/Nexo.Core.Application` | Application use cases and ports used by host and package consumers. |
-| `ASSUMPTION:` `src/Nexo.Contracts` | Cross-cutting contracts for package and host boundaries. |
-| `ASSUMPTION:` `src/Nexo.Brick.Contracts` | Extension contracts for bricks/components. |
-| `ASSUMPTION:` `src/Nexo.Policies` | Policy primitives used by the kernel. |
-| `ASSUMPTION:` `src/Nexo.Infrastructure` | Runtime infrastructure used by the host/embed graph. |
-| `ASSUMPTION:` `src/Nexo.Orchestration` | Orchestration services that make the kernel useful as a workflow runtime. |
-| `ASSUMPTION:` `src/Nexo.BackgroundAgents` | Background-agent services used by local and hosted orchestration workflows. |
-| `ASSUMPTION:` `src/Nexo.BackgroundAgents.HostRunners` | Host runner adapters used by CLI/API and app-level configurations. |
-| `ASSUMPTION:` `src/Nexo.Adapters.Models` | Model adapter wiring used by the documented provider model. |
-| `ASSUMPTION:` `src/Nexo.Hosting` | `AddNexo()` host integration surface documented as a NuGet host-embed path. |
-| `ASSUMPTION:` `src/Nexo.Hosting.Bundle` | Bundle/metapackage for the documented NuGet host-embed path. |
-| `ASSUMPTION:` `src/Nexo.Runtime` | Runtime services, barriers, and routing used by package and host consumers. |
-| `ASSUMPTION:` `src/Nexo.Runtime.Bundle` | Bundle/metapackage for runtime-only package consumers. |
-| `ASSUMPTION:` `src/Nexo.Sdk` | SDK registration surface documented as a NuGet consumer path. |
-| `ASSUMPTION:` `src/Nexo.Framework.Sdk` | Framework-facing SDK surface. |
-| `ASSUMPTION:` `src/Nexo.Client` | Typed HTTP client used by external consumers. |
-| `ASSUMPTION:` `src/Nexo.Lite` | Reduced-surface distribution package. |
-| `ASSUMPTION:` `src/Nexo.Tools.Assembly` | Assembly tooling referenced by validation and package workflows. |
-| `ASSUMPTION:` `src/ValidationUtilities` | Shared validation helper project. |
+| Allocation | Path |
+|------------|------|
+| OPEN | `src/Nexo.Abstractions/Nexo.Abstractions.csproj` |
+| OPEN | `src/Nexo.Contracts/Nexo.Contracts.csproj` |
+| OPEN | `src/Nexo.Brick.Contracts/Nexo.Brick.Contracts.csproj` |
+| OPEN | `src/Nexo.Sdk/Nexo.Sdk.csproj` |
+| OPEN | `src/Nexo.Framework.Sdk/Nexo.Framework.Sdk.csproj` |
+| OPEN | `src/Nexo.Client/Nexo.Client.csproj` |
+| OPEN | `src/Nexo.Core/Nexo.Core.csproj` |
+| OPEN | `src/Nexo.Core.Application/Nexo.Core.Application.csproj` |
+| OPEN | `src/Nexo.Core.Domain/Nexo.Core.Domain.csproj` |
+| OPEN | `src/Nexo.Runtime/Nexo.Runtime.csproj` |
+| OPEN | `src/Nexo.Runtime.Bundle/Nexo.Runtime.Bundle.csproj` |
+| OPEN | `src/Nexo.Lite/Nexo.Lite.csproj` |
+| OPEN | `application/src/Nexo.CLI/Nexo.CLI.csproj` |
+| OPEN | `application/src/Nexo.API/Nexo.API.csproj` |
+| OPEN | `src/Nexo.Infrastructure/Nexo.Infrastructure.csproj` |
+| OPEN | `src/Nexo.Orchestration/Nexo.Orchestration.csproj` |
+| OPEN | `src/Nexo.Adapters.Models/Nexo.Adapters.Models.csproj` |
+| OPEN | `src/Nexo.BackgroundAgents/Nexo.BackgroundAgents.csproj` |
+| OPEN | `src/Nexo.BackgroundAgents.HostRunners/Nexo.BackgroundAgents.HostRunners.csproj` |
+| OPEN | `src/Nexo.Hosting/Nexo.Hosting.csproj` |
+| OPEN | `src/Nexo.Hosting.Bundle/Nexo.Hosting.Bundle.csproj` |
+| OPEN | `src/Nexo.Policies/Nexo.Policies.csproj` |
+| OPEN | `src/Nexo.Policies.Dev/Nexo.Policies.Dev.csproj` |
+| OPEN | `src/Nexo.Bricks.Owasp/Nexo.Bricks.Owasp.csproj` |
+| OPEN | `src/Nexo.Compat/` (source-only compatibility/polyfill surface; no `.csproj`) |
+| OPEN | `src/ValidationUtilities/ValidationUtilities.csproj` |
+| OPEN | `src/Nexo.Tools.Assembly/Nexo.Tools.Assembly.csproj` |
+| OPEN | `src/Nexo.Tools.Dev/Nexo.Tools.Dev.csproj` |
+| OPEN | `src/Nexo.Ingress.AwsSns/Nexo.Ingress.AwsSns.csproj` |
+| OPEN | `src/Nexo.Ingress.AwsSns.Tests/Nexo.Ingress.AwsSns.Tests.csproj` |
+| OPEN | `src/Nexo.Ingress.DynamoDb/Nexo.Ingress.DynamoDb.csproj` |
+| OPEN | `src/Nexo.Ingress.DynamoDb.Tests/Nexo.Ingress.DynamoDb.Tests.csproj` |
+| OPEN | `src/Nexo.Transport.Grpc/Nexo.Transport.Grpc.csproj` |
+| OPEN | `src/Nexo.Transport.Grpc.Server/Nexo.Transport.Grpc.Server.csproj` |
+| OPEN | `src/Nexo.Transport.Grpc.Server.Host/Nexo.Transport.Grpc.Server.Host.csproj` |
+| OPEN | `src/Nexo.Tests.Application/Nexo.Tests.Application.csproj` |
+| OPEN | `src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj` |
+| OPEN | `src/Nexo.Tests.Contracts/Nexo.Tests.Contracts.csproj` |
+| OPEN | `src/Nexo.Tests.Domain/Nexo.Tests.Domain.csproj` |
+| OPEN | `src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj` |
+| OPEN | `src/Nexo.Tests.Kernel/Nexo.Tests.Kernel.csproj` |
+| OPEN | `src/Nexo.Tests.Orchestration/Nexo.Tests.Orchestration.csproj` |
+| OPEN | `src/Nexo.Tests.Transport/Nexo.Tests.Transport.csproj` |
+| OPEN | `application/src/Nexo.Tests.CLI/Nexo.Tests.CLI.csproj` |
+| OPEN | `application/src/Nexo.Tests.GameDirector/Nexo.Tests.GameDirector.csproj` |
+| OPEN | `application/src/Nexo.Tests.GameDomain/Nexo.Tests.GameDomain.csproj` |
+| OPEN | `docs/samples/ForgeMapHostSample/ForgeMapHostSample.csproj` |
+| OPEN | `docs/samples/NugetOrgRestoreHostingOnly/Nexo.NugetOrgRestoreHostingOnly.csproj` |
+| OPEN | `docs/samples/NugetOrgRestoreVerify/Nexo.NugetOrgRestoreVerify.csproj` |
+| OPEN | `docs/samples/StableSdkHostSample/StableSdkHostSample.csproj` |
+| OPEN | `docs/samples/StableSdkHostSample/package-consumer/StableSdkHostSample.Package.csproj` |
+| OPEN | `samples/**` |
 
-## Candidate future commercial-tier or product-boundary projects
+## Verify-then-place decisions
 
-The projects and paths below may belong in open core, may remain samples/apps, or may become part of a future commercial tier. The current repository documentation does not define the legal boundary, so each entry is intentionally labeled as an assumption and must be resolved by the owner before any commercial packaging or relicensing.
+These projects were explicitly inspected and placed:
 
-| Candidate | Why it needs an owner decision |
-|-----------|--------------------------------|
-| `ASSUMPTION:` `src/Nexo.Transport.Grpc`, `src/Nexo.Transport.Grpc.Server`, `src/Nexo.Transport.Grpc.Server.Host` | Transport is documented as an optional distribution/mesh surface. The owner must decide whether it is open infrastructure or part of a paid federation tier. |
-| `ASSUMPTION:` mesh and federation features built on the kernel/runtime | Product docs describe mesh as a possible premium add-on, while technical docs present mesh labs and phases in-repo. The exact open-core boundary is undecided. |
-| `ASSUMPTION:` `src/Nexo.Ingress.AwsSns` and `src/Nexo.Ingress.DynamoDb` | Cloud ingress adapters may be open integration examples or commercial/operator connectors. The owner must decide. |
-| `ASSUMPTION:` `src/Nexo.Policies.Dev`, `src/Nexo.Tools.Dev`, and `src/Nexo.Bricks.Owasp` | These are dev/tooling/policy projects used by the CLI graph today. Their packaging boundary is not specified in `docs/DistributionModels.md`. |
-| `ASSUMPTION:` `application/src/Nexo.CLI` and `application/src/Nexo.API` | The CLI/API are deployable product surfaces and also the main repo operating surface. The owner must decide whether all host code is open core or whether a future control plane is separate. |
-| `ASSUMPTION:` `application/src/GameDirector.*` and `application/src/Nexo.GameDomain` | Game Director is a product-style vertical application. Current docs do not state whether it is a sample, open app, or commercial SKU template. |
-| `ASSUMPTION:` `apps/game-director` | App configuration for the Game Director sidecar; packaging/licensing status is undecided. |
-| `ASSUMPTION:` `apps/nexo-forge` | App configuration for adaptive multiplayer FPS prototyping; packaging/licensing status is undecided. |
-| `ASSUMPTION:` `apps/release-manager` | App configuration for release-readiness automation; packaging/licensing status is undecided. |
-| `ASSUMPTION:` `apps/runtime-studio` | Runtime Studio is an application-level planner/worker agent-set configuration; packaging/licensing status is undecided. |
+| Project | Decision | Reason |
+|---------|----------|--------|
+| `application/src/Nexo.API/Nexo.API.csproj` | OPEN | Current project is a single-node HTTP/API host over the open kernel plus app references. It is not isolated as a multi-node commercial control plane. |
+| `src/Nexo.Transport.Grpc.Server/Nexo.Transport.Grpc.Server.csproj` | OPEN | Server implementation exposes the open gRPC transport surface; it is not a fleet-scale director/control-plane project. |
+| `src/Nexo.Transport.Grpc.Server.Host/Nexo.Transport.Grpc.Server.Host.csproj` | OPEN | Standalone gRPC host for the open transport server, not a governance tier. |
+| `application/Nexo.Application.sln` contents | OPEN for current contents | The solution contains `Nexo.API`, `Nexo.CLI`, `Nexo.GameDomain`, `Nexo.Tests.CLI`, and `Nexo.Tests.GameDomain`. The API/CLI/tests are open. `Nexo.GameDomain` remains Apache-2.0 until vertical extraction resolves the dependency-direction issue described below. |
 
-## Not decided in this sprint
+## Tier 2 — COMMERCIAL (fleet + governance)
 
-- Whether mesh/federation is Apache-licensed open core, a paid add-on, dual-licensed, or a separate commercial module.
-- Whether AWS and future cloud ingress adapters are open integrations or paid connectors.
-- Whether the four `apps/` directories are samples, open products, commercial SKU templates, or internal deployment presets.
-- Whether a future SaaS/control-plane layer will live in this repository or in a separate private repository.
-- Whether any project should receive a non-Apache license or additional commercial terms.
+Tier 2 is the future commercial layer for fleet-scale and governance capabilities:
 
-Until those decisions are made, contributors should treat this document as an inventory and decision log, not a final legal architecture.
+- mesh control plane / distributed execution,
+- knowledge sync,
+- elastic scheduling,
+- leases and checkpoints,
+- data-plane federation,
+- operator hardening,
+- director persistence,
+- centralized policy management,
+- aggregated tamper-evident audit,
+- RBAC/SSO and organization-scale governance.
+
+Current status: these capabilities are **not isolated in their own commercial project**. They are woven through Tier 1 projects such as `Nexo.Core.Application`, `Nexo.Infrastructure`, `Nexo.Orchestration`, `Nexo.Runtime`, `Nexo.CLI`, and `Nexo.API`. Those mixed projects remain Apache-2.0 in this sprint. Commercial licensing requires extracting the fleet/governance code into separate projects first.
+
+Likely extraction candidates include:
+
+- `src/Nexo.Core.Application/Fleet/**`
+- `src/Nexo.Infrastructure/Fleet/**`
+- `src/Nexo.Core.Application/Networking/**`
+- `src/Nexo.Infrastructure/Networking/**`
+- fleet-scale portions of `src/Nexo.Core.Application/Mesh/**` and `src/Nexo.Infrastructure/Mesh/**`
+- fleet/director CLI surfaces such as `MeshDirectorCommand` and `MeshHubCommand`
+- API mesh/fleet governance middleware and endpoints under `application/src/Nexo.API/**`
+
+## Tier 3 — COMMERCIAL (verticals)
+
+Tier 3 is the commercial product/vertical layer.
+
+These app configuration directories are marked with a `COMMERCIAL-LICENSE.md` stub:
+
+| Allocation | Path |
+|------------|------|
+| COMMERCIAL | `apps/game-director/` |
+| COMMERCIAL | `apps/nexo-forge/` |
+| COMMERCIAL | `apps/release-manager/` |
+| COMMERCIAL | `apps/runtime-studio/` |
+
+Stub text:
+
+> Not licensed under Apache-2.0. Commercial terms TBD. See /LICENSING.md.
+
+The code projects currently used by these verticals remain Apache-2.0 until they can be separated without creating OPEN -> COMMERCIAL project references:
+
+| Temporary allocation | Path | Reason |
+|----------------------|------|--------|
+| OPEN pending extraction | `application/src/Nexo.GameDomain/Nexo.GameDomain.csproj` | Referenced by `Nexo.API`, `Nexo.Tests.CLI`, and game-domain tests. |
+| OPEN pending extraction | `application/src/GameDirector.Domain/GameDirector.Domain.csproj` | Referenced by Game Director projects and tests; extraction needed before commercial marking. |
+| OPEN pending extraction | `application/src/GameDirector.Agents/GameDirector.Agents.csproj` | Referenced by Game Director host/tests; extraction needed before commercial marking. |
+| OPEN pending extraction | `application/src/GameDirector.Bricks/GameDirector.Bricks.csproj` | Referenced by Game Director host/tests; extraction needed before commercial marking. |
+| OPEN pending extraction | `application/src/GameDirector.Host/GameDirector.Host.csproj` | Host is part of the vertical wedge, but current project graph is not separated. |
+| OPEN pending extraction | `application/src/GameDirector.Mcp/GameDirector.Mcp.csproj` | Referenced by Game Director host/tests; extraction needed before commercial marking. |
+
+Recommended future open-source candidate: `apps/release-manager` is the best single app to open later as a minimal SDK reference because it demonstrates generic release-readiness automation without making the defense-adjacent Game Director wedge open.
+
+## Dependency-direction safety
+
+Rule: no Tier 1 OPEN project may reference a Tier 2/3 COMMERCIAL project.
+
+Current result: **passes for committed placement** because commercial markings are limited to app configuration directories and no Tier 1 `.csproj` references those directories as commercial projects.
+
+Preflight result for the originally requested vertical split: **blocked**. Marking `Nexo.GameDomain` or `GameDirector.*` projects commercial in-place would create OPEN -> COMMERCIAL edges from `Nexo.API` and test projects. Those edges are recorded in `SPRINT_SUMMARY.md` under “License extraction required.”
+
+## Open questions
+
+- Which fleet/governance files should be extracted first into commercial projects?
+- Should `Nexo.API` remain a purely open single-node host, or should commercial fleet/governance endpoints move to a separate host?
+- Should `Nexo.GameDomain` and `GameDirector.*` be extracted into commercial projects, moved into `apps/game-director`, or remain Apache-2.0 examples while only app packaging is commercial?
+- Should `apps/release-manager` become the future minimal open SDK reference app?

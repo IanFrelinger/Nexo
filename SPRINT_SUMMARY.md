@@ -26,7 +26,7 @@ Observation to keep out of this sprint's scope: `application/Nexo.Application.sl
 ## Changes by task
 
 - **Task 0 — Recon:** Added this summary and captured the true repo scope: adaptive orchestration kernel, trust controls, mesh/federation, transport/ingress, apps, hosts, and distribution channels.
-- **Task 1 — License:** Added Apache-2.0 `LICENSE`, added `LICENSING.md`, and updated the README license section to point at both the license and the open-core boundary inventory.
+- **Task 1 — License:** Added Apache-2.0 `LICENSE`, added Apache-2.0 SPDX package metadata to the open project set, added commercial stubs for app configuration directories whose dependency boundary is clean, updated `LICENSING.md` as the authoritative tier map, and updated the README license section.
 - **Task 2 — README rewrite:** Reframed the README around adaptive orchestration and the “ChatGPT is a calculator; Nexo is an autopilot panel” positioning, added reader routing and subsystem maps, preserved container-first quick start commands, and kept the barrier/security notes.
 - **Task 3 — Coherence / start here:** Promoted `docs/ProjectTiers.md` as the canonical repo map from both the README and docs index, added the README “Where to start” table, and created `docs/CiGateInventory.md` with one row per workflow and recommendation-only consolidation notes.
 - **Task 4 — Architecture honesty:** Added `docs/Conventions.md` to describe current error handling, interfaces, abstract classes, generics, and the gap between aspiration and current implementation without changing code.
@@ -34,15 +34,14 @@ Observation to keep out of this sprint's scope: `application/Nexo.Application.sl
 
 ## Open decisions for owner
 
-- **Open-core boundary:** `LICENSING.md` records candidate open-core and future commercial-tier projects only as `ASSUMPTION:` entries. The owner must decide the definitive boundary before any project is relicensed, moved behind commercial terms, dual-licensed, or marketed as part of a paid tier.
-- **Blocking dependency-direction decision for revised open-core boundary:** The requested replacement Task 1 boundary was preflighted before editing project metadata or adding commercial stubs. The intended placement creates Tier 1 OPEN -> Tier 3 COMMERCIAL `ProjectReference` edges, so the 1d safety rule requires stopping before committing those placement edits. The owner must decide whether these test/API projects move to the commercial tier, whether `Nexo.GameDomain`/GameDirector code remains open until extracted, or whether project references are split in a future code-organization sprint.
-- **Mesh/federation packaging:** Technical docs and product docs both reference mesh, but the owner must decide whether mesh remains Apache open core, becomes a paid add-on, is dual-licensed, or is separated into another module.
-- **Ingress/app packaging:** AWS ingress adapters and the four `apps/` configurations need an owner decision: open integrations/samples, commercial connectors/SKU templates, or something else.
+- **Vertical code extraction:** The owner-approved interim boundary keeps `Nexo.GameDomain` and `GameDirector.*` code projects Apache-2.0 until they can be separated without creating OPEN -> COMMERCIAL project references. The app packaging directories under `apps/` are marked commercial now.
+- **Mesh/federation extraction:** Technical docs and product docs both reference mesh. Fleet-scale mesh/governance code is woven through open projects today, so commercial marking requires extraction into separate projects first.
+- **API host boundary:** `Nexo.API` is open for now as a single-node host. Any org-scale governance, RBAC/SSO, aggregate audit, or fleet-control-plane endpoints should move to a separate commercial host or module before commercial marking.
 - **CI consolidation and branch protection:** `docs/CiGateInventory.md` identifies blocking candidates, advisory/manual workflows, release gates, and consolidation candidates. The owner must decide which checks are truly required for branch protection before any workflow cleanup is attempted.
 
 ## License extraction required
 
-The revised open-core boundary principle was checked against current project references before changing `.csproj` license metadata or adding `COMMERCIAL-LICENSE.md` stubs. These OPEN -> COMMERCIAL edges block the requested placement as written:
+The revised open-core boundary principle was checked against current project references before marking vertical code projects commercial. These OPEN -> COMMERCIAL edges would exist if `Nexo.GameDomain` or `GameDirector.*` were marked commercial in-place:
 
 | Intended Tier 1 OPEN project | Intended Tier 2/3 COMMERCIAL reference |
 |------------------------------|-----------------------------------------|
@@ -64,15 +63,14 @@ Fleet-scale mesh/governance code also appears to be woven into Tier 1 candidate 
 - `application/src/Nexo.CLI/Commands/MeshDirectorCommand.cs`, `MeshHubCommand.cs`, and fleet/mesh command surfaces if they are intended as commercial control-plane UX
 - `application/src/Nexo.API/Security/Mesh*` middleware and API endpoints that expose mesh/fleet governance behavior
 
-No revised Task 1 `.csproj` license edits or commercial stubs were committed because the dependency-direction safety check found the blocking edges above.
+Resolution applied in this sprint: keep the mixed vertical code projects Apache-2.0 pending extraction; mark only the app packaging directories under `apps/` with commercial stubs. With that committed placement, the dependency-direction safety check passes because no Tier 1 `.csproj` references a marked commercial project.
 
 ## Suggested follow-up issues
 
-- Define and approve the legal open-core/commercial licensing boundary.
-- Resolve the blocking OPEN -> COMMERCIAL project-reference edges found during the revised boundary preflight.
+- Extract vertical product code (`Nexo.GameDomain` and `GameDirector.*`) into commercial projects or plugin modules if the Game Director wedge must be commercial code instead of commercial packaging.
 - Extract fleet-scale mesh/governance namespaces into separate projects if those capabilities must be commercial while `Nexo.Runtime`, `Nexo.Orchestration`, `Nexo.Infrastructure`, and `Nexo.Core.Application` remain Apache open core.
 - Decide whether mesh/federation is open core, commercial add-on, dual-licensed, or a separate module.
-- Decide whether AWS ingress adapters and app configurations are open examples, commercial connectors/SKU templates, or internal presets.
+- Decide whether `apps/release-manager` should later become the single open-sourced minimal SDK reference app.
 - Consolidate CI gates and update branch-protection policy around a smaller required-check set.
 - Plan an errors-as-values migration for recoverable operational boundaries while preserving exception-based guard/framework paths where appropriate.
 - Review inheritance-heavy agent/value/test base patterns and decide where composition would improve traceability.
@@ -82,8 +80,8 @@ No revised Task 1 `.csproj` license edits or commercial stubs were committed bec
 
 ## Validation
 
-- **Changed files are docs/license only:** `LICENSE`, `LICENSING.md`, `README.md`, `SPRINT_SUMMARY.md`, `docs/CiGateInventory.md`, `docs/Conventions.md`, `docs/DocsIndex.md`, and `docs/ProjectTiers.md`.
-- **No source/test/workflow logic changed:** no files under `src/**`, `application/src/**`, or `.github/workflows/**` were modified.
+- **Changed files are license/docs/project metadata only:** `LICENSE`, `LICENSING.md`, `README.md`, `SPRINT_SUMMARY.md`, commercial app stubs, docs, and `.csproj` metadata license expressions.
+- **No source/test/workflow logic changed:** no `.cs` files or `.github/workflows/**` files were modified.
 - **README onboarding guard strings checked locally:** verified the README still contains `## Quick Start (5 minutes)`, `Choose your lane (recommended)`, `Lane A: dev container + container deployment (recommended)`, `Lane B: full local dev path (native SDK)`, `bash scripts/setup/setup.sh all`, and `dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore`; verified it does not contain `dotnet build Nexo.sln`.
 - **Local link fallback check:** `lychee` was not installed in this environment, so a local markdown link-target check was run against changed docs and passed.
 - **CLI build:** `dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore` succeeded.
@@ -91,4 +89,4 @@ No revised Task 1 `.csproj` license edits or commercial stubs were committed bec
 - **Documented subcommand help verification:** `pipeline validate --help`, `doctor --help`, `release --help`, `runtime-studio --help`, `mesh --help`, and `background-agent daemon --help` all succeeded.
 - **Doctor verification:** `dotnet run --project application/src/Nexo.CLI -- doctor --json` exited 0 and reported `"ok": true`; Docker was absent in the host environment, so the optional container smoke entry reported `docker: command not found` without failing the doctor profile.
 - **Quickstart pipeline verification:** `pipeline validate --template <tmp>` succeeded; `pipeline run --template <tmp> --run-id quickstart-run --format-json` completed with `"state":"Completed"`; `pipeline diagnostics --format-json` succeeded.
-- **Revised license-boundary preflight:** scanned intended Tier 1 OPEN and Tier 2/3 COMMERCIAL `ProjectReference` entries before editing `.csproj` metadata or adding commercial stubs. The scan found OPEN -> COMMERCIAL edges listed under “License extraction required,” so the requested placement is blocked by the Task 1d safety rule until the owner decides whether to move the referencing projects, keep the referenced projects open, or extract commercial code into separate projects.
+- **Revised license-boundary preflight:** scanned intended Tier 1 OPEN and Tier 2/3 COMMERCIAL `ProjectReference` entries. The scan found the vertical-code edges listed under “License extraction required,” so the committed placement keeps those code projects open pending extraction and marks only clean app packaging directories commercial.

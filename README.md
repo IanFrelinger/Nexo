@@ -381,6 +381,4 @@ See [`docs/Configuration.md`](docs/Configuration.md) for security options and [`
 
 ## License
 
-Nexo is licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE).
-
-For the current open-core boundary inventory and owner decisions still needed before any commercial split is finalized, see [LICENSING.md](LICENSING.md).
+Nexo uses an open-core model: single-node, inspectable runtime/SDK/trust surfaces are Apache-2.0, while fleet-scale governance and vertical app packaging are commercial. See [LICENSE](LICENSE) for Apache-2.0 terms and [LICENSING.md](LICENSING.md) for the authoritative tier allocation, extraction notes, and open questions.
