@@ -20,6 +20,10 @@ on:
       - 'application/src/Nexo.CLI/Commands/TestMultiEnvCommand.cs'
   workflow_dispatch:
 
+concurrency:
+  group: test-caching-multi-env-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test-caching:
     name: Caching Tests - ${{ matrix.environment.name }}
@@ -122,11 +126,15 @@ jobs:
     steps:
       - name: Aggregate results
         run: |
-          if [ "${{ needs.test-caching.result }}" = "failure" ]; then
-            echo "::error::One or more caching test environments failed"
-            exit 1
-          elif [ "${{ needs.test-caching.result }}" = "cancelled" ]; then
-            echo "::warning::Caching tests were cancelled"
-            exit 1
-          fi
-          echo "All caching tests passed across all environments"
+          case "${{ needs.test-caching.result }}" in
+            success)
+              echo "All caching tests passed across all environments"
+              ;;
+            cancelled)
+              echo "::warning::Caching tests were cancelled (superseded run); not counted as a hard failure."
+              ;;
+            *)
+              echo "::error::One or more caching test environments failed"
+              exit 1
+              ;;
+          esac

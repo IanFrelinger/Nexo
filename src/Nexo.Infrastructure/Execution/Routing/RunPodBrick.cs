@@ -170,6 +170,14 @@ public sealed class RunPodBrick : Brick, IBrickExecutor
                 await Task.Delay(pollingInterval, cancellationToken).ConfigureAwait(false);
             }
 
+            if (cancellationToken.IsCancellationRequested)
+            {
+                _logger.LogWarning("runpod.lifecycle stage=cancelled");
+                return Result<GenerationExecutionResult>.Failure(
+                    "runpod.cancelled",
+                    "RunPod execution was cancelled.");
+            }
+
             if (finalStatus?.State != RunPodJobState.Completed)
             {
                 _logger.LogWarning(
