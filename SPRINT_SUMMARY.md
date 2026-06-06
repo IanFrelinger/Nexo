@@ -35,13 +35,42 @@ Observation to keep out of this sprint's scope: `application/Nexo.Application.sl
 ## Open decisions for owner
 
 - **Open-core boundary:** `LICENSING.md` records candidate open-core and future commercial-tier projects only as `ASSUMPTION:` entries. The owner must decide the definitive boundary before any project is relicensed, moved behind commercial terms, dual-licensed, or marketed as part of a paid tier.
+- **Blocking dependency-direction decision for revised open-core boundary:** The requested replacement Task 1 boundary was preflighted before editing project metadata or adding commercial stubs. The intended placement creates Tier 1 OPEN -> Tier 3 COMMERCIAL `ProjectReference` edges, so the 1d safety rule requires stopping before committing those placement edits. The owner must decide whether these test/API projects move to the commercial tier, whether `Nexo.GameDomain`/GameDirector code remains open until extracted, or whether project references are split in a future code-organization sprint.
 - **Mesh/federation packaging:** Technical docs and product docs both reference mesh, but the owner must decide whether mesh remains Apache open core, becomes a paid add-on, is dual-licensed, or is separated into another module.
 - **Ingress/app packaging:** AWS ingress adapters and the four `apps/` configurations need an owner decision: open integrations/samples, commercial connectors/SKU templates, or something else.
 - **CI consolidation and branch protection:** `docs/CiGateInventory.md` identifies blocking candidates, advisory/manual workflows, release gates, and consolidation candidates. The owner must decide which checks are truly required for branch protection before any workflow cleanup is attempted.
 
+## License extraction required
+
+The revised open-core boundary principle was checked against current project references before changing `.csproj` license metadata or adding `COMMERCIAL-LICENSE.md` stubs. These OPEN -> COMMERCIAL edges block the requested placement as written:
+
+| Intended Tier 1 OPEN project | Intended Tier 2/3 COMMERCIAL reference |
+|------------------------------|-----------------------------------------|
+| `application/src/Nexo.API/Nexo.API.csproj` | `application/src/Nexo.GameDomain/Nexo.GameDomain.csproj` |
+| `application/src/Nexo.Tests.CLI/Nexo.Tests.CLI.csproj` | `application/src/Nexo.GameDomain/Nexo.GameDomain.csproj` |
+| `application/src/Nexo.Tests.GameDirector/Nexo.Tests.GameDirector.csproj` | `application/src/GameDirector.Agents/GameDirector.Agents.csproj` |
+| `application/src/Nexo.Tests.GameDirector/Nexo.Tests.GameDirector.csproj` | `application/src/GameDirector.Bricks/GameDirector.Bricks.csproj` |
+| `application/src/Nexo.Tests.GameDirector/Nexo.Tests.GameDirector.csproj` | `application/src/GameDirector.Domain/GameDirector.Domain.csproj` |
+| `application/src/Nexo.Tests.GameDirector/Nexo.Tests.GameDirector.csproj` | `application/src/GameDirector.Mcp/GameDirector.Mcp.csproj` |
+| `application/src/Nexo.Tests.GameDirector/Nexo.Tests.GameDirector.csproj` | `application/src/Nexo.GameDomain/Nexo.GameDomain.csproj` |
+| `application/src/Nexo.Tests.GameDomain/Nexo.Tests.GameDomain.csproj` | `application/src/Nexo.GameDomain/Nexo.GameDomain.csproj` |
+
+Fleet-scale mesh/governance code also appears to be woven into Tier 1 candidate projects rather than isolated behind separate commercial projects. Namespaces/files that likely need extraction before they can be marked commercial include:
+
+- `src/Nexo.Core.Application/Fleet/**`
+- `src/Nexo.Infrastructure/Fleet/**` (and related fleet/mesh task registry, placement, worker executor, persistence, registration key, trust policy, knowledge replication, and checkpoint services)
+- `src/Nexo.Core.Application/Networking/**` and `src/Nexo.Infrastructure/Networking/**` for knowledge sync / network negotiation / adaptive cache surfaces
+- `src/Nexo.Core.Application/Mesh/**` and `src/Nexo.Infrastructure/Mesh/**` where single-node capability advertisement blends into multi-node discovery and negotiation
+- `application/src/Nexo.CLI/Commands/MeshDirectorCommand.cs`, `MeshHubCommand.cs`, and fleet/mesh command surfaces if they are intended as commercial control-plane UX
+- `application/src/Nexo.API/Security/Mesh*` middleware and API endpoints that expose mesh/fleet governance behavior
+
+No revised Task 1 `.csproj` license edits or commercial stubs were committed because the dependency-direction safety check found the blocking edges above.
+
 ## Suggested follow-up issues
 
 - Define and approve the legal open-core/commercial licensing boundary.
+- Resolve the blocking OPEN -> COMMERCIAL project-reference edges found during the revised boundary preflight.
+- Extract fleet-scale mesh/governance namespaces into separate projects if those capabilities must be commercial while `Nexo.Runtime`, `Nexo.Orchestration`, `Nexo.Infrastructure`, and `Nexo.Core.Application` remain Apache open core.
 - Decide whether mesh/federation is open core, commercial add-on, dual-licensed, or a separate module.
 - Decide whether AWS ingress adapters and app configurations are open examples, commercial connectors/SKU templates, or internal presets.
 - Consolidate CI gates and update branch-protection policy around a smaller required-check set.
@@ -62,3 +91,4 @@ Observation to keep out of this sprint's scope: `application/Nexo.Application.sl
 - **Documented subcommand help verification:** `pipeline validate --help`, `doctor --help`, `release --help`, `runtime-studio --help`, `mesh --help`, and `background-agent daemon --help` all succeeded.
 - **Doctor verification:** `dotnet run --project application/src/Nexo.CLI -- doctor --json` exited 0 and reported `"ok": true`; Docker was absent in the host environment, so the optional container smoke entry reported `docker: command not found` without failing the doctor profile.
 - **Quickstart pipeline verification:** `pipeline validate --template <tmp>` succeeded; `pipeline run --template <tmp> --run-id quickstart-run --format-json` completed with `"state":"Completed"`; `pipeline diagnostics --format-json` succeeded.
+- **Revised license-boundary preflight:** scanned intended Tier 1 OPEN and Tier 2/3 COMMERCIAL `ProjectReference` entries before editing `.csproj` metadata or adding commercial stubs. The scan found OPEN -> COMMERCIAL edges listed under “License extraction required,” so the requested placement is blocked by the Task 1d safety rule until the owner decides whether to move the referencing projects, keep the referenced projects open, or extract commercial code into separate projects.
