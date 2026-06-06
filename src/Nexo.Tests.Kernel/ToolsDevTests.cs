@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Diagnostics;
 using FluentAssertions;
 using Moq;
 using Nexo.Abstractions;
@@ -321,6 +322,54 @@ public class ToolsDevTests
                 new WorldSnapshot(0, new Dictionary<string, object?>()),
                 CancellationToken.None);
             result.Delta.Log.Should().Contain(l => l.Contains("build:exit="));
+        }
+        finally
+        {
+            if (Directory.Exists(root)) Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task DotnetBuildTool_uses_preferred_solution_filter_when_root_has_multiple_build_files()
+    {
+        var root = Path.Combine(Path.GetTempPath(), "nexo-build-filter-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(root);
+        await File.WriteAllTextAsync(Path.Combine(root, "Mini.csproj"), """
+            <Project Sdk="Microsoft.NET.Sdk">
+              <PropertyGroup>
+                <TargetFramework>net8.0</TargetFramework>
+              </PropertyGroup>
+            </Project>
+            """);
+        await File.WriteAllTextAsync(Path.Combine(root, "Other.csproj"), """
+            <Project Sdk="Microsoft.NET.Sdk">
+              <PropertyGroup>
+                <TargetFramework>net8.0</TargetFramework>
+              </PropertyGroup>
+            </Project>
+            """);
+
+        try
+        {
+            await RunDotnetAsync(root, "new sln --name Nexo");
+            await RunDotnetAsync(root, "sln Nexo.sln add Mini.csproj");
+            await File.WriteAllTextAsync(Path.Combine(root, "Nexo.LocalDevCore.slnf"), """
+                {
+                  "solution": {
+                    "path": "Nexo.sln",
+                    "projects": [
+                      "Mini.csproj"
+                    ]
+                  }
+                }
+                """);
+
+            var result = await new DotnetBuildTool().InvokeAsync(
+                Call("dotnet.build", new { root }),
+                new WorldSnapshot(0, new Dictionary<string, object?>()),
+                CancellationToken.None);
+
+            result.Delta.Log.Should().Contain(l => l.Contains("build:exit=0"));
         }
         finally
         {
@@ -1535,5 +1584,21 @@ public class ToolsDevTests
         {
             if (Directory.Exists(root)) Directory.Delete(root, recursive: true);
         }
+    }
+
+    private static async Task RunDotnetAsync(string workingDirectory, string arguments)
+    {
+        using var process = Process.Start(new ProcessStartInfo("dotnet", arguments)
+        {
+            WorkingDirectory = workingDirectory,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false
+        }) ?? throw new InvalidOperationException("Failed to start dotnet.");
+
+        var stdout = await process.StandardOutput.ReadToEndAsync();
+        var stderr = await process.StandardError.ReadToEndAsync();
+        await process.WaitForExitAsync();
+        process.ExitCode.Should().Be(0, $"dotnet {arguments} should succeed. stdout={stdout} stderr={stderr}");
     }
 }

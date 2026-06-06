@@ -26,8 +26,47 @@ public sealed class DotnetBuildTool : ITool
     /// </summary>
     public static Task<(int exitCode, string stdout, string stderr, bool timedOut)> RunReleaseBuildAsync(
         string workingDirectory,
-        CancellationToken ct = default) =>
-        DotnetRunner.RunAsync(workingDirectory, "build -c Release", TimeSpan.FromMinutes(10), ct);
+        CancellationToken ct = default)
+    {
+        var arguments = ResolveBuildArguments(workingDirectory);
+        return DotnetRunner.RunAsync(workingDirectory, arguments, TimeSpan.FromMinutes(10), ct);
+    }
+
+    internal static string ResolveBuildArguments(string workingDirectory)
+    {
+        if (string.IsNullOrWhiteSpace(workingDirectory) || !Directory.Exists(workingDirectory))
+        {
+            return "build -c Release";
+        }
+
+        var preferredTargets = new[]
+        {
+            "Nexo.LocalDevCore.slnf",
+            "Nexo.Core.slnf"
+        };
+
+        foreach (var target in preferredTargets)
+        {
+            if (File.Exists(Path.Combine(workingDirectory, target)))
+            {
+                return $"build {Quote(target)} -c Release";
+            }
+        }
+
+        var buildFiles = Directory.EnumerateFiles(workingDirectory, "*.*", SearchOption.TopDirectoryOnly)
+            .Where(path =>
+                path.EndsWith(".slnf", StringComparison.OrdinalIgnoreCase) ||
+                path.EndsWith(".sln", StringComparison.OrdinalIgnoreCase) ||
+                path.EndsWith(".csproj", StringComparison.OrdinalIgnoreCase))
+            .OrderBy(path => Path.GetFileName(path), StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        return buildFiles.Length == 1
+            ? $"build {Quote(Path.GetFileName(buildFiles[0]))} -c Release"
+            : "build -c Release";
+    }
+
+    private static string Quote(string value) => $"\"{value.Replace("\"", "\\\"", StringComparison.Ordinal)}\"";
 
     public async Task<ToolResult> InvokeAsync(ToolCall call, WorldSnapshot s, CancellationToken ct)
     {
