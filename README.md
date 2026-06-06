@@ -464,4 +464,6 @@ Core references:
 
 ## License
 
-See repository for license information.
+Nexo is licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE).
+
+For the current open-core boundary inventory and owner decisions still needed before any commercial split is finalized, see [LICENSING.md](LICENSING.md).

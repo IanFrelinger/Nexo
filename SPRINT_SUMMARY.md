@@ -25,15 +25,18 @@ Observation to keep out of this sprint's scope: `application/Nexo.Application.sl
 
 ## Changes by task
 
-_To be finalized as tasks are completed._
+- **Task 0 — Recon:** Added this summary and captured the true repo scope: adaptive orchestration kernel, trust controls, mesh/federation, transport/ingress, apps, hosts, and distribution channels.
+- **Task 1 — License:** Added Apache-2.0 `LICENSE`, added `LICENSING.md`, and updated the README license section to point at both the license and the open-core boundary inventory.
 
 ## Open decisions for owner
 
-_To be finalized as tasks are completed._
+- **Open-core boundary:** `LICENSING.md` records candidate open-core and future commercial-tier projects only as `ASSUMPTION:` entries. The owner must decide the definitive boundary before any project is relicensed, moved behind commercial terms, dual-licensed, or marketed as part of a paid tier.
+- **Mesh/federation packaging:** Technical docs and product docs both reference mesh, but the owner must decide whether mesh remains Apache open core, becomes a paid add-on, is dual-licensed, or is separated into another module.
+- **Ingress/app packaging:** AWS ingress adapters and the four `apps/` configurations need an owner decision: open integrations/samples, commercial connectors/SKU templates, or something else.
 
 ## Suggested follow-up issues
 
-_To be finalized as tasks are completed._
+- Define and approve the legal open-core/commercial licensing boundary.
 
 ## Validation
 
