@@ -30,6 +30,7 @@ Observation to keep out of this sprint's scope: `application/Nexo.Application.sl
 - **Task 2 — README rewrite:** Reframed the README around adaptive orchestration and the “ChatGPT is a calculator; Nexo is an autopilot panel” positioning, added reader routing and subsystem maps, preserved container-first quick start commands, and kept the barrier/security notes.
 - **Task 3 — Coherence / start here:** Promoted `docs/ProjectTiers.md` as the canonical repo map from both the README and docs index, added the README “Where to start” table, and created `docs/CiGateInventory.md` with one row per workflow and recommendation-only consolidation notes.
 - **Task 4 — Architecture honesty:** Added `docs/Conventions.md` to describe current error handling, interfaces, abstract classes, generics, and the gap between aspiration and current implementation without changing code.
+- **Task 5 — Wrap:** Finalized this summary with owner decisions, follow-up issues, and validation evidence.
 
 ## Open decisions for owner
 
@@ -46,7 +47,18 @@ Observation to keep out of this sprint's scope: `application/Nexo.Application.sl
 - Consolidate CI gates and update branch-protection policy around a smaller required-check set.
 - Plan an errors-as-values migration for recoverable operational boundaries while preserving exception-based guard/framework paths where appropriate.
 - Review inheritance-heavy agent/value/test base patterns and decide where composition would improve traceability.
+- Add a periodic README/GettingStarted command-drift check so docs stay aligned with `application/src/Nexo.CLI`.
+- Automate project-count/tier-map refresh checks for `docs/ProjectTiers.md`.
+- Decide product packaging for Game Director, Nexo Forge, Release Manager, and Runtime Studio.
 
 ## Validation
 
-_To be finalized as tasks are completed._
+- **Changed files are docs/license only:** `LICENSE`, `LICENSING.md`, `README.md`, `SPRINT_SUMMARY.md`, `docs/CiGateInventory.md`, `docs/Conventions.md`, `docs/DocsIndex.md`, and `docs/ProjectTiers.md`.
+- **No source/test/workflow logic changed:** no files under `src/**`, `application/src/**`, or `.github/workflows/**` were modified.
+- **README onboarding guard strings checked locally:** verified the README still contains `## Quick Start (5 minutes)`, `Choose your lane (recommended)`, `Lane A: dev container + container deployment (recommended)`, `Lane B: full local dev path (native SDK)`, `bash scripts/setup/setup.sh all`, and `dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore`; verified it does not contain `dotnet build Nexo.sln`.
+- **Local link fallback check:** `lychee` was not installed in this environment, so a local markdown link-target check was run against changed docs and passed.
+- **CLI build:** `dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore` succeeded.
+- **CLI help verification:** `dotnet run --project application/src/Nexo.CLI -- --help` succeeded.
+- **Documented subcommand help verification:** `pipeline validate --help`, `doctor --help`, `release --help`, `runtime-studio --help`, `mesh --help`, and `background-agent daemon --help` all succeeded.
+- **Doctor verification:** `dotnet run --project application/src/Nexo.CLI -- doctor --json` exited 0 and reported `"ok": true`; Docker was absent in the host environment, so the optional container smoke entry reported `docker: command not found` without failing the doctor profile.
+- **Quickstart pipeline verification:** `pipeline validate --template <tmp>` succeeded; `pipeline run --template <tmp> --run-id quickstart-run --format-json` completed with `"state":"Completed"`; `pipeline diagnostics --format-json` succeeded.
