@@ -26,7 +26,7 @@ Observation to keep out of this sprint's scope: `application/Nexo.Application.sl
 ## Changes by task
 
 - **Task 0 — Recon:** Added this summary and captured the true repo scope: adaptive orchestration kernel, trust controls, mesh/federation, transport/ingress, apps, hosts, and distribution channels.
-- **Task 1 — License:** Added Apache-2.0 `LICENSE`, added Apache-2.0 SPDX package metadata to the open project set, added commercial stubs for app configuration directories whose dependency boundary is clean, updated `LICENSING.md` as the authoritative tier map, and updated the README license section.
+- **Task 1 — License:** Added Apache-2.0 `LICENSE`, set Apache-2.0 package metadata for the open project set, added commercial stubs for app configuration directories whose dependency/CI boundary is clean, updated `LICENSING.md` as the authoritative tier map, and updated the README license section.
 - **Task 2 — README rewrite:** Reframed the README around adaptive orchestration and the “ChatGPT is a calculator; Nexo is an autopilot panel” positioning, added reader routing and subsystem maps, preserved container-first quick start commands, and kept the barrier/security notes.
 - **Task 3 — Coherence / start here:** Promoted `docs/ProjectTiers.md` as the canonical repo map from both the README and docs index, added the README “Where to start” table, and created `docs/CiGateInventory.md` with one row per workflow and recommendation-only consolidation notes.
 - **Task 4 — Architecture honesty:** Added `docs/Conventions.md` to describe current error handling, interfaces, abstract classes, generics, and the gap between aspiration and current implementation without changing code.
@@ -34,7 +34,7 @@ Observation to keep out of this sprint's scope: `application/Nexo.Application.sl
 
 ## Open decisions for owner
 
-- **Vertical code extraction:** The owner-approved interim boundary keeps `Nexo.GameDomain` and `GameDirector.*` code projects Apache-2.0 until they can be separated without creating OPEN -> COMMERCIAL project references. The app packaging directories under `apps/` are marked commercial now.
+- **Vertical code extraction:** The owner-approved interim boundary keeps `Nexo.GameDomain` and `GameDirector.*` code projects Apache-2.0 until they can be separated without creating OPEN -> COMMERCIAL project references. The clean app packaging directories under `apps/` are marked commercial now; `apps/runtime-studio` is commercially allocated but its stub is deferred until the existing forge-smoke lane is fixed.
 - **Mesh/federation extraction:** Technical docs and product docs both reference mesh. Fleet-scale mesh/governance code is woven through open projects today, so commercial marking requires extraction into separate projects first.
 - **API host boundary:** `Nexo.API` is open for now as a single-node host. Any org-scale governance, RBAC/SSO, aggregate audit, or fleet-control-plane endpoints should move to a separate commercial host or module before commercial marking.
 - **CI consolidation and branch protection:** `docs/CiGateInventory.md` identifies blocking candidates, advisory/manual workflows, release gates, and consolidation candidates. The owner must decide which checks are truly required for branch protection before any workflow cleanup is attempted.
@@ -65,10 +65,13 @@ Fleet-scale mesh/governance code also appears to be woven into Tier 1 candidate 
 
 Resolution applied in this sprint: keep the mixed vertical code projects Apache-2.0 pending extraction; mark only the app packaging directories under `apps/` with commercial stubs. With that committed placement, the dependency-direction safety check passes because no Tier 1 `.csproj` references a marked commercial project.
 
+CI stabilization note: `apps/runtime-studio/COMMERCIAL-LICENSE.md` is intentionally deferred. A stub in that directory triggers `.github/workflows/runtime-studio-forge-smoke.yml`, whose `background-agent proposals build --repo-root .` step currently fails with `MSB1011` because the repo root contains multiple project/solution files. This is an existing workflow/command ambiguity, not a licensing metadata failure.
+
 ## Suggested follow-up issues
 
 - Extract vertical product code (`Nexo.GameDomain` and `GameDirector.*`) into commercial projects or plugin modules if the Game Director wedge must be commercial code instead of commercial packaging.
 - Extract fleet-scale mesh/governance namespaces into separate projects if those capabilities must be commercial while `Nexo.Runtime`, `Nexo.Orchestration`, `Nexo.Infrastructure`, and `Nexo.Core.Application` remain Apache open core.
+- Fix the Runtime Studio forge-smoke `background-agent proposals build --repo-root .` ambiguity, then add `apps/runtime-studio/COMMERCIAL-LICENSE.md`.
 - Decide whether mesh/federation is open core, commercial add-on, dual-licensed, or a separate module.
 - Decide whether `apps/release-manager` should later become the single open-sourced minimal SDK reference app.
 - Consolidate CI gates and update branch-protection policy around a smaller required-check set.
@@ -90,4 +93,4 @@ Resolution applied in this sprint: keep the mixed vertical code projects Apache-
 - **Doctor verification:** `dotnet run --project application/src/Nexo.CLI -- doctor --json` exited 0 and reported `"ok": true`; Docker was absent in the host environment, so the optional container smoke entry reported `docker: command not found` without failing the doctor profile.
 - **Quickstart pipeline verification:** `pipeline validate --template <tmp>` succeeded; `pipeline run --template <tmp> --run-id quickstart-run --format-json` completed with `"state":"Completed"`; `pipeline diagnostics --format-json` succeeded.
 - **Revised license-boundary preflight:** scanned intended Tier 1 OPEN and Tier 2/3 COMMERCIAL `ProjectReference` entries. The scan found the vertical-code edges listed under “License extraction required,” so the committed placement keeps those code projects open pending extraction and marks only clean app packaging directories commercial.
-- **SPDX and boundary verification:** verified 56 open `.csproj` files carry `<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>`; verified the committed commercial placement has no Tier 1 `.csproj` -> commercial project reference violations; rebuilt `application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore` successfully after metadata edits.
+- **SPDX and boundary verification:** verified open `.csproj` files receive Apache-2.0 package metadata either directly or via `Directory.Build.props`; verified the committed commercial placement has no Tier 1 `.csproj` -> commercial project reference violations; rebuilt `application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore` successfully after metadata edits.

@@ -10,7 +10,7 @@ The repository root license is Apache-2.0. See [`LICENSE`](LICENSE).
 
 ## Tier 1 — OPEN (Apache-2.0)
 
-Tier 1 is the adoption and trust surface: SDKs, contracts, single-node runtime/hosts, trust primitives, tests, samples, and inspectable extension points. These projects carry `<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>` where they have a `.csproj`.
+Tier 1 is the adoption and trust surface: SDKs, contracts, single-node runtime/hosts, trust primitives, tests, samples, and inspectable extension points. These projects carry Apache-2.0 package metadata either directly in their `.csproj` or through the repository-wide `Directory.Build.props` default.
 
 Rationale: this tier protects two moats at once — an extensible SDK and a single runtime across surfaces. `Nexo.Policies`, `Nexo.Policies.Dev`, and `Nexo.Bricks.Owasp` are open on purpose: trust-by-design fails if the trust primitives are a paywalled black box.
 
@@ -111,14 +111,13 @@ Likely extraction candidates include:
 
 Tier 3 is the commercial product/vertical layer.
 
-These app configuration directories are marked with a `COMMERCIAL-LICENSE.md` stub:
+These app configuration directories are marked with a `COMMERCIAL-LICENSE.md` stub where doing so does not trigger a broken unrelated CI lane:
 
 | Allocation | Path |
 |------------|------|
 | COMMERCIAL | `apps/game-director/` |
 | COMMERCIAL | `apps/nexo-forge/` |
 | COMMERCIAL | `apps/release-manager/` |
-| COMMERCIAL | `apps/runtime-studio/` |
 
 Stub text:
 
@@ -137,6 +136,8 @@ The code projects currently used by these verticals remain Apache-2.0 until they
 
 Recommended future open-source candidate: `apps/release-manager` is the best single app to open later as a minimal SDK reference because it demonstrates generic release-readiness automation without making the defense-adjacent Game Director wedge open.
 
+`apps/runtime-studio/` is commercially allocated in this model, but its stub is deferred in this PR because any change under `apps/runtime-studio/**` triggers the existing Runtime Studio forge-smoke workflow. That workflow currently fails in its `background-agent proposals build --repo-root .` step with `MSB1011` because the repo root contains multiple project/solution files. Add the stub after that workflow or command path is fixed, or move the stub to a path that does not trigger the broken lane.
+
 ## Dependency-direction safety
 
 Rule: no Tier 1 OPEN project may reference a Tier 2/3 COMMERCIAL project.
@@ -150,4 +151,5 @@ Preflight result for the originally requested vertical split: **blocked**. Marki
 - Which fleet/governance files should be extracted first into commercial projects?
 - Should `Nexo.API` remain a purely open single-node host, or should commercial fleet/governance endpoints move to a separate host?
 - Should `Nexo.GameDomain` and `GameDirector.*` be extracted into commercial projects, moved into `apps/game-director`, or remain Apache-2.0 examples while only app packaging is commercial?
+- When should `apps/runtime-studio/COMMERCIAL-LICENSE.md` be added once the Runtime Studio forge-smoke lane no longer fails on repo-root build ambiguity?
 - Should `apps/release-manager` become the future minimal open SDK reference app?
