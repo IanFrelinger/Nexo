@@ -1,8 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
     <PropertyGroup>
-
-      <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
         <TargetFramework>net8.0</TargetFramework>
         <LangVersion>12.0</LangVersion>
         <Nullable>enable</Nullable>

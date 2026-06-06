@@ -5,8 +5,6 @@
     </ItemGroup>
 
     <PropertyGroup>
-
-      <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
         <TargetFramework>net8.0</TargetFramework>
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <NoWarn>$(NoWarn);1591</NoWarn>
