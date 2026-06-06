@@ -1,5 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <!-- Standalone sample: do not inherit repo central package management (Nexo.Hosting version is local feed). -->
     <!-- ManagePackageVersionsCentrally: see Directory.Packages.props in this folder -->
     <!-- Transitive advisories: pinned in package-consumer/Directory.Build.props -->
