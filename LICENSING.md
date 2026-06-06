@@ -10,7 +10,7 @@ The repository root license is Apache-2.0. See [`LICENSE`](LICENSE).
 
 ## Tier 1 — OPEN (Apache-2.0)
 
-Tier 1 is the adoption and trust surface: SDKs, contracts, single-node runtime/hosts, trust primitives, tests, samples, and inspectable extension points. These projects carry Apache-2.0 package metadata either directly in their `.csproj` or through the repository-wide `Directory.Build.props` default.
+Tier 1 is the adoption and trust surface: SDKs, contracts, single-node runtime/hosts, trust primitives, tests, samples, and inspectable extension points. These projects carry Apache-2.0 package metadata either directly in their `.csproj` or through the repository-wide `Directory.Build.props` / `Directory.Build.targets` defaults.
 
 Rationale: this tier protects two moats at once — an extensible SDK and a single runtime across surfaces. `Nexo.Policies`, `Nexo.Policies.Dev`, and `Nexo.Bricks.Owasp` are open on purpose: trust-by-design fails if the trust primitives are a paywalled black box.
 
