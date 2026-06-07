@@ -54,6 +54,7 @@
     <ProjectReference Include="../../../src/Nexo.BackgroundAgents.HostRunners/Nexo.BackgroundAgents.HostRunners.csproj" />
     <ProjectReference Include="../../../src/Nexo.Policies.Dev/Nexo.Policies.Dev.csproj" />
     <ProjectReference Include="../../../src/Nexo.Tools.Dev/Nexo.Tools.Dev.csproj" />
+    <ProjectReference Include="../Nexo.GameDomain/Nexo.GameDomain.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -77,7 +77,7 @@ These projects were explicitly inspected and placed:
 
 | Project | Decision | Reason |
 |---------|----------|--------|
-| `application/src/Nexo.API/Nexo.API.csproj` | OPEN | Current project is a single-node HTTP/API host over the open kernel plus app references. It is not isolated as a multi-node commercial control plane. |
+| `application/src/Nexo.API/Nexo.API.csproj` | OPEN | Current project is a single-node HTTP/API host over the open kernel. The Forge/GameDomain HTTP surface has been moved to the Game Director application layer, so this host no longer references `Nexo.GameDomain`. |
 | `src/Nexo.Transport.Grpc.Server/Nexo.Transport.Grpc.Server.csproj` | OPEN | Server implementation exposes the open gRPC transport surface; it is not a fleet-scale director/control-plane project. |
 | `src/Nexo.Transport.Grpc.Server.Host/Nexo.Transport.Grpc.Server.Host.csproj` | OPEN | Standalone gRPC host for the open transport server, not a governance tier. |
 | `application/Nexo.Application.sln` contents | OPEN for current contents | The solution contains `Nexo.API`, `Nexo.CLI`, `Nexo.GameDomain`, `Nexo.Tests.CLI`, and `Nexo.Tests.GameDomain`. The API/CLI/tests are open. `Nexo.GameDomain` remains Apache-2.0 until vertical extraction resolves the dependency-direction issue described below. |
@@ -130,7 +130,7 @@ The code projects currently used by these verticals remain Apache-2.0 until they
 
 | Temporary allocation | Path | Reason |
 |----------------------|------|--------|
-| OPEN pending extraction | `application/src/Nexo.GameDomain/Nexo.GameDomain.csproj` | Referenced by `Nexo.API`, `Nexo.Tests.CLI`, and game-domain tests. |
+| OPEN pending extraction | `application/src/Nexo.GameDomain/Nexo.GameDomain.csproj` | Referenced by `Nexo.CLI`, Game Director projects, and game-domain tests. |
 | OPEN pending extraction | `application/src/GameDirector.Domain/GameDirector.Domain.csproj` | Referenced by Game Director projects and tests; extraction needed before commercial marking. |
 | OPEN pending extraction | `application/src/GameDirector.Agents/GameDirector.Agents.csproj` | Referenced by Game Director host/tests; extraction needed before commercial marking. |
 | OPEN pending extraction | `application/src/GameDirector.Bricks/GameDirector.Bricks.csproj` | Referenced by Game Director host/tests; extraction needed before commercial marking. |
@@ -145,7 +145,7 @@ Rule: no Tier 1 OPEN project may reference a Tier 2/3 COMMERCIAL project.
 
 Current result: **passes for committed placement** because commercial markings are limited to app configuration directories and no Tier 1 `.csproj` references those directories as commercial projects.
 
-Preflight result for the originally requested vertical split: **blocked**. Marking `Nexo.GameDomain` or `GameDirector.*` projects commercial in-place would create OPEN -> COMMERCIAL edges from `Nexo.API` and test projects. Those edges are recorded in `SPRINT_SUMMARY.md` under “License extraction required.”
+Preflight result for the originally requested vertical split: **partially unblocked**. `Nexo.API` and `Nexo.Tests.CLI` no longer reference `Nexo.GameDomain`, but marking `Nexo.GameDomain` or `GameDirector.*` projects commercial in-place would still create OPEN -> COMMERCIAL edges from `Nexo.CLI`, Game Director projects, and vertical test projects. Those remaining edges are recorded in `SPRINT_SUMMARY.md` under “License extraction required.”
 
 ## Open questions
 

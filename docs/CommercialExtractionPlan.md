@@ -19,15 +19,15 @@ The vertical code is currently mixed into the application solution graph. Markin
 
 | Current project | Current references that matter for extraction |
 |-----------------|-----------------------------------------------|
-| `application/src/Nexo.API/Nexo.API.csproj` | References `application/src/Nexo.GameDomain/Nexo.GameDomain.csproj`; this keeps `Nexo.GameDomain` open until the API becomes plugin-based or the game domain moves behind an optional commercial host. |
-| `application/src/Nexo.CLI/Nexo.CLI.csproj` | Does not directly reference Game Director projects, but it is the open single-node CLI shell and should not grow direct commercial references. |
-| `application/src/Nexo.GameDomain/Nexo.GameDomain.csproj` | References open core (`Nexo.Core.Application`, `Nexo.Core.Domain`) and is referenced by `Nexo.API`, CLI tests, and game-domain tests. |
+| `application/src/Nexo.API/Nexo.API.csproj` | **Resolved:** the Forge/GameDomain HTTP surface moved to the Game Director/MCP application layer, so `Nexo.API` no longer references `Nexo.GameDomain`. |
+| `application/src/Nexo.CLI/Nexo.CLI.csproj` | References `Nexo.GameDomain` for Unity/game-asset descriptor helpers. It is the open single-node CLI shell, so those helpers must move behind an open abstraction or a commercial/plugin command before `Nexo.GameDomain` can become commercial. |
+| `application/src/Nexo.GameDomain/Nexo.GameDomain.csproj` | References open core (`Nexo.Core.Application`, `Nexo.Core.Domain`) and is referenced by `Nexo.CLI`, Game Director projects, and game-domain tests. |
 | `application/src/GameDirector.Domain/GameDirector.Domain.csproj` | References `Nexo.GameDomain` and open core. |
 | `application/src/GameDirector.Agents/GameDirector.Agents.csproj` | References `GameDirector.Bricks`, `GameDirector.Domain`, `Nexo.Client`, and open abstractions/application/domain. |
 | `application/src/GameDirector.Bricks/GameDirector.Bricks.csproj` | References `GameDirector.Domain` plus open abstractions/domain/application/infrastructure. |
 | `application/src/GameDirector.Mcp/GameDirector.Mcp.csproj` | References `GameDirector.Domain`, `Nexo.Client`, open core, infrastructure, and brick contracts. |
 | `application/src/GameDirector.Host/GameDirector.Host.csproj` | References all Game Director projects plus `Nexo.API`, `Nexo.Client`, and `Nexo.Hosting`. |
-| `application/src/Nexo.Tests.CLI/Nexo.Tests.CLI.csproj` | References `Nexo.CLI` and `Nexo.GameDomain`; must not remain an open test project if `Nexo.GameDomain` becomes commercial. |
+| `application/src/Nexo.Tests.CLI/Nexo.Tests.CLI.csproj` | **Resolved:** game-domain descriptor serialization assertions moved to `Nexo.Tests.GameDomain`, so the CLI test assembly no longer directly references `Nexo.GameDomain`. |
 | `application/src/Nexo.Tests.GameDomain/Nexo.Tests.GameDomain.csproj` | References `Nexo.GameDomain`; should move with commercial game-domain tests or become an open compatibility test if the domain stays open. |
 | `application/src/Nexo.Tests.GameDirector/Nexo.Tests.GameDirector.csproj` | References `GameDirector.*` and `Nexo.GameDomain`; should move with commercial Game Director tests. |
 
@@ -103,16 +103,17 @@ Open core should retain low-level trust primitives and local/single-node mesh pr
 
 Purpose: break direct open-host references to vertical code before moving code.
 
-1. Identify every `Nexo.API` use of `Nexo.GameDomain` types.
-2. Introduce or document an existing open extension point for vertical endpoint/service registration.
-3. Ensure `Nexo.API` can build and run without `Nexo.GameDomain`.
-4. Move any CLI tests that require game-domain types out of `Nexo.Tests.CLI` or rewrite them to test open extension points only.
+1. **Done:** identify every `Nexo.API` use of `Nexo.GameDomain` types.
+2. **Done:** move the Forge HTTP surface to the Game Director/MCP application layer.
+3. **Done:** ensure `Nexo.API` can build without `Nexo.GameDomain`.
+4. **Done:** move CLI tests that require game-domain asset descriptors into `Nexo.Tests.GameDomain`.
 
 Exit criteria:
 
 - `Nexo.API` no longer references `Nexo.GameDomain`.
 - `Nexo.Tests.CLI` no longer references `Nexo.GameDomain`.
-- No behavior changes beyond moving vertical registration behind an extension point.
+- `Nexo.CLI` has an identified follow-up seam for Unity/game-domain descriptor helpers before `Nexo.GameDomain` can become commercial.
+- Game Director host owns the Forge HTTP endpoint/service registration.
 
 ### Phase B — extract GameDomain and Game Director
 

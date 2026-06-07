@@ -46,13 +46,10 @@ using Microsoft.Extensions.Options;
 using MediatR;
 using Microsoft.OpenApi.Models;
 using Nexo.API.Endpoints;
-using Nexo.API.Forge;
 using Nexo.API.Middleware.Ingress;
 using Nexo.API.Security;
 using Nexo.Core.Application.Middleware.Ports;
 using Nexo.Contracts;
-using Nexo.GameDomain.Mapping;
-using Nexo.GameDomain.Materials;
 using Nexo.BackgroundAgents.Extending;
 using Nexo.BackgroundAgents.HostRunners;
 using Nexo.BackgroundAgents.Optimization;
@@ -94,8 +91,6 @@ builder.Services.Configure<NexoEntitlementsOptions>(
     builder.Configuration.GetSection(NexoEntitlementsOptions.SectionPath));
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<ICopilotSubmissionQuota, CopilotSubmissionQuota>();
-builder.Services.Configure<ForgeSessionOptions>(
-    builder.Configuration.GetSection(ForgeSessionOptions.SectionPath));
 builder.Services.Configure<MeshSecurityOptions>(
     builder.Configuration.GetSection(MeshSecurityOptions.SectionPath));
 builder.Services.Configure<SmsIngressDynamoDbOptions>(
@@ -118,11 +113,6 @@ builder.Services.AddSwaggerGen(static options =>
 builder.Services.AddNexoRuntimeRouting(builder.Configuration);
 
 builder.Services.AddSingleton<INexoIngressAccessor, HttpNexoIngressAccessor>();
-builder.Services.AddHttpClient("forge-map")
-    .ConfigurePrimaryHttpMessageHandler(sp =>
-        ForgeMapHttpSocketsHandlerFactory.Create(
-            sp.GetRequiredService<IOptionsMonitor<ForgeSessionOptions>>(),
-            sp.GetRequiredService<ILoggerFactory>()));
 builder.Services.AddHttpClient("nexo-sns-signing", c => c.Timeout = TimeSpan.FromSeconds(15));
 builder.Services.AddSingleton<ISnsSignatureVerifier, SnsRsaSignatureVerifier>();
 builder.Services.AddRateLimiter(static o =>
@@ -158,7 +148,6 @@ builder.Services.AddRateLimiter(static o =>
             });
     });
 });
-builder.Services.AddSingleton<IForgeStateService, TenantPartitionedForgeStateService>();
 
 // Planner / optimizer / tester background agents need the same runners as `nexo background-agent daemon`.
 builder.Services.TryAddSingleton<ICodeAnalysisRunner, CodeAnalysisRunnerAdapter>();
@@ -176,23 +165,6 @@ builder.Services.AddNexo(options =>
 
 builder.Services.AddMediatR(cfg =>
     cfg.RegisterServicesFromAssembly(typeof(RecordSmsYesApprovalCommand).Assembly));
-
-builder.Services.AddSingleton<HeuristicMaterialIntelligenceService>();
-builder.Services.AddSingleton<IMaterialIntelligenceService>(sp =>
-    new ModelAugmentedMaterialIntelligenceService(
-        sp.GetRequiredService<Nexo.Abstractions.IModel>(),
-        sp.GetRequiredService<HeuristicMaterialIntelligenceService>(),
-        sp.GetRequiredService<IOptions<ForgeSessionOptions>>(),
-        sp.GetRequiredService<ILogger<ModelAugmentedMaterialIntelligenceService>>()));
-builder.Services.AddSingleton<HeuristicVectorMapIntelligenceService>();
-builder.Services.AddSingleton<IMapVerificationService, HeuristicMapVerificationService>();
-builder.Services.AddSingleton<IVectorMapIntelligenceService>(sp =>
-    new ModelAugmentedVectorMapIntelligenceService(
-        sp.GetRequiredService<Nexo.Abstractions.IModel>(),
-        sp.GetRequiredService<HeuristicVectorMapIntelligenceService>(),
-        sp.GetRequiredService<IOptions<ForgeSessionOptions>>(),
-        sp.GetRequiredService<ILogger<ModelAugmentedVectorMapIntelligenceService>>()));
-builder.Services.AddSingleton<MapPipelineRunner>();
 
 var app = builder.Build();
 
@@ -275,8 +247,6 @@ app.UseNexoMeshCorrelation();
 app.UseNexoMeshSecurity();
 app.UseNexoApiKeyAuth();
 app.UseNexoCopilotScopedAuthorization();
-app.UseMiddleware<ForgeAuthenticationMiddleware>();
-app.UseMiddleware<ForgeTenantMiddleware>();
 
 app.UseRateLimiter();
 
@@ -284,7 +254,6 @@ app.UseSwagger();
 app.UseSwaggerUI(static c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Nexo.API v1"));
 app.MapNexoEndpoints();
 app.MapIngressEndpoints();
-app.MapForgeEndpoints();
 app.MapFallbackToFile("index.html");
 
 app.Run();
