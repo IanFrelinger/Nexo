@@ -132,7 +132,7 @@ Stub text:
 
 > Not licensed under Apache-2.0. Commercial terms TBD. See /LICENSING.md.
 
-The GameDomain module and Game Director code/test projects have been moved into `commercial/`, or commercially marked there, so they may reference the commercial GameDomain module without creating open-to-commercial project references.
+The GameDomain module and Game Director code/test projects have been moved into `commercial/`, so they may reference each other and the open core without creating open-to-commercial project references.
 
 Recommended future open-source candidate: `apps/release-manager` is the best single app to open later as a minimal SDK reference because it demonstrates generic release-readiness automation without making the defense-adjacent Game Director wedge open.
 
@@ -140,7 +140,7 @@ Recommended future open-source candidate: `apps/release-manager` is the best sin
 
 Rule: no Tier 1 OPEN project may reference a Tier 2/3 COMMERCIAL project.
 
-Current result: **passes for committed placement** because commercial markings are limited to app configuration directories and no Tier 1 `.csproj` references those directories as commercial projects.
+Current result: **passes for committed placement** because no Tier 1 `.csproj` references a commercial project.
 
 Preflight result for the vertical split: **unblocked for GameDomain/GameDirector**. `Nexo.API`, `Nexo.CLI`, and `Nexo.Tests.CLI` no longer reference `Nexo.GameDomain`; `Nexo.GameDomain`, Game Director code, and their tests have moved to commercial paths. Remaining extraction work is fleet/governance extraction.
 

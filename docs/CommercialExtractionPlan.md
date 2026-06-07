@@ -191,7 +191,7 @@ This can start as a script and become a CI gate after the first extraction PR la
 1. **PR 1 — API vertical seam:** remove `Nexo.API` and `Nexo.Tests.CLI` direct references to `Nexo.GameDomain`.
 2. **PR 2 — CLI/GameDomain seam:** move Unity pipeline helpers into the open CLI surface and remove `Nexo.CLI -> Nexo.GameDomain`.
 3. **PR 3 — GameDomain/GameDirector commercial move:** move `Nexo.GameDomain`, GameDirector code, and tests into commercial module layout.
-4. 4. **PR 4 — fleet inventory split:** classify open mesh primitives vs commercial fleet/governance files.
+4. **PR 4 — fleet inventory split:** classify open mesh primitives vs commercial fleet/governance files.
 5. **PR 5 — fleet extraction:** move fleet task/direction/governance implementations into commercial modules.
 6. **PR 6 — dependency-boundary gate:** add scanner script and optional CI enforcement.
 
