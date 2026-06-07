@@ -83,4 +83,4 @@ If workflows are manual-only, align branch protection with **`.github/workflows/
 
 ## Host integration (engines)
 
-See **`docs/architecture/forge-map-host-integration.md`**, **`docs/engine-bridge/README.md`**, and the **`docs/samples/ForgeMapHostSample`** project for milestones M1–M6 plus tile cache and engine-bridge snippets.
+See **`docs/architecture/forge-map-host-integration.md`**, **`docs/engine-bridge/README.md`**, and the **`commercial/samples/ForgeMapHostSample`** project for milestones M1–M6 plus tile cache and engine-bridge snippets.

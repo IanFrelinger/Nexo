@@ -6,7 +6,7 @@
       "src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj",
       "application/src/Nexo.Tests.CLI/Nexo.Tests.CLI.csproj",
       "src/Nexo.Tests.Domain/Nexo.Tests.Domain.csproj",
-      "application/src/Nexo.Tests.GameDomain/Nexo.Tests.GameDomain.csproj",
+      "commercial/tests/Nexo.Commercial.Tests.GameDomain/Nexo.Commercial.Tests.GameDomain.csproj",
       "src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj",
       "src/Nexo.Tests.Orchestration/Nexo.Tests.Orchestration.csproj",
       "src/Nexo.Tests.Transport/Nexo.Tests.Transport.csproj"

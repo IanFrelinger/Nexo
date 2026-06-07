@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <NexoCommercialProject>true</NexoCommercialProject>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
@@ -11,7 +12,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../../src/Nexo.GameDomain/Nexo.GameDomain.csproj" />
+    <ProjectReference Include="../../src/Nexo.Commercial.GameDomain/Nexo.Commercial.GameDomain.csproj" />
   </ItemGroup>
 
 </Project>

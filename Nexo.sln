@@ -99,9 +99,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.CLI", "application\src
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.API", "application\src\Nexo.API\Nexo.API.csproj", "{900D1396-B41E-4592-9B03-1ECFE9B4A8BA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.GameDomain", "application\src\Nexo.GameDomain\Nexo.GameDomain.csproj", "{9CD88C08-6A2D-44C2-85BB-0E1A45D08383}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.Commercial.GameDomain", "commercial\src\Nexo.Commercial.GameDomain\Nexo.Commercial.GameDomain.csproj", "{9CD88C08-6A2D-44C2-85BB-0E1A45D08383}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.Tests.GameDomain", "application\src\Nexo.Tests.GameDomain\Nexo.Tests.GameDomain.csproj", "{1034F18B-417F-45EF-A736-A7DC3250D3B0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.Commercial.Tests.GameDomain", "commercial\tests\Nexo.Commercial.Tests.GameDomain\Nexo.Commercial.Tests.GameDomain.csproj", "{1034F18B-417F-45EF-A736-A7DC3250D3B0}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.Infrastructure", "src\Nexo.Infrastructure\Nexo.Infrastructure.csproj", "{FB24C010-F1E8-4C0D-AB0C-58CFC74A840C}"
 EndProject

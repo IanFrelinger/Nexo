@@ -18,7 +18,7 @@ Runnable **.NET 8** console app that walks through **M1–M5**, **phases A–C**
 ## Run
 
 ```bash
-cd docs/samples/ForgeMapHostSample
+cd commercial/samples/ForgeMapHostSample
 dotnet run
 ```
 

@@ -34,23 +34,14 @@ Observation to keep out of this sprint's scope: `application/Nexo.Application.sl
 
 ## Open decisions for owner
 
-- **Vertical code extraction:** The owner-approved interim boundary keeps `Nexo.GameDomain` and `GameDirector.*` code projects Apache-2.0 until they can be separated without creating OPEN -> COMMERCIAL project references. The app packaging directories under `apps/` are marked commercial now.
+- **Vertical code extraction:** `Nexo.GameDomain` and its tests now live under `commercial/`; Game Director code/test projects are marked commercial in place and can be physically moved/renamed in a later cleanup.
 - **Mesh/federation extraction:** Technical docs and product docs both reference mesh. Fleet-scale mesh/governance code is woven through open projects today, so commercial marking requires extraction into separate projects first.
 - **API host boundary:** `Nexo.API` is open for now as a single-node host. Any org-scale governance, RBAC/SSO, aggregate audit, or fleet-control-plane endpoints should move to a separate commercial host or module before commercial marking.
 - **CI consolidation and branch protection:** `docs/CiGateInventory.md` identifies blocking candidates, advisory/manual workflows, release gates, and consolidation candidates. The owner must decide which checks are truly required for branch protection before any workflow cleanup is attempted.
 
 ## License extraction required
 
-The revised open-core boundary principle was checked against current project references before marking vertical code projects commercial. These OPEN -> COMMERCIAL edges would exist if `Nexo.GameDomain` or `GameDirector.*` were marked commercial in-place:
-
-| Intended Tier 1 OPEN project | Intended Tier 2/3 COMMERCIAL reference |
-|------------------------------|-----------------------------------------|
-| `application/src/Nexo.Tests.GameDirector/Nexo.Tests.GameDirector.csproj` | `application/src/GameDirector.Agents/GameDirector.Agents.csproj` |
-| `application/src/Nexo.Tests.GameDirector/Nexo.Tests.GameDirector.csproj` | `application/src/GameDirector.Bricks/GameDirector.Bricks.csproj` |
-| `application/src/Nexo.Tests.GameDirector/Nexo.Tests.GameDirector.csproj` | `application/src/GameDirector.Domain/GameDirector.Domain.csproj` |
-| `application/src/Nexo.Tests.GameDirector/Nexo.Tests.GameDirector.csproj` | `application/src/GameDirector.Mcp/GameDirector.Mcp.csproj` |
-| `application/src/Nexo.Tests.GameDirector/Nexo.Tests.GameDirector.csproj` | `application/src/Nexo.GameDomain/Nexo.GameDomain.csproj` |
-| `application/src/Nexo.Tests.GameDomain/Nexo.Tests.GameDomain.csproj` | `application/src/Nexo.GameDomain/Nexo.GameDomain.csproj` |
+The revised open-core boundary principle was checked against current project references before marking vertical code projects commercial. The GameDomain/GameDirector vertical split is now unblocked: `Nexo.API`, `Nexo.CLI`, and `Nexo.Tests.CLI` do not reference GameDomain/GameDirector projects; `Nexo.GameDomain` and its tests have moved to `commercial/`; and Game Director code/test projects are marked commercial in place.
 
 Fleet-scale mesh/governance code also appears to be woven into Tier 1 candidate projects rather than isolated behind separate commercial projects. Namespaces/files that likely need extraction before they can be marked commercial include:
 
@@ -61,7 +52,7 @@ Fleet-scale mesh/governance code also appears to be woven into Tier 1 candidate 
 - `application/src/Nexo.CLI/Commands/MeshDirectorCommand.cs`, `MeshHubCommand.cs`, and fleet/mesh command surfaces if they are intended as commercial control-plane UX
 - `application/src/Nexo.API/Security/Mesh*` middleware and API endpoints that expose mesh/fleet governance behavior
 
-Resolution applied in this sprint: keep the mixed vertical code projects Apache-2.0 pending extraction; mark only the app packaging directories under `apps/` with commercial stubs. With that committed placement, the dependency-direction safety check passes because no Tier 1 `.csproj` references a marked commercial project.
+Resolution applied in this sprint: move GameDomain code/tests to `commercial/`, mark Game Director code/tests commercial in place, and keep only open API/CLI shells in the open application surface. With that placement, the dependency-direction safety check passes because no Tier 1 `.csproj` references a marked commercial project.
 
 CI stabilization note: `apps/runtime-studio/COMMERCIAL-LICENSE.md` initially exposed a Runtime Studio forge-smoke failure in `background-agent proposals build --repo-root .`: `dotnet build -c Release` was ambiguous at the repo root because multiple project/solution files are present. The follow-up fix teaches `dotnet.build` / `forge.build` to choose `Nexo.LocalDevCore.slnf` (or `Nexo.Core.slnf`) when invoked from the repo root, so the Runtime Studio commercial stub can be present without tripping that smoke gate. Application `.csproj` files are also left untouched in the PR diff so the layer-boundary gate can pass against `master`; their effective package license is supplied by repository-wide MSBuild defaults.
 
@@ -69,7 +60,7 @@ API/CLI seam progress: the Forge HTTP surface has been moved out of `Nexo.API` a
 
 ## Suggested follow-up issues
 
-- Extract vertical product code (`Nexo.GameDomain` and `GameDirector.*`) into commercial projects or plugin modules if the Game Director wedge must be commercial code instead of commercial packaging.
+- Optionally move/rename the commercially marked `GameDirector.*` projects into `commercial/` physical layout.
 - Extract fleet-scale mesh/governance namespaces into separate projects if those capabilities must be commercial while `Nexo.Runtime`, `Nexo.Orchestration`, `Nexo.Infrastructure`, and `Nexo.Core.Application` remain Apache open core.
 - Use `docs/CommercialExtractionPlan.md` as the starting sequence for commercial extraction PRs and validation gates.
 - Decide whether mesh/federation is open core, commercial add-on, dual-licensed, or a separate module.
@@ -95,3 +86,4 @@ API/CLI seam progress: the Forge HTTP surface has been moved out of `Nexo.API` a
 - **Revised license-boundary preflight:** scanned intended Tier 1 OPEN and Tier 2/3 COMMERCIAL `ProjectReference` entries. The scan found the vertical-code edges listed under “License extraction required,” so the committed placement keeps those code projects open pending extraction and marks only clean app packaging directories commercial.
 - **SPDX and boundary verification:** verified open `.csproj` files receive Apache-2.0 package metadata either directly or via `Directory.Build.props` / `Directory.Build.targets`; verified the committed commercial placement has no Tier 1 `.csproj` -> commercial project reference violations; rebuilt `application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore` successfully after metadata edits.
 - **CI stabilization:** after adding a PR-body `[skip-prod-style]` rationale and removing application/forge-smoke-triggering path diffs, the `testing-strategy`, `layer-boundary`, `docs-link-check`, and onboarding docs guard checks passed on the updated PR.
+- **Commercial GameDomain move:** verified `commercial/src/Nexo.Commercial.GameDomain` builds, `commercial/tests/Nexo.Commercial.Tests.GameDomain` focused asset descriptor tests pass, GameDirector Forge tests pass against the moved commercial module, `Nexo.LocalDevCore.slnf` builds, and a dependency scan found no open project references to commercial projects.
