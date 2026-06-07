@@ -8,7 +8,7 @@ Nexo uses an open-core boundary:
 
 The repository root license is Apache-2.0. See [`LICENSE`](LICENSE).
 
-For the follow-up project/module extraction sequence, see [`docs/CommercialExtractionPlan.md`](docs/CommercialExtractionPlan.md).
+For the follow-up project/module extraction sequence, see [`docs/CommercialExtractionPlan.md`](docs/CommercialExtractionPlan.md). For fleet/mesh governance classification, see [`docs/FleetGovernanceExtractionInventory.md`](docs/FleetGovernanceExtractionInventory.md).
 
 ## Tier 1 — OPEN (Apache-2.0)
 
@@ -96,7 +96,7 @@ Tier 2 is the future commercial layer for fleet-scale and governance capabilitie
 
 Current status: these capabilities are **not isolated in their own commercial project**. They are woven through Tier 1 projects such as `Nexo.Core.Application`, `Nexo.Infrastructure`, `Nexo.Orchestration`, `Nexo.Runtime`, `Nexo.CLI`, and `Nexo.API`. Those mixed projects remain Apache-2.0 in this sprint. Commercial licensing requires extracting the fleet/governance code into separate projects first.
 
-Likely extraction candidates include:
+The current classification inventory is [`docs/FleetGovernanceExtractionInventory.md`](docs/FleetGovernanceExtractionInventory.md). Likely extraction candidates include:
 
 - `src/Nexo.Core.Application/Fleet/**`
 - `src/Nexo.Infrastructure/Fleet/**`
@@ -146,7 +146,7 @@ Preflight result for the vertical split: **unblocked for GameDomain/GameDirector
 
 ## Open questions
 
-- Which fleet/governance files should be extracted first into commercial projects?
+- Which fleet/governance files should be extracted first into commercial projects? Start from [`docs/FleetGovernanceExtractionInventory.md`](docs/FleetGovernanceExtractionInventory.md).
 - Should `Nexo.API` remain a purely open single-node host, or should commercial fleet/governance endpoints move to a separate host?
 - Should `apps/release-manager` become the future minimal open SDK reference app?
 
