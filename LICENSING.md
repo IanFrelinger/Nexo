@@ -117,6 +117,7 @@ These app configuration directories are marked with a `COMMERCIAL-LICENSE.md` st
 | COMMERCIAL | `commercial/src/Nexo.Commercial.GameDomain/` |
 | COMMERCIAL | `commercial/tests/Nexo.Commercial.Tests.GameDomain/` |
 | COMMERCIAL | `commercial/samples/ForgeMapHostSample/` |
+| COMMERCIAL | `commercial/src/Nexo.Commercial.Fleet.Contracts/` |
 | COMMERCIAL | `commercial/src/Nexo.Commercial.GameDirector.Domain/` |
 | COMMERCIAL | `commercial/src/Nexo.Commercial.GameDirector.Agents/` |
 | COMMERCIAL | `commercial/src/Nexo.Commercial.GameDirector.Bricks/` |

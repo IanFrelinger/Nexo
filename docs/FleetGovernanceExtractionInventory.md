@@ -201,15 +201,15 @@ This document. No code moves.
 
 ### PR 5 — commercial fleet contracts/core
 
-Move:
-
-- `src/Nexo.Core.Application/Fleet/**`
-- commercial-classified `src/Nexo.Core.Application/Networking/**` ports/models
-
-Create:
+Create the commercial contracts module and seed it with copied fleet contract DTOs/ports while open consumers are still being migrated:
 
 - `commercial/src/Nexo.Commercial.Fleet.Contracts`
-- `commercial/src/Nexo.Commercial.Fleet.Core`
+- Seed from `src/Nexo.Core.Application/Fleet/**`
+- Keep the original open files temporarily until commercial infrastructure/API consumers move in later PRs.
+
+Then move:
+
+- commercial-classified `src/Nexo.Core.Application/Networking/**` ports/models, if owner confirms those are not part of a smaller open networking substrate.
 
 ### PR 6 — commercial fleet infrastructure
 
