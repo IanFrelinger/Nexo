@@ -8,6 +8,8 @@ Nexo uses an open-core boundary:
 
 The repository root license is Apache-2.0. See [`LICENSE`](LICENSE).
 
+For the follow-up project/module extraction sequence, see [`docs/CommercialExtractionPlan.md`](docs/CommercialExtractionPlan.md).
+
 ## Tier 1 — OPEN (Apache-2.0)
 
 Tier 1 is the adoption and trust surface: SDKs, contracts, single-node runtime/hosts, trust primitives, tests, samples, and inspectable extension points. These projects carry Apache-2.0 package metadata either directly in their `.csproj` or through the repository-wide `Directory.Build.props` / `Directory.Build.targets` defaults.
@@ -151,3 +153,5 @@ Preflight result for the originally requested vertical split: **blocked**. Marki
 - Should `Nexo.API` remain a purely open single-node host, or should commercial fleet/governance endpoints move to a separate host?
 - Should `Nexo.GameDomain` and `GameDirector.*` be extracted into commercial projects, moved into `apps/game-director`, or remain Apache-2.0 examples while only app packaging is commercial?
 - Should `apps/release-manager` become the future minimal open SDK reference app?
+
+See [`docs/CommercialExtractionPlan.md`](docs/CommercialExtractionPlan.md) for the proposed extraction order and validation gates.

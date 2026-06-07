@@ -71,6 +71,7 @@ CI stabilization note: `apps/runtime-studio/COMMERCIAL-LICENSE.md` initially exp
 
 - Extract vertical product code (`Nexo.GameDomain` and `GameDirector.*`) into commercial projects or plugin modules if the Game Director wedge must be commercial code instead of commercial packaging.
 - Extract fleet-scale mesh/governance namespaces into separate projects if those capabilities must be commercial while `Nexo.Runtime`, `Nexo.Orchestration`, `Nexo.Infrastructure`, and `Nexo.Core.Application` remain Apache open core.
+- Use `docs/CommercialExtractionPlan.md` as the starting sequence for commercial extraction PRs and validation gates.
 - Decide whether mesh/federation is open core, commercial add-on, dual-licensed, or a separate module.
 - Decide whether `apps/release-manager` should later become the single open-sourced minimal SDK reference app.
 - Consolidate CI gates and update branch-protection policy around a smaller required-check set.

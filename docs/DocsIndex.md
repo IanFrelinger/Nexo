@@ -17,6 +17,7 @@ Documentation index for the Nexo platform. Start here to find what you need.
 11. `scripts/start-nexo-api-dev.ps1` / `scripts/start-nexo-api-dev.sh` — Docker Ollama + host `Nexo.API` dev stack (see `docs/Configuration.md` → Ollama).
 12. `docs/Architecture.md` — layered architecture and component boundaries.
 13. `docs/Conventions.md` — current code conventions as practiced today.
+14. `docs/CommercialExtractionPlan.md` — planned commercial module extraction sequence after the open-core licensing boundary.
 
 ## Operator / Production Readiness
 
@@ -98,6 +99,7 @@ Documentation index for the Nexo platform. Start here to find what you need.
 
 ## Planning & Roadmap
 
+- `docs/CommercialExtractionPlan.md` — follow-up extraction plan for Game Director, `Nexo.GameDomain`, and fleet/mesh governance commercial modules.
 - `docs/Conventions.md` — current conventions for errors, interfaces, abstract classes, and generics.
 - `docs/MeshPhase0NorthStar.md` — **Phase 0 (executed):** federated mesh north star, capability matrix by profile, trust boundary, SLOs (feeds mesh Phases 1–7).
 - `docs/ExecutionPlan.md` — phased execution plan with implementation tasks, dependencies, and success metrics.
