@@ -1,7 +1,6 @@
 using System.Text.Json;
 using FluentAssertions;
 using Nexo.CLI.Commands;
-using Nexo.GameDomain.Assets;
 using Xunit;
 
 namespace Nexo.Tests.CLI.Tests.Commands;
@@ -637,67 +636,6 @@ public class Bar { }";
         prompt1.Should().Contain("AnimationDescriptor");
         prompt2.Should().Contain("SoundBankDescriptor");
         prompt3.Should().Contain("AnimationSetDescriptor");
-    }
-
-    [Fact(Timeout = 15000)]
-    public async Task AssetDescriptor_JsonRoundTrip_Material()
-    {
-        await Task.CompletedTask;
-        var original = new Nexo.GameDomain.Assets.MaterialDescriptor
-        {
-            Id = "mat-1",
-            Name = "Test Mat",
-            ShaderName = "Standard",
-            Color = "#FF0000",
-            Metallic = 0.5,
-            Smoothness = 0.7,
-            RenderMode = "Transparent"
-        };
-
-        var opts = new JsonSerializerOptions(JsonSerializerDefaults.Web) { PropertyNameCaseInsensitive = true };
-        var json = JsonSerializer.Serialize(original, opts);
-        var restored = JsonSerializer.Deserialize<Nexo.GameDomain.Assets.MaterialDescriptor>(json, opts);
-
-        restored.Should().NotBeNull();
-        restored!.Id.Should().Be("mat-1");
-        restored.RenderMode.Should().Be("Transparent");
-    }
-
-    [Fact(Timeout = 15000)]
-    public async Task AssetDescriptor_JsonRoundTrip_Audio()
-    {
-        await Task.CompletedTask;
-        var original = new Nexo.GameDomain.Assets.AudioDescriptor
-        {
-            Id = "explosion",
-            Name = "Explosion SFX",
-            Category = "sfx",
-            SubCategory = "explosion",
-            Volume = 0.8,
-            Pitch = 0.9,
-            PitchVariance = 0.1,
-            SpatialBlend = 1.0,
-            Loop = false,
-            MixerGroup = "SFX",
-            Variations = new[]
-            {
-                new Nexo.GameDomain.Assets.AudioVariation { VariantId = "v1", PitchOffset = 0.05, ClipSuffix = "_01" }
-            },
-            Tags = new[] { "combat", "explosion" }
-        };
-
-        var opts = new JsonSerializerOptions(JsonSerializerDefaults.Web) { PropertyNameCaseInsensitive = true };
-        var json = JsonSerializer.Serialize(original, opts);
-        var restored = JsonSerializer.Deserialize<Nexo.GameDomain.Assets.AudioDescriptor>(json, opts);
-
-        restored.Should().NotBeNull();
-        restored!.Id.Should().Be("explosion");
-        restored.SubCategory.Should().Be("explosion");
-        restored.SpatialBlend.Should().Be(1.0);
-        restored.MixerGroup.Should().Be("SFX");
-        restored.Variations.Should().HaveCount(1);
-        restored.Variations[0].VariantId.Should().Be("v1");
-        restored.Tags.Should().HaveCount(2);
     }
 
     [Fact(Timeout = 15000)]

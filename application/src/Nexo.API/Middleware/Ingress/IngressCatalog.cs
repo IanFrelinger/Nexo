@@ -8,7 +8,6 @@ public static class IngressCatalog
     public static IngressCatalogResponse Current { get; } = new(
     [
         new IngressCatalogEntry("HttpApi", "/api/*", "Primary REST ingress via MapNexoEndpoints (MediatR-backed handlers)."),
-        new IngressCatalogEntry("ForgeHttpApi", "/forge/*", "Forge session HTTP surface (tenant middleware)."),
         new IngressCatalogEntry("Health", "/health", "Liveness probe."),
         new IngressCatalogEntry("OpenApi", "/swagger/v1/swagger.json", "Swagger/OpenAPI document when enabled."),
         new IngressCatalogEntry("MiddlewareIngress", "/api/middleware/*", "Correlation echo, ingress catalog, ingress context snapshot."),

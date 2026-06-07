@@ -45,8 +45,7 @@ The revised open-core boundary principle was checked against current project ref
 
 | Intended Tier 1 OPEN project | Intended Tier 2/3 COMMERCIAL reference |
 |------------------------------|-----------------------------------------|
-| `application/src/Nexo.API/Nexo.API.csproj` | `application/src/Nexo.GameDomain/Nexo.GameDomain.csproj` |
-| `application/src/Nexo.Tests.CLI/Nexo.Tests.CLI.csproj` | `application/src/Nexo.GameDomain/Nexo.GameDomain.csproj` |
+| `application/src/Nexo.CLI/Nexo.CLI.csproj` | `application/src/Nexo.GameDomain/Nexo.GameDomain.csproj` |
 | `application/src/Nexo.Tests.GameDirector/Nexo.Tests.GameDirector.csproj` | `application/src/GameDirector.Agents/GameDirector.Agents.csproj` |
 | `application/src/Nexo.Tests.GameDirector/Nexo.Tests.GameDirector.csproj` | `application/src/GameDirector.Bricks/GameDirector.Bricks.csproj` |
 | `application/src/Nexo.Tests.GameDirector/Nexo.Tests.GameDirector.csproj` | `application/src/GameDirector.Domain/GameDirector.Domain.csproj` |
@@ -67,10 +66,13 @@ Resolution applied in this sprint: keep the mixed vertical code projects Apache-
 
 CI stabilization note: `apps/runtime-studio/COMMERCIAL-LICENSE.md` initially exposed a Runtime Studio forge-smoke failure in `background-agent proposals build --repo-root .`: `dotnet build -c Release` was ambiguous at the repo root because multiple project/solution files are present. The follow-up fix teaches `dotnet.build` / `forge.build` to choose `Nexo.LocalDevCore.slnf` (or `Nexo.Core.slnf`) when invoked from the repo root, so the Runtime Studio commercial stub can be present without tripping that smoke gate. Application `.csproj` files are also left untouched in the PR diff so the layer-boundary gate can pass against `master`; their effective package license is supplied by repository-wide MSBuild defaults.
 
+API seam progress: the Forge HTTP surface has been moved out of `Nexo.API` and into the Game Director/MCP application layer. `Nexo.API` and `Nexo.Tests.CLI` no longer reference `Nexo.GameDomain`; the remaining CLI-to-GameDomain dependency is isolated to Unity/game-asset descriptor helpers and should be addressed before `Nexo.GameDomain` is marked commercial.
+
 ## Suggested follow-up issues
 
 - Extract vertical product code (`Nexo.GameDomain` and `GameDirector.*`) into commercial projects or plugin modules if the Game Director wedge must be commercial code instead of commercial packaging.
 - Extract fleet-scale mesh/governance namespaces into separate projects if those capabilities must be commercial while `Nexo.Runtime`, `Nexo.Orchestration`, `Nexo.Infrastructure`, and `Nexo.Core.Application` remain Apache open core.
+- Use `docs/CommercialExtractionPlan.md` as the starting sequence for commercial extraction PRs and validation gates.
 - Decide whether mesh/federation is open core, commercial add-on, dual-licensed, or a separate module.
 - Decide whether `apps/release-manager` should later become the single open-sourced minimal SDK reference app.
 - Consolidate CI gates and update branch-protection policy around a smaller required-check set.

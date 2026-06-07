@@ -12,7 +12,6 @@
     <Content Include="..\Nexo.API\wwwroot\**" Link="wwwroot\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <PackageReference Include="MediatR" />
     <PackageReference Include="Swashbuckle.AspNetCore" />
-    <PackageReference Include="LiteDB" />
     <ProjectReference Include="..\GameDirector.Agents\GameDirector.Agents.csproj" />
     <ProjectReference Include="..\GameDirector.Bricks\GameDirector.Bricks.csproj" />
     <ProjectReference Include="..\GameDirector.Domain\GameDirector.Domain.csproj" />
