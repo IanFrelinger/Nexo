@@ -351,7 +351,7 @@ public class ToolsDevTests
 
         try
         {
-            await RunDotnetAsync(root, "new sln --name Nexo");
+            await RunDotnetAsync(root, "new sln --name Nexo --format sln");
             await RunDotnetAsync(root, "sln Nexo.sln add Mini.csproj");
             await File.WriteAllTextAsync(Path.Combine(root, "Nexo.LocalDevCore.slnf"), """
                 {
