@@ -1,9 +1,9 @@
 using System.Text.Json;
 using FluentAssertions;
-using Nexo.GameDomain.Pipeline;
+using Nexo.CLI.Unity.Pipeline;
 using Xunit;
 
-namespace Nexo.Tests.GameDomain.Pipeline;
+namespace Nexo.Tests.CLI.Tests.Unity.Pipeline;
 
 public sealed class CompositionGraphTests : IDisposable
 {

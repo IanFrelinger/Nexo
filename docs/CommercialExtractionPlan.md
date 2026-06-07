@@ -20,8 +20,8 @@ The vertical code is currently mixed into the application solution graph. Markin
 | Current project | Current references that matter for extraction |
 |-----------------|-----------------------------------------------|
 | `application/src/Nexo.API/Nexo.API.csproj` | **Resolved:** the Forge/GameDomain HTTP surface moved to the Game Director/MCP application layer, so `Nexo.API` no longer references `Nexo.GameDomain`. |
-| `application/src/Nexo.CLI/Nexo.CLI.csproj` | References `Nexo.GameDomain` for Unity/game-asset descriptor helpers. It is the open single-node CLI shell, so those helpers must move behind an open abstraction or a commercial/plugin command before `Nexo.GameDomain` can become commercial. |
-| `application/src/Nexo.GameDomain/Nexo.GameDomain.csproj` | References open core (`Nexo.Core.Application`, `Nexo.Core.Domain`) and is referenced by `Nexo.CLI`, Game Director projects, and game-domain tests. |
+| `application/src/Nexo.CLI/Nexo.CLI.csproj` | **Resolved:** Unity pipeline helper types moved into `Nexo.CLI`, so the CLI no longer references `Nexo.GameDomain`. |
+| `application/src/Nexo.GameDomain/Nexo.GameDomain.csproj` | References open core (`Nexo.Core.Application`, `Nexo.Core.Domain`) and is referenced by Game Director projects and game-domain tests. |
 | `application/src/GameDirector.Domain/GameDirector.Domain.csproj` | References `Nexo.GameDomain` and open core. |
 | `application/src/GameDirector.Agents/GameDirector.Agents.csproj` | References `GameDirector.Bricks`, `GameDirector.Domain`, `Nexo.Client`, and open abstractions/application/domain. |
 | `application/src/GameDirector.Bricks/GameDirector.Bricks.csproj` | References `GameDirector.Domain` plus open abstractions/domain/application/infrastructure. |
@@ -107,12 +107,13 @@ Purpose: break direct open-host references to vertical code before moving code.
 2. **Done:** move the Forge HTTP surface to the Game Director/MCP application layer.
 3. **Done:** ensure `Nexo.API` can build without `Nexo.GameDomain`.
 4. **Done:** move CLI tests that require game-domain asset descriptors into `Nexo.Tests.GameDomain`.
+5. **Done:** move Unity pipeline helpers from `Nexo.GameDomain` into `Nexo.CLI`.
 
 Exit criteria:
 
 - `Nexo.API` no longer references `Nexo.GameDomain`.
 - `Nexo.Tests.CLI` no longer references `Nexo.GameDomain`.
-- `Nexo.CLI` has an identified follow-up seam for Unity/game-domain descriptor helpers before `Nexo.GameDomain` can become commercial.
+- `Nexo.CLI` no longer references `Nexo.GameDomain`.
 - Game Director host owns the Forge HTTP endpoint/service registration.
 
 ### Phase B — extract GameDomain and Game Director
@@ -187,10 +188,11 @@ This can start as a script and become a CI gate after the first extraction PR la
 ## Recommended PR sequence
 
 1. **PR 1 — API vertical seam:** remove `Nexo.API` and `Nexo.Tests.CLI` direct references to `Nexo.GameDomain`.
-2. **PR 2 — GameDomain commercial move:** move `Nexo.GameDomain` plus tests into commercial module layout.
-3. **PR 3 — Game Director commercial move:** move `GameDirector.*` plus tests into commercial module layout.
-4. **PR 4 — fleet inventory split:** classify open mesh primitives vs commercial fleet/governance files.
-5. **PR 5 — fleet extraction:** move fleet task/direction/governance implementations into commercial modules.
-6. **PR 6 — dependency-boundary gate:** add scanner script and optional CI enforcement.
+2. **PR 2 — CLI/GameDomain seam:** move Unity pipeline helpers into the open CLI surface and remove `Nexo.CLI -> Nexo.GameDomain`.
+3. **PR 3 — GameDomain commercial move:** move `Nexo.GameDomain` plus tests into commercial module layout.
+4. **PR 4 — Game Director commercial move:** move `GameDirector.*` plus tests into commercial module layout.
+5. **PR 5 — fleet inventory split:** classify open mesh primitives vs commercial fleet/governance files.
+6. **PR 6 — fleet extraction:** move fleet task/direction/governance implementations into commercial modules.
+7. **PR 7 — dependency-boundary gate:** add scanner script and optional CI enforcement.
 
 Do not combine these into one large refactor. The dependency graph and licensing boundary should be reviewable at every step.

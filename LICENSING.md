@@ -130,7 +130,7 @@ The code projects currently used by these verticals remain Apache-2.0 until they
 
 | Temporary allocation | Path | Reason |
 |----------------------|------|--------|
-| OPEN pending extraction | `application/src/Nexo.GameDomain/Nexo.GameDomain.csproj` | Referenced by `Nexo.CLI`, Game Director projects, and game-domain tests. |
+| OPEN pending extraction | `application/src/Nexo.GameDomain/Nexo.GameDomain.csproj` | Referenced by Game Director projects and game-domain tests. |
 | OPEN pending extraction | `application/src/GameDirector.Domain/GameDirector.Domain.csproj` | Referenced by Game Director projects and tests; extraction needed before commercial marking. |
 | OPEN pending extraction | `application/src/GameDirector.Agents/GameDirector.Agents.csproj` | Referenced by Game Director host/tests; extraction needed before commercial marking. |
 | OPEN pending extraction | `application/src/GameDirector.Bricks/GameDirector.Bricks.csproj` | Referenced by Game Director host/tests; extraction needed before commercial marking. |
@@ -145,7 +145,7 @@ Rule: no Tier 1 OPEN project may reference a Tier 2/3 COMMERCIAL project.
 
 Current result: **passes for committed placement** because commercial markings are limited to app configuration directories and no Tier 1 `.csproj` references those directories as commercial projects.
 
-Preflight result for the originally requested vertical split: **partially unblocked**. `Nexo.API` and `Nexo.Tests.CLI` no longer reference `Nexo.GameDomain`, but marking `Nexo.GameDomain` or `GameDirector.*` projects commercial in-place would still create OPEN -> COMMERCIAL edges from `Nexo.CLI`, Game Director projects, and vertical test projects. Those remaining edges are recorded in `SPRINT_SUMMARY.md` under “License extraction required.”
+Preflight result for the originally requested vertical split: **partially unblocked**. `Nexo.API`, `Nexo.CLI`, and `Nexo.Tests.CLI` no longer reference `Nexo.GameDomain`, but marking `Nexo.GameDomain` or `GameDirector.*` projects commercial in-place would still create OPEN -> COMMERCIAL edges from Game Director projects and vertical test projects. Those remaining edges are recorded in `SPRINT_SUMMARY.md` under “License extraction required.”
 
 ## Open questions
 

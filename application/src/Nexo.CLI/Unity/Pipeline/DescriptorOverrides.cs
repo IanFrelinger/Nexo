@@ -1,4 +1,4 @@
-namespace Nexo.GameDomain.Pipeline;
+namespace Nexo.CLI.Unity.Pipeline;
 
 using System.Text.Json;
 
