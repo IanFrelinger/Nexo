@@ -15,7 +15,7 @@ fi
 
 if [ "${APPLICATION_GATE_GAMEDOMAIN:-0}" = "1" ]; then
   echo "== Application Tier D: GameDomain tests =="
-  dotnet test application/src/Nexo.Tests.GameDomain/Nexo.Tests.GameDomain.csproj -f net8.0 \
+  dotnet test commercial/tests/Nexo.Commercial.Tests.GameDomain/Nexo.Commercial.Tests.GameDomain.csproj -f net8.0 \
     --blame-hang-timeout 120s --blame-hang-dump-type none
 else
   echo "== Application Tier D: GameDomain skipped (APPLICATION_GATE_GAMEDOMAIN=1 to enable) =="

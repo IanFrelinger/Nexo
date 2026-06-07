@@ -81,17 +81,17 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "application", "application"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{F89E166B-875E-4F45-A72F-DC15564E7E9A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameDirector.Domain", "application\src\GameDirector.Domain\GameDirector.Domain.csproj", "{3B26105D-42A8-4B16-90A1-1A6736EBB888}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameDirector.Domain", "commercial\src\Nexo.Commercial.GameDirector.Domain\GameDirector.Domain.csproj", "{3B26105D-42A8-4B16-90A1-1A6736EBB888}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameDirector.Bricks", "application\src\GameDirector.Bricks\GameDirector.Bricks.csproj", "{595A646E-6D12-416D-AA53-B1941CEA1DA0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameDirector.Bricks", "commercial\src\Nexo.Commercial.GameDirector.Bricks\GameDirector.Bricks.csproj", "{595A646E-6D12-416D-AA53-B1941CEA1DA0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameDirector.Agents", "application\src\GameDirector.Agents\GameDirector.Agents.csproj", "{2A1B14FF-4F38-425A-BC62-5630102B815A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameDirector.Agents", "commercial\src\Nexo.Commercial.GameDirector.Agents\GameDirector.Agents.csproj", "{2A1B14FF-4F38-425A-BC62-5630102B815A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameDirector.Mcp", "application\src\GameDirector.Mcp\GameDirector.Mcp.csproj", "{BD0A9553-A432-41D6-99A3-49E9B467B2F0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameDirector.Mcp", "commercial\src\Nexo.Commercial.GameDirector.Mcp\GameDirector.Mcp.csproj", "{BD0A9553-A432-41D6-99A3-49E9B467B2F0}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameDirector.Host", "application\src\GameDirector.Host\GameDirector.Host.csproj", "{FA7D039A-B968-4093-8173-DE43116A742F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GameDirector.Host", "commercial\src\Nexo.Commercial.GameDirector.Host\GameDirector.Host.csproj", "{FA7D039A-B968-4093-8173-DE43116A742F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.Tests.GameDirector", "application\src\Nexo.Tests.GameDirector\Nexo.Tests.GameDirector.csproj", "{B410D1DB-C764-49CF-9821-E74EF5F0D5DF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.Tests.GameDirector", "commercial\tests\Nexo.Commercial.Tests.GameDirector\Nexo.Tests.GameDirector.csproj", "{B410D1DB-C764-49CF-9821-E74EF5F0D5DF}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.Tests.Kernel", "src\Nexo.Tests.Kernel\Nexo.Tests.Kernel.csproj", "{1CFD322C-6892-441F-9884-B7495EC59099}"
 EndProject
@@ -99,9 +99,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.CLI", "application\src
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.API", "application\src\Nexo.API\Nexo.API.csproj", "{900D1396-B41E-4592-9B03-1ECFE9B4A8BA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.GameDomain", "application\src\Nexo.GameDomain\Nexo.GameDomain.csproj", "{9CD88C08-6A2D-44C2-85BB-0E1A45D08383}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.Commercial.GameDomain", "commercial\src\Nexo.Commercial.GameDomain\Nexo.Commercial.GameDomain.csproj", "{9CD88C08-6A2D-44C2-85BB-0E1A45D08383}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.Tests.GameDomain", "application\src\Nexo.Tests.GameDomain\Nexo.Tests.GameDomain.csproj", "{1034F18B-417F-45EF-A736-A7DC3250D3B0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.Commercial.Tests.GameDomain", "commercial\tests\Nexo.Commercial.Tests.GameDomain\Nexo.Commercial.Tests.GameDomain.csproj", "{1034F18B-417F-45EF-A736-A7DC3250D3B0}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.Infrastructure", "src\Nexo.Infrastructure\Nexo.Infrastructure.csproj", "{FB24C010-F1E8-4C0D-AB0C-58CFC74A840C}"
 EndProject

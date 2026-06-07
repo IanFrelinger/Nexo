@@ -18,6 +18,7 @@ Documentation index for the Nexo platform. Start here to find what you need.
 12. `docs/Architecture.md` — layered architecture and component boundaries.
 13. `docs/Conventions.md` — current code conventions as practiced today.
 14. `docs/CommercialExtractionPlan.md` — planned commercial module extraction sequence after the open-core licensing boundary.
+15. `docs/FleetGovernanceExtractionInventory.md` — fleet/mesh governance file classification for the next commercial extraction phase.
 
 ## Operator / Production Readiness
 
@@ -100,6 +101,7 @@ Documentation index for the Nexo platform. Start here to find what you need.
 ## Planning & Roadmap
 
 - `docs/CommercialExtractionPlan.md` — follow-up extraction plan for Game Director, `Nexo.GameDomain`, and fleet/mesh governance commercial modules.
+- `docs/FleetGovernanceExtractionInventory.md` — classification inventory for open mesh primitives vs commercial fleet/governance code.
 - `docs/Conventions.md` — current conventions for errors, interfaces, abstract classes, and generics.
 - `docs/MeshPhase0NorthStar.md` — **Phase 0 (executed):** federated mesh north star, capability matrix by profile, trust boundary, SLOs (feeds mesh Phases 1–7).
 - `docs/ExecutionPlan.md` — phased execution plan with implementation tasks, dependencies, and success metrics.

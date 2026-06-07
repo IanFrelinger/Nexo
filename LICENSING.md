@@ -8,7 +8,7 @@ Nexo uses an open-core boundary:
 
 The repository root license is Apache-2.0. See [`LICENSE`](LICENSE).
 
-For the follow-up project/module extraction sequence, see [`docs/CommercialExtractionPlan.md`](docs/CommercialExtractionPlan.md).
+For the follow-up project/module extraction sequence, see [`docs/CommercialExtractionPlan.md`](docs/CommercialExtractionPlan.md). For fleet/mesh governance classification, see [`docs/FleetGovernanceExtractionInventory.md`](docs/FleetGovernanceExtractionInventory.md).
 
 ## Tier 1 — OPEN (Apache-2.0)
 
@@ -62,9 +62,6 @@ Rationale: this tier protects two moats at once — an extensible SDK and a sing
 | OPEN | `src/Nexo.Tests.Orchestration/Nexo.Tests.Orchestration.csproj` |
 | OPEN | `src/Nexo.Tests.Transport/Nexo.Tests.Transport.csproj` |
 | OPEN | `application/src/Nexo.Tests.CLI/Nexo.Tests.CLI.csproj` |
-| OPEN | `application/src/Nexo.Tests.GameDirector/Nexo.Tests.GameDirector.csproj` |
-| OPEN | `application/src/Nexo.Tests.GameDomain/Nexo.Tests.GameDomain.csproj` |
-| OPEN | `docs/samples/ForgeMapHostSample/ForgeMapHostSample.csproj` |
 | OPEN | `docs/samples/NugetOrgRestoreHostingOnly/Nexo.NugetOrgRestoreHostingOnly.csproj` |
 | OPEN | `docs/samples/NugetOrgRestoreVerify/Nexo.NugetOrgRestoreVerify.csproj` |
 | OPEN | `docs/samples/StableSdkHostSample/StableSdkHostSample.csproj` |
@@ -80,7 +77,7 @@ These projects were explicitly inspected and placed:
 | `application/src/Nexo.API/Nexo.API.csproj` | OPEN | Current project is a single-node HTTP/API host over the open kernel. The Forge/GameDomain HTTP surface has been moved to the Game Director application layer, so this host no longer references `Nexo.GameDomain`. |
 | `src/Nexo.Transport.Grpc.Server/Nexo.Transport.Grpc.Server.csproj` | OPEN | Server implementation exposes the open gRPC transport surface; it is not a fleet-scale director/control-plane project. |
 | `src/Nexo.Transport.Grpc.Server.Host/Nexo.Transport.Grpc.Server.Host.csproj` | OPEN | Standalone gRPC host for the open transport server, not a governance tier. |
-| `application/Nexo.Application.sln` contents | OPEN for current contents | The solution contains `Nexo.API`, `Nexo.CLI`, `Nexo.GameDomain`, `Nexo.Tests.CLI`, and `Nexo.Tests.GameDomain`. The API/CLI/tests are open. `Nexo.GameDomain` remains Apache-2.0 until vertical extraction resolves the dependency-direction issue described below. |
+| `application/Nexo.Application.sln` contents | OPEN for current contents | The solution contains `Nexo.API`, `Nexo.CLI`, and `Nexo.Tests.CLI` as open surfaces. `Nexo.GameDomain` and its tests have moved to `commercial/`. |
 
 ## Tier 2 — COMMERCIAL (fleet + governance)
 
@@ -99,7 +96,7 @@ Tier 2 is the future commercial layer for fleet-scale and governance capabilitie
 
 Current status: these capabilities are **not isolated in their own commercial project**. They are woven through Tier 1 projects such as `Nexo.Core.Application`, `Nexo.Infrastructure`, `Nexo.Orchestration`, `Nexo.Runtime`, `Nexo.CLI`, and `Nexo.API`. Those mixed projects remain Apache-2.0 in this sprint. Commercial licensing requires extracting the fleet/governance code into separate projects first.
 
-Likely extraction candidates include:
+The current classification inventory is [`docs/FleetGovernanceExtractionInventory.md`](docs/FleetGovernanceExtractionInventory.md). Likely extraction candidates include:
 
 - `src/Nexo.Core.Application/Fleet/**`
 - `src/Nexo.Infrastructure/Fleet/**`
@@ -117,6 +114,15 @@ These app configuration directories are marked with a `COMMERCIAL-LICENSE.md` st
 
 | Allocation | Path |
 |------------|------|
+| COMMERCIAL | `commercial/src/Nexo.Commercial.GameDomain/` |
+| COMMERCIAL | `commercial/tests/Nexo.Commercial.Tests.GameDomain/` |
+| COMMERCIAL | `commercial/samples/ForgeMapHostSample/` |
+| COMMERCIAL | `commercial/src/Nexo.Commercial.GameDirector.Domain/` |
+| COMMERCIAL | `commercial/src/Nexo.Commercial.GameDirector.Agents/` |
+| COMMERCIAL | `commercial/src/Nexo.Commercial.GameDirector.Bricks/` |
+| COMMERCIAL | `commercial/src/Nexo.Commercial.GameDirector.Mcp/` |
+| COMMERCIAL | `commercial/src/Nexo.Commercial.GameDirector.Host/` |
+| COMMERCIAL | `commercial/tests/Nexo.Commercial.Tests.GameDirector/` |
 | COMMERCIAL | `apps/game-director/` |
 | COMMERCIAL | `apps/nexo-forge/` |
 | COMMERCIAL | `apps/release-manager/` |
@@ -126,16 +132,7 @@ Stub text:
 
 > Not licensed under Apache-2.0. Commercial terms TBD. See /LICENSING.md.
 
-The code projects currently used by these verticals remain Apache-2.0 until they can be separated without creating OPEN -> COMMERCIAL project references:
-
-| Temporary allocation | Path | Reason |
-|----------------------|------|--------|
-| OPEN pending extraction | `application/src/Nexo.GameDomain/Nexo.GameDomain.csproj` | Referenced by `Nexo.CLI`, Game Director projects, and game-domain tests. |
-| OPEN pending extraction | `application/src/GameDirector.Domain/GameDirector.Domain.csproj` | Referenced by Game Director projects and tests; extraction needed before commercial marking. |
-| OPEN pending extraction | `application/src/GameDirector.Agents/GameDirector.Agents.csproj` | Referenced by Game Director host/tests; extraction needed before commercial marking. |
-| OPEN pending extraction | `application/src/GameDirector.Bricks/GameDirector.Bricks.csproj` | Referenced by Game Director host/tests; extraction needed before commercial marking. |
-| OPEN pending extraction | `application/src/GameDirector.Host/GameDirector.Host.csproj` | Host is part of the vertical wedge, but current project graph is not separated. |
-| OPEN pending extraction | `application/src/GameDirector.Mcp/GameDirector.Mcp.csproj` | Referenced by Game Director host/tests; extraction needed before commercial marking. |
+The GameDomain module and Game Director code/test projects have been moved into `commercial/`, so they may reference each other and the open core without creating open-to-commercial project references.
 
 Recommended future open-source candidate: `apps/release-manager` is the best single app to open later as a minimal SDK reference because it demonstrates generic release-readiness automation without making the defense-adjacent Game Director wedge open.
 
@@ -143,15 +140,14 @@ Recommended future open-source candidate: `apps/release-manager` is the best sin
 
 Rule: no Tier 1 OPEN project may reference a Tier 2/3 COMMERCIAL project.
 
-Current result: **passes for committed placement** because commercial markings are limited to app configuration directories and no Tier 1 `.csproj` references those directories as commercial projects.
+Current result: **passes for committed placement** because no Tier 1 `.csproj` references a commercial project.
 
-Preflight result for the originally requested vertical split: **partially unblocked**. `Nexo.API` and `Nexo.Tests.CLI` no longer reference `Nexo.GameDomain`, but marking `Nexo.GameDomain` or `GameDirector.*` projects commercial in-place would still create OPEN -> COMMERCIAL edges from `Nexo.CLI`, Game Director projects, and vertical test projects. Those remaining edges are recorded in `SPRINT_SUMMARY.md` under “License extraction required.”
+Preflight result for the vertical split: **unblocked for GameDomain/GameDirector**. `Nexo.API`, `Nexo.CLI`, and `Nexo.Tests.CLI` no longer reference `Nexo.GameDomain`; `Nexo.GameDomain`, Game Director code, and their tests have moved to commercial paths. Remaining extraction work is fleet/governance extraction.
 
 ## Open questions
 
-- Which fleet/governance files should be extracted first into commercial projects?
+- Which fleet/governance files should be extracted first into commercial projects? Start from [`docs/FleetGovernanceExtractionInventory.md`](docs/FleetGovernanceExtractionInventory.md).
 - Should `Nexo.API` remain a purely open single-node host, or should commercial fleet/governance endpoints move to a separate host?
-- Should `Nexo.GameDomain` and `GameDirector.*` be extracted into commercial projects, moved into `apps/game-director`, or remain Apache-2.0 examples while only app packaging is commercial?
 - Should `apps/release-manager` become the future minimal open SDK reference app?
 
 See [`docs/CommercialExtractionPlan.md`](docs/CommercialExtractionPlan.md) for the proposed extraction order and validation gates.

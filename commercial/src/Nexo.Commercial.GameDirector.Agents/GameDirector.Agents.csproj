@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <NexoCommercialProject>true</NexoCommercialProject>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>GameDirector.Agents</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Nexo.Commercial.GameDirector.Bricks\GameDirector.Bricks.csproj" />
+    <ProjectReference Include="..\Nexo.Commercial.GameDirector.Domain\GameDirector.Domain.csproj" />
+    <ProjectReference Include="..\..\..\src\Nexo.Abstractions\Nexo.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\src\Nexo.Core.Domain\Nexo.Core.Domain.csproj" />
+    <ProjectReference Include="..\..\..\src\Nexo.Client\Nexo.Client.csproj" />
+    <ProjectReference Include="..\..\..\src\Nexo.Core.Application\Nexo.Core.Application.csproj" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+  </ItemGroup>
+</Project>

@@ -4,7 +4,7 @@ Self-hosted, MCP-exposed AI sidecar for game studios. Monitors balance drift and
 
 ## Architecture
 
-- **Host**: `application/src/GameDirector.Host` — `AddNexoSdk` → `AddNexo` → Nexo API + Forge + `/mcp`
+- **Host**: `commercial/src/Nexo.Commercial.GameDirector.Host` — `AddNexoSdk` → `AddNexo` → Nexo API + Forge + `/mcp`
 - **Bricks**: `balance.analysis`, `map.flow`, `content.generation`
 - **Agents**: `balance-watcher`, `map-validator` (hosted services + JSON agent set)
 - **Trust**: `internal-only` pack from `config/trust-packs/internal-only.json`
@@ -55,7 +55,7 @@ Add to Cursor MCP settings:
 ## Local development
 
 ```bash
-dotnet run --project application/src/GameDirector.Host
+dotnet run --project commercial/src/Nexo.Commercial.GameDirector.Host
 curl -s http://127.0.0.1:8080/health
 ```
 

@@ -24,4 +24,4 @@ Loose snippets remain under **`snippets/`** for quick copy-paste.
 ## Related
 
 - **`docs/architecture/forge-map-host-integration.md`** — milestones M1–M6 + terrain/material extras.
-- **`docs/samples/ForgeMapHostSample`** — console rehearsal including vector + Terrain-RGB pipeline fetch.
+- **`commercial/samples/ForgeMapHostSample`** — console rehearsal including vector + Terrain-RGB pipeline fetch.
