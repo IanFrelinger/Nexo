@@ -62,7 +62,6 @@ Rationale: this tier protects two moats at once — an extensible SDK and a sing
 | OPEN | `src/Nexo.Tests.Orchestration/Nexo.Tests.Orchestration.csproj` |
 | OPEN | `src/Nexo.Tests.Transport/Nexo.Tests.Transport.csproj` |
 | OPEN | `application/src/Nexo.Tests.CLI/Nexo.Tests.CLI.csproj` |
-| OPEN | `application/src/Nexo.Tests.GameDirector/Nexo.Tests.GameDirector.csproj` |
 | OPEN | `docs/samples/NugetOrgRestoreHostingOnly/Nexo.NugetOrgRestoreHostingOnly.csproj` |
 | OPEN | `docs/samples/NugetOrgRestoreVerify/Nexo.NugetOrgRestoreVerify.csproj` |
 | OPEN | `docs/samples/StableSdkHostSample/StableSdkHostSample.csproj` |
@@ -118,12 +117,12 @@ These app configuration directories are marked with a `COMMERCIAL-LICENSE.md` st
 | COMMERCIAL | `commercial/src/Nexo.Commercial.GameDomain/` |
 | COMMERCIAL | `commercial/tests/Nexo.Commercial.Tests.GameDomain/` |
 | COMMERCIAL | `commercial/samples/ForgeMapHostSample/` |
-| COMMERCIAL | `application/src/GameDirector.Domain/` |
-| COMMERCIAL | `application/src/GameDirector.Agents/` |
-| COMMERCIAL | `application/src/GameDirector.Bricks/` |
-| COMMERCIAL | `application/src/GameDirector.Mcp/` |
-| COMMERCIAL | `application/src/GameDirector.Host/` |
-| COMMERCIAL | `application/src/Nexo.Tests.GameDirector/` |
+| COMMERCIAL | `commercial/src/Nexo.Commercial.GameDirector.Domain/` |
+| COMMERCIAL | `commercial/src/Nexo.Commercial.GameDirector.Agents/` |
+| COMMERCIAL | `commercial/src/Nexo.Commercial.GameDirector.Bricks/` |
+| COMMERCIAL | `commercial/src/Nexo.Commercial.GameDirector.Mcp/` |
+| COMMERCIAL | `commercial/src/Nexo.Commercial.GameDirector.Host/` |
+| COMMERCIAL | `commercial/tests/Nexo.Commercial.Tests.GameDirector/` |
 | COMMERCIAL | `apps/game-director/` |
 | COMMERCIAL | `apps/nexo-forge/` |
 | COMMERCIAL | `apps/release-manager/` |
@@ -133,7 +132,7 @@ Stub text:
 
 > Not licensed under Apache-2.0. Commercial terms TBD. See /LICENSING.md.
 
-The GameDomain module has been moved into `commercial/`. Game Director code projects are marked commercial in place with stubs so they may reference the commercial GameDomain module without creating open-to-commercial project references. A later cleanup can move those projects physically into a `commercial/` module layout.
+The GameDomain module and Game Director code/test projects have been moved into `commercial/`, or commercially marked there, so they may reference the commercial GameDomain module without creating open-to-commercial project references.
 
 Recommended future open-source candidate: `apps/release-manager` is the best single app to open later as a minimal SDK reference because it demonstrates generic release-readiness automation without making the defense-adjacent Game Director wedge open.
 
@@ -143,13 +142,12 @@ Rule: no Tier 1 OPEN project may reference a Tier 2/3 COMMERCIAL project.
 
 Current result: **passes for committed placement** because commercial markings are limited to app configuration directories and no Tier 1 `.csproj` references those directories as commercial projects.
 
-Preflight result for the vertical split: **unblocked for GameDomain/GameDirector**. `Nexo.API`, `Nexo.CLI`, and `Nexo.Tests.CLI` no longer reference `Nexo.GameDomain`; `Nexo.GameDomain` and its tests have moved to `commercial/`; and Game Director code/test projects are marked commercial in place. Remaining extraction work is physical relocation/renaming of Game Director projects and fleet/governance extraction.
+Preflight result for the vertical split: **unblocked for GameDomain/GameDirector**. `Nexo.API`, `Nexo.CLI`, and `Nexo.Tests.CLI` no longer reference `Nexo.GameDomain`; `Nexo.GameDomain`, Game Director code, and their tests have moved to commercial paths. Remaining extraction work is fleet/governance extraction.
 
 ## Open questions
 
 - Which fleet/governance files should be extracted first into commercial projects?
 - Should `Nexo.API` remain a purely open single-node host, or should commercial fleet/governance endpoints move to a separate host?
-- Should `GameDirector.*` be physically moved/renamed into `commercial/`, or is commercial-in-place sufficient until the fleet extraction is complete?
 - Should `apps/release-manager` become the future minimal open SDK reference app?
 
 See [`docs/CommercialExtractionPlan.md`](docs/CommercialExtractionPlan.md) for the proposed extraction order and validation gates.

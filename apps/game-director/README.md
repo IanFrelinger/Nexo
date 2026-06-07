@@ -10,7 +10,7 @@ docker compose -f docker-compose.game-director.yml up -d --build
 docker compose -f docker-compose.game-director.yml exec ollama ollama pull llama3.1:latest
 
 # Or run locally
-dotnet run --project application/src/GameDirector.Host
+dotnet run --project commercial/src/Nexo.Commercial.GameDirector.Host
 ```
 
 Portal: http://127.0.0.1:8080/  

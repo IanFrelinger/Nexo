@@ -22,14 +22,14 @@ The vertical code is being separated from the open application surface. The API 
 | `application/src/Nexo.API/Nexo.API.csproj` | **Resolved:** the Forge/GameDomain HTTP surface moved to the Game Director/MCP application layer, so `Nexo.API` no longer references `Nexo.GameDomain`. |
 | `application/src/Nexo.CLI/Nexo.CLI.csproj` | **Resolved:** Unity pipeline helper types moved into `Nexo.CLI`, so the CLI no longer references `Nexo.GameDomain`. |
 | `commercial/src/Nexo.Commercial.GameDomain/Nexo.Commercial.GameDomain.csproj` | **Resolved:** moved from `application/src/Nexo.GameDomain`; references open core and is now commercially marked. |
-| `application/src/GameDirector.Domain/GameDirector.Domain.csproj` | Commercial-in-place; references commercial GameDomain and open core. |
-| `application/src/GameDirector.Agents/GameDirector.Agents.csproj` | Commercial-in-place; references GameDirector bricks/domain, `Nexo.Client`, and open abstractions/application/domain. |
-| `application/src/GameDirector.Bricks/GameDirector.Bricks.csproj` | Commercial-in-place; references GameDirector domain plus open abstractions/domain/application/infrastructure. |
-| `application/src/GameDirector.Mcp/GameDirector.Mcp.csproj` | Commercial-in-place; references GameDirector domain, `Nexo.Client`, open core, infrastructure, and brick contracts. |
-| `application/src/GameDirector.Host/GameDirector.Host.csproj` | Commercial-in-place; references all Game Director projects plus `Nexo.API`, `Nexo.Client`, and `Nexo.Hosting`. |
+| `commercial/src/Nexo.Commercial.GameDirector.Domain/GameDirector.Domain.csproj` | Moved to commercial layout; references commercial GameDomain and open core. |
+| `commercial/src/Nexo.Commercial.GameDirector.Agents/GameDirector.Agents.csproj` | Moved to commercial layout; references GameDirector bricks/domain, `Nexo.Client`, and open abstractions/application/domain. |
+| `commercial/src/Nexo.Commercial.GameDirector.Bricks/GameDirector.Bricks.csproj` | Moved to commercial layout; references GameDirector domain plus open abstractions/domain/application/infrastructure. |
+| `commercial/src/Nexo.Commercial.GameDirector.Mcp/GameDirector.Mcp.csproj` | Moved to commercial layout; references GameDirector domain, `Nexo.Client`, open core, infrastructure, and brick contracts. |
+| `commercial/src/Nexo.Commercial.GameDirector.Host/GameDirector.Host.csproj` | Moved to commercial layout; references all Game Director projects plus `Nexo.API`, `Nexo.Client`, and `Nexo.Hosting`. |
 | `application/src/Nexo.Tests.CLI/Nexo.Tests.CLI.csproj` | **Resolved:** game-domain descriptor serialization assertions moved to `Nexo.Tests.GameDomain`, so the CLI test assembly no longer directly references `Nexo.GameDomain`. |
 | `commercial/tests/Nexo.Commercial.Tests.GameDomain/Nexo.Commercial.Tests.GameDomain.csproj` | **Resolved:** moved with commercial GameDomain tests. |
-| `application/src/Nexo.Tests.GameDirector/Nexo.Tests.GameDirector.csproj` | Commercial-in-place; references GameDirector projects and commercial GameDomain. |
+| `commercial/tests/Nexo.Commercial.Tests.GameDirector/Nexo.Tests.GameDirector.csproj` | Moved to commercial layout; references GameDirector projects and commercial GameDomain. |
 
 ### Fleet / mesh / governance graph
 
@@ -68,13 +68,13 @@ Target commercial projects/modules:
 | Proposed commercial module | Source today | Target shape |
 |----------------------------|--------------|--------------|
 | `Nexo.Commercial.GameDomain` | `commercial/src/Nexo.Commercial.GameDomain` | Commercial domain package used only by commercial vertical hosts/tests. |
-| `Nexo.Commercial.GameDirector.Domain` | `application/src/GameDirector.Domain` | Vertical-specific domain layer. |
-| `Nexo.Commercial.GameDirector.Bricks` | `application/src/GameDirector.Bricks` | Vertical bricks over open `Nexo.Brick.Contracts` and open runtime ports. |
-| `Nexo.Commercial.GameDirector.Agents` | `application/src/GameDirector.Agents` | Vertical agents over open abstractions/client/application ports. |
-| `Nexo.Commercial.GameDirector.Mcp` | `application/src/GameDirector.Mcp` | Commercial MCP surface for the vertical. |
-| `Nexo.Commercial.GameDirector.Host` | `application/src/GameDirector.Host` | Commercial host that composes open API/hosting with vertical modules. |
+| `Nexo.Commercial.GameDirector.Domain` | `commercial/src/Nexo.Commercial.GameDirector.Domain` | Vertical-specific domain layer. |
+| `Nexo.Commercial.GameDirector.Bricks` | `commercial/src/Nexo.Commercial.GameDirector.Bricks` | Vertical bricks over open `Nexo.Brick.Contracts` and open runtime ports. |
+| `Nexo.Commercial.GameDirector.Agents` | `commercial/src/Nexo.Commercial.GameDirector.Agents` | Vertical agents over open abstractions/client/application ports. |
+| `Nexo.Commercial.GameDirector.Mcp` | `commercial/src/Nexo.Commercial.GameDirector.Mcp` | Commercial MCP surface for the vertical. |
+| `Nexo.Commercial.GameDirector.Host` | `commercial/src/Nexo.Commercial.GameDirector.Host` | Commercial host that composes open API/hosting with vertical modules. |
 | `Nexo.Commercial.Tests.GameDomain` | `commercial/tests/Nexo.Commercial.Tests.GameDomain` | Commercial test assembly for GameDomain. |
-| `Nexo.Commercial.Tests.GameDirector` | `application/src/Nexo.Tests.GameDirector` | Commercial vertical test assembly. |
+| `Nexo.Commercial.Tests.GameDirector` | `commercial/tests/Nexo.Commercial.Tests.GameDirector` | Commercial vertical test assembly. |
 
 `Nexo.API` should lose its direct `ProjectReference` to `Nexo.GameDomain`. Use one of these patterns:
 
@@ -190,10 +190,9 @@ This can start as a script and become a CI gate after the first extraction PR la
 
 1. **PR 1 — API vertical seam:** remove `Nexo.API` and `Nexo.Tests.CLI` direct references to `Nexo.GameDomain`.
 2. **PR 2 — CLI/GameDomain seam:** move Unity pipeline helpers into the open CLI surface and remove `Nexo.CLI -> Nexo.GameDomain`.
-3. **PR 3 — GameDomain commercial move:** move `Nexo.GameDomain` plus tests into commercial module layout and mark GameDirector code commercial in place.
-4. **PR 4 — Game Director physical move:** optionally move `GameDirector.*` plus tests into `commercial/` module layout.
-5. **PR 5 — fleet inventory split:** classify open mesh primitives vs commercial fleet/governance files.
-6. **PR 6 — fleet extraction:** move fleet task/direction/governance implementations into commercial modules.
-7. **PR 7 — dependency-boundary gate:** add scanner script and optional CI enforcement.
+3. **PR 3 — GameDomain/GameDirector commercial move:** move `Nexo.GameDomain`, GameDirector code, and tests into commercial module layout.
+4. 4. **PR 4 — fleet inventory split:** classify open mesh primitives vs commercial fleet/governance files.
+5. **PR 5 — fleet extraction:** move fleet task/direction/governance implementations into commercial modules.
+6. **PR 6 — dependency-boundary gate:** add scanner script and optional CI enforcement.
 
 Do not combine these into one large refactor. The dependency graph and licensing boundary should be reviewable at every step.

@@ -10,14 +10,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="..\Nexo.API\wwwroot\**" Link="wwwroot\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\..\application\src\Nexo.API\wwwroot\**" Link="wwwroot\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
     <PackageReference Include="MediatR" />
     <PackageReference Include="Swashbuckle.AspNetCore" />
-    <ProjectReference Include="..\GameDirector.Agents\GameDirector.Agents.csproj" />
-    <ProjectReference Include="..\GameDirector.Bricks\GameDirector.Bricks.csproj" />
-    <ProjectReference Include="..\GameDirector.Domain\GameDirector.Domain.csproj" />
-    <ProjectReference Include="..\GameDirector.Mcp\GameDirector.Mcp.csproj" />
-    <ProjectReference Include="..\Nexo.API\Nexo.API.csproj" />
+    <ProjectReference Include="..\Nexo.Commercial.GameDirector.Agents\GameDirector.Agents.csproj" />
+    <ProjectReference Include="..\Nexo.Commercial.GameDirector.Bricks\GameDirector.Bricks.csproj" />
+    <ProjectReference Include="..\Nexo.Commercial.GameDirector.Domain\GameDirector.Domain.csproj" />
+    <ProjectReference Include="..\Nexo.Commercial.GameDirector.Mcp\GameDirector.Mcp.csproj" />
+    <ProjectReference Include="..\..\..\application\src\Nexo.API\Nexo.API.csproj" />
     <ProjectReference Include="..\..\..\src\Nexo.Client\Nexo.Client.csproj" />
     <ProjectReference Include="..\..\..\src\Nexo.Hosting\Nexo.Hosting.csproj" />
   </ItemGroup>
