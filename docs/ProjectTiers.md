@@ -64,6 +64,7 @@ The CLI project also references spine-adjacent packs: **`Nexo.Bricks.Owasp`**, *
 |------|------------------|
 | Game Director | `commercial/src/Nexo.Commercial.GameDirector.Domain`, `Nexo.Commercial.GameDirector.Agents`, `Nexo.Commercial.GameDirector.Bricks`, `Nexo.Commercial.GameDirector.Host`, `Nexo.Commercial.GameDirector.Mcp` |
 | Game domain | `commercial/src/Nexo.Commercial.GameDomain` |
+| Fleet contracts | `commercial/src/Nexo.Commercial.Fleet.Contracts` |
 | App configs | `apps/runtime-studio`, `apps/nexo-forge`, `apps/game-director`, `apps/release-manager` |
 | Tools | `tools/Nexo.UnitySidecarDemo`, `tools/ApplyFeedbackChanges` |
 | Demos | `docs/demos/Nexo.Demos.Avalonia`, `Nexo.Demos.BlazorWeb`, `Nexo.Demos.ConsoleClient` |
