@@ -5,3 +5,6 @@ http://127.0.0.1*
 https://127.0.0.1*
 http://0.0.0.0*
 http://host.docker.internal*
+
+# Public regulatory page blocks CI link-check user agents intermittently.
+https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai
