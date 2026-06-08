@@ -1,6 +1,5 @@
 using FluentAssertions;
 using Nexo.Core.Application.Execution.Routing;
-using Nexo.Core.Application.Fleet.Models;
 using Nexo.Core.Application.Mesh;
 using Nexo.Core.Application.Mesh.Models;
 using Nexo.Core.Application.Pipelines.Models;
@@ -87,39 +86,6 @@ public sealed class ApplicationRemainingCoverageTests
         InstanceCapabilities.AllFormats.SupportedFormats.Should().HaveCount(3);
         InstanceCapabilities.LocalNexo.CanCompile.Should().BeTrue();
         InstanceCapabilities.LocalNexo.AvailableComponents.Should().Contain("nexo-cli");
-    }
-
-    [Fact]
-    public void MeshTaskState_record_holds_scheduling_metadata()
-    {
-        var state = new MeshTaskState(
-            TaskId: "t1",
-            Name: "render",
-            Steps: 2,
-            RequiredBrickIds: new[] { "b1" },
-            Affinity: new Dictionary<string, string> { ["gpu"] = "a100" },
-            Priority: 5,
-            DeadlineUtc: DateTimeOffset.UtcNow.AddHours(1),
-            Status: MeshTaskStatus.Pending,
-            AssignedPeerId: null,
-            AssignedApiBaseUrl: null,
-            PlacementReason: null,
-            AttemptCount: 0,
-            CreatedAtUtc: DateTimeOffset.UtcNow,
-            LastScheduledAtUtc: null,
-            CorrelationId: "corr",
-            IdempotencyKey: "idem",
-            LastScheduleIdempotencyKey: null,
-            ResultSummary: null,
-            ResultHandle: null,
-            LeaseToken: null,
-            LeaseOwnerPeerId: null,
-            LeaseExpiresUtc: null,
-            CheckpointHandle: null);
-
-        state.TaskId.Should().Be("t1");
-        state.Affinity["gpu"].Should().Be("a100");
-        state.CorrelationId.Should().Be("corr");
     }
 
     [Fact]

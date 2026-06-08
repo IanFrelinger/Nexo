@@ -122,6 +122,7 @@ These app configuration directories are marked with a `COMMERCIAL-LICENSE.md` st
 | COMMERCIAL | `commercial/src/Nexo.Commercial.Fleet.Api/` |
 | COMMERCIAL | `commercial/src/Nexo.Commercial.Fleet.Host/` |
 | COMMERCIAL | `commercial/tests/Nexo.Commercial.Tests.Fleet.Host/` |
+| COMMERCIAL | `commercial/tests/Nexo.Commercial.Tests.Fleet/` |
 | COMMERCIAL | `commercial/src/Nexo.Commercial.MeshDirector/` |
 | COMMERCIAL | `commercial/tests/Nexo.Commercial.Tests.MeshDirector/` |
 | COMMERCIAL | `commercial/src/Nexo.Commercial.GameDirector.Domain/` |

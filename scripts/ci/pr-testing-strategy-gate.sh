@@ -91,7 +91,7 @@ for f in "${ALL_CHANGED[@]}"; do
     src/Nexo.Core.Domain/*) needs_domain=1; needs_kernel_cov=1 ;;
     src/Nexo.Core.Application/*|src/Nexo.Infrastructure/*|src/Nexo.Runtime/*) needs_kernel_cov=1 ;;
     src/Nexo.Hosting/*|src/Nexo.Infrastructure/Pipelines/*) needs_kernel_gate=1 ;;
-    src/Nexo.Infrastructure/Mesh/*|src/Nexo.Infrastructure/Fleet/*|docker-compose*fleet*|scripts/mesh-lab*)
+    src/Nexo.Infrastructure/Mesh/*|src/Nexo.Infrastructure/MeshLab/*|commercial/src/Nexo.Commercial.Fleet.*|docker-compose*fleet*|scripts/mesh-lab*)
       needs_mesh=1 ;;
     application/*) needs_app_gate=1 ;;
   esac

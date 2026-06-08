@@ -4,12 +4,11 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-INFRA="src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj"
+FLEET_TESTS="commercial/tests/Nexo.Commercial.Tests.Fleet/Nexo.Commercial.Tests.Fleet.csproj"
 
 echo "== Mesh Tier C: fleet / clustered task control plane (in-process) =="
-dotnet build "$INFRA" -f net8.0 -v minimal
-NEXO_ALLOW_MOCK=1 dotnet test "$INFRA" -f net8.0 --no-build \
-  --filter "FullyQualifiedName~Nexo.Tests.Infrastructure.Tests.Fleet" \
+dotnet build "$FLEET_TESTS" -f net8.0 -v minimal
+NEXO_ALLOW_MOCK=1 dotnet test "$FLEET_TESTS" -f net8.0 --no-build \
   --blame-hang-timeout 180s --blame-hang-dump-type none
 
 echo ""

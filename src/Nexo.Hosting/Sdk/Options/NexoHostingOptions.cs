@@ -42,13 +42,6 @@ public sealed class NexoHostingOptions
     public bool DisableObservationPipeline { get; set; }
 
     /// <summary>
-    /// When true, skips open <c>Nexo.Infrastructure.Fleet</c> director registration during <see cref="NexoServiceCollectionExtensions.AddNexo"/>.
-    /// Commercial fleet hosts set this and register <c>Nexo.Commercial.Fleet.Infrastructure</c> explicitly.
-    /// Default: false.
-    /// </summary>
-    public bool DisableOpenFleetDirector { get; set; }
-
-    /// <summary>
     /// When true, observation pipeline store errors are fail-open (logged and skipped) instead of stopping the host.
     /// Default: null (resolved from NEXO_OBSERVATION_FAIL_OPEN env var, then false).
     /// </summary>
