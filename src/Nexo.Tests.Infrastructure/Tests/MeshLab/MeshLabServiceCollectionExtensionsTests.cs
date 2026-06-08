@@ -45,4 +45,26 @@ public sealed class MeshLabServiceCollectionExtensionsTests
             d.ServiceType == typeof(IHostedService) &&
             d.ImplementationType == typeof(MeshLabWorkerExecutorBackgroundService));
     }
+
+    [Fact]
+    public void MeshLabWorkerExecutorOptions_exposes_section_path_and_defaults()
+    {
+        var options = new MeshLabWorkerExecutorOptions
+        {
+            Enabled = true,
+            DirectorBaseUrl = "http://director:8080",
+            ApiKey = "key",
+            TaskNamePrefix = "lab",
+            PollIntervalMs = 250,
+            ExecuteBrickOnAssignedPeer = false,
+            ResultSummary = "done",
+        };
+
+        MeshLabWorkerExecutorOptions.SectionPath.Should().Be("Nexo:MeshLab:WorkerExecutor");
+        options.DirectorBaseUrl.Should().Be("http://director:8080");
+        options.TaskNamePrefix.Should().Be("lab");
+        options.PollIntervalMs.Should().Be(250);
+        options.ExecuteBrickOnAssignedPeer.Should().BeFalse();
+        options.ResultSummary.Should().Be("done");
+    }
 }

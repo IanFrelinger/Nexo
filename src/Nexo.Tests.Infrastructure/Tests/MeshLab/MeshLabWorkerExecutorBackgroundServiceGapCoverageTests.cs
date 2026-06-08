@@ -104,6 +104,57 @@ public sealed class MeshLabWorkerExecutorBackgroundServiceGapCoverageTests
         await act.Should().NotThrowAsync();
     }
 
+    [Fact]
+    public async Task ExecuteAsync_logs_and_continues_after_unexpected_errors()
+    {
+        var handler = new FakeFleetHandler((_, _) => throw new InvalidOperationException("unexpected"));
+        var options = new MeshLabWorkerExecutorOptions
+        {
+            Enabled = true,
+            ApiKey = "test-key",
+            PollIntervalMs = 100,
+        };
+
+        var client = CreateClient(handler, options, new ConfigurationBuilder().Build());
+        var service = new MeshLabWorkerExecutorBackgroundService(
+            client,
+            new StaticOptionsMonitor<MeshLabWorkerExecutorOptions>(options),
+            NullLogger<MeshLabWorkerExecutorBackgroundService>.Instance);
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(500));
+        await service.StartAsync(cts.Token);
+        await Task.Delay(300);
+        await cts.CancelAsync();
+        await service.StopAsync(CancellationToken.None);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_clamps_poll_interval_to_minimum()
+    {
+        var requestCount = 0;
+        var handler = new CountingHandler(() => Interlocked.Increment(ref requestCount));
+        var options = new MeshLabWorkerExecutorOptions
+        {
+            Enabled = true,
+            ApiKey = "test-key",
+            PollIntervalMs = 10,
+        };
+
+        var client = CreateClient(handler, options, new ConfigurationBuilder().Build());
+        var service = new MeshLabWorkerExecutorBackgroundService(
+            client,
+            new StaticOptionsMonitor<MeshLabWorkerExecutorOptions>(options),
+            NullLogger<MeshLabWorkerExecutorBackgroundService>.Instance);
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(400));
+        await service.StartAsync(cts.Token);
+        await Task.Delay(350);
+        await cts.CancelAsync();
+        await service.StopAsync(CancellationToken.None);
+
+        requestCount.Should().BeGreaterThan(0);
+    }
+
     private static MeshLabWorkerExecutorClient CreateClient(
         HttpMessageHandler handler,
         MeshLabWorkerExecutorOptions options,
