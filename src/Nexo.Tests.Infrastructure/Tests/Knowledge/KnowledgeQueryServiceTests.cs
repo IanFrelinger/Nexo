@@ -13,7 +13,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Knowledge;
 
-public sealed class KnowledgeQueryServiceGapCoverageTests
+public sealed class KnowledgeQueryServiceTests
 {
     [Fact]
     public async Task QueryAsync_aggregates_all_sources_with_filters_and_pagination()

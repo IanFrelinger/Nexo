@@ -483,25 +483,25 @@ if compose_workers ps -q worker 2>/dev/null | grep -q .; then
   fi
   echo
   if [[ -n "$API_KEY" ]]; then
-    echo "== Worker tier: GET /api/mesh/fleet/nodes with X-Nexo-Api-Key =="
+    echo "== Worker tier: GET /api/status with X-Nexo-Api-Key (open API; fleet routes live on peer-a) =="
     if [[ "$WORKER_BRIDGE_MODE" == 1 ]]; then
-      curl_on_lab_net_extra -H "X-Nexo-Api-Key: ${API_KEY}" "${WORKER_HTTP}/api/mesh/fleet/nodes" | head -c 400
+      curl_on_lab_net_extra -H "X-Nexo-Api-Key: ${API_KEY}" "${WORKER_HTTP}/api/status" | head -c 400
     else
-      curl -fsS -H "X-Nexo-Api-Key: ${API_KEY}" "${WORKER_HTTP}/api/mesh/fleet/nodes" | head -c 400
+      curl -fsS -H "X-Nexo-Api-Key: ${API_KEY}" "${WORKER_HTTP}/api/status" | head -c 400
     fi
     echo
   fi
   if [[ -n "$BASIC_PASS" ]]; then
     WUSER="${BASIC_USER:-nexo}"
-    echo "== Worker tier: GET /api/mesh/fleet/nodes with Basic auth =="
+    echo "== Worker tier: GET /api/status with Basic auth =="
     if [[ "$WORKER_BRIDGE_MODE" == 1 ]]; then
-      curl_on_lab_net_extra -u "${WUSER}:${BASIC_PASS}" "${WORKER_HTTP}/api/mesh/fleet/nodes" | head -c 400
+      curl_on_lab_net_extra -u "${WUSER}:${BASIC_PASS}" "${WORKER_HTTP}/api/status" | head -c 400
     else
-      curl -fsS -u "${WUSER}:${BASIC_PASS}" "${WORKER_HTTP}/api/mesh/fleet/nodes" | head -c 400
+      curl -fsS -u "${WUSER}:${BASIC_PASS}" "${WORKER_HTTP}/api/status" | head -c 400
     fi
     echo
   else
-    echo "(Skipping worker Basic-auth mesh read: Nexo__Security__Worker__BasicAuthPassword unset)"
+    echo "(Skipping worker Basic-auth status read: Nexo__Security__Worker__BasicAuthPassword unset)"
   fi
 else
   echo "(worker tier not running; use --profile workers to include workers)"
