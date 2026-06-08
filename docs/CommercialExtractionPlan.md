@@ -200,8 +200,9 @@ This can start as a script and become a CI gate after the first extraction PR la
 6. **PR 6 — fleet infrastructure baseline:** seed `Nexo.Commercial.Fleet.Infrastructure` from current fleet implementations.
 7. **PR 7 — mesh director migration:** move mesh-lab/operator packaging to `Nexo.Commercial.MeshDirector` and remove the open CLI duplicate.
 8. **PR 8 — fleet API baseline:** seed `Nexo.Commercial.Fleet.Api` from open `/api/mesh` fleet/task/knowledge endpoints.
-9. **PR 9 — fleet host wiring:** add `Nexo.Commercial.Fleet.Host` and wire commercial fleet DI plus `MapCommercialFleetEndpoints()`; keep open endpoint duplicates until mesh-lab migrates.
-10. **PR 10 — open fleet cleanup:** move mesh-lab scripts/tests to the commercial host and remove open `/api/mesh` fleet/task/knowledge duplicates from `Nexo.API`.
-11. **PR 11 — dependency-boundary gate:** add scanner script and optional CI enforcement.
+9. **PR 9 — fleet host wiring:** add `Nexo.Commercial.Fleet.Host` and wire commercial fleet DI plus `MapCommercialFleetEndpoints()`.
+10. **PR 10 — open fleet cleanup:** migrate mesh-lab peer-a to the commercial fleet host and remove open `/api/mesh` fleet/task/knowledge handlers from `Nexo.API`.
+11. **PR 11 — open fleet infrastructure cleanup:** remove `src/Nexo.Infrastructure/Fleet/**` and `src/Nexo.Core.Application/Fleet/**` once worker executor and tests migrate.
+12. **PR 12 — dependency-boundary gate:** add scanner script and optional CI enforcement.
 
 Do not combine these into one large refactor. The dependency graph and licensing boundary should be reviewable at every step.

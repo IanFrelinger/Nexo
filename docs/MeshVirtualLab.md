@@ -1,12 +1,12 @@
 # Virtual mesh lab (heterogeneous images + auth)
 
-The lab runs **multiple Nexo.API containers** on one Docker bridge so you can test **different images and security configurations** together without extra hardware.
+The lab runs **heterogeneous Nexo hosts** on one Docker bridge so you can test **different images and security configurations** together without extra hardware. **peer-a** is the commercial fleet director (`Fleet.Host`); **peer-b** and **worker** use open `Nexo.API`.
 
 ## What runs by default
 
 | Role | Dockerfile (override) | Runtime / env highlights | Auth (override) |
 |------|-------------------------|---------------------------|-----------------|
-| **peer-a** | `MESH_LAB_PEER_A_DOCKERFILE` → **`.docker/Dockerfile.api`** | `ASPNETCORE_ENVIRONMENT` = Production (default) | **ApiKey** (`Nexo__Security__ApiKey`) |
+| **peer-a** | `MESH_LAB_PEER_A_DOCKERFILE` → **`.docker/Dockerfile.fleet-host`** | `ASPNETCORE_ENVIRONMENT` = Production (default); LiteDB director persistence | **ApiKey** (`Nexo__Security__ApiKey`) |
 | **peer-b** | `MESH_LAB_PEER_B_DOCKERFILE` → **`.docker/Dockerfile.quickstart`** | **`NEXO_ALLOW_MOCK=1`**, Staging | **ApiKeyOrBearerToken** — same **`Nexo__Security__ApiKey`** *or* **`Nexo__Security__PeerB__BearerToken`** |
 | **worker** (profile **`workers`**) | `MESH_LAB_WORKER_DOCKERFILE` → **`.docker/Dockerfile.api`** | Development by default (`MESH_LAB_WORKER_ASPNETCORE_ENVIRONMENT`), `ShowAdvisoryInPortal` off by default | **ApiKeyOrBasic** — API key *or* Basic (**`nexo`** + **`Nexo__Security__Worker__BasicAuthPassword`**) |
 

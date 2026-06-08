@@ -258,17 +258,17 @@ Added:
 - `commercial/src/Nexo.Commercial.Fleet.Host` — operator host registering `AddNexoCommercialFleetDirector()` and mapping `MapCommercialFleetEndpoints()`;
 - `commercial/src/Nexo.Commercial.Fleet.Api/CommercialFleetHostExtensions.cs` — shared DI/endpoint wiring helper;
 - `commercial/tests/Nexo.Commercial.Tests.Fleet.Host` and `scripts/commercial-fleet-host-smoke.sh` — host build/smoke validation;
-- `NexoHostingOptions.DisableOpenFleetDirector` and `NexoEndpointMappingOptions.ExcludeFleetEndpoints` — avoid duplicate open/commercial fleet registration on commercial hosts.
+- `NexoHostingOptions.DisableOpenFleetDirector` — commercial fleet host skips open fleet DI registration in `AddNexo()`.
 
-Open `Nexo.API` fleet/task/knowledge routes remain until mesh-lab scripts/tests migrate.
+### PR 10 — open fleet endpoint cleanup (done)
 
-### PR 10 — open fleet endpoint cleanup
+Completed:
 
-Complete the open API cleanup:
+- removed open `/api/mesh/fleet/**`, `/api/mesh/tasks/**`, and `/api/mesh/knowledge/**` endpoint handlers from `Nexo.API`;
+- migrated mesh-lab **peer-a** to `.docker/Dockerfile.fleet-host` (`Nexo.Commercial.Fleet.Host`);
+- mesh-lab verify scripts unchanged (same HTTP paths; director is now the commercial host).
 
-- remove open `/api/mesh/fleet/**`, `/api/mesh/tasks/**`, and `/api/mesh/knowledge/**` endpoint duplicates from `Nexo.API`;
-- move mesh-lab scripts/tests to the commercial fleet host;
-- keep mesh security/correlation middleware open.
+Open fleet contracts/infrastructure under `src/` remain until worker executor and infrastructure tests migrate.
 
 ### PR 11 — dependency-boundary scanner
 

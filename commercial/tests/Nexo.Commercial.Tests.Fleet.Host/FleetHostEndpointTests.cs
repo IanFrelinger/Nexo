@@ -34,6 +34,20 @@ public sealed class FleetHostEndpointTests : IClassFixture<WebApplicationFactory
     }
 
     [Fact]
+    public async Task Commercial_mesh_task_create_accepts_mutating_request_with_api_key()
+    {
+        using var client = _factory.CreateClient();
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/api/mesh/tasks")
+        {
+            Content = JsonContent.Create(new { name = "commercial-fleet-host-test-task", steps = 1 })
+        };
+        request.Headers.Add("X-Nexo-Api-Key", "fleet-host-dev-key");
+
+        var response = await client.SendAsync(request);
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
     public async Task Commercial_fleet_register_node_accepts_mutating_request_with_api_key()
     {
         using var client = _factory.CreateClient();
