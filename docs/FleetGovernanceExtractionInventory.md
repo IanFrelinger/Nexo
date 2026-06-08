@@ -248,17 +248,17 @@ Seed commercial endpoint module:
 
 - `commercial/src/Nexo.Commercial.Fleet.Api`
 - copy `/api/mesh/fleet/**`, `/api/mesh/tasks/**`, and `/api/mesh/knowledge/**` endpoint mappings/handlers/DTOs from open `Nexo.API`;
-- use commercial fleet contracts/infrastructure namespaces;
-- keep open endpoints temporarily until commercial host wiring moves.
+- use commercial fleet contracts/infrastructure namespaces.
 
 ### PR 9 — commercial fleet host migration
 
-Move commercial hosts/operator packaging to:
+Complete the open API cleanup:
 
-- `Nexo.Commercial.Fleet.Api`
-- `Nexo.Commercial.Fleet.Infrastructure`
+- remove open `/api/mesh/fleet/**`, `/api/mesh/tasks/**`, and `/api/mesh/knowledge/**` endpoint duplicates from `Nexo.API`;
+- keep mesh security/correlation middleware open;
+- keep commercial endpoint extension available for commercial hosts/operator packaging.
 
-Then remove open endpoint duplicates from `Nexo.API` when no open tests/scripts require them.
+Commercial host/operator packaging can now call `MapCommercialFleetEndpoints()` explicitly.
 
 ### PR 10 — dependency-boundary scanner
 

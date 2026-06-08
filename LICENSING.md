@@ -94,7 +94,7 @@ Tier 2 is the future commercial layer for fleet-scale and governance capabilitie
 - aggregated tamper-evident audit,
 - RBAC/SSO and organization-scale governance.
 
-Current status: these capabilities are **not isolated in their own commercial project**. They are woven through Tier 1 projects such as `Nexo.Core.Application`, `Nexo.Infrastructure`, `Nexo.Orchestration`, `Nexo.Runtime`, `Nexo.CLI`, and `Nexo.API`. Those mixed projects remain Apache-2.0 in this sprint. Commercial licensing requires extracting the fleet/governance code into separate projects first.
+Current status: fleet contracts, fleet infrastructure, mesh director, and fleet API endpoint baselines now exist under `commercial/`. Some fleet/governance implementation code remains in open projects while consumers are migrated incrementally; open `Nexo.API` no longer owns the fleet/task/knowledge endpoint handlers.
 
 The current classification inventory is [`docs/FleetGovernanceExtractionInventory.md`](docs/FleetGovernanceExtractionInventory.md). Likely extraction candidates include:
 
