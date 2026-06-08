@@ -237,6 +237,107 @@ public sealed class MeshLabWorkerExecutorClientGapCoverageTests
     }
 
     [Fact]
+    public async Task TryProcessOneAssignedTaskAsync_reads_brick_id_from_lowercase_id_property()
+    {
+        var executed = false;
+        var client = CreateClient(
+            new FakeFleetHandler((req, _) =>
+            {
+                var path = req.RequestUri!.AbsolutePath;
+                if (path.EndsWith("/api/mesh/tasks", StringComparison.Ordinal))
+                {
+                    return Json(HttpStatusCode.OK, """
+                        [{"taskId":"t6b","name":"mesh-lab-worker-exec-lowercase-id","status":"Assigned","assignedApiBaseUrl":"http://peer:8080/","leaseToken":"tok"}]
+                        """);
+                }
+
+                if (path.EndsWith("/api/bricks", StringComparison.Ordinal))
+                    return Json(HttpStatusCode.OK, """{"bricks":[{"id":"lowercase-brick"}]}""");
+
+                if (path.Contains("/execute", StringComparison.Ordinal))
+                {
+                    executed = true;
+                    return Json(HttpStatusCode.OK, """{"success":true}""");
+                }
+
+                return Json(HttpStatusCode.OK, "{}");
+            }),
+            new MeshLabWorkerExecutorOptions
+            {
+                ApiKey = "test-key",
+                TaskNamePrefix = "mesh-lab-worker-exec",
+                ExecuteBrickOnAssignedPeer = true,
+            },
+            new ConfigurationBuilder().Build());
+
+        (await client.TryProcessOneAssignedTaskAsync(CancellationToken.None)).Should().Be(1);
+        executed.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task TryProcessOneAssignedTaskAsync_skips_brick_when_catalog_request_fails()
+    {
+        var patchCount = 0;
+        var client = CreateClient(
+            new FakeFleetHandler((req, _) =>
+            {
+                var path = req.RequestUri!.AbsolutePath;
+                if (path.EndsWith("/api/mesh/tasks", StringComparison.Ordinal) && req.Method == HttpMethod.Get)
+                {
+                    return Json(HttpStatusCode.OK, """
+                        [{"taskId":"t7","name":"mesh-lab-worker-exec-catalog-fail","status":"Assigned","assignedApiBaseUrl":"http://peer:8080/","leaseToken":"tok"}]
+                        """);
+                }
+
+                if (path.EndsWith("/api/bricks", StringComparison.Ordinal))
+                    return Json(HttpStatusCode.ServiceUnavailable, """{"error":"catalog down"}""");
+
+                patchCount++;
+                return Json(HttpStatusCode.OK, "{}");
+            }),
+            new MeshLabWorkerExecutorOptions
+            {
+                ApiKey = "test-key",
+                TaskNamePrefix = "mesh-lab-worker-exec",
+                ExecuteBrickOnAssignedPeer = true,
+            },
+            new ConfigurationBuilder().Build());
+
+        (await client.TryProcessOneAssignedTaskAsync(CancellationToken.None)).Should().Be(1);
+        patchCount.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task TryProcessOneAssignedTaskAsync_tolerates_peer_http_errors_during_brick_execute()
+    {
+        var client = CreateClient(
+            new FakeFleetHandler((req, _) =>
+            {
+                var path = req.RequestUri!.AbsolutePath;
+                if (path.EndsWith("/api/mesh/tasks", StringComparison.Ordinal))
+                    return Json(HttpStatusCode.OK, req.Method == HttpMethod.Get
+                        ? """
+                          [{"taskId":"t8","name":"mesh-lab-worker-exec-peer-error","status":"Assigned","assignedApiBaseUrl":"http://peer:8080/","leaseToken":"tok"}]
+                          """
+                        : "{}");
+
+                if (path.EndsWith("/api/bricks", StringComparison.Ordinal))
+                    throw new HttpRequestException("peer unreachable");
+
+                return Json(HttpStatusCode.OK, "{}");
+            }),
+            new MeshLabWorkerExecutorOptions
+            {
+                ApiKey = "test-key",
+                TaskNamePrefix = "mesh-lab-worker-exec",
+                ExecuteBrickOnAssignedPeer = true,
+            },
+            new ConfigurationBuilder().Build());
+
+        (await client.TryProcessOneAssignedTaskAsync(CancellationToken.None)).Should().Be(1);
+    }
+
+    [Fact]
     public async Task TryProcessOneAssignedTaskAsync_reads_brick_id_from_pascal_case_property()
     {
         var executed = false;

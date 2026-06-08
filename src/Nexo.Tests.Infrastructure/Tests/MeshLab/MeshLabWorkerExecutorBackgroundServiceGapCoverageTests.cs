@@ -129,6 +129,29 @@ public sealed class MeshLabWorkerExecutorBackgroundServiceGapCoverageTests
     }
 
     [Fact]
+    public async Task ExecuteAsync_keeps_polling_while_disabled()
+    {
+        var requestCount = 0;
+        var client = CreateClient(
+            new CountingHandler(() => Interlocked.Increment(ref requestCount)),
+            new MeshLabWorkerExecutorOptions { Enabled = false, ApiKey = "key" },
+            new ConfigurationBuilder().Build());
+
+        var service = new MeshLabWorkerExecutorBackgroundService(
+            client,
+            new StaticOptionsMonitor<MeshLabWorkerExecutorOptions>(new MeshLabWorkerExecutorOptions { Enabled = false }),
+            NullLogger<MeshLabWorkerExecutorBackgroundService>.Instance);
+
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+        await service.StartAsync(cts.Token);
+        await Task.Delay(2100);
+        await cts.CancelAsync();
+        await service.StopAsync(CancellationToken.None);
+
+        requestCount.Should().Be(0);
+    }
+
+    [Fact]
     public async Task ExecuteAsync_clamps_poll_interval_to_minimum()
     {
         var requestCount = 0;

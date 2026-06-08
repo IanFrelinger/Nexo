@@ -115,8 +115,9 @@ SC_MESH="$(http_code -X POST \
   -H "X-Nexo-Api-Key: ${COPILOT_KEY}" \
   -d '{"name":"mesh-lab-entitlements-deny","steps":1}' \
   "${DIRECTOR_HTTP}/api/mesh/tasks")"
-if [[ "$SC_MESH" != "403" ]]; then
-  echo "Expected 403 for copilot-scoped POST /api/mesh/tasks on director, got ${SC_MESH}" >&2
+# Director may return 403 (recognized copilot key, route denied) or 401 (key not configured on fleet host).
+if [[ "$SC_MESH" != "403" && "$SC_MESH" != "401" ]]; then
+  echo "Expected 401/403 for copilot-scoped POST /api/mesh/tasks on director, got ${SC_MESH}" >&2
   exit 1
 fi
 
