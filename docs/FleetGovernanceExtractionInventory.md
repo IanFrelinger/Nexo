@@ -260,8 +260,6 @@ Added:
 - `commercial/tests/Nexo.Commercial.Tests.Fleet.Host` and `scripts/commercial-fleet-host-smoke.sh` — host build/smoke validation;
 - `NexoHostingOptions.DisableOpenFleetDirector` — commercial fleet host skips open fleet DI registration in `AddNexo()`.
 
-Open `Nexo.API` fleet/task/knowledge routes remain until mesh-lab scripts/tests migrate.
-
 ### PR 10 — open fleet endpoint cleanup (done)
 
 Completed:

@@ -7,6 +7,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>Nexo.Commercial.Fleet.Host</RootNamespace>
     <AssemblyName>Fleet.Host</AssemblyName>
+    <!-- Nexo.API is a referenced Web SDK project; both ship appsettings.json. -->
+    <ErrorOnDuplicatePublishOutputFiles>false</ErrorOnDuplicatePublishOutputFiles>
   </PropertyGroup>
 
   <ItemGroup>
