@@ -171,7 +171,7 @@ Target module: `commercial/src/Nexo.Commercial.Fleet.Contracts` for ports/models
 
 | Path | Classification |
 |------|----------------|
-| `application/src/Nexo.CLI/Commands/MeshDirectorCommand.cs` | **COMMERCIAL / duplicated baseline** — direct client for fleet director API. A commercial copy now exists in `commercial/src/Nexo.Commercial.MeshDirector`; keep the open copy temporarily until mesh-lab scripts and operator packaging consume the commercial module. |
+| `commercial/src/Nexo.Commercial.MeshDirector/MeshDirectorCommand.cs` | **COMMERCIAL** — direct client for fleet director API. The open CLI duplicate has been removed after mesh-lab scripts/operator packaging moved to the commercial module. |
 | `application/src/Nexo.CLI/Commands/MeshHubCommand.cs` | **SPLIT / owner decision** — `health` can remain open as generic remote health probe; `list` over admitted peers and hub/fleet semantics should move commercial or be renamed as local-only inspection. |
 
 ### Fleet tests to move commercial
@@ -181,7 +181,7 @@ Target module: `commercial/tests/Nexo.Commercial.Tests.Fleet`.
 | Path group | Target / reason |
 |------------|-----------------|
 | `src/Nexo.Tests.Infrastructure/Tests/Fleet/*.cs` | Move all fleet registry, placement, persistence, lease/checkpoint, knowledge replication, worker executor, and trust policy tests with fleet code. |
-| `application/src/Nexo.Tests.CLI/Tests/Commands/MeshDirectorCommandUriTests.cs` | Commercial copy now exists in `commercial/tests/Nexo.Commercial.Tests.MeshDirector`; keep the open test temporarily while the open CLI retains the compatibility command. |
+| `commercial/tests/Nexo.Commercial.Tests.MeshDirector/MeshDirectorCommandUriTests.cs` | **COMMERCIAL** — URI-building tests for the commercial mesh director client. The open CLI duplicate has been removed. |
 
 ## SPLIT / owner decision inventory
 
@@ -233,9 +233,9 @@ Create:
 
 Seed commercial module and then move or split:
 
-- `MeshDirectorCommand` (commercial copy exists; open copy retained temporarily for mesh-lab compatibility)
+- `MeshDirectorCommand` (commercial module owns this now)
 - commercial portions of `MeshHubCommand`
-- related CLI tests (commercial copy exists; open copy retained temporarily)
+- related URI tests (commercial module owns these now)
 
 Create:
 

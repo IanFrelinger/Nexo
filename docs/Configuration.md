@@ -9,10 +9,10 @@ Nexo configures via environment variables and optional `~/.nexo/config.json`. Th
 | `NEXO_CONFIG_PATH` | Path to config file | `~/.nexo/config.json` |
 | `NEXO_MESH_INSTANCES_PATH` | Path to **`instances.json`** for **`nexo mesh`** discovery | `~/.nexo/instances.json` |
 | `NEXO_MESH_TRUST_POLICY` | Discovery filter: **`any`**, **`allowlist`** (only **`admitted: true`** peers), **`trusted-only`**, **`trusted-preferred`** | **`any`** for discovery (see **`MeshTrustPolicyConfiguration`**) |
-| `NEXO_MESH_DIRECTOR_BASE_URL` | Base URL for **`nexo mesh director`** HTTP calls | unset |
+| `NEXO_MESH_DIRECTOR_BASE_URL` | Base URL for **commercial mesh director CLI** (`dotnet run --project commercial/src/Nexo.Commercial.MeshDirector -- director ...`) HTTP calls | unset |
 | `NEXO_MESH_API_KEY` | Optional **`X-Nexo-Api-Key`** for director CLI | unset |
 | `NEXO_MESH_MUTATING_TOKEN` | Optional **`X-Nexo-Mesh-Token`** for mutating mesh routes on the hub | unset |
-| `NEXO_MESH_PEER_REGISTRATION_KEY` | Per-peer fleet registration secret for **`nexo mesh director register`** (when director requires distinct key) | unset |
+| `NEXO_MESH_PEER_REGISTRATION_KEY` | Per-peer fleet registration secret for **commercial mesh director CLI `register`** (when director requires distinct key) | unset |
 | `NEXO_DEPLOYMENT_PROFILE` | Hosting dependency profile for `AddNexo()` module composition (`full`, `server`, `edge`, `air-gapped`, `system`) | `full` |
 | `NEXO_STRICT_MODE` | `1` or `true` = enable strict mode (fail-fast + verbose diagnostics for dev/CI; disable for production) | `false` |
 | `NEXO_AIRGAP` | `1` or `true` = air-gapped; no cloud calls | unset |
@@ -152,14 +152,14 @@ Binds section **`Nexo:Mesh:Persistence`**. See [MeshPhase9DirectorPersistence.md
 
 ## Mesh director CLI (`NEXO_MESH_*`, Phase 7)
 
-Used by **`nexo mesh director`** when a worker or script talks to a remote **`Nexo.API`** mesh control plane. See **`docs/MeshPhase7EdgeAlignment.md`**. Discovery-related `NEXO_MESH_*` values also appear under **Core** above; this section summarizes hub HTTP access from the CLI.
+Used by **commercial mesh director CLI** (`dotnet run --project commercial/src/Nexo.Commercial.MeshDirector -- director ...`) when a worker or script talks to a remote **`Nexo.API`** mesh control plane. See **`docs/MeshPhase7EdgeAlignment.md`**. Discovery-related `NEXO_MESH_*` values also appear under **Core** above; this section summarizes hub HTTP access from the CLI.
 
 | Variable | Description |
 |----------|-------------|
 | `NEXO_MESH_DIRECTOR_BASE_URL` | Director base URL (e.g. `https://hub:8080`) |
 | `NEXO_MESH_API_KEY` | Optional **`X-Nexo-Api-Key`** when the hub enforces API key auth |
 | `NEXO_MESH_MUTATING_TOKEN` | Optional **`X-Nexo-Mesh-Token`** for mutating **`/api/mesh`** requests |
-| `NEXO_MESH_PEER_REGISTRATION_KEY` | Per-peer registration secret for **`nexo mesh director register`** |
+| `NEXO_MESH_PEER_REGISTRATION_KEY` | Per-peer registration secret for **commercial mesh director CLI `register`** |
 
 ## Pipelines (`NEXO_PIPELINE_*`)
 

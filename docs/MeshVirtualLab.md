@@ -101,7 +101,7 @@ That covers **Docker DNS, bridge connectivity, security headers, director placem
 
 **Fleet governance (peer-a director):** default **`Nexo__Mesh__Fleet__RequirePeerRegistrationKey=true`**. Each fleet register must include **`peerRegistrationKey`** in the JSON body (distinct from the operator **`Nexo__Security__ApiKey`**). Set **`MESH_LAB_PEER_REGISTRATION_KEY`** in `.env.mesh-lab`. [`scripts/mesh-lab-verify-governance.sh`](../scripts/mesh-lab-verify-governance.sh) (invoked from standard verify) checks registration policy, credential rotation (fingerprint change), **`POST /api/mesh/fleet/nodes/{peerId}/revoke`** → placement blocked, and **`/admit`** → placement restored. Set **`MESH_LAB_SKIP_GOV_VERIFY=1`** to skip.
 
-**Director CLI (Product 5.3):** [`scripts/mesh-lab-verify-director-cli.sh`](../scripts/mesh-lab-verify-director-cli.sh) exercises **`nexo mesh director register|revoke|admit`** against the running lab (requires .NET SDK on the host). Set **`MESH_LAB_SKIP_DIRECTOR_CLI_VERIFY=1`** to skip. Ops: [`docs/runbooks/mesh-lab-operations.md`](runbooks/mesh-lab-operations.md) (split-brain, upgrade order, director vs `instances.json`).
+**Director CLI (Product 5.3):** [`scripts/mesh-lab-verify-director-cli.sh`](../scripts/mesh-lab-verify-director-cli.sh) exercises **commercial mesh director CLI `register|revoke|admit`** against the running lab (requires .NET SDK on the host). Set **`MESH_LAB_SKIP_DIRECTOR_CLI_VERIFY=1`** to skip. Ops: [`docs/runbooks/mesh-lab-operations.md`](runbooks/mesh-lab-operations.md) (split-brain, upgrade order, director vs `instances.json`).
 
 **Director persistence (Phase 9):** peer-a uses **LiteDB** (`Nexo__Mesh__Persistence__Provider=LiteDb`, volume `mesh_lab_peer_a_data`). [`scripts/mesh-lab-verify-persistence.sh`](../scripts/mesh-lab-verify-persistence.sh) restarts peer-a and asserts fleet + tasks survive. Set **`MESH_LAB_SKIP_PERSISTENCE_VERIFY=1`** to skip. See [`MeshPhase9DirectorPersistence.md`](MeshPhase9DirectorPersistence.md).
 
@@ -154,11 +154,11 @@ make mesh-lab-stress
 ```bash
 export NEXO_MESH_DIRECTOR_BASE_URL=http://127.0.0.1:18081
 export NEXO_MESH_API_KEY='your-key'
-dotnet run --project application/src/Nexo.CLI -- mesh director get /health --json
+dotnet run --project commercial/src/Nexo.Commercial.MeshDirector -- director get /health --json
 
 export NEXO_MESH_DIRECTOR_BASE_URL=http://127.0.0.1:18082
 # peer-b accepts Bearer OR same API key:
-dotnet run --project application/src/Nexo.CLI -- mesh director get /health --json
+dotnet run --project commercial/src/Nexo.Commercial.MeshDirector -- director get /health --json
 ```
 
 ## instances.json (optional)

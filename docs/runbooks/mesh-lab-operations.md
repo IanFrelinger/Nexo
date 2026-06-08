@@ -20,7 +20,7 @@ One-shot (CI parity): `make mesh-lab-e2e-workers`, `make mesh-lab-e2e-deep`, `ma
 |-----------|--------|----------|
 | **`nexo mesh admit` / `revoke`** | Local **`instances.json`** discovery file | gRPC/capability routing on this host |
 | **`POST /api/mesh/fleet/nodes/{id}/admit|revoke`** | **Director** in-memory fleet (peer-a in lab) | HTTP mesh placement only |
-| **`nexo mesh director admit|revoke`** | Same as HTTP above from headless hosts | CI scripts, workers without curl |
+| **commercial mesh director CLI `admit|revoke`** | Same as HTTP above from headless hosts | CI scripts, workers without curl |
 
 Lab verify runs **both** HTTP governance ([`mesh-lab-verify-governance.sh`](../../scripts/mesh-lab-verify-governance.sh)) and CLI ([`mesh-lab-verify-director-cli.sh`](../../scripts/mesh-lab-verify-director-cli.sh)).
 
@@ -57,7 +57,7 @@ There is **no distributed consensus** in the MVP director—last writer wins on 
 | `peer-a container not running` in verify | Wrong `COMPOSE_PROJECT_NAME` | Export same project name for scripts and compose |
 | Worker executor timeout | Executor disabled or director URL wrong | Check worker logs; `Nexo__MeshLab__WorkerExecutor__*` env |
 | `placement.trust_policy_blocked` | Only untrusted workers registered | Register a **Trusted** fleet node or relax `Nexo__Mesh__Placement__PeerTrustPolicy` |
-| `placement.peer_not_admitted` | Peer revoked on director | `POST …/admit` or `nexo mesh director admit <id>` |
+| `placement.peer_not_admitted` | Peer revoked on director | `POST …/admit` or `commercial mesh director CLI `admit <id>`` |
 | Register **400** missing key | `RequirePeerRegistrationKey=true` | Set **`MESH_LAB_PEER_REGISTRATION_KEY`** / **`NEXO_MESH_PEER_REGISTRATION_KEY`** |
 | Register **400** same as ApiKey | Policy rejects operator key as peer secret | Use a distinct registration secret |
 | Stress `port is already allocated` on scale | Host port publish on workers | Stress uses `docker-compose.mesh-lab-stress.override.yml` |
@@ -87,11 +87,11 @@ export NEXO_MESH_DIRECTOR_BASE_URL=http://127.0.0.1:18081
 export NEXO_MESH_API_KEY='…'
 export NEXO_MESH_PEER_REGISTRATION_KEY='…'   # distinct from API key
 
-dotnet run --project application/src/Nexo.CLI -- mesh director register worker-1 \
+dotnet run --project commercial/src/Nexo.Commercial.MeshDirector -- director register worker-1 \
   --api-base-url http://peer-b:8080 --trust-tier Trusted --json
 
-dotnet run --project application/src/Nexo.CLI -- mesh director revoke worker-1
-dotnet run --project application/src/Nexo.CLI -- mesh director admit worker-1
+dotnet run --project commercial/src/Nexo.Commercial.MeshDirector -- director revoke worker-1
+dotnet run --project commercial/src/Nexo.Commercial.MeshDirector -- director admit worker-1
 ```
 
 See [`MeshPhase7EdgeAlignment.md`](../MeshPhase7EdgeAlignment.md).
