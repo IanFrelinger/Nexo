@@ -39,7 +39,7 @@ Default **`NEXO_FRIEND_MESH_PORT_PUBLISH`** is **`127.0.0.1:8080`** so the conta
 
 ## Workers and mesh director
 
-If your Nexo build exposes **`/api/mesh/*`**, each friend can run a worker and register with the hub using the same auth headers your deployment expects. From a headless machine, **`nexo mesh director`** can call the hub when **`NEXO_MESH_*`** env vars are set — see **`docs/MeshPhase7EdgeAlignment.md`** (if present on your branch).
+If your Nexo build exposes **`/api/mesh/*`**, each friend can run a worker and register with the hub using the same auth headers your deployment expects. From a headless machine, **commercial mesh director CLI** (`dotnet run --project commercial/src/Nexo.Commercial.MeshDirector -- director ...`) can call the hub when **`NEXO_MESH_*`** env vars are set — see **`docs/MeshPhase7EdgeAlignment.md`** (if present on your branch).
 
 ## Limitations
 

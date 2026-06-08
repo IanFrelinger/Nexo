@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Mesh director governance via nexo mesh director CLI (Phase 7 + Product 5.3).
+# Mesh director governance via commercial mesh director CLI CLI (Phase 7 + Product 5.3).
 #
 #   ./scripts/mesh-lab-verify-director-cli.sh .env.mesh-lab
 #
@@ -16,7 +16,7 @@ source "${ROOT}/scripts/mesh-lab-fleet.sh"
 COMPOSE_ENV_FILE="${1:-${COMPOSE_ENV_FILE:-.env.mesh-lab}}"
 PEER_A_HOST="${MESH_LAB_PEER_A_HOST:-127.0.0.1:18081}"
 CLI_PEER_ID="${MESH_LAB_CLI_GOV_PEER_ID:-mesh-lab-cli-gov-peer}"
-CLI_PROJECT="${MESH_LAB_CLI_PROJECT:-application/src/Nexo.CLI/Nexo.CLI.csproj}"
+MESH_DIRECTOR_PROJECT="${MESH_LAB_MESH_DIRECTOR_PROJECT:-commercial/src/Nexo.Commercial.MeshDirector/Nexo.Commercial.MeshDirector.csproj}"
 
 if [[ ! -f "$COMPOSE_ENV_FILE" ]]; then
   echo "Missing env file: $COMPOSE_ENV_FILE" >&2
@@ -42,7 +42,7 @@ export NEXO_MESH_API_KEY="${API_KEY}"
 export NEXO_MESH_PEER_REGISTRATION_KEY="${MESH_LAB_PEER_REGISTRATION_KEY}"
 
 director() {
-  dotnet run --project "$CLI_PROJECT" -- mesh director "$@"
+  dotnet run --project "$MESH_DIRECTOR_PROJECT" -- director "$@"
 }
 
 mesh_post() {

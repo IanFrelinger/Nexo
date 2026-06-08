@@ -41,7 +41,7 @@ Fleet-scale mesh and governance behavior is currently woven through open project
 - `src/Nexo.Infrastructure/Networking/**`
 - fleet-scale portions of `src/Nexo.Core.Application/Mesh/**`
 - fleet-scale portions of `src/Nexo.Infrastructure/Mesh/**`
-- `application/src/Nexo.CLI/Commands/MeshDirectorCommand.cs`
+- `commercial/src/Nexo.Commercial.MeshDirector/MeshDirectorCommand.cs`
 - `application/src/Nexo.CLI/Commands/MeshHubCommand.cs`
 - mesh/fleet governance endpoints and middleware under `application/src/Nexo.API/**`
 
@@ -91,7 +91,7 @@ Target commercial modules:
 | `Nexo.Commercial.Fleet.Contracts` | seeded from fleet DTOs/ports now in `Nexo.Core.Application/Fleet` | Commercial contracts needed by commercial fleet runtime; originals remain temporarily until consumers move. |
 | `Nexo.Commercial.Fleet.Core` | fleet placement/task/checkpoint abstractions and policies | Fleet scheduling and governance logic. |
 | `Nexo.Commercial.Fleet.Infrastructure` | seeded from `Nexo.Infrastructure/Fleet` persistence/worker/director services | Commercial implementations for persistence, director state, workers, leases, checkpoints; originals remain temporarily until consumers move. |
-| `Nexo.Commercial.MeshDirector` | seeded from CLI director HTTP client surface | Commercial control plane CLI/API module; open CLI copy remains temporarily for mesh-lab compatibility. |
+| `Nexo.Commercial.MeshDirector` | CLI director HTTP client surface | Commercial control plane CLI/API module. |
 | `Nexo.Commercial.Governance` | centralized policy, RBAC/SSO, aggregated audit surfaces | Commercial organization-level governance module. |
 | `Nexo.Commercial.Tests.Fleet` | fleet/mesh governance tests currently under open test projects | Commercial test assembly for extracted fleet behavior. |
 
@@ -196,7 +196,7 @@ This can start as a script and become a CI gate after the first extraction PR la
 4. **PR 4 — fleet inventory split:** classify open mesh primitives vs commercial fleet/governance files in [`FleetGovernanceExtractionInventory.md`](FleetGovernanceExtractionInventory.md).
 5. **PR 5 — fleet contracts baseline:** seed `Nexo.Commercial.Fleet.Contracts` from fleet task/node DTOs and ports.
 6. **PR 6 — fleet infrastructure baseline:** seed `Nexo.Commercial.Fleet.Infrastructure` from current fleet implementations.
-7. **PR 7 — mesh director baseline:** seed `Nexo.Commercial.MeshDirector` and tests while retaining open CLI compatibility until scripts/packaging move.
+7. **PR 7 — mesh director migration:** move mesh-lab/operator packaging to `Nexo.Commercial.MeshDirector` and remove the open CLI duplicate.
 8. **PR 8 — dependency-boundary gate:** add scanner script and optional CI enforcement.
 
 Do not combine these into one large refactor. The dependency graph and licensing boundary should be reviewable at every step.
