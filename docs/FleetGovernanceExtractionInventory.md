@@ -171,7 +171,7 @@ Target module: `commercial/src/Nexo.Commercial.Fleet.Contracts` for ports/models
 
 | Path | Classification |
 |------|----------------|
-| `application/src/Nexo.CLI/Commands/MeshDirectorCommand.cs` | **COMMERCIAL** — direct client for fleet director API. Move to `Nexo.Commercial.MeshDirector` or commercial CLI plugin. |
+| `application/src/Nexo.CLI/Commands/MeshDirectorCommand.cs` | **COMMERCIAL / duplicated baseline** — direct client for fleet director API. A commercial copy now exists in `commercial/src/Nexo.Commercial.MeshDirector`; keep the open copy temporarily until mesh-lab scripts and operator packaging consume the commercial module. |
 | `application/src/Nexo.CLI/Commands/MeshHubCommand.cs` | **SPLIT / owner decision** — `health` can remain open as generic remote health probe; `list` over admitted peers and hub/fleet semantics should move commercial or be renamed as local-only inspection. |
 
 ### Fleet tests to move commercial
@@ -181,7 +181,7 @@ Target module: `commercial/tests/Nexo.Commercial.Tests.Fleet`.
 | Path group | Target / reason |
 |------------|-----------------|
 | `src/Nexo.Tests.Infrastructure/Tests/Fleet/*.cs` | Move all fleet registry, placement, persistence, lease/checkpoint, knowledge replication, worker executor, and trust policy tests with fleet code. |
-| `application/src/Nexo.Tests.CLI/Tests/Commands/MeshDirectorCommandUriTests.cs` | Move with `MeshDirectorCommand`. |
+| `application/src/Nexo.Tests.CLI/Tests/Commands/MeshDirectorCommandUriTests.cs` | Commercial copy now exists in `commercial/tests/Nexo.Commercial.Tests.MeshDirector`; keep the open test temporarily while the open CLI retains the compatibility command. |
 
 ## SPLIT / owner decision inventory
 
@@ -231,11 +231,11 @@ Create:
 
 ### PR 7 — commercial mesh director / CLI surface
 
-Move or split:
+Seed commercial module and then move or split:
 
-- `MeshDirectorCommand`
+- `MeshDirectorCommand` (commercial copy exists; open copy retained temporarily for mesh-lab compatibility)
 - commercial portions of `MeshHubCommand`
-- related CLI tests
+- related CLI tests (commercial copy exists; open copy retained temporarily)
 
 Create:
 
