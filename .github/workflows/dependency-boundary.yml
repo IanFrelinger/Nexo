@@ -1,0 +1,48 @@
+# Enforces open-core / commercial project-reference and licensing boundary rules.
+name: dependency-boundary
+
+on:
+  pull_request:
+    paths:
+      - "**/*.csproj"
+      - "commercial/**"
+      - "application/**"
+      - "src/**"
+      - "Directory.Build.props"
+      - "Directory.Build.targets"
+      - "LICENSING.md"
+      - "scripts/verify-open-commercial-dependency-boundary.py"
+      - "scripts/dependency-boundary-gate.sh"
+      - "scripts/dependency-boundary.open-to-commercial.allowlist.txt"
+      - ".github/workflows/dependency-boundary.yml"
+  push:
+    branches:
+      - master
+      - main
+      - "cursor/**"
+    paths:
+      - "**/*.csproj"
+      - "commercial/**"
+      - "application/**"
+      - "src/**"
+      - "Directory.Build.props"
+      - "Directory.Build.targets"
+      - "LICENSING.md"
+      - "scripts/verify-open-commercial-dependency-boundary.py"
+      - "scripts/dependency-boundary-gate.sh"
+      - "scripts/dependency-boundary.open-to-commercial.allowlist.txt"
+      - ".github/workflows/dependency-boundary.yml"
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Verify open/commercial dependency boundary
+        run: bash scripts/dependency-boundary-gate.sh

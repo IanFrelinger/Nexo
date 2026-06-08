@@ -77,6 +77,7 @@ needs_kernel_cov=0
 needs_kernel_gate=0
 needs_mesh=0
 needs_app_gate=0
+needs_dependency_boundary=0
 docs_only=1
 
 for f in "${ALL_CHANGED[@]}"; do
@@ -94,7 +95,11 @@ for f in "${ALL_CHANGED[@]}"; do
     src/Nexo.Infrastructure/Mesh/*|src/Nexo.Infrastructure/MeshLab/*|commercial/src/Nexo.Commercial.Fleet.*|docker-compose*fleet*|scripts/mesh-lab*)
       needs_mesh=1 ;;
     application/*) needs_app_gate=1 ;;
+    commercial/*) needs_dependency_boundary=1 ;;
+    Directory.Build.props|Directory.Build.targets|LICENSING.md)
+      needs_dependency_boundary=1 ;;
   esac
+  [[ "$f" == *.csproj ]] && needs_dependency_boundary=1
 done
 
 if [[ "$docs_only" -eq 1 ]]; then
@@ -105,6 +110,7 @@ else
   [[ "$needs_domain" -eq 1 ]] && note "  dotnet test src/Nexo.Tests.Domain/Nexo.Tests.Domain.csproj"
   [[ "$needs_app_gate" -eq 1 ]] && note "  make application-gate-tier-a (or tier-c for API)"
   [[ "$needs_mesh" -eq 1 ]] && note "  make composition-mesh-gate-tier-c (or mesh-lab-e2e with Docker)"
+  [[ "$needs_dependency_boundary" -eq 1 ]] && note "  make dependency-boundary-gate"
 fi
 
 if [[ "$fail" -ne 0 ]]; then

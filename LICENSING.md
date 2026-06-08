@@ -94,12 +94,10 @@ Tier 2 is the future commercial layer for fleet-scale and governance capabilitie
 - aggregated tamper-evident audit,
 - RBAC/SSO and organization-scale governance.
 
-Current status: fleet contracts, fleet infrastructure, mesh director, fleet API, and fleet host now exist under `commercial/`. Mesh-lab director (peer-a) runs `Nexo.Commercial.Fleet.Host`. Open `src/Nexo.Core.Application/Fleet/**` and `src/Nexo.Infrastructure/Fleet/**` remain temporarily for worker executor and infrastructure tests.
+Current status: fleet contracts, fleet infrastructure, mesh director, fleet API, and fleet host exist under `commercial/`. Mesh-lab director (peer-a) runs `Nexo.Commercial.Fleet.Host`. Open duplicate fleet trees under `src/` have been removed; mesh-lab workers use open `Nexo.Infrastructure/MeshLab` to poll the commercial director HTTP API.
 
-The current classification inventory is [`docs/FleetGovernanceExtractionInventory.md`](docs/FleetGovernanceExtractionInventory.md). Likely extraction candidates include:
+The current classification inventory is [`docs/FleetGovernanceExtractionInventory.md`](docs/FleetGovernanceExtractionInventory.md). Remaining extraction candidates include:
 
-- `src/Nexo.Core.Application/Fleet/**`
-- `src/Nexo.Infrastructure/Fleet/**`
 - `src/Nexo.Core.Application/Networking/**`
 - `src/Nexo.Infrastructure/Networking/**`
 - fleet-scale portions of `src/Nexo.Core.Application/Mesh/**` and `src/Nexo.Infrastructure/Mesh/**`
@@ -150,7 +148,9 @@ Rule: no Tier 1 OPEN project may reference a Tier 2/3 COMMERCIAL project.
 
 Current result: **passes for committed placement** because no Tier 1 `.csproj` references a commercial project.
 
-Preflight result for the vertical split: **unblocked for GameDomain/GameDirector**. `Nexo.API`, `Nexo.CLI`, and `Nexo.Tests.CLI` no longer reference `Nexo.GameDomain`; `Nexo.GameDomain`, Game Director code, and their tests have moved to commercial paths. Remaining extraction work is fleet/governance extraction.
+Enforced in CI by `scripts/dependency-boundary-gate.sh` (workflow: `.github/workflows/dependency-boundary.yml`). The scanner classifies projects by path and `NexoCommercialProject`, fails on open→commercial `ProjectReference` edges, requires `COMMERCIAL-LICENSE.md` beside commercial `.csproj` files, and verifies open packable projects resolve `PackageLicenseExpression=Apache-2.0`.
+
+Preflight result for the vertical split: **unblocked for GameDomain/GameDirector**. `Nexo.API`, `Nexo.CLI`, and `Nexo.Tests.CLI` no longer reference `Nexo.GameDomain`; `Nexo.GameDomain`, Game Director code, and their tests have moved to commercial paths. Fleet infrastructure extraction from open `src/` is complete; remaining work is networking/governance extraction and further commercial module splits.
 
 ## Open questions
 

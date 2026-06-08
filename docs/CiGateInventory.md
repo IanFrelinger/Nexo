@@ -33,6 +33,7 @@ Tier labels are intentionally conservative:
 | `.github/workflows/kernel-coverage-gate.yml` | Kernel coverage gate | `push`, `pull_request` | Kernel coverage ratchet. | Blocking candidate |
 | `.github/workflows/kernel-gate.yml` | Kernel Gate | `push`, `pull_request`, `workflow_dispatch` | Kernel tier build/test gate with manual tier expansion. | Blocking candidate |
 | `.github/workflows/layer-boundary.yml` | layer-boundary | `pull_request` | Enforces tier/layer boundary rules. | Blocking candidate |
+| `.github/workflows/dependency-boundary.yml` | dependency-boundary | `pull_request`, `push`, `workflow_dispatch` | Open-core vs commercial project-reference and licensing boundary scan. | Blocking candidate |
 | `.github/workflows/mapbox-tile-helpers-ci.yml` | Mapbox Tile Helpers (optional) | `workflow_dispatch` | Optional Mapbox helper validation. | Advisory/manual |
 | `.github/workflows/mesh-lab-gate.yml` | Mesh virtual lab gate | `push`, `pull_request`, `workflow_dispatch` | Virtual mesh lab validation. | Blocking candidate |
 | `.github/workflows/mesh-lab-remote-gate.yml` | Mesh lab remote gate (self-hosted / tailnet) | `workflow_dispatch` | Manual self-hosted/tailnet mesh validation. | Advisory/manual |

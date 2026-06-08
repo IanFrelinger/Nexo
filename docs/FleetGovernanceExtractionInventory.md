@@ -275,16 +275,15 @@ Completed:
 - moved fleet unit tests to `commercial/tests/Nexo.Commercial.Tests.Fleet`;
 - kept mesh-lab worker executor tests under `src/Nexo.Tests.Infrastructure/Tests/MeshLab/**`.
 
-### PR 12 — dependency-boundary scanner
+### PR 12 — dependency-boundary scanner (done)
 
-Add a script that:
+Added:
 
-- classifies open vs commercial projects;
-- fails on open project references to commercial projects;
-- checks commercial directories include `COMMERCIAL-LICENSE.md`;
-- verifies open packable projects resolve `PackageLicenseExpression=Apache-2.0`.
-
-Wire to CI only after owner approval.
+- `scripts/verify-open-commercial-dependency-boundary.py` — classifies projects, scans `ProjectReference` edges, checks `COMMERCIAL-LICENSE.md`, and evaluates open packable `PackageLicenseExpression`;
+- `scripts/dependency-boundary-gate.sh` — strict wrapper (`DEPENDENCY_BOUNDARY_STRICT=1`);
+- `scripts/dependency-boundary.open-to-commercial.allowlist.txt` — documented exception list (empty by default);
+- `.github/workflows/dependency-boundary.yml` — CI gate on `.csproj` / licensing path changes;
+- `make dependency-boundary-gate`.
 
 ## Validation for this inventory PR
 
