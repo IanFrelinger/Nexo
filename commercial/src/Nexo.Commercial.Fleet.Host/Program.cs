@@ -146,7 +146,7 @@ app.UseRateLimiter();
 app.UseSwagger();
 app.UseSwaggerUI(static c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Nexo Commercial Fleet Host v1"));
 
-app.MapNexoEndpoints(new NexoEndpointMappingOptions { ExcludeFleetEndpoints = true });
+app.MapNexoEndpoints();
 app.MapNexoCommercialFleetEndpoints();
 app.MapIngressEndpoints();
 
