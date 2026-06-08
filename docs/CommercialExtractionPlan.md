@@ -91,6 +91,7 @@ Target commercial modules:
 | `Nexo.Commercial.Fleet.Contracts` | seeded from fleet DTOs/ports now in `Nexo.Core.Application/Fleet` | Commercial contracts needed by commercial fleet runtime; originals remain temporarily until consumers move. |
 | `Nexo.Commercial.Fleet.Core` | fleet placement/task/checkpoint abstractions and policies | Fleet scheduling and governance logic. |
 | `Nexo.Commercial.Fleet.Infrastructure` | seeded from `Nexo.Infrastructure/Fleet` persistence/worker/director services | Commercial implementations for persistence, director state, workers, leases, checkpoints; originals remain temporarily until consumers move. |
+| `Nexo.Commercial.Fleet.Api` | seeded from `Nexo.API` `/api/mesh` fleet/task/knowledge endpoints | Commercial endpoint extension for fleet director HTTP APIs; open endpoints remain temporarily until host wiring moves. |
 | `Nexo.Commercial.MeshDirector` | CLI director HTTP client surface | Commercial control plane CLI/API module. |
 | `Nexo.Commercial.Governance` | centralized policy, RBAC/SSO, aggregated audit surfaces | Commercial organization-level governance module. |
 | `Nexo.Commercial.Tests.Fleet` | fleet/mesh governance tests currently under open test projects | Commercial test assembly for extracted fleet behavior. |
@@ -197,6 +198,8 @@ This can start as a script and become a CI gate after the first extraction PR la
 5. **PR 5 — fleet contracts baseline:** seed `Nexo.Commercial.Fleet.Contracts` from fleet task/node DTOs and ports.
 6. **PR 6 — fleet infrastructure baseline:** seed `Nexo.Commercial.Fleet.Infrastructure` from current fleet implementations.
 7. **PR 7 — mesh director migration:** move mesh-lab/operator packaging to `Nexo.Commercial.MeshDirector` and remove the open CLI duplicate.
-8. **PR 8 — dependency-boundary gate:** add scanner script and optional CI enforcement.
+8. **PR 8 — fleet API baseline:** seed `Nexo.Commercial.Fleet.Api` from open `/api/mesh` fleet/task/knowledge endpoints.
+9. **PR 9 — fleet host migration:** wire commercial host/operator packaging to the commercial API/infrastructure and remove open endpoint duplicates when safe.
+10. **PR 10 — dependency-boundary gate:** add scanner script and optional CI enforcement.
 
 Do not combine these into one large refactor. The dependency graph and licensing boundary should be reviewable at every step.

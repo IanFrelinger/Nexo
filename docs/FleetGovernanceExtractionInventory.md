@@ -23,6 +23,7 @@ Classification terms:
 | `commercial/src/Nexo.Commercial.Fleet.Contracts` | Fleet DTOs and ports that commercial infrastructure and control-plane hosts consume. |
 | `commercial/src/Nexo.Commercial.Fleet.Core` | Task placement, fleet trust policy, elastic scheduling, lease/checkpoint policy, knowledge replication orchestration. |
 | `commercial/src/Nexo.Commercial.Fleet.Infrastructure` | LiteDB registries, worker executor client/background service, director persistence, import/export implementations, sweep/rebalance services. |
+| `commercial/src/Nexo.Commercial.Fleet.Api` | Commercial `/api/mesh` fleet/task/knowledge endpoint extension seeded from open `Nexo.API`. |
 | `commercial/src/Nexo.Commercial.MeshDirector` | Mesh director CLI/API/control-plane operations and HTTP client surfaces. |
 | `commercial/src/Nexo.Commercial.Governance` | Future RBAC/SSO, centralized policy management, aggregate tamper-evident audit, org-scale entitlements. |
 | `commercial/tests/Nexo.Commercial.Tests.Fleet` | Fleet/director/governance tests moved out of open test projects. |
@@ -241,7 +242,25 @@ Create:
 
 - `commercial/src/Nexo.Commercial.MeshDirector`
 
-### PR 8 — dependency-boundary scanner
+### PR 8 — commercial fleet API baseline
+
+Seed commercial endpoint module:
+
+- `commercial/src/Nexo.Commercial.Fleet.Api`
+- copy `/api/mesh/fleet/**`, `/api/mesh/tasks/**`, and `/api/mesh/knowledge/**` endpoint mappings/handlers/DTOs from open `Nexo.API`;
+- use commercial fleet contracts/infrastructure namespaces;
+- keep open endpoints temporarily until commercial host wiring moves.
+
+### PR 9 — commercial fleet host migration
+
+Move commercial hosts/operator packaging to:
+
+- `Nexo.Commercial.Fleet.Api`
+- `Nexo.Commercial.Fleet.Infrastructure`
+
+Then remove open endpoint duplicates from `Nexo.API` when no open tests/scripts require them.
+
+### PR 10 — dependency-boundary scanner
 
 Add a script that:
 
