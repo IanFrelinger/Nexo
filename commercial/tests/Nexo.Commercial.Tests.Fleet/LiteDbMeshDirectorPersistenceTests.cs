@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Commercial.Tests.Fleet;
 
+[Collection(nameof(LiteDbFleetCollection))]
 public sealed class LiteDbMeshDirectorPersistenceTests
 {
     [Fact]
@@ -13,31 +14,34 @@ public sealed class LiteDbMeshDirectorPersistenceTests
         var path = Path.Combine(Path.GetTempPath(), $"nexo-mesh-{Guid.NewGuid():N}.db");
         try
         {
-            var nodes1 = new LiteDbFleetNodeRegistry(path);
-            var tasks1 = new LiteDbMeshTaskRegistry(path);
+            MeshTaskState created;
+            {
+                var nodes1 = new LiteDbFleetNodeRegistry(path);
+                var tasks1 = new LiteDbMeshTaskRegistry(path);
 
-            await nodes1.RegisterOrUpdateAsync(new MeshFleetNodeState(
-                "persist-peer",
-                "https://worker.example/",
-                new Dictionary<string, string>(),
-                Array.Empty<string>(),
-                false,
-                DateTimeOffset.UtcNow,
-                DateTimeOffset.UtcNow,
-                0,
-                MeshFleetTrustTier.Trusted,
-                Admitted: true,
-                RegistrationKeyFingerprint: "ABC123"));
-
-            var created = await tasks1.CreateAsync(
-                new MeshTaskCreateSpec(
-                    "persist-task",
-                    1,
+                await nodes1.RegisterOrUpdateAsync(new MeshFleetNodeState(
+                    "persist-peer",
+                    "https://worker.example/",
+                    new Dictionary<string, string>(),
                     Array.Empty<string>(),
-                    null,
+                    false,
+                    DateTimeOffset.UtcNow,
+                    DateTimeOffset.UtcNow,
                     0,
-                    null,
-                    IdempotencyKey: "idem-persist-1"));
+                    MeshFleetTrustTier.Trusted,
+                    Admitted: true,
+                    RegistrationKeyFingerprint: "ABC123"));
+
+                created = await tasks1.CreateAsync(
+                    new MeshTaskCreateSpec(
+                        "persist-task",
+                        1,
+                        Array.Empty<string>(),
+                        null,
+                        0,
+                        null,
+                        IdempotencyKey: "idem-persist-1"));
+            }
 
             var nodes2 = new LiteDbFleetNodeRegistry(path);
             var tasks2 = new LiteDbMeshTaskRegistry(path);

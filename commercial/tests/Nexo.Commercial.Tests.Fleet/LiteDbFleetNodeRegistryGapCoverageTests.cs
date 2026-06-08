@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Commercial.Tests.Fleet;
 
+[Collection(nameof(LiteDbFleetCollection))]
 public sealed class LiteDbFleetNodeRegistryGapCoverageTests
 {
     [Fact]

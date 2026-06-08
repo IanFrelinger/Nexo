@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Commercial.Tests.Fleet;
 
+[Collection(nameof(LiteDbFleetCollection))]
 public sealed class LiteDbMeshTaskRegistryGapCoverageTests
 {
     [Fact]
@@ -190,6 +191,7 @@ public sealed class LiteDbMeshTaskRegistryGapCoverageTests
     }
 }
 
+[Collection(nameof(LiteDbFleetCollection))]
 public sealed class LiteDbMeshDirectorConnectionGapCoverageTests
 {
     [Fact]
