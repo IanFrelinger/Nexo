@@ -17,6 +17,8 @@ Documentation index for the Nexo platform. Start here to find what you need.
 11. `scripts/start-nexo-api-dev.ps1` / `scripts/start-nexo-api-dev.sh` — Docker Ollama + host `Nexo.API` dev stack (see `docs/Configuration.md` → Ollama).
 12. `docs/Architecture.md` — layered architecture and component boundaries.
 13. `docs/Conventions.md` — current code conventions as practiced today.
+14. `docs/CommercialExtractionPlan.md` — planned commercial module extraction sequence after the open-core licensing boundary.
+15. `docs/FleetGovernanceExtractionInventory.md` — fleet/mesh governance file classification for the next commercial extraction phase.
 
 ## Operator / Production Readiness
 
@@ -70,7 +72,7 @@ Documentation index for the Nexo platform. Start here to find what you need.
 ## Security / Trust
 
 - `docs/FriendMeshPrefab.md` — prefab Docker Compose + env template for a small shared **Nexo.API** hub (friends / tailnet).
-- `docs/MeshPhase8OperatorHardening.md` — **Mesh Phase 8:** discovery admission, trust alias, `nexo mesh hub` / `mesh director`, TLS example.
+- `docs/MeshPhase8OperatorHardening.md` — **Mesh Phase 8:** discovery admission, trust alias, `nexo mesh hub` / `dotnet run --project commercial/src/Nexo.Commercial.MeshDirector -- director ...`, TLS example.
 - `docs/MeshVirtualLab.md` — **Virtual mesh lab:** two Nexo.API nodes in Docker + verify script (no extra hardware); **`scripts/bootstrap-cloud-mesh-lab.sh`** for Ubuntu/Debian cloud VMs.
 - `docs/MeshAgentSetupCapabilityBreakdown.md` — mesh agent setup **tear sheet**: capability tiers, ports, and ops checklist mapped to mesh DI surfaces.
 - `docs/TrustAndInformationArchitecture.md` — sanitization, audit, access boundaries.
@@ -98,6 +100,8 @@ Documentation index for the Nexo platform. Start here to find what you need.
 
 ## Planning & Roadmap
 
+- `docs/CommercialExtractionPlan.md` — follow-up extraction plan for Game Director, `Nexo.GameDomain`, and fleet/mesh governance commercial modules.
+- `docs/FleetGovernanceExtractionInventory.md` — classification inventory for open mesh primitives vs commercial fleet/governance code.
 - `docs/Conventions.md` — current conventions for errors, interfaces, abstract classes, and generics.
 - `docs/MeshPhase0NorthStar.md` — **Phase 0 (executed):** federated mesh north star, capability matrix by profile, trust boundary, SLOs (feeds mesh Phases 1–7).
 - `docs/ExecutionPlan.md` — phased execution plan with implementation tasks, dependencies, and success metrics.

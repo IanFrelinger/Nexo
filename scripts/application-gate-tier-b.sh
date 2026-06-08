@@ -9,7 +9,7 @@ CLI_TESTS="application/src/Nexo.Tests.CLI/Nexo.Tests.CLI.csproj"
 echo "== Application Tier B: CLI command tests =="
 dotnet build "$CLI_TESTS" -v minimal
 NEXO_ALLOW_MOCK=1 dotnet test "$CLI_TESTS" -f net8.0 --no-build \
-  --filter "FullyQualifiedName~ValidateCommandTests|FullyQualifiedName~MeshDirectorCommandUriTests|FullyQualifiedName~TrustCommandTests|FullyQualifiedName~WorkflowCommandTests" \
+  --filter "FullyQualifiedName~ValidateCommandTests|FullyQualifiedName~TrustCommandTests|FullyQualifiedName~WorkflowCommandTests" \
   --blame-hang-timeout 120s --blame-hang-dump-type none
 
 echo "== Application Tier B: doctor --json =="

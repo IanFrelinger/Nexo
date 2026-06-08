@@ -4,7 +4,7 @@ CI workflow **`.github/workflows/layer-boundary.yml`** enforces:
 
 | Base branch | Rule |
 |-------------|------|
-| `master`, `main`, or `runtime/*` | PR must **not** change files under **`application/`** |
+| `master`, `main`, or `runtime/*` | PR must **not** change files under **`application/`**, unless the PR also changes **`commercial/`** (vertical integration merge) |
 | `application/*` | PR must **not** change files under **`src/`** (kernel) |
 | `master` / `main` / `runtime/*` | Head branch must **not** be named `application/*` |
 | `application/*` | Head branch must **not** be named `runtime/*` |

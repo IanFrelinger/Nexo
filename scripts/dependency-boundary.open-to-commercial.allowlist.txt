@@ -1,0 +1,4 @@
+# Documented exceptions for open -> commercial ProjectReference edges.
+# Format: <open_csproj> -> <commercial_csproj>
+#
+# This file should remain empty under normal operation.

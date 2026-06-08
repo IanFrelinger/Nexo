@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using Nexo.BackgroundAgents.HostRunners;
-using Nexo.GameDomain.Pipeline;
+using Nexo.CLI.Unity.Pipeline;
 
 namespace Nexo.CLI.Commands;
 

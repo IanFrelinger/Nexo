@@ -41,10 +41,16 @@ jobs:
           echo "Changed files:"
           echo "$CHANGED"
 
-          # --- Runtime bases: no application/ ---
+          COMMERCIAL_INTEGRATION=0
+          if echo "$CHANGED" | grep -q '^commercial/'; then
+            COMMERCIAL_INTEGRATION=1
+            echo "Commercial paths changed — allowing coordinated application/ + src/ integration merges."
+          fi
+
+          # --- Runtime bases: no application/ (except commercial vertical integration) ---
           case "$BASE_REF" in
             master|main|runtime/*)
-              if echo "$CHANGED" | grep -q '^application/'; then
+              if [[ "$COMMERCIAL_INTEGRATION" -eq 0 ]] && echo "$CHANGED" | grep -q '^application/'; then
                 echo "::error::Base branch '$BASE_REF' is runtime/kernel-first. This PR changes application/ — retarget or remove those paths."
                 exit 1
               fi

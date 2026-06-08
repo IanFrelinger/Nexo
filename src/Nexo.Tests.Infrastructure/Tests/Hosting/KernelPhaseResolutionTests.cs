@@ -7,7 +7,6 @@ using Nexo.BackgroundAgents.Trust;
 using Nexo.Core.Application.Common.Ports;
 using Nexo.Core.Application.Common.Services;
 using Nexo.Core.Application.Configuration.Ports;
-using Nexo.Core.Application.Fleet.Ports;
 using Nexo.Core.Application.Knowledge.Ports;
 using Nexo.Core.Application.Observation.Ports;
 using Nexo.Core.Application.Pipelines.Models;
@@ -58,7 +57,6 @@ public sealed class KernelPhaseResolutionTests
         AssertPresence(sp, expected.PatternStore, sp => sp.GetService<IPatternStore>());
         AssertPresence(sp, expected.BackgroundAgents, sp => sp.GetService<IBackgroundAgentRegistry>());
         AssertPresence(sp, expected.GrpcChannelFactory, sp => sp.GetService<IGrpcChannelFactory>());
-        AssertPresence(sp, expected.FleetRegistry, sp => sp.GetService<IFleetNodeRegistry>());
         AssertPresence(sp, expected.CloudSanitization, sp => sp.GetService<ICloudSanitizationProxy>());
 
         if (expected.EndpointRegistryNotInMemory)
@@ -133,7 +131,6 @@ public sealed class KernelPhaseResolutionTests
         bool PatternStore,
         bool BackgroundAgents,
         bool GrpcChannelFactory,
-        bool FleetRegistry,
         bool CloudSanitization,
         bool EndpointRegistryNotInMemory)
     {
@@ -146,7 +143,6 @@ public sealed class KernelPhaseResolutionTests
             PatternStore: true,
             BackgroundAgents: true,
             GrpcChannelFactory: true,
-            FleetRegistry: true,
             CloudSanitization: true,
             EndpointRegistryNotInMemory: false);
 
@@ -159,7 +155,6 @@ public sealed class KernelPhaseResolutionTests
             PatternStore: false,
             BackgroundAgents: false,
             GrpcChannelFactory: false,
-            FleetRegistry: true,
             CloudSanitization: false,
             EndpointRegistryNotInMemory: true);
 
@@ -172,7 +167,6 @@ public sealed class KernelPhaseResolutionTests
             PatternStore: false,
             BackgroundAgents: false,
             GrpcChannelFactory: false,
-            FleetRegistry: true,
             CloudSanitization: false,
             EndpointRegistryNotInMemory: true);
 
@@ -185,7 +179,6 @@ public sealed class KernelPhaseResolutionTests
             PatternStore: false,
             BackgroundAgents: false,
             GrpcChannelFactory: false,
-            FleetRegistry: true,
             CloudSanitization: false,
             EndpointRegistryNotInMemory: true);
     }

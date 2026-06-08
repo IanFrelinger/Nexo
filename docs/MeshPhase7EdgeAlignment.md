@@ -4,9 +4,13 @@ Phase 7 closes a practical gap from the Phase 0 **capability matrix**: **PC / Ma
 
 **Depends on:** mesh director HTTP surface on **`Nexo.API`** (`/api/mesh/*`), mesh security headers (`Nexo:Security:Mesh`), and correlation id propagation where enabled.
 
-## CLI: `nexo mesh director`
+## CLI: commercial mesh director
 
-Subcommands **`get`**, **`post`**, **`patch`**, **`register`**, **`admit`**, and **`revoke`** perform HTTP calls against a director base URL.
+Subcommands **`get`**, **`post`**, **`patch`**, **`register`**, **`admit`**, and **`revoke`** perform HTTP calls against a director base URL. From a source checkout, use:
+
+```bash
+dotnet run --project commercial/src/Nexo.Commercial.MeshDirector -- director <subcommand>
+```
 
 ### Environment variables
 
@@ -24,20 +28,20 @@ export NEXO_MESH_DIRECTOR_BASE_URL=https://director.example:8080
 export NEXO_MESH_MUTATING_TOKEN=your-long-secret
 
 # List fleet nodes (GET is non-mutating for mesh security; token optional)
-nexo mesh director get /api/mesh/fleet/nodes --json
+dotnet run --project commercial/src/Nexo.Commercial.MeshDirector -- director get /api/mesh/fleet/nodes --json
 
 # Register this host as a worker (includes peerRegistrationKey when director policy requires it)
 export NEXO_MESH_PEER_REGISTRATION_KEY='long-secret-not-the-api-key'
-nexo mesh director register worker-01 \
+dotnet run --project commercial/src/Nexo.Commercial.MeshDirector -- director register worker-01 \
   --api-base-url https://worker-01:8080/ \
   --trust-tier Trusted
 
 # Revoke / admit placement eligibility (Product 5.2 director governance)
-nexo mesh director revoke worker-01
-nexo mesh director admit worker-01
+dotnet run --project commercial/src/Nexo.Commercial.MeshDirector -- director revoke worker-01
+dotnet run --project commercial/src/Nexo.Commercial.MeshDirector -- director admit worker-01
 
 # Heartbeat with queue depth for elastic placement
-nexo mesh director post /api/mesh/fleet/nodes/worker-01/heartbeat --body '{"queueDepth":2}'
+dotnet run --project commercial/src/Nexo.Commercial.MeshDirector -- director post /api/mesh/fleet/nodes/worker-01/heartbeat --body '{"queueDepth":2}'
 ```
 
 Use **`--base-url`**, **`--api-key`**, and **`--mesh-token`** to override env for one-off runs. **`--body-file`** accepts a path for larger JSON payloads.
@@ -49,7 +53,7 @@ The CLI exits **0** when the HTTP status is success (2xx), **1** otherwise (netw
 ## Edge / mobile
 
 - **Nexo.Lite / MAUI:** Use your HTTP client of choice against **`{director}/api/mesh/*`**, sending **`X-Nexo-Correlation-Id`** (Phase 3), **`X-Nexo-Mesh-Token`** on mutating mesh calls (Phase 2), and **`X-Nexo-Api-Key`** if the hub requires it.
-- **Headless CI:** Same as CLI — script **`nexo mesh director`** or `curl` with the same headers.
+- **Headless CI:** Same as CLI — script **`dotnet run --project commercial/src/Nexo.Commercial.MeshDirector -- director ...`** or `curl` with the same headers.
 
 ## Limitations
 
@@ -60,5 +64,5 @@ The CLI exits **0** when the HTTP status is success (2xx), **1** otherwise (netw
 
 | Date | Change |
 |------|--------|
-| 2026-04-22 | Initial Phase 7: `nexo mesh director` HTTP helper + env contract. |
+| 2026-04-22 | Initial Phase 7: commercial mesh director HTTP helper + env contract. |
 | 2026-05-19 | `register` / `admit` / `revoke` + `NEXO_MESH_PEER_REGISTRATION_KEY`; lab verify via `mesh-lab-verify-director-cli.sh`. |

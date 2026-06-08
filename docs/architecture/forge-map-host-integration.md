@@ -8,7 +8,7 @@ This document tracks **host-side** work that sits next to runtime types in **`Ne
 
 **Implemented in-repo:**
 
-- Reference **`docs/samples/ForgeMapHostSample`** unwraps `ForgeEngineManifestResponse.json` and prints core fields.
+- Reference **`commercial/samples/ForgeMapHostSample`** unwraps `ForgeEngineManifestResponse.json` and prints core fields.
 - Production hosts should deserialize into engine-specific objects (Unity ScriptableObjects, Unreal data tables, etc.) using the same JSON schema produced by **`EngineAestheticManifestBuilder`**.
 
 ## M2 — Tile orchestration

@@ -1466,7 +1466,6 @@ static class Program
         root.AddCommand(new ComposeCommand());
         var meshCmd = new MeshCommand();
         meshCmd.AddCommand(new MeshHubCommand());
-        meshCmd.AddCommand(new MeshDirectorCommand());
         root.AddCommand(meshCmd);
         root.AddCommand(backgroundAgentCmd);
         root.AddCommand(testCmd);

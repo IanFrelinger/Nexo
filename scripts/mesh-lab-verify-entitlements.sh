@@ -25,6 +25,8 @@ source_env_kv() {
 
 API_KEY="$(source_env_kv Nexo__Security__ApiKey)"
 COPILOT_KEY="$(source_env_kv Nexo__Security__CopilotScopedApiKey)"
+PEER_A_HOST="${MESH_LAB_PEER_A_HOST:-127.0.0.1:18081}"
+DIRECTOR_HTTP="http://${PEER_A_HOST}"
 WORKER_PUBLISH_FALLBACK="$(source_env_kv MESH_LAB_WORKER_PUBLISH)"
 [[ -n "$WORKER_PUBLISH_FALLBACK" ]] || WORKER_PUBLISH_FALLBACK="127.0.0.1:18083"
 QUOTA_MAX="$(source_env_kv Nexo__Entitlements__MaxCopilotSubmissionsPerHour)"
@@ -107,25 +109,26 @@ if [[ "$SC_STATUS" != "200" ]]; then
   exit 1
 fi
 
-echo "-- CopilotScoped key: POST /api/mesh/tasks (forbidden) --"
+echo "-- CopilotScoped key: POST /api/mesh/tasks on director (forbidden) --"
 SC_MESH="$(http_code -X POST \
   -H "Content-Type: application/json" \
   -H "X-Nexo-Api-Key: ${COPILOT_KEY}" \
   -d '{"name":"mesh-lab-entitlements-deny","steps":1}' \
-  "${WORKER_HTTP}/api/mesh/tasks")"
-if [[ "$SC_MESH" != "403" ]]; then
-  echo "Expected 403 for copilot-scoped POST /api/mesh/tasks, got ${SC_MESH}" >&2
+  "${DIRECTOR_HTTP}/api/mesh/tasks")"
+# Director may return 403 (recognized copilot key, route denied) or 401 (key not configured on fleet host).
+if [[ "$SC_MESH" != "403" && "$SC_MESH" != "401" ]]; then
+  echo "Expected 401/403 for copilot-scoped POST /api/mesh/tasks on director, got ${SC_MESH}" >&2
   exit 1
 fi
 
-echo "-- Full API key: POST /api/mesh/tasks (allowed) --"
+echo "-- Full API key: POST /api/mesh/tasks on director (allowed) --"
 FULL_MESH="$(http_code -X POST \
   -H "Content-Type: application/json" \
   -H "X-Nexo-Api-Key: ${API_KEY}" \
   -d '{"name":"mesh-lab-entitlements-allow","steps":1}' \
-  "${WORKER_HTTP}/api/mesh/tasks")"
+  "${DIRECTOR_HTTP}/api/mesh/tasks")"
 if [[ "$FULL_MESH" != "200" ]]; then
-  echo "Expected 200 for full key POST /api/mesh/tasks, got ${FULL_MESH}" >&2
+  echo "Expected 200 for full key POST /api/mesh/tasks on director, got ${FULL_MESH}" >&2
   exit 1
 fi
 

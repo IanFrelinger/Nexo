@@ -22,7 +22,7 @@ using Nexo.Core.Application.Validation.UseCases.RunValidation;
 using Nexo.Contracts;
 using Nexo.Infrastructure;
 using Nexo.Infrastructure.Environments;
-using Nexo.Infrastructure.Fleet;
+using Nexo.Infrastructure.MeshLab;
 using Nexo.Infrastructure.Copilot;
 using Nexo.Infrastructure.Execution;
 using Nexo.Infrastructure.Execution.Ephemeral;
@@ -664,14 +664,6 @@ internal static partial class NexoKernelRegistrar
             return new Nexo.Infrastructure.Analysis.Rules.AnalysisRuleEngine(rules, logger);
         });
 
-        services.AddNexoFleetDirector(configuration);
-        services.AddNexoMeshElasticScheduling(configuration);
-        services.AddNexoMeshCheckpointScheduling(configuration);
-        // Mesh knowledge export/import requires IPatternStore (observation pipeline).
-        if (modules.IncludeObservationPipeline && !options.DisableObservationPipeline)
-        {
-            services.AddNexoMeshKnowledgeReplication(configuration);
-        }
         services.AddNexoMeshLabWorkerExecutor(configuration);
 
     }

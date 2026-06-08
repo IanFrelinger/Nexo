@@ -62,12 +62,13 @@ The CLI project also references spine-adjacent packs: **`Nexo.Bricks.Owasp`**, *
 
 | Area | Projects / paths |
 |------|------------------|
-| Game Director | `GameDirector.Domain`, `GameDirector.Agents`, `GameDirector.Bricks`, `GameDirector.Host`, `GameDirector.Mcp` |
-| Game domain | `application/src/Nexo.GameDomain` |
+| Game Director | `commercial/src/Nexo.Commercial.GameDirector.Domain`, `Nexo.Commercial.GameDirector.Agents`, `Nexo.Commercial.GameDirector.Bricks`, `Nexo.Commercial.GameDirector.Host`, `Nexo.Commercial.GameDirector.Mcp` |
+| Game domain | `commercial/src/Nexo.Commercial.GameDomain` |
+| Fleet | `commercial/src/Nexo.Commercial.Fleet.Contracts`, `commercial/src/Nexo.Commercial.Fleet.Infrastructure`, `commercial/src/Nexo.Commercial.Fleet.Api`, `commercial/src/Nexo.Commercial.Fleet.Host`, `commercial/src/Nexo.Commercial.MeshDirector` |
 | App configs | `apps/runtime-studio`, `apps/nexo-forge`, `apps/game-director`, `apps/release-manager` |
 | Tools | `tools/Nexo.UnitySidecarDemo`, `tools/ApplyFeedbackChanges` |
 | Demos | `docs/demos/Nexo.Demos.Avalonia`, `Nexo.Demos.BlazorWeb`, `Nexo.Demos.ConsoleClient` |
-| Samples | `docs/samples/*` (e.g. `ForgeMapHostSample`, `StableSdkHostSample`, NuGet restore verify samples) |
+| Samples | `docs/samples/*` (e.g. `StableSdkHostSample`, NuGet restore verify samples); commercial samples such as `commercial/samples/ForgeMapHostSample` live under `commercial/samples/` |
 
 ## Tier 4 — tests
 
@@ -84,8 +85,8 @@ The CLI project also references spine-adjacent packs: **`Nexo.Bricks.Owasp`**, *
 | `Nexo.Ingress.AwsSns.Tests` | SNS ingress tests |
 | `Nexo.Ingress.DynamoDb.Tests` | DynamoDB ingress tests |
 | `application/src/Nexo.Tests.CLI` | CLI tests |
-| `application/src/Nexo.Tests.GameDirector` | Game Director tests |
-| `application/src/Nexo.Tests.GameDomain` | Game domain tests |
+| `commercial/tests/Nexo.Commercial.Tests.GameDirector` | commercial Game Director tests |
+| `commercial/tests/Nexo.Commercial.Tests.GameDomain` | commercial game domain tests |
 
 ## Minimal clone-to-run core
 

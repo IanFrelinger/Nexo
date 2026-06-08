@@ -1,7 +1,7 @@
 # Virtual multi-node lab: heterogeneous Nexo.API images + security modes on one Docker network.
 #
 # Default image mix (override with MESH_LAB_*_DOCKERFILE):
-#   peer-a  → .docker/Dockerfile.api         (slim aspnet runtime)
+#   peer-a  → .docker/Dockerfile.fleet-host  (commercial fleet director host)
 #   peer-b  → .docker/Dockerfile.quickstart  (aspnet + NEXO_ALLOW_MOCK=1)
 #   worker  → .docker/Dockerfile.api         (set MESH_LAB_WORKER_DOCKERFILE to Dockerfile.agent-server locally for SDK-heavy image)
 #
@@ -24,7 +24,7 @@ services:
   peer-a:
     build:
       context: ${NEXO_BUILD_CONTEXT:-.}
-      dockerfile: ${MESH_LAB_PEER_A_DOCKERFILE:-.docker/Dockerfile.api}
+      dockerfile: ${MESH_LAB_PEER_A_DOCKERFILE:-.docker/Dockerfile.fleet-host}
     networks:
       mesh_lab:
         aliases:
@@ -37,8 +37,9 @@ services:
       Nexo__Security__AuthorizationMode: ${MESH_LAB_PEER_A_AUTH_MODE:-ApiKey}
       Nexo__Security__AuthorizationScope: ${MESH_LAB_PEER_A_AUTH_SCOPE:-MutatingApi}
       Nexo__Security__ApiKey: ${Nexo__Security__ApiKey}
+      Nexo__Security__CopilotScopedApiKey: ${Nexo__Security__CopilotScopedApiKey:-}
       Nexo__Security__ApiKeyHeaderName: ${Nexo__Security__ApiKeyHeaderName:-X-Nexo-Api-Key}
-      Nexo__Security__CustomAdvisory: "${MESH_LAB_PEER_A_ADVISORY:-Mesh lab peer-a (Dockerfile.api + ApiKey)}"
+      Nexo__Security__CustomAdvisory: "${MESH_LAB_PEER_A_ADVISORY:-Mesh lab peer-a (Dockerfile.fleet-host + ApiKey)}"
       Nexo__Security__ShowAdvisoryInPortal: "${MESH_LAB_PEER_A_SHOW_ADVISORY:-true}"
       Nexo__Mesh__Placement__PeerTrustPolicy: "${MESH_LAB_PLACEMENT_TRUST_POLICY:-trusted-only}"
       Nexo__Mesh__Fleet__RequirePeerRegistrationKey: "${Nexo__Mesh__Fleet__RequirePeerRegistrationKey:-true}"

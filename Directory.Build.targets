@@ -1,5 +1,6 @@
 <Project>
   <PropertyGroup>
-    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageLicenseExpression Condition="'$(NexoCommercialProject)' == 'true'"></PackageLicenseExpression>
+    <PackageLicenseExpression Condition="'$(NexoCommercialProject)' != 'true'">Apache-2.0</PackageLicenseExpression>
   </PropertyGroup>
 </Project>
