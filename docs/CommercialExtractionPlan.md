@@ -90,7 +90,7 @@ Target commercial modules:
 |----------------------------|--------------|--------------|
 | `Nexo.Commercial.Fleet.Contracts` | seeded from fleet DTOs/ports now in `Nexo.Core.Application/Fleet` | Commercial contracts needed by commercial fleet runtime; originals remain temporarily until consumers move. |
 | `Nexo.Commercial.Fleet.Core` | fleet placement/task/checkpoint abstractions and policies | Fleet scheduling and governance logic. |
-| `Nexo.Commercial.Fleet.Infrastructure` | `Nexo.Infrastructure/Fleet` persistence/worker/director services | Commercial implementations for persistence, director state, workers, leases, checkpoints. |
+| `Nexo.Commercial.Fleet.Infrastructure` | seeded from `Nexo.Infrastructure/Fleet` persistence/worker/director services | Commercial implementations for persistence, director state, workers, leases, checkpoints; originals remain temporarily until consumers move. |
 | `Nexo.Commercial.MeshDirector` | CLI/API director/hub surfaces and director persistence | Commercial control plane host/API/CLI module. |
 | `Nexo.Commercial.Governance` | centralized policy, RBAC/SSO, aggregated audit surfaces | Commercial organization-level governance module. |
 | `Nexo.Commercial.Tests.Fleet` | fleet/mesh governance tests currently under open test projects | Commercial test assembly for extracted fleet behavior. |
@@ -195,7 +195,8 @@ This can start as a script and become a CI gate after the first extraction PR la
 3. **PR 3 — GameDomain/GameDirector commercial move:** move `Nexo.GameDomain`, GameDirector code, and tests into commercial module layout.
 4. **PR 4 — fleet inventory split:** classify open mesh primitives vs commercial fleet/governance files in [`FleetGovernanceExtractionInventory.md`](FleetGovernanceExtractionInventory.md).
 5. **PR 5 — fleet contracts baseline:** seed `Nexo.Commercial.Fleet.Contracts` from fleet task/node DTOs and ports.
-6. **PR 6 — fleet extraction:** move fleet task/direction/governance implementations into commercial modules.
-7. **PR 7 — dependency-boundary gate:** add scanner script and optional CI enforcement.
+6. **PR 6 — fleet infrastructure baseline:** seed `Nexo.Commercial.Fleet.Infrastructure` from current fleet implementations.
+7. **PR 7 — fleet consumer migration:** move API/CLI/director consumers to commercial modules and remove open duplicates when safe.
+8. **PR 8 — dependency-boundary gate:** add scanner script and optional CI enforcement.
 
 Do not combine these into one large refactor. The dependency graph and licensing boundary should be reviewable at every step.

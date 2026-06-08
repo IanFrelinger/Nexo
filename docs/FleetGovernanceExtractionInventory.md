@@ -213,9 +213,14 @@ Then move:
 
 ### PR 6 — commercial fleet infrastructure
 
-Move:
+Create the commercial fleet infrastructure module and seed it with copied fleet implementation code while open consumers are still being migrated:
 
-- `src/Nexo.Infrastructure/Fleet/**`
+- `commercial/src/Nexo.Commercial.Fleet.Infrastructure`
+- Seed from `src/Nexo.Infrastructure/Fleet/**`
+- Keep the original open files temporarily until commercial API/CLI consumers move in later PRs.
+
+Then move:
+
 - commercial-classified `src/Nexo.Infrastructure/Networking/**`
 - fleet tests from `src/Nexo.Tests.Infrastructure/Tests/Fleet/**`
 
