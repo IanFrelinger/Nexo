@@ -24,6 +24,7 @@ Classification terms:
 | `commercial/src/Nexo.Commercial.Fleet.Core` | Task placement, fleet trust policy, elastic scheduling, lease/checkpoint policy, knowledge replication orchestration. |
 | `commercial/src/Nexo.Commercial.Fleet.Infrastructure` | LiteDB registries, worker executor client/background service, director persistence, import/export implementations, sweep/rebalance services. |
 | `commercial/src/Nexo.Commercial.Fleet.Api` | Commercial `/api/mesh` fleet/task/knowledge endpoint extension seeded from open `Nexo.API`. |
+| `commercial/src/Nexo.Commercial.Fleet.Host` | Commercial operator host wiring `AddNexoCommercialFleetDirector()` and `MapCommercialFleetEndpoints()`. |
 | `commercial/src/Nexo.Commercial.MeshDirector` | Mesh director CLI/API/control-plane operations and HTTP client surfaces. |
 | `commercial/src/Nexo.Commercial.Governance` | Future RBAC/SSO, centralized policy management, aggregate tamper-evident audit, org-scale entitlements. |
 | `commercial/tests/Nexo.Commercial.Tests.Fleet` | Fleet/director/governance tests moved out of open test projects. |
@@ -250,17 +251,26 @@ Seed commercial endpoint module:
 - copy `/api/mesh/fleet/**`, `/api/mesh/tasks/**`, and `/api/mesh/knowledge/**` endpoint mappings/handlers/DTOs from open `Nexo.API`;
 - use commercial fleet contracts/infrastructure namespaces.
 
-### PR 9 — commercial fleet host migration
+### PR 9 — commercial fleet host wiring (done)
+
+Added:
+
+- `commercial/src/Nexo.Commercial.Fleet.Host` — operator host registering `AddNexoCommercialFleetDirector()` and mapping `MapCommercialFleetEndpoints()`;
+- `commercial/src/Nexo.Commercial.Fleet.Api/CommercialFleetHostExtensions.cs` — shared DI/endpoint wiring helper;
+- `commercial/tests/Nexo.Commercial.Tests.Fleet.Host` and `scripts/commercial-fleet-host-smoke.sh` — host build/smoke validation;
+- `NexoHostingOptions.DisableOpenFleetDirector` and `NexoEndpointMappingOptions.ExcludeFleetEndpoints` — avoid duplicate open/commercial fleet registration on commercial hosts.
+
+Open `Nexo.API` fleet/task/knowledge routes remain until mesh-lab scripts/tests migrate.
+
+### PR 10 — open fleet endpoint cleanup
 
 Complete the open API cleanup:
 
 - remove open `/api/mesh/fleet/**`, `/api/mesh/tasks/**`, and `/api/mesh/knowledge/**` endpoint duplicates from `Nexo.API`;
-- keep mesh security/correlation middleware open;
-- keep commercial endpoint extension available for commercial hosts/operator packaging.
+- move mesh-lab scripts/tests to the commercial fleet host;
+- keep mesh security/correlation middleware open.
 
-Commercial host/operator packaging can now call `MapCommercialFleetEndpoints()` explicitly.
-
-### PR 10 — dependency-boundary scanner
+### PR 11 — dependency-boundary scanner
 
 Add a script that:
 

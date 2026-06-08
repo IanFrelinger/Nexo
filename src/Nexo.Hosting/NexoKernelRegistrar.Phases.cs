@@ -664,15 +664,19 @@ internal static partial class NexoKernelRegistrar
             return new Nexo.Infrastructure.Analysis.Rules.AnalysisRuleEngine(rules, logger);
         });
 
-        services.AddNexoFleetDirector(configuration);
-        services.AddNexoMeshElasticScheduling(configuration);
-        services.AddNexoMeshCheckpointScheduling(configuration);
-        // Mesh knowledge export/import requires IPatternStore (observation pipeline).
-        if (modules.IncludeObservationPipeline && !options.DisableObservationPipeline)
+        if (!options.DisableOpenFleetDirector)
         {
-            services.AddNexoMeshKnowledgeReplication(configuration);
+            services.AddNexoFleetDirector(configuration);
+            services.AddNexoMeshElasticScheduling(configuration);
+            services.AddNexoMeshCheckpointScheduling(configuration);
+            // Mesh knowledge export/import requires IPatternStore (observation pipeline).
+            if (modules.IncludeObservationPipeline && !options.DisableObservationPipeline)
+            {
+                services.AddNexoMeshKnowledgeReplication(configuration);
+            }
+
+            services.AddNexoMeshLabWorkerExecutor(configuration);
         }
-        services.AddNexoMeshLabWorkerExecutor(configuration);
 
     }
 
