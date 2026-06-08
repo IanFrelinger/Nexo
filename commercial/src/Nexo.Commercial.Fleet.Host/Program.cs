@@ -123,7 +123,6 @@ builder.Services.AddNexo(options =>
     options.RegisterBackgroundAgentHostedService =
         builder.Configuration.GetValue("Nexo:RegisterBackgroundAgentHostedService", defaultValue: true);
     options.DisableObservationPipeline = disableObservationPipeline;
-    options.DisableOpenFleetDirector = true;
 });
 
 builder.Services.AddNexoCommercialFleetDirector(

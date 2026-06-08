@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <NexoCommercialProject>true</NexoCommercialProject>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Moq" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../src/Nexo.Commercial.Fleet.Infrastructure/Nexo.Commercial.Fleet.Infrastructure.csproj" />
+    <ProjectReference Include="../../src/Nexo.Commercial.Fleet.Contracts/Nexo.Commercial.Fleet.Contracts.csproj" />
+    <ProjectReference Include="../../../src/Nexo.Infrastructure/Nexo.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

@@ -3,7 +3,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Nexo.Abstractions.Routing;
 using Nexo.BackgroundAgents.Registry;
 using Nexo.Core.Application.Configuration.Ports;
-using Nexo.Core.Application.Fleet.Ports;
 using Nexo.Core.Application.Observation.Ports;
 using Nexo.Core.Application.Pipelines.Models;
 using Nexo.Core.Application.Pipelines.Ports;
@@ -96,14 +95,12 @@ public sealed class HostingDeploymentProfileTests
     [Theory(Timeout = TestTimeouts.E2E)]
     [InlineData(NexoDeploymentProfile.Full)]
     [InlineData(NexoDeploymentProfile.Server)]
-    public async Task FullAndServerProfiles_ResolveFleetAndValidation(NexoDeploymentProfile profile)
+    public async Task FullAndServerProfiles_ResolveValidation(NexoDeploymentProfile profile)
     {
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddNexoProfile(profile);
         var sp = services.BuildServiceProvider(validateScopes: true);
-
-        sp.GetRequiredService<IFleetNodeRegistry>().Should().NotBeNull();
 
         using var scope = sp.CreateScope();
         var validation = scope.ServiceProvider.GetRequiredService<IValidationService>();
@@ -164,7 +161,6 @@ public sealed class HostingDeploymentProfileTests
         sp.GetRequiredService<StrictModeOptions>().Should().NotBeNull();
         sp.GetService<IPipelineTemplateValidator>().Should().BeNull();
         sp.GetService<IPatternStore>().Should().BeNull();
-        sp.GetRequiredService<IFleetNodeRegistry>().Should().NotBeNull();
     }
 
     [Fact(Timeout = TestTimeouts.E2E)]

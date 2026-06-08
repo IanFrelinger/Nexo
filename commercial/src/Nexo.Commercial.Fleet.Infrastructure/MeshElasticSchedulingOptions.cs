@@ -13,6 +13,6 @@ public sealed class MeshElasticSchedulingOptions
     /// <summary>Minutes between rebalance rounds.</summary>
     public int IntervalMinutes { get; set; } = 2;
 
-    /// <summary>Re-invoke placement for <see cref="Nexo.Core.Application.Fleet.Models.MeshTaskStatus.Pending"/> tasks older than this (seconds).</summary>
+    /// <summary>Re-invoke placement for <see cref="Nexo.Commercial.Fleet.Contracts.Models.MeshTaskStatus.Pending"/> tasks older than this (seconds).</summary>
     public int PendingStaleSeconds { get; set; } = 120;
 }

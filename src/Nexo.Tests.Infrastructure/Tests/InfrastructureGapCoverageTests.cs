@@ -6,7 +6,6 @@ using Nexo.Core.Application.Adaptation.Ports;
 using Nexo.Core.Application.Analysis.Models;
 using Nexo.Core.Application.Composition.Models;
 using Nexo.Core.Application.Environments;
-using Nexo.Core.Application.Fleet.Models;
 using Nexo.Core.Application.Mesh.Models;
 using Nexo.Core.Application.Observation.Models;
 using Nexo.Core.Application.ParallelTesting.Models;
@@ -18,7 +17,6 @@ using Nexo.Infrastructure.Composition;
 using Nexo.Infrastructure.Environments;
 using Nexo.Infrastructure.Execution;
 using Nexo.Infrastructure.Execution.Sdk;
-using Nexo.Infrastructure.Fleet;
 using Nexo.Infrastructure.Maintenance.Adapters;
 using Nexo.Infrastructure.Mesh;
 using Nexo.Infrastructure.Observation;
@@ -90,18 +88,6 @@ public class InfrastructureGapCoverageTests
         env.CanApplySourceFix.Should().Be(canApply);
         env.CanApplyBrickFix.Should().Be(canApply);
         env.CanPromoteWithoutApproval.Should().Be(canPromote);
-    }
-
-    [Fact]
-    public void MeshFleetRegistrationKeys_fingerprint_and_director_check()
-    {
-        MeshFleetRegistrationKeys.Fingerprint(null).Should().BeNull();
-        MeshFleetRegistrationKeys.Fingerprint("  ").Should().BeNull();
-        var fp = MeshFleetRegistrationKeys.Fingerprint("my-key");
-        fp.Should().NotBeNullOrWhiteSpace();
-        fp!.Length.Should().Be(16);
-        MeshFleetRegistrationKeys.IsDistinctFromDirectorKey("abc", "abc").Should().BeFalse();
-        MeshFleetRegistrationKeys.IsDistinctFromDirectorKey("abc", "def").Should().BeTrue();
     }
 
     [Fact]
@@ -449,36 +435,6 @@ public class InfrastructureGapCoverageTests
         var result = await service.RefineAsync(req);
         result.WasModified.Should().BeFalse();
         result.Notes.Should().StartWith("model_error:");
-    }
-
-    [Fact]
-    public async Task InMemoryFleetNodeRegistry_tracks_registration_and_heartbeat()
-    {
-        var registry = new InMemoryFleetNodeRegistry();
-        var node = new MeshFleetNodeState(
-            PeerId: "peer-1",
-            ApiBaseUrl: "http://localhost:7777",
-            Labels: new Dictionary<string, string> { ["role"] = "worker" },
-            AdvertisedBrickIds: new[] { "b1" },
-            Drained: false,
-            LastHeartbeatUtc: DateTimeOffset.UtcNow.AddMinutes(-5),
-            RegisteredAtUtc: DateTimeOffset.UtcNow,
-            ReportedQueueDepth: 0,
-            Admitted: true);
-
-        await registry.RegisterOrUpdateAsync(node);
-        (await registry.GetAsync("peer-1"))!.PeerId.Should().Be("peer-1");
-        (await registry.ListAsync()).Should().ContainSingle();
-
-        (await registry.SetDrainedAsync("peer-1", true)).Should().BeTrue();
-        (await registry.GetAsync("peer-1"))!.Drained.Should().BeTrue();
-
-        (await registry.SetAdmittedAsync("peer-1", false)).Should().BeTrue();
-        await registry.HeartbeatAsync("peer-1", reportedQueueDepth: 3);
-        (await registry.GetAsync("peer-1"))!.ReportedQueueDepth.Should().Be(3);
-
-        (await registry.RemoveAsync("peer-1")).Should().BeTrue();
-        (await registry.GetAsync("peer-1")).Should().BeNull();
     }
 
     [Fact]

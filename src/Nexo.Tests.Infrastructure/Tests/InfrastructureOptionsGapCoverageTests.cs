@@ -1,7 +1,7 @@
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Nexo.Core.Application.Common.Ports;
-using Nexo.Infrastructure.Fleet.MeshLab;
+using Nexo.Infrastructure.MeshLab;
 using Nexo.Infrastructure.Metrics;
 using Nexo.Infrastructure.ModelArtifacts;
 using Xunit;

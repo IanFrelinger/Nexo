@@ -258,8 +258,6 @@ Added:
 - `commercial/src/Nexo.Commercial.Fleet.Host` — operator host registering `AddNexoCommercialFleetDirector()` and mapping `MapCommercialFleetEndpoints()`;
 - `commercial/src/Nexo.Commercial.Fleet.Api/CommercialFleetHostExtensions.cs` — shared DI/endpoint wiring helper;
 - `commercial/tests/Nexo.Commercial.Tests.Fleet.Host` and `scripts/commercial-fleet-host-smoke.sh` — host build/smoke validation;
-- `NexoHostingOptions.DisableOpenFleetDirector` — commercial fleet host skips open fleet DI registration in `AddNexo()`.
-
 ### PR 10 — open fleet endpoint cleanup (done)
 
 Completed:
@@ -268,9 +266,16 @@ Completed:
 - migrated mesh-lab **peer-a** to `.docker/Dockerfile.fleet-host` (`Nexo.Commercial.Fleet.Host`);
 - mesh-lab verify scripts unchanged (same HTTP paths; director is now the commercial host).
 
-Open fleet contracts/infrastructure under `src/` remain until worker executor and infrastructure tests migrate.
+### PR 11 — open fleet infrastructure cleanup (done)
 
-### PR 11 — dependency-boundary scanner
+Completed:
+
+- removed `src/Nexo.Core.Application/Fleet/**` and `src/Nexo.Infrastructure/Fleet/**`;
+- extracted mesh-lab worker executor to `src/Nexo.Infrastructure/MeshLab/**` (open HTTP client only);
+- moved fleet unit tests to `commercial/tests/Nexo.Commercial.Tests.Fleet`;
+- kept mesh-lab worker executor tests under `src/Nexo.Tests.Infrastructure/Tests/MeshLab/**`.
+
+### PR 12 — dependency-boundary scanner
 
 Add a script that:
 
