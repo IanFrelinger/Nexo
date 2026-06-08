@@ -94,7 +94,7 @@ Tier 2 is the future commercial layer for fleet-scale and governance capabilitie
 - aggregated tamper-evident audit,
 - RBAC/SSO and organization-scale governance.
 
-Current status: fleet contracts, fleet infrastructure, mesh director, and fleet API endpoint baselines now exist under `commercial/`. Some fleet/governance implementation code remains in open projects while consumers are migrated incrementally; open `Nexo.API` still owns fleet/task/knowledge endpoint handlers until commercial host wiring and mesh-lab scripts move.
+Current status: fleet contracts, fleet infrastructure, mesh director, fleet API endpoint baselines, and a commercial fleet host now exist under `commercial/`. Some fleet/governance implementation code remains in open projects while consumers are migrated incrementally; open `Nexo.API` still owns fleet/task/knowledge endpoint handlers until mesh-lab scripts and tests move to the commercial host.
 
 The current classification inventory is [`docs/FleetGovernanceExtractionInventory.md`](docs/FleetGovernanceExtractionInventory.md). Likely extraction candidates include:
 
@@ -120,6 +120,8 @@ These app configuration directories are marked with a `COMMERCIAL-LICENSE.md` st
 | COMMERCIAL | `commercial/src/Nexo.Commercial.Fleet.Contracts/` |
 | COMMERCIAL | `commercial/src/Nexo.Commercial.Fleet.Infrastructure/` |
 | COMMERCIAL | `commercial/src/Nexo.Commercial.Fleet.Api/` |
+| COMMERCIAL | `commercial/src/Nexo.Commercial.Fleet.Host/` |
+| COMMERCIAL | `commercial/tests/Nexo.Commercial.Tests.Fleet.Host/` |
 | COMMERCIAL | `commercial/src/Nexo.Commercial.MeshDirector/` |
 | COMMERCIAL | `commercial/tests/Nexo.Commercial.Tests.MeshDirector/` |
 | COMMERCIAL | `commercial/src/Nexo.Commercial.GameDirector.Domain/` |

@@ -39,6 +39,18 @@ using Nexo.Core.Domain.Execution;
 namespace Nexo.API.Endpoints;
 
 /// <summary>
+/// Optional flags for <see cref="NexoEndpoints.MapNexoEndpoints"/>.
+/// </summary>
+public sealed class NexoEndpointMappingOptions
+{
+    /// <summary>
+    /// When true, skips open <c>/api/mesh</c> fleet/task/knowledge routes so a commercial host can map
+    /// <c>MapCommercialFleetEndpoints()</c> without duplicate routes.
+    /// </summary>
+    public bool ExcludeFleetEndpoints { get; init; }
+}
+
+/// <summary>
 /// Extension methods for mapping Nexo API endpoints.
 /// </summary>
 public static class NexoEndpoints
@@ -48,7 +60,9 @@ public static class NexoEndpoints
         WriteIndented = true
     };
 
-    public static IEndpointRouteBuilder MapNexoEndpoints(this IEndpointRouteBuilder app)
+    public static IEndpointRouteBuilder MapNexoEndpoints(
+        this IEndpointRouteBuilder app,
+        NexoEndpointMappingOptions? options = null)
     {
         app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTimeOffset.UtcNow }))
             .WithName("HealthCheck")
@@ -168,6 +182,74 @@ public static class NexoEndpoints
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status404NotFound);
 
+        if (options?.ExcludeFleetEndpoints != true)
+        {
+            MapOpenFleetEndpoints(group);
+        }
+
+        group.MapGet("/background-agents/summary", GetBackgroundAgentSummaryAsync)
+            .WithName("GetBackgroundAgentSummary")
+            .WithSummary("Get background agent health summary")
+            .Produces<BackgroundAgentSummaryResponse>(StatusCodes.Status200OK);
+
+        group.MapGet("/runtime-studio/metrics", GetRuntimeStudioMetricsAsync)
+            .WithName("GetRuntimeStudioMetrics")
+            .WithSummary("Runtime Studio backlog metrics (objectives, forge, observations path size)")
+            .Produces<RuntimeStudioMetricsResponse>(StatusCodes.Status200OK);
+
+        group.MapGet("/trust/dashboard", GetTrustDashboardAsync)
+            .WithName("GetTrustDashboard")
+            .WithSummary("Get trust boundary and recent audit events")
+            .Produces<TrustDashboardResponse>(StatusCodes.Status200OK);
+
+        group.MapPost("/trust/pause", SetTrustPauseAsync)
+            .WithName("SetTrustPause")
+            .WithSummary("Pause or resume trust observation boundary")
+            .Produces<TrustBoundaryMutationResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest);
+
+        group.MapPost("/trust/rule", SetTrustRuleAsync)
+            .WithName("SetTrustRule")
+            .WithSummary("Update trust allow/deny rules for category/source")
+            .Produces<TrustBoundaryMutationResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest);
+
+        group.MapGet("/knowledge/query", QueryKnowledgeAsync)
+            .WithName("QueryKnowledge")
+            .WithSummary("Query unified adaptation/pattern/knowledge timeline")
+            .Produces<KnowledgeQueryResult>(StatusCodes.Status200OK);
+
+        group.MapGet("/preferences", GetPreferencesAsync)
+            .WithName("GetPreferences")
+            .WithSummary("Get server-side user preferences")
+            .Produces<PreferencesResponse>(StatusCodes.Status200OK);
+
+        group.MapPost("/preferences", SavePreferencesAsync)
+            .WithName("SavePreferences")
+            .WithSummary("Save server-side user preferences")
+            .Produces<PreferencesResponse>(StatusCodes.Status200OK);
+
+        group.MapGet("/activity/feed", GetActivityFeedAsync)
+            .WithName("GetActivityFeed")
+            .WithSummary("Get recent activity from background agents and system events")
+            .Produces<ActivityFeedResponse>(StatusCodes.Status200OK);
+
+        group.MapPost("/changelog/generate", GenerateChangelogAsync)
+            .WithName("GenerateChangelog")
+            .WithSummary("Generate project changelog summary from recent changes")
+            .Produces<ChangelogResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
+
+        group.MapGet("/onboarding/status", GetOnboardingStatusAsync)
+            .WithName("GetOnboardingStatus")
+            .WithSummary("Get setup status for first-run wizard (provider availability, config state)")
+            .Produces<OnboardingStatusResponse>(StatusCodes.Status200OK);
+
+        return app;
+    }
+
+    private static void MapOpenFleetEndpoints(RouteGroupBuilder group)
+    {
         var mesh = group.MapGroup("/mesh").WithTags("Mesh");
 
         mesh.MapGet("/fleet/nodes", ListFleetNodesAsync)
@@ -289,66 +371,6 @@ public static class NexoEndpoints
             .WithSummary("Phase 4: import adaptation + pattern payload from a peer")
             .Produces<MeshKnowledgeImportResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest);
-
-        group.MapGet("/background-agents/summary", GetBackgroundAgentSummaryAsync)
-            .WithName("GetBackgroundAgentSummary")
-            .WithSummary("Get background agent health summary")
-            .Produces<BackgroundAgentSummaryResponse>(StatusCodes.Status200OK);
-
-        group.MapGet("/runtime-studio/metrics", GetRuntimeStudioMetricsAsync)
-            .WithName("GetRuntimeStudioMetrics")
-            .WithSummary("Runtime Studio backlog metrics (objectives, forge, observations path size)")
-            .Produces<RuntimeStudioMetricsResponse>(StatusCodes.Status200OK);
-
-        group.MapGet("/trust/dashboard", GetTrustDashboardAsync)
-            .WithName("GetTrustDashboard")
-            .WithSummary("Get trust boundary and recent audit events")
-            .Produces<TrustDashboardResponse>(StatusCodes.Status200OK);
-
-        group.MapPost("/trust/pause", SetTrustPauseAsync)
-            .WithName("SetTrustPause")
-            .WithSummary("Pause or resume trust observation boundary")
-            .Produces<TrustBoundaryMutationResponse>(StatusCodes.Status200OK)
-            .ProducesProblem(StatusCodes.Status400BadRequest);
-
-        group.MapPost("/trust/rule", SetTrustRuleAsync)
-            .WithName("SetTrustRule")
-            .WithSummary("Update trust allow/deny rules for category/source")
-            .Produces<TrustBoundaryMutationResponse>(StatusCodes.Status200OK)
-            .ProducesProblem(StatusCodes.Status400BadRequest);
-
-        group.MapGet("/knowledge/query", QueryKnowledgeAsync)
-            .WithName("QueryKnowledge")
-            .WithSummary("Query unified adaptation/pattern/knowledge timeline")
-            .Produces<KnowledgeQueryResult>(StatusCodes.Status200OK);
-
-        group.MapGet("/preferences", GetPreferencesAsync)
-            .WithName("GetPreferences")
-            .WithSummary("Get server-side user preferences")
-            .Produces<PreferencesResponse>(StatusCodes.Status200OK);
-
-        group.MapPost("/preferences", SavePreferencesAsync)
-            .WithName("SavePreferences")
-            .WithSummary("Save server-side user preferences")
-            .Produces<PreferencesResponse>(StatusCodes.Status200OK);
-
-        group.MapGet("/activity/feed", GetActivityFeedAsync)
-            .WithName("GetActivityFeed")
-            .WithSummary("Get recent activity from background agents and system events")
-            .Produces<ActivityFeedResponse>(StatusCodes.Status200OK);
-
-        group.MapPost("/changelog/generate", GenerateChangelogAsync)
-            .WithName("GenerateChangelog")
-            .WithSummary("Generate project changelog summary from recent changes")
-            .Produces<ChangelogResponse>(StatusCodes.Status200OK)
-            .ProducesProblem(StatusCodes.Status500InternalServerError);
-
-        group.MapGet("/onboarding/status", GetOnboardingStatusAsync)
-            .WithName("GetOnboardingStatus")
-            .WithSummary("Get setup status for first-run wizard (provider availability, config state)")
-            .Produces<OnboardingStatusResponse>(StatusCodes.Status200OK);
-
-        return app;
     }
 
     private static async Task<IResult> RunAgentAsync(
