@@ -8,11 +8,11 @@ Nexo uses an open-core boundary:
 
 The repository root license is Apache-2.0. See [`LICENSE`](LICENSE).
 
-For the follow-up project/module extraction sequence, see [`docs/CommercialExtractionPlan.md`](docs/CommercialExtractionPlan.md). For fleet/mesh governance classification, see [`docs/FleetGovernanceExtractionInventory.md`](docs/FleetGovernanceExtractionInventory.md).
+Extraction **Phases A–E** are complete (see [`docs/CommercialExtractionPlan.md`](docs/CommercialExtractionPlan.md)). The open/commercial project graph is enforced in CI by [`scripts/dependency-boundary-gate.sh`](scripts/dependency-boundary-gate.sh). Optional follow-up extractions (for example `src/**/Networking/**`) are classified in [`docs/FleetGovernanceExtractionInventory.md`](docs/FleetGovernanceExtractionInventory.md).
 
 ## Tier 1 — OPEN (Apache-2.0)
 
-Tier 1 is the adoption and trust surface: SDKs, contracts, single-node runtime/hosts, trust primitives, tests, samples, and inspectable extension points. These projects carry Apache-2.0 package metadata either directly in their `.csproj` or through the repository-wide `Directory.Build.props` / `Directory.Build.targets` defaults.
+Tier 1 is the adoption and trust surface: SDKs, contracts, single-node runtime/hosts, trust primitives, tests, samples, and inspectable extension points. These projects carry Apache-2.0 package metadata either directly in their `.csproj` or through the repository-wide `Directory.Build.props` / `Directory.Build.targets` defaults (`PackageLicenseExpression=Apache-2.0` for non-commercial projects).
 
 Rationale: this tier protects two moats at once — an extensible SDK and a single runtime across surfaces. `Nexo.Policies`, `Nexo.Policies.Dev`, and `Nexo.Bricks.Owasp` are open on purpose: trust-by-design fails if the trust primitives are a paywalled black box.
 
@@ -32,7 +32,7 @@ Rationale: this tier protects two moats at once — an extensible SDK and a sing
 | OPEN | `src/Nexo.Lite/Nexo.Lite.csproj` |
 | OPEN | `application/src/Nexo.CLI/Nexo.CLI.csproj` |
 | OPEN | `application/src/Nexo.API/Nexo.API.csproj` |
-| OPEN | `src/Nexo.Infrastructure/Nexo.Infrastructure.csproj` |
+| OPEN | `src/Nexo.Infrastructure/Nexo.Infrastructure.csproj` (includes open `MeshLab` worker executor) |
 | OPEN | `src/Nexo.Orchestration/Nexo.Orchestration.csproj` |
 | OPEN | `src/Nexo.Adapters.Models/Nexo.Adapters.Models.csproj` |
 | OPEN | `src/Nexo.BackgroundAgents/Nexo.BackgroundAgents.csproj` |
@@ -68,61 +68,59 @@ Rationale: this tier protects two moats at once — an extensible SDK and a sing
 | OPEN | `docs/samples/StableSdkHostSample/package-consumer/StableSdkHostSample.Package.csproj` |
 | OPEN | `samples/**` |
 
+Open mesh **primitives** (local discovery, capability advertisement, trust middleware) remain under `src/Nexo.Core.Application/Mesh/**` and `src/Nexo.Infrastructure/Mesh/**`. Mesh-lab **workers** poll the commercial fleet director via open `src/Nexo.Infrastructure/MeshLab/**`.
+
 ## Verify-then-place decisions
 
 These projects were explicitly inspected and placed:
 
 | Project | Decision | Reason |
 |---------|----------|--------|
-| `application/src/Nexo.API/Nexo.API.csproj` | OPEN | Current project is a single-node HTTP/API host over the open kernel. The Forge/GameDomain HTTP surface has been moved to the Game Director application layer, so this host no longer references `Nexo.GameDomain`. |
+| `application/src/Nexo.API/Nexo.API.csproj` | OPEN | Single-node HTTP/API host over the open kernel. Fleet `/api/mesh/*` director endpoints live on `Nexo.Commercial.Fleet.Host`, not open `Nexo.API`. |
 | `src/Nexo.Transport.Grpc.Server/Nexo.Transport.Grpc.Server.csproj` | OPEN | Server implementation exposes the open gRPC transport surface; it is not a fleet-scale director/control-plane project. |
 | `src/Nexo.Transport.Grpc.Server.Host/Nexo.Transport.Grpc.Server.Host.csproj` | OPEN | Standalone gRPC host for the open transport server, not a governance tier. |
-| `application/Nexo.Application.sln` contents | OPEN for current contents | The solution contains `Nexo.API`, `Nexo.CLI`, and `Nexo.Tests.CLI` as open surfaces. `Nexo.GameDomain` and its tests have moved to `commercial/`. |
+| `application/Nexo.Application.sln` contents | OPEN for current contents | The solution contains `Nexo.API`, `Nexo.CLI`, and `Nexo.Tests.CLI` as open surfaces. Game domain and Game Director live under `commercial/`. |
 
 ## Tier 2 — COMMERCIAL (fleet + governance)
 
-Tier 2 is the future commercial layer for fleet-scale and governance capabilities:
+Tier 2 is the commercial layer for fleet-scale and governance capabilities:
 
 - mesh control plane / distributed execution,
-- knowledge sync,
+- knowledge replication on the director,
 - elastic scheduling,
 - leases and checkpoints,
 - data-plane federation,
 - operator hardening,
 - director persistence,
-- centralized policy management,
+- centralized policy management (future `Nexo.Commercial.Governance`),
 - aggregated tamper-evident audit,
 - RBAC/SSO and organization-scale governance.
 
-Current status: fleet contracts, fleet infrastructure, mesh director, fleet API, and fleet host exist under `commercial/`. Mesh-lab director (peer-a) runs `Nexo.Commercial.Fleet.Host`. Open duplicate fleet trees under `src/` have been removed; mesh-lab workers use open `Nexo.Infrastructure/MeshLab` to poll the commercial director HTTP API.
+**Current modules** (each directory has `COMMERCIAL-LICENSE.md` and `NexoCommercialProject=true` in its `.csproj`):
 
-The current classification inventory is [`docs/FleetGovernanceExtractionInventory.md`](docs/FleetGovernanceExtractionInventory.md). Remaining extraction candidates include:
+| Module | Path |
+|--------|------|
+| Fleet contracts | `commercial/src/Nexo.Commercial.Fleet.Contracts/` |
+| Fleet infrastructure | `commercial/src/Nexo.Commercial.Fleet.Infrastructure/` |
+| Fleet API extensions | `commercial/src/Nexo.Commercial.Fleet.Api/` |
+| Fleet operator host | `commercial/src/Nexo.Commercial.Fleet.Host/` |
+| Mesh director CLI | `commercial/src/Nexo.Commercial.MeshDirector/` |
+| Fleet tests | `commercial/tests/Nexo.Commercial.Tests.Fleet/`, `commercial/tests/Nexo.Commercial.Tests.Fleet.Host/` |
+| Mesh director tests | `commercial/tests/Nexo.Commercial.Tests.MeshDirector/` |
 
-- `src/Nexo.Core.Application/Networking/**`
-- `src/Nexo.Infrastructure/Networking/**`
-- fleet-scale portions of `src/Nexo.Core.Application/Mesh/**` and `src/Nexo.Infrastructure/Mesh/**`
-- fleet/director CLI surfaces such as `MeshDirectorCommand` and `MeshHubCommand`
-- API mesh/fleet governance middleware and endpoints under `application/src/Nexo.API/**`
+Mesh-lab **peer-a** runs `Nexo.Commercial.Fleet.Host` (`.docker/Dockerfile.fleet-host`). Open duplicate fleet trees under `src/**/Fleet/**` have been removed.
+
+**Optional follow-up** (not required for the open/commercial boundary): classify and optionally move `src/Nexo.Core.Application/Networking/**` and `src/Nexo.Infrastructure/Networking/**` per [`docs/FleetGovernanceExtractionInventory.md`](docs/FleetGovernanceExtractionInventory.md).
 
 ## Tier 3 — COMMERCIAL (verticals)
 
 Tier 3 is the commercial product/vertical layer.
-
-These app configuration directories are marked with a `COMMERCIAL-LICENSE.md` stub:
 
 | Allocation | Path |
 |------------|------|
 | COMMERCIAL | `commercial/src/Nexo.Commercial.GameDomain/` |
 | COMMERCIAL | `commercial/tests/Nexo.Commercial.Tests.GameDomain/` |
 | COMMERCIAL | `commercial/samples/ForgeMapHostSample/` |
-| COMMERCIAL | `commercial/src/Nexo.Commercial.Fleet.Contracts/` |
-| COMMERCIAL | `commercial/src/Nexo.Commercial.Fleet.Infrastructure/` |
-| COMMERCIAL | `commercial/src/Nexo.Commercial.Fleet.Api/` |
-| COMMERCIAL | `commercial/src/Nexo.Commercial.Fleet.Host/` |
-| COMMERCIAL | `commercial/tests/Nexo.Commercial.Tests.Fleet.Host/` |
-| COMMERCIAL | `commercial/tests/Nexo.Commercial.Tests.Fleet/` |
-| COMMERCIAL | `commercial/src/Nexo.Commercial.MeshDirector/` |
-| COMMERCIAL | `commercial/tests/Nexo.Commercial.Tests.MeshDirector/` |
 | COMMERCIAL | `commercial/src/Nexo.Commercial.GameDirector.Domain/` |
 | COMMERCIAL | `commercial/src/Nexo.Commercial.GameDirector.Agents/` |
 | COMMERCIAL | `commercial/src/Nexo.Commercial.GameDirector.Bricks/` |
@@ -134,11 +132,11 @@ These app configuration directories are marked with a `COMMERCIAL-LICENSE.md` st
 | COMMERCIAL | `apps/release-manager/` |
 | COMMERCIAL | `apps/runtime-studio/` |
 
-Stub text:
+Stub text in each `COMMERCIAL-LICENSE.md`:
 
 > Not licensed under Apache-2.0. Commercial terms TBD. See /LICENSING.md.
 
-The GameDomain module and Game Director code/test projects have been moved into `commercial/`, so they may reference each other and the open core without creating open-to-commercial project references.
+Commercial vertical projects may reference each other and the open core; open projects must not reference commercial projects.
 
 Recommended future open-source candidate: `apps/release-manager` is the best single app to open later as a minimal SDK reference because it demonstrates generic release-readiness automation without making the defense-adjacent Game Director wedge open.
 
@@ -146,16 +144,18 @@ Recommended future open-source candidate: `apps/release-manager` is the best sin
 
 Rule: no Tier 1 OPEN project may reference a Tier 2/3 COMMERCIAL project.
 
-Current result: **passes for committed placement** because no Tier 1 `.csproj` references a commercial project.
-
 Enforced in CI by `scripts/dependency-boundary-gate.sh` (workflow: `.github/workflows/dependency-boundary.yml`). The scanner classifies projects by path and `NexoCommercialProject`, fails on open→commercial `ProjectReference` edges, requires `COMMERCIAL-LICENSE.md` beside commercial `.csproj` files, and verifies open packable projects resolve `PackageLicenseExpression=Apache-2.0`.
 
-Preflight result for the vertical split: **unblocked for GameDomain/GameDirector**. `Nexo.API`, `Nexo.CLI`, and `Nexo.Tests.CLI` no longer reference `Nexo.GameDomain`; `Nexo.GameDomain`, Game Director code, and their tests have moved to commercial paths. Fleet infrastructure extraction from open `src/` is complete; remaining work is networking/governance extraction and further commercial module splits.
+Local verification:
 
-## Open questions
+```bash
+make dependency-boundary-gate
+```
 
-- Which fleet/governance files should be extracted first into commercial projects? Start from [`docs/FleetGovernanceExtractionInventory.md`](docs/FleetGovernanceExtractionInventory.md).
-- Should `Nexo.API` remain a purely open single-node host, or should commercial fleet/governance endpoints move to a separate host?
+## Open questions (post-extraction)
+
+- Should `src/**/Networking/**` move to commercial fleet/governance modules, or remain a smaller open substrate?
+- Should open `MeshHubCommand` split further so only local mesh inspection stays in `Nexo.CLI`?
 - Should `apps/release-manager` become the future minimal open SDK reference app?
 
-See [`docs/CommercialExtractionPlan.md`](docs/CommercialExtractionPlan.md) for the proposed extraction order and validation gates.
+See [`docs/CommercialExtractionPlan.md`](docs/CommercialExtractionPlan.md) for the completed extraction sequence and validation gates.

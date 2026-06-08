@@ -1,6 +1,8 @@
 # Commercial extraction plan
 
-This plan defines the next commercial-boundary work after the open-core licensing sprint. It is a planning document only: do not move code, rename projects, or change CI from this document alone.
+This plan records the commercial-boundary work after the open-core licensing sprint.
+
+**Status (2026-06):** Phases **A–E** are **complete**. GameDomain, Game Director, fleet/mesh governance, licensing metadata (Phase D), and the dependency-boundary CI gate (Phase E) are in place on `master`. Optional follow-ups (Networking extraction, CLI mesh-hub split, `Nexo.Commercial.Governance`) are tracked under [Open questions](#open-questions-post-extraction) in [`LICENSING.md`](../LICENSING.md).
 
 ## Goal
 
@@ -13,9 +15,9 @@ Create a clean project/module boundary where:
 
 ## Current blockers
 
-### Vertical / Game Director graph
+None for the core open/commercial boundary. Phases A–E exit criteria are met.
 
-The vertical code is being separated from the open application surface. The API and CLI seams are now resolved; GameDomain has moved to `commercial/`; Game Director projects are commercially marked in place and can be physically moved in a later cleanup.
+### Vertical / Game Director graph (resolved)
 
 | Current project | Current references that matter for extraction |
 |-----------------|-----------------------------------------------|
@@ -31,21 +33,11 @@ The vertical code is being separated from the open application surface. The API 
 | `commercial/tests/Nexo.Commercial.Tests.GameDomain/Nexo.Commercial.Tests.GameDomain.csproj` | **Resolved:** moved with commercial GameDomain tests. |
 | `commercial/tests/Nexo.Commercial.Tests.GameDirector/Nexo.Tests.GameDirector.csproj` | Moved to commercial layout; references GameDirector projects and commercial GameDomain. |
 
-### Fleet / mesh / governance graph
+### Fleet / mesh / governance graph (resolved)
 
-Fleet-scale mesh and governance behavior is currently woven through open projects:
+Fleet-scale code has moved to `commercial/src/Nexo.Commercial.Fleet.*`, `Nexo.Commercial.MeshDirector`, and `Nexo.Commercial.Fleet.Host`. Open `src/**/Fleet/**` trees are removed. Mesh-lab workers use open `src/Nexo.Infrastructure/MeshLab/**` to call the commercial director HTTP API.
 
-- `src/Nexo.Core.Application/Fleet/**`
-- `src/Nexo.Infrastructure/Fleet/**`
-- `src/Nexo.Core.Application/Networking/**`
-- `src/Nexo.Infrastructure/Networking/**`
-- fleet-scale portions of `src/Nexo.Core.Application/Mesh/**`
-- fleet-scale portions of `src/Nexo.Infrastructure/Mesh/**`
-- `commercial/src/Nexo.Commercial.MeshDirector/MeshDirectorCommand.cs`
-- `application/src/Nexo.CLI/Commands/MeshHubCommand.cs`
-- mesh/fleet governance endpoints and middleware under `application/src/Nexo.API/**`
-
-Those files cannot be marked commercial while they remain inside open projects such as `Nexo.Core.Application`, `Nexo.Infrastructure`, `Nexo.Runtime`, `Nexo.Orchestration`, `Nexo.CLI`, or `Nexo.API`.
+**Optional follow-up:** `src/Nexo.Core.Application/Networking/**`, `src/Nexo.Infrastructure/Networking/**`, and a finer split of open CLI mesh hub vs commercial director commands — see [`FleetGovernanceExtractionInventory.md`](FleetGovernanceExtractionInventory.md).
 
 ## Target boundary
 
@@ -152,33 +144,31 @@ Exit criteria:
 - Commercial fleet modules compile against open contracts.
 - Mesh/fleet tests are split into open primitive tests and commercial fleet tests.
 
-### Phase D — licensing and package metadata
+### Phase D — licensing and package metadata (done)
 
 Purpose: make the legal boundary match the project graph.
 
-1. Add Apache-2.0 package metadata to open projects.
-2. Add commercial stubs to commercial project directories.
-3. Remove any ambiguous “pending extraction” notes once extraction is complete.
-4. Update `LICENSING.md`, `docs/ProjectTiers.md`, `docs/DistributionModels.md`, and package/solution docs.
+1. **Done:** Apache-2.0 package metadata on open projects (`Directory.Build.props` / `Directory.Build.targets`; verified by dependency-boundary gate).
+2. **Done:** `COMMERCIAL-LICENSE.md` stubs beside every commercial `.csproj`.
+3. **Done:** removed ambiguous “pending extraction” notes for extracted modules.
+4. **Done:** updated `LICENSING.md`, `docs/ProjectTiers.md`, `docs/DistributionModels.md`.
 
 Exit criteria:
 
 - `LICENSING.md` has no “pending extraction” entries for extracted modules.
 - Open package graph and commercial module graph are clear.
 
-### Phase E — automate dependency safety
+Validation: `make dependency-boundary-gate`
+
+### Phase E — automate dependency safety (done)
 
 Purpose: prevent boundary regressions.
 
-Recommended check:
-
-1. Maintain an allowlist/map of open project paths and commercial project paths.
-2. Scan every `.csproj` for `<ProjectReference>`.
-3. Fail if an open project references a commercial project.
-4. Warn if a commercial project lacks a `COMMERCIAL-LICENSE.md` stub.
-5. Warn if an open packable project lacks effective `PackageLicenseExpression=Apache-2.0`.
-
-This can start as a script and become a CI gate after the first extraction PR lands.
+1. **Done:** `scripts/verify-open-commercial-dependency-boundary.py` classifies open vs commercial projects.
+2. **Done:** scan every `.csproj` for `<ProjectReference>`; fail on open→commercial edges.
+3. **Done:** require `COMMERCIAL-LICENSE.md` beside commercial projects.
+4. **Done:** verify open packable projects resolve `PackageLicenseExpression=Apache-2.0`.
+5. **Done:** CI workflow `.github/workflows/dependency-boundary.yml` and `make dependency-boundary-gate`.
 
 ## Validation gates by phase
 
@@ -204,5 +194,10 @@ This can start as a script and become a CI gate after the first extraction PR la
 10. **PR 10 — open fleet cleanup:** migrate mesh-lab peer-a to the commercial fleet host and remove open `/api/mesh` fleet/task/knowledge handlers from `Nexo.API`.
 11. **PR 11 — open fleet infrastructure cleanup (done):** removed open fleet trees; mesh-lab worker executor lives in `src/Nexo.Infrastructure/MeshLab/**`; fleet tests moved to `commercial/tests/Nexo.Commercial.Tests.Fleet`.
 12. **PR 12 — dependency-boundary gate (done):** `scripts/dependency-boundary-gate.sh`, `.github/workflows/dependency-boundary.yml`, and `make dependency-boundary-gate`.
+13. **PR 13 — Phase D licensing (done):** align `Directory.Build.props` license default with Apache-2.0; refresh `LICENSING.md`, `ProjectTiers.md`, and `DistributionModels.md` to match the post-extraction graph.
 
-Do not combine these into one large refactor. The dependency graph and licensing boundary should be reviewable at every step.
+Do not combine large refactors retroactively. The dependency graph and licensing boundary should stay reviewable at every step.
+
+## Open questions (post-extraction)
+
+See [`LICENSING.md`](../LICENSING.md) — Networking classification, CLI mesh-hub split, and `apps/release-manager` open-source candidacy.

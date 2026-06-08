@@ -23,7 +23,8 @@ Release automation is summarized in **`docs/RELEASE.md`** (NuGet + GHCR from one
 | **CLI** | **`Nexo.CLI`** binary or **GHCR `nexo-cli`** image | Image tag or digest; CLI `--version` / package | **`docs/GettingStarted.md`** (`doctor`, `pipeline`) |
 | **Compose / operators** | Root **`docker-compose*.yml`** + operator docs | Compose file revision + image digests | **`docs/DEPLOYMENT.md`**, stack-specific guides |
 | **Source / monorepo** | `ProjectReference` into **`src/`** | Git commit / branch | **`docs/IntegratorGuide.md`** (project reference example) |
-| **Mesh / federation** | Peer config, director URL, tokens | `instances.json`, env vars | **`docs/IntegratorGuide.md`**, **`docs/FriendMeshPrefab.md`**, mesh phase docs |
+| **Mesh / federation (open peers)** | Peer config, local mesh primitives, worker executor | `instances.json`, env vars | **`docs/IntegratorGuide.md`**, **`docs/FriendMeshPrefab.md`**, **`docs/MeshVirtualLab.md`** |
+| **Mesh fleet director (commercial)** | `Nexo.Commercial.Fleet.Host`, `/api/mesh/*` director APIs | Image tag + API key + peer registration key | **`.docker/Dockerfile.fleet-host`**, **`scripts/commercial-fleet-host-smoke.sh`**, mesh-lab peer-a |
 
 ## Golden reference pins (copy/paste)
 
@@ -37,6 +38,7 @@ Use these as **stable entrypoints** when writing runbooks or samples; replace im
 | **CLI container (public)** | **`ghcr.io/ianfrelinger/nexo-cli:latest`** — smoke with **`--help`** and **`pipeline validate --help`** (not **`doctor`**, see **`docs/GettingStarted.md`**). |
 | **Compose (operator lab)** | **`docker-compose.ephemeral.yml`** (light deps) or **`docker-compose.portal.yml`** (Director stack) — hub **`docs/DEPLOYMENT.md`**. |
 | **Mesh prefab** | **`docker-compose.friend-mesh.yml`** + **`docs/FriendMeshPrefab.md`** |
+| **Mesh lab (heterogeneous)** | **`docker-compose.mesh-lab.yml`** — peer-a = commercial fleet host, peer-b/worker = open `Nexo.API` | **`docs/MeshVirtualLab.md`**, **`scripts/mesh-lab-verify.sh`** |
 
 ## Contract boundaries
 

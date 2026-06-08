@@ -8,7 +8,8 @@
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
     <Deterministic>true</Deterministic>
     <RepositoryUrl>https://github.com/IanFrelinger/Nexo</RepositoryUrl>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <!-- Open packable projects resolve Apache-2.0 via Directory.Build.targets; commercial clears the expression. -->
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/IanFrelinger/Nexo</PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon Condition="Exists('$(MSBuildThisFileDirectory)icon.png')">icon.png</PackageIcon>
