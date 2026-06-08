@@ -2,7 +2,7 @@
 
 This is the canonical repository map for contributors and reviewers. Use it with [`README.md`](../README.md) for orientation and [`DistributionModels.md`](DistributionModels.md) for how each surface is consumed or shipped.
 
-The monorepo has **~62** `.csproj` projects. The **runnable product** is roughly **15 projects** (Tiers **0** and **1**): kernel libraries, distribution/SDK packs, and the two deployable hosts. Everything else is packaging, optional transport/mesh, product experiments, demos/samples, and tests.
+The monorepo has **~69** `.csproj` projects (**52** open, **17** commercial; see [`LICENSING.md`](../LICENSING.md) and `make dependency-boundary-gate`). The **runnable open product** is roughly **15 projects** (Tiers **0** and **1**): kernel libraries, distribution/SDK packs, and the two deployable hosts (`Nexo.CLI`, `Nexo.API`). Commercial fleet and vertical hosts live under `commercial/` and `apps/`.
 
 Tiers depend **inward** only (satellites reference the spine, not the reverse). The **`layer-boundary`** CI gate enforces this.
 
@@ -17,7 +17,7 @@ Tiers depend **inward** only (satellites reference the spine, not the reverse). 
 | `Nexo.Contracts` | Cross-cutting contracts |
 | `Nexo.Brick.Contracts` | Brick extension contracts |
 | `Nexo.Policies` | Policy primitives |
-| `Nexo.Infrastructure` | Execution, persistence, adapters |
+| `Nexo.Infrastructure` | Execution, persistence, adapters; open `MeshLab` worker executor (polls commercial fleet director) |
 | `Nexo.Orchestration` | Orchestrator, routing, coordination |
 | `Nexo.BackgroundAgents` | Scheduler, RAG, tools |
 | `Nexo.BackgroundAgents.HostRunners` | Host runner adapters |
@@ -87,6 +87,9 @@ The CLI project also references spine-adjacent packs: **`Nexo.Bricks.Owasp`**, *
 | `application/src/Nexo.Tests.CLI` | CLI tests |
 | `commercial/tests/Nexo.Commercial.Tests.GameDirector` | commercial Game Director tests |
 | `commercial/tests/Nexo.Commercial.Tests.GameDomain` | commercial game domain tests |
+| `commercial/tests/Nexo.Commercial.Tests.Fleet` | commercial fleet/director tests |
+| `commercial/tests/Nexo.Commercial.Tests.Fleet.Host` | commercial fleet host smoke tests |
+| `commercial/tests/Nexo.Commercial.Tests.MeshDirector` | commercial mesh director CLI tests |
 
 ## Minimal clone-to-run core
 
