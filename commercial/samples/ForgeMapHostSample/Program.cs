@@ -2,7 +2,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Nexo.GameDomain.Mapping;
 
-var baseUrl = (Environment.GetEnvironmentVariable("NEXO_API_BASE_URL") ?? "http://localhost:5000").TrimEnd('/');
+var baseUrl = (Environment.GetEnvironmentVariable("NEXO_API_BASE_URL") ?? "http://127.0.0.1:8080").TrimEnd('/');
 var engineId = Environment.GetEnvironmentVariable("FORGE_ENGINE_ID") ?? "unity";
 var mapboxToken = Environment.GetEnvironmentVariable("MAPBOX_ACCESS_TOKEN");
 var tileset = Environment.GetEnvironmentVariable("MAPBOX_TILESET_ID") ?? "mapbox.mapbox-streets-v8";

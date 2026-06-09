@@ -10,7 +10,9 @@ Nexo Forge maps to Nexo's layered architecture:
 ┌──────────────────────────────────────────────────────┐
 │  Forge Bar UX (CLI / future Unity editor panel)      │
 ├──────────────────────────────────────────────────────┤
-│  Nexo.GameDomain (Session, Macros, Descriptors)      │
+│  Nexo.Commercial.GameDomain (Session, Macros, etc.)  │
+├──────────────────────────────────────────────────────┤
+│  Nexo.Commercial.GameDirector.Host (/api/forge)    │
 ├──────────────────────────────────────────────────────┤
 │  Background Agents (balance, map, perf, content, macro)│
 ├──────────────────────────────────────────────────────┤
@@ -20,7 +22,7 @@ Nexo Forge maps to Nexo's layered architecture:
 └──────────────────────────────────────────────────────┘
 ```
 
-- **Nexo.GameDomain** — domain models (`SessionState`, `MacroDefinition`, weapon/map/ability descriptors) and exporter utilities for JSON round-tripping.
+- **Nexo.Commercial.GameDomain** — domain models (`SessionState`, `MacroDefinition`, weapon/map/ability descriptors) and exporter utilities for JSON round-tripping. Types retain the `Nexo.GameDomain` namespace.
 - **Background Agents** — the `agent_set.forge.json` configuration drives five deterministic agents that run on a schedule.
 - **Core.Application / Orchestration** — MediatR use cases, the orchestrator, and the agent scheduler from the base Nexo platform.
 - **Infrastructure** — LLM providers (used by the content-suggester when wired to a real model), persistence, and mesh networking.
@@ -203,4 +205,4 @@ Nexo Forge is designed to integrate with the Unity game engine via the **Unity s
 4. **LOD control** — the performance-monitor agent's LOD suggestions are applied to Unity's `LODGroup` components via the sidecar bridge.
 5. **Macro playback** — macros can script sequences of Unity editor actions (place spawn points, adjust lighting, swap materials) through the sidecar command channel.
 
-The `Nexo.GameDomain` library targets `netstandard2.0` alongside `net8.0` so it can be referenced directly from Unity 2019+ projects.
+`Nexo.Commercial.GameDomain` targets `netstandard2.0` alongside `net8.0` so it can be referenced directly from Unity 2019+ projects.

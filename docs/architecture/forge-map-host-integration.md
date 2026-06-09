@@ -1,6 +1,6 @@
 # Forge map host integration (milestones)
 
-This document tracks **host-side** work that sits next to runtime types in **`Nexo.GameDomain`** and HTTP endpoints in **`Nexo.API`**.
+This document tracks **host-side** work that sits next to runtime types in **`Nexo.Commercial.GameDomain`** (`Nexo.GameDomain` namespace) and HTTP endpoints in **`Nexo.Commercial.GameDirector.Host`** (`ForgeEndpoints` in `Nexo.Commercial.GameDirector.Mcp`).
 
 ## M1 — Engine aesthetic manifest
 
@@ -55,7 +55,7 @@ This document tracks **host-side** work that sits next to runtime types in **`Ne
 
 ## M6 — Material / aesthetic assist (implemented)
 
-**Goal:** Surface procedural colours and shader-parameter hints aligned with **`EngineSurfaceBinding`** roles without requiring tessellation in Nexo.API.
+**Goal:** Surface procedural colours and shader-parameter hints aligned with **`EngineSurfaceBinding`** roles without requiring tessellation in the Game Director host.
 
 **Implemented in-repo:**
 

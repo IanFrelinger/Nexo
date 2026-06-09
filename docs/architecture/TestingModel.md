@@ -16,7 +16,7 @@ Some suites inherit **`UnitTestBase`** (which extends **`TestBase`**) and implem
 
 ## Production-like tests (`Category=ProdStyle`)
 
-Use **`[Trait("Category", "ProdStyle")]`** on xUnit classes that mirror production wiring: **`AddNexo`**, **`AddRunPodCapabilityRouting`**, adaptation/composition stacks, Forge HTTP surfaces, capability routing, barriers, etc. **`UnitTestBridgeTests`** in Application / Domain / Infrastructure / CLI is tagged so every **`UnitTestBase`** suite participates. **`Nexo.Tests.GameDomain`** and **`Nexo.Tests.Transport`** use **`[assembly: AssemblyTrait("Category", "ProdStyle")]`** so the full assembly runs under **`Category=ProdStyle`**.
+Use **`[Trait("Category", "ProdStyle")]`** on xUnit classes that mirror production wiring: **`AddNexo`**, **`AddRunPodCapabilityRouting`**, adaptation/composition stacks, Forge HTTP surfaces, capability routing, barriers, etc. **`UnitTestBridgeTests`** in Application / Domain / Infrastructure / CLI is tagged so every **`UnitTestBase`** suite participates. **`Nexo.Commercial.Tests.GameDomain`** and **`Nexo.Tests.Transport`** use **`[assembly: AssemblyTrait("Category", "ProdStyle")]`** so the full assembly runs under **`Category=ProdStyle`**.
 
 **NCR virtual routing (`VirtualProductionNcrRoutingHost`):** production **`RunPodHttpClient`** against an in-process **`RunPodLoopbackApiServer`** (REST-compatible shim), **`ProviderFactory`** local execution, **`EnvironmentHardwareProfiler`**, **`FileBasedInstanceDiscovery`** — see **`docs/NcrReleaseSLOs.md`**.
 
