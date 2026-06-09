@@ -1,6 +1,6 @@
 # Forge map adaptation and engine manifests
 
-Runtime types live in **`Nexo.GameDomain`**; HTTP surface in **`Nexo.API`** (`ForgeEndpoints`).
+Runtime types live in **`Nexo.Commercial.GameDomain`** (`Nexo.GameDomain` namespace); HTTP surface in **`Nexo.Commercial.GameDirector.Host`** (`ForgeEndpoints` in `Nexo.Commercial.GameDirector.Mcp`).
 
 ## Map adaptation plan
 

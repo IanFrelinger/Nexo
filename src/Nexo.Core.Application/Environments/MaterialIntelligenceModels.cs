@@ -2,7 +2,7 @@ namespace Nexo.Core.Application.Environments;
 
 /// <summary>
 /// Suggested material parameters and texture-generation hints for the engine adaptation layer.
-/// Maps naturally to <c>Nexo.GameDomain.Assets.MaterialDescriptor</c> (paths filled after image bake).
+/// Maps naturally to <c>Nexo.Commercial.GameDomain</c> <c>MaterialDescriptor</c> (paths filled after image bake).
 /// </summary>
 /// <param name="Id">Stable material id.</param>
 /// <param name="Name">Display name.</param>

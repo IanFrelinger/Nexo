@@ -4,11 +4,13 @@ Deployable and product-facing projects that consume the runtime under `src/`.
 
 | Project | Role |
 |---------|------|
-| `Nexo.API` | HTTP host |
+| `Nexo.API` | Open HTTP host (kernel status, mesh worker, etc.) |
 | `Nexo.CLI` | `nexo` global tool |
-| `Nexo.GameDomain` | Forge / game descriptors |
+| `Nexo.Commercial.GameDomain` | Forge / game descriptors (commercial; under `commercial/src/`) |
 
-Tests: `Nexo.Tests.CLI`, `Nexo.Tests.GameDomain`.
+Forge HTTP (`/api/forge/*`) is served by **`Nexo.Commercial.GameDirector.Host`** in `commercial/`, not `Nexo.API`.
+
+Tests: `Nexo.Tests.CLI`, `Nexo.Commercial.Tests.GameDomain` (commercial).
 
 Build:
 
