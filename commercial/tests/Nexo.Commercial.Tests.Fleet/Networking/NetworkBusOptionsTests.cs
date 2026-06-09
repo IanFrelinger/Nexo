@@ -1,14 +1,13 @@
 using FluentAssertions;
 using Nexo.Core.Domain;
 using Nexo.Infrastructure.Networking;
-using Nexo.Tests.Infrastructure.Helpers;
 using Xunit;
 
-namespace Nexo.Tests.Infrastructure.Tests.Networking;
+namespace Nexo.Commercial.Tests.Fleet.Networking;
 
 public sealed class NetworkBusOptionsTests
 {
-    [Fact(Timeout = TestTimeouts.Quick)]
+    [Fact]
     public async Task DefaultValues_MatchNexoDefaults()
     {
         await Task.CompletedTask;
@@ -19,7 +18,7 @@ public sealed class NetworkBusOptionsTests
         opts.DefaultMaxHops.Should().Be(NexoDefaults.NetworkBusDefaultMaxHops);
     }
 
-    [Fact(Timeout = TestTimeouts.Quick)]
+    [Fact]
     public async Task DefaultNodeId_IsMachineName()
     {
         await Task.CompletedTask;
@@ -28,7 +27,7 @@ public sealed class NetworkBusOptionsTests
         opts.NodeId.Should().Be(Environment.MachineName);
     }
 
-    [Fact(Timeout = TestTimeouts.Quick)]
+    [Fact]
     public async Task DefaultPeerUrls_IsEmpty()
     {
         await Task.CompletedTask;
@@ -37,7 +36,7 @@ public sealed class NetworkBusOptionsTests
         opts.PeerUrls.Should().BeEmpty();
     }
 
-    [Fact(Timeout = TestTimeouts.Quick)]
+    [Fact]
     public async Task CustomValues_OverrideDefaults()
     {
         await Task.CompletedTask;
@@ -57,7 +56,7 @@ public sealed class NetworkBusOptionsTests
         opts.PeerUrls.Should().HaveCount(2);
     }
 
-    [Fact(Timeout = TestTimeouts.Quick)]
+    [Fact]
     public async Task SectionName_IsNetworkBus()
     {
         await Task.CompletedTask;

@@ -11,7 +11,7 @@ using Nexo.Core.Application.Networking.Ports;
 using Nexo.Infrastructure.Networking;
 using Xunit;
 
-namespace Nexo.Tests.Infrastructure.Tests.Networking;
+namespace Nexo.Commercial.Tests.Fleet.Networking;
 
 public class InfrastructureNetworkingGapCoverageTests
 {

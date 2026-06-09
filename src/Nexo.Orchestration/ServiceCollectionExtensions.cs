@@ -91,8 +91,6 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IAgentBus, AgentBus>();
         services.AddSingleton<ChannelManager>();
         services.AddSingleton<MessageSchemaValidator>();
-        // AgentBusNetworkBridge is registered by AddAgentBusNetworkBridge when INetworkBus is also registered (e.g. in API).
-
         // Coordination
         services.AddSingleton<DependencyResolver>();
         services.AddSingleton<ConflictDetector>();
@@ -151,19 +149,6 @@ public static class ServiceCollectionExtensions
     {
         public ValueTask RecordAsync(BarrierAuditEvent auditEvent, CancellationToken cancellationToken = default)
             => ValueTask.CompletedTask;
-    }
-
-    /// <summary>
-    /// Registers the bridge between IAgentBus and INetworkBus. Call after both AddNexoOrchestration and INetworkBus registration.
-    /// </summary>
-    public static IServiceCollection AddAgentBusNetworkBridge(this IServiceCollection services, IConfiguration? configuration = null)
-    {
-        if (configuration != null)
-            services.Configure<AgentBusNetworkBridgeOptions>(configuration.GetSection(AgentBusNetworkBridgeOptions.SectionName));
-        else
-            services.Configure<AgentBusNetworkBridgeOptions>(_ => { });
-        services.AddHostedService<AgentBusNetworkBridge>();
-        return services;
     }
 
     /// <summary>

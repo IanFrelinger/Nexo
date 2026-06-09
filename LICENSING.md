@@ -110,7 +110,7 @@ Tier 2 is the commercial layer for fleet-scale and governance capabilities:
 
 Mesh-lab **peer-a** runs `Nexo.Commercial.Fleet.Host` (`.docker/Dockerfile.fleet-host`). Open duplicate fleet trees under `src/**/Fleet/**` have been removed.
 
-**Optional follow-up** (not required for the open/commercial boundary): classify and optionally move `src/Nexo.Core.Application/Networking/**` and `src/Nexo.Infrastructure/Networking/**` per [`docs/FleetGovernanceExtractionInventory.md`](docs/FleetGovernanceExtractionInventory.md).
+**Networking (Phase F, done):** knowledge-sync / network-bus / adaptive-cache surfaces live under `commercial/src/Nexo.Commercial.Fleet.Contracts/Networking/**` and `commercial/src/Nexo.Commercial.Fleet.Infrastructure/Networking/**` (namespaces retain `Nexo.Core.Application.Networking` / `Nexo.Infrastructure.Networking` for compatibility). Register via `AddNexoCommercialFleetNetworking()` on the commercial fleet host.
 
 ## Tier 3 — COMMERCIAL (verticals)
 
@@ -154,7 +154,7 @@ make dependency-boundary-gate
 
 ## Open questions (post-extraction)
 
-- Should `src/**/Networking/**` move to commercial fleet/governance modules, or remain a smaller open substrate?
+- ~~Should `src/**/Networking/**` move to commercial?~~ **Done (Phase F):** under `Nexo.Commercial.Fleet.*`.
 - Should open `MeshHubCommand` split further so only local mesh inspection stays in `Nexo.CLI`?
 - Should `apps/release-manager` become the future minimal open SDK reference app?
 

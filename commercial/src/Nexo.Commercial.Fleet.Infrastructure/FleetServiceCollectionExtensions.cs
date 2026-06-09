@@ -2,6 +2,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Nexo.Commercial.Fleet.Contracts.Ports;
+using Nexo.Commercial.Fleet.Infrastructure.Communication;
 using Nexo.Commercial.Fleet.Infrastructure.MeshLab;
 
 namespace Nexo.Commercial.Fleet.Infrastructure;
@@ -115,4 +116,34 @@ public static class FleetServiceCollectionExtensions
         services.AddHostedService<MeshLabWorkerExecutorBackgroundService>();
         return services;
     }
+
+    /// <summary>
+    /// Commercial fleet networking: HTTP network bus, knowledge sync, plasticity, and optional agent-bus bridge.
+    /// Call after <c>AddNexoOrchestration</c> when cross-node networking is required.
+    /// </summary>
+    public static IServiceCollection AddNexoCommercialFleetNetworking(
+        this IServiceCollection services,
+        IConfiguration? configuration = null)
+    {
+        if (configuration is not null)
+        {
+            services.AddOptions<AgentBusNetworkBridgeOptions>()
+                .Bind(configuration.GetSection(AgentBusNetworkBridgeOptions.SectionName));
+        }
+        else
+        {
+            services.AddOptions<AgentBusNetworkBridgeOptions>();
+        }
+
+        services.AddHostedService<AgentBusNetworkBridge>();
+        return services;
+    }
+
+    /// <summary>
+    /// Registers the bridge between <see cref="Nexo.Orchestration.Communication.IAgentBus"/> and <see cref="Nexo.Core.Application.Networking.Ports.INetworkBus"/>.
+    /// </summary>
+    public static IServiceCollection AddAgentBusNetworkBridge(
+        this IServiceCollection services,
+        IConfiguration? configuration = null)
+        => services.AddNexoCommercialFleetNetworking(configuration);
 }

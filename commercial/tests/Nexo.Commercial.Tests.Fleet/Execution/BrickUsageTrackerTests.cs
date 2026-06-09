@@ -1,16 +1,25 @@
 using FluentAssertions;
 using Microsoft.Extensions.Options;
 using Nexo.Core.Application.Networking.Models;
+using Nexo.Core.Domain;
 using Nexo.Infrastructure.Execution;
 using Xunit;
 
-namespace Nexo.Tests.Infrastructure.Tests.Execution;
+namespace Nexo.Commercial.Tests.Fleet.Execution;
 
 /// <summary>
 /// Tests for BrickUsageTracker: usage-weighted brick routing (synaptic plasticity).
 /// </summary>
 public class BrickUsageTrackerTests
 {
+    [Fact]
+    public void BrickUsageTrackerOptions_UsesNexoDefaults()
+    {
+        var opts = new BrickUsageTrackerOptions();
+        opts.MaxEntries.Should().Be(NexoDefaults.BrickUsageTrackerMaxEntries);
+        opts.RollingHourWindowSeconds.Should().Be(NexoDefaults.BrickUsageTrackerRollingHourWindowSeconds);
+    }
+
     private static BrickUsageTracker CreateTracker(int maxEntries = 1000, int rollingHourSeconds = 3600)
     {
         var options = new BrickUsageTrackerOptions { MaxEntries = maxEntries, RollingHourWindowSeconds = rollingHourSeconds };

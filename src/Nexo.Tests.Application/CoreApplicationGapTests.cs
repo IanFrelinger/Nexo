@@ -18,7 +18,6 @@ using Nexo.Core.Application.Knowledge.Models;
 using Nexo.Core.Application.Mesh.Models;
 using Nexo.Core.Application.Middleware;
 using Nexo.Core.Application.Middleware.Ports;
-using Nexo.Core.Application.Networking.Models;
 using Nexo.Core.Application.NodeCapabilityRuntime.Models;
 using Nexo.Core.Application.Orchestration.Profiles;
 using Nexo.Core.Application.Pipelines.Models;
@@ -130,7 +129,7 @@ public class CoreApplicationGapTests
     }
 
     [Fact]
-    public void Knowledge_and_networking_models_round_trip()
+    public void Knowledge_models_round_trip()
     {
         new PullProgress { ModelId = "m", BytesDownloaded = 10, TotalBytes = 100 }
             .BytesDownloaded.Should().Be(10);
@@ -159,14 +158,6 @@ public class CoreApplicationGapTests
             Reason = "fixed",
         }.Improved.Should().BeTrue();
 
-        new KnowledgeChunk { Id = "c1", SourceNodeId = "n1", ContentHash = "abc" }
-            .ContentHash.Should().Be("abc");
-
-        new PlasticityMetrics { NodeId = "n1", PeerCount = 2, HotBrickCount = 1 }.PeerCount.Should().Be(2);
-
-        new KnowledgeSyncStatus { NodeId = "n1", PeerIds = new[] { "p1" } }.NodeId.Should().Be("n1");
-
-        new NetworkAgentEntry { AgentId = "a1", NodeId = "n1" }.AgentId.Should().Be("a1");
     }
 
     [Fact]
