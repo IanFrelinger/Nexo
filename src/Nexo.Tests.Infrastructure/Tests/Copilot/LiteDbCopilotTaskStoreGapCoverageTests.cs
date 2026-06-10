@@ -65,6 +65,45 @@ public sealed class LiteDbCopilotTaskStoreGapCoverageTests
     }
 
     [Fact]
+    public async Task QueryAsync_isolates_records_by_tenant()
+    {
+        var path = CreateTempDbPath();
+        try
+        {
+            var store = new LiteDbCopilotTaskStore(path);
+            var now = DateTimeOffset.UtcNow;
+            await store.StoreAsync(new CopilotTaskRecord
+            {
+                TaskId = "a-task",
+                Task = "tenant a",
+                SubmittedAt = now,
+                TenantId = "tenant-a",
+                Success = true,
+            });
+            await store.StoreAsync(new CopilotTaskRecord
+            {
+                TaskId = "b-task",
+                Task = "tenant b",
+                SubmittedAt = now,
+                TenantId = "tenant-b",
+                Success = true,
+            });
+
+            var aResults = await store.QueryAsync(tenantId: "tenant-a");
+            var bResults = await store.QueryAsync(tenantId: "tenant-b");
+
+            aResults.Should().ContainSingle(r => r.TaskId == "a-task");
+            bResults.Should().ContainSingle(r => r.TaskId == "b-task");
+            aResults.Should().NotContain(r => r.TaskId == "b-task");
+            bResults.Should().NotContain(r => r.TaskId == "a-task");
+        }
+        finally
+        {
+            TryDelete(path);
+        }
+    }
+
+    [Fact]
     public async Task QueryAsync_includes_default_tenant_records_with_null_or_empty_tenant()
     {
         var path = CreateTempDbPath();

@@ -1,0 +1,39 @@
+# Product Fleet Phase 0.4 — reference single-tenant Private shape (local dev / pilot).
+# See docs/product-fleet/private-reference-deployment.md
+services:
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "127.0.0.1:11434:11434"
+    volumes:
+      - ollama-models:/root/.ollama
+    restart: unless-stopped
+
+  nexo-api:
+    build:
+      context: .
+      dockerfile: .docker/Dockerfile.api
+    depends_on:
+      - ollama
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1:latest}
+      NEXO_DAILIES_PATH: /data/dailies
+      Nexo__Product__DefaultTenantId: ${NEXO_DEFAULT_TENANT_ID:-default}
+      Nexo__Product__AllowedTenantIds__0: ${NEXO_DEFAULT_TENANT_ID:-default}
+      Nexo__Entitlements__MaxCopilotSubmissionsPerHour: ${NEXO_MAX_COPILOT_PER_HOUR:-0}
+      Nexo__Entitlements__DeploymentMode: Private
+      Nexo__Entitlements__Seats: ${NEXO_SEATS:-5}
+      Nexo__Entitlements__MaxConcurrency: ${NEXO_MAX_CONCURRENCY:-2}
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - nexo-dailies:/data/dailies
+      - nexo-copilot-data:/data/copilot
+    restart: unless-stopped
+
+volumes:
+  ollama-models:
+  nexo-dailies:
+  nexo-copilot-data:
