@@ -57,4 +57,17 @@ public abstract class DataDecisionAuditLogContractTests
         json.Should().Contain("ScopeChainRejected");
         json.Should().Contain("AmbientAction");
     }
+
+    [Fact]
+    public void LogCopilotTask_IsTenantScopedAndRetrievable()
+    {
+        var log = CreateInstance();
+        log.LogCopilotTask("tenant-a", "task-123", success: true);
+
+        var recent = log.GetRecent(10, eventType: "CopilotTask");
+        recent.Should().ContainSingle();
+        recent[0].TenantId.Should().Be("tenant-a");
+        recent[0].SourceId.Should().Be("task-123");
+        recent[0].Disposition.Should().Be("Success");
+    }
 }

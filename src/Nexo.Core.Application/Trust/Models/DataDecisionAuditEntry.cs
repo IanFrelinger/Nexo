@@ -11,6 +11,9 @@ public sealed class DataDecisionAuditEntry
     /// <summary>When the event occurred.</summary>
     public DateTimeOffset Timestamp { get; init; }
 
+    /// <summary>Product Fleet tenant scope when the event is tenant-bound (e.g. copilot jobs).</summary>
+    public string? TenantId { get; init; }
+
     // Sanitization fields
     public string? RuleVersion { get; init; }
     public string? FieldOrType { get; init; }

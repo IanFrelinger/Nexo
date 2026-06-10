@@ -21,7 +21,7 @@ This is the **engineering, operations, and go-to-market sequence** for turning t
 | 0.2 | **Entitlements configuration** (file or DB) keyed by plan: seats, `included_jobs`, `max_concurrency`, `retention_days`, `sso_enabled`, `audit_export`, `deployment_mode` | Same binary runs with different config profiles (dev/staging/prod) | **Started:** `NexoEntitlementsOptions` fields; copilot hourly quota enforced |
 | 0.3 | **Usage counters** (jobs submitted, jobs succeeded, tokens optional if BYOK proxy) emitted to logs or metrics table | You can answer “how many jobs per tenant last 24h?” | **Started:** `ITenantUsageStore`, `GET /api/usage/summary`, structured `NexoUsage` logs |
 | 0.4 | **Reference deployment** documented: compose (or Helm) for “single-tenant production shape” matching what you sell as Private | New hire reproduces deploy from docs in one session | **Started:** `docker-compose.private-single-tenant.yml` + `docs/product-fleet/private-reference-deployment.md` |
-| 0.5 | **Observability baseline**: structured logs, health checks, redacted config export for support | On-call playbook v0.1 exists |
+| 0.5 | **Observability baseline**: structured logs, health checks, redacted config export for support | On-call playbook v0.1 exists | **Started:** `GET /api/support/diagnostics`, copilot audit `TenantId`, [`on-call-playbook-v0.1.md`](./product-fleet/on-call-playbook-v0.1.md) |
 | 0.6 | **Legal/commercial shell**: entity, basic ToS/Privacy for a website, DPA template if Cloud will hold customer data | Counsel-reviewed drafts (timing varies) |
 
 **Exit:** you can run **one production-shaped tenant** with measurable usage and no ambiguous identity.
@@ -32,12 +32,12 @@ This is the **engineering, operations, and go-to-market sequence** for turning t
 
 Private is usually **less COGS risk** and forces **install, upgrade, and air-gap** clarity early.
 
-| Step | What to implement | Done means |
-|------|-------------------|------------|
-| 1.1 | **Install path**: pinned images, versioned release artifacts, migration notes | Customer upgrades one minor version without data loss |
-| 1.2 | **License or subscription check** (even v0: signed JWT license file or online activation with **air-gap fallback**) | Expired license degrades gracefully (read-only or block execution—your policy, documented) |
-| 1.3 | **Secrets**: BYOK storage for provider keys; document what never leaves host | Security one-pager accurate |
-| 1.4 | **Backup/restore** runbook + tested restore for DB and object stores you use | RPO/RTO stated on support page |
+| Step | What to implement | Done means | Status |
+|------|-------------------|------------|--------|
+| 1.1 | **Install path**: pinned images, versioned release artifacts, migration notes | Customer upgrades one minor version without data loss | **Started:** install/upgrade table in [`private-reference-deployment.md`](./product-fleet/private-reference-deployment.md) |
+| 1.2 | **License or subscription check** (even v0: signed JWT license file or online activation with **air-gap fallback**) | Expired license degrades gracefully (read-only or block execution—your policy, documented) | **Started:** `NexoPrivateLicenseOptions`, `PrivateLicenseMiddleware`, sample [`sample-private-license.json`](./product-fleet/sample-private-license.json) |
+| 1.3 | **Secrets**: BYOK storage for provider keys; document what never leaves host | Security one-pager accurate | **Started:** [`private-byok-security.md`](./product-fleet/private-byok-security.md) |
+| 1.4 | **Backup/restore** runbook + tested restore for DB and object stores you use | RPO/RTO stated on support page | **Started:** [`private-backup-restore.md`](./product-fleet/private-backup-restore.md) (RPO 24h / RTO 4h pilot defaults) |
 | 1.5 | **Private pricing + invoice flow** (Stripe Invoicing, Paddle, or manual) + **order form template** | First paying Private customer can be billed without heroics |
 | 1.6 | **Support boundaries**: severity levels, response-time targets for paid Private | Published on website or contract appendix |
 

@@ -26,6 +26,9 @@ services:
       Nexo__Entitlements__DeploymentMode: Private
       Nexo__Entitlements__Seats: ${NEXO_SEATS:-5}
       Nexo__Entitlements__MaxConcurrency: ${NEXO_MAX_CONCURRENCY:-2}
+      NEXO_LICENSE_FILE: ${NEXO_LICENSE_FILE:-}
+      Nexo__PrivateLicense__EnforceLicense: ${NEXO_ENFORCE_LICENSE:-false}
+      Nexo__PrivateLicense__AllowReadOnlyWhenExpired: "true"
     ports:
       - "127.0.0.1:8080:8080"
     volumes:

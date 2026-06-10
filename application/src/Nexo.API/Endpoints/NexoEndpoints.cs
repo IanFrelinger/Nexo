@@ -27,6 +27,7 @@ using Nexo.Infrastructure.Execution;
 using Nexo.API.Security;
 using Nexo.Orchestration.Coordination;
 using Nexo.Orchestration.Models;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
@@ -99,6 +100,11 @@ public static class NexoEndpoints
             .WithSummary("Rolling usage counters for the resolved tenant (Product Fleet Phase 0.3)")
             .Produces<Nexo.Core.Application.Product.Models.TenantUsageSummary>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest);
+
+        group.MapGet("/support/diagnostics", GetSupportDiagnosticsAsync)
+            .WithName("GetSupportDiagnostics")
+            .WithSummary("Redacted support diagnostics export (Product Fleet Phase 0.5)")
+            .Produces<SupportDiagnosticsResponse>(StatusCodes.Status200OK);
 
         group.MapGet("/status", GetStatusAsync)
             .WithName("GetStatus")
@@ -392,6 +398,7 @@ public static class NexoEndpoints
                 Error = null
             }, cancellationToken);
             usageStore.RecordJobCompleted(tenantId, result.Success);
+            auditLog?.LogCopilotTask(tenantId, taskId, result.Success);
             usageLogger.LogInformation(
                 "NexoUsage metric=copilot_job_completed tenant={TenantId} taskId={TaskId} success={Success}",
                 tenantId,
@@ -420,6 +427,7 @@ public static class NexoEndpoints
                 Error = ex.Message
             }, cancellationToken);
             usageStore.RecordJobCompleted(tenantId, success: false);
+            auditLog?.LogCopilotTask(tenantId, taskId, success: false);
             usageLogger.LogInformation(
                 "NexoUsage metric=copilot_job_completed tenant={TenantId} taskId={TaskId} success={Success}",
                 tenantId,
@@ -429,6 +437,24 @@ public static class NexoEndpoints
                 detail: IsDevelopment() ? ex.Message : "An internal error occurred. Check server logs for details.",
                 statusCode: StatusCodes.Status500InternalServerError);
         }
+    }
+
+    private static Task<IResult> GetSupportDiagnosticsAsync(
+        [FromServices] IConfiguration configuration,
+        [FromServices] IHostEnvironment environment,
+        [FromServices] IOptions<NexoEntitlementsOptions> entitlementsOptions,
+        [FromServices] IOptions<NexoProductOptions> productOptions,
+        [FromServices] IOptions<NexoSecurityOptions> securityOptions,
+        [FromServices] IPrivateLicenseValidator licenseValidator)
+    {
+        var diagnostics = SupportDiagnosticsExporter.Build(
+            configuration,
+            environment,
+            entitlementsOptions.Value,
+            productOptions.Value,
+            securityOptions.Value,
+            licenseValidator.GetStatus());
+        return Task.FromResult<IResult>(Results.Ok(diagnostics));
     }
 
     private static Task<IResult> GetUsageSummaryAsync(
