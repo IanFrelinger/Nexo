@@ -8,6 +8,7 @@ using Nexo.BrickContracts.Capabilities;
 using Nexo.Contracts;
 using Nexo.Core.Application.Copilot.Models;
 using Nexo.Core.Application.Copilot.Ports;
+using Nexo.Core.Application.Product.Ports;
 using Nexo.Core.Application.Knowledge.Models;
 using Nexo.Core.Application.Knowledge.Ports;
 using Nexo.Core.Application.Agent.UseCases.RunAgent;
@@ -92,6 +93,12 @@ public static class NexoEndpoints
             .WithName("ListCopilotTasks")
             .WithSummary("List recent copilot tasks (newest first)")
             .Produces<IReadOnlyList<CopilotTaskRecord>>(StatusCodes.Status200OK);
+
+        group.MapGet("/usage/summary", GetUsageSummaryAsync)
+            .WithName("GetUsageSummary")
+            .WithSummary("Rolling usage counters for the resolved tenant (Product Fleet Phase 0.3)")
+            .Produces<Nexo.Core.Application.Product.Models.TenantUsageSummary>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest);
 
         group.MapGet("/status", GetStatusAsync)
             .WithName("GetStatus")
@@ -337,6 +344,7 @@ public static class NexoEndpoints
         [FromServices] IAccessBoundary? accessBoundary,
         [FromServices] IOptions<NexoProductOptions> productOptions,
         [FromServices] ICopilotSubmissionQuota copilotSubmissionQuota,
+        [FromServices] ITenantUsageStore usageStore,
         [FromServices] ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
@@ -350,6 +358,7 @@ public static class NexoEndpoints
             return Results.Json(new ProblemDetails { Title = "Too Many Requests", Detail = quotaMsg }, statusCode: StatusCodes.Status429TooManyRequests);
 
         var usageLogger = loggerFactory.CreateLogger("Nexo.Usage");
+        usageStore.RecordJobSubmitted(tenantId);
 
         var taskId = Guid.NewGuid().ToString("D");
         var submittedAt = DateTimeOffset.UtcNow;
@@ -382,6 +391,7 @@ public static class NexoEndpoints
                 Summary = summary,
                 Error = null
             }, cancellationToken);
+            usageStore.RecordJobCompleted(tenantId, result.Success);
             usageLogger.LogInformation(
                 "NexoUsage metric=copilot_job_completed tenant={TenantId} taskId={TaskId} success={Success}",
                 tenantId,
@@ -409,6 +419,7 @@ public static class NexoEndpoints
                 Summary = null,
                 Error = ex.Message
             }, cancellationToken);
+            usageStore.RecordJobCompleted(tenantId, success: false);
             usageLogger.LogInformation(
                 "NexoUsage metric=copilot_job_completed tenant={TenantId} taskId={TaskId} success={Success}",
                 tenantId,
@@ -418,6 +429,19 @@ public static class NexoEndpoints
                 detail: IsDevelopment() ? ex.Message : "An internal error occurred. Check server logs for details.",
                 statusCode: StatusCodes.Status500InternalServerError);
         }
+    }
+
+    private static Task<IResult> GetUsageSummaryAsync(
+        HttpContext httpContext,
+        [FromServices] ITenantUsageStore usageStore,
+        [FromServices] IOptions<NexoProductOptions> productOptions,
+        int hours = 24)
+    {
+        if (!NexoHttpTenant.TryResolve(httpContext.Request, productOptions.Value, out var tenantId, out var tenantError))
+            return Task.FromResult<IResult>(Results.BadRequest(new ProblemDetails { Title = "Invalid tenant", Detail = tenantError }));
+
+        var summary = usageStore.GetSummary(tenantId, hours);
+        return Task.FromResult<IResult>(Results.Ok(summary));
     }
 
     private static async Task<IResult> ListCopilotTasksAsync(

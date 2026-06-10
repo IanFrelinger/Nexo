@@ -49,6 +49,8 @@ using Nexo.API.Endpoints;
 using Nexo.API.Middleware.Ingress;
 using Nexo.API.Security;
 using Nexo.Core.Application.Middleware.Ports;
+using Nexo.Core.Application.Product.Ports;
+using Nexo.Infrastructure.Product;
 using Nexo.Contracts;
 using Nexo.BackgroundAgents.Extending;
 using Nexo.BackgroundAgents.HostRunners;
@@ -91,6 +93,7 @@ builder.Services.Configure<NexoEntitlementsOptions>(
     builder.Configuration.GetSection(NexoEntitlementsOptions.SectionPath));
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<ICopilotSubmissionQuota, CopilotSubmissionQuota>();
+builder.Services.AddSingleton<ITenantUsageStore, InMemoryTenantUsageStore>();
 builder.Services.Configure<MeshSecurityOptions>(
     builder.Configuration.GetSection(MeshSecurityOptions.SectionPath));
 builder.Services.Configure<SmsIngressDynamoDbOptions>(

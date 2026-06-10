@@ -5,6 +5,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Nexo.API.Security;
 using Nexo.Core.Application.Copilot.Models;
 using Nexo.Core.Application.Copilot.Ports;
+using Nexo.Core.Application.Product.Models;
+using Nexo.Core.Application.Product.Ports;
 using Nexo.Tests.Infrastructure.Helpers.VirtualProduction;
 using Xunit;
 
@@ -82,5 +84,30 @@ public sealed class ProductFleetTenantIsolationTests : IClassFixture<NexoApiWebA
         tasks.Should().NotBeNull();
         tasks!.Should().Contain(t => t.TaskId == "list-a");
         tasks.Should().NotContain(t => t.TaskId == "list-b");
+    }
+
+    [Fact(Timeout = 120000)]
+    public async Task GET_usage_summary_returns_counters_for_resolved_tenant_only()
+    {
+        using (var scope = _factory.Services.CreateScope())
+        {
+            var usage = scope.ServiceProvider.GetRequiredService<ITenantUsageStore>();
+            usage.RecordJobSubmitted("tenant-a");
+            usage.RecordJobCompleted("tenant-a", success: true);
+            usage.RecordJobSubmitted("tenant-b");
+            usage.RecordJobCompleted("tenant-b", success: false);
+        }
+
+        var client = _factory.CreateClient();
+        using var request = new HttpRequestMessage(HttpMethod.Get, "api/usage/summary?hours=24");
+        request.Headers.TryAddWithoutValidation(NexoHttpTenant.TenantHeaderName, "tenant-a");
+
+        using var response = await client.SendAsync(request);
+        response.EnsureSuccessStatusCode();
+        var summary = await response.Content.ReadFromJsonAsync<TenantUsageSummary>();
+        summary.Should().NotBeNull();
+        summary!.TenantId.Should().Be("tenant-a");
+        summary.JobsSubmitted.Should().BeGreaterThanOrEqualTo(1);
+        summary.JobsSucceeded.Should().BeGreaterThanOrEqualTo(1);
     }
 }
