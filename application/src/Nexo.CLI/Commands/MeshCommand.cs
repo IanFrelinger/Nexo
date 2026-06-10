@@ -55,8 +55,18 @@ public sealed class MeshCommand : Command
             await ExecuteImportAsync(path);
         });
 
-        var admitPeerArg = new Argument<string>("peerId", "Peer id to admit in instances.json");
-        var admitCmd = new Command("admit", "Set admitted=true for a peer in instances.json");
+        var peersCmd = new Command("peers", "List peers from local instances.json (open mesh primitive; not fleet director nodes)");
+        peersCmd.SetHandler(ExecutePeers);
+
+        var healthUrlOpt = new Option<string?>("--url", () => null, "Remote host base URL, e.g. https://nexo.example:8080") { IsRequired = true };
+        var healthTimeoutOpt = new Option<int>("--timeout-seconds", () => 30, "HTTP timeout");
+        var healthCmd = new Command("health", "GET /health on a remote Nexo host (generic probe)");
+        healthCmd.Add(healthUrlOpt);
+        healthCmd.Add(healthTimeoutOpt);
+        healthCmd.SetHandler(ExecuteHealthAsync, healthUrlOpt, healthTimeoutOpt);
+
+        var admitPeerArg = new Argument<string>("peerId", "Peer id to admit in local instances.json");
+        var admitCmd = new Command("admit", "Set admitted=true in local instances.json (not fleet director; use commercial mesh director admit for /api/mesh/fleet)");
         admitCmd.AddArgument(admitPeerArg);
         admitCmd.SetHandler((InvocationContext ctx) =>
         {
@@ -73,8 +83,8 @@ public sealed class MeshCommand : Command
             ctx.ExitCode = 0;
         });
 
-        var revokePeerArg = new Argument<string>("peerId", "Peer id to revoke in instances.json");
-        var revokeCmd = new Command("revoke", "Set admitted=false for a peer in instances.json");
+        var revokePeerArg = new Argument<string>("peerId", "Peer id to revoke in local instances.json");
+        var revokeCmd = new Command("revoke", "Set admitted=false in local instances.json (not fleet director; use commercial mesh director revoke for /api/mesh/fleet)");
         revokeCmd.AddArgument(revokePeerArg);
         revokeCmd.SetHandler((InvocationContext ctx) =>
         {
@@ -99,6 +109,8 @@ public sealed class MeshCommand : Command
         AddCommand(capabilitiesCmd);
         AddCommand(exportCmd);
         AddCommand(importCmd);
+        AddCommand(peersCmd);
+        AddCommand(healthCmd);
         AddCommand(admitCmd);
         AddCommand(revokeCmd);
 
@@ -242,8 +254,59 @@ public sealed class MeshCommand : Command
         }
 
         if (!discover && !advertise && string.IsNullOrEmpty(capability) && string.IsNullOrWhiteSpace(setTrustTier))
-            Console.WriteLine("Use --discover, --advertise, --capability <name>, --set-trust-tier <peerId>:<tier>, mesh admit, mesh revoke, or mesh hub. Commercial mesh director commands live under commercial/src/Nexo.Commercial.MeshDirector.");
+            Console.WriteLine(
+                "Use --discover, --advertise, --capability <name>, --set-trust-tier <peerId>:<tier>, " +
+                "mesh peers, mesh health, mesh admit, or mesh revoke (local instances.json). " +
+                "Fleet director HTTP (register, admit, list-nodes) lives in commercial/src/Nexo.Commercial.MeshDirector.");
         Environment.ExitCode = 0;
+    }
+
+    private static void ExecutePeers()
+    {
+        var instancesPath = Environment.GetEnvironmentVariable("NEXO_MESH_INSTANCES_PATH");
+        var services = new ServiceCollection()
+            .AddLogging(b => b.AddConsole())
+            .AddMeshInfrastructure(instancesPath)
+            .BuildServiceProvider();
+
+        var discovery = services.GetRequiredService<IInstanceDiscovery>();
+        var peers = discovery.DiscoverAsync().GetAwaiter().GetResult();
+        Console.WriteLine($"Local peers from instances.json ({peers.Count}):");
+        foreach (var p in peers)
+        {
+            Console.WriteLine(
+                $"  {p.PeerId,-24} {p.Endpoint,-40} tier={p.TrustTier,-10} admitted={p.Admitted}");
+        }
+
+        Environment.ExitCode = 0;
+    }
+
+    private static async Task ExecuteHealthAsync(string? baseUrl, int timeoutSeconds)
+    {
+        if (string.IsNullOrWhiteSpace(baseUrl))
+        {
+            Console.Error.WriteLine("--url is required.");
+            Environment.ExitCode = 1;
+            return;
+        }
+
+        var root = baseUrl.Trim().TrimEnd('/');
+        var uri = new Uri(root + "/health", UriKind.Absolute);
+        var client = new HttpClient { Timeout = TimeSpan.FromSeconds(Math.Clamp(timeoutSeconds, 5, 120)) };
+        try
+        {
+            using var resp = await client.GetAsync(uri).ConfigureAwait(false);
+            var body = await resp.Content.ReadAsStringAsync().ConfigureAwait(false);
+            Console.WriteLine($"{(int)resp.StatusCode} {resp.ReasonPhrase}");
+            if (!string.IsNullOrWhiteSpace(body))
+                Console.WriteLine(body);
+            Environment.ExitCode = resp.IsSuccessStatusCode ? 0 : 1;
+        }
+        catch (Exception ex)
+        {
+            Console.Error.WriteLine(ex.Message);
+            Environment.ExitCode = 1;
+        }
     }
 
     private static bool TryParseTrustTierChange(string value, out string? peerId, out PeerTrustTier tier)

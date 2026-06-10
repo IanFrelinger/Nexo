@@ -163,7 +163,7 @@ dotnet run --project commercial/src/Nexo.Commercial.MeshDirector -- director get
 
 ## instances.json (optional)
 
-Use host URLs from above; see previous revision of this doc for a JSON template (`mesh hub list`).
+Use host URLs from above; list local peers with `nexo mesh peers` or fleet nodes with `director list-nodes`.
 
 ## Stop
 

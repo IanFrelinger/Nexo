@@ -72,7 +72,7 @@ Documentation index for the Nexo platform. Start here to find what you need.
 ## Security / Trust
 
 - `docs/FriendMeshPrefab.md` — prefab Docker Compose + env template for a small shared **Nexo.API** hub (friends / tailnet).
-- `docs/MeshPhase8OperatorHardening.md` — **Mesh Phase 8:** discovery admission, trust alias, `nexo mesh hub` / `dotnet run --project commercial/src/Nexo.Commercial.MeshDirector -- director ...`, TLS example.
+- `docs/MeshPhase8OperatorHardening.md` — **Mesh Phase 8:** discovery admission, trust alias, `nexo mesh peers` / `mesh health` / `dotnet run --project commercial/src/Nexo.Commercial.MeshDirector -- director ...`, TLS example.
 - `docs/MeshVirtualLab.md` — **Virtual mesh lab:** two Nexo.API nodes in Docker + verify script (no extra hardware); **`scripts/bootstrap-cloud-mesh-lab.sh`** for Ubuntu/Debian cloud VMs.
 - `docs/MeshAgentSetupCapabilityBreakdown.md` — mesh agent setup **tear sheet**: capability tiers, ports, and ops checklist mapped to mesh DI surfaces.
 - `docs/TrustAndInformationArchitecture.md` — sanitization, audit, access boundaries.
