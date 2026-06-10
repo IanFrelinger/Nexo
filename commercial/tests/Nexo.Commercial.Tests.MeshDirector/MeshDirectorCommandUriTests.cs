@@ -20,4 +20,10 @@ public sealed class MeshDirectorCommandUriTests
         var path = MeshDirectorCommand.BuildFleetNodePath("peer/a", "admit");
         Assert.Equal("/api/mesh/fleet/nodes/peer%2Fa/admit", path);
     }
+
+    [Fact]
+    public void FleetNodesPath_matches_list_nodes_command()
+    {
+        Assert.Equal("/api/mesh/fleet/nodes", MeshDirectorCommand.FleetNodesPath);
+    }
 }

@@ -37,7 +37,7 @@ None for the core open/commercial boundary. Phases A–E exit criteria are met.
 
 Fleet-scale code has moved to `commercial/src/Nexo.Commercial.Fleet.*`, `Nexo.Commercial.MeshDirector`, and `Nexo.Commercial.Fleet.Host`. Open `src/**/Fleet/**` trees are removed. Mesh-lab workers use open `src/Nexo.Infrastructure/MeshLab/**` to call the commercial director HTTP API.
 
-**Optional follow-up:** `src/Nexo.Core.Application/Networking/**`, `src/Nexo.Infrastructure/Networking/**`, and a finer split of open CLI mesh hub vs commercial director commands — see [`FleetGovernanceExtractionInventory.md`](FleetGovernanceExtractionInventory.md).
+**Optional follow-up:** networking extraction (Phase F, see PR #155) and CLI mesh hub split (done: `mesh peers`/`health` vs `director list-nodes`/`health`) — see [`FleetGovernanceExtractionInventory.md`](FleetGovernanceExtractionInventory.md).
 
 ## Target boundary
 

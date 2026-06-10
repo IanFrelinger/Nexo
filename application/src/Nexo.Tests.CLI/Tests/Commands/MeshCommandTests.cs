@@ -13,6 +13,7 @@ public sealed class MeshCommandTests : UnitTestBase
         try
         {
             await TestSetTrustTierPreservesPeerFieldsAsync().ConfigureAwait(false);
+            await TestPeersListsLocalInstancesAsync().ConfigureAwait(false);
             return new TestResult
             {
                 Name = nameof(MeshCommandTests),
@@ -42,6 +43,49 @@ public sealed class MeshCommandTests : UnitTestBase
                 ErrorMessage = ex.Message,
                 StackTrace = ex.StackTrace
             };
+        }
+    }
+
+    private async Task TestPeersListsLocalInstancesAsync()
+    {
+        var tempRoot = Path.Combine(Path.GetTempPath(), $"nexo-mesh-peers-{Guid.NewGuid():N}");
+        var instancesPath = Path.Combine(tempRoot, "instances.json");
+        Directory.CreateDirectory(tempRoot);
+
+        var payload = """
+                      [
+                        {
+                          "peerId": "peer-a",
+                          "endpoint": "http://peer-a:5000",
+                          "capabilities": ["nexo-cli"],
+                          "trustTier": "Trusted",
+                          "admitted": true
+                        }
+                      ]
+                      """;
+        await File.WriteAllTextAsync(instancesPath, payload).ConfigureAwait(false);
+
+        var previousPath = Environment.GetEnvironmentVariable("NEXO_MESH_INSTANCES_PATH");
+        Environment.SetEnvironmentVariable("NEXO_MESH_INSTANCES_PATH", instancesPath);
+        var previousOut = Console.Out;
+        using var writer = new StringWriter();
+        Console.SetOut(writer);
+        try
+        {
+            var root = new RootCommand();
+            root.AddCommand(new MeshCommand());
+            var exitCode = await root.InvokeAsync("mesh peers").ConfigureAwait(false);
+            AssertEqual(0, exitCode);
+            var output = writer.ToString();
+            AssertTrue(output.Contains("peer-a", StringComparison.Ordinal), "Should list local peer id.");
+            AssertTrue(output.Contains("instances.json", StringComparison.OrdinalIgnoreCase), "Should label local source.");
+        }
+        finally
+        {
+            Console.SetOut(previousOut);
+            Environment.SetEnvironmentVariable("NEXO_MESH_INSTANCES_PATH", previousPath);
+            if (Directory.Exists(tempRoot))
+                Directory.Delete(tempRoot, recursive: true);
         }
     }
 

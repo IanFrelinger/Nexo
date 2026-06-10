@@ -110,7 +110,35 @@ public sealed class MeshDirectorCommand : Command
                 ctx.ParseResult.GetValueForOption(peerRegKeyOpt)).ConfigureAwait(false);
         });
 
-        var admitCmd = new Command("admit", "POST /api/mesh/fleet/nodes/{peerId}/admit");
+        var listNodesCmd = new Command("list-nodes", "GET /api/mesh/fleet/nodes (fleet director registry)");
+        listNodesCmd.Add(baseUrlOpt);
+        listNodesCmd.Add(apiKeyOpt);
+        listNodesCmd.Add(meshTokenOpt);
+        listNodesCmd.Add(timeoutOpt);
+        listNodesCmd.Add(jsonOpt);
+        listNodesCmd.SetHandler(
+            (string? baseUrl, string? apiKey, string? meshToken, int timeout, bool json) =>
+                InvokeGetAsync(baseUrl, apiKey, meshToken, timeout, json, FleetNodesPath),
+            baseUrlOpt,
+            apiKeyOpt,
+            meshTokenOpt,
+            timeoutOpt,
+            jsonOpt);
+
+        var directorHealthCmd = new Command("health", "GET /health on the fleet director host");
+        directorHealthCmd.Add(baseUrlOpt);
+        directorHealthCmd.Add(apiKeyOpt);
+        directorHealthCmd.Add(timeoutOpt);
+        directorHealthCmd.Add(jsonOpt);
+        directorHealthCmd.SetHandler(
+            (string? baseUrl, string? apiKey, int timeout, bool json) =>
+                InvokeGetAsync(baseUrl, apiKey, null, timeout, json, "/health"),
+            baseUrlOpt,
+            apiKeyOpt,
+            timeoutOpt,
+            jsonOpt);
+
+        var admitCmd = new Command("admit", "POST /api/mesh/fleet/nodes/{peerId}/admit (fleet director)");
         admitCmd.Add(baseUrlOpt);
         admitCmd.Add(apiKeyOpt);
         admitCmd.Add(meshTokenOpt);
@@ -119,7 +147,7 @@ public sealed class MeshDirectorCommand : Command
         admitCmd.AddArgument(peerIdArg);
         admitCmd.SetHandler(InvokeAdmitAsync, baseUrlOpt, apiKeyOpt, meshTokenOpt, timeoutOpt, jsonOpt, peerIdArg);
 
-        var revokeCmd = new Command("revoke", "POST /api/mesh/fleet/nodes/{peerId}/revoke");
+        var revokeCmd = new Command("revoke", "POST /api/mesh/fleet/nodes/{peerId}/revoke (fleet director)");
         revokeCmd.Add(baseUrlOpt);
         revokeCmd.Add(apiKeyOpt);
         revokeCmd.Add(meshTokenOpt);
@@ -132,9 +160,13 @@ public sealed class MeshDirectorCommand : Command
         AddCommand(postCmd);
         AddCommand(patchCmd);
         AddCommand(registerCmd);
+        AddCommand(listNodesCmd);
+        AddCommand(directorHealthCmd);
         AddCommand(admitCmd);
         AddCommand(revokeCmd);
     }
+
+    internal const string FleetNodesPath = "/api/mesh/fleet/nodes";
 
     internal static string BuildFleetNodePath(string peerId, string action) =>
         $"/api/mesh/fleet/nodes/{Uri.EscapeDataString(peerId)}/{action}";

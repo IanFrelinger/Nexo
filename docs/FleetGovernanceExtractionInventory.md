@@ -174,7 +174,7 @@ Target module: `commercial/src/Nexo.Commercial.Fleet.Contracts` for ports/models
 | Path | Classification |
 |------|----------------|
 | `commercial/src/Nexo.Commercial.MeshDirector/MeshDirectorCommand.cs` | **COMMERCIAL** — direct client for fleet director API. The open CLI duplicate has been removed after mesh-lab scripts/operator packaging moved to the commercial module. |
-| `application/src/Nexo.CLI/Commands/MeshHubCommand.cs` | **SPLIT / owner decision** — `health` can remain open as generic remote health probe; `list` over admitted peers and hub/fleet semantics should move commercial or be renamed as local-only inspection. |
+| ~~`application/src/Nexo.CLI/Commands/MeshHubCommand.cs`~~ | **Resolved:** removed; open **`mesh peers`** / **`mesh health`**; commercial **`director list-nodes`** / **`director health`**. |
 
 ### Fleet tests to move commercial
 
@@ -189,8 +189,8 @@ Target module: `commercial/tests/Nexo.Commercial.Tests.Fleet`.
 
 | Path | Decision needed |
 |------|-----------------|
-| `application/src/Nexo.CLI/Commands/MeshCommand.cs` | Keep local discovery/advertise/capabilities/import/export open. Decide whether `sync`, `admit`, `revoke`, and `--set-trust-tier` remain open local trust tools or become commercial fleet operations. |
-| `application/src/Nexo.CLI/Commands/MeshHubCommand.cs` | Split generic health probe from hub/fleet peer-listing behavior, or move whole command commercial. |
+| `application/src/Nexo.CLI/Commands/MeshCommand.cs` | **Resolved:** `discover`, `advertise`, `capabilities`, `sync`, import/export, `peers`, `health`, `--set-trust-tier`, and local `admit`/`revoke` (instances.json) stay open. Fleet director ops use `Nexo.Commercial.MeshDirector`. |
+| ~~`MeshHubCommand`~~ | **Resolved** — see open `mesh peers`/`mesh health` vs commercial `director list-nodes`/`director health`. |
 | `src/Nexo.Tests.Infrastructure/Tests/Mesh/MeshLabDockerFixture.cs`, `MeshLabDockerEnv.cs`, `MeshLabDockerE2ETests.cs` | Virtual lab may remain open if it validates primitive two-node behavior; move commercial if it validates fleet worker/director placement. |
 | `src/Nexo.Tests.Infrastructure/Tests/Networking/NetworkBusOptionsTests.cs` | Options-only test can remain open only if owner keeps a minimal open network bus. Otherwise move with commercial networking. |
 | `src/Nexo.Tests.Infrastructure/Tests/Networking/InfrastructureNetworkingGapCoverageTests.cs` | Move if networking is commercial; split if any low-level open networking primitive remains. |
@@ -236,7 +236,7 @@ Create:
 Seed commercial module and then move or split:
 
 - `MeshDirectorCommand` (commercial module owns this now)
-- commercial portions of `MeshHubCommand`
+- ~~commercial portions of `MeshHubCommand`~~ (done: `director list-nodes` / `director health`)
 - related URI tests (commercial module owns these now)
 
 Create:

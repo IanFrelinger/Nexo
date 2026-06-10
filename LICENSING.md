@@ -155,7 +155,7 @@ make dependency-boundary-gate
 ## Open questions (post-extraction)
 
 - ~~Should `src/**/Networking/**` move to commercial?~~ **Done (Phase F):** under `Nexo.Commercial.Fleet.*`.
-- Should open `MeshHubCommand` split further so only local mesh inspection stays in `Nexo.CLI`?
+- ~~Should open `MeshHubCommand` split further?~~ **Done:** open `nexo mesh peers` / `mesh health` (local probe); fleet `list-nodes` / director `health` on `Nexo.Commercial.MeshDirector`.
 - Should `apps/release-manager` become the future minimal open SDK reference app?
 
 See [`docs/CommercialExtractionPlan.md`](docs/CommercialExtractionPlan.md) for the completed extraction sequence and validation gates.
