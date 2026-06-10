@@ -1,8 +1,6 @@
 using FluentAssertions;
 using Nexo.Core.Application.Execution.Routing;
 using Nexo.Core.Domain;
-using Nexo.Infrastructure.Execution;
-using Nexo.Infrastructure.Networking;
 using Nexo.Infrastructure.Pipelines;
 using Nexo.Tests.Infrastructure.Helpers;
 using Xunit;
@@ -118,25 +116,6 @@ public sealed class NexoDefaultsTests
         cfg.QueueDepthThreshold.Should().Be(NexoDefaults.RunPodDefaultQueueDepthThreshold);
         cfg.PeerCapabilityId.Should().Be(NexoDefaults.RunPodDefaultPeerCapabilityId);
         cfg.PeerRoutingBrickId.Should().Be(NexoDefaults.RunPodDefaultPeerRoutingBrickId);
-    }
-
-    [Fact(Timeout = TestTimeouts.Quick)]
-    public async Task NetworkBusOptions_UsesNexoDefaults()
-    {
-        await Task.CompletedTask;
-        var opts = new NetworkBusOptions();
-        opts.HeartbeatIntervalSeconds.Should().Be(NexoDefaults.NetworkBusHeartbeatIntervalSeconds);
-        opts.MaxEventHistory.Should().Be(NexoDefaults.NetworkBusMaxEventHistory);
-        opts.DefaultMaxHops.Should().Be(NexoDefaults.NetworkBusDefaultMaxHops);
-    }
-
-    [Fact(Timeout = TestTimeouts.Quick)]
-    public async Task BrickUsageTrackerOptions_UsesNexoDefaults()
-    {
-        await Task.CompletedTask;
-        var opts = new BrickUsageTrackerOptions();
-        opts.MaxEntries.Should().Be(NexoDefaults.BrickUsageTrackerMaxEntries);
-        opts.RollingHourWindowSeconds.Should().Be(NexoDefaults.BrickUsageTrackerRollingHourWindowSeconds);
     }
 
     [Fact(Timeout = TestTimeouts.Quick)]

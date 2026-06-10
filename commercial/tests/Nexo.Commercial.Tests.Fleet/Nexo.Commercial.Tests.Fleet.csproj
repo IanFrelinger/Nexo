@@ -22,6 +22,6 @@
   <ItemGroup>
     <ProjectReference Include="../../src/Nexo.Commercial.Fleet.Infrastructure/Nexo.Commercial.Fleet.Infrastructure.csproj" />
     <ProjectReference Include="../../src/Nexo.Commercial.Fleet.Contracts/Nexo.Commercial.Fleet.Contracts.csproj" />
-    <ProjectReference Include="../../../src/Nexo.Infrastructure/Nexo.Infrastructure.csproj" />
+    <ProjectReference Include="../../../src/Nexo.Orchestration/Nexo.Orchestration.csproj" />
   </ItemGroup>
 </Project>

@@ -1,6 +1,6 @@
 # Fleet and mesh governance extraction inventory
 
-This inventory is the next step after the open-core licensing boundary and vertical extraction work. It classifies fleet, mesh, and networking code before moving it so the commercial boundary stays reviewable.
+This inventory guided fleet and networking extraction. **Fleet (Phases C–E) and networking (Phase F) are complete** on `master`; remaining items are optional CLI splits and governance modules. It classifies fleet, mesh, and networking code before moving it so the commercial boundary stays reviewable.
 
 Classification terms:
 

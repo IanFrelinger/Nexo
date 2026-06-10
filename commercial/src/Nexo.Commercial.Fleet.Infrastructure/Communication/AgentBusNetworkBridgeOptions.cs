@@ -1,4 +1,4 @@
-namespace Nexo.Orchestration.Communication;
+namespace Nexo.Commercial.Fleet.Infrastructure.Communication;
 
 /// <summary>
 /// Options for the bridge between IAgentBus and INetworkBus.

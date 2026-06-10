@@ -2,7 +2,7 @@
 
 This plan records the commercial-boundary work after the open-core licensing sprint.
 
-**Status (2026-06):** Phases **A–E** are **complete**. GameDomain, Game Director, fleet/mesh governance, licensing metadata (Phase D), and the dependency-boundary CI gate (Phase E) are in place on `master`. Optional follow-ups (Networking extraction, CLI mesh-hub split, `Nexo.Commercial.Governance`) are tracked under [Open questions](#open-questions-post-extraction) in [`LICENSING.md`](../LICENSING.md).
+**Status (2026-06):** Phases **A–F** are **complete** (F = networking extraction to commercial fleet). GameDomain, Game Director, fleet/mesh governance, licensing metadata (Phase D), and the dependency-boundary CI gate (Phase E) are in place on `master`. Optional follow-ups (Networking extraction, CLI mesh-hub split, `Nexo.Commercial.Governance`) are tracked under [Open questions](#open-questions-post-extraction) in [`LICENSING.md`](../LICENSING.md).
 
 ## Goal
 
@@ -170,6 +170,17 @@ Purpose: prevent boundary regressions.
 4. **Done:** verify open packable projects resolve `PackageLicenseExpression=Apache-2.0`.
 5. **Done:** CI workflow `.github/workflows/dependency-boundary.yml` and `make dependency-boundary-gate`.
 
+### Phase F — networking extraction (done)
+
+Purpose: move cross-node knowledge-sync, network bus, plasticity, and agent-bus bridge out of open `src/`.
+
+1. **Done:** move `Networking` models/ports to `commercial/src/Nexo.Commercial.Fleet.Contracts/Networking/**`.
+2. **Done:** move HTTP networking implementations, `BrickUsageTracker`, `AdaptiveBrickCache`, and `AgentBusNetworkBridge` to `commercial/src/Nexo.Commercial.Fleet.Infrastructure/**`.
+3. **Done:** move networking tests to `commercial/tests/Nexo.Commercial.Tests.Fleet/**`.
+4. **Done:** expose `AddNexoCommercialFleetNetworking()` / `AddAgentBusNetworkBridge()` on commercial fleet DI.
+
+Validation: `make dependency-boundary-gate`, `dotnet test commercial/tests/Nexo.Commercial.Tests.Fleet`.
+
 ## Validation gates by phase
 
 | Phase | Minimum validation |
@@ -179,6 +190,7 @@ Purpose: prevent boundary regressions.
 | C | Build open core and commercial fleet solution/filter, run open mesh primitive tests and commercial fleet tests, open/commercial dependency scan |
 | D | Package metadata check, docs link check, NuGet pack graph alignment |
 | E | New dependency-boundary script passing locally and in CI |
+| F | Commercial fleet tests green; no open `src/**/Networking/**` trees remain |
 
 ## Recommended PR sequence
 
@@ -195,9 +207,10 @@ Purpose: prevent boundary regressions.
 11. **PR 11 — open fleet infrastructure cleanup (done):** removed open fleet trees; mesh-lab worker executor lives in `src/Nexo.Infrastructure/MeshLab/**`; fleet tests moved to `commercial/tests/Nexo.Commercial.Tests.Fleet`.
 12. **PR 12 — dependency-boundary gate (done):** `scripts/dependency-boundary-gate.sh`, `.github/workflows/dependency-boundary.yml`, and `make dependency-boundary-gate`.
 13. **PR 13 — Phase D licensing (done):** align `Directory.Build.props` license default with Apache-2.0; refresh `LICENSING.md`, `ProjectTiers.md`, and `DistributionModels.md` to match the post-extraction graph.
+14. **PR 14 — Phase F networking (done):** move open `Networking` trees and related execution/bridge code into `Nexo.Commercial.Fleet.*`.
 
 Do not combine large refactors retroactively. The dependency graph and licensing boundary should stay reviewable at every step.
 
 ## Open questions (post-extraction)
 
-See [`LICENSING.md`](../LICENSING.md) — Networking classification, CLI mesh-hub split, and `apps/release-manager` open-source candidacy.
+See [`LICENSING.md`](../LICENSING.md) — CLI mesh-hub split and `apps/release-manager` open-source candidacy.

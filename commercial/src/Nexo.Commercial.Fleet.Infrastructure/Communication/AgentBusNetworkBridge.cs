@@ -4,9 +4,10 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nexo.Core.Application.Networking.Models;
 using Nexo.Core.Application.Networking.Ports;
+using Nexo.Orchestration.Communication;
 using Nexo.Orchestration.Communication.Models;
 
-namespace Nexo.Orchestration.Communication;
+namespace Nexo.Commercial.Fleet.Infrastructure.Communication;
 
 /// <summary>
 /// Bridges the local IAgentBus with INetworkBus: forwards agent messages to the network

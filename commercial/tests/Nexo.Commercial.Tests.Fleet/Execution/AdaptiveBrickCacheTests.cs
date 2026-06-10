@@ -8,7 +8,7 @@ using Nexo.Core.Domain.Execution;
 using Nexo.Infrastructure.Execution;
 using Xunit;
 
-namespace Nexo.Tests.Infrastructure.Tests.Execution;
+namespace Nexo.Commercial.Tests.Fleet.Execution;
 
 /// <summary>
 /// Tests for AdaptiveBrickCache: usage-aware brick caching (synaptic plasticity).
