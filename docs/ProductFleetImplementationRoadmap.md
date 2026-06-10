@@ -15,10 +15,10 @@ This is the **engineering, operations, and go-to-market sequence** for turning t
 
 ## Phase 0 — Foundation (all products depend on this)
 
-| Step | What to implement | Done means |
-|------|-------------------|------------|
-| 0.1 | **Tenant model** end-to-end: stable `tenant_id` (or org id) on every job, audit row, artifact, and API key | Cross-tenant access tests fail in CI |
-| 0.2 | **Entitlements configuration** (file or DB) keyed by plan: seats, `included_jobs`, `max_concurrency`, `retention_days`, `sso_enabled`, `audit_export`, `deployment_mode` | Same binary runs with different config profiles (dev/staging/prod) |
+| Step | What to implement | Done means | Status |
+|------|-------------------|------------|--------|
+| 0.1 | **Tenant model** end-to-end: stable `tenant_id` (or org id) on every job, audit row, artifact, and API key | Cross-tenant access tests fail in CI | **In progress:** `X-Nexo-Tenant` on copilot API; `ProductFleetTenantIsolationTests` + `NexoHttpTenantTests` in CI |
+| 0.2 | **Entitlements configuration** (file or DB) keyed by plan: seats, `included_jobs`, `max_concurrency`, `retention_days`, `sso_enabled`, `audit_export`, `deployment_mode` | Same binary runs with different config profiles (dev/staging/prod) | **Started:** `NexoEntitlementsOptions` fields; copilot hourly quota enforced |
 | 0.3 | **Usage counters** (jobs submitted, jobs succeeded, tokens optional if BYOK proxy) emitted to logs or metrics table | You can answer “how many jobs per tenant last 24h?” |
 | 0.4 | **Reference deployment** documented: compose (or Helm) for “single-tenant production shape” matching what you sell as Private | New hire reproduces deploy from docs in one session |
 | 0.5 | **Observability baseline**: structured logs, health checks, redacted config export for support | On-call playbook v0.1 exists |
