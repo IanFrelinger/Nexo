@@ -81,7 +81,7 @@ public sealed class LiteDbDataDecisionAuditLogTests : IDisposable
 
         var csv = log.ExportToCsv(10);
 
-        csv.Should().Contain("Timestamp,EventType,RuleVersion,FieldOrType,Disposition");
+        csv.Should().Contain("Timestamp,EventType,TenantId,RuleVersion,FieldOrType,Disposition");
         csv.Should().Contain("Sanitization");
     }
 }
