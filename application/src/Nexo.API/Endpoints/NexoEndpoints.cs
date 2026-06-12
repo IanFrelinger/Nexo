@@ -8,6 +8,7 @@ using Nexo.BrickContracts.Capabilities;
 using Nexo.Contracts;
 using Nexo.Core.Application.Copilot.Models;
 using Nexo.Core.Application.Copilot.Ports;
+using Nexo.Core.Application.Product.Models;
 using Nexo.Core.Application.Product.Ports;
 using Nexo.Core.Application.Knowledge.Models;
 using Nexo.Core.Application.Knowledge.Ports;
@@ -28,6 +29,7 @@ using Nexo.API.Security;
 using Nexo.Orchestration.Coordination;
 using Nexo.Orchestration.Models;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 using System.Text.Json;
@@ -105,6 +107,32 @@ public static class NexoEndpoints
             .WithName("GetSupportDiagnostics")
             .WithSummary("Redacted support diagnostics export (Product Fleet Phase 0.5)")
             .Produces<SupportDiagnosticsResponse>(StatusCodes.Status200OK);
+
+        group.MapPost("/orgs", CreateOrganizationAsync)
+            .WithName("CreateOrganization")
+            .WithSummary("Create a cloud organization (Product Fleet Phase 2.3)")
+            .Produces<Organization>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest);
+
+        group.MapGet("/orgs/{orgId}", GetOrganizationAsync)
+            .WithName("GetOrganization")
+            .WithSummary("Get organization metadata for a member")
+            .Produces<Organization>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status403Forbidden)
+            .ProducesProblem(StatusCodes.Status404NotFound);
+
+        group.MapGet("/orgs/{orgId}/members", ListOrganizationMembersAsync)
+            .WithName("ListOrganizationMembers")
+            .WithSummary("List organization members")
+            .Produces<IReadOnlyList<OrganizationMember>>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status403Forbidden);
+
+        group.MapPost("/orgs/{orgId}/members", AddOrganizationMemberAsync)
+            .WithName("AddOrganizationMember")
+            .WithSummary("Invite or add a member (admin only)")
+            .Produces<OrganizationMember>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status403Forbidden);
 
         group.MapGet("/status", GetStatusAsync)
             .WithName("GetStatus")
@@ -357,7 +385,7 @@ public static class NexoEndpoints
         if (string.IsNullOrWhiteSpace(request?.Task))
             return Results.BadRequest(new ProblemDetails { Title = "Task is required" });
 
-        if (!NexoHttpTenant.TryResolve(httpContext.Request, productOptions.Value, out var tenantId, out var tenantError))
+        if (!TryResolveProductTenant(httpContext, productOptions.Value, out var tenantId, out var tenantError))
             return Results.BadRequest(new ProblemDetails { Title = "Invalid tenant", Detail = tenantError });
 
         if (!copilotSubmissionQuota.TryConsume(tenantId, out var quotaMsg))
@@ -463,7 +491,7 @@ public static class NexoEndpoints
         [FromServices] IOptions<NexoProductOptions> productOptions,
         int hours = 24)
     {
-        if (!NexoHttpTenant.TryResolve(httpContext.Request, productOptions.Value, out var tenantId, out var tenantError))
+        if (!TryResolveProductTenant(httpContext, productOptions.Value, out var tenantId, out var tenantError))
             return Task.FromResult<IResult>(Results.BadRequest(new ProblemDetails { Title = "Invalid tenant", Detail = tenantError }));
 
         var summary = usageStore.GetSummary(tenantId, hours);
@@ -478,7 +506,7 @@ public static class NexoEndpoints
         [FromQuery] DateTimeOffset? since = null,
         CancellationToken cancellationToken = default)
     {
-        if (!NexoHttpTenant.TryResolve(httpContext.Request, productOptions.Value, out var tenantId, out var tenantError))
+        if (!TryResolveProductTenant(httpContext, productOptions.Value, out var tenantId, out var tenantError))
             return Results.BadRequest(new ProblemDetails { Title = "Invalid tenant", Detail = tenantError });
 
         maxCount = Math.Clamp(maxCount <= 0 ? 50 : maxCount, 1, 500);
@@ -496,7 +524,7 @@ public static class NexoEndpoints
         if (string.IsNullOrWhiteSpace(taskId))
             return Results.BadRequest(new ProblemDetails { Title = "taskId is required" });
 
-        if (!NexoHttpTenant.TryResolve(httpContext.Request, productOptions.Value, out var tenantId, out var tenantError))
+        if (!TryResolveProductTenant(httpContext, productOptions.Value, out var tenantId, out var tenantError))
             return Results.BadRequest(new ProblemDetails { Title = "Invalid tenant", Detail = tenantError });
 
         var task = await copilotTaskStore.GetByIdAsync(taskId.Trim(), cancellationToken);
@@ -1106,6 +1134,164 @@ public static class NexoEndpoints
             activePack?.Version));
     }
 
+    private static Task<IResult> CreateOrganizationAsync(
+        HttpContext httpContext,
+        [FromBody] CreateOrganizationRequest request,
+        [FromServices] IOrganizationStore orgStore,
+        [FromServices] IOptions<NexoProductOptions> productOptions)
+    {
+        if (string.IsNullOrWhiteSpace(request?.Name))
+            return Task.FromResult<IResult>(Results.BadRequest(new ProblemDetails { Title = "Name is required" }));
+
+        Organization organization;
+        try
+        {
+            organization = orgStore.CreateOrganization(request.Name, request.TenantId);
+        }
+        catch (ArgumentException ex)
+        {
+            return Task.FromResult<IResult>(Results.BadRequest(new ProblemDetails { Title = "Invalid organization", Detail = ex.Message }));
+        }
+
+        if (NexoHttpOrg.TryResolveUser(httpContext.Request, productOptions.Value, out var creatorId, out _))
+            orgStore.AddMember(organization.OrgId, creatorId, OrganizationRole.Admin);
+
+        return Task.FromResult<IResult>(Results.Ok(organization));
+    }
+
+    private static Task<IResult> GetOrganizationAsync(
+        HttpContext httpContext,
+        string orgId,
+        [FromServices] IOrganizationStore orgStore,
+        [FromServices] IOptions<NexoProductOptions> productOptions)
+    {
+        if (!NexoHttpOrg.TryResolveOrgContext(
+                httpContext.Request,
+                productOptions.Value,
+                orgStore,
+                out var organization,
+                out _,
+                out _,
+                out var error) ||
+            !string.Equals(organization.OrgId, orgId.Trim(), StringComparison.Ordinal))
+        {
+            return Task.FromResult<IResult>(Results.Json(
+                new ProblemDetails { Title = "Forbidden", Detail = error ?? "Organization access denied." },
+                statusCode: StatusCodes.Status403Forbidden));
+        }
+
+        return Task.FromResult<IResult>(Results.Ok(organization));
+    }
+
+    private static Task<IResult> ListOrganizationMembersAsync(
+        HttpContext httpContext,
+        string orgId,
+        [FromServices] IOrganizationStore orgStore,
+        [FromServices] IOptions<NexoProductOptions> productOptions)
+    {
+        if (!NexoHttpOrg.TryResolveOrgContext(
+                httpContext.Request,
+                productOptions.Value,
+                orgStore,
+                out var organization,
+                out _,
+                out _,
+                out var error) ||
+            !string.Equals(organization.OrgId, orgId.Trim(), StringComparison.Ordinal))
+        {
+            return Task.FromResult<IResult>(Results.Json(
+                new ProblemDetails { Title = "Forbidden", Detail = error ?? "Organization access denied." },
+                statusCode: StatusCodes.Status403Forbidden));
+        }
+
+        return Task.FromResult<IResult>(Results.Ok(orgStore.GetMembers(orgId.Trim())));
+    }
+
+    private static Task<IResult> AddOrganizationMemberAsync(
+        HttpContext httpContext,
+        string orgId,
+        [FromBody] AddOrganizationMemberRequest request,
+        [FromServices] IOrganizationStore orgStore,
+        [FromServices] IOptions<NexoProductOptions> productOptions)
+    {
+        if (string.IsNullOrWhiteSpace(request?.UserId))
+            return Task.FromResult<IResult>(Results.BadRequest(new ProblemDetails { Title = "UserId is required" }));
+
+        if (!NexoHttpOrg.TryResolveOrgContext(
+                httpContext.Request,
+                productOptions.Value,
+                orgStore,
+                out var organization,
+                out _,
+                out var actorRole,
+                out var error) ||
+            !string.Equals(organization.OrgId, orgId.Trim(), StringComparison.Ordinal))
+        {
+            return Task.FromResult<IResult>(Results.Json(
+                new ProblemDetails { Title = "Forbidden", Detail = error ?? "Organization access denied." },
+                statusCode: StatusCodes.Status403Forbidden));
+        }
+
+        if (actorRole != OrganizationRole.Admin)
+        {
+            return Task.FromResult<IResult>(Results.Json(
+                new ProblemDetails { Title = "Forbidden", Detail = "Only organization admins can add members." },
+                statusCode: StatusCodes.Status403Forbidden));
+        }
+
+        if (!Enum.TryParse<OrganizationRole>(request.Role, ignoreCase: true, out var role))
+            role = OrganizationRole.Member;
+
+        try
+        {
+            var member = orgStore.AddMember(orgId.Trim(), request.UserId, role);
+            return Task.FromResult<IResult>(Results.Ok(member));
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException)
+        {
+            return Task.FromResult<IResult>(Results.BadRequest(new ProblemDetails { Title = "Invalid member", Detail = ex.Message }));
+        }
+    }
+
+    private static bool TryResolveProductTenant(
+        HttpContext httpContext,
+        NexoProductOptions options,
+        out string tenantId,
+        out string? errorDetail)
+    {
+        if (!NexoHttpTenant.TryResolve(httpContext.Request, options, out tenantId, out errorDetail))
+            return false;
+
+        if (!options.RequireOrgMembership)
+            return true;
+
+        var orgStore = httpContext.RequestServices.GetService<IOrganizationStore>();
+        if (orgStore is null)
+        {
+            errorDetail = "Organization store is not configured.";
+            return false;
+        }
+
+        if (!NexoHttpOrg.TryResolveOrgContext(
+                httpContext.Request,
+                options,
+                orgStore,
+                out var organization,
+                out _,
+                out _,
+                out errorDetail))
+            return false;
+
+        if (!NexoHttpOrg.TenantMatchesOrg(tenantId, organization))
+        {
+            errorDetail = $"Tenant '{tenantId}' does not match organization scope '{organization.TenantId}'.";
+            return false;
+        }
+
+        tenantId = organization.TenantId;
+        return true;
+    }
+
     // Preferences file lives next to the config file so it survives Docker
     // container restarts when the config directory is on a volume mount.
     private static bool IsDevelopment() =>
@@ -1300,7 +1486,7 @@ public static class NexoEndpoints
             providers.Add(new ProviderStatus(name, available, reason));
         }
 
-        if (!NexoHttpTenant.TryResolve(httpContext.Request, productOptions.Value, out var tenantId, out var tenantError))
+        if (!TryResolveProductTenant(httpContext, productOptions.Value, out var tenantId, out var tenantError))
             return Results.BadRequest(new ProblemDetails { Title = "Invalid tenant", Detail = tenantError });
 
         var tasks = await copilotTaskStore.QueryAsync(1, null, tenantId, cancellationToken);
@@ -1486,3 +1672,9 @@ public sealed record OnboardingStatusResponse(
     string ResolvedTenantId);
 
 public sealed record ProviderStatus(string Name, bool Available, string? Reason);
+
+// ── Cloud control plane (Phase 2.3) ─────────────────────────────────
+
+public sealed record CreateOrganizationRequest(string Name, string? TenantId);
+
+public sealed record AddOrganizationMemberRequest(string UserId, string Role = "Member");

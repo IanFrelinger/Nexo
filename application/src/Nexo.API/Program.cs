@@ -97,6 +97,7 @@ builder.Services.AddSingleton<IPrivateLicenseValidator, PrivateLicenseValidator>
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<ICopilotSubmissionQuota, CopilotSubmissionQuota>();
 builder.Services.AddSingleton<ITenantUsageStore, InMemoryTenantUsageStore>();
+builder.Services.AddSingleton<IOrganizationStore, InMemoryOrganizationStore>();
 builder.Services.Configure<MeshSecurityOptions>(
     builder.Configuration.GetSection(MeshSecurityOptions.SectionPath));
 builder.Services.Configure<SmsIngressDynamoDbOptions>(

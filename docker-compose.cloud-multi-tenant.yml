@@ -1,0 +1,38 @@
+# Product Fleet Phase 2 — multi-tenant Cloud staging shape (local dev).
+# See docs/product-fleet/cloud-reference-deployment.md
+services:
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "127.0.0.1:11434:11434"
+    volumes:
+      - ollama-models:/root/.ollama
+    restart: unless-stopped
+
+  nexo-api:
+    build:
+      context: .
+      dockerfile: .docker/Dockerfile.api
+    depends_on:
+      - ollama
+    environment:
+      ASPNETCORE_URLS: http://+:8080
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1:latest}
+      NEXO_DAILIES_PATH: /data/dailies
+      Nexo__Product__RequireOrgMembership: "true"
+      Nexo__Entitlements__DeploymentMode: Cloud
+      Nexo__Entitlements__MaxCopilotSubmissionsPerHour: ${NEXO_MAX_COPILOT_PER_HOUR:-120}
+      Nexo__Entitlements__Seats: ${NEXO_SEATS:-25}
+      Nexo__Entitlements__MaxConcurrency: ${NEXO_MAX_CONCURRENCY:-3}
+    ports:
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - nexo-cloud-dailies:/data/dailies
+      - nexo-cloud-data:/data/copilot
+    restart: unless-stopped
+
+volumes:
+  ollama-models:
+  nexo-cloud-dailies:
+  nexo-cloud-data:
