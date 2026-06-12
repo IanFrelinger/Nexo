@@ -510,6 +510,8 @@ public sealed class AggressivenessModeTests
         public void LogAmbientAction(string agentId, string summary, int toolCallsExecuted) =>
             _captured.Add((agentId, summary, toolCallsExecuted));
 
+        public void LogCopilotTask(string tenantId, string taskId, bool success) { }
+
         public void LogSanitization(SanitizationAuditEntryDto entry) { }
         public void LogBoundaryChange(BoundaryChangeEvent evt) { }
         public void LogClassification(string dataType, string levelName, string? reason) { }

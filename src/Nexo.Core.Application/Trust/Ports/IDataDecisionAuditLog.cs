@@ -30,6 +30,9 @@ public interface IDataDecisionAuditLog
     /// <param name="toolCallsExecuted">Number of tool calls executed.</param>
     void LogAmbientAction(string agentId, string summary, int toolCallsExecuted);
 
+    /// <summary>Log a copilot task completion for tenant-scoped audit trails (Product Fleet Phase 0.5).</summary>
+    void LogCopilotTask(string tenantId, string taskId, bool success);
+
     /// <summary>Get recent audit entries (all types).</summary>
     IReadOnlyList<DataDecisionAuditEntry> GetRecent(int maxCount, DateTimeOffset? since = null, DateTimeOffset? until = null, string? eventType = null);
 

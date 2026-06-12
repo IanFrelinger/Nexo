@@ -115,6 +115,19 @@ public sealed class DataDecisionAuditLog : IDataDecisionAuditLog, ISanitizationA
     }
 
     /// <inheritdoc />
+    public void LogCopilotTask(string tenantId, string taskId, bool success)
+    {
+        Append(new DataDecisionAuditEntry
+        {
+            EventType = "CopilotTask",
+            Timestamp = DateTimeOffset.UtcNow,
+            TenantId = tenantId,
+            SourceId = taskId,
+            Disposition = success ? "Success" : "Failure",
+        });
+    }
+
+    /// <inheritdoc />
     public IReadOnlyList<DataDecisionAuditEntry> GetRecent(int maxCount, DateTimeOffset? since = null, DateTimeOffset? until = null, string? eventType = null) =>
         GetRecentInternal(maxCount, since, until, eventType);
 
@@ -133,6 +146,7 @@ public sealed class DataDecisionAuditLog : IDataDecisionAuditLog, ISanitizationA
             {
                 e.EventType,
                 e.Timestamp,
+                e.TenantId,
                 e.RuleVersion,
                 e.FieldOrType,
                 e.Disposition,
@@ -207,6 +221,10 @@ public sealed class DataDecisionAuditLog : IDataDecisionAuditLog, ISanitizationA
                 if (!string.IsNullOrEmpty(e.Reason))
                     sb.AppendLine($"- **Summary:** {e.Reason}");
             }
+            else if (e.EventType == "CopilotTask")
+            {
+                sb.AppendLine($"- **Tenant:** {e.TenantId} | **Task:** {e.SourceId} | **Outcome:** {e.Disposition}");
+            }
 
             sb.AppendLine();
         }
@@ -219,12 +237,13 @@ public sealed class DataDecisionAuditLog : IDataDecisionAuditLog, ISanitizationA
     {
         var entries = GetRecentInternal(maxCount, since, until, eventType);
         var sb = new System.Text.StringBuilder();
-        sb.AppendLine("Timestamp,EventType,RuleVersion,FieldOrType,Disposition,Reason,ChangeType,Category,SourceId,ProjectPath,PreviousState,NewState,DataType,LevelName");
+        sb.AppendLine("Timestamp,EventType,TenantId,RuleVersion,FieldOrType,Disposition,Reason,ChangeType,Category,SourceId,ProjectPath,PreviousState,NewState,DataType,LevelName");
         foreach (var e in entries)
         {
             var line = string.Join(",",
                 EscapeCsv(e.Timestamp.ToString("o")),
                 EscapeCsv(e.EventType),
+                EscapeCsv(e.TenantId),
                 EscapeCsv(e.RuleVersion),
                 EscapeCsv(e.FieldOrType),
                 EscapeCsv(e.Disposition),

@@ -1,0 +1,6 @@
+{
+  "customerId": "acme-pilot",
+  "tenantId": "acme-pilot",
+  "expiresAt": "2027-12-31T23:59:59Z",
+  "seats": 5
+}

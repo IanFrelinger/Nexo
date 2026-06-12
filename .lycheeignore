@@ -8,3 +8,6 @@ http://host.docker.internal*
 
 # Public regulatory page blocks CI link-check user agents intermittently.
 https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai
+
+# Vendor blog returns 503 to CI user agents intermittently (see docs/ICPResearchMemo.md).
+https://codebrewtools.com/blogs/ai-native-internal-developer-portals-2026

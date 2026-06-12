@@ -91,6 +91,9 @@ builder.Services.Configure<NexoProductOptions>(
     builder.Configuration.GetSection(NexoProductOptions.SectionPath));
 builder.Services.Configure<NexoEntitlementsOptions>(
     builder.Configuration.GetSection(NexoEntitlementsOptions.SectionPath));
+builder.Services.Configure<NexoPrivateLicenseOptions>(
+    builder.Configuration.GetSection(NexoPrivateLicenseOptions.SectionPath));
+builder.Services.AddSingleton<IPrivateLicenseValidator, PrivateLicenseValidator>();
 builder.Services.AddMemoryCache();
 builder.Services.AddSingleton<ICopilotSubmissionQuota, CopilotSubmissionQuota>();
 builder.Services.AddSingleton<ITenantUsageStore, InMemoryTenantUsageStore>();
@@ -249,6 +252,7 @@ app.UseStaticFiles();
 app.UseNexoMeshCorrelation();
 app.UseNexoMeshSecurity();
 app.UseNexoApiKeyAuth();
+app.UsePrivateLicenseGate();
 app.UseNexoCopilotScopedAuthorization();
 
 app.UseRateLimiter();

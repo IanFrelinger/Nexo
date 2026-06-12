@@ -148,7 +148,7 @@ public class DataDecisionAuditLogTests
 
         var csv = log.ExportToCsv(10);
 
-        csv.Should().Contain("Timestamp,EventType,RuleVersion,FieldOrType,Disposition");
+        csv.Should().Contain("Timestamp,EventType,TenantId,RuleVersion,FieldOrType,Disposition");
         csv.Should().Contain("Sanitization");
         csv.Should().Contain("Classification");
     }
