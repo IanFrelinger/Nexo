@@ -42,6 +42,7 @@ public sealed class WorkflowCommand : Command
     private readonly Func<CancellationToken, Task<IReadOnlyList<PeerInfo>>> _meshPeerDiscovery;
     private readonly ScaffoldHandler _scaffoldHandler;
     private readonly HistoryHandler _historyHandler;
+    private readonly BaselineHandler _baselineHandler;
 
     public WorkflowCommand(Func<OrchestrateCommand> orchestrateFactory)
         : this(
@@ -174,6 +175,7 @@ public sealed class WorkflowCommand : Command
         _meshScenarioExecutor = meshScenarioExecutor ?? ExecuteScenarioOnMeshPeerAsync;
         _scaffoldHandler = new ScaffoldHandler();
         _historyHandler = new HistoryHandler();
+        _baselineHandler = new BaselineHandler(NormalizeBenchmarkSet, LoadGatePolicy, BuildBaselineId);
         ConfigureScaffoldCommand();
         ConfigureStressCommand();
         ConfigureHistoryCommand();
@@ -655,122 +657,11 @@ public sealed class WorkflowCommand : Command
         string runId,
         string? notes,
         string? policyFile,
-        bool json)
-    {
-        var fullRepoRoot = Path.GetFullPath(string.IsNullOrWhiteSpace(repoRoot) ? Environment.CurrentDirectory : repoRoot);
-        if (!Directory.Exists(fullRepoRoot))
-        {
-            WriteBaselinePromoteResult(new WorkflowBaselinePromoteResult(false, $"Repo root not found: {fullRepoRoot}"), json);
-            return Task.FromResult(1);
-        }
+        bool json) => _baselineHandler.ExecutePromoteAsync(repoRoot, benchmarkSet, runId, notes, policyFile, json);
 
-        if (string.IsNullOrWhiteSpace(runId))
-        {
-            WriteBaselinePromoteResult(new WorkflowBaselinePromoteResult(false, "Run-id is required for baseline promotion."), json);
-            return Task.FromResult(1);
-        }
+    internal Task<int> ExecuteBaselineListAsync(string repoRoot, string? benchmarkSet, bool json) => _baselineHandler.ExecuteListAsync(repoRoot, benchmarkSet, json);
 
-        var history = WorkflowLabHistoryStore.ReadAll(fullRepoRoot);
-        var candidateRows = history
-            .Where(x => string.Equals(x.RunId, runId.Trim(), StringComparison.OrdinalIgnoreCase))
-            .ToArray();
-        if (candidateRows.Length == 0)
-        {
-            WriteBaselinePromoteResult(new WorkflowBaselinePromoteResult(false, $"No history found for run-id '{runId.Trim()}'."), json);
-            return Task.FromResult(1);
-        }
-
-        var policyResult = LoadGatePolicy(policyFile);
-        if (!policyResult.Ok)
-        {
-            WriteBaselinePromoteResult(new WorkflowBaselinePromoteResult(false, policyResult.Error ?? "Unable to parse policy file."), json);
-            return Task.FromResult(1);
-        }
-
-        var latest = candidateRows.OrderByDescending(x => x.StartedAtUtc).First();
-        var normalizedBenchmarkSet = NormalizeBenchmarkSet(
-            benchmarkSet,
-            string.IsNullOrWhiteSpace(latest.BenchmarkSet) ? "workflow-lab" : latest.BenchmarkSet);
-        var promoted = WorkflowBaselineStore.Promote(fullRepoRoot, new WorkflowBaselineRecord
-        {
-            BaselineId = BuildBaselineId(normalizedBenchmarkSet, latest.RunId),
-            BenchmarkSet = normalizedBenchmarkSet,
-            RunId = latest.RunId,
-            GitSha = latest.GitSha,
-            SpecHash = latest.SpecHash,
-            ProviderSnapshot = latest.ProviderSnapshot,
-            PromotedAtUtc = DateTimeOffset.UtcNow,
-            Active = true,
-            Notes = string.IsNullOrWhiteSpace(notes) ? null : notes.Trim(),
-            Policy = policyResult.Policy is null
-                ? null
-                : new WorkflowGatePolicySpec
-                {
-                    Name = policyResult.Policy.Name,
-                    BenchmarkSet = policyResult.Policy.BenchmarkSet,
-                    MinSuccessRateDelta = policyResult.Policy.MinSuccessRateDelta,
-                    MaxP95LatencyRegressionMs = policyResult.Policy.MaxP95LatencyRegressionMs,
-                    MaxAverageLatencyRegressionMs = policyResult.Policy.MaxAverageLatencyRegressionMs,
-                    MinAverageScoreDelta = policyResult.Policy.MinAverageScoreDelta,
-                    MaxRegressedScenarios = policyResult.Policy.MaxRegressedScenarios
-                }
-        });
-
-        WriteBaselinePromoteResult(
-            new WorkflowBaselinePromoteResult(
-                true,
-                $"Promoted run-id {promoted.RunId} as active baseline for benchmark-set {promoted.BenchmarkSet}.",
-                promoted),
-            json);
-        return Task.FromResult(0);
-    }
-
-    internal Task<int> ExecuteBaselineListAsync(string repoRoot, string? benchmarkSet, bool json)
-    {
-        var fullRepoRoot = Path.GetFullPath(string.IsNullOrWhiteSpace(repoRoot) ? Environment.CurrentDirectory : repoRoot);
-        if (!Directory.Exists(fullRepoRoot))
-        {
-            WriteBaselineListResult(new WorkflowBaselineListResult(false, $"Repo root not found: {fullRepoRoot}"), json);
-            return Task.FromResult(1);
-        }
-
-        var all = WorkflowBaselineStore.ReadAll(fullRepoRoot);
-        var filtered = string.IsNullOrWhiteSpace(benchmarkSet)
-            ? all
-            : all.Where(x => string.Equals(x.BenchmarkSet, benchmarkSet.Trim(), StringComparison.OrdinalIgnoreCase)).ToArray();
-        WriteBaselineListResult(
-            new WorkflowBaselineListResult(
-                true,
-                $"Loaded {filtered.Count} baseline record(s).",
-                filtered),
-            json);
-        return Task.FromResult(0);
-    }
-
-    internal Task<int> ExecuteBaselineShowAsync(string repoRoot, string? benchmarkSet, string? baselineId, bool json)
-    {
-        var fullRepoRoot = Path.GetFullPath(string.IsNullOrWhiteSpace(repoRoot) ? Environment.CurrentDirectory : repoRoot);
-        if (!Directory.Exists(fullRepoRoot))
-        {
-            WriteBaselineShowResult(new WorkflowBaselineShowResult(false, $"Repo root not found: {fullRepoRoot}"), json);
-            return Task.FromResult(1);
-        }
-
-        WorkflowBaselineRecord? selected = !string.IsNullOrWhiteSpace(baselineId)
-            ? WorkflowBaselineStore.ReadById(fullRepoRoot, baselineId)
-            : WorkflowBaselineStore.ReadActive(fullRepoRoot, NormalizeBenchmarkSet(benchmarkSet, "workflow-lab"));
-        if (selected is null)
-        {
-            var missing = !string.IsNullOrWhiteSpace(baselineId)
-                ? $"No baseline found for id '{baselineId.Trim()}'."
-                : $"No active baseline found for benchmark-set '{NormalizeBenchmarkSet(benchmarkSet, "workflow-lab")}'.";
-            WriteBaselineShowResult(new WorkflowBaselineShowResult(false, missing), json);
-            return Task.FromResult(1);
-        }
-
-        WriteBaselineShowResult(new WorkflowBaselineShowResult(true, "Baseline loaded.", selected), json);
-        return Task.FromResult(0);
-    }
+    internal Task<int> ExecuteBaselineShowAsync(string repoRoot, string? benchmarkSet, string? baselineId, bool json) => _baselineHandler.ExecuteShowAsync(repoRoot, benchmarkSet, baselineId, json);
 
     internal Task<int> ExecuteReportAsync(
         string repoRoot,
@@ -3695,82 +3586,6 @@ public sealed class WorkflowCommand : Command
     }
 
 
-    private static void WriteBaselinePromoteResult(WorkflowBaselinePromoteResult result, bool json)
-    {
-        if (json)
-        {
-            Console.WriteLine(JsonSerializer.Serialize(new
-            {
-                ok = result.Ok,
-                summary = result.Summary,
-                baseline = result.Baseline
-            }, new JsonSerializerOptions { WriteIndented = true }));
-            return;
-        }
-
-        Console.WriteLine($"workflow baseline promote: {(result.Ok ? "ok" : "failed")}");
-        Console.WriteLine(result.Summary);
-        if (result.Baseline is not null)
-        {
-            Console.WriteLine($"  baseline-id={result.Baseline.BaselineId}");
-            Console.WriteLine($"  benchmark-set={result.Baseline.BenchmarkSet}");
-            Console.WriteLine($"  run-id={result.Baseline.RunId}");
-            Console.WriteLine($"  promoted-at={result.Baseline.PromotedAtUtc:O}");
-        }
-    }
-
-    private static void WriteBaselineListResult(WorkflowBaselineListResult result, bool json)
-    {
-        if (json)
-        {
-            Console.WriteLine(JsonSerializer.Serialize(new
-            {
-                ok = result.Ok,
-                summary = result.Summary,
-                baselines = result.Baselines
-            }, new JsonSerializerOptions { WriteIndented = true }));
-            return;
-        }
-
-        Console.WriteLine($"workflow baseline list: {(result.Ok ? "ok" : "failed")}");
-        Console.WriteLine(result.Summary);
-        foreach (var baseline in result.Baselines ?? Array.Empty<WorkflowBaselineRecord>())
-        {
-            Console.WriteLine($"  {baseline.BaselineId} | benchmark-set={baseline.BenchmarkSet} | run-id={baseline.RunId} | promoted-at={baseline.PromotedAtUtc:O}");
-        }
-    }
-
-    private static void WriteBaselineShowResult(WorkflowBaselineShowResult result, bool json)
-    {
-        if (json)
-        {
-            Console.WriteLine(JsonSerializer.Serialize(new
-            {
-                ok = result.Ok,
-                summary = result.Summary,
-                baseline = result.Baseline
-            }, new JsonSerializerOptions { WriteIndented = true }));
-            return;
-        }
-
-        Console.WriteLine($"workflow baseline show: {(result.Ok ? "ok" : "failed")}");
-        Console.WriteLine(result.Summary);
-        if (result.Baseline is not null)
-        {
-            Console.WriteLine($"  baseline-id={result.Baseline.BaselineId}");
-            Console.WriteLine($"  benchmark-set={result.Baseline.BenchmarkSet}");
-            Console.WriteLine($"  run-id={result.Baseline.RunId}");
-            Console.WriteLine($"  git-sha={result.Baseline.GitSha}");
-            Console.WriteLine($"  spec-hash={result.Baseline.SpecHash}");
-            Console.WriteLine($"  provider-snapshot={result.Baseline.ProviderSnapshot}");
-            Console.WriteLine($"  promoted-at={result.Baseline.PromotedAtUtc:O}");
-            if (!string.IsNullOrWhiteSpace(result.Baseline.Notes))
-                Console.WriteLine($"  notes={result.Baseline.Notes}");
-            if (result.Baseline.Policy is not null)
-                Console.WriteLine($"  policy={JsonSerializer.Serialize(result.Baseline.Policy)}");
-        }
-    }
-
     private static string RenderComparisonText(WorkflowRunComparison comparison, string indent)
     {
         var prefix = string.IsNullOrEmpty(indent) ? string.Empty : indent;
@@ -3920,21 +3735,6 @@ public sealed class WorkflowCommand : Command
         string? OutputPath = null,
         WorkflowRunComparison? Comparison = null);
 
-    private sealed record WorkflowBaselinePromoteResult(
-        bool Ok,
-        string Summary,
-        WorkflowBaselineRecord? Baseline = null);
-
-    private sealed record WorkflowBaselineListResult(
-        bool Ok,
-        string Summary,
-        IReadOnlyList<WorkflowBaselineRecord>? Baselines = null);
-
-    private sealed record WorkflowBaselineShowResult(
-        bool Ok,
-        string Summary,
-        WorkflowBaselineRecord? Baseline = null);
-
     private sealed record WorkflowGateResult(
         bool Ok,
         bool Passed,
@@ -3969,22 +3769,6 @@ public sealed class WorkflowCommand : Command
         double SuccessRateDelta,
         long AverageLatencyDeltaMs,
         double AverageScoreDelta);
-
-    private sealed record WorkflowGatePolicy
-    {
-        public string? Name { get; init; }
-        public string? BenchmarkSet { get; init; }
-        public double? MinSuccessRateDelta { get; init; }
-        public long? MaxP95LatencyRegressionMs { get; init; }
-        public long? MaxAverageLatencyRegressionMs { get; init; }
-        public double? MinAverageScoreDelta { get; init; }
-        public int? MaxRegressedScenarios { get; init; }
-    }
-
-    private sealed record GatePolicyLoadResult(
-        bool Ok,
-        WorkflowGatePolicy? Policy,
-        string? Error);
 
     private sealed class OptimizeCandidateRuntimeState
     {
