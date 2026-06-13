@@ -40,6 +40,7 @@ public sealed class WorkflowCommand : Command
     private readonly Func<string, CancellationToken, Task<PreflightResult>> _providerPreflight;
     private readonly Func<IReadOnlyList<string>, CancellationToken, Task<ModelPullResult>> _ollamaModelPuller;
     private readonly Func<CancellationToken, Task<IReadOnlyList<PeerInfo>>> _meshPeerDiscovery;
+    private readonly ScaffoldHandler _scaffoldHandler;
 
     public WorkflowCommand(Func<OrchestrateCommand> orchestrateFactory)
         : this(
@@ -170,6 +171,7 @@ public sealed class WorkflowCommand : Command
         _ollamaModelPuller = ollamaModelPuller ?? PullOllamaModelsAsync;
         _meshPeerDiscovery = meshPeerDiscovery ?? (_ => Task.FromResult<IReadOnlyList<PeerInfo>>(Array.Empty<PeerInfo>()));
         _meshScenarioExecutor = meshScenarioExecutor ?? ExecuteScenarioOnMeshPeerAsync;
+        _scaffoldHandler = new ScaffoldHandler();
         ConfigureScaffoldCommand();
         ConfigureStressCommand();
         ConfigureHistoryCommand();
@@ -641,31 +643,7 @@ public sealed class WorkflowCommand : Command
         AddCommand(optimize);
     }
 
-    internal Task<int> ExecuteScaffoldAsync(string outputPath, bool force, bool json)
-    {
-        if (string.IsNullOrWhiteSpace(outputPath))
-        {
-            WriteScaffoldResult(new WorkflowScaffoldResult(false, "Output path is required."), json);
-            return Task.FromResult(1);
-        }
-
-        var fullPath = Path.GetFullPath(outputPath);
-        var parent = Path.GetDirectoryName(fullPath);
-        if (!string.IsNullOrWhiteSpace(parent))
-            Directory.CreateDirectory(parent);
-
-        if (File.Exists(fullPath) && !force)
-        {
-            WriteScaffoldResult(new WorkflowScaffoldResult(false, $"File already exists: {fullPath}. Use --force to overwrite.", fullPath), json);
-            return Task.FromResult(1);
-        }
-
-        var scaffold = WorkflowLabRuntimeSpec.Default();
-        var payload = JsonSerializer.Serialize(scaffold, new JsonSerializerOptions { WriteIndented = true });
-        File.WriteAllText(fullPath, payload);
-        WriteScaffoldResult(new WorkflowScaffoldResult(true, "Workflow lab spec scaffolded successfully.", fullPath), json);
-        return Task.FromResult(0);
-    }
+    internal Task<int> ExecuteScaffoldAsync(string outputPath, bool force, bool json) => _scaffoldHandler.ExecuteAsync(outputPath, force, json);
 
     internal Task<int> ExecuteHistoryAsync(string repoRoot, int limit, string? benchmarkSet, bool json)
     {
@@ -3571,25 +3549,6 @@ public sealed class WorkflowCommand : Command
             SynthesisRationale: rationale);
     }
 
-    private static void WriteScaffoldResult(WorkflowScaffoldResult result, bool json)
-    {
-        if (json)
-        {
-            Console.WriteLine(JsonSerializer.Serialize(new
-            {
-                ok = result.Ok,
-                summary = result.Summary,
-                outputPath = result.OutputPath
-            }, new JsonSerializerOptions { WriteIndented = true }));
-            return;
-        }
-
-        Console.WriteLine($"workflow scaffold: {(result.Ok ? "ok" : "failed")}");
-        Console.WriteLine(result.Summary);
-        if (!string.IsNullOrWhiteSpace(result.OutputPath))
-            Console.WriteLine($"  output={result.OutputPath}");
-    }
-
     private static void WriteStressResult(WorkflowStressResult result, bool json)
     {
         if (json)
@@ -3879,8 +3838,6 @@ public sealed class WorkflowCommand : Command
         };
         return string.Join(Environment.NewLine, lines);
     }
-
-    private sealed record WorkflowScaffoldResult(bool Ok, string Summary, string? OutputPath = null);
 
     private sealed record WorkflowStressRunRecord(
         string RunId,
