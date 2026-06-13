@@ -67,35 +67,15 @@ dotnet run --project application/src/Nexo.CLI -- doctor --json
 If you cannot use Docker, install the .NET SDK version from [`global.json`](global.json) and run:
 
 ```bash
-bash scripts/setup/setup.sh all
 dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore
 dotnet run --project application/src/Nexo.CLI -- --help
 ```
 
+Native setup depth lives in [`docs/GettingStarted.md`](docs/GettingStarted.md).
+
 ## Build local container images
 
-Published GHCR images are part of the release plan, but the source-built images below are the truthful path in this repo today:
-
-```bash
-docker build -f .docker/Dockerfile.cli -t nexo-cli:local .
-docker run --rm nexo-cli:local --help
-
-docker build -f .docker/Dockerfile.api -t nexo-api:local .
-docker run --rm -p 8080:8080 nexo-api:local
-```
-
-Compose entry points are documented in [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) and [`docs/GettingStarted.md`](docs/GettingStarted.md).
-
-## Common CLI commands
-
-```bash
-dotnet run --project application/src/Nexo.CLI -- --help
-dotnet run --project application/src/Nexo.CLI -- doctor --json
-dotnet run --project application/src/Nexo.CLI -- pipeline diagnostics --format-json
-dotnet run --project application/src/Nexo.CLI -- validate
-```
-
-For a guided first pipeline, use [`docs/GettingStarted.md`](docs/GettingStarted.md).
+Published `latest` GHCR images are available for the CLI/API, and source-built images remain the reproducible path from this checkout. CLI/API image commands and compose entry points are documented in [`docs/GettingStarted.md`](docs/GettingStarted.md) and [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md). Version-pinned public release artifacts are tracked in [`docs/Roadmap.md`](docs/Roadmap.md).
 
 ## Test and gate commands
 
@@ -118,6 +98,6 @@ Testing strategy and CI workflow details live in [`docs/Testing.md`](docs/Testin
 
 ## Distribution status
 
-Nexo currently supports source/monorepo use, local Docker builds, compose stacks, and local NuGet/package verification paths. Public NuGet and GHCR artifact publication is tracked for the release sprint in [`docs/Roadmap.md`](docs/Roadmap.md).
+Nexo currently supports source/monorepo use, local Docker builds, published `latest` CLI/API GHCR images, compose stacks, and local NuGet/package verification paths. Version-pinned NuGet and GHCR release artifacts are tracked for the release sprint in [`docs/Roadmap.md`](docs/Roadmap.md).
 
 Nexo uses an open-core model: single-node, inspectable runtime/SDK/trust surfaces are Apache-2.0, while fleet-scale governance and vertical app packaging are commercial. See [LICENSE](LICENSE) and [LICENSING.md](LICENSING.md).

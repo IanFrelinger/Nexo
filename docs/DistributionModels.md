@@ -9,7 +9,7 @@ For day-to-day embedding and extension work, start with **`docs/IntegratorGuide.
 Ship the **same semantic version** across artifacts that belong together:
 
 - **NuGet:** all `Nexo.*` packages for a release share one `PackageVersion`; consumers often reference **`Nexo.Hosting.Bundle`**. See **`docs/PUBLISHING.md`**.
-- **Containers:** source-built images now; GHCR images are planned for tagged releases and will use the same **`vX.Y.Z`** version (plus digest pins for production). See **`docs/RELEASE.md`**, **`docs/DEPLOYMENT.md`**, and **`docs/Roadmap.md`**.
+- **Containers:** `latest` GHCR images exist today; tagged releases should publish versioned GHCR images with the same **`vX.Y.Z`** version (plus digest pins for production). See **`docs/RELEASE.md`**, **`docs/DEPLOYMENT.md`**, and **`docs/Roadmap.md`**.
 
 Release automation is summarized in **`docs/RELEASE.md`** (NuGet + GHCR from one tag when configured).
 
@@ -20,7 +20,7 @@ Release automation is summarized in **`docs/RELEASE.md`** (NuGet + GHCR from one
 | **NuGet host embed** | `Nexo.Hosting` graph, **`Nexo.Hosting.Bundle`** | Package version on a feed | Build and run **`docs/samples/StableSdkHostSample/`** (see **`docs/SdkIntegrationGuide.md`**) |
 | **NuGet client** | **`Nexo.Client`** / **`Nexo.Sdk`** | Package version | **`docs/sdk.md`** (client quick start) |
 | **HTTP-only** | Running **`Nexo.API`** | Base URL + TLS + API key policy | **`curl`** `GET /health`, `GET /api/status` (see **`docs/SelfHostedAgentServer.md`**) |
-| **CLI** | **`Nexo.CLI`** binary or source-built CLI image | Git commit / image tag; CLI `--version` / package | **`docs/GettingStarted.md`** (`doctor`, `pipeline`) |
+| **CLI** | **`Nexo.CLI`** binary or **GHCR `nexo-cli`** image | Git commit / image tag; CLI `--version` / package | **`docs/GettingStarted.md`** (`doctor`, `pipeline`) |
 | **Compose / operators** | Root **`docker-compose*.yml`** + operator docs | Compose file revision + image digests | **`docs/DEPLOYMENT.md`**, stack-specific guides |
 | **Source / monorepo** | `ProjectReference` into **`src/`** | Git commit / branch | **`docs/IntegratorGuide.md`** (project reference example) |
 | **Mesh / federation (open peers)** | Peer config, local mesh primitives, worker executor | `instances.json`, env vars | **`docs/IntegratorGuide.md`**, **`docs/FriendMeshPrefab.md`**, **`docs/MeshVirtualLab.md`** |
@@ -35,7 +35,7 @@ Use these as **stable entrypoints** when writing runbooks or samples; replace im
 | **NuGet host sample (local pack)** | `docs/samples/StableSdkHostSample/package-consumer/StableSdkHostSample.Package.csproj` + **`scripts/verify-stable-sdk-host-sample-packages.sh`** |
 | **NuGet metapackage (consumers)** | **`Nexo.Hosting.Bundle`** at the release semver (see **`docs/PUBLISHING.md`**) |
 | **HTTP / API container** | Build **`.docker/Dockerfile.api`**; container listens on **`8080`** (`ASPNETCORE_URLS=http://+:8080`). Smoke script: **`scripts/ci/distribution-matrix-api-http-smoke.sh`**. |
-| **CLI container (local)** | Build **`.docker/Dockerfile.cli`** as `nexo-cli:local`; smoke with **`--help`** and **`pipeline validate --help`** (not **`doctor`**, see **`docs/GettingStarted.md`**). |
+| **CLI container (public)** | **`ghcr.io/ianfrelinger/nexo-cli:latest`**; smoke with **`--help`** and **`pipeline validate --help`** (not **`doctor`**, see **`docs/GettingStarted.md`**). |
 | **Compose (operator lab)** | **`docker-compose.ephemeral.yml`** (light deps) or **`docker-compose.portal.yml`** (Director stack) — hub **`docs/DEPLOYMENT.md`**. |
 | **Mesh prefab** | **`docker-compose.friend-mesh.yml`** + **`docs/FriendMeshPrefab.md`** |
 | **Mesh lab (heterogeneous)** | **`docker-compose.mesh-lab.yml`** — peer-a = commercial fleet host, peer-b/worker = open `Nexo.API` | **`docs/MeshVirtualLab.md`**, **`scripts/mesh-lab-verify.sh`** |
