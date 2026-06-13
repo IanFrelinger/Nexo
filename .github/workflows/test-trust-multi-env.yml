@@ -22,8 +22,8 @@ jobs:
           docker build -f .docker/Dockerfile.test-caching -t nexo-trust:ubuntu .
           mkdir -p test-results/trust
           docker run --rm -v "${{ github.workspace }}/test-results/trust:/workspace/test-results" nexo-trust:ubuntu bash -c \
-            "cd /workspace && dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net9.0 --filter 'FullyQualifiedName~Trust' --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=trust-infra-ubuntu.trx' --results-directory /workspace/test-results && \
-             dotnet test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj -f net9.0 --filter 'FullyQualifiedName~Trust' --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=trust-bg-ubuntu.trx' --results-directory /workspace/test-results"
+            "cd /workspace && dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net8.0 --filter 'FullyQualifiedName~Trust' --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=trust-infra-ubuntu.trx' --results-directory /workspace/test-results && \
+             dotnet test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj -f net8.0 --filter 'FullyQualifiedName~Trust' --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=trust-bg-ubuntu.trx' --results-directory /workspace/test-results"
       - uses: EnricoMi/publish-unit-test-result-action@v2
         if: always()
         continue-on-error: true
@@ -44,8 +44,8 @@ jobs:
           docker build -f .docker/Dockerfile.test-caching-alpine -t nexo-trust:alpine .
           mkdir -p test-results/trust
           docker run --rm -v "${{ github.workspace }}/test-results/trust:/workspace/test-results" nexo-trust:alpine bash -c \
-            "cd /workspace && dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net9.0 --filter 'FullyQualifiedName~Trust' --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=trust-infra-alpine.trx' --results-directory /workspace/test-results && \
-             dotnet test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj -f net9.0 --filter 'FullyQualifiedName~Trust' --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=trust-bg-alpine.trx' --results-directory /workspace/test-results"
+            "cd /workspace && dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net8.0 --filter 'FullyQualifiedName~Trust' --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=trust-infra-alpine.trx' --results-directory /workspace/test-results && \
+             dotnet test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj -f net8.0 --filter 'FullyQualifiedName~Trust' --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=trust-bg-alpine.trx' --results-directory /workspace/test-results"
       - uses: EnricoMi/publish-unit-test-result-action@v2
         if: always()
         continue-on-error: true
@@ -66,8 +66,8 @@ jobs:
           docker build -f .docker/Dockerfile.test-caching-debian -t nexo-trust:debian .
           mkdir -p test-results/trust
           docker run --rm -v "${{ github.workspace }}/test-results/trust:/workspace/test-results" nexo-trust:debian bash -c \
-            "cd /workspace && dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net9.0 --filter 'FullyQualifiedName~Trust' --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=trust-infra-debian.trx' --results-directory /workspace/test-results && \
-             dotnet test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj -f net9.0 --filter 'FullyQualifiedName~Trust' --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=trust-bg-debian.trx' --results-directory /workspace/test-results"
+            "cd /workspace && dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net8.0 --filter 'FullyQualifiedName~Trust' --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=trust-infra-debian.trx' --results-directory /workspace/test-results && \
+             dotnet test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj -f net8.0 --filter 'FullyQualifiedName~Trust' --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=trust-bg-debian.trx' --results-directory /workspace/test-results"
       - uses: EnricoMi/publish-unit-test-result-action@v2
         if: always()
         continue-on-error: true

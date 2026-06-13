@@ -93,20 +93,20 @@ info "Docker not found — using native .NET path"
 
 # Install .NET SDK if missing
 if ! command -v dotnet >/dev/null 2>&1; then
-  info "Installing .NET SDK 9..."
+  info "Installing .NET SDK 8..."
   if command -v curl >/dev/null 2>&1; then
     curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh
-    bash /tmp/dotnet-install.sh --channel 9.0
+    bash /tmp/dotnet-install.sh --channel 8.0
     export PATH="${HOME}/.dotnet:${PATH}"
     rm -f /tmp/dotnet-install.sh
   elif command -v wget >/dev/null 2>&1; then
     wget -qO /tmp/dotnet-install.sh https://dot.net/v1/dotnet-install.sh
-    bash /tmp/dotnet-install.sh --channel 9.0
+    bash /tmp/dotnet-install.sh --channel 8.0
     export PATH="${HOME}/.dotnet:${PATH}"
     rm -f /tmp/dotnet-install.sh
   else
     fail ".NET SDK not found and neither curl nor wget available to install it."
-    fail "Install .NET SDK 9 from https://dot.net and rerun."
+    fail "Install .NET SDK 8 from https://dot.net and rerun."
     exit 1
   fi
 fi

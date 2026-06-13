@@ -119,7 +119,6 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: |
-            9.0.x
             8.0.x
 
       - name: "Setup — verify hosting pack graph consistency"
@@ -255,13 +254,13 @@ jobs:
         include:
           - dockerfile: .docker/Dockerfile.test-caching
             label: Ubuntu-Container
-            build_arg: "DOTNET_VERSION=9.0"
+            build_arg: "DOTNET_VERSION=8.0"
           - dockerfile: .docker/Dockerfile.test-caching-alpine
             label: Alpine-Container
-            build_arg: "DOTNET_VERSION=9.0"
+            build_arg: "DOTNET_VERSION=8.0"
           - dockerfile: .docker/Dockerfile.test-caching-debian
             label: Debian-Container
-            build_arg: "DOTNET_VERSION=9.0"
+            build_arg: "DOTNET_VERSION=8.0"
 
     steps:
       - name: Checkout
@@ -271,7 +270,6 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: |
-            9.0.x
             8.0.x
 
       # ── Stage 1: Setup (build container) ────────────────────────────
@@ -311,7 +309,7 @@ jobs:
 
               echo "=== Smoke tests ==="
               dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
-                -f net9.0 \
+                -f net8.0 \
                 --no-build \
                 --blame-hang-timeout 180s \
                 --blame-hang-dump-type none \
@@ -320,7 +318,7 @@ jobs:
                 --logger "trx;LogFileName=smoke.trx" \
                 --results-directory /results/test-results
               dotnet test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj \
-                -f net9.0 \
+                -f net8.0 \
                 --no-build \
                 --blame-hang-timeout 60s \
                 --blame-hang-dump-type none \

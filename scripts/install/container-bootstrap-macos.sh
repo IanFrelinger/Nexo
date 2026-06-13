@@ -2,7 +2,7 @@
 set -euo pipefail
 
 DEFAULT_IMAGE="ghcr.io/ianfrelinger/nexo-cli:latest"
-DEFAULT_SDK_IMAGE="mcr.microsoft.com/dotnet/sdk:9.0"
+DEFAULT_SDK_IMAGE="mcr.microsoft.com/dotnet/sdk:8.0"
 IMAGE="${DEFAULT_IMAGE}"
 SDK_IMAGE="${DEFAULT_SDK_IMAGE}"
 WORKSPACE_DIR=""

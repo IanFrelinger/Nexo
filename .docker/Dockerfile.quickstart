@@ -3,7 +3,7 @@
 #   docker build -f .docker/Dockerfile.quickstart -t nexo:latest .
 #   docker run --rm -p 8080:8080 nexo:latest
 #   Open http://localhost:8080
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
 COPY . .

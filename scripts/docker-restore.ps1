@@ -1,7 +1,7 @@
 #Requires -Version 5.1
 <#
 .SYNOPSIS
-  Restore the Nexo setup-gate project graph inside Linux dotnet/sdk:9.0 (no host SDK required).
+  Restore the Nexo setup-gate project graph inside Linux dotnet/sdk:8.0 (no host SDK required).
 
   Uses ONE container so NuGet packages stay in the same filesystem as the build.
   Optional: -Build to compile Nexo.CLI after restore.
@@ -20,7 +20,7 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-$image = "mcr.microsoft.com/dotnet/sdk:9.0"
+$image = "mcr.microsoft.com/dotnet/sdk:8.0"
 
 docker pull $image 2>&1 | Out-Host
 

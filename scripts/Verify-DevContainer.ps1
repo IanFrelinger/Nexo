@@ -42,7 +42,7 @@ catch {
 
 $root = Resolve-RepoRoot $RepoRoot
 $mountSrc = $root.Replace('\', '/')
-$image = "mcr.microsoft.com/devcontainers/dotnet:9.0-bookworm"
+$image = "mcr.microsoft.com/devcontainers/dotnet:8.0-bookworm"
 
 Write-Host "Verify-DevContainer: pulling $image ..." -ForegroundColor Cyan
 & docker pull $image | Out-Host

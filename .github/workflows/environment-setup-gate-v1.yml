@@ -26,7 +26,6 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: |
-            9.0.x
             8.0.x
 
       - name: Run setup check (Linux/macOS)
@@ -94,10 +93,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - image: mcr.microsoft.com/dotnet/sdk:9.0
-            image_id: dotnet-sdk-9-0
-          - image: mcr.microsoft.com/dotnet/sdk:9.0-bookworm-slim
-            image_id: dotnet-sdk-9-0-bookworm-slim
+          - image: mcr.microsoft.com/dotnet/sdk:8.0
+            image_id: dotnet-sdk-8-0
+          - image: mcr.microsoft.com/dotnet/sdk:8.0-bookworm-slim
+            image_id: dotnet-sdk-8-0-bookworm-slim
 
     steps:
       - name: Checkout

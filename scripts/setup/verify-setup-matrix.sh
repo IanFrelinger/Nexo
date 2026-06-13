@@ -66,7 +66,7 @@ else
     fi
   fi
 
-  for tag in mcr.microsoft.com/dotnet/sdk:9.0 mcr.microsoft.com/dotnet/sdk:9.0-bookworm-slim; do
+  for tag in mcr.microsoft.com/dotnet/sdk:8.0 mcr.microsoft.com/dotnet/sdk:8.0-bookworm-slim; do
     log "C :: container ${tag}" "docker pull + setup-linux + build"
     docker pull "${tag}" >/dev/null
     if docker run --rm "${MATRIX_CONTAINER_PLATFORM[@]}" -v "${REPO_ROOT}:/repo" -w /repo "${tag}" bash -lc '
