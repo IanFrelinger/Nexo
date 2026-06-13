@@ -16,12 +16,14 @@ public sealed class RuntimeCommand : Command
     private readonly RecommendHandler _recommendHandler;
     private readonly HistoryHandler _historyHandler;
     private readonly PlanHandler _planHandler;
+    private readonly GateHandler _gateHandler;
 
     public RuntimeCommand() : base("runtime", "Adaptive runtime control plane commands.")
     {
         _recommendHandler = new RecommendHandler();
         _historyHandler = new HistoryHandler();
         _planHandler = new PlanHandler(BuildPlanContext);
+        _gateHandler = new GateHandler();
         ConfigureExecuteCommand();
         ConfigurePlanCommand();
         ConfigureEvaluateCommand();
@@ -595,28 +597,7 @@ public sealed class RuntimeCommand : Command
         string? benchmarkSet,
         string? stage,
         int minConsecutivePasses,
-        bool json)
-    {
-        var fullRepoRoot = Path.GetFullPath(string.IsNullOrWhiteSpace(repoRoot) ? Environment.CurrentDirectory : repoRoot);
-        if (!Directory.Exists(fullRepoRoot))
-        {
-            RuntimeOutputWriter.WriteGateResult(new RuntimeGateResult(false, $"Repo root not found: {fullRepoRoot}"), json);
-            return Task.FromResult(1);
-        }
-
-        var gate = RuntimeGateEvaluation.EvaluateGateResult(
-            fullRepoRoot,
-            historyWindow,
-            minPassRate,
-            minTotal,
-            goal,
-            policy,
-            benchmarkSet,
-            stage,
-            minConsecutivePasses);
-        RuntimeOutputWriter.WriteGateResult(gate, json);
-        return Task.FromResult(gate.Ok ? 0 : 1);
-    }
+        bool json) => _gateHandler.ExecuteAsync(repoRoot, historyWindow, minPassRate, minTotal, goal, policy, benchmarkSet, stage, minConsecutivePasses, json);
 
     internal async Task<int> ExecuteReleaseGateAsync(
         string mode,
