@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <!-- Single TFM: parent tests may target net9.0 but this helper always builds as net8.0 so restore/build cannot fail with NETSDK1005 when assets.json lacks net9.0. -->
+    <!-- Single TFM: this helper always builds as net8.0 so restore/build stays aligned with the repository SDK/TFM baseline. -->
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
