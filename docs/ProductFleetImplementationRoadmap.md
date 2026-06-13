@@ -17,11 +17,11 @@ This is the **engineering, operations, and go-to-market sequence** for turning t
 
 | Step | What to implement | Done means | Status |
 |------|-------------------|------------|--------|
-| 0.1 | **Tenant model** end-to-end: stable `tenant_id` (or org id) on every job, audit row, artifact, and API key | Cross-tenant access tests fail in CI | **In progress:** `X-Nexo-Tenant` on copilot API; `ProductFleetTenantIsolationTests` + `NexoHttpTenantTests` in CI |
-| 0.2 | **Entitlements configuration** (file or DB) keyed by plan: seats, `included_jobs`, `max_concurrency`, `retention_days`, `sso_enabled`, `audit_export`, `deployment_mode` | Same binary runs with different config profiles (dev/staging/prod) | **Started:** `NexoEntitlementsOptions` fields; copilot hourly quota enforced |
-| 0.3 | **Usage counters** (jobs submitted, jobs succeeded, tokens optional if BYOK proxy) emitted to logs or metrics table | You can answer “how many jobs per tenant last 24h?” | **Started:** `ITenantUsageStore`, `GET /api/usage/summary`, structured `NexoUsage` logs |
-| 0.4 | **Reference deployment** documented: compose (or Helm) for “single-tenant production shape” matching what you sell as Private | New hire reproduces deploy from docs in one session | **Started:** `docker-compose.private-single-tenant.yml` + `docs/product-fleet/private-reference-deployment.md` |
-| 0.5 | **Observability baseline**: structured logs, health checks, redacted config export for support | On-call playbook v0.1 exists | **Started:** `GET /api/support/diagnostics`, copilot audit `TenantId`, [`on-call-playbook-v0.1.md`](./product-fleet/on-call-playbook-v0.1.md) |
+| 0.1 | **Tenant model** end-to-end: stable `tenant_id` (or org id) on every job, audit row, artifact, and API key | Cross-tenant access tests fail in CI | **Done:** `X-Nexo-Tenant`; `ProductFleetTenantIsolationTests` + `NexoHttpTenantTests` |
+| 0.2 | **Entitlements configuration** (file or DB) keyed by plan: seats, `included_jobs`, `max_concurrency`, `retention_days`, `sso_enabled`, `audit_export`, `deployment_mode` | Same binary runs with different config profiles (dev/staging/prod) | **Done:** `NexoEntitlementsOptions`; copilot hourly quota enforced |
+| 0.3 | **Usage counters** (jobs submitted, jobs succeeded, tokens optional if BYOK proxy) emitted to logs or metrics table | You can answer “how many jobs per tenant last 24h?” | **Done:** `ITenantUsageStore`, `GET /api/usage/summary`, `NexoUsage` logs |
+| 0.4 | **Reference deployment** documented: compose (or Helm) for “single-tenant production shape” matching what you sell as Private | New hire reproduces deploy from docs in one session | **Done:** `docker-compose.private-single-tenant.yml` + [`private-reference-deployment.md`](./product-fleet/private-reference-deployment.md) |
+| 0.5 | **Observability baseline**: structured logs, health checks, redacted config export for support | On-call playbook v0.1 exists | **Done:** `GET /api/support/diagnostics`, copilot audit `TenantId`, [`on-call-playbook-v0.1.md`](./product-fleet/on-call-playbook-v0.1.md) |
 | 0.6 | **Legal/commercial shell**: entity, basic ToS/Privacy for a website, DPA template if Cloud will hold customer data | Counsel-reviewed drafts (timing varies) |
 
 **Exit:** you can run **one production-shaped tenant** with measurable usage and no ambiguous identity.
@@ -38,8 +38,8 @@ Private is usually **less COGS risk** and forces **install, upgrade, and air-gap
 | 1.2 | **License or subscription check** (even v0: signed JWT license file or online activation with **air-gap fallback**) | Expired license degrades gracefully (read-only or block execution—your policy, documented) | **Started:** `NexoPrivateLicenseOptions`, `PrivateLicenseMiddleware`, sample [`sample-private-license.json`](./product-fleet/sample-private-license.json) |
 | 1.3 | **Secrets**: BYOK storage for provider keys; document what never leaves host | Security one-pager accurate | **Started:** [`private-byok-security.md`](./product-fleet/private-byok-security.md) |
 | 1.4 | **Backup/restore** runbook + tested restore for DB and object stores you use | RPO/RTO stated on support page | **Started:** [`private-backup-restore.md`](./product-fleet/private-backup-restore.md) (RPO 24h / RTO 4h pilot defaults) |
-| 1.5 | **Private pricing + invoice flow** (Stripe Invoicing, Paddle, or manual) + **order form template** | First paying Private customer can be billed without heroics |
-| 1.6 | **Support boundaries**: severity levels, response-time targets for paid Private | Published on website or contract appendix |
+| 1.5 | **Private pricing + invoice flow** (Stripe Invoicing, Paddle, or manual) + **order form template** | First paying Private customer can be billed without heroics | **Started:** [`private-order-form-template.md`](./product-fleet/private-order-form-template.md) |
+| 1.6 | **Support boundaries**: severity levels, response-time targets for paid Private | Published on website or contract appendix | **Started:** [`private-support-boundaries.md`](./product-fleet/private-support-boundaries.md) |
 
 **Exit:** **first annual Private customer** or equivalent pilot revenue with a repeatable deploy story.
 
@@ -49,11 +49,11 @@ Private is usually **less COGS risk** and forces **install, upgrade, and air-gap
 
 Only start when Phase 0 is solid; overlap Phase 1 if you have capacity.
 
-| Step | What to implement | Done means |
-|------|-------------------|------------|
-| 2.1 | **AWS account structure**: prod/stage, IAM boundaries, secrets manager, VPC | No secrets in git; least-privilege roles |
-| 2.2 | **Isolation**: per-tenant DB schema or DB, or strict row-level security + proven tests; network policies between services | Third-party or internal pen test of **tenant escape** path |
-| 2.3 | **Control plane**: signup, org creation, invite flow, role model (admin vs member) | Non-admin cannot read other org’s jobs |
+| Step | What to implement | Done means | Status |
+|------|-------------------|------------|--------|
+| 2.1 | **AWS account structure**: prod/stage, IAM boundaries, secrets manager, VPC | No secrets in git; least-privilege roles | **Started:** [`cloud-aws-account-structure.md`](./product-fleet/cloud-aws-account-structure.md) |
+| 2.2 | **Isolation**: per-tenant DB schema or DB, or strict row-level security + proven tests; network policies between services | Third-party or internal pen test of **tenant escape** path | **Started:** `RequireOrgMembership` + `ProductFleetOrgControlPlaneTests`; [`docker-compose.cloud-multi-tenant.yml`](../docker-compose.cloud-multi-tenant.yml) |
+| 2.3 | **Control plane**: signup, org creation, invite flow, role model (admin vs member) | Non-admin cannot read other org’s jobs | **Started:** `IOrganizationStore`, `/api/orgs/*`, admin-only invites |
 | 2.4 | **Stripe Billing**: products/prices for seats; optional metered usage for jobs/storage | Test subscription + upgrade + cancel in staging |
 | 2.5 | **Metering pipeline**: usage events → aggregation job → Stripe usage records (or internal ledger if invoiced) | Overage bill matches product-defined job definition |
 | 2.6 | **Abuse controls**: rate limits, CAPTCHA or email domain rules, plan caps | Cost cannot spike unbounded from one free account |

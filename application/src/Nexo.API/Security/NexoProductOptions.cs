@@ -15,4 +15,11 @@ public sealed class NexoProductOptions
     /// When empty, any non-empty tenant header up to 128 chars is accepted after trimming.
     /// </summary>
     public string[] AllowedTenantIds { get; set; } = [];
+
+    /// <summary>Cloud mode: copilot/usage routes require <c>X-Nexo-User</c> + <c>X-Nexo-Org</c> membership.</summary>
+    public bool RequireOrgMembership { get; set; }
+
+    public string UserHeaderName { get; set; } = NexoHttpOrg.UserHeaderName;
+
+    public string OrgHeaderName { get; set; } = NexoHttpOrg.OrgHeaderName;
 }
