@@ -43,6 +43,7 @@ public sealed class WorkflowCommand : Command
     private readonly ScaffoldHandler _scaffoldHandler;
     private readonly HistoryHandler _historyHandler;
     private readonly BaselineHandler _baselineHandler;
+    private readonly ReportHandler _reportHandler;
 
     public WorkflowCommand(Func<OrchestrateCommand> orchestrateFactory)
         : this(
@@ -176,6 +177,7 @@ public sealed class WorkflowCommand : Command
         _scaffoldHandler = new ScaffoldHandler();
         _historyHandler = new HistoryHandler();
         _baselineHandler = new BaselineHandler(NormalizeBenchmarkSet, LoadGatePolicy, BuildBaselineId);
+        _reportHandler = new ReportHandler(BuildBenchmarkReport, BuildComparison, RenderReportContent, RenderComparisonText);
         ConfigureScaffoldCommand();
         ConfigureStressCommand();
         ConfigureHistoryCommand();
@@ -671,99 +673,7 @@ public sealed class WorkflowCommand : Command
         string? baselineRunId,
         string? since,
         string? outputPath,
-        bool json)
-    {
-        var fullRepoRoot = Path.GetFullPath(string.IsNullOrWhiteSpace(repoRoot) ? Environment.CurrentDirectory : repoRoot);
-        if (!Directory.Exists(fullRepoRoot))
-        {
-            WriteReportResult(new WorkflowReportResult(
-                false,
-                $"Repo root not found: {fullRepoRoot}",
-                new WorkflowBenchmarkReport(
-                    DateTimeOffset.UtcNow,
-                    0,
-                    0,
-                    0,
-                    0d,
-                    0,
-                    0,
-                    0d,
-                    0d,
-                    0d,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    "unknown",
-                    Array.Empty<WorkflowScenarioBenchmark>(),
-                    Array.Empty<WorkflowScenarioBenchmark>(),
-                    Array.Empty<WorkflowFailureCategoryStat>(),
-                    Array.Empty<string>(),
-                    null,
-                    null,
-                    null,
-                    null,
-                    Array.Empty<WorkflowRecommendation>())), json);
-            return Task.FromResult(1);
-        }
-
-        var rows = WorkflowLabHistoryStore.ReadRecent(fullRepoRoot, Math.Max(1, limit));
-        if (!string.IsNullOrWhiteSpace(benchmarkSet))
-        {
-            var normalized = benchmarkSet.Trim().ToLowerInvariant();
-            rows = rows
-                .Where(x => string.Equals(x.BenchmarkSet, normalized, StringComparison.OrdinalIgnoreCase))
-                .ToArray();
-        }
-        if (!string.IsNullOrWhiteSpace(since) && DateTimeOffset.TryParse(since, out var sinceUtc))
-        {
-            rows = rows.Where(x => x.StartedAtUtc >= sinceUtc).ToArray();
-        }
-
-        var comparison = BuildComparison(rows, runId, baselineRunId);
-        if (comparison is { Valid: false })
-        {
-            WriteReportResult(new WorkflowReportResult(
-                false,
-                comparison.Summary ?? "Unable to build workflow run comparison.",
-                BuildBenchmarkReport(Array.Empty<WorkflowLabStressHistoryRow>()),
-                null,
-                comparison), json);
-            return Task.FromResult(1);
-        }
-
-        var filteredRows = rows;
-        if (!string.IsNullOrWhiteSpace(runId))
-        {
-            var normalizedRunId = runId.Trim();
-            filteredRows = filteredRows.Where(x => string.Equals(x.RunId, normalizedRunId, StringComparison.OrdinalIgnoreCase)).ToArray();
-        }
-
-        var report = BuildBenchmarkReport(filteredRows);
-        var result = new WorkflowReportResult(
-            report.TotalRuns > 0,
-            report.TotalRuns > 0
-                ? $"Benchmark report generated from {report.TotalRuns} run(s)."
-                : "No workflow stress history found for the selected filters.",
-            report,
-            Comparison: comparison);
-
-        if (!string.IsNullOrWhiteSpace(outputPath))
-        {
-            var fullOutputPath = Path.GetFullPath(outputPath);
-            var directory = Path.GetDirectoryName(fullOutputPath);
-            if (!string.IsNullOrWhiteSpace(directory))
-                Directory.CreateDirectory(directory);
-
-            var content = RenderReportContent(result, json, fullOutputPath);
-            File.WriteAllText(fullOutputPath, content);
-            result = result with { OutputPath = fullOutputPath };
-        }
-
-        WriteReportResult(result, json);
-        return Task.FromResult(result.Ok ? 0 : 1);
-    }
+        bool json) => _reportHandler.ExecuteAsync(repoRoot, limit, benchmarkSet, runId, baselineRunId, since, outputPath, json);
 
     internal Task<int> ExecuteGateAsync(
         string repoRoot,
@@ -3443,40 +3353,6 @@ public sealed class WorkflowCommand : Command
         }
     }
 
-    private static void WriteReportResult(WorkflowReportResult result, bool json)
-    {
-        if (json)
-        {
-            Console.WriteLine(JsonSerializer.Serialize(new
-            {
-                ok = result.Ok,
-                summary = result.Summary,
-                outputPath = result.OutputPath,
-                report = result.Report,
-                comparison = result.Comparison
-            }, new JsonSerializerOptions { WriteIndented = true }));
-            return;
-        }
-
-        Console.WriteLine($"workflow report: {(result.Ok ? "ok" : "failed")}");
-        Console.WriteLine(result.Summary);
-        if (!string.IsNullOrWhiteSpace(result.OutputPath))
-            Console.WriteLine($"  output={result.OutputPath}");
-        Console.WriteLine($"  success-rate={result.Report.SuccessRate:P1}, avg-latency={result.Report.AverageElapsedMs}ms, p95={result.Report.P95ElapsedMs}ms");
-        if (result.Report.TopScenarios.Count > 0)
-            Console.WriteLine($"  best={result.Report.TopScenarios[0].ScenarioGroupId} score={result.Report.TopScenarios[0].AverageScore:F2}");
-        if (result.Report.Recommendations.Count > 0)
-        {
-            Console.WriteLine("  recommendations:");
-            foreach (var rec in result.Report.Recommendations.Take(5))
-                Console.WriteLine($"    - [{rec.Action}] {rec.Kind}: {rec.Rationale}");
-        }
-        if (result.Comparison is { Valid: true, RunId: not null, BaselineRunId: not null })
-        {
-            Console.WriteLine(RenderComparisonText(result.Comparison, "  "));
-        }
-    }
-
     private static void WriteOptimizeResult(WorkflowOptimizeResult result, bool json)
     {
         if (json)
@@ -3676,99 +3552,12 @@ public sealed class WorkflowCommand : Command
         IReadOnlyList<TargetAllocationStat>? TargetAllocations = null,
         IReadOnlyList<CandidateAllocationStat>? CandidateAllocations = null);
 
-    private sealed record WorkflowScenarioBenchmark(
-        string ScenarioGroupId,
-        int Runs,
-        int Successes,
-        int Failures,
-        double SuccessRate,
-        long AverageElapsedMs,
-        long P95ElapsedMs,
-        double AverageScore,
-        double AverageConflicts,
-        double AverageEscalations)
-    {
-        public string? LastFailureSummary { get; init; }
-    }
-
-    private sealed record WorkflowFailureCategoryStat(
-        string Category,
-        int Count);
-
-    private sealed record WorkflowBenchmarkReport(
-        DateTimeOffset GeneratedAtUtc,
-        int TotalRuns,
-        int SuccessRuns,
-        int FailedRuns,
-        double SuccessRate,
-        long AverageElapsedMs,
-        long P95ElapsedMs,
-        double AverageScore,
-        double AverageConflicts,
-        double AverageEscalations,
-        long AverageCpuTimeDeltaMs,
-        long P95WorkingSetMb,
-        long P95PrivateMemoryMb,
-        long P95ManagedMemoryMb,
-        long MaxThreadCount,
-        string HardwareProfile,
-        IReadOnlyList<WorkflowScenarioBenchmark> TopScenarios,
-        IReadOnlyList<WorkflowScenarioBenchmark> Bottlenecks,
-        IReadOnlyList<WorkflowFailureCategoryStat> FailureCategories,
-        IReadOnlyList<string> RunIds,
-        string? LatestRunId,
-        string? GitSha,
-        string? SpecHash,
-        string? ProviderSnapshot,
-        IReadOnlyList<WorkflowRecommendation> Recommendations);
-
-    private sealed record WorkflowRecommendation(
-        string Kind,
-        string Action,
-        string? Target,
-        string Rationale);
-
-    private sealed record WorkflowReportResult(
-        bool Ok,
-        string Summary,
-        WorkflowBenchmarkReport Report,
-        string? OutputPath = null,
-        WorkflowRunComparison? Comparison = null);
-
     private sealed record WorkflowGateResult(
         bool Ok,
         bool Passed,
         string Summary,
         IReadOnlyList<string>? Failures = null,
         WorkflowRunComparison? Comparison = null);
-
-    private sealed record WorkflowRunComparison(
-        bool Valid,
-        string Summary,
-        string? RunId = null,
-        string? BaselineRunId = null,
-        int CandidateRunCount = 0,
-        int BaselineRunCount = 0,
-        double CandidateSuccessRate = 0d,
-        double BaselineSuccessRate = 0d,
-        double SuccessRateDelta = 0d,
-        long CandidateAverageLatencyMs = 0,
-        long BaselineAverageLatencyMs = 0,
-        long AverageLatencyDeltaMs = 0,
-        long CandidateP95LatencyMs = 0,
-        long BaselineP95LatencyMs = 0,
-        long P95LatencyDeltaMs = 0,
-        double CandidateAverageScore = 0d,
-        double BaselineAverageScore = 0d,
-        double AverageScoreDelta = 0d,
-        int RegressedScenarios = 0,
-        IReadOnlyList<WorkflowScenarioDelta>? ScenarioDeltas = null);
-
-    private sealed record WorkflowScenarioDelta(
-        string ScenarioGroupId,
-        double SuccessRateDelta,
-        long AverageLatencyDeltaMs,
-        double AverageScoreDelta);
 
     private sealed class OptimizeCandidateRuntimeState
     {
