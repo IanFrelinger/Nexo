@@ -45,6 +45,7 @@ public sealed class WorkflowCommand : Command
     private readonly BaselineHandler _baselineHandler;
     private readonly ReportHandler _reportHandler;
     private readonly GateHandler _gateHandler;
+    private readonly StressHandler _stressHandler;
 
     public WorkflowCommand(Func<OrchestrateCommand> orchestrateFactory)
         : this(
@@ -180,6 +181,25 @@ public sealed class WorkflowCommand : Command
         _baselineHandler = new BaselineHandler(NormalizeBenchmarkSet, LoadGatePolicy, BuildBaselineId);
         _reportHandler = new ReportHandler(BuildBenchmarkReport, BuildComparison, RenderReportContent, RenderComparisonText);
         _gateHandler = new GateHandler(NormalizeBenchmarkSet, LoadGatePolicy, BuildComparison, RenderComparisonText);
+        _stressHandler = new StressHandler(
+            _providerPreflight,
+            ResolveDefaultSpecPath,
+            NormalizeRequests,
+            NormalizeCompositions,
+            NormalizeProfiles,
+            NormalizeBenchmarkSet,
+            BuildRunId,
+            ResolveGitSha,
+            ComputeSpecHash,
+            BuildProviderSnapshot,
+            ResolveExecutionTargetsAsync,
+            BuildScenarioPlans,
+            ShuffleScenarioPlans,
+            BuildRuntimeSpec,
+            BuildScenarioId,
+            ExecuteScenarioForTargetAsync,
+            CaptureRuntimeTelemetry,
+            ComputeScore);
         ConfigureScaffoldCommand();
         ConfigureStressCommand();
         ConfigureHistoryCommand();
@@ -690,7 +710,7 @@ public sealed class WorkflowCommand : Command
         int maxRegressedScenarios,
         bool json) => _gateHandler.ExecuteAsync(repoRoot, benchmarkSet, runId, baselineRunId, policyFile, minSuccessRateDelta, maxP95LatencyRegressionMs, maxAverageLatencyRegressionMs, minAverageScoreDelta, maxRegressedScenarios, json);
 
-    internal async Task<int> ExecuteStressAsync(
+    internal Task<int> ExecuteStressAsync(
         string? requestOverride,
         string? specPath,
         string? specJson,
@@ -707,265 +727,7 @@ public sealed class WorkflowCommand : Command
         string? meshCapability,
         bool json,
         bool verbose,
-        CancellationToken ct)
-    {
-        var resolvedSpecPath = ResolveDefaultSpecPath(specPath);
-        WorkflowLabRuntimeSpec spec;
-        try
-        {
-            spec = WorkflowLabRuntimeSpecLoader.Load(resolvedSpecPath, specJson);
-        }
-        catch (Exception ex)
-        {
-            WriteStressResult(new WorkflowStressResult(false, $"Failed to load workflow lab spec: {ex.Message}"), json);
-            return 1;
-        }
-
-        var repoRoot = Environment.CurrentDirectory;
-        var requests = NormalizeRequests(spec.Requests);
-        var compositions = NormalizeCompositions(spec.Compositions);
-        var profiles = NormalizeProfiles(spec.ModelProfiles, providerOverride, preferOverride);
-        if (requests.Length == 0 || compositions.Length == 0 || profiles.Length == 0)
-        {
-            WriteStressResult(new WorkflowStressResult(
-                false,
-                "Workflow stress spec must include at least one request, composition, and model profile."), json);
-            return 1;
-        }
-
-        var benchmarkSet = NormalizeBenchmarkSet(benchmarkSetOverride, spec.Execution.BenchmarkSet);
-        var persistHistory = persistHistoryOverride ?? spec.Execution.PersistHistory;
-        var iterations = Math.Max(1, iterationsOverride ?? spec.Execution.Iterations);
-        var sharedRequest = string.IsNullOrWhiteSpace(requestOverride) ? null : requestOverride.Trim();
-        var runId = BuildRunId();
-        var specHash = ComputeSpecHash(JsonSerializer.Serialize(spec));
-        var gitSha = ResolveGitSha();
-        var providerSnapshot = BuildProviderSnapshot(profiles);
-        var warmupRuns = Math.Max(0, warmupRunsOverride ?? spec.Execution.WarmupRuns);
-        var cooldownMs = Math.Max(0, cooldownMsOverride ?? spec.Execution.CooldownMs);
-        var shuffleScenarios = shuffleScenariosOverride ?? spec.Execution.ShuffleScenarioOrder;
-        var randomSeed = randomSeedOverride ?? spec.Execution.RandomSeed;
-        var rng = randomSeed.HasValue ? new Random(randomSeed.Value) : null;
-
-        var preflightByProvider = new Dictionary<string, PreflightResult>(StringComparer.OrdinalIgnoreCase);
-        foreach (var provider in profiles
-                     .Select(x => x.Default.Provider)
-                     .Where(x => !string.IsNullOrWhiteSpace(x))
-                     .Select(x => x!.Trim())
-                     .Distinct(StringComparer.OrdinalIgnoreCase))
-        {
-            preflightByProvider[provider] = await _providerPreflight(provider, ct).ConfigureAwait(false);
-        }
-
-        var executionTargets = await ResolveExecutionTargetsAsync(
-            includeMeshPeers,
-            meshCapability,
-            ct).ConfigureAwait(false);
-
-        var scenarioPlans = BuildScenarioPlans(requests, compositions, profiles, iterations);
-        if (shuffleScenarios && scenarioPlans.Count > 1)
-            ShuffleScenarioPlans(scenarioPlans, rng ?? new Random());
-
-        var runs = new List<WorkflowStressRunRecord>();
-        var executionTargetCursor = 0;
-        foreach (var plan in scenarioPlans)
-        {
-            var request = plan.Request;
-            var composition = plan.Composition;
-            var profile = plan.Profile;
-            var i = plan.Iteration;
-            var executionTarget = executionTargets[executionTargetCursor % executionTargets.Count];
-            executionTargetCursor++;
-            var scenarioId = BuildScenarioId(request.Id, composition.Id, profile.Id, i) +
-                             $"::target-{WorkflowOptimizeReportRenderer.NormalizeScenarioTargetSegment(executionTarget.Id)}";
-            var runtime = BuildRuntimeSpec(composition, profile);
-            var runtimeJson = JsonSerializer.Serialize(runtime);
-            var runtimeExecutionRequest = WorkflowOptimizeReportRenderer.BuildExecutionRequest(request, composition, profile, sharedRequest);
-            var profileProvider = profile.Default.Provider?.Trim();
-
-            for (var warmup = 0; warmup < warmupRuns; warmup++)
-            {
-                ct.ThrowIfCancellationRequested();
-                if (!string.IsNullOrWhiteSpace(profileProvider) &&
-                    preflightByProvider.TryGetValue(profileProvider, out var warmupPreflight) &&
-                    !warmupPreflight.Ok)
-                {
-                    break;
-                }
-
-                try
-                {
-                    _ = await ExecuteScenarioForTargetAsync(
-                        executionTarget,
-                        runtimeExecutionRequest,
-                        runtimeJson,
-                        profile.Default.Provider,
-                        verbose,
-                        ct).ConfigureAwait(false);
-                }
-                catch
-                {
-                    // Warmups are intentionally ignored in persisted metrics.
-                }
-            }
-
-            ct.ThrowIfCancellationRequested();
-            var startedAt = DateTimeOffset.UtcNow;
-            var cpuStart = Process.GetCurrentProcess().TotalProcessorTime;
-            var sw = Stopwatch.StartNew();
-            ScenarioExecutionResult scenario;
-            if (!string.IsNullOrWhiteSpace(profileProvider) &&
-                preflightByProvider.TryGetValue(profileProvider, out var preflight) &&
-                !preflight.Ok)
-            {
-                scenario = new ScenarioExecutionResult(
-                    Ok: false,
-                    Summary: $"Skipped due to provider preflight failure ({profileProvider}): {preflight.Detail}",
-                    ConflictCount: 0,
-                    EscalationCount: 0,
-                    FailureCategory: "skipped_infra",
-                    Skipped: true);
-            }
-            else
-            {
-                try
-                {
-                    scenario = await ExecuteScenarioForTargetAsync(
-                        executionTarget,
-                        runtimeExecutionRequest,
-                        runtimeJson,
-                        profile.Default.Provider,
-                        verbose,
-                        ct).ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    scenario = new ScenarioExecutionResult(
-                        Ok: false,
-                        Summary: $"Scenario executor failed: {ex.Message}",
-                        ConflictCount: 0,
-                        EscalationCount: 0,
-                        FailureCategory: "executor_failure");
-                }
-            }
-            var elapsedMs = sw.ElapsedMilliseconds;
-            var telemetry = CaptureRuntimeTelemetry(startedAt, cpuStart);
-            var score = ComputeScore(scenario.Ok, elapsedMs, composition, profile);
-            var runSummary = $"{scenario.Summary} [target={executionTarget.Id}]";
-            runs.Add(new WorkflowStressRunRecord(
-                runId,
-                gitSha,
-                specHash,
-                providerSnapshot,
-                scenarioId,
-                request.Id,
-                composition.Id,
-                profile.Id,
-                i,
-                scenario.Ok,
-                composition.Roles.Count,
-                scenario.ConflictCount,
-                scenario.EscalationCount,
-                elapsedMs,
-                score,
-                runSummary,
-                scenario.FailureCategory,
-                scenario.Skipped,
-                startedAt,
-                telemetry.CpuTimeDeltaMs,
-                telemetry.WorkingSetMb,
-                telemetry.PrivateMemoryMb,
-                telemetry.ManagedMemoryMb,
-                telemetry.ThreadCount,
-                telemetry.HardwareProfile,
-                benchmarkSet));
-
-            if (cooldownMs > 0)
-            {
-                await Task.Delay(TimeSpan.FromMilliseconds(cooldownMs), ct).ConfigureAwait(false);
-            }
-        }
-
-        var aggregates = runs
-            .GroupBy(x => new { x.RequestId, x.CompositionId, x.ModelProfileId })
-            .Select(group =>
-            {
-                var list = group.ToArray();
-                var successCount = list.Count(x => x.Success);
-                var avgElapsed = (long)Math.Round(list.Select(x => (double)x.ElapsedMs).DefaultIfEmpty(0d).Average());
-                var avgScore = Math.Round(list.Select(x => x.Score).DefaultIfEmpty(0d).Average(), 3);
-                return new WorkflowStressAggregate(
-                    ScenarioGroupId: $"{group.Key.RequestId}::{group.Key.CompositionId}::{group.Key.ModelProfileId}",
-                    group.Key.RequestId,
-                    group.Key.CompositionId,
-                    group.Key.ModelProfileId,
-                    list.Length,
-                    successCount,
-                    list.Length - successCount,
-                    avgElapsed,
-                    avgScore);
-            })
-            .OrderByDescending(x => x.AverageScore)
-            .ThenByDescending(x => x.Successes)
-            .ThenBy(x => x.AverageElapsedMs)
-            .ToArray();
-
-        if (persistHistory)
-        {
-            foreach (var run in runs)
-            {
-                WorkflowLabHistoryStore.Append(
-                    repoRoot,
-                    new WorkflowLabStressHistoryRow
-                    {
-                        RunId = run.RunId,
-                        GitSha = run.GitSha,
-                        SpecHash = run.SpecHash,
-                        ProviderSnapshot = run.ProviderSnapshot,
-                        ScenarioId = run.ScenarioId,
-                        RequestId = run.RequestId,
-                        CompositionId = run.CompositionId,
-                        ModelProfileId = run.ModelProfileId,
-                        Iteration = run.Iteration,
-                        StartedAtUtc = run.StartedAtUtc,
-                        ElapsedMs = run.ElapsedMs,
-                        Success = run.Success,
-                        AgentCount = run.AgentCount,
-                        ConflictCount = run.ConflictCount,
-                        EscalationCount = run.EscalationCount,
-                        Score = run.Score,
-                        Summary = run.Summary,
-                        Skipped = run.Skipped,
-                        CpuTimeDeltaMs = run.CpuTimeDeltaMs,
-                        WorkingSetMb = run.WorkingSetMb,
-                        PrivateMemoryMb = run.PrivateMemoryMb,
-                        ManagedMemoryMb = run.ManagedMemoryMb,
-                        ThreadCount = run.ThreadCount,
-                        HardwareProfile = run.HardwareProfile,
-                        FailureCategory = run.FailureCategory,
-                        BenchmarkSet = run.BenchmarkSet
-                    });
-            }
-        }
-
-        var allPassed = runs.All(run => run.Success || run.Skipped);
-        var failureCount = runs.Count(run => !run.Success && !run.Skipped);
-        var skippedCount = runs.Count(run => run.Skipped);
-        var best = aggregates.FirstOrDefault(x => x.Successes > 0);
-        var result = new WorkflowStressResult(
-            allPassed,
-            allPassed
-                ? $"Workflow stress completed: {runs.Count} run(s) across {aggregates.Length} scenario groups (run-id={runId})."
-                : $"Workflow stress completed with {failureCount} failing run(s), {skippedCount} skipped run(s), out of {runs.Count} (run-id={runId}).",
-            runs,
-            aggregates,
-            best,
-            runId,
-            benchmarkSet,
-            persistHistory);
-        WriteStressResult(result, json);
-        return result.Ok ? 0 : 1;
-    }
+        CancellationToken ct) => _stressHandler.ExecuteAsync(requestOverride, specPath, specJson, providerOverride, preferOverride, iterationsOverride, benchmarkSetOverride, persistHistoryOverride, warmupRunsOverride, shuffleScenariosOverride, randomSeedOverride, cooldownMsOverride, includeMeshPeers, meshCapability, json, verbose, ct);
 
     internal async Task<int> ExecuteOptimizeAsync(
         string? requestOverride,
@@ -1843,14 +1605,6 @@ public sealed class WorkflowCommand : Command
         return targets;
     }
 
-
-    private sealed record ExecutionTarget(
-        string Id,
-        string? Endpoint,
-        bool IsLocal)
-    {
-        public static readonly ExecutionTarget Local = new("local", null, true);
-    }
 
     private sealed record MeshOrchestrateRequest(
         string Request,
@@ -3247,39 +3001,6 @@ public sealed class WorkflowCommand : Command
             SynthesisRationale: rationale);
     }
 
-    private static void WriteStressResult(WorkflowStressResult result, bool json)
-    {
-        if (json)
-        {
-            Console.WriteLine(JsonSerializer.Serialize(new
-            {
-                ok = result.Ok,
-                summary = result.Summary,
-                runId = result.RunId,
-                benchmarkSet = result.BenchmarkSet,
-                persistHistory = result.PersistHistory,
-                runs = result.Runs,
-                aggregates = result.Aggregates,
-                best = result.Best
-            }, new JsonSerializerOptions { WriteIndented = true }));
-            return;
-        }
-
-        Console.WriteLine($"workflow stress: {(result.Ok ? "ok" : "failed")}");
-        Console.WriteLine(result.Summary);
-        if (!string.IsNullOrWhiteSpace(result.BenchmarkSet))
-            Console.WriteLine($"  run-id={result.RunId ?? "n/a"}, benchmark-set={result.BenchmarkSet} (persist-history={result.PersistHistory})");
-        foreach (var aggregate in (result.Aggregates ?? Array.Empty<WorkflowStressAggregate>()).Take(5))
-        {
-            Console.WriteLine(
-                $"  {aggregate.ScenarioGroupId}: success={aggregate.Successes}/{aggregate.TotalRuns}, avg-score={aggregate.AverageScore:F2}, avg-elapsed={aggregate.AverageElapsedMs}ms");
-        }
-        if (result.Best != null)
-        {
-            Console.WriteLine($"  best={result.Best.ScenarioGroupId} score={result.Best.AverageScore:F2}");
-        }
-    }
-
     private static void WriteOptimizeResult(WorkflowOptimizeResult result, bool json)
     {
         if (json)
@@ -3375,55 +3096,6 @@ public sealed class WorkflowCommand : Command
         return string.Join(Environment.NewLine, lines);
     }
 
-    private sealed record WorkflowStressRunRecord(
-        string RunId,
-        string GitSha,
-        string SpecHash,
-        string ProviderSnapshot,
-        string ScenarioId,
-        string RequestId,
-        string CompositionId,
-        string ModelProfileId,
-        int Iteration,
-        bool Success,
-        int AgentCount,
-        int ConflictCount,
-        int EscalationCount,
-        long ElapsedMs,
-        double Score,
-        string Summary,
-        string FailureCategory,
-        bool Skipped,
-        DateTimeOffset StartedAtUtc,
-        long CpuTimeDeltaMs,
-        long WorkingSetMb,
-        long PrivateMemoryMb,
-        long ManagedMemoryMb,
-        int ThreadCount,
-        string HardwareProfile,
-        string BenchmarkSet);
-
-    private sealed record WorkflowStressAggregate(
-        string ScenarioGroupId,
-        string RequestId,
-        string CompositionId,
-        string ModelProfileId,
-        int TotalRuns,
-        int Successes,
-        int Failures,
-        long AverageElapsedMs,
-        double AverageScore);
-
-    private sealed record WorkflowStressResult(
-        bool Ok,
-        string Summary,
-        IReadOnlyList<WorkflowStressRunRecord>? Runs = null,
-        IReadOnlyList<WorkflowStressAggregate>? Aggregates = null,
-        WorkflowStressAggregate? Best = null,
-        string? RunId = null,
-        string? BenchmarkSet = null,
-        bool? PersistHistory = null);
-
     private sealed record WorkflowOptimizeResult(
         bool Ok,
         string Summary,
@@ -3487,14 +3159,6 @@ public sealed class WorkflowCommand : Command
     }
 
 
-    private sealed record RuntimeTelemetry(
-        long CpuTimeDeltaMs,
-        long WorkingSetMb,
-        long PrivateMemoryMb,
-        long ManagedMemoryMb,
-        int ThreadCount,
-        string HardwareProfile);
-
     internal sealed record ModelPullResult(
         bool Ok,
         string Summary,
@@ -3510,7 +3174,7 @@ public sealed class WorkflowCommand : Command
         bool Skipped = false,
         string FailureCategory = "none");
 
-    private sealed record PreflightResult(
+    internal sealed record PreflightResult(
         bool Ok,
         string Provider,
         string Detail);

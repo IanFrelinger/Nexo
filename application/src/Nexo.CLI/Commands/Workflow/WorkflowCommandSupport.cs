@@ -109,3 +109,68 @@ internal sealed record WorkflowGateResult(
     string Summary,
     IReadOnlyList<string>? Failures = null,
     WorkflowRunComparison? Comparison = null);
+
+internal sealed record ExecutionTarget(
+    string Id,
+    string? Endpoint,
+    bool IsLocal)
+{
+    public static readonly ExecutionTarget Local = new("local", null, true);
+}
+
+internal sealed record WorkflowStressRunRecord(
+    string RunId,
+    string GitSha,
+    string SpecHash,
+    string ProviderSnapshot,
+    string ScenarioId,
+    string RequestId,
+    string CompositionId,
+    string ModelProfileId,
+    int Iteration,
+    bool Success,
+    int AgentCount,
+    int ConflictCount,
+    int EscalationCount,
+    long ElapsedMs,
+    double Score,
+    string Summary,
+    string FailureCategory = "none",
+    bool Skipped = false,
+    DateTimeOffset StartedAtUtc = default,
+    long CpuTimeDeltaMs = 0,
+    long WorkingSetMb = 0,
+    long PrivateMemoryMb = 0,
+    long ManagedMemoryMb = 0,
+    int ThreadCount = 0,
+    string HardwareProfile = "unknown",
+    string BenchmarkSet = "workflow-lab");
+
+internal sealed record WorkflowStressAggregate(
+    string ScenarioGroupId,
+    string RequestId,
+    string CompositionId,
+    string ModelProfileId,
+    int Runs,
+    int Successes,
+    int Failures,
+    long AverageElapsedMs,
+    double AverageScore);
+
+internal sealed record WorkflowStressResult(
+    bool Ok,
+    string Summary,
+    IReadOnlyList<WorkflowStressRunRecord>? Runs = null,
+    IReadOnlyList<WorkflowStressAggregate>? Aggregates = null,
+    WorkflowStressAggregate? Best = null,
+    string? RunId = null,
+    string? BenchmarkSet = null,
+    bool? PersistHistory = null);
+
+internal sealed record RuntimeTelemetry(
+    long CpuTimeDeltaMs,
+    long WorkingSetMb,
+    long PrivateMemoryMb,
+    long ManagedMemoryMb,
+    int ThreadCount,
+    string HardwareProfile);
