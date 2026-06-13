@@ -17,6 +17,7 @@ public sealed class RuntimeCommand : Command
     private readonly HistoryHandler _historyHandler;
     private readonly PlanHandler _planHandler;
     private readonly GateHandler _gateHandler;
+    private readonly EvaluateHandler _evaluateHandler;
 
     public RuntimeCommand() : base("runtime", "Adaptive runtime control plane commands.")
     {
@@ -24,6 +25,7 @@ public sealed class RuntimeCommand : Command
         _historyHandler = new HistoryHandler();
         _planHandler = new PlanHandler(BuildPlanContext);
         _gateHandler = new GateHandler();
+        _evaluateHandler = new EvaluateHandler(ExecuteCoreAsync);
         ConfigureExecuteCommand();
         ConfigurePlanCommand();
         ConfigureEvaluateCommand();
@@ -892,7 +894,7 @@ public sealed class RuntimeCommand : Command
         return finalExitCode;
     }
 
-    internal async Task<int> ExecuteEvaluateAsync(
+    internal Task<int> ExecuteEvaluateAsync(
         string? goalsJson,
         string? goalsFile,
         string policiesCsv,
@@ -913,92 +915,7 @@ public sealed class RuntimeCommand : Command
         string benchmarkSet,
         bool allowVisualCapabilityDegrade,
         bool json,
-        CancellationToken ct)
-    {
-        var goals = ResolveGoals(goalsJson, goalsFile);
-        if (goals.Length == 0)
-        {
-            RuntimeOutputWriter.WriteEvaluateResult(new RuntimeEvaluateResult(false, "No goals provided for evaluation."), json);
-            return 1;
-        }
-
-        var policies = ResolvePolicies(policiesCsv);
-        if (policies.Length == 0)
-        {
-            RuntimeOutputWriter.WriteEvaluateResult(new RuntimeEvaluateResult(false, "No valid policies provided for evaluation."), json);
-            return 1;
-        }
-
-        var fullRepoRoot = Path.GetFullPath(string.IsNullOrWhiteSpace(repoRoot) ? Environment.CurrentDirectory : repoRoot);
-        if (!Directory.Exists(fullRepoRoot))
-        {
-            RuntimeOutputWriter.WriteEvaluateResult(new RuntimeEvaluateResult(false, $"Repo root not found: {fullRepoRoot}"), json);
-            return 1;
-        }
-
-        var scenarioResults = new List<RuntimeEvaluateScenarioResult>();
-        foreach (var goal in goals)
-        {
-            foreach (var policy in policies)
-            {
-                var run = await ExecuteCoreAsync(
-                    goal,
-                    fullRepoRoot,
-                    provider,
-                    allowMock,
-                    runTests,
-                    testFilter,
-                    bootstrapProfile,
-                    policy,
-                    runtimeManifestPath,
-                    runtimeManifestJson,
-                    maxIterationsOverride,
-                    bootstrapApply,
-                    bootstrapYes: true,
-                    bootstrapDryRun: false,
-                    runPreflight,
-                    useHistory,
-                    historyWindow,
-                    persistHistory,
-                    benchmarkSet,
-                    allowVisualCapabilityDegrade,
-                    ct).ConfigureAwait(false);
-                scenarioResults.Add(new RuntimeEvaluateScenarioResult(
-                    AdaptiveRuntimeExecutionReport.BuildGoalPreview(goal, 80),
-                    policy,
-                    run.Ok,
-                    run.ElapsedMs,
-                    run.FailureStage,
-                    run.Summary));
-            }
-        }
-
-        var policySummary = scenarioResults
-            .GroupBy(r => r.Policy, StringComparer.OrdinalIgnoreCase)
-            .Select(g => new RuntimeEvaluatePolicySummary(
-                g.Key,
-                g.Count(),
-                g.Count(x => x.Ok),
-                g.Count(x => !x.Ok),
-                (long)Math.Round(
-                    g.Where(x => x.ElapsedMs.HasValue)
-                     .Select(x => (double)x.ElapsedMs!.Value)
-                     .DefaultIfEmpty(0d)
-                     .Average())))
-            .OrderBy(s => s.Policy, StringComparer.OrdinalIgnoreCase)
-            .ToArray();
-
-        var allPassed = scenarioResults.All(r => r.Ok);
-        var result = new RuntimeEvaluateResult(
-            allPassed,
-            allPassed
-                ? $"Evaluation complete: {scenarioResults.Count} scenario(s) passed."
-                : $"Evaluation complete: {scenarioResults.Count(r => !r.Ok)} failing scenario(s) out of {scenarioResults.Count}.",
-            scenarioResults.ToArray(),
-            policySummary);
-        RuntimeOutputWriter.WriteEvaluateResult(result, json);
-        return allPassed ? 0 : 1;
-    }
+        CancellationToken ct) => _evaluateHandler.ExecuteAsync(goalsJson, goalsFile, policiesCsv, repoRoot, provider, allowMock, runTests, testFilter, bootstrapProfile, runtimeManifestPath, runtimeManifestJson, maxIterationsOverride, bootstrapApply, runPreflight, useHistory, historyWindow, persistHistory, benchmarkSet, allowVisualCapabilityDegrade, json, ct);
 
     private RuntimePlanContext BuildPlanContext(
         string goal,
