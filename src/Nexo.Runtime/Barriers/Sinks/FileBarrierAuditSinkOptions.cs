@@ -1,6 +1,6 @@
 namespace Nexo.Runtime.Barriers.Sinks;
 
-public sealed class FileBarrierAuditSinkOptions
+internal sealed class FileBarrierAuditSinkOptions
 {
     /// <summary>
     /// Directory where audit files are written. Must be writable.

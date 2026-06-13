@@ -7,7 +7,7 @@ namespace Nexo.Runtime.Barriers;
 /// <summary>
 /// Scoped barrier context accessor that permits one-time initialization.
 /// </summary>
-public sealed class ScopedBarrierContextAccessor : IBarrierContextAccessor
+internal sealed class ScopedBarrierContextAccessor : IBarrierContextAccessor
 {
     private readonly BarrierHierarchy _hierarchy;
     private readonly BarrierOptions _options;

@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Nexo.Runtime.Barriers.Sinks;
 
-public sealed class FileBarrierAuditSinkLifetime : IHostedService
+internal sealed class FileBarrierAuditSinkLifetime : IHostedService
 {
     private readonly FileBarrierAuditSink _sink;
     private readonly ILogger<FileBarrierAuditSinkLifetime> _logger;

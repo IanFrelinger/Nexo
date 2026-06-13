@@ -5,7 +5,7 @@ namespace Nexo.Runtime.Routing;
 /// <summary>
 /// Configuration model for endpoint routing.
 /// </summary>
-public sealed class RoutingOptions
+internal sealed class RoutingOptions
 {
     public IList<EndpointDescriptorConfig> Endpoints { get; init; } = [];
 
@@ -21,7 +21,7 @@ public sealed class RoutingOptions
 /// <summary>
 /// Configuration model for a single endpoint descriptor.
 /// </summary>
-public sealed class EndpointDescriptorConfig
+internal sealed class EndpointDescriptorConfig
 {
     public string Endpoint { get; init; } = string.Empty;
 

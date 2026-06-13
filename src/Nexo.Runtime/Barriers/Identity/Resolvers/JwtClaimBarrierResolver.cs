@@ -8,7 +8,7 @@ namespace Nexo.Runtime.Barriers.Identity.Resolvers;
 /// Resolves barrier level from pre-validated JWT claims.
 /// This resolver does not validate JWT signatures; host middleware must do that first.
 /// </summary>
-public sealed class JwtClaimBarrierResolver : IBarrierIdentityResolver
+internal sealed class JwtClaimBarrierResolver : IBarrierIdentityResolver
 {
     private readonly JwtClaimResolverOptions _options;
     private readonly BarrierHierarchy _hierarchy;

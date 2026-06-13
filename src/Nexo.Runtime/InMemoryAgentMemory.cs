@@ -13,7 +13,7 @@ namespace Nexo.Runtime;
 /// Implements IAgentMemory for agent event storage and retrieval.
 /// Used by CapabilityRegistry to provide memory for agents.
 /// </summary>
-public sealed class InMemoryAgentMemory : IAgentMemory
+internal sealed class InMemoryAgentMemory : IAgentMemory
 {
     private readonly List<EventRecord> _events = new();
 

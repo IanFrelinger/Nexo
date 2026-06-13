@@ -2,7 +2,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Nexo.Runtime.Barriers.Sinks;
 
-public sealed class StructuredLogBarrierAuditSinkOptions
+internal sealed class StructuredLogBarrierAuditSinkOptions
 {
     /// <summary>
     /// Override log level per event type. Key = BarrierAuditEventType constant.

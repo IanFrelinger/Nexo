@@ -6,7 +6,7 @@ namespace Nexo.Runtime.Barriers;
 /// <summary>
 /// AsyncLocal-backed ambient barrier context for singleton consumers.
 /// </summary>
-public sealed class BarrierContextAmbient : IBarrierContextAmbient
+internal sealed class BarrierContextAmbient : IBarrierContextAmbient
 {
     private static readonly AsyncLocal<BarrierContext?> Holder = new();
 

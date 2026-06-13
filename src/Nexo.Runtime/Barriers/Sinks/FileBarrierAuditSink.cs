@@ -7,7 +7,7 @@ using Nexo.Abstractions.Barriers;
 
 namespace Nexo.Runtime.Barriers.Sinks;
 
-public sealed class FileBarrierAuditSink : IBarrierAuditSink, IAsyncDisposable
+internal sealed class FileBarrierAuditSink : IBarrierAuditSink, IAsyncDisposable
 {
     private readonly FileBarrierAuditSinkOptions _options;
     private readonly ILogger<FileBarrierAuditSink> _logger;

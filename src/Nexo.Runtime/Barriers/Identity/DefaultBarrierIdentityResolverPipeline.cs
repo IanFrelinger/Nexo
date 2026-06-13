@@ -4,7 +4,7 @@ using Nexo.Abstractions.Barriers.Identity;
 
 namespace Nexo.Runtime.Barriers.Identity;
 
-public sealed class DefaultBarrierIdentityResolverPipeline : IBarrierIdentityResolverPipeline
+internal sealed class DefaultBarrierIdentityResolverPipeline : IBarrierIdentityResolverPipeline
 {
     private const string BarrierHeader = "x-nexo-barrier";
 

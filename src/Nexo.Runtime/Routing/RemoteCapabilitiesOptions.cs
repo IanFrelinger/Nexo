@@ -3,7 +3,7 @@ namespace Nexo.Runtime.Routing;
 /// <summary>
 /// Runtime-layer options controlling remote capability cache freshness and stale fallback.
 /// </summary>
-public sealed class RemoteCapabilitiesOptions
+internal sealed class RemoteCapabilitiesOptions
 {
     /// <summary>
     /// How long a freshly fetched capability snapshot stays in fast in-memory cache before refresh.

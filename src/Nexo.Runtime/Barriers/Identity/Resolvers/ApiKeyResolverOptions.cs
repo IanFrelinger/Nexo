@@ -1,6 +1,6 @@
 namespace Nexo.Runtime.Barriers.Identity.Resolvers;
 
-public sealed class ApiKeyResolverOptions
+internal sealed class ApiKeyResolverOptions
 {
     /// <summary>
     /// Header name to read API key from. Default: x-nexo-api-key.

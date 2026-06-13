@@ -6,7 +6,7 @@ using Nexo.Abstractions.Barriers.Identity;
 
 namespace Nexo.Runtime.Barriers.Identity.Resolvers;
 
-public sealed class ApiKeyBarrierResolver : IBarrierIdentityResolver
+internal sealed class ApiKeyBarrierResolver : IBarrierIdentityResolver
 {
     private readonly ApiKeyResolverOptions _options;
     private readonly BarrierHierarchy _hierarchy;

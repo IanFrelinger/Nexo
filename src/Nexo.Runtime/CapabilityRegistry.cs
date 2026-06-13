@@ -14,7 +14,7 @@ namespace Nexo.Runtime;
 /// Implements IToolbox interface for agent tool access.
 /// Used by AgentHost for tool execution.
 /// </summary>
-public sealed class CapabilityRegistry : IToolbox
+internal sealed class CapabilityRegistry : IToolbox
 {
     private readonly Dictionary<string, ITool> _tools = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, InMemoryAgentMemory> _mem = new();

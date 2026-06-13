@@ -3,7 +3,7 @@ using Nexo.Abstractions.Barriers;
 
 namespace Nexo.Runtime.Barriers.Sinks;
 
-public sealed class StructuredLogBarrierAuditSink : IBarrierAuditSink
+internal sealed class StructuredLogBarrierAuditSink : IBarrierAuditSink
 {
     private readonly ILogger<StructuredLogBarrierAuditSink> _logger;
     private readonly IReadOnlyDictionary<string, LogLevel> _eventLevelOverrides;

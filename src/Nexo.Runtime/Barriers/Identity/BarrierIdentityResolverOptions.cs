@@ -1,6 +1,6 @@
 namespace Nexo.Runtime.Barriers.Identity;
 
-public sealed class BarrierIdentityResolverOptions
+internal sealed class BarrierIdentityResolverOptions
 {
     /// <summary>
     /// Resolver registration priority. Lower index = higher priority.

@@ -5,7 +5,7 @@ using Nexo.Abstractions.Barriers.Identity;
 
 namespace Nexo.Runtime.Barriers.Identity.Resolvers;
 
-public sealed class PkiCertificateBarrierResolver : IBarrierIdentityResolver
+internal sealed class PkiCertificateBarrierResolver : IBarrierIdentityResolver
 {
     private const string SubjectField = "Subject";
     private const string SanField = "SAN";

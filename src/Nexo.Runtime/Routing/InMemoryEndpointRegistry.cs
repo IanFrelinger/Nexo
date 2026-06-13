@@ -8,7 +8,7 @@ namespace Nexo.Runtime.Routing;
 /// <summary>
 /// Thread-safe in-memory endpoint registry.
 /// </summary>
-public sealed class InMemoryEndpointRegistry : IEndpointRegistry
+internal sealed class InMemoryEndpointRegistry : IEndpointRegistry
 {
     private readonly ConcurrentDictionary<string, EndpointDescriptor> _descriptors = new(StringComparer.OrdinalIgnoreCase);
     private readonly ILogger<InMemoryEndpointRegistry> _logger;

@@ -22,14 +22,14 @@ public delegate void ChainRejectionCallback(IReadOnlyList<ToolCall> chain, int r
 ///
 /// Used for agent execution in simulation environments.
 /// </summary>
-public sealed class AgentHost
+internal sealed class AgentHost
 {
     private readonly IReadOnlyList<IAgent> _agents;
     private readonly IToolbox _tools;
     private readonly PolicyEngine _policies;
     private readonly ChainRejectionCallback? _onChainRejected;
 
-    public AgentHost(IEnumerable<IAgent> agents, IToolbox tools, PolicyEngine policies, ChainRejectionCallback? onChainRejected = null)
+    internal AgentHost(IEnumerable<IAgent> agents, IToolbox tools, PolicyEngine policies, ChainRejectionCallback? onChainRejected = null)
     {
         _agents = agents.ToList();
         _tools = tools;
@@ -37,7 +37,7 @@ public sealed class AgentHost
         _onChainRejected = onChainRejected;
     }
 
-    public async Task<IActionDelta?> StepAsync(WorldSnapshot s, CancellationToken ct)
+    internal async Task<IActionDelta?> StepAsync(WorldSnapshot s, CancellationToken ct)
     {
         var deltas = new List<IActionDelta>();
         foreach (var agent in _agents)

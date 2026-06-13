@@ -6,7 +6,7 @@ namespace Nexo.Runtime.Transport;
 /// <summary>
 /// Delegates invocation to in-process or remote transport based on request options.
 /// </summary>
-public sealed class RoutingAgentTransport : IAgentTransport
+internal sealed class RoutingAgentTransport : IAgentTransport
 {
     private readonly IAgentTransport _inProcess;
     private readonly IAgentTransport _remote;

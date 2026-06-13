@@ -13,7 +13,7 @@ namespace Nexo.Runtime.Barriers.Identity;
 /// When a level is resolved, initializes the scoped <see cref="IBarrierContextAccessor"/>
 /// and records an audit event. Gated by NEXO_BARRIER_MIDDLEWARE_ENABLED.
 /// </summary>
-public sealed class HttpBarrierContextMiddleware : IMiddleware
+internal sealed class HttpBarrierContextMiddleware : IMiddleware
 {
     private readonly IBarrierIdentityResolverPipeline _pipeline;
     private readonly IBarrierAuditLog _auditLog;

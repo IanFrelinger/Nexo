@@ -19,6 +19,14 @@
     <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" />
   </ItemGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="Nexo.Hosting" />
+    <InternalsVisibleTo Include="Nexo.Infrastructure" />
+    <InternalsVisibleTo Include="Nexo.BackgroundAgents" />
+    <InternalsVisibleTo Include="Nexo.BackgroundAgents.HostRunners" />
+    <InternalsVisibleTo Include="Nexo.CLI" />
     <InternalsVisibleTo Include="Nexo.Tests.Infrastructure" />
+    <InternalsVisibleTo Include="Nexo.Tests.BackgroundAgents" />
+    <InternalsVisibleTo Include="Nexo.Tests.Transport" />
+    <InternalsVisibleTo Include="Nexo.Tests.Orchestration" />
   </ItemGroup>
 </Project>

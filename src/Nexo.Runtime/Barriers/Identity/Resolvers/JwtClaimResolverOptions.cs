@@ -1,6 +1,6 @@
 namespace Nexo.Runtime.Barriers.Identity.Resolvers;
 
-public sealed class JwtClaimResolverOptions
+internal sealed class JwtClaimResolverOptions
 {
     /// <summary>
     /// JWT claim name to inspect. Example: nexo_barrier, tier, clearance.

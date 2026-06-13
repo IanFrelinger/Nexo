@@ -7,7 +7,7 @@ namespace Nexo.Runtime.Barriers;
 /// <summary>
 /// Structured logger-backed barrier audit log with optional sink fan-out.
 /// </summary>
-public sealed class StructuredBarrierAuditLog : IBarrierAuditLog
+internal sealed class StructuredBarrierAuditLog : IBarrierAuditLog
 {
     private readonly ILogger<StructuredBarrierAuditLog> _logger;
     private readonly IReadOnlyList<IBarrierAuditSink> _sinks;

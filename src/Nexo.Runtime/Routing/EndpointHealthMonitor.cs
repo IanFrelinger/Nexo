@@ -10,7 +10,7 @@ namespace Nexo.Runtime.Routing;
 /// <summary>
 /// Periodic endpoint health monitor that updates registry health state.
 /// </summary>
-public sealed class EndpointHealthMonitor : BackgroundService
+internal sealed class EndpointHealthMonitor : BackgroundService
 {
     private readonly IEndpointRegistry _endpointRegistry;
     private readonly GrpcAgentTransport _grpcTransport;
