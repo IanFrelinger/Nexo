@@ -15,11 +15,13 @@ public sealed class RuntimeCommand : Command
 {
     private readonly RecommendHandler _recommendHandler;
     private readonly HistoryHandler _historyHandler;
+    private readonly PlanHandler _planHandler;
 
     public RuntimeCommand() : base("runtime", "Adaptive runtime control plane commands.")
     {
         _recommendHandler = new RecommendHandler();
         _historyHandler = new HistoryHandler();
+        _planHandler = new PlanHandler(BuildPlanContext);
         ConfigureExecuteCommand();
         ConfigurePlanCommand();
         ConfigureEvaluateCommand();
@@ -567,48 +569,7 @@ public sealed class RuntimeCommand : Command
         int? maxIterationsOverride,
         bool useHistory,
         int historyWindow,
-        bool json)
-    {
-        if (string.IsNullOrWhiteSpace(goal))
-        {
-            RuntimeOutputWriter.WritePlanResult(new RuntimePlanResult(false, "Goal is required."), json);
-            return Task.FromResult(1);
-        }
-
-        var fullRepoRoot = Path.GetFullPath(string.IsNullOrWhiteSpace(repoRoot) ? Environment.CurrentDirectory : repoRoot);
-        if (!Directory.Exists(fullRepoRoot))
-        {
-            RuntimeOutputWriter.WritePlanResult(new RuntimePlanResult(false, $"Repo root not found: {fullRepoRoot}"), json);
-            return Task.FromResult(1);
-        }
-
-        try
-        {
-            var context = BuildPlanContext(
-                goal,
-                fullRepoRoot,
-                testFilter,
-                bootstrapProfile,
-                qaPolicy,
-                runtimeManifestPath,
-                runtimeManifestJson,
-                maxIterationsOverride,
-                useHistory,
-                historyWindow);
-            RuntimeOutputWriter.WritePlanResult(new RuntimePlanResult(
-                true,
-                "Plan computed successfully.",
-                context.Plan,
-                context.WorkflowSpec,
-                context.AdaptivePolicyReason), json);
-            return Task.FromResult(0);
-        }
-        catch (Exception ex)
-        {
-            RuntimeOutputWriter.WritePlanResult(new RuntimePlanResult(false, $"Failed to compute plan: {ex.Message}"), json);
-            return Task.FromResult(1);
-        }
-    }
+        bool json) => _planHandler.ExecuteAsync(goal, repoRoot, testFilter, bootstrapProfile, qaPolicy, runtimeManifestPath, runtimeManifestJson, maxIterationsOverride, useHistory, historyWindow, json);
 
     internal Task<int> ExecuteHistoryAsync(
         string repoRoot,
