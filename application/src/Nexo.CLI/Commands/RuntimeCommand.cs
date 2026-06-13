@@ -316,39 +316,39 @@ public sealed class RuntimeCommand : Command
         var releaseGateCmd = new Command("release-gate", "Run release promotion lanes (core, visual, chaos) without shell scripts.");
         var modeOpt = new Option<string>("--mode", () => "full", "Lane mode: core | visual | chaos | full.");
         var repoRootOpt = new Option<string>("--repo-root", () => Environment.CurrentDirectory, "Repository root path.");
-        var providerOpt = new Option<string>("--provider", () => ReadEnvString("NEXO_RELEASE_PROVIDER", "mock-json"), "Model provider override.");
+        var providerOpt = new Option<string>("--provider", () => RuntimeCommandUtilities.ReadEnvString("NEXO_RELEASE_PROVIDER", "mock-json"), "Model provider override.");
         var allowMockOpt = new Option<bool>("--allow-mock", () => true, "Enable mock/offline providers.");
         var runTestsOpt = new Option<bool>("--run-tests", () => true, "Run generated extension QA/test gates.");
         var testFilterOpt = new Option<string>("--test-filter", () => "SelfExtendGenerated", "Functional test filter.");
         var preflightOpt = new Option<bool>("--preflight", () => true, "Run self-extend preflight before execution.");
 
         var coreMinPassRateOpt = new Option<double>("--core-min-pass-rate",
-            () => ReadEnvDouble("NEXO_RELEASE_CORE_MIN_PASS_RATE", ReadEnvDouble("NEXO_RELEASE_MIN_PASS_RATE", 0.85d)),
+            () => RuntimeCommandUtilities.ReadEnvDouble("NEXO_RELEASE_CORE_MIN_PASS_RATE", RuntimeCommandUtilities.ReadEnvDouble("NEXO_RELEASE_MIN_PASS_RATE", 0.85d)),
             "Minimum pass-rate required for release-core gate.");
         var coreMinTotalOpt = new Option<int>("--core-min-total",
-            () => ReadEnvInt("NEXO_RELEASE_CORE_MIN_TOTAL", ReadEnvInt("NEXO_RELEASE_MIN_TOTAL", 10)),
+            () => RuntimeCommandUtilities.ReadEnvInt("NEXO_RELEASE_CORE_MIN_TOTAL", RuntimeCommandUtilities.ReadEnvInt("NEXO_RELEASE_MIN_TOTAL", 10)),
             "Minimum sample size required for release-core gate.");
         var coreHistoryWindowOpt = new Option<int>("--core-history-window",
-            () => ReadEnvInt("NEXO_RELEASE_CORE_HISTORY_WINDOW", ReadEnvInt("NEXO_RELEASE_HISTORY_WINDOW", 20)),
+            () => RuntimeCommandUtilities.ReadEnvInt("NEXO_RELEASE_CORE_HISTORY_WINDOW", RuntimeCommandUtilities.ReadEnvInt("NEXO_RELEASE_HISTORY_WINDOW", 20)),
             "History window for release-core gate.");
 
         var visualMinPassRateOpt = new Option<double>("--visual-min-pass-rate",
-            () => ReadEnvDouble("NEXO_RELEASE_VISUAL_MIN_PASS_RATE", 0.80d),
+            () => RuntimeCommandUtilities.ReadEnvDouble("NEXO_RELEASE_VISUAL_MIN_PASS_RATE", 0.80d),
             "Minimum pass-rate required for release-visual gate.");
         var visualMinTotalOpt = new Option<int>("--visual-min-total",
-            () => ReadEnvInt("NEXO_RELEASE_VISUAL_MIN_TOTAL", 8),
+            () => RuntimeCommandUtilities.ReadEnvInt("NEXO_RELEASE_VISUAL_MIN_TOTAL", 8),
             "Minimum sample size required for release-visual gate.");
         var visualHistoryWindowOpt = new Option<int>("--visual-history-window",
-            () => ReadEnvInt("NEXO_RELEASE_VISUAL_HISTORY_WINDOW", 20),
+            () => RuntimeCommandUtilities.ReadEnvInt("NEXO_RELEASE_VISUAL_HISTORY_WINDOW", 20),
             "History window for release-visual gate.");
         var visualPromotionStreakOpt = new Option<int>("--visual-promotion-streak",
-            () => ReadEnvInt("NEXO_VISUAL_PROMOTION_STREAK", 3),
+            () => RuntimeCommandUtilities.ReadEnvInt("NEXO_VISUAL_PROMOTION_STREAK", 3),
             "Consecutive pass streak required before visual lane becomes mandatory in auto mode.");
         var visualRequiredModeOpt = new Option<string>("--visual-required-mode",
-            () => ReadEnvString("NEXO_VISUAL_REQUIRED_MODE", "auto"),
+            () => RuntimeCommandUtilities.ReadEnvString("NEXO_VISUAL_REQUIRED_MODE", "auto"),
             "Visual lane requirement mode: auto | true | false.");
         var laneRepetitionsOpt = new Option<int>("--lane-repetitions",
-            () => ReadEnvInt("NEXO_RELEASE_LANE_REPETITIONS", 1),
+            () => RuntimeCommandUtilities.ReadEnvInt("NEXO_RELEASE_LANE_REPETITIONS", 1),
             "How many times each release lane matrix should execute before gating.");
         var sloWarningOnlyOpt = new Option<bool>("--slo-warning-only", () => false, "Emit SLO evidence but do not fail release gate on SLO threshold breaches.");
         var emitSloEvidenceOpt = new Option<bool>("--emit-slo-evidence", () => true, "Emit machine-readable SLO evidence artifacts.");
@@ -358,19 +358,19 @@ public sealed class RuntimeCommand : Command
             "Optional path to write machine-readable SLO evidence JSON.");
         var ncrResolutionMsSloOpt = new Option<double>(
             "--ncr-resolution-ms-slo",
-            () => ReadEnvDouble("NEXO_RELEASE_SLO_NCR_RESOLUTION_MS", 250d),
+            () => RuntimeCommandUtilities.ReadEnvDouble("NEXO_RELEASE_SLO_NCR_RESOLUTION_MS", 250d),
             "Maximum NCR model-resolution P95 duration (ms).");
         var ncrLoadMsSloOpt = new Option<double>(
             "--ncr-load-ms-slo",
-            () => ReadEnvDouble("NEXO_RELEASE_SLO_NCR_LOAD_MS", 1000d),
+            () => RuntimeCommandUtilities.ReadEnvDouble("NEXO_RELEASE_SLO_NCR_LOAD_MS", 1000d),
             "Maximum NCR model-load P95 duration (ms).");
         var ncrOutcomeMsSloOpt = new Option<double>(
             "--ncr-outcome-ms-slo",
-            () => ReadEnvDouble("NEXO_RELEASE_SLO_NCR_OUTCOME_MS", 1500d),
+            () => RuntimeCommandUtilities.ReadEnvDouble("NEXO_RELEASE_SLO_NCR_OUTCOME_MS", 1500d),
             "Maximum NCR execution outcome P95 duration (ms).");
         var ncrFailureRateSloOpt = new Option<double>(
             "--ncr-failure-rate-slo",
-            () => ReadEnvDouble("NEXO_RELEASE_SLO_NCR_FAILURE_RATE", 0.2d),
+            () => RuntimeCommandUtilities.ReadEnvDouble("NEXO_RELEASE_SLO_NCR_FAILURE_RATE", 0.2d),
             "Maximum allowed NCR failure rate across release benchmark history [0,1].");
 
         var jsonOpt = new Option<bool>("--json", () => false, "Emit JSON output for underlying lane evaluations.");
@@ -628,7 +628,7 @@ public sealed class RuntimeCommand : Command
         }
         if (!string.IsNullOrWhiteSpace(policy))
         {
-            var p = NormalizeQaPolicy(policy);
+            var p = RuntimeCommandUtilities.NormalizeQaPolicy(policy);
             items = items.Where(i => string.Equals(i.ResolvedQaPolicy, p, StringComparison.OrdinalIgnoreCase)).ToArray();
         }
         if (!string.IsNullOrWhiteSpace(benchmarkSet))
@@ -1124,7 +1124,7 @@ public sealed class RuntimeCommand : Command
         int historyWindow)
     {
         var manifest = AdaptiveRuntimeManifestLoader.Load(runtimeManifestPath, runtimeManifestJson);
-        var requestedQaPolicy = NormalizeQaPolicy(qaPolicy);
+        var requestedQaPolicy = RuntimeCommandUtilities.NormalizeQaPolicy(qaPolicy);
         string? adaptivePolicyReason = null;
         var effectiveQaPolicy = requestedQaPolicy;
 
@@ -1202,7 +1202,7 @@ public sealed class RuntimeCommand : Command
                             ElapsedMs = output.ElapsedMs ?? elapsed,
                             GoalFingerprint = output.GoalFingerprint ?? goalFingerprint,
                             GoalPreview = output.GoalPreview ?? goalPreview,
-                            BenchmarkSet = NormalizeBenchmarkSet(benchmarkSet),
+                            BenchmarkSet = RuntimeCommandUtilities.NormalizeBenchmarkSet(benchmarkSet),
                             RequestedQaPolicy = output.RequestedQaPolicy ?? "auto",
                             ResolvedQaPolicy = output.ResolvedQaPolicy ?? "demo",
                             BootstrapProfile = output.Plan?.BootstrapProfile ?? "self-extend-functional",
@@ -1691,7 +1691,7 @@ public sealed class RuntimeCommand : Command
     {
         return (csv ?? string.Empty)
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Select(NormalizeQaPolicy)
+            .Select(RuntimeCommandUtilities.NormalizeQaPolicy)
             .Where(p => p is "demo" or "release" or "prod" or "research" or "auto")
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();
@@ -1719,7 +1719,7 @@ public sealed class RuntimeCommand : Command
         }
         if (!string.IsNullOrWhiteSpace(policy))
         {
-            var p = NormalizeQaPolicy(policy);
+            var p = RuntimeCommandUtilities.NormalizeQaPolicy(policy);
             items = items.Where(i => string.Equals(i.ResolvedQaPolicy, p, StringComparison.OrdinalIgnoreCase)).ToArray();
         }
         if (!string.IsNullOrWhiteSpace(benchmarkSet))
@@ -1925,47 +1925,6 @@ public sealed class RuntimeCommand : Command
             "false" or "0" or "no" or "optional" => "false",
             _ => "invalid"
         };
-    }
-
-    private static string ReadEnvString(string key, string fallback)
-    {
-        var value = Environment.GetEnvironmentVariable(key);
-        return string.IsNullOrWhiteSpace(value) ? fallback : value.Trim();
-    }
-
-    private static int ReadEnvInt(string key, int fallback)
-    {
-        var value = Environment.GetEnvironmentVariable(key);
-        if (int.TryParse(value, out var parsed))
-            return parsed;
-        return fallback;
-    }
-
-    private static double ReadEnvDouble(string key, double fallback)
-    {
-        var value = Environment.GetEnvironmentVariable(key);
-        if (double.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var parsed))
-            return parsed;
-        return fallback;
-    }
-
-    private static string NormalizeQaPolicy(string? qaPolicy)
-    {
-        var normalized = (qaPolicy ?? "auto").Trim().ToLowerInvariant();
-        return normalized switch
-        {
-            "demo" => "demo",
-            "release" => "release",
-            "prod" => "prod",
-            "research" => "research",
-            _ => "auto"
-        };
-    }
-
-    private static string NormalizeBenchmarkSet(string? benchmarkSet)
-    {
-        var normalized = (benchmarkSet ?? "adhoc").Trim().ToLowerInvariant();
-        return string.IsNullOrWhiteSpace(normalized) ? "adhoc" : normalized;
     }
 
 }
