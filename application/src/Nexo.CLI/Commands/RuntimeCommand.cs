@@ -547,7 +547,7 @@ public sealed class RuntimeCommand : Command
         if (remediationAttempts.Count > 0 && result.RemediationAttempts == null)
             result = result with { RemediationAttempts = remediationAttempts.ToArray() };
 
-        WriteResult(result, json);
+        RuntimeOutputWriter.WriteResult(result, json);
         return result.Ok ? 0 : 1;
     }
 
@@ -566,14 +566,14 @@ public sealed class RuntimeCommand : Command
     {
         if (string.IsNullOrWhiteSpace(goal))
         {
-            WritePlanResult(new RuntimePlanResult(false, "Goal is required."), json);
+            RuntimeOutputWriter.WritePlanResult(new RuntimePlanResult(false, "Goal is required."), json);
             return Task.FromResult(1);
         }
 
         var fullRepoRoot = Path.GetFullPath(string.IsNullOrWhiteSpace(repoRoot) ? Environment.CurrentDirectory : repoRoot);
         if (!Directory.Exists(fullRepoRoot))
         {
-            WritePlanResult(new RuntimePlanResult(false, $"Repo root not found: {fullRepoRoot}"), json);
+            RuntimeOutputWriter.WritePlanResult(new RuntimePlanResult(false, $"Repo root not found: {fullRepoRoot}"), json);
             return Task.FromResult(1);
         }
 
@@ -590,7 +590,7 @@ public sealed class RuntimeCommand : Command
                 maxIterationsOverride,
                 useHistory,
                 historyWindow);
-            WritePlanResult(new RuntimePlanResult(
+            RuntimeOutputWriter.WritePlanResult(new RuntimePlanResult(
                 true,
                 "Plan computed successfully.",
                 context.Plan,
@@ -600,7 +600,7 @@ public sealed class RuntimeCommand : Command
         }
         catch (Exception ex)
         {
-            WritePlanResult(new RuntimePlanResult(false, $"Failed to compute plan: {ex.Message}"), json);
+            RuntimeOutputWriter.WritePlanResult(new RuntimePlanResult(false, $"Failed to compute plan: {ex.Message}"), json);
             return Task.FromResult(1);
         }
     }
@@ -616,7 +616,7 @@ public sealed class RuntimeCommand : Command
         var fullRepoRoot = Path.GetFullPath(string.IsNullOrWhiteSpace(repoRoot) ? Environment.CurrentDirectory : repoRoot);
         if (!Directory.Exists(fullRepoRoot))
         {
-            WriteHistoryResult(new RuntimeHistoryResult(false, $"Repo root not found: {fullRepoRoot}"), json);
+            RuntimeOutputWriter.WriteHistoryResult(new RuntimeHistoryResult(false, $"Repo root not found: {fullRepoRoot}"), json);
             return Task.FromResult(1);
         }
 
@@ -641,7 +641,7 @@ public sealed class RuntimeCommand : Command
         var passed = items.Count(i => i.Success);
         var failed = total - passed;
         var avgElapsed = (long)Math.Round(items.Select(i => (double)i.ElapsedMs).DefaultIfEmpty(0d).Average());
-        WriteHistoryResult(new RuntimeHistoryResult(
+        RuntimeOutputWriter.WriteHistoryResult(new RuntimeHistoryResult(
             true,
             $"Loaded {total} history entries.",
             items,
@@ -657,14 +657,14 @@ public sealed class RuntimeCommand : Command
     {
         if (string.IsNullOrWhiteSpace(goal))
         {
-            WriteRecommendResult(new RuntimeRecommendResult(false, "Goal is required."), json);
+            RuntimeOutputWriter.WriteRecommendResult(new RuntimeRecommendResult(false, "Goal is required."), json);
             return Task.FromResult(1);
         }
 
         var fullRepoRoot = Path.GetFullPath(string.IsNullOrWhiteSpace(repoRoot) ? Environment.CurrentDirectory : repoRoot);
         if (!Directory.Exists(fullRepoRoot))
         {
-            WriteRecommendResult(new RuntimeRecommendResult(false, $"Repo root not found: {fullRepoRoot}"), json);
+            RuntimeOutputWriter.WriteRecommendResult(new RuntimeRecommendResult(false, $"Repo root not found: {fullRepoRoot}"), json);
             return Task.FromResult(1);
         }
 
@@ -673,7 +673,7 @@ public sealed class RuntimeCommand : Command
         var result = recommendation == null
             ? new RuntimeRecommendResult(true, "No recommendation from history.", Policy: null, Reason: null)
             : new RuntimeRecommendResult(true, "Recommendation computed from history.", recommendation.QaPolicy, recommendation.Reason);
-        WriteRecommendResult(result, json);
+        RuntimeOutputWriter.WriteRecommendResult(result, json);
         return Task.FromResult(0);
     }
 
@@ -692,7 +692,7 @@ public sealed class RuntimeCommand : Command
         var fullRepoRoot = Path.GetFullPath(string.IsNullOrWhiteSpace(repoRoot) ? Environment.CurrentDirectory : repoRoot);
         if (!Directory.Exists(fullRepoRoot))
         {
-            WriteGateResult(new RuntimeGateResult(false, $"Repo root not found: {fullRepoRoot}"), json);
+            RuntimeOutputWriter.WriteGateResult(new RuntimeGateResult(false, $"Repo root not found: {fullRepoRoot}"), json);
             return Task.FromResult(1);
         }
 
@@ -706,7 +706,7 @@ public sealed class RuntimeCommand : Command
             benchmarkSet,
             stage,
             minConsecutivePasses);
-        WriteGateResult(gate, json);
+        RuntimeOutputWriter.WriteGateResult(gate, json);
         return Task.FromResult(gate.Ok ? 0 : 1);
     }
 
@@ -969,7 +969,7 @@ public sealed class RuntimeCommand : Command
             ncrFailureRateSlo);
         if (emitSloEvidence)
         {
-            WriteRuntimeSloEvidence(fullRepoRoot, evidenceOutput, sloEvidence);
+            RuntimeOutputWriter.WriteRuntimeSloEvidence(fullRepoRoot, evidenceOutput, sloEvidence);
         }
 
         if (finalExitCode == 0 && !sloWarningOnly && !sloEvidence.Passed)
@@ -1029,21 +1029,21 @@ public sealed class RuntimeCommand : Command
         var goals = ResolveGoals(goalsJson, goalsFile);
         if (goals.Length == 0)
         {
-            WriteEvaluateResult(new RuntimeEvaluateResult(false, "No goals provided for evaluation."), json);
+            RuntimeOutputWriter.WriteEvaluateResult(new RuntimeEvaluateResult(false, "No goals provided for evaluation."), json);
             return 1;
         }
 
         var policies = ResolvePolicies(policiesCsv);
         if (policies.Length == 0)
         {
-            WriteEvaluateResult(new RuntimeEvaluateResult(false, "No valid policies provided for evaluation."), json);
+            RuntimeOutputWriter.WriteEvaluateResult(new RuntimeEvaluateResult(false, "No valid policies provided for evaluation."), json);
             return 1;
         }
 
         var fullRepoRoot = Path.GetFullPath(string.IsNullOrWhiteSpace(repoRoot) ? Environment.CurrentDirectory : repoRoot);
         if (!Directory.Exists(fullRepoRoot))
         {
-            WriteEvaluateResult(new RuntimeEvaluateResult(false, $"Repo root not found: {fullRepoRoot}"), json);
+            RuntimeOutputWriter.WriteEvaluateResult(new RuntimeEvaluateResult(false, $"Repo root not found: {fullRepoRoot}"), json);
             return 1;
         }
 
@@ -1107,7 +1107,7 @@ public sealed class RuntimeCommand : Command
                 : $"Evaluation complete: {scenarioResults.Count(r => !r.Ok)} failing scenario(s) out of {scenarioResults.Count}.",
             scenarioResults.ToArray(),
             policySummary);
-        WriteEvaluateResult(result, json);
+        RuntimeOutputWriter.WriteEvaluateResult(result, json);
         return allPassed ? 0 : 1;
     }
 
@@ -1654,213 +1654,6 @@ public sealed class RuntimeCommand : Command
         return null;
     }
 
-    private static void WriteResult(RuntimeExecuteResult result, bool json)
-    {
-        if (json)
-        {
-            var payload = new
-            {
-                runId = result.RunId,
-                startedAtUtc = result.StartedAtUtc,
-                elapsedMs = result.ElapsedMs,
-                failureStage = result.FailureStage,
-                ok = result.Ok,
-                summary = result.Summary,
-                requestedQaPolicy = result.RequestedQaPolicy,
-                resolvedQaPolicy = result.ResolvedQaPolicy,
-                adaptivePolicyReason = result.AdaptivePolicyReason,
-                plan = result.Plan == null
-                    ? null
-                    : new
-                    {
-                        bootstrapProfile = result.Plan.BootstrapProfile,
-                        qaPolicy = result.Plan.QaPolicyProfile,
-                        focus = result.Plan.Focus,
-                        maxIterations = result.Plan.MaxIterations,
-                        stopOnFirstPass = result.Plan.StopOnFirstPass,
-                        runFunctionalQa = result.Plan.RunFunctionalQa,
-                        runAestheticQa = result.Plan.RunAestheticQa,
-                        runVisualQa = result.Plan.RunVisualQa,
-                        visualFallback = result.Plan.VisualQaFallbackPolicy,
-                        reasons = result.Plan.Reasons
-                    },
-                bootstrap = result.BootstrapAfter == null
-                    ? null
-                    : new
-                    {
-                        applied = result.BootstrapApplied,
-                        applyExit = result.BootstrapApplyExit,
-                        ok = result.BootstrapOk,
-                        missingRequired = result.BootstrapAfter.MissingRequired.Select(m => m.Id).ToArray()
-                    },
-                gates = new
-                {
-                    preflightRan = result.PreflightRan,
-                    preflightOk = result.PreflightOk,
-                    selfExtendRan = result.SelfExtendRan,
-                    selfExtendOk = result.SelfExtendOk
-                },
-                remediation = result.RemediationAttempts,
-                preflight = result.PreflightPayload,
-                execution = result.SelfExtendPayload
-            };
-            Console.WriteLine(JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true }));
-            return;
-        }
-
-        Console.WriteLine($"runtime execute: {(result.Ok ? "ok" : "failed")}");
-        Console.WriteLine(result.Summary);
-        if (!string.IsNullOrWhiteSpace(result.FailureStage) && !string.Equals(result.FailureStage, "none", StringComparison.OrdinalIgnoreCase))
-            Console.WriteLine($"  failure-stage={result.FailureStage}");
-        if (result.Plan != null)
-        {
-            Console.WriteLine($"  profile={result.Plan.BootstrapProfile}, policy={result.Plan.QaPolicyProfile}, focus={result.Plan.Focus}");
-            Console.WriteLine($"  visual-policy={result.Plan.VisualQaFallbackPolicy}, run-visual={result.Plan.RunVisualQa}");
-        }
-        if (result.BootstrapAfter != null)
-            Console.WriteLine($"  bootstrap missing-required={result.BootstrapAfter.MissingRequired.Count()}");
-        if (result.RemediationAttempts is { Length: > 0 })
-        {
-            foreach (var step in result.RemediationAttempts)
-                Console.WriteLine($"  remediation: policy={step.Policy}, ok={step.Ok}, reason={step.Reason}");
-        }
-    }
-
-    private static void WritePlanResult(RuntimePlanResult result, bool json)
-    {
-        if (json)
-        {
-            var payload = new
-            {
-                ok = result.Ok,
-                summary = result.Summary,
-                adaptivePolicyReason = result.AdaptivePolicyReason,
-                plan = result.Plan == null
-                    ? null
-                    : new
-                    {
-                        bootstrapProfile = result.Plan.BootstrapProfile,
-                        qaPolicy = result.Plan.QaPolicyProfile,
-                        focus = result.Plan.Focus,
-                        maxIterations = result.Plan.MaxIterations,
-                        stopOnFirstPass = result.Plan.StopOnFirstPass,
-                        runFunctionalQa = result.Plan.RunFunctionalQa,
-                        runAestheticQa = result.Plan.RunAestheticQa,
-                        runVisualQa = result.Plan.RunVisualQa,
-                        visualFallback = result.Plan.VisualQaFallbackPolicy,
-                        reasons = result.Plan.Reasons
-                    },
-                workflow = result.WorkflowSpec?.Workflow
-            };
-            Console.WriteLine(JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true }));
-            return;
-        }
-
-        Console.WriteLine($"runtime plan: {(result.Ok ? "ok" : "failed")}");
-        Console.WriteLine(result.Summary);
-        if (result.Plan != null)
-        {
-            Console.WriteLine($"  profile={result.Plan.BootstrapProfile}");
-            Console.WriteLine($"  qa-policy={result.Plan.QaPolicyProfile}");
-            Console.WriteLine($"  focus={result.Plan.Focus}");
-            Console.WriteLine($"  visual-policy={result.Plan.VisualQaFallbackPolicy}, run-visual={result.Plan.RunVisualQa}");
-        }
-        if (!string.IsNullOrWhiteSpace(result.AdaptivePolicyReason))
-            Console.WriteLine($"  adaptive-policy={result.AdaptivePolicyReason}");
-    }
-
-    private static void WriteEvaluateResult(RuntimeEvaluateResult result, bool json)
-    {
-        if (json)
-        {
-            var payload = new
-            {
-                ok = result.Ok,
-                summary = result.Summary,
-                scenarios = result.Scenarios,
-                policies = result.PolicySummaries
-            };
-            Console.WriteLine(JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true }));
-            return;
-        }
-
-        Console.WriteLine($"runtime evaluate: {(result.Ok ? "ok" : "failed")}");
-        Console.WriteLine(result.Summary);
-        foreach (var policy in result.PolicySummaries ?? Array.Empty<RuntimeEvaluatePolicySummary>())
-            Console.WriteLine($"  {policy.Policy}: {policy.Passed}/{policy.Total} passed, avg={policy.AverageElapsedMs}ms");
-    }
-
-    private static void WriteHistoryResult(RuntimeHistoryResult result, bool json)
-    {
-        if (json)
-        {
-            var payload = new
-            {
-                ok = result.Ok,
-                summary = result.Summary,
-                summaryStats = result.SummaryStats,
-                items = result.Items
-            };
-            Console.WriteLine(JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true }));
-            return;
-        }
-
-        Console.WriteLine($"runtime history: {(result.Ok ? "ok" : "failed")}");
-        Console.WriteLine(result.Summary);
-        if (result.SummaryStats != null)
-            Console.WriteLine($"  total={result.SummaryStats.Total}, passed={result.SummaryStats.Passed}, failed={result.SummaryStats.Failed}, avg={result.SummaryStats.AverageElapsedMs}ms");
-        foreach (var item in result.Items ?? Array.Empty<AdaptiveRuntimeExecutionReport>())
-            Console.WriteLine($"  [{item.StartedAtUtc:O}] ok={item.Success} policy={item.ResolvedQaPolicy} benchmark={item.BenchmarkSet} stage={item.FailureStage} goal=\"{item.GoalPreview}\"");
-    }
-
-    private static void WriteRecommendResult(RuntimeRecommendResult result, bool json)
-    {
-        if (json)
-        {
-            Console.WriteLine(JsonSerializer.Serialize(new
-            {
-                ok = result.Ok,
-                summary = result.Summary,
-                policy = result.Policy,
-                reason = result.Reason
-            }, new JsonSerializerOptions { WriteIndented = true }));
-            return;
-        }
-
-        Console.WriteLine($"runtime recommend: {(result.Ok ? "ok" : "failed")}");
-        Console.WriteLine(result.Summary);
-        if (!string.IsNullOrWhiteSpace(result.Policy))
-            Console.WriteLine($"  policy={result.Policy}");
-        if (!string.IsNullOrWhiteSpace(result.Reason))
-            Console.WriteLine($"  reason={result.Reason}");
-    }
-
-    private static void WriteGateResult(RuntimeGateResult result, bool json)
-    {
-        if (json)
-        {
-            Console.WriteLine(JsonSerializer.Serialize(new
-            {
-                ok = result.Ok,
-                summary = result.Summary,
-                total = result.Total,
-                passed = result.Passed,
-                passRate = result.PassRate,
-                minTotal = result.MinTotal,
-                minPassRate = result.MinPassRate,
-                streak = result.Streak,
-                minConsecutivePasses = result.MinConsecutivePasses,
-                sloEvidence = result.SloEvidence
-            }, new JsonSerializerOptions { WriteIndented = true }));
-            return;
-        }
-
-        Console.WriteLine($"runtime gate: {(result.Ok ? "ok" : "failed")}");
-        Console.WriteLine(result.Summary);
-        if (result.Total.HasValue)
-            Console.WriteLine($"  total={result.Total}, passed={result.Passed}, pass-rate={result.PassRate:P1}, min={result.MinPassRate:P1} over {result.MinTotal} run(s), streak={result.Streak}/{result.MinConsecutivePasses}");
-    }
-
     private static string[] ResolveGoals(string? goalsJson, string? goalsFile)
     {
         if (!string.IsNullOrWhiteSpace(goalsJson))
@@ -2106,66 +1899,6 @@ public sealed class RuntimeCommand : Command
             Passed: checks.All(check => check.Passed));
     }
 
-    private static void WriteRuntimeSloEvidence(string repoRoot, string? evidenceOutput, RuntimeSloEvidence evidence)
-    {
-        var defaultJsonPath = Path.Combine(repoRoot, ".nexo", "runtime", "release-gate", "last-run", "evidence.json");
-        var jsonPath = string.IsNullOrWhiteSpace(evidenceOutput)
-            ? defaultJsonPath
-            : Path.GetFullPath(evidenceOutput.Trim());
-        var mdPath = Path.ChangeExtension(jsonPath, ".md");
-        var jsonDir = Path.GetDirectoryName(jsonPath);
-        if (!string.IsNullOrWhiteSpace(jsonDir))
-            Directory.CreateDirectory(jsonDir);
-
-        var payload = new
-        {
-            generatedAtUtc = evidence.GeneratedAtUtc,
-            mode = evidence.Mode,
-            visualLaneRequired = evidence.VisualLaneRequired,
-            passed = evidence.Passed,
-            totalSamples = evidence.TotalSamples,
-            metrics = new
-            {
-                ncrResolutionP95Ms = evidence.NcrResolutionP95Ms,
-                ncrLoadP95Ms = evidence.NcrLoadP95Ms,
-                ncrOutcomeP95Ms = evidence.NcrOutcomeP95Ms,
-                ncrFailureRate = evidence.NcrFailureRate
-            },
-            thresholds = evidence.Thresholds,
-            checks = evidence.Checks,
-            lanes = evidence.Lanes
-        };
-        File.WriteAllText(jsonPath, JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true }));
-
-        var lines = new List<string>
-        {
-            "# Runtime Release Gate SLO Evidence",
-            string.Empty,
-            $"- Generated UTC: {evidence.GeneratedAtUtc:O}",
-            $"- Mode: {evidence.Mode}",
-            $"- Visual lane required: {(evidence.VisualLaneRequired ? "yes" : "no")}",
-            $"- Overall SLO status: {(evidence.Passed ? "PASS" : "FAIL")}",
-            string.Empty,
-            "## NCR Metrics",
-            string.Empty,
-            $"- ncr.model_resolution.p95_ms: {evidence.NcrResolutionP95Ms:0.##} (max {evidence.Thresholds.NcrResolutionP95MsMax:0.##})",
-            $"- ncr.model_load.p95_ms: {evidence.NcrLoadP95Ms:0.##} (max {evidence.Thresholds.NcrLoadP95MsMax:0.##})",
-            $"- ncr.outcome.p95_ms: {evidence.NcrOutcomeP95Ms:0.##} (max {evidence.Thresholds.NcrOutcomeP95MsMax:0.##})",
-            $"- ncr.failure_rate: {evidence.NcrFailureRate:0.####} (max {evidence.Thresholds.NcrFailureRateMax:0.####})",
-            string.Empty,
-            "## Gate Checks",
-            string.Empty
-        };
-        lines.AddRange(evidence.Checks.Select(check =>
-            $"- {(check.Passed ? "PASS" : "FAIL")} `{check.Name}` actual={check.Actual:0.####} threshold={check.Threshold:0.####} ({check.Detail})"));
-        lines.Add(string.Empty);
-        lines.Add("## Lane Summary");
-        lines.Add(string.Empty);
-        lines.AddRange(evidence.Lanes.Select(lane =>
-            $"- `{lane.Lane}` ({lane.BenchmarkSet}) gate={(lane.GateOk.HasValue ? (lane.GateOk.Value ? "pass" : "fail") : "n/a")} passRate={(lane.PassRate.HasValue ? lane.PassRate.Value.ToString("0.####") : "n/a")} total={(lane.Total.HasValue ? lane.Total.Value.ToString() : "n/a")}"));
-        File.WriteAllLines(mdPath, lines);
-    }
-
     private static double ComputeP95(IReadOnlyList<double> values)
     {
         if (values.Count == 0)
@@ -2235,148 +1968,4 @@ public sealed class RuntimeCommand : Command
         return string.IsNullOrWhiteSpace(normalized) ? "adhoc" : normalized;
     }
 
-    private sealed record RuntimeSubprocessResult(int ExitCode, string StdOut, string StdErr);
-    private sealed record RuntimeVisualInfraCapability(bool Ready, string Summary);
-
-    private sealed record RuntimeExecuteResult(
-        bool Ok,
-        string Summary,
-        AdaptiveRuntimeExecutionPlan? Plan = null,
-        BootstrapAssessment? BootstrapBefore = null,
-        BootstrapAssessment? BootstrapAfter = null,
-        bool BootstrapApplied = false,
-        int? BootstrapApplyExit = null,
-        JsonElement? PreflightPayload = null,
-        RuntimeSubprocessResult? PreflightRun = null,
-        JsonElement? SelfExtendPayload = null,
-        RuntimeSubprocessResult? SelfExtendRun = null,
-        string? RequestedQaPolicy = null,
-        string? ResolvedQaPolicy = null,
-        string? AdaptivePolicyReason = null,
-        string? RepoRoot = null,
-        string? FailureStage = null,
-        bool? BootstrapOk = null,
-        bool? PreflightRan = null,
-        bool? PreflightOk = null,
-        bool? SelfExtendRan = null,
-        bool? SelfExtendOk = null,
-        string? RunId = null,
-        DateTimeOffset? StartedAtUtc = null,
-        long? ElapsedMs = null,
-        string? GoalFingerprint = null,
-        string? GoalPreview = null,
-        RuntimeRemediationAttempt[]? RemediationAttempts = null);
-
-    private sealed record RuntimePlanResult(
-        bool Ok,
-        string Summary,
-        AdaptiveRuntimeExecutionPlan? Plan = null,
-        SelfExtendWorkflowRuntimeSpec? WorkflowSpec = null,
-        string? AdaptivePolicyReason = null);
-
-    private sealed record RuntimePlanContext(
-        string Goal,
-        AdaptiveRuntimeManifest Manifest,
-        AdaptiveRuntimeExecutionPlan Plan,
-        SelfExtendWorkflowRuntimeSpec WorkflowSpec,
-        string RequestedQaPolicy,
-        string? AdaptivePolicyReason);
-
-    private sealed record RuntimeEvaluateScenarioResult(
-        string Goal,
-        string Policy,
-        bool Ok,
-        long? ElapsedMs,
-        string? FailureStage,
-        string Summary);
-
-    private sealed record RuntimeEvaluatePolicySummary(
-        string Policy,
-        int Total,
-        int Passed,
-        int Failed,
-        long AverageElapsedMs);
-
-    private sealed record RuntimeEvaluateResult(
-        bool Ok,
-        string Summary,
-        IReadOnlyList<RuntimeEvaluateScenarioResult>? Scenarios = null,
-        IReadOnlyList<RuntimeEvaluatePolicySummary>? PolicySummaries = null);
-
-    private sealed record RuntimeHistorySummary(
-        int Total,
-        int Passed,
-        int Failed,
-        long AverageElapsedMs);
-
-    private sealed record RuntimeHistoryResult(
-        bool Ok,
-        string Summary,
-        IReadOnlyList<AdaptiveRuntimeExecutionReport>? Items = null,
-        RuntimeHistorySummary? SummaryStats = null);
-
-    private sealed record RuntimeRecommendResult(
-        bool Ok,
-        string Summary,
-        string? Policy = null,
-        string? Reason = null);
-
-    private sealed record RuntimeGateResult(
-        bool Ok,
-        string Summary,
-        int? Total = null,
-        int? Passed = null,
-        double? PassRate = null,
-        int? MinTotal = null,
-        double? MinPassRate = null,
-        int? Streak = null,
-        int? MinConsecutivePasses = null,
-        RuntimeSloEvidence? SloEvidence = null);
-
-    private sealed record RuntimeSloEvidence(
-        DateTimeOffset GeneratedAtUtc,
-        string Mode,
-        bool VisualLaneRequired,
-        RuntimeSloThresholds Thresholds,
-        IReadOnlyList<RuntimeSloCheck> Checks,
-        IReadOnlyList<RuntimeLaneSloEvidence> Lanes,
-        int TotalSamples,
-        double NcrResolutionP95Ms,
-        double NcrLoadP95Ms,
-        double NcrOutcomeP95Ms,
-        double NcrFailureRate,
-        bool Passed);
-
-    private sealed record RuntimeSloThresholds(
-        double NcrResolutionP95MsMax,
-        double NcrLoadP95MsMax,
-        double NcrOutcomeP95MsMax,
-        double NcrFailureRateMax);
-
-    private sealed record RuntimeSloCheck(
-        string Name,
-        double Actual,
-        double Threshold,
-        bool Passed,
-        string Detail);
-
-    private sealed record RuntimeLaneSloEvidence(
-        string Lane,
-        string BenchmarkSet,
-        bool? GateOk,
-        string? GateSummary,
-        double? PassRate,
-        double? MinPassRate,
-        int? Total,
-        int? PassedCount);
-
-    private sealed record RuntimeRemediationPolicy(string Policy, string Reason);
-
-    private sealed record RuntimeRemediationAttempt(
-        string Policy,
-        string Reason,
-        bool Ok,
-        string? FailureStage,
-        string? RunId,
-        string Summary);
 }
