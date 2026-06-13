@@ -174,3 +174,65 @@ internal sealed record RuntimeTelemetry(
     long ManagedMemoryMb,
     int ThreadCount,
     string HardwareProfile);
+
+internal sealed record WorkflowOptimizeResult(
+    bool Ok,
+    string Summary,
+    string? SessionRunId = null,
+    string? BenchmarkSet = null,
+    string? RecommendationReportPath = null,
+    IReadOnlyList<WorkflowOptimizeCandidate>? Candidates = null,
+    WorkflowOptimizeCandidate? Winner = null,
+    IReadOnlyList<WorkflowOptimizeRecommendation>? Recommendations = null,
+    string? PromotionSummary = null,
+    string? PromotedBaselineId = null,
+    string? Objective = null,
+    string? ObjectiveFile = null,
+    string? SearchStrategy = null,
+    int? BudgetRuns = null,
+    int? MeasuredRunsUsed = null,
+    int? EarlyStopMinRuns = null,
+    double? EarlyStopMinSuccessRate = null,
+    int? SynthesizedCandidateCount = null,
+    int? AdaptiveSynthesizedCandidateCount = null,
+    double? WinnerConfidence = null,
+    double? PromotionConfidenceThreshold = null,
+    IReadOnlyList<OptimizeAllocationTrace>? AllocationTrace = null,
+    IReadOnlyList<TargetAllocationStat>? TargetAllocations = null,
+    IReadOnlyList<CandidateAllocationStat>? CandidateAllocations = null);
+
+internal sealed class OptimizeCandidateRuntimeState
+{
+    public OptimizeCandidateRuntimeState(
+        OptimizeCandidatePlan candidate,
+        string candidateRunId,
+        string? profileProvider,
+        IReadOnlyList<string> requiredModels,
+        WorkflowCommand.ModelPullResult pullResult,
+        IReadOnlyList<ScenarioPlan> plans)
+    {
+        Candidate = candidate;
+        CandidateRunId = candidateRunId;
+        ProfileProvider = profileProvider;
+        RequiredModels = requiredModels;
+        PullResult = pullResult;
+        Plans = plans;
+    }
+
+    public OptimizeCandidatePlan Candidate { get; }
+    public string CandidateRunId { get; }
+    public string? ProfileProvider { get; }
+    public IReadOnlyList<string> RequiredModels { get; }
+    public WorkflowCommand.ModelPullResult PullResult { get; }
+    public IReadOnlyList<ScenarioPlan> Plans { get; }
+    public int NextPlanIndex { get; set; }
+    public bool EarlyStopped { get; set; }
+    public List<WorkflowStressRunRecord> Runs { get; } = new();
+}
+
+internal sealed class TargetExecutionStats
+{
+    public int Runs { get; set; }
+    public int Successes { get; set; }
+    public long TotalLatencyMs { get; set; }
+}

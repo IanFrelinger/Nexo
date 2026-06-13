@@ -46,6 +46,7 @@ public sealed class WorkflowCommand : Command
     private readonly ReportHandler _reportHandler;
     private readonly GateHandler _gateHandler;
     private readonly StressHandler _stressHandler;
+    private readonly OptimizeHandler _optimizeHandler;
 
     public WorkflowCommand(Func<OrchestrateCommand> orchestrateFactory)
         : this(
@@ -200,6 +201,11 @@ public sealed class WorkflowCommand : Command
             ExecuteScenarioForTargetAsync,
             CaptureRuntimeTelemetry,
             ComputeScore);
+        _optimizeHandler = new OptimizeHandler(
+            _providerPreflight,
+            _ollamaModelPuller,
+            ResolveExecutionTargetsAsync,
+            ExecuteScenarioForTargetAsync);
         ConfigureScaffoldCommand();
         ConfigureStressCommand();
         ConfigureHistoryCommand();
@@ -729,7 +735,7 @@ public sealed class WorkflowCommand : Command
         bool verbose,
         CancellationToken ct) => _stressHandler.ExecuteAsync(requestOverride, specPath, specJson, providerOverride, preferOverride, iterationsOverride, benchmarkSetOverride, persistHistoryOverride, warmupRunsOverride, shuffleScenariosOverride, randomSeedOverride, cooldownMsOverride, includeMeshPeers, meshCapability, json, verbose, ct);
 
-    internal async Task<int> ExecuteOptimizeAsync(
+    internal Task<int> ExecuteOptimizeAsync(
         string? requestOverride,
         string? objective,
         string? objectiveFile,
@@ -757,664 +763,7 @@ public sealed class WorkflowCommand : Command
         string? reportOutputPath,
         bool json,
         bool verbose,
-        CancellationToken ct)
-    {
-        var resolvedSpecPath = ResolveDefaultSpecPath(specPath);
-        WorkflowLabRuntimeSpec spec;
-        try
-        {
-            spec = WorkflowLabRuntimeSpecLoader.Load(resolvedSpecPath, specJson);
-        }
-        catch (Exception ex)
-        {
-            WriteOptimizeResult(new WorkflowOptimizeResult(false, $"Failed to load workflow lab spec: {ex.Message}"), json);
-            return 1;
-        }
-
-        var repoRoot = Environment.CurrentDirectory;
-        var requests = NormalizeRequests(spec.Requests);
-        var compositions = NormalizeCompositions(spec.Compositions);
-        var profiles = NormalizeProfiles(spec.ModelProfiles, providerOverride, preferOverride);
-        if (requests.Length == 0 || compositions.Length == 0 || profiles.Length == 0)
-        {
-            WriteOptimizeResult(new WorkflowOptimizeResult(
-                false,
-                "Workflow optimize spec must include at least one request, composition, and model profile."), json);
-            return 1;
-        }
-
-        var objectiveText = ResolveObjectiveText(objective, objectiveFile);
-        if (objectiveText is null && !string.IsNullOrWhiteSpace(objectiveFile))
-        {
-            WriteOptimizeResult(new WorkflowOptimizeResult(
-                false,
-                $"Failed to load objective file: {objectiveFile}",
-                Objective: objective,
-                ObjectiveFile: objectiveFile), json);
-            return 1;
-        }
-
-        var benchmarkSet = NormalizeBenchmarkSet(benchmarkSetOverride, spec.Execution.BenchmarkSet);
-        var persistHistory = persistHistoryOverride ?? spec.Execution.PersistHistory;
-        var iterations = Math.Max(1, iterationsOverride ?? spec.Execution.Iterations);
-        var warmupRuns = Math.Max(0, warmupRunsOverride ?? spec.Execution.WarmupRuns);
-        var cooldownMs = Math.Max(0, cooldownMsOverride ?? spec.Execution.CooldownMs);
-        var shuffleScenarios = shuffleScenariosOverride ?? spec.Execution.ShuffleScenarioOrder;
-        var randomSeed = randomSeedOverride ?? spec.Execution.RandomSeed;
-        var rng = randomSeed.HasValue ? new Random(randomSeed.Value) : null;
-        var strategy = NormalizeSearchStrategy(searchStrategy);
-        var minRunsForEarlyStop = Math.Max(1, earlyStopMinRuns ?? 2);
-        var minSuccessForEarlyStop = Math.Clamp(earlyStopMinSuccessRate ?? 0.35, 0d, 1d);
-        var measuredRunBudget = budgetRuns.HasValue ? Math.Max(1, budgetRuns.Value) : int.MaxValue;
-        var sharedRequest = string.IsNullOrWhiteSpace(requestOverride) ? null : requestOverride.Trim();
-        var optimizeRunId = BuildRunId();
-        var specHash = ComputeSpecHash(JsonSerializer.Serialize(spec));
-        var gitSha = ResolveGitSha();
-        var providerSnapshot = BuildProviderSnapshot(profiles);
-
-        var scenarioPlans = BuildScenarioPlans(requests, compositions, profiles, iterations);
-        var groupedCandidates = scenarioPlans
-            .GroupBy(
-                x => $"{x.Request.Id}::{x.Composition.Id}::{x.Profile.Id}",
-                StringComparer.OrdinalIgnoreCase)
-            .Select(g => new OptimizeCandidatePlan(
-                g.Key,
-                g.First().Request,
-                g.First().Composition,
-                g.First().Profile,
-                g.OrderBy(x => x.Iteration).ToArray()))
-            .ToList();
-
-        var objectiveKeywordSet = BuildObjectiveKeywordSet(objectiveText);
-        var maxCandidateCount = Math.Max(1, maxCandidates);
-        var synthesizedCandidates = BuildObjectiveSynthesizedCandidates(
-            groupedCandidates,
-            objectiveKeywordSet,
-            maxCandidateCount);
-        if (synthesizedCandidates.Count > 0)
-        {
-            groupedCandidates = groupedCandidates
-                .Concat(synthesizedCandidates)
-                .GroupBy(x => x.CandidateId, StringComparer.OrdinalIgnoreCase)
-                .Select(x => x.First())
-                .ToList();
-        }
-
-        if (shuffleScenarios && groupedCandidates.Count > 1)
-            WorkflowOptimizeReportRenderer.ShuffleOptimizeCandidates(groupedCandidates, rng ?? new Random());
-
-        groupedCandidates = SortCandidatesForSearchStrategy(groupedCandidates, strategy, objectiveKeywordSet);
-
-        if (groupedCandidates.Count > maxCandidateCount)
-            groupedCandidates = groupedCandidates.Take(maxCandidateCount).ToList();
-
-        var preflightByProvider = new Dictionary<string, PreflightResult>(StringComparer.OrdinalIgnoreCase);
-        foreach (var provider in profiles
-                     .Select(x => x.Default.Provider)
-                     .Where(x => !string.IsNullOrWhiteSpace(x))
-                     .Select(x => x!.Trim())
-                     .Distinct(StringComparer.OrdinalIgnoreCase))
-        {
-            preflightByProvider[provider] = await _providerPreflight(provider, ct).ConfigureAwait(false);
-        }
-
-        var executionTargets = await ResolveExecutionTargetsAsync(
-            includeMeshPeers,
-            meshCapability,
-            ct).ConfigureAwait(false);
-
-        var measuredRunsUsed = 0;
-        var targetStats = executionTargets.ToDictionary(
-            x => x.Id,
-            x => new TargetExecutionStats(),
-            StringComparer.OrdinalIgnoreCase);
-        var allocationTrace = new List<OptimizeAllocationTrace>();
-        var adaptiveSynthesisBudget = Math.Max(1, maxCandidateCount / 3);
-        var adaptiveSynthesisCount = 0;
-        var adaptiveSynthesisCursor = 0;
-        var candidates = new List<WorkflowOptimizeCandidate>();
-        var persistedRows = new List<WorkflowLabStressHistoryRow>();
-        var candidateStates = new List<OptimizeCandidateRuntimeState>();
-        for (var candidateIndex = 0; candidateIndex < groupedCandidates.Count; candidateIndex++)
-        {
-            var candidate = groupedCandidates[candidateIndex];
-            var profileProvider = candidate.Profile.Default.Provider?.Trim();
-            var requiredModels = WorkflowOptimizeReportRenderer.ResolveOllamaModelsForCandidate(candidate.Composition, candidate.Profile);
-            var pullResult = autoPullModels
-                ? await _ollamaModelPuller(requiredModels, ct).ConfigureAwait(false)
-                : new ModelPullResult(
-                    Ok: true,
-                    Summary: "Model auto-pull disabled.",
-                    Models: requiredModels,
-                    PulledModels: Array.Empty<string>());
-            var candidatePlans = strategy == "successive-halving"
-                ? candidate.Plans.Take(Math.Max(1, (candidate.Plans.Count + 1) / 2)).ToArray()
-                : candidate.Plans.ToArray();
-            candidateStates.Add(new OptimizeCandidateRuntimeState(
-                candidate,
-                $"{optimizeRunId}-c{candidateIndex + 1:D2}",
-                profileProvider,
-                requiredModels,
-                pullResult,
-                candidatePlans));
-        }
-
-        while (measuredRunsUsed < measuredRunBudget)
-        {
-            var candidateState = SelectNextCandidateState(candidateStates, objectiveKeywordSet);
-            if (candidateState is null)
-                break;
-            ct.ThrowIfCancellationRequested();
-            var plan = candidateState.Plans[candidateState.NextPlanIndex];
-            candidateState.NextPlanIndex++;
-            var request = plan.Request;
-            var composition = plan.Composition;
-            var profile = plan.Profile;
-            var iteration = plan.Iteration;
-            var executionTarget = SelectExecutionTarget(executionTargets, targetStats);
-            var scenarioId = BuildScenarioId(request.Id, composition.Id, profile.Id, iteration) +
-                             $"::target-{WorkflowOptimizeReportRenderer.NormalizeScenarioTargetSegment(executionTarget.Id)}";
-            var runtime = BuildRuntimeSpec(composition, profile);
-            var runtimeJson = JsonSerializer.Serialize(runtime);
-            var runtimeExecutionRequest = WorkflowOptimizeReportRenderer.BuildExecutionRequest(request, composition, profile, sharedRequest);
-
-            for (var warmup = 0; warmup < warmupRuns; warmup++)
-            {
-                ct.ThrowIfCancellationRequested();
-                if (!candidateState.PullResult.Ok && executionTarget.IsLocal)
-                    break;
-                if (executionTarget.IsLocal &&
-                    !string.IsNullOrWhiteSpace(candidateState.ProfileProvider) &&
-                    preflightByProvider.TryGetValue(candidateState.ProfileProvider, out var warmupPreflight) &&
-                    !warmupPreflight.Ok)
-                {
-                    break;
-                }
-
-                try
-                {
-                    _ = await ExecuteScenarioForTargetAsync(
-                        executionTarget,
-                        runtimeExecutionRequest,
-                        runtimeJson,
-                        profile.Default.Provider,
-                        verbose,
-                        ct).ConfigureAwait(false);
-                }
-                catch
-                {
-                    // Warmups are intentionally ignored in persisted metrics.
-                }
-            }
-
-            ct.ThrowIfCancellationRequested();
-            var startedAt = DateTimeOffset.UtcNow;
-            var cpuStart = Process.GetCurrentProcess().TotalProcessorTime;
-            var sw = Stopwatch.StartNew();
-            ScenarioExecutionResult scenario;
-            if (!candidateState.PullResult.Ok && executionTarget.IsLocal)
-            {
-                scenario = new ScenarioExecutionResult(
-                    Ok: false,
-                    Summary: $"Skipped due to model pull failure: {candidateState.PullResult.Summary}",
-                    ConflictCount: 0,
-                    EscalationCount: 0,
-                    FailureCategory: "skipped_infra",
-                    Skipped: true);
-            }
-            else if (executionTarget.IsLocal &&
-                     !string.IsNullOrWhiteSpace(candidateState.ProfileProvider) &&
-                     preflightByProvider.TryGetValue(candidateState.ProfileProvider, out var preflight) &&
-                     !preflight.Ok)
-            {
-                scenario = new ScenarioExecutionResult(
-                    Ok: false,
-                    Summary: $"Skipped due to provider preflight failure ({candidateState.ProfileProvider}): {preflight.Detail}",
-                    ConflictCount: 0,
-                    EscalationCount: 0,
-                    FailureCategory: "skipped_infra",
-                    Skipped: true);
-            }
-            else
-            {
-                try
-                {
-                    scenario = await ExecuteScenarioForTargetAsync(
-                        executionTarget,
-                        runtimeExecutionRequest,
-                        runtimeJson,
-                        profile.Default.Provider,
-                        verbose,
-                        ct).ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    scenario = new ScenarioExecutionResult(
-                        Ok: false,
-                        Summary: $"Scenario executor failed: {ex.Message}",
-                        ConflictCount: 0,
-                        EscalationCount: 0,
-                        FailureCategory: "executor_failure");
-                }
-            }
-
-            var elapsedMs = sw.ElapsedMilliseconds;
-            var telemetry = CaptureRuntimeTelemetry(startedAt, cpuStart);
-            var score = ComputeScore(scenario.Ok, elapsedMs, composition, profile);
-            var runSummary = $"{scenario.Summary} [target={executionTarget.Id}]";
-            var runRecord = new WorkflowStressRunRecord(
-                candidateState.CandidateRunId,
-                gitSha,
-                specHash,
-                providerSnapshot,
-                scenarioId,
-                request.Id,
-                composition.Id,
-                profile.Id,
-                iteration,
-                scenario.Ok,
-                composition.Roles.Count,
-                scenario.ConflictCount,
-                scenario.EscalationCount,
-                elapsedMs,
-                score,
-                runSummary,
-                scenario.FailureCategory,
-                scenario.Skipped,
-                startedAt,
-                telemetry.CpuTimeDeltaMs,
-                telemetry.WorkingSetMb,
-                telemetry.PrivateMemoryMb,
-                telemetry.ManagedMemoryMb,
-                telemetry.ThreadCount,
-                telemetry.HardwareProfile,
-                benchmarkSet);
-            candidateState.Runs.Add(runRecord);
-            measuredRunsUsed++;
-            UpdateTargetExecutionStats(targetStats, executionTarget.Id, runRecord.Success, runRecord.Skipped, runRecord.ElapsedMs);
-            allocationTrace.Add(new OptimizeAllocationTrace(
-                measuredRunsUsed,
-                candidateState.Candidate.CandidateId,
-                executionTarget.Id,
-                runRecord.Success,
-                runRecord.ElapsedMs,
-                candidateState.Candidate.Synthesized ? "synthesized-candidate" : "base-candidate"));
-
-            var historyRow = new WorkflowLabStressHistoryRow
-            {
-                RunId = runRecord.RunId,
-                GitSha = runRecord.GitSha,
-                SpecHash = runRecord.SpecHash,
-                ProviderSnapshot = runRecord.ProviderSnapshot,
-                ScenarioId = runRecord.ScenarioId,
-                RequestId = runRecord.RequestId,
-                CompositionId = runRecord.CompositionId,
-                ModelProfileId = runRecord.ModelProfileId,
-                Iteration = runRecord.Iteration,
-                StartedAtUtc = runRecord.StartedAtUtc,
-                ElapsedMs = runRecord.ElapsedMs,
-                Success = runRecord.Success,
-                AgentCount = runRecord.AgentCount,
-                ConflictCount = runRecord.ConflictCount,
-                EscalationCount = runRecord.EscalationCount,
-                Score = runRecord.Score,
-                Summary = runRecord.Summary,
-                Skipped = runRecord.Skipped,
-                CpuTimeDeltaMs = runRecord.CpuTimeDeltaMs,
-                WorkingSetMb = runRecord.WorkingSetMb,
-                PrivateMemoryMb = runRecord.PrivateMemoryMb,
-                ManagedMemoryMb = runRecord.ManagedMemoryMb,
-                ThreadCount = runRecord.ThreadCount,
-                HardwareProfile = runRecord.HardwareProfile,
-                FailureCategory = runRecord.FailureCategory,
-                BenchmarkSet = runRecord.BenchmarkSet
-            };
-            if (persistHistory)
-                WorkflowLabHistoryStore.Append(repoRoot, historyRow);
-            persistedRows.Add(historyRow);
-
-            if (cooldownMs > 0)
-                await Task.Delay(TimeSpan.FromMilliseconds(cooldownMs), ct).ConfigureAwait(false);
-
-            if (candidateState.Runs.Count >= minRunsForEarlyStop)
-            {
-                var successful = candidateState.Runs.Count(x => x.Success);
-                var successRateNow = candidateState.Runs.Count == 0 ? 0d : (double)successful / candidateState.Runs.Count;
-                if (successRateNow < minSuccessForEarlyStop)
-                    candidateState.EarlyStopped = true;
-            }
-
-            if (adaptiveSynthesisCount < adaptiveSynthesisBudget &&
-                measuredRunsUsed < measuredRunBudget &&
-                candidateStates.Count < maxCandidateCount &&
-                candidateState.Runs.Count == 1 &&
-                candidateState.Runs[0].Success &&
-                !candidateState.Candidate.Synthesized &&
-                objectiveKeywordSet.Count > 0)
-            {
-                var adaptiveCandidate = BuildAdaptiveFollowUpCandidate(
-                    candidateState.Candidate,
-                    objectiveKeywordSet,
-                    ++adaptiveSynthesisCursor);
-                if (adaptiveCandidate is not null &&
-                    !candidateStates.Any(x => string.Equals(x.Candidate.CandidateId, adaptiveCandidate.CandidateId, StringComparison.OrdinalIgnoreCase)))
-                {
-                    var adaptiveProfileProvider = adaptiveCandidate.Profile.Default.Provider?.Trim();
-                    var adaptiveModels = WorkflowOptimizeReportRenderer.ResolveOllamaModelsForCandidate(adaptiveCandidate.Composition, adaptiveCandidate.Profile);
-                    var adaptivePullResult = autoPullModels
-                        ? await _ollamaModelPuller(adaptiveModels, ct).ConfigureAwait(false)
-                        : new ModelPullResult(
-                            Ok: true,
-                            Summary: "Model auto-pull disabled.",
-                            Models: adaptiveModels,
-                            PulledModels: Array.Empty<string>());
-                    var adaptivePlans = strategy == "successive-halving"
-                        ? adaptiveCandidate.Plans.Take(Math.Max(1, (adaptiveCandidate.Plans.Count + 1) / 2)).ToArray()
-                        : adaptiveCandidate.Plans.ToArray();
-                    candidateStates.Add(new OptimizeCandidateRuntimeState(
-                        adaptiveCandidate,
-                        $"{optimizeRunId}-c{candidateStates.Count + 1:D2}",
-                        adaptiveProfileProvider,
-                        adaptiveModels,
-                        adaptivePullResult,
-                        adaptivePlans));
-                    adaptiveSynthesisCount++;
-                }
-            }
-        }
-
-        foreach (var candidateState in candidateStates.Where(x => x.Runs.Count > 0))
-        {
-            var successCount = candidateState.Runs.Count(x => x.Success);
-            var failureCount = candidateState.Runs.Count(x => !x.Success && !x.Skipped);
-            var skippedCount = candidateState.Runs.Count(x => x.Skipped);
-            var successRate = candidateState.Runs.Count == 0 ? 0d : Math.Round((double)successCount / candidateState.Runs.Count, 4);
-            var avgLatency = candidateState.Runs.Count == 0
-                ? 0L
-                : (long)Math.Round(candidateState.Runs.Select(x => (double)x.ElapsedMs).DefaultIfEmpty(0d).Average());
-            var p95Latency = candidateState.Runs.Count == 0 ? 0L : ComputePercentile(candidateState.Runs.Select(x => x.ElapsedMs), 0.95);
-            var avgScore = candidateState.Runs.Count == 0
-                ? 0d
-                : Math.Round(candidateState.Runs.Select(x => x.Score).DefaultIfEmpty(0d).Average(), 3);
-            var avgCpuDelta = candidateState.Runs.Count == 0
-                ? 0L
-                : (long)Math.Round(candidateState.Runs.Select(x => (double)x.CpuTimeDeltaMs).DefaultIfEmpty(0d).Average());
-            var p95WorkingSet = candidateState.Runs.Count == 0 ? 0L : ComputePercentile(candidateState.Runs.Select(x => x.WorkingSetMb), 0.95);
-            var p95PrivateMemory = candidateState.Runs.Count == 0 ? 0L : ComputePercentile(candidateState.Runs.Select(x => x.PrivateMemoryMb), 0.95);
-            var p95ManagedMemory = candidateState.Runs.Count == 0 ? 0L : ComputePercentile(candidateState.Runs.Select(x => x.ManagedMemoryMb), 0.95);
-            var maxThreadCount = candidateState.Runs.Count == 0 ? 0 : candidateState.Runs.Max(x => x.ThreadCount);
-            var hardwareProfile = candidateState.Runs
-                .Select(x => x.HardwareProfile)
-                .Where(x => !string.IsNullOrWhiteSpace(x))
-                .GroupBy(x => x, StringComparer.OrdinalIgnoreCase)
-                .OrderByDescending(x => x.Count())
-                .ThenBy(x => x.Key, StringComparer.OrdinalIgnoreCase)
-                .Select(x => x.Key)
-                .FirstOrDefault() ?? "unknown";
-            var candidateObjectiveScore = ScoreCandidateForObjective(candidateState.Candidate, objectiveKeywordSet);
-            candidates.Add(new WorkflowOptimizeCandidate(
-                CandidateId: candidateState.Candidate.CandidateId,
-                RunId: candidateState.CandidateRunId,
-                RequestId: candidateState.Candidate.Request.Id,
-                CompositionId: candidateState.Candidate.Composition.Id,
-                ModelProfileId: candidateState.Candidate.Profile.Id,
-                TotalRuns: candidateState.Runs.Count,
-                Successes: successCount,
-                Failures: failureCount,
-                Skipped: skippedCount,
-                SuccessRate: successRate,
-                AverageLatencyMs: avgLatency,
-                P95LatencyMs: p95Latency,
-                AverageScore: avgScore,
-                AverageCpuTimeDeltaMs: avgCpuDelta,
-                P95WorkingSetMb: p95WorkingSet,
-                P95PrivateMemoryMb: p95PrivateMemory,
-                P95ManagedMemoryMb: p95ManagedMemory,
-                MaxThreadCount: maxThreadCount,
-                HardwareProfile: hardwareProfile,
-                Models: candidateState.RequiredModels,
-                AutoPullSummary: candidateState.PullResult.Summary,
-                AutoPullOk: candidateState.PullResult.Ok,
-                Synthesized: candidateState.Candidate.Synthesized,
-                SynthesisRationale: candidateState.Candidate.SynthesisRationale,
-                ObjectiveScore: candidateObjectiveScore));
-        }
-
-        if (candidates.Count == 0)
-        {
-            WriteOptimizeResult(new WorkflowOptimizeResult(false, "No optimize candidates were generated."), json);
-            return 1;
-        }
-
-        var ranked = candidates
-            .OrderByDescending(x => x.SuccessRate)
-            .ThenByDescending(x => x.AverageScore)
-            .ThenByDescending(x => x.ObjectiveScore)
-            .ThenBy(x => x.P95LatencyMs)
-            .ThenBy(x => x.AverageLatencyMs)
-            .ToArray();
-        var winner = ranked[0];
-        var winnerConfidence = WorkflowOptimizeReportRenderer.ComputePromotionConfidence(winner, minRunsForEarlyStop);
-        const double promotionConfidenceThreshold = 0.6;
-        var minimumPromotionSamples = Math.Max(2, minRunsForEarlyStop);
-        var winnerHasMinimumSamples = winner.TotalRuns >= minimumPromotionSamples;
-        var recommendations = WorkflowOptimizeReportRenderer.BuildOptimizeRecommendations(ranked);
-        if (!winnerHasMinimumSamples)
-        {
-            recommendations = recommendations
-                .Concat(new[]
-                {
-                    new WorkflowOptimizeRecommendation(
-                        Kind: "sample-size",
-                        Action: "collect-more-samples",
-                        CandidateId: winner.CandidateId,
-                        Rationale:
-                        $"Winner has {winner.TotalRuns} measured run(s); minimum {minimumPromotionSamples} run(s) required before promotion.")
-                })
-                .ToArray();
-        }
-        if (winnerConfidence < promotionConfidenceThreshold)
-        {
-            recommendations = recommendations
-                .Concat(new[]
-                {
-                    new WorkflowOptimizeRecommendation(
-                        Kind: "confidence",
-                        Action: "collect-more-samples",
-                        CandidateId: winner.CandidateId,
-                        Rationale:
-                        $"Winner confidence {winnerConfidence:F2} is below threshold {promotionConfidenceThreshold:F2}; collect more measured runs before promotion.")
-                })
-                .ToArray();
-        }
-        var synthesizedCandidateCount = ranked.Count(x => x.Synthesized);
-        var targetAllocations = WorkflowOptimizeReportRenderer.BuildTargetAllocations(allocationTrace);
-        var candidateAllocations = WorkflowOptimizeReportRenderer.BuildCandidateAllocations(allocationTrace, ranked);
-
-        string? promotionSummary = null;
-        string? promotedBaselineId = null;
-        if (promoteWinner && persistHistory)
-        {
-            if (!winnerHasMinimumSamples)
-            {
-                promotionSummary =
-                    $"Promotion skipped: winner has {winner.TotalRuns} measured run(s), requires at least {minimumPromotionSamples}.";
-            }
-            else if (winnerConfidence < promotionConfidenceThreshold)
-            {
-                promotionSummary =
-                    $"Promotion skipped: winner confidence {winnerConfidence:F2} below threshold {promotionConfidenceThreshold:F2}.";
-            }
-
-            var policyLoad = LoadGatePolicy(policyFile);
-            if (!string.IsNullOrWhiteSpace(promotionSummary))
-            {
-                // confidence guardrail already decided promotion outcome
-            }
-            else if (!policyLoad.Ok)
-            {
-                promotionSummary = $"Promotion skipped: {policyLoad.Error}";
-            }
-            else
-            {
-                var effectiveMinSuccessRateDelta = policyLoad.Policy?.MinSuccessRateDelta ?? -0.05;
-                var effectiveMaxP95LatencyRegressionMs = policyLoad.Policy?.MaxP95LatencyRegressionMs ?? 250;
-                var effectiveMaxAverageLatencyRegressionMs = policyLoad.Policy?.MaxAverageLatencyRegressionMs ?? 150;
-                var effectiveMinAverageScoreDelta = policyLoad.Policy?.MinAverageScoreDelta ?? -5.0;
-                var effectiveMaxRegressedScenarios = policyLoad.Policy?.MaxRegressedScenarios ?? 2;
-                var activeBaseline = WorkflowBaselineStore.ReadActive(repoRoot, benchmarkSet);
-                if (activeBaseline is not null)
-                {
-                    var history = WorkflowLabHistoryStore.ReadAll(repoRoot)
-                        .Where(x => string.Equals(x.BenchmarkSet, benchmarkSet, StringComparison.OrdinalIgnoreCase))
-                        .ToArray();
-                    var comparison = BuildComparison(history, winner.RunId, activeBaseline.RunId);
-                    if (!comparison.Valid)
-                    {
-                        promotionSummary = $"Promotion skipped: failed to compare against active baseline {activeBaseline.RunId}.";
-                    }
-                    else
-                    {
-                        var failures = new List<string>();
-                        if (comparison.SuccessRateDelta < effectiveMinSuccessRateDelta)
-                            failures.Add("success-rate");
-                        if (comparison.P95LatencyDeltaMs > effectiveMaxP95LatencyRegressionMs)
-                            failures.Add("p95-latency");
-                        if (comparison.AverageLatencyDeltaMs > effectiveMaxAverageLatencyRegressionMs)
-                            failures.Add("avg-latency");
-                        if (comparison.AverageScoreDelta < effectiveMinAverageScoreDelta)
-                            failures.Add("avg-score");
-                        if (comparison.RegressedScenarios > effectiveMaxRegressedScenarios)
-                            failures.Add("regressed-scenarios");
-
-                        if (failures.Count > 0)
-                        {
-                            promotionSummary =
-                                $"Promotion skipped: winner failed policy gates versus baseline {activeBaseline.RunId} ({string.Join(", ", failures)}).";
-                        }
-                    }
-                }
-
-                if (string.IsNullOrWhiteSpace(promotionSummary))
-                {
-                    var winnerRows = persistedRows
-                        .Where(x => string.Equals(x.RunId, winner.RunId, StringComparison.OrdinalIgnoreCase))
-                        .ToArray();
-                    if (winnerRows.Length == 0)
-                    {
-                        promotionSummary = "Promotion skipped: winner rows missing from history.";
-                    }
-                    else
-                    {
-                        var latest = winnerRows
-                            .OrderByDescending(x => x.StartedAtUtc)
-                            .First();
-                        var promoted = new WorkflowBaselineRecord
-                        {
-                            BaselineId = BuildBaselineId(benchmarkSet, winner.RunId),
-                            BenchmarkSet = benchmarkSet,
-                            RunId = winner.RunId,
-                            GitSha = latest.GitSha ?? "unknown",
-                            SpecHash = latest.SpecHash ?? "unknown",
-                            ProviderSnapshot = latest.ProviderSnapshot ?? "unknown",
-                            PromotedAtUtc = DateTimeOffset.UtcNow,
-                            Active = true,
-                            Notes = $"auto-promoted by workflow optimize ({optimizeRunId})",
-                            Policy = policyLoad.Policy is null
-                                ? null
-                                : new WorkflowGatePolicySpec
-                                {
-                                    BenchmarkSet = policyLoad.Policy.BenchmarkSet,
-                                    MinSuccessRateDelta = policyLoad.Policy.MinSuccessRateDelta,
-                                    MaxP95LatencyRegressionMs = policyLoad.Policy.MaxP95LatencyRegressionMs,
-                                    MaxAverageLatencyRegressionMs = policyLoad.Policy.MaxAverageLatencyRegressionMs,
-                                    MinAverageScoreDelta = policyLoad.Policy.MinAverageScoreDelta,
-                                    MaxRegressedScenarios = policyLoad.Policy.MaxRegressedScenarios
-                                }
-                        };
-                        WorkflowBaselineStore.Promote(repoRoot, promoted);
-                        promotedBaselineId = promoted.BaselineId;
-                        promotionSummary = $"Promoted winner run-id {winner.RunId} as active baseline {promoted.BaselineId}.";
-                    }
-                }
-            }
-        }
-        else if (promoteWinner && !persistHistory)
-        {
-            promotionSummary = "Promotion skipped: persist-history disabled.";
-        }
-
-        var reportPath = WorkflowOptimizeReportRenderer.ResolveOptimizeReportPath(reportOutputPath);
-        Directory.CreateDirectory(Path.GetDirectoryName(reportPath)!);
-        var reportContent = WorkflowOptimizeReportRenderer.RenderOptimizationRecommendationContent(
-            reportPath,
-            optimizeRunId,
-            benchmarkSet,
-            ranked,
-            winner,
-            recommendations,
-            promotionSummary,
-            objectiveText,
-            objectiveFile,
-            strategy,
-            measuredRunsUsed,
-            measuredRunBudget,
-            minRunsForEarlyStop,
-            minSuccessForEarlyStop,
-            synthesizedCandidateCount,
-            winnerConfidence,
-            promotionConfidenceThreshold,
-            allocationTrace,
-            targetAllocations,
-            candidateAllocations);
-        File.WriteAllText(reportPath, reportContent);
-
-        WorkflowOptimizeLastStore.Write(
-            repoRoot,
-            new WorkflowOptimizeLastPayload
-            {
-                WrittenAtUtc = DateTimeOffset.UtcNow,
-                OptimizeRunId = optimizeRunId,
-                Ok = ranked.Any(x => x.Successes > 0),
-                WinnerCandidateId = winner.CandidateId,
-                WinnerRunId = winner.RunId,
-                ModelProfileId = winner.ModelProfileId,
-                CompositionId = winner.CompositionId,
-                RequestId = winner.RequestId,
-                OllamaModels = winner.Models.ToArray()
-            });
-
-        var hasSuccess = ranked.Any(x => x.Successes > 0);
-        var result = new WorkflowOptimizeResult(
-            Ok: hasSuccess,
-            Summary: hasSuccess
-                ? $"Workflow optimize completed: evaluated {ranked.Length} candidate(s); winner={winner.CandidateId}."
-                : $"Workflow optimize completed with no successful candidates across {ranked.Length} evaluated candidate(s).",
-            SessionRunId: optimizeRunId,
-            BenchmarkSet: benchmarkSet,
-            RecommendationReportPath: reportPath,
-            Candidates: ranked,
-            Winner: winner,
-            Recommendations: recommendations,
-            PromotionSummary: promotionSummary,
-            PromotedBaselineId: promotedBaselineId,
-            Objective: objectiveText,
-            ObjectiveFile: objectiveFile,
-            SearchStrategy: strategy,
-            BudgetRuns: measuredRunBudget == int.MaxValue ? null : measuredRunBudget,
-            MeasuredRunsUsed: measuredRunsUsed,
-            EarlyStopMinRuns: minRunsForEarlyStop,
-            EarlyStopMinSuccessRate: minSuccessForEarlyStop,
-            SynthesizedCandidateCount: synthesizedCandidateCount,
-            AdaptiveSynthesizedCandidateCount: adaptiveSynthesisCount,
-            WinnerConfidence: winnerConfidence,
-            PromotionConfidenceThreshold: promotionConfidenceThreshold,
-            AllocationTrace: allocationTrace,
-            TargetAllocations: targetAllocations,
-            CandidateAllocations: candidateAllocations);
-        WriteOptimizeResult(result, json);
-        return result.Ok ? 0 : 1;
-    }
+        CancellationToken ct) => _optimizeHandler.ExecuteAsync(requestOverride, objective, objectiveFile, specPath, specJson, providerOverride, preferOverride, iterationsOverride, benchmarkSetOverride, persistHistoryOverride, warmupRunsOverride, shuffleScenariosOverride, randomSeedOverride, cooldownMsOverride, maxCandidates, budgetRuns, searchStrategy, earlyStopMinRuns, earlyStopMinSuccessRate, includeMeshPeers, meshCapability, autoPullModels, promoteWinner, policyFile, reportOutputPath, json, verbose, ct);
 
     private static async Task<ModelPullResult> PullOllamaModelsAsync(
         IReadOnlyList<string> models,
@@ -1728,7 +1077,7 @@ public sealed class WorkflowCommand : Command
         return "model_execution_failure";
     }
 
-    private static OrchestrationRuntimeSpec BuildRuntimeSpec(
+    internal static OrchestrationRuntimeSpec BuildRuntimeSpec(
         WorkflowLabCompositionSpec composition,
         WorkflowLabModelProfileSpec profile)
     {
@@ -1758,7 +1107,7 @@ public sealed class WorkflowCommand : Command
         };
     }
 
-    private static WorkflowLabRequestSpec[] NormalizeRequests(IReadOnlyList<WorkflowLabRequestSpec> requests)
+    internal static WorkflowLabRequestSpec[] NormalizeRequests(IReadOnlyList<WorkflowLabRequestSpec> requests)
     {
         return (requests ?? Array.Empty<WorkflowLabRequestSpec>())
             .Where(x => !string.IsNullOrWhiteSpace(x.Id))
@@ -1767,7 +1116,7 @@ public sealed class WorkflowCommand : Command
             .ToArray();
     }
 
-    private static WorkflowLabCompositionSpec[] NormalizeCompositions(IReadOnlyList<WorkflowLabCompositionSpec> compositions)
+    internal static WorkflowLabCompositionSpec[] NormalizeCompositions(IReadOnlyList<WorkflowLabCompositionSpec> compositions)
     {
         var output = new List<WorkflowLabCompositionSpec>();
         foreach (var composition in compositions ?? Array.Empty<WorkflowLabCompositionSpec>())
@@ -1805,7 +1154,7 @@ public sealed class WorkflowCommand : Command
         return output.ToArray();
     }
 
-    private static WorkflowLabModelProfileSpec[] NormalizeProfiles(
+    internal static WorkflowLabModelProfileSpec[] NormalizeProfiles(
         IReadOnlyList<WorkflowLabModelProfileSpec> profiles,
         string? providerOverride,
         string? preferOverride)
@@ -1851,17 +1200,17 @@ public sealed class WorkflowCommand : Command
         return updated;
     }
 
-    private static string ResolveDefaultSpecPath(string? explicitPath)
+    internal static string ResolveDefaultSpecPath(string? explicitPath)
     {
         if (!string.IsNullOrWhiteSpace(explicitPath))
             return Path.GetFullPath(explicitPath);
         return Path.Combine(Environment.CurrentDirectory, ".nexo", "workflow", "workflow_lab.runtime.json");
     }
 
-    private static string BuildRunId()
+    internal static string BuildRunId()
         => DateTimeOffset.UtcNow.ToString("yyyyMMdd-HHmmss") + "-" + Guid.NewGuid().ToString("N")[..8];
 
-    private static string ResolveGitSha()
+    internal static string ResolveGitSha()
     {
         try
         {
@@ -1884,7 +1233,7 @@ public sealed class WorkflowCommand : Command
         }
     }
 
-    private static string ComputeSpecHash(string raw)
+    internal static string ComputeSpecHash(string raw)
     {
         var text = raw ?? string.Empty;
         using var sha = System.Security.Cryptography.SHA256.Create();
@@ -1893,7 +1242,7 @@ public sealed class WorkflowCommand : Command
         return Convert.ToHexString(hash)[..12].ToLowerInvariant();
     }
 
-    private static string BuildProviderSnapshot(IReadOnlyList<WorkflowLabModelProfileSpec> profiles)
+    internal static string BuildProviderSnapshot(IReadOnlyList<WorkflowLabModelProfileSpec> profiles)
     {
         var providers = profiles
             .Select(x => x.Default.Provider)
@@ -1930,17 +1279,17 @@ public sealed class WorkflowCommand : Command
         }
     }
 
-    private static string BuildScenarioId(string requestId, string compositionId, string profileId, int iteration)
+    internal static string BuildScenarioId(string requestId, string compositionId, string profileId, int iteration)
         => $"{requestId}::{compositionId}::{profileId}::iter-{iteration}";
 
-    private static string NormalizeBenchmarkSet(string? benchmarkSetOverride, string defaultValue)
+    internal static string NormalizeBenchmarkSet(string? benchmarkSetOverride, string defaultValue)
     {
         var value = string.IsNullOrWhiteSpace(benchmarkSetOverride) ? defaultValue : benchmarkSetOverride;
         var normalized = (value ?? "workflow-lab").Trim().ToLowerInvariant();
         return string.IsNullOrWhiteSpace(normalized) ? "workflow-lab" : normalized;
     }
 
-    private static GatePolicyLoadResult LoadGatePolicy(string? policyFile)
+    internal static GatePolicyLoadResult LoadGatePolicy(string? policyFile)
     {
         if (string.IsNullOrWhiteSpace(policyFile))
             return new GatePolicyLoadResult(true, null, null);
@@ -1971,14 +1320,14 @@ public sealed class WorkflowCommand : Command
         }
     }
 
-    private static string BuildBaselineId(string benchmarkSet, string runId)
+    internal static string BuildBaselineId(string benchmarkSet, string runId)
     {
         var prefix = NormalizeBenchmarkSet(benchmarkSet, "workflow-lab").Replace(' ', '-');
         var suffix = string.IsNullOrWhiteSpace(runId) ? Guid.NewGuid().ToString("N")[..8] : runId.Trim();
         return $"{prefix}-{suffix}";
     }
 
-    private static RuntimeTelemetry CaptureRuntimeTelemetry(DateTimeOffset startedAtUtc, TimeSpan cpuStart)
+    internal static RuntimeTelemetry CaptureRuntimeTelemetry(DateTimeOffset startedAtUtc, TimeSpan cpuStart)
     {
         try
         {
@@ -2216,7 +1565,7 @@ public sealed class WorkflowCommand : Command
         return output;
     }
 
-    private static long ComputePercentile(IEnumerable<long> source, double percentile)
+    internal static long ComputePercentile(IEnumerable<long> source, double percentile)
     {
         var ordered = source.OrderBy(x => x).ToArray();
         if (ordered.Length == 0)
@@ -2226,7 +1575,7 @@ public sealed class WorkflowCommand : Command
         return ordered[index];
     }
 
-    private static IReadOnlyList<ScenarioPlan> BuildScenarioPlans(
+    internal static IReadOnlyList<ScenarioPlan> BuildScenarioPlans(
         IReadOnlyList<WorkflowLabRequestSpec> requests,
         IReadOnlyList<WorkflowLabCompositionSpec> compositions,
         IReadOnlyList<WorkflowLabModelProfileSpec> profiles,
@@ -2262,7 +1611,7 @@ public sealed class WorkflowCommand : Command
         }
     }
 
-    private static WorkflowRunComparison BuildComparison(
+    internal static WorkflowRunComparison BuildComparison(
         IReadOnlyList<WorkflowLabStressHistoryRow> rows,
         string? runId,
         string? baselineRunId)
@@ -2570,7 +1919,7 @@ public sealed class WorkflowCommand : Command
     }
 
 
-    private static double ComputeScore(
+    internal static double ComputeScore(
         bool success,
         long elapsedMs,
         WorkflowLabCompositionSpec composition,
@@ -2584,7 +1933,7 @@ public sealed class WorkflowCommand : Command
         return Math.Round(score, 3);
     }
 
-    private static string? ResolveObjectiveText(string? objective, string? objectiveFile)
+    internal static string? ResolveObjectiveText(string? objective, string? objectiveFile)
     {
         if (!string.IsNullOrWhiteSpace(objective))
             return objective.Trim();
@@ -2604,7 +1953,7 @@ public sealed class WorkflowCommand : Command
         }
     }
 
-    private static HashSet<string> BuildObjectiveKeywordSet(string? objective)
+    internal static HashSet<string> BuildObjectiveKeywordSet(string? objective)
     {
         var output = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         if (string.IsNullOrWhiteSpace(objective))
@@ -2620,7 +1969,7 @@ public sealed class WorkflowCommand : Command
         return output;
     }
 
-    private static List<OptimizeCandidatePlan> BuildObjectiveSynthesizedCandidates(
+    internal static List<OptimizeCandidatePlan> BuildObjectiveSynthesizedCandidates(
         IReadOnlyList<OptimizeCandidatePlan> baseCandidates,
         HashSet<string> objectiveKeywords,
         int maxCandidates)
@@ -2812,7 +2161,7 @@ public sealed class WorkflowCommand : Command
         return $"Derived from {seed.CandidateId}; objective keywords [{keywordText}] applied to request prompt and profile {synthesizedProfile.Id}.";
     }
 
-    private static string NormalizeSearchStrategy(string? searchStrategy)
+    internal static string NormalizeSearchStrategy(string? searchStrategy)
     {
         var value = string.IsNullOrWhiteSpace(searchStrategy)
             ? "successive-halving"
@@ -2825,7 +2174,7 @@ public sealed class WorkflowCommand : Command
         };
     }
 
-    private static List<OptimizeCandidatePlan> SortCandidatesForSearchStrategy(
+    internal static List<OptimizeCandidatePlan> SortCandidatesForSearchStrategy(
         IReadOnlyList<OptimizeCandidatePlan> candidates,
         string strategy,
         HashSet<string> objectiveKeywords)
@@ -2853,7 +2202,7 @@ public sealed class WorkflowCommand : Command
         return ranked.Take(halved).Concat(ranked.Skip(halved)).ToList();
     }
 
-    private static int ScoreCandidateForObjective(OptimizeCandidatePlan candidate, HashSet<string> objectiveKeywords)
+    internal static int ScoreCandidateForObjective(OptimizeCandidatePlan candidate, HashSet<string> objectiveKeywords)
     {
         if (objectiveKeywords.Count == 0)
             return 0;
@@ -2893,7 +2242,7 @@ public sealed class WorkflowCommand : Command
         return matches;
     }
 
-    private static OptimizeCandidateRuntimeState? SelectNextCandidateState(
+    internal static OptimizeCandidateRuntimeState? SelectNextCandidateState(
         IReadOnlyList<OptimizeCandidateRuntimeState> states,
         HashSet<string> objectiveKeywords)
     {
@@ -2916,7 +2265,7 @@ public sealed class WorkflowCommand : Command
             .FirstOrDefault();
     }
 
-    private static ExecutionTarget SelectExecutionTarget(
+    internal static ExecutionTarget SelectExecutionTarget(
         IReadOnlyList<ExecutionTarget> targets,
         IReadOnlyDictionary<string, TargetExecutionStats> targetStats)
     {
@@ -2949,7 +2298,7 @@ public sealed class WorkflowCommand : Command
             .First();
     }
 
-    private static void UpdateTargetExecutionStats(
+    internal static void UpdateTargetExecutionStats(
         IDictionary<string, TargetExecutionStats> targetStats,
         string targetId,
         bool success,
@@ -2968,7 +2317,7 @@ public sealed class WorkflowCommand : Command
         stats.TotalLatencyMs += Math.Max(0, latencyMs);
     }
 
-    private static OptimizeCandidatePlan? BuildAdaptiveFollowUpCandidate(
+    internal static OptimizeCandidatePlan? BuildAdaptiveFollowUpCandidate(
         OptimizeCandidatePlan seed,
         HashSet<string> objectiveKeywords,
         int cursor)
@@ -3001,85 +2350,6 @@ public sealed class WorkflowCommand : Command
             SynthesisRationale: rationale);
     }
 
-    private static void WriteOptimizeResult(WorkflowOptimizeResult result, bool json)
-    {
-        if (json)
-        {
-            Console.WriteLine(JsonSerializer.Serialize(new
-            {
-                ok = result.Ok,
-                summary = result.Summary,
-                sessionRunId = result.SessionRunId,
-                benchmarkSet = result.BenchmarkSet,
-                recommendationReportPath = result.RecommendationReportPath,
-                winner = result.Winner,
-                recommendations = result.Recommendations,
-                promotionSummary = result.PromotionSummary,
-                promotedBaselineId = result.PromotedBaselineId,
-                objective = result.Objective,
-                objectiveFile = result.ObjectiveFile,
-                searchStrategy = result.SearchStrategy,
-                budgetRuns = result.BudgetRuns,
-                measuredRunsUsed = result.MeasuredRunsUsed,
-                earlyStopMinRuns = result.EarlyStopMinRuns,
-                earlyStopMinSuccessRate = result.EarlyStopMinSuccessRate,
-                synthesizedCandidateCount = result.SynthesizedCandidateCount,
-                adaptiveSynthesizedCandidateCount = result.AdaptiveSynthesizedCandidateCount,
-                winnerConfidence = result.WinnerConfidence,
-                promotionConfidenceThreshold = result.PromotionConfidenceThreshold,
-                allocationTrace = result.AllocationTrace,
-                targetAllocations = result.TargetAllocations,
-                candidateAllocations = result.CandidateAllocations,
-                candidates = result.Candidates
-            }, new JsonSerializerOptions { WriteIndented = true }));
-            return;
-        }
-
-        Console.WriteLine($"workflow optimize: {(result.Ok ? "ok" : "failed")}");
-        Console.WriteLine(result.Summary);
-        if (!string.IsNullOrWhiteSpace(result.SessionRunId))
-            Console.WriteLine($"  session-run-id={result.SessionRunId}");
-        if (!string.IsNullOrWhiteSpace(result.BenchmarkSet))
-            Console.WriteLine($"  benchmark-set={result.BenchmarkSet}");
-        if (!string.IsNullOrWhiteSpace(result.RecommendationReportPath))
-            Console.WriteLine($"  recommendation-report={result.RecommendationReportPath}");
-        if (!string.IsNullOrWhiteSpace(result.Objective))
-            Console.WriteLine($"  objective={result.Objective}");
-        if (!string.IsNullOrWhiteSpace(result.ObjectiveFile))
-            Console.WriteLine($"  objective-file={result.ObjectiveFile}");
-        if (!string.IsNullOrWhiteSpace(result.SearchStrategy))
-            Console.WriteLine($"  search-strategy={result.SearchStrategy}");
-        if (result.MeasuredRunsUsed.HasValue)
-            Console.WriteLine($"  measured-runs-used={result.MeasuredRunsUsed}{(result.BudgetRuns.HasValue ? "/" + result.BudgetRuns.Value : string.Empty)}");
-        if (result.EarlyStopMinRuns.HasValue || result.EarlyStopMinSuccessRate.HasValue)
-            Console.WriteLine($"  early-stop=min-runs:{result.EarlyStopMinRuns ?? 0}, min-success-rate:{(result.EarlyStopMinSuccessRate ?? 0d):P0}");
-        if (result.SynthesizedCandidateCount.HasValue)
-            Console.WriteLine($"  synthesized-candidates={result.SynthesizedCandidateCount}");
-        if (result.AdaptiveSynthesizedCandidateCount.HasValue)
-            Console.WriteLine($"  adaptive-synthesized-candidates={result.AdaptiveSynthesizedCandidateCount}");
-        if (result.WinnerConfidence.HasValue)
-            Console.WriteLine($"  winner-confidence={result.WinnerConfidence:F2}");
-        if (result.PromotionConfidenceThreshold.HasValue)
-            Console.WriteLine($"  promotion-confidence-threshold={result.PromotionConfidenceThreshold:F2}");
-        if (result.AllocationTrace is { Count: > 0 })
-            Console.WriteLine($"  allocation-trace-entries={result.AllocationTrace.Count}");
-        if (result.Winner is not null)
-        {
-            Console.WriteLine(
-                $"  winner={result.Winner.CandidateId} (run-id={result.Winner.RunId}, success-rate={result.Winner.SuccessRate:P1}, avg-score={result.Winner.AverageScore:F2}, p95={result.Winner.P95LatencyMs}ms)");
-        }
-        if (result.Recommendations is { Count: > 0 })
-        {
-            Console.WriteLine("  recommendations:");
-            foreach (var recommendation in result.Recommendations)
-                Console.WriteLine($"    - [{recommendation.Action}] {recommendation.Kind}: {recommendation.Rationale}");
-        }
-        if (!string.IsNullOrWhiteSpace(result.PromotionSummary))
-            Console.WriteLine($"  promotion={result.PromotionSummary}");
-        if (!string.IsNullOrWhiteSpace(result.PromotedBaselineId))
-            Console.WriteLine($"  promoted-baseline-id={result.PromotedBaselineId}");
-    }
-
 
     private static string RenderComparisonText(WorkflowRunComparison comparison, string indent)
     {
@@ -3094,68 +2364,6 @@ public sealed class WorkflowCommand : Command
             $"{prefix}regressed-scenarios={comparison.RegressedScenarios}"
         };
         return string.Join(Environment.NewLine, lines);
-    }
-
-    private sealed record WorkflowOptimizeResult(
-        bool Ok,
-        string Summary,
-        string? SessionRunId = null,
-        string? BenchmarkSet = null,
-        string? RecommendationReportPath = null,
-        IReadOnlyList<WorkflowOptimizeCandidate>? Candidates = null,
-        WorkflowOptimizeCandidate? Winner = null,
-        IReadOnlyList<WorkflowOptimizeRecommendation>? Recommendations = null,
-        string? PromotionSummary = null,
-        string? PromotedBaselineId = null,
-        string? Objective = null,
-        string? ObjectiveFile = null,
-        string? SearchStrategy = null,
-        int? BudgetRuns = null,
-        int? MeasuredRunsUsed = null,
-        int? EarlyStopMinRuns = null,
-        double? EarlyStopMinSuccessRate = null,
-        int? SynthesizedCandidateCount = null,
-        int? AdaptiveSynthesizedCandidateCount = null,
-        double? WinnerConfidence = null,
-        double? PromotionConfidenceThreshold = null,
-        IReadOnlyList<OptimizeAllocationTrace>? AllocationTrace = null,
-        IReadOnlyList<TargetAllocationStat>? TargetAllocations = null,
-        IReadOnlyList<CandidateAllocationStat>? CandidateAllocations = null);
-
-    private sealed class OptimizeCandidateRuntimeState
-    {
-        public OptimizeCandidateRuntimeState(
-            OptimizeCandidatePlan candidate,
-            string candidateRunId,
-            string? profileProvider,
-            IReadOnlyList<string> requiredModels,
-            ModelPullResult pullResult,
-            IReadOnlyList<ScenarioPlan> plans)
-        {
-            Candidate = candidate;
-            CandidateRunId = candidateRunId;
-            ProfileProvider = profileProvider;
-            RequiredModels = requiredModels;
-            PullResult = pullResult;
-            Plans = plans;
-        }
-
-        public OptimizeCandidatePlan Candidate { get; }
-        public string CandidateRunId { get; }
-        public string? ProfileProvider { get; }
-        public IReadOnlyList<string> RequiredModels { get; }
-        public ModelPullResult PullResult { get; }
-        public IReadOnlyList<ScenarioPlan> Plans { get; }
-        public int NextPlanIndex { get; set; }
-        public bool EarlyStopped { get; set; }
-        public List<WorkflowStressRunRecord> Runs { get; } = new();
-    }
-
-    private sealed class TargetExecutionStats
-    {
-        public int Runs { get; set; }
-        public int Successes { get; set; }
-        public long TotalLatencyMs { get; set; }
     }
 
 
