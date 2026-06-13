@@ -38,7 +38,7 @@ internal sealed partial class OptimizeHandler(
         bool verbose,
         CancellationToken ct)
     {
-        var resolvedSpecPath = WorkflowCommand.ResolveDefaultSpecPath(specPath);
+        var resolvedSpecPath = WorkflowCommandUtilities.ResolveDefaultSpecPath(specPath);
         WorkflowLabRuntimeSpec spec;
         try
         {
@@ -50,9 +50,9 @@ internal sealed partial class OptimizeHandler(
             return 1;
         }
         var repoRoot = Environment.CurrentDirectory;
-        var requests = WorkflowCommand.NormalizeRequests(spec.Requests);
-        var compositions = WorkflowCommand.NormalizeCompositions(spec.Compositions);
-        var profiles = WorkflowCommand.NormalizeProfiles(spec.ModelProfiles, providerOverride, preferOverride);
+        var requests = WorkflowCommandUtilities.NormalizeRequests(spec.Requests);
+        var compositions = WorkflowCommandUtilities.NormalizeCompositions(spec.Compositions);
+        var profiles = WorkflowCommandUtilities.NormalizeProfiles(spec.ModelProfiles, providerOverride, preferOverride);
         if (requests.Length == 0 || compositions.Length == 0 || profiles.Length == 0)
         {
             WriteResult(new WorkflowOptimizeResult(
@@ -60,7 +60,7 @@ internal sealed partial class OptimizeHandler(
                 "Workflow optimize spec must include at least one request, composition, and model profile."), json);
             return 1;
         }
-        var objectiveText = WorkflowCommand.ResolveObjectiveText(objective, objectiveFile);
+        var objectiveText = WorkflowCommandUtilities.ResolveObjectiveText(objective, objectiveFile);
         if (objectiveText is null && !string.IsNullOrWhiteSpace(objectiveFile))
         {
             WriteResult(new WorkflowOptimizeResult(
@@ -70,7 +70,7 @@ internal sealed partial class OptimizeHandler(
                 ObjectiveFile: objectiveFile), json);
             return 1;
         }
-        var benchmarkSet = WorkflowCommand.NormalizeBenchmarkSet(benchmarkSetOverride, spec.Execution.BenchmarkSet);
+        var benchmarkSet = WorkflowCommandUtilities.NormalizeBenchmarkSet(benchmarkSetOverride, spec.Execution.BenchmarkSet);
         var persistHistory = persistHistoryOverride ?? spec.Execution.PersistHistory;
         var iterations = Math.Max(1, iterationsOverride ?? spec.Execution.Iterations);
         var warmupRuns = Math.Max(0, warmupRunsOverride ?? spec.Execution.WarmupRuns);
@@ -78,16 +78,16 @@ internal sealed partial class OptimizeHandler(
         var shuffleScenarios = shuffleScenariosOverride ?? spec.Execution.ShuffleScenarioOrder;
         var randomSeed = randomSeedOverride ?? spec.Execution.RandomSeed;
         var rng = randomSeed.HasValue ? new Random(randomSeed.Value) : null;
-        var strategy = WorkflowCommand.NormalizeSearchStrategy(searchStrategy);
+        var strategy = WorkflowCommandUtilities.NormalizeSearchStrategy(searchStrategy);
         var minRunsForEarlyStop = Math.Max(1, earlyStopMinRuns ?? 2);
         var minSuccessForEarlyStop = Math.Clamp(earlyStopMinSuccessRate ?? 0.35, 0d, 1d);
         var measuredRunBudget = budgetRuns.HasValue ? Math.Max(1, budgetRuns.Value) : int.MaxValue;
         var sharedRequest = string.IsNullOrWhiteSpace(requestOverride) ? null : requestOverride.Trim();
-        var optimizeRunId = WorkflowCommand.BuildRunId();
-        var specHash = WorkflowCommand.ComputeSpecHash(JsonSerializer.Serialize(spec));
-        var gitSha = WorkflowCommand.ResolveGitSha();
-        var providerSnapshot = WorkflowCommand.BuildProviderSnapshot(profiles);
-        var scenarioPlans = WorkflowCommand.BuildScenarioPlans(requests, compositions, profiles, iterations);
+        var optimizeRunId = WorkflowCommandUtilities.BuildRunId();
+        var specHash = WorkflowCommandUtilities.ComputeSpecHash(JsonSerializer.Serialize(spec));
+        var gitSha = WorkflowCommandUtilities.ResolveGitSha();
+        var providerSnapshot = WorkflowCommandUtilities.BuildProviderSnapshot(profiles);
+        var scenarioPlans = WorkflowCommandUtilities.BuildScenarioPlans(requests, compositions, profiles, iterations);
         var groupedCandidates = scenarioPlans
             .GroupBy(
                 x => $"{x.Request.Id}::{x.Composition.Id}::{x.Profile.Id}",
@@ -100,9 +100,9 @@ internal sealed partial class OptimizeHandler(
                 g.OrderBy(x => x.Iteration).ToArray()))
             .ToList();
 
-        var objectiveKeywordSet = WorkflowCommand.BuildObjectiveKeywordSet(objectiveText);
+        var objectiveKeywordSet = WorkflowCommandUtilities.BuildObjectiveKeywordSet(objectiveText);
         var maxCandidateCount = Math.Max(1, maxCandidates);
-        var synthesizedCandidates = WorkflowCommand.BuildObjectiveSynthesizedCandidates(
+        var synthesizedCandidates = WorkflowCommandUtilities.BuildObjectiveSynthesizedCandidates(
             groupedCandidates,
             objectiveKeywordSet,
             maxCandidateCount);
@@ -118,7 +118,7 @@ internal sealed partial class OptimizeHandler(
         if (shuffleScenarios && groupedCandidates.Count > 1)
             WorkflowOptimizeReportRenderer.ShuffleOptimizeCandidates(groupedCandidates, rng ?? new Random());
 
-        groupedCandidates = WorkflowCommand.SortCandidatesForSearchStrategy(groupedCandidates, strategy, objectiveKeywordSet);
+        groupedCandidates = WorkflowCommandUtilities.SortCandidatesForSearchStrategy(groupedCandidates, strategy, objectiveKeywordSet);
 
         if (groupedCandidates.Count > maxCandidateCount)
             groupedCandidates = groupedCandidates.Take(maxCandidateCount).ToList();
@@ -158,7 +158,7 @@ internal sealed partial class OptimizeHandler(
 
         while (measuredRunsUsed < measuredRunBudget)
         {
-            var candidateState = WorkflowCommand.SelectNextCandidateState(candidateStates, objectiveKeywordSet);
+            var candidateState = WorkflowCommandUtilities.SelectNextCandidateState(candidateStates, objectiveKeywordSet);
             if (candidateState is null)
                 break;
             ct.ThrowIfCancellationRequested();
@@ -168,10 +168,10 @@ internal sealed partial class OptimizeHandler(
             var composition = plan.Composition;
             var profile = plan.Profile;
             var iteration = plan.Iteration;
-            var executionTarget = WorkflowCommand.SelectExecutionTarget(executionTargets, targetStats);
-            var scenarioId = WorkflowCommand.BuildScenarioId(request.Id, composition.Id, profile.Id, iteration) +
+            var executionTarget = WorkflowCommandUtilities.SelectExecutionTarget(executionTargets, targetStats);
+            var scenarioId = WorkflowCommandUtilities.BuildScenarioId(request.Id, composition.Id, profile.Id, iteration) +
                              $"::target-{WorkflowOptimizeReportRenderer.NormalizeScenarioTargetSegment(executionTarget.Id)}";
-            var runtime = WorkflowCommand.BuildRuntimeSpec(composition, profile);
+            var runtime = WorkflowCommandUtilities.BuildRuntimeSpec(composition, profile);
             var runtimeJson = JsonSerializer.Serialize(runtime);
             var runtimeExecutionRequest = WorkflowOptimizeReportRenderer.BuildExecutionRequest(request, composition, profile, sharedRequest);
 
@@ -256,8 +256,8 @@ internal sealed partial class OptimizeHandler(
             }
 
             var elapsedMs = sw.ElapsedMilliseconds;
-            var telemetry = WorkflowCommand.CaptureRuntimeTelemetry(startedAt, cpuStart);
-            var score = WorkflowCommand.ComputeScore(scenario.Ok, elapsedMs, composition, profile);
+            var telemetry = WorkflowCommandUtilities.CaptureRuntimeTelemetry(startedAt, cpuStart);
+            var score = WorkflowCommandUtilities.ComputeScore(scenario.Ok, elapsedMs, composition, profile);
             var runSummary = $"{scenario.Summary} [target={executionTarget.Id}]";
             var runRecord = new WorkflowStressRunRecord(
                 candidateState.CandidateRunId,
@@ -288,7 +288,7 @@ internal sealed partial class OptimizeHandler(
                 benchmarkSet);
             candidateState.Runs.Add(runRecord);
             measuredRunsUsed++;
-            WorkflowCommand.UpdateTargetExecutionStats(targetStats, executionTarget.Id, runRecord.Success, runRecord.Skipped, runRecord.ElapsedMs);
+            WorkflowCommandUtilities.UpdateTargetExecutionStats(targetStats, executionTarget.Id, runRecord.Success, runRecord.Skipped, runRecord.ElapsedMs);
             allocationTrace.Add(new OptimizeAllocationTrace(
                 measuredRunsUsed,
                 candidateState.Candidate.CandidateId,
@@ -349,7 +349,7 @@ internal sealed partial class OptimizeHandler(
                 !candidateState.Candidate.Synthesized &&
                 objectiveKeywordSet.Count > 0)
             {
-                var adaptiveCandidate = WorkflowCommand.BuildAdaptiveFollowUpCandidate(
+                var adaptiveCandidate = WorkflowCommandUtilities.BuildAdaptiveFollowUpCandidate(
                     candidateState.Candidate,
                     objectiveKeywordSet,
                     ++adaptiveSynthesisCursor);
@@ -426,7 +426,7 @@ internal sealed partial class OptimizeHandler(
                     $"Promotion skipped: winner confidence {winnerConfidence:F2} below threshold {promotionConfidenceThreshold:F2}.";
             }
 
-            var policyLoad = WorkflowCommand.LoadGatePolicy(policyFile);
+            var policyLoad = WorkflowCommandUtilities.LoadGatePolicy(policyFile);
             if (!string.IsNullOrWhiteSpace(promotionSummary))
             {
                 // confidence guardrail already decided promotion outcome
@@ -448,7 +448,7 @@ internal sealed partial class OptimizeHandler(
                     var history = WorkflowLabHistoryStore.ReadAll(repoRoot)
                         .Where(x => string.Equals(x.BenchmarkSet, benchmarkSet, StringComparison.OrdinalIgnoreCase))
                         .ToArray();
-                    var comparison = WorkflowCommand.BuildComparison(history, winner.RunId, activeBaseline.RunId);
+                    var comparison = WorkflowCommandUtilities.BuildComparison(history, winner.RunId, activeBaseline.RunId);
                     if (!comparison.Valid)
                     {
                         promotionSummary = $"Promotion skipped: failed to compare against active baseline {activeBaseline.RunId}.";
@@ -491,7 +491,7 @@ internal sealed partial class OptimizeHandler(
                             .First();
                         var promoted = new WorkflowBaselineRecord
                         {
-                            BaselineId = WorkflowCommand.BuildBaselineId(benchmarkSet, winner.RunId),
+                            BaselineId = WorkflowCommandUtilities.BuildBaselineId(benchmarkSet, winner.RunId),
                             BenchmarkSet = benchmarkSet,
                             RunId = winner.RunId,
                             GitSha = latest.GitSha ?? "unknown",

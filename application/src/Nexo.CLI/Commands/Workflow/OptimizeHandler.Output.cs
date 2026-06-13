@@ -18,16 +18,16 @@ internal sealed partial class OptimizeHandler
             var avgLatency = candidateState.Runs.Count == 0
                 ? 0L
                 : (long)Math.Round(candidateState.Runs.Select(x => (double)x.ElapsedMs).DefaultIfEmpty(0d).Average());
-            var p95Latency = candidateState.Runs.Count == 0 ? 0L : WorkflowCommand.ComputePercentile(candidateState.Runs.Select(x => x.ElapsedMs), 0.95);
+            var p95Latency = candidateState.Runs.Count == 0 ? 0L : WorkflowCommandUtilities.ComputePercentile(candidateState.Runs.Select(x => x.ElapsedMs), 0.95);
             var avgScore = candidateState.Runs.Count == 0
                 ? 0d
                 : Math.Round(candidateState.Runs.Select(x => x.Score).DefaultIfEmpty(0d).Average(), 3);
             var avgCpuDelta = candidateState.Runs.Count == 0
                 ? 0L
                 : (long)Math.Round(candidateState.Runs.Select(x => (double)x.CpuTimeDeltaMs).DefaultIfEmpty(0d).Average());
-            var p95WorkingSet = candidateState.Runs.Count == 0 ? 0L : WorkflowCommand.ComputePercentile(candidateState.Runs.Select(x => x.WorkingSetMb), 0.95);
-            var p95PrivateMemory = candidateState.Runs.Count == 0 ? 0L : WorkflowCommand.ComputePercentile(candidateState.Runs.Select(x => x.PrivateMemoryMb), 0.95);
-            var p95ManagedMemory = candidateState.Runs.Count == 0 ? 0L : WorkflowCommand.ComputePercentile(candidateState.Runs.Select(x => x.ManagedMemoryMb), 0.95);
+            var p95WorkingSet = candidateState.Runs.Count == 0 ? 0L : WorkflowCommandUtilities.ComputePercentile(candidateState.Runs.Select(x => x.WorkingSetMb), 0.95);
+            var p95PrivateMemory = candidateState.Runs.Count == 0 ? 0L : WorkflowCommandUtilities.ComputePercentile(candidateState.Runs.Select(x => x.PrivateMemoryMb), 0.95);
+            var p95ManagedMemory = candidateState.Runs.Count == 0 ? 0L : WorkflowCommandUtilities.ComputePercentile(candidateState.Runs.Select(x => x.ManagedMemoryMb), 0.95);
             var maxThreadCount = candidateState.Runs.Count == 0 ? 0 : candidateState.Runs.Max(x => x.ThreadCount);
             var hardwareProfile = candidateState.Runs
                 .Select(x => x.HardwareProfile)
@@ -37,7 +37,7 @@ internal sealed partial class OptimizeHandler
                 .ThenBy(x => x.Key, StringComparer.OrdinalIgnoreCase)
                 .Select(x => x.Key)
                 .FirstOrDefault() ?? "unknown";
-            var candidateObjectiveScore = WorkflowCommand.ScoreCandidateForObjective(candidateState.Candidate, objectiveKeywordSet);
+            var candidateObjectiveScore = WorkflowCommandUtilities.ScoreCandidateForObjective(candidateState.Candidate, objectiveKeywordSet);
             candidates.Add(new WorkflowOptimizeCandidate(
                 CandidateId: candidateState.Candidate.CandidateId,
                 RunId: candidateState.CandidateRunId,
