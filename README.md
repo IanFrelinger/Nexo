@@ -77,6 +77,15 @@ Native setup depth lives in [`docs/GettingStarted.md`](docs/GettingStarted.md).
 
 Published `latest` GHCR images are available for the CLI/API, and source-built images remain the reproducible path from this checkout. CLI/API image commands and compose entry points are documented in [`docs/GettingStarted.md`](docs/GettingStarted.md) and [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md). Version-pinned public release artifacts are tracked in [`docs/Roadmap.md`](docs/Roadmap.md).
 
+After the `v0.1.0` tag release workflow completes, pin install commands to the versioned artifacts:
+
+```bash
+dotnet add package Nexo.Sdk --version 0.1.0
+dotnet add package Nexo.Hosting.Bundle --version 0.1.0
+docker pull ghcr.io/ianfrelinger/nexo-cli:0.1.0
+docker pull ghcr.io/ianfrelinger/nexo-api:0.1.0
+```
+
 ## Test and gate commands
 
 ```bash

@@ -14,10 +14,10 @@
     <AssemblyCompany>Nexo</AssemblyCompany>
     <AssemblyProduct>Nexo CLI</AssemblyProduct>
     <AssemblyCopyright>Copyright © Nexo 2024</AssemblyCopyright>
-    <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <FileVersion>1.0.0.0</FileVersion>
+    <AssemblyVersion>0.1.0.0</AssemblyVersion>
+    <FileVersion>0.1.0.0</FileVersion>
     <PackageId>Nexo.CLI</PackageId>
-    <PackageVersion>1.0.0</PackageVersion>
+    <PackageVersion>0.1.0</PackageVersion>
     <Description>Provider-agnostic LEGO-style feature factory CLI</Description>
     <PackageTags>nexo;ai;feature-factory;offline-first</PackageTags>
     <RepositoryUrl>https://github.com/IanFrelinger/Nexo</RepositoryUrl>
@@ -27,7 +27,7 @@
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <PackageProjectUrl>https://github.com/IanFrelinger/Nexo</PackageProjectUrl>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
 
@@ -38,7 +38,6 @@
     <PackageReference Include="Microsoft.Extensions.Logging" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" />
     <PackageReference Include="MediatR" />
-    <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All" />
   </ItemGroup>
 
   <ItemGroup>

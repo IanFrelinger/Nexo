@@ -10,7 +10,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
     <PackageId>Nexo.API</PackageId>
-    <PackageVersion>1.0.0</PackageVersion>
+    <PackageVersion>0.1.0</PackageVersion>
     <Title>Nexo API</Title>
     <Description>HTTP API for Nexo kernel. Exposes agent, validate, improve, observe, and execution endpoints.</Description>
     <PackageTags>nexo;ai;api;orchestration</PackageTags>

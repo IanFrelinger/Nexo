@@ -12,7 +12,7 @@ internal sealed class RemoteCapabilitiesOptions
 
     /// <summary>
     /// Maximum allowed age for stale capability reuse.
-    /// Set to <= 0 to disable stale-age enforcement.
+    /// Set to less than or equal to zero to disable stale-age enforcement.
     /// </summary>
     public TimeSpan MaxStaleAge { get; set; } = TimeSpan.FromMinutes(10);
 }

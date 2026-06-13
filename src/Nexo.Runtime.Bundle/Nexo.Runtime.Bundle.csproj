@@ -13,7 +13,7 @@
     <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
     <NoDefaultExcludes>true</NoDefaultExcludes>
     <PackageId>Nexo.Runtime.Bundle</PackageId>
-    <PackageVersion>1.0.0</PackageVersion>
+    <PackageVersion>0.1.0</PackageVersion>
     <Title>Nexo runtime kernel (bundle)</Title>
     <Description>
       Metapackage for the Nexo execution kernel: abstractions, domain, application ports, infrastructure,
@@ -23,7 +23,7 @@
     <PackageTags>nexo;runtime;kernel;metapackage</PackageTags>
     <RepositoryUrl>https://github.com/IanFrelinger/Nexo</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
   <ItemGroup>

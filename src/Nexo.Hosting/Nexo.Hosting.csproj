@@ -9,7 +9,7 @@
     <IsPackable>true</IsPackable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageId>Nexo.Hosting</PackageId>
-    <PackageVersion>1.0.0</PackageVersion>
+    <PackageVersion>0.1.0</PackageVersion>
     <Title>Nexo Hosting</Title>
     <Description>Hosting extensions for embedding the Nexo kernel in applications. Call AddNexo() to register orchestration, adaptation, persistence, trust, and agent services.</Description>
     <PackageTags>nexo;ai;hosting;di;orchestration;agents</PackageTags>

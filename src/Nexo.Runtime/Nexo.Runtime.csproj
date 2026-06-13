@@ -3,6 +3,13 @@
     <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>true</IsPackable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+    <PackageId>Nexo.Runtime</PackageId>
+    <Title>Nexo Runtime</Title>
+    <Description>Runtime routing, barrier enforcement, audit sinks, endpoint registry, and in-process agent execution primitives for Nexo.</Description>
+    <PackageTags>nexo;runtime;agents;routing;barriers</PackageTags>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\Nexo.Abstractions\Nexo.Abstractions.csproj" />

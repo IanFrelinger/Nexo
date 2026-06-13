@@ -10,7 +10,7 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
     <PackageId>Nexo.Ingress.DynamoDb</PackageId>
-    <PackageVersion>1.0.0</PackageVersion>
+    <PackageVersion>0.1.0</PackageVersion>
     <Title>Nexo DynamoDB ingress stores</Title>
     <Description>DynamoDB-backed SMS approval idempotency for Nexo ingress adapters.</Description>
   </PropertyGroup>

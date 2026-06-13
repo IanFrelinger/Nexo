@@ -3,4 +3,8 @@
     <PackageLicenseExpression Condition="'$(NexoCommercialProject)' == 'true'"></PackageLicenseExpression>
     <PackageLicenseExpression Condition="'$(NexoCommercialProject)' != 'true'">Apache-2.0</PackageLicenseExpression>
   </PropertyGroup>
+
+  <ItemGroup Condition="'$(IsPackable)' == 'true' AND '$(NexoCommercialProject)' != 'true' AND '$(MSBuildProjectName)' != 'StableSdkHostSample.Package' AND '$(MSBuildProjectName)' != 'Nexo.Hosting.Bundle' AND '$(MSBuildProjectName)' != 'Nexo.Runtime.Bundle'">
+    <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All" />
+  </ItemGroup>
 </Project>

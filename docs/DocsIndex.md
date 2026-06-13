@@ -33,6 +33,7 @@ Consumer-facing docs for using Nexo as an SDK, client, package graph, or running
 - `docs/MiddlewareIngress.md` — SMS/SNS/DynamoDB ingress contracts and behavior.
 - `docs/NuGetConsumerVerify.md` — package consumption verification.
 - `docs/SdkCompatibilityPolicy.md` — supported package compatibility policy.
+- `docs/Versioning.md` — SemVer, version-locked artifact set, 0.x breaking policy, and deprecation policy.
 
 ## Developing Nexo
 
@@ -45,6 +46,7 @@ Maintainer-facing docs for changing the monorepo, validating gates, and operatin
 - `docs/CiGateInventory.md` — workflow inventory.
 - `docs/ProductionReadinessGate-v1.md` — production readiness gate.
 - `docs/RELEASE.md` and `docs/RELEASE_RUNBOOK.md` — release process.
+- `docs/Versioning.md` — versioning and deprecation policy.
 - `docs/SurfaceReview.md` — supported package public API surface review.
 - `docs/Roadmap.md` — deferred claims and release-artifact follow-ups.
 
