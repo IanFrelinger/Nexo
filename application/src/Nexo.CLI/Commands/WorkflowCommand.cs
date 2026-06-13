@@ -44,6 +44,7 @@ public sealed class WorkflowCommand : Command
     private readonly HistoryHandler _historyHandler;
     private readonly BaselineHandler _baselineHandler;
     private readonly ReportHandler _reportHandler;
+    private readonly GateHandler _gateHandler;
 
     public WorkflowCommand(Func<OrchestrateCommand> orchestrateFactory)
         : this(
@@ -178,6 +179,7 @@ public sealed class WorkflowCommand : Command
         _historyHandler = new HistoryHandler();
         _baselineHandler = new BaselineHandler(NormalizeBenchmarkSet, LoadGatePolicy, BuildBaselineId);
         _reportHandler = new ReportHandler(BuildBenchmarkReport, BuildComparison, RenderReportContent, RenderComparisonText);
+        _gateHandler = new GateHandler(NormalizeBenchmarkSet, LoadGatePolicy, BuildComparison, RenderComparisonText);
         ConfigureScaffoldCommand();
         ConfigureStressCommand();
         ConfigureHistoryCommand();
@@ -686,82 +688,7 @@ public sealed class WorkflowCommand : Command
         long maxAverageLatencyRegressionMs,
         double minAverageScoreDelta,
         int maxRegressedScenarios,
-        bool json)
-    {
-        var fullRepoRoot = Path.GetFullPath(string.IsNullOrWhiteSpace(repoRoot) ? Environment.CurrentDirectory : repoRoot);
-        if (!Directory.Exists(fullRepoRoot))
-        {
-            WriteGateResult(new WorkflowGateResult(false, false, $"Repo root not found: {fullRepoRoot}"), json);
-            return Task.FromResult(1);
-        }
-
-        if (string.IsNullOrWhiteSpace(runId))
-        {
-            WriteGateResult(new WorkflowGateResult(false, false, "--run-id is required."), json);
-            return Task.FromResult(1);
-        }
-
-        var policyResult = LoadGatePolicy(policyFile);
-        if (!policyResult.Ok)
-        {
-            WriteGateResult(new WorkflowGateResult(false, false, policyResult.Error ?? "Unable to parse policy file."), json);
-            return Task.FromResult(1);
-        }
-
-        var normalizedBenchmarkSet = NormalizeBenchmarkSet(
-            benchmarkSet,
-            string.IsNullOrWhiteSpace(policyResult.Policy?.BenchmarkSet) ? "workflow-lab" : policyResult.Policy!.BenchmarkSet!);
-        var resolvedBaselineRunId = string.IsNullOrWhiteSpace(baselineRunId)
-            ? WorkflowBaselineStore.ReadActive(fullRepoRoot, normalizedBenchmarkSet)?.RunId
-            : baselineRunId.Trim();
-        if (string.IsNullOrWhiteSpace(resolvedBaselineRunId))
-        {
-            WriteGateResult(new WorkflowGateResult(
-                false,
-                false,
-                $"No baseline run-id provided and no active baseline found for benchmark-set '{normalizedBenchmarkSet}'."), json);
-            return Task.FromResult(1);
-        }
-
-        var rows = WorkflowLabHistoryStore.ReadAll(fullRepoRoot);
-        if (!string.IsNullOrWhiteSpace(normalizedBenchmarkSet))
-        {
-            rows = rows.Where(x => string.Equals(x.BenchmarkSet, normalizedBenchmarkSet, StringComparison.OrdinalIgnoreCase)).ToArray();
-        }
-
-        var comparison = BuildComparison(rows, runId, resolvedBaselineRunId);
-        if (!comparison.Valid)
-        {
-            WriteGateResult(new WorkflowGateResult(false, false, comparison.Summary ?? "Failed to build comparison.", Comparison: comparison), json);
-            return Task.FromResult(1);
-        }
-
-        var effectiveMinSuccessRateDelta = policyResult.Policy?.MinSuccessRateDelta ?? minSuccessRateDelta;
-        var effectiveMaxP95LatencyRegressionMs = policyResult.Policy?.MaxP95LatencyRegressionMs ?? maxP95LatencyRegressionMs;
-        var effectiveMaxAverageLatencyRegressionMs = policyResult.Policy?.MaxAverageLatencyRegressionMs ?? maxAverageLatencyRegressionMs;
-        var effectiveMinAverageScoreDelta = policyResult.Policy?.MinAverageScoreDelta ?? minAverageScoreDelta;
-        var effectiveMaxRegressedScenarios = policyResult.Policy?.MaxRegressedScenarios ?? maxRegressedScenarios;
-
-        var failures = new List<string>();
-        if (comparison.SuccessRateDelta < effectiveMinSuccessRateDelta)
-            failures.Add($"successRateDelta {comparison.SuccessRateDelta:F4} < {effectiveMinSuccessRateDelta:F4}");
-        if (comparison.P95LatencyDeltaMs > effectiveMaxP95LatencyRegressionMs)
-            failures.Add($"p95LatencyDeltaMs {comparison.P95LatencyDeltaMs} > {effectiveMaxP95LatencyRegressionMs}");
-        if (comparison.AverageLatencyDeltaMs > effectiveMaxAverageLatencyRegressionMs)
-            failures.Add($"averageLatencyDeltaMs {comparison.AverageLatencyDeltaMs} > {effectiveMaxAverageLatencyRegressionMs}");
-        if (comparison.AverageScoreDelta < effectiveMinAverageScoreDelta)
-            failures.Add($"averageScoreDelta {comparison.AverageScoreDelta:F3} < {effectiveMinAverageScoreDelta:F3}");
-        if (comparison.RegressedScenarios > effectiveMaxRegressedScenarios)
-            failures.Add($"regressedScenarios {comparison.RegressedScenarios} > {effectiveMaxRegressedScenarios}");
-
-        var passed = failures.Count == 0;
-        var summary = passed
-            ? $"Workflow gate passed for run {comparison.RunId} vs baseline {comparison.BaselineRunId}."
-            : $"Workflow gate failed for run {comparison.RunId} vs baseline {comparison.BaselineRunId}: {string.Join("; ", failures)}";
-        var result = new WorkflowGateResult(true, passed, summary, failures.ToArray(), comparison);
-        WriteGateResult(result, json);
-        return Task.FromResult(passed ? 0 : 1);
-    }
+        bool json) => _gateHandler.ExecuteAsync(repoRoot, benchmarkSet, runId, baselineRunId, policyFile, minSuccessRateDelta, maxP95LatencyRegressionMs, maxAverageLatencyRegressionMs, minAverageScoreDelta, maxRegressedScenarios, json);
 
     internal async Task<int> ExecuteStressAsync(
         string? requestOverride,
@@ -3432,35 +3359,6 @@ public sealed class WorkflowCommand : Command
             Console.WriteLine($"  promoted-baseline-id={result.PromotedBaselineId}");
     }
 
-    private static void WriteGateResult(WorkflowGateResult result, bool json)
-    {
-        if (json)
-        {
-            Console.WriteLine(JsonSerializer.Serialize(new
-            {
-                ok = result.Ok,
-                passed = result.Passed,
-                summary = result.Summary,
-                failures = result.Failures,
-                comparison = result.Comparison
-            }, new JsonSerializerOptions { WriteIndented = true }));
-            return;
-        }
-
-        Console.WriteLine($"workflow gate: {(result.Ok ? (result.Passed ? "passed" : "failed") : "error")}");
-        Console.WriteLine(result.Summary);
-        if (result.Failures is { Count: > 0 })
-        {
-            Console.WriteLine("  thresholds:");
-            foreach (var failure in result.Failures)
-                Console.WriteLine($"    - {failure}");
-        }
-        if (result.Comparison is { Valid: true })
-        {
-            Console.WriteLine(RenderComparisonText(result.Comparison, "  "));
-        }
-    }
-
 
     private static string RenderComparisonText(WorkflowRunComparison comparison, string indent)
     {
@@ -3551,13 +3449,6 @@ public sealed class WorkflowCommand : Command
         IReadOnlyList<OptimizeAllocationTrace>? AllocationTrace = null,
         IReadOnlyList<TargetAllocationStat>? TargetAllocations = null,
         IReadOnlyList<CandidateAllocationStat>? CandidateAllocations = null);
-
-    private sealed record WorkflowGateResult(
-        bool Ok,
-        bool Passed,
-        string Summary,
-        IReadOnlyList<string>? Failures = null,
-        WorkflowRunComparison? Comparison = null);
 
     private sealed class OptimizeCandidateRuntimeState
     {

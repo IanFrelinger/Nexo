@@ -102,3 +102,10 @@ internal sealed record WorkflowScenarioDelta(
     double SuccessRateDelta,
     long AverageLatencyDeltaMs,
     double AverageScoreDelta);
+
+internal sealed record WorkflowGateResult(
+    bool Ok,
+    bool Passed,
+    string Summary,
+    IReadOnlyList<string>? Failures = null,
+    WorkflowRunComparison? Comparison = null);
