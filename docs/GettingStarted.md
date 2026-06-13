@@ -2,7 +2,7 @@
 
 This guide covers initial setup, trust configuration, and first pipeline validation. Nexo operates on local infrastructure with no external service dependencies. Trust controls are available but disabled by default — enable with `NEXO_TRUST_ENABLED=1`.
 
-The **default** path is **containers + CLI**: develop inside the **Dev Container** (or run published **GHCR** images / **compose** stacks). If you cannot use Docker at all, use **`scripts/setup/*`** on a machine with **.NET SDK 9** (no separate repo “installer” scripts). See `README.md` for the full map.
+The **default** path is **containers + CLI**: develop inside the **Dev Container** (or run published **GHCR** images / **compose** stacks). If you cannot use Docker at all, use **`scripts/setup/*`** on a machine with **.NET SDK 8** (no separate repo “installer” scripts). See `README.md` for the full map.
 
 ## Quickest path (recommended)
 
@@ -31,7 +31,7 @@ In ~10-15 minutes, you will:
 ## Prerequisites
 
 - **Default:** Docker (Desktop or Engine) and Git. You do **not** need a host .NET SDK for Dev Container, quickstart image, or `docker run … ghcr.io/ianfrelinger/nexo-cli`.
-- **Native lane:** .NET SDK **9.x** (repo is pinned in `global.json`).
+- **Native lane:** .NET SDK **8.x** (repo is pinned in `global.json`).
 - Optional: Ollama/OpenAI/Azure credentials (model-backed commands).
 
 ## 1) Choose your startup lane
@@ -243,7 +243,7 @@ Then resolve application ports from DI (analysis, validation, orchestration, etc
 
 ## Common pitfalls
 
-- If commands fail due to SDK mismatch, ensure your local SDK honors `global.json` (`9.x`).
+- If commands fail due to SDK mismatch, ensure your local SDK honors `global.json` (`8.x`).
 - **`dotnet build Nexo.sln`** should succeed on Linux with a stock .NET SDK; use **`Nexo.LocalDevCore.slnf`** or **`Nexo.PrimeTime.slnf`** when you want a smaller/faster slice.
 - Prefer running heavy validations sequentially (not in parallel terminals) to avoid resource pressure.
 - For CI parity, use the documented gate workflows under `.github/workflows/`.

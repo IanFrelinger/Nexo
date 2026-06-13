@@ -11,7 +11,7 @@
       <CopyScriptDir>$(MSBuildThisFileDirectory)scripts</CopyScriptDir>
       <CopyScriptProj>$(CopyScriptDir)\copy-assemblies.csproj</CopyScriptProj>
       <CopyScriptProj Condition="'$(OS)' != 'Windows_NT'">$(CopyScriptDir)/copy-assemblies.csproj</CopyScriptProj>
-      <!-- Always net8.0 — see scripts/copy-assemblies.csproj (avoids NETSDK1005 when parent is net9.0). -->
+      <!-- Always net8.0 — see scripts/copy-assemblies.csproj (keeps helper aligned with the repo baseline). -->
       <CopyAssemblyToolTfm>net8.0</CopyAssemblyToolTfm>
       <CopyScriptExe>$(CopyScriptDir)\bin\Debug\$(CopyAssemblyToolTfm)\copy-assemblies.dll</CopyScriptExe>
       <CopyScriptExe Condition="'$(OS)' != 'Windows_NT'">$(CopyScriptDir)/bin/Debug/$(CopyAssemblyToolTfm)/copy-assemblies.dll</CopyScriptExe>

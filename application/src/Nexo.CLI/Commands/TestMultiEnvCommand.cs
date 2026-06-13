@@ -286,9 +286,8 @@ public class TestMultiEnvCommand
             var tag = $"nexo-trust-test:{env}";
             if (!json && console != null) console.WriteLine($"Testing Trust on {env}...");
 
-            var dotnetVer = "9.0";
-            var sdkVer = string.Equals(dotnetVer, "8.0", StringComparison.Ordinal) ? "9.0" : dotnetVer;
-            var buildExit = await RunProcessAsync("docker", $"build -f \"{path}\" -t {tag} --build-arg DOTNET_SDK_VERSION={sdkVer} \"{root}\"", root, verbose ? console : null);
+            var dotnetVer = "8.0";
+            var buildExit = await RunProcessAsync("docker", $"build -f \"{path}\" -t {tag} --build-arg DOTNET_VERSION={dotnetVer} \"{root}\"", root, verbose ? console : null);
             if (buildExit != 0)
             {
                 if (!json) console?.WriteError($"  Failed to build {env}");
@@ -297,9 +296,9 @@ public class TestMultiEnvCommand
             }
 
             var logFile = Path.Combine(logBaseDir, $"{env}-trust.log");
-            // Use -f net9.0: SDK 9 images lack net8.0 runtime; single-quote logger to avoid nested shell quoting
-            var testArgsInfra = $"test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net9.0 --filter {trustFilter} --logger 'console;verbosity=minimal' --logger 'trx;LogFileName={env}-trust-infra.trx' --results-directory /workspace/test-results";
-            var testArgsBg = $"test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj -f net9.0 --filter {trustFilter} --logger 'console;verbosity=minimal' --logger 'trx;LogFileName={env}-trust-bg.trx' --results-directory /workspace/test-results";
+            // Single-quote logger to avoid nested shell quoting.
+            var testArgsInfra = $"test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net8.0 --filter {trustFilter} --logger 'console;verbosity=minimal' --logger 'trx;LogFileName={env}-trust-infra.trx' --results-directory /workspace/test-results";
+            var testArgsBg = $"test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj -f net8.0 --filter {trustFilter} --logger 'console;verbosity=minimal' --logger 'trx;LogFileName={env}-trust-bg.trx' --results-directory /workspace/test-results";
             var volMount = ephemeral ? "" : $" -v \"{resultsDir}\":/workspace/test-results";
             var networkOpt = noNetwork ? " --network none" : "";
             var runCmd = $"run --rm{volMount}{networkOpt} {tag} bash -c \"cd /workspace && dotnet {testArgsInfra} && dotnet {testArgsBg}\"";
@@ -342,11 +341,10 @@ public class TestMultiEnvCommand
             var path = Path.GetFullPath(Path.Combine(root, df.TrimStart('/', '\\').Replace('/', Path.DirectorySeparatorChar)));
             if (!File.Exists(path)) continue;
             var tag = $"nexo-caching-test:{env}";
-            var dotnetVer = "9.0";
-            var sdkVer = string.Equals(dotnetVer, "8.0", StringComparison.Ordinal) ? "9.0" : dotnetVer;
-            var buildExit = await RunProcessAsync("docker", $"build -f \"{path}\" -t {tag} --build-arg DOTNET_SDK_VERSION={sdkVer} \"{root}\"", root, verbose ? console : null);
+            var dotnetVer = "8.0";
+            var buildExit = await RunProcessAsync("docker", $"build -f \"{path}\" -t {tag} --build-arg DOTNET_VERSION={dotnetVer} \"{root}\"", root, verbose ? console : null);
             if (buildExit != 0) { failed++; continue; }
-            var testArgs = $"test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net9.0 --filter {filter} --logger 'console;verbosity=minimal'";
+            var testArgs = $"test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net8.0 --filter {filter} --logger 'console;verbosity=minimal'";
             var networkOpt = noNetwork ? " --network none" : "";
             var runExit = await RunProcessAsync("docker", $"run --rm{volMount}{networkOpt} {tag} bash -c \"cd /workspace && dotnet {testArgs}\"", root);
             if (runExit != 0) failed++;

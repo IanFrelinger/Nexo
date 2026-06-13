@@ -53,13 +53,13 @@ For Infrastructure Sdk / Hosting registration changes, prefer **`dotnet build Ne
 - **xUnit** suites (for example `Nexo.Tests.Infrastructure`) run with normal `dotnet test` filters.
 - **`UnitTestBase`** tests are executed by **`ITestRunner`** / **`TestRunnerAdapter`** (same path as the CLI). **`UnitTestFrameworkBridge`** (in `Nexo.Infrastructure`) exposes **`UnitTestBridgeTests`** in **`Nexo.Tests.Domain`**, **`Nexo.Tests.Application`**, **`Nexo.Tests.Infrastructure`**, and **`Nexo.Tests.CLI`** so `dotnet test` on those projects runs most framework suites. A few types are skipped when they need a special layout or host (see `docs/architecture/TestingModel.md`).
 
-High-level architecture notes: `docs/architecture/README.md`. SDK vs. `net8.0` / `net9.0`: `docs/architecture/DotnetVersions.md`.
+High-level architecture notes: `docs/architecture/README.md`. SDK and target framework policy: `docs/architecture/DotnetVersions.md`.
 
 ## Prerequisites (native escape hatch)
 
 Use this only when you cannot use the dev container or other Docker workflows:
 
-- .NET SDK `9.x` (pinned by `global.json`)
+- .NET SDK `8.x` (pinned by `global.json`)
 - Git
 - Optional: Docker (for multi-environment and compose-based test lanes)
 

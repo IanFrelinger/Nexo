@@ -69,7 +69,7 @@ Choose your lane (recommended):
 - Docker (Desktop or Engine) and Git.
 - Optional: Ollama/OpenAI/Azure credentials for live model backends.
 
-You do **not** need a host-installed .NET SDK for the Dev Container or published container paths. Install .NET SDK 9.x only for the native escape hatch in Lane B.
+You do **not** need a host-installed .NET SDK for the Dev Container or published container paths. Install .NET SDK 8.x only for the native escape hatch in Lane B.
 
 #### 2) Dev Container (Cursor / VS Code)
 

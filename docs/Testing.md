@@ -298,11 +298,11 @@ Three Docker test images are maintained under `.docker/`:
 
 | Image | Base | Purpose |
 |-------|------|---------|
-| `Dockerfile.test-caching` | Ubuntu + .NET 9 SDK | Framework, trust, and smoke tests |
-| `Dockerfile.test-caching-alpine` | Alpine + .NET 9 SDK | Alpine-specific portability tests |
-| `Dockerfile.test-caching-debian` | Debian + .NET 9 SDK | Debian-specific portability tests |
+| `Dockerfile.test-caching` | Ubuntu + .NET 8 SDK | Framework, trust, and smoke tests |
+| `Dockerfile.test-caching-alpine` | Alpine + .NET 8 SDK | Alpine-specific portability tests |
+| `Dockerfile.test-caching-debian` | Debian + .NET 8 SDK | Debian-specific portability tests |
 
-All three include the .NET 8 runtime (for CLI `net8.0` target) and pre-build test projects + CLI during image build.
+All three use the .NET 8 SDK/runtime baseline and pre-build test projects + CLI during image build.
 
 ## E2E Test Coverage
 

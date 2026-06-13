@@ -2,12 +2,12 @@
 
 ## SDK version (`global.json`)
 
-The repository pins the **.NET SDK** to **9.x** (see `global.json` with `rollForward: latestMinor`). Developer images and CI often use **`mcr.microsoft.com/dotnet/sdk:9.0`** so everyone builds with the same MSBuild and C# language version.
+The repository pins the **.NET SDK** to **8.x** (see `global.json` with `rollForward: latestFeature`). Developer images and CI use **`mcr.microsoft.com/dotnet/sdk:8.0`** so everyone builds with the same LTS toolchain and target baseline.
 
 ## Target frameworks
 
-Many libraries and executables target **`net8.0`** (current LTS for shipped artifacts). That is intentional: runtime and deployment baselines stay on LTS while the **toolchain** stays current.
+Libraries, executables, and test projects target **`net8.0`** as the current LTS for shipped artifacts and local development.
 
-Some test projects multi-target **`net8.0` and `net9.0`** (for example `Nexo.Tests.Infrastructure`) so CI can exercise both runtimes where workflows pass `-f net9.0`.
+Some compatibility libraries continue to multi-target **`netstandard2.0` and `net8.0`** where published packages need older consumer/runtime reach (for example Unity-oriented and runtime-core surfaces). Do not add new target frameworks without documenting the package compatibility need.
 
-**Rule of thumb:** use the SDK from `global.json` to build; ship or run on `net8.0` unless a specific project or workflow documents a different TFM.
+**Rule of thumb:** use the SDK from `global.json` to build; ship, test, and run on `net8.0` unless a compatibility package explicitly documents a retained `netstandard2.0` target.

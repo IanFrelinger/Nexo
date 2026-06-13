@@ -13,7 +13,7 @@ public static class CliRunner
     private static readonly Dictionary<string, string> _cachedCliPaths = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>
-    /// Serializes <c>dotnet build</c> across parallel test hosts (e.g. net8.0 + net9.0) so
+    /// Serializes <c>dotnet build</c> across parallel test hosts so
     /// concurrent MSBuild invocations do not corrupt shared <c>obj</c> trees.
     /// </summary>
     private static readonly Mutex s_crossProcessBuild =

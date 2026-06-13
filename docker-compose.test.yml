@@ -7,14 +7,14 @@ services:
     volumes:
       - ./test-results:/workspace/test-results
     environment:
-      - DOTNET_VERSION=9.0
+      - DOTNET_VERSION=8.0
     command: >
       bash -lc "dotnet test /workspace/src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj
-      -f net9.0
+      -f net8.0
       --filter 'FullyQualifiedName~BaseFrameworkSmokeTests'
       --logger 'trx;LogFileName=ubuntu-baseframework.trx'
       --results-directory /workspace/test-results
       > /workspace/test-results/ubuntu-logs.txt 2>&1
-      && printf '{\"ok\":true,\"suite\":\"BaseFrameworkSmokeTests\",\"framework\":\"net9.0\"}\n'
+      && printf '{\"ok\":true,\"suite\":\"BaseFrameworkSmokeTests\",\"framework\":\"net8.0\"}\n'
       > /workspace/test-results/ubuntu-results.json"
 

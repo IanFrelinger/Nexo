@@ -4,7 +4,7 @@ This guide walks you through submitting your first coding task through the Nexo 
 
 ## Prerequisites
 
-- .NET SDK 9.x (repo is pinned by `global.json`; the API project targets `net8.0` but requires the 9.x SDK to build)
+- .NET SDK 8.x (repo is pinned by `global.json`; the API project targets `net8.0`)
 - Nexo repo cloned and built (`dotnet build application/src/Nexo.API/Nexo.API.csproj`)
 - An LLM provider configured (or `NEXO_ALLOW_MOCK=1` for local testing without API keys)
 

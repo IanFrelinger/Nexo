@@ -12,11 +12,11 @@ Fail fast on environment drift before deeper functional gates run.
 - `macos-latest`
 - `windows-latest`
 - Ephemeral Linux container:
-  - `mcr.microsoft.com/dotnet/sdk:9.0`
+  - `mcr.microsoft.com/dotnet/sdk:8.0`
 
 Ephemeral container validation (Linux):
 
-- `mcr.microsoft.com/dotnet/sdk:9.0`
+- `mcr.microsoft.com/dotnet/sdk:8.0`
 
 ## Gate workflow
 
@@ -24,7 +24,7 @@ Workflow file: `.github/workflows/environment-setup-gate-v1.yml`
 
 Each matrix job performs:
 
-1. Setup .NET SDK (`9.0.x`, `8.0.x`).
+1. Setup .NET SDK (`8.0.x`).
 2. Run platform setup dependency check:
    - Linux/macOS: `bash scripts/setup/setup.sh check`
    - Windows: `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode check`
