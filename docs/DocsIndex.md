@@ -20,6 +20,34 @@ Documentation index for the Nexo platform. Start here to find what you need.
 14. `docs/CommercialExtractionPlan.md` — planned commercial module extraction sequence after the open-core licensing boundary.
 15. `docs/FleetGovernanceExtractionInventory.md` — fleet/mesh governance file classification for the next commercial extraction phase.
 
+## Building on Nexo
+
+Consumer-facing docs for using Nexo as an SDK, client, package graph, or running service:
+
+- `docs/GettingStarted.md` — first setup lanes, CLI smoke checks, and first pipeline.
+- `docs/sdk.md` — SDK integration guidance.
+- `docs/SdkIntegrationGuide.md` — host integration and extension points.
+- `docs/DistributionModels.md` — source, local image, NuGet, HTTP, compose, and mesh distribution channels.
+- `docs/api/index.md` — API documentation index.
+- `docs/Configuration.md` — environment variables and configuration.
+- `docs/MiddlewareIngress.md` — SMS/SNS/DynamoDB ingress contracts and behavior.
+- `docs/NuGetConsumerVerify.md` — package consumption verification.
+- `docs/SdkCompatibilityPolicy.md` — supported package compatibility policy.
+
+## Developing Nexo
+
+Maintainer-facing docs for changing the monorepo, validating gates, and operating release infrastructure:
+
+- `CONTRIBUTING.md` — contributor workflow and PR checks.
+- `docs/ProjectTiers.md` — canonical repo/project tier map.
+- `docs/architecture/README.md` — architecture map.
+- `docs/Testing.md` — local and CI testing guidance.
+- `docs/CiGateInventory.md` — workflow inventory.
+- `docs/ProductionReadinessGate-v1.md` — production readiness gate.
+- `docs/RELEASE.md` and `docs/RELEASE_RUNBOOK.md` — release process.
+- `docs/SurfaceReview.md` — supported package public API surface review.
+- `docs/Roadmap.md` — deferred claims and release-artifact follow-ups.
+
 ## Operator / Production Readiness
 
 - **`docs/DistributionModels.md`** — how Nexo is **distributed** (NuGet, HTTP, CLI, compose, source, mesh), **pinning**, and the **distribution matrix** CI workflow that gates each channel.

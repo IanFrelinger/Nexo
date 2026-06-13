@@ -2,7 +2,7 @@
 
 This guide covers initial setup, trust configuration, and first pipeline validation. Nexo operates on local infrastructure with no external service dependencies. Trust controls are available but disabled by default — enable with `NEXO_TRUST_ENABLED=1`.
 
-The **default** path is **containers + CLI**: develop inside the **Dev Container** (or run published **GHCR** images / **compose** stacks). If you cannot use Docker at all, use **`scripts/setup/*`** on a machine with **.NET SDK 8** (no separate repo “installer” scripts). See `README.md` for the full map.
+The **default** path is **containers + CLI**: develop inside the **Dev Container** or build local Docker images / compose stacks from this checkout. If you cannot use Docker at all, use **`scripts/setup/*`** on a machine with **.NET SDK 8** (no separate repo “installer” scripts). See `README.md` for the full map.
 
 ## Quickest path (recommended)
 
@@ -23,14 +23,14 @@ docker run --rm -p 8080:8080 nexo:quickstart
 
 In ~10-15 minutes, you will:
 
-1. Pick one startup lane (**Dev Container**, **GHCR CLI**, **quickstart image**, or **native** escape hatch).
+1. Pick one startup lane (**Dev Container**, **local CLI image**, **quickstart image**, or **native** escape hatch).
 2. Verify CLI is working.
 3. Validate and run a minimal pipeline.
 4. Move to deeper validation/testing only after first success.
 
 ## Prerequisites
 
-- **Default:** Docker (Desktop or Engine) and Git. You do **not** need a host .NET SDK for Dev Container, quickstart image, or `docker run … ghcr.io/ianfrelinger/nexo-cli`.
+- **Default:** Docker (Desktop or Engine) and Git. You do **not** need a host .NET SDK for the Dev Container or quickstart image.
 - **Native lane:** .NET SDK **8.x** (repo is pinned in `global.json`).
 - Optional: Ollama/OpenAI/Azure credentials (model-backed commands).
 
@@ -45,20 +45,20 @@ dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore
 dotnet run --project application/src/Nexo.CLI -- --help
 ```
 
-### Lane B: published CLI image (minimal host)
+### Lane B: local CLI image (minimal host)
 
 ```bash
-docker pull ghcr.io/ianfrelinger/nexo-cli:latest
-docker run --rm ghcr.io/ianfrelinger/nexo-cli:latest --help
+docker build -f .docker/Dockerfile.cli -t nexo-cli:local .
+docker run --rm nexo-cli:local --help
 ```
 
 With workspace mount:
 
 ```bash
-docker run --rm -v "$PWD:/work" -w /work ghcr.io/ianfrelinger/nexo-cli:latest --help
+docker run --rm -v "$PWD:/work" -w /work nexo-cli:local --help
 ```
 
-The published **`nexo-cli`** image is **runtime-only** (no `git`/`curl` in the container OS), so **`nexo doctor --json`** is expected to report missing host tools there. Run **`doctor`** on your workstation or inside the **Dev Container** for a full dependency check; CI validates the image with **`--help`** and **`pipeline validate --help`** instead (see **`docs/DistributionModels.md`**).
+Public GHCR images move into the install path after the release sprint; until then, use source-built local images. Run **`doctor`** on your workstation or inside the **Dev Container** for a full dependency check; CI validates the CLI image with **`--help`** and **`pipeline validate --help`** instead (see **`docs/DistributionModels.md`**).
 
 ### Lane C (escape hatch): native setup scripts + CLI build
 
