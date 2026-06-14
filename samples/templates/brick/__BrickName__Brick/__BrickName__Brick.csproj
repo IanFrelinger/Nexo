@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>true</IsPackable>
+    <PackageId>__BrickName__Brick</PackageId>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="__NexoCoreDomainProjectReference__" />
+  </ItemGroup>
+</Project>
