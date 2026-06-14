@@ -2,7 +2,7 @@
 
 This plan records the commercial-boundary work after the open-core licensing sprint.
 
-**Status (2026-06):** Phases **A–F** are **complete** (F = networking extraction to commercial fleet). GameDomain, Game Director, fleet/mesh governance, licensing metadata (Phase D), and the dependency-boundary CI gate (Phase E) are in place on `master`. Optional follow-ups (Networking extraction, CLI mesh-hub split, `Nexo.Commercial.Governance`) are tracked under [Open questions](#open-questions-post-extraction) in [`LICENSING.md`](../LICENSING.md).
+**Status (2026-06):** Phases **A–F** are **complete** (F = networking extraction to commercial fleet). GameDomain, Game Director, fleet/mesh governance, licensing metadata (Phase D), and the dependency-boundary CI gate (Phase E) are in place on `master`. The authoritative current boundary is [`OpenCoreBoundary.md`](OpenCoreBoundary.md). Optional follow-ups (CLI mesh-hub split, `Nexo.Commercial.Governance`) are tracked under [Open questions](#open-questions-post-extraction) in [`LICENSING.md`](../LICENSING.md).
 
 ## Goal
 
@@ -76,15 +76,14 @@ Target commercial projects/modules:
 
 ### Commercial fleet / governance
 
-Target commercial modules:
+Commercial fleet/governance modules now live under `commercial/src/Nexo.Commercial.Fleet.*` and `commercial/src/Nexo.Commercial.MeshDirector`. The table below is retained as the historical target map:
 
 | Proposed commercial module | Source today | Target shape |
 |----------------------------|--------------|--------------|
-| `Nexo.Commercial.Fleet.Contracts` | seeded from fleet DTOs/ports now in `Nexo.Core.Application/Fleet` | Commercial contracts needed by commercial fleet runtime; originals remain temporarily until consumers move. |
-| `Nexo.Commercial.Fleet.Core` | fleet placement/task/checkpoint abstractions and policies | Fleet scheduling and governance logic. |
-| `Nexo.Commercial.Fleet.Infrastructure` | seeded from `Nexo.Infrastructure/Fleet` persistence/worker/director services | Commercial implementations for persistence, director state, workers, leases, checkpoints; originals remain temporarily until consumers move. |
-| `Nexo.Commercial.Fleet.Api` | seeded from `Nexo.API` `/api/mesh` fleet/task/knowledge endpoints | Commercial endpoint extension for fleet director HTTP APIs; open endpoints remain temporarily until mesh-lab migrates. |
-| `Nexo.Commercial.Fleet.Host` | new commercial operator host | Wires commercial fleet DI and `MapCommercialFleetEndpoints()`; open `Nexo.API` fleet routes remain until mesh-lab migration. |
+| `Nexo.Commercial.Fleet.Contracts` | `commercial/src/Nexo.Commercial.Fleet.Contracts` | Commercial contracts needed by commercial fleet runtime. |
+| `Nexo.Commercial.Fleet.Infrastructure` | `commercial/src/Nexo.Commercial.Fleet.Infrastructure` | Commercial implementations for persistence, director state, workers, leases, checkpoints, and networking. |
+| `Nexo.Commercial.Fleet.Api` | `commercial/src/Nexo.Commercial.Fleet.Api` | Commercial endpoint extension for fleet director HTTP APIs. |
+| `Nexo.Commercial.Fleet.Host` | `commercial/src/Nexo.Commercial.Fleet.Host` | Commercial operator host that wires commercial fleet DI and endpoints. |
 | `Nexo.Commercial.MeshDirector` | CLI director HTTP client surface | Commercial control plane CLI/API module. |
 | `Nexo.Commercial.Governance` | centralized policy, RBAC/SSO, aggregated audit surfaces | Commercial organization-level governance module. |
 | `Nexo.Commercial.Tests.Fleet` | fleet/mesh governance tests currently under open test projects | Commercial test assembly for extracted fleet behavior. |
@@ -133,10 +132,10 @@ Purpose: split fleet-scale control plane from open mesh/trust primitives.
 
 Classification source: [`FleetGovernanceExtractionInventory.md`](FleetGovernanceExtractionInventory.md).
 
-1. Separate single-node/open mesh primitives from fleet-scale coordination.
-2. Move fleet task registry, placement, leases/checkpoints, director persistence, worker executor, registration keys, knowledge replication, and trust-tier fleet policy into commercial modules.
-3. Move `mesh director` and commercial `mesh hub` CLI/API surfaces into commercial modules, or keep only local/open mesh commands in the open CLI.
-4. Keep trust primitives open: barrier identity, audit event contracts, policy pack primitives, sensitivity rules, sanitization primitives.
+1. **Done:** separate single-node/open mesh primitives from fleet-scale coordination.
+2. **Done:** move fleet task registry, placement, leases/checkpoints, director persistence, worker executor, registration keys, knowledge replication, and trust-tier fleet policy into commercial modules.
+3. **Done:** move `mesh director` and commercial `mesh hub` CLI/API surfaces into commercial modules; keep local/open mesh commands in the open CLI.
+4. **Done:** keep trust primitives open: barrier identity, audit event contracts, policy pack primitives, sensitivity rules, sanitization primitives.
 
 Exit criteria:
 

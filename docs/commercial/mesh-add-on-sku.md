@@ -2,6 +2,8 @@
 
 Implementation-oriented outline for **Product E** ([`ProductFleetImplementationRoadmap.md`](../ProductFleetImplementationRoadmap.md) Phase 5). The virtual lab proves technical behavior; this doc maps it to sellable entitlements.
 
+**Status:** landed commercial modules are `Nexo.Commercial.Fleet.*` and `Nexo.Commercial.MeshDirector`. See [`../OpenCoreBoundary.md`](../OpenCoreBoundary.md) for the authoritative open/commercial split.
+
 ## SKU: `nexo-mesh-federation`
 
 | Entitlement | Lab coverage | Production note |

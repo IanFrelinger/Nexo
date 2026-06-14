@@ -28,6 +28,9 @@ from pathlib import Path
 
 EXCLUDED_CSPROJ: set[str] = {
     "src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.csproj",
+    # Template project uses tokenized ProjectReference replaced by `nexo new brick`.
+    "samples/templates/brick/__BrickName__Brick/__BrickName__Brick.csproj",
+    "samples/templates/brick/__BrickName__Brick.Tests/__BrickName__Brick.Tests.csproj",
 }
 
 COMMERCIAL_PATH_MARKERS = (
@@ -43,6 +46,8 @@ PROJECT_REF_RE = re.compile(
     re.IGNORECASE,
 )
 
+CS_COMMENT_RE = re.compile(r"//.*?$|/\*.*?\*/", re.MULTILINE | re.DOTALL)
+
 NEXO_COMMERCIAL_RE = re.compile(
     r"<NexoCommercialProject>\s*true\s*</NexoCommercialProject>",
     re.IGNORECASE,
@@ -50,6 +55,17 @@ NEXO_COMMERCIAL_RE = re.compile(
 
 IS_PACKABLE_TRUE_RE = re.compile(
     r"<IsPackable>\s*true\s*</IsPackable>",
+    re.IGNORECASE,
+)
+
+OPEN_MESH_GUARD_PATHS = (
+    "src/Nexo.Infrastructure/Mesh/",
+    "src/Nexo.Infrastructure/MeshLab/",
+    "src/Nexo.Core.Application/Mesh/",
+)
+
+OPEN_MESH_COMMERCIAL_CONCEPT_RE = re.compile(
+    r"\b(Nexo\.Commercial|Fleet|Governance|RBAC|Tenant|ControlPlane|Organization)\b",
     re.IGNORECASE,
 )
 
@@ -82,6 +98,24 @@ def read_allowlist(root: Path) -> set[tuple[str, str]]:
         left, right = (part.strip() for part in body.split("->", 1))
         pairs.add((left.replace("\\", "/"), right.replace("\\", "/")))
     return pairs
+
+
+def validate_allowlist_justifications(root: Path) -> list[str]:
+    path = root / "scripts/dependency-boundary.open-to-commercial.allowlist.txt"
+    if not path.is_file():
+        return []
+
+    errors: list[str] = []
+    for line_number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+        body = line.split("#", 1)[0].strip()
+        if not body:
+            continue
+        comment = line.split("#", 1)[1].strip() if "#" in line else ""
+        if not comment:
+            errors.append(
+                f"{path.relative_to(root).as_posix()}:{line_number}: allowlist entry must include a justification comment"
+            )
+    return errors
 
 
 def discover_csprojs(root: Path) -> list[Path]:
@@ -136,6 +170,8 @@ def main() -> int:
 
     errors: list[str] = []
     warnings: list[str] = []
+
+    errors.extend(validate_allowlist_justifications(root))
 
     projects = [classify_project(path, root) for path in discover_csprojs(root)]
     by_rel = {p.rel: p for p in projects}
@@ -195,6 +231,21 @@ def main() -> int:
                 errors.append(msg)
             else:
                 warnings.append(msg)
+
+    # 4) open mesh primitive guard: no commercial control-plane concepts in open mesh source.
+    for mesh_prefix in OPEN_MESH_GUARD_PATHS:
+        mesh_root = root / mesh_prefix
+        if not mesh_root.exists():
+            continue
+        for source_path in sorted(mesh_root.rglob("*.cs")):
+            rel = rel_posix(source_path, root)
+            text = source_path.read_text(encoding="utf-8", errors="replace")
+            text = CS_COMMENT_RE.sub("", text)
+            match = OPEN_MESH_COMMERCIAL_CONCEPT_RE.search(text)
+            if match:
+                errors.append(
+                    f"open mesh primitive contains commercial concept '{match.group(1)}': {rel}"
+                )
 
     open_count = sum(1 for p in projects if not p.commercial)
     commercial_count = sum(1 for p in projects if p.commercial)
