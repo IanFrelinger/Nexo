@@ -4,6 +4,8 @@ This page is for **maintainers and integrators**: how Nexo is shipped, how each 
 
 For day-to-day embedding and extension work, start with **`docs/IntegratorGuide.md`**, **`docs/sdk.md`**, and **`docs/architecture/runtime-vs-application.md`**.
 
+For the authoritative open-vs-commercial boundary, see **`docs/OpenCoreBoundary.md`**.
+
 ## Version spine
 
 Ship the **same semantic version** across artifacts that belong together:

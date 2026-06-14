@@ -1,5 +1,7 @@
 # Virtual mesh lab (heterogeneous images + auth)
 
+**Status:** landed. The heterogeneous lab composes the commercial fleet director with open mesh/API worker primitives. See [`OpenCoreBoundary.md`](OpenCoreBoundary.md) for the authoritative open/commercial split.
+
 The lab runs **heterogeneous Nexo hosts** on one Docker bridge so you can test **different images and security configurations** together without extra hardware. **peer-a** is the commercial fleet director (`Fleet.Host`); **peer-b** and **worker** use open `Nexo.API`.
 
 ## What runs by default

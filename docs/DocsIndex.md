@@ -17,8 +17,9 @@ Documentation index for the Nexo platform. Start here to find what you need.
 11. `scripts/start-nexo-api-dev.ps1` / `scripts/start-nexo-api-dev.sh` — Docker Ollama + host `Nexo.API` dev stack (see `docs/Configuration.md` → Ollama).
 12. `docs/Architecture.md` — layered architecture and component boundaries.
 13. `docs/Conventions.md` — current code conventions as practiced today.
-14. `docs/CommercialExtractionPlan.md` — planned commercial module extraction sequence after the open-core licensing boundary.
-15. `docs/FleetGovernanceExtractionInventory.md` — fleet/mesh governance file classification for the next commercial extraction phase.
+14. `docs/OpenCoreBoundary.md` — authoritative open-vs-commercial boundary and guard policy.
+15. `docs/CommercialExtractionPlan.md` — historical commercial extraction sequence and completed phase record.
+16. `docs/FleetGovernanceExtractionInventory.md` — historical fleet/mesh governance classification inventory.
 
 ## Operator / Production Readiness
 
@@ -101,7 +102,8 @@ Documentation index for the Nexo platform. Start here to find what you need.
 
 ## Planning & Roadmap
 
-- `docs/CommercialExtractionPlan.md` — commercial extraction plan (Phases A–E complete); optional Networking/CLI follow-ups.
+- `docs/OpenCoreBoundary.md` — authoritative open-vs-commercial boundary.
+- `docs/CommercialExtractionPlan.md` — commercial extraction plan (Phases A–F complete); optional CLI/governance follow-ups.
 - `docs/FleetGovernanceExtractionInventory.md` — classification inventory for open mesh primitives vs commercial fleet/governance code.
 - `docs/Conventions.md` — current conventions for errors, interfaces, abstract classes, and generics.
 - `docs/MeshPhase0NorthStar.md` — **Phase 0 (executed):** federated mesh north star, capability matrix by profile, trust boundary, SLOs (feeds mesh Phases 1–7).
