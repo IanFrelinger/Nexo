@@ -1,0 +1,16 @@
+[assembly: System.Reflection.AssemblyMetadata("RepositoryUrl", "https://github.com/IanFrelinger/Nexo")]
+[assembly: System.Runtime.Versioning.TargetFramework(".NETCoreApp,Version=v8.0", FrameworkDisplayName=".NET 8.0")]
+namespace Nexo.Framework.Sdk
+{
+    public sealed class NexoFrameworkOptions
+    {
+        public NexoFrameworkOptions() { }
+        public System.Action<Nexo.Hosting.NexoHostingOptions>? ConfigureHost { get; set; }
+        public bool RegisterKernel { get; set; }
+        public string? RemoteApiBaseUrl { get; set; }
+    }
+    public static class NexoFrameworkServiceCollectionExtensions
+    {
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddNexoFramework(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, System.Action<Nexo.Framework.Sdk.NexoFrameworkOptions>? configure = null) { }
+    }
+}
