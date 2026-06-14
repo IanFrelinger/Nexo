@@ -90,6 +90,6 @@ dotnet run --project application/src/Nexo.CLI -- new brick Hello --output sample
 dotnet test samples/hello-brick-scratch/HelloBrick.Tests/HelloBrick.Tests.csproj
 ```
 
-Or copy the template directly from `samples/templates/brick/` (added by the code-brick template step).
+Or copy the template directly from [`samples/templates/brick/`](../samples/templates/brick/).
 
-The complete reference implementation lives in `samples/hello-brick/` once the reference sample step is present.
+The complete reference implementation lives in [`samples/hello-brick/`](../samples/hello-brick/).
