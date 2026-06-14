@@ -16,6 +16,8 @@ namespace Nexo.CLI.Commands;
 public sealed class UnityDevCommand : Command
 {
     private readonly Func<SelfExtendRunnerAdapter> _runnerFactory;
+    private readonly GenerateHandler _generateHandler;
+    private readonly IterateHandler _iterateHandler;
 
     private const string DefaultOutputDir = "Assets/Scripts/Generated";
     private const string DefaultTestDir = "Assets/Tests/EditMode/Generated";
@@ -44,6 +46,8 @@ Rules:
         : base("unity-dev", "Automate Unity gameplay system development with LLM-driven code generation.")
     {
         _runnerFactory = runnerFactory ?? throw new ArgumentNullException(nameof(runnerFactory));
+        _generateHandler = new GenerateHandler(_runnerFactory);
+        _iterateHandler = new IterateHandler(_runnerFactory);
 
         AddCommand(CreateInitCommand());
         AddCommand(CreateGenerateCommand());
@@ -170,141 +174,16 @@ Rules:
         bool json,
         CancellationToken ct,
         string? templatePath = null,
-        string? compositionContext = null)
-    {
-        var fullProjectRoot = Path.GetFullPath(projectRoot);
-
-        // Auto-scaffold the project if it doesn't exist or is missing Assets/
-        if (!Directory.Exists(fullProjectRoot) || !Directory.Exists(Path.Combine(fullProjectRoot, "Assets")))
-        {
-            var projectName = Path.GetFileName(fullProjectRoot);
-            if (string.IsNullOrWhiteSpace(projectName)) projectName = "NexoForgeGame";
-
-            if (!json) Console.WriteLine($"Project not found at {fullProjectRoot} — scaffolding new Unity project '{projectName}'...");
-            var initResult = ExecuteInit(projectRoot, projectName, json);
-            if (initResult != 0) return initResult;
-        }
-
-        if (!ValidateProjectRoot(fullProjectRoot, json))
-            return 1;
-
-        var fullOutputDir = Path.Combine(fullProjectRoot, outputDir);
-        var fullTestDir = Path.Combine(fullProjectRoot, testDir);
-
-        SetPathAllowlist(fullProjectRoot, fullOutputDir, fullTestDir);
-
-        var constraints = ProjectConstraints.LoadFromFile(fullProjectRoot);
-        var template = templatePath != null ? GenerationTemplate.LoadFromFile(templatePath) : null;
-
-        var prompt = BuildGeneratePrompt(systemDescription, outputDir, testDir,
-            constraints.ToPromptFragment(),
-            template?.ToPromptFragment() ?? "",
-            compositionContext ?? "");
-
-        if (dryRun)
-        {
-            WriteDryRunOutput(prompt, json);
-            return 0;
-        }
-
-        var runner = _runnerFactory();
-        var result = await runner.RunAsync(fullProjectRoot, prompt, "unity-dev-generate", ct).ConfigureAwait(false);
-
-        if (!result.Success)
-        {
-            WriteError($"Generation failed: {result.Summary}", json);
-            return 1;
-        }
-
-        // The runner writes files directly via repo.fs.write tool calls.
-        // Discover what was created by scanning the output directory.
-        Directory.CreateDirectory(fullOutputDir);
-        var writtenFiles = Directory.Exists(fullOutputDir)
-            ? Directory.GetFiles(fullOutputDir, "*.cs", SearchOption.AllDirectories)
-                .Select(f => Path.GetRelativePath(fullProjectRoot, f).Replace('\\', '/'))
-                .ToList()
-            : new List<string>();
-
-        // Also check test directory
-        if (Directory.Exists(fullTestDir))
-        {
-            writtenFiles.AddRange(
-                Directory.GetFiles(fullTestDir, "*.cs", SearchOption.AllDirectories)
-                    .Select(f => Path.GetRelativePath(fullProjectRoot, f).Replace('\\', '/')));
-        }
-
-        WriteManifest(fullOutputDir, systemDescription, writtenFiles);
-
-        WriteGenerateResult(writtenFiles, systemDescription, outputDir, json);
-        return 0;
-    }
+        string? compositionContext = null) =>
+        await _generateHandler.ExecuteAsync(projectRoot, systemDescription, outputDir, testDir, dryRun, json, ct, templatePath, compositionContext).ConfigureAwait(false);
 
     internal async Task<int> ExecuteIterateAsync(
         string projectRoot,
         string changeDescription,
         string systemDir,
         bool json,
-        CancellationToken ct)
-    {
-        var fullProjectRoot = Path.GetFullPath(projectRoot);
-        if (!ValidateProjectRoot(fullProjectRoot, json))
-            return 1;
-
-        var fullSystemDir = Path.Combine(fullProjectRoot, systemDir);
-        if (!Directory.Exists(fullSystemDir))
-        {
-            WriteError($"System directory not found: {fullSystemDir}", json);
-            return 1;
-        }
-
-        var existingFiles = Directory.GetFiles(fullSystemDir, "*.cs", SearchOption.AllDirectories);
-        if (existingFiles.Length == 0)
-        {
-            WriteError($"No .cs files found in {systemDir}", json);
-            return 1;
-        }
-
-        SetPathAllowlist(fullProjectRoot, fullSystemDir);
-
-        var contextBuilder = new StringBuilder();
-        contextBuilder.AppendLine("Existing files in the system:");
-        contextBuilder.AppendLine();
-
-        foreach (var file in existingFiles)
-        {
-            var relativePath = Path.GetRelativePath(fullProjectRoot, file).Replace('\\', '/');
-            var content = await File.ReadAllTextAsync(file, ct).ConfigureAwait(false);
-            contextBuilder.AppendLine($"// FILE: {relativePath}");
-            contextBuilder.AppendLine(content);
-            contextBuilder.AppendLine();
-
-            var overrideFragment = DescriptorOverrides.ToPromptFragment(file);
-            if (!string.IsNullOrEmpty(overrideFragment))
-                contextBuilder.AppendLine(overrideFragment);
-        }
-
-        var prompt = BuildIteratePrompt(changeDescription, systemDir, contextBuilder.ToString());
-
-        var runner = _runnerFactory();
-        var result = await runner.RunAsync(fullProjectRoot, prompt, "unity-dev-iterate", ct).ConfigureAwait(false);
-
-        if (!result.Success)
-        {
-            WriteError($"Iteration failed: {result.Summary}", json);
-            return 1;
-        }
-
-        // The runner writes files directly via repo.fs.write tool calls.
-        // Discover what was modified by rescanning the system directory.
-        var writtenFiles = Directory.GetFiles(fullSystemDir, "*.cs", SearchOption.AllDirectories)
-            .Select(f => Path.GetRelativePath(fullProjectRoot, f).Replace('\\', '/'))
-            .ToList();
-
-        WriteManifest(fullSystemDir, changeDescription, writtenFiles);
-
-        WriteIterateResult(writtenFiles, changeDescription, systemDir, json);
-        return 0;
-    }
+        CancellationToken ct) =>
+        await _iterateHandler.ExecuteAsync(projectRoot, changeDescription, systemDir, json, ct).ConfigureAwait(false);
 
     internal static int ExecuteList(string projectRoot, bool json)
     {
@@ -639,7 +518,7 @@ Place test files under: {testDir}/
 Each file must start with a // FILE: marker with the relative path from the project root.";
     }
 
-    private static string BuildIteratePrompt(string changeDescription, string systemDir, string existingContext)
+    internal static string BuildIteratePrompt(string changeDescription, string systemDir, string existingContext)
     {
         return $@"{UnitySystemPrompt}
 
@@ -653,7 +532,7 @@ Requested change:
 Output the complete modified files. Each file must start with a // FILE: marker with the relative path from the project root. Include all files that need changes.";
     }
 
-    private static void SetPathAllowlist(string projectRoot, params string[] additionalPaths)
+    internal static void SetPathAllowlist(string projectRoot, params string[] additionalPaths)
     {
         var existing = Environment.GetEnvironmentVariable("NEXO_PATH_ALLOWLIST_EXTRA") ?? "";
         var paths = new List<string>();
@@ -671,7 +550,7 @@ Output the complete modified files. Each file must start with a // FILE: marker 
         Environment.SetEnvironmentVariable("NEXO_PATH_ALLOWLIST_EXTRA", string.Join(",", paths));
     }
 
-    private static void WriteError(string message, bool json)
+    internal static void WriteError(string message, bool json)
     {
         if (json)
             Console.WriteLine(JsonSerializer.Serialize(new { ok = false, error = message }));
@@ -679,7 +558,7 @@ Output the complete modified files. Each file must start with a // FILE: marker 
             Console.Error.WriteLine($"unity-dev: error: {message}");
     }
 
-    private static void WriteDryRunOutput(string prompt, bool json)
+    internal static void WriteDryRunOutput(string prompt, bool json)
     {
         if (json)
         {
@@ -699,7 +578,7 @@ Output the complete modified files. Each file must start with a // FILE: marker 
         }
     }
 
-    private static void WriteGenerateResult(List<string> files, string systemDescription, string outputDir, bool json)
+    internal static void WriteGenerateResult(List<string> files, string systemDescription, string outputDir, bool json)
     {
         if (json)
         {
@@ -722,7 +601,7 @@ Output the complete modified files. Each file must start with a // FILE: marker 
         }
     }
 
-    private static void WriteIterateResult(List<string> files, string changeDescription, string systemDir, bool json)
+    internal static void WriteIterateResult(List<string> files, string changeDescription, string systemDir, bool json)
     {
         if (json)
         {
@@ -1040,7 +919,7 @@ Generate TWO files:
 Each file must start with a // FILE: marker with the relative path from the project root.";
     }
 
-    private static void WriteAssetsResult(List<string> files, string assetType, string description, bool json)
+    internal static void WriteAssetsResult(List<string> files, string assetType, string description, bool json)
     {
         if (json)
         {
@@ -1283,7 +1162,7 @@ Analyse the test failures and generate corrected files. Each file must start wit
         return null;
     }
 
-    private static void WriteQaResult(List<object> iterations, int totalIterations, bool allPassed, bool json)
+    internal static void WriteQaResult(List<object> iterations, int totalIterations, bool allPassed, bool json)
     {
         if (json)
         {
@@ -1383,7 +1262,7 @@ Analyse the test failures and generate corrected files. Each file must start wit
         return allOk ? 0 : 1;
     }
 
-    private static void WriteFullstackResult(List<object> steps, bool success, bool json)
+    internal static void WriteFullstackResult(List<object> steps, bool success, bool json)
     {
         if (json)
         {
