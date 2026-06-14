@@ -8,6 +8,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="__NexoCoreDomainProjectReference__" />
+    <PackageReference Include="Nexo.Authoring" Version="__NexoVersion__" />
   </ItemGroup>
 </Project>

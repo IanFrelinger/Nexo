@@ -1,5 +1,6 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using System.Reflection;
 using System.Text.Json;
 
 namespace Nexo.CLI.Commands;
@@ -23,12 +24,14 @@ public sealed class NewCommand : Command
             () => Environment.CurrentDirectory,
             "Directory where the brick solution folder should be created.");
         var jsonOpt = new Option<bool>("--json", () => false, "Emit machine-readable JSON output.");
+        var nexoVersionOpt = new Option<string?>("--nexo-version", () => null, "Nexo.Authoring package version to reference.");
 
         var command = new Command("brick", "Scaffold a code-authored Nexo brick project and test project.")
         {
             nameArg,
             outputOpt,
-            jsonOpt
+            jsonOpt,
+            nexoVersionOpt
         };
 
         command.SetHandler((InvocationContext context) =>
@@ -36,13 +39,14 @@ public sealed class NewCommand : Command
             var name = context.ParseResult.GetValueForArgument(nameArg);
             var output = context.ParseResult.GetValueForOption(outputOpt) ?? Environment.CurrentDirectory;
             var json = context.ParseResult.GetValueForOption(jsonOpt);
-            context.ExitCode = ExecuteBrick(name, output, json);
+            var nexoVersion = context.ParseResult.GetValueForOption(nexoVersionOpt);
+            context.ExitCode = ExecuteBrick(name, output, json, nexoVersion);
         });
 
         return command;
     }
 
-    internal static int ExecuteBrick(string name, string outputDirectory, bool json)
+    internal static int ExecuteBrick(string name, string outputDirectory, bool json, string? nexoVersion = null)
     {
         var normalizedName = NormalizeBrickName(name);
         if (normalizedName is null)
@@ -68,7 +72,7 @@ public sealed class NewCommand : Command
             return 1;
         }
 
-        var replacements = BuildReplacements(normalizedName, projectRoot, FindRepoRoot());
+        var replacements = BuildReplacements(normalizedName, ResolveNexoVersion(nexoVersion));
         CopyTemplate(templateFiles, root, replacements);
 
         var testProject = Path.Combine(testsRoot, $"{normalizedName}Brick.Tests.csproj");
@@ -86,18 +90,29 @@ public sealed class NewCommand : Command
         return 0;
     }
 
-    private static Dictionary<string, string> BuildReplacements(string brickName, string projectRoot, string repoRoot)
+    private static Dictionary<string, string> BuildReplacements(string brickName, string nexoVersion)
     {
-        var coreDomainProject = Path.Combine(repoRoot, "src", "Nexo.Core.Domain", "Nexo.Core.Domain.csproj");
-        var relativeCoreDomainProject = Path.GetRelativePath(projectRoot, coreDomainProject).Replace('\\', '/');
         return new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["__BrickName__"] = brickName,
             ["__DisplayName__"] = $"{brickName} Brick",
             ["__BrickId__"] = ToBrickId(brickName),
             ["__Namespace__"] = $"{brickName}Brick",
-            ["__NexoCoreDomainProjectReference__"] = relativeCoreDomainProject
+            ["__NexoVersion__"] = nexoVersion
         };
+    }
+
+    private static string ResolveNexoVersion(string? overrideVersion)
+    {
+        if (!string.IsNullOrWhiteSpace(overrideVersion))
+            return overrideVersion.Trim();
+
+        var info = typeof(NewCommand).Assembly
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+            ?.InformationalVersion;
+        var version = (info ?? typeof(NewCommand).Assembly.GetName().Version?.ToString() ?? "1.0.0")
+            .Split('+', 2)[0];
+        return string.IsNullOrWhiteSpace(version) ? "1.0.0" : version;
     }
 
     private static void CopyTemplate(
