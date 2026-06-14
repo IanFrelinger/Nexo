@@ -517,6 +517,7 @@ static partial class Program
         root.AddCommand(new DogfoodCommand());
         root.AddCommand(new BootstrapCommand());
         root.AddCommand(new DoctorCommand());
+        root.AddCommand(new NewCommand());
         root.AddCommand(new RuntimeCommand());
         root.AddCommand(new WorkflowCommand(() => ServiceProvider.CreateScope()));
         root.AddCommand(new RuntimeStudioCommand());
