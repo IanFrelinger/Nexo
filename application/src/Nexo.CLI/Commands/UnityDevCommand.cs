@@ -19,13 +19,14 @@ public sealed class UnityDevCommand : Command
     private readonly GenerateHandler _generateHandler;
     private readonly IterateHandler _iterateHandler;
     private readonly AssetsHandler _assetsHandler;
+    private readonly QaHandler _qaHandler;
 
     private const string DefaultOutputDir = "Assets/Scripts/Generated";
     private const string DefaultTestDir = "Assets/Tests/EditMode/Generated";
     private const string ManifestFileName = ".nexo-gen-manifest.json";
     private const string FileMarkerPrefix = "// FILE: ";
 
-    private const string UnitySystemPrompt = @"You are a Unity C# code generator specializing in production-quality gameplay systems.
+    internal const string UnitySystemPrompt = @"You are a Unity C# code generator specializing in production-quality gameplay systems.
 
 Rules:
 - Generate production-quality Unity C# code ready for use in a Unity project.
@@ -50,6 +51,7 @@ Rules:
         _generateHandler = new GenerateHandler(_runnerFactory);
         _iterateHandler = new IterateHandler(_runnerFactory);
         _assetsHandler = new AssetsHandler(_runnerFactory);
+        _qaHandler = new QaHandler(_runnerFactory);
 
         AddCommand(CreateInitCommand());
         AddCommand(CreateGenerateCommand());
@@ -935,107 +937,8 @@ Each file must start with a // FILE: marker with the relative path from the proj
         int maxIterations,
         bool json,
         string? unityPath,
-        CancellationToken ct)
-    {
-        var fullProjectRoot = Path.GetFullPath(projectRoot);
-        if (!ValidateProjectRoot(fullProjectRoot, json))
-            return 1;
-
-        var unity = unityPath ?? FindUnityEditor();
-        if (unity == null)
-        {
-            WriteError("Unity editor not found. Provide --unity-path or ensure Unity is on PATH.", json);
-            return 1;
-        }
-
-        SetPathAllowlist(fullProjectRoot);
-        var iterations = new List<object>();
-
-        for (int i = 1; i <= maxIterations; i++)
-        {
-            if (!json) Console.WriteLine($"QA iteration {i}/{maxIterations}: compiling...");
-
-            var (buildExit, buildOutput) = await RunUnityCommand(
-                unity, fullProjectRoot,
-                "-batchmode -nographics -logFile - -quit",
-                ct).ConfigureAwait(false);
-
-            if (buildExit != 0)
-            {
-                if (!json) Console.WriteLine($"  Compilation failed (exit {buildExit}). Requesting LLM fix...");
-
-                var fixPrompt = $@"{UnitySystemPrompt}
-
-The Unity project at {fullProjectRoot} failed to compile.
-Build output:
-{Truncate(buildOutput, 4000)}
-
-Analyse the errors and generate corrected files. Each file must start with a // FILE: marker.";
-
-                var runner = _runnerFactory();
-                var fixResult = await runner.RunAsync(fullProjectRoot, fixPrompt, "unity-dev-qa-fix", ct).ConfigureAwait(false);
-
-                var fixedFiles = ParseFiles(fixResult.Summary);
-                foreach (var (rp, content) in fixedFiles)
-                {
-                    var fp = Path.Combine(fullProjectRoot, rp);
-                    var d = Path.GetDirectoryName(fp);
-                    if (!string.IsNullOrEmpty(d)) Directory.CreateDirectory(d);
-                    await File.WriteAllTextAsync(fp, content, ct).ConfigureAwait(false);
-                }
-
-                iterations.Add(new { iteration = i, phase = "build", passed = false, filesFixed = fixedFiles.Count });
-                continue;
-            }
-
-            if (!json) Console.WriteLine("  Compilation succeeded. Running EditMode tests...");
-
-            var testResultPath = Path.Combine(fullProjectRoot, "TestResults", $"qa-iter-{i}.xml");
-            var testDir = Path.GetDirectoryName(testResultPath);
-            if (!string.IsNullOrEmpty(testDir)) Directory.CreateDirectory(testDir);
-
-            var (testExit, testOutput) = await RunUnityCommand(
-                unity, fullProjectRoot,
-                $"-batchmode -nographics -runTests -testPlatform EditMode -testResults \"{testResultPath}\" -logFile - -quit",
-                ct).ConfigureAwait(false);
-
-            if (testExit == 0)
-            {
-                if (!json) Console.WriteLine("  All tests passed!");
-                iterations.Add(new { iteration = i, phase = "test", passed = true, filesFixed = 0 });
-                WriteQaResult(iterations, i, true, json);
-                return 0;
-            }
-
-            if (!json) Console.WriteLine($"  Tests failed (exit {testExit}). Requesting LLM fix...");
-
-            var testFixPrompt = $@"{UnitySystemPrompt}
-
-The Unity project at {fullProjectRoot} compiled successfully but EditMode tests failed.
-Test output:
-{Truncate(testOutput, 4000)}
-
-Analyse the test failures and generate corrected files. Each file must start with a // FILE: marker.";
-
-            var testRunner = _runnerFactory();
-            var testFixResult = await testRunner.RunAsync(fullProjectRoot, testFixPrompt, "unity-dev-qa-fix", ct).ConfigureAwait(false);
-
-            var testFixedFiles = ParseFiles(testFixResult.Summary);
-            foreach (var (rp, content) in testFixedFiles)
-            {
-                var fp = Path.Combine(fullProjectRoot, rp);
-                var d = Path.GetDirectoryName(fp);
-                if (!string.IsNullOrEmpty(d)) Directory.CreateDirectory(d);
-                await File.WriteAllTextAsync(fp, content, ct).ConfigureAwait(false);
-            }
-
-            iterations.Add(new { iteration = i, phase = "test", passed = false, filesFixed = testFixedFiles.Count });
-        }
-
-        if (!json) Console.WriteLine($"QA: max iterations ({maxIterations}) reached without all tests passing.");
-        WriteQaResult(iterations, maxIterations, false, json);
-        return 1;
-    }
+        CancellationToken ct) =>
+        await _qaHandler.ExecuteAsync(projectRoot, maxIterations, json, unityPath, ct).ConfigureAwait(false);
 
     internal static async Task<(int exitCode, string output)> RunUnityCommand(
         string unityPath, string projectRoot, string args, CancellationToken ct)
