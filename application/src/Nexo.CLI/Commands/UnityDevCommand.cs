@@ -21,6 +21,7 @@ public sealed class UnityDevCommand : Command
     private readonly AssetsHandler _assetsHandler;
     private readonly QaHandler _qaHandler;
     private readonly ComposeHandler _composeHandler;
+    private readonly FullstackHandler _fullstackHandler;
 
     internal const string DefaultOutputDir = "Assets/Scripts/Generated";
     internal const string DefaultTestDir = "Assets/Tests/EditMode/Generated";
@@ -54,6 +55,7 @@ Rules:
         _assetsHandler = new AssetsHandler(_runnerFactory);
         _qaHandler = new QaHandler(_runnerFactory);
         _composeHandler = new ComposeHandler(ExecuteGenerateAsync);
+        _fullstackHandler = new FullstackHandler(ExecuteGenerateAsync, ExecuteAssetsAsync, ExecuteQaAsync);
 
         AddCommand(CreateInitCommand());
         AddCommand(CreateGenerateCommand());
@@ -1014,59 +1016,7 @@ Each file must start with a // FILE: marker with the relative path from the proj
         string projectRoot,
         string gameDescription,
         bool json,
-        CancellationToken ct)
-    {
-        var fullProjectRoot = Path.GetFullPath(projectRoot);
-        var steps = new List<object>();
+        CancellationToken ct) =>
+        await _fullstackHandler.ExecuteAsync(projectRoot, gameDescription, json, ct).ConfigureAwait(false);
 
-        // Step 1: init
-        if (!json) Console.WriteLine("fullstack: step 1/4 — init");
-        var initCode = ExecuteInit(projectRoot, Path.GetFileName(fullProjectRoot) ?? "NexoForgeGame", json);
-        steps.Add(new { step = "init", exitCode = initCode });
-        if (initCode != 0) { WriteFullstackResult(steps, false, json); return initCode; }
-
-        // Step 2: generate core systems
-        if (!json) Console.WriteLine("fullstack: step 2/4 — generate");
-        var genCode = await ExecuteGenerateAsync(
-            projectRoot, gameDescription, DefaultOutputDir, DefaultTestDir,
-            false, json, ct).ConfigureAwait(false);
-        steps.Add(new { step = "generate", exitCode = genCode });
-        if (genCode != 0) { WriteFullstackResult(steps, false, json); return genCode; }
-
-        // Step 3: generate material + prefab assets
-        if (!json) Console.WriteLine("fullstack: step 3/4 — assets");
-        var matCode = await ExecuteAssetsAsync(
-            projectRoot, "material", $"Materials for: {gameDescription}", json, ct).ConfigureAwait(false);
-        steps.Add(new { step = "assets-material", exitCode = matCode });
-
-        var prefabCode = await ExecuteAssetsAsync(
-            projectRoot, "prefab", $"Prefabs for: {gameDescription}", json, ct).ConfigureAwait(false);
-        steps.Add(new { step = "assets-prefab", exitCode = prefabCode });
-
-        // Step 4: qa loop
-        if (!json) Console.WriteLine("fullstack: step 4/4 — qa");
-        var qaCode = await ExecuteQaAsync(projectRoot, 5, json, null, ct).ConfigureAwait(false);
-        steps.Add(new { step = "qa", exitCode = qaCode });
-
-        var allOk = initCode == 0 && genCode == 0 && qaCode == 0;
-        WriteFullstackResult(steps, allOk, json);
-        return allOk ? 0 : 1;
-    }
-
-    internal static void WriteFullstackResult(List<object> steps, bool success, bool json)
-    {
-        if (json)
-        {
-            Console.WriteLine(JsonSerializer.Serialize(new
-            {
-                ok = success,
-                action = "fullstack",
-                steps
-            }, new JsonSerializerOptions { WriteIndented = true }));
-        }
-        else
-        {
-            Console.WriteLine($"unity-dev fullstack: {(success ? "ok" : "failed")}");
-        }
-    }
 }
