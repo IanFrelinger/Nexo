@@ -18,6 +18,7 @@ public sealed class UnityDevCommand : Command
     private readonly Func<SelfExtendRunnerAdapter> _runnerFactory;
     private readonly GenerateHandler _generateHandler;
     private readonly IterateHandler _iterateHandler;
+    private readonly AssetsHandler _assetsHandler;
 
     private const string DefaultOutputDir = "Assets/Scripts/Generated";
     private const string DefaultTestDir = "Assets/Tests/EditMode/Generated";
@@ -48,6 +49,7 @@ Rules:
         _runnerFactory = runnerFactory ?? throw new ArgumentNullException(nameof(runnerFactory));
         _generateHandler = new GenerateHandler(_runnerFactory);
         _iterateHandler = new IterateHandler(_runnerFactory);
+        _assetsHandler = new AssetsHandler(_runnerFactory);
 
         AddCommand(CreateInitCommand());
         AddCommand(CreateGenerateCommand());
@@ -830,54 +832,8 @@ Output the complete modified files. Each file must start with a // FILE: marker 
         string assetType,
         string description,
         bool json,
-        CancellationToken ct)
-    {
-        var fullProjectRoot = Path.GetFullPath(projectRoot);
-        if (!ValidateProjectRoot(fullProjectRoot, json))
-            return 1;
-
-        var validTypes = new[] { "material", "prefab", "scene", "audio", "animation", "soundbank", "animationset", "ui", "vfx", "physics", "input", "network", "ainavigation", "build" };
-        var normalizedType = assetType.ToLowerInvariant();
-        if (!validTypes.Contains(normalizedType))
-        {
-            WriteError($"Invalid asset type '{assetType}'. Must be one of: {string.Join(", ", validTypes)}", json);
-            return 1;
-        }
-
-        var assetDir = Path.Combine(fullProjectRoot, "Assets", "NexoAssets", normalizedType);
-        Directory.CreateDirectory(assetDir);
-
-        SetPathAllowlist(fullProjectRoot, assetDir);
-
-        var prompt = BuildAssetPrompt(normalizedType, description);
-
-        var runner = _runnerFactory();
-        var result = await runner.RunAsync(fullProjectRoot, prompt, "unity-dev-assets", ct).ConfigureAwait(false);
-
-        if (!result.Success)
-        {
-            WriteError($"Asset generation failed: {result.Summary}", json);
-            return 1;
-        }
-
-        var files = ParseFiles(result.Summary);
-        var writtenFiles = new List<string>();
-
-        foreach (var (relativePath, content) in files)
-        {
-            var fullPath = Path.Combine(fullProjectRoot, relativePath);
-            var dir = Path.GetDirectoryName(fullPath);
-            if (!string.IsNullOrEmpty(dir))
-                Directory.CreateDirectory(dir);
-
-            await File.WriteAllTextAsync(fullPath, content, ct).ConfigureAwait(false);
-            writtenFiles.Add(relativePath);
-        }
-
-        WriteManifest(assetDir, description, writtenFiles);
-        WriteAssetsResult(writtenFiles, normalizedType, description, json);
-        return 0;
-    }
+        CancellationToken ct) =>
+        await _assetsHandler.ExecuteAsync(projectRoot, assetType, description, json, ct).ConfigureAwait(false);
 
     internal static string BuildAssetPrompt(string assetType, string description)
     {
