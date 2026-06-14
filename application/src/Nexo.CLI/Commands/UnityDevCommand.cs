@@ -13,7 +13,7 @@ namespace Nexo.CLI.Commands;
 /// CLI command that automates Unity gameplay system development via LLM-driven code generation.
 /// Supports generating new gameplay systems, iterating on existing ones, and listing generated systems.
 /// </summary>
-public sealed class UnityDevCommand : Command
+public sealed partial class UnityDevCommand : Command
 {
     private readonly Func<SelfExtendRunnerAdapter> _runnerFactory;
     private readonly GenerateHandler _generateHandler;
@@ -25,8 +25,8 @@ public sealed class UnityDevCommand : Command
 
     internal const string DefaultOutputDir = "Assets/Scripts/Generated";
     internal const string DefaultTestDir = "Assets/Tests/EditMode/Generated";
-    private const string ManifestFileName = ".nexo-gen-manifest.json";
-    private const string FileMarkerPrefix = "// FILE: ";
+    internal const string ManifestFileName = ".nexo-gen-manifest.json";
+    internal const string FileMarkerPrefix = "// FILE: ";
 
     internal const string UnitySystemPrompt = @"You are a Unity C# code generator specializing in production-quality gameplay systems.
 
@@ -68,111 +68,6 @@ Rules:
         AddCommand(CreateComposeCommand());
     }
 
-    private Command CreateInitCommand()
-    {
-        var projectRootOpt = new Option<string>("--project-root", "Path where the Unity project should be created.") { IsRequired = true };
-        var nameOpt = new Option<string>("--name", () => "NexoForgeGame", "Project name (used for folder naming and Assembly Definitions).");
-        var jsonOpt = new Option<bool>("--format-json", () => false, "Emit machine-readable JSON output.");
-
-        var cmd = new Command("init", "Scaffold a new Unity project structure ready for Nexo Forge development.")
-        {
-            projectRootOpt, nameOpt, jsonOpt
-        };
-
-        cmd.SetHandler(async (InvocationContext ctx) =>
-        {
-            var projectRoot = ctx.ParseResult.GetValueForOption(projectRootOpt)!;
-            var name = ctx.ParseResult.GetValueForOption(nameOpt) ?? "NexoForgeGame";
-            var json = ctx.ParseResult.GetValueForOption(jsonOpt);
-
-            ctx.ExitCode = await Task.FromResult(ExecuteInit(projectRoot, name, json));
-        });
-
-        return cmd;
-    }
-
-    private Command CreateGenerateCommand()
-    {
-        var projectRootOpt = new Option<string>("--project-root", "Path to the Unity project root.") { IsRequired = true };
-        var systemOpt = new Option<string>("--system", "Description of the gameplay system to generate.") { IsRequired = true };
-        var outputDirOpt = new Option<string>("--output-dir", () => DefaultOutputDir, "Relative path under project-root for generated scripts.");
-        var testDirOpt = new Option<string>("--test-dir", () => DefaultTestDir, "Relative path under project-root for generated tests.");
-        var dryRunOpt = new Option<bool>("--dry-run", () => false, "Show what would be generated without writing files.");
-        var jsonOpt = new Option<bool>("--format-json", () => false, "Emit machine-readable JSON output.");
-        var templateOpt = new Option<string?>("--template", () => null, "Path to a .template.json file for fixed/generated field control.");
-
-        var cmd = new Command("generate", "Generate a new Unity gameplay system.")
-        {
-            projectRootOpt, systemOpt, outputDirOpt, testDirOpt, dryRunOpt, jsonOpt, templateOpt
-        };
-
-        cmd.SetHandler(async (InvocationContext ctx) =>
-        {
-            var projectRoot = ctx.ParseResult.GetValueForOption(projectRootOpt)!;
-            var system = ctx.ParseResult.GetValueForOption(systemOpt)!;
-            var outputDir = ctx.ParseResult.GetValueForOption(outputDirOpt) ?? DefaultOutputDir;
-            var testDir = ctx.ParseResult.GetValueForOption(testDirOpt) ?? DefaultTestDir;
-            var dryRun = ctx.ParseResult.GetValueForOption(dryRunOpt);
-            var json = ctx.ParseResult.GetValueForOption(jsonOpt);
-            var template = ctx.ParseResult.GetValueForOption(templateOpt);
-
-            ctx.ExitCode = await ExecuteGenerateAsync(
-                projectRoot, system, outputDir, testDir, dryRun, json,
-                ct: ctx.GetCancellationToken(), templatePath: template).ConfigureAwait(false);
-        });
-
-        return cmd;
-    }
-
-    private Command CreateIterateCommand()
-    {
-        var projectRootOpt = new Option<string>("--project-root", "Path to the Unity project root.") { IsRequired = true };
-        var changeOpt = new Option<string>("--change", "Description of the change to make.") { IsRequired = true };
-        var systemDirOpt = new Option<string>("--system-dir", "Relative folder under project-root containing the system to modify (e.g. Assets/Scripts/Weapons).") { IsRequired = true };
-        var jsonOpt = new Option<bool>("--format-json", () => false, "Emit machine-readable JSON output.");
-
-        var cmd = new Command("iterate", "Modify an existing Unity gameplay system.")
-        {
-            projectRootOpt, changeOpt, systemDirOpt, jsonOpt
-        };
-
-        cmd.SetHandler(async (InvocationContext ctx) =>
-        {
-            var projectRoot = ctx.ParseResult.GetValueForOption(projectRootOpt)!;
-            var change = ctx.ParseResult.GetValueForOption(changeOpt)!;
-            var systemDir = ctx.ParseResult.GetValueForOption(systemDirOpt)!;
-            var json = ctx.ParseResult.GetValueForOption(jsonOpt);
-
-            ctx.ExitCode = await ExecuteIterateAsync(
-                projectRoot, change, systemDir, json,
-                ctx.GetCancellationToken()).ConfigureAwait(false);
-        });
-
-        return cmd;
-    }
-
-    private Command CreateListCommand()
-    {
-        var projectRootOpt = new Option<string>("--project-root", "Path to the Unity project root.") { IsRequired = true };
-        var jsonOpt = new Option<bool>("--format-json", () => false, "Emit machine-readable JSON output.");
-
-        var cmd = new Command("list", "List generated gameplay systems.")
-        {
-            projectRootOpt, jsonOpt
-        };
-
-        cmd.SetHandler(async (InvocationContext ctx) =>
-        {
-            var projectRoot = ctx.ParseResult.GetValueForOption(projectRootOpt)!;
-            var json = ctx.ParseResult.GetValueForOption(jsonOpt);
-
-            ctx.ExitCode = ExecuteList(projectRoot, json);
-            await Task.CompletedTask;
-        });
-
-        return cmd;
-    }
-
     internal async Task<int> ExecuteGenerateAsync(
         string projectRoot,
         string systemDescription,
@@ -193,537 +88,39 @@ Rules:
         CancellationToken ct) =>
         await _iterateHandler.ExecuteAsync(projectRoot, changeDescription, systemDir, json, ct).ConfigureAwait(false);
 
-    internal static int ExecuteList(string projectRoot, bool json)
-    {
-        var fullProjectRoot = Path.GetFullPath(projectRoot);
-        if (!ValidateProjectRoot(fullProjectRoot, json))
-            return 1;
+    internal static int ExecuteList(string projectRoot, bool json) => UnityDevCommandUtilities.ExecuteList(projectRoot, json);
 
-        var generatedRoot = Path.Combine(fullProjectRoot, DefaultOutputDir);
-        if (!Directory.Exists(generatedRoot))
-        {
-            if (json)
-                Console.WriteLine(JsonSerializer.Serialize(new { ok = true, systems = Array.Empty<object>() }));
-            else
-                Console.WriteLine("No generated systems found.");
-            return 0;
-        }
+    internal static bool ValidateProjectRoot(string fullProjectRoot, bool json) => UnityDevCommandUtilities.ValidateProjectRoot(fullProjectRoot, json);
 
-        var systems = new List<object>();
-        foreach (var dir in Directory.GetDirectories(generatedRoot))
-        {
-            var csFiles = Directory.GetFiles(dir, "*.cs", SearchOption.AllDirectories);
-            if (csFiles.Length == 0)
-                continue;
+    internal static int ExecuteInit(string projectRoot, string projectName, bool json) => UnityDevCommandUtilities.ExecuteInit(projectRoot, projectName, json);
 
-            var dirName = Path.GetFileName(dir);
-            var manifestPath = Path.Combine(dir, ManifestFileName);
-            string? prompt = null;
-            string? generatedAt = null;
+    internal static List<(string RelativePath, string Content)> ParseFiles(string rawOutput) => UnityDevCommandUtilities.ParseFiles(rawOutput);
 
-            if (File.Exists(manifestPath))
-            {
-                try
-                {
-                    var manifestJson = File.ReadAllText(manifestPath);
-                    using var doc = JsonDocument.Parse(manifestJson);
-                    if (doc.RootElement.TryGetProperty("prompt", out var p))
-                        prompt = p.GetString();
-                    if (doc.RootElement.TryGetProperty("generatedAt", out var g))
-                        generatedAt = g.GetString();
-                }
-                catch
-                {
-                    // Ignore malformed manifest
-                }
-            }
+    internal static void WriteManifest(string directory, string prompt, List<string> files) => UnityDevCommandUtilities.WriteManifest(directory, prompt, files);
 
-            systems.Add(new
-            {
-                name = dirName,
-                path = Path.GetRelativePath(fullProjectRoot, dir).Replace('\\', '/'),
-                fileCount = csFiles.Length,
-                prompt,
-                generatedAt
-            });
-        }
+    internal static string BuildGeneratePrompt(string systemDescription, string outputDir, string testDir, string constraintFragment = "", string templateFragment = "", string compositionContext = "") => UnityDevCommandUtilities.BuildGeneratePrompt(systemDescription, outputDir, testDir, constraintFragment, templateFragment, compositionContext);
 
-        if (json)
-        {
-            Console.WriteLine(JsonSerializer.Serialize(new { ok = true, systems }, new JsonSerializerOptions { WriteIndented = true }));
-        }
-        else
-        {
-            if (systems.Count == 0)
-            {
-                Console.WriteLine("No generated systems found.");
-            }
-            else
-            {
-                Console.WriteLine($"Generated systems ({systems.Count}):");
-                foreach (dynamic sys in systems)
-                    Console.WriteLine($"  {sys.name} ({sys.fileCount} files) - {sys.path}");
-            }
-        }
+    internal static string BuildIteratePrompt(string changeDescription, string systemDir, string existingContext) => UnityDevCommandUtilities.BuildIteratePrompt(changeDescription, systemDir, existingContext);
 
-        return 0;
-    }
+    internal static void SetPathAllowlist(string projectRoot, params string[] additionalPaths) => UnityDevCommandUtilities.SetPathAllowlist(projectRoot, additionalPaths);
 
-    internal static bool ValidateProjectRoot(string fullProjectRoot, bool json)
-    {
-        if (!Directory.Exists(fullProjectRoot))
-        {
-            WriteError($"Project root not found: {fullProjectRoot}", json);
-            return false;
-        }
+    internal static void WriteError(string message, bool json) => UnityDevCommandUtilities.WriteError(message, json);
 
-        var assetsDir = Path.Combine(fullProjectRoot, "Assets");
-        if (!Directory.Exists(assetsDir))
-        {
-            WriteError($"Not a valid Unity project: missing Assets/ folder in {fullProjectRoot}", json);
-            return false;
-        }
+    internal static void WriteDryRunOutput(string prompt, bool json) => UnityDevCommandUtilities.WriteDryRunOutput(prompt, json);
 
-        return true;
-    }
+    internal static void WriteGenerateResult(List<string> files, string systemDescription, string outputDir, bool json) => UnityDevCommandUtilities.WriteGenerateResult(files, systemDescription, outputDir, json);
 
-    internal static int ExecuteInit(string projectRoot, string projectName, bool json)
-    {
-        var fullPath = Path.GetFullPath(projectRoot);
-        Directory.CreateDirectory(fullPath);
-
-        var dirs = new[]
-        {
-            "Assets/Scenes",
-            "Assets/Scripts",
-            "Assets/Scripts/Generated",
-            "Assets/Prefabs",
-            "Assets/Materials",
-            "Assets/ScriptableObjects",
-            "Assets/Tests/EditMode",
-            "Assets/Tests/EditMode/Generated",
-            "Assets/Tests/PlayMode",
-            "Packages",
-            "ProjectSettings",
-            ".nexo"
-        };
-
-        foreach (var dir in dirs)
-            Directory.CreateDirectory(Path.Combine(fullPath, dir));
-
-        var manifestPath = Path.Combine(fullPath, "Packages", "manifest.json");
-        if (!File.Exists(manifestPath))
-        {
-            File.WriteAllText(manifestPath, JsonSerializer.Serialize(new
-            {
-                dependencies = new Dictionary<string, string>
-                {
-                    ["com.unity.inputsystem"] = "1.7.0",
-                    ["com.unity.textmeshpro"] = "3.0.6",
-                    ["com.unity.test-framework"] = "1.3.9",
-                    ["com.unity.netcode.gameobjects"] = "1.8.1"
-                }
-            }, new JsonSerializerOptions { WriteIndented = true }));
-        }
-
-        var projectSettingsPath = Path.Combine(fullPath, "ProjectSettings", "ProjectVersion.txt");
-        if (!File.Exists(projectSettingsPath))
-            File.WriteAllText(projectSettingsPath, "m_EditorVersion: 2022.3.0f1\n");
-
-        var gitignorePath = Path.Combine(fullPath, ".gitignore");
-        if (!File.Exists(gitignorePath))
-        {
-            File.WriteAllText(gitignorePath, @"# Unity
-/[Ll]ibrary/
-/[Tt]emp/
-/[Oo]bj/
-/[Bb]uild/
-/[Bb]uilds/
-/[Ll]ogs/
-/[Uu]ser[Ss]ettings/
-*.csproj
-*.sln
-*.suo
-*.tmp
-*.user
-*.userprefs
-*.pidb
-*.booproj
-*.unityproj
-*.svd
-*.pdb
-*.mdb
-*.opendb
-*.VC.db
-*.pidb.meta
-*.pdb.meta
-*.mdb.meta
-
-# Nexo
-.nexo/*.db
-.nexo/preferences.json
-");
-        }
-
-        var asmdefPath = Path.Combine(fullPath, "Assets", "Scripts", $"{projectName}.asmdef");
-        if (!File.Exists(asmdefPath))
-        {
-            File.WriteAllText(asmdefPath, JsonSerializer.Serialize(new
-            {
-                name = projectName,
-                rootNamespace = projectName,
-                references = new[] { "Unity.InputSystem", "Unity.Netcode.Runtime" },
-                includePlatforms = Array.Empty<string>(),
-                excludePlatforms = Array.Empty<string>(),
-                allowUnsafeCode = false,
-                overrideReferences = false,
-                precompiledReferences = Array.Empty<string>(),
-                autoReferenced = true,
-                defineConstraints = Array.Empty<string>(),
-                versionDefines = Array.Empty<string>(),
-                noEngineReferences = false
-            }, new JsonSerializerOptions { WriteIndented = true }));
-        }
-
-        var testAsmdefPath = Path.Combine(fullPath, "Assets", "Tests", "EditMode", $"{projectName}.Tests.asmdef");
-        if (!File.Exists(testAsmdefPath))
-        {
-            File.WriteAllText(testAsmdefPath, JsonSerializer.Serialize(new
-            {
-                name = $"{projectName}.Tests",
-                rootNamespace = $"{projectName}.Tests",
-                references = new[] { projectName, "UnityEngine.TestRunner", "UnityEditor.TestRunner" },
-                includePlatforms = new[] { "Editor" },
-                excludePlatforms = Array.Empty<string>(),
-                allowUnsafeCode = false,
-                overrideReferences = true,
-                precompiledReferences = new[] { "nunit.framework.dll" },
-                autoReferenced = false,
-                defineConstraints = new[] { "UNITY_INCLUDE_TESTS" },
-                versionDefines = Array.Empty<string>(),
-                noEngineReferences = false
-            }, new JsonSerializerOptions { WriteIndented = true }));
-        }
-
-        var nexoConfigPath = Path.Combine(fullPath, ".nexo", "config.json");
-        if (!File.Exists(nexoConfigPath))
-        {
-            File.WriteAllText(nexoConfigPath, JsonSerializer.Serialize(new
-            {
-                provider = "ollama",
-                model = "llama3.1"
-            }, new JsonSerializerOptions { WriteIndented = true }));
-        }
-
-        var createdFiles = new List<string>();
-        foreach (var dir in dirs) createdFiles.Add(dir + "/");
-        if (File.Exists(manifestPath)) createdFiles.Add("Packages/manifest.json");
-        if (File.Exists(asmdefPath)) createdFiles.Add($"Assets/Scripts/{projectName}.asmdef");
-        if (File.Exists(testAsmdefPath)) createdFiles.Add($"Assets/Tests/EditMode/{projectName}.Tests.asmdef");
-        createdFiles.Add(".gitignore");
-        createdFiles.Add(".nexo/config.json");
-        createdFiles.Add("ProjectSettings/ProjectVersion.txt");
-
-        if (json)
-        {
-            Console.WriteLine(JsonSerializer.Serialize(new
-            {
-                ok = true,
-                projectRoot = fullPath,
-                projectName,
-                filesCreated = createdFiles
-            }, new JsonSerializerOptions { WriteIndented = true }));
-        }
-        else
-        {
-            Console.WriteLine($"Unity project scaffolded at: {fullPath}");
-            Console.WriteLine($"  Project name: {projectName}");
-            Console.WriteLine($"  Directories: {dirs.Length}");
-            Console.WriteLine($"  Package manifest with InputSystem, Netcode, TestFramework");
-            Console.WriteLine($"  Assembly definitions for scripts and tests");
-            Console.WriteLine($"  .gitignore for Unity + Nexo");
-            Console.WriteLine($"  .nexo/config.json (default: Ollama provider)");
-            Console.WriteLine();
-            Console.WriteLine("Next: open this folder in Unity Hub, or run:");
-            Console.WriteLine($"  nexo unity-dev generate --project-root {projectRoot} --system \"your system description\"");
-        }
-
-        return 0;
-    }
-
-    internal static List<(string RelativePath, string Content)> ParseFiles(string rawOutput)
-    {
-        var files = new List<(string, string)>();
-        if (string.IsNullOrWhiteSpace(rawOutput))
-            return files;
-
-        var lines = rawOutput.Split('\n');
-        string? currentPath = null;
-        var currentContent = new StringBuilder();
-
-        foreach (var rawLine in lines)
-        {
-            var line = rawLine.TrimEnd('\r');
-
-            if (line.StartsWith(FileMarkerPrefix, StringComparison.Ordinal))
-            {
-                if (currentPath != null)
-                {
-                    files.Add((currentPath, currentContent.ToString().TrimEnd()));
-                    currentContent.Clear();
-                }
-
-                currentPath = line[FileMarkerPrefix.Length..].Trim().Replace('\\', '/');
-            }
-            else if (currentPath != null)
-            {
-                currentContent.AppendLine(line);
-            }
-        }
-
-        if (currentPath != null)
-            files.Add((currentPath, currentContent.ToString().TrimEnd()));
-
-        return files;
-    }
-
-    internal static void WriteManifest(string directory, string prompt, List<string> files)
-    {
-        try
-        {
-            Directory.CreateDirectory(directory);
-            var manifest = new
-            {
-                generatedAt = DateTime.UtcNow.ToString("O"),
-                prompt,
-                files
-            };
-            var manifestPath = Path.Combine(directory, ManifestFileName);
-            var options = new JsonSerializerOptions { WriteIndented = true };
-            File.WriteAllText(manifestPath, JsonSerializer.Serialize(manifest, options));
-        }
-        catch
-        {
-            // Best-effort manifest writing; don't fail the command
-        }
-    }
-
-    internal static string BuildGeneratePrompt(
-        string systemDescription,
-        string outputDir,
-        string testDir,
-        string constraintFragment = "",
-        string templateFragment = "",
-        string compositionContext = "")
-    {
-        return $@"{UnitySystemPrompt}{constraintFragment}{templateFragment}
-
-Generate a Unity gameplay system based on the following description:
-{systemDescription}
-{(string.IsNullOrEmpty(compositionContext) ? "" : $"\nContext from upstream systems:\n{compositionContext}\n")}
-Place script files under: {outputDir}/
-Place test files under: {testDir}/
-Each file must start with a // FILE: marker with the relative path from the project root.";
-    }
-
-    internal static string BuildIteratePrompt(string changeDescription, string systemDir, string existingContext)
-    {
-        return $@"{UnitySystemPrompt}
-
-You are modifying an existing Unity gameplay system located in: {systemDir}
-
-{existingContext}
-
-Requested change:
-{changeDescription}
-
-Output the complete modified files. Each file must start with a // FILE: marker with the relative path from the project root. Include all files that need changes.";
-    }
-
-    internal static void SetPathAllowlist(string projectRoot, params string[] additionalPaths)
-    {
-        var existing = Environment.GetEnvironmentVariable("NEXO_PATH_ALLOWLIST_EXTRA") ?? "";
-        var paths = new List<string>();
-        if (!string.IsNullOrWhiteSpace(existing))
-            paths.Add(existing);
-
-        // Add Unity-standard relative prefixes so the PathAllowlist policy
-        // approves writes to Assets/, Packages/, ProjectSettings/ etc.
-        paths.Add("Assets/");
-        paths.Add("Packages/");
-        paths.Add("ProjectSettings/");
-
-        // Also add the full project root as SandboxRoot for absolute path resolution
-        Environment.SetEnvironmentVariable("NEXO_SANDBOX_ROOT", projectRoot);
-        Environment.SetEnvironmentVariable("NEXO_PATH_ALLOWLIST_EXTRA", string.Join(",", paths));
-    }
-
-    internal static void WriteError(string message, bool json)
-    {
-        if (json)
-            Console.WriteLine(JsonSerializer.Serialize(new { ok = false, error = message }));
-        else
-            Console.Error.WriteLine($"unity-dev: error: {message}");
-    }
-
-    internal static void WriteDryRunOutput(string prompt, bool json)
-    {
-        if (json)
-        {
-            Console.WriteLine(JsonSerializer.Serialize(new
-            {
-                ok = true,
-                dryRun = true,
-                prompt
-            }, new JsonSerializerOptions { WriteIndented = true }));
-        }
-        else
-        {
-            Console.WriteLine("=== DRY RUN ===");
-            Console.WriteLine("The following prompt would be sent to the LLM:");
-            Console.WriteLine();
-            Console.WriteLine(prompt);
-        }
-    }
-
-    internal static void WriteGenerateResult(List<string> files, string systemDescription, string outputDir, bool json)
-    {
-        if (json)
-        {
-            Console.WriteLine(JsonSerializer.Serialize(new
-            {
-                ok = true,
-                action = "generate",
-                system = systemDescription,
-                outputDir,
-                filesCreated = files
-            }, new JsonSerializerOptions { WriteIndented = true }));
-        }
-        else
-        {
-            Console.WriteLine($"unity-dev generate: ok");
-            Console.WriteLine($"System: {systemDescription}");
-            Console.WriteLine($"Files created ({files.Count}):");
-            foreach (var f in files)
-                Console.WriteLine($"  {f}");
-        }
-    }
-
-    internal static void WriteIterateResult(List<string> files, string changeDescription, string systemDir, bool json)
-    {
-        if (json)
-        {
-            Console.WriteLine(JsonSerializer.Serialize(new
-            {
-                ok = true,
-                action = "iterate",
-                change = changeDescription,
-                systemDir,
-                filesModified = files
-            }, new JsonSerializerOptions { WriteIndented = true }));
-        }
-        else
-        {
-            Console.WriteLine($"unity-dev iterate: ok");
-            Console.WriteLine($"Change: {changeDescription}");
-            Console.WriteLine($"System: {systemDir}");
-            Console.WriteLine($"Files modified ({files.Count}):");
-            foreach (var f in files)
-                Console.WriteLine($"  {f}");
-        }
-    }
+    internal static void WriteIterateResult(List<string> files, string changeDescription, string systemDir, bool json) => UnityDevCommandUtilities.WriteIterateResult(files, changeDescription, systemDir, json);
 
     // ───────────────────────────────────────────────────────────────────
     //  pin subcommand
     // ───────────────────────────────────────────────────────────────────
 
-    private Command CreatePinCommand()
-    {
-        var projectRootOpt = new Option<string>("--project-root", "Path to the Unity project root.") { IsRequired = true };
-        var fileOpt = new Option<string>("--file", "Descriptor path relative to the project root.") { IsRequired = true };
-        var fieldOpt = new Option<string>("--field", "Field name to pin or unpin.") { IsRequired = true };
-        var valueOpt = new Option<string?>("--value", () => null, "Value to pin. Required unless --unpin is set.");
-        var unpinOpt = new Option<bool>("--unpin", () => false, "Remove the pin for the given field.");
-        var jsonOpt = new Option<bool>("--format-json", () => false, "Emit machine-readable JSON output.");
-
-        var cmd = new Command("pin", "Pin or unpin a field value on a descriptor to preserve it across regeneration.")
-        {
-            projectRootOpt, fileOpt, fieldOpt, valueOpt, unpinOpt, jsonOpt
-        };
-
-        cmd.SetHandler((InvocationContext ctx) =>
-        {
-            var projectRoot = ctx.ParseResult.GetValueForOption(projectRootOpt)!;
-            var file = ctx.ParseResult.GetValueForOption(fileOpt)!;
-            var field = ctx.ParseResult.GetValueForOption(fieldOpt)!;
-            var value = ctx.ParseResult.GetValueForOption(valueOpt);
-            var unpin = ctx.ParseResult.GetValueForOption(unpinOpt);
-            var json = ctx.ParseResult.GetValueForOption(jsonOpt);
-
-            ctx.ExitCode = ExecutePin(projectRoot, file, field, value, unpin, json);
-        });
-
-        return cmd;
-    }
-
-    internal static int ExecutePin(string projectRoot, string file, string field, string? value, bool unpin, bool json)
-    {
-        var fullProjectRoot = Path.GetFullPath(projectRoot);
-        var descriptorPath = Path.Combine(fullProjectRoot, file);
-
-        if (unpin)
-        {
-            DescriptorOverrides.Unpin(descriptorPath, field);
-            if (json)
-                Console.WriteLine(JsonSerializer.Serialize(new { ok = true, action = "unpin", file, field }));
-            else
-                Console.WriteLine($"Unpinned '{field}' from {file}");
-        }
-        else
-        {
-            if (value == null)
-            {
-                WriteError("--value is required when pinning a field.", json);
-                return 1;
-            }
-            DescriptorOverrides.Pin(descriptorPath, field, value);
-            if (json)
-                Console.WriteLine(JsonSerializer.Serialize(new { ok = true, action = "pin", file, field, value }));
-            else
-                Console.WriteLine($"Pinned '{field}' = '{value}' on {file}");
-        }
-
-        return 0;
-    }
+    internal static int ExecutePin(string projectRoot, string file, string field, string? value, bool unpin, bool json) => UnityDevCommandUtilities.ExecutePin(projectRoot, file, field, value, unpin, json);
 
     // ───────────────────────────────────────────────────────────────────
     //  compose subcommand
     // ───────────────────────────────────────────────────────────────────
-
-    private Command CreateComposeCommand()
-    {
-        var projectRootOpt = new Option<string>("--project-root", "Path to the Unity project root.") { IsRequired = true };
-        var configOpt = new Option<string>("--config", () => ".nexo/composition.json", "Path to the composition graph JSON file (relative to project root).");
-        var jsonOpt = new Option<bool>("--format-json", () => false, "Emit machine-readable JSON output.");
-
-        var cmd = new Command("compose", "Run multi-system generation using a composition dependency graph.")
-        {
-            projectRootOpt, configOpt, jsonOpt
-        };
-
-        cmd.SetHandler(async (InvocationContext ctx) =>
-        {
-            var projectRoot = ctx.ParseResult.GetValueForOption(projectRootOpt)!;
-            var config = ctx.ParseResult.GetValueForOption(configOpt) ?? ".nexo/composition.json";
-            var json = ctx.ParseResult.GetValueForOption(jsonOpt);
-
-            ctx.ExitCode = await ExecuteComposeAsync(
-                projectRoot, config, json,
-                ctx.GetCancellationToken()).ConfigureAwait(false);
-        });
-
-        return cmd;
-    }
 
     internal async Task<int> ExecuteComposeAsync(
         string projectRoot,
@@ -736,33 +133,6 @@ Output the complete modified files. Each file must start with a // FILE: marker 
     //  assets subcommand
     // ───────────────────────────────────────────────────────────────────
 
-    private Command CreateAssetsCommand()
-    {
-        var projectRootOpt = new Option<string>("--project-root", "Path to the Unity project root.") { IsRequired = true };
-        var typeOpt = new Option<string>("--type", "Asset type to generate (material|prefab|scene|audio|animation|soundbank|animationset|ui|vfx|physics|input|network|ainavigation|build).") { IsRequired = true };
-        var descriptionOpt = new Option<string>("--description", "Description of the asset to generate.") { IsRequired = true };
-        var jsonOpt = new Option<bool>("--format-json", () => false, "Emit machine-readable JSON output.");
-
-        var cmd = new Command("assets", "Generate game asset definitions (JSON descriptors and C# loaders).")
-        {
-            projectRootOpt, typeOpt, descriptionOpt, jsonOpt
-        };
-
-        cmd.SetHandler(async (InvocationContext ctx) =>
-        {
-            var projectRoot = ctx.ParseResult.GetValueForOption(projectRootOpt)!;
-            var type = ctx.ParseResult.GetValueForOption(typeOpt)!;
-            var description = ctx.ParseResult.GetValueForOption(descriptionOpt)!;
-            var json = ctx.ParseResult.GetValueForOption(jsonOpt);
-
-            ctx.ExitCode = await ExecuteAssetsAsync(
-                projectRoot, type, description, json,
-                ctx.GetCancellationToken()).ConfigureAwait(false);
-        });
-
-        return cmd;
-    }
-
     internal async Task<int> ExecuteAssetsAsync(
         string projectRoot,
         string assetType,
@@ -771,100 +141,13 @@ Output the complete modified files. Each file must start with a // FILE: marker 
         CancellationToken ct) =>
         await _assetsHandler.ExecuteAsync(projectRoot, assetType, description, json, ct).ConfigureAwait(false);
 
-    internal static string BuildAssetPrompt(string assetType, string description)
-    {
-        var schemaHint = assetType switch
-        {
-            "material" => "MaterialDescriptor JSON with fields: Id, Name, ShaderName, Color (hex), Metallic (0-1), Smoothness (0-1), EmissionColor (hex or null), RenderMode (Opaque|Cutout|Transparent), TextureSlots (dict of slot name to texture path).",
-            "prefab" => "PrefabDescriptor JSON with fields: Id, Name, Components (list of {TypeName, Properties}), Children (nested PrefabDescriptors), Position/Rotation/Scale (Vector3 with X,Y,Z).",
-            "scene" => "SceneDescriptor JSON with fields: Id, Name, RootObjects (list of PrefabDescriptors), AmbientLightColor (hex), SkyboxMaterial (string or null), NavMeshAreas (list of {Name, Center, Size} with Vector3).",
-            "audio" => "AudioDescriptor JSON with fields: Id, Name, Category (sfx|music|ambient|ui|voice|foley), SubCategory, Volume (0-1), Pitch, PitchVariance (random offset ±), Loop, FadeInSeconds, FadeOutSeconds, Priority (0-256), SpatialBlend (0=2D, 1=3D), MinDistance, MaxDistance, RolloffMode (linear|logarithmic|custom), DopplerLevel, Spread (0-360), MixerGroup (Master|SFX|Music|Ambient|UI|Voice), DuckingVolume, BypassEffects, BypassReverb, Variations (list of {VariantId, PitchOffset, VolumeOffset, ClipSuffix}), Tags.",
-            "animation" => "AnimationDescriptor JSON with fields: Id, Name, Category (character|weapon|environment|ui|camera), DefaultState, States (list of {Name, ClipName, Speed, Loop, Mirror, SpeedParameterName, Events [{Time (0-1), FunctionName, StringParameter, FloatParameter, IntParameter}], Position {X,Y}}), Transitions (list of {FromState (use \"Any\" for AnyState), ToState, TransitionDuration, ExitTime (0-1), HasExitTime, HasFixedDuration, Conditions [{ParameterName, Mode (equals|not_equal|greater|less|if_true|if_false), Threshold}]}), Parameters (list of {Name, Type (float|int|bool|trigger), DefaultValue}), Layers (list of {Name, Weight, BlendingMode (override|additive), AvatarMask (null for full body, e.g. \"UpperBody\"), IKPass}), Tags. Design the state machine with proper transitions between states — for example a character animator should have Idle, Walk, Run, Jump states with parameter-driven transitions. Use layers to separate upper/lower body animations. Add AnimationEvents for gameplay hooks like footstep sounds or weapon fire frames.",
-            "soundbank" => "SoundBankDescriptor JSON with fields: Id, Name, Category (weapon|character|environment|ui|music), Events (list of {EventName (e.g. \"fire\", \"reload\", \"footstep_concrete\"), AudioDescriptorIds (list of IDs for random selection pool), SelectionMode (random|sequential|random_no_repeat), CooldownSeconds, MaxConcurrent, VolumeMultiplier, PitchMultiplier}), Tags. Map game events to audio responses — each event references one or more AudioDescriptor IDs. Use cooldowns to prevent audio spam and MaxConcurrent to limit simultaneous instances. Selection modes control how variants are picked: random for uniform, sequential for round-robin, random_no_repeat to avoid repeating the last played clip.",
-            "animationset" => "AnimationSetDescriptor JSON with fields: Id, Name, Category (character|weapon|vehicle), Mappings (list of {GameplayState (idle|walk|run|jump|crouch|slide|ads|fire|reload|die|etc.), AnimationDescriptorId, CrossfadeDuration}), BlendTrees (list of {Name, BlendParameter (e.g. \"Speed\", \"Direction\"), BlendParameterY (for 2D trees, null for 1D), BlendType (1D|2DSimpleDirectional|2DFreeformDirectional|2DFreeformCartesian), Children [{AnimationDescriptorId, Threshold, ThresholdY, TimeScale}]}), Tags. Map gameplay states to animation descriptors with crossfade durations for smooth transitions. Use BlendTrees for locomotion blending — a 1D tree blends idle/walk/run by speed, a 2D tree adds directional strafing. Each BlendTreeChild positions an animation on the blend axis via Threshold.",
-            "ui" => "UIDescriptor JSON with fields: Id, Name, CanvasMode (overlay|camera|worldspace), Elements (list of {Type (text|button|image|panel|slider|input), Name, Position (Vector3), Size (Vector2 with X,Y), Properties}).",
-            "vfx" => "VfxDescriptor JSON with fields: Id, Name, Category (muzzle_flash|impact|explosion|trail|ambient|shield|pickup|death), Duration, Loop, PlayOnAwake, Modules (list of {ModuleName (emission|shape|velocity|color|size|noise|collision|renderer), Properties (dict of string to value)}), Tags.",
-            "physics" => "PhysicsDescriptor JSON with fields: Id, Name, Category (material|collider|rigidbody|projectile), DynamicFriction (0-1), StaticFriction (0-1), Bounciness (0-1), FrictionCombine (average|minimum|maximum|multiply), BounceCombine, Mass, Drag, AngularDrag, UseGravity, IsKinematic, Interpolation (none|interpolate|extrapolate), CollisionDetection (discrete|continuous|continuous_dynamic|continuous_speculative), ColliderType (box|sphere|capsule|mesh|convex_mesh), ColliderCenter (Vector3), ColliderSize (Vector3), ColliderRadius, ColliderHeight, IsTrigger, ProjectileSpeed, GravityMultiplier, MaxLifetime, MaxBounces, BounceEnergyRetention, Tags.",
-            "input" => "InputDescriptor JSON with fields: Id, Name, ActionMaps (list of {Name, Actions (list of {Name, Type (button|value|passthrough), ControlType (Button|Vector2|Axis), Bindings (list of {Path, Composite (2DVector|1DAxis|null), CompositePart (up|down|left|right|null), Interactions (list), Processors (list)})})}), Tags.",
-            "network" => "NetworkDescriptor JSON with fields: Id, Name, Category (player|projectile|pickup|game_state|environment), IsPlayerObject, DontDestroyWithOwner, SyncedVariables (list of {Name, Type (float|int|bool|Vector3|Quaternion|string|custom), Permission (server|owner|everyone), DeliveryMode (reliable|unreliable), SendRate}), Rpcs (list of {Name, Direction (server|client), DeliveryMode, Parameters (list of {Name, Type})}), Spawning ({AutoSpawn, SpawnAuthority (server|owner), DespawnDelay, PoolId}), Tags.",
-            "ainavigation" => "AiNavigationDescriptor JSON with fields: Id, Name, PatrolRoutes (list of {Name, Waypoints (list of Vector3), Loop, WaitTimePerPoint, MoveSpeed}), CoverPoints (list of {Position (Vector3), CoverDirection (Vector3), CoverType (half|full|lean_left|lean_right), Rating (0-1)}), TacticalPositions (list of {Name, Position (Vector3), Role (sniper_nest|choke_point|flank_route|power_position|objective_watch|generic), ControlRadius, SightlineTargets (list of Vector3)}), Tags.",
-            "build" => "BuildDescriptor JSON with fields: Id, Name, TargetPlatform (StandaloneWindows64|StandaloneOSX|StandaloneLinux64|WebGL|Android|iOS), OutputPath, DevelopmentBuild, AllowDebugging, Scenes (list of scene paths), CompanyName, ProductName, BundleVersion, Quality ({VSyncCount, TargetFrameRate, ShadowQuality (disable|hard_only|all), ShadowResolution, ShadowDistance, AntiAliasing (disabled|2x|4x|8x), TextureQuality (full|half|quarter|eighth), MaxLod}), ScriptingDefines (list), Tags.",
-            _ => ""
-        };
+    internal static string BuildAssetPrompt(string assetType, string description) => UnityDevCommandUtilities.BuildAssetPrompt(assetType, description);
 
-        return $@"{UnitySystemPrompt}
-
-You are generating a Unity asset descriptor and its companion C# loader script.
-
-Asset type: {assetType}
-Description: {description}
-
-Schema: {schemaHint}
-
-Generate TWO files:
-1. A JSON descriptor file at: Assets/NexoAssets/{assetType}/{{name}}.json
-   - The JSON must conform exactly to the schema above.
-2. A C# loader script at: Assets/NexoAssets/{assetType}/{{name}}Loader.cs
-   - The loader should read the JSON at runtime using JsonUtility or System.Text.Json and create the corresponding Unity objects.
-   - Use a MonoBehaviour that loads on Awake or a static utility method.
-
-Each file must start with a // FILE: marker with the relative path from the project root.";
-    }
-
-    internal static void WriteAssetsResult(List<string> files, string assetType, string description, bool json)
-    {
-        if (json)
-        {
-            Console.WriteLine(JsonSerializer.Serialize(new
-            {
-                ok = true,
-                action = "assets",
-                assetType,
-                description,
-                filesCreated = files
-            }, new JsonSerializerOptions { WriteIndented = true }));
-        }
-        else
-        {
-            Console.WriteLine($"unity-dev assets: ok");
-            Console.WriteLine($"Type: {assetType}");
-            Console.WriteLine($"Description: {description}");
-            Console.WriteLine($"Files created ({files.Count}):");
-            foreach (var f in files)
-                Console.WriteLine($"  {f}");
-        }
-    }
+    internal static void WriteAssetsResult(List<string> files, string assetType, string description, bool json) => UnityDevCommandUtilities.WriteAssetsResult(files, assetType, description, json);
 
     // ───────────────────────────────────────────────────────────────────
     //  qa subcommand
     // ───────────────────────────────────────────────────────────────────
-
-    private Command CreateQaCommand()
-    {
-        var projectRootOpt = new Option<string>("--project-root", "Path to the Unity project root.") { IsRequired = true };
-        var maxIterOpt = new Option<int>("--max-iterations", () => 5, "Maximum compile/test/fix iterations.");
-        var jsonOpt = new Option<bool>("--format-json", () => false, "Emit machine-readable JSON output.");
-        var unityPathOpt = new Option<string?>("--unity-path", () => null, "Path to the Unity editor executable. Auto-detected if omitted.");
-
-        var cmd = new Command("qa", "Automated compile, test, and iterative-fix loop using the Unity editor CLI.")
-        {
-            projectRootOpt, maxIterOpt, jsonOpt, unityPathOpt
-        };
-
-        cmd.SetHandler(async (InvocationContext ctx) =>
-        {
-            var projectRoot = ctx.ParseResult.GetValueForOption(projectRootOpt)!;
-            var maxIter = ctx.ParseResult.GetValueForOption(maxIterOpt);
-            var json = ctx.ParseResult.GetValueForOption(jsonOpt);
-            var unityPath = ctx.ParseResult.GetValueForOption(unityPathOpt);
-
-            ctx.ExitCode = await ExecuteQaAsync(
-                projectRoot, maxIter, json, unityPath,
-                ctx.GetCancellationToken()).ConfigureAwait(false);
-        });
-
-        return cmd;
-    }
 
     internal async Task<int> ExecuteQaAsync(
         string projectRoot,
@@ -874,86 +157,9 @@ Each file must start with a // FILE: marker with the relative path from the proj
         CancellationToken ct) =>
         await _qaHandler.ExecuteAsync(projectRoot, maxIterations, json, unityPath, ct).ConfigureAwait(false);
 
-    internal static async Task<(int exitCode, string output)> RunUnityCommand(
-        string unityPath, string projectRoot, string args, CancellationToken ct)
-    {
-        var psi = new ProcessStartInfo
-        {
-            FileName = unityPath,
-            Arguments = $"-projectPath \"{projectRoot}\" {args}",
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-            CreateNoWindow = true
-        };
+    internal static Task<(int exitCode, string output)> RunUnityCommand(string unityPath, string projectRoot, string args, CancellationToken ct) => UnityDevCommandUtilities.RunUnityCommand(unityPath, projectRoot, args, ct);
 
-        using var process = new Process { StartInfo = psi };
-        var outputBuilder = new StringBuilder();
-
-        process.OutputDataReceived += (_, e) => { if (e.Data != null) outputBuilder.AppendLine(e.Data); };
-        process.ErrorDataReceived += (_, e) => { if (e.Data != null) outputBuilder.AppendLine(e.Data); };
-
-        process.Start();
-        process.BeginOutputReadLine();
-        process.BeginErrorReadLine();
-
-        await process.WaitForExitAsync(ct).ConfigureAwait(false);
-        return (process.ExitCode, outputBuilder.ToString());
-    }
-
-    internal static string? FindUnityEditor()
-    {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-        {
-            var hubBase = "/Applications/Unity/Hub/Editor";
-            if (Directory.Exists(hubBase))
-            {
-                foreach (var dir in Directory.GetDirectories(hubBase).OrderByDescending(d => d))
-                {
-                    var candidate = Path.Combine(dir, "Unity.app", "Contents", "MacOS", "Unity");
-                    if (File.Exists(candidate)) return candidate;
-                }
-            }
-        }
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-        {
-            var hubBase = @"C:\Program Files\Unity\Hub\Editor";
-            if (Directory.Exists(hubBase))
-            {
-                foreach (var dir in Directory.GetDirectories(hubBase).OrderByDescending(d => d))
-                {
-                    var candidate = Path.Combine(dir, "Editor", "Unity.exe");
-                    if (File.Exists(candidate)) return candidate;
-                }
-            }
-        }
-
-        try
-        {
-            var psi = new ProcessStartInfo
-            {
-                FileName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "where" : "which",
-                Arguments = "unity",
-                RedirectStandardOutput = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-            using var proc = Process.Start(psi);
-            if (proc != null)
-            {
-                var path = proc.StandardOutput.ReadLine()?.Trim();
-                proc.WaitForExit();
-                if (proc.ExitCode == 0 && !string.IsNullOrEmpty(path) && File.Exists(path))
-                    return path;
-            }
-        }
-        catch
-        {
-            // which/where not available; fall through
-        }
-
-        return null;
-    }
+    internal static string? FindUnityEditor() => UnityDevCommandUtilities.FindUnityEditor();
 
     internal static void WriteQaResult(List<object> iterations, int totalIterations, bool allPassed, bool json)
     {
@@ -976,41 +182,11 @@ Each file must start with a // FILE: marker with the relative path from the proj
         }
     }
 
-    internal static string Truncate(string text, int maxLength)
-    {
-        if (string.IsNullOrEmpty(text) || text.Length <= maxLength)
-            return text;
-        return text[..maxLength] + "\n... (truncated)";
-    }
+    internal static string Truncate(string text, int maxLength) => UnityDevCommandUtilities.Truncate(text, maxLength);
 
     // ───────────────────────────────────────────────────────────────────
     //  fullstack subcommand
     // ───────────────────────────────────────────────────────────────────
-
-    private Command CreateFullstackCommand()
-    {
-        var projectRootOpt = new Option<string>("--project-root", "Path to the Unity project root.") { IsRequired = true };
-        var gameDescOpt = new Option<string>("--game-description", "High-level description of the game to build.") { IsRequired = true };
-        var jsonOpt = new Option<bool>("--format-json", () => false, "Emit machine-readable JSON output.");
-
-        var cmd = new Command("fullstack", "Run the full pipeline: init → generate → assets → qa.")
-        {
-            projectRootOpt, gameDescOpt, jsonOpt
-        };
-
-        cmd.SetHandler(async (InvocationContext ctx) =>
-        {
-            var projectRoot = ctx.ParseResult.GetValueForOption(projectRootOpt)!;
-            var gameDesc = ctx.ParseResult.GetValueForOption(gameDescOpt)!;
-            var json = ctx.ParseResult.GetValueForOption(jsonOpt);
-
-            ctx.ExitCode = await ExecuteFullstackAsync(
-                projectRoot, gameDesc, json,
-                ctx.GetCancellationToken()).ConfigureAwait(false);
-        });
-
-        return cmd;
-    }
 
     internal async Task<int> ExecuteFullstackAsync(
         string projectRoot,
