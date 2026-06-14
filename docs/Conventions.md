@@ -2,6 +2,21 @@
 
 This document describes the conventions Nexo practices today. It is intentionally descriptive, not aspirational: this sprint does not refactor code, change exception behavior, remove interfaces, or migrate inheritance patterns.
 
+## Mechanically enforced (Core.Domain)
+
+The following conventions are enforced by `src/Nexo.Tests.Domain/DomainConventionArchitectureTests.cs` and are scoped **only** to `Nexo.Core.Domain`:
+
+1. **No generic class/record/struct declarations in Core.Domain.** The domain assembly currently declares zero generic domain types. This keeps domain contracts concrete and easy to serialize, inspect, and reason about. This does not ban .NET generic framework types such as `Task<T>` or `IReadOnlyList<T>` in members.
+2. **Class inheritance stays within sanctioned domain families.** Domain classes may derive only from `object` or these existing, closed families:
+   - `ExecutionEvent` — execution event hierarchy for behavior/step telemetry.
+   - `DomainException` / `System.Exception` — domain exception family.
+   - `BaseTypeValue` — type-value objects with shared equality semantics.
+   - `WorkflowNode` — visual workflow composer node hierarchy.
+
+These assertions are tripwires for future drift. If a future PR needs a new domain inheritance family or a generic domain type, update the test and this section with an explicit rationale rather than slipping the change in accidentally.
+
+These invariants intentionally do **not** apply to Infrastructure, CLI, Orchestration, transport, or tests, where generics, exceptions, and inheritance are pragmatic and expected.
+
 ## Error handling: values and exceptions both exist
 
 Nexo is partway toward errors-as-values, but it is not uniformly there.
@@ -65,7 +80,7 @@ Generics are common and idiomatic throughout the repository:
 
 Avoid presenting Nexo as a generics-free or intentionally flat-only codebase. The actual code uses .NET generics where they make contracts and data flow explicit.
 
-## Aspiration vs. current state
+## Aspirational / partial (not gated)
 
 The architectural aspiration is:
 
@@ -82,3 +97,9 @@ The current state is **partway there**:
 - Generics are widely used where they clarify typed contracts.
 
 Treat further migration as future work. A follow-up issue should define where errors-as-values are valuable, which exception paths should remain, and which inheritance-heavy areas would benefit from composition. Do not start that migration as part of documentation or licensing work.
+
+The following are **not mechanically enforced** today:
+
+- **Errors-as-values everywhere.** This is partial: newer routing/provider paths use `Result<T>`, but many guard, lifecycle, IO, transport, and framework paths correctly throw exceptions.
+- **Composition over inheritance everywhere.** Directionally preferred when it reduces coupling, but not absolute. Core.Domain has the sanctioned inheritance families above; other layers use inheritance pragmatically.
+- **No static methods.** Static helpers and constants exist throughout the codebase, including Core.Domain. A blanket ban would misrepresent the code and force risky refactors.
