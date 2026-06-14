@@ -49,10 +49,18 @@ jobs:
             echo "Commercial paths changed — allowing coordinated application/ + src/ integration merges."
           fi
 
-          # --- Runtime bases: no application/ (except commercial vertical integration) ---
+          DISTRIBUTION_AUTHORING=0
+          if echo "$CHANGED" | grep -q '^application/' && \
+             { echo "$CHANGED" | grep -q '^src/Nexo.Authoring/' || \
+               echo "$CHANGED" | grep -q '^scripts/verify-standalone-brick-authoring.sh'; }; then
+            DISTRIBUTION_AUTHORING=1
+            echo "Nexo.Authoring distribution paths changed — allowing coordinated application/ + src/ integration merge."
+          fi
+
+          # --- Runtime bases: no application/ (except coordinated integration merges) ---
           case "$BASE_REF" in
             master|main|runtime/*)
-              if [[ "$COMMERCIAL_INTEGRATION" -eq 0 ]] && echo "$CHANGED" | grep -q '^application/'; then
+              if [[ "$COMMERCIAL_INTEGRATION" -eq 0 && "$DISTRIBUTION_AUTHORING" -eq 0 ]] && echo "$CHANGED" | grep -q '^application/'; then
                 echo "::error::Base branch '$BASE_REF' is runtime/kernel-first. This PR changes application/ — retarget or remove those paths."
                 exit 1
               fi
