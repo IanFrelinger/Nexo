@@ -18,6 +18,7 @@ on:
       - ".docker/Dockerfile.api"
       - ".docker/Dockerfile.cli"
       - "scripts/verify-stable-sdk-host-sample-packages.sh"
+      - "scripts/verify-standalone-brick-authoring.sh"
       - "scripts/pack-nexo-hosting-graph.sh"
       - "scripts/pack-nexo-hosting-graph.ps1"
       - "scripts/pack-nexo-hosting-graph.allowlist.txt"
@@ -25,8 +26,11 @@ on:
       - "application/src/Nexo.API/**"
       - "application/src/Nexo.CLI/**"
       - "src/Nexo.Client/**"
+      - "src/Nexo.Authoring/**"
       - "src/Nexo.Hosting/**"
       - "docs/samples/StableSdkHostSample/**"
+      - "samples/templates/brick/**"
+      - "samples/hello-brick/**"
       - "src/Nexo.Tests.Infrastructure/Tests/VirtualProduction/**"
       - "src/Nexo.Tests.Infrastructure/Helpers/VirtualProduction/**"
   pull_request:
@@ -36,6 +40,7 @@ on:
       - ".docker/Dockerfile.api"
       - ".docker/Dockerfile.cli"
       - "scripts/verify-stable-sdk-host-sample-packages.sh"
+      - "scripts/verify-standalone-brick-authoring.sh"
       - "scripts/pack-nexo-hosting-graph.sh"
       - "scripts/pack-nexo-hosting-graph.ps1"
       - "scripts/pack-nexo-hosting-graph.allowlist.txt"
@@ -43,8 +48,11 @@ on:
       - "application/src/Nexo.API/**"
       - "application/src/Nexo.CLI/**"
       - "src/Nexo.Client/**"
+      - "src/Nexo.Authoring/**"
       - "src/Nexo.Hosting/**"
       - "docs/samples/StableSdkHostSample/**"
+      - "samples/templates/brick/**"
+      - "samples/hello-brick/**"
       - "src/Nexo.Tests.Infrastructure/Tests/VirtualProduction/**"
       - "src/Nexo.Tests.Infrastructure/Helpers/VirtualProduction/**"
 
@@ -94,6 +102,20 @@ jobs:
       # doctor --json expects git/curl and a dev-style host; the CLI image is aspnet runtime-only.
       - name: Smoke (pipeline validate --help)
         run: docker run --rm nexo-cli:dist-matrix pipeline validate --help
+
+  standalone-brick-authoring:
+    name: Standalone brick authoring scaffold
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Verify tool-installed nexo new brick outside repo
+        run: bash scripts/verify-standalone-brick-authoring.sh
 
   api-image-http-smoke:
     name: API image + curl /health + /api/status
