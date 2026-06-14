@@ -1,0 +1,34 @@
+using Nexo.CLI.Runtime;
+
+namespace Nexo.CLI.Commands;
+
+internal sealed class RecommendHandler
+{
+    public Task<int> ExecuteAsync(
+        string goal,
+        string repoRoot,
+        int historyWindow,
+        bool json)
+    {
+        if (string.IsNullOrWhiteSpace(goal))
+        {
+            RuntimeOutputWriter.WriteRecommendResult(new RuntimeRecommendResult(false, "Goal is required."), json);
+            return Task.FromResult(1);
+        }
+
+        var fullRepoRoot = Path.GetFullPath(string.IsNullOrWhiteSpace(repoRoot) ? Environment.CurrentDirectory : repoRoot);
+        if (!Directory.Exists(fullRepoRoot))
+        {
+            RuntimeOutputWriter.WriteRecommendResult(new RuntimeRecommendResult(false, $"Repo root not found: {fullRepoRoot}"), json);
+            return Task.FromResult(1);
+        }
+
+        var history = AdaptiveRuntimeExecutionHistoryStore.ReadRecent(fullRepoRoot, Math.Max(1, historyWindow));
+        var recommendation = AdaptiveRuntimePolicyAdvisor.RecommendQaPolicy(goal, history);
+        var result = recommendation == null
+            ? new RuntimeRecommendResult(true, "No recommendation from history.", Policy: null, Reason: null)
+            : new RuntimeRecommendResult(true, "Recommendation computed from history.", recommendation.QaPolicy, recommendation.Reason);
+        RuntimeOutputWriter.WriteRecommendResult(result, json);
+        return Task.FromResult(0);
+    }
+}
