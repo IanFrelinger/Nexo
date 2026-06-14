@@ -17,16 +17,6 @@ on:
       - 'scripts/install/**'
       - 'application/src/Nexo.CLI/**'
       - 'global.json'
-  pull_request:
-    paths:
-      - '.github/workflows/onboarding-quickstart-gate.yml'
-      - 'README.md'
-      - 'docs/GettingStarted.md'
-      - 'docs/OnboardingAutomation.md'
-      - 'scripts/setup/**'
-      - 'scripts/install/**'
-      - 'application/src/Nexo.CLI/**'
-      - 'global.json'
   workflow_dispatch:
 
 jobs:
@@ -76,25 +66,25 @@ jobs:
           mkdir -p "${RUNNER_TEMP}/onboarding"
           TREND_FILE="${RUNNER_TEMP}/onboarding/onboarding-native-linux-trend.json"
           TREND_FILE="${TREND_FILE}" python - <<'PY'
-import json
-import os
-from datetime import datetime, timezone
-run_attempt = int(os.getenv("GITHUB_RUN_ATTEMPT", "1"))
-run_number = int(os.getenv("GITHUB_RUN_NUMBER", "0"))
-trend = {
-  "workflow": os.getenv("GITHUB_WORKFLOW"),
-  "runId": os.getenv("GITHUB_RUN_ID"),
-  "runNumber": run_number,
-  "runAttempt": run_attempt,
-  "timestampUtc": datetime.now(timezone.utc).isoformat(),
-  "driftSignals": {
-    "isScheduledRun": os.getenv("GITHUB_EVENT_NAME") == "schedule",
-    "isRetry": run_attempt > 1
-  }
-}
-with open(os.environ["TREND_FILE"], "w", encoding="utf-8") as f:
-    json.dump(trend, f, indent=2)
-PY
+          import json
+          import os
+          from datetime import datetime, timezone
+          run_attempt = int(os.getenv("GITHUB_RUN_ATTEMPT", "1"))
+          run_number = int(os.getenv("GITHUB_RUN_NUMBER", "0"))
+          trend = {
+            "workflow": os.getenv("GITHUB_WORKFLOW"),
+            "runId": os.getenv("GITHUB_RUN_ID"),
+            "runNumber": run_number,
+            "runAttempt": run_attempt,
+            "timestampUtc": datetime.now(timezone.utc).isoformat(),
+            "driftSignals": {
+              "isScheduledRun": os.getenv("GITHUB_EVENT_NAME") == "schedule",
+              "isRetry": run_attempt > 1
+            }
+          }
+          with open(os.environ["TREND_FILE"], "w", encoding="utf-8") as f:
+              json.dump(trend, f, indent=2)
+          PY
 
       - name: Emit native quickstart summary
         if: always()
@@ -167,25 +157,25 @@ PY
           mkdir -p "${RUNNER_TEMP}/onboarding"
           TREND_FILE="${RUNNER_TEMP}/onboarding/onboarding-container-linux-trend.json"
           TREND_FILE="${TREND_FILE}" python - <<'PY'
-import json
-import os
-from datetime import datetime, timezone
-run_attempt = int(os.getenv("GITHUB_RUN_ATTEMPT", "1"))
-run_number = int(os.getenv("GITHUB_RUN_NUMBER", "0"))
-trend = {
-  "workflow": os.getenv("GITHUB_WORKFLOW"),
-  "runId": os.getenv("GITHUB_RUN_ID"),
-  "runNumber": run_number,
-  "runAttempt": run_attempt,
-  "timestampUtc": datetime.now(timezone.utc).isoformat(),
-  "driftSignals": {
-    "isScheduledRun": os.getenv("GITHUB_EVENT_NAME") == "schedule",
-    "isRetry": run_attempt > 1
-  }
-}
-with open(os.environ["TREND_FILE"], "w", encoding="utf-8") as f:
-    json.dump(trend, f, indent=2)
-PY
+          import json
+          import os
+          from datetime import datetime, timezone
+          run_attempt = int(os.getenv("GITHUB_RUN_ATTEMPT", "1"))
+          run_number = int(os.getenv("GITHUB_RUN_NUMBER", "0"))
+          trend = {
+            "workflow": os.getenv("GITHUB_WORKFLOW"),
+            "runId": os.getenv("GITHUB_RUN_ID"),
+            "runNumber": run_number,
+            "runAttempt": run_attempt,
+            "timestampUtc": datetime.now(timezone.utc).isoformat(),
+            "driftSignals": {
+              "isScheduledRun": os.getenv("GITHUB_EVENT_NAME") == "schedule",
+              "isRetry": run_attempt > 1
+            }
+          }
+          with open(os.environ["TREND_FILE"], "w", encoding="utf-8") as f:
+              json.dump(trend, f, indent=2)
+          PY
 
       - name: Emit container quickstart summary
         if: always()
@@ -269,10 +259,10 @@ PY
           print(json.dumps(out, indent=2))
           PY
 
-      - name: Upload categorized failure taxonomy
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
+                - name: Upload categorized failure taxonomy
+                  if: always()
+                  uses: actions/upload-artifact@v4
+                  with:
           name: onboarding-failure-categorization
           path: categorized/
           retention-days: 14

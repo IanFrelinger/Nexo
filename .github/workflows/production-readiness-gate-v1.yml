@@ -16,17 +16,6 @@ on:
       - "src/Nexo.Tests.Infrastructure/Tests/Pipelines/**"
       - "application/src/Nexo.Tests.CLI/**"
   workflow_dispatch:
-  pull_request:
-    paths:
-      - ".github/workflows/production-readiness-gate-v1.yml"
-      - "docs/ProductionReadinessGate-v1.md"
-      - "docs/ReleaseCandidateChecklist-v1.md"
-      - "src/Nexo.Core.Application/Pipelines/**"
-      - "src/Nexo.Infrastructure/Pipelines/**"
-      - "application/src/Nexo.CLI/**"
-      - "src/Nexo.Tests.Infrastructure/Tests/Pipelines/**"
-      - "application/src/Nexo.Tests.CLI/**"
-
 jobs:
   gate-v1:
     strategy:

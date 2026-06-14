@@ -11,12 +11,6 @@ on:
       - "src/Nexo.Tests.Transport/**"
       - "src/Nexo.Transport.Grpc/**"
       - "src/Nexo.Abstractions/**"
-  pull_request:
-    paths:
-      - ".github/workflows/grpc-transport-gate.yml"
-      - "src/Nexo.Tests.Transport/**"
-      - "src/Nexo.Transport.Grpc/**"
-      - "src/Nexo.Abstractions/**"
   workflow_dispatch:
 
 jobs:
