@@ -1,0 +1,172 @@
+[assembly: System.Reflection.AssemblyMetadata("RepositoryUrl", "https://github.com/IanFrelinger/Nexo")]
+[assembly: System.Runtime.Versioning.TargetFramework(".NETCoreApp,Version=v8.0", FrameworkDisplayName=".NET 8.0")]
+namespace Nexo.Core.Domain.Bricks
+{
+    public class AgenticImplementation
+    {
+        public AgenticImplementation() { }
+        public Nexo.Core.Domain.Bricks.ImplementationCharacteristics Characteristics { get; init; }
+        public string Description { get; init; }
+        public string Executor { get; init; }
+        public string Id { get; init; }
+        public Nexo.Core.Domain.Bricks.LLMConfig LLMConfig { get; init; }
+        public string Name { get; init; }
+        public System.Collections.Generic.IReadOnlyDictionary<string, Nexo.Core.Domain.Bricks.ProviderConfig> ProviderMappings { get; init; }
+    }
+    public abstract class Brick
+    {
+        protected Brick() { }
+        public Nexo.Core.Domain.Bricks.BrickCategory Category { get; init; }
+        public Nexo.Core.Domain.Bricks.ImplementationType DefaultImplementation { get; init; }
+        public string Description { get; init; }
+        public Nexo.Core.Domain.Bricks.DomainKnowledge DomainKnowledge { get; init; }
+        public System.Collections.Generic.IReadOnlyList<Nexo.Core.Domain.Bricks.ImplementationType> FallbackChain { get; init; }
+        public string Icon { get; init; }
+        public string Id { get; init; }
+        public Nexo.Core.Domain.Bricks.BrickImplementations Implementations { get; init; }
+        public Nexo.Core.Domain.Bricks.BrickInterface Interface { get; init; }
+        public Nexo.Core.Domain.Bricks.BrickMetadata Metadata { get; init; }
+        public string Name { get; init; }
+        public Nexo.Core.Domain.Bricks.ImplementationSelector? Selector { get; init; }
+        public string Version { get; init; }
+        public abstract System.Threading.Tasks.Task<Nexo.Core.Domain.Execution.BrickOutput> ExecuteAsync(Nexo.Core.Domain.Execution.BrickInput input, Nexo.Core.Domain.Bricks.ImplementationType implementation, Nexo.Core.Domain.Execution.IExecutionContext context, System.Threading.CancellationToken cancellationToken = default);
+    }
+    public enum BrickCategory
+    {
+        Input = 0,
+        Output = 1,
+        Analysis = 2,
+        Transform = 3,
+        Generation = 4,
+        Validation = 5,
+        Security = 6,
+        Control = 7,
+    }
+    public class BrickImplementations
+    {
+        public BrickImplementations() { }
+        public Nexo.Core.Domain.Bricks.AgenticImplementation? Agentic { get; init; }
+        public Nexo.Core.Domain.Bricks.DeterministicImplementation? Deterministic { get; init; }
+        public bool HasAgentic { get; }
+        public bool HasDeterministic { get; }
+    }
+    public class BrickInputDefinition
+    {
+        public BrickInputDefinition(string name, string type, string? description = null, bool required = true, object? defaultValue = null) { }
+        public object? Default { get; init; }
+        public string? Description { get; init; }
+        public string Name { get; init; }
+        public bool Required { get; init; }
+        public string Type { get; init; }
+    }
+    public class BrickInterface
+    {
+        public BrickInterface() { }
+        public System.Collections.Generic.IReadOnlyList<Nexo.Core.Domain.Bricks.BrickInputDefinition> Inputs { get; init; }
+        public System.Collections.Generic.IReadOnlyList<Nexo.Core.Domain.Bricks.BrickOutputDefinition> Outputs { get; init; }
+    }
+    public class BrickMetadata
+    {
+        public BrickMetadata() { }
+        public string? Author { get; init; }
+        public System.DateTime? LastUpdated { get; init; }
+        public string? License { get; init; }
+        public string? Repository { get; init; }
+        public long UsageCount { get; set; }
+    }
+    public class BrickOutputDefinition
+    {
+        public BrickOutputDefinition(string name, string type, string? description = null) { }
+        public string? Description { get; init; }
+        public string Name { get; init; }
+        public string Type { get; init; }
+    }
+    public sealed class BrickRuntimeSpec : System.IEquatable<Nexo.Core.Domain.Bricks.BrickRuntimeSpec>
+    {
+        public BrickRuntimeSpec() { }
+        public System.Collections.Generic.IReadOnlyList<Nexo.Core.Domain.Bricks.ImplementationType> Fallback { get; init; }
+        public string Prefer { get; init; }
+        public static Nexo.Core.Domain.Bricks.BrickRuntimeSpec AgenticOnly() { }
+        public static Nexo.Core.Domain.Bricks.BrickRuntimeSpec AgenticWithDeterministicFallback() { }
+        public static Nexo.Core.Domain.Bricks.BrickRuntimeSpec DeterministicOnly() { }
+    }
+    public class DeterministicImplementation
+    {
+        public DeterministicImplementation() { }
+        public Nexo.Core.Domain.Bricks.ImplementationCharacteristics Characteristics { get; init; }
+        public System.Collections.Generic.IReadOnlyDictionary<string, object> Config { get; init; }
+        public string Description { get; init; }
+        public string Executor { get; init; }
+        public string Id { get; init; }
+        public string Name { get; init; }
+    }
+    public class DomainKnowledge
+    {
+        public DomainKnowledge() { }
+        public long ExecutionCount { get; set; }
+        public System.Collections.Generic.IReadOnlyList<Nexo.Core.Domain.Bricks.LearnedPattern> LearnedPatterns { get; init; }
+        public System.Collections.Generic.IReadOnlyDictionary<string, string> ReferenceData { get; init; }
+        public System.Collections.Generic.IReadOnlyList<Nexo.Core.Domain.Bricks.DomainRule> Rules { get; init; }
+        public System.Collections.Generic.IReadOnlyList<string> Standards { get; init; }
+    }
+    public class DomainRule
+    {
+        public DomainRule(string id, string description, string? pattern = null, string? severity = null, string? cweId = null) { }
+        public string? CweId { get; init; }
+        public string Description { get; init; }
+        public string Id { get; init; }
+        public string? Pattern { get; init; }
+        public string? Severity { get; init; }
+    }
+    public class ImplementationCharacteristics
+    {
+        public ImplementationCharacteristics() { }
+        public bool Deterministic { get; init; }
+        public string Latency { get; init; }
+        public bool RequiresNetwork { get; init; }
+        public Nexo.Core.Domain.Bricks.ResourceUsage ResourceUsage { get; init; }
+    }
+    public class ImplementationSelector
+    {
+        public ImplementationSelector() { }
+        public Nexo.Core.Domain.Bricks.ImplementationType Default { get; init; }
+        public System.Collections.Generic.IReadOnlyList<string> PreferAgentic { get; init; }
+        public System.Collections.Generic.IReadOnlyList<string> PreferDeterministic { get; init; }
+        public Nexo.Core.Domain.Bricks.ImplementationType Select(Nexo.Core.Domain.Execution.IExecutionContext context) { }
+    }
+    public enum ImplementationType
+    {
+        Deterministic = 0,
+        Agentic = 1,
+        Auto = 2,
+    }
+    public class LLMConfig
+    {
+        public LLMConfig() { }
+        public int MaxTokens { get; init; }
+        public string Model { get; init; }
+        public string SystemPrompt { get; init; }
+        public double Temperature { get; init; }
+        public System.Collections.Generic.IReadOnlyList<string>? Tools { get; init; }
+    }
+    public class LearnedPattern
+    {
+        public LearnedPattern(string pattern, string outcome, double confidence, int occurrenceCount) { }
+        public double Confidence { get; init; }
+        public int OccurrenceCount { get; init; }
+        public string Outcome { get; init; }
+        public string Pattern { get; init; }
+    }
+    public class ProviderConfig
+    {
+        public ProviderConfig(string model, string? endpoint = null) { }
+        public string? Endpoint { get; init; }
+        public string Model { get; init; }
+    }
+    public enum ResourceUsage
+    {
+        Low = 0,
+        Medium = 1,
+        High = 2,
+    }
+}
