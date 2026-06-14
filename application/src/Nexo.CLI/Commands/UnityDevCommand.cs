@@ -20,9 +20,10 @@ public sealed class UnityDevCommand : Command
     private readonly IterateHandler _iterateHandler;
     private readonly AssetsHandler _assetsHandler;
     private readonly QaHandler _qaHandler;
+    private readonly ComposeHandler _composeHandler;
 
-    private const string DefaultOutputDir = "Assets/Scripts/Generated";
-    private const string DefaultTestDir = "Assets/Tests/EditMode/Generated";
+    internal const string DefaultOutputDir = "Assets/Scripts/Generated";
+    internal const string DefaultTestDir = "Assets/Tests/EditMode/Generated";
     private const string ManifestFileName = ".nexo-gen-manifest.json";
     private const string FileMarkerPrefix = "// FILE: ";
 
@@ -52,6 +53,7 @@ Rules:
         _iterateHandler = new IterateHandler(_runnerFactory);
         _assetsHandler = new AssetsHandler(_runnerFactory);
         _qaHandler = new QaHandler(_runnerFactory);
+        _composeHandler = new ComposeHandler(ExecuteGenerateAsync);
 
         AddCommand(CreateInitCommand());
         AddCommand(CreateGenerateCommand());
@@ -725,78 +727,8 @@ Output the complete modified files. Each file must start with a // FILE: marker 
         string projectRoot,
         string configPath,
         bool json,
-        CancellationToken ct)
-    {
-        var fullProjectRoot = Path.GetFullPath(projectRoot);
-        if (!ValidateProjectRoot(fullProjectRoot, json))
-            return 1;
-
-        var fullConfigPath = Path.Combine(fullProjectRoot, configPath);
-        var graph = CompositionGraph.LoadFromFile(fullConfigPath);
-        if (graph == null || graph.Systems.Count == 0)
-        {
-            WriteError($"Composition graph not found or empty: {fullConfigPath}", json);
-            return 1;
-        }
-
-        IReadOnlyList<CompositionNode> executionOrder;
-        try
-        {
-            executionOrder = graph.GetExecutionOrder();
-        }
-        catch (InvalidOperationException ex)
-        {
-            WriteError(ex.Message, json);
-            return 1;
-        }
-
-        var completedOutputs = new Dictionary<string, string>();
-        var steps = new List<object>();
-
-        foreach (var node in executionOrder)
-        {
-            if (!json) Console.WriteLine($"compose: generating system '{node.Id}'...");
-
-            var upstreamContext = new StringBuilder();
-            foreach (var dep in node.Depends)
-            {
-                if (completedOutputs.TryGetValue(dep, out var output))
-                {
-                    upstreamContext.AppendLine($"--- Output from '{dep}' ---");
-                    upstreamContext.AppendLine(output);
-                }
-            }
-
-            var code = await ExecuteGenerateAsync(
-                projectRoot, node.Prompt, DefaultOutputDir, DefaultTestDir,
-                false, json, ct,
-                compositionContext: upstreamContext.ToString()).ConfigureAwait(false);
-
-            completedOutputs[node.Id] = node.Prompt;
-            steps.Add(new { systemId = node.Id, exitCode = code });
-
-            if (code != 0)
-            {
-                WriteError($"Composition step '{node.Id}' failed.", json);
-                if (json)
-                    Console.WriteLine(JsonSerializer.Serialize(new { ok = false, action = "compose", steps },
-                        new JsonSerializerOptions { WriteIndented = true }));
-                return code;
-            }
-        }
-
-        if (json)
-        {
-            Console.WriteLine(JsonSerializer.Serialize(new { ok = true, action = "compose", steps },
-                new JsonSerializerOptions { WriteIndented = true }));
-        }
-        else
-        {
-            Console.WriteLine($"compose: completed {executionOrder.Count} systems.");
-        }
-
-        return 0;
-    }
+        CancellationToken ct) =>
+        await _composeHandler.ExecuteAsync(projectRoot, configPath, json, ct).ConfigureAwait(false);
 
     // ───────────────────────────────────────────────────────────────────
     //  assets subcommand
