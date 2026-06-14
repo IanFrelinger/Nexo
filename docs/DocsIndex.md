@@ -86,6 +86,7 @@ Documentation index for the Nexo platform. Start here to find what you need.
 - `docs/ProjectTiers.md` — canonical repository map by project tier.
 - `docs/api/index.md` — API docs index.
 - `docs/sdk.md` — SDK integration guidance.
+- `docs/AuthoringBricks.md` — authoritative code-brick authoring guide.
 - `docs/PUBLISHING.md` — pack and publish `Nexo.Hosting` (and its `Nexo.*` graph) to NuGet / GitHub Packages; operator checklist.
 - `docs/NuGetConsumerVerify.md` — validate NuGet-only consumption (local pack vs published feed); workflow **`.github/workflows/nuget-consumer-verify.yml`**.
 - `docs/samples/StableSdkHostSample/Program.cs` — reference host integration that only uses stable SDK extension points.
