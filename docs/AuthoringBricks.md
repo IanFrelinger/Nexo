@@ -81,15 +81,31 @@ Nexo also has an adaptive manifest path: `INewBrickGenerator.GenerateAsync(...)`
 
 Use **code-authored bricks** when you want to ship source-controlled domain logic with tests and stable package/version ownership. Use the **manifest generator** when Nexo is inferring a candidate brick from observed workflow patterns. Both paths describe the same conceptual brick surface; code bricks are the developer-authored, reviewable path.
 
-## Scaffold a code brick
+## Scaffold a code brick from the published CLI
 
-Use the CLI scaffold:
+Install the CLI as a .NET tool and scaffold a standalone brick:
 
 ```bash
-dotnet run --project application/src/Nexo.CLI -- new brick Hello --output samples/hello-brick-scratch
-dotnet test samples/hello-brick-scratch/HelloBrick.Tests/HelloBrick.Tests.csproj
+dotnet tool install --global Nexo.CLI
+nexo new brick MyThing
+cd MyThingBrick.Tests
+dotnet test
 ```
 
-Or copy the template directly from [`samples/templates/brick/`](../samples/templates/brick/).
+The generated brick project references **`Nexo.Authoring`**, the published package for code-authored brick development. That single package brings the authoring surface (`Brick`, `BrickInput`, `BrickOutput`, `IExecutionContext`, `IBrickExecutor`) and host registration helpers.
+
+Use `--nexo-version` when you want to pin the generated project to a specific package version:
+
+```bash
+nexo new brick MyThing --nexo-version 1.2.3
+```
+
+For local repo development you can still run:
+
+```bash
+dotnet run --project application/src/Nexo.CLI -- new brick Hello --output /tmp/hello-brick --nexo-version 9.9.9-local
+```
+
+Or inspect the template directly at [`samples/templates/brick/`](../samples/templates/brick/).
 
 The complete reference implementation lives in [`samples/hello-brick/`](../samples/hello-brick/).
