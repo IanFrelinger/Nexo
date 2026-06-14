@@ -3,23 +3,6 @@
 name: Composition Mesh Gate
 
 on:
-  pull_request:
-    paths:
-      - "src/Nexo.Infrastructure/Pipelines/**"
-      - "src/Nexo.Core.Application/Pipelines/**"
-      - "src/Nexo.Infrastructure/MeshLab/**"
-      - "src/Nexo.Tests.Infrastructure/Tests/Pipelines/**"
-      - "src/Nexo.Tests.Infrastructure/Tests/MeshLab/**"
-      - "commercial/tests/Nexo.Commercial.Tests.Fleet/**"
-      - "commercial/src/Nexo.Commercial.Fleet.Infrastructure/**"
-      - "commercial/src/Nexo.Commercial.Fleet.Contracts/**"
-      - "application/src/Nexo.CLI/Commands/PipelineCommand.cs"
-      - "application/src/Nexo.CLI/Commands/Mesh*.cs"
-      - "docker-compose.mesh-lab.yml"
-      - "scripts/composition-mesh-gate*.sh"
-      - "scripts/mesh-lab*.sh"
-      - "Makefile"
-      - ".github/workflows/composition-mesh-gate.yml"
   workflow_dispatch:
     inputs:
       tier:

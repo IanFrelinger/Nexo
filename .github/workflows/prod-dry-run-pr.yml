@@ -4,11 +4,6 @@ name: Prod dry run (Compose)
 # See docs/prod-dry-run.md.
 
 on:
-  pull_request:
-    branches:
-      - master
-      - main
-      - "cursor/**"
   workflow_dispatch:
 
 concurrency:

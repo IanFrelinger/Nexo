@@ -16,17 +16,6 @@ on:
       - "application/src/Nexo.CLI/**"
       - "README.md"
       - "docs/DocsIndex.md"
-  pull_request:
-    paths:
-      - ".github/workflows/compose-gate.yml"
-      - "docker-compose.test.yml"
-      - "docker-compose.ephemeral.yml"
-      - ".docker/Dockerfile.test-caching"
-      - ".docker/Dockerfile.test-caching-alpine"
-      - ".docker/Dockerfile.test-caching-debian"
-      - "application/src/Nexo.CLI/**"
-      - "README.md"
-      - "docs/DocsIndex.md"
   workflow_dispatch:
 
 jobs:

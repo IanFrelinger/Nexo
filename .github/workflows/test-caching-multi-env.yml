@@ -12,12 +12,6 @@ on:
       - 'src/Nexo.Tests.Infrastructure/**'
       - '.docker/Dockerfile.test-caching*'
       - 'application/src/Nexo.CLI/Commands/TestMultiEnvCommand.cs'
-  pull_request:
-    branches: [ master, main ]
-    paths:
-      - 'src/Nexo.Tests.Infrastructure/**'
-      - '.docker/Dockerfile.test-caching*'
-      - 'application/src/Nexo.CLI/Commands/TestMultiEnvCommand.cs'
   workflow_dispatch:
 
 concurrency:

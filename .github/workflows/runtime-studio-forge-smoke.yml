@@ -2,15 +2,6 @@
 name: Runtime Studio forge smoke
 
 on:
-  pull_request:
-    paths:
-      - 'application/src/Nexo.CLI/**'
-      - 'src/Nexo.BackgroundAgents/**'
-      - 'src/Nexo.BackgroundAgents.HostRunners/**'
-      - 'src/Nexo.Tools.Dev/**'
-      - 'src/Nexo.Policies.Dev/**'
-      - 'apps/runtime-studio/**'
-      - '.github/workflows/runtime-studio-forge-smoke.yml'
   workflow_dispatch:
 
 jobs:

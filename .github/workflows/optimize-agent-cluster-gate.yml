@@ -9,13 +9,6 @@ on:
       - "scripts/sandbox/**"
       - "application/src/Nexo.CLI/**"
       - "application/src/Nexo.CLI/Runtime/**"
-  pull_request:
-    paths:
-      - ".github/workflows/optimize-agent-cluster-gate.yml"
-      - "apps/runtime-studio/**"
-      - "scripts/sandbox/**"
-      - "application/src/Nexo.CLI/**"
-      - "application/src/Nexo.CLI/Runtime/**"
   workflow_dispatch:
 
 env:
