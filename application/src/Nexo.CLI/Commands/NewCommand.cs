@@ -51,11 +51,10 @@ public sealed class NewCommand : Command
             return 1;
         }
 
-        var repoRoot = FindRepoRoot();
-        var templateRoot = Path.Combine(repoRoot, "samples", "templates", "brick");
-        if (!Directory.Exists(templateRoot))
+        var templateFiles = LoadTemplateFiles();
+        if (templateFiles.Count == 0)
         {
-            WriteResult(false, $"Brick template not found: {templateRoot}", null, json);
+            WriteResult(false, "Brick template resources were not found in the CLI package.", null, json);
             return 1;
         }
 
@@ -69,8 +68,8 @@ public sealed class NewCommand : Command
             return 1;
         }
 
-        var replacements = BuildReplacements(normalizedName, projectRoot, repoRoot);
-        CopyTemplate(templateRoot, root, replacements);
+        var replacements = BuildReplacements(normalizedName, projectRoot, FindRepoRoot());
+        CopyTemplate(templateFiles, root, replacements);
 
         var testProject = Path.Combine(testsRoot, $"{normalizedName}Brick.Tests.csproj");
         WriteResult(
@@ -101,18 +100,53 @@ public sealed class NewCommand : Command
         };
     }
 
-    private static void CopyTemplate(string templateRoot, string outputRoot, IReadOnlyDictionary<string, string> replacements)
+    private static void CopyTemplate(
+        IReadOnlyDictionary<string, string> templateFiles,
+        string outputRoot,
+        IReadOnlyDictionary<string, string> replacements)
     {
-        foreach (var sourcePath in Directory.GetFiles(templateRoot, "*", SearchOption.AllDirectories))
+        foreach (var (relative, text) in templateFiles)
         {
-            var relative = Path.GetRelativePath(templateRoot, sourcePath);
             var targetRelative = ReplaceTokens(relative, replacements);
             var target = Path.Combine(outputRoot, targetRelative);
             Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-
-            var text = File.ReadAllText(sourcePath);
             File.WriteAllText(target, ReplaceTokens(text, replacements));
         }
+    }
+
+    private static IReadOnlyDictionary<string, string> LoadTemplateFiles()
+    {
+        const string prefix = "Nexo.CLI.Templates.Brick/";
+        var assembly = typeof(NewCommand).Assembly;
+        var embedded = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var resourceName in assembly.GetManifestResourceNames()
+                     .Where(name => name.StartsWith(prefix, StringComparison.Ordinal)))
+        {
+            using var stream = assembly.GetManifestResourceStream(resourceName);
+            if (stream is null)
+                continue;
+            using var reader = new StreamReader(stream);
+            embedded[resourceName[prefix.Length..].Replace('\\', '/')] = reader.ReadToEnd();
+        }
+
+        if (embedded.Count > 0)
+            return embedded;
+
+        var repoRoot = TryFindRepoRoot();
+        if (repoRoot is null)
+            return embedded;
+
+        var templateRoot = Path.Combine(repoRoot, "samples", "templates", "brick");
+        if (!Directory.Exists(templateRoot))
+            return embedded;
+
+        foreach (var sourcePath in Directory.GetFiles(templateRoot, "*", SearchOption.AllDirectories))
+        {
+            var relative = Path.GetRelativePath(templateRoot, sourcePath).Replace('\\', '/');
+            embedded[relative] = File.ReadAllText(sourcePath);
+        }
+
+        return embedded;
     }
 
     private static string ReplaceTokens(string value, IReadOnlyDictionary<string, string> replacements)
@@ -149,6 +183,11 @@ public sealed class NewCommand : Command
 
     private static string FindRepoRoot()
     {
+        return TryFindRepoRoot() ?? AppContext.BaseDirectory;
+    }
+
+    private static string? TryFindRepoRoot()
+    {
         var current = new DirectoryInfo(Environment.CurrentDirectory);
         while (current is not null)
         {
@@ -160,7 +199,7 @@ public sealed class NewCommand : Command
             current = current.Parent;
         }
 
-        return AppContext.BaseDirectory;
+        return null;
     }
 
     private static void WriteResult(bool ok, string summary, object? details, bool json)
