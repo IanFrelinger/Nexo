@@ -19,7 +19,7 @@ Require these exact status check contexts on `master` / `main` branch protection
 | `.github/workflows/docs-link-check.yml` | Docs Link Check | `Docs Link Check / lychee (README + docs)` |
 | `.github/workflows/testing-strategy-gate.yml` | Testing strategy gate | `Testing strategy gate / testing-strategy` |
 | `.github/workflows/security-gate.yml` | Security Gate | `Security Gate / security-gate` |
-| `.github/workflows/distribution-matrix-gate.yml` | Distribution Matrix Gate | `Distribution Matrix Gate / NuGet local pack → StableSdkHostSample`<br>`Distribution Matrix Gate / CLI image build + smoke`<br>`Distribution Matrix Gate / API image + curl /health + /api/status`<br>`Distribution Matrix Gate / Nexo.Client ↔ in-process Nexo.API (net9)`<br>`Distribution Matrix Gate / Pack script vs Nexo.Hosting graph` |
+| `.github/workflows/distribution-matrix-gate.yml` | Distribution Matrix Gate | `Distribution Matrix Gate / NuGet local pack → StableSdkHostSample`<br>`Distribution Matrix Gate / CLI image build + smoke`<br>`Distribution Matrix Gate / API image + curl /health + /api/status`<br>`Distribution Matrix Gate / Nexo.Client ↔ in-process Nexo.API (net9)`<br>`Distribution Matrix Gate / Pack script vs Nexo.Hosting graph`<br>`Distribution Matrix Gate / Standalone brick authoring scaffold` |
 
 
 ### Branch protection update snippet
@@ -49,7 +49,8 @@ cat > /tmp/nexo-required-checks.json <<'JSON'
           "Distribution Matrix Gate / CLI image build + smoke",
           "Distribution Matrix Gate / API image + curl /health + /api/status",
           "Distribution Matrix Gate / Nexo.Client ↔ in-process Nexo.API (net9)",
-          "Distribution Matrix Gate / Pack script vs Nexo.Hosting graph"
+          "Distribution Matrix Gate / Pack script vs Nexo.Hosting graph",
+          "Distribution Matrix Gate / Standalone brick authoring scaffold"
 ]
   }
 }
