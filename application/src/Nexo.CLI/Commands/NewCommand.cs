@@ -1,5 +1,6 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using System.Reflection;
 using System.Text.Json;
 
 namespace Nexo.CLI.Commands;
@@ -23,12 +24,14 @@ public sealed class NewCommand : Command
             () => Environment.CurrentDirectory,
             "Directory where the brick solution folder should be created.");
         var jsonOpt = new Option<bool>("--json", () => false, "Emit machine-readable JSON output.");
+        var nexoVersionOpt = new Option<string?>("--nexo-version", () => null, "Nexo.Authoring package version to reference.");
 
         var command = new Command("brick", "Scaffold a code-authored Nexo brick project and test project.")
         {
             nameArg,
             outputOpt,
-            jsonOpt
+            jsonOpt,
+            nexoVersionOpt
         };
 
         command.SetHandler((InvocationContext context) =>
@@ -36,13 +39,14 @@ public sealed class NewCommand : Command
             var name = context.ParseResult.GetValueForArgument(nameArg);
             var output = context.ParseResult.GetValueForOption(outputOpt) ?? Environment.CurrentDirectory;
             var json = context.ParseResult.GetValueForOption(jsonOpt);
-            context.ExitCode = ExecuteBrick(name, output, json);
+            var nexoVersion = context.ParseResult.GetValueForOption(nexoVersionOpt);
+            context.ExitCode = ExecuteBrick(name, output, json, nexoVersion);
         });
 
         return command;
     }
 
-    internal static int ExecuteBrick(string name, string outputDirectory, bool json)
+    internal static int ExecuteBrick(string name, string outputDirectory, bool json, string? nexoVersion = null)
     {
         var normalizedName = NormalizeBrickName(name);
         if (normalizedName is null)
@@ -51,11 +55,10 @@ public sealed class NewCommand : Command
             return 1;
         }
 
-        var repoRoot = FindRepoRoot();
-        var templateRoot = Path.Combine(repoRoot, "samples", "templates", "brick");
-        if (!Directory.Exists(templateRoot))
+        var templateFiles = LoadTemplateFiles();
+        if (templateFiles.Count == 0)
         {
-            WriteResult(false, $"Brick template not found: {templateRoot}", null, json);
+            WriteResult(false, "Brick template resources were not found in the CLI package.", null, json);
             return 1;
         }
 
@@ -69,8 +72,8 @@ public sealed class NewCommand : Command
             return 1;
         }
 
-        var replacements = BuildReplacements(normalizedName, projectRoot, repoRoot);
-        CopyTemplate(templateRoot, root, replacements);
+        var replacements = BuildReplacements(normalizedName, ResolveNexoVersion(nexoVersion));
+        CopyTemplate(templateFiles, root, replacements);
 
         var testProject = Path.Combine(testsRoot, $"{normalizedName}Brick.Tests.csproj");
         WriteResult(
@@ -87,32 +90,78 @@ public sealed class NewCommand : Command
         return 0;
     }
 
-    private static Dictionary<string, string> BuildReplacements(string brickName, string projectRoot, string repoRoot)
+    private static Dictionary<string, string> BuildReplacements(string brickName, string nexoVersion)
     {
-        var coreDomainProject = Path.Combine(repoRoot, "src", "Nexo.Core.Domain", "Nexo.Core.Domain.csproj");
-        var relativeCoreDomainProject = Path.GetRelativePath(projectRoot, coreDomainProject).Replace('\\', '/');
         return new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["__BrickName__"] = brickName,
             ["__DisplayName__"] = $"{brickName} Brick",
             ["__BrickId__"] = ToBrickId(brickName),
             ["__Namespace__"] = $"{brickName}Brick",
-            ["__NexoCoreDomainProjectReference__"] = relativeCoreDomainProject
+            ["__NexoVersion__"] = nexoVersion
         };
     }
 
-    private static void CopyTemplate(string templateRoot, string outputRoot, IReadOnlyDictionary<string, string> replacements)
+    private static string ResolveNexoVersion(string? overrideVersion)
     {
-        foreach (var sourcePath in Directory.GetFiles(templateRoot, "*", SearchOption.AllDirectories))
+        if (!string.IsNullOrWhiteSpace(overrideVersion))
+            return overrideVersion.Trim();
+
+        var info = typeof(NewCommand).Assembly
+            .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+            ?.InformationalVersion;
+        var version = (info ?? typeof(NewCommand).Assembly.GetName().Version?.ToString() ?? "1.0.0")
+            .Split('+', 2)[0];
+        return string.IsNullOrWhiteSpace(version) ? "1.0.0" : version;
+    }
+
+    private static void CopyTemplate(
+        IReadOnlyDictionary<string, string> templateFiles,
+        string outputRoot,
+        IReadOnlyDictionary<string, string> replacements)
+    {
+        foreach (var (relative, text) in templateFiles)
         {
-            var relative = Path.GetRelativePath(templateRoot, sourcePath);
             var targetRelative = ReplaceTokens(relative, replacements);
             var target = Path.Combine(outputRoot, targetRelative);
             Directory.CreateDirectory(Path.GetDirectoryName(target)!);
-
-            var text = File.ReadAllText(sourcePath);
             File.WriteAllText(target, ReplaceTokens(text, replacements));
         }
+    }
+
+    private static IReadOnlyDictionary<string, string> LoadTemplateFiles()
+    {
+        const string prefix = "Nexo.CLI.Templates.Brick/";
+        var assembly = typeof(NewCommand).Assembly;
+        var embedded = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var resourceName in assembly.GetManifestResourceNames()
+                     .Where(name => name.StartsWith(prefix, StringComparison.Ordinal)))
+        {
+            using var stream = assembly.GetManifestResourceStream(resourceName);
+            if (stream is null)
+                continue;
+            using var reader = new StreamReader(stream);
+            embedded[resourceName[prefix.Length..].Replace('\\', '/')] = reader.ReadToEnd();
+        }
+
+        if (embedded.Count > 0)
+            return embedded;
+
+        var repoRoot = TryFindRepoRoot();
+        if (repoRoot is null)
+            return embedded;
+
+        var templateRoot = Path.Combine(repoRoot, "samples", "templates", "brick");
+        if (!Directory.Exists(templateRoot))
+            return embedded;
+
+        foreach (var sourcePath in Directory.GetFiles(templateRoot, "*", SearchOption.AllDirectories))
+        {
+            var relative = Path.GetRelativePath(templateRoot, sourcePath).Replace('\\', '/');
+            embedded[relative] = File.ReadAllText(sourcePath);
+        }
+
+        return embedded;
     }
 
     private static string ReplaceTokens(string value, IReadOnlyDictionary<string, string> replacements)
@@ -149,6 +198,11 @@ public sealed class NewCommand : Command
 
     private static string FindRepoRoot()
     {
+        return TryFindRepoRoot() ?? AppContext.BaseDirectory;
+    }
+
+    private static string? TryFindRepoRoot()
+    {
         var current = new DirectoryInfo(Environment.CurrentDirectory);
         while (current is not null)
         {
@@ -160,7 +214,7 @@ public sealed class NewCommand : Command
             current = current.Parent;
         }
 
-        return AppContext.BaseDirectory;
+        return null;
     }
 
     private static void WriteResult(bool ok, string summary, object? details, bool json)

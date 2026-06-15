@@ -7,6 +7,11 @@
         <LangVersion>12.0</LangVersion>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
+        <IsPackable>true</IsPackable>
+        <PackageId>Nexo.Core.Domain</PackageId>
+        <Title>Nexo Core Domain</Title>
+        <Description>Core Nexo domain model including brick authoring base types and execution contracts.</Description>
+        <PackageTags>nexo;domain;bricks;authoring</PackageTags>
     </PropertyGroup>
 
     <!-- Framework-specific package references are handled in Directory.Build.props -->

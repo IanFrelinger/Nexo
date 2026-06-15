@@ -28,6 +28,7 @@
     <ProjectReference Include="../../../src/Nexo.Infrastructure/Nexo.Infrastructure.csproj" />
     <ProjectReference Include="../../../src/Nexo.Sdk/Nexo.Sdk.csproj" />
     <ProjectReference Include="../../../src/Nexo.Framework.Sdk/Nexo.Framework.Sdk.csproj" />
+    <ProjectReference Include="../../../src/Nexo.Authoring/Nexo.Authoring.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,10 @@
+[assembly: System.Reflection.AssemblyMetadata("RepositoryUrl", "https://github.com/IanFrelinger/Nexo")]
+[assembly: System.Runtime.Versioning.TargetFramework(".NETCoreApp,Version=v8.0", FrameworkDisplayName=".NET 8.0")]
+namespace Nexo.Authoring
+{
+    public static class NexoAuthoringServiceCollectionExtensions
+    {
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddNexoBrick<TBrick>(this Microsoft.Extensions.DependencyInjection.IServiceCollection services)
+            where TBrick : Nexo.Core.Domain.Bricks.Brick { }
+    }
+}

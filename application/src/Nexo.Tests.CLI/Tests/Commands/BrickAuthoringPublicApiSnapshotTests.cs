@@ -14,6 +14,7 @@ public sealed class BrickAuthoringPublicApiSnapshotTests
     {
         var snapshots = new Dictionary<string, string>
         {
+            ["Nexo.Authoring.approved.txt"] = typeof(Nexo.Authoring.NexoAuthoringServiceCollectionExtensions).Assembly.GeneratePublicApi(),
             ["Nexo.Sdk.approved.txt"] = typeof(Nexo.Sdk.Client.NexoClientSdkBuilder).Assembly.GeneratePublicApi(),
             ["Nexo.Framework.Sdk.approved.txt"] = typeof(Nexo.Framework.Sdk.NexoFrameworkOptions).Assembly.GeneratePublicApi(),
             ["Nexo.Core.Domain.Bricks.approved.txt"] = typeof(Brick)

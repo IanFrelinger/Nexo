@@ -64,6 +64,10 @@
     <Compile Include="../../../src/Nexo.Hosting/GlobalUsings.Infrastructure.Sdk.cs" Link="GlobalUsings.Infrastructure.Sdk.cs" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="../../../samples/templates/brick/**/*" LogicalName="Nexo.CLI.Templates.Brick/%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
   <ItemGroup Condition="'$(IncludeTestProjectReferences)' != 'false'">
     <!-- Test projects for runtime discovery (excluding CLI to avoid circular dependency) -->
     <ProjectReference Include="../../../src/Nexo.Tests.Domain/Nexo.Tests.Domain.csproj" />
