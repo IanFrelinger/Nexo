@@ -1,6 +1,7 @@
 using System.Reactive.Subjects;
 using System.Reactive.Linq;
 using Microsoft.Extensions.Logging;
+using Nexo.Core.Application.Bricks;
 using Nexo.Core.Application.Common.Ports;
 using Nexo.Core.Domain.Agents;
 using Nexo.Core.Domain.Behaviors;
@@ -268,6 +269,7 @@ public class WorkflowExecutor
         var chain = BuildBrickExecutionChain(brick, preferred, context.ExecutionContext);
 
         var brickInput = new BrickInput(inputs);
+        BrickInputDefaults.Apply(brick, brickInput);
         BrickOutput? result = null;
         Exception? last = null;
 
@@ -368,6 +370,7 @@ public class WorkflowExecutor
             var preferred = clusterBrick.DefaultImplementation == ImplementationType.Auto ? brick.DefaultImplementation : clusterBrick.DefaultImplementation;
             var chain = BuildBrickExecutionChain(brick, preferred, context.ExecutionContext);
             var brickInput = BuildClusterBrickInput(step, cluster, resolvedParams, brickOutputs);
+            BrickInputDefaults.Apply(brick, brickInput);
 
             BrickOutput? result = null;
             foreach (var impl in chain)

@@ -1,6 +1,4 @@
-using System.Reflection;
 using FluentAssertions;
-using Nexo.Core.Domain.Bricks;
 using PublicApiGenerator;
 using Xunit;
 
@@ -16,14 +14,7 @@ public sealed class BrickAuthoringPublicApiSnapshotTests
         {
             ["Nexo.Authoring.approved.txt"] = typeof(Nexo.Authoring.NexoAuthoringServiceCollectionExtensions).Assembly.GeneratePublicApi(),
             ["Nexo.Sdk.approved.txt"] = typeof(Nexo.Sdk.Client.NexoClientSdkBuilder).Assembly.GeneratePublicApi(),
-            ["Nexo.Framework.Sdk.approved.txt"] = typeof(Nexo.Framework.Sdk.NexoFrameworkOptions).Assembly.GeneratePublicApi(),
-            ["Nexo.Core.Domain.Bricks.approved.txt"] = typeof(Brick)
-                .Assembly
-                .GetExportedTypes()
-                .Where(t => t.Namespace?.StartsWith("Nexo.Core.Domain.Bricks", StringComparison.Ordinal) == true)
-                .OrderBy(t => t.FullName, StringComparer.Ordinal)
-                .ToArray()
-                .GeneratePublicApi()
+            ["Nexo.Framework.Sdk.approved.txt"] = typeof(Nexo.Framework.Sdk.NexoFrameworkOptions).Assembly.GeneratePublicApi()
         };
 
         var snapshotRoot = FindSnapshotRoot();

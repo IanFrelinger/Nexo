@@ -11,4 +11,3 @@ public class BrickMetadata
     public long UsageCount { get; set; }
     public DateTime? LastUpdated { get; init; }
 }
-

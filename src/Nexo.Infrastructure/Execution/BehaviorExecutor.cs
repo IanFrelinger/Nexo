@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Threading.Channels;
 using Microsoft.Extensions.Logging;
+using Nexo.Core.Application.Bricks;
 using Nexo.Core.Application.Common.Ports;
 using Nexo.Core.Application.Execution.Models;
 using Nexo.Core.Application.Execution.Ports;
@@ -146,6 +147,7 @@ public class BehaviorExecutor : Nexo.Core.Domain.Execution.IBehaviorExecutor
 
                     // Map inputs once per step (implementation swapping should use same inputs).
                     var brickInput = MapInputs(step.InputMapping, context);
+                    BrickInputDefaults.Apply(brick, brickInput);
 
                     // Determine implementation chain (preference + fallback), filtering for availability.
                     var chain = ResolveImplementationChain(step, brick, behavior, options, context);

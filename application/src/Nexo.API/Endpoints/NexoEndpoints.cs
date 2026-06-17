@@ -13,6 +13,7 @@ using Nexo.Core.Application.Product.Ports;
 using Nexo.Core.Application.Knowledge.Models;
 using Nexo.Core.Application.Knowledge.Ports;
 using Nexo.Core.Application.Agent.UseCases.RunAgent;
+using Nexo.Core.Application.Bricks;
 using Nexo.Core.Application.NodeCapabilityRuntime.Models;
 using Nexo.Core.Application.NodeCapabilityRuntime.Ports;
 using Nexo.Core.Application.Trust.Ports;
@@ -677,6 +678,7 @@ public static class NexoEndpoints
 
         var context = BrickCatalogWireMapper.ToExecutionContext(request.ExecutionContext);
         var input = BrickValueSerializer.FromWireToBrickInput(request.Input);
+        BrickInputDefaults.Apply(brick, input);
 
         try
         {

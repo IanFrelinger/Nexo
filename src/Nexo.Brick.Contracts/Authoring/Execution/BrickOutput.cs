@@ -33,4 +33,3 @@ public class BrickOutput
     
     public IReadOnlyDictionary<string, object> ToDictionary() => _data;
 }
-

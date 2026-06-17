@@ -17,6 +17,10 @@
     <!-- Framework-specific package references are handled in Directory.Build.props -->
     <!-- Only add project-specific packages here -->
     <ItemGroup>
+      <ProjectReference Include="..\Nexo.Brick.Contracts\Nexo.Brick.Contracts.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
       <PackageReference Include="JetBrains.Annotations" />
       <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
     </ItemGroup>

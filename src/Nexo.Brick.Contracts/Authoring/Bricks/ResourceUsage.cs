@@ -9,4 +9,3 @@ public enum ResourceUsage
     Medium,
     High
 }
-

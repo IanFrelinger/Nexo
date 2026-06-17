@@ -9,4 +9,3 @@ public enum ImplementationType
     Agentic,
     Auto
 }
-

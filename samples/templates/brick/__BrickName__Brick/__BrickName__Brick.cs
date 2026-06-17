@@ -35,7 +35,7 @@ public sealed class __BrickName__Brick : Brick
         IExecutionContext context,
         CancellationToken cancellationToken = default)
     {
-        var name = input.Get("name", "world") ?? "world";
+        var name = input.Get<string>("name");
         var output = new BrickOutput
         {
             Summary = $"Generated greeting for {name}."
