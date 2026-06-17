@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
+using Nexo.Core.Application.Bricks;
 using Nexo.Core.Domain.Behaviors;
 using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Clusters;
@@ -105,7 +106,9 @@ public class ClusterExecutor : IClusterExecutor
             }
             
             // Build brick input from connections and parameters
-            var brickInput = BuildBrickInput(step, cluster, resolvedParams, brickOutputs);
+            var brickInput = BrickInputDefaults.Apply(
+                brick,
+                BuildBrickInput(step, cluster, resolvedParams, brickOutputs));
             
             var stepIndex = 0;
             for (int i = 0; i < plan.Steps.Count; i++)

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Nexo.BrickContracts;
+using Nexo.Core.Application.Bricks;
 using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Execution;
 using Nexo.Infrastructure.Execution;
@@ -24,8 +25,10 @@ public sealed class McpBrickExecutor
         var brick = _bricks.GetBrick(brickId)
             ?? throw new InvalidOperationException($"Brick '{brickId}' is not registered.");
 
-        var brickInput = BrickValueSerializer.FromWireToBrickInput(
-            input.ToDictionary(kv => kv.Key, kv => (object?)kv.Value ?? ""));
+        var brickInput = BrickInputDefaults.Apply(
+            brick,
+            BrickValueSerializer.FromWireToBrickInput(
+                input.ToDictionary(kv => kv.Key, kv => (object?)kv.Value ?? "")));
 
         var context = new Nexo.Infrastructure.Execution.ExecutionContext { AgentId = "mcp-tool" };
         var output = await brick.ExecuteAsync(brickInput, implementation, context, ct).ConfigureAwait(false);
