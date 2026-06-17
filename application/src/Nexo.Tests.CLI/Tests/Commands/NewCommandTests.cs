@@ -12,7 +12,7 @@ public sealed class NewCommandTests
     public void ExecuteBrick_rejects_invalid_name()
     {
         var output = Path.Combine(Path.GetTempPath(), $"nexo-new-brick-{Guid.NewGuid():N}");
-        NewCommand.ExecuteBrick("123 bad", output, json: true).Should().Be(1);
+        NewCommand.ExecuteBrick("123 bad", output, json: false).Should().Be(1);
         Directory.Exists(output).Should().BeFalse();
     }
 
@@ -22,7 +22,7 @@ public sealed class NewCommandTests
         var output = Path.Combine(Path.GetTempPath(), $"nexo-new-brick-{Guid.NewGuid():N}");
         try
         {
-            NewCommand.ExecuteBrick("MyThing", output, json: true).Should().Be(0);
+            NewCommand.ExecuteBrick("MyThing", output, json: false).Should().Be(0);
 
             File.Exists(Path.Combine(output, "MyThingBrick", "MyThingBrick.csproj")).Should().BeTrue();
             File.Exists(Path.Combine(output, "MyThingBrick", "MyThingBrick.cs")).Should().BeTrue();
