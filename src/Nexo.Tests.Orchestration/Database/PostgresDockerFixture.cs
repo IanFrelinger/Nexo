@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using Npgsql;
 using Xunit;
@@ -125,23 +126,30 @@ public sealed class PostgresDockerFixture : IAsyncLifetime
 
     private static async Task<(int ExitCode, string StdOut, string StdErr)> RunProcessAsync(string file, string args)
     {
-        using var process = new Process
+        try
         {
-            StartInfo = new ProcessStartInfo
+            using var process = new Process
             {
-                FileName = file,
-                Arguments = args,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true,
-            },
-        };
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = file,
+                    Arguments = args,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true,
+                },
+            };
 
-        process.Start();
-        var stdout = await process.StandardOutput.ReadToEndAsync();
-        var stderr = await process.StandardError.ReadToEndAsync();
-        await process.WaitForExitAsync();
-        return (process.ExitCode, stdout, stderr);
+            process.Start();
+            var stdout = await process.StandardOutput.ReadToEndAsync();
+            var stderr = await process.StandardError.ReadToEndAsync();
+            await process.WaitForExitAsync();
+            return (process.ExitCode, stdout, stderr);
+        }
+        catch (Exception ex) when (ex is Win32Exception or FileNotFoundException)
+        {
+            return (-1, string.Empty, ex.Message);
+        }
     }
 }
