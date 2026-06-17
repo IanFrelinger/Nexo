@@ -10,7 +10,6 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
     <PackageId>Nexo.Authoring</PackageId>
-    <PackageVersion>1.0.0</PackageVersion>
     <Title>Nexo Authoring</Title>
     <Description>Minimal package for code-authored Nexo bricks: Brick base types, execution contracts, and host registration helpers.</Description>
     <PackageTags>nexo;authoring;bricks;sdk</PackageTags>

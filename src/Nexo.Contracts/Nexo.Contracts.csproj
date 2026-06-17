@@ -10,7 +10,6 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
     <PackageId>Nexo.Contracts</PackageId>
-    <PackageVersion>1.0.0</PackageVersion>
     <Title>Nexo Contracts</Title>
     <Description>Shared HTTP request/response DTOs for Nexo API and client.</Description>
     <PackageTags>nexo;ai;contracts;dto</PackageTags>

@@ -3,4 +3,11 @@
     <PackageLicenseExpression Condition="'$(NexoCommercialProject)' == 'true'"></PackageLicenseExpression>
     <PackageLicenseExpression Condition="'$(NexoCommercialProject)' != 'true'">Apache-2.0</PackageLicenseExpression>
   </PropertyGroup>
+
+  <!-- Override SDK default 1.0.0 after project evaluation (root VERSION file). -->
+  <PropertyGroup Condition="Exists('$(MSBuildThisFileDirectory)VERSION') AND '$(IsPackable)' == 'true'">
+    <NexoPackageVersion>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)VERSION').Trim())</NexoPackageVersion>
+    <PackageVersion>$(NexoPackageVersion)</PackageVersion>
+    <Version>$(NexoPackageVersion)</Version>
+  </PropertyGroup>
 </Project>

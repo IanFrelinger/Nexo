@@ -1,0 +1,15 @@
+<Project>
+  <!-- Copy into your solution root as Directory.Packages.props (central package management). -->
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <!-- Must match a published Nexo release (repo root VERSION when consuming from your fork). -->
+    <NexoConsumerPackageVersion>0.1.0</NexoConsumerPackageVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageVersion Include="Nexo.Brick.Contracts" Version="$(NexoConsumerPackageVersion)" />
+    <PackageVersion Include="Nexo.Authoring" Version="$(NexoConsumerPackageVersion)" />
+    <PackageVersion Include="Nexo.Hosting.Bundle" Version="$(NexoConsumerPackageVersion)" />
+    <PackageVersion Include="Nexo.Sdk" Version="$(NexoConsumerPackageVersion)" />
+    <PackageVersion Include="Nexo.Client" Version="$(NexoConsumerPackageVersion)" />
+  </ItemGroup>
+</Project>

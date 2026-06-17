@@ -17,7 +17,6 @@
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
     <FileVersion>1.0.0.0</FileVersion>
     <PackageId>Nexo.CLI</PackageId>
-    <PackageVersion>1.0.0</PackageVersion>
     <Description>Provider-agnostic LEGO-style feature factory CLI</Description>
     <PackageTags>nexo;ai;feature-factory;offline-first</PackageTags>
     <RepositoryUrl>https://github.com/IanFrelinger/Nexo</RepositoryUrl>

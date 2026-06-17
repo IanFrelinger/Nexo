@@ -13,7 +13,6 @@
     <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
     <NoDefaultExcludes>true</NoDefaultExcludes>
     <PackageId>Nexo.Runtime.Bundle</PackageId>
-    <PackageVersion>1.0.0</PackageVersion>
     <Title>Nexo runtime kernel (bundle)</Title>
     <Description>
       Metapackage for the Nexo execution kernel: abstractions, domain, application ports, infrastructure,
