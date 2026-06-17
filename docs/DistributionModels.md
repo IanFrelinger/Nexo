@@ -58,6 +58,8 @@ The workflow **`.github/workflows/distribution-matrix-gate.yml`** runs **in para
 | Matrix job | What it proves |
 |------------|----------------|
 | **nuget-local-pack-consumer** | Local pack → **`scripts/verify-stable-sdk-host-sample-packages.sh`** (isolated NuGet cache, sample restores from folder feed + nuget.org). |
+| **standalone-brick-authoring** | Tool-installed **`nexo new brick`** outside the repo; restore/build/test from local feed only. |
+| **external-product-shape** | **`scripts/verify-external-product-shape.sh`** — ephemeral consumer restores **`Nexo.Authoring`**, **`Nexo.Hosting.Bundle`**, **`Nexo.Sdk`**, boots a thin host with an authored brick, and round-trips via **`INexoClient.InvokeAsync`** (`POST /api/bricks/{id}/execute`). |
 | **cli-image-smoke** | **`.docker/Dockerfile.cli`** builds; container runs **`--help`** and **`pipeline validate --help`** (runtime image has no git/curl, so **`doctor`** is not used here). |
 | **api-image-http-smoke** | **`.docker/Dockerfile.api`** builds; container serves **`/health`** and **`/api/status`** (host **`curl`** — HTTP-only consumer path). Script: **`scripts/ci/distribution-matrix-api-http-smoke.sh`**. |
 | **nexo-client-inprocess-test** | **`Nexo.Client`** `GetStatusAsync` against in-process **`Nexo.API`** (same pipeline as production; **`net9.0`** test filter). |
