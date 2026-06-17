@@ -15,7 +15,22 @@ These packages are intended for external integration. Breaking changes require a
 - `Nexo.Sdk`
 - `Nexo.Client`
 - `Nexo.Brick.Contracts`
+- `Nexo.Authoring`
 - `Nexo.Hosting.Bundle` (metapackage: references the `Nexo.Hosting` graph at a single version)
+
+#### Code-brick authoring surface
+
+The `nexo new brick` code-brick path references `Nexo.Authoring` and exposes the following authoring types as a stable contract. Their namespaces are preserved for source compatibility with existing consumers; their implementation is hosted in the stable brick contract assembly.
+
+- `Nexo.Core.Domain.Bricks.Brick`
+- `Nexo.Core.Domain.Bricks.BrickCategory`
+- `Nexo.Core.Domain.Bricks.BrickInterface`
+- `Nexo.Core.Domain.Bricks.BrickInputDefinition`
+- `Nexo.Core.Domain.Bricks.BrickOutputDefinition`
+- `Nexo.Core.Domain.Execution.BrickInput`
+- `Nexo.Core.Domain.Execution.BrickOutput`
+- `Nexo.Core.Domain.Bricks.ImplementationType`
+- `Nexo.Core.Domain.Execution.IExecutionContext`
 
 ### Experimental
 
