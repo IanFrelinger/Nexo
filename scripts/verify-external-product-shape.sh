@@ -12,9 +12,19 @@ CONSUMER_ROOT="${WORK}/consumer"
 CFG="${WORK}/NuGet.Config"
 HOST_PORT="${NEXO_EXTERNAL_PRODUCT_VERIFY_PORT:-0}"
 WAIT_SECS="${NEXO_EXTERNAL_PRODUCT_VERIFY_WAIT_SECS:-120}"
+SOURCE_KEY="${NEXO_VERIFY_SOURCE_KEY:-nexo-local}"
 ISOL_CLEANUP=""
+USE_PUBLISHED_FEED=0
 
-mkdir -p "${FEED}" "${TOOL_PATH}" "${CONSUMER_ROOT}"
+if [[ -n "${NEXO_EXTERNAL_PRODUCT_PACKAGE_FEED:-}" ]]; then
+  USE_PUBLISHED_FEED=1
+  FEED="${NEXO_EXTERNAL_PRODUCT_PACKAGE_FEED}"
+fi
+
+mkdir -p "${TOOL_PATH}" "${CONSUMER_ROOT}"
+if [[ "${USE_PUBLISHED_FEED}" -eq 0 ]]; then
+  mkdir -p "${FEED}"
+fi
 
 pack() {
   local project="$1"
@@ -28,6 +38,9 @@ pack() {
 }
 
 echo "==> Packing consumer surface as version ${VERSION} into ${FEED}"
+if [[ "${USE_PUBLISHED_FEED}" -eq 1 ]]; then
+  echo "==> Using published feed at ${FEED}; skipping local pack."
+else
 bash "${ROOT}/scripts/pack-nexo-hosting-graph.sh" "${VERSION}" "${FEED}"
 pack src/Nexo.Authoring/Nexo.Authoring.csproj
 pack src/Nexo.Sdk/Nexo.Sdk.csproj
@@ -39,6 +52,7 @@ pack src/Nexo.Bricks.Owasp/Nexo.Bricks.Owasp.csproj
 pack src/Nexo.BackgroundAgents.HostRunners/Nexo.BackgroundAgents.HostRunners.csproj
 pack src/Nexo.Policies.Dev/Nexo.Policies.Dev.csproj
 pack application/src/Nexo.CLI/Nexo.CLI.csproj
+fi
 
 if [[ -z "${NEXO_EXTERNAL_PRODUCT_VERIFY_NO_ISOLATED_CACHE:-}" ]]; then
   ISOL_BASE="${NEXO_EXTERNAL_PRODUCT_VERIFY_ISOLATED_ROOT:-$(mktemp -d "${WORK}/nuget-cache-XXXXXX")}"
@@ -49,16 +63,35 @@ if [[ -z "${NEXO_EXTERNAL_PRODUCT_VERIFY_NO_ISOLATED_CACHE:-}" ]]; then
   echo "Isolated restore: NUGET_PACKAGES=${NUGET_PACKAGES} DOTNET_CLI_HOME=${DOTNET_CLI_HOME}"
 fi
 
-cat > "${CFG}" <<EOF
+if [[ -n "${NEXO_NUGET_USERNAME:-}" && -n "${NEXO_NUGET_PASSWORD:-}" ]]; then
+  cat > "${CFG}" <<EOF
 <?xml version="1.0" encoding="utf-8"?>
 <configuration>
   <packageSources>
     <clear />
-    <add key="nexo-local" value="${FEED}" />
+    <add key="${SOURCE_KEY}" value="${FEED}" protocolVersion="3" />
+    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" />
+  </packageSources>
+  <packageSourceCredentials>
+    <${SOURCE_KEY}>
+      <add key="Username" value="${NEXO_NUGET_USERNAME}" />
+      <add key="ClearTextPassword" value="${NEXO_NUGET_PASSWORD}" />
+    </${SOURCE_KEY}>
+  </packageSourceCredentials>
+</configuration>
+EOF
+else
+  cat > "${CFG}" <<EOF
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <packageSources>
+    <clear />
+    <add key="${SOURCE_KEY}" value="${FEED}" />
     <add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" />
   </packageSources>
 </configuration>
 EOF
+fi
 
 dotnet tool install \
   --tool-path "${TOOL_PATH}" \

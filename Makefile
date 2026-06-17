@@ -1,4 +1,4 @@
-.PHONY: build build-core build-demos prod-dry-run prod-dry-run-agent-server restore-core test test-prod-style test-framework-prod-first test-prime-time test-prime-time-full test-cross-platform test-portable test-multi-env test-all-platforms test-all-platforms-ephemeral ci-verify kernel-gate kernel-gate-tier-b kernel-gate-tier-c kernel-gate-tier-d kernel-gate-tier-e kernel-gate-full application-gate application-gate-tier-a application-gate-tier-b application-gate-tier-c application-gate-tier-d application-gate-full composition-mesh-gate composition-mesh-gate-tier-a composition-mesh-gate-tier-b composition-mesh-gate-tier-c composition-mesh-gate-tier-d composition-mesh-gate-full dependency-boundary-gate ship-gate ship-gate-tier-a ship-gate-tier-b ship-gate-tier-c ship-gate-tier-d ship-gate-full ops-gate ops-gate-tier-a ops-gate-tier-b ops-gate-tier-c ops-gate-tier-d ops-gate-tier-e ops-gate-full security-gate security-gate-tier-a security-gate-tier-b security-gate-tier-c security-gate-tier-d security-gate-tier-e security-gate-full rc-gate rc-gate-tier-a rc-gate-tier-b rc-gate-tier-c rc-gate-tier-d rc-gate-tier-e rc-gate-full perf-gate perf-gate-tier-a perf-gate-tier-b perf-gate-tier-c perf-gate-tier-d perf-gate-full compat-gate compat-gate-tier-a compat-gate-tier-b compat-gate-tier-c compat-gate-full dr-gate dr-gate-tier-a dr-gate-tier-b dr-gate-tier-c dr-gate-full waterproofing-gate-full nexo-ready-gate bootstrap-mesh-lab-env validate-safe review-summary clean-test-artifacts test-readiness-gate release-preflight release-gate release-dispatch verify-external-product-shape mesh-lab-e2e mesh-lab-e2e-workers mesh-lab-e2e-deep mesh-lab-e2e-stress mesh-lab-up mesh-lab-verify mesh-lab-verify-deep mesh-lab-verify-entitlements mesh-lab-verify-governance mesh-lab-verify-director-cli mesh-lab-verify-persistence mesh-lab-verify-network-negative mesh-lab-verify-post-stress mesh-lab-stress mesh-lab-down test-mesh-lab
+.PHONY: build build-core build-demos prod-dry-run prod-dry-run-agent-server restore-core test test-prod-style test-framework-prod-first test-prime-time test-prime-time-full test-cross-platform test-portable test-multi-env test-all-platforms test-all-platforms-ephemeral ci-verify kernel-gate kernel-gate-tier-b kernel-gate-tier-c kernel-gate-tier-d kernel-gate-tier-e kernel-gate-full application-gate application-gate-tier-a application-gate-tier-b application-gate-tier-c application-gate-tier-d application-gate-full composition-mesh-gate composition-mesh-gate-tier-a composition-mesh-gate-tier-b composition-mesh-gate-tier-c composition-mesh-gate-tier-d composition-mesh-gate-full dependency-boundary-gate ship-gate ship-gate-tier-a ship-gate-tier-b ship-gate-tier-c ship-gate-tier-d ship-gate-full ops-gate ops-gate-tier-a ops-gate-tier-b ops-gate-tier-c ops-gate-tier-d ops-gate-tier-e ops-gate-full security-gate security-gate-tier-a security-gate-tier-b security-gate-tier-c security-gate-tier-d security-gate-tier-e security-gate-full rc-gate rc-gate-tier-a rc-gate-tier-b rc-gate-tier-c rc-gate-tier-d rc-gate-tier-e rc-gate-full perf-gate perf-gate-tier-a perf-gate-tier-b perf-gate-tier-c perf-gate-tier-d perf-gate-full compat-gate compat-gate-tier-a compat-gate-tier-b compat-gate-tier-c compat-gate-full dr-gate dr-gate-tier-a dr-gate-tier-b dr-gate-tier-c dr-gate-full waterproofing-gate-full nexo-ready-gate bootstrap-mesh-lab-env validate-safe review-summary clean-test-artifacts test-readiness-gate release-preflight release-gate release-dispatch release-staging verify-staging release-staging-and-verify verify-external-product-shape mesh-lab-e2e mesh-lab-e2e-workers mesh-lab-e2e-deep mesh-lab-e2e-stress mesh-lab-up mesh-lab-verify mesh-lab-verify-deep mesh-lab-verify-entitlements mesh-lab-verify-governance mesh-lab-verify-director-cli mesh-lab-verify-persistence mesh-lab-verify-network-negative mesh-lab-verify-post-stress mesh-lab-stress mesh-lab-down test-mesh-lab
 
 # External product shape: packed Nexo.* feed → authored brick + thin host + HTTP client (no repo refs).
 verify-external-product-shape:
@@ -17,6 +17,20 @@ release-gate:
 release-dispatch:
 	@test -n "$(VERSION)" || (echo "Set VERSION=1.2.3"; exit 1)
 	gh workflow run Release --ref $${REF:-master} -f version="$(VERSION)" -f skip_multi_arch=false
+
+# Staging-only release dispatch (guarded; refuses when NUGET_PUBLISH_MODE enables nuget.org).
+release-staging:
+	@test -n "$(VERSION)" || (echo "Set VERSION=x.y.z"; exit 1)
+	DRY_RUN=$(DRY_RUN) NEXO_RELEASE_STAGING_REF=$${REF:-} bash scripts/release-staging.sh "$(VERSION)"
+
+verify-staging:
+	@test -n "$(VERSION)" || (echo "Set VERSION=x.y.z"; exit 1)
+	bash scripts/verify-staging.sh "$(VERSION)"
+
+release-staging-and-verify:
+	@test -n "$(VERSION)" || (echo "Set VERSION=x.y.z"; exit 1)
+	$(MAKE) release-staging VERSION="$(VERSION)" DRY_RUN="$(DRY_RUN)"
+	@if [ "$(DRY_RUN)" != "1" ]; then $(MAKE) verify-staging VERSION="$(VERSION)"; fi
 
 # All automated test projects in Nexo.PrimeTime.slnf (nine Nexo.Tests.* assemblies).
 PRIME_TIME_SLNF := Nexo.PrimeTime.slnf

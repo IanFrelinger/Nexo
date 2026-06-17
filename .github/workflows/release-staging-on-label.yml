@@ -1,0 +1,64 @@
+# Deliberate human trigger: label a PR with release:staging to dispatch a staging-only release cut.
+# Refuses when NUGET_PUBLISH_MODE would push to nuget.org.
+name: Release staging on label
+
+on:
+  pull_request:
+    types: [labeled]
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  dispatch-staging-release:
+    if: github.event.label.name == 'release:staging'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Abort if nuget.org publish mode is enabled
+        shell: bash
+        run: |
+          MODE="${{ vars.NUGET_PUBLISH_MODE }}"
+          MODE="$(echo "${MODE}" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')"
+          case "${MODE}" in
+            oidc|apikey)
+              echo "::error::NUGET_PUBLISH_MODE=${MODE} would push to nuget.org; refusing label-triggered staging dispatch."
+              exit 1
+              ;;
+          esac
+          echo "nuget.org push: SKIPPED — PUBLISH_MODE is not oidc/apikey"
+
+      - name: Require staging feed configuration
+        shell: bash
+        run: |
+          if [[ -z "${{ vars.NUGET_STAGING_FEED_URL }}" ]]; then
+            echo "::error::NUGET_STAGING_FEED_URL is not set (see docs/StagingFeed.md)."
+            exit 1
+          fi
+
+      - name: Resolve canonical version
+        id: version
+        shell: bash
+        run: |
+          if [[ -f VERSION ]]; then
+            V="$(tr -d '[:space:]' < VERSION)"
+          else
+            V="$(sed -n 's:.*<PackageVersion>\([^<]*\)</PackageVersion>.*:\1:p' src/Nexo.Hosting.Bundle/Nexo.Hosting.Bundle.csproj | head -1)"
+          fi
+          if [[ ! "${V}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$ ]]; then
+            echo "::error::Could not resolve valid semver (VERSION file or Hosting.Bundle PackageVersion)."
+            exit 1
+          fi
+          echo "version=${V}" >> "$GITHUB_OUTPUT"
+          echo "Resolved version: ${V}"
+
+      - name: Dispatch release.yml (staging-only guard passed)
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run release.yml \
+            --ref "${{ github.event.pull_request.head.ref }}" \
+            -f "version=${{ steps.version.outputs.version }}" \
+            -f skip_multi_arch=false
