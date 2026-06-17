@@ -81,15 +81,6 @@ namespace Nexo.Core.Domain.Bricks
         public string Name { get; init; }
         public string Type { get; init; }
     }
-    public sealed class BrickRuntimeSpec : System.IEquatable<Nexo.Core.Domain.Bricks.BrickRuntimeSpec>
-    {
-        public BrickRuntimeSpec() { }
-        public System.Collections.Generic.IReadOnlyList<Nexo.Core.Domain.Bricks.ImplementationType> Fallback { get; init; }
-        public string Prefer { get; init; }
-        public static Nexo.Core.Domain.Bricks.BrickRuntimeSpec AgenticOnly() { }
-        public static Nexo.Core.Domain.Bricks.BrickRuntimeSpec AgenticWithDeterministicFallback() { }
-        public static Nexo.Core.Domain.Bricks.BrickRuntimeSpec DeterministicOnly() { }
-    }
     public class DeterministicImplementation
     {
         public DeterministicImplementation() { }
@@ -168,5 +159,35 @@ namespace Nexo.Core.Domain.Bricks
         Low = 0,
         Medium = 1,
         High = 2,
+    }
+}
+namespace Nexo.Core.Domain.Execution
+{
+    public class BrickInput
+    {
+        public BrickInput() { }
+        public BrickInput(System.Collections.Generic.IReadOnlyDictionary<string, object> data) { }
+        public T Get<T>(string key) { }
+        public T? Get<T>(string key, T? defaultValue) { }
+        public void Set(string key, object value) { }
+        public System.Collections.Generic.IReadOnlyDictionary<string, object> ToDictionary() { }
+    }
+    public class BrickOutput
+    {
+        public BrickOutput() { }
+        public object this[string key] { get; set; }
+        public string? Summary { get; set; }
+        public T Get<T>(string key) { }
+        public void Set(string key, object value) { }
+        public System.Collections.Generic.IReadOnlyDictionary<string, object> ToDictionary() { }
+    }
+    public interface IExecutionContext
+    {
+        string AgentId { get; }
+        bool AuditMode { get; }
+        string BehaviorId { get; }
+        bool IsAirGapped { get; }
+        string Provider { get; }
+        System.Collections.Generic.IReadOnlyDictionary<string, object> Variables { get; }
     }
 }

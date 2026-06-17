@@ -17,10 +17,12 @@ public sealed class BrickAuthoringPublicApiSnapshotTests
             ["Nexo.Authoring.approved.txt"] = typeof(Nexo.Authoring.NexoAuthoringServiceCollectionExtensions).Assembly.GeneratePublicApi(),
             ["Nexo.Sdk.approved.txt"] = typeof(Nexo.Sdk.Client.NexoClientSdkBuilder).Assembly.GeneratePublicApi(),
             ["Nexo.Framework.Sdk.approved.txt"] = typeof(Nexo.Framework.Sdk.NexoFrameworkOptions).Assembly.GeneratePublicApi(),
-            ["Nexo.Core.Domain.Bricks.approved.txt"] = typeof(Brick)
+            ["Nexo.Brick.Contracts.Authoring.approved.txt"] = typeof(Brick)
                 .Assembly
                 .GetExportedTypes()
-                .Where(t => t.Namespace?.StartsWith("Nexo.Core.Domain.Bricks", StringComparison.Ordinal) == true)
+                .Where(t =>
+                    t.Namespace?.StartsWith("Nexo.Core.Domain.Bricks", StringComparison.Ordinal) == true ||
+                    t.Namespace?.StartsWith("Nexo.Core.Domain.Execution", StringComparison.Ordinal) == true)
                 .OrderBy(t => t.FullName, StringComparer.Ordinal)
                 .ToArray()
                 .GeneratePublicApi()
