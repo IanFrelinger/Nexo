@@ -19,6 +19,7 @@ on:
       - ".docker/Dockerfile.cli"
       - "scripts/verify-stable-sdk-host-sample-packages.sh"
       - "scripts/verify-standalone-brick-authoring.sh"
+      - "scripts/verify-external-product-shape.sh"
       - "scripts/pack-nexo-hosting-graph.sh"
       - "scripts/pack-nexo-hosting-graph.ps1"
       - "scripts/pack-nexo-hosting-graph.allowlist.txt"
@@ -26,6 +27,8 @@ on:
       - "application/src/Nexo.API/**"
       - "application/src/Nexo.CLI/**"
       - "src/Nexo.Client/**"
+      - "src/Nexo.Sdk/**"
+      - "src/Nexo.Hosting.Bundle/**"
       - "src/Nexo.Authoring/**"
       - "src/Nexo.Brick.Contracts/**"
       - "src/Nexo.Core.Domain/Bricks/**"
@@ -45,6 +48,7 @@ on:
       - ".docker/Dockerfile.cli"
       - "scripts/verify-stable-sdk-host-sample-packages.sh"
       - "scripts/verify-standalone-brick-authoring.sh"
+      - "scripts/verify-external-product-shape.sh"
       - "scripts/pack-nexo-hosting-graph.sh"
       - "scripts/pack-nexo-hosting-graph.ps1"
       - "scripts/pack-nexo-hosting-graph.allowlist.txt"
@@ -52,6 +56,8 @@ on:
       - "application/src/Nexo.API/**"
       - "application/src/Nexo.CLI/**"
       - "src/Nexo.Client/**"
+      - "src/Nexo.Sdk/**"
+      - "src/Nexo.Hosting.Bundle/**"
       - "src/Nexo.Authoring/**"
       - "src/Nexo.Brick.Contracts/**"
       - "src/Nexo.Core.Domain/Bricks/**"
@@ -124,6 +130,22 @@ jobs:
 
       - name: Verify tool-installed nexo new brick outside repo
         run: bash scripts/verify-standalone-brick-authoring.sh
+
+  external-product-shape:
+    name: External product shape (brick + host + client)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Verify packed feed consumer (authored brick + thin host + HTTP client)
+        env:
+          NEXO_EXTERNAL_PRODUCT_VERIFY_VERSION: "9.9.9-ci-${{ github.run_id }}"
+        run: bash scripts/verify-external-product-shape.sh
 
   api-image-http-smoke:
     name: API image + curl /health + /api/status
