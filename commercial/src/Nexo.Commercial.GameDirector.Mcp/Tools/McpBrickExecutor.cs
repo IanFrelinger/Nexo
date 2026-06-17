@@ -25,10 +25,9 @@ public sealed class McpBrickExecutor
         var brick = _bricks.GetBrick(brickId)
             ?? throw new InvalidOperationException($"Brick '{brickId}' is not registered.");
 
-        var brickInput = BrickInputDefaults.Apply(
-            brick,
-            BrickValueSerializer.FromWireToBrickInput(
-                input.ToDictionary(kv => kv.Key, kv => (object?)kv.Value ?? "")));
+        var brickInput = BrickValueSerializer.FromWireToBrickInput(
+            input.ToDictionary(kv => kv.Key, kv => (object?)kv.Value ?? ""));
+        BrickInputDefaults.Apply(brick, brickInput);
 
         var context = new Nexo.Infrastructure.Execution.ExecutionContext { AgentId = "mcp-tool" };
         var output = await brick.ExecuteAsync(brickInput, implementation, context, ct).ConfigureAwait(false);

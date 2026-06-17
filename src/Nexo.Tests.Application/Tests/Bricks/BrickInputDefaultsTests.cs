@@ -14,9 +14,9 @@ public sealed class BrickInputDefaultsTests
         var brick = new DefaultNameBrick();
         var input = new BrickInput();
 
-        var result = BrickInputDefaults.Apply(brick, input);
+        BrickInputDefaults.Apply(brick, input);
 
-        result.Get<string>("name").Should().Be("world");
+        input.Get<string>("name").Should().Be("world");
     }
 
     [Fact]
@@ -28,9 +28,9 @@ public sealed class BrickInputDefaultsTests
             ["name"] = "Nexo"
         });
 
-        var result = BrickInputDefaults.Apply(brick, input);
+        BrickInputDefaults.Apply(brick, input);
 
-        result.Get<string>("name").Should().Be("Nexo");
+        input.Get<string>("name").Should().Be("Nexo");
     }
 
     private sealed class DefaultNameBrick : Brick
