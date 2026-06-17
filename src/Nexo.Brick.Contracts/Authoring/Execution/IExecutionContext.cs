@@ -35,4 +35,3 @@ public interface IExecutionContext
     /// </summary>
     IReadOnlyDictionary<string, object> Variables { get; }
 }
-

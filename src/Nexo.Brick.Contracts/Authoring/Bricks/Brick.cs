@@ -59,4 +59,3 @@ public abstract class Brick
         IExecutionContext context,
         CancellationToken cancellationToken = default);
 }
-

@@ -53,4 +53,3 @@ public class BrickOutputDefinition
         Description = description;
     }
 }
-

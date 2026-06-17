@@ -100,4 +100,3 @@ public class ImplementationCharacteristics
     public bool RequiresNetwork { get; init; }
     public ResourceUsage ResourceUsage { get; init; } = ResourceUsage.Low;
 }
-
