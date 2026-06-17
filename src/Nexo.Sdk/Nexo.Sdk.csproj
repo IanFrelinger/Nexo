@@ -10,7 +10,6 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
     <PackageId>Nexo.Sdk</PackageId>
-    <PackageVersion>1.0.0</PackageVersion>
     <Title>Nexo SDK</Title>
     <Description>Slim client for Unity/Unreal and embedded use. Implements INexoClient with optional adaptive routing (local model or server).</Description>
     <PackageTags>nexo;ai;sdk;unity;unreal;client</PackageTags>

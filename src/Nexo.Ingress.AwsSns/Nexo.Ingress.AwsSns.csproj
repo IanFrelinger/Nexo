@@ -10,7 +10,6 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
     <PackageId>Nexo.Ingress.AwsSns</PackageId>
-    <PackageVersion>1.0.0</PackageVersion>
     <Title>Nexo AWS SNS ingress helpers</Title>
     <Description>Canonical string construction, RSA signature verification, and SMS payload extraction for Amazon SNS HTTP(S) webhooks.</Description>
   </PropertyGroup>

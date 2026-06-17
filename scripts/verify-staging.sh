@@ -19,9 +19,8 @@ fi
 VERSION="${VERSION#v}"
 
 PUBLISHED_SCRIPT="${ROOT}/scripts/verify-external-product-shape-published.sh"
-if [[ ! -f "${PUBLISHED_SCRIPT}" ]]; then
-  echo "ABORT: ${PUBLISHED_SCRIPT} is missing." >&2
-  echo "       Merge the release-prep PR that adds published-feed verification for the external product shape." >&2
+if [[ ! -x "${PUBLISHED_SCRIPT}" ]]; then
+  echo "ABORT: missing executable ${PUBLISHED_SCRIPT}" >&2
   exit 1
 fi
 

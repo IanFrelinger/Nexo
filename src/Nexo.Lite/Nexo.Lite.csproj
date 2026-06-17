@@ -10,7 +10,6 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>$(NoWarn);1591</NoWarn>
     <PackageId>Nexo.Lite</PackageId>
-    <PackageVersion>1.0.0</PackageVersion>
     <Title>Nexo Lite</Title>
     <Description>Slim Nexo host for edge and air-gapped hosts. Orchestration + local provider (ONNX/LLamaSharp). No Roslyn, Docker, or code analysis. Designed for lightweight orchestration on Linux and constrained environments.</Description>
     <PackageTags>nexo;ai;lite;edge;air-gapped</PackageTags>

@@ -15,6 +15,11 @@
     <PackageIcon Condition="Exists('$(MSBuildThisFileDirectory)icon.png')">icon.png</PackageIcon>
   </PropertyGroup>
 
+  <!-- Canonical package version source: root VERSION file (scripts/resolve-canonical-package-version.sh). -->
+  <PropertyGroup Condition="Exists('$(MSBuildThisFileDirectory)VERSION')">
+    <NexoPackageVersion>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)VERSION').Trim())</NexoPackageVersion>
+  </PropertyGroup>
+
   <!-- NetStandard compatibility shims (Unity 2019+) -->
   <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETStandard'">
     <Compile Include="$(MSBuildThisFileDirectory)src/Nexo.Compat/Polyfills/*.cs" />
