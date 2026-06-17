@@ -106,9 +106,8 @@ public class ClusterExecutor : IClusterExecutor
             }
             
             // Build brick input from connections and parameters
-            var brickInput = BrickInputDefaults.Apply(
-                brick,
-                BuildBrickInput(step, cluster, resolvedParams, brickOutputs));
+            var brickInput = BuildBrickInput(step, cluster, resolvedParams, brickOutputs);
+            BrickInputDefaults.Apply(brick, brickInput);
             
             var stepIndex = 0;
             for (int i = 0; i < plan.Steps.Count; i++)

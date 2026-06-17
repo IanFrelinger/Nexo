@@ -677,7 +677,8 @@ public static class NexoEndpoints
             implementation = ImplementationType.Deterministic;
 
         var context = BrickCatalogWireMapper.ToExecutionContext(request.ExecutionContext);
-        var input = BrickInputDefaults.Apply(brick, BrickValueSerializer.FromWireToBrickInput(request.Input));
+        var input = BrickValueSerializer.FromWireToBrickInput(request.Input);
+        BrickInputDefaults.Apply(brick, input);
 
         try
         {

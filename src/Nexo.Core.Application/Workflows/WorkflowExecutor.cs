@@ -268,7 +268,8 @@ public class WorkflowExecutor
         var preferred = node.Implementation == ImplementationType.Auto ? brick.DefaultImplementation : node.Implementation;
         var chain = BuildBrickExecutionChain(brick, preferred, context.ExecutionContext);
 
-        var brickInput = BrickInputDefaults.Apply(brick, new BrickInput(inputs));
+        var brickInput = new BrickInput(inputs);
+        BrickInputDefaults.Apply(brick, brickInput);
         BrickOutput? result = null;
         Exception? last = null;
 
@@ -368,9 +369,8 @@ public class WorkflowExecutor
 
             var preferred = clusterBrick.DefaultImplementation == ImplementationType.Auto ? brick.DefaultImplementation : clusterBrick.DefaultImplementation;
             var chain = BuildBrickExecutionChain(brick, preferred, context.ExecutionContext);
-            var brickInput = BrickInputDefaults.Apply(
-                brick,
-                BuildClusterBrickInput(step, cluster, resolvedParams, brickOutputs));
+            var brickInput = BuildClusterBrickInput(step, cluster, resolvedParams, brickOutputs);
+            BrickInputDefaults.Apply(brick, brickInput);
 
             BrickOutput? result = null;
             foreach (var impl in chain)

@@ -146,7 +146,8 @@ public class BehaviorExecutor : Nexo.Core.Domain.Execution.IBehaviorExecutor
                     }
 
                     // Map inputs once per step (implementation swapping should use same inputs).
-                    var brickInput = BrickInputDefaults.Apply(brick, MapInputs(step.InputMapping, context));
+                    var brickInput = MapInputs(step.InputMapping, context);
+                    BrickInputDefaults.Apply(brick, brickInput);
 
                     // Determine implementation chain (preference + fallback), filtering for availability.
                     var chain = ResolveImplementationChain(step, brick, behavior, options, context);
