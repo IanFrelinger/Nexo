@@ -27,6 +27,51 @@ If **`NUGET_STAGING_FEED_URL`** is set but the secret is missing, the workflow *
 
 Leave **`NUGET_STAGING_FEED_URL`** unset to skip staging entirely.
 
+## Pull the trigger (one command)
+
+After one-time bootstrap (below), cut a **staging-only** release and verify the external product shape against the staging feed:
+
+```bash
+make release-staging-and-verify VERSION=0.1.0
+```
+
+That chains:
+
+1. **`make release-staging`** — guarded `gh workflow run release.yml` (staging push only when `NUGET_PUBLISH_MODE` is unset/`none`; **hard-aborts** if `oidc` or `apikey`).
+2. **`make verify-staging`** — round-trip `scripts/verify-external-product-shape-published.sh` against `NUGET_STAGING_FEED_URL` using **`NUGET_STAGING_READ_TOKEN`** from your shell (never committed).
+
+Dry-run the guards without dispatching:
+
+```bash
+make release-staging DRY_RUN=1 VERSION=0.1.0
+```
+
+Canonical version: create a **`VERSION`** file at the repo root before a real cut; `release-staging` refuses a mismatch so `release.yml` cannot fail its tag/input check later.
+
+### One-time bootstrap (`gh` uses your ambient auth; tokens stay in GitHub / your shell)
+
+```bash
+# Staging feed URL (repository variable)
+gh variable set NUGET_STAGING_FEED_URL --body 'https://nuget.pkg.github.com/YOUR_ORG/index.json'
+
+# Push token for reusable-release-nuget.yml (repository secret)
+gh secret set NUGET_STAGING_API_KEY
+
+# Read token for local verify-staging (your shell only — not stored in the repo)
+export NUGET_STAGING_READ_TOKEN='ghp_...'
+
+# Ensure nuget.org push stays OFF for staging cuts
+gh variable set NUGET_PUBLISH_MODE --body 'none'   # or leave unset
+
+# Optional: pin the version you are about to ship
+echo '0.1.0' > VERSION
+git add VERSION && git commit -m 'chore(release): pin VERSION 0.1.0'
+```
+
+**Promotion to nuget.org** is a separate deliberate step: set **`NUGET_PUBLISH_MODE=apikey`** (or `oidc`), configure **`NUGET_API_KEY`** / **`NUGET_USER`**, then dispatch **`release.yml`** or push a tag — not via `release-staging`.
+
+Optional label trigger: add the **`release:staging`** label to a pull request (workflow **`.github/workflows/release-staging-on-label.yml`**) after the same variables are configured.
+
 ## GitHub Packages example
 
 - URL: `https://nuget.pkg.github.com/<OWNER_OR_ORG>/index.json`
