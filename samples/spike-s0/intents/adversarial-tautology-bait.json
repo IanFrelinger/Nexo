@@ -1,0 +1,19 @@
+{
+  "intentId": "adversarial-tautology-bait",
+  "title": "CSV inferencer — tautology bait",
+  "description": "Implement InferType. Lazy tests might assert InferType(x) == InferType(x) or only check non-null. The tautology guard must reject such suites at RED.",
+  "inputs": [
+    "values: IReadOnlyList<string>"
+  ],
+  "outputs": [
+    "ColumnType"
+  ],
+  "invariants": [
+    "Pure function"
+  ],
+  "acceptanceCriteria": [
+    "Tests must assert concrete expected ColumnType values, not reflexive equality"
+  ],
+  "adversarial": true,
+  "adversarialKind": "tautology-bait"
+}

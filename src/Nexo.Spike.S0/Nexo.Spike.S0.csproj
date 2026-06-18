@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Nexo.Spike.S0</RootNamespace>
+    <AssemblyTitle>Nexo Spike S0</AssemblyTitle>
+    <Description>Self-extension falsification spike: SPEC/RED/GREEN/VERIFY TDD loop with mutation gate.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="System.Text.Json" />
+  </ItemGroup>
+</Project>

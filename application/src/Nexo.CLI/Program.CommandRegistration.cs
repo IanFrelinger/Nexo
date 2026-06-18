@@ -508,6 +508,7 @@ static partial class Program
         maintenanceCmd.AddCommand(maintenanceCleanCmd);
         root.AddCommand(maintenanceCmd);
 
+        root.AddCommand(new BuildCommand());
         root.AddCommand(new CiCommand());
         root.AddCommand(new ReleaseCommand());
         root.AddCommand(analyzeCmd);

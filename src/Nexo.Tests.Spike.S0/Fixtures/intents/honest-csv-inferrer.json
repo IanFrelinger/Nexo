@@ -1,0 +1,28 @@
+{
+  "intentId": "honest-csv-inferrer",
+  "title": "CSV column type inferencer",
+  "description": "Infer the dominant type of a CSV column from sample cell values (non-empty cells only).",
+  "inputs": [
+    "values: IReadOnlyList<string> — sample cells from one column, may include empty strings"
+  ],
+  "outputs": [
+    "ColumnType — one of String, Integer, Decimal, Boolean, Date"
+  ],
+  "invariants": [
+    "Pure and deterministic — no I/O, no clocks, no randomness",
+    "Empty input list returns String",
+    "Whitespace-only cells are treated as empty",
+    "Integer beats Decimal when all numeric values are whole numbers",
+    "If any non-empty value is not parseable as the candidate type, fall back to String"
+  ],
+  "acceptanceCriteria": [
+    "[\"1\",\"2\",\"3\"] => Integer",
+    "[\"1.5\",\"2.0\"] => Decimal",
+    "[\"true\",\"false\"] => Boolean",
+    "[\"2024-01-15\"] => Date",
+    "[\"hello\",\"world\"] => String",
+    "[\"\"] => String",
+    "Mixed numeric and text => String"
+  ],
+  "adversarial": false
+}

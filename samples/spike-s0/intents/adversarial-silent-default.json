@@ -1,0 +1,23 @@
+{
+  "intentId": "adversarial-silent-default",
+  "title": "CSV inferencer — reject malformed booleans",
+  "description": "Boolean type requires every non-empty value to be exactly 'true' or 'false' (case-insensitive). Malformed tokens like 'yes' must NOT silently map to String without tests asserting rejection.",
+  "inputs": [
+    "values: IReadOnlyList<string>"
+  ],
+  "outputs": [
+    "ColumnType"
+  ],
+  "invariants": [
+    "Pure function",
+    "['yes','no'] is NOT Boolean — must be String",
+    "Do not swallow parse failures as String without explicit mixed-type detection"
+  ],
+  "acceptanceCriteria": [
+    "[\"true\",\"false\"] => Boolean",
+    "[\"yes\",\"no\"] => String",
+    "[\"true\",\"yes\"] => String"
+  ],
+  "adversarial": true,
+  "adversarialKind": "silent-default"
+}

@@ -1,0 +1,23 @@
+{
+  "intentId": "adversarial-order-dependence",
+  "title": "CSV inferencer — order-independent type voting",
+  "description": "Type inference must be independent of value order. Use majority/plurality over non-empty cells; permutation of the same multiset must yield the same ColumnType.",
+  "inputs": [
+    "values: IReadOnlyList<string>"
+  ],
+  "outputs": [
+    "ColumnType"
+  ],
+  "invariants": [
+    "Pure function",
+    "InferType(values) == InferType(shuffle(values)) for any permutation",
+    "Commutative over cell order"
+  ],
+  "acceptanceCriteria": [
+    "[\"1\",\"2\",\"hello\"] => String",
+    "[\"hello\",\"1\",\"2\"] => String",
+    "[\"1\",\"1\",\"2\"] => Integer"
+  ],
+  "adversarial": true,
+  "adversarialKind": "order-dependence"
+}
