@@ -1,22 +1,22 @@
 {
   "RunId": "adversarial-off-by-one",
   "IntentId": "adversarial-off-by-one",
-  "StartedAt": "2026-06-18T13:18:55.0881229+00:00",
-  "CompletedAt": "2026-06-18T13:19:11.1487461+00:00",
-  "Outcome": 0,
-  "RejectingGuard": 0,
-  "RejectedAtStage": null,
+  "StartedAt": "2026-06-18T13:33:47.9869184+00:00",
+  "CompletedAt": "2026-06-18T13:33:55.7152832+00:00",
+  "Outcome": 1,
+  "RejectingGuard": 5,
+  "RejectedAtStage": 3,
   "RedGreenBounces": 0,
   "HumanVerdictNote": null,
   "Stages": [
     {
       "Stage": 0,
-      "At": "2026-06-18T13:18:55.1150598+00:00",
+      "At": "2026-06-18T13:33:48.0138271+00:00",
       "Summary": "Frozen spec written."
     },
     {
       "Stage": 1,
-      "At": "2026-06-18T13:18:57.558644+00:00",
+      "At": "2026-06-18T13:33:50.476783+00:00",
       "Summary": "RED reason classified.",
       "Details": {
         "reason": 2,
@@ -25,30 +25,26 @@
     },
     {
       "Stage": 2,
-      "At": "2026-06-18T13:19:00.5585962+00:00",
+      "At": "2026-06-18T13:33:53.4341364+00:00",
       "Summary": "All tests green."
     },
     {
       "Stage": 3,
-      "At": "2026-06-18T13:19:11.1487182+00:00",
-      "Summary": "Stryker mutation run complete.",
+      "At": "2026-06-18T13:33:55.715256+00:00",
+      "Summary": "Property/metamorphic gate complete.",
       "Details": {
-        "MutationScore": 83.33,
-        "Passed": true,
-        "SurvivingMutants": [
-          "/tmp/nexo-s0-exp-adversarial-off-by-one/CsvColumnInferrer/ColumnTypeInferrer.cs:8:nonEmpty.Any"
-        ]
+        "Passed": false,
+        "FailedTests": 1
       }
     }
   ],
-  "VerifyPasses": [
+  "VerifyPasses": [],
+  "PropertyPasses": [
     {
-      "At": "2026-06-18T13:19:11.1486611+00:00",
-      "MutationScore": 83.33,
-      "SurvivingMutants": [
-        "/tmp/nexo-s0-exp-adversarial-off-by-one/CsvColumnInferrer/ColumnTypeInferrer.cs:8:nonEmpty.Any"
-      ],
-      "Passed": true
+      "At": "2026-06-18T13:33:55.7152473+00:00",
+      "Passed": false,
+      "FailedTests": 1,
+      "Summary": "Test run for /tmp/nexo-s0-exp-adversarial-off-by-one/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.SpecAcceptancePropertyTests.Implementation_satisfies_all_frozen_acceptance_criteria [49 ms]\n  Error Message:\n   Expected actual to be ColumnType.String {value: 0} because acceptance criterion [\u002242\u0022] =\u003E String, but found ColumnType.Integer {value: 1}.\n  Stack Trace:\n     at FluentAssertions.Primitives.EnumAssertions\u00602.Be(TEnum expected, String because, Object[] becauseArgs)\n   at CsvColumnInferrer.Properties.SpecAcceptancePropertyTests.Implementation_satisfies_all_frozen_acceptance_criteria() in /tmp/nexo-s0-exp-adversarial-off-by-one/CsvColumnInferrer.Properties/SpecAcceptancePropertyTests.cs:line 22\n   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)\n   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)\n\nFailed!  - Failed:     1, Passed:     8, Skipped:     0, Total:     9, Duration: 50 ms - CsvColumnInferrer.Properties.dll (net8.0)\n\n[xUnit.net 00:00:00.16]     CsvColumnInferrer.Properties.SpecAcceptancePropertyTests.Implementation_satisfies_all_frozen_acceptance_criteria [FAIL]\n"
     }
   ]
 }

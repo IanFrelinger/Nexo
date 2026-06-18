@@ -43,6 +43,11 @@ public sealed class BuildCommand : Command
             () => false,
             "Skip Stryker VERIFY (for fast gate checks).");
 
+        var skipPropertyOpt = new Option<bool>(
+            "--skip-property",
+            () => false,
+            "Skip load-bearing property/metamorphic VERIFY gate.");
+
         var jsonOpt = new Option<bool>("--json", () => false, "Emit machine-readable run log JSON.");
 
         AddOption(intentOpt);
@@ -51,6 +56,7 @@ public sealed class BuildCommand : Command
         AddOption(maxBouncesOpt);
         AddOption(commitOpt);
         AddOption(skipMutationOpt);
+        AddOption(skipPropertyOpt);
         AddOption(jsonOpt);
 
         this.SetHandler(async (InvocationContext ctx) =>
@@ -61,6 +67,7 @@ public sealed class BuildCommand : Command
             var maxBounces = ctx.ParseResult.GetValueForOption(maxBouncesOpt);
             var commit = ctx.ParseResult.GetValueForOption(commitOpt);
             var skipMutation = ctx.ParseResult.GetValueForOption(skipMutationOpt);
+            var skipProperty = ctx.ParseResult.GetValueForOption(skipPropertyOpt);
             var json = ctx.ParseResult.GetValueForOption(jsonOpt);
 
             ctx.ExitCode = await ExecuteAsync(
@@ -70,6 +77,7 @@ public sealed class BuildCommand : Command
                 maxBounces,
                 commit,
                 skipMutation,
+                skipProperty,
                 json,
                 ctx.GetCancellationToken()).ConfigureAwait(false);
         });
@@ -82,6 +90,7 @@ public sealed class BuildCommand : Command
         int maxBounces,
         bool commitPerStage,
         bool skipMutation,
+        bool skipProperty,
         bool json,
         CancellationToken ct)
     {
@@ -98,7 +107,8 @@ public sealed class BuildCommand : Command
             MutationThresholdPercent = mutationThreshold,
             MaxRedGreenBounces = maxBounces,
             CommitPerStage = commitPerStage,
-            SkipMutation = skipMutation
+            SkipMutation = skipMutation,
+            SkipProperty = skipProperty
         };
 
         var runner = new TddLoopRunner();
@@ -139,5 +149,8 @@ public sealed class BuildCommand : Command
 
         foreach (var verify in log.VerifyPasses)
             Console.WriteLine($"  [VERIFY] mutation={verify.MutationScore:F1}% passed={verify.Passed} survivors={verify.SurvivingMutants.Count}");
+
+        foreach (var property in log.PropertyPasses)
+            Console.WriteLine($"  [PROPERTY] passed={property.Passed} failedTests={property.FailedTests}");
     }
 }

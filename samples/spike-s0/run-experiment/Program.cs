@@ -33,21 +33,21 @@ var scenarios = new[]
         Red: "red/hollow-off-by-one-tests.cs",
         Green: "green/wrong-off-by-one-impl.cs",
         ExpectOutcome: SpikeRunOutcome.Rejected,
-        ExpectGuard: GuardKind.Mutation),
+        ExpectGuard: GuardKind.Property),
     new Scenario(
         "adversarial-silent-default",
         Path.Combine(intentsRoot, "adversarial-silent-default.json"),
         Red: "red/hollow-silent-default-tests.cs",
         Green: "green/wrong-silent-default-impl.cs",
         ExpectOutcome: SpikeRunOutcome.Rejected,
-        ExpectGuard: GuardKind.Mutation),
+        ExpectGuard: GuardKind.Property),
     new Scenario(
         "adversarial-order-dependence",
         Path.Combine(intentsRoot, "adversarial-order-dependence.json"),
         Red: "red/hollow-order-tests.cs",
         Green: "green/wrong-order-impl.cs",
         ExpectOutcome: SpikeRunOutcome.Rejected,
-        ExpectGuard: GuardKind.Mutation)
+        ExpectGuard: GuardKind.Property)
 };
 
 // tautology fixture lives in test fixtures — copy path
@@ -105,7 +105,8 @@ foreach (var scenario in scenarios)
 
     var gateDetected = log.RejectingGuard == scenario.ExpectGuard
                        || (scenario.ExpectGuard == GuardKind.Mutation && log.RejectingGuard == GuardKind.Mutation)
-                       || (scenario.ExpectGuard == GuardKind.Tautology && log.RejectingGuard == GuardKind.Tautology);
+                       || (scenario.ExpectGuard == GuardKind.Tautology && log.RejectingGuard == GuardKind.Tautology)
+                       || (scenario.ExpectGuard == GuardKind.Property && log.RejectingGuard == GuardKind.Property);
 
     var record = new
     {
@@ -128,7 +129,7 @@ foreach (var scenario in scenarios)
     var logCopy = Path.Combine(resultsDir, $"{scenario.Name}-run-log.json");
     await File.WriteAllTextAsync(logCopy, JsonSerializer.Serialize(log, new JsonSerializerOptions { WriteIndented = true }));
 
-    Console.WriteLine($"[{scenario.Name}] outcome={log.Outcome} guard={log.RejectingGuard} stage={log.RejectedAtStage} mutation={log.VerifyPasses.LastOrDefault()?.MutationScore:F1}%");
+    Console.WriteLine($"[{scenario.Name}] outcome={log.Outcome} guard={log.RejectingGuard} stage={log.RejectedAtStage} mutation={log.VerifyPasses.LastOrDefault()?.MutationScore:F1}% propertyPassed={log.PropertyPasses.LastOrDefault()?.Passed}");
 }
 
 var summaryPath = Path.Combine(resultsDir, "experiment-summary.json");

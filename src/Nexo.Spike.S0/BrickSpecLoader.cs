@@ -24,7 +24,10 @@ public static class BrickSpecLoader
     {
         var path = Path.Combine(workspaceRoot, "spec.frozen.json");
         await using var stream = File.Create(path);
-        await JsonSerializer.SerializeAsync(stream, spec, new JsonSerializerOptions { WriteIndented = true }, ct)
-            .ConfigureAwait(false);
+        await JsonSerializer.SerializeAsync(
+            stream,
+            spec,
+            new JsonSerializerOptions { WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase },
+            ct).ConfigureAwait(false);
     }
 }

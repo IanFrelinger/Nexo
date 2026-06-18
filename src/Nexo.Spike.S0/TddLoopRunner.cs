@@ -12,17 +12,35 @@ public sealed class TddLoopRunner
 {
     private readonly IStageAgent _testAuthor;
     private readonly IStageAgent _implementer;
+    private readonly PropertyGate _propertyGate;
     private readonly MutationGate _mutationGate;
 
     public TddLoopRunner()
-        : this(new FileBasedStageAgent("test-author"), new FileBasedStageAgent("implementer"), new MutationGate())
+        : this(
+            new FileBasedStageAgent("test-author"),
+            new FileBasedStageAgent("implementer"),
+            new PropertyGate(),
+            new MutationGate())
     {
     }
 
-    public TddLoopRunner(IStageAgent testAuthor, IStageAgent implementer, MutationGate mutationGate)
+    public TddLoopRunner(
+        IStageAgent testAuthor,
+        IStageAgent implementer,
+        MutationGate mutationGate)
+        : this(testAuthor, implementer, new PropertyGate(), mutationGate)
+    {
+    }
+
+    public TddLoopRunner(
+        IStageAgent testAuthor,
+        IStageAgent implementer,
+        PropertyGate propertyGate,
+        MutationGate mutationGate)
     {
         _testAuthor = testAuthor;
         _implementer = implementer;
+        _propertyGate = propertyGate;
         _mutationGate = mutationGate;
     }
 
@@ -86,17 +104,22 @@ public sealed class TddLoopRunner
             }
 
             mutationFeedback = verifyResult.SurvivingMutants;
-            runLog.RedGreenBounces++;
-            if (runLog.RedGreenBounces > options.MaxRedGreenBounces)
+            if (runLog.RedGreenBounces >= options.MaxRedGreenBounces)
             {
-                runLog.Outcome = SpikeRunOutcome.BudgetExhausted;
-                runLog.RejectingGuard = GuardKind.Budget;
-                runLog.RecordStage(SpikeStage.Verify, "RED↔GREEN bounce budget exhausted.");
+                if (runLog.Outcome != SpikeRunOutcome.Rejected)
+                {
+                    runLog.Outcome = SpikeRunOutcome.BudgetExhausted;
+                    runLog.RejectingGuard = GuardKind.Budget;
+                    runLog.RecordStage(SpikeStage.Verify, "RED↔GREEN bounce budget exhausted.");
+                }
+
                 break;
             }
 
-            runLog.RecordStage(SpikeStage.Verify, "Mutation gate failed — bouncing to RED.", new
+            runLog.RedGreenBounces++;
+            runLog.RecordStage(SpikeStage.Verify, "VERIFY failed — bouncing to RED.", new
             {
+                rejectingGuard = runLog.RejectingGuard,
                 mutationFeedback
             });
         }
@@ -227,10 +250,43 @@ public sealed class TddLoopRunner
         SpikeRunLog runLog,
         CancellationToken ct)
     {
+        var propertyPassed = true;
+        if (!options.SkipProperty)
+        {
+            var propertyResult = await _propertyGate.RunAsync(workspace, ct).ConfigureAwait(false);
+            runLog.RecordProperty(propertyResult.Passed, propertyResult.FailedTests, propertyResult.RawOutput);
+            runLog.RecordStage(SpikeStage.Verify, "Property/metamorphic gate complete.", new
+            {
+                propertyResult.Passed,
+                propertyResult.FailedTests
+            });
+
+            if (!propertyResult.Passed)
+            {
+                runLog.Outcome = SpikeRunOutcome.Rejected;
+                runLog.RejectingGuard = GuardKind.Property;
+                runLog.RejectedAtStage = SpikeStage.Verify;
+                propertyPassed = false;
+            }
+        }
+        else
+        {
+            runLog.RecordStage(SpikeStage.Verify, "Property gate skipped (--skip-property).");
+        }
+
+        if (!propertyPassed)
+        {
+            if (options.CommitPerStage)
+                await SpikeWorkspaceScaffold.CommitStageAsync(workspace, SpikeStage.Verify, ct).ConfigureAwait(false);
+            return (false, []);
+        }
+
         if (options.SkipMutation)
         {
             runLog.RecordStage(SpikeStage.Verify, "Mutation skipped (--skip-mutation).");
             runLog.RecordVerify(100, [], true);
+            if (options.CommitPerStage)
+                await SpikeWorkspaceScaffold.CommitStageAsync(workspace, SpikeStage.Verify, ct).ConfigureAwait(false);
             return (true, []);
         }
 

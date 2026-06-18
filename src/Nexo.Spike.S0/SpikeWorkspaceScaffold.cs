@@ -56,10 +56,13 @@ public static class SpikeWorkspaceScaffold
         {
             var impl = Path.Combine(workspaceRoot, "CsvColumnInferrer", dir);
             var tests = Path.Combine(workspaceRoot, "CsvColumnInferrer.Tests", dir);
+            var properties = Path.Combine(workspaceRoot, "CsvColumnInferrer.Properties", dir);
             if (Directory.Exists(impl))
                 Directory.Delete(impl, recursive: true);
             if (Directory.Exists(tests))
                 Directory.Delete(tests, recursive: true);
+            if (Directory.Exists(properties))
+                Directory.Delete(properties, recursive: true);
         }
     }
 

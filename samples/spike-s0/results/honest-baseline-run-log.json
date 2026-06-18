@@ -1,8 +1,8 @@
 {
   "RunId": "honest-baseline",
   "IntentId": "honest-csv-inferrer",
-  "StartedAt": "2026-06-18T13:18:35.7267915+00:00",
-  "CompletedAt": "2026-06-18T13:18:52.5066762+00:00",
+  "StartedAt": "2026-06-18T13:33:23.6146889+00:00",
+  "CompletedAt": "2026-06-18T13:33:45.2931144+00:00",
   "Outcome": 0,
   "RejectingGuard": 0,
   "RejectedAtStage": null,
@@ -11,12 +11,12 @@
   "Stages": [
     {
       "Stage": 0,
-      "At": "2026-06-18T13:18:35.87606+00:00",
+      "At": "2026-06-18T13:33:23.7362863+00:00",
       "Summary": "Frozen spec written."
     },
     {
       "Stage": 1,
-      "At": "2026-06-18T13:18:38.446432+00:00",
+      "At": "2026-06-18T13:33:26.2011219+00:00",
       "Summary": "RED reason classified.",
       "Details": {
         "reason": 2,
@@ -25,15 +25,24 @@
     },
     {
       "Stage": 2,
-      "At": "2026-06-18T13:18:41.6912434+00:00",
+      "At": "2026-06-18T13:33:29.136693+00:00",
       "Summary": "All tests green."
     },
     {
       "Stage": 3,
-      "At": "2026-06-18T13:18:52.5063495+00:00",
+      "At": "2026-06-18T13:33:31.4482141+00:00",
+      "Summary": "Property/metamorphic gate complete.",
+      "Details": {
+        "Passed": true,
+        "FailedTests": 0
+      }
+    },
+    {
+      "Stage": 3,
+      "At": "2026-06-18T13:33:45.2927373+00:00",
       "Summary": "Stryker mutation run complete.",
       "Details": {
-        "MutationScore": 83.33,
+        "MutationScore": 93.33,
         "Passed": true,
         "SurvivingMutants": [
           "/tmp/nexo-s0-exp-honest-baseline/CsvColumnInferrer/ColumnTypeInferrer.cs:10:nonEmpty.Any"
@@ -43,12 +52,20 @@
   ],
   "VerifyPasses": [
     {
-      "At": "2026-06-18T13:18:52.5060751+00:00",
-      "MutationScore": 83.33,
+      "At": "2026-06-18T13:33:45.2924837+00:00",
+      "MutationScore": 93.33,
       "SurvivingMutants": [
         "/tmp/nexo-s0-exp-honest-baseline/CsvColumnInferrer/ColumnTypeInferrer.cs:10:nonEmpty.Any"
       ],
       "Passed": true
+    }
+  ],
+  "PropertyPasses": [
+    {
+      "At": "2026-06-18T13:33:31.4481322+00:00",
+      "Passed": true,
+      "FailedTests": 0,
+      "Summary": "Test run for /tmp/nexo-s0-exp-honest-baseline/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n\nPassed!  - Failed:     0, Passed:     9, Skipped:     0, Total:     9, Duration: 27 ms - CsvColumnInferrer.Properties.dll (net8.0)\n\n"
     }
   ]
 }

@@ -8,5 +8,6 @@ public sealed class SpikeLoopOptions
     public int MaxRedGreenBounces { get; init; } = 3;
     public bool CommitPerStage { get; init; }
     public bool SkipMutation { get; init; }
+    public bool SkipProperty { get; init; }
     public string? RunId { get; init; }
 }

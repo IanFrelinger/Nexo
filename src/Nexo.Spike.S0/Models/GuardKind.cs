@@ -8,5 +8,6 @@ public enum GuardKind
     Tautology,
     RedReason,
     Mutation,
+    Property,
     Budget
 }

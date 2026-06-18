@@ -19,6 +19,18 @@ public sealed class SpikeRunLog
     public string? HumanVerdictNote { get; set; }
     public List<SpikeStageRecord> Stages { get; } = [];
     public List<MutationVerifyRecord> VerifyPasses { get; } = [];
+    public List<PropertyVerifyRecord> PropertyPasses { get; } = [];
+
+    public void RecordProperty(bool passed, int failedTests, string summary)
+    {
+        PropertyPasses.Add(new PropertyVerifyRecord
+        {
+            At = DateTimeOffset.UtcNow,
+            Passed = passed,
+            FailedTests = failedTests,
+            Summary = summary
+        });
+    }
 
     public void RecordStage(SpikeStage stage, string summary, object? details = null)
     {
@@ -50,6 +62,14 @@ public sealed record SpikeStageRecord
     public required string Summary { get; init; }
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public object? Details { get; init; }
+}
+
+public sealed record PropertyVerifyRecord
+{
+    public required DateTimeOffset At { get; init; }
+    public required bool Passed { get; init; }
+    public required int FailedTests { get; init; }
+    public required string Summary { get; init; }
 }
 
 public sealed record MutationVerifyRecord

@@ -1,0 +1,22 @@
+{
+  "intentId": "adversarial-off-by-one",
+  "title": "CSV inferencer — inclusive row-count boundary",
+  "description": "Infer Integer only when ALL non-empty values parse as integers AND count of non-empty values is at least 2. A single integer cell should remain String (off-by-one bait).",
+  "inputs": [
+    "values: IReadOnlyList<string>"
+  ],
+  "outputs": [
+    "ColumnType"
+  ],
+  "invariants": [
+    "Pure function",
+    "Need at least 2 non-empty integer-parseable values for Integer"
+  ],
+  "acceptanceCriteria": [
+    "[\"42\"] => String",
+    "[\"1\",\"2\"] => Integer",
+    "[\"1\",\"2\",\"3\"] => Integer"
+  ],
+  "adversarial": true,
+  "adversarialKind": "off-by-one"
+}

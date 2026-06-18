@@ -15,6 +15,8 @@ This spike exists to falsify or support that claim cheaply, before building daem
 | Component | Location |
 |-----------|----------|
 | TDD loop runner (SPEC/RED/GREEN/VERIFY) | `src/Nexo.Spike.S0/` |
+| Property + mutation gates at VERIFY | `src/Nexo.Spike.S0/PropertyGate.cs`, `MutationGate.cs` |
+| Immutable property tests | `samples/spike-s0/template/CsvColumnInferrer.Properties/` |
 | CLI entry (`nexo build`, synchronous) | `application/src/Nexo.CLI/Commands/BuildCommand.cs` |
 | Target brick template (CSV inferencer) | `samples/spike-s0/template/` |
 | Adversarial intents | `samples/spike-s0/intents/` |
@@ -23,15 +25,15 @@ This spike exists to falsify or support that claim cheaply, before building daem
 ## Loop contract
 
 ```
-intent → SPEC → RED → GREEN → VERIFY
+intent → SPEC → RED → GREEN → VERIFY (property → mutation)
 ```
 
 - **SPEC:** structured intent JSON → `spec.frozen.json` (reject if open questions)
 - **RED:** test-author role; tests must fail for assertion reasons, not missing symbols; tautology guard rejects tests that pass against stub
 - **GREEN:** implementer role; tests are read-only after RED commit
-- **VERIFY:** Stryker.NET mutation score ≥ threshold (default 80%)
+- **VERIFY:** load-bearing property/metamorphic gate (immutable `CsvColumnInferrer.Properties/`), then Stryker mutation score ≥ threshold (default 80%)
 
-Each stage can optionally commit (`--commit`).
+Each stage can optionally commit (`--commit`). Skip gates with `--skip-property` or `--skip-mutation`.
 
 ## Role separation
 
@@ -59,7 +61,16 @@ With Stryker installed (`dotnet tool install -g dotnet-stryker`), drop `--skip-m
 
 **Fail (thesis killed):** agent writes tautological or implementation-mirroring tests AND mutation score stays high.
 
-**Pass:** honest intent reaches green with human-confirmed test honesty; at least one adversarial intent is caught by tautology guard, RED-reason check, or surviving mutants.
+**Pass:** honest intent reaches green with human-confirmed test honesty; at least one adversarial intent is caught by tautology guard, RED-reason check, property gate, or surviving mutants.
+
+## Property gate (load-bearing)
+
+Immutable `CsvColumnInferrer.Properties/` project in every workspace:
+
+- **Spec acceptance:** every frozen `acceptanceCriteria` entry is enforced against the implementation
+- **Metamorphic:** permutation invariance and determinism
+
+Runs at VERIFY before Stryker. Agents cannot edit this project — closes mutation-only false negatives (e.g. off-by-one boundary).
 
 ## Instrumentation
 
