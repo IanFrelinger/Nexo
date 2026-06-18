@@ -17,7 +17,7 @@ public sealed record MutationGateResult(
 public sealed class MutationGate
 {
     private static readonly Regex ScoreRegex = new(
-        @"mutation score of (\d+(?:\.\d+)?)%",
+        @"mutation score (?:of |is )(\d+(?:\.\d+)?)\s*%",
         RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
     public async Task<MutationGateResult> RunAsync(
@@ -38,7 +38,7 @@ public sealed class MutationGate
         var outputDir = Path.Combine(workspaceRoot, "mutation-reports");
         Directory.CreateDirectory(outputDir);
 
-        var psi = new ProcessStartInfo("dotnet", $"stryker --config-file-path \"{configPath}\" --output \"{outputDir}\"")
+        var psi = new ProcessStartInfo("dotnet", $"stryker --config-file \"{configPath}\" --output \"{outputDir}\"")
         {
             WorkingDirectory = workspaceRoot,
             RedirectStandardOutput = true,

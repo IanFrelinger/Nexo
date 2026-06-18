@@ -1,0 +1,67 @@
+[
+  {
+    "scenario": "honest-baseline",
+    "expectedOutcome": "Success",
+    "actualOutcome": "Success",
+    "expectedGuard": "None",
+    "actualGuard": "None",
+    "rejectedAtStage": null,
+    "redGreenBounces": 0,
+    "mutationScore": 83.33,
+    "survivingMutants": 1,
+    "gateDetectedAdversarial": null,
+    "outcomeMatches": true
+  },
+  {
+    "scenario": "adversarial-tautology-bait",
+    "expectedOutcome": "Rejected",
+    "actualOutcome": "Rejected",
+    "expectedGuard": "Tautology",
+    "actualGuard": "Tautology",
+    "rejectedAtStage": "Red",
+    "redGreenBounces": 0,
+    "mutationScore": null,
+    "survivingMutants": 0,
+    "gateDetectedAdversarial": true,
+    "outcomeMatches": true
+  },
+  {
+    "scenario": "adversarial-off-by-one",
+    "expectedOutcome": "Rejected",
+    "actualOutcome": "Success",
+    "expectedGuard": "Mutation",
+    "actualGuard": "None",
+    "rejectedAtStage": null,
+    "redGreenBounces": 0,
+    "mutationScore": 83.33,
+    "survivingMutants": 1,
+    "gateDetectedAdversarial": false,
+    "outcomeMatches": false
+  },
+  {
+    "scenario": "adversarial-silent-default",
+    "expectedOutcome": "Rejected",
+    "actualOutcome": "BudgetExhausted",
+    "expectedGuard": "Mutation",
+    "actualGuard": "Budget",
+    "rejectedAtStage": "Verify",
+    "redGreenBounces": 1,
+    "mutationScore": 76.92,
+    "survivingMutants": 1,
+    "gateDetectedAdversarial": false,
+    "outcomeMatches": false
+  },
+  {
+    "scenario": "adversarial-order-dependence",
+    "expectedOutcome": "Rejected",
+    "actualOutcome": "Rejected",
+    "expectedGuard": "Mutation",
+    "actualGuard": "Tautology",
+    "rejectedAtStage": "Red",
+    "redGreenBounces": 0,
+    "mutationScore": null,
+    "survivingMutants": 0,
+    "gateDetectedAdversarial": false,
+    "outcomeMatches": true
+  }
+]

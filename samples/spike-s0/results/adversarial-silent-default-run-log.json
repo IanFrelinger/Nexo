@@ -1,0 +1,59 @@
+{
+  "RunId": "adversarial-silent-default",
+  "IntentId": "adversarial-silent-default",
+  "StartedAt": "2026-06-18T13:19:11.1580261+00:00",
+  "CompletedAt": "2026-06-18T13:19:28.9862277+00:00",
+  "Outcome": 2,
+  "RejectingGuard": 5,
+  "RejectedAtStage": 3,
+  "RedGreenBounces": 1,
+  "HumanVerdictNote": null,
+  "Stages": [
+    {
+      "Stage": 0,
+      "At": "2026-06-18T13:19:11.2043659+00:00",
+      "Summary": "Frozen spec written."
+    },
+    {
+      "Stage": 1,
+      "At": "2026-06-18T13:19:13.6757962+00:00",
+      "Summary": "RED reason classified.",
+      "Details": {
+        "reason": 2,
+        "testCode": 1
+      }
+    },
+    {
+      "Stage": 2,
+      "At": "2026-06-18T13:19:16.6738152+00:00",
+      "Summary": "All tests green."
+    },
+    {
+      "Stage": 3,
+      "At": "2026-06-18T13:19:28.9860866+00:00",
+      "Summary": "Stryker mutation run complete.",
+      "Details": {
+        "MutationScore": 76.92,
+        "Passed": false,
+        "SurvivingMutants": [
+          "/tmp/nexo-s0-exp-adversarial-silent-default/CsvColumnInferrer/ColumnTypeInferrer.cs:8:nonEmpty.Any"
+        ]
+      }
+    },
+    {
+      "Stage": 3,
+      "At": "2026-06-18T13:19:28.986223+00:00",
+      "Summary": "RED\u2194GREEN bounce budget exhausted."
+    }
+  ],
+  "VerifyPasses": [
+    {
+      "At": "2026-06-18T13:19:28.9860604+00:00",
+      "MutationScore": 76.92,
+      "SurvivingMutants": [
+        "/tmp/nexo-s0-exp-adversarial-silent-default/CsvColumnInferrer/ColumnTypeInferrer.cs:8:nonEmpty.Any"
+      ],
+      "Passed": false
+    }
+  ]
+}

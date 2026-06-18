@@ -1,0 +1,28 @@
+{
+  "RunId": "adversarial-tautology-bait",
+  "IntentId": "adversarial-tautology-bait",
+  "StartedAt": "2026-06-18T13:18:52.5630129+00:00",
+  "CompletedAt": "2026-06-18T13:18:55.0777537+00:00",
+  "Outcome": 1,
+  "RejectingGuard": 2,
+  "RejectedAtStage": 1,
+  "RedGreenBounces": 0,
+  "HumanVerdictNote": null,
+  "Stages": [
+    {
+      "Stage": 0,
+      "At": "2026-06-18T13:18:52.6112756+00:00",
+      "Summary": "Frozen spec written."
+    },
+    {
+      "Stage": 1,
+      "At": "2026-06-18T13:18:55.0776295+00:00",
+      "Summary": "RED reason classified.",
+      "Details": {
+        "reason": 0,
+        "testCode": 0
+      }
+    }
+  ],
+  "VerifyPasses": []
+}
