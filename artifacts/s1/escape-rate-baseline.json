@@ -1,4 +1,14 @@
 {
-  "wrongImplEscapeRate": 0.0,
-  "note": "Ratchet baseline from first S1 harness run (seeds=8, offline DefectInjectionGenerator). CI fails only if escape rate increases above this value."
+  "catalogVersions": {
+    "s1-v1": {
+      "wrongImplEscapeRate": 0.0,
+      "weakTestEscapeRate": 0.0,
+      "note": "Legacy S1 coarse catalog baseline."
+    },
+    "s1.1-v1": {
+      "wrongImplEscapeRate": 0.4444444444444444,
+      "weakTestEscapeRate": 0.0,
+      "note": "First s1.1 run (seeds=8, mutation-sample=3). CI ratchet compares within catalogVersion only."
+    }
+  }
 }

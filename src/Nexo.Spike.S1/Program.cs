@@ -34,9 +34,10 @@ await EscapeRateReportWriter.WriteFindingsMarkdownAsync(report, mdPath).Configur
 
 Console.WriteLine($"Wrote {jsonPath}");
 Console.WriteLine($"Wrote {mdPath}");
+Console.WriteLine($"Catalog version: {report.CatalogVersion}");
 Console.WriteLine(
     $"Wrong-impl escape rate: {report.WrongImpl.EscapeRate:P1} ({report.WrongImpl.Escapes}/{report.WrongImpl.Escapes + report.WrongImpl.Caught})");
-Console.WriteLine($"Weak-test dimension: {report.WeakTest.Status}");
+Console.WriteLine($"Weak-test dimension: {report.WeakTest.Status} (escape rate: {report.WeakTest.EscapeRate:P1})");
 
 return 0;
 
@@ -50,7 +51,7 @@ internal static class HarnessCli
 
         Options:
           --seeds N              Number of deterministic seeds (default: 8)
-          --mutation-sample M    Weak-test candidates to run (0 skips mutation; default: 0)
+          --mutation-sample M    Weak-test candidates to run (0 skips mutation; default: 3)
           --budget-minutes T     Wall-clock budget for mutation dimension (default: 30)
           --out path             Output directory (default: artifacts/s1)
           --help                 Show help
@@ -59,7 +60,7 @@ internal static class HarnessCli
     public static ParsedArgs Parse(string[] args)
     {
         var seeds = 8;
-        var mutationSample = 0;
+        var mutationSample = 3;
         var budgetMinutes = 30;
         var output = Path.Combine(Directory.GetCurrentDirectory(), "artifacts", "s1");
         var showHelp = false;

@@ -13,6 +13,7 @@ public sealed class EscapeRateHarnessOptions
     public required int BudgetMinutes { get; init; }
     public required string OutputDirectory { get; init; }
     public double MutationThresholdPercent { get; init; } = 80;
+    public IReadOnlyList<double>? ThresholdSweep { get; init; }
     public IAdversarialGenerator? Generator { get; init; }
 }
 
@@ -33,6 +34,10 @@ public sealed class EscapeRateHarness
         var workRoot = Path.Combine(options.OutputDirectory, "workspaces");
         Directory.CreateDirectory(workRoot);
         var reportRoot = Path.GetFullPath(options.OutputDirectory);
+        var deadline = DateTimeOffset.UtcNow.AddMinutes(options.BudgetMinutes);
+
+        var allAttributions = new List<CandidateOutcome>();
+        var survivingExamples = new List<SurvivingExample>();
 
         var wrongImplCandidates = generator.GenerateWrongImplCandidates(options.Seeds);
         var wrongImplBaselines = Enumerable.Range(0, options.Seeds)
@@ -40,30 +45,23 @@ public sealed class EscapeRateHarness
             .ToList();
 
         var wrongImplOutcomes = new List<CandidateOutcome>(wrongImplCandidates.Count + wrongImplBaselines.Count);
-        var survivingExamples = new List<SurvivingExample>();
 
         foreach (var candidate in wrongImplCandidates)
         {
             ct.ThrowIfCancellationRequested();
-            var (outcome, workspace, detail) = await EvaluateWrongImplAsync(candidate, workRoot, ct)
-                .ConfigureAwait(false);
+            var outcome = await EvaluateWrongImplAsync(candidate, workRoot, ct).ConfigureAwait(false);
             wrongImplOutcomes.Add(outcome);
+            allAttributions.Add(outcome);
             if (outcome.Kind == CandidateOutcomeKind.Escape)
-            {
-                survivingExamples.Add(new SurvivingExample(
-                    "wrong-impl",
-                    candidate.Tag.ToString(),
-                    candidate.Seed,
-                    ToReportRelativePath(workspace, reportRoot),
-                    detail));
-            }
+                survivingExamples.Add(ToSurvivingExample("wrong-impl", outcome, workRoot, reportRoot));
         }
 
         foreach (var baseline in wrongImplBaselines)
         {
             ct.ThrowIfCancellationRequested();
-            var (outcome, _, _) = await EvaluateWrongImplAsync(baseline, workRoot, ct).ConfigureAwait(false);
+            var outcome = await EvaluateWrongImplAsync(baseline, workRoot, ct).ConfigureAwait(false);
             wrongImplOutcomes.Add(outcome);
+            allAttributions.Add(outcome);
         }
 
         var wrongImplReport = EscapeRateTally.BuildDimensionReport(
@@ -74,6 +72,8 @@ public sealed class EscapeRateHarness
             TransformCatalog.WrongImplTags);
 
         DimensionReport weakTestReport;
+        ThresholdSensitivityReport? thresholdSensitivity = null;
+
         if (options.MutationSample <= 0)
         {
             weakTestReport = SkippedDimension("MutationGate", "mutation-sample-zero");
@@ -84,16 +84,17 @@ public sealed class EscapeRateHarness
         }
         else
         {
-            var deadline = DateTimeOffset.UtcNow.AddMinutes(options.BudgetMinutes);
             var weakCandidates = generator.GenerateWeakTestCandidates(options.Seeds)
                 .Take(options.MutationSample)
                 .ToList();
-            var weakBaselines = new List<AdversarialCandidate>();
-            if (weakCandidates.Count > 0)
-                weakBaselines.Add(generator.GenerateHonestBaseline(weakCandidates[0].Seed));
+            var weakBaselines = weakCandidates.Count > 0
+                ? [generator.GenerateHonestBaseline(weakCandidates[0].Seed)]
+                : new List<AdversarialCandidate>();
 
-            var weakOutcomes = new List<CandidateOutcome>(weakCandidates.Count + weakBaselines.Count);
+            var weakOutcomes = new List<CandidateOutcome>();
+            var sweepWorkspaces = new Dictionary<TransformTag, string>();
             var budgetExceeded = false;
+            var sensitivityComplete = false;
 
             foreach (var candidate in weakCandidates)
             {
@@ -104,25 +105,21 @@ public sealed class EscapeRateHarness
                     break;
                 }
 
-                var (outcome, workspace, detail) = await EvaluateWeakTestAsync(
+                var (outcome, workspace) = await EvaluateWeakTestAsync(
                         candidate,
                         workRoot,
                         options.MutationThresholdPercent,
                         ct)
                     .ConfigureAwait(false);
                 weakOutcomes.Add(outcome);
+                allAttributions.Add(outcome);
                 if (outcome.Kind == CandidateOutcomeKind.Escape)
-                {
-                    survivingExamples.Add(new SurvivingExample(
-                        "weak-test",
-                        candidate.Tag.ToString(),
-                        candidate.Seed,
-                        ToReportRelativePath(workspace, reportRoot),
-                        detail));
-                }
+                    survivingExamples.Add(ToSurvivingExample("weak-test", outcome, workRoot, reportRoot));
+                if (outcome.Kind is CandidateOutcomeKind.Escape or CandidateOutcomeKind.Caught)
+                    sweepWorkspaces[candidate.Tag] = workspace;
             }
 
-            if (!budgetExceeded && weakBaselines.Count > 0)
+            if (!budgetExceeded)
             {
                 foreach (var baseline in weakBaselines)
                 {
@@ -132,17 +129,54 @@ public sealed class EscapeRateHarness
                         break;
                     }
 
-                    var (outcome, _, _) = await EvaluateWeakTestAsync(
+                    var (outcome, _) = await EvaluateWeakTestAsync(
                             baseline,
                             workRoot,
                             options.MutationThresholdPercent,
                             ct)
                         .ConfigureAwait(false);
                     weakOutcomes.Add(outcome);
+                    allAttributions.Add(outcome);
                 }
             }
 
-            var status = budgetExceeded ? "completed-budget-truncated" : "completed";
+            if (!budgetExceeded && sweepWorkspaces.Count > 0)
+            {
+                var thresholds = options.ThresholdSweep ?? TransformCatalog.WeakTestThresholdSweep;
+                var sweepResults = new Dictionary<TransformTag, IReadOnlyList<CandidateOutcomeKind>>();
+
+                foreach (var (tag, workspace) in sweepWorkspaces)
+                {
+                    if (DateTimeOffset.UtcNow >= deadline)
+                    {
+                        budgetExceeded = true;
+                        break;
+                    }
+
+                    var kinds = new List<CandidateOutcomeKind>();
+                    foreach (var threshold in thresholds)
+                    {
+                        if (DateTimeOffset.UtcNow >= deadline)
+                        {
+                            budgetExceeded = true;
+                            break;
+                        }
+
+                        kinds.Add(await RunMutationThresholdAsync(workspace, threshold, ct).ConfigureAwait(false));
+                    }
+
+                    sweepResults[tag] = kinds;
+                }
+
+                if (sweepResults.Count == sweepWorkspaces.Count)
+                    sensitivityComplete = true;
+
+                thresholdSensitivity = EscapeRateTally.BuildThresholdSensitivity(thresholds, sweepResults);
+            }
+
+            var status = budgetExceeded
+                ? sensitivityComplete ? "completed-budget-truncated" : "completed-budget-truncated-before-sensitivity"
+                : "completed";
             weakTestReport = EscapeRateTally.BuildDimensionReport(
                 "MutationGate",
                 status,
@@ -153,6 +187,7 @@ public sealed class EscapeRateHarness
 
         return new EscapeRateReport(
             EscapeRateReport.Version,
+            TransformCatalog.CatalogVersion,
             adversaryMode,
             options.Seeds,
             options.MutationSample,
@@ -160,15 +195,20 @@ public sealed class EscapeRateHarness
             tools,
             wrongImplReport,
             weakTestReport,
+            thresholdSensitivity,
+            allAttributions,
             survivingExamples);
     }
 
-    internal async Task<(CandidateOutcome Outcome, string WorkspacePath, string? Detail)> EvaluateWrongImplAsync(
+    internal async Task<CandidateOutcome> EvaluateWrongImplAsync(
         AdversarialCandidate candidate,
         string workRoot,
         CancellationToken ct)
     {
         var workspace = Path.Combine(workRoot, $"wrong-impl-{candidate.Seed:D4}-{candidate.Tag}");
+        var definition = TransformAttribution.Get(candidate.Tag);
+        var diff = TransformCatalog.BuildImplDiff(candidate.Tag);
+
         try
         {
             await MaterializeWorkspaceAsync(candidate, workspace, ct).ConfigureAwait(false);
@@ -177,58 +217,53 @@ public sealed class EscapeRateHarness
                 await SpikeWorkspaceScaffold.BuildAsync(workspace, ct).ConfigureAwait(false);
             if (buildCode != 0 || buildTimedOut)
             {
-                return (
-                    Blocked(candidate, $"build failed: {TrimForReport(buildOut, buildErr)}"),
-                    workspace,
-                    null);
+                return Blocked(
+                    candidate,
+                    definition,
+                    diff,
+                    $"build failed: {TrimForReport(buildOut, buildErr)}");
             }
 
             var propertyResult = await _propertyGate.RunAsync(workspace, ct).ConfigureAwait(false);
             if (candidate.Family == TransformFamily.HonestBaseline)
             {
-                return (
-                    propertyResult.Passed
-                        ? new CandidateOutcome(candidate.Tag, candidate.Family, candidate.Seed, CandidateOutcomeKind.Accepted, "accepted")
-                        : new CandidateOutcome(
-                            candidate.Tag,
-                            candidate.Family,
-                            candidate.Seed,
-                            CandidateOutcomeKind.FalseReject,
-                            TrimForReport(propertyResult.RawOutput)),
-                    workspace,
-                    null);
+                return propertyResult.Passed
+                    ? Accepted(candidate, definition)
+                    : FalseReject(candidate, definition, propertyResult.RawOutput);
             }
 
-            return (
-                propertyResult.Passed
-                    ? new CandidateOutcome(
-                        candidate.Tag,
-                        candidate.Family,
-                        candidate.Seed,
-                        CandidateOutcomeKind.Escape,
-                        "PropertyGate passed")
-                    : new CandidateOutcome(
-                        candidate.Tag,
-                        candidate.Family,
-                        candidate.Seed,
-                        CandidateOutcomeKind.Caught,
-                        TrimForReport(propertyResult.RawOutput)),
-                workspace,
-                propertyResult.Passed ? "property-gate-pass" : null);
+            if (propertyResult.Passed)
+            {
+                return Escape(
+                    candidate,
+                    definition,
+                    diff,
+                    TransformAttribution.ResolveMissingRelation(definition));
+            }
+
+            return Caught(
+                candidate,
+                definition,
+                diff,
+                TransformAttribution.ResolveCaughtBy(propertyResult.RawOutput, definition),
+                propertyResult.RawOutput);
         }
         catch (Exception ex)
         {
-            return (Blocked(candidate, ex.Message), workspace, null);
+            return Blocked(candidate, definition, diff, ex.Message);
         }
     }
 
-    internal async Task<(CandidateOutcome Outcome, string WorkspacePath, string? Detail)> EvaluateWeakTestAsync(
+    internal async Task<(CandidateOutcome Outcome, string WorkspacePath)> EvaluateWeakTestAsync(
         AdversarialCandidate candidate,
         string workRoot,
         double mutationThresholdPercent,
         CancellationToken ct)
     {
         var workspace = Path.Combine(workRoot, $"weak-test-{candidate.Seed:D4}-{candidate.Tag}");
+        var definition = TransformAttribution.Get(candidate.Tag);
+        var diff = TransformCatalog.BuildTestDiff(candidate.Tag);
+
         try
         {
             await MaterializeWorkspaceAsync(candidate, workspace, ct).ConfigureAwait(false);
@@ -237,20 +272,14 @@ public sealed class EscapeRateHarness
                 await SpikeWorkspaceScaffold.BuildAsync(workspace, ct).ConfigureAwait(false);
             if (buildCode != 0 || buildTimedOut)
             {
-                return (
-                    Blocked(candidate, $"build failed: {TrimForReport(buildOut, buildErr)}"),
-                    workspace,
-                    null);
+                return (Blocked(candidate, definition, diff, $"build failed: {TrimForReport(buildOut, buildErr)}"), workspace);
             }
 
             var (testCode, testOut, testErr, testTimedOut) =
                 await SpikeWorkspaceScaffold.TestWithRebuildAsync(workspace, ct).ConfigureAwait(false);
             if (testCode != 0 || testTimedOut)
             {
-                return (
-                    Blocked(candidate, $"tests failed: {TrimForReport(testOut, testErr)}"),
-                    workspace,
-                    null);
+                return (Blocked(candidate, definition, diff, $"tests failed: {TrimForReport(testOut, testErr)}"), workspace);
             }
 
             var mutationResult = await _mutationGate.RunAsync(workspace, mutationThresholdPercent, ct)
@@ -258,48 +287,140 @@ public sealed class EscapeRateHarness
 
             if (candidate.Family == TransformFamily.HonestBaseline)
             {
-                return (
-                    mutationResult.Passed
-                        ? new CandidateOutcome(candidate.Tag, candidate.Family, candidate.Seed, CandidateOutcomeKind.Accepted, "accepted")
-                        : new CandidateOutcome(
-                            candidate.Tag,
-                            candidate.Family,
-                            candidate.Seed,
-                            CandidateOutcomeKind.FalseReject,
-                            TrimForReport(mutationResult.RawOutput)),
-                    workspace,
-                    null);
+                return mutationResult.Passed
+                    ? (Accepted(candidate, definition), workspace)
+                    : (FalseReject(candidate, definition, mutationResult.RawOutput), workspace);
             }
 
-            var survivors = mutationResult.SurvivingMutants.Count == 0
-                ? $"score={mutationResult.MutationScore:F1}%"
-                : string.Join("; ", mutationResult.SurvivingMutants.Take(3));
+            if (mutationResult.Passed)
+            {
+                return (Escape(
+                    candidate,
+                    definition,
+                    diff,
+                    $"mutation score {mutationResult.MutationScore:F1}% >= {mutationThresholdPercent:F0}% threshold"), workspace);
+            }
 
-            return (
-                mutationResult.Passed
-                    ? new CandidateOutcome(
-                        candidate.Tag,
-                        candidate.Family,
-                        candidate.Seed,
-                        CandidateOutcomeKind.Escape,
-                        $"MutationGate passed ({mutationResult.MutationScore:F1}%)")
-                    : new CandidateOutcome(
-                        candidate.Tag,
-                        candidate.Family,
-                        candidate.Seed,
-                        CandidateOutcomeKind.Caught,
-                        TrimForReport(mutationResult.RawOutput)),
-                workspace,
-                mutationResult.Passed ? survivors : null);
+            return (Caught(
+                candidate,
+                definition,
+                diff,
+                TransformAttribution.ResolveCaughtBy(mutationResult.RawOutput, definition),
+                mutationResult.RawOutput), workspace);
         }
         catch (Exception ex)
         {
-            return (Blocked(candidate, ex.Message), workspace, null);
+            return (Blocked(candidate, definition, diff, ex.Message), workspace);
         }
     }
 
-    private static CandidateOutcome Blocked(AdversarialCandidate candidate, string detail) =>
-        new(candidate.Tag, candidate.Family, candidate.Seed, CandidateOutcomeKind.Blocked, detail);
+    private async Task<CandidateOutcomeKind> RunMutationThresholdAsync(
+        string workspace,
+        double threshold,
+        CancellationToken ct)
+    {
+        var reportsDir = Path.Combine(workspace, "mutation-reports");
+        if (Directory.Exists(reportsDir))
+            Directory.Delete(reportsDir, recursive: true);
+
+        var mutationResult = await _mutationGate.RunAsync(workspace, threshold, ct).ConfigureAwait(false);
+        return mutationResult.Passed ? CandidateOutcomeKind.Escape : CandidateOutcomeKind.Caught;
+    }
+
+    private static CandidateOutcome Escape(
+        AdversarialCandidate candidate,
+        TransformDefinition definition,
+        string diff,
+        string missingRelation) =>
+        new(
+            candidate.Tag,
+            candidate.Family,
+            candidate.Seed,
+            CandidateOutcomeKind.Escape,
+            "gate passed",
+            definition.Hypothesis,
+            null,
+            missingRelation,
+            diff);
+
+    private static CandidateOutcome Caught(
+        AdversarialCandidate candidate,
+        TransformDefinition definition,
+        string diff,
+        string caughtBy,
+        string rawOutput) =>
+        new(
+            candidate.Tag,
+            candidate.Family,
+            candidate.Seed,
+            CandidateOutcomeKind.Caught,
+            TrimForReport(rawOutput),
+            definition.Hypothesis,
+            caughtBy,
+            null,
+            diff);
+
+    private static CandidateOutcome Accepted(AdversarialCandidate candidate, TransformDefinition definition) =>
+        new(
+            candidate.Tag,
+            candidate.Family,
+            candidate.Seed,
+            CandidateOutcomeKind.Accepted,
+            "accepted",
+            definition.Hypothesis,
+            definition.ExpectedRelation,
+            null,
+            null);
+
+    private static CandidateOutcome FalseReject(
+        AdversarialCandidate candidate,
+        TransformDefinition definition,
+        string rawOutput) =>
+        new(
+            candidate.Tag,
+            candidate.Family,
+            candidate.Seed,
+            CandidateOutcomeKind.FalseReject,
+            TrimForReport(rawOutput),
+            definition.Hypothesis,
+            null,
+            definition.ExpectedRelation,
+            null);
+
+    private static CandidateOutcome Blocked(
+        AdversarialCandidate candidate,
+        TransformDefinition definition,
+        string diff,
+        string detail) =>
+        new(
+            candidate.Tag,
+            candidate.Family,
+            candidate.Seed,
+            CandidateOutcomeKind.Blocked,
+            detail,
+            definition.Hypothesis,
+            null,
+            null,
+            diff);
+
+    private static SurvivingExample ToSurvivingExample(
+        string dimension,
+        CandidateOutcome outcome,
+        string workRoot,
+        string reportRoot)
+    {
+        var workspace = Path.Combine(
+            workRoot,
+            $"{dimension}-{outcome.Seed:D4}-{outcome.Tag}");
+        return new SurvivingExample(
+            dimension,
+            outcome.Tag.ToString(),
+            outcome.Seed,
+            ToReportRelativePath(workspace, reportRoot),
+            outcome.Hypothesis,
+            outcome.MissingRelation ?? outcome.CaughtBy ?? "n/a",
+            outcome.DiffSummary ?? "(no diff)");
+    }
 
     private static async Task MaterializeWorkspaceAsync(
         AdversarialCandidate candidate,

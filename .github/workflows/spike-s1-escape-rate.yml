@@ -6,7 +6,7 @@ on:
     - cron: "0 6 * * 1"
 
 jobs:
-  escape-rate-wrong-impl:
+  escape-rate:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -20,12 +20,12 @@ jobs:
       - name: Install dotnet-stryker
         run: dotnet tool install -g dotnet-stryker
 
-      - name: Run wrong-impl dimension (offline, seeds=8)
+      - name: Run escape-rate harness (offline, seeds=8, mutation-sample=3)
         run: |
           export PATH="$HOME/.dotnet/tools:$PATH"
-          dotnet run --project src/Nexo.Spike.S1 -- --seeds 8 --mutation-sample 0 --out artifacts/s1
+          dotnet run --project src/Nexo.Spike.S1 -- --seeds 8 --mutation-sample 3 --budget-minutes 45 --out artifacts/s1
 
-      - name: Ratchet wrong-impl escape rate
+      - name: Ratchet escape rate within catalog version
         run: |
           python3 <<'PY'
           import json
@@ -35,14 +35,33 @@ jobs:
           baseline_path = Path("artifacts/s1/escape-rate-baseline.json")
 
           report = json.loads(report_path.read_text())
-          rate = report["wrongImpl"]["escapeRate"]
           baseline = json.loads(baseline_path.read_text())
-          baseline_rate = baseline["wrongImplEscapeRate"]
+          catalog = report["catalogVersion"]
+          versions = baseline.get("catalogVersions", {})
 
-          print(f"wrong-impl escape rate: {rate:.6f} (baseline {baseline_rate:.6f})")
-          if rate > baseline_rate + 1e-9:
+          if catalog not in versions:
               raise SystemExit(
-                  f"Escape rate regressed: {rate:.6f} > baseline {baseline_rate:.6f}"
+                  f"No baseline entry for catalogVersion {catalog!r}. "
+                  "Commit a baseline from the first run for this catalog version."
+              )
+
+          entry = versions[catalog]
+          wrong_rate = report["wrongImpl"]["escapeRate"]
+          weak_rate = report["weakTest"]["escapeRate"]
+          base_wrong = entry.get("wrongImplEscapeRate")
+          base_weak = entry.get("weakTestEscapeRate")
+
+          print(f"catalogVersion={catalog}")
+          print(f"wrong-impl escape rate: {wrong_rate:.6f} (baseline {base_wrong})")
+          print(f"weak-test escape rate: {weak_rate:.6f} (baseline {base_weak})")
+
+          if base_wrong is not None and wrong_rate > float(base_wrong) + 1e-9:
+              raise SystemExit(
+                  f"Wrong-impl escape rate regressed for {catalog}: {wrong_rate:.6f} > {base_wrong}"
+              )
+          if base_weak is not None and weak_rate > float(base_weak) + 1e-9:
+              raise SystemExit(
+                  f"Weak-test escape rate regressed for {catalog}: {weak_rate:.6f} > {base_weak}"
               )
           PY
 

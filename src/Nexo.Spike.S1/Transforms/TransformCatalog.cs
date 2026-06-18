@@ -35,7 +35,9 @@ public static class HonestFixtures
 
 public static class TransformCatalog
 {
-    public static IReadOnlyList<TransformTag> WrongImplTags { get; } =
+    public const string CatalogVersion = "s1.1-v1";
+
+    public static IReadOnlyList<TransformTag> CoarseWrongImplTags { get; } =
     [
         TransformTag.OffByOne,
         TransformTag.BoundaryInclusive,
@@ -45,6 +47,25 @@ public static class TransformCatalog
         TransformTag.SwappedOperands
     ];
 
+    public static IReadOnlyList<TransformTag> SemanticWrongImplTags { get; } =
+    [
+        TransformTag.SemanticTypePrecedenceDecimalFirst,
+        TransformTag.SemanticTypePrecedenceZeroOneBool,
+        TransformTag.SemanticEmptyWhitespaceRetained,
+        TransformTag.SemanticFormatLeadingZeros,
+        TransformTag.SemanticFormatThousands,
+        TransformTag.SemanticFormatScientific,
+        TransformTag.SemanticFormatLocaleComma,
+        TransformTag.SemanticFormatSignedZero,
+        TransformTag.SemanticSamplingWindow,
+        TransformTag.SemanticBooleanYesNo,
+        TransformTag.SemanticBooleanYn,
+        TransformTag.SemanticHeterogeneousFallback
+    ];
+
+    public static IReadOnlyList<TransformTag> WrongImplTags { get; } =
+        CoarseWrongImplTags.Concat(SemanticWrongImplTags).ToList();
+
     public static IReadOnlyList<TransformTag> WeakTestTags { get; } =
     [
         TransformTag.AssertionRemoved,
@@ -52,6 +73,8 @@ public static class TransformCatalog
         TransformTag.OverNarrowDomain,
         TransformTag.TypeOnlyAssert
     ];
+
+    public static IReadOnlyList<double> WeakTestThresholdSweep { get; } = [60, 75, 90];
 
     public static string ApplyImplTransform(TransformTag tag, string source) => tag switch
     {
@@ -62,6 +85,18 @@ public static class TransformCatalog
         TransformTag.DroppedBranch => ImplTransforms.DroppedBranch(source),
         TransformTag.ConstantReturn => ImplTransforms.ConstantReturn(source),
         TransformTag.SwappedOperands => ImplTransforms.SwappedOperands(source),
+        TransformTag.SemanticTypePrecedenceDecimalFirst => SemanticImplTransforms.TypePrecedenceDecimalFirst(source),
+        TransformTag.SemanticTypePrecedenceZeroOneBool => SemanticImplTransforms.TypePrecedenceZeroOneBool(source),
+        TransformTag.SemanticEmptyWhitespaceRetained => SemanticImplTransforms.EmptyWhitespaceRetained(source),
+        TransformTag.SemanticFormatLeadingZeros => SemanticImplTransforms.FormatLeadingZeros(source),
+        TransformTag.SemanticFormatThousands => SemanticImplTransforms.FormatThousands(source),
+        TransformTag.SemanticFormatScientific => SemanticImplTransforms.FormatScientific(source),
+        TransformTag.SemanticFormatLocaleComma => SemanticImplTransforms.FormatLocaleComma(source),
+        TransformTag.SemanticFormatSignedZero => SemanticImplTransforms.FormatSignedZero(source),
+        TransformTag.SemanticSamplingWindow => SemanticImplTransforms.SamplingWindow(source),
+        TransformTag.SemanticBooleanYesNo => SemanticImplTransforms.BooleanYesNo(source),
+        TransformTag.SemanticBooleanYn => SemanticImplTransforms.BooleanYn(source),
+        TransformTag.SemanticHeterogeneousFallback => SemanticImplTransforms.HeterogeneousFallback(source),
         _ => throw new ArgumentOutOfRangeException(nameof(tag), tag, "Not an impl transform")
     };
 
@@ -74,6 +109,51 @@ public static class TransformCatalog
         TransformTag.TypeOnlyAssert => TestTransforms.TypeOnlyAssert(source),
         _ => throw new ArgumentOutOfRangeException(nameof(tag), tag, "Not a test transform")
     };
+
+    public static string BuildImplDiff(TransformTag tag)
+    {
+        var honest = Implementation;
+        var defective = ApplyImplTransform(tag, honest);
+        return ImplDiffBuilder.Build(honest, defective);
+    }
+
+    public static string BuildTestDiff(TransformTag tag)
+    {
+        var honest = Tests;
+        var defective = ApplyTestTransform(tag, honest);
+        return ImplDiffBuilder.Build(honest, defective);
+    }
+
+    private static string Implementation => HonestFixtures.Implementation;
+    private static string Tests => HonestFixtures.Tests;
+}
+
+internal static class ImplDiffBuilder
+{
+    public static string Build(string before, string after)
+    {
+        if (string.Equals(before, after, StringComparison.Ordinal))
+            return "(no diff)";
+
+        var beforeLines = before.Split('\n');
+        var afterLines = after.Split('\n');
+        var sb = new StringBuilder();
+        var max = Math.Max(beforeLines.Length, afterLines.Length);
+        for (var i = 0; i < max; i++)
+        {
+            var left = i < beforeLines.Length ? beforeLines[i] : null;
+            var right = i < afterLines.Length ? afterLines[i] : null;
+            if (left == right)
+                continue;
+
+            if (left is not null)
+                sb.AppendLine($"- {left.TrimEnd()}");
+            if (right is not null)
+                sb.AppendLine($"+ {right.TrimEnd()}");
+        }
+
+        return sb.Length == 0 ? "(no diff)" : sb.ToString().TrimEnd();
+    }
 }
 
 internal static class ImplTransforms
@@ -162,7 +242,7 @@ internal static class TestTransforms
 
     public static string OverNarrowDomain(string source)
     {
-        var keep = """
+        const string keep = """
     [Fact]
     public void Integer_column_is_inferred_as_Integer()
     {

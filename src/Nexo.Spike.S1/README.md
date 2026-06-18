@@ -12,11 +12,11 @@ Measures how often deliberately-wrong implementations and deliberately-weak test
 From repository root:
 
 ```bash
-# Cheap dimension only (PropertyGate sweep; deterministic, no API keys)
-dotnet run --project src/Nexo.Spike.S1 -- --seeds 8 --mutation-sample 0
+# Full run: wrong-impl sweep + weak-test mutation sample (default mutation-sample=3)
+dotnet run --project src/Nexo.Spike.S1 -- --seeds 8 --mutation-sample 3 --budget-minutes 45
 
-# Add bounded mutation sampling when Stryker is installed
-dotnet run --project src/Nexo.Spike.S1 -- --seeds 8 --mutation-sample 3 --budget-minutes 30
+# Wrong-impl only (skip mutation dimension)
+dotnet run --project src/Nexo.Spike.S1 -- --seeds 8 --mutation-sample 0
 ```
 
 Outputs:
@@ -29,7 +29,7 @@ Outputs:
 | Flag | Default | Description |
 | --- | --- | --- |
 | `--seeds N` | `8` | Deterministic seed sweep (catalog × seeds for wrong-impl) |
-| `--mutation-sample M` | `0` | Weak-test candidates via MutationGate (`0` skips) |
+| `--mutation-sample M` | `3` | Weak-test candidates via MutationGate (`0` skips) |
 | `--budget-minutes T` | `30` | Wall-clock cap for mutation dimension |
 | `--out path` | `artifacts/s1` | Output directory |
 
@@ -42,4 +42,4 @@ Outputs:
 
 ## Metric scope
 
-The offline transform catalog is a **lower bound** on escape rate. Adaptive or LLM adversaries may find additional escapes. False-reject counts come from honest no-op baselines through the same gates.
+Catalog version `s1.1-v1` includes coarse and **semantic** wrong-impl transforms designed to probe gaps in the frozen property oracle. Escapes are signal — each names a missing property relation. This is not a target of 0%; attributed escapes form the property-authoring backlog. Adaptive or LLM adversaries may find additional escapes.
