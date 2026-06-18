@@ -1,0 +1,53 @@
+name: Spike S1 Escape Rate (manual)
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 6 * * 1"
+
+jobs:
+  escape-rate-wrong-impl:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Install dotnet-stryker
+        run: dotnet tool install -g dotnet-stryker
+
+      - name: Run wrong-impl dimension (offline, seeds=8)
+        run: |
+          export PATH="$HOME/.dotnet/tools:$PATH"
+          dotnet run --project src/Nexo.Spike.S1 -- --seeds 8 --mutation-sample 0 --out artifacts/s1
+
+      - name: Ratchet wrong-impl escape rate
+        run: |
+          python3 <<'PY'
+          import json
+          from pathlib import Path
+
+          report_path = Path("artifacts/s1/escape-rate-report.json")
+          baseline_path = Path("artifacts/s1/escape-rate-baseline.json")
+
+          report = json.loads(report_path.read_text())
+          rate = report["wrongImpl"]["escapeRate"]
+          baseline = json.loads(baseline_path.read_text())
+          baseline_rate = baseline["wrongImplEscapeRate"]
+
+          print(f"wrong-impl escape rate: {rate:.6f} (baseline {baseline_rate:.6f})")
+          if rate > baseline_rate + 1e-9:
+              raise SystemExit(
+                  f"Escape rate regressed: {rate:.6f} > baseline {baseline_rate:.6f}"
+              )
+          PY
+
+      - name: Upload escape-rate report
+        uses: actions/upload-artifact@v4
+        with:
+          name: s1-escape-rate-report
+          path: artifacts/s1/

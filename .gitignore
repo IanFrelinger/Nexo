@@ -5,7 +5,11 @@ docs/api/api/
 # Build artifacts
 **/bin/
 **/obj/
-artifacts/
+artifacts/*
+# S1 gate-escape-rate harness reports (committed from actual runs)
+!artifacts/s1/
+!artifacts/s1/**
+artifacts/s1/workspaces/
 # Nested helper tool under Nexo.Tests.Infrastructure (never commit its build output)
 src/Nexo.Tests.Infrastructure/scripts/bin/
 src/Nexo.Tests.Infrastructure/scripts/obj/

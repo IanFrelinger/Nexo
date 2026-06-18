@@ -1,0 +1,4 @@
+{
+  "wrongImplEscapeRate": 0.0,
+  "note": "Ratchet baseline from first S1 harness run (seeds=8, offline DefectInjectionGenerator). CI fails only if escape rate increases above this value."
+}

@@ -1,0 +1,3 @@
+{
+  "install": "bash scripts/cursor-agent-setup-s1.sh"
+}

@@ -1,0 +1,101 @@
+{
+  "reportVersion": "s1-v1",
+  "adversaryMode": "offline",
+  "seeds": 8,
+  "mutationSample": 0,
+  "budgetMinutes": 30,
+  "tools": {
+    "dotnetAvailable": true,
+    "strykerAvailable": true,
+    "strykerDetail": "dotnet stryker --help"
+  },
+  "wrongImpl": {
+    "status": "completed",
+    "gate": "PropertyGate",
+    "totalCandidates": 56,
+    "escapes": 0,
+    "caught": 48,
+    "falseRejects": 0,
+    "blocked": 0,
+    "escapeRate": 0,
+    "falseRejectRate": 0,
+    "perTransform": {
+      "OffByOne": {
+        "total": 8,
+        "escapes": 0,
+        "caught": 8,
+        "falseRejects": 0,
+        "blocked": 0,
+        "escapeRate": 0,
+        "falseRejectRate": 0
+      },
+      "BoundaryInclusive": {
+        "total": 8,
+        "escapes": 0,
+        "caught": 8,
+        "falseRejects": 0,
+        "blocked": 0,
+        "escapeRate": 0,
+        "falseRejectRate": 0
+      },
+      "NegatedCondition": {
+        "total": 8,
+        "escapes": 0,
+        "caught": 8,
+        "falseRejects": 0,
+        "blocked": 0,
+        "escapeRate": 0,
+        "falseRejectRate": 0
+      },
+      "DroppedBranch": {
+        "total": 8,
+        "escapes": 0,
+        "caught": 8,
+        "falseRejects": 0,
+        "blocked": 0,
+        "escapeRate": 0,
+        "falseRejectRate": 0
+      },
+      "ConstantReturn": {
+        "total": 8,
+        "escapes": 0,
+        "caught": 8,
+        "falseRejects": 0,
+        "blocked": 0,
+        "escapeRate": 0,
+        "falseRejectRate": 0
+      },
+      "SwappedOperands": {
+        "total": 8,
+        "escapes": 0,
+        "caught": 8,
+        "falseRejects": 0,
+        "blocked": 0,
+        "escapeRate": 0,
+        "falseRejectRate": 0
+      },
+      "HonestNoOp": {
+        "total": 8,
+        "escapes": 0,
+        "caught": 0,
+        "falseRejects": 0,
+        "blocked": 0,
+        "escapeRate": 0,
+        "falseRejectRate": 0
+      }
+    }
+  },
+  "weakTest": {
+    "status": "skipped:mutation-sample-zero",
+    "gate": "MutationGate",
+    "totalCandidates": 0,
+    "escapes": 0,
+    "caught": 0,
+    "falseRejects": 0,
+    "blocked": 0,
+    "escapeRate": 0,
+    "falseRejectRate": 0,
+    "perTransform": {}
+  },
+  "survivingExamples": []
+}
