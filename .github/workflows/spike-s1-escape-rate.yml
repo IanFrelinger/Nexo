@@ -63,6 +63,20 @@ jobs:
               raise SystemExit(
                   f"Weak-test escape rate regressed for {catalog}: {weak_rate:.6f} > {base_weak}"
               )
+
+          density_path = Path("artifacts/s1/intent-density-report.json")
+          if density_path.exists():
+              density_report = json.loads(density_path.read_text())
+              probe_version = density_report["probeCorpusVersion"]
+              density = density_report["intentDensity"]
+              density_baselines = baseline.get("intentDensity", {})
+              if probe_version in density_baselines:
+                  base_density = density_baselines[probe_version].get("intentDensity")
+                  print(f"intent density: {density:.6f} (baseline {base_density})")
+                  if base_density is not None and density < float(base_density) - 1e-9:
+                      raise SystemExit(
+                          f"Intent density regressed for {probe_version}: {density:.6f} < {base_density}"
+                      )
           PY
 
       - name: Upload escape-rate report

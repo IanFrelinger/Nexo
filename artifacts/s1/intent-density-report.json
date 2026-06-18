@@ -1,0 +1,152 @@
+{
+  "reportVersion": "s1.2-v1",
+  "probeCorpusVersion": "s1.2-v1",
+  "catalogVersion": "s1.2-v1",
+  "intentDensity": 0.3333333333333333,
+  "pinnedCount": 4,
+  "unpinnedCount": 8,
+  "totalProbeClasses": 12,
+  "certificationThreshold": 0.95,
+  "certification": {
+    "verdict": "NotCertifiable",
+    "intentDensity": 0.3333333333333333,
+    "threshold": 0.95,
+    "message": "acceptance criteria too sparse to certify",
+    "pinnedClasses": [
+      "scientific-notation",
+      "decimal-first-precedence",
+      "sampling-window-widening",
+      "heterogeneous-fallback"
+    ],
+    "unpinnedClasses": [
+      "zero-one-literals",
+      "leading-zeros",
+      "thousands-separator",
+      "locale-comma-decimal",
+      "signed-zero",
+      "boolean-yes-no",
+      "boolean-yn",
+      "whitespace-only"
+    ],
+    "outOfScopeClasses": [
+      "zero-one-literals",
+      "leading-zeros",
+      "thousands-separator",
+      "locale-comma-decimal",
+      "signed-zero",
+      "boolean-yes-no",
+      "boolean-yn",
+      "whitespace-only"
+    ]
+  },
+  "probeClasses": [
+    {
+      "probeClassId": "zero-one-literals",
+      "description": "Numeric 0/1 string literals vs boolean classification",
+      "status": "Unpinned",
+      "decidingRelation": "silent",
+      "divergentTransform": "SemanticTypePrecedenceZeroOneBool",
+      "honestAccepted": true,
+      "divergentAccepted": true
+    },
+    {
+      "probeClassId": "leading-zeros",
+      "description": "Leading-zero numeric strings (e.g. 007)",
+      "status": "Unpinned",
+      "decidingRelation": "silent",
+      "divergentTransform": "SemanticFormatLeadingZeros",
+      "honestAccepted": true,
+      "divergentAccepted": true
+    },
+    {
+      "probeClassId": "thousands-separator",
+      "description": "Thousands-separated numerics (e.g. 1,000)",
+      "status": "Unpinned",
+      "decidingRelation": "silent",
+      "divergentTransform": "SemanticFormatThousands",
+      "honestAccepted": true,
+      "divergentAccepted": true
+    },
+    {
+      "probeClassId": "locale-comma-decimal",
+      "description": "Locale comma decimal literals (e.g. 1,5)",
+      "status": "Unpinned",
+      "decidingRelation": "silent",
+      "divergentTransform": "SemanticFormatLocaleComma",
+      "honestAccepted": true,
+      "divergentAccepted": true
+    },
+    {
+      "probeClassId": "signed-zero",
+      "description": "Signed-zero literals (\u002B0 / -0)",
+      "status": "Unpinned",
+      "decidingRelation": "silent",
+      "divergentTransform": "SemanticFormatSignedZero",
+      "honestAccepted": true,
+      "divergentAccepted": true
+    },
+    {
+      "probeClassId": "boolean-yes-no",
+      "description": "Colloquial yes/no boolean tokens",
+      "status": "Unpinned",
+      "decidingRelation": "silent",
+      "divergentTransform": "SemanticBooleanYesNo",
+      "honestAccepted": true,
+      "divergentAccepted": true
+    },
+    {
+      "probeClassId": "boolean-yn",
+      "description": "Single-letter Y/N boolean tokens",
+      "status": "Unpinned",
+      "decidingRelation": "silent",
+      "divergentTransform": "SemanticBooleanYn",
+      "honestAccepted": true,
+      "divergentAccepted": true
+    },
+    {
+      "probeClassId": "whitespace-only",
+      "description": "Whitespace-only cells treated as empty",
+      "status": "Unpinned",
+      "decidingRelation": "silent",
+      "divergentTransform": "SemanticEmptyWhitespaceRetained",
+      "honestAccepted": true,
+      "divergentAccepted": true
+    },
+    {
+      "probeClassId": "scientific-notation",
+      "description": "Scientific notation numerics (control: pinned)",
+      "status": "Pinned",
+      "decidingRelation": "none \u2014 gap: scientific notation literals not in frozen acceptance criteria",
+      "divergentTransform": "SemanticFormatScientific",
+      "honestAccepted": true,
+      "divergentAccepted": false
+    },
+    {
+      "probeClassId": "decimal-first-precedence",
+      "description": "Integer vs decimal precedence (control: pinned)",
+      "status": "Pinned",
+      "decidingRelation": "acceptance: [\u00221\u0022,\u00222\u0022,\u00223\u0022] =\u003E Integer",
+      "divergentTransform": "SemanticTypePrecedenceDecimalFirst",
+      "honestAccepted": true,
+      "divergentAccepted": false
+    },
+    {
+      "probeClassId": "sampling-window-widening",
+      "description": "Inference limited to first N cells (control: pinned)",
+      "status": "Pinned",
+      "decidingRelation": "none \u2014 gap: sampling-window / column-length invariance not in frozen criteria",
+      "divergentTransform": "SemanticSamplingWindow",
+      "honestAccepted": true,
+      "divergentAccepted": false
+    },
+    {
+      "probeClassId": "heterogeneous-fallback",
+      "description": "Mixed column fallback to partial numeric (control: pinned)",
+      "status": "Pinned",
+      "decidingRelation": "acceptance: mixed numeric and text =\u003E String",
+      "divergentTransform": "SemanticHeterogeneousFallback",
+      "honestAccepted": true,
+      "divergentAccepted": false
+    }
+  ]
+}

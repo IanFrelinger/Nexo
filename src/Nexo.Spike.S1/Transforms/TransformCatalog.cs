@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.RegularExpressions;
 using Nexo.Spike.S1.Adversary;
+using Nexo.Spike.S1.IntentDensity;
 
 namespace Nexo.Spike.S1.Transforms;
 
@@ -35,7 +36,7 @@ public static class HonestFixtures
 
 public static class TransformCatalog
 {
-    public const string CatalogVersion = "s1.1-v1";
+    public const string CatalogVersion = "s1.2-v1";
 
     public static IReadOnlyList<TransformTag> CoarseWrongImplTags { get; } =
     [
@@ -76,51 +77,75 @@ public static class TransformCatalog
 
     public static IReadOnlyList<double> WeakTestThresholdSweep { get; } = [60, 75, 90];
 
-    public static string ApplyImplTransform(TransformTag tag, string source) => tag switch
+    public static string ApplyImplTransform(TransformTag tag, string source) =>
+        ApplyImplTransform(tag, source, 0);
+
+    public static string ApplyImplTransform(TransformTag tag, string source, int seed)
+    {
+        if (tag == TransformTag.HonestNoOp)
+            return source;
+
+        var transformed = ApplyImplTransformCore(tag, source, seed);
+        return $"{transformed.TrimEnd()}\n// seed-perturb-{seed}\n";
+    }
+
+    private static string ApplyImplTransformCore(TransformTag tag, string source, int seed) => tag switch
     {
         TransformTag.HonestNoOp => source,
-        TransformTag.OffByOne => ImplTransforms.OffByOne(source),
-        TransformTag.BoundaryInclusive => ImplTransforms.BoundaryInclusive(source),
-        TransformTag.NegatedCondition => ImplTransforms.NegatedCondition(source),
-        TransformTag.DroppedBranch => ImplTransforms.DroppedBranch(source),
-        TransformTag.ConstantReturn => ImplTransforms.ConstantReturn(source),
-        TransformTag.SwappedOperands => ImplTransforms.SwappedOperands(source),
-        TransformTag.SemanticTypePrecedenceDecimalFirst => SemanticImplTransforms.TypePrecedenceDecimalFirst(source),
-        TransformTag.SemanticTypePrecedenceZeroOneBool => SemanticImplTransforms.TypePrecedenceZeroOneBool(source),
-        TransformTag.SemanticEmptyWhitespaceRetained => SemanticImplTransforms.EmptyWhitespaceRetained(source),
-        TransformTag.SemanticFormatLeadingZeros => SemanticImplTransforms.FormatLeadingZeros(source),
-        TransformTag.SemanticFormatThousands => SemanticImplTransforms.FormatThousands(source),
-        TransformTag.SemanticFormatScientific => SemanticImplTransforms.FormatScientific(source),
-        TransformTag.SemanticFormatLocaleComma => SemanticImplTransforms.FormatLocaleComma(source),
-        TransformTag.SemanticFormatSignedZero => SemanticImplTransforms.FormatSignedZero(source),
-        TransformTag.SemanticSamplingWindow => SemanticImplTransforms.SamplingWindow(source),
-        TransformTag.SemanticBooleanYesNo => SemanticImplTransforms.BooleanYesNo(source),
-        TransformTag.SemanticBooleanYn => SemanticImplTransforms.BooleanYn(source),
-        TransformTag.SemanticHeterogeneousFallback => SemanticImplTransforms.HeterogeneousFallback(source),
+        TransformTag.OffByOne => ImplTransforms.OffByOne(source, seed),
+        TransformTag.BoundaryInclusive => ImplTransforms.BoundaryInclusive(source, seed),
+        TransformTag.NegatedCondition => ImplTransforms.NegatedCondition(source, seed),
+        TransformTag.DroppedBranch => ImplTransforms.DroppedBranch(source, seed),
+        TransformTag.ConstantReturn => ImplTransforms.ConstantReturn(source, seed),
+        TransformTag.SwappedOperands => ImplTransforms.SwappedOperands(source, seed),
+        TransformTag.SemanticTypePrecedenceDecimalFirst => SemanticImplTransforms.TypePrecedenceDecimalFirst(source, seed),
+        TransformTag.SemanticTypePrecedenceZeroOneBool => SemanticImplTransforms.TypePrecedenceZeroOneBool(source, seed),
+        TransformTag.SemanticEmptyWhitespaceRetained => SemanticImplTransforms.EmptyWhitespaceRetained(source, seed),
+        TransformTag.SemanticFormatLeadingZeros => SemanticImplTransforms.FormatLeadingZeros(source, seed),
+        TransformTag.SemanticFormatThousands => SemanticImplTransforms.FormatThousands(source, seed),
+        TransformTag.SemanticFormatScientific => SemanticImplTransforms.FormatScientific(source, seed),
+        TransformTag.SemanticFormatLocaleComma => SemanticImplTransforms.FormatLocaleComma(source, seed),
+        TransformTag.SemanticFormatSignedZero => SemanticImplTransforms.FormatSignedZero(source, seed),
+        TransformTag.SemanticSamplingWindow => SemanticImplTransforms.SamplingWindow(source, seed),
+        TransformTag.SemanticBooleanYesNo => SemanticImplTransforms.BooleanYesNo(source, seed),
+        TransformTag.SemanticBooleanYn => SemanticImplTransforms.BooleanYn(source, seed),
+        TransformTag.SemanticHeterogeneousFallback => SemanticImplTransforms.HeterogeneousFallback(source, seed),
         _ => throw new ArgumentOutOfRangeException(nameof(tag), tag, "Not an impl transform")
     };
 
-    public static string ApplyTestTransform(TransformTag tag, string source) => tag switch
+    public static string ApplyTestTransform(TransformTag tag, string source) =>
+        ApplyTestTransform(tag, source, 0);
+
+    public static string ApplyTestTransform(TransformTag tag, string source, int seed)
+    {
+        if (tag == TransformTag.HonestNoOp)
+            return source;
+
+        var transformed = ApplyTestTransformCore(tag, source, seed);
+        return $"{transformed.TrimEnd()}\n// seed-perturb-{seed}\n";
+    }
+
+    private static string ApplyTestTransformCore(TransformTag tag, string source, int seed) => tag switch
     {
         TransformTag.HonestNoOp => source,
-        TransformTag.AssertionRemoved => TestTransforms.AssertionRemoved(source),
-        TransformTag.TautologyReplacement => TestTransforms.TautologyReplacement(source),
-        TransformTag.OverNarrowDomain => TestTransforms.OverNarrowDomain(source),
-        TransformTag.TypeOnlyAssert => TestTransforms.TypeOnlyAssert(source),
+        TransformTag.AssertionRemoved => TestTransforms.AssertionRemoved(source, seed),
+        TransformTag.TautologyReplacement => TestTransforms.TautologyReplacement(source, seed),
+        TransformTag.OverNarrowDomain => TestTransforms.OverNarrowDomain(source, seed),
+        TransformTag.TypeOnlyAssert => TestTransforms.TypeOnlyAssert(source, seed),
         _ => throw new ArgumentOutOfRangeException(nameof(tag), tag, "Not a test transform")
     };
 
-    public static string BuildImplDiff(TransformTag tag)
+    public static string BuildImplDiff(TransformTag tag, int seed = 0)
     {
         var honest = Implementation;
-        var defective = ApplyImplTransform(tag, honest);
+        var defective = ApplyImplTransform(tag, honest, seed);
         return ImplDiffBuilder.Build(honest, defective);
     }
 
-    public static string BuildTestDiff(TransformTag tag)
+    public static string BuildTestDiff(TransformTag tag, int seed = 0)
     {
         var honest = Tests;
-        var defective = ApplyTestTransform(tag, honest);
+        var defective = ApplyTestTransform(tag, honest, seed);
         return ImplDiffBuilder.Build(honest, defective);
     }
 
@@ -156,99 +181,69 @@ internal static class ImplDiffBuilder
     }
 }
 
-internal static class ImplTransforms
-{
-    public static string OffByOne(string source) =>
-        source.Replace(
-            "if (nonEmpty.All(v => int.TryParse(v, out _)))",
-            "if (nonEmpty.Count >= 4 && nonEmpty.All(v => int.TryParse(v, out _)))",
-            StringComparison.Ordinal);
-
-    public static string BoundaryInclusive(string source) =>
-        source.Replace(
-            "if (values.Count == 0)",
-            "if (values.Count <= 1)",
-            StringComparison.Ordinal);
-
-    public static string NegatedCondition(string source) =>
-        source.Replace(
-            "if (nonEmpty.All(IsBoolean))",
-            "if (!nonEmpty.All(IsBoolean))",
-            StringComparison.Ordinal);
-
-    public static string DroppedBranch(string source)
-    {
-        const string block = """
-
-        if (nonEmpty.All(IsDate))
-            return ColumnType.Date;
-
-""";
-        return source.Replace(block, "\n", StringComparison.Ordinal);
-    }
-
-    public static string ConstantReturn(string source)
-    {
-        const string marker = "public static ColumnType InferType(IReadOnlyList<string> values)";
-        var idx = source.IndexOf(marker, StringComparison.Ordinal);
-        if (idx < 0)
-            return source;
-
-        var brace = source.IndexOf('{', idx);
-        if (brace < 0)
-            return source;
-
-        return source[..(brace + 1)] + "\n        return ColumnType.String;\n    }\n}\n";
-    }
-
-    public static string SwappedOperands(string source)
-    {
-        const string integer = """
-        if (nonEmpty.All(v => int.TryParse(v, out _)))
-            return ColumnType.Integer;
-
-""";
-        const string decimalBlock = """
-        if (nonEmpty.All(v => decimal.TryParse(v, out _)))
-            return ColumnType.Decimal;
-
-""";
-        if (!source.Contains(integer, StringComparison.Ordinal) ||
-            !source.Contains(decimalBlock, StringComparison.Ordinal))
-        {
-            return source;
-        }
-
-        return source
-            .Replace(integer, "__DECIMAL_PLACEHOLDER__", StringComparison.Ordinal)
-            .Replace(decimalBlock, integer, StringComparison.Ordinal)
-            .Replace("__DECIMAL_PLACEHOLDER__", decimalBlock, StringComparison.Ordinal);
-    }
-}
-
 internal static class TestTransforms
 {
     private static readonly Regex ShouldBeRegex = new(
         @"ColumnTypeInferrer\.InferType\(([^)]*)\)\.Should\(\)\.Be\(ColumnType\.\w+\);",
         RegexOptions.Compiled);
 
-    public static string AssertionRemoved(string source) =>
-        ShouldBeRegex.Replace(source, "ColumnTypeInferrer.InferType($1);");
+    public static string AssertionRemoved(string source, int seed) =>
+        ShouldBeRegex.Replace(source, $"ColumnTypeInferrer.InferType($1); /* removed seed {seed} */");
 
-    public static string TautologyReplacement(string source) =>
+    public static string TautologyReplacement(string source, int seed) =>
         ShouldBeRegex.Replace(
             source,
-            "var __t = ColumnTypeInferrer.InferType($1); __t.Should().Be(__t);");
+            $"var __t{seed} = ColumnTypeInferrer.InferType($1); __t{seed}.Should().Be(__t{seed});");
 
-    public static string OverNarrowDomain(string source)
+    public static string OverNarrowDomain(string source, int seed)
     {
-        const string keep = """
+        var facts = new[]
+        {
+            """
     [Fact]
     public void Integer_column_is_inferred_as_Integer()
     {
         ColumnTypeInferrer.InferType(["1", "2", "3"]).Should().Be(ColumnType.Integer);
     }
-""";
+""",
+            """
+    [Fact]
+    public void Decimal_column_is_inferred_as_Decimal()
+    {
+        ColumnTypeInferrer.InferType(["1.5", "2.0"]).Should().Be(ColumnType.Decimal);
+    }
+""",
+            """
+    [Fact]
+    public void Boolean_column_is_inferred_as_Boolean()
+    {
+        ColumnTypeInferrer.InferType(["true", "false"]).Should().Be(ColumnType.Boolean);
+    }
+""",
+            """
+    [Fact]
+    public void Date_column_is_inferred_as_Date()
+    {
+        ColumnTypeInferrer.InferType(["2024-01-15"]).Should().Be(ColumnType.Date);
+    }
+""",
+            """
+    [Fact]
+    public void Text_column_is_inferred_as_String()
+    {
+        ColumnTypeInferrer.InferType(["hello", "world"]).Should().Be(ColumnType.String);
+    }
+""",
+            """
+    [Fact]
+    public void Mixed_numeric_and_text_is_String()
+    {
+        ColumnTypeInferrer.InferType(["1", "hello"]).Should().Be(ColumnType.String);
+    }
+"""
+        };
+
+        var keep = facts[seed % facts.Length];
         var sb = new StringBuilder();
         sb.AppendLine("using FluentAssertions;");
         sb.AppendLine("using CsvColumnInferrer;");
@@ -263,6 +258,23 @@ internal static class TestTransforms
         return sb.ToString();
     }
 
-    public static string TypeOnlyAssert(string source) =>
-        ShouldBeRegex.Replace(source, "ColumnTypeInferrer.InferType($1);");
+    public static string TypeOnlyAssert(string source, int seed)
+    {
+        source = EnsureSystemUsing(source);
+        return ShouldBeRegex.Replace(
+            source,
+            match =>
+                $"{{ var __r{seed} = ColumnTypeInferrer.InferType({match.Groups[1].Value}); __r{seed}.Should().BeOneOf(Enum.GetValues<ColumnType>()); /* type-only seed {seed} */ }}");
+    }
+
+    private static string EnsureSystemUsing(string source)
+    {
+        if (source.Contains("using System;", StringComparison.Ordinal))
+            return source;
+
+        return source.Replace(
+            "using FluentAssertions;",
+            "using System;\nusing FluentAssertions;",
+            StringComparison.Ordinal);
+    }
 }

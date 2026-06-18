@@ -1,4 +1,5 @@
 using Nexo.Spike.S1;
+using Nexo.Spike.S1.IntentDensity;
 using Nexo.Spike.S1.Reporting;
 
 var parsed = HarnessCli.Parse(args);
@@ -26,18 +27,30 @@ var options = new EscapeRateHarnessOptions
 var harness = new EscapeRateHarness();
 var report = await harness.RunAsync(options).ConfigureAwait(false);
 
+var densityAnalyzer = new IntentDensityAnalyzer();
+var densityReport = await densityAnalyzer.AnalyzeAsync(parsed.CertificationThreshold).ConfigureAwait(false);
+
 var jsonPath = Path.Combine(parsed.OutputDirectory, "escape-rate-report.json");
+var densityJsonPath = Path.Combine(parsed.OutputDirectory, "intent-density-report.json");
 var mdPath = Path.Combine(parsed.OutputDirectory, "findings.md");
 
 await EscapeRateReportWriter.WriteJsonAsync(report, jsonPath).ConfigureAwait(false);
-await EscapeRateReportWriter.WriteFindingsMarkdownAsync(report, mdPath).ConfigureAwait(false);
+await IntentDensityReportWriter.WriteJsonAsync(densityReport, densityJsonPath).ConfigureAwait(false);
+
+var findings = EscapeRateReportWriter.RenderFindings(report)
+               + "\n"
+               + IntentDensityReportWriter.RenderFindingsSection(densityReport);
+await File.WriteAllTextAsync(mdPath, findings).ConfigureAwait(false);
 
 Console.WriteLine($"Wrote {jsonPath}");
+Console.WriteLine($"Wrote {densityJsonPath}");
 Console.WriteLine($"Wrote {mdPath}");
 Console.WriteLine($"Catalog version: {report.CatalogVersion}");
 Console.WriteLine(
     $"Wrong-impl escape rate: {report.WrongImpl.EscapeRate:P1} ({report.WrongImpl.Escapes}/{report.WrongImpl.Escapes + report.WrongImpl.Caught})");
+Console.WriteLine($"Distinct wrong-impl trials: {report.DistinctWrongImplTrials} ({report.TotalWrongImplCandidates} total runs)");
 Console.WriteLine($"Weak-test dimension: {report.WeakTest.Status} (escape rate: {report.WeakTest.EscapeRate:P1})");
+Console.WriteLine($"Intent density: {densityReport.IntentDensity:P1} — certification: {densityReport.Certification.Verdict}");
 
 return 0;
 
@@ -51,8 +64,9 @@ internal static class HarnessCli
 
         Options:
           --seeds N              Number of deterministic seeds (default: 8)
-          --mutation-sample M    Weak-test candidates to run (0 skips mutation; default: 3)
+          --mutation-sample M    Weak-test candidates to run (0 skips mutation; default: 4)
           --budget-minutes T     Wall-clock budget for mutation dimension (default: 30)
+          --certification-threshold P  Intent-density certification threshold (default: 0.95)
           --out path             Output directory (default: artifacts/s1)
           --help                 Show help
         """;
@@ -60,8 +74,9 @@ internal static class HarnessCli
     public static ParsedArgs Parse(string[] args)
     {
         var seeds = 8;
-        var mutationSample = 3;
+        var mutationSample = 4;
         var budgetMinutes = 30;
+        var certificationThreshold = 0.95;
         var output = Path.Combine(Directory.GetCurrentDirectory(), "artifacts", "s1");
         var showHelp = false;
 
@@ -85,6 +100,10 @@ internal static class HarnessCli
                     if (!TryReadInt(args, ref i, out budgetMinutes) || budgetMinutes <= 0)
                         return ParsedArgs.Error("Invalid --budget-minutes value");
                     break;
+                case "--certification-threshold":
+                    if (!TryReadDouble(args, ref i, out certificationThreshold) || certificationThreshold <= 0 || certificationThreshold > 1)
+                        return ParsedArgs.Error("Invalid --certification-threshold value");
+                    break;
                 case "--out":
                     if (!TryReadString(args, ref i, out var outPath))
                         return ParsedArgs.Error("Missing value for --out");
@@ -95,13 +114,22 @@ internal static class HarnessCli
             }
         }
 
-        return new ParsedArgs(false, showHelp, seeds, mutationSample, budgetMinutes, output, null);
+        return new ParsedArgs(false, showHelp, seeds, mutationSample, budgetMinutes, certificationThreshold, output, null);
     }
 
     private static bool TryReadInt(string[] args, ref int index, out int value)
     {
         value = 0;
         if (index + 1 >= args.Length || !int.TryParse(args[index + 1], out value))
+            return false;
+        index++;
+        return true;
+    }
+
+    private static bool TryReadDouble(string[] args, ref int index, out double value)
+    {
+        value = 0;
+        if (index + 1 >= args.Length || !double.TryParse(args[index + 1], out value))
             return false;
         index++;
         return true;
@@ -123,10 +151,11 @@ internal static class HarnessCli
         int Seeds,
         int MutationSample,
         int BudgetMinutes,
+        double CertificationThreshold,
         string OutputDirectory,
         string? ErrorMessage)
     {
         public static ParsedArgs Error(string message) =>
-            new(true, false, 0, 0, 0, string.Empty, message);
+            new(true, false, 0, 0, 0, 0.95, string.Empty, message);
     }
 }

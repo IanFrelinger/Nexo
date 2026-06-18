@@ -71,6 +71,21 @@ public sealed class EscapeRateHarness
             wrongImplOutcomes.Where(o => o.Family == TransformFamily.HonestBaseline).ToList(),
             TransformCatalog.WrongImplTags);
 
+        var weakSampleCandidates = options.MutationSample <= 0
+            ? new List<AdversarialCandidate>()
+            : TransformCatalog.WeakTestTags
+                .SelectMany(tag => generator.GenerateWeakTestCandidates(options.Seeds).Where(c => c.Tag == tag).Take(1))
+                .ToList();
+
+        var distinctWrongImplTrials = wrongImplCandidates
+            .Select(c => (c.Tag, c.ImplementationSource))
+            .Distinct()
+            .Count();
+        var distinctWeakTestTrials = weakSampleCandidates
+            .Select(c => (c.Tag, c.TestSource))
+            .Distinct()
+            .Count();
+
         DimensionReport weakTestReport;
         ThresholdSensitivityReport? thresholdSensitivity = null;
 
@@ -84,9 +99,10 @@ public sealed class EscapeRateHarness
         }
         else
         {
-            var weakCandidates = generator.GenerateWeakTestCandidates(options.Seeds)
-                .Take(options.MutationSample)
-                .ToList();
+        var weakCandidates = TransformCatalog.WeakTestTags
+            .Select(tag => weakSampleCandidates.First(c => c.Tag == tag))
+            .Take(options.MutationSample)
+            .ToList();
             var weakBaselines = weakCandidates.Count > 0
                 ? [generator.GenerateHonestBaseline(weakCandidates[0].Seed)]
                 : new List<AdversarialCandidate>();
@@ -192,6 +208,10 @@ public sealed class EscapeRateHarness
             options.Seeds,
             options.MutationSample,
             options.BudgetMinutes,
+            distinctWrongImplTrials,
+            distinctWeakTestTrials,
+            wrongImplCandidates.Count,
+            weakSampleCandidates.Count,
             tools,
             wrongImplReport,
             weakTestReport,
@@ -207,7 +227,7 @@ public sealed class EscapeRateHarness
     {
         var workspace = Path.Combine(workRoot, $"wrong-impl-{candidate.Seed:D4}-{candidate.Tag}");
         var definition = TransformAttribution.Get(candidate.Tag);
-        var diff = TransformCatalog.BuildImplDiff(candidate.Tag);
+        var diff = TransformCatalog.BuildImplDiff(candidate.Tag, candidate.Seed);
 
         try
         {
@@ -262,7 +282,7 @@ public sealed class EscapeRateHarness
     {
         var workspace = Path.Combine(workRoot, $"weak-test-{candidate.Seed:D4}-{candidate.Tag}");
         var definition = TransformAttribution.Get(candidate.Tag);
-        var diff = TransformCatalog.BuildTestDiff(candidate.Tag);
+        var diff = TransformCatalog.BuildTestDiff(candidate.Tag, candidate.Seed);
 
         try
         {

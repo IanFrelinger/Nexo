@@ -24,7 +24,7 @@ public sealed class DefectInjectionGenerator : IAdversarialGenerator
                     tag,
                     TransformFamily.WrongImpl,
                     seed,
-                    TransformCatalog.ApplyImplTransform(tag, honestImpl),
+                    TransformCatalog.ApplyImplTransform(tag, honestImpl, seed),
                     honestTests));
             }
         }
@@ -50,7 +50,7 @@ public sealed class DefectInjectionGenerator : IAdversarialGenerator
                     TransformFamily.WeakTest,
                     seed,
                     honestImpl,
-                    TransformCatalog.ApplyTestTransform(tag, honestTests)));
+                    TransformCatalog.ApplyTestTransform(tag, honestTests, seed)));
             }
         }
 

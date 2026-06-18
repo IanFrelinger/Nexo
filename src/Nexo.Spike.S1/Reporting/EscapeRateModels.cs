@@ -78,6 +78,10 @@ public sealed record EscapeRateReport(
     int Seeds,
     int MutationSample,
     int BudgetMinutes,
+    int DistinctWrongImplTrials,
+    int DistinctWeakTestTrials,
+    int TotalWrongImplCandidates,
+    int TotalWeakTestCandidates,
     ToolAvailability Tools,
     DimensionReport WrongImpl,
     DimensionReport WeakTest,
@@ -85,7 +89,7 @@ public sealed record EscapeRateReport(
     IReadOnlyList<CandidateOutcome> Attributions,
     IReadOnlyList<SurvivingExample> SurvivingExamples)
 {
-    public const string Version = "s1.1-v1";
+    public const string Version = "s1.2-v1";
 }
 
 public static class EscapeRateTally
@@ -213,7 +217,7 @@ public static class EscapeRateReportWriter
             "",
             $"- **Catalog version**: `{report.CatalogVersion}`",
             $"- **Adversary**: `{report.AdversaryMode}` (offline taxonomy; not adaptive/LLM)",
-            $"- **Seeds**: {report.Seeds}",
+            $"- **Seeds**: {report.Seeds} ({report.DistinctWrongImplTrials} distinct wrong-impl trials; {report.TotalWrongImplCandidates} total runs)",
             $"- **Wrong-impl escape rate** (PropertyGate): **{report.WrongImpl.EscapeRate:P1}** " +
             $"({report.WrongImpl.Escapes}/{report.WrongImpl.Escapes + report.WrongImpl.Caught} adversarial candidates escaped)",
             $"- **Wrong-impl false-reject rate**: {report.WrongImpl.FalseRejectRate:P1}",

@@ -29,7 +29,7 @@ Outputs:
 | Flag | Default | Description |
 | --- | --- | --- |
 | `--seeds N` | `8` | Deterministic seed sweep (catalog × seeds for wrong-impl) |
-| `--mutation-sample M` | `3` | Weak-test candidates via MutationGate (`0` skips) |
+| `--mutation-sample M` | `4` | Weak-test candidates to run (0 skips mutation; one per tag up to M) |
 | `--budget-minutes T` | `30` | Wall-clock cap for mutation dimension |
 | `--out path` | `artifacts/s1` | Output directory |
 
