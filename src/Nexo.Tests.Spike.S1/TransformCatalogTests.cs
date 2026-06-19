@@ -12,8 +12,8 @@ public sealed class TransformCatalogTests
     [Fact]
     public void Catalog_has_versioned_identifier()
     {
-        TransformCatalog.CatalogVersion.Should().Be("s1.3-v1");
-        ProbeCorpus.ProbeCorpusVersion.Should().Be("s1.3-v1");
+        TransformCatalog.CatalogVersion.Should().Be("s1.4-v1");
+        ProbeCorpus.ProbeCorpusVersion.Should().Be("s1.4-v1");
         TransformAttribution.All.Should().ContainKey(TransformTag.SemanticBooleanYesNo);
     }
 
@@ -201,7 +201,7 @@ public sealed class IntentDensityTests
         ids.Should().Contain("whitespace-only");
         ids.Should().Contain("scientific-notation");
         ids.Should().Contain("heterogeneous-fallback");
-        ProbeCorpus.All.Should().HaveCount(12);
+        ProbeCorpus.All.Should().HaveCount(18);
     }
 
     [Fact]
@@ -245,13 +245,14 @@ public sealed class IntentDensityTests
     }
 
     [Fact]
-    public void All_probe_classes_expected_pinned_after_s1_3_densification()
+    public void All_probe_classes_expected_pinned_after_s1_4_multi_witness()
     {
         ProbeCorpus.All.Should().OnlyContain(p => p.ExpectedPinned);
     }
 
     private static ProbeClassResult Probe(string id, ProbePinStatus status) =>
-        new(id, id, status, status == ProbePinStatus.Pinned ? "acceptance" : "silent", TransformTag.OffByOne, true, status == ProbePinStatus.Unpinned);
+        new(id, id, status, status == ProbePinStatus.Pinned ? "acceptance" : "silent",
+            TransformTag.OffByOne, true, false, 8, [], [], []);
 }
 
 public sealed class AdversarialGeneratorFactoryTests

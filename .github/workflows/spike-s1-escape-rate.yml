@@ -23,7 +23,7 @@ jobs:
       - name: Run escape-rate harness (offline, seeds=8, mutation-sample=3)
         run: |
           export PATH="$HOME/.dotnet/tools:$PATH"
-          dotnet run --project src/Nexo.Spike.S1 -- --seeds 8 --mutation-sample 3 --budget-minutes 45 --out artifacts/s1
+          dotnet run --project src/Nexo.Spike.S1 -- --seeds 8 --mutation-sample 3 --budget-minutes 45 --negative-control --out artifacts/s1
 
       - name: Ratchet escape rate within catalog version
         run: |
@@ -77,6 +77,13 @@ jobs:
                       raise SystemExit(
                           f"Intent density regressed for {probe_version}: {density:.6f} < {base_density}"
                       )
+
+              equiv = density_report.get("equivalence")
+              if equiv is not None:
+                  holds = equiv.get("equivalenceHolds")
+                  print(f"certification equivalence holds: {holds}")
+                  if holds is not True:
+                      raise SystemExit("Certification equivalence violated: density==1.0 <=> escapes==0")
           PY
 
       - name: Upload escape-rate report

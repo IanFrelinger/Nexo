@@ -53,8 +53,8 @@ public static class TransformAttribution
                 TransformTag.SwappedOperands => new(
                     tag,
                     TransformFamily.WrongImpl,
-                    "Integer and decimal precedence swapped.",
-                    "acceptance: [\"1\",\"2\",\"3\"] => Integer; [\"1.5\",\"2.0\"] => Decimal"),
+                    "Integer/decimal or boolean/date branch precedence swapped.",
+                    "acceptance: [\"1\",\"2\",\"3\"] => Integer; [\"1.5\",\"2.0\"] => Decimal; vacuous boolean/date swap on odd seeds"),
                 _ => new(tag, TransformFamily.WrongImpl, "Coarse defect.", "PropertyGate")
             };
         }
@@ -106,8 +106,8 @@ public static class TransformAttribution
                 TransformTag.SemanticSamplingWindow => new(
                     tag,
                     TransformFamily.WrongImpl,
-                    "Inference uses only first two non-empty cells, missing later type-widening values.",
-                    "none — gap: sampling-window / column-length invariance not in frozen criteria"),
+                    "Inference uses only first N non-empty cells, missing later type-widening values.",
+                    "acceptance: [\"1\",\"2\",\"hello\"] => String; metamorphic: full-column not prefix"),
                 TransformTag.SemanticBooleanYesNo => new(
                     tag,
                     TransformFamily.WrongImpl,
@@ -168,6 +168,12 @@ public static class TransformAttribution
             return definition.ExpectedRelation.StartsWith("acceptance:", StringComparison.Ordinal)
                 ? definition.ExpectedRelation
                 : "frozen acceptance criteria (spec-derived)";
+
+        if (rawOutput.Contains("full_column", StringComparison.OrdinalIgnoreCase)
+            || rawOutput.Contains("prefix", StringComparison.OrdinalIgnoreCase))
+            return definition.ExpectedRelation.StartsWith("acceptance:", StringComparison.Ordinal)
+                ? definition.ExpectedRelation
+                : "metamorphic: full-column not prefix";
 
         if (rawOutput.Contains("whitespace", StringComparison.OrdinalIgnoreCase))
             return definition.ExpectedRelation.StartsWith("invariant:", StringComparison.Ordinal)

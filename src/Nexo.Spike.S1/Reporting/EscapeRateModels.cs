@@ -89,7 +89,7 @@ public sealed record EscapeRateReport(
     IReadOnlyList<CandidateOutcome> Attributions,
     IReadOnlyList<SurvivingExample> SurvivingExamples)
 {
-    public const string Version = "s1.3-v1";
+    public const string Version = "s1.4-v1";
 }
 
 public static class EscapeRateTally

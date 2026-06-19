@@ -16,19 +16,65 @@ if (parsed.IsError)
     return 2;
 }
 
-var options = new EscapeRateHarnessOptions
+var harness = new EscapeRateHarness();
+var report = await harness.RunAsync(new EscapeRateHarnessOptions
 {
     Seeds = parsed.Seeds,
     MutationSample = parsed.MutationSample,
     BudgetMinutes = parsed.BudgetMinutes,
     OutputDirectory = parsed.OutputDirectory
-};
-
-var harness = new EscapeRateHarness();
-var report = await harness.RunAsync(options).ConfigureAwait(false);
+}).ConfigureAwait(false);
 
 var densityAnalyzer = new IntentDensityAnalyzer();
-var densityReport = await densityAnalyzer.AnalyzeAsync(parsed.CertificationThreshold).ConfigureAwait(false);
+var densityReport = await densityAnalyzer.AnalyzeAsync(new IntentDensityOptions
+{
+    Seeds = parsed.Seeds,
+    CertificationThreshold = parsed.CertificationThreshold
+}).ConfigureAwait(false);
+
+var equivalence = CertificationEquivalence.Evaluate(densityReport, report);
+densityReport = densityReport with
+{
+    Equivalence = new CertificationEquivalenceReport(
+        equivalence.DensityEqualsOne,
+        equivalence.EscapesEqualsZero,
+        equivalence.EquivalenceHolds,
+        equivalence.IntentDensity,
+        equivalence.WrongImplEscapes,
+        equivalence.Scope)
+};
+
+NegativeControlReport? negativeControl = null;
+if (parsed.RunNegativeControl)
+{
+    var negativeIntent = ResolveNegativeControlIntent();
+    var ncHarness = await harness.RunAsync(new EscapeRateHarnessOptions
+    {
+        Seeds = parsed.Seeds,
+        MutationSample = 0,
+        BudgetMinutes = 1,
+        OutputDirectory = Path.Combine(parsed.OutputDirectory, "negative-control"),
+        IntentPath = negativeIntent
+    }).ConfigureAwait(false);
+
+    var ncDensity = await densityAnalyzer.AnalyzeAsync(new IntentDensityOptions
+    {
+        Seeds = parsed.Seeds,
+        CertificationThreshold = parsed.CertificationThreshold,
+        IntentPath = negativeIntent
+    }).ConfigureAwait(false);
+
+    var certificationRevoked =
+        ncDensity.IntentDensity < 1.0 - 1e-9 && ncHarness.WrongImpl.Escapes > 0;
+    negativeControl = new NegativeControlReport(
+        true,
+        NegativeControlStripping.RemovedRelation,
+        ncDensity.IntentDensity,
+        ncHarness.WrongImpl.Escapes,
+        certificationRevoked);
+
+    densityReport = densityReport with { NegativeControl = negativeControl };
+}
 
 var jsonPath = Path.Combine(parsed.OutputDirectory, "escape-rate-report.json");
 var densityJsonPath = Path.Combine(parsed.OutputDirectory, "intent-density-report.json");
@@ -51,8 +97,28 @@ Console.WriteLine(
 Console.WriteLine($"Distinct wrong-impl trials: {report.DistinctWrongImplTrials} ({report.TotalWrongImplCandidates} total runs)");
 Console.WriteLine($"Weak-test dimension: {report.WeakTest.Status} (escape rate: {report.WeakTest.EscapeRate:P1})");
 Console.WriteLine($"Intent density: {densityReport.IntentDensity:P1} — certification: {densityReport.Certification.Verdict}");
+Console.WriteLine($"Equivalence (density==1.0 <=> escapes==0): {equivalence.EquivalenceHolds} — {CertificationEquivalence.ScopeNote}");
+if (negativeControl is not null)
+    Console.WriteLine($"Negative control: density={negativeControl.IntentDensity:P1}, escapes={negativeControl.WrongImplEscapes}, broken={negativeControl.EquivalenceBroken}");
 
-return 0;
+return equivalence.EquivalenceHolds ? 0 : 1;
+
+static string ResolveNegativeControlIntent()
+{
+    var candidates = new[]
+    {
+        Path.Combine(Directory.GetCurrentDirectory(), "src", "Nexo.Spike.S1", "Fixtures", "honest-csv-inferrer-negative-control.json"),
+        Path.Combine(AppContext.BaseDirectory, "Fixtures", "honest-csv-inferrer-negative-control.json")
+    };
+
+    foreach (var path in candidates)
+    {
+        if (File.Exists(path))
+            return path;
+    }
+
+    throw new FileNotFoundException("honest-csv-inferrer-negative-control.json fixture not found");
+}
 
 internal static class HarnessCli
 {
@@ -67,6 +133,7 @@ internal static class HarnessCli
           --mutation-sample M    Weak-test candidates to run (0 skips mutation; default: 4)
           --budget-minutes T     Wall-clock budget for mutation dimension (default: 30)
           --certification-threshold P  Intent-density certification threshold (default: 0.95)
+          --negative-control     Run stripped-spec negative control (proves equivalence not vacuous)
           --out path             Output directory (default: artifacts/s1)
           --help                 Show help
         """;
@@ -79,6 +146,7 @@ internal static class HarnessCli
         var certificationThreshold = 0.95;
         var output = Path.Combine(Directory.GetCurrentDirectory(), "artifacts", "s1");
         var showHelp = false;
+        var runNegativeControl = false;
 
         for (var i = 0; i < args.Length; i++)
         {
@@ -104,6 +172,9 @@ internal static class HarnessCli
                     if (!TryReadDouble(args, ref i, out certificationThreshold) || certificationThreshold <= 0 || certificationThreshold > 1)
                         return ParsedArgs.Error("Invalid --certification-threshold value");
                     break;
+                case "--negative-control":
+                    runNegativeControl = true;
+                    break;
                 case "--out":
                     if (!TryReadString(args, ref i, out var outPath))
                         return ParsedArgs.Error("Missing value for --out");
@@ -114,7 +185,7 @@ internal static class HarnessCli
             }
         }
 
-        return new ParsedArgs(false, showHelp, seeds, mutationSample, budgetMinutes, certificationThreshold, output, null);
+        return new ParsedArgs(false, showHelp, seeds, mutationSample, budgetMinutes, certificationThreshold, output, runNegativeControl, null);
     }
 
     private static bool TryReadInt(string[] args, ref int index, out int value)
@@ -153,9 +224,10 @@ internal static class HarnessCli
         int BudgetMinutes,
         double CertificationThreshold,
         string OutputDirectory,
+        bool RunNegativeControl,
         string? ErrorMessage)
     {
         public static ParsedArgs Error(string message) =>
-            new(true, false, 0, 0, 0, 0.95, string.Empty, message);
+            new(true, false, 0, 0, 0, 0.95, string.Empty, false, message);
     }
 }

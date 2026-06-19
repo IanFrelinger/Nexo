@@ -12,6 +12,13 @@ public enum CertificationVerdict
     NotCertifiable
 }
 
+public sealed record ProbeSeedWitnessResult(
+    int Seed,
+    bool HonestAccepted,
+    bool DivergentAccepted,
+    bool BehaviorallyIdentical,
+    bool PinnedForSeed);
+
 public sealed record ProbeClassResult(
     string ProbeClassId,
     string Description,
@@ -19,7 +26,11 @@ public sealed record ProbeClassResult(
     string DecidingRelation,
     TransformTag DivergentTransform,
     bool HonestAccepted,
-    bool DivergentAccepted);
+    bool DivergentAccepted,
+    int WitnessSeedCount,
+    IReadOnlyList<int> EscapingSeeds,
+    IReadOnlyList<int> VacuousSeeds,
+    IReadOnlyList<ProbeSeedWitnessResult> SeedWitnesses);
 
 public sealed record CertificationResult(
     CertificationVerdict Verdict,
@@ -30,19 +41,37 @@ public sealed record CertificationResult(
     IReadOnlyList<string> UnpinnedClasses,
     IReadOnlyList<string> OutOfScopeClasses);
 
+public sealed record CertificationEquivalenceReport(
+    bool DensityEqualsOne,
+    bool EscapesEqualsZero,
+    bool EquivalenceHolds,
+    double IntentDensity,
+    int WrongImplEscapes,
+    string Scope);
+
+public sealed record NegativeControlReport(
+    bool Enabled,
+    string? RemovedRelation,
+    double IntentDensity,
+    int WrongImplEscapes,
+    bool EquivalenceBroken);
+
 public sealed record IntentDensityReport(
     string ReportVersion,
     string ProbeCorpusVersion,
     string CatalogVersion,
+    int ConfiguredSeedCount,
     double IntentDensity,
     int PinnedCount,
     int UnpinnedCount,
     int TotalProbeClasses,
     double CertificationThreshold,
     CertificationResult Certification,
+    CertificationEquivalenceReport? Equivalence,
+    NegativeControlReport? NegativeControl,
     IReadOnlyList<ProbeClassResult> ProbeClasses)
 {
-    public const string Version = "s1.3-v1";
+    public const string Version = "s1.4-v1";
 }
 
 public static class IntentDensityReportWriter
@@ -66,20 +95,48 @@ public static class IntentDensityReportWriter
     {
         var lines = new List<string>
         {
-            "## Intent density",
+            "## Intent density (multi-witness)",
             "",
+            $"- **Scope**: {CertificationEquivalence.ScopeNote}",
             $"- **Probe corpus version**: `{report.ProbeCorpusVersion}`",
-            $"- **Intent density**: **{report.IntentDensity:P1}** ({report.PinnedCount}/{report.TotalProbeClasses} probe classes pinned)",
+            $"- **Witness seeds per class**: {report.ConfiguredSeedCount}",
+            $"- **Intent density**: **{report.IntentDensity:P1}** ({report.PinnedCount}/{report.TotalProbeClasses} probe classes pinned across all seeds)",
             $"- **Certification threshold**: {report.CertificationThreshold:P0}",
             $"- **Honest-impl certification**: **{report.Certification.Verdict}** — {report.Certification.Message}",
             "",
-            "| Probe class | Status | Deciding relation |",
-            "| --- | --- | --- |"
+            "| Probe class | Status | Witnesses | Escaping seeds | Deciding relation |",
+            "| --- | --- | ---: | --- | --- |"
         };
 
         foreach (var probe in report.ProbeClasses)
         {
-            lines.Add($"| `{probe.ProbeClassId}` | {probe.Status} | {probe.DecidingRelation} |");
+            var escaping = probe.EscapingSeeds.Count == 0
+                ? "—"
+                : string.Join(", ", probe.EscapingSeeds);
+            lines.Add(
+                $"| `{probe.ProbeClassId}` | {probe.Status} | {probe.WitnessSeedCount} | {escaping} | {probe.DecidingRelation} |");
+        }
+
+        if (report.Equivalence is not null)
+        {
+            lines.Add("");
+            lines.Add("### Certification equivalence (capstone)");
+            lines.Add("");
+            lines.Add("| density==1.0 | escapes==0 | equivalence holds |");
+            lines.Add("| --- | --- | --- |");
+            lines.Add(
+                $"| {report.Equivalence.DensityEqualsOne} | {report.Equivalence.EscapesEqualsZero} | **{report.Equivalence.EquivalenceHolds}** |");
+        }
+
+        if (report.NegativeControl is { Enabled: true } control)
+        {
+            lines.Add("");
+            lines.Add("### Negative control (one relation removed)");
+            lines.Add("");
+            lines.Add($"- **Removed**: `{control.RemovedRelation}`");
+            lines.Add($"- **Intent density**: {control.IntentDensity:P1}");
+            lines.Add($"- **Wrong-impl escapes**: {control.WrongImplEscapes}");
+            lines.Add($"- **Equivalence broken (expected)**: {control.EquivalenceBroken}");
         }
 
         if (report.Certification.UnpinnedClasses.Count > 0)

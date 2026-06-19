@@ -103,4 +103,11 @@ public sealed class ColumnTypeInferrerRedTests
     {
         ColumnTypeInferrer.InferType(["   "]).Should().Be(ColumnType.String);
     }
+
+    // S1.4 pin: sampling-window — ["1","2","hello"] => String (full column, not prefix)
+    [Fact]
+    public void Prefix_integers_with_suffix_text_is_String()
+    {
+        ColumnTypeInferrer.InferType(["1", "2", "hello"]).Should().Be(ColumnType.String);
+    }
 }

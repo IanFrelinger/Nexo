@@ -7,8 +7,10 @@
     <RootNamespace>Nexo.Spike.S1</RootNamespace>
     <AssemblyTitle>Nexo Spike S1</AssemblyTitle>
     <Description>Gate escape-rate harness for S0 verification envelope.</Description>
-    <InternalsVisibleTo>Nexo.Tests.Spike.S1</InternalsVisibleTo>
   </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Nexo.Tests.Spike.S1" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Nexo.Spike.S0\Nexo.Spike.S0.csproj" />
   </ItemGroup>

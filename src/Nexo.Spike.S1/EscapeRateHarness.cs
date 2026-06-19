@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using Nexo.Spike.S0;
 using Nexo.Spike.S1.Adversary;
+using Nexo.Spike.S1.IntentDensity;
 using Nexo.Spike.S1.Reporting;
 using Nexo.Spike.S1.Transforms;
 
@@ -15,6 +16,7 @@ public sealed class EscapeRateHarnessOptions
     public double MutationThresholdPercent { get; init; } = 80;
     public IReadOnlyList<double>? ThresholdSweep { get; init; }
     public IAdversarialGenerator? Generator { get; init; }
+    public string? IntentPath { get; init; }
 }
 
 public sealed class EscapeRateHarness
@@ -49,7 +51,7 @@ public sealed class EscapeRateHarness
         foreach (var candidate in wrongImplCandidates)
         {
             ct.ThrowIfCancellationRequested();
-            var outcome = await EvaluateWrongImplAsync(candidate, workRoot, ct).ConfigureAwait(false);
+            var outcome = await EvaluateWrongImplAsync(candidate, workRoot, options.IntentPath, ct).ConfigureAwait(false);
             wrongImplOutcomes.Add(outcome);
             allAttributions.Add(outcome);
             if (outcome.Kind == CandidateOutcomeKind.Escape)
@@ -59,7 +61,7 @@ public sealed class EscapeRateHarness
         foreach (var baseline in wrongImplBaselines)
         {
             ct.ThrowIfCancellationRequested();
-            var outcome = await EvaluateWrongImplAsync(baseline, workRoot, ct).ConfigureAwait(false);
+            var outcome = await EvaluateWrongImplAsync(baseline, workRoot, options.IntentPath, ct).ConfigureAwait(false);
             wrongImplOutcomes.Add(outcome);
             allAttributions.Add(outcome);
         }
@@ -124,6 +126,7 @@ public sealed class EscapeRateHarness
                 var (outcome, workspace) = await EvaluateWeakTestAsync(
                         candidate,
                         workRoot,
+                        options.IntentPath,
                         options.MutationThresholdPercent,
                         ct)
                     .ConfigureAwait(false);
@@ -148,6 +151,7 @@ public sealed class EscapeRateHarness
                     var (outcome, _) = await EvaluateWeakTestAsync(
                             baseline,
                             workRoot,
+                            options.IntentPath,
                             options.MutationThresholdPercent,
                             ct)
                         .ConfigureAwait(false);
@@ -223,6 +227,7 @@ public sealed class EscapeRateHarness
     internal async Task<CandidateOutcome> EvaluateWrongImplAsync(
         AdversarialCandidate candidate,
         string workRoot,
+        string? intentPath,
         CancellationToken ct)
     {
         var workspace = Path.Combine(workRoot, $"wrong-impl-{candidate.Seed:D4}-{candidate.Tag}");
@@ -231,7 +236,7 @@ public sealed class EscapeRateHarness
 
         try
         {
-            await MaterializeWorkspaceAsync(candidate, workspace, ct).ConfigureAwait(false);
+            await MaterializeWorkspaceAsync(candidate, workspace, intentPath, ct).ConfigureAwait(false);
 
             var (buildCode, buildOut, buildErr, buildTimedOut) =
                 await SpikeWorkspaceScaffold.BuildAsync(workspace, ct).ConfigureAwait(false);
@@ -254,6 +259,26 @@ public sealed class EscapeRateHarness
 
             if (propertyResult.Passed)
             {
+                if (!NegativeControlStripping.IsNegativeControlIntent(intentPath))
+                {
+                    var intent = ResolveHonestIntentPath(intentPath);
+                    var identical = await BehavioralWitnessChecker.IsBehaviorallyIdenticalAsync(
+                        HonestFixtures.Implementation,
+                        candidate.ImplementationSource,
+                        intent,
+                        ct).ConfigureAwait(false);
+
+                    if (identical)
+                    {
+                        return Caught(
+                            candidate,
+                            definition,
+                            diff,
+                            "vacuous: identical outputs on frozen witnesses",
+                            propertyResult.RawOutput);
+                    }
+                }
+
                 return Escape(
                     candidate,
                     definition,
@@ -277,6 +302,7 @@ public sealed class EscapeRateHarness
     internal async Task<(CandidateOutcome Outcome, string WorkspacePath)> EvaluateWeakTestAsync(
         AdversarialCandidate candidate,
         string workRoot,
+        string? intentPath,
         double mutationThresholdPercent,
         CancellationToken ct)
     {
@@ -286,7 +312,7 @@ public sealed class EscapeRateHarness
 
         try
         {
-            await MaterializeWorkspaceAsync(candidate, workspace, ct).ConfigureAwait(false);
+            await MaterializeWorkspaceAsync(candidate, workspace, intentPath, ct).ConfigureAwait(false);
 
             var (buildCode, buildOut, buildErr, buildTimedOut) =
                 await SpikeWorkspaceScaffold.BuildAsync(workspace, ct).ConfigureAwait(false);
@@ -445,10 +471,12 @@ public sealed class EscapeRateHarness
     private static async Task MaterializeWorkspaceAsync(
         AdversarialCandidate candidate,
         string workspace,
+        string? intentPath,
         CancellationToken ct)
     {
         SpikeWorkspaceScaffold.CreateFresh(workspace, overwrite: true);
-        var intent = ResolveHonestIntentPath();
+        NegativeControlStripping.ApplyIfNeeded(workspace, intentPath);
+        var intent = ResolveHonestIntentPath(intentPath);
         await BrickSpecLoader.WriteFrozenAsync(
                 workspace,
                 await BrickSpecLoader.LoadAsync(intent, ct).ConfigureAwait(false),
@@ -463,8 +491,11 @@ public sealed class EscapeRateHarness
             candidate.TestSource);
     }
 
-    private static string ResolveHonestIntentPath()
+    private static string ResolveHonestIntentPath(string? overridePath = null)
     {
+        if (!string.IsNullOrWhiteSpace(overridePath) && File.Exists(overridePath))
+            return overridePath;
+
         var candidates = new[]
         {
             Path.Combine(AppContext.BaseDirectory, "Fixtures", "honest-csv-inferrer.json"),

@@ -36,7 +36,7 @@ public static class HonestFixtures
 
 public static class TransformCatalog
 {
-    public const string CatalogVersion = "s1.3-v1";
+    public const string CatalogVersion = "s1.4-v1";
 
     public static IReadOnlyList<TransformTag> CoarseWrongImplTags { get; } =
     [

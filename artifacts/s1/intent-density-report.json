@@ -1,17 +1,18 @@
 {
-  "reportVersion": "s1.3-v1",
-  "probeCorpusVersion": "s1.3-v1",
-  "catalogVersion": "s1.3-v1",
+  "reportVersion": "s1.4-v1",
+  "probeCorpusVersion": "s1.4-v1",
+  "catalogVersion": "s1.4-v1",
+  "configuredSeedCount": 8,
   "intentDensity": 1,
-  "pinnedCount": 12,
+  "pinnedCount": 18,
   "unpinnedCount": 0,
-  "totalProbeClasses": 12,
+  "totalProbeClasses": 18,
   "certificationThreshold": 0.95,
   "certification": {
     "verdict": "Certifiable",
     "intentDensity": 1,
     "threshold": 0.95,
-    "message": "all probe classes pinned by frozen oracle",
+    "message": "all probe classes pinned across all witness seeds",
     "pinnedClasses": [
       "zero-one-literals",
       "leading-zeros",
@@ -24,10 +25,31 @@
       "scientific-notation",
       "decimal-first-precedence",
       "sampling-window-widening",
-      "heterogeneous-fallback"
+      "heterogeneous-fallback",
+      "integer-minimum-count",
+      "single-value-date-boundary",
+      "boolean-branch-polarity",
+      "date-branch-required",
+      "non-constant-inference",
+      "integer-decimal-precedence"
     ],
     "unpinnedClasses": [],
     "outOfScopeClasses": []
+  },
+  "equivalence": {
+    "densityEqualsOne": true,
+    "escapesEqualsZero": true,
+    "equivalenceHolds": true,
+    "intentDensity": 1,
+    "wrongImplEscapes": 0,
+    "scope": "Scoped to the fixed offline transform catalog and configured seed range; a lower bound on oracle faithfulness, not universal correctness."
+  },
+  "negativeControl": {
+    "enabled": true,
+    "removedRelation": "acceptance: [\u00221\u0022,\u00222\u0022,\u0022hello\u0022] =\u003E String; metamorphic: full-column not prefix",
+    "intentDensity": 0.8888888888888888,
+    "wrongImplEscapes": 8,
+    "equivalenceBroken": true
   },
   "probeClasses": [
     {
@@ -37,7 +59,68 @@
       "decidingRelation": "acceptance: [\u00220\u0022,\u00221\u0022] =\u003E Integer",
       "divergentTransform": "SemanticTypePrecedenceZeroOneBool",
       "honestAccepted": true,
-      "divergentAccepted": false
+      "divergentAccepted": false,
+      "witnessSeedCount": 8,
+      "escapingSeeds": [],
+      "vacuousSeeds": [],
+      "seedWitnesses": [
+        {
+          "seed": 0,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 1,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 2,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 3,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 4,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 5,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 6,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 7,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        }
+      ]
     },
     {
       "probeClassId": "leading-zeros",
@@ -46,7 +129,68 @@
       "decidingRelation": "acceptance: [\u0022007\u0022] =\u003E Integer",
       "divergentTransform": "SemanticFormatLeadingZeros",
       "honestAccepted": true,
-      "divergentAccepted": false
+      "divergentAccepted": false,
+      "witnessSeedCount": 8,
+      "escapingSeeds": [],
+      "vacuousSeeds": [],
+      "seedWitnesses": [
+        {
+          "seed": 0,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 1,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 2,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 3,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 4,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 5,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 6,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 7,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        }
+      ]
     },
     {
       "probeClassId": "thousands-separator",
@@ -55,7 +199,68 @@
       "decidingRelation": "acceptance: [\u00221,000\u0022] =\u003E Decimal",
       "divergentTransform": "SemanticFormatThousands",
       "honestAccepted": true,
-      "divergentAccepted": false
+      "divergentAccepted": false,
+      "witnessSeedCount": 8,
+      "escapingSeeds": [],
+      "vacuousSeeds": [],
+      "seedWitnesses": [
+        {
+          "seed": 0,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 1,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 2,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 3,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 4,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 5,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 6,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 7,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        }
+      ]
     },
     {
       "probeClassId": "locale-comma-decimal",
@@ -64,7 +269,68 @@
       "decidingRelation": "acceptance: [\u00221,5\u0022] =\u003E Date; [\u00221,.\u0022] =\u003E Decimal",
       "divergentTransform": "SemanticFormatLocaleComma",
       "honestAccepted": true,
-      "divergentAccepted": false
+      "divergentAccepted": false,
+      "witnessSeedCount": 8,
+      "escapingSeeds": [],
+      "vacuousSeeds": [],
+      "seedWitnesses": [
+        {
+          "seed": 0,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 1,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 2,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 3,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 4,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 5,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 6,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 7,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        }
+      ]
     },
     {
       "probeClassId": "signed-zero",
@@ -73,7 +339,68 @@
       "decidingRelation": "acceptance: [\u0022\u002B0\u0022,\u0022-0\u0022] =\u003E Integer",
       "divergentTransform": "SemanticFormatSignedZero",
       "honestAccepted": true,
-      "divergentAccepted": false
+      "divergentAccepted": false,
+      "witnessSeedCount": 8,
+      "escapingSeeds": [],
+      "vacuousSeeds": [],
+      "seedWitnesses": [
+        {
+          "seed": 0,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 1,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 2,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 3,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 4,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 5,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 6,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 7,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        }
+      ]
     },
     {
       "probeClassId": "boolean-yes-no",
@@ -82,7 +409,68 @@
       "decidingRelation": "acceptance: [\u0022yes\u0022,\u0022no\u0022] =\u003E String",
       "divergentTransform": "SemanticBooleanYesNo",
       "honestAccepted": true,
-      "divergentAccepted": false
+      "divergentAccepted": false,
+      "witnessSeedCount": 8,
+      "escapingSeeds": [],
+      "vacuousSeeds": [],
+      "seedWitnesses": [
+        {
+          "seed": 0,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 1,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 2,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 3,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 4,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 5,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 6,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 7,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        }
+      ]
     },
     {
       "probeClassId": "boolean-yn",
@@ -91,7 +479,68 @@
       "decidingRelation": "acceptance: [\u0022Y\u0022,\u0022N\u0022] =\u003E String",
       "divergentTransform": "SemanticBooleanYn",
       "honestAccepted": true,
-      "divergentAccepted": false
+      "divergentAccepted": false,
+      "witnessSeedCount": 8,
+      "escapingSeeds": [],
+      "vacuousSeeds": [],
+      "seedWitnesses": [
+        {
+          "seed": 0,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 1,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 2,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 3,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 4,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 5,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 6,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 7,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        }
+      ]
     },
     {
       "probeClassId": "whitespace-only",
@@ -100,43 +549,778 @@
       "decidingRelation": "invariant: whitespace-only cells treated as empty",
       "divergentTransform": "SemanticEmptyWhitespaceRetained",
       "honestAccepted": true,
-      "divergentAccepted": false
+      "divergentAccepted": false,
+      "witnessSeedCount": 8,
+      "escapingSeeds": [],
+      "vacuousSeeds": [],
+      "seedWitnesses": [
+        {
+          "seed": 0,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 1,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 2,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 3,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 4,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 5,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 6,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 7,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        }
+      ]
     },
     {
       "probeClassId": "scientific-notation",
-      "description": "Scientific notation numerics (control: pinned)",
+      "description": "Scientific notation numerics",
       "status": "Pinned",
       "decidingRelation": "none \u2014 gap: scientific notation literals not in frozen acceptance criteria",
       "divergentTransform": "SemanticFormatScientific",
       "honestAccepted": true,
-      "divergentAccepted": false
+      "divergentAccepted": false,
+      "witnessSeedCount": 8,
+      "escapingSeeds": [],
+      "vacuousSeeds": [],
+      "seedWitnesses": [
+        {
+          "seed": 0,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 1,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 2,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 3,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 4,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 5,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 6,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 7,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        }
+      ]
     },
     {
       "probeClassId": "decimal-first-precedence",
-      "description": "Integer vs decimal precedence (control: pinned)",
+      "description": "Integer vs decimal precedence (semantic)",
       "status": "Pinned",
       "decidingRelation": "acceptance: [\u00221\u0022,\u00222\u0022,\u00223\u0022] =\u003E Integer",
       "divergentTransform": "SemanticTypePrecedenceDecimalFirst",
       "honestAccepted": true,
-      "divergentAccepted": false
+      "divergentAccepted": false,
+      "witnessSeedCount": 8,
+      "escapingSeeds": [],
+      "vacuousSeeds": [],
+      "seedWitnesses": [
+        {
+          "seed": 0,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 1,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 2,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 3,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 4,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 5,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 6,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 7,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        }
+      ]
     },
     {
       "probeClassId": "sampling-window-widening",
-      "description": "Inference limited to first N cells (control: pinned)",
+      "description": "Inference must use full column, not prefix sample",
       "status": "Pinned",
-      "decidingRelation": "none \u2014 gap: sampling-window / column-length invariance not in frozen criteria",
+      "decidingRelation": "acceptance: [\u00221\u0022,\u00222\u0022,\u0022hello\u0022] =\u003E String; metamorphic: full-column not prefix",
       "divergentTransform": "SemanticSamplingWindow",
       "honestAccepted": true,
-      "divergentAccepted": false
+      "divergentAccepted": false,
+      "witnessSeedCount": 8,
+      "escapingSeeds": [],
+      "vacuousSeeds": [
+        1,
+        3,
+        5,
+        7
+      ],
+      "seedWitnesses": [
+        {
+          "seed": 0,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 1,
+          "honestAccepted": true,
+          "divergentAccepted": true,
+          "behaviorallyIdentical": true,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 2,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 3,
+          "honestAccepted": true,
+          "divergentAccepted": true,
+          "behaviorallyIdentical": true,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 4,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 5,
+          "honestAccepted": true,
+          "divergentAccepted": true,
+          "behaviorallyIdentical": true,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 6,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 7,
+          "honestAccepted": true,
+          "divergentAccepted": true,
+          "behaviorallyIdentical": true,
+          "pinnedForSeed": true
+        }
+      ]
     },
     {
       "probeClassId": "heterogeneous-fallback",
-      "description": "Mixed column fallback to partial numeric (control: pinned)",
+      "description": "Mixed column fallback to partial numeric",
       "status": "Pinned",
       "decidingRelation": "acceptance: mixed numeric and text =\u003E String",
       "divergentTransform": "SemanticHeterogeneousFallback",
       "honestAccepted": true,
-      "divergentAccepted": false
+      "divergentAccepted": false,
+      "witnessSeedCount": 8,
+      "escapingSeeds": [],
+      "vacuousSeeds": [],
+      "seedWitnesses": [
+        {
+          "seed": 0,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 1,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 2,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 3,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 4,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 5,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 6,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 7,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        }
+      ]
+    },
+    {
+      "probeClassId": "integer-minimum-count",
+      "description": "Integer branch off-by-one on cell-count threshold",
+      "status": "Pinned",
+      "decidingRelation": "acceptance: [\u00221\u0022,\u00222\u0022,\u00223\u0022] =\u003E Integer",
+      "divergentTransform": "OffByOne",
+      "honestAccepted": true,
+      "divergentAccepted": false,
+      "witnessSeedCount": 8,
+      "escapingSeeds": [],
+      "vacuousSeeds": [],
+      "seedWitnesses": [
+        {
+          "seed": 0,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 1,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 2,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 3,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 4,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 5,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 6,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 7,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        }
+      ]
+    },
+    {
+      "probeClassId": "single-value-date-boundary",
+      "description": "Single-value date columns not treated as empty",
+      "status": "Pinned",
+      "decidingRelation": "acceptance: [\u00222024-01-15\u0022] =\u003E Date",
+      "divergentTransform": "BoundaryInclusive",
+      "honestAccepted": true,
+      "divergentAccepted": false,
+      "witnessSeedCount": 8,
+      "escapingSeeds": [],
+      "vacuousSeeds": [],
+      "seedWitnesses": [
+        {
+          "seed": 0,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 1,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 2,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 3,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 4,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 5,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 6,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 7,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        }
+      ]
+    },
+    {
+      "probeClassId": "boolean-branch-polarity",
+      "description": "Boolean branch polarity not negated",
+      "status": "Pinned",
+      "decidingRelation": "acceptance: [\u0022true\u0022,\u0022false\u0022] =\u003E Boolean",
+      "divergentTransform": "NegatedCondition",
+      "honestAccepted": true,
+      "divergentAccepted": false,
+      "witnessSeedCount": 8,
+      "escapingSeeds": [],
+      "vacuousSeeds": [],
+      "seedWitnesses": [
+        {
+          "seed": 0,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 1,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 2,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 3,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 4,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 5,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 6,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 7,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        }
+      ]
+    },
+    {
+      "probeClassId": "date-branch-required",
+      "description": "Date branch must remain for date literals",
+      "status": "Pinned",
+      "decidingRelation": "acceptance: [\u00222024-01-15\u0022] =\u003E Date",
+      "divergentTransform": "DroppedBranch",
+      "honestAccepted": true,
+      "divergentAccepted": false,
+      "witnessSeedCount": 8,
+      "escapingSeeds": [],
+      "vacuousSeeds": [],
+      "seedWitnesses": [
+        {
+          "seed": 0,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 1,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 2,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 3,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 4,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 5,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 6,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 7,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        }
+      ]
+    },
+    {
+      "probeClassId": "non-constant-inference",
+      "description": "Inference must not collapse to constant return",
+      "status": "Pinned",
+      "decidingRelation": "acceptance: [\u00221\u0022,\u00222\u0022,\u00223\u0022] =\u003E Integer",
+      "divergentTransform": "ConstantReturn",
+      "honestAccepted": true,
+      "divergentAccepted": false,
+      "witnessSeedCount": 8,
+      "escapingSeeds": [],
+      "vacuousSeeds": [],
+      "seedWitnesses": [
+        {
+          "seed": 0,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 1,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 2,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 3,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 4,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 5,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 6,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 7,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        }
+      ]
+    },
+    {
+      "probeClassId": "integer-decimal-precedence",
+      "description": "Integer before decimal; boolean before date",
+      "status": "Pinned",
+      "decidingRelation": "acceptance: [\u00221\u0022,\u00222\u0022,\u00223\u0022] =\u003E Integer; [\u00221.5\u0022,\u00222.0\u0022] =\u003E Decimal; vacuous boolean/date swap on odd seeds",
+      "divergentTransform": "SwappedOperands",
+      "honestAccepted": true,
+      "divergentAccepted": false,
+      "witnessSeedCount": 8,
+      "escapingSeeds": [],
+      "vacuousSeeds": [
+        1,
+        3,
+        5,
+        7
+      ],
+      "seedWitnesses": [
+        {
+          "seed": 0,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 1,
+          "honestAccepted": true,
+          "divergentAccepted": true,
+          "behaviorallyIdentical": true,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 2,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 3,
+          "honestAccepted": true,
+          "divergentAccepted": true,
+          "behaviorallyIdentical": true,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 4,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 5,
+          "honestAccepted": true,
+          "divergentAccepted": true,
+          "behaviorallyIdentical": true,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 6,
+          "honestAccepted": true,
+          "divergentAccepted": false,
+          "behaviorallyIdentical": false,
+          "pinnedForSeed": true
+        },
+        {
+          "seed": 7,
+          "honestAccepted": true,
+          "divergentAccepted": true,
+          "behaviorallyIdentical": true,
+          "pinnedForSeed": true
+        }
+      ]
     }
   ]
 }

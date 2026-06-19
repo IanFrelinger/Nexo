@@ -1,7 +1,7 @@
 {
-  "intentId": "honest-csv-inferrer",
-  "title": "CSV column type inferencer",
-  "description": "Infer the dominant type of a CSV column from sample cell values (non-empty cells only).",
+  "intentId": "honest-csv-inferrer-negative-control",
+  "title": "CSV column type inferencer (negative control — sampling-window relation removed)",
+  "description": "S1.4 negative control: same as honest spec but without sampling-window pin.",
   "inputs": [
     "values: IReadOnlyList<string> — sample cells from one column, may include empty strings"
   ],
@@ -14,15 +14,7 @@
     "Whitespace-only cells are treated as empty",
     "Integer beats Decimal when all numeric values are whole numbers",
     "If any non-empty value is not parseable as the candidate type, fall back to String",
-    "Pin zero-one-literals: [\"0\",\"1\"] => Integer (parses as int; not Boolean)",
-    "Pin leading-zeros: [\"007\"] => Integer",
-    "Pin thousands-separator: [\"1,000\"] => Decimal (decimal.TryParse accepts comma thousands)",
-    "Pin locale-comma-decimal: [\"1,5\"] => Date; comma-decimal edge [\"1,.\"] => Decimal (DateOnly rejects, decimal.TryParse accepts)",
-    "Pin signed-zero: [\"+0\",\"-0\"] => Integer",
-    "Pin boolean-yes-no: [\"yes\",\"no\"] => String (not Boolean)",
-    "Pin boolean-yn: [\"Y\",\"N\"] => String (not Boolean)",
-    "Pin whitespace-only: whitespace-only cells filtered as empty => String",
-    "Pin sampling-window: [\"1\",\"2\",\"hello\"] => String (full column, not prefix sample)"
+    "NEGATIVE CONTROL: sampling-window relation deliberately removed for equivalence proof"
   ],
   "acceptanceCriteria": [
     "[\"1\",\"2\",\"3\"] => Integer",

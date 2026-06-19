@@ -36,7 +36,8 @@ public sealed class PinningPropertyGateTests
         ["signed-zero"],
         ["boolean-yes-no"],
         ["boolean-yn"],
-        ["whitespace-only"]
+        ["whitespace-only"],
+        ["sampling-window-widening"]
     ];
 
     private static async Task<bool> RunPropertyGateAsync(TransformTag tag)

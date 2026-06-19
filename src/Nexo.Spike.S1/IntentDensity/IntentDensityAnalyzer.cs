@@ -8,33 +8,66 @@ namespace Nexo.Spike.S1.IntentDensity;
 public sealed class IntentDensityAnalyzer
 {
     private readonly PropertyGate _propertyGate = new();
+    private readonly string _honestImpl = HonestFixtures.Implementation;
+
+    public Task<IntentDensityReport> AnalyzeAsync(
+        double certificationThreshold = 0.95,
+        CancellationToken ct = default) =>
+        AnalyzeAsync(new IntentDensityOptions
+        {
+            Seeds = 8,
+            CertificationThreshold = certificationThreshold
+        }, ct);
 
     public async Task<IntentDensityReport> AnalyzeAsync(
-        double certificationThreshold = 0.95,
+        IntentDensityOptions options,
         CancellationToken ct = default)
     {
+        var intentPath = ResolveHonestIntentPath(options.IntentPath);
         var probeResults = new List<ProbeClassResult>();
 
         foreach (var probe in ProbeCorpus.All)
         {
             ct.ThrowIfCancellationRequested();
-            var honestPassed = await RunPropertyGateAsync(
-                TransformTag.HonestNoOp,
-                TransformFamily.HonestBaseline,
-                seed: 0,
-                ct).ConfigureAwait(false);
+            var seedWitnesses = new List<ProbeSeedWitnessResult>();
+            var escapingSeeds = new List<int>();
+            var vacuousSeeds = new List<int>();
 
-            var divergentPassed = await RunPropertyGateAsync(
-                probe.DivergentTransform,
-                TransformFamily.WrongImpl,
-                seed: 0,
-                ct).ConfigureAwait(false);
+            for (var seed = 0; seed < options.Seeds; seed++)
+            {
+                var honestPassed = await RunPropertyGateAsync(
+                    TransformTag.HonestNoOp, seed, intentPath, ct).ConfigureAwait(false);
 
-            var pinned = honestPassed && !divergentPassed;
+                var divergentPassed = await RunPropertyGateAsync(
+                    probe.DivergentTransform, seed, intentPath, ct).ConfigureAwait(false);
+
+                var identical = false;
+                if (divergentPassed && !NegativeControlStripping.IsNegativeControlIntent(intentPath))
+                {
+                    var candidate = TransformCatalog.ApplyImplTransform(
+                        probe.DivergentTransform, _honestImpl, seed);
+                    identical = await BehavioralWitnessChecker.IsBehaviorallyIdenticalAsync(
+                        _honestImpl, candidate, intentPath, ct).ConfigureAwait(false);
+                    if (identical)
+                        vacuousSeeds.Add(seed);
+                }
+
+                var pinnedForSeed = honestPassed && (!divergentPassed || identical);
+                if (!pinnedForSeed)
+                    escapingSeeds.Add(seed);
+
+                seedWitnesses.Add(new ProbeSeedWitnessResult(
+                    seed, honestPassed, divergentPassed, identical, pinnedForSeed));
+            }
+
+            var honestAll = seedWitnesses.All(s => s.HonestAccepted);
+            var pinned = honestAll && escapingSeeds.Count == 0;
             var definition = TransformAttribution.Get(probe.DivergentTransform);
             var deciding = pinned
                 ? definition.ExpectedRelation
-                : "silent";
+                : escapingSeeds.Count > 0
+                    ? $"unpinned seeds: {string.Join(",", escapingSeeds)}"
+                    : "silent";
 
             probeResults.Add(new ProbeClassResult(
                 probe.Id,
@@ -42,36 +75,40 @@ public sealed class IntentDensityAnalyzer
                 pinned ? ProbePinStatus.Pinned : ProbePinStatus.Unpinned,
                 deciding,
                 probe.DivergentTransform,
-                honestPassed,
-                divergentPassed));
+                honestAll,
+                seedWitnesses.Any(s => s.DivergentAccepted && !s.BehaviorallyIdentical),
+                options.Seeds,
+                escapingSeeds,
+                vacuousSeeds,
+                seedWitnesses));
         }
 
         var pinnedCount = probeResults.Count(p => p.Status == ProbePinStatus.Pinned);
-        var unpinnedCount = probeResults.Count - pinnedCount;
         var density = probeResults.Count == 0 ? 0 : (double)pinnedCount / probeResults.Count;
 
         var certification = CertificationGate.Evaluate(
-            density,
-            probeResults,
-            certificationThreshold);
+            density, probeResults, options.CertificationThreshold);
 
         return new IntentDensityReport(
             IntentDensityReport.Version,
             ProbeCorpus.ProbeCorpusVersion,
             TransformCatalog.CatalogVersion,
+            options.Seeds,
             density,
             pinnedCount,
-            unpinnedCount,
+            probeResults.Count - pinnedCount,
             probeResults.Count,
-            certificationThreshold,
+            options.CertificationThreshold,
             certification,
+            options.Equivalence,
+            options.NegativeControl,
             probeResults);
     }
 
     private async Task<bool> RunPropertyGateAsync(
         TransformTag tag,
-        TransformFamily family,
         int seed,
+        string intentPath,
         CancellationToken ct)
     {
         var workspace = Path.Combine(
@@ -81,14 +118,14 @@ public sealed class IntentDensityAnalyzer
         try
         {
             SpikeWorkspaceScaffold.CreateFresh(workspace, overwrite: true);
-            var intent = ResolveHonestIntentPath();
+            NegativeControlStripping.ApplyIfNeeded(workspace, intentPath);
             await BrickSpecLoader.WriteFrozenAsync(
                     workspace,
-                    await BrickSpecLoader.LoadAsync(intent, ct).ConfigureAwait(false),
+                    await BrickSpecLoader.LoadAsync(intentPath, ct).ConfigureAwait(false),
                     ct)
                 .ConfigureAwait(false);
 
-            var impl = TransformCatalog.ApplyImplTransform(tag, HonestFixtures.Implementation, seed);
+            var impl = TransformCatalog.ApplyImplTransform(tag, _honestImpl, seed);
             var tests = TransformCatalog.ApplyTestTransform(TransformTag.HonestNoOp, HonestFixtures.Tests, seed);
 
             File.WriteAllText(Path.Combine(workspace, "CsvColumnInferrer", "ColumnTypeInferrer.cs"), impl);
@@ -106,20 +143,17 @@ public sealed class IntentDensityAnalyzer
         {
             if (Directory.Exists(workspace))
             {
-                try
-                {
-                    Directory.Delete(workspace, recursive: true);
-                }
-                catch
-                {
-                    // best-effort cleanup
-                }
+                try { Directory.Delete(workspace, recursive: true); }
+                catch { /* best-effort */ }
             }
         }
     }
 
-    private static string ResolveHonestIntentPath()
+    private static string ResolveHonestIntentPath(string? overridePath)
     {
+        if (!string.IsNullOrWhiteSpace(overridePath) && File.Exists(overridePath))
+            return overridePath;
+
         var candidates = new[]
         {
             Path.Combine(AppContext.BaseDirectory, "Fixtures", "honest-csv-inferrer.json"),
@@ -135,6 +169,15 @@ public sealed class IntentDensityAnalyzer
 
         throw new FileNotFoundException("honest-csv-inferrer.json fixture not found");
     }
+}
+
+public sealed class IntentDensityOptions
+{
+    public required int Seeds { get; init; }
+    public double CertificationThreshold { get; init; } = 0.95;
+    public string? IntentPath { get; init; }
+    public CertificationEquivalenceReport? Equivalence { get; init; }
+    public NegativeControlReport? NegativeControl { get; init; }
 }
 
 public static class CertificationGate
@@ -171,7 +214,7 @@ public static class CertificationGate
                 CertificationVerdict.Certifiable,
                 intentDensity,
                 threshold,
-                "all probe classes pinned by frozen oracle",
+                "all probe classes pinned across all witness seeds",
                 pinned,
                 unpinned,
                 []);

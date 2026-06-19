@@ -1,28 +1,28 @@
 {
-  "reportVersion": "s1.3-v1",
-  "catalogVersion": "s1.3-v1",
+  "reportVersion": "s1.4-v1",
+  "catalogVersion": "s1.4-v1",
   "adversaryMode": "offline",
   "seeds": 8,
-  "mutationSample": 4,
-  "budgetMinutes": 45,
+  "mutationSample": 0,
+  "budgetMinutes": 1,
   "distinctWrongImplTrials": 144,
-  "distinctWeakTestTrials": 4,
+  "distinctWeakTestTrials": 0,
   "totalWrongImplCandidates": 144,
-  "totalWeakTestCandidates": 4,
+  "totalWeakTestCandidates": 0,
   "tools": {
     "dotnetAvailable": true,
-    "strykerAvailable": true,
-    "strykerDetail": "dotnet stryker --help"
+    "strykerAvailable": false,
+    "strykerDetail": "Possible reasons for this include:\n  * You misspelled a built-in dotnet command.\n  * You intended to execute a .NET program, but dotnet-stryker does not exist.\n  * You intended to run a global tool, but a dotnet-prefixed executable with this name could not be found on the PATH.\n\nCould not execute because the specified command or file was not found."
   },
   "wrongImpl": {
     "status": "completed",
     "gate": "PropertyGate",
     "totalCandidates": 152,
-    "escapes": 8,
-    "caught": 136,
+    "escapes": 0,
+    "caught": 144,
     "falseRejects": 0,
     "blocked": 0,
-    "escapeRate": 0.05555555555555555,
+    "escapeRate": 0,
     "falseRejectRate": 0,
     "perTransform": {
       "OffByOne": {
@@ -72,11 +72,11 @@
       },
       "SwappedOperands": {
         "total": 8,
-        "escapes": 4,
-        "caught": 4,
+        "escapes": 0,
+        "caught": 8,
         "falseRejects": 0,
         "blocked": 0,
-        "escapeRate": 0.5,
+        "escapeRate": 0,
         "falseRejectRate": 0
       },
       "SemanticTypePrecedenceDecimalFirst": {
@@ -153,11 +153,11 @@
       },
       "SemanticSamplingWindow": {
         "total": 8,
-        "escapes": 4,
-        "caught": 4,
+        "escapes": 0,
+        "caught": 8,
         "falseRejects": 0,
         "blocked": 0,
-        "escapeRate": 0.5,
+        "escapeRate": 0,
         "falseRejectRate": 0
       },
       "SemanticBooleanYesNo": {
@@ -199,94 +199,16 @@
     }
   },
   "weakTest": {
-    "status": "completed-budget-truncated-before-sensitivity",
+    "status": "skipped:mutation-sample-zero",
     "gate": "MutationGate",
-    "totalCandidates": 5,
+    "totalCandidates": 0,
     "escapes": 0,
-    "caught": 4,
+    "caught": 0,
     "falseRejects": 0,
     "blocked": 0,
     "escapeRate": 0,
     "falseRejectRate": 0,
-    "perTransform": {
-      "AssertionRemoved": {
-        "total": 1,
-        "escapes": 0,
-        "caught": 1,
-        "falseRejects": 0,
-        "blocked": 0,
-        "escapeRate": 0,
-        "falseRejectRate": 0
-      },
-      "TautologyReplacement": {
-        "total": 1,
-        "escapes": 0,
-        "caught": 1,
-        "falseRejects": 0,
-        "blocked": 0,
-        "escapeRate": 0,
-        "falseRejectRate": 0
-      },
-      "OverNarrowDomain": {
-        "total": 1,
-        "escapes": 0,
-        "caught": 1,
-        "falseRejects": 0,
-        "blocked": 0,
-        "escapeRate": 0,
-        "falseRejectRate": 0
-      },
-      "TypeOnlyAssert": {
-        "total": 1,
-        "escapes": 0,
-        "caught": 1,
-        "falseRejects": 0,
-        "blocked": 0,
-        "escapeRate": 0,
-        "falseRejectRate": 0
-      },
-      "HonestNoOp": {
-        "total": 1,
-        "escapes": 0,
-        "caught": 0,
-        "falseRejects": 0,
-        "blocked": 0,
-        "escapeRate": 0,
-        "falseRejectRate": 0
-      }
-    }
-  },
-  "thresholdSensitivity": {
-    "thresholds": [
-      60,
-      75,
-      90
-    ],
-    "perTransform": {
-      "AssertionRemoved": [
-        {
-          "thresholdPercent": 60,
-          "escapes": 0,
-          "caught": 1,
-          "escapeRate": 0
-        },
-        {
-          "thresholdPercent": 75,
-          "escapes": 0,
-          "caught": 1,
-          "escapeRate": 0
-        },
-        {
-          "thresholdPercent": 90,
-          "escapes": 0,
-          "caught": 1,
-          "escapeRate": 0
-        }
-      ]
-    },
-    "firstEscapeThreshold": {
-      "AssertionRemoved": null
-    }
+    "perTransform": {}
   },
   "attributions": [
     {
@@ -294,7 +216,7 @@
       "family": "WrongImpl",
       "seed": 0,
       "kind": "Caught",
-      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0000-OffByOne/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.SpecAcceptancePropertyTests.Implementation_satisfies_all...",
+      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0000-OffByOne/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.MetamorphicPropertyTests.InferType_uses_full_column_not_...",
       "hypothesis": "Integer branch requires too many cells (off-by-one on count threshold).",
       "caughtBy": "acceptance: [\u00221\u0022,\u00222\u0022,\u00223\u0022] =\u003E Integer",
       "diffSummary": "-         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n\u002B         if (nonEmpty.Count \u003E= 4 \u0026\u0026 nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n- \n\u002B // seed-perturb-0\n\u002B"
@@ -304,7 +226,7 @@
       "family": "WrongImpl",
       "seed": 0,
       "kind": "Caught",
-      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0000-BoundaryInclusive/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.SpecAcceptancePropertyTests.Implementation_sati...",
+      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0000-BoundaryInclusive/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.MetamorphicPropertyTests.InferType_is_invariant...",
       "hypothesis": "Single-value columns treated as empty (inclusive boundary on row count).",
       "caughtBy": "acceptance: [\u00222024-01-15\u0022] =\u003E Date",
       "diffSummary": "-         if (values.Count == 0)\n\u002B         if (values.Count \u003C= 1)\n- \n\u002B // seed-perturb-0\n\u002B"
@@ -314,7 +236,7 @@
       "family": "WrongImpl",
       "seed": 0,
       "kind": "Caught",
-      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0000-NegatedCondition/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.SpecAcceptancePropertyTests.Implementation_satis...",
+      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0000-NegatedCondition/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.MetamorphicPropertyTests.InferType_uses_full_col...",
       "hypothesis": "Boolean branch polarity inverted.",
       "caughtBy": "acceptance: [\u0022true\u0022,\u0022false\u0022] =\u003E Boolean",
       "diffSummary": "-         if (nonEmpty.All(IsBoolean))\n\u002B         if (!nonEmpty.All(IsBoolean))\n- \n\u002B // seed-perturb-0\n\u002B"
@@ -334,7 +256,7 @@
       "family": "WrongImpl",
       "seed": 0,
       "kind": "Caught",
-      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0000-ConstantReturn/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.SpecAcceptancePropertyTests.Implementation_satisfi...",
+      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0000-ConstantReturn/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.MetamorphicPropertyTests.InferType_uses_full_colum...",
       "hypothesis": "All columns collapse to constant String return.",
       "caughtBy": "acceptance: [\u00221\u0022,\u00222\u0022,\u00223\u0022] =\u003E Integer",
       "diffSummary": "-         if (values.Count == 0)\n\u002B         return ColumnType.String;\n-             return ColumnType.String;\n\u002B     }\n- \n\u002B }\n-         var nonEmpty = values.Where(v =\u003E !string.IsNullOrWhiteSpace(v)).ToList();\n\u002B // seed-perturb-0\n-         if (nonEmpty.Count == 0)\n\u002B \n-             return ColumnType.String;\n- \n-         if (nonEmpty.All(IsBoolean))\n-             return ColumnType.Boolean;\n- \n-         if (nonEmpty.All(IsDate))\n-             return ColumnType.Date;\n- \n-         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n-             return ColumnType.Integer;\n- \n-         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n-             return ColumnType.Decimal;\n- \n-         return ColumnType.String;\n-     }\n- \n-     private static bool IsBoolean(string value) =\u003E\n-         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n-         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n- \n-     private static bool IsDate(string value) =\u003E\n-         DateOnly.TryParse(value, out _);\n- }\n-"
@@ -345,8 +267,8 @@
       "seed": 0,
       "kind": "Caught",
       "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0000-SwappedOperands/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.SpecAcceptancePropertyTests.Implementation_satisf...",
-      "hypothesis": "Integer and decimal precedence swapped.",
-      "caughtBy": "acceptance: [\u00221\u0022,\u00222\u0022,\u00223\u0022] =\u003E Integer; [\u00221.5\u0022,\u00222.0\u0022] =\u003E Decimal",
+      "hypothesis": "Integer/decimal or boolean/date branch precedence swapped.",
+      "caughtBy": "acceptance: [\u00221\u0022,\u00222\u0022,\u00223\u0022] =\u003E Integer; [\u00221.5\u0022,\u00222.0\u0022] =\u003E Decimal; vacuous boolean/date swap on odd seeds",
       "diffSummary": "-         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n\u002B         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n-             return ColumnType.Integer;\n\u002B             return ColumnType.Decimal;\n-         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n\u002B         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n-             return ColumnType.Decimal;\n\u002B             return ColumnType.Integer;\n- \n\u002B // seed-perturb-0\n\u002B"
     },
     {
@@ -354,7 +276,7 @@
       "family": "WrongImpl",
       "seed": 0,
       "kind": "Caught",
-      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0000-SemanticTypePrecedenceDecimalFirst/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.SpecAcceptancePropertyTests.Im...",
+      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0000-SemanticTypePrecedenceDecimalFirst/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.MetamorphicPropertyTests.Infer...",
       "hypothesis": "Decimal branch runs before integer, misclassifying whole-number columns.",
       "caughtBy": "acceptance: [\u00221\u0022,\u00222\u0022,\u00223\u0022] =\u003E Integer",
       "diffSummary": "-         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n\u002B         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n-             return ColumnType.Integer;\n\u002B             return ColumnType.Decimal;\n-         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n\u002B         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n-             return ColumnType.Decimal;\n\u002B             return ColumnType.Integer; /* precedence-seed-0 */\n- \n\u002B // seed-perturb-0\n\u002B"
@@ -404,7 +326,7 @@
       "family": "WrongImpl",
       "seed": 0,
       "kind": "Caught",
-      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0000-SemanticFormatScientific/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.SpecAcceptancePropertyTests.Implementati...",
+      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0000-SemanticFormatScientific/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.MetamorphicPropertyTests.InferType_uses_...",
       "hypothesis": "Scientific notation accepted via double parse (\u00221e3\u0022 -\u003E Decimal).",
       "caughtBy": "frozen acceptance criteria (spec-derived)",
       "diffSummary": "- namespace CsvColumnInferrer;\n\u002B using System.Globalization;\n- public enum ColumnType\n\u002B namespace CsvColumnInferrer;\n- {\n\u002B \n-     String,\n\u002B public enum ColumnType\n-     Integer,\n\u002B {\n-     Decimal,\n\u002B     String,\n-     Boolean,\n\u002B     Integer,\n-     Date\n\u002B     Decimal,\n- }\n\u002B     Boolean,\n- \n\u002B     Date\n- public static class ColumnTypeInferrer\n\u002B }\n- {\n\u002B \n-     public static ColumnType InferType(IReadOnlyList\u003Cstring\u003E values)\n\u002B public static class ColumnTypeInferrer\n-     {\n\u002B {\n-         if (values.Count == 0)\n\u002B     public static ColumnType InferType(IReadOnlyList\u003Cstring\u003E values)\n-             return ColumnType.String;\n\u002B     {\n- \n\u002B         if (values.Count == 0)\n-         var nonEmpty = values.Where(v =\u003E !string.IsNullOrWhiteSpace(v)).ToList();\n\u002B             return ColumnType.String;\n-         if (nonEmpty.Count == 0)\n\u002B \n-             return ColumnType.String;\n\u002B         var nonEmpty = values.Where(v =\u003E !string.IsNullOrWhiteSpace(v)).ToList();\n- \n\u002B         if (nonEmpty.Count == 0)\n-         if (nonEmpty.All(IsBoolean))\n\u002B             return ColumnType.String;\n-             return ColumnType.Boolean;\n\u002B \n- \n\u002B                 if (nonEmpty.All(v =\u003E double.TryParse(v, NumberStyles.Float, CultureInfo.InvariantCulture, out _)))\n-         if (nonEmpty.All(IsDate))\n\u002B             return ColumnType.Decimal; /* witness:1e3 */\n-             return ColumnType.Date;\n\u002B \n- \n\u002B         if (nonEmpty.All(IsBoolean))\n-         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n\u002B             return ColumnType.Boolean;\n-             return ColumnType.Integer;\n\u002B \n- \n\u002B         if (nonEmpty.All(IsDate))\n-         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n\u002B             return ColumnType.Date;\n-             return ColumnType.Decimal;\n\u002B \n- \n\u002B         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n-         return ColumnType.String;\n\u002B             return ColumnType.Integer;\n-     }\n\u002B \n- \n\u002B         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n-     private static bool IsBoolean(string value) =\u003E\n\u002B             return ColumnType.Decimal;\n-         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n\u002B \n-         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n\u002B         return ColumnType.String;\n- \n\u002B     }\n-     private static bool IsDate(string value) =\u003E\n\u002B \n-         DateOnly.TryParse(value, out _);\n\u002B     private static bool IsBoolean(string value) =\u003E\n- }\n\u002B         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n- \n\u002B         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n\u002B \n\u002B     private static bool IsDate(string value) =\u003E\n\u002B         DateOnly.TryParse(value, out _);\n\u002B }\n\u002B // seed-perturb-0\n\u002B"
@@ -435,8 +357,8 @@
       "seed": 0,
       "kind": "Caught",
       "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0000-SemanticSamplingWindow/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.MetamorphicPropertyTests.InferType_is_inva...",
-      "hypothesis": "Inference uses only first two non-empty cells, missing later type-widening values.",
-      "caughtBy": "metamorphic: value-order invariance",
+      "hypothesis": "Inference uses only first N non-empty cells, missing later type-widening values.",
+      "caughtBy": "acceptance: [\u00221\u0022,\u00222\u0022,\u0022hello\u0022] =\u003E String; metamorphic: full-column not prefix",
       "diffSummary": "-         if (nonEmpty.Count == 0)\n\u002B                 nonEmpty = nonEmpty.Take(2).ToList();\n-             return ColumnType.String;\n\u002B         if (nonEmpty.Count == 0)\n- \n\u002B             return ColumnType.String;\n-         if (nonEmpty.All(IsBoolean))\n\u002B \n-             return ColumnType.Boolean;\n\u002B         if (nonEmpty.All(IsBoolean))\n- \n\u002B             return ColumnType.Boolean;\n-         if (nonEmpty.All(IsDate))\n\u002B \n-             return ColumnType.Date;\n\u002B         if (nonEmpty.All(IsDate))\n- \n\u002B             return ColumnType.Date;\n-         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n\u002B \n-             return ColumnType.Integer;\n\u002B         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n- \n\u002B             return ColumnType.Integer;\n-         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n\u002B \n-             return ColumnType.Decimal;\n\u002B         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n- \n\u002B             return ColumnType.Decimal;\n-         return ColumnType.String;\n\u002B \n-     }\n\u002B         return ColumnType.String;\n- \n\u002B     }\n-     private static bool IsBoolean(string value) =\u003E\n\u002B \n-         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n\u002B     private static bool IsBoolean(string value) =\u003E\n-         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n\u002B         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n- \n\u002B         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n-     private static bool IsDate(string value) =\u003E\n\u002B \n-         DateOnly.TryParse(value, out _);\n\u002B     private static bool IsDate(string value) =\u003E\n- }\n\u002B         DateOnly.TryParse(value, out _);\n- \n\u002B }\n\u002B // seed-perturb-0\n\u002B"
     },
     {
@@ -474,7 +396,7 @@
       "family": "WrongImpl",
       "seed": 1,
       "kind": "Caught",
-      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0001-OffByOne/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.SpecAcceptancePropertyTests.Implementation_satisfies_all...",
+      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0001-OffByOne/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.MetamorphicPropertyTests.InferType_uses_full_column_not_...",
       "hypothesis": "Integer branch requires too many cells (off-by-one on count threshold).",
       "caughtBy": "acceptance: [\u00221\u0022,\u00222\u0022,\u00223\u0022] =\u003E Integer",
       "diffSummary": "-         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n\u002B         if (nonEmpty.Count \u003E= 5 \u0026\u0026 nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n- \n\u002B // seed-perturb-1\n\u002B"
@@ -494,7 +416,7 @@
       "family": "WrongImpl",
       "seed": 1,
       "kind": "Caught",
-      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0001-NegatedCondition/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.SpecAcceptancePropertyTests.Implementation_satis...",
+      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0001-NegatedCondition/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.MetamorphicPropertyTests.InferType_uses_full_col...",
       "hypothesis": "Boolean branch polarity inverted.",
       "caughtBy": "acceptance: [\u0022true\u0022,\u0022false\u0022] =\u003E Boolean",
       "diffSummary": "-         if (nonEmpty.All(IsDate))\n\u002B         if (!nonEmpty.All(IsDate))\n- \n\u002B // seed-perturb-1\n\u002B"
@@ -514,7 +436,7 @@
       "family": "WrongImpl",
       "seed": 1,
       "kind": "Caught",
-      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0001-ConstantReturn/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.SpecAcceptancePropertyTests.Implementation_satisfi...",
+      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0001-ConstantReturn/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.MetamorphicPropertyTests.Whitespace_only_cells_are...",
       "hypothesis": "All columns collapse to constant String return.",
       "caughtBy": "acceptance: [\u00221\u0022,\u00222\u0022,\u00223\u0022] =\u003E Integer",
       "diffSummary": "-         if (values.Count == 0)\n\u002B         return ColumnType.Integer;\n-             return ColumnType.String;\n\u002B     }\n- \n\u002B }\n-         var nonEmpty = values.Where(v =\u003E !string.IsNullOrWhiteSpace(v)).ToList();\n\u002B // seed-perturb-1\n-         if (nonEmpty.Count == 0)\n\u002B \n-             return ColumnType.String;\n- \n-         if (nonEmpty.All(IsBoolean))\n-             return ColumnType.Boolean;\n- \n-         if (nonEmpty.All(IsDate))\n-             return ColumnType.Date;\n- \n-         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n-             return ColumnType.Integer;\n- \n-         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n-             return ColumnType.Decimal;\n- \n-         return ColumnType.String;\n-     }\n- \n-     private static bool IsBoolean(string value) =\u003E\n-         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n-         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n- \n-     private static bool IsDate(string value) =\u003E\n-         DateOnly.TryParse(value, out _);\n- }\n-"
@@ -523,10 +445,10 @@
       "tag": "SwappedOperands",
       "family": "WrongImpl",
       "seed": 1,
-      "kind": "Escape",
-      "detail": "gate passed",
-      "hypothesis": "Integer and decimal precedence swapped.",
-      "missingRelation": "acceptance: [\u00221\u0022,\u00222\u0022,\u00223\u0022] =\u003E Integer; [\u00221.5\u0022,\u00222.0\u0022] =\u003E Decimal",
+      "kind": "Caught",
+      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0001-SwappedOperands/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n\nPassed!  - Failed:     0, Passed:    16, Skipped:     0, Total:    16, Duration: 34 ms...",
+      "hypothesis": "Integer/decimal or boolean/date branch precedence swapped.",
+      "caughtBy": "vacuous: identical outputs on frozen witnesses",
       "diffSummary": "-         if (nonEmpty.All(IsBoolean))\n\u002B         if (nonEmpty.All(IsDate))\n-             return ColumnType.Boolean;\n\u002B             return ColumnType.Date;\n-         if (nonEmpty.All(IsDate))\n\u002B         if (nonEmpty.All(IsBoolean))\n-             return ColumnType.Date;\n\u002B             return ColumnType.Boolean;\n- \n\u002B // seed-perturb-1\n\u002B"
     },
     {
@@ -613,10 +535,10 @@
       "tag": "SemanticSamplingWindow",
       "family": "WrongImpl",
       "seed": 1,
-      "kind": "Escape",
-      "detail": "gate passed",
-      "hypothesis": "Inference uses only first two non-empty cells, missing later type-widening values.",
-      "missingRelation": "none \u2014 gap: sampling-window / column-length invariance not in frozen criteria",
+      "kind": "Caught",
+      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0001-SemanticSamplingWindow/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n\nPassed!  - Failed:     0, Passed:    16, Skipped:     0, Total:    16, Duration...",
+      "hypothesis": "Inference uses only first N non-empty cells, missing later type-widening values.",
+      "caughtBy": "vacuous: identical outputs on frozen witnesses",
       "diffSummary": "-         if (nonEmpty.Count == 0)\n\u002B                 nonEmpty = nonEmpty.Take(3).ToList();\n-             return ColumnType.String;\n\u002B         if (nonEmpty.Count == 0)\n- \n\u002B             return ColumnType.String;\n-         if (nonEmpty.All(IsBoolean))\n\u002B \n-             return ColumnType.Boolean;\n\u002B         if (nonEmpty.All(IsBoolean))\n- \n\u002B             return ColumnType.Boolean;\n-         if (nonEmpty.All(IsDate))\n\u002B \n-             return ColumnType.Date;\n\u002B         if (nonEmpty.All(IsDate))\n- \n\u002B             return ColumnType.Date;\n-         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n\u002B \n-             return ColumnType.Integer;\n\u002B         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n- \n\u002B             return ColumnType.Integer;\n-         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n\u002B \n-             return ColumnType.Decimal;\n\u002B         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n- \n\u002B             return ColumnType.Decimal;\n-         return ColumnType.String;\n\u002B \n-     }\n\u002B         return ColumnType.String;\n- \n\u002B     }\n-     private static bool IsBoolean(string value) =\u003E\n\u002B \n-         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n\u002B     private static bool IsBoolean(string value) =\u003E\n-         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n\u002B         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n- \n\u002B         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n-     private static bool IsDate(string value) =\u003E\n\u002B \n-         DateOnly.TryParse(value, out _);\n\u002B     private static bool IsDate(string value) =\u003E\n- }\n\u002B         DateOnly.TryParse(value, out _);\n- \n\u002B }\n\u002B // seed-perturb-1\n\u002B"
     },
     {
@@ -674,7 +596,7 @@
       "family": "WrongImpl",
       "seed": 2,
       "kind": "Caught",
-      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0002-NegatedCondition/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.SpecAcceptancePropertyTests.Implementation_satis...",
+      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0002-NegatedCondition/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.MetamorphicPropertyTests.InferType_uses_full_col...",
       "hypothesis": "Boolean branch polarity inverted.",
       "caughtBy": "acceptance: [\u0022true\u0022,\u0022false\u0022] =\u003E Boolean",
       "diffSummary": "-         if (nonEmpty.All(IsBoolean))\n\u002B         if (!nonEmpty.All(IsBoolean))\n- \n\u002B // seed-perturb-2\n\u002B"
@@ -705,8 +627,8 @@
       "seed": 2,
       "kind": "Caught",
       "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0002-SwappedOperands/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.SpecAcceptancePropertyTests.Implementation_satisf...",
-      "hypothesis": "Integer and decimal precedence swapped.",
-      "caughtBy": "acceptance: [\u00221\u0022,\u00222\u0022,\u00223\u0022] =\u003E Integer; [\u00221.5\u0022,\u00222.0\u0022] =\u003E Decimal",
+      "hypothesis": "Integer/decimal or boolean/date branch precedence swapped.",
+      "caughtBy": "acceptance: [\u00221\u0022,\u00222\u0022,\u00223\u0022] =\u003E Integer; [\u00221.5\u0022,\u00222.0\u0022] =\u003E Decimal; vacuous boolean/date swap on odd seeds",
       "diffSummary": "-         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n\u002B         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n-             return ColumnType.Integer;\n\u002B             return ColumnType.Decimal;\n-         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n\u002B         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n-             return ColumnType.Decimal;\n\u002B             return ColumnType.Integer;\n- \n\u002B // seed-perturb-2\n\u002B"
     },
     {
@@ -714,7 +636,7 @@
       "family": "WrongImpl",
       "seed": 2,
       "kind": "Caught",
-      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0002-SemanticTypePrecedenceDecimalFirst/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.SpecAcceptancePropertyTests.Im...",
+      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0002-SemanticTypePrecedenceDecimalFirst/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.MetamorphicPropertyTests.Infer...",
       "hypothesis": "Decimal branch runs before integer, misclassifying whole-number columns.",
       "caughtBy": "acceptance: [\u00221\u0022,\u00222\u0022,\u00223\u0022] =\u003E Integer",
       "diffSummary": "-         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n\u002B         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n-             return ColumnType.Integer;\n\u002B             return ColumnType.Decimal;\n-         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n\u002B         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n-             return ColumnType.Decimal;\n\u002B             return ColumnType.Integer; /* precedence-seed-2 */\n- \n\u002B // seed-perturb-2\n\u002B"
@@ -795,8 +717,8 @@
       "seed": 2,
       "kind": "Caught",
       "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0002-SemanticSamplingWindow/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.MetamorphicPropertyTests.InferType_is_inva...",
-      "hypothesis": "Inference uses only first two non-empty cells, missing later type-widening values.",
-      "caughtBy": "metamorphic: value-order invariance",
+      "hypothesis": "Inference uses only first N non-empty cells, missing later type-widening values.",
+      "caughtBy": "acceptance: [\u00221\u0022,\u00222\u0022,\u0022hello\u0022] =\u003E String; metamorphic: full-column not prefix",
       "diffSummary": "-         if (nonEmpty.Count == 0)\n\u002B                 nonEmpty = nonEmpty.Take(2).ToList();\n-             return ColumnType.String;\n\u002B         if (nonEmpty.Count == 0)\n- \n\u002B             return ColumnType.String;\n-         if (nonEmpty.All(IsBoolean))\n\u002B \n-             return ColumnType.Boolean;\n\u002B         if (nonEmpty.All(IsBoolean))\n- \n\u002B             return ColumnType.Boolean;\n-         if (nonEmpty.All(IsDate))\n\u002B \n-             return ColumnType.Date;\n\u002B         if (nonEmpty.All(IsDate))\n- \n\u002B             return ColumnType.Date;\n-         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n\u002B \n-             return ColumnType.Integer;\n\u002B         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n- \n\u002B             return ColumnType.Integer;\n-         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n\u002B \n-             return ColumnType.Decimal;\n\u002B         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n- \n\u002B             return ColumnType.Decimal;\n-         return ColumnType.String;\n\u002B \n-     }\n\u002B         return ColumnType.String;\n- \n\u002B     }\n-     private static bool IsBoolean(string value) =\u003E\n\u002B \n-         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n\u002B     private static bool IsBoolean(string value) =\u003E\n-         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n\u002B         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n- \n\u002B         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n-     private static bool IsDate(string value) =\u003E\n\u002B \n-         DateOnly.TryParse(value, out _);\n\u002B     private static bool IsDate(string value) =\u003E\n- }\n\u002B         DateOnly.TryParse(value, out _);\n- \n\u002B }\n\u002B // seed-perturb-2\n\u002B"
     },
     {
@@ -824,7 +746,7 @@
       "family": "WrongImpl",
       "seed": 2,
       "kind": "Caught",
-      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0002-SemanticHeterogeneousFallback/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.SpecAcceptancePropertyTests.Impleme...",
+      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0002-SemanticHeterogeneousFallback/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.MetamorphicPropertyTests.InferType_...",
       "hypothesis": "Mixed columns fall back to partial numeric type instead of String.",
       "caughtBy": "acceptance: mixed numeric and text =\u003E String",
       "diffSummary": "-             return ColumnType.String;\n\u002B             return ColumnType.String; /* heterogeneous-seed-2 */\n-             return ColumnType.String;\n\u002B             return ColumnType.String; /* heterogeneous-seed-2 */\n-         return ColumnType.String;\n\u002B         if (nonEmpty.Any(v =\u003E int.TryParse(v, out _)))\n-     }\n\u002B             return ColumnType.Integer;\n- \n\u002B         if (nonEmpty.Any(v =\u003E decimal.TryParse(v, out _)))\n-     private static bool IsBoolean(string value) =\u003E\n\u002B             return ColumnType.Decimal;\n-         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n\u002B         return ColumnType.String; /* heterogeneous-seed-2 */\n-         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n\u002B     }\n-     private static bool IsDate(string value) =\u003E\n\u002B     private static bool IsBoolean(string value) =\u003E\n-         DateOnly.TryParse(value, out _);\n\u002B         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n- }\n\u002B         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n\u002B     private static bool IsDate(string value) =\u003E\n\u002B         DateOnly.TryParse(value, out _);\n\u002B }\n\u002B // seed-perturb-2\n\u002B"
@@ -844,7 +766,7 @@
       "family": "WrongImpl",
       "seed": 3,
       "kind": "Caught",
-      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0003-BoundaryInclusive/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.SpecAcceptancePropertyTests.Implementation_sati...",
+      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0003-BoundaryInclusive/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.MetamorphicPropertyTests.InferType_is_invariant...",
       "hypothesis": "Single-value columns treated as empty (inclusive boundary on row count).",
       "caughtBy": "acceptance: [\u00222024-01-15\u0022] =\u003E Date",
       "diffSummary": "-         if (values.Count == 0)\n\u002B         if (values.Count \u003C= 2)\n- \n\u002B // seed-perturb-3\n\u002B"
@@ -883,10 +805,10 @@
       "tag": "SwappedOperands",
       "family": "WrongImpl",
       "seed": 3,
-      "kind": "Escape",
-      "detail": "gate passed",
-      "hypothesis": "Integer and decimal precedence swapped.",
-      "missingRelation": "acceptance: [\u00221\u0022,\u00222\u0022,\u00223\u0022] =\u003E Integer; [\u00221.5\u0022,\u00222.0\u0022] =\u003E Decimal",
+      "kind": "Caught",
+      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0003-SwappedOperands/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n\nPassed!  - Failed:     0, Passed:    16, Skipped:     0, Total:    16, Duration: 32 ms...",
+      "hypothesis": "Integer/decimal or boolean/date branch precedence swapped.",
+      "caughtBy": "vacuous: identical outputs on frozen witnesses",
       "diffSummary": "-         if (nonEmpty.All(IsBoolean))\n\u002B         if (nonEmpty.All(IsDate))\n-             return ColumnType.Boolean;\n\u002B             return ColumnType.Date;\n-         if (nonEmpty.All(IsDate))\n\u002B         if (nonEmpty.All(IsBoolean))\n-             return ColumnType.Date;\n\u002B             return ColumnType.Boolean;\n- \n\u002B // seed-perturb-3\n\u002B"
     },
     {
@@ -973,10 +895,10 @@
       "tag": "SemanticSamplingWindow",
       "family": "WrongImpl",
       "seed": 3,
-      "kind": "Escape",
-      "detail": "gate passed",
-      "hypothesis": "Inference uses only first two non-empty cells, missing later type-widening values.",
-      "missingRelation": "none \u2014 gap: sampling-window / column-length invariance not in frozen criteria",
+      "kind": "Caught",
+      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0003-SemanticSamplingWindow/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n\nPassed!  - Failed:     0, Passed:    16, Skipped:     0, Total:    16, Duration...",
+      "hypothesis": "Inference uses only first N non-empty cells, missing later type-widening values.",
+      "caughtBy": "vacuous: identical outputs on frozen witnesses",
       "diffSummary": "-         if (nonEmpty.Count == 0)\n\u002B                 nonEmpty = nonEmpty.Take(4).ToList();\n-             return ColumnType.String;\n\u002B         if (nonEmpty.Count == 0)\n- \n\u002B             return ColumnType.String;\n-         if (nonEmpty.All(IsBoolean))\n\u002B \n-             return ColumnType.Boolean;\n\u002B         if (nonEmpty.All(IsBoolean))\n- \n\u002B             return ColumnType.Boolean;\n-         if (nonEmpty.All(IsDate))\n\u002B \n-             return ColumnType.Date;\n\u002B         if (nonEmpty.All(IsDate))\n- \n\u002B             return ColumnType.Date;\n-         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n\u002B \n-             return ColumnType.Integer;\n\u002B         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n- \n\u002B             return ColumnType.Integer;\n-         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n\u002B \n-             return ColumnType.Decimal;\n\u002B         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n- \n\u002B             return ColumnType.Decimal;\n-         return ColumnType.String;\n\u002B \n-     }\n\u002B         return ColumnType.String;\n- \n\u002B     }\n-     private static bool IsBoolean(string value) =\u003E\n\u002B \n-         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n\u002B     private static bool IsBoolean(string value) =\u003E\n-         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n\u002B         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n- \n\u002B         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n-     private static bool IsDate(string value) =\u003E\n\u002B \n-         DateOnly.TryParse(value, out _);\n\u002B     private static bool IsDate(string value) =\u003E\n- }\n\u002B         DateOnly.TryParse(value, out _);\n- \n\u002B }\n\u002B // seed-perturb-3\n\u002B"
     },
     {
@@ -1014,7 +936,7 @@
       "family": "WrongImpl",
       "seed": 4,
       "kind": "Caught",
-      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0004-OffByOne/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.SpecAcceptancePropertyTests.Implementation_satisfies_all...",
+      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0004-OffByOne/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.MetamorphicPropertyTests.InferType_uses_full_column_not_...",
       "hypothesis": "Integer branch requires too many cells (off-by-one on count threshold).",
       "caughtBy": "acceptance: [\u00221\u0022,\u00222\u0022,\u00223\u0022] =\u003E Integer",
       "diffSummary": "-         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n\u002B         if (nonEmpty.Count \u003E= 7 \u0026\u0026 nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n- \n\u002B // seed-perturb-4\n\u002B"
@@ -1024,7 +946,7 @@
       "family": "WrongImpl",
       "seed": 4,
       "kind": "Caught",
-      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0004-BoundaryInclusive/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.SpecAcceptancePropertyTests.Implementation_sati...",
+      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0004-BoundaryInclusive/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.MetamorphicPropertyTests.InferType_is_invariant...",
       "hypothesis": "Single-value columns treated as empty (inclusive boundary on row count).",
       "caughtBy": "acceptance: [\u00222024-01-15\u0022] =\u003E Date",
       "diffSummary": "-         if (values.Count == 0)\n\u002B         if (values.Count \u003C= 1)\n- \n\u002B // seed-perturb-4\n\u002B"
@@ -1064,9 +986,9 @@
       "family": "WrongImpl",
       "seed": 4,
       "kind": "Caught",
-      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0004-SwappedOperands/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.SpecAcceptancePropertyTests.Implementation_satisf...",
-      "hypothesis": "Integer and decimal precedence swapped.",
-      "caughtBy": "acceptance: [\u00221\u0022,\u00222\u0022,\u00223\u0022] =\u003E Integer; [\u00221.5\u0022,\u00222.0\u0022] =\u003E Decimal",
+      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0004-SwappedOperands/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.MetamorphicPropertyTests.InferType_uses_full_colu...",
+      "hypothesis": "Integer/decimal or boolean/date branch precedence swapped.",
+      "caughtBy": "acceptance: [\u00221\u0022,\u00222\u0022,\u00223\u0022] =\u003E Integer; [\u00221.5\u0022,\u00222.0\u0022] =\u003E Decimal; vacuous boolean/date swap on odd seeds",
       "diffSummary": "-         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n\u002B         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n-             return ColumnType.Integer;\n\u002B             return ColumnType.Decimal;\n-         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n\u002B         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n-             return ColumnType.Decimal;\n\u002B             return ColumnType.Integer;\n- \n\u002B // seed-perturb-4\n\u002B"
     },
     {
@@ -1074,7 +996,7 @@
       "family": "WrongImpl",
       "seed": 4,
       "kind": "Caught",
-      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0004-SemanticTypePrecedenceDecimalFirst/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.SpecAcceptancePropertyTests.Im...",
+      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0004-SemanticTypePrecedenceDecimalFirst/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.MetamorphicPropertyTests.Infer...",
       "hypothesis": "Decimal branch runs before integer, misclassifying whole-number columns.",
       "caughtBy": "acceptance: [\u00221\u0022,\u00222\u0022,\u00223\u0022] =\u003E Integer",
       "diffSummary": "-         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n\u002B         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n-             return ColumnType.Integer;\n\u002B             return ColumnType.Decimal;\n-         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n\u002B         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n-             return ColumnType.Decimal;\n\u002B             return ColumnType.Integer; /* precedence-seed-4 */\n- \n\u002B // seed-perturb-4\n\u002B"
@@ -1124,7 +1046,7 @@
       "family": "WrongImpl",
       "seed": 4,
       "kind": "Caught",
-      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0004-SemanticFormatScientific/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.SpecAcceptancePropertyTests.Implementati...",
+      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0004-SemanticFormatScientific/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.MetamorphicPropertyTests.InferType_uses_...",
       "hypothesis": "Scientific notation accepted via double parse (\u00221e3\u0022 -\u003E Decimal).",
       "caughtBy": "frozen acceptance criteria (spec-derived)",
       "diffSummary": "- namespace CsvColumnInferrer;\n\u002B using System.Globalization;\n- public enum ColumnType\n\u002B namespace CsvColumnInferrer;\n- {\n\u002B \n-     String,\n\u002B public enum ColumnType\n-     Integer,\n\u002B {\n-     Decimal,\n\u002B     String,\n-     Boolean,\n\u002B     Integer,\n-     Date\n\u002B     Decimal,\n- }\n\u002B     Boolean,\n- \n\u002B     Date\n- public static class ColumnTypeInferrer\n\u002B }\n- {\n\u002B \n-     public static ColumnType InferType(IReadOnlyList\u003Cstring\u003E values)\n\u002B public static class ColumnTypeInferrer\n-     {\n\u002B {\n-         if (values.Count == 0)\n\u002B     public static ColumnType InferType(IReadOnlyList\u003Cstring\u003E values)\n-             return ColumnType.String;\n\u002B     {\n- \n\u002B         if (values.Count == 0)\n-         var nonEmpty = values.Where(v =\u003E !string.IsNullOrWhiteSpace(v)).ToList();\n\u002B             return ColumnType.String;\n-         if (nonEmpty.Count == 0)\n\u002B \n-             return ColumnType.String;\n\u002B         var nonEmpty = values.Where(v =\u003E !string.IsNullOrWhiteSpace(v)).ToList();\n- \n\u002B         if (nonEmpty.Count == 0)\n-         if (nonEmpty.All(IsBoolean))\n\u002B             return ColumnType.String;\n-             return ColumnType.Boolean;\n\u002B \n- \n\u002B                 if (nonEmpty.All(v =\u003E double.TryParse(v, NumberStyles.Float, CultureInfo.InvariantCulture, out _)))\n-         if (nonEmpty.All(IsDate))\n\u002B             return ColumnType.Decimal; /* witness:9e-1 */\n-             return ColumnType.Date;\n\u002B \n- \n\u002B         if (nonEmpty.All(IsBoolean))\n-         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n\u002B             return ColumnType.Boolean;\n-             return ColumnType.Integer;\n\u002B \n- \n\u002B         if (nonEmpty.All(IsDate))\n-         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n\u002B             return ColumnType.Date;\n-             return ColumnType.Decimal;\n\u002B \n- \n\u002B         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n-         return ColumnType.String;\n\u002B             return ColumnType.Integer;\n-     }\n\u002B \n- \n\u002B         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n-     private static bool IsBoolean(string value) =\u003E\n\u002B             return ColumnType.Decimal;\n-         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n\u002B \n-         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n\u002B         return ColumnType.String;\n- \n\u002B     }\n-     private static bool IsDate(string value) =\u003E\n\u002B \n-         DateOnly.TryParse(value, out _);\n\u002B     private static bool IsBoolean(string value) =\u003E\n- }\n\u002B         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n- \n\u002B         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n\u002B \n\u002B     private static bool IsDate(string value) =\u003E\n\u002B         DateOnly.TryParse(value, out _);\n\u002B }\n\u002B // seed-perturb-4\n\u002B"
@@ -1155,8 +1077,8 @@
       "seed": 4,
       "kind": "Caught",
       "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0004-SemanticSamplingWindow/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.MetamorphicPropertyTests.InferType_is_inva...",
-      "hypothesis": "Inference uses only first two non-empty cells, missing later type-widening values.",
-      "caughtBy": "metamorphic: value-order invariance",
+      "hypothesis": "Inference uses only first N non-empty cells, missing later type-widening values.",
+      "caughtBy": "acceptance: [\u00221\u0022,\u00222\u0022,\u0022hello\u0022] =\u003E String; metamorphic: full-column not prefix",
       "diffSummary": "-         if (nonEmpty.Count == 0)\n\u002B                 nonEmpty = nonEmpty.Take(2).ToList();\n-             return ColumnType.String;\n\u002B         if (nonEmpty.Count == 0)\n- \n\u002B             return ColumnType.String;\n-         if (nonEmpty.All(IsBoolean))\n\u002B \n-             return ColumnType.Boolean;\n\u002B         if (nonEmpty.All(IsBoolean))\n- \n\u002B             return ColumnType.Boolean;\n-         if (nonEmpty.All(IsDate))\n\u002B \n-             return ColumnType.Date;\n\u002B         if (nonEmpty.All(IsDate))\n- \n\u002B             return ColumnType.Date;\n-         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n\u002B \n-             return ColumnType.Integer;\n\u002B         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n- \n\u002B             return ColumnType.Integer;\n-         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n\u002B \n-             return ColumnType.Decimal;\n\u002B         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n- \n\u002B             return ColumnType.Decimal;\n-         return ColumnType.String;\n\u002B \n-     }\n\u002B         return ColumnType.String;\n- \n\u002B     }\n-     private static bool IsBoolean(string value) =\u003E\n\u002B \n-         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n\u002B     private static bool IsBoolean(string value) =\u003E\n-         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n\u002B         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n- \n\u002B         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n-     private static bool IsDate(string value) =\u003E\n\u002B \n-         DateOnly.TryParse(value, out _);\n\u002B     private static bool IsDate(string value) =\u003E\n- }\n\u002B         DateOnly.TryParse(value, out _);\n- \n\u002B }\n\u002B // seed-perturb-4\n\u002B"
     },
     {
@@ -1184,7 +1106,7 @@
       "family": "WrongImpl",
       "seed": 4,
       "kind": "Caught",
-      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0004-SemanticHeterogeneousFallback/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.SpecAcceptancePropertyTests.Impleme...",
+      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0004-SemanticHeterogeneousFallback/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.MetamorphicPropertyTests.InferType_...",
       "hypothesis": "Mixed columns fall back to partial numeric type instead of String.",
       "caughtBy": "acceptance: mixed numeric and text =\u003E String",
       "diffSummary": "-             return ColumnType.String;\n\u002B             return ColumnType.String; /* heterogeneous-seed-4 */\n-             return ColumnType.String;\n\u002B             return ColumnType.String; /* heterogeneous-seed-4 */\n-         return ColumnType.String;\n\u002B         if (nonEmpty.Any(v =\u003E int.TryParse(v, out _)))\n-     }\n\u002B             return ColumnType.Integer;\n- \n\u002B         if (nonEmpty.Any(v =\u003E decimal.TryParse(v, out _)))\n-     private static bool IsBoolean(string value) =\u003E\n\u002B             return ColumnType.Decimal;\n-         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n\u002B         return ColumnType.String; /* heterogeneous-seed-4 */\n-         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n\u002B     }\n-     private static bool IsDate(string value) =\u003E\n\u002B     private static bool IsBoolean(string value) =\u003E\n-         DateOnly.TryParse(value, out _);\n\u002B         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n- }\n\u002B         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n\u002B     private static bool IsDate(string value) =\u003E\n\u002B         DateOnly.TryParse(value, out _);\n\u002B }\n\u002B // seed-perturb-4\n\u002B"
@@ -1194,7 +1116,7 @@
       "family": "WrongImpl",
       "seed": 5,
       "kind": "Caught",
-      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0005-OffByOne/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.SpecAcceptancePropertyTests.Implementation_satisfies_all...",
+      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0005-OffByOne/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.MetamorphicPropertyTests.InferType_uses_full_column_not_...",
       "hypothesis": "Integer branch requires too many cells (off-by-one on count threshold).",
       "caughtBy": "acceptance: [\u00221\u0022,\u00222\u0022,\u00223\u0022] =\u003E Integer",
       "diffSummary": "-         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n\u002B         if (nonEmpty.Count \u003E= 4 \u0026\u0026 nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n- \n\u002B // seed-perturb-5\n\u002B"
@@ -1204,7 +1126,7 @@
       "family": "WrongImpl",
       "seed": 5,
       "kind": "Caught",
-      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0005-BoundaryInclusive/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.MetamorphicPropertyTests.InferType_is_invariant...",
+      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0005-BoundaryInclusive/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.SpecAcceptancePropertyTests.Implementation_sati...",
       "hypothesis": "Single-value columns treated as empty (inclusive boundary on row count).",
       "caughtBy": "acceptance: [\u00222024-01-15\u0022] =\u003E Date",
       "diffSummary": "-         if (values.Count == 0)\n\u002B         if (values.Count \u003C= 2)\n- \n\u002B // seed-perturb-5\n\u002B"
@@ -1234,7 +1156,7 @@
       "family": "WrongImpl",
       "seed": 5,
       "kind": "Caught",
-      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0005-ConstantReturn/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.SpecAcceptancePropertyTests.Implementation_satisfi...",
+      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0005-ConstantReturn/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.MetamorphicPropertyTests.Whitespace_only_cells_are...",
       "hypothesis": "All columns collapse to constant String return.",
       "caughtBy": "acceptance: [\u00221\u0022,\u00222\u0022,\u00223\u0022] =\u003E Integer",
       "diffSummary": "-         if (values.Count == 0)\n\u002B         return ColumnType.Boolean;\n-             return ColumnType.String;\n\u002B     }\n- \n\u002B }\n-         var nonEmpty = values.Where(v =\u003E !string.IsNullOrWhiteSpace(v)).ToList();\n\u002B // seed-perturb-5\n-         if (nonEmpty.Count == 0)\n\u002B \n-             return ColumnType.String;\n- \n-         if (nonEmpty.All(IsBoolean))\n-             return ColumnType.Boolean;\n- \n-         if (nonEmpty.All(IsDate))\n-             return ColumnType.Date;\n- \n-         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n-             return ColumnType.Integer;\n- \n-         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n-             return ColumnType.Decimal;\n- \n-         return ColumnType.String;\n-     }\n- \n-     private static bool IsBoolean(string value) =\u003E\n-         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n-         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n- \n-     private static bool IsDate(string value) =\u003E\n-         DateOnly.TryParse(value, out _);\n- }\n-"
@@ -1243,10 +1165,10 @@
       "tag": "SwappedOperands",
       "family": "WrongImpl",
       "seed": 5,
-      "kind": "Escape",
-      "detail": "gate passed",
-      "hypothesis": "Integer and decimal precedence swapped.",
-      "missingRelation": "acceptance: [\u00221\u0022,\u00222\u0022,\u00223\u0022] =\u003E Integer; [\u00221.5\u0022,\u00222.0\u0022] =\u003E Decimal",
+      "kind": "Caught",
+      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0005-SwappedOperands/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n\nPassed!  - Failed:     0, Passed:    16, Skipped:     0, Total:    16, Duration: 39 ms...",
+      "hypothesis": "Integer/decimal or boolean/date branch precedence swapped.",
+      "caughtBy": "vacuous: identical outputs on frozen witnesses",
       "diffSummary": "-         if (nonEmpty.All(IsBoolean))\n\u002B         if (nonEmpty.All(IsDate))\n-             return ColumnType.Boolean;\n\u002B             return ColumnType.Date;\n-         if (nonEmpty.All(IsDate))\n\u002B         if (nonEmpty.All(IsBoolean))\n-             return ColumnType.Date;\n\u002B             return ColumnType.Boolean;\n- \n\u002B // seed-perturb-5\n\u002B"
     },
     {
@@ -1304,7 +1226,7 @@
       "family": "WrongImpl",
       "seed": 5,
       "kind": "Caught",
-      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0005-SemanticFormatScientific/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.SpecAcceptancePropertyTests.Implementati...",
+      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0005-SemanticFormatScientific/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.MetamorphicPropertyTests.InferType_uses_...",
       "hypothesis": "Scientific notation accepted via double parse (\u00221e3\u0022 -\u003E Decimal).",
       "caughtBy": "frozen acceptance criteria (spec-derived)",
       "diffSummary": "- namespace CsvColumnInferrer;\n\u002B using System.Globalization;\n- public enum ColumnType\n\u002B namespace CsvColumnInferrer;\n- {\n\u002B \n-     String,\n\u002B public enum ColumnType\n-     Integer,\n\u002B {\n-     Decimal,\n\u002B     String,\n-     Boolean,\n\u002B     Integer,\n-     Date\n\u002B     Decimal,\n- }\n\u002B     Boolean,\n- \n\u002B     Date\n- public static class ColumnTypeInferrer\n\u002B }\n- {\n\u002B \n-     public static ColumnType InferType(IReadOnlyList\u003Cstring\u003E values)\n\u002B public static class ColumnTypeInferrer\n-     {\n\u002B {\n-         if (values.Count == 0)\n\u002B     public static ColumnType InferType(IReadOnlyList\u003Cstring\u003E values)\n-             return ColumnType.String;\n\u002B     {\n- \n\u002B         if (values.Count == 0)\n-         var nonEmpty = values.Where(v =\u003E !string.IsNullOrWhiteSpace(v)).ToList();\n\u002B             return ColumnType.String;\n-         if (nonEmpty.Count == 0)\n\u002B \n-             return ColumnType.String;\n\u002B         var nonEmpty = values.Where(v =\u003E !string.IsNullOrWhiteSpace(v)).ToList();\n- \n\u002B         if (nonEmpty.Count == 0)\n-         if (nonEmpty.All(IsBoolean))\n\u002B             return ColumnType.String;\n-             return ColumnType.Boolean;\n\u002B \n- \n\u002B                 if (nonEmpty.All(v =\u003E double.TryParse(v, NumberStyles.Float, CultureInfo.InvariantCulture, out _)))\n-         if (nonEmpty.All(IsDate))\n\u002B             return ColumnType.Decimal; /* witness:1e2 */\n-             return ColumnType.Date;\n\u002B \n- \n\u002B         if (nonEmpty.All(IsBoolean))\n-         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n\u002B             return ColumnType.Boolean;\n-             return ColumnType.Integer;\n\u002B \n- \n\u002B         if (nonEmpty.All(IsDate))\n-         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n\u002B             return ColumnType.Date;\n-             return ColumnType.Decimal;\n\u002B \n- \n\u002B         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n-         return ColumnType.String;\n\u002B             return ColumnType.Integer;\n-     }\n\u002B \n- \n\u002B         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n-     private static bool IsBoolean(string value) =\u003E\n\u002B             return ColumnType.Decimal;\n-         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n\u002B \n-         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n\u002B         return ColumnType.String;\n- \n\u002B     }\n-     private static bool IsDate(string value) =\u003E\n\u002B \n-         DateOnly.TryParse(value, out _);\n\u002B     private static bool IsBoolean(string value) =\u003E\n- }\n\u002B         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n- \n\u002B         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n\u002B \n\u002B     private static bool IsDate(string value) =\u003E\n\u002B         DateOnly.TryParse(value, out _);\n\u002B }\n\u002B // seed-perturb-5\n\u002B"
@@ -1333,10 +1255,10 @@
       "tag": "SemanticSamplingWindow",
       "family": "WrongImpl",
       "seed": 5,
-      "kind": "Escape",
-      "detail": "gate passed",
-      "hypothesis": "Inference uses only first two non-empty cells, missing later type-widening values.",
-      "missingRelation": "none \u2014 gap: sampling-window / column-length invariance not in frozen criteria",
+      "kind": "Caught",
+      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0005-SemanticSamplingWindow/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n\nPassed!  - Failed:     0, Passed:    16, Skipped:     0, Total:    16, Duration...",
+      "hypothesis": "Inference uses only first N non-empty cells, missing later type-widening values.",
+      "caughtBy": "vacuous: identical outputs on frozen witnesses",
       "diffSummary": "-         if (nonEmpty.Count == 0)\n\u002B                 nonEmpty = nonEmpty.Take(3).ToList();\n-             return ColumnType.String;\n\u002B         if (nonEmpty.Count == 0)\n- \n\u002B             return ColumnType.String;\n-         if (nonEmpty.All(IsBoolean))\n\u002B \n-             return ColumnType.Boolean;\n\u002B         if (nonEmpty.All(IsBoolean))\n- \n\u002B             return ColumnType.Boolean;\n-         if (nonEmpty.All(IsDate))\n\u002B \n-             return ColumnType.Date;\n\u002B         if (nonEmpty.All(IsDate))\n- \n\u002B             return ColumnType.Date;\n-         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n\u002B \n-             return ColumnType.Integer;\n\u002B         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n- \n\u002B             return ColumnType.Integer;\n-         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n\u002B \n-             return ColumnType.Decimal;\n\u002B         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n- \n\u002B             return ColumnType.Decimal;\n-         return ColumnType.String;\n\u002B \n-     }\n\u002B         return ColumnType.String;\n- \n\u002B     }\n-     private static bool IsBoolean(string value) =\u003E\n\u002B \n-         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n\u002B     private static bool IsBoolean(string value) =\u003E\n-         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n\u002B         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n- \n\u002B         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n-     private static bool IsDate(string value) =\u003E\n\u002B \n-         DateOnly.TryParse(value, out _);\n\u002B     private static bool IsDate(string value) =\u003E\n- }\n\u002B         DateOnly.TryParse(value, out _);\n- \n\u002B }\n\u002B // seed-perturb-5\n\u002B"
     },
     {
@@ -1384,7 +1306,7 @@
       "family": "WrongImpl",
       "seed": 6,
       "kind": "Caught",
-      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0006-BoundaryInclusive/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.MetamorphicPropertyTests.InferType_is_invariant...",
+      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0006-BoundaryInclusive/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.SpecAcceptancePropertyTests.Implementation_sati...",
       "hypothesis": "Single-value columns treated as empty (inclusive boundary on row count).",
       "caughtBy": "acceptance: [\u00222024-01-15\u0022] =\u003E Date",
       "diffSummary": "-         if (values.Count == 0)\n\u002B         if (values.Count \u003C= 1)\n- \n\u002B // seed-perturb-6\n\u002B"
@@ -1424,9 +1346,9 @@
       "family": "WrongImpl",
       "seed": 6,
       "kind": "Caught",
-      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0006-SwappedOperands/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.SpecAcceptancePropertyTests.Implementation_satisf...",
-      "hypothesis": "Integer and decimal precedence swapped.",
-      "caughtBy": "acceptance: [\u00221\u0022,\u00222\u0022,\u00223\u0022] =\u003E Integer; [\u00221.5\u0022,\u00222.0\u0022] =\u003E Decimal",
+      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0006-SwappedOperands/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.MetamorphicPropertyTests.InferType_uses_full_colu...",
+      "hypothesis": "Integer/decimal or boolean/date branch precedence swapped.",
+      "caughtBy": "acceptance: [\u00221\u0022,\u00222\u0022,\u00223\u0022] =\u003E Integer; [\u00221.5\u0022,\u00222.0\u0022] =\u003E Decimal; vacuous boolean/date swap on odd seeds",
       "diffSummary": "-         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n\u002B         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n-             return ColumnType.Integer;\n\u002B             return ColumnType.Decimal;\n-         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n\u002B         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n-             return ColumnType.Decimal;\n\u002B             return ColumnType.Integer;\n- \n\u002B // seed-perturb-6\n\u002B"
     },
     {
@@ -1434,7 +1356,7 @@
       "family": "WrongImpl",
       "seed": 6,
       "kind": "Caught",
-      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0006-SemanticTypePrecedenceDecimalFirst/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.SpecAcceptancePropertyTests.Im...",
+      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0006-SemanticTypePrecedenceDecimalFirst/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.MetamorphicPropertyTests.Infer...",
       "hypothesis": "Decimal branch runs before integer, misclassifying whole-number columns.",
       "caughtBy": "acceptance: [\u00221\u0022,\u00222\u0022,\u00223\u0022] =\u003E Integer",
       "diffSummary": "-         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n\u002B         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n-             return ColumnType.Integer;\n\u002B             return ColumnType.Decimal;\n-         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n\u002B         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n-             return ColumnType.Decimal;\n\u002B             return ColumnType.Integer; /* precedence-seed-6 */\n- \n\u002B // seed-perturb-6\n\u002B"
@@ -1484,7 +1406,7 @@
       "family": "WrongImpl",
       "seed": 6,
       "kind": "Caught",
-      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0006-SemanticFormatScientific/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.SpecAcceptancePropertyTests.Implementati...",
+      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0006-SemanticFormatScientific/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.MetamorphicPropertyTests.InferType_uses_...",
       "hypothesis": "Scientific notation accepted via double parse (\u00221e3\u0022 -\u003E Decimal).",
       "caughtBy": "frozen acceptance criteria (spec-derived)",
       "diffSummary": "- namespace CsvColumnInferrer;\n\u002B using System.Globalization;\n- public enum ColumnType\n\u002B namespace CsvColumnInferrer;\n- {\n\u002B \n-     String,\n\u002B public enum ColumnType\n-     Integer,\n\u002B {\n-     Decimal,\n\u002B     String,\n-     Boolean,\n\u002B     Integer,\n-     Date\n\u002B     Decimal,\n- }\n\u002B     Boolean,\n- \n\u002B     Date\n- public static class ColumnTypeInferrer\n\u002B }\n- {\n\u002B \n-     public static ColumnType InferType(IReadOnlyList\u003Cstring\u003E values)\n\u002B public static class ColumnTypeInferrer\n-     {\n\u002B {\n-         if (values.Count == 0)\n\u002B     public static ColumnType InferType(IReadOnlyList\u003Cstring\u003E values)\n-             return ColumnType.String;\n\u002B     {\n- \n\u002B         if (values.Count == 0)\n-         var nonEmpty = values.Where(v =\u003E !string.IsNullOrWhiteSpace(v)).ToList();\n\u002B             return ColumnType.String;\n-         if (nonEmpty.Count == 0)\n\u002B \n-             return ColumnType.String;\n\u002B         var nonEmpty = values.Where(v =\u003E !string.IsNullOrWhiteSpace(v)).ToList();\n- \n\u002B         if (nonEmpty.Count == 0)\n-         if (nonEmpty.All(IsBoolean))\n\u002B             return ColumnType.String;\n-             return ColumnType.Boolean;\n\u002B \n- \n\u002B                 if (nonEmpty.All(v =\u003E double.TryParse(v, NumberStyles.Float, CultureInfo.InvariantCulture, out _)))\n-         if (nonEmpty.All(IsDate))\n\u002B             return ColumnType.Decimal; /* witness:5e3 */\n-             return ColumnType.Date;\n\u002B \n- \n\u002B         if (nonEmpty.All(IsBoolean))\n-         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n\u002B             return ColumnType.Boolean;\n-             return ColumnType.Integer;\n\u002B \n- \n\u002B         if (nonEmpty.All(IsDate))\n-         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n\u002B             return ColumnType.Date;\n-             return ColumnType.Decimal;\n\u002B \n- \n\u002B         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n-         return ColumnType.String;\n\u002B             return ColumnType.Integer;\n-     }\n\u002B \n- \n\u002B         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n-     private static bool IsBoolean(string value) =\u003E\n\u002B             return ColumnType.Decimal;\n-         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n\u002B \n-         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n\u002B         return ColumnType.String;\n- \n\u002B     }\n-     private static bool IsDate(string value) =\u003E\n\u002B \n-         DateOnly.TryParse(value, out _);\n\u002B     private static bool IsBoolean(string value) =\u003E\n- }\n\u002B         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n- \n\u002B         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n\u002B \n\u002B     private static bool IsDate(string value) =\u003E\n\u002B         DateOnly.TryParse(value, out _);\n\u002B }\n\u002B // seed-perturb-6\n\u002B"
@@ -1515,8 +1437,8 @@
       "seed": 6,
       "kind": "Caught",
       "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0006-SemanticSamplingWindow/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.MetamorphicPropertyTests.InferType_is_inva...",
-      "hypothesis": "Inference uses only first two non-empty cells, missing later type-widening values.",
-      "caughtBy": "metamorphic: value-order invariance",
+      "hypothesis": "Inference uses only first N non-empty cells, missing later type-widening values.",
+      "caughtBy": "acceptance: [\u00221\u0022,\u00222\u0022,\u0022hello\u0022] =\u003E String; metamorphic: full-column not prefix",
       "diffSummary": "-         if (nonEmpty.Count == 0)\n\u002B                 nonEmpty = nonEmpty.Take(2).ToList();\n-             return ColumnType.String;\n\u002B         if (nonEmpty.Count == 0)\n- \n\u002B             return ColumnType.String;\n-         if (nonEmpty.All(IsBoolean))\n\u002B \n-             return ColumnType.Boolean;\n\u002B         if (nonEmpty.All(IsBoolean))\n- \n\u002B             return ColumnType.Boolean;\n-         if (nonEmpty.All(IsDate))\n\u002B \n-             return ColumnType.Date;\n\u002B         if (nonEmpty.All(IsDate))\n- \n\u002B             return ColumnType.Date;\n-         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n\u002B \n-             return ColumnType.Integer;\n\u002B         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n- \n\u002B             return ColumnType.Integer;\n-         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n\u002B \n-             return ColumnType.Decimal;\n\u002B         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n- \n\u002B             return ColumnType.Decimal;\n-         return ColumnType.String;\n\u002B \n-     }\n\u002B         return ColumnType.String;\n- \n\u002B     }\n-     private static bool IsBoolean(string value) =\u003E\n\u002B \n-         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n\u002B     private static bool IsBoolean(string value) =\u003E\n-         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n\u002B         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n- \n\u002B         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n-     private static bool IsDate(string value) =\u003E\n\u002B \n-         DateOnly.TryParse(value, out _);\n\u002B     private static bool IsDate(string value) =\u003E\n- }\n\u002B         DateOnly.TryParse(value, out _);\n- \n\u002B }\n\u002B // seed-perturb-6\n\u002B"
     },
     {
@@ -1544,7 +1466,7 @@
       "family": "WrongImpl",
       "seed": 6,
       "kind": "Caught",
-      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0006-SemanticHeterogeneousFallback/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.SpecAcceptancePropertyTests.Impleme...",
+      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0006-SemanticHeterogeneousFallback/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.MetamorphicPropertyTests.InferType_...",
       "hypothesis": "Mixed columns fall back to partial numeric type instead of String.",
       "caughtBy": "acceptance: mixed numeric and text =\u003E String",
       "diffSummary": "-             return ColumnType.String;\n\u002B             return ColumnType.String; /* heterogeneous-seed-6 */\n-             return ColumnType.String;\n\u002B             return ColumnType.String; /* heterogeneous-seed-6 */\n-         return ColumnType.String;\n\u002B         if (nonEmpty.Any(v =\u003E int.TryParse(v, out _)))\n-     }\n\u002B             return ColumnType.Integer;\n- \n\u002B         if (nonEmpty.Any(v =\u003E decimal.TryParse(v, out _)))\n-     private static bool IsBoolean(string value) =\u003E\n\u002B             return ColumnType.Decimal;\n-         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n\u002B         return ColumnType.String; /* heterogeneous-seed-6 */\n-         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n\u002B     }\n-     private static bool IsDate(string value) =\u003E\n\u002B     private static bool IsBoolean(string value) =\u003E\n-         DateOnly.TryParse(value, out _);\n\u002B         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n- }\n\u002B         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n\u002B     private static bool IsDate(string value) =\u003E\n\u002B         DateOnly.TryParse(value, out _);\n\u002B }\n\u002B // seed-perturb-6\n\u002B"
@@ -1564,7 +1486,7 @@
       "family": "WrongImpl",
       "seed": 7,
       "kind": "Caught",
-      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0007-BoundaryInclusive/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.SpecAcceptancePropertyTests.Implementation_sati...",
+      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0007-BoundaryInclusive/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.MetamorphicPropertyTests.InferType_is_invariant...",
       "hypothesis": "Single-value columns treated as empty (inclusive boundary on row count).",
       "caughtBy": "acceptance: [\u00222024-01-15\u0022] =\u003E Date",
       "diffSummary": "-         if (values.Count == 0)\n\u002B         if (values.Count \u003C= 2)\n- \n\u002B // seed-perturb-7\n\u002B"
@@ -1574,7 +1496,7 @@
       "family": "WrongImpl",
       "seed": 7,
       "kind": "Caught",
-      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0007-NegatedCondition/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.SpecAcceptancePropertyTests.Implementation_satis...",
+      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0007-NegatedCondition/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.MetamorphicPropertyTests.InferType_uses_full_col...",
       "hypothesis": "Boolean branch polarity inverted.",
       "caughtBy": "acceptance: [\u0022true\u0022,\u0022false\u0022] =\u003E Boolean",
       "diffSummary": "-         if (nonEmpty.All(IsDate))\n\u002B         if (!nonEmpty.All(IsDate))\n- \n\u002B // seed-perturb-7\n\u002B"
@@ -1594,7 +1516,7 @@
       "family": "WrongImpl",
       "seed": 7,
       "kind": "Caught",
-      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0007-ConstantReturn/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.SpecAcceptancePropertyTests.Implementation_satisfi...",
+      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0007-ConstantReturn/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.MetamorphicPropertyTests.Whitespace_only_cells_are...",
       "hypothesis": "All columns collapse to constant String return.",
       "caughtBy": "acceptance: [\u00221\u0022,\u00222\u0022,\u00223\u0022] =\u003E Integer",
       "diffSummary": "-         if (values.Count == 0)\n\u002B         return ColumnType.Integer;\n-             return ColumnType.String;\n\u002B     }\n- \n\u002B }\n-         var nonEmpty = values.Where(v =\u003E !string.IsNullOrWhiteSpace(v)).ToList();\n\u002B // seed-perturb-7\n-         if (nonEmpty.Count == 0)\n\u002B \n-             return ColumnType.String;\n- \n-         if (nonEmpty.All(IsBoolean))\n-             return ColumnType.Boolean;\n- \n-         if (nonEmpty.All(IsDate))\n-             return ColumnType.Date;\n- \n-         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n-             return ColumnType.Integer;\n- \n-         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n-             return ColumnType.Decimal;\n- \n-         return ColumnType.String;\n-     }\n- \n-     private static bool IsBoolean(string value) =\u003E\n-         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n-         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n- \n-     private static bool IsDate(string value) =\u003E\n-         DateOnly.TryParse(value, out _);\n- }\n-"
@@ -1603,10 +1525,10 @@
       "tag": "SwappedOperands",
       "family": "WrongImpl",
       "seed": 7,
-      "kind": "Escape",
-      "detail": "gate passed",
-      "hypothesis": "Integer and decimal precedence swapped.",
-      "missingRelation": "acceptance: [\u00221\u0022,\u00222\u0022,\u00223\u0022] =\u003E Integer; [\u00221.5\u0022,\u00222.0\u0022] =\u003E Decimal",
+      "kind": "Caught",
+      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0007-SwappedOperands/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n\nPassed!  - Failed:     0, Passed:    16, Skipped:     0, Total:    16, Duration: 32 ms...",
+      "hypothesis": "Integer/decimal or boolean/date branch precedence swapped.",
+      "caughtBy": "vacuous: identical outputs on frozen witnesses",
       "diffSummary": "-         if (nonEmpty.All(IsBoolean))\n\u002B         if (nonEmpty.All(IsDate))\n-             return ColumnType.Boolean;\n\u002B             return ColumnType.Date;\n-         if (nonEmpty.All(IsDate))\n\u002B         if (nonEmpty.All(IsBoolean))\n-             return ColumnType.Date;\n\u002B             return ColumnType.Boolean;\n- \n\u002B // seed-perturb-7\n\u002B"
     },
     {
@@ -1664,7 +1586,7 @@
       "family": "WrongImpl",
       "seed": 7,
       "kind": "Caught",
-      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0007-SemanticFormatScientific/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.SpecAcceptancePropertyTests.Implementati...",
+      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0007-SemanticFormatScientific/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.MetamorphicPropertyTests.InferType_uses_...",
       "hypothesis": "Scientific notation accepted via double parse (\u00221e3\u0022 -\u003E Decimal).",
       "caughtBy": "frozen acceptance criteria (spec-derived)",
       "diffSummary": "- namespace CsvColumnInferrer;\n\u002B using System.Globalization;\n- public enum ColumnType\n\u002B namespace CsvColumnInferrer;\n- {\n\u002B \n-     String,\n\u002B public enum ColumnType\n-     Integer,\n\u002B {\n-     Decimal,\n\u002B     String,\n-     Boolean,\n\u002B     Integer,\n-     Date\n\u002B     Decimal,\n- }\n\u002B     Boolean,\n- \n\u002B     Date\n- public static class ColumnTypeInferrer\n\u002B }\n- {\n\u002B \n-     public static ColumnType InferType(IReadOnlyList\u003Cstring\u003E values)\n\u002B public static class ColumnTypeInferrer\n-     {\n\u002B {\n-         if (values.Count == 0)\n\u002B     public static ColumnType InferType(IReadOnlyList\u003Cstring\u003E values)\n-             return ColumnType.String;\n\u002B     {\n- \n\u002B         if (values.Count == 0)\n-         var nonEmpty = values.Where(v =\u003E !string.IsNullOrWhiteSpace(v)).ToList();\n\u002B             return ColumnType.String;\n-         if (nonEmpty.Count == 0)\n\u002B \n-             return ColumnType.String;\n\u002B         var nonEmpty = values.Where(v =\u003E !string.IsNullOrWhiteSpace(v)).ToList();\n- \n\u002B         if (nonEmpty.Count == 0)\n-         if (nonEmpty.All(IsBoolean))\n\u002B             return ColumnType.String;\n-             return ColumnType.Boolean;\n\u002B \n- \n\u002B                 if (nonEmpty.All(v =\u003E double.TryParse(v, NumberStyles.Float, CultureInfo.InvariantCulture, out _)))\n-         if (nonEmpty.All(IsDate))\n\u002B             return ColumnType.Decimal; /* witness:2.5e2 */\n-             return ColumnType.Date;\n\u002B \n- \n\u002B         if (nonEmpty.All(IsBoolean))\n-         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n\u002B             return ColumnType.Boolean;\n-             return ColumnType.Integer;\n\u002B \n- \n\u002B         if (nonEmpty.All(IsDate))\n-         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n\u002B             return ColumnType.Date;\n-             return ColumnType.Decimal;\n\u002B \n- \n\u002B         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n-         return ColumnType.String;\n\u002B             return ColumnType.Integer;\n-     }\n\u002B \n- \n\u002B         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n-     private static bool IsBoolean(string value) =\u003E\n\u002B             return ColumnType.Decimal;\n-         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n\u002B \n-         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n\u002B         return ColumnType.String;\n- \n\u002B     }\n-     private static bool IsDate(string value) =\u003E\n\u002B \n-         DateOnly.TryParse(value, out _);\n\u002B     private static bool IsBoolean(string value) =\u003E\n- }\n\u002B         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n- \n\u002B         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n\u002B \n\u002B     private static bool IsDate(string value) =\u003E\n\u002B         DateOnly.TryParse(value, out _);\n\u002B }\n\u002B // seed-perturb-7\n\u002B"
@@ -1693,10 +1615,10 @@
       "tag": "SemanticSamplingWindow",
       "family": "WrongImpl",
       "seed": 7,
-      "kind": "Escape",
-      "detail": "gate passed",
-      "hypothesis": "Inference uses only first two non-empty cells, missing later type-widening values.",
-      "missingRelation": "none \u2014 gap: sampling-window / column-length invariance not in frozen criteria",
+      "kind": "Caught",
+      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0007-SemanticSamplingWindow/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n\nPassed!  - Failed:     0, Passed:    16, Skipped:     0, Total:    16, Duration...",
+      "hypothesis": "Inference uses only first N non-empty cells, missing later type-widening values.",
+      "caughtBy": "vacuous: identical outputs on frozen witnesses",
       "diffSummary": "-         if (nonEmpty.Count == 0)\n\u002B                 nonEmpty = nonEmpty.Take(5).ToList();\n-             return ColumnType.String;\n\u002B         if (nonEmpty.Count == 0)\n- \n\u002B             return ColumnType.String;\n-         if (nonEmpty.All(IsBoolean))\n\u002B \n-             return ColumnType.Boolean;\n\u002B         if (nonEmpty.All(IsBoolean))\n- \n\u002B             return ColumnType.Boolean;\n-         if (nonEmpty.All(IsDate))\n\u002B \n-             return ColumnType.Date;\n\u002B         if (nonEmpty.All(IsDate))\n- \n\u002B             return ColumnType.Date;\n-         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n\u002B \n-             return ColumnType.Integer;\n\u002B         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n- \n\u002B             return ColumnType.Integer;\n-         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n\u002B \n-             return ColumnType.Decimal;\n\u002B         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n- \n\u002B             return ColumnType.Decimal;\n-         return ColumnType.String;\n\u002B \n-     }\n\u002B         return ColumnType.String;\n- \n\u002B     }\n-     private static bool IsBoolean(string value) =\u003E\n\u002B \n-         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n\u002B     private static bool IsBoolean(string value) =\u003E\n-         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n\u002B         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n- \n\u002B         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n-     private static bool IsDate(string value) =\u003E\n\u002B \n-         DateOnly.TryParse(value, out _);\n\u002B     private static bool IsDate(string value) =\u003E\n- }\n\u002B         DateOnly.TryParse(value, out _);\n- \n\u002B }\n\u002B // seed-perturb-7\n\u002B"
     },
     {
@@ -1724,7 +1646,7 @@
       "family": "WrongImpl",
       "seed": 7,
       "kind": "Caught",
-      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0007-SemanticHeterogeneousFallback/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.SpecAcceptancePropertyTests.Impleme...",
+      "detail": "Test run for /workspace/artifacts/s1/workspaces/wrong-impl-0007-SemanticHeterogeneousFallback/CsvColumnInferrer.Properties/bin/Release/net8.0/CsvColumnInferrer.Properties.dll (.NETCoreApp,Version=v8.0)\nVSTest version 17.14.1 (x64)\n\nStarting test execution, please wait...\nA total of 1 test files matched the specified pattern.\n  Failed CsvColumnInferrer.Properties.MetamorphicPropertyTests.InferType_...",
       "hypothesis": "Mixed columns fall back to partial numeric type instead of String.",
       "caughtBy": "acceptance: mixed numeric and text =\u003E String",
       "diffSummary": "-             return ColumnType.String;\n\u002B             return ColumnType.String; /* heterogeneous-seed-7 */\n-             return ColumnType.String;\n\u002B             return ColumnType.String; /* heterogeneous-seed-7 */\n-         return ColumnType.String;\n\u002B         if (nonEmpty.Any(v =\u003E int.TryParse(v, out _)))\n-     }\n\u002B             return ColumnType.Integer;\n- \n\u002B         if (nonEmpty.Any(v =\u003E decimal.TryParse(v, out _)))\n-     private static bool IsBoolean(string value) =\u003E\n\u002B             return ColumnType.Decimal;\n-         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n\u002B         return ColumnType.String; /* heterogeneous-seed-7 */\n-         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n\u002B     }\n-     private static bool IsDate(string value) =\u003E\n\u002B     private static bool IsBoolean(string value) =\u003E\n-         DateOnly.TryParse(value, out _);\n\u002B         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n- }\n\u002B         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n\u002B     private static bool IsDate(string value) =\u003E\n\u002B         DateOnly.TryParse(value, out _);\n\u002B }\n\u002B // seed-perturb-7\n\u002B"
@@ -1800,129 +1722,7 @@
       "detail": "accepted",
       "hypothesis": "Honest implementation and tests (no transform).",
       "caughtBy": "baseline acceptance"
-    },
-    {
-      "tag": "AssertionRemoved",
-      "family": "WeakTest",
-      "seed": 0,
-      "kind": "Caught",
-      "detail": "_____ _              _               _   _ ______ _______ \u00A0\n  / ____| |            | |             | \\ | |  ____|__   __|\u00A0\n | (___ | |_ _ __ _   _| | _____ _ __  |  \\| | |__     | |   \u00A0\n  \\___ \\| __| \u0027__| | | | |/ / _ \\ \u0027__| | . \u0060 |  __|    | |   \u00A0\n  ____) | |_| |  | |_| |   \u003C  __/ |    | |\\  | |____   | |   \u00A0\n |_____/ \\__|_|   \\__, |_|\\_\\___|_| (_)|_| \\_|______|  |_|   \u00A0\n                   __/ | ...",
-      "hypothesis": "Example assertions removed; tests compile but do not check outcomes.",
-      "caughtBy": "mutation score \u003E= threshold (example assertions killed)",
-      "diffSummary": "-         ColumnTypeInferrer.InferType([\u00221\u0022, \u00222\u0022, \u00223\u0022]).Should().Be(ColumnType.Integer);\n\u002B         ColumnTypeInferrer.InferType([\u00221\u0022, \u00222\u0022, \u00223\u0022]); /* removed seed 0 */\n-         ColumnTypeInferrer.InferType([\u00221.5\u0022, \u00222.0\u0022]).Should().Be(ColumnType.Decimal);\n\u002B         ColumnTypeInferrer.InferType([\u00221.5\u0022, \u00222.0\u0022]); /* removed seed 0 */\n-         ColumnTypeInferrer.InferType([\u0022true\u0022, \u0022false\u0022]).Should().Be(ColumnType.Boolean);\n\u002B         ColumnTypeInferrer.InferType([\u0022true\u0022, \u0022false\u0022]); /* removed seed 0 */\n-         ColumnTypeInferrer.InferType([\u00222024-01-15\u0022]).Should().Be(ColumnType.Date);\n\u002B         ColumnTypeInferrer.InferType([\u00222024-01-15\u0022]); /* removed seed 0 */\n-         ColumnTypeInferrer.InferType([\u0022hello\u0022, \u0022world\u0022]).Should().Be(ColumnType.String);\n\u002B         ColumnTypeInferrer.InferType([\u0022hello\u0022, \u0022world\u0022]); /* removed seed 0 */\n-         ColumnTypeInferrer.InferType([\u00221\u0022, \u0022hello\u0022]).Should().Be(ColumnType.String);\n\u002B         ColumnTypeInferrer.InferType([\u00221\u0022, \u0022hello\u0022]); /* removed seed 0 */\n-         ColumnTypeInferrer.InferType([\u00220\u0022, \u00221\u0022]).Should().Be(ColumnType.Integer);\n\u002B         ColumnTypeInferrer.InferType([\u00220\u0022, \u00221\u0022]); /* removed seed 0 */\n-         ColumnTypeInferrer.InferType([\u0022007\u0022]).Should().Be(ColumnType.Integer);\n\u002B         ColumnTypeInferrer.InferType([\u0022007\u0022]); /* removed seed 0 */\n-         ColumnTypeInferrer.InferType([\u00221,000\u0022]).Should().Be(ColumnType.Decimal);\n\u002B         ColumnTypeInferrer.InferType([\u00221,000\u0022]); /* removed seed 0 */\n-         ColumnTypeInferrer.InferType([\u00221,5\u0022]).Should().Be(ColumnType.Date);\n\u002B         ColumnTypeInferrer.InferType([\u00221,5\u0022]); /* removed seed 0 */\n-         ColumnTypeInferrer.InferType([\u00221,.\u0022]).Should().Be(ColumnType.Decimal);\n\u002B         ColumnTypeInferrer.InferType([\u00221,.\u0022]); /* removed seed 0 */\n-         ColumnTypeInferrer.InferType([\u0022\u002B0\u0022, \u0022-0\u0022]).Should().Be(ColumnType.Integer);\n\u002B         ColumnTypeInferrer.InferType([\u0022\u002B0\u0022, \u0022-0\u0022]); /* removed seed 0 */\n-         ColumnTypeInferrer.InferType([\u0022yes\u0022, \u0022no\u0022]).Should().Be(ColumnType.String);\n\u002B         ColumnTypeInferrer.InferType([\u0022yes\u0022, \u0022no\u0022]); /* removed seed 0 */\n-         ColumnTypeInferrer.InferType([\u0022Y\u0022, \u0022N\u0022]).Should().Be(ColumnType.String);\n\u002B         ColumnTypeInferrer.InferType([\u0022Y\u0022, \u0022N\u0022]); /* removed seed 0 */\n-         ColumnTypeInferrer.InferType([\u0022   \u0022]).Should().Be(ColumnType.String);\n\u002B         ColumnTypeInferrer.InferType([\u0022   \u0022]); /* removed seed 0 */\n- \n\u002B // seed-perturb-0\n\u002B"
-    },
-    {
-      "tag": "TautologyReplacement",
-      "family": "WeakTest",
-      "seed": 0,
-      "kind": "Caught",
-      "detail": "_____ _              _               _   _ ______ _______ \u00A0\n  / ____| |            | |             | \\ | |  ____|__   __|\u00A0\n | (___ | |_ _ __ _   _| | _____ _ __  |  \\| | |__     | |   \u00A0\n  \\___ \\| __| \u0027__| | | | |/ / _ \\ \u0027__| | . \u0060 |  __|    | |   \u00A0\n  ____) | |_| |  | |_| |   \u003C  __/ |    | |\\  | |____   | |   \u00A0\n |_____/ \\__|_|   \\__, |_|\\_\\___|_| (_)|_| \\_|______|  |_|   \u00A0\n                   __/ | ...",
-      "hypothesis": "Assertions replaced with tautology (actual compared to itself).",
-      "caughtBy": "mutation score \u003E= threshold (tautology detection / RED discipline)",
-      "diffSummary": "-         ColumnTypeInferrer.InferType([\u00221\u0022, \u00222\u0022, \u00223\u0022]).Should().Be(ColumnType.Integer);\n\u002B         var __t0 = ColumnTypeInferrer.InferType([\u00221\u0022, \u00222\u0022, \u00223\u0022]); __t0.Should().Be(__t0);\n-         ColumnTypeInferrer.InferType([\u00221.5\u0022, \u00222.0\u0022]).Should().Be(ColumnType.Decimal);\n\u002B         var __t0 = ColumnTypeInferrer.InferType([\u00221.5\u0022, \u00222.0\u0022]); __t0.Should().Be(__t0);\n-         ColumnTypeInferrer.InferType([\u0022true\u0022, \u0022false\u0022]).Should().Be(ColumnType.Boolean);\n\u002B         var __t0 = ColumnTypeInferrer.InferType([\u0022true\u0022, \u0022false\u0022]); __t0.Should().Be(__t0);\n-         ColumnTypeInferrer.InferType([\u00222024-01-15\u0022]).Should().Be(ColumnType.Date);\n\u002B         var __t0 = ColumnTypeInferrer.InferType([\u00222024-01-15\u0022]); __t0.Should().Be(__t0);\n-         ColumnTypeInferrer.InferType([\u0022hello\u0022, \u0022world\u0022]).Should().Be(ColumnType.String);\n\u002B         var __t0 = ColumnTypeInferrer.InferType([\u0022hello\u0022, \u0022world\u0022]); __t0.Should().Be(__t0);\n-         ColumnTypeInferrer.InferType([\u00221\u0022, \u0022hello\u0022]).Should().Be(ColumnType.String);\n\u002B         var __t0 = ColumnTypeInferrer.InferType([\u00221\u0022, \u0022hello\u0022]); __t0.Should().Be(__t0);\n-         ColumnTypeInferrer.InferType([\u00220\u0022, \u00221\u0022]).Should().Be(ColumnType.Integer);\n\u002B         var __t0 = ColumnTypeInferrer.InferType([\u00220\u0022, \u00221\u0022]); __t0.Should().Be(__t0);\n-         ColumnTypeInferrer.InferType([\u0022007\u0022]).Should().Be(ColumnType.Integer);\n\u002B         var __t0 = ColumnTypeInferrer.InferType([\u0022007\u0022]); __t0.Should().Be(__t0);\n-         ColumnTypeInferrer.InferType([\u00221,000\u0022]).Should().Be(ColumnType.Decimal);\n\u002B         var __t0 = ColumnTypeInferrer.InferType([\u00221,000\u0022]); __t0.Should().Be(__t0);\n-         ColumnTypeInferrer.InferType([\u00221,5\u0022]).Should().Be(ColumnType.Date);\n\u002B         var __t0 = ColumnTypeInferrer.InferType([\u00221,5\u0022]); __t0.Should().Be(__t0);\n-         ColumnTypeInferrer.InferType([\u00221,.\u0022]).Should().Be(ColumnType.Decimal);\n\u002B         var __t0 = ColumnTypeInferrer.InferType([\u00221,.\u0022]); __t0.Should().Be(__t0);\n-         ColumnTypeInferrer.InferType([\u0022\u002B0\u0022, \u0022-0\u0022]).Should().Be(ColumnType.Integer);\n\u002B         var __t0 = ColumnTypeInferrer.InferType([\u0022\u002B0\u0022, \u0022-0\u0022]); __t0.Should().Be(__t0);\n-         ColumnTypeInferrer.InferType([\u0022yes\u0022, \u0022no\u0022]).Should().Be(ColumnType.String);\n\u002B         var __t0 = ColumnTypeInferrer.InferType([\u0022yes\u0022, \u0022no\u0022]); __t0.Should().Be(__t0);\n-         ColumnTypeInferrer.InferType([\u0022Y\u0022, \u0022N\u0022]).Should().Be(ColumnType.String);\n\u002B         var __t0 = ColumnTypeInferrer.InferType([\u0022Y\u0022, \u0022N\u0022]); __t0.Should().Be(__t0);\n-         ColumnTypeInferrer.InferType([\u0022   \u0022]).Should().Be(ColumnType.String);\n\u002B         var __t0 = ColumnTypeInferrer.InferType([\u0022   \u0022]); __t0.Should().Be(__t0);\n- \n\u002B // seed-perturb-0\n\u002B"
-    },
-    {
-      "tag": "OverNarrowDomain",
-      "family": "WeakTest",
-      "seed": 0,
-      "kind": "Caught",
-      "detail": "_____ _              _               _   _ ______ _______ \u00A0\n  / ____| |            | |             | \\ | |  ____|__   __|\u00A0\n | (___ | |_ _ __ _   _| | _____ _ __  |  \\| | |__     | |   \u00A0\n  \\___ \\| __| \u0027__| | | | |/ / _ \\ \u0027__| | . \u0060 |  __|    | |   \u00A0\n  ____) | |_| |  | |_| |   \u003C  __/ |    | |\\  | |____   | |   \u00A0\n |_____/ \\__|_|   \\__, |_|\\_\\___|_| (_)|_| \\_|______|  |_|   \u00A0\n                   __/ | ...",
-      "hypothesis": "Only one example input domain covered.",
-      "caughtBy": "mutation score \u003E= threshold (breadth of example coverage)",
-      "diffSummary": "- \n\u002B }\n-     [Fact]\n\u002B // seed-perturb-0\n-     public void Decimal_column_is_inferred_as_Decimal()\n\u002B \n-     {\n-         ColumnTypeInferrer.InferType([\u00221.5\u0022, \u00222.0\u0022]).Should().Be(ColumnType.Decimal);\n-     }\n- \n-     [Fact]\n-     public void Boolean_column_is_inferred_as_Boolean()\n-     {\n-         ColumnTypeInferrer.InferType([\u0022true\u0022, \u0022false\u0022]).Should().Be(ColumnType.Boolean);\n-     }\n- \n-     [Fact]\n-     public void Date_column_is_inferred_as_Date()\n-     {\n-         ColumnTypeInferrer.InferType([\u00222024-01-15\u0022]).Should().Be(ColumnType.Date);\n-     }\n- \n-     [Fact]\n-     public void Text_column_is_inferred_as_String()\n-     {\n-         ColumnTypeInferrer.InferType([\u0022hello\u0022, \u0022world\u0022]).Should().Be(ColumnType.String);\n-     }\n- \n-     [Fact]\n-     public void Mixed_numeric_and_text_is_String()\n-     {\n-         ColumnTypeInferrer.InferType([\u00221\u0022, \u0022hello\u0022]).Should().Be(ColumnType.String);\n-     }\n- \n-     // S1.3 pin: zero-one-literals \u2014 [\u00220\u0022,\u00221\u0022] =\u003E Integer (parses as int; not Boolean)\n-     [Fact]\n-     public void Zero_one_literals_are_Integer_not_Boolean()\n-     {\n-         ColumnTypeInferrer.InferType([\u00220\u0022, \u00221\u0022]).Should().Be(ColumnType.Integer);\n-     }\n- \n-     // S1.3 pin: leading-zeros \u2014 [\u0022007\u0022] =\u003E Integer\n-     [Fact]\n-     public void Leading_zero_numerics_are_Integer()\n-     {\n-         ColumnTypeInferrer.InferType([\u0022007\u0022]).Should().Be(ColumnType.Integer);\n-     }\n- \n-     // S1.3 pin: thousands-separator \u2014 [\u00221,000\u0022] =\u003E Decimal\n-     [Fact]\n-     public void Thousands_separated_numerics_are_Decimal()\n-     {\n-         ColumnTypeInferrer.InferType([\u00221,000\u0022]).Should().Be(ColumnType.Decimal);\n-     }\n- \n-     // S1.3 pin: locale-comma-decimal \u2014 [\u00221,5\u0022] =\u003E Date; edge [\u00221,.\u0022] =\u003E Decimal\n-     [Fact]\n-     public void Locale_comma_decimal_literals_are_Date()\n-     {\n-         ColumnTypeInferrer.InferType([\u00221,5\u0022]).Should().Be(ColumnType.Date);\n-     }\n- \n-     [Fact]\n-     public void Locale_comma_malformed_decimal_edge_is_Decimal()\n-     {\n-         ColumnTypeInferrer.InferType([\u00221,.\u0022]).Should().Be(ColumnType.Decimal);\n-     }\n- \n-     // S1.3 pin: signed-zero \u2014 [\u0022\u002B0\u0022,\u0022-0\u0022] =\u003E Integer\n-     [Fact]\n-     public void Signed_zero_literals_are_Integer()\n-     {\n-         ColumnTypeInferrer.InferType([\u0022\u002B0\u0022, \u0022-0\u0022]).Should().Be(ColumnType.Integer);\n-     }\n- \n-     // S1.3 pin: boolean-yes-no \u2014 [\u0022yes\u0022,\u0022no\u0022] =\u003E String (not Boolean)\n-     [Fact]\n-     public void Yes_no_tokens_are_String_not_Boolean()\n-     {\n-         ColumnTypeInferrer.InferType([\u0022yes\u0022, \u0022no\u0022]).Should().Be(ColumnType.String);\n-     }\n- \n-     // S1.3 pin: boolean-yn \u2014 [\u0022Y\u0022,\u0022N\u0022] =\u003E String (not Boolean)\n-     [Fact]\n-     public void Y_N_tokens_are_String_not_Boolean()\n-     {\n-         ColumnTypeInferrer.InferType([\u0022Y\u0022, \u0022N\u0022]).Should().Be(ColumnType.String);\n-     }\n- \n-     // S1.3 pin: whitespace-only \u2014 filtered as empty =\u003E String\n-     [Fact]\n-     public void Whitespace_only_cells_are_String()\n-     {\n-         ColumnTypeInferrer.InferType([\u0022   \u0022]).Should().Be(ColumnType.String);\n-     }\n- }\n-"
-    },
-    {
-      "tag": "TypeOnlyAssert",
-      "family": "WeakTest",
-      "seed": 0,
-      "kind": "Caught",
-      "detail": "_____ _              _               _   _ ______ _______ \u00A0\n  / ____| |            | |             | \\ | |  ____|__   __|\u00A0\n | (___ | |_ _ __ _   _| | _____ _ __  |  \\| | |__     | |   \u00A0\n  \\___ \\| __| \u0027__| | | | |/ / _ \\ \u0027__| | . \u0060 |  __|    | |   \u00A0\n  ____) | |_| |  | |_| |   \u003C  __/ |    | |\\  | |____   | |   \u00A0\n |_____/ \\__|_|   \\__, |_|\\_\\___|_| (_)|_| \\_|______|  |_|   \u00A0\n                   __/ | ...",
-      "hypothesis": "Assertions weakened to type-only calls without value checks.",
-      "caughtBy": "mutation score \u003E= threshold (value assertions killed)",
-      "diffSummary": "- using FluentAssertions;\n\u002B using System;\n- using CsvColumnInferrer;\n\u002B using FluentAssertions;\n- using Xunit;\n\u002B using CsvColumnInferrer;\n- \n\u002B using Xunit;\n- namespace CsvColumnInferrer.Tests;\n\u002B \n- \n\u002B namespace CsvColumnInferrer.Tests;\n- public sealed class ColumnTypeInferrerRedTests\n\u002B \n- {\n\u002B public sealed class ColumnTypeInferrerRedTests\n-     [Fact]\n\u002B {\n-     public void Integer_column_is_inferred_as_Integer()\n\u002B     [Fact]\n-     {\n\u002B     public void Integer_column_is_inferred_as_Integer()\n-         ColumnTypeInferrer.InferType([\u00221\u0022, \u00222\u0022, \u00223\u0022]).Should().Be(ColumnType.Integer);\n\u002B     {\n-     }\n\u002B         { var __r0 = ColumnTypeInferrer.InferType([\u00221\u0022, \u00222\u0022, \u00223\u0022]); __r0.Should().BeOneOf(Enum.GetValues\u003CColumnType\u003E()); /* type-only seed 0 */ }\n- \n\u002B     }\n-     [Fact]\n\u002B \n-     public void Decimal_column_is_inferred_as_Decimal()\n\u002B     [Fact]\n-     {\n\u002B     public void Decimal_column_is_inferred_as_Decimal()\n-         ColumnTypeInferrer.InferType([\u00221.5\u0022, \u00222.0\u0022]).Should().Be(ColumnType.Decimal);\n\u002B     {\n-     }\n\u002B         { var __r0 = ColumnTypeInferrer.InferType([\u00221.5\u0022, \u00222.0\u0022]); __r0.Should().BeOneOf(Enum.GetValues\u003CColumnType\u003E()); /* type-only seed 0 */ }\n- \n\u002B     }\n-     [Fact]\n\u002B \n-     public void Boolean_column_is_inferred_as_Boolean()\n\u002B     [Fact]\n-     {\n\u002B     public void Boolean_column_is_inferred_as_Boolean()\n-         ColumnTypeInferrer.InferType([\u0022true\u0022, \u0022false\u0022]).Should().Be(ColumnType.Boolean);\n\u002B     {\n-     }\n\u002B         { var __r0 = ColumnTypeInferrer.InferType([\u0022true\u0022, \u0022false\u0022]); __r0.Should().BeOneOf(Enum.GetValues\u003CColumnType\u003E()); /* type-only seed 0 */ }\n- \n\u002B     }\n-     [Fact]\n\u002B \n-     public void Date_column_is_inferred_as_Date()\n\u002B     [Fact]\n-     {\n\u002B     public void Date_column_is_inferred_as_Date()\n-         ColumnTypeInferrer.InferType([\u00222024-01-15\u0022]).Should().Be(ColumnType.Date);\n\u002B     {\n-     }\n\u002B         { var __r0 = ColumnTypeInferrer.InferType([\u00222024-01-15\u0022]); __r0.Should().BeOneOf(Enum.GetValues\u003CColumnType\u003E()); /* type-only seed 0 */ }\n- \n\u002B     }\n-     [Fact]\n\u002B \n-     public void Text_column_is_inferred_as_String()\n\u002B     [Fact]\n-     {\n\u002B     public void Text_column_is_inferred_as_String()\n-         ColumnTypeInferrer.InferType([\u0022hello\u0022, \u0022world\u0022]).Should().Be(ColumnType.String);\n\u002B     {\n-     }\n\u002B         { var __r0 = ColumnTypeInferrer.InferType([\u0022hello\u0022, \u0022world\u0022]); __r0.Should().BeOneOf(Enum.GetValues\u003CColumnType\u003E()); /* type-only seed 0 */ }\n- \n\u002B     }\n-     [Fact]\n\u002B \n-     public void Mixed_numeric_and_text_is_String()\n\u002B     [Fact]\n-     {\n\u002B     public void Mixed_numeric_and_text_is_String()\n-         ColumnTypeInferrer.InferType([\u00221\u0022, \u0022hello\u0022]).Should().Be(ColumnType.String);\n\u002B     {\n-     }\n\u002B         { var __r0 = ColumnTypeInferrer.InferType([\u00221\u0022, \u0022hello\u0022]); __r0.Should().BeOneOf(Enum.GetValues\u003CColumnType\u003E()); /* type-only seed 0 */ }\n- \n\u002B     }\n-     // S1.3 pin: zero-one-literals \u2014 [\u00220\u0022,\u00221\u0022] =\u003E Integer (parses as int; not Boolean)\n\u002B \n-     [Fact]\n\u002B     // S1.3 pin: zero-one-literals \u2014 [\u00220\u0022,\u00221\u0022] =\u003E Integer (parses as int; not Boolean)\n-     public void Zero_one_literals_are_Integer_not_Boolean()\n\u002B     [Fact]\n-     {\n\u002B     public void Zero_one_literals_are_Integer_not_Boolean()\n-         ColumnTypeInferrer.InferType([\u00220\u0022, \u00221\u0022]).Should().Be(ColumnType.Integer);\n\u002B     {\n-     }\n\u002B         { var __r0 = ColumnTypeInferrer.InferType([\u00220\u0022, \u00221\u0022]); __r0.Should().BeOneOf(Enum.GetValues\u003CColumnType\u003E()); /* type-only seed 0 */ }\n- \n\u002B     }\n-     // S1.3 pin: leading-zeros \u2014 [\u0022007\u0022] =\u003E Integer\n\u002B \n-     [Fact]\n\u002B     // S1.3 pin: leading-zeros \u2014 [\u0022007\u0022] =\u003E Integer\n-     public void Leading_zero_numerics_are_Integer()\n\u002B     [Fact]\n-     {\n\u002B     public void Leading_zero_numerics_are_Integer()\n-         ColumnTypeInferrer.InferType([\u0022007\u0022]).Should().Be(ColumnType.Integer);\n\u002B     {\n-     }\n\u002B         { var __r0 = ColumnTypeInferrer.InferType([\u0022007\u0022]); __r0.Should().BeOneOf(Enum.GetValues\u003CColumnType\u003E()); /* type-only seed 0 */ }\n- \n\u002B     }\n-     // S1.3 pin: thousands-separator \u2014 [\u00221,000\u0022] =\u003E Decimal\n\u002B \n-     [Fact]\n\u002B     // S1.3 pin: thousands-separator \u2014 [\u00221,000\u0022] =\u003E Decimal\n-     public void Thousands_separated_numerics_are_Decimal()\n\u002B     [Fact]\n-     {\n\u002B     public void Thousands_separated_numerics_are_Decimal()\n-         ColumnTypeInferrer.InferType([\u00221,000\u0022]).Should().Be(ColumnType.Decimal);\n\u002B     {\n-     }\n\u002B         { var __r0 = ColumnTypeInferrer.InferType([\u00221,000\u0022]); __r0.Should().BeOneOf(Enum.GetValues\u003CColumnType\u003E()); /* type-only seed 0 */ }\n- \n\u002B     }\n-     // S1.3 pin: locale-comma-decimal \u2014 [\u00221,5\u0022] =\u003E Date; edge [\u00221,.\u0022] =\u003E Decimal\n\u002B \n-     [Fact]\n\u002B     // S1.3 pin: locale-comma-decimal \u2014 [\u00221,5\u0022] =\u003E Date; edge [\u00221,.\u0022] =\u003E Decimal\n-     public void Locale_comma_decimal_literals_are_Date()\n\u002B     [Fact]\n-     {\n\u002B     public void Locale_comma_decimal_literals_are_Date()\n-         ColumnTypeInferrer.InferType([\u00221,5\u0022]).Should().Be(ColumnType.Date);\n\u002B     {\n-     }\n\u002B         { var __r0 = ColumnTypeInferrer.InferType([\u00221,5\u0022]); __r0.Should().BeOneOf(Enum.GetValues\u003CColumnType\u003E()); /* type-only seed 0 */ }\n- \n\u002B     }\n-     [Fact]\n\u002B \n-     public void Locale_comma_malformed_decimal_edge_is_Decimal()\n\u002B     [Fact]\n-     {\n\u002B     public void Locale_comma_malformed_decimal_edge_is_Decimal()\n-         ColumnTypeInferrer.InferType([\u00221,.\u0022]).Should().Be(ColumnType.Decimal);\n\u002B     {\n-     }\n\u002B         { var __r0 = ColumnTypeInferrer.InferType([\u00221,.\u0022]); __r0.Should().BeOneOf(Enum.GetValues\u003CColumnType\u003E()); /* type-only seed 0 */ }\n- \n\u002B     }\n-     // S1.3 pin: signed-zero \u2014 [\u0022\u002B0\u0022,\u0022-0\u0022] =\u003E Integer\n\u002B \n-     [Fact]\n\u002B     // S1.3 pin: signed-zero \u2014 [\u0022\u002B0\u0022,\u0022-0\u0022] =\u003E Integer\n-     public void Signed_zero_literals_are_Integer()\n\u002B     [Fact]\n-     {\n\u002B     public void Signed_zero_literals_are_Integer()\n-         ColumnTypeInferrer.InferType([\u0022\u002B0\u0022, \u0022-0\u0022]).Should().Be(ColumnType.Integer);\n\u002B     {\n-     }\n\u002B         { var __r0 = ColumnTypeInferrer.InferType([\u0022\u002B0\u0022, \u0022-0\u0022]); __r0.Should().BeOneOf(Enum.GetValues\u003CColumnType\u003E()); /* type-only seed 0 */ }\n- \n\u002B     }\n-     // S1.3 pin: boolean-yes-no \u2014 [\u0022yes\u0022,\u0022no\u0022] =\u003E String (not Boolean)\n\u002B \n-     [Fact]\n\u002B     // S1.3 pin: boolean-yes-no \u2014 [\u0022yes\u0022,\u0022no\u0022] =\u003E String (not Boolean)\n-     public void Yes_no_tokens_are_String_not_Boolean()\n\u002B     [Fact]\n-     {\n\u002B     public void Yes_no_tokens_are_String_not_Boolean()\n-         ColumnTypeInferrer.InferType([\u0022yes\u0022, \u0022no\u0022]).Should().Be(ColumnType.String);\n\u002B     {\n-     }\n\u002B         { var __r0 = ColumnTypeInferrer.InferType([\u0022yes\u0022, \u0022no\u0022]); __r0.Should().BeOneOf(Enum.GetValues\u003CColumnType\u003E()); /* type-only seed 0 */ }\n- \n\u002B     }\n-     // S1.3 pin: boolean-yn \u2014 [\u0022Y\u0022,\u0022N\u0022] =\u003E String (not Boolean)\n\u002B \n-     [Fact]\n\u002B     // S1.3 pin: boolean-yn \u2014 [\u0022Y\u0022,\u0022N\u0022] =\u003E String (not Boolean)\n-     public void Y_N_tokens_are_String_not_Boolean()\n\u002B     [Fact]\n-     {\n\u002B     public void Y_N_tokens_are_String_not_Boolean()\n-         ColumnTypeInferrer.InferType([\u0022Y\u0022, \u0022N\u0022]).Should().Be(ColumnType.String);\n\u002B     {\n-     }\n\u002B         { var __r0 = ColumnTypeInferrer.InferType([\u0022Y\u0022, \u0022N\u0022]); __r0.Should().BeOneOf(Enum.GetValues\u003CColumnType\u003E()); /* type-only seed 0 */ }\n- \n\u002B     }\n-     // S1.3 pin: whitespace-only \u2014 filtered as empty =\u003E String\n\u002B \n-     [Fact]\n\u002B     // S1.3 pin: whitespace-only \u2014 filtered as empty =\u003E String\n-     public void Whitespace_only_cells_are_String()\n\u002B     [Fact]\n-     {\n\u002B     public void Whitespace_only_cells_are_String()\n-         ColumnTypeInferrer.InferType([\u0022   \u0022]).Should().Be(ColumnType.String);\n\u002B     {\n-     }\n\u002B         { var __r0 = ColumnTypeInferrer.InferType([\u0022   \u0022]); __r0.Should().BeOneOf(Enum.GetValues\u003CColumnType\u003E()); /* type-only seed 0 */ }\n- }\n\u002B     }\n- \n\u002B }\n\u002B // seed-perturb-0\n\u002B"
-    },
-    {
-      "tag": "HonestNoOp",
-      "family": "HonestBaseline",
-      "seed": 0,
-      "kind": "Accepted",
-      "detail": "accepted",
-      "hypothesis": "Honest implementation and tests (no transform).",
-      "caughtBy": "baseline acceptance"
     }
   ],
-  "survivingExamples": [
-    {
-      "dimension": "wrong-impl",
-      "transformTag": "SwappedOperands",
-      "seed": 1,
-      "workspacePath": "workspaces/wrong-impl-0001-SwappedOperands",
-      "hypothesis": "Integer and decimal precedence swapped.",
-      "missingRelation": "acceptance: [\u00221\u0022,\u00222\u0022,\u00223\u0022] =\u003E Integer; [\u00221.5\u0022,\u00222.0\u0022] =\u003E Decimal",
-      "diffSummary": "-         if (nonEmpty.All(IsBoolean))\n\u002B         if (nonEmpty.All(IsDate))\n-             return ColumnType.Boolean;\n\u002B             return ColumnType.Date;\n-         if (nonEmpty.All(IsDate))\n\u002B         if (nonEmpty.All(IsBoolean))\n-             return ColumnType.Date;\n\u002B             return ColumnType.Boolean;\n- \n\u002B // seed-perturb-1\n\u002B"
-    },
-    {
-      "dimension": "wrong-impl",
-      "transformTag": "SemanticSamplingWindow",
-      "seed": 1,
-      "workspacePath": "workspaces/wrong-impl-0001-SemanticSamplingWindow",
-      "hypothesis": "Inference uses only first two non-empty cells, missing later type-widening values.",
-      "missingRelation": "none \u2014 gap: sampling-window / column-length invariance not in frozen criteria",
-      "diffSummary": "-         if (nonEmpty.Count == 0)\n\u002B                 nonEmpty = nonEmpty.Take(3).ToList();\n-             return ColumnType.String;\n\u002B         if (nonEmpty.Count == 0)\n- \n\u002B             return ColumnType.String;\n-         if (nonEmpty.All(IsBoolean))\n\u002B \n-             return ColumnType.Boolean;\n\u002B         if (nonEmpty.All(IsBoolean))\n- \n\u002B             return ColumnType.Boolean;\n-         if (nonEmpty.All(IsDate))\n\u002B \n-             return ColumnType.Date;\n\u002B         if (nonEmpty.All(IsDate))\n- \n\u002B             return ColumnType.Date;\n-         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n\u002B \n-             return ColumnType.Integer;\n\u002B         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n- \n\u002B             return ColumnType.Integer;\n-         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n\u002B \n-             return ColumnType.Decimal;\n\u002B         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n- \n\u002B             return ColumnType.Decimal;\n-         return ColumnType.String;\n\u002B \n-     }\n\u002B         return ColumnType.String;\n- \n\u002B     }\n-     private static bool IsBoolean(string value) =\u003E\n\u002B \n-         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n\u002B     private static bool IsBoolean(string value) =\u003E\n-         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n\u002B         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n- \n\u002B         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n-     private static bool IsDate(string value) =\u003E\n\u002B \n-         DateOnly.TryParse(value, out _);\n\u002B     private static bool IsDate(string value) =\u003E\n- }\n\u002B         DateOnly.TryParse(value, out _);\n- \n\u002B }\n\u002B // seed-perturb-1\n\u002B"
-    },
-    {
-      "dimension": "wrong-impl",
-      "transformTag": "SwappedOperands",
-      "seed": 3,
-      "workspacePath": "workspaces/wrong-impl-0003-SwappedOperands",
-      "hypothesis": "Integer and decimal precedence swapped.",
-      "missingRelation": "acceptance: [\u00221\u0022,\u00222\u0022,\u00223\u0022] =\u003E Integer; [\u00221.5\u0022,\u00222.0\u0022] =\u003E Decimal",
-      "diffSummary": "-         if (nonEmpty.All(IsBoolean))\n\u002B         if (nonEmpty.All(IsDate))\n-             return ColumnType.Boolean;\n\u002B             return ColumnType.Date;\n-         if (nonEmpty.All(IsDate))\n\u002B         if (nonEmpty.All(IsBoolean))\n-             return ColumnType.Date;\n\u002B             return ColumnType.Boolean;\n- \n\u002B // seed-perturb-3\n\u002B"
-    },
-    {
-      "dimension": "wrong-impl",
-      "transformTag": "SemanticSamplingWindow",
-      "seed": 3,
-      "workspacePath": "workspaces/wrong-impl-0003-SemanticSamplingWindow",
-      "hypothesis": "Inference uses only first two non-empty cells, missing later type-widening values.",
-      "missingRelation": "none \u2014 gap: sampling-window / column-length invariance not in frozen criteria",
-      "diffSummary": "-         if (nonEmpty.Count == 0)\n\u002B                 nonEmpty = nonEmpty.Take(4).ToList();\n-             return ColumnType.String;\n\u002B         if (nonEmpty.Count == 0)\n- \n\u002B             return ColumnType.String;\n-         if (nonEmpty.All(IsBoolean))\n\u002B \n-             return ColumnType.Boolean;\n\u002B         if (nonEmpty.All(IsBoolean))\n- \n\u002B             return ColumnType.Boolean;\n-         if (nonEmpty.All(IsDate))\n\u002B \n-             return ColumnType.Date;\n\u002B         if (nonEmpty.All(IsDate))\n- \n\u002B             return ColumnType.Date;\n-         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n\u002B \n-             return ColumnType.Integer;\n\u002B         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n- \n\u002B             return ColumnType.Integer;\n-         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n\u002B \n-             return ColumnType.Decimal;\n\u002B         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n- \n\u002B             return ColumnType.Decimal;\n-         return ColumnType.String;\n\u002B \n-     }\n\u002B         return ColumnType.String;\n- \n\u002B     }\n-     private static bool IsBoolean(string value) =\u003E\n\u002B \n-         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n\u002B     private static bool IsBoolean(string value) =\u003E\n-         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n\u002B         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n- \n\u002B         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n-     private static bool IsDate(string value) =\u003E\n\u002B \n-         DateOnly.TryParse(value, out _);\n\u002B     private static bool IsDate(string value) =\u003E\n- }\n\u002B         DateOnly.TryParse(value, out _);\n- \n\u002B }\n\u002B // seed-perturb-3\n\u002B"
-    },
-    {
-      "dimension": "wrong-impl",
-      "transformTag": "SwappedOperands",
-      "seed": 5,
-      "workspacePath": "workspaces/wrong-impl-0005-SwappedOperands",
-      "hypothesis": "Integer and decimal precedence swapped.",
-      "missingRelation": "acceptance: [\u00221\u0022,\u00222\u0022,\u00223\u0022] =\u003E Integer; [\u00221.5\u0022,\u00222.0\u0022] =\u003E Decimal",
-      "diffSummary": "-         if (nonEmpty.All(IsBoolean))\n\u002B         if (nonEmpty.All(IsDate))\n-             return ColumnType.Boolean;\n\u002B             return ColumnType.Date;\n-         if (nonEmpty.All(IsDate))\n\u002B         if (nonEmpty.All(IsBoolean))\n-             return ColumnType.Date;\n\u002B             return ColumnType.Boolean;\n- \n\u002B // seed-perturb-5\n\u002B"
-    },
-    {
-      "dimension": "wrong-impl",
-      "transformTag": "SemanticSamplingWindow",
-      "seed": 5,
-      "workspacePath": "workspaces/wrong-impl-0005-SemanticSamplingWindow",
-      "hypothesis": "Inference uses only first two non-empty cells, missing later type-widening values.",
-      "missingRelation": "none \u2014 gap: sampling-window / column-length invariance not in frozen criteria",
-      "diffSummary": "-         if (nonEmpty.Count == 0)\n\u002B                 nonEmpty = nonEmpty.Take(3).ToList();\n-             return ColumnType.String;\n\u002B         if (nonEmpty.Count == 0)\n- \n\u002B             return ColumnType.String;\n-         if (nonEmpty.All(IsBoolean))\n\u002B \n-             return ColumnType.Boolean;\n\u002B         if (nonEmpty.All(IsBoolean))\n- \n\u002B             return ColumnType.Boolean;\n-         if (nonEmpty.All(IsDate))\n\u002B \n-             return ColumnType.Date;\n\u002B         if (nonEmpty.All(IsDate))\n- \n\u002B             return ColumnType.Date;\n-         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n\u002B \n-             return ColumnType.Integer;\n\u002B         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n- \n\u002B             return ColumnType.Integer;\n-         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n\u002B \n-             return ColumnType.Decimal;\n\u002B         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n- \n\u002B             return ColumnType.Decimal;\n-         return ColumnType.String;\n\u002B \n-     }\n\u002B         return ColumnType.String;\n- \n\u002B     }\n-     private static bool IsBoolean(string value) =\u003E\n\u002B \n-         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n\u002B     private static bool IsBoolean(string value) =\u003E\n-         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n\u002B         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n- \n\u002B         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n-     private static bool IsDate(string value) =\u003E\n\u002B \n-         DateOnly.TryParse(value, out _);\n\u002B     private static bool IsDate(string value) =\u003E\n- }\n\u002B         DateOnly.TryParse(value, out _);\n- \n\u002B }\n\u002B // seed-perturb-5\n\u002B"
-    },
-    {
-      "dimension": "wrong-impl",
-      "transformTag": "SwappedOperands",
-      "seed": 7,
-      "workspacePath": "workspaces/wrong-impl-0007-SwappedOperands",
-      "hypothesis": "Integer and decimal precedence swapped.",
-      "missingRelation": "acceptance: [\u00221\u0022,\u00222\u0022,\u00223\u0022] =\u003E Integer; [\u00221.5\u0022,\u00222.0\u0022] =\u003E Decimal",
-      "diffSummary": "-         if (nonEmpty.All(IsBoolean))\n\u002B         if (nonEmpty.All(IsDate))\n-             return ColumnType.Boolean;\n\u002B             return ColumnType.Date;\n-         if (nonEmpty.All(IsDate))\n\u002B         if (nonEmpty.All(IsBoolean))\n-             return ColumnType.Date;\n\u002B             return ColumnType.Boolean;\n- \n\u002B // seed-perturb-7\n\u002B"
-    },
-    {
-      "dimension": "wrong-impl",
-      "transformTag": "SemanticSamplingWindow",
-      "seed": 7,
-      "workspacePath": "workspaces/wrong-impl-0007-SemanticSamplingWindow",
-      "hypothesis": "Inference uses only first two non-empty cells, missing later type-widening values.",
-      "missingRelation": "none \u2014 gap: sampling-window / column-length invariance not in frozen criteria",
-      "diffSummary": "-         if (nonEmpty.Count == 0)\n\u002B                 nonEmpty = nonEmpty.Take(5).ToList();\n-             return ColumnType.String;\n\u002B         if (nonEmpty.Count == 0)\n- \n\u002B             return ColumnType.String;\n-         if (nonEmpty.All(IsBoolean))\n\u002B \n-             return ColumnType.Boolean;\n\u002B         if (nonEmpty.All(IsBoolean))\n- \n\u002B             return ColumnType.Boolean;\n-         if (nonEmpty.All(IsDate))\n\u002B \n-             return ColumnType.Date;\n\u002B         if (nonEmpty.All(IsDate))\n- \n\u002B             return ColumnType.Date;\n-         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n\u002B \n-             return ColumnType.Integer;\n\u002B         if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n- \n\u002B             return ColumnType.Integer;\n-         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n\u002B \n-             return ColumnType.Decimal;\n\u002B         if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n- \n\u002B             return ColumnType.Decimal;\n-         return ColumnType.String;\n\u002B \n-     }\n\u002B         return ColumnType.String;\n- \n\u002B     }\n-     private static bool IsBoolean(string value) =\u003E\n\u002B \n-         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n\u002B     private static bool IsBoolean(string value) =\u003E\n-         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n\u002B         value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n- \n\u002B         || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n-     private static bool IsDate(string value) =\u003E\n\u002B \n-         DateOnly.TryParse(value, out _);\n\u002B     private static bool IsDate(string value) =\u003E\n- }\n\u002B         DateOnly.TryParse(value, out _);\n- \n\u002B }\n\u002B // seed-perturb-7\n\u002B"
-    }
-  ]
+  "survivingExamples": []
 }

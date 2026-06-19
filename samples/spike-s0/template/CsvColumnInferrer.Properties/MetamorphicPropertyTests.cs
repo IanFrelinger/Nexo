@@ -73,4 +73,15 @@ public sealed class MetamorphicPropertyTests
         ColumnTypeInferrer.InferType(["   "]).Should().Be(ColumnType.String);
         ColumnTypeInferrer.InferType(["\t", "  "]).Should().Be(ColumnType.String);
     }
+
+    /// <summary>
+    /// Metamorphic invariant: inference uses the full column, not a strict prefix,
+    /// when a suffix cell widens the inferred type.
+    /// </summary>
+    [Fact]
+    public void InferType_uses_full_column_not_prefix_when_suffix_widens_type()
+    {
+        ColumnTypeInferrer.InferType(["1", "2"]).Should().Be(ColumnType.Integer);
+        ColumnTypeInferrer.InferType(["1", "2", "hello"]).Should().Be(ColumnType.String);
+    }
 }

@@ -21,7 +21,8 @@
     "Pin signed-zero: [\"+0\",\"-0\"] => Integer",
     "Pin boolean-yes-no: [\"yes\",\"no\"] => String (not Boolean)",
     "Pin boolean-yn: [\"Y\",\"N\"] => String (not Boolean)",
-    "Pin whitespace-only: whitespace-only cells filtered as empty => String"
+    "Pin whitespace-only: whitespace-only cells filtered as empty => String",
+    "Pin sampling-window: [\"1\",\"2\",\"hello\"] => String (full column, not prefix sample)"
   ],
   "acceptanceCriteria": [
     "[\"1\",\"2\",\"3\"] => Integer",

@@ -19,6 +19,11 @@
       "wrongImplEscapeRate": 0.05555555555555555,
       "weakTestEscapeRate": 0.0,
       "note": "S1.3 densified spec; 8/144 residual escapes (SwappedOperands + SemanticSamplingWindow seed sub-variants)."
+    },
+    "s1.4-v1": {
+      "wrongImplEscapeRate": 0.0,
+      "weakTestEscapeRate": 0.0,
+      "note": "S1.4 closeout; 0/144 escapes with multi-witness pinning and vacuity reclassification."
     }
   },
   "intentDensity": {
@@ -29,6 +34,10 @@
     "s1.3-v1": {
       "intentDensity": 1.0,
       "note": "12/12 probe classes pinned; honest impl Certifiable at 95% threshold."
+    },
+    "s1.4-v1": {
+      "intentDensity": 1.0,
+      "note": "18/18 probe classes pinned across all seeds; certification equivalence holds."
     }
   }
 }
