@@ -1,0 +1,2 @@
+# Ignore generated workspaces from harness runs
+workspaces/

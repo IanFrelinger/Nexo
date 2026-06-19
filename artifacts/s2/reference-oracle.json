@@ -1,0 +1,29 @@
+{
+  "version": "s2.0-v1",
+  "provenance": "Frozen labeled truth corpus for the CSV column type inferrer brick. Gate-pinned rows mirror acceptance criteria from honest-csv-inferrer.json (S1.4). Held-out rows were cross-checked once against well-known CSV type-sniffer behavior (integer-before-decimal precedence, full-column inference, locale edge cases) then frozen as a table. No live external calls at evaluation time.",
+  "labels": [
+    { "inputs": ["1", "2", "3"], "expectedType": "Integer", "source": "gate-pinned" },
+    { "inputs": ["1.5", "2.0"], "expectedType": "Decimal", "source": "gate-pinned" },
+    { "inputs": ["true", "false"], "expectedType": "Boolean", "source": "gate-pinned" },
+    { "inputs": ["2024-01-15"], "expectedType": "Date", "source": "gate-pinned" },
+    { "inputs": ["hello", "world"], "expectedType": "String", "source": "gate-pinned" },
+    { "inputs": [""], "expectedType": "String", "source": "gate-pinned" },
+    { "inputs": ["1", "hello"], "expectedType": "String", "source": "gate-pinned" },
+    { "inputs": ["0", "1"], "expectedType": "Integer", "source": "gate-pinned" },
+    { "inputs": ["007"], "expectedType": "Integer", "source": "gate-pinned" },
+    { "inputs": ["1,000"], "expectedType": "Decimal", "source": "gate-pinned" },
+    { "inputs": ["1,5"], "expectedType": "Date", "source": "gate-pinned" },
+    { "inputs": ["1,."], "expectedType": "Decimal", "source": "gate-pinned" },
+    { "inputs": ["+0", "-0"], "expectedType": "Integer", "source": "gate-pinned" },
+    { "inputs": ["yes", "no"], "expectedType": "String", "source": "gate-pinned" },
+    { "inputs": ["Y", "N"], "expectedType": "String", "source": "gate-pinned" },
+    { "inputs": ["   "], "expectedType": "String", "source": "gate-pinned" },
+    { "inputs": ["1", "2", "hello"], "expectedType": "String", "source": "gate-pinned" },
+    { "inputs": ["999"], "expectedType": "Integer", "source": "held-out" },
+    { "inputs": ["1", "2", "3", "4"], "expectedType": "Integer", "source": "held-out" },
+    { "inputs": ["10", "20"], "expectedType": "Integer", "source": "held-out" },
+    { "inputs": ["1e3"], "expectedType": "String", "source": "held-out" },
+    { "inputs": ["2024-01-15", "2024-02-20"], "expectedType": "Date", "source": "held-out" },
+    { "inputs": ["false", "true"], "expectedType": "Boolean", "source": "held-out" }
+  ]
+}

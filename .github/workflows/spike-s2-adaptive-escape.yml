@@ -1,0 +1,60 @@
+name: Spike S2 Adaptive Escape (manual)
+
+on:
+  workflow_dispatch:
+
+jobs:
+  adaptive-escape:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Install dotnet-stryker
+        run: dotnet tool install -g dotnet-stryker
+
+      - name: Run adaptive escape harness (mock adversary only)
+        run: |
+          export PATH="$HOME/.dotnet/tools:$PATH"
+          unset NEXO_S2_ADVERSARY
+          unset OPENAI_API_KEY
+          unset ANTHROPIC_API_KEY
+          unset NEXO_LLM_API_KEY
+          dotnet test src/Nexo.Tests.Spike.S2 --filter "FullyQualifiedName~NonVacuity|FullyQualifiedName~ReferenceOracle|FullyQualifiedName~AdversaryIsolation|FullyQualifiedName~LlmAdversary"
+          dotnet run --project src/Nexo.Spike.S2 -- --intents 1 --attempts 3 --out artifacts/s2
+
+      - name: Assert non-vacuity and mock-only adversary
+        run: |
+          python3 <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          if os.environ.get("NEXO_S2_ADVERSARY") == "llm":
+              raise SystemExit("CI must not set NEXO_S2_ADVERSARY=llm")
+
+          report = json.loads(Path("artifacts/s2/adaptive-escape-report.json").read_text())
+          print(f"adversaryBackend={report['adversaryBackend']}")
+          print(f"trueEscapes={report['trueEscapeCount']} benignPasses={report['benignPassCount']}")
+
+          if report["adversaryBackend"] != "mock":
+              raise SystemExit("CI/cloud must use mock adversary only")
+
+          if report["trueEscapeCount"] < 1 or report["benignPassCount"] < 1:
+              raise SystemExit("Non-vacuity guard failed: need detected TrueEscape and BenignPass")
+
+          backlog = report.get("newDefectBacklog") or []
+          if not backlog:
+              raise SystemExit("Expected held-out backlog entries from TrueEscape")
+          PY
+
+      - name: Upload adaptive-escape report
+        uses: actions/upload-artifact@v4
+        with:
+          name: s2-adaptive-escape-report
+          path: artifacts/s2/

@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Nexo.Spike.S2</RootNamespace>
+    <AssemblyTitle>Nexo Spike S2</AssemblyTitle>
+    <Description>Adaptive adversary escape rate vs independent reference oracle.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Nexo.Tests.Spike.S2" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Nexo.Spike.S0\Nexo.Spike.S0.csproj" />
+    <ProjectReference Include="..\Nexo.Spike.S1\Nexo.Spike.S1.csproj" />
+  </ItemGroup>
+</Project>
