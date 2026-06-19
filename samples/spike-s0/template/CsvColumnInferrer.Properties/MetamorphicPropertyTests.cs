@@ -41,4 +41,36 @@ public sealed class MetamorphicPropertyTests
         var values = new[] { "1", "hello", "true" };
         ColumnTypeInferrer.InferType(values).Should().Be(ColumnTypeInferrer.InferType(values));
     }
+
+    public static TheoryData<string[]> WhitespaceInvariantBaselines => new()
+    {
+        { ["1", "2", "3"] },
+        { ["hello", "world"] },
+        { ["true", "false"] },
+        { ["1", "hello"] },
+        { ["2024-01-15"] }
+    };
+
+    /// <summary>
+    /// Metamorphic invariant: inserting whitespace-only cells does not change inferred type.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(WhitespaceInvariantBaselines))]
+    public void InferType_is_invariant_when_inserting_whitespace_only_cells(string[] baseline)
+    {
+        var expected = ColumnTypeInferrer.InferType(baseline);
+        var interleaved = baseline.SelectMany(v => new[] { "   ", v }).ToList();
+        ColumnTypeInferrer.InferType(interleaved)
+            .Should().Be(expected, because: "whitespace-only cells treated as empty");
+        var trailing = baseline.Concat(["   ", "\t"]).ToList();
+        ColumnTypeInferrer.InferType(trailing)
+            .Should().Be(expected, because: "whitespace-only cells treated as empty");
+    }
+
+    [Fact]
+    public void Whitespace_only_cells_are_treated_as_empty()
+    {
+        ColumnTypeInferrer.InferType(["   "]).Should().Be(ColumnType.String);
+        ColumnTypeInferrer.InferType(["\t", "  "]).Should().Be(ColumnType.String);
+    }
 }

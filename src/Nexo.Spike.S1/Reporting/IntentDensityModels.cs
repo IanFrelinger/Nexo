@@ -42,7 +42,7 @@ public sealed record IntentDensityReport(
     CertificationResult Certification,
     IReadOnlyList<ProbeClassResult> ProbeClasses)
 {
-    public const string Version = "s1.2-v1";
+    public const string Version = "s1.3-v1";
 }
 
 public static class IntentDensityReportWriter

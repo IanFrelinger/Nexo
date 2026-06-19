@@ -13,7 +13,15 @@
     "Empty input list returns String",
     "Whitespace-only cells are treated as empty",
     "Integer beats Decimal when all numeric values are whole numbers",
-    "If any non-empty value is not parseable as the candidate type, fall back to String"
+    "If any non-empty value is not parseable as the candidate type, fall back to String",
+    "Pin zero-one-literals: [\"0\",\"1\"] => Integer (parses as int; not Boolean)",
+    "Pin leading-zeros: [\"007\"] => Integer",
+    "Pin thousands-separator: [\"1,000\"] => Decimal (decimal.TryParse accepts comma thousands)",
+    "Pin locale-comma-decimal: [\"1,5\"] => Date; comma-decimal edge [\"1,.\"] => Decimal (DateOnly rejects, decimal.TryParse accepts)",
+    "Pin signed-zero: [\"+0\",\"-0\"] => Integer",
+    "Pin boolean-yes-no: [\"yes\",\"no\"] => String (not Boolean)",
+    "Pin boolean-yn: [\"Y\",\"N\"] => String (not Boolean)",
+    "Pin whitespace-only: whitespace-only cells filtered as empty => String"
   ],
   "acceptanceCriteria": [
     "[\"1\",\"2\",\"3\"] => Integer",
@@ -22,7 +30,16 @@
     "[\"2024-01-15\"] => Date",
     "[\"hello\",\"world\"] => String",
     "[\"\"] => String",
-    "Mixed numeric and text => String"
+    "Mixed numeric and text => String",
+    "[\"0\",\"1\"] => Integer",
+    "[\"007\"] => Integer",
+    "[\"1,000\"] => Decimal",
+    "[\"1,5\"] => Date",
+    "[\"1,.\"] => Decimal",
+    "[\"+0\",\"-0\"] => Integer",
+    "[\"yes\",\"no\"] => String",
+    "[\"Y\",\"N\"] => String",
+    "[\"   \"] => String"
   ],
   "adversarial": false
 }

@@ -12,8 +12,8 @@ public sealed class TransformCatalogTests
     [Fact]
     public void Catalog_has_versioned_identifier()
     {
-        TransformCatalog.CatalogVersion.Should().Be("s1.2-v1");
-        ProbeCorpus.ProbeCorpusVersion.Should().Be("s1.2-v1");
+        TransformCatalog.CatalogVersion.Should().Be("s1.3-v1");
+        ProbeCorpus.ProbeCorpusVersion.Should().Be("s1.3-v1");
         TransformAttribution.All.Should().ContainKey(TransformTag.SemanticBooleanYesNo);
     }
 
@@ -230,6 +230,24 @@ public sealed class IntentDensityTests
         var result = CertificationGate.Evaluate(0.91, probes, threshold: 0.9);
         result.Verdict.Should().Be(CertificationVerdict.CertifiableWithScope);
         result.OutOfScopeClasses.Should().Contain("gap");
+    }
+
+    [Fact]
+    public void Certification_gate_marks_fully_pinned_spec_certifiable()
+    {
+        var probes = ProbeCorpus.All
+            .Select(p => Probe(p.Id, ProbePinStatus.Pinned))
+            .ToList();
+
+        var result = CertificationGate.Evaluate(1.0, probes, threshold: 0.95);
+        result.Verdict.Should().Be(CertificationVerdict.Certifiable);
+        result.UnpinnedClasses.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void All_probe_classes_expected_pinned_after_s1_3_densification()
+    {
+        ProbeCorpus.All.Should().OnlyContain(p => p.ExpectedPinned);
     }
 
     private static ProbeClassResult Probe(string id, ProbePinStatus status) =>

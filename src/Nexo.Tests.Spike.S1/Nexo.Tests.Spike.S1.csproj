@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Nexo.Spike.S1\Nexo.Spike.S1.csproj" />
+    <ProjectReference Include="..\Nexo.Spike.S0\Nexo.Spike.S0.csproj" />
   </ItemGroup>
 
 </Project>

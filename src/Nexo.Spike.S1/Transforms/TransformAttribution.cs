@@ -71,8 +71,8 @@ public static class TransformAttribution
                 TransformTag.SemanticTypePrecedenceZeroOneBool => new(
                     tag,
                     TransformFamily.WrongImpl,
-                    "Numeric 0/1 literals classified as Boolean instead of String.",
-                    "none — gap: 0/1 numeric string literals not in frozen acceptance criteria"),
+                    "Numeric 0/1 literals classified as Boolean instead of Integer.",
+                    "acceptance: [\"0\",\"1\"] => Integer"),
                 TransformTag.SemanticEmptyWhitespaceRetained => new(
                     tag,
                     TransformFamily.WrongImpl,
@@ -82,12 +82,12 @@ public static class TransformAttribution
                     tag,
                     TransformFamily.WrongImpl,
                     "Leading-zero numerics (e.g. \"007\") rejected from Integer branch.",
-                    "none — gap: leading-zero format literals not in frozen acceptance criteria"),
+                    "acceptance: [\"007\"] => Integer"),
                 TransformTag.SemanticFormatThousands => new(
                     tag,
                     TransformFamily.WrongImpl,
                     "Thousands separators stripped before numeric parse (\"1,000\" -> Integer).",
-                    "none — gap: thousands-separator format not in frozen acceptance criteria"),
+                    "acceptance: [\"1,000\"] => Decimal"),
                 TransformTag.SemanticFormatScientific => new(
                     tag,
                     TransformFamily.WrongImpl,
@@ -97,12 +97,12 @@ public static class TransformAttribution
                     tag,
                     TransformFamily.WrongImpl,
                     "Locale comma decimals parsed (\"1,5\" -> Decimal).",
-                    "none — gap: locale comma decimal format not in frozen acceptance criteria"),
+                    "acceptance: [\"1,5\"] => Date; [\"1,.\"] => Decimal"),
                 TransformTag.SemanticFormatSignedZero => new(
                     tag,
                     TransformFamily.WrongImpl,
                     "Signed-zero literals (\"-0\", \"+0\") forced to String.",
-                    "none — gap: signed-zero format literals not in frozen acceptance criteria"),
+                    "acceptance: [\"+0\",\"-0\"] => Integer"),
                 TransformTag.SemanticSamplingWindow => new(
                     tag,
                     TransformFamily.WrongImpl,
@@ -112,12 +112,12 @@ public static class TransformAttribution
                     tag,
                     TransformFamily.WrongImpl,
                     "Colloquial yes/no tokens classified as Boolean.",
-                    "none — gap: yes/no boolean ambiguity not in frozen acceptance criteria"),
+                    "acceptance: [\"yes\",\"no\"] => String"),
                 TransformTag.SemanticBooleanYn => new(
                     tag,
                     TransformFamily.WrongImpl,
                     "Single-letter Y/N tokens classified as Boolean.",
-                    "none — gap: Y/N boolean ambiguity not in frozen acceptance criteria"),
+                    "acceptance: [\"Y\",\"N\"] => String"),
                 TransformTag.SemanticHeterogeneousFallback => new(
                     tag,
                     TransformFamily.WrongImpl,
@@ -168,6 +168,11 @@ public static class TransformAttribution
             return definition.ExpectedRelation.StartsWith("acceptance:", StringComparison.Ordinal)
                 ? definition.ExpectedRelation
                 : "frozen acceptance criteria (spec-derived)";
+
+        if (rawOutput.Contains("whitespace", StringComparison.OrdinalIgnoreCase))
+            return definition.ExpectedRelation.StartsWith("invariant:", StringComparison.Ordinal)
+                ? definition.ExpectedRelation
+                : "invariant: whitespace-only cells treated as empty";
 
         if (rawOutput.Contains("permutation", StringComparison.OrdinalIgnoreCase)
             || rawOutput.Contains("OrderPairs", StringComparison.Ordinal))
