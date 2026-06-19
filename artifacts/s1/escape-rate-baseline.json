@@ -14,12 +14,21 @@
       "wrongImplEscapeRate": 0.5069444444444444,
       "weakTestEscapeRate": 0.0,
       "note": "S1.2 with seed perturbation; 144 distinct wrong-impl trials."
+    },
+    "s1.3-v1": {
+      "wrongImplEscapeRate": 0.05555555555555555,
+      "weakTestEscapeRate": 0.0,
+      "note": "S1.3 densified spec; 8/144 residual escapes (SwappedOperands + SemanticSamplingWindow seed sub-variants)."
     }
   },
   "intentDensity": {
     "s1.2-v1": {
       "intentDensity": 0.3333333333333333,
       "note": "4/12 probe classes pinned under sparse frozen spec; honest impl NotCertifiable at 95% threshold."
+    },
+    "s1.3-v1": {
+      "intentDensity": 1.0,
+      "note": "12/12 probe classes pinned; honest impl Certifiable at 95% threshold."
     }
   }
 }
