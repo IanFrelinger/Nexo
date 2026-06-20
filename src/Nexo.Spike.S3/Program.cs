@@ -150,12 +150,9 @@ internal static class LiveHarnessCli
 
     public static LiveParsedArgs Parse(string[] args)
     {
-        var common = CommonHarnessCli.Parse(args, resetRegistryDefault: true);
         var intents = 1;
         var maxAttempts = 3;
-
-        if (common.IsError)
-            return LiveParsedArgs.FromError(common.ErrorMessage!);
+        var commonArgs = new List<string>();
 
         for (var i = 0; i < args.Length; i++)
         {
@@ -169,8 +166,15 @@ internal static class LiveHarnessCli
                     if (!CommonHarnessCli.TryReadInt(args, ref i, out maxAttempts) || maxAttempts <= 0)
                         return LiveParsedArgs.Error("Invalid --max-attempts value");
                     break;
+                default:
+                    commonArgs.Add(args[i]);
+                    break;
             }
         }
+
+        var common = CommonHarnessCli.Parse(commonArgs.ToArray(), resetRegistryDefault: true);
+        if (common.IsError)
+            return LiveParsedArgs.FromError(common.ErrorMessage!);
 
         return new LiveParsedArgs(
             false,
