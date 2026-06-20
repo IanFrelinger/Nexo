@@ -1,0 +1,30 @@
+{
+  "entryId": "csv-type-inference",
+  "intent": {
+    "intentKey": "csv-column-type-inference",
+    "tags": [
+      "core",
+      "offline"
+    ],
+    "capabilityKey": "csv-type-inference"
+  },
+  "candidateId": "standin-honest-csv-inferrer",
+  "contentHash": "693054c5a06c26703b881124637fc1d3ac459e219b5ad7c62656bb958998a1f5",
+  "implementationSource": "namespace CsvColumnInferrer;\n\npublic enum ColumnType\n{\n    String,\n    Integer,\n    Decimal,\n    Boolean,\n    Date\n}\n\npublic static class ColumnTypeInferrer\n{\n    public static ColumnType InferType(IReadOnlyList\u003Cstring\u003E values)\n    {\n        if (values.Count == 0)\n            return ColumnType.String;\n\n        var nonEmpty = values.Where(v =\u003E !string.IsNullOrWhiteSpace(v)).ToList();\n        if (nonEmpty.Count == 0)\n            return ColumnType.String;\n\n        if (nonEmpty.All(IsBoolean))\n            return ColumnType.Boolean;\n\n        if (nonEmpty.All(IsDate))\n            return ColumnType.Date;\n\n        if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n            return ColumnType.Integer;\n\n        if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n            return ColumnType.Decimal;\n\n        return ColumnType.String;\n    }\n\n    private static bool IsBoolean(string value) =\u003E\n        value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n        || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n\n    private static bool IsDate(string value) =\u003E\n        DateOnly.TryParse(value, out _);\n}\n",
+  "intentSpecPath": "/workspace/samples/spike-s0/intents/honest-csv-inferrer.json",
+  "certification": {
+    "recordId": "1399b05c874b477e88bc6fb6adb85e3c",
+    "redReason": 2,
+    "mutationScore": 93.33,
+    "mutationThreshold": 80,
+    "mutationSkipped": false,
+    "intentDensity": 1,
+    "escapeRate": 0,
+    "roleSeparationAttested": true,
+    "catalogVersion": "s1.4-v1",
+    "probeCorpusVersion": "s1.4-v1",
+    "certifiedAt": "2026-06-20T03:24:21.6490361+00:00",
+    "signature": "R1M9SBfX8tU3kzD1di3GHpsHcj46NnvEvYkCMeJuw4I="
+  },
+  "admittedAt": "2026-06-20T03:24:21.9903791+00:00"
+}

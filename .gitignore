@@ -14,6 +14,9 @@ artifacts/s1/workspaces/
 !artifacts/s2/
 !artifacts/s2/**
 artifacts/s2/workspaces/
+!artifacts/s3/
+!artifacts/s3/**
+artifacts/s3/workspaces/
 # Nested helper tool under Nexo.Tests.Infrastructure (never commit its build output)
 src/Nexo.Tests.Infrastructure/scripts/bin/
 src/Nexo.Tests.Infrastructure/scripts/obj/

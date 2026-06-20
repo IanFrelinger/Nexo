@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Nexo.Spike.S3</RootNamespace>
+    <AssemblyTitle>Nexo Spike S3</AssemblyTitle>
+    <Description>Skill registry, capability lookup, and stand-in reuse loop.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Nexo.Tests.Spike.S3" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Nexo.Spike.S0\Nexo.Spike.S0.csproj" />
+    <ProjectReference Include="..\Nexo.Spike.S1\Nexo.Spike.S1.csproj" />
+    <ProjectReference Include="..\Nexo.Spike.S2\Nexo.Spike.S2.csproj" />
+  </ItemGroup>
+</Project>

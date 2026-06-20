@@ -1,0 +1,62 @@
+{
+  "version": "s3.0-v1",
+  "generatorBackend": "scripted-standin",
+  "runAt": "2026-06-20T03:24:26.6832152+00:00",
+  "calls": [
+    {
+      "scenario": "generated-and-admitted",
+      "contextLabel": "initial-discovery",
+      "outcome": "generated",
+      "generationRan": true,
+      "certificationRan": true,
+      "reused": false,
+      "generatorBackend": "scripted-standin",
+      "entryId": "csv-type-inference",
+      "rejectionReason": null,
+      "registryEntryCountBefore": 0,
+      "registryEntryCountAfter": 1
+    },
+    {
+      "scenario": "reused-same-intent",
+      "contextLabel": "repeat-request",
+      "outcome": "reused",
+      "generationRan": false,
+      "certificationRan": false,
+      "reused": true,
+      "generatorBackend": "scripted-standin",
+      "entryId": "csv-type-inference",
+      "rejectionReason": null,
+      "registryEntryCountBefore": 1,
+      "registryEntryCountAfter": 1
+    },
+    {
+      "scenario": "reused-other-context",
+      "contextLabel": "etl-pipeline-stage-3",
+      "outcome": "reused",
+      "generationRan": false,
+      "certificationRan": false,
+      "reused": true,
+      "generatorBackend": "scripted-standin",
+      "entryId": "csv-type-inference",
+      "rejectionReason": null,
+      "registryEntryCountBefore": 1,
+      "registryEntryCountAfter": 1
+    },
+    {
+      "scenario": "rejected-failed-certification",
+      "contextLabel": "bad-candidate-intent",
+      "outcome": "rejected",
+      "generationRan": true,
+      "certificationRan": true,
+      "reused": false,
+      "generatorBackend": "scripted-standin",
+      "entryId": null,
+      "rejectionReason": "gate stack failed at RED: Determining projects to restore...\n  All projects are up-to-date for restore.\n  CsvColumnInferrer -\u003E /tmp/nexo-s3-cert/aa493e0ddad84815b4c32d3d6b02010f/workspace/CsvColumnInferrer/bin/Release/net8.0/CsvColumnInferrer.dll\n  CsvColumnInferrer.Tests -\u003E /tmp/nexo-s3-cert/aa493e0ddad84815b4c32d3d6b02010f...",
+      "registryEntryCountBefore": 1,
+      "registryEntryCountAfter": 1
+    }
+  ],
+  "registryEntryIds": [
+    "csv-type-inference"
+  ]
+}
