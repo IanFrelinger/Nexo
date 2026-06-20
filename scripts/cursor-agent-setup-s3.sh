@@ -6,7 +6,7 @@ cd "$ROOT"
 
 if ! command -v dotnet >/dev/null 2>&1; then
   wget -q https://dot.net/v1/dotnet-install.sh -O /tmp/dotnet-install.sh
-  bash /tmp/dotnet-install.sh --channel 8.0 --install-dir "$HOME/.dotnet"
+  bash /tmp/dotnet-install.sh --version 9.0.100 --install-dir "$HOME/.dotnet"
   export PATH="$HOME/.dotnet:$PATH"
 fi
 
