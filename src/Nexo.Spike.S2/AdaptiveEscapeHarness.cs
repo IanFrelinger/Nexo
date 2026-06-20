@@ -165,7 +165,9 @@ public sealed class AdaptiveEscapeHarness
             AdaptiveEscapeReport.Version,
             oracle.Version,
             adversary.BackendName,
-            Environment.GetEnvironmentVariable("NEXO_S2_LLM_MODEL"),
+            string.Equals(adversary.BackendName, AdaptiveAdversaryFactory.LlmMode, StringComparison.OrdinalIgnoreCase)
+                ? Environment.GetEnvironmentVariable("NEXO_S2_LLM_MODEL")
+                : null,
             new EffortBudget(intentCount, options.AttemptsPerIntent),
             ScopeNote,
             total == 0 ? 0 : (double)trueEscapes / total,

@@ -1,0 +1,192 @@
+{
+  "reportVersion": "s2.0-v1",
+  "referenceOracleVersion": "s2.0-v1",
+  "adversaryBackend": "cursor-standin",
+  "effortBudget": {
+    "intents": 1,
+    "attemptsPerIntent": 8
+  },
+  "scopeNote": "Lower bound w.r.t. this adversary\u0027s effort budget and this reference corpus; not a universal guarantee of correctness or exhaustive adaptive search.",
+  "trueEscapeRate": 0.25,
+  "benignPassRate": 0.375,
+  "rejectionRate": 0.375,
+  "trueEscapeCount": 2,
+  "benignPassCount": 3,
+  "rejectedCount": 3,
+  "attemptsToFirstEscapeByIntent": [
+    3
+  ],
+  "newDefectBacklog": [
+    {
+      "inputs": [
+        "999"
+      ],
+      "expectedType": "Integer",
+      "actualType": "String",
+      "candidateId": "cursor-attempt-03",
+      "attemptIndex": 2,
+      "hypothesis": "Gate-pinned acceptance with held-out [\u0022999\u0022] misclassified as String."
+    },
+    {
+      "inputs": [
+        "1e3"
+      ],
+      "expectedType": "String",
+      "actualType": "Decimal",
+      "candidateId": "cursor-attempt-06",
+      "attemptIndex": 5,
+      "hypothesis": "Honest-like impl but [\u00221e3\u0022] =\u003E Decimal; held-out oracle expects String."
+    }
+  ],
+  "attempts": [
+    {
+      "intentIndex": 0,
+      "attemptIndex": 0,
+      "candidateId": "cursor-attempt-01",
+      "hypothesis": "Initial naive constant String \u2014 expect RED failure.",
+      "outcome": "Rejected",
+      "rejectedByGate": "RED",
+      "rejectionDetail": "Determining projects to restore...\n  All projects are up-to-date for restore.\n  CsvColumnInferrer -\u003E /Users/ianfrelinger/CursorProjects/Nexo/artifacts/s2/cursor-standin-run/workspaces/intent-00-attempt-00-cursor-attempt-01/CsvColumnInferrer/bin/Release/net8.0/CsvColumnInferrer.dll\n  CsvColumnInferrer.Tests -\u003E /Users/ianfrelinger/CursorProjects/Nexo/artifacts/s2/cursor-standin-run/workspaces/intent-00-attempt-00-cursor-attempt-01/CsvColumnInferrer.Tests/bin/Release/net8.0/CsvColumnInferrer.Tests....",
+      "gatesPassed": [],
+      "oracleDisagreements": [],
+      "heldOutDisagreements": []
+    },
+    {
+      "intentIndex": 0,
+      "attemptIndex": 1,
+      "candidateId": "cursor-attempt-02",
+      "hypothesis": "Expand Boolean detector to yes/no \u2014 fails RED pinned [\u0022yes\u0022,\u0022no\u0022] =\u003E String.",
+      "outcome": "Rejected",
+      "rejectedByGate": "RED",
+      "rejectionDetail": "Determining projects to restore...\n  All projects are up-to-date for restore.\n  CsvColumnInferrer -\u003E /Users/ianfrelinger/CursorProjects/Nexo/artifacts/s2/cursor-standin-run/workspaces/intent-00-attempt-01-cursor-attempt-02/CsvColumnInferrer/bin/Release/net8.0/CsvColumnInferrer.dll\n  CsvColumnInferrer.Tests -\u003E /Users/ianfrelinger/CursorProjects/Nexo/artifacts/s2/cursor-standin-run/workspaces/intent-00-attempt-01-cursor-attempt-02/CsvColumnInferrer.Tests/bin/Release/net8.0/CsvColumnInferrer.Tests....",
+      "gatesPassed": [],
+      "oracleDisagreements": [],
+      "heldOutDisagreements": []
+    },
+    {
+      "intentIndex": 0,
+      "attemptIndex": 2,
+      "candidateId": "cursor-attempt-03",
+      "hypothesis": "Gate-pinned acceptance with held-out [\u0022999\u0022] misclassified as String.",
+      "outcome": "TrueEscape",
+      "rejectionDetail": "\n   _____ _              _               _   _ ______ _______ \u00A0\n  / ____| |            | |             | \\ | |  ____|__   __|\u00A0\n | (___ | |_ _ __ _   _| | _____ _ __  |  \\| | |__     | |   \u00A0\n  \\___ \\| __| \u0027__| | | | |/ / _ \\ \u0027__| | . \u0060 |  __|    | |   \u00A0\n  ____) | |_| |  | |_| |   \u003C  __/ |    | |\\  | |____   | |   \u00A0\n |_____/ \\__|_|   \\__, |_|\\_\\___|_| (_)|_| \\_|______|  |_|   \u00A0\n                   __/ |                                     \u00A0\n                  |___/                                      \u00A0\n\n\nVersion: 4.13.0\n\nA new version of Stryker.NET (4.14.2) is available. Please consider upgrading \nusing \u0060dotnet tool update -g dotnet-stryker\u0060\n\n[22:20:41 INF] Analysis starting.\n[22:20:41 INF] Analyzing 1 test project(s).\n[22:20:43 INF] Found project /Users/ianfrelinger/CursorProjects/Nexo/artifacts/s2/cursor-standin-run/workspaces/intent-00-attempt-02-cursor-attempt-03/CsvColumnInferrer/CsvColumnInferrer.csproj to mutate.\n[22:20:43 INF] Analysis complete.\n[22:20:43 INF] Building test project /Users/ianfrelinger/CursorProjects/Nexo/artifacts/s2/cursor-standin-run/workspaces/intent-00-attempt-02-cursor-attempt-03/CsvColumnInferrer.Tests/CsvColumnInferrer.Tests.csproj (1/1)\n[22:20:44 INF] Building project CsvColumnInferrer.Tests.csproj using dotnet build CsvColumnInferrer.Tests.csproj -c Debug --property:Platform=AnyCPU (directory /Users/ianfrelinger/CursorProjects/Nexo/artifacts/s2/cursor-standin-run/workspaces/intent-00-attempt-02-cursor-attempt-03/CsvColumnInferrer.Tests.)\n[22:20:46 INF] Number of tests found: 16 for project /Users/ianfrelinger/CursorProjects/Nexo/artifacts/s2/cursor-standin-run/workspaces/intent-00-attempt-02-cursor-attempt-03/CsvColumnInferrer/CsvColumnInferrer.csproj. Initial test run started.\n[22:20:49 INF] 27 mutants created\n[22:20:49 INF] Capture mutant coverage using \u0027CoverageBasedTest\u0027 mode.\nHint: by passing \u0022--open-report or -o\u0022 the report will open automatically and \nupdate the report in real-time.\n[22:20:49 INF] 6     mutants got status CompileError. Reason: Mutant caused compile errors\n[22:20:49 INF] 2     mutants got status Ignored.      Reason: Removed by block already covered filter\n[22:20:49 INF] 8     total mutants are skipped for the above mentioned reasons\n[22:20:49 INF] 19    total mutants will be tested\n\nKilled:   17\nSurvived:  2\nTimeout:   0\n\nYour json report has been generated at:\nfile:///Users/ianfrelinger/CursorProjects/Nexo/artifacts/s2/cursor-standin-run/w\norkspaces/intent-00-attempt-02-cursor-attempt-03/mutation-reports/reports/mutati\non-report.json\n\nYour html report has been generated at:\nfile:///Users/ianfrelinger/CursorProjects/Nexo/artifacts/s2/cursor-standin-run/w\norkspaces/intent-00-attempt-02-cursor-attempt-03/mutation-reports/reports/mutati\non-report.html\nYou can open it in your browser of choice.\n[22:20:53 INF] Time Elapsed 00:00:11.9529991\n[22:20:53 INF] The final mutation score is 89.47 %\n\n",
+      "gatesPassed": [
+        "Build",
+        "RED",
+        "PropertyGate",
+        "MutationGate"
+      ],
+      "oracleDisagreements": [
+        {
+          "inputs": [
+            "999"
+          ],
+          "expectedType": "Integer",
+          "actualType": "String"
+        }
+      ],
+      "heldOutDisagreements": [
+        {
+          "inputs": [
+            "999"
+          ],
+          "expectedType": "Integer",
+          "actualType": "String"
+        }
+      ]
+    },
+    {
+      "intentIndex": 0,
+      "attemptIndex": 3,
+      "candidateId": "cursor-attempt-04",
+      "hypothesis": "Honest reference implementation after observing escape \u2014 oracle agrees.",
+      "outcome": "BenignPass",
+      "rejectionDetail": "\n   _____ _              _               _   _ ______ _______ \u00A0\n  / ____| |            | |             | \\ | |  ____|__   __|\u00A0\n | (___ | |_ _ __ _   _| | _____ _ __  |  \\| | |__     | |   \u00A0\n  \\___ \\| __| \u0027__| | | | |/ / _ \\ \u0027__| | . \u0060 |  __|    | |   \u00A0\n  ____) | |_| |  | |_| |   \u003C  __/ |    | |\\  | |____   | |   \u00A0\n |_____/ \\__|_|   \\__, |_|\\_\\___|_| (_)|_| \\_|______|  |_|   \u00A0\n                   __/ |                                     \u00A0\n                  |___/                                      \u00A0\n\n\nVersion: 4.13.0\n\nA new version of Stryker.NET (4.14.2) is available. Please consider upgrading \nusing \u0060dotnet tool update -g dotnet-stryker\u0060\n\n[22:21:01 INF] Analysis starting.\n[22:21:01 INF] Analyzing 1 test project(s).\n[22:21:04 INF] Found project /Users/ianfrelinger/CursorProjects/Nexo/artifacts/s2/cursor-standin-run/workspaces/intent-00-attempt-03-cursor-attempt-04/CsvColumnInferrer/CsvColumnInferrer.csproj to mutate.\n[22:21:04 INF] Analysis complete.\n[22:21:04 INF] Building test project /Users/ianfrelinger/CursorProjects/Nexo/artifacts/s2/cursor-standin-run/workspaces/intent-00-attempt-03-cursor-attempt-04/CsvColumnInferrer.Tests/CsvColumnInferrer.Tests.csproj (1/1)\n[22:21:04 INF] Building project CsvColumnInferrer.Tests.csproj using dotnet build CsvColumnInferrer.Tests.csproj -c Debug --property:Platform=AnyCPU (directory /Users/ianfrelinger/CursorProjects/Nexo/artifacts/s2/cursor-standin-run/workspaces/intent-00-attempt-03-cursor-attempt-04/CsvColumnInferrer.Tests.)\n[22:21:07 INF] Number of tests found: 16 for project /Users/ianfrelinger/CursorProjects/Nexo/artifacts/s2/cursor-standin-run/workspaces/intent-00-attempt-03-cursor-attempt-04/CsvColumnInferrer/CsvColumnInferrer.csproj. Initial test run started.\n[22:21:09 INF] 20 mutants created\n[22:21:09 INF] Capture mutant coverage using \u0027CoverageBasedTest\u0027 mode.\nHint: by passing \u0022--open-report or -o\u0022 the report will open automatically and \nupdate the report in real-time.\n[22:21:09 INF] 4     mutants got status CompileError. Reason: Mutant caused compile errors\n[22:21:09 INF] 1     mutants got status Ignored.      Reason: Removed by block already covered filter\n[22:21:09 INF] 5     total mutants are skipped for the above mentioned reasons\n[22:21:09 INF] 15    total mutants will be tested\n\nKilled:   14\nSurvived:  1\nTimeout:   0\n\nYour json report has been generated at:\nfile:///Users/ianfrelinger/CursorProjects/Nexo/artifacts/s2/cursor-standin-run/w\norkspaces/intent-00-attempt-03-cursor-attempt-04/mutation-reports/reports/mutati\non-report.json\n\nYour html report has been generated at:\nfile:///Users/ianfrelinger/CursorProjects/Nexo/artifacts/s2/cursor-standin-run/w\norkspaces/intent-00-attempt-03-cursor-attempt-04/mutation-reports/reports/mutati\non-report.html\nYou can open it in your browser of choice.\n[22:21:14 INF] Time Elapsed 00:00:12.3317301\n[22:21:14 INF] The final mutation score is 93.33 %\n\n",
+      "gatesPassed": [
+        "Build",
+        "RED",
+        "PropertyGate",
+        "MutationGate"
+      ],
+      "oracleDisagreements": [],
+      "heldOutDisagreements": []
+    },
+    {
+      "intentIndex": 0,
+      "attemptIndex": 4,
+      "candidateId": "cursor-attempt-05",
+      "hypothesis": "Decimal-before-integer precedence \u2014 fails PropertyGate pinned rows.",
+      "outcome": "Rejected",
+      "rejectedByGate": "RED",
+      "rejectionDetail": "Determining projects to restore...\n  All projects are up-to-date for restore.\n  CsvColumnInferrer -\u003E /Users/ianfrelinger/CursorProjects/Nexo/artifacts/s2/cursor-standin-run/workspaces/intent-00-attempt-04-cursor-attempt-05/CsvColumnInferrer/bin/Release/net8.0/CsvColumnInferrer.dll\n  CsvColumnInferrer.Tests -\u003E /Users/ianfrelinger/CursorProjects/Nexo/artifacts/s2/cursor-standin-run/workspaces/intent-00-attempt-04-cursor-attempt-05/CsvColumnInferrer.Tests/bin/Release/net8.0/CsvColumnInferrer.Tests....",
+      "gatesPassed": [],
+      "oracleDisagreements": [],
+      "heldOutDisagreements": []
+    },
+    {
+      "intentIndex": 0,
+      "attemptIndex": 5,
+      "candidateId": "cursor-attempt-06",
+      "hypothesis": "Honest-like impl but [\u00221e3\u0022] =\u003E Decimal; held-out oracle expects String.",
+      "outcome": "TrueEscape",
+      "rejectionDetail": "\n   _____ _              _               _   _ ______ _______ \u00A0\n  / ____| |            | |             | \\ | |  ____|__   __|\u00A0\n | (___ | |_ _ __ _   _| | _____ _ __  |  \\| | |__     | |   \u00A0\n  \\___ \\| __| \u0027__| | | | |/ / _ \\ \u0027__| | . \u0060 |  __|    | |   \u00A0\n  ____) | |_| |  | |_| |   \u003C  __/ |    | |\\  | |____   | |   \u00A0\n |_____/ \\__|_|   \\__, |_|\\_\\___|_| (_)|_| \\_|______|  |_|   \u00A0\n                   __/ |                                     \u00A0\n                  |___/                                      \u00A0\n\n\nVersion: 4.13.0\n\nA new version of Stryker.NET (4.14.2) is available. Please consider upgrading \nusing \u0060dotnet tool update -g dotnet-stryker\u0060\n\n[22:21:26 INF] Analysis starting.\n[22:21:26 INF] Analyzing 1 test project(s).\n[22:21:28 INF] Found project /Users/ianfrelinger/CursorProjects/Nexo/artifacts/s2/cursor-standin-run/workspaces/intent-00-attempt-05-cursor-attempt-06/CsvColumnInferrer/CsvColumnInferrer.csproj to mutate.\n[22:21:28 INF] Analysis complete.\n[22:21:28 INF] Building test project /Users/ianfrelinger/CursorProjects/Nexo/artifacts/s2/cursor-standin-run/workspaces/intent-00-attempt-05-cursor-attempt-06/CsvColumnInferrer.Tests/CsvColumnInferrer.Tests.csproj (1/1)\n[22:21:28 INF] Building project CsvColumnInferrer.Tests.csproj using dotnet build CsvColumnInferrer.Tests.csproj -c Debug --property:Platform=AnyCPU (directory /Users/ianfrelinger/CursorProjects/Nexo/artifacts/s2/cursor-standin-run/workspaces/intent-00-attempt-05-cursor-attempt-06/CsvColumnInferrer.Tests.)\n[22:21:31 INF] Number of tests found: 16 for project /Users/ianfrelinger/CursorProjects/Nexo/artifacts/s2/cursor-standin-run/workspaces/intent-00-attempt-05-cursor-attempt-06/CsvColumnInferrer/CsvColumnInferrer.csproj. Initial test run started.\n[22:21:33 INF] 25 mutants created\n[22:21:33 INF] Capture mutant coverage using \u0027CoverageBasedTest\u0027 mode.\nHint: by passing \u0022--open-report or -o\u0022 the report will open automatically and \nupdate the report in real-time.\n[22:21:34 INF] 6     mutants got status CompileError. Reason: Mutant caused compile errors\n[22:21:34 INF] 1     mutants got status NoCoverage.   Reason: Not covered by any test.\n[22:21:34 INF] 1     mutants got status Ignored.      Reason: Removed by block already covered filter\n[22:21:34 INF] 8     total mutants are skipped for the above mentioned reasons\n[22:21:34 INF] 17    total mutants will be tested\n\nKilled:   15\nSurvived:  2\nTimeout:   0\n\nYour json report has been generated at:\nfile:///Users/ianfrelinger/CursorProjects/Nexo/artifacts/s2/cursor-standin-run/w\norkspaces/intent-00-attempt-05-cursor-attempt-06/mutation-reports/reports/mutati\non-report.json\n\nYour html report has been generated at:\nfile:///Users/ianfrelinger/CursorProjects/Nexo/artifacts/s2/cursor-standin-run/w\norkspaces/intent-00-attempt-05-cursor-attempt-06/mutation-reports/reports/mutati\non-report.html\nYou can open it in your browser of choice.\n[22:21:38 INF] Time Elapsed 00:00:12.0780799\n[22:21:38 INF] The final mutation score is 83.33 %\n\n",
+      "gatesPassed": [
+        "Build",
+        "RED",
+        "PropertyGate",
+        "MutationGate"
+      ],
+      "oracleDisagreements": [
+        {
+          "inputs": [
+            "1e3"
+          ],
+          "expectedType": "String",
+          "actualType": "Decimal"
+        }
+      ],
+      "heldOutDisagreements": [
+        {
+          "inputs": [
+            "1e3"
+          ],
+          "expectedType": "String",
+          "actualType": "Decimal"
+        }
+      ]
+    },
+    {
+      "intentIndex": 0,
+      "attemptIndex": 6,
+      "candidateId": "cursor-attempt-07",
+      "hypothesis": "Benign honest impl.",
+      "outcome": "BenignPass",
+      "rejectionDetail": "\n   _____ _              _               _   _ ______ _______ \u00A0\n  / ____| |            | |             | \\ | |  ____|__   __|\u00A0\n | (___ | |_ _ __ _   _| | _____ _ __  |  \\| | |__     | |   \u00A0\n  \\___ \\| __| \u0027__| | | | |/ / _ \\ \u0027__| | . \u0060 |  __|    | |   \u00A0\n  ____) | |_| |  | |_| |   \u003C  __/ |    | |\\  | |____   | |   \u00A0\n |_____/ \\__|_|   \\__, |_|\\_\\___|_| (_)|_| \\_|______|  |_|   \u00A0\n                   __/ |                                     \u00A0\n                  |___/                                      \u00A0\n\n\nVersion: 4.13.0\n\nA new version of Stryker.NET (4.14.2) is available. Please consider upgrading \nusing \u0060dotnet tool update -g dotnet-stryker\u0060\n\n[22:21:46 INF] Analysis starting.\n[22:21:46 INF] Analyzing 1 test project(s).\n[22:21:48 INF] Found project /Users/ianfrelinger/CursorProjects/Nexo/artifacts/s2/cursor-standin-run/workspaces/intent-00-attempt-06-cursor-attempt-07/CsvColumnInferrer/CsvColumnInferrer.csproj to mutate.\n[22:21:48 INF] Analysis complete.\n[22:21:48 INF] Building test project /Users/ianfrelinger/CursorProjects/Nexo/artifacts/s2/cursor-standin-run/workspaces/intent-00-attempt-06-cursor-attempt-07/CsvColumnInferrer.Tests/CsvColumnInferrer.Tests.csproj (1/1)\n[22:21:49 INF] Building project CsvColumnInferrer.Tests.csproj using dotnet build CsvColumnInferrer.Tests.csproj -c Debug --property:Platform=AnyCPU (directory /Users/ianfrelinger/CursorProjects/Nexo/artifacts/s2/cursor-standin-run/workspaces/intent-00-attempt-06-cursor-attempt-07/CsvColumnInferrer.Tests.)\n[22:21:51 INF] Number of tests found: 16 for project /Users/ianfrelinger/CursorProjects/Nexo/artifacts/s2/cursor-standin-run/workspaces/intent-00-attempt-06-cursor-attempt-07/CsvColumnInferrer/CsvColumnInferrer.csproj. Initial test run started.\n[22:21:54 INF] 20 mutants created\n[22:21:54 INF] Capture mutant coverage using \u0027CoverageBasedTest\u0027 mode.\nHint: by passing \u0022--open-report or -o\u0022 the report will open automatically and \nupdate the report in real-time.\n[22:21:54 INF] 4     mutants got status CompileError. Reason: Mutant caused compile errors\n[22:21:54 INF] 1     mutants got status Ignored.      Reason: Removed by block already covered filter\n[22:21:54 INF] 5     total mutants are skipped for the above mentioned reasons\n[22:21:54 INF] 15    total mutants will be tested\n\nKilled:   14\nSurvived:  1\nTimeout:   0\n\nYour json report has been generated at:\nfile:///Users/ianfrelinger/CursorProjects/Nexo/artifacts/s2/cursor-standin-run/w\norkspaces/intent-00-attempt-06-cursor-attempt-07/mutation-reports/reports/mutati\non-report.json\n\nYour html report has been generated at:\nfile:///Users/ianfrelinger/CursorProjects/Nexo/artifacts/s2/cursor-standin-run/w\norkspaces/intent-00-attempt-06-cursor-attempt-07/mutation-reports/reports/mutati\non-report.html\nYou can open it in your browser of choice.\n[22:21:57 INF] Time Elapsed 00:00:11.4114892\n[22:21:57 INF] The final mutation score is 93.33 %\n\n",
+      "gatesPassed": [
+        "Build",
+        "RED",
+        "PropertyGate",
+        "MutationGate"
+      ],
+      "oracleDisagreements": [],
+      "heldOutDisagreements": []
+    },
+    {
+      "intentIndex": 0,
+      "attemptIndex": 7,
+      "candidateId": "cursor-attempt-08",
+      "hypothesis": "Benign honest impl.",
+      "outcome": "BenignPass",
+      "rejectionDetail": "\n   _____ _              _               _   _ ______ _______ \u00A0\n  / ____| |            | |             | \\ | |  ____|__   __|\u00A0\n | (___ | |_ _ __ _   _| | _____ _ __  |  \\| | |__     | |   \u00A0\n  \\___ \\| __| \u0027__| | | | |/ / _ \\ \u0027__| | . \u0060 |  __|    | |   \u00A0\n  ____) | |_| |  | |_| |   \u003C  __/ |    | |\\  | |____   | |   \u00A0\n |_____/ \\__|_|   \\__, |_|\\_\\___|_| (_)|_| \\_|______|  |_|   \u00A0\n                   __/ |                                     \u00A0\n                  |___/                                      \u00A0\n\n\nVersion: 4.13.0\n\nA new version of Stryker.NET (4.14.2) is available. Please consider upgrading \nusing \u0060dotnet tool update -g dotnet-stryker\u0060\n\n[22:22:06 INF] Analysis starting.\n[22:22:06 INF] Analyzing 1 test project(s).\n[22:22:08 INF] Found project /Users/ianfrelinger/CursorProjects/Nexo/artifacts/s2/cursor-standin-run/workspaces/intent-00-attempt-07-cursor-attempt-08/CsvColumnInferrer/CsvColumnInferrer.csproj to mutate.\n[22:22:08 INF] Analysis complete.\n[22:22:08 INF] Building test project /Users/ianfrelinger/CursorProjects/Nexo/artifacts/s2/cursor-standin-run/workspaces/intent-00-attempt-07-cursor-attempt-08/CsvColumnInferrer.Tests/CsvColumnInferrer.Tests.csproj (1/1)\n[22:22:09 INF] Building project CsvColumnInferrer.Tests.csproj using dotnet build CsvColumnInferrer.Tests.csproj -c Debug --property:Platform=AnyCPU (directory /Users/ianfrelinger/CursorProjects/Nexo/artifacts/s2/cursor-standin-run/workspaces/intent-00-attempt-07-cursor-attempt-08/CsvColumnInferrer.Tests.)\n[22:22:11 INF] Number of tests found: 16 for project /Users/ianfrelinger/CursorProjects/Nexo/artifacts/s2/cursor-standin-run/workspaces/intent-00-attempt-07-cursor-attempt-08/CsvColumnInferrer/CsvColumnInferrer.csproj. Initial test run started.\n[22:22:14 INF] 20 mutants created\n[22:22:14 INF] Capture mutant coverage using \u0027CoverageBasedTest\u0027 mode.\nHint: by passing \u0022--open-report or -o\u0022 the report will open automatically and \nupdate the report in real-time.\n[22:22:14 INF] 4     mutants got status CompileError. Reason: Mutant caused compile errors\n[22:22:14 INF] 1     mutants got status Ignored.      Reason: Removed by block already covered filter\n[22:22:14 INF] 5     total mutants are skipped for the above mentioned reasons\n[22:22:14 INF] 15    total mutants will be tested\n\nKilled:   14\nSurvived:  1\nTimeout:   0\n\nYour json report has been generated at:\nfile:///Users/ianfrelinger/CursorProjects/Nexo/artifacts/s2/cursor-standin-run/w\norkspaces/intent-00-attempt-07-cursor-attempt-08/mutation-reports/reports/mutati\non-report.json\n\nYour html report has been generated at:\nfile:///Users/ianfrelinger/CursorProjects/Nexo/artifacts/s2/cursor-standin-run/w\norkspaces/intent-00-attempt-07-cursor-attempt-08/mutation-reports/reports/mutati\non-report.html\nYou can open it in your browser of choice.\n[22:22:17 INF] Time Elapsed 00:00:11.3196539\n[22:22:17 INF] The final mutation score is 93.33 %\n\n",
+      "gatesPassed": [
+        "Build",
+        "RED",
+        "PropertyGate",
+        "MutationGate"
+      ],
+      "oracleDisagreements": [],
+      "heldOutDisagreements": []
+    }
+  ],
+  "nonVacuityProven": true
+}
