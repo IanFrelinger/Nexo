@@ -12,8 +12,9 @@ fi
 
 export PATH="$HOME/.dotnet/tools:$PATH"
 export DOTNET_ROOT="${DOTNET_ROOT:-$HOME/.dotnet}"
+# Keep NEXO_S3_GENERATOR unset so install runs recorded backend (CI-safe).
+# Do not unset ANTHROPIC_API_KEY — it may be injected as a Runtime Secret for live runs.
 unset NEXO_S3_GENERATOR
-unset ANTHROPIC_API_KEY
 unset OPENAI_API_KEY
 unset NEXO_LLM_API_KEY
 
