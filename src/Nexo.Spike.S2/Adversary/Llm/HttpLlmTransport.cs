@@ -19,7 +19,18 @@ public sealed class HttpLlmTransport : ILlmTransport, IDisposable
 
     internal HttpLlmTransport(HttpClient? httpClient, Func<LlmRuntimeConfig> configFactory)
     {
-        _httpClient = httpClient ?? new HttpClient();
+        if (httpClient is null)
+        {
+            httpClient = new HttpClient();
+            var timeoutSeconds = int.TryParse(
+                Environment.GetEnvironmentVariable("NEXO_S2_LLM_TIMEOUT_SECONDS"),
+                out var parsed)
+                ? parsed
+                : 600;
+            httpClient.Timeout = TimeSpan.FromSeconds(Math.Max(30, timeoutSeconds));
+        }
+
+        _httpClient = httpClient;
         _configFactory = configFactory;
     }
 
