@@ -13,8 +13,8 @@
   "implementationSource": "namespace CsvColumnInferrer;\n\npublic enum ColumnType\n{\n    String,\n    Integer,\n    Decimal,\n    Boolean,\n    Date\n}\n\npublic static class ColumnTypeInferrer\n{\n    public static ColumnType InferType(IReadOnlyList\u003Cstring\u003E values)\n    {\n        if (values.Count == 0)\n            return ColumnType.String;\n\n        var nonEmpty = values.Where(v =\u003E !string.IsNullOrWhiteSpace(v)).ToList();\n        if (nonEmpty.Count == 0)\n            return ColumnType.String;\n\n        if (nonEmpty.All(IsBoolean))\n            return ColumnType.Boolean;\n\n        if (nonEmpty.All(IsDate))\n            return ColumnType.Date;\n\n        if (nonEmpty.All(v =\u003E int.TryParse(v, out _)))\n            return ColumnType.Integer;\n\n        if (nonEmpty.All(v =\u003E decimal.TryParse(v, out _)))\n            return ColumnType.Decimal;\n\n        return ColumnType.String;\n    }\n\n    private static bool IsBoolean(string value) =\u003E\n        value.Equals(\u0022true\u0022, StringComparison.OrdinalIgnoreCase)\n        || value.Equals(\u0022false\u0022, StringComparison.OrdinalIgnoreCase);\n\n    private static bool IsDate(string value) =\u003E\n        DateOnly.TryParse(value, out _);\n}\n",
   "intentSpecPath": "/workspace/samples/spike-s0/intents/honest-csv-inferrer.json",
   "certification": {
-    "recordId": "1399b05c874b477e88bc6fb6adb85e3c",
-    "redReason": 2,
+    "recordId": "33ea356a37d34668bfe014e908b68754",
+    "redReason": "assertionFailure",
     "mutationScore": 93.33,
     "mutationThreshold": 80,
     "mutationSkipped": false,
@@ -23,8 +23,15 @@
     "roleSeparationAttested": true,
     "catalogVersion": "s1.4-v1",
     "probeCorpusVersion": "s1.4-v1",
-    "certifiedAt": "2026-06-20T03:24:21.6490361+00:00",
-    "signature": "R1M9SBfX8tU3kzD1di3GHpsHcj46NnvEvYkCMeJuw4I="
+    "certifiedAt": "2026-06-20T04:17:36.8995189+00:00",
+    "signature": "xHzyDC\u002BoXvCV/qnYzV3HRaqfTBXfVjitvcOkqKx2rRo="
   },
-  "admittedAt": "2026-06-20T03:24:21.9903791+00:00"
+  "provenance": {
+    "generatorBackend": "recorded",
+    "isolationEnforced": false,
+    "modelId": null,
+    "temperature": null,
+    "attemptsUsed": 1
+  },
+  "admittedAt": "2026-06-20T04:17:37.2296068+00:00"
 }

@@ -19,15 +19,17 @@ public sealed class IntentMatcherTests
     }
 
     [Fact]
-    public void Scripted_stand_in_generator_is_labeled_scripted_standin()
+    public async Task Recorded_generator_is_labeled_recorded_and_not_isolation_enforced()
     {
-        var generator = new ScriptedStandInSkillGenerator();
-        ScriptedStandInSkillGenerator.BackendLabel.Should().Be("scripted-standin");
+        var generator = new RecordedSkillGenerator();
+        generator.BackendName.Should().Be("recorded");
+        generator.IsolationEnforced.Should().BeFalse();
 
-        var candidate = generator.Generate(
+        var handoff = generator.Describe(
             new IntentDescriptor("csv-column-type-inference", ["core"], CapabilityKey: "csv-type-inference"));
+        var candidate = await generator.IngestAsync(handoff);
 
-        candidate.GeneratorBackend.Should().Be("scripted-standin");
+        candidate.GeneratorBackend.Should().Be("recorded");
         candidate.Hypothesis.Should().StartWith("StandIn:");
     }
 }

@@ -606,6 +606,20 @@ mesh-lab-down:
 	@test -f .env.mesh-lab || (echo "Missing .env.mesh-lab"; exit 1)
 	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=nexo_mesh_lab_local docker compose --profile workers -f docker-compose.mesh-lab.yml --env-file .env.mesh-lab down -v
 
+# Spike S3 — recorded skill loop (offline, CI/cloud default)
+.PHONY: test-spike-s3 s3-loop-recorded s3-generate-live
+
+test-spike-s3:
+	dotnet test src/Nexo.Tests.Spike.S3/Nexo.Tests.Spike.S3.csproj -c Release
+
+s3-loop-recorded:
+	dotnet run --project src/Nexo.Spike.S3 -c Release -- --out artifacts/s3 --reset-registry --density-seeds 2 --escape-seeds 2
+
+# LOCAL ONLY — requires ANTHROPIC_API_KEY; never run in CI/cloud
+s3-generate-live:
+	@test -n "$$ANTHROPIC_API_KEY" || (echo "ANTHROPIC_API_KEY required for live Claude generation"; exit 1)
+	NEXO_S3_GENERATOR=claude dotnet run --project src/Nexo.Spike.S3 -c Release -- live --out artifacts/s3 --reset-registry --intents 1 --max-attempts 3
+
 # Optional dotnet gate mirroring mesh-lab-gate (compose + mesh-lab-verify*.sh). Requires Docker + python3.
 test-mesh-lab:
 	NEXO_RUN_MESH_LAB=1 dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net8.0 \

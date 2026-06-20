@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Nexo.Spike.S0.Models;
+using Nexo.Spike.S3.Generation;
 using Nexo.Spike.S3.Models;
 using Nexo.Spike.S3.Registry;
 using Xunit;
@@ -65,13 +66,14 @@ public sealed class SkillRegistryAdmissionTests
         try
         {
             var registry = new SkillRegistry(root);
-            var candidate = BuildCandidate();
-            var record = BuildValidRecord();
+        var candidate = BuildCandidate();
+        var record = BuildValidRecord();
 
-            var result = registry.Admit(candidate, record);
+        var result = registry.Admit(candidate, record);
 
-            result.Status.Should().Be(AdmissionStatus.Admitted);
-            result.Entry.Should().NotBeNull();
+        result.Status.Should().Be(AdmissionStatus.Admitted);
+        result.Entry.Should().NotBeNull();
+        result.Entry!.Provenance.GeneratorBackend.Should().Be(RecordedSkillGenerator.BackendLabel);
             registry.ListEntries().Should().HaveCount(1);
             File.Exists(RegistryPaths.EntryFilePath(root, "csv-type-inference")).Should().BeTrue();
             File.Exists(RegistryPaths.ImplementationFilePath(root, "csv-type-inference")).Should().BeTrue();
@@ -89,7 +91,8 @@ public sealed class SkillRegistryAdmissionTests
             "/tmp/intent.json",
             "public static class Impl {}",
             "test",
-            "test hypothesis");
+            "test hypothesis",
+            new SkillProvenance(RecordedSkillGenerator.BackendLabel, false, null, null, 1));
 
     private static SignedCertificationRecord BuildValidRecord()
     {

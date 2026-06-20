@@ -11,4 +11,5 @@ public sealed record RegistryEntry(
     string ImplementationSource,
     string IntentSpecPath,
     SignedCertificationRecord Certification,
+    SkillProvenance Provenance,
     DateTimeOffset AdmittedAt);

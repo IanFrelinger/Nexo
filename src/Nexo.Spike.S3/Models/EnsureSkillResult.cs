@@ -14,4 +14,7 @@ public sealed record EnsureSkillResult(
     bool GenerationRan,
     bool CertificationRan,
     bool Reused,
-    string GeneratorBackend);
+    string GeneratorBackend,
+    bool? IsolationEnforced = null,
+    string? ModelId = null,
+    int? AttemptsUsed = null);

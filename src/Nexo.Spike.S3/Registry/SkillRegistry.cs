@@ -63,6 +63,8 @@ public sealed class SkillRegistry
             candidate.ImplementationSource,
             candidate.IntentSpecPath,
             certification,
+            candidate.Provenance
+            ?? new SkillProvenance(candidate.GeneratorBackend, false, null, null, 1),
             DateTimeOffset.UtcNow);
 
         WriteEntry(entry);

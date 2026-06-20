@@ -1,7 +1,7 @@
 {
-  "version": "s3.0-v1",
-  "generatorBackend": "scripted-standin",
-  "runAt": "2026-06-20T03:24:26.6832152+00:00",
+  "version": "s3.1-recorded-v1",
+  "generatorBackend": "recorded",
+  "runAt": "2026-06-20T04:17:51.4714618+00:00",
   "calls": [
     {
       "scenario": "generated-and-admitted",
@@ -10,11 +10,15 @@
       "generationRan": true,
       "certificationRan": true,
       "reused": false,
-      "generatorBackend": "scripted-standin",
+      "generatorBackend": "recorded",
       "entryId": "csv-type-inference",
       "rejectionReason": null,
       "registryEntryCountBefore": 0,
-      "registryEntryCountAfter": 1
+      "registryEntryCountAfter": 1,
+      "isolationEnforced": false,
+      "modelId": null,
+      "attemptsUsed": 1,
+      "temperature": null
     },
     {
       "scenario": "reused-same-intent",
@@ -23,11 +27,15 @@
       "generationRan": false,
       "certificationRan": false,
       "reused": true,
-      "generatorBackend": "scripted-standin",
+      "generatorBackend": "recorded",
       "entryId": "csv-type-inference",
       "rejectionReason": null,
       "registryEntryCountBefore": 1,
-      "registryEntryCountAfter": 1
+      "registryEntryCountAfter": 1,
+      "isolationEnforced": false,
+      "modelId": null,
+      "attemptsUsed": 0,
+      "temperature": null
     },
     {
       "scenario": "reused-other-context",
@@ -36,11 +44,15 @@
       "generationRan": false,
       "certificationRan": false,
       "reused": true,
-      "generatorBackend": "scripted-standin",
+      "generatorBackend": "recorded",
       "entryId": "csv-type-inference",
       "rejectionReason": null,
       "registryEntryCountBefore": 1,
-      "registryEntryCountAfter": 1
+      "registryEntryCountAfter": 1,
+      "isolationEnforced": false,
+      "modelId": null,
+      "attemptsUsed": 0,
+      "temperature": null
     },
     {
       "scenario": "rejected-failed-certification",
@@ -49,11 +61,15 @@
       "generationRan": true,
       "certificationRan": true,
       "reused": false,
-      "generatorBackend": "scripted-standin",
+      "generatorBackend": "recorded",
       "entryId": null,
-      "rejectionReason": "gate stack failed at RED: Determining projects to restore...\n  All projects are up-to-date for restore.\n  CsvColumnInferrer -\u003E /tmp/nexo-s3-cert/aa493e0ddad84815b4c32d3d6b02010f/workspace/CsvColumnInferrer/bin/Release/net8.0/CsvColumnInferrer.dll\n  CsvColumnInferrer.Tests -\u003E /tmp/nexo-s3-cert/aa493e0ddad84815b4c32d3d6b02010f...",
+      "rejectionReason": "gate stack failed at RED: Determining projects to restore...\n  All projects are up-to-date for restore.\n  CsvColumnInferrer -\u003E /tmp/nexo-s3-cert/09e2c6e51d15442cb9ba170111983d0a/workspace/CsvColumnInferrer/bin/Release/net8.0/CsvColumnInferrer.dll\n  CsvColumnInferrer.Tests -\u003E /tmp/nexo-s3-cert/09e2c6e51d15442cb9ba170111983d0a...",
       "registryEntryCountBefore": 1,
-      "registryEntryCountAfter": 1
+      "registryEntryCountAfter": 1,
+      "isolationEnforced": false,
+      "modelId": null,
+      "attemptsUsed": 3,
+      "temperature": null
     }
   ],
   "registryEntryIds": [

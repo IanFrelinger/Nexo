@@ -13,7 +13,11 @@ public sealed record SkillLoopCallRecord(
     string? EntryId,
     string? RejectionReason,
     int RegistryEntryCountBefore,
-    int RegistryEntryCountAfter);
+    int RegistryEntryCountAfter,
+    bool? IsolationEnforced = null,
+    string? ModelId = null,
+    int? AttemptsUsed = null,
+    double? Temperature = null);
 
 public sealed record SkillLoopReport(
     string Version,

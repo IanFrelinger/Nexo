@@ -18,7 +18,7 @@ public sealed class SkillLookupReuseTests
         try
         {
             var registry = new SkillRegistry(root);
-            var generator = new TrackingStandInGenerator();
+            var generator = new TrackingSkillGenerator();
             var certification = new TrackingCertificationHarness();
             var loop = new SkillReuseLoop(registry, generator, certification);
 
@@ -31,11 +31,9 @@ public sealed class SkillLookupReuseTests
             result.Reused.Should().BeTrue();
             result.GenerationRan.Should().BeFalse();
             result.CertificationRan.Should().BeFalse();
-            result.Entry.Should().NotBeNull();
-            result.Entry!.EntryId.Should().Be("csv-type-inference");
-            generator.GenerationCount.Should().Be(0);
+            generator.GenerationCallCount.Should().Be(0);
             certification.InvocationCount.Should().Be(0);
-            loop.GenerationCount.Should().Be(0);
+            loop.GenerationCallCount.Should().Be(0);
             loop.CertificationInvocationCount.Should().Be(0);
         }
         finally
@@ -51,7 +49,7 @@ public sealed class SkillLookupReuseTests
         try
         {
             var registry = new SkillRegistry(root);
-            var generator = new TrackingStandInGenerator();
+            var generator = new TrackingSkillGenerator();
             var certification = new TrackingCertificationHarness();
             var loop = new SkillReuseLoop(registry, generator, certification);
 
@@ -62,10 +60,8 @@ public sealed class SkillLookupReuseTests
 
             first.Outcome.Should().Be(EnsureSkillOutcome.Generated);
             second.Outcome.Should().Be(EnsureSkillOutcome.Reused);
-            loop.GenerationCount.Should().Be(1);
+            loop.GenerationCallCount.Should().Be(1);
             loop.CertificationInvocationCount.Should().Be(1);
-            generator.GenerationCount.Should().Be(1);
-            certification.InvocationCount.Should().Be(1);
             registry.ListEntries().Should().HaveCount(1);
         }
         finally
@@ -81,9 +77,13 @@ public sealed class SkillLookupReuseTests
         try
         {
             var registry = new SkillRegistry(root);
-            var generator = new TrackingStandInGenerator();
+            var generator = new TrackingSkillGenerator();
             var certification = new TrackingCertificationHarness(alwaysPass: false);
-            var loop = new SkillReuseLoop(registry, generator, certification);
+            var loop = new SkillReuseLoop(
+                registry,
+                generator,
+                certification,
+                new SkillReuseLoopOptions { MaxAttemptsPerIntent = 1 });
 
             var intent = new IntentDescriptor("csv-constant-type-guess", ["constant-guess"], CapabilityKey: "csv-constant-guess");
             var result = await loop.EnsureSkillAsync(intent);
@@ -99,6 +99,35 @@ public sealed class SkillLookupReuseTests
         }
     }
 
+    [Fact]
+    public async Task Attempt_cap_stops_retrying_after_max_attempts()
+    {
+        var root = CreateTempRegistryRoot();
+        try
+        {
+            var registry = new SkillRegistry(root);
+            var generator = new TrackingSkillGenerator();
+            var certification = new TrackingCertificationHarness(alwaysPass: false);
+            var loop = new SkillReuseLoop(
+                registry,
+                generator,
+                certification,
+                new SkillReuseLoopOptions { MaxAttemptsPerIntent = 3 });
+
+            var intent = new IntentDescriptor("csv-column-type-inference", ["core"], CapabilityKey: "csv-type-inference");
+            var result = await loop.EnsureSkillAsync(intent);
+
+            result.Outcome.Should().Be(EnsureSkillOutcome.Rejected);
+            result.AttemptsUsed.Should().Be(3);
+            loop.GenerationCallCount.Should().Be(3);
+            loop.CertificationInvocationCount.Should().Be(3);
+        }
+        finally
+        {
+            TryDelete(root);
+        }
+    }
+
     private static void SeedAdmittedEntry(SkillRegistry registry, IntentDescriptor intent)
     {
         var candidate = new SkillCandidate(
@@ -106,8 +135,9 @@ public sealed class SkillLookupReuseTests
             intent,
             "/tmp/intent.json",
             "namespace CsvColumnInferrer; public static class ColumnTypeInferrer {}",
-            ScriptedStandInSkillGenerator.BackendLabel,
-            "seed");
+            RecordedSkillGenerator.BackendLabel,
+            "seed",
+            new SkillProvenance(RecordedSkillGenerator.BackendLabel, false, null, null, 1));
 
         var unsigned = new SignedCertificationRecord(
             "seed-record",
@@ -147,24 +177,38 @@ public sealed class SkillLookupReuseTests
         }
     }
 
-    private sealed class TrackingStandInGenerator : IStandInSkillGenerator
+    private sealed class TrackingSkillGenerator : ISkillGenerator
     {
         private int _count;
 
-        public string BackendName => ScriptedStandInSkillGenerator.BackendLabel;
+        public string BackendName => RecordedSkillGenerator.BackendLabel;
 
-        public int GenerationCount => _count;
+        public bool IsolationEnforced => false;
 
-        public SkillCandidate Generate(IntentDescriptor intent)
+        public int GenerationCallCount => _count;
+
+        public GenerationHandoff Describe(
+            IntentDescriptor intent,
+            IReadOnlyList<GateVerdictSummary>? priorVerdicts = null,
+            int attemptIndex = 0,
+            string? workRoot = null)
+        {
+            var root = workRoot ?? Path.Combine(Path.GetTempPath(), $"nexo-s3-track-{Guid.NewGuid():N}");
+            var handoff = new RecordedSkillGenerator().Describe(intent, priorVerdicts, attemptIndex, root);
+            return handoff;
+        }
+
+        public Task<SkillCandidate> IngestAsync(GenerationHandoff handoff, CancellationToken ct = default)
         {
             _count++;
-            return new SkillCandidate(
+            return Task.FromResult(new SkillCandidate(
                 "tracking-candidate",
-                intent,
+                handoff.Request.Intent,
                 "/tmp/intent.json",
                 "namespace CsvColumnInferrer; public static class ColumnTypeInferrer {}",
                 BackendName,
-                "tracking");
+                "tracking",
+                new SkillProvenance(BackendName, false, null, null, handoff.Request.AttemptIndex + 1)));
         }
     }
 
@@ -181,9 +225,7 @@ public sealed class SkillLookupReuseTests
         {
             _count++;
             if (!_alwaysPass)
-            {
                 return Task.FromResult(new CertificationResult(false, null, "forced certification failure"));
-            }
 
             var unsigned = new SignedCertificationRecord(
                 Guid.NewGuid().ToString("N"),

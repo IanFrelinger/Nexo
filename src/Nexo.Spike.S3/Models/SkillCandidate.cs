@@ -9,4 +9,5 @@ public sealed record SkillCandidate(
     string IntentSpecPath,
     string ImplementationSource,
     string GeneratorBackend,
-    string Hypothesis);
+    string Hypothesis,
+    SkillProvenance? Provenance = null);

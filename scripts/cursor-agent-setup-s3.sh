@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Cursor background-agent provisioning for Spike S3 skill registry loop.
-# Offline: no model, no API key, no network for generation (stand-in only).
-
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
@@ -15,11 +12,10 @@ fi
 
 export PATH="$HOME/.dotnet/tools:$PATH"
 export DOTNET_ROOT="${DOTNET_ROOT:-$HOME/.dotnet}"
-unset OPENAI_API_KEY
+unset NEXO_S3_GENERATOR
 unset ANTHROPIC_API_KEY
+unset OPENAI_API_KEY
 unset NEXO_LLM_API_KEY
-unset NEXO_S1_ADVERSARY
-unset NEXO_S2_ADVERSARY
 
 dotnet --version
 

@@ -83,11 +83,19 @@ public static class SkillLoopDemonstration
                 result.Entry?.EntryId,
                 result.RejectionReason,
                 before,
-                after));
+                after,
+                result.IsolationEnforced,
+                result.ModelId,
+                result.AttemptsUsed,
+                result.Entry?.Provenance.Temperature));
         }
 
+        var version = string.Equals(generatorBackend, SkillGeneratorFactory.ClaudeMode, StringComparison.OrdinalIgnoreCase)
+            ? "s3.2-claude-v1"
+            : "s3.1-recorded-v1";
+
         return new SkillLoopReport(
-            Version: "s3.0-v1",
+            Version: version,
             GeneratorBackend: generatorBackend,
             RunAt: DateTimeOffset.UtcNow,
             Calls: calls,
