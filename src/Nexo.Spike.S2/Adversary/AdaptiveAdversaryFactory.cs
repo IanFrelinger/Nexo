@@ -4,7 +4,7 @@ public static class AdaptiveAdversaryFactory
 {
     public const string MockMode = "mock";
     public const string LlmMode = "llm";
-    public const string CursorStandInMode = "cursor-standin";
+    public const string ScriptedStandInMode = ScriptedStandInAdversary.ScriptedStandInMode;
 
     public static IAdaptiveAdversary Create()
     {
@@ -13,9 +13,12 @@ public static class AdaptiveAdversaryFactory
         {
             MockMode => new DeterministicMockAdversary(),
             LlmMode => new LlmAdversary(),
-            CursorStandInMode => new CursorStandInAdversary(),
+            ScriptedStandInMode => new ScriptedStandInAdversary(),
             _ => throw new InvalidOperationException(
-                $"Unknown NEXO_S2_ADVERSARY='{mode}'. Supported: {MockMode}, {LlmMode}, {CursorStandInMode}.")
+                $"Unknown NEXO_S2_ADVERSARY='{mode}'. Supported: {MockMode}, {LlmMode}, {ScriptedStandInMode}.")
         };
     }
+
+    public static string ResolveMode() =>
+        Environment.GetEnvironmentVariable("NEXO_S2_ADVERSARY") ?? MockMode;
 }

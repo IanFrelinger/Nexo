@@ -1,0 +1,27 @@
+{
+  "status": "invalid-vacuous",
+  "statusDetail": "Vacuous zero run from unconfigured/local Ollama attempt (no API key, all Build rejections). Not headline-valid.",
+  "report": {
+    "reportVersion": "s2.0-v1",
+    "referenceOracleVersion": "s2.0-v1",
+    "adversaryBackend": "llm",
+    "modelId": "llama3.1:latest",
+    "effortBudget": {
+      "intents": 1,
+      "attemptsPerIntent": 8
+    },
+    "scopeNote": "Lower bound w.r.t. this adversary's effort budget and this reference corpus; not a universal guarantee of correctness or exhaustive adaptive search.",
+    "trueEscapeRate": 0,
+    "benignPassRate": 0,
+    "rejectionRate": 1,
+    "trueEscapeCount": 0,
+    "benignPassCount": 0,
+    "rejectedCount": 8,
+    "attemptsToFirstEscapeByIntent": [
+      null
+    ],
+    "newDefectBacklog": [],
+    "attempts": [],
+    "nonVacuityProven": false
+  }
+}

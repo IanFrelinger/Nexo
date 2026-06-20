@@ -1,5 +1,6 @@
 using Nexo.Spike.S2;
 using Nexo.Spike.S2.Adversary;
+using Nexo.Spike.S2.Adversary.Llm;
 using Nexo.Spike.S2.Reporting;
 
 var parsed = HarnessCli.Parse(args);
@@ -16,26 +17,82 @@ if (parsed.IsError)
     return 2;
 }
 
-var harness = new AdaptiveEscapeHarness();
-var report = await harness.RunAsync(new AdaptiveEscapeHarnessOptions
+var adversaryMode = AdaptiveAdversaryFactory.ResolveMode();
+var runStartedAt = DateTimeOffset.UtcNow;
+var runDirectory = AdaptiveEscapeReportPublisher.PlanRunDirectory(
+    parsed.ArtifactsRoot,
+    adversaryMode,
+    runStartedAt);
+
+if (string.Equals(adversaryMode, AdaptiveAdversaryFactory.LlmMode, StringComparison.OrdinalIgnoreCase))
 {
-    Intents = parsed.Intents,
-    AttemptsPerIntent = parsed.Attempts,
-    OutputDirectory = parsed.OutputDirectory,
-    IntentPath = parsed.IntentPath,
-    ReferenceOraclePath = parsed.ReferenceOraclePath,
-    MutationThresholdPercent = parsed.MutationThreshold,
-    RequireMutation = parsed.RequireMutation
-}).ConfigureAwait(false);
+    try
+    {
+        LlmRunPreflight.EnsureProviderConfigured();
+    }
+    catch (InvalidOperationException ex)
+    {
+        var stub = await AdaptiveEscapeReportPublisher.PublishStubLlmFailureAsync(
+            parsed.ArtifactsRoot,
+            ex.Message,
+            Environment.GetEnvironmentVariable("NEXO_S2_LLM_MODEL")).ConfigureAwait(false);
 
-var jsonPath = Path.Combine(parsed.OutputDirectory, "adaptive-escape-report.json");
-var mdPath = Path.Combine(parsed.OutputDirectory, "findings.md");
+        Console.Error.WriteLine("LLM adversary preflight failed (stub/unconfigured provider).");
+        Console.Error.WriteLine(ex.Message);
+        Console.Error.WriteLine($"Invalid run marker: {Path.Combine(stub.RunDirectory, AdaptiveEscapeReportPublisher.InvalidMarkerFileName)}");
+        return 1;
+    }
+}
 
-await AdaptiveEscapeReportWriter.WriteJsonAsync(report, jsonPath).ConfigureAwait(false);
-await File.WriteAllTextAsync(mdPath, AdaptiveEscapeReportWriter.RenderFindings(report)).ConfigureAwait(false);
+AdaptiveEscapeReport report;
+try
+{
+    var harness = new AdaptiveEscapeHarness();
+    report = await harness.RunAsync(new AdaptiveEscapeHarnessOptions
+    {
+        Intents = parsed.Intents,
+        AttemptsPerIntent = parsed.Attempts,
+        OutputDirectory = runDirectory,
+        IntentPath = parsed.IntentPath,
+        ReferenceOraclePath = parsed.ReferenceOraclePath,
+        MutationThresholdPercent = parsed.MutationThreshold,
+        RequireMutation = parsed.RequireMutation
+    }).ConfigureAwait(false);
+}
+catch (Exception ex) when (string.Equals(adversaryMode, AdaptiveAdversaryFactory.LlmMode, StringComparison.OrdinalIgnoreCase)
+                           && LlmRunPreflight.IsProviderMissingError(ex))
+{
+    var stub = await AdaptiveEscapeReportPublisher.PublishStubLlmFailureAsync(
+        parsed.ArtifactsRoot,
+        ex.Message,
+        Environment.GetEnvironmentVariable("NEXO_S2_LLM_MODEL")).ConfigureAwait(false);
 
-Console.WriteLine($"Wrote {jsonPath}");
-Console.WriteLine($"Wrote {mdPath}");
+    Console.Error.WriteLine("LLM adversary run failed before completion (stub/unconfigured provider).");
+    Console.Error.WriteLine(ex.Message);
+    Console.Error.WriteLine($"Invalid run marker: {Path.Combine(stub.RunDirectory, AdaptiveEscapeReportPublisher.InvalidMarkerFileName)}");
+    return 1;
+}
+
+var published = await AdaptiveEscapeReportPublisher.PublishRunAsync(
+    report,
+    parsed.ArtifactsRoot,
+    runDirectory,
+    attemptCanonicalPromotion: true).ConfigureAwait(false);
+
+Console.WriteLine($"Wrote run report: {Path.Combine(published.RunDirectory, AdaptiveEscapeReportPublisher.RunReportFileName)}");
+Console.WriteLine($"Wrote run findings: {Path.Combine(published.RunDirectory, AdaptiveEscapeReportPublisher.RunFindingsFileName)}");
+if (published.PromotedToCanonical)
+{
+    Console.WriteLine($"Promoted canonical: {published.CanonicalJsonPath}");
+    Console.WriteLine($"Promoted canonical: {published.CanonicalFindingsPath}");
+}
+else if (!report.NonVacuityProven)
+{
+    Console.WriteLine(
+        $"Canonical report NOT updated (status={published.Status}). " +
+        $"See {Path.Combine(published.RunDirectory, AdaptiveEscapeReportPublisher.InvalidMarkerFileName)}");
+}
+
 Console.WriteLine($"Adversary backend: {report.AdversaryBackend}");
 Console.WriteLine($"True-escape rate: {report.TrueEscapeRate:P1} ({report.TrueEscapeCount}/{report.Attempts.Count})");
 Console.WriteLine($"Benign-pass rate: {report.BenignPassRate:P1} ({report.BenignPassCount}/{report.Attempts.Count})");
@@ -61,9 +118,12 @@ internal static class HarnessCli
           --no-require-mutation    Allow skipping MutationGate when stryker missing
           --intent path            Brick intent JSON (default: S1 honest fixture)
           --oracle path            Reference oracle JSON (default: artifacts/s2/reference-oracle.json)
-          --out path               Output directory (default: artifacts/s2)
+          --out path               Artifacts root directory (default: artifacts/s2)
           --allow-incomplete-non-vacuity  Exit 0 even if non-vacuity not proven (local dev)
           --help                   Show help
+
+        Run outputs land in artifacts/s2/runs/<backend>-<version>/.
+        Canonical artifacts/s2/adaptive-escape-report.json is updated ONLY for valid mock runs.
 
         Local LLM run (never in CI):
           export NEXO_S2_ADVERSARY=llm
@@ -78,7 +138,7 @@ internal static class HarnessCli
         var mutationThreshold = 80.0;
         var requireMutation = true;
         var allowIncomplete = false;
-        var output = Path.Combine(Directory.GetCurrentDirectory(), "artifacts", "s2");
+        var artifactsRoot = Path.Combine(Directory.GetCurrentDirectory(), "artifacts", "s2");
         var intent = ResolveDefaultIntent();
         var oracle = ResolveDefaultOracle();
         var showHelp = false;
@@ -115,7 +175,7 @@ internal static class HarnessCli
                 case "--out":
                     if (!TryReadString(args, ref i, out var outPath))
                         return ParsedArgs.Error("Missing value for --out");
-                    output = Path.GetFullPath(outPath);
+                    artifactsRoot = Path.GetFullPath(outPath);
                     break;
                 case "--intent":
                     if (!TryReadString(args, ref i, out var intentPath))
@@ -132,7 +192,7 @@ internal static class HarnessCli
             }
         }
 
-        return new ParsedArgs(false, showHelp, intents, attempts, mutationThreshold, requireMutation, allowIncomplete, output, intent, oracle, null);
+        return new ParsedArgs(false, showHelp, intents, attempts, mutationThreshold, requireMutation, allowIncomplete, artifactsRoot, intent, oracle, null);
     }
 
     private static string ResolveDefaultIntent()
@@ -199,7 +259,7 @@ internal static class HarnessCli
         double MutationThreshold,
         bool RequireMutation,
         bool AllowIncompleteNonVacuity,
-        string OutputDirectory,
+        string ArtifactsRoot,
         string IntentPath,
         string ReferenceOraclePath,
         string? ErrorMessage)

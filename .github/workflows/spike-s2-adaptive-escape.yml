@@ -25,7 +25,7 @@ jobs:
           unset OPENAI_API_KEY
           unset ANTHROPIC_API_KEY
           unset NEXO_LLM_API_KEY
-          dotnet test src/Nexo.Tests.Spike.S2 --filter "FullyQualifiedName~NonVacuity|FullyQualifiedName~ReferenceOracle|FullyQualifiedName~AdversaryIsolation|FullyQualifiedName~LlmAdversary"
+          dotnet test src/Nexo.Tests.Spike.S2 --filter "FullyQualifiedName~NonVacuity|FullyQualifiedName~ReferenceOracle|FullyQualifiedName~AdversaryIsolation|FullyQualifiedName~LlmAdversary|FullyQualifiedName~ReportIntegrity"
           dotnet run --project src/Nexo.Spike.S2 -- --intents 1 --attempts 3 --out artifacts/s2
 
       - name: Assert non-vacuity and mock-only adversary
@@ -45,8 +45,15 @@ jobs:
           if report["adversaryBackend"] != "mock":
               raise SystemExit("CI/cloud must use mock adversary only")
 
+          if report.get("nonVacuityProven") is False:
+              raise SystemExit("Canonical report must have nonVacuityProven=true")
+
           if report["trueEscapeCount"] < 1 or report["benignPassCount"] < 1:
               raise SystemExit("Non-vacuity guard failed: need detected TrueEscape and BenignPass")
+
+          mock_run = Path("artifacts/s2/runs/mock-s2.0-v1/adaptive-escape-report.json")
+          if not mock_run.exists():
+              raise SystemExit("Expected per-backend mock run artifact under artifacts/s2/runs/mock-s2.0-v1/")
 
           backlog = report.get("newDefectBacklog") or []
           if not backlog:

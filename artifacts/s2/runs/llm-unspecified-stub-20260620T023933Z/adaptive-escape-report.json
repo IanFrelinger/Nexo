@@ -1,0 +1,24 @@
+{
+  "status": "invalid-stub-llm",
+  "statusDetail": "LLM API key is not set. Set OPENAI_API_KEY, ANTHROPIC_API_KEY, or NEXO_LLM_API_KEY before calling LlmAdversary.",
+  "report": {
+    "reportVersion": "s2.0-v1",
+    "referenceOracleVersion": "s2.0-v1",
+    "adversaryBackend": "llm",
+    "effortBudget": {
+      "intents": 0,
+      "attemptsPerIntent": 0
+    },
+    "scopeNote": "Lower bound w.r.t. this adversary\u0027s effort budget and this reference corpus; not a universal guarantee of correctness or exhaustive adaptive search.",
+    "trueEscapeRate": 0,
+    "benignPassRate": 0,
+    "rejectionRate": 0,
+    "trueEscapeCount": 0,
+    "benignPassCount": 0,
+    "rejectedCount": 0,
+    "attemptsToFirstEscapeByIntent": [],
+    "newDefectBacklog": [],
+    "attempts": [],
+    "nonVacuityProven": false
+  }
+}

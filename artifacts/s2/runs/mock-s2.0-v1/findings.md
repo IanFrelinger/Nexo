@@ -4,11 +4,11 @@
 
 - **Report version**: `s2.0-v1`
 - **Reference oracle version**: `s2.0-v1`
-- **Adversary backend**: `cursor-standin`
-- **Effort budget**: 1 intent(s) × 8 attempt(s)
-- **True-escape rate**: **25.0%** (2/8)
-- **Benign-pass rate**: **37.5%** (3/8)
-- **Rejection rate**: **37.5%** (3/8)
+- **Adversary backend**: `mock`
+- **Effort budget**: 1 intent(s) × 3 attempt(s)
+- **True-escape rate**: **33.3%** (1/3)
+- **Benign-pass rate**: **33.3%** (1/3)
+- **Rejection rate**: **33.3%** (1/3)
 - **Non-vacuity proven**: True
 
 ## Scope caveat
@@ -17,27 +17,21 @@ Lower bound w.r.t. this adversary's effort budget and this reference corpus; not
 
 ## Attempts-to-first-true-escape
 
-- Intent 0: 3
+- Intent 0: 2
 
 ## New-defect backlog (held-out oracle disagreements)
 
 | Inputs | Expected | Actual | Attempt | Candidate |
 | --- | --- | --- | ---: | --- |
-| `["999"]` | Integer | String | 3 | `cursor-attempt-03` |
-| `["1e3"]` | String | Decimal | 6 | `cursor-attempt-06` |
+| `["999"]` | Integer | String | 2 | `mock-true-escape-held-out-999` |
 
 ## Per-attempt outcomes
 
 | Intent | Attempt | Candidate | Outcome | Rejected by |
 | ---: | ---: | --- | --- | --- |
-| 0 | 1 | `cursor-attempt-01` | Rejected | RED |
-| 0 | 2 | `cursor-attempt-02` | Rejected | RED |
-| 0 | 3 | `cursor-attempt-03` | TrueEscape | — |
-| 0 | 4 | `cursor-attempt-04` | BenignPass | — |
-| 0 | 5 | `cursor-attempt-05` | Rejected | RED |
-| 0 | 6 | `cursor-attempt-06` | TrueEscape | — |
-| 0 | 7 | `cursor-attempt-07` | BenignPass | — |
-| 0 | 8 | `cursor-attempt-08` | BenignPass | — |
+| 0 | 1 | `mock-rejected-constant-return` | Rejected | RED |
+| 0 | 2 | `mock-true-escape-held-out-999` | TrueEscape | — |
+| 0 | 3 | `mock-benign-pass-honest` | BenignPass | — |
 
 ## Local LLM command
 

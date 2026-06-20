@@ -60,37 +60,85 @@ public static class AdaptiveEscapeReportWriter
         Converters = { new JsonStringEnumConverter() }
     };
 
-    public static async Task WriteJsonAsync(AdaptiveEscapeReport report, string path, CancellationToken ct = default)
+    public static async Task WriteRunRecordAsync(
+        AdaptiveEscapeRunRecord record,
+        string path,
+        CancellationToken ct = default)
     {
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         await using var stream = File.Create(path);
-        await JsonSerializer.SerializeAsync(stream, report, JsonOptions, ct).ConfigureAwait(false);
+        await JsonSerializer.SerializeAsync(stream, record, JsonOptions, ct).ConfigureAwait(false);
     }
 
-    public static string RenderFindings(AdaptiveEscapeReport report)
+    public static void WriteCanonicalJson(AdaptiveEscapeReport report, string path)
     {
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        using var stream = File.Create(path);
+        JsonSerializer.Serialize(stream, report, JsonOptions);
+    }
+
+    public static async Task WriteJsonAsync(AdaptiveEscapeReport report, string path, CancellationToken ct = default)
+    {
+        WriteCanonicalJson(report, path);
+        await Task.CompletedTask;
+    }
+
+    public static string RenderFindings(
+        AdaptiveEscapeReport report,
+        AdaptiveEscapeFindingsOptions? options = null)
+    {
+        options ??= AdaptiveEscapeFindingsOptions.ForRun(AdaptiveEscapeRunStatus.Valid);
+
         var lines = new List<string>
         {
             "# S2 Adaptive Adversary Escape Rate",
-            "",
-            "## Headline",
-            "",
-            $"- **Report version**: `{report.ReportVersion}`",
-            $"- **Reference oracle version**: `{report.ReferenceOracleVersion}`",
-            $"- **Adversary backend**: `{report.AdversaryBackend}`",
-            $"- **Effort budget**: {report.EffortBudget.Intents} intent(s) × {report.EffortBudget.AttemptsPerIntent} attempt(s)",
-            $"- **True-escape rate**: **{report.TrueEscapeRate:P1}** ({report.TrueEscapeCount}/{report.Attempts.Count})",
-            $"- **Benign-pass rate**: **{report.BenignPassRate:P1}** ({report.BenignPassCount}/{report.Attempts.Count})",
-            $"- **Rejection rate**: **{report.RejectionRate:P1}** ({report.RejectedCount}/{report.Attempts.Count})",
-            $"- **Non-vacuity proven**: {report.NonVacuityProven}",
-            "",
-            "## Scope caveat",
-            "",
-            report.ScopeNote,
-            "",
-            "## Attempts-to-first-true-escape",
             ""
         };
+
+        if (options.IncludeScriptedStandInBanner)
+        {
+            lines.Add(
+                "> **Scripted stand-in (non-adaptive):** replays hand-authored candidates keyed by attempt index; " +
+                "provides **no novel signal** vs the S1 catalog. Offline harness exercise only — **never** the phase-2 headline result.");
+            lines.Add("");
+        }
+
+        if (options.IncludeCorrectionNote)
+        {
+            lines.Add("## CORRECTION");
+            lines.Add("");
+            lines.Add(
+                "A prior artifact labeled \"real LLM adaptive-adversary run\" was an empty stub/Ollama run " +
+                "(`backend=llm`, `trueEscapeRate=0`, `nonVacuityProven=false`) with **no API key** and **no adaptive behavior**. " +
+                "That vacuous-zero report was misleading and is superseded by this canonical mock baseline. " +
+                "A real keyed LLM escape rate is still pending a local run.");
+            lines.Add("");
+        }
+
+        if (!string.IsNullOrWhiteSpace(options.RunStatus)
+            && !string.Equals(options.RunStatus, AdaptiveEscapeRunStatus.Valid, StringComparison.OrdinalIgnoreCase))
+        {
+            lines.Add($"**Run status:** `{options.RunStatus}` (not canonical / not headline-valid)");
+            lines.Add("");
+        }
+
+        lines.Add("## Headline");
+        lines.Add("");
+        lines.Add($"- **Report version**: `{report.ReportVersion}`");
+        lines.Add($"- **Reference oracle version**: `{report.ReferenceOracleVersion}`");
+        lines.Add($"- **Adversary backend**: `{report.AdversaryBackend}`");
+        lines.Add($"- **Effort budget**: {report.EffortBudget.Intents} intent(s) × {report.EffortBudget.AttemptsPerIntent} attempt(s)");
+        lines.Add($"- **True-escape rate**: **{report.TrueEscapeRate:P1}** ({report.TrueEscapeCount}/{report.Attempts.Count})");
+        lines.Add($"- **Benign-pass rate**: **{report.BenignPassRate:P1}** ({report.BenignPassCount}/{report.Attempts.Count})");
+        lines.Add($"- **Rejection rate**: **{report.RejectionRate:P1}** ({report.RejectedCount}/{report.Attempts.Count})");
+        lines.Add($"- **Non-vacuity proven**: {report.NonVacuityProven}");
+        lines.Add("");
+        lines.Add("## Scope caveat");
+        lines.Add("");
+        lines.Add(report.ScopeNote);
+        lines.Add("");
+        lines.Add("## Attempts-to-first-true-escape");
+        lines.Add("");
 
         for (var i = 0; i < report.AttemptsToFirstEscapeByIntent.Count; i++)
         {

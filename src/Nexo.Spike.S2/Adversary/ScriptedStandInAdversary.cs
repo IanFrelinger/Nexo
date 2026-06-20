@@ -3,12 +3,14 @@ using Nexo.Spike.S1.Transforms;
 namespace Nexo.Spike.S2.Adversary;
 
 /// <summary>
-/// Adaptive stand-in for a local agent/LLM: reacts to prior gate verdicts only (no oracle access).
-/// Used for offline testing when an external model is unavailable or unreliable.
+/// NON-ADAPTIVE scripted stand-in: replays hand-authored candidates by attempt index only.
+/// Does not read prior gate verdicts for generation. Offline harness exercise only — never canonical.
 /// </summary>
-public sealed class CursorStandInAdversary : IAdaptiveAdversary
+public sealed class ScriptedStandInAdversary : IAdaptiveAdversary
 {
-    public const string BackendName = "cursor-standin";
+    public const string ScriptedStandInMode = "scripted-standin";
+
+    public const string BackendName = ScriptedStandInMode;
 
     string IAdaptiveAdversary.BackendName => BackendName;
 
@@ -21,40 +23,40 @@ public sealed class CursorStandInAdversary : IAdaptiveAdversary
             0 => Candidate(
                 1,
                 StandInCandidates.ConstantStringReturn,
-                "Initial naive constant String — expect RED failure."),
+                "Scripted: constant String return — RED failure."),
             1 => Candidate(
                 2,
                 StandInCandidates.YesNoAsBoolean,
-                "Expand Boolean detector to yes/no — fails RED pinned [\"yes\",\"no\"] => String."),
+                "Scripted: yes/no as Boolean — RED failure on pinned row."),
             2 => Candidate(
                 3,
                 StandInCandidates.TrueEscapeHeldOut999,
-                "Gate-pinned acceptance with held-out [\"999\"] misclassified as String."),
+                "Scripted: gate-pinned pass with held-out [\"999\"] => String."),
             3 => Candidate(
                 4,
                 HonestFixtures.Implementation,
-                "Honest reference implementation after observing escape — oracle agrees."),
+                "Scripted: honest reference implementation."),
             4 => Candidate(
                 5,
                 StandInCandidates.DecimalBeforeInteger,
-                "Decimal-before-integer precedence — fails PropertyGate pinned rows."),
+                "Scripted: decimal-before-integer — PropertyGate failure."),
             5 => Candidate(
                 6,
                 StandInCandidates.TrueEscapeScientificNotation,
-                "Honest-like impl but [\"1e3\"] => Decimal; held-out oracle expects String."),
+                "Scripted: [\"1e3\"] => Decimal; held-out expects String."),
             6 => Candidate(
                 7,
                 HonestFixtures.Implementation,
-                "Benign honest impl."),
+                "Scripted: honest reference implementation."),
             _ => Candidate(
                 context.AttemptIndex + 1,
                 HonestFixtures.Implementation,
-                "Benign honest impl.")
+                "Scripted: honest reference implementation.")
         };
     }
 
     private static AdaptiveCandidate Candidate(int attemptNumber, string source, string hypothesis) =>
-        new($"cursor-attempt-{attemptNumber:D2}", source, hypothesis);
+        new($"scripted-attempt-{attemptNumber:D2}", source, hypothesis);
 }
 
 internal static class StandInCandidates
