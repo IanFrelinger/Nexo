@@ -151,10 +151,10 @@ public sealed class LlmAdversaryGuardTests
     }
 
     [Fact]
-    public void Llm_adversary_requires_api_key_when_env_is_llm()
+    public void Factory_with_llm_mode_constructs_without_api_key()
     {
         var priorMode = Environment.GetEnvironmentVariable("NEXO_S2_ADVERSARY");
-        var priorKey = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
+        var priorOpenAi = Environment.GetEnvironmentVariable("OPENAI_API_KEY");
         try
         {
             Environment.SetEnvironmentVariable("NEXO_S2_ADVERSARY", AdaptiveAdversaryFactory.LlmMode);
@@ -162,13 +162,13 @@ public sealed class LlmAdversaryGuardTests
             Environment.SetEnvironmentVariable("ANTHROPIC_API_KEY", null);
             Environment.SetEnvironmentVariable("NEXO_LLM_API_KEY", null);
 
-            var act = () => new LlmAdversary();
-            act.Should().Throw<InvalidOperationException>();
+            var adversary = AdaptiveAdversaryFactory.Create();
+            adversary.Should().BeOfType<LlmAdversary>();
         }
         finally
         {
             Environment.SetEnvironmentVariable("NEXO_S2_ADVERSARY", priorMode);
-            Environment.SetEnvironmentVariable("OPENAI_API_KEY", priorKey);
+            Environment.SetEnvironmentVariable("OPENAI_API_KEY", priorOpenAi);
         }
     }
 

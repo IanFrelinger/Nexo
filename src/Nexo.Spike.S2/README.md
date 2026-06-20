@@ -11,10 +11,15 @@ dotnet run --project src/Nexo.Spike.S2 -- --intents 1 --attempts 3 --out artifac
 
 ## Local LLM run (never in CI)
 
+Requires `NEXO_S2_ADVERSARY=llm` and a provider API key at **call time** (never logged or persisted).
+The `LlmAdversary` uses `HttpLlmTransport`; tests use `FakeLlmTransport` only.
+
 ```bash
 export NEXO_S2_ADVERSARY=llm
 export OPENAI_API_KEY=...   # or ANTHROPIC_API_KEY / NEXO_LLM_API_KEY
 export NEXO_S2_LLM_MODEL=gpt-4o
+export NEXO_S2_LLM_TEMPERATURE=0
+export NEXO_S2_LLM_SEED=42
 export PATH="$HOME/.dotnet/tools:$PATH"
 dotnet run --project src/Nexo.Spike.S2 -- --intents 1 --attempts 8 --out artifacts/s2
 ```
