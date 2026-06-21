@@ -1,12 +1,15 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Nexo.Core.Application.Adaptation.Ports;
+using Nexo.Core.Application.Certification.Ports;
 using Nexo.Core.Application.Observation.Ports;
 using Nexo.Core.Application.Paths;
 using Nexo.Core.Application.Rollback.Ports;
 using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Execution;
 using Nexo.Infrastructure.Adaptation;
+using Nexo.Infrastructure.Certification;
+using Nexo.Infrastructure.Certification.Sdk.Extensions;
 using Nexo.Infrastructure.Execution;
 using Nexo.Infrastructure.Observation;
 using Nexo.Infrastructure.Sdk.Observation;
@@ -33,13 +36,32 @@ public static class AdaptationServiceCollectionExtensions
 
         services.AddOptions<AdaptationBrickOptions>();
 
-        services.AddSingleton<Nexo.Infrastructure.Execution.BrickRegistry>(sp =>
+        services.AddCertificationInfrastructure();
+
+        services.AddSingleton<CertifiedBrickRegistry>(sp =>
+        {
+            var registry = new CertifiedBrickRegistry(
+                sp.GetRequiredService<ICertificationRecordStore>(),
+                sp.GetRequiredService<CertificationRecordSigner>(),
+                sp.GetService<Microsoft.Extensions.Logging.ILogger<CertifiedBrickRegistry>>());
+            BootstrapCertifiedCatalog(sp, registry, patternStorePath);
+            return registry;
+        });
+        services.AddSingleton<ICertifiedBrickAdmission, CertifiedBrickAdmission>();
+
+        services.AddSingleton<BrickRegistry>(sp =>
         {
             var bricks = new List<Brick>();
             if (patternStorePath != null)
             {
-                var contextAssembler = sp.GetRequiredService<IContextAssembler>();
-                bricks.Add(new ObservationContextBrick(contextAssembler));
+                var store = sp.GetRequiredService<ICertificationRecordStore>();
+                var signer = sp.GetRequiredService<CertificationRecordSigner>();
+                var record = store.Get("observation.context");
+                if (record is { Admitted: true, Signed: true } && signer.Verify(record))
+                {
+                    var contextAssembler = sp.GetRequiredService<IContextAssembler>();
+                    bricks.Add(new ObservationContextBrick(contextAssembler));
+                }
             }
 
             var options = sp.GetService<IOptions<AdaptationBrickOptions>>();
@@ -60,10 +82,9 @@ public static class AdaptationServiceCollectionExtensions
                 }
             }
 
-            return new Nexo.Infrastructure.Execution.BrickRegistry(bricks);
+            return new BrickRegistry(bricks);
         });
-        services.AddSingleton<Nexo.Core.Domain.Execution.IBrickRegistry>(sp =>
-            sp.GetRequiredService<Nexo.Infrastructure.Execution.BrickRegistry>());
+        services.AddSingleton<IBrickRegistry>(sp => sp.GetRequiredService<BrickRegistry>());
 
         services.AddSingleton<IBrickDecomposer, BrickDecomposer>();
         services.AddSingleton<IFixGenerator, FixGenerator>();
@@ -99,6 +120,46 @@ public static class AdaptationServiceCollectionExtensions
         services.AddRollbackInfrastructure(snapshotPath);
 
         return services;
+    }
+
+    private static void BootstrapCertifiedCatalog(
+        IServiceProvider sp,
+        CertifiedBrickRegistry registry,
+        string? patternStorePath)
+    {
+        var store = sp.GetRequiredService<ICertificationRecordStore>();
+
+        if (patternStorePath != null)
+        {
+            var record = store.Get("observation.context");
+            if (record is { Admitted: true, Signed: true })
+            {
+                var contextAssembler = sp.GetRequiredService<IContextAssembler>();
+                var brick = new ObservationContextBrick(contextAssembler);
+                registry.TryAdmit(brick, record);
+            }
+        }
+
+        var options = sp.GetService<IOptions<AdaptationBrickOptions>>();
+        if (options?.Value?.AdditionalBrickTypes is not { Count: > 0 } types)
+            return;
+
+        foreach (var type in types)
+        {
+            try
+            {
+                var brick = (Brick?)ActivatorUtilities.CreateInstance(sp, type);
+                if (brick is null)
+                    continue;
+                var rec = store.Get(brick.Id);
+                if (rec is { Admitted: true, Signed: true })
+                    registry.TryAdmit(brick, rec);
+            }
+            catch (Exception)
+            {
+                // Skip bricks that fail to instantiate (missing DI, etc.)
+            }
+        }
     }
 
     /// <summary>
