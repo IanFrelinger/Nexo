@@ -1,32 +1,23 @@
 using System.Reflection;
 using System.Runtime.Loader;
-using System.Text.RegularExpressions;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.Extensions.Logging.Abstractions;
 using Nexo.Core.Application.Certification.Models;
 using Nexo.Core.Domain.Bricks;
-using Nexo.Core.Domain.Execution;
 using Nexo.Infrastructure.Testing.CodeAnalysis;
 
 namespace Nexo.Infrastructure.Certification;
 
 internal sealed class BrickMutationEngine
 {
-    private static readonly IReadOnlyList<MutationDefinition> Catalog =
+    public IReadOnlyList<string> GetMutationStrategyNames() =>
     [
-        new("flip-gt-error-count", @"errorCount > 0", "errorCount < 0"),
-        new("flip-lt-index", @"idx < 0", "idx > 0"),
-        new("off-by-one-plus", @"\(idx \+ 5\)", "(idx + 4)"),
-        new("negate-contains", @"\.Contains\(""ERROR""", @".Contains(""NOPE"""),
-        new("drop-error-branch", @"if \(line\.Contains\(""ERROR"".*\)\)\s*\r?\n\s*errorLines\.Add\(line\);", "// dropped branch"),
-        new(
-            "mutate-first-message-only",
-            @"var firstErrorMessage = errorCount > 0 \? ExtractErrorMessage\(errorLines\[0\]\) : string\.Empty;",
-            @"var firstErrorMessage = ""escaped-mutant"";"),
+        "flip-binary-op",
+        "negate-condition",
+        "mutate-int-literal",
+        "mutate-string-literal",
+        "remove-statement",
+        "swap-logical-op"
     ];
-
-    public IReadOnlyList<MutationDefinition> GetCatalog() => Catalog;
 
     public async Task<MutationTestResult> RunAsync(
         string sourceCode,
@@ -37,16 +28,17 @@ internal sealed class BrickMutationEngine
     {
         var survivors = new List<string>();
         var killed = new List<string>();
+        var mutations = AstMutationCatalog.CollectMutations(sourceCode);
 
-        foreach (var mutation in Catalog)
+        foreach (var mutation in mutations)
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (!mutation.Pattern.IsMatch(sourceCode))
-                continue;
-
-            var mutatedSource = mutation.Pattern.Replace(sourceCode, mutation.Replacement, 1);
+            var mutatedSource = mutation.ToSource();
             if (string.Equals(mutatedSource, sourceCode, StringComparison.Ordinal))
+            {
+                killed.Add(mutation.Id);
                 continue;
+            }
 
             var mutant = await TryCompileMutantAsync(
                 mutatedSource,
@@ -87,14 +79,15 @@ internal sealed class BrickMutationEngine
     {
         var tempDir = Path.Combine(Path.GetTempPath(), "nexo-cert-mut", Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(tempDir);
-        var outputPath = Path.Combine(tempDir, "mutant.dll");
+        var assemblyName = $"MutantBrick_{Guid.NewGuid():N}";
+        var outputPath = Path.Combine(tempDir, $"{assemblyName}.dll");
 
         try
         {
             var compiler = new RoslynCodeAnalysisService(NullLogger<RoslynCodeAnalysisService>.Instance);
             var compile = await compiler.CompileAsync(
                 WrapWithGlobalUsings(sourceCode),
-                "MutantBrick",
+                assemblyName,
                 outputPath,
                 compilationReferences,
                 cancellationToken).ConfigureAwait(false);
@@ -175,20 +168,6 @@ internal sealed class MutantAssemblyLoadContext : AssemblyLoadContext
     }
 
     protected override Assembly? Load(AssemblyName assemblyName) => null;
-}
-
-internal sealed class MutationDefinition
-{
-    public MutationDefinition(string id, string pattern, string replacement)
-    {
-        Id = id;
-        Pattern = new Regex(pattern, RegexOptions.Multiline);
-        Replacement = replacement;
-    }
-
-    public string Id { get; }
-    public Regex Pattern { get; }
-    public string Replacement { get; }
 }
 
 internal sealed record MutationTestResult(
