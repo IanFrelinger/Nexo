@@ -2,8 +2,9 @@
 # Fail closed when the cert-gate filter matches too few tests (dotnet test exits 0 on zero matches).
 set -euo pipefail
 
-# CertificationGateTeethTests: 6, AstMutationEngineTests: 2, GenerationSafetyTests: 4
-readonly MIN_EXPECTED=12
+# CertificationGateTeethTests: 6, AstMutationEngineTests: 2, GenerationSafetyTests: 4,
+# CompositionCertificationGateTeethTests: 5
+readonly MIN_EXPECTED=17
 TRX="${1:-test-results/cert-gate.trx}"
 
 if [[ ! -f "${TRX}" ]]; then
