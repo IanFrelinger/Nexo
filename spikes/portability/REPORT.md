@@ -17,8 +17,31 @@ Probe brick: `ErrorSummaryExtractor` (deterministic log scanner)
 
 ## Gate teeth
 
-Strong witness on the probe brick: ADMIT with `escape_rate=0`, mutants killed: ["flip-gt-error-count","flip-lt-index","off-by-one-plus","negate-contains","drop-error-branch","mutate-first-message-only"].
-Weak witness (unit test `MutationProbeBrick`, errorCount-only): REJECT with `escape_rate > 0`; survivors include `flip-gt-error-count` and `mutate-first-message-only`.
+Strong witness on the probe brick: ADMIT with `escape_rate=0`, mutants killed by AST operators (`flip-binary-op`, `negate-condition`, `mutate-int-literal`, `remove-statement`, etc.).
+Weak witness (unit test `MutationProbeBrick`, errorCount-only): REJECT with `escape_rate > 0`; survivors include AST ids such as `flip-binary-op-*` and `mutate-int-literal-*`.
+
+## General generation
+
+Intent: **line-substring-counter** — extract count of lines containing a given substring (plus `firstMatchingLine` output).
+
+Independent strong witness (human-provided, not authored by generator):
+
+| Input | Expected output |
+|-------|-----------------|
+| `text="FOO line one\nplain\nFOO line two\n"`, `substring="FOO"` | `matchCount=2`, `firstMatchingLine="FOO line one"` |
+
+Model seam: `IGeneratorModel` with hermetic `FixtureGeneratorModel` in tests; production `ProviderGeneratorModel` (`model:ollama:isolation-enforced`) behind the sealed seam.
+
+### Generate→certify→admit results (AST-derived mutations, fixture model)
+
+| Case | Variant | Witness | Result | Gate detail |
+|------|---------|---------|--------|-------------|
+| 4a | `fixture:correct` | Strong | **ADMIT** | `escape_rate=0`, signed admission record |
+| 4b | `fixture:buggy` | Strong | **REJECT** | `correctness` — `firstMatchingLine` reports last match (`FOO line two`) instead of first |
+| 4c | `fixture:correct` | Weak (`matchCount` only) | **REJECT** | `mutation` — `escape_rate > 0` (AST mutants survive weak witness) |
+| 4d | `fixture:dependency-leak` | Strong | **REJECT** | `dependency` — source contains forbidden token `Nexo.Infrastructure` |
+
+Generated manifest carries `GenerationProvenance` (e.g. `fixture:correct`) marking model/fixture origin on the artifact.
 
 ## Contract-stability gaps (repo-internal context in generated brick)
 
