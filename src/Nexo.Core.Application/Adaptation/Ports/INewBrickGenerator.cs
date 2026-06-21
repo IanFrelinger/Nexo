@@ -17,4 +17,13 @@ public interface INewBrickGenerator
         string patternType,
         IReadOnlyDictionary<string, object>? patternMetadata = null,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Generate a brick manifest from arbitrary intent using the sealed model seam.
+    /// Witness signature provides I/O contract only — not witness cases.
+    /// </summary>
+    Task<BrickManifest> GenerateFromIntentAsync(
+        IntentSpec intent,
+        WitnessSignature witnessSignature,
+        CancellationToken cancellationToken = default);
 }
