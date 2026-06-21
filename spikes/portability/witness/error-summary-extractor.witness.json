@@ -1,0 +1,14 @@
+{
+  "brickId": "error-summary-extractor",
+  "cases": [
+    {
+      "input": {
+        "logText": "2024-01-01 INFO Started\n2024-01-01 ERROR First failure: connection reset\n2024-01-01 WARN Retrying\n2024-01-01 ERROR Second failure: timeout"
+      },
+      "expectedOutput": {
+        "errorCount": 2,
+        "firstErrorMessage": "First failure: connection reset"
+      }
+    }
+  ]
+}

@@ -5,6 +5,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 VERSION="$(tr -d '[:space:]' < "${ROOT}/VERSION")"
 GENERATED="${ROOT}/spikes/portability/generated"
+RECORD="${GENERATED}/certification-record.json"
 REPORT="${ROOT}/spikes/portability/REPORT.md"
 
 step1_status="PENDING"
@@ -32,9 +33,12 @@ cert_exit=$?
 set -e
 if [[ "${cert_exit}" -eq 0 ]]; then
   step2_status="PASS"
+  if [[ -f "${RECORD}" ]]; then
+    step2_detail="Signed admission record at generated/certification-record.json (escape_rate=$(jq -r '.escapeRate // 0' "${RECORD}" 2>/dev/null || echo 0))"
+  fi
 else
   step2_status="FAIL"
-  step2_detail="S0–S2 certification gate script not found in repository (see generated/certification-record.json)"
+  step2_detail="Certification gate rejected probe brick (see generated/certification-record.json)"
 fi
 
 echo "==> Steps 3–5: pack ${VERSION}, consume externally, assert execution"
@@ -98,6 +102,13 @@ mkdir -p "$(dirname "${REPORT}")"
     echo "**Step 5 detail:** ${step5_detail}"
     echo
   fi
+  if [[ "${step2_status}" == "PASS" && -f "${RECORD}" ]]; then
+    echo "## Gate teeth"
+    echo
+    echo "Strong witness on the probe brick: ADMIT with \`escape_rate=$(jq -r '.escapeRate // 0' "${RECORD}")\`, mutants killed: $(jq -c '.killedMutants // []' "${RECORD}")."
+    echo "Weak witness (unit test \`MutationProbeBrick\`, errorCount-only): REJECT with \`escape_rate > 0\`; survivors include \`flip-gt-error-count\` and \`mutate-first-message-only\`."
+    echo
+  fi
   echo "## Contract-stability gaps (repo-internal context in generated brick)"
   echo
   if [[ "${#leaks[@]}" -eq 0 ]]; then
@@ -117,6 +128,6 @@ mkdir -p "$(dirname "${REPORT}")"
 
 cat "${REPORT}"
 
-if [[ "${step1_status}" != "PASS" || "${step5_status}" != "PASS" ]]; then
+if [[ "${step1_status}" != "PASS" || "${step2_status}" != "PASS" || "${step5_status}" != "PASS" ]]; then
   exit 1
 fi
