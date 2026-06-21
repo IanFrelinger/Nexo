@@ -6,7 +6,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 VERSION="$(tr -d '[:space:]' < "${ROOT}/VERSION")"
 GENERATED="${ROOT}/spikes/portability/generated"
 RECORD="${GENERATED}/certification-record.json"
-REPORT="${ROOT}/spikes/portability/REPORT.md"
+REPORT="${ROOT}/spikes/portability/spike-run-summary.md"
 
 step1_status="PENDING"
 step2_status="PENDING"
