@@ -3,7 +3,7 @@
   "stage": "S0-S2",
   "admitted": false,
   "signed": false,
-  "timestamp": "2026-06-21T04:30:23Z",
+  "timestamp": "2026-06-21T04:32:47Z",
   "reason": "No S0-S2 brick certification gate script found in repository",
   "searched": [
   "scripts/certify-brick-gate.sh",
