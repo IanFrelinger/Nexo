@@ -8,6 +8,7 @@ using Nexo.Core.Application.Rollback.Ports;
 using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Execution;
 using Nexo.Infrastructure.Adaptation;
+using Nexo.Infrastructure.Adaptation.Generation;
 using Nexo.Infrastructure.Certification;
 using Nexo.Infrastructure.Certification.Sdk.Extensions;
 using Nexo.Infrastructure.Execution;
@@ -90,7 +91,18 @@ public static class AdaptationServiceCollectionExtensions
         services.AddSingleton<IFixGenerator, FixGenerator>();
         services.AddSingleton<IBrickRecompiler, BrickRecompiler>();
         services.AddSingleton<IBehaviorRewirer, BehaviorRewirer>();
-        services.AddSingleton<INewBrickGenerator>(sp => new NewBrickGenerator(sp.GetService<IAdaptationLog>()));
+        services.AddSingleton<IGeneratorModel>(sp =>
+        {
+            var factory = sp.GetService<Execution.IProviderFactory>();
+            return factory is not null
+                ? new ProviderGeneratorModel(factory)
+                : new FixtureGeneratorModel();
+        });
+        services.AddSingleton<INewBrickGenerator>(sp =>
+            new NewBrickGenerator(
+                sp.GetRequiredService<IGeneratorModel>(),
+                sp.GetService<IAdaptationLog>()));
+        services.AddSingleton<IGenerateAndCertifyService, GenerateAndCertifyService>();
         services.AddSingleton<INewBehaviorAssembler, NewBehaviorAssembler>();
         services.AddSingleton<ISourceCodeFixer, EmptyCatchCodeFixer>();
         services.AddSingleton<IImmutableCoreRegistry, ImmutableCoreRegistry>();
