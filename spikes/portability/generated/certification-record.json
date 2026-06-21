@@ -1,0 +1,14 @@
+{
+  "status": "FAIL",
+  "stage": "S0-S2",
+  "admitted": false,
+  "signed": false,
+  "timestamp": "2026-06-21T04:30:23Z",
+  "reason": "No S0-S2 brick certification gate script found in repository",
+  "searched": [
+  "scripts/certify-brick-gate.sh",
+  "scripts/verify-brick-certification-gate.sh",
+  "scripts/verify-brick-certification-s0-s2.sh"
+],
+  "brickId": "error-summary-extractor"
+}
