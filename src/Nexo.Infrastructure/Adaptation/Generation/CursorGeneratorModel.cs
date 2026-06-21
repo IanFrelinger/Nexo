@@ -11,8 +11,9 @@ namespace Nexo.Infrastructure.Adaptation.Generation;
 public sealed class CursorGeneratorModel : IGeneratorModel
 {
     public const string DamageResolverIntentId = "damage-resolver";
+    public const string HealthApplierIntentId = "health-applier";
 
-    /// <summary>honest | buggy</summary>
+    /// <summary>honest | buggy (damage-resolver only)</summary>
     public string Variant { get; set; } = "honest";
 
     public Task<GeneratedBrickSource> GenerateAsync(
@@ -22,20 +23,28 @@ public sealed class CursorGeneratorModel : IGeneratorModel
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        if (!string.Equals(intent.IntentId, DamageResolverIntentId, StringComparison.OrdinalIgnoreCase))
-            throw new NotSupportedException($"Cursor model has no source for intent '{intent.IntentId}'.");
-
-        var source = Variant switch
+        return Task.FromResult(intent.IntentId.ToLowerInvariant() switch
         {
-            "buggy" => DamageResolverSources.Buggy(witnessSignature),
-            _ => DamageResolverSources.Honest(witnessSignature)
-        };
+            var id when string.Equals(id, DamageResolverIntentId, StringComparison.Ordinal) =>
+                new GeneratedBrickSource(
+                    Variant switch
+                    {
+                        "buggy" => DamageResolverSources.Buggy(witnessSignature),
+                        _ => DamageResolverSources.Honest(witnessSignature)
+                    },
+                    Provenance: $"cursor:{Variant}",
+                    ClassName: "DamageResolverBrick",
+                    Namespace: "GeneratedBricks"),
 
-        return Task.FromResult(new GeneratedBrickSource(
-            source,
-            Provenance: $"cursor:{Variant}",
-            ClassName: "DamageResolverBrick",
-            Namespace: "GeneratedBricks"));
+            var id when string.Equals(id, HealthApplierIntentId, StringComparison.Ordinal) =>
+                new GeneratedBrickSource(
+                    HealthApplierSources.Honest(witnessSignature),
+                    Provenance: "cursor:honest",
+                    ClassName: "HealthApplierBrick",
+                    Namespace: "GeneratedBricks"),
+
+            _ => throw new NotSupportedException($"Cursor model has no source for intent '{intent.IntentId}'.")
+        });
     }
 }
 
@@ -112,4 +121,50 @@ public sealed class DamageResolverBrick : Brick
 """,
                 StringComparison.Ordinal);
     }
+}
+
+internal static class HealthApplierSources
+{
+    public static string Honest(WitnessSignature signature) => $$"""
+using Nexo.Core.Domain.Bricks;
+using Nexo.Core.Domain.Execution;
+
+namespace GeneratedBricks;
+
+public sealed class HealthApplierBrick : Brick
+{
+    public HealthApplierBrick()
+    {
+        Id = "{{signature.BrickId}}";
+        Name = "Health Applier";
+        Version = "1.0.0";
+        Category = BrickCategory.Analysis;
+        Description = "Applies final damage to current health, flooring at zero.";
+        Interface = new BrickInterface
+        {
+            Inputs =
+            [
+                new BrickInputDefinition("currentHealth", "int", "Health before damage"),
+                new BrickInputDefinition("finalDamage", "int", "Damage to subtract")
+            ],
+            Outputs = [new BrickOutputDefinition("newHealth", "int", "Health after damage")]
+        };
+    }
+
+    public override Task<BrickOutput> ExecuteAsync(
+        BrickInput input,
+        ImplementationType implementation,
+        IExecutionContext context,
+        CancellationToken cancellationToken = default)
+    {
+        var currentHealth = input.Get<int>("currentHealth");
+        var finalDamage = input.Get<int>("finalDamage");
+        var newHealth = Math.Max(0, currentHealth - finalDamage);
+
+        var output = new BrickOutput { Summary = $"New health: {newHealth}" };
+        output.Set("newHealth", newHealth);
+        return Task.FromResult(output);
+    }
+}
+""";
 }
