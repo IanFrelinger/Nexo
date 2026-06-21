@@ -57,6 +57,26 @@ Composition: **error-summary-pipeline** — certified `mutation-probe-brick` →
 
 Graph mutations only (reorder/drop/redirect/swap brick assignments); constituent brick source is sealed.
 
+## Dogfood run
+
+**honest=ADMIT, buggy=REJECT, tests_executed=19**
+
+Intent: **damage-resolver** — Cursor-authored `CursorGeneratorModel` (`cursor:honest` / `cursor:buggy`); human-authored witness in `DamageResolverDogfoodWitness.Spec` (generation blind).
+
+Run: `bash scripts/run-cert-gate.sh` (2026-06-21, branch `cursor/dogfood-cursor-generator-921c`).
+
+| Fact | Value |
+|------|-------|
+| Tests executed | **19** (`cert-gate-zero-test-guard.sh` MIN_EXPECTED=19, guard passed) |
+| `HonestCursorGeneration_Admits_WithZeroEscapeRate` | **PASS** (TRX `outcome="Passed"`) |
+| `BuggyCursorGeneration_Rejects` | **PASS** (TRX `outcome="Passed"`) |
+| Honest brick `escape_rate` | **0** (asserted by passing test: `result.Decision.Record.EscapeRate == 0`) |
+| Honest brick `signed` | **true** (asserted by passing test: `result.Decision.Record.Signed == true`) |
+
+Console summary: `Test Run Successful. Total tests: 19, Passed: 19`; `cert-gate executed 19 tests (expected>=19).`
+
+Dogfood test durations (TRX): honest 647 ms, buggy 61 ms.
+
 ## Contract-stability gaps (repo-internal context in generated brick)
 
 - Generated brick uses Nexo.Core.Domain.* namespaces (shipped via Nexo.Authoring/Nexo.Brick.Contracts but not the pinned package IDs)
