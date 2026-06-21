@@ -20,6 +20,19 @@ Version pin: `0.1.0` (from `VERSION`)
 
 **Dogfood summary:** `honest=ADMIT`, `buggy=REJECT`, `tests_executed=19` — CI-confirmed on PR #191.
 
+### Integration merge verification (2026-06-21)
+
+Branch `cursor/integration-cert-tower-921c` — fast-forward merge of full tower + merge-readiness onto `origin/master` (`5bd1a103`).
+
+Local cert-gate on integration tip (`9baf34a9`):
+
+```
+Test Run Successful. Total tests: 19, Passed: 19
+cert-gate executed 19 tests (expected>=19, derived from --list-tests).
+```
+
+Dogfood on integration: `HonestCursorGeneration_Admits_WithZeroEscapeRate` PASS, `BuggyCursorGeneration_Rejects` PASS.
+
 ---
 
 ## Atom portability (spike)
