@@ -28,21 +28,14 @@ jobs:
         run: |
           dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net8.0 --no-restore -v minimal
 
-      - name: Run certification + generation tests
+      - name: Run cert-gate
         shell: bash
-        run: |
-          mkdir -p test-results
-          dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
-            -f net8.0 \
-            --no-build \
-            --filter "FullyQualifiedName~Nexo.Tests.Infrastructure.Tests.Certification|FullyQualifiedName~Nexo.Tests.Infrastructure.Tests.Adaptation.GenerationSafety|FullyQualifiedName~AstMutationEngineTests" \
-            --logger "trx;LogFileName=cert-gate.trx" \
-            --logger "console;verbosity=normal" \
-            --results-directory test-results
+        run: bash scripts/run-cert-gate.sh
 
-      - name: Zero-test guard
+      - name: Job summary
+        if: always()
         shell: bash
-        run: bash scripts/cert-gate-zero-test-guard.sh test-results/cert-gate.trx
+        run: bash scripts/cert-gate-summary.sh test-results/cert-gate.trx
 
       - name: Upload test results
         if: always()
