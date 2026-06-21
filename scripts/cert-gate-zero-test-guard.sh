@@ -19,12 +19,12 @@ if [[ -z "${MIN_EXPECTED}" || "${MIN_EXPECTED}" -lt 1 ]]; then
   exit 1
 fi
 
-EXECUTED="$(grep -oE 'executed="[0-9]+"' "${TRX}" | head -1 | sed 's/executed="//;s/"//')"
-EXECUTED="${EXECUTED:-0}"
+REPORTED="$(grep -oE 'total="[0-9]+"' "${TRX}" | head -1 | sed 's/total="//;s/"//')"
+REPORTED="${REPORTED:-0}"
 
-if [[ "${EXECUTED}" -lt "${MIN_EXPECTED}" ]]; then
-  echo "cert-gate matched fewer tests than expected (ran=${EXECUTED}, expected>=${MIN_EXPECTED}) — filter is stale."
+if [[ "${REPORTED}" -lt "${MIN_EXPECTED}" ]]; then
+  echo "cert-gate matched fewer tests than expected (reported=${REPORTED}, expected>=${MIN_EXPECTED}) — filter is stale."
   exit 1
 fi
 
-echo "cert-gate executed ${EXECUTED} tests (expected>=${MIN_EXPECTED}, derived from --list-tests)."
+echo "cert-gate reported ${REPORTED} tests (expected>=${MIN_EXPECTED}, derived from --list-tests)."
