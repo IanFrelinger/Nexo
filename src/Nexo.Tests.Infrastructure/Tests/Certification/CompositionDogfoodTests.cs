@@ -27,7 +27,7 @@ public sealed class CompositionDogfoodTests
         BrickId: CursorGeneratorModel.HealthApplierIntentId,
         Name: "Health Applier");
 
-    [Fact(Skip = "HUMAN-AUTHORED WITNESS: populate CompositionDogfoodWitness.Spec")]
+    [Fact]
     public async Task HonestComposition_StrongWitness_Admits_WithZeroEscapeRate()
     {
         var witness = RequireHumanWitness();
@@ -47,7 +47,7 @@ public sealed class CompositionDogfoodTests
         ctx.CompositionSigner.Verify(decision.Record).Should().BeTrue();
     }
 
-    [Fact(Skip = "HUMAN-AUTHORED WITNESS: populate CompositionDogfoodWitness.Spec")]
+    [Fact]
     public async Task BrokenComposition_StrongWitness_Rejects()
     {
         var witness = RequireHumanWitness();
