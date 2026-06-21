@@ -1,0 +1,35 @@
+name: Cert gate
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  cert-gate:
+    name: cert-gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Run cert-gate
+        shell: bash
+        run: bash scripts/run-cert-gate.sh
+
+      - name: Job summary
+        if: always()
+        shell: bash
+        run: bash scripts/cert-gate-summary.sh test-results/cert-gate.trx
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cert-gate-trx
+          path: test-results/*.trx
+          if-no-files-found: warn

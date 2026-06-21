@@ -1,0 +1,23 @@
+{
+  "status": "PASS",
+  "stage": "S0-S2",
+  "admitted": true,
+  "signed": true,
+  "timestamp": "2026-06-21T06:18:57.3163911+00:00",
+  "brickId": "error-summary-extractor",
+  "escapeRate": 0,
+  "totalMutants": 6,
+  "survivingMutants": 0,
+  "killedMutants": [
+    "flip-gt-error-count",
+    "flip-lt-index",
+    "off-by-one-plus",
+    "negate-contains",
+    "drop-error-branch",
+    "mutate-first-message-only"
+  ],
+  "survivingMutantIds": [],
+  "signature": "BDhhvUVXQK2UeXjOttgQUhEQpbfbl\u002BZcgYt91b0fEYo=",
+  "reason": null,
+  "gate": "Nexo.Infrastructure.Certification.CertificationGate"
+}

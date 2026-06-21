@@ -15,6 +15,14 @@ WAIT_SECS="${NEXO_EXTERNAL_PRODUCT_VERIFY_WAIT_SECS:-120}"
 SOURCE_KEY="${NEXO_VERIFY_SOURCE_KEY:-nexo-local}"
 ISOL_CLEANUP=""
 USE_PUBLISHED_FEED=0
+PROBE_BRICK_SOURCE="${NEXO_EXTERNAL_PRODUCT_PROBE_BRICK_SOURCE:-}"
+if [[ -n "${NEXO_EXTERNAL_PRODUCT_PROBE_BRICK:-}" && -z "${PROBE_BRICK_SOURCE}" ]]; then
+  PROBE_BRICK_SOURCE="${ROOT}/spikes/portability/generated/ErrorSummaryExtractorBrick"
+fi
+USE_PROBE_BRICK=0
+if [[ -n "${PROBE_BRICK_SOURCE}" ]]; then
+  USE_PROBE_BRICK=1
+fi
 
 if [[ -n "${NEXO_EXTERNAL_PRODUCT_PACKAGE_FEED:-}" ]]; then
   USE_PUBLISHED_FEED=1
@@ -47,11 +55,13 @@ pack src/Nexo.Sdk/Nexo.Sdk.csproj
 pack src/Nexo.Client/Nexo.Client.csproj
 
 # CLI + dependencies for `nexo new brick` (same extras as verify-standalone-brick-authoring.sh).
+if [[ "${USE_PROBE_BRICK}" -eq 0 ]]; then
 pack src/Nexo.Adapters.Models/Nexo.Adapters.Models.csproj
 pack src/Nexo.Bricks.Owasp/Nexo.Bricks.Owasp.csproj
 pack src/Nexo.BackgroundAgents.HostRunners/Nexo.BackgroundAgents.HostRunners.csproj
 pack src/Nexo.Policies.Dev/Nexo.Policies.Dev.csproj
 pack application/src/Nexo.CLI/Nexo.CLI.csproj
+fi
 fi
 
 if [[ -z "${NEXO_EXTERNAL_PRODUCT_VERIFY_NO_ISOLATED_CACHE:-}" ]]; then
@@ -93,16 +103,52 @@ else
 EOF
 fi
 
+if [[ "${USE_PROBE_BRICK}" -eq 0 ]]; then
 dotnet tool install \
   --tool-path "${TOOL_PATH}" \
   Nexo.CLI \
   --version "${VERSION}" \
   --add-source "${FEED}" \
   --ignore-failed-sources
+fi
 
 BRICK_OUT="${CONSUMER_ROOT}/brick"
 mkdir -p "${BRICK_OUT}"
 
+BRICK_ID="intensity"
+BRICK_CLASS="IntensityBrick"
+BRICK_NAMESPACE="IntensityBrick"
+BRICK_PROJECT_NAME="IntensityBrick"
+BRICK_PROJECT_DIR="${BRICK_OUT}/IntensityBrick"
+
+if [[ "${USE_PROBE_BRICK}" -eq 1 ]]; then
+  BRICK_ID="error-summary-extractor"
+  BRICK_CLASS="ErrorSummaryExtractorBrick"
+  BRICK_NAMESPACE="ErrorSummaryExtractorBrick"
+  BRICK_PROJECT_NAME="ErrorSummaryExtractorBrick"
+  BRICK_PROJECT_DIR="${BRICK_OUT}/ErrorSummaryExtractorBrick"
+  if [[ ! -f "${PROBE_BRICK_SOURCE}/ErrorSummaryExtractorBrick.cs" ]]; then
+    echo "Probe brick source not found at ${PROBE_BRICK_SOURCE}" >&2
+    exit 1
+  fi
+  echo "==> Copying generated probe brick from ${PROBE_BRICK_SOURCE}"
+  mkdir -p "${BRICK_PROJECT_DIR}"
+  cp "${PROBE_BRICK_SOURCE}/ErrorSummaryExtractorBrick.cs" "${BRICK_PROJECT_DIR}/ErrorSummaryExtractorBrick.cs"
+  cat > "${BRICK_PROJECT_DIR}/ErrorSummaryExtractorBrick.csproj" <<EOF
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Nexo.Brick.Contracts" Version="${VERSION}" />
+    <PackageReference Include="Nexo.Authoring" Version="${VERSION}" />
+  </ItemGroup>
+</Project>
+EOF
+else
 echo "==> Scaffolding authored brick via nexo new brick"
 "${TOOL_PATH}/nexo" new brick Intensity \
   --output "${BRICK_OUT}" \
@@ -159,6 +205,7 @@ public sealed class IntensityBrick : Brick
     }
 }
 CS
+fi
 
 HOST_DIR="${CONSUMER_ROOT}/host/ExternalProductHost"
 CLIENT_DIR="${CONSUMER_ROOT}/client/ExternalProductClient"
@@ -177,12 +224,12 @@ cat > "${HOST_DIR}/ExternalProductHost.csproj" <<EOF
     <PackageReference Include="Nexo.Hosting.Bundle" Version="${VERSION}" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="../../brick/IntensityBrick/IntensityBrick.csproj" />
+    <ProjectReference Include="../../brick/${BRICK_PROJECT_NAME}/${BRICK_PROJECT_NAME}.csproj" />
   </ItemGroup>
 </Project>
 EOF
 
-cat > "${HOST_DIR}/Program.cs" <<'CS'
+cat > "${HOST_DIR}/Program.cs" <<'HOSTCS'
 using Nexo.Authoring;
 using Nexo.BrickContracts;
 using Nexo.Core.Application.Bricks;
@@ -190,11 +237,27 @@ using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Execution;
 using Nexo.Hosting;
 using Nexo.Infrastructure.Execution;
+HOSTCS
+
+if [[ "${USE_PROBE_BRICK}" -eq 1 ]]; then
+  cat >> "${HOST_DIR}/Program.cs" <<HOSTCS
+using ${BRICK_NAMESPACE};
+
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddNexoBrick<${BRICK_NAMESPACE}.${BRICK_CLASS}>();
+HOSTCS
+else
+  cat >> "${HOST_DIR}/Program.cs" <<'HOSTCS'
 using IntensityBrick;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddNexoBrick<IntensityBrick.IntensityBrick>();
+HOSTCS
+fi
+
+cat >> "${HOST_DIR}/Program.cs" <<'HOSTCS'
 builder.Services.AddNexo(options =>
 {
     options.RegisterBackgroundAgentHostedService = false;
@@ -270,7 +333,7 @@ static Nexo.Infrastructure.Execution.ExecutionContext ToExecutionContext(Executi
             : new Dictionary<string, object>(dto.Variables)
     };
 }
-CS
+HOSTCS
 
 cat > "${CLIENT_DIR}/ExternalProductClient.csproj" <<EOF
 <Project Sdk="Microsoft.NET.Sdk">
@@ -287,7 +350,10 @@ cat > "${CLIENT_DIR}/ExternalProductClient.csproj" <<EOF
 </Project>
 EOF
 
-cat > "${CLIENT_DIR}/Program.cs" <<'CS'
+if [[ "${USE_PROBE_BRICK}" -eq 1 ]]; then
+  cp "${ROOT}/spikes/portability/templates/ExternalProductProbeClient.cs" "${CLIENT_DIR}/Program.cs"
+else
+cat > "${CLIENT_DIR}/Program.cs" <<'CLIENTCS'
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
@@ -315,7 +381,6 @@ var requestBody = new Dictionary<string, object?>
 var jsonOptions = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 using var content = JsonContent.Create(requestBody, options: jsonOptions);
 
-// Route from Nexo.API MapNexoEndpoints: POST /api/bricks/{brickId}/execute
 using var response = await client.InvokeAsync(
     HttpMethod.Post,
     "api/bricks/intensity/execute",
@@ -342,12 +407,13 @@ if (!doc.RootElement.TryGetProperty("output", out var outputEl) ||
 }
 
 Console.WriteLine("external-product-client: brick round-trip OK (intensity 21 -> result 42)");
-CS
+CLIENTCS
+fi
 
 SLN="${CONSUMER_ROOT}/ExternalProduct.sln"
 dotnet new sln -n ExternalProduct -o "${CONSUMER_ROOT}" --force
 dotnet sln "${SLN}" add \
-  "${BRICK_OUT}/IntensityBrick/IntensityBrick.csproj" \
+  "${BRICK_PROJECT_DIR}/${BRICK_PROJECT_NAME}.csproj" \
   "${HOST_DIR}/ExternalProductHost.csproj" \
   "${CLIENT_DIR}/ExternalProductClient.csproj"
 

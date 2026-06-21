@@ -20,6 +20,15 @@ public record BrickManifest
     /// <summary>Generated implementation source (C#) when creating new bricks.</summary>
     public string? ImplementationSource { get; init; }
 
+    /// <summary>Provenance marker for generated source (fixture, model provider, etc.).</summary>
+    public string? GenerationProvenance { get; init; }
+
+    /// <summary>Declared class name when source is generated.</summary>
+    public string? GeneratedClassName { get; init; }
+
+    /// <summary>Declared namespace when source is generated.</summary>
+    public string? GeneratedNamespace { get; init; }
+
     /// <summary>Configuration overrides for the implementation.</summary>
     public IReadOnlyDictionary<string, object> Config { get; init; } = new Dictionary<string, object>();
 }

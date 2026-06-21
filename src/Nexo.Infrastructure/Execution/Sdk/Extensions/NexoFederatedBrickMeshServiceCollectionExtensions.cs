@@ -39,7 +39,8 @@ public static class NexoFederatedBrickMeshServiceCollectionExtensions
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
-            var local = sp.GetService<BrickRegistry>();
+            var local = sp.GetService<BrickRegistry>() as IBrickRegistry
+                ?? sp.GetService<IBrickRegistry>();
             if (local is null)
                 throw new InvalidOperationException(
                     "Federated brick mesh requires a local BrickRegistry (enable adaptation in the deployment profile).");
