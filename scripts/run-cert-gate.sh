@@ -5,7 +5,10 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "${ROOT}"
 
-FILTER="FullyQualifiedName~Nexo.Tests.Infrastructure.Tests.Certification|FullyQualifiedName~Nexo.Tests.Infrastructure.Tests.Adaptation.GenerationSafety|FullyQualifiedName~AstMutationEngineTests"
+# shellcheck source=scripts/cert-gate-config.sh
+source "${ROOT}/scripts/cert-gate-config.sh"
+
+FILTER="${CERT_GATE_FILTER}"
 RESULTS_DIR="${ROOT}/test-results"
 TRX="${RESULTS_DIR}/cert-gate.trx"
 
