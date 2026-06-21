@@ -4,8 +4,9 @@ using Nexo.Core.Application.Adaptation.Ports;
 namespace Nexo.Infrastructure.Adaptation.Generation;
 
 /// <summary>
-/// Cursor-authored model seam for dogfood certification. Returns source written at sprint time
-/// (not a live API). Witness cases are never seen — only <see cref="WitnessSignature"/> I/O.
+/// <strong>TEST DOUBLE</strong> — stand-in for <see cref="ProviderGeneratorModel"/> in dogfood certification tests.
+/// Returns Cursor-authored source written at sprint time (not a live API or production generation).
+/// Witness cases are never seen — only <see cref="WitnessSignature"/> I/O.
 /// </summary>
 public sealed class CursorGeneratorModel : IGeneratorModel
 {

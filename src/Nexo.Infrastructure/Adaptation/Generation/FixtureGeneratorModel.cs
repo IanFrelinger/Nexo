@@ -4,7 +4,8 @@ using Nexo.Core.Application.Adaptation.Ports;
 namespace Nexo.Infrastructure.Adaptation.Generation;
 
 /// <summary>
-/// Hermetic fixture model for tests. Returns canned source by intent id and variant.
+/// <strong>TEST DOUBLE</strong> — hermetic stand-in for <see cref="ProviderGeneratorModel"/> in certification tests.
+/// Returns canned source by intent id and variant; not production generation.
 /// </summary>
 public sealed class FixtureGeneratorModel : IGeneratorModel
 {
