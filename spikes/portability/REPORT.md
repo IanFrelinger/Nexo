@@ -59,23 +59,28 @@ Graph mutations only (reorder/drop/redirect/swap brick assignments); constituent
 
 ## Dogfood run
 
-**honest=ADMIT, buggy=REJECT, tests_executed=19**
+**honest=ADMIT, buggy=REJECT, tests_executed=19** — **CI-confirmed** on PR #191 @ `802e6d18`
 
 Intent: **damage-resolver** — Cursor-authored `CursorGeneratorModel` (`cursor:honest` / `cursor:buggy`); human-authored witness in `DamageResolverDogfoodWitness.Spec` (generation blind).
 
-Run: `bash scripts/run-cert-gate.sh` (2026-06-21, branch `cursor/dogfood-cursor-generator-921c`).
+### CI verification (authoritative)
 
 | Fact | Value |
 |------|-------|
-| Tests executed | **19** (`cert-gate-zero-test-guard.sh` MIN_EXPECTED=19, guard passed) |
-| `HonestCursorGeneration_Admits_WithZeroEscapeRate` | **PASS** (TRX `outcome="Passed"`) |
-| `BuggyCursorGeneration_Rejects` | **PASS** (TRX `outcome="Passed"`) |
-| Honest brick `escape_rate` | **0** (asserted by passing test: `result.Decision.Record.EscapeRate == 0`) |
-| Honest brick `signed` | **true** (asserted by passing test: `result.Decision.Record.Signed == true`) |
+| Workflow | [Cert gate run 27918244198](https://github.com/IanFrelinger/Nexo/actions/runs/27918244198) — `conclusion: success` |
+| Commit | `802e6d180bcae8cb7538d0497a644f67a5153893` |
+| Tests executed | **19** (TRX `Counters total="19" executed="19" passed="19"`) |
+| `HonestCursorGeneration_Admits_WithZeroEscapeRate` | **PASS** (CI TRX `outcome="Passed"`, 941 ms on `runnervm7b5n9`) |
+| `BuggyCursorGeneration_Rejects` | **PASS** (CI TRX `outcome="Passed"`, 63 ms) |
+| Honest brick `escape_rate` | **0** (test assertion on ADMIT path; no mutant survivors) |
+| Honest brick `signed` | **true** (test assertion on ADMIT path) |
+| TRX artifact | `cert-gate-trx` uploaded by workflow (not committed to repo) |
 
-Console summary: `Test Run Successful. Total tests: 19, Passed: 19`; `cert-gate executed 19 tests (expected>=19).`
+CI console: `Test Run Successful. Total tests: 19, Passed: 19`; `cert-gate executed 19 tests (expected>=19).`
 
-Dogfood test durations (TRX): honest 647 ms, buggy 61 ms.
+### Local reproduction
+
+`bash scripts/run-cert-gate.sh` also passes on branch `cursor/dogfood-cursor-generator-921c` (2026-06-21).
 
 ## Contract-stability gaps (repo-internal context in generated brick)
 
