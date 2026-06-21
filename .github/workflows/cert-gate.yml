@@ -1,0 +1,49 @@
+name: Cert gate
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  cert-gate:
+    name: cert-gate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore
+        shell: bash
+        run: |
+          dotnet restore src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.csproj
+          dotnet restore src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj
+
+      - name: Build
+        shell: bash
+        run: |
+          dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net8.0 --no-restore -v minimal
+
+      - name: Run certification + generation tests
+        shell: bash
+        run: |
+          mkdir -p test-results
+          dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+            -f net8.0 \
+            --no-build \
+            --filter "FullyQualifiedName~Nexo.Tests.Infrastructure.Tests.Certification|FullyQualifiedName~Nexo.Tests.Infrastructure.Tests.Adaptation.GenerationSafety|FullyQualifiedName~AstMutationEngineTests" \
+            --logger "trx;LogFileName=cert-gate.trx" \
+            --logger "console;verbosity=normal" \
+            --results-directory test-results
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cert-gate-trx
+          path: test-results/*.trx
+          if-no-files-found: warn
