@@ -6,7 +6,7 @@
 |------|-------|
 | PR | [#192](https://github.com/IanFrelinger/Nexo/pull/192) |
 | Branch | `cursor/integration-cert-tower-921c` → `master` |
-| Head SHA | `b40dad2acb7e7ad1b930210a3130c58fa29568fb` |
+| Head SHA | `1cd62fc380433f4c387358e08880262272c87629` |
 | Evidence ledger | [`docs/certification-evidence.md`](docs/certification-evidence.md) |
 
 ## cert-gate (authoritative)
@@ -14,7 +14,7 @@
 | Field | Value |
 |-------|-------|
 | Check name | `cert-gate` |
-| Workflow | [Cert gate run 27919135021](https://github.com/IanFrelinger/Nexo/actions/runs/27919135021) |
+| Workflow | [Cert gate run 27919178924](https://github.com/IanFrelinger/Nexo/actions/runs/27919178924) |
 | **conclusion** | **success** |
 | Tests executed | **19** |
 | Tests passed | **19** |
