@@ -3,9 +3,8 @@
 set -euo pipefail
 
 # CertificationGateTeethTests: 6, AstMutationEngineTests: 2, GenerationSafetyTests: 4,
-# CompositionCertificationGateTeethTests: 5, DamageResolverDogfoodTests: 2 (skipped until human witness)
-# Active executed count: 17. When dogfood witness is populated and Skip removed: 19.
-readonly MIN_EXPECTED=17
+# CompositionCertificationGateTeethTests: 5, DamageResolverDogfoodTests: 2
+readonly MIN_EXPECTED=19
 TRX="${1:-test-results/cert-gate.trx}"
 
 if [[ ! -f "${TRX}" ]]; then

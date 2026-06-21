@@ -32,7 +32,7 @@ public sealed class DamageResolverDogfoodTests
         return new GenerateAndCertifyService(generator, admission);
     }
 
-    [Fact(Skip = "HUMAN-AUTHORED WITNESS: populate DamageResolverDogfoodWitness.Spec before enabling")]
+    [Fact]
     public async Task HonestCursorGeneration_Admits_WithZeroEscapeRate()
     {
         var witness = RequireHumanWitness();
@@ -47,7 +47,7 @@ public sealed class DamageResolverDogfoodTests
         result.Manifest!.GenerationProvenance.Should().StartWith("cursor:honest");
     }
 
-    [Fact(Skip = "HUMAN-AUTHORED WITNESS: populate DamageResolverDogfoodWitness.Spec before enabling")]
+    [Fact]
     public async Task BuggyCursorGeneration_Rejects()
     {
         var witness = RequireHumanWitness();
@@ -60,8 +60,5 @@ public sealed class DamageResolverDogfoodTests
         result.Manifest!.GenerationProvenance.Should().StartWith("cursor:buggy");
     }
 
-    private static WitnessSpec RequireHumanWitness() =>
-        DamageResolverDogfoodWitness.Spec
-        ?? throw new InvalidOperationException(
-            "HUMAN-AUTHORED WITNESS missing — populate DamageResolverDogfoodWitness.Spec");
+    private static WitnessSpec RequireHumanWitness() => DamageResolverDogfoodWitness.Spec;
 }
