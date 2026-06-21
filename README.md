@@ -324,6 +324,9 @@ dotnet run --project application/src/Nexo.CLI -- --help
 # focused pipeline tests
 dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --filter "FullyQualifiedName~Pipelines"
 
+# certification + generation safety gate (same filter as CI cert-gate workflow)
+bash scripts/run-cert-gate.sh
+
 # broader local CLI test runner path
 dotnet run --project application/src/Nexo.CLI -- test local
 ```

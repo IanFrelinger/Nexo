@@ -17,17 +17,6 @@ jobs:
         with:
           dotnet-version: "8.0.x"
 
-      - name: Restore
-        shell: bash
-        run: |
-          dotnet restore src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.csproj
-          dotnet restore src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj
-
-      - name: Build
-        shell: bash
-        run: |
-          dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net8.0 --no-restore -v minimal
-
       - name: Run cert-gate
         shell: bash
         run: bash scripts/run-cert-gate.sh
