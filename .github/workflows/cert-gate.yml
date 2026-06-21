@@ -40,6 +40,10 @@ jobs:
             --logger "console;verbosity=normal" \
             --results-directory test-results
 
+      - name: Zero-test guard
+        shell: bash
+        run: bash scripts/cert-gate-zero-test-guard.sh test-results/cert-gate.trx
+
       - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
