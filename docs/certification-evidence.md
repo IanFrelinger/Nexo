@@ -122,7 +122,7 @@ honest=ADMIT, broken=REJECT, tests_reported=21
 
 Composition: **damage-resolver → health-applier** (`damage-to-health-pipeline`); witness in `CompositionDogfoodWitness.Spec` (6 end-to-end cases); broken wiring redirects `currentHealth` into `health.finalDamage` (rejects on `correctness`).
 
-cert-gate CI: _pending — see PR checks._
+cert-gate CI: **queued** (not yet started as of push) — [run 27921275656](https://github.com/IanFrelinger/Nexo/actions/runs/27921275656). PR checks API reports `pending` for all jobs; no conclusion available yet.
 
 ## Contract-stability gaps
 
