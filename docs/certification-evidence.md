@@ -109,6 +109,21 @@ Intent: **damage-resolver** — Cursor-authored `CursorGeneratorModel` (**test d
 | Honest brick `signed` | **true** |
 | TRX artifact | `cert-gate-trx` uploaded by workflow (not committed to repo) |
 
+## Composition dogfood run
+
+honest=ADMIT, broken=REJECT, tests_reported=21
+
+| Test | Result |
+|------|--------|
+| `HonestComposition_StrongWitness_Admits_WithZeroEscapeRate` | **PASS** |
+| `BrokenComposition_StrongWitness_Rejects` | **PASS** |
+| Honest composition `composition_escape_rate` | **0** |
+| Honest composition `signed` | **true** |
+
+Composition: **damage-resolver → health-applier** (`damage-to-health-pipeline`); witness in `CompositionDogfoodWitness.Spec` (6 end-to-end cases); broken wiring redirects `currentHealth` into `health.finalDamage` (rejects on `correctness`).
+
+cert-gate CI: **success**, run [27922375242](https://github.com/IanFrelinger/Nexo/actions/runs/27922375242) — TRX `total="21"`, guard `cert-gate reported 21 tests (expected>=21)`.
+
 ## Contract-stability gaps
 
 - Generated brick uses Nexo.Core.Domain.* namespaces (shipped via Nexo.Authoring/Nexo.Brick.Contracts but not the pinned package IDs)
