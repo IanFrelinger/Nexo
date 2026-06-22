@@ -69,6 +69,7 @@ public sealed class CertificationGateTeethTests
         decision.Record.EscapeRate.Should().Be(0);
         decision.Record.Signed.Should().BeTrue();
         decision.Record.Signature.Should().NotBeNullOrWhiteSpace();
+        decision.Record.ContentHash.Should().NotBeNullOrWhiteSpace();
         new CertificationRecordSigner().Verify(decision.Record).Should().BeTrue();
     }
 

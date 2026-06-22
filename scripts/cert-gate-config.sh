@@ -12,6 +12,7 @@ readonly CERT_GATE_FILTER='FullyQualifiedName~Nexo.Tests.Infrastructure.Tests.Ce
 #   CompositionCertificationGateTeethTests: 5
 #   DamageResolverDogfoodTests: 2
 #   CompositionDogfoodTests: 2
+#   CrossProjectReuseTests: 3
 
 cert_gate_list_tests() {
   local root="${1:?repo root required}"
