@@ -1,9 +1,9 @@
-namespace Nexo.Core.Application.Certification.Models;
+namespace Nexo.Certification.Contracts;
 
 /// <summary>
-/// Signed certification admission record emitted on ADMIT.
+/// Portable certification record for external consumers (JSON sidecar).
 /// </summary>
-public sealed record CertificationRecord
+public sealed record CertificationRecordData
 {
     public required string Status { get; init; }
     public required string Stage { get; init; }
