@@ -125,6 +125,7 @@ public static class BrickCertificationProjectLoader
     private static object FromJsonElement(JsonElement element) => element.ValueKind switch
     {
         JsonValueKind.String => element.GetString()!,
+        JsonValueKind.Number when element.TryGetInt32(out var int32) => int32,
         JsonValueKind.Number when element.TryGetInt64(out var number) => number,
         JsonValueKind.Number => element.GetDouble(),
         JsonValueKind.True => true,

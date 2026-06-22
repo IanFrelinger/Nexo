@@ -1,0 +1,29 @@
+{
+  "brickId": "damage-resolver",
+  "cases": [
+    {
+      "input": { "baseDamage": 50, "critMultiplierPercent": 100, "armor": 10, "isCrit": false },
+      "expectedOutput": { "finalDamage": 40 }
+    },
+    {
+      "input": { "baseDamage": 100, "critMultiplierPercent": 150, "armor": 20, "isCrit": true },
+      "expectedOutput": { "finalDamage": 130 }
+    },
+    {
+      "input": { "baseDamage": 100, "critMultiplierPercent": 150, "armor": 30, "isCrit": true },
+      "expectedOutput": { "finalDamage": 120 }
+    },
+    {
+      "input": { "baseDamage": 10, "critMultiplierPercent": 100, "armor": 50, "isCrit": false },
+      "expectedOutput": { "finalDamage": 0 }
+    },
+    {
+      "input": { "baseDamage": 7, "critMultiplierPercent": 150, "armor": 0, "isCrit": true },
+      "expectedOutput": { "finalDamage": 10 }
+    },
+    {
+      "input": { "baseDamage": 0, "critMultiplierPercent": 200, "armor": 5, "isCrit": true },
+      "expectedOutput": { "finalDamage": 0 }
+    }
+  ]
+}
