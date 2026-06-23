@@ -160,6 +160,22 @@ bad-proposals=REJECT (all variants), correct-proposal=ADMIT, independence=PASS, 
 
 cert-gate CI: **success**, run [28000451847](https://github.com/IanFrelinger/Nexo/actions/runs/28000451847) — TRX `total="33" executed="33" passed="33"`; all 9 `CompositionProposer*` tests `outcome="Passed"` (check-runs API: `cert-gate` conclusion `success` @ `887686a1`).
 
+## Agent-composer: real-model proposer dogfood (P3-S2)
+
+recorded-proposal=ADMIT (first-try), independence=PASS, s1-regression=PASS, tests_reported=37
+
+| Proof | Result |
+|-------|--------|
+| `RecordedRealProposal_TraversesIdenticalLoop_ReportsHonestGateVerdict` | **ADMIT** — recorded `model:cursor:isolation-enforced` proposal; `firstTryCertified=true` at recording |
+| `RecordedRealProposal_WhenAdmitted_MatchesHandAuthoredCompositionResult` | **ADMIT** — same certified result as hand-authored `CompositionDogfoodFixtures.HonestSpec()` |
+| `CompositionGeneratorModel_InputPathCannotCarryWitnessCases` | **PASS** — `ICompositionGeneratorModel` accepts `CompositionProposerInput` only |
+| `RealProposerPrompt_IsBuiltFromProposerInputOnly_WithNoWitnessValues` | **PASS** — prompt built from target + catalog; no serialized witness cases |
+| S1 `CompositionProposerDogfoodTests` (8 tests) | **UNCHANGED** — controlled rejection suite still green |
+
+**What this proves:** A real model proposer (`ProviderCompositionGeneratorModel` over `ICompositionGeneratorModel`, mirroring `IGeneratorModel`) builds prompts from `CompositionProposerInput` only. Cert-gate replays a **recorded** proposal (`RecordedCompositionGeneratorModel`) — no live API in blocking CI. The recorded dogfood honestly reports the gate verdict on the model's actual proposal (`firstTryCertified=true`, ADMIT on damage→health).
+
+**v0 boundary:** Single recorded proposal (record/replay); live provider records locally via `CompositionProposalRecorder`. S1 controlled rejection suite remains authoritative teeth.
+
 ## Contract-stability gaps
 
 - Generated brick uses Nexo.Core.Domain.* namespaces (shipped via Nexo.Authoring/Nexo.Brick.Contracts but not the pinned package IDs)
