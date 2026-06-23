@@ -99,6 +99,35 @@ public static class CompositionDogfoodHarness
             ctx.BrickStore);
     }
 
+    public static CompositionProposerInput BuildProposerInputForIndependenceCheck()
+    {
+        var target = Nexo.Core.Application.Certification.CompositionProposerInputBuilder.TargetFromSpec(
+            CompositionDogfoodFixtures.HonestSpec());
+
+        return new CompositionProposerInput(
+            target,
+            [
+                new CertifiedBrickCatalogEntry(
+                    CursorGeneratorModel.DamageResolverIntentId,
+                    [
+                        new WitnessIoField("baseDamage", "int"),
+                        new WitnessIoField("critMultiplierPercent", "int"),
+                        new WitnessIoField("armor", "int"),
+                        new WitnessIoField("isCrit", "bool")
+                    ],
+                    [new WitnessIoField("finalDamage", "int")],
+                    "damage-resolver@2026-06-21T00:00:00.0000000Z"),
+                new CertifiedBrickCatalogEntry(
+                    CursorGeneratorModel.HealthApplierIntentId,
+                    [
+                        new WitnessIoField("currentHealth", "int"),
+                        new WitnessIoField("finalDamage", "int")
+                    ],
+                    [new WitnessIoField("newHealth", "int")],
+                    "health-applier@2026-06-21T00:00:00.0000000Z")
+            ]);
+    }
+
     /// <summary>
     /// Atom-level witness for health-applier constituent certification only — not the composition witness.
     /// </summary>

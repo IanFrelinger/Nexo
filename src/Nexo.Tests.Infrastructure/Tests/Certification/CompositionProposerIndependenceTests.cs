@@ -1,6 +1,10 @@
 using System.Reflection;
+using System.Text.Json;
 using FluentAssertions;
 using Nexo.Core.Application.Certification.Models;
+using Nexo.Core.Application.Certification.Ports;
+using Nexo.Infrastructure.Certification.Composition;
+using Nexo.Tests.Infrastructure.Certification.Dogfood;
 using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Certification;
@@ -11,13 +15,7 @@ public sealed class CompositionProposerIndependenceTests
     [Fact]
     public void ProposerInput_StructurallyCannotCarryWitnessCases()
     {
-        var forbidden = new HashSet<string>(StringComparer.Ordinal)
-        {
-            nameof(WitnessCase),
-            nameof(WitnessSpec),
-            nameof(CompositionWitnessSpec)
-        };
-
+        var forbidden = ForbiddenWitnessTypeNames();
         var violations = new List<string>();
         ScanType(typeof(CompositionProposerInput), forbidden, violations, "CompositionProposerInput");
 
@@ -25,6 +23,54 @@ public sealed class CompositionProposerIndependenceTests
             "proposer input must not contain witness-bearing fields: {0}",
             string.Join(", ", violations));
     }
+
+    [Fact]
+    public void CompositionGeneratorModel_InputPathCannotCarryWitnessCases()
+    {
+        var method = typeof(ICompositionGeneratorModel).GetMethod(nameof(ICompositionGeneratorModel.ProposeAsync))
+            ?? throw new InvalidOperationException("ICompositionGeneratorModel.ProposeAsync not found");
+
+        method.GetParameters().Should().ContainSingle(p =>
+            p.ParameterType == typeof(CompositionProposerInput),
+            "real model proposer must accept CompositionProposerInput only");
+
+        var forbidden = ForbiddenWitnessTypeNames();
+        var violations = new List<string>();
+        foreach (var parameter in method.GetParameters())
+            ScanType(parameter.ParameterType, forbidden, violations, parameter.Name ?? "param");
+
+        violations.Should().BeEmpty(
+            "composition generator model input path must not carry witness cases: {0}",
+            string.Join(", ", violations));
+    }
+
+    [Fact]
+    public void RealProposerPrompt_IsBuiltFromProposerInputOnly_WithNoWitnessValues()
+    {
+        var ctx = CompositionDogfoodHarness.BuildProposerInputForIndependenceCheck();
+        var prompt = CompositionProposerPromptBuilder.BuildUserPrompt(ctx);
+
+        prompt.Should().Contain(ctx.Target.CompositionId);
+        prompt.Should().Contain("damage-resolver");
+        prompt.Should().Contain("health-applier");
+        prompt.Should().NotContain("WitnessCase");
+        prompt.Should().NotContain("expectedOutputs");
+
+        foreach (var witnessCase in CompositionDogfoodHarness.RequireHumanWitness().Cases)
+        {
+            var serialized = JsonSerializer.Serialize(witnessCase);
+            prompt.Should().NotContain(serialized,
+                "serialized witness cases must never reach the model prompt");
+        }
+    }
+
+    private static HashSet<string> ForbiddenWitnessTypeNames() =>
+        new(StringComparer.Ordinal)
+        {
+            nameof(WitnessCase),
+            nameof(WitnessSpec),
+            nameof(CompositionWitnessSpec)
+        };
 
     private static void ScanType(
         Type type,
