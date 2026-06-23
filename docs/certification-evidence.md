@@ -158,6 +158,8 @@ bad-proposals=REJECT (all variants), correct-proposal=ADMIT, independence=PASS, 
 
 **v0 boundary:** Controlled proposer only; real LLM/agent proposer is the next sprint.
 
+cert-gate CI: **success**, run [28000451847](https://github.com/IanFrelinger/Nexo/actions/runs/28000451847) — TRX `total="33" executed="33" passed="33"`; all 9 `CompositionProposer*` tests `outcome="Passed"` (check-runs API: `cert-gate` conclusion `success` @ `887686a1`).
+
 ## Contract-stability gaps
 
 - Generated brick uses Nexo.Core.Domain.* namespaces (shipped via Nexo.Authoring/Nexo.Brick.Contracts but not the pinned package IDs)
