@@ -142,6 +142,22 @@ Pack/export: `scripts/pack-certified-brick-reuse.sh` → local feed + `certifica
 
 **v0 trust model:** same-owner cross-project reuse via shared dev HMAC key (`NEXO_CERT_DEV_HMAC_KEY`). Cross-organization trust requires PKI (out of scope).
 
+## Agent-composer: propose→certify loop (P3-S1)
+
+bad-proposals=REJECT (all variants), correct-proposal=ADMIT, independence=PASS, tests_reported=33
+
+| Proof | Result |
+|-------|--------|
+| `BadProposalVariants_AreRejectedByExistingGate` (5 variants) | **REJECT** — `correctness` \| `mutation` \| `seam` \| `constituents` via unchanged `CompositionCertificationGate` |
+| `TamperedConstituentCert_RejectedByConstituentIntegrity` | **REJECT** — `constituents` (atom cert does not verify) |
+| `CorrectProposal_StrongWitness_Admits_WithZeroEscapeRate` | **ADMIT** — `composition_escape_rate=0`, signed |
+| `CorrectProposal_MatchesHandAuthoredCompositionResult` | **ADMIT** — same certified result as hand-authored `CompositionDogfoodFixtures.HonestSpec()` |
+| `ProposerInput_StructurallyCannotCarryWitnessCases` | **PASS** — `CompositionProposerInput` has no witness-bearing fields |
+
+**What this proves:** An untrusted proposer (`ICompositionProposer`) receives only target I/O signature + certified-brick catalog. Its wiring proposal traverses the **identical** composition admission gate as hand-authored specs — no agent bypass. Human witness remains in `CompositionDogfoodWitness.Spec`; the controlled proposer (`ControlledCompositionProposer`) is a deterministic CI double, not a real model.
+
+**v0 boundary:** Controlled proposer only; real LLM/agent proposer is the next sprint.
+
 ## Contract-stability gaps
 
 - Generated brick uses Nexo.Core.Domain.* namespaces (shipped via Nexo.Authoring/Nexo.Brick.Contracts but not the pinned package IDs)
