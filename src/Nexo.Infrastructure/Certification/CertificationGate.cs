@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Nexo.Certification.Contracts;
 using Nexo.Core.Application.Certification.Models;
 using Nexo.Core.Application.Certification.Ports;
 
@@ -25,6 +26,8 @@ public sealed class CertificationGate : ICertificationGate
         var brickId = request.Brick.Id;
         var timestamp = DateTimeOffset.UtcNow;
 
+        var contentHash = BrickContentHasher.ComputeSha256(request.SourceCode);
+
         CertificationRecord Fail(string check, string reason, MutationTestResult? mutation = null) =>
             BuildRecord(
                 admitted: false,
@@ -32,6 +35,7 @@ public sealed class CertificationGate : ICertificationGate
                 status: "FAIL",
                 brickId,
                 timestamp,
+                contentHash,
                 reason,
                 mutation);
 
@@ -121,6 +125,7 @@ public sealed class CertificationGate : ICertificationGate
             status: "PASS",
             brickId,
             timestamp,
+            contentHash,
             reason: null,
             mutation: mutationResult);
         admittedRecord = admittedRecord with { Signature = _signer.Sign(admittedRecord) };
@@ -139,6 +144,7 @@ public sealed class CertificationGate : ICertificationGate
         string status,
         string brickId,
         DateTimeOffset timestamp,
+        string contentHash,
         string? reason,
         MutationTestResult? mutation)
     {
@@ -150,6 +156,7 @@ public sealed class CertificationGate : ICertificationGate
             Signed = signed,
             Timestamp = timestamp,
             BrickId = brickId,
+            ContentHash = contentHash,
             EscapeRate = mutation?.EscapeRate ?? 0,
             TotalMutants = mutation?.TotalMutants ?? 0,
             SurvivingMutants = mutation?.SurvivingMutantIds.Count ?? 0,

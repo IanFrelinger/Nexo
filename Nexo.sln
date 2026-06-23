@@ -115,6 +115,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.Commercial.Tests.Fleet
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.Authoring", "src\Nexo.Authoring\Nexo.Authoring.csproj", "{9E3C74B5-BCB4-4177-B52F-FFDA282B455E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.Certification.Contracts", "src\Nexo.Certification.Contracts\Nexo.Certification.Contracts.csproj", "{265B00C0-D947-424D-A624-5233E0FDEC8C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -737,6 +739,18 @@ Global
 		{9E3C74B5-BCB4-4177-B52F-FFDA282B455E}.Release|x64.Build.0 = Release|Any CPU
 		{9E3C74B5-BCB4-4177-B52F-FFDA282B455E}.Release|x86.ActiveCfg = Release|Any CPU
 		{9E3C74B5-BCB4-4177-B52F-FFDA282B455E}.Release|x86.Build.0 = Release|Any CPU
+		{265B00C0-D947-424D-A624-5233E0FDEC8C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{265B00C0-D947-424D-A624-5233E0FDEC8C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{265B00C0-D947-424D-A624-5233E0FDEC8C}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{265B00C0-D947-424D-A624-5233E0FDEC8C}.Debug|x64.Build.0 = Debug|Any CPU
+		{265B00C0-D947-424D-A624-5233E0FDEC8C}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{265B00C0-D947-424D-A624-5233E0FDEC8C}.Debug|x86.Build.0 = Debug|Any CPU
+		{265B00C0-D947-424D-A624-5233E0FDEC8C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{265B00C0-D947-424D-A624-5233E0FDEC8C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{265B00C0-D947-424D-A624-5233E0FDEC8C}.Release|x64.ActiveCfg = Release|Any CPU
+		{265B00C0-D947-424D-A624-5233E0FDEC8C}.Release|x64.Build.0 = Release|Any CPU
+		{265B00C0-D947-424D-A624-5233E0FDEC8C}.Release|x86.ActiveCfg = Release|Any CPU
+		{265B00C0-D947-424D-A624-5233E0FDEC8C}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -794,6 +808,7 @@ Global
 		{8904A032-99F3-AFCD-AFBD-12F878AC12DB} = {6941732A-EE8F-0657-99DC-FA435846C4C2}
 		{1112CCFA-2A91-489F-ACAB-E43501C0E0AA} = {8904A032-99F3-AFCD-AFBD-12F878AC12DB}
 		{9E3C74B5-BCB4-4177-B52F-FFDA282B455E} = {9D4F8B1A-0B6E-4A3E-8A6A-0DE12C7C6E2F}
+		{265B00C0-D947-424D-A624-5233E0FDEC8C} = {9D4F8B1A-0B6E-4A3E-8A6A-0DE12C7C6E2F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {12345678-1234-1234-1234-123456789ABC}
