@@ -1,0 +1,49 @@
+using Microsoft.Extensions.Logging;
+using Nexo.Core.Application.Certification.Models;
+using Nexo.Core.Application.Certification.Ports;
+using Nexo.Infrastructure.Execution;
+
+namespace Nexo.Infrastructure.Certification.Composition;
+
+/// <summary>
+/// Real model implementation behind the composition generator seam. Marked isolation-enforced;
+/// not used in hermetic cert-gate (record once locally, replay via <see cref="RecordedCompositionGeneratorModel"/>).
+/// </summary>
+public sealed class ProviderCompositionGeneratorModel : ICompositionGeneratorModel
+{
+    private readonly IProviderFactory _providerFactory;
+    private readonly ILogger<ProviderCompositionGeneratorModel>? _logger;
+    private readonly string _provider;
+
+    public ProviderCompositionGeneratorModel(
+        IProviderFactory providerFactory,
+        string provider = "ollama",
+        ILogger<ProviderCompositionGeneratorModel>? logger = null)
+    {
+        _providerFactory = providerFactory ?? throw new ArgumentNullException(nameof(providerFactory));
+        _provider = provider;
+        _logger = logger;
+    }
+
+    public async Task<ProposedComposition> ProposeAsync(
+        CompositionProposerInput input,
+        CancellationToken cancellationToken = default)
+    {
+        var userPrompt = CompositionProposerPromptBuilder.BuildUserPrompt(input);
+
+        _logger?.LogInformation(
+            "ProviderCompositionGeneratorModel proposing for {CompositionId} via {Provider}",
+            input.Target.CompositionId,
+            _provider);
+
+        var response = await _providerFactory.ExecuteLLMAsync(
+            _provider,
+            CompositionProposerPromptBuilder.SystemPrompt,
+            userPrompt,
+            new { temperature = 0 },
+            cancellationToken).ConfigureAwait(false);
+
+        var spec = CompositionSpecJsonParser.Parse(response);
+        return new ProposedComposition(spec, $"model:{_provider}:isolation-enforced");
+    }
+}
