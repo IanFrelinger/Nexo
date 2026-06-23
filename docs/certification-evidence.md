@@ -176,6 +176,8 @@ recorded-proposal=ADMIT (first-try), independence=PASS, s1-regression=PASS, test
 
 **v0 boundary:** Single recorded proposal (record/replay); live provider records locally via `CompositionProposalRecorder`. S1 controlled rejection suite remains authoritative teeth.
 
+cert-gate CI: **success**, run [28028224579](https://github.com/IanFrelinger/Nexo/actions/runs/28028224579) — TRX `total="37" executed="37" passed="37"`; all 4 new P3-S2 tests `outcome="Passed"` (check-runs API: `cert-gate` conclusion `success` @ `ca03c2b1`).
+
 ## Contract-stability gaps
 
 - Generated brick uses Nexo.Core.Domain.* namespaces (shipped via Nexo.Authoring/Nexo.Brick.Contracts but not the pinned package IDs)
