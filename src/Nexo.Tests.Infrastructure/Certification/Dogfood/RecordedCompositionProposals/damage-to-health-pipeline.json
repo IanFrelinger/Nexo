@@ -1,0 +1,35 @@
+{
+  "provenance": "model:cursor:isolation-enforced",
+  "provider": "cursor",
+  "recordedAt": "2026-06-21T18:00:00Z",
+  "compositionId": "damage-to-health-pipeline",
+  "firstTryCertified": true,
+  "gateVerdictAtRecording": "ADMIT",
+  "gateFailureCheckAtRecording": null,
+  "spec": {
+    "compositionId": "damage-to-health-pipeline",
+    "nodes": [
+      { "nodeId": "damage", "brickId": "damage-resolver" },
+      { "nodeId": "health", "brickId": "health-applier" }
+    ],
+    "edges": [
+      { "sourceNodeId": "__input__", "sourcePort": "baseDamage", "targetNodeId": "damage", "targetPort": "baseDamage" },
+      { "sourceNodeId": "__input__", "sourcePort": "critMultiplierPercent", "targetNodeId": "damage", "targetPort": "critMultiplierPercent" },
+      { "sourceNodeId": "__input__", "sourcePort": "armor", "targetNodeId": "damage", "targetPort": "armor" },
+      { "sourceNodeId": "__input__", "sourcePort": "isCrit", "targetNodeId": "damage", "targetPort": "isCrit" },
+      { "sourceNodeId": "__input__", "sourcePort": "currentHealth", "targetNodeId": "health", "targetPort": "currentHealth" },
+      { "sourceNodeId": "damage", "sourcePort": "finalDamage", "targetNodeId": "health", "targetPort": "finalDamage" },
+      { "sourceNodeId": "health", "sourcePort": "newHealth", "targetNodeId": "__output__", "targetPort": "newHealth" }
+    ],
+    "inputs": [
+      { "name": "baseDamage", "type": "int" },
+      { "name": "critMultiplierPercent", "type": "int" },
+      { "name": "armor", "type": "int" },
+      { "name": "isCrit", "type": "bool" },
+      { "name": "currentHealth", "type": "int" }
+    ],
+    "outputs": [
+      { "name": "newHealth", "type": "int" }
+    ]
+  }
+}
