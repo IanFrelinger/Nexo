@@ -1,0 +1,132 @@
+using Nexo.Core.Application.Adaptation.Models;
+using Nexo.Core.Application.Certification.Models;
+using Nexo.Core.Application.Certification.Ports;
+using Nexo.Infrastructure.Adaptation;
+using Nexo.Infrastructure.Adaptation.Generation;
+using Nexo.Infrastructure.Certification;
+using Nexo.Infrastructure.Certification.Composition;
+using Nexo.Tests.Infrastructure.Certification.Dogfood;
+using Nexo.Tests.Infrastructure.Certification.Fixtures;
+
+namespace Nexo.Tests.Infrastructure.Certification.Dogfood;
+
+/// <summary>
+/// Shared harness: certifies damage-resolver + health-applier constituents and wires composition gate.
+/// </summary>
+public static class CompositionDogfoodHarness
+{
+    public static readonly IntentSpec DamageResolverIntent = new(
+        CursorGeneratorModel.DamageResolverIntentId,
+        "Given baseDamage, critMultiplierPercent, armor, and isCrit, compute final damage as crit-adjusted raw minus armor (floored at zero).",
+        BrickId: CursorGeneratorModel.DamageResolverIntentId,
+        Name: "Damage Resolver");
+
+    public static readonly IntentSpec HealthApplierIntent = new(
+        CursorGeneratorModel.HealthApplierIntentId,
+        "Given currentHealth and finalDamage, compute newHealth as max(0, currentHealth - finalDamage).",
+        BrickId: CursorGeneratorModel.HealthApplierIntentId,
+        Name: "Health Applier");
+
+    public static CompositionWitnessSpec RequireHumanWitness()
+    {
+        if (CompositionDogfoodWitness.Spec is null)
+            throw new InvalidOperationException("HUMAN-AUTHORED WITNESS: populate CompositionDogfoodWitness.Spec");
+
+        return CompositionDogfoodWitness.Spec;
+    }
+
+    public static async Task<CertifiedCompositionTestContext> CreateAdmittedContextAsync()
+    {
+        Environment.SetEnvironmentVariable("NEXO_CERT_NUGET_CONFIG", null);
+
+        var brickStore = new InMemoryCertificationRecordStore();
+        var brickSigner = new CertificationRecordSigner();
+        var brickRegistry = new CertifiedBrickRegistry(brickStore, brickSigner);
+        var brickGate = new CertificationGate(brickSigner);
+        var brickAdmission = new CertifiedBrickAdmission(brickGate, brickRegistry);
+        var generator = new NewBrickGenerator(new CursorGeneratorModel { Variant = "honest" });
+        var generateAndCertify = new GenerateAndCertifyService(generator, brickAdmission);
+
+        var damageResult = await generateAndCertify.GenerateCertifyAndAdmitAsync(
+            DamageResolverIntent,
+            DamageResolverDogfoodWitness.Spec).ConfigureAwait(false);
+
+        if (!damageResult.Decision.Admitted)
+        {
+            throw new InvalidOperationException(
+                $"Failed to admit damage-resolver: {damageResult.Decision.FailureCheck} {damageResult.Decision.Record.Reason}");
+        }
+
+        var healthResult = await generateAndCertify.GenerateCertifyAndAdmitAsync(
+            HealthApplierIntent,
+            HealthApplierConstituentWitness).ConfigureAwait(false);
+
+        if (!healthResult.Decision.Admitted)
+        {
+            throw new InvalidOperationException(
+                $"Failed to admit health-applier: {healthResult.Decision.FailureCheck} {healthResult.Decision.Record.Reason}");
+        }
+
+        var compositionStore = new InMemoryCompositionCertificationRecordStore();
+        var compositionSigner = new CompositionCertificationRecordSigner(brickSigner);
+        var compositionRegistry = new CertifiedCompositionRegistry(compositionStore, compositionSigner);
+        var compositionGate = new CompositionCertificationGate(
+            brickStore,
+            brickSigner,
+            brickRegistry,
+            compositionSigner);
+        var compositionAdmission = new CertifiedCompositionAdmission(compositionGate, compositionRegistry);
+
+        return new CertifiedCompositionTestContext(
+            brickStore,
+            brickSigner,
+            brickRegistry,
+            brickAdmission,
+            compositionStore,
+            compositionSigner,
+            compositionRegistry,
+            compositionGate,
+            compositionAdmission);
+    }
+
+    public static CompositionProposerInput BuildProposerInput(CertifiedCompositionTestContext ctx)
+    {
+        var target = Nexo.Core.Application.Certification.CompositionProposerInputBuilder.TargetFromSpec(
+            CompositionDogfoodFixtures.HonestSpec());
+        return Nexo.Core.Application.Certification.CompositionProposerInputBuilder.FromTargetAndRegistry(
+            target,
+            ctx.BrickRegistry,
+            ctx.BrickStore);
+    }
+
+    /// <summary>
+    /// Atom-level witness for health-applier constituent certification only — not the composition witness.
+    /// </summary>
+    public static readonly WitnessSpec HealthApplierConstituentWitness = new(
+        CursorGeneratorModel.HealthApplierIntentId,
+        [
+            new WitnessCase(
+                new Dictionary<string, object>
+                {
+                    ["currentHealth"] = 100,
+                    ["finalDamage"] = 30
+                },
+                new Dictionary<string, object> { ["newHealth"] = 70 }),
+
+            new WitnessCase(
+                new Dictionary<string, object>
+                {
+                    ["currentHealth"] = 50,
+                    ["finalDamage"] = 60
+                },
+                new Dictionary<string, object> { ["newHealth"] = 0 }),
+
+            new WitnessCase(
+                new Dictionary<string, object>
+                {
+                    ["currentHealth"] = 0,
+                    ["finalDamage"] = 10
+                },
+                new Dictionary<string, object> { ["newHealth"] = 0 })
+        ]);
+}
