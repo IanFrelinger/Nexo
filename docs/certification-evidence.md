@@ -178,6 +178,29 @@ recorded-proposal=ADMIT (first-try), independence=PASS, s1-regression=PASS, test
 
 cert-gate CI: **success**, run [28028224579](https://github.com/IanFrelinger/Nexo/actions/runs/28028224579) — TRX `total="37" executed="37" passed="37"`; all 4 new P3-S2 tests `outcome="Passed"` (check-runs API: `cert-gate` conclusion `success` @ `ca03c2b1`).
 
+## Agent-composer: acceptance-rate measurement (P3-S3)
+
+acceptance_rate=0.60 (3/5), protocol=N=5 temperature=0.7 discards=none, s1-s2-regression=PASS, tests_reported=41
+
+| Observation | Value |
+|-------------|-------|
+| **Measured acceptance rate** | **0.60** (3 admits / 5 proposals) — reported, not targeted |
+| Protocol | N=5, temperature=0.7, provider=cursor, discards=none |
+| Distinctness observed | 3 unique wiring specs (correct×3, reordered×1, dropped×1) |
+| Short-batch guard | REJECT on truncated batch (3 < declared 5) |
+
+| Proof | Result |
+|-------|--------|
+| `RecordedBatch_EachEntryReproducesRecordedVerdictOnReplay` | **PASS** — anti-forgery: replay verdict matches each recorded verdict |
+| `RecordedBatch_ComputedRateMatchesAdmitsOverTotal` | **PASS** — arithmetic integrity only (no threshold assertion) |
+| `ShortBatchGuard_RejectsTruncatedBatch` | **PASS** — vacuous rate guard bites |
+| `RecordedBatch_HoldsExactlyDeclaredIndependentSamples` | **PASS** — exactly N=5 sequence-indexed entries, no padding |
+| S1 + S2 tests | **BYTE-UNCHANGED** |
+
+**What this proves:** Raw untrusted proposer acceptance is **measured** (admits/total via unchanged `ProposeAndCertifyCompositionService`), not gated. Full batch recorded locally at temperature > 0 including rejects; CI replays deterministically.
+
+**v0 boundary:** Single task (damage→health), one provider (cursor), record/replay batch.
+
 ## Contract-stability gaps
 
 - Generated brick uses Nexo.Core.Domain.* namespaces (shipped via Nexo.Authoring/Nexo.Brick.Contracts but not the pinned package IDs)
