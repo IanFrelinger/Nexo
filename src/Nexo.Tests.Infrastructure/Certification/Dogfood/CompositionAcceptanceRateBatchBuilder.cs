@@ -1,5 +1,6 @@
 using Nexo.Core.Application.Certification.Models;
 using Nexo.Infrastructure.Certification.Composition;
+using Nexo.Tests.Infrastructure.Certification.Doubles;
 using Nexo.Tests.Infrastructure.Certification.Fixtures;
 
 namespace Nexo.Tests.Infrastructure.Certification.Dogfood;

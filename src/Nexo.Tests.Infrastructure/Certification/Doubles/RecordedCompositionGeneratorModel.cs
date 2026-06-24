@@ -1,11 +1,12 @@
 using Nexo.Core.Application.Certification.Models;
 using Nexo.Core.Application.Certification.Ports;
+using Nexo.Infrastructure.Certification.Composition;
 
-namespace Nexo.Infrastructure.Certification.Composition;
+namespace Nexo.Tests.Infrastructure.Certification.Doubles;
 
 /// <summary>
-/// <strong>TEST DOUBLE / REPLAY</strong> — hermetic stand-in for <see cref="ProviderCompositionGeneratorModel"/>.
-/// Returns pre-recorded proposal(s) deterministically; mirrors <see cref="Adaptation.Generation.FixtureGeneratorModel"/>.
+/// <strong>TEST DOUBLE / REPLAY</strong> — hermetic stand-in for production model proposer.
+/// Returns pre-recorded proposal(s) deterministically.
 /// </summary>
 internal sealed class RecordedCompositionGeneratorModel : ICompositionGeneratorModel
 {

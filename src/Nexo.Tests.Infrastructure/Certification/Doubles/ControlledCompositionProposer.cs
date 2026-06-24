@@ -1,7 +1,7 @@
 using Nexo.Core.Application.Certification.Models;
 using Nexo.Core.Application.Certification.Ports;
 
-namespace Nexo.Infrastructure.Certification.Composition;
+namespace Nexo.Tests.Infrastructure.Certification.Doubles;
 
 /// <summary>
 /// <strong>TEST DOUBLE</strong> — deterministic stand-in for an untrusted agent composition proposer.

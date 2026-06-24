@@ -1,13 +1,14 @@
 using Nexo.Core.Application.Certification.Models;
 using Nexo.Core.Application.Certification.Ports;
+using Nexo.Infrastructure.Certification.Composition;
 
-namespace Nexo.Infrastructure.Certification.Composition;
+namespace Nexo.Tests.Infrastructure.Certification.Doubles;
 
 /// <summary>
 /// Persists live model proposals and gate verdicts for offline replay.
 /// Run locally once — never invoked from blocking cert-gate.
 /// </summary>
-public static class CompositionProposalRecorder
+internal static class CompositionProposalRecorder
 {
     public static async Task SaveAsync(
         string outputPath,

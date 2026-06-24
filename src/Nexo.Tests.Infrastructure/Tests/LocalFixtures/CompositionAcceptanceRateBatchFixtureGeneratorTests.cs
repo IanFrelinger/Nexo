@@ -1,4 +1,4 @@
-using Nexo.Infrastructure.Certification.Composition;
+using Nexo.Tests.Infrastructure.Certification.Doubles;
 using Nexo.Tests.Infrastructure.Certification.Dogfood;
 using Xunit;
 

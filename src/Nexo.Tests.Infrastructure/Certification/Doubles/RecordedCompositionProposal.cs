@@ -1,14 +1,14 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using Nexo.Core.Application.Certification.Models;
+using Nexo.Infrastructure.Certification.Composition;
 
-namespace Nexo.Infrastructure.Certification.Composition;
+namespace Nexo.Tests.Infrastructure.Certification.Doubles;
 
 /// <summary>
 /// Serializable recorded composition proposal for offline replay in cert-gate.
 /// Produced by a one-time local live call via <see cref="CompositionProposalRecorder"/>.
 /// </summary>
-public sealed record RecordedCompositionProposal(
+internal sealed record RecordedCompositionProposal(
     string Provenance,
     string Provider,
     DateTimeOffset RecordedAt,

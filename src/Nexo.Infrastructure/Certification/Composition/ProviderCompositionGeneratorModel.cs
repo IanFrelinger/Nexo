@@ -7,7 +7,7 @@ namespace Nexo.Infrastructure.Certification.Composition;
 
 /// <summary>
 /// Real model implementation behind the composition generator seam. Marked isolation-enforced;
-/// not used in hermetic cert-gate (record once locally, replay via <see cref="RecordedCompositionGeneratorModel"/>).
+/// not used in hermetic cert-gate (record once locally; replay via test doubles in Nexo.Tests.Infrastructure).
 /// </summary>
 public sealed class ProviderCompositionGeneratorModel : ICompositionGeneratorModel
 {

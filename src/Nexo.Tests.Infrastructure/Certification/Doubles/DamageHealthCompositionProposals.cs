@@ -1,7 +1,9 @@
 using Nexo.Core.Application.Certification.Models;
+using Nexo.Core.Application.Certification.Ports;
 using Nexo.Infrastructure.Adaptation.Generation;
+using Nexo.Infrastructure.Certification.Composition;
 
-namespace Nexo.Infrastructure.Certification.Composition;
+namespace Nexo.Tests.Infrastructure.Certification.Doubles;
 
 /// <summary>
 /// Deterministic damage→health composition proposals for controlled proposer variants.

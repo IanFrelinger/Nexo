@@ -27,7 +27,7 @@ public static class CompositionAcceptanceRateMeasurer
             cancellationToken.ThrowIfCancellationRequested();
 
             var service = new ProposeAndCertifyCompositionService(
-                new FixedProposalReplayProposer(entry),
+                new RecordedEntryReplayProposer(entry),
                 admission);
 
             var result = await service.ProposeCertifyAndAdmitAsync(
@@ -72,4 +72,15 @@ public static class CompositionAcceptanceRateMeasurer
 
     private static string FormatVerdict(CompositionCertificationDecision decision) =>
         decision.Admitted ? "ADMIT" : $"REJECT({decision.FailureCheck})";
+
+    private sealed class RecordedEntryReplayProposer(RecordedCompositionBatchEntry entry) : ICompositionProposer
+    {
+        public Task<ProposedComposition> ProposeAsync(
+            CompositionProposerInput input,
+            CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            return Task.FromResult(new ProposedComposition(entry.Spec, entry.Provenance));
+        }
+    }
 }
