@@ -33,7 +33,7 @@ public sealed class BackgroundAgentServiceTests
     public async Task ExecuteAsync_registers_enabled_agents_and_starts_registry()
     {
         var registry = new Mock<IBackgroundAgentRegistry>();
-        registry.Setup(r => r.RegisterAsync(It.IsAny<IAgent>(), It.IsAny<BackgroundAgentConfig>(), It.IsAny<CancellationToken>()))
+        registry.Setup(r => r.RegisterAsync(It.IsAny<IAgent>(), It.IsAny<BackgroundAgentConfig>(), AgentRegistrationOrigin.Authored, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
         registry.Setup(r => r.StartAllAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
 
@@ -50,6 +50,7 @@ public sealed class BackgroundAgentServiceTests
         registry.Verify(r => r.RegisterAsync(
             It.IsAny<IAgent>(),
             It.Is<BackgroundAgentConfig>(c => c.Id == "enabled-agent"),
+            AgentRegistrationOrigin.Authored,
             It.IsAny<CancellationToken>()), Times.Once);
         registry.Verify(r => r.StartAllAsync(It.IsAny<CancellationToken>()), Times.Once);
         registry.Verify(r => r.StopAllAsync(It.IsAny<CancellationToken>()), Times.Once);
@@ -59,7 +60,7 @@ public sealed class BackgroundAgentServiceTests
     public async Task ExecuteAsync_skips_disabled_agents()
     {
         var registry = new Mock<IBackgroundAgentRegistry>();
-        registry.Setup(r => r.RegisterAsync(It.IsAny<IAgent>(), It.IsAny<BackgroundAgentConfig>(), It.IsAny<CancellationToken>()))
+        registry.Setup(r => r.RegisterAsync(It.IsAny<IAgent>(), It.IsAny<BackgroundAgentConfig>(), AgentRegistrationOrigin.Authored, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
         registry.Setup(r => r.StartAllAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
 
@@ -87,7 +88,7 @@ public sealed class BackgroundAgentServiceTests
         await service.StopAsync(CancellationToken.None);
 
         registry.Verify(
-            r => r.RegisterAsync(It.IsAny<IAgent>(), It.IsAny<BackgroundAgentConfig>(), It.IsAny<CancellationToken>()),
+            r => r.RegisterAsync(It.IsAny<IAgent>(), It.IsAny<BackgroundAgentConfig>(), AgentRegistrationOrigin.Authored, It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -96,10 +97,10 @@ public sealed class BackgroundAgentServiceTests
     {
         var registry = new Mock<IBackgroundAgentRegistry>();
         registry
-            .Setup(r => r.RegisterAsync(It.IsAny<IAgent>(), It.Is<BackgroundAgentConfig>(c => c.Id == "bad-agent"), It.IsAny<CancellationToken>()))
+            .Setup(r => r.RegisterAsync(It.IsAny<IAgent>(), It.Is<BackgroundAgentConfig>(c => c.Id == "bad-agent"), AgentRegistrationOrigin.Authored, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("register failed"));
         registry
-            .Setup(r => r.RegisterAsync(It.IsAny<IAgent>(), It.Is<BackgroundAgentConfig>(c => c.Id == "good-agent"), It.IsAny<CancellationToken>()))
+            .Setup(r => r.RegisterAsync(It.IsAny<IAgent>(), It.Is<BackgroundAgentConfig>(c => c.Id == "good-agent"), AgentRegistrationOrigin.Authored, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
         registry.Setup(r => r.StartAllAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
 
@@ -135,7 +136,7 @@ public sealed class BackgroundAgentServiceTests
         await service.StopAsync(CancellationToken.None);
 
         registry.Verify(
-            r => r.RegisterAsync(It.IsAny<IAgent>(), It.Is<BackgroundAgentConfig>(c => c.Id == "good-agent"), It.IsAny<CancellationToken>()),
+            r => r.RegisterAsync(It.IsAny<IAgent>(), It.Is<BackgroundAgentConfig>(c => c.Id == "good-agent"), AgentRegistrationOrigin.Authored, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 

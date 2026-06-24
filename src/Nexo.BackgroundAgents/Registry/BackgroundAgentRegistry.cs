@@ -52,7 +52,15 @@ public interface IBackgroundAgentRegistry
     /// started or executed. Duplicate registration for the same agent ID
     /// overwrites the previous instance.
     /// </summary>
-    Task RegisterAsync(IAgent agent, BackgroundAgentConfig config, CancellationToken cancellationToken = default);
+    /// <param name="origin">
+    /// Registration provenance. Defaults to <see cref="AgentRegistrationOrigin.Machine"/> so
+    /// callers that omit provenance must justify themselves with a resolvable parent.
+    /// </param>
+    Task RegisterAsync(
+        IAgent agent,
+        BackgroundAgentConfig config,
+        AgentRegistrationOrigin origin = AgentRegistrationOrigin.Machine,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Look up a registered agent by ID. Returns <c>null</c> for unknown IDs
@@ -193,7 +201,11 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
     /// <summary>
     /// Register a background agent.
     /// </summary>
-    public Task RegisterAsync(IAgent agent, BackgroundAgentConfig config, CancellationToken cancellationToken = default)
+    public Task RegisterAsync(
+        IAgent agent,
+        BackgroundAgentConfig config,
+        AgentRegistrationOrigin origin = AgentRegistrationOrigin.Machine,
+        CancellationToken cancellationToken = default)
     {
         if (agent == null)
             throw new ArgumentNullException(nameof(agent));
@@ -202,6 +214,7 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
 
         AgentPolicyNarrowingValidator.ValidateOrThrow(
             config,
+            origin,
             parentId => _agents.TryGetValue(parentId, out var parent) ? parent : null,
             _sensitivityRegistry ?? new DataSensitivityRegistry());
 

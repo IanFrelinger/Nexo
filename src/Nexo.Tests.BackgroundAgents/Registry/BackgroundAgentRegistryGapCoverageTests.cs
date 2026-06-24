@@ -16,6 +16,7 @@ using Nexo.Core.Application.SelfImprovement.Ports;
 using Nexo.Orchestration.Agents;
 using Nexo.Orchestration.Architect.Models;
 using Xunit;
+using Nexo.Tests.BackgroundAgents.Registry;
 
 namespace Nexo.Tests.BackgroundAgents.Registry;
 
@@ -27,8 +28,8 @@ public sealed class BackgroundAgentRegistryGapCoverageTests
         var registry = BuildRegistry();
         var config = MonitorConfig("dup-agent");
 
-        await registry.RegisterAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
-        await registry.RegisterAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
+        await registry.RegisterAuthoredAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
+        await registry.RegisterAuthoredAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
 
         registry.GetAll().Should().ContainSingle(a => a.Config.Id == "dup-agent");
     }
@@ -51,7 +52,7 @@ public sealed class BackgroundAgentRegistryGapCoverageTests
     {
         var registry = BuildRegistry();
         var config = MonitorConfig("running-agent");
-        await registry.RegisterAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
+        await registry.RegisterAuthoredAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
 
         await registry.StartAsync(config.Id);
         await registry.StartAsync(config.Id);
@@ -64,7 +65,7 @@ public sealed class BackgroundAgentRegistryGapCoverageTests
     {
         var registry = BuildRegistry();
         var config = MonitorConfig("idle-agent");
-        await registry.RegisterAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
+        await registry.RegisterAuthoredAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
 
         await registry.StopAsync(config.Id);
 
@@ -94,7 +95,7 @@ public sealed class BackgroundAgentRegistryGapCoverageTests
             Enabled = true,
         };
 
-        await registry.RegisterAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
+        await registry.RegisterAuthoredAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
         await registry.ExecuteOnceAsync(config.Id);
 
         loop.Verify(l => l.RunOnceAsync(It.IsAny<CancellationToken>()), Times.Never);
@@ -122,7 +123,7 @@ public sealed class BackgroundAgentRegistryGapCoverageTests
     {
         var registry = BuildRegistry(testRunRunner: new ThrowingTestRunner());
         var config = new BackgroundAgentConfig { Id = "failing-tester", Role = "tester", Enabled = true };
-        await registry.RegisterAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
+        await registry.RegisterAuthoredAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
 
         await registry.ExecuteOnceAsync(config.Id);
 
@@ -145,7 +146,7 @@ public sealed class BackgroundAgentRegistryGapCoverageTests
         var registry = BuildRegistry(selfExtendRunner: runner, observations: store);
 
         var config = ExtenderConfig("extender-obs", Environment.CurrentDirectory);
-        await registry.RegisterAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
+        await registry.RegisterAuthoredAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
         await registry.ExecuteOnceAsync(config.Id);
 
         var obs = store.All.Should().ContainSingle().Subject;
@@ -168,7 +169,7 @@ public sealed class BackgroundAgentRegistryGapCoverageTests
         var registry = BuildRegistry(selfExtendRunner: runner, observations: store);
 
         var config = ExtenderConfig("extender-fail", Environment.CurrentDirectory);
-        await registry.RegisterAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
+        await registry.RegisterAuthoredAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
         await registry.ExecuteOnceAsync(config.Id);
 
         store.All.Should().ContainSingle().Which.severity.Should().Be(ObservationSeverity.Warn);
@@ -191,7 +192,7 @@ public sealed class BackgroundAgentRegistryGapCoverageTests
         var config = ExtenderConfig("extender-telem", Environment.CurrentDirectory);
         config.ModelProvider = "ollama";
         config.ModelName = "llama3";
-        await registry.RegisterAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
+        await registry.RegisterAuthoredAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
         await registry.ExecuteOnceAsync(config.Id);
 
         var evt = cycleEvents.Read().Should().ContainSingle().Subject;
@@ -215,7 +216,7 @@ public sealed class BackgroundAgentRegistryGapCoverageTests
 
         var registry = BuildRegistry(selfImprovementLoop: loop.Object, modeStore: modeStore.Object);
         var config = new BackgroundAgentConfig { Id = "self-improver-semi", Role = "self-improver", Enabled = true };
-        await registry.RegisterAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
+        await registry.RegisterAuthoredAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
         await registry.ExecuteOnceAsync(config.Id);
 
         loop.Verify(l => l.RunOnceAsync(It.IsAny<CancellationToken>()), Times.Never);
@@ -244,7 +245,7 @@ public sealed class BackgroundAgentRegistryGapCoverageTests
             modeStore: modeStore.Object,
             approvalGate: new AlwaysApprovalGate());
         var config = new BackgroundAgentConfig { Id = "self-improver-run", Role = "self-improver", Enabled = true };
-        await registry.RegisterAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
+        await registry.RegisterAuthoredAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
         await registry.ExecuteOnceAsync(config.Id);
 
         loop.Verify(l => l.RunOnceAsync(It.IsAny<CancellationToken>()), Times.Once);
@@ -265,7 +266,7 @@ public sealed class BackgroundAgentRegistryGapCoverageTests
             modeStore: modeStore.Object,
             approvalGate: new AlwaysApprovalGate());
         var config = new BackgroundAgentConfig { Id = "self-improver-null-report", Role = "self-improver", Enabled = true };
-        await registry.RegisterAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
+        await registry.RegisterAuthoredAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
         await registry.ExecuteOnceAsync(config.Id);
 
         loop.Verify(l => l.RunOnceAsync(It.IsAny<CancellationToken>()), Times.Once);
@@ -277,7 +278,7 @@ public sealed class BackgroundAgentRegistryGapCoverageTests
     {
         var registry = BuildRegistry(codeAnalysisRunner: new FakeCodeAnalysisRunner(true, "unused", 0));
         var config = new BackgroundAgentConfig { Id = "optimizer-default", Role = "optimizer", Enabled = true };
-        await registry.RegisterAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
+        await registry.RegisterAuthoredAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
         await registry.ExecuteOnceAsync(config.Id);
 
         registry.GetAgent(config.Id)!.SuccessCount.Should().Be(1);
@@ -293,7 +294,7 @@ public sealed class BackgroundAgentRegistryGapCoverageTests
             shutdownGracePeriod: TimeSpan.FromSeconds(2));
 
         var config = ExtenderConfig("drain-agent", Environment.CurrentDirectory);
-        await registry.RegisterAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
+        await registry.RegisterAuthoredAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
 
         var cycle = registry.ExecuteOnceAsync(config.Id);
         await Task.Delay(50);
@@ -315,7 +316,7 @@ public sealed class BackgroundAgentRegistryGapCoverageTests
             shutdownGracePeriod: TimeSpan.FromMilliseconds(50));
 
         var config = ExtenderConfig("slow-agent", Environment.CurrentDirectory);
-        await registry.RegisterAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
+        await registry.RegisterAuthoredAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
 
         var cycle = registry.ExecuteOnceAsync(config.Id);
         await Task.Delay(30);
@@ -331,7 +332,7 @@ public sealed class BackgroundAgentRegistryGapCoverageTests
         var runner = new DelaySelfExtendRunner(TimeSpan.FromSeconds(5));
         var registry = BuildRegistry(selfExtendRunner: runner);
         var config = ExtenderConfig("cancel-agent", Environment.CurrentDirectory);
-        await registry.RegisterAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
+        await registry.RegisterAuthoredAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
 
         using var cts = new CancellationTokenSource();
         cts.CancelAfter(TimeSpan.FromMilliseconds(50));
@@ -349,7 +350,7 @@ public sealed class BackgroundAgentRegistryGapCoverageTests
 
         var registry = BuildRegistry(selfExtendRunner: runner, modeStore: modeStore.Object);
         var config = ExtenderConfig("extender-passive", Environment.CurrentDirectory);
-        await registry.RegisterAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
+        await registry.RegisterAuthoredAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
         await registry.ExecuteOnceAsync(config.Id);
 
         registry.GetAgent(config.Id)!.SuccessCount.Should().Be(1);
@@ -368,7 +369,7 @@ public sealed class BackgroundAgentRegistryGapCoverageTests
             Enabled = true,
             Parameters = new Dictionary<string, object> { ["Path"] = Environment.CurrentDirectory },
         };
-        await registry.RegisterAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
+        await registry.RegisterAuthoredAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
         await registry.ExecuteOnceAsync(config.Id);
 
         runner.LastRepoRoot.Should().Be(Environment.CurrentDirectory);
@@ -380,7 +381,7 @@ public sealed class BackgroundAgentRegistryGapCoverageTests
         var runner = new RecordingSelfExtendRunner();
         var registry = BuildRegistry(selfExtendRunner: runner);
         var config = new BackgroundAgentConfig { Id = "extender-no-path", Role = "extender", Enabled = true };
-        await registry.RegisterAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
+        await registry.RegisterAuthoredAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
         await registry.ExecuteOnceAsync(config.Id);
 
         runner.LastRepoRoot.Should().BeNull();
@@ -392,7 +393,7 @@ public sealed class BackgroundAgentRegistryGapCoverageTests
     {
         var registry = BuildRegistry();
         var config = MonitorConfig("start-all-agent");
-        await registry.RegisterAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
+        await registry.RegisterAuthoredAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
 
         await registry.StartAllAsync();
 
@@ -408,7 +409,7 @@ public sealed class BackgroundAgentRegistryGapCoverageTests
         var registry = BuildRegistry(testRunRunner: new ThrowingTestRunner(), cycleEvents: cycleEvents);
 
         var config = new BackgroundAgentConfig { Id = "fail-telem", Role = "tester", Enabled = true };
-        await registry.RegisterAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
+        await registry.RegisterAuthoredAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
         await registry.ExecuteOnceAsync(config.Id);
 
         var evt = cycleEvents.Read().Should().ContainSingle().Subject;

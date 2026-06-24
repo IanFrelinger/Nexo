@@ -5,30 +5,37 @@ using Nexo.BackgroundAgents.Registry;
 namespace Nexo.BackgroundAgents.Security;
 
 /// <summary>
-/// Enforces child ⊆ creator exfiltration/sensitivity envelope at machine-spawn registration.
-/// Human-authored roots (no <see cref="BackgroundAgentConfig.ParentId"/>) are trust roots and skip validation.
+/// Enforces child ⊆ creator exfiltration/sensitivity envelope at machine-origin registration.
+/// Authored registrations are trust roots and skip validation.
 /// </summary>
 public static class AgentPolicyNarrowingValidator
 {
     public static void ValidateOrThrow(
         BackgroundAgentConfig child,
+        AgentRegistrationOrigin origin,
         Func<string, BackgroundAgentInstance?> resolveParent,
         IDataSensitivityRegistry sensitivityRegistry)
     {
-        if (string.IsNullOrWhiteSpace(child.ParentId))
+        if (origin == AgentRegistrationOrigin.Authored)
             return;
+
+        if (string.IsNullOrWhiteSpace(child.ParentId))
+        {
+            throw new InvalidOperationException(
+                $"Refusing machine-origin agent '{child.Id}': ParentId is required.");
+        }
 
         if (sensitivityRegistry is null)
         {
             throw new InvalidOperationException(
-                $"Refusing machine-spawned agent '{child.Id}': sensitivity registry unavailable to verify parent envelope.");
+                $"Refusing machine-origin agent '{child.Id}': sensitivity registry unavailable to verify parent envelope.");
         }
 
         var parentInstance = resolveParent(child.ParentId);
         if (parentInstance is null)
         {
             throw new InvalidOperationException(
-                $"Refusing machine-spawned agent '{child.Id}': parent '{child.ParentId}' is not registered.");
+                $"Refusing machine-origin agent '{child.Id}': parent '{child.ParentId}' is not registered.");
         }
 
         var parent = parentInstance.Config;
@@ -38,25 +45,25 @@ public static class AgentPolicyNarrowingValidator
         if (parentPolicy.BlockExternalLLMs && !childPolicy.BlockExternalLLMs)
         {
             throw new InvalidOperationException(
-                $"Refusing machine-spawned agent '{child.Id}': BlockExternalLLMs cannot be relaxed below parent '{parent.Id}'.");
+                $"Refusing machine-origin agent '{child.Id}': BlockExternalLLMs cannot be relaxed below parent '{parent.Id}'.");
         }
 
         if (parentPolicy.BlockWebSearch && !childPolicy.BlockWebSearch)
         {
             throw new InvalidOperationException(
-                $"Refusing machine-spawned agent '{child.Id}': BlockWebSearch cannot be relaxed below parent '{parent.Id}'.");
+                $"Refusing machine-origin agent '{child.Id}': BlockWebSearch cannot be relaxed below parent '{parent.Id}'.");
         }
 
         if (parentPolicy.BlockNetworkExports && !childPolicy.BlockNetworkExports)
         {
             throw new InvalidOperationException(
-                $"Refusing machine-spawned agent '{child.Id}': BlockNetworkExports cannot be relaxed below parent '{parent.Id}'.");
+                $"Refusing machine-origin agent '{child.Id}': BlockNetworkExports cannot be relaxed below parent '{parent.Id}'.");
         }
 
         if (parentPolicy.RequireLocalOnly && !childPolicy.RequireLocalOnly)
         {
             throw new InvalidOperationException(
-                $"Refusing machine-spawned agent '{child.Id}': RequireLocalOnly cannot be relaxed below parent '{parent.Id}'.");
+                $"Refusing machine-origin agent '{child.Id}': RequireLocalOnly cannot be relaxed below parent '{parent.Id}'.");
         }
 
         EnsureLevelNotBroader(
@@ -86,7 +93,7 @@ public static class AgentPolicyNarrowingValidator
                 if (parentAllowed is not null && !parentAllowed.Contains(levelName))
                 {
                     throw new InvalidOperationException(
-                        $"Refusing machine-spawned agent '{child.Id}': AllowedDataSensitivityLevels contains '{levelName}' outside parent '{parent.Id}' allow-list.");
+                        $"Refusing machine-origin agent '{child.Id}': AllowedDataSensitivityLevels contains '{levelName}' outside parent '{parent.Id}' allow-list.");
                 }
 
                 EnsureLevelNotBroader(
@@ -113,13 +120,13 @@ public static class AgentPolicyNarrowingValidator
         if (parentLevel is null || childLevel is null)
         {
             throw new InvalidOperationException(
-                $"Refusing machine-spawned agent '{childId}': unable to resolve {field} sensitivity levels for parent/child comparison.");
+                $"Refusing machine-origin agent '{childId}': unable to resolve {field} sensitivity levels for parent/child comparison.");
         }
 
         if (childLevel.SensitivityValue > parentLevel.SensitivityValue)
         {
             throw new InvalidOperationException(
-                $"Refusing machine-spawned agent '{childId}': {field} '{childLevelName}' exceeds parent '{parentId}' envelope '{parentLevelName}'.");
+                $"Refusing machine-origin agent '{childId}': {field} '{childLevelName}' exceeds parent '{parentId}' envelope '{parentLevelName}'.");
         }
     }
 }

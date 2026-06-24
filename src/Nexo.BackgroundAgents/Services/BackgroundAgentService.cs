@@ -126,7 +126,7 @@ public class BackgroundAgentService : BackgroundService
         var agent = _agentFactory.CreateAgent(spec);
 
         // Register with registry
-        await _registry.RegisterAsync(agent, config, cancellationToken);
+        await _registry.RegisterAsync(agent, config, AgentRegistrationOrigin.Authored, cancellationToken);
 
         _logger.LogInformation("Created and registered background agent: {AgentId}", config.Id);
     }
