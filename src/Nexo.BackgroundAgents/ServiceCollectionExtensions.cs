@@ -103,10 +103,11 @@ public static class ServiceCollectionExtensions
             var selfImprovementLoop = sp.GetService<Nexo.Core.Application.SelfImprovement.Ports.ISelfImprovementLoop>();
             var modeStore = sp.GetService<IAggressivenessModeStore>();
             var approvalGate = sp.GetService<IApprovalGate>();
+            var sensitivityRegistry = sp.GetService<IDataSensitivityRegistry>();
             var auditLog = sp.GetService<IDataDecisionAuditLog>();
             var cycleEvents = sp.GetService<CycleEventStore>();
             var observations = sp.GetService<IObservationStore>();
-            return new BackgroundAgentRegistry(scheduler, logger, logStore, codeAnalysisRunner, testRunRunner, selfExtendRunner, selfImprovementLoop, modeStore, approvalGate, auditLog, cycleEvents, observations);
+            return new BackgroundAgentRegistry(scheduler, logger, logStore, codeAnalysisRunner, testRunRunner, selfExtendRunner, selfImprovementLoop, modeStore, approvalGate, sensitivityRegistry, auditLog, cycleEvents, observations);
         });
         services.TryAddSingleton<BackgroundAgentConfigLoader>();
         services.TryAddSingleton<BackgroundAgentSpecBuilder>();
