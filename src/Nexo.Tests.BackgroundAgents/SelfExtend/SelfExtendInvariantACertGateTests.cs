@@ -32,6 +32,30 @@ public sealed class SelfExtendInvariantACertGateTests
     }
 
     [Fact]
+    public void Rejection_default_factory_without_explicit_cert_store_refuses_uncertified_brick()
+    {
+        var (_, policies, _) = RepoFsToolboxFactory.CreateWithBuildTest();
+
+        var policyTypes = SelfExtendAuditTestSupport.GetPolicies(policies)
+            .Select(p => p.GetType().Name)
+            .ToList();
+        policyTypes.Should().Contain(nameof(SelfProducedBrickCertificationPolicy));
+
+        var call = new ToolCall(
+            "repo.fs.write",
+            JsonSerializer.SerializeToElement(new { path = BrickRelativePath, content = BrickSource }));
+
+        var snapshot = new WorldSnapshot(0, new Dictionary<string, object?>
+        {
+            ["RepoRoot"] = "/workspace",
+            ["selfExtendAdmission"] = true
+        });
+
+        policies.Approve(call, snapshot, out var reason).Should().BeFalse();
+        reason.Should().Contain("no certification record");
+    }
+
+    [Fact]
     public void Rejection_uncertified_self_proposed_brick_is_refused_at_registration_or_use()
     {
         var (_, policies, _) = RepoFsToolboxFactory.CreateWithBuildTest(
