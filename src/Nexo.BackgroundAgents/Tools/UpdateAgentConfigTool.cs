@@ -72,7 +72,7 @@ public sealed class UpdateAgentConfigTool : ITool
             }
             var spec = _specBuilder.BuildSpec(config);
             var agent = _agentFactory.CreateAgent(spec);
-            await _registry.RegisterAsync(agent, config, ct).ConfigureAwait(false);
+            await _registry.RegisterAsync(agent, config, AgentRegistrationOrigin.Authored, ct).ConfigureAwait(false);
             var okLog = new[] { $"Re-registered background agent from config: {agentId}" };
             var okDelta = new ActionDelta(s.Tick, s.Tick + 1, okLog);
             return new ToolResult(okDelta, new { ok = true, agentId, action = "updated" });

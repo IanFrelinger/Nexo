@@ -10,6 +10,7 @@ using Nexo.BackgroundAgents.Scheduling;
 using Nexo.Orchestration.Agents;
 using Nexo.Orchestration.Architect.Models;
 using Xunit;
+using Nexo.Tests.BackgroundAgents.Registry;
 
 namespace Nexo.Tests.BackgroundAgents.Performance;
 
@@ -82,7 +83,7 @@ public class ExecuteOncePerformanceTests
         var spec = specBuilder.BuildSpec(agentConfig);
         var logger = sp.GetRequiredService<ILogger<GenericAgent>>();
         var agent = new GenericAgent(spec, logger);
-        await registry.RegisterAsync(agent, agentConfig, default);
+        await registry.RegisterAuthoredAsync(agent, agentConfig);
         return (registry, agentConfig.Id);
     }
 }

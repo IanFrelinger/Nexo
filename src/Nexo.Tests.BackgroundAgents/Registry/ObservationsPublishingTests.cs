@@ -10,6 +10,7 @@ using Nexo.BackgroundAgents.Scheduling;
 using Nexo.BackgroundAgents.Testing;
 using Nexo.Orchestration.Agents;
 using Xunit;
+using Nexo.Tests.BackgroundAgents.Registry;
 
 namespace Nexo.Tests.BackgroundAgents.Registry;
 
@@ -37,7 +38,7 @@ public sealed class ObservationsPublishingTests
             Parameters = new Dictionary<string, object> { ["Filter"] = "PathAllowlist" }
         };
         var agent = new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance);
-        await registry.RegisterAsync(agent, config);
+        await registry.RegisterAuthoredAsync(agent, config);
         await registry.ExecuteOnceAsync(config.Id);
 
         store.All.Should().ContainSingle();
@@ -64,7 +65,7 @@ public sealed class ObservationsPublishingTests
             Role = "tester",
             Enabled = true
         };
-        await registry.RegisterAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
+        await registry.RegisterAuthoredAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
         await registry.ExecuteOnceAsync(config.Id);
 
         store.All.Should().ContainSingle().Which.severity.Should().Be(ObservationSeverity.Info);
@@ -85,7 +86,7 @@ public sealed class ObservationsPublishingTests
             Enabled = true,
             Parameters = new Dictionary<string, object> { ["Path"] = "src/Nexo.Core" }
         };
-        await registry.RegisterAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
+        await registry.RegisterAuthoredAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
         await registry.ExecuteOnceAsync(config.Id);
 
         var obs = store.All.Should().ContainSingle().Subject;
@@ -106,7 +107,7 @@ public sealed class ObservationsPublishingTests
             observations: null);
 
         var config = new BackgroundAgentConfig { Id = "tester-3", Role = "tester", Enabled = true };
-        await registry.RegisterAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
+        await registry.RegisterAuthoredAsync(new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance), config);
 
         var act = async () => await registry.ExecuteOnceAsync(config.Id);
         await act.Should().NotThrowAsync();

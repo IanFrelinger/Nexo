@@ -2,10 +2,14 @@ using Microsoft.Extensions.Logging;
 using Nexo.Abstractions;
 using Nexo.BackgroundAgents.Agents;
 using Nexo.BackgroundAgents.Configuration;
+using Nexo.BackgroundAgents.DataSensitivity;
 using Nexo.BackgroundAgents.Extending;
 using Nexo.BackgroundAgents.Forge;
 using Nexo.BackgroundAgents.Objectives;
 using Nexo.BackgroundAgents.Observations;
+using Nexo.BackgroundAgents.Registry;
+using Nexo.BackgroundAgents.Security;
+using Nexo.Core.Application.Certification.Ports;
 using Nexo.Runtime;
 
 namespace Nexo.BackgroundAgents.HostRunners;
@@ -32,6 +36,9 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
     private readonly IObjectiveStore? _objectives;
     private readonly IChangeProposalStore? _proposals;
     private readonly IAggressivenessModeStore? _modeStore;
+    private readonly ICertificationRecordStore _certificationStore;
+    private readonly IBackgroundAgentRegistry? _agentRegistry;
+    private readonly IDataSensitivityRegistry? _sensitivityRegistry;
 
     public SelfExtendRunnerAdapter(
         IModel model,
@@ -40,7 +47,10 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
         IObservationStore? observations = null,
         IObjectiveStore? objectives = null,
         IChangeProposalStore? proposals = null,
-        IAggressivenessModeStore? modeStore = null)
+        IAggressivenessModeStore? modeStore = null,
+        ICertificationRecordStore? certificationStore = null,
+        IBackgroundAgentRegistry? agentRegistry = null,
+        IDataSensitivityRegistry? sensitivityRegistry = null)
     {
         _model = model ?? throw new ArgumentNullException(nameof(model));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -49,6 +59,9 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
         _objectives = objectives;
         _proposals = proposals;
         _modeStore = modeStore;
+        _certificationStore = certificationStore ?? FailClosedCertificationRecordStore.Instance;
+        _agentRegistry = agentRegistry;
+        _sensitivityRegistry = sensitivityRegistry;
     }
 
     /// <inheritdoc />
@@ -78,6 +91,20 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
         string? modelProvider,
         string? modelName,
         CancellationToken cancellationToken = default)
+        => await RunAsync(repoRoot, objective, agentName, modelProvider, modelName, agentId: null, cancellationToken)
+            .ConfigureAwait(false);
+
+    /// <summary>
+    /// Runs a self-extend cycle with registry agent id for policy enforcement (exfiltration, cert admission).
+    /// </summary>
+    public async Task<SelfExtendRunResult> RunAsync(
+        string repoRoot,
+        string? objective,
+        string? agentName,
+        string? modelProvider,
+        string? modelName,
+        string? agentId,
+        CancellationToken cancellationToken = default)
     {
         if (!BackgroundAgentAdapterValidation.TryResolveDirectory(repoRoot, "RepoRoot", out var errorMessage))
         {
@@ -85,6 +112,7 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
         }
 
         var resolvedAgentName = string.IsNullOrWhiteSpace(agentName) ? "self-extend" : agentName!.Trim();
+        var resolvedAgentId = string.IsNullOrWhiteSpace(agentId) ? resolvedAgentName : agentId!.Trim();
 
         // Claim a backlog item for this cycle when an objective store is wired and
         // the caller hasn't pinned an explicit objective string. Without this the
@@ -115,10 +143,13 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
         {
             var (tools, policies, budget) = RepoFsToolboxFactory.CreateWithBuildTest(
                 observations: _observations,
-                source: resolvedAgentName,
+                source: resolvedAgentId,
                 objectiveId: claimed?.Id,
                 proposals: _proposals,
-                modeStore: _modeStore);
+                modeStore: _modeStore,
+                certificationStore: _certificationStore,
+                agentRegistry: _agentRegistry,
+                sensitivityRegistry: _sensitivityRegistry);
             budget.Reset();
             // Register objective lifecycle tools only when a store is wired — the
             // tools cannot operate without one and must not be advertised to the LLM
@@ -139,7 +170,14 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
                 modelName);
             var scratchpadPath = ResolveScratchpadPath(repoRoot!, resolvedAgentName);
             var recent = LoadRecentObservations();
-            var snapshot = BuildSnapshot(repoRoot!, resolvedAgentName, effectiveObjective, scratchpadPath, recent, claimed);
+            var snapshot = BuildSnapshot(
+                repoRoot!,
+                resolvedAgentName,
+                resolvedAgentId,
+                effectiveObjective,
+                scratchpadPath,
+                recent,
+                claimed);
 
             // Multi-turn ReAct: agent loops up to MaxIterations, executing tool calls inline
             // through the policy engine and feeding observations back into the conversation.
@@ -208,6 +246,7 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
     private static WorldSnapshot BuildSnapshot(
         string repoRoot,
         string agentName,
+        string agentId,
         string? objective,
         string? scratchpadPath = null,
         IReadOnlyList<RuntimeObservation>? recentObservations = null,
@@ -217,7 +256,9 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
         {
             ["RepoRoot"] = repoRoot,
             ["OutputRoot"] = Path.Combine(repoRoot, "out"),
-            ["AgentName"] = agentName
+            ["AgentName"] = agentName,
+            ["agentId"] = agentId,
+            ["selfExtendAdmission"] = true
         };
 
         if (!string.IsNullOrWhiteSpace(objective))
