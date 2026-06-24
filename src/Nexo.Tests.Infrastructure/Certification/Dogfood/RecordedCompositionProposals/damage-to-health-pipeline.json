@@ -1,7 +1,7 @@
 {
   "provenance": "model:cursor:isolation-enforced",
   "provider": "cursor",
-  "recordedAt": "2026-06-21T18:00:00Z",
+  "recordedAt": "2026-06-23T14:30:01+00:00",
   "compositionId": "damage-to-health-pipeline",
   "firstTryCertified": true,
   "gateVerdictAtRecording": "ADMIT",
