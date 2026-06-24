@@ -31,7 +31,7 @@ public sealed class FileBasedAggressivenessModeStore : IAggressivenessModeStore
         try
         {
             if (!File.Exists(_path))
-                return BackgroundAgentAggressivenessMode.Active;
+                return BackgroundAgentAggressivenessMode.Passive;
 
             var json = File.ReadAllText(_path);
             var doc = JsonSerializer.Deserialize<ModeDoc>(json);
@@ -40,7 +40,7 @@ public sealed class FileBasedAggressivenessModeStore : IAggressivenessModeStore
         }
         catch
         {
-            return BackgroundAgentAggressivenessMode.Active;
+            return BackgroundAgentAggressivenessMode.Passive;
         }
     }
 
