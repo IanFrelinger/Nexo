@@ -12,7 +12,7 @@
   
   <!-- xUnit: limit parallelism to reduce memory usage (Cursor, CI) -->
   <ItemGroup>
-    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="Certification/Dogfood/RecordedCompositionProposals/**/*.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <!-- Workaround for Castle.Core net6.0 assembly loading issue on .NET 8.0 -->
   <ItemGroup>
