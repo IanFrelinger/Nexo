@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Nexo.BackgroundAgents.Configuration;
 using Nexo.BackgroundAgents.Registry;
 using Nexo.Orchestration.Agents;
+using Nexo.Tests.BackgroundAgents.Registry;
 using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.SelfExtend;
@@ -36,7 +37,7 @@ public sealed class SelfExtendInvariantBPolicyNarrowingTests
             }
         };
 
-        await registry.RegisterAsync(
+        await registry.RegisterAuthoredAsync(
             new GenericAgent(SelfExtendAuditTestSupport.BuildSpec(parent), NullLogger<GenericAgent>.Instance),
             parent);
         await registry.RegisterAsync(
@@ -68,7 +69,7 @@ public sealed class SelfExtendInvariantBPolicyNarrowingTests
         var parent = RestrictiveConfig("creator-parent", parentId: null);
         var child = BroadenedChildConfig("creator-child", parentId: "creator-parent");
 
-        await registry.RegisterAsync(
+        await registry.RegisterAuthoredAsync(
             new GenericAgent(SelfExtendAuditTestSupport.BuildSpec(parent), NullLogger<GenericAgent>.Instance),
             parent);
 
@@ -86,7 +87,7 @@ public sealed class SelfExtendInvariantBPolicyNarrowingTests
         var registry = SelfExtendAuditTestSupport.CreateRegistry();
         var root = BroadenedChildConfig("balance-watcher", parentId: null);
 
-        await registry.RegisterAsync(
+        await registry.RegisterAuthoredAsync(
             new GenericAgent(SelfExtendAuditTestSupport.BuildSpec(root), NullLogger<GenericAgent>.Instance),
             root);
 

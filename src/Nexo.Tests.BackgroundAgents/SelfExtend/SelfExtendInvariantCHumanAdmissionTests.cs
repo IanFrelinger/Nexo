@@ -7,6 +7,7 @@ using Nexo.BackgroundAgents.Registry;
 using Nexo.BackgroundAgents.Tools;
 using Nexo.Orchestration.Agents;
 using Xunit;
+using Nexo.Tests.BackgroundAgents.Registry;
 
 namespace Nexo.Tests.BackgroundAgents.SelfExtend;
 
@@ -24,7 +25,7 @@ public sealed class SelfExtendInvariantCHumanAdmissionTests
             modeStore: null);
         var config = SelfExtendAuditTestSupport.ExtenderConfig("passive-default-extender", Environment.CurrentDirectory);
 
-        await registry.RegisterAsync(
+        await registry.RegisterAuthoredAsync(
             new GenericAgent(SelfExtendAuditTestSupport.BuildSpec(config), NullLogger<GenericAgent>.Instance),
             config);
         await registry.ExecuteOnceAsync(config.Id);
@@ -42,7 +43,7 @@ public sealed class SelfExtendInvariantCHumanAdmissionTests
             modeStore: SelfExtendAuditTestSupport.ActiveModeStore());
         var config = SelfExtendAuditTestSupport.ExtenderConfig("active-extender", Environment.CurrentDirectory);
 
-        await registry.RegisterAsync(
+        await registry.RegisterAuthoredAsync(
             new GenericAgent(SelfExtendAuditTestSupport.BuildSpec(config), NullLogger<GenericAgent>.Instance),
             config);
         await registry.ExecuteOnceAsync(config.Id);
@@ -62,7 +63,7 @@ public sealed class SelfExtendInvariantCHumanAdmissionTests
             approvalGate: new AlwaysApprovalGate());
         var config = SelfExtendAuditTestSupport.ExtenderConfig("semi-active-extender", Environment.CurrentDirectory);
 
-        await registry.RegisterAsync(
+        await registry.RegisterAuthoredAsync(
             new GenericAgent(SelfExtendAuditTestSupport.BuildSpec(config), NullLogger<GenericAgent>.Instance),
             config);
         await registry.ExecuteOnceAsync(config.Id);
@@ -82,7 +83,7 @@ public sealed class SelfExtendInvariantCHumanAdmissionTests
             approvalGate: null);
         var config = SelfExtendAuditTestSupport.ExtenderConfig("semi-active-denied", Environment.CurrentDirectory);
 
-        await registry.RegisterAsync(
+        await registry.RegisterAuthoredAsync(
             new GenericAgent(SelfExtendAuditTestSupport.BuildSpec(config), NullLogger<GenericAgent>.Instance),
             config);
         await registry.ExecuteOnceAsync(config.Id);
@@ -103,7 +104,7 @@ public sealed class SelfExtendInvariantCHumanAdmissionTests
             Commands = ["ping"],
             Schedule = new BackgroundAgentSchedule { Type = ScheduleType.Interval, Interval = TimeSpan.FromMinutes(1) },
         };
-        await registry.RegisterAsync(
+        await registry.RegisterAuthoredAsync(
             new GenericAgent(SelfExtendAuditTestSupport.BuildSpec(config), NullLogger<GenericAgent>.Instance),
             config);
 

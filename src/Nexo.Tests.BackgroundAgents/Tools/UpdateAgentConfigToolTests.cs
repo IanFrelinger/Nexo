@@ -65,7 +65,7 @@ public sealed class UpdateAgentConfigToolTests
     public async Task InvokeAsync_re_registers_agent_from_config()
     {
         var registry = new Mock<IBackgroundAgentRegistry>();
-        registry.Setup(r => r.RegisterAsync(It.IsAny<IAgent>(), It.IsAny<BackgroundAgentConfig>(), It.IsAny<CancellationToken>()))
+        registry.Setup(r => r.RegisterAsync(It.IsAny<IAgent>(), It.IsAny<BackgroundAgentConfig>(), AgentRegistrationOrigin.Authored, It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         var tool = CreateTool(registry.Object, CreateConfigLoader());
@@ -76,7 +76,7 @@ public sealed class UpdateAgentConfigToolTests
 
         result.Delta.Log.Should().Contain(l => l.Contains("Re-registered"));
         registry.Verify(
-            r => r.RegisterAsync(It.IsAny<IAgent>(), It.Is<BackgroundAgentConfig>(c => c.Id == "cfg-agent"), It.IsAny<CancellationToken>()),
+            r => r.RegisterAsync(It.IsAny<IAgent>(), It.Is<BackgroundAgentConfig>(c => c.Id == "cfg-agent"), AgentRegistrationOrigin.Authored, It.IsAny<CancellationToken>()),
             Times.Once);
     }
 

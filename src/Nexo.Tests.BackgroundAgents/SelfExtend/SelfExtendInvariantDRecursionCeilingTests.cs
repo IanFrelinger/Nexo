@@ -5,6 +5,7 @@ using Nexo.BackgroundAgents.Agents;
 using Nexo.Orchestration.Agents;
 using Nexo.Policies.Dev;
 using Xunit;
+using Nexo.Tests.BackgroundAgents.Registry;
 
 namespace Nexo.Tests.BackgroundAgents.SelfExtend;
 
@@ -45,7 +46,7 @@ public sealed class SelfExtendInvariantDRecursionCeilingTests
             selfExtendRunner: runner,
             modeStore: SelfExtendAuditTestSupport.ActiveModeStore());
         var config = SelfExtendAuditTestSupport.ExtenderConfig("deep-extender", Environment.CurrentDirectory);
-        await registry.RegisterAsync(
+        await registry.RegisterAuthoredAsync(
             new GenericAgent(SelfExtendAuditTestSupport.BuildSpec(config), NullLogger<GenericAgent>.Instance),
             config);
 
@@ -68,7 +69,7 @@ public sealed class SelfExtendInvariantDRecursionCeilingTests
             selfExtendRunner: runner,
             modeStore: SelfExtendAuditTestSupport.ActiveModeStore());
         var config = SelfExtendAuditTestSupport.ExtenderConfig("ceiling-extender", Environment.CurrentDirectory);
-        await registry.RegisterAsync(
+        await registry.RegisterAuthoredAsync(
             new GenericAgent(SelfExtendAuditTestSupport.BuildSpec(config), NullLogger<GenericAgent>.Instance),
             config);
 

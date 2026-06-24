@@ -75,7 +75,7 @@ public sealed class BackgroundAgentLifecycleE2ETests
         var configs = await configLoader.LoadAsync(default);
         var spec = specBuilder.BuildSpec(configs[0]);
         var agent = new GenericAgent(spec, services.GetRequiredService<ILogger<GenericAgent>>());
-        await registry.RegisterAsync(agent, configs[0], default);
+        await registry.RegisterAsync(agent, configs[0], AgentRegistrationOrigin.Authored);
         return agent;
     }
 

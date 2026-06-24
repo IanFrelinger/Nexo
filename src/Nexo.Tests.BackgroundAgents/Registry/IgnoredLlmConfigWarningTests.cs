@@ -7,6 +7,7 @@ using Nexo.BackgroundAgents.Registry;
 using Nexo.BackgroundAgents.Scheduling;
 using Nexo.Orchestration.Agents;
 using Xunit;
+using Nexo.Tests.BackgroundAgents.Registry;
 
 namespace Nexo.Tests.BackgroundAgents.Registry;
 
@@ -44,7 +45,7 @@ public sealed class IgnoredLlmConfigWarningTests
         };
 
         var spec = new BackgroundAgentSpecBuilder(new DataSensitivityRegistry(), null).BuildSpec(config);
-        await registry.RegisterAsync(new GenericAgent(spec, NullLogger<GenericAgent>.Instance), config);
+        await registry.RegisterAuthoredAsync(new GenericAgent(spec, NullLogger<GenericAgent>.Instance), config);
 
         if (expectWarning)
             captured.Should().Contain(m => m.Contains("IGNORED", StringComparison.Ordinal) && m.Contains("agent-x"));

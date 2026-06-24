@@ -9,6 +9,7 @@ using Nexo.BackgroundAgents.Registry;
 using Nexo.BackgroundAgents.Scheduling;
 using Nexo.Orchestration.Agents;
 using Xunit;
+using Nexo.Tests.BackgroundAgents.Registry;
 
 namespace Nexo.Tests.BackgroundAgents.Registry;
 
@@ -46,7 +47,7 @@ public sealed class SelfExtendParameterFlowTests
         };
 
         var agent = new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance);
-        await registry.RegisterAsync(agent, config);
+        await registry.RegisterAuthoredAsync(agent, config);
 
         await registry.ExecuteOnceAsync(config.Id);
 
@@ -80,7 +81,7 @@ public sealed class SelfExtendParameterFlowTests
         };
 
         var agent = new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance);
-        await registry.RegisterAsync(agent, config);
+        await registry.RegisterAuthoredAsync(agent, config);
         await registry.ExecuteOnceAsync(config.Id);
 
         var call = fakeRunner.Calls.Single();
@@ -109,7 +110,7 @@ public sealed class SelfExtendParameterFlowTests
             }
         };
         var agent = new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance);
-        await registry.RegisterAsync(agent, config);
+        await registry.RegisterAuthoredAsync(agent, config);
         await registry.ExecuteOnceAsync(config.Id);
 
         var call = fakeRunner.Calls.Single();
