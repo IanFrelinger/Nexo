@@ -8,23 +8,23 @@ namespace Nexo.Tests.BackgroundAgents.Configuration;
 public sealed class FileBasedAggressivenessModeStoreGapCoverageTests
 {
     [Fact]
-    public void GetMode_missing_file_returns_active()
+    public void GetMode_missing_file_returns_passive()
     {
         var path = Path.Combine(Path.GetTempPath(), "nexo-mode-missing-" + Guid.NewGuid().ToString("N") + ".json");
         var store = new FileBasedAggressivenessModeStore(path);
 
-        store.GetMode().Should().Be(BackgroundAgentAggressivenessMode.Active);
+        store.GetMode().Should().Be(BackgroundAgentAggressivenessMode.Passive);
     }
 
     [Fact]
-    public void GetMode_corrupt_json_returns_active()
+    public void GetMode_corrupt_json_returns_passive()
     {
         var path = Path.Combine(Path.GetTempPath(), "nexo-mode-corrupt-" + Guid.NewGuid().ToString("N") + ".json");
         File.WriteAllText(path, "{not-json");
         try
         {
             var store = new FileBasedAggressivenessModeStore(path);
-            store.GetMode().Should().Be(BackgroundAgentAggressivenessMode.Active);
+            store.GetMode().Should().Be(BackgroundAgentAggressivenessMode.Passive);
         }
         finally
         {

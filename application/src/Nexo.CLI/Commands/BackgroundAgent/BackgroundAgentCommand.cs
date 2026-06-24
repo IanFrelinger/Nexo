@@ -321,7 +321,7 @@ public class BackgroundAgentCommand
                     var autoConfig = CloneForAutoscale(template, autoId);
                     var spec = _specBuilder.BuildSpec(autoConfig);
                     var agent = _agentFactory.CreateAgent(spec);
-                    await _registry.RegisterAsync(agent, autoConfig, ct);
+                    await _registry.RegisterAsync(agent, autoConfig, cancellationToken: ct);
                     await _registry.StartAsync(autoId, ct);
                     created.Add(autoId);
                     started.Add(autoId);
@@ -405,7 +405,7 @@ public class BackgroundAgentCommand
             ?? throw new InvalidOperationException($"Agent '{id}' not found in configuration");
         var spec = _specBuilder.BuildSpec(config);
         var agent = _agentFactory.CreateAgent(spec);
-        await _registry.RegisterAsync(agent, config, ct);
+        await _registry.RegisterAsync(agent, config, AgentRegistrationOrigin.Authored, ct);
     }
 
     public static int CalculateDesiredAgentCount(int demand, int minAgents, int maxAgents, int unitsPerAgent)
