@@ -1,12 +1,12 @@
-# Self-Extend Safety Audit (SX-AUDIT)
+# Self-Extend Safety Audit (SX-AUDIT / SX-ENFORCE)
 
-**Sprint:** SX-AUDIT — characterize existing teeth; do **not** build new enforcement.  
-**Branch:** `cursor/self-extend-audit-6118`  
+**Sprint:** SX-AUDIT (characterize) + SX-ENFORCE (A/B/C teeth)  
+**Branch:** `cursor/self-extend-enforce-6118` (off `cursor/self-extend-audit-6118`)  
 **Scope:** Background-agent self-extend path only (not CLI `nexo self-extend`, not orchestration `LifecycleManager`).
 
 ## Purpose
 
-Trace the **executing** control flow for background extender agents and record whether four safety invariants are enforced today. A documented **GAP** is a successful audit outcome.
+Trace the **executing** control flow for background extender agents and record whether four safety invariants are enforced. Invariant **D** remains deferred.
 
 ## Control-flow trace
 
@@ -20,7 +20,9 @@ BackgroundAgentService.ExecuteAsync                    [BackgroundAgentService.c
          ├─ BackgroundAgentSpecBuilder.BuildSpec       [BackgroundAgentService.cs:123]
          ├─ AgentFactory.CreateAgent                   [BackgroundAgentService.cs:126]
          └─ BackgroundAgentRegistry.RegisterAsync       [BackgroundAgentService.cs:129]
-              └─ stores instance; no cert/policy gates [BackgroundAgentRegistry.cs:191–209]
+              ├─ AgentPolicyNarrowingValidator (B)     [BackgroundAgentRegistry.cs:203–206]
+              │    skip when ParentId absent (trust root)
+              └─ stores instance                       [BackgroundAgentRegistry.cs:209–217]
 
 BackgroundAgentService → registry.StartAllAsync        [BackgroundAgentService.cs:87]
   └─ AgentScheduler schedules extender cadence         [BackgroundAgentRegistry.cs:345]
@@ -29,19 +31,20 @@ Scheduler tick → TrackedExecuteAgentAsync              [BackgroundAgentRegistr
   └─ ExecuteAgentAsync                                 [BackgroundAgentRegistry.cs:416+]
        └─ role == "extender" + RepoRoot/Path param    [BackgroundAgentRegistry.cs:513–516]
             ├─ IAggressivenessModeStore.GetMode        [BackgroundAgentRegistry.cs:518]
-            │    default Active when store missing     [BackgroundAgentRegistry.cs:518]
-            ├─ Passive → skip                          [BackgroundAgentRegistry.cs:519–525]
-            ├─ SemiActive → IApprovalGate              [BackgroundAgentRegistry.cs:528–544]
-            │    (not commercial ApprovalBridge)
-            └─ ISelfExtendRunner.RunAsync              [BackgroundAgentRegistry.cs:555–557]
+            │    default Passive when store missing    [BackgroundAgentRegistry.cs:518]
+            ├─ Passive → skip (C)                      [BackgroundAgentRegistry.cs:519–525]
+            ├─ SemiActive → IApprovalGate (deny if null) [BackgroundAgentRegistry.cs:528–544]
+            └─ ISelfExtendRunner.RunAsync(+ agentId)   [BackgroundAgentRegistry.cs:555–557]
                  └─ SelfExtendRunnerAdapter.RunAsync  [SelfExtendRunnerAdapter.cs:74–196]
                       ├─ RepoFsToolboxFactory.CreateWithBuildTest
-                      │    [SelfExtendRunnerAdapter.cs:116–121]
+                      │    [SelfExtendRunnerAdapter.cs:116–131]
                       │    policies: PathAllowlist, MaxWriteSize, BuildTestBudget,
+                      │    SelfProducedBrickCertificationPolicy (A),
+                      │    DataExfiltrationPolicy (B),
                       │    optional ForgeMediatedWritesPolicy
-                      │    [RepoFsToolboxFactory.cs:117–131]
-                      ├─ BuildSnapshot (AgentName, not agentId)
-                      │    [SelfExtendRunnerAdapter.cs:208–304]
+                      │    [RepoFsToolboxFactory.cs:117–145]
+                      ├─ BuildSnapshot (agentId + selfExtendAdmission)
+                      │    [SelfExtendRunnerAdapter.cs:224–232]
                       └─ ToolCallingAgent.RunCycleAsync
                            [SelfExtendRunnerAdapter.cs:149–150]
                            → PolicyEngine.Approve per tool call
@@ -52,51 +55,44 @@ Runtime agent activation (separate from extend cycle):
   UpdateAgentConfigTool → RegisterAsync (re-register) [UpdateAgentConfigTool.cs:75]
 ```
 
-**Not on this path:** `CertificationGate`, `CompositionCertificationGate`, `BackgroundAgentPolicyEngineFactory` / `DataExfiltrationPolicy` (factory is test-only wiring today), `LifecycleManager`, commercial `ApprovalBridge` (Discord playtest fixes).
+**Not on this path:** commercial `ApprovalBridge` (Discord playtest fixes), `LifecycleManager`.
 
 ## Invariant verdicts
 
-| ID | Invariant | Verdict | Executing enforcement (or bypass path) | Test |
-|----|-----------|---------|----------------------------------------|------|
-| A | Cert-gate inheritance | **GAP** | **Bypass:** `SelfExtendRunnerAdapter.RunAsync` → `RepoFsToolboxFactory.CreateWithBuildTest` builds `PolicyEngine` with `PathAllowlist`, `MaxWriteSize`, `BuildTestBudget`, optional `ForgeMediatedWritesPolicy` only — no `ICertificationGate` / `CertificationGate` call on write or register (`RepoFsToolboxFactory.cs:117–131`, `SelfExtendRunnerAdapter.cs:116–150`). `BackgroundAgentRegistry.RegisterAsync` stores config with no cert check (`BackgroundAgentRegistry.cs:191–209`). Zero `CertificationGate` references under `Nexo.BackgroundAgents*` / `HostRunners`. | `SelfExtendInvariantACertGateTests` — 2 characterization PASS, 1 rejection **SKIP (GAP)** |
-| B | Monotonic policy narrowing | **GAP** | **Bypass:** `RegisterAsync` accepts any `ExfiltrationPolicy` on config with no parent subset check (`BackgroundAgentRegistry.cs:191–209`). `ParentId` is copied into spawn spec dependencies only (`BackgroundAgentSpecBuilder.cs:52–57`). Self-extend cycle uses `RepoFsToolboxFactory` policies without `DataExfiltrationPolicy` (`RepoFsToolboxFactory.cs:117–131`). Snapshot sets `AgentName` not `agentId`, so even if `DataExfiltrationPolicy` were present it fail-opens (`SelfExtendRunnerAdapter.cs:220`, `DataExfiltrationPolicy.cs:73–77`). `BackgroundAgentPolicyEngineFactory` is not wired on this path. | `SelfExtendInvariantBPolicyNarrowingTests` — 2 characterization PASS, 1 rejection **SKIP (GAP)** |
-| C | Human admission seam (ApprovalBridge) | **GAP** | **Bypass:** Default aggressiveness is **Active** when mode file missing (`BackgroundAgentRegistry.cs:518`, `FileBasedAggressivenessModeStore.cs:33–34`). Extender runs without approval in Active/Ambient. `EnableAgentTool` → `StartAsync` with no admission token (`EnableAgentTool.cs:49`). Commercial `ApprovalBridge` (Discord emoji → playtest fixes) is not referenced by background agent registration/activation. `IApprovalGate` gates **SemiActive extender cycles** only (`BackgroundAgentRegistry.cs:528–544`); default DI is `NoApprovalGate` (`ServiceCollectionExtensions.cs:56`). | `SelfExtendInvariantCHumanAdmissionTests` — 3 characterization PASS, 1 rejection **SKIP (GAP)** |
-| D | Recursion / runaway ceiling | **GAP** (partial per-cycle caps) | **Partial:** `ToolCallingAgent.DefaultMaxIterations` (=5) and `DefaultPerCycleDeadline` (5 min) bound a single ReAct cycle (`ToolCallingAgent.cs:33–43`). `BuildTestBudget` caps build/test tool calls per cycle (`BuildTestBudget.cs:50–76`, wired in `RepoFsToolboxFactory.cs:121`). **Bypass:** No extender recursion depth counter or cross-cycle rate limit — `ExecuteOnceAsync` / scheduler can invoke extender repeatedly with no refusal (`BackgroundAgentRegistry.cs:555–601`; characterization runs 12 cycles unblocked). | `SelfExtendInvariantDRecursionCeilingTests` — 3 characterization PASS, 1 rejection **SKIP (GAP)** |
+| ID | Invariant | Verdict | Executing enforcement | Test |
+|----|-----------|---------|----------------------|------|
+| A | Cert-gate inheritance | **ENFORCED** | `SelfProducedBrickCertificationPolicy.Approve` on self-extend writes when `selfExtendAdmission=true`; verifies admitted record via `CertificationTrustVerifier` (content-bound) [`SelfProducedBrickCertificationPolicy.cs:24–78`, wired `RepoFsToolboxFactory.cs:137–140`]. Missing store → `FailClosedCertificationRecordStore` denies all brick admissions. Human boot roots unaffected (no self-extend snapshot). | `SelfExtendInvariantACertGateTests` |
+| B | Monotonic policy narrowing | **ENFORCED** | `AgentPolicyNarrowingValidator.ValidateOrThrow` at `RegisterAsync` for `ParentId` children [`BackgroundAgentRegistry.cs:203–206`, `AgentPolicyNarrowingValidator.cs`]. Self-extend snapshot sets `agentId` + wires `DataExfiltrationPolicy` [`SelfExtendRunnerAdapter.cs:224–232`, `RepoFsToolboxFactory.cs:142–145`]. Roots without `ParentId` skip narrowing (trust root). | `SelfExtendInvariantBPolicyNarrowingTests` |
+| C | Fail-closed default | **ENFORCED** | `FileBasedAggressivenessModeStore` missing/corrupt file → **Passive** [`FileBasedAggressivenessModeStore.cs:33–34`, `41–44`]. Registry fallback when mode store absent → **Passive** [`BackgroundAgentRegistry.cs:518`]. SemiActive without `IApprovalGate` → denied [`BackgroundAgentRegistry.cs:528–535`]. Explicit Active or approved SemiActive → runs. | `SelfExtendInvariantCHumanAdmissionTests` |
+| D | Recursion / runaway ceiling | **GAP** (partial per-cycle caps) | Per-cycle: `ToolCallingAgent.DefaultMaxIterations`, `BuildTestBudget`. **No** cross-cycle extender depth/rate refusal. | `SelfExtendInvariantDRecursionCeilingTests` — rejection **SKIP (GAP)** |
 
 ### Invariant A — cert-gate inheritance
 
-**Verdict: GAP**
+**Verdict: ENFORCED**
 
-Self-proposed bricks written via `repo.fs.write` on the extender path are approved by dev filesystem policies only. Nothing on the path calls `CertificationGate.CertifyAsync` or `CertifiedBrickAdmission` before registration or tool execution.
+Self-produced brick writes under `src/Nexo.Bricks*/` on the self-extend admission edge require an admitted, content-bound certification record. Uncertified, missing-record, and tampered content are refused by `SelfProducedBrickCertificationPolicy`.
 
 ### Invariant B — monotonic policy narrowing
 
-**Verdict: GAP**
+**Verdict: ENFORCED**
 
-A child agent config with `BlockExternalLLMs = false`, `RequireLocalOnly = false`, and `MaxAllowedLevel = "Secret"` registers successfully even when the nominal parent carries a stricter envelope. No code compares child `ExfiltrationPolicy` to creator policy at spawn/register time.
+Machine-spawned agents (`ParentId` set) must have an envelope ⊆ creator at registration. Human-authored trust roots (`ParentId` absent) register unchanged. Self-extend cycles key `DataExfiltrationPolicy` on `agentId` in the snapshot.
 
-### Invariant C — human admission seam
+### Invariant C — fail-closed default
 
-**Verdict: GAP**
+**Verdict: ENFORCED**
 
-“Activation” into the live mesh (`StartAsync` / `enable_agent`) does not require commercial `ApprovalBridge` or any human approval token. Default **Active** mode runs extender cycles immediately. SemiActive + `IApprovalGate` is a separate, optional per-cycle gate — not mesh admission — and defaults to deny when unwired.
+Unconfigured aggressiveness defaults to **Passive** — extender cycles do not run until an operator sets Active (or approves SemiActive). This is distinct from mesh `enable_agent` activation; monitors/testers in the boot agent set still start normally.
 
 ### Invariant D — recursion / runaway ceiling
 
-**Verdict: GAP** (with **partial** per-cycle enforcement)
+**Verdict: GAP** (deferred)
 
-Within one cycle, iteration and build/test budgets exist. Across cycles, nothing refuses an extender after N cumulative self-extend invocations or enforces a spawn-depth ceiling for agents created by extenders.
+Within-cycle ReAct and build/test budgets exist. Cross-cycle extender recursion depth is not capped.
 
-## REORDER note
+## REORDER note (post SX-ENFORCE)
 
-**Invariants A and B are GAP — roadmap-changing.**
-
-Before treating self-extend output as production-safe mesh expansion:
-
-1. **Cert gate (A) must precede runnable bricks** — wire `CertificationGate` / composition admission on the propose → write → register edge so uncertified self-proposed bricks are refused, not merely path-allowlisted.
-2. **Policy narrowing (B) must precede spawn** — compare child `ExfiltrationPolicy` and `MaxDataSensitivity` to creator envelope at `RegisterAsync` / spawn-spec validation; wire `DataExfiltrationPolicy` on the self-extend snapshot (`agentId`) if exfiltration teeth are required at tool time.
-
-Human admission (C) and extender recursion ceiling (D) are also GAP but are operational guardrails that can follow A/B in priority — uncertified, over-privileged agents are the higher-severity expansion risk.
+Invariants **A, B, and C** are now enforced on the live path. **D** (cross-cycle extender recursion ceiling) remains the primary deferred safety item before treating unattended multi-cycle self-extension as production-safe.
 
 ## Test index
 
@@ -105,7 +101,7 @@ Human admission (C) and extender recursion ceiling (D) are also GAP but are oper
 | `src/Nexo.Tests.BackgroundAgents/SelfExtend/SelfExtendInvariantACertGateTests.cs` | Invariant A |
 | `src/Nexo.Tests.BackgroundAgents/SelfExtend/SelfExtendInvariantBPolicyNarrowingTests.cs` | Invariant B |
 | `src/Nexo.Tests.BackgroundAgents/SelfExtend/SelfExtendInvariantCHumanAdmissionTests.cs` | Invariant C |
-| `src/Nexo.Tests.BackgroundAgents/SelfExtend/SelfExtendInvariantDRecursionCeilingTests.cs` | Invariant D |
+| `src/Nexo.Tests.BackgroundAgents/SelfExtend/SelfExtendInvariantDRecursionCeilingTests.cs` | Invariant D (GAP) |
 | `src/Nexo.Tests.BackgroundAgents/SelfExtend/SelfExtendAuditTestSupport.cs` | Shared helpers |
 
-Rejection tests use `[Fact(Skip = "GAP: … see docs/SELF-EXTEND-AUDIT.md#…")]` so CI stays green while the gap remains visible in test discovery output.
+Invariant D rejection test retains `[Fact(Skip = "GAP: …")]` until a future sprint adds cross-cycle ceiling enforcement.
