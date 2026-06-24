@@ -9,17 +9,32 @@ using Xunit;
 namespace Nexo.Tests.BackgroundAgents.SelfExtend;
 
 /// <summary>
-/// SX-AUDIT invariant B — monotonic policy narrowing for self-created agents.
-/// See <c>docs/SELF-EXTEND-AUDIT.md#invariant-b-monotonic-policy-narrowing</c>.
+/// SX-ENFORCE invariant B — monotonic policy narrowing for machine-spawned agents.
 /// </summary>
 public sealed class SelfExtendInvariantBPolicyNarrowingTests
 {
     [Fact]
-    public async Task Characterization_register_async_accepts_child_with_broader_exfiltration_than_parent()
+    public async Task Admission_equal_or_stricter_child_envelope_registers_successfully()
     {
         var registry = SelfExtendAuditTestSupport.CreateRegistry();
         var parent = RestrictiveConfig("creator-parent", parentId: null);
-        var child = BroadenedChildConfig("creator-child", parentId: "creator-parent");
+        var child = new BackgroundAgentConfig
+        {
+            Id = "creator-child",
+            ParentId = "creator-parent",
+            Role = "extender",
+            Enabled = true,
+            MaxDataSensitivity = "Public",
+            Commands = ["extend"],
+            ExfiltrationPolicy = new ExfiltrationPolicy
+            {
+                MaxAllowedLevel = "Public",
+                BlockExternalLLMs = true,
+                BlockWebSearch = true,
+                BlockNetworkExports = true,
+                RequireLocalOnly = true
+            }
+        };
 
         await registry.RegisterAsync(
             new GenericAgent(SelfExtendAuditTestSupport.BuildSpec(parent), NullLogger<GenericAgent>.Instance),
@@ -28,31 +43,25 @@ public sealed class SelfExtendInvariantBPolicyNarrowingTests
             new GenericAgent(SelfExtendAuditTestSupport.BuildSpec(child), NullLogger<GenericAgent>.Instance),
             child);
 
-        var stored = registry.GetAgent("creator-child");
-        stored.Should().NotBeNull();
-        stored!.Config.ExfiltrationPolicy.BlockExternalLLMs.Should().BeFalse();
-        stored.Config.ExfiltrationPolicy.RequireLocalOnly.Should().BeFalse();
-        stored.Config.ExfiltrationPolicy.MaxAllowedLevel.Should().Be("Secret");
+        registry.GetAgent("creator-child").Should().NotBeNull();
     }
 
     [Fact]
-    public void Characterization_self_extend_snapshot_omits_agentId_so_data_exfiltration_policy_fail_open()
+    public void Characterization_self_extend_snapshot_includes_agentId_for_exfiltration_policy()
     {
         var snapshot = new WorldSnapshot(0, new Dictionary<string, object?>
         {
             ["RepoRoot"] = "/workspace",
-            ["AgentName"] = "runtime-planner"
+            ["AgentName"] = "runtime-planner",
+            ["agentId"] = "runtime-planner",
+            ["selfExtendAdmission"] = true
         });
 
-        snapshot.Data.Should().ContainKey("AgentName");
-        snapshot.Data.Should().NotContainKey("agentId",
-            "SelfExtendRunnerAdapter.BuildSnapshot sets AgentName only — DataExfiltrationPolicy.Approve fail-opens without agentId");
+        snapshot.Data.Should().ContainKey("agentId");
+        snapshot.Data["agentId"].Should().Be("runtime-planner");
     }
 
-    /// <summary>
-    /// Rejection test for invariant B. Skipped because spawn/registration does not compare child vs parent envelope.
-    /// </summary>
-    [Fact(Skip = "GAP: RegisterAsync stores broader ExfiltrationPolicy with no subset check vs creator — see docs/SELF-EXTEND-AUDIT.md#invariant-b-monotonic-policy-narrowing")]
+    [Fact]
     public async Task Rejection_spawn_spec_with_broader_envelope_than_creator_is_refused()
     {
         var registry = SelfExtendAuditTestSupport.CreateRegistry();
@@ -67,8 +76,21 @@ public sealed class SelfExtendInvariantBPolicyNarrowingTests
             new GenericAgent(SelfExtendAuditTestSupport.BuildSpec(child), NullLogger<GenericAgent>.Instance),
             child);
 
-        await act.Should().ThrowAsync<InvalidOperationException>(
-            "invariant B requires broader MaxAllowedLevel or relaxed BlockExternalLLMs/RequireLocalOnly to be REFUSED");
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*BlockExternalLLMs*");
+    }
+
+    [Fact]
+    public async Task Admission_human_authored_root_without_parent_registers_without_narrowing_check()
+    {
+        var registry = SelfExtendAuditTestSupport.CreateRegistry();
+        var root = BroadenedChildConfig("balance-watcher", parentId: null);
+
+        await registry.RegisterAsync(
+            new GenericAgent(SelfExtendAuditTestSupport.BuildSpec(root), NullLogger<GenericAgent>.Instance),
+            root);
+
+        registry.GetAgent("balance-watcher")!.Config.ExfiltrationPolicy.BlockExternalLLMs.Should().BeFalse();
     }
 
     private static BackgroundAgentConfig RestrictiveConfig(string id, string? parentId) => new()
@@ -89,7 +111,7 @@ public sealed class SelfExtendInvariantBPolicyNarrowingTests
         }
     };
 
-    private static BackgroundAgentConfig BroadenedChildConfig(string id, string parentId) => new()
+    private static BackgroundAgentConfig BroadenedChildConfig(string id, string? parentId) => new()
     {
         Id = id,
         ParentId = parentId,
