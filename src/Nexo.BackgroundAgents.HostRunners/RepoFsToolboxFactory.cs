@@ -136,10 +136,8 @@ internal static class RepoFsToolboxFactory
             policyList.Add(new ForgeMediatedWritesPolicy(modeStore));
         }
 
-        if (certificationStore is not null)
-        {
-            policyList.Add(new SelfProducedBrickCertificationPolicy(certificationStore));
-        }
+        policyList.Add(new SelfProducedBrickCertificationPolicy(
+            certificationStore ?? FailClosedCertificationRecordStore.Instance));
 
         if (agentRegistry is not null && sensitivityRegistry is not null)
         {
