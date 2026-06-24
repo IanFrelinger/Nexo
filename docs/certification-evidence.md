@@ -201,6 +201,8 @@ acceptance_rate=0.60 (3/5), protocol=N=5 temperature=0.7 discards=none, s1-s2-re
 
 **v0 boundary:** Single task (damage→health), one provider (cursor), record/replay batch.
 
+cert-gate CI: **success**, run [28067778575](https://github.com/IanFrelinger/Nexo/actions/runs/28067778575) — TRX `total="41" executed="41" passed="41"`; all 4 P3-S3 tests `outcome="Passed"` (check-runs API: `cert-gate` conclusion `success` @ `7f9cbdc3`).
+
 ## Contract-stability gaps
 
 - Generated brick uses Nexo.Core.Domain.* namespaces (shipped via Nexo.Authoring/Nexo.Brick.Contracts but not the pinned package IDs)
