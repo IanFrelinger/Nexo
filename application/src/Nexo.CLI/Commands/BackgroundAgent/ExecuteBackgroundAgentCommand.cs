@@ -75,6 +75,6 @@ public class ExecuteBackgroundAgentCommand
             ?? throw new InvalidOperationException($"Agent '{id}' not found in configuration");
         var spec = _specBuilder.BuildSpec(config);
         var agent = _agentFactory.CreateAgent(spec);
-        await _registry.RegisterAsync(agent, config, ct).ConfigureAwait(false);
+        await _registry.RegisterAsync(agent, config, AgentRegistrationOrigin.Authored, ct).ConfigureAwait(false);
     }
 }
