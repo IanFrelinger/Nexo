@@ -2,11 +2,13 @@ using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using Nexo.Abstractions;
 using Nexo.BackgroundAgents.Configuration;
+using Nexo.BackgroundAgents.DataSensitivity;
 using Nexo.BackgroundAgents.Extending;
 using Nexo.BackgroundAgents.Logging;
 using Nexo.BackgroundAgents.Observations;
 using Nexo.BackgroundAgents.Optimization;
 using Nexo.BackgroundAgents.Scheduling;
+using Nexo.BackgroundAgents.Security;
 using Nexo.BackgroundAgents.Telemetry;
 using Nexo.BackgroundAgents.Testing;
 using Nexo.Core.Application.SelfImprovement.Ports;
@@ -50,7 +52,15 @@ public interface IBackgroundAgentRegistry
     /// started or executed. Duplicate registration for the same agent ID
     /// overwrites the previous instance.
     /// </summary>
-    Task RegisterAsync(IAgent agent, BackgroundAgentConfig config, CancellationToken cancellationToken = default);
+    /// <param name="origin">
+    /// Registration provenance. Defaults to <see cref="AgentRegistrationOrigin.Machine"/> so
+    /// callers that omit provenance must justify themselves with a resolvable parent.
+    /// </param>
+    Task RegisterAsync(
+        IAgent agent,
+        BackgroundAgentConfig config,
+        AgentRegistrationOrigin origin = AgentRegistrationOrigin.Machine,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Look up a registered agent by ID. Returns <c>null</c> for unknown IDs
@@ -134,6 +144,7 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
     private readonly ISelfImprovementLoop? _selfImprovementLoop;
     private readonly IAggressivenessModeStore? _modeStore;
     private readonly IApprovalGate? _approvalGate;
+    private readonly IDataSensitivityRegistry? _sensitivityRegistry;
     private readonly IDataDecisionAuditLog? _auditLog;
     private readonly CycleEventStore? _cycleEvents;
     private readonly Observations.IObservationStore? _observations;
@@ -165,6 +176,7 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
         ISelfImprovementLoop? selfImprovementLoop = null,
         IAggressivenessModeStore? modeStore = null,
         IApprovalGate? approvalGate = null,
+        IDataSensitivityRegistry? sensitivityRegistry = null,
         IDataDecisionAuditLog? auditLog = null,
         CycleEventStore? cycleEvents = null,
         Observations.IObservationStore? observations = null,
@@ -179,6 +191,7 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
         _selfImprovementLoop = selfImprovementLoop;
         _modeStore = modeStore;
         _approvalGate = approvalGate;
+        _sensitivityRegistry = sensitivityRegistry;
         _auditLog = auditLog;
         _cycleEvents = cycleEvents;
         _observations = observations;
@@ -188,12 +201,22 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
     /// <summary>
     /// Register a background agent.
     /// </summary>
-    public Task RegisterAsync(IAgent agent, BackgroundAgentConfig config, CancellationToken cancellationToken = default)
+    public Task RegisterAsync(
+        IAgent agent,
+        BackgroundAgentConfig config,
+        AgentRegistrationOrigin origin = AgentRegistrationOrigin.Machine,
+        CancellationToken cancellationToken = default)
     {
         if (agent == null)
             throw new ArgumentNullException(nameof(agent));
         if (config == null)
             throw new ArgumentNullException(nameof(config));
+
+        AgentPolicyNarrowingValidator.ValidateOrThrow(
+            config,
+            origin,
+            parentId => _agents.TryGetValue(parentId, out var parent) ? parent : null,
+            _sensitivityRegistry ?? new DataSensitivityRegistry());
 
         // Create agent instance
         var instance = new BackgroundAgentInstance
@@ -515,7 +538,7 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
                 _selfExtendRunner != null &&
                 TryGetParameter(instance.Config, new[] { "RepoRoot", "Path" }, out var repoRoot))
             {
-                var mode = _modeStore?.GetMode() ?? BackgroundAgentAggressivenessMode.Active;
+                var mode = _modeStore?.GetMode() ?? BackgroundAgentAggressivenessMode.Passive;
                 if (mode == BackgroundAgentAggressivenessMode.Passive)
                 {
                     _logStore?.Append(agentId, "Info", "Passive mode: skipping extender execution (observe only).");
@@ -553,7 +576,7 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
                 var modelProvider = string.IsNullOrWhiteSpace(instance.Config.ModelProvider) ? null : instance.Config.ModelProvider;
                 var modelName = string.IsNullOrWhiteSpace(instance.Config.ModelName) ? null : instance.Config.ModelName;
                 var result = await _selfExtendRunner
-                    .RunAsync(repoRoot, objective, agentName, modelProvider, modelName, cancellationToken)
+                    .RunAsync(repoRoot, objective, agentName, modelProvider, modelName, agentId, cancellationToken)
                     .ConfigureAwait(false);
 
                 if (mode == BackgroundAgentAggressivenessMode.Ambient)

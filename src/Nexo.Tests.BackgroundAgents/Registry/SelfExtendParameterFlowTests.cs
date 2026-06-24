@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using Nexo.Abstractions;
 using Nexo.BackgroundAgents.Configuration;
 using Nexo.BackgroundAgents.DataSensitivity;
 using Nexo.BackgroundAgents.Extending;
@@ -8,6 +9,7 @@ using Nexo.BackgroundAgents.Registry;
 using Nexo.BackgroundAgents.Scheduling;
 using Nexo.Orchestration.Agents;
 using Xunit;
+using Nexo.Tests.BackgroundAgents.Registry;
 
 namespace Nexo.Tests.BackgroundAgents.Registry;
 
@@ -45,7 +47,7 @@ public sealed class SelfExtendParameterFlowTests
         };
 
         var agent = new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance);
-        await registry.RegisterAsync(agent, config);
+        await registry.RegisterAuthoredAsync(agent, config);
 
         await registry.ExecuteOnceAsync(config.Id);
 
@@ -56,6 +58,7 @@ public sealed class SelfExtendParameterFlowTests
         call.AgentName.Should().Be("runtime-planner");
         call.ModelProvider.Should().Be("ollama");
         call.ModelName.Should().Be("llama3.1:latest");
+        call.AgentId.Should().Be("planner-1");
     }
 
     [Fact]
@@ -78,11 +81,12 @@ public sealed class SelfExtendParameterFlowTests
         };
 
         var agent = new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance);
-        await registry.RegisterAsync(agent, config);
+        await registry.RegisterAuthoredAsync(agent, config);
         await registry.ExecuteOnceAsync(config.Id);
 
         var call = fakeRunner.Calls.Single();
         call.AgentName.Should().Be("planner-2");
+        call.AgentId.Should().Be("planner-2");
         call.Objective.Should().BeNull();
     }
 
@@ -106,7 +110,7 @@ public sealed class SelfExtendParameterFlowTests
             }
         };
         var agent = new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance);
-        await registry.RegisterAsync(agent, config);
+        await registry.RegisterAuthoredAsync(agent, config);
         await registry.ExecuteOnceAsync(config.Id);
 
         var call = fakeRunner.Calls.Single();
@@ -116,6 +120,8 @@ public sealed class SelfExtendParameterFlowTests
 
     private static IBackgroundAgentRegistry BuildRegistry(ISelfExtendRunner runner)
     {
+        var modeStore = new InMemoryAggressivenessModeStore();
+        modeStore.SetMode(BackgroundAgentAggressivenessMode.Active);
         var scheduler = new AgentScheduler(new ScheduleExecutor(), NullLogger<AgentScheduler>.Instance);
         return new BackgroundAgentRegistry(
             scheduler,
@@ -124,7 +130,9 @@ public sealed class SelfExtendParameterFlowTests
             codeAnalysisRunner: null,
             testRunRunner: null,
             selfExtendRunner: runner,
-            selfImprovementLoop: null);
+            selfImprovementLoop: null,
+            modeStore: modeStore,
+            sensitivityRegistry: new DataSensitivityRegistry());
     }
 
     private static Orchestration.Architect.Models.AgentSpawnSpec BuildSpec(BackgroundAgentConfig c)
@@ -167,11 +175,25 @@ public sealed class SelfExtendParameterFlowTests
             return Task.FromResult(new SelfExtendRunResult(true, 0, 0, "noop"));
         }
 
+        public Task<SelfExtendRunResult> RunAsync(
+            string repoRoot,
+            string? objective,
+            string? agentName,
+            string? modelProvider,
+            string? modelName,
+            string? agentId,
+            CancellationToken cancellationToken = default)
+        {
+            Calls.Add(new RecordedCall(repoRoot, objective, agentName, modelProvider, modelName, agentId));
+            return Task.FromResult(new SelfExtendRunResult(true, 0, 0, "noop"));
+        }
+
         public sealed record RecordedCall(
             string RepoRoot,
             string? Objective,
             string? AgentName,
             string? ModelProvider,
-            string? ModelName);
+            string? ModelName,
+            string? AgentId = null);
     }
 }

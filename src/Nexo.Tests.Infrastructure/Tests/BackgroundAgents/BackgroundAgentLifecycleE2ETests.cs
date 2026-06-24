@@ -40,7 +40,9 @@ public sealed class BackgroundAgentLifecycleE2ETests
         var scheduler = new AgentScheduler(scheduleExecutor, null);
         var registry = new BackgroundAgentRegistry(
             scheduler, null, logStore, null, null,
-            extendRunner, selfImprovementLoop: null, modeStore, approvalGate, auditLog);
+            extendRunner, selfImprovementLoop: null, modeStore, approvalGate,
+            sensitivityRegistry: new DataSensitivityRegistry(),
+            auditLog: auditLog);
         return (registry, logStore);
     }
 
@@ -73,7 +75,7 @@ public sealed class BackgroundAgentLifecycleE2ETests
         var configs = await configLoader.LoadAsync(default);
         var spec = specBuilder.BuildSpec(configs[0]);
         var agent = new GenericAgent(spec, services.GetRequiredService<ILogger<GenericAgent>>());
-        await registry.RegisterAsync(agent, configs[0], default);
+        await registry.RegisterAsync(agent, configs[0], AgentRegistrationOrigin.Authored);
         return agent;
     }
 
@@ -89,7 +91,8 @@ public sealed class BackgroundAgentLifecycleE2ETests
         var scheduler = new AgentScheduler(new ScheduleExecutor(), null);
         var registry = new BackgroundAgentRegistry(
             scheduler, null, logStore, null, null,
-            mockExtend, selfImprovementLoop: null, modeStore);
+            mockExtend, selfImprovementLoop: null, modeStore,
+            sensitivityRegistry: new DataSensitivityRegistry());
 
         await RegisterExtenderAgent(registry, "transition-test");
 

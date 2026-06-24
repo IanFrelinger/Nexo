@@ -14,6 +14,7 @@ using Nexo.Core.Application.Trust.Models;
 using Nexo.Core.Application.Trust.Ports;
 using Nexo.Orchestration.Agents;
 using Xunit;
+using Nexo.Tests.BackgroundAgents.Registry;
 
 namespace Nexo.Tests.BackgroundAgents.Configuration;
 
@@ -62,7 +63,7 @@ public sealed class AggressivenessModeTests
         var agentConfig = configs[0];
         var spec = specBuilder.BuildSpec(agentConfig);
         var agent = new GenericAgent(spec, services.GetRequiredService<ILogger<GenericAgent>>());
-        await registry.RegisterAsync(agent, agentConfig, default);
+        await registry.RegisterAuthoredAsync(agent, agentConfig);
 
         await registry.ExecuteOnceAsync("extender-passive", default);
 
@@ -111,7 +112,7 @@ public sealed class AggressivenessModeTests
         var agentConfig = configs[0];
         var spec = specBuilder.BuildSpec(agentConfig);
         var agent = new GenericAgent(spec, services.GetRequiredService<ILogger<GenericAgent>>());
-        await registry.RegisterAsync(agent, agentConfig, default);
+        await registry.RegisterAuthoredAsync(agent, agentConfig);
 
         await registry.ExecuteOnceAsync("extender-active", default);
 
@@ -215,7 +216,7 @@ public sealed class AggressivenessModeTests
         var agentConfig = configs[0];
         var spec = specBuilder.BuildSpec(agentConfig);
         var agent = new GenericAgent(spec, services.GetRequiredService<ILogger<GenericAgent>>());
-        await registry.RegisterAsync(agent, agentConfig, default);
+        await registry.RegisterAuthoredAsync(agent, agentConfig);
 
         await registry.ExecuteOnceAsync("extender-semiactive", default);
 
@@ -265,7 +266,7 @@ public sealed class AggressivenessModeTests
         var agentConfig = configs[0];
         var spec = specBuilder.BuildSpec(agentConfig);
         var agent = new GenericAgent(spec, services.GetRequiredService<ILogger<GenericAgent>>());
-        await registry.RegisterAsync(agent, agentConfig, default);
+        await registry.RegisterAuthoredAsync(agent, agentConfig);
 
         await registry.ExecuteOnceAsync("extender-semiactive-denied", default);
 
@@ -315,7 +316,7 @@ public sealed class AggressivenessModeTests
         var agentConfig = configs[0];
         var spec = specBuilder.BuildSpec(agentConfig);
         var agent = new GenericAgent(spec, services.GetRequiredService<ILogger<GenericAgent>>());
-        await registry.RegisterAsync(agent, agentConfig, default);
+        await registry.RegisterAuthoredAsync(agent, agentConfig);
 
         await registry.ExecuteOnceAsync("extender-semiactive-timeout", default);
 
@@ -365,7 +366,7 @@ public sealed class AggressivenessModeTests
         var agentConfig = configs[0];
         var spec = specBuilder.BuildSpec(agentConfig);
         var agent = new GenericAgent(spec, services.GetRequiredService<ILogger<GenericAgent>>());
-        await registry.RegisterAsync(agent, agentConfig, default);
+        await registry.RegisterAuthoredAsync(agent, agentConfig);
 
         await registry.ExecuteOnceAsync("extender-semiactive-approved", default);
 
@@ -412,7 +413,7 @@ public sealed class AggressivenessModeTests
         var agentConfig = configs[0];
         var spec = specBuilder.BuildSpec(agentConfig);
         var agent = new GenericAgent(spec, services.GetRequiredService<ILogger<GenericAgent>>());
-        await registry.RegisterAsync(agent, agentConfig, default);
+        await registry.RegisterAuthoredAsync(agent, agentConfig);
 
         await registry.ExecuteOnceAsync("extender-ambient", default);
 
@@ -462,7 +463,7 @@ public sealed class AggressivenessModeTests
         var agentConfig = configs[0];
         var spec = specBuilder.BuildSpec(agentConfig);
         var agent = new GenericAgent(spec, services.GetRequiredService<ILogger<GenericAgent>>());
-        await registry.RegisterAsync(agent, agentConfig, default);
+        await registry.RegisterAuthoredAsync(agent, agentConfig);
 
         await registry.ExecuteOnceAsync("extender-ambient-audit", default);
 
