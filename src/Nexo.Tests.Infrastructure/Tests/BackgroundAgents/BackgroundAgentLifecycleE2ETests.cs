@@ -40,7 +40,9 @@ public sealed class BackgroundAgentLifecycleE2ETests
         var scheduler = new AgentScheduler(scheduleExecutor, null);
         var registry = new BackgroundAgentRegistry(
             scheduler, null, logStore, null, null,
-            extendRunner, selfImprovementLoop: null, modeStore, approvalGate, auditLog);
+            extendRunner, selfImprovementLoop: null, modeStore, approvalGate,
+            sensitivityRegistry: new DataSensitivityRegistry(),
+            auditLog: auditLog);
         return (registry, logStore);
     }
 
@@ -89,7 +91,8 @@ public sealed class BackgroundAgentLifecycleE2ETests
         var scheduler = new AgentScheduler(new ScheduleExecutor(), null);
         var registry = new BackgroundAgentRegistry(
             scheduler, null, logStore, null, null,
-            mockExtend, selfImprovementLoop: null, modeStore);
+            mockExtend, selfImprovementLoop: null, modeStore,
+            sensitivityRegistry: new DataSensitivityRegistry());
 
         await RegisterExtenderAgent(registry, "transition-test");
 
