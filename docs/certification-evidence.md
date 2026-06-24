@@ -142,66 +142,61 @@ Pack/export: `scripts/pack-certified-brick-reuse.sh` → local feed + `certifica
 
 **v0 trust model:** same-owner cross-project reuse via shared dev HMAC key (`NEXO_CERT_DEV_HMAC_KEY`). Cross-organization trust requires PKI (out of scope).
 
-## Agent-composer: propose→certify loop (P3-S1)
+## Agent-composer (proposer seam → real model → acceptance rate)
 
-bad-proposals=REJECT (all variants), correct-proposal=ADMIT, independence=PASS, tests_reported=33
+Cumulative evidence from P3-S1 (controlled proposer), P3-S2 (real-model record/replay), and P3-S3 (acceptance-rate measurement). cert-gate: **41 tests** @ [run 28067778575](https://github.com/IanFrelinger/Nexo/actions/runs/28067778575) (`conclusion: success` @ `7f9cbdc3`).
+
+### Proposer seam (P3-S1)
 
 | Proof | Result |
 |-------|--------|
 | `BadProposalVariants_AreRejectedByExistingGate` (5 variants) | **REJECT** — `correctness` \| `mutation` \| `seam` \| `constituents` via unchanged `CompositionCertificationGate` |
-| `TamperedConstituentCert_RejectedByConstituentIntegrity` | **REJECT** — `constituents` (atom cert does not verify) |
+| `TamperedConstituentCert_RejectedByConstituentIntegrity` | **REJECT** — `constituents` |
 | `CorrectProposal_StrongWitness_Admits_WithZeroEscapeRate` | **ADMIT** — `composition_escape_rate=0`, signed |
-| `CorrectProposal_MatchesHandAuthoredCompositionResult` | **ADMIT** — same certified result as hand-authored `CompositionDogfoodFixtures.HonestSpec()` |
-| `ProposerInput_StructurallyCannotCarryWitnessCases` | **PASS** — `CompositionProposerInput` has no witness-bearing fields |
+| `CorrectProposal_MatchesHandAuthoredCompositionResult` | **ADMIT** — matches hand-authored `CompositionDogfoodFixtures.HonestSpec()` |
+| `ProposerInput_StructurallyCannotCarryWitnessCases` | **PASS** — no witness-bearing fields on `CompositionProposerInput` |
 
-**What this proves:** An untrusted proposer (`ICompositionProposer`) receives only target I/O signature + certified-brick catalog. Its wiring proposal traverses the **identical** composition admission gate as hand-authored specs — no agent bypass. Human witness remains in `CompositionDogfoodWitness.Spec`; the controlled proposer (`ControlledCompositionProposer`) is a deterministic CI double, not a real model.
+**What this proves:** Untrusted proposer (`ICompositionProposer`) receives target I/O signature + certified-brick catalog only. Wiring traverses the **identical** composition admission gate — no agent bypass. Human witness in `CompositionDogfoodWitness.Spec`; `ControlledCompositionProposer` is a deterministic CI double.
 
-**v0 boundary:** Controlled proposer only; real LLM/agent proposer is the next sprint.
+**v0 boundary:** Controlled proposer only for rejection teeth; real model is next layer below.
 
-cert-gate CI: **success**, run [28000451847](https://github.com/IanFrelinger/Nexo/actions/runs/28000451847) — TRX `total="33" executed="33" passed="33"`; all 9 `CompositionProposer*` tests `outcome="Passed"` (check-runs API: `cert-gate` conclusion `success` @ `887686a1`).
+CI: [run 28000451847](https://github.com/IanFrelinger/Nexo/actions/runs/28000451847) — 33 tests, 9 `CompositionProposer*` passed.
 
-## Agent-composer: real-model proposer dogfood (P3-S2)
-
-recorded-proposal=ADMIT (first-try), independence=PASS, s1-regression=PASS, tests_reported=37
+### Real-model proposer dogfood (P3-S2)
 
 | Proof | Result |
 |-------|--------|
-| `RecordedRealProposal_TraversesIdenticalLoop_ReportsHonestGateVerdict` | **ADMIT** — recorded `model:cursor:isolation-enforced` proposal; `firstTryCertified=true` at recording |
-| `RecordedRealProposal_WhenAdmitted_MatchesHandAuthoredCompositionResult` | **ADMIT** — same certified result as hand-authored `CompositionDogfoodFixtures.HonestSpec()` |
-| `CompositionGeneratorModel_InputPathCannotCarryWitnessCases` | **PASS** — `ICompositionGeneratorModel` accepts `CompositionProposerInput` only |
-| `RealProposerPrompt_IsBuiltFromProposerInputOnly_WithNoWitnessValues` | **PASS** — prompt built from target + catalog; no serialized witness cases |
-| S1 `CompositionProposerDogfoodTests` (8 tests) | **UNCHANGED** — controlled rejection suite still green |
+| `RecordedRealProposal_TraversesIdenticalLoop_ReportsHonestGateVerdict` | **ADMIT** — `model:cursor:isolation-enforced`; `firstTryCertified=true` |
+| `RecordedRealProposal_WhenAdmitted_MatchesHandAuthoredCompositionResult` | **ADMIT** — same result as hand-authored spec |
+| `CompositionGeneratorModel_InputPathCannotCarryWitnessCases` | **PASS** |
+| `RealProposerPrompt_IsBuiltFromProposerInputOnly_WithNoWitnessValues` | **PASS** — no serialized witness cases in prompt |
+| S1 controlled rejection suite (8 tests) | **UNCHANGED** |
 
-**What this proves:** A real model proposer (`ProviderCompositionGeneratorModel` over `ICompositionGeneratorModel`, mirroring `IGeneratorModel`) builds prompts from `CompositionProposerInput` only. Cert-gate replays a **recorded** proposal (`RecordedCompositionGeneratorModel`) — no live API in blocking CI. The recorded dogfood honestly reports the gate verdict on the model's actual proposal (`firstTryCertified=true`, ADMIT on damage→health).
+**What this proves:** `ProviderCompositionGeneratorModel` over `ICompositionGeneratorModel` builds prompts from `CompositionProposerInput` only. Cert-gate replays a **recorded** proposal — no live API. Honest first-try ADMIT on damage→health.
 
-**v0 boundary:** Single recorded proposal (record/replay); live provider records locally via `CompositionProposalRecorder`. S1 controlled rejection suite remains authoritative teeth.
+**v0 boundary:** Single recorded proposal (record/replay); live capture via `CompositionProposalRecorder` locally. S1 controlled rejection remains authoritative teeth.
 
-cert-gate CI: **success**, run [28028224579](https://github.com/IanFrelinger/Nexo/actions/runs/28028224579) — TRX `total="37" executed="37" passed="37"`; all 4 new P3-S2 tests `outcome="Passed"` (check-runs API: `cert-gate` conclusion `success` @ `ca03c2b1`).
+CI: [run 28028224579](https://github.com/IanFrelinger/Nexo/actions/runs/28028224579) — 37 tests.
 
-## Agent-composer: acceptance-rate measurement (P3-S3)
-
-acceptance_rate=0.60 (3/5), protocol=N=5 temperature=0.7 discards=none, s1-s2-regression=PASS, tests_reported=41
+### Acceptance-rate measurement (P3-S3)
 
 | Observation | Value |
 |-------------|-------|
 | **Measured acceptance rate** | **0.60** (3 admits / 5 proposals) — reported, not targeted |
 | Protocol | N=5, temperature=0.7, provider=cursor, discards=none |
 | Distinctness observed | 3 unique wiring specs (correct×3, reordered×1, dropped×1) |
-| Short-batch guard | REJECT on truncated batch (3 < declared 5) |
 
 | Proof | Result |
 |-------|--------|
-| `RecordedBatch_EachEntryReproducesRecordedVerdictOnReplay` | **PASS** — anti-forgery: replay verdict matches each recorded verdict |
-| `RecordedBatch_ComputedRateMatchesAdmitsOverTotal` | **PASS** — arithmetic integrity only (no threshold assertion) |
-| `ShortBatchGuard_RejectsTruncatedBatch` | **PASS** — vacuous rate guard bites |
-| `RecordedBatch_HoldsExactlyDeclaredIndependentSamples` | **PASS** — exactly N=5 sequence-indexed entries, no padding |
+| `RecordedBatch_EachEntryReproducesRecordedVerdictOnReplay` | **PASS** — anti-forgery |
+| `RecordedBatch_ComputedRateMatchesAdmitsOverTotal` | **PASS** — arithmetic integrity only |
+| `ShortBatchGuard_RejectsTruncatedBatch` | **PASS** |
+| `RecordedBatch_HoldsExactlyDeclaredIndependentSamples` | **PASS** — exactly N=5, no padding |
 | S1 + S2 tests | **BYTE-UNCHANGED** |
 
-**What this proves:** Raw untrusted proposer acceptance is **measured** (admits/total via unchanged `ProposeAndCertifyCompositionService`), not gated. Full batch recorded locally at temperature > 0 including rejects; CI replays deterministically.
+**What this proves:** Raw proposer acceptance is **measured** (admits/total via unchanged `ProposeAndCertifyCompositionService`), not gated. Full batch recorded at temperature > 0 including rejects; CI replays deterministically.
 
 **v0 boundary:** Single task (damage→health), one provider (cursor), record/replay batch.
-
-cert-gate CI: **success**, run [28067778575](https://github.com/IanFrelinger/Nexo/actions/runs/28067778575) — TRX `total="41" executed="41" passed="41"`; all 4 P3-S3 tests `outcome="Passed"` (check-runs API: `cert-gate` conclusion `success` @ `7f9cbdc3`).
 
 ## Contract-stability gaps
 
