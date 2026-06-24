@@ -7,7 +7,7 @@ namespace Nexo.Infrastructure.Certification.Composition;
 /// <strong>TEST DOUBLE</strong> — deterministic stand-in for an untrusted agent composition proposer.
 /// Emits caller-specified wiring variants; never sees witness cases.
 /// </summary>
-public sealed class ControlledCompositionProposer : ICompositionProposer
+internal sealed class ControlledCompositionProposer : ICompositionProposer
 {
     public const string CorrectVariant = "correct";
     public const string ReorderedWiringVariant = "reordered-wiring";
