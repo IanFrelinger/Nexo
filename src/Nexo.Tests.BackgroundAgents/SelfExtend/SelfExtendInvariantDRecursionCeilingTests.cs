@@ -41,7 +41,9 @@ public sealed class SelfExtendInvariantDRecursionCeilingTests
     public async Task Characterization_no_cross_cycle_extender_depth_ceiling()
     {
         var runner = new SelfExtendAuditTestSupport.CountingSelfExtendRunner();
-        var registry = SelfExtendAuditTestSupport.CreateRegistry(selfExtendRunner: runner);
+        var registry = SelfExtendAuditTestSupport.CreateRegistry(
+            selfExtendRunner: runner,
+            modeStore: SelfExtendAuditTestSupport.ActiveModeStore());
         var config = SelfExtendAuditTestSupport.ExtenderConfig("deep-extender", Environment.CurrentDirectory);
         await registry.RegisterAsync(
             new GenericAgent(SelfExtendAuditTestSupport.BuildSpec(config), NullLogger<GenericAgent>.Instance),
@@ -62,7 +64,9 @@ public sealed class SelfExtendInvariantDRecursionCeilingTests
     public async Task Rejection_extension_past_configured_recursion_ceiling_is_refused()
     {
         var runner = new SelfExtendAuditTestSupport.CountingSelfExtendRunner();
-        var registry = SelfExtendAuditTestSupport.CreateRegistry(selfExtendRunner: runner);
+        var registry = SelfExtendAuditTestSupport.CreateRegistry(
+            selfExtendRunner: runner,
+            modeStore: SelfExtendAuditTestSupport.ActiveModeStore());
         var config = SelfExtendAuditTestSupport.ExtenderConfig("ceiling-extender", Environment.CurrentDirectory);
         await registry.RegisterAsync(
             new GenericAgent(SelfExtendAuditTestSupport.BuildSpec(config), NullLogger<GenericAgent>.Instance),

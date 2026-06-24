@@ -430,6 +430,9 @@ public sealed class BackgroundAgentRegistryGapCoverageTests
         IApprovalGate? approvalGate = null,
         TimeSpan? shutdownGracePeriod = null)
     {
+        if (selfExtendRunner is not null && modeStore is null)
+            modeStore = new InMemoryAggressivenessModeStore();
+
         var scheduler = new AgentScheduler(new ScheduleExecutor(), NullLogger<AgentScheduler>.Instance);
         return new BackgroundAgentRegistry(
             scheduler,
@@ -440,6 +443,7 @@ public sealed class BackgroundAgentRegistryGapCoverageTests
             selfImprovementLoop: selfImprovementLoop,
             modeStore: modeStore,
             approvalGate: approvalGate,
+            sensitivityRegistry: new DataSensitivityRegistry(),
             cycleEvents: cycleEvents,
             observations: observations,
             shutdownGracePeriod: shutdownGracePeriod);
