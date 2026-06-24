@@ -5,16 +5,22 @@ namespace Nexo.Infrastructure.Certification.Composition;
 
 /// <summary>
 /// <strong>TEST DOUBLE / REPLAY</strong> — hermetic stand-in for <see cref="ProviderCompositionGeneratorModel"/>.
-/// Returns a pre-recorded proposal deterministically; mirrors <see cref="Adaptation.Generation.FixtureGeneratorModel"/>.
+/// Returns pre-recorded proposal(s) deterministically; mirrors <see cref="Adaptation.Generation.FixtureGeneratorModel"/>.
 /// </summary>
-public sealed class RecordedCompositionGeneratorModel : ICompositionGeneratorModel
+internal sealed class RecordedCompositionGeneratorModel : ICompositionGeneratorModel
 {
-    private readonly IReadOnlyDictionary<string, RecordedCompositionProposal> _recordings;
+    private readonly IReadOnlyDictionary<string, RecordedCompositionProposal> _singleRecordings;
+    private readonly RecordedCompositionProposalBatch? _batch;
 
-    public RecordedCompositionGeneratorModel(IEnumerable<RecordedCompositionProposal> recordings)
+    public RecordedCompositionGeneratorModel(
+        IEnumerable<RecordedCompositionProposal> singleRecordings,
+        RecordedCompositionProposalBatch? batch = null)
     {
-        _recordings = recordings.ToDictionary(r => r.CompositionId, StringComparer.Ordinal);
+        _singleRecordings = singleRecordings.ToDictionary(r => r.CompositionId, StringComparer.Ordinal);
+        _batch = batch;
     }
+
+    public RecordedCompositionProposalBatch? Batch => _batch;
 
     public static RecordedCompositionGeneratorModel FromJsonFiles(params string[] paths)
     {
@@ -26,13 +32,19 @@ public sealed class RecordedCompositionGeneratorModel : ICompositionGeneratorMod
         return new RecordedCompositionGeneratorModel(recordings);
     }
 
+    public static RecordedCompositionGeneratorModel FromBatchFile(string path)
+    {
+        var batch = RecordedCompositionProposalBatch.FromJson(File.ReadAllText(path));
+        return new RecordedCompositionGeneratorModel([], batch);
+    }
+
     public Task<ProposedComposition> ProposeAsync(
         CompositionProposerInput input,
         CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
-        if (!_recordings.TryGetValue(input.Target.CompositionId, out var recording))
+        if (!_singleRecordings.TryGetValue(input.Target.CompositionId, out var recording))
         {
             throw new NotSupportedException(
                 $"Recorded composition model has no recording for '{input.Target.CompositionId}'.");
@@ -42,5 +54,8 @@ public sealed class RecordedCompositionGeneratorModel : ICompositionGeneratorMod
     }
 
     public RecordedCompositionProposal? GetRecording(string compositionId) =>
-        _recordings.TryGetValue(compositionId, out var recording) ? recording : null;
+        _singleRecordings.TryGetValue(compositionId, out var recording) ? recording : null;
+
+    public IReadOnlyList<RecordedCompositionBatchEntry> GetBatchEntries() =>
+        _batch?.Entries ?? [];
 }

@@ -1,0 +1,458 @@
+{
+  "provider": "cursor",
+  "temperature": 0.7,
+  "declaredSampleCount": 5,
+  "batchRecordedAt": "2026-06-23T14:30:00+00:00",
+  "discards": "none",
+  "entries": [
+    {
+      "sequenceIndex": 0,
+      "provenance": "model:cursor:isolation-enforced",
+      "recordedAt": "2026-06-23T14:30:01+00:00",
+      "gateAdmittedAtRecording": true,
+      "gateVerdictAtRecording": "ADMIT",
+      "gateFailureCheckAtRecording": null,
+      "spec": {
+        "compositionId": "damage-to-health-pipeline",
+        "nodes": [
+          {
+            "nodeId": "damage",
+            "brickId": "damage-resolver"
+          },
+          {
+            "nodeId": "health",
+            "brickId": "health-applier"
+          }
+        ],
+        "edges": [
+          {
+            "sourceNodeId": "__input__",
+            "sourcePort": "baseDamage",
+            "targetNodeId": "damage",
+            "targetPort": "baseDamage"
+          },
+          {
+            "sourceNodeId": "__input__",
+            "sourcePort": "critMultiplierPercent",
+            "targetNodeId": "damage",
+            "targetPort": "critMultiplierPercent"
+          },
+          {
+            "sourceNodeId": "__input__",
+            "sourcePort": "armor",
+            "targetNodeId": "damage",
+            "targetPort": "armor"
+          },
+          {
+            "sourceNodeId": "__input__",
+            "sourcePort": "isCrit",
+            "targetNodeId": "damage",
+            "targetPort": "isCrit"
+          },
+          {
+            "sourceNodeId": "__input__",
+            "sourcePort": "currentHealth",
+            "targetNodeId": "health",
+            "targetPort": "currentHealth"
+          },
+          {
+            "sourceNodeId": "damage",
+            "sourcePort": "finalDamage",
+            "targetNodeId": "health",
+            "targetPort": "finalDamage"
+          },
+          {
+            "sourceNodeId": "health",
+            "sourcePort": "newHealth",
+            "targetNodeId": "__output__",
+            "targetPort": "newHealth"
+          }
+        ],
+        "inputs": [
+          {
+            "name": "baseDamage",
+            "type": "int"
+          },
+          {
+            "name": "critMultiplierPercent",
+            "type": "int"
+          },
+          {
+            "name": "armor",
+            "type": "int"
+          },
+          {
+            "name": "isCrit",
+            "type": "bool"
+          },
+          {
+            "name": "currentHealth",
+            "type": "int"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "newHealth",
+            "type": "int"
+          }
+        ]
+      }
+    },
+    {
+      "sequenceIndex": 1,
+      "provenance": "model:cursor:isolation-enforced",
+      "recordedAt": "2026-06-23T14:30:02+00:00",
+      "gateAdmittedAtRecording": true,
+      "gateVerdictAtRecording": "ADMIT",
+      "gateFailureCheckAtRecording": null,
+      "spec": {
+        "compositionId": "damage-to-health-pipeline",
+        "nodes": [
+          {
+            "nodeId": "damage",
+            "brickId": "damage-resolver"
+          },
+          {
+            "nodeId": "health",
+            "brickId": "health-applier"
+          }
+        ],
+        "edges": [
+          {
+            "sourceNodeId": "__input__",
+            "sourcePort": "baseDamage",
+            "targetNodeId": "damage",
+            "targetPort": "baseDamage"
+          },
+          {
+            "sourceNodeId": "__input__",
+            "sourcePort": "critMultiplierPercent",
+            "targetNodeId": "damage",
+            "targetPort": "critMultiplierPercent"
+          },
+          {
+            "sourceNodeId": "__input__",
+            "sourcePort": "armor",
+            "targetNodeId": "damage",
+            "targetPort": "armor"
+          },
+          {
+            "sourceNodeId": "__input__",
+            "sourcePort": "isCrit",
+            "targetNodeId": "damage",
+            "targetPort": "isCrit"
+          },
+          {
+            "sourceNodeId": "__input__",
+            "sourcePort": "currentHealth",
+            "targetNodeId": "health",
+            "targetPort": "currentHealth"
+          },
+          {
+            "sourceNodeId": "damage",
+            "sourcePort": "finalDamage",
+            "targetNodeId": "health",
+            "targetPort": "finalDamage"
+          },
+          {
+            "sourceNodeId": "health",
+            "sourcePort": "newHealth",
+            "targetNodeId": "__output__",
+            "targetPort": "newHealth"
+          }
+        ],
+        "inputs": [
+          {
+            "name": "baseDamage",
+            "type": "int"
+          },
+          {
+            "name": "critMultiplierPercent",
+            "type": "int"
+          },
+          {
+            "name": "armor",
+            "type": "int"
+          },
+          {
+            "name": "isCrit",
+            "type": "bool"
+          },
+          {
+            "name": "currentHealth",
+            "type": "int"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "newHealth",
+            "type": "int"
+          }
+        ]
+      }
+    },
+    {
+      "sequenceIndex": 2,
+      "provenance": "model:cursor:isolation-enforced",
+      "recordedAt": "2026-06-23T14:30:03+00:00",
+      "gateAdmittedAtRecording": false,
+      "gateVerdictAtRecording": "REJECT",
+      "gateFailureCheckAtRecording": "seam",
+      "spec": {
+        "compositionId": "damage-to-health-pipeline",
+        "nodes": [
+          {
+            "nodeId": "damage",
+            "brickId": "health-applier"
+          },
+          {
+            "nodeId": "health",
+            "brickId": "damage-resolver"
+          }
+        ],
+        "edges": [
+          {
+            "sourceNodeId": "__input__",
+            "sourcePort": "baseDamage",
+            "targetNodeId": "damage",
+            "targetPort": "baseDamage"
+          },
+          {
+            "sourceNodeId": "__input__",
+            "sourcePort": "critMultiplierPercent",
+            "targetNodeId": "damage",
+            "targetPort": "critMultiplierPercent"
+          },
+          {
+            "sourceNodeId": "__input__",
+            "sourcePort": "armor",
+            "targetNodeId": "damage",
+            "targetPort": "armor"
+          },
+          {
+            "sourceNodeId": "__input__",
+            "sourcePort": "isCrit",
+            "targetNodeId": "damage",
+            "targetPort": "isCrit"
+          },
+          {
+            "sourceNodeId": "__input__",
+            "sourcePort": "currentHealth",
+            "targetNodeId": "health",
+            "targetPort": "currentHealth"
+          },
+          {
+            "sourceNodeId": "damage",
+            "sourcePort": "finalDamage",
+            "targetNodeId": "health",
+            "targetPort": "finalDamage"
+          },
+          {
+            "sourceNodeId": "health",
+            "sourcePort": "newHealth",
+            "targetNodeId": "__output__",
+            "targetPort": "newHealth"
+          }
+        ],
+        "inputs": [
+          {
+            "name": "baseDamage",
+            "type": "int"
+          },
+          {
+            "name": "critMultiplierPercent",
+            "type": "int"
+          },
+          {
+            "name": "armor",
+            "type": "int"
+          },
+          {
+            "name": "isCrit",
+            "type": "bool"
+          },
+          {
+            "name": "currentHealth",
+            "type": "int"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "newHealth",
+            "type": "int"
+          }
+        ]
+      }
+    },
+    {
+      "sequenceIndex": 3,
+      "provenance": "model:cursor:isolation-enforced",
+      "recordedAt": "2026-06-23T14:30:04+00:00",
+      "gateAdmittedAtRecording": true,
+      "gateVerdictAtRecording": "ADMIT",
+      "gateFailureCheckAtRecording": null,
+      "spec": {
+        "compositionId": "damage-to-health-pipeline",
+        "nodes": [
+          {
+            "nodeId": "damage",
+            "brickId": "damage-resolver"
+          },
+          {
+            "nodeId": "health",
+            "brickId": "health-applier"
+          }
+        ],
+        "edges": [
+          {
+            "sourceNodeId": "__input__",
+            "sourcePort": "baseDamage",
+            "targetNodeId": "damage",
+            "targetPort": "baseDamage"
+          },
+          {
+            "sourceNodeId": "__input__",
+            "sourcePort": "critMultiplierPercent",
+            "targetNodeId": "damage",
+            "targetPort": "critMultiplierPercent"
+          },
+          {
+            "sourceNodeId": "__input__",
+            "sourcePort": "armor",
+            "targetNodeId": "damage",
+            "targetPort": "armor"
+          },
+          {
+            "sourceNodeId": "__input__",
+            "sourcePort": "isCrit",
+            "targetNodeId": "damage",
+            "targetPort": "isCrit"
+          },
+          {
+            "sourceNodeId": "__input__",
+            "sourcePort": "currentHealth",
+            "targetNodeId": "health",
+            "targetPort": "currentHealth"
+          },
+          {
+            "sourceNodeId": "damage",
+            "sourcePort": "finalDamage",
+            "targetNodeId": "health",
+            "targetPort": "finalDamage"
+          },
+          {
+            "sourceNodeId": "health",
+            "sourcePort": "newHealth",
+            "targetNodeId": "__output__",
+            "targetPort": "newHealth"
+          }
+        ],
+        "inputs": [
+          {
+            "name": "baseDamage",
+            "type": "int"
+          },
+          {
+            "name": "critMultiplierPercent",
+            "type": "int"
+          },
+          {
+            "name": "armor",
+            "type": "int"
+          },
+          {
+            "name": "isCrit",
+            "type": "bool"
+          },
+          {
+            "name": "currentHealth",
+            "type": "int"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "newHealth",
+            "type": "int"
+          }
+        ]
+      }
+    },
+    {
+      "sequenceIndex": 4,
+      "provenance": "model:cursor:isolation-enforced",
+      "recordedAt": "2026-06-23T14:30:05+00:00",
+      "gateAdmittedAtRecording": false,
+      "gateVerdictAtRecording": "REJECT",
+      "gateFailureCheckAtRecording": "correctness",
+      "spec": {
+        "compositionId": "damage-to-health-pipeline",
+        "nodes": [
+          {
+            "nodeId": "damage",
+            "brickId": "damage-resolver"
+          }
+        ],
+        "edges": [
+          {
+            "sourceNodeId": "__input__",
+            "sourcePort": "baseDamage",
+            "targetNodeId": "damage",
+            "targetPort": "baseDamage"
+          },
+          {
+            "sourceNodeId": "__input__",
+            "sourcePort": "critMultiplierPercent",
+            "targetNodeId": "damage",
+            "targetPort": "critMultiplierPercent"
+          },
+          {
+            "sourceNodeId": "__input__",
+            "sourcePort": "armor",
+            "targetNodeId": "damage",
+            "targetPort": "armor"
+          },
+          {
+            "sourceNodeId": "__input__",
+            "sourcePort": "isCrit",
+            "targetNodeId": "damage",
+            "targetPort": "isCrit"
+          },
+          {
+            "sourceNodeId": "damage",
+            "sourcePort": "finalDamage",
+            "targetNodeId": "__output__",
+            "targetPort": "newHealth"
+          }
+        ],
+        "inputs": [
+          {
+            "name": "baseDamage",
+            "type": "int"
+          },
+          {
+            "name": "critMultiplierPercent",
+            "type": "int"
+          },
+          {
+            "name": "armor",
+            "type": "int"
+          },
+          {
+            "name": "isCrit",
+            "type": "bool"
+          },
+          {
+            "name": "currentHealth",
+            "type": "int"
+          }
+        ],
+        "outputs": [
+          {
+            "name": "newHealth",
+            "type": "int"
+          }
+        ]
+      }
+    }
+  ]
+}
