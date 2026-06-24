@@ -1,7 +1,11 @@
 using Nexo.Abstractions;
 using Nexo.BackgroundAgents.Configuration;
+using Nexo.BackgroundAgents.DataSensitivity;
 using Nexo.BackgroundAgents.Forge;
 using Nexo.BackgroundAgents.Observations;
+using Nexo.BackgroundAgents.Registry;
+using Nexo.BackgroundAgents.Security;
+using Nexo.Core.Application.Certification.Ports;
 using Nexo.Policies.Dev;
 using Nexo.Runtime;
 using Nexo.Tools.Dev;
@@ -64,7 +68,10 @@ internal static class RepoFsToolboxFactory
         string source = "self-extend",
         string? objectiveId = null,
         IChangeProposalStore? proposals = null,
-        IAggressivenessModeStore? modeStore = null)
+        IAggressivenessModeStore? modeStore = null,
+        ICertificationRecordStore? certificationStore = null,
+        IBackgroundAgentRegistry? agentRegistry = null,
+        IDataSensitivityRegistry? sensitivityRegistry = null)
     {
         var tools = new CapabilityRegistry();
         tools.Register(new RepoFsListTool());
@@ -128,6 +135,17 @@ internal static class RepoFsToolboxFactory
             // continue to write directly.
             policyList.Add(new ForgeMediatedWritesPolicy(modeStore));
         }
+
+        if (certificationStore is not null)
+        {
+            policyList.Add(new SelfProducedBrickCertificationPolicy(certificationStore));
+        }
+
+        if (agentRegistry is not null && sensitivityRegistry is not null)
+        {
+            policyList.Add(new DataExfiltrationPolicy(agentRegistry, sensitivityRegistry));
+        }
+
         var policies = new PolicyEngine(policyList.ToArray());
 
         return (tools, policies, budget);

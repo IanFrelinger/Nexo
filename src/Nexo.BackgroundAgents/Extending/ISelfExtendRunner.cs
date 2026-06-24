@@ -46,5 +46,18 @@ public interface ISelfExtendRunner
         string? modelProvider,
         string? modelName,
         CancellationToken cancellationToken = default)
-        => RunAsync(repoRoot, objective, agentName, cancellationToken);
+        => RunAsync(repoRoot, objective, agentName, modelProvider, modelName, agentId: null, cancellationToken);
+
+    /// <summary>
+    /// Run one self-extend cycle with explicit registry agent id for policy enforcement.
+    /// </summary>
+    Task<SelfExtendRunResult> RunAsync(
+        string repoRoot,
+        string? objective,
+        string? agentName,
+        string? modelProvider,
+        string? modelName,
+        string? agentId,
+        CancellationToken cancellationToken = default)
+        => RunAsync(repoRoot, objective, agentName, modelProvider, modelName, cancellationToken);
 }
