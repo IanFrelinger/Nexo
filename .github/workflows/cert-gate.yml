@@ -2,7 +2,13 @@ name: Cert gate
 
 on:
   pull_request:
+  push:
+    branches: [master]
   workflow_dispatch:
+
+concurrency:
+  group: cert-gate-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   cert-gate:
