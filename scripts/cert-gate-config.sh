@@ -18,6 +18,7 @@ readonly CERT_GATE_FILTER='FullyQualifiedName~Nexo.Tests.Infrastructure.Tests.Ce
 #   RealModelCompositionProposerDogfoodTests: 2
 #   CompositionAcceptanceRateMeasurementTests: 3
 #   CompositionAcceptanceRateProtocolTests: 1
+#   AttestedStateLogBindingTests: 10
 # Excluded from cert-gate filter: LocalFixtures.CompositionAcceptanceRateBatchFixtureGeneratorTests (local fixture regen only)
 
 cert_gate_list_tests() {
