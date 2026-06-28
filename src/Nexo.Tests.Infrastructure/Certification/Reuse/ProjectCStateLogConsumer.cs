@@ -1,5 +1,4 @@
 using Nexo.Certification.State;
-using Nexo.Infrastructure.Certification;
 using Nexo.Tests.Infrastructure.Certification.Reuse;
 
 namespace Nexo.Tests.Infrastructure.Certification.Reuse;
@@ -9,17 +8,14 @@ namespace Nexo.Tests.Infrastructure.Certification.Reuse;
 /// </summary>
 public static class ProjectCStateLogConsumer
 {
-    public static StateLogTrustResult VerifyBundledArtifacts(string artifactRoot, string? hmacKey = null)
-    {
-        var schema = AttestedStateLogWireFormat.DeserializeSchema(
-            File.ReadAllText(PhaseWitnessPaths.SchemaPath(artifactRoot)));
-        var log = AttestedStateLogWireFormat.DeserializeLog(
-            File.ReadAllText(PhaseWitnessPaths.LogPath(artifactRoot)));
-        var catalog = new FileCertifiedBehaviorCatalog(PhaseWitnessPaths.BehaviorRoot(artifactRoot));
-        var resolver = new CertifiedBehaviorCertificateResolver(catalog);
+    public static StateLogTrustResult VerifyBundledArtifacts(string artifactRoot, string? hmacKey = null) =>
+        AttestedStateLogArtifactVerifier.VerifyBundledArtifacts(artifactRoot, hmacKey);
 
-        return StateLogVerifier.Verify(log, schema, resolver, hmacKey);
-    }
+    public static StateLogTrustResult VerifyBundledArtifactsWithLiveSidecar(string artifactRoot, string? hmacKey = null) =>
+        AttestedStateLogArtifactVerifier.VerifyBundledArtifacts(
+            artifactRoot,
+            hmacKey,
+            bindLiveStateSidecar: true);
 
     public static void AssertProjectCProjectHasNoGateOrInfrastructureReferences(string projectCcsprojPath)
     {

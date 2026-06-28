@@ -9,13 +9,17 @@ namespace Nexo.Infrastructure.Certification;
 public sealed class AttestedStateLogTrustGate : IAttestedStateLogTrustGate
 {
     private readonly ICertificateResolver _resolver;
+    private readonly IBrickTransitionReplayerFactory _replayerFactory;
 
-    public AttestedStateLogTrustGate(ICertifiedBehaviorCatalog catalog)
+    public AttestedStateLogTrustGate(
+        ICertifiedBehaviorCatalog catalog,
+        IBrickTransitionReplayerFactory replayerFactory)
     {
         if (catalog is null)
             throw new ArgumentNullException(nameof(catalog));
 
         _resolver = new CertifiedBehaviorCertificateResolver(catalog);
+        _replayerFactory = replayerFactory ?? throw new ArgumentNullException(nameof(replayerFactory));
     }
 
     public StateLogTrustResult Verify(
@@ -25,4 +29,18 @@ public sealed class AttestedStateLogTrustGate : IAttestedStateLogTrustGate
         ITransitionReplayer? replayer = null,
         ILiveStateHashReader? liveStateReader = null) =>
         StateLogVerifier.Verify(log, schema, _resolver, hmacKey, replayer, liveStateReader);
+
+    public StateLogTrustResult VerifyFullTrust(
+        AttestedStateLog log,
+        StateSchema schema,
+        string? hmacKey = null,
+        string? liveStateHash = null)
+    {
+        var replayer = _replayerFactory.Create(schema);
+        ILiveStateHashReader? liveReader = liveStateHash is null
+            ? null
+            : new FixedLiveStateHashReader(liveStateHash);
+
+        return Verify(log, schema, hmacKey, replayer, liveReader);
+    }
 }

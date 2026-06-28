@@ -37,6 +37,9 @@ var log = new AttestedStateLog(new[] { t0, t1, t2 });
 Directory.CreateDirectory(behaviorRoot);
 File.WriteAllText(Path.Combine(outputRoot, "state-schema.json"), AttestedStateLogWireFormat.SerializeSchema(schema));
 File.WriteAllText(Path.Combine(outputRoot, "attested-state-log.json"), AttestedStateLogWireFormat.SerializeLog(log));
+File.WriteAllText(
+    Path.Combine(outputRoot, AttestedStateLogArtifactVerifier.LiveStateFileName),
+    AttestedStateLogWireFormat.SerializeLiveState(new LiveStateSnapshot(ready)));
 
 FileCertifiedBehaviorCatalog.WriteEntry(behaviorRoot, new CertifiedBehaviorEntry { ContentHash = alpha.ContentHash!, Record = alpha, Source = alphaSource });
 FileCertifiedBehaviorCatalog.WriteEntry(behaviorRoot, new CertifiedBehaviorEntry { ContentHash = beta.ContentHash!, Record = beta, Source = betaSource });

@@ -54,6 +54,22 @@ public static class AttestedStateLogWireFormat
         return new AttestedStateLog(transitions);
     }
 
+    public static string SerializeLiveState(LiveStateSnapshot snapshot) =>
+        JsonSerializer.Serialize(
+            new LiveStateDto { CurrentStateHash = snapshot.CurrentStateHash },
+            JsonOptions);
+
+    public static LiveStateSnapshot DeserializeLiveState(string json)
+    {
+        var dto = JsonSerializer.Deserialize<LiveStateDto>(json, JsonOptions)
+            ?? throw new JsonException("Live state JSON is invalid.");
+
+        if (string.IsNullOrWhiteSpace(dto.CurrentStateHash))
+            throw new JsonException("Live state currentStateHash is required.");
+
+        return new LiveStateSnapshot(dto.CurrentStateHash);
+    }
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -74,5 +90,10 @@ public static class AttestedStateLogWireFormat
         public string ResultingStateHash { get; set; } = string.Empty;
         public string PrevEntryHash { get; set; } = string.Empty;
         public string EntryHash { get; set; } = string.Empty;
+    }
+
+    private sealed class LiveStateDto
+    {
+        public string CurrentStateHash { get; set; } = string.Empty;
     }
 }

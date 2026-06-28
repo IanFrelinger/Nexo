@@ -10,8 +10,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Nexo.Certification.Contracts" Version="0.1.0" />
-    <PackageReference Include="Nexo.Certification.State" Version="0.1.0" />
+    <ProjectReference Include="..\..\..\src\Nexo.Certification.Contracts\Nexo.Certification.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\src\Nexo.Certification.State\Nexo.Certification.State.csproj" />
   </ItemGroup>
 
 </Project>

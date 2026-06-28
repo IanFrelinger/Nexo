@@ -44,4 +44,17 @@ public sealed class AttestedStateLogWireFormatTests
         after.Trusted.Should().Be(before.Trusted);
         after.VerifiedTransitions.Should().Be(before.VerifiedTransitions);
     }
+
+    [Fact]
+    public void LiveStateSidecar_RoundTrip_PreservesHash()
+    {
+        var artifactRoot = PhaseWitnessPaths.ArtifactRoot();
+        var originalJson = File.ReadAllText(PhaseWitnessPaths.LiveStatePath(artifactRoot));
+        var original = AttestedStateLogWireFormat.DeserializeLiveState(originalJson);
+
+        var roundTripped = AttestedStateLogWireFormat.DeserializeLiveState(
+            AttestedStateLogWireFormat.SerializeLiveState(original));
+
+        roundTripped.CurrentStateHash.Should().Be(original.CurrentStateHash);
+    }
 }

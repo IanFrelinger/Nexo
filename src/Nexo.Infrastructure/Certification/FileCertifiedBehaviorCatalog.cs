@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Nexo.Certification.Contracts;
+using Nexo.Certification.State;
 using Nexo.Core.Application.Certification.Models;
 using Nexo.Core.Application.Certification.Ports;
 
@@ -67,13 +68,10 @@ public sealed class FileCertifiedBehaviorCatalog : ICertifiedBehaviorCatalog
     }
 
     internal static string ToPathSafeContentHash(string contentHash) =>
-        contentHash.Replace('/', '_');
+        BundledBehaviorPaths.ToPathSafeContentHash(contentHash);
 
-    private IEnumerable<string> CandidateDirectories(string behaviorCertContentHash)
-    {
-        yield return Path.Combine(_directory, behaviorCertContentHash);
-        yield return Path.Combine(_directory, ToPathSafeContentHash(behaviorCertContentHash));
-    }
+    private IEnumerable<string> CandidateDirectories(string behaviorCertContentHash) =>
+        BundledBehaviorPaths.CandidateDirectories(_directory, behaviorCertContentHash);
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {

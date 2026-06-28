@@ -89,6 +89,45 @@ public sealed class CrossProjectStateLogReuseTests
         }
     }
 
+    [Fact]
+    public void HonestAttestedStateLog_ProjectC_TrustsTier3WithLiveSidecar()
+    {
+        var result = ProjectCStateLogConsumer.VerifyBundledArtifactsWithLiveSidecar(
+            PhaseWitnessPaths.ArtifactRoot(),
+            HmacKey);
+
+        result.Trusted.Should().BeTrue($"expected TRUSTED, got {result.FailureCode}: {result.Reason}");
+        result.VerifiedTransitions.Should().Be(3);
+    }
+
+    [Fact]
+    public void TamperedLiveStateSidecar_ProjectC_RefusesLiveMismatch()
+    {
+        var artifactRoot = PhaseWitnessPaths.ArtifactRoot();
+        var tempDir = Path.Combine(Path.GetTempPath(), "nexo-live-state-tamper-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+
+        try
+        {
+            CopyDirectory(artifactRoot, tempDir);
+            var schema = AttestedStateLogWireFormat.DeserializeSchema(
+                File.ReadAllText(PhaseWitnessPaths.SchemaPath(tempDir)));
+            var wrongHash = schema.ComputeBoundStateHash("phase:armed");
+            File.WriteAllText(
+                PhaseWitnessPaths.LiveStatePath(tempDir),
+                AttestedStateLogWireFormat.SerializeLiveState(new LiveStateSnapshot(wrongHash)));
+
+            var result = ProjectCStateLogConsumer.VerifyBundledArtifactsWithLiveSidecar(tempDir, HmacKey);
+
+            result.Trusted.Should().BeFalse();
+            result.FailureCode.Should().Be("live-state-mismatch");
+        }
+        finally
+        {
+            Directory.Delete(tempDir, recursive: true);
+        }
+    }
+
     private static void CopyDirectory(string source, string destination)
     {
         foreach (var directory in Directory.GetDirectories(source, "*", SearchOption.AllDirectories))

@@ -1,5 +1,7 @@
 namespace Nexo.Tests.Infrastructure.Certification.Reuse;
 
+using Nexo.Certification.State;
+
 /// <summary>
 /// Shared paths for bundled phase-witness attested state log artifacts (Project C).
 /// </summary>
@@ -25,4 +27,7 @@ public static class PhaseWitnessPaths
     public static string ReadPhaseAdvanceBrickSource() => File.ReadAllText(PhaseAdvanceBrickSourcePath());
 
     public static string ReadPhaseReleaseBrickSource() => File.ReadAllText(PhaseReleaseBrickSourcePath());
+
+    public static string LiveStatePath(string artifactRoot) =>
+        Path.Combine(artifactRoot, AttestedStateLogArtifactVerifier.LiveStateFileName);
 }

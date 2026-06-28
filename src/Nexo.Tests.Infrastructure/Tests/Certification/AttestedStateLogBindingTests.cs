@@ -199,7 +199,7 @@ public sealed class AttestedStateLogBindingTests
             Witness.CreateSchema(),
             Witness.CreateResolver(),
             HmacKey,
-            liveStateReader: new InMemoryLiveStateHashReader(Witness.PhaseArmedHash));
+            liveStateReader: new FixedLiveStateHashReader(Witness.PhaseArmedHash));
 
         result.Trusted.Should().BeFalse();
         result.FailureCode.Should().Be("live-state-mismatch");
@@ -255,7 +255,23 @@ public sealed class AttestedStateLogBindingTests
             Witness.CreateSchema(),
             Witness.CreateResolver(),
             HmacKey,
-            liveStateReader: new InMemoryLiveStateHashReader(Witness.PhaseReadyHash));
+            liveStateReader: new FixedLiveStateHashReader(Witness.PhaseReadyHash));
+
+        result.Trusted.Should().BeTrue($"expected TRUSTED, got {result.FailureCode}: {result.Reason}");
+        result.VerifiedTransitions.Should().Be(log.Count);
+    }
+
+    [Fact]
+    public void A5_FullyValidLogWithFullTrust_IsTrusted()
+    {
+        var log = Witness.BuildValidLog();
+        var result = StateLogVerifier.Verify(
+            log,
+            Witness.CreateSchema(),
+            Witness.CreateResolver(),
+            HmacKey,
+            Witness.CreateBrickReplayer(),
+            new FixedLiveStateHashReader(Witness.PhaseReadyHash));
 
         result.Trusted.Should().BeTrue($"expected TRUSTED, got {result.FailureCode}: {result.Reason}");
         result.VerifiedTransitions.Should().Be(log.Count);

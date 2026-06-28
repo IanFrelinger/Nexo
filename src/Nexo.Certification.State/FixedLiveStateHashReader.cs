@@ -1,15 +1,13 @@
-using Nexo.Certification.State;
-
-namespace Nexo.Infrastructure.Certification;
+namespace Nexo.Certification.State;
 
 /// <summary>
-/// Fixed live state hash for tests and deterministic hosts.
+/// Fixed live state hash for tests, bundled sidecars, and deterministic hosts.
 /// </summary>
-public sealed class InMemoryLiveStateHashReader : ILiveStateHashReader
+public sealed class FixedLiveStateHashReader : ILiveStateHashReader
 {
     private readonly string? _stateHash;
 
-    public InMemoryLiveStateHashReader(string? stateHash) => _stateHash = stateHash;
+    public FixedLiveStateHashReader(string? stateHash) => _stateHash = stateHash;
 
     public LiveStateHashReadResult ReadCurrentStateHash() =>
         string.IsNullOrWhiteSpace(_stateHash)
