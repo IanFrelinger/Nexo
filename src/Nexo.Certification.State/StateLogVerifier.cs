@@ -2,7 +2,8 @@ namespace Nexo.Certification.State;
 
 /// <summary>
 /// Verifies attested state logs: certified behavior provenance, schema validity, and hash-chain integrity.
-/// Tier-1 is structural; optional <see cref="ITransitionReplayer"/> enables Tier-2 replay checks.
+/// Tier-1 is structural; optional <see cref="ITransitionReplayer"/> enables Tier-2 replay checks;
+/// optional <see cref="ILiveStateHashReader"/> enables Tier-3 live head binding.
 /// </summary>
 public static class StateLogVerifier
 {
@@ -13,7 +14,8 @@ public static class StateLogVerifier
         StateSchema schema,
         ICertificateResolver resolver,
         string? hmacKey = null,
-        ITransitionReplayer? replayer = null)
+        ITransitionReplayer? replayer = null,
+        ILiveStateHashReader? liveStateReader = null)
     {
         if (log is null)
             return Refused("log-missing", "Attested state log is required.", 0);
@@ -136,6 +138,56 @@ public static class StateLogVerifier
             verified++;
             priorResultingStateHash = transition.ResultingStateHash;
             priorEntryHash = transition.EntryHash;
+        }
+
+        if (liveStateReader is not null)
+        {
+            var headBinding = VerifyLiveHeadBinding(log, schema, liveStateReader, verified);
+            if (!headBinding.Trusted)
+                return headBinding;
+        }
+
+        return new StateLogTrustResult(true, null, null, verified);
+    }
+
+    private static StateLogTrustResult VerifyLiveHeadBinding(
+        AttestedStateLog log,
+        StateSchema schema,
+        ILiveStateHashReader liveStateReader,
+        int verified)
+    {
+        var head = log.CurrentStateHash;
+        if (string.IsNullOrWhiteSpace(head))
+        {
+            return Refused(
+                "live-state-head-missing",
+                "Attested state log has no current state hash to bind against live storage.",
+                verified);
+        }
+
+        var live = liveStateReader.ReadCurrentStateHash();
+        if (!live.Found || string.IsNullOrWhiteSpace(live.StateHash))
+        {
+            return Refused(
+                "live-state-unavailable",
+                "Live state storage did not yield a current state hash.",
+                verified);
+        }
+
+        if (!schema.IsValidStateHash(live.StateHash))
+        {
+            return Refused(
+                "live-state-schema-violation",
+                "Live state hash violates the schema.",
+                verified);
+        }
+
+        if (!string.Equals(head, live.StateHash, StringComparison.Ordinal))
+        {
+            return Refused(
+                "live-state-mismatch",
+                "Attested log head does not match the live state store hash.",
+                verified);
         }
 
         return new StateLogTrustResult(true, null, null, verified);

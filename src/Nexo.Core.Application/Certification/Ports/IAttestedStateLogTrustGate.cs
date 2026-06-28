@@ -11,5 +11,6 @@ public interface IAttestedStateLogTrustGate
         AttestedStateLog log,
         StateSchema schema,
         string? hmacKey = null,
-        ITransitionReplayer? replayer = null);
+        ITransitionReplayer? replayer = null,
+        ILiveStateHashReader? liveStateReader = null);
 }

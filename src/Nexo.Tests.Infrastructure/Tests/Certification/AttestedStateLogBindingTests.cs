@@ -188,6 +188,25 @@ public sealed class AttestedStateLogBindingTests
     }
 
     [Fact]
+    public void R10_LiveStateHeadMismatch_Refuses()
+    {
+        var log = Witness.BuildValidLog();
+        var tier1 = VerifyTier1(log);
+        tier1.Trusted.Should().BeTrue("internally valid log should pass Tier-1 without live binding");
+
+        var result = StateLogVerifier.Verify(
+            log,
+            Witness.CreateSchema(),
+            Witness.CreateResolver(),
+            HmacKey,
+            liveStateReader: new InMemoryLiveStateHashReader(Witness.PhaseArmedHash));
+
+        result.Trusted.Should().BeFalse();
+        result.FailureCode.Should().Be("live-state-mismatch");
+        result.VerifiedTransitions.Should().Be(log.Count);
+    }
+
+    [Fact]
     public void A1_FullyValidLog_IsTrusted()
     {
         var log = Witness.BuildValidLog();
@@ -222,6 +241,21 @@ public sealed class AttestedStateLogBindingTests
             Witness.CreateResolver(),
             HmacKey,
             Witness.CreateBrickReplayer());
+
+        result.Trusted.Should().BeTrue($"expected TRUSTED, got {result.FailureCode}: {result.Reason}");
+        result.VerifiedTransitions.Should().Be(log.Count);
+    }
+
+    [Fact]
+    public void A4_FullyValidLogWithLiveHeadBinding_IsTrusted()
+    {
+        var log = Witness.BuildValidLog();
+        var result = StateLogVerifier.Verify(
+            log,
+            Witness.CreateSchema(),
+            Witness.CreateResolver(),
+            HmacKey,
+            liveStateReader: new InMemoryLiveStateHashReader(Witness.PhaseReadyHash));
 
         result.Trusted.Should().BeTrue($"expected TRUSTED, got {result.FailureCode}: {result.Reason}");
         result.VerifiedTransitions.Should().Be(log.Count);

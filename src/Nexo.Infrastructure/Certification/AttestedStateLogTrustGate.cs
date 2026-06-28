@@ -22,6 +22,7 @@ public sealed class AttestedStateLogTrustGate : IAttestedStateLogTrustGate
         AttestedStateLog log,
         StateSchema schema,
         string? hmacKey = null,
-        ITransitionReplayer? replayer = null) =>
-        StateLogVerifier.Verify(log, schema, _resolver, hmacKey, replayer);
+        ITransitionReplayer? replayer = null,
+        ILiveStateHashReader? liveStateReader = null) =>
+        StateLogVerifier.Verify(log, schema, _resolver, hmacKey, replayer, liveStateReader);
 }
