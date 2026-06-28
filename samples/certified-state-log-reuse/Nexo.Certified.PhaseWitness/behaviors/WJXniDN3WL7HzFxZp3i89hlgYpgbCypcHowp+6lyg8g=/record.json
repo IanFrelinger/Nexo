@@ -1,0 +1,19 @@
+{
+  "status": "PASS",
+  "stage": "witness",
+  "admitted": true,
+  "signed": true,
+  "timestamp": "2026-01-01T00:00:00+00:00",
+  "brickId": "behavior-beta",
+  "contentHash": "WJXniDN3WL7HzFxZp3i89hlgYpgbCypcHowp\u002B6lyg8g=",
+  "escapeRate": 0,
+  "totalMutants": 1,
+  "survivingMutants": 0,
+  "killedMutants": [
+    "m1"
+  ],
+  "survivingMutantIds": [],
+  "signature": "Pp8r57wxCk9tJ2TUvlATEnELDYCkwnSlj1/NjzuHyHU=",
+  "reason": null,
+  "gate": null
+}

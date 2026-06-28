@@ -28,4 +28,13 @@ public static class CertificationServiceCollectionExtensions
             sp.GetRequiredService<CertifiedBrickRegistry>());
         return services;
     }
+
+    public static IServiceCollection AddAttestedStateLogTrust(
+        this IServiceCollection services,
+        ICertifiedBehaviorCatalog catalog)
+    {
+        services.AddSingleton(catalog);
+        services.AddSingleton<IAttestedStateLogTrustGate, AttestedStateLogTrustGate>();
+        return services;
+    }
 }

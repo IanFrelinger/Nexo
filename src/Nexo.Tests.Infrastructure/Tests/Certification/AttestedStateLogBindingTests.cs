@@ -172,6 +172,21 @@ public sealed class AttestedStateLogBindingTests
     }
 
     [Fact]
+    public void A2_FullyValidLogWithReplay_IsTrusted()
+    {
+        var log = Witness.BuildValidLog();
+        var result = StateLogVerifier.Verify(
+            log,
+            Witness.CreateSchema(),
+            Witness.CreateResolver(),
+            HmacKey,
+            Witness.CreateReplayer());
+
+        result.Trusted.Should().BeTrue($"expected TRUSTED, got {result.FailureCode}: {result.Reason}");
+        result.VerifiedTransitions.Should().Be(log.Count);
+    }
+
+    [Fact]
     public void G1_ZeroMutantGuard_VerifiedTransitionCountMatchesLogLength()
     {
         var log = Witness.BuildValidLog();

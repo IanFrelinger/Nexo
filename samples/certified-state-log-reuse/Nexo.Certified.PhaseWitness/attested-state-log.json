@@ -1,0 +1,28 @@
+{
+  "transitions": [
+    {
+      "priorStateHash": "2KOfL3zrreBAe0/Mr85eJvLI1GPF3yomE4QhRWj9yLQ=",
+      "action": "phase:advance",
+      "behaviorCertContentHash": "pzH6yOaelThGaRnxr4q/rZobTsC6G1UJfMZsjs4IV88=",
+      "resultingStateHash": "ET4RHNdGvXr7mRXuhjPmcAgdxwdJq1znr5nC7M2a8lM=",
+      "prevEntryHash": "",
+      "entryHash": "FmKPyo1eIEwtnMJuTaiDGqBR65DyG4HZ9ooGaGcK37I="
+    },
+    {
+      "priorStateHash": "ET4RHNdGvXr7mRXuhjPmcAgdxwdJq1znr5nC7M2a8lM=",
+      "action": "phase:advance",
+      "behaviorCertContentHash": "pzH6yOaelThGaRnxr4q/rZobTsC6G1UJfMZsjs4IV88=",
+      "resultingStateHash": "paSbhBxKgMzuAqZJ6Wn6Jdo2fEn19fcgU7zCiUkCIqc=",
+      "prevEntryHash": "FmKPyo1eIEwtnMJuTaiDGqBR65DyG4HZ9ooGaGcK37I=",
+      "entryHash": "kkuvy3ApsaZidE16X2jLKLkwvry2BFkDp/Ey5aDLON0="
+    },
+    {
+      "priorStateHash": "paSbhBxKgMzuAqZJ6Wn6Jdo2fEn19fcgU7zCiUkCIqc=",
+      "action": "phase:release",
+      "behaviorCertContentHash": "WJXniDN3WL7HzFxZp3i89hlgYpgbCypcHowp\u002B6lyg8g=",
+      "resultingStateHash": "7hXz0Whljdm28W8jG0Ua3Qfg59DrJXYDuyVDVis8nN0=",
+      "prevEntryHash": "kkuvy3ApsaZidE16X2jLKLkwvry2BFkDp/Ey5aDLON0=",
+      "entryHash": "d9xYY1wX71JPoIcN5CS3uZO\u002BjExQ8NoBzkQ59bbuL7o="
+    }
+  ]
+}

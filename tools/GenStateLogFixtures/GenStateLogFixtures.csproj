@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/Nexo.Certification.State/Nexo.Certification.State.csproj" />
+    <ProjectReference Include="../../src/Nexo.Certification.Contracts/Nexo.Certification.Contracts.csproj" />
+    <ProjectReference Include="../../src/Nexo.Infrastructure/Nexo.Infrastructure.csproj" />
+    <ProjectReference Include="../../src/Nexo.Core.Application/Nexo.Core.Application.csproj" />
+  </ItemGroup>
+</Project>

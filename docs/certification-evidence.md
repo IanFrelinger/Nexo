@@ -142,6 +142,25 @@ Pack/export: `scripts/pack-certified-brick-reuse.sh` → local feed + `certifica
 
 **v0 trust model:** same-owner cross-project reuse via shared dev HMAC key (`NEXO_CERT_DEV_HMAC_KEY`). Cross-organization trust requires PKI (out of scope).
 
+## State log binding (foundation + portable substrate)
+
+Attested state log binding: certify transition **rules/schema** and bind mutable state via hash-chained provenance (`Nexo.Certification.State`). Tier-1 structural verification via `StateLogVerifier`; Tier-2 replay via optional `ITransitionReplayer` seam.
+
+| Proof | Result |
+|-------|--------|
+| `AttestedStateLogBindingTests` R1–R8 | **REFUSE** — distinct codes: `behavior-cert-unresolved`, `behavior-cert-untrusted`, `schema-violation`, `chain-prev-entry-break`, `chain-gap`, `chain-reorder`, `injected-behavior-cert-unresolved`, `replay-mismatch` |
+| `A1_FullyValidLog_IsTrusted` | **TRUSTED** — `VerifiedTransitions == 3` |
+| `A2_FullyValidLogWithReplay_IsTrusted` | **TRUSTED** — Tier-2 admission with fake replayer |
+| `G1_ZeroMutantGuard_VerifiedTransitionCountMatchesLogLength` | **PASS** — count > 0 and equals N |
+| `CrossProjectStateLogReuseTests` | **PASS** — Project C bundled JSON + file catalog, no Infrastructure in consumer csproj |
+| `AttestedStateLogWireFormatTests` | **PASS** — bundled sample deserializes and trusts Tier-1 |
+| `CertifiedBehaviorCatalogTests` | **PASS** — file catalog resolves trusted behaviors |
+| `AttestedStateLogTrustGateTests` | **PASS** — DI trust gate trusts bundled sample |
+
+Project C (`samples/certified-state-log-reuse/ProjectC`) references only `Nexo.Certification.State` + `Nexo.Certification.Contracts`. Bundled artifacts under `Nexo.Certified.PhaseWitness/` (`state-schema.json`, `attested-state-log.json`, behavior sidecars). Pack: `scripts/pack-certified-state-log-reuse.sh`.
+
+**Tier split:** Tier-1 catches cert provenance, schema format, hash-chain integrity (R1–R7). Tier-2 replay required for swapped-valid-cert / out-of-band state tamper (R8, A2).
+
 ## Agent-composer (proposer seam → real model → acceptance rate)
 
 Cumulative evidence from P3-S1 (controlled proposer), P3-S2 (real-model record/replay), and P3-S3 (acceptance-rate measurement). cert-gate: **41 tests** @ [run 28067778575](https://github.com/IanFrelinger/Nexo/actions/runs/28067778575) (`conclusion: success` @ `7f9cbdc3`).
