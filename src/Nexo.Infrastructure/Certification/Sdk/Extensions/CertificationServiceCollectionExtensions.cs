@@ -34,6 +34,8 @@ public static class CertificationServiceCollectionExtensions
         ICertifiedBehaviorCatalog catalog)
     {
         services.AddSingleton(catalog);
+        services.AddSingleton<CertifiedBrickInstantiator>();
+        services.AddSingleton<IBrickTransitionReplayerFactory, BrickTransitionReplayerFactory>();
         services.AddSingleton<IAttestedStateLogTrustGate, AttestedStateLogTrustGate>();
         return services;
     }

@@ -1,6 +1,8 @@
 using FluentAssertions;
 using Nexo.Certification.Contracts;
 using Nexo.Certification.State;
+using Nexo.Infrastructure.Certification;
+using Nexo.Tests.Infrastructure.Certification.Reuse;
 using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Certification;
@@ -18,8 +20,8 @@ public sealed class AttestedStateLogBindingTests
     private const string WitnessSchemaCanonical =
         """{"version":1,"stateBinding":{"version":"witness-v1","hashLength":44}}""";
 
-    private const string BehaviorAlphaSource = "certified-behavior-alpha-v1";
-    private const string BehaviorBetaSource = "certified-behavior-beta-v1";
+    private static string AlphaBrickSource => PhaseWitnessPaths.ReadPhaseAdvanceBrickSource();
+    private static string BetaBrickSource => PhaseWitnessPaths.ReadPhaseReleaseBrickSource();
 
     private static readonly WitnessFixture Witness = WitnessFixture.Create();
     private static readonly CertifiedTransitionBuilder TransitionBuilder = new();
@@ -162,6 +164,30 @@ public sealed class AttestedStateLogBindingTests
     }
 
     [Fact]
+    public void R9_OutOfBandStateTamperReplayMismatch_Refuses()
+    {
+        var log = Witness.BuildValidLog();
+        var tampered = ReplaceTransition(log, 2, transition => transition with
+        {
+            ResultingStateHash = Witness.PhaseArmedHash
+        });
+        tampered = RehashEntireLog(tampered);
+
+        var tier1 = VerifyTier1(tampered);
+        tier1.Trusted.Should().BeTrue("structurally valid tampered hash should pass Tier-1");
+
+        var tier2 = StateLogVerifier.Verify(
+            tampered,
+            Witness.CreateSchema(),
+            Witness.CreateResolver(),
+            HmacKey,
+            Witness.CreateBrickReplayer());
+
+        tier2.Trusted.Should().BeFalse();
+        tier2.FailureCode.Should().Be("replay-mismatch");
+    }
+
+    [Fact]
     public void A1_FullyValidLog_IsTrusted()
     {
         var log = Witness.BuildValidLog();
@@ -181,6 +207,21 @@ public sealed class AttestedStateLogBindingTests
             Witness.CreateResolver(),
             HmacKey,
             Witness.CreateReplayer());
+
+        result.Trusted.Should().BeTrue($"expected TRUSTED, got {result.FailureCode}: {result.Reason}");
+        result.VerifiedTransitions.Should().Be(log.Count);
+    }
+
+    [Fact]
+    public void A3_FullyValidLogWithBrickReplay_IsTrusted()
+    {
+        var log = Witness.BuildValidLog();
+        var result = StateLogVerifier.Verify(
+            log,
+            Witness.CreateSchema(),
+            Witness.CreateResolver(),
+            HmacKey,
+            Witness.CreateBrickReplayer());
 
         result.Trusted.Should().BeTrue($"expected TRUSTED, got {result.FailureCode}: {result.Reason}");
         result.VerifiedTransitions.Should().Be(log.Count);
@@ -286,8 +327,8 @@ public sealed class AttestedStateLogBindingTests
             var phaseArmed = schema.ComputeBoundStateHash("phase:armed");
             var phaseReady = schema.ComputeBoundStateHash("phase:ready");
 
-            var alphaRecord = CreateTrustedRecord("behavior-alpha", BehaviorAlphaSource, HmacKey);
-            var betaRecord = CreateTrustedRecord("behavior-beta", BehaviorBetaSource, HmacKey);
+            var alphaRecord = CreateTrustedRecord("behavior-alpha", AlphaBrickSource, HmacKey);
+            var betaRecord = CreateTrustedRecord("behavior-beta", BetaBrickSource, HmacKey);
             var untrustedRecord = alphaRecord with { Admitted = false, Status = "FAIL", Signed = false };
 
             return new WitnessFixture(
@@ -334,11 +375,13 @@ public sealed class AttestedStateLogBindingTests
         public ICertificateResolver CreateResolver(bool trustAlpha = true) =>
             new MapCertificateResolver(new Dictionary<string, (CertificationRecordData, string)>
             {
-                [AlphaCertHash] = (trustAlpha ? _alphaRecord : _untrustedRecord, BehaviorAlphaSource),
-                [BetaCertHash] = (_betaRecord, BehaviorBetaSource)
+                [AlphaCertHash] = (trustAlpha ? _alphaRecord : _untrustedRecord, AlphaBrickSource),
+                [BetaCertHash] = (_betaRecord, BetaBrickSource)
             });
 
         public ITransitionReplayer CreateReplayer() => new PhaseReplayer(_schema);
+
+        public ITransitionReplayer CreateBrickReplayer() => new BrickTransitionReplayer(_schema);
 
         public static string ComputeEntryHash(
             string priorStateHash,
@@ -462,11 +505,11 @@ public sealed class AttestedStateLogBindingTests
                     "Prior state hash is not a known witness phase value.");
             }
 
-            string? nextPhase = (phase, brickSource, action) switch
+            string? nextPhase = (phase, behaviorCert.BrickId, action) switch
             {
-                ("genesis", BehaviorAlphaSource, "phase:advance") => "phase:idle",
-                ("phase:idle", BehaviorAlphaSource, "phase:advance") => "phase:armed",
-                ("phase:armed", BehaviorBetaSource, "phase:release") => "phase:ready",
+                ("genesis", "behavior-alpha", "phase:advance") => "phase:idle",
+                ("phase:idle", "behavior-alpha", "phase:advance") => "phase:armed",
+                ("phase:armed", "behavior-beta", "phase:release") => "phase:ready",
                 _ => null
             };
 

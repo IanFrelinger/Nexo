@@ -26,11 +26,17 @@ public sealed class StateSchema
         CanonicalForm = canonicalForm;
         SchemaHash = Contracts.BrickContentHasher.ComputeSha256(canonicalForm);
         _rules = ParseRules(canonicalForm);
+        StateBindingVersion = _rules.BindingVersion;
     }
 
     public string CanonicalForm { get; }
 
     public string SchemaHash { get; }
+
+    /// <summary>
+    /// Version tag embedded in schema-bound state hashes (from canonical JSON <c>stateBinding.version</c>).
+    /// </summary>
+    public string StateBindingVersion { get; }
 
     /// <summary>
     /// Tier-1 structural schema check on a state hash (format + length).

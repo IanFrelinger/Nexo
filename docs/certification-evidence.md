@@ -148,18 +148,19 @@ Attested state log binding: certify transition **rules/schema** and bind mutable
 
 | Proof | Result |
 |-------|--------|
-| `AttestedStateLogBindingTests` R1–R8 | **REFUSE** — distinct codes: `behavior-cert-unresolved`, `behavior-cert-untrusted`, `schema-violation`, `chain-prev-entry-break`, `chain-gap`, `chain-reorder`, `injected-behavior-cert-unresolved`, `replay-mismatch` |
+| `AttestedStateLogBindingTests` R1–R9 | **REFUSE** — distinct codes: `behavior-cert-unresolved`, `behavior-cert-untrusted`, `schema-violation`, `chain-prev-entry-break`, `chain-gap`, `chain-reorder`, `injected-behavior-cert-unresolved`, `replay-mismatch` |
 | `A1_FullyValidLog_IsTrusted` | **TRUSTED** — `VerifiedTransitions == 3` |
 | `A2_FullyValidLogWithReplay_IsTrusted` | **TRUSTED** — Tier-2 admission with fake replayer |
+| `A3_FullyValidLogWithBrickReplay_IsTrusted` | **TRUSTED** — Tier-2 admission via `BrickTransitionReplayer` (Roslyn brick execution) |
 | `G1_ZeroMutantGuard_VerifiedTransitionCountMatchesLogLength` | **PASS** — count > 0 and equals N |
 | `CrossProjectStateLogReuseTests` | **PASS** — Project C bundled JSON + file catalog, no Infrastructure in consumer csproj |
 | `AttestedStateLogWireFormatTests` | **PASS** — bundled sample deserializes and trusts Tier-1 |
 | `CertifiedBehaviorCatalogTests` | **PASS** — file catalog resolves trusted behaviors |
-| `AttestedStateLogTrustGateTests` | **PASS** — DI trust gate trusts bundled sample |
+| `AttestedStateLogTrustGateTests` | **PASS** — DI trust gate trusts bundled sample (Tier-1 and Tier-2 brick replay) |
 
-Project C (`samples/certified-state-log-reuse/ProjectC`) references only `Nexo.Certification.State` + `Nexo.Certification.Contracts`. Bundled artifacts under `Nexo.Certified.PhaseWitness/` (`state-schema.json`, `attested-state-log.json`, behavior sidecars). Pack: `scripts/pack-certified-state-log-reuse.sh`.
+Project C (`samples/certified-state-log-reuse/ProjectC`) references only `Nexo.Certification.State` + `Nexo.Certification.Contracts`. Bundled artifacts under `Nexo.Certified.PhaseWitness/` (`state-schema.json`, `attested-state-log.json`, compilable brick sources under `bricks/`, behavior sidecars). Pack: `scripts/pack-certified-state-log-reuse.sh`.
 
-**Tier split:** Tier-1 catches cert provenance, schema format, hash-chain integrity (R1–R7). Tier-2 replay required for swapped-valid-cert / out-of-band state tamper (R8, A2).
+**Tier split:** Tier-1 catches cert provenance, schema format, hash-chain integrity (R1–R7). Tier-2 replay required for swapped-valid-cert (R8) and out-of-band state tamper with valid schema hashes (R9). Production replay: `BrickTransitionReplayer` + `IBrickTransitionReplayerFactory` in `Nexo.Infrastructure`.
 
 ## Agent-composer (proposer seam → real model → acceptance rate)
 

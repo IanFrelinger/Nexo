@@ -15,4 +15,14 @@ public static class PhaseWitnessPaths
     public static string LogPath(string artifactRoot) => Path.Combine(artifactRoot, "attested-state-log.json");
 
     public static string BehaviorRoot(string artifactRoot) => Path.Combine(artifactRoot, "behaviors");
+
+    public static string BricksRoot() => Path.Combine(ArtifactRoot(), "bricks");
+
+    public static string PhaseAdvanceBrickSourcePath() => Path.Combine(BricksRoot(), "PhaseAdvanceBrick.cs");
+
+    public static string PhaseReleaseBrickSourcePath() => Path.Combine(BricksRoot(), "PhaseReleaseBrick.cs");
+
+    public static string ReadPhaseAdvanceBrickSource() => File.ReadAllText(PhaseAdvanceBrickSourcePath());
+
+    public static string ReadPhaseReleaseBrickSource() => File.ReadAllText(PhaseReleaseBrickSourcePath());
 }

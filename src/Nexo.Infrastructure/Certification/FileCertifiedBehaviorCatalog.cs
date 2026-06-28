@@ -26,40 +26,53 @@ public sealed class FileCertifiedBehaviorCatalog : ICertifiedBehaviorCatalog
         if (string.IsNullOrWhiteSpace(behaviorCertContentHash))
             return CertifiedBehaviorCatalogLookup.Miss();
 
-        var behaviorDir = Path.Combine(_directory, behaviorCertContentHash);
-        var recordPath = Path.Combine(behaviorDir, "record.json");
-        var sourcePath = Path.Combine(behaviorDir, "source.txt");
-
-        if (!File.Exists(recordPath) || !File.Exists(sourcePath))
-            return CertifiedBehaviorCatalogLookup.Miss();
-
-        var record = JsonSerializer.Deserialize<CertificationRecordData>(
-            File.ReadAllText(recordPath),
-            JsonOptions);
-
-        if (record is null || string.IsNullOrWhiteSpace(record.ContentHash))
-            return CertifiedBehaviorCatalogLookup.Miss();
-
-        if (!string.Equals(record.ContentHash, behaviorCertContentHash, StringComparison.Ordinal))
-            return CertifiedBehaviorCatalogLookup.Miss();
-
-        var source = File.ReadAllText(sourcePath);
-        return CertifiedBehaviorCatalogLookup.Hit(new CertifiedBehaviorEntry
+        foreach (var behaviorDir in CandidateDirectories(behaviorCertContentHash))
         {
-            ContentHash = behaviorCertContentHash,
-            Record = record,
-            Source = source
-        });
+            var recordPath = Path.Combine(behaviorDir, "record.json");
+            var sourcePath = Path.Combine(behaviorDir, "source.txt");
+
+            if (!File.Exists(recordPath) || !File.Exists(sourcePath))
+                continue;
+
+            var record = JsonSerializer.Deserialize<CertificationRecordData>(
+                File.ReadAllText(recordPath),
+                JsonOptions);
+
+            if (record is null || string.IsNullOrWhiteSpace(record.ContentHash))
+                continue;
+
+            if (!string.Equals(record.ContentHash, behaviorCertContentHash, StringComparison.Ordinal))
+                continue;
+
+            var source = File.ReadAllText(sourcePath);
+            return CertifiedBehaviorCatalogLookup.Hit(new CertifiedBehaviorEntry
+            {
+                ContentHash = behaviorCertContentHash,
+                Record = record,
+                Source = source
+            });
+        }
+
+        return CertifiedBehaviorCatalogLookup.Miss();
     }
 
     public static void WriteEntry(string directory, CertifiedBehaviorEntry entry)
     {
-        var behaviorDir = Path.Combine(directory, entry.ContentHash);
+        var behaviorDir = Path.Combine(directory, ToPathSafeContentHash(entry.ContentHash));
         Directory.CreateDirectory(behaviorDir);
         File.WriteAllText(
             Path.Combine(behaviorDir, "record.json"),
             JsonSerializer.Serialize(entry.Record, JsonOptions));
         File.WriteAllText(Path.Combine(behaviorDir, "source.txt"), entry.Source);
+    }
+
+    internal static string ToPathSafeContentHash(string contentHash) =>
+        contentHash.Replace('/', '_');
+
+    private IEnumerable<string> CandidateDirectories(string behaviorCertContentHash)
+    {
+        yield return Path.Combine(_directory, behaviorCertContentHash);
+        yield return Path.Combine(_directory, ToPathSafeContentHash(behaviorCertContentHash));
     }
 
     private static readonly JsonSerializerOptions JsonOptions = new()

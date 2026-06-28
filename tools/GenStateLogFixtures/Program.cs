@@ -5,17 +5,24 @@ using Nexo.Infrastructure.Certification;
 
 const string HmacKey = "attested-state-log-test-hmac";
 const string SchemaCanonical = """{"version":1,"stateBinding":{"version":"witness-v1","hashLength":44}}""";
-const string AlphaSource = "certified-behavior-alpha-v1";
-const string BetaSource = "certified-behavior-beta-v1";
 
-var outputRoot = args[0];
+var outputRoot = args.Length > 0
+    ? args[0]
+    : Path.Combine(
+        Directory.GetCurrentDirectory(),
+        "samples", "certified-state-log-reuse", "Nexo.Certified.PhaseWitness");
+
+var bricksRoot = Path.Combine(outputRoot, "bricks");
 var behaviorRoot = Path.Combine(outputRoot, "behaviors");
+
+var alphaSource = File.ReadAllText(Path.Combine(bricksRoot, "PhaseAdvanceBrick.cs"));
+var betaSource = File.ReadAllText(Path.Combine(bricksRoot, "PhaseReleaseBrick.cs"));
 
 var schema = new StateSchema(SchemaCanonical);
 var builder = new CertifiedTransitionBuilder();
 
-var alpha = CreateRecord("behavior-alpha", AlphaSource);
-var beta = CreateRecord("behavior-beta", BetaSource);
+var alpha = CreateRecord("behavior-alpha", alphaSource);
+var beta = CreateRecord("behavior-beta", betaSource);
 
 var genesis = schema.ComputeBoundStateHash("genesis");
 var idle = schema.ComputeBoundStateHash("phase:idle");
@@ -31,10 +38,12 @@ Directory.CreateDirectory(behaviorRoot);
 File.WriteAllText(Path.Combine(outputRoot, "state-schema.json"), AttestedStateLogWireFormat.SerializeSchema(schema));
 File.WriteAllText(Path.Combine(outputRoot, "attested-state-log.json"), AttestedStateLogWireFormat.SerializeLog(log));
 
-FileCertifiedBehaviorCatalog.WriteEntry(behaviorRoot, new CertifiedBehaviorEntry { ContentHash = alpha.ContentHash!, Record = alpha, Source = AlphaSource });
-FileCertifiedBehaviorCatalog.WriteEntry(behaviorRoot, new CertifiedBehaviorEntry { ContentHash = beta.ContentHash!, Record = beta, Source = BetaSource });
+FileCertifiedBehaviorCatalog.WriteEntry(behaviorRoot, new CertifiedBehaviorEntry { ContentHash = alpha.ContentHash!, Record = alpha, Source = alphaSource });
+FileCertifiedBehaviorCatalog.WriteEntry(behaviorRoot, new CertifiedBehaviorEntry { ContentHash = beta.ContentHash!, Record = beta, Source = betaSource });
 
 Console.WriteLine($"Wrote fixtures to {outputRoot}");
+Console.WriteLine($"  alpha hash: {alpha.ContentHash}");
+Console.WriteLine($"  beta hash:  {beta.ContentHash}");
 
 static CertificationRecordData CreateRecord(string brickId, string source)
 {

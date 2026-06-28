@@ -4,8 +4,8 @@
   "admitted": true,
   "signed": true,
   "timestamp": "2026-01-01T00:00:00+00:00",
-  "brickId": "behavior-beta",
-  "contentHash": "WJXniDN3WL7HzFxZp3i89hlgYpgbCypcHowp\u002B6lyg8g=",
+  "brickId": "behavior-alpha",
+  "contentHash": "wV0NHCCA1GIW7LYF3IqODcs4vS/aBs3uNrep\u002BtJHQbg=",
   "escapeRate": 0,
   "totalMutants": 1,
   "survivingMutants": 0,
@@ -13,7 +13,7 @@
     "m1"
   ],
   "survivingMutantIds": [],
-  "signature": "Pp8r57wxCk9tJ2TUvlATEnELDYCkwnSlj1/NjzuHyHU=",
+  "signature": "cMW1loM8iN66FzUVQEaPzadtJwWIZGtj94s\u002BKe\u002Bjt6A=",
   "reason": null,
   "gate": null
 }
