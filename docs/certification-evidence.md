@@ -214,6 +214,18 @@ Headless cert + verifier core for binding physical objects to hosted digital-twi
 
 cert-gate: **69 tests** @ [run 28486193636](https://github.com/IanFrelinger/Nexo/actions/runs/28486193636) (`conclusion: success`, PR #210).
 
+## Physical-atom asset resolution (Phase 1 — Prototype)
+
+Headless hosting/resolution loop: register assets + certs, resolve by atom/hash, verify bundles. Spec: `docs/physical-atom-phase1-spec.md`.
+
+| Proof | Result |
+|-------|--------|
+| `PhysicalAtomResolutionVerifierTests` (R1–R4 + A1–A2) | **PASS** — unresolved atom/asset, store byte mismatch, tampered bundle manifest refused |
+| `AssetBundleCertificationPipelineTests` | **PASS** — certify/register/resolve end-to-end |
+| `PhysicalAtomCertBundleManifestTests` | **PASS** — sample `design-scope.bundle.json` round-trips and verifies |
+
+Sample bundle: `samples/physical-atom-cert/design-scope.bundle.json`.
+
 ## Contract-stability gaps
 
 - Generated brick uses Nexo.Core.Domain.* namespaces (shipped via Nexo.Authoring/Nexo.Brick.Contracts but not the pinned package IDs)
