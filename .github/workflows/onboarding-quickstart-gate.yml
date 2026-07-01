@@ -220,7 +220,7 @@ jobs:
       - name: Download native quickstart artifacts
         if: always()
         continue-on-error: true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: onboarding-quickstart-native-linux
           path: artifacts/native
@@ -228,7 +228,7 @@ jobs:
       - name: Download container quickstart artifacts
         if: always()
         continue-on-error: true
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: onboarding-quickstart-container-linux
           path: artifacts/container
