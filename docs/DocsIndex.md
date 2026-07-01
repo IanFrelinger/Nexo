@@ -75,6 +75,7 @@ Documentation index for the Nexo platform. Start here to find what you need.
 - `docs/physical-atom-phase0-spec.md` — **Phase 0 (Prototype):** physical-atom certificate schema, Ed25519 verifier, binding-scope policy (headless, cert-gate tested).
 - `docs/physical-atom-phase1-spec.md` — **Phase 1 (Prototype):** asset resolution store, certified bundle manifest, resolution verifier (headless).
 - `docs/physical-atom-phase2-spec.md` — **Phase 2 (Prototype):** QR/NFC tag reference encoding (headless byte codecs).
+- `docs/physical-atom-phase3-spec.md` — **Phase 3 (Prototype):** HTTP resolution router + tag verify orchestration (headless).
 - `docs/physical-atom-phase0-test-report.md` — rejection-first test coverage report for Phase 0.
 - `docs/physical-atom-phase1-test-report.md` — Phase 1 resolution/bundle test report.
 - `docs/physical-atom-phase2-test-report.md` — Phase 2 QR/NFC tag encoding test report.

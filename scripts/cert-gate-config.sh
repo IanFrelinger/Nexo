@@ -28,6 +28,9 @@ readonly CERT_GATE_FILTER='FullyQualifiedName~Nexo.Tests.Infrastructure.Tests.Ce
 #   PhysicalAtomTagCodecTests: 8
 #   PhysicalAtomTagIssuingTests: 2
 #   PhysicalAtomTagSampleTests: 1
+#   PhysicalAtomTagVerifyOrchestratorTests: 5
+#   HttpAssetResolutionRouterTests: 4
+#   PhysicalAtomEndToEndFlowTests: 1
 # Excluded from cert-gate filter: LocalFixtures.CompositionAcceptanceRateBatchFixtureGeneratorTests (local fixture regen only)
 
 cert_gate_list_tests() {

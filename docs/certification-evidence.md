@@ -238,6 +238,16 @@ QR/NFC reference encoding for certified atoms. Spec: `docs/physical-atom-phase2-
 
 Sample QR: `samples/physical-atom-cert/design-scope.tag-qr.txt`.
 
+## Physical-atom orchestration (Phase 3 — Prototype)
+
+HTTP resolution routing + tag→verify orchestration. Spec: `docs/physical-atom-phase3-spec.md`.
+
+| Proof | Result |
+|-------|--------|
+| `PhysicalAtomTagVerifyOrchestratorTests` | **PASS** — malformed tag, unresolved atom, reference/fingerprint mismatch refused |
+| `HttpAssetResolutionRouterTests` | **PASS** — headless GET routes for cert + asset |
+| `PhysicalAtomEndToEndFlowTests` | **PASS** — pipeline → HTTP → tag verify |
+
 ## Contract-stability gaps
 
 - Generated brick uses Nexo.Core.Domain.* namespaces (shipped via Nexo.Authoring/Nexo.Brick.Contracts but not the pinned package IDs)
