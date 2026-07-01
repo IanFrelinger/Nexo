@@ -28,7 +28,7 @@ jobs:
 
       - name: Upload core promotion SLO evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: runtime-release-promotion-core-evidence
           path: |
@@ -60,7 +60,7 @@ jobs:
 
       - name: Upload visual promotion SLO evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: runtime-release-promotion-visual-evidence
           path: |
@@ -92,7 +92,7 @@ jobs:
 
       - name: Upload chaos promotion SLO evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: runtime-release-promotion-chaos-evidence
           path: |

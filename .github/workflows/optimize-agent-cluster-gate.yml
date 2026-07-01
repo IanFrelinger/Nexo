@@ -187,7 +187,7 @@ jobs:
 
       - name: Upload optimize artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: optimize-agent-cluster-gate
           path: |
@@ -240,7 +240,7 @@ jobs:
 
       - name: Upload daemon artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: daemon-launch-gate
           path: ${{ runner.temp }}/daemon-output.txt
@@ -312,7 +312,7 @@ jobs:
 
       - name: Upload combo artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: flag-combo-${{ matrix.label }}
           path: ${{ runner.temp }}/combo-output.txt

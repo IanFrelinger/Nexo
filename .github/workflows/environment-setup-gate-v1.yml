@@ -80,7 +80,7 @@ jobs:
 
       - name: Upload setup gate artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: environment-setup-gate-v1-artifacts-${{ matrix.os }}
           path: |
@@ -143,7 +143,7 @@ jobs:
 
       - name: Upload ephemeral setup artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: environment-setup-gate-v1-ephemeral-${{ matrix.image_id }}
           path: |

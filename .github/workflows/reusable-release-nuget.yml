@@ -88,7 +88,7 @@ jobs:
         run: bash scripts/verify-stable-sdk-host-sample-packages.sh
 
       - name: Upload NuGet packages + manifest
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: nuget-packages-${{ env.PACKAGE_VERSION }}
           path: |
@@ -150,7 +150,7 @@ jobs:
 
       - name: Upload SBOM artifact
         if: vars.NUGET_RELEASE_SBOM == 'true'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: nuget-sbom-${{ env.PACKAGE_VERSION }}
           path: |

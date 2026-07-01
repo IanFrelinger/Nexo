@@ -44,7 +44,7 @@ jobs:
         run: dotnet run --project application/src/Nexo.CLI -- runtime release-gate --repo-root . --mode ${{ matrix.lane }} --allow-mock --core-min-total 3 --core-history-window 3 --visual-required-mode true --visual-min-total 3 --visual-history-window 3 --lane-repetitions 1 --emit-slo-evidence --slo-warning-only --ncr-resolution-ms-slo 250 --ncr-load-ms-slo 1000 --ncr-outcome-ms-slo 1500 --ncr-failure-rate-slo 0.2
       - name: Upload runtime SLO evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: runtime-slo-evidence-${{ matrix.lane }}
           path: |
@@ -77,7 +77,7 @@ jobs:
         run: dotnet run --project application/src/Nexo.CLI -- runtime release-gate --repo-root . --mode chaos
       - name: Upload runtime SLO evidence
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: runtime-slo-evidence-chaos
           path: |

@@ -58,7 +58,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: persistence-${{ matrix.os }}
           path: test-results/persistence/
@@ -98,7 +98,7 @@ jobs:
 
       - name: Upload test results
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: persistence-windows-docker
           path: test-results/persistence/

@@ -71,7 +71,7 @@ jobs:
 
       - name: Upload compose test artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: compose-gate-test-lane
           path: |
@@ -127,7 +127,7 @@ jobs:
 
       - name: Upload ephemeral lane artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: compose-gate-ephemeral-lane
           path: |

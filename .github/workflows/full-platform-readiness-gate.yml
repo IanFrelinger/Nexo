@@ -200,7 +200,7 @@ jobs:
       # ── Artifacts ───────────────────────────────────────────────────
       - name: Upload readiness artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: readiness-${{ matrix.label }}
           path: |
@@ -304,7 +304,7 @@ jobs:
       # ── Artifacts ───────────────────────────────────────────────────
       - name: Upload container readiness artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: readiness-${{ matrix.label }}
           path: ${{ runner.temp }}/container-results/

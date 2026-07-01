@@ -21,7 +21,7 @@ jobs:
             8.0.x
       - name: Run perf gate
         run: PERF_GATE_SKIP_PRIOR=1 bash scripts/perf-gate.sh
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: perf-gate-${{ github.run_id }}

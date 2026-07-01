@@ -105,7 +105,7 @@ jobs:
 
       - name: Upload native quickstart artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: onboarding-quickstart-native-linux
           path: |
@@ -196,7 +196,7 @@ jobs:
 
       - name: Upload container quickstart artifacts
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: onboarding-quickstart-container-linux
           path: |
@@ -261,7 +261,7 @@ jobs:
 
                 - name: Upload categorized failure taxonomy
                   if: always()
-                  uses: actions/upload-artifact@v4
+                  uses: actions/upload-artifact@v7
                   with:
           name: onboarding-failure-categorization
           path: categorized/
