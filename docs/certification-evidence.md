@@ -8,7 +8,7 @@ Version pin: `0.1.0` (from `VERSION`)
 
 | Property | Proof mechanism | Result | CI run |
 |----------|-----------------|--------|--------|
-| Atom portability (spike steps 1–5) | `spikes/portability/run-portability-spike.sh` — generate, certify, pack, external consume, cross-project execute | **PASS** (all steps) | Local spike; see [portability spike summary](../spikes/portability/spike-run-summary.md) when re-run |
+| Atom portability (spike steps 1–5) | `spikes/portability/run-portability-spike.sh` — generate, certify, pack, external consume, cross-project execute | **PASS** (all steps) | Local spike; re-run `run-portability-spike.sh` for fresh summary |
 | Atom gate teeth (strong witness) | `CertificationGateTeethTests.GoodBrick_StrongWitness_Admits_WithZeroEscapeRate` | **ADMIT**, `escape_rate=0` | [Cert gate 27918340788](https://github.com/IanFrelinger/Nexo/actions/runs/27918340788) |
 | Atom gate teeth (weak witness) | `CertificationGateTeethTests.WeakWitness_AllowsMutantEscapes_RejectsWithTeeth` | **REJECT**, `mutation`, `escape_rate > 0` | [Cert gate 27918340788](https://github.com/IanFrelinger/Nexo/actions/runs/27918340788) |
 | General generation 4b (buggy rejects) | `GenerationSafetyTests.BuggyGeneration_StrongWitness_Rejects` | **REJECT**, `correctness` \| `mutation` | [Cert gate 27918340788](https://github.com/IanFrelinger/Nexo/actions/runs/27918340788) |
@@ -197,6 +197,22 @@ CI: [run 28028224579](https://github.com/IanFrelinger/Nexo/actions/runs/28028224
 **What this proves:** Raw proposer acceptance is **measured** (admits/total via unchanged `ProposeAndCertifyCompositionService`), not gated. Full batch recorded at temperature > 0 including rejects; CI replays deterministically.
 
 **v0 boundary:** Single task (damage→health), one provider (cursor), record/replay batch.
+
+## Physical-atom certification (Phase 0 — Prototype)
+
+Headless cert + verifier core for binding physical objects to hosted digital-twin assets. Spec: `docs/physical-atom-phase0-spec.md`. Test report: `docs/physical-atom-phase0-test-report.md`.
+
+| Proof | Result |
+|-------|--------|
+| `PhysicalAtomCertificateVerifierTests` (R1–R7 refusal + A1–A4 admission) | **PASS** — forged sig, hash mismatch, binding-scope violations, geo H3 inconsistency, tampered extensions all refused |
+| `BundleCertificationBrickTests` | **PASS** — Design/Instance/Batch issuance; inconsistent inputs refused at issuance |
+| `PhysicalAtomSampleCertTests` | **PASS** — committed sample at `samples/physical-atom-cert/` verifies headless |
+
+**Design decision:** `Design` binding_scope with populated `manufacture_meta` is an explicit error (`binding-scope-manufacture-meta-forbidden`), not silently ignored.
+
+**Crypto:** Ed25519 issuer signatures via `Nexo.Certification.Physical` (NSec 25.4.0). Sample issuer key is documentation-only.
+
+cert-gate: **69 tests** @ [run 28486193636](https://github.com/IanFrelinger/Nexo/actions/runs/28486193636) (`conclusion: success`, PR #210).
 
 ## Contract-stability gaps
 

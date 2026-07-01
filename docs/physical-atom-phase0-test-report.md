@@ -24,8 +24,13 @@
 |----|------|--------|
 | A1 | Well-formed `Design` scope | PASS |
 | A2 | Well-formed `Instance` scope | PASS |
-| A3 | Well-formed `Batch` scope | PASS |
 | A4 | `Design` + consistent `geo_anchor` | PASS |
+
+## Sample replay (`PhysicalAtomSampleCertTests`)
+
+| Case | Status |
+|------|--------|
+| Committed `samples/physical-atom-cert/instance-scope.example.json` verifies against documented asset bytes | PASS |
 
 ## Issuance coverage (`BundleCertificationBrickTests`)
 
@@ -47,11 +52,11 @@
 ```bash
 dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
   -f net8.0 \
-  --filter "FullyQualifiedName~PhysicalAtomCertificateVerifierTests|FullyQualifiedName~BundleCertificationBrickTests"
+  --filter "FullyQualifiedName~PhysicalAtomCertificateVerifierTests|FullyQualifiedName~BundleCertificationBrickTests|FullyQualifiedName~PhysicalAtomSampleCertTests"
 ```
 
 All tests are headless (xUnit, no GUI/simulator/device).
 
 ## Phase 0 gate
 
-Verifier rejects every malformed/tampered cert in the suite and accepts well-formed certs across all three `binding_scope` values. **17/17 tests passing** (11 verifier + 6 issuer).
+Verifier rejects every malformed/tampered cert in the suite and accepts well-formed certs across all three `binding_scope` values. **18/18 tests passing** (11 verifier + 6 issuer + 1 sample replay).

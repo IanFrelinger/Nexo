@@ -72,6 +72,9 @@ Documentation index for the Nexo platform. Start here to find what you need.
 
 ## Security / Trust
 
+- `docs/physical-atom-phase0-spec.md` — **Phase 0 (Prototype):** physical-atom certificate schema, Ed25519 verifier, binding-scope policy (headless, cert-gate tested).
+- `docs/physical-atom-phase0-test-report.md` — rejection-first test coverage report for Phase 0.
+- `samples/physical-atom-cert/` — signed sample certificate + issuer public key for headless verification replay.
 - `docs/FriendMeshPrefab.md` — prefab Docker Compose + env template for a small shared **Nexo.API** hub (friends / tailnet).
 - `docs/MeshPhase8OperatorHardening.md` — **Mesh Phase 8:** discovery admission, trust alias, `nexo mesh peers` / `mesh health` / `dotnet run --project commercial/src/Nexo.Commercial.MeshDirector -- director ...`, TLS example.
 - `docs/MeshVirtualLab.md` — **Virtual mesh lab:** two Nexo.API nodes in Docker + verify script (no extra hardware); **`scripts/bootstrap-cloud-mesh-lab.sh`** for Ubuntu/Debian cloud VMs.
