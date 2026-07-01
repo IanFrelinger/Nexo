@@ -200,4 +200,9 @@
   <ItemGroup>
     <PackageVersion Include="NCrontab" Version="3.3.3" />
   </ItemGroup>
+  <!-- Physical-atom certification (Phase 0) -->
+  <ItemGroup>
+    <PackageVersion Include="NSec.Cryptography" Version="25.4.0" />
+    <PackageVersion Include="pocketken.H3" Version="4.0.0" />
+  </ItemGroup>
 </Project>
