@@ -226,6 +226,18 @@ Headless hosting/resolution loop: register assets + certs, resolve by atom/hash,
 
 Sample bundle: `samples/physical-atom-cert/design-scope.bundle.json`.
 
+## Physical-atom tag encoding (Phase 2 — Prototype)
+
+QR/NFC reference encoding for certified atoms. Spec: `docs/physical-atom-phase2-spec.md`.
+
+| Proof | Result |
+|-------|--------|
+| `PhysicalAtomTagCodecTests` (R1–R6 + A1–A2) | **PASS** — malformed prefix/base64/CRC/version/NDEF type refused |
+| `PhysicalAtomTagIssuingTests` | **PASS** — bundle → QR + NFC; missing issuer key refused |
+| `PhysicalAtomTagSampleTests` | **PASS** — `design-scope.tag-qr.txt` decodes headless |
+
+Sample QR: `samples/physical-atom-cert/design-scope.tag-qr.txt`.
+
 ## Contract-stability gaps
 
 - Generated brick uses Nexo.Core.Domain.* namespaces (shipped via Nexo.Authoring/Nexo.Brick.Contracts but not the pinned package IDs)

@@ -8,6 +8,7 @@
 |------|---------|
 | `instance-scope.example.json` | Signed `Instance` scope certificate |
 | `design-scope.bundle.json` | Self-contained Design-scope certified bundle manifest (Phase 1) |
+| `design-scope.tag-qr.txt` | QR payload for the design-scope bundle (Phase 2) |
 | `issuer-public-key.sample.b64` | Base64 Ed25519 public key (32 bytes) for verification |
 
 ## Bound asset
