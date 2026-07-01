@@ -58,7 +58,7 @@ jobs:
 
       - name: Set up Docker Buildx
         if: matrix.environment.type == 'docker'
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Build Docker image
         if: matrix.environment.type == 'docker'
