@@ -261,7 +261,23 @@ Identity/pose seam landed on `master` via squash merge `4f550b03`. Duplicate `Ne
 
 Projects: `Nexo.Spatial.Contracts`, `Nexo.Spatial.Runtime`, `Nexo.Spatial.Multiplayer`. Doc: `docs/spatial-multiplayer.md`.
 
-**Deferred:** 0c8b hash-chained bundle transitions (use `PhysicalAtomCertBundleVerifier` instead). Real ARKit/ARCore SDK wiring is P2 (`Nexo.Spatial.Platform.ARKit` stub landed separately).
+**Deferred:** 0c8b hash-chained bundle transitions (use `PhysicalAtomCertBundleVerifier` instead). Native SDK binding on device hosts (ARKit/NRSDK/RealityKit frame delegates) remains a manual hardware follow-up.
+
+## Spatial platform providers (P2 — Prototype)
+
+Real platform shells wired through injectable native-interop seams; headless CI exercises fail-closed paths only.
+
+| Proof | Result |
+|-------|--------|
+| `ArKitSpatialAnchorProviderRejectionTests` | **PASS** — non-iOS/uninitialized fail-closed; limited→`Occluded`; interruption→`Lost`; unknown atom→`null` |
+| `XrealSpatialAnchorProviderRejectionTests` | **PASS** — unsupported host, tether disconnect→`Lost`, unknown atom→`null` |
+| `VisionProSpatialAnchorProviderRejectionTests` | **PASS** — pre-immersive-space fail-closed; limited→`Occluded` |
+| `SpatialAnchorProviderSelectorRejectionTests` | **PASS** — unsupported host explicit unavailable; deterministic priority tie-break |
+| `dependency-boundary-gate` | **PASS** — zero `Nexo.Certification.*` in `Nexo.Spatial.Platform.*`; no sibling platform refs |
+
+Projects: `Nexo.Spatial.Platform.ARKit`, `Nexo.Spatial.Platform.XREAL`, `Nexo.Spatial.Platform.VisionPro`. Selection glue: `SpatialAnchorProviderSelector` in `Nexo.Spatial.Runtime`.
+
+**Architecture notes:** ARKit session lifecycle is host-owned via `IArKitNativeSession`. Vision Pro is a separate package (not an ARKit variant) for visionOS consumer isolation + immersive-space gating. Provider priority: `visionpro` → `arkit` → `xreal` (ordinal tie-break).
 
 ## Contract-stability gaps
 
