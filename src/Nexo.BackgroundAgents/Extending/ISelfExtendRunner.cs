@@ -46,7 +46,7 @@ public interface ISelfExtendRunner
         string? modelProvider,
         string? modelName,
         CancellationToken cancellationToken = default)
-        => RunAsync(repoRoot, objective, agentName, modelProvider, modelName, agentId: null, cancellationToken);
+        => RunAsync(repoRoot, objective, agentName, cancellationToken);
 
     /// <summary>
     /// Run one self-extend cycle with explicit registry agent id for policy enforcement.

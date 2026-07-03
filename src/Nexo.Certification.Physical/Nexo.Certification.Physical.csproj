@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>12.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <IsPackable>true</IsPackable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+    <PackageId>Nexo.Certification.Physical</PackageId>
+    <Title>Nexo Certification Physical</Title>
+    <Description>Physical-atom certificate schema, Ed25519 signing, and standalone verification for digital-twin asset binding.</Description>
+    <PackageTags>nexo;certification;physical-atom;trust;ed25519</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NSec.Cryptography" />
+    <PackageReference Include="pocketken.H3" />
+  </ItemGroup>
+
+</Project>

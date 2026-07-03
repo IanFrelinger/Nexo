@@ -8,7 +8,7 @@ Version pin: `0.1.0` (from `VERSION`)
 
 | Property | Proof mechanism | Result | CI run |
 |----------|-----------------|--------|--------|
-| Atom portability (spike steps 1–5) | `spikes/portability/run-portability-spike.sh` — generate, certify, pack, external consume, cross-project execute | **PASS** (all steps) | Local spike; see [portability spike summary](../spikes/portability/spike-run-summary.md) when re-run |
+| Atom portability (spike steps 1–5) | `spikes/portability/run-portability-spike.sh` — generate, certify, pack, external consume, cross-project execute | **PASS** (all steps) | Local spike; re-run `run-portability-spike.sh` for fresh summary |
 | Atom gate teeth (strong witness) | `CertificationGateTeethTests.GoodBrick_StrongWitness_Admits_WithZeroEscapeRate` | **ADMIT**, `escape_rate=0` | [Cert gate 27918340788](https://github.com/IanFrelinger/Nexo/actions/runs/27918340788) |
 | Atom gate teeth (weak witness) | `CertificationGateTeethTests.WeakWitness_AllowsMutantEscapes_RejectsWithTeeth` | **REJECT**, `mutation`, `escape_rate > 0` | [Cert gate 27918340788](https://github.com/IanFrelinger/Nexo/actions/runs/27918340788) |
 | General generation 4b (buggy rejects) | `GenerationSafetyTests.BuggyGeneration_StrongWitness_Rejects` | **REJECT**, `correctness` \| `mutation` | [Cert gate 27918340788](https://github.com/IanFrelinger/Nexo/actions/runs/27918340788) |
@@ -197,6 +197,56 @@ CI: [run 28028224579](https://github.com/IanFrelinger/Nexo/actions/runs/28028224
 **What this proves:** Raw proposer acceptance is **measured** (admits/total via unchanged `ProposeAndCertifyCompositionService`), not gated. Full batch recorded at temperature > 0 including rejects; CI replays deterministically.
 
 **v0 boundary:** Single task (damage→health), one provider (cursor), record/replay batch.
+
+## Physical-atom certification (Phase 0 — Prototype)
+
+Headless cert + verifier core for binding physical objects to hosted digital-twin assets. Spec: `docs/physical-atom-phase0-spec.md`. Test report: `docs/physical-atom-phase0-test-report.md`.
+
+| Proof | Result |
+|-------|--------|
+| `PhysicalAtomCertificateVerifierTests` (R1–R7 refusal + A1–A4 admission) | **PASS** — forged sig, hash mismatch, binding-scope violations, geo H3 inconsistency, tampered extensions all refused |
+| `BundleCertificationBrickTests` | **PASS** — Design/Instance/Batch issuance; inconsistent inputs refused at issuance |
+| `PhysicalAtomSampleCertTests` | **PASS** — committed sample at `samples/physical-atom-cert/` verifies headless |
+
+**Design decision:** `Design` binding_scope with populated `manufacture_meta` is an explicit error (`binding-scope-manufacture-meta-forbidden`), not silently ignored.
+
+**Crypto:** Ed25519 issuer signatures via `Nexo.Certification.Physical` (NSec 25.4.0). Sample issuer key is documentation-only.
+
+cert-gate: **69 tests** @ [run 28486193636](https://github.com/IanFrelinger/Nexo/actions/runs/28486193636) (`conclusion: success`, PR #210).
+
+## Physical-atom asset resolution (Phase 1 — Prototype)
+
+Headless hosting/resolution loop: register assets + certs, resolve by atom/hash, verify bundles. Spec: `docs/physical-atom-phase1-spec.md`.
+
+| Proof | Result |
+|-------|--------|
+| `PhysicalAtomResolutionVerifierTests` (R1–R4 + A1–A2) | **PASS** — unresolved atom/asset, store byte mismatch, tampered bundle manifest refused |
+| `AssetBundleCertificationPipelineTests` | **PASS** — certify/register/resolve end-to-end |
+| `PhysicalAtomCertBundleManifestTests` | **PASS** — sample `design-scope.bundle.json` round-trips and verifies |
+
+Sample bundle: `samples/physical-atom-cert/design-scope.bundle.json`.
+
+## Physical-atom tag encoding (Phase 2 — Prototype)
+
+QR/NFC reference encoding for certified atoms. Spec: `docs/physical-atom-phase2-spec.md`.
+
+| Proof | Result |
+|-------|--------|
+| `PhysicalAtomTagCodecTests` (R1–R6 + A1–A2) | **PASS** — malformed prefix/base64/CRC/version/NDEF type refused |
+| `PhysicalAtomTagIssuingTests` | **PASS** — bundle → QR + NFC; missing issuer key refused |
+| `PhysicalAtomTagSampleTests` | **PASS** — `design-scope.tag-qr.txt` decodes headless |
+
+Sample QR: `samples/physical-atom-cert/design-scope.tag-qr.txt`.
+
+## Physical-atom orchestration (Phase 3 — Prototype)
+
+HTTP resolution routing + tag→verify orchestration. Spec: `docs/physical-atom-phase3-spec.md`.
+
+| Proof | Result |
+|-------|--------|
+| `PhysicalAtomTagVerifyOrchestratorTests` | **PASS** — malformed tag, unresolved atom, reference/fingerprint mismatch refused |
+| `HttpAssetResolutionRouterTests` | **PASS** — headless GET routes for cert + asset |
+| `PhysicalAtomEndToEndFlowTests` | **PASS** — pipeline → HTTP → tag verify |
 
 ## Contract-stability gaps
 

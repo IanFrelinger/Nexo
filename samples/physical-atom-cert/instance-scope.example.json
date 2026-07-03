@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "maturity": "Prototype",
+  "atomId": "550e8400-e29b-41d4-a716-446655440000",
+  "bindingScope": "Instance",
+  "assetHash": "18301e3630ca2816dcb1e23264aaec41d9ed4108337c9b5a936e39565d01c742",
+  "assetVersion": "1.0.0",
+  "geoAnchor": {
+    "latitude": 37.7749,
+    "longitude": -122.4194,
+    "resolution": 9,
+    "h3Index": "897016d01d3ffff"
+  },
+  "manufactureMeta": {
+    "batchId": "BATCH-SAMPLE-001",
+    "serialNumber": "SN-SAMPLE-42",
+    "manufacturedAt": "2026-06-01T00:00:00Z"
+  },
+  "extensions": {},
+  "issuerSignature": "ezD/dUuely6gPUZwa6kcNlQs4mP5Gcx0Cxh2sIKXz/bXstqX87ROKaMgbRvHW2EQchex8XXXt3ljZ+9trfbICA=="
+}

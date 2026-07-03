@@ -13,6 +13,7 @@
   <!-- xUnit: limit parallelism to reduce memory usage (Cursor, CI) -->
   <ItemGroup>
     <Content Include="Certification/Dogfood/RecordedCompositionProposals/**/*.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="../../samples/physical-atom-cert/**/*" CopyToOutputDirectory="PreserveNewest" Link="physical-atom-cert/%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
   <!-- Workaround for Castle.Core net6.0 assembly loading issue on .NET 8.0 -->
   <ItemGroup>
@@ -64,8 +65,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Nexo.Certification.Physical\Nexo.Certification.Physical.csproj" />
     <ProjectReference Include="..\Nexo.Certification.Contracts\Nexo.Certification.Contracts.csproj" />
     <ProjectReference Include="..\Nexo.Certification.State\Nexo.Certification.State.csproj" />
+    <ProjectReference Include="..\Nexo.Spatial.Contracts\Nexo.Spatial.Contracts.csproj" />
+    <ProjectReference Include="..\Nexo.Spatial.Runtime\Nexo.Spatial.Runtime.csproj" />
+    <ProjectReference Include="..\Nexo.Spatial.Multiplayer\Nexo.Spatial.Multiplayer.csproj" />
     <ProjectReference Include="..\Nexo.Abstractions\Nexo.Abstractions.csproj" />
     <ProjectReference Include="..\Nexo.Core.Application\Nexo.Core.Application.csproj" />
     <ProjectReference Include="..\Nexo.Tests.Contracts\Nexo.Tests.Contracts.csproj" />
