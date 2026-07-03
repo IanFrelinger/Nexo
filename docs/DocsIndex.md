@@ -79,6 +79,7 @@ Documentation index for the Nexo platform. Start here to find what you need.
 - `docs/physical-atom-phase0-test-report.md` — rejection-first test coverage report for Phase 0.
 - `docs/physical-atom-phase1-test-report.md` — Phase 1 resolution/bundle test report.
 - `docs/physical-atom-phase2-test-report.md` — Phase 2 QR/NFC tag encoding test report.
+- `docs/spatial-multiplayer.md` — **Spatial P1:** single host authority per match scope (v1 decision).
 - `samples/physical-atom-cert/` — signed sample certificate + issuer public key for headless verification replay.
 - `docs/FriendMeshPrefab.md` — prefab Docker Compose + env template for a small shared **Nexo.API** hub (friends / tailnet).
 - `docs/MeshPhase8OperatorHardening.md` — **Mesh Phase 8:** discovery admission, trust alias, `nexo mesh peers` / `mesh health` / `dotnet run --project commercial/src/Nexo.Commercial.MeshDirector -- director ...`, TLS example.
