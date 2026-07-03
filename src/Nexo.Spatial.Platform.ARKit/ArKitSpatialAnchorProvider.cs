@@ -1,35 +1,50 @@
 using System.Reactive.Linq;
 using Nexo.Spatial.Contracts;
+using Nexo.Spatial.Platform.ARKit.Interop;
 
 namespace Nexo.Spatial.Platform.ARKit;
 
 /// <summary>
-/// ARKit platform <see cref="ISpatialAnchorProvider"/> (P2).
-/// Until native ARKit session wiring exists, non-iOS and uninitialized sessions fail closed.
+/// ARKit platform <see cref="ISpatialAnchorProvider"/> (P2-S1).
+/// Reads raw poses from an injected <see cref="IArKitNativeSession"/>; non-iOS and inactive sessions fail closed.
 /// </summary>
+/// <remarks>
+/// Session start/stop is owned by the host application — inject a session whose <see cref="IArKitNativeSession.IsActive"/>
+/// reflects the live ARKit <c>ARSession</c>. This provider emits raw poses only; filtering lives in
+/// <see cref="PoseStreamConsumer"/>.
+/// </remarks>
 public sealed class ArKitSpatialAnchorProvider : ISpatialAnchorProvider
 {
-    private readonly bool _sessionReady;
+    private readonly IArKitNativeSession _session;
+
+    /// <summary>Creates a provider with no active native session (fail-closed).</summary>
+    public ArKitSpatialAnchorProvider()
+        : this(UninitializedArKitNativeSession.Instance)
+    {
+    }
+
+    /// <summary>Creates a provider bound to a host-managed ARKit session.</summary>
+    public ArKitSpatialAnchorProvider(IArKitNativeSession session)
+    {
+        _session = session ?? throw new ArgumentNullException(nameof(session));
+    }
 
     /// <summary>
-    /// Creates a provider. On non-iOS hosts, poses are never emitted.
+    /// Convenience factory for hosts that manage <see cref="PlatformArKitNativeSession"/> lifecycle inline.
     /// </summary>
-    /// <param name="sessionReady">When true on iOS, indicates native session is active (future P2 wiring).</param>
-    public ArKitSpatialAnchorProvider(bool sessionReady = false)
-    {
-        _sessionReady = sessionReady;
-    }
+    public static ArKitSpatialAnchorProvider WithPlatformSession(bool sessionActive = false) =>
+        new(new PlatformArKitNativeSession(sessionActive));
 
     public Task<PoseSample?> GetCurrentPose(string atomId)
     {
-        if (string.IsNullOrWhiteSpace(atomId))
+        if (string.IsNullOrWhiteSpace(atomId) || !IsTrackingAvailable())
             return Task.FromResult<PoseSample?>(null);
 
-        if (!IsTrackingAvailable())
+        var frame = _session.TryGetAnchorPose(atomId);
+        if (frame is null)
             return Task.FromResult<PoseSample?>(null);
 
-        // Native ARKit pose lookup is P2 follow-up; unavailable until wired.
-        return Task.FromResult<PoseSample?>(null);
+        return Task.FromResult<PoseSample?>(ArKitTrackingStateMapper.ToPoseSample(frame));
     }
 
     public IObservable<PoseSample> ObservePose(string atomId)
@@ -37,12 +52,20 @@ public sealed class ArKitSpatialAnchorProvider : ISpatialAnchorProvider
         if (string.IsNullOrWhiteSpace(atomId) || !IsTrackingAvailable())
             return Observable.Return(CreateLostSample());
 
-        // Session ready on iOS but native bridge not wired yet — still fail closed.
-        return Observable.Return(CreateLostSample());
+        if (_session.IsInterrupted)
+            return Observable.Return(CreateLostSample());
+
+        var stream = _session.ObserveAnchorPose(atomId)
+            .Select(ArKitTrackingStateMapper.ToPoseSample);
+
+        var initial = _session.TryGetAnchorPose(atomId);
+        if (initial is not null)
+            stream = stream.StartWith(ArKitTrackingStateMapper.ToPoseSample(initial));
+
+        return stream.DefaultIfEmpty(CreateLostSample());
     }
 
-    private bool IsTrackingAvailable() =>
-        ArKitSpatialAvailability.IsSupported() && _sessionReady;
+    private bool IsTrackingAvailable() => _session.IsActive;
 
     private static PoseSample CreateLostSample() =>
         new(

@@ -23,6 +23,9 @@
     <ProjectReference Include="..\Nexo.Certification.Physical\Nexo.Certification.Physical.csproj" />
     <ProjectReference Include="..\Nexo.Spatial.Contracts\Nexo.Spatial.Contracts.csproj" />
     <ProjectReference Include="..\Nexo.Spatial.Multiplayer\Nexo.Spatial.Multiplayer.csproj" />
+    <ProjectReference Include="..\Nexo.Spatial.Platform.ARKit\Nexo.Spatial.Platform.ARKit.csproj" />
+    <ProjectReference Include="..\Nexo.Spatial.Platform.VisionPro\Nexo.Spatial.Platform.VisionPro.csproj" />
+    <ProjectReference Include="..\Nexo.Spatial.Platform.XREAL\Nexo.Spatial.Platform.XREAL.csproj" />
   </ItemGroup>
 
 </Project>
