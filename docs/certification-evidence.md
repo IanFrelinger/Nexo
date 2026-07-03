@@ -248,6 +248,21 @@ HTTP resolution routing + tag→verify orchestration. Spec: `docs/physical-atom-
 | `HttpAssetResolutionRouterTests` | **PASS** — headless GET routes for cert + asset |
 | `PhysicalAtomEndToEndFlowTests` | **PASS** — pipeline → HTTP → tag verify |
 
+## Spatial pose arc (P1 — Prototype, #220)
+
+Identity/pose seam landed on `master` via squash merge `4f550b03`. Duplicate `Nexo.Certification.PhysicalAtom` dropped; spatial runtime binds through `TagVerifyResolverAdapter` → `PhysicalAtomTagVerifyOrchestrator`.
+
+| Proof | Result |
+|-------|--------|
+| `SpatialBindingServiceRejectionTests` + `TagVerifyResolverAdapterSeamTests` | **PASS** — uncertified atom, issuer mismatch, mid-stream asset-hash change refused |
+| `ScopedPoseRelayRejectionTests` | **PASS** — host-only publish, non-member subscribe refused, no pose replay for late joiners |
+| `PoseStreamConsumerRejectionTests` | **PASS** — confidence/gap/velocity policies downstream of provider |
+| `dependency-boundary-gate` | **PASS** — only `Nexo.Spatial.Runtime` references `Nexo.Certification.Physical` |
+
+Projects: `Nexo.Spatial.Contracts`, `Nexo.Spatial.Runtime`, `Nexo.Spatial.Multiplayer`. Doc: `docs/spatial-multiplayer.md`.
+
+**Deferred:** 0c8b hash-chained bundle transitions (use `PhysicalAtomCertBundleVerifier` instead). Real ARKit/ARCore SDK wiring is P2 (`Nexo.Spatial.Platform.ARKit` stub landed separately).
+
 ## Contract-stability gaps
 
 - Generated brick uses Nexo.Core.Domain.* namespaces (shipped via Nexo.Authoring/Nexo.Brick.Contracts but not the pinned package IDs)

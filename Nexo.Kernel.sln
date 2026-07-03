@@ -55,6 +55,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.Spatial.Multiplayer", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.Spatial.Runtime", "src\Nexo.Spatial.Runtime\Nexo.Spatial.Runtime.csproj", "{F26866BB-754B-44A0-B33F-80CE9E486B03}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.Spatial.Platform.ARKit", "src\Nexo.Spatial.Platform.ARKit\Nexo.Spatial.Platform.ARKit.csproj", "{075FBDC0-DF1B-46B2-A74E-70C1A6CCF6B1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -365,6 +367,18 @@ Global
 		{F26866BB-754B-44A0-B33F-80CE9E486B03}.Release|x64.Build.0 = Release|Any CPU
 		{F26866BB-754B-44A0-B33F-80CE9E486B03}.Release|x86.ActiveCfg = Release|Any CPU
 		{F26866BB-754B-44A0-B33F-80CE9E486B03}.Release|x86.Build.0 = Release|Any CPU
+		{075FBDC0-DF1B-46B2-A74E-70C1A6CCF6B1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{075FBDC0-DF1B-46B2-A74E-70C1A6CCF6B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{075FBDC0-DF1B-46B2-A74E-70C1A6CCF6B1}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{075FBDC0-DF1B-46B2-A74E-70C1A6CCF6B1}.Debug|x64.Build.0 = Debug|Any CPU
+		{075FBDC0-DF1B-46B2-A74E-70C1A6CCF6B1}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{075FBDC0-DF1B-46B2-A74E-70C1A6CCF6B1}.Debug|x86.Build.0 = Debug|Any CPU
+		{075FBDC0-DF1B-46B2-A74E-70C1A6CCF6B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{075FBDC0-DF1B-46B2-A74E-70C1A6CCF6B1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{075FBDC0-DF1B-46B2-A74E-70C1A6CCF6B1}.Release|x64.ActiveCfg = Release|Any CPU
+		{075FBDC0-DF1B-46B2-A74E-70C1A6CCF6B1}.Release|x64.Build.0 = Release|Any CPU
+		{075FBDC0-DF1B-46B2-A74E-70C1A6CCF6B1}.Release|x86.ActiveCfg = Release|Any CPU
+		{075FBDC0-DF1B-46B2-A74E-70C1A6CCF6B1}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -395,5 +409,6 @@ Global
 		{E2DE65D6-67A4-408D-A709-BEABCE074133} = {31297073-3FD6-401C-A313-89BE7C850D6B}
 		{4F9E2BCD-9241-40B5-911F-B53541BB3CC1} = {31297073-3FD6-401C-A313-89BE7C850D6B}
 		{F26866BB-754B-44A0-B33F-80CE9E486B03} = {31297073-3FD6-401C-A313-89BE7C850D6B}
+		{075FBDC0-DF1B-46B2-A74E-70C1A6CCF6B1} = {31297073-3FD6-401C-A313-89BE7C850D6B}
 	EndGlobalSection
 EndGlobal
