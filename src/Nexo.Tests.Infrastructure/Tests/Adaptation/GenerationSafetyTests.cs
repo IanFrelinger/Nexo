@@ -61,7 +61,6 @@ public sealed class GenerationSafetyTests
         var gate = new CertificationGate(signer);
         var admission = new CertifiedBrickAdmission(gate, registry);
         var generator = new NewBrickGenerator(fixture);
-        /// <summary>Generate and certify service.</summary>
         return new GenerateAndCertifyService(generator, admission);
     }
 

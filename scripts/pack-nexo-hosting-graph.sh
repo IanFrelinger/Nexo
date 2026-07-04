@@ -29,6 +29,8 @@ pack src/Nexo.Tools.Assembly/Nexo.Tools.Assembly.csproj
 pack src/Nexo.Tools.Dev/Nexo.Tools.Dev.csproj
 pack src/Nexo.Transport.Grpc/Nexo.Transport.Grpc.csproj
 pack src/Nexo.Runtime/Nexo.Runtime.csproj
+pack src/Nexo.Certification.Contracts/Nexo.Certification.Contracts.csproj
+pack src/Nexo.Certification.Physical/Nexo.Certification.Physical.csproj
 pack src/Nexo.Infrastructure/Nexo.Infrastructure.csproj
 pack src/Nexo.Orchestration/Nexo.Orchestration.csproj
 pack src/Nexo.BackgroundAgents/Nexo.BackgroundAgents.csproj
