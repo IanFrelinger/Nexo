@@ -76,7 +76,7 @@ API/CLI seam progress: the Forge HTTP surface has been moved out of `Nexo.API` a
 
 - **Changed files are license/docs/project metadata only:** `LICENSE`, `LICENSING.md`, `README.md`, `SPRINT_SUMMARY.md`, commercial app stubs, docs, and `.csproj` metadata license expressions.
 - **No source/test/workflow logic changed:** no `.cs` files or `.github/workflows/**` files were modified.
-- **README onboarding guard strings checked locally:** verified the README still contains `## Quick Start (5 minutes)`, `Choose your lane (recommended)`, `Lane A: dev container + container deployment (recommended)`, `Lane B: full local dev path (native SDK)`, `bash scripts/setup/setup.sh all`, and `dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore`; verified it does not contain `dotnet build Nexo.sln`.
+- **README onboarding guard strings checked locally:** verified the README still contains `## Quick Start (5 minutes)`, the goal-based lanes `### Lane 1 — Try (run the portal)`, `### Lane 2 — Develop (dev container + CLI)`, `### Lane 3 — Deploy (operators)`, `bash scripts/setup/setup.sh all`, and `dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore`; verified it does not contain `dotnet build Nexo.sln`.
 - **Local link fallback check:** `lychee` was not installed in this environment, so a local markdown link-target check was run against changed docs and passed.
 - **CLI build:** `dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore` succeeded.
 - **CLI help verification:** `dotnet run --project application/src/Nexo.CLI -- --help` succeeded.

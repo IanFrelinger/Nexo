@@ -1,5 +1,9 @@
 # Nexo
 
+> **Nexo is a local-first .NET AI runtime for running auditable AI workflows** — routing work across local, cloud, and peer execution targets, and extending its own capabilities under policy-controlled trust boundaries.
+
+**New here? Start with one of three lanes:** [**Try**](#lane-1--try-run-the-portal) (run the portal in Docker) · [**Develop**](#lane-2--develop-dev-container--cli) (dev container + CLI) · [**Deploy**](#lane-3--deploy-operators) (GHCR images + compose).
+
 Nexo is an **adaptive orchestration framework** for private, auditable software workflows. It watches how teams build, test, release, and operate software; learns repeatable patterns; and improves automations over time with built-in privacy controls such as pause/resume, local-first model routing, policy gates, and audit trails.
 
 **ChatGPT is a calculator; Nexo is an autopilot panel.** A calculator answers the prompt in front of it. An autopilot panel observes the whole flight, keeps the route visible, applies policy, hands control back to the operator, and records what happened.
@@ -7,6 +11,47 @@ Nexo is an **adaptive orchestration framework** for private, auditable software 
 In this repo, that panel is a .NET runtime plus deployable hosts and app-level configurations: kernel libraries, observe/adapt/improve loops, mesh/federation, gRPC transport, AWS ingress, `Nexo.CLI`, `Nexo.API`, four `apps/` configurations, and NuGet/GHCR/compose distribution paths.
 
 Repository: <https://github.com/IanFrelinger/Nexo>
+
+## Architecture at a glance
+
+```mermaid
+flowchart TB
+    subgraph Surfaces["Entry surfaces"]
+        CLI["Nexo.CLI (nexo)"]
+        API["Nexo.API (HTTP + portal)"]
+        EMBED["Embedded host (NuGet)"]
+    end
+
+    ADD["AddNexo() — DI composition root"]
+
+    subgraph Kernel["Kernel spine (src/)"]
+        APPUC["Core.Application — use cases, ports (MediatR)"]
+        ORCH["Orchestration — architect, agents, coordination"]
+        BG["Background agents — scheduler, RAG, observe loop"]
+        INFRA["Infrastructure — provider factory, persistence, adaptation, execution routing"]
+        DOMAIN["Core.Domain / Abstractions — bricks, agents, contracts"]
+    end
+
+    subgraph Trust["Trust (on the execution path)"]
+        SAN["Sanitization + PII/secret filters"]
+        AUDIT["Audit + barrier identity"]
+    end
+
+    subgraph Targets["Execution targets"]
+        LOCAL["Local (Ollama / ONNX / offline)"]
+        CLOUD["Cloud (OpenAI / Azure) — opt-in"]
+        PEER["Peers / mesh + RunPod"]
+    end
+
+    CLI --> ADD
+    API --> ADD
+    EMBED --> ADD
+    ADD --> APPUC --> ORCH --> BG --> INFRA --> DOMAIN
+    INFRA --> Trust
+    Trust --> Targets
+```
+
+For layer-by-layer detail see [`docs/Architecture.md`](docs/Architecture.md); for the project/tier map see [`docs/ProjectTiers.md`](docs/ProjectTiers.md).
 
 ## Where to start
 
@@ -28,6 +73,13 @@ Repository: <https://github.com/IanFrelinger/Nexo>
 
 For the canonical tier-by-tier project map, see [`docs/ProjectTiers.md`](docs/ProjectTiers.md). For distribution channels and their validation gates, see [`docs/DistributionModels.md`](docs/DistributionModels.md).
 
+## What Nexo is not
+
+- **Not a hosted SaaS or chatbot.** You run it (CLI, API, container, or embedded in your app); nothing is sent to a Nexo-operated service.
+- **Not cloud-dependent.** Cloud providers are opt-in execution targets, not requirements. Air-gapped and local-only deployments are first-class.
+- **Not a drop-in IDE plugin.** Nexo is a runtime and orchestration layer, not an editor extension.
+- **Not secure-by-default on a network.** Local defaults are HTTP-only with no auth (see the warning below); network exposure requires explicit auth + TLS.
+
 ## Subsystem map
 
 | Area | What it contains | Where to look |
@@ -43,7 +95,7 @@ For the canonical tier-by-tier project map, see [`docs/ProjectTiers.md`](docs/Pr
 
 ## Default workflow
 
-1. **Evaluate / develop** — [Quick Start](#quick-start-5-minutes) → **Lane A** → Dev Container or container-first commands.
+1. **Evaluate / develop** — [Quick Start](#quick-start-5-minutes) → **Lane 1 (Try)** or **Lane 2 (Develop)** for the portal, Dev Container, or CLI.
 2. **Deploy / operate** — [Deploy (operators)](#deploy-operators) for GHCR images and compose stacks.
 3. **Integrate** — [`docs/DistributionModels.md`](docs/DistributionModels.md) for NuGet, HTTP, CLI, compose, source, and mesh.
 4. **Understand repo shape** — [`docs/ProjectTiers.md`](docs/ProjectTiers.md) for the canonical tier map.
@@ -58,20 +110,37 @@ For the canonical tier-by-tier project map, see [`docs/ProjectTiers.md`](docs/Pr
 
 ## Quick Start (5 minutes)
 
-Choose your lane (recommended):
+> ⚠️ **Not safe for public exposure as shipped.** Defaults are tuned for local dev: **HTTP-only, no authentication** (`ExposureProfile: Localhost`, `AuthorizationMode: None`, `AllowedHosts: "*"`). Before exposing Nexo to any network, configure **auth + TLS** — see [Security Defaults](#security-defaults).
 
-### Lane A: dev container + container deployment (recommended)
+Pick the lane that matches your goal. Most people should start with **Try**.
 
-**Local development** should use the Dev Container. **Running Nexo as a service** uses the same container discipline: quickstart image, GHCR CLI image, compose, and/or published API images.
+| Lane | Goal | You need |
+|------|------|----------|
+| [**1. Try**](#lane-1--try-run-the-portal) | See Nexo running in one command | Docker |
+| [**2. Develop**](#lane-2--develop-dev-container--cli) | Build/extend the code, run the CLI | Docker + Dev Container (or native .NET SDK) |
+| [**3. Deploy**](#lane-3--deploy-operators) | Run it as a service you operate | Docker + compose |
 
-#### 1) Prerequisites
+### Lane 1 — Try (run the portal)
 
-- Docker (Desktop or Engine) and Git.
-- Optional: Ollama/OpenAI/Azure credentials for live model backends.
+The fastest way to see Nexo work. Uses the mock provider, so **no API keys are required**.
 
-You do **not** need a host-installed .NET SDK for the Dev Container or published container paths. Install .NET SDK 9.x only for the native escape hatch in Lane B.
+```bash
+git clone https://github.com/IanFrelinger/Nexo.git && cd Nexo
+docker build -f .docker/Dockerfile.quickstart -t nexo:quickstart .
+docker run --rm -p 8080:8080 nexo:quickstart
+# Open http://localhost:8080
+```
 
-#### 2) Dev Container (Cursor / VS Code)
+Prefer the CLI? Pull the published image and run a command:
+
+```bash
+docker pull ghcr.io/ianfrelinger/nexo-cli:latest
+docker run --rm ghcr.io/ianfrelinger/nexo-cli:latest --help
+```
+
+### Lane 2 — Develop (dev container + CLI)
+
+Recommended path uses the **Dev Container** (no host .NET SDK needed).
 
 1. Install the [Dev Containers](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-containers) extension.
 2. Open this repository.
@@ -85,96 +154,7 @@ dotnet run --project application/src/Nexo.CLI -- --help
 dotnet run --project application/src/Nexo.CLI -- doctor --json
 ```
 
-Headless dev-container check:
-
-```powershell
-pwsh -NoProfile -ExecutionPolicy Bypass -File ./scripts/Verify-DevContainer.ps1
-```
-
-#### 3) Run the portal quickstart image
-
-```bash
-git clone https://github.com/IanFrelinger/Nexo.git && cd Nexo
-docker build -f .docker/Dockerfile.quickstart -t nexo:quickstart .
-docker run --rm -p 8080:8080 nexo:quickstart
-# Open http://localhost:8080 — mock provider; no API keys required.
-```
-
-#### 4) Published CLI image
-
-```bash
-docker pull ghcr.io/ianfrelinger/nexo-cli:latest
-docker run --rm ghcr.io/ianfrelinger/nexo-cli:latest --help
-```
-
-Validate a pipeline template from your workspace:
-
-```bash
-docker run --rm \
-  -v "$PWD:/work" \
-  -w /work \
-  ghcr.io/ianfrelinger/nexo-cli:latest \
-  pipeline validate --template /work/path/to/template.json
-```
-
-Build a local CLI image:
-
-```bash
-docker build -f .docker/Dockerfile.cli -t nexo-cli:local .
-docker run --rm nexo-cli:local --help
-```
-
-#### 5) Compose stacks
-
-For multi-service deployment on a host you control, start from the root compose files and operator guides:
-
-| File | Purpose |
-|------|---------|
-| `docker-compose.portal.yml` | Director portal + `nexo-api` + Ollama. |
-| `docker-compose.agent-server.yml` | Portal + API + Ollama + mounted workspace + default Runtime Studio agent set. |
-| `docker-compose.game-director.yml` | Game Director sidecar and MCP-facing workflow. |
-| `docker-compose.ephemeral.yml` | Disposable local dependencies for tests and labs. |
-
-```bash
-docker compose -f docker-compose.portal.yml up -d --build
-docker compose -f docker-compose.agent-server.yml up -d --build
-```
-
-### Lane B: full local dev path (native SDK)
-
-Use this only when containers are not an option.
-
-#### 6) Native setup
-
-```bash
-git clone https://github.com/IanFrelinger/Nexo.git
-cd Nexo
-bash scripts/setup/setup.sh all
-dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore
-dotnet run --project application/src/Nexo.CLI -- --help
-dotnet run --project application/src/Nexo.CLI -- doctor --json
-```
-
-Windows PowerShell:
-
-```powershell
-git clone https://github.com/IanFrelinger/Nexo.git
-Set-Location Nexo
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode all
-dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore
-dotnet run --project application/src/Nexo.CLI -- --help
-dotnet run --project application/src/Nexo.CLI -- doctor --json
-```
-
-No-Docker install/bootstrap escape hatches:
-
-- `bash scripts/install/quickstart.sh`
-- `bash scripts/setup/setup.sh all`
-- `bash scripts/setup/setup-unix.sh`
-- `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode all`
-- `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\docker-restore.ps1`
-
-#### 7) Run a first high-signal command
+Run your first pipeline (create a template, validate it, run it):
 
 ```bash
 tmp_dir="$(mktemp -d)"
@@ -198,11 +178,59 @@ dotnet run --project application/src/Nexo.CLI -- pipeline run --template "$templ
 dotnet run --project application/src/Nexo.CLI -- pipeline diagnostics --format-json
 ```
 
-`validate` can execute a broader architecture/test sweep and may be heavier on constrained hosts:
+<details>
+<summary>Native SDK path (no Docker) and other escape hatches</summary>
+
+Use this only when containers are not an option. Requires .NET SDK 9.x.
 
 ```bash
-dotnet run --project application/src/Nexo.CLI -- validate
+git clone https://github.com/IanFrelinger/Nexo.git
+cd Nexo
+bash scripts/setup/setup.sh all
+dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore
+dotnet run --project application/src/Nexo.CLI -- doctor --json
 ```
+
+Windows PowerShell:
+
+```powershell
+git clone https://github.com/IanFrelinger/Nexo.git
+Set-Location Nexo
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode all
+dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore
+dotnet run --project application/src/Nexo.CLI -- doctor --json
+```
+
+Other bootstrap helpers: `scripts/install/quickstart.sh`, `scripts/setup/setup-unix.sh`, `scripts/docker-restore.ps1`. Headless dev-container check: `pwsh -NoProfile -ExecutionPolicy Bypass -File ./scripts/Verify-DevContainer.ps1`.
+
+`nexo validate` runs a broader architecture/test sweep and can be heavy on constrained hosts.
+</details>
+
+### Lane 3 — Deploy (operators)
+
+Run Nexo as a service using compose stacks on a host you control. Review the [security warning](#quick-start-5-minutes) above first.
+
+| File | Purpose |
+|------|---------|
+| `docker-compose.portal.yml` | Director portal + `nexo-api` + Ollama. |
+| `docker-compose.agent-server.yml` | Portal + API + Ollama + mounted workspace + default Runtime Studio agent set. |
+| `docker-compose.game-director.yml` | Game Director sidecar and MCP-facing workflow. |
+| `docker-compose.ephemeral.yml` | Disposable local dependencies for tests and labs. |
+
+```bash
+docker compose -f docker-compose.portal.yml up -d --build
+docker compose -f docker-compose.agent-server.yml up -d --build
+```
+
+Validate a pipeline template from a mounted workspace with the published CLI image:
+
+```bash
+docker run --rm -v "$PWD:/work" -w /work \
+  ghcr.io/ianfrelinger/nexo-cli:latest \
+  pipeline validate --template /work/path/to/template.json
+```
+
+For operator runbooks, images, and hardening, see [Deploy (operators)](#deploy-operators).
 
 ## Common CLI workflows
 
