@@ -1,10 +1,11 @@
 using System.Text.Json;
 using Nexo.CLI.Runtime;
 
-namespace Nexo.CLI.Commands;
-
+namespace Nexo.CLI.Commands.Workflow;
+/// <summary>Handles history requests.</summary>
 internal sealed class HistoryHandler
 {
+    /// <summary>Executes the command handler and returns a process exit code.</summary>
     public Task<int> ExecuteAsync(string repoRoot, int limit, string? benchmarkSet, bool json)
     {
         var fullRepoRoot = Path.GetFullPath(string.IsNullOrWhiteSpace(repoRoot) ? Environment.CurrentDirectory : repoRoot);

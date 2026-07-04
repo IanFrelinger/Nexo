@@ -17,6 +17,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Barriers.Runtime;
 
+/// <summary>Tests for runtime service collection extensions gap coverage.</summary>
 public sealed class RuntimeServiceCollectionExtensionsGapCoverageTests
 {
     [Fact]
@@ -100,6 +101,7 @@ public sealed class RuntimeServiceCollectionExtensionsGapCoverageTests
         services.AddSingleton<BarrierHierarchy>(sp =>
         {
             var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<BarrierOptions>>().Value;
+            /// <summary>Barrier hierarchy.</summary>
             return new BarrierHierarchy(options.Levels.Select((name, index) => new BarrierLevel(name, index)));
         });
         services.AddBarrierIdentityResolvers(configuration);
@@ -130,6 +132,7 @@ public sealed class RuntimeServiceCollectionExtensionsGapCoverageTests
         services.AddSingleton<BarrierHierarchy>(sp =>
         {
             var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<BarrierOptions>>().Value;
+            /// <summary>Barrier hierarchy.</summary>
             return new BarrierHierarchy(options.Levels.Select((name, index) => new BarrierLevel(name, index)));
         });
         services.AddBarrierIdentityResolvers(configuration);
@@ -215,6 +218,7 @@ public sealed class RuntimeServiceCollectionExtensionsGapCoverageTests
         services.AddSingleton<BarrierHierarchy>(sp =>
         {
             var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<BarrierOptions>>().Value;
+            /// <summary>Barrier hierarchy.</summary>
             return new BarrierHierarchy(options.Levels.Select((name, index) => new BarrierLevel(name, index)));
         });
         services.AddBarrierIdentityResolvers(configuration);
@@ -342,6 +346,7 @@ public sealed class RuntimeServiceCollectionExtensionsGapCoverageTests
         services.AddSingleton<BarrierHierarchy>(sp =>
         {
             var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<BarrierOptions>>().Value;
+            /// <summary>Barrier hierarchy.</summary>
             return new BarrierHierarchy(options.Levels.Select((name, index) => new BarrierLevel(name, index)));
         });
         services.AddBarrierIdentityResolvers(configuration);
@@ -370,6 +375,7 @@ public sealed class RuntimeServiceCollectionExtensionsGapCoverageTests
         services.AddSingleton<BarrierHierarchy>(sp =>
         {
             var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<BarrierOptions>>().Value;
+            /// <summary>Barrier hierarchy.</summary>
             return new BarrierHierarchy(options.Levels.Select((name, index) => new BarrierLevel(name, index)));
         });
 
@@ -409,6 +415,7 @@ public sealed class RuntimeServiceCollectionExtensionsGapCoverageTests
             .AddInMemoryCollection(values)
             .Build();
 
+    /// <summary>Stub in process transport.</summary>
     private sealed class StubInProcessTransport : IAgentTransport
     {
         public Task<AgentResult> SendAsync(AgentInvocationRequest request, CancellationToken cancellationToken = default)
@@ -418,6 +425,7 @@ public sealed class RuntimeServiceCollectionExtensionsGapCoverageTests
             => Task.FromResult(new TransportHealth(true, "in-process"));
     }
 
+    /// <summary>Stub remote transport.</summary>
     private sealed class StubRemoteTransport : IAgentTransport
     {
         public Task<AgentResult> SendAsync(AgentInvocationRequest request, CancellationToken cancellationToken = default)

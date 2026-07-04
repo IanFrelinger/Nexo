@@ -13,6 +13,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Adaptation;
 
+/// <summary>Tests for brick recompiler.</summary>
 [Trait("Category", "Adaptation")]
 public sealed class BrickRecompilerTests
 {

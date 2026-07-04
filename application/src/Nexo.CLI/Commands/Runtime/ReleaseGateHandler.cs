@@ -1,13 +1,9 @@
-namespace Nexo.CLI.Commands;
+namespace Nexo.CLI.Commands.Runtime;
 
-internal delegate Task<int> RuntimeEvaluateExecutor(
-    string? goalsJson, string? goalsFile, string policiesCsv, string repoRoot, string? provider, bool allowMock, bool runTests, string testFilter, string bootstrapProfile, string? runtimeManifestPath, string? runtimeManifestJson, int? maxIterationsOverride, bool bootstrapApply, bool runPreflight, bool useHistory, int historyWindow, bool persistHistory, string benchmarkSet, bool allowVisualCapabilityDegrade, bool json, CancellationToken ct);
-
-internal delegate Task<int> RuntimeGateExecutor(
-    string repoRoot, int historyWindow, double minPassRate, int minTotal, string? goal, string? policy, string? benchmarkSet, string? stage, int minConsecutivePasses, bool json);
-
+/// <summary>Handles release gate requests.</summary>
 internal sealed class ReleaseGateHandler(RuntimeEvaluateExecutor executeEvaluate, RuntimeGateExecutor executeGate)
 {
+    /// <summary>Executes the command handler and returns a process exit code.</summary>
     public async Task<int> ExecuteAsync(
         string mode,
         string repoRoot,

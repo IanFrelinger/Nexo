@@ -3,6 +3,7 @@ using System.CommandLine.Invocation;
 
 namespace Nexo.CLI.Commands;
 
+/// <summary>CLI command for unity dev.</summary>
 public sealed partial class UnityDevCommand
 {
     private Command CreateInitCommand()

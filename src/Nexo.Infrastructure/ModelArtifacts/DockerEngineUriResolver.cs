@@ -2,8 +2,10 @@ using System.Runtime.InteropServices;
 
 namespace Nexo.Infrastructure.ModelArtifacts;
 
+/// <summary>Resolves the Docker engine URI for the current operating system.</summary>
 internal static class DockerEngineUriResolver
 {
+    /// <summary>Returns the platform-specific Docker engine URI.</summary>
     public static Uri Resolve()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))

@@ -19,6 +19,7 @@ public sealed class OllamaEphemeralLifecycle : IEphemeralModelLifecycle
     private readonly DockerClient _dockerClient;
     private readonly AsyncLocal<string?> _sessionUrl = new();
 
+    /// <summary>Initializes a new ollama ephemeral lifecycle.</summary>
     public OllamaEphemeralLifecycle(ILogger<OllamaEphemeralLifecycle> logger, DockerClient? dockerClient = null)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -26,6 +27,7 @@ public sealed class OllamaEphemeralLifecycle : IEphemeralModelLifecycle
         _dockerClient = dockerClient ?? new DockerClientConfiguration(uri).CreateClient();
     }
 
+    /// <summary>Start session asynchronously.</summary>
     public async Task<IAsyncDisposable> StartSessionAsync(string? model = null, CancellationToken cancellationToken = default)
     {
         if (_sessionUrl.Value != null)
@@ -64,6 +66,7 @@ public sealed class OllamaEphemeralLifecycle : IEphemeralModelLifecycle
         return new SessionScope(this, containerId);
     }
 
+    /// <summary>Get base url asynchronously.</summary>
     public Task<string> GetBaseUrlAsync(CancellationToken cancellationToken = default)
     {
         var url = _sessionUrl.Value;
@@ -122,12 +125,14 @@ public sealed class OllamaEphemeralLifecycle : IEphemeralModelLifecycle
         private readonly OllamaEphemeralLifecycle _lifecycle;
         private readonly string? _containerId;
 
+        /// <summary>Initializes a new session scope.</summary>
         public SessionScope(OllamaEphemeralLifecycle lifecycle, string? containerId)
         {
             _lifecycle = lifecycle;
             _containerId = containerId;
         }
 
+        /// <summary>Dispose asynchronously.</summary>
         public async ValueTask DisposeAsync()
         {
             await _lifecycle.StopSessionAsync(_containerId, _containerId == null);

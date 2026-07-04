@@ -25,6 +25,7 @@ public sealed class StructuredBarrierAuditLog : IBarrierAuditLog
         }
     }
 
+    /// <summary>Fans out a barrier audit event to all registered sinks.</summary>
     public async ValueTask RecordAsync(
         BarrierAuditEvent auditEvent,
         CancellationToken cancellationToken = default)

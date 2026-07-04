@@ -10,6 +10,7 @@ public sealed class InMemoryOrganizationStore : IOrganizationStore
     private readonly Dictionary<string, Organization> _orgs = new(StringComparer.Ordinal);
     private readonly List<OrganizationMember> _members = [];
 
+    /// <summary>Create organization.</summary>
     public Organization CreateOrganization(string name, string? tenantId = null)
     {
         if (string.IsNullOrWhiteSpace(name))
@@ -35,6 +36,7 @@ public sealed class InMemoryOrganizationStore : IOrganizationStore
         return org;
     }
 
+    /// <summary>Gets organization.</summary>
     public Organization? GetOrganization(string orgId)
     {
         if (string.IsNullOrWhiteSpace(orgId))
@@ -46,6 +48,7 @@ public sealed class InMemoryOrganizationStore : IOrganizationStore
         }
     }
 
+    /// <summary>Adds member.</summary>
     public OrganizationMember AddMember(string orgId, string userId, OrganizationRole role)
     {
         if (GetOrganization(orgId) is null)
@@ -71,6 +74,7 @@ public sealed class InMemoryOrganizationStore : IOrganizationStore
         return member;
     }
 
+    /// <summary>Gets members.</summary>
     public IReadOnlyList<OrganizationMember> GetMembers(string orgId)
     {
         if (string.IsNullOrWhiteSpace(orgId))
@@ -85,6 +89,7 @@ public sealed class InMemoryOrganizationStore : IOrganizationStore
         }
     }
 
+    /// <summary>Gets member role.</summary>
     public OrganizationRole? GetMemberRole(string orgId, string userId)
     {
         if (string.IsNullOrWhiteSpace(orgId) || string.IsNullOrWhiteSpace(userId))

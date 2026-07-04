@@ -9,8 +9,10 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Observation;
 
+/// <summary>Tests for pattern detector.</summary>
 public class PatternDetectorTests
 {
+    /// <summary>Tests for in memory pattern store.</summary>
     private sealed class InMemoryPatternStore : IPatternStore
     {
         private readonly ConcurrentBag<ObservedPattern> _patterns = new();
@@ -26,8 +28,11 @@ public class PatternDetectorTests
             return Task.FromResult<IReadOnlyList<ObservedPattern>>(_patterns.ToList());
         }
 
+        /// <summary>Persist async.</summary>
+        /// <param name="default">Default.</param>
         public Task PersistAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
 
+        /// <summary>Gets all.</summary>
         public IReadOnlyList<ObservedPattern> GetAll() => _patterns.ToList();
     }
 

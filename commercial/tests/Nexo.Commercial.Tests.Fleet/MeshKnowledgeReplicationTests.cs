@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Nexo.Commercial.Tests.Fleet;
 
+/// <summary>Tests for mesh knowledge replication.</summary>
 public sealed class MeshKnowledgeReplicationTests : IDisposable
 {
     private readonly string _dir;

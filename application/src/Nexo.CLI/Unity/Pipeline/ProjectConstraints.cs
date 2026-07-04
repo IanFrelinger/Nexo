@@ -10,14 +10,28 @@ using System.Text.Json.Serialization;
 /// </summary>
 public sealed record ProjectConstraints
 {
+    /// <summary>C# coding standards for generated scripts.</summary>
     public CodeConstraints Code { get; init; } = new();
+
+    /// <summary>Combat tuning bounds for generated weapons.</summary>
     public WeaponConstraints Weapons { get; init; } = new();
+
+    /// <summary>Character movement limits for generated controllers.</summary>
     public MovementConstraints Movement { get; init; } = new();
+
+    /// <summary>Multiplayer synchronization rules.</summary>
     public NetworkingConstraints Networking { get; init; } = new();
+
+    /// <summary>Audio variation and spatialization rules.</summary>
     public AudioConstraints Audio { get; init; } = new();
+
+    /// <summary>Animator and state-machine rules.</summary>
     public AnimationConstraints Animation { get; init; } = new();
+
+    /// <summary>Visual and performance budgets for generated assets.</summary>
     public AestheticConstraints Aesthetics { get; init; } = new();
 
+    /// <summary>Loads constraints from <c>.nexo/constraints.json</c> under the project root.</summary>
     public static ProjectConstraints LoadFromFile(string projectRoot)
     {
         var path = Path.Combine(projectRoot, ".nexo", "constraints.json");
@@ -27,6 +41,7 @@ public sealed record ProjectConstraints
         return JsonSerializer.Deserialize<ProjectConstraints>(json, SerializerOptions) ?? new ProjectConstraints();
     }
 
+    /// <summary>Persists constraints to <c>.nexo/constraints.json</c> under the project root.</summary>
     public void SaveToFile(string projectRoot)
     {
         var dir = Path.Combine(projectRoot, ".nexo");
@@ -35,6 +50,7 @@ public sealed record ProjectConstraints
         File.WriteAllText(path, JsonSerializer.Serialize(this, SerializerOptions));
     }
 
+    /// <summary>Builds a bullet-list fragment suitable for LLM system prompts.</summary>
     public string ToPromptFragment()
     {
         var parts = new List<string>();
@@ -58,58 +74,4 @@ public sealed record ProjectConstraints
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
     };
-}
-
-public sealed record CodeConstraints
-{
-    public string? NamespacePrefix { get; init; }
-    public int MaxFileLines { get; init; }
-    public bool RequireInterfaces { get; init; }
-    public bool RequireSerializeField { get; init; } = true;
-    public IReadOnlyList<string> BannedPatterns { get; init; } = Array.Empty<string>();
-    public IReadOnlyList<string> RequiredUsings { get; init; } = Array.Empty<string>();
-    public string? TestCoverage { get; init; }
-}
-
-public sealed record WeaponConstraints
-{
-    public double[]? DamageRange { get; init; }
-    public double[]? FireRateRange { get; init; }
-    public int MaxMagazineSize { get; init; }
-    public bool RequireReloadMechanic { get; init; }
-}
-
-public sealed record MovementConstraints
-{
-    public double MaxSpeed { get; init; }
-    public bool RequireGroundCheck { get; init; }
-    public bool RequireCoyoteTime { get; init; }
-}
-
-public sealed record NetworkingConstraints
-{
-    public string? Authority { get; init; }
-    public int MaxSyncedVariablesPerObject { get; init; }
-    public bool RequireServerRpc { get; init; }
-}
-
-public sealed record AudioConstraints
-{
-    public bool RequireVariations { get; init; }
-    public int MinVariationsPerEvent { get; init; } = 2;
-    public bool RequireSpatialBlend { get; init; }
-    public int MaxSimultaneous { get; init; } = 32;
-}
-
-public sealed record AnimationConstraints
-{
-    public double MaxTransitionDuration { get; init; } = 0.3;
-    public bool RequireExitTime { get; init; }
-}
-
-public sealed record AestheticConstraints
-{
-    public string? DefaultPack { get; init; }
-    public int MaxTriBudgetPerObject { get; init; }
-    public int MaxDrawCalls { get; init; }
 }

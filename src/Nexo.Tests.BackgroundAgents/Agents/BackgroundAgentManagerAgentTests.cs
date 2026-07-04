@@ -10,6 +10,7 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.Agents;
 
+/// <summary>Tests for background agent manager agent.</summary>
 public class BackgroundAgentManagerAgentTests
 {
     [Fact]

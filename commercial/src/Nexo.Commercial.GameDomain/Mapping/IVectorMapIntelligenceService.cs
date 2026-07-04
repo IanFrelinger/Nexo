@@ -1,5 +1,4 @@
-namespace Nexo.GameDomain.Mapping;
-
+namespace Nexo.Commercial.GameDomain.Mapping;
 /// <summary>
 /// Optional AI-assisted interpretation of raw vector map bytes (implemented by hosts or no-op).
 /// </summary>

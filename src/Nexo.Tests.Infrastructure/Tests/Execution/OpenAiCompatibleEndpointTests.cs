@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Execution;
 
+/// <summary>Tests for open ai compatible endpoint.</summary>
 public sealed class OpenAiCompatibleEndpointTests
 {
     [Theory]

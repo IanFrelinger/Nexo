@@ -11,8 +11,12 @@ using Xunit;
 
 namespace Nexo.Tests.Kernel;
 
+/// <summary>Tests for tools dev.</summary>
 public class ToolsDevTests
 {
+    /// <summary>Call.</summary>
+    /// <param name="id">Id.</param>
+    /// <param name="args">Args.</param>
     private static ToolCall Call(string id, object args) =>
         new(id, JsonDocument.Parse(JsonSerializer.Serialize(args)).RootElement);
 
@@ -351,7 +355,11 @@ public class ToolsDevTests
 
         try
         {
+            /// <summary>Run dotnet async.</summary>
+            /// <param name="sln"">Sln".</param>
             await RunDotnetAsync(root, "new sln --name Nexo --format sln");
+            /// <summary>Run dotnet async.</summary>
+            /// <param name="Mini.csproj"">Mini.csproj".</param>
             await RunDotnetAsync(root, "sln Nexo.sln add Mini.csproj");
             await File.WriteAllTextAsync(Path.Combine(root, "Nexo.LocalDevCore.slnf"), """
                 {
@@ -501,6 +509,7 @@ public class ToolsDevTests
         var sourcePath = Path.Combine(root, "Cmd.cs");
         await File.WriteAllTextAsync(sourcePath, """
             namespace Wrong;
+            /// <summary>Not sealed.</summary>
             class NotSealed { }
             """);
         try
@@ -746,6 +755,7 @@ public class ToolsDevTests
         await File.WriteAllTextAsync(Path.Combine(root, "Cmd.cs"), """
             namespace Expected;
 
+            /// <summary>Cmd.</summary>
             public sealed class Cmd
             {
             }
@@ -884,13 +894,17 @@ public class ToolsDevTests
         await File.WriteAllTextAsync(Path.Combine(root, "Cmd.cs"), """
             namespace Expected;
 
+            /// <summary>Cmd.</summary>
             public sealed class Cmd : BaseCmd
             {
                 public Cmd() : base("expected-name") { }
             }
 
+            /// <summary>Base cmd.</summary>
             public class BaseCmd
             {
+                /// <summary>Base cmd.</summary>
+                /// <param name="name">Name.</param>
                 protected BaseCmd(string name) { }
             }
             """);
@@ -919,6 +933,7 @@ public class ToolsDevTests
 
             await File.WriteAllTextAsync(Path.Combine(root, "Bad.cs"), """
                 namespace Expected;
+                /// <summary>Bad.</summary>
                 class Bad { }
                 """);
             var bad = await new RoslynAnalyzeTool().InvokeAsync(
@@ -1194,11 +1209,13 @@ public class ToolsDevTests
         {
             (await ViolationCount("Ns.cs", """
                 namespace Wrong;
+                /// <summary>Ns.</summary>
                 public sealed class Ns { }
                 """, new { requiredNamespace = "Expected", requireFileScopedNamespace = true })).Should().BeGreaterThan(0);
 
             (await ViolationCount("BlockNs.cs", """
                 namespace Blocked {
+                    /// <summary>Block ns.</summary>
                     public sealed class BlockNs { }
                 }
                 """, new { requireFileScopedNamespace = true })).Should().BeGreaterThan(0);
@@ -1207,32 +1224,40 @@ public class ToolsDevTests
 
             (await ViolationCount("Name.cs", """
                 namespace Expected;
+                /// <summary>Other.</summary>
                 public sealed class Other { }
                 """, new { requiredClassName = "ExpectedName", requireFileScopedNamespace = true })).Should().BeGreaterThan(0);
 
             (await ViolationCount("Internal.cs", """
                 namespace Expected;
+                /// <summary>Internal.</summary>
                 sealed class Internal { }
                 """, new { requirePublic = true, requireFileScopedNamespace = true })).Should().BeGreaterThan(0);
 
             (await ViolationCount("Open.cs", """
                 namespace Expected;
+                /// <summary>Open.</summary>
                 public class Open { }
                 """, new { requireSealed = true, requireFileScopedNamespace = true })).Should().BeGreaterThan(0);
 
             (await ViolationCount("Base.cs", """
                 namespace Expected;
+                /// <summary>Base.</summary>
                 public sealed class Base { }
                 """, new { requiredBaseType = "MissingBase", requireFileScopedNamespace = true })).Should().BeGreaterThan(0);
 
             (await ViolationCount("Cmd.cs", """
                 namespace Expected;
+                /// <summary>Cmd.</summary>
                 public sealed class Cmd : BaseCmd
                 {
                     public Cmd() : base("wrong-name") { }
                 }
+                /// <summary>Base cmd.</summary>
                 public class BaseCmd
                 {
+                    /// <summary>Base cmd.</summary>
+                    /// <param name="name">Name.</param>
                     protected BaseCmd(string name) { }
                 }
                 """, new { requiredCommandName = "right-name", requireFileScopedNamespace = true })).Should().BeGreaterThan(0);

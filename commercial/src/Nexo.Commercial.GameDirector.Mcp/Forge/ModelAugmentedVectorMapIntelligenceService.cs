@@ -2,10 +2,9 @@ using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nexo.Abstractions;
-using Nexo.GameDomain.Mapping;
+using Nexo.Commercial.GameDomain.Mapping;
 
-namespace Nexo.API.Forge;
-
+namespace GameDirector.Mcp.Forge;
 /// <summary>
 /// Runs heuristic analysis then optionally augments with <see cref="IModel"/> when enabled.
 /// </summary>

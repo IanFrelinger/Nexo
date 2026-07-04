@@ -1,5 +1,4 @@
-namespace Nexo.GameDomain.Materials;
-
+namespace Nexo.Commercial.GameDomain.Materials;
 /// <summary>
 /// Output from <see cref="IMaterialIntelligenceService"/> for engine-side material setup.
 /// </summary>

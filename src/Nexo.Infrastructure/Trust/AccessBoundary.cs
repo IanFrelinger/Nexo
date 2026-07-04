@@ -293,11 +293,17 @@ public sealed class AccessBoundary : IAccessBoundary
 
     private sealed class AccessBoundaryConfig
     {
+        /// <summary>Is paused.</summary>
         public bool IsPaused { get; set; }
+        /// <summary>Category allowed.</summary>
         public Dictionary<string, bool>? CategoryAllowed { get; set; }
+        /// <summary>Source allowed.</summary>
         public Dictionary<string, bool>? SourceAllowed { get; set; }
+        /// <summary>Project overrides.</summary>
         public Dictionary<string, Dictionary<string, bool>>? ProjectOverrides { get; set; }
+        /// <summary>Active policy pack id.</summary>
         public string? ActivePolicyPackId { get; set; }
+        /// <summary>Active policy pack version.</summary>
         public string? ActivePolicyPackVersion { get; set; }
     }
 }

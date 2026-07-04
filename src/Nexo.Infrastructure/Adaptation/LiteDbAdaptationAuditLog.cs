@@ -12,6 +12,7 @@ public sealed class LiteDbAdaptationAuditLog : IAdaptationAuditLog
     private const string CollectionName = "adaptation_audit";
     private readonly string _connectionString;
 
+    /// <summary>Initializes a new lite db adaptation audit log.</summary>
     public LiteDbAdaptationAuditLog(string pathOrConnectionString)
     {
         if (string.IsNullOrWhiteSpace(pathOrConnectionString))
@@ -83,16 +84,26 @@ public sealed class LiteDbAdaptationAuditLog : IAdaptationAuditLog
 
     private sealed class AuditDoc
     {
+        /// <summary>Id.</summary>
         [BsonId]
         public string Id { get; set; } = string.Empty;
+        /// <summary>Timestamp.</summary>
         public DateTimeOffset Timestamp { get; set; }
+        /// <summary>Autonomy level.</summary>
         public string AutonomyLevel { get; set; } = string.Empty;
+        /// <summary>Outcome.</summary>
         public string Outcome { get; set; } = string.Empty;
+        /// <summary>Brick id.</summary>
         public string? BrickId { get; set; }
+        /// <summary>Failure type.</summary>
         public string? FailureType { get; set; }
+        /// <summary>File path.</summary>
         public string? FilePath { get; set; }
+        /// <summary>Regression passed.</summary>
         public bool RegressionPassed { get; set; }
+        /// <summary>Promoted.</summary>
         public bool Promoted { get; set; }
+        /// <summary>Message.</summary>
         public string? Message { get; set; }
     }
 }

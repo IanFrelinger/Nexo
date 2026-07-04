@@ -1,5 +1,6 @@
 namespace Nexo.Runtime.Barriers.Identity.Resolvers;
 
+/// <summary>Configuration for API key to barrier level hash mappings.</summary>
 public sealed class ApiKeyResolverOptions
 {
     /// <summary>

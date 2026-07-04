@@ -15,6 +15,7 @@ public sealed class SelfExtendCommand : Command
 {
     private readonly Func<SelfExtendRunnerAdapter> _runnerFactory;
 
+    /// <summary>Creates a new SelfExtendCommand instance.</summary>
     public SelfExtendCommand(Func<SelfExtendRunnerAdapter> runnerFactory)
         : base("self-extend", "Run one self-extend cycle with file-write tools under policy.")
     {

@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.VirtualProduction;
 
+/// <summary>Tests for product fleet org control plane.</summary>
 [Collection("Integration")]
 [Trait("Category", "Integration")]
 [Trait("Category", "ProdStyle")]
@@ -16,6 +17,8 @@ public sealed class ProductFleetOrgControlPlaneTests : IClassFixture<NexoCloudAp
 {
     private readonly NexoCloudApiWebApplicationFactory _factory;
 
+    /// <summary>Product fleet org control plane tests.</summary>
+    /// <param name="factory">Factory.</param>
     public ProductFleetOrgControlPlaneTests(NexoCloudApiWebApplicationFactory factory) => _factory = factory;
 
     [Fact(Timeout = 120000)]
@@ -23,6 +26,7 @@ public sealed class ProductFleetOrgControlPlaneTests : IClassFixture<NexoCloudAp
     {
         var client = _factory.CreateClient();
         var org = await CreateOrgAsync(client, "alice@acme.example", "Acme");
+        /// <summary>Add member async.</summary>
         await AddMemberAsync(client, org.OrgId, "alice@acme.example", "bob@acme.example", OrganizationRole.Member);
 
         using var request = new HttpRequestMessage(HttpMethod.Post, $"api/orgs/{org.OrgId}/members");

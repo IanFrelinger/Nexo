@@ -1,10 +1,10 @@
 using System.Text.Json;
 using FluentAssertions;
-using Nexo.GameDomain.Discord;
-using Nexo.GameDomain.Playtest;
+using Nexo.Commercial.GameDomain.Discord;
+using Nexo.Commercial.GameDomain.Playtest;
 
-namespace Nexo.Tests.GameDomain.Discord;
-
+namespace Nexo.Commercial.Tests.GameDomain.Discord;
+/// <summary>Tests for discord integration.</summary>
 public class DiscordIntegrationTests
 {
     [Fact]
@@ -223,6 +223,7 @@ public class DiscordIntegrationTests
         message.Should().Contain("highlight_01.mp4");
     }
 
+    /// <summary>Creates sample report.</summary>
     private static PlaytestReport CreateSampleReport() => new()
     {
         SessionId = "session-001",

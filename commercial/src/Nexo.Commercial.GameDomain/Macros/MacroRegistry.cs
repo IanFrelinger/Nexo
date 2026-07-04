@@ -1,7 +1,6 @@
 using System.Collections.Concurrent;
 
-namespace Nexo.GameDomain.Macros;
-
+namespace Nexo.Commercial.GameDomain.Macros;
 /// <summary>
 /// Thread-safe, in-memory registry for <see cref="MacroDefinition"/> instances.
 /// <para>

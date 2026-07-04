@@ -1,9 +1,9 @@
 using FluentAssertions;
-using Nexo.GameDomain.Mapping;
+using Nexo.Commercial.GameDomain.Mapping;
 using Xunit;
 
-namespace Nexo.Tests.GameDomain;
-
+namespace Nexo.Commercial.Tests.GameDomain;
+/// <summary>Tests for web mercator tile math.</summary>
 public sealed class WebMercatorTileMathTests
 {
     [Fact]

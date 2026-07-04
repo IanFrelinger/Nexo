@@ -3,8 +3,8 @@ using System.Text.Json;
 using Nexo.CLI.Runtime;
 using Nexo.Orchestration.Models;
 
-namespace Nexo.CLI.Commands;
-
+namespace Nexo.CLI.Commands.Workflow;
+/// <summary>Handles stress requests.</summary>
 internal sealed class StressHandler(
     Func<string, CancellationToken, Task<WorkflowCommand.PreflightResult>> providerPreflight,
     Func<string?, string> resolveDefaultSpecPath,
@@ -25,6 +25,7 @@ internal sealed class StressHandler(
     Func<DateTimeOffset, TimeSpan, RuntimeTelemetry> captureRuntimeTelemetry,
     Func<bool, long, WorkflowLabCompositionSpec, WorkflowLabModelProfileSpec, double> computeScore)
 {
+    /// <summary>Executes the command handler and returns a process exit code.</summary>
     public async Task<int> ExecuteAsync(
         string? requestOverride,
         string? specPath,
@@ -298,6 +299,7 @@ internal sealed class StressHandler(
             runId,
             benchmarkSet,
             persistHistory);
+        /// <summary>Write result.</summary>
         WriteResult(result, json);
         return result.Ok ? 0 : 1;
     }

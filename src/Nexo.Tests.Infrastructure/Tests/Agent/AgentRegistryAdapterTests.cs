@@ -9,17 +9,24 @@ using Nexo.Infrastructure.Agent.Adapters;
 
 namespace Nexo.Tests.Infrastructure.Tests.Agent;
 
+/// <summary>Tests for agent registry adapter.</summary>
 public class AgentRegistryAdapterTests : UnitTestBase
 {
     public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
+            /// <summary>Test get agents async with no agents.</summary>
             await TestGetAgentsAsyncWithNoAgents();
+            /// <summary>Test get agents async with single agent.</summary>
             await TestGetAgentsAsyncWithSingleAgent();
+            /// <summary>Test get agents async with multiple agents.</summary>
             await TestGetAgentsAsyncWithMultipleAgents();
+            /// <summary>Test get agent async found.</summary>
             await TestGetAgentAsyncFound();
+            /// <summary>Test get agent async not found.</summary>
             await TestGetAgentAsyncNotFound();
+            /// <summary>Test discover agents async.</summary>
             await TestDiscoverAgentsAsync();
 
             return new TestResult
@@ -67,7 +74,9 @@ public class AgentRegistryAdapterTests : UnitTestBase
         var adapter = new AgentRegistryAdapter(mockServiceProvider.Object, mockLogger.Object);
         var agents = await adapter.GetAgentsAsync();
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(agents);
+        /// <summary>Assert equal.</summary>
         AssertEqual(0, agents.Count);
     }
 
@@ -86,8 +95,11 @@ public class AgentRegistryAdapterTests : UnitTestBase
         var adapter = new AgentRegistryAdapter(mockServiceProvider.Object, mockLogger.Object);
         var agents = await adapter.GetAgentsAsync();
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(agents);
+        /// <summary>Assert equal.</summary>
         AssertEqual(1, agents.Count);
+        /// <summary>Assert equal.</summary>
         AssertEqual("TestAgent", agents[0].Name);
     }
 
@@ -111,7 +123,9 @@ public class AgentRegistryAdapterTests : UnitTestBase
         var adapter = new AgentRegistryAdapter(mockServiceProvider.Object, mockLogger.Object);
         var agents = await adapter.GetAgentsAsync();
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(agents);
+        /// <summary>Assert equal.</summary>
         AssertEqual(3, agents.Count);
         AssertTrue(agents.Any(a => a.Name == "Agent1"));
         AssertTrue(agents.Any(a => a.Name == "Agent2"));
@@ -133,7 +147,9 @@ public class AgentRegistryAdapterTests : UnitTestBase
         var adapter = new AgentRegistryAdapter(mockServiceProvider.Object, mockLogger.Object);
         var agent = await adapter.GetAgentAsync("TestAgent");
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(agent);
+        /// <summary>Assert equal.</summary>
         AssertEqual("TestAgent", agent!.Name);
     }
 
@@ -149,6 +165,7 @@ public class AgentRegistryAdapterTests : UnitTestBase
         var adapter = new AgentRegistryAdapter(mockServiceProvider.Object, mockLogger.Object);
         var agent = await adapter.GetAgentAsync("NonExistentAgent");
 
+        /// <summary>Assert null.</summary>
         AssertNull(agent);
     }
 
@@ -167,8 +184,11 @@ public class AgentRegistryAdapterTests : UnitTestBase
         var adapter = new AgentRegistryAdapter(mockServiceProvider.Object, mockLogger.Object);
         var agents = await adapter.DiscoverAgentsAsync();
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(agents);
+        /// <summary>Assert equal.</summary>
         AssertEqual(1, agents.Count);
+        /// <summary>Assert equal.</summary>
         AssertEqual("DiscoveredAgent", agents[0].Name);
     }
 }

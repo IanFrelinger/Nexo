@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Trust;
 
+/// <summary>Tests for observation gate gap coverage.</summary>
 public sealed class ObservationGateGapCoverageTests
 {
     [Fact]

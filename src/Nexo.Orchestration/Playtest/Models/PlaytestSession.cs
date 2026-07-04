@@ -13,93 +13,27 @@ namespace Nexo.Orchestration.Playtest.Models;
 /// </summary>
 public sealed record PlaytestSession
 {
+    /// <summary>Unique session identifier.</summary>
     public required string SessionId { get; init; }
+
+    /// <summary>Build under test.</summary>
     public required string BuildId { get; init; }
+
+    /// <summary>Session configuration and parameters.</summary>
     public required PlaytestConfiguration Configuration { get; init; }
 
+    /// <summary>UTC timestamp when the session started.</summary>
     public DateTimeOffset StartedAt { get; init; }
+
+    /// <summary>UTC timestamp when the session ended.</summary>
     public DateTimeOffset? EndedAt { get; init; }
+
+    /// <summary>Current lifecycle status of the session.</summary>
     public PlaytestStatus Status { get; init; } = PlaytestStatus.Pending;
 
+    /// <summary>AI player sessions participating in the playtest.</summary>
     public IReadOnlyList<AIPlayerSession> Players { get; init; } = Array.Empty<AIPlayerSession>();
+
+    /// <summary>Aggregate metrics collected during the session.</summary>
     public PlaytestMetrics? Metrics { get; init; }
 }
-
-/// <summary>
-/// Configuration for a playtest session.
-/// </summary>
-public sealed record PlaytestConfiguration
-{
-    public int PlayerCount { get; init; } = 1;
-    public TimeSpan MaxDuration { get; init; } = TimeSpan.FromMinutes(30);
-    public string? Scenario { get; init; }
-    public IReadOnlyList<string> FocusAreas { get; init; } = Array.Empty<string>();
-
-    /// <summary>
-    /// AI player behavior profiles (aggressive, passive, explorer, etc.)
-    /// </summary>
-    public IReadOnlyList<string> PlayerProfiles { get; init; } = Array.Empty<string>();
-}
-
-/// <summary>
-/// Session data for a single AI player.
-/// </summary>
-public sealed record AIPlayerSession
-{
-    public required string PlayerId { get; init; }
-    public required string Profile { get; init; }
-    public IReadOnlyList<PlayerAction> Actions { get; init; } = Array.Empty<PlayerAction>();
-    public PlayerMetrics? Metrics { get; init; }
-}
-
-/// <summary>
-/// An action taken by an AI player.
-/// </summary>
-public sealed record PlayerAction
-{
-    public required string ActionType { get; init; }
-    public required DateTimeOffset Timestamp { get; init; }
-    public IReadOnlyDictionary<string, object> Parameters { get; init; } =
-        new Dictionary<string, object>();
-    public string? Reasoning { get; init; }
-}
-
-/// <summary>
-/// Metrics for a single player session.
-/// </summary>
-public sealed record PlayerMetrics
-{
-    public int TotalActions { get; init; }
-    public int Kills { get; init; }
-    public int Deaths { get; init; }
-    public int ObjectivesCompleted { get; init; }
-    public double AverageResponseTimeMs { get; init; }
-    public TimeSpan TotalPlayTime { get; init; }
-}
-
-/// <summary>
-/// Overall playtest metrics.
-/// </summary>
-public sealed record PlaytestMetrics
-{
-    public TimeSpan TotalDuration { get; init; }
-    public int TotalEvents { get; init; }
-    public double AverageFrameRate { get; init; }
-    public double MinFrameRate { get; init; }
-    public long PeakMemoryBytes { get; init; }
-    public int CrashCount { get; init; }
-    public int ErrorCount { get; init; }
-}
-
-/// <summary>
-/// Status of a playtest session.
-/// </summary>
-public enum PlaytestStatus
-{
-    Pending,
-    Running,
-    Completed,
-    Failed,
-    Cancelled
-}
-

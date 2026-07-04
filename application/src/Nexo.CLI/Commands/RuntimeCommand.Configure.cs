@@ -3,6 +3,7 @@ using System.CommandLine.Invocation;
 
 namespace Nexo.CLI.Commands;
 
+/// <summary>CLI command for runtime.</summary>
 public sealed partial class RuntimeCommand
 {
     private void ConfigureExecuteCommand()
@@ -83,6 +84,7 @@ public sealed partial class RuntimeCommand
                 ctx.ParseResult.GetValueForOption(jsonOpt),
                 ctx.GetCancellationToken()).ConfigureAwait(false);
         });
+        /// <summary>Add command.</summary>
         AddCommand(executeCmd);
     }
 
@@ -127,6 +129,7 @@ public sealed partial class RuntimeCommand
                 ctx.ParseResult.GetValueForOption(historyWindowOpt),
                 ctx.ParseResult.GetValueForOption(jsonOpt)).ConfigureAwait(false);
         });
+        /// <summary>Add command.</summary>
         AddCommand(planCmd);
     }
 
@@ -199,6 +202,7 @@ public sealed partial class RuntimeCommand
                 ctx.ParseResult.GetValueForOption(jsonOpt),
                 ctx.GetCancellationToken()).ConfigureAwait(false);
         });
+        /// <summary>Add command.</summary>
         AddCommand(evaluateCmd);
     }
 
@@ -227,6 +231,7 @@ public sealed partial class RuntimeCommand
                 ctx.ParseResult.GetValueForOption(benchmarkSetOpt),
                 ctx.ParseResult.GetValueForOption(jsonOpt)).GetAwaiter().GetResult();
         });
+        /// <summary>Add command.</summary>
         AddCommand(historyCmd);
     }
 
@@ -249,6 +254,7 @@ public sealed partial class RuntimeCommand
                 ctx.ParseResult.GetValueForOption(historyWindowOpt),
                 ctx.ParseResult.GetValueForOption(jsonOpt)).GetAwaiter().GetResult();
         });
+        /// <summary>Add command.</summary>
         AddCommand(recommendCmd);
     }
 
@@ -289,6 +295,7 @@ public sealed partial class RuntimeCommand
                 ctx.ParseResult.GetValueForOption(minConsecutivePassesOpt),
                 ctx.ParseResult.GetValueForOption(jsonOpt)).GetAwaiter().GetResult();
         });
+        /// <summary>Add command.</summary>
         AddCommand(gateCmd);
     }
 
@@ -410,6 +417,7 @@ public sealed partial class RuntimeCommand
                 ctx.ParseResult.GetValueForOption(jsonOpt),
                 ctx.GetCancellationToken()).ConfigureAwait(false);
         });
+        /// <summary>Add command.</summary>
         AddCommand(releaseGateCmd);
     }
 

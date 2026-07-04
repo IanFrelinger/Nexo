@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.NodeCapabilityRuntime;
 
+/// <summary>Tests for tier classification.</summary>
 public sealed class TierClassificationTests
 {
     [Theory]

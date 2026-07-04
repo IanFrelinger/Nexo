@@ -13,6 +13,7 @@ public sealed class ModelArtifactCatalogService : IModelArtifactCatalogService
     private readonly IEnumerable<IModelArtifactCatalogSource> _sources;
     private readonly ILogger<ModelArtifactCatalogService> _logger;
 
+    /// <summary>Initializes a new model artifact catalog service.</summary>
     public ModelArtifactCatalogService(
         IEnumerable<IModelArtifactCatalogSource> sources,
         ILogger<ModelArtifactCatalogService> logger)
@@ -21,9 +22,11 @@ public sealed class ModelArtifactCatalogService : IModelArtifactCatalogService
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>List all asynchronously.</summary>
     public Task<IReadOnlyList<ModelArtifactRecord>> ListAllAsync(CancellationToken cancellationToken = default) =>
         ListFromSourcesAsync(static s => s is not IRemoteInstallableModelArtifactSource, cancellationToken);
 
+    /// <summary>List installable asynchronously.</summary>
     public Task<IReadOnlyList<ModelArtifactRecord>> ListInstallableAsync(CancellationToken cancellationToken = default) =>
         ListFromSourcesAsync(static s => s is IRemoteInstallableModelArtifactSource, cancellationToken);
 

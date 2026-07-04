@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.Configuration;
 
+/// <summary>Tests for file based aggressiveness mode store gap coverage.</summary>
 public sealed class FileBasedAggressivenessModeStoreGapCoverageTests
 {
     [Fact]

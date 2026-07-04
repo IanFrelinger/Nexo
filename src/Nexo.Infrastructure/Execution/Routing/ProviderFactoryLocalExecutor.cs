@@ -13,6 +13,7 @@ public sealed class ProviderFactoryLocalExecutor : ILocalExecutor
     private readonly IProviderFactory _providerFactory;
     private readonly ILogger<ProviderFactoryLocalExecutor> _logger;
 
+    /// <summary>Initializes a new provider factory local executor.</summary>
     public ProviderFactoryLocalExecutor(
         IProviderFactory providerFactory,
         ILogger<ProviderFactoryLocalExecutor> logger)
@@ -21,6 +22,7 @@ public sealed class ProviderFactoryLocalExecutor : ILocalExecutor
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>Execute asynchronously.</summary>
     public async Task<Result<GenerationExecutionResult>> ExecuteAsync(
         RunPodJobPayload payload,
         JobRequirements requirements,

@@ -7,6 +7,7 @@ using Nexo.Abstractions.Barriers;
 
 namespace Nexo.Runtime.Barriers.Sinks;
 
+/// <summary>Append-only file sink for barrier audit events with rotation and async draining.</summary>
 public sealed class FileBarrierAuditSink : IBarrierAuditSink, IAsyncDisposable
 {
     private readonly FileBarrierAuditSinkOptions _options;
@@ -41,6 +42,7 @@ public sealed class FileBarrierAuditSink : IBarrierAuditSink, IAsyncDisposable
         _drainTask = Task.Run(DrainAsync);
     }
 
+    /// <summary>Enqueues a barrier audit event for asynchronous file append.</summary>
     public ValueTask WriteAsync(
         BarrierAuditEvent auditEvent,
         CancellationToken cancellationToken = default)
@@ -74,6 +76,7 @@ public sealed class FileBarrierAuditSink : IBarrierAuditSink, IAsyncDisposable
         return ValueTask.CompletedTask;
     }
 
+    /// <summary>Flushes pending events and releases file writer resources.</summary>
     public async ValueTask DisposeAsync()
     {
         if (Interlocked.Exchange(ref _disposeRequested, 1) != 0)

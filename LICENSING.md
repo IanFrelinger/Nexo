@@ -110,7 +110,7 @@ Tier 2 is the commercial layer for fleet-scale and governance capabilities:
 
 Mesh-lab **peer-a** runs `Nexo.Commercial.Fleet.Host` (`.docker/Dockerfile.fleet-host`). Open duplicate fleet trees under `src/**/Fleet/**` have been removed.
 
-**Networking (Phase F, done):** knowledge-sync / network-bus / adaptive-cache surfaces live under `commercial/src/Nexo.Commercial.Fleet.Contracts/Networking/**` and `commercial/src/Nexo.Commercial.Fleet.Infrastructure/Networking/**` (namespaces retain `Nexo.Core.Application.Networking` / `Nexo.Infrastructure.Networking` for compatibility). Register via `AddNexoCommercialFleetNetworking()` on the commercial fleet host.
+**Networking (Phase F, done):** knowledge-sync / network-bus / adaptive-cache surfaces live under `commercial/src/Nexo.Commercial.Fleet.Contracts/Networking/**` and `commercial/src/Nexo.Commercial.Fleet.Infrastructure/Networking/**` (namespaces retain `Nexo.Core.Application.Networking` / `Nexo.Commercial.Fleet.Infrastructure.Networking` for compatibility). Register via `AddNexoCommercialFleetNetworking()` on the commercial fleet host.
 
 ## Tier 3 — COMMERCIAL (verticals)
 

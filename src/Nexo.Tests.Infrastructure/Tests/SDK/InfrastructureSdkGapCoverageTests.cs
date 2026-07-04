@@ -1,11 +1,11 @@
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Nexo.Core.Application.Maintenance.Ports;
-using Nexo.Infrastructure.Sdk.Maintenance;
+using Nexo.Infrastructure.Maintenance.Sdk.Extensions;
 using Xunit;
 
-namespace Nexo.Tests.Infrastructure.Tests.Sdk;
-
+namespace Nexo.Tests.Infrastructure.Tests.SDK;
+/// <summary>Tests for infrastructure sdk gap coverage.</summary>
 public class InfrastructureSdkGapCoverageTests
 {
     [Fact]

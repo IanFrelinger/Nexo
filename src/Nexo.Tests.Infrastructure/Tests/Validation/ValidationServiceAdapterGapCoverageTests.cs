@@ -9,9 +9,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Validation;
 
-[CollectionDefinition("ValidationAdapterCwd", DisableParallelization = true)]
-public sealed class ValidationAdapterCwdCollection;
-
+/// <summary>Tests for validation service adapter gap coverage.</summary>
 [Collection("ValidationAdapterCwd")]
 public class ValidationServiceAdapterGapCoverageTests
 {
@@ -277,8 +275,10 @@ public class ValidationServiceAdapterGapCoverageTests
             """);
         File.WriteAllText(Path.Combine(testsDir, "PassTests.cs"), """
             using Xunit;
+            /// <summary>Tests for pass.</summary>
             public class PassTests
             {
+                /// <summary>Ok.</summary>
                 [Fact] public void Ok() { }
                 [Fact] public void Other() { }
             }
@@ -310,8 +310,10 @@ public class ValidationServiceAdapterGapCoverageTests
             """);
         File.WriteAllText(Path.Combine(testsDir, "FailTests.cs"), """
             using Xunit;
+            /// <summary>Tests for fail.</summary>
             public class FailTests
             {
+                /// <summary>Boom.</summary>
                 [Fact] public void Boom() => Assert.True(false);
             }
             """);
@@ -323,6 +325,7 @@ public class ValidationServiceAdapterGapCoverageTests
         var parser = new Mock<ITestResultParser>();
         parser.Setup(p => p.ParseAsync(It.IsAny<FileInfo>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<TestResult>());
+        /// <summary>Validation service adapter.</summary>
         return new ValidationServiceAdapter(NullLogger<ValidationServiceAdapter>.Instance, parser.Object);
     }
 }

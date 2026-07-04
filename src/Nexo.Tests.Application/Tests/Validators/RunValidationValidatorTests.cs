@@ -6,6 +6,7 @@ using Nexo.Core.Application.Validation.UseCases.RunValidation;
 
 namespace Nexo.Tests.Application.Tests.Validators;
 
+/// <summary>Tests for run validation validator.</summary>
 public class RunValidationValidatorTests : UnitTestBase
 {
     public override Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
@@ -38,6 +39,8 @@ public class RunValidationValidatorTests : UnitTestBase
             // Test 4: Valid filter string should pass
             var command4 = new RunValidationCommand("TestCategory");
             var result4 = validator.Validate(command4);
+            /// <summary>Assert true.</summary>
+            /// <param name="validation"">Validation".</param>
             AssertTrue(result4.IsValid, "Valid filter string should pass validation");
             AssertFalse(result4.Errors.Any(e => e.PropertyName == "Filter"),
                 "Should not have Filter validation errors");
@@ -46,6 +49,8 @@ public class RunValidationValidatorTests : UnitTestBase
             var progress = new Progress<Nexo.Core.Application.Common.Models.ProgressReport>();
             var command5 = new RunValidationCommand("TestCategory", progress);
             var result5 = validator.Validate(command5);
+            /// <summary>Assert true.</summary>
+            /// <param name="validation"">Validation".</param>
             AssertTrue(result5.IsValid, "Valid filter with progress should pass validation");
             AssertFalse(result5.Errors.Any(e => e.PropertyName == "Filter"),
                 "Should not have Filter validation errors");

@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration.Validation;
 
+/// <summary>Tests for schema validator.</summary>
 public class SchemaValidatorTests
 {
     private readonly Mock<ILogger<SchemaValidator>> _loggerMock;

@@ -15,6 +15,7 @@ namespace Nexo.CLI.Commands;
 /// </summary>
 public sealed class ChangelogCommand : Command
 {
+    /// <summary>Creates a new ChangelogCommand instance.</summary>
     public ChangelogCommand() : base("changelog", "Generate changelog from promoted changes (Phase F).")
     {
         var sinceOpt = new Option<string?>("--since", "Start date (e.g. 7d, 30d, or yyyy-MM-dd). Default: 7d");

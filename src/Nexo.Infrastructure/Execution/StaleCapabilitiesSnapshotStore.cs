@@ -1,4 +1,4 @@
-using Nexo.BrickContracts.Capabilities;
+using Nexo.Brick.Contracts.Capabilities;
 
 namespace Nexo.Infrastructure.Execution;
 
@@ -11,6 +11,7 @@ public sealed class StaleCapabilitiesSnapshotStore
     private readonly Dictionary<string, NodeCapabilityManifestDto> _byBaseUrl = new(StringComparer.OrdinalIgnoreCase);
     private readonly object _gate = new();
 
+    /// <summary>Gets .</summary>
     public NodeCapabilityManifestDto? Get(string baseUrl)
     {
         if (string.IsNullOrWhiteSpace(baseUrl))
@@ -27,6 +28,7 @@ public sealed class StaleCapabilitiesSnapshotStore
         }
     }
 
+    /// <summary>Put.</summary>
     public void Put(string baseUrl, NodeCapabilityManifestDto value)
     {
         if (string.IsNullOrWhiteSpace(baseUrl) || value is null)

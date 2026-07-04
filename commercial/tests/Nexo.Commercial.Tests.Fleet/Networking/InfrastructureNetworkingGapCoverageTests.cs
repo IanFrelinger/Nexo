@@ -6,13 +6,14 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
-using Nexo.Core.Application.Networking.Models;
-using Nexo.Core.Application.Networking.Ports;
-using Nexo.Infrastructure.Networking;
+using Nexo.Commercial.Fleet.Contracts.Networking.Models;
+using Nexo.Commercial.Fleet.Contracts.Networking.Ports;
+using Nexo.Commercial.Fleet.Infrastructure.Networking;
 using Xunit;
 
 namespace Nexo.Commercial.Tests.Fleet.Networking;
 
+/// <summary>Tests for infrastructure networking gap coverage.</summary>
 public class InfrastructureNetworkingGapCoverageTests
 {
     [Fact]
@@ -126,9 +127,11 @@ public class InfrastructureNetworkingGapCoverageTests
                 PeerUrls = new[] { "https://peer.example.com" },
                 HeartbeatIntervalSeconds = 0,
             },
+            /// <summary>Fake handler.</summary>
             new FakeHandler((_, _) =>
             {
                 Interlocked.Increment(ref sent);
+                /// <summary>Json.</summary>
                 return Json(HttpStatusCode.OK, "{}");
             }));
 
@@ -149,6 +152,7 @@ public class InfrastructureNetworkingGapCoverageTests
                 PeerUrls = new[] { "https://peer.example.com" },
                 HeartbeatIntervalSeconds = 0,
             },
+            /// <summary>Fake handler.</summary>
             new FakeHandler((_, _) => Json(HttpStatusCode.InternalServerError, "{}")));
 
         await bus.SendAsync("peer.example.com", Event("e7", "fail"));
@@ -166,9 +170,11 @@ public class InfrastructureNetworkingGapCoverageTests
                 PeerUrls = new[] { "https://peer.example.com" },
                 HeartbeatIntervalSeconds = 0,
             },
+            /// <summary>Fake handler.</summary>
             new FakeHandler((_, _) =>
             {
                 Interlocked.Increment(ref sent);
+                /// <summary>Json.</summary>
                 return Json(HttpStatusCode.OK, "{}");
             }));
 
@@ -247,6 +253,7 @@ public class InfrastructureNetworkingGapCoverageTests
                 PeerUrls = new[] { "https://peer.example.com" },
                 HeartbeatIntervalSeconds = 0,
             },
+            /// <summary>Fake handler.</summary>
             new FakeHandler((_, _) => throw new HttpRequestException("network down")));
 
         await bus.SendAsync("peer.example.com", Event("e11", "boom"));
@@ -264,9 +271,11 @@ public class InfrastructureNetworkingGapCoverageTests
                 PeerUrls = new[] { "https://peer-a.example.com", "https://peer-b.example.com" },
                 HeartbeatIntervalSeconds = 0,
             },
+            /// <summary>Fake handler.</summary>
             new FakeHandler((req, _) =>
             {
                 sentTo.Add(req.RequestUri!.Host);
+                /// <summary>Json.</summary>
                 return Json(HttpStatusCode.OK, "{}");
             }));
 
@@ -303,9 +312,11 @@ public class InfrastructureNetworkingGapCoverageTests
                 PeerUrls = new[] { "https://peer.example.com" },
                 HeartbeatIntervalSeconds = 1,
             },
+            /// <summary>Fake handler.</summary>
             new FakeHandler((_, _) =>
             {
                 Interlocked.Increment(ref sent);
+                /// <summary>Json.</summary>
                 return Json(HttpStatusCode.OK, "{}");
             }));
 
@@ -372,6 +383,7 @@ public class InfrastructureNetworkingGapCoverageTests
         var handler = new FakeHandler((req, _) =>
         {
             if (req.Method == HttpMethod.Post)
+                /// <summary>Json.</summary>
                 return Json(HttpStatusCode.OK, "{}");
             if (req.Method == HttpMethod.Get)
             {
@@ -385,6 +397,7 @@ public class InfrastructureNetworkingGapCoverageTests
                 };
             }
 
+            /// <summary>Json.</summary>
             return Json(HttpStatusCode.NotFound, "{}");
         });
 
@@ -425,6 +438,7 @@ public class InfrastructureNetworkingGapCoverageTests
                 PeerUrls = new[] { "https://peer.example.com" },
                 DiscoveredEntryMaxAgeSeconds = 0,
             },
+            /// <summary>Fake handler.</summary>
             new FakeHandler((req, _) =>
             {
                 req.RequestUri!.AbsolutePath.Should().Be("/api/agents");
@@ -449,6 +463,7 @@ public class InfrastructureNetworkingGapCoverageTests
                 PeerUrls = new[] { "not-a-url", "https://peer.example.com" },
                 DiscoveredEntryMaxAgeSeconds = 0,
             },
+            /// <summary>Fake handler.</summary>
             new FakeHandler((_, _) => throw new HttpRequestException("peer down")));
 
         await directory.RefreshFromPeersAsync();
@@ -462,6 +477,8 @@ public class InfrastructureNetworkingGapCoverageTests
         services.AddSingleton<INetworkBus>(CreateBus(new NetworkBusOptions { NodeId = "p-node", PeerUrls = [] }));
         services.AddSingleton<IKnowledgeSyncService>(new HttpKnowledgeSyncService(
             Options.Create(new KnowledgeSyncServiceOptions { NodeId = "p-node" }),
+            /// <summary>Creates factory.</summary>
+            /// <param name="FakeHandler((_">Fake handler((_.</param>
             CreateFactory(new FakeHandler((_, _) => Json(HttpStatusCode.OK, "{}"))),
             NullLogger<HttpKnowledgeSyncService>.Instance));
 
@@ -474,9 +491,15 @@ public class InfrastructureNetworkingGapCoverageTests
         metrics.NodeId.Should().Be("p-node");
     }
 
+    /// <summary>Chunk.</summary>
+    /// <param name="id">Id.</param>
+    /// <param name="contentType">Content type.</param>
     private static KnowledgeChunk Chunk(string id, string contentType) =>
         new() { Id = id, SourceNodeId = "node", ContentType = contentType };
 
+    /// <summary>Event.</summary>
+    /// <param name="id">Id.</param>
+    /// <param name="type">Type.</param>
     private static NetworkEvent Event(string id, string type) => new()
     {
         EventId = id,
@@ -503,6 +526,8 @@ public class InfrastructureNetworkingGapCoverageTests
         HttpMessageHandler? handler = null) =>
         new(
             Options.Create(options),
+            /// <summary>Creates factory.</summary>
+            /// <param name="FakeHandler((_">Fake handler((_.</param>
             CreateFactory(handler ?? new FakeHandler((_, _) => Json(HttpStatusCode.OK, "[]"))),
             NullLogger<HttpNetworkAgentDirectory>.Instance);
 
@@ -513,16 +538,25 @@ public class InfrastructureNetworkingGapCoverageTests
         return services.BuildServiceProvider().GetRequiredService<IHttpClientFactory>();
     }
 
+    /// <summary>Json.</summary>
+    /// <param name="status">Status.</param>
+    /// <param name="json">Json.</param>
     private static HttpResponseMessage Json(HttpStatusCode status, string json) =>
         new(status) { Content = new StringContent(json, Encoding.UTF8, "application/json") };
 
+    /// <summary>Handles fake requests.</summary>
     private sealed class FakeHandler : HttpMessageHandler
     {
         private readonly Func<HttpRequestMessage, CancellationToken, HttpResponseMessage> _handler;
 
+        /// <summary>Fake handler.</summary>
+        /// <param name="handler">Handler.</param>
         public FakeHandler(Func<HttpRequestMessage, CancellationToken, HttpResponseMessage> handler) =>
             _handler = handler;
 
+        /// <summary>Send async.</summary>
+        /// <param name="request">Request.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
             Task.FromResult(_handler(request, cancellationToken));
     }

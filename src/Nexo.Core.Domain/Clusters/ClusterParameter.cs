@@ -5,8 +5,13 @@ namespace Nexo.Core.Domain.Clusters;
 /// </summary>
 public class ClusterParameter
 {
+    /// <summary>Parameter key referenced in mappings and instance overrides.</summary>
     public string Name { get; init; } = default!;
+
+    /// <summary>Human-readable label for composer UIs.</summary>
     public string DisplayName { get; init; } = default!;
+
+    /// <summary>Description shown to operators configuring the cluster.</summary>
     public string Description { get; init; } = default!;
     
     /// <summary>
@@ -44,32 +49,3 @@ public class ClusterParameter
     /// </summary>
     public ParameterUIHints? UIHints { get; init; }
 }
-
-/// <summary>
-/// Validation rule for a parameter.
-/// </summary>
-public class ParameterValidation
-{
-    public string Type { get; init; } = default!;
-    public string Value { get; init; } = default!;
-    public string Message { get; init; } = default!;
-    
-    public ParameterValidation(string type, string value, string message)
-    {
-        Type = type;
-        Value = value;
-        Message = message;
-    }
-}
-
-/// <summary>
-/// UI hints for parameter rendering.
-/// </summary>
-public class ParameterUIHints
-{
-    public string? ControlType { get; init; } // "slider", "dropdown", "text", "color", etc.
-    public string? Group { get; init; }
-    public int? Order { get; init; }
-    public bool Advanced { get; init; } = false;
-}
-

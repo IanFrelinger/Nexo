@@ -1,9 +1,9 @@
 using System.Text.Json;
 using FluentAssertions;
-using Nexo.GameDomain.Assets;
+using Nexo.Commercial.GameDomain.Assets;
 
-namespace Nexo.Tests.GameDomain;
-
+namespace Nexo.Commercial.Tests.GameDomain;
+/// <summary>Tests for vfx physics input.</summary>
 public class VfxPhysicsInputTests
 {
     // ── VfxDescriptor ──────────────────────────────────────────────────

@@ -1,12 +1,12 @@
 using FluentAssertions;
-using Nexo.GameDomain.Aesthetics;
-using Nexo.GameDomain.Descriptors;
-using Nexo.GameDomain.Macros;
-using Nexo.GameDomain.Scoping;
-using Nexo.GameDomain.Session;
+using Nexo.Commercial.GameDomain.Aesthetics;
+using Nexo.Commercial.GameDomain.Descriptors;
+using Nexo.Commercial.GameDomain.Macros;
+using Nexo.Commercial.GameDomain.Scoping;
+using Nexo.Commercial.GameDomain.Session;
 
-namespace Nexo.Tests.GameDomain;
-
+namespace Nexo.Commercial.Tests.GameDomain;
+/// <summary>Tests for session exporter.</summary>
 public class SessionExporterTests
 {
     [Fact]

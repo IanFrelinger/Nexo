@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Spatial;
 
+/// <summary>Tests for pose stream consumer rejection.</summary>
 [Trait("Category", "Spatial")]
 public sealed class PoseStreamConsumerRejectionTests
 {

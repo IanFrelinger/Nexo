@@ -1,3 +1,4 @@
+// Portability spike: external product client that probes a hosted brick via Nexo.Sdk.Client.
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;

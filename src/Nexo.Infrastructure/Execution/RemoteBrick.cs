@@ -1,20 +1,21 @@
 using System.Net.Http.Json;
 using Microsoft.Extensions.Logging;
-using Nexo.BrickContracts;
+using Nexo.Brick.Contracts;
 using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Execution;
 
 namespace Nexo.Infrastructure.Execution;
 
 /// <summary>
-/// Brick implementation that delegates ExecuteAsync to a remote brick host via HTTP.
+/// DomainBrick implementation that delegates ExecuteAsync to a remote brick host via HTTP.
 /// </summary>
-public sealed class RemoteBrick : Brick
+public sealed class RemoteBrick : DomainBrick
 {
     private readonly HttpClient _httpClient;
     private readonly string _executeBaseUrl;
     private readonly ILogger<RemoteBrick>? _logger;
 
+    /// <summary>Initializes a new remote brick.</summary>
     public RemoteBrick(
         BrickCatalogEntryDto catalogEntry,
         HttpClient httpClient,
@@ -57,6 +58,7 @@ public sealed class RemoteBrick : Brick
         }
     }
 
+    /// <summary>Execute asynchronously.</summary>
     public override async Task<BrickOutput> ExecuteAsync(
         BrickInput input,
         ImplementationType implementation,

@@ -1,7 +1,6 @@
 using Nexo.Core.Application.Environments;
 
-namespace Nexo.GameDomain.Environments;
-
+namespace Nexo.Commercial.GameDomain.Environments;
 /// <summary>
 /// Describes a multi-resolution voxel environment suitable for streaming game worlds—conceptually
 /// a 3D analogue of a tiled map pyramid: each <see cref="LodTiers"/> entry is one zoom level with

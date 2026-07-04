@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Policies;
 
+/// <summary>Tests for forge mediated writes policy.</summary>
 [Trait("Category", "Unit")]
 public sealed class ForgeMediatedWritesPolicyTests
 {

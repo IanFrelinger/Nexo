@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.Trust;
 
+/// <summary>Tests for data taxonomy gap coverage.</summary>
 [Collection("DataTaxonomyGap")]
 public class DataTaxonomyGapCoverageTests : IDisposable
 {
@@ -68,6 +69,8 @@ public class DataTaxonomyGapCoverageTests : IDisposable
     [Fact]
     public void Default_constructor_falls_back_to_built_in_mappings_when_file_invalid()
     {
+        /// <summary>Write taxonomy file.</summary>
+        /// <param name="json"">Json".</param>
         WriteTaxonomyFile("{ not valid json");
 
         var taxonomy = new DataTaxonomy();
@@ -79,6 +82,7 @@ public class DataTaxonomyGapCoverageTests : IDisposable
     [Fact]
     public void Default_constructor_uses_built_in_mappings_when_no_file_exists()
     {
+        /// <summary>Clear taxonomy cache.</summary>
         ClearTaxonomyCache();
 
         var taxonomy = new DataTaxonomy();
@@ -90,6 +94,7 @@ public class DataTaxonomyGapCoverageTests : IDisposable
     private void WriteTaxonomyFile(string content)
     {
         File.WriteAllText(_taxonomyPath, content);
+        /// <summary>Clear taxonomy cache.</summary>
         ClearTaxonomyCache();
     }
 
@@ -100,6 +105,3 @@ public class DataTaxonomyGapCoverageTests : IDisposable
         cache.Clear();
     }
 }
-
-[CollectionDefinition("DataTaxonomyGap", DisableParallelization = true)]
-public sealed class DataTaxonomyGapCollection;

@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.Kernel;
 
+/// <summary>Tests for output path sandboxed gap coverage.</summary>
 public sealed class OutputPathSandboxedGapCoverageTests
 {
     [Fact]

@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Observation;
 
+/// <summary>Tests for lite db pattern store.</summary>
 public class LiteDbPatternStoreTests : TempDirTestBase
 {
     private readonly string _dbPath;

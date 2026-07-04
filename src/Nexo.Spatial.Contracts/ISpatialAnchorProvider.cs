@@ -18,7 +18,15 @@ namespace Nexo.Spatial.Contracts;
 /// </remarks>
 public interface ISpatialAnchorProvider
 {
+    /// <summary>
+    /// Returns the most recent pose for an atom, or null when tracking is unavailable.
+    /// </summary>
+    /// <param name="atomId">Tracked spatial atom identifier.</param>
     Task<PoseSample?> GetCurrentPose(string atomId);
 
+    /// <summary>
+    /// Observes a push stream of raw pose samples for an atom.
+    /// </summary>
+    /// <param name="atomId">Tracked spatial atom identifier.</param>
     IObservable<PoseSample> ObservePose(string atomId);
 }

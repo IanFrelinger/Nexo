@@ -1,14 +1,16 @@
-using Nexo.BrickContracts;
-using Nexo.BrickContracts.Capabilities;
+using Nexo.Brick.Contracts;
+using Nexo.Brick.Contracts.Capabilities;
 using Nexo.Core.Application.NodeCapabilityRuntime.Ports;
 using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Execution;
 
 namespace Nexo.API;
 
+/// <summary>DomainBrick catalog wire mapper.</summary>
 internal static class BrickCatalogWireMapper
 {
-    public static BrickCatalogEntryDto ToEntry(Brick brick, NodeCapabilityManifestDto? hostCapabilities)
+    /// <summary>Maps a domain brick and host capabilities to a catalog wire DTO.</summary>
+    public static BrickCatalogEntryDto ToEntry(DomainBrick brick, NodeCapabilityManifestDto? hostCapabilities)
     {
         return new BrickCatalogEntryDto
         {
@@ -77,6 +79,7 @@ internal static class BrickCatalogWireMapper
         };
     }
 
+    /// <summary>Maps an execution context DTO to the infrastructure execution context model.</summary>
     public static Nexo.Infrastructure.Execution.ExecutionContext ToExecutionContext(ExecutionContextDto? dto)
     {
         if (dto is null)

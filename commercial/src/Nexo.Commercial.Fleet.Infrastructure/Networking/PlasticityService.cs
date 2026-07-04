@@ -1,11 +1,10 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Nexo.Core.Application.Networking.Models;
-using Nexo.Core.Application.Networking.Ports;
+using Nexo.Commercial.Fleet.Contracts.Networking.Models;
+using Nexo.Commercial.Fleet.Contracts.Networking.Ports;
 
-namespace Nexo.Infrastructure.Networking;
-
+namespace Nexo.Commercial.Fleet.Infrastructure.Networking;
 /// <summary>
 /// Aggregates plasticity metrics from optional usage tracker, cache, network bus, knowledge sync, agent directory.
 /// </summary>

@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Pipelines;
 
+/// <summary>Tests for in memory pipeline run store.</summary>
 public sealed class InMemoryPipelineRunStoreTests
 {
     [Fact]

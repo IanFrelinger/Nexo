@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Composition;
 
+/// <summary>Tests for component descriptor validator schema.</summary>
 [Trait("Category", "Integration")]
 public sealed class ComponentDescriptorValidatorSchemaTests
 {

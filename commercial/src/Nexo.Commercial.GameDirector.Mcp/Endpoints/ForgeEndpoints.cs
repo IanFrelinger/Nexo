@@ -4,18 +4,17 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Routing;
-using Nexo.API.Forge;
-using Nexo.GameDomain.Aesthetics;
-using Nexo.GameDomain.Descriptors;
-using Nexo.GameDomain.Macros;
-using Nexo.GameDomain.Mapping;
-using Nexo.GameDomain.Materials;
-using Nexo.GameDomain.Scoping;
-using Nexo.GameDomain.Session;
-using Nexo.GameDomain.Contracts;
+using GameDirector.Mcp.Forge;
+using Nexo.Commercial.GameDomain.Aesthetics;
+using Nexo.Commercial.GameDomain.Descriptors;
+using Nexo.Commercial.GameDomain.Macros;
+using Nexo.Commercial.GameDomain.Mapping;
+using Nexo.Commercial.GameDomain.Materials;
+using Nexo.Commercial.GameDomain.Scoping;
+using Nexo.Commercial.GameDomain.Session;
+using Nexo.Commercial.GameDomain.Contracts;
 
-namespace Nexo.API.Endpoints;
-
+namespace GameDirector.Mcp.Endpoints;
 /// <summary>
 /// Nexo Forge HTTP API: sessions, settings, macros, aesthetics, map adaptation planning,
 /// and optional LiteDB-backed persistence via <see cref="IForgeStateService"/>.
@@ -553,34 +552,3 @@ public static class ForgeEndpoints
         return Results.Ok(new ForgeMaterialHintsResponse(result.Summary, result.Hints));
     }
 }
-
-public sealed record ForgeCreateSessionRequest(
-    string Name,
-    int MaxPlayers = 8,
-    GameRuleDescriptor? GameRule = null);
-
-public sealed record ForgeSessionExportResponse(string Json);
-
-public sealed record ForgeSessionImportRequest(string Json);
-
-public sealed record ForgeGenerateRequest(string Prompt, string? Category);
-
-public sealed record ForgeGenerateResponse(string Prompt, string Category, object Descriptor);
-
-public sealed record ForgeResolvedSettingsResponse(
-    ScopeContext Context,
-    Dictionary<string, object> ResolvedSettings);
-
-public sealed record ForgeMacroExportResponse(string MacroId, string Json);
-
-public sealed record ForgeMacroImportRequest(string Json);
-
-public sealed record ForgeApplyAestheticRequest(
-    string AestheticId,
-    SettingScope? Scope = null);
-
-public sealed record ForgeEngineManifestResponse(string Json);
-
-public sealed record ForgeTilePyramidResponse(int FinestZoom, IReadOnlyList<MapTilePyramidTier> Tiers);
-
-public sealed record ForgeMaterialHintsResponse(string Summary, IReadOnlyList<MaterialSurfaceHint> Hints);

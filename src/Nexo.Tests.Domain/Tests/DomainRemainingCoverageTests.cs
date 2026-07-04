@@ -14,6 +14,7 @@ using ExecutionContext = Nexo.Infrastructure.Execution.ExecutionContext;
 
 namespace Nexo.Tests.Domain.Tests;
 
+/// <summary>Tests for domain remaining coverage.</summary>
 public sealed class DomainRemainingCoverageTests
 {
     [Fact]
@@ -464,7 +465,7 @@ public sealed class DomainRemainingCoverageTests
         new BehaviorStartedEvent("b1", "Behavior", DateTime.UtcNow).Type.Should().Be("behavior_started");
         new BehaviorCompletedEvent("b1", true, new Dictionary<string, object>()).Success.Should().BeTrue();
         new BehaviorCancelledEvent("b1").BehaviorId.Should().Be("b1");
-        new StepStartedEvent("s1", "brick", "Brick", ImplementationType.Deterministic, false, 0, 1)
+        new StepStartedEvent("s1", "brick", "DomainBrick", ImplementationType.Deterministic, false, 0, 1)
             .StepIndex.Should().Be(0);
         new StepCompletedEvent("s1", "brick", ImplementationType.Agentic, 12, "done").LatencyMs.Should().Be(12);
         new StepSkippedEvent("s1", "condition false").Reason.Should().Contain("condition");
@@ -593,57 +594,69 @@ public sealed class DomainRemainingCoverageTests
         parameter.Validations.Should().ContainSingle();
     }
 
+    /// <summary>Gets description.</summary>
+    /// <param name="value">Value.</param>
     private static string GetDescription(object value) =>
         (string)value.GetType().GetProperty("Description")!.GetValue(value)!;
 
     private static (object FromName, object FromValue, object Sample, object Other) CreateValueObjectSamples(string typeName) =>
         typeName switch
         {
+            /// <summary>Nameof.</summary>
             nameof(AIConfidenceLevel) => (
                 AIConfidenceLevel.FromName("High"),
                 AIConfidenceLevel.FromValue(3),
                 AIConfidenceLevel.High,
                 AIConfidenceLevel.Low),
+            /// <summary>Nameof.</summary>
             nameof(AIEngineType) => (
                 AIEngineType.FromName("GPT"),
                 AIEngineType.FromValue(1),
                 AIEngineType.GPT,
                 AIEngineType.Claude),
+            /// <summary>Nameof.</summary>
             nameof(AIProviderType) => (
                 AIProviderType.FromName("OpenAI"),
                 AIProviderType.FromValue(5),
                 AIProviderType.OpenAI,
                 AIProviderType.Ollama),
+            /// <summary>Nameof.</summary>
             nameof(BetaProgramStatus) => (
                 BetaProgramStatus.FromName("Active"),
                 BetaProgramStatus.FromValue(1),
                 BetaProgramStatus.Active,
                 BetaProgramStatus.Pending),
+            /// <summary>Nameof.</summary>
             nameof(HealthStatus) => (
                 HealthStatus.FromName("Good"),
                 HealthStatus.FromValue(3),
                 HealthStatus.Good,
                 HealthStatus.Critical),
+            /// <summary>Nameof.</summary>
             nameof(MethodVisibility) => (
                 MethodVisibility.FromName("Public"),
                 MethodVisibility.FromValue(1),
                 MethodVisibility.Public,
                 MethodVisibility.Private),
+            /// <summary>Nameof.</summary>
             nameof(OnboardingStatus) => (
                 OnboardingStatus.FromName("Completed"),
                 OnboardingStatus.FromValue(2),
                 OnboardingStatus.Completed,
                 OnboardingStatus.Pending),
+            /// <summary>Nameof.</summary>
             nameof(ProjectStatus) => (
                 ProjectStatus.FromName("Active"),
                 ProjectStatus.FromValue(3),
                 ProjectStatus.Active,
                 ProjectStatus.Completed),
+            /// <summary>Nameof.</summary>
             nameof(SprintStatus) => (
                 SprintStatus.FromName("Active"),
                 SprintStatus.FromValue(1),
                 SprintStatus.Active,
                 SprintStatus.Cancelled),
+            /// <summary>Nameof.</summary>
             nameof(TaskPriority) => (
                 TaskPriority.FromName("High"),
                 TaskPriority.FromValue(2),
@@ -654,6 +667,7 @@ public sealed class DomainRemainingCoverageTests
                 Nexo.Core.Domain.Values.TaskStatus.FromValue(2),
                 Nexo.Core.Domain.Values.TaskStatus.Done,
                 Nexo.Core.Domain.Values.TaskStatus.Todo),
+            /// <summary>Nameof.</summary>
             nameof(RiskLevel) => (
                 RiskLevel.FromName("High"),
                 RiskLevel.FromValue(2),
@@ -662,7 +676,8 @@ public sealed class DomainRemainingCoverageTests
             _ => throw new ArgumentOutOfRangeException(nameof(typeName), typeName, null),
         };
 
-    private sealed class TestBrick : Brick
+    /// <summary>Tests for test brick.</summary>
+    private sealed class TestBrick : DomainBrick
     {
         public override Task<BrickOutput> ExecuteAsync(
             BrickInput input,

@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Http;
 
-namespace Nexo.API.Forge;
-
+namespace GameDirector.Mcp.Forge;
 /// <summary>
 /// Resolves the current Forge tenant id from <see cref="HttpContext.Items"/> (set by <see cref="ForgeTenantMiddleware"/>).
 /// </summary>

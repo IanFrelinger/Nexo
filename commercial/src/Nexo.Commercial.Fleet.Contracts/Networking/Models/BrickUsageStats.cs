@@ -1,5 +1,4 @@
-namespace Nexo.Core.Application.Networking.Models;
-
+namespace Nexo.Commercial.Fleet.Contracts.Networking.Models;
 /// <summary>
 /// Aggregated usage statistics for a brick (for routing and cache TTL decisions).
 /// </summary>

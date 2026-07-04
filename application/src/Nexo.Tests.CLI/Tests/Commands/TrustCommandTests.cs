@@ -8,17 +8,24 @@ using Nexo.Infrastructure.Trust;
 
 namespace Nexo.Tests.CLI.Tests.Commands;
 
+/// <summary>Tests for trust command.</summary>
 public class TrustCommandTests : UnitTestBase
 {
     public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
+            /// <summary>Test audit async_with audit log_returns zero.</summary>
             await TestAuditAsync_WithAuditLog_ReturnsZero();
+            /// <summary>Test audit async_without audit log_returns one.</summary>
             await TestAuditAsync_WithoutAuditLog_ReturnsOne();
+            /// <summary>Test pause async_with boundary_returns zero.</summary>
             await TestPauseAsync_WithBoundary_ReturnsZero();
+            /// <summary>Test resume async_with boundary_returns zero.</summary>
             await TestResumeAsync_WithBoundary_ReturnsZero();
+            /// <summary>Test allow async_with category_sets allowed.</summary>
             await TestAllowAsync_WithCategory_SetsAllowed();
+            /// <summary>Test boundary async_with boundary_returns zero.</summary>
             await TestBoundaryAsync_WithBoundary_ReturnsZero();
             return new TestResult
             {
@@ -60,6 +67,7 @@ public class TrustCommandTests : UnitTestBase
 
         var exitCode = await command.AuditAsync(10, null, null, null, false, false, false);
 
+        /// <summary>Assert equal.</summary>
         AssertEqual(0, exitCode);
     }
 
@@ -70,6 +78,7 @@ public class TrustCommandTests : UnitTestBase
 
         var exitCode = await command.AuditAsync(10, null, null, null, false, false, false);
 
+        /// <summary>Assert equal.</summary>
         AssertEqual(1, exitCode);
     }
 
@@ -81,7 +90,9 @@ public class TrustCommandTests : UnitTestBase
 
         var exitCode = await command.PauseAsync(false);
 
+        /// <summary>Assert equal.</summary>
         AssertEqual(0, exitCode);
+        /// <summary>Assert true.</summary>
         AssertTrue(boundary.IsObservationPaused);
     }
 
@@ -94,7 +105,9 @@ public class TrustCommandTests : UnitTestBase
 
         var exitCode = await command.ResumeAsync(false);
 
+        /// <summary>Assert equal.</summary>
         AssertEqual(0, exitCode);
+        /// <summary>Assert false.</summary>
         AssertFalse(boundary.IsObservationPaused);
     }
 
@@ -107,6 +120,7 @@ public class TrustCommandTests : UnitTestBase
 
         var exitCode = await command.AllowAsync("file-paths", null, null, false);
 
+        /// <summary>Assert equal.</summary>
         AssertEqual(0, exitCode);
         mockBoundary.Verify(x => x.SetCategoryAllowed("file-paths", true), Times.Once);
     }
@@ -119,6 +133,7 @@ public class TrustCommandTests : UnitTestBase
 
         var exitCode = await command.BoundaryAsync(false);
 
+        /// <summary>Assert equal.</summary>
         AssertEqual(0, exitCode);
     }
 }

@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Execution;
 
+/// <summary>Tests for hot swappable model gap coverage.</summary>
 public sealed class HotSwappableModelGapCoverageTests
 {
     [Fact]
@@ -27,6 +28,8 @@ public sealed class HotSwappableModelGapCoverageTests
     [Fact]
     public async Task CompleteAsync_uses_system_provider_directive()
     {
+        /// <summary>With env.</summary>
+        /// <param name="(">(.</param>
         await WithEnv("NEXO_ALLOW_MOCK", "1", async () =>
         {
             var model = CreateModel();
@@ -45,8 +48,12 @@ public sealed class HotSwappableModelGapCoverageTests
     [Fact]
     public async Task CompleteAsync_uses_env_provider_when_no_directive()
     {
+        /// <summary>With env.</summary>
+        /// <param name="(">(.</param>
         await WithEnv("NEXO_ALLOW_MOCK", "1", async () =>
         {
+            /// <summary>With env.</summary>
+            /// <param name="(">(.</param>
             await WithEnv("NEXO_MODEL_PROVIDER", "offline", async () =>
             {
                 var model = CreateModel();
@@ -69,6 +76,8 @@ public sealed class HotSwappableModelGapCoverageTests
             ("user", "fallback"),
         });
 
+        /// <summary>With env.</summary>
+        /// <param name="(">(.</param>
         await WithEnv("OPENAI_API_KEY", null, async () =>
         {
             var output = await model.CompleteAsync(input, CancellationToken.None);
@@ -79,8 +88,12 @@ public sealed class HotSwappableModelGapCoverageTests
     [Fact]
     public async Task CompleteAsync_injects_provider_when_no_system_message_exists()
     {
+        /// <summary>With env.</summary>
+        /// <param name="(">(.</param>
         await WithEnv("NEXO_ALLOW_MOCK", "1", async () =>
         {
+            /// <summary>With env.</summary>
+            /// <param name="(">(.</param>
             await WithEnv("NEXO_MODEL_PROVIDER", "offline", async () =>
             {
                 var model = CreateModel();
@@ -107,6 +120,7 @@ public sealed class HotSwappableModelGapCoverageTests
         Environment.SetEnvironmentVariable(key, value);
         try
         {
+            /// <summary>Action.</summary>
             await action();
         }
         finally

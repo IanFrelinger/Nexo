@@ -5,8 +5,7 @@ using Nexo.Core.Application.Rollback.Ports;
 using Nexo.Infrastructure.Adaptation;
 using Nexo.Infrastructure.Rollback;
 
-namespace Nexo.Infrastructure.Sdk.Rollback;
-
+namespace Nexo.Infrastructure.Rollback.Sdk.Extensions;
 /// <summary>
 /// DI extensions for rollback infrastructure.
 /// </summary>

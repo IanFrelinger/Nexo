@@ -4,7 +4,7 @@ using Nexo.Core.Domain.Execution;
 namespace Nexo.Tests.Infrastructure.Certification.Fixtures;
 
 /// <summary>Compatible I/O with <see cref="ErrorSummaryFormatterBrick"/> but wrong summary text (for swap mutants).</summary>
-public sealed class ErrorCountPassthroughBrick : Brick
+public sealed class ErrorCountPassthroughBrick : DomainBrick
 {
     public ErrorCountPassthroughBrick()
     {

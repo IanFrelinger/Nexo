@@ -1,12 +1,12 @@
 using FluentAssertions;
-using Nexo.GameDomain.Aesthetics;
-using Nexo.GameDomain.Mapping;
-using Nexo.GameDomain.Scoping;
-using Nexo.GameDomain.Session;
+using Nexo.Commercial.GameDomain.Aesthetics;
+using Nexo.Commercial.GameDomain.Mapping;
+using Nexo.Commercial.GameDomain.Scoping;
+using Nexo.Commercial.GameDomain.Session;
 using Xunit;
 
-namespace Nexo.Tests.GameDomain;
-
+namespace Nexo.Commercial.Tests.GameDomain;
+/// <summary>Tests for map adaptation planner.</summary>
 public sealed class MapAdaptationPlannerTests
 {
     private static readonly IReadOnlyList<AestheticPack> Catalog =

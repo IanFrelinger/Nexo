@@ -14,6 +14,7 @@ using Nexo.Tests.Application.Helpers;
 
 namespace Nexo.Tests.CLI.Tests.Commands;
 
+/// <summary>Tests for analyze command.</summary>
 public class AnalyzeCommandTests : UnitTestBase
 {
     private DirectoryInfo? _tempDir;
@@ -37,12 +38,19 @@ public class AnalyzeCommandTests : UnitTestBase
     {
         try
         {
+            /// <summary>Test successful analysis no violations.</summary>
             await TestSuccessfulAnalysisNoViolations();
+            /// <summary>Test successful analysis with violations.</summary>
             await TestSuccessfulAnalysisWithViolations();
+            /// <summary>Test json output.</summary>
             await TestJsonOutput();
+            /// <summary>Test verbose output.</summary>
             await TestVerboseOutput();
+            /// <summary>Test analysis exception.</summary>
             await TestAnalysisException();
+            /// <summary>Test unauthorized access exception.</summary>
             await TestUnauthorizedAccessException();
+            /// <summary>Test general exception.</summary>
             await TestGeneralException();
 
             return new TestResult

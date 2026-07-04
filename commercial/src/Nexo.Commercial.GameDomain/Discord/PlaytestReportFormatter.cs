@@ -1,15 +1,18 @@
-namespace Nexo.GameDomain.Discord;
-
-using Nexo.GameDomain.Playtest;
+namespace Nexo.Commercial.GameDomain.Discord;
+using Nexo.Commercial.GameDomain.Playtest;
 
 /// <summary>
 /// Formats <see cref="PlaytestReport"/> data into Discord-ready embeds and messages.
 /// </summary>
 public static class PlaytestReportFormatter
 {
+    /// <summary>Constant value for green.</summary>
     public const int Green = 0x22C55E;
+    /// <summary>Constant value for yellow.</summary>
     public const int Yellow = 0xF59E0B;
+    /// <summary>Constant value for red.</summary>
     public const int Red = 0xEF4444;
+    /// <summary>Constant value for blue.</summary>
     public const int Blue = 0x3B82F6;
 
     /// <summary>

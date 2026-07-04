@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Barriers;
 
+/// <summary>Tests for client certificate san extractor gap coverage.</summary>
 public sealed class ClientCertificateSanExtractorGapCoverageTests
 {
     [Fact]
@@ -30,6 +31,7 @@ public sealed class ClientCertificateSanExtractorGapCoverageTests
         sans.Should().BeEmpty();
     }
 
+    /// <summary>Tests for throwing extensions.</summary>
     private sealed class ThrowingExtensions : IEnumerable<X509Extension>
     {
         public IEnumerator<X509Extension> GetEnumerator()

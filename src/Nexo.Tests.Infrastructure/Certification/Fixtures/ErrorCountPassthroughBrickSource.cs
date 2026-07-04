@@ -1,5 +1,6 @@
 namespace Nexo.Tests.Infrastructure.Certification.Fixtures;
 
+/// <summary>Error count passthrough brick source.</summary>
 public static class ErrorCountPassthroughBrickSource
 {
     public const string Code = """
@@ -8,7 +9,8 @@ using Nexo.Core.Domain.Execution;
 
 namespace Nexo.Tests.Infrastructure.Certification.Fixtures;
 
-public sealed class ErrorCountPassthroughBrick : Brick
+/// <summary>Error count passthrough brick.</summary>
+public sealed class ErrorCountPassthroughBrick : DomainBrick
 {
     public ErrorCountPassthroughBrick()
     {

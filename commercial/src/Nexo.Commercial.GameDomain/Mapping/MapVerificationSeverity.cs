@@ -1,5 +1,4 @@
-namespace Nexo.GameDomain.Mapping;
-
+namespace Nexo.Commercial.GameDomain.Mapping;
 /// <summary>Severity for <see cref="MapVerificationIssue"/>.</summary>
 public enum MapVerificationSeverity
 {

@@ -14,10 +14,19 @@ namespace Nexo.Orchestration.Playtest.Models;
 /// </summary>
 public sealed record BalanceIssue
 {
+    /// <summary>Unique issue identifier.</summary>
     public required string IssueId { get; init; }
+
+    /// <summary>Balance category for the issue.</summary>
     public required BalanceCategory Category { get; init; }
+
+    /// <summary>Severity rating assigned to the issue.</summary>
     public required BalanceSeverity Severity { get; init; }
+
+    /// <summary>Short title for operator display.</summary>
     public required string Title { get; init; }
+
+    /// <summary>Detailed description of the balance problem.</summary>
     public required string Description { get; init; }
 
     /// <summary>
@@ -35,63 +44,3 @@ public sealed record BalanceIssue
     /// </summary>
     public IReadOnlyList<string> AffectedDomains { get; init; } = Array.Empty<string>();
 }
-
-/// <summary>
-/// Statistical evidence for a balance issue.
-/// </summary>
-public sealed record StatisticalEvidence
-{
-    public required string Metric { get; init; }
-    public required double ObservedValue { get; init; }
-    public required double ExpectedValue { get; init; }
-    public double? Deviation { get; init; }
-    public int SampleSize { get; init; }
-}
-
-/// <summary>
-/// A suggested fix for a balance issue.
-/// </summary>
-public sealed record SuggestedFix
-{
-    public required string Description { get; init; }
-    public required double Confidence { get; init; }
-    public IReadOnlyDictionary<string, object> Parameters { get; init; } =
-        new Dictionary<string, object>();
-}
-
-/// <summary>
-/// Categories of balance issues.
-/// </summary>
-public enum BalanceCategory
-{
-    Combat,
-    Economy,
-    Progression,
-    Difficulty,
-    Pacing,
-    Performance
-}
-
-/// <summary>
-/// Severity levels for balance issues.
-/// </summary>
-public enum BalanceSeverity
-{
-    Minor,      // Noticeable but not game-breaking
-    Moderate,   // Impacts enjoyment
-    Major,      // Significantly impacts gameplay
-    Critical    // Game-breaking
-}
-
-/// <summary>
-/// Playtest report with balance analysis.
-/// </summary>
-public sealed record PlaytestReport
-{
-    public required string ReportId { get; init; }
-    public IReadOnlyList<string> SessionIds { get; init; } = Array.Empty<string>();
-    public DateTimeOffset GeneratedAt { get; init; }
-    public IReadOnlyList<BalanceIssue> Issues { get; init; } = Array.Empty<BalanceIssue>();
-    public string? Summary { get; init; }
-}
-

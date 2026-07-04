@@ -133,26 +133,3 @@ public sealed class ComplianceChecker
         return issues;
     }
 }
-
-/// <summary>
-/// A compliance issue.
-/// </summary>
-public sealed record ComplianceIssue
-{
-    public required string Standard { get; init; }
-    public required string Rule { get; init; }
-    public required string Description { get; init; }
-    public required ComplianceSeverity Severity { get; init; }
-}
-
-/// <summary>
-/// Severity of a compliance issue.
-/// </summary>
-public enum ComplianceSeverity
-{
-    Low,
-    Medium,
-    High,
-    Critical
-}
-

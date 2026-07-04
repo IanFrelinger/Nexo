@@ -16,6 +16,7 @@ public sealed class OllamaModelServingBackend : IModelServingBackend
     private readonly HttpClient _httpClient;
     private readonly IMetricsCollector? _metricsCollector;
 
+    /// <summary>Initializes a new ollama model serving backend.</summary>
     public OllamaModelServingBackend(
         HttpClient httpClient,
         IOptions<OllamaBackendOptions> options,
@@ -30,8 +31,10 @@ public sealed class OllamaModelServingBackend : IModelServingBackend
         }
     }
 
+    /// <summary>Backend type.</summary>
     public BackendType BackendType => BackendType.Ollama;
 
+    /// <summary>Is available asynchronously.</summary>
     public async Task<bool> IsAvailableAsync(CancellationToken ct = default)
     {
         var started = DateTimeOffset.UtcNow;
@@ -50,6 +53,7 @@ public sealed class OllamaModelServingBackend : IModelServingBackend
         }
     }
 
+    /// <summary>Run inference asynchronously.</summary>
     public async Task<InferenceResult> RunInferenceAsync(InferenceRequest request, CancellationToken ct = default)
     {
         ct.ThrowIfCancellationRequested();
@@ -90,6 +94,7 @@ public sealed class OllamaModelServingBackend : IModelServingBackend
         }
     }
 
+    /// <summary>Load model asynchronously.</summary>
     public async Task LoadModelAsync(string modelId, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(modelId)) throw new ArgumentException("Model id is required", nameof(modelId));
@@ -111,6 +116,7 @@ public sealed class OllamaModelServingBackend : IModelServingBackend
         }
     }
 
+    /// <summary>Unload model asynchronously.</summary>
     public async Task UnloadModelAsync(string modelId, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(modelId)) throw new ArgumentException("Model id is required", nameof(modelId));
@@ -132,6 +138,7 @@ public sealed class OllamaModelServingBackend : IModelServingBackend
         }
     }
 
+    /// <summary>Pull model asynchronously.</summary>
     public async Task PullModelAsync(string modelId, IProgress<PullProgress>? progress = null, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(modelId)) throw new ArgumentException("Model id is required", nameof(modelId));
@@ -154,6 +161,7 @@ public sealed class OllamaModelServingBackend : IModelServingBackend
         }
     }
 
+    /// <summary>List loaded models asynchronously.</summary>
     public async Task<IReadOnlyList<string>> ListLoadedModelsAsync(CancellationToken ct = default)
     {
         var started = DateTimeOffset.UtcNow;

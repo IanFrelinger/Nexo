@@ -10,6 +10,7 @@ namespace Nexo.CLI.Commands;
 /// </summary>
 public sealed class NewCommand : Command
 {
+    /// <summary>Creates a new NewCommand instance.</summary>
     public NewCommand()
         : base("new", "Scaffold Nexo extension artifacts.")
     {

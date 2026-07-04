@@ -12,6 +12,7 @@ public sealed class FileBasedSelfImprovementMetricsStore : ISelfImprovementMetri
 {
     private readonly string _path;
 
+    /// <summary>Initializes a new file based self improvement metrics store.</summary>
     public FileBasedSelfImprovementMetricsStore(string? path = null)
     {
         _path = path ?? Path.Combine(

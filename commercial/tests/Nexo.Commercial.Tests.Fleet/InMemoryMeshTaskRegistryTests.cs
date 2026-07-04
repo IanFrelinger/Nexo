@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Commercial.Tests.Fleet;
 
+/// <summary>Tests for in memory mesh task registry.</summary>
 public sealed class InMemoryMeshTaskRegistryTests
 {
     [Fact]

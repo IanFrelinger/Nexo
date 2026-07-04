@@ -17,12 +17,25 @@ namespace Nexo.Orchestration.Negotiation;
 /// </summary>
 public sealed record NegotiationResult
 {
+    /// <summary>Whether negotiation produced a resolution.</summary>
     public bool Success { get; init; }
+
+    /// <summary>How the conflict was resolved.</summary>
     public ResolutionType ResolutionType { get; init; }
+
+    /// <summary>Negotiated resolution proposal, if applicable.</summary>
     public ProposedResolution? Resolution { get; init; }
+
+    /// <summary>Resolved schema artifact, if applicable.</summary>
     public JsonElement? ResolvedSchema { get; init; }
+
+    /// <summary>Resolved resource allocation, if applicable.</summary>
     public ResourceAllocation? ResolvedAllocation { get; init; }
+
+    /// <summary>Human-readable explanation of the outcome.</summary>
     public string? Reason { get; init; }
+
+    /// <summary>Number of negotiation rounds required.</summary>
     public int RoundsRequired { get; init; }
 
     public static NegotiationResult Negotiated(ProposedResolution resolution, string reason, int rounds = 0) => new()
@@ -65,30 +78,3 @@ public sealed record NegotiationResult
         Reason = reason
     };
 }
-
-/// <summary>
-/// Type of resolution achieved.
-/// 
-/// Defines resolution types:
-/// - Automatic: Resolved automatically without agent input
-/// - Negotiated: Resolved through agent negotiation
-/// - Synthesized: Resolved through creative synthesis
-/// - Escalated: Could not be resolved - escalated to human
-/// 
-/// Used by NegotiationResult to indicate how a conflict was resolved.
-/// </summary>
-public enum ResolutionType
-{
-    /// <summary>Resolved automatically without agent input.</summary>
-    Automatic,
-
-    /// <summary>Resolved through agent negotiation.</summary>
-    Negotiated,
-
-    /// <summary>Resolved through creative synthesis.</summary>
-    Synthesized,
-
-    /// <summary>Could not be resolved - escalated to human.</summary>
-    Escalated
-}
-

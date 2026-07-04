@@ -1,7 +1,6 @@
-using Nexo.GameDomain.Aesthetics;
+using Nexo.Commercial.GameDomain.Aesthetics;
 
-namespace Nexo.GameDomain.Mapping;
-
+namespace Nexo.Commercial.GameDomain.Mapping;
 /// <summary>
 /// Derives a web-tile zoom pyramid from aesthetic <see cref="LodLevel"/> entries and a **finest** map zoom.
 /// <para>

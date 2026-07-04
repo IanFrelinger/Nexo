@@ -1,10 +1,11 @@
 using System.Text.Json;
 using Nexo.BackgroundAgents.HostRunners;
 
-namespace Nexo.CLI.Commands;
-
+namespace Nexo.CLI.Commands.Unity;
+/// <summary>Handles qa requests.</summary>
 internal sealed class QaHandler(Func<SelfExtendRunnerAdapter> runnerFactory)
 {
+    /// <summary>Executes the command handler and returns a process exit code.</summary>
     public async Task<int> ExecuteAsync(
         string projectRoot,
         int maxIterations,
@@ -78,6 +79,7 @@ Analyse the errors and generate corrected files. Each file must start with a // 
             {
                 if (!json) Console.WriteLine("  All tests passed!");
                 iterations.Add(new { iteration = i, phase = "test", passed = true, filesFixed = 0 });
+                /// <summary>Write result.</summary>
                 WriteResult(iterations, i, true, json);
                 return 0;
             }
@@ -108,6 +110,7 @@ Analyse the test failures and generate corrected files. Each file must start wit
         }
 
         if (!json) Console.WriteLine($"QA: max iterations ({maxIterations}) reached without all tests passing.");
+        /// <summary>Write result.</summary>
         WriteResult(iterations, maxIterations, false, json);
         return 1;
     }

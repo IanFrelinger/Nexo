@@ -1,5 +1,4 @@
-namespace Nexo.GameDomain.Descriptors;
-
+namespace Nexo.Commercial.GameDomain.Descriptors;
 /// <summary>
 /// Data-only descriptor for an AI combatant behaviour profile.
 /// <para>

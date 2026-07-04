@@ -12,6 +12,7 @@ public class SensitivityCommand
     private readonly IDataSensitivityRegistry _registry;
     private readonly ILogger<SensitivityCommand> _logger;
 
+    /// <summary>Creates the sensitivity analysis command.</summary>
     public SensitivityCommand(
         IDataSensitivityRegistry registry,
         ILogger<SensitivityCommand> logger)
@@ -20,6 +21,7 @@ public class SensitivityCommand
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>Creates a new ListAsync instance.</summary>
     public Task<int> ListAsync(bool formatJson, CancellationToken ct = default)
     {
         try
@@ -60,6 +62,7 @@ public class SensitivityCommand
         }
     }
 
+    /// <summary>Creates a new ShowAsync instance.</summary>
     public Task<int> ShowAsync(string name, bool formatJson, CancellationToken ct = default)
     {
         try
@@ -108,6 +111,7 @@ public class SensitivityCommand
         }
     }
 
+    /// <summary>Creates a new AddAsync instance.</summary>
     public Task<int> AddAsync(string name, int sensitivityValue, bool allowsExternalLLM, bool allowsWebSearch, bool requiresLocalOnly, bool allowsNetworkExports, string description, bool formatJson, CancellationToken ct = default)
     {
         try
@@ -131,6 +135,7 @@ public class SensitivityCommand
         }
     }
 
+    /// <summary>Creates a new UpdateAsync instance.</summary>
     public Task<int> UpdateAsync(string name, int sensitivityValue, bool allowsExternalLLM, bool allowsWebSearch, bool requiresLocalOnly, bool allowsNetworkExports, string description, bool formatJson, CancellationToken ct = default)
     {
         try
@@ -171,6 +176,7 @@ public class SensitivityCommand
         }
     }
 
+    /// <summary>Creates a new RemoveAsync instance.</summary>
     public Task<int> RemoveAsync(string name, bool formatJson, CancellationToken ct = default)
     {
         try

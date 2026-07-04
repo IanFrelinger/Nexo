@@ -1,7 +1,9 @@
 namespace Nexo.API.Security;
 
+/// <summary>Security advisory content.</summary>
 internal static class SecurityAdvisoryContent
 {
+    /// <summary>Returns exposure-specific advisory summary and operator hints.</summary>
     public static (string Summary, string[] Hints) For(NexoExposureProfile profile)
     {
         return profile switch

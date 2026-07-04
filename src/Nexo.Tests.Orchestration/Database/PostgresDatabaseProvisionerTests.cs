@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration.Database;
 
+/// <summary>Tests for postgres database provisioner.</summary>
 public sealed class PostgresDatabaseProvisionerTests
 {
     [Fact]

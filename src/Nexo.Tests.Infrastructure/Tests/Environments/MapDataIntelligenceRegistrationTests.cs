@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Environments;
 
+/// <summary>Tests for map data intelligence registration.</summary>
 public sealed class MapDataIntelligenceRegistrationTests
 {
     [Fact]

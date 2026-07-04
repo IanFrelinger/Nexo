@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.RAG;
 
+/// <summary>Tests for sqlite vector store.</summary>
 public class SqliteVectorStoreTests
 {
     [Fact]

@@ -1,10 +1,11 @@
 using FluentAssertions;
 using Nexo.Core.Domain;
-using Nexo.Infrastructure.Networking;
+using Nexo.Commercial.Fleet.Infrastructure.Networking;
 using Xunit;
 
 namespace Nexo.Commercial.Tests.Fleet.Networking;
 
+/// <summary>Tests for network bus options.</summary>
 public sealed class NetworkBusOptionsTests
 {
     [Fact]

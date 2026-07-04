@@ -7,6 +7,7 @@ using Xunit.Abstractions;
 
 namespace Nexo.Tests.Infrastructure.Tests.Safety;
 
+/// <summary>Tests for local model provider integration.</summary>
 [Collection("LocalModelProviderState")]
 [Trait("Category", "DockerOptional")]
 public sealed class LocalModelProviderIntegrationTests
@@ -16,6 +17,8 @@ public sealed class LocalModelProviderIntegrationTests
 
     private readonly ITestOutputHelper _output;
 
+    /// <summary>Local model provider integration tests.</summary>
+    /// <param name="output">Output.</param>
     public LocalModelProviderIntegrationTests(ITestOutputHelper output) => _output = output;
 
     [Fact]
@@ -60,6 +63,7 @@ public sealed class LocalModelProviderIntegrationTests
         await LocalModelProvider.ExecuteAsync("sys", "first", null, CancellationToken.None);
 
         var weightsBefore = GetStaticField("_weights");
+        /// <summary>Invoke ensure model loaded.</summary>
         InvokeEnsureModelLoaded(scope.ModelPath!);
         var weightsAfter = GetStaticField("_weights");
 
@@ -97,6 +101,7 @@ public sealed class LocalModelProviderIntegrationTests
         result.Should().NotBeNull();
     }
 
+    /// <summary>Tests for local model test scope.</summary>
     private sealed class LocalModelTestScope : IAsyncDisposable
     {
         private readonly string? _previousPath;
@@ -110,16 +115,20 @@ public sealed class LocalModelProviderIntegrationTests
             SkipReason = skipReason;
         }
 
+        /// <summary>Is ready.</summary>
         public bool IsReady { get; }
 
+        /// <summary>Skip reason.</summary>
         public string? SkipReason { get; }
 
+        /// <summary>Model path.</summary>
         public string? ModelPath { get; private set; }
 
         public static async Task<LocalModelTestScope> CreateAsync(
             ITestOutputHelper output,
             string? contextSize = null)
         {
+            /// <summary>Reset loaded model state.</summary>
             ResetLoadedModelState();
             var previousPath = Environment.GetEnvironmentVariable("NEXO_LOCAL_MODEL_PATH");
             var previousContext = Environment.GetEnvironmentVariable("NEXO_LOCAL_CONTEXT_SIZE");
@@ -167,6 +176,7 @@ public sealed class LocalModelProviderIntegrationTests
 
         public ValueTask DisposeAsync()
         {
+            /// <summary>Reset loaded model state.</summary>
             ResetLoadedModelState();
             Environment.SetEnvironmentVariable("NEXO_LOCAL_MODEL_PATH", _previousPath);
             Environment.SetEnvironmentVariable("NEXO_LOCAL_CONTEXT_SIZE", _previousContext);
@@ -200,6 +210,8 @@ public sealed class LocalModelProviderIntegrationTests
         }
     }
 
+    /// <summary>Gets static field.</summary>
+    /// <param name="name">Name.</param>
     private static object? GetStaticField(string name) =>
         typeof(LocalModelProvider).GetField(name, BindingFlags.Static | BindingFlags.NonPublic)?.GetValue(null);
 

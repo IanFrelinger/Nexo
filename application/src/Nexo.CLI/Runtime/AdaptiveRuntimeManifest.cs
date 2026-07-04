@@ -25,21 +25,6 @@ public sealed record AdaptiveRuntimeManifest
     /// </summary>
     public string? QaPolicyProfile { get; init; }
 
+    /// <summary>Returns an empty default adaptive runtime manifest.</summary>
     public static AdaptiveRuntimeManifest Default() => new();
-}
-
-public sealed record AdaptiveRuntimeExecutionPlan
-{
-    public string BootstrapProfile { get; init; } = "self-extend-functional";
-    public string QaPolicyProfile { get; init; } = "demo";
-    public string Focus { get; init; } = "functional";
-    public int MaxIterations { get; init; } = 2;
-    public bool StopOnFirstPass { get; init; } = true;
-    public bool RunFunctionalQa { get; init; } = true;
-    public bool RunAestheticQa { get; init; } = false;
-    public bool RunVisualQa { get; init; } = false;
-    public string VisualQaFallbackPolicy { get; init; } = "degrade";
-    public bool RequirePreflight { get; init; } = true;
-    public string[] AgentPhases { get; init; } = ["planner", "builder", "qa-functional"];
-    public string[] Reasons { get; init; } = Array.Empty<string>();
 }

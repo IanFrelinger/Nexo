@@ -18,8 +18,11 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration;
 
+/// <summary>Tests for orchestration playtest coordination.</summary>
 public class OrchestrationPlaytestCoordinationTests
 {
+    /// <summary>Spec.</summary>
+    /// <param name=""Playtest"">"playtest".</param>
     private static AgentSpawnSpec Spec(string domain = "Playtest") => new()
     {
         AgentId = "agent-1",

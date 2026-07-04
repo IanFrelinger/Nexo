@@ -1,5 +1,10 @@
 namespace Nexo.Abstractions.Barriers.Identity;
 
+/// <summary>
+/// Maps inbound identity material to a concrete barrier level.
+/// Each resolver inspects a specific authority source (JWT, mTLS, API key, etc.)
+/// and returns <see langword="null"/> when it cannot resolve from available context.
+/// </summary>
 public interface IBarrierIdentityResolver
 {
     /// <summary>

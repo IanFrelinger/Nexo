@@ -10,6 +10,7 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration;
 
+/// <summary>Tests for orchestration architect gap coverage.</summary>
 public class OrchestrationArchitectGapCoverageTests
 {
     [Fact]
@@ -142,6 +143,7 @@ public class OrchestrationArchitectGapCoverageTests
         elevation.ErrorCode.Should().Be("BARRIER_ELEVATION_DENIED");
     }
 
+    /// <summary>Cyclic.</summary>
     private sealed class Cyclic
     {
         public Cyclic Self => this;

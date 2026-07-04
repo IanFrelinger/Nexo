@@ -10,8 +10,7 @@ using Nexo.Infrastructure.Execution;
 using Nexo.Tests.Infrastructure.Helpers;
 using Xunit;
 
-namespace Nexo.Tests.Infrastructure.Tests.Sdk;
-
+namespace Nexo.Tests.Infrastructure.Tests.SDK;
 /// <summary>
 /// P2.1: SDK registration tests.
 /// </summary>

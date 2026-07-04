@@ -3,8 +3,10 @@ using Nexo.Infrastructure.IO;
 
 namespace Nexo.CLI.Runtime;
 
+/// <summary>Adaptive runtime manifest loader.</summary>
 public static class AdaptiveRuntimeManifestLoader
 {
+    /// <summary>Creates a new Load instance.</summary>
     public static AdaptiveRuntimeManifest Load(string? path, string? json)
     {
         if (!string.IsNullOrWhiteSpace(json))

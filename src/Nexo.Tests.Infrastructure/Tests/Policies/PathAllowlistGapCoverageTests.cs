@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Policies;
 
+/// <summary>Tests for path allowlist gap coverage.</summary>
 [Trait("Category", "Unit")]
 public sealed class PathAllowlistGapCoverageTests
 {
@@ -135,6 +136,7 @@ public sealed class PathAllowlistGapCoverageTests
     private static ToolCall CreateToolCall(string toolId, string path)
     {
         var json = JsonSerializer.SerializeToElement(new { path });
+        /// <summary>Tool call.</summary>
         return new ToolCall(toolId, json);
     }
 }

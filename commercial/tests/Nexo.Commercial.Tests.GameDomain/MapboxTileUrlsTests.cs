@@ -1,9 +1,9 @@
 using FluentAssertions;
-using Nexo.GameDomain.Maps;
+using Nexo.Commercial.GameDomain.Maps;
 using Xunit;
 
-namespace Nexo.Tests.GameDomain;
-
+namespace Nexo.Commercial.Tests.GameDomain;
+/// <summary>Tests for mapbox tile urls.</summary>
 public class MapboxTileUrlsTests
 {
     [Fact]

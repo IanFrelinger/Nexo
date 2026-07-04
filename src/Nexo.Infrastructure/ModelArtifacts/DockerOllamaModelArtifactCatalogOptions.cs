@@ -3,6 +3,7 @@ namespace Nexo.Infrastructure.ModelArtifacts;
 /// <summary>Options for discovering Ollama models inside Docker-hosted Ollama containers.</summary>
 public sealed class DockerOllamaModelArtifactCatalogOptions
 {
+    /// <summary>Configuration section name.</summary>
     public const string SectionName = "Nexo:ModelArtifactCatalog:DockerOllama";
 
     /// <summary>When false, <see cref="DockerOllamaModelArtifactCatalogSource"/> returns no entries.</summary>

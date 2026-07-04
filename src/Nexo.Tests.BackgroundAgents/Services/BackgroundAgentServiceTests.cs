@@ -13,6 +13,7 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.Services;
 
+/// <summary>Tests for background agent service.</summary>
 public sealed class BackgroundAgentServiceTests
 {
     [Fact]
@@ -195,9 +196,12 @@ public sealed class BackgroundAgentServiceTests
                 ["BackgroundAgents:Agents:0:Schedule:Interval"] = "00:01:00",
             })
             .Build();
+        /// <summary>Creates loader.</summary>
         return CreateLoader(config);
     }
 
+    /// <summary>Creates loader.</summary>
+    /// <param name="config">Config.</param>
     private static BackgroundAgentConfigLoader CreateLoader(IConfiguration config) =>
         new(config, new DataSensitivityRegistry(), null);
 

@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Pipelines;
 
+/// <summary>Tests for pipeline scheduler.</summary>
 public sealed class PipelineSchedulerTests
 {
     private static PipelineExecutionGraph BuildGraph()

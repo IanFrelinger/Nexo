@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.Application.Tests.Bricks;
 
+/// <summary>Tests for brick input defaults.</summary>
 public sealed class BrickInputDefaultsTests
 {
     [Fact]
@@ -33,7 +34,8 @@ public sealed class BrickInputDefaultsTests
         input.Get<string>("name").Should().Be("Nexo");
     }
 
-    private sealed class DefaultNameBrick : Brick
+    /// <summary>Tests for default name brick.</summary>
+    private sealed class DefaultNameBrick : DomainBrick
     {
         public DefaultNameBrick()
         {

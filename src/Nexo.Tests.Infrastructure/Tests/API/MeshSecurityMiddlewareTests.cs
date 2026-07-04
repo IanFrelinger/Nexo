@@ -12,6 +12,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.API;
 
+/// <summary>Tests for mesh security middleware.</summary>
 public sealed class MeshSecurityMiddlewareTests
 {
     [Fact]

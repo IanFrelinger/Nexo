@@ -14,6 +14,7 @@ public class WebSearchCommand
     private readonly IConfiguration _configuration;
     private readonly ILogger<WebSearchCommand> _logger;
 
+    /// <summary>Creates a new WebSearchCommand instance.</summary>
     public WebSearchCommand(
         IConfiguration configuration,
         ILogger<WebSearchCommand> logger,

@@ -1,7 +1,6 @@
 using System.Text.Json;
 
-namespace Nexo.Core.Application.Networking.Models;
-
+namespace Nexo.Commercial.Fleet.Contracts.Networking.Models;
 /// <summary>
 /// A chunk of knowledge/memory for cross-node sync (e.g. indexed memory to propagate).
 /// </summary>

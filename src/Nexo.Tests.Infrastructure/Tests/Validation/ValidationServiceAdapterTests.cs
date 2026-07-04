@@ -8,15 +8,20 @@ using Nexo.Infrastructure.Validation.Parsers;
 
 namespace Nexo.Tests.Infrastructure.Tests.Validation;
 
+/// <summary>Tests for validation service adapter.</summary>
 public class ValidationServiceAdapterTests : UnitTestBase
 {
     public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
+            /// <summary>Test no test projects found.</summary>
             await TestNoTestProjectsFound();
+            /// <summary>Test progress reporting.</summary>
             await TestProgressReporting();
+            /// <summary>Test cancellation.</summary>
             await TestCancellation();
+            /// <summary>Test exception handling.</summary>
             await TestExceptionHandling();
 
             return new TestResult
@@ -67,11 +72,19 @@ public class ValidationServiceAdapterTests : UnitTestBase
 
             var result = await adapter.ValidateAsync(null, null, CancellationToken.None);
 
+            /// <summary>Assert not null.</summary>
             AssertNotNull(result);
+            /// <summary>Assert true.</summary>
+            /// <param name="found"">Found".</param>
             AssertTrue(result.Passed, "Should pass when no test projects found");
+            /// <summary>Assert equal.</summary>
+            /// <param name="skipped"">Skipped".</param>
             AssertEqual("No test projects found - validation skipped", result.Message);
+            /// <summary>Assert equal.</summary>
             AssertEqual(0, result.TestsRun);
+            /// <summary>Assert equal.</summary>
             AssertEqual(0, result.TestsPassed);
+            /// <summary>Assert equal.</summary>
             AssertEqual(0, result.TestsFailed);
         }
         finally
@@ -128,6 +141,7 @@ public class ValidationServiceAdapterTests : UnitTestBase
         // Should handle cancellation gracefully and return a result
         var result = await adapter.ValidateAsync(null, null, cts.Token);
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(result);
         // May return error result or handle cancellation
     }
@@ -143,6 +157,7 @@ public class ValidationServiceAdapterTests : UnitTestBase
         // but we can verify the adapter handles errors gracefully
         var result = await adapter.ValidateAsync("test-filter", null, CancellationToken.None);
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(result);
         // Should return a result (either success or failure, but not throw)
     }

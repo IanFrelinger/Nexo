@@ -3,11 +3,10 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Nexo.GameDomain.Macros;
-using Nexo.GameDomain.Session;
+using Nexo.Commercial.GameDomain.Macros;
+using Nexo.Commercial.GameDomain.Session;
 
-namespace Nexo.API.Forge;
-
+namespace GameDirector.Mcp.Forge;
 /// <summary>
 /// Isolates Forge session and macro state per tenant id (from <see cref="ForgeTenantMiddleware"/>),
 /// using either in-memory slots or a separate LiteDB file per tenant under a common root directory.

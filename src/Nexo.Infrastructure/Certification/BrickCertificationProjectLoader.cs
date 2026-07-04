@@ -6,8 +6,10 @@ using Nexo.Core.Domain.Bricks;
 
 namespace Nexo.Infrastructure.Certification;
 
+/// <summary>Loads brick projects and witness specs from disk into certification requests.</summary>
 public static class BrickCertificationProjectLoader
 {
+    /// <summary>Load asynchronously.</summary>
     public static async Task<CertificationRequest> LoadAsync(
         string brickProjectDirectory,
         string witnessSpecPath,
@@ -37,10 +39,10 @@ public static class BrickCertificationProjectLoader
             ?? throw new FileNotFoundException("Built brick assembly not found");
 
         var assembly = Assembly.LoadFrom(dllPath);
-        var brickType = assembly.GetTypes().FirstOrDefault(t => typeof(Brick).IsAssignableFrom(t) && !t.IsAbstract)
-            ?? throw new InvalidOperationException("No Brick type in assembly");
+        var brickType = assembly.GetTypes().FirstOrDefault(t => typeof(DomainBrick).IsAssignableFrom(t) && !t.IsAbstract)
+            ?? throw new InvalidOperationException("No DomainBrick type in assembly");
 
-        var brick = (Brick)Activator.CreateInstance(brickType)!;
+        var brick = (DomainBrick)Activator.CreateInstance(brickType)!;
         var references = CollectReferences(buildDir, dllPath);
 
         var witness = new WitnessSpec(
@@ -98,13 +100,17 @@ public static class BrickCertificationProjectLoader
 
     private sealed class WitnessSpecDto
     {
+        /// <summary>Brick id.</summary>
         public string? BrickId { get; set; }
+        /// <summary>Cases.</summary>
         public List<WitnessCaseDto> Cases { get; set; } = [];
     }
 
     private sealed class WitnessCaseDto
     {
+        /// <summary>Input.</summary>
         public Dictionary<string, object> Input { get; set; } = new();
+        /// <summary>Expected output.</summary>
         public Dictionary<string, object> ExpectedOutput { get; set; } = new();
     }
 

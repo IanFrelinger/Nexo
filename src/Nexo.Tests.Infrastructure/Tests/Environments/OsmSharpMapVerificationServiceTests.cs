@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Environments;
 
+/// <summary>Tests for osm sharp map verification service.</summary>
 public sealed class OsmSharpMapVerificationServiceTests
 {
     private readonly OsmSharpMapVerificationService _svc = new();

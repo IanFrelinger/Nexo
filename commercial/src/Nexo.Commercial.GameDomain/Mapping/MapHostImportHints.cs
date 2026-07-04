@@ -1,5 +1,4 @@
-namespace Nexo.GameDomain.Mapping;
-
+namespace Nexo.Commercial.GameDomain.Mapping;
 /// <summary>
 /// Human-readable suggested host/engine actions after the reference pipeline has fetched and summarized bytes (M1–M3 bridge).
 /// </summary>

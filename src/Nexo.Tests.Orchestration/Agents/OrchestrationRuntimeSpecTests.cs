@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration.Agents;
 
+/// <summary>Tests for orchestration runtime spec.</summary>
 public sealed class OrchestrationRuntimeSpecTests
 {
     [Fact]
@@ -82,8 +83,10 @@ public sealed class OrchestrationRuntimeSpecTests
         capture.LastSystem.Should().Contain("nexo.model.name=llama3.2:3b");
     }
 
+    /// <summary>Capturing model.</summary>
     private sealed class CapturingModel : IModel
     {
+        /// <summary>Last system.</summary>
         public string? LastSystem { get; private set; }
 
         public Task<ModelOutput> CompleteAsync(ModelInput input, CancellationToken ct)

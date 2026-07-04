@@ -11,11 +11,13 @@ public sealed class ModelScoringService
     private const long LargeModelThresholdBytes = 7L * 1024 * 1024 * 1024;
     private readonly IPlatformPolicy _policy;
 
+    /// <summary>Initializes a new model scoring service.</summary>
     public ModelScoringService(IPlatformPolicy policy)
     {
         _policy = policy ?? throw new ArgumentNullException(nameof(policy));
     }
 
+    /// <summary>Score model.</summary>
     public float ScoreModel(ModelDescriptor model, TaskContext context, NodeProfile profile)
     {
         if (!_policy.CanLoadModel(model, profile)) return float.MinValue;

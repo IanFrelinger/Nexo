@@ -11,6 +11,7 @@ public sealed class LiteDbPatternProcessedStore : IPatternProcessedStore
     private const string CollectionName = "processed_patterns";
     private readonly string _connectionString;
 
+    /// <summary>Initializes a new lite db pattern processed store.</summary>
     public LiteDbPatternProcessedStore(string pathOrConnectionString)
     {
         if (string.IsNullOrWhiteSpace(pathOrConnectionString))
@@ -19,6 +20,7 @@ public sealed class LiteDbPatternProcessedStore : IPatternProcessedStore
         _connectionString = trimmed.StartsWith("Filename=", StringComparison.OrdinalIgnoreCase) ? trimmed : $"Filename={trimmed}";
     }
 
+    /// <summary>Mark processed asynchronously.</summary>
     public Task MarkProcessedAsync(string patternId, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -28,6 +30,7 @@ public sealed class LiteDbPatternProcessedStore : IPatternProcessedStore
         return Task.CompletedTask;
     }
 
+    /// <summary>Is processed asynchronously.</summary>
     public Task<bool> IsProcessedAsync(string patternId, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -40,9 +43,12 @@ public sealed class LiteDbPatternProcessedStore : IPatternProcessedStore
 
     private sealed class ProcessedDoc
     {
+        /// <summary>Id.</summary>
         [BsonId]
         public ObjectId Id { get; set; } = ObjectId.NewObjectId();
+        /// <summary>Pattern id.</summary>
         public string PatternId { get; set; } = string.Empty;
+        /// <summary>Processed at.</summary>
         public DateTimeOffset ProcessedAt { get; set; }
     }
 }

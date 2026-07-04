@@ -18,7 +18,7 @@ public interface IBehavioralAnalyzer
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Result indicating contract satisfaction and any drift.</returns>
     Task<BehavioralAnalysisResult> AnalyzeAsync(
-        Brick brick,
+        DomainBrick brick,
         BrickOutput actualOutput,
         CancellationToken cancellationToken = default);
 }

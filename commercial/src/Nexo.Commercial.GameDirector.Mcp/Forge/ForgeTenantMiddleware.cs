@@ -2,8 +2,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 
-namespace Nexo.API.Forge;
-
+namespace GameDirector.Mcp.Forge;
 /// <summary>
 /// Resolves Forge tenant id from claims (optional) or a header, and stores it on <see cref="HttpContext.Items"/>.
 /// </summary>

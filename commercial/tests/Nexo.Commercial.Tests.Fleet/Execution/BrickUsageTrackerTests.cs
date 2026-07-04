@@ -1,8 +1,8 @@
 using FluentAssertions;
 using Microsoft.Extensions.Options;
-using Nexo.Core.Application.Networking.Models;
+using Nexo.Commercial.Fleet.Contracts.Networking.Models;
 using Nexo.Core.Domain;
-using Nexo.Infrastructure.Execution;
+using Nexo.Commercial.Fleet.Infrastructure.Execution;
 using Xunit;
 
 namespace Nexo.Commercial.Tests.Fleet.Execution;

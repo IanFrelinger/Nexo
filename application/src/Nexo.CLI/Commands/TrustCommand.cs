@@ -14,6 +14,7 @@ public class TrustCommand
     private readonly ITrustPolicyPackRegistry? _policyPackRegistry;
     private readonly ILogger<TrustCommand> _logger;
 
+    /// <summary>Creates a new TrustCommand instance.</summary>
     public TrustCommand(
         IDataDecisionAuditLog? auditLog,
         IAccessBoundary? accessBoundary,
@@ -392,6 +393,7 @@ public class TrustCommand
         return null;
     }
 
+    /// <summary>Creates a new DescribePolicyPackAsync instance.</summary>
     public Task<int> DescribePolicyPackAsync(string? packId, bool formatJson, CancellationToken ct = default)
     {
         try
@@ -491,6 +493,7 @@ public class TrustCommand
         }
     }
 
+    /// <summary>Creates a new ListPolicyPacksAsync instance.</summary>
     public Task<int> ListPolicyPacksAsync(bool formatJson, CancellationToken ct = default)
     {
         try
@@ -542,6 +545,7 @@ public class TrustCommand
         }
     }
 
+    /// <summary>Creates a new ApplyPolicyPackAsync instance.</summary>
     public Task<int> ApplyPolicyPackAsync(string packId, bool formatJson, CancellationToken ct = default)
     {
         try

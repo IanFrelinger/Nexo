@@ -2,8 +2,8 @@ using System.Diagnostics;
 using System.Text.Json;
 using Nexo.CLI.Runtime;
 
-namespace Nexo.CLI.Commands;
-
+namespace Nexo.CLI.Commands.Runtime;
+/// <summary>Handles execute requests.</summary>
 internal sealed partial class ExecuteHandler
 {
     internal async Task<RuntimeExecuteResult> ExecuteCoreAsync(

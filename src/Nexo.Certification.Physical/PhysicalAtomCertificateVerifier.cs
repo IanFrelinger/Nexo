@@ -47,5 +47,3 @@ public static class PhysicalAtomCertificateVerifier
     private static PhysicalAtomTrustResult Refused(string code, string reason) =>
         new(false, code, reason);
 }
-
-public sealed record PhysicalAtomTrustResult(bool Trusted, string? FailureCode, string? Reason);

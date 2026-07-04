@@ -20,6 +20,9 @@ public class GetConfigurationHandler : IRequestHandler<GetConfigurationQuery, Ne
     private readonly IConfigurationService _configurationService;
     private readonly ILogger<GetConfigurationHandler> _logger;
 
+    /// <summary>Creates a handler that loads configuration via <see cref="IConfigurationService"/>.</summary>
+    /// <param name="configurationService">Service that loads persisted configuration.</param>
+    /// <param name="logger">Logger for configuration operations.</param>
     public GetConfigurationHandler(
         IConfigurationService configurationService,
         ILogger<GetConfigurationHandler> logger)
@@ -28,6 +31,10 @@ public class GetConfigurationHandler : IRequestHandler<GetConfigurationQuery, Ne
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>Handles the query by loading current configuration.</summary>
+    /// <param name="request">Configuration query (no parameters).</param>
+    /// <param name="cancellationToken">Token used to cancel the operation.</param>
+    /// <returns>Current <see cref="NexoConfiguration"/> settings.</returns>
     public async Task<NexoConfiguration> Handle(
         GetConfigurationQuery request,
         CancellationToken cancellationToken)

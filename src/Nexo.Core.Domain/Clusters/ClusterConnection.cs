@@ -5,6 +5,7 @@ namespace Nexo.Core.Domain.Clusters;
 /// </summary>
 public class ClusterConnection
 {
+    /// <summary>Stable connection identifier within the cluster.</summary>
     public string Id { get; init; } = default!;
     
     /// <summary>
@@ -37,14 +38,3 @@ public class ClusterConnection
     /// </summary>
     public ConnectionType Type { get; init; } = ConnectionType.Data;
 }
-
-/// <summary>
-/// Connection type for visualization and execution.
-/// </summary>
-public enum ConnectionType
-{
-    Data,       // Output → Input data flow
-    Control,    // Execution flow control
-    Event       // Event trigger
-}
-

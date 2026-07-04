@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.Tests;
 
+/// <summary>Tests for in memory sanitization audit log.</summary>
 public sealed class InMemorySanitizationAuditLogTests
 {
     [Fact(Timeout = 15000)]

@@ -1,5 +1,4 @@
-namespace Nexo.GameDomain.Discord;
-
+namespace Nexo.Commercial.GameDomain.Discord;
 /// <summary>
 /// Token-bucket rate limiter respecting Discord's API limits.
 /// Per-channel: 5 messages per 5 seconds. Global: 50 requests/second.
@@ -28,6 +27,7 @@ public sealed class DiscordRateLimiter
         }
     }
 
+    /// <summary>Execute async operation.</summary>
     public async Task ExecuteAsync(Func<Task> action, CancellationToken ct = default)
     {
         await ExecuteAsync(async () => { await action(); return 0; }, ct);

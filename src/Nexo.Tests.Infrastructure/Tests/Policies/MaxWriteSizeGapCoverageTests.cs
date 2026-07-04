@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Policies;
 
+/// <summary>Tests for max write size gap coverage.</summary>
 [Trait("Category", "Unit")]
 public sealed class MaxWriteSizeGapCoverageTests
 {

@@ -1,16 +1,6 @@
 namespace Nexo.BackgroundAgents.Configuration;
 
 /// <summary>
-/// Result of an approval request.
-/// </summary>
-public enum ApprovalResult
-{
-    Approved,
-    Denied,
-    TimedOut
-}
-
-/// <summary>
 /// Gate for SemiActive mode: approves or rejects extender execution before it runs.
 /// When mode is SemiActive, the registry calls this before running the self-extend cycle.
 /// If no approval is granted, execution is skipped (observe-only for that cycle).

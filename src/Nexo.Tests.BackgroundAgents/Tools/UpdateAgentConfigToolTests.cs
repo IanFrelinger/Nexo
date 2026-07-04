@@ -14,6 +14,7 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.Tools;
 
+/// <summary>Tests for update agent config tool.</summary>
 public sealed class UpdateAgentConfigToolTests
 {
     [Fact]
@@ -121,6 +122,7 @@ public sealed class UpdateAgentConfigToolTests
             agentFactory);
     }
 
+    /// <summary>Creates config loader.</summary>
     private static BackgroundAgentConfigLoader CreateConfigLoader() =>
         new(
             new ConfigurationBuilder()
@@ -139,6 +141,8 @@ public sealed class UpdateAgentConfigToolTests
             new DataSensitivityRegistry(),
             null);
 
+    /// <summary>Call.</summary>
+    /// <param name="agentId">Agent id.</param>
     private static ToolCall Call(string agentId) =>
         new(UpdateAgentConfigTool.DefaultId, JsonSerializer.SerializeToElement(new { agentId }));
 }

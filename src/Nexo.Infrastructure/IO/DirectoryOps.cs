@@ -6,8 +6,10 @@ namespace Nexo.Infrastructure.IO;
 /// </summary>
 public static class DirectoryOps
 {
+    /// <summary>Create directory.</summary>
     public static void CreateDirectory(string path) => Directory.CreateDirectory(path);
 
+    /// <summary>Ensures parent directory exists.</summary>
     public static void EnsureParentDirectoryExists(string filePath)
     {
         var dir = Path.GetDirectoryName(filePath);

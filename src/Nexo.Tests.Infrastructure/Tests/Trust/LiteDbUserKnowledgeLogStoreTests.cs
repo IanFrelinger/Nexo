@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Trust;
 
+/// <summary>Tests for lite db user knowledge log store.</summary>
 public class LiteDbUserKnowledgeLogStoreTests : TempDirTestBase
 {
     private readonly string _dbPath;

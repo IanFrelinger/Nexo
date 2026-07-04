@@ -7,14 +7,18 @@ using Nexo.Core.Application.Testing.Models;
 
 namespace Nexo.Tests.CLI.Tests.Commands;
 
+/// <summary>Tests for sensitivity command.</summary>
 public class SensitivityCommandTests : UnitTestBase
 {
     public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
+            /// <summary>Test list succeeds.</summary>
             await TestListSucceeds();
+            /// <summary>Test list format json.</summary>
             await TestListFormatJson();
+            /// <summary>Test show public.</summary>
             await TestShowPublic();
             return new TestResult
             {
@@ -54,6 +58,7 @@ public class SensitivityCommandTests : UnitTestBase
         var logger = new Mock<ILogger<SensitivityCommand>>();
         var command = new SensitivityCommand(registry, logger.Object);
         var exitCode = await command.ListAsync(false);
+        /// <summary>Assert equal.</summary>
         AssertEqual(0, exitCode);
     }
 
@@ -63,6 +68,7 @@ public class SensitivityCommandTests : UnitTestBase
         var logger = new Mock<ILogger<SensitivityCommand>>();
         var command = new SensitivityCommand(registry, logger.Object);
         var exitCode = await command.ListAsync(true);
+        /// <summary>Assert equal.</summary>
         AssertEqual(0, exitCode);
     }
 
@@ -72,6 +78,7 @@ public class SensitivityCommandTests : UnitTestBase
         var logger = new Mock<ILogger<SensitivityCommand>>();
         var command = new SensitivityCommand(registry, logger.Object);
         var exitCode = await command.ShowAsync("Public", false);
+        /// <summary>Assert equal.</summary>
         AssertEqual(0, exitCode);
     }
 }

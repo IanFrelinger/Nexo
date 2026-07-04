@@ -1,10 +1,9 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
-using Nexo.Core.Application.Networking.Models;
-using Nexo.Core.Application.Networking.Ports;
+using Nexo.Commercial.Fleet.Contracts.Networking.Models;
+using Nexo.Commercial.Fleet.Contracts.Networking.Ports;
 
-namespace Nexo.Infrastructure.Networking;
-
+namespace Nexo.Commercial.Fleet.Infrastructure.Networking;
 /// <summary>
 /// In-memory store for knowledge chunks received from the network.
 /// </summary>

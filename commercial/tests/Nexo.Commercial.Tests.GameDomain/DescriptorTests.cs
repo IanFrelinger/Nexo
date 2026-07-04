@@ -1,10 +1,10 @@
 using System.Text.Json;
 using FluentAssertions;
-using Nexo.GameDomain.Aesthetics;
-using Nexo.GameDomain.Descriptors;
+using Nexo.Commercial.GameDomain.Aesthetics;
+using Nexo.Commercial.GameDomain.Descriptors;
 
-namespace Nexo.Tests.GameDomain;
-
+namespace Nexo.Commercial.Tests.GameDomain;
+/// <summary>Tests for descriptor.</summary>
 public class DescriptorTests
 {
     [Fact]

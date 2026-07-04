@@ -5,12 +5,14 @@ using Nexo.Core.Application.Certification.Ports;
 
 namespace Nexo.Infrastructure.Certification;
 
+/// <summary>Certification gate: mutation testing, dependency checks, signing, and admit/reject decisions.</summary>
 public sealed class CertificationGate : ICertificationGate
 {
     private readonly BrickMutationEngine _mutationEngine = new();
     private readonly CertificationRecordSigner _signer;
     private readonly ILogger<CertificationGate>? _logger;
 
+    /// <summary>Initializes a new certification gate.</summary>
     public CertificationGate(
         CertificationRecordSigner signer,
         ILogger<CertificationGate>? logger = null)
@@ -19,6 +21,7 @@ public sealed class CertificationGate : ICertificationGate
         _logger = logger;
     }
 
+    /// <summary>Certify asynchronously.</summary>
     public async Task<CertificationDecision> CertifyAsync(
         CertificationRequest request,
         CancellationToken cancellationToken = default)

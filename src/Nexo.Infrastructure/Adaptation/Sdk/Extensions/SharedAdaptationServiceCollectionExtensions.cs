@@ -5,8 +5,7 @@ using Nexo.Core.Application.Analysis.Ports;
 using Nexo.Infrastructure.Analysis;
 using Nexo.Infrastructure.Adaptation;
 
-namespace Nexo.Infrastructure.Sdk.Adaptation;
-
+namespace Nexo.Infrastructure.Adaptation.Sdk.Extensions;
 /// <summary>
 /// DI extensions for P2.3 shared adaptation cache.
 /// </summary>
@@ -57,7 +56,9 @@ public static class SharedAdaptationServiceCollectionExtensions
     private sealed class StaticPeerIdProvider : IPeerIdProvider
     {
         private readonly string _peerId;
+        /// <summary>Initializes a static peer identifier provider.</summary>
         public StaticPeerIdProvider(string peerId) => _peerId = peerId;
+        /// <summary>Gets peer id.</summary>
         public string GetPeerId() => _peerId;
     }
 }

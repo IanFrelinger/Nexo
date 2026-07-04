@@ -26,6 +26,7 @@ public sealed class NodeCapabilityRuntime : INodeCapabilityRuntime
     private readonly Dictionary<(string ModelId, TaskCapability Capability), float> _qualityFeedback = new();
     private NodeProfile _currentProfile = new();
 
+    /// <summary>Initializes a new node capability runtime.</summary>
     public NodeCapabilityRuntime(
         IHardwareProfiler profiler,
         IPlatformPolicy policy,
@@ -48,12 +49,16 @@ public sealed class NodeCapabilityRuntime : INodeCapabilityRuntime
             : DefaultModelSuite.CreateForPlatform(policy.Platform);
     }
 
+    /// <summary>Current profile.</summary>
     public NodeProfile CurrentProfile => _currentProfile;
 
+    /// <summary>Available models.</summary>
     public IReadOnlyList<ModelDescriptor> AvailableModels => _models.AsReadOnly();
 
+    /// <summary>Constraint changes.</summary>
     public IObservable<ConstraintUpdate> ConstraintChanges => _constraintChanges;
 
+    /// <summary>Select model asynchronously.</summary>
     public async Task<ModelResolution> SelectModelAsync(TaskContext context, CancellationToken ct = default)
     {
         var selectStarted = DateTimeOffset.UtcNow;
@@ -132,6 +137,7 @@ public sealed class NodeCapabilityRuntime : INodeCapabilityRuntime
         return bestFit;
     }
 
+    /// <summary>Ensure model ready asynchronously.</summary>
     public async Task EnsureModelReadyAsync(ModelDescriptor model, CancellationToken ct = default)
     {
         var started = DateTimeOffset.UtcNow;
@@ -149,8 +155,10 @@ public sealed class NodeCapabilityRuntime : INodeCapabilityRuntime
         }
     }
 
+    /// <summary>Get tier asynchronously.</summary>
     public Task<NodeTier> GetTierAsync() => Task.FromResult(_currentProfile.Tier);
 
+    /// <summary>Gets capability manifest.</summary>
     public NodeCapabilityManifest GetCapabilityManifest()
     {
         var hotModelIds = _models.Where(m => m.State == ModelState.Hot).Select(m => m.Id).ToArray();
@@ -172,6 +180,7 @@ public sealed class NodeCapabilityRuntime : INodeCapabilityRuntime
         };
     }
 
+    /// <summary>Record outcome asynchronously.</summary>
     public Task RecordOutcomeAsync(ModelResolution resolution, BrickExecutionOutcome outcome, CancellationToken ct = default)
     {
         ct.ThrowIfCancellationRequested();
@@ -260,61 +269,5 @@ public sealed class NodeCapabilityRuntime : INodeCapabilityRuntime
             _ => 0.0f
         };
         return qualityScore < minimum;
-    }
-}
-
-internal sealed class SimpleObservable<T> : IObservable<T>
-{
-    private readonly List<IObserver<T>> _observers = new();
-    private readonly object _gate = new();
-
-    public IDisposable Subscribe(IObserver<T> observer)
-    {
-        if (observer is null) throw new ArgumentNullException(nameof(observer));
-        lock (_gate)
-        {
-            _observers.Add(observer);
-        }
-
-        return new Subscription(_observers, _gate, observer);
-    }
-
-    public void Publish(T value)
-    {
-        List<IObserver<T>> snapshot;
-        lock (_gate)
-        {
-            snapshot = new List<IObserver<T>>(_observers);
-        }
-
-        foreach (var observer in snapshot)
-        {
-            observer.OnNext(value);
-        }
-    }
-
-    private sealed class Subscription : IDisposable
-    {
-        private readonly List<IObserver<T>> _observers;
-        private readonly object _gate;
-        private IObserver<T>? _observer;
-
-        public Subscription(List<IObserver<T>> observers, object gate, IObserver<T> observer)
-        {
-            _observers = observers;
-            _gate = gate;
-            _observer = observer;
-        }
-
-        public void Dispose()
-        {
-            if (_observer is null) return;
-            lock (_gate)
-            {
-                _observers.Remove(_observer);
-            }
-
-            _observer = null;
-        }
     }
 }

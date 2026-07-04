@@ -5,8 +5,10 @@ namespace Nexo.API.Security;
 /// </summary>
 public static class NexoHttpTenant
 {
+    /// <summary>Default tenant header name (<c>X-Nexo-Tenant</c>).</summary>
     public const string TenantHeaderName = "X-Nexo-Tenant";
 
+    /// <summary>Resolves tenant ID from headers and options; sets <paramref name="errorDetail"/> on validation failure.</summary>
     public static bool TryResolve(HttpRequest request, NexoProductOptions options, out string tenantId, out string? errorDetail)
     {
         tenantId = string.IsNullOrWhiteSpace(options.DefaultTenantId) ? "default" : options.DefaultTenantId.Trim();

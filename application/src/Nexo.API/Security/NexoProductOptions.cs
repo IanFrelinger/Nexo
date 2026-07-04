@@ -5,6 +5,7 @@ namespace Nexo.API.Security;
 /// </summary>
 public sealed class NexoProductOptions
 {
+    /// <summary>Configuration section path (<c>Nexo:Product</c>).</summary>
     public const string SectionPath = "Nexo:Product";
 
     /// <summary>Used when <c>X-Nexo-Tenant</c> is omitted.</summary>
@@ -19,7 +20,9 @@ public sealed class NexoProductOptions
     /// <summary>Cloud mode: copilot/usage routes require <c>X-Nexo-User</c> + <c>X-Nexo-Org</c> membership.</summary>
     public bool RequireOrgMembership { get; set; }
 
+    /// <summary>Header name for resolving the authenticated user ID.</summary>
     public string UserHeaderName { get; set; } = NexoHttpOrg.UserHeaderName;
 
+    /// <summary>Header name for resolving organization membership.</summary>
     public string OrgHeaderName { get; set; } = NexoHttpOrg.OrgHeaderName;
 }

@@ -1,5 +1,5 @@
-namespace Nexo.CLI.Commands;
-
+namespace Nexo.CLI.Commands.Unity;
+/// <summary>Unity asset prompt builder.</summary>
 internal static class UnityAssetPromptBuilder
 {
     internal static string BuildAssetPrompt(string assetType, string description)

@@ -26,9 +26,11 @@ public sealed class XrealSpatialAnchorProvider : ISpatialAnchorProvider
         _session = session ?? throw new ArgumentNullException(nameof(session));
     }
 
+    /// <summary>Convenience factory for hosts that manage <see cref="PlatformXrealNativeSession"/> lifecycle inline.</summary>
     public static XrealSpatialAnchorProvider WithPlatformSession(bool sessionActive = false) =>
         new(new PlatformXrealNativeSession(sessionActive));
 
+    /// <summary>Returns the latest pose for an atom, or <see langword="null"/> when unavailable.</summary>
     public Task<PoseSample?> GetCurrentPose(string atomId)
     {
         if (string.IsNullOrWhiteSpace(atomId) || !IsTrackingAvailable())
@@ -41,6 +43,7 @@ public sealed class XrealSpatialAnchorProvider : ISpatialAnchorProvider
         return Task.FromResult<PoseSample?>(XrealTrackingStateMapper.ToPoseSample(frame));
     }
 
+    /// <summary>Observes pose updates for an atom; emits lost samples when tracking is unavailable.</summary>
     public IObservable<PoseSample> ObservePose(string atomId)
     {
         if (string.IsNullOrWhiteSpace(atomId) || !IsTrackingAvailable())

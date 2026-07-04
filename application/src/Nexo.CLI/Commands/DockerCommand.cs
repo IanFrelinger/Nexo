@@ -16,6 +16,7 @@ namespace Nexo.CLI.Commands;
 /// </summary>
 public class DockerCommand : Command
 {
+    /// <summary>Creates a new DockerCommand instance.</summary>
     public DockerCommand() : base("docker", "Docker operations (build, run, clean, ps, images)")
     {
         // nexo docker build

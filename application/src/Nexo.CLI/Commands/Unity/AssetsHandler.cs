@@ -1,9 +1,10 @@
 using Nexo.BackgroundAgents.HostRunners;
 
-namespace Nexo.CLI.Commands;
-
+namespace Nexo.CLI.Commands.Unity;
+/// <summary>Handles assets requests.</summary>
 internal sealed class AssetsHandler(Func<SelfExtendRunnerAdapter> runnerFactory)
 {
+    /// <summary>Executes the command handler and returns a process exit code.</summary>
     public async Task<int> ExecuteAsync(
         string projectRoot,
         string assetType,

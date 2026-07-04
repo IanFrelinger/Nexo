@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Nexo.Tests.GameDirector;
 
+/// <summary>Tests for content generation brick.</summary>
 [Trait("Category", "GameDirectorApplication")]
 public sealed class ContentGenerationBrickTests
 {

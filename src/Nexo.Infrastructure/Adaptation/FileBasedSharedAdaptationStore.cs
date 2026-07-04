@@ -22,6 +22,7 @@ public sealed class FileBasedSharedAdaptationStore : ISharedAdaptationBroadcaste
     private readonly string? _sourcePeerId;
     private readonly IReadOnlyCollection<string>? _trustedPeerIds;
 
+    /// <summary>Initializes a new file based shared adaptation store.</summary>
     public FileBasedSharedAdaptationStore(
         string? basePath,
         IAdaptationLog log,

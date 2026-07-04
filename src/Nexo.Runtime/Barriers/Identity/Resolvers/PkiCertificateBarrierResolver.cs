@@ -5,6 +5,7 @@ using Nexo.Abstractions.Barriers.Identity;
 
 namespace Nexo.Runtime.Barriers.Identity.Resolvers;
 
+/// <summary>Resolves barrier level from mTLS client certificate subject or SAN patterns.</summary>
 public sealed class PkiCertificateBarrierResolver : IBarrierIdentityResolver
 {
     private const string SubjectField = "Subject";
@@ -24,8 +25,10 @@ public sealed class PkiCertificateBarrierResolver : IBarrierIdentityResolver
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>Resolver identifier used in audit and diagnostics.</summary>
     public string ResolverName => "PkiCertificate";
 
+    /// <summary>Attempts to resolve barrier level from client certificate subject or SAN rules.</summary>
     public ValueTask<BarrierResolutionResult?> TryResolveAsync(
         BarrierResolutionContext context,
         CancellationToken cancellationToken = default)

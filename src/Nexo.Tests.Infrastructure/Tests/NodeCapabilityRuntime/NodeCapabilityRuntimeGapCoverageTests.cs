@@ -16,6 +16,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.NodeCapabilityRuntime;
 
+/// <summary>Tests for node capability runtime gap coverage.</summary>
 public class NodeCapabilityRuntimeGapCoverageTests
 {
     private static ModelDescriptor TextModel => new()
@@ -310,11 +311,15 @@ public class NodeCapabilityRuntimeGapCoverageTests
             metrics);
     }
 
+    /// <summary>Tests for fixed hardware profiler.</summary>
     private sealed class FixedHardwareProfiler(NodeProfile profile) : IHardwareProfiler
     {
+        /// <summary>Capture async.</summary>
+        /// <param name="default">Default.</param>
         public Task<NodeProfile> CaptureAsync(CancellationToken ct = default) => Task.FromResult(profile);
     }
 
+    /// <summary>Tests for sequence hardware profiler.</summary>
     private sealed class SequenceHardwareProfiler(NodeProfile first, NodeProfile second) : IHardwareProfiler
     {
         private int _calls;
@@ -323,16 +328,25 @@ public class NodeCapabilityRuntimeGapCoverageTests
             => Task.FromResult(Interlocked.Increment(ref _calls) == 1 ? first : second);
     }
 
+    /// <summary>Tests for collect observer.</summary>
     private sealed class CollectObserver<T>(List<T> sink) : IObserver<T>
     {
+        /// <summary>On completed.</summary>
         public void OnCompleted() { }
+        /// <summary>On error.</summary>
+        /// <param name="error">Error.</param>
         public void OnError(Exception error) => throw error;
+        /// <summary>On next.</summary>
+        /// <param name="value">Value.</param>
         public void OnNext(T value) => sink.Add(value);
     }
 
+    /// <summary>Tests for in memory metrics collector.</summary>
     private sealed class InMemoryMetricsCollector : IMetricsCollector
     {
+        /// <summary>Execution times.</summary>
         public Dictionary<string, TimeSpan> ExecutionTimes { get; } = new(StringComparer.Ordinal);
+        /// <summary>Counters.</summary>
         public Dictionary<string, long> Counters { get; } = new(StringComparer.Ordinal);
 
         public void RecordExecutionTime(string operationName, TimeSpan duration)

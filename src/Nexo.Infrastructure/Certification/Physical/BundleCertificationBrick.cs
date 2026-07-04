@@ -3,40 +3,6 @@ using Nexo.Certification.Physical;
 namespace Nexo.Infrastructure.Certification.Physical;
 
 /// <summary>
-/// Input to deterministic physical-atom certificate issuance.
-/// </summary>
-public sealed class BundleCertificationRequest
-{
-    public Guid AtomId { get; init; }
-
-    public BindingScope BindingScope { get; init; }
-
-    public required byte[] AssetBytes { get; init; }
-
-    public required string AssetVersion { get; init; }
-
-    public GeoAnchor? GeoAnchor { get; init; }
-
-    public ManufactureMeta? ManufactureMeta { get; init; }
-
-    public IReadOnlyDictionary<string, byte[]> Extensions { get; init; } =
-        new Dictionary<string, byte[]>(StringComparer.Ordinal);
-}
-
-public sealed record BundleCertificationResult(
-    bool Succeeded,
-    PhysicalAtomCertificate? Certificate,
-    string? FailureCode,
-    string? Reason)
-{
-    public static BundleCertificationResult Ok(PhysicalAtomCertificate certificate) =>
-        new(true, certificate, null, null);
-
-    public static BundleCertificationResult Refused(string code, string reason) =>
-        new(false, null, code, reason);
-}
-
-/// <summary>
 /// Deterministic certification brick: issues signed <see cref="PhysicalAtomCertificate"/> values
 /// using the cert-gate Ed25519 signing pattern. Refuses inconsistent binding_scope inputs.
 /// </summary>
@@ -44,6 +10,7 @@ public sealed class BundleCertificationBrick
 {
     private readonly byte[] _issuerPrivateKey;
 
+    /// <summary>Initializes a new bundle certification brick.</summary>
     public BundleCertificationBrick(ReadOnlySpan<byte> issuerPrivateKey)
     {
         if (issuerPrivateKey.IsEmpty)
@@ -52,6 +19,7 @@ public sealed class BundleCertificationBrick
         _issuerPrivateKey = issuerPrivateKey.ToArray();
     }
 
+    /// <summary>Whether sue.</summary>
     public BundleCertificationResult Issue(BundleCertificationRequest request)
     {
         if (request is null)

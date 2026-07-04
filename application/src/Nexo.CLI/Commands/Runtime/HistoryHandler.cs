@@ -1,9 +1,10 @@
 using Nexo.CLI.Runtime;
 
-namespace Nexo.CLI.Commands;
-
+namespace Nexo.CLI.Commands.Runtime;
+/// <summary>Handles runtime history requests.</summary>
 internal sealed class RuntimeHistoryHandler
 {
+    /// <summary>Executes the command handler and returns a process exit code.</summary>
     public Task<int> ExecuteAsync(
         string repoRoot,
         int limit,

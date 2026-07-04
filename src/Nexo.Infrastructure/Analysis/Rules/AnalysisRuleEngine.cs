@@ -20,6 +20,7 @@ public class AnalysisRuleEngine
     private readonly IReadOnlyList<IAnalysisRule> _rules;
     private readonly ILogger<AnalysisRuleEngine> _logger;
 
+    /// <summary>Initializes a new analysis rule engine.</summary>
     public AnalysisRuleEngine(
         IEnumerable<IAnalysisRule> rules,
         ILogger<AnalysisRuleEngine> logger)

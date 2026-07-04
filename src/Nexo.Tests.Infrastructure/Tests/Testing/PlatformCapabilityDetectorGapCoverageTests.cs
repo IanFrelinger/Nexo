@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Testing;
 
+/// <summary>Tests for platform capability detector gap coverage.</summary>
 public sealed class PlatformCapabilityDetectorGapCoverageTests
 {
     [Theory]

@@ -6,6 +6,7 @@ namespace Nexo.API.Security;
 /// </summary>
 public sealed class MeshSecurityOptions
 {
+    /// <summary>Configuration section path (<c>Nexo:Security:Mesh</c>).</summary>
     public const string SectionPath = "Nexo:Security:Mesh";
 
     /// <summary>
@@ -26,6 +27,7 @@ public sealed class MeshSecurityOptions
     /// </summary>
     public string? BrickExecuteToken { get; set; }
 
+    /// <summary>Header name for <see cref="BrickExecuteToken"/> (default X-Nexo-Brick-Execute-Token).</summary>
     public string BrickExecuteTokenHeaderName { get; set; } = "X-Nexo-Brick-Execute-Token";
 
     /// <summary>

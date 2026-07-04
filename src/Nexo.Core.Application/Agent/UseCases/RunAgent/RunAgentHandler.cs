@@ -24,6 +24,10 @@ public class RunAgentHandler : IRequestHandler<RunAgentCommand, AgentExecutionRe
     private readonly ILogger<RunAgentHandler> _logger;
     private readonly IMetricsCollector? _metricsCollector;
 
+    /// <summary>Creates a handler that executes agents via <see cref="IAgentExecutor"/>.</summary>
+    /// <param name="agentExecutor">Service that runs agent actions.</param>
+    /// <param name="logger">Logger for execution progress and errors.</param>
+    /// <param name="metricsCollector">Optional metrics collector for execution telemetry.</param>
     public RunAgentHandler(
         IAgentExecutor agentExecutor,
         ILogger<RunAgentHandler> logger,

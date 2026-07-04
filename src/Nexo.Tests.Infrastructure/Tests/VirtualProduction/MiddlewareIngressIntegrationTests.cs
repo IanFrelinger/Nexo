@@ -11,6 +11,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.VirtualProduction;
 
+/// <summary>Tests for middleware ingress integration.</summary>
 [Collection("Integration")]
 [Trait("Category", "Integration")]
 [Trait("Category", "ProdStyle")]
@@ -18,6 +19,8 @@ public sealed class MiddlewareIngressIntegrationTests : IClassFixture<NexoApiWeb
 {
     private readonly NexoApiWebApplicationFactory _factory;
 
+    /// <summary>Middleware ingress integration tests.</summary>
+    /// <param name="factory">Factory.</param>
     public MiddlewareIngressIntegrationTests(NexoApiWebApplicationFactory factory) => _factory = factory;
 
     [Fact(Timeout = 60000)]

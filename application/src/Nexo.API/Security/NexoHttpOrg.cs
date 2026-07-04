@@ -8,9 +8,13 @@ namespace Nexo.API.Security;
 /// </summary>
 public static class NexoHttpOrg
 {
+    /// <summary>Default user header name (<c>X-Nexo-User</c>).</summary>
     public const string UserHeaderName = "X-Nexo-User";
+
+    /// <summary>Default organization header name (<c>X-Nexo-Org</c>).</summary>
     public const string OrgHeaderName = "X-Nexo-Org";
 
+    /// <summary>Resolves the authenticated user ID from request headers.</summary>
     public static bool TryResolveUser(HttpRequest request, NexoProductOptions options, out string userId, out string? errorDetail)
     {
         userId = "";
@@ -36,6 +40,7 @@ public static class NexoHttpOrg
         return true;
     }
 
+    /// <summary>Resolves organization membership, role, and user ID from request headers.</summary>
     public static bool TryResolveOrgContext(
         HttpRequest request,
         NexoProductOptions options,
@@ -82,6 +87,7 @@ public static class NexoHttpOrg
         return true;
     }
 
+    /// <summary>Returns true when <paramref name="tenantId"/> matches the organization's tenant scope.</summary>
     public static bool TenantMatchesOrg(string tenantId, Organization organization) =>
         string.Equals(tenantId, organization.TenantId, StringComparison.Ordinal);
 }

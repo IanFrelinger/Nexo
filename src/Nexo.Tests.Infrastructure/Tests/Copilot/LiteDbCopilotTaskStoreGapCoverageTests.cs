@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Copilot;
 
+/// <summary>Tests for lite db copilot task store gap coverage.</summary>
 public sealed class LiteDbCopilotTaskStoreGapCoverageTests
 {
     [Fact]
@@ -27,6 +28,7 @@ public sealed class LiteDbCopilotTaskStoreGapCoverageTests
         }
         finally
         {
+            /// <summary>Attempts to delete; returns false on failure.</summary>
             TryDelete(path);
         }
     }
@@ -60,6 +62,7 @@ public sealed class LiteDbCopilotTaskStoreGapCoverageTests
         }
         finally
         {
+            /// <summary>Attempts to delete; returns false on failure.</summary>
             TryDelete(path);
         }
     }
@@ -99,6 +102,7 @@ public sealed class LiteDbCopilotTaskStoreGapCoverageTests
         }
         finally
         {
+            /// <summary>Attempts to delete; returns false on failure.</summary>
             TryDelete(path);
         }
     }
@@ -124,6 +128,7 @@ public sealed class LiteDbCopilotTaskStoreGapCoverageTests
         }
         finally
         {
+            /// <summary>Attempts to delete; returns false on failure.</summary>
             TryDelete(path);
         }
     }
@@ -150,6 +155,7 @@ public sealed class LiteDbCopilotTaskStoreGapCoverageTests
         }
         finally
         {
+            /// <summary>Attempts to delete; returns false on failure.</summary>
             TryDelete(path);
         }
     }
@@ -166,6 +172,7 @@ public sealed class LiteDbCopilotTaskStoreGapCoverageTests
         }
         finally
         {
+            /// <summary>Attempts to delete; returns false on failure.</summary>
             TryDelete(path);
         }
     }

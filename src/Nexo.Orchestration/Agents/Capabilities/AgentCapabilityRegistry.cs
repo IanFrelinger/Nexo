@@ -62,28 +62,3 @@ public sealed class AgentCapabilityRegistry
         return _capabilities;
     }
 }
-
-/// <summary>
-/// Capabilities of an agent.
-/// 
-/// Contains:
-/// - Agent ID and domain
-/// - List of capabilities (e.g., "image_generation", "code_analysis")
-/// - Supported input modalities (text, image, audio)
-/// - Supported programming languages
-/// - Whether the agent supports learning
-/// - Optional metadata dictionary
-/// 
-/// Used by AgentCapabilityRegistry to track agent capabilities.
-/// </summary>
-public sealed record AgentCapability
-{
-    public required string AgentId { get; init; }
-    public required string Domain { get; init; }
-    public IReadOnlyList<string> Capabilities { get; init; } = new List<string>();
-    public IReadOnlyList<string> SupportedModalities { get; init; } = new List<string> { "text" };
-    public IReadOnlyList<string> SupportedLanguages { get; init; } = new List<string>();
-    public bool SupportsLearning { get; init; }
-    public IReadOnlyDictionary<string, object> Metadata { get; init; } = new Dictionary<string, object>();
-}
-

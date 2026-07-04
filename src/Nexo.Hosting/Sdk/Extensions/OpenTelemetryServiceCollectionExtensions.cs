@@ -3,8 +3,7 @@ using Nexo.Core.Application.Common.Ports;
 using Nexo.Infrastructure.Metrics;
 using OpenTelemetry.Metrics;
 
-namespace Nexo.Hosting;
-
+namespace Nexo.Hosting.Sdk.Extensions;
 /// <summary>
 /// OpenTelemetry integration for Nexo. Call AddNexoOpenTelemetry() after AddNexo() to enable
 /// metrics export via OpenTelemetry (OTLP, Console, etc.).

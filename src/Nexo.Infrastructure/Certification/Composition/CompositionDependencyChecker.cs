@@ -1,5 +1,6 @@
 namespace Nexo.Infrastructure.Certification.Composition;
 
+/// <summary>Validates composition project dependencies against certification allow-lists.</summary>
 internal static class CompositionDependencyChecker
 {
     private static readonly string[] ForbiddenSourceTokens =
@@ -11,6 +12,7 @@ internal static class CompositionDependencyChecker
         "/workspace"
     ];
 
+    /// <summary>Check.</summary>
     public static DependencyCheckResult Check(string? wiringMetadata)
     {
         var violations = new List<string>();

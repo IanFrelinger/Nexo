@@ -115,8 +115,13 @@ public sealed class ChannelManager
 
     private sealed class Channel
     {
+        /// <summary>Normalized channel identifier.</summary>
         public required string ChannelId { get; init; }
+
+        /// <summary>First agent in the channel pair.</summary>
         public required string AgentId1 { get; init; }
+
+        /// <summary>Second agent in the channel pair.</summary>
         public required string AgentId2 { get; init; }
     }
 }

@@ -4,11 +4,6 @@ using Microsoft.Extensions.Options;
 
 namespace Nexo.API.Security;
 
-public interface ICopilotSubmissionQuota
-{
-    bool TryConsume(string tenantId, out string? denialMessage);
-}
-
 /// <summary>
 /// Fixed-window hourly quota per tenant using in-memory counters (single-process).
 /// </summary>
@@ -17,6 +12,7 @@ public sealed class CopilotSubmissionQuota : ICopilotSubmissionQuota
     private readonly IMemoryCache _cache;
     private readonly NexoEntitlementsOptions _options;
 
+    /// <summary>Creates an in-memory hourly copilot submission quota tracker.</summary>
     public CopilotSubmissionQuota(IMemoryCache cache, IOptions<NexoEntitlementsOptions> optionsAccessor)
     {
         _cache = cache;

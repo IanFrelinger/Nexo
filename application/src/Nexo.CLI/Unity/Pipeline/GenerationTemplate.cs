@@ -8,9 +8,13 @@ using System.Text.Json;
 /// </summary>
 public sealed record GenerationTemplate
 {
+    /// <summary>Field values that generation must reuse exactly.</summary>
     public Dictionary<string, object> FixedValues { get; init; } = new();
+
+    /// <summary>Field names the LLM is expected to generate.</summary>
     public IReadOnlyList<string> GenerateFields { get; init; } = Array.Empty<string>();
 
+    /// <summary>Loads a generation template from a <c>.template.json</c> file.</summary>
     public static GenerationTemplate? LoadFromFile(string templatePath)
     {
         if (string.IsNullOrEmpty(templatePath) || !File.Exists(templatePath))
@@ -47,6 +51,7 @@ public sealed record GenerationTemplate
         return new GenerationTemplate { FixedValues = fixedValues, GenerateFields = generateFields };
     }
 
+    /// <summary>Builds a bullet-list fragment suitable for LLM system prompts.</summary>
     public string ToPromptFragment()
     {
         var parts = new List<string>();

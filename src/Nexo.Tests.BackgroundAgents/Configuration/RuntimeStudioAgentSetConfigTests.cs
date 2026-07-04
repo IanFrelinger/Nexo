@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.Configuration;
 
+/// <summary>Tests for runtime studio agent set config.</summary>
 public sealed class RuntimeStudioAgentSetConfigTests
 {
     [Fact]
@@ -109,6 +110,8 @@ public sealed class RuntimeStudioAgentSetConfigTests
             dir = dir.Parent;
         }
 
+        /// <summary>Invalid operation exception.</summary>
+        /// <param name="directory"">Directory".</param>
         throw new InvalidOperationException("Could not locate Nexo.sln from test base directory");
     }
 }

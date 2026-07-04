@@ -2,6 +2,7 @@ using System.Diagnostics;
 
 namespace Nexo.Tools.Dev;
 
+/// <summary>Dotnet runner.</summary>
 internal static class DotnetRunner
 {
     public static async Task<(int exitCode, string stdout, string stderr, bool timedOut)> RunAsync(

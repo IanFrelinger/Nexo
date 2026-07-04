@@ -18,6 +18,7 @@ public class BackgroundAgentCommand
     private readonly Nexo.Orchestration.Agents.AgentFactory _agentFactory;
     private readonly ILogger<BackgroundAgentCommand> _logger;
 
+    /// <summary>Creates a new BackgroundAgentCommand instance.</summary>
     public BackgroundAgentCommand(
         BackgroundAgentConfigLoader configLoader,
         IBackgroundAgentRegistry registry,
@@ -408,6 +409,7 @@ public class BackgroundAgentCommand
         await _registry.RegisterAsync(agent, config, AgentRegistrationOrigin.Authored, ct);
     }
 
+    /// <summary>Creates a new CalculateDesiredAgentCount instance.</summary>
     public static int CalculateDesiredAgentCount(int demand, int minAgents, int maxAgents, int unitsPerAgent)
     {
         var normalizedDemand = Math.Max(0, demand);

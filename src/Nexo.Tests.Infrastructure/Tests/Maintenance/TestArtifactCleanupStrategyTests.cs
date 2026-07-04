@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Maintenance;
 
+/// <summary>Tests for test artifact cleanup strategy.</summary>
 public class TestArtifactCleanupStrategyTests : IDisposable
 {
     private readonly string _repoRoot;

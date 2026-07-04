@@ -4,53 +4,19 @@ using Nexo.Certification.Physical.Resolution;
 namespace Nexo.Infrastructure.Certification.Physical;
 
 /// <summary>
-/// Input to deterministic asset bundle certification and registration.
-/// </summary>
-public sealed class AssetBundleCertificationRequest
-{
-    public Guid AtomId { get; init; }
-
-    public BindingScope BindingScope { get; init; }
-
-    public required byte[] AssetBytes { get; init; }
-
-    public required string AssetVersion { get; init; }
-
-    public string ContentType { get; init; } = "application/octet-stream";
-
-    public GeoAnchor? GeoAnchor { get; init; }
-
-    public ManufactureMeta? ManufactureMeta { get; init; }
-
-    public IReadOnlyDictionary<string, byte[]> Extensions { get; init; } =
-        new Dictionary<string, byte[]>(StringComparer.Ordinal);
-}
-
-public sealed record AssetBundleCertificationResult(
-    bool Succeeded,
-    PhysicalAtomCertBundle? Bundle,
-    string? FailureCode,
-    string? Reason)
-{
-    public static AssetBundleCertificationResult Ok(PhysicalAtomCertBundle bundle) =>
-        new(true, bundle, null, null);
-
-    public static AssetBundleCertificationResult Refused(string code, string reason) =>
-        new(false, null, code, reason);
-}
-
-/// <summary>
 /// Phase 1 pipeline: issue certificate, register asset + cert in resolution store, emit portable bundle.
 /// </summary>
 public sealed class AssetBundleCertificationPipeline
 {
     private readonly BundleCertificationBrick _issuer;
 
+    /// <summary>Initializes a new asset bundle certification pipeline.</summary>
     public AssetBundleCertificationPipeline(BundleCertificationBrick issuer)
     {
         _issuer = issuer ?? throw new ArgumentNullException(nameof(issuer));
     }
 
+    /// <summary>Certify and register.</summary>
     public AssetBundleCertificationResult CertifyAndRegister(
         InMemoryAssetResolutionStore store,
         AssetBundleCertificationRequest request,

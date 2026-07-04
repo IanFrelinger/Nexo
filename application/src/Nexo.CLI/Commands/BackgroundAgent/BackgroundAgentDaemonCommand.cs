@@ -19,6 +19,7 @@ namespace Nexo.CLI.Commands.BackgroundAgent;
 /// </summary>
 public sealed class BackgroundAgentDaemonCommand
 {
+    /// <summary>Creates a new RunAsync instance.</summary>
     public async Task<int> RunAsync(
         string? configPath,
         string? duration,

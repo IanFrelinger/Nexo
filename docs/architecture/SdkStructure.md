@@ -19,7 +19,7 @@ These conventions usually **preserve** existing namespaces for bulk moves; **new
 - **`Sdk/Options/`** — option bags and enums tied to registration (`NexoHostingOptions`, deployment profile, host SDK options).
 - **`Sdk/Builders/`** — fluent builders implementing port interfaces (`HostNexoSdkBuilder` implements `INexoSdkBuilder`).
 - **`Sdk/Extensions/`** — `*ServiceCollectionExtensions`, OpenTelemetry hooks, etc.
-- **`Observation/Sdk/Extensions/`** — DI extensions use namespace **`Nexo.Infrastructure.Sdk.Observation`** (`AddObservationCore`, `AddObservationInfrastructure`).
+- **`Observation/Sdk/Extensions/`** — DI extensions use namespace **`Nexo.Infrastructure.Observation.Sdk.Extensions`** (`AddObservationCore`, `AddObservationInfrastructure`).
 - **Other feature areas** — same physical layout; namespaces follow **`Nexo.Infrastructure.Sdk.<Subsystem>`** unless a **name collision** with runtime types forces **`Nexo.Infrastructure.<Subsystem>.Sdk`** (see **`NodeCapabilityRuntime`**, **`Execution`**, **`Execution.Routing`**, **`Mesh`**).
 
 ### Mechanical sweep (`*ServiceCollectionExtensions`)
@@ -32,23 +32,23 @@ Extension entry points and namespaces (collision-safe variants where noted):
 
 | Feature folder | Extension namespace |
 | -------------- | ------------------- |
-| **Adaptation** (`Adaptation/Sdk/Extensions/`) | `Nexo.Infrastructure.Sdk.Adaptation` |
-| **Analysis** (`Analysis/BrickAnalyzer/Sdk/Extensions/`) | `Nexo.Infrastructure.Sdk.Analysis` |
-| **Composition** (`Composition/Sdk/Extensions/`) | `Nexo.Infrastructure.Sdk.Composition` |
-| **Execution** (`Execution/Sdk/Extensions/`) | `Nexo.Infrastructure.Execution.Sdk` |
-| **Execution/Routing** (`Execution/Routing/Sdk/Extensions/`) | `Nexo.Infrastructure.Execution.Routing.Sdk` |
-| **Maintenance** (`Maintenance/Sdk/Extensions/`) | `Nexo.Infrastructure.Sdk.Maintenance` |
-| **Mesh** (`Mesh/Sdk/Extensions/`) | `Nexo.Infrastructure.Mesh.Sdk` |
-| **ModelArtifacts** (`ModelArtifacts/Sdk/Extensions/`) | `Nexo.Infrastructure.Sdk.ModelArtifacts` |
-| **NodeCapabilityRuntime** (`NodeCapabilityRuntime/Sdk/Extensions/`) | `Nexo.Infrastructure.NodeCapabilityRuntime.Sdk` |
-| **Observation** (`Observation/Sdk/Extensions/`) | `Nexo.Infrastructure.Sdk.Observation` |
-| **ParallelTesting** (`ParallelTesting/Sdk/Extensions/`) | `Nexo.Infrastructure.Sdk.ParallelTesting` |
-| **Persistence** (`Persistence/Sdk/Extensions/`) | `Nexo.Infrastructure.Sdk.Persistence` |
-| **Pipelines** (`Pipelines/Sdk/Extensions/`) | `Nexo.Infrastructure.Sdk.Pipelines` |
-| **Rollback** (`Rollback/Sdk/Extensions/`) | `Nexo.Infrastructure.Sdk.Rollback` |
-| **SelfContext** (`SelfContext/Sdk/Extensions/`) | `Nexo.Infrastructure.Sdk.SelfContext` |
-| **SelfImprovement** (`SelfImprovement/Sdk/Extensions/`) | `Nexo.Infrastructure.Sdk.SelfImprovement` |
-| **Trust** (`Trust/Sdk/Extensions/`) | `Nexo.Infrastructure.Sdk.Trust` |
+| **Adaptation** (`Adaptation/Sdk/Extensions/`) | `Nexo.Infrastructure.Adaptation.Sdk.Extensions` |
+| **Analysis** (`Analysis/BrickAnalyzer/Sdk/Extensions/`) | `Nexo.Infrastructure.Analysis.BrickAnalyzer.Sdk.Extensions` |
+| **Composition** (`Composition/Sdk/Extensions/`) | `Nexo.Infrastructure.Composition.Sdk.Extensions` |
+| **Execution** (`Execution/Sdk/Extensions/`) | `Nexo.Infrastructure.Execution.Sdk.Extensions.Extensions` |
+| **Execution/Routing** (`Execution/Routing/Sdk/Extensions/`) | `Nexo.Infrastructure.Execution.Routing.Sdk.Extensions.Extensions` |
+| **Maintenance** (`Maintenance/Sdk/Extensions/`) | `Nexo.Infrastructure.Maintenance.Sdk.Extensions` |
+| **Mesh** (`Mesh/Sdk/Extensions/`) | `Nexo.Infrastructure.Mesh.Sdk.Extensions.Extensions` |
+| **ModelArtifacts** (`ModelArtifacts/Sdk/Extensions/`) | `Nexo.Infrastructure.ModelArtifacts.Sdk.Extensions` |
+| **NodeCapabilityRuntime** (`NodeCapabilityRuntime/Sdk/Extensions/`) | `Nexo.Infrastructure.NodeCapabilityRuntime.Sdk.Extensions.Extensions` |
+| **Observation** (`Observation/Sdk/Extensions/`) | `Nexo.Infrastructure.Observation.Sdk.Extensions` |
+| **ParallelTesting** (`ParallelTesting/Sdk/Extensions/`) | `Nexo.Infrastructure.ParallelTesting.Sdk.Extensions` |
+| **Persistence** (`Persistence/Sdk/Extensions/`) | `Nexo.Infrastructure.Persistence.Sdk.Extensions` |
+| **Pipelines** (`Pipelines/Sdk/Extensions/`) | `Nexo.Infrastructure.Pipelines.Sdk.Extensions` |
+| **Rollback** (`Rollback/Sdk/Extensions/`) | `Nexo.Infrastructure.Rollback.Sdk.Extensions` |
+| **SelfContext** (`SelfContext/Sdk/Extensions/`) | `Nexo.Infrastructure.SelfContext.Sdk.Extensions` |
+| **SelfImprovement** (`SelfImprovement/Sdk/Extensions/`) | `Nexo.Infrastructure.SelfImprovement.Sdk.Extensions` |
+| **Trust** (`Trust/Sdk/Extensions/`) | `Nexo.Infrastructure.Trust.Sdk.Extensions` |
 
 ### Optional `Sdk/Options` pilot
 

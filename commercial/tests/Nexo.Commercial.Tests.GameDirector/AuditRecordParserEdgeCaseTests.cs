@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Tests.GameDirector;
 
+/// <summary>Tests for audit record parser edge case.</summary>
 [Trait("Category", "GameDirectorApplication")]
 public sealed class AuditRecordParserEdgeCaseTests
 {

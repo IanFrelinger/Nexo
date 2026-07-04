@@ -14,11 +14,13 @@ public sealed class OperatorDashboardBackgroundAgentCommand
     private readonly ILogger<OperatorDashboardBackgroundAgentCommand> _logger;
     private string? _expectedAuthToken;
 
+    /// <summary>Creates a new OperatorDashboardBackgroundAgentCommand instance.</summary>
     public OperatorDashboardBackgroundAgentCommand(ILogger<OperatorDashboardBackgroundAgentCommand> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>Creates a new RunAsync instance.</summary>
     public async Task<int> RunAsync(int port, bool openBrowser, string? authToken, CancellationToken cancellationToken = default)
     {
         if (port is < 1 or > 65535)

@@ -1,5 +1,4 @@
-namespace Nexo.Infrastructure.Pipelines;
-
+namespace Nexo.Infrastructure.Pipelines.Sdk.Options;
 /// <summary>
 /// Persistence strategy for pipeline runs.
 /// </summary>

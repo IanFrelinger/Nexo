@@ -5,6 +5,7 @@ namespace Nexo.API.Middleware.Ingress;
 /// <summary>Phase A inventory — canonical HTTP/WebSocket/SMS lab seams (no secrets).</summary>
 public static class IngressCatalog
 {
+    /// <summary>Static catalog of supported ingress surfaces and lab seams.</summary>
     public static IngressCatalogResponse Current { get; } = new(
     [
         new IngressCatalogEntry("HttpApi", "/api/*", "Primary REST ingress via MapNexoEndpoints (MediatR-backed handlers)."),

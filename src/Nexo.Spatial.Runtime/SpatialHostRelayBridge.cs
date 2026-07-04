@@ -19,6 +19,7 @@ public sealed class SpatialHostRelayBridge : IDisposable
         _relay = relay ?? throw new ArgumentNullException(nameof(relay));
     }
 
+    /// <summary>Attaches a host binding session to relay scoped pose updates into a match scope.</summary>
     public RelayAttachResult AttachHostBinding(
         string scopeId,
         string hostParticipantId,
@@ -73,6 +74,7 @@ public sealed class SpatialHostRelayBridge : IDisposable
         return RelayAttachResult.Success();
     }
 
+    /// <summary>Disposes all active binding relay subscriptions.</summary>
     public void Dispose()
     {
         lock (_gate)
@@ -92,28 +94,4 @@ public sealed class SpatialHostRelayBridge : IDisposable
         if (_disposed)
             throw new ObjectDisposedException(nameof(SpatialHostRelayBridge));
     }
-}
-
-/// <summary>
-/// Result of attaching a host binding to a scoped relay.
-/// </summary>
-public sealed class RelayAttachResult
-{
-    public RelayAttachResult(bool succeeded, string? rejectionCode, string? reason)
-    {
-        Succeeded = succeeded;
-        RejectionCode = rejectionCode?.Trim();
-        Reason = reason?.Trim();
-    }
-
-    public bool Succeeded { get; }
-
-    public string? RejectionCode { get; }
-
-    public string? Reason { get; }
-
-    public static RelayAttachResult Success() => new(true, null, null);
-
-    public static RelayAttachResult Rejected(string rejectionCode, string reason) =>
-        new(false, rejectionCode, reason);
 }

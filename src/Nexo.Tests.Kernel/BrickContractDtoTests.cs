@@ -1,10 +1,11 @@
 using FluentAssertions;
-using Nexo.BrickContracts;
-using Nexo.BrickContracts.Capabilities;
+using Nexo.Brick.Contracts;
+using Nexo.Brick.Contracts.Capabilities;
 using Xunit;
 
 namespace Nexo.Tests.Kernel;
 
+/// <summary>Tests for brick contract dto.</summary>
 public class BrickContractDtoTests
 {
     [Fact]

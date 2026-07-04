@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Nexo.Tests.Transport;
 
+/// <summary>Grpc server call context factory.</summary>
 internal static class GrpcServerCallContextFactory
 {
     private static readonly Type HttpContextServerCallContextType =
@@ -14,6 +15,8 @@ internal static class GrpcServerCallContextFactory
 
     private static readonly FieldInfo RequestHeadersField =
         HttpContextServerCallContextType.GetField("_requestHeaders", BindingFlags.Instance | BindingFlags.NonPublic)
+        /// <summary>Invalid operation exception.</summary>
+        /// <param name="field."">Field.".</param>
         ?? throw new InvalidOperationException("Could not locate gRPC request headers field.");
 
     public static ServerCallContext Create(Metadata requestHeaders, X509Certificate2? clientCertificate = null)

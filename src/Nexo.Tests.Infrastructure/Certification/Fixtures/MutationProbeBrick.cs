@@ -4,12 +4,12 @@ using Nexo.Core.Domain.Execution;
 namespace Nexo.Tests.Infrastructure.Certification.Fixtures;
 
 /// <summary>Same logic as ErrorSummaryExtractor for mutation testing with weak witness specs.</summary>
-public sealed class MutationProbeBrick : Brick
+public sealed class MutationProbeBrick : DomainBrick
 {
     public MutationProbeBrick()
     {
         Id = "mutation-probe-brick";
-        Name = "Mutation Probe Brick";
+        Name = "Mutation Probe DomainBrick";
         Version = "1.0.0";
         Category = BrickCategory.Analysis;
         Description = "Log scanner for mutation gate tests.";

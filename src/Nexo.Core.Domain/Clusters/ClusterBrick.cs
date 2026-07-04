@@ -50,21 +50,3 @@ public class ClusterBrick
     public IReadOnlyDictionary<string, string> ParameterMappings { get; init; } = 
         new Dictionary<string, string>();
 }
-
-/// <summary>
-/// Position for visualization.
-/// </summary>
-public class Position
-{
-    public double X { get; init; } = 0;
-    public double Y { get; init; } = 0;
-    
-    public Position() { }
-    
-    public Position(double x, double y)
-    {
-        X = x;
-        Y = y;
-    }
-}
-

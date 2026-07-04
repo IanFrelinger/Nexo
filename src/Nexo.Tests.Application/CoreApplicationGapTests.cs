@@ -30,6 +30,7 @@ using Xunit;
 
 namespace Nexo.Tests.Application;
 
+/// <summary>Tests for core application gap.</summary>
 public class CoreApplicationGapTests
 {
     [Fact]
@@ -258,7 +259,7 @@ public class CoreApplicationGapTests
         new WorkflowStartedEvent("c1", "wf").WorkflowName.Should().Be("wf");
         new ExecutionPlanCreatedEvent("c1", new ExecutionPlan()).CorrelationId.Should().Be("c1");
         new WorkflowCompletedEvent("c1", new WorkflowResult { Success = true }).Result.Success.Should().BeTrue();
-        new WorkflowFailedEvent("c1", new InvalidOperationException("x")).Error.Message.Should().Be("x");
+        new WorkflowFailedEvent("c1", new InvalidOperationException("x")).Exception.Message.Should().Be("x");
 
         new VoxelChunkDataResult(true, new byte[] { 1 }, "application/octet-stream", "etag")
             .ContentType.Should().Be("application/octet-stream");
@@ -282,6 +283,7 @@ public class CoreApplicationGapTests
         var kernel = new ParallelLoopKernel(new SequentialLoopKernel());
         var result = await kernel.ForEachAsync(
             Enumerable.Range(0, 4),
+            /// <summary>Async.</summary>
             async (_, _, ct) =>
             {
                 await Task.Delay(10, ct);
@@ -305,6 +307,7 @@ public class CoreApplicationGapTests
         var kernel = new InstrumentedLoopKernel(new SequentialLoopKernel(), NullLogger<InstrumentedLoopKernel>.Instance);
         var result = await kernel.ForEachAsync(
             new[] { 1, 2 },
+            /// <summary>Async.</summary>
             async (_, _, ct) =>
             {
                 await Task.Yield();

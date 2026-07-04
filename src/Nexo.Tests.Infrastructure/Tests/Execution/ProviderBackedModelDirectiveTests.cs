@@ -7,6 +7,7 @@ using Nexo.Infrastructure.Execution.Models;
 
 namespace Nexo.Tests.Infrastructure.Tests.Execution;
 
+/// <summary>Tests for provider backed model directive.</summary>
 public sealed class ProviderBackedModelDirectiveTests : UnitTestBase
 {
     public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
@@ -58,19 +59,29 @@ public sealed class ProviderBackedModelDirectiveTests : UnitTestBase
 
         var output = await model.CompleteAsync(input, CancellationToken.None).ConfigureAwait(false);
 
+        /// <summary>Assert equal.</summary>
         AssertEqual("ok", output.Text);
+        /// <summary>Assert equal.</summary>
         AssertEqual("ollama", providerFactory.LastProvider);
+        /// <summary>Assert equal.</summary>
         AssertEqual("qwen2.5:7b", providerFactory.LastModel);
         AssertTrue((providerFactory.LastSystemPrompt ?? string.Empty).Contains("System behavior", StringComparison.Ordinal));
     }
 
+    /// <summary>Tests for capturing provider factory.</summary>
     private sealed class CapturingProviderFactory : IProviderFactory
     {
+        /// <summary>Last provider.</summary>
         public string? LastProvider { get; private set; }
+        /// <summary>Last system prompt.</summary>
         public string? LastSystemPrompt { get; private set; }
+        /// <summary>Last user prompt.</summary>
         public string? LastUserPrompt { get; private set; }
+        /// <summary>Last model.</summary>
         public string? LastModel { get; private set; }
 
+        /// <summary>Returns whether  provider available.</summary>
+        /// <param name="provider">Provider.</param>
         public bool IsProviderAvailable(string provider) => true;
 
         public Task<string> ExecuteLLMAsync(

@@ -2,8 +2,7 @@ using Microsoft.Extensions.Logging;
 using Nexo.Abstractions;
 using Nexo.Orchestration.Architect.Models;
 
-namespace Nexo.Orchestration.Agents;
-
+namespace Nexo.Orchestration.Agents.Templates;
 /// <summary>
 /// Specialized agent for Gameplay domain tasks.
 /// 

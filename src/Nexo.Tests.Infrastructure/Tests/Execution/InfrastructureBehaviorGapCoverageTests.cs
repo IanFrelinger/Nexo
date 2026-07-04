@@ -12,6 +12,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Execution;
 
+/// <summary>Tests for infrastructure behavior gap coverage.</summary>
 public class InfrastructureBehaviorGapCoverageTests
 {
     [Fact]
@@ -206,7 +207,7 @@ public class InfrastructureBehaviorGapCoverageTests
         events.OfType<StepCompletedEvent>().Should().BeEmpty();
     }
 
-    private static BehaviorExecutor CreateExecutor(Brick brick)
+    private static BehaviorExecutor CreateExecutor(DomainBrick brick)
     {
         var registry = new SingleBrickRegistry(brick);
         var cache = new SemanticCache(NullLogger<SemanticCache>.Instance);
@@ -218,23 +219,60 @@ public class InfrastructureBehaviorGapCoverageTests
             NullLogger<BehaviorExecutor>.Instance);
     }
 
-    private sealed class SingleBrickRegistry(Brick brick) : IBrickRegistry
+    /// <summary>Tests for single brick registry.</summary>
+    private sealed class SingleBrickRegistry(DomainBrick brick) : IBrickRegistry
     {
-        public Brick? GetBrick(string id) => id == brick.Id ? brick : null;
-        public IReadOnlyList<Brick> GetAllBricks() => [brick];
+        /// <summary>Gets brick.</summary>
+        /// <param name="id">Id.</param>
+        public DomainBrick? GetBrick(string id) => id == brick.Id ? brick : null;
+        /// <summary>Gets all bricks.</summary>
+        public IReadOnlyList<DomainBrick> GetAllBricks() => [brick];
     }
 
+    /// <summary>Tests for stub provider factory.</summary>
     private sealed class StubProviderFactory : IProviderFactory
     {
+        /// <summary>Returns whether  provider available.</summary>
+        /// <param name="provider">Provider.</param>
         public bool IsProviderAvailable(string provider) => true;
+        /// <summary>Execute llm async.</summary>
+        /// <param name="provider">Provider.</param>
+        /// <param name="systemPrompt">System prompt.</param>
+        /// <param name="userPrompt">User prompt.</param>
+        /// <param name="config">Config.</param>
+        /// <param name="default">Default.</param>
         public Task<string> ExecuteLLMAsync(string provider, string systemPrompt, string userPrompt, object config, CancellationToken cancellationToken = default) => Task.FromResult("{}");
+        /// <summary>Execute vision async.</summary>
+        /// <param name="provider">Provider.</param>
+        /// <param name="systemPrompt">System prompt.</param>
+        /// <param name="userPrompt">User prompt.</param>
+        /// <param name="imageBytes">Image bytes.</param>
+        /// <param name="config">Config.</param>
+        /// <param name="default">Default.</param>
         public Task<string> ExecuteVisionAsync(string provider, string systemPrompt, string userPrompt, byte[] imageBytes, object config, CancellationToken cancellationToken = default) => Task.FromResult("{}");
+        /// <summary>Execute vision multi frame async.</summary>
+        /// <param name="provider">Provider.</param>
+        /// <param name="systemPrompt">System prompt.</param>
+        /// <param name="userPrompt">User prompt.</param>
+        /// <param name="frameBytes">Frame bytes.</param>
+        /// <param name="config">Config.</param>
+        /// <param name="default">Default.</param>
         public Task<string> ExecuteVisionMultiFrameAsync(string provider, string systemPrompt, string userPrompt, IReadOnlyList<byte[]> frameBytes, object config, CancellationToken cancellationToken = default) => Task.FromResult("{}");
+        /// <summary>Execute video async.</summary>
+        /// <param name="systemPrompt">System prompt.</param>
+        /// <param name="userPrompt">User prompt.</param>
+        /// <param name="frameBytes">Frame bytes.</param>
+        /// <param name="config">Config.</param>
+        /// <param name="default">Default.</param>
         public Task<string> ExecuteVideoAsync(string systemPrompt, string userPrompt, IReadOnlyList<byte[]> frameBytes, object config, CancellationToken cancellationToken = default) => Task.FromResult("{}");
+        /// <summary>Ensure ollama reachable async.</summary>
+        /// <param name="requireVisionModel">Require vision model.</param>
+        /// <param name="default">Default.</param>
         public Task EnsureOllamaReachableAsync(bool requireVisionModel, CancellationToken cancellationToken = default) => Task.CompletedTask;
     }
 
-    private sealed class FlakyDeterministicBehaviorBrick : Brick
+    /// <summary>Tests for flaky deterministic behavior brick.</summary>
+    private sealed class FlakyDeterministicBehaviorBrick : DomainBrick
     {
         public FlakyDeterministicBehaviorBrick(string id)
         {
@@ -259,10 +297,13 @@ public class InfrastructureBehaviorGapCoverageTests
             ImplementationType implementation,
             IExecutionContext context,
             CancellationToken cancellationToken = default) =>
+            /// <summary>Invalid operation exception.</summary>
+            /// <param name="fails"">Fails".</param>
             throw new InvalidOperationException("always fails");
     }
 
-    private sealed class AgenticOnlyBehaviorBrick : Brick
+    /// <summary>Tests for agentic only behavior brick.</summary>
+    private sealed class AgenticOnlyBehaviorBrick : DomainBrick
     {
         public AgenticOnlyBehaviorBrick(string id)
         {
@@ -295,7 +336,8 @@ public class InfrastructureBehaviorGapCoverageTests
         }
     }
 
-    private sealed class EchoBehaviorBrick : Brick
+    /// <summary>Tests for echo behavior brick.</summary>
+    private sealed class EchoBehaviorBrick : DomainBrick
     {
         public EchoBehaviorBrick(string id)
         {

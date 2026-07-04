@@ -7,17 +7,24 @@ using Nexo.Infrastructure.Metrics;
 
 namespace Nexo.Tests.Infrastructure.Tests.Metrics;
 
+/// <summary>Tests for memory metrics collector.</summary>
 public class MemoryMetricsCollectorTests : UnitTestBase
 {
     public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
+            /// <summary>Test record execution time.</summary>
             await TestRecordExecutionTime();
+            /// <summary>Test record execution time multiple.</summary>
             await TestRecordExecutionTimeMultiple();
+            /// <summary>Test increment counter.</summary>
             await TestIncrementCounter();
+            /// <summary>Test increment counter multiple.</summary>
             await TestIncrementCounterMultiple();
+            /// <summary>Test get snapshot async.</summary>
             await TestGetSnapshotAsync();
+            /// <summary>Test concurrent access.</summary>
             await TestConcurrentAccess();
 
             return new TestResult
@@ -90,6 +97,7 @@ public class MemoryMetricsCollectorTests : UnitTestBase
 
         var snapshot = collector.GetSnapshotAsync().Result;
         AssertTrue(snapshot.Counters.ContainsKey("test-counter"));
+        /// <summary>Assert equal.</summary>
         AssertEqual(1L, snapshot.Counters["test-counter"]);
 
         return Task.CompletedTask;
@@ -105,6 +113,7 @@ public class MemoryMetricsCollectorTests : UnitTestBase
 
         var snapshot = collector.GetSnapshotAsync().Result;
         AssertTrue(snapshot.Counters.ContainsKey("test-counter"));
+        /// <summary>Assert equal.</summary>
         AssertEqual(8L, snapshot.Counters["test-counter"]);
 
         return Task.CompletedTask;
@@ -122,14 +131,19 @@ public class MemoryMetricsCollectorTests : UnitTestBase
 
         var snapshot = collector.GetSnapshotAsync().Result;
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(snapshot);
+        /// <summary>Assert equal.</summary>
         AssertEqual(2, snapshot.ExecutionTimes.Count);
+        /// <summary>Assert equal.</summary>
         AssertEqual(2, snapshot.Counters.Count);
         AssertTrue(snapshot.ExecutionTimes.ContainsKey("op1"));
         AssertTrue(snapshot.ExecutionTimes.ContainsKey("op2"));
         AssertTrue(snapshot.Counters.ContainsKey("counter1"));
         AssertTrue(snapshot.Counters.ContainsKey("counter2"));
+        /// <summary>Assert equal.</summary>
         AssertEqual(10L, snapshot.Counters["counter1"]);
+        /// <summary>Assert equal.</summary>
         AssertEqual(20L, snapshot.Counters["counter2"]);
 
         return Task.CompletedTask;
@@ -154,7 +168,9 @@ public class MemoryMetricsCollectorTests : UnitTestBase
         Task.WaitAll(tasks.ToArray());
 
         var snapshot = collector.GetSnapshotAsync().Result;
+        /// <summary>Assert equal.</summary>
         AssertEqual(10, snapshot.ExecutionTimes.Count);
+        /// <summary>Assert equal.</summary>
         AssertEqual(10, snapshot.Counters.Count);
 
         return Task.CompletedTask;

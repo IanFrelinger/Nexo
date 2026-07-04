@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Tests.GameDirector;
 
+/// <summary>Tests for brick registry.</summary>
 [Trait("Category", "GameDirectorApplication")]
 public sealed class BrickRegistryTests
 {

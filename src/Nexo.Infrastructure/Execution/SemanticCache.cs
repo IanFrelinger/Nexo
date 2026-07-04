@@ -11,11 +11,13 @@ public class SemanticCache : ISemanticCache
     private readonly Dictionary<string, BrickOutput> _cache = new();
     private readonly ILogger<SemanticCache> _logger;
     
+    /// <summary>Initializes a new semantic cache.</summary>
     public SemanticCache(ILogger<SemanticCache> logger)
     {
         _logger = logger;
     }
     
+    /// <summary>Get asynchronously.</summary>
     public Task<BrickOutput?> GetAsync(string cacheKey, CancellationToken cancellationToken = default)
     {
         if (_cache.TryGetValue(cacheKey, out var output))
@@ -28,6 +30,7 @@ public class SemanticCache : ISemanticCache
         return Task.FromResult<BrickOutput?>(null);
     }
     
+    /// <summary>Set asynchronously.</summary>
     public Task SetAsync(string cacheKey, BrickOutput output, CancellationToken cancellationToken = default)
     {
         _cache[cacheKey] = output;

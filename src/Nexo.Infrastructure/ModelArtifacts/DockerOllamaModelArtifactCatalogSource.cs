@@ -15,6 +15,7 @@ namespace Nexo.Infrastructure.ModelArtifacts;
 /// </summary>
 public sealed class DockerOllamaModelArtifactCatalogSource : IModelArtifactCatalogSource, IDisposable
 {
+    /// <summary>http client name constant.</summary>
     public const string HttpClientName = "Nexo.ModelArtifactCatalog.DockerOllamaProbe";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -28,6 +29,7 @@ public sealed class DockerOllamaModelArtifactCatalogSource : IModelArtifactCatal
     private readonly ILogger<DockerOllamaModelArtifactCatalogSource> _logger;
     private readonly bool _disposeDockerClient;
 
+    /// <summary>Initializes a new docker ollama model artifact catalog source.</summary>
     public DockerOllamaModelArtifactCatalogSource(
         IHttpClientFactory httpClientFactory,
         IOptions<DockerOllamaModelArtifactCatalogOptions> options,
@@ -49,8 +51,10 @@ public sealed class DockerOllamaModelArtifactCatalogSource : IModelArtifactCatal
         }
     }
 
+    /// <summary>Source id.</summary>
     public string SourceId => "docker-ollama-tags";
 
+    /// <summary>Is available asynchronously.</summary>
     public async Task<bool> IsAvailableAsync(CancellationToken cancellationToken = default)
     {
         if (!_options.Value.Enabled)
@@ -70,6 +74,7 @@ public sealed class DockerOllamaModelArtifactCatalogSource : IModelArtifactCatal
         }
     }
 
+    /// <summary>List asynchronously.</summary>
     public async Task<IReadOnlyList<ModelArtifactRecord>> ListAsync(CancellationToken cancellationToken = default)
     {
         if (!_options.Value.Enabled)
@@ -190,6 +195,7 @@ public sealed class DockerOllamaModelArtifactCatalogSource : IModelArtifactCatal
         return null;
     }
 
+    /// <summary>Releases managed resources.</summary>
     public void Dispose()
     {
         if (_disposeDockerClient)

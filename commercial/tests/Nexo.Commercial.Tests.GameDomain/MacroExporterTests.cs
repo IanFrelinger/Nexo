@@ -1,11 +1,14 @@
 using System.Text.Json;
 using FluentAssertions;
-using Nexo.GameDomain.Macros;
+using Nexo.Commercial.GameDomain.Macros;
 
-namespace Nexo.Tests.GameDomain;
-
+namespace Nexo.Commercial.Tests.GameDomain;
+/// <summary>Tests for macro exporter.</summary>
 public class MacroExporterTests
 {
+    /// <summary>Creates macro.</summary>
+    /// <param name=""macro-1"">"macro-1".</param>
+    /// <param name="Macro"">Macro".</param>
     private static MacroDefinition CreateMacro(string id = "macro-1", string name = "Test Macro") =>
         new()
         {

@@ -4,6 +4,7 @@ using Nexo.Core.Application.Testing.Models;
 
 namespace Nexo.Tests.CLI.Tests.Commands;
 
+/// <summary>Tests for bootstrap self extend profile.</summary>
 public sealed class BootstrapSelfExtendProfileTests : UnitTestBase
 {
     public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
@@ -47,8 +48,12 @@ public sealed class BootstrapSelfExtendProfileTests : UnitTestBase
     private async Task TestAestheticProfileDoesNotRequireDockerAsync(CancellationToken cancellationToken)
     {
         var assessment = await BootstrapRuntime.AssessDemoAsync("self-extend-aesthetic", includeOptional: false, cancellationToken).ConfigureAwait(false);
+        /// <summary>Assert true.</summary>
+        /// <param name="host."">Host.".</param>
         AssertTrue(assessment.Supported, "Bootstrap assessment should be supported on this host.");
         var docker = assessment.Dependencies.First(d => string.Equals(d.Id, "docker", StringComparison.OrdinalIgnoreCase));
+        /// <summary>Assert false.</summary>
+        /// <param name="self-extend-visual."">Self-extend-visual.".</param>
         AssertFalse(docker.Required, "Docker must remain optional for self-extend-aesthetic; strict container deps belong to self-extend-visual.");
     }
 

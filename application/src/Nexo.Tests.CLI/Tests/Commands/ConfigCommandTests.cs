@@ -10,15 +10,20 @@ using Nexo.Core.Application.Testing.Abstractions;
 
 namespace Nexo.Tests.CLI.Tests.Commands;
 
+/// <summary>Tests for config command.</summary>
 public class ConfigCommandTests : UnitTestBase
 {
     public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
+            /// <summary>Test successful config load.</summary>
             await TestSuccessfulConfigLoad();
+            /// <summary>Test json output.</summary>
             await TestJsonOutput();
+            /// <summary>Test verbose output.</summary>
             await TestVerboseOutput();
+            /// <summary>Test general exception.</summary>
             await TestGeneralException();
 
             return new TestResult

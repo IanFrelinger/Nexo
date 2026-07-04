@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Contracts;
 
+/// <summary>Tests for file snapshot store contract.</summary>
 public sealed class FileSnapshotStoreContractTests : SnapshotStoreContractTests
 {
     private readonly string _tempDir;
@@ -18,8 +19,11 @@ public sealed class FileSnapshotStoreContractTests : SnapshotStoreContractTests
         _snapshotPath = Path.Combine(_tempDir, "snapshots");
     }
 
+    /// <summary>Creates instance.</summary>
     protected override ISnapshotStore CreateInstance() => new FileSnapshotStore(_snapshotPath);
 
+    /// <summary>Gets temp file path.</summary>
+    /// <param name="relativePath">Relative path.</param>
     protected override string GetTempFilePath(string relativePath) =>
         Path.Combine(_tempDir, relativePath.Replace('/', Path.DirectorySeparatorChar));
 

@@ -1,12 +1,12 @@
 using Microsoft.Extensions.Logging;
-using Nexo.BrickContracts;
+using Nexo.Brick.Contracts;
 using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Execution;
 
 namespace Nexo.Infrastructure.Execution;
 
 /// <summary>
-/// Brick registry that merges local bricks with bricks from one or more remote catalogs.
+/// DomainBrick registry that merges local bricks with bricks from one or more remote catalogs.
 /// Remote bricks are returned as <see cref="RemoteBrick"/> instances.
 /// </summary>
 public sealed class CompositeBrickRegistry : IBrickRegistry
@@ -16,6 +16,7 @@ public sealed class CompositeBrickRegistry : IBrickRegistry
     private readonly HttpClient _httpClient;
     private readonly ILogger<CompositeBrickRegistry>? _logger;
 
+    /// <summary>Initializes a new composite brick registry.</summary>
     public CompositeBrickRegistry(
         IBrickRegistry local,
         IReadOnlyList<IRemoteBrickCatalog> remoteCatalogs,
@@ -28,7 +29,8 @@ public sealed class CompositeBrickRegistry : IBrickRegistry
         _logger = logger;
     }
 
-    public Brick? GetBrick(string id)
+    /// <summary>Gets brick.</summary>
+    public DomainBrick? GetBrick(string id)
     {
         var local = _local.GetBrick(id);
         if (local != null) return local;
@@ -62,9 +64,10 @@ public sealed class CompositeBrickRegistry : IBrickRegistry
         return null;
     }
 
-    public IReadOnlyList<Brick> GetAllBricks()
+    /// <summary>Gets all bricks.</summary>
+    public IReadOnlyList<DomainBrick> GetAllBricks()
     {
-        var set = new Dictionary<string, Brick>(StringComparer.OrdinalIgnoreCase);
+        var set = new Dictionary<string, DomainBrick>(StringComparer.OrdinalIgnoreCase);
 
         foreach (var b in _local.GetAllBricks())
             set[b.Id] = b;

@@ -7,12 +7,14 @@ using Nexo.Core.Application.Testing.Models;
 
 namespace Nexo.Tests.Application.Tests.Extensions;
 
+/// <summary>Tests for service collection extensions.</summary>
 public class ServiceCollectionExtensionsTests : UnitTestBase
 {
     public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
+            /// <summary>Test add nexo agents.</summary>
             await TestAddNexoAgents();
 
             return new TestResult
@@ -59,7 +61,10 @@ public class ServiceCollectionExtensionsTests : UnitTestBase
         // Should register IAgentFactory
         var serviceProvider = services.BuildServiceProvider();
         var factory = serviceProvider.GetService<IAgentFactory>();
+        /// <summary>Assert not null.</summary>
         AssertNotNull(factory);
+        /// <summary>Assert true.</summary>
+        /// <param name="AgentFactory">Agent factory.</param>
         AssertTrue(factory is AgentFactory);
 
         return Task.CompletedTask;

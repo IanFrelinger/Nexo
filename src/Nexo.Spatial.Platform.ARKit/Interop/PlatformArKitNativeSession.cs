@@ -19,8 +19,10 @@ public sealed class PlatformArKitNativeSession : IArKitNativeSession
         _isActive = isActive;
     }
 
+    /// <summary>Whether the ARKit session is active and tracking is available.</summary>
     public bool IsActive => _isActive && ArKitSpatialAvailability.IsSupported() && !_isInterrupted;
 
+    /// <summary>Whether ARKit reported a session interruption.</summary>
     public bool IsInterrupted => _isInterrupted;
 
     /// <summary>Called by the host when ARKit <c>ARSession</c> run configuration starts.</summary>
@@ -29,6 +31,7 @@ public sealed class PlatformArKitNativeSession : IArKitNativeSession
     /// <summary>Called by the host on ARKit session-interruption callbacks.</summary>
     public void SetInterrupted(bool interrupted) => _isInterrupted = interrupted;
 
+    /// <summary>Reads the latest native pose frame for an anchor, if available.</summary>
     public ArKitNativePoseFrame? TryGetAnchorPose(string atomId)
     {
         if (!IsActive || string.IsNullOrWhiteSpace(atomId))
@@ -37,6 +40,7 @@ public sealed class PlatformArKitNativeSession : IArKitNativeSession
         return ArKitNativeBridge.TryGetAnchorPose(atomId);
     }
 
+    /// <summary>Observes native pose frames for an anchor id.</summary>
     public IObservable<ArKitNativePoseFrame> ObserveAnchorPose(string atomId)
     {
         if (string.IsNullOrWhiteSpace(atomId) || !_isActive || !ArKitSpatialAvailability.IsSupported())

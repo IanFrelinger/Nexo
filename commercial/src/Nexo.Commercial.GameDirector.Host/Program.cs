@@ -10,8 +10,8 @@ using Nexo.Abstractions;
 using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Execution;
 using Nexo.Infrastructure.Execution;
-using Nexo.API.Endpoints;
-using Nexo.API.Forge;
+using GameDirector.Mcp.Endpoints;
+using GameDirector.Mcp.Forge;
 using Nexo.API.Security;
 using Nexo.BackgroundAgents.Extending;
 using Nexo.BackgroundAgents.HostRunners;
@@ -19,10 +19,12 @@ using Nexo.BackgroundAgents.Optimization;
 using Nexo.BackgroundAgents.Testing;
 using Nexo.Client;
 using Nexo.Core.Application.Trust.Ports;
-using Nexo.GameDomain.Mapping;
-using Nexo.GameDomain.Materials;
+using Nexo.Commercial.GameDomain.Mapping;
+using Nexo.Commercial.GameDomain.Materials;
+using Nexo.API.Endpoints;
 using Nexo.Hosting;
-using Nexo.Hosting.Sdk;
+using Nexo.Hosting.Sdk.Extensions;
+using Nexo.Hosting.Sdk.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 

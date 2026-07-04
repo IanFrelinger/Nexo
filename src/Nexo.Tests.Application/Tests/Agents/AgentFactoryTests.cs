@@ -6,13 +6,16 @@ using Nexo.Core.Application.Testing.Models;
 
 namespace Nexo.Tests.Application.Tests.Agents;
 
+/// <summary>Tests for agent factory.</summary>
 public class AgentFactoryTests : UnitTestBase
 {
     public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
+            /// <summary>Test create.</summary>
             await TestCreate();
+            /// <summary>Test create throws when not registered.</summary>
             await TestCreateThrowsWhenNotRegistered();
 
             return new TestResult
@@ -56,11 +59,15 @@ public class AgentFactoryTests : UnitTestBase
 
         var agent = factory.Create<TestAgent>();
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(agent);
+        /// <summary>Assert true.</summary>
+        /// <param name="TestAgent">Test agent.</param>
         AssertTrue(agent is TestAgent);
         
         // Should return same instance if registered as singleton
         var agent2 = factory.Create<TestAgent>();
+        /// <summary>Assert equal.</summary>
         AssertEqual(agent, agent2);
 
         return Task.CompletedTask;
@@ -75,6 +82,8 @@ public class AgentFactoryTests : UnitTestBase
         try
         {
             factory.Create<TestAgent>();
+            /// <summary>Assertion exception.</summary>
+            /// <param name="thrown"">Thrown".</param>
             throw new AssertionException("Expected InvalidOperationException to be thrown");
         }
         catch (InvalidOperationException)
@@ -85,6 +94,7 @@ public class AgentFactoryTests : UnitTestBase
         return Task.CompletedTask;
     }
 
+    /// <summary>Tests for test agent.</summary>
     private class TestAgent { }
 }
 

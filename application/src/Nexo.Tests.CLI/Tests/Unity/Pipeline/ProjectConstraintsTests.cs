@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Tests.CLI.Tests.Unity.Pipeline;
 
+/// <summary>Tests for project constraints.</summary>
 public sealed class ProjectConstraintsTests : IDisposable
 {
     private readonly string _tempDir = Path.Combine(Path.GetTempPath(), $"nexo-constraints-{Guid.NewGuid():N}");

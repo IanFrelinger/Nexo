@@ -25,6 +25,7 @@ public static class SupportDiagnosticsExporter
         "connection_string",
     };
 
+    /// <summary>Builds a redacted support diagnostics response from live configuration and license state.</summary>
     public static SupportDiagnosticsResponse Build(
         IConfiguration configuration,
         IHostEnvironment environment,
@@ -112,86 +113,4 @@ public static class SupportDiagnosticsExporter
 
         return false;
     }
-}
-
-public sealed class SupportDiagnosticsResponse
-{
-    public DateTimeOffset ExportedAt { get; init; }
-
-    public string Application { get; init; } = "";
-
-    public string Version { get; init; } = "";
-
-    public string Environment { get; init; } = "";
-
-    public string DeploymentMode { get; init; } = "";
-
-    public SupportDiagnosticsProductSection Product { get; init; } = new();
-
-    public SupportDiagnosticsEntitlementsSection Entitlements { get; init; } = new();
-
-    public SupportDiagnosticsSecuritySection Security { get; init; } = new();
-
-    public SupportDiagnosticsLicenseSection License { get; init; } = new();
-
-    public IReadOnlyDictionary<string, string?> RedactedConfiguration { get; init; }
-        = new Dictionary<string, string?>();
-}
-
-public sealed class SupportDiagnosticsProductSection
-{
-    public string DefaultTenantId { get; init; } = "";
-
-    public int AllowedTenantCount { get; init; }
-}
-
-public sealed class SupportDiagnosticsEntitlementsSection
-{
-    public int MaxCopilotSubmissionsPerHour { get; init; }
-
-    public int Seats { get; init; }
-
-    public int IncludedJobs { get; init; }
-
-    public int MaxConcurrency { get; init; }
-
-    public int RetentionDays { get; init; }
-
-    public bool SsoEnabled { get; init; }
-
-    public bool AuditExportEnabled { get; init; }
-}
-
-public sealed class SupportDiagnosticsSecuritySection
-{
-    public string ExposureProfile { get; init; } = "";
-
-    public string AuthorizationMode { get; init; } = "";
-
-    public string AuthorizationScope { get; init; } = "";
-
-    public bool RequireAuthForCopilotReadApis { get; init; }
-
-    public bool ApiKeyConfigured { get; init; }
-
-    public bool BearerTokenConfigured { get; init; }
-
-    public bool BasicAuthConfigured { get; init; }
-}
-
-public sealed class SupportDiagnosticsLicenseSection
-{
-    public string State { get; init; } = "";
-
-    public string? CustomerId { get; init; }
-
-    public string? TenantId { get; init; }
-
-    public DateTimeOffset? ExpiresAt { get; init; }
-
-    public int Seats { get; init; }
-
-    public string? Detail { get; init; }
-
-    public bool Enforced { get; init; }
 }

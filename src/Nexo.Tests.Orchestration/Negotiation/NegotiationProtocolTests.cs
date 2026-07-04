@@ -12,6 +12,7 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration.Negotiation;
 
+/// <summary>Tests for negotiation protocol.</summary>
 public class NegotiationProtocolTests
 {
     private readonly IServiceProvider _serviceProvider;
@@ -149,6 +150,7 @@ public class NegotiationProtocolTests
         var synthesisEngine = new SynthesisEngine(
             _serviceProvider.GetRequiredService<ILogger<SynthesisEngine>>(),
             model);
+        /// <summary>Negotiation protocol.</summary>
         return new NegotiationProtocol(logger, schemaAdapter, paretoOptimizer, constraintRelaxer, synthesisEngine, model);
     }
 

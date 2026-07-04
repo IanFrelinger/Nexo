@@ -1,9 +1,8 @@
-using Nexo.GameDomain.Aesthetics;
-using Nexo.GameDomain.Macros;
-using Nexo.GameDomain.Session;
+using Nexo.Commercial.GameDomain.Aesthetics;
+using Nexo.Commercial.GameDomain.Macros;
+using Nexo.Commercial.GameDomain.Session;
 
-namespace Nexo.GameDomain.Contracts;
-
+namespace Nexo.Commercial.GameDomain.Contracts;
 /// <summary>
 /// Contract for a game-engine client (Unity, Unreal, Godot, or custom) communicating with the Nexo Forge backend.
 /// Implementations handle transport (HTTP, gRPC, WebSocket) without exposing

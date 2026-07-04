@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.RAG;
 
+/// <summary>Tests for rag tool.</summary>
 public class RAGToolTests
 {
     [Fact]

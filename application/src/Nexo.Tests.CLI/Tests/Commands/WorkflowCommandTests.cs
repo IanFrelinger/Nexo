@@ -5,6 +5,7 @@ using Nexo.Core.Application.Testing.Models;
 
 namespace Nexo.Tests.CLI.Tests.Commands;
 
+/// <summary>Tests for workflow command.</summary>
 public sealed class WorkflowCommandTests : UnitTestBase
 {
     public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
@@ -69,6 +70,7 @@ public sealed class WorkflowCommandTests : UnitTestBase
         WorkflowCommand.ScenarioExecutor executor = scenarioExecutor is null
             ? StubScenarioExecutorAsync
             : new WorkflowCommand.ScenarioExecutor(scenarioExecutor);
+        /// <summary>Workflow command.</summary>
         return new WorkflowCommand(executor);
     }
 
@@ -112,6 +114,7 @@ public sealed class WorkflowCommandTests : UnitTestBase
             var outputPath = Path.Combine(repoRoot, ".nexo", "workflow", "workflow_lab.runtime.json");
             var command = CreateCommand();
             var exitCode = await command.ExecuteScaffoldAsync(outputPath, force: false, json: true).ConfigureAwait(false);
+            /// <summary>Assert equal.</summary>
             AssertEqual(0, exitCode);
             AssertTrue(File.Exists(outputPath), "Expected workflow scaffold file to be created.");
 
@@ -159,6 +162,7 @@ public sealed class WorkflowCommandTests : UnitTestBase
             var command = CreateCommand();
             var (exitCode, output) = await CaptureConsoleAsync(
                 () => command.ExecuteHistoryAsync(repoRoot, limit: 10, benchmarkSet: "workflow-lab", json: true)).ConfigureAwait(false);
+            /// <summary>Assert equal.</summary>
             AssertEqual(0, exitCode);
             AssertTrue(output.Contains("\"summaryStats\"", StringComparison.OrdinalIgnoreCase), "History output should include summary stats.");
             AssertTrue(output.Contains("\"bestScenarioId\"", StringComparison.OrdinalIgnoreCase), "History output should include best scenario.");
@@ -229,13 +233,19 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     json: true,
                     verbose: false,
                     ct: cancellationToken)).ConfigureAwait(false);
+            /// <summary>Assert equal.</summary>
             AssertEqual(0, exitCode);
             AssertTrue(output.Contains("\"ok\": true", StringComparison.OrdinalIgnoreCase), "Stress output should report success.");
             AssertTrue(output.Contains("\"aggregates\"", StringComparison.OrdinalIgnoreCase), "Stress output should include aggregate rankings.");
 
             var historyRows = WorkflowLabHistoryStore.ReadRecent(repoRoot, 10);
+            /// <summary>Assert true.</summary>
+            /// <param name="1">1.</param>
+            /// <param name="row."">Row.".</param>
             AssertTrue(historyRows.Count >= 1, "Expected stress run to persist at least one history row.");
+            /// <summary>Assert equal.</summary>
             AssertEqual("hardware-lab", historyRows[0].BenchmarkSet);
+            /// <summary>Assert equal.</summary>
             AssertEqual("none", historyRows[0].FailureCategory);
         }
         finally
@@ -327,6 +337,7 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     json: true,
                     verbose: false,
                     ct: cancellationToken)).ConfigureAwait(false);
+            /// <summary>Assert equal.</summary>
             AssertEqual(1, exitCode);
             AssertTrue(output.Contains("\"ok\": false", StringComparison.OrdinalIgnoreCase), "Stress should fail when executor fails.");
             AssertTrue(output.Contains("forced failure", StringComparison.OrdinalIgnoreCase), "Stress output should include executor failure summary.");
@@ -391,6 +402,7 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     outputPath: reportPath,
                     json: false)).ConfigureAwait(false);
 
+            /// <summary>Assert equal.</summary>
             AssertEqual(0, exitCode);
             AssertTrue(output.Contains("workflow report: ok", StringComparison.OrdinalIgnoreCase), "Report output should indicate success.");
             AssertTrue(File.Exists(reportPath), "Markdown report file should be written.");
@@ -466,6 +478,7 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     outputPath: reportPath,
                     json: false)).ConfigureAwait(false);
 
+            /// <summary>Assert equal.</summary>
             AssertEqual(0, exitCode);
             AssertTrue(output.Contains("workflow report: ok", StringComparison.OrdinalIgnoreCase));
             var markdown = await File.ReadAllTextAsync(reportPath, cancellationToken).ConfigureAwait(false);
@@ -518,9 +531,14 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     json: true,
                     verbose: false,
                     ct: cancellationToken)).ConfigureAwait(false);
+            /// <summary>Assert equal.</summary>
             AssertEqual(1, exitCode);
             var historyRows = WorkflowLabHistoryStore.ReadRecent(repoRoot, 5);
+            /// <summary>Assert true.</summary>
+            /// <param name="1">1.</param>
+            /// <param name="persisted."">Persisted.".</param>
             AssertTrue(historyRows.Count >= 1, "Expected failure row to be persisted.");
+            /// <summary>Assert equal.</summary>
             AssertEqual("runtime_context_failure", historyRows[0].FailureCategory);
             AssertTrue(!string.IsNullOrWhiteSpace(historyRows[0].HardwareProfile), "Expected telemetry hardware profile in persisted history.");
         }
@@ -591,8 +609,10 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     verbose: false,
                     ct: cancellationToken)).ConfigureAwait(false);
 
+            /// <summary>Assert equal.</summary>
             AssertEqual(0, exitCode);
             AssertTrue(output.Contains("\"ok\": true", StringComparison.OrdinalIgnoreCase));
+            /// <summary>Assert equal.</summary>
             AssertEqual(8, calls.Count); // 4 scenarios x (1 warmup + 1 measured)
             AssertTrue(calls[0].Contains("Do one", StringComparison.OrdinalIgnoreCase) ||
                        calls[0].Contains("Do two", StringComparison.OrdinalIgnoreCase));
@@ -652,6 +672,7 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     outputPath: reportPath,
                     json: false)).ConfigureAwait(false);
 
+            /// <summary>Assert equal.</summary>
             AssertEqual(0, exitCode);
             AssertTrue(output.Contains("comparison=candidate vs baseline", StringComparison.OrdinalIgnoreCase));
             var markdown = await File.ReadAllTextAsync(reportPath, cancellationToken).ConfigureAwait(false);
@@ -712,6 +733,7 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     minAverageScoreDelta: -10,
                     maxRegressedScenarios: 0,
                     json: false)).ConfigureAwait(false);
+            /// <summary>Assert equal.</summary>
             AssertEqual(1, failingExit);
             AssertTrue(failingOutput.Contains("workflow gate: failed", StringComparison.OrdinalIgnoreCase));
 
@@ -728,6 +750,7 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     minAverageScoreDelta: -100,
                     maxRegressedScenarios: 10,
                     json: false)).ConfigureAwait(false);
+            /// <summary>Assert equal.</summary>
             AssertEqual(0, passingExit);
             AssertTrue(passingOutput.Contains("workflow gate: passed", StringComparison.OrdinalIgnoreCase));
         }
@@ -768,6 +791,7 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     notes: "promotion test",
                     policyFile: null,
                     json: false)).ConfigureAwait(false);
+            /// <summary>Assert equal.</summary>
             AssertEqual(0, promoteExit);
             AssertTrue(promoteOutput.Contains("workflow baseline promote: ok", StringComparison.OrdinalIgnoreCase));
 
@@ -776,6 +800,7 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     repoRoot: repoRoot,
                     benchmarkSet: "workflow-lab",
                     json: false)).ConfigureAwait(false);
+            /// <summary>Assert equal.</summary>
             AssertEqual(0, listExit);
             AssertTrue(listOutput.Contains("run-promote", StringComparison.OrdinalIgnoreCase));
 
@@ -785,6 +810,7 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     benchmarkSet: "workflow-lab",
                     baselineId: null,
                     json: false)).ConfigureAwait(false);
+            /// <summary>Assert equal.</summary>
             AssertEqual(0, showExit);
             AssertTrue(showOutput.Contains("run-id=run-promote", StringComparison.OrdinalIgnoreCase));
 
@@ -843,6 +869,7 @@ public sealed class WorkflowCommandTests : UnitTestBase
                 notes: null,
                 policyFile: null,
                 json: true).ConfigureAwait(false);
+            /// <summary>Assert equal.</summary>
             AssertEqual(0, promoteExit);
 
             var policyPath = Path.Combine(repoRoot, ".nexo", "workflow", "gate_policy.json");
@@ -872,6 +899,8 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     maxRegressedScenarios: 10,
                     json: false)).ConfigureAwait(false);
             if (gateExit != 0)
+                /// <summary>Assertion exception.</summary>
+                /// <param name="{gateOutput}"">{gate output}".</param>
                 throw new AssertionException($"Expected gate exit 0 but got {gateExit}. Output: {gateOutput}");
             AssertTrue(gateOutput.Contains("workflow gate: passed", StringComparison.OrdinalIgnoreCase) ||
                        gateOutput.Contains("\"passed\": true", StringComparison.OrdinalIgnoreCase));
@@ -969,6 +998,7 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     verbose: false,
                     ct: cancellationToken)).ConfigureAwait(false);
 
+            /// <summary>Assert equal.</summary>
             AssertEqual(0, exitCode);
             AssertTrue(output.Contains("workflow optimize: ok", StringComparison.OrdinalIgnoreCase));
             AssertTrue(output.Contains("recommendation-report=", StringComparison.OrdinalIgnoreCase));
@@ -1063,11 +1093,15 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     verbose: false,
                     ct: cancellationToken)).ConfigureAwait(false);
 
+            /// <summary>Assert equal.</summary>
             AssertEqual(0, exitCode);
             AssertTrue(output.Contains("workflow optimize: ok", StringComparison.OrdinalIgnoreCase));
             AssertTrue(output.Contains("promoted-baseline-id=", StringComparison.OrdinalIgnoreCase));
 
             var active = WorkflowBaselineStore.ReadActive(repoRoot, "workflow-lab");
+            /// <summary>Assert true.</summary>
+            /// <param name="null">Null.</param>
+            /// <param name="baseline."">Baseline.".</param>
             AssertTrue(active is not null, "Expected optimize to auto-promote winner baseline.");
             AssertTrue(!string.IsNullOrWhiteSpace(active!.RunId), "Promoted baseline should have run-id.");
             AssertTrue(File.Exists(reportPath), "Expected optimize promotion report to be written.");
@@ -1163,8 +1197,12 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     verbose: false,
                     ct: cancellationToken)).ConfigureAwait(false);
 
+            /// <summary>Assert equal.</summary>
             AssertEqual(0, exitCode);
             AssertTrue(output.Contains("\"ok\": true", StringComparison.OrdinalIgnoreCase));
+            /// <summary>Assert true.</summary>
+            /// <param name="null">Null.</param>
+            /// <param name="puller."">Puller.".</param>
             AssertTrue(pulledModels is not null, "Expected optimize to invoke model puller.");
             var resolvedPulledModels = pulledModels ?? Array.Empty<string>();
             AssertTrue(
@@ -1252,6 +1290,7 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     verbose: false,
                     ct: cancellationToken)).ConfigureAwait(false);
 
+            /// <summary>Assert equal.</summary>
             AssertEqual(0, exitCode);
             AssertTrue(output.Contains("\"searchStrategy\": \"objective-first\"", StringComparison.OrdinalIgnoreCase));
             AssertTrue(output.Contains("\"measuredRunsUsed\": 2", StringComparison.OrdinalIgnoreCase));
@@ -1345,7 +1384,9 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     verbose: false,
                     ct: cancellationToken)).ConfigureAwait(false);
 
+            /// <summary>Assert equal.</summary>
             AssertEqual(1, exitCode);
+            /// <summary>Assert equal.</summary>
             AssertEqual(2, executions);
             AssertTrue(output.Contains("\"measuredRunsUsed\": 2", StringComparison.OrdinalIgnoreCase));
             AssertTrue(output.Contains("\"earlyStopMinRuns\": 2", StringComparison.OrdinalIgnoreCase));
@@ -1413,6 +1454,7 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     maxRegressedScenarios: 10,
                     json: true)).ConfigureAwait(false);
 
+            /// <summary>Assert equal.</summary>
             AssertEqual(1, exitCode);
             AssertTrue(
                 output.Contains("\"valid\": false", StringComparison.OrdinalIgnoreCase),
@@ -1504,6 +1546,7 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     verbose: false,
                     ct: cancellationToken)).ConfigureAwait(false);
 
+            /// <summary>Assert equal.</summary>
             AssertEqual(0, exitCode);
             AssertTrue(output.Contains("\"ok\": true", StringComparison.OrdinalIgnoreCase));
             AssertTrue(output.Contains("\"synthesizedCandidateCount\": 1", StringComparison.OrdinalIgnoreCase));
@@ -1613,6 +1656,7 @@ public sealed class WorkflowCommandTests : UnitTestBase
                     verbose: false,
                     ct: cancellationToken)).ConfigureAwait(false);
 
+            /// <summary>Assert equal.</summary>
             AssertEqual(0, exitCode);
             AssertTrue(output.Contains("\"winnerConfidence\":", StringComparison.OrdinalIgnoreCase));
             AssertTrue(output.Contains("\"promotionConfidenceThreshold\":", StringComparison.OrdinalIgnoreCase));

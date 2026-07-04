@@ -11,6 +11,7 @@ namespace Nexo.CLI.Commands;
 /// </summary>
 public sealed class DoctorCommand : Command
 {
+    /// <summary>Creates a new DoctorCommand instance.</summary>
     public DoctorCommand() : base("doctor", "Run onboarding readiness report (dependencies + CLI/runtime checks).")
     {
         var includeOptionalOpt = new Option<bool>(

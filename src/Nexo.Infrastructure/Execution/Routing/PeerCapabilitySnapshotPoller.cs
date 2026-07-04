@@ -19,6 +19,7 @@ public sealed class PeerCapabilitySnapshotPoller : BackgroundService, IPeerCapab
     private readonly string _capabilityId;
     private readonly PeerTrustPolicyResolver _trustPolicyResolver;
 
+    /// <summary>Initializes a new peer capability snapshot poller.</summary>
     public PeerCapabilitySnapshotPoller(
         IInstanceDiscovery discovery,
         ILogger<PeerCapabilitySnapshotPoller> logger,
@@ -37,6 +38,7 @@ public sealed class PeerCapabilitySnapshotPoller : BackgroundService, IPeerCapab
             config?.Value?.UntrustedPeerIdsCsv);
     }
 
+    /// <summary>Current peer execution candidates from the latest capability snapshot.</summary>
     public IReadOnlyList<PeerExecutionCandidate> Candidates
     {
         get

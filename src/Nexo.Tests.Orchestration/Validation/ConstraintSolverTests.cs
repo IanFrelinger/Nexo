@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration.Validation;
 
+/// <summary>Tests for constraint solver.</summary>
 public class ConstraintSolverTests
 {
     private readonly Mock<ILogger<ConstraintSolver>> _loggerMock;

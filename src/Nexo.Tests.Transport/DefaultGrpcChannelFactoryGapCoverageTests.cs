@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Nexo.Tests.Transport;
 
+/// <summary>Tests for default grpc channel factory gap coverage.</summary>
 [Collection("GrpcTransportEnvironment")]
 public sealed class DefaultGrpcChannelFactoryGapCoverageTests
 {
@@ -248,6 +249,7 @@ public sealed class DefaultGrpcChannelFactoryGapCoverageTests
         return (certPem, keyPem, caPem, pfxPath);
     }
 
+    /// <summary>Environment variable scope.</summary>
     private sealed class EnvironmentVariableScope : IDisposable
     {
         private readonly string _key;
@@ -260,6 +262,7 @@ public sealed class DefaultGrpcChannelFactoryGapCoverageTests
             Environment.SetEnvironmentVariable(key, value);
         }
 
+        /// <summary>Dispose.</summary>
         public void Dispose() => Environment.SetEnvironmentVariable(_key, _priorValue);
     }
 }

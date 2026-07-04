@@ -22,8 +22,10 @@ public class DockerExecutionPlatform : IExecutionPlatform, IDisposable
     private readonly DockerClient _dockerClient;
     private readonly bool _disposeClient;
 
+    /// <summary>Platform name.</summary>
     public string PlatformName => "Docker";
 
+    /// <summary>Initializes a new docker execution platform.</summary>
     public DockerExecutionPlatform(ILogger<DockerExecutionPlatform> logger, DockerClient? dockerClient = null)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -42,6 +44,7 @@ public class DockerExecutionPlatform : IExecutionPlatform, IDisposable
         }
     }
 
+    /// <summary>Is available asynchronously.</summary>
     public async Task<bool> IsAvailableAsync(CancellationToken cancellationToken = default)
     {
         try
@@ -56,6 +59,7 @@ public class DockerExecutionPlatform : IExecutionPlatform, IDisposable
         }
     }
 
+    /// <summary>Build image asynchronously.</summary>
     public async Task<ExecutionBuildResult> BuildImageAsync(
         string dockerfilePath,
         string imageTag,
@@ -109,6 +113,7 @@ public class DockerExecutionPlatform : IExecutionPlatform, IDisposable
         }
     }
 
+    /// <summary>Run container asynchronously.</summary>
     public async Task<ExecutionRunResult> RunContainerAsync(
         string imageTag,
         string[] command,
@@ -164,6 +169,7 @@ public class DockerExecutionPlatform : IExecutionPlatform, IDisposable
         }
     }
 
+    /// <summary>Remove container asynchronously.</summary>
     public async Task RemoveContainerAsync(string containerId, CancellationToken cancellationToken = default)
     {
         try
@@ -176,6 +182,7 @@ public class DockerExecutionPlatform : IExecutionPlatform, IDisposable
         }
     }
 
+    /// <summary>Remove image asynchronously.</summary>
     public async Task RemoveImageAsync(string imageTag, CancellationToken cancellationToken = default)
     {
         try
@@ -229,6 +236,7 @@ public class DockerExecutionPlatform : IExecutionPlatform, IDisposable
         }
     }
 
+    /// <summary>Releases managed resources.</summary>
     public void Dispose()
     {
         if (_disposeClient)

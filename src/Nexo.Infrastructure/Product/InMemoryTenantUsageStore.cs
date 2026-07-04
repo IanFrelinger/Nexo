@@ -9,12 +9,15 @@ public sealed class InMemoryTenantUsageStore : ITenantUsageStore
     private readonly object _lock = new();
     private readonly List<UsageEntry> _entries = [];
 
+    /// <summary>Record job submitted.</summary>
     public void RecordJobSubmitted(string tenantId)
         => Append(NormalizeTenant(tenantId), submitted: true, success: null);
 
+    /// <summary>Record job completed.</summary>
     public void RecordJobCompleted(string tenantId, bool success)
         => Append(NormalizeTenant(tenantId), submitted: false, success: success);
 
+    /// <summary>Gets summary.</summary>
     public TenantUsageSummary GetSummary(string tenantId, int windowHours)
     {
         var tid = NormalizeTenant(tenantId);

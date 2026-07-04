@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Rollback;
 
+/// <summary>Tests for dependency graph.</summary>
 public sealed class DependencyGraphTests
 {
     [Fact]

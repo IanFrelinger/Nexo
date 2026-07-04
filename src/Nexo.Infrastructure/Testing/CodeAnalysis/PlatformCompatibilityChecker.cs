@@ -86,11 +86,3 @@ public static class PlatformCompatibilityChecker
 
     private static string GetPlatformName() => CompatibilityTestHooks.ResolvePlatformName();
 }
-
-/// <summary>
-/// Result of platform compatibility check.
-/// </summary>
-public record CodeAnalysisCompatibilityResult(
-    string Platform,
-    bool IsCompatible,
-    List<string> Issues);

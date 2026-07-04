@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Hosting;
 
+/// <summary>Tests for open telemetry.</summary>
 [Trait("Category", "E2E")]
 public sealed class OpenTelemetryTests
 {

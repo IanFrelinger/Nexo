@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Certification;
 
+/// <summary>Tests for physical atom cert bundle manifest.</summary>
 [Trait("Category", "Certification")]
 public sealed class PhysicalAtomCertBundleManifestTests
 {

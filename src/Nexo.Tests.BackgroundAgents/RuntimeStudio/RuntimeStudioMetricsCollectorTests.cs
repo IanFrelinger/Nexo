@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.RuntimeStudio;
 
+/// <summary>Tests for runtime studio metrics collector.</summary>
 public sealed class RuntimeStudioMetricsCollectorTests : IDisposable
 {
     private readonly string _root;

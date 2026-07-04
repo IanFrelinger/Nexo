@@ -16,6 +16,7 @@ public sealed class FileBasedInstanceDiscovery : IInstanceDiscovery
     private readonly string _instancesPath;
     private readonly PeerTrustPolicyResolver _trustPolicyResolver;
 
+    /// <summary>Initializes a new file based instance discovery.</summary>
     public FileBasedInstanceDiscovery(
         string? instancesPath = null,
         string? trustedPeerIdsCsv = null,

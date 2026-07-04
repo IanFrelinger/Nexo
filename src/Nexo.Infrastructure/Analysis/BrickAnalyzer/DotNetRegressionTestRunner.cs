@@ -13,6 +13,7 @@ public sealed class DotNetRegressionTestRunner : IRegressionTestRunner
 {
     private readonly ILogger<DotNetRegressionTestRunner>? _logger;
 
+    /// <summary>Initializes a new dot net regression test runner.</summary>
     public DotNetRegressionTestRunner(ILogger<DotNetRegressionTestRunner>? logger = null)
     {
         _logger = logger;

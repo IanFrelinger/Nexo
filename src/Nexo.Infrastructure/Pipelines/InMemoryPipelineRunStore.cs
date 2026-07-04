@@ -11,6 +11,7 @@ public sealed class InMemoryPipelineRunStore : IPipelineRunStore
 {
     private readonly ConcurrentDictionary<string, PipelineRun> _runs = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Save asynchronously.</summary>
     public Task SaveAsync(PipelineRun run, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -18,6 +19,7 @@ public sealed class InMemoryPipelineRunStore : IPipelineRunStore
         return Task.CompletedTask;
     }
 
+    /// <summary>Get asynchronously.</summary>
     public Task<PipelineRun?> GetAsync(string runId, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();

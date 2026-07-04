@@ -12,6 +12,7 @@ using Nexo.Tests.Application.Helpers;
 
 namespace Nexo.Tests.CLI.Tests.Commands;
 
+/// <summary>Tests for agent command.</summary>
 public class AgentCommandTests : UnitTestBase
 {
     private DirectoryInfo? _tempDir;
@@ -35,12 +36,19 @@ public class AgentCommandTests : UnitTestBase
     {
         try
         {
+            /// <summary>Test successful execution.</summary>
             await TestSuccessfulExecution();
+            /// <summary>Test failed execution.</summary>
             await TestFailedExecution();
+            /// <summary>Test json output.</summary>
             await TestJsonOutput();
+            /// <summary>Test verbose output.</summary>
             await TestVerboseOutput();
+            /// <summary>Test agent execution exception.</summary>
             await TestAgentExecutionException();
+            /// <summary>Test timeout exception.</summary>
             await TestTimeoutException();
+            /// <summary>Test general exception.</summary>
             await TestGeneralException();
 
             return new TestResult

@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Contracts;
 
+/// <summary>Tests for lite db pattern store contract tests impl.</summary>
 public sealed class LiteDbPatternStoreContractTestsImpl : PatternStoreContractTests, IDisposable
 {
     private readonly string _dbPath;
@@ -17,7 +18,9 @@ public sealed class LiteDbPatternStoreContractTestsImpl : PatternStoreContractTe
         _dbPath = Path.Combine(_dbPath, "patterns.db");
     }
 
+    /// <summary>Creates instance.</summary>
     protected override IPatternStore CreateInstance() => new LiteDbPatternStore(_dbPath);
 
+    /// <summary>Dispose.</summary>
     public void Dispose() => _cleanup.Dispose();
 }

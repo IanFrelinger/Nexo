@@ -18,6 +18,7 @@ namespace Nexo.CLI.Commands;
 /// </summary>
 public sealed class IngestFailuresCommand : Command
 {
+    /// <summary>Creates a new IngestFailuresCommand instance.</summary>
     public IngestFailuresCommand() : base("ingest-failures", "Parse TRX test result files and ingest failures into the self-improvement store.")
     {
         var trxPathOpt = new Option<string>("--trx-path", "Path to a TRX file or directory containing TRX files") { IsRequired = true };

@@ -5,8 +5,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Nexo.Client;
 using Xunit;
 
-namespace Nexo.Tests.Infrastructure.NexoClientInvokeTests;
-
+namespace Nexo.Tests.Infrastructure.Tests.Client;
+/// <summary>Tests for nexo client invoke async.</summary>
 public sealed class NexoClientInvokeAsyncTests
 {
     [Fact]
@@ -29,9 +29,12 @@ public sealed class NexoClientInvokeAsyncTests
         handler.LastRequestUri!.ToString().Should().Be("http://localhost/api/copilot/task");
     }
 
+    /// <summary>Tests for capturing handler.</summary>
     private sealed class CapturingHandler : HttpMessageHandler
     {
+        /// <summary>Last method.</summary>
         public HttpMethod? LastMethod { get; private set; }
+        /// <summary>Last request uri.</summary>
         public Uri? LastRequestUri { get; private set; }
 
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)

@@ -13,6 +13,7 @@ public sealed class MapDataProviderRouter : IMapDataProviderRouter
     private readonly IReadOnlyDictionary<string, ITerrainMapDataProvider> _terrain;
     private readonly IReadOnlyDictionary<string, IVoxelChunkDataProvider> _voxel;
 
+    /// <summary>Initializes a new map data provider router.</summary>
     public MapDataProviderRouter(
         IEnumerable<IVectorMapDataProvider> vectorProviders,
         IEnumerable<ITerrainMapDataProvider> terrainProviders,
@@ -23,12 +24,15 @@ public sealed class MapDataProviderRouter : IMapDataProviderRouter
         _voxel = ToDictionary(voxelProviders, static p => p.Kind, nameof(IVoxelChunkDataProvider));
     }
 
+    /// <summary>Resolve vector.</summary>
     public IVectorMapDataProvider ResolveVector(MapDataSourceBinding binding) =>
         Resolve(_vector, binding.Kind, "vector map");
 
+    /// <summary>Resolve terrain.</summary>
     public ITerrainMapDataProvider ResolveTerrain(MapDataSourceBinding binding) =>
         Resolve(_terrain, binding.Kind, "terrain");
 
+    /// <summary>Resolve voxel store.</summary>
     public IVoxelChunkDataProvider ResolveVoxelStore(MapDataSourceBinding binding) =>
         Resolve(_voxel, binding.Kind, "voxel chunk");
 

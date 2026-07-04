@@ -1,7 +1,6 @@
 using Nexo.Core.Domain;
 
-namespace Nexo.Infrastructure.Networking;
-
+namespace Nexo.Commercial.Fleet.Infrastructure.Networking;
 /// <summary>
 /// Configuration for the HTTP-based network bus.
 /// </summary>

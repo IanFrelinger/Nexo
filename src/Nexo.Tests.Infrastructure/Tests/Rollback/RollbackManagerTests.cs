@@ -11,6 +11,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Rollback;
 
+/// <summary>Tests for rollback manager.</summary>
 public sealed class RollbackManagerTests : IDisposable
 {
     private readonly string _tempDir;
@@ -21,6 +22,7 @@ public sealed class RollbackManagerTests : IDisposable
         (_tempDir, _tempDirCleanup) = TestHelpers.CreateTempDirectoryWithCleanup("nexo-rollback");
     }
 
+    /// <summary>Dispose.</summary>
     public void Dispose() => _tempDirCleanup.Dispose();
 
     [Fact]

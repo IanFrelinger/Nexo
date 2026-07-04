@@ -7,6 +7,7 @@ namespace Nexo.Infrastructure.Execution.Routing;
 /// </summary>
 public sealed class EnvironmentQueueDepthProvider : ILocalQueueDepthProvider
 {
+    /// <summary>Current local queue depth from environment configuration.</summary>
     public int CurrentDepth
     {
         get

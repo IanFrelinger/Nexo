@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Trust;
 
+/// <summary>Tests for lite db user knowledge log store gap coverage.</summary>
 public sealed class LiteDbUserKnowledgeLogStoreGapCoverageTests : TempDirTestBase
 {
     private readonly string _dbPath;

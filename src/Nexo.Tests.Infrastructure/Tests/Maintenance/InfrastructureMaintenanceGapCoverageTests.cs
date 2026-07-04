@@ -11,6 +11,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Maintenance;
 
+/// <summary>Tests for infrastructure maintenance gap coverage.</summary>
 public class InfrastructureMaintenanceGapCoverageTests
 {
     [Fact]

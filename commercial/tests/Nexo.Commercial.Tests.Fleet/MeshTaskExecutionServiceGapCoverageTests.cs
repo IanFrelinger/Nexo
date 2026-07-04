@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Nexo.Commercial.Tests.Fleet;
 
+/// <summary>Tests for mesh task execution service gap coverage.</summary>
 public sealed class MeshTaskExecutionServiceGapCoverageTests
 {
     [Fact]

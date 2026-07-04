@@ -46,6 +46,7 @@ Rules:
 - Use namespaces matching the folder structure.
 - Prefer composition over inheritance for gameplay logic.";
 
+    /// <summary>Creates a new UnityDevCommand instance.</summary>
     public UnityDevCommand(Func<SelfExtendRunnerAdapter> runnerFactory)
         : base("unity-dev", "Automate Unity gameplay system development with LLM-driven code generation.")
     {

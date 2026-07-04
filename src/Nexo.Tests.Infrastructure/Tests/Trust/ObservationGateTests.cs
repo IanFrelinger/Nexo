@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Trust;
 
+/// <summary>Tests for observation gate.</summary>
 public class ObservationGateTests
 {
     [Fact]

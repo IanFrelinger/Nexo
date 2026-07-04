@@ -1,3 +1,4 @@
+// CLI tool to export certified brick packages.
 using System.Text.Json;
 using Nexo.Certification.Contracts;
 using Nexo.Infrastructure.Certification;

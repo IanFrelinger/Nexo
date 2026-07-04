@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration.RateLimiting;
 
+/// <summary>Tests for rate limiter.</summary>
 public class RateLimiterTests
 {
     private readonly Mock<ILogger<RateLimiter>> _loggerMock;

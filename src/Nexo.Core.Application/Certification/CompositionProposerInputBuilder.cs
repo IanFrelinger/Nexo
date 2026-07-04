@@ -11,6 +11,13 @@ namespace Nexo.Core.Application.Certification;
 /// </summary>
 public static class CompositionProposerInputBuilder
 {
+    /// <summary>
+    /// Builds proposer input from a target signature and admitted bricks in the registry.
+    /// </summary>
+    /// <param name="target">Desired composition I/O contract.</param>
+    /// <param name="brickRegistry">Registry of available brick definitions.</param>
+    /// <param name="certificationStore">Store of signed certification records.</param>
+    /// <returns>Proposer input with certified brick catalog (no witness cases).</returns>
     public static CompositionProposerInput FromTargetAndRegistry(
         CompositionTargetSignature target,
         IBrickRegistry brickRegistry,
@@ -34,6 +41,11 @@ public static class CompositionProposerInputBuilder
         return new CompositionProposerInput(target, catalog);
     }
 
+    /// <summary>
+    /// Derives a target signature from a full composition spec (I/O ports only).
+    /// </summary>
+    /// <param name="spec">Composition graph specification.</param>
+    /// <returns>Target I/O contract without nodes or edges.</returns>
     public static CompositionTargetSignature TargetFromSpec(CompositionSpec spec) =>
         new(spec.CompositionId, spec.Inputs, spec.Outputs);
 

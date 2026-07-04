@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Pipelines;
 
+/// <summary>Tests for pipeline template validator.</summary>
 public sealed class PipelineTemplateValidatorTests
 {
     private readonly PipelineTemplateValidator _sut = new();

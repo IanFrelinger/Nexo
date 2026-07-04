@@ -7,12 +7,17 @@ using Nexo.Core.Application.Trust.Ports;
 
 namespace Nexo.Infrastructure.Knowledge;
 
+/// <summary>
+/// Aggregates adaptation logs, pattern stores, and user knowledge logs into a unified query result.
+/// Tolerates partial backend failures and returns entries from healthy stores only.
+/// </summary>
 public sealed class KnowledgeQueryService : IKnowledgeQueryService
 {
     private readonly IAdaptationLog _adaptationLog;
     private readonly IPatternStore _patternStore;
     private readonly IUserKnowledgeLogStore _knowledgeLogStore;
 
+    /// <summary>Initializes a new knowledge query service.</summary>
     public KnowledgeQueryService(
         IAdaptationLog adaptationLog,
         IPatternStore patternStore,
@@ -23,6 +28,7 @@ public sealed class KnowledgeQueryService : IKnowledgeQueryService
         _knowledgeLogStore = knowledgeLogStore ?? throw new ArgumentNullException(nameof(knowledgeLogStore));
     }
 
+    /// <summary>Query asynchronously.</summary>
     public async Task<KnowledgeQueryResult> QueryAsync(KnowledgeQueryRequest request, CancellationToken cancellationToken = default)
     {
         var normalized = NormalizeRequest(request);

@@ -42,7 +42,6 @@ public interface IDockerService
         IProgress<string>? progress = null,
         CancellationToken cancellationToken = default);
 
-
     /// <summary>
     /// Removes a container by ID.
     /// </summary>
@@ -53,20 +52,3 @@ public interface IDockerService
     /// </summary>
     Task RemoveImageAsync(string imageTag, CancellationToken cancellationToken = default);
 }
-
-/// <summary>
-/// Result of a Docker build operation.
-/// </summary>
-public record DockerBuildResult(bool Success, string? ErrorMessage, TimeSpan Duration);
-
-/// <summary>
-/// Result of a Docker run operation.
-/// </summary>
-public record DockerRunResult(
-    bool Success,
-    int ExitCode,
-    string StandardOutput,
-    string StandardError,
-    string? ContainerId,
-    TimeSpan Duration);
-

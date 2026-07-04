@@ -1,11 +1,10 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nexo.Abstractions;
-using Nexo.GameDomain.Aesthetics;
-using Nexo.GameDomain.Materials;
+using Nexo.Commercial.GameDomain.Aesthetics;
+using Nexo.Commercial.GameDomain.Materials;
 
-namespace Nexo.API.Forge;
-
+namespace GameDirector.Mcp.Forge;
 /// <summary>
 /// Runs heuristic material hints then optionally augments with <see cref="IModel"/> when enabled.
 /// </summary>

@@ -1,5 +1,4 @@
-namespace Nexo.GameDomain.Mapping;
-
+namespace Nexo.Commercial.GameDomain.Mapping;
 /// <summary>Single diagnostic from <see cref="IMapVerificationService"/>.</summary>
 public sealed record MapVerificationIssue(
     MapVerificationSeverity Severity,

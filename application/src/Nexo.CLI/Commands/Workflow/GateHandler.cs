@@ -1,14 +1,15 @@
 using System.Text.Json;
 using Nexo.CLI.Runtime;
 
-namespace Nexo.CLI.Commands;
-
+namespace Nexo.CLI.Commands.Workflow;
+/// <summary>Handles gate requests.</summary>
 internal sealed class GateHandler(
     Func<string?, string, string> normalizeBenchmarkSet,
     Func<string?, GatePolicyLoadResult> loadGatePolicy,
     Func<IReadOnlyList<WorkflowLabStressHistoryRow>, string?, string?, WorkflowRunComparison> buildComparison,
     Func<WorkflowRunComparison, string, string> renderComparisonText)
 {
+    /// <summary>Executes the command handler and returns a process exit code.</summary>
     public Task<int> ExecuteAsync(
         string repoRoot,
         string? benchmarkSet,
@@ -93,6 +94,7 @@ internal sealed class GateHandler(
             ? $"Workflow gate passed for run {comparison.RunId} vs baseline {comparison.BaselineRunId}."
             : $"Workflow gate failed for run {comparison.RunId} vs baseline {comparison.BaselineRunId}: {string.Join("; ", failures)}";
         var result = new WorkflowGateResult(true, passed, summary, failures.ToArray(), comparison);
+        /// <summary>Write result.</summary>
         WriteResult(result, json);
         return Task.FromResult(passed ? 0 : 1);
     }

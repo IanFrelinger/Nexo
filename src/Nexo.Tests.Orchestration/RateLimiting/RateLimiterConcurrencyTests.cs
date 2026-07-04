@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration.RateLimiting;
 
+/// <summary>Tests for rate limiter concurrency.</summary>
 public class RateLimiterConcurrencyTests
 {
     [Fact]

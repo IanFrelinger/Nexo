@@ -25,6 +25,7 @@ public class AgentCommand
     private readonly IConsoleRenderer _renderer;
     private readonly ILogger<AgentCommand> _logger;
 
+    /// <summary>Creates a new AgentCommand instance.</summary>
     public AgentCommand(
         IMediator mediator,
         IConsoleRenderer renderer,
@@ -35,6 +36,7 @@ public class AgentCommand
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>Executes the command handler and returns a process exit code.</summary>
     public async Task<int> ExecuteAsync(string agentName, FileInfo? inputFile, bool json, bool verbose)
     {
         var correlationId = Guid.NewGuid().ToString();

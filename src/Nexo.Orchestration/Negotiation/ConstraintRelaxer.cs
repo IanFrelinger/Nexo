@@ -198,32 +198,3 @@ public sealed class ConstraintRelaxer
         return relaxedConstraints.Count > 0;
     }
 }
-
-/// <summary>
-/// Result of constraint relaxation attempt.
-/// </summary>
-public sealed record RelaxationResult
-{
-    public bool Success { get; init; }
-    public IReadOnlyDictionary<string, string> RelaxedConstraints { get; init; } =
-        new Dictionary<string, string>();
-    public string? Explanation { get; init; }
-    public string? FailureReason { get; init; }
-
-    public static RelaxationResult Unresolvable(string reason) => new()
-    {
-        Success = false,
-        FailureReason = reason
-    };
-}
-
-/// <summary>
-/// Plan for relaxing constraints.
-/// </summary>
-internal sealed record RelaxationPlan
-{
-    public IReadOnlyDictionary<string, string> RelaxedConstraints { get; init; } =
-        new Dictionary<string, string>();
-    public string? Explanation { get; init; }
-}
-

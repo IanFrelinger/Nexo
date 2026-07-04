@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Nexo.Tests.GameDirector;
 
+/// <summary>Tests for schema record.</summary>
 [Trait("Category", "GameDirectorApplication")]
 public sealed class SchemaRecordTests
 {

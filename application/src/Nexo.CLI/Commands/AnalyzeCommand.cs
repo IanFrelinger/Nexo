@@ -25,6 +25,7 @@ public class AnalyzeCommand
     private readonly IConsoleRenderer _renderer;
     private readonly ILogger<AnalyzeCommand> _logger;
 
+    /// <summary>Creates a new AnalyzeCommand instance.</summary>
     public AnalyzeCommand(
         IMediator mediator,
         IConsoleRenderer renderer,

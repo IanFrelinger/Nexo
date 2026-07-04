@@ -23,6 +23,7 @@ public class ListAgentsCommand
     private readonly IConsoleRenderer _renderer;
     private readonly ILogger<ListAgentsCommand> _logger;
 
+    /// <summary>Creates a new ListAgentsCommand instance.</summary>
     public ListAgentsCommand(
         IMediator mediator,
         IConsoleRenderer renderer,
@@ -33,6 +34,7 @@ public class ListAgentsCommand
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>Executes the command handler and returns a process exit code.</summary>
     public async Task<int> ExecuteAsync(bool json, bool verbose)
     {
         var correlationId = Guid.NewGuid().ToString();

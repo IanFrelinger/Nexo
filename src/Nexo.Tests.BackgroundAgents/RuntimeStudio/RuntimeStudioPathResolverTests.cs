@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.RuntimeStudio;
 
+/// <summary>Tests for runtime studio path resolver.</summary>
 public sealed class RuntimeStudioPathResolverTests : IDisposable
 {
     private readonly string _base;

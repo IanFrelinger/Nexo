@@ -7,13 +7,16 @@ using Nexo.Core.Application.Testing.Models;
 
 namespace Nexo.Tests.CLI.Tests.Commands;
 
+/// <summary>Tests for logs background agent command.</summary>
 public class LogsBackgroundAgentCommandTests : UnitTestBase
 {
     public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
+            /// <summary>Test logs empty when no store.</summary>
             await TestLogsEmptyWhenNoStore();
+            /// <summary>Test logs from store.</summary>
             await TestLogsFromStore();
             return new TestResult { Name = nameof(LogsBackgroundAgentCommandTests), Category = "CLI", Passed = true, Message = "All LogsBackgroundAgentCommand tests passed" };
         }
@@ -32,6 +35,7 @@ public class LogsBackgroundAgentCommandTests : UnitTestBase
         var logger = new Mock<ILogger<LogsBackgroundAgentCommand>>();
         var command = new LogsBackgroundAgentCommand(logger.Object, logStore: null);
         var exitCode = await command.ExecuteAsync("any-agent", 100, null, null, false);
+        /// <summary>Assert equal.</summary>
         AssertEqual(0, exitCode);
     }
 
@@ -42,6 +46,7 @@ public class LogsBackgroundAgentCommandTests : UnitTestBase
         var logger = new Mock<ILogger<LogsBackgroundAgentCommand>>();
         var command = new LogsBackgroundAgentCommand(logger.Object, store);
         var exitCode = await command.ExecuteAsync("agent1", 100, null, null, false);
+        /// <summary>Assert equal.</summary>
         AssertEqual(0, exitCode);
     }
 }

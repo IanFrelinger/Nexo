@@ -1,10 +1,13 @@
 using FluentAssertions;
-using Nexo.GameDomain.Macros;
+using Nexo.Commercial.GameDomain.Macros;
 
-namespace Nexo.Tests.GameDomain;
-
+namespace Nexo.Commercial.Tests.GameDomain;
+/// <summary>Tests for macro registry.</summary>
 public class MacroRegistryTests
 {
+    /// <summary>Creates macro.</summary>
+    /// <param name="id">Id.</param>
+    /// <param name="Macro"">Macro".</param>
     private static MacroDefinition CreateMacro(string id, string name = "Test Macro") =>
         new()
         {

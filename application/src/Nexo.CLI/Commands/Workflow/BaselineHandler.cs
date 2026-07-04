@@ -1,13 +1,14 @@
 using System.Text.Json;
 using Nexo.CLI.Runtime;
 
-namespace Nexo.CLI.Commands;
-
+namespace Nexo.CLI.Commands.Workflow;
+/// <summary>Handles baseline requests.</summary>
 internal sealed class BaselineHandler(
     Func<string?, string, string> normalizeBenchmarkSet,
     Func<string?, GatePolicyLoadResult> loadGatePolicy,
     Func<string, string, string> buildBaselineId)
 {
+    /// <summary>Creates a new ExecutePromoteAsync instance.</summary>
     public Task<int> ExecutePromoteAsync(
         string repoRoot,
         string? benchmarkSet,
@@ -84,6 +85,7 @@ internal sealed class BaselineHandler(
         return Task.FromResult(0);
     }
 
+    /// <summary>Creates a new ExecuteListAsync instance.</summary>
     public Task<int> ExecuteListAsync(string repoRoot, string? benchmarkSet, bool json)
     {
         var fullRepoRoot = Path.GetFullPath(string.IsNullOrWhiteSpace(repoRoot) ? Environment.CurrentDirectory : repoRoot);
@@ -106,6 +108,7 @@ internal sealed class BaselineHandler(
         return Task.FromResult(0);
     }
 
+    /// <summary>Creates a new ExecuteShowAsync instance.</summary>
     public Task<int> ExecuteShowAsync(string repoRoot, string? benchmarkSet, string? baselineId, bool json)
     {
         var fullRepoRoot = Path.GetFullPath(string.IsNullOrWhiteSpace(repoRoot) ? Environment.CurrentDirectory : repoRoot);

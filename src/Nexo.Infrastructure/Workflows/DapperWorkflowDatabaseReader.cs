@@ -13,11 +13,13 @@ public sealed class DapperWorkflowDatabaseReader : IWorkflowDatabaseReader
 {
     private readonly ILogger<DapperWorkflowDatabaseReader>? _logger;
 
+    /// <summary>Initializes a new dapper workflow database reader.</summary>
     public DapperWorkflowDatabaseReader(ILogger<DapperWorkflowDatabaseReader>? logger = null)
     {
         _logger = logger;
     }
 
+    /// <summary>Execute query asynchronously.</summary>
     public async Task<object> ExecuteQueryAsync(string connectionString, string query, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(connectionString))

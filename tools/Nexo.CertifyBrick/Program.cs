@@ -1,3 +1,4 @@
+// CLI tool for brick certification workflows.
 using System.Text.Json;
 using Nexo.Core.Application.Certification.Ports;
 using Nexo.Infrastructure.Certification;

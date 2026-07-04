@@ -10,11 +10,13 @@ public sealed class PipelineDecomposer : IPipelineDecomposer
 {
     private readonly IPipelineTemplateValidator _validator;
 
+    /// <summary>Initializes a new pipeline decomposer.</summary>
     public PipelineDecomposer(IPipelineTemplateValidator validator)
     {
         _validator = validator ?? throw new ArgumentNullException(nameof(validator));
     }
 
+    /// <summary>Decompose.</summary>
     public PipelineExecutionGraph Decompose(PipelineTemplate template)
     {
         var validation = _validator.Validate(template);

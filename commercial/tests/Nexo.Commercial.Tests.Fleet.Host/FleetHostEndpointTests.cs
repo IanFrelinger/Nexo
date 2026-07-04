@@ -7,11 +7,14 @@ using Xunit;
 
 namespace Nexo.Commercial.Tests.Fleet.Host;
 
+/// <summary>Tests for fleet host endpoint.</summary>
 [Trait("Category", "CommercialFleetHost")]
 public sealed class FleetHostEndpointTests : IClassFixture<WebApplicationFactory<FleetHostProgram>>
 {
     private readonly WebApplicationFactory<FleetHostProgram> _factory;
 
+    /// <summary>Fleet host endpoint tests.</summary>
+    /// <param name="factory">Factory.</param>
     public FleetHostEndpointTests(WebApplicationFactory<FleetHostProgram> factory) =>
         _factory = factory.WithWebHostBuilder(builder => builder.UseEnvironment("Development"));
 
@@ -66,5 +69,7 @@ public sealed class FleetHostEndpointTests : IClassFixture<WebApplicationFactory
         response.StatusCode.Should().Be(HttpStatusCode.OK);
     }
 
+    /// <summary>Wire DTO for fleet node.</summary>
+    /// <param name="PeerId">Peer id.</param>
     private sealed record FleetNodeDto(string PeerId);
 }

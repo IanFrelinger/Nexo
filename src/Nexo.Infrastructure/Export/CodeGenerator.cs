@@ -9,7 +9,8 @@ namespace Nexo.Infrastructure.Export;
 /// </summary>
 public class CodeGenerator : ICodeGenerator
 {
-    public Task<string> GenerateDeterministicAsync(Brick brick, ExportTarget target, CancellationToken ct = default)
+    /// <summary>Generate deterministic asynchronously.</summary>
+    public Task<string> GenerateDeterministicAsync(DomainBrick brick, ExportTarget target, CancellationToken ct = default)
     {
         // Simple stub implementation - in production, use templates or code generation libraries
         var code = target switch
@@ -25,13 +26,15 @@ public class CodeGenerator : ICodeGenerator
         return Task.FromResult(code);
     }
     
-    public Task<string> GenerateDeterministicWithDataAsync(Brick brick, ExportTarget target, CancellationToken ct = default)
+    /// <summary>Generate deterministic with data asynchronously.</summary>
+    public Task<string> GenerateDeterministicWithDataAsync(DomainBrick brick, ExportTarget target, CancellationToken ct = default)
     {
         // Similar to GenerateDeterministicAsync but includes references to generated data files
         var code = GenerateDeterministicAsync(brick, target, ct).Result;
         return Task.FromResult(code + "\n// Uses generated data from data files");
     }
     
+    /// <summary>Generate orchestration asynchronously.</summary>
     public Task<string> GenerateOrchestrationAsync(Workflow workflow, ExportTarget target, CancellationToken ct = default)
     {
         var code = target switch
@@ -47,6 +50,7 @@ public class CodeGenerator : ICodeGenerator
         return Task.FromResult(code);
     }
     
+    /// <summary>Generate runtime bootstrap asynchronously.</summary>
     public Task<string> GenerateRuntimeBootstrapAsync(Workflow workflow, ExportTarget target, bool includeFallbacks, CancellationToken ct = default)
     {
         var code = $@"// Nexo Runtime Bootstrap
@@ -63,7 +67,8 @@ await executor.ExecuteAsync(workflow);
         return Task.FromResult(code);
     }
     
-    public Task<ExportedFile> GenerateStaticDataAsync(Brick brick, GeneratedContent content, ExportTarget target, CancellationToken ct = default)
+    /// <summary>Generate static data asynchronously.</summary>
+    public Task<ExportedFile> GenerateStaticDataAsync(DomainBrick brick, GeneratedContent content, ExportTarget target, CancellationToken ct = default)
     {
         var json = System.Text.Json.JsonSerializer.Serialize(content.Variations, new System.Text.Json.JsonSerializerOptions
         {
@@ -78,13 +83,14 @@ await executor.ExecuteAsync(workflow);
         });
     }
     
-    private string GenerateCSharpDeterministic(Brick brick)
+    private string GenerateCSharpDeterministic(DomainBrick brick)
     {
         return $@"// Generated from {brick.Name}
 namespace Generated
 {{
-    public class {brick.Name.Replace(" ", "")}Brick
+    public class {brick.Name.Replace(" ", "")}DomainBrick
     {{
+        /// <summary>Executes .</summary>
         public object Execute(object input)
         {{
             // Deterministic implementation
@@ -94,7 +100,7 @@ namespace Generated
 }}";
     }
     
-    private string GeneratePythonDeterministic(Brick brick)
+    private string GeneratePythonDeterministic(DomainBrick brick)
     {
         return $@"# Generated from {brick.Name}
 def execute(input):
@@ -102,7 +108,7 @@ def execute(input):
     return {{'result': 'stub'}}";
     }
     
-    private string GenerateTypeScriptDeterministic(Brick brick)
+    private string GenerateTypeScriptDeterministic(DomainBrick brick)
     {
         return $@"// Generated from {brick.Name}
 export function execute(input: any): any {{
@@ -116,8 +122,10 @@ export function execute(input: any): any {{
         return $@"// Orchestration for {workflow.Name}
 namespace Generated
 {{
+    /// <summary>Orchestrator.</summary>
     public class Orchestrator
     {{
+        /// <summary>Execute asynchronously.</summary>
         public async Task ExecuteAsync()
         {{
             // Execute {workflow.Instances.Count} instances
@@ -142,7 +150,7 @@ export async function execute(): Promise<void> {{
 }}";
     }
 
-    private static string GenerateBehaviorTreeStub(Brick brick)
+    private static string GenerateBehaviorTreeStub(DomainBrick brick)
     {
         var safeName = brick.Name.Replace(" ", "");
         return $@"{{
@@ -154,7 +162,7 @@ export async function execute(): Promise<void> {{
 }}";
     }
 
-    private static string GenerateStateMachineStub(Brick brick)
+    private static string GenerateStateMachineStub(DomainBrick brick)
     {
         var safeName = brick.Name.Replace(" ", "");
         return $@"{{
@@ -165,15 +173,16 @@ export async function execute(): Promise<void> {{
 }}";
     }
 
-    private static string GenerateGenericStub(Brick brick, ExportTarget target)
+    private static string GenerateGenericStub(DomainBrick brick, ExportTarget target)
     {
         return $@"// Generated stub for {brick.Name}
 // Target: {target}
 // Add implementation for this export target in CodeGenerator
 namespace Generated
 {{
-    public class {brick.Name.Replace(" ", "")}Brick
+    public class {brick.Name.Replace(" ", "")}DomainBrick
     {{
+        /// <summary>Executes .</summary>
         public object Execute(object input) => new {{ result = ""stub"" }};
     }}
 }}";

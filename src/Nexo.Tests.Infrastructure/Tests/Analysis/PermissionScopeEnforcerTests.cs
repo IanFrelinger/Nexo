@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Analysis;
 
+/// <summary>Tests for permission scope enforcer.</summary>
 public class PermissionScopeEnforcerTests
 {
     private readonly IPermissionScopeEnforcer _enforcer = new PermissionScopeEnforcer();

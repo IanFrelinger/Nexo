@@ -1,5 +1,4 @@
-namespace Nexo.GameDomain.Aesthetics;
-
+namespace Nexo.Commercial.GameDomain.Aesthetics;
 /// <summary>
 /// Default Forge aesthetic catalog used by <see cref="Mapping.MapAdaptationPlanner"/> when resolving packs from session state.
 /// </summary>

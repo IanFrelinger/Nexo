@@ -5,8 +5,7 @@ using Microsoft.Extensions.Options;
 using Nexo.Core.Application.Pipelines.Ports;
 using Nexo.Infrastructure.Pipelines;
 
-namespace Nexo.Infrastructure.Sdk.Pipelines;
-
+namespace Nexo.Infrastructure.Pipelines.Sdk.Extensions;
 /// <summary>
 /// Registers pipeline composition layer services.
 /// </summary>

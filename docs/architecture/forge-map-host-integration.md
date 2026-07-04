@@ -1,6 +1,6 @@
 # Forge map host integration (milestones)
 
-This document tracks **host-side** work that sits next to runtime types in **`Nexo.Commercial.GameDomain`** (`Nexo.GameDomain` namespace) and HTTP endpoints in **`Nexo.Commercial.GameDirector.Host`** (`ForgeEndpoints` in `Nexo.Commercial.GameDirector.Mcp`).
+This document tracks **host-side** work that sits next to runtime types in **`Nexo.Commercial.GameDomain`** (`Nexo.Commercial.GameDomain` namespace) and HTTP endpoints in **`Nexo.Commercial.GameDirector.Host`** (`ForgeEndpoints` in `Nexo.Commercial.GameDirector.Mcp`).
 
 ## M1 — Engine aesthetic manifest
 

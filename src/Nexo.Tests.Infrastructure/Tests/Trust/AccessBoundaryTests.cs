@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Trust;
 
+/// <summary>Tests for access boundary.</summary>
 public class AccessBoundaryTests
 {
     [Fact]

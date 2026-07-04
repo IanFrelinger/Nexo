@@ -21,14 +21,19 @@ public sealed class FakeSpatialAnchorProvider : ISpatialAnchorProvider, IDisposa
     private readonly object _gate = new();
     private bool _disposed;
 
+    /// <summary>Creates a fake provider from an in-memory scripted sequence list.</summary>
+    /// <param name="sequences">Per-atom scripted pose timelines.</param>
     public FakeSpatialAnchorProvider(IEnumerable<ScriptedAtomSequence> sequences)
     {
         _sequences = sequences.ToDictionary(s => s.AtomId, StringComparer.Ordinal);
     }
 
+    /// <summary>Deserializes scripted sequences from JSON (camelCase property names).</summary>
+    /// <param name="json">JSON array of <see cref="ScriptedAtomSequence"/> objects.</param>
     public static FakeSpatialAnchorProvider FromJson(string json) =>
         new(JsonSerializer.Deserialize<ScriptedAtomSequence[]>(json, JsonOptions) ?? Array.Empty<ScriptedAtomSequence>());
 
+    /// <inheritdoc />
     public Task<PoseSample?> GetCurrentPose(string atomId)
     {
         lock (_gate)
@@ -42,6 +47,7 @@ public sealed class FakeSpatialAnchorProvider : ISpatialAnchorProvider, IDisposa
         }
     }
 
+    /// <inheritdoc />
     public IObservable<PoseSample> ObservePose(string atomId)
     {
         lock (_gate)
@@ -92,6 +98,7 @@ public sealed class FakeSpatialAnchorProvider : ISpatialAnchorProvider, IDisposa
         }
     }
 
+    /// <summary>Releases all pose observables and completes active subscriptions.</summary>
     public void Dispose()
     {
         lock (_gate)
@@ -113,14 +120,4 @@ public sealed class FakeSpatialAnchorProvider : ISpatialAnchorProvider, IDisposa
         if (_disposed)
             throw new ObjectDisposedException(nameof(FakeSpatialAnchorProvider));
     }
-}
-
-/// <summary>
-/// Scripted pose timeline for a single atom.
-/// </summary>
-public sealed record ScriptedAtomSequence
-{
-    public string AtomId { get; init; } = string.Empty;
-
-    public IReadOnlyList<PoseSample> Samples { get; init; } = Array.Empty<PoseSample>();
 }

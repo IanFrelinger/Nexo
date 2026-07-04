@@ -5,6 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace Nexo.UnitySidecarDemo;
 
+/// <summary>Program.</summary>
 internal static class Program
 {
     private const string DefaultOutputRoot = "tools/unity-demo-output";
@@ -13,6 +14,7 @@ internal static class Program
     {
         if (args.Length == 0 || IsHelp(args[0]))
         {
+            /// <summary>Print help.</summary>
             PrintHelp();
             return 0;
         }
@@ -39,6 +41,7 @@ internal static class Program
     private static int UnknownCommand(string command)
     {
         Console.Error.WriteLine($"Unknown command: {command}");
+        /// <summary>Print help.</summary>
         PrintHelp();
         return 2;
     }
@@ -315,14 +318,21 @@ internal static class Program
         const string interfaceCode = """
 namespace Generated.Systems.Contracts;
 
+/// <summary>Contract for generated gameplay system.</summary>
 public interface IGeneratedGameplaySystem
 {
+    /// <summary>System id.</summary>
     string SystemId { get; }
 
+    /// <summary>Initialize.</summary>
+    /// <param name="context">Context.</param>
     void Initialize(SystemContext context);
 
+    /// <summary>Tick.</summary>
+    /// <param name="deltaTime">Delta time.</param>
     void Tick(float deltaTime);
 
+    /// <summary>Teardown.</summary>
     void Teardown();
 }
 """;
@@ -332,12 +342,16 @@ using UnityEngine;
 
 namespace Generated.Systems.Contracts;
 
+/// <summary>System context.</summary>
 public sealed class SystemContext
 {
+    /// <summary>Player root.</summary>
     public GameObject PlayerRoot { get; init; } = null!;
 
+    /// <summary>Player transform.</summary>
     public Transform PlayerTransform { get; init; } = null!;
 
+    /// <summary>Current time.</summary>
     public float CurrentTime { get; init; }
 }
 """;
@@ -486,6 +500,7 @@ public sealed class {{className}} : MonoBehaviour, IGeneratedGameplaySystem
         if (!root.EndsWith("System", StringComparison.Ordinal))
             root += "System";
 
+        /// <summary>Sanitize class name.</summary>
         return SanitizeClassName(root);
     }
 
@@ -534,18 +549,23 @@ public sealed class {{className}} : MonoBehaviour, IGeneratedGameplaySystem
         return """
 namespace UnityEngine;
 
+/// <summary>Mono behaviour.</summary>
 public class MonoBehaviour { }
 
+/// <summary>Serialize field.</summary>
 public sealed class SerializeField : System.Attribute { }
 
+/// <summary>Game object.</summary>
 public sealed class GameObject { }
 
+/// <summary>Transform.</summary>
 public sealed class Transform
 {
     public Vector3 position;
     public Vector3 forward = new(0f, 0f, 1f);
 }
 
+/// <summary>Vector3.</summary>
 public struct Vector3
 {
     public float x;
@@ -563,23 +583,32 @@ public struct Vector3
     public static Vector3 operator *(Vector3 v, float m) => new(v.x * m, v.y * m, v.z * m);
 }
 
+/// <summary>Enumerates key code values.</summary>
 public enum KeyCode
 {
     LeftShift
 }
 
+/// <summary>Input.</summary>
 public static class Input
 {
+    /// <summary>Gets key down.</summary>
+    /// <param name="key">Key.</param>
     public static bool GetKeyDown(KeyCode key) => false;
 }
 
+/// <summary>Time.</summary>
 public static class Time
 {
     public static float time => 0f;
 }
 
+/// <summary>Mathf.</summary>
 public static class Mathf
 {
+    /// <summary>Min.</summary>
+    /// <param name="a">A.</param>
+    /// <param name="b">B.</param>
     public static float Min(float a, float b) => a < b ? a : b;
 }
 """;
@@ -609,6 +638,8 @@ public static class Mathf
 
         using var process = Process.Start(psi);
         if (process == null)
+            /// <summary>Command result.</summary>
+            /// <param name="process."">Process.".</param>
             return new CommandResult(1, string.Empty, "Failed to start process.");
 
         var stdOutTask = process.StandardOutput.ReadToEndAsync();
@@ -618,6 +649,7 @@ public static class Mathf
         var stdout = await stdOutTask;
         var stderr = await stdErrTask;
 
+        /// <summary>Command result.</summary>
         return new CommandResult(process.ExitCode, stdout, stderr);
     }
 
@@ -719,6 +751,3 @@ public static class Mathf
                $"Iteration {iteration} of {totalIterations}: produce a focused, implementable gameplay system script.";
     }
 }
-
-internal sealed record CommandResult(int ExitCode, string StdOut, string StdErr);
-internal sealed record SupervisorRole(string RoleName, string FocusArea, string PromptTemplate);

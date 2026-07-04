@@ -6,6 +6,7 @@ using Xunit;
 
 namespace HelloBrick.Tests;
 
+/// <summary>Tests for hello brick.</summary>
 public sealed class HelloBrickTests
 {
     [Fact]
@@ -27,6 +28,7 @@ public sealed class HelloBrickTests
         output.Summary.Should().Contain("Nexo");
     }
 
+    /// <summary>Test execution context.</summary>
     private sealed class TestExecutionContext : IExecutionContext
     {
         public string AgentId => "test-agent";
@@ -34,6 +36,7 @@ public sealed class HelloBrickTests
         public bool IsAirGapped => true;
         public bool AuditMode => true;
         public string Provider => "test";
+        /// <summary>Variables.</summary>
         public IReadOnlyDictionary<string, object> Variables { get; } = new Dictionary<string, object>();
     }
 }

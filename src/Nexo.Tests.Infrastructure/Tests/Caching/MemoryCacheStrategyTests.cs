@@ -6,19 +6,28 @@ using Nexo.Infrastructure.Caching;
 
 namespace Nexo.Tests.Infrastructure.Tests.Caching;
 
+/// <summary>Tests for memory cache strategy.</summary>
 public class MemoryCacheStrategyTests : UnitTestBase
 {
     public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
+            /// <summary>Test get async cache hit.</summary>
             await TestGetAsyncCacheHit();
+            /// <summary>Test get async cache miss.</summary>
             await TestGetAsyncCacheMiss();
+            /// <summary>Test get async expired entry.</summary>
             await TestGetAsyncExpiredEntry();
+            /// <summary>Test set async.</summary>
             await TestSetAsync();
+            /// <summary>Test set async with expiration.</summary>
             await TestSetAsyncWithExpiration();
+            /// <summary>Test remove async.</summary>
             await TestRemoveAsync();
+            /// <summary>Test clear async.</summary>
             await TestClearAsync();
+            /// <summary>Test concurrent access.</summary>
             await TestConcurrentAccess();
 
             return new TestResult
@@ -63,8 +72,11 @@ public class MemoryCacheStrategyTests : UnitTestBase
 
         var result = await cache.GetAsync<TestClass>("test-key");
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(result);
+        /// <summary>Assert equal.</summary>
         AssertEqual(1, result!.Id);
+        /// <summary>Assert equal.</summary>
         AssertEqual("Test", result.Name);
     }
 
@@ -75,6 +87,7 @@ public class MemoryCacheStrategyTests : UnitTestBase
 
         var result = await cache.GetAsync<TestClass>("non-existent-key");
 
+        /// <summary>Assert null.</summary>
         AssertNull(result);
     }
 
@@ -92,6 +105,7 @@ public class MemoryCacheStrategyTests : UnitTestBase
 
         var result = await cache.GetAsync<TestClass>("expired-key");
 
+        /// <summary>Assert null.</summary>
         AssertNull(result);
     }
 
@@ -104,7 +118,9 @@ public class MemoryCacheStrategyTests : UnitTestBase
         await cache.SetAsync("set-key", testValue);
 
         var result = await cache.GetAsync<TestClass>("set-key");
+        /// <summary>Assert not null.</summary>
         AssertNotNull(result);
+        /// <summary>Assert equal.</summary>
         AssertEqual(2, result!.Id);
     }
 
@@ -117,11 +133,13 @@ public class MemoryCacheStrategyTests : UnitTestBase
         await cache.SetAsync("expiring-key", testValue, TimeSpan.FromSeconds(1));
 
         var result = await cache.GetAsync<TestClass>("expiring-key");
+        /// <summary>Assert not null.</summary>
         AssertNotNull(result);
 
         await Task.Delay(1100);
 
         var expiredResult = await cache.GetAsync<TestClass>("expiring-key");
+        /// <summary>Assert null.</summary>
         AssertNull(expiredResult);
     }
 
@@ -135,6 +153,7 @@ public class MemoryCacheStrategyTests : UnitTestBase
         await cache.RemoveAsync("remove-key");
 
         var result = await cache.GetAsync<TestClass>("remove-key");
+        /// <summary>Assert null.</summary>
         AssertNull(result);
     }
 
@@ -167,7 +186,9 @@ public class MemoryCacheStrategyTests : UnitTestBase
             {
                 await cache.SetAsync($"key{index}", new TestClass { Id = index });
                 var result = await cache.GetAsync<TestClass>($"key{index}");
+                /// <summary>Assert not null.</summary>
                 AssertNotNull(result);
+                /// <summary>Assert equal.</summary>
                 AssertEqual(index, result!.Id);
             }));
         }
@@ -175,9 +196,12 @@ public class MemoryCacheStrategyTests : UnitTestBase
         await Task.WhenAll(tasks);
     }
 
+    /// <summary>Tests for test class.</summary>
     private class TestClass
     {
+        /// <summary>Id.</summary>
         public int Id { get; set; }
+        /// <summary>Name.</summary>
         public string Name { get; set; } = string.Empty;
     }
 }

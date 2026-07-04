@@ -21,6 +21,7 @@ public class ProposalsBackgroundAgentCommand
     private readonly IChangeProposalStore _store;
     private readonly ILogger<ProposalsBackgroundAgentCommand> _logger;
 
+    /// <summary>Creates the proposals background-agent command handler.</summary>
     public ProposalsBackgroundAgentCommand(
         IChangeProposalStore store,
         ILogger<ProposalsBackgroundAgentCommand> logger)
@@ -29,9 +30,11 @@ public class ProposalsBackgroundAgentCommand
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>Lists change proposals with optional status and target filters.</summary>
     public Task<int> ListAsync(string? status, string? targetPrefix, bool formatJson, CancellationToken ct = default)
         => ListAsync(status, targetPrefix, formatJson, Console.Out, Console.Error, ct);
 
+    /// <summary>Lists change proposals with optional status and target filters.</summary>
     public Task<int> ListAsync(
         string? status,
         string? targetPrefix,
@@ -90,9 +93,11 @@ public class ProposalsBackgroundAgentCommand
         }
     }
 
+    /// <summary>Shows a single change proposal, optionally including the diff.</summary>
     public Task<int> ShowAsync(string id, bool showDiff, bool formatJson, CancellationToken ct = default)
         => ShowAsync(id, showDiff, formatJson, Console.Out, Console.Error, ct);
 
+    /// <summary>Shows a single change proposal, optionally including the diff.</summary>
     public Task<int> ShowAsync(string id, bool showDiff, bool formatJson, TextWriter stdout, TextWriter stderr, CancellationToken ct = default)
     {
         try
@@ -139,9 +144,11 @@ public class ProposalsBackgroundAgentCommand
         }
     }
 
+    /// <summary>Marks a proposal approved with optional approver metadata.</summary>
     public Task<int> ApproveAsync(string id, string? approver, string? note, bool formatJson, CancellationToken ct = default)
         => Transition(_store.Approve, id, approver, note, "approved", formatJson);
 
+    /// <summary>Marks a proposal rejected with optional reviewer metadata.</summary>
     public Task<int> RejectAsync(string id, string? reviewer, string? note, bool formatJson, CancellationToken ct = default)
         => Transition(_store.Reject, id, reviewer, note, "rejected", formatJson);
 
@@ -163,6 +170,7 @@ public class ProposalsBackgroundAgentCommand
         CancellationToken ct = default)
         => ApplyAsync(id, repoRoot, force, formatJson, verifyBuild, verifyTest, Console.Out, Console.Error, ct);
 
+    /// <summary>Applies an approved proposal to disk after base-sha drift checks.</summary>
     public async Task<int> ApplyAsync(
         string id,
         string repoRoot,
@@ -317,6 +325,7 @@ public class ProposalsBackgroundAgentCommand
     public Task<int> BuildAsync(string repoRoot, bool formatJson, CancellationToken ct = default)
         => BuildAsync(repoRoot, formatJson, Console.Out, Console.Error, ct);
 
+    /// <summary>Builds the repository after applying or validating a proposal.</summary>
     public async Task<int> BuildAsync(
         string repoRoot,
         bool formatJson,
@@ -366,6 +375,7 @@ public class ProposalsBackgroundAgentCommand
     public Task<int> TestAsync(string repoRoot, bool formatJson, CancellationToken ct = default)
         => TestAsync(repoRoot, formatJson, Console.Out, Console.Error, ct);
 
+    /// <summary>Runs tests for the repository after proposal application.</summary>
     public async Task<int> TestAsync(
         string repoRoot,
         bool formatJson,
@@ -443,6 +453,7 @@ public class ProposalsBackgroundAgentCommand
     public Task<int> JanitorAsync(double? proposedTtlHours, double? approvedTtlHours, bool formatJson, CancellationToken ct = default)
         => JanitorAsync(proposedTtlHours, approvedTtlHours, formatJson, Console.Out, Console.Error, ct);
 
+    /// <summary>Purges expired proposals using configured TTL thresholds.</summary>
     public Task<int> JanitorAsync(double? proposedTtlHours, double? approvedTtlHours, bool formatJson, TextWriter stdout, TextWriter stderr, CancellationToken ct = default)
     {
         try
@@ -465,9 +476,11 @@ public class ProposalsBackgroundAgentCommand
         }
     }
 
+    /// <summary>Reports aggregate proposal queue statistics.</summary>
     public Task<int> StatsAsync(bool formatJson, CancellationToken ct = default)
         => StatsAsync(formatJson, Console.Out, Console.Error, ct);
 
+    /// <summary>Reports aggregate proposal queue statistics.</summary>
     public Task<int> StatsAsync(bool formatJson, TextWriter stdout, TextWriter stderr, CancellationToken ct = default)
     {
         try

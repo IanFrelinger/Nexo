@@ -16,6 +16,7 @@ using Xunit;
 
 namespace Nexo.Commercial.Tests.Fleet;
 
+/// <summary>Tests for infrastructure fleet gap coverage.</summary>
 public class InfrastructureFleetGapCoverageTests
 {
     [Fact]
@@ -211,28 +212,45 @@ public class InfrastructureFleetGapCoverageTests
             Times.AtLeastOnce);
     }
 
+    /// <summary>Json.</summary>
+    /// <param name="status">Status.</param>
+    /// <param name="json">Json.</param>
     private static HttpResponseMessage Json(HttpStatusCode status, string json) =>
         new(status) { Content = new StringContent(json, Encoding.UTF8, "application/json") };
 
+    /// <summary>Handles fake fleet requests.</summary>
     private sealed class FakeFleetHandler(Func<HttpRequestMessage, CancellationToken, HttpResponseMessage> handler) : HttpMessageHandler
     {
+        /// <summary>Send async.</summary>
+        /// <param name="request">Request.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
             Task.FromResult(handler(request, cancellationToken));
     }
 
+    /// <summary>Static options monitor.</summary>
     private sealed class StaticOptionsMonitor<T>(T value) : Microsoft.Extensions.Options.IOptionsMonitor<T> where T : class
     {
+        /// <summary>Current value.</summary>
         public T CurrentValue { get; } = value;
+        /// <summary>Gets the value.</summary>
+        /// <param name="name">Name.</param>
         public T Get(string? name) => CurrentValue;
+        /// <summary>On change.</summary>
+        /// <param name="listener">Listener.</param>
         public IDisposable OnChange(Action<T, string?> listener) => NullDisposable.Instance;
     }
 
+    /// <summary>Null disposable.</summary>
     private sealed class NullDisposable : IDisposable
     {
         public static readonly NullDisposable Instance = new();
+        /// <summary>Dispose.</summary>
         public void Dispose() { }
     }
 
+    /// <summary>Sample node.</summary>
+    /// <param name="peerId">Peer id.</param>
     private static MeshFleetNodeState SampleNode(string peerId) => new(
         PeerId: peerId,
         ApiBaseUrl: "http://localhost:8080",

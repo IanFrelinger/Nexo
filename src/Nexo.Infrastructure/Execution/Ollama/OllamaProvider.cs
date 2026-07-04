@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Nexo.Infrastructure.Execution.Ollama;
 
+/// <summary>Ollama provider.</summary>
 public sealed class OllamaProvider
 {
     private readonly HttpClient _httpClient;
@@ -15,6 +16,7 @@ public sealed class OllamaProvider
 
     private Dictionary<string, OllamaModelManifest> _manifestByName = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Initializes a new ollama provider.</summary>
     public OllamaProvider(
         HttpClient httpClient,
         string? baseUrl = null,
@@ -43,10 +45,13 @@ public sealed class OllamaProvider
         }
     }
 
+    /// <summary>Whether the Ollama endpoint is reachable and has a loaded model manifest.</summary>
     public bool IsAvailable { get; private set; }
 
+    /// <summary>UTC timestamp of the last successful model manifest refresh.</summary>
     public DateTimeOffset? LastRefreshUtc { get; private set; }
 
+    /// <summary>Cached Ollama model manifests from the last refresh.</summary>
     public IReadOnlyList<OllamaModelManifest> Manifest
     {
         get
@@ -60,6 +65,7 @@ public sealed class OllamaProvider
         }
     }
 
+    /// <summary>Check health asynchronously.</summary>
     public async Task<Result<bool>> CheckHealthAsync(CancellationToken cancellationToken = default)
     {
         var refreshResult = await RefreshModelsAsync(cancellationToken).ConfigureAwait(false);
@@ -73,6 +79,7 @@ public sealed class OllamaProvider
             "Ollama health check failed for an unknown reason."));
     }
 
+    /// <summary>Refresh models asynchronously.</summary>
     public async Task<Result<IReadOnlyList<OllamaModelManifest>>> RefreshModelsAsync(CancellationToken cancellationToken = default)
     {
         try
@@ -127,6 +134,7 @@ public sealed class OllamaProvider
         }
     }
 
+    /// <summary>Validate model.</summary>
     public Result<OllamaModelManifest> ValidateModel(string requestedModel)
     {
         if (string.IsNullOrWhiteSpace(requestedModel))
@@ -206,6 +214,7 @@ public sealed class OllamaProvider
         return true;
     }
 
+    /// <summary>Execute chat asynchronously.</summary>
     public async Task<Result<string>> ExecuteChatAsync(
         string requestedModel,
         string systemPrompt,

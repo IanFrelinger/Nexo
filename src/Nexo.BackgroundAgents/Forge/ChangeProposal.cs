@@ -38,13 +38,3 @@ public sealed record ChangeProposal
     /// </summary>
     public string? BaseSha256 { get; init; }
 }
-
-[JsonConverter(typeof(JsonStringEnumConverter))]
-public enum ChangeProposalStatus
-{
-    Proposed,
-    Approved,
-    Rejected,
-    Applied,
-    Stale
-}

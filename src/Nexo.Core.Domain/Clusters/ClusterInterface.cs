@@ -27,37 +27,3 @@ public class ClusterInterface
     /// </summary>
     public FailurePolicy FailurePolicy { get; init; } = FailurePolicy.Abort;
 }
-
-/// <summary>
-/// Input or output port of a cluster.
-/// </summary>
-public class ClusterPort
-{
-    public string Name { get; init; } = default!;
-    public string Type { get; init; } = default!;
-    public string Description { get; init; } = default!;
-    public bool Required { get; init; } = true;
-    public object? Default { get; init; }
-    
-    /// <summary>
-    /// Which internal brick and port this maps to.
-    /// Format: "brickLocalId.portName"
-    /// </summary>
-    public string InternalMapping { get; init; } = default!;
-}
-
-/// <summary>
-/// Event that a cluster can emit.
-/// </summary>
-public class ClusterEvent
-{
-    public string Name { get; init; } = default!;
-    public string Description { get; init; } = default!;
-    
-    /// <summary>
-    /// Which internal brick event this surfaces.
-    /// Format: "brickLocalId.eventName"
-    /// </summary>
-    public string InternalMapping { get; init; } = default!;
-}
-

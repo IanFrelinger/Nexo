@@ -3,8 +3,10 @@ using Nexo.Core.Application.Certification.Ports;
 
 namespace Nexo.Infrastructure.Certification.Composition;
 
+/// <summary>Verifies all constituent bricks in a composition are certified and admitted.</summary>
 internal static class CompositionConstituentChecker
 {
+    /// <summary>Check.</summary>
     public static ConstituentCheckResult Check(
         CompositionSpec spec,
         ICertificationRecordStore brickCertificationStore,

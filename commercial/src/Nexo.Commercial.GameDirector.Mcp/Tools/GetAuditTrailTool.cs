@@ -5,10 +5,13 @@ using Nexo.Core.Application.Trust.Ports;
 
 namespace GameDirector.Mcp.Tools;
 
+/// <summary>Get audit trail tool.</summary>
 public sealed class GetAuditTrailTool : IMcpTool
 {
     private readonly IDataDecisionAuditLog _auditLog;
 
+    /// <summary>Gets audit trail tool.</summary>
+    /// <param name="auditLog">Audit log.</param>
     public GetAuditTrailTool(IDataDecisionAuditLog auditLog) => _auditLog = auditLog;
 
     public string Name => "get_audit_trail";
@@ -45,6 +48,10 @@ public sealed class GetAuditTrailTool : IMcpTool
         return Task.FromResult(JsonSerializer.SerializeToElement(payload, McpToolHelpers.JsonOptions));
     }
 
+    /// <summary>Parse date.</summary>
+    /// <param name="args">Args.</param>
+    /// <param name="name">Name.</param>
+    /// <param name="fallback">Fallback.</param>
     private static DateTimeOffset ParseDate(JsonElement args, string name, DateTimeOffset fallback) =>
         args.TryGetProperty(name, out var el) && DateTimeOffset.TryParse(el.GetString(), out var dt)
             ? dt

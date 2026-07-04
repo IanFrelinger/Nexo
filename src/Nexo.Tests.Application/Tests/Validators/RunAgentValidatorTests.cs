@@ -6,6 +6,7 @@ using Nexo.Core.Application.Testing.Models;
 
 namespace Nexo.Tests.Application.Tests.Validators;
 
+/// <summary>Tests for run agent validator.</summary>
 public class RunAgentValidatorTests : UnitTestBase
 {
     public override Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
@@ -17,6 +18,8 @@ public class RunAgentValidatorTests : UnitTestBase
             // Test 1: Null agent name should fail
             var command1 = new RunAgentCommand(null!, null);
             var result1 = validator.Validate(command1);
+            /// <summary>Assert false.</summary>
+            /// <param name="validation"">Validation".</param>
             AssertFalse(result1.IsValid, "Null agent name should fail validation");
             AssertTrue(result1.Errors.Any(e => e.PropertyName == "AgentName" && e.ErrorMessage == "Agent name is required"),
                 "Should have 'Agent name is required' error");
@@ -24,6 +27,8 @@ public class RunAgentValidatorTests : UnitTestBase
             // Test 2: Empty string agent name should fail
             var command2 = new RunAgentCommand(string.Empty, null);
             var result2 = validator.Validate(command2);
+            /// <summary>Assert false.</summary>
+            /// <param name="validation"">Validation".</param>
             AssertFalse(result2.IsValid, "Empty string agent name should fail validation");
             AssertTrue(result2.Errors.Any(e => e.PropertyName == "AgentName" && e.ErrorMessage == "Agent name is required"),
                 "Should have 'Agent name is required' error");
@@ -31,6 +36,8 @@ public class RunAgentValidatorTests : UnitTestBase
             // Test 3: Whitespace-only agent name should fail
             var command3 = new RunAgentCommand("   ", null);
             var result3 = validator.Validate(command3);
+            /// <summary>Assert false.</summary>
+            /// <param name="validation"">Validation".</param>
             AssertFalse(result3.IsValid, "Whitespace-only agent name should fail validation");
             AssertTrue(result3.Errors.Any(e => e.PropertyName == "AgentName" && e.ErrorMessage == "Agent name is required"),
                 "Should have 'Agent name is required' error");
@@ -38,6 +45,8 @@ public class RunAgentValidatorTests : UnitTestBase
             // Test 4: Valid agent name should pass
             var command4 = new RunAgentCommand("TestAgent", null);
             var result4 = validator.Validate(command4);
+            /// <summary>Assert true.</summary>
+            /// <param name="validation"">Validation".</param>
             AssertTrue(result4.IsValid, "Valid agent name should pass validation");
             AssertFalse(result4.Errors.Any(e => e.PropertyName == "AgentName"),
                 "Should not have AgentName validation errors");
@@ -46,6 +55,8 @@ public class RunAgentValidatorTests : UnitTestBase
             var inputFile = new FileInfo(Path.GetTempFileName());
             var command5 = new RunAgentCommand("TestAgent", inputFile);
             var result5 = validator.Validate(command5);
+            /// <summary>Assert true.</summary>
+            /// <param name="validation"">Validation".</param>
             AssertTrue(result5.IsValid, "Valid agent name with input file should pass validation");
             AssertFalse(result5.Errors.Any(e => e.PropertyName == "AgentName"),
                 "Should not have AgentName validation errors");
@@ -54,6 +65,8 @@ public class RunAgentValidatorTests : UnitTestBase
             var nonExistentFile = new FileInfo(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()));
             var command6 = new RunAgentCommand("TestAgent", nonExistentFile);
             var result6 = validator.Validate(command6);
+            /// <summary>Assert true.</summary>
+            /// <param name="validation"">Validation".</param>
             AssertTrue(result6.IsValid, "Valid agent name with non-existent input file should pass validation");
             AssertFalse(result6.Errors.Any(e => e.PropertyName == "AgentName"),
                 "Should not have AgentName validation errors");

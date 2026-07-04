@@ -16,11 +16,21 @@ namespace Nexo.Core.Application.Validation.Models;
 /// </summary>
 public record ValidationResult
 {
+    /// <summary>Whether all validation checks passed.</summary>
     public required bool Passed { get; init; }
+
+    /// <summary>Human-readable summary of the validation outcome.</summary>
     public required string Message { get; init; }
+
+    /// <summary>Total number of tests executed.</summary>
     public required int TestsRun { get; init; }
+
+    /// <summary>Number of tests that passed.</summary>
     public required int TestsPassed { get; init; }
+
+    /// <summary>Number of tests that failed.</summary>
     public required int TestsFailed { get; init; }
+
+    /// <summary>Per-test results when detailed output is available.</summary>
     public IReadOnlyList<TestResult>? TestResults { get; init; }
 }
-

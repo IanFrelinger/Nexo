@@ -7,11 +7,22 @@ namespace Nexo.Core.Domain.Bricks;
 /// </summary>
 public abstract class Brick
 {
+    /// <summary>Stable brick identifier used in catalog and execute routes.</summary>
     public string Id { get; init; } = default!;
+
+    /// <summary>Human-readable display name shown in operator UIs.</summary>
     public string Name { get; init; } = default!;
+
+    /// <summary>Semantic version of the brick implementation.</summary>
     public string Version { get; init; } = "1.0.0";
+
+    /// <summary>Emoji or icon token for catalog and workflow composer UIs.</summary>
     public string Icon { get; init; } = "📦";
+
+    /// <summary>Primary functional category for catalog grouping.</summary>
     public BrickCategory Category { get; init; }
+
+    /// <summary>Short description of what the brick does.</summary>
     public string Description { get; init; } = default!;
     
     /// <summary>
@@ -53,6 +64,11 @@ public abstract class Brick
     /// <summary>
     /// Execute this brick with the given input and implementation type.
     /// </summary>
+    /// <param name="input">Named input values matching <see cref="Interface"/>.</param>
+    /// <param name="implementation">Deterministic, agentic, or auto-selected implementation.</param>
+    /// <param name="context">Runtime environment and workflow variables.</param>
+    /// <param name="cancellationToken">Cancellation token for cooperative shutdown.</param>
+    /// <returns>Named output values and optional summary text.</returns>
     public abstract Task<BrickOutput> ExecuteAsync(
         BrickInput input, 
         ImplementationType implementation,

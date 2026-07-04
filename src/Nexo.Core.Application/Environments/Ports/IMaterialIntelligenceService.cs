@@ -9,6 +9,12 @@ namespace Nexo.Core.Application.Environments.Ports;
 /// </summary>
 public interface IMaterialIntelligenceService
 {
+    /// <summary>
+    /// Suggests materials and texture-generation hints for the given style and tags.
+    /// </summary>
+    /// <param name="request">Style preset, OSM tags, and output cap.</param>
+    /// <param name="cancellationToken">Token used to cancel the operation.</param>
+    /// <returns>Batch of suggested material specifications.</returns>
     Task<MaterialIntelligenceResult> SuggestMaterialsAsync(
         MaterialIntelligenceRequest request,
         CancellationToken cancellationToken = default);

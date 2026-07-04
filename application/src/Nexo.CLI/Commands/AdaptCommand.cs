@@ -22,6 +22,7 @@ namespace Nexo.CLI.Commands;
 /// </summary>
 public sealed class AdaptCommand : Command
 {
+    /// <summary>Creates a new AdaptCommand instance.</summary>
     public AdaptCommand() : base("adapt", "Decompose brick to manifest, optionally apply fixes and recompile (Block 3 dogfood).")
     {
         var brickOpt = new Option<string>("--brick", () => "observation.context", "Brick ID to adapt");

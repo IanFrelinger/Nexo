@@ -3,12 +3,6 @@ using Nexo.Abstractions;
 namespace Nexo.Runtime;
 
 /// <summary>
-/// Callback invoked when a tool call chain is rejected before any execution.
-/// (chain, rejectedIndex, reason) — enables audit logging with full chain trace.
-/// </summary>
-public delegate void ChainRejectionCallback(IReadOnlyList<ToolCall> chain, int rejectedIndex, string reason);
-
-/// <summary>
 /// Host for executing agents in a simulation step.
 ///
 /// Responsibilities:
@@ -29,6 +23,7 @@ public sealed class AgentHost
     private readonly PolicyEngine _policies;
     private readonly ChainRejectionCallback? _onChainRejected;
 
+    /// <summary>Creates a host with the given agents, toolbox, policies, and optional chain rejection callback.</summary>
     public AgentHost(IEnumerable<IAgent> agents, IToolbox tools, PolicyEngine policies, ChainRejectionCallback? onChainRejected = null)
     {
         _agents = agents.ToList();
@@ -37,6 +32,7 @@ public sealed class AgentHost
         _onChainRejected = onChainRejected;
     }
 
+    /// <summary>Runs one simulation step: think, validate, invoke approved tools, and merge action deltas.</summary>
     public async Task<IActionDelta?> StepAsync(WorldSnapshot s, CancellationToken ct)
     {
         var deltas = new List<IActionDelta>();

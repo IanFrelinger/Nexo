@@ -23,6 +23,7 @@ public class ValidationServiceAdapter : IValidationService
     private readonly ILogger<ValidationServiceAdapter> _logger;
     private readonly ITestResultParser _testResultParser;
 
+    /// <summary>Initializes a new validation service adapter.</summary>
     public ValidationServiceAdapter(
         ILogger<ValidationServiceAdapter> logger,
         ITestResultParser testResultParser)
@@ -31,6 +32,7 @@ public class ValidationServiceAdapter : IValidationService
         _testResultParser = testResultParser ?? throw new ArgumentNullException(nameof(testResultParser));
     }
 
+    /// <summary>Validate asynchronously.</summary>
     public async Task<ValidationResult> ValidateAsync(
         string? filter,
         IProgress<ProgressReport>? progress = null,

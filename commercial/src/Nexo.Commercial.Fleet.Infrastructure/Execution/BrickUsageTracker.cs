@@ -1,10 +1,9 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Nexo.Core.Application.Networking.Models;
-using Nexo.Core.Application.Networking.Ports;
+using Nexo.Commercial.Fleet.Contracts.Networking.Models;
+using Nexo.Commercial.Fleet.Contracts.Networking.Ports;
 
-namespace Nexo.Infrastructure.Execution;
-
+namespace Nexo.Commercial.Fleet.Infrastructure.Execution;
 /// <summary>
 /// In-memory usage tracker for brick executions. Implements synaptic plasticity:
 /// hot bricks (frequently used) and cold bricks (unused) for adaptive caching.

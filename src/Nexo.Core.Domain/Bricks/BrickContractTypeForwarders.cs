@@ -2,6 +2,9 @@ using System.Runtime.CompilerServices;
 using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Execution;
 
+// Type forwarders preserve backward-compatible assembly references after brick authoring
+// types moved into Nexo.Brick.Contracts. Consumers referencing Nexo.Core.Domain types
+// continue to resolve without recompilation.
 [assembly: TypeForwardedTo(typeof(AgenticImplementation))]
 [assembly: TypeForwardedTo(typeof(Brick))]
 [assembly: TypeForwardedTo(typeof(BrickCategory))]

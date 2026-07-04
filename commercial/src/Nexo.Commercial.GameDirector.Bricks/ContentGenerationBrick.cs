@@ -12,7 +12,7 @@ namespace GameDirector.Bricks;
 /// <summary>
 /// content.generation — agentic flavor/item/macro text using Forge session context.
 /// </summary>
-public sealed class ContentGenerationBrick : Brick
+public sealed class ContentGenerationBrick : DomainBrick
 {
     private readonly IDataDecisionAuditLog _auditLog;
     private readonly IModel? _model;

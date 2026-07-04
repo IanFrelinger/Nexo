@@ -1,5 +1,4 @@
-namespace Nexo.API.Forge;
-
+namespace GameDirector.Mcp.Forge;
 /// <summary>
 /// Forge session storage, tenant header, map pipeline fetch policy, and vector intelligence options.
 /// </summary>
@@ -13,7 +12,7 @@ public sealed class ForgeSessionOptions
     public string TenantHeaderName { get; set; } = "X-Forge-Tenant";
 
     /// <summary>
-    /// When true, non-dry map pipeline runs may call <see cref="Nexo.GameDomain.Mapping.IVectorMapIntelligenceService"/> on fetched vector bytes.
+    /// When true, non-dry map pipeline runs may call <see cref="Nexo.Commercial.GameDomain.Mapping.IVectorMapIntelligenceService"/> on fetched vector bytes.
     /// </summary>
     public bool EnableVectorIntelligence { get; set; }
 
@@ -92,7 +91,7 @@ public sealed class ForgeSessionOptions
     public bool EnableTerrainPayloadParsing { get; set; } = true;
 
     /// <summary>
-    /// When true (default), <see cref="MapPipelineRunner"/> runs <see cref="Nexo.GameDomain.Mapping.IMapVerificationService"/> after vector parse.
+    /// When true (default), <see cref="MapPipelineRunner"/> runs <see cref="Nexo.Commercial.GameDomain.Mapping.IMapVerificationService"/> after vector parse.
     /// </summary>
     public bool EnableMapVerification { get; set; } = true;
 

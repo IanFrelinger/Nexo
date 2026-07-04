@@ -11,6 +11,7 @@ internal static class CompositionGraphMutationCatalog
 {
     private const int MaxPerKind = 4;
 
+    /// <summary>Collect mutations.</summary>
     public static IReadOnlyList<StructuralMutation> CollectMutations(
         CompositionSpec spec,
         IBrickRegistry brickRegistry)
@@ -150,7 +151,7 @@ internal static class CompositionGraphMutationCatalog
         }
     }
 
-    private static bool HasCompatibleInterface(Brick current, Brick candidate)
+    private static bool HasCompatibleInterface(DomainBrick current, DomainBrick candidate)
     {
         if (current.Interface.Inputs.Count != candidate.Interface.Inputs.Count
             || current.Interface.Outputs.Count != candidate.Interface.Outputs.Count)
@@ -175,5 +176,3 @@ internal static class CompositionGraphMutationCatalog
         return true;
     }
 }
-
-internal sealed record StructuralMutation(string Id, CompositionSpec MutatedSpec);

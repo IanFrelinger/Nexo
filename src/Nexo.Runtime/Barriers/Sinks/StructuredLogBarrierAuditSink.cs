@@ -3,6 +3,7 @@ using Nexo.Abstractions.Barriers;
 
 namespace Nexo.Runtime.Barriers.Sinks;
 
+/// <summary>Structured logging sink for barrier audit events with per-event log level overrides.</summary>
 public sealed class StructuredLogBarrierAuditSink : IBarrierAuditSink
 {
     private readonly ILogger<StructuredLogBarrierAuditSink> _logger;
@@ -21,6 +22,7 @@ public sealed class StructuredLogBarrierAuditSink : IBarrierAuditSink
             StringComparer.OrdinalIgnoreCase);
     }
 
+    /// <summary>Writes a barrier audit event to structured application logs.</summary>
     public ValueTask WriteAsync(
         BarrierAuditEvent auditEvent,
         CancellationToken cancellationToken = default)

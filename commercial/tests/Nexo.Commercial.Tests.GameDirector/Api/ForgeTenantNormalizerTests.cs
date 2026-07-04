@@ -1,9 +1,9 @@
 using FluentAssertions;
-using Nexo.API.Forge;
+using GameDirector.Mcp.Forge;
 using Xunit;
 
-namespace Nexo.Tests.Infrastructure.Tests.API;
-
+namespace Nexo.Tests.GameDirector.Api;
+/// <summary>Tests for forge tenant normalizer.</summary>
 public sealed class ForgeTenantNormalizerTests
 {
     [Theory]

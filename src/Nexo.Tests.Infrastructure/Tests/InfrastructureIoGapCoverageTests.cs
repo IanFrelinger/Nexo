@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests;
 
+/// <summary>Tests for infrastructure io gap coverage.</summary>
 public class InfrastructureIoGapCoverageTests
 {
     [Fact]

@@ -14,5 +14,5 @@ public interface IBrickRecompiler
     /// <param name="manifest">The edited manifest.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The compiled brick, or null if recompilation failed.</returns>
-    Task<Brick?> RecompileAsync(BrickManifest manifest, CancellationToken cancellationToken = default);
+    Task<DomainBrick?> RecompileAsync(BrickManifest manifest, CancellationToken cancellationToken = default);
 }

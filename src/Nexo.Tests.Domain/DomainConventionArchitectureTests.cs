@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Nexo.Tests.Domain;
 
+/// <summary>Tests for domain convention architecture.</summary>
 public sealed class DomainConventionArchitectureTests
 {
     private static readonly Type[] SanctionedBaseTypes =
@@ -64,6 +65,8 @@ public sealed class DomainConventionArchitectureTests
             .ToArray();
     }
 
+    /// <summary>Returns whether  compiler generated.</summary>
+    /// <param name="type">Type.</param>
     private static bool IsCompilerGenerated(Type type) =>
         type.GetCustomAttributes(typeof(System.Runtime.CompilerServices.CompilerGeneratedAttribute), inherit: false).Length > 0;
 }

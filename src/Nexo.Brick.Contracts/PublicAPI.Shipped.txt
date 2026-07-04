@@ -1,225 +1,225 @@
 #nullable enable
-Nexo.BrickContracts.BrickCatalogEntryDto
-Nexo.BrickContracts.BrickCatalogEntryDto.BrickCatalogEntryDto() -> void
-Nexo.BrickContracts.BrickCatalogEntryDto.Category.get -> string
-Nexo.BrickContracts.BrickCatalogEntryDto.Category.set -> void
-Nexo.BrickContracts.BrickCatalogEntryDto.Description.get -> string
-Nexo.BrickContracts.BrickCatalogEntryDto.Description.set -> void
-Nexo.BrickContracts.BrickCatalogEntryDto.DomainKnowledge.get -> Nexo.BrickContracts.DomainKnowledgeDto
-Nexo.BrickContracts.BrickCatalogEntryDto.DomainKnowledge.set -> void
-Nexo.BrickContracts.BrickCatalogEntryDto.HasAgentic.get -> bool
-Nexo.BrickContracts.BrickCatalogEntryDto.HasAgentic.set -> void
-Nexo.BrickContracts.BrickCatalogEntryDto.HasDeterministic.get -> bool
-Nexo.BrickContracts.BrickCatalogEntryDto.HasDeterministic.set -> void
-Nexo.BrickContracts.BrickCatalogEntryDto.HostBaseUrl.get -> string
-Nexo.BrickContracts.BrickCatalogEntryDto.HostBaseUrl.set -> void
-Nexo.BrickContracts.BrickCatalogEntryDto.HostCapabilities.get -> Nexo.BrickContracts.Capabilities.NodeCapabilityManifestDto
-Nexo.BrickContracts.BrickCatalogEntryDto.HostCapabilities.set -> void
-Nexo.BrickContracts.BrickCatalogEntryDto.Icon.get -> string
-Nexo.BrickContracts.BrickCatalogEntryDto.Icon.set -> void
-Nexo.BrickContracts.BrickCatalogEntryDto.Id.get -> string
-Nexo.BrickContracts.BrickCatalogEntryDto.Id.set -> void
-Nexo.BrickContracts.BrickCatalogEntryDto.Interface.get -> Nexo.BrickContracts.BrickInterfaceDto
-Nexo.BrickContracts.BrickCatalogEntryDto.Interface.set -> void
-Nexo.BrickContracts.BrickCatalogEntryDto.Metadata.get -> Nexo.BrickContracts.BrickMetadataDto
-Nexo.BrickContracts.BrickCatalogEntryDto.Metadata.set -> void
-Nexo.BrickContracts.BrickCatalogEntryDto.Name.get -> string
-Nexo.BrickContracts.BrickCatalogEntryDto.Name.set -> void
-Nexo.BrickContracts.BrickCatalogEntryDto.UsageStats.get -> Nexo.BrickContracts.BrickUsageStatsDto
-Nexo.BrickContracts.BrickCatalogEntryDto.UsageStats.set -> void
-Nexo.BrickContracts.BrickCatalogEntryDto.Version.get -> string
-Nexo.BrickContracts.BrickCatalogEntryDto.Version.set -> void
-Nexo.BrickContracts.BrickCatalogEntryDto.WireFormatVersion.get -> string
-Nexo.BrickContracts.BrickCatalogEntryDto.WireFormatVersion.set -> void
-Nexo.BrickContracts.BrickCatalogResponseDto
-Nexo.BrickContracts.BrickCatalogResponseDto.BrickCatalogResponseDto() -> void
-Nexo.BrickContracts.BrickCatalogResponseDto.Bricks.get -> System.Collections.Generic.IReadOnlyList<Nexo.BrickContracts.BrickCatalogEntryDto>
-Nexo.BrickContracts.BrickCatalogResponseDto.Bricks.set -> void
-Nexo.BrickContracts.BrickCatalogResponseDto.ContinuationToken.get -> string
-Nexo.BrickContracts.BrickCatalogResponseDto.ContinuationToken.set -> void
-Nexo.BrickContracts.BrickCatalogResponseDto.WireFormatVersion.get -> string
-Nexo.BrickContracts.BrickCatalogResponseDto.WireFormatVersion.set -> void
-Nexo.BrickContracts.BrickExecuteRequestDto
-Nexo.BrickContracts.BrickExecuteRequestDto.BrickExecuteRequestDto() -> void
-Nexo.BrickContracts.BrickExecuteRequestDto.BrickId.get -> string
-Nexo.BrickContracts.BrickExecuteRequestDto.BrickId.set -> void
-Nexo.BrickContracts.BrickExecuteRequestDto.ExecutionContext.get -> Nexo.BrickContracts.ExecutionContextDto
-Nexo.BrickContracts.BrickExecuteRequestDto.ExecutionContext.set -> void
-Nexo.BrickContracts.BrickExecuteRequestDto.Implementation.get -> string
-Nexo.BrickContracts.BrickExecuteRequestDto.Implementation.set -> void
-Nexo.BrickContracts.BrickExecuteRequestDto.Input.get -> System.Collections.Generic.IReadOnlyDictionary<string, object>
-Nexo.BrickContracts.BrickExecuteRequestDto.Input.set -> void
-Nexo.BrickContracts.BrickExecuteRequestDto.WireFormatVersion.get -> string
-Nexo.BrickContracts.BrickExecuteRequestDto.WireFormatVersion.set -> void
-Nexo.BrickContracts.BrickExecuteResponseDto
-Nexo.BrickContracts.BrickExecuteResponseDto.BrickExecuteResponseDto() -> void
-Nexo.BrickContracts.BrickExecuteResponseDto.Error.get -> string
-Nexo.BrickContracts.BrickExecuteResponseDto.Error.set -> void
-Nexo.BrickContracts.BrickExecuteResponseDto.Output.get -> System.Collections.Generic.IReadOnlyDictionary<string, object>
-Nexo.BrickContracts.BrickExecuteResponseDto.Output.set -> void
-Nexo.BrickContracts.BrickExecuteResponseDto.Success.get -> bool
-Nexo.BrickContracts.BrickExecuteResponseDto.Success.set -> void
-Nexo.BrickContracts.BrickExecuteResponseDto.Summary.get -> string
-Nexo.BrickContracts.BrickExecuteResponseDto.Summary.set -> void
-Nexo.BrickContracts.BrickExecuteResponseDto.WireFormatVersion.get -> string
-Nexo.BrickContracts.BrickExecuteResponseDto.WireFormatVersion.set -> void
-Nexo.BrickContracts.BrickInputDefinitionDto
-Nexo.BrickContracts.BrickInputDefinitionDto.BrickInputDefinitionDto() -> void
-Nexo.BrickContracts.BrickInputDefinitionDto.Default.get -> object
-Nexo.BrickContracts.BrickInputDefinitionDto.Default.set -> void
-Nexo.BrickContracts.BrickInputDefinitionDto.Description.get -> string
-Nexo.BrickContracts.BrickInputDefinitionDto.Description.set -> void
-Nexo.BrickContracts.BrickInputDefinitionDto.Name.get -> string
-Nexo.BrickContracts.BrickInputDefinitionDto.Name.set -> void
-Nexo.BrickContracts.BrickInputDefinitionDto.Required.get -> bool
-Nexo.BrickContracts.BrickInputDefinitionDto.Required.set -> void
-Nexo.BrickContracts.BrickInputDefinitionDto.Type.get -> string
-Nexo.BrickContracts.BrickInputDefinitionDto.Type.set -> void
-Nexo.BrickContracts.BrickInterfaceDto
-Nexo.BrickContracts.BrickInterfaceDto.BrickInterfaceDto() -> void
-Nexo.BrickContracts.BrickInterfaceDto.Inputs.get -> System.Collections.Generic.IReadOnlyList<Nexo.BrickContracts.BrickInputDefinitionDto>
-Nexo.BrickContracts.BrickInterfaceDto.Inputs.set -> void
-Nexo.BrickContracts.BrickInterfaceDto.Outputs.get -> System.Collections.Generic.IReadOnlyList<Nexo.BrickContracts.BrickOutputDefinitionDto>
-Nexo.BrickContracts.BrickInterfaceDto.Outputs.set -> void
-Nexo.BrickContracts.BrickMetadataDto
-Nexo.BrickContracts.BrickMetadataDto.Author.get -> string
-Nexo.BrickContracts.BrickMetadataDto.Author.set -> void
-Nexo.BrickContracts.BrickMetadataDto.BrickMetadataDto() -> void
-Nexo.BrickContracts.BrickMetadataDto.LastUpdated.get -> System.DateTime?
-Nexo.BrickContracts.BrickMetadataDto.LastUpdated.set -> void
-Nexo.BrickContracts.BrickMetadataDto.License.get -> string
-Nexo.BrickContracts.BrickMetadataDto.License.set -> void
-Nexo.BrickContracts.BrickMetadataDto.Repository.get -> string
-Nexo.BrickContracts.BrickMetadataDto.Repository.set -> void
-Nexo.BrickContracts.BrickMetadataDto.UsageCount.get -> long
-Nexo.BrickContracts.BrickMetadataDto.UsageCount.set -> void
-Nexo.BrickContracts.BrickOutputDefinitionDto
-Nexo.BrickContracts.BrickOutputDefinitionDto.BrickOutputDefinitionDto() -> void
-Nexo.BrickContracts.BrickOutputDefinitionDto.Description.get -> string
-Nexo.BrickContracts.BrickOutputDefinitionDto.Description.set -> void
-Nexo.BrickContracts.BrickOutputDefinitionDto.Name.get -> string
-Nexo.BrickContracts.BrickOutputDefinitionDto.Name.set -> void
-Nexo.BrickContracts.BrickOutputDefinitionDto.Type.get -> string
-Nexo.BrickContracts.BrickOutputDefinitionDto.Type.set -> void
-Nexo.BrickContracts.BrickUsageRecordDto
-Nexo.BrickContracts.BrickUsageRecordDto.AvgDurationMs.get -> double
-Nexo.BrickContracts.BrickUsageRecordDto.AvgDurationMs.set -> void
-Nexo.BrickContracts.BrickUsageRecordDto.BrickId.get -> string
-Nexo.BrickContracts.BrickUsageRecordDto.BrickId.set -> void
-Nexo.BrickContracts.BrickUsageRecordDto.BrickUsageRecordDto() -> void
-Nexo.BrickContracts.BrickUsageRecordDto.ExecutionCount.get -> long
-Nexo.BrickContracts.BrickUsageRecordDto.ExecutionCount.set -> void
-Nexo.BrickContracts.BrickUsageRecordDto.LastUsed.get -> System.DateTimeOffset
-Nexo.BrickContracts.BrickUsageRecordDto.LastUsed.set -> void
-Nexo.BrickContracts.BrickUsageRecordDto.SuccessRate.get -> double
-Nexo.BrickContracts.BrickUsageRecordDto.SuccessRate.set -> void
-Nexo.BrickContracts.BrickUsageReportDto
-Nexo.BrickContracts.BrickUsageReportDto.BrickUsageReportDto() -> void
-Nexo.BrickContracts.BrickUsageReportDto.NodeId.get -> string
-Nexo.BrickContracts.BrickUsageReportDto.NodeId.set -> void
-Nexo.BrickContracts.BrickUsageReportDto.Records.get -> System.Collections.Generic.List<Nexo.BrickContracts.BrickUsageRecordDto>
-Nexo.BrickContracts.BrickUsageReportDto.Records.set -> void
-Nexo.BrickContracts.BrickUsageReportDto.WireFormatVersion.get -> string
-Nexo.BrickContracts.BrickUsageReportDto.WireFormatVersion.set -> void
-Nexo.BrickContracts.BrickUsageStatsDto
-Nexo.BrickContracts.BrickUsageStatsDto.AvgDurationMs.get -> double
-Nexo.BrickContracts.BrickUsageStatsDto.AvgDurationMs.set -> void
-Nexo.BrickContracts.BrickUsageStatsDto.BrickUsageStatsDto() -> void
-Nexo.BrickContracts.BrickUsageStatsDto.LastUsed.get -> System.DateTimeOffset?
-Nexo.BrickContracts.BrickUsageStatsDto.LastUsed.set -> void
-Nexo.BrickContracts.BrickUsageStatsDto.SuccessRate.get -> double
-Nexo.BrickContracts.BrickUsageStatsDto.SuccessRate.set -> void
-Nexo.BrickContracts.BrickUsageStatsDto.TotalExecutions.get -> long
-Nexo.BrickContracts.BrickUsageStatsDto.TotalExecutions.set -> void
-Nexo.BrickContracts.Capabilities.NodeCapabilityManifestDto
-Nexo.BrickContracts.Capabilities.NodeCapabilityManifestDto.AcceptingRemoteWork.get -> bool
-Nexo.BrickContracts.Capabilities.NodeCapabilityManifestDto.AcceptingRemoteWork.set -> void
-Nexo.BrickContracts.Capabilities.NodeCapabilityManifestDto.AvailableModelIds.get -> string[]
-Nexo.BrickContracts.Capabilities.NodeCapabilityManifestDto.AvailableModelIds.set -> void
-Nexo.BrickContracts.Capabilities.NodeCapabilityManifestDto.GeneratedAt.get -> System.DateTimeOffset
-Nexo.BrickContracts.Capabilities.NodeCapabilityManifestDto.GeneratedAt.set -> void
-Nexo.BrickContracts.Capabilities.NodeCapabilityManifestDto.HotModelIds.get -> string[]
-Nexo.BrickContracts.Capabilities.NodeCapabilityManifestDto.HotModelIds.set -> void
-Nexo.BrickContracts.Capabilities.NodeCapabilityManifestDto.NodeCapabilityManifestDto() -> void
-Nexo.BrickContracts.Capabilities.NodeCapabilityManifestDto.NodeId.get -> string
-Nexo.BrickContracts.Capabilities.NodeCapabilityManifestDto.NodeId.set -> void
-Nexo.BrickContracts.Capabilities.NodeCapabilityManifestDto.Platform.get -> Nexo.BrickContracts.Capabilities.PlatformTypeDto
-Nexo.BrickContracts.Capabilities.NodeCapabilityManifestDto.Platform.set -> void
-Nexo.BrickContracts.Capabilities.NodeCapabilityManifestDto.SupportedCapabilities.get -> Nexo.BrickContracts.Capabilities.TaskCapabilityDto[]
-Nexo.BrickContracts.Capabilities.NodeCapabilityManifestDto.SupportedCapabilities.set -> void
-Nexo.BrickContracts.Capabilities.NodeCapabilityManifestDto.Tier.get -> Nexo.BrickContracts.Capabilities.NodeTierDto
-Nexo.BrickContracts.Capabilities.NodeCapabilityManifestDto.Tier.set -> void
-Nexo.BrickContracts.Capabilities.NodeTierDto
-Nexo.BrickContracts.Capabilities.NodeTierDto.Core = 3 -> Nexo.BrickContracts.Capabilities.NodeTierDto
-Nexo.BrickContracts.Capabilities.NodeTierDto.Micro = 1 -> Nexo.BrickContracts.Capabilities.NodeTierDto
-Nexo.BrickContracts.Capabilities.NodeTierDto.Nano = 0 -> Nexo.BrickContracts.Capabilities.NodeTierDto
-Nexo.BrickContracts.Capabilities.NodeTierDto.Standard = 2 -> Nexo.BrickContracts.Capabilities.NodeTierDto
-Nexo.BrickContracts.Capabilities.PlatformTypeDto
-Nexo.BrickContracts.Capabilities.PlatformTypeDto.Android = 4 -> Nexo.BrickContracts.Capabilities.PlatformTypeDto
-Nexo.BrickContracts.Capabilities.PlatformTypeDto.Linux = 2 -> Nexo.BrickContracts.Capabilities.PlatformTypeDto
-Nexo.BrickContracts.Capabilities.PlatformTypeDto.Unknown = 5 -> Nexo.BrickContracts.Capabilities.PlatformTypeDto
-Nexo.BrickContracts.Capabilities.PlatformTypeDto.Windows = 0 -> Nexo.BrickContracts.Capabilities.PlatformTypeDto
-Nexo.BrickContracts.Capabilities.PlatformTypeDto.iOS = 3 -> Nexo.BrickContracts.Capabilities.PlatformTypeDto
-Nexo.BrickContracts.Capabilities.PlatformTypeDto.macOS = 1 -> Nexo.BrickContracts.Capabilities.PlatformTypeDto
-Nexo.BrickContracts.Capabilities.TaskCapabilityDto
-Nexo.BrickContracts.Capabilities.TaskCapabilityDto.Classification = 5 -> Nexo.BrickContracts.Capabilities.TaskCapabilityDto
-Nexo.BrickContracts.Capabilities.TaskCapabilityDto.CodeGeneration = 1 -> Nexo.BrickContracts.Capabilities.TaskCapabilityDto
-Nexo.BrickContracts.Capabilities.TaskCapabilityDto.Embeddings = 2 -> Nexo.BrickContracts.Capabilities.TaskCapabilityDto
-Nexo.BrickContracts.Capabilities.TaskCapabilityDto.Reasoning = 4 -> Nexo.BrickContracts.Capabilities.TaskCapabilityDto
-Nexo.BrickContracts.Capabilities.TaskCapabilityDto.TextGeneration = 0 -> Nexo.BrickContracts.Capabilities.TaskCapabilityDto
-Nexo.BrickContracts.Capabilities.TaskCapabilityDto.Vision = 3 -> Nexo.BrickContracts.Capabilities.TaskCapabilityDto
-Nexo.BrickContracts.DomainKnowledgeDto
-Nexo.BrickContracts.DomainKnowledgeDto.DomainKnowledgeDto() -> void
-Nexo.BrickContracts.DomainKnowledgeDto.ExecutionCount.get -> long
-Nexo.BrickContracts.DomainKnowledgeDto.ExecutionCount.set -> void
-Nexo.BrickContracts.DomainKnowledgeDto.LearnedPatterns.get -> System.Collections.Generic.IReadOnlyList<Nexo.BrickContracts.LearnedPatternDto>
-Nexo.BrickContracts.DomainKnowledgeDto.LearnedPatterns.set -> void
-Nexo.BrickContracts.DomainKnowledgeDto.ReferenceData.get -> System.Collections.Generic.IReadOnlyDictionary<string, string>
-Nexo.BrickContracts.DomainKnowledgeDto.ReferenceData.set -> void
-Nexo.BrickContracts.DomainKnowledgeDto.Rules.get -> System.Collections.Generic.IReadOnlyList<Nexo.BrickContracts.DomainRuleDto>
-Nexo.BrickContracts.DomainKnowledgeDto.Rules.set -> void
-Nexo.BrickContracts.DomainKnowledgeDto.Standards.get -> System.Collections.Generic.IReadOnlyList<string>
-Nexo.BrickContracts.DomainKnowledgeDto.Standards.set -> void
-Nexo.BrickContracts.DomainRuleDto
-Nexo.BrickContracts.DomainRuleDto.CweId.get -> string
-Nexo.BrickContracts.DomainRuleDto.CweId.set -> void
-Nexo.BrickContracts.DomainRuleDto.Description.get -> string
-Nexo.BrickContracts.DomainRuleDto.Description.set -> void
-Nexo.BrickContracts.DomainRuleDto.DomainRuleDto() -> void
-Nexo.BrickContracts.DomainRuleDto.Id.get -> string
-Nexo.BrickContracts.DomainRuleDto.Id.set -> void
-Nexo.BrickContracts.DomainRuleDto.Pattern.get -> string
-Nexo.BrickContracts.DomainRuleDto.Pattern.set -> void
-Nexo.BrickContracts.DomainRuleDto.Severity.get -> string
-Nexo.BrickContracts.DomainRuleDto.Severity.set -> void
-Nexo.BrickContracts.ExecutionContextDto
-Nexo.BrickContracts.ExecutionContextDto.AgentId.get -> string
-Nexo.BrickContracts.ExecutionContextDto.AgentId.set -> void
-Nexo.BrickContracts.ExecutionContextDto.AuditMode.get -> bool
-Nexo.BrickContracts.ExecutionContextDto.AuditMode.set -> void
-Nexo.BrickContracts.ExecutionContextDto.BehaviorId.get -> string
-Nexo.BrickContracts.ExecutionContextDto.BehaviorId.set -> void
-Nexo.BrickContracts.ExecutionContextDto.CorrelationId.get -> string
-Nexo.BrickContracts.ExecutionContextDto.CorrelationId.set -> void
-Nexo.BrickContracts.ExecutionContextDto.ExecutionContextDto() -> void
-Nexo.BrickContracts.ExecutionContextDto.IsAirGapped.get -> bool
-Nexo.BrickContracts.ExecutionContextDto.IsAirGapped.set -> void
-Nexo.BrickContracts.ExecutionContextDto.Provider.get -> string
-Nexo.BrickContracts.ExecutionContextDto.Provider.set -> void
-Nexo.BrickContracts.ExecutionContextDto.Variables.get -> System.Collections.Generic.IReadOnlyDictionary<string, object>
-Nexo.BrickContracts.ExecutionContextDto.Variables.set -> void
-Nexo.BrickContracts.LearnedPatternDto
-Nexo.BrickContracts.LearnedPatternDto.Confidence.get -> double
-Nexo.BrickContracts.LearnedPatternDto.Confidence.set -> void
-Nexo.BrickContracts.LearnedPatternDto.LearnedPatternDto() -> void
-Nexo.BrickContracts.LearnedPatternDto.OccurrenceCount.get -> int
-Nexo.BrickContracts.LearnedPatternDto.OccurrenceCount.set -> void
-Nexo.BrickContracts.LearnedPatternDto.Outcome.get -> string
-Nexo.BrickContracts.LearnedPatternDto.Outcome.set -> void
-Nexo.BrickContracts.LearnedPatternDto.Pattern.get -> string
-Nexo.BrickContracts.LearnedPatternDto.Pattern.set -> void
-Nexo.BrickContracts.WireFormatVersion
-const Nexo.BrickContracts.WireFormatVersion.Current = "2025-02" -> string
+Nexo.Brick.Contracts.BrickCatalogEntryDto
+Nexo.Brick.Contracts.BrickCatalogEntryDto.BrickCatalogEntryDto() -> void
+Nexo.Brick.Contracts.BrickCatalogEntryDto.Category.get -> string
+Nexo.Brick.Contracts.BrickCatalogEntryDto.Category.set -> void
+Nexo.Brick.Contracts.BrickCatalogEntryDto.Description.get -> string
+Nexo.Brick.Contracts.BrickCatalogEntryDto.Description.set -> void
+Nexo.Brick.Contracts.BrickCatalogEntryDto.DomainKnowledge.get -> Nexo.Brick.Contracts.DomainKnowledgeDto
+Nexo.Brick.Contracts.BrickCatalogEntryDto.DomainKnowledge.set -> void
+Nexo.Brick.Contracts.BrickCatalogEntryDto.HasAgentic.get -> bool
+Nexo.Brick.Contracts.BrickCatalogEntryDto.HasAgentic.set -> void
+Nexo.Brick.Contracts.BrickCatalogEntryDto.HasDeterministic.get -> bool
+Nexo.Brick.Contracts.BrickCatalogEntryDto.HasDeterministic.set -> void
+Nexo.Brick.Contracts.BrickCatalogEntryDto.HostBaseUrl.get -> string
+Nexo.Brick.Contracts.BrickCatalogEntryDto.HostBaseUrl.set -> void
+Nexo.Brick.Contracts.BrickCatalogEntryDto.HostCapabilities.get -> Nexo.Brick.Contracts.Capabilities.NodeCapabilityManifestDto
+Nexo.Brick.Contracts.BrickCatalogEntryDto.HostCapabilities.set -> void
+Nexo.Brick.Contracts.BrickCatalogEntryDto.Icon.get -> string
+Nexo.Brick.Contracts.BrickCatalogEntryDto.Icon.set -> void
+Nexo.Brick.Contracts.BrickCatalogEntryDto.Id.get -> string
+Nexo.Brick.Contracts.BrickCatalogEntryDto.Id.set -> void
+Nexo.Brick.Contracts.BrickCatalogEntryDto.Interface.get -> Nexo.Brick.Contracts.BrickInterfaceDto
+Nexo.Brick.Contracts.BrickCatalogEntryDto.Interface.set -> void
+Nexo.Brick.Contracts.BrickCatalogEntryDto.Metadata.get -> Nexo.Brick.Contracts.BrickMetadataDto
+Nexo.Brick.Contracts.BrickCatalogEntryDto.Metadata.set -> void
+Nexo.Brick.Contracts.BrickCatalogEntryDto.Name.get -> string
+Nexo.Brick.Contracts.BrickCatalogEntryDto.Name.set -> void
+Nexo.Brick.Contracts.BrickCatalogEntryDto.UsageStats.get -> Nexo.Brick.Contracts.BrickUsageStatsDto
+Nexo.Brick.Contracts.BrickCatalogEntryDto.UsageStats.set -> void
+Nexo.Brick.Contracts.BrickCatalogEntryDto.Version.get -> string
+Nexo.Brick.Contracts.BrickCatalogEntryDto.Version.set -> void
+Nexo.Brick.Contracts.BrickCatalogEntryDto.WireFormatVersion.get -> string
+Nexo.Brick.Contracts.BrickCatalogEntryDto.WireFormatVersion.set -> void
+Nexo.Brick.Contracts.BrickCatalogResponseDto
+Nexo.Brick.Contracts.BrickCatalogResponseDto.BrickCatalogResponseDto() -> void
+Nexo.Brick.Contracts.BrickCatalogResponseDto.Bricks.get -> System.Collections.Generic.IReadOnlyList<Nexo.Brick.Contracts.BrickCatalogEntryDto>
+Nexo.Brick.Contracts.BrickCatalogResponseDto.Bricks.set -> void
+Nexo.Brick.Contracts.BrickCatalogResponseDto.ContinuationToken.get -> string
+Nexo.Brick.Contracts.BrickCatalogResponseDto.ContinuationToken.set -> void
+Nexo.Brick.Contracts.BrickCatalogResponseDto.WireFormatVersion.get -> string
+Nexo.Brick.Contracts.BrickCatalogResponseDto.WireFormatVersion.set -> void
+Nexo.Brick.Contracts.BrickExecuteRequestDto
+Nexo.Brick.Contracts.BrickExecuteRequestDto.BrickExecuteRequestDto() -> void
+Nexo.Brick.Contracts.BrickExecuteRequestDto.BrickId.get -> string
+Nexo.Brick.Contracts.BrickExecuteRequestDto.BrickId.set -> void
+Nexo.Brick.Contracts.BrickExecuteRequestDto.ExecutionContext.get -> Nexo.Brick.Contracts.ExecutionContextDto
+Nexo.Brick.Contracts.BrickExecuteRequestDto.ExecutionContext.set -> void
+Nexo.Brick.Contracts.BrickExecuteRequestDto.Implementation.get -> string
+Nexo.Brick.Contracts.BrickExecuteRequestDto.Implementation.set -> void
+Nexo.Brick.Contracts.BrickExecuteRequestDto.Input.get -> System.Collections.Generic.IReadOnlyDictionary<string, object>
+Nexo.Brick.Contracts.BrickExecuteRequestDto.Input.set -> void
+Nexo.Brick.Contracts.BrickExecuteRequestDto.WireFormatVersion.get -> string
+Nexo.Brick.Contracts.BrickExecuteRequestDto.WireFormatVersion.set -> void
+Nexo.Brick.Contracts.BrickExecuteResponseDto
+Nexo.Brick.Contracts.BrickExecuteResponseDto.BrickExecuteResponseDto() -> void
+Nexo.Brick.Contracts.BrickExecuteResponseDto.Error.get -> string
+Nexo.Brick.Contracts.BrickExecuteResponseDto.Error.set -> void
+Nexo.Brick.Contracts.BrickExecuteResponseDto.Output.get -> System.Collections.Generic.IReadOnlyDictionary<string, object>
+Nexo.Brick.Contracts.BrickExecuteResponseDto.Output.set -> void
+Nexo.Brick.Contracts.BrickExecuteResponseDto.Success.get -> bool
+Nexo.Brick.Contracts.BrickExecuteResponseDto.Success.set -> void
+Nexo.Brick.Contracts.BrickExecuteResponseDto.Summary.get -> string
+Nexo.Brick.Contracts.BrickExecuteResponseDto.Summary.set -> void
+Nexo.Brick.Contracts.BrickExecuteResponseDto.WireFormatVersion.get -> string
+Nexo.Brick.Contracts.BrickExecuteResponseDto.WireFormatVersion.set -> void
+Nexo.Brick.Contracts.BrickInputDefinitionDto
+Nexo.Brick.Contracts.BrickInputDefinitionDto.BrickInputDefinitionDto() -> void
+Nexo.Brick.Contracts.BrickInputDefinitionDto.Default.get -> object
+Nexo.Brick.Contracts.BrickInputDefinitionDto.Default.set -> void
+Nexo.Brick.Contracts.BrickInputDefinitionDto.Description.get -> string
+Nexo.Brick.Contracts.BrickInputDefinitionDto.Description.set -> void
+Nexo.Brick.Contracts.BrickInputDefinitionDto.Name.get -> string
+Nexo.Brick.Contracts.BrickInputDefinitionDto.Name.set -> void
+Nexo.Brick.Contracts.BrickInputDefinitionDto.Required.get -> bool
+Nexo.Brick.Contracts.BrickInputDefinitionDto.Required.set -> void
+Nexo.Brick.Contracts.BrickInputDefinitionDto.Type.get -> string
+Nexo.Brick.Contracts.BrickInputDefinitionDto.Type.set -> void
+Nexo.Brick.Contracts.BrickInterfaceDto
+Nexo.Brick.Contracts.BrickInterfaceDto.BrickInterfaceDto() -> void
+Nexo.Brick.Contracts.BrickInterfaceDto.Inputs.get -> System.Collections.Generic.IReadOnlyList<Nexo.Brick.Contracts.BrickInputDefinitionDto>
+Nexo.Brick.Contracts.BrickInterfaceDto.Inputs.set -> void
+Nexo.Brick.Contracts.BrickInterfaceDto.Outputs.get -> System.Collections.Generic.IReadOnlyList<Nexo.Brick.Contracts.BrickOutputDefinitionDto>
+Nexo.Brick.Contracts.BrickInterfaceDto.Outputs.set -> void
+Nexo.Brick.Contracts.BrickMetadataDto
+Nexo.Brick.Contracts.BrickMetadataDto.Author.get -> string
+Nexo.Brick.Contracts.BrickMetadataDto.Author.set -> void
+Nexo.Brick.Contracts.BrickMetadataDto.BrickMetadataDto() -> void
+Nexo.Brick.Contracts.BrickMetadataDto.LastUpdated.get -> System.DateTime?
+Nexo.Brick.Contracts.BrickMetadataDto.LastUpdated.set -> void
+Nexo.Brick.Contracts.BrickMetadataDto.License.get -> string
+Nexo.Brick.Contracts.BrickMetadataDto.License.set -> void
+Nexo.Brick.Contracts.BrickMetadataDto.Repository.get -> string
+Nexo.Brick.Contracts.BrickMetadataDto.Repository.set -> void
+Nexo.Brick.Contracts.BrickMetadataDto.UsageCount.get -> long
+Nexo.Brick.Contracts.BrickMetadataDto.UsageCount.set -> void
+Nexo.Brick.Contracts.BrickOutputDefinitionDto
+Nexo.Brick.Contracts.BrickOutputDefinitionDto.BrickOutputDefinitionDto() -> void
+Nexo.Brick.Contracts.BrickOutputDefinitionDto.Description.get -> string
+Nexo.Brick.Contracts.BrickOutputDefinitionDto.Description.set -> void
+Nexo.Brick.Contracts.BrickOutputDefinitionDto.Name.get -> string
+Nexo.Brick.Contracts.BrickOutputDefinitionDto.Name.set -> void
+Nexo.Brick.Contracts.BrickOutputDefinitionDto.Type.get -> string
+Nexo.Brick.Contracts.BrickOutputDefinitionDto.Type.set -> void
+Nexo.Brick.Contracts.BrickUsageRecordDto
+Nexo.Brick.Contracts.BrickUsageRecordDto.AvgDurationMs.get -> double
+Nexo.Brick.Contracts.BrickUsageRecordDto.AvgDurationMs.set -> void
+Nexo.Brick.Contracts.BrickUsageRecordDto.BrickId.get -> string
+Nexo.Brick.Contracts.BrickUsageRecordDto.BrickId.set -> void
+Nexo.Brick.Contracts.BrickUsageRecordDto.BrickUsageRecordDto() -> void
+Nexo.Brick.Contracts.BrickUsageRecordDto.ExecutionCount.get -> long
+Nexo.Brick.Contracts.BrickUsageRecordDto.ExecutionCount.set -> void
+Nexo.Brick.Contracts.BrickUsageRecordDto.LastUsed.get -> System.DateTimeOffset
+Nexo.Brick.Contracts.BrickUsageRecordDto.LastUsed.set -> void
+Nexo.Brick.Contracts.BrickUsageRecordDto.SuccessRate.get -> double
+Nexo.Brick.Contracts.BrickUsageRecordDto.SuccessRate.set -> void
+Nexo.Brick.Contracts.BrickUsageReportDto
+Nexo.Brick.Contracts.BrickUsageReportDto.BrickUsageReportDto() -> void
+Nexo.Brick.Contracts.BrickUsageReportDto.NodeId.get -> string
+Nexo.Brick.Contracts.BrickUsageReportDto.NodeId.set -> void
+Nexo.Brick.Contracts.BrickUsageReportDto.Records.get -> System.Collections.Generic.List<Nexo.Brick.Contracts.BrickUsageRecordDto>
+Nexo.Brick.Contracts.BrickUsageReportDto.Records.set -> void
+Nexo.Brick.Contracts.BrickUsageReportDto.WireFormatVersion.get -> string
+Nexo.Brick.Contracts.BrickUsageReportDto.WireFormatVersion.set -> void
+Nexo.Brick.Contracts.BrickUsageStatsDto
+Nexo.Brick.Contracts.BrickUsageStatsDto.AvgDurationMs.get -> double
+Nexo.Brick.Contracts.BrickUsageStatsDto.AvgDurationMs.set -> void
+Nexo.Brick.Contracts.BrickUsageStatsDto.BrickUsageStatsDto() -> void
+Nexo.Brick.Contracts.BrickUsageStatsDto.LastUsed.get -> System.DateTimeOffset?
+Nexo.Brick.Contracts.BrickUsageStatsDto.LastUsed.set -> void
+Nexo.Brick.Contracts.BrickUsageStatsDto.SuccessRate.get -> double
+Nexo.Brick.Contracts.BrickUsageStatsDto.SuccessRate.set -> void
+Nexo.Brick.Contracts.BrickUsageStatsDto.TotalExecutions.get -> long
+Nexo.Brick.Contracts.BrickUsageStatsDto.TotalExecutions.set -> void
+Nexo.Brick.Contracts.Capabilities.NodeCapabilityManifestDto
+Nexo.Brick.Contracts.Capabilities.NodeCapabilityManifestDto.AcceptingRemoteWork.get -> bool
+Nexo.Brick.Contracts.Capabilities.NodeCapabilityManifestDto.AcceptingRemoteWork.set -> void
+Nexo.Brick.Contracts.Capabilities.NodeCapabilityManifestDto.AvailableModelIds.get -> string[]
+Nexo.Brick.Contracts.Capabilities.NodeCapabilityManifestDto.AvailableModelIds.set -> void
+Nexo.Brick.Contracts.Capabilities.NodeCapabilityManifestDto.GeneratedAt.get -> System.DateTimeOffset
+Nexo.Brick.Contracts.Capabilities.NodeCapabilityManifestDto.GeneratedAt.set -> void
+Nexo.Brick.Contracts.Capabilities.NodeCapabilityManifestDto.HotModelIds.get -> string[]
+Nexo.Brick.Contracts.Capabilities.NodeCapabilityManifestDto.HotModelIds.set -> void
+Nexo.Brick.Contracts.Capabilities.NodeCapabilityManifestDto.NodeCapabilityManifestDto() -> void
+Nexo.Brick.Contracts.Capabilities.NodeCapabilityManifestDto.NodeId.get -> string
+Nexo.Brick.Contracts.Capabilities.NodeCapabilityManifestDto.NodeId.set -> void
+Nexo.Brick.Contracts.Capabilities.NodeCapabilityManifestDto.Platform.get -> Nexo.Brick.Contracts.Capabilities.PlatformTypeDto
+Nexo.Brick.Contracts.Capabilities.NodeCapabilityManifestDto.Platform.set -> void
+Nexo.Brick.Contracts.Capabilities.NodeCapabilityManifestDto.SupportedCapabilities.get -> Nexo.Brick.Contracts.Capabilities.TaskCapabilityDto[]
+Nexo.Brick.Contracts.Capabilities.NodeCapabilityManifestDto.SupportedCapabilities.set -> void
+Nexo.Brick.Contracts.Capabilities.NodeCapabilityManifestDto.Tier.get -> Nexo.Brick.Contracts.Capabilities.NodeTierDto
+Nexo.Brick.Contracts.Capabilities.NodeCapabilityManifestDto.Tier.set -> void
+Nexo.Brick.Contracts.Capabilities.NodeTierDto
+Nexo.Brick.Contracts.Capabilities.NodeTierDto.Core = 3 -> Nexo.Brick.Contracts.Capabilities.NodeTierDto
+Nexo.Brick.Contracts.Capabilities.NodeTierDto.Micro = 1 -> Nexo.Brick.Contracts.Capabilities.NodeTierDto
+Nexo.Brick.Contracts.Capabilities.NodeTierDto.Nano = 0 -> Nexo.Brick.Contracts.Capabilities.NodeTierDto
+Nexo.Brick.Contracts.Capabilities.NodeTierDto.Standard = 2 -> Nexo.Brick.Contracts.Capabilities.NodeTierDto
+Nexo.Brick.Contracts.Capabilities.PlatformTypeDto
+Nexo.Brick.Contracts.Capabilities.PlatformTypeDto.Android = 4 -> Nexo.Brick.Contracts.Capabilities.PlatformTypeDto
+Nexo.Brick.Contracts.Capabilities.PlatformTypeDto.Linux = 2 -> Nexo.Brick.Contracts.Capabilities.PlatformTypeDto
+Nexo.Brick.Contracts.Capabilities.PlatformTypeDto.Unknown = 5 -> Nexo.Brick.Contracts.Capabilities.PlatformTypeDto
+Nexo.Brick.Contracts.Capabilities.PlatformTypeDto.Windows = 0 -> Nexo.Brick.Contracts.Capabilities.PlatformTypeDto
+Nexo.Brick.Contracts.Capabilities.PlatformTypeDto.iOS = 3 -> Nexo.Brick.Contracts.Capabilities.PlatformTypeDto
+Nexo.Brick.Contracts.Capabilities.PlatformTypeDto.macOS = 1 -> Nexo.Brick.Contracts.Capabilities.PlatformTypeDto
+Nexo.Brick.Contracts.Capabilities.TaskCapabilityDto
+Nexo.Brick.Contracts.Capabilities.TaskCapabilityDto.Classification = 5 -> Nexo.Brick.Contracts.Capabilities.TaskCapabilityDto
+Nexo.Brick.Contracts.Capabilities.TaskCapabilityDto.CodeGeneration = 1 -> Nexo.Brick.Contracts.Capabilities.TaskCapabilityDto
+Nexo.Brick.Contracts.Capabilities.TaskCapabilityDto.Embeddings = 2 -> Nexo.Brick.Contracts.Capabilities.TaskCapabilityDto
+Nexo.Brick.Contracts.Capabilities.TaskCapabilityDto.Reasoning = 4 -> Nexo.Brick.Contracts.Capabilities.TaskCapabilityDto
+Nexo.Brick.Contracts.Capabilities.TaskCapabilityDto.TextGeneration = 0 -> Nexo.Brick.Contracts.Capabilities.TaskCapabilityDto
+Nexo.Brick.Contracts.Capabilities.TaskCapabilityDto.Vision = 3 -> Nexo.Brick.Contracts.Capabilities.TaskCapabilityDto
+Nexo.Brick.Contracts.DomainKnowledgeDto
+Nexo.Brick.Contracts.DomainKnowledgeDto.DomainKnowledgeDto() -> void
+Nexo.Brick.Contracts.DomainKnowledgeDto.ExecutionCount.get -> long
+Nexo.Brick.Contracts.DomainKnowledgeDto.ExecutionCount.set -> void
+Nexo.Brick.Contracts.DomainKnowledgeDto.LearnedPatterns.get -> System.Collections.Generic.IReadOnlyList<Nexo.Brick.Contracts.LearnedPatternDto>
+Nexo.Brick.Contracts.DomainKnowledgeDto.LearnedPatterns.set -> void
+Nexo.Brick.Contracts.DomainKnowledgeDto.ReferenceData.get -> System.Collections.Generic.IReadOnlyDictionary<string, string>
+Nexo.Brick.Contracts.DomainKnowledgeDto.ReferenceData.set -> void
+Nexo.Brick.Contracts.DomainKnowledgeDto.Rules.get -> System.Collections.Generic.IReadOnlyList<Nexo.Brick.Contracts.DomainRuleDto>
+Nexo.Brick.Contracts.DomainKnowledgeDto.Rules.set -> void
+Nexo.Brick.Contracts.DomainKnowledgeDto.Standards.get -> System.Collections.Generic.IReadOnlyList<string>
+Nexo.Brick.Contracts.DomainKnowledgeDto.Standards.set -> void
+Nexo.Brick.Contracts.DomainRuleDto
+Nexo.Brick.Contracts.DomainRuleDto.CweId.get -> string
+Nexo.Brick.Contracts.DomainRuleDto.CweId.set -> void
+Nexo.Brick.Contracts.DomainRuleDto.Description.get -> string
+Nexo.Brick.Contracts.DomainRuleDto.Description.set -> void
+Nexo.Brick.Contracts.DomainRuleDto.DomainRuleDto() -> void
+Nexo.Brick.Contracts.DomainRuleDto.Id.get -> string
+Nexo.Brick.Contracts.DomainRuleDto.Id.set -> void
+Nexo.Brick.Contracts.DomainRuleDto.Pattern.get -> string
+Nexo.Brick.Contracts.DomainRuleDto.Pattern.set -> void
+Nexo.Brick.Contracts.DomainRuleDto.Severity.get -> string
+Nexo.Brick.Contracts.DomainRuleDto.Severity.set -> void
+Nexo.Brick.Contracts.ExecutionContextDto
+Nexo.Brick.Contracts.ExecutionContextDto.AgentId.get -> string
+Nexo.Brick.Contracts.ExecutionContextDto.AgentId.set -> void
+Nexo.Brick.Contracts.ExecutionContextDto.AuditMode.get -> bool
+Nexo.Brick.Contracts.ExecutionContextDto.AuditMode.set -> void
+Nexo.Brick.Contracts.ExecutionContextDto.BehaviorId.get -> string
+Nexo.Brick.Contracts.ExecutionContextDto.BehaviorId.set -> void
+Nexo.Brick.Contracts.ExecutionContextDto.CorrelationId.get -> string
+Nexo.Brick.Contracts.ExecutionContextDto.CorrelationId.set -> void
+Nexo.Brick.Contracts.ExecutionContextDto.ExecutionContextDto() -> void
+Nexo.Brick.Contracts.ExecutionContextDto.IsAirGapped.get -> bool
+Nexo.Brick.Contracts.ExecutionContextDto.IsAirGapped.set -> void
+Nexo.Brick.Contracts.ExecutionContextDto.Provider.get -> string
+Nexo.Brick.Contracts.ExecutionContextDto.Provider.set -> void
+Nexo.Brick.Contracts.ExecutionContextDto.Variables.get -> System.Collections.Generic.IReadOnlyDictionary<string, object>
+Nexo.Brick.Contracts.ExecutionContextDto.Variables.set -> void
+Nexo.Brick.Contracts.LearnedPatternDto
+Nexo.Brick.Contracts.LearnedPatternDto.Confidence.get -> double
+Nexo.Brick.Contracts.LearnedPatternDto.Confidence.set -> void
+Nexo.Brick.Contracts.LearnedPatternDto.LearnedPatternDto() -> void
+Nexo.Brick.Contracts.LearnedPatternDto.OccurrenceCount.get -> int
+Nexo.Brick.Contracts.LearnedPatternDto.OccurrenceCount.set -> void
+Nexo.Brick.Contracts.LearnedPatternDto.Outcome.get -> string
+Nexo.Brick.Contracts.LearnedPatternDto.Outcome.set -> void
+Nexo.Brick.Contracts.LearnedPatternDto.Pattern.get -> string
+Nexo.Brick.Contracts.LearnedPatternDto.Pattern.set -> void
+Nexo.Brick.Contracts.WireFormatVersion
+const Nexo.Brick.Contracts.WireFormatVersion.Current = "2025-02" -> string
 Nexo.Core.Domain.Bricks.AgenticImplementation
 Nexo.Core.Domain.Bricks.AgenticImplementation.AgenticImplementation() -> void
 Nexo.Core.Domain.Bricks.AgenticImplementation.Characteristics.get -> Nexo.Core.Domain.Bricks.ImplementationCharacteristics

@@ -1,7 +1,6 @@
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
-using Nexo.Abstractions;
 using Nexo.Core.Application.Common.Ports;
 using Nexo.Core.Application.Common.Services;
 using Nexo.Core.Application.Workflows;
@@ -16,6 +15,7 @@ using Xunit;
 
 namespace Nexo.Tests.Application;
 
+/// <summary>Tests for a workflow executor edge case.</summary>
 public sealed class WorkflowExecutorEdgeCaseTests
 {
     [Fact]
@@ -213,7 +213,7 @@ public sealed class WorkflowExecutorEdgeCaseTests
         var definition = new WorkflowDefinition
         {
             Id = "wf-brick",
-            Name = "Brick workflow",
+            Name = "DomainBrick workflow",
             Nodes = new List<WorkflowNode>
             {
                 new BrickNode
@@ -567,7 +567,7 @@ public sealed class WorkflowExecutorEdgeCaseTests
             Name = "Missing brick",
             Nodes = new List<WorkflowNode> { new BrickNode { Id = "b", BrickId = "missing", Outputs = new List<NodePort>() } },
         }, new WorkflowInput());
-        await actBrick.Should().ThrowAsync<InvalidOperationException>().WithMessage("*Brick not found*");
+        await actBrick.Should().ThrowAsync<InvalidOperationException>().WithMessage("*DomainBrick not found*");
     }
 
     [Fact]
@@ -848,7 +848,9 @@ public sealed class WorkflowExecutorEdgeCaseTests
         using (workflow.Events.Subscribe(e =>
         {
             if (e is ExecutionPlanCreatedEvent created)
+            {
                 plan = created.Plan;
+            }
         }))
         {
             await workflow.ExecuteAsync(new WorkflowDefinition
@@ -947,7 +949,7 @@ public sealed class WorkflowExecutorEdgeCaseTests
             Name = "Cluster abort",
             Nodes = new List<WorkflowNode> { new ClusterNode { Id = "cluster", ClusterId = "c-abort", Outputs = new List<NodePort>() } },
         }, new WorkflowInput());
-        await actCluster.Should().ThrowAsync<InvalidOperationException>().WithMessage("*Brick not found*");
+        await actCluster.Should().ThrowAsync<InvalidOperationException>().WithMessage("*DomainBrick not found*");
     }
 
     [Fact]
@@ -1508,7 +1510,7 @@ public sealed class WorkflowExecutorEdgeCaseTests
         var result = await workflow.ExecuteAsync(new WorkflowDefinition
         {
             Id = "wf-brick-fallback",
-            Name = "Brick fallback",
+            Name = "DomainBrick fallback",
             Nodes = new List<WorkflowNode>
             {
                 new BrickNode
@@ -1564,7 +1566,8 @@ public sealed class WorkflowExecutorEdgeCaseTests
         events.Should().Contain(e => e is WorkflowCompletedEvent);
     }
 
-    private sealed class FallbackStubBrick : Brick
+    /// <summary>Fallback stub brick.</summary>
+    private sealed class FallbackStubBrick : DomainBrick
     {
         public FallbackStubBrick()
         {
@@ -1586,7 +1589,9 @@ public sealed class WorkflowExecutorEdgeCaseTests
             CancellationToken cancellationToken = default)
         {
             if (implementation == ImplementationType.Deterministic)
+            {
                 throw new InvalidOperationException("deterministic failed");
+            }
 
             var output = new BrickOutput();
             output.Set("result", "agentic-ok");
@@ -1594,7 +1599,8 @@ public sealed class WorkflowExecutorEdgeCaseTests
         }
     }
 
-    private sealed class InvalidXmlKeysStubBrick : Brick
+    /// <summary>Invalid xml keys stub brick.</summary>
+    private sealed class InvalidXmlKeysStubBrick : DomainBrick
     {
         public InvalidXmlKeysStubBrick()
         {
@@ -1624,7 +1630,8 @@ public sealed class WorkflowExecutorEdgeCaseTests
         }
     }
 
-    private sealed class FallbackAgenticBrick : Brick
+    /// <summary>Fallback agentic brick.</summary>
+    private sealed class FallbackAgenticBrick : DomainBrick
     {
         public FallbackAgenticBrick()
         {
@@ -1633,7 +1640,7 @@ public sealed class WorkflowExecutorEdgeCaseTests
             Description = "test";
             Category = BrickCategory.Transform;
             DefaultImplementation = ImplementationType.Agentic;
-            FallbackChain = new[] { ImplementationType.Deterministic };
+            FallbackChain = [ImplementationType.Deterministic];
             Implementations = new BrickImplementations
             {
                 Deterministic = new DeterministicImplementation { Id = "d", Name = "d", Description = "d", Executor = "x" },
@@ -1648,7 +1655,9 @@ public sealed class WorkflowExecutorEdgeCaseTests
             CancellationToken cancellationToken = default)
         {
             if (implementation == ImplementationType.Agentic)
+            {
                 throw new InvalidOperationException("agentic unavailable");
+            }
 
             var output = new BrickOutput();
             output.Set("result", "deterministic-ok");
@@ -1656,7 +1665,8 @@ public sealed class WorkflowExecutorEdgeCaseTests
         }
     }
 
-    private sealed class SuccessStubBrick : Brick
+    /// <summary>Success stub brick.</summary>
+    private sealed class SuccessStubBrick : DomainBrick
     {
         private readonly string _value;
 
@@ -1685,7 +1695,8 @@ public sealed class WorkflowExecutorEdgeCaseTests
         }
     }
 
-    private sealed class PassthroughStubBrick : Brick
+    /// <summary>Passthrough stub brick.</summary>
+    private sealed class PassthroughStubBrick : DomainBrick
     {
         public PassthroughStubBrick(string id)
         {
@@ -1712,7 +1723,8 @@ public sealed class WorkflowExecutorEdgeCaseTests
         }
     }
 
-    private sealed class ScoreDictStubBrick : Brick
+    /// <summary>Score dict stub brick.</summary>
+    private sealed class ScoreDictStubBrick : DomainBrick
     {
         public ScoreDictStubBrick()
         {
@@ -1738,7 +1750,8 @@ public sealed class WorkflowExecutorEdgeCaseTests
         }
     }
 
-    private sealed class EmptyListStubBrick : Brick
+    /// <summary>Empty list stub brick.</summary>
+    private sealed class EmptyListStubBrick : DomainBrick
     {
         public EmptyListStubBrick()
         {
@@ -1758,13 +1771,20 @@ public sealed class WorkflowExecutorEdgeCaseTests
             IExecutionContext context,
             CancellationToken cancellationToken = default)
         {
-            var output = new BrickOutput();
-            output.Set("data", new List<Dictionary<string, object>>());
+            var output = new BrickOutput
+            {
+                Summary = null
+            };
+            output.Set("data", new List<Dictionary<string, object>>
+            {
+                Capacity = 0
+            });
             return Task.FromResult(output);
         }
     }
 
-    private sealed class ListStubBrick : Brick
+    /// <summary>List stub brick.</summary>
+    private sealed class ListStubBrick : DomainBrick
     {
         public ListStubBrick()
         {
@@ -1786,8 +1806,7 @@ public sealed class WorkflowExecutorEdgeCaseTests
         {
             var rows = new List<Dictionary<string, object>>
             {
-                new() { ["score"] = "10" },
-                new() { ["score"] = "3" },
+                new() { ["score"] = "10" }, new() { ["score"] = "3" },
             };
             var output = new BrickOutput();
             output.Set("data", rows);
@@ -1797,7 +1816,7 @@ public sealed class WorkflowExecutorEdgeCaseTests
 
     private static async IAsyncEnumerable<ExecutionEvent> ToAsyncEnumerable(IEnumerable<ExecutionEvent> events)
     {
-        foreach (var evt in events)
+        foreach (ExecutionEvent evt in events)
         {
             yield return evt;
             await Task.Yield();

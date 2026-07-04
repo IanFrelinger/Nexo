@@ -10,8 +10,10 @@ using System.Text.Json;
 /// </summary>
 public sealed record CompositionGraph
 {
+    /// <summary>Composition nodes defining prompts and dependency edges.</summary>
     public IReadOnlyList<CompositionNode> Systems { get; init; } = Array.Empty<CompositionNode>();
 
+    /// <summary>Loads a composition graph from a JSON file.</summary>
     public static CompositionGraph? LoadFromFile(string path)
     {
         if (string.IsNullOrEmpty(path) || !File.Exists(path))
@@ -54,11 +56,4 @@ public sealed record CompositionGraph
 
         return result;
     }
-}
-
-public sealed record CompositionNode
-{
-    public string Id { get; init; } = string.Empty;
-    public string Prompt { get; init; } = string.Empty;
-    public IReadOnlyList<string> Depends { get; init; } = Array.Empty<string>();
 }

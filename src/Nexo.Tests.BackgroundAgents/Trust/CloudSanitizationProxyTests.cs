@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.Trust;
 
+/// <summary>Tests for cloud sanitization proxy.</summary>
 public class CloudSanitizationProxyTests
 {
     [Fact]

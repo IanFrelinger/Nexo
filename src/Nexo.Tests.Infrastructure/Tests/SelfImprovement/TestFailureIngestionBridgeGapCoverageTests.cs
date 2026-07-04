@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.SelfImprovement;
 
+/// <summary>Tests for test failure ingestion bridge gap coverage.</summary>
 public sealed class TestFailureIngestionBridgeGapCoverageTests
 {
     [Fact]
@@ -58,48 +59,5 @@ public sealed class TestFailureIngestionBridgeGapCoverageTests
         captured!.TestName.Should().Be("failing");
         captured.ErrorMessage.Should().Be("expected true");
         captured.StackTrace.Should().Be("at Fail()");
-    }
-}
-
-public sealed class FileBasedSelfImprovementMetricsStoreGapCoverageTests
-{
-    [Fact]
-    public async Task GetLastAsync_returns_null_when_file_missing()
-    {
-        var path = Path.Combine(Path.GetTempPath(), "nexo-metrics-" + Guid.NewGuid().ToString("N") + ".json");
-        var store = new FileBasedSelfImprovementMetricsStore(path);
-
-        (await store.GetLastAsync()).Should().BeNull();
-    }
-
-    [Fact]
-    public async Task SaveAsync_and_GetLastAsync_round_trip_report()
-    {
-        var path = Path.Combine(Path.GetTempPath(), "nexo-metrics-" + Guid.NewGuid().ToString("N") + ".json");
-        try
-        {
-            var store = new FileBasedSelfImprovementMetricsStore(path);
-            var report = new Nexo.Core.Application.SelfImprovement.Models.SelfImprovementReport(
-                RunAt: DateTimeOffset.UtcNow,
-                FailuresProcessed: 2,
-                FixesGenerated: 1,
-                FixesValidated: 1,
-                FixesPromoted: 1,
-                FixesRejected: 0,
-                PromotedAdaptationIds: ["a1"],
-                RejectedReasons: []);
-
-            await store.SaveAsync(report);
-
-            var loaded = await store.GetLastAsync();
-            loaded.Should().NotBeNull();
-            loaded!.FailuresProcessed.Should().Be(2);
-            loaded.FixesPromoted.Should().Be(1);
-        }
-        finally
-        {
-            if (File.Exists(path))
-                File.Delete(path);
-        }
     }
 }

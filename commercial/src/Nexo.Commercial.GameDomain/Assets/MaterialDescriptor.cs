@@ -1,5 +1,4 @@
-namespace Nexo.GameDomain.Assets;
-
+namespace Nexo.Commercial.GameDomain.Assets;
 /// <summary>
 /// Data-only descriptor for a surface material (shader, colours, texture slots).
 /// Host runtimes map these values to engine-specific materials and assets.

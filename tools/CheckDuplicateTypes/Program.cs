@@ -1,3 +1,4 @@
+// CLI tool to detect duplicate type definitions across assemblies.
 using System.Reflection;
 using System.Text;
 var roots = new [] { "src" };

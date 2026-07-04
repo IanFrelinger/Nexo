@@ -7,8 +7,10 @@ using Nexo.Infrastructure.Testing.CodeAnalysis;
 
 namespace Nexo.Infrastructure.Certification;
 
+/// <summary>Generates and compiles AST mutants for brick certification mutation testing.</summary>
 internal sealed class BrickMutationEngine
 {
+    /// <summary>Gets mutation strategy names.</summary>
     public IReadOnlyList<string> GetMutationStrategyNames() =>
     [
         "flip-binary-op",
@@ -19,6 +21,7 @@ internal sealed class BrickMutationEngine
         "swap-logical-op"
     ];
 
+    /// <summary>Run asynchronously.</summary>
     public async Task<MutationTestResult> RunAsync(
         string sourceCode,
         string brickTypeName,
@@ -130,6 +133,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using DomainBrick = Nexo.Core.Domain.Bricks.Brick;
 
 """;
 
@@ -158,20 +162,3 @@ internal sealed class CertAuditContext : Nexo.Core.Domain.Execution.IExecutionCo
         return systemUsings + sourceCode.Insert(braceIndex + 1, auditContext);
     }
 }
-
-internal sealed record CompiledMutant(object Instance, Assembly Assembly, MutantAssemblyLoadContext LoadContext);
-
-internal sealed class MutantAssemblyLoadContext : AssemblyLoadContext
-{
-    public MutantAssemblyLoadContext() : base(isCollectible: true)
-    {
-    }
-
-    protected override Assembly? Load(AssemblyName assemblyName) => null;
-}
-
-internal sealed record MutationTestResult(
-    int TotalMutants,
-    IReadOnlyList<string> SurvivingMutantIds,
-    IReadOnlyList<string> KilledMutantIds,
-    double EscapeRate);

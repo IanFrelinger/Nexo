@@ -1,7 +1,7 @@
 using FluentAssertions;
 using Microsoft.AspNetCore.Http;
 using Nexo.API.Endpoints;
-using Nexo.BrickContracts.Capabilities;
+using Nexo.Brick.Contracts.Capabilities;
 using Nexo.Core.Application.NodeCapabilityRuntime.Models;
 using Nexo.Core.Application.NodeCapabilityRuntime.Ports;
 using System.Reflection;
@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.API;
 
+/// <summary>Tests for capabilities endpoint.</summary>
 public sealed class CapabilitiesEndpointTests
 {
     [Fact]
@@ -44,8 +45,10 @@ public sealed class CapabilitiesEndpointTests
         return (NodeCapabilityManifestDto)value!;
     }
 
+    /// <summary>Tests for stub node capability runtime.</summary>
     private sealed class StubNodeCapabilityRuntime : INodeCapabilityRuntime
     {
+        /// <summary>Current profile.</summary>
         public NodeProfile CurrentProfile { get; } = new()
         {
             Platform = PlatformType.Linux,
@@ -87,10 +90,14 @@ public sealed class CapabilitiesEndpointTests
             });
     }
 
+    /// <summary>Tests for noop observable.</summary>
     private sealed class NoopObservable<T> : IObservable<T>
     {
+        /// <summary>Subscribe.</summary>
+        /// <param name="observer">Observer.</param>
         public IDisposable Subscribe(IObserver<T> observer) => new NoopDisposable();
 
+        /// <summary>Tests for noop disposable.</summary>
         private sealed class NoopDisposable : IDisposable
         {
             public void Dispose()

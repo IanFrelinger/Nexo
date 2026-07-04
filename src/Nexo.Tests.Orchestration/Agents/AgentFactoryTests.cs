@@ -3,11 +3,13 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Nexo.Orchestration.Agents;
+using Nexo.Orchestration.Agents.Templates;
 using Nexo.Orchestration.Architect.Models;
 using Xunit;
 
 namespace Nexo.Tests.Orchestration.Agents;
 
+/// <summary>Tests for agent factory.</summary>
 public class AgentFactoryTests
 {
     private readonly IServiceProvider _serviceProvider;

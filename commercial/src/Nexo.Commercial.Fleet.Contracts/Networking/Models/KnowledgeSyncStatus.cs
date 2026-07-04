@@ -1,5 +1,4 @@
-namespace Nexo.Core.Application.Networking.Models;
-
+namespace Nexo.Commercial.Fleet.Contracts.Networking.Models;
 /// <summary>
 /// Status of knowledge sync for this node.
 /// </summary>

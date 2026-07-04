@@ -3,7 +3,8 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using Nexo.CLI.Unity.Pipeline;
-namespace Nexo.CLI.Commands;
+namespace Nexo.CLI.Commands.Unity;
+/// <summary>Unity dev command utilities.</summary>
 internal static class UnityDevCommandUtilities
 {
     internal static int ExecuteList(string projectRoot, bool json)
@@ -80,12 +81,14 @@ internal static class UnityDevCommandUtilities
     {
         if (!Directory.Exists(fullProjectRoot))
         {
+            /// <summary>Write error.</summary>
             WriteError($"Project root not found: {fullProjectRoot}", json);
             return false;
         }
         var assetsDir = Path.Combine(fullProjectRoot, "Assets");
         if (!Directory.Exists(assetsDir))
         {
+            /// <summary>Write error.</summary>
             WriteError($"Not a valid Unity project: missing Assets/ folder in {fullProjectRoot}", json);
             return false;
         }
@@ -463,6 +466,7 @@ internal static class UnityDevCommandUtilities
         {
             if (value == null)
             {
+                /// <summary>Write error.</summary>
                 WriteError("--value is required when pinning a field.", json);
                 return 1;
             }
@@ -477,6 +481,9 @@ internal static class UnityDevCommandUtilities
     }
 
 
+    /// <summary>Creates asset prompt.</summary>
+    /// <param name="assetType">Asset type.</param>
+    /// <param name="description">Description.</param>
     internal static string BuildAssetPrompt(string assetType, string description) => UnityAssetPromptBuilder.BuildAssetPrompt(assetType, description);
 
 

@@ -14,6 +14,7 @@ public class ModeBackgroundAgentCommand
     private readonly IAggressivenessModeStore _modeStore;
     private readonly ILogger<ModeBackgroundAgentCommand> _logger;
 
+    /// <summary>Creates a new ModeBackgroundAgentCommand instance.</summary>
     public ModeBackgroundAgentCommand(
         IAggressivenessModeStore modeStore,
         ILogger<ModeBackgroundAgentCommand> logger)

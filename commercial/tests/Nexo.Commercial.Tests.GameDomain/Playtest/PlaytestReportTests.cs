@@ -1,9 +1,9 @@
 using System.Text.Json;
 using FluentAssertions;
-using Nexo.GameDomain.Playtest;
+using Nexo.Commercial.GameDomain.Playtest;
 
-namespace Nexo.Tests.GameDomain.Playtest;
-
+namespace Nexo.Commercial.Tests.GameDomain.Playtest;
+/// <summary>Tests for playtest report.</summary>
 public class PlaytestReportTests
 {
     [Fact]

@@ -6,6 +6,7 @@ using Nexo.Core.Application.Testing.Models;
 
 namespace Nexo.Tests.CLI.Tests.Commands;
 
+/// <summary>Tests for mesh command.</summary>
 public sealed class MeshCommandTests : UnitTestBase
 {
     public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
@@ -75,6 +76,7 @@ public sealed class MeshCommandTests : UnitTestBase
             var root = new RootCommand();
             root.AddCommand(new MeshCommand());
             var exitCode = await root.InvokeAsync("mesh peers").ConfigureAwait(false);
+            /// <summary>Assert equal.</summary>
             AssertEqual(0, exitCode);
             var output = writer.ToString();
             AssertTrue(output.Contains("peer-a", StringComparison.Ordinal), "Should list local peer id.");
@@ -121,6 +123,7 @@ public sealed class MeshCommandTests : UnitTestBase
             root.AddCommand(new MeshCommand());
 
             var exitCode = await root.InvokeAsync("mesh --set-trust-tier peer-1:trusted").ConfigureAwait(false);
+            /// <summary>Assert equal.</summary>
             AssertEqual(0, exitCode);
             AssertTrue(writer.ToString().Contains("Updated trust tier", StringComparison.OrdinalIgnoreCase));
 

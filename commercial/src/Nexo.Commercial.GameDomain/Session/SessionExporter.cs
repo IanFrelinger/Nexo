@@ -1,7 +1,6 @@
 using System.Text.Json;
 
-namespace Nexo.GameDomain.Session;
-
+namespace Nexo.Commercial.GameDomain.Session;
 /// <summary>
 /// Round-trip JSON serialisation for <see cref="SessionState"/>.
 /// </summary>

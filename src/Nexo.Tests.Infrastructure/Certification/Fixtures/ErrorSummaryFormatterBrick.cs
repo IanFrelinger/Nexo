@@ -4,7 +4,7 @@ using Nexo.Core.Domain.Execution;
 namespace Nexo.Tests.Infrastructure.Certification.Fixtures;
 
 /// <summary>Formats probe outputs into a composition-level summary string.</summary>
-public sealed class ErrorSummaryFormatterBrick : Brick
+public sealed class ErrorSummaryFormatterBrick : DomainBrick
 {
     public ErrorSummaryFormatterBrick()
     {

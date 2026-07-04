@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Execution;
 
+/// <summary>Tests for infrastructure ollama gap coverage.</summary>
 public class InfrastructureOllamaGapCoverageTests
 {
     [Fact]
@@ -15,10 +16,15 @@ public class InfrastructureOllamaGapCoverageTests
         {
             if (request.RequestUri!.AbsolutePath == "/api/tags")
             {
+                /// <summary>Json.</summary>
+                /// <param name=""llava:7b"">"llava:7b".</param>
+                /// <param name="}"""">}""".</param>
                 return Json("""{ "models": [ { "name": "llava:7b", "size": 100 } ] }""");
             }
 
             request.RequestUri.AbsolutePath.Should().Be("/api/chat");
+            /// <summary>Json.</summary>
+            /// <param name="}"""">}""".</param>
             return Json("""{ "message": { "content": "hello from ollama" } }""");
         });
 
@@ -86,9 +92,14 @@ public class InfrastructureOllamaGapCoverageTests
         using var client = new HttpClient(new FakeHandler(request =>
         {
             if (request.RequestUri!.AbsolutePath == "/api/tags")
+                /// <summary>Json.</summary>
+                /// <param name=""m:latest"">"m:latest".</param>
+                /// <param name="}"""">}""".</param>
                 return Json("""{ "models": [ { "name": "m:latest", "size": 1 } ] }""");
             if (request.RequestUri.AbsolutePath == "/api/chat")
+                /// <summary>Http response message.</summary>
                 return new HttpResponseMessage(HttpStatusCode.NotFound);
+            /// <summary>Json.</summary>
             return Json("{}");
         })) { BaseAddress = new Uri("http://localhost:11434/") };
 
@@ -98,7 +109,12 @@ public class InfrastructureOllamaGapCoverageTests
         using var badJsonClient = new HttpClient(new FakeHandler(request =>
         {
             if (request.RequestUri!.AbsolutePath == "/api/tags")
+                /// <summary>Json.</summary>
+                /// <param name=""m:latest"">"m:latest".</param>
+                /// <param name="}"""">}""".</param>
                 return Json("""{ "models": [ { "name": "m:latest", "size": 1 } ] }""");
+            /// <summary>Json.</summary>
+            /// <param name="}"""">}""".</param>
             return Json("""{ "unexpected": true }""");
         })) { BaseAddress = new Uri("http://localhost:11434/") };
 
@@ -124,15 +140,23 @@ public class InfrastructureOllamaGapCoverageTests
         sut.IsAvailable.Should().BeFalse();
     }
 
+    /// <summary>Json.</summary>
+    /// <param name="json">Json.</param>
     private static HttpResponseMessage Json(string json) =>
         new(HttpStatusCode.OK) { Content = new StringContent(json, Encoding.UTF8, "application/json") };
 
+    /// <summary>Tests for fake handler.</summary>
     private sealed class FakeHandler : HttpMessageHandler
     {
         private readonly Func<HttpRequestMessage, HttpResponseMessage> _handler;
 
+        /// <summary>Fake handler.</summary>
+        /// <param name="handler">Handler.</param>
         public FakeHandler(Func<HttpRequestMessage, HttpResponseMessage> handler) => _handler = handler;
 
+        /// <summary>Send async.</summary>
+        /// <param name="request">Request.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
             Task.FromResult(_handler(request));
     }

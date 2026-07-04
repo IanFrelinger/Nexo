@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Nexo.Tests.Transport;
 
+/// <summary>Tests for routing agent transport.</summary>
 public sealed class RoutingAgentTransportTests
 {
     [Fact]

@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.API;
 
+/// <summary>Tests for private license validator.</summary>
 public sealed class PrivateLicenseValidatorTests
 {
     [Fact]
@@ -63,19 +64,29 @@ public sealed class PrivateLicenseValidatorTests
         validator.GetStatus().State.Should().Be(PrivateLicenseState.Expired);
     }
 
+    /// <summary>Creates validator.</summary>
+    /// <param name="options">Options.</param>
+    /// <param name="contentRoot">Content root.</param>
     private static PrivateLicenseValidator CreateValidator(NexoPrivateLicenseOptions options, string contentRoot) =>
         new(
             Options.Create(options),
             new StubHostEnvironment(contentRoot),
             NullLogger<PrivateLicenseValidator>.Instance);
 
+    /// <summary>Tests for stub host environment.</summary>
     private sealed class StubHostEnvironment : IHostEnvironment
     {
+        /// <summary>Stub host environment.</summary>
+        /// <param name="contentRoot">Content root.</param>
         public StubHostEnvironment(string contentRoot) => ContentRootPath = contentRoot;
 
+        /// <summary>Environment name.</summary>
         public string EnvironmentName { get; set; } = Microsoft.Extensions.Hosting.Environments.Development;
+        /// <summary>Application name.</summary>
         public string ApplicationName { get; set; } = "Nexo.Tests";
+        /// <summary>Content root path.</summary>
         public string ContentRootPath { get; set; }
+        /// <summary>Content root file provider.</summary>
         public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
     }
 }

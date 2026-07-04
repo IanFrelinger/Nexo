@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.Scheduling;
 
+/// <summary>Tests for agent scheduler.</summary>
 public class AgentSchedulerTests
 {
     [Fact]
@@ -73,6 +74,9 @@ public class AgentSchedulerTests
             State = BackgroundAgentState.Running
         };
 
+        /// <summary>Execute once.</summary>
+        /// <param name="i">I.</param>
+        /// <param name="ct">Cancellation token.</param>
         static Task ExecuteOnce(BackgroundAgentInstance i, CancellationToken ct) => Task.CompletedTask;
 
         await scheduler.StartAsync(instance, ExecuteOnce);

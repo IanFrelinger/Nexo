@@ -64,22 +64,3 @@ public interface IExecutionPlatform
     /// </summary>
     Task RemoveImageAsync(string imageTag, CancellationToken cancellationToken = default);
 }
-
-/// <summary>
-/// Result of a container image build operation.
-/// </summary>
-public record ExecutionBuildResult(
-    bool Success,
-    string? ErrorMessage,
-    TimeSpan Duration);
-
-/// <summary>
-/// Result of a container run operation.
-/// </summary>
-public record ExecutionRunResult(
-    bool Success,
-    int ExitCode,
-    string StandardOutput,
-    string StandardError,
-    string? ContainerId,
-    TimeSpan Duration);

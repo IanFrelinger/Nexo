@@ -13,11 +13,13 @@ public sealed class FileSnapshotStore : ISnapshotStore
     private readonly string _basePath;
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = false };
 
+    /// <summary>Initializes a new file snapshot store.</summary>
     public FileSnapshotStore(string? basePath = null)
     {
         _basePath = basePath ?? Path.Combine(RepoPathResolver.FindRepoRoot(), "nexo-snapshots");
     }
 
+    /// <summary>Take snapshot asynchronously.</summary>
     public Task<string> TakeSnapshotAsync(string label, IReadOnlyList<string> componentPaths, CancellationToken ct = default)
     {
         var id = Guid.NewGuid().ToString("N");
@@ -50,6 +52,7 @@ public sealed class FileSnapshotStore : ISnapshotStore
         return Task.FromResult(id);
     }
 
+    /// <summary>List snapshots asynchronously.</summary>
     public Task<IEnumerable<SnapshotEntry>> ListSnapshotsAsync(CancellationToken ct = default)
     {
         if (!Directory.Exists(_basePath))
@@ -71,6 +74,7 @@ public sealed class FileSnapshotStore : ISnapshotStore
         return Task.FromResult<IEnumerable<SnapshotEntry>>(list.OrderByDescending(x => x.TakenAt).ToList());
     }
 
+    /// <summary>Restore snapshot asynchronously.</summary>
     public Task RestoreSnapshotAsync(string snapshotId, CancellationToken ct = default)
     {
         var snapshotDir = Path.Combine(_basePath, snapshotId);
@@ -101,6 +105,7 @@ public sealed class FileSnapshotStore : ISnapshotStore
         return Task.CompletedTask;
     }
 
+    /// <summary>Delete snapshot asynchronously.</summary>
     public Task DeleteSnapshotAsync(string snapshotId, CancellationToken ct = default)
     {
         var snapshotDir = Path.Combine(_basePath, snapshotId);
@@ -111,9 +116,13 @@ public sealed class FileSnapshotStore : ISnapshotStore
 
     private sealed class SnapshotMeta
     {
+        /// <summary>Snapshot id.</summary>
         public string SnapshotId { get; set; } = "";
+        /// <summary>Label.</summary>
         public string Label { get; set; } = "";
+        /// <summary>Taken at.</summary>
         public DateTimeOffset TakenAt { get; set; }
+        /// <summary>Components included.</summary>
         public List<string> ComponentsIncluded { get; set; } = new();
     }
 }

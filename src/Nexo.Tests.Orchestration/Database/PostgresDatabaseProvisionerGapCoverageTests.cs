@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration.Database;
 
+/// <summary>Tests for postgres database provisioner gap coverage.</summary>
 public sealed class PostgresDatabaseProvisionerGapCoverageTests
 {
     [Fact]

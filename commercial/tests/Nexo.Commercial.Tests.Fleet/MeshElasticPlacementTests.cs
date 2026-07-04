@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Nexo.Commercial.Tests.Fleet;
 
+/// <summary>Tests for mesh elastic placement.</summary>
 public sealed class MeshElasticPlacementTests
 {
     [Fact]

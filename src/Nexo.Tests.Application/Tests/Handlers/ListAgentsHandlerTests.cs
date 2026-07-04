@@ -9,14 +9,18 @@ using Nexo.Core.Application.Testing.Models;
 
 namespace Nexo.Tests.Application.Tests.Handlers;
 
+/// <summary>Tests for list agents handler.</summary>
 public class ListAgentsHandlerTests : UnitTestBase
 {
     public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
+            /// <summary>Test successful listing with agents.</summary>
             await TestSuccessfulListingWithAgents();
+            /// <summary>Test empty list.</summary>
             await TestEmptyList();
+            /// <summary>Test cancellation.</summary>
             await TestCancellation();
 
             return new TestResult
@@ -82,13 +86,23 @@ public class ListAgentsHandlerTests : UnitTestBase
         var query = new ListAgentsQuery();
         var result = await handler.Handle(query, CancellationToken.None);
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(result);
+        /// <summary>Assert equal.</summary>
         AssertEqual(2, result.Count);
+        /// <summary>Assert equal.</summary>
         AssertEqual("TestAgent1", result[0].Name);
+        /// <summary>Assert equal.</summary>
+        /// <param name="1"">1".</param>
         AssertEqual("Test agent 1", result[0].Description);
+        /// <summary>Assert equal.</summary>
         AssertEqual(2, result[0].Capabilities.Count);
+        /// <summary>Assert equal.</summary>
         AssertEqual("TestAgent2", result[1].Name);
+        /// <summary>Assert equal.</summary>
+        /// <param name="2"">2".</param>
         AssertEqual("Test agent 2", result[1].Description);
+        /// <summary>Assert equal.</summary>
         AssertEqual(1, result[1].Capabilities.Count);
 
         mockAgentRegistry.Verify(r => r.GetAgentsAsync(It.IsAny<CancellationToken>()), Times.Once);
@@ -109,7 +123,9 @@ public class ListAgentsHandlerTests : UnitTestBase
         var query = new ListAgentsQuery();
         var result = await handler.Handle(query, CancellationToken.None);
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(result);
+        /// <summary>Assert equal.</summary>
         AssertEqual(0, result.Count);
 
         mockAgentRegistry.Verify(r => r.GetAgentsAsync(It.IsAny<CancellationToken>()), Times.Once);

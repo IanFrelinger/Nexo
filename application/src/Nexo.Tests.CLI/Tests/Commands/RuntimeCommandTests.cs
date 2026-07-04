@@ -8,6 +8,7 @@ using Nexo.Core.Application.Testing.Models;
 
 namespace Nexo.Tests.CLI.Tests.Commands;
 
+/// <summary>Tests for runtime command.</summary>
 public sealed class RuntimeCommandTests : UnitTestBase
 {
     public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
@@ -18,6 +19,7 @@ public sealed class RuntimeCommandTests : UnitTestBase
             await TestGateRequiresConsecutivePassStreakAsync().ConfigureAwait(false);
             await TestGateJsonIncludesSloEvidenceAsync().ConfigureAwait(false);
             await TestReleaseGateRejectsInvalidModeAsync().ConfigureAwait(false);
+            /// <summary>Test visual required auto uses strict benchmark set.</summary>
             TestVisualRequiredAutoUsesStrictBenchmarkSet();
 
             return new TestResult
@@ -86,6 +88,7 @@ public sealed class RuntimeCommandTests : UnitTestBase
             var (exitCode, output) = await InvokeRuntimeAsync(
                 $"history --repo-root \"{repoRoot}\" --benchmark-set release-core --limit 20 --json").ConfigureAwait(false);
 
+            /// <summary>Assert equal.</summary>
             AssertEqual(0, exitCode);
             using var payload = ParseLastJsonObject(output);
             var root = payload.RootElement;
@@ -149,6 +152,8 @@ public sealed class RuntimeCommandTests : UnitTestBase
             var (strictExit, strictOutput) = await InvokeRuntimeAsync(
                 $"gate --repo-root \"{repoRoot}\" --benchmark-set release-core --policy release --history-window 20 --min-pass-rate 0 --min-total 1 --min-consecutive-passes 3 --json")
                 .ConfigureAwait(false);
+            /// <summary>Assert equal.</summary>
+            /// <param name="threshold."">Threshold.".</param>
             AssertEqual(1, strictExit, "Gate should fail when streak is below required threshold.");
             using (var strictPayload = ParseLastJsonObject(strictOutput))
             {
@@ -161,6 +166,8 @@ public sealed class RuntimeCommandTests : UnitTestBase
             var (lenientExit, lenientOutput) = await InvokeRuntimeAsync(
                 $"gate --repo-root \"{repoRoot}\" --benchmark-set release-core --policy release --history-window 20 --min-pass-rate 0 --min-total 1 --min-consecutive-passes 2 --json")
                 .ConfigureAwait(false);
+            /// <summary>Assert equal.</summary>
+            /// <param name="met."">Met.".</param>
             AssertEqual(0, lenientExit, "Gate should pass when streak threshold is met.");
             using var lenientPayload = ParseLastJsonObject(lenientOutput);
             var lenientRoot = lenientPayload.RootElement;
@@ -181,6 +188,7 @@ public sealed class RuntimeCommandTests : UnitTestBase
         {
             var (exitCode, output) = await InvokeRuntimeAsync(
                 $"release-gate --mode bananas --repo-root \"{repoRoot}\"").ConfigureAwait(false);
+            /// <summary>Assert equal.</summary>
             AssertEqual(1, exitCode);
             AssertTrue(output.Contains("unsupported mode", StringComparison.OrdinalIgnoreCase),
                 "Expected release-gate to reject unsupported mode values.");
@@ -227,6 +235,8 @@ public sealed class RuntimeCommandTests : UnitTestBase
                 $"gate --repo-root \"{repoRoot}\" --benchmark-set release-core --policy release --history-window 20 --min-pass-rate 0 --min-total 1 --min-consecutive-passes 0 --json")
                 .ConfigureAwait(false);
 
+            /// <summary>Assert equal.</summary>
+            /// <param name="thresholds."">Thresholds.".</param>
             AssertEqual(0, exitCode, "Gate should pass with relaxed thresholds.");
             using var payload = ParseLastJsonObject(output);
             var root = payload.RootElement;
@@ -282,12 +292,18 @@ public sealed class RuntimeCommandTests : UnitTestBase
             var resolveMethod = typeof(RuntimeCommand).GetMethod(
                 "ResolveVisualRequired",
                 BindingFlags.NonPublic | BindingFlags.Static);
+            /// <summary>Assert not null.</summary>
+            /// <param name="helper."">Helper.".</param>
             AssertNotNull(resolveMethod, "Expected ResolveVisualRequired private helper.");
 
             var autoRequires = (bool)resolveMethod!.Invoke(null, new object[] { "auto", repoRoot, 20, 2 })!;
+            /// <summary>Assert true.</summary>
+            /// <param name="streak."">Streak.".</param>
             AssertTrue(autoRequires, "Auto mode should require visual lane from strict benchmark streak.");
 
             var advisoryOnly = (bool)resolveMethod.Invoke(null, new object[] { "auto", repoRoot, 20, 3 })!;
+            /// <summary>Assert false.</summary>
+            /// <param name="insufficient."">Insufficient.".</param>
             AssertFalse(advisoryOnly, "Auto mode should not require visual lane when strict streak is insufficient.");
         }
         finally
@@ -342,6 +358,8 @@ public sealed class RuntimeCommandTests : UnitTestBase
             }
         }
 
+        /// <summary>Invalid operation exception.</summary>
+        /// <param name="output."">Output.".</param>
         throw new InvalidOperationException("No JSON payload found in runtime command output.");
     }
 }

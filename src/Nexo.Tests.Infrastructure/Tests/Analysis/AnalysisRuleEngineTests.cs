@@ -9,6 +9,7 @@ using Nexo.Tests.Application.Helpers;
 
 namespace Nexo.Tests.Infrastructure.Tests.Analysis;
 
+/// <summary>Tests for analysis rule engine.</summary>
 public class AnalysisRuleEngineTests : UnitTestBase
 {
     private DirectoryInfo? _tempDir;
@@ -32,11 +33,17 @@ public class AnalysisRuleEngineTests : UnitTestBase
     {
         try
         {
+            /// <summary>Test empty rules list.</summary>
             await TestEmptyRulesList();
+            /// <summary>Test single rule execution.</summary>
             await TestSingleRuleExecution();
+            /// <summary>Test multiple rules execution.</summary>
             await TestMultipleRulesExecution();
+            /// <summary>Test rule exception handling.</summary>
             await TestRuleExceptionHandling();
+            /// <summary>Test cancellation.</summary>
             await TestCancellation();
+            /// <summary>Test get rules.</summary>
             await TestGetRules();
 
             return new TestResult
@@ -79,7 +86,9 @@ public class AnalysisRuleEngineTests : UnitTestBase
         var assemblyFile = TestHelpers.CreateTempAssemblyFile(_tempDir!, "test.dll");
         var violations = await ruleEngine.AnalyzeAsync(assemblyFile, CancellationToken.None);
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(violations);
+        /// <summary>Assert equal.</summary>
         AssertEqual(0, violations.Count);
     }
 
@@ -105,9 +114,14 @@ public class AnalysisRuleEngineTests : UnitTestBase
         var assemblyFile = TestHelpers.CreateTempAssemblyFile(_tempDir!, "test.dll");
         var violations = await ruleEngine.AnalyzeAsync(assemblyFile, CancellationToken.None);
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(violations);
+        /// <summary>Assert equal.</summary>
         AssertEqual(1, violations.Count);
+        /// <summary>Assert equal.</summary>
         AssertEqual("TestRule", violations[0].Rule);
+        /// <summary>Assert equal.</summary>
+        /// <param name="violation"">Violation".</param>
         AssertEqual("Test violation", violations[0].Message);
 
         mockRule.Verify(r => r.AnalyzeAsync(assemblyFile, It.IsAny<CancellationToken>()), Times.Once);
@@ -138,7 +152,9 @@ public class AnalysisRuleEngineTests : UnitTestBase
         var assemblyFile = TestHelpers.CreateTempAssemblyFile(_tempDir!, "test.dll");
         var violations = await ruleEngine.AnalyzeAsync(assemblyFile, CancellationToken.None);
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(violations);
+        /// <summary>Assert equal.</summary>
         AssertEqual(2, violations.Count);
         AssertTrue(violations.Any(v => v.Rule == "Rule1"));
         AssertTrue(violations.Any(v => v.Rule == "Rule2"));
@@ -162,10 +178,14 @@ public class AnalysisRuleEngineTests : UnitTestBase
         // Should not throw - exceptions are caught and added as violations
         var violations = await ruleEngine.AnalyzeAsync(assemblyFile, CancellationToken.None);
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(violations);
+        /// <summary>Assert equal.</summary>
         AssertEqual(1, violations.Count);
+        /// <summary>Assert equal.</summary>
         AssertEqual("FailingRule", violations[0].Rule);
         AssertTrue(violations[0].Message.Contains("Rule execution failed"));
+        /// <summary>Assert equal.</summary>
         AssertEqual(RiskLevel.Medium, violations[0].Severity);
     }
 
@@ -187,8 +207,11 @@ public class AnalysisRuleEngineTests : UnitTestBase
         // So we should get a violation, not an exception
         var violations = await ruleEngine.AnalyzeAsync(assemblyFile, CancellationToken.None);
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(violations);
+        /// <summary>Assert equal.</summary>
         AssertEqual(1, violations.Count);
+        /// <summary>Assert equal.</summary>
         AssertEqual("TestRule", violations[0].Rule);
         AssertTrue(violations[0].Message.Contains("Rule execution failed"));
     }
@@ -206,7 +229,9 @@ public class AnalysisRuleEngineTests : UnitTestBase
 
         var retrievedRules = ruleEngine.GetRules();
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(retrievedRules);
+        /// <summary>Assert equal.</summary>
         AssertEqual(2, retrievedRules.Count);
         AssertTrue(retrievedRules.Any(r => r.Name == "Rule1"));
         AssertTrue(retrievedRules.Any(r => r.Name == "Rule2"));

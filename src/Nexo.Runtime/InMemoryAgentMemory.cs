@@ -17,8 +17,10 @@ public sealed class InMemoryAgentMemory : IAgentMemory
 {
     private readonly List<EventRecord> _events = new();
 
+    /// <summary>Appends an event record to agent memory.</summary>
     public void Write(EventRecord e) => _events.Add(e);
 
+    /// <summary>Returns up to <paramref name="k"/> recent events matching <paramref name="filter"/>.</summary>
     public IReadOnlyList<EventRecord> Query(string filter, int k)
     {
         return _events

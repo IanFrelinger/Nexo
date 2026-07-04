@@ -55,5 +55,7 @@ static string FindRepoRoot()
         dir = Directory.GetParent(dir)?.FullName ?? string.Empty;
     }
 
+    /// <summary>Invalid operation exception.</summary>
+    /// <param name="root."">Root.".</param>
     throw new InvalidOperationException("Could not locate Nexo repo root.");
 }

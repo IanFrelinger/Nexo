@@ -10,16 +10,22 @@ using Nexo.Core.Application.Testing.Abstractions;
 
 namespace Nexo.Tests.CLI.Tests.Commands;
 
+/// <summary>Tests for list agents command.</summary>
 public class ListAgentsCommandTests : UnitTestBase
 {
     public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
+            /// <summary>Test successful listing.</summary>
             await TestSuccessfulListing();
+            /// <summary>Test empty agent list.</summary>
             await TestEmptyAgentList();
+            /// <summary>Test json output.</summary>
             await TestJsonOutput();
+            /// <summary>Test verbose output.</summary>
             await TestVerboseOutput();
+            /// <summary>Test general exception.</summary>
             await TestGeneralException();
 
             return new TestResult

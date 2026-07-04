@@ -13,6 +13,7 @@ public sealed class FileBasedLocalTransport : ILocalTransport
     private readonly string _peerId;
     private bool _connected;
 
+    /// <summary>Initializes a new file based local transport.</summary>
     public FileBasedLocalTransport(string meshBasePath, string peerId)
     {
         _meshBasePath = meshBasePath ?? throw new ArgumentNullException(nameof(meshBasePath));

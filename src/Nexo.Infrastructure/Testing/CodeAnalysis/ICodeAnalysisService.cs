@@ -46,36 +46,3 @@ public interface ICodeAnalysisService
         string assemblyPath,
         CancellationToken cancellationToken = default);
 }
-
-/// <summary>
-/// Result of a code compilation operation.
-/// </summary>
-public record CompilationResult(
-    bool Success,
-    string? AssemblyPath,
-    IEnumerable<string> Errors,
-    IEnumerable<string> Warnings,
-    TimeSpan Duration);
-
-/// <summary>
-/// Result of an assembly decompilation operation.
-/// </summary>
-public record DecompilationResult(
-    bool Success,
-    string? SourceCode,
-    string? OutputPath,
-    string? ErrorMessage,
-    TimeSpan Duration);
-
-/// <summary>
-/// Result of an assembly analysis operation.
-/// </summary>
-public record AssemblyAnalysisResult(
-    bool Success,
-    string? AssemblyName,
-    string? Version,
-    string? CultureName,
-    IEnumerable<string> Types,
-    IEnumerable<string> Methods,
-    string? ErrorMessage,
-    TimeSpan Duration);

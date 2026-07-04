@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Barriers.Sinks;
 
+/// <summary>Tests for file barrier audit sink lifetime gap coverage.</summary>
 public sealed class FileBarrierAuditSinkLifetimeGapCoverageTests
 {
     [Fact]

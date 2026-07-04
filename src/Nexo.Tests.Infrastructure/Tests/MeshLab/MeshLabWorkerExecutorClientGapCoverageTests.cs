@@ -10,6 +10,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.MeshLab;
 
+/// <summary>Tests for mesh lab worker executor client gap coverage.</summary>
 public sealed class MeshLabWorkerExecutorClientGapCoverageTests
 {
     [Fact]
@@ -85,6 +86,7 @@ public sealed class MeshLabWorkerExecutorClientGapCoverageTests
     public async Task TryProcessOneAssignedTaskAsync_returns_zero_when_director_lists_no_tasks()
     {
         var client = CreateClient(
+            /// <summary>Fake fleet handler.</summary>
             new FakeFleetHandler((_, _) => Json(HttpStatusCode.OK, "[]")),
             new MeshLabWorkerExecutorOptions
             {
@@ -100,6 +102,7 @@ public sealed class MeshLabWorkerExecutorClientGapCoverageTests
     public async Task TryProcessOneAssignedTaskAsync_returns_zero_when_status_patch_fails()
     {
         var client = CreateClient(
+            /// <summary>Fake fleet handler.</summary>
             new FakeFleetHandler((req, _) =>
             {
                 if (req.Method == HttpMethod.Get)
@@ -109,6 +112,8 @@ public sealed class MeshLabWorkerExecutorClientGapCoverageTests
                         """);
                 }
 
+                /// <summary>Json.</summary>
+                /// <param name="failed"}"""">Failed"}""".</param>
                 return Json(HttpStatusCode.BadRequest, """{"error":"patch failed"}""");
             }),
             new MeshLabWorkerExecutorOptions
@@ -127,6 +132,7 @@ public sealed class MeshLabWorkerExecutorClientGapCoverageTests
     {
         var patchCount = 0;
         var client = CreateClient(
+            /// <summary>Fake fleet handler.</summary>
             new FakeFleetHandler((req, _) =>
             {
                 if (req.Method == HttpMethod.Get)
@@ -139,6 +145,7 @@ public sealed class MeshLabWorkerExecutorClientGapCoverageTests
                 req.Headers.TryGetValues("X-Nexo-Api-Key", out var keys).Should().BeTrue();
                 keys!.Single().Should().Be("config-key");
                 patchCount++;
+                /// <summary>Json.</summary>
                 return Json(HttpStatusCode.OK, "{}");
             }),
             new MeshLabWorkerExecutorOptions
@@ -161,6 +168,7 @@ public sealed class MeshLabWorkerExecutorClientGapCoverageTests
     public async Task TryProcessOneAssignedTaskAsync_returns_zero_when_no_api_key_configured()
     {
         var client = CreateClient(
+            /// <summary>Fake fleet handler.</summary>
             new FakeFleetHandler((_, _) => Json(HttpStatusCode.OK, """
                 [{"taskId":"t3","name":"mesh-lab-worker-exec-no-key","status":"Assigned","assignedApiBaseUrl":"http://peer:8080","leaseToken":"tok"}]
                 """)),
@@ -179,6 +187,7 @@ public sealed class MeshLabWorkerExecutorClientGapCoverageTests
     {
         var patchCount = 0;
         var client = CreateClient(
+            /// <summary>Fake fleet handler.</summary>
             new FakeFleetHandler((req, _) =>
             {
                 if (req.Method == HttpMethod.Get)
@@ -189,6 +198,7 @@ public sealed class MeshLabWorkerExecutorClientGapCoverageTests
                 }
 
                 patchCount++;
+                /// <summary>Json.</summary>
                 return Json(HttpStatusCode.OK, "{}");
             }),
             new MeshLabWorkerExecutorOptions
@@ -208,6 +218,7 @@ public sealed class MeshLabWorkerExecutorClientGapCoverageTests
     {
         var patchCount = 0;
         var client = CreateClient(
+            /// <summary>Fake fleet handler.</summary>
             new FakeFleetHandler((req, _) =>
             {
                 var path = req.RequestUri!.AbsolutePath;
@@ -219,9 +230,11 @@ public sealed class MeshLabWorkerExecutorClientGapCoverageTests
                 }
 
                 if (path.EndsWith("/api/bricks", StringComparison.Ordinal))
+                    /// <summary>Json.</summary>
                     return Json(HttpStatusCode.OK, """{"bricks":[]}""");
 
                 patchCount++;
+                /// <summary>Json.</summary>
                 return Json(HttpStatusCode.OK, "{}");
             }),
             new MeshLabWorkerExecutorOptions
@@ -241,6 +254,7 @@ public sealed class MeshLabWorkerExecutorClientGapCoverageTests
     {
         var executed = false;
         var client = CreateClient(
+            /// <summary>Fake fleet handler.</summary>
             new FakeFleetHandler((req, _) =>
             {
                 var path = req.RequestUri!.AbsolutePath;
@@ -252,14 +266,17 @@ public sealed class MeshLabWorkerExecutorClientGapCoverageTests
                 }
 
                 if (path.EndsWith("/api/bricks", StringComparison.Ordinal))
+                    /// <summary>Json.</summary>
                     return Json(HttpStatusCode.OK, """{"bricks":[{"id":"lowercase-brick"}]}""");
 
                 if (path.Contains("/execute", StringComparison.Ordinal))
                 {
                     executed = true;
+                    /// <summary>Json.</summary>
                     return Json(HttpStatusCode.OK, """{"success":true}""");
                 }
 
+                /// <summary>Json.</summary>
                 return Json(HttpStatusCode.OK, "{}");
             }),
             new MeshLabWorkerExecutorOptions
@@ -279,6 +296,7 @@ public sealed class MeshLabWorkerExecutorClientGapCoverageTests
     {
         var patchCount = 0;
         var client = CreateClient(
+            /// <summary>Fake fleet handler.</summary>
             new FakeFleetHandler((req, _) =>
             {
                 var path = req.RequestUri!.AbsolutePath;
@@ -290,9 +308,12 @@ public sealed class MeshLabWorkerExecutorClientGapCoverageTests
                 }
 
                 if (path.EndsWith("/api/bricks", StringComparison.Ordinal))
+                    /// <summary>Json.</summary>
+                    /// <param name="down"}"""">Down"}""".</param>
                     return Json(HttpStatusCode.ServiceUnavailable, """{"error":"catalog down"}""");
 
                 patchCount++;
+                /// <summary>Json.</summary>
                 return Json(HttpStatusCode.OK, "{}");
             }),
             new MeshLabWorkerExecutorOptions
@@ -311,6 +332,7 @@ public sealed class MeshLabWorkerExecutorClientGapCoverageTests
     public async Task TryProcessOneAssignedTaskAsync_tolerates_peer_http_errors_during_brick_execute()
     {
         var client = CreateClient(
+            /// <summary>Fake fleet handler.</summary>
             new FakeFleetHandler((req, _) =>
             {
                 var path = req.RequestUri!.AbsolutePath;
@@ -322,8 +344,11 @@ public sealed class MeshLabWorkerExecutorClientGapCoverageTests
                         : "{}");
 
                 if (path.EndsWith("/api/bricks", StringComparison.Ordinal))
+                    /// <summary>Http request exception.</summary>
+                    /// <param name="unreachable"">Unreachable".</param>
                     throw new HttpRequestException("peer unreachable");
 
+                /// <summary>Json.</summary>
                 return Json(HttpStatusCode.OK, "{}");
             }),
             new MeshLabWorkerExecutorOptions
@@ -342,6 +367,7 @@ public sealed class MeshLabWorkerExecutorClientGapCoverageTests
     {
         var executed = false;
         var client = CreateClient(
+            /// <summary>Fake fleet handler.</summary>
             new FakeFleetHandler((req, _) =>
             {
                 var path = req.RequestUri!.AbsolutePath;
@@ -353,14 +379,17 @@ public sealed class MeshLabWorkerExecutorClientGapCoverageTests
                 }
 
                 if (path.EndsWith("/api/bricks", StringComparison.Ordinal))
+                    /// <summary>Json.</summary>
                     return Json(HttpStatusCode.OK, """{"Bricks":[{"BrickId":"pascal-brick"}]}""");
 
                 if (path.Contains("/execute", StringComparison.Ordinal))
                 {
                     executed = true;
+                    /// <summary>Json.</summary>
                     return Json(HttpStatusCode.BadRequest, """{"error":"ignored"}""");
                 }
 
+                /// <summary>Json.</summary>
                 return Json(HttpStatusCode.OK, "{}");
             }),
             new MeshLabWorkerExecutorOptions
@@ -392,42 +421,41 @@ public sealed class MeshLabWorkerExecutorClientGapCoverageTests
             NullLogger<MeshLabWorkerExecutorClient>.Instance);
     }
 
+    /// <summary>Json.</summary>
+    /// <param name="status">Status.</param>
+    /// <param name="json">Json.</param>
     private static HttpResponseMessage Json(HttpStatusCode status, string json) =>
         new(status) { Content = new StringContent(json, Encoding.UTF8, "application/json") };
 
+    /// <summary>Tests for fake fleet handler.</summary>
     private sealed class FakeFleetHandler(Func<HttpRequestMessage, CancellationToken, HttpResponseMessage> handler)
         : HttpMessageHandler
     {
+        /// <summary>Send async.</summary>
+        /// <param name="request">Request.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
             Task.FromResult(handler(request, cancellationToken));
     }
 
+    /// <summary>Tests for static options monitor.</summary>
     private sealed class StaticOptionsMonitor<T>(T value) : Microsoft.Extensions.Options.IOptionsMonitor<T> where T : class
     {
+        /// <summary>Current value.</summary>
         public T CurrentValue { get; } = value;
+        /// <summary>Gets the value.</summary>
+        /// <param name="name">Name.</param>
         public T Get(string? name) => CurrentValue;
+        /// <summary>On change.</summary>
+        /// <param name="listener">Listener.</param>
         public IDisposable OnChange(Action<T, string?> listener) => NullDisposable.Instance;
     }
 
+    /// <summary>Tests for null disposable.</summary>
     private sealed class NullDisposable : IDisposable
     {
         public static readonly NullDisposable Instance = new();
+        /// <summary>Dispose.</summary>
         public void Dispose() { }
-    }
-}
-
-public sealed class MeshLabWorkerExecutorOptionsGapCoverageTests
-{
-    [Fact]
-    public void Defaults_match_expected_mesh_lab_worker_configuration()
-    {
-        var options = new MeshLabWorkerExecutorOptions();
-
-        MeshLabWorkerExecutorOptions.SectionPath.Should().Be("Nexo:MeshLab:WorkerExecutor");
-        options.DirectorBaseUrl.Should().Be("http://127.0.0.1:18081");
-        options.TaskNamePrefix.Should().Be("mesh-lab-worker-exec");
-        options.PollIntervalMs.Should().Be(500);
-        options.ExecuteBrickOnAssignedPeer.Should().BeTrue();
-        options.ResultSummary.Should().Be("mesh-lab-worker-executor-complete");
     }
 }

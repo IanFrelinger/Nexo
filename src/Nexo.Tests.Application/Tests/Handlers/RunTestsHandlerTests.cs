@@ -8,16 +8,22 @@ using Nexo.Core.Application.Testing.UseCases.RunTests;
 
 namespace Nexo.Tests.Application.Tests.Handlers;
 
+/// <summary>Tests for run tests handler.</summary>
 public class RunTestsHandlerTests : UnitTestBase
 {
     public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
+            /// <summary>Test successful execution without filter.</summary>
             await TestSuccessfulExecutionWithoutFilter();
+            /// <summary>Test successful execution with filter.</summary>
             await TestSuccessfulExecutionWithFilter();
+            /// <summary>Test cancellation.</summary>
             await TestCancellation();
+            /// <summary>Test progress reporting.</summary>
             await TestProgressReporting();
+            /// <summary>Test empty results.</summary>
             await TestEmptyResults();
 
             return new TestResult
@@ -79,11 +85,16 @@ public class RunTestsHandlerTests : UnitTestBase
         var command = new RunTestsCommand(null);
         var result = await handler.Handle(command, CancellationToken.None);
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(result);
+        /// <summary>Assert equal.</summary>
         AssertEqual(3, result.TotalTests);
+        /// <summary>Assert equal.</summary>
         AssertEqual(2, result.PassedTests);
+        /// <summary>Assert equal.</summary>
         AssertEqual(1, result.FailedTests);
         AssertEqual(TimeSpan.FromMilliseconds(100), result.TotalDuration);
+        /// <summary>Assert equal.</summary>
         AssertEqual(3, result.Results.Count);
 
         mockTestRunner.Verify(r => r.RunTestsAsync(null, It.IsAny<IProgress<ProgressReport>>(), It.IsAny<CancellationToken>()), Times.Once);
@@ -114,9 +125,13 @@ public class RunTestsHandlerTests : UnitTestBase
         var command = new RunTestsCommand("Category1");
         var result = await handler.Handle(command, CancellationToken.None);
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(result);
+        /// <summary>Assert equal.</summary>
         AssertEqual(1, result.TotalTests);
+        /// <summary>Assert equal.</summary>
         AssertEqual(1, result.PassedTests);
+        /// <summary>Assert equal.</summary>
         AssertEqual(0, result.FailedTests);
 
         mockTestRunner.Verify(r => r.RunTestsAsync("Category1", It.IsAny<IProgress<ProgressReport>>(), It.IsAny<CancellationToken>()), Times.Once);
@@ -169,6 +184,7 @@ public class RunTestsHandlerTests : UnitTestBase
         var command = new RunTestsCommand(null, progress);
         var result = await handler.Handle(command, CancellationToken.None);
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(result);
         mockTestRunner.Verify(r => r.RunTestsAsync(It.IsAny<string?>(), It.IsAny<IProgress<ProgressReport>>(), It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -195,10 +211,15 @@ public class RunTestsHandlerTests : UnitTestBase
         var command = new RunTestsCommand("NonExistentFilter");
         var result = await handler.Handle(command, CancellationToken.None);
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(result);
+        /// <summary>Assert equal.</summary>
         AssertEqual(0, result.TotalTests);
+        /// <summary>Assert equal.</summary>
         AssertEqual(0, result.PassedTests);
+        /// <summary>Assert equal.</summary>
         AssertEqual(0, result.FailedTests);
+        /// <summary>Assert equal.</summary>
         AssertEqual(0, result.Results.Count);
     }
 }

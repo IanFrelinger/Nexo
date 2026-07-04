@@ -14,6 +14,7 @@ public sealed class MaintenanceCommand
     private readonly IConsoleRenderer _renderer;
     private readonly ILogger<MaintenanceCommand> _logger;
 
+    /// <summary>Creates a new MaintenanceCommand instance.</summary>
     public MaintenanceCommand(
         IArtifactCleanupService cleanupService,
         IConsoleRenderer renderer,
@@ -24,6 +25,7 @@ public sealed class MaintenanceCommand
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>Executes the command handler and returns a process exit code.</summary>
     public async Task<int> ExecuteAsync(string? strategyId, string? repoRoot, bool json)
     {
         var context = new ArtifactCleanupContext(RepoRoot: repoRoot);

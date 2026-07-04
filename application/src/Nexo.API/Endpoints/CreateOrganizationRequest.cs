@@ -1,0 +1,45 @@
+using System.Text;
+using MediatR;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Nexo.Brick.Contracts;
+using Nexo.Brick.Contracts.Capabilities;
+using Nexo.Contracts;
+using Nexo.Core.Application.Copilot.Models;
+using Nexo.Core.Application.Copilot.Ports;
+using Nexo.Core.Application.Product.Models;
+using Nexo.Core.Application.Product.Ports;
+using Nexo.Core.Application.Knowledge.Models;
+using Nexo.Core.Application.Knowledge.Ports;
+using Nexo.Core.Application.Agent.UseCases.RunAgent;
+using Nexo.Core.Application.Bricks;
+using Nexo.Core.Application.NodeCapabilityRuntime.Models;
+using Nexo.Core.Application.NodeCapabilityRuntime.Ports;
+using Nexo.Core.Application.Trust.Ports;
+using Nexo.Core.Application.Validation.UseCases.RunValidation;
+using Nexo.Abstractions;
+using Nexo.BackgroundAgents.Configuration;
+using Nexo.BackgroundAgents.Forge;
+using Nexo.BackgroundAgents.Objectives;
+using Nexo.BackgroundAgents.Registry;
+using Nexo.BackgroundAgents.RuntimeStudio;
+using Nexo.Infrastructure.Testing.ExecutionPlatform;
+using Nexo.Infrastructure.Execution;
+using Nexo.API.Security;
+using Nexo.Orchestration.Coordination;
+using Nexo.Orchestration.Models;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
+using System.Text.Json;
+using Nexo.Core.Domain.Bricks;
+using Nexo.Core.Domain.Execution;
+
+namespace Nexo.API.Endpoints;
+
+// ── Cloud control plane (Phase 2.3) ─────────────────────────────────
+
+/// <summary>Request body for creating a new organization.</summary>
+public sealed record CreateOrganizationRequest(string Name, string? TenantId);

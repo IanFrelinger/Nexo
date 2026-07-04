@@ -9,12 +9,14 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Workflows;
 
+/// <summary>Tests for http workflow webhook client.</summary>
 public class HttpWorkflowWebhookClientTests
 {
     private static HttpWorkflowWebhookClient CreateClient(HttpMessageHandler handler)
     {
         var factory = new Mock<IHttpClientFactory>();
         factory.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(() => new HttpClient(handler));
+        /// <summary>Http workflow webhook client.</summary>
         return new HttpWorkflowWebhookClient(factory.Object, NullLogger<HttpWorkflowWebhookClient>.Instance);
     }
 

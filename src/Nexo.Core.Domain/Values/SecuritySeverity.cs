@@ -13,9 +13,15 @@ namespace Nexo.Core.Domain.Values;
 /// </summary>
 public sealed class SecuritySeverity : BaseTypeValue
 {
+    /// <summary>Creates a security severity value.</summary>
     public SecuritySeverity(string value, string display) : base(value, display) { }
-    
+
+    /// <summary>Low-severity finding.</summary>
     public static readonly SecuritySeverity Low    = new("low","Low");
+
+    /// <summary>Medium-severity finding.</summary>
     public static readonly SecuritySeverity Medium = new("med","Medium");
+
+    /// <summary>High-severity finding.</summary>
     public static readonly SecuritySeverity High   = new("high","High");
 }

@@ -342,35 +342,3 @@ function generatedCode(): void {{
         return Task.CompletedTask;
     }
 }
-
-/// <summary>
-/// Requirements for code generation.
-/// </summary>
-public sealed record CodeRequirements
-{
-    public required string Functionality { get; init; }
-    public string? Language { get; init; }
-    public IReadOnlyList<string> Patterns { get; init; } = Array.Empty<string>();
-    public IReadOnlyList<string> Constraints { get; init; } = Array.Empty<string>();
-}
-
-/// <summary>
-/// Context for code generation (dependencies, existing code, etc.).
-/// </summary>
-public sealed record CodeContext
-{
-    public IReadOnlyDictionary<string, object> Dependencies { get; init; } = new Dictionary<string, object>();
-}
-
-/// <summary>
-/// Result of code generation.
-/// </summary>
-public sealed record CodeGenerationResult
-{
-    public required string Code { get; init; }
-    public required string Language { get; init; }
-    public CodeAnalysis? Analysis { get; init; }
-    public required DateTimeOffset GeneratedAt { get; init; }
-    public IReadOnlyDictionary<string, object> Metadata { get; init; } = new Dictionary<string, object>();
-}
-

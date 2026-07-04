@@ -3,6 +3,7 @@ using System.CommandLine.Invocation;
 
 namespace Nexo.CLI.Commands;
 
+/// <summary>CLI command for workflow.</summary>
 public sealed partial class WorkflowCommand
 {
     private void ConfigureScaffoldCommand()
@@ -25,6 +26,7 @@ public sealed partial class WorkflowCommand
                 ctx.ParseResult.GetValueForOption(jsonOpt)).GetAwaiter().GetResult();
             ctx.ExitCode = exitCode;
         });
+        /// <summary>Add command.</summary>
         AddCommand(scaffold);
     }
 
@@ -125,6 +127,7 @@ public sealed partial class WorkflowCommand
                 ctx.GetCancellationToken()).GetAwaiter().GetResult();
             ctx.ExitCode = exitCode;
         });
+        /// <summary>Add command.</summary>
         AddCommand(stress);
     }
 
@@ -148,6 +151,7 @@ public sealed partial class WorkflowCommand
                 ctx.ParseResult.GetValueForOption(jsonOpt)).GetAwaiter().GetResult();
             ctx.ExitCode = exitCode;
         });
+        /// <summary>Add command.</summary>
         AddCommand(history);
     }
 
@@ -183,6 +187,7 @@ public sealed partial class WorkflowCommand
                 ctx.ParseResult.GetValueForOption(jsonOpt)).GetAwaiter().GetResult();
             ctx.ExitCode = exitCode;
         });
+        /// <summary>Add command.</summary>
         AddCommand(report);
     }
 
@@ -228,6 +233,7 @@ public sealed partial class WorkflowCommand
                 ctx.ParseResult.GetValueForOption(jsonOpt)).GetAwaiter().GetResult();
             ctx.ExitCode = exitCode;
         });
+        /// <summary>Add command.</summary>
         AddCommand(gate);
     }
 
@@ -298,6 +304,7 @@ public sealed partial class WorkflowCommand
         });
         baseline.AddCommand(show);
 
+        /// <summary>Add command.</summary>
         AddCommand(baseline);
     }
 
@@ -464,6 +471,7 @@ public sealed partial class WorkflowCommand
                 ctx.GetCancellationToken()).GetAwaiter().GetResult();
             ctx.ExitCode = exitCode;
         });
+        /// <summary>Add command.</summary>
         AddCommand(optimize);
     }
 

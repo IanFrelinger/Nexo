@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Execution;
 
+/// <summary>Tests for step execution mode store gap coverage.</summary>
 public sealed class StepExecutionModeStoreGapCoverageTests
 {
     [Fact]

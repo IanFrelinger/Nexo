@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Barriers.Identity;
 
+/// <summary>Tests for barrier resolution integration.</summary>
 [Trait("Category", "Integration")]
 [Trait("Category", "ProdStyle")]
 public sealed class BarrierResolutionIntegrationTests
@@ -107,6 +108,7 @@ public sealed class BarrierResolutionIntegrationTests
         if (result is null)
         {
             if (options.RequireExplicitBarrier)
+                /// <summary>Barrier context missing exception.</summary>
                 throw new BarrierContextMissingException("*", resolutionContext.CorrelationId);
 
             var defaultContext = BarrierContext.Create(
@@ -189,6 +191,7 @@ public sealed class BarrierResolutionIntegrationTests
             },
             ApiKey: null);
 
+    /// <summary>Stub resolver.</summary>
     private sealed class StubResolver : IBarrierIdentityResolver
     {
         private readonly BarrierResolutionResult? _result;
@@ -199,6 +202,7 @@ public sealed class BarrierResolutionIntegrationTests
             _result = result;
         }
 
+        /// <summary>Resolver name.</summary>
         public string ResolverName { get; }
 
         public ValueTask<BarrierResolutionResult?> TryResolveAsync(
@@ -207,20 +211,26 @@ public sealed class BarrierResolutionIntegrationTests
             => new(_result);
     }
 
+    /// <summary>Capturing accessor.</summary>
     private sealed class CapturingAccessor : IBarrierContextAccessor
     {
+        /// <summary>Current.</summary>
         public BarrierContext? Current { get; private set; }
 
         public void Initialize(BarrierContext context)
         {
             if (Current is not null)
+                /// <summary>Invalid operation exception.</summary>
+                /// <param name="initialized."">Initialized.".</param>
                 throw new InvalidOperationException("Already initialized.");
             Current = context;
         }
     }
 
+    /// <summary>Capturing audit log.</summary>
     private sealed class CapturingAuditLog : IBarrierAuditLog
     {
+        /// <summary>Events.</summary>
         public List<BarrierAuditEvent> Events { get; } = [];
 
         public ValueTask RecordAsync(BarrierAuditEvent auditEvent, CancellationToken cancellationToken = default)

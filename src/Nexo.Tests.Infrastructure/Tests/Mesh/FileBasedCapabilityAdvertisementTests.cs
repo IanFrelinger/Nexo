@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Mesh;
 
+/// <summary>Tests for file based capability advertisement.</summary>
 public sealed class FileBasedCapabilityAdvertisementTests : IDisposable
 {
     private readonly string _tempDir;

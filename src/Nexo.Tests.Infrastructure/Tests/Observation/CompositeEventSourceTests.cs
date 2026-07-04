@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Observation;
 
+/// <summary>Tests for composite event source.</summary>
 public sealed class CompositeEventSourceTests
 {
     [Fact]
@@ -60,6 +61,7 @@ public sealed class CompositeEventSourceTests
         collected[1].EventId.Should().Be("e2");
     }
 
+    /// <summary>Tests for mock event source.</summary>
     private sealed class MockEventSource : IObservableEventSource
     {
         private readonly NormalizedEvent[] _events;
@@ -70,6 +72,7 @@ public sealed class CompositeEventSourceTests
             _events = events;
         }
 
+        /// <summary>Source id.</summary>
         public string SourceId { get; }
 
         public async IAsyncEnumerable<NormalizedEvent> SubscribeAsync([EnumeratorCancellation] CancellationToken cancellationToken = default)

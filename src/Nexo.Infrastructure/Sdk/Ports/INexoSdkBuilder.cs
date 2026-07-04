@@ -14,9 +14,9 @@ public interface INexoSdkBuilder
     /// Registers a brick type. The brick will be available in the brick registry at runtime.
     /// Call before AddNexo().
     /// </summary>
-    /// <typeparam name="T">Brick type (must inherit from <see cref="Brick"/>).</typeparam>
+    /// <typeparam name="T">DomainBrick type (must inherit from <see cref="DomainBrick"/>).</typeparam>
     /// <returns>This builder for chaining.</returns>
-    INexoSdkBuilder RegisterBrick<T>() where T : Brick;
+    INexoSdkBuilder RegisterBrick<T>() where T : DomainBrick;
 
     /// <summary>
     /// Registers an agent type (e.g. implementing Nexo.Abstractions.IAgent).

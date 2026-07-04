@@ -1,12 +1,13 @@
 using System.Text.Json;
 
-namespace Nexo.CLI.Commands;
-
+namespace Nexo.CLI.Commands.Unity;
+/// <summary>Handles fullstack requests.</summary>
 internal sealed class FullstackHandler(
     UnityGenerateExecutor executeGenerate,
     Func<string, string, string, bool, CancellationToken, Task<int>> executeAssets,
     Func<string, int, bool, string?, CancellationToken, Task<int>> executeQa)
 {
+    /// <summary>Executes the command handler and returns a process exit code.</summary>
     public async Task<int> ExecuteAsync(
         string projectRoot,
         string gameDescription,
@@ -42,6 +43,7 @@ internal sealed class FullstackHandler(
         steps.Add(new { step = "qa", exitCode = qaCode });
 
         var allOk = initCode == 0 && genCode == 0 && qaCode == 0;
+        /// <summary>Write result.</summary>
         WriteResult(steps, allOk, json);
         return allOk ? 0 : 1;
     }

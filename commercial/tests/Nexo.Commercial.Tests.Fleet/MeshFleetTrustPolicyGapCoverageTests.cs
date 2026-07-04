@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Commercial.Tests.Fleet;
 
+/// <summary>Tests for mesh fleet trust policy gap coverage.</summary>
 public sealed class MeshFleetTrustPolicyGapCoverageTests
 {
     [Theory]

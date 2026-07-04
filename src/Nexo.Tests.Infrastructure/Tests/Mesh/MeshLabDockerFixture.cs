@@ -270,6 +270,3 @@ public sealed class MeshLabDockerFixture : IAsyncLifetime
         return exitCode == 0;
     }
 }
-
-[CollectionDefinition("MeshLabDocker")]
-public sealed class MeshLabDockerCollection : ICollectionFixture<MeshLabDockerFixture>;

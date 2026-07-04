@@ -11,15 +11,19 @@ public sealed class DefaultAgenticStageExecutionAdapter : IPipelineStageExecutio
 {
     private readonly ILogger<DefaultAgenticStageExecutionAdapter> _logger;
 
+    /// <summary>Initializes a new default agentic stage execution adapter.</summary>
     public DefaultAgenticStageExecutionAdapter(ILogger<DefaultAgenticStageExecutionAdapter> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>Adapter key.</summary>
     public string AdapterKey => "default";
 
+    /// <summary>Worker type.</summary>
     public PipelineWorkerType WorkerType => PipelineWorkerType.Agentic;
 
+    /// <summary>Execute asynchronously.</summary>
     public Task<PipelineStageExecutionResult> ExecuteAsync(
         PipelineStageExecutionRequest request,
         CancellationToken cancellationToken = default)

@@ -99,6 +99,7 @@ public static class RuntimeServiceCollectionExtensions
             levels.Add(level);
     }
 
+    /// <summary>Registers barrier audit sinks from configuration.</summary>
     public static IServiceCollection AddBarrierAuditSinks(
         this IServiceCollection services,
         IConfiguration configuration)
@@ -161,6 +162,7 @@ public static class RuntimeServiceCollectionExtensions
         return services;
     }
 
+    /// <summary>Registers barrier identity resolvers from configuration.</summary>
     public static IServiceCollection AddBarrierIdentityResolvers(
         this IServiceCollection services,
         IConfiguration configuration)

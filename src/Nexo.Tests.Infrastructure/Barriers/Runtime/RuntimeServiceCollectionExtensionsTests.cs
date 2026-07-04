@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Barriers.Runtime;
 
+/// <summary>Tests for runtime service collection extensions.</summary>
 public sealed class RuntimeServiceCollectionExtensionsTests
 {
     [Fact]

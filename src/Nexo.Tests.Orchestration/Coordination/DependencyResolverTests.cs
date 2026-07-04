@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration.Coordination;
 
+/// <summary>Tests for dependency resolver.</summary>
 public class DependencyResolverTests
 {
     private readonly IServiceProvider _serviceProvider;

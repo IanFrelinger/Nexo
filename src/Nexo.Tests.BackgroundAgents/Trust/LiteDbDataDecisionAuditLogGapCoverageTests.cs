@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.Trust;
 
+/// <summary>Tests for lite db data decision audit log gap coverage.</summary>
 public sealed class LiteDbDataDecisionAuditLogGapCoverageTests : IDisposable
 {
     private readonly string _dbPath = Path.Combine(Path.GetTempPath(), $"nexo_audit_gap_{Guid.NewGuid():N}.db");

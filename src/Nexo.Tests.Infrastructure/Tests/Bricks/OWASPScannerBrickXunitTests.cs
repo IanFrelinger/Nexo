@@ -10,15 +10,19 @@ using ExecutionContext = Nexo.Infrastructure.Execution.ExecutionContext;
 
 namespace Nexo.Tests.Infrastructure.Tests.Bricks;
 
+/// <summary>Tests for owasp scanner brick xunit.</summary>
 public class OWASPScannerBrickXunitTests
 {
     private static OWASPScannerBrick CreateBrick(Mock<IProviderFactory>? factory = null)
     {
         factory ??= new Mock<IProviderFactory>();
         var logger = new Mock<ILogger<OWASPScannerBrick>>();
+        /// <summary>Owasp scanner brick.</summary>
         return new OWASPScannerBrick(factory.Object, logger.Object);
     }
 
+    /// <summary>Context.</summary>
+    /// <param name=""mock"">"mock".</param>
     private static ExecutionContext Context(string provider = "mock") => new()
     {
         AgentId = "agent",

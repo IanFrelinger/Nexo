@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.Telemetry;
 
+/// <summary>Tests for cycle event store.</summary>
 public class CycleEventStoreTests : IDisposable
 {
     private readonly string _tempDir;

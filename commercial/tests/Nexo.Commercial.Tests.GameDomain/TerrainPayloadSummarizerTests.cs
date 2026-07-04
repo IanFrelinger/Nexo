@@ -1,9 +1,9 @@
 using FluentAssertions;
-using Nexo.GameDomain.Mapping;
+using Nexo.Commercial.GameDomain.Mapping;
 using Xunit;
 
-namespace Nexo.Tests.GameDomain;
-
+namespace Nexo.Commercial.Tests.GameDomain;
+/// <summary>Tests for terrain payload summarizer.</summary>
 public sealed class TerrainPayloadSummarizerTests
 {
     private const string Png1x1B64 =

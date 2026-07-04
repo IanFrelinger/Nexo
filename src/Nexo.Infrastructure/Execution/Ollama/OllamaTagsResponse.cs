@@ -2,20 +2,10 @@ using System.Text.Json.Serialization;
 
 namespace Nexo.Infrastructure.Execution.Ollama;
 
+/// <summary>Deserialized response from Ollama <c>/api/tags</c> listing installed models.</summary>
 public sealed record OllamaTagsResponse
 {
+    /// <summary>Models reported by the Ollama daemon.</summary>
     [JsonPropertyName("models")]
     public IReadOnlyList<OllamaTagsModel> Models { get; init; } = [];
-}
-
-public sealed record OllamaTagsModel
-{
-    [JsonPropertyName("name")]
-    public string Name { get; init; } = string.Empty;
-
-    [JsonPropertyName("size")]
-    public long Size { get; init; }
-
-    [JsonPropertyName("modified_at")]
-    public DateTimeOffset? ModifiedAt { get; init; }
 }

@@ -328,7 +328,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
                 new BrickNode
                 {
                     Id = "brick-1",
-                    Name = "Test Brick",
+                    Name = "Test DomainBrick",
                     BrickId = "test-brick",
                     // Auto will pick the brick default (agentic), then should fall back to deterministic on failure.
                     Implementation = ImplementationType.Auto,
@@ -667,7 +667,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
                 new BrickNode
                 {
                     Id = "brick-1",
-                    Name = "List Brick",
+                    Name = "List DomainBrick",
                     BrickId = "list-brick",
                     Implementation = ImplementationType.Deterministic,
                     Inputs = new List<NodePort>(),
@@ -766,7 +766,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
                 new BrickNode
                 {
                     Id = "brick-1",
-                    Name = "Struct Brick",
+                    Name = "Struct DomainBrick",
                     BrickId = "struct-brick",
                     Implementation = ImplementationType.Deterministic,
                     Inputs = new List<NodePort>(),
@@ -855,7 +855,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
                     new BrickNode
                     {
                         Id = "brick-1",
-                        Name = "Data Brick",
+                        Name = "Data DomainBrick",
                         BrickId = "data-brick",
                         Implementation = ImplementationType.Deterministic,
                         Inputs = new List<NodePort>(),
@@ -925,198 +925,5 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
             yield return item;
             await Task.Delay(10); // Small delay to simulate async
         }
-    }
-}
-
-/// <summary>
-/// Test brick for workflow executor tests.
-/// </summary>
-public class TestBrickForWorkflow : Brick
-{
-    public TestBrickForWorkflow()
-    {
-        Id = "test-brick";
-        Name = "Test Brick";
-        Category = BrickCategory.Analysis;
-        Description = "Test";
-        
-        Interface = new BrickInterface();
-        Implementations = new BrickImplementations
-        {
-            Deterministic = new DeterministicImplementation
-            {
-                Id = "test-det",
-                Name = "Test",
-                Description = "Test",
-                Executor = "Test",
-                Characteristics = new ImplementationCharacteristics
-                {
-                    Deterministic = true,
-                    RequiresNetwork = false
-                }
-            },
-            Agentic = new AgenticImplementation
-            {
-                Id = "test-agentic",
-                Name = "Test Agentic",
-                Description = "Always throws to force fallback in tests"
-            }
-        };
-        
-        DefaultImplementation = ImplementationType.Agentic;
-        FallbackChain = new[] { ImplementationType.Agentic, ImplementationType.Deterministic };
-    }
-    
-    public override async Task<BrickOutput> ExecuteAsync(
-        BrickInput input,
-        ImplementationType implementation,
-        IExecutionContext context,
-        CancellationToken cancellationToken = default)
-    {
-        await Task.Delay(10, cancellationToken);
-        if (implementation == ImplementationType.Agentic)
-        {
-            throw new InvalidOperationException("Agentic implementation failed (test)");
-        }
-        var output = new BrickOutput
-        {
-            Summary = "Brick executed"
-        };
-        output["result"] = "brick-output";
-        return output;
-    }
-}
-
-/// <summary>
-/// Test brick that outputs a list of dicts for Transform node tests.
-/// </summary>
-public class TestBrickWithListOutput : Brick
-{
-    public TestBrickWithListOutput()
-    {
-        Id = "list-brick";
-        Name = "List Brick";
-        Category = BrickCategory.Analysis;
-        Description = "Outputs list for transform tests";
-        Interface = new BrickInterface();
-        Implementations = new BrickImplementations
-        {
-            Deterministic = new DeterministicImplementation
-            {
-                Id = "list-det",
-                Name = "List",
-                Description = "Test",
-                Executor = "Test",
-                Characteristics = new ImplementationCharacteristics { Deterministic = true, RequiresNetwork = false }
-            }
-        };
-        DefaultImplementation = ImplementationType.Deterministic;
-        FallbackChain = Array.Empty<ImplementationType>();
-    }
-
-    public override async Task<BrickOutput> ExecuteAsync(
-        BrickInput input,
-        ImplementationType implementation,
-        IExecutionContext context,
-        CancellationToken cancellationToken = default)
-    {
-        await Task.CompletedTask;
-        var output = new BrickOutput { Summary = "List" };
-        output["data"] = new List<Dictionary<string, object>>
-        {
-            new Dictionary<string, object> { ["value"] = 10 },
-            new Dictionary<string, object> { ["value"] = 5 }
-        };
-        return output;
-    }
-}
-
-/// <summary>
-/// Test brick that outputs structured data for Conditional node tests.
-/// </summary>
-public class TestBrickWithStructuredOutput : Brick
-{
-    public TestBrickWithStructuredOutput()
-    {
-        Id = "struct-brick";
-        Name = "Struct Brick";
-        Category = BrickCategory.Analysis;
-        Description = "Outputs struct for conditional tests";
-        Interface = new BrickInterface();
-        Implementations = new BrickImplementations
-        {
-            Deterministic = new DeterministicImplementation
-            {
-                Id = "struct-det",
-                Name = "Struct",
-                Description = "Test",
-                Executor = "Test",
-                Characteristics = new ImplementationCharacteristics { Deterministic = true, RequiresNetwork = false }
-            }
-        };
-        DefaultImplementation = ImplementationType.Deterministic;
-        FallbackChain = Array.Empty<ImplementationType>();
-    }
-
-    public override async Task<BrickOutput> ExecuteAsync(
-        BrickInput input,
-        ImplementationType implementation,
-        IExecutionContext context,
-        CancellationToken cancellationToken = default)
-    {
-        await Task.CompletedTask;
-        var output = new BrickOutput { Summary = "Struct" };
-        output["result"] = new Dictionary<string, object>
-        {
-            ["data"] = new Dictionary<string, object> { ["count"] = 3 }
-        };
-        return output;
-    }
-}
-
-/// <summary>
-/// Test brick that outputs data for output format tests.
-/// </summary>
-public class TestBrickWithDataOutput : Brick
-{
-    public TestBrickWithDataOutput()
-    {
-        Id = "data-brick";
-        Name = "Data Brick";
-        Category = BrickCategory.Analysis;
-        Description = "Outputs data for format tests";
-        Interface = new BrickInterface();
-        Implementations = new BrickImplementations
-        {
-            Deterministic = new DeterministicImplementation
-            {
-                Id = "data-det",
-                Name = "Data",
-                Description = "Test",
-                Executor = "Test",
-                Characteristics = new ImplementationCharacteristics { Deterministic = true, RequiresNetwork = false }
-            }
-        };
-        DefaultImplementation = ImplementationType.Deterministic;
-        FallbackChain = Array.Empty<ImplementationType>();
-    }
-
-    public override async Task<BrickOutput> ExecuteAsync(
-        BrickInput input,
-        ImplementationType implementation,
-        IExecutionContext context,
-        CancellationToken cancellationToken = default)
-    {
-        await Task.CompletedTask;
-        var output = new BrickOutput { Summary = "Data" };
-        output["result"] = new Dictionary<string, object>
-        {
-            ["items"] = new List<Dictionary<string, object>>
-            {
-                new Dictionary<string, object> { ["id"] = 1, ["name"] = "a" },
-                new Dictionary<string, object> { ["id"] = 2, ["name"] = "b" }
-            }
-        };
-        return output;
     }
 }

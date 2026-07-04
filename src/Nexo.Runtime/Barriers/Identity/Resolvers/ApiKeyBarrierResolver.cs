@@ -6,6 +6,7 @@ using Nexo.Abstractions.Barriers.Identity;
 
 namespace Nexo.Runtime.Barriers.Identity.Resolvers;
 
+/// <summary>Resolves barrier level from configured API key hashes.</summary>
 public sealed class ApiKeyBarrierResolver : IBarrierIdentityResolver
 {
     private readonly ApiKeyResolverOptions _options;
@@ -22,8 +23,10 @@ public sealed class ApiKeyBarrierResolver : IBarrierIdentityResolver
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>Resolver identifier used in audit and diagnostics.</summary>
     public string ResolverName => "ApiKey";
 
+    /// <summary>Attempts to resolve barrier level from a configured API key hash mapping.</summary>
     public ValueTask<BarrierResolutionResult?> TryResolveAsync(
         BarrierResolutionContext context,
         CancellationToken cancellationToken = default)

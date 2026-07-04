@@ -1,5 +1,4 @@
-namespace Nexo.GameDomain.Descriptors;
-
+namespace Nexo.Commercial.GameDomain.Descriptors;
 /// <summary>
 /// Spatial dimensions for a map element or game object, expressed in world units.
 /// </summary>

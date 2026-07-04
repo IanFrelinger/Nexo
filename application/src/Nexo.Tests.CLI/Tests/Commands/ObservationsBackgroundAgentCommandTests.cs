@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.CLI.Tests.Commands;
 
+/// <summary>Tests for observations background agent command.</summary>
 public class ObservationsBackgroundAgentCommandTests : IDisposable
 {
     private readonly string _tempDir;
@@ -37,8 +38,14 @@ public class ObservationsBackgroundAgentCommandTests : IDisposable
     [Fact]
     public async Task Lists_observations_in_table_filtered_by_kind_and_source()
     {
+        /// <summary>Seed.</summary>
+        /// <param name="failures"">Failures".</param>
         Seed("runtime-worker-tester", ObservationKind.Test, ObservationSeverity.Error, "3 failures");
+        /// <summary>Seed.</summary>
+        /// <param name="violations"">Violations".</param>
         Seed("runtime-worker-optimizer", ObservationKind.Analysis, ObservationSeverity.Warn, "5 violations");
+        /// <summary>Seed.</summary>
+        /// <param name="file"">File".</param>
         Seed("runtime-planner", ObservationKind.AgentAction, ObservationSeverity.Info, "wrote 1 file");
 
         var cmd = NewCmd();
@@ -74,9 +81,13 @@ public class ObservationsBackgroundAgentCommandTests : IDisposable
     [Fact]
     public async Task Summary_groups_counts_per_source_and_severity()
     {
+        /// <summary>Seed.</summary>
         Seed("tester", ObservationKind.Test, ObservationSeverity.Error, "x");
+        /// <summary>Seed.</summary>
         Seed("tester", ObservationKind.Test, ObservationSeverity.Info, "y");
+        /// <summary>Seed.</summary>
         Seed("tester", ObservationKind.Build, ObservationSeverity.Info, "z");
+        /// <summary>Seed.</summary>
         Seed("optimizer", ObservationKind.Analysis, ObservationSeverity.Warn, "w");
 
         var cmd = NewCmd();
@@ -92,6 +103,7 @@ public class ObservationsBackgroundAgentCommandTests : IDisposable
     [Fact]
     public async Task Json_output_is_well_formed_and_includes_path()
     {
+        /// <summary>Seed.</summary>
         Seed("tester", ObservationKind.Test, ObservationSeverity.Info, "ok");
 
         var cmd = NewCmd();
@@ -118,6 +130,7 @@ public class ObservationsBackgroundAgentCommandTests : IDisposable
         err.Should().Contain("Allowed:");
     }
 
+    /// <summary>New cmd.</summary>
     private ObservationsBackgroundAgentCommand NewCmd() =>
         new(_store, NullLogger<ObservationsBackgroundAgentCommand>.Instance);
 

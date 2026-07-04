@@ -7,8 +7,10 @@ using Nexo.Commercial.Fleet.Contracts.Models;
 
 namespace Nexo.Commercial.Fleet.Infrastructure.MeshLab;
 
+/// <summary>Client for mesh lab worker executor interactions.</summary>
 public sealed class MeshLabWorkerExecutorClient
 {
+    /// <summary>Constant value for http client name.</summary>
     public const string HttpClientName = "mesh-lab-worker-executor";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -33,6 +35,7 @@ public sealed class MeshLabWorkerExecutorClient
         _logger = logger;
     }
 
+    /// <summary>Attempts to process one assigned task async.</summary>
     public async Task<int> TryProcessOneAssignedTaskAsync(CancellationToken cancellationToken)
     {
         var opts = _options.CurrentValue;
@@ -47,6 +50,7 @@ public sealed class MeshLabWorkerExecutorClient
             : 0;
     }
 
+    /// <summary>Pick candidate operation.</summary>
     public static MeshLabTaskSnapshot? PickCandidate(IReadOnlyList<MeshLabTaskSnapshot> tasks, string prefix)
     {
         if (string.IsNullOrWhiteSpace(prefix))
@@ -69,6 +73,7 @@ public sealed class MeshLabWorkerExecutorClient
         return null;
     }
 
+    /// <summary>Is status operation.</summary>
     public static bool IsStatus(string? status, MeshTaskStatus expected)
     {
         if (string.IsNullOrWhiteSpace(status))
@@ -232,10 +237,3 @@ public sealed class MeshLabWorkerExecutorClient
             ? _configuration["Nexo:Security:ApiKey"]
             : opts.ApiKey.Trim();
 }
-
-public sealed record MeshLabTaskSnapshot(
-    string TaskId,
-    string? Name,
-    string? Status,
-    string? AssignedApiBaseUrl,
-    string? LeaseToken);

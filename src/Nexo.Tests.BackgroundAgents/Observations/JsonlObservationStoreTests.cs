@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.Observations;
 
+/// <summary>Tests for jsonl observation store.</summary>
 public class JsonlObservationStoreTests : IDisposable
 {
     private readonly string _tempDir;

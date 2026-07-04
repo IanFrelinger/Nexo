@@ -4,8 +4,12 @@ using Xunit;
 
 namespace Nexo.Ingress.AwsSns.Tests;
 
+/// <summary>Tests for sns revocation mode parser.</summary>
 public sealed class SnsRevocationModeParserTests
 {
+    /// <summary>Parse_maps_expected_modes.</summary>
+    /// <param name="input">Input.</param>
+    /// <param name="expected">Expected.</param>
     [Theory]
     [InlineData(null, X509RevocationMode.NoCheck)]
     [InlineData("", X509RevocationMode.NoCheck)]

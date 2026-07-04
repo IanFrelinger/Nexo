@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.WebSearch;
 
+/// <summary>Tests for sensitive content filter.</summary>
 public class SensitiveContentFilterTests
 {
     [Fact]

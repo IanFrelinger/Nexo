@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Policies;
 
+/// <summary>Tests for forge mediated writes policy gap coverage.</summary>
 [Trait("Category", "Unit")]
 public sealed class ForgeMediatedWritesPolicyGapCoverageTests
 {
@@ -67,6 +68,7 @@ public sealed class ForgeMediatedWritesPolicyGapCoverageTests
     private static ToolCall CreateToolCall(string toolId, string path)
     {
         var json = JsonSerializer.SerializeToElement(new { path });
+        /// <summary>Tool call.</summary>
         return new ToolCall(toolId, json);
     }
 }

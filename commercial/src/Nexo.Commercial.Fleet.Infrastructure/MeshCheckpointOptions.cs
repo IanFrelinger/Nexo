@@ -5,6 +5,7 @@ namespace Nexo.Commercial.Fleet.Infrastructure;
 /// </summary>
 public sealed class MeshCheckpointOptions
 {
+    /// <summary>Constant value for section path.</summary>
     public const string SectionPath = "Nexo:Mesh:Checkpoint";
 
     /// <summary>Default lease duration after assignment (seconds).</summary>

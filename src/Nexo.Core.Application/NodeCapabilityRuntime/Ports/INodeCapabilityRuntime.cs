@@ -3,68 +3,35 @@ using Nexo.Core.Application.NodeCapabilityRuntime.Models;
 
 namespace Nexo.Core.Application.NodeCapabilityRuntime.Ports;
 
+/// <summary>
+/// Runtime facade for node capability profiling, model selection, and inference lifecycle.
+/// </summary>
 public interface INodeCapabilityRuntime
 {
+    /// <summary>Current hardware and platform profile snapshot.</summary>
     NodeProfile CurrentProfile { get; }
 
+    /// <summary>Selects the best model for a task given current constraints.</summary>
     Task<ModelResolution> SelectModelAsync(TaskContext context, CancellationToken ct = default);
 
+    /// <summary>Ensures the selected model is loaded and ready for inference.</summary>
     Task EnsureModelReadyAsync(ModelDescriptor model, CancellationToken ct = default);
 
+    /// <summary>Returns the compute tier of this node.</summary>
     Task<NodeTier> GetTierAsync();
 
+    /// <summary>Stream of constraint updates (battery, thermal, network) affecting routing.</summary>
     IObservable<ConstraintUpdate> ConstraintChanges { get; }
 
+    /// <summary>Models currently available on this node.</summary>
     IReadOnlyList<ModelDescriptor> AvailableModels { get; }
 
+    /// <summary>Publishes a wire-format capability manifest for federation routing.</summary>
     NodeCapabilityManifest GetCapabilityManifest();
 
+    /// <summary>Records execution outcome feedback to improve future model selection.</summary>
     Task RecordOutcomeAsync(
         ModelResolution resolution,
         BrickExecutionOutcome outcome,
         CancellationToken ct = default);
-}
-
-public interface IPlatformPolicy
-{
-    PlatformType Platform { get; }
-
-    bool CanRunInferenceNow(NodeProfile profile);
-    bool CanLoadModel(ModelDescriptor model, NodeProfile profile);
-    bool CanPullModel(NodeProfile profile);
-    bool CanAdvertiseRemoteWork(NodeProfile profile);
-
-    long MaxModelCacheBytes { get; }
-    long MaxSingleModelBytes { get; }
-    int MaxConcurrentInferenceRequests { get; }
-
-    TimeSpan HotModelTTL { get; }
-    TimeSpan ColdEvictionAge { get; }
-    bool ShouldUnloadAfterInference(NodeProfile profile);
-    bool CanRunIdleMaintenance(NodeProfile profile);
-}
-
-public interface IHardwareProfiler
-{
-    Task<NodeProfile> CaptureAsync(CancellationToken ct = default);
-}
-
-public interface IModelServingBackend
-{
-    BackendType BackendType { get; }
-    Task<bool> IsAvailableAsync(CancellationToken ct = default);
-    Task<InferenceResult> RunInferenceAsync(InferenceRequest request, CancellationToken ct = default);
-    Task LoadModelAsync(string modelId, CancellationToken ct = default);
-    Task UnloadModelAsync(string modelId, CancellationToken ct = default);
-    Task PullModelAsync(string modelId, IProgress<PullProgress>? progress = null, CancellationToken ct = default);
-    Task<IReadOnlyList<string>> ListLoadedModelsAsync(CancellationToken ct = default);
-}
-
-public interface IModelLifecycleManager
-{
-    Task<bool> EnsureLoadedAsync(ModelDescriptor model, CancellationToken ct = default);
-    Task UnloadAsync(ModelDescriptor model);
-    Task PullAsync(ModelDescriptor model, IProgress<PullProgress>? progress = null, CancellationToken ct = default);
-    Task EvictAsync(ModelDescriptor model);
-    Task RunIdleMaintenanceAsync(CancellationToken ct = default);
 }

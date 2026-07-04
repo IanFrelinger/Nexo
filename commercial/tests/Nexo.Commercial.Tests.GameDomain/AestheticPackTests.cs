@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using System.Text.Json;
 using FluentAssertions;
-using Nexo.GameDomain.Aesthetics;
+using Nexo.Commercial.GameDomain.Aesthetics;
 
-namespace Nexo.Tests.GameDomain;
-
+namespace Nexo.Commercial.Tests.GameDomain;
+/// <summary>Tests for aesthetic pack.</summary>
 public class AestheticPackTests
 {
     [Fact]

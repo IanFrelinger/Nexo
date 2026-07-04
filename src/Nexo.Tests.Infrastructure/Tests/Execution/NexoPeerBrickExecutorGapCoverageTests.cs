@@ -10,6 +10,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Execution;
 
+/// <summary>Tests for nexo peer brick executor gap coverage.</summary>
 public sealed class NexoPeerBrickExecutorGapCoverageTests
 {
     [Fact]
@@ -197,6 +198,7 @@ public sealed class NexoPeerBrickExecutorGapCoverageTests
         using var httpClient = new HttpClient(new FakeHandler(async (_, ct) =>
         {
             await Task.Delay(TimeSpan.FromSeconds(2), ct);
+            /// <summary>Http response message.</summary>
             return new HttpResponseMessage(HttpStatusCode.OK);
         }));
 
@@ -568,11 +570,17 @@ public sealed class NexoPeerBrickExecutorGapCoverageTests
         hosts.Should().ContainInOrder("peer-a", "peer-b");
     }
 
+    /// <summary>Payload.</summary>
     private static RunPodJobPayload Payload() => new() { ModelId = "m1", Prompt = "hello" };
 
+    /// <summary>Requirements.</summary>
     private static JobRequirements Requirements() =>
         new() { ModelId = "m1", MinimumVramBytes = 1, ComputeClass = GpuComputeClass.Low };
 
+    /// <summary>Eligible peer.</summary>
+    /// <param name="id">Id.</param>
+    /// <param name="endpoint">Endpoint.</param>
+    /// <param name="0">0.</param>
     private static PeerExecutionCandidate EligiblePeer(string id, string endpoint, int queueDepth = 0) => new()
     {
         PeerId = id,
@@ -597,29 +605,46 @@ public sealed class NexoPeerBrickExecutorGapCoverageTests
                 PeerRequestTimeout = peerRequestTimeout ?? TimeSpan.FromSeconds(1),
             }));
 
+    /// <summary>Tests for gap execution context.</summary>
     private sealed class GapExecutionContext : IExecutionContext
     {
+        /// <summary>Agent id.</summary>
         public string AgentId { get; init; } = "gap-agent";
+        /// <summary>Behavior id.</summary>
         public string BehaviorId { get; init; } = "gap-behavior";
+        /// <summary>Is air gapped.</summary>
         public bool IsAirGapped { get; init; }
+        /// <summary>Audit mode.</summary>
         public bool AuditMode { get; init; } = true;
+        /// <summary>Provider.</summary>
         public string Provider { get; init; } = "local";
+        /// <summary>Variables.</summary>
         public IReadOnlyDictionary<string, object> Variables { get; init; } = new Dictionary<string, object>();
     }
 
+    /// <summary>Tests for static peer snapshot.</summary>
     private sealed class StaticPeerSnapshot(IReadOnlyList<PeerExecutionCandidate> candidates) : IPeerCapabilitySnapshot
     {
+        /// <summary>Candidates.</summary>
         public IReadOnlyList<PeerExecutionCandidate> Candidates { get; } = candidates;
     }
 
+    /// <summary>Tests for static http client factory.</summary>
     private sealed class StaticHttpClientFactory(HttpClient client) : IHttpClientFactory
     {
+        /// <summary>Creates client.</summary>
+        /// <param name="name">Name.</param>
         public HttpClient CreateClient(string name) => client;
     }
 
+    /// <summary>Tests for fake handler.</summary>
     private sealed class FakeHandler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> handler) : HttpMessageHandler
     {
+        /// <summary>Send async.</summary>
+        /// <param name="request">Request.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
+            /// <summary>Handler.</summary>
             handler(request, cancellationToken);
     }
 }

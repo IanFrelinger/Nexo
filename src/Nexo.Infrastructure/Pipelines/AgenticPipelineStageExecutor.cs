@@ -14,6 +14,7 @@ public sealed class AgenticPipelineStageExecutor : IPipelineStageExecutor
     private readonly PipelineExecutionOptions _executionOptions;
     private readonly IPipelineStageExecutionAdapter _adapter;
 
+    /// <summary>Initializes a new agentic pipeline stage executor.</summary>
     public AgenticPipelineStageExecutor(
         ILogger<AgenticPipelineStageExecutor> logger,
         IEnumerable<IPipelineStageExecutionAdapter> adapters,
@@ -32,8 +33,10 @@ public sealed class AgenticPipelineStageExecutor : IPipelineStageExecutor
                 $"No agentic pipeline adapter registered for key '{adapterKey}'.");
     }
 
+    /// <summary>Worker type.</summary>
     public PipelineWorkerType WorkerType => PipelineWorkerType.Agentic;
 
+    /// <summary>Execute asynchronously.</summary>
     public Task<PipelineStageExecutionResult> ExecuteAsync(
         PipelineStageExecutionRequest request,
         CancellationToken cancellationToken = default)

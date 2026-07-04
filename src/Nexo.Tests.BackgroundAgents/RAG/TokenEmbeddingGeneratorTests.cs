@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.RAG;
 
+/// <summary>Tests for token embedding generator.</summary>
 public class TokenEmbeddingGeneratorTests
 {
     [Fact]

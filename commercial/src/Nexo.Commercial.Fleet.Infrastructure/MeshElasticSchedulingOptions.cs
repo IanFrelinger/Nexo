@@ -5,6 +5,7 @@ namespace Nexo.Commercial.Fleet.Infrastructure;
 /// </summary>
 public sealed class MeshElasticSchedulingOptions
 {
+    /// <summary>Constant value for section path.</summary>
     public const string SectionPath = "Nexo:Mesh:Elastic";
 
     /// <summary>When true, runs <see cref="MeshPendingTaskRebalancerBackgroundService"/>.</summary>

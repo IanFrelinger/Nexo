@@ -4,12 +4,12 @@ using Nexo.Core.Domain.Execution;
 namespace Nexo.Tests.Infrastructure.Certification.Fixtures;
 
 /// <summary>Always returns wrong error count — fails witness correctness check.</summary>
-public sealed class BadWitnessBrick : Brick
+public sealed class BadWitnessBrick : DomainBrick
 {
     public BadWitnessBrick()
     {
         Id = "bad-witness-brick";
-        Name = "Bad Witness Brick";
+        Name = "Bad Witness DomainBrick";
         Version = "1.0.0";
         Category = BrickCategory.Analysis;
         Description = "Returns incorrect error count.";

@@ -1,5 +1,4 @@
-namespace Nexo.Infrastructure.Networking;
-
+namespace Nexo.Commercial.Fleet.Infrastructure.Networking;
 /// <summary>
 /// Configuration for the plasticity service (metrics and optional background tasks).
 /// </summary>

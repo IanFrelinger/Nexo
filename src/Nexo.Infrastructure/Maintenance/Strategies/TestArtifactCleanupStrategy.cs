@@ -13,16 +13,20 @@ public sealed class TestArtifactCleanupStrategy : IArtifactCleanupStrategy
 
     private readonly ILogger<TestArtifactCleanupStrategy> _logger;
 
+    /// <summary>Initializes a new test artifact cleanup strategy.</summary>
     public TestArtifactCleanupStrategy(ILogger<TestArtifactCleanupStrategy> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>Id.</summary>
     public string Id => IdConstant;
+    /// <summary>Description.</summary>
     public string Description => "Removes TestResults directories and test-results folder from the repository.";
 
     private const string IdConstant = "test-artifacts";
 
+    /// <summary>Clean asynchronously.</summary>
     public Task<ArtifactCleanupResult> CleanAsync(ArtifactCleanupContext context, CancellationToken ct = default)
     {
         var repoRoot = context.RepoRoot ?? Directory.GetCurrentDirectory();

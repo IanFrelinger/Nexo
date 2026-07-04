@@ -6,13 +6,16 @@ using Nexo.Tools.Dev;
 
 namespace Nexo.Tests.Infrastructure.Tests.Tools;
 
+/// <summary>Tests for roslyn analyze tool.</summary>
 public sealed class RoslynAnalyzeToolTests : UnitTestBase
 {
     public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
+            /// <summary>Test flags wrong namespace async.</summary>
             await TestFlagsWrongNamespaceAsync(cancellationToken);
+            /// <summary>Test accepts valid generated command async.</summary>
             await TestAcceptsValidGeneratedCommandAsync(cancellationToken);
 
             return new TestResult
@@ -57,6 +60,7 @@ public sealed class RoslynAnalyzeToolTests : UnitTestBase
         await File.WriteAllTextAsync(path, """
 using System.CommandLine;
 namespace Wrong.Namespace;
+/// <summary>Tests for bad command.</summary>
 public sealed class BadCommand : Command
 {
     public BadCommand() : base("bad", "bad") { }
@@ -100,6 +104,7 @@ using System.Text.Json;
 
 namespace Nexo.CLI.Commands.DemoGenerated;
 
+/// <summary>Tests for hello gen123 command.</summary>
 public sealed class HelloGen123Command : Command
 {
     public HelloGen123Command() : base("hello-gen-123", "Demo-generated command")

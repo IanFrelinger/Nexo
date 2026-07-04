@@ -13,6 +13,7 @@ namespace Nexo.CLI.Commands;
 /// </summary>
 public sealed class RollbackCommand : Command
 {
+    /// <summary>Creates a new RollbackCommand instance.</summary>
     public RollbackCommand() : base("rollback", "Roll back an adaptation or restore to a snapshot")
     {
         var adaptationIdArg = new Argument<string?>("adaptation-id", "Adaptation ID to roll back");

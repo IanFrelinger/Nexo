@@ -14,6 +14,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Execution;
 
+/// <summary>Tests for capability routing brick.</summary>
 public sealed class CapabilityRoutingBrickTests
 {
     [Fact]
@@ -652,19 +653,27 @@ public sealed class CapabilityRoutingBrickTests
             NullLogger<NcrCapabilityRouter>.Instance);
     }
 
+    /// <summary>Tests for snapshot stub.</summary>
     private sealed class SnapshotStub : INCRCapabilitySnapshot
     {
+        /// <summary>Available vram bytes.</summary>
         public long AvailableVramBytes { get; set; }
+        /// <summary>Compute class.</summary>
         public GpuComputeClass ComputeClass { get; set; } = GpuComputeClass.None;
+        /// <summary>Current queue depth.</summary>
         public int CurrentQueueDepth { get; set; }
+        /// <summary>Captured at.</summary>
         public DateTimeOffset CapturedAt { get; set; } = DateTimeOffset.UtcNow;
     }
 
+    /// <summary>Tests for stub peer snapshot.</summary>
     private sealed class StubPeerSnapshot : IPeerCapabilitySnapshot
     {
+        /// <summary>Candidates.</summary>
         public IReadOnlyList<PeerExecutionCandidate> Candidates { get; init; } = [];
     }
 
+    /// <summary>Tests for stub local executor.</summary>
     private sealed class StubLocalExecutor : ILocalExecutor
     {
         private readonly Func<RunPodJobPayload, Result<GenerationExecutionResult>> _handler;
@@ -682,13 +691,20 @@ public sealed class CapabilityRoutingBrickTests
             => Task.FromResult(_handler(payload));
     }
 
+    /// <summary>Tests for stub run pod client.</summary>
     private sealed class StubRunPodClient : IRunPodClient
     {
+        /// <summary>Spin up result.</summary>
         public Result<RunPodInstance> SpinUpResult { get; set; } = Result<RunPodInstance>.Failure("stub.spinup.not_configured", "Spin-up not configured.");
+        /// <summary>Dispatch result.</summary>
         public Result<JobHandle> DispatchResult { get; set; } = Result<JobHandle>.Failure("stub.dispatch.not_configured", "Dispatch not configured.");
+        /// <summary>Status sequence.</summary>
         public Queue<JobStatus> StatusSequence { get; set; } = new();
+        /// <summary>Pull result.</summary>
         public Result<byte[]> PullResult { get; set; } = Result<byte[]>.Failure("stub.pull.not_configured", "Pull not configured.");
+        /// <summary>Terminate result.</summary>
         public Result<Unit> TerminateResult { get; set; } = Result<Unit>.Success(Unit.Value);
+        /// <summary>Terminate calls.</summary>
         public int TerminateCalls { get; private set; }
 
         public Task<Result<RunPodInstance>> SpinUpInstance(
@@ -732,18 +748,28 @@ public sealed class CapabilityRoutingBrickTests
         }
     }
 
+    /// <summary>Tests for test execution context.</summary>
     private sealed class TestExecutionContext : IExecutionContext
     {
+        /// <summary>Agent id.</summary>
         public string AgentId { get; init; } = "test-agent";
+        /// <summary>Behavior id.</summary>
         public string BehaviorId { get; init; } = "test-behavior";
+        /// <summary>Is air gapped.</summary>
         public bool IsAirGapped { get; init; }
+        /// <summary>Audit mode.</summary>
         public bool AuditMode { get; init; } = true;
+        /// <summary>Provider.</summary>
         public string Provider { get; init; } = "ollama";
+        /// <summary>Variables.</summary>
         public IReadOnlyDictionary<string, object> Variables { get; init; } = new Dictionary<string, object>();
     }
 
+    /// <summary>Tests for stub provider factory.</summary>
     private sealed class StubProviderFactory : IProviderFactory
     {
+        /// <summary>Returns whether  provider available.</summary>
+        /// <param name="provider">Provider.</param>
         public bool IsProviderAvailable(string provider) => true;
         public Task<string> ExecuteLLMAsync(string provider, string systemPrompt, string userPrompt, object config, CancellationToken cancellationToken = default)
             => Task.FromResult("ok");
@@ -757,8 +783,10 @@ public sealed class CapabilityRoutingBrickTests
             => Task.CompletedTask;
     }
 
+    /// <summary>Tests for stub peer executor.</summary>
     private sealed class StubPeerExecutor : IPeerExecutor
     {
+        /// <summary>Next result.</summary>
         public Result<GenerationExecutionResult> NextResult { get; set; } =
             Result<GenerationExecutionResult>.Failure("peer-routing.stub", "Stub peer executor should not be invoked in router-only tests.");
 

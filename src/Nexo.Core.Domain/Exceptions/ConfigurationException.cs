@@ -11,7 +11,10 @@ namespace Nexo.Core.Domain.Exceptions;
 /// </summary>
 public class ConfigurationException : DomainException
 {
+    /// <summary>Optional structured error code from <see cref="ErrorCodes"/>.</summary>
     public string? ErrorCode { get; }
+
+    /// <summary>Optional operator suggestion for resolving the configuration failure.</summary>
     public string? Suggestion { get; }
 
     public ConfigurationException(string message) : base(message)

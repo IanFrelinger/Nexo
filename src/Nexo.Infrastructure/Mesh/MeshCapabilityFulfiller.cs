@@ -16,6 +16,7 @@ public sealed class MeshCapabilityFulfiller : ICapabilityFulfiller
     private readonly ILogger<MeshCapabilityFulfiller>? _logger;
     private readonly ConcurrentDictionary<string, Func<ArtifactFormat, CancellationToken, Task<Artifact>>> _handlers = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Initializes a new mesh capability fulfiller.</summary>
     public MeshCapabilityFulfiller(ILocalTransport transport, ILogger<MeshCapabilityFulfiller>? logger = null)
     {
         _transport = transport ?? throw new ArgumentNullException(nameof(transport));

@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Adaptation;
 
+/// <summary>Tests for generation safety.</summary>
 [Trait("Category", "Adaptation")]
 [Collection("GenerationSafety")]
 public sealed class GenerationSafetyTests

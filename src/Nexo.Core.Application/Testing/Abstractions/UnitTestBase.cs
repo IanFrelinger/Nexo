@@ -71,13 +71,3 @@ public abstract class UnitTestBase : TestBase
         }
     }
 }
-
-/// <summary>
-/// Exception thrown when an assertion fails.
-/// </summary>
-public class AssertionException : Exception
-{
-    public AssertionException(string message) : base(message) { }
-    public AssertionException(string message, Exception innerException) : base(message, innerException) { }
-}
-

@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration.Agents;
 
+/// <summary>Tests for agent runtime factory.</summary>
 public sealed class AgentRuntimeFactoryTests
 {
     [Fact]

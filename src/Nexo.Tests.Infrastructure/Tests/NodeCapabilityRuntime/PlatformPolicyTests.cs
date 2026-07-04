@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.NodeCapabilityRuntime;
 
+/// <summary>Tests for platform policy.</summary>
 public sealed class PlatformPolicyTests
 {
     [Fact]

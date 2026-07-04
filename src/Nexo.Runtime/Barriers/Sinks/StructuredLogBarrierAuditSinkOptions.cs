@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Nexo.Runtime.Barriers.Sinks;
 
+/// <summary>Configuration for structured-log barrier audit sink log level overrides.</summary>
 public sealed class StructuredLogBarrierAuditSinkOptions
 {
     /// <summary>

@@ -12,7 +12,7 @@ public sealed class BehavioralAnalyzer : IBehavioralAnalyzer
 {
     /// <inheritdoc />
     public Task<BehavioralAnalysisResult> AnalyzeAsync(
-        Brick brick,
+        DomainBrick brick,
         BrickOutput actualOutput,
         CancellationToken cancellationToken = default)
     {

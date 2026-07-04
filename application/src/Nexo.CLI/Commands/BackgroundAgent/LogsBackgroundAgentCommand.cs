@@ -12,6 +12,7 @@ public class LogsBackgroundAgentCommand
     private readonly IBackgroundAgentLogStore? _logStore;
     private readonly ILogger<LogsBackgroundAgentCommand> _logger;
 
+    /// <summary>Creates a new LogsBackgroundAgentCommand instance.</summary>
     public LogsBackgroundAgentCommand(
         ILogger<LogsBackgroundAgentCommand> logger,
         IBackgroundAgentLogStore? logStore = null)

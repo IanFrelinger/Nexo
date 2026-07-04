@@ -12,6 +12,7 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.Observation;
 
+/// <summary>Tests for observation pipeline service gap coverage.</summary>
 public sealed class ObservationPipelineServiceGapCoverageTests
 {
     [Fact]

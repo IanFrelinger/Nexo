@@ -10,14 +10,3 @@ public interface IPeerCapabilitySnapshot
 {
     IReadOnlyList<PeerExecutionCandidate> Candidates { get; }
 }
-
-public sealed record PeerExecutionCandidate
-{
-    public string PeerId { get; init; } = string.Empty;
-    public string Endpoint { get; init; } = string.Empty;
-    public long AvailableVramBytes { get; init; }
-    public GpuComputeClass ComputeClass { get; init; } = GpuComputeClass.None;
-    public int QueueDepth { get; init; }
-    public PeerTrustTier TrustTier { get; init; } = PeerTrustTier.Unknown;
-    public DateTimeOffset CapturedAt { get; init; } = DateTimeOffset.UtcNow;
-}

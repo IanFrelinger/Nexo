@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Copilot;
 
+/// <summary>Tests for copilot task store.</summary>
 [Trait("Category", "Integration")]
 public sealed class CopilotTaskStoreTests : TempDirTestBase
 {

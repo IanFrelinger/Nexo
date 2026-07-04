@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Barriers;
 
+/// <summary>Tests for barrier level gap coverage.</summary>
 public sealed class BarrierLevelGapCoverageTests
 {
     [Fact]

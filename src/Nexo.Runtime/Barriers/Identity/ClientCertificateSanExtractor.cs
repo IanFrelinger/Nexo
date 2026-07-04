@@ -3,6 +3,7 @@ using System.Security.Cryptography.X509Certificates;
 
 namespace Nexo.Runtime.Barriers.Identity;
 
+/// <summary>Extracts DNS subject alternative names from client X.509 certificates for PKI barrier resolution.</summary>
 internal static class ClientCertificateSanExtractor
 {
     internal static void ExtractDnsSans(X509Certificate2 certificate, ICollection<string> certSans)

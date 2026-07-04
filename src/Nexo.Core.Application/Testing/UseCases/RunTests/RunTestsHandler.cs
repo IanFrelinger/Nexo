@@ -29,6 +29,11 @@ public class RunTestsHandler : IRequestHandler<RunTestsCommand, TestExecutionRes
     private readonly ArtifactCleanupOptions _cleanupOptions;
     private readonly ILogger<RunTestsHandler> _logger;
 
+    /// <summary>Creates a handler that runs tests via <see cref="ITestRunner"/>.</summary>
+    /// <param name="testRunner">Service that executes test suites.</param>
+    /// <param name="logger">Logger for test run progress and results.</param>
+    /// <param name="cleanupService">Optional artifact cleanup service.</param>
+    /// <param name="cleanupOptions">Optional cleanup configuration.</param>
     public RunTestsHandler(
         ITestRunner testRunner,
         ILogger<RunTestsHandler> logger,
@@ -41,6 +46,10 @@ public class RunTestsHandler : IRequestHandler<RunTestsCommand, TestExecutionRes
         _cleanupOptions = cleanupOptions?.Value ?? new ArtifactCleanupOptions();
     }
 
+    /// <summary>Handles the command by running tests with optional filtering and cleanup.</summary>
+    /// <param name="request">Command containing optional filter and progress callback.</param>
+    /// <param name="cancellationToken">Token used to cancel the operation.</param>
+    /// <returns>Aggregated test execution results.</returns>
     public async Task<TestExecutionResult> Handle(
         RunTestsCommand request,
         CancellationToken cancellationToken)

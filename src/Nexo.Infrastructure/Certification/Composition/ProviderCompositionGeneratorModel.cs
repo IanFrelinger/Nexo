@@ -15,6 +15,7 @@ public sealed class ProviderCompositionGeneratorModel : ICompositionGeneratorMod
     private readonly ILogger<ProviderCompositionGeneratorModel>? _logger;
     private readonly string _provider;
 
+    /// <summary>Initializes a new provider composition generator model.</summary>
     public ProviderCompositionGeneratorModel(
         IProviderFactory providerFactory,
         string provider = "ollama",
@@ -25,6 +26,7 @@ public sealed class ProviderCompositionGeneratorModel : ICompositionGeneratorMod
         _logger = logger;
     }
 
+    /// <summary>Propose asynchronously.</summary>
     public async Task<ProposedComposition> ProposeAsync(
         CompositionProposerInput input,
         CancellationToken cancellationToken = default)

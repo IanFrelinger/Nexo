@@ -5,10 +5,13 @@ using Nexo.Core.Domain.Execution;
 
 namespace GameDirector.Mcp.Tools;
 
+/// <summary>Analyze balance tool.</summary>
 public sealed class AnalyzeBalanceTool : IMcpTool
 {
     private readonly McpBrickExecutor _executor;
 
+    /// <summary>Analyze balance tool.</summary>
+    /// <param name="executor">Executor.</param>
     public AnalyzeBalanceTool(McpBrickExecutor executor) => _executor = executor;
 
     public string Name => "analyze_balance";

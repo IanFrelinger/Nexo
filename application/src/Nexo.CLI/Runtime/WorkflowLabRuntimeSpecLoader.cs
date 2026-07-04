@@ -8,6 +8,7 @@ namespace Nexo.CLI.Runtime;
 /// </summary>
 public static class WorkflowLabRuntimeSpecLoader
 {
+    /// <summary>Loads a workflow lab runtime spec from inline JSON, a file path, or defaults.</summary>
     public static WorkflowLabRuntimeSpec Load(string? path, string? json)
     {
         if (!string.IsNullOrWhiteSpace(json))

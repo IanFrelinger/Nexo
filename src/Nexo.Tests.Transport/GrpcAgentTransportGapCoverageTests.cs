@@ -11,6 +11,7 @@ using Xunit;
 
 namespace Nexo.Tests.Transport;
 
+/// <summary>Tests for grpc agent transport gap coverage.</summary>
 [Collection("GrpcTransportEnvironment")]
 public sealed class GrpcAgentTransportGapCoverageTests
 {
@@ -337,12 +338,17 @@ public sealed class GrpcAgentTransportGapCoverageTests
         result.Success.Should().BeTrue();
     }
 
+    /// <summary>Throwing channel factory.</summary>
     private sealed class ThrowingChannelFactory : IGrpcChannelFactory
     {
         private readonly Exception _exception;
 
+        /// <summary>Throwing channel factory.</summary>
+        /// <param name="exception">Exception.</param>
         public ThrowingChannelFactory(Exception exception) => _exception = exception;
 
+        /// <summary>Gets or create.</summary>
+        /// <param name="endpoint">Endpoint.</param>
         public GrpcChannel GetOrCreate(string endpoint) => throw _exception;
 
         public void DisposeAll()
@@ -350,6 +356,7 @@ public sealed class GrpcAgentTransportGapCoverageTests
         }
     }
 
+    /// <summary>Echo transport.</summary>
     private sealed class EchoTransport : IAgentTransport
     {
         public Task<AgentResult> SendAsync(AgentInvocationRequest request, CancellationToken cancellationToken = default)
@@ -364,15 +371,23 @@ public sealed class GrpcAgentTransportGapCoverageTests
                 SpanId: request.SpanId));
         }
 
+        /// <summary>Check health async.</summary>
+        /// <param name="default">Default.</param>
         public Task<TransportHealth> CheckHealthAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult(new TransportHealth(true, "echo"));
     }
 
+    /// <summary>Failing transport.</summary>
     private sealed class FailingTransport : IAgentTransport
     {
         private readonly string _message;
+        /// <summary>Failing transport.</summary>
+        /// <param name="message">Message.</param>
         public FailingTransport(string message) => _message = message;
 
+        /// <summary>Send async.</summary>
+        /// <param name="request">Request.</param>
+        /// <param name="default">Default.</param>
         public Task<AgentResult> SendAsync(AgentInvocationRequest request, CancellationToken cancellationToken = default) =>
             Task.FromResult(new AgentResult(
                 Success: false,
@@ -381,20 +396,29 @@ public sealed class GrpcAgentTransportGapCoverageTests
                 CorrelationId: request.CorrelationId,
                 SpanId: request.SpanId));
 
+        /// <summary>Check health async.</summary>
+        /// <param name="default">Default.</param>
         public Task<TransportHealth> CheckHealthAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult(new TransportHealth(false, "fail"));
     }
 
+    /// <summary>Stub barrier context ambient.</summary>
     private sealed class StubBarrierContextAmbient : IBarrierContextAmbient
     {
         private BarrierContext? _context;
+        /// <summary>Stub barrier context ambient.</summary>
+        /// <param name="context">Context.</param>
         public StubBarrierContextAmbient(BarrierContext context) => _context = context;
         public BarrierContext? Current => _context;
+        /// <summary>Sets current.</summary>
+        /// <param name="context">Context.</param>
         public void SetCurrent(BarrierContext? context) => _context = context;
     }
 
+    /// <summary>Recording barrier audit log.</summary>
     private sealed class RecordingBarrierAuditLog : IBarrierAuditLog
     {
+        /// <summary>Events.</summary>
         public List<BarrierAuditEvent> Events { get; } = new();
         public ValueTask RecordAsync(BarrierAuditEvent auditEvent, CancellationToken cancellationToken = default)
         {
@@ -403,13 +427,17 @@ public sealed class GrpcAgentTransportGapCoverageTests
         }
     }
 
+    /// <summary>Capture transport.</summary>
     private sealed class CaptureTransport : IAgentTransport
     {
         private readonly Action<AgentInvocationRequest> _onInvoke;
+        /// <summary>Capture transport.</summary>
+        /// <param name="onInvoke">On invoke.</param>
         public CaptureTransport(Action<AgentInvocationRequest> onInvoke) => _onInvoke = onInvoke;
 
         public Task<AgentResult> SendAsync(AgentInvocationRequest request, CancellationToken cancellationToken = default)
         {
+            /// <summary>_on invoke.</summary>
             _onInvoke(request);
             return Task.FromResult(new AgentResult(
                 Success: true,
@@ -418,10 +446,13 @@ public sealed class GrpcAgentTransportGapCoverageTests
                 SpanId: request.SpanId));
         }
 
+        /// <summary>Check health async.</summary>
+        /// <param name="default">Default.</param>
         public Task<TransportHealth> CheckHealthAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult(new TransportHealth(true, "capture"));
     }
 
+    /// <summary>Environment variable scope.</summary>
     private sealed class EnvironmentVariableScope : IDisposable
     {
         private readonly string _key;
@@ -434,6 +465,7 @@ public sealed class GrpcAgentTransportGapCoverageTests
             Environment.SetEnvironmentVariable(key, value);
         }
 
+        /// <summary>Dispose.</summary>
         public void Dispose() => Environment.SetEnvironmentVariable(_key, _priorValue);
     }
 }

@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration.Barriers;
 
+/// <summary>Tests for scoped barrier context accessor.</summary>
 public sealed class ScopedBarrierContextAccessorTests
 {
     [Fact]
@@ -94,6 +95,7 @@ public sealed class ScopedBarrierContextAccessorTests
 
     private static BarrierHierarchy CreateHierarchy(params string[] levels)
     {
+        /// <summary>Barrier hierarchy.</summary>
         return new BarrierHierarchy(levels.Select((name, rank) => new BarrierLevel(name, rank)));
     }
 }

@@ -10,6 +10,7 @@ public sealed class AdaptationPromoter : IAdaptationPromoter
 {
     private readonly IAdaptationLog _log;
 
+    /// <summary>Initializes a new adaptation promoter.</summary>
     public AdaptationPromoter(IAdaptationLog log)
     {
         _log = log ?? throw new ArgumentNullException(nameof(log));

@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.MeshLab;
 
+/// <summary>Tests for mesh lab worker executor background service gap coverage.</summary>
 public sealed class MeshLabWorkerExecutorBackgroundServiceGapCoverageTests
 {
     [Fact]
@@ -16,6 +17,7 @@ public sealed class MeshLabWorkerExecutorBackgroundServiceGapCoverageTests
     {
         var requestCount = 0;
         var client = CreateClient(
+            /// <summary>Counting handler.</summary>
             new CountingHandler(() => Interlocked.Increment(ref requestCount)),
             new MeshLabWorkerExecutorOptions { Enabled = false, ApiKey = "key" },
             new ConfigurationBuilder().Build());
@@ -48,6 +50,7 @@ public sealed class MeshLabWorkerExecutorBackgroundServiceGapCoverageTests
             }
 
             patchCount++;
+            /// <summary>Json.</summary>
             return Json(HttpStatusCode.OK, "{}");
         });
 
@@ -133,6 +136,7 @@ public sealed class MeshLabWorkerExecutorBackgroundServiceGapCoverageTests
     {
         var requestCount = 0;
         var client = CreateClient(
+            /// <summary>Counting handler.</summary>
             new CountingHandler(() => Interlocked.Increment(ref requestCount)),
             new MeshLabWorkerExecutorOptions { Enabled = false, ApiKey = "key" },
             new ConfigurationBuilder().Build());
@@ -195,35 +199,52 @@ public sealed class MeshLabWorkerExecutorBackgroundServiceGapCoverageTests
             NullLogger<MeshLabWorkerExecutorClient>.Instance);
     }
 
+    /// <summary>Json.</summary>
+    /// <param name="status">Status.</param>
+    /// <param name="json">Json.</param>
     private static HttpResponseMessage Json(HttpStatusCode status, string json) =>
         new(status) { Content = new StringContent(json, Encoding.UTF8, "application/json") };
 
+    /// <summary>Tests for fake fleet handler.</summary>
     private sealed class FakeFleetHandler(Func<HttpRequestMessage, CancellationToken, HttpResponseMessage> handler)
         : HttpMessageHandler
     {
+        /// <summary>Send async.</summary>
+        /// <param name="request">Request.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
             Task.FromResult(handler(request, cancellationToken));
     }
 
+    /// <summary>Tests for counting handler.</summary>
     private sealed class CountingHandler(Action onRequest) : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
+            /// <summary>On request.</summary>
             onRequest();
             return Task.FromResult(Json(HttpStatusCode.OK, "[]"));
         }
     }
 
+    /// <summary>Tests for static options monitor.</summary>
     private sealed class StaticOptionsMonitor<T>(T value) : Microsoft.Extensions.Options.IOptionsMonitor<T> where T : class
     {
+        /// <summary>Current value.</summary>
         public T CurrentValue { get; } = value;
+        /// <summary>Gets the value.</summary>
+        /// <param name="name">Name.</param>
         public T Get(string? name) => CurrentValue;
+        /// <summary>On change.</summary>
+        /// <param name="listener">Listener.</param>
         public IDisposable OnChange(Action<T, string?> listener) => NullDisposable.Instance;
     }
 
+    /// <summary>Tests for null disposable.</summary>
     private sealed class NullDisposable : IDisposable
     {
         public static readonly NullDisposable Instance = new();
+        /// <summary>Dispose.</summary>
         public void Dispose() { }
     }
 }

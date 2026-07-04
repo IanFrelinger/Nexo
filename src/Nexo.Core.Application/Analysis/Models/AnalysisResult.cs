@@ -15,28 +15,12 @@ namespace Nexo.Core.Application.Analysis.Models;
 /// </summary>
 public record AnalysisResult
 {
+    /// <summary>Whether any violations were found.</summary>
     public required bool HasViolations { get; init; }
+
+    /// <summary>Violations discovered during analysis.</summary>
     public required IReadOnlyList<Violation> Violations { get; init; }
+
+    /// <summary>Total number of violations in <see cref="Violations"/>.</summary>
     public required int TotalViolations { get; init; }
 }
-
-/// <summary>
-/// Represents a single violation found during analysis.
-/// 
-/// Contains:
-/// - Rule that was violated
-/// - Human-readable message
-/// - File path and line number (if applicable)
-/// - Severity level (RiskLevel)
-/// 
-/// Used to report specific issues found during code analysis.
-/// </summary>
-public record Violation
-{
-    public required string Rule { get; init; }
-    public required string Message { get; init; }
-    public required string FilePath { get; init; }
-    public int? LineNumber { get; init; }
-    public RiskLevel Severity { get; init; } = RiskLevel.Medium;
-}
-

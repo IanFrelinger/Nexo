@@ -15,6 +15,7 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration;
 
+/// <summary>Tests for orchestration agents gap coverage.</summary>
 public class OrchestrationAgentsGapCoverageTests
 {
     [Fact]
@@ -118,6 +119,7 @@ public class OrchestrationAgentsGapCoverageTests
         var actInit = () => agent.InitializeAsync();
         await actInit.Should().ThrowAsync<InvalidOperationException>();
 
+        /// <summary>Sets agent state.</summary>
         SetAgentState(agent, AgentState.Created);
         var actExecuteEarly = () => agent.ExecuteAsync();
         await actExecuteEarly.Should().ThrowAsync<InvalidOperationException>();
@@ -440,24 +442,48 @@ public class OrchestrationAgentsGapCoverageTests
         return await task;
     }
 
+    /// <summary>Failing shutdown agent.</summary>
     private sealed class FailingShutdownAgent : BaseAgent
     {
         public FailingShutdownAgent(AgentSpawnSpec spec, ILogger<BaseAgent> logger) : base(spec, logger) { }
 
+        /// <summary>On initialize async.</summary>
+        /// <param name="cancellationToken">Cancellation token.</param>
         protected override Task OnInitializeAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+        /// <summary>On dependencies resolved async.</summary>
+        /// <param name="dependencyOutputs">Dependency outputs.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
         protected override Task OnDependenciesResolvedAsync(IReadOnlyDictionary<string, object> dependencyOutputs, CancellationToken cancellationToken) => Task.CompletedTask;
+        /// <summary>On execute async.</summary>
+        /// <param name="dependencyOutputs">Dependency outputs.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
         protected override Task<object> OnExecuteAsync(IReadOnlyDictionary<string, object>? dependencyOutputs, CancellationToken cancellationToken) => Task.FromResult<object>("ok");
+        /// <summary>On shutdown async.</summary>
+        /// <param name="cancellationToken">Cancellation token.</param>
         protected override Task OnShutdownAsync(CancellationToken cancellationToken) => throw new InvalidOperationException("shutdown failed");
     }
 
+    /// <summary>Failing execute agent.</summary>
     private sealed class FailingExecuteAgent : BaseAgent
     {
         public FailingExecuteAgent(AgentSpawnSpec spec, ILogger<BaseAgent> logger) : base(spec, logger) { }
 
+        /// <summary>On initialize async.</summary>
+        /// <param name="cancellationToken">Cancellation token.</param>
         protected override Task OnInitializeAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+        /// <summary>On dependencies resolved async.</summary>
+        /// <param name="dependencyOutputs">Dependency outputs.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
         protected override Task OnDependenciesResolvedAsync(IReadOnlyDictionary<string, object> dependencyOutputs, CancellationToken cancellationToken) => Task.CompletedTask;
+        /// <summary>On execute async.</summary>
+        /// <param name="dependencyOutputs">Dependency outputs.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
         protected override Task<object> OnExecuteAsync(IReadOnlyDictionary<string, object>? dependencyOutputs, CancellationToken cancellationToken) =>
+            /// <summary>Invalid operation exception.</summary>
+            /// <param name="failed"">Failed".</param>
             throw new InvalidOperationException("execute failed");
+        /// <summary>On shutdown async.</summary>
+        /// <param name="cancellationToken">Cancellation token.</param>
         protected override Task OnShutdownAsync(CancellationToken cancellationToken) => Task.CompletedTask;
     }
 }

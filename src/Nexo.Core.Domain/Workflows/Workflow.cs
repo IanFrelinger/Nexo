@@ -7,8 +7,13 @@ namespace Nexo.Core.Domain.Workflows;
 /// </summary>
 public class Workflow
 {
+    /// <summary>Stable workflow identifier.</summary>
     public string Id { get; init; } = default!;
+
+    /// <summary>Human-readable workflow name.</summary>
     public string Name { get; init; } = default!;
+
+    /// <summary>Short description of the workflow purpose.</summary>
     public string Description { get; init; } = default!;
     
     /// <summary>
@@ -21,16 +26,3 @@ public class Workflow
     /// </summary>
     public IReadOnlyList<WorkflowConnection> Connections { get; init; } = [];
 }
-
-/// <summary>
-/// A connection between cluster instances in a workflow.
-/// </summary>
-public class WorkflowConnection
-{
-    public string Id { get; init; } = default!;
-    public string FromInstanceId { get; init; } = default!;
-    public string FromOutput { get; init; } = default!;
-    public string ToInstanceId { get; init; } = default!;
-    public string ToInput { get; init; } = default!;
-}
-

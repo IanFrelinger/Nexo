@@ -11,6 +11,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.SelfContext;
 
+/// <summary>Tests for self context assembler gap coverage.</summary>
 public sealed class SelfContextAssemblerGapCoverageTests
 {
     [Fact]

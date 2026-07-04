@@ -191,36 +191,3 @@ public sealed class ParetoOptimizer
         return string.Join("; ", parts);
     }
 }
-
-/// <summary>
-/// Result of Pareto optimization.
-/// </summary>
-public sealed record ParetoResult
-{
-    public bool HasConflict { get; init; }
-    public IReadOnlyList<ResourceAllocation> ParetoFrontier { get; init; } = Array.Empty<ResourceAllocation>();
-    public ResourceAllocation? RecommendedAllocation { get; init; }
-    public IReadOnlyList<string> Tradeoffs { get; init; } = Array.Empty<string>();
-
-    public static ParetoResult NoConflict() => new() { HasConflict = false };
-}
-
-/// <summary>
-/// Resource allocation for multiple agents.
-/// </summary>
-public sealed record ResourceAllocation
-{
-    public IReadOnlyDictionary<string, AllocatedResources> Allocations { get; init; } =
-        new Dictionary<string, AllocatedResources>();
-}
-
-/// <summary>
-/// Allocated resources for a single agent.
-/// </summary>
-public sealed record AllocatedResources
-{
-    public int ComputeSeconds { get; init; }
-    public int MemoryMb { get; init; }
-    public int ContextTokens { get; init; }
-}
-

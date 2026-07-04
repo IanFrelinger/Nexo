@@ -19,6 +19,7 @@ public sealed class NcrCapabilityRouter : ICapabilityRouter
     private readonly ILogger<NcrCapabilityRouter> _logger;
     private readonly PeerTrustPolicyResolver _peerTrustResolver;
 
+    /// <summary>Initializes a new ncr capability router.</summary>
     public NcrCapabilityRouter(
         INCRCapabilitySnapshot snapshot,
         IPeerCapabilitySnapshot peerSnapshot,
@@ -41,6 +42,7 @@ public sealed class NcrCapabilityRouter : ICapabilityRouter
             _config.Value.UntrustedPeerIdsCsv);
     }
 
+    /// <summary>Resolve execution target.</summary>
     public ExecutionTarget ResolveExecutionTarget(JobRequirements requirements)
     {
         if (requirements.RemoteExecutionPreference == RemoteExecutionPreference.PeerNetworkOnly)

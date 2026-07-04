@@ -8,6 +8,7 @@ namespace Nexo.Infrastructure.NodeCapabilityRuntime.Profiles;
 /// </summary>
 public sealed class EnvironmentHardwareProfiler : IHardwareProfiler
 {
+    /// <summary>Capture asynchronously.</summary>
     public Task<NodeProfile> CaptureAsync(CancellationToken ct = default)
     {
         ct.ThrowIfCancellationRequested();
@@ -67,6 +68,7 @@ public sealed class EnvironmentHardwareProfiler : IHardwareProfiler
         return PlatformType.Unknown;
     }
 
+    /// <summary>Classify tier.</summary>
     public static NodeTier ClassifyTier(NodeProfile profile)
     {
         var ramGiB = profile.TotalRAMBytes / (1024.0 * 1024.0 * 1024.0);

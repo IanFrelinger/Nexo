@@ -5,13 +5,16 @@ using Nexo.Core.Application.Testing.Models;
 
 namespace Nexo.Tests.CLI.Tests.Commands;
 
+/// <summary>Tests for runtime studio tune applier.</summary>
 public sealed class RuntimeStudioTuneApplierTests : UnitTestBase
 {
     public override Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
+            /// <summary>Test apply tune_updates ollama model names_from default spec.</summary>
             TestApplyTune_UpdatesOllamaModelNames_FromDefaultSpec();
+            /// <summary>Test resolve ollama model for lab agent_mixed profile.</summary>
             TestResolveOllamaModelForLabAgent_MixedProfile();
             return Task.FromResult(new TestResult
             {
@@ -93,8 +96,13 @@ public sealed class RuntimeStudioTuneApplierTests : UnitTestBase
             };
 
             var result = RuntimeStudioTuneApplier.Apply(temp, specPath, agentPath, last, dryRun: false);
+            /// <summary>Assert true.</summary>
             AssertTrue(result.Ok, result.Summary);
+            /// <summary>Assert not null.</summary>
             AssertNotNull(result.UpdatedAgentIds);
+            /// <summary>Assert true.</summary>
+            /// <param name="1">1.</param>
+            /// <param name="update."">Update.".</param>
             AssertTrue(result.UpdatedAgentIds!.Count >= 1, "Expected at least one agent update.");
 
             var updated = File.ReadAllText(agentPath);
@@ -122,7 +130,9 @@ public sealed class RuntimeStudioTuneApplierTests : UnitTestBase
 
         var planner = RuntimeStudioTuneApplier.ResolveOllamaModelForLabAgent(composition, profile, "planner-1");
         var builder = RuntimeStudioTuneApplier.ResolveOllamaModelForLabAgent(composition, profile, "builder-1");
+        /// <summary>Assert equal.</summary>
         AssertEqual("qwen2.5:7b", planner);
+        /// <summary>Assert equal.</summary>
         AssertEqual("codellama:13b", builder);
     }
 }

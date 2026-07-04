@@ -26,6 +26,7 @@ public class TestRunnerAdapter : ITestRunner
     private readonly ILogger<TestRunnerAdapter> _logger;
     private readonly IServiceProvider _serviceProvider;
 
+    /// <summary>Initializes a new test runner adapter.</summary>
     public TestRunnerAdapter(
         ILogger<TestRunnerAdapter> logger,
         IServiceProvider serviceProvider)
@@ -34,6 +35,7 @@ public class TestRunnerAdapter : ITestRunner
         _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
     }
 
+    /// <summary>Run tests asynchronously.</summary>
     public async Task<TestExecutionResult> RunTestsAsync(
         string? filter = null,
         IProgress<ProgressReport>? progress = null,

@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Execution;
 
+/// <summary>Tests for ollama provider.</summary>
 public sealed class OllamaProviderTests
 {
     [Fact]
@@ -101,9 +102,14 @@ public sealed class OllamaProviderTests
             requestCount++;
             if (requestCount == 1)
             {
+                /// <summary>Json response.</summary>
+                /// <param name=""llama3.2:3b"">"llama3.2:3b".</param>
+                /// <param name="}"""">}""".</param>
                 return JsonResponse("""{ "models": [ { "name": "llama3.2:3b", "size": 1234 } ] }""");
             }
 
+            /// <summary>Http request exception.</summary>
+            /// <param name="refused"">Refused".</param>
             throw new HttpRequestException("Connection refused");
         });
 
@@ -153,10 +159,12 @@ public sealed class OllamaProviderTests
         };
     }
 
+    /// <summary>Tests for fake http message handler.</summary>
     private sealed class FakeHttpMessageHandler : HttpMessageHandler
     {
         private readonly Func<HttpRequestMessage, HttpResponseMessage> _handler;
 
+        /// <summary>Requests.</summary>
         public List<HttpRequestMessage> Requests { get; } = new();
 
         public FakeHttpMessageHandler(Func<HttpRequestMessage, HttpResponseMessage> handler)

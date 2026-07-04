@@ -12,11 +12,13 @@ public sealed class DockerDesktopLifecycleAdapter : IBlobStorageLifecycle
 {
     private readonly ILogger<DockerDesktopLifecycleAdapter> _logger;
 
+    /// <summary>Initializes a new docker desktop lifecycle adapter.</summary>
     public DockerDesktopLifecycleAdapter(ILogger<DockerDesktopLifecycleAdapter> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>Pause asynchronously.</summary>
     public async Task PauseAsync(CancellationToken ct = default)
     {
         _logger.LogInformation("Pausing Docker Desktop for blob cleanup...");
@@ -51,6 +53,7 @@ public sealed class DockerDesktopLifecycleAdapter : IBlobStorageLifecycle
         await Task.Delay(3000, ct).ConfigureAwait(false);
     }
 
+    /// <summary>Resume asynchronously.</summary>
     public Task ResumeAsync(CancellationToken ct = default)
     {
         _logger.LogInformation("Resuming Docker Desktop...");

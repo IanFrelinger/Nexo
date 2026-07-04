@@ -3,8 +3,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Nexo.Abstractions.Database;
 using Nexo.Infrastructure.Persistence;
 
-namespace Nexo.Infrastructure.Sdk.Persistence;
-
+namespace Nexo.Infrastructure.Persistence.Sdk.Extensions;
 /// <summary>
 /// DI registration for isolated database provisioning.
 /// </summary>

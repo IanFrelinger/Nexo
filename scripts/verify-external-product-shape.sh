@@ -231,7 +231,7 @@ EOF
 
 cat > "${HOST_DIR}/Program.cs" <<'HOSTCS'
 using Nexo.Authoring;
-using Nexo.BrickContracts;
+using Nexo.Brick.Contracts;
 using Nexo.Core.Application.Bricks;
 using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Execution;

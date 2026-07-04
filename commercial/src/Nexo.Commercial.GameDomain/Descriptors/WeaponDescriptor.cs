@@ -1,5 +1,4 @@
-namespace Nexo.GameDomain.Descriptors;
-
+namespace Nexo.Commercial.GameDomain.Descriptors;
 /// <summary>
 /// Data-only descriptor for a weapon archetype consumed by the host combat system.
 /// <para>

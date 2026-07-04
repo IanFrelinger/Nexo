@@ -6,6 +6,7 @@ using System.Xml;
 
 namespace ValidationUtilities;
 
+/// <summary>J unit aggregator.</summary>
 public class JUnitAggregator
 {
     public static int Run(string[] args)

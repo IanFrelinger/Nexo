@@ -9,6 +9,7 @@ using System.Text.Json;
 
 namespace Nexo.Tests.Infrastructure.Tests.Configuration;
 
+/// <summary>Tests for configuration service adapter.</summary>
 public class ConfigurationServiceAdapterTests : UnitTestBase
 {
     private DirectoryInfo? _tempDir;
@@ -32,13 +33,21 @@ public class ConfigurationServiceAdapterTests : UnitTestBase
     {
         try
         {
+            /// <summary>Test load default configuration.</summary>
             await TestLoadDefaultConfiguration();
+            /// <summary>Test load from file.</summary>
             await TestLoadFromFile();
+            /// <summary>Test load invalid json.</summary>
             await TestLoadInvalidJson();
+            /// <summary>Test load non existent file.</summary>
             await TestLoadNonExistentFile();
+            /// <summary>Test save configuration.</summary>
             await TestSaveConfiguration();
+            /// <summary>Test save to non existent directory.</summary>
             await TestSaveToNonExistentDirectory();
+            /// <summary>Test get default.</summary>
             await TestGetDefault();
+            /// <summary>Test cancellation.</summary>
             await TestCancellation();
 
             return new TestResult
@@ -82,9 +91,14 @@ public class ConfigurationServiceAdapterTests : UnitTestBase
 
         var defaultConfig = adapter.GetDefault();
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(defaultConfig);
+        /// <summary>Assert not null.</summary>
         AssertNotNull(defaultConfig.Analysis);
+        /// <summary>Assert not null.</summary>
         AssertNotNull(defaultConfig.Validation);
+        /// <summary>Assert true.</summary>
+        /// <param name="0">0.</param>
         AssertTrue(defaultConfig.Analysis.EnabledRules.Count > 0);
         return Task.CompletedTask;
     }
@@ -121,6 +135,7 @@ public class ConfigurationServiceAdapterTests : UnitTestBase
         var adapter = new ConfigurationServiceAdapter(mockLogger.Object);
         var defaultConfig = adapter.GetDefault();
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(defaultConfig);
         return Task.CompletedTask;
     }
@@ -133,6 +148,7 @@ public class ConfigurationServiceAdapterTests : UnitTestBase
         // The adapter uses a hardcoded path, so we can't easily test invalid JSON
         // But we can verify GetDefault works
         var defaultConfig = adapter.GetDefault();
+        /// <summary>Assert not null.</summary>
         AssertNotNull(defaultConfig);
         return Task.CompletedTask;
     }
@@ -145,6 +161,7 @@ public class ConfigurationServiceAdapterTests : UnitTestBase
         // The adapter should return default config when file doesn't exist
         // Since we can't override the path, we test GetDefault
         var defaultConfig = adapter.GetDefault();
+        /// <summary>Assert not null.</summary>
         AssertNotNull(defaultConfig);
         return Task.CompletedTask;
     }
@@ -174,7 +191,9 @@ public class ConfigurationServiceAdapterTests : UnitTestBase
         // The adapter uses a hardcoded path, so we can't easily test saving
         // But we can verify the config structure is valid
         AssertNotNull(config);
+        /// <summary>Assert not null.</summary>
         AssertNotNull(config.Analysis);
+        /// <summary>Assert not null.</summary>
         AssertNotNull(config.Validation);
         return Task.CompletedTask;
     }
@@ -199,17 +218,29 @@ public class ConfigurationServiceAdapterTests : UnitTestBase
 
         var defaultConfig = adapter.GetDefault();
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(defaultConfig);
+        /// <summary>Assert not null.</summary>
         AssertNotNull(defaultConfig.Analysis);
+        /// <summary>Assert not null.</summary>
         AssertNotNull(defaultConfig.Validation);
+        /// <summary>Assert true.</summary>
+        /// <param name="0">0.</param>
         AssertTrue(defaultConfig.Analysis.EnabledRules.Count > 0);
         AssertTrue(defaultConfig.Analysis.EnabledRules.Contains("SecurityScan"));
         AssertTrue(defaultConfig.Analysis.EnabledRules.Contains("CodeQuality"));
+        /// <summary>Assert equal.</summary>
         AssertEqual(20, defaultConfig.Analysis.MaxComplexityThreshold);
+        /// <summary>Assert true.</summary>
         AssertTrue(defaultConfig.Analysis.EnableSecurityScan);
+        /// <summary>Assert true.</summary>
         AssertTrue(defaultConfig.Analysis.EnableCodeQuality);
+        /// <summary>Assert equal.</summary>
         AssertEqual(300, defaultConfig.Validation.TimeoutSeconds);
+        /// <summary>Assert false.</summary>
         AssertFalse(defaultConfig.Validation.FailOnNoTests);
+        /// <summary>Assert true.</summary>
+        /// <param name="0">0.</param>
         AssertTrue(defaultConfig.Validation.TestProjectPatterns.Count > 0);
 
         return Task.CompletedTask;
@@ -227,6 +258,7 @@ public class ConfigurationServiceAdapterTests : UnitTestBase
         // Since we can't easily test LoadAsync/SaveAsync with custom paths,
         // we verify GetDefault works
         var defaultConfig = adapter.GetDefault();
+        /// <summary>Assert not null.</summary>
         AssertNotNull(defaultConfig);
         return Task.CompletedTask;
     }

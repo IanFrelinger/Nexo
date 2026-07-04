@@ -1,5 +1,4 @@
-namespace Nexo.GameDomain.Discord;
-
+namespace Nexo.Commercial.GameDomain.Discord;
 /// <summary>
 /// Maps Discord emoji reactions to fix application actions.
 /// ✅ = approve all fixes, ❌ = reject all, 1️⃣-9️⃣ = approve individual fix.
@@ -46,16 +45,3 @@ public sealed class ApprovalBridge
             $"Unrecognized reaction: {emoji}");
     }
 }
-
-public enum ApprovalAction
-{
-    ApproveAll,
-    ApproveSingle,
-    RejectAll,
-    Unknown
-}
-
-public sealed record ApprovalResult(
-    ApprovalAction Action,
-    IReadOnlyList<Playtest.ProposedFix> FixesToApply,
-    string Summary);

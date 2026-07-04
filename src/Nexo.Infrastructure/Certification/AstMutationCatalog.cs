@@ -11,6 +11,7 @@ internal static class AstMutationCatalog
 {
     private const int MaxPerKind = 4;
 
+    /// <summary>Collect mutations.</summary>
     public static IReadOnlyList<AstMutation> CollectMutations(string sourceCode)
     {
         var tree = CSharpSyntaxTree.ParseText(sourceCode);
@@ -213,9 +214,4 @@ internal static class AstMutationCatalog
         flipped = node.WithOperatorToken(flippedToken.Value);
         return true;
     }
-}
-
-internal sealed record AstMutation(string Id, SyntaxNode MutatedRoot)
-{
-    public string ToSource() => MutatedRoot.NormalizeWhitespace().ToFullString();
 }

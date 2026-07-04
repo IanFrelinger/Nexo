@@ -76,7 +76,7 @@ public sealed class VirtualProductionNcrRoutingHost : IAsyncDisposable
         foreach (var kv in opts.ConfigurationOverrides)
             builder.Configuration[kv.Key] = kv.Value;
 
-        builder.Services.AddSingleton<IBrickRegistry>(_ => new BrickRegistry(Array.Empty<Brick>()));
+        builder.Services.AddSingleton<IBrickRegistry>(_ => new BrickRegistry(Array.Empty<DomainBrick>()));
         builder.Services.AddSingleton<IProviderFactory>(sp =>
             new ProviderFactory(sp.GetRequiredService<ILogger<ProviderFactory>>()));
 
@@ -148,58 +148,4 @@ public sealed class VirtualProductionNcrRoutingHost : IAsyncDisposable
                 Environment.SetEnvironmentVariable(kv.Key, kv.Value);
         }
     }
-}
-
-/// <summary>Knobs for <see cref="VirtualProductionNcrRoutingHost"/>.</summary>
-public sealed class VirtualProductionNcrRoutingHostOptions
-{
-    /// <summary>Defaults tuned for fast CI.</summary>
-    public Dictionary<string, string?> ConfigurationOverrides { get; } = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["Nexo:RunPod:QueueDepthThreshold"] = "8",
-        ["Nexo:RunPod:Timeout"] = "00:01:00",
-        ["Nexo:RunPod:PollingInterval"] = "00:00:00.050",
-        ["Nexo:RunPod:EnablePeerNetworkRouting"] = "true",
-        ["Nexo:RunPod:PreferPeerNetworkOverCloud"] = "true",
-        ["Nexo:RunPod:PeerTrustPolicy"] = "any",
-        ["Nexo:RunPod:PeerDiscoveryInterval"] = "00:00:00.150",
-        ["Nexo:RunPod:PeerCapabilityId"] = "generation.capability-routing",
-        ["Nexo:NodeCapabilityRuntime:ProfileRefreshInterval"] = "00:00:00.150",
-        ["Nexo:NodeCapabilityRuntime:NodeId"] = "virtual-prod-node"
-    };
-
-    public TimeSpan PostStartDelay { get; set; } = TimeSpan.FromMilliseconds(250);
-
-    /// <summary>Loopback RunPod API behaviour (same paths as production <see cref="RunPodHttpClient"/>).</summary>
-    public RunPodLoopbackApiConfiguration RunPodCloud { get; } = new();
-
-    /// <summary>
-    /// Process environment variables applied while the host runs (restored on dispose).
-    /// Use <c>NEXO_TOTAL_VRAM_BYTES</c> / <c>NEXO_AVAILABLE_VRAM_BYTES</c> for <see cref="EnvironmentHardwareProfiler"/>.
-    /// </summary>
-    public Dictionary<string, string?> EnvironmentOverrides { get; } = new(StringComparer.OrdinalIgnoreCase)
-    {
-        ["NEXO_ALLOW_MOCK"] = "1"
-    };
-
-    /// <summary>Sets VRAM hints for <see cref="EnvironmentHardwareProfiler"/>.</summary>
-    public void SetVramBytes(long totalBytes, long? availableBytes = null)
-    {
-        EnvironmentOverrides["NEXO_TOTAL_VRAM_BYTES"] = totalBytes.ToString();
-        EnvironmentOverrides["NEXO_AVAILABLE_VRAM_BYTES"] = (availableBytes ?? totalBytes).ToString();
-    }
-}
-
-/// <summary>Minimal execution context for capability-routing brick tests (provider resolved by <see cref="ProviderFactory"/>).</summary>
-public sealed class VirtualProdExecutionContext : IExecutionContext
-{
-    public string AgentId { get; init; } = "virtual-prod-agent";
-    public string BehaviorId { get; init; } = "virtual-prod-behavior";
-    public bool IsAirGapped { get; init; }
-    public bool AuditMode { get; init; } = true;
-
-    /// <summary>Use mock-json when <c>NEXO_ALLOW_MOCK=1</c> for deterministic local execution.</summary>
-    public string Provider { get; init; } = "mock-json";
-
-    public IReadOnlyDictionary<string, object> Variables { get; init; } = new Dictionary<string, object>();
 }

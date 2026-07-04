@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace Nexo.Certification.Physical.Resolution.Http;
 
+/// <summary>Physical atom certificate json codec.</summary>
 internal static class PhysicalAtomCertificateJsonCodec
 {
     private static readonly JsonSerializerOptions Options = new()
@@ -17,6 +18,8 @@ internal static class PhysicalAtomCertificateJsonCodec
         Options.Converters.Add(new JsonStringEnumConverter());
     }
 
+    /// <summary>Serialize.</summary>
+    /// <param name="certificate">Certificate.</param>
     public static byte[] Serialize(PhysicalAtomCertificate certificate) =>
         JsonSerializer.SerializeToUtf8Bytes(certificate, Options);
 }

@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Export;
 
+/// <summary>Tests for code generator gap coverage.</summary>
 public sealed class CodeGeneratorGapCoverageTests
 {
     private readonly CodeGenerator _generator = new();
@@ -97,7 +98,7 @@ public sealed class CodeGeneratorGapCoverageTests
     }
 
     private static TestBrick SampleBrick()
-        => new("test-brick", "Test Brick");
+        => new("test-brick", "Test DomainBrick");
 
     private static Workflow SampleWorkflow()
         => new()
@@ -112,7 +113,8 @@ public sealed class CodeGeneratorGapCoverageTests
             ],
         };
 
-    private sealed class TestBrick : Brick
+    /// <summary>Tests for test brick.</summary>
+    private sealed class TestBrick : DomainBrick
     {
         public TestBrick(string id, string name)
         {

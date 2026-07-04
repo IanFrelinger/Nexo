@@ -21,6 +21,7 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration.Routing;
 
+/// <summary>Tests for endpoint health monitor.</summary>
 public sealed class EndpointHealthMonitorTests
 {
     [Fact]
@@ -230,6 +231,7 @@ public sealed class EndpointHealthMonitorTests
             Times.AtLeastOnce);
     }
 
+    /// <summary>Throwing update endpoint registry.</summary>
     private sealed class ThrowingUpdateEndpointRegistry : IEndpointRegistry
     {
         private readonly ConcurrentDictionary<string, EndpointDescriptor> _endpoints =
@@ -243,14 +245,19 @@ public sealed class EndpointHealthMonitorTests
 
         public List<(string endpoint, bool isHealthy)> Updates { get; } = [];
 
+        /// <summary>Gets all.</summary>
         public IReadOnlyList<EndpointDescriptor> GetAll() => _endpoints.Values.ToList();
 
+        /// <summary>Register.</summary>
+        /// <param name="descriptor">Descriptor.</param>
         public void Register(EndpointDescriptor descriptor) => _endpoints[descriptor.Endpoint] = descriptor;
 
         public void UpdateHealth(string endpoint, bool isHealthy)
         {
             Updates.Add((endpoint, isHealthy));
             if (isHealthy)
+                /// <summary>Invalid operation exception.</summary>
+                /// <param name="failed"">Failed".</param>
                 throw new InvalidOperationException("update failed");
         }
     }
@@ -260,9 +267,11 @@ public sealed class EndpointHealthMonitorTests
         var factory = new DefaultGrpcChannelFactory(
             Options.Create(new GrpcTransportOptions { AllowInsecure = true }),
             NullLogger<DefaultGrpcChannelFactory>.Instance);
+        /// <summary>Grpc agent transport.</summary>
         return new GrpcAgentTransport(factory, NullLogger<GrpcAgentTransport>.Instance);
     }
 
+    /// <summary>Test endpoint registry.</summary>
     private sealed class TestEndpointRegistry : IEndpointRegistry
     {
         private readonly ConcurrentDictionary<string, EndpointDescriptor> _endpoints =
@@ -278,6 +287,7 @@ public sealed class EndpointHealthMonitorTests
 
         public List<(string endpoint, bool isHealthy)> Updates { get; } = [];
 
+        /// <summary>Gets all.</summary>
         public IReadOnlyList<EndpointDescriptor> GetAll() => _endpoints.Values.ToList();
 
         public void Register(EndpointDescriptor descriptor)
@@ -295,6 +305,7 @@ public sealed class EndpointHealthMonitorTests
         }
     }
 
+    /// <summary>Grpc server fixture.</summary>
     private sealed class GrpcServerFixture : IAsyncDisposable
     {
         private readonly WebApplication _app;
@@ -305,6 +316,7 @@ public sealed class EndpointHealthMonitorTests
             Endpoint = endpoint;
         }
 
+        /// <summary>Endpoint.</summary>
         public string Endpoint { get; }
 
         public static async Task<GrpcServerFixture> StartAsync(bool health)
@@ -338,6 +350,7 @@ public sealed class EndpointHealthMonitorTests
             app.MapNexoGrpcServer();
             await app.StartAsync();
 
+            /// <summary>Grpc server fixture.</summary>
             return new GrpcServerFixture(app, endpoint);
         }
 
@@ -357,6 +370,7 @@ public sealed class EndpointHealthMonitorTests
         }
     }
 
+    /// <summary>Fixed health transport.</summary>
     private sealed class FixedHealthTransport : IAgentTransport
     {
         private readonly bool _healthy;
@@ -378,6 +392,7 @@ public sealed class EndpointHealthMonitorTests
                 DiagnosticMessage: _healthy ? "ok" : "down"));
     }
 
+    /// <summary>Environment variable scope.</summary>
     private sealed class EnvironmentVariableScope : IDisposable
     {
         private readonly string _key;

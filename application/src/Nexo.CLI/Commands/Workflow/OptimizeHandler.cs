@@ -1,13 +1,15 @@
 using System.Diagnostics;
 using System.Text.Json;
 using Nexo.CLI.Runtime;
-namespace Nexo.CLI.Commands;
+namespace Nexo.CLI.Commands.Workflow;
+/// <summary>Handles optimize requests.</summary>
 internal sealed partial class OptimizeHandler(
     Func<string, CancellationToken, Task<WorkflowCommand.PreflightResult>> providerPreflight,
     Func<IReadOnlyList<string>, CancellationToken, Task<WorkflowCommand.ModelPullResult>> ollamaModelPuller,
     Func<bool, string?, CancellationToken, Task<IReadOnlyList<ExecutionTarget>>> resolveExecutionTargets,
     Func<ExecutionTarget, string, string, string?, bool, CancellationToken, Task<WorkflowCommand.ScenarioExecutionResult>> executeScenarioForTarget)
 {
+    /// <summary>Executes the command handler and returns a process exit code.</summary>
     public async Task<int> ExecuteAsync(
         string? requestOverride,
         string? objective,
@@ -592,6 +594,7 @@ internal sealed partial class OptimizeHandler(
             AllocationTrace: allocationTrace,
             TargetAllocations: targetAllocations,
             CandidateAllocations: candidateAllocations);
+        /// <summary>Write result.</summary>
         WriteResult(result, json);
         return result.Ok ? 0 : 1;
     }

@@ -10,6 +10,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Certification;
 
+/// <summary>Tests for composition proposer dogfood.</summary>
 [Trait("Category", "Certification")]
 public sealed class CompositionProposerDogfoodTests
 {

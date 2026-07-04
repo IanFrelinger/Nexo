@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration.Barriers;
 
+/// <summary>Tests for barrier routing policy.</summary>
 public sealed class BarrierRoutingPolicyTests
 {
     [Fact]

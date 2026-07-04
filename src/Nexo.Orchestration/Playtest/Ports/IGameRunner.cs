@@ -41,32 +41,3 @@ public interface IGameRunner
     /// </summary>
     bool IsRunning { get; }
 }
-
-/// <summary>
-/// Current state of the game.
-/// 
-/// Contains:
-/// - Game over status
-/// - Player health and position
-/// - Current objective
-/// - Currency and equipped weapon
-/// - Nearby enemies and items
-/// - Available actions
-/// 
-/// Returned by IGameRunner to represent current game state.
-/// Used by AIPlayerAgent to make decisions.
-/// </summary>
-public sealed record GameState
-{
-    public bool IsGameOver { get; init; }
-    public double PlayerHealth { get; init; }
-    public double PlayerMaxHealth { get; init; }
-    public string PlayerPosition { get; init; } = "";
-    public string? CurrentObjective { get; init; }
-    public int Currency { get; init; }
-    public string? EquippedWeapon { get; init; }
-    public IReadOnlyList<string> NearbyEnemies { get; init; } = Array.Empty<string>();
-    public IReadOnlyList<string> NearbyItems { get; init; } = Array.Empty<string>();
-    public IReadOnlyList<string> AvailableActions { get; init; } = Array.Empty<string>();
-}
-

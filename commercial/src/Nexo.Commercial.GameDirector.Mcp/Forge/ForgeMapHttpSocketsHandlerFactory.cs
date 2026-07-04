@@ -3,8 +3,7 @@ using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace Nexo.API.Forge;
-
+namespace GameDirector.Mcp.Forge;
 /// <summary>
 /// Factory for <see cref="SocketsHttpHandler"/> used by the forge-map <see cref="HttpClient"/>,
 /// including optional connect-time IP validation against private ranges.

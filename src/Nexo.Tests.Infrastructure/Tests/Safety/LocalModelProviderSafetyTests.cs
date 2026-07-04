@@ -5,9 +5,6 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Safety;
 
-[CollectionDefinition("LocalModelProviderState", DisableParallelization = true)]
-public sealed class LocalModelProviderStateCollection;
-
 [Collection("LocalModelProviderState")]
 
 /// <summary>

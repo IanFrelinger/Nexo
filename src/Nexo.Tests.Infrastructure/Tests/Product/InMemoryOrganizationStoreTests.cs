@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Product;
 
+/// <summary>Tests for in memory organization store.</summary>
 public sealed class InMemoryOrganizationStoreTests
 {
     [Fact]

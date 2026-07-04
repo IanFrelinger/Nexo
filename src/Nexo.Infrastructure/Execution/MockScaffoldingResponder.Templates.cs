@@ -3,6 +3,7 @@ using System.Text.RegularExpressions;
 
 namespace Nexo.Infrastructure.Execution;
 
+/// <summary>Embedded template sources for mock scaffolding code generation responses.</summary>
 internal static partial class MockScaffoldingResponder
 {
     private static string BuildSystemContextSource(bool includeJump, bool includeSprint)

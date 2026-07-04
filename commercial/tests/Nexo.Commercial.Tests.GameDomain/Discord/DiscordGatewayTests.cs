@@ -1,8 +1,8 @@
 using FluentAssertions;
-using Nexo.GameDomain.Discord;
+using Nexo.Commercial.GameDomain.Discord;
 
-namespace Nexo.Tests.GameDomain.Discord;
-
+namespace Nexo.Commercial.Tests.GameDomain.Discord;
+/// <summary>Tests for discord gateway.</summary>
 public class DiscordGatewayTests
 {
     private DiscordGatewayClient CreateClient() => new("test-bot-token", "test-channel-id");

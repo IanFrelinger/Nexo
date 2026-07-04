@@ -10,6 +10,7 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.Security;
 
+/// <summary>Tests for background agent policy engine factory.</summary>
 public class BackgroundAgentPolicyEngineFactoryTests
 {
     [Fact]

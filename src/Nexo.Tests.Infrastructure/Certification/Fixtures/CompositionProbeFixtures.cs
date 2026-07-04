@@ -8,6 +8,7 @@ using Nexo.Tests.Infrastructure.Certification.Fixtures;
 
 namespace Nexo.Tests.Infrastructure.Certification.Fixtures;
 
+/// <summary>Composition probe fixtures.</summary>
 public static class CompositionProbeFixtures
 {
     public const string CompositionId = "error-summary-pipeline";
@@ -21,6 +22,7 @@ public static class CompositionProbeFixtures
 
     public static readonly string ExpectedSummary = "Errors=2; first=First failure: connection reset";
 
+    /// <summary>Correct spec.</summary>
     public static CompositionSpec CorrectSpec() => new(
         CompositionId,
         [
@@ -49,6 +51,7 @@ public static class CompositionProbeFixtures
         return CorrectSpec() with { Edges = edges };
     }
 
+    /// <summary>Uncertified constituent spec.</summary>
     public static CompositionSpec UncertifiedConstituentSpec() =>
         CorrectSpec() with
         {
@@ -59,6 +62,7 @@ public static class CompositionProbeFixtures
             ]
         };
 
+    /// <summary>Nondeterministic spec.</summary>
     public static CompositionSpec NondeterministicSpec() =>
         new(
             CompositionId + "-nondet",
@@ -74,6 +78,7 @@ public static class CompositionProbeFixtures
                 new CompositionPort("nonce", "int")
             ]);
 
+    /// <summary>Nondeterministic edges.</summary>
     private static IReadOnlyList<CompositionEdge> NondeterministicEdges() =>
     [
         new CompositionEdge(CompositionGraphConstants.InputNodeId, "logText", "probe", "logText"),
@@ -84,6 +89,7 @@ public static class CompositionProbeFixtures
         new CompositionEdge("format", "nonce", CompositionGraphConstants.OutputNodeId, "nonce")
     ];
 
+    /// <summary>Strong witness.</summary>
     public static CompositionWitnessSpec StrongWitness() => new(
         CompositionId,
         [
@@ -96,6 +102,7 @@ public static class CompositionProbeFixtures
                 })
         ]);
 
+    /// <summary>Weak witness.</summary>
     public static CompositionWitnessSpec WeakWitness() => new(
         CompositionId,
         [
@@ -184,7 +191,7 @@ public static class CompositionProbeFixtures
 
     public static void SeedSyntheticConstituent(
         CertifiedCompositionTestContext ctx,
-        Brick brick,
+        DomainBrick brick,
         string brickId)
     {
         var record = new CertificationRecord
@@ -203,7 +210,7 @@ public static class CompositionProbeFixtures
 
     private static async Task AdmitBrickAsync(
         CertifiedBrickAdmission admission,
-        Brick brick,
+        DomainBrick brick,
         string sourceCode,
         WitnessSpec witness)
     {
@@ -215,7 +222,7 @@ public static class CompositionProbeFixtures
             ProjectPath = CreateCleanProjectFile(),
             CompilationReferences =
             [
-                typeof(Brick).Assembly.Location,
+                typeof(DomainBrick).Assembly.Location,
                 typeof(BrickInput).Assembly.Location,
                 typeof(MutationProbeBrick).Assembly.Location
             ],
@@ -227,6 +234,7 @@ public static class CompositionProbeFixtures
                 $"Failed to admit fixture brick {brick.Id}: {decision.FailureCheck} {decision.Record.Reason}");
     }
 
+    /// <summary>Correct edges.</summary>
     private static IReadOnlyList<CompositionEdge> CorrectEdges() =>
     [
         new CompositionEdge(CompositionGraphConstants.InputNodeId, "logText", "probe", "logText"),
@@ -249,39 +257,4 @@ public static class CompositionProbeFixtures
 """);
         return path;
     }
-}
-
-public sealed class CertifiedCompositionTestContext
-{
-    public CertifiedCompositionTestContext(
-        InMemoryCertificationRecordStore brickStore,
-        CertificationRecordSigner brickSigner,
-        CertifiedBrickRegistry brickRegistry,
-        CertifiedBrickAdmission brickAdmission,
-        InMemoryCompositionCertificationRecordStore compositionStore,
-        CompositionCertificationRecordSigner compositionSigner,
-        CertifiedCompositionRegistry compositionRegistry,
-        CompositionCertificationGate compositionGate,
-        CertifiedCompositionAdmission compositionAdmission)
-    {
-        BrickStore = brickStore;
-        BrickSigner = brickSigner;
-        BrickRegistry = brickRegistry;
-        BrickAdmission = brickAdmission;
-        CompositionStore = compositionStore;
-        CompositionSigner = compositionSigner;
-        CompositionRegistry = compositionRegistry;
-        CompositionGate = compositionGate;
-        CompositionAdmission = compositionAdmission;
-    }
-
-    public InMemoryCertificationRecordStore BrickStore { get; }
-    public CertificationRecordSigner BrickSigner { get; }
-    public CertifiedBrickRegistry BrickRegistry { get; }
-    public CertifiedBrickAdmission BrickAdmission { get; }
-    public InMemoryCompositionCertificationRecordStore CompositionStore { get; }
-    public CompositionCertificationRecordSigner CompositionSigner { get; }
-    public CertifiedCompositionRegistry CompositionRegistry { get; }
-    public CompositionCertificationGate CompositionGate { get; }
-    public CertifiedCompositionAdmission CompositionAdmission { get; }
 }

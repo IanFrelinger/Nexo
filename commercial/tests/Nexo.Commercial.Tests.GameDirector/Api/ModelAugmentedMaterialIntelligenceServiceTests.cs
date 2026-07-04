@@ -3,17 +3,21 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nexo.Abstractions;
-using Nexo.API.Forge;
-using Nexo.GameDomain.Aesthetics;
-using Nexo.GameDomain.Materials;
+using GameDirector.Mcp.Forge;
+using Nexo.Commercial.GameDomain.Aesthetics;
+using Nexo.Commercial.GameDomain.Materials;
 using Xunit;
 
-namespace Nexo.Tests.Infrastructure.Tests.API;
-
+namespace Nexo.Tests.GameDirector.Api;
+/// <summary>Tests for model augmented material intelligence service.</summary>
 public sealed class ModelAugmentedMaterialIntelligenceServiceTests
 {
+    /// <summary>Stub model.</summary>
     private sealed class StubModel : IModel
     {
+        /// <summary>Complete async.</summary>
+        /// <param name="input">Input.</param>
+        /// <param name="ct">Cancellation token.</param>
         public Task<ModelOutput> CompleteAsync(ModelInput input, CancellationToken ct) =>
             Task.FromResult(new ModelOutput("Prefer subtle roughness on terrain."));
     }

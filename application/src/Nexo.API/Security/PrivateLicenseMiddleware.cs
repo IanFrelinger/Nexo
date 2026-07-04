@@ -12,6 +12,7 @@ public sealed class PrivateLicenseMiddleware
     private readonly NexoPrivateLicenseOptions _options;
     private readonly IPrivateLicenseValidator _validator;
 
+    /// <summary>Creates middleware that gates mutating routes on private license validity.</summary>
     public PrivateLicenseMiddleware(
         RequestDelegate next,
         IOptions<NexoPrivateLicenseOptions> optionsAccessor,
@@ -22,6 +23,7 @@ public sealed class PrivateLicenseMiddleware
         _validator = validator;
     }
 
+    /// <summary>Blocks mutating routes when the private license is expired or invalid.</summary>
     public async Task InvokeAsync(HttpContext context)
     {
         if (!_options.EnforceLicense || !ShouldEvaluate(context.Request))
@@ -74,10 +76,4 @@ public sealed class PrivateLicenseMiddleware
 
     private static string EscapeJson(string value) =>
         value.Replace("\\", "\\\\", StringComparison.Ordinal).Replace("\"", "\\\"", StringComparison.Ordinal);
-}
-
-public static class PrivateLicenseMiddlewareExtensions
-{
-    public static IApplicationBuilder UsePrivateLicenseGate(this IApplicationBuilder app) =>
-        app.UseMiddleware<PrivateLicenseMiddleware>();
 }

@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.NodeCapabilityRuntime;
 
+/// <summary>Tests for null model serving backend gap coverage.</summary>
 public class NullModelServingBackendGapCoverageTests
 {
     [Fact]

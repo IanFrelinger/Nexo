@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Pipelines;
 
+/// <summary>Tests for pipeline decomposer.</summary>
 public sealed class PipelineDecomposerTests
 {
     [Fact]

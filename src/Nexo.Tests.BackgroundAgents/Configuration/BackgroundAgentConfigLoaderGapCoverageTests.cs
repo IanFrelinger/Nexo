@@ -8,14 +8,18 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.Configuration;
 
+/// <summary>Tests for background agent config loader gap coverage.</summary>
 public class BackgroundAgentConfigLoaderGapCoverageTests
 {
     private static BackgroundAgentConfigLoader CreateLoader(IConfiguration config)
     {
         var sensitivityRegistry = new DataSensitivityRegistry();
+        /// <summary>Background agent config loader.</summary>
         return new BackgroundAgentConfigLoader(config, sensitivityRegistry, null);
     }
 
+    /// <summary>Valid agent base.</summary>
+    /// <param name=""agent-1"">"agent-1".</param>
     private static Dictionary<string, string?> ValidAgentBase(string id = "agent-1") => new()
     {
         ["BackgroundAgents:Agents:0:Id"] = id,

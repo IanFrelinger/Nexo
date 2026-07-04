@@ -273,37 +273,3 @@ Provide:
         return Task.CompletedTask;
     }
 }
-
-/// <summary>
-/// Artifact to be analyzed for security issues.
-/// </summary>
-public sealed record SecurityArtifact
-{
-    public required string Name { get; init; }
-    public required string Type { get; init; }
-    public required string Content { get; init; }
-    public required string Language { get; init; }
-}
-
-/// <summary>
-/// Result of security analysis.
-/// </summary>
-public sealed record SecurityAnalysisResult
-{
-    public IReadOnlyList<Vulnerability> Vulnerabilities { get; init; } = new List<Vulnerability>();
-    public IReadOnlyList<ComplianceIssue> ComplianceIssues { get; init; } = new List<ComplianceIssue>();
-    public AdvancedSecurityAnalysis? AdvancedAnalysis { get; init; }
-    public required DateTimeOffset AnalyzedAt { get; init; }
-    public IReadOnlyDictionary<string, object> Metadata { get; init; } = new Dictionary<string, object>();
-}
-
-/// <summary>
-/// Advanced security analysis from LLM.
-/// </summary>
-public sealed record AdvancedSecurityAnalysis
-{
-    public required string Summary { get; init; }
-    public required int RiskScore { get; init; }
-    public IReadOnlyList<string> Recommendations { get; init; } = new List<string>();
-}
-

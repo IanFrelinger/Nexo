@@ -11,7 +11,10 @@ namespace Nexo.Core.Domain.Exceptions;
 /// </summary>
 public class ValidationException : DomainException
 {
+    /// <summary>Optional structured error code from <see cref="ErrorCodes"/>.</summary>
     public string? ErrorCode { get; }
+
+    /// <summary>Optional operator suggestion for resolving the validation failure.</summary>
     public string? Suggestion { get; }
 
     public ValidationException(string message) : base(message)

@@ -144,17 +144,3 @@ public sealed class HealthMonitor
         _healthCheckTimer?.Dispose();
     }
 }
-
-/// <summary>
-/// Health status information for an agent.
-/// </summary>
-public sealed class AgentHealthStatus
-{
-    public required string AgentId { get; init; }
-    public required AgentContainer Container { get; init; }
-    public AgentHealth Health { get; set; }
-    public AgentState State { get; set; }
-    public DateTimeOffset LastHealthCheck { get; set; }
-    public DateTimeOffset? LastStateChange { get; set; }
-}
-

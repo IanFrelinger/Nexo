@@ -1,12 +1,12 @@
 using System.Text.Json;
 using FluentAssertions;
-using Nexo.GameDomain.Aesthetics;
-using Nexo.GameDomain.Contracts;
-using Nexo.GameDomain.Descriptors;
-using Nexo.GameDomain.Scoping;
+using Nexo.Commercial.GameDomain.Aesthetics;
+using Nexo.Commercial.GameDomain.Contracts;
+using Nexo.Commercial.GameDomain.Descriptors;
+using Nexo.Commercial.GameDomain.Scoping;
 
-namespace Nexo.Tests.GameDomain;
-
+namespace Nexo.Commercial.Tests.GameDomain;
+/// <summary>Tests for forge contracts.</summary>
 public class ForgeContractsTests
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web)

@@ -141,7 +141,7 @@ public class BehaviorExecutor : Nexo.Core.Domain.Execution.IBehaviorExecutor
                     var brick = _brickRegistry.GetBrick(step.BrickId);
                     if (brick == null)
                     {
-                        await writer.WriteAsync(new StepErrorEvent(step.Id, $"Brick not found: {step.BrickId}"), ct);
+                        await writer.WriteAsync(new StepErrorEvent(step.Id, $"DomainBrick not found: {step.BrickId}"), ct);
                         return behavior.OnStepFailure == FailurePolicy.Abort ? LoopAction.Break : LoopAction.Continue;
                     }
 
@@ -327,7 +327,7 @@ public class BehaviorExecutor : Nexo.Core.Domain.Execution.IBehaviorExecutor
     
     private IReadOnlyList<ImplementationType> ResolveImplementationChain(
         BehaviorStep step,
-        Brick brick,
+        DomainBrick brick,
         Behavior behavior,
         ExecutionOptions options,
         ExecutionContext context)
@@ -389,7 +389,7 @@ public class BehaviorExecutor : Nexo.Core.Domain.Execution.IBehaviorExecutor
     }
     
     private bool IsImplementationAvailable(
-        Brick brick, 
+        DomainBrick brick, 
         ImplementationType implementation, 
         ExecutionContext context)
     {
@@ -406,7 +406,7 @@ public class BehaviorExecutor : Nexo.Core.Domain.Execution.IBehaviorExecutor
     private IReadOnlyList<ImplementationType> BuildChain(
         ImplementationType first,
         ExecutionOptions options,
-        Brick brick,
+        DomainBrick brick,
         ExecutionContext context,
         BrickRuntimeSpec? runtimeSpec = null)
     {
@@ -434,7 +434,7 @@ public class BehaviorExecutor : Nexo.Core.Domain.Execution.IBehaviorExecutor
 
     private static ImplementationType PreferToImplementation(
         string? prefer,
-        Brick brick,
+        DomainBrick brick,
         ExecutionContext context,
         ImplementationMode mode)
     {

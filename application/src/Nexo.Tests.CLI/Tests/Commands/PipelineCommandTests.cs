@@ -7,10 +7,12 @@ using Nexo.Core.Application.Pipelines.Models;
 using Nexo.Core.Application.Pipelines.Ports;
 using Nexo.Core.Application.Testing.Abstractions;
 using Nexo.Infrastructure.Pipelines;
+using Nexo.Infrastructure.Pipelines.Sdk.Options;
 using Microsoft.Extensions.Options;
 
 namespace Nexo.Tests.CLI.Tests.Commands;
 
+/// <summary>Tests for pipeline command.</summary>
 public sealed class PipelineCommandTests : UnitTestBase
 {
     private string? _tempDir;
@@ -33,11 +35,17 @@ public sealed class PipelineCommandTests : UnitTestBase
     {
         try
         {
+            /// <summary>Test validate success.</summary>
             await TestValidateSuccess();
+            /// <summary>Test validate failure.</summary>
             await TestValidateFailure();
+            /// <summary>Test run success.</summary>
             await TestRunSuccess();
+            /// <summary>Test run failure.</summary>
             await TestRunFailure();
+            /// <summary>Test run with resume and inputs.</summary>
             await TestRunWithResumeAndInputs();
+            /// <summary>Test diagnostics.</summary>
             await TestDiagnostics();
 
             return new TestResult
@@ -305,10 +313,15 @@ public sealed class PipelineCommandTests : UnitTestBase
             inputs: new Dictionary<string, string> { ["k"] = "v" });
 
         AssertEqual((int)ExitCode.Ok, exitCode);
+        /// <summary>Assert not null.</summary>
         AssertNotNull(captured);
+        /// <summary>Assert equal.</summary>
         AssertEqual("run-3", captured!.RunId);
+        /// <summary>Assert equal.</summary>
         AssertEqual("prior-1", captured.ResumeRunId);
+        /// <summary>Assert true.</summary>
         AssertTrue(captured.ResumeFailedStages);
+        /// <summary>Assert equal.</summary>
         AssertEqual("v", captured.Inputs["k"]);
         renderer.Verify(x => x.RenderJson(It.IsAny<object>()), Times.Once);
     }

@@ -11,11 +11,12 @@ using Nexo.Core.Domain.Execution;
 using Nexo.Infrastructure.Execution;
 using Nexo.Infrastructure.Execution.Ephemeral;
 using Nexo.Infrastructure.Execution.Routing;
-using Nexo.Infrastructure.Execution.Sdk;
+using Nexo.Infrastructure.Execution.Sdk.Extensions;
 using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Execution;
 
+/// <summary>Tests for infrastructure routing gap coverage.</summary>
 public class InfrastructureRoutingGapCoverageTests
 {
     [Fact]
@@ -26,16 +27,19 @@ public class InfrastructureRoutingGapCoverageTests
             var path = request.RequestUri!.AbsolutePath;
             if (path == "/v2/instances" && request.Method == HttpMethod.Post)
             {
+                /// <summary>Json.</summary>
                 return Json(HttpStatusCode.OK, """{"instanceId":"inst-1"}""");
             }
 
             if (path == "/v2/instances/inst-1/jobs" && request.Method == HttpMethod.Post)
             {
+                /// <summary>Json.</summary>
                 return Json(HttpStatusCode.OK, """{"jobId":"job-1"}""");
             }
 
             if (path == "/v2/jobs/job-1" && request.Method == HttpMethod.Get)
             {
+                /// <summary>Json.</summary>
                 return Json(HttpStatusCode.OK, """{"status":"completed","message":"done"}""");
             }
 
@@ -49,9 +53,11 @@ public class InfrastructureRoutingGapCoverageTests
 
             if (path == "/v2/instances/inst-1" && request.Method == HttpMethod.Delete)
             {
+                /// <summary>Json.</summary>
                 return Json(HttpStatusCode.OK, "{}");
             }
 
+            /// <summary>Json.</summary>
             return Json(HttpStatusCode.NotFound, "{}");
         }, apiKey: "secret-key");
 
@@ -103,14 +109,18 @@ public class InfrastructureRoutingGapCoverageTests
         using var httpClient = CreateClient((request, _) =>
         {
             if (request.Method == HttpMethod.Post && request.RequestUri!.AbsolutePath == "/v2/instances")
+                /// <summary>Json.</summary>
                 return Json(HttpStatusCode.BadRequest, "{}");
 
             if (request.Method == HttpMethod.Post)
+                /// <summary>Json.</summary>
                 return Json(HttpStatusCode.OK, "{}");
 
             if (request.Method == HttpMethod.Get && request.RequestUri!.AbsolutePath.Contains("/result"))
+                /// <summary>Json.</summary>
                 return Json(HttpStatusCode.InternalServerError, "{}");
 
+            /// <summary>Json.</summary>
             return Json(HttpStatusCode.OK, "{}");
         });
 
@@ -164,7 +174,7 @@ public class InfrastructureRoutingGapCoverageTests
     {
         var services = new ServiceCollection();
         services.AddHttpClient();
-        services.AddSingleton(new BrickRegistry(Array.Empty<Brick>()));
+        services.AddSingleton(new BrickRegistry(Array.Empty<DomainBrick>()));
         var config = new ConfigurationBuilder().Build();
 
         services.AddNexoFederatedBrickMesh(config);
@@ -178,7 +188,7 @@ public class InfrastructureRoutingGapCoverageTests
     {
         var services = new ServiceCollection();
         services.AddHttpClient();
-        services.AddSingleton(new BrickRegistry(Array.Empty<Brick>()));
+        services.AddSingleton(new BrickRegistry(Array.Empty<DomainBrick>()));
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
@@ -196,7 +206,7 @@ public class InfrastructureRoutingGapCoverageTests
     {
         var services = new ServiceCollection();
         services.AddHttpClient();
-        services.AddSingleton(new BrickRegistry(Array.Empty<Brick>()));
+        services.AddSingleton(new BrickRegistry(Array.Empty<DomainBrick>()));
         var config = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
@@ -251,6 +261,8 @@ public class InfrastructureRoutingGapCoverageTests
         failure.Get<string>("errorCode").Should().Be("exec.fail");
     }
 
+    /// <summary>Creates client.</summary>
+    /// <param name="httpClient">Http client.</param>
     private static RunPodHttpClient CreateClient(HttpClient httpClient) =>
         new(
             httpClient,
@@ -275,25 +287,38 @@ public class InfrastructureRoutingGapCoverageTests
         return client;
     }
 
+    /// <summary>Json.</summary>
+    /// <param name="status">Status.</param>
+    /// <param name="json">Json.</param>
     private static HttpResponseMessage Json(HttpStatusCode status, string json) =>
         new(status) { Content = new StringContent(json, Encoding.UTF8, "application/json") };
 
+    /// <summary>Tests for fake http message handler.</summary>
     private sealed class FakeHttpMessageHandler : HttpMessageHandler
     {
         private readonly Func<HttpRequestMessage, CancellationToken, HttpResponseMessage> _handler;
 
+        /// <summary>Fake http message handler.</summary>
+        /// <param name="handler">Handler.</param>
         public FakeHttpMessageHandler(Func<HttpRequestMessage, CancellationToken, HttpResponseMessage> handler) =>
             _handler = handler;
 
+        /// <summary>Send async.</summary>
+        /// <param name="request">Request.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
             Task.FromResult(_handler(request, cancellationToken));
     }
 
+    /// <summary>Tests for stub capability router.</summary>
     private sealed class StubCapabilityRouter(ExecutionTarget target) : ICapabilityRouter
     {
+        /// <summary>Resolve execution target.</summary>
+        /// <param name="requirements">Requirements.</param>
         public ExecutionTarget ResolveExecutionTarget(JobRequirements requirements) => target;
     }
 
+    /// <summary>Tests for stub routing local executor.</summary>
     private sealed class StubRoutingLocalExecutor(Func<RunPodJobPayload, Result<GenerationExecutionResult>> handler) : ILocalExecutor
     {
         public Task<Result<GenerationExecutionResult>> ExecuteAsync(
@@ -304,13 +329,20 @@ public class InfrastructureRoutingGapCoverageTests
             Task.FromResult(handler(payload));
     }
 
+    /// <summary>Tests for routing test execution context.</summary>
     private sealed class RoutingTestExecutionContext : IExecutionContext
     {
+        /// <summary>Agent id.</summary>
         public string AgentId { get; init; } = "routing-gap";
+        /// <summary>Behavior id.</summary>
         public string BehaviorId { get; init; } = "generation";
+        /// <summary>Is air gapped.</summary>
         public bool IsAirGapped { get; init; }
+        /// <summary>Audit mode.</summary>
         public bool AuditMode { get; init; } = true;
+        /// <summary>Provider.</summary>
         public string Provider { get; init; } = "local";
+        /// <summary>Variables.</summary>
         public IReadOnlyDictionary<string, object> Variables { get; init; } = new Dictionary<string, object>();
     }
 }

@@ -1,5 +1,4 @@
-namespace Nexo.GameDomain.Aesthetics;
-
+namespace Nexo.Commercial.GameDomain.Aesthetics;
 /// <summary>
 /// Binds a logical rendering role in an <see cref="AestheticPack"/> to an engine-specific material or shader surface.
 /// Multiple bindings for the same <see cref="Role"/> and different <see cref="EngineId"/> allow one pack to adapt

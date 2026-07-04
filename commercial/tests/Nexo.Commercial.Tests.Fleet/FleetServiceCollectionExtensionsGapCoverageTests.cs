@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Nexo.Commercial.Tests.Fleet;
 
+/// <summary>Tests for fleet service collection extensions gap coverage.</summary>
 public sealed class FleetServiceCollectionExtensionsGapCoverageTests
 {
     [Fact]
@@ -41,6 +42,7 @@ public sealed class FleetServiceCollectionExtensionsGapCoverageTests
         provider.GetRequiredService<IFleetNodeRegistry>().Should().BeOfType<LiteDbFleetNodeRegistry>();
         provider.GetRequiredService<IMeshTaskRegistry>().Should().BeOfType<LiteDbMeshTaskRegistry>();
 
+        /// <summary>Attempts to delete; returns false on failure.</summary>
         TryDelete(dbPath);
     }
 

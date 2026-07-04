@@ -1,8 +1,8 @@
 using System.Text.Json;
 using Nexo.CLI.Runtime;
 
-namespace Nexo.CLI.Commands;
-
+namespace Nexo.CLI.Commands.Runtime;
+/// <summary>Runtime output writer.</summary>
 internal static class RuntimeOutputWriter
 {
     internal static void WriteResult(RuntimeExecuteResult result, bool json)

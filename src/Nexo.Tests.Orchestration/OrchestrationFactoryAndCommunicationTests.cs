@@ -14,6 +14,7 @@ using Nexo.Orchestration.Agents;
 using Nexo.Orchestration.Agents.Assets;
 using Nexo.Orchestration.Agents.Playtest;
 using Nexo.Orchestration.Agents.Planning;
+using Nexo.Orchestration.Agents.Templates;
 using Nexo.Orchestration.Architect;
 using Nexo.Orchestration.Architect.Models;
 using Nexo.Orchestration.Assets.Ports;
@@ -26,8 +27,12 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration;
 
+/// <summary>Tests for orchestration factory and communication.</summary>
 public class OrchestrationFactoryAndCommunicationTests
 {
+    /// <summary>Spec.</summary>
+    /// <param name="domain">Domain.</param>
+    /// <param name="null">Null.</param>
     private static AgentSpawnSpec Spec(string domain, string? agentId = null) => new()
     {
         AgentId = agentId ?? $"{domain}-1",
@@ -152,6 +157,7 @@ public class OrchestrationFactoryAndCommunicationTests
         return services.BuildServiceProvider();
     }
 
+    /// <summary>Test cache strategy.</summary>
     private sealed class TestCacheStrategy : ICacheStrategy
     {
         private readonly ConcurrentDictionary<string, object> _store = new();

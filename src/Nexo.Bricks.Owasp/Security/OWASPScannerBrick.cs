@@ -8,7 +8,7 @@ namespace Nexo.Bricks.Owasp.Security;
 /// <summary>
 /// OWASP vulnerability scanner brick with both deterministic and agentic implementations.
 /// </summary>
-public class OWASPScannerBrick : Brick
+public class OWASPScannerBrick : DomainBrick
 {
     private readonly IProviderFactory _providerFactory;
     private readonly ILogger<OWASPScannerBrick> _logger;
@@ -280,17 +280,3 @@ public class OWASPScannerBrick : Brick
         return findings;
     }
 }
-
-public record SecurityFinding(
-    string Id,
-    string Type,
-    string Severity,
-    string? CweId,
-    string Description
-);
-
-public record ScanMetadata(
-    int RulesApplied,
-    int LinesScanned,
-    string Language
-);

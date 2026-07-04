@@ -24,6 +24,7 @@ public sealed class PrivateLicenseValidator : IPrivateLicenseValidator
     private readonly object _sync = new();
     private PrivateLicenseStatus? _cached;
 
+    /// <summary>Creates a validator that loads and caches license status from disk.</summary>
     public PrivateLicenseValidator(
         IOptions<NexoPrivateLicenseOptions> optionsAccessor,
         IHostEnvironment environment,
@@ -34,6 +35,7 @@ public sealed class PrivateLicenseValidator : IPrivateLicenseValidator
         _logger = logger;
     }
 
+    /// <summary>Returns the cached or freshly evaluated private license status.</summary>
     public PrivateLicenseStatus GetStatus()
     {
         lock (_sync)

@@ -6,10 +6,19 @@ namespace Nexo.Core.Domain.Clusters;
 /// </summary>
 public class Cluster
 {
+    /// <summary>Stable cluster identifier.</summary>
     public string Id { get; init; } = default!;
+
+    /// <summary>Human-readable cluster name.</summary>
     public string Name { get; init; } = default!;
+
+    /// <summary>Semantic version of the cluster definition.</summary>
     public string Version { get; init; } = "1.0.0";
+
+    /// <summary>Emoji or icon token for catalog UIs.</summary>
     public string Icon { get; init; } = "🔗";
+
+    /// <summary>Short description of the cluster purpose.</summary>
     public string Description { get; init; } = default!;
     
     /// <summary>

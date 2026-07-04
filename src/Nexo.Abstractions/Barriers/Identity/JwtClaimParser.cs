@@ -3,8 +3,19 @@ using System.Text.Json;
 
 namespace Nexo.Abstractions.Barriers.Identity;
 
+/// <summary>
+/// Lightweight JWT payload parser for barrier identity resolution.
+/// Decodes the middle segment of a JWT without validating signatures or expiry;
+/// resolvers use the extracted claims as hints only.
+/// </summary>
 public static class JwtClaimParser
 {
+    /// <summary>
+    /// Parses claim name/value pairs from a JWT payload segment.
+    /// Returns an empty dictionary when the token is null, malformed, or cannot be decoded.
+    /// Never throws; callers treat an empty result as "no JWT claims available".
+    /// </summary>
+    /// <param name="rawJwt">Full JWT string (<c>header.payload.signature</c>) or raw JSON payload.</param>
     public static IReadOnlyDictionary<string, string> ParseClaims(string? rawJwt)
     {
         var token = rawJwt?.Trim();

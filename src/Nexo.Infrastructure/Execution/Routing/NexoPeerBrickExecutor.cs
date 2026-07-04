@@ -2,7 +2,7 @@ using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
-using Nexo.BrickContracts;
+using Nexo.Brick.Contracts;
 using Nexo.Core.Application.Execution.Routing;
 using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Execution;
@@ -22,6 +22,7 @@ public sealed class NexoPeerBrickExecutor : IPeerExecutor
     private readonly TimeSpan _peerRequestTimeout;
     private readonly PeerTrustPolicyResolver _trustPolicyResolver;
 
+    /// <summary>Initializes a new nexo peer brick executor.</summary>
     public NexoPeerBrickExecutor(
         IHttpClientFactory httpClientFactory,
         ILogger<NexoPeerBrickExecutor> logger,
@@ -44,6 +45,7 @@ public sealed class NexoPeerBrickExecutor : IPeerExecutor
             config?.Value?.UntrustedPeerIdsCsv);
     }
 
+    /// <summary>Execute asynchronously.</summary>
     public async Task<Result<GenerationExecutionResult>> ExecuteAsync(
         RunPodJobPayload payload,
         JobRequirements requirements,

@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Environments;
 
+/// <summary>Tests for no op environment services gap coverage.</summary>
 public sealed class NoOpEnvironmentServicesGapCoverageTests
 {
     [Fact]

@@ -1,5 +1,6 @@
 namespace Nexo.Runtime.Barriers.Sinks;
 
+/// <summary>Configuration for append-only file barrier audit sink behavior.</summary>
 public sealed class FileBarrierAuditSinkOptions
 {
     /// <summary>

@@ -2,6 +2,7 @@ using Nexo.Abstractions.Routing;
 
 namespace Nexo.Orchestration.Routing;
 
+/// <summary>Filters endpoints by required task capabilities from the routing context.</summary>
 internal sealed class CapabilityRoutingPolicy : IRoutingPolicy
 {
     public IReadOnlyList<EndpointDescriptor> Apply(

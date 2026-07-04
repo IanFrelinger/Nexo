@@ -160,3 +160,26 @@ dotnet_naming_style.begins_with_i.required_prefix = I
 dotnet_naming_style.begins_with_i.required_suffix =
 dotnet_naming_style.begins_with_i.word_separator =
 dotnet_naming_style.begins_with_i.capitalization = pascal_case
+
+# IDE0130: namespace must match folder path
+dotnet_style_namespace_match_folder = true:suggestion
+
+# Type-forwarder shims intentionally use Core.Domain namespaces from Brick.Contracts/Authoring
+[src/Nexo.Brick.Contracts/Authoring/**.cs]
+dotnet_style_namespace_match_folder = false
+dotnet_diagnostic.IDE0130.severity = none
+
+# Brick template placeholders — replaced when scaffolding new bricks
+[samples/templates/**.cs]
+dotnet_style_namespace_match_folder = false
+dotnet_diagnostic.IDE0130.severity = none
+
+# Generated Unity validation output (not hand-maintained)
+[tools/unity-demo-output/**.cs]
+dotnet_style_namespace_match_folder = false
+dotnet_diagnostic.IDE0130.severity = none
+
+# Code-gen template, not compiled
+[src/Nexo.Infrastructure/Execution/Templates/**.cs]
+dotnet_style_namespace_match_folder = false
+dotnet_diagnostic.IDE0130.severity = none

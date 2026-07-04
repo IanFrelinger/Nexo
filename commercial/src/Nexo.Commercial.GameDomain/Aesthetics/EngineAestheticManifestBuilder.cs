@@ -2,8 +2,7 @@ using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace Nexo.GameDomain.Aesthetics;
-
+namespace Nexo.Commercial.GameDomain.Aesthetics;
 /// <summary>
 /// Builds a JSON manifest for a specific engine from an <see cref="AestheticPack"/>.
 /// </summary>

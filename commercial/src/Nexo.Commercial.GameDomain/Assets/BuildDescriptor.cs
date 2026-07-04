@@ -1,37 +1,37 @@
-namespace Nexo.GameDomain.Assets;
-
+namespace Nexo.Commercial.GameDomain.Assets;
 /// <summary>
 /// Host build configuration descriptor: target platform, quality settings, player settings,
 /// and options for producing a playable build.
 /// </summary>
 public sealed record BuildDescriptor
 {
+    /// <summary>id value.</summary>
     public string Id { get; init; } = string.Empty;
+    /// <summary>Name value.</summary>
     public string Name { get; init; } = string.Empty;
 
+    /// <summary>Target platform value.</summary>
     public string TargetPlatform { get; init; } = "StandaloneWindows64"; // StandaloneWindows64, StandaloneOSX, StandaloneLinux64, WebGL, Android, iOS
+    /// <summary>Output path value.</summary>
     public string OutputPath { get; init; } = "Builds/";
+    /// <summary>Development build value.</summary>
     public bool DevelopmentBuild { get; init; }
+    /// <summary>Allow debugging value.</summary>
     public bool AllowDebugging { get; init; }
 
+    /// <summary>Scenes value.</summary>
     public IReadOnlyList<string> Scenes { get; init; } = Array.Empty<string>(); // Scene paths to include
+    /// <summary>Company name value.</summary>
     public string CompanyName { get; init; } = string.Empty;
+    /// <summary>Product name value.</summary>
     public string ProductName { get; init; } = string.Empty;
+    /// <summary>Bundle version value.</summary>
     public string BundleVersion { get; init; } = "0.1.0";
 
+    /// <summary>Quality value.</summary>
     public QualityConfig Quality { get; init; } = new();
+    /// <summary>Scripting defines value.</summary>
     public IReadOnlyList<string> ScriptingDefines { get; init; } = Array.Empty<string>();
+    /// <summary>Tags value.</summary>
     public IReadOnlyList<string> Tags { get; init; } = Array.Empty<string>();
-}
-
-public sealed record QualityConfig
-{
-    public int VSyncCount { get; init; } = 1; // 0=off, 1=every vblank, 2=every other
-    public int TargetFrameRate { get; init; } = -1; // -1=platform default
-    public string ShadowQuality { get; init; } = "all"; // disable, hard_only, all
-    public int ShadowResolution { get; init; } = 2048;
-    public double ShadowDistance { get; init; } = 150.0;
-    public string AntiAliasing { get; init; } = "4x"; // disabled, 2x, 4x, 8x
-    public string TextureQuality { get; init; } = "full"; // full, half, quarter, eighth
-    public int MaxLod { get; init; } = 0; // 0=highest, 1, 2, etc.
 }

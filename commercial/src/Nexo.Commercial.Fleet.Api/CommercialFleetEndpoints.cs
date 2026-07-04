@@ -19,6 +19,7 @@ public static class CommercialFleetEndpoints
 {
     private const string CommercialMeshCorrelationItemKey = "Nexo.Mesh.CorrelationId";
 
+    /// <summary>Maps commercial fleet HTTP endpoints under <c>/api/mesh</c>.</summary>
     public static IEndpointRouteBuilder MapCommercialFleetEndpoints(this IEndpointRouteBuilder app)
     {
         var mesh = app.MapGroup("/api/mesh").WithTags("Commercial Mesh Fleet");
@@ -142,7 +143,6 @@ public static class CommercialFleetEndpoints
             .WithSummary("Phase 4: import adaptation + pattern payload from a peer")
             .Produces<MeshKnowledgeImportResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest);
-
 
         return app;
     }
@@ -648,100 +648,4 @@ public static class CommercialFleetEndpoints
         return a.Length == b.Length && CryptographicOperations.FixedTimeEquals(a, b);
     }
 
-
 }
-
-public sealed record MeshFleetNodeRequest(
-    string PeerId,
-    string ApiBaseUrl,
-    IReadOnlyDictionary<string, string>? Labels = null,
-    IReadOnlyList<string>? AdvertisedBrickIds = null,
-    bool Drained = false,
-    int? ReportedQueueDepth = null,
-    string? TrustTier = null,
-    bool? Admitted = null,
-    string? PeerRegistrationKey = null);
-
-public sealed record MeshHeartbeatRequest(int? QueueDepth = null);
-
-public sealed record MeshFleetDrainRequest(bool Drained);
-
-public sealed record MeshFleetNodeResponse(
-    string PeerId,
-    string ApiBaseUrl,
-    IReadOnlyDictionary<string, string> Labels,
-    IReadOnlyList<string> AdvertisedBrickIds,
-    bool Drained,
-    DateTimeOffset? LastHeartbeatUtc,
-    DateTimeOffset RegisteredAtUtc,
-    int ReportedQueueDepth,
-    string TrustTier,
-    bool Admitted,
-    string? RegistrationKeyFingerprint);
-
-public sealed record MeshElasticWorkerSnapshot(string PeerId, int ReportedQueueDepth, DateTimeOffset? LastHeartbeatUtc);
-
-public sealed record MeshElasticStatusResponse(
-    IReadOnlyDictionary<string, int> TaskCountsByStatus,
-    IReadOnlyList<MeshElasticWorkerSnapshot> Workers,
-    DateTimeOffset GeneratedAtUtc);
-
-public sealed record MeshTaskCreateRequest(
-    string? Name,
-    int Steps,
-    IReadOnlyList<string>? RequiredBrickIds,
-    IReadOnlyDictionary<string, string>? Affinity,
-    int Priority = 0,
-    DateTimeOffset? DeadlineUtc = null,
-    string? CorrelationId = null,
-    string? IdempotencyKey = null);
-
-public sealed record MeshScheduleRequest(
-    string? ScheduleIdempotencyKey = null,
-    string? CorrelationId = null,
-    int? LeaseSeconds = null);
-
-public sealed record MeshTaskResponse(
-    string TaskId,
-    string? Name,
-    int Steps,
-    IReadOnlyList<string> RequiredBrickIds,
-    IReadOnlyDictionary<string, string> Affinity,
-    int Priority,
-    DateTimeOffset? DeadlineUtc,
-    string Status,
-    string? AssignedPeerId,
-    string? AssignedApiBaseUrl,
-    string? PlacementReason,
-    int AttemptCount,
-    DateTimeOffset CreatedAtUtc,
-    DateTimeOffset? LastScheduledAtUtc,
-    string? CorrelationId,
-    string? IdempotencyKey,
-    string? LastScheduleIdempotencyKey,
-    string? ResultSummary,
-    string? ResultHandle,
-    string? LeaseToken,
-    string? LeaseOwnerPeerId,
-    DateTimeOffset? LeaseExpiresUtc,
-    string? CheckpointHandle);
-
-public sealed record MeshLeaseExtendRequest(string LeaseToken, int? ExtendSeconds = null);
-
-public sealed record MeshMigrateForCheckpointRequest(string LeaseToken, string CheckpointHandle);
-
-public sealed record MeshTaskStatusPatchRequest(
-    MeshTaskStatus Status,
-    string? Reason = null,
-    string? CorrelationId = null,
-    string? ResultSummary = null,
-    string? ResultHandle = null,
-    string? LeaseToken = null);
-
-public sealed record MeshKnowledgeImportResponse(
-    int AdaptationsApplied,
-    int AdaptationsSkipped,
-    int PatternsApplied,
-    int PatternsSkipped);
-
-

@@ -1,5 +1,4 @@
-namespace Nexo.GameDomain.Maps;
-
+namespace Nexo.Commercial.GameDomain.Maps;
 /// <summary>
 /// Web Mercator (EPSG:3857) tile index math for standard XYZ tiling used by Mapbox raster/vector APIs.
 /// </summary>

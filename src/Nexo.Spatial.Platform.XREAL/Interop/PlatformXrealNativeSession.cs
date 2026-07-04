@@ -12,14 +12,19 @@ public sealed class PlatformXrealNativeSession : IXrealNativeSession
 
     public PlatformXrealNativeSession(bool isActive = false) => _isActive = isActive;
 
+    /// <summary>Whether the NRSDK session is active and tracking is available.</summary>
     public bool IsActive => _isActive && XrealSpatialAvailability.IsSupported() && !_hostDisconnected;
 
+    /// <summary>Whether the tethered Android host lost connection to the glasses.</summary>
     public bool IsHostDisconnected => _hostDisconnected;
 
+    /// <summary>Called by the host when the NRSDK session starts or stops.</summary>
     public void SetActive(bool active) => _isActive = active;
 
+    /// <summary>Called by the host when the glasses disconnect from the tethered device.</summary>
     public void SetHostDisconnected(bool disconnected) => _hostDisconnected = disconnected;
 
+    /// <summary>Reads the latest native pose frame for an anchor, if available.</summary>
     public XrealNativePoseFrame? TryGetAnchorPose(string atomId)
     {
         if (!IsActive || string.IsNullOrWhiteSpace(atomId))
@@ -28,6 +33,7 @@ public sealed class PlatformXrealNativeSession : IXrealNativeSession
         return XrealNativeBridge.TryGetAnchorPose(atomId);
     }
 
+    /// <summary>Observes native pose frames for an anchor id.</summary>
     public IObservable<XrealNativePoseFrame> ObserveAnchorPose(string atomId)
     {
         if (string.IsNullOrWhiteSpace(atomId) || !_isActive || !XrealSpatialAvailability.IsSupported())

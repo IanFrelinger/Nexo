@@ -14,6 +14,7 @@ public sealed class ProviderGeneratorModel : IGeneratorModel
     private readonly ILogger<ProviderGeneratorModel>? _logger;
     private readonly string _provider;
 
+    /// <summary>Initializes a new provider generator model.</summary>
     public ProviderGeneratorModel(
         IProviderFactory providerFactory,
         string provider = "ollama",
@@ -24,6 +25,7 @@ public sealed class ProviderGeneratorModel : IGeneratorModel
         _logger = logger;
     }
 
+    /// <summary>Generate asynchronously.</summary>
     public async Task<GeneratedBrickSource> GenerateAsync(
         IntentSpec intent,
         WitnessSignature witnessSignature,
@@ -32,9 +34,9 @@ public sealed class ProviderGeneratorModel : IGeneratorModel
         var systemPrompt = """
 You generate deterministic C# brick implementations for Nexo.
 Rules:
-- Target net8, inherit Brick, override ExecuteAsync only.
+- Target net8, inherit DomainBrick, override ExecuteAsync only.
 - Use only: using Nexo.Core.Domain.Bricks; using Nexo.Core.Domain.Execution;
-- Namespace GeneratedBricks, class name ends with Brick.
+- Namespace Nexo.Certified.DamageResolver, class name ends with Brick.
 - No DateTime.Now, Random, or nondeterministic APIs.
 - Return ONLY the C# source file contents.
 """;
@@ -92,6 +94,6 @@ Outputs: {string.Join(", ", witnessSignature.Outputs.Select(o => $"{o.Name}:{o.T
     private static string InferNamespace(string source)
     {
         var match = System.Text.RegularExpressions.Regex.Match(source, @"namespace\s+([\w.]+)");
-        return match.Success ? match.Groups[1].Value : "GeneratedBricks";
+        return match.Success ? match.Groups[1].Value : "Nexo.Certified.DamageResolver";
     }
 }

@@ -16,11 +16,15 @@ public sealed class BarrierCeilingExceededException : Exception
         CorrelationId = correlationId;
     }
 
+    /// <summary>Requested barrier level that exceeded the host ceiling.</summary>
     public string RequestedLevel { get; }
 
+    /// <summary>Host-configured maximum allowed barrier level.</summary>
     public string HostCeiling { get; }
 
+    /// <summary>Correlation identifier associated with the rejected request.</summary>
     public string CorrelationId { get; }
 
+    /// <summary>Stable error code for barrier ceiling violations.</summary>
     public string ErrorCode => "BARRIER_CEILING_EXCEEDED";
 }

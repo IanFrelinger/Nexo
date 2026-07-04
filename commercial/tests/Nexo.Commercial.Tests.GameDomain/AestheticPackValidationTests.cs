@@ -1,9 +1,9 @@
 using FluentAssertions;
-using Nexo.GameDomain.Aesthetics;
+using Nexo.Commercial.GameDomain.Aesthetics;
 using Xunit;
 
-namespace Nexo.Tests.GameDomain;
-
+namespace Nexo.Commercial.Tests.GameDomain;
+/// <summary>Tests for aesthetic pack validation.</summary>
 public class AestheticPackValidationTests
 {
     [Fact]

@@ -4,6 +4,7 @@ using System.Text.Json;
 
 namespace Nexo.Tests.CLI.Tests.Commands.SelfExtendGenerated;
 
+/// <summary>Tests for ui domain knowledge retention.</summary>
 public sealed class UiDomainKnowledgeRetentionTests : UnitTestBase
 {
     public override Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)

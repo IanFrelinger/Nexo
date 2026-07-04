@@ -25,8 +25,10 @@ public sealed class ScopedBarrierContextAccessor : IBarrierContextAccessor
         _ambient = ambient;
     }
 
+    /// <summary>Barrier context for the current scope, if initialized.</summary>
     public BarrierContext? Current => _context;
 
+    /// <summary>Initializes the scoped barrier context; throws on ceiling violation or re-initialization.</summary>
     public void Initialize(BarrierContext context)
     {
         if (context is null)

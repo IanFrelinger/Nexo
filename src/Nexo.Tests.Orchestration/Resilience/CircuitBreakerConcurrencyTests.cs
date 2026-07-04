@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration.Resilience;
 
+/// <summary>Tests for circuit breaker concurrency.</summary>
 public class CircuitBreakerConcurrencyTests
 {
     [Fact]
@@ -52,6 +53,8 @@ public class CircuitBreakerConcurrencyTests
             var count = Interlocked.Increment(ref callCount);
             if (count % 3 == 0) // Every 3rd call fails
             {
+                /// <summary>Invalid operation exception.</summary>
+                /// <param name="failure"">Failure".</param>
                 throw new InvalidOperationException("Periodic failure");
             }
             return Task.FromResult(count);

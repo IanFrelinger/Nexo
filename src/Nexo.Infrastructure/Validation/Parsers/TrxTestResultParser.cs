@@ -20,13 +20,16 @@ public class TrxTestResultParser : ITestResultParser
 {
     private readonly ILogger<TrxTestResultParser> _logger;
 
+    /// <summary>Initializes a new trx test result parser.</summary>
     public TrxTestResultParser(ILogger<TrxTestResultParser> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>Supported extensions.</summary>
     public IReadOnlyList<string> SupportedExtensions => new[] { ".trx" };
 
+    /// <summary>Parse asynchronously.</summary>
     public Task<IReadOnlyList<TestResult>> ParseAsync(
         FileInfo resultFile,
         CancellationToken cancellationToken = default)

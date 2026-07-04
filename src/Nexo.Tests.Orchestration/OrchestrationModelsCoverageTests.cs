@@ -14,6 +14,7 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration;
 
+/// <summary>Tests for orchestration models coverage.</summary>
 public class OrchestrationModelsCoverageTests
 {
     [Fact]

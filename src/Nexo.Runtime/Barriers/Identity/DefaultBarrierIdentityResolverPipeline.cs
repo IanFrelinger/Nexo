@@ -4,6 +4,9 @@ using Nexo.Abstractions.Barriers.Identity;
 
 namespace Nexo.Runtime.Barriers.Identity;
 
+/// <summary>
+/// Default resolver pipeline: explicit level first, then registered resolvers in order.
+/// </summary>
 public sealed class DefaultBarrierIdentityResolverPipeline : IBarrierIdentityResolverPipeline
 {
     private const string BarrierHeader = "x-nexo-barrier";
@@ -19,6 +22,7 @@ public sealed class DefaultBarrierIdentityResolverPipeline : IBarrierIdentityRes
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>Resolves barrier level from explicit header or registered resolvers in order.</summary>
     public async ValueTask<BarrierResolutionResult?> ResolveAsync(
         BarrierResolutionContext context,
         CancellationToken cancellationToken = default)

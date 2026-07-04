@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Validation;
 
+/// <summary>Tests for trx test result parser gap coverage.</summary>
 public class TrxTestResultParserGapCoverageTests
 {
     [Fact]

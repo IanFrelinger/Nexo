@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Trust;
 
+/// <summary>Tests for cloud availability resolver.</summary>
 public sealed class CloudAvailabilityResolverTests
 {
     [Fact]

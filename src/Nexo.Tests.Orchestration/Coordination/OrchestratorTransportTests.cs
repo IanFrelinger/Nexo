@@ -18,6 +18,7 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration.Coordination;
 
+/// <summary>Tests for orchestrator transport.</summary>
 public sealed class OrchestratorTransportTests
 {
     [Fact]
@@ -417,6 +418,7 @@ public sealed class OrchestratorTransportTests
             invocationHooks: invocationHooks);
     }
 
+    /// <summary>Metadata append hook.</summary>
     private sealed class MetadataAppendHook : IAgentTransportInvocationHook
     {
         private readonly string _key;
@@ -450,6 +452,7 @@ public sealed class OrchestratorTransportTests
         }
     }
 
+    /// <summary>Output wrap hook.</summary>
     private sealed class OutputWrapHook : IAgentTransportInvocationHook
     {
         public Task<object> AfterSuccessAsync(
@@ -459,6 +462,7 @@ public sealed class OrchestratorTransportTests
             Task.FromResult<object>(new { wrapped = output });
     }
 
+    /// <summary>Counting invocation hook.</summary>
     private sealed class CountingInvocationHook : IAgentTransportInvocationHook
     {
         public int BeforeSendCount;

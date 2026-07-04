@@ -8,10 +8,11 @@ using Nexo.Infrastructure.Testing.CodeAnalysis;
 namespace Nexo.Infrastructure.Adaptation.Generation;
 
 /// <summary>
-/// Builds and compiles a generated brick manifest into a runnable <see cref="Brick"/> instance.
+/// Builds and compiles a generated brick manifest into a runnable <see cref="DomainBrick"/> instance.
 /// </summary>
 public static class GeneratedBrickBuilder
 {
+    /// <summary>Build asynchronously.</summary>
     public static async Task<BuiltGeneratedBrick> BuildAsync(
         BrickManifest manifest,
         CancellationToken cancellationToken = default)
@@ -50,10 +51,10 @@ public static class GeneratedBrickBuilder
         var assemblyBytes = await File.ReadAllBytesAsync(dllPath, cancellationToken).ConfigureAwait(false);
         var assembly = Assembly.Load(assemblyBytes);
         var brickType = assembly.GetType(brickTypeName)
-            ?? assembly.GetTypes().FirstOrDefault(t => typeof(Brick).IsAssignableFrom(t) && !t.IsAbstract)
-            ?? throw new InvalidOperationException("No Brick type found in generated assembly");
+            ?? assembly.GetTypes().FirstOrDefault(t => typeof(DomainBrick).IsAssignableFrom(t) && !t.IsAbstract)
+            ?? throw new InvalidOperationException("No DomainBrick type found in generated assembly");
 
-        var brick = (Brick)Activator.CreateInstance(brickType)!;
+        var brick = (DomainBrick)Activator.CreateInstance(brickType)!;
         var references = Directory.GetFiles(buildDir, "*.dll", SearchOption.AllDirectories).Distinct().ToList();
 
         return new BuiltGeneratedBrick(brick, brickType.FullName!, manifest.ImplementationSource, projectPath, references);
@@ -70,7 +71,7 @@ public static class GeneratedBrickBuilder
         var outputPath = Path.Combine(projectDir, $"{assemblyName}.dll");
         var references = new List<string>
         {
-            typeof(Brick).Assembly.Location,
+            typeof(DomainBrick).Assembly.Location,
             typeof(BrickInput).Assembly.Location
         };
 
@@ -88,8 +89,8 @@ public static class GeneratedBrickBuilder
         var assemblyBytes = await File.ReadAllBytesAsync(compile.AssemblyPath, cancellationToken).ConfigureAwait(false);
         var assembly = Assembly.Load(assemblyBytes);
         var brickType = assembly.GetType(brickTypeName)
-            ?? assembly.GetTypes().First(t => typeof(Brick).IsAssignableFrom(t) && !t.IsAbstract);
-        var brick = (Brick)Activator.CreateInstance(brickType)!;
+            ?? assembly.GetTypes().First(t => typeof(DomainBrick).IsAssignableFrom(t) && !t.IsAbstract);
+        var brick = (DomainBrick)Activator.CreateInstance(brickType)!;
         var projectPath = Path.Combine(projectDir, $"{className}.csproj");
         await File.WriteAllTextAsync(projectPath, CreateProjectFile(assemblyName), cancellationToken).ConfigureAwait(false);
 
@@ -107,6 +108,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using DomainBrick = Nexo.Core.Domain.Bricks.Brick;
 
 """ + sourceCode;
 
@@ -161,10 +163,3 @@ using System.Threading.Tasks;
         return (process.ExitCode, stdout + stderr);
     }
 }
-
-public sealed record BuiltGeneratedBrick(
-    Brick Brick,
-    string BrickTypeName,
-    string SourceCode,
-    string ProjectPath,
-    IReadOnlyList<string> CompilationReferences);

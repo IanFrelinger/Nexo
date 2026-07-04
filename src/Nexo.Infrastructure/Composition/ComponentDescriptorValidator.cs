@@ -2,8 +2,10 @@ using Nexo.Core.Application.Composition.Models;
 
 namespace Nexo.Infrastructure.Composition;
 
+/// <summary>Validates component descriptor metadata required for pipeline composition registration.</summary>
 internal static class ComponentDescriptorValidator
 {
+    /// <summary>Returns validation issues for the supplied descriptor; empty when valid.</summary>
     public static IReadOnlyList<ComponentValidationIssue> Validate(ComponentDescriptor descriptor)
     {
         var issues = new List<ComponentValidationIssue>();

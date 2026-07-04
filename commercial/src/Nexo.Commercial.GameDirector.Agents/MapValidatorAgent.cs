@@ -3,6 +3,7 @@ using Nexo.Core.Domain.Agents;
 
 namespace GameDirector.Agents;
 
+/// <summary>Map validator agent.</summary>
 public sealed class MapValidatorAgent : IAgent
 {
     public string Name => "map-validator";

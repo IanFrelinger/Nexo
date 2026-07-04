@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.MeshLab;
 
+/// <summary>Tests for mesh lab service collection extensions.</summary>
 public sealed class MeshLabServiceCollectionExtensionsTests
 {
     [Fact]

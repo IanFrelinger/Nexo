@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Analysis;
 
+/// <summary>Tests for infrastructure analysis gap coverage.</summary>
 public class InfrastructureAnalysisGapCoverageTests
 {
     [Fact]
@@ -177,8 +178,10 @@ public class InfrastructureAnalysisGapCoverageTests
         await File.WriteAllTextAsync(Path.Combine(root, "Dangerous.cs"), """
             using System.Reflection;
             namespace Nexo.TestDangerous;
+            /// <summary>Tests for dangerous.</summary>
             public static class Dangerous
             {
+                /// <summary>Trigger.</summary>
                 public static void Trigger() => Assembly.Load("System.Runtime");
             }
             """);

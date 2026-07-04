@@ -2,22 +2,17 @@ using Nexo.Core.Application.Interfaces;
 
 namespace Nexo.Core.Application.Orchestration;
 
-public interface IPreValidator
-{
-    ValueTask<(bool ok, string? reason)> ValidateAsync(object input, CancellationToken ct);
-}
-
-public interface IPostValidator<TOut>
-{
-    ValueTask<(bool ok, string? reason)> ValidateAsync(TOut output, CancellationToken ct);
-}
-
+/// <summary>
+/// Default orchestrator that runs pre-validators, executes the command,
+/// then runs post-validators via the loop kernel.
+/// </summary>
 public sealed class GenericCommandOrchestrator : IOrchestrator
 {
     private readonly IEnumerable<IPreValidator> _pre;
     private readonly IEnumerable<object> _post; // covariant storage for IPostValidator<T>
     private readonly Nexo.Core.Application.Common.Ports.ILoopKernel _loops;
 
+    /// <summary>Creates an orchestrator with injected validators and loop kernel.</summary>
     public GenericCommandOrchestrator(IEnumerable<IPreValidator> preValidators,
                                       IEnumerable<object> postValidators,
                                       Nexo.Core.Application.Common.Ports.ILoopKernel loops)
@@ -27,6 +22,7 @@ public sealed class GenericCommandOrchestrator : IOrchestrator
         _loops = loops;
     }
 
+    /// <inheritdoc />
     public async ValueTask<OrchestrationResult> RunAsync<TIn, TOut>(
         ICommand<TIn, TOut> command, TIn input, CancellationToken ct)
     {

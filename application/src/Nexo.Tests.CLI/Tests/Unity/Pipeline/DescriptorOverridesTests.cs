@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Nexo.Tests.CLI.Tests.Unity.Pipeline;
 
+/// <summary>Tests for descriptor overrides.</summary>
 public sealed class DescriptorOverridesTests : IDisposable
 {
     private readonly string _tempDir = Path.Combine(Path.GetTempPath(), $"nexo-overrides-{Guid.NewGuid():N}");

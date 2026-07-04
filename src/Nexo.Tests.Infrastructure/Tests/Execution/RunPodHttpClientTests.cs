@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Execution;
 
+/// <summary>Tests for run pod http client.</summary>
 public sealed class RunPodHttpClientTests
 {
     [Fact]
@@ -49,6 +50,7 @@ public sealed class RunPodHttpClientTests
         result.Value.Message.Should().Contain("cancelled");
     }
 
+    /// <summary>Tests for fake http message handler.</summary>
     private sealed class FakeHttpMessageHandler : HttpMessageHandler
     {
         private readonly Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> _handler;

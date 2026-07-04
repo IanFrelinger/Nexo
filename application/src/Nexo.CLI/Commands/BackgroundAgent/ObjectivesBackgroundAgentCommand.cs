@@ -25,6 +25,7 @@ public class ObjectivesBackgroundAgentCommand
     private readonly IObservationStore? _observations;
     private readonly ILogger<ObjectivesBackgroundAgentCommand> _logger;
 
+    /// <summary>Creates the objectives background-agent command handler.</summary>
     public ObjectivesBackgroundAgentCommand(
         IObjectiveStore store,
         ILogger<ObjectivesBackgroundAgentCommand> logger,
@@ -43,6 +44,7 @@ public class ObjectivesBackgroundAgentCommand
     public Task<int> ListAsync(string? status, string? tag, bool formatJson, CancellationToken ct = default)
         => ListAsync(status, tag, formatJson, Console.Out, Console.Error, ct);
 
+    /// <summary>Lists objectives with optional status and owner filters.</summary>
     public Task<int> ListAsync(
         string? status,
         string? tag,
@@ -113,6 +115,7 @@ public class ObjectivesBackgroundAgentCommand
     public Task<int> ShowAsync(string id, bool formatJson, CancellationToken ct = default)
         => ShowAsync(id, formatJson, Console.Out, Console.Error, ct);
 
+    /// <summary>Shows a single objective record.</summary>
     public Task<int> ShowAsync(string id, bool formatJson, TextWriter stdout, TextWriter stderr, CancellationToken ct = default)
     {
         try
@@ -174,6 +177,7 @@ public class ObjectivesBackgroundAgentCommand
         CancellationToken ct = default)
         => AddAsync(id, title, priority, tags, body, bodyFile, formatJson, Console.Out, Console.Error, ct);
 
+    /// <summary>Creates a new AddAsync instance.</summary>
     public Task<int> AddAsync(
         string id,
         string title,
@@ -241,6 +245,7 @@ public class ObjectivesBackgroundAgentCommand
     public Task<int> CompleteAsync(string id, string? note, bool formatJson, CancellationToken ct = default)
         => CompleteAsync(id, note, formatJson, Console.Out, Console.Error, ct);
 
+    /// <summary>Creates a new CompleteAsync instance.</summary>
     public Task<int> CompleteAsync(string id, string? note, bool formatJson, TextWriter stdout, TextWriter stderr, CancellationToken ct = default)
     {
         try
@@ -258,9 +263,11 @@ public class ObjectivesBackgroundAgentCommand
         }
     }
 
+    /// <summary>Creates a new BlockAsync instance.</summary>
     public Task<int> BlockAsync(string id, string reason, bool formatJson, CancellationToken ct = default)
         => BlockAsync(id, reason, formatJson, Console.Out, Console.Error, ct);
 
+    /// <summary>Creates a new BlockAsync instance.</summary>
     public Task<int> BlockAsync(string id, string reason, bool formatJson, TextWriter stdout, TextWriter stderr, CancellationToken ct = default)
     {
         try
@@ -280,9 +287,11 @@ public class ObjectivesBackgroundAgentCommand
         }
     }
 
+    /// <summary>Creates a new UnblockAsync instance.</summary>
     public Task<int> UnblockAsync(string id, bool formatJson, CancellationToken ct = default)
         => UnblockAsync(id, formatJson, Console.Out, Console.Error, ct);
 
+    /// <summary>Creates a new UnblockAsync instance.</summary>
     public Task<int> UnblockAsync(string id, bool formatJson, TextWriter stdout, TextWriter stderr, CancellationToken ct = default)
     {
         try
@@ -307,6 +316,7 @@ public class ObjectivesBackgroundAgentCommand
     public Task<int> StatsAsync(bool formatJson, CancellationToken ct = default)
         => StatsAsync(formatJson, Console.Out, Console.Error, ct);
 
+    /// <summary>Reports aggregate objective queue statistics.</summary>
     public Task<int> StatsAsync(bool formatJson, TextWriter stdout, TextWriter stderr, CancellationToken ct = default)
     {
         try
@@ -379,6 +389,7 @@ public class ObjectivesBackgroundAgentCommand
     public Task<int> ReportAsync(string? id, string? status, double? sinceHours, bool formatJson, CancellationToken ct = default)
         => ReportAsync(id, status, sinceHours, formatJson, Console.Out, Console.Error, ct);
 
+    /// <summary>Creates a new ReportAsync instance.</summary>
     public Task<int> ReportAsync(
         string? id,
         string? status,

@@ -10,6 +10,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Export;
 
+/// <summary>Tests for content generator gap coverage.</summary>
 public sealed class ContentGeneratorGapCoverageTests
 {
     [Fact]
@@ -25,7 +26,7 @@ public sealed class ContentGeneratorGapCoverageTests
             .ReturnsAsync("generated-content");
 
         var generator = new ContentGenerator(provider.Object, NullLogger<ContentGenerator>.Instance);
-        var brick = new TestBrick("gen-b1", "Generator Brick");
+        var brick = new TestBrick("gen-b1", "Generator DomainBrick");
 
         var result = await generator.GenerateAsync(
             brick,
@@ -43,7 +44,7 @@ public sealed class ContentGeneratorGapCoverageTests
             p => p.ExecuteLLMAsync(
                 "openai",
                 It.Is<string>(s => s.Contains("Generation")),
-                It.Is<string>(s => s.Contains("Generator Brick") && s.Contains("ISO-9001")),
+                It.Is<string>(s => s.Contains("Generator DomainBrick") && s.Contains("ISO-9001")),
                 It.IsAny<object>(),
                 It.IsAny<CancellationToken>()),
             Times.Exactly(3));
@@ -71,7 +72,8 @@ public sealed class ContentGeneratorGapCoverageTests
         result.Variations[1].Metadata!["index"].Should().Be(1);
     }
 
-    private sealed class TestBrick : Brick
+    /// <summary>Tests for test brick.</summary>
+    private sealed class TestBrick : DomainBrick
     {
         public TestBrick(string id, string name)
         {

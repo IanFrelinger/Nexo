@@ -1,8 +1,7 @@
 using System.Globalization;
 using System.Text;
 
-namespace Nexo.GameDomain.Mapping;
-
+namespace Nexo.Commercial.GameDomain.Mapping;
 /// <summary>
 /// Stable cache identity for raw tile bytes on disk (host-controlled layout).
 /// </summary>
@@ -17,10 +16,15 @@ public sealed class MapTileCacheKey
         Y = y;
     }
 
+    /// <summary>aesthetic id value.</summary>
     public string AestheticId { get; }
+    /// <summary>provider id value.</summary>
     public string ProviderId { get; }
+    /// <summary>Z value.</summary>
     public int Z { get; }
+    /// <summary>X value.</summary>
     public int X { get; }
+    /// <summary>Y value.</summary>
     public int Y { get; }
 
     /// <summary>Creates a key with path-safe aesthetic and provider segments.</summary>

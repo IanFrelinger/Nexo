@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.Trust;
 
+/// <summary>Tests for data decision audit log.</summary>
 public class DataDecisionAuditLogTests
 {
     [Fact]

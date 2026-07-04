@@ -9,12 +9,13 @@ namespace Nexo.Infrastructure.Execution.Routing;
 /// <summary>
 /// Remote generation brick using full RunPod instance lifecycle.
 /// </summary>
-public sealed class RunPodBrick : Brick, IBrickExecutor
+public sealed class RunPodBrick : DomainBrick, IBrickExecutor
 {
     private readonly IRunPodClient _runPodClient;
     private readonly IOptions<RunPodBrickConfig> _config;
     private readonly ILogger<RunPodBrick> _logger;
 
+    /// <summary>Initializes a new run pod brick.</summary>
     public RunPodBrick(
         IRunPodClient runPodClient,
         IOptions<RunPodBrickConfig> config,
@@ -67,6 +68,7 @@ public sealed class RunPodBrick : Brick, IBrickExecutor
         };
     }
 
+    /// <summary>Execute asynchronously.</summary>
     public async Task<Result<GenerationExecutionResult>> ExecuteAsync(
         RunPodJobPayload payload,
         JobRequirements requirements,
@@ -265,6 +267,7 @@ public sealed class RunPodBrick : Brick, IBrickExecutor
         }
     }
 
+    /// <summary>Execute asynchronously.</summary>
     public override async Task<BrickOutput> ExecuteAsync(
         BrickInput input,
         ImplementationType implementation,

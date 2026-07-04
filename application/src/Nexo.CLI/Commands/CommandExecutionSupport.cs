@@ -4,6 +4,7 @@ using Nexo.Core.Application.Common.Models;
 
 namespace Nexo.CLI.Commands;
 
+/// <summary>Command execution support.</summary>
 internal static class CommandExecutionSupport
 {
     internal static Progress<ProgressReport>? CreateProgressReporter(

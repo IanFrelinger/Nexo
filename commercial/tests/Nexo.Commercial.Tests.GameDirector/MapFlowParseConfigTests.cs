@@ -8,9 +8,11 @@ using Xunit;
 
 namespace Nexo.Tests.GameDirector;
 
+/// <summary>Tests for map flow parse config.</summary>
 [Trait("Category", "GameDirectorApplication")]
 public sealed class MapFlowParseConfigTests
 {
+    /// <summary>New brick.</summary>
     private static MapFlowBrick NewBrick() => new(
         GameDirectorTestHost.CreateAuditLog(),
         NullLogger<MapFlowBrick>.Instance);

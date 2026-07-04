@@ -14,6 +14,7 @@ public sealed class GenerateAndCertifyService : IGenerateAndCertifyService
     private readonly INewBrickGenerator _generator;
     private readonly ICertifiedBrickAdmission _admission;
 
+    /// <summary>Initializes a new generate and certify service.</summary>
     public GenerateAndCertifyService(
         INewBrickGenerator generator,
         ICertifiedBrickAdmission admission)
@@ -22,6 +23,7 @@ public sealed class GenerateAndCertifyService : IGenerateAndCertifyService
         _admission = admission ?? throw new ArgumentNullException(nameof(admission));
     }
 
+    /// <summary>Generate certify and admit asynchronously.</summary>
     public async Task<GenerateCertifyResult> GenerateCertifyAndAdmitAsync(
         IntentSpec intent,
         WitnessSpec witness,

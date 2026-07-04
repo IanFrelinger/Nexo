@@ -7,6 +7,7 @@ namespace Nexo.Core.Application.Analysis.UseCases.AnalyzeCode;
 /// </summary>
 public class AnalyzeCodeValidator : AbstractValidator<AnalyzeCodeCommand>
 {
+    /// <summary>Creates a validator requiring an existing analysis path.</summary>
     public AnalyzeCodeValidator()
     {
         RuleFor(x => x.Path)

@@ -4,12 +4,12 @@ using Nexo.Core.Domain.Execution;
 namespace Nexo.Tests.Infrastructure.Certification.Fixtures;
 
 /// <summary>Uses Random — fails determinism check under AuditMode.</summary>
-public sealed class NondeterministicBrick : Brick
+public sealed class NondeterministicBrick : DomainBrick
 {
     public NondeterministicBrick()
     {
         Id = "nondeterministic-brick";
-        Name = "Nondeterministic Brick";
+        Name = "Nondeterministic DomainBrick";
         Version = "1.0.0";
         Category = BrickCategory.Analysis;
         Description = "Nondeterministic output.";

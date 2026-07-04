@@ -5,6 +5,7 @@ using Nexo.Core.Domain.Execution;
 
 namespace Nexo.Infrastructure.Certification.Composition;
 
+/// <summary>Certification gate for multi-brick composition graphs (topology, seams, mutants).</summary>
 public sealed class CompositionCertificationGate : ICompositionCertificationGate
 {
     private readonly ICertificationRecordStore _brickCertificationStore;
@@ -15,6 +16,7 @@ public sealed class CompositionCertificationGate : ICompositionCertificationGate
     private readonly CompositionExecutor _executor = new();
     private readonly ILogger<CompositionCertificationGate>? _logger;
 
+    /// <summary>Initializes a new composition certification gate.</summary>
     public CompositionCertificationGate(
         ICertificationRecordStore brickCertificationStore,
         CertificationRecordSigner brickSigner,
@@ -29,6 +31,7 @@ public sealed class CompositionCertificationGate : ICompositionCertificationGate
         _logger = logger;
     }
 
+    /// <summary>Certify asynchronously.</summary>
     public async Task<CompositionCertificationDecision> CertifyAsync(
         CompositionCertificationRequest request,
         CancellationToken cancellationToken = default)

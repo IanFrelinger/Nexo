@@ -11,13 +11,13 @@ using Nexo.Infrastructure.NodeCapabilityRuntime.Policies;
 using Nexo.Infrastructure.NodeCapabilityRuntime.Profiles;
 using Nexo.Infrastructure.NodeCapabilityRuntime.Scoring;
 
-namespace Nexo.Infrastructure.NodeCapabilityRuntime.Sdk;
-
+namespace Nexo.Infrastructure.NodeCapabilityRuntime.Sdk.Extensions;
 /// <summary>
 /// DI registration helpers for NCR core and per-platform policy bindings.
 /// </summary>
 public static class NodeCapabilityRuntimeServiceCollectionExtensions
 {
+    /// <summary>Adds node capability runtime core.</summary>
     public static IServiceCollection AddNodeCapabilityRuntimeCore(
         this IServiceCollection services,
         IConfiguration configuration)
@@ -40,6 +40,7 @@ public static class NodeCapabilityRuntimeServiceCollectionExtensions
         return services;
     }
 
+    /// <summary>Adds node capability runtime windows.</summary>
     public static IServiceCollection AddNodeCapabilityRuntimeWindows(
         this IServiceCollection services,
         IConfiguration configuration)
@@ -47,6 +48,7 @@ public static class NodeCapabilityRuntimeServiceCollectionExtensions
         return AddDesktopPolicyAndBackend<WindowsPolicy>(services, configuration);
     }
 
+    /// <summary>Adds node capability runtime mac o s.</summary>
     public static IServiceCollection AddNodeCapabilityRuntimeMacOS(
         this IServiceCollection services,
         IConfiguration configuration)
@@ -54,6 +56,7 @@ public static class NodeCapabilityRuntimeServiceCollectionExtensions
         return AddDesktopPolicyAndBackend<MacOsPolicy>(services, configuration);
     }
 
+    /// <summary>Adds node capability runtime linux.</summary>
     public static IServiceCollection AddNodeCapabilityRuntimeLinux(
         this IServiceCollection services,
         IConfiguration configuration)
@@ -61,6 +64,7 @@ public static class NodeCapabilityRuntimeServiceCollectionExtensions
         return AddDesktopPolicyAndBackend<LinuxPolicy>(services, configuration);
     }
 
+    /// <summary>Adds node capability runtimei o s.</summary>
     public static IServiceCollection AddNodeCapabilityRuntimeiOS(
         this IServiceCollection services,
         IConfiguration _)
@@ -68,6 +72,7 @@ public static class NodeCapabilityRuntimeServiceCollectionExtensions
         return AddPolicy<iOSPolicy>(services);
     }
 
+    /// <summary>Adds node capability runtime android.</summary>
     public static IServiceCollection AddNodeCapabilityRuntimeAndroid(
         this IServiceCollection services,
         IConfiguration _)

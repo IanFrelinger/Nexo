@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Tests.CLI.Tests.Unity.Pipeline;
 
+/// <summary>Tests for composition graph.</summary>
 public sealed class CompositionGraphTests : IDisposable
 {
     private readonly string _tempDir = Path.Combine(Path.GetTempPath(), $"nexo-compose-{Guid.NewGuid():N}");

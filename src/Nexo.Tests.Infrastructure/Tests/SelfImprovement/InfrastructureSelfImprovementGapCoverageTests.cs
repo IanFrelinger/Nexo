@@ -20,6 +20,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.SelfImprovement;
 
+/// <summary>Tests for infrastructure self improvement gap coverage.</summary>
 public class InfrastructureSelfImprovementGapCoverageTests
 {
     private const string AdaptableFile = "src/Nexo.Bricks/ObservationContextBrick.cs";
@@ -248,6 +249,7 @@ public class InfrastructureSelfImprovementGapCoverageTests
         processed.Verify(s => s.MarkProcessedAsync("pat-1", It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    /// <summary>Sample failure.</summary>
     private static TestFailureRecord SampleFailure() => new()
     {
         Id = Guid.NewGuid().ToString("N"),

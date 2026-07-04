@@ -11,12 +11,14 @@ using Nexo.Orchestration.Agents;
 
 namespace Nexo.Tests.CLI.Tests.Commands;
 
+/// <summary>Tests for execute background agent command.</summary>
 public class ExecuteBackgroundAgentCommandTests : UnitTestBase
 {
     public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
+            /// <summary>Test execute once succeeds.</summary>
             await TestExecuteOnceSucceeds();
             return new TestResult
             {
@@ -77,6 +79,7 @@ public class ExecuteBackgroundAgentCommandTests : UnitTestBase
 
         var command = new ExecuteBackgroundAgentCommand(configLoader, registry.Object, specBuilder, agentFactory, logger.Object);
         var exitCode = await command.ExecuteAsync("test-agent", runAsync: false, formatJson: false);
+        /// <summary>Assert equal.</summary>
         AssertEqual(0, exitCode);
         registry.Verify(r => r.ExecuteOnceAsync("test-agent", It.IsAny<CancellationToken>()), Times.Once);
     }

@@ -7,6 +7,7 @@ public static class SmsYesTokenParser
 {
     private static readonly Regex YesTokenPattern = new(@"^\s*YES\s+(?<token>\S+)\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
 
+    /// <summary>Parses a <c>YES &lt;token&gt;</c> approval line from an SMS body.</summary>
     public static bool TryParse(string body, out string token)
     {
         token = string.Empty;

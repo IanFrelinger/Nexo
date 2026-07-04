@@ -2,6 +2,7 @@ using Nexo.Abstractions.Routing;
 
 namespace Nexo.Orchestration.Routing;
 
+/// <summary>Sorts and selects endpoints by configured priority weights.</summary>
 internal sealed class PrioritySelectionPolicy : IRoutingPolicy
 {
     public IReadOnlyList<EndpointDescriptor> Apply(

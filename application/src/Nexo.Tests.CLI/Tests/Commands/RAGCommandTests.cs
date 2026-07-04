@@ -7,14 +7,18 @@ using Nexo.Core.Application.Testing.Models;
 
 namespace Nexo.Tests.CLI.Tests.Commands;
 
+/// <summary>Tests for rag command.</summary>
 public class RAGCommandTests : UnitTestBase
 {
     public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
+            /// <summary>Test stats succeeds.</summary>
             await TestStatsSucceeds();
+            /// <summary>Test stats format json.</summary>
             await TestStatsFormatJson();
+            /// <summary>Test search empty.</summary>
             await TestSearchEmpty();
             return new TestResult
             {
@@ -63,6 +67,7 @@ public class RAGCommandTests : UnitTestBase
         var logger = new Mock<ILogger<RAGCommand>>();
         var command = new RAGCommand(rag, indexer, logger.Object);
         var exitCode = await command.StatsAsync(false);
+        /// <summary>Assert equal.</summary>
         AssertEqual(0, exitCode);
     }
 
@@ -72,6 +77,7 @@ public class RAGCommandTests : UnitTestBase
         var logger = new Mock<ILogger<RAGCommand>>();
         var command = new RAGCommand(rag, indexer, logger.Object);
         var exitCode = await command.StatsAsync(true);
+        /// <summary>Assert equal.</summary>
         AssertEqual(0, exitCode);
     }
 
@@ -81,6 +87,7 @@ public class RAGCommandTests : UnitTestBase
         var logger = new Mock<ILogger<RAGCommand>>();
         var command = new RAGCommand(rag, indexer, logger.Object);
         var exitCode = await command.SearchAsync("test query", 5, 0.0, null, false);
+        /// <summary>Assert equal.</summary>
         AssertEqual(0, exitCode);
     }
 }

@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Barriers;
 
+/// <summary>Tests for barrier hierarchy gap coverage.</summary>
 public sealed class BarrierHierarchyGapCoverageTests
 {
     private static readonly BarrierHierarchy Hierarchy = new([

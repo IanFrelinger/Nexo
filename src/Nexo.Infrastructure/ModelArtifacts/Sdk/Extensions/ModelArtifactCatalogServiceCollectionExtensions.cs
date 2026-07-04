@@ -6,8 +6,8 @@ using Nexo.Core.Application.ModelArtifacts.Ports;
 using Nexo.Infrastructure.ModelArtifacts;
 using Nexo.Infrastructure.NodeCapabilityRuntime.Backends;
 
-namespace Nexo.Infrastructure.Sdk.ModelArtifacts;
-
+namespace Nexo.Infrastructure.ModelArtifacts.Sdk.Extensions;
+/// <summary>DI registration extensions for model artifact catalog.</summary>
 public static class ModelArtifactCatalogServiceCollectionExtensions
 {
     /// <summary>

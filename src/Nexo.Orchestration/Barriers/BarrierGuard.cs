@@ -2,6 +2,7 @@ using Nexo.Abstractions.Barriers;
 
 namespace Nexo.Orchestration.Barriers;
 
+/// <summary>Enforces barrier context presence and logs agent invocation audit events.</summary>
 internal sealed class BarrierGuard
 {
     private readonly IBarrierContextAccessor _accessor;

@@ -11,6 +11,7 @@ public sealed class DependencyGraph : IDependencyGraph
     private readonly Dictionary<string, HashSet<string>> _dependents = new(StringComparer.OrdinalIgnoreCase);
     private readonly object _lock = new();
 
+    /// <summary>Registers .</summary>
     public void Register(string componentId, IEnumerable<string> dependsOn)
     {
         if (string.IsNullOrWhiteSpace(componentId))
@@ -39,6 +40,7 @@ public sealed class DependencyGraph : IDependencyGraph
         }
     }
 
+    /// <summary>Gets dependents.</summary>
     public IEnumerable<string> GetDependents(string componentId)
     {
         lock (_lock)
@@ -49,6 +51,7 @@ public sealed class DependencyGraph : IDependencyGraph
         }
     }
 
+    /// <summary>Gets dependencies.</summary>
     public IEnumerable<string> GetDependencies(string componentId)
     {
         lock (_lock)
@@ -59,6 +62,7 @@ public sealed class DependencyGraph : IDependencyGraph
         }
     }
 
+    /// <summary>Gets transitive dependents.</summary>
     public IEnumerable<string> GetTransitiveDependents(string componentId)
     {
         lock (_lock)
@@ -84,6 +88,7 @@ public sealed class DependencyGraph : IDependencyGraph
         }
     }
 
+    /// <summary>Removes .</summary>
     public void Remove(string componentId)
     {
         lock (_lock)
@@ -109,6 +114,7 @@ public sealed class DependencyGraph : IDependencyGraph
         }
     }
 
+    /// <summary>Whether cycles exists.</summary>
     public bool HasCycles()
     {
         lock (_lock)

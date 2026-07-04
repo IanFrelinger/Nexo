@@ -7,6 +7,7 @@ namespace Nexo.API.Middleware.Ingress;
 /// </summary>
 public sealed class IngressEnvelopeMiddleware(RequestDelegate next)
 {
+    /// <summary>Builds an HTTP ingress envelope from request headers and correlation context.</summary>
     public Task InvokeAsync(HttpContext context)
     {
         var correlation =

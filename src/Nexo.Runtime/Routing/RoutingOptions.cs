@@ -7,8 +7,10 @@ namespace Nexo.Runtime.Routing;
 /// </summary>
 public sealed class RoutingOptions
 {
+    /// <summary>Configured endpoint descriptors loaded at startup.</summary>
     public IList<EndpointDescriptorConfig> Endpoints { get; init; } = [];
 
+    /// <summary>Interval between endpoint health probes, in seconds.</summary>
     public int HealthCheckIntervalSeconds { get; init; } = 30;
 
     /// <summary>
@@ -16,34 +18,4 @@ public sealed class RoutingOptions
     /// Helps suppress noisy warnings for transient one-off probe failures.
     /// </summary>
     public int DegradedLogFailureThreshold { get; init; } = 1;
-}
-
-/// <summary>
-/// Configuration model for a single endpoint descriptor.
-/// </summary>
-public sealed class EndpointDescriptorConfig
-{
-    public string Endpoint { get; init; } = string.Empty;
-
-    public string Name { get; init; } = string.Empty;
-
-    public string[] SupportedCapabilities { get; init; } = [];
-
-    public string[] AcceptedBarrierLevels { get; init; } = [];
-
-    public string? Region { get; init; }
-
-    public int Priority { get; init; } = 100;
-
-    public EndpointDescriptor ToDescriptor()
-    {
-        return new EndpointDescriptor(
-            Endpoint: Endpoint,
-            Name: Name,
-            SupportedCapabilities: SupportedCapabilities,
-            AcceptedBarrierLevels: AcceptedBarrierLevels,
-            Region: Region,
-            Priority: Priority,
-            IsHealthy: true);
-    }
 }

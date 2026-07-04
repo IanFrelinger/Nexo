@@ -4,6 +4,7 @@ using Nexo.Contracts;
 
 namespace Nexo.API.Middleware.Ingress;
 
+/// <summary>Configuration options for validate nexo middleware ingress.</summary>
 public sealed class ValidateNexoMiddlewareIngressOptions : IValidateOptions<NexoMiddlewareIngressOptions>
 {
     private readonly IHostEnvironment _environment;

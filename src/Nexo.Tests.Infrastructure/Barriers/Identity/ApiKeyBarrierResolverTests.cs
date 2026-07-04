@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Barriers.Identity;
 
+/// <summary>Tests for api key barrier resolver.</summary>
 public sealed class ApiKeyBarrierResolverTests
 {
     [Fact]

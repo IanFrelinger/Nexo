@@ -45,13 +45,3 @@ public interface IDataDecisionAuditLog
     /// <summary>Export to CSV for compliance.</summary>
     string ExportToCsv(int maxCount = 1000, DateTimeOffset? since = null, DateTimeOffset? until = null, string? eventType = null);
 }
-
-/// <summary>
-/// DTO for sanitization audit entries (avoids dependency on BackgroundAgents).
-/// </summary>
-public sealed record SanitizationAuditEntryDto(
-    DateTimeOffset Timestamp,
-    string RuleVersion,
-    string FieldOrType,
-    string Disposition,
-    string? Reason);

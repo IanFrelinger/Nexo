@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.NodeCapabilityRuntime;
 
+/// <summary>Tests for ncr agentic brick engine.</summary>
 public sealed class NcrAgenticBrickEngineTests
 {
     [Fact]
@@ -65,7 +66,8 @@ public sealed class NcrAgenticBrickEngineTests
         ncr.VerifyAll();
     }
 
-    private sealed class TestBrick : Brick
+    /// <summary>Tests for test brick.</summary>
+    private sealed class TestBrick : DomainBrick
     {
         public override Task<BrickOutput> ExecuteAsync(BrickInput input, ImplementationType implementation, IExecutionContext context, CancellationToken cancellationToken = default)
             => Task.FromResult(new BrickOutput());

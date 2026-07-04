@@ -9,10 +9,9 @@ using Nexo.Core.Application.Trust.Ports;
 using Nexo.Infrastructure.Adaptation;
 using Nexo.Infrastructure.SelfImprovement;
 using Nexo.Infrastructure.Trust;
-using Nexo.Infrastructure.Sdk.Trust;
+using Nexo.Infrastructure.Trust.Sdk.Extensions;
 
-namespace Nexo.Infrastructure.Sdk.SelfImprovement;
-
+namespace Nexo.Infrastructure.SelfImprovement.Sdk.Extensions;
 /// <summary>
 /// DI extensions for self-improvement loop.
 /// </summary>

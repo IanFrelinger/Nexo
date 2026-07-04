@@ -1,10 +1,11 @@
 using FluentAssertions;
 using Microsoft.Extensions.Options;
-using Nexo.BrickContracts;
-using Nexo.Core.Application.Networking.Models;
-using Nexo.Core.Application.Networking.Ports;
+using Nexo.Brick.Contracts;
+using Nexo.Commercial.Fleet.Contracts.Networking.Models;
+using Nexo.Commercial.Fleet.Contracts.Networking.Ports;
 using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Execution;
+using Nexo.Commercial.Fleet.Infrastructure.Execution;
 using Nexo.Infrastructure.Execution;
 using Xunit;
 
@@ -17,13 +18,13 @@ public class AdaptiveBrickCacheTests
 {
     private sealed class StubBrickRegistry : IBrickRegistry
     {
-        private readonly Dictionary<string, Brick> _bricks = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, DomainBrick> _bricks = new(StringComparer.OrdinalIgnoreCase);
 
-        public void Add(Brick b) => _bricks[b.Id] = b;
+        public void Add(DomainBrick b) => _bricks[b.Id] = b;
 
-        public Brick? GetBrick(string id) => _bricks.TryGetValue(id, out var b) ? b : null;
+        public DomainBrick? GetBrick(string id) => _bricks.TryGetValue(id, out var b) ? b : null;
 
-        public IReadOnlyList<Brick> GetAllBricks() => _bricks.Values.ToList();
+        public IReadOnlyList<DomainBrick> GetAllBricks() => _bricks.Values.ToList();
     }
 
     [Fact]
@@ -127,7 +128,7 @@ public class AdaptiveBrickCacheTests
 
     private static RemoteBrick CreateRemoteBrick(string id)
     {
-        var entry = new Nexo.BrickContracts.BrickCatalogEntryDto
+        var entry = new Nexo.Brick.Contracts.BrickCatalogEntryDto
         {
             Id = id,
             Name = id,
@@ -138,7 +139,7 @@ public class AdaptiveBrickCacheTests
         return new RemoteBrick(entry, new HttpClient(), "http://127.0.0.1:9");
     }
 
-    private sealed class TestBrick : Brick
+    private sealed class TestBrick : DomainBrick
     {
         public override Task<BrickOutput> ExecuteAsync(BrickInput input, ImplementationType implementation, IExecutionContext context, CancellationToken cancellationToken = default)
             => throw new NotImplementedException();

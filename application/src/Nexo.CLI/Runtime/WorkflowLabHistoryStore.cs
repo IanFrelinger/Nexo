@@ -2,37 +2,7 @@ using System.Text.Json;
 
 namespace Nexo.CLI.Runtime;
 
-public sealed record WorkflowLabStressHistoryRow
-{
-    public string RunId { get; init; } = string.Empty;
-    public string GitSha { get; init; } = string.Empty;
-    public string SpecHash { get; init; } = string.Empty;
-    public string ProviderSnapshot { get; init; } = string.Empty;
-    public string ScenarioId { get; init; } = string.Empty;
-    public string RequestId { get; init; } = string.Empty;
-    public string CompositionId { get; init; } = string.Empty;
-    public string ModelProfileId { get; init; } = string.Empty;
-    public int Iteration { get; init; }
-    public DateTimeOffset StartedAtUtc { get; init; } = DateTimeOffset.UtcNow;
-    public long ElapsedMs { get; init; }
-    public bool Success { get; init; }
-    public int AgentCount { get; init; }
-    public int ConflictCount { get; init; }
-    public int EscalationCount { get; init; }
-    public double Score { get; init; }
-    public string? Summary { get; init; }
-    public bool Skipped { get; init; }
-    public bool Warmup { get; init; }
-    public long CpuTimeDeltaMs { get; init; }
-    public long WorkingSetMb { get; init; }
-    public long PrivateMemoryMb { get; init; }
-    public long ManagedMemoryMb { get; init; }
-    public int ThreadCount { get; init; }
-    public string HardwareProfile { get; init; } = string.Empty;
-    public string FailureCategory { get; init; } = "none";
-    public string BenchmarkSet { get; init; } = "workflow-lab";
-}
-
+/// <summary>Workflow lab history store.</summary>
 public static class WorkflowLabHistoryStore
 {
     private const string RelativePath = ".nexo/runtime/workflow_lab_history.jsonl";
@@ -41,9 +11,11 @@ public static class WorkflowLabHistoryStore
         PropertyNameCaseInsensitive = true
     };
 
+    /// <summary>Resolves the workflow lab history file path under the repository root.</summary>
     public static string GetPath(string repoRoot)
         => Path.GetFullPath(Path.Combine(repoRoot, RelativePath));
 
+    /// <summary>Reads the most recent history rows ordered by start time descending.</summary>
     public static IReadOnlyList<WorkflowLabStressHistoryRow> ReadRecent(string repoRoot, int maxItems = 300)
     {
         if (maxItems <= 0)
@@ -76,6 +48,7 @@ public static class WorkflowLabHistoryStore
             .ToArray();
     }
 
+    /// <summary>Reads all history rows ordered by start time descending.</summary>
     public static IReadOnlyList<WorkflowLabStressHistoryRow> ReadAll(string repoRoot)
     {
         var path = GetPath(repoRoot);
@@ -104,6 +77,7 @@ public static class WorkflowLabHistoryStore
             .ToArray();
     }
 
+    /// <summary>Appends a history row to the workflow lab JSONL store.</summary>
     public static void Append(string repoRoot, WorkflowLabStressHistoryRow report)
     {
         var path = GetPath(repoRoot);

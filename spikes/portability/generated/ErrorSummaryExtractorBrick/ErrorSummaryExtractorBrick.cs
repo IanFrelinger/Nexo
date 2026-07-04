@@ -6,7 +6,7 @@ namespace ErrorSummaryExtractorBrick;
 /// <summary>
 /// Deterministic log scanner: counts ERROR lines and extracts the first error message.
 /// </summary>
-public sealed class ErrorSummaryExtractorBrick : Brick
+public sealed class ErrorSummaryExtractorBrick : DomainBrick
 {
     public ErrorSummaryExtractorBrick()
     {

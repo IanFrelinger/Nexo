@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Barriers.Identity;
 
+/// <summary>Tests for default barrier identity resolver pipeline.</summary>
 public sealed class DefaultBarrierIdentityResolverPipelineTests
 {
     [Fact]
@@ -197,6 +198,7 @@ public sealed class DefaultBarrierIdentityResolverPipelineTests
             JwtClaims: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase),
             ApiKey: null);
 
+    /// <summary>Stub resolver.</summary>
     private sealed class StubResolver : IBarrierIdentityResolver
     {
         private readonly BarrierResolutionResult? _result;
@@ -207,6 +209,7 @@ public sealed class DefaultBarrierIdentityResolverPipelineTests
             _result = result;
         }
 
+        /// <summary>Resolver name.</summary>
         public string ResolverName { get; }
 
         public ValueTask<BarrierResolutionResult?> TryResolveAsync(
@@ -215,9 +218,13 @@ public sealed class DefaultBarrierIdentityResolverPipelineTests
             => new(_result);
     }
 
+    /// <summary>Throwing resolver.</summary>
     private sealed class ThrowingResolver : IBarrierIdentityResolver
     {
+        /// <summary>Throwing resolver.</summary>
+        /// <param name="name">Name.</param>
         public ThrowingResolver(string name) => ResolverName = name;
+        /// <summary>Resolver name.</summary>
         public string ResolverName { get; }
 
         public ValueTask<BarrierResolutionResult?> TryResolveAsync(

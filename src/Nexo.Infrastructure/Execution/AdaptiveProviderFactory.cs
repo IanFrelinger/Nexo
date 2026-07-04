@@ -13,6 +13,7 @@ public sealed class AdaptiveProviderFactory : IProviderFactory
     private readonly ILoadPolicy _loadPolicy;
     private readonly ILogger<AdaptiveProviderFactory>? _logger;
 
+    /// <summary>Initializes a new adaptive provider factory.</summary>
     public AdaptiveProviderFactory(
         IProviderFactory inner,
         ILoadPolicy loadPolicy,

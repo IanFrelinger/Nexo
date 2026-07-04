@@ -10,6 +10,7 @@ public interface IIsolatedDatabase : IAsyncDisposable
     /// </summary>
     string ConnectionString { get; }
 
+    /// <summary>Isolation tier describing how this database instance is separated from peers.</summary>
     DatabaseIsolationLevel Isolation { get; }
 
     /// <summary>

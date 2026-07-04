@@ -130,14 +130,22 @@ public sealed class LiteDbUserKnowledgeLogStore : IUserKnowledgeLogStore
 
     private sealed class KnowledgeLogDoc
     {
+        /// <summary>Id.</summary>
         [BsonId]
         public string Id { get; set; } = string.Empty;
+        /// <summary>Data type.</summary>
         public string DataType { get; set; } = string.Empty;
+        /// <summary>Generated content text.</summary>
         public string Content { get; set; } = string.Empty;
+        /// <summary>Source observation ids.</summary>
         public string[]? SourceObservationIds { get; set; }
+        /// <summary>Version.</summary>
         public int Version { get; set; }
+        /// <summary>Created at.</summary>
         public DateTimeOffset CreatedAt { get; set; }
+        /// <summary>Updated at.</summary>
         public DateTimeOffset UpdatedAt { get; set; }
+        /// <summary>Deleted at.</summary>
         public DateTimeOffset? DeletedAt { get; set; }
     }
 }

@@ -14,6 +14,7 @@ public sealed class SneakernetTransport : ISneakernetTransport
     private readonly ISharedAdaptationSync _sync;
     private readonly ILogger<SneakernetTransport>? _logger;
 
+    /// <summary>Initializes a new sneakernet transport.</summary>
     public SneakernetTransport(ISharedAdaptationSync sync, ILogger<SneakernetTransport>? logger = null)
     {
         _sync = sync ?? throw new ArgumentNullException(nameof(sync));
@@ -85,19 +86,29 @@ public sealed class SneakernetTransport : ISneakernetTransport
 
     private sealed class SneakernetExportDto
     {
+        /// <summary>Version.</summary>
         public int Version { get; set; }
+        /// <summary>Format.</summary>
         public string Format { get; set; } = "nexo-mesh-adaptation";
+        /// <summary>Exported at.</summary>
         public DateTimeOffset ExportedAt { get; set; }
+        /// <summary>Entry count.</summary>
         public int EntryCount { get; set; }
+        /// <summary>Entries.</summary>
         public List<SneakernetEntryDto> Entries { get; set; } = new();
     }
 
     private sealed class SneakernetEntryDto
     {
+        /// <summary>Id.</summary>
         public string Id { get; set; } = string.Empty;
+        /// <summary>Record.</summary>
         public AdaptationRecord Record { get; set; } = null!;
+        /// <summary>Files.</summary>
         public Dictionary<string, string> Files { get; set; } = new();
+        /// <summary>Source peer id.</summary>
         public string? SourcePeerId { get; set; }
+        /// <summary>Broadcast at.</summary>
         public DateTimeOffset BroadcastAt { get; set; }
     }
 }

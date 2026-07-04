@@ -14,9 +14,15 @@ namespace Nexo.Core.Domain.Values;
 /// </summary>
 public abstract class BaseTypeValue : ITypeValue
 {
+    /// <inheritdoc />
     public string Value { get; }
+
+    /// <inheritdoc />
     public string Display { get; }
 
+    /// <summary>Creates a value/display pair.</summary>
+    /// <param name="value">Internal serialized value.</param>
+    /// <param name="display">Human-readable label.</param>
     protected BaseTypeValue(string value, string display)
     {
         Value = value;

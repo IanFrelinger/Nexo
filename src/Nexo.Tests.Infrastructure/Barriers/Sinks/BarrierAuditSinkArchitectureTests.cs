@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Barriers.Sinks;
 
+/// <summary>Tests for barrier audit sink architecture.</summary>
 public sealed class BarrierAuditSinkArchitectureTests
 {
     [Fact]

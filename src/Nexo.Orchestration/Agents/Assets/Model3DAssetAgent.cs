@@ -213,15 +213,3 @@ public sealed class Model3DAssetAgent : BaseAssetAgent
         return ModelQuality.Medium;
     }
 }
-
-/// <summary>
-/// Generated 3D model asset.
-/// </summary>
-internal sealed record GeneratedModel3DAsset : GeneratedAssetBase
-{
-    public required Model3DFormat Format { get; init; }
-    public required int VertexCount { get; init; }
-    public required int TriangleCount { get; init; }
-    public required IReadOnlyList<string> TexturePaths { get; init; }
-}
-

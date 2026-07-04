@@ -5,10 +5,12 @@ using Nexo.Core.Application.Certification.Models;
 
 namespace Nexo.Infrastructure.Certification.Composition;
 
+/// <summary>HMAC signer for composition certification records.</summary>
 public sealed class CompositionCertificationRecordSigner
 {
     private readonly byte[] _keyBytes;
 
+    /// <summary>Initializes a new composition certification record signer.</summary>
     public CompositionCertificationRecordSigner(CertificationRecordSigner? brickSigner = null)
     {
         _ = brickSigner;
@@ -17,6 +19,7 @@ public sealed class CompositionCertificationRecordSigner
         _keyBytes = Encoding.UTF8.GetBytes(key);
     }
 
+    /// <summary>Sign.</summary>
     public string Sign(CompositionCertificationRecord record)
     {
         var payload = BuildPayload(record);
@@ -25,6 +28,7 @@ public sealed class CompositionCertificationRecordSigner
         return Convert.ToBase64String(hash);
     }
 
+    /// <summary>Verify.</summary>
     public bool Verify(CompositionCertificationRecord record)
     {
         if (string.IsNullOrWhiteSpace(record.Signature))

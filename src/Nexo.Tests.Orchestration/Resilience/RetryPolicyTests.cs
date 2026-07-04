@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration.Resilience;
 
+/// <summary>Tests for retry policy.</summary>
 public class RetryPolicyTests
 {
     private readonly Mock<ILogger<RetryPolicy>> _loggerMock;
@@ -48,6 +49,8 @@ public class RetryPolicyTests
             await Task.CompletedTask;
             if (callCount < 2)
             {
+                /// <summary>Invalid operation exception.</summary>
+                /// <param name="error"">Error".</param>
                 throw new InvalidOperationException("Test error");
             }
             return 42;
@@ -69,6 +72,8 @@ public class RetryPolicyTests
         var operation = new Func<Task<int>>(async () =>
         {
             await Task.CompletedTask;
+            /// <summary>Invalid operation exception.</summary>
+            /// <param name="error"">Error".</param>
             throw new InvalidOperationException("Test error");
         });
 
@@ -87,6 +92,7 @@ public class RetryPolicyTests
         {
             callCount++;
             await Task.CompletedTask;
+            /// <summary>Argument exception.</summary>
             throw new ArgumentException("Non-retryable");
         });
         var shouldRetry = new Func<Exception, bool>(ex => ex is not ArgumentException);
@@ -111,6 +117,8 @@ public class RetryPolicyTests
         {
             delays.Add(DateTimeOffset.UtcNow);
             await Task.CompletedTask;
+            /// <summary>Invalid operation exception.</summary>
+            /// <param name="error"">Error".</param>
             throw new InvalidOperationException("Test error");
         });
 

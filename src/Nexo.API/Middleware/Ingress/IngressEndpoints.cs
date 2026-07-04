@@ -9,6 +9,7 @@ using Nexo.Core.Application.Middleware.Ports;
 
 namespace Nexo.API.Middleware.Ingress;
 
+/// <summary>Ingress endpoints.</summary>
 public static class IngressEndpoints
 {
     public static WebApplication MapIngressEndpoints(this WebApplication app)

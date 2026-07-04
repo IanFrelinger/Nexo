@@ -6,8 +6,13 @@ using Microsoft.Extensions.Options;
 
 namespace Nexo.Infrastructure.MeshLab;
 
+/// <summary>
+/// Polls the mesh-lab director for assigned tasks and executes them against peer nodes.
+/// Used by background worker hosts in mesh-lab integration scenarios.
+/// </summary>
 public sealed class MeshLabWorkerExecutorClient
 {
+    /// <summary>Named <see cref="IHttpClientFactory"/> client for mesh-lab HTTP calls.</summary>
     public const string HttpClientName = "mesh-lab-worker-executor";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -20,6 +25,7 @@ public sealed class MeshLabWorkerExecutorClient
     private readonly IConfiguration _configuration;
     private readonly ILogger<MeshLabWorkerExecutorClient> _logger;
 
+    /// <summary>Initializes a new mesh lab worker executor client.</summary>
     public MeshLabWorkerExecutorClient(
         IHttpClientFactory httpClientFactory,
         IOptionsMonitor<MeshLabWorkerExecutorOptions> options,
@@ -32,6 +38,7 @@ public sealed class MeshLabWorkerExecutorClient
         _logger = logger;
     }
 
+    /// <summary>Try process one assigned task asynchronously.</summary>
     public async Task<int> TryProcessOneAssignedTaskAsync(CancellationToken cancellationToken)
     {
         var opts = _options.CurrentValue;
@@ -46,6 +53,7 @@ public sealed class MeshLabWorkerExecutorClient
             : 0;
     }
 
+    /// <summary>Pick candidate.</summary>
     public static MeshLabTaskSnapshot? PickCandidate(IReadOnlyList<MeshLabTaskSnapshot> tasks, string prefix)
     {
         if (string.IsNullOrWhiteSpace(prefix))
@@ -68,6 +76,7 @@ public sealed class MeshLabWorkerExecutorClient
         return null;
     }
 
+    /// <summary>Whether status.</summary>
     public static bool IsStatus(string? status, MeshLabTaskStatus expected)
     {
         if (string.IsNullOrWhiteSpace(status))
@@ -231,10 +240,3 @@ public sealed class MeshLabWorkerExecutorClient
             ? _configuration["Nexo:Security:ApiKey"]
             : opts.ApiKey.Trim();
 }
-
-public sealed record MeshLabTaskSnapshot(
-    string TaskId,
-    string? Name,
-    string? Status,
-    string? AssignedApiBaseUrl,
-    string? LeaseToken);

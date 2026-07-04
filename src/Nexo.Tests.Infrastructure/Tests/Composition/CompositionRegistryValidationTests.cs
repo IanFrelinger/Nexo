@@ -3,6 +3,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Composition;
 
+/// <summary>Tests for composition registry validation.</summary>
 public sealed class CompositionRegistryValidationTests
 {
     [Fact]

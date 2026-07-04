@@ -7,8 +7,10 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Environments;
 
+/// <summary>Tests for map data provider router.</summary>
 public sealed class MapDataProviderRouterTests
 {
+    /// <summary>Tests for http vector.</summary>
     private sealed class HttpVector : IVectorMapDataProvider
     {
         public string Kind => MapDataSourceKinds.Http;
@@ -21,6 +23,7 @@ public sealed class MapDataProviderRouterTests
             Task.FromResult(new VectorMapDataResult(ReadOnlyMemory<byte>.Empty, "application/octet-stream"));
     }
 
+    /// <summary>Tests for overpass vector.</summary>
     private sealed class OverpassVector : IVectorMapDataProvider
     {
         public string Kind => MapDataSourceKinds.Overpass;

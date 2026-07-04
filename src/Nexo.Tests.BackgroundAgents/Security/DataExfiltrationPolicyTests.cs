@@ -10,11 +10,13 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.Security;
 
+/// <summary>Tests for data exfiltration policy.</summary>
 public class DataExfiltrationPolicyTests
 {
     private static ToolCall ToolCall(string id, object? args = null)
     {
         var json = args != null ? JsonSerializer.SerializeToElement(args) : JsonSerializer.SerializeToElement(new { });
+        /// <summary>Tool call.</summary>
         return new ToolCall(id, json);
     }
 

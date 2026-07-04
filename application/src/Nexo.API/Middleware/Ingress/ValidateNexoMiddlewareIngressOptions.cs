@@ -4,11 +4,13 @@ using Nexo.Contracts;
 
 namespace Nexo.API.Middleware.Ingress;
 
+/// <summary>Configuration options for validate nexo middleware ingress.</summary>
 public sealed class ValidateNexoMiddlewareIngressOptions : IValidateOptions<NexoMiddlewareIngressOptions>
 {
     private readonly IHostEnvironment _environment;
     private readonly IOptionsMonitor<SmsIngressDynamoDbOptions> _dynamo;
 
+    /// <summary>Creates a startup validator for middleware ingress configuration.</summary>
     public ValidateNexoMiddlewareIngressOptions(
         IHostEnvironment environment,
         IOptionsMonitor<SmsIngressDynamoDbOptions> dynamo)
@@ -17,6 +19,7 @@ public sealed class ValidateNexoMiddlewareIngressOptions : IValidateOptions<Nexo
         _dynamo = dynamo;
     }
 
+    /// <summary>Validates middleware ingress options at startup.</summary>
     public ValidateOptionsResult Validate(string? name, NexoMiddlewareIngressOptions options)
     {
         if (options.EnableAwsSnsSmsWebhook && !_environment.IsEnvironment("Testing"))

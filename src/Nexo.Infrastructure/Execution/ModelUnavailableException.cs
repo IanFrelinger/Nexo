@@ -6,11 +6,13 @@ namespace Nexo.Infrastructure.Execution;
 /// </summary>
 public sealed class ModelUnavailableException : InvalidOperationException
 {
+    /// <summary>Initializes a new model unavailable exception.</summary>
     public ModelUnavailableException(string message)
         : base(message)
     {
     }
 
+    /// <summary>Initializes a new model unavailable exception.</summary>
     public ModelUnavailableException(string message, Exception innerException)
         : base(message, innerException)
     {

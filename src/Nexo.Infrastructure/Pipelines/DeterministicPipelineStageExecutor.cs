@@ -14,6 +14,7 @@ public sealed class DeterministicPipelineStageExecutor : IPipelineStageExecutor
     private readonly PipelineExecutionOptions _executionOptions;
     private readonly IPipelineStageExecutionAdapter _adapter;
 
+    /// <summary>Initializes a new deterministic pipeline stage executor.</summary>
     public DeterministicPipelineStageExecutor(
         ILogger<DeterministicPipelineStageExecutor> logger,
         IEnumerable<IPipelineStageExecutionAdapter> adapters,
@@ -32,8 +33,10 @@ public sealed class DeterministicPipelineStageExecutor : IPipelineStageExecutor
                 $"No deterministic pipeline adapter registered for key '{adapterKey}'.");
     }
 
+    /// <summary>Worker type.</summary>
     public PipelineWorkerType WorkerType => PipelineWorkerType.Deterministic;
 
+    /// <summary>Execute asynchronously.</summary>
     public Task<PipelineStageExecutionResult> ExecuteAsync(
         PipelineStageExecutionRequest request,
         CancellationToken cancellationToken = default)

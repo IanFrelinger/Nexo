@@ -2,8 +2,8 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Nexo.BrickContracts;
-using Nexo.BrickContracts.Capabilities;
+using Nexo.Brick.Contracts;
+using Nexo.Brick.Contracts.Capabilities;
 
 namespace Nexo.Infrastructure.Execution;
 
@@ -21,6 +21,7 @@ public sealed class HttpRemoteBrickCatalog : IRemoteBrickCatalog
     private NodeCapabilityManifestDto? _cachedCapabilities;
     private DateTimeOffset _capabilitiesFetchedAt = DateTimeOffset.MinValue;
 
+    /// <summary>Initializes a new http remote brick catalog.</summary>
     public HttpRemoteBrickCatalog(
         HttpClient httpClient,
         ILogger<HttpRemoteBrickCatalog>? logger = null,
@@ -35,8 +36,10 @@ public sealed class HttpRemoteBrickCatalog : IRemoteBrickCatalog
         _maxStaleCapabilityAge = maxStaleCapabilityAge ?? TimeSpan.FromMinutes(5);
     }
 
+    /// <summary>Base url.</summary>
     public string BaseUrl => _httpClient.BaseAddress?.ToString() ?? string.Empty;
 
+    /// <summary>Get all asynchronously.</summary>
     public async Task<IReadOnlyList<BrickCatalogEntryDto>> GetAllAsync(CancellationToken cancellationToken = default)
     {
         try
@@ -63,6 +66,7 @@ public sealed class HttpRemoteBrickCatalog : IRemoteBrickCatalog
         }
     }
 
+    /// <summary>Get by id asynchronously.</summary>
     public async Task<BrickCatalogEntryDto?> GetByIdAsync(string brickId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrEmpty(brickId)) return null;
@@ -89,9 +93,11 @@ public sealed class HttpRemoteBrickCatalog : IRemoteBrickCatalog
         }
     }
 
+    /// <summary>Get capabilities asynchronously.</summary>
     public async Task<NodeCapabilityManifestDto?> GetCapabilitiesAsync(CancellationToken cancellationToken = default)
         => (await GetCapabilitiesWithStalenessAsync(cancellationToken).ConfigureAwait(false)).Capabilities;
 
+    /// <summary>Get capabilities with staleness asynchronously.</summary>
     public async Task<CapabilitiesFetchResult> GetCapabilitiesWithStalenessAsync(CancellationToken cancellationToken = default)
     {
         var now = DateTimeOffset.UtcNow;
@@ -389,7 +395,7 @@ public sealed class HttpRemoteBrickCatalog : IRemoteBrickCatalog
 
             entries.Add(new BrickCatalogEntryDto
             {
-                WireFormatVersion = ReadString(brick, "wireFormatVersion") ?? Nexo.BrickContracts.WireFormatVersion.Current,
+                WireFormatVersion = ReadString(brick, "wireFormatVersion") ?? Nexo.Brick.Contracts.WireFormatVersion.Current,
                 Id = ReadString(brick, "id") ?? string.Empty,
                 Name = ReadString(brick, "name") ?? string.Empty,
                 Version = ReadString(brick, "version") ?? "1.0.0",

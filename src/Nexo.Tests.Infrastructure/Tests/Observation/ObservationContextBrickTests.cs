@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Observation;
 
+/// <summary>Tests for observation context brick.</summary>
 public sealed class ObservationContextBrickTests
 {
     [Fact]

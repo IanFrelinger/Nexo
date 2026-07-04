@@ -30,24 +30,3 @@ public class ClusterMetadata
     /// </summary>
     public ClusterStats Stats { get; init; } = new();
 }
-
-/// <summary>
-/// Sharing scope for clusters.
-/// </summary>
-public enum SharingScope
-{
-    Private,    // Only creator can use
-    Team,       // Shared with team/organization
-    Community   // Public to all users
-}
-
-/// <summary>
-/// Usage statistics for a cluster.
-/// </summary>
-public class ClusterStats
-{
-    public int UsageCount { get; set; }
-    public int FavoriteCount { get; set; }
-    public double AverageRating { get; set; }
-}
-

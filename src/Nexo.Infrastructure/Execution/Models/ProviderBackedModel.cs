@@ -12,12 +12,14 @@ public sealed class ProviderBackedModel : IModel
     private readonly IProviderFactory _providerFactory;
     private readonly ILogger<ProviderBackedModel> _logger;
 
+    /// <summary>Initializes a new provider backed model.</summary>
     public ProviderBackedModel(IProviderFactory providerFactory, ILogger<ProviderBackedModel> logger)
     {
         _providerFactory = providerFactory;
         _logger = logger;
     }
 
+    /// <summary>Complete asynchronously.</summary>
     public async Task<ModelOutput> CompleteAsync(ModelInput input, CancellationToken ct)
     {
         var (provider, model, systemPrompt, userPrompt) = Parse(input);

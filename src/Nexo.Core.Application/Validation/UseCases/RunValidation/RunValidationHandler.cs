@@ -24,6 +24,10 @@ public class RunValidationHandler : IRequestHandler<RunValidationCommand, Valida
     private readonly ILogger<RunValidationHandler> _logger;
     private readonly IMetricsCollector? _metricsCollector;
 
+    /// <summary>Creates a handler that runs validation via <see cref="IValidationService"/>.</summary>
+    /// <param name="validationService">Service that executes validation tests.</param>
+    /// <param name="logger">Logger for validation progress and errors.</param>
+    /// <param name="metricsCollector">Optional metrics collector for execution telemetry.</param>
     public RunValidationHandler(
         IValidationService validationService,
         ILogger<RunValidationHandler> logger,

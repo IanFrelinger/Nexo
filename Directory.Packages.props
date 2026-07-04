@@ -123,6 +123,10 @@
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.0" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.0" />
     <PackageVersion Include="Microsoft.Data.Sqlite" Version="8.0.0" />
+    <!-- Override transitive SQLitePCLRaw.lib.e_sqlite3 2.1.6 (NU1903 / GHSA-2m69-gcr7-jv3q / CVE-2025-6965).
+         The 2.1.x line has no fix; bundle 3.0.3 ships patched SQLite 3.50.4 via SourceGear.sqlite3.
+         Referenced only by the two SQLite-consuming projects (native bundle, not applied solution-wide). -->
+    <PackageVersion Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="8.0.0" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.8" />

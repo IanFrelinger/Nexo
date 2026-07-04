@@ -11,6 +11,7 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration;
 
+/// <summary>Tests for orchestration negotiation gap coverage.</summary>
 public class OrchestrationNegotiationGapCoverageTests
 {
     [Fact]
@@ -117,6 +118,8 @@ public class OrchestrationNegotiationGapCoverageTests
         model.Verify(m => m.CompleteAsync(It.IsAny<ModelInput>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    /// <summary>Sample conflict.</summary>
+    /// <param name="agentIds">Agent ids.</param>
     private static Conflict SampleConflict(params string[] agentIds) => new()
     {
         ConflictType = ConflictType.Philosophy,

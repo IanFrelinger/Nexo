@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.Trust;
 
+/// <summary>Tests for sanitizing provider factory.</summary>
 public sealed class SanitizingProviderFactoryTests
 {
     [Fact]

@@ -12,6 +12,7 @@ public sealed class LiteDbTestFailureStore : ITestFailureStore
     private const string CollectionName = "test_failures";
     private readonly string _connectionString;
 
+    /// <summary>Initializes a new lite db test failure store.</summary>
     public LiteDbTestFailureStore(string pathOrConnectionString)
     {
         if (string.IsNullOrWhiteSpace(pathOrConnectionString))
@@ -65,12 +66,18 @@ public sealed class LiteDbTestFailureStore : ITestFailureStore
 
     private sealed class TestFailureDoc
     {
+        /// <summary>Id.</summary>
         [BsonId]
         public string Id { get; set; } = string.Empty;
+        /// <summary>Timestamp.</summary>
         public DateTimeOffset Timestamp { get; set; }
+        /// <summary>Test name.</summary>
         public string TestName { get; set; } = string.Empty;
+        /// <summary>File path.</summary>
         public string? FilePath { get; set; }
+        /// <summary>Error message.</summary>
         public string? ErrorMessage { get; set; }
+        /// <summary>Stack trace.</summary>
         public string? StackTrace { get; set; }
     }
 }

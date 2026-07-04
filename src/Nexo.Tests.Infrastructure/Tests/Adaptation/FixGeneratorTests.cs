@@ -7,13 +7,15 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Adaptation;
 
+/// <summary>Tests for fix generator.</summary>
 [Trait("Category", "Adaptation")]
 public sealed class FixGeneratorTests
 {
+    /// <summary>Creates base manifest.</summary>
     private static BrickManifest CreateBaseManifest() => new()
     {
         Id = "test.brick",
-        Name = "Test Brick",
+        Name = "Test DomainBrick",
         Version = "1.0.0",
         Interface = new BrickInterface { Inputs = [], Outputs = [] },
     };

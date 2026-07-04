@@ -27,6 +27,7 @@ namespace Nexo.CLI.Commands;
 /// </summary>
 public class OrchestrateCommand
 {
+    /// <summary>Structured orchestration payload returned by programmatic callers.</summary>
     public sealed record StructuredOrchestrationResult(
         bool Ok,
         string CorrelationId,
@@ -48,6 +49,7 @@ public class OrchestrateCommand
     private readonly IBarrierAuditLog _barrierAuditLog;
     private readonly IBarrierIdentityResolverPipeline _barrierResolverPipeline;
 
+    /// <summary>Creates the orchestrate command with orchestrator, rendering, and barrier dependencies.</summary>
     public OrchestrateCommand(
         Orchestrator orchestrator,
         IConsoleRenderer renderer,
@@ -93,6 +95,7 @@ public class OrchestrateCommand
             json,
             verbose);
 
+    /// <summary>Runs orchestration and returns a structured result without writing console output.</summary>
     public async Task<StructuredOrchestrationResult> ExecuteStructuredAsync(
         string request,
         string? runtimeSpecPath,
@@ -186,6 +189,7 @@ public class OrchestrateCommand
         }
     }
 
+    /// <summary>Executes orchestration with runtime spec overrides and writes console or JSON output.</summary>
     public async Task<int> ExecuteAsync(
         string request,
         string? runtimeSpecPath,

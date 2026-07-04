@@ -14,12 +14,14 @@ public sealed class ModelBackedVectorMapIntelligenceService : IVectorMapIntellig
     private readonly IModel _model;
     private readonly int _maxInputChars;
 
+    /// <summary>Initializes a new model backed vector map intelligence service.</summary>
     public ModelBackedVectorMapIntelligenceService(IModel model, int maxInputChars = 120_000)
     {
         _model = model;
         _maxInputChars = maxInputChars;
     }
 
+    /// <summary>Refine asynchronously.</summary>
     public async Task<VectorMapIntelligenceResult> RefineAsync(
         VectorMapIntelligenceRequest request,
         CancellationToken cancellationToken = default)

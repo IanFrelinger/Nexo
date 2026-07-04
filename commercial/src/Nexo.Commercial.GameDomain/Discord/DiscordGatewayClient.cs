@@ -1,5 +1,4 @@
-namespace Nexo.GameDomain.Discord;
-
+namespace Nexo.Commercial.GameDomain.Discord;
 /// <summary>
 /// Connects to Discord Gateway via websocket to listen for reaction events.
 /// Used for the approval/denial flow: bot posts fix proposals, user reacts,
@@ -84,6 +83,7 @@ public sealed class DiscordGatewayClient : IDisposable
         get { lock (_lock) { return _pendingApprovals.Count; } }
     }
 
+    /// <summary>Releases resources held by this instance.</summary>
     public void Dispose()
     {
         lock (_lock) { _pendingApprovals.Clear(); }
@@ -91,8 +91,11 @@ public sealed class DiscordGatewayClient : IDisposable
 
     private sealed class PendingApproval
     {
+        /// <summary>message id value.</summary>
         public string MessageId { get; init; } = string.Empty;
+        /// <summary>On reaction value.</summary>
         public Func<string, Task> OnReaction { get; init; } = _ => Task.CompletedTask;
+        /// <summary>Registered at value.</summary>
         public DateTimeOffset RegisteredAt { get; init; }
     }
 }

@@ -2,8 +2,8 @@ using System.Text.Json;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Nexo.Core.Application.Networking.Models;
-using Nexo.Core.Application.Networking.Ports;
+using Nexo.Commercial.Fleet.Contracts.Networking.Models;
+using Nexo.Commercial.Fleet.Contracts.Networking.Ports;
 using Nexo.Orchestration.Communication;
 using Nexo.Orchestration.Communication.Models;
 
@@ -40,6 +40,7 @@ public sealed class AgentBusNetworkBridge : IHostedService, IDisposable
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>Start async operation.</summary>
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         _networkSubscription = await _networkBus.SubscribeAsync(NetworkEventTypes.AgentMessage, OnNetworkEventAsync, cancellationToken)
@@ -49,12 +50,14 @@ public sealed class AgentBusNetworkBridge : IHostedService, IDisposable
         _logger.LogInformation("AgentBusNetworkBridge started: forwarding agent messages to network and delivering network agent messages locally.");
     }
 
+    /// <summary>Stop async operation.</summary>
     public Task StopAsync(CancellationToken cancellationToken)
     {
         Dispose();
         return Task.CompletedTask;
     }
 
+    /// <summary>Releases resources held by this instance.</summary>
     public void Dispose()
     {
         _networkSubscription?.Dispose();
@@ -142,11 +145,17 @@ public sealed class AgentBusNetworkBridge : IHostedService, IDisposable
 
     private sealed class AgentMessageWireDto
     {
+        /// <summary>message id value.</summary>
         public string? MessageId { get; set; }
+        /// <summary>from agent id value.</summary>
         public string? FromAgentId { get; set; }
+        /// <summary>to agent id value.</summary>
         public string? ToAgentId { get; set; }
+        /// <summary>Message type value.</summary>
         public string? MessageType { get; set; }
+        /// <summary>Timestamp value.</summary>
         public DateTimeOffset Timestamp { get; set; }
+        /// <summary>Payload value.</summary>
         public JsonElement? Payload { get; set; }
     }
 }

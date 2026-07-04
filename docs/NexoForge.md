@@ -22,7 +22,7 @@ Nexo Forge maps to Nexo's layered architecture:
 └──────────────────────────────────────────────────────┘
 ```
 
-- **Nexo.Commercial.GameDomain** — domain models (`SessionState`, `MacroDefinition`, weapon/map/ability descriptors) and exporter utilities for JSON round-tripping. Types retain the `Nexo.GameDomain` namespace.
+- **Nexo.Commercial.GameDomain** — domain models (`SessionState`, `MacroDefinition`, weapon/map/ability descriptors) and exporter utilities for JSON round-tripping. Types retain the `Nexo.Commercial.GameDomain` namespace.
 - **Background Agents** — the `agent_set.forge.json` configuration drives five deterministic agents that run on a schedule.
 - **Core.Application / Orchestration** — MediatR use cases, the orchestrator, and the agent scheduler from the base Nexo platform.
 - **Infrastructure** — LLM providers (used by the content-suggester when wired to a real model), persistence, and mesh networking.

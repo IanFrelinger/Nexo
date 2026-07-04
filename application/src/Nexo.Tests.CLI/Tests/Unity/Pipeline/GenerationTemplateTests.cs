@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Nexo.Tests.CLI.Tests.Unity.Pipeline;
 
+/// <summary>Tests for generation template.</summary>
 public sealed class GenerationTemplateTests : IDisposable
 {
     private readonly string _tempDir = Path.Combine(Path.GetTempPath(), $"nexo-template-{Guid.NewGuid():N}");

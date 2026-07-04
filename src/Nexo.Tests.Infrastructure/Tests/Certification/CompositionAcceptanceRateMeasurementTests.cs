@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Certification;
 
+/// <summary>Tests for composition acceptance rate measurement.</summary>
 [Trait("Category", "Certification")]
 public sealed class CompositionAcceptanceRateMeasurementTests
 {

@@ -21,6 +21,7 @@ public sealed class CloudAvailabilityResolver : ICloudAvailabilityResolver
         Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
         ".nexo", "config.json");
 
+    /// <summary>Initializes a new cloud availability resolver.</summary>
     public CloudAvailabilityResolver(
         ILogger<CloudAvailabilityResolver> logger,
         string? configPath = null,

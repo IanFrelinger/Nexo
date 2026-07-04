@@ -7,8 +7,7 @@ using Nexo.Infrastructure.Maintenance.Ports;
 using Nexo.Infrastructure.Maintenance.Strategies;
 using Nexo.Infrastructure.Maintenance;
 
-namespace Nexo.Infrastructure.Sdk.Maintenance;
-
+namespace Nexo.Infrastructure.Maintenance.Sdk.Extensions;
 /// <summary>
 /// DI extensions for artifact cleanup services.
 /// </summary>

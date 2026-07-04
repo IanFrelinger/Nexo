@@ -3,80 +3,9 @@ using System.Text.Json;
 using Nexo.CLI.Runtime;
 using Nexo.Orchestration.Models;
 
-namespace Nexo.CLI.Commands;
+namespace Nexo.CLI.Commands.Workflow;
 
-internal sealed record WorkflowOptimizeCandidate(
-    string CandidateId,
-    string RunId,
-    string RequestId,
-    string CompositionId,
-    string ModelProfileId,
-    int TotalRuns,
-    int Successes,
-    int Failures,
-    int Skipped,
-    double SuccessRate,
-    long AverageLatencyMs,
-    long P95LatencyMs,
-    double AverageScore,
-    long AverageCpuTimeDeltaMs,
-    long P95WorkingSetMb,
-    long P95PrivateMemoryMb,
-    long P95ManagedMemoryMb,
-    long MaxThreadCount,
-    string HardwareProfile,
-    IReadOnlyList<string> Models,
-    string AutoPullSummary,
-    bool AutoPullOk,
-    bool Synthesized = false,
-    string? SynthesisRationale = null,
-    int ObjectiveScore = 0);
-
-internal sealed record WorkflowOptimizeRecommendation(
-    string Kind,
-    string Action,
-    string CandidateId,
-    string Rationale);
-
-internal sealed record OptimizeCandidatePlan(
-    string CandidateId,
-    WorkflowLabRequestSpec Request,
-    WorkflowLabCompositionSpec Composition,
-    WorkflowLabModelProfileSpec Profile,
-    IReadOnlyList<ScenarioPlan> Plans,
-    bool Synthesized = false,
-    string? SynthesisRationale = null);
-
-internal sealed record ScenarioPlan(
-    WorkflowLabRequestSpec Request,
-    WorkflowLabCompositionSpec Composition,
-    WorkflowLabModelProfileSpec Profile,
-    int Iteration);
-
-internal sealed record OptimizeAllocationTrace(
-    int RunIndex,
-    string CandidateId,
-    string TargetId,
-    bool Success,
-    long LatencyMs,
-    string Reason);
-
-internal sealed record TargetAllocationStat(
-    string TargetId,
-    int Runs,
-    int Successes,
-    double SuccessRate,
-    long AverageLatencyMs);
-
-internal sealed record CandidateAllocationStat(
-    string CandidateId,
-    int Runs,
-    int Successes,
-    double SuccessRate,
-    long AverageLatencyMs,
-    int ObjectiveScore,
-    bool Synthesized);
-
+/// <summary>Workflow optimize report renderer.</summary>
 internal static class WorkflowOptimizeReportRenderer
 {
     internal static IReadOnlyList<WorkflowOptimizeRecommendation> BuildOptimizeRecommendations(
@@ -130,7 +59,6 @@ internal static class WorkflowOptimizeReportRenderer
         return recommendations;
     }
 
-
     internal static double ComputePromotionConfidence(
         WorkflowOptimizeCandidate winner,
         int minRunsForEarlyStop)
@@ -142,7 +70,6 @@ internal static class WorkflowOptimizeReportRenderer
         var confidence = (0.55d * successWeight) + (0.30d * runCoverage) + (0.15d * failurePenalty);
         return Math.Round(Math.Clamp(confidence, 0d, 1d), 4);
     }
-
 
     internal static IReadOnlyList<TargetAllocationStat> BuildTargetAllocations(
         IReadOnlyList<OptimizeAllocationTrace> allocationTrace)
@@ -170,7 +97,6 @@ internal static class WorkflowOptimizeReportRenderer
             .ThenBy(x => x.TargetId, StringComparer.OrdinalIgnoreCase)
             .ToArray();
     }
-
 
     internal static IReadOnlyList<CandidateAllocationStat> BuildCandidateAllocations(
         IReadOnlyList<OptimizeAllocationTrace> allocationTrace,
@@ -207,7 +133,6 @@ internal static class WorkflowOptimizeReportRenderer
             .ToArray();
     }
 
-
     internal static IReadOnlyList<string> ResolveOllamaModelsForCandidate(
         WorkflowLabCompositionSpec composition,
         WorkflowLabModelProfileSpec profile)
@@ -222,23 +147,28 @@ internal static class WorkflowOptimizeReportRenderer
         }
 
         if (string.Equals(profile.Default.Provider, "ollama", StringComparison.OrdinalIgnoreCase))
+            /// <summary>Add model.</summary>
             AddModel(models, profile.Default.Model);
 
         foreach (var runtime in profile.Agents.Values)
         {
             if (!string.Equals(runtime.Provider, "ollama", StringComparison.OrdinalIgnoreCase))
                 continue;
+            /// <summary>Add model.</summary>
             AddModel(models, runtime.Model);
         }
 
         foreach (var role in composition.Roles)
         {
+            /// <summary>Add model.</summary>
             AddModel(models, role.OllamaModel);
             if (profile.AgentModelHints.TryGetValue(role.AgentId, out var hint))
+                /// <summary>Add model.</summary>
                 AddModel(models, hint);
             if (profile.Agents.TryGetValue(role.AgentId, out var runtime) &&
                 string.Equals(runtime.Provider, "ollama", StringComparison.OrdinalIgnoreCase))
             {
+                /// <summary>Add model.</summary>
                 AddModel(models, runtime.Model);
             }
         }
@@ -247,7 +177,6 @@ internal static class WorkflowOptimizeReportRenderer
             .OrderBy(x => x, StringComparer.OrdinalIgnoreCase)
             .ToArray();
     }
-
 
     internal static string ResolveOptimizeReportPath(string? reportOutputPath)
     {
@@ -260,7 +189,6 @@ internal static class WorkflowOptimizeReportRenderer
             "workflow",
             "optimize_recommendation_report.md");
     }
-
 
     internal static string RenderOptimizationRecommendationContent(
         string reportPath,
@@ -371,7 +299,6 @@ internal static class WorkflowOptimizeReportRenderer
             candidateAllocations);
     }
 
-
     internal static string RenderOptimizationRecommendationMarkdown(
         string sessionRunId,
         string benchmarkSet,
@@ -468,7 +395,6 @@ internal static class WorkflowOptimizeReportRenderer
         return sb.ToString();
     }
 
-
     internal static string RenderOptimizationRecommendationText(
         string sessionRunId,
         string benchmarkSet,
@@ -537,7 +463,6 @@ internal static class WorkflowOptimizeReportRenderer
         return sb.ToString();
     }
 
-
     internal static void ShuffleOptimizeCandidates(IReadOnlyList<OptimizeCandidatePlan> candidates, Random rng)
     {
         if (candidates is not List<OptimizeCandidatePlan> list)
@@ -549,7 +474,6 @@ internal static class WorkflowOptimizeReportRenderer
             (list[i], list[j]) = (list[j], list[i]);
         }
     }
-
 
     internal static string BuildExecutionRequest(
         WorkflowLabRequestSpec request,
@@ -576,7 +500,6 @@ internal static class WorkflowOptimizeReportRenderer
             "Treat the composition as mandatory orchestration constraints.";
     }
 
-
     internal static bool TryNormalizeMeshEndpoint(string endpoint, out string normalizedEndpoint)
     {
         normalizedEndpoint = string.Empty;
@@ -590,7 +513,6 @@ internal static class WorkflowOptimizeReportRenderer
         normalizedEndpoint = uri.GetLeftPart(UriPartial.Authority).TrimEnd('/');
         return !string.IsNullOrWhiteSpace(normalizedEndpoint);
     }
-
 
     internal static string NormalizeScenarioTargetSegment(string targetId)
     {

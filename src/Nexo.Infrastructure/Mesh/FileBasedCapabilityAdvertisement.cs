@@ -15,6 +15,7 @@ public sealed class FileBasedCapabilityAdvertisement : ICapabilityAdvertisement
     private readonly string _peerId;
     private readonly PeerTrustTier _trustTier;
 
+    /// <summary>Initializes a new file based capability advertisement.</summary>
     public FileBasedCapabilityAdvertisement(
         IInstanceDiscovery discovery,
         string? instancesPath = null,
@@ -82,12 +83,16 @@ public sealed class FileBasedCapabilityAdvertisement : ICapabilityAdvertisement
 
     private sealed class PeerEntry
     {
+        /// <summary>Peer identifier.</summary>
         [System.Text.Json.Serialization.JsonPropertyName("peerId")]
         public string PeerId { get; set; } = "";
+        /// <summary>Peer endpoint URI.</summary>
         [System.Text.Json.Serialization.JsonPropertyName("endpoint")]
         public string Endpoint { get; set; } = "";
+        /// <summary>Advertised capability identifiers.</summary>
         [System.Text.Json.Serialization.JsonPropertyName("capabilities")]
         public List<string> Capabilities { get; set; } = new();
+        /// <summary>Configured trust tier for the peer.</summary>
         [System.Text.Json.Serialization.JsonPropertyName("trustTier")]
         public PeerTrustTier TrustTier { get; set; } = PeerTrustTier.Unknown;
     }

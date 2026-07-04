@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.Forge;
 
+/// <summary>Tests for proposal janitor.</summary>
 public class ProposalJanitorTests : IDisposable
 {
     private readonly string _tempDir;
@@ -15,6 +16,7 @@ public class ProposalJanitorTests : IDisposable
         _store = new ChangeProposalStore(_tempDir);
     }
 
+    /// <summary>Dispose.</summary>
     public void Dispose() { try { Directory.Delete(_tempDir, recursive: true); } catch { /* best effort */ } }
 
     [Fact]

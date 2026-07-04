@@ -1,7 +1,8 @@
-namespace Nexo.CLI.Commands;
-
+namespace Nexo.CLI.Commands.Runtime;
+/// <summary>Handles runtime gate requests.</summary>
 internal sealed class RuntimeGateHandler
 {
+    /// <summary>Executes the command handler and returns a process exit code.</summary>
     public Task<int> ExecuteAsync(
         string repoRoot,
         int historyWindow,

@@ -22,6 +22,7 @@ Rules:
 - Do not include witness values or expected outputs.
 """;
 
+    /// <summary>Builds user prompt.</summary>
     public static string BuildUserPrompt(CompositionProposerInput input)
     {
         var target = input.Target;

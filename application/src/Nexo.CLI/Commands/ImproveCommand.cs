@@ -29,6 +29,7 @@ namespace Nexo.CLI.Commands;
 /// </summary>
 public sealed class ImproveCommand : Command
 {
+    /// <summary>Creates a new ImproveCommand instance.</summary>
     public ImproveCommand() : base("improve", "Analyze brick code, then run adaptation for each violation (Block 4 closed-loop).")
     {
         var pathOpt = new Option<string?>("--path", "Path to analyze. Default: Block 1 Observation folders.");
@@ -496,7 +497,7 @@ public sealed class ImproveCommand : Command
                 if (recompiled != null)
                 {
                     brickAdapted++;
-                    logger.LogInformation("Adapted {Brick} for {Rule}", brickId, rule);
+                    logger.LogInformation("Adapted {DomainBrick} for {Rule}", brickId, rule);
                 }
             }
         }

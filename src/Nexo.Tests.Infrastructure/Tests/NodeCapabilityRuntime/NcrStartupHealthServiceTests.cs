@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.NodeCapabilityRuntime;
 
+/// <summary>Tests for ncr startup health service.</summary>
 public sealed class NcrStartupHealthServiceTests
 {
     [Fact]
@@ -95,14 +96,19 @@ public sealed class NcrStartupHealthServiceTests
         await act.Should().NotThrowAsync();
     }
 
+    /// <summary>Tests for throwing handler.</summary>
     private sealed class ThrowingHandler : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
             => throw new HttpRequestException("No route to host");
     }
 
+    /// <summary>Tests for tags ok handler.</summary>
     private sealed class TagsOkHandler : HttpMessageHandler
     {
+        /// <summary>Send async.</summary>
+        /// <param name="request">Request.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
             Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
             {
@@ -110,8 +116,12 @@ public sealed class NcrStartupHealthServiceTests
             });
     }
 
+    /// <summary>Tests for status handler.</summary>
     private sealed class StatusHandler(HttpStatusCode status) : HttpMessageHandler
     {
+        /// <summary>Send async.</summary>
+        /// <param name="request">Request.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
             Task.FromResult(new HttpResponseMessage(status));
     }

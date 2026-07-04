@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.External;
 
+/// <summary>Tests for mapbox tile response validators.</summary>
 public sealed class MapboxTileResponseValidatorsTests
 {
     [Fact]

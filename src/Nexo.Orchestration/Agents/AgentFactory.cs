@@ -6,6 +6,7 @@ using Nexo.Orchestration.Architect.Models;
 using Nexo.Orchestration.Agents.Assets;
 using Nexo.Orchestration.Agents.Playtest;
 using Nexo.Orchestration.Agents.Planning;
+using Nexo.Orchestration.Agents.Templates;
 using Nexo.Orchestration.Models;
 using Nexo.Orchestration.Assets.Ports;
 using Nexo.Orchestration.Playtest.Ports;

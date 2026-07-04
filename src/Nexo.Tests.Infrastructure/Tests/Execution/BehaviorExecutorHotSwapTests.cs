@@ -17,14 +17,18 @@ using Nexo.Core.Application.Common.Services;
 
 namespace Nexo.Tests.Infrastructure.Tests.Execution;
 
+/// <summary>Tests for behavior executor hot swap.</summary>
 public sealed class BehaviorExecutorHotSwapTests : UnitTestBase
 {
     public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
+            /// <summary>Test swaps on failure async.</summary>
             await TestSwapsOnFailureAsync();
+            /// <summary>Test prefers deterministic via runtime spec async.</summary>
             await TestPrefersDeterministicViaRuntimeSpecAsync();
+            /// <summary>Test hot swappable model falls back async.</summary>
             await TestHotSwappableModelFallsBackAsync();
 
             return new TestResult
@@ -105,9 +109,18 @@ public sealed class BehaviorExecutorHotSwapTests : UnitTestBase
             if (evt is StepCompletedEvent) completed = true;
         }
 
+        /// <summary>Assert true.</summary>
+        /// <param name="fallback"">Fallback".</param>
         AssertTrue(completed, "Step should complete via deterministic fallback");
+        /// <summary>Assert true.</summary>
+        /// <param name="1">1.</param>
+        /// <param name="impl"">Impl".</param>
         AssertTrue(errors >= 1, "Should emit a step error for the failing impl");
+        /// <summary>Assert true.</summary>
+        /// <param name="2">2.</param>
+        /// <param name="implementations"">Implementations".</param>
         AssertTrue(impls.Count >= 2, "Should attempt at least two implementations");
+        /// <summary>Assert equal.</summary>
         AssertEqual(ImplementationType.Agentic, impls[0]);
         AssertTrue(impls.Contains(ImplementationType.Deterministic), "Should fall back to deterministic");
     }
@@ -158,6 +171,8 @@ public sealed class BehaviorExecutorHotSwapTests : UnitTestBase
             }
         }
 
+        /// <summary>Assert equal.</summary>
+        /// <param name="first"">First".</param>
         AssertEqual(ImplementationType.Deterministic, firstImpl!.Value, "Runtime spec should force deterministic first");
     }
 
@@ -172,6 +187,8 @@ public sealed class BehaviorExecutorHotSwapTests : UnitTestBase
         // Force a provider that is typically unavailable in CI (no API key), ensuring fallback.
         await WithEnv("NEXO_MODEL_PROVIDER", "openai", async () =>
         {
+            /// <summary>With env.</summary>
+            /// <param name="(">(.</param>
             await WithEnv("OPENAI_API_KEY", null, async () =>
             {
                 var input = new ModelInput(new List<(string role, string content)>
@@ -181,13 +198,15 @@ public sealed class BehaviorExecutorHotSwapTests : UnitTestBase
                 });
 
                 var outp = await model.CompleteAsync(input, CancellationToken.None);
+                /// <summary>Assert equal.</summary>
+                /// <param name="behavior"">Behavior".</param>
                 AssertEqual("hello", outp.Text, "Should fall back to deterministic echo behavior");
             });
         });
     }
 
     private static BehaviorExecutor CreateExecutor(
-        Brick brick,
+        DomainBrick brick,
         bool providerAvailable,
         IAgenticBrickEngine? agenticBrickEngine = null,
         IMetricsCollector? metricsCollector = null)
@@ -209,18 +228,29 @@ public sealed class BehaviorExecutorHotSwapTests : UnitTestBase
             metricsCollector);
     }
 
+    /// <summary>Tests for single brick registry.</summary>
     private sealed class SingleBrickRegistry : Nexo.Core.Domain.Execution.IBrickRegistry
     {
-        private readonly Brick _brick;
-        public SingleBrickRegistry(Brick brick) => _brick = brick;
-        public Brick? GetBrick(string id) => id == _brick.Id ? _brick : null;
-        public IReadOnlyList<Brick> GetAllBricks() => new[] { _brick };
+        private readonly DomainBrick _brick;
+        /// <summary>Single brick registry.</summary>
+        /// <param name="brick">Brick.</param>
+        public SingleBrickRegistry(DomainBrick brick) => _brick = brick;
+        /// <summary>Gets brick.</summary>
+        /// <param name="id">Id.</param>
+        public DomainBrick? GetBrick(string id) => id == _brick.Id ? _brick : null;
+        /// <summary>Gets all bricks.</summary>
+        public IReadOnlyList<DomainBrick> GetAllBricks() => new[] { _brick };
     }
 
+    /// <summary>Tests for stub provider factory.</summary>
     private sealed class StubProviderFactory : IProviderFactory
     {
         private readonly bool _available;
+        /// <summary>Stub provider factory.</summary>
+        /// <param name="available">Available.</param>
         public StubProviderFactory(bool available) => _available = available;
+        /// <summary>Returns whether  provider available.</summary>
+        /// <param name="provider">Provider.</param>
         public bool IsProviderAvailable(string provider) => _available;
         public Task<string> ExecuteLLMAsync(string provider, string systemPrompt, string userPrompt, object config, CancellationToken cancellationToken = default)
             => Task.FromResult("{}");
@@ -234,7 +264,8 @@ public sealed class BehaviorExecutorHotSwapTests : UnitTestBase
             => Task.CompletedTask;
     }
 
-    private sealed class FlakyAgenticBrick : Brick
+    /// <summary>Tests for flaky agentic brick.</summary>
+    private sealed class FlakyAgenticBrick : DomainBrick
     {
         public FlakyAgenticBrick()
         {
@@ -255,6 +286,8 @@ public sealed class BehaviorExecutorHotSwapTests : UnitTestBase
         {
             if (implementation == ImplementationType.Agentic)
             {
+                /// <summary>Invalid operation exception.</summary>
+                /// <param name="failed"">Failed".</param>
                 throw new InvalidOperationException("agentic failed");
             }
 
@@ -272,6 +305,7 @@ public sealed class BehaviorExecutorHotSwapTests : UnitTestBase
         try
         {
             Environment.SetEnvironmentVariable(key, value);
+            /// <summary>Action.</summary>
             await action();
         }
         finally

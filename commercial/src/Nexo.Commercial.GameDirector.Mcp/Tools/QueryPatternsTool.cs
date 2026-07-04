@@ -4,10 +4,13 @@ using Nexo.Client;
 
 namespace GameDirector.Mcp.Tools;
 
+/// <summary>Query patterns tool.</summary>
 public sealed class QueryPatternsTool : IMcpTool
 {
     private readonly INexoClient _client;
 
+    /// <summary>Query patterns tool.</summary>
+    /// <param name="client">Client.</param>
     public QueryPatternsTool(INexoClient client) => _client = client;
 
     public string Name => "query_patterns";

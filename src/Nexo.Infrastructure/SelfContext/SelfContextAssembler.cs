@@ -17,6 +17,7 @@ public sealed class SelfContextAssembler : ISelfContextAssembler
     private readonly IExecutionTracer _executionTracer;
     private readonly IPatternStore _patternStore;
 
+    /// <summary>Initializes a new self context assembler.</summary>
     public SelfContextAssembler(IAdaptationLog adaptationLog, IExecutionTracer executionTracer, IPatternStore patternStore)
     {
         _adaptationLog = adaptationLog ?? throw new ArgumentNullException(nameof(adaptationLog));

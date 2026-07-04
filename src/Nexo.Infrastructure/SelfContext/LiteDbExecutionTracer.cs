@@ -13,6 +13,7 @@ public sealed class LiteDbExecutionTracer : IExecutionTracer
     private const string CollectionName = "execution_traces";
     private readonly string _connectionString;
 
+    /// <summary>Initializes a new lite db execution tracer.</summary>
     public LiteDbExecutionTracer(string pathOrConnectionString)
     {
         if (string.IsNullOrWhiteSpace(pathOrConnectionString))
@@ -118,12 +119,18 @@ public sealed class LiteDbExecutionTracer : IExecutionTracer
 
     private sealed class TraceDoc
     {
+        /// <summary>Id.</summary>
         [BsonId]
         public string Id { get; set; } = string.Empty;
+        /// <summary>Timestamp.</summary>
         public DateTimeOffset Timestamp { get; set; }
+        /// <summary>Operation.</summary>
         public string Operation { get; set; } = string.Empty;
+        /// <summary>Path.</summary>
         public string? Path { get; set; }
+        /// <summary>Outcome.</summary>
         public string? Outcome { get; set; }
+        /// <summary>Context json.</summary>
         public string? ContextJson { get; set; }
     }
 }

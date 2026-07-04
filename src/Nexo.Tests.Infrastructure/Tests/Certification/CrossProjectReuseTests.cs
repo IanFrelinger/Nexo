@@ -10,6 +10,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Certification;
 
+/// <summary>Tests for cross project reuse.</summary>
 [Trait("Category", "Certification")]
 public sealed class CrossProjectReuseTests
 {
@@ -95,8 +96,13 @@ public sealed class CrossProjectReuseTests
         decision.Admitted.Should().BeTrue("project A must certify damage-resolver");
         decision.Record.ContentHash.Should().NotBeNullOrWhiteSpace();
 
+        /// <summary>Certified artifact.</summary>
         return new CertifiedArtifact(built.SourceCode, decision.Record, built.BrickTypeName);
     }
 
+    /// <summary>Tests for certified artifact.</summary>
+    /// <param name="SourceCode">Source code.</param>
+    /// <param name="Record">Record.</param>
+    /// <param name="BrickTypeName">Brick type name.</param>
     private sealed record CertifiedArtifact(string SourceCode, CertificationRecord Record, string? BrickTypeName);
 }

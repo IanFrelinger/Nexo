@@ -5,7 +5,7 @@
 | Item | Status |
 | ---- | ------ |
 | **Track A — Hosting partials** | **`AddNexo`** → **`NexoKernelRegistrar.Register`**; **`NexoKernelRegistrationContext`** + **20 phase methods** in **`NexoKernelRegistrar.Phases.cs`** + **`NexoKernelRegistrar.Ephemeral.cs`** (`EphemeralModelsEnabled`). **`ModuleSelection`** in **`NexoKernelRegistrationModels.cs`**. **`NexoServiceCollectionExtensions.Deployment.cs`** — deployment profile helpers; **`NexoServiceCollectionExtensions.NodeCapabilityRuntime.cs`** — **`RegisterNodeCapabilityRuntime`**. |
-| **Track B — Infrastructure `Sdk/`** | **Done:** `*ServiceCollectionExtensions` under **`Feature/Sdk/Extensions/`** with **`Nexo.Infrastructure.Sdk.<Area>`** namespaces. Collision-safe: **`Nexo.Infrastructure.NodeCapabilityRuntime.Sdk`**, **`Nexo.Infrastructure.Execution.Sdk`**, **`Nexo.Infrastructure.Execution.Routing.Sdk`**, **`Nexo.Infrastructure.Mesh.Sdk`**. |
+| **Track B — Infrastructure `Sdk/`** | **Done:** `*ServiceCollectionExtensions` under **`Feature/Sdk/Extensions/`** with **`Nexo.Infrastructure.Sdk.<Area>`** namespaces. Collision-safe: **`Nexo.Infrastructure.NodeCapabilityRuntime.Sdk.Extensions.Extensions`**, **`Nexo.Infrastructure.Execution.Sdk.Extensions.Extensions`**, **`Nexo.Infrastructure.Execution.Routing.Sdk.Extensions.Extensions`**, **`Nexo.Infrastructure.Mesh.Sdk.Extensions.Extensions`**. |
 | **Consumer projects** | **`GlobalUsings.Infrastructure.Sdk.cs`** in **`Nexo.Hosting`**; **`Nexo.CLI`** and **`Nexo.Tests.Infrastructure`** link it for Sdk extension resolution. |
 | **Non-goal — ports** | **`INexoSdkBuilder`** in **`Nexo.Infrastructure.Sdk.Ports`**. |
 | **Non-goal — megapackage** | **`Nexo.Framework.Sdk`** + **`AddNexoFramework`**. |

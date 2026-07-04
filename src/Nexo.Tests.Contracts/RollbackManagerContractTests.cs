@@ -50,7 +50,6 @@ public abstract class RollbackManagerContractTests : IDisposable
 
         var impact = await rollback.PreviewRollbackAsync(adaptationId);
 
-        impact.Should().NotBeNull();
         impact.TargetAdaptationId.Should().Be(adaptationId);
     }
 }

@@ -4,12 +4,14 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Workflows;
 
+/// <summary>Tests for quest pdf workflow exporter gap coverage.</summary>
 public sealed class QuestPdfWorkflowExporterGapCoverageTests
 {
     private static QuestPdfWorkflowExporter? TryCreateExporter()
     {
         try
         {
+            /// <summary>Quest pdf workflow exporter.</summary>
             return new QuestPdfWorkflowExporter();
         }
         catch (TypeInitializationException)

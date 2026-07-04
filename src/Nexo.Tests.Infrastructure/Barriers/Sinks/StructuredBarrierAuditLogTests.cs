@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Barriers.Sinks;
 
+/// <summary>Tests for structured barrier audit log.</summary>
 public sealed class StructuredBarrierAuditLogTests
 {
     [Fact]
@@ -80,9 +81,12 @@ public sealed class StructuredBarrierAuditLogTests
             "span-1",
             DateTimeOffset.UtcNow);
 
+    /// <summary>Capturing sink.</summary>
     private sealed class CapturingSink : IBarrierAuditSink
     {
+        /// <summary>Events.</summary>
         public List<BarrierAuditEvent> Events { get; } = [];
+        /// <summary>Tokens.</summary>
         public List<CancellationToken> Tokens { get; } = [];
 
         public ValueTask WriteAsync(BarrierAuditEvent auditEvent, CancellationToken cancellationToken = default)
@@ -93,6 +97,7 @@ public sealed class StructuredBarrierAuditLogTests
         }
     }
 
+    /// <summary>Throwing sink.</summary>
     private sealed class ThrowingSink : IBarrierAuditSink
     {
         public ValueTask WriteAsync(BarrierAuditEvent auditEvent, CancellationToken cancellationToken = default)

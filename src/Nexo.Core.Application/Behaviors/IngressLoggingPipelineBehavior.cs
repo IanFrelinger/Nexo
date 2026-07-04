@@ -13,6 +13,9 @@ public sealed class IngressLoggingPipelineBehavior<TRequest, TResponse> : IPipel
     private readonly INexoIngressAccessor _ingress;
     private readonly ILogger<IngressLoggingPipelineBehavior<TRequest, TResponse>> _logger;
 
+    /// <summary>Creates a pipeline behavior that adds ingress correlation to log scopes.</summary>
+    /// <param name="ingress">Accessor for current ingress context.</param>
+    /// <param name="logger">Logger for the pipeline behavior.</param>
     public IngressLoggingPipelineBehavior(
         INexoIngressAccessor ingress,
         ILogger<IngressLoggingPipelineBehavior<TRequest, TResponse>> logger)
@@ -21,6 +24,11 @@ public sealed class IngressLoggingPipelineBehavior<TRequest, TResponse> : IPipel
         _logger = logger;
     }
 
+    /// <summary>Wraps the next delegate in an ingress logging scope when correlation is present.</summary>
+    /// <param name="request">MediatR request being handled.</param>
+    /// <param name="next">Next delegate in the MediatR pipeline.</param>
+    /// <param name="cancellationToken">Token used to cancel the operation.</param>
+    /// <returns>Handler response from the next delegate.</returns>
     public async Task<TResponse> Handle(
         TRequest request,
         RequestHandlerDelegate<TResponse> next,

@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Pipelines;
 
+/// <summary>Tests for pipeline orchestrator gap coverage.</summary>
 public sealed class PipelineOrchestratorGapCoverageTests
 {
     [Fact]
@@ -502,6 +503,8 @@ public sealed class PipelineOrchestratorGapCoverageTests
             NullLogger<PipelineOrchestrator>.Instance);
     }
 
+    /// <summary>Single stage template.</summary>
+    /// <param name="stageId">Stage id.</param>
     private static PipelineTemplate SingleStageTemplate(string stageId) => new()
     {
         TemplateId = stageId + "-template",

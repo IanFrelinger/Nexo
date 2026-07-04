@@ -3,26 +3,10 @@ using System.Runtime.InteropServices;
 
 namespace Nexo.CLI.Commands;
 
-internal sealed record DoctorRemediationAttempt(
-    string Id,
-    string Problem,
-    string Command,
-    bool Attempted,
-    bool Success,
-    string Status,
-    string Message,
-    int ExitCode,
-    string FollowUp);
-
-internal sealed class DoctorRemediationReport
-{
-    public bool FixEnabled { get; init; }
-    public bool AutoApproveFixes { get; init; }
-    public IReadOnlyList<DoctorRemediationAttempt> Attempts { get; init; } = Array.Empty<DoctorRemediationAttempt>();
-}
-
+/// <summary>Doctor remediation.</summary>
 internal static class DoctorRemediation
 {
+    /// <summary>Creates a new RunAsync instance.</summary>
     public static async Task<DoctorRemediationReport> RunAsync(
         BootstrapAssessment assessment,
         bool osSupported,

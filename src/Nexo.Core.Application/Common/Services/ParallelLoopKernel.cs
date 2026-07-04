@@ -10,6 +10,8 @@ public sealed class ParallelLoopKernel : ILoopKernel
 {
     private readonly ILoopKernel _fallback;
 
+    /// <summary>Creates a parallel kernel that delegates to <paramref name="fallback"/> when parallelism is disabled.</summary>
+    /// <param name="fallback">Sequential kernel used when parallel execution is not requested.</param>
     public ParallelLoopKernel(ILoopKernel fallback)
     {
         _fallback = fallback;

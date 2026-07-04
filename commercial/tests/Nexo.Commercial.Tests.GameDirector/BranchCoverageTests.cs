@@ -11,6 +11,7 @@ using Xunit;
 
 namespace Nexo.Tests.GameDirector;
 
+/// <summary>Tests for branch coverage.</summary>
 [Trait("Category", "GameDirectorApplication")]
 public sealed class BranchCoverageTests
 {
@@ -182,12 +183,18 @@ public sealed class BranchCoverageTests
         }
     }
 
+    /// <summary>Throwing model.</summary>
     private sealed class ThrowingModel : IModel
     {
+        /// <summary>Complete async.</summary>
+        /// <param name="input">Input.</param>
+        /// <param name="ct">Cancellation token.</param>
         public Task<ModelOutput> CompleteAsync(ModelInput input, CancellationToken ct) =>
+            /// <summary>Invalid operation exception.</summary>
             throw new InvalidOperationException("simulated");
     }
 
+    /// <summary>Recording feed.</summary>
     private sealed class RecordingFeed : global::GameDirector.Agents.IActivityFeedPublisher
     {
         public List<(string Source, string EventType, string Summary)> Entries { get; } = [];
@@ -198,10 +205,16 @@ public sealed class BranchCoverageTests
         }
     }
 
+    /// <summary>Throwing brick registry.</summary>
     private sealed class ThrowingBrickRegistry : Nexo.Core.Domain.Execution.IBrickRegistry
     {
-        public Brick? GetBrick(string id) => throw new InvalidOperationException("registry broken");
-        public IReadOnlyList<Brick> GetAllBricks() => [];
-        public void Register(Brick brick) { }
+        /// <summary>Gets brick.</summary>
+        /// <param name="id">Id.</param>
+        public DomainBrick? GetBrick(string id) => throw new InvalidOperationException("registry broken");
+        /// <summary>Gets all bricks.</summary>
+        public IReadOnlyList<DomainBrick> GetAllBricks() => [];
+        /// <summary>Register.</summary>
+        /// <param name="brick">Brick.</param>
+        public void Register(DomainBrick brick) { }
     }
 }

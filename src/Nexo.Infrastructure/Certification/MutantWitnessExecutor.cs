@@ -5,8 +5,10 @@ using Nexo.Core.Domain.Execution;
 
 namespace Nexo.Infrastructure.Certification;
 
+/// <summary>Runs witness specs against compiled mutant brick instances during certification.</summary>
 internal static class MutantWitnessExecutor
 {
+    /// <summary>Run witness asynchronously.</summary>
     public static async Task<bool> RunWitnessAsync(
         object mutantInstance,
         Assembly mutantAssembly,
@@ -35,7 +37,7 @@ internal static class MutantWitnessExecutor
     {
         var executeMethod = mutantInstance.GetType()
             .GetMethods(BindingFlags.Public | BindingFlags.Instance)
-            .First(m => m.Name == nameof(Brick.ExecuteAsync) && m.GetParameters().Length == 4);
+            .First(m => m.Name == nameof(DomainBrick.ExecuteAsync) && m.GetParameters().Length == 4);
 
         var parameters = executeMethod.GetParameters();
         var inputType = parameters[0].ParameterType;
@@ -77,28 +79,5 @@ internal static class MutantWitnessExecutor
         }
 
         return true;
-    }
-}
-
-internal static class WitnessValueComparer
-{
-    public static bool AreEqual(object expected, object actual)
-    {
-        if (expected is int or long or short or byte)
-        {
-            try
-            {
-                return Convert.ToInt64(expected) == Convert.ToInt64(actual);
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
-        return string.Equals(
-            Convert.ToString(expected, System.Globalization.CultureInfo.InvariantCulture),
-            Convert.ToString(actual, System.Globalization.CultureInfo.InvariantCulture),
-            StringComparison.Ordinal);
     }
 }

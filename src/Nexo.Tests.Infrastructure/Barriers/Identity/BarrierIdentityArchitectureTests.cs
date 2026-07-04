@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Barriers.Identity;
 
+/// <summary>Tests for barrier identity architecture.</summary>
 public sealed class BarrierIdentityArchitectureTests
 {
     [Fact]

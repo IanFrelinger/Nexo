@@ -11,12 +11,14 @@ namespace Nexo.CLI.Commands.BackgroundAgent;
 /// </summary>
 public static class RuntimeStudioOperatorDashboardSummary
 {
+    /// <summary>Creates a new PathsInfo instance.</summary>
     public sealed record PathsInfo(
         string ObjectivesRoot,
         string ForgeRoot,
         string ObservationsPath,
         string AgentModePath);
 
+    /// <summary>Creates a new ResolvePaths instance.</summary>
     public static PathsInfo ResolvePaths()
     {
         var p = RuntimeStudioPathResolver.Resolve(Directory.GetCurrentDirectory());
@@ -28,6 +30,7 @@ public static class RuntimeStudioOperatorDashboardSummary
         return new PathsInfo(p.ObjectivesRoot, p.ForgeRoot, p.ObservationsPath, agentModePath);
     }
 
+    /// <summary>Creates a new BuildJson instance.</summary>
     public static string BuildJson(PathsInfo paths)
     {
         var modeStore = new FileBasedAggressivenessModeStore(paths.AgentModePath);

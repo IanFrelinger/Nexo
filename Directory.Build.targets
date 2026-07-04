@@ -10,4 +10,16 @@
     <PackageVersion>$(NexoPackageVersion)</PackageVersion>
     <Version>$(NexoPackageVersion)</Version>
   </PropertyGroup>
+
+  <!-- NetStandard compatibility shims (Unity 2019+): required members, init-only, etc.
+       Evaluated statically (not inside a <Target>) so IDE/language-server design-time builds
+       also see the polyfills; a Target-added <Compile> item is invisible to design-time builds,
+       which made every `required` member report CS0656 (missing RequiredMemberAttribute) in the editor.
+       Placed in Directory.Build.targets (not .props) because TargetFrameworkIdentifier is only
+       resolved per inner build, which is available by the time this file is imported. -->
+  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETStandard'">
+    <Compile Include="$(MSBuildThisFileDirectory)src/Nexo.Compat/Polyfills/*.cs">
+      <Link>Polyfills/%(Filename)%(Extension)</Link>
+    </Compile>
+  </ItemGroup>
 </Project>

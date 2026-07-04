@@ -7,6 +7,7 @@ using Nexo.CLI.Formatting;
 
 namespace Nexo.CLI;
 
+/// <summary>Program.</summary>
 static partial class Program
 {
     private static RootCommand BuildRootCommand()
@@ -40,6 +41,10 @@ static partial class Program
             )
         };
         analyzeCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="path">Path.</param>
+            /// <param name="json">Json.</param>
+            /// <param name="verbose">Verbose.</param>
             async (DirectoryInfo path, bool json, bool verbose) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<AnalyzeCommand>();
@@ -57,6 +62,10 @@ static partial class Program
             new Option<string?>("--filter", "Optional test filter (Category/Trait)")
         };
         validateCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="filter">Filter.</param>
+            /// <param name="json">Json.</param>
+            /// <param name="verbose">Verbose.</param>
             async (string? filter, bool json, bool verbose) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<ValidateCommand>();
@@ -74,6 +83,11 @@ static partial class Program
             new Option<FileInfo?>("--input", "Optional input file")
         };
         agentCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="name">Name.</param>
+            /// <param name="input">Input.</param>
+            /// <param name="json">Json.</param>
+            /// <param name="verbose">Verbose.</param>
             async (string name, FileInfo? input, bool json, bool verbose) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<AgentCommand>();
@@ -88,6 +102,9 @@ static partial class Program
         // nexo agent list
         var listAgentsCmd = new Command("list", "List available agents");
         listAgentsCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="json">Json.</param>
+            /// <param name="verbose">Verbose.</param>
             async (bool json, bool verbose) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<ListAgentsCommand>();
@@ -102,6 +119,9 @@ static partial class Program
         var configCmd = new Command("config", "View or manage configuration");
         var configShowCmd = new Command("show", "Show current configuration");
         configShowCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="json">Json.</param>
+            /// <param name="verbose">Verbose.</param>
             async (bool json, bool verbose) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<ConfigCommand>();
@@ -113,6 +133,9 @@ static partial class Program
         configCmd.AddCommand(configShowCmd);
         var configValidateCmd = new Command("validate", "Validate configuration");
         configValidateCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="json">Json.</param>
+            /// <param name="verbose">Verbose.</param>
             async (bool json, bool verbose) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<ConfigCommand>();
@@ -125,6 +148,10 @@ static partial class Program
         var configExportPathOpt = new Option<FileInfo>("--path", "Output file path") { IsRequired = true };
         var configExportCmd = new Command("export", "Export configuration to file") { configExportPathOpt };
         configExportCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="path">Path.</param>
+            /// <param name="json">Json.</param>
+            /// <param name="verbose">Verbose.</param>
             async (FileInfo path, bool json, bool verbose) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<ConfigCommand>();
@@ -138,6 +165,10 @@ static partial class Program
         var configImportPathOpt = new Option<FileInfo>("--path", "Input file path") { IsRequired = true };
         var configImportCmd = new Command("import", "Import and validate configuration from file") { configImportPathOpt };
         configImportCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="path">Path.</param>
+            /// <param name="json">Json.</param>
+            /// <param name="verbose">Verbose.</param>
             async (FileInfo path, bool json, bool verbose) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<ConfigCommand>();
@@ -152,6 +183,9 @@ static partial class Program
         var configSetModeModeArg = new Argument<string>("mode", "Execution mode: deterministic | agentic");
         var configSetModeCmd = new Command("set-mode", "Set execution mode for a step (hot-swap)") { configSetModeStepArg, configSetModeModeArg };
         configSetModeCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="stepId">Step id.</param>
+            /// <param name="modeStr">Mode str.</param>
             async (string stepId, string modeStr) =>
             {
                 var mode = modeStr.Trim().ToLowerInvariant() switch
@@ -168,6 +202,9 @@ static partial class Program
             configSetModeModeArg);
         configCmd.AddCommand(configSetModeCmd);
         configCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="json">Json.</param>
+            /// <param name="verbose">Verbose.</param>
             async (bool json, bool verbose) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<ConfigCommand>();
@@ -237,6 +274,10 @@ static partial class Program
             new Option<string?>("--filter", "Filter tests by name or category")
         };
         testLocalCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="filter">Filter.</param>
+            /// <param name="json">Json.</param>
+            /// <param name="verbose">Verbose.</param>
             async (string? filter, bool json, bool verbose) =>
             {
                 var testCommand = ServiceProvider.GetRequiredService<TestCommand>();
@@ -365,6 +406,14 @@ static partial class Program
         pipelineRunCmd.AddOption(pipelineResumeFailedOpt);
         pipelineRunCmd.AddOption(pipelineInputOpt);
         pipelineRunCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="template">Template.</param>
+            /// <param name="runId">Run id.</param>
+            /// <param name="resumeRunId">Resume run id.</param>
+            /// <param name="resumeFailedStages">Resume failed stages.</param>
+            /// <param name="rawInputs">Raw inputs.</param>
+            /// <param name="json">Json.</param>
+            /// <param name="verbose">Verbose.</param>
             async (FileInfo template, string? runId, string? resumeRunId, bool resumeFailedStages, string[] rawInputs, bool json, bool verbose) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<PipelineCommand>();
@@ -407,6 +456,9 @@ static partial class Program
         // nexo escalate list
         var escalateListCmd = new Command("list", "List all pending escalations");
         escalateListCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="json">Json.</param>
+            /// <param name="verbose">Verbose.</param>
             async (bool json, bool verbose) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<EscalateCommand>();
@@ -421,6 +473,10 @@ static partial class Program
         var escalateShowCmd = new Command("show", "Show details for a specific escalation");
         escalateShowCmd.AddArgument(new Argument<string>("id", "Escalation ID"));
         escalateShowCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="id">Id.</param>
+            /// <param name="json">Json.</param>
+            /// <param name="verbose">Verbose.</param>
             async (string id, bool json, bool verbose) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<EscalateCommand>();
@@ -437,6 +493,11 @@ static partial class Program
         escalateResolveCmd.AddArgument(new Argument<string>("id", "Escalation ID"));
         escalateResolveCmd.AddOption(new Option<string?>("--resolution", "Resolution description"));
         escalateResolveCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="id">Id.</param>
+            /// <param name="resolution">Resolution.</param>
+            /// <param name="json">Json.</param>
+            /// <param name="verbose">Verbose.</param>
             async (string id, string? resolution, bool json, bool verbose) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<EscalateCommand>();
@@ -454,6 +515,11 @@ static partial class Program
         escalateDismissCmd.AddArgument(new Argument<string>("id", "Escalation ID"));
         escalateDismissCmd.AddOption(new Option<string?>("--reason", "Dismissal reason"));
         escalateDismissCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="id">Id.</param>
+            /// <param name="reason">Reason.</param>
+            /// <param name="json">Json.</param>
+            /// <param name="verbose">Verbose.</param>
             async (string id, string? reason, bool json, bool verbose) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<EscalateCommand>();
@@ -470,6 +536,10 @@ static partial class Program
         var escalateListBySeverityCmd = new Command("list-by-severity", "List escalations filtered by severity");
         escalateListBySeverityCmd.AddArgument(new Argument<string>("severity", "Severity level (Low, Medium, High, Critical)"));
         escalateListBySeverityCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="severity">Severity.</param>
+            /// <param name="json">Json.</param>
+            /// <param name="verbose">Verbose.</param>
             async (string severity, bool json, bool verbose) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<EscalateCommand>();
@@ -496,6 +566,10 @@ static partial class Program
         maintenanceCleanCmd.AddOption(strategyOpt);
         maintenanceCleanCmd.AddOption(repoOpt);
         maintenanceCleanCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="strategy">Strategy.</param>
+            /// <param name="repo">Repo.</param>
+            /// <param name="json">Json.</param>
             async (string? strategy, string? repo, bool json) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<MaintenanceCommand>();

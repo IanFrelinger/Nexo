@@ -1,5 +1,4 @@
-namespace Nexo.GameDomain.Environments;
-
+namespace Nexo.Commercial.GameDomain.Environments;
 /// <summary>
 /// Optional toggles for embedded AI assistance on map ingestion (resolved by host; defaults off).
 /// </summary>

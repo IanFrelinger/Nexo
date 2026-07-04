@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.API;
 
+/// <summary>Tests for nexo http org.</summary>
 public sealed class NexoHttpOrgTests
 {
     [Fact]

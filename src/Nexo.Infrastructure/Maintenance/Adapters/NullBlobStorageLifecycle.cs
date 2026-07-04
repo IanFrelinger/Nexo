@@ -8,6 +8,8 @@ namespace Nexo.Infrastructure.Maintenance.Adapters;
 /// </summary>
 public sealed class NullBlobStorageLifecycle : IBlobStorageLifecycle
 {
+    /// <summary>Pause asynchronously.</summary>
     public Task PauseAsync(CancellationToken ct = default) => Task.CompletedTask;
+    /// <summary>Resume asynchronously.</summary>
     public Task ResumeAsync(CancellationToken ct = default) => Task.CompletedTask;
 }

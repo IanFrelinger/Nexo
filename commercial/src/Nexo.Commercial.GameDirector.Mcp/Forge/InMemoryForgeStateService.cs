@@ -1,9 +1,9 @@
-using Nexo.GameDomain.Descriptors;
-using Nexo.GameDomain.Macros;
-using Nexo.GameDomain.Session;
+using Nexo.Commercial.GameDomain.Descriptors;
+using Nexo.Commercial.GameDomain.Macros;
+using Nexo.Commercial.GameDomain.Session;
 
-namespace Nexo.API.Forge;
-
+namespace GameDirector.Mcp.Forge;
+/// <summary>Service for in memory forge state operations.</summary>
 public sealed class InMemoryForgeStateService : IForgeStateService
 {
     private SessionState _session = CreateDefaultSession();
@@ -31,6 +31,7 @@ public sealed class InMemoryForgeStateService : IForgeStateService
         _registry = new MacroRegistry();
     }
 
+    /// <summary>Creates default session.</summary>
     internal static SessionState CreateDefaultSession() => new()
     {
         SessionId = Guid.NewGuid().ToString("D"),

@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Barriers.Sinks;
 
+/// <summary>Tests for structured barrier audit log gap coverage.</summary>
 public sealed class StructuredBarrierAuditLogGapCoverageTests
 {
     [Fact]
@@ -91,8 +92,10 @@ public sealed class StructuredBarrierAuditLogGapCoverageTests
             DateTimeOffset.UtcNow,
             Detail: "test");
 
+    /// <summary>Capturing sink.</summary>
     private sealed class CapturingSink : IBarrierAuditSink
     {
+        /// <summary>Events.</summary>
         public List<BarrierAuditEvent> Events { get; } = [];
 
         public ValueTask WriteAsync(BarrierAuditEvent auditEvent, CancellationToken cancellationToken = default)
@@ -102,6 +105,7 @@ public sealed class StructuredBarrierAuditLogGapCoverageTests
         }
     }
 
+    /// <summary>Throwing sink.</summary>
     private sealed class ThrowingSink : IBarrierAuditSink
     {
         public ValueTask WriteAsync(BarrierAuditEvent auditEvent, CancellationToken cancellationToken = default)

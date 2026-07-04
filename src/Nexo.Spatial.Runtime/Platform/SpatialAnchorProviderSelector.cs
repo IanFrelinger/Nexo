@@ -28,6 +28,7 @@ public sealed class SpatialAnchorProviderSelector
         _priority = (priorityOrder ?? DefaultPriority).ToList();
     }
 
+    /// <summary>Resolves the highest-priority supported anchor provider for the current host.</summary>
     public SpatialAnchorProviderResolution Resolve()
     {
         if (_registrations.Count == 0)

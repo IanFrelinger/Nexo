@@ -8,9 +8,13 @@ namespace Nexo.API.Middleware.Ingress;
 /// </summary>
 public sealed class CorrelationIdMiddleware(RequestDelegate next)
 {
+    /// <summary>Request and response header name for the correlation identifier.</summary>
     public const string HeaderName = "X-Correlation-Id";
+
+    /// <summary>HttpContext item key storing the resolved correlation identifier.</summary>
     public const string HttpContextItemKey = "Nexo.CorrelationId";
 
+    /// <summary>Accepts or generates a correlation ID and echoes it on the response.</summary>
     public Task InvokeAsync(HttpContext context)
     {
         var incoming = context.Request.Headers[HeaderName].FirstOrDefault();

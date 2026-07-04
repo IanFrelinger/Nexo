@@ -24,6 +24,7 @@ public class CachedAnalysisServiceAdapter : IAnalysisService
     private readonly ICacheStrategy _cache;
     private readonly ILogger<CachedAnalysisServiceAdapter> _logger;
 
+    /// <summary>Initializes a new cached analysis service adapter.</summary>
     public CachedAnalysisServiceAdapter(
         IAnalysisService inner,
         ICacheStrategy cache,
@@ -34,6 +35,7 @@ public class CachedAnalysisServiceAdapter : IAnalysisService
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>Analyze asynchronously.</summary>
     public async Task<AnalysisResult> AnalyzeAsync(
         DirectoryInfo path,
         IProgress<ProgressReport>? progress = null,

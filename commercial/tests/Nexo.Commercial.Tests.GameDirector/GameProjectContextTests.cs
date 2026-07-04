@@ -1,10 +1,11 @@
 using FluentAssertions;
 using GameDirector.Domain;
-using Nexo.GameDomain.Session;
+using Nexo.Commercial.GameDomain.Session;
 using Xunit;
 
 namespace Nexo.Tests.GameDirector;
 
+/// <summary>Tests for game project context.</summary>
 [Trait("Category", "GameDirectorApplication")]
 public sealed class GameProjectContextTests
 {

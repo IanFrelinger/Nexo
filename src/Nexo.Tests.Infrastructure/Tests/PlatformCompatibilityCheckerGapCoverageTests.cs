@@ -6,10 +6,13 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests;
 
+/// <summary>Tests for platform compatibility checker gap coverage.</summary>
 public class PlatformCompatibilityCheckerGapCoverageTests : IDisposable
 {
+    /// <summary>Platform compatibility checker gap coverage tests.</summary>
     public PlatformCompatibilityCheckerGapCoverageTests() => CompatibilityTestHooks.Reset();
 
+    /// <summary>Dispose.</summary>
     public void Dispose() => CompatibilityTestHooks.Reset();
 
     [Fact]
@@ -101,7 +104,10 @@ public class PlatformCompatibilityCheckerGapCoverageTests : IDisposable
         CompatibilityTestHooks.TypeResolver = name =>
         {
             if (name.Contains("Microsoft.Extensions.Logging", StringComparison.Ordinal))
+                /// <summary>Typeof.</summary>
                 return typeof(object);
+            /// <summary>Invalid operation exception.</summary>
+            /// <param name="failed"">Failed".</param>
             throw new InvalidOperationException("playwright probe failed");
         };
 

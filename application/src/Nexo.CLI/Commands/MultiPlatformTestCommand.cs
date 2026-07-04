@@ -15,6 +15,7 @@ namespace Nexo.CLI.Commands;
 /// </summary>
 public class MultiPlatformTestCommand : Command
 {
+    /// <summary>Creates the multi-platform test command with platform, project, and execution options.</summary>
     public MultiPlatformTestCommand() : base("test", "Run tests across multiple platforms using Nexo's execution platform")
     {
         var platformsOption = new Option<string[]>(
@@ -84,6 +85,7 @@ public class MultiPlatformTestCommand : Command
         AddOption(visualOption);
     }
 
+    /// <summary>Runs tests on the requested platforms and returns a process exit code.</summary>
     public static async Task<int> ExecuteAsync(
         string[] platforms,
         string? testProject,
@@ -563,14 +565,28 @@ public class MultiPlatformTestCommand : Command
         return current;
     }
 
+    /// <summary>Per-platform test execution outcome collected during a multi-platform run.</summary>
     private class PlatformTestResult
     {
+        /// <summary>Platform name under test.</summary>
         public string PlatformName { get; set; } = "";
+
+        /// <summary>When true, the platform run completed without failures.</summary>
         public bool Passed { get; set; }
+
+        /// <summary>Total tests discovered for the platform run.</summary>
         public int TotalTests { get; set; }
+
+        /// <summary>Tests that passed on the platform.</summary>
         public int PassedTests { get; set; }
+
+        /// <summary>Tests that failed on the platform.</summary>
         public int FailedTests { get; set; }
+
+        /// <summary>Wall-clock duration of the platform run.</summary>
         public TimeSpan Duration { get; set; }
+
+        /// <summary>Optional error message when the platform run failed.</summary>
         public string? ErrorMessage { get; set; }
     }
 }

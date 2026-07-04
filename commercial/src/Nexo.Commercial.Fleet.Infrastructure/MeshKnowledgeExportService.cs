@@ -19,6 +19,7 @@ public sealed class MeshKnowledgeExportService
         _patternStore = patternStore ?? throw new ArgumentNullException(nameof(patternStore));
     }
 
+    /// <summary>Export async operation.</summary>
     public async Task<MeshKnowledgeExportPayload> ExportAsync(
         DateTimeOffset? since,
         int maxAdaptations,

@@ -4,19 +4,19 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Nexo.API.Endpoints;
-using Nexo.API.Forge;
-using Nexo.GameDomain.Aesthetics;
-using Nexo.GameDomain.Descriptors;
-using Nexo.GameDomain.Macros;
-using Nexo.GameDomain.Mapping;
-using Nexo.GameDomain.Materials;
-using Nexo.GameDomain.Scoping;
-using Nexo.GameDomain.Session;
+using GameDirector.Mcp.Endpoints;
+using GameDirector.Mcp.Forge;
+using Nexo.Commercial.GameDomain.Aesthetics;
+using Nexo.Commercial.GameDomain.Descriptors;
+using Nexo.Commercial.GameDomain.Macros;
+using Nexo.Commercial.GameDomain.Mapping;
+using Nexo.Commercial.GameDomain.Materials;
+using Nexo.Commercial.GameDomain.Scoping;
+using Nexo.Commercial.GameDomain.Session;
 using Xunit;
 
-namespace Nexo.Tests.Infrastructure.Tests.API;
-
+namespace Nexo.Tests.GameDirector.Api;
+/// <summary>Tests for forge endpoints.</summary>
 [Trait("Category", "E2E")]
 [Trait("Category", "ProdStyle")]
 public sealed class ForgeEndpointsTests : IDisposable
@@ -42,11 +42,13 @@ public sealed class ForgeEndpointsTests : IDisposable
 
     public ForgeEndpointsTests()
     {
+        /// <summary>Reset store.</summary>
         ResetStore();
     }
 
     public void Dispose()
     {
+        /// <summary>Reset store.</summary>
         ResetStore();
     }
 
@@ -105,6 +107,7 @@ public sealed class ForgeEndpointsTests : IDisposable
         var exportResult = await InvokeAsync(GetHandler("ExportSessionAsync"));
         var exported = ExtractOkValue<ForgeSessionExportResponse>(exportResult);
 
+        /// <summary>Reset store.</summary>
         ResetStore();
 
         var importRequest = new ForgeSessionImportRequest(exported.Json);
@@ -329,7 +332,7 @@ public sealed class ForgeEndpointsTests : IDisposable
             ]
         };
 
-        var req = new Nexo.GameDomain.Contracts.ForgeApplyCustomAestheticPackRequest(custom);
+        var req = new Nexo.Commercial.GameDomain.Contracts.ForgeApplyCustomAestheticPackRequest(custom);
         var result = await InvokeAsync(GetHandler("ApplyCustomAestheticPackAsync"), req);
 
         var session = ExtractOkValue<SessionState>(result);
@@ -353,7 +356,7 @@ public sealed class ForgeEndpointsTests : IDisposable
         };
 
         var result = await InvokeAsync(GetHandler("ApplyCustomAestheticPackAsync"),
-            new Nexo.GameDomain.Contracts.ForgeApplyCustomAestheticPackRequest(bad));
+            new Nexo.Commercial.GameDomain.Contracts.ForgeApplyCustomAestheticPackRequest(bad));
 
         var status = result as IStatusCodeHttpResult;
         status.Should().NotBeNull();
@@ -424,5 +427,6 @@ public sealed class ForgeEndpointsTests : IDisposable
         return (T)value!;
     }
 
+    /// <summary>Reset store.</summary>
     private static void ResetStore() => Forge.Reset();
 }

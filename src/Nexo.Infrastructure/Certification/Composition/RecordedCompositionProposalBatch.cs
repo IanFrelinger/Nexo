@@ -14,6 +14,7 @@ public sealed record RecordedCompositionProposalBatch(
     string Discards,
     IReadOnlyList<RecordedCompositionBatchEntry> Entries)
 {
+    /// <summary>To json.</summary>
     public string ToJson() => JsonSerializer.Serialize(
         new RecordedCompositionProposalBatchDto
         {
@@ -26,6 +27,7 @@ public sealed record RecordedCompositionProposalBatch(
         },
         JsonOptions);
 
+    /// <summary>From json.</summary>
     public static RecordedCompositionProposalBatch FromJson(string json)
     {
         var dto = JsonSerializer.Deserialize<RecordedCompositionProposalBatchDto>(json, JsonOptions)
@@ -72,22 +74,35 @@ public sealed record RecordedCompositionProposalBatch(
 
     private sealed class RecordedCompositionProposalBatchDto
     {
+        /// <summary>Provider.</summary>
         public string Provider { get; set; } = "";
+        /// <summary>Temperature.</summary>
         public double Temperature { get; set; }
+        /// <summary>Declared sample count.</summary>
         public int DeclaredSampleCount { get; set; }
+        /// <summary>Batch recorded at.</summary>
         public DateTimeOffset BatchRecordedAt { get; set; }
+        /// <summary>Discards.</summary>
         public string Discards { get; set; } = "none";
+        /// <summary>Entries.</summary>
         public List<RecordedCompositionBatchEntryDto>? Entries { get; set; }
     }
 
     private sealed class RecordedCompositionBatchEntryDto
     {
+        /// <summary>Sequence index.</summary>
         public int SequenceIndex { get; set; }
+        /// <summary>Provenance.</summary>
         public string Provenance { get; set; } = "";
+        /// <summary>Recorded at.</summary>
         public DateTimeOffset RecordedAt { get; set; }
+        /// <summary>Gate admitted at recording.</summary>
         public bool GateAdmittedAtRecording { get; set; }
+        /// <summary>Gate verdict at recording.</summary>
         public string GateVerdictAtRecording { get; set; } = "";
+        /// <summary>Gate failure check at recording.</summary>
         public string? GateFailureCheckAtRecording { get; set; }
+        /// <summary>Spec.</summary>
         public CompositionSpecJsonParser.CompositionSpecDto Spec { get; set; } = new();
     }
 }

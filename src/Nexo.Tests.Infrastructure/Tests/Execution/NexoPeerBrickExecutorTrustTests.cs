@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Execution;
 
+/// <summary>Tests for nexo peer brick executor trust.</summary>
 public sealed class NexoPeerBrickExecutorTrustTests
 {
     [Fact]
@@ -49,26 +50,42 @@ public sealed class NexoPeerBrickExecutorTrustTests
         result.Error?.Code.Should().Be("peer-routing.no_eligible_peers");
     }
 
+    /// <summary>Tests for static peer snapshot.</summary>
     private sealed class StaticPeerSnapshot : IPeerCapabilitySnapshot
     {
+        /// <summary>Static peer snapshot.</summary>
+        /// <param name="candidates">Candidates.</param>
         public StaticPeerSnapshot(IReadOnlyList<PeerExecutionCandidate> candidates) => Candidates = candidates;
+        /// <summary>Candidates.</summary>
         public IReadOnlyList<PeerExecutionCandidate> Candidates { get; }
     }
 
+    /// <summary>Tests for static http client factory.</summary>
     private sealed class StaticHttpClientFactory : IHttpClientFactory
     {
         private readonly HttpClient _client;
+        /// <summary>Static http client factory.</summary>
+        /// <param name="client">Client.</param>
         public StaticHttpClientFactory(HttpClient client) => _client = client;
+        /// <summary>Creates client.</summary>
+        /// <param name="name">Name.</param>
         public HttpClient CreateClient(string name) => _client;
     }
 
+    /// <summary>Tests for test execution context.</summary>
     private sealed class TestExecutionContext : IExecutionContext
     {
+        /// <summary>Agent id.</summary>
         public string AgentId { get; init; } = "test-agent";
+        /// <summary>Behavior id.</summary>
         public string BehaviorId { get; init; } = "test-behavior";
+        /// <summary>Is air gapped.</summary>
         public bool IsAirGapped { get; init; }
+        /// <summary>Audit mode.</summary>
         public bool AuditMode { get; init; } = true;
+        /// <summary>Provider.</summary>
         public string Provider { get; init; } = "nexo";
+        /// <summary>Variables.</summary>
         public IReadOnlyDictionary<string, object> Variables { get; init; } = new Dictionary<string, object>();
     }
 }

@@ -2,10 +2,11 @@ using System.Text;
 using Nexo.BackgroundAgents.HostRunners;
 using Nexo.CLI.Unity.Pipeline;
 
-namespace Nexo.CLI.Commands;
-
+namespace Nexo.CLI.Commands.Unity;
+/// <summary>Handles iterate requests.</summary>
 internal sealed class IterateHandler(Func<SelfExtendRunnerAdapter> runnerFactory)
 {
+    /// <summary>Executes the command handler and returns a process exit code.</summary>
     public async Task<int> ExecuteAsync(
         string projectRoot,
         string changeDescription,

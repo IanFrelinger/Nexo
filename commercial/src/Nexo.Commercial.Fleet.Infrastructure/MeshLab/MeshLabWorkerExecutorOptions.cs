@@ -5,6 +5,7 @@ namespace Nexo.Commercial.Fleet.Infrastructure.MeshLab;
 /// </summary>
 public sealed class MeshLabWorkerExecutorOptions
 {
+    /// <summary>Constant value for section path.</summary>
     public const string SectionPath = "Nexo:MeshLab:WorkerExecutor";
 
     /// <summary>When true, <see cref="MeshLabWorkerExecutorBackgroundService"/> runs in this API process.</summary>

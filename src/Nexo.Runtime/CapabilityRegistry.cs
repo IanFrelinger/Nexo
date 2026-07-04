@@ -19,10 +19,13 @@ public sealed class CapabilityRegistry : IToolbox
     private readonly Dictionary<string, ITool> _tools = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, InMemoryAgentMemory> _mem = new();
 
+    /// <summary>Registers a tool for agent invocation.</summary>
     public void Register(ITool tool) => _tools[tool.Id] = tool;
 
+    /// <summary>Returns schemas for all registered tools.</summary>
     public IEnumerable<ToolSchema> Schemas() => _tools.Values.Select(t => t.Schema);
 
+    /// <summary>Returns or creates in-memory storage for <paramref name="agent"/>.</summary>
     public IAgentMemory MemoryFor(IAgent agent)
     {
         if (!_mem.TryGetValue(agent.Name, out var m))
@@ -33,6 +36,7 @@ public sealed class CapabilityRegistry : IToolbox
         return m;
     }
 
+    /// <summary>Invokes a registered tool on behalf of an agent.</summary>
     public Task<ToolResult> InvokeAsync(ToolCall call, WorldSnapshot s, CancellationToken ct)
     {
         if (!_tools.TryGetValue(call.Id, out var tool))

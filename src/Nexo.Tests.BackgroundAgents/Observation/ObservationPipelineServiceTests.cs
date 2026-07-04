@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.Observation;
 
+/// <summary>Tests for observation pipeline service.</summary>
 public class ObservationPipelineServiceTests
 {
     [Fact]
@@ -81,11 +82,17 @@ public class ObservationPipelineServiceTests
         }
     }
 
+    /// <summary>Deny all observation gate.</summary>
     private sealed class DenyAllObservationGate : Nexo.Core.Application.Trust.Ports.IObservationGate
     {
+        /// <summary>Should observe.</summary>
+        /// <param name="category">Category.</param>
+        /// <param name="sourceId">Source id.</param>
+        /// <param name="projectPath">Project path.</param>
         public bool ShouldObserve(string category, string sourceId, string? projectPath) => false;
     }
 
+    /// <summary>Throwing pattern store.</summary>
     private sealed class ThrowingPatternStore : Nexo.Core.Application.Observation.Ports.IPatternStore
     {
         public Task AddAsync(Nexo.Core.Application.Observation.Models.ObservedPattern pattern, CancellationToken cancellationToken = default)

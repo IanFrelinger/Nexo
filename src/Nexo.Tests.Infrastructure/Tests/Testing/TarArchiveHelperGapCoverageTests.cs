@@ -10,6 +10,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Testing;
 
+/// <summary>Tests for tar archive helper gap coverage.</summary>
 public sealed class TarArchiveHelperGapCoverageTests
 {
     [Fact]
@@ -44,6 +45,7 @@ public sealed class TarArchiveHelperGapCoverageTests
         }
         finally
         {
+            /// <summary>Attempts to delete directory; returns false on failure.</summary>
             TryDeleteDirectory(root);
         }
     }
@@ -59,78 +61,5 @@ public sealed class TarArchiveHelperGapCoverageTests
         {
             // best-effort temp cleanup
         }
-    }
-}
-
-public sealed class UnitTestFrameworkBridgeGapCoverageTests
-{
-    [Fact]
-    public void DiscoverUnitTestTypesFromAssembly_throws_for_null_assembly()
-    {
-        var act = () => UnitTestFrameworkBridge.DiscoverUnitTestTypesFromAssembly(null!);
-
-        act.Should().Throw<ArgumentNullException>();
-    }
-
-    [Fact]
-    public void DiscoverUnitTestTypesFromAssembly_excludes_infrastructure_helper_types()
-    {
-        var assembly = typeof(UnitTestFrameworkBridgeGapCoverageTests).Assembly;
-        var types = UnitTestFrameworkBridge.DiscoverUnitTestTypesFromAssembly(assembly);
-
-        types.Should().NotContain(t => t.Name == "SimpleTestForRunner");
-        types.Should().NotContain(t => t.Name == "DependencyWrappingArchitectureTests");
-    }
-
-    [Fact]
-    public async Task ExecuteUnitTestAsync_throws_for_invalid_type()
-    {
-        var act = async () => await UnitTestFrameworkBridge.ExecuteUnitTestAsync(typeof(string));
-
-        await act.Should().ThrowAsync<ArgumentException>()
-            .WithParameterName("testType");
-    }
-}
-
-public sealed class RemoteExecutionPlatformGapCoverageTests
-{
-    [Fact]
-    public void Constructor_throws_for_null_http_client()
-    {
-        var act = () => new RemoteExecutionPlatform(null!);
-
-        act.Should().Throw<ArgumentNullException>().WithParameterName("httpClient");
-    }
-
-    [Fact]
-    public async Task BuildImageAsync_returns_failure_details_from_remote_response()
-    {
-        var handler = new FakeTestingHandler((req, _) =>
-        {
-            if (req.RequestUri!.AbsolutePath.Contains("build", StringComparison.Ordinal))
-            {
-                return Json(HttpStatusCode.OK, """{"success":false,"errorMessage":"bad dockerfile","durationMs":25}""");
-            }
-
-            return Json(HttpStatusCode.NotFound, "{}");
-        });
-
-        using var client = new HttpClient(handler) { BaseAddress = new Uri("https://remote.example/") };
-        var platform = new RemoteExecutionPlatform(client);
-
-        var result = await platform.BuildImageAsync("Dockerfile", "tag:latest", ".");
-
-        result.Success.Should().BeFalse();
-        result.ErrorMessage.Should().Be("bad dockerfile");
-    }
-
-    private static HttpResponseMessage Json(HttpStatusCode status, string json) =>
-        new(status) { Content = new StringContent(json, Encoding.UTF8, "application/json") };
-
-    private sealed class FakeTestingHandler(Func<HttpRequestMessage, CancellationToken, HttpResponseMessage> handler)
-        : HttpMessageHandler
-    {
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
-            Task.FromResult(handler(request, cancellationToken));
     }
 }

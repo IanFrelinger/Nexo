@@ -4,7 +4,7 @@ using Nexo.Core.Domain.Execution;
 namespace Nexo.Tests.Infrastructure.Certification.Fixtures;
 
 /// <summary>Deterministic summary plus a volatile nonce output for composition determinism tests.</summary>
-public sealed class NondeterministicFormatterBrick : Brick
+public sealed class NondeterministicFormatterBrick : DomainBrick
 {
     public NondeterministicFormatterBrick()
     {

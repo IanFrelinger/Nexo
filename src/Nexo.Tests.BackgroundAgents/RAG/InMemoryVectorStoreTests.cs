@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.RAG;
 
+/// <summary>Tests for in memory vector store.</summary>
 public class InMemoryVectorStoreTests
 {
     [Fact]

@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.NodeCapabilityRuntime;
 
+/// <summary>Tests for ollama model serving backend.</summary>
 public sealed class OllamaModelServingBackendTests
 {
     [Fact]
@@ -91,10 +92,12 @@ public sealed class OllamaModelServingBackendTests
         };
     }
 
+    /// <summary>Tests for fake http message handler.</summary>
     private sealed class FakeHttpMessageHandler : HttpMessageHandler
     {
         private readonly Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> _handler;
 
+        /// <summary>Requests.</summary>
         public List<HttpRequestMessage> Requests { get; } = new();
 
         public FakeHttpMessageHandler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> handler)
@@ -105,6 +108,7 @@ public sealed class OllamaModelServingBackendTests
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             Requests.Add(request);
+            /// <summary>_handler.</summary>
             return _handler(request, cancellationToken);
         }
     }

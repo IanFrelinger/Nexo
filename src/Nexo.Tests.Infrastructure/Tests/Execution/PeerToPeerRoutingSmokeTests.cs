@@ -11,6 +11,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Execution;
 
+/// <summary>Tests for peer to peer routing smoke.</summary>
 [Trait("Category", "Smoke")]
 public sealed class PeerToPeerRoutingSmokeTests
 {
@@ -23,6 +24,7 @@ public sealed class PeerToPeerRoutingSmokeTests
             requestedHosts.Add(request.RequestUri?.Host ?? string.Empty);
             if (string.Equals(request.RequestUri?.Host, "peer-a", StringComparison.OrdinalIgnoreCase))
             {
+                /// <summary>Http response message.</summary>
                 return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
             }
 
@@ -86,6 +88,7 @@ public sealed class PeerToPeerRoutingSmokeTests
             if (string.Equals(request.RequestUri?.Host, "peer-slow", StringComparison.OrdinalIgnoreCase))
             {
                 await Task.Delay(TimeSpan.FromMilliseconds(250), cancellationToken);
+                /// <summary>Http response message.</summary>
                 return new HttpResponseMessage(HttpStatusCode.OK);
             }
 
@@ -204,6 +207,8 @@ public sealed class PeerToPeerRoutingSmokeTests
         {
             if (string.Equals(request.RequestUri?.Host, "peer-down", StringComparison.OrdinalIgnoreCase))
             {
+                /// <summary>Http request exception.</summary>
+                /// <param name="refused"">Refused".</param>
                 throw new HttpRequestException("connection refused");
             }
 
@@ -322,6 +327,7 @@ public sealed class PeerToPeerRoutingSmokeTests
                 var count = peerCallCounts[host];
                 if (count % 3 == 0)
                 {
+                    /// <summary>Http response message.</summary>
                     return new HttpResponseMessage(HttpStatusCode.ServiceUnavailable);
                 }
             }
@@ -439,6 +445,7 @@ public sealed class PeerToPeerRoutingSmokeTests
             {
                 if (roll < 35)
                 {
+                    /// <summary>Http response message.</summary>
                     return new HttpResponseMessage(HttpStatusCode.BadGateway);
                 }
             }
@@ -455,6 +462,8 @@ public sealed class PeerToPeerRoutingSmokeTests
             {
                 if (roll < 15)
                 {
+                    /// <summary>Http request exception.</summary>
+                    /// <param name="reset"">Reset".</param>
                     throw new HttpRequestException("socket reset");
                 }
             }
@@ -561,6 +570,7 @@ public sealed class PeerToPeerRoutingSmokeTests
         """;
     }
 
+    /// <summary>Tests for static peer snapshot.</summary>
     private sealed class StaticPeerSnapshot : IPeerCapabilitySnapshot
     {
         public StaticPeerSnapshot(IReadOnlyList<PeerExecutionCandidate> candidates)
@@ -568,9 +578,11 @@ public sealed class PeerToPeerRoutingSmokeTests
             Candidates = candidates;
         }
 
+        /// <summary>Candidates.</summary>
         public IReadOnlyList<PeerExecutionCandidate> Candidates { get; }
     }
 
+    /// <summary>Tests for static http client factory.</summary>
     private sealed class StaticHttpClientFactory : IHttpClientFactory
     {
         private readonly HttpClient _client;
@@ -584,6 +596,7 @@ public sealed class PeerToPeerRoutingSmokeTests
             => _client;
     }
 
+    /// <summary>Tests for fake http message handler.</summary>
     private sealed class FakeHttpMessageHandler : HttpMessageHandler
     {
         private readonly Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> _handler;
@@ -597,13 +610,20 @@ public sealed class PeerToPeerRoutingSmokeTests
             => _handler(request, cancellationToken);
     }
 
+    /// <summary>Tests for test execution context.</summary>
     private sealed class TestExecutionContext : IExecutionContext
     {
+        /// <summary>Agent id.</summary>
         public string AgentId { get; init; } = "smoke-agent";
+        /// <summary>Behavior id.</summary>
         public string BehaviorId { get; init; } = "smoke-behavior";
+        /// <summary>Is air gapped.</summary>
         public bool IsAirGapped { get; init; }
+        /// <summary>Audit mode.</summary>
         public bool AuditMode { get; init; } = true;
+        /// <summary>Provider.</summary>
         public string Provider { get; init; } = "nexo";
+        /// <summary>Variables.</summary>
         public IReadOnlyDictionary<string, object> Variables { get; init; } = new Dictionary<string, object>();
     }
 }

@@ -15,6 +15,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Barriers;
 
+/// <summary>Tests for http barrier context middleware.</summary>
 [Trait("Category", "Integration")]
 public sealed class HttpBarrierContextMiddlewareTests : IDisposable
 {
@@ -861,6 +862,7 @@ public sealed class HttpBarrierContextMiddlewareTests : IDisposable
         sanBuilder.AddDnsName(commonName);
         sanBuilder.AddDnsName(dnsName);
         request.CertificateExtensions.Add(sanBuilder.Build());
+        /// <summary>Creates self signed certificate.</summary>
         return CreateSelfSignedCertificate(request);
     }
 
@@ -872,6 +874,7 @@ public sealed class HttpBarrierContextMiddlewareTests : IDisposable
             rsa,
             HashAlgorithmName.SHA256,
             RSASignaturePadding.Pkcs1);
+        /// <summary>Creates self signed certificate.</summary>
         return CreateSelfSignedCertificate(request);
     }
 
@@ -887,6 +890,7 @@ public sealed class HttpBarrierContextMiddlewareTests : IDisposable
 #endif
     }
 
+    /// <summary>Tests for stub pipeline.</summary>
     private sealed class StubPipeline(BarrierResolutionResult? result) : IBarrierIdentityResolverPipeline
     {
         public ValueTask<BarrierResolutionResult?> ResolveAsync(
@@ -895,9 +899,12 @@ public sealed class HttpBarrierContextMiddlewareTests : IDisposable
             => new(result);
     }
 
+    /// <summary>Tests for capturing pipeline.</summary>
     private sealed class CapturingPipeline(BarrierResolutionResult? result) : IBarrierIdentityResolverPipeline
     {
+        /// <summary>Last context.</summary>
         public BarrierResolutionContext? LastContext { get; private set; }
+        /// <summary>Last cancellation token.</summary>
         public CancellationToken LastCancellationToken { get; private set; }
 
         public ValueTask<BarrierResolutionResult?> ResolveAsync(
@@ -910,6 +917,7 @@ public sealed class HttpBarrierContextMiddlewareTests : IDisposable
         }
     }
 
+    /// <summary>Tests for throwing pipeline.</summary>
     private sealed class ThrowingPipeline : IBarrierIdentityResolverPipeline
     {
         public ValueTask<BarrierResolutionResult?> ResolveAsync(
@@ -918,16 +926,23 @@ public sealed class HttpBarrierContextMiddlewareTests : IDisposable
             => throw new InvalidOperationException("resolution failed");
     }
 
+    /// <summary>Tests for capturing accessor.</summary>
     private sealed class CapturingAccessor : IBarrierContextAccessor
     {
+        /// <summary>Current.</summary>
         public BarrierContext? Current { get; private set; }
 
+        /// <summary>Initialize.</summary>
+        /// <param name="context">Context.</param>
         public void Initialize(BarrierContext context) => Current = context;
     }
 
+    /// <summary>Tests for capturing ambient.</summary>
     private sealed class CapturingAmbient : IBarrierContextAmbient
     {
+        /// <summary>Current.</summary>
         public BarrierContext? Current { get; private set; }
+        /// <summary>Was cleared.</summary>
         public bool WasCleared { get; private set; }
 
         public void SetCurrent(BarrierContext? context)
@@ -938,8 +953,10 @@ public sealed class HttpBarrierContextMiddlewareTests : IDisposable
         }
     }
 
+    /// <summary>Tests for capturing audit log.</summary>
     private sealed class CapturingAuditLog : IBarrierAuditLog
     {
+        /// <summary>Events.</summary>
         public List<BarrierAuditEvent> Events { get; } = [];
 
         public ValueTask RecordAsync(BarrierAuditEvent auditEvent, CancellationToken cancellationToken = default)
@@ -949,21 +966,27 @@ public sealed class HttpBarrierContextMiddlewareTests : IDisposable
         }
     }
 
+    /// <summary>Tests for throwing audit log.</summary>
     private sealed class ThrowingAuditLog : IBarrierAuditLog
     {
         public ValueTask RecordAsync(BarrierAuditEvent auditEvent, CancellationToken cancellationToken = default)
             => throw new InvalidOperationException("audit failed");
     }
 
+    /// <summary>Tests for test logger.</summary>
     private sealed class TestLogger<T> : ILogger<T>
     {
         public IDisposable BeginScope<TState>(TState state) where TState : notnull => NullScope.Instance;
+        /// <summary>Returns whether  enabled.</summary>
+        /// <param name="logLevel">Log level.</param>
         public bool IsEnabled(LogLevel logLevel) => true;
         public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter) { }
 
+        /// <summary>Tests for null scope.</summary>
         private sealed class NullScope : IDisposable
         {
             public static readonly NullScope Instance = new();
+            /// <summary>Dispose.</summary>
             public void Dispose() { }
         }
     }

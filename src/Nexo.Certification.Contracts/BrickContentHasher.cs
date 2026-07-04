@@ -8,6 +8,11 @@ namespace Nexo.Certification.Contracts;
 /// </summary>
 public static class BrickContentHasher
 {
+    /// <summary>
+    /// Computes the Base64 SHA-256 hash of canonical brick source text.
+    /// </summary>
+    /// <param name="canonicalSource">Normalized brick source; must not be null or empty.</param>
+    /// <exception cref="ArgumentException">When <paramref name="canonicalSource"/> is null or empty.</exception>
     public static string ComputeSha256(string canonicalSource)
     {
         if (string.IsNullOrEmpty(canonicalSource))

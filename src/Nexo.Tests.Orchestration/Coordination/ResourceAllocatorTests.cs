@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration.Coordination;
 
+/// <summary>Tests for resource allocator.</summary>
 public class ResourceAllocatorTests
 {
     private readonly IServiceProvider _serviceProvider;

@@ -3,8 +3,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Nexo.Core.Application.Trust.Ports;
 using Nexo.Infrastructure.Trust;
 
-namespace Nexo.Infrastructure.Sdk.Trust;
-
+namespace Nexo.Infrastructure.Trust.Sdk.Extensions;
 /// <summary>
 /// DI extensions for Trust &amp; Information Architecture.
 /// </summary>

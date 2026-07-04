@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Nexo.Tests.Application;
 
+/// <summary>Tests for generic command orchestrator gap coverage.</summary>
 public class GenericCommandOrchestratorGapCoverageTests
 {
     [Fact]
@@ -76,30 +77,38 @@ public class GenericCommandOrchestratorGapCoverageTests
         result.Message.Should().Contain("post-validation failed");
     }
 
+    /// <summary>CLI command for echo.</summary>
     private sealed class EchoCommand : ICommand<string, string>
     {
+        /// <summary>Execute async.</summary>
+        /// <param name="input">Input.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
         public ValueTask<string> ExecuteAsync(string input, CancellationToken cancellationToken) =>
             ValueTask.FromResult(input);
     }
 
+    /// <summary>Always pass pre validator.</summary>
     private sealed class AlwaysPassPreValidator : IPreValidator
     {
         public ValueTask<(bool ok, string? reason)> ValidateAsync(object input, CancellationToken ct) =>
             ValueTask.FromResult((true, (string?)null));
     }
 
+    /// <summary>Fail pre validator.</summary>
     private sealed class FailPreValidator(string reason) : IPreValidator
     {
         public ValueTask<(bool ok, string? reason)> ValidateAsync(object input, CancellationToken ct) =>
             ValueTask.FromResult<(bool, string?)>((false, reason));
     }
 
+    /// <summary>Always pass post validator.</summary>
     private sealed class AlwaysPassPostValidator<TOut> : IPostValidator<TOut>
     {
         public ValueTask<(bool ok, string? reason)> ValidateAsync(TOut output, CancellationToken ct) =>
             ValueTask.FromResult((true, (string?)null));
     }
 
+    /// <summary>Fail post validator.</summary>
     private sealed class FailPostValidator<TOut>(string reason) : IPostValidator<TOut>
     {
         public ValueTask<(bool ok, string? reason)> ValidateAsync(TOut output, CancellationToken ct) =>

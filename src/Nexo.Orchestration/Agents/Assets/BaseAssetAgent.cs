@@ -353,22 +353,3 @@ public abstract class BaseAssetAgent : BaseAgent
         return sb.ToString();
     }
 }
-
-/// <summary>
-/// Base record for generated assets.
-/// </summary>
-public abstract record GeneratedAssetBase
-{
-    public required string FilePath { get; init; }
-}
-
-/// <summary>
-/// Result of constraint evaluation.
-/// </summary>
-public enum ConstraintResult
-{
-    Passed,
-    Failed,
-    Warning
-}
-

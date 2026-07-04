@@ -1,7 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace Nexo.GameDomain.Mapping;
-
+namespace Nexo.Commercial.GameDomain.Mapping;
 /// <summary>
 /// Rule-based verification using parse summaries and inspection notes (no extra network).
 /// Suitable for tiling-down sanity checks (layers, tags, feature counts).

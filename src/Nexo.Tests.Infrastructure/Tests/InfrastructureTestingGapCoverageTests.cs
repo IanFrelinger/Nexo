@@ -1,7 +1,7 @@
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
-using Nexo.Infrastructure.Sdk.Maintenance;
+using Nexo.Infrastructure.Maintenance.Sdk.Extensions;
 using Nexo.Infrastructure.Testing.Agents;
 using Nexo.Infrastructure.Testing.CodeAnalysis;
 using Nexo.Infrastructure.Testing.Docker;
@@ -12,6 +12,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests;
 
+/// <summary>Tests for infrastructure testing gap coverage.</summary>
 public class InfrastructureTestingGapCoverageTests
 {
     [Fact]
@@ -58,11 +59,15 @@ public class InfrastructureTestingGapCoverageTests
         var handler = new FakeTestingHandler((req, _) =>
         {
             if (req.RequestUri!.AbsolutePath.Contains("status"))
+                /// <summary>Json.</summary>
                 return Json(HttpStatusCode.OK, "{}");
             if (req.RequestUri.AbsolutePath.Contains("build"))
+                /// <summary>Json.</summary>
                 return Json(HttpStatusCode.OK, """{"success":true,"durationMs":100}""");
             if (req.RequestUri.AbsolutePath.Contains("run"))
+                /// <summary>Json.</summary>
                 return Json(HttpStatusCode.OK, """{"success":true,"exitCode":0,"standardOutput":"ok","standardError":"","containerId":"c1","durationMs":50}""");
+            /// <summary>Json.</summary>
             return Json(HttpStatusCode.NotFound, "{}");
         });
 
@@ -100,11 +105,18 @@ public class InfrastructureTestingGapCoverageTests
             .Should().NotBeNull();
     }
 
+    /// <summary>Json.</summary>
+    /// <param name="status">Status.</param>
+    /// <param name="json">Json.</param>
     private static HttpResponseMessage Json(HttpStatusCode status, string json) =>
         new(status) { Content = new StringContent(json, Encoding.UTF8, "application/json") };
 
+    /// <summary>Tests for fake testing handler.</summary>
     private sealed class FakeTestingHandler(Func<HttpRequestMessage, CancellationToken, HttpResponseMessage> handler) : HttpMessageHandler
     {
+        /// <summary>Send async.</summary>
+        /// <param name="request">Request.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
             Task.FromResult(handler(request, cancellationToken));
     }

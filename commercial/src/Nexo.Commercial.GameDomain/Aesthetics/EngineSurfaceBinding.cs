@@ -1,5 +1,4 @@
-namespace Nexo.GameDomain.Aesthetics;
-
+namespace Nexo.Commercial.GameDomain.Aesthetics;
 /// <summary>
 /// Binds a logical rendering role to an engine-specific material or shader surface.
 /// </summary>

@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Nexo.Tests.CLI.Tests.Commands;
 
+/// <summary>Tests for forge related command.</summary>
 [Trait("Category", "E2E")]
 [Trait("Category", "ProdStyle")]
 public sealed class ForgeRelatedCommandTests
@@ -98,6 +99,7 @@ public sealed class ForgeRelatedCommandTests
         }
         finally
         {
+            /// <summary>Attempts to delete directory; returns false on failure.</summary>
             TryDeleteDirectory(tempDir);
         }
     }
@@ -126,6 +128,7 @@ public sealed class ForgeRelatedCommandTests
         }
         finally
         {
+            /// <summary>Attempts to delete directory; returns false on failure.</summary>
             TryDeleteDirectory(tempDir);
         }
     }
@@ -198,6 +201,7 @@ public sealed class ForgeRelatedCommandTests
         }
         finally
         {
+            /// <summary>Attempts to delete directory; returns false on failure.</summary>
             TryDeleteDirectory(tempDir);
         }
     }
@@ -251,6 +255,7 @@ public sealed class ForgeRelatedCommandTests
         }
         finally
         {
+            /// <summary>Attempts to delete directory; returns false on failure.</summary>
             TryDeleteDirectory(tempDir);
         }
     }

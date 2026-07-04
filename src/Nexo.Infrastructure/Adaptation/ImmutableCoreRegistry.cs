@@ -33,8 +33,10 @@ public sealed class ImmutableCoreRegistry : IImmutableCoreRegistry
         "rollback.manager",
     };
 
+    /// <summary>Core component ids.</summary>
     public IReadOnlyList<string> CoreComponentIds { get; } = Array.AsReadOnly(CoreIds);
 
+    /// <summary>Whether in immutable core.</summary>
     public bool IsInImmutableCore(string pathOrComponentId)
     {
         if (string.IsNullOrWhiteSpace(pathOrComponentId)) return false;
@@ -46,6 +48,7 @@ public sealed class ImmutableCoreRegistry : IImmutableCoreRegistry
         return IsCoreNamespace(normalized);
     }
 
+    /// <summary>Whether core namespace.</summary>
     public bool IsCoreNamespace(string namespaceOrPath)
     {
         if (string.IsNullOrWhiteSpace(namespaceOrPath)) return false;

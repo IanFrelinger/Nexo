@@ -3,6 +3,7 @@ namespace Nexo.Infrastructure.ModelArtifacts;
 /// <summary>Options for fetching installable models from the public Ollama library API.</summary>
 public sealed class OllamaRemoteLibraryCatalogOptions
 {
+    /// <summary>Configuration section name.</summary>
     public const string SectionName = "Nexo:ModelArtifactCatalog:OllamaRemoteLibrary";
 
     /// <summary>
@@ -14,5 +15,6 @@ public sealed class OllamaRemoteLibraryCatalogOptions
     /// <summary>HTTPS origin for the library <c>/api/tags</c> listing (default ollama.com).</summary>
     public string BaseUrl { get; set; } = "https://ollama.com";
 
+    /// <summary>Request timeout.</summary>
     public TimeSpan RequestTimeout { get; set; } = TimeSpan.FromSeconds(60);
 }

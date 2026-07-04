@@ -10,6 +10,7 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.Security;
 
+/// <summary>Tests for background agent policy engine factory gap coverage.</summary>
 public sealed class BackgroundAgentPolicyEngineFactoryGapCoverageTests
 {
     [Fact]

@@ -11,6 +11,7 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration.Tests;
 
+/// <summary>Tests for negotiation helpers.</summary>
 public sealed class NegotiationHelpersTests
 {
     private readonly IServiceProvider _serviceProvider;

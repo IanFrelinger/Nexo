@@ -8,14 +8,18 @@ using Nexo.Core.Application.Testing.Models;
 
 namespace Nexo.Tests.CLI.Tests.Commands;
 
+/// <summary>Tests for mode background agent command.</summary>
 public class ModeBackgroundAgentCommandTests : UnitTestBase
 {
     public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
+            /// <summary>Test get default mode.</summary>
             await TestGetDefaultMode();
+            /// <summary>Test set and get mode.</summary>
             await TestSetAndGetMode();
+            /// <summary>Test set invalid mode throws.</summary>
             await TestSetInvalidModeThrows();
             return new TestResult
             {
@@ -55,6 +59,7 @@ public class ModeBackgroundAgentCommandTests : UnitTestBase
         var logger = new Mock<ILogger<ModeBackgroundAgentCommand>>();
         var command = new ModeBackgroundAgentCommand(modeStore, logger.Object);
         var exitCode = await command.GetAsync(false);
+        /// <summary>Assert equal.</summary>
         AssertEqual(0, exitCode);
     }
 
@@ -65,6 +70,7 @@ public class ModeBackgroundAgentCommandTests : UnitTestBase
         var command = new ModeBackgroundAgentCommand(modeStore, logger.Object);
 
         var setExitCode = await command.SetAsync("passive", false);
+        /// <summary>Assert equal.</summary>
         AssertEqual(0, setExitCode);
         AssertEqual(BackgroundAgentAggressivenessMode.Passive, modeStore.GetMode());
 
@@ -82,6 +88,7 @@ public class ModeBackgroundAgentCommandTests : UnitTestBase
         var command = new ModeBackgroundAgentCommand(modeStore, logger.Object);
 
         var exitCode = await command.SetAsync("invalid-mode", false);
+        /// <summary>Assert equal.</summary>
         AssertEqual(1, exitCode);
     }
 }

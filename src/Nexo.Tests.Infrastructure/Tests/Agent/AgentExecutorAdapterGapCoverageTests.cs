@@ -11,9 +11,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Agent;
 
-[CollectionDefinition("AgentExecutorAdapterCwd", DisableParallelization = true)]
-public sealed class AgentExecutorAdapterCwdCollection;
-
+/// <summary>Tests for agent executor adapter gap coverage.</summary>
 [Collection("AgentExecutorAdapterCwd")]
 public sealed class AgentExecutorAdapterGapCoverageTests
 {
@@ -271,6 +269,7 @@ public sealed class AgentExecutorAdapterGapCoverageTests
 
         try
         {
+            /// <summary>Action.</summary>
             await action(dir);
         }
         finally
@@ -283,8 +282,10 @@ public sealed class AgentExecutorAdapterGapCoverageTests
         }
     }
 
+    /// <summary>Tests for no op cleanup service.</summary>
     private sealed class NoOpCleanupService : IArtifactCleanupService
     {
+        /// <summary>Gets available strategy ids.</summary>
         public IReadOnlyList<string> GetAvailableStrategyIds() => Array.Empty<string>();
 
         public Task<ArtifactCleanupResult> CleanAsync(
@@ -294,6 +295,7 @@ public sealed class AgentExecutorAdapterGapCoverageTests
             Task.FromResult(new ArtifactCleanupResult("noop", 0, Array.Empty<string>(), Array.Empty<string>()));
     }
 
+    /// <summary>Tests for app domain gap agent.</summary>
     private sealed class AppDomainGapAgent : IAgent
     {
         public const string AgentName = "ExecutorGapAppDomainAgent";
@@ -308,10 +310,12 @@ public sealed class AgentExecutorAdapterGapCoverageTests
             Task.FromResult(AgentActions.None);
     }
 
+    /// <summary>Tests for string ctor gap agent.</summary>
     private sealed class StringCtorGapAgent : IAgent
     {
         public const string ExpectedName = "ExecutorGapStringCtorAgent";
 
+        /// <summary>String ctor gap agent.</summary>
         public StringCtorGapAgent() => Name = "wrong-default-name";
 
         public StringCtorGapAgent(string name)
@@ -321,6 +325,7 @@ public sealed class AgentExecutorAdapterGapCoverageTests
             Name = name;
         }
 
+        /// <summary>Name.</summary>
         public string Name { get; }
 
         public Task<AgentActions> ThinkAsync(

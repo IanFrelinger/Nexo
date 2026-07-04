@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Analysis;
 
+/// <summary>Tests for roslyn brick static analyzer.</summary>
 public class RoslynBrickStaticAnalyzerTests
 {
     private readonly IBrickStaticAnalyzer _analyzer = new RoslynBrickStaticAnalyzer();
@@ -18,11 +19,13 @@ public class RoslynBrickStaticAnalyzerTests
         {
             var file = Path.Combine(tempDir, "Bad.cs");
             await File.WriteAllTextAsync(file, """
+                /// <summary>Tests for bad.</summary>
                 public class Bad
                 {
                     public void M()
                     {
                         try { }
+                        /// <summary>Catch.</summary>
                         catch (Exception) { }
                     }
                 }
@@ -49,11 +52,14 @@ public class RoslynBrickStaticAnalyzerTests
         {
             var file = Path.Combine(tempDir, "Good.cs");
             await File.WriteAllTextAsync(file, """
+                /// <summary>Tests for good.</summary>
                 public class Good
                 {
                     public void M()
                     {
                         try { }
+                        /// <summary>Catch.</summary>
+                        /// <param name="ex">Ex.</param>
                         catch (Exception ex) { throw; }
                     }
                 }

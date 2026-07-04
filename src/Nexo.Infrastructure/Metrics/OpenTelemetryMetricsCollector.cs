@@ -17,6 +17,7 @@ public sealed class OpenTelemetryMetricsCollector : IMetricsCollector
     private readonly Counter<long> _operationCounter;
     private readonly ILogger<OpenTelemetryMetricsCollector>? _logger;
 
+    /// <summary>Initializes a new open telemetry metrics collector.</summary>
     public OpenTelemetryMetricsCollector(ILogger<OpenTelemetryMetricsCollector>? logger = null)
     {
         _meter = new Meter(MeterName, "1.0.0");

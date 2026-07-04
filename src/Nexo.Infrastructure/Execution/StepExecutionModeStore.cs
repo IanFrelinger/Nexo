@@ -16,6 +16,7 @@ public sealed class StepExecutionModeStore : IStepExecutionMode
     private readonly Dictionary<string, ExecutionMode> _modes = new(StringComparer.OrdinalIgnoreCase);
     private readonly object _lock = new();
 
+    /// <summary>Initializes a new step execution mode store.</summary>
     public StepExecutionModeStore(string? configPath = null, ILogger<StepExecutionModeStore>? logger = null)
     {
         _configPath = configPath ?? Path.Combine(RepoPathResolver.FindRepoRoot(), "nexo-step-modes.json");
@@ -23,6 +24,7 @@ public sealed class StepExecutionModeStore : IStepExecutionMode
         Load();
     }
 
+    /// <summary>Gets mode.</summary>
     public ExecutionMode GetMode(string stepId)
     {
         lock (_lock)
@@ -31,6 +33,7 @@ public sealed class StepExecutionModeStore : IStepExecutionMode
         }
     }
 
+    /// <summary>Set mode asynchronously.</summary>
     public Task SetModeAsync(string stepId, ExecutionMode mode, CancellationToken ct = default)
     {
         lock (_lock)
@@ -41,6 +44,7 @@ public sealed class StepExecutionModeStore : IStepExecutionMode
         return Task.CompletedTask;
     }
 
+    /// <summary>Swap asynchronously.</summary>
     public Task<HotSwapResult> SwapAsync(string stepId, ExecutionMode targetMode, CancellationToken ct = default)
     {
         var previous = GetMode(stepId);
