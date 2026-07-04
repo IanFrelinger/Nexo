@@ -1,5 +1,4 @@
-namespace Nexo.GameDomain.Mapping;
-
+namespace Nexo.Commercial.GameDomain.Mapping;
 /// <summary>
 /// Aggregate result of a map pipeline run.
 /// </summary>

@@ -22,6 +22,7 @@ public class WorkflowExporter : IWorkflowExporter
     private readonly IContentGenerator _contentGenerator;
     private readonly ILogger<WorkflowExporter> _logger;
     
+    /// <summary>Initializes a new workflow exporter.</summary>
     public WorkflowExporter(
         IClusterRegistry clusterRegistry,
         IBrickRegistry brickRegistry,
@@ -82,7 +83,7 @@ public class WorkflowExporter : IWorkflowExporter
         {
             if (!brick.Implementations.HasDeterministic)
             {
-                messages.Add($"Warning: Brick '{brick.Name}' has no deterministic implementation. Using stub.");
+                messages.Add($"Warning: DomainBrick '{brick.Name}' has no deterministic implementation. Using stub.");
             }
             
             var code = await _codeGenerator.GenerateDeterministicAsync(brick, config.Target, ct);
@@ -289,9 +290,9 @@ public class WorkflowExporter : IWorkflowExporter
     /// </summary>
     /// <param name="workflow">The workflow to flatten.</param>
     /// <returns>List of unique bricks used in the workflow.</returns>
-    private IReadOnlyList<Brick> FlattenWorkflow(Workflow workflow)
+    private IReadOnlyList<DomainBrick> FlattenWorkflow(Workflow workflow)
     {
-        var bricks = new HashSet<Brick>();
+        var bricks = new HashSet<DomainBrick>();
         
         foreach (var instance in workflow.Instances)
         {
@@ -311,7 +312,7 @@ public class WorkflowExporter : IWorkflowExporter
         return bricks.ToList();
     }
     
-    private string GetFilePath(Brick brick, ExportTarget target)
+    private string GetFilePath(DomainBrick brick, ExportTarget target)
     {
         var ext = GetExtension(target);
         return $"{brick.Category}/{brick.Name.Replace(" ", "")}{ext}";

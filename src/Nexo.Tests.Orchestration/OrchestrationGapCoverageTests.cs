@@ -13,6 +13,7 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration;
 
+/// <summary>Tests for orchestration gap coverage.</summary>
 public class OrchestrationGapCoverageTests
 {
     [Fact]
@@ -211,6 +212,7 @@ public class OrchestrationGapCoverageTests
         final.RecommendedFeatures.Should().Contain("combat loop");
     }
 
+    /// <summary>Test planning agent.</summary>
     private sealed class TestPlanningAgent : PlanningAgent
     {
         public TestPlanningAgent(AgentSpawnSpec spec, ILogger<Nexo.Orchestration.Agents.BaseAgent> logger, IModel? model)

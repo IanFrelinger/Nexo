@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.CLI.Tests.Commands;
 
+/// <summary>Tests for stats background agent command.</summary>
 public class StatsBackgroundAgentCommandTests : IDisposable
 {
     private readonly string _tempDir;
@@ -37,9 +38,29 @@ public class StatsBackgroundAgentCommandTests : IDisposable
     [Fact]
     public async Task Aggregates_cycles_per_agent_in_human_table()
     {
+        /// <summary>Seed.</summary>
+        /// <param name="true">True.</param>
+        /// <param name="100">100.</param>
+        /// <param name="2">2.</param>
+        /// <param name="0">0.</param>
         Seed("runtime-planner", "extender", success: true, durationMs: 100, executed: 2, denied: 0);
+        /// <summary>Seed.</summary>
+        /// <param name="true">True.</param>
+        /// <param name="300">300.</param>
+        /// <param name="4">4.</param>
+        /// <param name="1">1.</param>
         Seed("runtime-planner", "extender", success: true, durationMs: 300, executed: 4, denied: 1);
+        /// <summary>Seed.</summary>
+        /// <param name="false">False.</param>
+        /// <param name="50">50.</param>
+        /// <param name="0">0.</param>
+        /// <param name="0">0.</param>
         Seed("runtime-planner", "extender", success: false, durationMs: 50, executed: 0, denied: 0);
+        /// <summary>Seed.</summary>
+        /// <param name="true">True.</param>
+        /// <param name="1000">1000.</param>
+        /// <param name="0">0.</param>
+        /// <param name="0">0.</param>
         Seed("runtime-worker-tester", "tester", success: true, durationMs: 1000, executed: 0, denied: 0);
 
         var cmd = new StatsBackgroundAgentCommand(_store, NullLogger<StatsBackgroundAgentCommand>.Instance);
@@ -55,7 +76,13 @@ public class StatsBackgroundAgentCommandTests : IDisposable
     [Fact]
     public async Task Filters_by_agent_role_and_since_hours()
     {
+        /// <summary>Seed.</summary>
+        /// <param name="true">True.</param>
+        /// <param name="10">10.</param>
         Seed("runtime-planner", "extender", success: true, durationMs: 10);
+        /// <summary>Seed.</summary>
+        /// <param name="true">True.</param>
+        /// <param name="10">10.</param>
         Seed("runtime-worker-optimizer", "optimizer", success: true, durationMs: 10);
         // ancient event must be excluded by --since-hours
         Append(new CycleEvent(
@@ -76,6 +103,11 @@ public class StatsBackgroundAgentCommandTests : IDisposable
     [Fact]
     public async Task Json_output_is_well_formed_and_includes_path()
     {
+        /// <summary>Seed.</summary>
+        /// <param name="true">True.</param>
+        /// <param name="200">200.</param>
+        /// <param name="3">3.</param>
+        /// <param name="1">1.</param>
         Seed("runtime-planner", "extender", success: true, durationMs: 200, executed: 3, denied: 1);
 
         var cmd = new StatsBackgroundAgentCommand(_store, NullLogger<StatsBackgroundAgentCommand>.Instance);
@@ -110,6 +142,8 @@ public class StatsBackgroundAgentCommandTests : IDisposable
             error: success ? null : "boom"));
     }
 
+    /// <summary>Append.</summary>
+    /// <param name="evt">Evt.</param>
     private void Append(CycleEvent evt) => _store.Append(evt);
 
     private static async Task<(int rc, string stdout)> CaptureAsync(Func<Task<int>> action)

@@ -13,6 +13,7 @@ public sealed class InMemoryMeshTaskRegistry : IMeshTaskRegistry
     private readonly ConcurrentDictionary<string, string> _idempotencyToTaskId = new(StringComparer.OrdinalIgnoreCase);
     private readonly SemaphoreSlim _lock = new(1, 1);
 
+    /// <summary>Creates async.</summary>
     public async Task<MeshTaskState> CreateAsync(MeshTaskCreateSpec spec, CancellationToken cancellationToken = default)
     {
         var id = $"{DateTimeOffset.UtcNow:yyyyMMddHHmmssfff}-{Guid.NewGuid():N}";
@@ -67,6 +68,7 @@ public sealed class InMemoryMeshTaskRegistry : IMeshTaskRegistry
         }
     }
 
+    /// <summary>Attempts to get by idempotency key async.</summary>
     public Task<MeshTaskState?> TryGetByIdempotencyKeyAsync(string idempotencyKey, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -79,6 +81,7 @@ public sealed class InMemoryMeshTaskRegistry : IMeshTaskRegistry
                 : null);
     }
 
+    /// <summary>Gets async.</summary>
     public async Task<MeshTaskState?> GetAsync(string taskId, CancellationToken cancellationToken = default)
     {
         await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -92,6 +95,7 @@ public sealed class InMemoryMeshTaskRegistry : IMeshTaskRegistry
         }
     }
 
+    /// <summary>List async operation.</summary>
     public async Task<IReadOnlyList<MeshTaskState>> ListAsync(CancellationToken cancellationToken = default)
     {
         await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -108,6 +112,7 @@ public sealed class InMemoryMeshTaskRegistry : IMeshTaskRegistry
         }
     }
 
+    /// <summary>Update async operation.</summary>
     public async Task<bool> UpdateAsync(MeshTaskState task, CancellationToken cancellationToken = default)
     {
         await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);

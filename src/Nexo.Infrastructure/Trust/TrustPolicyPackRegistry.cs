@@ -27,6 +27,7 @@ public sealed class TrustPolicyPackRegistry : ITrustPolicyPackRegistry
     private ActiveTrustPolicyPack? _activePack;
     private IReadOnlyDictionary<string, TrustPolicyPack> _packs = new Dictionary<string, TrustPolicyPack>(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Initializes a new trust policy pack registry.</summary>
     public TrustPolicyPackRegistry(string? packsRootPath = null, ILogger<TrustPolicyPackRegistry>? logger = null)
     {
         _packsRootPath = ResolvePacksRootPath(packsRootPath);
@@ -85,6 +86,7 @@ public sealed class TrustPolicyPackRegistry : ITrustPolicyPackRegistry
         return active;
     }
 
+    /// <summary>Reload.</summary>
     public void Reload()
     {
         Directory.CreateDirectory(_packsRootPath);

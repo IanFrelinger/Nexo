@@ -1,5 +1,4 @@
-namespace Nexo.GameDomain.Assets;
-
+namespace Nexo.Commercial.GameDomain.Assets;
 /// <summary>
 /// Two-component vector used for UI element sizes and positions.
 /// </summary>

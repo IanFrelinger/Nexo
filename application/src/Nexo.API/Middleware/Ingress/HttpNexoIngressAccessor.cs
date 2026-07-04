@@ -8,6 +8,7 @@ namespace Nexo.API.Middleware.Ingress;
 /// </summary>
 public sealed class HttpNexoIngressAccessor(IHttpContextAccessor httpContextAccessor) : INexoIngressAccessor
 {
+    /// <inheritdoc />
     public string? CorrelationId
     {
         get
@@ -19,14 +20,19 @@ public sealed class HttpNexoIngressAccessor(IHttpContextAccessor httpContextAcce
         }
     }
 
+    /// <inheritdoc />
     public string? Transport => GetEnvelope()?.Transport;
 
+    /// <inheritdoc />
     public string? TenantId => GetEnvelope()?.TenantId;
 
+    /// <inheritdoc />
     public string? AppId => GetEnvelope()?.AppId;
 
+    /// <inheritdoc />
     public string? IdempotencyKey => GetEnvelope()?.IdempotencyKey;
 
+    /// <inheritdoc />
     public string? PayloadVersion => GetEnvelope()?.PayloadVersion;
 
     private Nexo.Contracts.NexoIngressEnvelope? GetEnvelope() =>

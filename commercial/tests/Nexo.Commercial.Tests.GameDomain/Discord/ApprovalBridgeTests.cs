@@ -1,11 +1,12 @@
 using FluentAssertions;
-using Nexo.GameDomain.Discord;
-using Nexo.GameDomain.Playtest;
+using Nexo.Commercial.GameDomain.Discord;
+using Nexo.Commercial.GameDomain.Playtest;
 
-namespace Nexo.Tests.GameDomain.Discord;
-
+namespace Nexo.Commercial.Tests.GameDomain.Discord;
+/// <summary>Tests for approval bridge.</summary>
 public class ApprovalBridgeTests
 {
+    /// <summary>Sample fixes.</summary>
     private static IReadOnlyList<ProposedFix> SampleFixes() => new[]
     {
         new ProposedFix { FixNumber = 1, Description = "Fix collision", TargetSystem = "Player.cs" },

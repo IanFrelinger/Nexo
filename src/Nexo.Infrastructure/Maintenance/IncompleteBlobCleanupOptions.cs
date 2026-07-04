@@ -6,6 +6,7 @@ namespace Nexo.Infrastructure.Maintenance;
 /// </summary>
 public sealed class IncompleteBlobCleanupOptions
 {
+    /// <summary>Configuration section name.</summary>
     public const string SectionName = "IncompleteBlobCleanup";
 
     /// <summary>Base path to blob storage (e.g. ~/.docker/models/blobs or ~/.ollama/models/blobs).</summary>

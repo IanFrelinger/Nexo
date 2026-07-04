@@ -5,9 +5,6 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration.Database;
 
-[CollectionDefinition("PostgresDocker", DisableParallelization = true)]
-public sealed class PostgresDockerCollection : ICollectionFixture<PostgresDockerFixture>;
-
 /// <summary>
 /// Optional Postgres server for provisioner integration tests.
 /// Uses <c>NEXO_TEST_POSTGRES_ADMIN</c> when set; otherwise starts a disposable Docker container.

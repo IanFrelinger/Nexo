@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration.Agents;
 
+/// <summary>Tests for base agent.</summary>
 public class BaseAgentTests
 {
     private readonly Mock<ILogger<GenericAgent>> _loggerMock;

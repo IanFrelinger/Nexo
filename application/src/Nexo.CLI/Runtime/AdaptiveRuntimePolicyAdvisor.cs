@@ -1,9 +1,9 @@
 namespace Nexo.CLI.Runtime;
 
-public sealed record AdaptiveRuntimePolicyRecommendation(string QaPolicy, string Reason);
-
+/// <summary>Adaptive runtime policy advisor.</summary>
 public static class AdaptiveRuntimePolicyAdvisor
 {
+    /// <summary>Creates a new RecommendQaPolicy instance.</summary>
     public static AdaptiveRuntimePolicyRecommendation? RecommendQaPolicy(
         string goal,
         IReadOnlyList<AdaptiveRuntimeExecutionReport> history)

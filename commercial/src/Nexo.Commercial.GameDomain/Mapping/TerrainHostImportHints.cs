@@ -1,5 +1,4 @@
-namespace Nexo.GameDomain.Mapping;
-
+namespace Nexo.Commercial.GameDomain.Mapping;
 /// <summary>
 /// Host-facing bullets for terrain raster imports (mirrors <see cref="MapHostImportHints"/> for vectors).
 /// </summary>

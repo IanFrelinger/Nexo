@@ -1,7 +1,8 @@
-namespace Nexo.CLI.Commands;
-
+namespace Nexo.CLI.Commands.Runtime;
+/// <summary>Handles plan requests.</summary>
 internal sealed class PlanHandler(Func<string, string, string, string, string, string?, string?, int?, bool, int, RuntimePlanContext> buildPlanContext)
 {
+    /// <summary>Executes the command handler and returns a process exit code.</summary>
     public Task<int> ExecuteAsync(
         string goal,
         string repoRoot,

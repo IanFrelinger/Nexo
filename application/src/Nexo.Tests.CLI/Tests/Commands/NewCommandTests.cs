@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Tests.CLI.Tests.Commands;
 
+/// <summary>Tests for new command.</summary>
 [Trait("Category", "CLI")]
 public sealed class NewCommandTests
 {

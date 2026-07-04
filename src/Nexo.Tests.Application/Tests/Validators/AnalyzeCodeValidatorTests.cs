@@ -6,6 +6,7 @@ using Nexo.Core.Application.Testing.Models;
 
 namespace Nexo.Tests.Application.Tests.Validators;
 
+/// <summary>Tests for analyze code validator.</summary>
 public class AnalyzeCodeValidatorTests : UnitTestBase
 {
     public override Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
@@ -17,8 +18,15 @@ public class AnalyzeCodeValidatorTests : UnitTestBase
             // Test 1: Null path should fail
             var command1 = new AnalyzeCodeCommand(null!);
             var result1 = validator.Validate(command1);
+            /// <summary>Assert false.</summary>
+            /// <param name="validation"">Validation".</param>
             AssertFalse(result1.IsValid, "Null path should fail validation");
+            /// <summary>Assert not null.</summary>
+            /// <param name="null"">Null".</param>
             AssertNotNull(result1.Errors, "Validation errors should not be null");
+            /// <summary>Assert true.</summary>
+            /// <param name="0">0.</param>
+            /// <param name="errors"">Errors".</param>
             AssertTrue(result1.Errors.Count > 0, "Should have validation errors");
             AssertTrue(result1.Errors.Any(e => e.PropertyName == "Path" && e.ErrorMessage == "Path is required"),
                 "Should have 'Path is required' error");
@@ -27,6 +35,8 @@ public class AnalyzeCodeValidatorTests : UnitTestBase
             var nonExistentPath = new DirectoryInfo(Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString()));
             var command2 = new AnalyzeCodeCommand(nonExistentPath);
             var result2 = validator.Validate(command2);
+            /// <summary>Assert false.</summary>
+            /// <param name="validation"">Validation".</param>
             AssertFalse(result2.IsValid, "Non-existent path should fail validation");
             AssertTrue(result2.Errors.Any(e => e.PropertyName == "Path" && e.ErrorMessage == "Path must exist"),
                 "Should have 'Path must exist' error");
@@ -35,6 +45,8 @@ public class AnalyzeCodeValidatorTests : UnitTestBase
             var validPath = new DirectoryInfo(Path.GetTempPath());
             var command3 = new AnalyzeCodeCommand(validPath);
             var result3 = validator.Validate(command3);
+            /// <summary>Assert true.</summary>
+            /// <param name="validation"">Validation".</param>
             AssertTrue(result3.IsValid, "Valid path should pass validation");
             AssertFalse(result3.Errors.Any(e => e.PropertyName == "Path"),
                 "Should not have Path validation errors");
@@ -43,6 +55,8 @@ public class AnalyzeCodeValidatorTests : UnitTestBase
             var progress = new Progress<Nexo.Core.Application.Common.Models.ProgressReport>();
             var command4 = new AnalyzeCodeCommand(validPath, progress);
             var result4 = validator.Validate(command4);
+            /// <summary>Assert true.</summary>
+            /// <param name="validation"">Validation".</param>
             AssertTrue(result4.IsValid, "Valid path with progress should pass validation");
             AssertFalse(result4.Errors.Any(e => e.PropertyName == "Path"),
                 "Should not have Path validation errors");

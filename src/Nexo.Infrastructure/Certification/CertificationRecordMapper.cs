@@ -3,8 +3,10 @@ using Nexo.Certification.Contracts;
 
 namespace Nexo.Infrastructure.Certification;
 
+/// <summary>Maps domain certification records to portable wire DTOs for external consumers.</summary>
 public static class CertificationRecordMapper
 {
+    /// <summary>To data.</summary>
     public static CertificationRecordData ToData(CertificationRecord record) => new()
     {
         Status = record.Status,

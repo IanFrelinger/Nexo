@@ -12,12 +12,14 @@ public sealed class DocumentationUpdater : IDocumentationUpdater
     private readonly IAdaptationLog _adaptationLog;
     private readonly IChangelogGenerator _changelogGenerator;
 
+    /// <summary>Initializes a new documentation updater.</summary>
     public DocumentationUpdater(IAdaptationLog adaptationLog, IChangelogGenerator changelogGenerator)
     {
         _adaptationLog = adaptationLog ?? throw new ArgumentNullException(nameof(adaptationLog));
         _changelogGenerator = changelogGenerator ?? throw new ArgumentNullException(nameof(changelogGenerator));
     }
 
+    /// <summary>Update for adaptation asynchronously.</summary>
     public async Task UpdateForAdaptationAsync(string adaptationId, CancellationToken ct = default)
     {
         var records = await _adaptationLog.QueryAsync(DateTimeOffset.UtcNow.AddDays(-1), null, null, ct).ConfigureAwait(false);
@@ -46,6 +48,7 @@ Adapted from promotion {adaptationId}.
         await File.WriteAllTextAsync(docPath, content, ct).ConfigureAwait(false);
     }
 
+    /// <summary>Generate stub asynchronously.</summary>
     public Task GenerateStubAsync(string componentId, CancellationToken ct = default)
     {
         var docPath = Path.Combine(RepoPathResolver.FindRepoRoot(), "docs", "bricks", $"{componentId}.md");

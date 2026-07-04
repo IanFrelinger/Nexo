@@ -3,6 +3,7 @@ using Nexo.Abstractions.Routing;
 
 namespace Nexo.Orchestration.Routing;
 
+/// <summary>Prefers endpoints in the requested geographic region when available.</summary>
 internal sealed class GeographicAffinityPolicy : IRoutingPolicy
 {
     private readonly ILogger<GeographicAffinityPolicy> _logger;

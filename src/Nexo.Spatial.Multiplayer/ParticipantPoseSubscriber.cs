@@ -16,6 +16,7 @@ public sealed class ParticipantPoseSubscriber
         _transport = transport ?? throw new ArgumentNullException(nameof(transport));
     }
 
+    /// <summary>Reads a participant-visible snapshot of scope membership and atoms.</summary>
     public MatchScopeSnapshotResult TryGetScopeSnapshot(string scopeId, string participantId)
     {
         var scope = _scopeStore.GetScope(scopeId);
@@ -36,6 +37,7 @@ public sealed class ParticipantPoseSubscriber
             scope.ScopedAtomIds));
     }
 
+    /// <summary>Subscribes a scope member to scoped pose updates.</summary>
     public SubscribeResult TrySubscribe(string scopeId, string participantId)
     {
         var scope = _scopeStore.GetScope(scopeId);
@@ -51,61 +53,4 @@ public sealed class ParticipantPoseSubscriber
 
         return SubscribeResult.Success(_transport.Subscribe(scopeId, participantId));
     }
-}
-
-/// <summary>
-/// Scope snapshot for late joiners — membership and scoped atoms only, no historical poses.
-/// </summary>
-public sealed record MatchScopeSnapshot(
-    string ScopeId,
-    string HostParticipantId,
-    IReadOnlyCollection<string> MemberParticipantIds,
-    IReadOnlyCollection<string> ScopedAtomIds);
-
-public sealed class MatchScopeSnapshotResult
-{
-    public MatchScopeSnapshotResult(bool succeeded, MatchScopeSnapshot? snapshot, string? rejectionCode, string? reason)
-    {
-        Succeeded = succeeded;
-        Snapshot = snapshot;
-        RejectionCode = rejectionCode?.Trim();
-        Reason = reason?.Trim();
-    }
-
-    public bool Succeeded { get; }
-
-    public MatchScopeSnapshot? Snapshot { get; }
-
-    public string? RejectionCode { get; }
-
-    public string? Reason { get; }
-
-    public static MatchScopeSnapshotResult Success(MatchScopeSnapshot snapshot) => new(true, snapshot, null, null);
-
-    public static MatchScopeSnapshotResult Rejected(string rejectionCode, string reason) =>
-        new(false, null, rejectionCode, reason);
-}
-
-public sealed class SubscribeResult
-{
-    public SubscribeResult(bool succeeded, IObservable<ScopedPoseMessage>? stream, string? rejectionCode, string? reason)
-    {
-        Succeeded = succeeded;
-        Stream = stream;
-        RejectionCode = rejectionCode?.Trim();
-        Reason = reason?.Trim();
-    }
-
-    public bool Succeeded { get; }
-
-    public IObservable<ScopedPoseMessage>? Stream { get; }
-
-    public string? RejectionCode { get; }
-
-    public string? Reason { get; }
-
-    public static SubscribeResult Success(IObservable<ScopedPoseMessage> stream) => new(true, stream, null, null);
-
-    public static SubscribeResult Rejected(string rejectionCode, string reason) =>
-        new(false, null, rejectionCode, reason);
 }

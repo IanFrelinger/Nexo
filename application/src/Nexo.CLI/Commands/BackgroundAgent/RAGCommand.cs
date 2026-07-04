@@ -13,6 +13,7 @@ public class RAGCommand
     private readonly IKnowledgeBaseIndexer _indexer;
     private readonly ILogger<RAGCommand> _logger;
 
+    /// <summary>Creates a new RAGCommand instance.</summary>
     public RAGCommand(
         IRAGService ragService,
         IKnowledgeBaseIndexer indexer,

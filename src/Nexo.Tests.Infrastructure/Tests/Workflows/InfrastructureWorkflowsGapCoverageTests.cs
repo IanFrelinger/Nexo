@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Workflows;
 
+/// <summary>Tests for infrastructure workflows gap coverage.</summary>
 public class InfrastructureWorkflowsGapCoverageTests
 {
     [Fact]
@@ -44,16 +45,24 @@ public class InfrastructureWorkflowsGapCoverageTests
         await act.Should().NotThrowAsync();
     }
 
+    /// <summary>Tests for in memory cluster registry.</summary>
     private sealed class InMemoryClusterRegistry : IClusterRegistry
     {
         private readonly Dictionary<string, Cluster> _clusters = new(StringComparer.OrdinalIgnoreCase);
 
+        /// <summary>Gets the value.</summary>
+        /// <param name="id">Id.</param>
         public Cluster? Get(string id) => _clusters.GetValueOrDefault(id);
 
+        /// <summary>Gets all.</summary>
         public IReadOnlyList<Cluster> GetAll() => _clusters.Values.ToList();
 
+        /// <summary>Register.</summary>
+        /// <param name="cluster">Cluster.</param>
         public void Register(Cluster cluster) => _clusters[cluster.Id] = cluster;
 
+        /// <summary>Unregister.</summary>
+        /// <param name="id">Id.</param>
         public void Unregister(string id) => _clusters.Remove(id);
     }
 }

@@ -1,5 +1,4 @@
-namespace Nexo.GameDomain.Discord;
-
+namespace Nexo.Commercial.GameDomain.Discord;
 using System.Diagnostics;
 
 /// <summary>

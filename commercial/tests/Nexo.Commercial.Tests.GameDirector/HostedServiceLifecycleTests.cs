@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Nexo.Tests.GameDirector;
 
+/// <summary>Tests for hosted service lifecycle.</summary>
 [Trait("Category", "GameDirectorApplication")]
 public sealed class HostedServiceLifecycleTests
 {
@@ -188,6 +189,7 @@ public sealed class HostedServiceLifecycleTests
         }
     }
 
+    /// <summary>Recording activity feed.</summary>
     private sealed class RecordingActivityFeed : IActivityFeedPublisher
     {
         public List<(string Source, string EventType, string Summary)> Entries { get; } = [];
@@ -198,10 +200,16 @@ public sealed class HostedServiceLifecycleTests
         }
     }
 
+    /// <summary>Empty brick registry.</summary>
     private sealed class EmptyBrickRegistry : IBrickRegistry
     {
+        /// <summary>Gets brick.</summary>
+        /// <param name="id">Id.</param>
         public Nexo.Core.Domain.Bricks.Brick? GetBrick(string id) => null;
+        /// <summary>Gets all bricks.</summary>
         public IReadOnlyList<Nexo.Core.Domain.Bricks.Brick> GetAllBricks() => [];
+        /// <summary>Register.</summary>
+        /// <param name="brick">Brick.</param>
         public void Register(Nexo.Core.Domain.Bricks.Brick brick) { }
     }
 }

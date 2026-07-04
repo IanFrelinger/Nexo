@@ -1,7 +1,6 @@
-using Nexo.Core.Application.Networking.Models;
+using Nexo.Commercial.Fleet.Contracts.Networking.Models;
 
-namespace Nexo.Core.Application.Networking.Ports;
-
+namespace Nexo.Commercial.Fleet.Contracts.Networking.Ports;
 /// <summary>
 /// Directory of agents on the network: register local agents and discover agents on peers.
 /// </summary>

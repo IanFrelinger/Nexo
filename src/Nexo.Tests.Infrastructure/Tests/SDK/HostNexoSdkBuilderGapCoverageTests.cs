@@ -6,8 +6,8 @@ using Nexo.Core.Domain.Execution;
 using Nexo.Hosting.Sdk;
 using Xunit;
 
-namespace Nexo.Tests.Infrastructure.Tests.Sdk;
-
+namespace Nexo.Tests.Infrastructure.Tests.SDK;
+/// <summary>Tests for host nexo sdk builder gap coverage.</summary>
 public sealed class HostNexoSdkBuilderGapCoverageTests
 {
     [Fact]
@@ -84,7 +84,8 @@ public sealed class HostNexoSdkBuilderGapCoverageTests
         options.BrickTypes.Should().Contain(typeof(SdkGapTestBrick));
     }
 
-    private sealed class SdkGapTestBrick : Brick
+    /// <summary>Tests for sdk gap test brick.</summary>
+    private sealed class SdkGapTestBrick : DomainBrick
     {
         public override Task<BrickOutput> ExecuteAsync(
             BrickInput input,
@@ -94,6 +95,7 @@ public sealed class HostNexoSdkBuilderGapCoverageTests
             => Task.FromResult(new BrickOutput());
     }
 
+    /// <summary>Tests for sdk gap test agent.</summary>
     private sealed class SdkGapTestAgent : IAgent
     {
         public string Name => "sdk-gap-agent";

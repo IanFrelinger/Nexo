@@ -8,13 +8,13 @@ namespace Nexo.Core.Application.SelfImprovement.Ports;
 /// </summary>
 public interface ISelfImprovementMetricsStore
 {
-    /// <summary>
-    /// Saves the latest report (called when self-improvement loop completes).
-    /// </summary>
+    /// <summary>Saves the latest report when a self-improvement loop completes.</summary>
+    /// <param name="report">Report produced by the completed loop run.</param>
+    /// <param name="cancellationToken">Token used to cancel the operation.</param>
     Task SaveAsync(SelfImprovementReport report, CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Gets the last saved report, or null if none.
-    /// </summary>
+    /// <summary>Gets the last saved report, or null if none exists.</summary>
+    /// <param name="cancellationToken">Token used to cancel the operation.</param>
+    /// <returns>The most recently persisted report, or null.</returns>
     Task<SelfImprovementReport?> GetLastAsync(CancellationToken cancellationToken = default);
 }

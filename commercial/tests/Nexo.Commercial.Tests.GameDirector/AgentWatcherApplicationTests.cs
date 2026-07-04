@@ -12,6 +12,7 @@ using Xunit;
 
 namespace Nexo.Tests.GameDirector;
 
+/// <summary>Tests for agent watcher application.</summary>
 [Trait("Category", "GameDirectorApplication")]
 public sealed class AgentWatcherApplicationTests
 {
@@ -157,6 +158,7 @@ public sealed class AgentWatcherApplicationTests
         }
     }
 
+    /// <summary>Capturing activity feed.</summary>
     private sealed class CapturingActivityFeed : IActivityFeedPublisher
     {
         public List<(string Source, string EventType, string Summary)> Entries { get; } = [];

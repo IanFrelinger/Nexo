@@ -10,6 +10,7 @@ using Nexo.Tests.Application.Helpers;
 
 namespace Nexo.Tests.Infrastructure.Tests.Agent;
 
+/// <summary>Tests for agent executor adapter.</summary>
 public class AgentExecutorAdapterTests : UnitTestBase
 {
     private DirectoryInfo? _tempDir;
@@ -33,12 +34,19 @@ public class AgentExecutorAdapterTests : UnitTestBase
     {
         try
         {
+            /// <summary>Test agent not found.</summary>
             await TestAgentNotFound();
+            /// <summary>Test successful execution with input file.</summary>
             await TestSuccessfulExecutionWithInputFile();
+            /// <summary>Test successful execution without input file.</summary>
             await TestSuccessfulExecutionWithoutInputFile();
+            /// <summary>Test successful execution with default assembly.</summary>
             await TestSuccessfulExecutionWithDefaultAssembly();
+            /// <summary>Test timeout exception.</summary>
             await TestTimeoutException();
+            /// <summary>Test general exception.</summary>
             await TestGeneralException();
+            /// <summary>Test cancellation.</summary>
             await TestCancellation();
 
             return new TestResult

@@ -3,6 +3,7 @@ using Xunit;
 
 namespace Nexo.Ingress.AwsSns.Tests;
 
+/// <summary>Tests for sns sms message extractor.</summary>
 public sealed class SnsSmsMessageExtractorTests
 {
     [Fact]

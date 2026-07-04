@@ -11,6 +11,7 @@ using Nexo.Tests.Application.Helpers;
 
 namespace Nexo.Tests.Infrastructure.Tests.Analysis;
 
+/// <summary>Tests for cached analysis service adapter.</summary>
 public class CachedAnalysisServiceAdapterTests : UnitTestBase
 {
     private DirectoryInfo? _tempDir;
@@ -34,11 +35,17 @@ public class CachedAnalysisServiceAdapterTests : UnitTestBase
     {
         try
         {
+            /// <summary>Test cache hit.</summary>
             await TestCacheHit();
+            /// <summary>Test cache miss.</summary>
             await TestCacheMiss();
+            /// <summary>Test cache storage.</summary>
             await TestCacheStorage();
+            /// <summary>Test progress reporting with cache hit.</summary>
             await TestProgressReportingWithCacheHit();
+            /// <summary>Test progress reporting with cache miss.</summary>
             await TestProgressReportingWithCacheMiss();
+            /// <summary>Test cancellation.</summary>
             await TestCancellation();
 
             return new TestResult
@@ -93,8 +100,11 @@ public class CachedAnalysisServiceAdapterTests : UnitTestBase
         var adapter = new CachedAnalysisServiceAdapter(mockInner.Object, mockCache.Object, mockLogger.Object);
         var result = await adapter.AnalyzeAsync(_tempDir!, null, CancellationToken.None);
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(result);
+        /// <summary>Assert false.</summary>
         AssertFalse(result.HasViolations);
+        /// <summary>Assert equal.</summary>
         AssertEqual(0, result.TotalViolations);
 
         // Inner service should not be called on cache hit
@@ -130,8 +140,11 @@ public class CachedAnalysisServiceAdapterTests : UnitTestBase
         var adapter = new CachedAnalysisServiceAdapter(mockInner.Object, mockCache.Object, mockLogger.Object);
         var result = await adapter.AnalyzeAsync(_tempDir!, null, CancellationToken.None);
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(result);
+        /// <summary>Assert true.</summary>
         AssertTrue(result.HasViolations);
+        /// <summary>Assert equal.</summary>
         AssertEqual(1, result.TotalViolations);
 
         // Inner service should be called on cache miss
@@ -211,6 +224,8 @@ public class CachedAnalysisServiceAdapterTests : UnitTestBase
                 AssertTrue(cachedReport.Message.Contains("cached", StringComparison.OrdinalIgnoreCase) ||
                            cachedReport.Message.Contains("Cached", StringComparison.OrdinalIgnoreCase),
                     $"Progress message should indicate cached result, got: {cachedReport.Message}");
+                /// <summary>Assert not null.</summary>
+                /// <param name="metadata"">Metadata".</param>
                 AssertNotNull(cachedReport.Metadata, "Progress report should have metadata");
                 AssertTrue(cachedReport.Metadata!.ContainsKey("Cached"), "Progress report metadata should contain 'Cached' key");
             }

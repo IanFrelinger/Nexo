@@ -8,6 +8,7 @@ public sealed class InMemoryMatchScopeStore : IMatchScopeStore
     private readonly Dictionary<string, ScopeState> _scopes = new(StringComparer.Ordinal);
     private readonly object _gate = new();
 
+    /// <summary>Creates a scope with first-writer-wins host claim.</summary>
     public MatchScopeOperationResult TryCreate(string scopeId, string hostParticipantId, IEnumerable<string> scopedAtomIds)
     {
         if (string.IsNullOrWhiteSpace(scopeId))
@@ -46,6 +47,7 @@ public sealed class InMemoryMatchScopeStore : IMatchScopeStore
         }
     }
 
+    /// <summary>Adds a participant to an existing scope.</summary>
     public MatchScopeOperationResult TryJoin(string scopeId, string participantId)
     {
         lock (_gate)
@@ -62,6 +64,7 @@ public sealed class InMemoryMatchScopeStore : IMatchScopeStore
         }
     }
 
+    /// <summary>Removes a participant from an existing scope.</summary>
     public MatchScopeOperationResult TryLeave(string scopeId, string participantId)
     {
         lock (_gate)
@@ -78,6 +81,7 @@ public sealed class InMemoryMatchScopeStore : IMatchScopeStore
         }
     }
 
+    /// <summary>Ends a scope and removes it from the store.</summary>
     public void End(string scopeId)
     {
         lock (_gate)
@@ -86,6 +90,7 @@ public sealed class InMemoryMatchScopeStore : IMatchScopeStore
         }
     }
 
+    /// <summary>Gets the current scope state, if it exists.</summary>
     public MatchScope? GetScope(string scopeId)
     {
         lock (_gate)

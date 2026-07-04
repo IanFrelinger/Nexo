@@ -1,5 +1,9 @@
 namespace Nexo.Abstractions.Barriers.Identity;
 
+/// <summary>
+/// Ordered pipeline of <see cref="IBarrierIdentityResolver"/> implementations.
+/// Runs resolvers in priority order until one produces a non-null result.
+/// </summary>
 public interface IBarrierIdentityResolverPipeline
 {
     /// <summary>

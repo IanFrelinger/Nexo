@@ -32,6 +32,16 @@ public sealed class InstanceCapabilities
     /// <summary>Available component IDs (e.g. nexo-cli, nexo-observe).</summary>
     public IReadOnlyCollection<string> AvailableComponents { get; }
 
+    /// <summary>
+    /// Creates an instance capability profile for mesh artifact negotiation.
+    /// </summary>
+    /// <param name="supportedFormats">Artifact formats this instance can produce or consume.</param>
+    /// <param name="preferredFormat">Preferred format when multiple are supported.</param>
+    /// <param name="canCompile">Whether this instance can compile source artifacts.</param>
+    /// <param name="hasDockerRuntime">Whether a Docker runtime is available.</param>
+    /// <param name="hasWasmRuntime">Whether a WebAssembly runtime is available.</param>
+    /// <param name="isAirGapped">Whether this instance has no network access.</param>
+    /// <param name="availableComponents">Component identifiers available on this instance.</param>
     public InstanceCapabilities(
         IEnumerable<ArtifactFormat> supportedFormats,
         ArtifactFormat? preferredFormat = null,

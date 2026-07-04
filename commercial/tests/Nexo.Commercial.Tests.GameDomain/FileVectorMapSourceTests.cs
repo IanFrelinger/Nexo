@@ -1,8 +1,8 @@
 using FluentAssertions;
-using Nexo.GameDomain.Mapping;
+using Nexo.Commercial.GameDomain.Mapping;
 
-namespace Nexo.Tests.GameDomain;
-
+namespace Nexo.Commercial.Tests.GameDomain;
+/// <summary>Tests for file vector map source.</summary>
 public class FileVectorMapSourceTests
 {
     [Fact]

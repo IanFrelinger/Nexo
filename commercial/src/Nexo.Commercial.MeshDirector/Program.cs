@@ -2,6 +2,7 @@ using System.CommandLine;
 
 namespace Nexo.Commercial.MeshDirector;
 
+/// <summary>Program.</summary>
 internal static class Program
 {
     private static Task<int> Main(string[] args)

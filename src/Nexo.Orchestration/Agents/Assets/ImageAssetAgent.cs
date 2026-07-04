@@ -159,13 +159,3 @@ public sealed class ImageAssetAgent : BaseAssetAgent
         };
     }
 }
-
-/// <summary>
-/// Generated image asset.
-/// </summary>
-internal sealed record GeneratedImageAsset : GeneratedAssetBase
-{
-    public required ImageSize Size { get; init; }
-    public required string MimeType { get; init; }
-}
-

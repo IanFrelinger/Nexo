@@ -10,6 +10,7 @@ using System.Collections.Generic;
 
 namespace Nexo.Tests.Infrastructure.Tests.Pipelines;
 
+/// <summary>Tests for pipeline service collection extensions.</summary>
 public sealed class PipelineServiceCollectionExtensionsTests
 {
     [Fact]

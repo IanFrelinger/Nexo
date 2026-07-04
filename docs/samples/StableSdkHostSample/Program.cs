@@ -28,12 +28,12 @@ services.AddNexo(options =>
 using var provider = services.BuildServiceProvider();
 Console.WriteLine("Stable SDK host sample bootstrapped successfully.");
 
-public sealed class SampleHostBrick : Brick
+public sealed class SampleHostBrick : DomainBrick
 {
     public SampleHostBrick()
     {
         Id = "sample.host.brick";
-        Name = "Sample Host Brick";
+        Name = "Sample Host DomainBrick";
         Description = "Sample stable-host SDK brick.";
     }
 

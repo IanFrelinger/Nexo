@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.Forge;
 
+/// <summary>Tests for change proposal store.</summary>
 public class ChangeProposalStoreTests : IDisposable
 {
     private readonly string _tempDir;
@@ -82,6 +83,10 @@ public class ChangeProposalStoreTests : IDisposable
         loaded.Summary.Should().Be("alpha");
     }
 
+    /// <summary>New proposal.</summary>
+    /// <param name="id">Id.</param>
+    /// <param name=""src/X.cs"">"src/x.cs".</param>
+    /// <param name=""test"">"test".</param>
     private static ChangeProposal NewProposal(string id, string target = "src/X.cs", string summary = "test") =>
         new()
         {

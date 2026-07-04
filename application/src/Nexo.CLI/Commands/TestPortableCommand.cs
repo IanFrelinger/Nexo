@@ -13,6 +13,7 @@ namespace Nexo.CLI.Commands;
 /// </summary>
 public class TestPortableCommand
 {
+    /// <summary>Creates a new CreateCommand instance.</summary>
     public static Command CreateCommand()
     {
         var listOpt = new Option<bool>("--list", "List targets that will run or be skipped on this host");
@@ -41,6 +42,7 @@ public class TestPortableCommand
         return cmd;
     }
 
+    /// <summary>Executes the command handler and returns a process exit code.</summary>
     public static async Task<int> ExecuteAsync(bool list, string scope, bool json, bool verbose)
     {
         var console = json ? null : new CliConsole(verbose);

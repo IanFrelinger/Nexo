@@ -15,6 +15,7 @@ public sealed class ThresholdScalingPolicy : IPipelineScalingPolicy
     private readonly int _queueScaleUpThreshold;
     private readonly double _errorRateThrottleThreshold;
 
+    /// <summary>Initializes a new threshold scaling policy.</summary>
     public ThresholdScalingPolicy(
         int deterministicMin = 1,
         int deterministicMax = 8,
@@ -31,6 +32,7 @@ public sealed class ThresholdScalingPolicy : IPipelineScalingPolicy
         _errorRateThrottleThreshold = errorRateThrottleThreshold;
     }
 
+    /// <summary>Evaluate.</summary>
     public PipelineScalingDecision Evaluate(PipelineScalingSnapshot snapshot)
     {
         var deterministic = snapshot.CurrentDeterministicWorkers;

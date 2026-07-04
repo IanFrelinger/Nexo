@@ -17,6 +17,7 @@ public sealed class PostgresDatabaseProvisioner : IDatabaseProvisioner
     private readonly IReadOnlyList<IDatabaseProvisioningHook> _hooks;
     private readonly ILogger<PostgresDatabaseProvisioner> _logger;
 
+    /// <summary>Initializes a new postgres database provisioner.</summary>
     public PostgresDatabaseProvisioner(
         ILogger<PostgresDatabaseProvisioner> logger,
         IEphemeralDatabaseLifecycle? ephemeralLifecycle = null,
@@ -259,6 +260,7 @@ public sealed class PostgresDatabaseProvisioner : IDatabaseProvisioner
         private readonly IEphemeralDatabaseLifecycle? _ephemeralLifecycle;
         private int _disposed;
 
+        /// <summary>Initializes a new postgres isolated database.</summary>
         public PostgresIsolatedDatabase(
             DatabaseIsolationLevel isolation,
             string connectionString,
@@ -277,12 +279,16 @@ public sealed class PostgresDatabaseProvisioner : IDatabaseProvisioner
             _ephemeralLifecycle = ephemeralLifecycle;
         }
 
+        /// <summary>Connection string.</summary>
         public string ConnectionString { get; }
 
+        /// <summary>Isolation.</summary>
         public DatabaseIsolationLevel Isolation => _isolation;
 
+        /// <summary>Backend resource id.</summary>
         public string? BackendResourceId { get; }
 
+        /// <summary>Dispose asynchronously.</summary>
         public async ValueTask DisposeAsync()
         {
             if (Interlocked.Exchange(ref _disposed, 1) != 0)

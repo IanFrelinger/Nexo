@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Pipelines;
 
+/// <summary>Tests for infrastructure pipelines gap coverage.</summary>
 public class InfrastructurePipelinesGapCoverageTests
 {
     [Fact]

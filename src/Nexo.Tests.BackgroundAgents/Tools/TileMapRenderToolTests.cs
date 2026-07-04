@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.Tools;
 
+/// <summary>Tests for tile map render tool.</summary>
 public sealed class TileMapRenderToolTests : IDisposable
 {
     private readonly string _tempDir;

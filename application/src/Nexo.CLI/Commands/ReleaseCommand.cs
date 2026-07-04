@@ -9,6 +9,7 @@ namespace Nexo.CLI.Commands;
 /// </summary>
 public sealed class ReleaseCommand : Command
 {
+    /// <summary>Creates a new ReleaseCommand instance.</summary>
     public ReleaseCommand() : base("release", "Release helpers: local NuGet preflight, trigger CI workflows")
     {
         var versionArg = new Argument<string>("version", "Semver to ship (e.g. 1.2.3), with or without v prefix");

@@ -18,6 +18,7 @@ public sealed class PostgresEphemeralLifecycle : IEphemeralDatabaseLifecycle
     private readonly ILogger<PostgresEphemeralLifecycle> _logger;
     private readonly DockerClient _dockerClient;
 
+    /// <summary>Initializes a new postgres ephemeral lifecycle.</summary>
     public PostgresEphemeralLifecycle(ILogger<PostgresEphemeralLifecycle> logger, DockerClient? dockerClient = null)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -25,6 +26,7 @@ public sealed class PostgresEphemeralLifecycle : IEphemeralDatabaseLifecycle
         _dockerClient = dockerClient ?? new DockerClientConfiguration(uri).CreateClient();
     }
 
+    /// <summary>Start asynchronously.</summary>
     public async Task<EphemeralDbResult> StartAsync(EphemeralDbOptions options, CancellationToken cancellationToken = default)
     {
         if (!string.Equals(options.Engine, "postgres", StringComparison.OrdinalIgnoreCase))
@@ -68,6 +70,7 @@ public sealed class PostgresEphemeralLifecycle : IEphemeralDatabaseLifecycle
         return new EphemeralDbResult(connectionString, containerId, hostPort);
     }
 
+    /// <summary>Stop asynchronously.</summary>
     public async Task StopAsync(string containerId, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrEmpty(containerId)) return;

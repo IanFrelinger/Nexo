@@ -8,11 +8,17 @@ namespace Nexo.Core.Application.Environments.Ports;
 /// </summary>
 public interface ITerrainMapDataProvider
 {
+    /// <summary>Discriminator matching <see cref="MapDataSourceBinding.Kind"/> this implementation handles.</summary>
     string Kind { get; }
 
     /// <summary>
     /// Fetches terrain coverage for the geographic bounds at the requested resolution hint (metres per sample or zoom).
     /// </summary>
+    /// <param name="bounds">Geographic rectangle to query.</param>
+    /// <param name="binding">Data source connection details.</param>
+    /// <param name="context">Cross-cutting request context.</param>
+    /// <param name="resolutionMetersHint">Desired horizontal resolution in metres.</param>
+    /// <param name="cancellationToken">Token used to cancel the operation.</param>
     Task<TerrainMapDataResult> FetchAsync(
         MapDataGeographicBounds bounds,
         MapDataSourceBinding binding,
@@ -20,13 +26,3 @@ public interface ITerrainMapDataProvider
         double resolutionMetersHint,
         CancellationToken cancellationToken = default);
 }
-
-/// <param name="Payload">Raw payload (GeoTIFF bytes, heightfield binary, JSON metadata + blob URL, etc.).</param>
-/// <param name="ContentType">MIME-like hint.</param>
-/// <param name="ResolutionMeters">Effective horizontal resolution if known.</param>
-/// <param name="SourceDescription">Optional provenance.</param>
-public sealed record TerrainMapDataResult(
-    ReadOnlyMemory<byte> Payload,
-    string ContentType,
-    double? ResolutionMeters = null,
-    string? SourceDescription = null);

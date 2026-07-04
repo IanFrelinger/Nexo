@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Certification;
 
+/// <summary>Tests for real model composition proposer dogfood.</summary>
 [Trait("Category", "Certification")]
 public sealed class RealModelCompositionProposerDogfoodTests
 {

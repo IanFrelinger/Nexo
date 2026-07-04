@@ -5,6 +5,7 @@ using Nexo.Core.Application.Testing.Models;
 
 namespace Nexo.Tests.CLI.Tests.Commands;
 
+/// <summary>Tests for doctor command.</summary>
 public sealed class DoctorCommandTests : UnitTestBase
 {
     public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
@@ -56,6 +57,8 @@ public sealed class DoctorCommandTests : UnitTestBase
             dryRun: false,
             autoApproveFixes: false,
             CancellationToken.None).ConfigureAwait(false);
+        /// <summary>Assert equal.</summary>
+        /// <param name="succeed."">Succeed.".</param>
         AssertEqual(0, exitCode, "Doctor should pass when bootstrap deps and CLI smoke succeed.");
     }
 
@@ -74,6 +77,8 @@ public sealed class DoctorCommandTests : UnitTestBase
                 dryRun: false,
                 autoApproveFixes: false,
                 CancellationToken.None).ConfigureAwait(false);
+            /// <summary>Assert equal.</summary>
+            /// <param name="pass."">Pass.".</param>
             AssertEqual(0, exitCode, "Doctor JSON mode should exit 0 when checks pass.");
             var output = writer.ToString();
             AssertTrue(output.Contains("\"ok\"", StringComparison.OrdinalIgnoreCase), "Doctor JSON output should include 'ok'.");
@@ -105,6 +110,8 @@ public sealed class DoctorCommandTests : UnitTestBase
                 dryRun: true,
                 autoApproveFixes: false,
                 CancellationToken.None).ConfigureAwait(false);
+            /// <summary>Assert equal.</summary>
+            /// <param name="pass."">Pass.".</param>
             AssertEqual(0, exitCode, "Doctor JSON with --fix --dry-run should exit 0 when checks pass.");
             var output = writer.ToString();
             AssertTrue(output.Contains("\"remediation\"", StringComparison.OrdinalIgnoreCase), "Doctor JSON output should include remediation section.");

@@ -5,7 +5,7 @@ using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
-using Nexo.BrickContracts;
+using Nexo.Brick.Contracts;
 using Nexo.Core.Domain.Behaviors;
 using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Clusters;
@@ -21,6 +21,7 @@ using ExecutionContext = Nexo.Infrastructure.Execution.ExecutionContext;
 
 namespace Nexo.Tests.Infrastructure.Tests.Execution;
 
+/// <summary>Tests for infrastructure execution gap coverage.</summary>
 public class InfrastructureExecutionGapCoverageTests
 {
     [Fact]
@@ -180,10 +181,10 @@ public class InfrastructureExecutionGapCoverageTests
                 Inputs = new List<BrickInputDefinitionDto> { new() { Name = "in", Type = "string", Required = true } },
                 Outputs = new List<BrickOutputDefinitionDto> { new() { Name = "result", Type = "string" } },
             },
-            HostCapabilities = new Nexo.BrickContracts.Capabilities.NodeCapabilityManifestDto
+            HostCapabilities = new Nexo.Brick.Contracts.Capabilities.NodeCapabilityManifestDto
             {
                 NodeId = "node-1",
-                SupportedCapabilities = new[] { Nexo.BrickContracts.Capabilities.TaskCapabilityDto.CodeGeneration },
+                SupportedCapabilities = new[] { Nexo.Brick.Contracts.Capabilities.TaskCapabilityDto.CodeGeneration },
             },
         };
 
@@ -415,6 +416,7 @@ public class InfrastructureExecutionGapCoverageTests
             cache ?? new InMemorySemanticCache(),
             NullLogger<ClusterExecutor>.Instance);
 
+    /// <summary>Creates single brick cluster.</summary>
     private static Cluster BuildSingleBrickCluster() => new()
     {
         Id = "cluster-1",
@@ -444,6 +446,7 @@ public class InfrastructureExecutionGapCoverageTests
         },
     };
 
+    /// <summary>Sample workflow.</summary>
     private static Workflow SampleWorkflow() => new()
     {
         Id = "wf-1",
@@ -452,8 +455,10 @@ public class InfrastructureExecutionGapCoverageTests
         Instances = Array.Empty<ClusterInstance>(),
     };
 
-    private static EchoBrick SampleBrick() => new("sample-brick") { Name = "Sample Brick" };
+    /// <summary>Sample brick.</summary>
+    private static EchoBrick SampleBrick() => new("sample-brick") { Name = "Sample DomainBrick" };
 
+    /// <summary>Creates context.</summary>
     private static IExecutionContext CreateContext() => new ExecutionContext
     {
         AgentId = "agent",
@@ -473,34 +478,52 @@ public class InfrastructureExecutionGapCoverageTests
         return events;
     }
 
+    /// <summary>Tests for in memory cluster registry.</summary>
     private sealed class InMemoryClusterRegistry : IClusterRegistry
     {
         private readonly Dictionary<string, Cluster> _clusters = new(StringComparer.OrdinalIgnoreCase);
 
+        /// <summary>Gets the value.</summary>
+        /// <param name="id">Id.</param>
         public Cluster? Get(string id) => _clusters.GetValueOrDefault(id);
 
+        /// <summary>Gets all.</summary>
         public IReadOnlyList<Cluster> GetAll() => _clusters.Values.ToList();
 
+        /// <summary>Register.</summary>
+        /// <param name="cluster">Cluster.</param>
         public void Register(Cluster cluster) => _clusters[cluster.Id] = cluster;
 
+        /// <summary>Unregister.</summary>
+        /// <param name="id">Id.</param>
         public void Unregister(string id) => _clusters.Remove(id);
     }
 
+    /// <summary>Tests for stub brick registry.</summary>
     private sealed class StubBrickRegistry : IBrickRegistry
     {
-        private readonly Dictionary<string, Brick> _bricks = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, DomainBrick> _bricks = new(StringComparer.OrdinalIgnoreCase);
 
-        public void Add(Brick brick) => _bricks[brick.Id] = brick;
+        /// <summary>Add.</summary>
+        /// <param name="brick">Brick.</param>
+        public void Add(DomainBrick brick) => _bricks[brick.Id] = brick;
 
-        public Brick? GetBrick(string id) => _bricks.GetValueOrDefault(id);
+        /// <summary>Gets brick.</summary>
+        /// <param name="id">Id.</param>
+        public DomainBrick? GetBrick(string id) => _bricks.GetValueOrDefault(id);
 
-        public IReadOnlyList<Brick> GetAllBricks() => _bricks.Values.ToList();
+        /// <summary>Gets all bricks.</summary>
+        public IReadOnlyList<DomainBrick> GetAllBricks() => _bricks.Values.ToList();
     }
 
+    /// <summary>Tests for in memory semantic cache.</summary>
     private sealed class InMemorySemanticCache : ISemanticCache
     {
         private readonly Dictionary<string, BrickOutput> _cache = new();
 
+        /// <summary>Gets async.</summary>
+        /// <param name="cacheKey">Cache key.</param>
+        /// <param name="default">Default.</param>
         public Task<BrickOutput?> GetAsync(string cacheKey, CancellationToken cancellationToken = default) =>
             Task.FromResult(_cache.GetValueOrDefault(cacheKey));
 
@@ -511,7 +534,8 @@ public class InfrastructureExecutionGapCoverageTests
         }
     }
 
-    private class EchoBrick : Brick
+    /// <summary>Tests for echo brick.</summary>
+    private class EchoBrick : DomainBrick
     {
         public EchoBrick(string id)
         {
@@ -543,8 +567,10 @@ public class InfrastructureExecutionGapCoverageTests
         }
     }
 
+    /// <summary>Tests for counting echo brick.</summary>
     private sealed class CountingEchoBrick : EchoBrick
     {
+        /// <summary>Executions.</summary>
         public int Executions { get; private set; }
 
         public CountingEchoBrick(string id) : base(id) { }
@@ -560,6 +586,7 @@ public class InfrastructureExecutionGapCoverageTests
         }
     }
 
+    /// <summary>Tests for fake http message handler.</summary>
     private sealed class FakeHttpMessageHandler : HttpMessageHandler
     {
         private readonly Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> _handler;

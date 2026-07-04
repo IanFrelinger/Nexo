@@ -11,7 +11,7 @@ public static class BrickInputDefaults
     /// <summary>
     /// Populates missing inputs with their declared defaults without overwriting supplied values.
     /// </summary>
-    public static void Apply(Brick brick, BrickInput input)
+    public static void Apply(DomainBrick brick, BrickInput input)
     {
         var existing = input.ToDictionary();
 

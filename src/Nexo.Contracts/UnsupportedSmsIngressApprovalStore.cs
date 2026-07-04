@@ -5,6 +5,7 @@ namespace Nexo.Contracts;
 /// </summary>
 public sealed class UnsupportedSmsIngressApprovalStore : ISmsIngressApprovalStore
 {
+    /// <inheritdoc />
     public Task<SmsInboundSimulationResponse> TryRecordApprovalAsync(
         string from,
         string approvalToken,

@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Barriers.Sinks;
 
+/// <summary>Tests for structured log barrier audit sink.</summary>
 public sealed class StructuredLogBarrierAuditSinkTests
 {
     [Theory]

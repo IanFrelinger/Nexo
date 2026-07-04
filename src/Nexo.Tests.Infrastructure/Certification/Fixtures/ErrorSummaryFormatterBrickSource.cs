@@ -1,5 +1,6 @@
 namespace Nexo.Tests.Infrastructure.Certification.Fixtures;
 
+/// <summary>Error summary formatter brick source.</summary>
 public static class ErrorSummaryFormatterBrickSource
 {
     public const string Code = """
@@ -8,7 +9,8 @@ using Nexo.Core.Domain.Execution;
 
 namespace Nexo.Tests.Infrastructure.Certification.Fixtures;
 
-public sealed class ErrorSummaryFormatterBrick : Brick
+/// <summary>Error summary formatter brick.</summary>
+public sealed class ErrorSummaryFormatterBrick : DomainBrick
 {
     public ErrorSummaryFormatterBrick()
     {

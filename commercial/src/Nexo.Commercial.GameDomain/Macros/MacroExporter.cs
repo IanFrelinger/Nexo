@@ -1,7 +1,6 @@
 using System.Text.Json;
 
-namespace Nexo.GameDomain.Macros;
-
+namespace Nexo.Commercial.GameDomain.Macros;
 /// <summary>
 /// Round-trip JSON serialisation for <see cref="MacroDefinition"/> and collections thereof.
 /// </summary>

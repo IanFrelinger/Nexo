@@ -1,5 +1,4 @@
-namespace Nexo.GameDomain.Assets;
-
+namespace Nexo.Commercial.GameDomain.Assets;
 /// <summary>
 /// Groups related audio descriptors into a sound bank with playback
 /// rules. Maps game events to audio responses. For example, a weapon
@@ -8,21 +7,15 @@ namespace Nexo.GameDomain.Assets;
 /// </summary>
 public sealed record SoundBankDescriptor
 {
+    /// <summary>id value.</summary>
     public string Id { get; init; } = string.Empty;
+    /// <summary>Name value.</summary>
     public string Name { get; init; } = string.Empty;
+    /// <summary>Category value.</summary>
     public string Category { get; init; } = "weapon";
 
+    /// <summary>Events value.</summary>
     public IReadOnlyList<SoundEvent> Events { get; init; } = Array.Empty<SoundEvent>();
+    /// <summary>Tags value.</summary>
     public IReadOnlyList<string> Tags { get; init; } = Array.Empty<string>();
-}
-
-public sealed record SoundEvent
-{
-    public string EventName { get; init; } = string.Empty;
-    public IReadOnlyList<string> AudioDescriptorIds { get; init; } = Array.Empty<string>();
-    public string SelectionMode { get; init; } = "random";
-    public double CooldownSeconds { get; init; } = 0.0;
-    public int MaxConcurrent { get; init; } = 3;
-    public double VolumeMultiplier { get; init; } = 1.0;
-    public double PitchMultiplier { get; init; } = 1.0;
 }

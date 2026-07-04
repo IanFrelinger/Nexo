@@ -18,6 +18,7 @@ public sealed class NCRCapabilityPoller : BackgroundService, INCRCapabilitySnaps
     private readonly ILogger<NCRCapabilityPoller> _logger;
     private volatile SnapshotState _snapshot = new();
 
+    /// <summary>Initializes a new n c r capability poller.</summary>
     public NCRCapabilityPoller(
         IHardwareProfiler hardwareProfiler,
         ILocalQueueDepthProvider queueDepthProvider,
@@ -30,12 +31,16 @@ public sealed class NCRCapabilityPoller : BackgroundService, INCRCapabilitySnaps
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>Available vram bytes.</summary>
     public long AvailableVramBytes => _snapshot.AvailableVramBytes;
 
+    /// <summary>Compute class.</summary>
     public GpuComputeClass ComputeClass => _snapshot.ComputeClass;
 
+    /// <summary>Current queue depth.</summary>
     public int CurrentQueueDepth => _snapshot.CurrentQueueDepth;
 
+    /// <summary>Captured at.</summary>
     public DateTimeOffset CapturedAt => _snapshot.CapturedAt;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -105,9 +110,13 @@ public sealed class NCRCapabilityPoller : BackgroundService, INCRCapabilitySnaps
 
     private sealed record SnapshotState
     {
+        /// <summary>Available vram bytes.</summary>
         public long AvailableVramBytes { get; init; }
+        /// <summary>Compute class.</summary>
         public GpuComputeClass ComputeClass { get; init; } = GpuComputeClass.None;
+        /// <summary>Current queue depth.</summary>
         public int CurrentQueueDepth { get; init; }
+        /// <summary>Captured at.</summary>
         public DateTimeOffset CapturedAt { get; init; } = DateTimeOffset.UtcNow;
     }
 }

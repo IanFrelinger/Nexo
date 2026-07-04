@@ -3,6 +3,7 @@ using Xunit;
 
 namespace Nexo.Commercial.Tests.MeshDirector;
 
+/// <summary>Tests for mesh director command uri.</summary>
 public sealed class MeshDirectorCommandUriTests
 {
     [Theory]

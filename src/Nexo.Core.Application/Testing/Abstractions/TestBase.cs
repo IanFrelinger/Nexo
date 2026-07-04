@@ -16,7 +16,10 @@ namespace Nexo.Core.Application.Testing.Abstractions;
 /// </summary>
 public abstract class TestBase
 {
+    /// <summary>Test name derived from the concrete test type.</summary>
     public string TestName => GetType().Name;
+
+    /// <summary>Test category derived from the type namespace.</summary>
     public string Category => GetType().Namespace?.Split('.').LastOrDefault() ?? "Unknown";
 
     /// <summary>

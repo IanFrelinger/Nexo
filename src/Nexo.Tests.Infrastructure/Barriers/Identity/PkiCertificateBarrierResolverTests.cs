@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Barriers.Identity;
 
+/// <summary>Tests for pki certificate barrier resolver.</summary>
 public sealed class PkiCertificateBarrierResolverTests
 {
     [Fact]

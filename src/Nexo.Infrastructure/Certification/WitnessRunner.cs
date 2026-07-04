@@ -5,10 +5,12 @@ using Nexo.Core.Domain.Execution;
 
 namespace Nexo.Infrastructure.Certification;
 
+/// <summary>Executes witness specifications against certified brick implementations.</summary>
 internal static class WitnessRunner
 {
+    /// <summary>Run asynchronously.</summary>
     public static async Task<WitnessRunResult> RunAsync(
-        Brick brick,
+        DomainBrick brick,
         WitnessSpec witness,
         IExecutionContext context,
         CancellationToken cancellationToken)
@@ -53,8 +55,9 @@ internal static class WitnessRunner
         return new WitnessRunResult(failures.Count == 0, failures);
     }
 
+    /// <summary>Runs the witness twice and compares serialized outputs for determinism.</summary>
     public static async Task<(bool Identical, string? First, string? Second)> CheckDeterminismAsync(
-        Brick brick,
+        DomainBrick brick,
         WitnessSpec witness,
         CancellationToken cancellationToken)
     {
@@ -118,17 +121,4 @@ internal static class WitnessRunner
 
     private static string FormatValue(object value) =>
         Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture) ?? "<null>";
-}
-
-internal sealed record WitnessRunResult(bool Passed, IReadOnlyList<string> Failures);
-
-internal sealed class AuditExecutionContext : IExecutionContext
-{
-    public string AgentId => "cert-gate";
-    public string BehaviorId => "cert-gate";
-    public bool IsAirGapped => true;
-    public bool AuditMode => true;
-    public string Provider => "deterministic";
-    public IReadOnlyDictionary<string, object> Variables { get; } =
-        new Dictionary<string, object>();
 }

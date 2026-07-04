@@ -21,6 +21,7 @@ public sealed partial class RuntimeCommand : Command
     private readonly ReleaseGateHandler _releaseGateHandler;
     private readonly ExecuteHandler _executeHandler;
 
+    /// <summary>Creates a new RuntimeCommand instance.</summary>
     public RuntimeCommand() : base("runtime", "Adaptive runtime control plane commands.")
     {
         _recommendHandler = new RecommendHandler();

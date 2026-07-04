@@ -4,8 +4,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nexo.Core.Domain.Execution;
 
-namespace Nexo.Infrastructure.Execution.Sdk;
-
+namespace Nexo.Infrastructure.Execution.Sdk.Extensions;
 /// <summary>
 /// Optional wiring so each Nexo host resolves bricks from peers over HTTP
 /// (<see cref="HttpRemoteBrickCatalog"/> + <see cref="CompositeBrickRegistry"/>).

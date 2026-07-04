@@ -15,12 +15,14 @@ using Nexo.Infrastructure.Execution;
 
 namespace Nexo.Tests.Infrastructure.Tests.Execution;
 
+/// <summary>Tests for behavior executor ncr escalation.</summary>
 public sealed class BehaviorExecutorNcrEscalationTests : UnitTestBase
 {
     public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
+            /// <summary>Test escalation emits typed event and fallback executes async.</summary>
             await TestEscalationEmitsTypedEventAndFallbackExecutesAsync();
 
             return new TestResult
@@ -114,7 +116,9 @@ public sealed class BehaviorExecutorNcrEscalationTests : UnitTestBase
             else if (evt is AgenticEscalatedEvent escalated)
             {
                 sawEscalated = true;
+                /// <summary>Assert equal.</summary>
                 AssertEqual("s-escalate", escalated.StepId);
+                /// <summary>Assert equal.</summary>
                 AssertEqual(brick.Id, escalated.BrickId);
                 AssertEqual(ResolutionReason.EscalatedPolicyBlocked.ToString(), escalated.Reason);
             }
@@ -124,14 +128,23 @@ public sealed class BehaviorExecutorNcrEscalationTests : UnitTestBase
             }
         }
 
+        /// <summary>Assert true.</summary>
+        /// <param name="AgenticEscalatedEvent"">Agentic escalated event".</param>
         AssertTrue(sawEscalated, "Escalation should emit AgenticEscalatedEvent");
+        /// <summary>Assert true.</summary>
+        /// <param name="complete"">Complete".</param>
         AssertTrue(sawCompleted, "Deterministic fallback should complete");
+        /// <summary>Assert true.</summary>
+        /// <param name="2">2.</param>
+        /// <param name="deterministic"">Deterministic".</param>
         AssertTrue(implementations.Count >= 2, "Should attempt agentic then deterministic");
+        /// <summary>Assert equal.</summary>
         AssertEqual(ImplementationType.Agentic, implementations[0]);
         AssertTrue(metrics.Counters.TryGetValue("ncr.execution.escalated.EscalatedPolicyBlocked", out var escalations) && escalations == 1);
     }
 
-    private sealed class AgenticThenDeterministicBrick : Brick
+    /// <summary>Tests for agentic then deterministic brick.</summary>
+    private sealed class AgenticThenDeterministicBrick : DomainBrick
     {
         public AgenticThenDeterministicBrick()
         {
@@ -152,6 +165,8 @@ public sealed class BehaviorExecutorNcrEscalationTests : UnitTestBase
         {
             if (implementation == ImplementationType.Agentic)
             {
+                /// <summary>Invalid operation exception.</summary>
+                /// <param name="escalation"">Escalation".</param>
                 throw new InvalidOperationException("agentic path should not execute after escalation");
             }
 
@@ -163,9 +178,10 @@ public sealed class BehaviorExecutorNcrEscalationTests : UnitTestBase
         }
     }
 
+    /// <summary>Tests for escalating agentic engine.</summary>
     private sealed class EscalatingAgenticEngine : IAgenticBrickEngine
     {
-        public Task<ModelResolution> ResolveModelForBrickAsync(Brick brick, IExecutionContext context, CancellationToken ct = default)
+        public Task<ModelResolution> ResolveModelForBrickAsync(DomainBrick brick, IExecutionContext context, CancellationToken ct = default)
         {
             return Task.FromResult(new ModelResolution
             {
@@ -184,19 +200,28 @@ public sealed class BehaviorExecutorNcrEscalationTests : UnitTestBase
             => Task.CompletedTask;
     }
 
+    /// <summary>Tests for single brick registry.</summary>
     private sealed class SingleBrickRegistry : Nexo.Core.Domain.Execution.IBrickRegistry
     {
-        private readonly Brick _brick;
+        private readonly DomainBrick _brick;
 
-        public SingleBrickRegistry(Brick brick) => _brick = brick;
+        /// <summary>Single brick registry.</summary>
+        /// <param name="brick">Brick.</param>
+        public SingleBrickRegistry(DomainBrick brick) => _brick = brick;
 
-        public Brick? GetBrick(string id) => id == _brick.Id ? _brick : null;
+        /// <summary>Gets brick.</summary>
+        /// <param name="id">Id.</param>
+        public DomainBrick? GetBrick(string id) => id == _brick.Id ? _brick : null;
 
-        public IReadOnlyList<Brick> GetAllBricks() => [_brick];
+        /// <summary>Gets all bricks.</summary>
+        public IReadOnlyList<DomainBrick> GetAllBricks() => [_brick];
     }
 
+    /// <summary>Tests for provider available factory.</summary>
     private sealed class ProviderAvailableFactory : IProviderFactory
     {
+        /// <summary>Returns whether  provider available.</summary>
+        /// <param name="provider">Provider.</param>
         public bool IsProviderAvailable(string provider) => true;
         public Task<string> ExecuteLLMAsync(string provider, string systemPrompt, string userPrompt, object config, CancellationToken cancellationToken = default)
             => Task.FromResult("{}");
@@ -210,9 +235,12 @@ public sealed class BehaviorExecutorNcrEscalationTests : UnitTestBase
             => Task.CompletedTask;
     }
 
+    /// <summary>Tests for in memory metrics collector.</summary>
     private sealed class InMemoryMetricsCollector : IMetricsCollector
     {
+        /// <summary>Execution times.</summary>
         public Dictionary<string, TimeSpan> ExecutionTimes { get; } = new(StringComparer.Ordinal);
+        /// <summary>Counters.</summary>
         public Dictionary<string, long> Counters { get; } = new(StringComparer.Ordinal);
 
         public void RecordExecutionTime(string operationName, TimeSpan duration)

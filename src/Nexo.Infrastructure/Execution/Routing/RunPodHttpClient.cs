@@ -15,6 +15,7 @@ public sealed class RunPodHttpClient : IRunPodClient
     private readonly ILogger<RunPodHttpClient> _logger;
     private readonly IOptions<RunPodBrickConfig> _options;
 
+    /// <summary>Initializes a new run pod http client.</summary>
     public RunPodHttpClient(
         HttpClient httpClient,
         IOptions<RunPodBrickConfig> options,
@@ -25,6 +26,7 @@ public sealed class RunPodHttpClient : IRunPodClient
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>Spin up instance.</summary>
     public async Task<Result<RunPodInstance>> SpinUpInstance(
         string modelId,
         string gpuType,
@@ -69,6 +71,7 @@ public sealed class RunPodHttpClient : IRunPodClient
         }
     }
 
+    /// <summary>Dispatch job.</summary>
     public async Task<Result<JobHandle>> DispatchJob(
         string instanceId,
         RunPodJobPayload payload,
@@ -114,6 +117,7 @@ public sealed class RunPodHttpClient : IRunPodClient
         }
     }
 
+    /// <summary>Poll job status.</summary>
     public async Task<Result<JobStatus>> PollJobStatus(
         JobHandle jobHandle,
         CancellationToken cancellationToken = default)
@@ -145,6 +149,7 @@ public sealed class RunPodHttpClient : IRunPodClient
         }
     }
 
+    /// <summary>Pull results.</summary>
     public async Task<Result<byte[]>> PullResults(
         JobHandle jobHandle,
         CancellationToken cancellationToken = default)
@@ -168,6 +173,7 @@ public sealed class RunPodHttpClient : IRunPodClient
         }
     }
 
+    /// <summary>Terminate instance.</summary>
     public async Task<Result<Unit>> TerminateInstance(
         string instanceId,
         CancellationToken cancellationToken = default)

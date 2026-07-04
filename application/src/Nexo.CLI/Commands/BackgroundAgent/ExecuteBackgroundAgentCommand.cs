@@ -17,6 +17,7 @@ public class ExecuteBackgroundAgentCommand
     private readonly AgentFactory _agentFactory;
     private readonly ILogger<ExecuteBackgroundAgentCommand> _logger;
 
+    /// <summary>Creates a new ExecuteBackgroundAgentCommand instance.</summary>
     public ExecuteBackgroundAgentCommand(
         BackgroundAgentConfigLoader configLoader,
         IBackgroundAgentRegistry registry,

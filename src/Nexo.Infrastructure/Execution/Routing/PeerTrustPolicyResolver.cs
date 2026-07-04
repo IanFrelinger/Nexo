@@ -3,12 +3,14 @@ using Nexo.Core.Application.Mesh.Models;
 
 namespace Nexo.Infrastructure.Execution.Routing;
 
+/// <summary>Resolves peer trust tiers from mesh policy configuration and allow/deny lists.</summary>
 internal sealed class PeerTrustPolicyResolver
 {
     private readonly HashSet<string> _trustedPeerIds;
     private readonly HashSet<string> _untrustedPeerIds;
     private readonly string _policy;
 
+    /// <summary>Initializes a new peer trust policy resolver.</summary>
     public PeerTrustPolicyResolver(string? policy, string? trustedPeerIdsCsv, string? untrustedPeerIdsCsv)
     {
         _policy = MeshTrustPolicyConfiguration.NormalizePolicy(policy);
@@ -16,8 +18,10 @@ internal sealed class PeerTrustPolicyResolver
         _untrustedPeerIds = ParseCsv(untrustedPeerIdsCsv);
     }
 
+    /// <summary>Policy.</summary>
     public string Policy => _policy;
 
+    /// <summary>Resolve tier.</summary>
     public PeerTrustTier ResolveTier(PeerInfo peer)
     {
         if (peer == null || string.IsNullOrWhiteSpace(peer.PeerId))
@@ -31,6 +35,7 @@ internal sealed class PeerTrustPolicyResolver
         return peer.TrustTier;
     }
 
+    /// <summary>Whether allowed.</summary>
     public bool IsAllowed(PeerTrustTier tier)
     {
         return _policy switch
@@ -42,6 +47,7 @@ internal sealed class PeerTrustPolicyResolver
         };
     }
 
+    /// <summary>Whether allowed.</summary>
     public bool IsAllowed(PeerExecutionCandidate candidate)
     {
         return IsAllowed(candidate.TrustTier);

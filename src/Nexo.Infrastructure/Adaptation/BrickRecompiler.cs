@@ -16,6 +16,7 @@ public sealed class BrickRecompiler : IBrickRecompiler
     private readonly IServiceProvider _services;
     private readonly ILogger<BrickRecompiler>? _logger;
 
+    /// <summary>Initializes a new brick recompiler.</summary>
     public BrickRecompiler(IServiceProvider services, ILogger<BrickRecompiler>? logger = null)
     {
         _services = services ?? throw new ArgumentNullException(nameof(services));
@@ -23,7 +24,7 @@ public sealed class BrickRecompiler : IBrickRecompiler
     }
 
     /// <inheritdoc />
-    public Task<Brick?> RecompileAsync(BrickManifest manifest, CancellationToken cancellationToken = default)
+    public Task<DomainBrick?> RecompileAsync(BrickManifest manifest, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 
@@ -36,7 +37,7 @@ public sealed class BrickRecompiler : IBrickRecompiler
                 {
                     var brick = CreateFromType(type, manifest);
                     if (brick != null)
-                        return Task.FromResult<Brick?>(brick);
+                        return Task.FromResult<DomainBrick?>(brick);
                 }
                 catch (Exception ex)
                 {
@@ -45,10 +46,10 @@ public sealed class BrickRecompiler : IBrickRecompiler
             }
         }
 
-        return Task.FromResult<Brick?>(null);
+        return Task.FromResult<DomainBrick?>(null);
     }
 
-    private Brick? CreateFromType(Type type, BrickManifest manifest)
+    private DomainBrick? CreateFromType(Type type, BrickManifest manifest)
     {
         if (type == typeof(ObservationContextBrick))
         {
@@ -60,12 +61,12 @@ public sealed class BrickRecompiler : IBrickRecompiler
         var parameterlessCtor = type.GetConstructor(Type.EmptyTypes);
         if (parameterlessCtor != null)
         {
-            return (Brick?)Activator.CreateInstance(type);
+            return (DomainBrick?)Activator.CreateInstance(type);
         }
 
         try
         {
-            return (Brick?)ActivatorUtilities.CreateInstance(_services, type);
+            return (DomainBrick?)ActivatorUtilities.CreateInstance(_services, type);
         }
         catch (Exception)
         {

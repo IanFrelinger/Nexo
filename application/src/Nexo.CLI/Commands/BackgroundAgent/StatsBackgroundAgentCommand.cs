@@ -22,6 +22,7 @@ public class StatsBackgroundAgentCommand
     private readonly CycleEventStore _store;
     private readonly ILogger<StatsBackgroundAgentCommand> _logger;
 
+    /// <summary>Creates a new StatsBackgroundAgentCommand instance.</summary>
     public StatsBackgroundAgentCommand(
         CycleEventStore store,
         ILogger<StatsBackgroundAgentCommand> logger)
@@ -160,19 +161,3 @@ public class StatsBackgroundAgentCommand
         return s.Length <= len ? s : s.Substring(0, len - 1) + "…";
     }
 }
-
-/// <summary>
-/// One row of aggregated cycle stats per agent.
-/// </summary>
-public sealed record AgentStatsRow(
-    string agent,
-    string role,
-    int cycles,
-    int successes,
-    int failures,
-    double avgDurationMs,
-    int toolsExecuted,
-    int toolsDenied,
-    double avgIterations,
-    DateTimeOffset lastCycleUtc,
-    IReadOnlyDictionary<string, int> stoppedReasons);

@@ -1,9 +1,9 @@
 using FluentAssertions;
-using Nexo.GameDomain.Mapping;
+using Nexo.Commercial.GameDomain.Mapping;
 using Xunit;
 
-namespace Nexo.Tests.GameDomain;
-
+namespace Nexo.Commercial.Tests.GameDomain;
+/// <summary>Tests for terrain tile url builder.</summary>
 public sealed class TerrainTileUrlBuilderTests
 {
     [Fact]

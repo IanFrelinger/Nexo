@@ -13,6 +13,7 @@ using OutputFormat = Nexo.Core.Domain.Export.OutputFormat;
 
 namespace Nexo.Tests.Infrastructure.Tests.Export;
 
+/// <summary>Tests for workflow exporter gap coverage.</summary>
 public sealed class WorkflowExporterGapCoverageTests
 {
     [Fact]
@@ -72,7 +73,7 @@ public sealed class WorkflowExporterGapCoverageTests
     public async Task ExportAsync_filters_generation_to_requested_brick_ids()
     {
         var contentGen = new Mock<IContentGenerator>();
-        contentGen.Setup(c => c.GenerateAsync(It.IsAny<Brick>(), It.IsAny<GenerationConfig>(), It.IsAny<CancellationToken>()))
+        contentGen.Setup(c => c.GenerateAsync(It.IsAny<DomainBrick>(), It.IsAny<GenerationConfig>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new GeneratedContent
             {
                 Variations = [new GeneratedVariation { Content = "v1" }],
@@ -107,10 +108,10 @@ public sealed class WorkflowExporterGapCoverageTests
 
         result.GenerationSummary!.ItemsGenerated.Should().Be(1);
         contentGen.Verify(
-            c => c.GenerateAsync(It.Is<Brick>(b => b.Id == "brick-a"), It.IsAny<GenerationConfig>(), It.IsAny<CancellationToken>()),
+            c => c.GenerateAsync(It.Is<DomainBrick>(b => b.Id == "brick-a"), It.IsAny<GenerationConfig>(), It.IsAny<CancellationToken>()),
             Times.Once);
         contentGen.Verify(
-            c => c.GenerateAsync(It.Is<Brick>(b => b.Id == "brick-b"), It.IsAny<GenerationConfig>(), It.IsAny<CancellationToken>()),
+            c => c.GenerateAsync(It.Is<DomainBrick>(b => b.Id == "brick-b"), It.IsAny<GenerationConfig>(), It.IsAny<CancellationToken>()),
             Times.Never);
     }
 
@@ -199,9 +200,12 @@ public sealed class WorkflowExporterGapCoverageTests
             Instances = [new ClusterInstance { InstanceId = "inst-1", ClusterId = clusterId }],
         };
 
+    /// <summary>Tests for export context.</summary>
     private sealed class ExportContext
     {
+        /// <summary>Clusters.</summary>
         public InMemoryClusterRegistry Clusters { get; } = new();
+        /// <summary>Bricks.</summary>
         public StubBrickRegistry Bricks { get; } = new();
 
         public void RegisterCluster(
@@ -229,31 +233,46 @@ public sealed class WorkflowExporterGapCoverageTests
         }
     }
 
+    /// <summary>Tests for in memory cluster registry.</summary>
     private sealed class InMemoryClusterRegistry : IClusterRegistry
     {
         private readonly Dictionary<string, Cluster> _clusters = new(StringComparer.OrdinalIgnoreCase);
 
+        /// <summary>Gets the value.</summary>
+        /// <param name="id">Id.</param>
         public Cluster? Get(string id) => _clusters.GetValueOrDefault(id);
 
+        /// <summary>Gets all.</summary>
         public IReadOnlyList<Cluster> GetAll() => _clusters.Values.ToList();
 
+        /// <summary>Register.</summary>
+        /// <param name="cluster">Cluster.</param>
         public void Register(Cluster cluster) => _clusters[cluster.Id] = cluster;
 
+        /// <summary>Unregister.</summary>
+        /// <param name="id">Id.</param>
         public void Unregister(string id) => _clusters.Remove(id);
     }
 
+    /// <summary>Tests for stub brick registry.</summary>
     private sealed class StubBrickRegistry : IBrickRegistry
     {
-        private readonly Dictionary<string, Brick> _bricks = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, DomainBrick> _bricks = new(StringComparer.OrdinalIgnoreCase);
 
-        public void Add(Brick brick) => _bricks[brick.Id] = brick;
+        /// <summary>Add.</summary>
+        /// <param name="brick">Brick.</param>
+        public void Add(DomainBrick brick) => _bricks[brick.Id] = brick;
 
-        public Brick? GetBrick(string id) => _bricks.GetValueOrDefault(id);
+        /// <summary>Gets brick.</summary>
+        /// <param name="id">Id.</param>
+        public DomainBrick? GetBrick(string id) => _bricks.GetValueOrDefault(id);
 
-        public IReadOnlyList<Brick> GetAllBricks() => _bricks.Values.ToList();
+        /// <summary>Gets all bricks.</summary>
+        public IReadOnlyList<DomainBrick> GetAllBricks() => _bricks.Values.ToList();
     }
 
-    private sealed class ExportTestBrick : Brick
+    /// <summary>Tests for export test brick.</summary>
+    private sealed class ExportTestBrick : DomainBrick
     {
         public ExportTestBrick(
             string id,

@@ -2,8 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Nexo.Infrastructure.Execution;
 
-namespace Nexo.Infrastructure.Execution.Sdk;
-
+namespace Nexo.Infrastructure.Execution.Sdk.Extensions;
 /// <summary>
 /// DI extensions for brick host (options and optional remote catalogs).
 /// </summary>

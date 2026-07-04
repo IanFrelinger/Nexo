@@ -13,6 +13,7 @@ namespace Nexo.Infrastructure.ModelArtifacts;
 /// </summary>
 public sealed class OllamaRemoteLibraryModelArtifactCatalogSource : IRemoteInstallableModelArtifactSource
 {
+    /// <summary>Named HTTP client used for remote Ollama library catalog requests.</summary>
     public const string HttpClientName = "Nexo.ModelArtifactCatalog.OllamaRemoteLibrary";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -23,6 +24,7 @@ public sealed class OllamaRemoteLibraryModelArtifactCatalogSource : IRemoteInsta
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IOptionsMonitor<OllamaRemoteLibraryCatalogOptions> _options;
 
+    /// <summary>Initializes a new ollama remote library model artifact catalog source.</summary>
     public OllamaRemoteLibraryModelArtifactCatalogSource(
         IHttpClientFactory httpClientFactory,
         IOptionsMonitor<OllamaRemoteLibraryCatalogOptions> options)
@@ -31,11 +33,14 @@ public sealed class OllamaRemoteLibraryModelArtifactCatalogSource : IRemoteInsta
         _options = options ?? throw new ArgumentNullException(nameof(options));
     }
 
+    /// <summary>Catalog source identifier for remote Ollama library models.</summary>
     public string SourceId => "ollama-remote-library";
 
+    /// <inheritdoc />
     public Task<bool> IsAvailableAsync(CancellationToken cancellationToken = default) =>
         Task.FromResult(_options.CurrentValue.Enabled);
 
+    /// <inheritdoc />
     public async Task<IReadOnlyList<ModelArtifactRecord>> ListAsync(CancellationToken cancellationToken = default)
     {
         if (!_options.CurrentValue.Enabled)
@@ -90,21 +95,26 @@ public sealed class OllamaRemoteLibraryModelArtifactCatalogSource : IRemoteInsta
 
     private sealed class RemoteWireResponse
     {
+        /// <summary>Remote model entries from the wire response.</summary>
         [JsonPropertyName("models")]
         public List<RemoteWireModel> Models { get; init; } = [];
     }
 
     private sealed class RemoteWireModel
     {
+        /// <summary>Model name including tag.</summary>
         [JsonPropertyName("name")]
         public string Name { get; init; } = string.Empty;
 
+        /// <summary>On-disk size in bytes.</summary>
         [JsonPropertyName("size")]
         public long Size { get; init; }
 
+        /// <summary>Last modification timestamp from the remote catalog.</summary>
         [JsonPropertyName("modified_at")]
         public DateTimeOffset? ModifiedAt { get; init; }
 
+        /// <summary>Content digest reported by the remote catalog.</summary>
         [JsonPropertyName("digest")]
         public string? Digest { get; init; }
     }

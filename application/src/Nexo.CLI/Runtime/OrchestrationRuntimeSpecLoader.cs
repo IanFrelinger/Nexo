@@ -10,6 +10,7 @@ namespace Nexo.CLI.Runtime;
 /// </summary>
 public static class OrchestrationRuntimeSpecLoader
 {
+    /// <summary>Creates a new Load instance.</summary>
     public static OrchestrationRuntimeSpec Load(string? path, string? json)
     {
         if (!string.IsNullOrWhiteSpace(json))

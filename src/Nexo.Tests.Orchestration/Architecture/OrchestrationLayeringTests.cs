@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration.Architecture;
 
+/// <summary>Tests for orchestration layering.</summary>
 public sealed class OrchestrationLayeringTests
 {
     [Fact]

@@ -4,6 +4,7 @@ using Nexo.Core.Application.Testing.Models;
 
 namespace Nexo.Tests.CLI.Tests.Commands.SelfExtendGenerated;
 
+/// <summary>Tests for self extend ui demo bundle command structure.</summary>
 public sealed class SelfExtendUiDemoBundleCommandStructureTests : UnitTestBase
 {
     public override Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
@@ -11,6 +12,8 @@ public sealed class SelfExtendUiDemoBundleCommandStructureTests : UnitTestBase
         try
         {
             var command = new SelfExtendUiDemoBundleCommand();
+            /// <summary>Assert equal.</summary>
+            /// <param name="scaffold"">Scaffold".</param>
             AssertEqual("self-extend-ui-demo-bundle", command.Name, "Bundle command name should match scaffold");
             AssertTrue(command.Subcommands.Any(s => string.Equals(s.Name, "ext-domain-knowledge", StringComparison.Ordinal)), "Expected subcommand 'ext-domain-knowledge'");
             AssertTrue(command.Subcommands.Any(s => string.Equals(s.Name, "ext-ui-shell", StringComparison.Ordinal)), "Expected subcommand 'ext-ui-shell'");

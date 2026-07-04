@@ -12,6 +12,8 @@ namespace Nexo.Commercial.Fleet.Infrastructure;
 /// </summary>
 public static class FleetServiceCollectionExtensions
 {
+    /// <summary>Add nexo fleet director operation.</summary>
+    /// <summary>Registers Phase 1 mesh director services and background workers.</summary>
     public static IServiceCollection AddNexoFleetDirector(
         this IServiceCollection services,
         IConfiguration? configuration = null)
@@ -140,7 +142,7 @@ public static class FleetServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Registers the bridge between <see cref="Nexo.Orchestration.Communication.IAgentBus"/> and <see cref="Nexo.Core.Application.Networking.Ports.INetworkBus"/>.
+    /// Registers the bridge between <see cref="Nexo.Orchestration.Communication.IAgentBus"/> and <see cref="Nexo.Commercial.Fleet.Contracts.Networking.Ports.INetworkBus"/>.
     /// </summary>
     public static IServiceCollection AddAgentBusNetworkBridge(
         this IServiceCollection services,

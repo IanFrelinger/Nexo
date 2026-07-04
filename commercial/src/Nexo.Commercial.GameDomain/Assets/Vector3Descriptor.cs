@@ -1,5 +1,4 @@
-namespace Nexo.GameDomain.Assets;
-
+namespace Nexo.Commercial.GameDomain.Assets;
 /// <summary>
 /// Three-component vector used for positions, rotations, and scales in asset descriptors.
 /// </summary>

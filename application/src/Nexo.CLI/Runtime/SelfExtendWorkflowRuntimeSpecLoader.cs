@@ -8,6 +8,7 @@ namespace Nexo.CLI.Runtime;
 /// </summary>
 public static class SelfExtendWorkflowRuntimeSpecLoader
 {
+    /// <summary>Creates a new Load instance.</summary>
     public static SelfExtendWorkflowRuntimeSpec Load(string? path, string? json)
     {
         if (!string.IsNullOrWhiteSpace(json))

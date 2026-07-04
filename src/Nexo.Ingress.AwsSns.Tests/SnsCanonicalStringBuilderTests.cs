@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Nexo.Ingress.AwsSns.Tests;
 
+/// <summary>Tests for sns canonical string builder.</summary>
 public sealed class SnsCanonicalStringBuilderTests
 {
     [Fact]

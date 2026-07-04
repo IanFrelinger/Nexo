@@ -23,7 +23,7 @@ using Nexo.BackgroundAgents.Observation;
 using Nexo.Core.Application.Trust.Ports;
 using Nexo.Infrastructure.Observation;
 using Nexo.Infrastructure.Trust;
-using Nexo.Infrastructure.Sdk.Trust;
+using Nexo.Infrastructure.Trust.Sdk.Extensions;
 using Nexo.Orchestration.Agents;
 
 namespace Nexo.BackgroundAgents;

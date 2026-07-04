@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.API;
 
+/// <summary>Tests for private license middleware.</summary>
 public sealed class PrivateLicenseMiddlewareTests
 {
     [Fact]
@@ -81,12 +82,16 @@ public sealed class PrivateLicenseMiddlewareTests
         return context;
     }
 
+    /// <summary>Tests for stub validator.</summary>
     private sealed class StubValidator : IPrivateLicenseValidator
     {
         private readonly PrivateLicenseStatus _status;
 
+        /// <summary>Stub validator.</summary>
+        /// <param name="status">Status.</param>
         public StubValidator(PrivateLicenseStatus status) => _status = status;
 
+        /// <summary>Gets status.</summary>
         public PrivateLicenseStatus GetStatus() => _status;
     }
 }

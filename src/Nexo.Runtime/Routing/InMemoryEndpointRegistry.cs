@@ -31,6 +31,7 @@ public sealed class InMemoryEndpointRegistry : IEndpointRegistry
         }
     }
 
+    /// <summary>Returns all registered endpoints ordered by priority and name.</summary>
     public IReadOnlyList<EndpointDescriptor> GetAll()
     {
         return _descriptors.Values
@@ -39,6 +40,7 @@ public sealed class InMemoryEndpointRegistry : IEndpointRegistry
             .ToList();
     }
 
+    /// <summary>Registers or replaces an endpoint descriptor.</summary>
     public void Register(EndpointDescriptor descriptor)
     {
         if (descriptor is null)
@@ -46,6 +48,7 @@ public sealed class InMemoryEndpointRegistry : IEndpointRegistry
         _descriptors[descriptor.Endpoint] = descriptor;
     }
 
+    /// <summary>Updates the health flag for a registered endpoint.</summary>
     public void UpdateHealth(string endpoint, bool isHealthy)
     {
         if (string.IsNullOrWhiteSpace(endpoint))

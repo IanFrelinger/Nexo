@@ -8,6 +8,7 @@ namespace Nexo.Infrastructure.Environments;
 /// </summary>
 public sealed class NoOpVectorMapIntelligenceService : IVectorMapIntelligenceService
 {
+    /// <summary>Refine asynchronously.</summary>
     public Task<VectorMapIntelligenceResult> RefineAsync(
         VectorMapIntelligenceRequest request,
         CancellationToken cancellationToken = default)

@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.API;
 
+/// <summary>Tests for nexo api open internet readiness.</summary>
 public sealed class NexoApiOpenInternetReadinessTests
 {
     [Fact]

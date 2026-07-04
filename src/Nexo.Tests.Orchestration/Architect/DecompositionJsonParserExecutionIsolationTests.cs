@@ -8,11 +8,13 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration.Architect;
 
+/// <summary>Tests for decomposition json parser execution isolation.</summary>
 public sealed class DecompositionJsonParserExecutionIsolationTests
 {
     private static DecompositionJsonParser CreateParser()
     {
         var logger = Mock.Of<ILogger<DecompositionJsonParser>>();
+        /// <summary>Decomposition json parser.</summary>
         return new DecompositionJsonParser(logger);
     }
 

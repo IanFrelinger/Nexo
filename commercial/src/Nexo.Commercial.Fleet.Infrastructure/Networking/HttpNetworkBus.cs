@@ -3,11 +3,10 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Nexo.Core.Application.Networking.Models;
-using Nexo.Core.Application.Networking.Ports;
+using Nexo.Commercial.Fleet.Contracts.Networking.Models;
+using Nexo.Commercial.Fleet.Contracts.Networking.Ports;
 
-namespace Nexo.Infrastructure.Networking;
-
+namespace Nexo.Commercial.Fleet.Infrastructure.Networking;
 /// <summary>
 /// HTTP-based network bus: broadcasts by POSTing to all peer URLs,
 /// deduplicates by EventId, respects Hops/MaxHops, optional relay (gossip).
@@ -54,6 +53,7 @@ public sealed class HttpNetworkBus : INetworkBus, IDisposable
             StartHeartbeat();
     }
 
+    /// <summary>node id value.</summary>
     public string NodeId { get; }
 
     public IReadOnlyList<string> ConnectedPeers
@@ -205,6 +205,7 @@ public sealed class HttpNetworkBus : INetworkBus, IDisposable
         }
     }
 
+    /// <summary>Releases resources held by this instance.</summary>
     public void Dispose() => _heartbeatCts?.Cancel();
 
     private sealed class SubscriptionToken : IDisposable
@@ -212,6 +213,7 @@ public sealed class HttpNetworkBus : INetworkBus, IDisposable
         private readonly Action _onDispose;
 
         public SubscriptionToken(Action onDispose) => _onDispose = onDispose;
+        /// <summary>Releases resources held by this instance.</summary>
         public void Dispose() => _onDispose();
     }
 }

@@ -34,14 +34,14 @@ Observation to keep out of this sprint's scope: `application/Nexo.Application.sl
 
 ## Open decisions for owner
 
-- **Vertical code extraction:** `Nexo.GameDomain` and its tests now live under `commercial/`; Game Director code/test projects are marked commercial in place and can be physically moved/renamed in a later cleanup.
+- **Vertical code extraction:** `Nexo.Commercial.GameDomain` and its tests now live under `commercial/`; Game Director code/test projects are marked commercial in place and can be physically moved/renamed in a later cleanup.
 - **Mesh/federation extraction:** Technical docs and product docs both reference mesh. Fleet-scale mesh/governance code is woven through open projects today, so commercial marking requires extraction into separate projects first.
 - **API host boundary:** `Nexo.API` is open for now as a single-node host. Any org-scale governance, RBAC/SSO, aggregate audit, or fleet-control-plane endpoints should move to a separate commercial host or module before commercial marking.
 - **CI consolidation and branch protection:** `docs/CiGateInventory.md` identifies blocking candidates, advisory/manual workflows, release gates, and consolidation candidates. The owner must decide which checks are truly required for branch protection before any workflow cleanup is attempted.
 
 ## License extraction required
 
-The revised open-core boundary principle was checked against current project references before marking vertical code projects commercial. The GameDomain/GameDirector vertical split is now unblocked: `Nexo.API`, `Nexo.CLI`, and `Nexo.Tests.CLI` do not reference GameDomain/GameDirector projects; `Nexo.GameDomain` and its tests have moved to `commercial/`; and Game Director code/test projects are marked commercial in place.
+The revised open-core boundary principle was checked against current project references before marking vertical code projects commercial. The GameDomain/GameDirector vertical split is now unblocked: `Nexo.API`, `Nexo.CLI`, and `Nexo.Tests.CLI` do not reference GameDomain/GameDirector projects; `Nexo.Commercial.GameDomain` and its tests have moved to `commercial/`; and Game Director code/test projects are marked commercial in place.
 
 Fleet-scale mesh/governance code also appears to be woven into Tier 1 candidate projects rather than isolated behind separate commercial projects. Namespaces/files that likely need extraction before they can be marked commercial include:
 
@@ -56,7 +56,7 @@ Resolution applied in this sprint: move GameDomain code/tests to `commercial/`, 
 
 CI stabilization note: `apps/runtime-studio/COMMERCIAL-LICENSE.md` initially exposed a Runtime Studio forge-smoke failure in `background-agent proposals build --repo-root .`: `dotnet build -c Release` was ambiguous at the repo root because multiple project/solution files are present. The follow-up fix teaches `dotnet.build` / `forge.build` to choose `Nexo.LocalDevCore.slnf` (or `Nexo.Core.slnf`) when invoked from the repo root, so the Runtime Studio commercial stub can be present without tripping that smoke gate. Application `.csproj` files are also left untouched in the PR diff so the layer-boundary gate can pass against `master`; their effective package license is supplied by repository-wide MSBuild defaults.
 
-API/CLI seam progress: the Forge HTTP surface has been moved out of `Nexo.API` and into the Game Director/MCP application layer. `Nexo.API`, `Nexo.CLI`, and `Nexo.Tests.CLI` no longer reference `Nexo.GameDomain`; Unity pipeline helpers now live in the open CLI surface.
+API/CLI seam progress: the Forge HTTP surface has been moved out of `Nexo.API` and into the Game Director/MCP application layer. `Nexo.API`, `Nexo.CLI`, and `Nexo.Tests.CLI` no longer reference `Nexo.Commercial.GameDomain`; Unity pipeline helpers now live in the open CLI surface.
 
 ## Suggested follow-up issues
 

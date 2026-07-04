@@ -24,8 +24,10 @@ public sealed class JwtClaimBarrierResolver : IBarrierIdentityResolver
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>Resolver identifier used in audit and diagnostics.</summary>
     public string ResolverName => "JwtClaim";
 
+    /// <summary>Attempts to resolve barrier level from pre-validated JWT claim values.</summary>
     public ValueTask<BarrierResolutionResult?> TryResolveAsync(
         BarrierResolutionContext context,
         CancellationToken cancellationToken = default)

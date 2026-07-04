@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration.Validation;
 
+/// <summary>Tests for coverage checker.</summary>
 public class CoverageCheckerTests
 {
     private readonly Mock<ILogger<CoverageChecker>> _loggerMock;

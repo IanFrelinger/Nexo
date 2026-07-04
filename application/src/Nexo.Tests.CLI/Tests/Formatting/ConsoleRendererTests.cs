@@ -9,25 +9,40 @@ using System.Text.Json;
 
 namespace Nexo.Tests.CLI.Tests.Formatting;
 
+/// <summary>Tests for console renderer.</summary>
 public class ConsoleRendererTests : UnitTestBase
 {
     public override Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
+            /// <summary>Test render success.</summary>
             TestRenderSuccess();
+            /// <summary>Test render error.</summary>
             TestRenderError();
+            /// <summary>Test render error with code.</summary>
             TestRenderErrorWithCode();
+            /// <summary>Test render progress start.</summary>
             TestRenderProgressStart();
+            /// <summary>Test render progress complete.</summary>
             TestRenderProgressComplete();
+            /// <summary>Test render progress.</summary>
             TestRenderProgress();
+            /// <summary>Test render analysis result.</summary>
             TestRenderAnalysisResult();
+            /// <summary>Test render analysis result json.</summary>
             TestRenderAnalysisResultJson();
+            /// <summary>Test render validation result.</summary>
             TestRenderValidationResult();
+            /// <summary>Test render validation result json.</summary>
             TestRenderValidationResultJson();
+            /// <summary>Test render agent result.</summary>
             TestRenderAgentResult();
+            /// <summary>Test render agent result json.</summary>
             TestRenderAgentResultJson();
+            /// <summary>Test render agent list.</summary>
             TestRenderAgentList();
+            /// <summary>Test render agent list json.</summary>
             TestRenderAgentListJson();
 
             return Task.FromResult(new TestResult

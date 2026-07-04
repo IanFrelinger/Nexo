@@ -1,5 +1,6 @@
 namespace Nexo.API.Middleware.Ingress;
 
+/// <summary>Ingress capability.</summary>
 public static class IngressCapability
 {
     public const string WebSocket = "websocket";

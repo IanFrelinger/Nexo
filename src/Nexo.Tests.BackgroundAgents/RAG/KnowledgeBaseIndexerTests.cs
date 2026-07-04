@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.RAG;
 
+/// <summary>Tests for knowledge base indexer.</summary>
 public class KnowledgeBaseIndexerTests : IDisposable
 {
     private readonly string _tempDir;

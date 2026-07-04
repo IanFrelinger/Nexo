@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration.Tests;
 
+/// <summary>Tests for orchestration metrics.</summary>
 public sealed class OrchestrationMetricsTests
 {
     private readonly OrchestrationMetrics _sut;

@@ -1,5 +1,4 @@
-namespace Nexo.GameDomain.Environments;
-
+namespace Nexo.Commercial.GameDomain.Environments;
 /// <summary>
 /// One composable level in a voxel environment pyramid. Analogous to a zoom level in a tiled map
 /// database: each tier defines spatial resolution (voxel size), chunk granularity, and optional
@@ -10,7 +9,7 @@ namespace Nexo.GameDomain.Environments;
 /// Larger indices are coarser summaries used farther from the camera or for previews.
 /// </param>
 /// <param name="DetailFactor">
-/// Normalised detail in <c>[0, 1]</c>, aligned with <see cref="Nexo.GameDomain.Aesthetics.LodLevel.DetailFactor"/>.
+/// Normalised detail in <c>[0, 1]</c>, aligned with <see cref="Nexo.Commercial.GameDomain.Aesthetics.LodLevel.DetailFactor"/>.
 /// For voxels: typically <c>1</c> at tier 0 and decreasing for coarser tiers.
 /// </param>
 /// <param name="VoxelSizeMeters">

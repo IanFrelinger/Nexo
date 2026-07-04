@@ -24,6 +24,10 @@ public class AnalyzeCodeHandler : IRequestHandler<AnalyzeCodeCommand, AnalysisRe
     private readonly ILogger<AnalyzeCodeHandler> _logger;
     private readonly IMetricsCollector? _metricsCollector;
 
+    /// <summary>Creates a handler that runs analysis via <see cref="IAnalysisService"/>.</summary>
+    /// <param name="analysisService">Service that performs code analysis.</param>
+    /// <param name="logger">Logger for analysis progress and errors.</param>
+    /// <param name="metricsCollector">Optional metrics collector for execution telemetry.</param>
     public AnalyzeCodeHandler(
         IAnalysisService analysisService,
         ILogger<AnalyzeCodeHandler> logger,

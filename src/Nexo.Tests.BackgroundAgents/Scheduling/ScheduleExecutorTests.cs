@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.Scheduling;
 
+/// <summary>Tests for schedule executor.</summary>
 public class ScheduleExecutorTests
 {
     [Fact]
@@ -94,6 +95,9 @@ public class ScheduleExecutorTests
             State = BackgroundAgentState.Running
         };
 
+        /// <summary>Execute once.</summary>
+        /// <param name="i">I.</param>
+        /// <param name="ct">Cancellation token.</param>
         static Task ExecuteOnce(BackgroundAgentInstance i, CancellationToken ct) => Task.CompletedTask;
 
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(1));

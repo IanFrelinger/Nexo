@@ -1,7 +1,6 @@
 using Nexo.Core.Domain;
 
-namespace Nexo.Infrastructure.Execution;
-
+namespace Nexo.Commercial.Fleet.Infrastructure.Execution;
 /// <summary>
 /// Configuration for <see cref="BrickUsageTracker"/> rolling window and aggregation.
 /// </summary>

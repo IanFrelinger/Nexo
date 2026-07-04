@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.Objectives;
 
+/// <summary>Tests for objective document parser.</summary>
 public class ObjectiveDocumentParserTests
 {
     [Fact]

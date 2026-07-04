@@ -2,8 +2,13 @@ using Nexo.Core.Application.Common.Ports;
 
 namespace Nexo.Core.Application.Common.Services;
 
+/// <summary>
+/// Baseline sequential implementation of <see cref="ILoopKernel"/>.
+/// Honors cancellation, max-iteration, and time-budget options.
+/// </summary>
 public sealed class SequentialLoopKernel : ILoopKernel
 {
+    /// <inheritdoc />
     public LoopResult ForEach<T>(
         IEnumerable<T> items,
         Func<T, int, CancellationToken, LoopAction> body,
@@ -42,6 +47,7 @@ public sealed class SequentialLoopKernel : ILoopKernel
         return new LoopResult { Completed = true, Iterations = i };
     }
 
+    /// <inheritdoc />
     public async ValueTask<LoopResult> ForEachAsync<T>(
         IEnumerable<T> items,
         Func<T, int, CancellationToken, ValueTask<LoopAction>> body,
@@ -80,6 +86,7 @@ public sealed class SequentialLoopKernel : ILoopKernel
         return new LoopResult { Completed = true, Iterations = i };
     }
 
+    /// <inheritdoc />
     public IReadOnlyList<TOut> SelectToList<TIn, TOut>(
         IEnumerable<TIn> items,
         Func<TIn, int, CancellationToken, TOut> map,
@@ -99,4 +106,3 @@ public sealed class SequentialLoopKernel : ILoopKernel
         return list;
     }
 }
-

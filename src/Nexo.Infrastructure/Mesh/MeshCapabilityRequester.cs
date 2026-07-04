@@ -21,6 +21,7 @@ public sealed class MeshCapabilityRequester : ICapabilityRequester
     private readonly int _pollIntervalMs;
     private readonly PeerTrustPolicyResolver _trustPolicy;
 
+    /// <summary>Initializes a new mesh capability requester.</summary>
     public MeshCapabilityRequester(
         ICapabilityAdvertisement advertisement,
         ILocalTransport transport,

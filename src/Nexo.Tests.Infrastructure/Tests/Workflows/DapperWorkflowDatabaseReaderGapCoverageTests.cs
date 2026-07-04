@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Workflows;
 
+/// <summary>Tests for dapper workflow database reader gap coverage.</summary>
 public sealed class DapperWorkflowDatabaseReaderGapCoverageTests
 {
     [Theory]

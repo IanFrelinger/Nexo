@@ -10,6 +10,7 @@ public sealed class ChangelogGenerator : IChangelogGenerator
 {
     private readonly IAdaptationLog _adaptationLog;
 
+    /// <summary>Initializes a new changelog generator.</summary>
     public ChangelogGenerator(IAdaptationLog adaptationLog)
     {
         _adaptationLog = adaptationLog ?? throw new ArgumentNullException(nameof(adaptationLog));

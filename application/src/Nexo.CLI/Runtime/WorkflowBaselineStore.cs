@@ -2,38 +2,16 @@ using System.Text.Json;
 
 namespace Nexo.CLI.Runtime;
 
-public sealed record WorkflowGatePolicySpec
-{
-    public string? Name { get; init; }
-    public string? BenchmarkSet { get; init; }
-    public double? MinSuccessRateDelta { get; init; }
-    public long? MaxP95LatencyRegressionMs { get; init; }
-    public long? MaxAverageLatencyRegressionMs { get; init; }
-    public double? MinAverageScoreDelta { get; init; }
-    public int? MaxRegressedScenarios { get; init; }
-}
-
-public sealed record WorkflowBaselineRecord
-{
-    public string BaselineId { get; init; } = string.Empty;
-    public string BenchmarkSet { get; init; } = "workflow-lab";
-    public string RunId { get; init; } = string.Empty;
-    public string GitSha { get; init; } = string.Empty;
-    public string SpecHash { get; init; } = string.Empty;
-    public string ProviderSnapshot { get; init; } = string.Empty;
-    public DateTimeOffset PromotedAtUtc { get; init; } = DateTimeOffset.UtcNow;
-    public bool Active { get; init; } = true;
-    public string? Notes { get; init; }
-    public WorkflowGatePolicySpec? Policy { get; init; }
-}
-
+/// <summary>Workflow baseline store.</summary>
 public static class WorkflowBaselineStore
 {
     private const string RelativePath = ".nexo/runtime/workflow_lab_baselines.json";
 
+    /// <summary>Resolves the workflow baseline file path under the repository root.</summary>
     public static string GetPath(string repoRoot)
         => Path.GetFullPath(Path.Combine(repoRoot, RelativePath));
 
+    /// <summary>Reads all baseline records ordered by promotion time descending.</summary>
     public static IReadOnlyList<WorkflowBaselineRecord> ReadAll(string repoRoot)
     {
         var path = GetPath(repoRoot);
@@ -54,6 +32,7 @@ public static class WorkflowBaselineStore
         }
     }
 
+    /// <summary>Reads the active baseline for a benchmark set, if one exists.</summary>
     public static WorkflowBaselineRecord? ReadActive(string repoRoot, string benchmarkSet)
     {
         var normalized = NormalizeBenchmarkSet(benchmarkSet);
@@ -63,6 +42,7 @@ public static class WorkflowBaselineStore
                 string.Equals(x.BenchmarkSet, normalized, StringComparison.OrdinalIgnoreCase));
     }
 
+    /// <summary>Reads a baseline record by identifier.</summary>
     public static WorkflowBaselineRecord? ReadById(string repoRoot, string baselineId)
     {
         if (string.IsNullOrWhiteSpace(baselineId))
@@ -72,6 +52,7 @@ public static class WorkflowBaselineStore
             .FirstOrDefault(x => string.Equals(x.BaselineId, normalized, StringComparison.OrdinalIgnoreCase));
     }
 
+    /// <summary>Promotes a baseline candidate and deactivates prior active rows for the same benchmark set.</summary>
     public static WorkflowBaselineRecord Promote(string repoRoot, WorkflowBaselineRecord candidate)
     {
         var baseline = candidate with
@@ -97,6 +78,7 @@ public static class WorkflowBaselineStore
         return baseline;
     }
 
+    /// <summary>Persists baseline records to disk under the repository root.</summary>
     private static void Persist(string repoRoot, IReadOnlyList<WorkflowBaselineRecord> items)
     {
         var path = GetPath(repoRoot);

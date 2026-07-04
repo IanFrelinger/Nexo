@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.ExecutionPlatform;
 
+/// <summary>Tests for docker execution platform gap coverage.</summary>
 public sealed class DockerExecutionPlatformGapCoverageTests
 {
     [Fact]

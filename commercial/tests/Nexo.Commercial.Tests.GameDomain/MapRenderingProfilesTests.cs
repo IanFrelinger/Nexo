@@ -1,8 +1,7 @@
 using FluentAssertions;
-using Nexo.GameDomain.Aesthetics;
+using Nexo.Commercial.GameDomain.Aesthetics;
 
-namespace Nexo.Tests.GameDomain;
-
+namespace Nexo.Commercial.Tests.GameDomain;
 /// <summary>
 /// Guards stable string identifiers used by hosts to branch map pipelines.
 /// </summary>

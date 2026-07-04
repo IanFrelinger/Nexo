@@ -1,5 +1,4 @@
-namespace Nexo.Core.Application.Networking.Models;
-
+namespace Nexo.Commercial.Fleet.Contracts.Networking.Models;
 /// <summary>
 /// Aggregated metrics for the plasticity (networking/usage/cache) subsystem.
 /// </summary>

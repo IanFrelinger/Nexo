@@ -13,6 +13,7 @@ public sealed class HttpWorkflowWebhookClient : IWorkflowWebhookClient
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ILogger<HttpWorkflowWebhookClient>? _logger;
 
+    /// <summary>Initializes a new http workflow webhook client.</summary>
     public HttpWorkflowWebhookClient(
         IHttpClientFactory httpClientFactory,
         ILogger<HttpWorkflowWebhookClient>? logger = null)
@@ -21,6 +22,7 @@ public sealed class HttpWorkflowWebhookClient : IWorkflowWebhookClient
         _logger = logger;
     }
 
+    /// <summary>Get asynchronously.</summary>
     public async Task<string> GetAsync(string url, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(url))
@@ -32,6 +34,7 @@ public sealed class HttpWorkflowWebhookClient : IWorkflowWebhookClient
         return await response.Content.ReadAsStringAsync(ct);
     }
 
+    /// <summary>Post asynchronously.</summary>
     public async Task PostAsync(string url, object data, CancellationToken ct = default)
     {
         if (string.IsNullOrWhiteSpace(url))

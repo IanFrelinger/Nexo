@@ -12,6 +12,7 @@ namespace Nexo.Infrastructure.Environments;
 /// </summary>
 public static class MapDataServiceCollectionExtensions
 {
+    /// <summary>Adds map data provider routing.</summary>
     public static IServiceCollection AddMapDataProviderRouting(this IServiceCollection services)
     {
         services.TryAddSingleton<IMapDataProviderRouter, MapDataProviderRouter>();

@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Nexo.Commercial.Tests.Fleet;
 
+/// <summary>Tests for mesh fleet registration keys gap coverage.</summary>
 public sealed class MeshFleetRegistrationKeysGapCoverageTests
 {
     [Theory]
@@ -38,36 +39,5 @@ public sealed class MeshFleetRegistrationKeysGapCoverageTests
     {
         MeshFleetRegistrationKeys.IsDistinctFromDirectorKey(" same ", "same").Should().BeFalse();
         MeshFleetRegistrationKeys.IsDistinctFromDirectorKey("peer", "director").Should().BeTrue();
-    }
-}
-
-public sealed class MeshElasticSchedulingOptionsGapCoverageTests
-{
-    [Fact]
-    public void Defaults_match_expected_elastic_scheduling_configuration()
-    {
-        var options = new MeshElasticSchedulingOptions();
-
-        MeshElasticSchedulingOptions.SectionPath.Should().Be("Nexo:Mesh:Elastic");
-        options.Enabled.Should().BeFalse();
-        options.IntervalMinutes.Should().Be(2);
-        options.PendingStaleSeconds.Should().Be(120);
-    }
-}
-
-public sealed class MeshPeerKnowledgeSyncOptionsGapCoverageTests
-{
-    [Fact]
-    public void Defaults_match_expected_knowledge_sync_configuration()
-    {
-        var options = new MeshPeerKnowledgeSyncOptions();
-
-        MeshPeerKnowledgeSyncOptions.SectionPath.Should().Be("Nexo:Mesh:KnowledgeSync");
-        options.Enabled.Should().BeFalse();
-        options.PeerBaseUrls.Should().BeEmpty();
-        options.IntervalMinutes.Should().Be(15);
-        options.SinceLookbackMultiplier.Should().Be(2);
-        options.MaxAdaptations.Should().Be(500);
-        options.MaxPatterns.Should().Be(500);
     }
 }

@@ -3,8 +3,11 @@ using Nexo.Spatial.Platform.VisionPro.Interop;
 
 namespace Nexo.Spatial.Platform.VisionPro;
 
+/// <summary>Vision pro tracking state mapper.</summary>
 internal static class VisionProTrackingStateMapper
 {
+    /// <summary>To pose sample.</summary>
+    /// <param name="frame">Frame.</param>
     internal static PoseSample ToPoseSample(VisionProNativePoseFrame frame) =>
         new(
             new SpatialVector3(frame.PositionX, frame.PositionY, frame.PositionZ),
@@ -13,6 +16,8 @@ internal static class VisionProTrackingStateMapper
             frame.Timestamp,
             MapTrackingState(frame.TrackingQuality));
 
+    /// <summary>Map tracking state.</summary>
+    /// <param name="quality">Quality.</param>
     internal static TrackingState MapTrackingState(VisionProNativeTrackingQuality quality) =>
         quality switch
         {
@@ -21,6 +26,8 @@ internal static class VisionProTrackingStateMapper
             _ => TrackingState.Lost
         };
 
+    /// <summary>Map confidence.</summary>
+    /// <param name="quality">Quality.</param>
     internal static double MapConfidence(VisionProNativeTrackingQuality quality) =>
         quality switch
         {

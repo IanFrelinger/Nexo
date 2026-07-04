@@ -1,5 +1,4 @@
-namespace Nexo.GameDomain.Aesthetics;
-
+namespace Nexo.Commercial.GameDomain.Aesthetics;
 /// <summary>
 /// Identifiers for how real-world map data is rasterised or meshed for play,
 /// independent of <see cref="AestheticPack.GeometryStrategy"/> (which targets authored scene content).

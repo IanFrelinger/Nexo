@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Trust;
 
+/// <summary>Tests for in memory user knowledge log store gap coverage.</summary>
 public sealed class InMemoryUserKnowledgeLogStoreGapCoverageTests
 {
     [Fact]

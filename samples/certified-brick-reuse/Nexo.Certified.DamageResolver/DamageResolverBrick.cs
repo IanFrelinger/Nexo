@@ -1,9 +1,9 @@
 using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Execution;
 
-namespace GeneratedBricks;
-
-public sealed class DamageResolverBrick : Brick
+namespace Nexo.Certified.DamageResolver;
+/// <summary>Damage resolver brick.</summary>
+public sealed class DamageResolverBrick : DomainBrick
 {
     public DamageResolverBrick()
     {

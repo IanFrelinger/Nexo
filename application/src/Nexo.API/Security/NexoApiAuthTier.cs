@@ -5,12 +5,12 @@ namespace Nexo.API.Security;
 /// </summary>
 public enum NexoApiAuthTier
 {
+    /// <summary>No authenticated tier (anonymous or bypassed routes).</summary>
     None = 0,
-    Full = 1,
-    CopilotScoped = 2
-}
 
-public static class NexoAuthContextKeys
-{
-    public const string AuthTier = "Nexo.ApiAuthTier";
+    /// <summary>Full API access tier.</summary>
+    Full = 1,
+
+    /// <summary>Copilot-scoped access tier with reduced mutating privileges.</summary>
+    CopilotScoped = 2
 }

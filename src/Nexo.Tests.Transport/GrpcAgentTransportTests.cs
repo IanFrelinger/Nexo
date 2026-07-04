@@ -17,6 +17,7 @@ using Xunit;
 
 namespace Nexo.Tests.Transport;
 
+/// <summary>Tests for grpc agent transport.</summary>
 [Collection("GrpcTransportEnvironment")]
 public sealed class GrpcAgentTransportTests
 {
@@ -172,6 +173,7 @@ public sealed class GrpcAgentTransportTests
         output.Should().ContainKey("nullValue");
     }
 
+    /// <summary>Capture invocation transport.</summary>
     private sealed class CaptureInvocationTransport : IAgentTransport
     {
         private readonly Action<AgentInvocationRequest> _onInvoke;
@@ -183,6 +185,7 @@ public sealed class GrpcAgentTransportTests
 
         public Task<AgentResult> SendAsync(AgentInvocationRequest request, CancellationToken cancellationToken = default)
         {
+            /// <summary>_on invoke.</summary>
             _onInvoke(request);
             return Task.FromResult(new AgentResult(
                 Success: true,
@@ -195,6 +198,7 @@ public sealed class GrpcAgentTransportTests
             => Task.FromResult(new TransportHealth(true, "capture"));
     }
 
+    /// <summary>Echo transport.</summary>
     private sealed class EchoTransport : IAgentTransport
     {
         private readonly TimeSpan _delay;
@@ -222,6 +226,7 @@ public sealed class GrpcAgentTransportTests
             => Task.FromResult(new TransportHealth(true, "echo"));
     }
 
+    /// <summary>Grpc server fixture.</summary>
     private sealed class GrpcServerFixture : IAsyncDisposable
     {
         private readonly WebApplication _app;
@@ -232,6 +237,7 @@ public sealed class GrpcAgentTransportTests
             Endpoint = endpoint;
         }
 
+        /// <summary>Endpoint.</summary>
         public string Endpoint { get; }
 
         public static async Task<GrpcServerFixture> StartAsync(IAgentTransport localTransport)
@@ -265,6 +271,7 @@ public sealed class GrpcAgentTransportTests
             app.MapNexoGrpcServer();
             await app.StartAsync();
 
+            /// <summary>Grpc server fixture.</summary>
             return new GrpcServerFixture(app, endpoint);
         }
 
@@ -284,6 +291,7 @@ public sealed class GrpcAgentTransportTests
         }
     }
 
+    /// <summary>Environment variable scope.</summary>
     private sealed class EnvironmentVariableScope : IDisposable
     {
         private readonly string _key;

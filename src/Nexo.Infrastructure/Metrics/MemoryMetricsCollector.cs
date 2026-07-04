@@ -22,11 +22,13 @@ public class MemoryMetricsCollector : IMetricsCollector
     private readonly ConcurrentDictionary<string, long> _counters = new();
     private readonly ILogger<MemoryMetricsCollector> _logger;
 
+    /// <summary>Initializes a new memory metrics collector.</summary>
     public MemoryMetricsCollector(ILogger<MemoryMetricsCollector> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>Record execution time.</summary>
     public void RecordExecutionTime(string operationName, TimeSpan duration)
     {
         _executionTimes.AddOrUpdate(
@@ -40,6 +42,7 @@ public class MemoryMetricsCollector : IMetricsCollector
             duration.TotalMilliseconds);
     }
 
+    /// <summary>Increment counter.</summary>
     public void IncrementCounter(string counterName, int value = 1)
     {
         _counters.AddOrUpdate(
@@ -53,6 +56,7 @@ public class MemoryMetricsCollector : IMetricsCollector
             _counters[counterName]);
     }
 
+    /// <summary>Get snapshot asynchronously.</summary>
     public Task<MetricsSnapshot> GetSnapshotAsync(CancellationToken cancellationToken = default)
     {
         var snapshot = new MetricsSnapshot

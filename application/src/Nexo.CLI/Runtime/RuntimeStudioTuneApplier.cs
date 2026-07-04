@@ -3,8 +3,6 @@ using System.Text.Json.Nodes;
 
 namespace Nexo.CLI.Runtime;
 
-public sealed record RuntimeStudioTuneApplyResult(bool Ok, string Summary, IReadOnlyList<string>? UpdatedAgentIds = null);
-
 /// <summary>
 /// Maps the last workflow-lab winner onto Runtime Studio <c>agent_set</c> Ollama <c>ModelName</c> fields.
 /// </summary>
@@ -21,6 +19,7 @@ public static class RuntimeStudioTuneApplier
         ("runtime-worker-optimizer", "builder-1")
     };
 
+    /// <summary>Creates a new Apply instance.</summary>
     public static RuntimeStudioTuneApplyResult Apply(
         string repoRoot,
         string specPath,

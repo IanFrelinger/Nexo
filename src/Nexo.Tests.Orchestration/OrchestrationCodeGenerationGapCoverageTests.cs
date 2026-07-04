@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration;
 
+/// <summary>Tests for orchestration code generation gap coverage.</summary>
 public class OrchestrationCodeGenerationGapCoverageTests
 {
     [Fact]

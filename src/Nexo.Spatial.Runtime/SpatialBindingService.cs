@@ -28,6 +28,7 @@ public sealed class SpatialBindingService : IDisposable
         _consumer = consumer ?? new PoseStreamConsumer();
     }
 
+    /// <summary>Attempts a one-shot bind of pose tracking to a certified physical atom.</summary>
     public SpatialBindingResult TryBind(string markerPayload)
     {
         var resolve = _resolver.Resolve(markerPayload);
@@ -45,6 +46,7 @@ public sealed class SpatialBindingService : IDisposable
         return SpatialBindingResult.ActiveBinding(processed, resolve.Record);
     }
 
+    /// <summary>Observes continuous bound pose updates for a certified atom.</summary>
     public IObservable<SpatialBindingUpdate> ObserveBoundPose(string atomId, string markerPayload)
     {
         lock (_gate)
@@ -70,6 +72,7 @@ public sealed class SpatialBindingService : IDisposable
         }
     }
 
+    /// <summary>Disposes all active binding sessions.</summary>
     public void Dispose()
     {
         lock (_gate)
@@ -169,43 +172,4 @@ public sealed class SpatialBindingService : IDisposable
             _updates.Dispose();
         }
     }
-}
-
-/// <summary>
-/// Continuous bound pose update emitted by <see cref="SpatialBindingService"/>.
-/// </summary>
-public sealed class SpatialBindingUpdate
-{
-    public SpatialBindingUpdate(
-        bool active,
-        bool lost,
-        string? rejectionCode,
-        ProcessedPoseSample? processedPose,
-        ResolvedAtomIdentity? identity)
-    {
-        Active = active;
-        Lost = lost;
-        RejectionCode = rejectionCode?.Trim();
-        ProcessedPose = processedPose;
-        Identity = identity;
-    }
-
-    public bool Active { get; }
-
-    public bool Lost { get; }
-
-    public string? RejectionCode { get; }
-
-    public ProcessedPoseSample? ProcessedPose { get; }
-
-    public ResolvedAtomIdentity? Identity { get; }
-
-    public static SpatialBindingUpdate RejectedUpdate(string rejectionCode) =>
-        new(false, false, rejectionCode, null, null);
-
-    public static SpatialBindingUpdate LostUpdate(string reason) =>
-        new(false, true, reason, null, null);
-
-    public static SpatialBindingUpdate ActiveUpdate(ProcessedPoseSample processedPose, ResolvedAtomIdentity identity) =>
-        new(true, false, null, processedPose, identity);
 }

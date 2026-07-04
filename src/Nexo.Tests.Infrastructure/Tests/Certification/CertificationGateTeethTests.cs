@@ -10,6 +10,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Certification;
 
+/// <summary>Tests for certification gate teeth.</summary>
 [Trait("Category", "Certification")]
 public sealed class CertificationGateTeethTests
 {
@@ -36,13 +37,14 @@ public sealed class CertificationGateTeethTests
                 new Dictionary<string, object> { ["errorCount"] = 2 })
         ]);
 
+    /// <summary>Creates gate.</summary>
     private static CertificationGate CreateGate() => new(new CertificationRecordSigner());
 
     private static List<string> CompilationReferences()
     {
         return
         [
-            typeof(Brick).Assembly.Location,
+            typeof(DomainBrick).Assembly.Location,
             typeof(BrickInput).Assembly.Location,
             typeof(MutationProbeBrick).Assembly.Location
         ];

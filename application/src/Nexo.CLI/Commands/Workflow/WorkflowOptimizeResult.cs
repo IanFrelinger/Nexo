@@ -1,0 +1,27 @@
+namespace Nexo.CLI.Commands.Workflow;
+
+internal sealed record WorkflowOptimizeResult(
+    bool Ok,
+    string Summary,
+    string? SessionRunId = null,
+    string? BenchmarkSet = null,
+    string? RecommendationReportPath = null,
+    IReadOnlyList<WorkflowOptimizeCandidate>? Candidates = null,
+    WorkflowOptimizeCandidate? Winner = null,
+    IReadOnlyList<WorkflowOptimizeRecommendation>? Recommendations = null,
+    string? PromotionSummary = null,
+    string? PromotedBaselineId = null,
+    string? Objective = null,
+    string? ObjectiveFile = null,
+    string? SearchStrategy = null,
+    int? BudgetRuns = null,
+    int? MeasuredRunsUsed = null,
+    int? EarlyStopMinRuns = null,
+    double? EarlyStopMinSuccessRate = null,
+    int? SynthesizedCandidateCount = null,
+    int? AdaptiveSynthesizedCandidateCount = null,
+    double? WinnerConfidence = null,
+    double? PromotionConfidenceThreshold = null,
+    IReadOnlyList<OptimizeAllocationTrace>? AllocationTrace = null,
+    IReadOnlyList<TargetAllocationStat>? TargetAllocations = null,
+    IReadOnlyList<CandidateAllocationStat>? CandidateAllocations = null);

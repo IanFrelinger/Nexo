@@ -206,14 +206,3 @@ public sealed class AudioAssetAgent : BaseAssetAgent
         return 10; // Default 10 seconds
     }
 }
-
-/// <summary>
-/// Generated audio asset.
-/// </summary>
-internal sealed record GeneratedAudioAsset : GeneratedAssetBase
-{
-    public required string MimeType { get; init; }
-    public required int DurationMs { get; init; }
-    public int? SampleRate { get; init; }
-}
-

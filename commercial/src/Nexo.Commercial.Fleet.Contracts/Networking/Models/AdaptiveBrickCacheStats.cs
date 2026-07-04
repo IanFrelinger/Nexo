@@ -1,5 +1,4 @@
-namespace Nexo.Core.Application.Networking.Models;
-
+namespace Nexo.Commercial.Fleet.Contracts.Networking.Models;
 /// <summary>
 /// Statistics for the adaptive brick cache (hit rate, entries, evictions).
 /// </summary>

@@ -22,14 +22,18 @@ public class SecurityAnalysisRule : IAnalysisRule
 {
     private readonly ILogger<SecurityAnalysisRule> _logger;
 
+    /// <summary>Initializes a new security analysis rule.</summary>
     public SecurityAnalysisRule(ILogger<SecurityAnalysisRule> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>Name.</summary>
     public string Name => "SecurityScan";
+    /// <summary>Description.</summary>
     public string Description => "Scans assemblies for security vulnerabilities";
 
+    /// <summary>Analyze asynchronously.</summary>
     public async Task<IReadOnlyList<Violation>> AnalyzeAsync(
         FileInfo assemblyFile,
         CancellationToken cancellationToken = default)

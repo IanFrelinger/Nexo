@@ -2,12 +2,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Nexo.Tests.Infrastructure.Barriers.Identity;
 
-internal sealed record TestLogEntry(
-    LogLevel Level,
-    string Message,
-    Exception? Exception,
-    IReadOnlyDictionary<string, object?> Properties);
-
+/// <summary>Test logger.</summary>
 internal sealed class TestLogger<T> : ILogger<T>
 {
     private readonly List<TestLogEntry> _entries = [];
@@ -26,6 +21,8 @@ internal sealed class TestLogger<T> : ILogger<T>
 
     public IDisposable BeginScope<TState>(TState state) where TState : notnull => NullScope.Instance;
 
+    /// <summary>Returns whether  enabled.</summary>
+    /// <param name="logLevel">Log level.</param>
     public bool IsEnabled(LogLevel logLevel) => true;
 
     public void Log<TState>(
@@ -58,9 +55,11 @@ internal sealed class TestLogger<T> : ILogger<T>
         }
     }
 
+    /// <summary>Null scope.</summary>
     private sealed class NullScope : IDisposable
     {
         public static readonly NullScope Instance = new();
+        /// <summary>Dispose.</summary>
         public void Dispose() { }
     }
 }

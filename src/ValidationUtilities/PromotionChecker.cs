@@ -3,6 +3,7 @@ using System.IO;
 
 namespace ValidationUtilities;
 
+/// <summary>Promotion checker.</summary>
 public class PromotionChecker
 {
     public static int Run(string[] args)

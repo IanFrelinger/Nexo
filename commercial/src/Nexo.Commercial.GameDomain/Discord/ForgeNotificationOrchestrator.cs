@@ -1,5 +1,4 @@
-namespace Nexo.GameDomain.Discord;
-
+namespace Nexo.Commercial.GameDomain.Discord;
 /// <summary>
 /// Orchestrates the full notification flow: reads playtest reports,
 /// formats them for Discord, posts summaries and video clips,
@@ -27,7 +26,9 @@ public sealed class ForgeNotificationOrchestrator : IDisposable
             _gateway = new DiscordGatewayClient(config.BotToken, config.ChannelId);
     }
 
+    /// <summary>Whether configured.</summary>
     public bool IsConfigured => _webhook != null;
+    /// <summary>Whether s bidirectional.</summary>
     public bool HasBidirectional => _gateway != null;
 
     /// <summary>
@@ -100,6 +101,7 @@ public sealed class ForgeNotificationOrchestrator : IDisposable
         return result;
     }
 
+    /// <summary>Releases resources held by this instance.</summary>
     public void Dispose()
     {
         _webhook?.Dispose();

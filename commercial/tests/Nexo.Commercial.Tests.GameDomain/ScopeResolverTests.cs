@@ -1,8 +1,8 @@
 using FluentAssertions;
-using Nexo.GameDomain.Scoping;
+using Nexo.Commercial.GameDomain.Scoping;
 
-namespace Nexo.Tests.GameDomain;
-
+namespace Nexo.Commercial.Tests.GameDomain;
+/// <summary>Tests for scope resolver.</summary>
 public class ScopeResolverTests
 {
     private static ScopedSetting MakeSetting(

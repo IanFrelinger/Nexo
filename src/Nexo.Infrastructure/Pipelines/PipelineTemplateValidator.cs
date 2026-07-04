@@ -8,6 +8,7 @@ namespace Nexo.Infrastructure.Pipelines;
 /// </summary>
 public sealed class PipelineTemplateValidator : IPipelineTemplateValidator
 {
+    /// <summary>Validate.</summary>
     public PipelineTemplateValidationResult Validate(PipelineTemplate template)
     {
         if (template == null)

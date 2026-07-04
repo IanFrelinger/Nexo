@@ -10,6 +10,7 @@ internal static class UserKnowledgeLogExportHelper
 {
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
+    /// <summary>To json.</summary>
     public static string ToJson(IReadOnlyList<UserKnowledgeLogEntry> entries)
     {
         var export = new
@@ -30,6 +31,7 @@ internal static class UserKnowledgeLogExportHelper
         return JsonSerializer.Serialize(export, JsonOptions);
     }
 
+    /// <summary>To markdown.</summary>
     public static string ToMarkdown(IReadOnlyList<UserKnowledgeLogEntry> entries)
     {
         var sb = new System.Text.StringBuilder();

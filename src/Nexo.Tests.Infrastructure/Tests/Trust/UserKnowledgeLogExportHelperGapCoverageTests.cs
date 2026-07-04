@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Trust;
 
+/// <summary>Tests for user knowledge log export helper gap coverage.</summary>
 public sealed class UserKnowledgeLogExportHelperGapCoverageTests
 {
     [Fact]

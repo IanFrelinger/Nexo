@@ -3,8 +3,10 @@ using Nexo.Core.Domain.Execution;
 
 namespace Nexo.Infrastructure.Certification;
 
+/// <summary>Serializes brick outputs to canonical JSON for witness comparison.</summary>
 internal static class BrickOutputSerializer
 {
+    /// <summary>To canonical json.</summary>
     public static string ToCanonicalJson(BrickOutput output)
     {
         var payload = new SortedDictionary<string, object?>(StringComparer.Ordinal)

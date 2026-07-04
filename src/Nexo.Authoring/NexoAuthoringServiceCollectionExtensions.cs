@@ -1,6 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Nexo.Core.Domain.Bricks;
-using Nexo.Hosting.Sdk;
+using Nexo.Hosting.Sdk.Extensions;
 
 namespace Nexo.Authoring;
 
@@ -14,7 +14,7 @@ public static class NexoAuthoringServiceCollectionExtensions
     /// Call before <c>AddNexo()</c>.
     /// </summary>
     public static IServiceCollection AddNexoBrick<TBrick>(this IServiceCollection services)
-        where TBrick : Brick
+        where TBrick : DomainBrick
     {
         return services.AddNexoSdk(sdk => sdk.RegisterBrick<TBrick>());
     }

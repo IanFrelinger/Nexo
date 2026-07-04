@@ -18,6 +18,7 @@ public sealed class RollbackManager : IRollbackManager
     private readonly Dictionary<string, (string? SnapshotId, IReadOnlyList<string> Paths)> _adaptationSnapshots = new(StringComparer.OrdinalIgnoreCase);
     private readonly object _lock = new();
 
+    /// <summary>Initializes a new rollback manager.</summary>
     public RollbackManager(
         ISnapshotStore snapshotStore,
         IDependencyGraph dependencyGraph,
@@ -30,6 +31,7 @@ public sealed class RollbackManager : IRollbackManager
         _logger = logger;
     }
 
+    /// <summary>Prepare for inherit.</summary>
     public void PrepareForInherit(string adaptationId, IReadOnlyList<string> affectedPaths)
     {
         if (string.IsNullOrWhiteSpace(adaptationId))
@@ -40,6 +42,7 @@ public sealed class RollbackManager : IRollbackManager
         }
     }
 
+    /// <summary>Before inherit asynchronously.</summary>
     public async Task<string> BeforeInheritAsync(string adaptationId, CancellationToken ct = default)
     {
         IReadOnlyList<string> paths;
@@ -75,6 +78,7 @@ public sealed class RollbackManager : IRollbackManager
         return snapshotId;
     }
 
+    /// <summary>Rollback asynchronously.</summary>
     public async Task RollbackAsync(string adaptationId, CancellationToken ct = default)
     {
         string snapshotId;
@@ -109,6 +113,7 @@ public sealed class RollbackManager : IRollbackManager
         _logger?.LogInformation("Rolled back adaptation {AdaptationId} via snapshot {SnapshotId}", adaptationId, snapshotId);
     }
 
+    /// <summary>Rollback to snapshot asynchronously.</summary>
     public async Task RollbackToSnapshotAsync(string snapshotId, CancellationToken ct = default)
     {
         await _snapshotStore.RestoreSnapshotAsync(snapshotId, ct).ConfigureAwait(false);
@@ -130,6 +135,7 @@ public sealed class RollbackManager : IRollbackManager
         _logger?.LogInformation("Rolled back to snapshot {SnapshotId}", snapshotId);
     }
 
+    /// <summary>Preview rollback asynchronously.</summary>
     public Task<RollbackImpact> PreviewRollbackAsync(string adaptationId, CancellationToken ct = default)
     {
         var transitive = _dependencyGraph.GetTransitiveDependents(adaptationId).ToList();

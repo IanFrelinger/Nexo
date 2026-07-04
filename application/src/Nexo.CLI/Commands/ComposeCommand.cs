@@ -14,6 +14,7 @@ namespace Nexo.CLI.Commands;
 /// </summary>
 public sealed class ComposeCommand : Command
 {
+    /// <summary>Creates a new ComposeCommand instance.</summary>
     public ComposeCommand() : base("compose", "Compose an agent from capability components (Block 7).")
     {
         var problemOpt = new Option<string>("--problem", "Problem description (e.g. 'test Nexo CLI', 'test failure analyzer')");

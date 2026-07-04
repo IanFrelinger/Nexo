@@ -9,12 +9,13 @@ using Nexo.Infrastructure.NodeCapabilityRuntime;
 using Nexo.Infrastructure.NodeCapabilityRuntime.Backends;
 using Nexo.Infrastructure.NodeCapabilityRuntime.Lifecycle;
 using Nexo.Infrastructure.NodeCapabilityRuntime.Policies;
-using Nexo.Infrastructure.NodeCapabilityRuntime.Sdk;
+using Nexo.Infrastructure.NodeCapabilityRuntime.Sdk.Extensions;
 using Nexo.Infrastructure.NodeCapabilityRuntime.Scoring;
 using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.NodeCapabilityRuntime;
 
+/// <summary>Tests for node capability runtime service collection extensions gap coverage.</summary>
 public sealed class NodeCapabilityRuntimeServiceCollectionExtensionsGapCoverageTests
 {
     [Fact]
@@ -64,6 +65,7 @@ public sealed class NodeCapabilityRuntimeServiceCollectionExtensionsGapCoverageT
             ["Nexo:NodeCapabilityRuntime:Ollama:BaseUrl"] = "http://127.0.0.1:11434",
         });
 
+        /// <summary>Invoke desktop registration.</summary>
         InvokeDesktopRegistration(services, configuration, policyType);
 
         using var provider = services.BuildServiceProvider();

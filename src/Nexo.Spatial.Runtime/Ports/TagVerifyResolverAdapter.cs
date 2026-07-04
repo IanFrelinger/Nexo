@@ -21,6 +21,7 @@ public sealed class TagVerifyResolverAdapter : IPhysicalAtomResolver
         _issuerPublicKey = issuerPublicKey;
     }
 
+    /// <summary>Verifies and resolves a physical atom from a QR marker payload.</summary>
     public PhysicalAtomResolveResult Resolve(string markerPayload)
     {
         try

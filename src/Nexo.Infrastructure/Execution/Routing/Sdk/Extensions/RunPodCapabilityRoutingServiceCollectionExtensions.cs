@@ -11,13 +11,13 @@ using Nexo.Core.Application.NodeCapabilityRuntime.Ports;
 using Nexo.Infrastructure.Adaptation;
 using Nexo.Infrastructure.Mesh;
 
-namespace Nexo.Infrastructure.Execution.Routing.Sdk;
-
+namespace Nexo.Infrastructure.Execution.Routing.Sdk.Extensions;
 /// <summary>
 /// Registers RunPod + NCR capability-routing execution components.
 /// </summary>
 public static class RunPodCapabilityRoutingServiceCollectionExtensions
 {
+    /// <summary>Adds run pod capability routing.</summary>
     public static IServiceCollection AddRunPodCapabilityRouting(
         this IServiceCollection services,
         IConfiguration configuration)

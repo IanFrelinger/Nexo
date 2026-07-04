@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Analysis;
 
+/// <summary>Tests for dot net regression test runner.</summary>
 public sealed class DotNetRegressionTestRunnerTests
 {
     [Fact]
@@ -27,6 +28,8 @@ public sealed class DotNetRegressionTestRunnerTests
 
         if (!File.Exists(slnPath))
         {
+            /// <summary>Invalid operation exception.</summary>
+            /// <param name="{slnPath}"">{sln path}".</param>
             throw new InvalidOperationException($"Nexo.sln not found at {slnPath}");
         }
 

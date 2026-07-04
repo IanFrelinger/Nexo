@@ -1,7 +1,6 @@
 using System.Text.Json;
 
-namespace Nexo.Core.Application.Networking.Models;
-
+namespace Nexo.Commercial.Fleet.Contracts.Networking.Models;
 /// <summary>
 /// Entry for an agent known to the network (this node or a peer).
 /// </summary>

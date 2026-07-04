@@ -4,8 +4,10 @@ using Nexo.Core.Domain.Execution;
 
 namespace Nexo.Infrastructure.Certification.Composition;
 
+/// <summary>Validates input/output seams between bricks in a composition graph.</summary>
 internal static class CompositionSeamChecker
 {
+    /// <summary>Check.</summary>
     public static SeamCheckResult Check(CompositionSpec spec, IBrickRegistry brickRegistry)
     {
         var violations = new List<string>();

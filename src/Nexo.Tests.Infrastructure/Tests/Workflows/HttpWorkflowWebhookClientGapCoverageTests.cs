@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Workflows;
 
+/// <summary>Tests for http workflow webhook client gap coverage.</summary>
 public sealed class HttpWorkflowWebhookClientGapCoverageTests
 {
     [Fact]
@@ -127,6 +128,7 @@ public sealed class HttpWorkflowWebhookClientGapCoverageTests
     {
         var factory = new Mock<IHttpClientFactory>();
         factory.Setup(f => f.CreateClient(It.IsAny<string>())).Returns(() => new HttpClient(handler));
+        /// <summary>Http workflow webhook client.</summary>
         return new HttpWorkflowWebhookClient(factory.Object, NullLogger<HttpWorkflowWebhookClient>.Instance);
     }
 }

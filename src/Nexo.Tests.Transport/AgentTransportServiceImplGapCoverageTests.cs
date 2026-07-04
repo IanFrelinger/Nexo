@@ -17,6 +17,7 @@ using Xunit;
 
 namespace Nexo.Tests.Transport;
 
+/// <summary>Tests for agent transport service impl gap coverage.</summary>
 [Collection("GrpcTransportEnvironment")]
 public sealed class AgentTransportServiceImplGapCoverageTests
 {
@@ -396,8 +397,12 @@ public sealed class AgentTransportServiceImplGapCoverageTests
         response.Output["count"].Should().Be("7");
     }
 
+    /// <summary>Object dictionary output transport.</summary>
     private sealed class ObjectDictionaryOutputTransport : IAgentTransport
     {
+        /// <summary>Send async.</summary>
+        /// <param name="request">Request.</param>
+        /// <param name="default">Default.</param>
         public Task<AgentResult> SendAsync(AgentInvocationRequest request, CancellationToken cancellationToken = default) =>
             Task.FromResult(new AgentResult(
                 Success: true,
@@ -405,12 +410,18 @@ public sealed class AgentTransportServiceImplGapCoverageTests
                 CorrelationId: request.CorrelationId,
                 SpanId: request.SpanId));
 
+        /// <summary>Check health async.</summary>
+        /// <param name="default">Default.</param>
         public Task<TransportHealth> CheckHealthAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult(new TransportHealth(true, "object-dict"));
     }
 
+    /// <summary>Explicit error code transport.</summary>
     private sealed class ExplicitErrorCodeTransport : IAgentTransport
     {
+        /// <summary>Send async.</summary>
+        /// <param name="request">Request.</param>
+        /// <param name="default">Default.</param>
         public Task<AgentResult> SendAsync(AgentInvocationRequest request, CancellationToken cancellationToken = default) =>
             Task.FromResult(new AgentResult(
                 Success: false,
@@ -419,12 +430,18 @@ public sealed class AgentTransportServiceImplGapCoverageTests
                 CorrelationId: request.CorrelationId,
                 SpanId: request.SpanId));
 
+        /// <summary>Check health async.</summary>
+        /// <param name="default">Default.</param>
         public Task<TransportHealth> CheckHealthAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult(new TransportHealth(false, "explicit-error"));
     }
 
+    /// <summary>Dictionary output transport.</summary>
     private sealed class DictionaryOutputTransport : IAgentTransport
     {
+        /// <summary>Send async.</summary>
+        /// <param name="request">Request.</param>
+        /// <param name="default">Default.</param>
         public Task<AgentResult> SendAsync(AgentInvocationRequest request, CancellationToken cancellationToken = default) =>
             Task.FromResult(new AgentResult(
                 Success: true,
@@ -432,12 +449,18 @@ public sealed class AgentTransportServiceImplGapCoverageTests
                 CorrelationId: request.CorrelationId,
                 SpanId: request.SpanId));
 
+        /// <summary>Check health async.</summary>
+        /// <param name="default">Default.</param>
         public Task<TransportHealth> CheckHealthAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult(new TransportHealth(true, "dict"));
     }
 
+    /// <summary>Metadata error transport.</summary>
     private sealed class MetadataErrorTransport : IAgentTransport
     {
+        /// <summary>Send async.</summary>
+        /// <param name="request">Request.</param>
+        /// <param name="default">Default.</param>
         public Task<AgentResult> SendAsync(AgentInvocationRequest request, CancellationToken cancellationToken = default) =>
             Task.FromResult(new AgentResult(
                 Success: false,
@@ -449,12 +472,18 @@ public sealed class AgentTransportServiceImplGapCoverageTests
                 CorrelationId: request.CorrelationId,
                 SpanId: request.SpanId));
 
+        /// <summary>Check health async.</summary>
+        /// <param name="default">Default.</param>
         public Task<TransportHealth> CheckHealthAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult(new TransportHealth(false, "meta-error"));
     }
 
+    /// <summary>Name only health transport.</summary>
     private sealed class NameOnlyHealthTransport : IAgentTransport
     {
+        /// <summary>Send async.</summary>
+        /// <param name="request">Request.</param>
+        /// <param name="default">Default.</param>
         public Task<AgentResult> SendAsync(AgentInvocationRequest request, CancellationToken cancellationToken = default) =>
             Task.FromResult(new AgentResult(
                 Success: true,
@@ -462,6 +491,8 @@ public sealed class AgentTransportServiceImplGapCoverageTests
                 CorrelationId: request.CorrelationId,
                 SpanId: request.SpanId));
 
+        /// <summary>Check health async.</summary>
+        /// <param name="default">Default.</param>
         public Task<TransportHealth> CheckHealthAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult(new TransportHealth(
                 IsHealthy: true,
@@ -469,8 +500,12 @@ public sealed class AgentTransportServiceImplGapCoverageTests
                 Message: "ready"));
     }
 
+    /// <summary>Scalar output transport.</summary>
     private sealed class ScalarOutputTransport : IAgentTransport
     {
+        /// <summary>Send async.</summary>
+        /// <param name="request">Request.</param>
+        /// <param name="default">Default.</param>
         public Task<AgentResult> SendAsync(AgentInvocationRequest request, CancellationToken cancellationToken = default) =>
             Task.FromResult(new AgentResult(
                 Success: true,
@@ -478,12 +513,18 @@ public sealed class AgentTransportServiceImplGapCoverageTests
                 CorrelationId: request.CorrelationId,
                 SpanId: request.SpanId));
 
+        /// <summary>Check health async.</summary>
+        /// <param name="default">Default.</param>
         public Task<TransportHealth> CheckHealthAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult(new TransportHealth(true, "scalar"));
     }
 
+    /// <summary>Echo transport.</summary>
     private sealed class EchoTransport : IAgentTransport
     {
+        /// <summary>Send async.</summary>
+        /// <param name="request">Request.</param>
+        /// <param name="default">Default.</param>
         public Task<AgentResult> SendAsync(AgentInvocationRequest request, CancellationToken cancellationToken = default) =>
             Task.FromResult(new AgentResult(
                 Success: true,
@@ -491,6 +532,8 @@ public sealed class AgentTransportServiceImplGapCoverageTests
                 CorrelationId: request.CorrelationId,
                 SpanId: request.SpanId));
 
+        /// <summary>Check health async.</summary>
+        /// <param name="default">Default.</param>
         public Task<TransportHealth> CheckHealthAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult(new TransportHealth(
                 IsHealthy: true,
@@ -500,11 +543,17 @@ public sealed class AgentTransportServiceImplGapCoverageTests
                 DiagnosticMessage: "ok"));
     }
 
+    /// <summary>Failing transport.</summary>
     private sealed class FailingTransport : IAgentTransport
     {
         private readonly string _message;
+        /// <summary>Failing transport.</summary>
+        /// <param name="message">Message.</param>
         public FailingTransport(string message) => _message = message;
 
+        /// <summary>Send async.</summary>
+        /// <param name="request">Request.</param>
+        /// <param name="default">Default.</param>
         public Task<AgentResult> SendAsync(AgentInvocationRequest request, CancellationToken cancellationToken = default) =>
             Task.FromResult(new AgentResult(
                 Success: false,
@@ -513,10 +562,13 @@ public sealed class AgentTransportServiceImplGapCoverageTests
                 CorrelationId: request.CorrelationId,
                 SpanId: request.SpanId));
 
+        /// <summary>Check health async.</summary>
+        /// <param name="default">Default.</param>
         public Task<TransportHealth> CheckHealthAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult(new TransportHealth(false, "fail"));
     }
 
+    /// <summary>Environment variable scope.</summary>
     private sealed class EnvironmentVariableScope : IDisposable
     {
         private readonly string _key;
@@ -529,74 +581,7 @@ public sealed class AgentTransportServiceImplGapCoverageTests
             Environment.SetEnvironmentVariable(key, value);
         }
 
+        /// <summary>Dispose.</summary>
         public void Dispose() => Environment.SetEnvironmentVariable(_key, _priorValue);
-    }
-}
-
-internal sealed class GrpcTransportTestFixture : IAsyncDisposable
-{
-    private readonly WebApplication _app;
-
-    private GrpcTransportTestFixture(WebApplication app, string endpoint)
-    {
-        _app = app;
-        Endpoint = endpoint;
-    }
-
-    public string Endpoint { get; }
-
-    public static async Task<GrpcTransportTestFixture> StartAsync(
-        IAgentTransport localTransport,
-        bool requireExplicitBarrier = false)
-    {
-        var port = GetFreePort();
-        var endpoint = $"http://127.0.0.1:{port}";
-
-        var builder = WebApplication.CreateBuilder(new WebApplicationOptions
-        {
-            EnvironmentName = Environments.Development
-        });
-
-        builder.WebHost.ConfigureKestrel(options =>
-        {
-            options.Listen(IPAddress.Loopback, port, listen =>
-            {
-                listen.Protocols = HttpProtocols.Http2;
-            });
-        });
-
-        builder.Services.AddSingleton<IAgentTransport>(localTransport);
-        builder.Services.AddSingleton<BarrierHierarchy>(_ =>
-            new BarrierHierarchy([new BarrierLevel("public", 0), new BarrierLevel("internal", 1)]));
-        builder.Services.AddSingleton<IOptions<BarrierOptions>>(
-            _ => Options.Create(new BarrierOptions
-            {
-                Levels = ["public", "internal"],
-                RequireExplicitBarrier = requireExplicitBarrier
-            }));
-        builder.Services.AddScoped<IBarrierContextAccessor, ScopedBarrierContextAccessor>();
-        builder.Services.AddSingleton<IBarrierAuditLog, StructuredBarrierAuditLog>();
-        builder.Services.AddNexoGrpcServer();
-
-        var app = builder.Build();
-        app.MapNexoGrpcServer();
-        await app.StartAsync();
-
-        return new GrpcTransportTestFixture(app, endpoint);
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        await _app.StopAsync();
-        await _app.DisposeAsync();
-    }
-
-    private static int GetFreePort()
-    {
-        var listener = new System.Net.Sockets.TcpListener(IPAddress.Loopback, 0);
-        listener.Start();
-        var port = ((IPEndPoint)listener.LocalEndpoint).Port;
-        listener.Stop();
-        return port;
     }
 }

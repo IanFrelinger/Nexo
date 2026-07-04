@@ -1,5 +1,6 @@
 namespace Nexo.Runtime.Barriers.Identity.Resolvers;
 
+/// <summary>Configuration for JWT claim to barrier level mappings.</summary>
 public sealed class JwtClaimResolverOptions
 {
     /// <summary>

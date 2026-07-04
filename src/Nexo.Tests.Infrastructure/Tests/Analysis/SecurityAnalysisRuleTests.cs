@@ -9,6 +9,7 @@ using Nexo.Tests.Application.Helpers;
 
 namespace Nexo.Tests.Infrastructure.Tests.Analysis;
 
+/// <summary>Tests for security analysis rule.</summary>
 public class SecurityAnalysisRuleTests : UnitTestBase
 {
     private DirectoryInfo? _tempDir;
@@ -32,8 +33,11 @@ public class SecurityAnalysisRuleTests : UnitTestBase
     {
         try
         {
+            /// <summary>Test rule properties.</summary>
             TestRuleProperties();
+            /// <summary>Test exception handling.</summary>
             await TestExceptionHandling();
+            /// <summary>Test with non existent file.</summary>
             await TestWithNonExistentFile();
 
             return new TestResult
@@ -73,7 +77,10 @@ public class SecurityAnalysisRuleTests : UnitTestBase
         var mockLogger = new Mock<ILogger<SecurityAnalysisRule>>();
         var rule = new SecurityAnalysisRule(mockLogger.Object);
 
+        /// <summary>Assert equal.</summary>
         AssertEqual("SecurityScan", rule.Name);
+        /// <summary>Assert equal.</summary>
+        /// <param name="vulnerabilities"">Vulnerabilities".</param>
         AssertEqual("Scans assemblies for security vulnerabilities", rule.Description);
     }
 
@@ -88,6 +95,7 @@ public class SecurityAnalysisRuleTests : UnitTestBase
         // The rule should catch exceptions and return a violation
         var violations = await rule.AnalyzeAsync(nonExistentFile, CancellationToken.None);
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(violations);
         // Should have a violation for the error (the rule adds violations when tools fail)
         if (violations.Count > 0)
@@ -99,6 +107,7 @@ public class SecurityAnalysisRuleTests : UnitTestBase
                           securityViolation.Message.Contains("error") ||
                           securityViolation.Message.Contains("Security scan"),
                     $"Violation message should contain error info, got: {securityViolation.Message}");
+                /// <summary>Assert equal.</summary>
                 AssertEqual(RiskLevel.Medium, securityViolation.Severity);
             }
         }
@@ -117,6 +126,7 @@ public class SecurityAnalysisRuleTests : UnitTestBase
         // Should handle gracefully and return violations (likely error violations)
         var violations = await rule.AnalyzeAsync(file, CancellationToken.None);
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(violations);
         // May have violations or be empty depending on tool behavior
         // The important thing is it doesn't throw

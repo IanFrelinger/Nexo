@@ -12,17 +12,24 @@ using Nexo.Core.Domain.Exceptions;
 
 namespace Nexo.Tests.CLI.Tests.Commands;
 
+/// <summary>Tests for validate command.</summary>
 public class ValidateCommandTests : UnitTestBase
 {
     public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
+            /// <summary>Test successful validation.</summary>
             await TestSuccessfulValidation();
+            /// <summary>Test failed validation.</summary>
             await TestFailedValidation();
+            /// <summary>Test json output.</summary>
             await TestJsonOutput();
+            /// <summary>Test verbose output.</summary>
             await TestVerboseOutput();
+            /// <summary>Test validation exception.</summary>
             await TestValidationException();
+            /// <summary>Test general exception.</summary>
             await TestGeneralException();
 
             return new TestResult

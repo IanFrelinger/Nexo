@@ -3,8 +3,10 @@ using System.Text;
 
 namespace Nexo.Commercial.Fleet.Infrastructure;
 
+/// <summary>Mesh fleet registration keys.</summary>
 public static class MeshFleetRegistrationKeys
 {
+    /// <summary>Fingerprint operation.</summary>
     public static string? Fingerprint(string? peerRegistrationKey)
     {
         if (string.IsNullOrWhiteSpace(peerRegistrationKey))
@@ -14,6 +16,7 @@ public static class MeshFleetRegistrationKeys
         return Convert.ToHexString(hash)[..16];
     }
 
+    /// <summary>Is distinct from director key operation.</summary>
     public static bool IsDistinctFromDirectorKey(string peerRegistrationKey, string? directorApiKey)
     {
         if (string.IsNullOrWhiteSpace(directorApiKey))

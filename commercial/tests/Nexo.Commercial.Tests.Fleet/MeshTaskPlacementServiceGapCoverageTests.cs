@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Nexo.Commercial.Tests.Fleet;
 
+/// <summary>Tests for mesh task placement service gap coverage.</summary>
 public sealed class MeshTaskPlacementServiceGapCoverageTests
 {
     [Fact]
@@ -45,6 +46,7 @@ public sealed class MeshTaskPlacementServiceGapCoverageTests
         var nodes = new InMemoryFleetNodeRegistry();
         var tasks = new InMemoryMeshTaskRegistry();
         var placement = CreatePlacement(nodes, tasks);
+        /// <summary>Register eligible node.</summary>
         await RegisterEligibleNode(nodes);
 
         var created = await tasks.CreateAsync(new MeshTaskCreateSpec("done", 1, Array.Empty<string>(), null, 0, null));
@@ -63,6 +65,7 @@ public sealed class MeshTaskPlacementServiceGapCoverageTests
         var nodes = new InMemoryFleetNodeRegistry();
         var tasks = new InMemoryMeshTaskRegistry();
         var placement = CreatePlacement(nodes, tasks);
+        /// <summary>Register eligible node.</summary>
         await RegisterEligibleNode(nodes);
 
         var created = await tasks.CreateAsync(new MeshTaskCreateSpec(
@@ -186,6 +189,7 @@ public sealed class MeshTaskPlacementServiceGapCoverageTests
         var nodes = new InMemoryFleetNodeRegistry();
         var tasks = new InMemoryMeshTaskRegistry();
         var placement = CreatePlacement(nodes, tasks);
+        /// <summary>Register eligible node.</summary>
         await RegisterEligibleNode(nodes);
 
         var created = await tasks.CreateAsync(new MeshTaskCreateSpec(
@@ -209,6 +213,7 @@ public sealed class MeshTaskPlacementServiceGapCoverageTests
         var nodes = new InMemoryFleetNodeRegistry();
         var tasks = new InMemoryMeshTaskRegistry();
         var placement = CreatePlacement(nodes, tasks);
+        /// <summary>Register eligible node.</summary>
         await RegisterEligibleNode(nodes);
 
         var created = await tasks.CreateAsync(new MeshTaskCreateSpec("lease", 1, Array.Empty<string>(), null, 0, null));
@@ -228,6 +233,7 @@ public sealed class MeshTaskPlacementServiceGapCoverageTests
         var nodes = new InMemoryFleetNodeRegistry();
         var tasks = new InMemoryMeshTaskRegistry();
         var placement = CreatePlacement(nodes, tasks);
+        /// <summary>Register eligible node.</summary>
         await RegisterEligibleNode(nodes);
 
         var created = await tasks.CreateAsync(new MeshTaskCreateSpec("reclaim", 1, Array.Empty<string>(), null, 0, null));
@@ -253,6 +259,7 @@ public sealed class MeshTaskPlacementServiceGapCoverageTests
         var nodes = new InMemoryFleetNodeRegistry();
         var tasks = new InMemoryMeshTaskRegistry();
         var placement = CreatePlacement(nodes, tasks);
+        /// <summary>Register eligible node.</summary>
         await RegisterEligibleNode(nodes);
 
         var created = await tasks.CreateAsync(new MeshTaskCreateSpec("idem", 1, Array.Empty<string>(), null, 0, null));
@@ -272,6 +279,7 @@ public sealed class MeshTaskPlacementServiceGapCoverageTests
         var nodes = new InMemoryFleetNodeRegistry();
         var tasks = new InMemoryMeshTaskRegistry();
         var placement = CreatePlacement(nodes, tasks);
+        /// <summary>Register eligible node.</summary>
         await RegisterEligibleNode(nodes);
 
         var created = await tasks.CreateAsync(new MeshTaskCreateSpec("conflict", 1, Array.Empty<string>(), null, 0, null));

@@ -2,11 +2,10 @@ using FluentValidation;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using Microsoft.Extensions.Http;
 using Nexo.Abstractions.Routing;
-using Nexo.Abstractions.Transport;
 using Nexo.BackgroundAgents;
 using Nexo.BackgroundAgents.Trust;
+using Nexo.Contracts;
 using Nexo.Core.Application.Adaptation.Ports;
 using Nexo.Core.Application.Analysis.UseCases.AnalyzeCode;
 using Nexo.Core.Application.Common.Ports;
@@ -18,23 +17,14 @@ using Nexo.Core.Application.Observation.Ports;
 using Nexo.Core.Application.Paths;
 using Nexo.Core.Application.Testing.UseCases.RunTests;
 using Nexo.Core.Application.Trust.Ports;
-using Nexo.Core.Application.Validation.UseCases.RunValidation;
-using Nexo.Contracts;
-using Nexo.Infrastructure;
-using Nexo.Infrastructure.Environments;
-using Nexo.Infrastructure.MeshLab;
 using Nexo.Infrastructure.Copilot;
+using Nexo.Infrastructure.Environments;
 using Nexo.Infrastructure.Execution;
 using Nexo.Infrastructure.Execution.Ephemeral;
 using Nexo.Infrastructure.Execution.LoadPolicy;
-using Nexo.Infrastructure.Execution.Routing;
 using Nexo.Infrastructure.Knowledge;
-using Nexo.Infrastructure.Maintenance;
-using Nexo.Infrastructure.ModelArtifacts;
-using Nexo.Infrastructure.NodeCapabilityRuntime;
-using Nexo.Infrastructure.Persistence;
+using Nexo.Infrastructure.MeshLab;
 using Nexo.Infrastructure.Persistence.Ephemeral;
-using Nexo.Infrastructure.Pipelines;
 using Nexo.Orchestration;
 using Nexo.Orchestration.Models;
 using Nexo.Orchestration.Transport;
@@ -44,14 +34,18 @@ using Nexo.Transport.Grpc;
 
 namespace Nexo.Hosting;
 
+/// <summary>
+/// Nexo kernel DI registration phases 01–20. Each method wires a focused service slice;
+/// phases run in order during <c>AddNexo</c> host bootstrap.
+/// </summary>
 internal static partial class NexoKernelRegistrar
 {
+    /// <summary>Phase 01: configuration binding and node capability runtime.</summary>
     private static void RegisterPhase01_ConfigurationNodeCapabilityRuntime(NexoKernelRegistrationContext ctx)
     {
-        var services = ctx.Services;
-        var options = ctx.Options;
-        var modules = ctx.Modules;
-        var configuration = ctx.Configuration;
+        IServiceCollection services = ctx.Services;
+        ModuleSelection modules = ctx.Modules;
+        IConfiguration configuration = ctx.Configuration;
 
         // ── Configuration & Node Capability Runtime ────────────────────
         // Environment variables are the primary config source; appsettings
@@ -68,12 +62,10 @@ internal static partial class NexoKernelRegistrar
 
     }
 
+    /// <summary>Phase 02: MediatR, FluentValidation, and ingress pipeline behaviors.</summary>
     private static void RegisterPhase02_CQRSMediatRFluentValidation(NexoKernelRegistrationContext ctx)
     {
-        var services = ctx.Services;
-        var options = ctx.Options;
-        var modules = ctx.Modules;
-        var configuration = ctx.Configuration;
+        IServiceCollection services = ctx.Services;
 
         // ── CQRS (MediatR) & FluentValidation ─────────────────────────
         // MediatR handlers from both the Analysis and Testing assemblies
@@ -95,12 +87,10 @@ internal static partial class NexoKernelRegistrar
 
     }
 
+    /// <summary>Phase 03: domain configuration service adapter.</summary>
     private static void RegisterPhase03_ConfigurationServiceAdapter(NexoKernelRegistrationContext ctx)
     {
-        var services = ctx.Services;
-        var options = ctx.Options;
-        var modules = ctx.Modules;
-        var configuration = ctx.Configuration;
+        IServiceCollection services = ctx.Services;
 
         // ── Configuration service adapter ──────────────────────────────
         // Bridges the domain-level IConfigurationService port to the
@@ -108,19 +98,17 @@ internal static partial class NexoKernelRegistrar
         // warnings escalate to hard failures (useful in CI pipelines).
         services.AddSingleton<Nexo.Core.Application.Configuration.Ports.IConfigurationService>(sp =>
         {
-            var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Configuration.ConfigurationServiceAdapter>>();
-            var strictMode = sp.GetService<StrictModeOptions>();
+            Microsoft.Extensions.Logging.ILogger<Infrastructure.Configuration.ConfigurationServiceAdapter> logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Configuration.ConfigurationServiceAdapter>>();
+            StrictModeOptions? strictMode = sp.GetService<StrictModeOptions>();
             return new Nexo.Infrastructure.Configuration.ConfigurationServiceAdapter(logger, strictMode?.ShouldFailOnConfigurationWarnings ?? false);
         });
 
     }
 
+    /// <summary>Phase 04: loop kernel decorator chain (sequential, parallel, instrumented).</summary>
     private static void RegisterPhase04_LoopKernelDecoratorChain(NexoKernelRegistrationContext ctx)
     {
-        var services = ctx.Services;
-        var options = ctx.Options;
-        var modules = ctx.Modules;
-        var configuration = ctx.Configuration;
+        IServiceCollection services = ctx.Services;
 
         // ── Loop kernel (decorator chain) ──────────────────────────────
         // The loop kernel runs brick-level iterations.  It is composed via
@@ -136,13 +124,13 @@ internal static partial class NexoKernelRegistrar
         services.AddSingleton<ILoopKernel>(sp =>
         {
             ILoopKernel k = new SequentialLoopKernel();
-            var enableParallel = string.Equals(Environment.GetEnvironmentVariable("NEXO_LOOP_PARALLEL"), "1", StringComparison.OrdinalIgnoreCase);
+            bool enableParallel = string.Equals(Environment.GetEnvironmentVariable("NEXO_LOOP_PARALLEL"), "1", StringComparison.OrdinalIgnoreCase);
             if (enableParallel)
             {
                 k = new ParallelLoopKernel(k);
             }
 
-            var instrument = string.Equals(Environment.GetEnvironmentVariable("NEXO_LOOP_INSTRUMENT"), "1", StringComparison.OrdinalIgnoreCase);
+            bool instrument = string.Equals(Environment.GetEnvironmentVariable("NEXO_LOOP_INSTRUMENT"), "1", StringComparison.OrdinalIgnoreCase);
             if (instrument)
             {
                 k = new InstrumentedLoopKernel(k, sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<InstrumentedLoopKernel>>());
@@ -153,12 +141,11 @@ internal static partial class NexoKernelRegistrar
 
     }
 
+    /// <summary>Phase 05: orchestration and optional runtime transport.</summary>
     private static void RegisterPhase05_OrchestrationTransport(NexoKernelRegistrationContext ctx)
     {
-        var services = ctx.Services;
-        var options = ctx.Options;
-        var modules = ctx.Modules;
-        var configuration = ctx.Configuration;
+        IServiceCollection services = ctx.Services;
+        ModuleSelection modules = ctx.Modules;
 
         // ── Orchestration & transport ──────────────────────────────────
         // Orchestration is always registered (it owns the runtime spec
@@ -178,12 +165,11 @@ internal static partial class NexoKernelRegistrar
 
     }
 
+    /// <summary>Phase 06: persistence and Postgres isolated database provisioner.</summary>
     private static void RegisterPhase06_Persistence(NexoKernelRegistrationContext ctx)
     {
-        var services = ctx.Services;
-        var options = ctx.Options;
-        var modules = ctx.Modules;
-        var configuration = ctx.Configuration;
+        IServiceCollection services = ctx.Services;
+        ModuleSelection modules = ctx.Modules;
 
         // ── Persistence ────────────────────────────────────────────────
         if (modules.IncludePersistence)
@@ -194,12 +180,13 @@ internal static partial class NexoKernelRegistrar
 
     }
 
+    /// <summary>Phase 07: adaptation infrastructure and federated brick mesh.</summary>
     private static void RegisterPhase07_Adaptation(NexoKernelRegistrationContext ctx)
     {
-        var services = ctx.Services;
-        var options = ctx.Options;
-        var modules = ctx.Modules;
-        var configuration = ctx.Configuration;
+        IServiceCollection services = ctx.Services;
+        NexoHostingOptions options = ctx.Options;
+        ModuleSelection modules = ctx.Modules;
+        IConfiguration configuration = ctx.Configuration;
 
         // ── Adaptation ─────────────────────────────────────────────────
         // Pattern store path is forwarded so the adaptation layer knows
@@ -207,40 +194,33 @@ internal static partial class NexoKernelRegistrar
         if (modules.IncludeAdaptation)
         {
             services.AddAdaptationInfrastructure(options.PatternStorePath);
-        }
-
-        if (modules.IncludeAdaptation)
-        {
             services.AddNexoFederatedBrickMesh(configuration);
         }
 
     }
 
+    /// <summary>Phase 08: LiteDB copilot task store.</summary>
     private static void RegisterPhase08_CopilotTaskStore(NexoKernelRegistrationContext ctx)
     {
-        var services = ctx.Services;
-        var options = ctx.Options;
-        var modules = ctx.Modules;
-        var configuration = ctx.Configuration;
+        IServiceCollection services = ctx.Services;
+        NexoHostingOptions options = ctx.Options;
 
         // ── Copilot task store ──────────────────────────────────────────
         // LiteDB file is co-located with the pattern store directory
         // (or the repo root as fallback) to keep all Nexo-generated
         // state in one discoverable location.
-        var copilotTasksBasePath = !string.IsNullOrEmpty(options.PatternStorePath)
+        string copilotTasksBasePath = !string.IsNullOrEmpty(options.PatternStorePath)
             ? Path.GetDirectoryName(options.PatternStorePath) ?? "."
             : RepoPathResolver.FindRepoRoot();
-        var copilotTasksDbPath = Path.Combine(copilotTasksBasePath, "nexo-copilot-tasks.db");
+        string copilotTasksDbPath = Path.Combine(copilotTasksBasePath, "nexo-copilot-tasks.db");
         services.TryAddSingleton<ICopilotTaskStore>(_ => new LiteDbCopilotTaskStore(copilotTasksDbPath));
 
     }
 
+    /// <summary>Phase 09: knowledge query service façade.</summary>
     private static void RegisterPhase09_KnowledgeQueryService(NexoKernelRegistrationContext ctx)
     {
-        var services = ctx.Services;
-        var options = ctx.Options;
-        var modules = ctx.Modules;
-        var configuration = ctx.Configuration;
+        IServiceCollection services = ctx.Services;
 
         // ── Knowledge query service ────────────────────────────────────
         // Aggregates adaptation logs, pattern store, and (optionally)
@@ -248,21 +228,20 @@ internal static partial class NexoKernelRegistrar
         // an in-memory knowledge log when the trust module is absent.
         services.TryAddSingleton<IKnowledgeQueryService>(sp =>
         {
-            var adaptationLog = sp.GetRequiredService<IAdaptationLog>();
-            var patternStore = sp.GetRequiredService<IPatternStore>();
-            var userKnowledgeStore = sp.GetService<IUserKnowledgeLogStore>()
+            IAdaptationLog adaptationLog = sp.GetRequiredService<IAdaptationLog>();
+            IPatternStore patternStore = sp.GetRequiredService<IPatternStore>();
+            IUserKnowledgeLogStore userKnowledgeStore = sp.GetService<IUserKnowledgeLogStore>()
                 ?? new Nexo.Infrastructure.Trust.InMemoryUserKnowledgeLogStore();
             return new KnowledgeQueryService(adaptationLog, patternStore, userKnowledgeStore);
         });
 
     }
 
+    /// <summary>Phase 10: pipeline composition layer.</summary>
     private static void RegisterPhase10_PipelineComposition(NexoKernelRegistrationContext ctx)
     {
-        var services = ctx.Services;
-        var options = ctx.Options;
-        var modules = ctx.Modules;
-        var configuration = ctx.Configuration;
+        IServiceCollection services = ctx.Services;
+        ModuleSelection modules = ctx.Modules;
 
         // ── Pipeline composition ───────────────────────────────────────
         if (modules.IncludePipelineComposition)
@@ -272,12 +251,12 @@ internal static partial class NexoKernelRegistrar
 
     }
 
+    /// <summary>Phase 11: background agents and RAG.</summary>
     private static void RegisterPhase11_BackgroundAgentsRAG(NexoKernelRegistrationContext ctx)
     {
-        var services = ctx.Services;
-        var options = ctx.Options;
-        var modules = ctx.Modules;
-        var configuration = ctx.Configuration;
+        IServiceCollection services = ctx.Services;
+        NexoHostingOptions options = ctx.Options;
+        ModuleSelection modules = ctx.Modules;
 
         // ── Background agents & RAG ────────────────────────────────────
         if (modules.IncludeBackgroundAgents)
@@ -292,12 +271,12 @@ internal static partial class NexoKernelRegistrar
 
     }
 
+    /// <summary>Phase 12: observation pipeline and web-search fallback.</summary>
     private static void RegisterPhase12_ObservationPipeline(NexoKernelRegistrationContext ctx)
     {
-        var services = ctx.Services;
-        var options = ctx.Options;
-        var modules = ctx.Modules;
-        var configuration = ctx.Configuration;
+        IServiceCollection services = ctx.Services;
+        NexoHostingOptions options = ctx.Options;
+        ModuleSelection modules = ctx.Modules;
 
         // ── Observation pipeline ───────────────────────────────────────
         // Captures runtime telemetry and persists it alongside patterns.
@@ -306,8 +285,8 @@ internal static partial class NexoKernelRegistrar
         //   for edge nodes with unreliable storage.
         if (modules.IncludeObservationPipeline && !options.DisableObservationPipeline)
         {
-            var repoRoot = RepoPathResolver.FindRepoRoot();
-            var observationFailOpen = options.ObservationFailOpen ?? NexoServiceCollectionExtensions.ParseBooleanEnvironmentVariable("NEXO_OBSERVATION_FAIL_OPEN");
+            string repoRoot = RepoPathResolver.FindRepoRoot();
+            bool observationFailOpen = options.ObservationFailOpen ?? NexoServiceCollectionExtensions.ParseBooleanEnvironmentVariable("NEXO_OBSERVATION_FAIL_OPEN");
             services.AddObservationPipeline(opts =>
             {
                 opts.RepoRoot = repoRoot;
@@ -326,12 +305,10 @@ internal static partial class NexoKernelRegistrar
 
     }
 
+    /// <summary>Phase 13: IModel decorator chain (provider, hot-swap, orchestration spec).</summary>
     private static void RegisterPhase13_ModelDecoratorChain(NexoKernelRegistrationContext ctx)
     {
-        var services = ctx.Services;
-        var options = ctx.Options;
-        var modules = ctx.Modules;
-        var configuration = ctx.Configuration;
+        IServiceCollection services = ctx.Services;
 
         // ── Model decorator chain ──────────────────────────────────────
         // The IModel abstraction is built as a three-layer decorator:
@@ -349,7 +326,7 @@ internal static partial class NexoKernelRegistrar
         // operations, while IModel always returns the fully decorated chain.
         services.AddSingleton<Nexo.Infrastructure.Execution.Models.HotSwappableModel>(sp =>
         {
-            var providerFactory = sp.GetRequiredService<Nexo.Infrastructure.Execution.IProviderFactory>();
+            IProviderFactory providerFactory = sp.GetRequiredService<Nexo.Infrastructure.Execution.IProviderFactory>();
             var providerBacked = new Nexo.Infrastructure.Execution.Models.ProviderBackedModel(
                 providerFactory,
                 sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Execution.Models.ProviderBackedModel>>());
@@ -360,8 +337,8 @@ internal static partial class NexoKernelRegistrar
 
         services.AddSingleton<Nexo.Abstractions.IModel>(sp =>
         {
-            var accessor = sp.GetRequiredService<IOrchestrationRuntimeSpecAccessor>();
-            var inner = sp.GetRequiredService<Nexo.Infrastructure.Execution.Models.HotSwappableModel>();
+            IOrchestrationRuntimeSpecAccessor accessor = sp.GetRequiredService<IOrchestrationRuntimeSpecAccessor>();
+            Infrastructure.Execution.Models.HotSwappableModel inner = sp.GetRequiredService<Nexo.Infrastructure.Execution.Models.HotSwappableModel>();
             return new Nexo.Orchestration.Models.OrchestrationRuntimeModelDecorator(
                 inner,
                 accessor,
@@ -370,12 +347,11 @@ internal static partial class NexoKernelRegistrar
 
     }
 
+    /// <summary>Phase 14: ephemeral model and database lifecycle.</summary>
     private static void RegisterPhase14_EphemeralLifecycle(NexoKernelRegistrationContext ctx)
     {
-        var services = ctx.Services;
-        var options = ctx.Options;
-        var modules = ctx.Modules;
-        var configuration = ctx.Configuration;
+        IServiceCollection services = ctx.Services;
+        ModuleSelection modules = ctx.Modules;
 
         // ── Ephemeral lifecycle ────────────────────────────────────────
         // "Ephemeral" means Nexo can spin up and tear down backing
@@ -392,7 +368,7 @@ internal static partial class NexoKernelRegistrar
             services.AddSingleton<IEphemeralModelLifecycle, OllamaEphemeralLifecycle>();
         }
 
-        var ephemeralDb = Environment.GetEnvironmentVariable("NEXO_EPHEMERAL_DB")?.Trim();
+        string? ephemeralDb = Environment.GetEnvironmentVariable("NEXO_EPHEMERAL_DB")?.Trim();
         if (modules.IncludePersistence && string.Equals(ephemeralDb, "postgres", StringComparison.OrdinalIgnoreCase))
         {
             services.AddSingleton<Nexo.Core.Application.Persistence.Ports.IEphemeralDatabaseLifecycle, PostgresEphemeralLifecycle>();
@@ -400,12 +376,12 @@ internal static partial class NexoKernelRegistrar
 
     }
 
+    /// <summary>Phase 15: trust services and provider factory three-way branching.</summary>
     private static void RegisterPhase15_TrustProviderFactory3wayBranching(NexoKernelRegistrationContext ctx)
     {
-        var services = ctx.Services;
-        var options = ctx.Options;
-        var modules = ctx.Modules;
-        var configuration = ctx.Configuration;
+        IServiceCollection services = ctx.Services;
+        NexoHostingOptions options = ctx.Options;
+        ModuleSelection modules = ctx.Modules;
 
         // ── Trust & provider factory (3-way branching) ─────────────────
         // The provider factory is the gateway through which every LLM
@@ -428,11 +404,11 @@ internal static partial class NexoKernelRegistrar
         //   that scrubs PII before LLM calls leave the trust boundary.
         // NEXO_LOAD_PREFERENCE (string, e.g. "latency" / "cost"):
         //   activates adaptive load balancing and selects the policy.
-        var ephemeralModels = EphemeralModelsEnabled();
-        var trustEnabledByConfig = options.TrustEnabled ?? string.Equals(Environment.GetEnvironmentVariable("NEXO_TRUST_ENABLED"), "1", StringComparison.OrdinalIgnoreCase);
-        var trustEnabled = modules.IncludeTrustServices && trustEnabledByConfig;
-        var loadPref = Environment.GetEnvironmentVariable("NEXO_LOAD_PREFERENCE")?.Trim();
-        var useAdaptive = options.UseAdaptiveLoadBalancing ?? !string.IsNullOrEmpty(loadPref);
+        bool ephemeralModels = EphemeralModelsEnabled();
+        bool trustEnabledByConfig = options.TrustEnabled ?? string.Equals(Environment.GetEnvironmentVariable("NEXO_TRUST_ENABLED"), "1", StringComparison.OrdinalIgnoreCase);
+        bool trustEnabled = modules.IncludeTrustServices && trustEnabledByConfig;
+        string? loadPref = Environment.GetEnvironmentVariable("NEXO_LOAD_PREFERENCE")?.Trim();
+        bool useAdaptive = options.UseAdaptiveLoadBalancing ?? !string.IsNullOrEmpty(loadPref);
 
         if (modules.IncludeTrustServices)
         {
@@ -444,20 +420,20 @@ internal static partial class NexoKernelRegistrar
         {
             services.AddSingleton<ProviderFactory>(sp =>
             {
-                var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<ProviderFactory>>();
-                var lifecycle = sp.GetService<IEphemeralModelLifecycle>();
+                Microsoft.Extensions.Logging.ILogger<ProviderFactory> logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<ProviderFactory>>();
+                IEphemeralModelLifecycle? lifecycle = sp.GetService<IEphemeralModelLifecycle>();
                 return new ProviderFactory(logger, lifecycle);
             });
             services.TryAddSingleton<ILoadPolicy, PreferenceLoadPolicy>();
             services.AddSingleton<IProviderFactory>(sp =>
             {
-                var pf = sp.GetRequiredService<ProviderFactory>();
+                ProviderFactory pf = sp.GetRequiredService<ProviderFactory>();
                 Nexo.Infrastructure.Execution.IProviderFactory inner = trustEnabled
                     ? new SanitizingProviderFactory(pf, sp.GetRequiredService<ICloudSanitizationProxy>(),
                         sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<SanitizingProviderFactory>>())
                     : pf;
-                var policy = sp.GetRequiredService<ILoadPolicy>();
-                var logger = sp.GetService<Microsoft.Extensions.Logging.ILogger<AdaptiveProviderFactory>>();
+                ILoadPolicy policy = sp.GetRequiredService<ILoadPolicy>();
+                Microsoft.Extensions.Logging.ILogger<AdaptiveProviderFactory>? logger = sp.GetService<Microsoft.Extensions.Logging.ILogger<AdaptiveProviderFactory>>();
                 return new AdaptiveProviderFactory(inner, policy, logger);
             });
         }
@@ -466,20 +442,19 @@ internal static partial class NexoKernelRegistrar
         {
             services.AddSingleton<IProviderFactory>(sp =>
             {
-                var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<ProviderFactory>>();
-                var lifecycle = sp.GetService<IEphemeralModelLifecycle>();
+                Microsoft.Extensions.Logging.ILogger<ProviderFactory> logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<ProviderFactory>>();
+                IEphemeralModelLifecycle? lifecycle = sp.GetService<IEphemeralModelLifecycle>();
                 return new ProviderFactory(logger, lifecycle);
             });
         }
 
     }
 
+    /// <summary>Phase 16: execution core, workflow integrations, and behavior pipeline.</summary>
     private static void RegisterPhase16_ExecutionCoreWorkflow(NexoKernelRegistrationContext ctx)
     {
-        var services = ctx.Services;
-        var options = ctx.Options;
-        var modules = ctx.Modules;
-        var configuration = ctx.Configuration;
+        IServiceCollection services = ctx.Services;
+        ModuleSelection modules = ctx.Modules;
 
         // ── Execution core & workflow ──────────────────────────────────
         services.AddSingleton<Nexo.Core.Application.Common.Ports.ITextFileSystem, Nexo.Infrastructure.IO.LocalTextFileSystem>();
@@ -506,7 +481,7 @@ internal static partial class NexoKernelRegistrar
         services.TryAddSingleton<Nexo.Infrastructure.Execution.ISemanticCache>(sp =>
             new Nexo.Infrastructure.Execution.SemanticCache(sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Execution.SemanticCache>>()));
         services.TryAddSingleton<Nexo.Core.Domain.Execution.IBehaviorRegistry>(_ =>
-            new Nexo.Infrastructure.Execution.BehaviorRegistry(Array.Empty<Nexo.Core.Domain.Behaviors.Behavior>()));
+            new Nexo.Infrastructure.Execution.BehaviorRegistry([]));
         services.TryAddSingleton<Nexo.Core.Application.Execution.Ports.IStepExecutionMode>(sp =>
             new Nexo.Infrastructure.Execution.StepExecutionModeStore(
                 null,
@@ -526,19 +501,17 @@ internal static partial class NexoKernelRegistrar
         // registered later at runtime.
         services.TryAddSingleton<Nexo.Core.Domain.Execution.IAgentRegistry>(sp =>
         {
-            var sdkOptions = sp.GetService<Nexo.Hosting.Sdk.NexoSdkOptions>();
-            var cards = sdkOptions?.AgentCards?.ToList() ?? new List<Nexo.Core.Domain.Agents.AgentCard>();
+            NexoSdkOptions? sdkOptions = sp.GetService<NexoSdkOptions>();
+            List<Core.Domain.Agents.AgentCard> cards = sdkOptions?.AgentCards?.ToList() ?? [];
             return new Nexo.Infrastructure.Execution.AgentRegistry(cards);
         });
 
     }
 
+    /// <summary>Phase 17: workflow executor and agent adapters.</summary>
     private static void RegisterPhase17_WorkflowExecutor(NexoKernelRegistrationContext ctx)
     {
-        var services = ctx.Services;
-        var options = ctx.Options;
-        var modules = ctx.Modules;
-        var configuration = ctx.Configuration;
+        IServiceCollection services = ctx.Services;
 
         // ── Workflow executor ──────────────────────────────────────────
         // Scoped because a single workflow execution may accumulate
@@ -564,12 +537,10 @@ internal static partial class NexoKernelRegistrar
 
     }
 
+    /// <summary>Phase 18: cached analysis and validation services.</summary>
     private static void RegisterPhase18_AnalysisValidation(NexoKernelRegistrationContext ctx)
     {
-        var services = ctx.Services;
-        var options = ctx.Options;
-        var modules = ctx.Modules;
-        var configuration = ctx.Configuration;
+        IServiceCollection services = ctx.Services;
 
         // ── Analysis & validation ──────────────────────────────────────
         // Both services use a caching decorator (CachedAnalysis/
@@ -580,8 +551,8 @@ internal static partial class NexoKernelRegistrar
             var inner = new Nexo.Infrastructure.Analysis.Adapters.AnalysisServiceAdapter(
                 sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Analysis.Adapters.AnalysisServiceAdapter>>(),
                 sp.GetRequiredService<Nexo.Infrastructure.Analysis.Rules.AnalysisRuleEngine>());
-            var cache = sp.GetRequiredService<ICacheStrategy>();
-            var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Analysis.Adapters.CachedAnalysisServiceAdapter>>();
+            ICacheStrategy cache = sp.GetRequiredService<ICacheStrategy>();
+            Microsoft.Extensions.Logging.ILogger<Infrastructure.Analysis.Adapters.CachedAnalysisServiceAdapter> logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Analysis.Adapters.CachedAnalysisServiceAdapter>>();
             return new Nexo.Infrastructure.Analysis.Adapters.CachedAnalysisServiceAdapter(inner, cache, logger);
         });
 
@@ -590,8 +561,8 @@ internal static partial class NexoKernelRegistrar
             var inner = new Nexo.Infrastructure.Validation.Adapters.ValidationServiceAdapter(
                 sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Validation.Adapters.ValidationServiceAdapter>>(),
                 sp.GetRequiredService<Nexo.Infrastructure.Validation.Parsers.ITestResultParser>());
-            var cache = sp.GetRequiredService<ICacheStrategy>();
-            var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Validation.Adapters.CachedValidationServiceAdapter>>();
+            ICacheStrategy cache = sp.GetRequiredService<ICacheStrategy>();
+            Microsoft.Extensions.Logging.ILogger<Infrastructure.Validation.Adapters.CachedValidationServiceAdapter> logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Validation.Adapters.CachedValidationServiceAdapter>>();
             return new Nexo.Infrastructure.Validation.Adapters.CachedValidationServiceAdapter(inner, cache, logger);
         });
 
@@ -599,12 +570,12 @@ internal static partial class NexoKernelRegistrar
         services.AddSingleton<IMetricsCollector, Nexo.Infrastructure.Metrics.MemoryMetricsCollector>();
     }
 
+    /// <summary>Phase 19: testing adapters and remote/docker execution platform.</summary>
     private static void RegisterPhase19_TestingAdapters(NexoKernelRegistrationContext ctx)
     {
-        var services = ctx.Services;
-        var options = ctx.Options;
-        var modules = ctx.Modules;
-        var configuration = ctx.Configuration;
+        IServiceCollection services = ctx.Services;
+        NexoHostingOptions options = ctx.Options;
+        ModuleSelection modules = ctx.Modules;
 
         // ── Testing adapters ───────────────────────────────────────────
         services.AddScoped<Nexo.Core.Application.Testing.Ports.ITestRunner, Nexo.Infrastructure.Testing.TestRunnerAdapter>();
@@ -615,16 +586,16 @@ internal static partial class NexoKernelRegistrar
         //   CI environments where Docker-in-Docker is unavailable.
         if (modules.IncludeTestingAdapters)
         {
-            var executionRemoteUrl = options.ExecutionRemoteUrl ?? Environment.GetEnvironmentVariable("NEXO_EXECUTION_REMOTE_URL")?.Trim();
+            string? executionRemoteUrl = options.ExecutionRemoteUrl ?? Environment.GetEnvironmentVariable("NEXO_EXECUTION_REMOTE_URL")?.Trim();
             if (!string.IsNullOrEmpty(executionRemoteUrl))
             {
-                var baseUrl = executionRemoteUrl.TrimEnd('/') + "/";
+                string baseUrl = executionRemoteUrl.TrimEnd('/') + "/";
                 services.AddHttpClient("NexoExecution", c => c.BaseAddress = new Uri(baseUrl));
                 services.AddSingleton<Nexo.Infrastructure.Testing.ExecutionPlatform.IExecutionPlatform>(sp =>
                 {
-                    var factory = sp.GetRequiredService<IHttpClientFactory>();
-                    var client = factory.CreateClient("NexoExecution");
-                    var logger = sp.GetService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Testing.ExecutionPlatform.RemoteExecutionPlatform>>();
+                    IHttpClientFactory factory = sp.GetRequiredService<IHttpClientFactory>();
+                    HttpClient client = factory.CreateClient("NexoExecution");
+                    Microsoft.Extensions.Logging.ILogger<Infrastructure.Testing.ExecutionPlatform.RemoteExecutionPlatform>? logger = sp.GetService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Testing.ExecutionPlatform.RemoteExecutionPlatform>>();
                     return new Nexo.Infrastructure.Testing.ExecutionPlatform.RemoteExecutionPlatform(client, logger);
                 });
             }
@@ -643,12 +614,11 @@ internal static partial class NexoKernelRegistrar
 
     }
 
+    /// <summary>Phase 20: analysis rule engine and mesh-lab worker executor.</summary>
     private static void RegisterPhase20_AnalysisRuleEngine(NexoKernelRegistrationContext ctx)
     {
-        var services = ctx.Services;
-        var options = ctx.Options;
-        var modules = ctx.Modules;
-        var configuration = ctx.Configuration;
+        IServiceCollection services = ctx.Services;
+        IConfiguration configuration = ctx.Configuration;
 
         // ── Analysis rule engine ───────────────────────────────────────
         // Rules are collected via DI multi-registration and fed into
@@ -659,8 +629,8 @@ internal static partial class NexoKernelRegistrar
         services.AddScoped<Nexo.Infrastructure.Analysis.Rules.IAnalysisRule, Nexo.Infrastructure.Analysis.Rules.CodeQualityRule>();
         services.AddScoped<Nexo.Infrastructure.Analysis.Rules.AnalysisRuleEngine>(sp =>
         {
-            var rules = sp.GetServices<Nexo.Infrastructure.Analysis.Rules.IAnalysisRule>();
-            var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Analysis.Rules.AnalysisRuleEngine>>();
+            IEnumerable<Infrastructure.Analysis.Rules.IAnalysisRule> rules = sp.GetServices<Nexo.Infrastructure.Analysis.Rules.IAnalysisRule>();
+            Microsoft.Extensions.Logging.ILogger<Infrastructure.Analysis.Rules.AnalysisRuleEngine> logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Analysis.Rules.AnalysisRuleEngine>>();
             return new Nexo.Infrastructure.Analysis.Rules.AnalysisRuleEngine(rules, logger);
         });
 

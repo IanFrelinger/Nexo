@@ -3,8 +3,7 @@ using Nexo.Core.Domain.Agents;
 using Nexo.Core.Domain.Bricks;
 using Nexo.Infrastructure.Sdk.Ports;
 
-namespace Nexo.Hosting.Sdk;
-
+namespace Nexo.Hosting.Sdk.Builders;
 #pragma warning disable CS0618 // NexoSdkBuilder is an obsolete type forwarder in this file
 
 /// <summary>
@@ -24,7 +23,7 @@ public class HostNexoSdkBuilder : INexoSdkBuilder
     }
 
     /// <inheritdoc />
-    public INexoSdkBuilder RegisterBrick<T>() where T : Brick
+    public INexoSdkBuilder RegisterBrick<T>() where T : DomainBrick
     {
         _options.BrickTypes.Add(typeof(T));
         return this;
@@ -52,18 +51,5 @@ public class HostNexoSdkBuilder : INexoSdkBuilder
 
         _options.AgentCards.Add(card);
         return this;
-    }
-}
-
-/// <summary>
-/// Back-compat type name for <see cref="HostNexoSdkBuilder"/>.
-/// </summary>
-[Obsolete("Renamed to HostNexoSdkBuilder.", error: false)]
-public sealed class NexoSdkBuilder : HostNexoSdkBuilder
-{
-    /// <inheritdoc cref="HostNexoSdkBuilder(NexoSdkOptions)"/>
-    public NexoSdkBuilder(NexoSdkOptions options)
-        : base(options)
-    {
     }
 }

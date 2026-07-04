@@ -16,6 +16,7 @@ public sealed class RoslynBrickStaticAnalyzer : IBrickStaticAnalyzer
 {
     private readonly ILogger<RoslynBrickStaticAnalyzer>? _logger;
 
+    /// <summary>Initializes a new roslyn brick static analyzer.</summary>
     public RoslynBrickStaticAnalyzer(ILogger<RoslynBrickStaticAnalyzer>? logger = null)
     {
         _logger = logger;

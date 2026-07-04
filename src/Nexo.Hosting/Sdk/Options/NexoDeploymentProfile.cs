@@ -1,5 +1,4 @@
-namespace Nexo.Hosting;
-
+namespace Nexo.Hosting.Sdk.Options;
 /// <summary>
 /// Deployment profiles that control which optional Nexo modules are registered
 /// into the DI container. Each profile maps to a <c>ModuleSelection</c> record

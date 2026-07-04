@@ -10,7 +10,7 @@ namespace Nexo.Infrastructure.Adaptation;
 public sealed class BrickDecomposer : IBrickDecomposer
 {
     /// <inheritdoc />
-    public Task<BrickManifest> DecomposeAsync(Brick brick, CancellationToken cancellationToken = default)
+    public Task<BrickManifest> DecomposeAsync(DomainBrick brick, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
 

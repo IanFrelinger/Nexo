@@ -2,21 +2,12 @@ using System.Text;
 using System.Text.Json;
 using Nexo.CLI.Unity.Pipeline;
 
-namespace Nexo.CLI.Commands;
+namespace Nexo.CLI.Commands.Unity;
 
-internal delegate Task<int> UnityGenerateExecutor(
-    string projectRoot,
-    string systemDescription,
-    string outputDir,
-    string testDir,
-    bool dryRun,
-    bool json,
-    CancellationToken ct,
-    string? templatePath = null,
-    string? compositionContext = null);
-
+/// <summary>Handles compose requests.</summary>
 internal sealed class ComposeHandler(UnityGenerateExecutor executeGenerate)
 {
+    /// <summary>Executes the command handler and returns a process exit code.</summary>
     public async Task<int> ExecuteAsync(
         string projectRoot,
         string configPath,

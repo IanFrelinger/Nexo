@@ -19,9 +19,12 @@ public sealed class ScopedPoseRelay
         _subscriber = new ParticipantPoseSubscriber(scopeStore, transport);
     }
 
+    /// <summary>Host-side publisher for scoped atom poses.</summary>
     public HostPosePublisher Host => _publisher;
 
+    /// <summary>Participant-side subscriber for scoped atom poses.</summary>
     public ParticipantPoseSubscriber Participants => _subscriber;
 
+    /// <summary>Match scope store backing this relay.</summary>
     public IMatchScopeStore ScopeStore => _scopeStore;
 }

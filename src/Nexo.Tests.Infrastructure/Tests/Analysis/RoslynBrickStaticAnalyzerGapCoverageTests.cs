@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Analysis;
 
+/// <summary>Tests for roslyn brick static analyzer gap coverage.</summary>
 public sealed class RoslynBrickStaticAnalyzerGapCoverageTests
 {
     private readonly RoslynBrickStaticAnalyzer _analyzer =
@@ -19,6 +20,7 @@ public sealed class RoslynBrickStaticAnalyzerGapCoverageTests
             await File.WriteAllTextAsync(Path.Combine(tempDir, "Blocking.cs"), """
                 using System.Threading.Tasks;
 
+                /// <summary>Tests for blocking.</summary>
                 public class Blocking
                 {
                     public async Task RunAsync()
@@ -36,6 +38,7 @@ public sealed class RoslynBrickStaticAnalyzerGapCoverageTests
         }
         finally
         {
+            /// <summary>Cleanup.</summary>
             Cleanup(tempDir);
         }
     }
@@ -49,6 +52,7 @@ public sealed class RoslynBrickStaticAnalyzerGapCoverageTests
             await File.WriteAllTextAsync(Path.Combine(tempDir, "ProcessStart.cs"), """
                 using System.Diagnostics;
 
+                /// <summary>Tests for proc.</summary>
                 public class Proc
                 {
                     public void Run()
@@ -65,6 +69,7 @@ public sealed class RoslynBrickStaticAnalyzerGapCoverageTests
         }
         finally
         {
+            /// <summary>Cleanup.</summary>
             Cleanup(tempDir);
         }
     }
@@ -77,21 +82,25 @@ public sealed class RoslynBrickStaticAnalyzerGapCoverageTests
         {
             var bad = Path.Combine(tempDir, "Bad.cs");
             await File.WriteAllTextAsync(bad, """
+                /// <summary>Tests for bad.</summary>
                 public class Bad
                 {
                     public void M()
                     {
                         try { }
+                        /// <summary>Catch.</summary>
                         catch (System.Exception) { }
                     }
                 }
                 """);
             await File.WriteAllTextAsync(Path.Combine(tempDir, "Ignored.cs"), """
+                /// <summary>Tests for ignored.</summary>
                 public class Ignored
                 {
                     public void M()
                     {
                         try { }
+                        /// <summary>Catch.</summary>
                         catch (System.Exception) { }
                     }
                 }
@@ -105,6 +114,7 @@ public sealed class RoslynBrickStaticAnalyzerGapCoverageTests
         }
         finally
         {
+            /// <summary>Cleanup.</summary>
             Cleanup(tempDir);
         }
     }
@@ -130,6 +140,7 @@ public sealed class RoslynBrickStaticAnalyzerGapCoverageTests
         finally
         {
             try { File.SetUnixFileMode(file, UnixFileMode.UserRead | UnixFileMode.UserWrite); } catch { /* best effort */ }
+            /// <summary>Cleanup.</summary>
             Cleanup(tempDir);
         }
     }
@@ -156,6 +167,7 @@ public sealed class RoslynBrickStaticAnalyzerGapCoverageTests
             await File.WriteAllTextAsync(Path.Combine(tempDir, "Wait.cs"), """
                 using System.Threading.Tasks;
 
+                /// <summary>Tests for waiter.</summary>
                 public class Waiter
                 {
                     public async Task RunAsync()
@@ -173,6 +185,7 @@ public sealed class RoslynBrickStaticAnalyzerGapCoverageTests
         }
         finally
         {
+            /// <summary>Cleanup.</summary>
             Cleanup(tempDir);
         }
     }

@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Environments;
 
+/// <summary>Tests for model backed material intelligence service.</summary>
 public sealed class ModelBackedMaterialIntelligenceServiceTests
 {
     [Fact]

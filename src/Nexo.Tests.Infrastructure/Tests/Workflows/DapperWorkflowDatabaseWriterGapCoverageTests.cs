@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Workflows;
 
+/// <summary>Tests for dapper workflow database writer gap coverage.</summary>
 public sealed class DapperWorkflowDatabaseWriterGapCoverageTests
 {
     [Theory]
@@ -26,6 +27,7 @@ public sealed class DapperWorkflowDatabaseWriterGapCoverageTests
     {
         var dbPath = CreateTempDatabasePath();
         var connectionString = $"Data Source={dbPath}";
+        /// <summary>Creates events table async.</summary>
         await CreateEventsTableAsync(connectionString);
 
         var writer = new DapperWorkflowDatabaseWriter();
@@ -53,6 +55,7 @@ public sealed class DapperWorkflowDatabaseWriterGapCoverageTests
     {
         var dbPath = CreateTempDatabasePath();
         var connectionString = $"Data Source={dbPath}";
+        /// <summary>Creates events table async.</summary>
         await CreateEventsTableAsync(connectionString);
 
         var writer = new DapperWorkflowDatabaseWriter();

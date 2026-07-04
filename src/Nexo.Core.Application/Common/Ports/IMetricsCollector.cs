@@ -28,14 +28,3 @@ public interface IMetricsCollector
     /// </summary>
     Task<MetricsSnapshot> GetSnapshotAsync(CancellationToken cancellationToken = default);
 }
-
-/// <summary>
-/// Snapshot of collected metrics.
-/// </summary>
-public record MetricsSnapshot
-{
-    public required IReadOnlyDictionary<string, TimeSpan> ExecutionTimes { get; init; }
-    public required IReadOnlyDictionary<string, long> Counters { get; init; }
-    public DateTime CollectedAt { get; init; } = DateTime.UtcNow;
-}
-

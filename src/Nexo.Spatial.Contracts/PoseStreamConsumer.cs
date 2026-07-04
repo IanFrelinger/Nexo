@@ -6,13 +6,22 @@ namespace Nexo.Spatial.Contracts;
 /// </summary>
 public sealed class PoseStreamConsumer
 {
+    /// <summary>Creates a consumer with optional policy thresholds.</summary>
+    /// <param name="options">Policy options; defaults are used when null.</param>
     public PoseStreamConsumer(PoseStreamConsumerOptions? options = null)
     {
         Options = options ?? new PoseStreamConsumerOptions();
     }
 
+    /// <summary>Active policy thresholds for pose acceptance.</summary>
     public PoseStreamConsumerOptions Options { get; }
 
+    /// <summary>
+    /// Evaluates a pose sample against policy using the previous sample and current clock.
+    /// </summary>
+    /// <param name="current">Latest raw provider sample, or null when unavailable.</param>
+    /// <param name="previous">Prior accepted or observed sample, when any.</param>
+    /// <param name="now">Current UTC timestamp for gap-timeout evaluation.</param>
     public ProcessedPoseSample Process(PoseSample? current, PoseSample? previous, DateTimeOffset now)
     {
         if (current is null)
@@ -73,29 +82,4 @@ public sealed class PoseStreamConsumer
         var velocity = distance / dt;
         return velocity > Options.MaxVelocityMetersPerSecond;
     }
-}
-
-/// <summary>
-/// Policy thresholds for <see cref="PoseStreamConsumer"/>.
-/// </summary>
-public sealed record PoseStreamConsumerOptions
-{
-    public double MinConfidence { get; init; } = 0.5;
-
-    public TimeSpan GapTimeout { get; init; } = TimeSpan.FromMilliseconds(500);
-
-    public double MaxVelocityMetersPerSecond { get; init; } = 10.0;
-}
-
-/// <summary>
-/// Consumer output after policy evaluation.
-/// </summary>
-public sealed record ProcessedPoseSample(
-    bool Accepted,
-    TrackingState EffectiveTrackingState,
-    PoseSample? Pose,
-    string? RejectionReason)
-{
-    public static ProcessedPoseSample Lost(string reason) =>
-        new(false, TrackingState.Lost, null, reason);
 }

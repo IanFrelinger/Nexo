@@ -11,6 +11,9 @@ namespace Nexo.Core.Domain.Values;
 /// </summary>
 public interface ITypeValue
 {
+    /// <summary>Internal serialized value representation.</summary>
     string Value { get; }
+
+    /// <summary>Human-readable display label.</summary>
     string Display { get; }
 }

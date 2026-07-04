@@ -11,6 +11,7 @@ public sealed class CoreVersionManager : ICoreVersionManager
     private readonly string _repoRoot;
     private readonly List<string> _changes = new();
 
+    /// <summary>Initializes a new core version manager.</summary>
     public CoreVersionManager(string? repoRoot = null)
     {
         _repoRoot = repoRoot ?? Directory.GetCurrentDirectory();

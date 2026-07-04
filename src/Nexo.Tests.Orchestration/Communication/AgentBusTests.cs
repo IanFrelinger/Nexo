@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration.Communication;
 
+/// <summary>Tests for agent bus.</summary>
 public class AgentBusTests
 {
     private readonly Mock<ILogger<AgentBus>> _loggerMock;

@@ -1,12 +1,15 @@
 using FluentAssertions;
 using Microsoft.Extensions.Options;
-using Nexo.API.Forge;
+using GameDirector.Mcp.Forge;
 using Xunit;
 
-namespace Nexo.Tests.Infrastructure.Tests.API;
-
+namespace Nexo.Tests.GameDirector.Api;
+/// <summary>Tests for forge map fetch url validator.</summary>
 public sealed class ForgeMapFetchUrlValidatorTests
 {
+    /// <summary>Opts.</summary>
+    /// <param name="false">False.</param>
+    /// <param name="hosts">Hosts.</param>
     private static ForgeSessionOptions Opts(bool allowEmpty = false, params string[] hosts) =>
         new()
         {

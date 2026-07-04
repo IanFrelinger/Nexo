@@ -31,6 +31,10 @@ public static class ServiceCollectionExtensions
     /// <summary>
     /// Adds the Nexo API client with the given base URL.
     /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="baseUrl">Base URL of the Nexo API host.</param>
+    /// <param name="apiKey">Optional API key sent as <c>X-Nexo-Api-Key</c>.</param>
+    /// <returns>The service collection for chaining.</returns>
     public static IServiceCollection AddNexoClient(this IServiceCollection services, string baseUrl, string? apiKey = null)
     {
         return services.AddNexoClient(options =>

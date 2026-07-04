@@ -1,7 +1,6 @@
 using System.Buffers.Binary;
 
-namespace Nexo.GameDomain.Mapping;
-
+namespace Nexo.Commercial.GameDomain.Mapping;
 /// <summary>
 /// Best-effort terrain raster summaries (PNG IHDR dimensions; other formats stay header-only).
 /// </summary>

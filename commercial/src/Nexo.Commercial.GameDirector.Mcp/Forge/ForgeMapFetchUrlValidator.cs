@@ -1,8 +1,7 @@
 using System.Net;
 using System.Net.Sockets;
 
-namespace Nexo.API.Forge;
-
+namespace GameDirector.Mcp.Forge;
 /// <summary>
 /// Validates URLs for Forge map pipeline HTTP fetches (SSRF mitigation).
 /// </summary>

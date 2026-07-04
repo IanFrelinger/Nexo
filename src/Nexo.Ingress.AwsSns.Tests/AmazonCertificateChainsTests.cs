@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Ingress.AwsSns.Tests;
 
+/// <summary>Tests for amazon certificate chains.</summary>
 public sealed class AmazonCertificateChainsTests
 {
     [Fact]

@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Pipelines;
 
+/// <summary>Tests for threshold scaling policy.</summary>
 public sealed class ThresholdScalingPolicyTests
 {
     [Fact]

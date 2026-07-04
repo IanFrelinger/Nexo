@@ -12,8 +12,13 @@ namespace Nexo.Core.Domain.Exceptions;
 /// </summary>
 public class AgentExecutionException : DomainException
 {
+    /// <summary>Name of the agent that failed.</summary>
     public string AgentName { get; }
+
+    /// <summary>Optional structured error code from <see cref="ErrorCodes"/>.</summary>
     public string? ErrorCode { get; }
+
+    /// <summary>Optional operator suggestion for resolving the failure.</summary>
     public string? Suggestion { get; }
 
     public AgentExecutionException(string agentName, string message) 

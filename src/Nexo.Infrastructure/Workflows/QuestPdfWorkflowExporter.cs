@@ -15,6 +15,7 @@ public sealed class QuestPdfWorkflowExporter : IWorkflowPdfExporter
         QuestPDF.Settings.License = LicenseType.Community;
     }
 
+    /// <summary>Export to pdf asynchronously.</summary>
     public Task<byte[]> ExportToPdfAsync(string content, CancellationToken ct = default)
     {
         var bytes = Document.Create(container =>

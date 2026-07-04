@@ -1,8 +1,8 @@
 using FluentAssertions;
-using Nexo.GameDomain.Scoping;
+using Nexo.Commercial.GameDomain.Scoping;
 
-namespace Nexo.Tests.GameDomain;
-
+namespace Nexo.Commercial.Tests.GameDomain;
+/// <summary>Tests for scoped setting.</summary>
 public class ScopedSettingTests
 {
     [Fact]

@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Nexo.Tests.GameDirector;
 
+/// <summary>Tests for activity feed publisher.</summary>
 [Trait("Category", "GameDirectorApplication")]
 public sealed class ActivityFeedPublisherTests
 {

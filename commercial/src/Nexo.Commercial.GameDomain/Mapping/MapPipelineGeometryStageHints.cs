@@ -1,5 +1,4 @@
-namespace Nexo.GameDomain.Mapping;
-
+namespace Nexo.Commercial.GameDomain.Mapping;
 /// <summary>
 /// Operator-facing hints for host-side geometry stages (runtime does not tessellate here).
 /// </summary>

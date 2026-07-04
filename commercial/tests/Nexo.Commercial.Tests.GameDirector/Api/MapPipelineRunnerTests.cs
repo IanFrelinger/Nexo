@@ -2,15 +2,16 @@ using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Nexo.API.Forge;
-using Nexo.GameDomain.Aesthetics;
-using Nexo.GameDomain.Mapping;
+using GameDirector.Mcp.Forge;
+using Nexo.Commercial.GameDomain.Aesthetics;
+using Nexo.Commercial.GameDomain.Mapping;
 using Xunit;
 
-namespace Nexo.Tests.Infrastructure.Tests.API;
-
+namespace Nexo.Tests.GameDirector.Api;
+/// <summary>Tests for map pipeline runner.</summary>
 public sealed class MapPipelineRunnerTests
 {
+    /// <summary>Handles ok requests.</summary>
     private sealed class OkHandler : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
@@ -22,6 +23,7 @@ public sealed class MapPipelineRunnerTests
         }
     }
 
+    /// <summary>Handles json ok requests.</summary>
     private sealed class JsonOkHandler : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
@@ -34,6 +36,7 @@ public sealed class MapPipelineRunnerTests
         }
     }
 
+    /// <summary>Handles empty geo json requests.</summary>
     private sealed class EmptyGeoJsonHandler : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
@@ -46,6 +49,7 @@ public sealed class MapPipelineRunnerTests
         }
     }
 
+    /// <summary>Handles png1x1 requests.</summary>
     private sealed class Png1x1Handler : HttpMessageHandler
     {
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)

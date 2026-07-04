@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Trust;
 
+/// <summary>Tests for access boundary gap coverage.</summary>
 public sealed class AccessBoundaryGapCoverageTests
 {
     [Fact]
@@ -200,6 +201,7 @@ public sealed class AccessBoundaryGapCoverageTests
         var boundary = new AccessBoundary();
         boundary.SetPause(true);
 
+        /// <summary>Invoke save to file async.</summary>
         await InvokeSaveToFileAsync(boundary);
 
         boundary.IsObservationPaused.Should().BeTrue();

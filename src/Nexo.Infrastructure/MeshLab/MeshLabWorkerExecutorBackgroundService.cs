@@ -13,6 +13,7 @@ public sealed class MeshLabWorkerExecutorBackgroundService : BackgroundService
     private readonly IOptionsMonitor<MeshLabWorkerExecutorOptions> _options;
     private readonly ILogger<MeshLabWorkerExecutorBackgroundService> _logger;
 
+    /// <summary>Initializes a new mesh lab worker executor background service.</summary>
     public MeshLabWorkerExecutorBackgroundService(
         MeshLabWorkerExecutorClient client,
         IOptionsMonitor<MeshLabWorkerExecutorOptions> options,

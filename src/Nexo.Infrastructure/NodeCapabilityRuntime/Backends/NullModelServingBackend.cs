@@ -10,14 +10,17 @@ public sealed class NullModelServingBackend : IModelServingBackend
 {
     private readonly HashSet<string> _loaded = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Backend type.</summary>
     public BackendType BackendType => BackendType.OnnxRuntime;
 
+    /// <summary>Is available asynchronously.</summary>
     public Task<bool> IsAvailableAsync(CancellationToken ct = default)
     {
         ct.ThrowIfCancellationRequested();
         return Task.FromResult(true);
     }
 
+    /// <summary>Run inference asynchronously.</summary>
     public Task<InferenceResult> RunInferenceAsync(InferenceRequest request, CancellationToken ct = default)
     {
         ct.ThrowIfCancellationRequested();
@@ -28,6 +31,7 @@ public sealed class NullModelServingBackend : IModelServingBackend
         });
     }
 
+    /// <summary>Load model asynchronously.</summary>
     public Task LoadModelAsync(string modelId, CancellationToken ct = default)
     {
         ct.ThrowIfCancellationRequested();
@@ -35,6 +39,7 @@ public sealed class NullModelServingBackend : IModelServingBackend
         return Task.CompletedTask;
     }
 
+    /// <summary>Unload model asynchronously.</summary>
     public Task UnloadModelAsync(string modelId, CancellationToken ct = default)
     {
         ct.ThrowIfCancellationRequested();
@@ -42,6 +47,7 @@ public sealed class NullModelServingBackend : IModelServingBackend
         return Task.CompletedTask;
     }
 
+    /// <summary>Pull model asynchronously.</summary>
     public Task PullModelAsync(string modelId, IProgress<PullProgress>? progress = null, CancellationToken ct = default)
     {
         ct.ThrowIfCancellationRequested();
@@ -49,6 +55,7 @@ public sealed class NullModelServingBackend : IModelServingBackend
         return Task.CompletedTask;
     }
 
+    /// <summary>List loaded models asynchronously.</summary>
     public Task<IReadOnlyList<string>> ListLoadedModelsAsync(CancellationToken ct = default)
     {
         ct.ThrowIfCancellationRequested();

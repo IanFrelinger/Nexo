@@ -1,10 +1,10 @@
-namespace Nexo.GameDomain.Mapping;
-
+namespace Nexo.Commercial.GameDomain.Mapping;
 /// <summary>
 /// Heuristic vector map analysis (format sniff + snippet); no network or LLM.
 /// </summary>
 public sealed class HeuristicVectorMapIntelligenceService : IVectorMapIntelligenceService
 {
+    /// <summary>Analyze async operation.</summary>
     public Task<VectorMapIntelligenceResult> AnalyzeAsync(
         ReadOnlyMemory<byte> rawBytes,
         string? contentTypeHint,

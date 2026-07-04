@@ -19,6 +19,7 @@ public class ObservationsBackgroundAgentCommand
     private readonly IObservationStore _store;
     private readonly ILogger<ObservationsBackgroundAgentCommand> _logger;
 
+    /// <summary>Creates a new ObservationsBackgroundAgentCommand instance.</summary>
     public ObservationsBackgroundAgentCommand(
         IObservationStore store,
         ILogger<ObservationsBackgroundAgentCommand> logger)

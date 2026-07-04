@@ -18,6 +18,7 @@ using Xunit;
 
 namespace Nexo.Tests.GameDirector;
 
+/// <summary>Tests for map mcp endpoint.</summary>
 [Trait("Category", "GameDirectorApplication")]
 public sealed class MapMcpEndpointTests : IAsyncLifetime
 {

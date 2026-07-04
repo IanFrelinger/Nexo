@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.Tools;
 
+/// <summary>Tests for disable agent tool.</summary>
 public class DisableAgentToolTests
 {
     [Fact]

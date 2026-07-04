@@ -1,33 +1,12 @@
 using System.Text.Json;
 using Nexo.CLI.Runtime;
 
-namespace Nexo.CLI.Commands;
+namespace Nexo.CLI.Commands.Runtime;
 
-internal delegate Task<RuntimeExecuteResult> RuntimeExecuteCore(
-    string goal,
-    string repoRoot,
-    string? provider,
-    bool allowMock,
-    bool runTests,
-    string testFilter,
-    string bootstrapProfile,
-    string qaPolicy,
-    string? runtimeManifestPath,
-    string? runtimeManifestJson,
-    int? maxIterationsOverride,
-    bool bootstrapApply,
-    bool bootstrapYes,
-    bool bootstrapDryRun,
-    bool runPreflight,
-    bool useHistory,
-    int historyWindow,
-    bool persistHistory,
-    string benchmarkSet,
-    bool allowVisualCapabilityDegrade,
-    CancellationToken ct);
-
+/// <summary>Handles evaluate requests.</summary>
 internal sealed class EvaluateHandler(RuntimeExecuteCore executeCore)
 {
+    /// <summary>Executes the command handler and returns a process exit code.</summary>
     public async Task<int> ExecuteAsync(
         string? goalsJson,
         string? goalsFile,
@@ -136,7 +115,6 @@ internal sealed class EvaluateHandler(RuntimeExecuteCore executeCore)
         return allPassed ? 0 : 1;
     }
 
-
     private static string[] ResolveGoals(string? goalsJson, string? goalsFile)
     {
         if (!string.IsNullOrWhiteSpace(goalsJson))
@@ -161,7 +139,6 @@ internal sealed class EvaluateHandler(RuntimeExecuteCore executeCore)
         return Array.Empty<string>();
     }
 
-
     private static string[] NormalizeGoals(IEnumerable<string>? goals)
     {
         return (goals ?? Array.Empty<string>())
@@ -170,7 +147,6 @@ internal sealed class EvaluateHandler(RuntimeExecuteCore executeCore)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();
     }
-
 
     private static string[] ResolvePolicies(string csv)
     {
@@ -181,6 +157,5 @@ internal sealed class EvaluateHandler(RuntimeExecuteCore executeCore)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();
     }
-
 
 }

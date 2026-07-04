@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Policies;
 
+/// <summary>Tests for build must pass before commit gap coverage.</summary>
 [Trait("Category", "Unit")]
 public sealed class BuildMustPassBeforeCommitGapCoverageTests
 {

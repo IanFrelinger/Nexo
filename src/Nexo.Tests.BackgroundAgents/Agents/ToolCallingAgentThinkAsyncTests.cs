@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.Agents;
 
+/// <summary>Tests for tool calling agent think async.</summary>
 public sealed class ToolCallingAgentThinkAsyncTests
 {
     [Fact]
@@ -87,28 +88,49 @@ public sealed class ToolCallingAgentThinkAsyncTests
         return (tb, noop);
     }
 
+    /// <summary>Empty toolbox.</summary>
     private sealed class EmptyToolbox : IToolbox
     {
+        /// <summary>Schemas.</summary>
         public IEnumerable<ToolSchema> Schemas() => Array.Empty<ToolSchema>();
+        /// <summary>Invoke async.</summary>
+        /// <param name="call">Call.</param>
+        /// <param name="s">S.</param>
+        /// <param name="ct">Cancellation token.</param>
         public Task<ToolResult> InvokeAsync(ToolCall call, WorldSnapshot s, CancellationToken ct) =>
+            /// <summary>Not supported exception.</summary>
             throw new NotSupportedException();
+        /// <summary>Memory for.</summary>
+        /// <param name="agent">Agent.</param>
         public IAgentMemory MemoryFor(IAgent agent) => new InMemoryAgentMemory();
     }
 
+    /// <summary>In memory agent memory.</summary>
     private sealed class InMemoryAgentMemory : IAgentMemory
     {
+        /// <summary>Events.</summary>
         public List<EventRecord> Events { get; } = new();
+        /// <summary>Write.</summary>
+        /// <param name="record">Record.</param>
         public void Write(EventRecord record) => Events.Add(record);
+        /// <summary>Query.</summary>
+        /// <param name="filter">Filter.</param>
+        /// <param name="k">K.</param>
         public IReadOnlyList<EventRecord> Query(string filter, int k) =>
             Events.Where(e => e.EventType.Contains(filter, StringComparison.Ordinal)).Take(k).ToList();
     }
 
+    /// <summary>Mock model.</summary>
     private sealed class MockModel : IModel
     {
         private readonly string _text;
+        /// <summary>Complete count.</summary>
         public int CompleteCount { get; private set; }
+        /// <summary>Last input.</summary>
         public ModelInput? LastInput { get; private set; }
 
+        /// <summary>Mock model.</summary>
+        /// <param name="text">Text.</param>
         public MockModel(string text) => _text = text;
 
         public Task<ModelOutput> CompleteAsync(ModelInput input, CancellationToken ct)
@@ -119,12 +141,19 @@ public sealed class ToolCallingAgentThinkAsyncTests
         }
     }
 
+    /// <summary>Throwing model.</summary>
     private sealed class ThrowingModel : IModel
     {
+        /// <summary>Complete async.</summary>
+        /// <param name="input">Input.</param>
+        /// <param name="ct">Cancellation token.</param>
         public Task<ModelOutput> CompleteAsync(ModelInput input, CancellationToken ct) =>
+            /// <summary>Invalid operation exception.</summary>
+            /// <param name="down"">Down".</param>
             throw new InvalidOperationException("model down");
     }
 
+    /// <summary>Recording tool.</summary>
     private sealed class RecordingTool : ITool
     {
         public int Invocations;
@@ -138,6 +167,7 @@ public sealed class ToolCallingAgentThinkAsyncTests
         }
     }
 
+    /// <summary>Simple delta.</summary>
     private sealed class SimpleDelta : IActionDelta
     {
         public SimpleDelta(int from, int to, params string[] log)
@@ -148,9 +178,12 @@ public sealed class ToolCallingAgentThinkAsyncTests
         }
 
         private readonly List<string> _log;
+        /// <summary>Tick from.</summary>
         public int TickFrom { get; }
+        /// <summary>Tick to.</summary>
         public int TickTo { get; }
         public IReadOnlyList<string> Log => _log;
+        /// <summary>Signature.</summary>
         public IReadOnlyList<byte>? Signature { get; set; }
     }
 }

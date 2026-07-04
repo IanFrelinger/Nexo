@@ -11,15 +11,19 @@ public sealed class DefaultDeterministicStageExecutionAdapter : IPipelineStageEx
 {
     private readonly ILogger<DefaultDeterministicStageExecutionAdapter> _logger;
 
+    /// <summary>Initializes a new default deterministic stage execution adapter.</summary>
     public DefaultDeterministicStageExecutionAdapter(ILogger<DefaultDeterministicStageExecutionAdapter> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>Adapter key.</summary>
     public string AdapterKey => "default";
 
+    /// <summary>Worker type.</summary>
     public PipelineWorkerType WorkerType => PipelineWorkerType.Deterministic;
 
+    /// <summary>Execute asynchronously.</summary>
     public Task<PipelineStageExecutionResult> ExecuteAsync(
         PipelineStageExecutionRequest request,
         CancellationToken cancellationToken = default)

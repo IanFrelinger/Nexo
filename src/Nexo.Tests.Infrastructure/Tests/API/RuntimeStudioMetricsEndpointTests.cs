@@ -12,6 +12,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.API;
 
+/// <summary>Tests for runtime studio metrics endpoint.</summary>
 public sealed class RuntimeStudioMetricsEndpointTests : IDisposable
 {
     private readonly string _root;
@@ -89,11 +90,16 @@ public sealed class RuntimeStudioMetricsEndpointTests : IDisposable
         return (T)value!;
     }
 
+    /// <summary>Tests for stub host environment.</summary>
     private sealed class StubHostEnvironment : IHostEnvironment
     {
+        /// <summary>Environment name.</summary>
         public string EnvironmentName { get; set; } = "Production";
+        /// <summary>Application name.</summary>
         public string ApplicationName { get; set; } = "test";
+        /// <summary>Content root path.</summary>
         public string ContentRootPath { get; set; } = "";
+        /// <summary>Content root file provider.</summary>
         public IFileProvider ContentRootFileProvider { get; set; } = new NullFileProvider();
     }
 }

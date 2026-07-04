@@ -1,13 +1,15 @@
-namespace Nexo.GameDomain.Maps;
-
+namespace Nexo.Commercial.GameDomain.Maps;
 /// <summary>
 /// Builds Mapbox Raster / Vector Tile API v4 URLs and validates Web Mercator tile indices.
 /// Host-agnostic; keep access tokens in environment or secure storage, never in source control.
 /// </summary>
 public static class MapboxTileUrls
 {
+    /// <summary>Constant value for default raster tileset id.</summary>
     public const string DefaultRasterTilesetId = "mapbox.satellite";
+    /// <summary>Constant value for default vector tileset id.</summary>
     public const string DefaultVectorTilesetId = "mapbox.mapbox-streets-v8";
+    /// <summary>Constant value for raster host.</summary>
     public const string RasterHost = "https://api.mapbox.com";
 
     /// <summary>Throws if tile indices are invalid for standard XYZ Web Mercator tiling at zoom <paramref name="z"/>.</summary>

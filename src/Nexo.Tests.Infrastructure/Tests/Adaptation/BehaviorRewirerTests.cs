@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Adaptation;
 
+/// <summary>Tests for behavior rewirer.</summary>
 [Trait("Category", "Adaptation")]
 public sealed class BehaviorRewirerTests
 {

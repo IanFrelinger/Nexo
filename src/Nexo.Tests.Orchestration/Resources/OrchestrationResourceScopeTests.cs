@@ -12,6 +12,7 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration.Resources;
 
+/// <summary>Tests for orchestration resource scope.</summary>
 public sealed class OrchestrationResourceScopeTests
 {
     [Fact]
@@ -95,6 +96,7 @@ public sealed class OrchestrationResourceScopeTests
         handle.Verify(x => x.ShutdownAsync(It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    /// <summary>Recording resource.</summary>
     private sealed class RecordingResource : IProvisionedResource
     {
         private readonly ProvisionedResourceKind _kind;

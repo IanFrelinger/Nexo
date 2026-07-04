@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Observation;
 
+/// <summary>Tests for process event source.</summary>
 public sealed class ProcessEventSourceTests
 {
     [Fact]

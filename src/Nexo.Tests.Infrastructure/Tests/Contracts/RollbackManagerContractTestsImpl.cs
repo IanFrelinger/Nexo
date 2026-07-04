@@ -10,6 +10,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Contracts;
 
+/// <summary>Tests for rollback manager contract tests impl.</summary>
 public sealed class RollbackManagerContractTestsImpl : RollbackManagerContractTests, IDisposable
 {
     private readonly string _tempDir;
@@ -35,8 +36,11 @@ public sealed class RollbackManagerContractTestsImpl : RollbackManagerContractTe
         _rollbackManager = services.GetRequiredService<IRollbackManager>();
     }
 
+    /// <summary>Creates instance.</summary>
     protected override IRollbackManager CreateInstance() => _rollbackManager;
 
+    /// <summary>Gets temp file path.</summary>
+    /// <param name="relativePath">Relative path.</param>
     protected override string GetTempFilePath(string relativePath) =>
         Path.Combine(_tempDir, relativePath.Replace('/', Path.DirectorySeparatorChar));
 

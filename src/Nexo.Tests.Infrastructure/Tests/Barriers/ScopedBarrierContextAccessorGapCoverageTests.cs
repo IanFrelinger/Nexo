@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Barriers;
 
+/// <summary>Tests for scoped barrier context accessor gap coverage.</summary>
 public sealed class ScopedBarrierContextAccessorGapCoverageTests
 {
     [Fact]
@@ -116,10 +117,14 @@ public sealed class ScopedBarrierContextAccessorGapCoverageTests
             CreateHierarchy(),
             resolutionDetail: "test");
 
+    /// <summary>Tests for capturing ambient.</summary>
     private sealed class CapturingAmbient : IBarrierContextAmbient
     {
+        /// <summary>Current.</summary>
         public BarrierContext? Current { get; private set; }
 
+        /// <summary>Sets current.</summary>
+        /// <param name="context">Context.</param>
         public void SetCurrent(BarrierContext? context) => Current = context;
     }
 }

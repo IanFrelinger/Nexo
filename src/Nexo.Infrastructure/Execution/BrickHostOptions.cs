@@ -5,6 +5,7 @@ namespace Nexo.Infrastructure.Execution;
 /// </summary>
 public class BrickHostOptions
 {
+    /// <summary>Configuration section name.</summary>
     public const string SectionName = "BrickHost";
 
     /// <summary>Base URLs of remote brick catalogs (GET /api/bricks).</summary>

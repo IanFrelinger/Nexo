@@ -1,5 +1,4 @@
-namespace Nexo.Hosting;
-
+namespace Nexo.Hosting.Sdk.Options;
 /// <summary>
 /// Options for configuring the Nexo kernel when using AddNexo().
 /// </summary>

@@ -1,11 +1,10 @@
 using System.Net;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Nexo.GameDomain.Aesthetics;
-using Nexo.GameDomain.Mapping;
+using Nexo.Commercial.GameDomain.Aesthetics;
+using Nexo.Commercial.GameDomain.Mapping;
 
-namespace Nexo.API.Forge;
-
+namespace GameDirector.Mcp.Forge;
 /// <summary>
 /// Executes map adaptation stages with bounded HTTP fetches, SSRF validation, payload heuristics,
 /// and optional vector intelligence.

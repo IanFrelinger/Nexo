@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.External;
 
+/// <summary>Tests for mapbox web mercator tile math.</summary>
 public sealed class MapboxWebMercatorTileMathTests
 {
     [Theory]

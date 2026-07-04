@@ -2,8 +2,10 @@ using Nexo.Core.Application.Certification.Models;
 
 namespace Nexo.Infrastructure.Certification.Composition;
 
+/// <summary>Computes topological execution order for composition graph nodes.</summary>
 internal static class CompositionGraphTopology
 {
+    /// <summary>Gets execution order.</summary>
     public static IReadOnlyList<string> GetExecutionOrder(CompositionSpec spec)
     {
         var nodeIds = spec.Nodes.Select(n => n.NodeId).ToHashSet(StringComparer.OrdinalIgnoreCase);

@@ -14,6 +14,7 @@ public sealed class CertifiedCompositionRegistry
     private readonly CompositionCertificationRecordSigner _signer;
     private readonly ILogger<CertifiedCompositionRegistry>? _logger;
 
+    /// <summary>Initializes a new certified composition registry.</summary>
     public CertifiedCompositionRegistry(
         ICompositionCertificationRecordStore store,
         CompositionCertificationRecordSigner signer,
@@ -24,6 +25,7 @@ public sealed class CertifiedCompositionRegistry
         _logger = logger;
     }
 
+    /// <summary>Gets composition.</summary>
     public CompositionSpec? GetComposition(string compositionId)
     {
         if (!_store.IsAdmitted(compositionId))

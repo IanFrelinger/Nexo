@@ -9,11 +9,13 @@ namespace Nexo.Core.Domain.Exceptions;
 /// </summary>
 public abstract class DomainException : Exception
 {
+    /// <summary>Creates a domain exception with a message.</summary>
     protected DomainException(string message) : base(message)
     {
     }
 
-    protected DomainException(string message, Exception innerException) 
+    /// <summary>Creates a domain exception with a message and inner cause.</summary>
+    protected DomainException(string message, Exception innerException)
         : base(message, innerException)
     {
     }

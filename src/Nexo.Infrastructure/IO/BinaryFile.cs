@@ -6,11 +6,14 @@ namespace Nexo.Infrastructure.IO;
 /// </summary>
 public static class BinaryFile
 {
+    /// <summary>Exists.</summary>
     public static bool Exists(string path) => File.Exists(path);
 
+    /// <summary>Write all bytes asynchronously.</summary>
     public static Task WriteAllBytesAsync(string path, byte[] bytes, CancellationToken ct = default)
         => File.WriteAllBytesAsync(path, bytes, ct);
 
+    /// <summary>Write all bytes asynchronously.</summary>
     public static Task WriteAllBytesAsync(string path, ReadOnlyMemory<byte> bytes, CancellationToken ct = default)
         => File.WriteAllBytesAsync(path, bytes.ToArray(), ct);
 }

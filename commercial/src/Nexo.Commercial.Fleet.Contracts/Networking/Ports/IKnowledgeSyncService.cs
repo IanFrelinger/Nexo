@@ -1,7 +1,6 @@
-using Nexo.Core.Application.Networking.Models;
+using Nexo.Commercial.Fleet.Contracts.Networking.Models;
 
-namespace Nexo.Core.Application.Networking.Ports;
-
+namespace Nexo.Commercial.Fleet.Contracts.Networking.Ports;
 /// <summary>
 /// Cross-node knowledge/memory sync: push chunks to peers and pull from a peer.
 /// </summary>

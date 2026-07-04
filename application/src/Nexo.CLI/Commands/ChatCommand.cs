@@ -11,6 +11,7 @@ public sealed class ChatCommand : Command
 {
     private readonly Func<OrchestrateCommand> _orchestrateFactory;
 
+    /// <summary>Creates the interactive chat command with orchestration and bootstrap options.</summary>
     public ChatCommand(Func<OrchestrateCommand> orchestrateFactory)
         : base("chat", "Interactive chat mode for coding workflows (bootstrap aware)")
     {
@@ -229,8 +230,10 @@ public sealed class ChatCommand : Command
         Console.WriteLine($"provider={state.Provider ?? "(default)"}, prefer-model={state.PreferModel ?? "(default)"}");
     }
 
+    /// <summary>Mutable chat session settings shared across interactive turns.</summary>
     private sealed class ChatState
     {
+        /// <summary>Initializes chat session state from command-line defaults.</summary>
         public ChatState(string? provider, string? preferModel, bool ephemeral)
         {
             Provider = provider;
@@ -238,10 +241,13 @@ public sealed class ChatCommand : Command
             Ephemeral = ephemeral;
         }
 
+        /// <summary>Execution provider override for subsequent orchestration turns.</summary>
         public string? Provider { get; set; }
 
+        /// <summary>Model preference override (agentic, deterministic, auto).</summary>
         public string? PreferModel { get; set; }
 
+        /// <summary>When true, ephemeral model lifecycle is enabled for this session.</summary>
         public bool Ephemeral { get; }
     }
 

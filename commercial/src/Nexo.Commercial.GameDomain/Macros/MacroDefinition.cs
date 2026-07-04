@@ -1,5 +1,4 @@
-namespace Nexo.GameDomain.Macros;
-
+namespace Nexo.Commercial.GameDomain.Macros;
 /// <summary>
 /// Defines a reusable macro — a named sequence of steps that automate repetitive game
 /// design operations such as spawning preset weapon loadouts, configuring AI waves,
@@ -45,43 +44,4 @@ public sealed record MacroDefinition
     /// <c>"system"</c>).
     /// </summary>
     public string TrustLevel { get; init; } = "community";
-}
-
-/// <summary>
-/// A single user-configurable parameter exposed by a <see cref="MacroDefinition"/>.
-/// </summary>
-public sealed record MacroParameter
-{
-    /// <summary>Parameter name used as a key when supplying values at invocation time.</summary>
-    public string Name { get; init; } = string.Empty;
-
-    /// <summary>
-    /// Data type hint (e.g. <c>"int"</c>, <c>"double"</c>, <c>"string"</c>, <c>"bool"</c>).
-    /// </summary>
-    public string Type { get; init; } = "string";
-
-    /// <summary>Default value used when the caller does not supply an explicit override.</summary>
-    public object? DefaultValue { get; init; }
-
-    /// <summary>Optional inclusive lower bound for numeric parameters.</summary>
-    public double? Min { get; init; }
-
-    /// <summary>Optional inclusive upper bound for numeric parameters.</summary>
-    public double? Max { get; init; }
-}
-
-/// <summary>
-/// A single action within a <see cref="MacroDefinition"/>'s execution sequence.
-/// </summary>
-public sealed record MacroStep
-{
-    /// <summary>
-    /// Action verb identifying the operation to perform (e.g. <c>"spawn_weapon"</c>,
-    /// <c>"set_rule"</c>, <c>"apply_aesthetic"</c>).
-    /// </summary>
-    public string Action { get; init; } = string.Empty;
-
-    /// <summary>Key-value arguments passed to the action handler.</summary>
-    public IReadOnlyDictionary<string, object> Args { get; init; } =
-        new Dictionary<string, object>();
 }

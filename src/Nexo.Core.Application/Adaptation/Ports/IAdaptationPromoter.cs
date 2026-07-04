@@ -7,5 +7,10 @@ namespace Nexo.Core.Application.Adaptation.Ports;
 /// </summary>
 public interface IAdaptationPromoter
 {
+    /// <summary>
+    /// Promotes a validated adaptation record to the active core.
+    /// </summary>
+    /// <param name="record">Adaptation record that passed regression.</param>
+    /// <param name="cancellationToken">Token used to cancel the operation.</param>
     Task PromoteAsync(AdaptationRecord record, CancellationToken cancellationToken = default);
 }

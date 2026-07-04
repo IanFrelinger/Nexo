@@ -16,7 +16,7 @@ using Nexo.Infrastructure.Analysis.BrickAnalyzer;
 using Nexo.Infrastructure.Composition;
 using Nexo.Infrastructure.Environments;
 using Nexo.Infrastructure.Execution;
-using Nexo.Infrastructure.Execution.Sdk;
+using Nexo.Infrastructure.Execution.Sdk.Extensions;
 using Nexo.Infrastructure.Maintenance.Adapters;
 using Nexo.Infrastructure.Mesh;
 using Nexo.Infrastructure.Observation;
@@ -25,6 +25,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests;
 
+/// <summary>Tests for infrastructure gap coverage.</summary>
 public class InfrastructureGapCoverageTests
 {
     [Fact]
@@ -111,6 +112,8 @@ public class InfrastructureGapCoverageTests
         };
         detector.HasConverged(new[] { passed }).Should().BeTrue();
 
+        /// <summary>Round.</summary>
+        /// <param name="passCount">Pass count.</param>
         AggregatedTestResult Round(int passCount) => new()
         {
             Results = Enumerable.Range(0, passCount).Select(i => new TestInstance

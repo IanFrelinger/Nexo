@@ -12,7 +12,7 @@ namespace GameDirector.Bricks;
 /// <summary>
 /// map.flow — deterministic tile graph analysis; local-only sightline narrative.
 /// </summary>
-public sealed class MapFlowBrick : Brick
+public sealed class MapFlowBrick : DomainBrick
 {
     private readonly IDataDecisionAuditLog _auditLog;
     private readonly IModel? _model;

@@ -3,11 +3,13 @@ using Nexo.Core.Application.Certification.Ports;
 
 namespace Nexo.Infrastructure.Certification.Composition;
 
+/// <summary>Certifies compositions and admits successful ones into the certified registry.</summary>
 public sealed class CertifiedCompositionAdmission : ICertifiedCompositionAdmission
 {
     private readonly ICompositionCertificationGate _gate;
     private readonly CertifiedCompositionRegistry _registry;
 
+    /// <summary>Initializes a new certified composition admission.</summary>
     public CertifiedCompositionAdmission(
         ICompositionCertificationGate gate,
         CertifiedCompositionRegistry registry)
@@ -16,6 +18,7 @@ public sealed class CertifiedCompositionAdmission : ICertifiedCompositionAdmissi
         _registry = registry ?? throw new ArgumentNullException(nameof(registry));
     }
 
+    /// <summary>Certify and admit asynchronously.</summary>
     public async Task<CompositionCertificationDecision> CertifyAndAdmitAsync(
         CompositionCertificationRequest request,
         CancellationToken cancellationToken = default)
@@ -42,5 +45,6 @@ public sealed class CertifiedCompositionAdmission : ICertifiedCompositionAdmissi
         return decision;
     }
 
+    /// <summary>Whether admitted.</summary>
     public bool IsAdmitted(string compositionId) => _registry.GetComposition(compositionId) is not null;
 }

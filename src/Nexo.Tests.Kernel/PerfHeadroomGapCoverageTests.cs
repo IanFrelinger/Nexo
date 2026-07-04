@@ -6,8 +6,11 @@ using Xunit;
 
 namespace Nexo.Tests.Kernel;
 
+/// <summary>Tests for perf headroom gap coverage.</summary>
 public sealed class PerfHeadroomGapCoverageTests
 {
+    /// <summary>Call.</summary>
+    /// <param name="id">Id.</param>
     private static ToolCall Call(string id) =>
         new(id, JsonDocument.Parse("{}").RootElement);
 

@@ -1,9 +1,11 @@
 namespace Nexo.CLI.Runtime;
 
+/// <summary>Adaptive runtime plan resolver.</summary>
 public static class AdaptiveRuntimePlanResolver
 {
     private const string UiSmokeProjectPath = "docs/UiDomainDemoGenerated/avalonia/Nexo.Ui.AvaloniaHost/Nexo.Ui.AvaloniaHost.csproj";
 
+    /// <summary>Resolves an adaptive execution plan from goal text, manifest context, and overrides.</summary>
     public static AdaptiveRuntimeExecutionPlan Resolve(
         string goal,
         AdaptiveRuntimeManifest manifest,
@@ -124,6 +126,7 @@ public static class AdaptiveRuntimePlanResolver
         };
     }
 
+    /// <summary>Builds a self-extend workflow runtime spec from a resolved execution plan.</summary>
     public static SelfExtendWorkflowRuntimeSpec BuildRuntimeSpec(AdaptiveRuntimeExecutionPlan plan, string? functionalFilterOverride = null)
     {
         return new SelfExtendWorkflowRuntimeSpec
@@ -149,6 +152,7 @@ public static class AdaptiveRuntimePlanResolver
         };
     }
 
+    /// <summary>Appends adaptive runtime context to the operator goal before orchestration.</summary>
     public static string EnrichGoal(string goal, AdaptiveRuntimeManifest manifest, AdaptiveRuntimeExecutionPlan plan)
     {
         var baseGoal = (goal ?? string.Empty).Trim();

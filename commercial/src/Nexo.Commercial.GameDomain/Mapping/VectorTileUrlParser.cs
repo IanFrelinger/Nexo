@@ -1,7 +1,6 @@
 using System.Globalization;
 
-namespace Nexo.GameDomain.Mapping;
-
+namespace Nexo.Commercial.GameDomain.Mapping;
 /// <summary>
 /// Extracts Web Mercator tile indices (z/x/y) from common vector-tile URL layouts (standard z/x/y path or query).
 /// </summary>

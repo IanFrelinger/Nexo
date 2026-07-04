@@ -3,12 +3,12 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
-using Nexo.API.Forge;
-using Nexo.GameDomain.Session;
+using GameDirector.Mcp.Forge;
+using Nexo.Commercial.GameDomain.Session;
 using Xunit;
 
-namespace Nexo.Tests.Infrastructure.Tests.API;
-
+namespace Nexo.Tests.GameDirector.Api;
+/// <summary>Tests for tenant partitioned forge state service.</summary>
 public sealed class TenantPartitionedForgeStateServiceTests
 {
     [Fact]

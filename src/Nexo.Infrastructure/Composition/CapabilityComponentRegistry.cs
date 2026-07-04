@@ -12,6 +12,7 @@ public sealed class CapabilityComponentRegistry : ICapabilityComponentRegistry
     private readonly ConcurrentDictionary<string, ComponentDescriptor> _byId = new(StringComparer.OrdinalIgnoreCase);
     private readonly ConcurrentDictionary<string, List<ComponentDescriptor>> _byCapability = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Initializes a new capability component registry.</summary>
     public CapabilityComponentRegistry()
     {
         SeedFromCodeAnalysis();

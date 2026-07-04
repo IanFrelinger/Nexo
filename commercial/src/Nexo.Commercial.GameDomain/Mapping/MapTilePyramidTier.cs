@@ -1,5 +1,4 @@
-namespace Nexo.GameDomain.Mapping;
-
+namespace Nexo.Commercial.GameDomain.Mapping;
 /// <summary>
 /// A row in a web Mercator tile pyramid for map streaming (see <see cref="MapLodPyramidPlanner"/>).
 /// </summary>

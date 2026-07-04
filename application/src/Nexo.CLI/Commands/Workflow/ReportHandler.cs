@@ -1,14 +1,15 @@
 using System.Text.Json;
 using Nexo.CLI.Runtime;
 
-namespace Nexo.CLI.Commands;
-
+namespace Nexo.CLI.Commands.Workflow;
+/// <summary>Handles report requests.</summary>
 internal sealed class ReportHandler(
     Func<IReadOnlyList<WorkflowLabStressHistoryRow>, WorkflowBenchmarkReport> buildBenchmarkReport,
     Func<IReadOnlyList<WorkflowLabStressHistoryRow>, string?, string?, WorkflowRunComparison> buildComparison,
     Func<WorkflowReportResult, bool, string, string> renderReportContent,
     Func<WorkflowRunComparison, string, string> renderComparisonText)
 {
+    /// <summary>Executes the command handler and returns a process exit code.</summary>
     public Task<int> ExecuteAsync(
         string repoRoot,
         int limit,
@@ -107,6 +108,7 @@ internal sealed class ReportHandler(
             result = result with { OutputPath = fullOutputPath };
         }
 
+        /// <summary>Write result.</summary>
         WriteResult(result, json);
         return Task.FromResult(result.Ok ? 0 : 1);
     }

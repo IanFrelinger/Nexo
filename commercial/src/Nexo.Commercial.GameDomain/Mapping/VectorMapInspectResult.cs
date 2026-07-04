@@ -1,5 +1,4 @@
-namespace Nexo.GameDomain.Mapping;
-
+namespace Nexo.Commercial.GameDomain.Mapping;
 /// <summary>
 /// Result of inspecting vector map bytes on disk (format sniff only — not a full topology parse).
 /// </summary>

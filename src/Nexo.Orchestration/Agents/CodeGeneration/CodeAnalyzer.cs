@@ -131,37 +131,3 @@ public sealed class CodeAnalyzer
         return null;
     }
 }
-
-/// <summary>
-/// Result of code analysis.
-/// </summary>
-public sealed record CodeAnalysis
-{
-    public required string Language { get; init; }
-    public required int LineCount { get; init; }
-    public required int Complexity { get; init; }
-    public IReadOnlyList<CodeIssue> Issues { get; init; } = new List<CodeIssue>();
-}
-
-/// <summary>
-/// An issue found in code analysis.
-/// </summary>
-public sealed record CodeIssue
-{
-    public required string Category { get; init; }
-    public required IssueSeverity Severity { get; init; }
-    public required string Message { get; init; }
-    public int? LineNumber { get; init; }
-}
-
-/// <summary>
-/// Severity of a code issue.
-/// </summary>
-public enum IssueSeverity
-{
-    Low,
-    Medium,
-    High,
-    Critical
-}
-

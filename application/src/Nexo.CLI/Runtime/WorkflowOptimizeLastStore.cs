@@ -2,23 +2,7 @@ using System.Text.Json;
 
 namespace Nexo.CLI.Runtime;
 
-/// <summary>
-/// Persisted snapshot of the most recent <c>workflow optimize</c> winner for downstream tooling
-/// (for example Runtime Studio agent-set sync).
-/// </summary>
-public sealed record WorkflowOptimizeLastPayload
-{
-    public DateTimeOffset WrittenAtUtc { get; init; }
-    public string OptimizeRunId { get; init; } = string.Empty;
-    public bool Ok { get; init; }
-    public string? WinnerCandidateId { get; init; }
-    public string? WinnerRunId { get; init; }
-    public string? ModelProfileId { get; init; }
-    public string? CompositionId { get; init; }
-    public string? RequestId { get; init; }
-    public IReadOnlyList<string> OllamaModels { get; init; } = Array.Empty<string>();
-}
-
+/// <summary>Persists and reads the most recent <c>workflow optimize</c> winner snapshot.</summary>
 public static class WorkflowOptimizeLastStore
 {
     private const string RelativePath = ".nexo/runtime/workflow_optimize_last.json";
@@ -29,9 +13,11 @@ public static class WorkflowOptimizeLastStore
         PropertyNameCaseInsensitive = true
     };
 
+    /// <summary>Absolute path to the optimize-last JSON file under <paramref name="repoRoot"/>.</summary>
     public static string GetPath(string repoRoot)
         => Path.GetFullPath(Path.Combine(repoRoot, RelativePath));
 
+    /// <summary>Writes <paramref name="payload"/> to the optimize-last store, creating parent directories as needed.</summary>
     public static void Write(string repoRoot, WorkflowOptimizeLastPayload payload)
     {
         var path = GetPath(repoRoot);
@@ -42,6 +28,7 @@ public static class WorkflowOptimizeLastStore
         File.WriteAllText(path, JsonSerializer.Serialize(payload, JsonOptions));
     }
 
+    /// <summary>Reads the optimize-last payload when present and valid; otherwise returns null.</summary>
     public static WorkflowOptimizeLastPayload? TryRead(string repoRoot)
     {
         var path = GetPath(repoRoot);

@@ -26,11 +26,13 @@ public sealed class VisionProSpatialAnchorProvider : ISpatialAnchorProvider
         _session = session ?? throw new ArgumentNullException(nameof(session));
     }
 
+    /// <summary>Convenience factory for hosts that manage <see cref="PlatformVisionProNativeSession"/> lifecycle inline.</summary>
     public static VisionProSpatialAnchorProvider WithPlatformSession(
         bool sessionActive = false,
         bool immersiveSpaceActive = false) =>
         new(new PlatformVisionProNativeSession(sessionActive, immersiveSpaceActive));
 
+    /// <summary>Returns the latest pose for an atom, or <see langword="null"/> when unavailable.</summary>
     public Task<PoseSample?> GetCurrentPose(string atomId)
     {
         if (string.IsNullOrWhiteSpace(atomId) || !IsTrackingAvailable())
@@ -43,6 +45,7 @@ public sealed class VisionProSpatialAnchorProvider : ISpatialAnchorProvider
         return Task.FromResult<PoseSample?>(VisionProTrackingStateMapper.ToPoseSample(frame));
     }
 
+    /// <summary>Observes pose updates for an atom; emits lost samples when tracking is unavailable.</summary>
     public IObservable<PoseSample> ObservePose(string atomId)
     {
         if (string.IsNullOrWhiteSpace(atomId) || !IsTrackingAvailable())

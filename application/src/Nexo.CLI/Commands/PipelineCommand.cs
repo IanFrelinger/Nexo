@@ -22,6 +22,7 @@ public sealed class PipelineCommand
     private readonly IOptions<PipelineExecutionAdapterOptions> _adapterOptions;
     private readonly ILogger<PipelineCommand> _logger;
 
+    /// <summary>Creates a new PipelineCommand instance.</summary>
     public PipelineCommand(
         IPipelineTemplateValidator validator,
         IPipelineOrchestrator orchestrator,
@@ -40,6 +41,7 @@ public sealed class PipelineCommand
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>Creates a new Validate instance.</summary>
     public int Validate(string templatePath, bool json, bool verbose)
     {
         if (string.IsNullOrWhiteSpace(templatePath))
@@ -103,6 +105,7 @@ public sealed class PipelineCommand
         }
     }
 
+    /// <summary>Creates a new RunAsync instance.</summary>
     public async Task<int> RunAsync(
         string templatePath,
         bool json,
@@ -207,6 +210,7 @@ public sealed class PipelineCommand
         }
     }
 
+    /// <summary>Creates a new Diagnostics instance.</summary>
     public int Diagnostics(bool json)
     {
         var execution = _executionOptions.Value;

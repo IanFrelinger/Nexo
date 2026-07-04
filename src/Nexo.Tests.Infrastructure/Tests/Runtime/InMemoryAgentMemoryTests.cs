@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Runtime;
 
+/// <summary>Tests for in memory agent memory.</summary>
 public sealed class InMemoryAgentMemoryTests
 {
     [Fact(Timeout = 15000)]

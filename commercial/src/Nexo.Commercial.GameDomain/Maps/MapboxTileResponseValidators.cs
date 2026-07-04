@@ -1,12 +1,12 @@
 using System.Net;
 
-namespace Nexo.GameDomain.Maps;
-
+namespace Nexo.Commercial.GameDomain.Maps;
 /// <summary>
 /// Shared assertions for Mapbox tile HTTP responses (hosts and tests).
 /// </summary>
 public static class MapboxTileResponseValidators
 {
+    /// <summary>Assert raster tile success operation.</summary>
     public static void AssertRasterTileSuccess(HttpStatusCode status, string? contentType, ReadOnlySpan<byte> body)
     {
         if (status != HttpStatusCode.OK)
@@ -22,6 +22,7 @@ public static class MapboxTileResponseValidators
             throw new InvalidOperationException("Body does not start with JPEG SOI (FF D8).");
     }
 
+    /// <summary>Assert vector tile success operation.</summary>
     public static void AssertVectorTileSuccess(HttpStatusCode status, string? contentType, ReadOnlySpan<byte> body)
     {
         if (status != HttpStatusCode.OK)

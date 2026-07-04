@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.Tools;
 
+/// <summary>Tests for restart agent tool.</summary>
 public class RestartAgentToolTests
 {
     [Fact]

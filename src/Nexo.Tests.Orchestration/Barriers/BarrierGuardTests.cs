@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration.Barriers;
 
+/// <summary>Tests for barrier guard.</summary>
 public sealed class BarrierGuardTests
 {
     [Fact]
@@ -122,6 +123,7 @@ public sealed class BarrierGuardTests
         BarrierOptions options)
     {
         var hierarchy = new BarrierHierarchy(options.Levels.Select((name, rank) => new BarrierLevel(name, rank)));
+        /// <summary>Barrier guard.</summary>
         return new BarrierGuard(accessor, audit, hierarchy, options);
     }
 }

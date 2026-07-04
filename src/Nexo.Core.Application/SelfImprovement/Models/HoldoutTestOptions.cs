@@ -18,10 +18,11 @@ public sealed class HoldoutTestOptions
     /// </summary>
     public bool ValidateHoldoutAtEnd { get; set; } = true;
 
-    /// <summary>
-    /// Derives the regression filter that excludes holdout tests.
-    /// For "Category=Holdout", returns "Category!=Holdout".
-    /// </summary>
+    /// <summary>Derives the regression filter that excludes holdout tests.</summary>
+    /// <returns>
+    /// An xUnit exclusion filter (e.g. <c>Category!=Holdout</c>), or null when
+    /// <see cref="HoldoutFilter"/> is unset or cannot be inverted.
+    /// </returns>
     public string? GetRegressionExclusionFilter()
     {
         if (string.IsNullOrWhiteSpace(HoldoutFilter))

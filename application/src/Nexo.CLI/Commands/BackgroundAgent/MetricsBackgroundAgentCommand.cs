@@ -16,6 +16,7 @@ public class MetricsBackgroundAgentCommand
     private readonly IAggressivenessModeStore _modeStore;
     private readonly ILogger<MetricsBackgroundAgentCommand> _logger;
 
+    /// <summary>Creates a new MetricsBackgroundAgentCommand instance.</summary>
     public MetricsBackgroundAgentCommand(
         IBackgroundAgentRegistry registry,
         IAggressivenessModeStore modeStore,

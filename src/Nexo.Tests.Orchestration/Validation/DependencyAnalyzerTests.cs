@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration.Validation;
 
+/// <summary>Tests for dependency analyzer.</summary>
 public class DependencyAnalyzerTests
 {
     private readonly Mock<ILogger<DependencyAnalyzer>> _loggerMock;

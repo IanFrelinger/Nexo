@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Barriers.Identity;
 
+/// <summary>Tests for barrier identity resolver registration.</summary>
 public sealed class BarrierIdentityResolverRegistrationTests
 {
     [Fact]
@@ -44,6 +45,7 @@ public sealed class BarrierIdentityResolverRegistrationTests
         services.AddSingleton<BarrierHierarchy>(sp =>
         {
             var options = sp.GetRequiredService<Microsoft.Extensions.Options.IOptions<BarrierOptions>>().Value;
+            /// <summary>Barrier hierarchy.</summary>
             return new BarrierHierarchy(options.Levels.Select((name, i) => new BarrierLevel(name, i)));
         });
 

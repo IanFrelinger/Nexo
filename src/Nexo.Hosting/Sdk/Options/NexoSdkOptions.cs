@@ -1,7 +1,6 @@
 using Nexo.Core.Domain.Agents;
 
-namespace Nexo.Hosting.Sdk;
-
+namespace Nexo.Hosting.Sdk.Options;
 /// <summary>
 /// Options for SDK-registered components. Populated by INexoSdkBuilder.
 /// </summary>

@@ -1,5 +1,4 @@
-namespace Nexo.GameDomain.Environments;
-
+namespace Nexo.Commercial.GameDomain.Environments;
 /// <summary>
 /// Helpers for deriving density metrics from <see cref="VoxelLodTier"/> descriptions.
 /// </summary>

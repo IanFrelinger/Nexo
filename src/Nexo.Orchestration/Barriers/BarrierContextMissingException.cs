@@ -1,5 +1,6 @@
 namespace Nexo.Orchestration.Barriers;
 
+/// <summary>Thrown when barrier context is required but not established for an agent invocation.</summary>
 public sealed class BarrierContextMissingException : Exception
 {
     public BarrierContextMissingException(string agentName, string correlationId)

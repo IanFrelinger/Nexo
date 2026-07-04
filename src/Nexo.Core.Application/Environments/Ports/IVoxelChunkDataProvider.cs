@@ -8,22 +8,17 @@ namespace Nexo.Core.Application.Environments.Ports;
 /// </summary>
 public interface IVoxelChunkDataProvider
 {
+    /// <summary>Discriminator matching <see cref="MapDataSourceBinding.Kind"/> this implementation handles.</summary>
     string Kind { get; }
 
     /// <summary>Returns chunk bytes if present; absent chunks should yield not-found or empty per host policy.</summary>
+    /// <param name="key">Voxel chunk coordinates and tier.</param>
+    /// <param name="binding">Data source connection details.</param>
+    /// <param name="context">Cross-cutting request context.</param>
+    /// <param name="cancellationToken">Token used to cancel the operation.</param>
     Task<VoxelChunkDataResult> FetchAsync(
         VoxelChunkKey key,
         MapDataSourceBinding binding,
         MapDataRequestContext context,
         CancellationToken cancellationToken = default);
 }
-
-/// <param name="Found">Whether data exists for this key.</param>
-/// <param name="Payload">Voxel or compressed chunk bytes when <see cref="Found"/> is true.</param>
-/// <param name="ContentType">Optional format hint.</param>
-/// <param name="ETag">Optional cache validator from upstream.</param>
-public sealed record VoxelChunkDataResult(
-    bool Found,
-    ReadOnlyMemory<byte> Payload = default,
-    string? ContentType = null,
-    string? ETag = null);

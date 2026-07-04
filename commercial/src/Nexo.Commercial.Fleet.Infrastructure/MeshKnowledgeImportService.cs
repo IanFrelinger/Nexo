@@ -27,6 +27,7 @@ public sealed class MeshKnowledgeImportService
         _logger = logger;
     }
 
+    /// <summary>Import async operation.</summary>
     public async Task<MeshKnowledgeImportResult> ImportAsync(MeshKnowledgeExportPayload payload, CancellationToken cancellationToken = default)
     {
         var adaptationsApplied = 0;
@@ -87,9 +88,3 @@ public sealed class MeshKnowledgeImportService
         return false;
     }
 }
-
-public sealed record MeshKnowledgeImportResult(
-    int AdaptationsApplied,
-    int AdaptationsSkipped,
-    int PatternsApplied,
-    int PatternsSkipped);

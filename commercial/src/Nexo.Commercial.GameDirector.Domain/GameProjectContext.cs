@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Nexo.GameDomain.Session;
+using Nexo.Commercial.GameDomain.Session;
 
 namespace GameDirector.Domain;
 
@@ -48,11 +48,3 @@ public sealed class GameProjectContext
         return ctx;
     }
 }
-
-public sealed record BalanceSheetRef(string SheetId, string Path, DateTimeOffset LastSeenUtc);
-public sealed record MapConfigRef(string MapId, string Path, DateTimeOffset LastValidatedUtc);
-public sealed record GenerationHistoryEntry(
-    string AuditId,
-    string TargetType,
-    string Prompt,
-    DateTimeOffset CreatedAtUtc);

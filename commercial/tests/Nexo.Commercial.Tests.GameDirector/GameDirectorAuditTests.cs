@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Tests.GameDirector;
 
+/// <summary>Tests for game director audit.</summary>
 [Trait("Category", "GameDirectorApplication")]
 public sealed class GameDirectorAuditTests
 {

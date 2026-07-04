@@ -2,8 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Nexo.Core.Application.Analysis.Ports;
 using Nexo.Infrastructure.Analysis.BrickAnalyzer;
 
-namespace Nexo.Infrastructure.Sdk.Analysis;
-
+namespace Nexo.Infrastructure.Analysis.BrickAnalyzer.Sdk.Extensions;
 /// <summary>
 /// DI registration for Block 2 code analyzers.
 /// </summary>

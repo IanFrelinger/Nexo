@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Tests.CLI.Tests.Commands;
 
+/// <summary>Tests for runtime studio operator dashboard summary.</summary>
 public sealed class RuntimeStudioOperatorDashboardSummaryTests : IDisposable
 {
     private readonly string _root;

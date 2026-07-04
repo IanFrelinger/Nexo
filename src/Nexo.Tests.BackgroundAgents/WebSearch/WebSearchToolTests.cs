@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.WebSearch;
 
+/// <summary>Tests for web search tool.</summary>
 public class WebSearchToolTests
 {
     [Fact]

@@ -1,5 +1,5 @@
-using Nexo.BrickContracts;
-using Nexo.BrickContracts.Capabilities;
+using Nexo.Brick.Contracts;
+using Nexo.Brick.Contracts.Capabilities;
 
 namespace Nexo.Infrastructure.Execution;
 
@@ -26,13 +26,4 @@ public interface IRemoteBrickCatalog
     /// Gets remote node capabilities and indicates whether the returned value is stale fallback data.
     /// </summary>
     Task<CapabilitiesFetchResult> GetCapabilitiesWithStalenessAsync(CancellationToken cancellationToken = default);
-}
-
-/// <summary>
-/// Result wrapper for capabilities retrieval.
-/// </summary>
-public sealed record CapabilitiesFetchResult
-{
-    public NodeCapabilityManifestDto? Capabilities { get; init; }
-    public bool IsStale { get; init; }
 }

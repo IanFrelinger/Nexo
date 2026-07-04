@@ -1,5 +1,6 @@
 namespace Nexo.Tests.Infrastructure.Certification.Reuse;
 
+/// <summary>Repo paths.</summary>
 internal static class RepoPaths
 {
     public static string FindRepoRoot()

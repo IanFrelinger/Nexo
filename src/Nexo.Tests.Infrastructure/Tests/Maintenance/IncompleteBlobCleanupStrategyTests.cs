@@ -10,6 +10,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Maintenance;
 
+/// <summary>Tests for incomplete blob cleanup strategy.</summary>
 public class IncompleteBlobCleanupStrategyTests : IDisposable
 {
     private readonly string _blobPath;
@@ -158,9 +159,11 @@ public class IncompleteBlobCleanupStrategyTests : IDisposable
     {
         var incompletePath = Path.Combine(_blobPath, "locked.incomplete");
         await File.WriteAllBytesAsync(incompletePath, new byte[64]);
+        /// <summary>Make undeletable.</summary>
         MakeUndeletable(incompletePath);
         if (!DeleteIsBlocked(incompletePath))
         {
+            /// <summary>Make deletable.</summary>
             MakeDeletable(incompletePath);
             return;
         }
@@ -175,6 +178,7 @@ public class IncompleteBlobCleanupStrategyTests : IDisposable
         }
         finally
         {
+            /// <summary>Make deletable.</summary>
             MakeDeletable(incompletePath);
         }
     }
@@ -196,6 +200,8 @@ public class IncompleteBlobCleanupStrategyTests : IDisposable
     {
         if (OperatingSystem.IsMacOS())
         {
+            /// <summary>Run shell.</summary>
+            /// <param name="\"{path}\""">\"{path}\"".</param>
             RunShell("chflags", $"uchg \"{path}\"");
             return;
         }
@@ -206,6 +212,8 @@ public class IncompleteBlobCleanupStrategyTests : IDisposable
             return;
         }
 
+        /// <summary>Run shell.</summary>
+        /// <param name="\"{path}\""">\"{path}\"".</param>
         RunShell("chmod", $"000 \"{path}\"");
     }
 
@@ -216,6 +224,8 @@ public class IncompleteBlobCleanupStrategyTests : IDisposable
 
         if (OperatingSystem.IsMacOS())
         {
+            /// <summary>Run shell.</summary>
+            /// <param name="\"{path}\""">\"{path}\"".</param>
             RunShell("chflags", $"nouchg \"{path}\"");
             return;
         }
@@ -226,6 +236,8 @@ public class IncompleteBlobCleanupStrategyTests : IDisposable
             return;
         }
 
+        /// <summary>Run shell.</summary>
+        /// <param name="\"{path}\""">\"{path}\"".</param>
         RunShell("chmod", $"644 \"{path}\"");
     }
 

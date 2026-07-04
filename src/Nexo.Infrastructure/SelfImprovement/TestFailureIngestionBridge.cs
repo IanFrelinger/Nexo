@@ -13,6 +13,7 @@ public sealed class TestFailureIngestionBridge
 {
     private readonly ITestFailureStore _store;
 
+    /// <summary>Initializes a new test failure ingestion bridge.</summary>
     public TestFailureIngestionBridge(ITestFailureStore store)
     {
         _store = store ?? throw new ArgumentNullException(nameof(store));

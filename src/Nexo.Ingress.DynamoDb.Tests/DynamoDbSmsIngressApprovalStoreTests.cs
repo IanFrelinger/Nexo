@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Nexo.Ingress.DynamoDb.Tests;
 
+/// <summary>Tests for dynamo db sms ingress approval store.</summary>
 public sealed class DynamoDbSmsIngressApprovalStoreTests
 {
     [Fact]
@@ -54,12 +55,19 @@ public sealed class DynamoDbSmsIngressApprovalStoreTests
         dynamo.Verify(d => d.GetItemAsync(It.IsAny<GetItemRequest>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
+    /// <summary>Options monitor stub.</summary>
     private sealed class OptionsMonitorStub : IOptionsMonitor<Nexo.Contracts.SmsIngressDynamoDbOptions>
     {
         private readonly IOptions<Nexo.Contracts.SmsIngressDynamoDbOptions> _inner;
+        /// <summary>Options monitor stub.</summary>
+        /// <param name="inner">Inner.</param>
         public OptionsMonitorStub(IOptions<Nexo.Contracts.SmsIngressDynamoDbOptions> inner) => _inner = inner;
         public Nexo.Contracts.SmsIngressDynamoDbOptions CurrentValue => _inner.Value;
+        /// <summary>Gets the value.</summary>
+        /// <param name="name">Name.</param>
         public Nexo.Contracts.SmsIngressDynamoDbOptions Get(string? name) => _inner.Value;
+        /// <summary>On change.</summary>
+        /// <param name="listener">Listener.</param>
         public IDisposable? OnChange(Action<Nexo.Contracts.SmsIngressDynamoDbOptions, string?> listener) => null;
     }
 }

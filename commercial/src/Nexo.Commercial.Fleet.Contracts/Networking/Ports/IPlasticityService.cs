@@ -1,7 +1,6 @@
-using Nexo.Core.Application.Networking.Models;
+using Nexo.Commercial.Fleet.Contracts.Networking.Models;
 
-namespace Nexo.Core.Application.Networking.Ports;
-
+namespace Nexo.Commercial.Fleet.Contracts.Networking.Ports;
 /// <summary>
 /// Orchestrates plasticity metrics and optional periodic tasks (usage reporting, directory refresh).
 /// </summary>

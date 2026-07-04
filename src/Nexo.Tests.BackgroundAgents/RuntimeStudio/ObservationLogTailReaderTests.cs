@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.RuntimeStudio;
 
+/// <summary>Tests for observation log tail reader.</summary>
 public sealed class ObservationLogTailReaderTests : IDisposable
 {
     private readonly string _path;

@@ -4,17 +4,24 @@ using Nexo.Core.Application.Testing.Models;
 
 namespace Nexo.Tests.Application.Tests.Models;
 
+/// <summary>Tests for test result.</summary>
 public class TestResultTests : UnitTestBase
 {
     public override Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
+            /// <summary>Test record equality.</summary>
             TestRecordEquality();
+            /// <summary>Test record inequality.</summary>
             TestRecordInequality();
+            /// <summary>Test initialization with all properties.</summary>
             TestInitializationWithAllProperties();
+            /// <summary>Test initialization with optional properties.</summary>
             TestInitializationWithOptionalProperties();
+            /// <summary>Test test execution result equality.</summary>
             TestTestExecutionResultEquality();
+            /// <summary>Test test execution result with categories.</summary>
             TestTestExecutionResultWithCategories();
 
             return Task.FromResult(new TestResult
@@ -64,8 +71,13 @@ public class TestResultTests : UnitTestBase
             Metadata = null
         };
 
+        /// <summary>Assert equal.</summary>
         AssertEqual(result1, result2);
+        /// <summary>Assert true.</summary>
+        /// <param name="result2">Result2.</param>
         AssertTrue(result1 == result2);
+        /// <summary>Assert false.</summary>
+        /// <param name="result2">Result2.</param>
         AssertFalse(result1 != result2);
         AssertEqual(result1.GetHashCode(), result2.GetHashCode());
     }
@@ -89,7 +101,11 @@ public class TestResultTests : UnitTestBase
         };
 
         AssertFalse(result1.Equals(result2));
+        /// <summary>Assert false.</summary>
+        /// <param name="result2">Result2.</param>
         AssertFalse(result1 == result2);
+        /// <summary>Assert true.</summary>
+        /// <param name="result2">Result2.</param>
         AssertTrue(result1 != result2);
     }
 
@@ -113,14 +129,23 @@ public class TestResultTests : UnitTestBase
             Metadata = metadata
         };
 
+        /// <summary>Assert equal.</summary>
         AssertEqual("Test1", result.TestName);
+        /// <summary>Assert equal.</summary>
         AssertEqual("Category1", result.Category);
+        /// <summary>Assert false.</summary>
         AssertFalse(result.Passed);
+        /// <summary>Assert equal.</summary>
+        /// <param name="failed"">Failed".</param>
         AssertEqual("Test failed", result.Message);
         AssertEqual(TimeSpan.FromMilliseconds(150), result.Duration);
+        /// <summary>Assert equal.</summary>
+        /// <param name="failed"">Failed".</param>
         AssertEqual("Assertion failed", result.ErrorMessage);
         AssertEqual("at Test1()", result.StackTrace);
+        /// <summary>Assert not null.</summary>
         AssertNotNull(result.Metadata);
+        /// <summary>Assert equal.</summary>
         AssertEqual(2, result.Metadata.Count);
     }
 
@@ -138,13 +163,21 @@ public class TestResultTests : UnitTestBase
             Metadata = null
         };
 
+        /// <summary>Assert equal.</summary>
         AssertEqual("Test1", result.TestName);
+        /// <summary>Assert equal.</summary>
         AssertEqual("Category1", result.Category);
+        /// <summary>Assert true.</summary>
         AssertTrue(result.Passed);
+        /// <summary>Assert null.</summary>
         AssertNull(result.Message);
+        /// <summary>Assert equal.</summary>
         AssertEqual(TimeSpan.Zero, result.Duration);
+        /// <summary>Assert null.</summary>
         AssertNull(result.ErrorMessage);
+        /// <summary>Assert null.</summary>
         AssertNull(result.StackTrace);
+        /// <summary>Assert null.</summary>
         AssertNull(result.Metadata);
     }
 
@@ -176,7 +209,10 @@ public class TestResultTests : UnitTestBase
             Categories = null
         };
 
+        /// <summary>Assert equal.</summary>
         AssertEqual(executionResult1, executionResult2);
+        /// <summary>Assert true.</summary>
+        /// <param name="executionResult2">Execution result2.</param>
         AssertTrue(executionResult1 == executionResult2);
         AssertEqual(executionResult1.GetHashCode(), executionResult2.GetHashCode());
     }
@@ -201,12 +237,19 @@ public class TestResultTests : UnitTestBase
             Categories = categories
         };
 
+        /// <summary>Assert equal.</summary>
         AssertEqual(2, executionResult.TotalTests);
+        /// <summary>Assert equal.</summary>
         AssertEqual(2, executionResult.PassedTests);
+        /// <summary>Assert equal.</summary>
         AssertEqual(0, executionResult.FailedTests);
+        /// <summary>Assert not null.</summary>
         AssertNotNull(executionResult.Categories);
+        /// <summary>Assert equal.</summary>
         AssertEqual(2, executionResult.Categories.Count);
+        /// <summary>Assert equal.</summary>
         AssertEqual("Category1", executionResult.Categories[0]);
+        /// <summary>Assert equal.</summary>
         AssertEqual("Category2", executionResult.Categories[1]);
     }
 }

@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Barriers.Identity;
 
+/// <summary>Tests for barrier resolver catch gap coverage.</summary>
 public sealed class BarrierResolverCatchGapCoverageTests
 {
     [Fact]
@@ -128,30 +129,45 @@ public sealed class BarrierResolverCatchGapCoverageTests
             new BarrierLevel("confidential", 2),
         ]);
 
+    /// <summary>Throwing headers.</summary>
     private sealed class ThrowingHeaders : IReadOnlyDictionary<string, string>
     {
         public string this[string key] => throw new InvalidOperationException("headers failed");
         public IEnumerable<string> Keys => throw new InvalidOperationException("headers failed");
         public IEnumerable<string> Values => throw new InvalidOperationException("headers failed");
         public int Count => throw new InvalidOperationException("headers failed");
+        /// <summary>Contains key.</summary>
+        /// <param name="key">Key.</param>
         public bool ContainsKey(string key) => throw new InvalidOperationException("headers failed");
+        /// <summary>Gets enumerator.</summary>
         public IEnumerator<KeyValuePair<string, string>> GetEnumerator() => throw new InvalidOperationException("headers failed");
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
+        /// <summary>Attempts to get value; returns false on failure.</summary>
+        /// <param name="key">Key.</param>
+        /// <param name="value">Value.</param>
         public bool TryGetValue(string key, out string value) => throw new InvalidOperationException("headers failed");
     }
 
+    /// <summary>Throwing claim dictionary.</summary>
     private sealed class ThrowingClaimDictionary : IReadOnlyDictionary<string, string>
     {
         public string this[string key] => throw new InvalidOperationException("claims failed");
         public IEnumerable<string> Keys => throw new InvalidOperationException("claims failed");
         public IEnumerable<string> Values => throw new InvalidOperationException("claims failed");
         public int Count => throw new InvalidOperationException("claims failed");
+        /// <summary>Contains key.</summary>
+        /// <param name="key">Key.</param>
         public bool ContainsKey(string key) => throw new InvalidOperationException("claims failed");
+        /// <summary>Gets enumerator.</summary>
         public IEnumerator<KeyValuePair<string, string>> GetEnumerator() => throw new InvalidOperationException("claims failed");
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
+        /// <summary>Attempts to get value; returns false on failure.</summary>
+        /// <param name="key">Key.</param>
+        /// <param name="value">Value.</param>
         public bool TryGetValue(string key, out string value) => throw new InvalidOperationException("claims failed");
     }
 
+    /// <summary>Throwing rule list.</summary>
     private sealed class ThrowingRuleList : IList<CertificateBarrierRule>
     {
         public CertificateBarrierRule this[int index]
@@ -162,14 +178,32 @@ public sealed class BarrierResolverCatchGapCoverageTests
 
         public int Count => throw new InvalidOperationException("rules failed");
         public bool IsReadOnly => false;
+        /// <summary>Add.</summary>
+        /// <param name="item">Item.</param>
         public void Add(CertificateBarrierRule item) => throw new InvalidOperationException("rules failed");
+        /// <summary>Clear.</summary>
         public void Clear() => throw new InvalidOperationException("rules failed");
+        /// <summary>Contains.</summary>
+        /// <param name="item">Item.</param>
         public bool Contains(CertificateBarrierRule item) => throw new InvalidOperationException("rules failed");
+        /// <summary>Copy to.</summary>
+        /// <param name="array">Array.</param>
+        /// <param name="arrayIndex">Array index.</param>
         public void CopyTo(CertificateBarrierRule[] array, int arrayIndex) => throw new InvalidOperationException("rules failed");
+        /// <summary>Gets enumerator.</summary>
         public IEnumerator<CertificateBarrierRule> GetEnumerator() => throw new InvalidOperationException("rules failed");
+        /// <summary>Index of.</summary>
+        /// <param name="item">Item.</param>
         public int IndexOf(CertificateBarrierRule item) => throw new InvalidOperationException("rules failed");
+        /// <summary>Insert.</summary>
+        /// <param name="index">Index.</param>
+        /// <param name="item">Item.</param>
         public void Insert(int index, CertificateBarrierRule item) => throw new InvalidOperationException("rules failed");
+        /// <summary>Remove.</summary>
+        /// <param name="item">Item.</param>
         public bool Remove(CertificateBarrierRule item) => throw new InvalidOperationException("rules failed");
+        /// <summary>Remove at.</summary>
+        /// <param name="index">Index.</param>
         public void RemoveAt(int index) => throw new InvalidOperationException("rules failed");
         System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator() => GetEnumerator();
     }

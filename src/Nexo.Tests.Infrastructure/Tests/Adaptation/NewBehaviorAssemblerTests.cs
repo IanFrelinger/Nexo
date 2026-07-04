@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Adaptation;
 
+/// <summary>Tests for new behavior assembler.</summary>
 [Trait("Category", "Adaptation")]
 public sealed class NewBehaviorAssemblerTests
 {

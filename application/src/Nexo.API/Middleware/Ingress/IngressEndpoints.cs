@@ -9,8 +9,10 @@ using Nexo.Core.Application.Middleware.Ports;
 
 namespace Nexo.API.Middleware.Ingress;
 
+/// <summary>Ingress endpoints.</summary>
 public static class IngressEndpoints
 {
+    /// <summary>Maps middleware ingress lab and diagnostic endpoints under <c>/api/middleware</c>.</summary>
     public static WebApplication MapIngressEndpoints(this WebApplication app)
     {
         var ingressGroup = app.MapGroup("/api/middleware").WithTags("MiddlewareIngress");

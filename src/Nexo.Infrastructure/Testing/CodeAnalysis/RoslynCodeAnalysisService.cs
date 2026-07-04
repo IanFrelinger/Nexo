@@ -23,11 +23,13 @@ public class RoslynCodeAnalysisService : ICodeAnalysisService
 {
     private readonly ILogger<RoslynCodeAnalysisService> _logger;
 
+    /// <summary>Initializes a new roslyn code analysis service.</summary>
     public RoslynCodeAnalysisService(ILogger<RoslynCodeAnalysisService> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>Compile asynchronously.</summary>
     public Task<CompilationResult> CompileAsync(
         string sourceCode,
         string assemblyName,
@@ -116,6 +118,7 @@ public class RoslynCodeAnalysisService : ICodeAnalysisService
         }, cancellationToken);
     }
 
+    /// <summary>Decompile asynchronously.</summary>
     public async Task<DecompilationResult> DecompileAsync(
         string assemblyPath,
         string outputPath,
@@ -169,6 +172,7 @@ public class RoslynCodeAnalysisService : ICodeAnalysisService
         }
     }
 
+    /// <summary>Analyze assembly asynchronously.</summary>
     public Task<AssemblyAnalysisResult> AnalyzeAssemblyAsync(
         string assemblyPath,
         CancellationToken cancellationToken = default)

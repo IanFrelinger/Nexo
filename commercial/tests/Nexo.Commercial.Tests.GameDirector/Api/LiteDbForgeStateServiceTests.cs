@@ -1,12 +1,12 @@
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
-using Nexo.API.Forge;
-using Nexo.GameDomain.Macros;
-using Nexo.GameDomain.Session;
+using GameDirector.Mcp.Forge;
+using Nexo.Commercial.GameDomain.Macros;
+using Nexo.Commercial.GameDomain.Session;
 using Xunit;
 
-namespace Nexo.Tests.Infrastructure.Tests.API;
-
+namespace Nexo.Tests.GameDirector.Api;
+/// <summary>Tests for lite db forge state service.</summary>
 public sealed class LiteDbForgeStateServiceTests
 {
     [Fact]

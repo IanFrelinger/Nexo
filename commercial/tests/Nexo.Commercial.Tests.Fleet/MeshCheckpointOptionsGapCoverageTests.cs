@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Nexo.Commercial.Tests.Fleet;
 
+/// <summary>Tests for mesh checkpoint options gap coverage.</summary>
 public sealed class MeshCheckpointOptionsGapCoverageTests
 {
     [Fact]

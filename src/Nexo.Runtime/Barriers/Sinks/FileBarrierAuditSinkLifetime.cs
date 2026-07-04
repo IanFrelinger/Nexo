@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Nexo.Runtime.Barriers.Sinks;
 
+/// <summary>Hosted service that flushes and disposes <see cref="FileBarrierAuditSink"/> on shutdown.</summary>
 public sealed class FileBarrierAuditSinkLifetime : IHostedService
 {
     private readonly FileBarrierAuditSink _sink;
@@ -17,8 +18,10 @@ public sealed class FileBarrierAuditSinkLifetime : IHostedService
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>No-op startup hook.</summary>
     public Task StartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
+    /// <summary>Flushes and disposes the file audit sink on shutdown.</summary>
     public async Task StopAsync(CancellationToken cancellationToken)
     {
         try

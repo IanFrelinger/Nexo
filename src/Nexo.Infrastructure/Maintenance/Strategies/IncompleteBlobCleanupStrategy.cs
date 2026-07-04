@@ -13,6 +13,7 @@ namespace Nexo.Infrastructure.Maintenance.Strategies;
 /// </summary>
 public sealed class IncompleteBlobCleanupStrategy : IArtifactCleanupStrategy
 {
+    /// <summary>id constant constant.</summary>
     public const string IdConstant = "incomplete-blobs";
     private const string IncompletePattern = "*.incomplete";
 
@@ -20,6 +21,7 @@ public sealed class IncompleteBlobCleanupStrategy : IArtifactCleanupStrategy
     private readonly IncompleteBlobCleanupOptions _options;
     private readonly IBlobStorageLifecycle? _lifecycle;
 
+    /// <summary>Initializes a new incomplete blob cleanup strategy.</summary>
     public IncompleteBlobCleanupStrategy(
         ILogger<IncompleteBlobCleanupStrategy> logger,
         IOptions<IncompleteBlobCleanupOptions> options,
@@ -30,9 +32,12 @@ public sealed class IncompleteBlobCleanupStrategy : IArtifactCleanupStrategy
         _lifecycle = lifecycle;
     }
 
+    /// <summary>Id.</summary>
     public string Id => IdConstant;
+    /// <summary>Description.</summary>
     public string Description => "Removes *.incomplete files from content-addressed blob storage.";
 
+    /// <summary>Clean asynchronously.</summary>
     public async Task<ArtifactCleanupResult> CleanAsync(ArtifactCleanupContext context, CancellationToken ct = default)
     {
         var blobPath = (context.Options != null && context.Options.TryGetValue("BlobStoragePath", out var path))

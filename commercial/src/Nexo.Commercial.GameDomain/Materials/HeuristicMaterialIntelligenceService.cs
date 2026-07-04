@@ -1,7 +1,6 @@
-using Nexo.GameDomain.Aesthetics;
+using Nexo.Commercial.GameDomain.Aesthetics;
 
-namespace Nexo.GameDomain.Materials;
-
+namespace Nexo.Commercial.GameDomain.Materials;
 /// <summary>
 /// Deterministic material hints from palette, geometry strategy, LODs, and optional vector parse kind (M6 baseline).
 /// </summary>

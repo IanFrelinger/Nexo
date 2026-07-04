@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.VirtualProduction;
 
+/// <summary>Tests for product fleet diagnostics.</summary>
 [Collection("Integration")]
 [Trait("Category", "Integration")]
 [Trait("Category", "ProdStyle")]
@@ -13,6 +14,8 @@ public sealed class ProductFleetDiagnosticsTests : IClassFixture<NexoApiWebAppli
 {
     private readonly NexoApiWebApplicationFactory _factory;
 
+    /// <summary>Product fleet diagnostics tests.</summary>
+    /// <param name="factory">Factory.</param>
     public ProductFleetDiagnosticsTests(NexoApiWebApplicationFactory factory) => _factory = factory;
 
     [Fact(Timeout = 120000)]

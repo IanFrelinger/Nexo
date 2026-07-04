@@ -3,10 +3,12 @@ using Nexo.Core.Domain.Execution;
 
 namespace Nexo.Infrastructure.Certification.Composition;
 
+/// <summary>Generates structural graph mutants and runs composition witness tests.</summary>
 internal sealed class CompositionGraphMutationEngine
 {
     private readonly CompositionExecutor _executor = new();
 
+    /// <summary>Run asynchronously.</summary>
     public async Task<CompositionMutationTestResult> RunAsync(
         CompositionSpec spec,
         CompositionWitnessSpec witness,
@@ -81,9 +83,3 @@ internal sealed class CompositionGraphMutationEngine
         return true;
     }
 }
-
-internal sealed record CompositionMutationTestResult(
-    int TotalMutants,
-    IReadOnlyList<string> SurvivingMutantIds,
-    IReadOnlyList<string> KilledMutantIds,
-    double EscapeRate);

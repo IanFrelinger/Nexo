@@ -1,5 +1,4 @@
-namespace Nexo.GameDomain.Mapping;
-
+namespace Nexo.Commercial.GameDomain.Mapping;
 /// <summary>
 /// Magic-byte terrain payload sniffing for HTTP fetch diagnostics.
 /// </summary>

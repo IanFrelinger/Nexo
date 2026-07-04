@@ -5,11 +5,22 @@ namespace Nexo.Core.Domain.Agents;
 /// </summary>
 public class AgentCard
 {
+    /// <summary>Stable agent identifier used in registries and routing.</summary>
     public string Id { get; init; } = default!;
+
+    /// <summary>Human-readable agent display name.</summary>
     public string Name { get; init; } = default!;
+
+    /// <summary>Semantic version of the agent card definition.</summary>
     public string Version { get; init; } = "1.0.0";
+
+    /// <summary>Emoji or icon token for operator UIs.</summary>
     public string Icon { get; init; } = "🤖";
+
+    /// <summary>Primary domain or specialty label (e.g. security, codegen).</summary>
     public string Domain { get; init; } = default!;
+
+    /// <summary>Short description of the agent's purpose.</summary>
     public string Description { get; init; } = default!;
     
     /// <summary>
@@ -48,69 +59,3 @@ public class AgentCard
     /// </summary>
     public IReadOnlyList<string> CoordinationProtocols { get; init; } = [];
 }
-
-/// <summary>
-/// Platforms supported by agents.
-/// </summary>
-public enum Platform
-{
-    Unity,
-    Web,
-    Cli,
-    Api,
-    VsCode,
-    Slack,
-    Teams,
-    Discord
-}
-
-/// <summary>
-/// Platform-specific configuration for an agent.
-/// </summary>
-public class PlatformConfig
-{
-    public string? UiComponent { get; init; }
-    public string EntryPoint { get; init; } = default!;
-    public IReadOnlyList<string> Capabilities { get; init; } = [];
-}
-
-/// <summary>
-/// Memory configuration for an agent.
-/// </summary>
-public class AgentMemoryConfig
-{
-    public bool SemanticCache { get; init; }
-    public bool PatternLibrary { get; init; }
-    public bool CrossProjectSharing { get; init; }
-}
-
-/// <summary>
-/// Operational constraints for an agent.
-/// </summary>
-public class AgentConstraints
-{
-    public TimeSpan MaxExecutionTime { get; init; } = TimeSpan.FromMinutes(5);
-    public int MaxConcurrentBehaviors { get; init; } = 3;
-    public IReadOnlyList<EscalationRule> EscalationRules { get; init; } = [];
-    public IReadOnlyList<string> Permissions { get; init; } = [];
-}
-
-/// <summary>
-/// Rule for escalating agent actions.
-/// </summary>
-public class EscalationRule
-{
-    public string Condition { get; init; } = default!;
-    public string Action { get; init; } = default!;
-    public string? Target { get; init; }
-    public string? Reason { get; init; }
-    
-    public EscalationRule(string condition, string action, string? target = null, string? reason = null)
-    {
-        Condition = condition;
-        Action = action;
-        Target = target;
-        Reason = reason;
-    }
-}
-

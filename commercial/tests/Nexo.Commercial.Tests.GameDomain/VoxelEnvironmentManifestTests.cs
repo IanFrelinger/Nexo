@@ -1,10 +1,10 @@
 using System.Text.Json;
 using FluentAssertions;
 using Nexo.Core.Application.Environments;
-using Nexo.GameDomain.Environments;
+using Nexo.Commercial.GameDomain.Environments;
 
-namespace Nexo.Tests.GameDomain;
-
+namespace Nexo.Commercial.Tests.GameDomain;
+/// <summary>Tests for voxel environment manifest.</summary>
 public sealed class VoxelEnvironmentManifestTests
 {
     [Fact]

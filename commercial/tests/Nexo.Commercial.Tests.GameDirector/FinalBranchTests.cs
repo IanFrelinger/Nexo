@@ -19,11 +19,12 @@ using Nexo.Core.Application.Trust.Models;
 using Nexo.Core.Application.Trust.Ports;
 using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Execution;
-using Nexo.GameDomain.Session;
+using Nexo.Commercial.GameDomain.Session;
 using Xunit;
 
 namespace Nexo.Tests.GameDirector;
 
+/// <summary>Tests for final branch.</summary>
 [Trait("Category", "GameDirectorApplication")]
 public sealed class FinalBranchTests
 {
@@ -231,19 +232,33 @@ public sealed class FinalBranchTests
         body.GetProperty("result").GetProperty("error").GetString().Should().Contain("unsupported");
     }
 
+    /// <summary>Stub trust pack registry.</summary>
     private sealed class StubTrustPackRegistry : ITrustPolicyPackRegistry
     {
         private readonly string _id;
+        /// <summary>Stub trust pack registry.</summary>
+        /// <param name="id">Id.</param>
         public StubTrustPackRegistry(string id) => _id = id;
+        /// <summary>List packs.</summary>
         public IReadOnlyList<TrustPolicyPackInfo> ListPacks() => Array.Empty<TrustPolicyPackInfo>();
+        /// <summary>Gets by id.</summary>
+        /// <param name="id">Id.</param>
         public TrustPolicyPack? GetById(string id) => null;
+        /// <summary>Gets active pack.</summary>
         public ActiveTrustPolicyPack? GetActivePack() => new(_id, "1.0", DateTimeOffset.UtcNow);
+        /// <summary>Activate async.</summary>
+        /// <param name="id">Id.</param>
+        /// <param name="default">Default.</param>
         public Task<ActiveTrustPolicyPack> ActivateAsync(string id, CancellationToken cancellationToken = default) =>
             Task.FromResult(new ActiveTrustPolicyPack(id, "1.0", DateTimeOffset.UtcNow));
     }
 
+    /// <summary>Null text model.</summary>
     private sealed class NullTextModel : IModel
     {
+        /// <summary>Complete async.</summary>
+        /// <param name="input">Input.</param>
+        /// <param name="ct">Cancellation token.</param>
         public Task<ModelOutput> CompleteAsync(ModelInput input, CancellationToken ct) =>
             Task.FromResult(new ModelOutput(null!));
     }

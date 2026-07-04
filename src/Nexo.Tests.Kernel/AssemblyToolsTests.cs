@@ -6,11 +6,15 @@ using Xunit;
 
 namespace Nexo.Tests.Kernel;
 
+/// <summary>Tests for assembly tools.</summary>
 public class AssemblyToolsTests
 {
     private static string CoreDllPath =>
         Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "Nexo.Core.dll"));
 
+    /// <summary>Call.</summary>
+    /// <param name="id">Id.</param>
+    /// <param name="args">Args.</param>
     private static ToolCall Call(string id, object args) =>
         new(id, JsonDocument.Parse(JsonSerializer.Serialize(args)).RootElement);
 

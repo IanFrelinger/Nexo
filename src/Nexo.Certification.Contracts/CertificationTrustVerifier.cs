@@ -5,6 +5,13 @@ namespace Nexo.Certification.Contracts;
 /// </summary>
 public static class CertificationTrustVerifier
 {
+    /// <summary>
+    /// Verifies that a certification record is trusted for the supplied brick source.
+    /// Checks admission status, signature validity, and content hash binding.
+    /// </summary>
+    /// <param name="record">Certification record to verify.</param>
+    /// <param name="brickSource">Canonical brick source text to hash and compare.</param>
+    /// <param name="hmacKey">Optional HMAC key override for signature verification.</param>
     public static CertificationTrustResult Verify(
         CertificationRecordData record,
         string brickSource,
@@ -36,5 +43,3 @@ public static class CertificationTrustVerifier
     private static CertificationTrustResult Untrusted(string code, string reason) =>
         new(false, code, reason);
 }
-
-public sealed record CertificationTrustResult(bool Trusted, string? FailureCode, string? Reason);

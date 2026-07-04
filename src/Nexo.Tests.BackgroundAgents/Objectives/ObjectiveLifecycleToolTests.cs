@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.Objectives;
 
+/// <summary>Tests for objective lifecycle tool.</summary>
 public class ObjectiveLifecycleToolTests : IDisposable
 {
     private readonly string _tempDir;
@@ -77,6 +78,7 @@ public class ObjectiveLifecycleToolTests : IDisposable
         ErrorOf(result).Should().Contain("not found");
     }
 
+    /// <summary>Snapshot.</summary>
     private static WorldSnapshot Snapshot() => new(0, new Dictionary<string, object?>());
 
     private static bool OkPropertyOf(ToolResult result)

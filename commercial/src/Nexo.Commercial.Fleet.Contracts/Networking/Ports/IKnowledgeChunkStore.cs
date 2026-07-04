@@ -1,7 +1,6 @@
-using Nexo.Core.Application.Networking.Models;
+using Nexo.Commercial.Fleet.Contracts.Networking.Models;
 
-namespace Nexo.Core.Application.Networking.Ports;
-
+namespace Nexo.Commercial.Fleet.Contracts.Networking.Ports;
 /// <summary>
 /// Local store for knowledge chunks received from the network (used by the sync API).
 /// </summary>

@@ -6,15 +6,16 @@ using Nexo.Core.Domain.Bricks;
 namespace Nexo.Infrastructure.Certification;
 
 /// <summary>
-/// Brick registry that only exposes bricks admitted through the certification gate.
+/// DomainBrick registry that only exposes bricks admitted through the certification gate.
 /// </summary>
 public sealed class CertifiedBrickRegistry : Nexo.Core.Domain.Execution.IBrickRegistry
 {
-    private readonly Dictionary<string, Brick> _bricks = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, DomainBrick> _bricks = new(StringComparer.OrdinalIgnoreCase);
     private readonly ICertificationRecordStore _store;
     private readonly CertificationRecordSigner _signer;
     private readonly ILogger<CertifiedBrickRegistry>? _logger;
 
+    /// <summary>Initializes a new certified brick registry.</summary>
     public CertifiedBrickRegistry(
         ICertificationRecordStore store,
         CertificationRecordSigner signer,
@@ -25,17 +26,19 @@ public sealed class CertifiedBrickRegistry : Nexo.Core.Domain.Execution.IBrickRe
         _logger = logger;
     }
 
-    public Brick? GetBrick(string id)
+    /// <summary>Gets brick.</summary>
+    public DomainBrick? GetBrick(string id)
     {
         if (!_store.IsAdmitted(id))
             return null;
         return _bricks.TryGetValue(id, out var brick) ? brick : null;
     }
 
-    public IReadOnlyList<Brick> GetAllBricks() =>
+    /// <summary>Gets all bricks.</summary>
+    public IReadOnlyList<DomainBrick> GetAllBricks() =>
         _bricks.Values.Where(b => _store.IsAdmitted(b.Id)).ToList();
 
-    internal bool TryAdmit(Brick brick, CertificationRecord record)
+    internal bool TryAdmit(DomainBrick brick, CertificationRecord record)
     {
         if (!record.Admitted || !record.Signed || !_signer.Verify(record))
         {

@@ -29,6 +29,7 @@ public class AgentExecutorAdapter : IAgentExecutor
     private readonly ILogger<AgentExecutorAdapter> _logger;
     private readonly IServiceProvider _serviceProvider;
 
+    /// <summary>Initializes a new agent executor adapter.</summary>
     public AgentExecutorAdapter(
         ILogger<AgentExecutorAdapter> logger,
         IServiceProvider serviceProvider)
@@ -37,6 +38,7 @@ public class AgentExecutorAdapter : IAgentExecutor
         _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
     }
 
+    /// <summary>Execute asynchronously.</summary>
     public async Task<AgentExecutionResult> ExecuteAsync(
         string agentName,
         FileInfo? inputFile,

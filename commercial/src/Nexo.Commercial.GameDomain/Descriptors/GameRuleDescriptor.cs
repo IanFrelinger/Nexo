@@ -1,5 +1,4 @@
-namespace Nexo.GameDomain.Descriptors;
-
+namespace Nexo.Commercial.GameDomain.Descriptors;
 /// <summary>
 /// Data-only descriptor for a game rule set that governs match flow, scoring, and respawn behaviour.
 /// <para>

@@ -11,17 +11,24 @@ using Nexo.Core.Application.Testing.Abstractions;
 
 namespace Nexo.Tests.CLI.Tests.Commands;
 
+/// <summary>Tests for test command.</summary>
 public class TestCommandTests : UnitTestBase
 {
     public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
+            /// <summary>Test successful test execution.</summary>
             await TestSuccessfulTestExecution();
+            /// <summary>Test failed test execution.</summary>
             await TestFailedTestExecution();
+            /// <summary>Test json output.</summary>
             await TestJsonOutput();
+            /// <summary>Test verbose output.</summary>
             await TestVerboseOutput();
+            /// <summary>Test with filter.</summary>
             await TestWithFilter();
+            /// <summary>Test general exception.</summary>
             await TestGeneralException();
 
             return new TestResult

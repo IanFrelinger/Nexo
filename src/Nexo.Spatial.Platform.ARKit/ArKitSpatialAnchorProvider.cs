@@ -35,6 +35,7 @@ public sealed class ArKitSpatialAnchorProvider : ISpatialAnchorProvider
     public static ArKitSpatialAnchorProvider WithPlatformSession(bool sessionActive = false) =>
         new(new PlatformArKitNativeSession(sessionActive));
 
+    /// <summary>Returns the latest pose for an atom, or <see langword="null"/> when unavailable.</summary>
     public Task<PoseSample?> GetCurrentPose(string atomId)
     {
         if (string.IsNullOrWhiteSpace(atomId) || !IsTrackingAvailable())
@@ -47,6 +48,7 @@ public sealed class ArKitSpatialAnchorProvider : ISpatialAnchorProvider
         return Task.FromResult<PoseSample?>(ArKitTrackingStateMapper.ToPoseSample(frame));
     }
 
+    /// <summary>Observes pose updates for an atom; emits lost samples when tracking is unavailable.</summary>
     public IObservable<PoseSample> ObservePose(string atomId)
     {
         if (string.IsNullOrWhiteSpace(atomId) || !IsTrackingAvailable())

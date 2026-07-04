@@ -12,6 +12,7 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents;
 
+/// <summary>Tests for background agents gap coverage.</summary>
 public class BackgroundAgentsGapCoverageTests
 {
     [Fact]
@@ -160,6 +161,7 @@ public class BackgroundAgentsGapCoverageTests
         level.AllowsWebSearch.Should().BeTrue();
     }
 
+    /// <summary>Handles fake http message requests.</summary>
     private sealed class FakeHttpMessageHandler : HttpMessageHandler
     {
         private readonly Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> _handler;

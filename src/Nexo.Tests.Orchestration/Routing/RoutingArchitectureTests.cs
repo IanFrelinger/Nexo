@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration.Routing;
 
+/// <summary>Tests for routing architecture.</summary>
 public sealed class RoutingArchitectureTests
 {
     [Fact]

@@ -21,6 +21,8 @@
   <ItemGroup>
     <PackageReference Include="LiteDB" />
     <PackageReference Include="Microsoft.Data.Sqlite" />
+    <!-- Force patched native SQLite bundle (GHSA-2m69-gcr7-jv3q); overrides transitive lib.e_sqlite3 2.1.6. -->
+    <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="Microsoft.Extensions.Configuration" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" />

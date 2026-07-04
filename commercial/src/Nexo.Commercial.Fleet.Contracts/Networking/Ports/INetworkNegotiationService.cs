@@ -1,7 +1,6 @@
-using Nexo.Core.Application.Networking.Models;
+using Nexo.Commercial.Fleet.Contracts.Networking.Models;
 
-namespace Nexo.Core.Application.Networking.Ports;
-
+namespace Nexo.Commercial.Fleet.Contracts.Networking.Ports;
 /// <summary>
 /// Finds agents on the network that can participate in negotiation (e.g. by conflict type or capability).
 /// </summary>

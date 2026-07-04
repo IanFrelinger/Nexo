@@ -26,6 +26,7 @@ public class ValidateCommand
     private readonly IConsoleRenderer _renderer;
     private readonly ILogger<ValidateCommand> _logger;
 
+    /// <summary>Creates a new ValidateCommand instance.</summary>
     public ValidateCommand(
         IMediator mediator,
         IConsoleRenderer renderer,
@@ -36,6 +37,7 @@ public class ValidateCommand
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>Executes the command handler and returns a process exit code.</summary>
     public async Task<int> ExecuteAsync(string? filter, bool json, bool verbose)
     {
         var correlationId = Guid.NewGuid().ToString();

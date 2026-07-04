@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Trust;
 
+/// <summary>Tests for in memory user knowledge log store.</summary>
 public class InMemoryUserKnowledgeLogStoreTests
 {
     [Fact]

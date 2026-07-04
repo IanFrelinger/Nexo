@@ -14,6 +14,7 @@ using Xunit;
 
 namespace Nexo.Tests.GameDirector;
 
+/// <summary>Tests for mcp service extensions.</summary>
 [Trait("Category", "GameDirectorApplication")]
 public sealed class McpServiceExtensionsTests
 {

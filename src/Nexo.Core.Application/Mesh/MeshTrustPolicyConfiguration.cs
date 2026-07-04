@@ -9,6 +9,8 @@ public static class MeshTrustPolicyConfiguration
     /// Normalizes a policy token to trusted-only, trusted-preferred, or any.
     /// Unknown values default to trusted-preferred (fail-closed for routing).
     /// </summary>
+    /// <param name="policy">Raw policy string from config or environment.</param>
+    /// <returns>Normalized policy token.</returns>
     public static string NormalizePolicy(string? policy)
     {
         var normalized = (policy ?? "trusted-preferred").Trim().ToLowerInvariant();
@@ -25,6 +27,7 @@ public static class MeshTrustPolicyConfiguration
     /// <summary>
     /// Policy used by mesh discovery: NEXO_MESH_TRUST_POLICY, else NEXO_PEER_TRUST_POLICY, else any (show all tiers).
     /// </summary>
+    /// <returns>Effective discovery trust policy.</returns>
     public static string ResolveDiscoveryPolicy()
     {
         var mesh = Environment.GetEnvironmentVariable("NEXO_MESH_TRUST_POLICY");
@@ -39,6 +42,7 @@ public static class MeshTrustPolicyConfiguration
     /// <summary>
     /// Policy for mesh capability requests: NEXO_MESH_TRUST_POLICY, else NEXO_PEER_TRUST_POLICY, else trusted-preferred.
     /// </summary>
+    /// <returns>Effective capability request trust policy.</returns>
     public static string ResolveCapabilityRequestPolicy()
     {
         var mesh = Environment.GetEnvironmentVariable("NEXO_MESH_TRUST_POLICY");

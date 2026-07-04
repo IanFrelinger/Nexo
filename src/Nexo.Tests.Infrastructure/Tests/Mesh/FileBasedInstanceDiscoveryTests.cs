@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Mesh;
 
+/// <summary>Tests for file based instance discovery.</summary>
 public sealed class FileBasedInstanceDiscoveryTests : IDisposable
 {
     private readonly string _path;
@@ -21,7 +22,9 @@ public sealed class FileBasedInstanceDiscoveryTests : IDisposable
 
     public void Dispose()
     {
+        /// <summary>Restore env.</summary>
         RestoreEnv("NEXO_MESH_TRUST_POLICY", _prevMeshPolicy);
+        /// <summary>Restore env.</summary>
         RestoreEnv("NEXO_MESH_INSTANCES_PATH", _prevInstancesPath);
         try
         {

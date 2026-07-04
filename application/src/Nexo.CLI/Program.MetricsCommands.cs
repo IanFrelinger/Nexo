@@ -5,6 +5,7 @@ using Nexo.CLI.Formatting;
 
 namespace Nexo.CLI;
 
+/// <summary>Program.</summary>
 static partial class Program
 {
     private static Command BuildMetricsCommand(Option<bool> jsonOpt, Option<bool> verboseOpt)
@@ -15,6 +16,9 @@ static partial class Program
         // nexo metrics report
         var metricsReportCmd = new Command("report", "Show performance report");
         metricsReportCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="json">Json.</param>
+            /// <param name="verbose">Verbose.</param>
             async (bool json, bool verbose) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<MetricsCommand>();
@@ -29,6 +33,10 @@ static partial class Program
         var metricsAgentCmd = new Command("agent", "Show metrics for a specific agent");
         metricsAgentCmd.AddArgument(new Argument<string>("id", "Agent ID"));
         metricsAgentCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="id">Id.</param>
+            /// <param name="json">Json.</param>
+            /// <param name="verbose">Verbose.</param>
             async (string id, bool json, bool verbose) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<MetricsCommand>();
@@ -45,6 +53,11 @@ static partial class Program
         metricsTracesCmd.AddOption(new Option<string?>("--correlation-id", "Filter by correlation ID"));
         metricsTracesCmd.AddOption(new Option<string?>("--operation", "Filter by operation name"));
         metricsTracesCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="correlationId">Correlation id.</param>
+            /// <param name="operation">Operation.</param>
+            /// <param name="json">Json.</param>
+            /// <param name="verbose">Verbose.</param>
             async (string? correlationId, string? operation, bool json, bool verbose) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<MetricsCommand>();
@@ -60,6 +73,9 @@ static partial class Program
         // nexo metrics clear
         var metricsClearCmd = new Command("clear", "Clear all collected metrics");
         metricsClearCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="json">Json.</param>
+            /// <param name="verbose">Verbose.</param>
             async (bool json, bool verbose) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<MetricsCommand>();
@@ -73,6 +89,8 @@ static partial class Program
         // nexo metrics self-improvement (P3.4: holdout pass rate)
         var metricsSelfImprovementCmd = new Command("self-improvement", "Show self-improvement metrics (holdout pass rate, etc.)");
         metricsSelfImprovementCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="json">Json.</param>
             async (bool json) =>
             {
                 var store = ServiceProvider.GetRequiredService<Nexo.Core.Application.SelfImprovement.Ports.ISelfImprovementMetricsStore>();

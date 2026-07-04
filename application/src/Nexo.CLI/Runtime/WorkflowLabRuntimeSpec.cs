@@ -7,11 +7,19 @@ namespace Nexo.CLI.Runtime;
 /// </summary>
 public sealed record WorkflowLabRuntimeSpec
 {
+    /// <summary>Execution controls for stress and benchmark runs.</summary>
     public WorkflowLabExecutionSpec Execution { get; init; } = new();
+
+    /// <summary>Prompt scenarios exercised during stress runs.</summary>
     public IReadOnlyList<WorkflowLabRequestSpec> Requests { get; init; } = Array.Empty<WorkflowLabRequestSpec>();
+
+    /// <summary>Agent compositions evaluated during stress runs.</summary>
     public IReadOnlyList<WorkflowLabCompositionSpec> Compositions { get; init; } = Array.Empty<WorkflowLabCompositionSpec>();
+
+    /// <summary>Model routing profiles paired with compositions during stress runs.</summary>
     public IReadOnlyList<WorkflowLabModelProfileSpec> ModelProfiles { get; init; } = Array.Empty<WorkflowLabModelProfileSpec>();
 
+    /// <summary>Returns the built-in default workflow lab runtime specification.</summary>
     public static WorkflowLabRuntimeSpec Default() => new()
     {
         Execution = new WorkflowLabExecutionSpec
@@ -120,56 +128,4 @@ public sealed record WorkflowLabRuntimeSpec
             }
         }
     };
-}
-
-public sealed record WorkflowLabExecutionSpec
-{
-    public int Iterations { get; init; } = 1;
-    public bool PersistHistory { get; init; } = true;
-    public string BenchmarkSet { get; init; } = "workflow-lab";
-    public bool SkipScenariosWhenProviderUnavailable { get; init; } = true;
-    public bool ShuffleScenarioOrder { get; init; }
-    public int? RandomSeed { get; init; }
-    public int WarmupRuns { get; init; }
-    public int CooldownMs { get; init; }
-}
-
-public sealed record WorkflowLabRequestSpec
-{
-    public string Id { get; init; } = "request-1";
-    public string Prompt { get; init; } = string.Empty;
-}
-
-public sealed record WorkflowLabCompositionSpec
-{
-    public string Id { get; init; } = "composition-1";
-    public string Description { get; init; } = string.Empty;
-    public IReadOnlyList<WorkflowLabAgentRoleSpec> Roles { get; init; } = Array.Empty<WorkflowLabAgentRoleSpec>();
-}
-
-public sealed record WorkflowLabAgentRoleSpec
-{
-    public string AgentId { get; init; } = string.Empty;
-    public string Role { get; init; } = string.Empty;
-    public string Domain { get; init; } = "general";
-    public string Goal { get; init; } = string.Empty;
-    public string? Description { get; init; }
-    public string? ClusterId { get; init; }
-    public string? ReportsToAgentId { get; init; }
-    public IReadOnlyList<string> CommandChain { get; init; } = Array.Empty<string>();
-    public string? OllamaModel { get; init; }
-    public string? Provider { get; init; }
-    public string? Prefer { get; init; }
-}
-
-public sealed record WorkflowLabModelProfileSpec
-{
-    public string Id { get; init; } = "profile-1";
-    public string Description { get; init; } = string.Empty;
-    public ModelRuntimeSpec Default { get; init; } = new();
-    public Dictionary<string, ModelRuntimeSpec> Domains { get; init; } = new(StringComparer.OrdinalIgnoreCase);
-    public Dictionary<string, ModelRuntimeSpec> Agents { get; init; } = new(StringComparer.OrdinalIgnoreCase);
-    public string? DefaultModelName { get; init; }
-    public Dictionary<string, string> DomainModelNames { get; init; } = new(StringComparer.OrdinalIgnoreCase);
-    public Dictionary<string, string> AgentModelHints { get; init; } = new(StringComparer.OrdinalIgnoreCase);
 }

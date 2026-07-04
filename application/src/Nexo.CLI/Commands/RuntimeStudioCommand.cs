@@ -13,6 +13,7 @@ namespace Nexo.CLI.Commands;
 /// </summary>
 public sealed class RuntimeStudioCommand : Command
 {
+    /// <summary>Creates a new RuntimeStudioCommand instance.</summary>
     public RuntimeStudioCommand() : base("runtime-studio", "Runtime Studio: local agent-set helpers")
     {
         var jsonOpt = new Option<bool>("--format-json", () => false, "Emit JSON output");

@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Nexo.Tests.CLI.Tests.Commands;
 
+/// <summary>Tests for proposals background agent command.</summary>
 public class ProposalsBackgroundAgentCommandTests : IDisposable
 {
     private readonly string _tempDir;
@@ -21,8 +22,10 @@ public class ProposalsBackgroundAgentCommandTests : IDisposable
         _store = new ChangeProposalStore(Path.Combine(_tempDir, "forge"));
     }
 
+    /// <summary>Dispose.</summary>
     public void Dispose() { try { Directory.Delete(_tempDir, recursive: true); } catch { /* best effort */ } }
 
+    /// <summary>New cmd.</summary>
     private ProposalsBackgroundAgentCommand NewCmd() =>
         new(_store, NullLogger<ProposalsBackgroundAgentCommand>.Instance);
 
@@ -70,8 +73,10 @@ public class ProposalsBackgroundAgentCommandTests : IDisposable
             """
             using Xunit;
 
+            /// <summary>Tests for unit test1.</summary>
             public class UnitTest1
             {
+                /// <summary>Ok.</summary>
                 [Fact]
                 public void Ok() => Assert.True(true);
             }
@@ -81,6 +86,7 @@ public class ProposalsBackgroundAgentCommandTests : IDisposable
     [Fact]
     public async Task BuildAsync_runs_dotnet_build_from_repo_root()
     {
+        /// <summary>Write minimal console app at repo root.</summary>
         WriteMinimalConsoleAppAtRepoRoot();
         var cmd = NewCmd();
         var stdout = new StringWriter();
@@ -93,6 +99,7 @@ public class ProposalsBackgroundAgentCommandTests : IDisposable
     [Fact]
     public async Task Apply_with_verify_build_returns_4_when_tree_no_longer_builds_but_file_is_written()
     {
+        /// <summary>Write minimal console app at repo root.</summary>
         WriteMinimalConsoleAppAtRepoRoot();
         _store.Add(new ChangeProposal
         {
@@ -115,6 +122,7 @@ public class ProposalsBackgroundAgentCommandTests : IDisposable
     [Fact]
     public async Task TestAsync_builds_then_tests_minimal_xunit_project()
     {
+        /// <summary>Write minimal xunit test project at repo root.</summary>
         WriteMinimalXunitTestProjectAtRepoRoot();
         var cmd = NewCmd();
         var stdout = new StringWriter();
@@ -127,6 +135,7 @@ public class ProposalsBackgroundAgentCommandTests : IDisposable
     [Fact]
     public async Task Apply_with_verify_test_returns_5_when_tests_fail_after_apply()
     {
+        /// <summary>Write minimal xunit test project at repo root.</summary>
         WriteMinimalXunitTestProjectAtRepoRoot();
         _store.Add(new ChangeProposal
         {
@@ -136,8 +145,10 @@ public class ProposalsBackgroundAgentCommandTests : IDisposable
                 """
                 using Xunit;
 
+                /// <summary>Tests for unit test1.</summary>
                 public class UnitTest1
                 {
+                    /// <summary>Bad.</summary>
                     [Fact]
                     public void Bad() => Assert.True(false);
                 }

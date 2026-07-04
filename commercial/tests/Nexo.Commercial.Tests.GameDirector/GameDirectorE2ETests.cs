@@ -10,6 +10,7 @@ using Xunit;
 
 namespace Nexo.Tests.GameDirector;
 
+/// <summary>Tests for game director e2 e.</summary>
 [Trait("Category", "GameDirectorE2E")]
 public sealed class GameDirectorE2ETests
 {

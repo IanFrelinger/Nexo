@@ -13,5 +13,5 @@ public interface IBrickDecomposer
     /// </summary>
     /// <param name="brick">The brick to decompose.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
-    Task<BrickManifest> DecomposeAsync(Brick brick, CancellationToken cancellationToken = default);
+    Task<BrickManifest> DecomposeAsync(DomainBrick brick, CancellationToken cancellationToken = default);
 }

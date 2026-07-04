@@ -1,5 +1,4 @@
-namespace Nexo.Infrastructure.Execution;
-
+namespace Nexo.Commercial.Fleet.Infrastructure.Execution;
 /// <summary>
 /// Configuration for <see cref="AdaptiveBrickCache"/> (dynamic TTL by usage).
 /// </summary>

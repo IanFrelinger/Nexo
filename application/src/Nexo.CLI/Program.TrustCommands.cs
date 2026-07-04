@@ -4,6 +4,7 @@ using Nexo.CLI.Commands;
 
 namespace Nexo.CLI;
 
+/// <summary>Program.</summary>
 static partial class Program
 {
     private static Command BuildTrustCommand(Option<bool> jsonOpt)
@@ -21,6 +22,14 @@ static partial class Program
             new Option<bool>("--csv", "Export as CSV (compliance)")
         };
         trustAuditCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="count">Count.</param>
+            /// <param name="since">Since.</param>
+            /// <param name="until">Until.</param>
+            /// <param name="type">Type.</param>
+            /// <param name="json">Json.</param>
+            /// <param name="md">Md.</param>
+            /// <param name="csv">Csv.</param>
             async (int count, string? since, string? until, string? type, bool json, bool md, bool csv) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<TrustCommand>();
@@ -37,6 +46,8 @@ static partial class Program
         var trustPauseCmd = new Command("pause", "Pause observation (halt all data collection)");
         trustPauseCmd.AddOption(jsonOpt);
         trustPauseCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="formatJson">Format json.</param>
             async (bool formatJson) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<TrustCommand>();
@@ -47,6 +58,8 @@ static partial class Program
         var trustResumeCmd = new Command("resume", "Resume observation");
         trustResumeCmd.AddOption(jsonOpt);
         trustResumeCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="formatJson">Format json.</param>
             async (bool formatJson) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<TrustCommand>();
@@ -60,6 +73,11 @@ static partial class Program
         trustAllowCmd.AddOption(new Option<string?>("--project", "Project path for override (requires --source)"));
         trustAllowCmd.AddOption(jsonOpt);
         trustAllowCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="category">Category.</param>
+            /// <param name="source">Source.</param>
+            /// <param name="project">Project.</param>
+            /// <param name="formatJson">Format json.</param>
             async (string? category, string? source, string? project, bool formatJson) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<TrustCommand>();
@@ -76,6 +94,11 @@ static partial class Program
         trustDenyCmd.AddOption(new Option<string?>("--project", "Project path for override (requires --source)"));
         trustDenyCmd.AddOption(jsonOpt);
         trustDenyCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="category">Category.</param>
+            /// <param name="source">Source.</param>
+            /// <param name="project">Project.</param>
+            /// <param name="formatJson">Format json.</param>
             async (string? category, string? source, string? project, bool formatJson) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<TrustCommand>();
@@ -88,6 +111,8 @@ static partial class Program
         trustCmd.AddCommand(trustDenyCmd);
         var trustBoundaryCmd = new Command("boundary", "Show access boundary status");
         trustBoundaryCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="formatJson">Format json.</param>
             async (bool formatJson) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<TrustCommand>();
@@ -99,6 +124,9 @@ static partial class Program
         trustDashboardCmd.AddOption(new Option<int>("--count", () => 50, "Max audit entries to include"));
         trustDashboardCmd.AddOption(jsonOpt);
         trustDashboardCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="count">Count.</param>
+            /// <param name="formatJson">Format json.</param>
             async (int count, bool formatJson) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<TrustCommand>();
@@ -112,6 +140,8 @@ static partial class Program
         var trustPackListCmd = new Command("list", "List available trust policy packs");
         trustPackListCmd.AddOption(jsonOpt);
         trustPackListCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="formatJson">Format json.</param>
             async (bool formatJson) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<TrustCommand>();
@@ -125,6 +155,9 @@ static partial class Program
         trustPackDescribeCmd.AddArgument(trustPackDescribeIdArg);
         trustPackDescribeCmd.AddOption(jsonOpt);
         trustPackDescribeCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="packId">Pack id.</param>
+            /// <param name="formatJson">Format json.</param>
             async (string packId, bool formatJson) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<TrustCommand>();
@@ -140,6 +173,9 @@ static partial class Program
         trustPackApplyCmd.AddOption(trustPackIdOpt);
         trustPackApplyCmd.AddOption(jsonOpt);
         trustPackApplyCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="id">Id.</param>
+            /// <param name="formatJson">Format json.</param>
             async (string id, bool formatJson) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<TrustCommand>();

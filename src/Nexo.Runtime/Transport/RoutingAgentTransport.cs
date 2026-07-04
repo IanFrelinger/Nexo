@@ -22,6 +22,7 @@ public sealed class RoutingAgentTransport : IAgentTransport
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>Routes an agent invocation to in-process or remote transport based on target endpoint.</summary>
     public Task<AgentResult> SendAsync(
         AgentInvocationRequest request,
         CancellationToken cancellationToken = default)
@@ -42,6 +43,7 @@ public sealed class RoutingAgentTransport : IAgentTransport
         return _remote.SendAsync(request, cancellationToken);
     }
 
+    /// <summary>Returns combined health from in-process and remote transports.</summary>
     public async Task<TransportHealth> CheckHealthAsync(CancellationToken cancellationToken = default)
     {
         var inProcessHealth = await _inProcess.CheckHealthAsync(cancellationToken);

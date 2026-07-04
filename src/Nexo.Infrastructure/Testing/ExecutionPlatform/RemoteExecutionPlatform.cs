@@ -19,8 +19,10 @@ public sealed class RemoteExecutionPlatform : IExecutionPlatform
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
+    /// <summary>Platform name.</summary>
     public string PlatformName => "Remote";
 
+    /// <summary>Initializes a new remote execution platform.</summary>
     public RemoteExecutionPlatform(HttpClient httpClient, ILogger<RemoteExecutionPlatform>? logger = null)
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));

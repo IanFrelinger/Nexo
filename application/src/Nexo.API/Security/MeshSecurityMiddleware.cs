@@ -20,6 +20,7 @@ public sealed class MeshSecurityMiddleware
     private static readonly object RateGate = new();
     private static readonly Dictionary<string, RateWindow> RateBuckets = new(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>Creates middleware that enforces mesh and brick execute security policies.</summary>
     public MeshSecurityMiddleware(
         RequestDelegate next,
         IOptions<MeshSecurityOptions> optionsAccessor,
@@ -30,6 +31,7 @@ public sealed class MeshSecurityMiddleware
         _logger = logger;
     }
 
+    /// <summary>Enforces mesh security policies for mesh and brick execute routes.</summary>
     public async Task InvokeAsync(HttpContext context)
     {
         if (!context.Request.Path.StartsWithSegments("/api", StringComparison.OrdinalIgnoreCase))

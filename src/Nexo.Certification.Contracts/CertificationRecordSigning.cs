@@ -9,8 +9,15 @@ namespace Nexo.Certification.Contracts;
 /// </summary>
 public static class CertificationRecordSigning
 {
+    /// <summary>Development-only default HMAC key; override via <c>NEXO_CERT_DEV_HMAC_KEY</c> in production.</summary>
     public const string DefaultDevKey = "nexo-cert-dev-hmac-v0";
 
+    /// <summary>
+    /// Computes the Base64 HMAC-SHA256 signature for a certification record.
+    /// The signature field on <paramref name="record"/> is excluded from the payload.
+    /// </summary>
+    /// <param name="record">Record to sign.</param>
+    /// <param name="hmacKey">Optional explicit key; falls back to environment or <see cref="DefaultDevKey"/>.</param>
     public static string Sign(CertificationRecordData record, string? hmacKey = null)
     {
         var payload = BuildPayload(record);
@@ -20,6 +27,12 @@ public static class CertificationRecordSigning
         return Convert.ToBase64String(hash);
     }
 
+    /// <summary>
+    /// Verifies the record's <see cref="CertificationRecordData.Signature"/> against the canonical payload.
+    /// Returns false when the signature is missing, malformed, or does not match.
+    /// </summary>
+    /// <param name="record">Record containing the signature to verify.</param>
+    /// <param name="hmacKey">Optional explicit key; falls back to environment or <see cref="DefaultDevKey"/>.</param>
     public static bool VerifySignature(CertificationRecordData record, string? hmacKey = null)
     {
         if (string.IsNullOrWhiteSpace(record.Signature))
@@ -52,6 +65,11 @@ public static class CertificationRecordSigning
 #endif
     }
 
+    /// <summary>
+    /// Builds the canonical JSON payload used for signing and verification.
+    /// Mutant id lists are sorted for deterministic serialization.
+    /// </summary>
+    /// <param name="record">Record to serialize.</param>
     public static string BuildPayload(CertificationRecordData record)
     {
         var clone = new

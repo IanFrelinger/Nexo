@@ -17,6 +17,7 @@ public sealed class LiteDbFleetNodeRegistry : IFleetNodeRegistry
         _connectionString = LiteDbMeshDirectorConnection.ToConnectionString(pathOrConnectionString);
     }
 
+    /// <summary>Register or update async operation.</summary>
     public async Task RegisterOrUpdateAsync(MeshFleetNodeState node, CancellationToken cancellationToken = default)
     {
         await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -32,6 +33,7 @@ public sealed class LiteDbFleetNodeRegistry : IFleetNodeRegistry
         }
     }
 
+    /// <summary>Remove async operation.</summary>
     public async Task<bool> RemoveAsync(string peerId, CancellationToken cancellationToken = default)
     {
         await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -47,6 +49,7 @@ public sealed class LiteDbFleetNodeRegistry : IFleetNodeRegistry
         }
     }
 
+    /// <summary>List async operation.</summary>
     public async Task<IReadOnlyList<MeshFleetNodeState>> ListAsync(CancellationToken cancellationToken = default)
     {
         await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -65,6 +68,7 @@ public sealed class LiteDbFleetNodeRegistry : IFleetNodeRegistry
         }
     }
 
+    /// <summary>Gets async.</summary>
     public async Task<MeshFleetNodeState?> GetAsync(string peerId, CancellationToken cancellationToken = default)
     {
         await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -81,6 +85,7 @@ public sealed class LiteDbFleetNodeRegistry : IFleetNodeRegistry
         }
     }
 
+    /// <summary>Sets drained async.</summary>
     public async Task<bool> SetDrainedAsync(string peerId, bool drained, CancellationToken cancellationToken = default)
     {
         await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -100,6 +105,7 @@ public sealed class LiteDbFleetNodeRegistry : IFleetNodeRegistry
         }
     }
 
+    /// <summary>Sets admitted async.</summary>
     public async Task<bool> SetAdmittedAsync(string peerId, bool admitted, CancellationToken cancellationToken = default)
     {
         await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -119,6 +125,7 @@ public sealed class LiteDbFleetNodeRegistry : IFleetNodeRegistry
         }
     }
 
+    /// <summary>Heartbeat async operation.</summary>
     public async Task HeartbeatAsync(string peerId, int? reportedQueueDepth = null, CancellationToken cancellationToken = default)
     {
         await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);

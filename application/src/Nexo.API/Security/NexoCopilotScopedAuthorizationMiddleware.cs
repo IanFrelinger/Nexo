@@ -10,12 +10,14 @@ public sealed class NexoCopilotScopedAuthorizationMiddleware
     private readonly RequestDelegate _next;
     private readonly NexoSecurityOptions _security;
 
+    /// <summary>Creates middleware that enforces copilot-scoped API key route restrictions.</summary>
     public NexoCopilotScopedAuthorizationMiddleware(RequestDelegate next, IOptions<NexoSecurityOptions> security)
     {
         _next = next;
         _security = security.Value;
     }
 
+    /// <summary>Restricts copilot-scoped API keys to allowed copilot and onboarding routes.</summary>
     public async Task InvokeAsync(HttpContext context)
     {
         if (!context.Request.Path.StartsWithSegments("/api", StringComparison.OrdinalIgnoreCase))
@@ -70,10 +72,4 @@ public sealed class NexoCopilotScopedAuthorizationMiddleware
 
         return false;
     }
-}
-
-public static class NexoCopilotScopedAuthorizationMiddlewareExtensions
-{
-    public static IApplicationBuilder UseNexoCopilotScopedAuthorization(this IApplicationBuilder app)
-        => app.UseMiddleware<NexoCopilotScopedAuthorizationMiddleware>();
 }

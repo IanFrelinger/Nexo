@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Commercial.Tests.Fleet;
 
+/// <summary>Tests for lite db mesh director persistence.</summary>
 [Collection(nameof(LiteDbFleetCollection))]
 public sealed class LiteDbMeshDirectorPersistenceTests
 {
@@ -60,6 +61,7 @@ public sealed class LiteDbMeshDirectorPersistenceTests
         }
         finally
         {
+            /// <summary>Attempts to delete; returns false on failure.</summary>
             TryDelete(path);
         }
     }

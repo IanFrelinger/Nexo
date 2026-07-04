@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Nexo.Tests.Transport;
 
+/// <summary>Tests for grpc transport options.</summary>
 public sealed class GrpcTransportOptionsTests
 {
     [Fact]

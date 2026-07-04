@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Nexo.Tests.Transport;
 
+/// <summary>Tests for agent transport service impl reflection gap coverage.</summary>
 public sealed class AgentTransportServiceImplReflectionGapCoverageTests
 {
     [Fact]
@@ -145,6 +146,7 @@ public sealed class AgentTransportServiceImplReflectionGapCoverageTests
             process!.WaitForExit(10_000).Should().BeTrue();
             process.ExitCode.Should().Be(0);
 
+            /// <summary>X509 certificate2.</summary>
             return new X509Certificate2(certPem);
         }
         finally

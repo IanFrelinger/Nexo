@@ -15,6 +15,7 @@ namespace Nexo.CLI.Commands;
 /// </summary>
 public sealed class TestParallelCommand : Command
 {
+    /// <summary>Creates a new TestParallelCommand instance.</summary>
     public TestParallelCommand() : base("parallel", "Run parallel test matrix (Block 8).")
     {
         var pathOpt = new Option<string?>("--path", "Solution or project path. Default: Nexo.Tests.Infrastructure.");
@@ -34,6 +35,7 @@ public sealed class TestParallelCommand : Command
         });
     }
 
+    /// <summary>Creates a new CreateCommand instance.</summary>
     public static Command CreateCommand() => new TestParallelCommand();
 
     private static async Task ExecuteAsync(string? path, int count, string[] filters)

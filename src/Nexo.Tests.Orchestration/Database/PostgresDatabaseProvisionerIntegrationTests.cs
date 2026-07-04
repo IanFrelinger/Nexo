@@ -10,6 +10,7 @@ using Xunit.Abstractions;
 
 namespace Nexo.Tests.Orchestration.Database;
 
+/// <summary>Tests for postgres database provisioner integration.</summary>
 [Collection("PostgresDocker")]
 [Trait("Category", "DockerOptional")]
 public sealed class PostgresDatabaseProvisionerIntegrationTests

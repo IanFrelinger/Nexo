@@ -1,52 +1,29 @@
-namespace Nexo.GameDomain.Assets;
-
+namespace Nexo.Commercial.GameDomain.Assets;
 /// <summary>
 /// Network-replicated object descriptor. Defines which components replicate, synchronization mode,
 /// ownership rules, and remote-call patterns for multiplayer gameplay.
 /// </summary>
 public sealed record NetworkDescriptor
 {
+    /// <summary>id value.</summary>
     public string Id { get; init; } = string.Empty;
+    /// <summary>Name value.</summary>
     public string Name { get; init; } = string.Empty;
+    /// <summary>Category value.</summary>
     public string Category { get; init; } = "player"; // player, projectile, pickup, game_state, environment
 
+    /// <summary>Whether player object.</summary>
     public bool IsPlayerObject { get; init; }
+    /// <summary>Dont destroy with owner value.</summary>
     public bool DontDestroyWithOwner { get; init; }
 
+    /// <summary>Synced variables value.</summary>
     public IReadOnlyList<NetworkVariable> SyncedVariables { get; init; } = Array.Empty<NetworkVariable>();
+    /// <summary>Rpcs value.</summary>
     public IReadOnlyList<NetworkRpc> Rpcs { get; init; } = Array.Empty<NetworkRpc>();
+    /// <summary>Spawning value.</summary>
     public SpawnConfig Spawning { get; init; } = new();
 
+    /// <summary>Tags value.</summary>
     public IReadOnlyList<string> Tags { get; init; } = Array.Empty<string>();
-}
-
-public sealed record NetworkVariable
-{
-    public string Name { get; init; } = string.Empty;
-    public string Type { get; init; } = "float"; // float, int, bool, Vector3, Quaternion, string, custom
-    public string Permission { get; init; } = "server"; // server, owner, everyone
-    public string DeliveryMode { get; init; } = "reliable"; // reliable, unreliable
-    public double SendRate { get; init; } = 0.0; // 0 = every change, >0 = max sends per second
-}
-
-public sealed record NetworkRpc
-{
-    public string Name { get; init; } = string.Empty;
-    public string Direction { get; init; } = "server"; // server (client→server), client (server→client)
-    public string DeliveryMode { get; init; } = "reliable";
-    public IReadOnlyList<RpcParameter> Parameters { get; init; } = Array.Empty<RpcParameter>();
-}
-
-public sealed record RpcParameter
-{
-    public string Name { get; init; } = string.Empty;
-    public string Type { get; init; } = "float";
-}
-
-public sealed record SpawnConfig
-{
-    public bool AutoSpawn { get; init; } = true;
-    public string SpawnAuthority { get; init; } = "server"; // server, owner
-    public double DespawnDelay { get; init; } = 0.0;
-    public string? PoolId { get; init; } // null = no pooling, string = pool group name
 }

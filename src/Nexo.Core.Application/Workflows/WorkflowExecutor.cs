@@ -31,9 +31,11 @@ public class WorkflowExecutor
     private readonly IClusterStore? _clusterStore;
     private readonly ILogger<WorkflowExecutor> _logger;
     private readonly Subject<WorkflowExecutionEvent> _events = new();
-    
+
+    /// <summary>Observable stream of workflow lifecycle and node events.</summary>
     public IObservable<WorkflowExecutionEvent> Events => _events.AsObservable();
-    
+
+    /// <summary>Creates a workflow executor with required domain registries and optional export integrations.</summary>
     public WorkflowExecutor(
         IAgentRegistry agents,
         IBrickRegistry bricks,
@@ -61,7 +63,14 @@ public class WorkflowExecutor
         _clusterStore = clusterStore;
         _logger = logger;
     }
-    
+
+    /// <summary>
+    /// Validates, plans, and executes a visual workflow definition.
+    /// </summary>
+    /// <param name="workflow">Composed workflow graph from the visual composer.</param>
+    /// <param name="input">Runtime parameters for input and cluster nodes.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Aggregate workflow result with per-node outputs.</returns>
     public async Task<WorkflowResult> ExecuteAsync(
         WorkflowDefinition workflow,
         WorkflowInput input,
@@ -261,7 +270,7 @@ public class WorkflowExecutor
         var brick = _bricks.GetBrick(node.BrickId);
         if (brick == null)
         {
-            throw new InvalidOperationException($"Brick not found: {node.BrickId}");
+            throw new InvalidOperationException($"DomainBrick not found: {node.BrickId}");
         }
 
         // Use the same swap-on-failure/fallback semantics as BehaviorExecutor.
@@ -292,7 +301,7 @@ public class WorkflowExecutor
 
         if (result == null)
         {
-            throw last ?? new InvalidOperationException("Brick execution failed");
+            throw last ?? new InvalidOperationException("DomainBrick execution failed");
         }
         
         return new NodeResult
@@ -304,7 +313,7 @@ public class WorkflowExecutor
     }
 
     private static IReadOnlyList<ImplementationType> BuildBrickExecutionChain(
-        Brick brick,
+        DomainBrick brick,
         ImplementationType preferred,
         IExecutionContext ctx)
     {
@@ -363,7 +372,7 @@ public class WorkflowExecutor
             if (brick == null)
             {
                 if (cluster.Interface.FailurePolicy == FailurePolicy.Abort)
-                    throw new InvalidOperationException($"Brick not found: {clusterBrick.BrickId}");
+                    throw new InvalidOperationException($"DomainBrick not found: {clusterBrick.BrickId}");
                 continue;
             }
 
@@ -382,14 +391,14 @@ public class WorkflowExecutor
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Brick {BrickId} failed with {Impl}, trying fallback", clusterBrick.BrickId, impl);
+                    _logger.LogWarning(ex, "DomainBrick {BrickId} failed with {Impl}, trying fallback", clusterBrick.BrickId, impl);
                 }
             }
 
             if (result == null)
             {
                 if (cluster.Interface.FailurePolicy == FailurePolicy.Abort)
-                    throw new InvalidOperationException($"Brick execution failed: {clusterBrick.BrickId}");
+                    throw new InvalidOperationException($"DomainBrick execution failed: {clusterBrick.BrickId}");
                 continue;
             }
 
@@ -1146,142 +1155,3 @@ public class WorkflowExecutor
             .Replace("\"", "&quot;");
     }
 }
-
-// Supporting classes and events
-
-public class WorkflowInput
-{
-    public IReadOnlyDictionary<string, object> Parameters { get; init; } = new Dictionary<string, object>();
-}
-
-public class WorkflowResult
-{
-    public string CorrelationId { get; init; } = "";
-    public bool Success { get; init; }
-    public Dictionary<string, object> Outputs { get; init; } = new();
-    public Dictionary<string, NodeResult> NodeResults { get; init; } = new();
-    public WorkflowMetrics Metrics { get; init; } = new();
-}
-
-public class NodeResult
-{
-    public string NodeId { get; init; } = "";
-    public bool Success { get; init; }
-    public Dictionary<string, object> Outputs { get; init; } = new();
-    public NodeMetrics? Metrics { get; init; }
-}
-
-public class NodeMetrics
-{
-    public TimeSpan Duration { get; init; }
-    public ImplementationType? Implementation { get; init; }
-    public long? TokensUsed { get; init; }
-    public bool CacheHit { get; init; }
-}
-
-public class WorkflowMetrics
-{
-    public TimeSpan TotalDuration { get; init; }
-    public int NodesExecuted { get; init; }
-    public int DeterministicBricks { get; init; }
-    public int AgenticBricks { get; init; }
-    public long TotalTokensUsed { get; init; }
-    public int CacheHits { get; init; }
-}
-
-public class ExecutionPlan
-{
-    public List<string> ExecutionOrder { get; init; } = new();
-    public List<List<string>> ParallelGroups { get; init; } = new();
-}
-
-public class WorkflowExecutionContext
-{
-    public string CorrelationId { get; init; }
-    public WorkflowDefinition Workflow { get; init; }
-    public IExecutionContext ExecutionContext { get; init; }
-    public WorkflowMetrics Metrics { get; set; } = new();
-    
-    public WorkflowExecutionContext(string correlationId, WorkflowDefinition workflow)
-    {
-        CorrelationId = correlationId;
-        Workflow = workflow;
-        // Create a simple execution context implementation
-        ExecutionContext = new SimpleExecutionContext
-        {
-            AgentId = "workflow",
-            BehaviorId = workflow.Id,
-            IsAirGapped = false,
-            AuditMode = false,
-            Provider = "openai",
-            Variables = new Dictionary<string, object>()
-        };
-    }
-}
-
-/// <summary>
-/// Simple implementation of IExecutionContext for workflow execution.
-/// </summary>
-internal class SimpleExecutionContext : IExecutionContext
-{
-    public string AgentId { get; init; } = "";
-    public string BehaviorId { get; init; } = "";
-    public bool IsAirGapped { get; init; }
-    public bool AuditMode { get; init; }
-    public string Provider { get; init; } = "openai";
-    public Dictionary<string, object> Variables { get; init; } = new();
-    
-    IReadOnlyDictionary<string, object> IExecutionContext.Variables => Variables;
-}
-
-public class WorkflowValidationResult
-{
-    public bool IsValid { get; init; }
-    public List<string> Errors { get; init; } = new();
-}
-
-public class WorkflowValidationException : Exception
-{
-    public List<string> Errors { get; }
-    
-    public WorkflowValidationException(List<string> errors) 
-        : base($"Workflow validation failed: {string.Join(", ", errors)}")
-    {
-        Errors = errors;
-    }
-}
-
-// Events
-
-public abstract record WorkflowExecutionEvent(string CorrelationId, DateTimeOffset Timestamp);
-
-public record WorkflowStartedEvent(string CorrelationId, string WorkflowName) 
-    : WorkflowExecutionEvent(CorrelationId, DateTimeOffset.UtcNow);
-
-public record ExecutionPlanCreatedEvent(string CorrelationId, ExecutionPlan Plan) 
-    : WorkflowExecutionEvent(CorrelationId, DateTimeOffset.UtcNow);
-
-public record NodeStartedEvent(string CorrelationId, WorkflowNode Node) 
-    : WorkflowExecutionEvent(CorrelationId, DateTimeOffset.UtcNow);
-
-public record NodeCompletedEvent(string CorrelationId, WorkflowNode Node, NodeResult Result) 
-    : WorkflowExecutionEvent(CorrelationId, DateTimeOffset.UtcNow);
-
-public record BrickImplementationSelectedEvent(
-    string CorrelationId, 
-    string NodeId, 
-    string BrickName, 
-    ImplementationType Implementation) 
-    : WorkflowExecutionEvent(CorrelationId, DateTimeOffset.UtcNow);
-
-public record NodeBrickEvent(
-    string CorrelationId, 
-    string NodeId, 
-    ExecutionEvent BrickEvent) 
-    : WorkflowExecutionEvent(CorrelationId, DateTimeOffset.UtcNow);
-
-public record WorkflowCompletedEvent(string CorrelationId, WorkflowResult Result) 
-    : WorkflowExecutionEvent(CorrelationId, DateTimeOffset.UtcNow);
-
-public record WorkflowFailedEvent(string CorrelationId, Exception Error) 
-    : WorkflowExecutionEvent(CorrelationId, DateTimeOffset.UtcNow);

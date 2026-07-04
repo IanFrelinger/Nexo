@@ -13,6 +13,7 @@ using OutputFormat = Nexo.Core.Domain.Export.OutputFormat;
 
 namespace Nexo.Tests.Infrastructure.Tests.Export;
 
+/// <summary>Tests for infrastructure export gap coverage.</summary>
 public class InfrastructureExportGapCoverageTests
 {
     [Fact]
@@ -38,7 +39,7 @@ public class InfrastructureExportGapCoverageTests
     public async Task WorkflowExporter_ai_then_deterministic_generates_data_and_code()
     {
         var contentGen = new Mock<IContentGenerator>();
-        contentGen.Setup(c => c.GenerateAsync(It.IsAny<Brick>(), It.IsAny<GenerationConfig>(), It.IsAny<CancellationToken>()))
+        contentGen.Setup(c => c.GenerateAsync(It.IsAny<DomainBrick>(), It.IsAny<GenerationConfig>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new GeneratedContent
             {
                 Variations = new[] { new GeneratedVariation { Content = "v1" } },
@@ -98,6 +99,9 @@ public class InfrastructureExportGapCoverageTests
         return (exporter, ctx);
     }
 
+    /// <summary>Sample workflow.</summary>
+    /// <param name="clusterId">Cluster id.</param>
+    /// <param name="_">_.</param>
     private static Workflow SampleWorkflow(string clusterId, string _) => new()
     {
         Id = "wf-export",
@@ -106,9 +110,12 @@ public class InfrastructureExportGapCoverageTests
         Instances = new[] { new ClusterInstance { InstanceId = "inst-1", ClusterId = clusterId } },
     };
 
+    /// <summary>Tests for export test context.</summary>
     private sealed class ExportTestContext
     {
+        /// <summary>Clusters.</summary>
         public InMemoryClusterRegistry Clusters { get; } = new();
+        /// <summary>Bricks.</summary>
         public StubBrickRegistry Bricks { get; } = new();
 
         public void RegisterCluster(
@@ -136,31 +143,46 @@ public class InfrastructureExportGapCoverageTests
         }
     }
 
+    /// <summary>Tests for in memory cluster registry.</summary>
     private sealed class InMemoryClusterRegistry : IClusterRegistry
     {
         private readonly Dictionary<string, Cluster> _clusters = new(StringComparer.OrdinalIgnoreCase);
 
+        /// <summary>Gets the value.</summary>
+        /// <param name="id">Id.</param>
         public Cluster? Get(string id) => _clusters.GetValueOrDefault(id);
 
+        /// <summary>Gets all.</summary>
         public IReadOnlyList<Cluster> GetAll() => _clusters.Values.ToList();
 
+        /// <summary>Register.</summary>
+        /// <param name="cluster">Cluster.</param>
         public void Register(Cluster cluster) => _clusters[cluster.Id] = cluster;
 
+        /// <summary>Unregister.</summary>
+        /// <param name="id">Id.</param>
         public void Unregister(string id) => _clusters.Remove(id);
     }
 
+    /// <summary>Tests for stub brick registry.</summary>
     private sealed class StubBrickRegistry : IBrickRegistry
     {
-        private readonly Dictionary<string, Brick> _bricks = new(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, DomainBrick> _bricks = new(StringComparer.OrdinalIgnoreCase);
 
-        public void Add(Brick brick) => _bricks[brick.Id] = brick;
+        /// <summary>Add.</summary>
+        /// <param name="brick">Brick.</param>
+        public void Add(DomainBrick brick) => _bricks[brick.Id] = brick;
 
-        public Brick? GetBrick(string id) => _bricks.GetValueOrDefault(id);
+        /// <summary>Gets brick.</summary>
+        /// <param name="id">Id.</param>
+        public DomainBrick? GetBrick(string id) => _bricks.GetValueOrDefault(id);
 
-        public IReadOnlyList<Brick> GetAllBricks() => _bricks.Values.ToList();
+        /// <summary>Gets all bricks.</summary>
+        public IReadOnlyList<DomainBrick> GetAllBricks() => _bricks.Values.ToList();
     }
 
-    private sealed class ExportTestBrick : Brick
+    /// <summary>Tests for export test brick.</summary>
+    private sealed class ExportTestBrick : DomainBrick
     {
         public ExportTestBrick(
             string id,

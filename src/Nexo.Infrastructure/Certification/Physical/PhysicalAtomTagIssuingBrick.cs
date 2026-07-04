@@ -4,29 +4,12 @@ using Nexo.Certification.Physical.Tagging;
 
 namespace Nexo.Infrastructure.Certification.Physical;
 
-public sealed record PhysicalAtomTagIssuingResult(
-    bool Succeeded,
-    PhysicalAtomTagReference? Reference,
-    string? QrPayload,
-    byte[]? NdefRecord,
-    string? FailureCode,
-    string? Reason)
-{
-    public static PhysicalAtomTagIssuingResult Ok(
-        PhysicalAtomTagReference reference,
-        string qrPayload,
-        byte[] ndefRecord) =>
-        new(true, reference, qrPayload, ndefRecord, null, null);
-
-    public static PhysicalAtomTagIssuingResult Refused(string code, string reason) =>
-        new(false, null, null, null, code, reason);
-}
-
 /// <summary>
 /// Phase 2 deterministic tag issuer: encodes certified atom references for QR and NFC payloads.
 /// </summary>
 public static class PhysicalAtomTagIssuingBrick
 {
+    /// <summary>Whether sue from bundle.</summary>
     public static PhysicalAtomTagIssuingResult IssueFromBundle(
         PhysicalAtomCertBundle bundle,
         TagReferenceKind kind)
@@ -37,6 +20,7 @@ public static class PhysicalAtomTagIssuingBrick
         return IssueFromCert(bundle.Certificate, kind, bundle.IssuerPublicKey);
     }
 
+    /// <summary>Whether sue from cert.</summary>
     public static PhysicalAtomTagIssuingResult IssueFromCert(
         PhysicalAtomCertificate certificate,
         TagReferenceKind kind,

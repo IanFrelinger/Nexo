@@ -8,6 +8,12 @@ namespace Nexo.Core.Application.Adaptation;
 /// </summary>
 public static class WitnessSignatureBuilder
 {
+    /// <summary>
+    /// Derives input and output field names and types from the first witness case.
+    /// </summary>
+    /// <param name="witness">Witness specification with at least one case.</param>
+    /// <returns>I/O signature without expected output values.</returns>
+    /// <exception cref="InvalidOperationException">When the witness contains no cases.</exception>
     public static WitnessSignature FromWitness(WitnessSpec witness)
     {
         if (witness.Cases.Count == 0)

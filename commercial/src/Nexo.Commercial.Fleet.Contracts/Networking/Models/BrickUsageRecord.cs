@@ -1,5 +1,4 @@
-namespace Nexo.Core.Application.Networking.Models;
-
+namespace Nexo.Commercial.Fleet.Contracts.Networking.Models;
 /// <summary>
 /// A single recorded brick execution for usage tracking (synaptic plasticity).
 /// </summary>

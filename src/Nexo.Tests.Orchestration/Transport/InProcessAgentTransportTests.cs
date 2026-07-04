@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration.Transport;
 
+/// <summary>Tests for in process agent transport.</summary>
 public sealed class InProcessAgentTransportTests
 {
     [Fact]

@@ -19,6 +19,7 @@ namespace Nexo.CLI.Commands;
 /// </summary>
 public sealed class ObserveCommand : Command
 {
+    /// <summary>Creates a new ObserveCommand instance.</summary>
     public ObserveCommand() : base("observe", "Observe development workflow (file system, processes); detect patterns. Dogfood: in Nexo repo, observes Nexo itself.")
     {
         var pathOpt = new Option<string?>("--path", "Root path to observe (default: repo root from cwd)");

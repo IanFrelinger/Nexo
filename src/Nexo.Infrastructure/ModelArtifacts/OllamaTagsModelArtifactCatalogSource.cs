@@ -11,6 +11,7 @@ namespace Nexo.Infrastructure.ModelArtifacts;
 /// </summary>
 public sealed class OllamaTagsModelArtifactCatalogSource : IModelArtifactCatalogSource
 {
+    /// <summary>http client name constant.</summary>
     public const string HttpClientName = "Nexo.ModelArtifactCatalog.OllamaTags";
 
     private static readonly JsonSerializerOptions JsonOptions = new()
@@ -20,13 +21,16 @@ public sealed class OllamaTagsModelArtifactCatalogSource : IModelArtifactCatalog
 
     private readonly IHttpClientFactory _httpClientFactory;
 
+    /// <summary>Initializes a new ollama tags model artifact catalog source.</summary>
     public OllamaTagsModelArtifactCatalogSource(IHttpClientFactory httpClientFactory)
     {
         _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
     }
 
+    /// <summary>Source id.</summary>
     public string SourceId => "ollama-tags";
 
+    /// <summary>Is available asynchronously.</summary>
     public async Task<bool> IsAvailableAsync(CancellationToken cancellationToken = default)
     {
         try
@@ -41,6 +45,7 @@ public sealed class OllamaTagsModelArtifactCatalogSource : IModelArtifactCatalog
         }
     }
 
+    /// <summary>List asynchronously.</summary>
     public async Task<IReadOnlyList<ModelArtifactRecord>> ListAsync(CancellationToken cancellationToken = default)
     {
         var client = _httpClientFactory.CreateClient(HttpClientName);

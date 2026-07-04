@@ -10,6 +10,7 @@ namespace Nexo.Infrastructure.Certification.Composition;
 /// </summary>
 internal sealed class CompositionExecutor
 {
+    /// <summary>Run asynchronously.</summary>
     public async Task<CompositionRunResult> RunAsync(
         CompositionSpec spec,
         IReadOnlyDictionary<string, object> compositionInput,
@@ -41,6 +42,7 @@ internal sealed class CompositionExecutor
         return new CompositionRunResult(true, compositionOutput, Array.Empty<string>());
     }
 
+    /// <summary>Run witness asynchronously.</summary>
     public async Task<WitnessRunResult> RunWitnessAsync(
         CompositionSpec spec,
         CompositionWitnessSpec witness,
@@ -85,6 +87,7 @@ internal sealed class CompositionExecutor
         return new WitnessRunResult(failures.Count == 0, failures);
     }
 
+    /// <summary>Runs the composition witness twice and compares outputs for determinism.</summary>
     public async Task<(bool Identical, string? First, string? Second)> CheckDeterminismAsync(
         CompositionSpec spec,
         CompositionWitnessSpec witness,
@@ -164,10 +167,3 @@ internal sealed class CompositionExecutor
         return output;
     }
 }
-
-internal sealed record CompositionRunResult(
-    bool Success,
-    IReadOnlyDictionary<string, object> Output,
-    IReadOnlyList<string> Errors);
-
-internal sealed record WitnessRunResult(bool Passed, IReadOnlyList<string> Failures);

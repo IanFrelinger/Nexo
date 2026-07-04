@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Validation;
 
+/// <summary>Tests for cached validation service adapter gap coverage.</summary>
 public sealed class CachedValidationServiceAdapterGapCoverageTests
 {
     [Fact]

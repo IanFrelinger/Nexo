@@ -1,10 +1,9 @@
 using System.Linq;
-using Nexo.GameDomain.Aesthetics;
-using Nexo.GameDomain.Scoping;
-using Nexo.GameDomain.Session;
+using Nexo.Commercial.GameDomain.Aesthetics;
+using Nexo.Commercial.GameDomain.Scoping;
+using Nexo.Commercial.GameDomain.Session;
 
-namespace Nexo.GameDomain.Mapping;
-
+namespace Nexo.Commercial.GameDomain.Mapping;
 /// <summary>
 /// Derives <see cref="MapAdaptationPlan"/> from session aesthetics and built-in catalog entries.
 /// </summary>

@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Nexo.Tests.Transport;
 
+/// <summary>Tests for grpc agent transport barrier ambient.</summary>
 [Collection("GrpcTransportEnvironment")]
 public sealed class GrpcAgentTransportBarrierAmbientTests
 {
@@ -59,6 +60,7 @@ public sealed class GrpcAgentTransportBarrierAmbientTests
         headers.GetValue("x-nexo-barrier")!.Should().Be("internal");
     }
 
+    /// <summary>Environment variable scope.</summary>
     private sealed class EnvironmentVariableScope : IDisposable
     {
         private readonly string _key;
@@ -71,6 +73,7 @@ public sealed class GrpcAgentTransportBarrierAmbientTests
             Environment.SetEnvironmentVariable(key, value);
         }
 
+        /// <summary>Dispose.</summary>
         public void Dispose() => Environment.SetEnvironmentVariable(_key, _priorValue);
     }
 }

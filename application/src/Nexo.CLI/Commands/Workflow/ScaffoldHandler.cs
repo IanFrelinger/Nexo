@@ -1,10 +1,11 @@
 using System.Text.Json;
 using Nexo.CLI.Runtime;
 
-namespace Nexo.CLI.Commands;
-
+namespace Nexo.CLI.Commands.Workflow;
+/// <summary>Handles scaffold requests.</summary>
 internal sealed class ScaffoldHandler
 {
+    /// <summary>Executes the command handler and returns a process exit code.</summary>
     public Task<int> ExecuteAsync(string outputPath, bool force, bool json)
     {
         if (string.IsNullOrWhiteSpace(outputPath))

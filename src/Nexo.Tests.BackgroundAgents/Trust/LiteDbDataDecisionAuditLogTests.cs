@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.Trust;
 
+/// <summary>Tests for lite db data decision audit log.</summary>
 public sealed class LiteDbDataDecisionAuditLogTests : IDisposable
 {
     private readonly string _dbPath;
@@ -15,6 +16,7 @@ public sealed class LiteDbDataDecisionAuditLogTests : IDisposable
         _dbPath = Path.Combine(Path.GetTempPath(), $"nexo_audit_test_{Guid.NewGuid():N}.db");
     }
 
+    /// <summary>Dispose.</summary>
     public void Dispose() => Dispose(true);
     private void Dispose(bool disposing)
     {

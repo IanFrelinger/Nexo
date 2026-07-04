@@ -2,6 +2,7 @@ using System.Xml.Linq;
 
 namespace Nexo.Infrastructure.Certification;
 
+/// <summary>Validates brick project dependencies against the certification allow-list.</summary>
 internal static class BrickDependencyChecker
 {
     private static readonly HashSet<string> AllowedPackages = new(StringComparer.OrdinalIgnoreCase)
@@ -19,6 +20,7 @@ internal static class BrickDependencyChecker
         "/workspace"
     ];
 
+    /// <summary>Check.</summary>
     public static DependencyCheckResult Check(string projectPath, string sourceCode)
     {
         var violations = new List<string>();
@@ -56,5 +58,3 @@ internal static class BrickDependencyChecker
         return new DependencyCheckResult(violations.Count == 0, violations);
     }
 }
-
-internal sealed record DependencyCheckResult(bool Passed, IReadOnlyList<string> Violations);

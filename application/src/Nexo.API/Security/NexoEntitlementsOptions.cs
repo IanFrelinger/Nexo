@@ -6,6 +6,7 @@ namespace Nexo.API.Security;
 /// </summary>
 public sealed class NexoEntitlementsOptions
 {
+    /// <summary>Configuration section path (<c>Nexo:Entitlements</c>).</summary>
     public const string SectionPath = "Nexo:Entitlements";
 
     /// <summary>Zero means unlimited.</summary>
@@ -23,8 +24,10 @@ public sealed class NexoEntitlementsOptions
     /// <summary>Artifact/history retention in days (0 = platform default).</summary>
     public int RetentionDays { get; set; }
 
+    /// <summary>Whether SSO entitlement is enabled for the deployment.</summary>
     public bool SsoEnabled { get; set; }
 
+    /// <summary>Whether audit export entitlement is enabled for the deployment.</summary>
     public bool AuditExportEnabled { get; set; }
 
     /// <summary>e.g. Private, Cloud, Enterprise — documentation / license profile hint.</summary>

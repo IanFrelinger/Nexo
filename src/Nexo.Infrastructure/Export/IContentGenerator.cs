@@ -9,7 +9,7 @@ namespace Nexo.Infrastructure.Export;
 public interface IContentGenerator
 {
     Task<GeneratedContent> GenerateAsync(
-        Brick brick,
+        DomainBrick brick,
         GenerationConfig config,
         CancellationToken ct = default);
 }

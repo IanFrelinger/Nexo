@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Nexo.Tests.Contracts;
 
+/// <summary>Tests for contracts dto.</summary>
 public class ContractsDtoTests
 {
     [Fact]
@@ -142,7 +143,7 @@ public class ContractsDtoTests
             2,
             "none");
         orchestrationResponse.Summary.Should().Be("done");
-        orchestrationResponse.Output.Should().NotBeNull();
+        Assert.NotNull(orchestrationResponse.Output);
         orchestrationResponse.Escalations.Should().Be(2);
 
         var status = new StatusResponse("prod", "healthy", 10, 3, "pack", "3.0");

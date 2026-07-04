@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Nexo.Tests.Application;
 
+/// <summary>Tests for application remaining coverage.</summary>
 public sealed class ApplicationRemainingCoverageTests
 {
     [Fact]

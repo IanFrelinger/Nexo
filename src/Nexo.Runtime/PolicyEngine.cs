@@ -19,11 +19,13 @@ public sealed class PolicyEngine
 {
     private readonly IReadOnlyList<IPolicy> _policies;
 
+    /// <summary>Creates a policy engine from the given policies.</summary>
     public PolicyEngine(IEnumerable<IPolicy> policies)
     {
         _policies = policies.ToList();
     }
 
+    /// <summary>Evaluates all policies for a tool call; sets <paramref name="reason"/> on denial.</summary>
     public bool Approve(ToolCall call, WorldSnapshot s, out string reason)
     {
         foreach (var p in _policies)
@@ -35,6 +37,7 @@ public sealed class PolicyEngine
         return true;
     }
 
+    /// <summary>Signs an action delta with a SHA-256 integrity hash.</summary>
     public IActionDelta Sign(IActionDelta delta)
     {
         using var sha = SHA256.Create();

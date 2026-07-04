@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration.Coordination;
 
+/// <summary>Tests for conflict detector.</summary>
 public class ConflictDetectorTests
 {
     private readonly IServiceProvider _serviceProvider;

@@ -4,6 +4,7 @@ using Nexo.Core.Domain.Execution;
 
 namespace GameDirector.Mcp;
 
+/// <summary>Game director mcp service extensions.</summary>
 public static class GameDirectorMcpServiceExtensions
 {
     public static IServiceCollection AddGameDirectorMcp(this IServiceCollection services)

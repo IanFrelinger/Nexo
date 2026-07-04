@@ -14,6 +14,7 @@ public sealed class NcrStartupHealthService : IHostedService
     private readonly IPlatformPolicy _policy;
     private readonly ILogger<NcrStartupHealthService> _logger;
 
+    /// <summary>Initializes a new ncr startup health service.</summary>
     public NcrStartupHealthService(
         IModelServingBackend backend,
         IPlatformPolicy policy,
@@ -24,6 +25,7 @@ public sealed class NcrStartupHealthService : IHostedService
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>Start asynchronously.</summary>
     public async Task StartAsync(CancellationToken cancellationToken)
     {
         if (_backend is not OllamaModelServingBackend)
@@ -58,5 +60,6 @@ public sealed class NcrStartupHealthService : IHostedService
         }
     }
 
+    /// <summary>Stop asynchronously.</summary>
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }

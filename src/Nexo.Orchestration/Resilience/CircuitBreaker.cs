@@ -240,39 +240,3 @@ public sealed class CircuitBreaker
         });
     }
 }
-
-/// <summary>
-/// State of a circuit breaker.
-/// </summary>
-internal sealed class CircuitState
-{
-    public required string OperationKey { get; init; }
-    public CircuitStateType State { get; set; }
-    public int ConsecutiveFailures { get; set; }
-    public int ConsecutiveSuccesses { get; set; }
-    public DateTimeOffset? LastFailureTime { get; set; }
-    public DateTimeOffset? LastSuccessTime { get; set; }
-    public Exception? LastError { get; set; }
-
-    // Lock for thread-safe state transitions
-    public readonly object SyncLock = new();
-}
-
-/// <summary>
-/// State of a circuit breaker.
-/// </summary>
-public enum CircuitStateType
-{
-    Closed,   // Normal operation
-    Open,     // Failing, reject requests
-    HalfOpen  // Testing if service recovered
-}
-
-/// <summary>
-/// Exception thrown when circuit breaker is open.
-/// </summary>
-public sealed class CircuitBreakerOpenException : Exception
-{
-    public CircuitBreakerOpenException(string message) : base(message) { }
-}
-

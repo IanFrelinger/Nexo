@@ -17,9 +17,16 @@ namespace Nexo.Orchestration.Assets.Models;
 /// </summary>
 public sealed record AssetOutput
 {
+    /// <summary>Unique asset identifier.</summary>
     public required string AssetId { get; init; }
+
+    /// <summary>Kind of generated asset.</summary>
     public required AssetType AssetType { get; init; }
+
+    /// <summary>Path to the asset file on disk.</summary>
     public required string FilePath { get; init; }
+
+    /// <summary>MIME type of the asset file.</summary>
     public required string MimeType { get; init; }
 
     /// <summary>
@@ -48,55 +55,3 @@ public sealed record AssetOutput
     /// </summary>
     public DateTimeOffset GeneratedAt { get; init; } = DateTimeOffset.UtcNow;
 }
-
-/// <summary>
-/// Types of assets that can be generated.
-/// </summary>
-public enum AssetType
-{
-    Image,
-    Audio,
-    Model3D,
-    Shader,
-    Animation,
-    Texture,
-    Material,
-    Prefab
-}
-
-/// <summary>
-/// The prompt and parameters used for generation.
-/// </summary>
-public sealed record GenerationPrompt
-{
-    public required string TextPrompt { get; init; }
-    public string? NegativePrompt { get; init; }
-    public string? StyleReference { get; init; }
-    public IReadOnlyDictionary<string, object> Parameters { get; init; } =
-        new Dictionary<string, object>();
-}
-
-/// <summary>
-/// Validation of generated asset against constraints.
-/// </summary>
-public sealed record AssetValidation
-{
-    public bool IsValid { get; init; }
-    public IReadOnlyList<string> PassedChecks { get; init; } = Array.Empty<string>();
-    public IReadOnlyList<string> FailedChecks { get; init; } = Array.Empty<string>();
-    public IReadOnlyList<string> Warnings { get; init; } = Array.Empty<string>();
-}
-
-/// <summary>
-/// Manifest of all assets in a project.
-/// </summary>
-public sealed record AssetManifest
-{
-    public required string ProjectId { get; init; }
-    public IReadOnlyList<AssetOutput> Assets { get; init; } = Array.Empty<AssetOutput>();
-    public DateTimeOffset GeneratedAt { get; init; } = DateTimeOffset.UtcNow;
-
-    public IReadOnlyDictionary<AssetType, int> AssetCounts =>
-        Assets.GroupBy(a => a.AssetType).ToDictionary(g => g.Key, g => g.Count());
-}
-

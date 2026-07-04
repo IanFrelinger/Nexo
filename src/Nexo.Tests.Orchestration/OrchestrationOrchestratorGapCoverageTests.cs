@@ -22,6 +22,7 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration;
 
+/// <summary>Tests for orchestration orchestrator gap coverage.</summary>
 public class OrchestrationOrchestratorGapCoverageTests
 {
     [Fact]

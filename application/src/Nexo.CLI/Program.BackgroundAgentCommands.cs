@@ -4,6 +4,7 @@ using Nexo.CLI.Commands.BackgroundAgent;
 
 namespace Nexo.CLI;
 
+/// <summary>Program.</summary>
 static partial class Program
 {
     private static Command BuildBackgroundAgentCommand(Option<bool> jsonOpt)
@@ -17,6 +18,11 @@ static partial class Program
             new Option<string?>("--sensitivity", "Filter by max sensitivity level")
         };
         listBgCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="formatJson">Format json.</param>
+            /// <param name="status">Status.</param>
+            /// <param name="role">Role.</param>
+            /// <param name="sensitivity">Sensitivity.</param>
             async (bool formatJson, string? status, string? role, string? sensitivity) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<BackgroundAgentCommand>();
@@ -32,6 +38,9 @@ static partial class Program
         var showBgIdOpt = new Option<string>("--id", "Agent ID") { IsRequired = true };
         var showBgCmd = new Command("show", "Show details for a background agent") { showBgIdOpt };
         showBgCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="id">Id.</param>
+            /// <param name="formatJson">Format json.</param>
             async (string id, bool formatJson) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<BackgroundAgentCommand>();
@@ -45,6 +54,9 @@ static partial class Program
         var startBgIdOpt = new Option<string>("--id", "Agent ID") { IsRequired = true };
         var startBgCmd = new Command("start", "Start a background agent") { startBgIdOpt };
         startBgCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="id">Id.</param>
+            /// <param name="formatJson">Format json.</param>
             async (string id, bool formatJson) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<BackgroundAgentCommand>();
@@ -58,6 +70,9 @@ static partial class Program
         var stopBgIdOpt = new Option<string>("--id", "Agent ID") { IsRequired = true };
         var stopBgCmd = new Command("stop", "Stop a background agent") { stopBgIdOpt };
         stopBgCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="id">Id.</param>
+            /// <param name="formatJson">Format json.</param>
             async (string id, bool formatJson) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<BackgroundAgentCommand>();
@@ -71,6 +86,9 @@ static partial class Program
         var restartBgIdOpt = new Option<string>("--id", "Agent ID") { IsRequired = true };
         var restartBgCmd = new Command("restart", "Restart a background agent") { restartBgIdOpt };
         restartBgCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="id">Id.</param>
+            /// <param name="formatJson">Format json.</param>
             async (string id, bool formatJson) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<BackgroundAgentCommand>();
@@ -99,6 +117,14 @@ static partial class Program
             autoscaleApplyIdleOpt
         };
         autoscaleApplyCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="role">Role.</param>
+            /// <param name="demand">Demand.</param>
+            /// <param name="minAgents">Min agents.</param>
+            /// <param name="maxAgents">Max agents.</param>
+            /// <param name="unitsPerAgent">Units per agent.</param>
+            /// <param name="idleSeconds">Idle seconds.</param>
+            /// <param name="formatJson">Format json.</param>
             async (string role, int demand, int minAgents, int maxAgents, int unitsPerAgent, int idleSeconds, bool formatJson) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<BackgroundAgentCommand>();
@@ -119,6 +145,10 @@ static partial class Program
         var executeBgAsyncOpt = new Option<bool>("--async", "Run execution asynchronously (don't wait)");
         var executeBgCmd = new Command("execute", "Manually run one execution of a background agent") { executeBgIdOpt, executeBgAsyncOpt };
         executeBgCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="id">Id.</param>
+            /// <param name="runAsync">Run async.</param>
+            /// <param name="formatJson">Format json.</param>
             async (string id, bool runAsync, bool formatJson) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ExecuteBackgroundAgentCommand>();
@@ -137,6 +167,12 @@ static partial class Program
             new Option<string?>("--since", "Show logs since duration (e.g. 1h, 30m)")
         };
         logsBgCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="id">Id.</param>
+            /// <param name="tail">Tail.</param>
+            /// <param name="level">Level.</param>
+            /// <param name="since">Since.</param>
+            /// <param name="formatJson">Format json.</param>
             async (string id, int tail, string? level, string? since, bool formatJson) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.LogsBackgroundAgentCommand>();
@@ -154,6 +190,9 @@ static partial class Program
         var metricsBgIdOpt = new Option<string>("--id", "Agent ID") { IsRequired = true };
         var metricsBgCmd = new Command("metrics", "Show agent performance metrics") { metricsBgIdOpt };
         metricsBgCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="id">Id.</param>
+            /// <param name="formatJson">Format json.</param>
             async (string id, bool formatJson) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.MetricsBackgroundAgentCommand>();
@@ -173,6 +212,11 @@ static partial class Program
             statsSinceOpt
         };
         statsBgCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="agent">Agent.</param>
+            /// <param name="role">Role.</param>
+            /// <param name="since">Since.</param>
+            /// <param name="formatJson">Format json.</param>
             async (string? agent, string? role, double? since, bool formatJson) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.StatsBackgroundAgentCommand>();
@@ -196,6 +240,13 @@ static partial class Program
             obsSourceOpt, obsKindOpt, obsSinceOpt, obsTailOpt, obsSummaryOpt
         };
         observationsBgCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="source">Source.</param>
+            /// <param name="kind">Kind.</param>
+            /// <param name="since">Since.</param>
+            /// <param name="tail">Tail.</param>
+            /// <param name="summary">Summary.</param>
+            /// <param name="formatJson">Format json.</param>
             async (string? source, string? kind, double? since, int? tail, bool summary, bool formatJson) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ObservationsBackgroundAgentCommand>();
@@ -435,6 +486,8 @@ static partial class Program
         var modeCmd = new Command("mode", "Get or set aggressiveness mode (passive, semi-active, active, ambient)");
         var modeGetCmd = new Command("get", "Get current mode");
         modeGetCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="formatJson">Format json.</param>
             async (bool formatJson) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ModeBackgroundAgentCommand>();
@@ -445,6 +498,9 @@ static partial class Program
         var modeSetValueOpt = new Option<string>("--value", "Mode: passive, semi-active, active, ambient") { IsRequired = true };
         var modeSetCmd = new Command("set", "Set mode (switchable at runtime without restart)") { modeSetValueOpt };
         modeSetCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="value">Value.</param>
+            /// <param name="formatJson">Format json.</param>
             async (string value, bool formatJson) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.ModeBackgroundAgentCommand>();
@@ -484,6 +540,15 @@ static partial class Program
             sensAddDescOpt
         };
         sensAddCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="name">Name.</param>
+            /// <param name="value">Value.</param>
+            /// <param name="allowsExternalLLM">Allows external llm.</param>
+            /// <param name="allowsWebSearch">Allows web search.</param>
+            /// <param name="requiresLocalOnly">Requires local only.</param>
+            /// <param name="allowsNetworkExports">Allows network exports.</param>
+            /// <param name="description">Description.</param>
+            /// <param name="formatJson">Format json.</param>
             async (string name, int value, bool allowsExternalLLM, bool allowsWebSearch, bool requiresLocalOnly, bool allowsNetworkExports, string? description, bool formatJson) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.SensitivityCommand>();
@@ -507,6 +572,15 @@ static partial class Program
             new Option<string>("--description", "Description")
         };
         sensUpdateCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="name">Name.</param>
+            /// <param name="value">Value.</param>
+            /// <param name="allowsExternalLLM">Allows external llm.</param>
+            /// <param name="allowsWebSearch">Allows web search.</param>
+            /// <param name="requiresLocalOnly">Requires local only.</param>
+            /// <param name="allowsNetworkExports">Allows network exports.</param>
+            /// <param name="description">Description.</param>
+            /// <param name="formatJson">Format json.</param>
             async (string name, int value, bool allowsExternalLLM, bool allowsWebSearch, bool requiresLocalOnly, bool allowsNetworkExports, string? description, bool formatJson) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.SensitivityCommand>();
@@ -536,6 +610,10 @@ static partial class Program
         var ragIndexSensOpt = new Option<string?>("--sensitivity", "Default sensitivity level for indexed documents");
         var ragIndexCmd = new Command("index", "Index paths into RAG store") { ragIndexPathsOpt, ragIndexSensOpt };
         ragIndexCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="paths">Paths.</param>
+            /// <param name="sensitivity">Sensitivity.</param>
+            /// <param name="formatJson">Format json.</param>
             async (string[] paths, string? sensitivity, bool formatJson) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.RAGCommand>();
@@ -552,6 +630,12 @@ static partial class Program
             new Option<string?>("--max-sensitivity", "Max sensitivity level for results")
         };
         ragSearchCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="query">Query.</param>
+            /// <param name="maxResults">Max results.</param>
+            /// <param name="minScore">Min score.</param>
+            /// <param name="maxSensitivity">Max sensitivity.</param>
+            /// <param name="formatJson">Format json.</param>
             async (string query, int maxResults, double minScore, string? maxSensitivity, bool formatJson) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.RAGCommand>();
@@ -594,6 +678,10 @@ static partial class Program
             new Option<int>("--max-results", () => 5, "Max results")
         };
         webSearchTestCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="query">Query.</param>
+            /// <param name="maxResults">Max results.</param>
+            /// <param name="formatJson">Format json.</param>
             async (string query, int maxResults, bool formatJson) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.WebSearchCommand>();
@@ -618,6 +706,12 @@ static partial class Program
             daemonDisableObservationOpt
         };
         daemonCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="config">Config.</param>
+            /// <param name="duration">Duration.</param>
+            /// <param name="patternStorePath">Pattern store path.</param>
+            /// <param name="disableObservation">Disable observation.</param>
+            /// <param name="formatJson">Format json.</param>
             async (FileInfo? config, string? duration, string? patternStorePath, bool disableObservation, bool formatJson) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.BackgroundAgentDaemonCommand>();
@@ -647,6 +741,10 @@ static partial class Program
             dashboardAuthOpt
         };
         dashboardCmd.SetHandler(
+            /// <summary>Async.</summary>
+            /// <param name="port">Port.</param>
+            /// <param name="open">Open.</param>
+            /// <param name="authToken">Auth token.</param>
             async (int port, bool open, string? authToken) =>
             {
                 var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.OperatorDashboardBackgroundAgentCommand>();

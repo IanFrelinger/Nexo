@@ -11,6 +11,7 @@ public sealed class ProposeAndCertifyCompositionService : IProposeAndCertifyComp
     private readonly ICompositionProposer _proposer;
     private readonly ICertifiedCompositionAdmission _admission;
 
+    /// <summary>Initializes a new propose and certify composition service.</summary>
     public ProposeAndCertifyCompositionService(
         ICompositionProposer proposer,
         ICertifiedCompositionAdmission admission)
@@ -19,6 +20,7 @@ public sealed class ProposeAndCertifyCompositionService : IProposeAndCertifyComp
         _admission = admission ?? throw new ArgumentNullException(nameof(admission));
     }
 
+    /// <summary>Propose certify and admit asynchronously.</summary>
     public async Task<ProposeCertifyCompositionResult> ProposeCertifyAndAdmitAsync(
         CompositionProposerInput proposerInput,
         CompositionWitnessSpec witness,

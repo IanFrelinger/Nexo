@@ -3,8 +3,7 @@ using Nexo.Abstractions;
 using Nexo.Infrastructure.Adaptation;
 using Nexo.Infrastructure.Sdk.Ports;
 
-namespace Nexo.Hosting.Sdk;
-
+namespace Nexo.Hosting.Sdk.Extensions;
 /// <summary>
 /// Extension methods for SDK-based component registration.
 /// Call AddNexoSdk before AddNexo to register external bricks and agents at runtime.

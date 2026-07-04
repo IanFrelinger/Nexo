@@ -21,6 +21,7 @@ namespace Nexo.CLI.Commands;
 /// </summary>
 public sealed class MeshCommand : Command
 {
+    /// <summary>Creates a new MeshCommand instance.</summary>
     public MeshCommand() : base("mesh", "Discover and advertise capabilities (Block 9).")
     {
         var discoverOpt = new Option<bool>("--discover", () => false, "Discover peer instances");

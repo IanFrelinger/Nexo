@@ -6,8 +6,11 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.Configuration;
 
+/// <summary>Tests for background agent spec builder gap coverage.</summary>
 public class BackgroundAgentSpecBuilderGapCoverageTests
 {
+    /// <summary>Base config.</summary>
+    /// <param name=""monitor"">"monitor".</param>
     private static BackgroundAgentConfig BaseConfig(string role = "monitor") => new()
     {
         Id = "agent-1",

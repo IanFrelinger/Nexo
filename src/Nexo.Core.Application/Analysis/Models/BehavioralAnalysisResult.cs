@@ -5,6 +5,9 @@ namespace Nexo.Core.Application.Analysis.Models;
 /// </summary>
 public record BehavioralAnalysisResult
 {
+    /// <summary>Whether the brick output satisfies its declared contract.</summary>
     public required bool ContractSatisfied { get; init; }
+
+    /// <summary>Descriptions of contract drift when output diverges from expected.</summary>
     public required IReadOnlyList<string> DriftDescriptions { get; init; }
 }

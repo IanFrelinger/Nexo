@@ -8,6 +8,7 @@ using System.Xml.Linq;
 
 namespace Nexo.Tests.Infrastructure.Tests.Validation;
 
+/// <summary>Tests for trx test result parser.</summary>
 public class TrxTestResultParserTests : UnitTestBase
 {
     private DirectoryInfo? _tempDir;
@@ -31,13 +32,21 @@ public class TrxTestResultParserTests : UnitTestBase
     {
         try
         {
+            /// <summary>Test supported extensions.</summary>
             TestSupportedExtensions();
+            /// <summary>Test non existent file.</summary>
             await TestNonExistentFile();
+            /// <summary>Test valid trx file with passed tests.</summary>
             await TestValidTrxFileWithPassedTests();
+            /// <summary>Test valid trx file with failed tests.</summary>
             await TestValidTrxFileWithFailedTests();
+            /// <summary>Test valid trx file with mixed results.</summary>
             await TestValidTrxFileWithMixedResults();
+            /// <summary>Test invalid xml file.</summary>
             await TestInvalidXmlFile();
+            /// <summary>Test empty trx file.</summary>
             await TestEmptyTrxFile();
+            /// <summary>Test cancellation.</summary>
             await TestCancellation();
 
             return new TestResult
@@ -77,8 +86,11 @@ public class TrxTestResultParserTests : UnitTestBase
         var mockLogger = new Mock<ILogger<TrxTestResultParser>>();
         var parser = new TrxTestResultParser(mockLogger.Object);
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(parser.SupportedExtensions);
+        /// <summary>Assert equal.</summary>
         AssertEqual(1, parser.SupportedExtensions.Count);
+        /// <summary>Assert equal.</summary>
         AssertEqual(".trx", parser.SupportedExtensions[0]);
     }
 
@@ -90,7 +102,9 @@ public class TrxTestResultParserTests : UnitTestBase
         var nonExistentFile = new FileInfo(Path.Combine(_tempDir!.FullName, "nonexistent.trx"));
         var results = await parser.ParseAsync(nonExistentFile, CancellationToken.None);
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(results);
+        /// <summary>Assert equal.</summary>
         AssertEqual(0, results.Count);
     }
 
@@ -110,7 +124,9 @@ public class TrxTestResultParserTests : UnitTestBase
 
         var results = await parser.ParseAsync(trxFile, CancellationToken.None);
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(results);
+        /// <summary>Assert equal.</summary>
         AssertEqual(2, results.Count);
         AssertTrue(results.All(r => r.Passed));
         AssertTrue(results.Any(r => r.Name == "Test1"));
@@ -133,7 +149,9 @@ public class TrxTestResultParserTests : UnitTestBase
 
         var results = await parser.ParseAsync(trxFile, CancellationToken.None);
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(results);
+        /// <summary>Assert equal.</summary>
         AssertEqual(2, results.Count);
         AssertTrue(results.All(r => !r.Passed));
         AssertTrue(results.Any(r => r.Name == "Test1" && r.Message == "Assertion failed: expected true"));
@@ -157,7 +175,9 @@ public class TrxTestResultParserTests : UnitTestBase
 
         var results = await parser.ParseAsync(trxFile, CancellationToken.None);
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(results);
+        /// <summary>Assert equal.</summary>
         AssertEqual(3, results.Count);
         AssertEqual(2, results.Count(r => r.Passed));
         AssertEqual(1, results.Count(r => !r.Passed));
@@ -178,7 +198,9 @@ public class TrxTestResultParserTests : UnitTestBase
         // Should handle gracefully and return empty results
         var results = await parser.ParseAsync(trxFile, CancellationToken.None);
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(results);
+        /// <summary>Assert equal.</summary>
         AssertEqual(0, results.Count);
     }
 
@@ -198,7 +220,9 @@ public class TrxTestResultParserTests : UnitTestBase
 
         var results = await parser.ParseAsync(trxFile, CancellationToken.None);
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(results);
+        /// <summary>Assert equal.</summary>
         AssertEqual(0, results.Count);
     }
 

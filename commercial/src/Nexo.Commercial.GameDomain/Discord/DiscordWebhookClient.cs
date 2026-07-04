@@ -1,5 +1,4 @@
-namespace Nexo.GameDomain.Discord;
-
+namespace Nexo.Commercial.GameDomain.Discord;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
@@ -78,28 +77,6 @@ public sealed class DiscordWebhookClient : IDisposable
         }, ct);
     }
 
+    /// <summary>Releases resources held by this instance.</summary>
     public void Dispose() => _http.Dispose();
-}
-
-/// <summary>Discord embed structure for rich messages.</summary>
-public sealed record DiscordEmbed
-{
-    public string? Title { get; init; }
-    public string? Description { get; init; }
-    public int? Color { get; init; }
-    public IReadOnlyList<DiscordEmbedField>? Fields { get; init; }
-    public DiscordEmbedFooter? Footer { get; init; }
-    public string? Timestamp { get; init; }
-}
-
-public sealed record DiscordEmbedField
-{
-    public string Name { get; init; } = string.Empty;
-    public string Value { get; init; } = string.Empty;
-    public bool Inline { get; init; }
-}
-
-public sealed record DiscordEmbedFooter
-{
-    public string Text { get; init; } = string.Empty;
 }

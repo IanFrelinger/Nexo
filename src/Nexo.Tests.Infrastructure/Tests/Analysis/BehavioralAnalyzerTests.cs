@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Analysis;
 
+/// <summary>Tests for behavioral analyzer.</summary>
 public class BehavioralAnalyzerTests
 {
     private readonly IBehavioralAnalyzer _analyzer = new BehavioralAnalyzer();
@@ -36,7 +37,8 @@ public class BehavioralAnalyzerTests
         result.DriftDescriptions.Should().Contain(d => d.Contains("result"));
     }
 
-    private sealed class TestBrick : Brick
+    /// <summary>Tests for test brick.</summary>
+    private sealed class TestBrick : DomainBrick
     {
         public TestBrick()
         {

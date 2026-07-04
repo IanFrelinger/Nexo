@@ -24,6 +24,7 @@ using Xunit;
 
 namespace Nexo.Tests.GameDirector;
 
+/// <summary>Tests for remaining coverage.</summary>
 [Trait("Category", "GameDirectorApplication")]
 public sealed class RemainingCoverageTests
 {
@@ -358,6 +359,7 @@ public sealed class RemainingCoverageTests
             .StartAsync();
     }
 
+    /// <summary>Recording feed.</summary>
     private sealed class RecordingFeed : IActivityFeedPublisher
     {
         public List<(string Source, string EventType, string Summary)> Entries { get; } = [];

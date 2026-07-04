@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Tests.Transport;
 
+/// <summary>Tests for transport gap coverage.</summary>
 public sealed class TransportGapCoverageTests
 {
     [Fact]

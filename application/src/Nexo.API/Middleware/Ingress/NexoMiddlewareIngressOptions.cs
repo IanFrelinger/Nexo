@@ -7,8 +7,10 @@ namespace Nexo.API.Middleware.Ingress;
 /// </summary>
 public sealed class NexoMiddlewareIngressOptions
 {
+    /// <summary>Configuration section path (<c>Nexo:MiddlewareIngress</c>).</summary>
     public const string SectionPath = "Nexo:MiddlewareIngress";
 
+    /// <summary>When true, exposes the WebSocket lab echo endpoint.</summary>
     public bool EnableWebSocketIngress { get; set; } = true;
 
     /// <summary>When true, exposes POST /api/ingress/sms/simulate for labs (not a substitute for signed SNS/Lambda).</summary>

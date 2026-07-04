@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Barriers;
 
+/// <summary>Tests for barrier context ambient gap coverage.</summary>
 public sealed class BarrierContextAmbientGapCoverageTests
 {
     [Fact]

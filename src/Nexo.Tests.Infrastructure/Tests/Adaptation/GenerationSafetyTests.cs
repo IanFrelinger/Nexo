@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Adaptation;
 
+/// <summary>Tests for generation safety.</summary>
 [Trait("Category", "Adaptation")]
 [Collection("GenerationSafety")]
 public sealed class GenerationSafetyTests
@@ -60,6 +61,7 @@ public sealed class GenerationSafetyTests
         var gate = new CertificationGate(signer);
         var admission = new CertifiedBrickAdmission(gate, registry);
         var generator = new NewBrickGenerator(fixture);
+        /// <summary>Generate and certify service.</summary>
         return new GenerateAndCertifyService(generator, admission);
     }
 

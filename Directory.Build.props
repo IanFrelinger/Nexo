@@ -2,6 +2,8 @@
   <PropertyGroup>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <AnalysisLevel>latest</AnalysisLevel>
+    <!-- Pin C# 12 across all TFMs. On net9.0 the C# 13 compiler honors OverloadResolutionPriority,
+         which mis-binds FluentAssertions 8's object.Should() to the Should<TEnum> enum overload (CS0453). -->
     <LangVersion>12.0</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
@@ -19,11 +21,6 @@
   <PropertyGroup Condition="Exists('$(MSBuildThisFileDirectory)VERSION')">
     <NexoPackageVersion>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)VERSION').Trim())</NexoPackageVersion>
   </PropertyGroup>
-
-  <!-- NetStandard compatibility shims (Unity 2019+) -->
-  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETStandard'">
-    <Compile Include="$(MSBuildThisFileDirectory)src/Nexo.Compat/Polyfills/*.cs" />
-  </ItemGroup>
 
   <PropertyGroup Condition="'$(IsTestProject)' == 'true'">
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>

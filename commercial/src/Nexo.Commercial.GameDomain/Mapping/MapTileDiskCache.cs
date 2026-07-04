@@ -1,7 +1,6 @@
 using System.Globalization;
 
-namespace Nexo.GameDomain.Mapping;
-
+namespace Nexo.Commercial.GameDomain.Mapping;
 /// <summary>
 /// Stores raw tile responses under <c>&lt;root&gt;/&lt;aesthetic&gt;/&lt;provider&gt;/z/x/y.bin</c>.
 /// </summary>

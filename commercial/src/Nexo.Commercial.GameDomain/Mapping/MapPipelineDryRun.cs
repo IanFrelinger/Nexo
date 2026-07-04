@@ -1,11 +1,11 @@
-namespace Nexo.GameDomain.Mapping;
-
+namespace Nexo.Commercial.GameDomain.Mapping;
 /// <summary>
 /// Simulates map pipeline stages without performing network I/O or heavy geometry work.
 /// Hosts replace this with real orchestration.
 /// </summary>
 public static class MapPipelineDryRun
 {
+    /// <summary>Execute operation.</summary>
     public static MapPipelineRunResult Execute(MapAdaptationPlan plan, MapPipelineRunRequest request)
     {
         ArgumentNullException.ThrowIfNull(plan);

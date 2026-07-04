@@ -16,6 +16,7 @@ public sealed class TestCommand
     private readonly IConsoleRenderer _renderer;
     private readonly ILogger<TestCommand> _logger;
 
+    /// <summary>Creates a new TestCommand instance.</summary>
     public TestCommand(IMediator mediator, IConsoleRenderer renderer, ILogger<TestCommand> logger)
     {
         _mediator = mediator ?? throw new ArgumentNullException(nameof(mediator));
@@ -23,9 +24,11 @@ public sealed class TestCommand
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>Executes the command handler and returns a process exit code.</summary>
     public Task<int> ExecuteAsync(string? filter, bool json, bool verbose)
         => ExecuteAsync(filter, json, verbose, CancellationToken.None);
 
+    /// <summary>Executes the command handler and returns a process exit code.</summary>
     public async Task<int> ExecuteAsync(string? filter, bool json, bool verbose, CancellationToken ct)
     {
         try

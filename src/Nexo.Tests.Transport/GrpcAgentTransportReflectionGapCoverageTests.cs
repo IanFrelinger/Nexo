@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.Transport;
 
+/// <summary>Tests for grpc agent transport reflection gap coverage.</summary>
 public sealed class GrpcAgentTransportReflectionGapCoverageTests
 {
     [Theory]

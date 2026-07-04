@@ -3,8 +3,7 @@ using Nexo.Core.Application.Composition.Ports;
 using Nexo.Core.Application.ParallelTesting.Ports;
 using Nexo.Infrastructure.Composition;
 
-namespace Nexo.Infrastructure.Sdk.Composition;
-
+namespace Nexo.Infrastructure.Composition.Sdk.Extensions;
 /// <summary>
 /// DI extensions for Block 7 composition.
 /// </summary>

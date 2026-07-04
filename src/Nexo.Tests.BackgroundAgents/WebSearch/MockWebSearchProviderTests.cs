@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.WebSearch;
 
+/// <summary>Tests for mock web search provider.</summary>
 public class MockWebSearchProviderTests
 {
     [Fact]

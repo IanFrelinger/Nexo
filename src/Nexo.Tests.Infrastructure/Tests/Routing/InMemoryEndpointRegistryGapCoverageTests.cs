@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Routing;
 
+/// <summary>Tests for in memory endpoint registry gap coverage.</summary>
 public sealed class InMemoryEndpointRegistryGapCoverageTests
 {
     [Fact]
@@ -70,6 +71,7 @@ public sealed class InMemoryEndpointRegistryGapCoverageTests
         registry.GetAll().Select(d => d.Name).Should().ContainInOrder("alpha", "charlie", "beta");
     }
 
+    /// <summary>Creates registry.</summary>
     private static InMemoryEndpointRegistry CreateRegistry() =>
         new(Options.Create(new RoutingOptions()), NullLogger<InMemoryEndpointRegistry>.Instance);
 }

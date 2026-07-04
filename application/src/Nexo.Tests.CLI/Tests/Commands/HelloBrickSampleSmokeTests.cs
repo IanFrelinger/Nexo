@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Nexo.Tests.CLI.Tests.Commands;
 
+/// <summary>Tests for hello brick sample smoke.</summary>
 [Trait("Category", "CLI")]
 public sealed class HelloBrickSampleSmokeTests
 {
@@ -50,6 +51,8 @@ public sealed class HelloBrickSampleSmokeTests
             current = current.Parent;
         }
 
+        /// <summary>Invalid operation exception.</summary>
+        /// <param name="found."">Found.".</param>
         throw new InvalidOperationException("Repository root not found.");
     }
 }

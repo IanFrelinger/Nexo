@@ -68,18 +68,3 @@ public static class RuntimeStudioMetricsCollector
             obsLastTs);
     }
 }
-
-public sealed record ObjectiveSlaSnapshot(
-    double? OldestPendingAgeHours,
-    double? OldestInProgressAgeHours,
-    int PendingCount,
-    int InProgressCount,
-    int BlockedCount);
-
-public sealed record RuntimeStudioDiskMetrics(
-    IReadOnlyDictionary<string, int> ObjectivesByStatus,
-    ObjectiveSlaSnapshot ObjectiveSla,
-    IReadOnlyDictionary<string, int> ProposalsByStatus,
-    long? ObservationsFileBytes,
-    int? ObservationsTailLineCount,
-    DateTimeOffset? ObservationsLastTimestamp);

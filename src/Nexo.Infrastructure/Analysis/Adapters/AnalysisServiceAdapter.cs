@@ -24,6 +24,7 @@ public class AnalysisServiceAdapter : IAnalysisService
     private readonly ILogger<AnalysisServiceAdapter> _logger;
     private readonly AnalysisRuleEngine _ruleEngine;
 
+    /// <summary>Initializes a new analysis service adapter.</summary>
     public AnalysisServiceAdapter(
         ILogger<AnalysisServiceAdapter> logger,
         AnalysisRuleEngine ruleEngine)
@@ -32,6 +33,7 @@ public class AnalysisServiceAdapter : IAnalysisService
         _ruleEngine = ruleEngine ?? throw new ArgumentNullException(nameof(ruleEngine));
     }
 
+    /// <summary>Analyze asynchronously.</summary>
     public async Task<AnalysisResult> AnalyzeAsync(
         DirectoryInfo path,
         IProgress<ProgressReport>? progress = null,

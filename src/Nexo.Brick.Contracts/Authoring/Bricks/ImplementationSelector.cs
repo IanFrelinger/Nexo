@@ -26,6 +26,8 @@ public class ImplementationSelector
     /// <summary>
     /// Select implementation based on context.
     /// </summary>
+    /// <param name="context">Runtime environment and workflow variables.</param>
+    /// <returns>Resolved implementation type.</returns>
     public ImplementationType Select(IExecutionContext context)
     {
         // Check deterministic conditions

@@ -9,6 +9,7 @@ public class ClusterRegistry : IClusterRegistry
 {
     private readonly Dictionary<string, Cluster> _clusters = new();
     
+    /// <summary>Initializes a new cluster registry.</summary>
     public ClusterRegistry(IEnumerable<Cluster>? clusters = null)
     {
         if (clusters != null)
@@ -20,21 +21,25 @@ public class ClusterRegistry : IClusterRegistry
         }
     }
     
+    /// <summary>Gets .</summary>
     public Cluster? Get(string id)
     {
         return _clusters.TryGetValue(id, out var cluster) ? cluster : null;
     }
     
+    /// <summary>Gets all.</summary>
     public IReadOnlyList<Cluster> GetAll()
     {
         return _clusters.Values.ToList();
     }
     
+    /// <summary>Registers .</summary>
     public void Register(Cluster cluster)
     {
         _clusters[cluster.Id] = cluster;
     }
     
+    /// <summary>Unregister.</summary>
     public void Unregister(string id)
     {
         _clusters.Remove(id);

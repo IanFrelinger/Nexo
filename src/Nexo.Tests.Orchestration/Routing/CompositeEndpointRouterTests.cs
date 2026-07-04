@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration.Routing;
 
+/// <summary>Tests for composite endpoint router.</summary>
 public sealed class CompositeEndpointRouterTests
 {
     [Fact]
@@ -177,6 +178,7 @@ public sealed class CompositeEndpointRouterTests
             IsHealthy: isHealthy);
     }
 
+    /// <summary>Test endpoint registry.</summary>
     private sealed class TestEndpointRegistry : IEndpointRegistry
     {
         private readonly List<EndpointDescriptor> _descriptors;
@@ -186,6 +188,7 @@ public sealed class CompositeEndpointRouterTests
             _descriptors = descriptors.ToList();
         }
 
+        /// <summary>Gets all.</summary>
         public IReadOnlyList<EndpointDescriptor> GetAll() => _descriptors.ToList();
 
         public void Register(EndpointDescriptor descriptor)
@@ -205,12 +208,16 @@ public sealed class CompositeEndpointRouterTests
         }
     }
 
+    /// <summary>Capture logger.</summary>
     private sealed class CaptureLogger<T> : ILogger<T>
     {
+        /// <summary>Messages.</summary>
         public List<string> Messages { get; } = [];
 
         public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
 
+        /// <summary>Returns whether  enabled.</summary>
+        /// <param name="logLevel">Log level.</param>
         public bool IsEnabled(LogLevel logLevel) => true;
 
         public void Log<TState>(

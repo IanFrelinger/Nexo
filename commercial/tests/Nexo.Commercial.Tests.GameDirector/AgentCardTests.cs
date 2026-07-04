@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Nexo.Tests.GameDirector;
 
+/// <summary>Tests for agent card.</summary>
 [Trait("Category", "GameDirectorApplication")]
 public sealed class AgentCardTests
 {

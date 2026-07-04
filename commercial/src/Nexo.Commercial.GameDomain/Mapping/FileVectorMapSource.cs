@@ -1,5 +1,4 @@
-namespace Nexo.GameDomain.Mapping;
-
+namespace Nexo.Commercial.GameDomain.Mapping;
 /// <summary>
 /// Loads vector map files (OSM XML, GeoJSON) from disk under a caller-supplied root directory.
 /// Paths are sandboxed to prevent traversal outside the caller-supplied root directory.

@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <!-- Chain to the repo-root Directory.Build.props; MSBuild only auto-imports the nearest one. -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup>
+    <NexoIncludeDomainBrickGlobalUsing Condition="
+      '$(MSBuildProjectName)' == 'GameDirector.Mcp' OR
+      '$(MSBuildProjectName)' == 'GameDirector.Bricks' OR
+      '$(MSBuildProjectName)' == 'GameDirector.Agents' OR
+      '$(MSBuildProjectName)' == 'Nexo.Commercial.GameDomain' OR
+      '$(MSBuildProjectName)' == 'Nexo.Commercial.Fleet.Infrastructure' OR
+      '$(MSBuildProjectName)' == 'Nexo.Commercial.Fleet.Contracts' OR
+      '$(MSBuildProjectName)' == 'Nexo.Commercial.Tests.Fleet' OR
+      '$(MSBuildProjectName)' == 'Nexo.Tests.GameDirector'
+      ">true</NexoIncludeDomainBrickGlobalUsing>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(NexoIncludeDomainBrickGlobalUsing)' == 'true'">
+    <Compile Include="$(MSBuildThisFileDirectory)../build/GlobalUsings.DomainBrick.cs" Link="GlobalUsings.DomainBrick.cs" />
+  </ItemGroup>
+</Project>

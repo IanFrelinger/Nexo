@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration.Barriers;
 
+/// <summary>Tests for barrier hierarchy.</summary>
 public sealed class BarrierHierarchyTests
 {
     [Fact]
@@ -73,6 +74,7 @@ public sealed class BarrierHierarchyTests
 
     private static BarrierHierarchy CreateHierarchy(params string[] names)
     {
+        /// <summary>Barrier hierarchy.</summary>
         return new BarrierHierarchy(names.Select((name, rank) => new BarrierLevel(name, rank)));
     }
 }

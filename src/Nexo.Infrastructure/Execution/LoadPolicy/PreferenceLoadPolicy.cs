@@ -9,6 +9,7 @@ public sealed class PreferenceLoadPolicy : ILoadPolicy
 {
     private readonly ILogger<PreferenceLoadPolicy>? _logger;
 
+    /// <summary>Initializes a new preference load policy.</summary>
     public PreferenceLoadPolicy(ILogger<PreferenceLoadPolicy>? logger = null)
     {
         _logger = logger;

@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Spatial;
 
+/// <summary>Tests for scoped pose relay rejection.</summary>
 [Trait("Category", "Spatial")]
 public sealed class ScopedPoseRelayRejectionTests
 {
@@ -224,6 +225,8 @@ public sealed class ScopedPoseRelayRejectionTests
             .Should().Be("binding-already-attached");
     }
 
+    /// <summary>Creates pose.</summary>
+    /// <param name="timestamp">Timestamp.</param>
     private static PoseSample CreatePose(DateTimeOffset timestamp) =>
         new(new SpatialVector3(1, 2, 3), new SpatialQuaternion(0, 0, 0, 1), 0.95, timestamp, TrackingState.Tracking);
 }

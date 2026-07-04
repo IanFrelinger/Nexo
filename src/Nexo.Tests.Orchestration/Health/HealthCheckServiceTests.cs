@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration.Health;
 
+/// <summary>Tests for health check service.</summary>
 public class HealthCheckServiceTests
 {
     private readonly Mock<ILogger<HealthCheckService>> _loggerMock;

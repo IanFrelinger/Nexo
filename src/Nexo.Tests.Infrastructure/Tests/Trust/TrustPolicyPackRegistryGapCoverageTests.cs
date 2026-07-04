@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Trust;
 
+/// <summary>Tests for trust policy pack registry gap coverage.</summary>
 public sealed class TrustPolicyPackRegistryGapCoverageTests
 {
     [Fact]
@@ -111,11 +112,14 @@ public sealed class TrustPolicyPackRegistryGapCoverageTests
     {
         var path = Path.Combine(Path.GetTempPath(), "nexo-trust-gap-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(path);
+        /// <summary>Temp pack root.</summary>
         return new TempPackRoot(path);
     }
 
+    /// <summary>Tests for temp pack root.</summary>
     private sealed class TempPackRoot(string path) : IDisposable
     {
+        /// <summary>Path.</summary>
         public string Path { get; } = path;
 
         public void Dispose()

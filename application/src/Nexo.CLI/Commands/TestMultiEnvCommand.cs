@@ -31,6 +31,7 @@ public class TestMultiEnvCommand
         ("FullyQualifiedName~BrickValueSerializerTests", "execution-brick")
     };
 
+    /// <summary>Creates a new CreateCommand instance.</summary>
     public static Command CreateCommand()
     {
         var suiteOpt = new Option<string>("--suite", () => "framework", "Suite: framework, caching, persistence, trust, or adaptation");
@@ -68,6 +69,7 @@ public class TestMultiEnvCommand
         return cmd;
     }
 
+    /// <summary>Executes the command handler and returns a process exit code.</summary>
     public static async Task<int> ExecuteAsync(string suite, string? envName, bool all, bool ephemeral, bool noNetwork, bool json, bool verbose)
     {
         var console = json ? null : new CliConsole(verbose);

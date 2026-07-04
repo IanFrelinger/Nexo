@@ -4,16 +4,22 @@ using Nexo.Core.Application.Testing.Models;
 
 namespace Nexo.Tests.Application.Tests.Models;
 
+/// <summary>Tests for progress report.</summary>
 public class ProgressReportTests : UnitTestBase
 {
     public override Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
+            /// <summary>Test record equality.</summary>
             TestRecordEquality();
+            /// <summary>Test record inequality.</summary>
             TestRecordInequality();
+            /// <summary>Test initialization with all properties.</summary>
             TestInitializationWithAllProperties();
+            /// <summary>Test initialization with optional properties.</summary>
             TestInitializationWithOptionalProperties();
+            /// <summary>Test initialization with metadata.</summary>
             TestInitializationWithMetadata();
 
             return Task.FromResult(new TestResult
@@ -57,8 +63,13 @@ public class ProgressReportTests : UnitTestBase
             Metadata = null
         };
 
+        /// <summary>Assert equal.</summary>
         AssertEqual(report1, report2);
+        /// <summary>Assert true.</summary>
+        /// <param name="report2">Report2.</param>
         AssertTrue(report1 == report2);
+        /// <summary>Assert false.</summary>
+        /// <param name="report2">Report2.</param>
         AssertFalse(report1 != report2);
         AssertEqual(report1.GetHashCode(), report2.GetHashCode());
     }
@@ -78,7 +89,11 @@ public class ProgressReportTests : UnitTestBase
         };
 
         AssertFalse(report1.Equals(report2));
+        /// <summary>Assert false.</summary>
+        /// <param name="report2">Report2.</param>
         AssertFalse(report1 == report2);
+        /// <summary>Assert true.</summary>
+        /// <param name="report2">Report2.</param>
         AssertTrue(report1 != report2);
     }
 
@@ -99,11 +114,18 @@ public class ProgressReportTests : UnitTestBase
             Metadata = metadata
         };
 
+        /// <summary>Assert equal.</summary>
         AssertEqual(75, report.Percentage);
+        /// <summary>Assert equal.</summary>
+        /// <param name="items"">Items".</param>
         AssertEqual("Processing items", report.Message);
+        /// <summary>Assert equal.</summary>
         AssertEqual(15, report.CurrentStep);
+        /// <summary>Assert equal.</summary>
         AssertEqual(20, report.TotalSteps);
+        /// <summary>Assert not null.</summary>
         AssertNotNull(report.Metadata);
+        /// <summary>Assert equal.</summary>
         AssertEqual(2, report.Metadata.Count);
     }
 
@@ -118,10 +140,15 @@ public class ProgressReportTests : UnitTestBase
             Metadata = null
         };
 
+        /// <summary>Assert equal.</summary>
         AssertEqual(25, report.Percentage);
+        /// <summary>Assert equal.</summary>
         AssertEqual("Starting", report.Message);
+        /// <summary>Assert null.</summary>
         AssertNull(report.CurrentStep);
+        /// <summary>Assert null.</summary>
         AssertNull(report.TotalSteps);
+        /// <summary>Assert null.</summary>
         AssertNull(report.Metadata);
     }
 
@@ -141,10 +168,15 @@ public class ProgressReportTests : UnitTestBase
             Metadata = metadata
         };
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(report.Metadata);
+        /// <summary>Assert equal.</summary>
         AssertEqual(3, report.Metadata.Count);
+        /// <summary>Assert equal.</summary>
         AssertEqual("test.txt", report.Metadata["fileName"]);
+        /// <summary>Assert equal.</summary>
         AssertEqual(1024L, report.Metadata["fileSize"]);
+        /// <summary>Assert equal.</summary>
         AssertEqual(true, report.Metadata["processed"]);
     }
 }

@@ -10,6 +10,7 @@ public sealed class PermissionEnvelope : IPermissionEnvelope
 {
     private readonly string _level;
 
+    /// <summary>Initializes a new permission envelope.</summary>
     public PermissionEnvelope(string autonomyLevel)
     {
         _level = (autonomyLevel ?? "supervised").Trim().ToLowerInvariant();

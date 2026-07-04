@@ -6,6 +6,7 @@ namespace Nexo.Commercial.Fleet.Infrastructure;
 /// </summary>
 public sealed class MeshPeerKnowledgeSyncOptions
 {
+    /// <summary>Constant value for section path.</summary>
     public const string SectionPath = "Nexo:Mesh:KnowledgeSync";
 
     /// <summary>When true, registers the background pull loop.</summary>

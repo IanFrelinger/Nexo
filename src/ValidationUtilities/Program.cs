@@ -3,12 +3,14 @@ using System.Linq;
 
 namespace ValidationUtilities;
 
+/// <summary>Program.</summary>
 public class Program
 {
     public static int Main(string[] args)
     {
         if (args.Length == 0)
         {
+            /// <summary>Show usage.</summary>
             ShowUsage();
             return 1;
         }

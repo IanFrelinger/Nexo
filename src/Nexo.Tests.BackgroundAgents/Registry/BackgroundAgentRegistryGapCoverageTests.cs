@@ -20,6 +20,7 @@ using Nexo.Tests.BackgroundAgents.Registry;
 
 namespace Nexo.Tests.BackgroundAgents.Registry;
 
+/// <summary>Tests for background agent registry gap coverage.</summary>
 public sealed class BackgroundAgentRegistryGapCoverageTests
 {
     [Fact]
@@ -450,6 +451,9 @@ public sealed class BackgroundAgentRegistryGapCoverageTests
             shutdownGracePeriod: shutdownGracePeriod);
     }
 
+    /// <summary>Extender config.</summary>
+    /// <param name="id">Id.</param>
+    /// <param name="repoRoot">Repo root.</param>
     private static BackgroundAgentConfig ExtenderConfig(string id, string repoRoot) => new()
     {
         Id = id,
@@ -461,6 +465,8 @@ public sealed class BackgroundAgentRegistryGapCoverageTests
         Schedule = new BackgroundAgentSchedule { Type = ScheduleType.Interval, Interval = TimeSpan.FromMinutes(1) },
     };
 
+    /// <summary>Monitor config.</summary>
+    /// <param name="id">Id.</param>
     private static BackgroundAgentConfig MonitorConfig(string id) => new()
     {
         Id = id,
@@ -472,13 +478,19 @@ public sealed class BackgroundAgentRegistryGapCoverageTests
         Schedule = new BackgroundAgentSchedule { Type = ScheduleType.Interval, Interval = TimeSpan.FromMinutes(1) },
     };
 
+    /// <summary>Creates spec.</summary>
+    /// <param name="config">Config.</param>
     private static AgentSpawnSpec BuildSpec(BackgroundAgentConfig config) =>
         new BackgroundAgentSpecBuilder(new DataSensitivityRegistry(), null).BuildSpec(config);
 
+    /// <summary>In memory observation store.</summary>
     private sealed class InMemoryObservationStore : IObservationStore
     {
+        /// <summary>All.</summary>
         public List<RuntimeObservation> All { get; } = new();
         public string Location => "in-memory://test";
+        /// <summary>Append.</summary>
+        /// <param name="observation">Observation.</param>
         public void Append(RuntimeObservation observation) => All.Add(observation);
         public IEnumerable<RuntimeObservation> ReadSince(
             DateTimeOffset? since = null,
@@ -486,11 +498,17 @@ public sealed class BackgroundAgentRegistryGapCoverageTests
             int? limit = null) => All;
     }
 
+    /// <summary>Configurable self extend runner.</summary>
     private sealed class ConfigurableSelfExtendRunner : ISelfExtendRunner
     {
         private readonly SelfExtendRunResult _result;
+        /// <summary>Configurable self extend runner.</summary>
+        /// <param name="result">Result.</param>
         public ConfigurableSelfExtendRunner(SelfExtendRunResult result) => _result = result;
 
+        /// <summary>Run async.</summary>
+        /// <param name="repoRoot">Repo root.</param>
+        /// <param name="default">Default.</param>
         public Task<SelfExtendRunResult> RunAsync(string repoRoot, CancellationToken cancellationToken = default) =>
             Task.FromResult(_result);
 
@@ -504,24 +522,39 @@ public sealed class BackgroundAgentRegistryGapCoverageTests
             Task.FromResult(_result);
     }
 
+    /// <summary>Throwing test runner.</summary>
     private sealed class ThrowingTestRunner : ITestRunRunner
     {
+        /// <summary>Run async.</summary>
+        /// <param name="filter">Filter.</param>
+        /// <param name="default">Default.</param>
         public Task<TestRunResult> RunAsync(string? filter, CancellationToken cancellationToken = default) =>
+            /// <summary>Invalid operation exception.</summary>
             throw new InvalidOperationException("boom");
     }
 
+    /// <summary>Fake code analysis runner.</summary>
     private sealed class FakeCodeAnalysisRunner : ICodeAnalysisRunner
     {
         private readonly CodeAnalysisRunResult _result;
+        /// <summary>Fake code analysis runner.</summary>
+        /// <param name="success">Success.</param>
+        /// <param name="summary">Summary.</param>
+        /// <param name="violations">Violations.</param>
         public FakeCodeAnalysisRunner(bool success, string summary, int violations) =>
             _result = new CodeAnalysisRunResult(success, violations, summary);
 
+        /// <summary>Run async.</summary>
+        /// <param name="path">Path.</param>
+        /// <param name="default">Default.</param>
         public Task<CodeAnalysisRunResult> RunAsync(string path, CancellationToken cancellationToken = default) =>
             Task.FromResult(_result);
     }
 
+    /// <summary>Recording self extend runner.</summary>
     private sealed class RecordingSelfExtendRunner : ISelfExtendRunner
     {
+        /// <summary>Last repo root.</summary>
         public string? LastRepoRoot { get; private set; }
 
         public Task<SelfExtendRunResult> RunAsync(string repoRoot, CancellationToken cancellationToken = default)
@@ -537,17 +570,22 @@ public sealed class BackgroundAgentRegistryGapCoverageTests
             string? modelProvider,
             string? modelName,
             CancellationToken cancellationToken = default) =>
+            /// <summary>Run async.</summary>
             RunAsync(repoRoot, cancellationToken);
     }
 
+    /// <summary>Gate self extend runner.</summary>
     private sealed class GateSelfExtendRunner : ISelfExtendRunner
     {
         private readonly Task _gate;
+        /// <summary>Gate self extend runner.</summary>
+        /// <param name="gate">Gate.</param>
         public GateSelfExtendRunner(Task gate) => _gate = gate;
 
         public async Task<SelfExtendRunResult> RunAsync(string repoRoot, CancellationToken cancellationToken = default)
         {
             await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+            /// <summary>Self extend run result.</summary>
             return new SelfExtendRunResult(true, 0, 0, "gated");
         }
 
@@ -558,17 +596,22 @@ public sealed class BackgroundAgentRegistryGapCoverageTests
             string? modelProvider,
             string? modelName,
             CancellationToken cancellationToken = default) =>
+            /// <summary>Run async.</summary>
             RunAsync(repoRoot, cancellationToken);
     }
 
+    /// <summary>Delay self extend runner.</summary>
     private sealed class DelaySelfExtendRunner : ISelfExtendRunner
     {
         private readonly TimeSpan _delay;
+        /// <summary>Delay self extend runner.</summary>
+        /// <param name="delay">Delay.</param>
         public DelaySelfExtendRunner(TimeSpan delay) => _delay = delay;
 
         public async Task<SelfExtendRunResult> RunAsync(string repoRoot, CancellationToken cancellationToken = default)
         {
             await Task.Delay(_delay, cancellationToken).ConfigureAwait(false);
+            /// <summary>Self extend run result.</summary>
             return new SelfExtendRunResult(true, 0, 0, "delayed");
         }
 
@@ -579,6 +622,7 @@ public sealed class BackgroundAgentRegistryGapCoverageTests
             string? modelProvider,
             string? modelName,
             CancellationToken cancellationToken = default) =>
+            /// <summary>Run async.</summary>
             RunAsync(repoRoot, cancellationToken);
     }
 }

@@ -6,12 +6,12 @@ namespace HelloBrick;
 /// <summary>
 /// Example code-authored Nexo brick generated from the code-brick template.
 /// </summary>
-public sealed class HelloBrick : Brick
+public sealed class HelloBrick : DomainBrick
 {
     public HelloBrick()
     {
         Id = "hello";
-        Name = "Hello Brick";
+        Name = "Hello DomainBrick";
         Version = "1.0.0";
         Icon = "🧱";
         Category = BrickCategory.Transform;

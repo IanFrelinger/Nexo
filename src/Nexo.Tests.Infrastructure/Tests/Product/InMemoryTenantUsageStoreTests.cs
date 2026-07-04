@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Product;
 
+/// <summary>Tests for in memory tenant usage store.</summary>
 public sealed class InMemoryTenantUsageStoreTests
 {
     [Fact]

@@ -13,6 +13,7 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration.Integration;
 
+/// <summary>Tests for architect agent integration.</summary>
 [Trait("Category", "Integration")]
 [Trait("Category", "ProdStyle")]
 public class ArchitectAgentIntegrationTests

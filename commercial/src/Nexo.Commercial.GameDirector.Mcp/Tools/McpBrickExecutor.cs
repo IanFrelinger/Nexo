@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Nexo.BrickContracts;
+using Nexo.Brick.Contracts;
 using Nexo.Core.Application.Bricks;
 using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Execution;
@@ -23,7 +23,7 @@ public sealed class McpBrickExecutor
         CancellationToken ct)
     {
         var brick = _bricks.GetBrick(brickId)
-            ?? throw new InvalidOperationException($"Brick '{brickId}' is not registered.");
+            ?? throw new InvalidOperationException($"DomainBrick '{brickId}' is not registered.");
 
         var brickInput = BrickValueSerializer.FromWireToBrickInput(
             input.ToDictionary(kv => kv.Key, kv => (object?)kv.Value ?? ""));

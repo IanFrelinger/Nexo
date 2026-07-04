@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.NodeCapabilityRuntime;
 
+/// <summary>Tests for model scoring service.</summary>
 public sealed class ModelScoringServiceTests
 {
     [Fact]

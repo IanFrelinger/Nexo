@@ -7,11 +7,10 @@ using Nexo.Core.Application.SelfContext.Ports;
 using Nexo.Core.Application.Trust.Ports;
 using Nexo.Infrastructure.Knowledge;
 using Nexo.Infrastructure.Observation;
-using Nexo.Infrastructure.Sdk.Observation;
+using Nexo.Infrastructure.Observation.Sdk.Extensions;
 using Nexo.Infrastructure.SelfContext;
 
-namespace Nexo.Infrastructure.Sdk.SelfContext;
-
+namespace Nexo.Infrastructure.SelfContext.Sdk.Extensions;
 /// <summary>
 /// DI extensions for Block 6 self-context.
 /// </summary>

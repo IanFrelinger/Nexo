@@ -14,6 +14,7 @@ public sealed class InMemoryScopedPoseTransport : IScopedPoseTransport, IDisposa
     private readonly object _gate = new();
     private bool _disposed;
 
+    /// <summary>Publishes a scoped pose update to scope subscribers.</summary>
     public PoseRelayResult TryPublish(string scopeId, string publisherParticipantId, string atomId, PoseSample pose)
     {
         lock (_gate)
@@ -35,6 +36,7 @@ public sealed class InMemoryScopedPoseTransport : IScopedPoseTransport, IDisposa
         }
     }
 
+    /// <summary>Subscribes a participant to scoped pose messages for a scope.</summary>
     public IObservable<ScopedPoseMessage> Subscribe(string scopeId, string subscriberParticipantId)
     {
         lock (_gate)
@@ -59,6 +61,7 @@ public sealed class InMemoryScopedPoseTransport : IScopedPoseTransport, IDisposa
         }
     }
 
+    /// <summary>Broadcasts a lost-tracking signal to scope subscribers.</summary>
     public void PublishSignal(string scopeId, string atomId, string reason)
     {
         lock (_gate)
@@ -78,6 +81,7 @@ public sealed class InMemoryScopedPoseTransport : IScopedPoseTransport, IDisposa
         }
     }
 
+    /// <summary>Disposes all active subscription subjects.</summary>
     public void Dispose()
     {
         lock (_gate)

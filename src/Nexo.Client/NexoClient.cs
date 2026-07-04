@@ -15,6 +15,10 @@ public sealed class NexoClient : INexoClient
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
+    /// <summary>
+    /// Creates a client that issues HTTP requests against a configured Nexo API host.
+    /// </summary>
+    /// <param name="httpClient">Pre-configured <see cref="HttpClient"/> with base address and auth headers.</param>
     public NexoClient(HttpClient httpClient)
     {
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));

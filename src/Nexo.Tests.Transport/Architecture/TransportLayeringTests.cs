@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Nexo.Tests.Transport.Architecture;
 
+/// <summary>Tests for transport layering.</summary>
 public sealed class TransportLayeringTests
 {
     [Fact]

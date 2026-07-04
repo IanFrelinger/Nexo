@@ -10,6 +10,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.NodeCapabilityRuntime;
 
+/// <summary>Tests for ollama model serving backend gap coverage.</summary>
 public sealed class OllamaModelServingBackendGapCoverageTests
 {
     [Fact]
@@ -254,9 +255,12 @@ public sealed class OllamaModelServingBackendGapCoverageTests
         metrics.Counters.Should().ContainKey("ncr.ollama.chat.error");
     }
 
+    /// <summary>Ok.</summary>
+    /// <param name="json">Json.</param>
     private static HttpResponseMessage Ok(string json) =>
         new(HttpStatusCode.OK) { Content = new StringContent(json, Encoding.UTF8, "application/json") };
 
+    /// <summary>Tests for fake handler.</summary>
     private sealed class FakeHandler : HttpMessageHandler
     {
         private Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> _handler;
@@ -273,9 +277,12 @@ public sealed class OllamaModelServingBackendGapCoverageTests
             => _handler(request, cancellationToken);
     }
 
+    /// <summary>Tests for recording metrics.</summary>
     private sealed class RecordingMetrics : IMetricsCollector
     {
+        /// <summary>Counters.</summary>
         public Dictionary<string, long> Counters { get; } = new(StringComparer.Ordinal);
+        /// <summary>Execution times.</summary>
         public Dictionary<string, TimeSpan> ExecutionTimes { get; } = new(StringComparer.Ordinal);
 
         public void IncrementCounter(string counterName, int value = 1)

@@ -13,12 +13,11 @@ using Nexo.Infrastructure.Certification;
 using Nexo.Infrastructure.Certification.Sdk.Extensions;
 using Nexo.Infrastructure.Execution;
 using Nexo.Infrastructure.Observation;
-using Nexo.Infrastructure.Sdk.Observation;
-using Nexo.Infrastructure.Sdk.Rollback;
+using Nexo.Infrastructure.Observation.Sdk.Extensions;
+using Nexo.Infrastructure.Rollback.Sdk.Extensions;
 using Nexo.Infrastructure.Rollback;
 
-namespace Nexo.Infrastructure.Sdk.Adaptation;
-
+namespace Nexo.Infrastructure.Adaptation.Sdk.Extensions;
 /// <summary>
 /// DI extension methods for the adaptation engine (Block 3 + Block 4).
 /// </summary>
@@ -52,7 +51,7 @@ public static class AdaptationServiceCollectionExtensions
 
         services.AddSingleton<BrickRegistry>(sp =>
         {
-            var bricks = new List<Brick>();
+            var bricks = new List<DomainBrick>();
             if (patternStorePath != null)
             {
                 var store = sp.GetRequiredService<ICertificationRecordStore>();
@@ -72,7 +71,7 @@ public static class AdaptationServiceCollectionExtensions
                 {
                     try
                     {
-                        var brick = (Brick?)ActivatorUtilities.CreateInstance(sp, type);
+                        var brick = (DomainBrick?)ActivatorUtilities.CreateInstance(sp, type);
                         if (brick != null)
                             bricks.Add(brick);
                     }
@@ -160,7 +159,7 @@ public static class AdaptationServiceCollectionExtensions
         {
             try
             {
-                var brick = (Brick?)ActivatorUtilities.CreateInstance(sp, type);
+                var brick = (DomainBrick?)ActivatorUtilities.CreateInstance(sp, type);
                 if (brick is null)
                     continue;
                 var rec = store.Get(brick.Id);

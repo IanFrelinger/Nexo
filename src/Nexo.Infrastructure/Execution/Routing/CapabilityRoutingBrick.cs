@@ -8,11 +8,12 @@ namespace Nexo.Infrastructure.Execution.Routing;
 /// <summary>
 /// Generation brick that transparently delegates to local or remote target.
 /// </summary>
-public sealed class CapabilityRoutingBrick : Brick, IBrickExecutor
+public sealed class CapabilityRoutingBrick : DomainBrick, IBrickExecutor
 {
     private readonly ICapabilityRouter _router;
     private readonly ILogger<CapabilityRoutingBrick> _logger;
 
+    /// <summary>Initializes a new capability routing brick.</summary>
     public CapabilityRoutingBrick(
         ICapabilityRouter router,
         ILogger<CapabilityRoutingBrick> logger)
@@ -66,6 +67,7 @@ public sealed class CapabilityRoutingBrick : Brick, IBrickExecutor
         };
     }
 
+    /// <summary>Execute asynchronously.</summary>
     public async Task<Result<GenerationExecutionResult>> ExecuteAsync(
         RunPodJobPayload payload,
         JobRequirements requirements,
@@ -117,6 +119,7 @@ public sealed class CapabilityRoutingBrick : Brick, IBrickExecutor
         });
     }
 
+    /// <summary>Execute asynchronously.</summary>
     public override async Task<BrickOutput> ExecuteAsync(
         BrickInput input,
         ImplementationType implementation,

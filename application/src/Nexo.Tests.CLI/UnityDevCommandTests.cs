@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Nexo.Tests.CLI;
 
+/// <summary>Tests for unity dev command.</summary>
 public class UnityDevCommandTests
 {
     private static readonly string[] NewAssetTypes = ["vfx", "physics", "input", "network", "ainavigation", "build"];

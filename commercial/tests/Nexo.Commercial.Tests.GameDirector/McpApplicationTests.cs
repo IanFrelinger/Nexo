@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Nexo.Tests.GameDirector;
 
+/// <summary>Tests for mcp application.</summary>
 [Trait("Category", "GameDirectorApplication")]
 public sealed class McpApplicationTests
 {

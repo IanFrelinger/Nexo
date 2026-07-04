@@ -1,8 +1,7 @@
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 
-namespace Nexo.API.Forge;
-
+namespace GameDirector.Mcp.Forge;
 /// <summary>
 /// When <see cref="ForgeSessionOptions.RequireForgeAuthentication"/> is true, rejects unauthenticated access to <c>/api/forge</c>.
 /// </summary>

@@ -13,6 +13,7 @@ public sealed class LiteDbPipelineRunStore : IPipelineRunStore
     private readonly string _databasePath;
     private readonly object _gate = new();
 
+    /// <summary>Initializes a new lite db pipeline run store.</summary>
     public LiteDbPipelineRunStore(string databasePath)
     {
         if (string.IsNullOrWhiteSpace(databasePath))
@@ -20,6 +21,7 @@ public sealed class LiteDbPipelineRunStore : IPipelineRunStore
         _databasePath = databasePath;
     }
 
+    /// <summary>Save asynchronously.</summary>
     public Task SaveAsync(PipelineRun run, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -36,6 +38,7 @@ public sealed class LiteDbPipelineRunStore : IPipelineRunStore
         return Task.CompletedTask;
     }
 
+    /// <summary>Get asynchronously.</summary>
     public Task<PipelineRun?> GetAsync(string runId, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -113,23 +116,36 @@ public sealed class LiteDbPipelineRunStore : IPipelineRunStore
 
     private sealed class PipelineRunDocument
     {
+        /// <summary>Run id.</summary>
         [BsonId]
         public string RunId { get; set; } = string.Empty;
+        /// <summary>Template id.</summary>
         public string TemplateId { get; set; } = string.Empty;
+        /// <summary>State.</summary>
         public string State { get; set; } = string.Empty;
+        /// <summary>Started at.</summary>
         public DateTimeOffset StartedAt { get; set; }
+        /// <summary>Completed at.</summary>
         public DateTimeOffset? CompletedAt { get; set; }
+        /// <summary>Stage runs.</summary>
         public List<PipelineStageRunDocument> StageRuns { get; set; } = new();
     }
 
     private sealed class PipelineStageRunDocument
     {
+        /// <summary>Stage id.</summary>
         public string StageId { get; set; } = string.Empty;
+        /// <summary>State.</summary>
         public string State { get; set; } = string.Empty;
+        /// <summary>Attempt.</summary>
         public int Attempt { get; set; }
+        /// <summary>Worker id.</summary>
         public string? WorkerId { get; set; }
+        /// <summary>Worker type.</summary>
         public string? WorkerType { get; set; }
+        /// <summary>Output.</summary>
         public string? Output { get; set; }
+        /// <summary>Error.</summary>
         public string? Error { get; set; }
     }
 }

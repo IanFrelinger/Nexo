@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Nexo.CLI.Commands;
+using Nexo.CLI.Commands.Workflow;
 using Xunit;
 
 namespace Nexo.Tests.CLI.Tests.Commands.Workflow;

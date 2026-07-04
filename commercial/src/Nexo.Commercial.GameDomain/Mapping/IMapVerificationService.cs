@@ -1,5 +1,4 @@
-namespace Nexo.GameDomain.Mapping;
-
+namespace Nexo.Commercial.GameDomain.Mapping;
 /// <summary>
 /// Optional hierarchical verification after vector payload inspection and summarization (rules / heuristics).
 /// </summary>

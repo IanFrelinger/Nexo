@@ -1,5 +1,6 @@
 namespace Nexo.Certification.Physical.Tagging;
 
+/// <summary>Enumerates tag reference kind values.</summary>
 public enum TagReferenceKind : byte
 {
     CertRef = 0,

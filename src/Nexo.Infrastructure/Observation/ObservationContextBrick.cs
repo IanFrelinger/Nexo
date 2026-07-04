@@ -5,13 +5,14 @@ using Nexo.Core.Application.Observation.Ports;
 namespace Nexo.Infrastructure.Observation;
 
 /// <summary>
-/// Brick that assembles observation context for agents. Wraps IContextAssembler.
+/// DomainBrick that assembles observation context for agents. Wraps IContextAssembler.
 /// Dogfood: this is a Nexo-owned brick that the adaptation engine can improve.
 /// </summary>
-public sealed class ObservationContextBrick : Brick
+public sealed class ObservationContextBrick : DomainBrick
 {
     private readonly IContextAssembler _assembler;
 
+    /// <summary>Initializes a new observation context brick.</summary>
     public ObservationContextBrick(IContextAssembler assembler)
     {
         _assembler = assembler ?? throw new ArgumentNullException(nameof(assembler));
@@ -36,6 +37,7 @@ public sealed class ObservationContextBrick : Brick
         };
     }
 
+    /// <summary>Execute asynchronously.</summary>
     public override async Task<BrickOutput> ExecuteAsync(
         BrickInput input,
         ImplementationType implementation,

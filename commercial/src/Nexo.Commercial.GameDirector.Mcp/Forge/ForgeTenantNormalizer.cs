@@ -1,7 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace Nexo.API.Forge;
-
+namespace GameDirector.Mcp.Forge;
 /// <summary>
 /// Normalizes client-supplied Forge tenant ids for safe use as LiteDB keys and dictionary keys.
 /// </summary>

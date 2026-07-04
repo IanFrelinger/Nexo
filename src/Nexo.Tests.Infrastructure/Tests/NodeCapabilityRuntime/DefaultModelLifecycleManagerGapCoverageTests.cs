@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.NodeCapabilityRuntime;
 
+/// <summary>Tests for default model lifecycle manager gap coverage.</summary>
 public class DefaultModelLifecycleManagerGapCoverageTests
 {
     private static ModelDescriptor Model => new()

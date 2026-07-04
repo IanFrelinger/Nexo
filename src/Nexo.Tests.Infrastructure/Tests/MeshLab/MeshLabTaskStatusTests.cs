@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.MeshLab;
 
+/// <summary>Tests for mesh lab task status.</summary>
 public sealed class MeshLabTaskStatusTests
 {
     [Theory]

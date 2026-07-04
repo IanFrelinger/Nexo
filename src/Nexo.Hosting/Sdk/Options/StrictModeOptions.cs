@@ -1,5 +1,4 @@
-namespace Nexo.Hosting;
-
+namespace Nexo.Hosting.Sdk.Options;
 /// <summary>
 /// Controls Nexo strict mode behavior. When enabled, the system fails fast with
 /// verbose diagnostics — ideal for development and CI. Flip to permissive once

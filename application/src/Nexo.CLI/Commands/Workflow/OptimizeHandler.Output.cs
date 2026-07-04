@@ -1,7 +1,7 @@
 using System.Text.Json;
 
-namespace Nexo.CLI.Commands;
-
+namespace Nexo.CLI.Commands.Workflow;
+/// <summary>Handles optimize requests.</summary>
 internal sealed partial class OptimizeHandler
 {
     private static List<WorkflowOptimizeCandidate> BuildCandidateResults(

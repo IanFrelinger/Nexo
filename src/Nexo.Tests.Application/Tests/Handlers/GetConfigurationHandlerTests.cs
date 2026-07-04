@@ -9,14 +9,18 @@ using Nexo.Core.Application.Testing.Models;
 
 namespace Nexo.Tests.Application.Tests.Handlers;
 
+/// <summary>Tests for get configuration handler.</summary>
 public class GetConfigurationHandlerTests : UnitTestBase
 {
     public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
+            /// <summary>Test successful configuration loading.</summary>
             await TestSuccessfulConfigurationLoading();
+            /// <summary>Test cancellation.</summary>
             await TestCancellation();
+            /// <summary>Test default configuration.</summary>
             await TestDefaultConfiguration();
 
             return new TestResult
@@ -80,12 +84,19 @@ public class GetConfigurationHandlerTests : UnitTestBase
         var query = new GetConfigurationQuery();
         var result = await handler.Handle(query, CancellationToken.None);
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(result);
+        /// <summary>Assert not null.</summary>
         AssertNotNull(result.Analysis);
+        /// <summary>Assert equal.</summary>
         AssertEqual(25, result.Analysis.MaxComplexityThreshold);
+        /// <summary>Assert true.</summary>
         AssertTrue(result.Analysis.EnableSecurityScan);
+        /// <summary>Assert not null.</summary>
         AssertNotNull(result.Validation);
+        /// <summary>Assert not null.</summary>
         AssertNotNull(result.Logging);
+        /// <summary>Assert equal.</summary>
         AssertEqual("Debug", result.Logging.Level);
 
         mockConfigurationService.Verify(s => s.LoadAsync(It.IsAny<CancellationToken>()), Times.Once);
@@ -129,9 +140,13 @@ public class GetConfigurationHandlerTests : UnitTestBase
         var query = new GetConfigurationQuery();
         var result = await handler.Handle(query, CancellationToken.None);
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(result);
+        /// <summary>Assert not null.</summary>
         AssertNotNull(result.Analysis);
+        /// <summary>Assert not null.</summary>
         AssertNotNull(result.Validation);
+        /// <summary>Assert not null.</summary>
         AssertNotNull(result.Logging);
     }
 }

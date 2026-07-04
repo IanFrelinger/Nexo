@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Routing;
 
 namespace GameDirector.Mcp;
 
+/// <summary>Map mcp endpoint extensions.</summary>
 public static class MapMcpEndpointExtensions
 {
     private static readonly JsonSerializerOptions JsonOptions = new(JsonSerializerDefaults.Web);

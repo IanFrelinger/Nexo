@@ -1,5 +1,4 @@
-namespace Nexo.GameDomain.Aesthetics;
-
+namespace Nexo.Commercial.GameDomain.Aesthetics;
 /// <summary>
 /// Helpers for hosts resolving <see cref="EngineRenderingSurfaceBinding"/> entries on an <see cref="AestheticPack"/>.
 /// </summary>

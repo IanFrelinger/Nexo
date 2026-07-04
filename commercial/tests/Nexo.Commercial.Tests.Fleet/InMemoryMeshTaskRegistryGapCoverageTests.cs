@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Commercial.Tests.Fleet;
 
+/// <summary>Tests for in memory mesh task registry gap coverage.</summary>
 public sealed class InMemoryMeshTaskRegistryGapCoverageTests
 {
     [Fact]

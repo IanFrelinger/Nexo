@@ -2,6 +2,7 @@ using Nexo.Abstractions.Routing;
 
 namespace Nexo.Orchestration.Routing;
 
+/// <summary>Removes unhealthy or stale endpoints from the candidate set.</summary>
 internal sealed class HealthFilterPolicy : IRoutingPolicy
 {
     public IReadOnlyList<EndpointDescriptor> Apply(

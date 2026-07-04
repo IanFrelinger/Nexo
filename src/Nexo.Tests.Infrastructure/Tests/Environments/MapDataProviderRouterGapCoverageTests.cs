@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Environments;
 
+/// <summary>Tests for map data provider router gap coverage.</summary>
 public sealed class MapDataProviderRouterGapCoverageTests
 {
     [Fact]
@@ -58,8 +59,10 @@ public sealed class MapDataProviderRouterGapCoverageTests
         router.ResolveVoxelStore(new MapDataSourceBinding(Kind: "CHUNK-STORE")).Should().BeSameAs(voxel);
     }
 
+    /// <summary>Tests for stub vector.</summary>
     private sealed class StubVector(string kind) : IVectorMapDataProvider
     {
+        /// <summary>Kind.</summary>
         public string Kind { get; } = kind;
 
         public Task<VectorMapDataResult> FetchAsync(
@@ -71,8 +74,10 @@ public sealed class MapDataProviderRouterGapCoverageTests
             => Task.FromResult(new VectorMapDataResult(ReadOnlyMemory<byte>.Empty, "application/octet-stream"));
     }
 
+    /// <summary>Tests for stub terrain.</summary>
     private sealed class StubTerrain(string kind) : ITerrainMapDataProvider
     {
+        /// <summary>Kind.</summary>
         public string Kind { get; } = kind;
 
         public Task<TerrainMapDataResult> FetchAsync(
@@ -84,8 +89,10 @@ public sealed class MapDataProviderRouterGapCoverageTests
             => Task.FromResult(new TerrainMapDataResult(ReadOnlyMemory<byte>.Empty, "application/octet-stream"));
     }
 
+    /// <summary>Tests for stub voxel.</summary>
     private sealed class StubVoxel(string kind) : IVoxelChunkDataProvider
     {
+        /// <summary>Kind.</summary>
         public string Kind { get; } = kind;
 
         public Task<VoxelChunkDataResult> FetchAsync(

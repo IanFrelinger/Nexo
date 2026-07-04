@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration.Resilience;
 
+/// <summary>Tests for circuit breaker.</summary>
 public class CircuitBreakerTests
 {
     private readonly Mock<ILogger<CircuitBreaker>> _loggerMock;
@@ -44,6 +45,8 @@ public class CircuitBreakerTests
         {
             callCount++;
             await Task.Delay(10);
+            /// <summary>Invalid operation exception.</summary>
+            /// <param name="error"">Error".</param>
             throw new InvalidOperationException("Test error");
         });
 
@@ -77,6 +80,8 @@ public class CircuitBreakerTests
         var operation = new Func<Task<int>>(async () =>
         {
             await Task.CompletedTask;
+            /// <summary>Invalid operation exception.</summary>
+            /// <param name="error"">Error".</param>
             throw new InvalidOperationException("Test error");
         });
 
@@ -115,6 +120,8 @@ public class CircuitBreakerTests
         var operation = new Func<Task<int>>(async () =>
         {
             await Task.CompletedTask;
+            /// <summary>Invalid operation exception.</summary>
+            /// <param name="error"">Error".</param>
             throw new InvalidOperationException("Test error");
         });
 

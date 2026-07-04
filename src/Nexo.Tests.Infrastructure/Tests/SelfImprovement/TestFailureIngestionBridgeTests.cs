@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.SelfImprovement;
 
+/// <summary>Tests for test failure ingestion bridge.</summary>
 [Trait("Category", "Integration")]
 public sealed class TestFailureIngestionBridgeTests : TempDirTestBase
 {

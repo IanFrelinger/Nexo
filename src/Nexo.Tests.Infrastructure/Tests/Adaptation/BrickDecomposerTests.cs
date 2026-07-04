@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Adaptation;
 
+/// <summary>Tests for brick decomposer.</summary>
 [Trait("Category", "Adaptation")]
 public sealed class BrickDecomposerTests
 {

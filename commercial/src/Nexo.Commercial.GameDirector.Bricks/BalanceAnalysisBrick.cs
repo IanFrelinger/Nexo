@@ -12,7 +12,7 @@ namespace GameDirector.Bricks;
 /// <summary>
 /// balance.analysis — deterministic TTK/outlier parse + optional hybrid narrative via local model.
 /// </summary>
-public sealed class BalanceAnalysisBrick : Brick
+public sealed class BalanceAnalysisBrick : DomainBrick
 {
     private readonly IDataDecisionAuditLog _auditLog;
     private readonly IModel? _model;

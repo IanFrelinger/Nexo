@@ -1,13 +1,13 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Nexo.Core.Application.Networking.Models;
-using Nexo.Core.Application.Networking.Ports;
+using Nexo.Commercial.Fleet.Contracts.Networking.Models;
+using Nexo.Commercial.Fleet.Contracts.Networking.Ports;
 using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Execution;
+using Nexo.Infrastructure.Execution;
 
-namespace Nexo.Infrastructure.Execution;
-
+namespace Nexo.Commercial.Fleet.Infrastructure.Execution;
 /// <summary>
 /// Wraps a brick registry with usage-aware caching: hot bricks get longer TTL,
 /// cold bricks short TTL, expired entries evicted. Tracks hit rate and evictions.
@@ -18,7 +18,7 @@ public sealed class AdaptiveBrickCache : IAdaptiveBrickCache
     private readonly IBrickUsageTracker _usageTracker;
     private readonly AdaptiveBrickCacheOptions _options;
     private readonly ILogger<AdaptiveBrickCache>? _logger;
-    private readonly ConcurrentDictionary<string, (Brick Brick, DateTimeOffset ExpiresAt)> _cache = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, (DomainBrick Brick, DateTimeOffset ExpiresAt)> _cache = new(StringComparer.OrdinalIgnoreCase);
     private long _hits;
     private long _misses;
     private long _evictionCount;
@@ -36,7 +36,7 @@ public sealed class AdaptiveBrickCache : IAdaptiveBrickCache
     }
 
     /// <inheritdoc />
-    public Brick? GetBrick(string id)
+    public DomainBrick? GetBrick(string id)
     {
         if (string.IsNullOrEmpty(id)) return null;
 
@@ -67,7 +67,7 @@ public sealed class AdaptiveBrickCache : IAdaptiveBrickCache
     }
 
     /// <inheritdoc />
-    public IReadOnlyList<Brick> GetAllBricks()
+    public IReadOnlyList<DomainBrick> GetAllBricks()
     {
         return _inner.GetAllBricks();
     }

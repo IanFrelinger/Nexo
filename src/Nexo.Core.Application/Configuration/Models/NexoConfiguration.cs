@@ -13,25 +13,12 @@ namespace Nexo.Core.Application.Configuration.Models;
 /// </summary>
 public record NexoConfiguration
 {
+    /// <summary>Settings for code analysis operations.</summary>
     public AnalysisConfiguration Analysis { get; init; } = new();
+
+    /// <summary>Settings for validation test runs.</summary>
     public ValidationConfiguration Validation { get; init; } = new();
+
+    /// <summary>Settings for application logging.</summary>
     public LoggingConfiguration Logging { get; init; } = new();
 }
-
-/// <summary>
-/// Configuration for logging.
-/// 
-/// Contains:
-/// - Log level (Information, Debug, etc.)
-/// - Whether structured logging is enabled
-/// - Whether progress indicators are enabled
-/// 
-/// Used to configure application-wide logging behavior.
-/// </summary>
-public record LoggingConfiguration
-{
-    public string Level { get; init; } = "Information";
-    public bool EnableStructuredLogging { get; init; } = true;
-    public bool EnableProgressIndicators { get; init; } = true;
-}
-

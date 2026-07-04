@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.ModelArtifacts;
 
+/// <summary>Tests for ollama remote library model artifact catalog source.</summary>
 public sealed class OllamaRemoteLibraryModelArtifactCatalogSourceTests
 {
     [Fact]
@@ -61,10 +62,13 @@ public sealed class OllamaRemoteLibraryModelArtifactCatalogSourceTests
         (await sut.ListAsync()).Should().BeEmpty();
     }
 
+    /// <summary>Tests for tags json handler.</summary>
     private sealed class TagsJsonHandler : HttpMessageHandler
     {
         private readonly string _json;
 
+        /// <summary>Tags json handler.</summary>
+        /// <param name="json">Json.</param>
         public TagsJsonHandler(string json) => _json = json;
 
         protected override Task<HttpResponseMessage> SendAsync(

@@ -1,5 +1,6 @@
 namespace Nexo.Orchestration.Barriers;
 
+/// <summary>Thrown when an agent invocation attempts to elevate above the current barrier level.</summary>
 public sealed class BarrierElevationException : Exception
 {
     public BarrierElevationException(
@@ -15,12 +16,16 @@ public sealed class BarrierElevationException : Exception
         RequestedLevel = requestedLevel;
     }
 
+    /// <summary>Name of the agent that attempted elevation.</summary>
     public string AgentName { get; }
 
+    /// <summary>Correlation identifier for the denied invocation.</summary>
     public string CorrelationId { get; }
 
+    /// <summary>Current permitted barrier level.</summary>
     public string CurrentLevel { get; }
 
+    /// <summary>Barrier level that was requested.</summary>
     public string RequestedLevel { get; }
 
     public string ErrorCode => "BARRIER_ELEVATION_DENIED";

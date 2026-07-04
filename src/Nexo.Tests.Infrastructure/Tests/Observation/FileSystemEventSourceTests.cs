@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Observation;
 
+/// <summary>Tests for file system event source.</summary>
 public class FileSystemEventSourceTests : IDisposable
 {
     private readonly string _tempDir;
@@ -14,6 +15,7 @@ public class FileSystemEventSourceTests : IDisposable
         Directory.CreateDirectory(_tempDir);
     }
 
+    /// <summary>Dispose.</summary>
     public void Dispose() => Dispose(true);
     protected virtual void Dispose(bool disposing)
     {

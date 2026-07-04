@@ -5,8 +5,7 @@ using Nexo.Core.Application.Mesh.Models;
 using Nexo.Core.Application.Mesh.Ports;
 using Nexo.Infrastructure.Mesh;
 
-namespace Nexo.Infrastructure.Mesh.Sdk;
-
+namespace Nexo.Infrastructure.Mesh.Sdk.Extensions;
 /// <summary>
 /// DI extensions for Block 9 mesh.
 /// </summary>

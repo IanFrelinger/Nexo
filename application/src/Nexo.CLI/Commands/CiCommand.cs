@@ -13,6 +13,7 @@ namespace Nexo.CLI.Commands;
 /// </summary>
 public sealed class CiCommand : Command
 {
+    /// <summary>Creates a new CiCommand instance.</summary>
     public CiCommand() : base("ci", "CI verification: build, smoke tests, and architecture validation")
     {
         var verifyCmd = new Command("verify", "Run full CI verification (build, test, validate)");
@@ -126,6 +127,7 @@ public sealed class CiCommand : Command
         return 0;
     }
 
+    /// <summary>Creates a new ExecuteRuntimeGateAsync instance.</summary>
     public static async Task<int> ExecuteRuntimeGateAsync()
     {
         var repoRoot = RepoPathResolver.FindRepoRoot();
@@ -147,6 +149,7 @@ public sealed class CiCommand : Command
         return exit;
     }
 
+    /// <summary>Creates a new ExecuteRuntimePromotionAsync instance.</summary>
     public static async Task<int> ExecuteRuntimePromotionAsync()
     {
         var repoRoot = RepoPathResolver.FindRepoRoot();
@@ -167,6 +170,7 @@ public sealed class CiCommand : Command
         return exit;
     }
 
+    /// <summary>Creates a new ExecuteReleaseBundleAsync instance.</summary>
     public static async Task<int> ExecuteReleaseBundleAsync(string profile = "default", string? outputDirectory = null)
     {
         var repoRoot = RepoPathResolver.FindRepoRoot();

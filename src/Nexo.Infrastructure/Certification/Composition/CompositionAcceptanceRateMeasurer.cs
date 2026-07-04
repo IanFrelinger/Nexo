@@ -9,6 +9,7 @@ namespace Nexo.Infrastructure.Certification.Composition;
 /// </summary>
 public static class CompositionAcceptanceRateMeasurer
 {
+    /// <summary>Measure recorded batch asynchronously.</summary>
     public static async Task<CompositionAcceptanceRateResult> MeasureRecordedBatchAsync(
         RecordedCompositionProposalBatch batch,
         CompositionProposerInput proposerInput,
@@ -68,6 +69,7 @@ public static class CompositionAcceptanceRateMeasurer
         return new CompositionAcceptanceRateResult(rate, admits, total, entryResults);
     }
 
+    /// <summary>Format rate.</summary>
     public static string FormatRate(double acceptanceRate) => acceptanceRate.ToString("F2");
 
     private static string FormatVerdict(CompositionCertificationDecision decision) =>
@@ -75,6 +77,7 @@ public static class CompositionAcceptanceRateMeasurer
 
     private sealed class RecordedEntryReplayProposer(RecordedCompositionBatchEntry entry) : ICompositionProposer
     {
+        /// <summary>Propose asynchronously.</summary>
         public Task<ProposedComposition> ProposeAsync(
             CompositionProposerInput input,
             CancellationToken cancellationToken = default)

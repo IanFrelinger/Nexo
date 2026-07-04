@@ -5,6 +5,9 @@ namespace Nexo.Core.Application.Execution.Models;
 /// </summary>
 public enum ExecutionMode
 {
+    /// <summary>Step runs with reproducible, rule-based execution.</summary>
     Deterministic,
+
+    /// <summary>Step runs with LLM-backed agentic execution.</summary>
     Agentic,
 }

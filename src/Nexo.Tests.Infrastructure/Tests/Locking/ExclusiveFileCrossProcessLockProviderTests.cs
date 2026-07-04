@@ -3,6 +3,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Locking;
 
+/// <summary>Tests for exclusive file cross process lock provider.</summary>
 public sealed class ExclusiveFileCrossProcessLockProviderTests
 {
     [Fact]

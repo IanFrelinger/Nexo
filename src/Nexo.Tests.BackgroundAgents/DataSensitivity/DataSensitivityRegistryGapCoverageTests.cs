@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.DataSensitivity;
 
+/// <summary>Tests for data sensitivity registry gap coverage.</summary>
 public sealed class DataSensitivityRegistryGapCoverageTests
 {
     [Fact]

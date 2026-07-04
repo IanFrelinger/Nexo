@@ -19,6 +19,7 @@ public sealed class HotSwappableModel : IModel
     private readonly IModel _deterministic;
     private readonly ILogger<HotSwappableModel> _logger;
 
+    /// <summary>Initializes a new hot swappable model.</summary>
     public HotSwappableModel(
         ProviderBackedModel agentic,
         ILogger<HotSwappableModel> logger)
@@ -28,6 +29,7 @@ public sealed class HotSwappableModel : IModel
         _logger = logger;
     }
 
+    /// <summary>Complete asynchronously.</summary>
     public async Task<ModelOutput> CompleteAsync(ModelInput input, CancellationToken ct)
     {
         var (prefer, providerOverride) = ParseRuntime(input);
@@ -124,6 +126,7 @@ public sealed class HotSwappableModel : IModel
 
     private sealed class EchoDeterministicModel : IModel
     {
+        /// <summary>Complete asynchronously.</summary>
         public Task<ModelOutput> CompleteAsync(ModelInput input, CancellationToken ct)
         {
             var text = input.Messages.LastOrDefault().content ?? "";

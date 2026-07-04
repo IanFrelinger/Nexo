@@ -8,6 +8,7 @@ public sealed class MemorySmsIngressApprovalStore : ISmsIngressApprovalStore
 {
     private readonly ConcurrentDictionary<string, SmsInboundSimulationResponse> _byExternalId = new(StringComparer.Ordinal);
 
+    /// <inheritdoc />
     public Task<SmsInboundSimulationResponse> TryRecordApprovalAsync(
         string from,
         string approvalToken,

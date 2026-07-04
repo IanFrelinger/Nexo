@@ -395,7 +395,7 @@ public sealed class NcrEngineOllamaIntegrationTests
         inference.Output.Should().NotBeNullOrWhiteSpace();
     }
 
-    private sealed class TestBrick : Brick
+    private sealed class TestBrick : DomainBrick
     {
         public override Task<BrickOutput> ExecuteAsync(BrickInput input, ImplementationType implementation, IExecutionContext context, CancellationToken cancellationToken = default)
             => Task.FromResult(new BrickOutput());

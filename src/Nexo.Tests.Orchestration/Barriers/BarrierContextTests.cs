@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration.Barriers;
 
+/// <summary>Tests for barrier context.</summary>
 public sealed class BarrierContextTests
 {
     [Fact]

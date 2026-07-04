@@ -12,6 +12,7 @@ public sealed class LiteDbCopilotTaskStore : ICopilotTaskStore
     private const string CollectionName = "copilot_tasks";
     private readonly string _connectionString;
 
+    /// <summary>Initializes a new lite db copilot task store.</summary>
     public LiteDbCopilotTaskStore(string pathOrConnectionString)
     {
         if (string.IsNullOrWhiteSpace(pathOrConnectionString))
@@ -96,15 +97,23 @@ public sealed class LiteDbCopilotTaskStore : ICopilotTaskStore
 
     private sealed class CopilotTaskDoc
     {
+        /// <summary>Tenant id.</summary>
         public string TenantId { get; set; } = "default";
 
+        /// <summary>Task id.</summary>
         [BsonId]
         public string TaskId { get; set; } = string.Empty;
+        /// <summary>Task.</summary>
         public string Task { get; set; } = string.Empty;
+        /// <summary>Submitted at.</summary>
         public DateTimeOffset SubmittedAt { get; set; }
+        /// <summary>Completed at.</summary>
         public DateTimeOffset? CompletedAt { get; set; }
+        /// <summary>Whether execution completed successfully.</summary>
         public bool Success { get; set; }
+        /// <summary>Summary.</summary>
         public string? Summary { get; set; }
+        /// <summary>Error.</summary>
         public string? Error { get; set; }
     }
 }

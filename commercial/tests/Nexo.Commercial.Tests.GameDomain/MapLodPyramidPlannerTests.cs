@@ -1,10 +1,10 @@
 using FluentAssertions;
-using Nexo.GameDomain.Aesthetics;
-using Nexo.GameDomain.Mapping;
+using Nexo.Commercial.GameDomain.Aesthetics;
+using Nexo.Commercial.GameDomain.Mapping;
 using Xunit;
 
-namespace Nexo.Tests.GameDomain;
-
+namespace Nexo.Commercial.Tests.GameDomain;
+/// <summary>Tests for map lod pyramid planner.</summary>
 public sealed class MapLodPyramidPlannerTests
 {
     [Fact]

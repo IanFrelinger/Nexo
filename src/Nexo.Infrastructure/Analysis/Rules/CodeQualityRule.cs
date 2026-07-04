@@ -22,14 +22,18 @@ public class CodeQualityRule : IAnalysisRule
 {
     private readonly ILogger<CodeQualityRule> _logger;
 
+    /// <summary>Initializes a new code quality rule.</summary>
     public CodeQualityRule(ILogger<CodeQualityRule> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>Name.</summary>
     public string Name => "CodeQuality";
+    /// <summary>Description.</summary>
     public string Description => "Analyzes code quality metrics";
 
+    /// <summary>Analyze asynchronously.</summary>
     public async Task<IReadOnlyList<Violation>> AnalyzeAsync(
         FileInfo assemblyFile,
         CancellationToken cancellationToken = default)

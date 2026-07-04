@@ -2,13 +2,14 @@ using System.Net;
 using System.Text;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
-using Nexo.BrickContracts;
-using Nexo.BrickContracts.Capabilities;
+using Nexo.Brick.Contracts;
+using Nexo.Brick.Contracts.Capabilities;
 using Nexo.Infrastructure.Execution;
 using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Execution;
 
+/// <summary>Tests for http remote brick catalog capability fallback.</summary>
 public sealed class HttpRemoteBrickCatalogCapabilityFallbackTests
 {
     [Fact]
@@ -425,6 +426,7 @@ public sealed class HttpRemoteBrickCatalogCapabilityFallbackTests
         };
     }
 
+    /// <summary>Tests for fake http message handler.</summary>
     private sealed class FakeHttpMessageHandler : HttpMessageHandler
     {
         private readonly Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> _handler;

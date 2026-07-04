@@ -7,8 +7,11 @@ using Xunit;
 
 namespace Nexo.Commercial.Tests.Fleet;
 
+/// <summary>Tests for mesh task execution service.</summary>
 public sealed class MeshTaskExecutionServiceTests
 {
+    /// <summary>Creates service.</summary>
+    /// <param name="tasks">Tasks.</param>
     private static MeshTaskExecutionService CreateService(InMemoryMeshTaskRegistry tasks) =>
         new(tasks, Options.Create(new MeshCheckpointOptions { LeaseSeconds = 120 }));
 

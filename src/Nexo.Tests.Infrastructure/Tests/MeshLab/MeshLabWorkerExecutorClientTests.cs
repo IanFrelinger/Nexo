@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.MeshLab;
 
+/// <summary>Tests for mesh lab worker executor client.</summary>
 public sealed class MeshLabWorkerExecutorClientTests
 {
     [Fact]

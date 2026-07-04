@@ -24,6 +24,7 @@ public sealed class OrchestrationHotSwappableModel : IModel
         _logger = logger;
     }
 
+    /// <summary>Completes a request using the primary model with deterministic fallback on preference or failure.</summary>
     public async Task<ModelOutput> CompleteAsync(ModelInput input, CancellationToken ct)
     {
         var prefer = ParsePrefer(input);

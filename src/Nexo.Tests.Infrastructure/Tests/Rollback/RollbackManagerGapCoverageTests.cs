@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Rollback;
 
+/// <summary>Tests for rollback manager gap coverage.</summary>
 public sealed class RollbackManagerGapCoverageTests
 {
     [Fact]

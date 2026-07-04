@@ -4,15 +4,20 @@ using Nexo.Core.Application.Testing.Models;
 
 namespace Nexo.Tests.CLI.Tests.Commands;
 
+/// <summary>Tests for adaptive runtime policy advisor.</summary>
 public sealed class AdaptiveRuntimePolicyAdvisorTests : UnitTestBase
 {
     public override Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
+            /// <summary>Test no history recommendation.</summary>
             TestNoHistoryRecommendation();
+            /// <summary>Test visual preflight failure recommendation.</summary>
             TestVisualPreflightFailureRecommendation();
+            /// <summary>Test self extend failure recommendation.</summary>
             TestSelfExtendFailureRecommendation();
+            /// <summary>Test history store round trip.</summary>
             TestHistoryStoreRoundTrip();
 
             return Task.FromResult(new TestResult
@@ -52,6 +57,9 @@ public sealed class AdaptiveRuntimePolicyAdvisorTests : UnitTestBase
         var recommendation = AdaptiveRuntimePolicyAdvisor.RecommendQaPolicy(
             "Create a visual app",
             Array.Empty<AdaptiveRuntimeExecutionReport>());
+        /// <summary>Assert true.</summary>
+        /// <param name="null">Null.</param>
+        /// <param name="recommendation."">Recommendation.".</param>
         AssertTrue(recommendation is null, "No history should not force a recommendation.");
     }
 
@@ -80,7 +88,10 @@ public sealed class AdaptiveRuntimePolicyAdvisorTests : UnitTestBase
         };
 
         var recommendation = AdaptiveRuntimePolicyAdvisor.RecommendQaPolicy(goal, reports);
+        /// <summary>Assert not null.</summary>
+        /// <param name="failures."">Failures.".</param>
         AssertNotNull(recommendation, "Expected recommendation for repeated preflight visual failures.");
+        /// <summary>Assert equal.</summary>
         AssertEqual("demo", recommendation!.QaPolicy);
     }
 
@@ -107,7 +118,10 @@ public sealed class AdaptiveRuntimePolicyAdvisorTests : UnitTestBase
         };
 
         var recommendation = AdaptiveRuntimePolicyAdvisor.RecommendQaPolicy(goal, reports);
+        /// <summary>Assert not null.</summary>
+        /// <param name="failures."">Failures.".</param>
         AssertNotNull(recommendation, "Expected recommendation for repeated self-extend failures.");
+        /// <summary>Assert equal.</summary>
         AssertEqual("research", recommendation!.QaPolicy);
     }
 
@@ -128,7 +142,9 @@ public sealed class AdaptiveRuntimePolicyAdvisorTests : UnitTestBase
 
             AdaptiveRuntimeExecutionHistoryStore.Append(tempRoot, report);
             var loaded = AdaptiveRuntimeExecutionHistoryStore.ReadRecent(tempRoot, maxItems: 10);
+            /// <summary>Assert equal.</summary>
             AssertEqual(1, loaded.Count);
+            /// <summary>Assert equal.</summary>
             AssertEqual(report.GoalFingerprint, loaded[0].GoalFingerprint);
         }
         finally

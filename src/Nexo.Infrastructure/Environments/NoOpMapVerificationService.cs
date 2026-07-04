@@ -8,6 +8,7 @@ namespace Nexo.Infrastructure.Environments;
 /// </summary>
 public sealed class NoOpMapVerificationService : IMapVerificationService
 {
+    /// <summary>Verify asynchronously.</summary>
     public Task<MapVerificationReport> VerifyAsync(
         MapVerificationRequest request,
         CancellationToken cancellationToken = default) =>

@@ -1,28 +1,11 @@
 namespace Nexo.API.Security;
 
-public enum NexoAuthorizationMode
-{
-    None = 0,
-    ApiKey = 1,
-    BearerToken = 2,
-    Basic = 3,
-    ApiKeyOrBearerToken = 4,
-    ApiKeyOrBasic = 5,
-    BearerTokenOrBasic = 6,
-    Any = 7
-}
-
-public enum NexoAuthorizationScope
-{
-    MutatingApi = 0,
-    AllApi = 1
-}
-
 /// <summary>
 /// User-configurable security posture hints for Nexo.API (appsettings / environment). Does not replace firewalls or Tailscale ACLs.
 /// </summary>
 public sealed class NexoSecurityOptions
 {
+    /// <summary>Configuration section path (<c>Nexo:Security</c>).</summary>
     public const string SectionPath = "Nexo:Security";
 
     /// <summary>

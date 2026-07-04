@@ -1,5 +1,5 @@
-namespace Nexo.CLI.Commands;
-
+namespace Nexo.CLI.Commands.Runtime;
+/// <summary>Runtime command utilities.</summary>
 internal static class RuntimeCommandUtilities
 {
     internal static string ReadEnvString(string key, string fallback)

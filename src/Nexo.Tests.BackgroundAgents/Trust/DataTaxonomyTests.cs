@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.Trust;
 
+/// <summary>Tests for data taxonomy.</summary>
 public class DataTaxonomyTests
 {
     [Fact]

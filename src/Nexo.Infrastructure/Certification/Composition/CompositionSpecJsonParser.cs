@@ -4,8 +4,10 @@ using Nexo.Core.Application.Certification.Models;
 
 namespace Nexo.Infrastructure.Certification.Composition;
 
+/// <summary>Parses composition specification JSON into domain models.</summary>
 internal static class CompositionSpecJsonParser
 {
+    /// <summary>Parses .</summary>
     public static CompositionSpec Parse(string json)
     {
         var dto = JsonSerializer.Deserialize<CompositionSpecDto>(
@@ -15,6 +17,7 @@ internal static class CompositionSpecJsonParser
         return FromDto(dto);
     }
 
+    /// <summary>From dto.</summary>
     public static CompositionSpec FromDto(CompositionSpecDto dto)
     {
         if (string.IsNullOrWhiteSpace(dto.CompositionId))
@@ -32,6 +35,7 @@ internal static class CompositionSpecJsonParser
                 ?? throw new InvalidOperationException("Model composition JSON missing outputs."));
     }
 
+    /// <summary>To dto.</summary>
     public static CompositionSpecDto ToDto(CompositionSpec spec) =>
         new()
         {
@@ -48,6 +52,7 @@ internal static class CompositionSpecJsonParser
             Outputs = spec.Outputs.Select(p => new PortDto { Name = p.Name, Type = p.Type }).ToList()
         };
 
+    /// <summary>Serializes .</summary>
     public static string Serialize(CompositionSpec spec) =>
         JsonSerializer.Serialize(ToDto(spec), JsonOptions);
 
@@ -74,30 +79,43 @@ internal static class CompositionSpecJsonParser
 
     internal sealed class CompositionSpecDto
     {
+        /// <summary>Composition id.</summary>
         public string CompositionId { get; set; } = "";
+        /// <summary>Nodes.</summary>
         public List<NodeDto>? Nodes { get; set; }
+        /// <summary>Edges.</summary>
         public List<EdgeDto>? Edges { get; set; }
+        /// <summary>Inputs.</summary>
         public List<PortDto>? Inputs { get; set; }
+        /// <summary>Behavior output values keyed by name.</summary>
         public List<PortDto>? Outputs { get; set; }
     }
 
     internal sealed class NodeDto
     {
+        /// <summary>Node id.</summary>
         public string NodeId { get; set; } = "";
+        /// <summary>Brick id.</summary>
         public string BrickId { get; set; } = "";
     }
 
     internal sealed class EdgeDto
     {
+        /// <summary>Source node id.</summary>
         public string SourceNodeId { get; set; } = "";
+        /// <summary>Source port.</summary>
         public string SourcePort { get; set; } = "";
+        /// <summary>Target node id.</summary>
         public string TargetNodeId { get; set; } = "";
+        /// <summary>Target port.</summary>
         public string TargetPort { get; set; } = "";
     }
 
     internal sealed class PortDto
     {
+        /// <summary>Name.</summary>
         public string Name { get; set; } = "";
+        /// <summary>Type.</summary>
         public string Type { get; set; } = "";
     }
 }

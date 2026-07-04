@@ -20,6 +20,7 @@ public class ClusterExecutor : IClusterExecutor
     private readonly ISemanticCache _semanticCache;
     private readonly ILogger<ClusterExecutor> _logger;
     
+    /// <summary>Initializes a new cluster executor.</summary>
     public ClusterExecutor(
         IClusterRegistry clusterRegistry,
         IBrickRegistry brickRegistry,
@@ -81,14 +82,14 @@ public class ClusterExecutor : IClusterExecutor
             var clusterBrick = cluster.Bricks.FirstOrDefault(b => b.LocalId == step.LocalId);
             if (clusterBrick is null)
             {
-                yield return new StepErrorEvent(step.LocalId, $"Brick not found in cluster: {step.LocalId}");
+                yield return new StepErrorEvent(step.LocalId, $"DomainBrick not found in cluster: {step.LocalId}");
                 continue;
             }
             
             var brick = _brickRegistry.GetBrick(clusterBrick.BrickId);
             if (brick is null)
             {
-                yield return new StepErrorEvent(step.LocalId, $"Brick not found: {clusterBrick.BrickId}");
+                yield return new StepErrorEvent(step.LocalId, $"DomainBrick not found: {clusterBrick.BrickId}");
                 if (cluster.Interface.FailurePolicy == FailurePolicy.Abort)
                     yield break;
                 continue;
@@ -171,7 +172,7 @@ public class ClusterExecutor : IClusterExecutor
                     break;
                 }
 
-                yield return new StepErrorEvent(step.LocalId, error ?? "Brick failed", sw.ElapsedMilliseconds);
+                yield return new StepErrorEvent(step.LocalId, error ?? "DomainBrick failed", sw.ElapsedMilliseconds);
                 usedFallback = true;
             }
 
@@ -194,7 +195,7 @@ public class ClusterExecutor : IClusterExecutor
             clusterOutput);
     }
 
-    private static IReadOnlyList<ImplementationType> BuildChain(Brick brick, ImplementationType preferred, IExecutionContext ctx)
+    private static IReadOnlyList<ImplementationType> BuildChain(DomainBrick brick, ImplementationType preferred, IExecutionContext ctx)
     {
         if (ctx.IsAirGapped)
         {
@@ -340,7 +341,7 @@ public class ClusterExecutor : IClusterExecutor
     /// <param name="context">Execution context for selector evaluation.</param>
     /// <returns>The implementation type to use for execution.</returns>
     private ImplementationType DetermineImplementation(
-        Brick brick,
+        DomainBrick brick,
         ClusterInstance instance,
         string localId,
         ClusterBrick clusterBrick,
@@ -415,7 +416,7 @@ public class ClusterExecutor : IClusterExecutor
     /// <param name="cluster">The cluster definition containing connections and mappings.</param>
     /// <param name="resolvedParams">Resolved cluster parameters.</param>
     /// <param name="brickOutputs">Outputs from previously executed bricks in the cluster.</param>
-    /// <returns>Brick input with all parameters and connections applied.</returns>
+    /// <returns>DomainBrick input with all parameters and connections applied.</returns>
     private static BrickInput BuildBrickInput(
         ExecutionStep step,
         Cluster cluster,
@@ -508,14 +509,3 @@ public class ClusterExecutor : IClusterExecutor
         return $"{brickId}:{implementation}:{inputHash}";
     }
 }
-
-/// <summary>
-/// Execution plan for a cluster.
-/// </summary>
-public record ExecutionPlan(IReadOnlyList<ExecutionStep> Steps);
-
-/// <summary>
-/// A step in the execution plan.
-/// </summary>
-public record ExecutionStep(string LocalId, string BrickId);
-

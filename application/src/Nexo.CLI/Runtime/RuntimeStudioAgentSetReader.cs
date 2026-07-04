@@ -7,6 +7,7 @@ namespace Nexo.CLI.Runtime;
 /// </summary>
 public static class RuntimeStudioAgentSetReader
 {
+    /// <summary>Creates a new OllamaAgentRow instance.</summary>
     public sealed record OllamaAgentRow(string Id, string ModelName);
 
     /// <summary>

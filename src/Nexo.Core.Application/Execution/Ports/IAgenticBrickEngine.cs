@@ -13,7 +13,7 @@ public interface IAgenticBrickEngine
     /// Resolves which model/provider should back this brick execution.
     /// </summary>
     Task<ModelResolution> ResolveModelForBrickAsync(
-        Brick brick,
+        DomainBrick brick,
         IExecutionContext context,
         CancellationToken ct = default);
 
@@ -24,15 +24,4 @@ public interface IAgenticBrickEngine
         ModelResolution resolution,
         BrickExecutionOutcome outcome,
         CancellationToken ct = default);
-}
-
-/// <summary>
-/// Simplified outcome signal used by model scoring feedback.
-/// </summary>
-public sealed record BrickExecutionOutcome
-{
-    public bool Succeeded { get; init; }
-    public bool TimedOut { get; init; }
-    public TimeSpan Duration { get; init; }
-    public string? ErrorCode { get; init; }
 }

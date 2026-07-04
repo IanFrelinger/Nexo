@@ -12,6 +12,7 @@ using Nexo.Tests.Application.Helpers;
 
 namespace Nexo.Tests.Infrastructure.Tests.Analysis;
 
+/// <summary>Tests for analysis service adapter comprehensive.</summary>
 public class AnalysisServiceAdapterComprehensiveTests : UnitTestBase
 {
     private DirectoryInfo? _tempDir;
@@ -35,13 +36,21 @@ public class AnalysisServiceAdapterComprehensiveTests : UnitTestBase
     {
         try
         {
+            /// <summary>Run test with error handling.</summary>
             await RunTestWithErrorHandling("TestEmptyDirectory", TestEmptyDirectory);
+            /// <summary>Run test with error handling.</summary>
             await RunTestWithErrorHandling("TestDirectoryWithAssemblyFiles", TestDirectoryWithAssemblyFiles);
+            /// <summary>Run test with error handling.</summary>
             await RunTestWithErrorHandling("TestDirectoryWithMultipleAssemblies", TestDirectoryWithMultipleAssemblies);
+            /// <summary>Run test with error handling.</summary>
             await RunTestWithErrorHandling("TestProgressReporting", TestProgressReporting);
+            /// <summary>Run test with error handling.</summary>
             await RunTestWithErrorHandling("TestCancellation", TestCancellation);
+            /// <summary>Run test with error handling.</summary>
             await RunTestWithErrorHandling("TestRuleEngineException", TestRuleEngineException);
+            /// <summary>Run test with error handling.</summary>
             await RunTestWithErrorHandling("TestNoAssembliesFound", TestNoAssembliesFound);
+            /// <summary>Run test with error handling.</summary>
             await RunTestWithErrorHandling("TestUnauthorizedAccessException", TestUnauthorizedAccessException);
 
             return new TestResult
@@ -80,6 +89,7 @@ public class AnalysisServiceAdapterComprehensiveTests : UnitTestBase
     {
         try
         {
+            /// <summary>Test action.</summary>
             await testAction();
         }
         catch (AssertionException)
@@ -109,6 +119,8 @@ public class AnalysisServiceAdapterComprehensiveTests : UnitTestBase
         }
         catch (Exception ex)
         {
+            /// <summary>Assertion exception.</summary>
+            /// <param name="{ex.Message}"">{ex.message}".</param>
             throw new AssertionException($"Test {testName} threw unexpected exception: {ex.Message}", ex);
         }
     }
@@ -122,9 +134,13 @@ public class AnalysisServiceAdapterComprehensiveTests : UnitTestBase
 
         var result = await adapter.AnalyzeAsync(_tempDir!, null, CancellationToken.None);
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(result);
+        /// <summary>Assert false.</summary>
         AssertFalse(result.HasViolations);
+        /// <summary>Assert equal.</summary>
         AssertEqual(0, result.TotalViolations);
+        /// <summary>Assert equal.</summary>
         AssertEqual(0, result.Violations.Count);
     }
 
@@ -153,9 +169,15 @@ public class AnalysisServiceAdapterComprehensiveTests : UnitTestBase
         var assemblyFile = TestHelpers.CreateTempAssemblyFile(_tempDir!, "test.dll");
         var result = await adapter.AnalyzeAsync(_tempDir!, null, CancellationToken.None);
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(result);
+        /// <summary>Assert true.</summary>
         AssertTrue(result.HasViolations);
+        /// <summary>Assert true.</summary>
+        /// <param name="0">0.</param>
         AssertTrue(result.TotalViolations > 0);
+        /// <summary>Assert true.</summary>
+        /// <param name="0">0.</param>
         AssertTrue(result.Violations.Count > 0);
     }
 
@@ -181,6 +203,7 @@ public class AnalysisServiceAdapterComprehensiveTests : UnitTestBase
 
         var result = await adapter.AnalyzeAsync(subDir, null, CancellationToken.None);
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(result);
         // Should have analyzed 3 files
         mockRule.Verify(r => r.AnalyzeAsync(It.IsAny<FileInfo>(), It.IsAny<CancellationToken>()), Times.Exactly(3));
@@ -209,6 +232,7 @@ public class AnalysisServiceAdapterComprehensiveTests : UnitTestBase
 
         var result = await adapter.AnalyzeAsync(subDir, progress, CancellationToken.None);
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(result);
         
         // Progress<T> callbacks may be invoked asynchronously, so wait a bit and retry
@@ -255,6 +279,8 @@ public class AnalysisServiceAdapterComprehensiveTests : UnitTestBase
         try
         {
             await adapter.AnalyzeAsync(_tempDir!, null, cts.Token);
+            /// <summary>Assertion exception.</summary>
+            /// <param name="thrown"">Thrown".</param>
             throw new AssertionException("Expected OperationCanceledException or AnalysisException to be thrown");
         }
         catch (OperationCanceledException)
@@ -301,6 +327,7 @@ public class AnalysisServiceAdapterComprehensiveTests : UnitTestBase
         // Should not throw - exceptions in rules are caught and added as violations
         var result = await adapter.AnalyzeAsync(_tempDir!, null, CancellationToken.None);
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(result);
         // Should have a violation for the rule failure
         AssertTrue(result.Violations.Any(v => v.Rule == "FailingRule" && v.Message.Contains("Rule execution failed")));
@@ -319,9 +346,13 @@ public class AnalysisServiceAdapterComprehensiveTests : UnitTestBase
         
         var result = await adapter.AnalyzeAsync(subDir, null, CancellationToken.None);
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(result);
+        /// <summary>Assert false.</summary>
         AssertFalse(result.HasViolations);
+        /// <summary>Assert equal.</summary>
         AssertEqual(0, result.TotalViolations);
+        /// <summary>Assert equal.</summary>
         AssertEqual(0, result.Violations.Count);
     }
 }

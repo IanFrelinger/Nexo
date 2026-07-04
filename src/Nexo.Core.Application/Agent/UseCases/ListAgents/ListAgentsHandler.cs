@@ -20,6 +20,9 @@ public class ListAgentsHandler : IRequestHandler<ListAgentsQuery, IReadOnlyList<
     private readonly IAgentRegistry _agentRegistry;
     private readonly ILogger<ListAgentsHandler> _logger;
 
+    /// <summary>Creates a handler that lists agents from <see cref="IAgentRegistry"/>.</summary>
+    /// <param name="agentRegistry">Registry of available agents.</param>
+    /// <param name="logger">Logger for discovery operations.</param>
     public ListAgentsHandler(
         IAgentRegistry agentRegistry,
         ILogger<ListAgentsHandler> logger)
@@ -28,6 +31,10 @@ public class ListAgentsHandler : IRequestHandler<ListAgentsQuery, IReadOnlyList<
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>Handles the query by returning registered agent metadata.</summary>
+    /// <param name="request">List-agents query (no parameters).</param>
+    /// <param name="cancellationToken">Token used to cancel the operation.</param>
+    /// <returns>Metadata for all registered agents.</returns>
     public async Task<IReadOnlyList<AgentMetadata>> Handle(
         ListAgentsQuery request,
         CancellationToken cancellationToken)

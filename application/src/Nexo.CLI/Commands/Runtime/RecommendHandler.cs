@@ -1,9 +1,10 @@
 using Nexo.CLI.Runtime;
 
-namespace Nexo.CLI.Commands;
-
+namespace Nexo.CLI.Commands.Runtime;
+/// <summary>Handles recommend requests.</summary>
 internal sealed class RecommendHandler
 {
+    /// <summary>Executes the command handler and returns a process exit code.</summary>
     public Task<int> ExecuteAsync(
         string goal,
         string repoRoot,

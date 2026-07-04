@@ -5,6 +5,7 @@ namespace Nexo.Infrastructure.Certification.Composition;
 /// </summary>
 public static class CompositionAcceptanceRateGuard
 {
+    /// <summary>Ensures batch complete.</summary>
     public static void EnsureBatchComplete(RecordedCompositionProposalBatch batch)
     {
         if (batch.DeclaredSampleCount <= 0)

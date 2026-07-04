@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Trust;
 
+/// <summary>Tests for trust policy pack registry.</summary>
 public sealed class TrustPolicyPackRegistryTests
 {
     [Fact]

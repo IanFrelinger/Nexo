@@ -8,8 +8,10 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration;
 
+/// <summary>Tests for orchestration multi modal.</summary>
 public class OrchestrationMultiModalTests
 {
+    /// <summary>Test multi modal agent.</summary>
     private sealed class TestMultiModalAgent : MultiModalAgentBase
     {
         public TestMultiModalAgent(AgentSpawnSpec spec, MultiModalProcessor? processor = null)
@@ -17,8 +19,15 @@ public class OrchestrationMultiModalTests
         {
         }
 
+        /// <summary>On initialize async.</summary>
+        /// <param name="cancellationToken">Cancellation token.</param>
         protected override Task OnInitializeAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+        /// <summary>On dependencies resolved async.</summary>
+        /// <param name="dependencyOutputs">Dependency outputs.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
         protected override Task OnDependenciesResolvedAsync(IReadOnlyDictionary<string, object> dependencyOutputs, CancellationToken cancellationToken) => Task.CompletedTask;
+        /// <summary>On shutdown async.</summary>
+        /// <param name="cancellationToken">Cancellation token.</param>
         protected override Task OnShutdownAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
         protected override async Task<object> OnExecuteAsync(

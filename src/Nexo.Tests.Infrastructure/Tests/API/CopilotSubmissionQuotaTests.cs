@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.API;
 
+/// <summary>Tests for copilot submission quota.</summary>
 public sealed class CopilotSubmissionQuotaTests
 {
     [Fact]

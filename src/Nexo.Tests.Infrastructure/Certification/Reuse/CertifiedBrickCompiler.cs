@@ -11,13 +11,13 @@ namespace Nexo.Tests.Infrastructure.Certification.Reuse;
 /// </summary>
 internal static class CertifiedBrickCompiler
 {
-    public static Brick InstantiateBrick(string source, string brickTypeName)
+    public static DomainBrick InstantiateBrick(string source, string brickTypeName)
     {
         var assemblyName = $"CertifiedBrick_{Guid.NewGuid():N}";
         var outputPath = Path.Combine(Path.GetTempPath(), $"{assemblyName}.dll");
         var references = new List<string>
         {
-            typeof(Brick).Assembly.Location,
+            typeof(DomainBrick).Assembly.Location,
             typeof(BrickInput).Assembly.Location
         };
 
@@ -31,14 +31,14 @@ internal static class CertifiedBrickCompiler
         if (!compile.Success || string.IsNullOrWhiteSpace(compile.AssemblyPath))
         {
             throw new InvalidOperationException(
-                $"Brick compilation failed: {string.Join("; ", compile.Errors)}");
+                $"DomainBrick compilation failed: {string.Join("; ", compile.Errors)}");
         }
 
         var assemblyBytes = File.ReadAllBytes(compile.AssemblyPath);
         var assembly = Assembly.Load(assemblyBytes);
         var type = assembly.GetType(brickTypeName, throwOnError: true)
             ?? throw new InvalidOperationException($"Type {brickTypeName} not found in certified brick assembly.");
-        return (Brick)Activator.CreateInstance(type)!;
+        return (DomainBrick)Activator.CreateInstance(type)!;
     }
 
     private static string WrapForRoslynCompile(string sourceCode) =>

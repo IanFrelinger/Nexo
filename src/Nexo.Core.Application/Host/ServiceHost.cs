@@ -7,11 +7,21 @@ using Nexo.Core.Application.Orchestration;
 
 namespace Nexo.Core.Application.Host;
 
+/// <summary>
+/// Lightweight application host for running commands outside the full Nexo kernel.
+/// Useful for tests, samples, and minimal CLI scenarios.
+/// </summary>
 public sealed class ServiceHost
 {
     private readonly IServiceProvider _sp;
+
+    /// <summary>Creates a host backed by an existing service provider.</summary>
     public ServiceHost(IServiceProvider sp) => _sp = sp;
 
+    /// <summary>
+    /// Builds a default service provider with logging, loop kernel, and command orchestration.
+    /// </summary>
+    /// <param name="configure">Optional callback to register additional services.</param>
     public static IServiceProvider BuildDefault(Action<IServiceCollection>? configure = null)
     {
         var services = new ServiceCollection();
@@ -24,6 +34,7 @@ public sealed class ServiceHost
         return services.BuildServiceProvider();
     }
 
-    public async ValueTask<OrchestrationResult> RunAsync<TIn,TOut>(ICommand<TIn,TOut> cmd, TIn input, CancellationToken ct)
+    /// <summary>Runs a command through the registered orchestrator.</summary>
+    public async ValueTask<OrchestrationResult> RunAsync<TIn, TOut>(ICommand<TIn, TOut> cmd, TIn input, CancellationToken ct)
         => await _sp.GetRequiredService<IOrchestrator>().RunAsync(cmd, input, ct);
 }

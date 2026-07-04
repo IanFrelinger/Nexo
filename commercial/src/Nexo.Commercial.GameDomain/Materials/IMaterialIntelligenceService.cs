@@ -1,7 +1,6 @@
-using Nexo.GameDomain.Aesthetics;
+using Nexo.Commercial.GameDomain.Aesthetics;
 
-namespace Nexo.GameDomain.Materials;
-
+namespace Nexo.Commercial.GameDomain.Materials;
 /// <summary>
 /// Optional AI-assisted material suggestions from an <see cref="AestheticPack"/> and vector parse context (no network in default impl).
 /// </summary>

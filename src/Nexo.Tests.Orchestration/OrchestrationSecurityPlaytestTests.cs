@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Nexo.Abstractions;
 using Nexo.Orchestration.Agents;
+using Nexo.Orchestration.Agents.Templates;
 using Nexo.Orchestration.Agents.Security;
 using Nexo.Orchestration.Architect.Models;
 using Nexo.Orchestration.Assets.Ports;
@@ -12,8 +13,11 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration;
 
+/// <summary>Tests for orchestration security playtest.</summary>
 public class OrchestrationSecurityPlaytestTests
 {
+    /// <summary>Spec.</summary>
+    /// <param name=""Security"">"security".</param>
     private static AgentSpawnSpec Spec(string domain = "Security") => new()
     {
         AgentId = "sec-1",

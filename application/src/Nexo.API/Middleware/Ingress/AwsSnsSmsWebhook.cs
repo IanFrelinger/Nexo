@@ -11,6 +11,7 @@ namespace Nexo.API.Middleware.Ingress;
 /// <summary>HTTP POST handler for Amazon SNS subscription and notification payloads.</summary>
 public static class AwsSnsSmsWebhook
 {
+    /// <summary>Maps the Amazon SNS SMS webhook endpoint when enabled.</summary>
     public static void MapAwsSnsSmsWebhook(this WebApplication app)
     {
         app.MapPost("/api/ingress/sms/sns", HandleAwsSnsAsync)

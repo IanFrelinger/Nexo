@@ -8,6 +8,7 @@ using Nexo.Tests.Application.Helpers;
 
 namespace Nexo.Tests.Infrastructure.Tests.Analysis;
 
+/// <summary>Tests for code quality rule.</summary>
 public class CodeQualityRuleTests : UnitTestBase
 {
     private DirectoryInfo? _tempDir;
@@ -31,8 +32,11 @@ public class CodeQualityRuleTests : UnitTestBase
     {
         try
         {
+            /// <summary>Test rule properties.</summary>
             TestRuleProperties();
+            /// <summary>Test exception handling.</summary>
             await TestExceptionHandling();
+            /// <summary>Test with non existent file.</summary>
             await TestWithNonExistentFile();
 
             return new TestResult
@@ -72,7 +76,10 @@ public class CodeQualityRuleTests : UnitTestBase
         var mockLogger = new Mock<ILogger<CodeQualityRule>>();
         var rule = new CodeQualityRule(mockLogger.Object);
 
+        /// <summary>Assert equal.</summary>
         AssertEqual("CodeQuality", rule.Name);
+        /// <summary>Assert equal.</summary>
+        /// <param name="metrics"">Metrics".</param>
         AssertEqual("Analyzes code quality metrics", rule.Description);
     }
 
@@ -87,6 +94,7 @@ public class CodeQualityRuleTests : UnitTestBase
         // The rule should catch exceptions and return empty violations (CodeQualityRule doesn't add error violations)
         var violations = await rule.AnalyzeAsync(nonExistentFile, CancellationToken.None);
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(violations);
         // CodeQualityRule catches exceptions but doesn't add violations for errors
         // So violations should be empty
@@ -104,6 +112,7 @@ public class CodeQualityRuleTests : UnitTestBase
         // Should handle gracefully and return empty violations
         var violations = await rule.AnalyzeAsync(file, CancellationToken.None);
 
+        /// <summary>Assert not null.</summary>
         AssertNotNull(violations);
         // Should not throw, even if file doesn't exist
     }

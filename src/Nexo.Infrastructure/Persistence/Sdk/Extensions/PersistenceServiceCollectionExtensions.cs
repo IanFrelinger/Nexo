@@ -2,8 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Nexo.Core.Application.Persistence.Ports;
 using Nexo.Infrastructure.Persistence;
 
-namespace Nexo.Infrastructure.Sdk.Persistence;
-
+namespace Nexo.Infrastructure.Persistence.Sdk.Extensions;
 /// <summary>
 /// DI registration for Nexo persistence. Use in-memory by default; replace with
 /// a database-backed IUnitOfWork from an adapter (e.g. Nexo.Adapters.Persistence.Sqlite)

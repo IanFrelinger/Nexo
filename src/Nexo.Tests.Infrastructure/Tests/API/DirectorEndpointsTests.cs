@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.API;
 
+/// <summary>Tests for director endpoints.</summary>
 public sealed class DirectorEndpointsTests
 {
     [Fact]
@@ -44,6 +45,7 @@ public sealed class DirectorEndpointsTests
         }
         finally
         {
+            /// <summary>Attempts to delete directory; returns false on failure.</summary>
             TryDeleteDirectory(dailiesPath);
         }
     }
@@ -106,6 +108,7 @@ public sealed class DirectorEndpointsTests
         }
         finally
         {
+            /// <summary>Attempts to delete directory; returns false on failure.</summary>
             TryDeleteDirectory(dailiesPath);
         }
     }

@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Observation;
 
+/// <summary>Tests for context assembler.</summary>
 public class ContextAssemblerTests : IDisposable
 {
     private readonly string _dbPath;

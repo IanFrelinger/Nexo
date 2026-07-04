@@ -7,11 +7,22 @@ namespace Nexo.Core.Application.Adaptation.Models;
 /// </summary>
 public record BrickManifest
 {
+    /// <summary>Unique brick identifier.</summary>
     public required string Id { get; init; }
+
+    /// <summary>Human-readable brick name.</summary>
     public required string Name { get; init; }
+
+    /// <summary>Semantic version of the brick definition.</summary>
     public string Version { get; init; } = "1.0.0";
+
+    /// <summary>Optional description of brick purpose.</summary>
     public string? Description { get; init; }
+
+    /// <summary>Brick category for catalog and routing.</summary>
     public BrickCategory Category { get; init; }
+
+    /// <summary>Input and output port definitions.</summary>
     public required BrickInterface Interface { get; init; }
 
     /// <summary>Assembly-qualified type name for existing bricks, or null for generated.</summary>

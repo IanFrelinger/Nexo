@@ -5,6 +5,11 @@ namespace Nexo.Abstractions.Barriers;
 /// </summary>
 public sealed record BarrierLevel : IComparable<BarrierLevel>
 {
+    /// <summary>
+    /// Creates a barrier level with a human-readable name and sensitivity rank.
+    /// </summary>
+    /// <param name="name">Operator-defined level label.</param>
+    /// <param name="rank">Sensitivity rank; lower values indicate lower sensitivity.</param>
     public BarrierLevel(string name, int rank)
     {
         if (string.IsNullOrWhiteSpace(name))
@@ -14,22 +19,21 @@ public sealed record BarrierLevel : IComparable<BarrierLevel>
         Rank = rank;
     }
 
-    /// <summary>
-    /// Human-readable, operator-defined label.
-    /// </summary>
+    /// <summary>Human-readable, operator-defined label.</summary>
     public string Name { get; }
 
-    /// <summary>
-    /// Sensitivity rank. Lower rank means lower sensitivity.
-    /// </summary>
+    /// <summary>Sensitivity rank. Lower rank means lower sensitivity.</summary>
     public int Rank { get; }
 
+    /// <inheritdoc />
     public int CompareTo(BarrierLevel? other)
         => other is null ? 1 : Rank.CompareTo(other.Rank);
 
+    /// <inheritdoc />
     public bool Equals(BarrierLevel? other)
         => other is not null && Rank == other.Rank;
 
+    /// <inheritdoc />
     public override int GetHashCode()
         => Rank.GetHashCode();
 

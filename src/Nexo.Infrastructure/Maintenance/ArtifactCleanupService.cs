@@ -12,6 +12,7 @@ public sealed class ArtifactCleanupService : IArtifactCleanupService
     private readonly IReadOnlyList<IArtifactCleanupStrategy> _strategies;
     private readonly ILogger<ArtifactCleanupService> _logger;
 
+    /// <summary>Initializes a new artifact cleanup service.</summary>
     public ArtifactCleanupService(
         IEnumerable<IArtifactCleanupStrategy> strategies,
         ILogger<ArtifactCleanupService> logger)
@@ -20,9 +21,11 @@ public sealed class ArtifactCleanupService : IArtifactCleanupService
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>Gets available strategy ids.</summary>
     public IReadOnlyList<string> GetAvailableStrategyIds()
         => _strategies.Select(s => s.Id).ToList();
 
+    /// <summary>Clean asynchronously.</summary>
     public async Task<ArtifactCleanupResult> CleanAsync(
         string? strategyId = null,
         ArtifactCleanupContext? context = null,

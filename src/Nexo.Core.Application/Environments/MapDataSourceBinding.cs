@@ -14,14 +14,3 @@ public sealed record MapDataSourceBinding(
     string? BaseUrl = null,
     IReadOnlyDictionary<string, string>? Headers = null,
     IReadOnlyDictionary<string, string>? Options = null);
-
-/// <summary>Conventional <see cref="MapDataSourceBinding.Kind"/> values.</summary>
-public static class MapDataSourceKinds
-{
-    public const string Http = "http";
-    public const string File = "file";
-    public const string Overpass = "overpass";
-    public const string TerrainTiles = "terrain_tiles";
-    public const string VoxelStore = "voxel_store";
-    public const string InMemory = "in_memory";
-}

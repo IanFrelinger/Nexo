@@ -1,7 +1,7 @@
 using Nexo.CLI.Runtime;
 
-namespace Nexo.CLI.Commands;
-
+namespace Nexo.CLI.Commands.Runtime;
+/// <summary>Runtime gate evaluation.</summary>
 internal static class RuntimeGateEvaluation
 {
     internal static RuntimeGateResult EvaluateGateResult(

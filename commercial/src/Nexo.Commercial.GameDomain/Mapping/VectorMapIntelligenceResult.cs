@@ -1,5 +1,4 @@
-namespace Nexo.GameDomain.Mapping;
-
+namespace Nexo.Commercial.GameDomain.Mapping;
 /// <summary>
 /// Heuristic output from <see cref="IVectorMapIntelligenceService"/>.
 /// </summary>

@@ -40,6 +40,7 @@ public sealed class SelfImprovementLoop : ISelfImprovementLoop
     private readonly ISelfImprovementMetricsStore? _metricsStore;
     private SelfImprovementReport? _lastReport;
 
+    /// <summary>Initializes a new self-improvement loop.</summary>
     public SelfImprovementLoop(
         ITestFailureStore testFailureStore,
         IBrickStaticAnalyzer analyzer,
@@ -76,6 +77,7 @@ public sealed class SelfImprovementLoop : ISelfImprovementLoop
         _metricsStore = metricsStore;
     }
 
+    /// <summary>Run once asynchronously.</summary>
     public async Task RunOnceAsync(CancellationToken ct = default)
     {
         if (_accessBoundary.IsObservationPaused)
@@ -434,6 +436,7 @@ public sealed class SelfImprovementLoop : ISelfImprovementLoop
         return pattern.ProjectPath;
     }
 
+    /// <summary>Start continuous asynchronously.</summary>
     public Task StartContinuousAsync(CancellationToken ct = default)
     {
         return Task.Run(async () =>
@@ -446,6 +449,7 @@ public sealed class SelfImprovementLoop : ISelfImprovementLoop
         }, ct);
     }
 
+    /// <summary>Get last run report asynchronously.</summary>
     public Task<SelfImprovementReport?> GetLastRunReportAsync(CancellationToken ct = default) =>
         Task.FromResult(_lastReport);
 }

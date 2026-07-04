@@ -13,13 +13,15 @@ public sealed class NcrAgenticBrickEngine : IAgenticBrickEngine
 {
     private readonly INodeCapabilityRuntime _ncr;
 
+    /// <summary>Initializes a new ncr agentic brick engine.</summary>
     public NcrAgenticBrickEngine(INodeCapabilityRuntime ncr)
     {
         _ncr = ncr ?? throw new ArgumentNullException(nameof(ncr));
     }
 
+    /// <summary>Resolve model for brick asynchronously.</summary>
     public async Task<ModelResolution> ResolveModelForBrickAsync(
-        Brick brick,
+        DomainBrick brick,
         IExecutionContext context,
         CancellationToken ct = default)
     {
@@ -33,13 +35,14 @@ public sealed class NcrAgenticBrickEngine : IAgenticBrickEngine
         return resolution;
     }
 
+    /// <summary>Record execution outcome asynchronously.</summary>
     public Task RecordExecutionOutcomeAsync(
         ModelResolution resolution,
         BrickExecutionOutcome outcome,
         CancellationToken ct = default)
         => _ncr.RecordOutcomeAsync(resolution, outcome, ct);
 
-    internal static TaskContext MapBrickToTaskContext(Brick brick, IExecutionContext context)
+    internal static TaskContext MapBrickToTaskContext(DomainBrick brick, IExecutionContext context)
     {
         if (brick is null) throw new ArgumentNullException(nameof(brick));
         if (context is null) throw new ArgumentNullException(nameof(context));

@@ -11,18 +11,26 @@ using Nexo.Orchestration.Agents;
 
 namespace Nexo.Tests.CLI.Tests.Commands;
 
+/// <summary>Tests for background agent command.</summary>
 public class BackgroundAgentCommandTests : UnitTestBase
 {
     public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
+            /// <summary>Test list empty.</summary>
             await TestListEmpty();
+            /// <summary>Test list format json.</summary>
             await TestListFormatJson();
+            /// <summary>Test daemon rejects invalid duration.</summary>
             await TestDaemonRejectsInvalidDuration();
+            /// <summary>Test daemon rejects missing config.</summary>
             await TestDaemonRejectsMissingConfig();
+            /// <summary>Test autoscale stops idle surplus auto agents.</summary>
             await TestAutoscaleStopsIdleSurplusAutoAgents();
+            /// <summary>Test autoscale restarts stopped auto agent when demand increases.</summary>
             await TestAutoscaleRestartsStoppedAutoAgentWhenDemandIncreases();
+            /// <summary>Test calculate desired agent count.</summary>
             await TestCalculateDesiredAgentCount();
             return new TestResult
             {
@@ -100,6 +108,7 @@ public class BackgroundAgentCommandTests : UnitTestBase
             logger.Object);
 
         var exitCode = await command.ListAsync(false, null, null, null);
+        /// <summary>Assert equal.</summary>
         AssertEqual(0, exitCode);
     }
 
@@ -124,6 +133,7 @@ public class BackgroundAgentCommandTests : UnitTestBase
             logger.Object);
 
         var exitCode = await command.ListAsync(true, null, null, null);
+        /// <summary>Assert equal.</summary>
         AssertEqual(0, exitCode);
     }
 
@@ -175,6 +185,7 @@ public class BackgroundAgentCommandTests : UnitTestBase
             idleSeconds: 0,
             formatJson: true);
 
+        /// <summary>Assert equal.</summary>
         AssertEqual(0, exitCode);
         registry.Verify(r => r.StopAsync("autoscale-extender-1", It.IsAny<CancellationToken>()), Times.Once);
         registry.Verify(r => r.StopAsync("autoscale-extender-2", It.IsAny<CancellationToken>()), Times.Once);
@@ -219,6 +230,7 @@ public class BackgroundAgentCommandTests : UnitTestBase
             idleSeconds: 0,
             formatJson: true);
 
+        /// <summary>Assert equal.</summary>
         AssertEqual(0, exitCode);
         registry.Verify(r => r.StartAsync("autoscale-extender-1", It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -232,6 +244,7 @@ public class BackgroundAgentCommandTests : UnitTestBase
             patternStorePath: null,
             disableObservation: false,
             formatJson: true);
+        /// <summary>Assert equal.</summary>
         AssertEqual(1, exitCode);
     }
 
@@ -245,6 +258,7 @@ public class BackgroundAgentCommandTests : UnitTestBase
             patternStorePath: null,
             disableObservation: false,
             formatJson: true);
+        /// <summary>Assert equal.</summary>
         AssertEqual(1, exitCode);
     }
 

@@ -32,6 +32,7 @@ public sealed class HttpBarrierContextMiddleware : IMiddleware
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>Resolves barrier context from the HTTP request and initializes scoped accessor state.</summary>
     public async Task InvokeAsync(HttpContext context, RequestDelegate next)
     {
         var ambient = context.RequestServices?.GetService(typeof(IBarrierContextAmbient)) as IBarrierContextAmbient;

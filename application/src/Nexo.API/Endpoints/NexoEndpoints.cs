@@ -3,8 +3,8 @@ using MediatR;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Nexo.BrickContracts;
-using Nexo.BrickContracts.Capabilities;
+using Nexo.Brick.Contracts;
+using Nexo.Brick.Contracts.Capabilities;
 using Nexo.Contracts;
 using Nexo.Core.Application.Copilot.Models;
 using Nexo.Core.Application.Copilot.Ports;
@@ -38,7 +38,6 @@ using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Execution;
 
 namespace Nexo.API.Endpoints;
-
 /// <summary>
 /// Extension methods for mapping Nexo API endpoints.
 /// </summary>
@@ -49,6 +48,7 @@ public static class NexoEndpoints
         WriteIndented = true
     };
 
+    /// <summary>Maps all Nexo REST API endpoints under <c>/api</c>.</summary>
     public static IEndpointRouteBuilder MapNexoEndpoints(this IEndpointRouteBuilder app)
     {
         app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTimeOffset.UtcNow }))
@@ -205,7 +205,6 @@ public static class NexoEndpoints
             .Produces<DirectorDailyEntry>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status404NotFound);
-
 
         group.MapGet("/background-agents/summary", GetBackgroundAgentSummaryAsync)
             .WithName("GetBackgroundAgentSummary")
@@ -1519,164 +1518,3 @@ public static class NexoEndpoints
             ResolvedTenantId: tenantId));
     }
 }
-
-// API-only DTOs (shared DTOs live in Nexo.Contracts)
-
-
-public sealed record CopilotTaskRequest(string Task, int AuditCount = 25);
-public sealed record CopilotTaskResponse(
-    string TaskId,
-    string TenantId,
-    bool Success,
-    string? Summary,
-    object? Output,
-    bool IsTrustPaused,
-    IReadOnlyList<Nexo.Core.Application.Trust.Models.DataDecisionAuditEntry> RecentAudit);
-
-public sealed record DirectorRunRequest(
-    string Goal,
-    string? Notes = null,
-    bool RunValidation = true,
-    string? ValidationFilter = null,
-    string? ContinueFromDailyId = null);
-
-public sealed record DirectorRunResponse(
-    bool Success,
-    string DailyId,
-    string DailyPath,
-    string? Summary,
-    string? IntegratedOutputJson,
-    ValidationResponse? Validation,
-    string? OrchestrationError,
-    string? ContinuedFromDailyId);
-
-// ── Runtime Studio (operator metrics) ───────────────────────────────
-
-public sealed record RuntimeStudioMetricsResponse(
-    string ObjectivesRootLocation,
-    string ForgeRootLocation,
-    string ObservationsPath,
-    IReadOnlyDictionary<string, int> ObjectivesByStatus,
-    RuntimeStudioObjectiveSlaHints ObjectiveSla,
-    IReadOnlyDictionary<string, int> ProposalsByStatus,
-    long? ObservationsFileBytes,
-    int? ObservationsTailLineCount,
-    DateTimeOffset? ObservationsLastTimestamp);
-
-/// <summary>Lightweight SLA-style hints derived from on-disk objective state.</summary>
-public sealed record RuntimeStudioObjectiveSlaHints(
-    double? OldestPendingAgeHours,
-    double? OldestInProgressAgeHours,
-    int PendingCount,
-    int InProgressCount,
-    int BlockedCount);
-
-public sealed record DirectorDailySummary(
-    string DailyId,
-    DateTimeOffset CreatedAtUtc,
-    string Goal,
-    bool Success,
-    string? Summary,
-    string? ContinueFromDailyId);
-
-public sealed record DirectorDailyEntry(
-    string DailyId,
-    DateTimeOffset CreatedAtUtc,
-    string Goal,
-    string? Notes,
-    string? ContinueFromDailyId,
-    bool Success,
-    string? Summary,
-    string? IntegratedOutputJson,
-    ValidationResponse? Validation,
-    string? OrchestrationError);
-
-public sealed record BackgroundAgentSummaryResponse(
-    string Mode,
-    IReadOnlyList<BackgroundAgentSnapshot> Agents,
-    int TotalAgents);
-
-public sealed record BackgroundAgentSnapshot(
-    string AgentId,
-    string Name,
-    string Role,
-    string State,
-    int ExecutionCount,
-    int SuccessCount,
-    int FailureCount,
-    DateTimeOffset? LastStartedAt,
-    DateTimeOffset? LastCompletedAt,
-    string? LastError);
-
-public sealed record TrustDashboardResponse(
-    bool AccessBoundaryRegistered,
-    bool AuditLogRegistered,
-    bool IsPaused,
-    IReadOnlyList<Nexo.Core.Application.Trust.Models.DataDecisionAuditEntry> RecentAudit,
-    IReadOnlyDictionary<string, int> AuditByType);
-
-public sealed record TrustPauseRequest(bool Paused);
-
-public sealed record TrustRuleRequest(string? Category, string? Source, bool Allowed);
-
-public sealed record TrustBoundaryMutationResponse(bool Ok, string Target, string State);
-
-// ── Preferences ─────────────────────────────────────────────────────
-
-public sealed record PreferencesRequest(string? DisplayName, string? Theme, string? DefaultFocus, string? PreferredProvider);
-
-public sealed record PreferencesResponse(
-    string? DisplayName,
-    string? Theme,
-    string? DefaultFocus,
-    string? PreferredProvider,
-    DateTimeOffset? LastSavedAt);
-
-// ── Activity Feed ───────────────────────────────────────────────────
-
-public sealed record ActivityFeedResponse(IReadOnlyList<ActivityEntry> Entries);
-
-public sealed record ActivityEntry(
-    string Source,
-    string EventType,
-    string Summary,
-    DateTimeOffset Timestamp);
-
-// ── Changelog ───────────────────────────────────────────────────────
-
-public sealed record ChangelogRequest(string? Since, int? MaxEntries);
-
-public sealed record ChangelogResponse(
-    string Summary,
-    IReadOnlyList<ChangelogEntry> Entries,
-    DateTimeOffset GeneratedAt);
-
-public sealed record ChangelogEntry(
-    string Category,
-    string Description,
-    DateTimeOffset Timestamp,
-    string? Source);
-
-// ── Onboarding ──────────────────────────────────────────────────────
-
-public sealed record OnboardingStatusResponse(
-    bool IsFirstRun,
-    bool ApiReachable,
-    IReadOnlyList<ProviderStatus> Providers,
-    bool HasCopilotTasks,
-    bool HasDailies,
-    string? ConfigPath,
-    string? ActiveTrustPack,
-    bool BuiltInAuthActive,
-    bool BuiltInCredentialsConfigured,
-    bool RequireAuthForCopilotReads,
-    bool CopilotScopedKeyConfigured,
-    string ResolvedTenantId);
-
-public sealed record ProviderStatus(string Name, bool Available, string? Reason);
-
-// ── Cloud control plane (Phase 2.3) ─────────────────────────────────
-
-public sealed record CreateOrganizationRequest(string Name, string? TenantId);
-
-public sealed record AddOrganizationMemberRequest(string UserId, string Role = "Member");

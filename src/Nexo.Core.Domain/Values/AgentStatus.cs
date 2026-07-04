@@ -12,8 +12,12 @@ namespace Nexo.Core.Domain.Values;
 /// </summary>
 public sealed class AgentStatus : BaseTypeValue
 {
+    /// <summary>Creates an agent status value.</summary>
     public AgentStatus(string value, string display) : base(value, display) { }
-    
+
+    /// <summary>Agent is idle and not executing.</summary>
     public static readonly AgentStatus Idle   = new("idle",   "Idle");
+
+    /// <summary>Agent is actively executing work.</summary>
     public static readonly AgentStatus Active = new("active", "Active");
 }

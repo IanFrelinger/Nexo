@@ -31,6 +31,7 @@ public class ConfigCommand
     private readonly IStepExecutionMode? _stepExecutionMode;
     private readonly IAdaptationAuditLog? _auditLog;
 
+    /// <summary>Creates a new ConfigCommand instance.</summary>
     public ConfigCommand(
         IMediator mediator,
         IConsoleRenderer renderer,
@@ -85,6 +86,7 @@ public class ConfigCommand
         return 0;
     }
 
+    /// <summary>Executes the command handler and returns a process exit code.</summary>
     public async Task<int> ExecuteAsync(bool json, bool verbose)
     {
         var correlationId = Guid.NewGuid().ToString();

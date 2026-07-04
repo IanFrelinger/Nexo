@@ -21,6 +21,7 @@ public class MetricsCommand
     private readonly IConsoleRenderer _renderer;
     private readonly ILogger<MetricsCommand> _logger;
 
+    /// <summary>Creates a new MetricsCommand instance.</summary>
     public MetricsCommand(
         OrchestrationMetrics metrics,
         IConsoleRenderer renderer,

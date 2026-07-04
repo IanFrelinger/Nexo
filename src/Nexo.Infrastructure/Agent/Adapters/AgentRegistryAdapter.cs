@@ -22,6 +22,7 @@ public class AgentRegistryAdapter : IAgentRegistry
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<AgentRegistryAdapter> _logger;
 
+    /// <summary>Initializes a new agent registry adapter.</summary>
     public AgentRegistryAdapter(
         IServiceProvider serviceProvider,
         ILogger<AgentRegistryAdapter> logger)
@@ -30,6 +31,7 @@ public class AgentRegistryAdapter : IAgentRegistry
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>Get agents asynchronously.</summary>
     public Task<IReadOnlyList<AgentMetadata>> GetAgentsAsync(CancellationToken cancellationToken = default)
     {
         var agents = new List<AgentMetadata>();
@@ -51,6 +53,7 @@ public class AgentRegistryAdapter : IAgentRegistry
         return Task.FromResult<IReadOnlyList<AgentMetadata>>(agents);
     }
 
+    /// <summary>Get agent asynchronously.</summary>
     public Task<AgentMetadata?> GetAgentAsync(string agentName, CancellationToken cancellationToken = default)
     {
         var agents = _serviceProvider.GetServices<IAgent>();
@@ -71,6 +74,7 @@ public class AgentRegistryAdapter : IAgentRegistry
         });
     }
 
+    /// <summary>Discover agents asynchronously.</summary>
     public Task<IReadOnlyList<AgentMetadata>> DiscoverAgentsAsync(CancellationToken cancellationToken = default)
     {
         // For now, return registered agents

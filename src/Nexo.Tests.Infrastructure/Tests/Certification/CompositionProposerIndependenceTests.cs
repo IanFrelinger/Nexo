@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Certification;
 
+/// <summary>Tests for composition proposer independence.</summary>
 [Trait("Category", "Certification")]
 public sealed class CompositionProposerIndependenceTests
 {
@@ -28,6 +29,8 @@ public sealed class CompositionProposerIndependenceTests
     public void CompositionGeneratorModel_InputPathCannotCarryWitnessCases()
     {
         var method = typeof(ICompositionGeneratorModel).GetMethod(nameof(ICompositionGeneratorModel.ProposeAsync))
+            /// <summary>Invalid operation exception.</summary>
+            /// <param name="found"">Found".</param>
             ?? throw new InvalidOperationException("ICompositionGeneratorModel.ProposeAsync not found");
 
         method.GetParameters().Should().ContainSingle(p =>
@@ -37,6 +40,8 @@ public sealed class CompositionProposerIndependenceTests
         var forbidden = ForbiddenWitnessTypeNames();
         var violations = new List<string>();
         foreach (var parameter in method.GetParameters())
+            /// <summary>Scan type.</summary>
+            /// <param name=""param"">"param".</param>
             ScanType(parameter.ParameterType, forbidden, violations, parameter.Name ?? "param");
 
         violations.Should().BeEmpty(
@@ -64,6 +69,7 @@ public sealed class CompositionProposerIndependenceTests
         }
     }
 
+    /// <summary>Forbidden witness type names.</summary>
     private static HashSet<string> ForbiddenWitnessTypeNames() =>
         new(StringComparer.Ordinal)
         {
@@ -87,11 +93,13 @@ public sealed class CompositionProposerIndependenceTests
         if (type.IsGenericType)
         {
             foreach (var arg in type.GetGenericArguments())
+                /// <summary>Scan type.</summary>
                 ScanType(arg, forbiddenTypeNames, violations, $"{path}<{arg.Name}>");
         }
 
         foreach (var property in type.GetProperties(BindingFlags.Public | BindingFlags.Instance))
         {
+            /// <summary>Scan type.</summary>
             ScanType(property.PropertyType, forbiddenTypeNames, violations, $"{path}.{property.Name}");
         }
     }

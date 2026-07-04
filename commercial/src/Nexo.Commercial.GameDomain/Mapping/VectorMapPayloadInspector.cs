@@ -1,5 +1,4 @@
-namespace Nexo.GameDomain.Mapping;
-
+namespace Nexo.Commercial.GameDomain.Mapping;
 /// <summary>
 /// Lightweight inspection of raw vector-map bytes (not a full parser).
 /// </summary>
@@ -86,8 +85,3 @@ public static class VectorMapPayloadInspector
         return Convert.ToHexString(span[..n]);
     }
 }
-
-/// <param name="FormatGuess">Heuristic format category.</param>
-/// <param name="Snippet">Optional short UTF-8 preview or hex prefix.</param>
-/// <param name="Notes">Diagnostic notes for operators.</param>
-public sealed record VectorPayloadInspection(string FormatGuess, string Snippet, IReadOnlyList<string> Notes);

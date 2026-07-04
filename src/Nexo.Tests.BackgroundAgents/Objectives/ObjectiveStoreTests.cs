@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents.Objectives;
 
+/// <summary>Tests for objective store.</summary>
 public class ObjectiveStoreTests : IDisposable
 {
     private readonly string _tempDir;

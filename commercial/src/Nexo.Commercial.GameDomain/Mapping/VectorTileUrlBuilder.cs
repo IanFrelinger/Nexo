@@ -1,5 +1,4 @@
-namespace Nexo.GameDomain.Mapping;
-
+namespace Nexo.Commercial.GameDomain.Mapping;
 /// <summary>
 /// Builds HTTPS URLs for common vector tile endpoints (host-side orchestration).
 /// </summary>

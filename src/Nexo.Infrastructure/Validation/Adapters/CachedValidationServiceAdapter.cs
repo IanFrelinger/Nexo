@@ -24,6 +24,7 @@ public class CachedValidationServiceAdapter : IValidationService
     private readonly ICacheStrategy _cache;
     private readonly ILogger<CachedValidationServiceAdapter> _logger;
 
+    /// <summary>Initializes a new cached validation service adapter.</summary>
     public CachedValidationServiceAdapter(
         IValidationService inner,
         ICacheStrategy cache,
@@ -34,6 +35,7 @@ public class CachedValidationServiceAdapter : IValidationService
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>Validate asynchronously.</summary>
     public async Task<ValidationResult> ValidateAsync(
         string? filter,
         IProgress<ProgressReport>? progress = null,

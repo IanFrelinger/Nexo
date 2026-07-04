@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Pipelines;
 
+/// <summary>Tests for pipeline orchestrator.</summary>
 public sealed class PipelineOrchestratorTests
 {
     [Fact]
@@ -402,6 +403,8 @@ public sealed class PipelineOrchestratorTests
     internal static PipelineOrchestrator BuildOrchestratorForGap(
         out IPipelineRunStore runStore,
         PipelineExecutionOptions? executionOptions = null) =>
+        /// <summary>Creates orchestrator.</summary>
+        /// <param name="runStore">Run store.</param>
         BuildOrchestrator(out runStore, executionOptions);
 
     private static PipelineOrchestrator BuildOrchestrator(
@@ -450,6 +453,7 @@ public sealed class PipelineOrchestratorTests
             NullLogger<PipelineOrchestrator>.Instance);
     }
 
+    /// <summary>Tests for test deterministic adapter.</summary>
     private sealed class TestDeterministicAdapter : IPipelineStageExecutionAdapter
     {
         public string AdapterKey => "default";
@@ -470,6 +474,7 @@ public sealed class PipelineOrchestratorTests
         }
     }
 
+    /// <summary>Tests for test agentic adapter.</summary>
     private sealed class TestAgenticAdapter : IPipelineStageExecutionAdapter
     {
         public string AdapterKey => "default";

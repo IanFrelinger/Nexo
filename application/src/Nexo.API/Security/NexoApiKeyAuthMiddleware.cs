@@ -18,12 +18,14 @@ public sealed class NexoApiKeyAuthMiddleware
     private readonly RequestDelegate _next;
     private readonly NexoSecurityOptions _options;
 
+    /// <summary>Creates middleware that validates built-in Nexo API credentials.</summary>
     public NexoApiKeyAuthMiddleware(RequestDelegate next, IOptions<NexoSecurityOptions> optionsAccessor)
     {
         _next = next;
         _options = optionsAccessor.Value;
     }
 
+    /// <summary>Validates built-in credentials and assigns the resolved auth tier for protected API routes.</summary>
     public async Task InvokeAsync(HttpContext context)
     {
         var mode = ResolveAuthorizationMode(out var isLegacyApiKeyMode);
@@ -396,13 +398,5 @@ public sealed class NexoApiKeyAuthMiddleware
             .Replace("\"", "\\\"", StringComparison.Ordinal)
             .Replace("\r", "\\r", StringComparison.Ordinal)
             .Replace("\n", "\\n", StringComparison.Ordinal);
-    }
-}
-
-public static class NexoApiKeyAuthMiddlewareExtensions
-{
-    public static IApplicationBuilder UseNexoApiKeyAuth(this IApplicationBuilder app)
-    {
-        return app.UseMiddleware<NexoApiKeyAuthMiddleware>();
     }
 }

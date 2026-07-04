@@ -13,6 +13,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Knowledge;
 
+/// <summary>Tests for knowledge query service.</summary>
 public sealed class KnowledgeQueryServiceTests
 {
     [Fact]
@@ -140,10 +141,13 @@ public sealed class KnowledgeQueryServiceTests
         var patterns = Mock.Of<IPatternStore>();
         var knowledge = Mock.Of<IUserKnowledgeLogStore>();
 
+        /// <summary>Action.</summary>
         new Action(() => new KnowledgeQueryService(null!, patterns, knowledge))
             .Should().Throw<ArgumentNullException>();
+        /// <summary>Action.</summary>
         new Action(() => new KnowledgeQueryService(adaptation, null!, knowledge))
             .Should().Throw<ArgumentNullException>();
+        /// <summary>Action.</summary>
         new Action(() => new KnowledgeQueryService(adaptation, patterns, null!))
             .Should().Throw<ArgumentNullException>();
     }

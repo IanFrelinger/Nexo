@@ -18,6 +18,7 @@ public class DockerService : IDockerService, IDisposable
     private readonly DockerClient _dockerClient;
     private readonly bool _disposeClient;
 
+    /// <summary>Initializes a new docker service.</summary>
     public DockerService(ILogger<DockerService> logger, DockerClient? dockerClient = null)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -36,6 +37,7 @@ public class DockerService : IDockerService, IDisposable
         }
     }
 
+    /// <summary>Is docker available asynchronously.</summary>
     public async Task<bool> IsDockerAvailableAsync(CancellationToken cancellationToken = default)
     {
         try
@@ -50,6 +52,7 @@ public class DockerService : IDockerService, IDisposable
         }
     }
 
+    /// <summary>Build image asynchronously.</summary>
     public async Task<DockerBuildResult> BuildImageAsync(
         string dockerfilePath,
         string imageTag,
@@ -103,6 +106,7 @@ public class DockerService : IDockerService, IDisposable
         }
     }
 
+    /// <summary>Run container asynchronously.</summary>
     public async Task<DockerRunResult> RunContainerAsync(
         string imageTag,
         string[] command,
@@ -183,6 +187,7 @@ public class DockerService : IDockerService, IDisposable
     }
 
 
+    /// <summary>Remove container asynchronously.</summary>
     public async Task RemoveContainerAsync(string containerId, CancellationToken cancellationToken = default)
     {
         try
@@ -198,6 +203,7 @@ public class DockerService : IDockerService, IDisposable
         }
     }
 
+    /// <summary>Remove image asynchronously.</summary>
     public async Task RemoveImageAsync(string imageTag, CancellationToken cancellationToken = default)
     {
         try
@@ -273,6 +279,7 @@ public class DockerService : IDockerService, IDisposable
         return (stdout.ToString(), stderr.ToString());
     }
 
+    /// <summary>Releases managed resources.</summary>
     public void Dispose()
     {
         if (_disposeClient)

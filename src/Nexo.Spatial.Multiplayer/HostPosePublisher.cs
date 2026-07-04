@@ -16,6 +16,7 @@ public sealed class HostPosePublisher
         _transport = transport ?? throw new ArgumentNullException(nameof(transport));
     }
 
+    /// <summary>Publishes a scoped pose update when the caller is the scope host.</summary>
     public PoseRelayResult TryPublishPose(
         string scopeId,
         string publisherParticipantId,
@@ -43,6 +44,7 @@ public sealed class HostPosePublisher
         return _transport.TryPublish(scopeId, publisherParticipantId, atomId, pose);
     }
 
+    /// <summary>Broadcasts a host-lost signal for an atom within a scope.</summary>
     public void PublishHostLost(string scopeId, string atomId, string reason)
     {
         if (_transport is InMemoryScopedPoseTransport inMemory)

@@ -98,6 +98,7 @@ public sealed class CompositionEngine : ICompositionEngine
         "reporting"
     ];
 
+    /// <summary>Initializes a new composition engine.</summary>
     public CompositionEngine(ICapabilityComponentRegistry registry)
     {
         _registry = registry ?? throw new ArgumentNullException(nameof(registry));

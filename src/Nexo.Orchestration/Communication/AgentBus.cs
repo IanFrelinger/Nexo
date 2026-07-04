@@ -205,9 +205,16 @@ public sealed class AgentBus : IAgentBus
 
     private sealed class MessageSubscription
     {
+        /// <summary>Unique subscription identifier.</summary>
         public required string Id { get; init; }
+
+        /// <summary>Subscribed message type, or null for all types.</summary>
         public string? MessageType { get; init; }
+
+        /// <summary>Optional agent ID filter for delivery.</summary>
         public string? AgentId { get; init; }
+
+        /// <summary>Handler invoked when a matching message arrives.</summary>
         public required Func<AgentMessage, CancellationToken, Task> Handler { get; init; }
     }
 

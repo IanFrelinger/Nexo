@@ -1,5 +1,4 @@
-namespace Nexo.BrickContracts;
-
+namespace Nexo.Brick.Contracts;
 /// <summary>
 /// Wire format version for brick catalog and execute APIs. Used for backward compatibility.
 /// </summary>

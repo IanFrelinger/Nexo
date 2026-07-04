@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Maintenance;
 
+/// <summary>Tests for artifact cleanup service.</summary>
 public class ArtifactCleanupServiceTests
 {
     [Fact]

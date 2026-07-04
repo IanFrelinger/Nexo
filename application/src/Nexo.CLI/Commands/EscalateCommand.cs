@@ -23,6 +23,7 @@ public class EscalateCommand
     private readonly IConsoleRenderer _renderer;
     private readonly ILogger<EscalateCommand> _logger;
 
+    /// <summary>Creates a new EscalateCommand instance.</summary>
     public EscalateCommand(
         EscalationManager escalationManager,
         IConsoleRenderer renderer,

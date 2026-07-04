@@ -8,9 +8,11 @@ using Xunit;
 
 namespace Nexo.Tests.GameDirector;
 
+/// <summary>Tests for balance parse rows.</summary>
 [Trait("Category", "GameDirectorApplication")]
 public sealed class BalanceParseRowsTests
 {
+    /// <summary>New brick.</summary>
     private static BalanceAnalysisBrick NewBrick() => new(
         GameDirectorTestHost.CreateAuditLog(),
         NullLogger<BalanceAnalysisBrick>.Instance);

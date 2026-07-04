@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.API;
 
+/// <summary>Tests for security advisory endpoint.</summary>
 public sealed class SecurityAdvisoryEndpointTests
 {
     [Theory]

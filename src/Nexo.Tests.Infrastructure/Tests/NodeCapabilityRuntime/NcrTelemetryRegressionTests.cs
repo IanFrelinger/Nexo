@@ -13,6 +13,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.NodeCapabilityRuntime;
 
+/// <summary>Tests for ncr telemetry regression.</summary>
 public sealed class NcrTelemetryRegressionTests
 {
     [Fact]
@@ -80,6 +81,7 @@ public sealed class NcrTelemetryRegressionTests
         metrics.ExecutionTimes.Should().ContainKey("ncr.outcome.duration");
     }
 
+    /// <summary>Tests for fixed hardware profiler.</summary>
     private sealed class FixedHardwareProfiler : Nexo.Core.Application.NodeCapabilityRuntime.Ports.IHardwareProfiler
     {
         private readonly NodeProfile _profile;
@@ -89,20 +91,31 @@ public sealed class NcrTelemetryRegressionTests
             _profile = profile;
         }
 
+        /// <summary>Capture async.</summary>
+        /// <param name="default">Default.</param>
         public Task<NodeProfile> CaptureAsync(CancellationToken ct = default) => Task.FromResult(_profile);
     }
 
+    /// <summary>Tests for stub model serving backend.</summary>
     private sealed class StubModelServingBackend : Nexo.Core.Application.NodeCapabilityRuntime.Ports.IModelServingBackend
     {
         public BackendType BackendType => BackendType.Ollama;
 
+        /// <summary>Returns whether  available async.</summary>
+        /// <param name="default">Default.</param>
         public Task<bool> IsAvailableAsync(CancellationToken ct = default) => Task.FromResult(true);
 
         public Task<InferenceResult> RunInferenceAsync(InferenceRequest request, CancellationToken ct = default)
             => Task.FromResult(new InferenceResult { Output = "ok", Duration = TimeSpan.FromMilliseconds(1), TokenCount = 1 });
 
+        /// <summary>Load model async.</summary>
+        /// <param name="modelId">Model id.</param>
+        /// <param name="default">Default.</param>
         public Task LoadModelAsync(string modelId, CancellationToken ct = default) => Task.CompletedTask;
 
+        /// <summary>Unload model async.</summary>
+        /// <param name="modelId">Model id.</param>
+        /// <param name="default">Default.</param>
         public Task UnloadModelAsync(string modelId, CancellationToken ct = default) => Task.CompletedTask;
 
         public Task PullModelAsync(string modelId, IProgress<PullProgress>? progress = null, CancellationToken ct = default)
@@ -112,9 +125,12 @@ public sealed class NcrTelemetryRegressionTests
             => Task.FromResult<IReadOnlyList<string>>([]);
     }
 
+    /// <summary>Tests for in memory metrics collector.</summary>
     private sealed class InMemoryMetricsCollector : IMetricsCollector
     {
+        /// <summary>Execution times.</summary>
         public Dictionary<string, TimeSpan> ExecutionTimes { get; } = new(StringComparer.Ordinal);
+        /// <summary>Counters.</summary>
         public Dictionary<string, long> Counters { get; } = new(StringComparer.Ordinal);
 
         public void RecordExecutionTime(string operationName, TimeSpan duration)

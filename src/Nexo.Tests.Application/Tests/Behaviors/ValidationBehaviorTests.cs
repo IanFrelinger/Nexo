@@ -7,17 +7,24 @@ using Nexo.Core.Application.Testing.Models;
 
 namespace Nexo.Tests.Application.Tests.Behaviors;
 
+/// <summary>Tests for validation behavior.</summary>
 public class ValidationBehaviorTests : UnitTestBase
 {
     public override async Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
+            /// <summary>Test handle with no validators.</summary>
             await TestHandleWithNoValidators();
+            /// <summary>Test handle with valid request.</summary>
             await TestHandleWithValidRequest();
+            /// <summary>Test handle with invalid request.</summary>
             await TestHandleWithInvalidRequest();
+            /// <summary>Test handle with multiple validators.</summary>
             await TestHandleWithMultipleValidators();
+            /// <summary>Test handle with multiple validators one fails.</summary>
             await TestHandleWithMultipleValidatorsOneFails();
+            /// <summary>Test handle calls next.</summary>
             await TestHandleCallsNext();
 
             return new TestResult
@@ -67,8 +74,11 @@ public class ValidationBehaviorTests : UnitTestBase
 
         var result = await behavior.Handle(request, next, CancellationToken.None);
 
+        /// <summary>Assert true.</summary>
         AssertTrue(nextCalled);
+        /// <summary>Assert not null.</summary>
         AssertNotNull(result);
+        /// <summary>Assert equal.</summary>
         AssertEqual("success", result.Result);
     }
 
@@ -88,8 +98,11 @@ public class ValidationBehaviorTests : UnitTestBase
 
         var result = await behavior.Handle(request, next, CancellationToken.None);
 
+        /// <summary>Assert true.</summary>
         AssertTrue(nextCalled);
+        /// <summary>Assert not null.</summary>
         AssertNotNull(result);
+        /// <summary>Assert equal.</summary>
         AssertEqual("success", result.Result);
     }
 
@@ -110,10 +123,13 @@ public class ValidationBehaviorTests : UnitTestBase
         try
         {
             await behavior.Handle(request, next, CancellationToken.None);
+            /// <summary>Assertion exception.</summary>
+            /// <param name="thrown"">Thrown".</param>
             throw new AssertionException("Expected ValidationException to be thrown");
         }
         catch (FluentValidation.ValidationException ex)
         {
+            /// <summary>Assert false.</summary>
             AssertFalse(nextCalled);
             AssertTrue(ex.Errors.Count() > 0);
         }
@@ -136,8 +152,11 @@ public class ValidationBehaviorTests : UnitTestBase
 
         var result = await behavior.Handle(request, next, CancellationToken.None);
 
+        /// <summary>Assert true.</summary>
         AssertTrue(nextCalled);
+        /// <summary>Assert not null.</summary>
         AssertNotNull(result);
+        /// <summary>Assert equal.</summary>
         AssertEqual("success", result.Result);
     }
 
@@ -159,10 +178,13 @@ public class ValidationBehaviorTests : UnitTestBase
         try
         {
             await behavior.Handle(request, next, CancellationToken.None);
+            /// <summary>Assertion exception.</summary>
+            /// <param name="thrown"">Thrown".</param>
             throw new AssertionException("Expected ValidationException to be thrown");
         }
         catch (FluentValidation.ValidationException ex)
         {
+            /// <summary>Assert false.</summary>
             AssertFalse(nextCalled);
             AssertTrue(ex.Errors.Count() > 0);
             AssertTrue(ex.Errors.Any(e => e.PropertyName == "Number"));
@@ -184,20 +206,26 @@ public class ValidationBehaviorTests : UnitTestBase
 
         var result = await behavior.Handle(request, next, CancellationToken.None);
 
+        /// <summary>Assert equal.</summary>
         AssertEqual(1, nextCallCount);
+        /// <summary>Assert not null.</summary>
         AssertNotNull(result);
+        /// <summary>Assert equal.</summary>
         AssertEqual("called-1", result.Result);
     }
 
     // Test request/response types
     private record TestRequest : IRequest<TestResponse>
     {
+        /// <summary>Value.</summary>
         public string Value { get; init; } = string.Empty;
+        /// <summary>Number.</summary>
         public int Number { get; init; }
     }
 
     private record TestResponse
     {
+        /// <summary>Result.</summary>
         public string Result { get; init; } = string.Empty;
     }
 
@@ -212,6 +240,7 @@ public class ValidationBehaviorTests : UnitTestBase
         }
     }
 
+    /// <summary>Tests for test request validator2.</summary>
     private class TestRequestValidator2 : AbstractValidator<TestRequest>
     {
         public TestRequestValidator2()

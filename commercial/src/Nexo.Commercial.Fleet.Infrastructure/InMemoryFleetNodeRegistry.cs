@@ -12,6 +12,7 @@ public sealed class InMemoryFleetNodeRegistry : IFleetNodeRegistry
     private readonly ConcurrentDictionary<string, MeshFleetNodeState> _nodes = new(StringComparer.OrdinalIgnoreCase);
     private readonly SemaphoreSlim _lock = new(1, 1);
 
+    /// <summary>Register or update async operation.</summary>
     public async Task RegisterOrUpdateAsync(MeshFleetNodeState node, CancellationToken cancellationToken = default)
     {
         await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -25,6 +26,7 @@ public sealed class InMemoryFleetNodeRegistry : IFleetNodeRegistry
         }
     }
 
+    /// <summary>Remove async operation.</summary>
     public async Task<bool> RemoveAsync(string peerId, CancellationToken cancellationToken = default)
     {
         await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -38,6 +40,7 @@ public sealed class InMemoryFleetNodeRegistry : IFleetNodeRegistry
         }
     }
 
+    /// <summary>List async operation.</summary>
     public async Task<IReadOnlyList<MeshFleetNodeState>> ListAsync(CancellationToken cancellationToken = default)
     {
         await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -51,6 +54,7 @@ public sealed class InMemoryFleetNodeRegistry : IFleetNodeRegistry
         }
     }
 
+    /// <summary>Gets async.</summary>
     public async Task<MeshFleetNodeState?> GetAsync(string peerId, CancellationToken cancellationToken = default)
     {
         await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -64,6 +68,7 @@ public sealed class InMemoryFleetNodeRegistry : IFleetNodeRegistry
         }
     }
 
+    /// <summary>Sets drained async.</summary>
     public async Task<bool> SetDrainedAsync(string peerId, bool drained, CancellationToken cancellationToken = default)
     {
         await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -80,6 +85,7 @@ public sealed class InMemoryFleetNodeRegistry : IFleetNodeRegistry
         }
     }
 
+    /// <summary>Sets admitted async.</summary>
     public async Task<bool> SetAdmittedAsync(string peerId, bool admitted, CancellationToken cancellationToken = default)
     {
         await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -96,6 +102,7 @@ public sealed class InMemoryFleetNodeRegistry : IFleetNodeRegistry
         }
     }
 
+    /// <summary>Heartbeat async operation.</summary>
     public async Task HeartbeatAsync(string peerId, int? reportedQueueDepth = null, CancellationToken cancellationToken = default)
     {
         await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);

@@ -2,8 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Nexo.Core.Application.ParallelTesting.Ports;
 using Nexo.Infrastructure.ParallelTesting;
 
-namespace Nexo.Infrastructure.Sdk.ParallelTesting;
-
+namespace Nexo.Infrastructure.ParallelTesting.Sdk.Extensions;
 /// <summary>
 /// DI extensions for Block 8 parallel testing.
 /// </summary>

@@ -13,6 +13,7 @@ public class ContentGenerator : IContentGenerator
     private readonly IProviderFactory _providerFactory;
     private readonly ILogger<ContentGenerator> _logger;
     
+    /// <summary>Initializes a new content generator.</summary>
     public ContentGenerator(
         IProviderFactory providerFactory,
         ILogger<ContentGenerator> logger)
@@ -21,8 +22,9 @@ public class ContentGenerator : IContentGenerator
         _logger = logger;
     }
     
+    /// <summary>Generate asynchronously.</summary>
     public async Task<GeneratedContent> GenerateAsync(
-        Brick brick,
+        DomainBrick brick,
         GenerationConfig config,
         CancellationToken ct = default)
     {
@@ -61,7 +63,7 @@ public class ContentGenerator : IContentGenerator
         };
     }
     
-    private static string BuildGenerationPrompt(Brick brick, int variationIndex)
+    private static string BuildGenerationPrompt(DomainBrick brick, int variationIndex)
     {
         return $@"Generate variation {variationIndex + 1} for brick: {brick.Name}
 

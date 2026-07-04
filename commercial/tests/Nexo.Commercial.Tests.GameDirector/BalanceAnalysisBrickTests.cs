@@ -10,6 +10,7 @@ using Xunit;
 
 namespace Nexo.Tests.GameDirector;
 
+/// <summary>Tests for balance analysis brick.</summary>
 [Trait("Category", "GameDirectorApplication")]
 public sealed class BalanceAnalysisBrickTests
 {

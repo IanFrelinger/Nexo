@@ -10,42 +10,6 @@ using Nexo.Orchestration.Metrics;
 namespace Nexo.CLI.Formatting;
 
 /// <summary>
-/// Host-specific console renderer for CLI output.
-/// 
-/// Provides methods for rendering various types of output to the console:
-/// - Success/error messages
-/// - Progress indicators
-/// - Analysis, validation, and agent execution results
-/// - Orchestration results, escalations, and conflicts
-/// - Performance reports, metrics, and traces
-/// - JSON output and tables
-/// 
-/// Used by CLI commands to provide consistent, formatted output.
-/// </summary>
-public interface IConsoleRenderer
-{
-    void RenderSuccess(string message);
-    void RenderError(string message);
-    void RenderErrorWithCode(string message, string? errorCode, string? suggestion = null);
-    void RenderProgressStart(string message);
-    void RenderProgressComplete(string message);
-    void RenderProgress(ProgressReport report);
-    void RenderAnalysisResult(AnalysisResult result, bool json);
-    void RenderValidationResult(ValidationResult result, bool json);
-    void RenderAgentResult(AgentExecutionResult result, bool json);
-    void RenderAgentList(IReadOnlyList<AgentMetadata> agents, bool json);
-    void RenderOrchestrationResult(OrchestrationResult result);
-    void RenderEscalations(IReadOnlyList<Escalation> escalations, bool verbose);
-    void RenderEscalationDetails(Escalation escalation, bool verbose);
-    void RenderConflicts(IReadOnlyList<Conflict> conflicts, bool verbose);
-    void RenderPerformanceReport(PerformanceReport report, bool verbose);
-    void RenderAgentMetrics(AgentMetrics metrics, bool verbose);
-    void RenderTraces(IReadOnlyList<TraceSpan> traces, string? correlationId, string? operationName, bool verbose);
-    void RenderJson(object data);
-    void RenderTable<T>(IEnumerable<T> items);
-}
-
-/// <summary>
 /// Console renderer implementation.
 /// 
 /// Provides concrete implementation of IConsoleRenderer for rendering CLI output.
@@ -58,6 +22,7 @@ public class ConsoleRenderer : IConsoleRenderer
 {
     private readonly JsonSerializerOptions _jsonOptions;
 
+    /// <summary>Creates a console renderer with default JSON serialization options.</summary>
     public ConsoleRenderer()
     {
         _jsonOptions = new JsonSerializerOptions
@@ -67,26 +32,31 @@ public class ConsoleRenderer : IConsoleRenderer
         };
     }
 
+    /// <inheritdoc />
     public void RenderSuccess(string message)
     {
         Console.Out.WriteLine(message);
     }
 
+    /// <inheritdoc />
     public void RenderError(string message)
     {
         Console.Error.WriteLine($"Error: {message}");
     }
 
+    /// <inheritdoc />
     public void RenderProgressStart(string message)
     {
         Console.Out.WriteLine($"[progress] {message}");
     }
 
+    /// <inheritdoc />
     public void RenderProgressComplete(string message)
     {
         Console.Out.WriteLine($"[complete] {message}");
     }
 
+    /// <inheritdoc />
     public void RenderProgress(ProgressReport report)
     {
         var stepInfo = report.TotalSteps.HasValue && report.CurrentStep.HasValue
@@ -95,6 +65,7 @@ public class ConsoleRenderer : IConsoleRenderer
         Console.Out.WriteLine($"[{report.Percentage}%]{stepInfo} {report.Message}");
     }
 
+    /// <inheritdoc />
     public void RenderErrorWithCode(string message, string? errorCode, string? suggestion = null)
     {
         Console.Error.WriteLine($"Error [{errorCode}]: {message}");
@@ -104,6 +75,7 @@ public class ConsoleRenderer : IConsoleRenderer
         }
     }
 
+    /// <inheritdoc />
     public void RenderAgentList(IReadOnlyList<Nexo.Core.Application.Agent.Models.AgentMetadata> agents, bool json)
     {
         if (json)
@@ -138,6 +110,7 @@ public class ConsoleRenderer : IConsoleRenderer
         }
     }
 
+    /// <inheritdoc />
     public void RenderAnalysisResult(AnalysisResult result, bool json)
     {
         if (json)
@@ -162,6 +135,7 @@ public class ConsoleRenderer : IConsoleRenderer
         }
     }
 
+    /// <inheritdoc />
     public void RenderValidationResult(ValidationResult result, bool json)
     {
         if (json)
@@ -189,6 +163,7 @@ public class ConsoleRenderer : IConsoleRenderer
         }
     }
 
+    /// <inheritdoc />
     public void RenderAgentResult(AgentExecutionResult result, bool json)
     {
         if (json)
@@ -213,6 +188,7 @@ public class ConsoleRenderer : IConsoleRenderer
         }
     }
 
+    /// <inheritdoc />
     public void RenderOrchestrationResult(OrchestrationResult result)
     {
         if (result.Success)
@@ -240,11 +216,13 @@ public class ConsoleRenderer : IConsoleRenderer
         }
     }
 
+    /// <inheritdoc />
     public void RenderJson(object data)
     {
         Console.Out.WriteLine(JsonSerializer.Serialize(data, _jsonOptions));
     }
 
+    /// <inheritdoc />
     public void RenderTable<T>(IEnumerable<T> items)
     {
         // Simple table rendering - can be enhanced with Spectre.Console later
@@ -254,6 +232,7 @@ public class ConsoleRenderer : IConsoleRenderer
         }
     }
 
+    /// <inheritdoc />
     public void RenderEscalations(IReadOnlyList<Escalation> escalations, bool verbose)
     {
         if (escalations.Count == 0)
@@ -305,6 +284,7 @@ public class ConsoleRenderer : IConsoleRenderer
         }
     }
 
+    /// <inheritdoc />
     public void RenderEscalationDetails(Escalation escalation, bool verbose)
     {
         var severityColor = escalation.Severity switch
@@ -367,6 +347,7 @@ public class ConsoleRenderer : IConsoleRenderer
         }
     }
 
+    /// <inheritdoc />
     public void RenderConflicts(IReadOnlyList<Conflict> conflicts, bool verbose)
     {
         if (conflicts.Count == 0)
@@ -406,6 +387,7 @@ public class ConsoleRenderer : IConsoleRenderer
         }
     }
 
+    /// <inheritdoc />
     public void RenderPerformanceReport(PerformanceReport report, bool verbose)
     {
         Console.Out.WriteLine("Performance Report");
@@ -460,6 +442,7 @@ public class ConsoleRenderer : IConsoleRenderer
         }
     }
 
+    /// <inheritdoc />
     public void RenderAgentMetrics(AgentMetrics metrics, bool verbose)
     {
         Console.Out.WriteLine($"Agent Metrics: {metrics.AgentId}");
@@ -474,6 +457,7 @@ public class ConsoleRenderer : IConsoleRenderer
         Console.Out.WriteLine($"Total Context Tokens: {metrics.TotalContextTokensUsed}");
     }
 
+    /// <inheritdoc />
     public void RenderTraces(IReadOnlyList<TraceSpan> traces, string? correlationId, string? operationName, bool verbose)
     {
         if (traces.Count == 0)
@@ -537,4 +521,3 @@ public class ConsoleRenderer : IConsoleRenderer
         [property: System.Text.Json.Serialization.JsonPropertyName("error")] string? Error
     );
 }
-

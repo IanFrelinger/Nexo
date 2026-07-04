@@ -2,8 +2,10 @@ using Nexo.Core.Application.NodeCapabilityRuntime.Models;
 
 namespace Nexo.Infrastructure.NodeCapabilityRuntime;
 
+/// <summary>Default catalog of models seeded per platform for node capability runtime routing.</summary>
 internal static class DefaultModelSuite
 {
+    /// <summary>Returns the built-in model descriptors appropriate for <paramref name="platform"/>.</summary>
     public static List<ModelDescriptor> CreateForPlatform(PlatformType platform)
     {
         var desktopOnly = new HashSet<PlatformType> { PlatformType.Windows, PlatformType.macOS, PlatformType.Linux };

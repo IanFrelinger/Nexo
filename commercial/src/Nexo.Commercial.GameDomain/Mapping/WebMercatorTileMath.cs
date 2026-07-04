@@ -1,5 +1,4 @@
-namespace Nexo.GameDomain.Mapping;
-
+namespace Nexo.Commercial.GameDomain.Mapping;
 /// <summary>
 /// Slippy map (XYZ / OSM) tile indices for the spherical Mercator projection used by Mapbox and most web maps.
 /// </summary>

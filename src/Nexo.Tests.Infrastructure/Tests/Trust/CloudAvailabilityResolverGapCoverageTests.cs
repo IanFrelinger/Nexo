@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Trust;
 
+/// <summary>Tests for cloud availability resolver gap coverage.</summary>
 public sealed class CloudAvailabilityResolverGapCoverageTests : IDisposable
 {
     private readonly string? _savedAirgap;
@@ -128,13 +129,19 @@ public sealed class CloudAvailabilityResolverGapCoverageTests : IDisposable
         (await resolver.IsAirGappedAsync()).Should().BeFalse();
     }
 
+    /// <summary>Tests for fake trust handler.</summary>
     private sealed class FakeTrustHandler : HttpMessageHandler
     {
         private readonly Func<HttpRequestMessage, CancellationToken, HttpResponseMessage> _handler;
 
+        /// <summary>Fake trust handler.</summary>
+        /// <param name="handler">Handler.</param>
         public FakeTrustHandler(Func<HttpRequestMessage, CancellationToken, HttpResponseMessage> handler) =>
             _handler = handler;
 
+        /// <summary>Send async.</summary>
+        /// <param name="request">Request.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
         protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
             Task.FromResult(_handler(request, cancellationToken));
     }

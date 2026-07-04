@@ -1,11 +1,11 @@
-namespace Nexo.GameDomain.Discord;
-
+namespace Nexo.Commercial.GameDomain.Discord;
 /// <summary>
 /// Discord integration configuration. Loaded from .nexo/discord.json
 /// or environment variables (NEXO_DISCORD_*).
 /// </summary>
 public sealed record DiscordConfig
 {
+    /// <summary>Constant value for section name.</summary>
     public const string SectionName = "Nexo:Discord";
 
     /// <summary>Webhook URL for posting reports (no bot token needed for one-way).</summary>
@@ -29,6 +29,7 @@ public sealed record DiscordConfig
     /// <summary>Max clip duration in seconds.</summary>
     public double MaxClipDurationSeconds { get; init; } = 15;
 
+    /// <summary>Load operation.</summary>
     public static DiscordConfig Load(string projectRoot)
     {
         var path = System.IO.Path.Combine(projectRoot, ".nexo", "discord.json");

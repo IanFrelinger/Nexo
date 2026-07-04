@@ -15,6 +15,7 @@ namespace Nexo.CLI.Commands;
 /// </summary>
 public sealed class AnalyzeBricksCommand : Command
 {
+    /// <summary>Creates a new AnalyzeBricksCommand instance.</summary>
     public AnalyzeBricksCommand() : base("bricks", "Analyze brick code (schema, safety, performance). Dogfood: defaults to Block 1 Observation path.")
     {
         var pathOpt = new Option<string?>("--path", "Path to analyze (dir or .cs file). Default: Nexo Observation folders.");

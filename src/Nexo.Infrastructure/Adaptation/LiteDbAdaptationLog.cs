@@ -12,6 +12,7 @@ public sealed class LiteDbAdaptationLog : IAdaptationLog
     private const string CollectionName = "adaptation_records";
     private readonly string _connectionString;
 
+    /// <summary>Initializes a new lite db adaptation log.</summary>
     public LiteDbAdaptationLog(string pathOrConnectionString)
     {
         if (string.IsNullOrWhiteSpace(pathOrConnectionString))
@@ -89,15 +90,24 @@ public sealed class LiteDbAdaptationLog : IAdaptationLog
 
     private sealed class AdaptationDoc
     {
+        /// <summary>Id.</summary>
         [BsonId]
         public string Id { get; set; } = string.Empty;
+        /// <summary>Timestamp.</summary>
         public DateTimeOffset Timestamp { get; set; }
+        /// <summary>Brick id.</summary>
         public string? BrickId { get; set; }
+        /// <summary>Failure type.</summary>
         public string FailureType { get; set; } = string.Empty;
+        /// <summary>Fix applied.</summary>
         public int FixApplied { get; set; }
+        /// <summary>File path.</summary>
         public string? FilePath { get; set; }
+        /// <summary>Regression passed.</summary>
         public bool RegressionPassed { get; set; }
+        /// <summary>Promoted.</summary>
         public bool Promoted { get; set; }
+        /// <summary>Message.</summary>
         public string? Message { get; set; }
     }
 }

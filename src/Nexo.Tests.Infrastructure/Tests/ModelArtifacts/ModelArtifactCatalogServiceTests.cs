@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.ModelArtifacts;
 
+/// <summary>Tests for model artifact catalog service.</summary>
 public sealed class ModelArtifactCatalogServiceTests
 {
     [Fact]
@@ -48,6 +49,7 @@ public sealed class ModelArtifactCatalogServiceTests
         all.Select(x => x.Id).Should().BeEquivalentTo("m1", "m3");
     }
 
+    /// <summary>Tests for stub remote source.</summary>
     private sealed class StubRemoteSource : StubSource, IRemoteInstallableModelArtifactSource
     {
         public StubRemoteSource(string sourceId, bool available, IReadOnlyList<ModelArtifactRecord> items)
@@ -56,6 +58,7 @@ public sealed class ModelArtifactCatalogServiceTests
         }
     }
 
+    /// <summary>Tests for stub source.</summary>
     private class StubSource : IModelArtifactCatalogSource
     {
         private readonly bool _available;
@@ -68,11 +71,16 @@ public sealed class ModelArtifactCatalogServiceTests
             _items = items;
         }
 
+        /// <summary>Source id.</summary>
         public string SourceId { get; }
 
+        /// <summary>Returns whether  available async.</summary>
+        /// <param name="default">Default.</param>
         public Task<bool> IsAvailableAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult(_available);
 
+        /// <summary>List async.</summary>
+        /// <param name="default">Default.</param>
         public Task<IReadOnlyList<ModelArtifactRecord>> ListAsync(CancellationToken cancellationToken = default) =>
             Task.FromResult(_items);
     }

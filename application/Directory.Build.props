@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <!-- Chain to the repo-root Directory.Build.props; MSBuild only auto-imports the nearest one. -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
+
+  <PropertyGroup>
+    <NexoIncludeDomainBrickGlobalUsing Condition="
+      '$(MSBuildProjectName)' == 'Nexo.CLI' OR
+      '$(MSBuildProjectName)' == 'Nexo.API'
+      ">true</NexoIncludeDomainBrickGlobalUsing>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(NexoIncludeDomainBrickGlobalUsing)' == 'true'">
+    <Compile Include="$(MSBuildThisFileDirectory)../build/GlobalUsings.DomainBrick.cs" Link="GlobalUsings.DomainBrick.cs" />
+  </ItemGroup>
+</Project>

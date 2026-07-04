@@ -17,6 +17,7 @@ namespace Nexo.CLI.Commands;
 /// </summary>
 public sealed class SelfContextCommand : Command
 {
+    /// <summary>Creates a new SelfContextCommand instance.</summary>
     public SelfContextCommand() : base("self-context", "Assemble and display self-context: recent adaptations, executions, patterns.")
     {
         var lookbackOpt = new Option<string?>("--lookback", "Lookback duration (e.g. 24h, 1d, 7d). Default: 24h");

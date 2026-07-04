@@ -14,6 +14,7 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration;
 
+/// <summary>Tests for orchestration coordination gap coverage.</summary>
 public class OrchestrationCoordinationGapCoverageTests
 {
     private readonly AgentFactory _factory;
@@ -202,7 +203,9 @@ public class OrchestrationCoordinationGapCoverageTests
 
         resolver.RegisterAgent(lead);
         resolver.RegisterAgent(worker);
+        /// <summary>Sets agent state.</summary>
         SetAgentState(lead.Agent, AgentState.Ready);
+        /// <summary>Sets agent state.</summary>
         SetAgentState(worker.Agent, AgentState.Ready);
 
         resolver.GetReadyAgents().Should().ContainSingle(c => c.AgentId == "lead");
@@ -331,6 +334,7 @@ public class OrchestrationCoordinationGapCoverageTests
             ResourceRequirements = new ResourceRequirements { EstimatedComputeSeconds = 1 },
         });
         await container.InitializeAsync();
+        /// <summary>Sets agent state.</summary>
         SetAgentState(container.Agent, AgentState.Failed);
 
         var monitor = new HealthMonitor(NullLogger<HealthMonitor>.Instance, TimeSpan.FromHours(1));
@@ -340,6 +344,7 @@ public class OrchestrationCoordinationGapCoverageTests
 
         var startField = typeof(AgentContainer).GetField("_startTime", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
         startField.SetValue(container, DateTimeOffset.UtcNow.AddMinutes(-10));
+        /// <summary>Sets agent state.</summary>
         SetAgentState(container.Agent, AgentState.Executing);
 
         typeof(HealthMonitor).GetMethod("PerformHealthChecks", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!

@@ -10,5 +10,6 @@ public interface IInstanceCapabilitiesProvider
     /// <summary>
     /// Gets the capabilities of this instance.
     /// </summary>
+    /// <returns>Supported artifact formats and runtime flags.</returns>
     InstanceCapabilities GetCapabilities();
 }

@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Nexo.Tests.CLI.Tests.Commands;
 
+/// <summary>Tests for objectives background agent command.</summary>
 public class ObjectivesBackgroundAgentCommandTests : IDisposable
 {
     private readonly string _tempDir;
@@ -24,6 +25,8 @@ public class ObjectivesBackgroundAgentCommandTests : IDisposable
         try { Directory.Delete(_tempDir, recursive: true); } catch { /* best effort */ }
     }
 
+    /// <summary>New cmd.</summary>
+    /// <param name="null">Null.</param>
     private ObjectivesBackgroundAgentCommand NewCmd(IObservationStore? observations = null) =>
         new(_store, NullLogger<ObjectivesBackgroundAgentCommand>.Instance, observations);
 

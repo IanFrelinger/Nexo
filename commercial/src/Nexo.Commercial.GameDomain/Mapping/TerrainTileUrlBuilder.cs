@@ -1,5 +1,4 @@
-namespace Nexo.GameDomain.Mapping;
-
+namespace Nexo.Commercial.GameDomain.Mapping;
 /// <summary>
 /// HTTPS URLs for common terrain / elevation raster tiles (host-side orchestration).
 /// </summary>

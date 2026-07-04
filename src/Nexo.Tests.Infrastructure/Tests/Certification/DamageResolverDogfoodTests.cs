@@ -11,6 +11,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Certification;
 
+/// <summary>Tests for damage resolver dogfood.</summary>
 [Trait("Category", "Certification")]
 public sealed class DamageResolverDogfoodTests
 {
@@ -29,6 +30,7 @@ public sealed class DamageResolverDogfoodTests
         var gate = new CertificationGate(signer);
         var admission = new CertifiedBrickAdmission(gate, registry);
         var generator = new NewBrickGenerator(model);
+        /// <summary>Generate and certify service.</summary>
         return new GenerateAndCertifyService(generator, admission);
     }
 
@@ -60,5 +62,6 @@ public sealed class DamageResolverDogfoodTests
         result.Manifest!.GenerationProvenance.Should().StartWith("cursor:buggy");
     }
 
+    /// <summary>Require human witness.</summary>
     private static WitnessSpec RequireHumanWitness() => DamageResolverDogfoodWitness.Spec;
 }

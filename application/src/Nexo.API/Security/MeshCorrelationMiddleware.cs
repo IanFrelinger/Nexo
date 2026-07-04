@@ -7,16 +7,21 @@ namespace Nexo.API.Security;
 /// </summary>
 public sealed class MeshCorrelationMiddleware
 {
+    /// <summary>HttpContext item key storing the resolved correlation identifier.</summary>
     public const string HttpContextItemKey = "Nexo.Mesh.CorrelationId";
+
+    /// <summary>Request and response header name for the correlation identifier.</summary>
     public const string HeaderName = "X-Nexo-Correlation-Id";
 
     private readonly RequestDelegate _next;
 
+    /// <summary>Creates middleware that propagates mesh correlation IDs.</summary>
     public MeshCorrelationMiddleware(RequestDelegate next)
     {
         _next = next ?? throw new ArgumentNullException(nameof(next));
     }
 
+    /// <summary>Assigns or echoes a correlation ID for mesh and brick execute requests.</summary>
     public async Task InvokeAsync(HttpContext context)
     {
         if (!context.Request.Path.StartsWithSegments("/api", StringComparison.OrdinalIgnoreCase))

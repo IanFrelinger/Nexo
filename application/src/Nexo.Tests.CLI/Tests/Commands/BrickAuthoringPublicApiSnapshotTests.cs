@@ -4,6 +4,7 @@ using Xunit;
 
 namespace Nexo.Tests.CLI.Tests.Commands;
 
+/// <summary>Tests for brick authoring public api snapshot.</summary>
 [Trait("Category", "CLI")]
 public sealed class BrickAuthoringPublicApiSnapshotTests
 {
@@ -26,6 +27,8 @@ public sealed class BrickAuthoringPublicApiSnapshotTests
             if (!File.Exists(path))
             {
                 File.WriteAllText(path, current);
+                /// <summary>Invalid operation exception.</summary>
+                /// <param name="it."">It.".</param>
                 throw new InvalidOperationException($"Created missing public API snapshot: {path}. Review and commit it.");
             }
 
@@ -52,6 +55,8 @@ public sealed class BrickAuthoringPublicApiSnapshotTests
             current = current.Parent;
         }
 
+        /// <summary>Invalid operation exception.</summary>
+        /// <param name="found."">Found.".</param>
         throw new InvalidOperationException("Repository root not found.");
     }
 }

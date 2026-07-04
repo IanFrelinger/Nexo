@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Adaptation;
 
+/// <summary>Tests for empty catch code fixer.</summary>
 [Trait("Category", "Adaptation")]
 public sealed class EmptyCatchCodeFixerTests
 {
@@ -20,11 +21,13 @@ public sealed class EmptyCatchCodeFixerTests
             var filePath = Path.Combine(tempDir, "Test.cs");
             var source = """
                 namespace Test;
+                /// <summary>Tests for c.</summary>
                 public class C
                 {
                     public void M()
                     {
                         try { }
+                        /// <summary>Catch.</summary>
                         catch (Exception) { }
                     }
                 }

@@ -1,5 +1,6 @@
 namespace Nexo.Tests.Kernel;
 
+/// <summary>Env var.</summary>
 internal static class EnvVar
 {
     public static void Run(string name, string? value, Action body)
@@ -8,6 +9,7 @@ internal static class EnvVar
         try
         {
             Environment.SetEnvironmentVariable(name, value);
+            /// <summary>Body.</summary>
             body();
         }
         finally
@@ -16,6 +18,3 @@ internal static class EnvVar
         }
     }
 }
-
-[Xunit.CollectionDefinition("EnvironmentSensitive", DisableParallelization = true)]
-public sealed class EnvironmentSensitiveCollection { }

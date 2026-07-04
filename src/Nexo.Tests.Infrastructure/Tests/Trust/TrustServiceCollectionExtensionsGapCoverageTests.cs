@@ -4,12 +4,13 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Nexo.Core.Application.Trust.Models;
 using Nexo.Core.Application.Trust.Ports;
-using Nexo.Infrastructure.Sdk.Trust;
+using Nexo.Infrastructure.Trust.Sdk.Extensions;
 using Nexo.Infrastructure.Trust;
 using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Trust;
 
+/// <summary>Tests for trust service collection extensions gap coverage.</summary>
 public sealed class TrustServiceCollectionExtensionsGapCoverageTests
 {
     [Fact]

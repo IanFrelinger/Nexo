@@ -1,6 +1,7 @@
+// Forge map host sample entry point.
 using System.Net.Http.Json;
 using System.Text.Json;
-using Nexo.GameDomain.Mapping;
+using Nexo.Commercial.GameDomain.Mapping;
 
 var baseUrl = (Environment.GetEnvironmentVariable("NEXO_API_BASE_URL") ?? "http://127.0.0.1:8080").TrimEnd('/');
 var engineId = Environment.GetEnvironmentVariable("FORGE_ENGINE_ID") ?? "unity";

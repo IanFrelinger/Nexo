@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.NodeCapabilityRuntime;
 
+/// <summary>Tests for infrastructure node capability gap coverage.</summary>
 public class InfrastructureNodeCapabilityGapCoverageTests
 {
     [Fact]
@@ -238,10 +239,16 @@ public class InfrastructureNodeCapabilityGapCoverageTests
             .WithInnerException<ArgumentNullException>();
     }
 
+    /// <summary>Tests for test observer.</summary>
     private sealed class TestObserver<T>(List<T> sink) : IObserver<T>
     {
+        /// <summary>On completed.</summary>
         public void OnCompleted() { }
+        /// <summary>On error.</summary>
+        /// <param name="error">Error.</param>
         public void OnError(Exception error) => throw error;
+        /// <summary>On next.</summary>
+        /// <param name="value">Value.</param>
         public void OnNext(T value) => sink.Add(value);
     }
 }

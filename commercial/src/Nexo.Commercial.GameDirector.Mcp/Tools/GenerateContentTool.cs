@@ -4,10 +4,13 @@ using Nexo.Core.Domain.Bricks;
 
 namespace GameDirector.Mcp.Tools;
 
+/// <summary>Generate content tool.</summary>
 public sealed class GenerateContentTool : IMcpTool
 {
     private readonly McpBrickExecutor _executor;
 
+    /// <summary>Generate content tool.</summary>
+    /// <param name="executor">Executor.</param>
     public GenerateContentTool(McpBrickExecutor executor) => _executor = executor;
 
     public string Name => "generate_content";

@@ -113,14 +113,22 @@ public sealed class LiteDbPatternStore : IPatternStore
 
     private sealed class PatternDoc
     {
+        /// <summary>Pattern id.</summary>
         [BsonId]
         public string PatternId { get; set; } = string.Empty;
+        /// <summary>Event type.</summary>
         public string EventType { get; set; } = string.Empty;
+        /// <summary>Frequency.</summary>
         public int Frequency { get; set; }
+        /// <summary>First seen.</summary>
         public DateTimeOffset FirstSeen { get; set; }
+        /// <summary>Last seen.</summary>
         public DateTimeOffset LastSeen { get; set; }
+        /// <summary>Related event ids.</summary>
         public string[]? RelatedEventIds { get; set; }
+        /// <summary>Metadata json.</summary>
         public string? MetadataJson { get; set; }
+        /// <summary>Path to the generated brick project.</summary>
         public string? ProjectPath { get; set; }
     }
 }

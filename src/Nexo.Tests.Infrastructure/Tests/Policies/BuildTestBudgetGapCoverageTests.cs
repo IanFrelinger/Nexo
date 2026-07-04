@@ -6,11 +6,14 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Policies;
 
+/// <summary>Tests for build test budget gap coverage.</summary>
 [Trait("Category", "Unit")]
 public sealed class BuildTestBudgetGapCoverageTests
 {
     private static readonly WorldSnapshot EmptySnapshot = new(0, new Dictionary<string, object?>());
 
+    /// <summary>Call.</summary>
+    /// <param name="id">Id.</param>
     private static ToolCall Call(string id) =>
         new(id, JsonSerializer.SerializeToElement(new { root = "." }));
 

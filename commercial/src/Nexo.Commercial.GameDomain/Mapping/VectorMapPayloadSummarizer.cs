@@ -8,8 +8,7 @@ using OsmSharp.Streams;
 using OsmSharp.Streams.Complete;
 using VectorTile = NetTopologySuite.IO.VectorTiles.Tiles.Tile;
 
-namespace Nexo.GameDomain.Mapping;
-
+namespace Nexo.Commercial.GameDomain.Mapping;
 /// <summary>
 /// Summarizes common vector map encodings after fetch (GeoJSON, OSM XML, Mapbox MVT).
 /// Full geometry/host rendering remains deferred; this only extracts counts and hints.

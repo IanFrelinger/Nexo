@@ -10,6 +10,7 @@ using Xunit;
 
 namespace Nexo.Tests.Orchestration;
 
+/// <summary>Tests for orchestration agent smoke.</summary>
 public class OrchestrationAgentSmokeTests
 {
     [Fact]

@@ -1,10 +1,10 @@
 using FluentAssertions;
-using Nexo.GameDomain.Aesthetics;
-using Nexo.GameDomain.Materials;
+using Nexo.Commercial.GameDomain.Aesthetics;
+using Nexo.Commercial.GameDomain.Materials;
 using Xunit;
 
-namespace Nexo.Tests.GameDomain;
-
+namespace Nexo.Commercial.Tests.GameDomain;
+/// <summary>Tests for heuristic material intelligence service.</summary>
 public sealed class HeuristicMaterialIntelligenceServiceTests
 {
     private readonly HeuristicMaterialIntelligenceService _sut = new();

@@ -1,5 +1,6 @@
 namespace Nexo.Tests.Infrastructure.Certification.Fixtures;
 
+/// <summary>Mutation probe brick source.</summary>
 public static class MutationProbeBrickSource
 {
     public const string Code = """
@@ -8,12 +9,13 @@ using Nexo.Core.Domain.Execution;
 
 namespace Nexo.Tests.Infrastructure.Certification.Fixtures;
 
-public sealed class MutationProbeBrick : Brick
+/// <summary>Mutation probe brick.</summary>
+public sealed class MutationProbeBrick : DomainBrick
 {
     public MutationProbeBrick()
     {
         Id = "mutation-probe-brick";
-        Name = "Mutation Probe Brick";
+        Name = "Mutation Probe DomainBrick";
         Version = "1.0.0";
         Category = BrickCategory.Analysis;
         Description = "Log scanner for mutation gate tests.";

@@ -1,10 +1,11 @@
 using Nexo.BackgroundAgents.HostRunners;
 using Nexo.CLI.Unity.Pipeline;
 
-namespace Nexo.CLI.Commands;
-
+namespace Nexo.CLI.Commands.Unity;
+/// <summary>Handles generate requests.</summary>
 internal sealed class GenerateHandler(Func<SelfExtendRunnerAdapter> runnerFactory)
 {
+    /// <summary>Executes the command handler and returns a process exit code.</summary>
     public async Task<int> ExecuteAsync(
         string projectRoot,
         string systemDescription,

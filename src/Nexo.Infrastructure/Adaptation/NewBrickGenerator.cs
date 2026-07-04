@@ -25,6 +25,7 @@ public sealed class NewBrickGenerator : INewBrickGenerator
         [FixtureGeneratorModel.LineSubstringCounterIntentId] = BrickCategory.Analysis,
     };
 
+    /// <summary>Initializes a new new brick generator.</summary>
     public NewBrickGenerator(IGeneratorModel? model = null, IAdaptationLog? adaptationLog = null)
     {
         _model = model ?? new FixtureGeneratorModel();
@@ -79,7 +80,7 @@ public sealed class NewBrickGenerator : INewBrickGenerator
             Name = $"Generated from {patternType}",
             Version = "1.0.0",
             Category = category,
-            Description = $"Brick for pattern type '{patternType}'" + (similarBrickId != null ? $" (similar to {similarBrickId})" : ""),
+            Description = $"DomainBrick for pattern type '{patternType}'" + (similarBrickId != null ? $" (similar to {similarBrickId})" : ""),
             Interface = new BrickInterface { Inputs = inputs, Outputs = outputs },
             ImplementationSource = null,
         };

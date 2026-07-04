@@ -1,3 +1,4 @@
+// gRPC transport server host entry point.
 using Nexo.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Nexo.Runtime;

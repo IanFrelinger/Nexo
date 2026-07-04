@@ -17,6 +17,7 @@ public sealed class ComposedTestRunner : IComposedTestRunner
     private readonly IInstanceSpawner _spawner;
     private readonly IResultCollector _collector;
 
+    /// <summary>Initializes a new composed test runner.</summary>
     public ComposedTestRunner(
         ICompositionEngine compositionEngine,
         IParameterMatrixGenerator matrixGenerator,

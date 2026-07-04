@@ -3,11 +3,10 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Nexo.Core.Application.Networking.Models;
-using Nexo.Core.Application.Networking.Ports;
+using Nexo.Commercial.Fleet.Contracts.Networking.Models;
+using Nexo.Commercial.Fleet.Contracts.Networking.Ports;
 
-namespace Nexo.Infrastructure.Networking;
-
+namespace Nexo.Commercial.Fleet.Infrastructure.Networking;
 /// <summary>
 /// HTTP-based knowledge sync: push chunks to peer /api/knowledge/sync and pull from peer GET /api/knowledge/sync.
 /// </summary>
@@ -43,6 +42,7 @@ public sealed class HttpKnowledgeSyncService : IKnowledgeSyncService
         }
     }
 
+    /// <summary>node id value.</summary>
     public string NodeId { get; }
 
     /// <inheritdoc />

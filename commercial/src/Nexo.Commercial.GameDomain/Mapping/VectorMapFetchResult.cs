@@ -1,5 +1,4 @@
-namespace Nexo.GameDomain.Mapping;
-
+namespace Nexo.Commercial.GameDomain.Mapping;
 /// <summary>
 /// Result of loading raw vector map bytes (OSM XML, GeoJSON) from a file path.
 /// </summary>

@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Nexo.Tests.GameDirector;
 
+/// <summary>Tests for map flow brick.</summary>
 [Trait("Category", "GameDirectorApplication")]
 public sealed class MapFlowBrickTests
 {

@@ -9,6 +9,7 @@ using Xunit;
 
 namespace Nexo.Tests.GameDirector;
 
+/// <summary>Tests for content generation fallback.</summary>
 [Trait("Category", "GameDirectorApplication")]
 public sealed class ContentGenerationFallbackTests
 {
@@ -80,9 +81,15 @@ public sealed class ContentGenerationFallbackTests
         snapshot.AestheticSummary.Should().BeNull();
     }
 
+    /// <summary>Throwing model.</summary>
     private sealed class ThrowingModel : IModel
     {
+        /// <summary>Complete async.</summary>
+        /// <param name="input">Input.</param>
+        /// <param name="ct">Cancellation token.</param>
         public Task<ModelOutput> CompleteAsync(ModelInput input, CancellationToken ct) =>
+            /// <summary>Invalid operation exception.</summary>
+            /// <param name="outage"">Outage".</param>
             throw new InvalidOperationException("simulated outage");
     }
 }

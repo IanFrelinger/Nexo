@@ -4,16 +4,22 @@ using Nexo.Core.Application.Testing.Models;
 
 namespace Nexo.Tests.CLI.Tests.Commands;
 
+/// <summary>Tests for adaptive runtime plan resolver.</summary>
 public sealed class AdaptiveRuntimePlanResolverTests : UnitTestBase
 {
     public override Task<TestResult> ExecuteAsync(CancellationToken cancellationToken = default)
     {
         try
         {
+            /// <summary>Test resolve visual ui goal.</summary>
             TestResolveVisualUiGoal();
+            /// <summary>Test resolve functional goal defaults.</summary>
             TestResolveFunctionalGoalDefaults();
+            /// <summary>Test manifest policy and goal enrichment.</summary>
             TestManifestPolicyAndGoalEnrichment();
+            /// <summary>Test manifest loader inline json.</summary>
             TestManifestLoaderInlineJson();
+            /// <summary>Test release policy uses strict visual fallback.</summary>
             TestReleasePolicyUsesStrictVisualFallback();
 
             return Task.FromResult(new TestResult
@@ -57,10 +63,17 @@ public sealed class AdaptiveRuntimePlanResolverTests : UnitTestBase
             bootstrapProfileOverride: "auto",
             qaPolicyOverride: "prod");
 
+        /// <summary>Assert equal.</summary>
         AssertEqual("self-extend-visual", plan.BootstrapProfile);
+        /// <summary>Assert equal.</summary>
         AssertEqual("prod", plan.QaPolicyProfile);
+        /// <summary>Assert true.</summary>
+        /// <param name="goals."">Goals.".</param>
         AssertTrue(plan.RunAestheticQa, "Aesthetic QA should be enabled for visual UI goals.");
+        /// <summary>Assert true.</summary>
+        /// <param name="goals."">Goals.".</param>
         AssertTrue(plan.RunVisualQa, "Visual QA should be enabled for visual UI goals.");
+        /// <summary>Assert equal.</summary>
         AssertEqual("strict", plan.VisualQaFallbackPolicy);
     }
 
@@ -73,11 +86,17 @@ public sealed class AdaptiveRuntimePlanResolverTests : UnitTestBase
             bootstrapProfileOverride: "auto",
             qaPolicyOverride: "auto");
 
+        /// <summary>Assert equal.</summary>
         AssertEqual("self-extend-functional", plan.BootstrapProfile);
+        /// <summary>Assert equal.</summary>
         AssertEqual("demo", plan.QaPolicyProfile);
+        /// <summary>Assert equal.</summary>
         AssertEqual("functional", plan.Focus);
+        /// <summary>Assert false.</summary>
         AssertFalse(plan.RunAestheticQa);
+        /// <summary>Assert false.</summary>
         AssertFalse(plan.RunVisualQa);
+        /// <summary>Assert equal.</summary>
         AssertEqual("degrade", plan.VisualQaFallbackPolicy);
     }
 
@@ -102,8 +121,13 @@ public sealed class AdaptiveRuntimePlanResolverTests : UnitTestBase
             qaPolicyOverride: "auto");
         var enriched = AdaptiveRuntimePlanResolver.EnrichGoal("Build adaptive personal runtime", manifest, plan);
 
+        /// <summary>Assert equal.</summary>
         AssertEqual("research", plan.QaPolicyProfile);
+        /// <summary>Assert true.</summary>
+        /// <param name="QA."">Qa.".</param>
         AssertTrue(plan.RunAestheticQa, "Personal runtime goals should include aesthetic QA.");
+        /// <summary>Assert true.</summary>
+        /// <param name="QA."">Qa.".</param>
         AssertTrue(plan.RunVisualQa, "Manifest UI capabilities should enable visual QA.");
         AssertTrue(enriched.Contains("domain-packs: personal, ui", StringComparison.OrdinalIgnoreCase), "Enriched goal should include domain pack context.");
         AssertTrue(enriched.Contains("preferences: tone=concise", StringComparison.OrdinalIgnoreCase), "Enriched goal should include preferences.");
@@ -123,8 +147,11 @@ public sealed class AdaptiveRuntimePlanResolverTests : UnitTestBase
         """;
 
         var manifest = AdaptiveRuntimeManifestLoader.Load(path: null, json: json);
+        /// <summary>Assert equal.</summary>
         AssertEqual(2, manifest.DomainPacks.Length);
+        /// <summary>Assert equal.</summary>
         AssertEqual(2, manifest.UiCapabilities.Length);
+        /// <summary>Assert equal.</summary>
         AssertEqual("demo", manifest.QaPolicyProfile);
         AssertEqual("dark", manifest.Preferences.Values.First());
     }
@@ -138,8 +165,12 @@ public sealed class AdaptiveRuntimePlanResolverTests : UnitTestBase
             bootstrapProfileOverride: "auto",
             qaPolicyOverride: "release");
 
+        /// <summary>Assert equal.</summary>
         AssertEqual("release", plan.QaPolicyProfile);
+        /// <summary>Assert equal.</summary>
         AssertEqual("strict", plan.VisualQaFallbackPolicy);
+        /// <summary>Assert true.</summary>
+        /// <param name="QA."">Qa.".</param>
         AssertTrue(plan.RunVisualQa, "Release policy on visual goals should still require visual QA.");
     }
 }

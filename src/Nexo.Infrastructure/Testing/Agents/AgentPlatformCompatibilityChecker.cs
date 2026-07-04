@@ -67,11 +67,3 @@ public static class AgentPlatformCompatibilityChecker
 
     private static string GetPlatformName() => CompatibilityTestHooks.ResolvePlatformName();
 }
-
-/// <summary>
-/// Result of agent platform compatibility check.
-/// </summary>
-public record AgentCompatibilityResult(
-    string Platform,
-    bool IsCompatible,
-    List<string> Issues);

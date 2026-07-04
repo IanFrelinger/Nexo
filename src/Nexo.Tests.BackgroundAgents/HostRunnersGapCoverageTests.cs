@@ -20,8 +20,12 @@ using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents;
 
+/// <summary>Tests for host runners gap coverage.</summary>
 public class HostRunnersGapCoverageTests
 {
+    /// <summary>Call.</summary>
+    /// <param name="id">Id.</param>
+    /// <param name="args">Args.</param>
     private static ToolCall Call(string id, object args) =>
         new(id, JsonDocument.Parse(JsonSerializer.Serialize(args)).RootElement);
 

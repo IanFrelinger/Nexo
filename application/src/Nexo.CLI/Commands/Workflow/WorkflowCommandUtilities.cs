@@ -6,8 +6,8 @@ using Nexo.CLI.Runtime;
 using Nexo.Orchestration.Models;
 using Process = System.Diagnostics.Process;
 
-namespace Nexo.CLI.Commands;
-
+namespace Nexo.CLI.Commands.Workflow;
+/// <summary>Workflow command utilities.</summary>
 internal static class WorkflowCommandUtilities
 {
     internal static string ClassifyFailureCategory(string output, string? parsedErrorCode = null)

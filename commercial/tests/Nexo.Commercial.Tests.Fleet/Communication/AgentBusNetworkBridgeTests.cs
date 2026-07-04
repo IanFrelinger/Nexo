@@ -4,14 +4,15 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Moq;
 using Nexo.Commercial.Fleet.Infrastructure.Communication;
-using Nexo.Core.Application.Networking.Models;
-using Nexo.Core.Application.Networking.Ports;
+using Nexo.Commercial.Fleet.Contracts.Networking.Models;
+using Nexo.Commercial.Fleet.Contracts.Networking.Ports;
 using Nexo.Orchestration.Communication;
 using Nexo.Orchestration.Communication.Models;
 using Xunit;
 
 namespace Nexo.Commercial.Tests.Fleet.Communication;
 
+/// <summary>Tests for agent bus network bridge.</summary>
 public sealed class AgentBusNetworkBridgeTests
 {
     [Fact]

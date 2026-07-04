@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Nexo.Commercial.Tests.Fleet;
 
+/// <summary>Tests for mesh task placement service.</summary>
 public sealed class MeshTaskPlacementServiceTests
 {
     private static MeshTaskPlacementService CreatePlacement(

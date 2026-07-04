@@ -19,6 +19,7 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
     private readonly PipelineExecutionOptions _options;
     private readonly ILogger<PipelineOrchestrator> _logger;
 
+    /// <summary>Initializes a new pipeline orchestrator.</summary>
     public PipelineOrchestrator(
         IPipelineTemplateValidator validator,
         IPipelineDecomposer decomposer,
@@ -41,6 +42,7 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>Run asynchronously.</summary>
     public async Task<PipelineRun> RunAsync(
         PipelineExecutionRequest request,
         CancellationToken cancellationToken = default)
@@ -448,10 +450,15 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
 
     private sealed record ExecutionOutcome
     {
+        /// <summary>Whether the operation succeeded.</summary>
         public bool Succeeded { get; init; }
+        /// <summary>Worker id.</summary>
         public string? WorkerId { get; init; }
+        /// <summary>Worker type.</summary>
         public PipelineWorkerType? WorkerType { get; init; }
+        /// <summary>Output.</summary>
         public string? Output { get; init; }
+        /// <summary>Error.</summary>
         public string? Error { get; init; }
     }
 }

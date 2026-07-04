@@ -16,7 +16,7 @@ public static class ProjectBTrustConsumer
 
     public static async Task<int> ExecuteDamageResolverSmokeAsync(
         string brickSource,
-        string brickTypeName = "GeneratedBricks.DamageResolverBrick")
+        string brickTypeName = "Nexo.Certified.DamageResolver.DamageResolverBrick")
     {
         var brick = CertifiedBrickCompiler.InstantiateBrick(brickSource, brickTypeName);
         var input = new Nexo.Core.Domain.Execution.BrickInput(new Dictionary<string, object>

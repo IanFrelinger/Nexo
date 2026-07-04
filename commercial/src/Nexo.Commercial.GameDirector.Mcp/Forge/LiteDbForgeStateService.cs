@@ -1,11 +1,11 @@
 using LiteDB;
 using Microsoft.Extensions.Logging;
-using Nexo.GameDomain.Descriptors;
-using Nexo.GameDomain.Macros;
-using Nexo.GameDomain.Session;
+using Nexo.Commercial.GameDomain.Descriptors;
+using Nexo.Commercial.GameDomain.Macros;
+using Nexo.Commercial.GameDomain.Session;
 
-namespace Nexo.API.Forge;
-
+namespace GameDirector.Mcp.Forge;
+/// <summary>Service for lite db forge state operations.</summary>
 public sealed class LiteDbForgeStateService : IForgeStateService, IDisposable
 {
     private const string Collection = "forge_state";
@@ -42,6 +42,7 @@ public sealed class LiteDbForgeStateService : IForgeStateService, IDisposable
             {
                 _session = InMemoryForgeStateService.CreateDefaultSession();
                 _registry = new MacroRegistry();
+                /// <summary>Persist unlocked.</summary>
                 PersistUnlocked();
                 _log.LogInformation("Forge LiteDB store initialized at {Path}.", path);
             }
@@ -68,6 +69,7 @@ public sealed class LiteDbForgeStateService : IForgeStateService, IDisposable
                     _log.LogWarning(ex, "Failed to deserialize macros; empty registry.");
                 }
 
+                /// <summary>Align session macros unlocked.</summary>
                 AlignSessionMacrosUnlocked();
             }
         }
@@ -89,6 +91,7 @@ public sealed class LiteDbForgeStateService : IForgeStateService, IDisposable
                 _registry = new MacroRegistry();
                 foreach (var m in _session.Macros)
                     _registry.Register(m);
+                /// <summary>Persist unlocked.</summary>
                 PersistUnlocked();
             }
         }
@@ -107,7 +110,9 @@ public sealed class LiteDbForgeStateService : IForgeStateService, IDisposable
             lock (_gate)
             {
                 _registry = value;
+                /// <summary>Align session macros unlocked.</summary>
                 AlignSessionMacrosUnlocked();
+                /// <summary>Persist unlocked.</summary>
                 PersistUnlocked();
             }
         }
@@ -117,7 +122,9 @@ public sealed class LiteDbForgeStateService : IForgeStateService, IDisposable
     {
         lock (_gate)
         {
+            /// <summary>Align session macros unlocked.</summary>
             AlignSessionMacrosUnlocked();
+            /// <summary>Persist unlocked.</summary>
             PersistUnlocked();
         }
     }
@@ -138,12 +145,17 @@ public sealed class LiteDbForgeStateService : IForgeStateService, IDisposable
         });
     }
 
+    /// <summary>Dispose.</summary>
     public void Dispose() => _db.Dispose();
 
+    /// <summary>Forge state doc.</summary>
     private sealed class ForgeStateDoc
     {
+        /// <summary>Id.</summary>
         public string Id { get; set; } = string.Empty;
+        /// <summary>Session json.</summary>
         public string SessionJson { get; set; } = "{}";
+        /// <summary>Macros json.</summary>
         public string MacrosJson { get; set; } = "[]";
     }
 }

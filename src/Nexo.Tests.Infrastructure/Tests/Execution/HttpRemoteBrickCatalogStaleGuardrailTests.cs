@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Execution;
 
+/// <summary>Tests for http remote brick catalog stale guardrail.</summary>
 public sealed class HttpRemoteBrickCatalogStaleGuardrailTests
 {
     [Fact]
@@ -100,6 +101,7 @@ public sealed class HttpRemoteBrickCatalogStaleGuardrailTests
         };
     }
 
+    /// <summary>Tests for fake http message handler.</summary>
     private sealed class FakeHttpMessageHandler : HttpMessageHandler
     {
         private readonly Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> _handler;

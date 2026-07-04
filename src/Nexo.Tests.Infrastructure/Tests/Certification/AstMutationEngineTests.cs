@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Certification;
 
+/// <summary>Tests for ast mutation engine.</summary>
 [Trait("Category", "Certification")]
 public sealed class AstMutationEngineTests
 {
@@ -54,7 +55,7 @@ public sealed class AstMutationEngineTests
         var engine = new BrickMutationEngine();
         var result = await engine.RunAsync(
             source,
-            "GeneratedBricks.LineSubstringCounterBrick",
+            "Nexo.Certified.DamageResolver.LineSubstringCounterBrick",
             witness,
             CompilationReferences(),
             CancellationToken.None);
@@ -62,6 +63,7 @@ public sealed class AstMutationEngineTests
         result.TotalMutants.Should().BeGreaterThan(0, "zero-mutant guard requires applicable AST mutations");
     }
 
+    /// <summary>Compilation references.</summary>
     private static List<string> CompilationReferences() =>
     [
         typeof(Nexo.Core.Domain.Bricks.Brick).Assembly.Location,

@@ -48,6 +48,7 @@ public sealed partial class WorkflowCommand : Command
     private readonly StressHandler _stressHandler;
     private readonly OptimizeHandler _optimizeHandler;
 
+    /// <summary>Creates a new WorkflowCommand instance.</summary>
     public WorkflowCommand(Func<OrchestrateCommand> orchestrateFactory)
         : this(
             async (request, runtimeSpecJson, provider, outputJson, verbose, ct) =>
@@ -62,6 +63,7 @@ public sealed partial class WorkflowCommand : Command
     {
     }
 
+    /// <summary>Creates a new WorkflowCommand instance.</summary>
     public WorkflowCommand(Func<IServiceScope> orchestrationScopeFactory)
         : this(
             async (request, runtimeSpecJson, provider, outputJson, verbose, ct) =>

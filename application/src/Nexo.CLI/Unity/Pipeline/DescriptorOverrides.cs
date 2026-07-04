@@ -15,9 +15,11 @@ public static class DescriptorOverrides
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
+    /// <summary>Resolves the companion overrides file path for a descriptor.</summary>
     public static string GetOverridePath(string descriptorPath) =>
         Path.ChangeExtension(descriptorPath, ".overrides.json");
 
+    /// <summary>Loads pinned field overrides for a descriptor, or an empty map when none exist.</summary>
     public static Dictionary<string, object> Load(string descriptorPath)
     {
         var path = GetOverridePath(descriptorPath);
@@ -28,6 +30,7 @@ public static class DescriptorOverrides
                ?? new Dictionary<string, object>();
     }
 
+    /// <summary>Pins a field value so regeneration preserves it across cycles.</summary>
     public static void Pin(string descriptorPath, string field, object value)
     {
         var overrides = Load(descriptorPath);
@@ -36,6 +39,7 @@ public static class DescriptorOverrides
         File.WriteAllText(path, JsonSerializer.Serialize(overrides, Options));
     }
 
+    /// <summary>Removes a pinned field override from the descriptor companion file.</summary>
     public static void Unpin(string descriptorPath, string field)
     {
         var overrides = Load(descriptorPath);
@@ -47,6 +51,7 @@ public static class DescriptorOverrides
             File.WriteAllText(path, JsonSerializer.Serialize(overrides, Options));
     }
 
+    /// <summary>Builds a bullet-list fragment describing pinned values for LLM prompts.</summary>
     public static string ToPromptFragment(string descriptorPath)
     {
         var overrides = Load(descriptorPath);

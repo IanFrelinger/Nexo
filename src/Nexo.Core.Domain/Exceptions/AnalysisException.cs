@@ -11,7 +11,10 @@ namespace Nexo.Core.Domain.Exceptions;
 /// </summary>
 public class AnalysisException : DomainException
 {
+    /// <summary>Optional structured error code from <see cref="ErrorCodes"/>.</summary>
     public string? ErrorCode { get; }
+
+    /// <summary>Optional operator suggestion for resolving the analysis failure.</summary>
     public string? Suggestion { get; }
 
     public AnalysisException(string message) : base(message)

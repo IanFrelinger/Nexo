@@ -15,8 +15,10 @@ public sealed class ModelBackedMaterialIntelligenceService : IMaterialIntelligen
 {
     private readonly IModel _model;
 
+    /// <summary>Initializes a new model-backed material intelligence service.</summary>
     public ModelBackedMaterialIntelligenceService(IModel model) => _model = model;
 
+    /// <summary>Suggest materials asynchronously.</summary>
     public async Task<MaterialIntelligenceResult> SuggestMaterialsAsync(
         MaterialIntelligenceRequest request,
         CancellationToken cancellationToken = default)
@@ -134,13 +136,21 @@ public sealed class ModelBackedMaterialIntelligenceService : IMaterialIntelligen
 
     private sealed class MaterialDto
     {
+        /// <summary>Id.</summary>
         public string? Id { get; set; }
+        /// <summary>Name.</summary>
         public string? Name { get; set; }
+        /// <summary>Shader name.</summary>
         public string? ShaderName { get; set; }
+        /// <summary>Color hex.</summary>
         public string? ColorHex { get; set; }
+        /// <summary>Metallic.</summary>
         public double Metallic { get; set; }
+        /// <summary>Smoothness.</summary>
         public double Smoothness { get; set; }
+        /// <summary>Render mode.</summary>
         public string? RenderMode { get; set; }
+        /// <summary>Texture slot hints.</summary>
         public Dictionary<string, string>? TextureSlotHints { get; set; }
     }
 }

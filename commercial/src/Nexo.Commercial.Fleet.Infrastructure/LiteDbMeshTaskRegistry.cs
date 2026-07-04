@@ -17,6 +17,7 @@ public sealed class LiteDbMeshTaskRegistry : IMeshTaskRegistry
         _connectionString = LiteDbMeshDirectorConnection.ToConnectionString(pathOrConnectionString);
     }
 
+    /// <summary>Creates async.</summary>
     public async Task<MeshTaskState> CreateAsync(MeshTaskCreateSpec spec, CancellationToken cancellationToken = default)
     {
         var id = $"{DateTimeOffset.UtcNow:yyyyMMddHHmmssfff}-{Guid.NewGuid():N}";
@@ -71,6 +72,7 @@ public sealed class LiteDbMeshTaskRegistry : IMeshTaskRegistry
         }
     }
 
+    /// <summary>Attempts to get by idempotency key async.</summary>
     public Task<MeshTaskState?> TryGetByIdempotencyKeyAsync(string idempotencyKey, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -84,6 +86,7 @@ public sealed class LiteDbMeshTaskRegistry : IMeshTaskRegistry
         return Task.FromResult(doc?.ToState());
     }
 
+    /// <summary>Gets async.</summary>
     public async Task<MeshTaskState?> GetAsync(string taskId, CancellationToken cancellationToken = default)
     {
         await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -100,6 +103,7 @@ public sealed class LiteDbMeshTaskRegistry : IMeshTaskRegistry
         }
     }
 
+    /// <summary>List async operation.</summary>
     public async Task<IReadOnlyList<MeshTaskState>> ListAsync(CancellationToken cancellationToken = default)
     {
         await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);
@@ -119,6 +123,7 @@ public sealed class LiteDbMeshTaskRegistry : IMeshTaskRegistry
         }
     }
 
+    /// <summary>Update async operation.</summary>
     public async Task<bool> UpdateAsync(MeshTaskState task, CancellationToken cancellationToken = default)
     {
         await _lock.WaitAsync(cancellationToken).ConfigureAwait(false);

@@ -5,6 +5,7 @@ namespace Nexo.API.Security;
 /// </summary>
 public sealed class NexoPrivateLicenseOptions
 {
+    /// <summary>Configuration section path (<c>Nexo:PrivateLicense</c>).</summary>
     public const string SectionPath = "Nexo:PrivateLicense";
 
     /// <summary>When false, license checks are advisory only (logged, not enforced).</summary>
