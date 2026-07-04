@@ -32,9 +32,9 @@ jobs:
 
           # README must include lane-based onboarding and safe build path.
           grep -nE "## Quick Start \\(5 minutes\\)" README.md
-          grep -nE "Choose your lane \\(recommended\\)" README.md
-          grep -nE "Lane A: dev container \\+ container deployment \\(recommended\\)" README.md
-          grep -nE "Lane B: full local dev path \\(native SDK\\)" README.md
+          grep -nE "### Lane 1 .* Try \\(run the portal\\)" README.md
+          grep -nE "### Lane 2 .* Develop \\(dev container \\+ CLI\\)" README.md
+          grep -nE "### Lane 3 .* Deploy \\(operators\\)" README.md
           grep -nE "bash scripts/setup/setup\\.sh all" README.md
           grep -nE "dotnet build application/src/Nexo\\.CLI/Nexo\\.CLI\\.csproj --no-restore" README.md
 
