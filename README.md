@@ -4,11 +4,9 @@
 
 **New here? Start with one of three lanes:** [**Try**](#lane-1--try-run-the-portal) (run the portal in Docker) · [**Develop**](#lane-2--develop-dev-container--cli) (dev container + CLI) · [**Deploy**](#lane-3--deploy-operators) (GHCR images + compose).
 
-Nexo is an **adaptive orchestration framework** for private, auditable software workflows. It watches how teams build, test, release, and operate software; learns repeatable patterns; and improves automations over time with built-in privacy controls such as pause/resume, local-first model routing, policy gates, and audit trails.
+It watches how teams build, test, release, and operate software; learns repeatable patterns; and improves automations over time — with built-in privacy controls such as pause/resume, local-first model routing, policy gates, and audit trails.
 
-**ChatGPT is a calculator; Nexo is an autopilot panel.** A calculator answers the prompt in front of it. An autopilot panel observes the whole flight, keeps the route visible, applies policy, hands control back to the operator, and records what happened.
-
-In this repo, that panel is a .NET runtime plus deployable hosts and app-level configurations: kernel libraries, observe/adapt/improve loops, mesh/federation, gRPC transport, AWS ingress, `Nexo.CLI`, `Nexo.API`, four `apps/` configurations, and NuGet/GHCR/compose distribution paths.
+In this repo it ships as a .NET runtime plus deployable hosts and app-level configurations: kernel libraries, observe/adapt/improve loops, mesh/federation, gRPC transport, AWS ingress, `Nexo.CLI`, `Nexo.API`, four `apps/` configurations, and NuGet/GHCR/compose distribution paths.
 
 Repository: <https://github.com/IanFrelinger/Nexo>
 
@@ -78,7 +76,7 @@ For the canonical tier-by-tier project map, see [`docs/ProjectTiers.md`](docs/Pr
 - **Not a hosted SaaS or chatbot.** You run it (CLI, API, container, or embedded in your app); nothing is sent to a Nexo-operated service.
 - **Not cloud-dependent.** Cloud providers are opt-in execution targets, not requirements. Air-gapped and local-only deployments are first-class.
 - **Not a drop-in IDE plugin.** Nexo is a runtime and orchestration layer, not an editor extension.
-- **Not secure-by-default on a network.** Local defaults are HTTP-only with no auth (see the warning below); network exposure requires explicit auth + TLS.
+- **Local-first by default.** Production network exposure requires auth + TLS; the shipped defaults are HTTP-only with no auth for local use (see the [Quick Start note](#quick-start-5-minutes)).
 
 ## Subsystem map
 
@@ -101,6 +99,8 @@ For the canonical tier-by-tier project map, see [`docs/ProjectTiers.md`](docs/Pr
 4. **Understand repo shape** — [`docs/ProjectTiers.md`](docs/ProjectTiers.md) for the canonical tier map.
 
 ## Why Nexo
+
+**ChatGPT is a calculator; Nexo is an autopilot panel.** A calculator answers the prompt in front of it. An autopilot panel observes the whole flight, keeps the route visible, applies policy, hands control back to the operator, and records what happened.
 
 - **Adaptive orchestration.** Nexo observes workflow signals, composes repeatable automations, and improves them under policy rather than treating every prompt as an isolated one-off.
 - **Operator control.** Pause observation, keep execution local-first, route work by trust tier, and make every automation inspectable.
