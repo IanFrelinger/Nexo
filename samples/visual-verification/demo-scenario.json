@@ -1,0 +1,10 @@
+{
+  "seed": 15242106,
+  "fixedTimestepSeconds": 0.016666666666666666,
+  "totalSteps": 10,
+  "inputScript": [
+    { "step": 1, "channel": "spawn", "payload": "" },
+    { "step": 5, "channel": "despawn", "payload": "" },
+    { "step": 8, "channel": "pause", "payload": "on" }
+  ]
+}
