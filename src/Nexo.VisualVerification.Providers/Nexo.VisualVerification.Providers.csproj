@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>12.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <IsPackable>true</IsPackable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+    <PackageId>Nexo.VisualVerification.Providers</PackageId>
+    <Title>Nexo Visual Verification Providers</Title>
+    <Description>Display and target-app providers for the Nexo visual verification harness.</Description>
+    <PackageTags>nexo;visual-verification;providers</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Nexo.VisualVerification\Nexo.VisualVerification.csproj" />
+  </ItemGroup>
+
+</Project>

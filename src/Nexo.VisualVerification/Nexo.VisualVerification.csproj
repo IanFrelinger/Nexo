@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>12.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <IsPackable>true</IsPackable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+    <PackageId>Nexo.VisualVerification</PackageId>
+    <Title>Nexo Visual Verification</Title>
+    <Description>Engine-agnostic visual verification harness records, hashing, and Ed25519 certification.</Description>
+    <PackageTags>nexo;visual-verification;eye-test;certification</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NSec.Cryptography" />
+    <PackageReference Include="System.Text.Json" />
+  </ItemGroup>
+
+</Project>
