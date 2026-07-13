@@ -16,23 +16,33 @@ public static class WitnessGraphOracle
     {
         var edges = new List<GraphEdge>();
         var certHash = ComputeCertHashWitness(bundle.Certificate);
+        var claims = ParseSignedClaims(bundle.Certificate);
 
-        edges.Add(new GraphEdge(bundle.ArtifactId, certHash, "CERTIFIED_BY"));
+        edges.Add(new GraphEdge(bundle.Certificate.AssetHash, certHash, "CERTIFIED_BY"));
 
-        if (!string.IsNullOrWhiteSpace(bundle.PriorCertificateHash))
-            edges.Add(new GraphEdge(certHash, bundle.PriorCertificateHash, "CHAINS_TO"));
+        if (claims.TryGetProperty("priorCertificateHash", out var prior))
+            edges.Add(new GraphEdge(certHash, prior.GetString()!, "CHAINS_TO"));
 
-        if (!string.IsNullOrWhiteSpace(bundle.PolicyName) && !string.IsNullOrWhiteSpace(bundle.PolicyVersion))
+        if (claims.TryGetProperty("policyName", out var policyName)
+            && claims.TryGetProperty("policyVersion", out var policyVersion))
         {
-            var policyId = $"{bundle.PolicyName}@{bundle.PolicyVersion}";
+            var policyId = $"{policyName.GetString()}@{policyVersion.GetString()}";
             edges.Add(new GraphEdge(certHash, policyId, "ISSUED_UNDER"));
         }
 
-        if (!string.IsNullOrWhiteSpace(bundle.ProducerAgentId) && bundle.ProducerAgentKind.HasValue)
-            edges.Add(new GraphEdge(bundle.ArtifactId, bundle.ProducerAgentId, "PRODUCED_BY"));
+        if (claims.TryGetProperty("producerAgentId", out var producer))
+            edges.Add(new GraphEdge(bundle.Certificate.AssetHash, producer.GetString()!, "PRODUCED_BY"));
 
-        foreach (var dep in bundle.DependsOnArtifactIds)
-            edges.Add(new GraphEdge(bundle.ArtifactId, dep, "DEPENDS_ON"));
+        if (claims.TryGetProperty("dependsOnArtifactIds", out var dependencies))
+        {
+            foreach (var dependency in dependencies.EnumerateArray())
+            {
+                edges.Add(new GraphEdge(
+                    bundle.Certificate.AssetHash,
+                    dependency.GetString()!,
+                    "DEPENDS_ON"));
+            }
+        }
 
         return edges;
     }
@@ -42,9 +52,21 @@ public static class WitnessGraphOracle
     /// </summary>
     private static string ComputeCertHashWitness(PhysicalAtomCertificate certificate)
     {
-        var witnessJson = BuildWitnessCanonicalJson(certificate);
-        var hash = SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(witnessJson));
+        var payload = System.Text.Encoding.UTF8.GetBytes(BuildWitnessCanonicalJson(certificate));
+        var signature = System.Text.Encoding.UTF8.GetBytes(certificate.IssuerSignature ?? string.Empty);
+        var content = new byte[payload.Length + 1 + signature.Length];
+        payload.CopyTo(content, 0);
+        content[payload.Length] = (byte)'\n';
+        signature.CopyTo(content, payload.Length + 1);
+        var hash = SHA256.HashData(content);
         return Convert.ToHexString(hash).ToLowerInvariant();
+    }
+
+    private static JsonElement ParseSignedClaims(PhysicalAtomCertificate certificate)
+    {
+        var bytes = certificate.Extensions[ProvenanceClaims.ExtensionKey];
+        using var document = JsonDocument.Parse(bytes);
+        return document.RootElement.Clone();
     }
 
     private static string BuildWitnessCanonicalJson(PhysicalAtomCertificate certificate)
@@ -92,13 +114,16 @@ public static class WitnessGraphOracle
 
     public static string ComputeChainHeadWitness(IReadOnlyList<ProvenanceCertificateBundle> bundles)
     {
-        var allHashes = bundles.Select(b => ProvenanceCertificateHasher.ComputeCertificateHash(b.Certificate)).ToHashSet(StringComparer.Ordinal);
+        var allHashes = bundles.Select(b => ComputeCertHashWitness(b.Certificate)).ToHashSet(StringComparer.Ordinal);
         var chainedFrom = bundles
-            .Where(b => !string.IsNullOrWhiteSpace(b.PriorCertificateHash))
-            .Select(b => b.PriorCertificateHash!)
+            .Select(bundle => ParseSignedClaims(bundle.Certificate))
+            .Where(claims => claims.TryGetProperty("priorCertificateHash", out _))
+            .Select(claims => claims.GetProperty("priorCertificateHash").GetString()!)
             .ToHashSet(StringComparer.Ordinal);
 
         var heads = allHashes.Where(h => !chainedFrom.Contains(h)).ToList();
-        return heads.Count == 1 ? heads[0] : heads.OrderBy(h => h, StringComparer.Ordinal).Last();
+        if (heads.Count != 1)
+            throw new InvalidOperationException($"Witness found {heads.Count} chain heads.");
+        return heads[0];
     }
 }

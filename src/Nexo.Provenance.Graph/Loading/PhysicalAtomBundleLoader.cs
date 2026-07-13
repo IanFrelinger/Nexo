@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Nexo.Certification.Physical;
 using Nexo.Certification.Physical.Resolution;
 using Nexo.Provenance.Graph.Models;
@@ -11,13 +12,11 @@ public static class PhysicalAtomBundleLoader
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNameCaseInsensitive = true,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        Converters = { new JsonStringEnumConverter() }
     };
 
-    public static ProvenanceCertificateBundle LoadFromJsonFile(
-        string path,
-        ArtifactKind artifactKind = ArtifactKind.Atom,
-        Action<ProvenanceCertificateBundle>? enrich = null)
+    public static ProvenanceCertificateBundle LoadFromJsonFile(string path)
     {
         var json = File.ReadAllText(path);
         var doc = JsonSerializer.Deserialize<BundleDocument>(json, JsonOptions)
@@ -35,18 +34,24 @@ public static class PhysicalAtomBundleLoader
             : throw new InvalidDataException($"Missing issuerPublicKeyBase64 in bundle: {path}");
 
         var assetHash = AssetContentHasher.ComputeSha256Hex(assetBytes);
-        var bundle = new ProvenanceCertificateBundle
+        ProvenanceClaimsCodec.TryDecode(doc.Certificate.Extensions, out var claims, out _);
+        claims ??= new ProvenanceClaims();
+
+        return new ProvenanceCertificateBundle
         {
             ArtifactId = assetHash,
-            ArtifactKind = artifactKind,
+            ArtifactKind = claims.ArtifactKind,
             Certificate = doc.Certificate,
             ArtifactContent = assetBytes,
             IssuerPublicKey = publicKey,
-            IssuedAt = DateTimeOffset.UtcNow
+            IssuedAt = claims.IssuedAt ?? default,
+            PolicyName = claims.PolicyName,
+            PolicyVersion = claims.PolicyVersion,
+            ProducerAgentId = claims.ProducerAgentId,
+            ProducerAgentKind = claims.ProducerAgentKind,
+            DependsOnArtifactIds = claims.DependsOnArtifactIds,
+            PriorCertificateHash = claims.PriorCertificateHash
         };
-
-        enrich?.Invoke(bundle);
-        return bundle;
     }
 
     public static PhysicalAtomCertBundle LoadPhysicalBundle(string path)

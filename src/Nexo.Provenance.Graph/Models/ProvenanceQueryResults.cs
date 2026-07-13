@@ -24,7 +24,7 @@ public sealed record LineageQueryResult : ProvenanceQueryResult
 public sealed record LineageCertificateEntry
 {
     public required string CertificateHash { get; init; }
-    public required DateTimeOffset IssuedAt { get; init; }
+    public DateTimeOffset? IssuedAt { get; init; }
     public required string SignerKeyId { get; init; }
     public string? PolicyId { get; init; }
     public string? PolicyVersion { get; init; }

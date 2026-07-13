@@ -11,10 +11,10 @@ public sealed class NullProvenanceGraphStore : IProvenanceGraphStore
 
     public Task EnsureSchemaAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
 
-    public Task ProjectBundleAsync(ProvenanceCertificateBundle bundle, string certificateHash, CancellationToken cancellationToken = default) =>
-        Task.CompletedTask;
-
-    public Task SetMetadataAsync(ProvenanceGraphMetadata metadata, CancellationToken cancellationToken = default) =>
+    public Task ProjectBatchAsync(
+        IReadOnlyList<VerifiedProvenanceRecord> records,
+        ProvenanceGraphMetadata metadata,
+        CancellationToken cancellationToken = default) =>
         Task.CompletedTask;
 
     public Task<ProvenanceGraphMetadata?> GetMetadataAsync(CancellationToken cancellationToken = default) =>

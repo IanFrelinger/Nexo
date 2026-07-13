@@ -9,55 +9,80 @@ public sealed class InMemoryProvenanceGraphStore : IProvenanceGraphStore
 {
     private readonly object _lock = new();
     private ProvenanceGraphMetadata? _metadata;
-    private readonly Dictionary<string, GraphArtifactNode> _artifacts = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, GraphCertificateNode> _certificates = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, GraphPolicyVersionNode> _policyVersions = new(StringComparer.Ordinal);
-    private readonly Dictionary<string, GraphAgentNode> _agents = new(StringComparer.Ordinal);
-    private readonly List<GraphEdge> _edges = new();
+    private Dictionary<string, GraphArtifactNode> _artifacts = new(StringComparer.Ordinal);
+    private Dictionary<string, GraphCertificateNode> _certificates = new(StringComparer.Ordinal);
+    private Dictionary<string, GraphPolicyVersionNode> _policyVersions = new(StringComparer.Ordinal);
+    private Dictionary<string, GraphAgentNode> _agents = new(StringComparer.Ordinal);
+    private List<GraphEdge> _edges = [];
+    private HashSet<string> _edgeKeys = new(StringComparer.Ordinal);
 
     public bool IsEnabled => true;
 
     public Task EnsureSchemaAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
 
-    public Task ProjectBundleAsync(ProvenanceCertificateBundle bundle, string certificateHash, CancellationToken cancellationToken = default)
+    public Task ProjectBatchAsync(
+        IReadOnlyList<VerifiedProvenanceRecord> records,
+        ProvenanceGraphMetadata metadata,
+        CancellationToken cancellationToken = default)
     {
         lock (_lock)
         {
-            _artifacts[bundle.ArtifactId] = new GraphArtifactNode(bundle.ArtifactId, bundle.ArtifactKind);
-            _certificates[certificateHash] = new GraphCertificateNode(
-                certificateHash,
-                bundle.IssuedAt,
-                ProvenanceCertificateHasher.ComputeSignerKeyId(bundle.IssuerPublicKey));
+            var artifacts = new Dictionary<string, GraphArtifactNode>(_artifacts, StringComparer.Ordinal);
+            var certificates = new Dictionary<string, GraphCertificateNode>(_certificates, StringComparer.Ordinal);
+            var policies = new Dictionary<string, GraphPolicyVersionNode>(_policyVersions, StringComparer.Ordinal);
+            var agents = new Dictionary<string, GraphAgentNode>(_agents, StringComparer.Ordinal);
+            var edges = new List<GraphEdge>(_edges);
+            var edgeKeys = new HashSet<string>(_edgeKeys, StringComparer.Ordinal);
 
-            MergeEdge(bundle.ArtifactId, certificateHash, "CERTIFIED_BY");
-
-            if (!string.IsNullOrWhiteSpace(bundle.PriorCertificateHash))
-                MergeEdge(certificateHash, bundle.PriorCertificateHash!, "CHAINS_TO");
-
-            if (!string.IsNullOrWhiteSpace(bundle.PolicyName) && !string.IsNullOrWhiteSpace(bundle.PolicyVersion))
+            foreach (var record in records)
             {
-                var policyId = ProvenanceCertificateHasher.ComputePolicyVersionId(bundle.PolicyName, bundle.PolicyVersion);
-                _policyVersions[policyId] = new GraphPolicyVersionNode(policyId, bundle.PolicyName, bundle.PolicyVersion);
-                MergeEdge(certificateHash, policyId, "ISSUED_UNDER");
+                artifacts[record.ArtifactId] = new GraphArtifactNode(record.ArtifactId, record.ArtifactKind);
+                certificates[record.CertificateHash] = new GraphCertificateNode(
+                    record.CertificateHash,
+                    record.IssuedAt,
+                    record.SignerKeyId);
             }
 
-            if (!string.IsNullOrWhiteSpace(bundle.ProducerAgentId) && bundle.ProducerAgentKind.HasValue)
+            foreach (var record in records)
             {
-                _agents[bundle.ProducerAgentId] = new GraphAgentNode(bundle.ProducerAgentId, bundle.ProducerAgentKind.Value);
-                MergeEdge(bundle.ArtifactId, bundle.ProducerAgentId, "PRODUCED_BY");
+                MergeEdge(edges, edgeKeys, record.ArtifactId, record.CertificateHash, "CERTIFIED_BY");
+
+                if (!string.IsNullOrWhiteSpace(record.PriorCertificateHash))
+                {
+                    if (!certificates.ContainsKey(record.PriorCertificateHash))
+                        throw new InvalidOperationException($"Unknown prior certificate '{record.PriorCertificateHash}'.");
+                    MergeEdge(edges, edgeKeys, record.CertificateHash, record.PriorCertificateHash, "CHAINS_TO");
+                }
+
+                if (!string.IsNullOrWhiteSpace(record.PolicyName) && !string.IsNullOrWhiteSpace(record.PolicyVersion))
+                {
+                    var policyId = ProvenanceCertificateHasher.ComputePolicyVersionId(record.PolicyName, record.PolicyVersion);
+                    policies[policyId] = new GraphPolicyVersionNode(policyId, record.PolicyName, record.PolicyVersion);
+                    MergeEdge(edges, edgeKeys, record.CertificateHash, policyId, "ISSUED_UNDER");
+                }
+
+                if (!string.IsNullOrWhiteSpace(record.ProducerAgentId) && record.ProducerAgentKind.HasValue)
+                {
+                    agents[record.ProducerAgentId] = new GraphAgentNode(record.ProducerAgentId, record.ProducerAgentKind.Value);
+                    MergeEdge(edges, edgeKeys, record.ArtifactId, record.ProducerAgentId, "PRODUCED_BY");
+                }
+
+                foreach (var dependency in record.DependsOnArtifactIds)
+                {
+                    if (!artifacts.ContainsKey(dependency))
+                        throw new InvalidOperationException($"Unknown dependency artifact '{dependency}'.");
+                    MergeEdge(edges, edgeKeys, record.ArtifactId, dependency, "DEPENDS_ON");
+                }
             }
 
-            foreach (var dep in bundle.DependsOnArtifactIds)
-                MergeEdge(bundle.ArtifactId, dep, "DEPENDS_ON");
-        }
-
-        return Task.CompletedTask;
-    }
-
-    public Task SetMetadataAsync(ProvenanceGraphMetadata metadata, CancellationToken cancellationToken = default)
-    {
-        lock (_lock)
+            _artifacts = artifacts;
+            _certificates = certificates;
+            _policyVersions = policies;
+            _agents = agents;
+            _edges = edges;
+            _edgeKeys = edgeKeys;
             _metadata = metadata;
+        }
 
         return Task.CompletedTask;
     }
@@ -84,14 +109,17 @@ public sealed class InMemoryProvenanceGraphStore : IProvenanceGraphStore
         return Task.CompletedTask;
     }
 
-    private void MergeEdge(string fromId, string toId, string relationship)
+    private static void MergeEdge(
+        List<GraphEdge> edges,
+        HashSet<string> edgeKeys,
+        string fromId,
+        string toId,
+        string relationship)
     {
         var key = $"{fromId}|{relationship}|{toId}";
-        if (_edgeKeys.Add(key))
-            _edges.Add(new GraphEdge(fromId, toId, relationship));
+        if (edgeKeys.Add(key))
+            edges.Add(new GraphEdge(fromId, toId, relationship));
     }
-
-    private readonly HashSet<string> _edgeKeys = new(StringComparer.Ordinal);
 
     public Task<ProvenanceGraphSnapshot?> GetSnapshotAsync(CancellationToken cancellationToken = default)
     {

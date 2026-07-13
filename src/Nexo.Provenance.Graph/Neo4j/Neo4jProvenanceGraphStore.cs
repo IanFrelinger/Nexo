@@ -21,94 +21,108 @@ public sealed class Neo4jProvenanceGraphStore : IProvenanceGraphStore, IAsyncDis
         await Neo4jSchemaMigrator.ApplyAsync(session, cancellationToken).ConfigureAwait(false);
     }
 
-    public async Task ProjectBundleAsync(ProvenanceCertificateBundle bundle, string certificateHash, CancellationToken cancellationToken = default)
+    public async Task ProjectBatchAsync(
+        IReadOnlyList<VerifiedProvenanceRecord> records,
+        ProvenanceGraphMetadata metadata,
+        CancellationToken cancellationToken = default)
     {
-        var signerKeyId = ProvenanceCertificateHasher.ComputeSignerKeyId(bundle.IssuerPublicKey);
         await using var session = _driver.AsyncSession();
         await session.ExecuteWriteAsync(async tx =>
         {
-            await tx.RunAsync(
-                """
-                MERGE (a:Artifact {id: $artifactId})
-                SET a.kind = $artifactKind
-                MERGE (c:Certificate {id: $certificateHash})
-                SET c.issuedAt = $issuedAt, c.signerKeyId = $signerKeyId
-                MERGE (a)-[:CERTIFIED_BY]->(c)
-                """,
-                new
+            foreach (var record in records)
+            {
+                await tx.RunAsync(
+                    """
+                    MERGE (a:Artifact {id: $artifactId})
+                    SET a.kind = $artifactKind, a.verified = true
+                    MERGE (c:Certificate {id: $certificateHash})
+                    SET c.issuedAt = $issuedAt, c.signerKeyId = $signerKeyId, c.verified = true
+                    """,
+                    new
+                    {
+                        artifactId = record.ArtifactId,
+                        artifactKind = record.ArtifactKind.ToString().ToLowerInvariant(),
+                        certificateHash = record.CertificateHash,
+                        issuedAt = record.IssuedAt?.UtcDateTime,
+                        signerKeyId = record.SignerKeyId
+                    }).ConfigureAwait(false);
+            }
+
+            foreach (var record in records)
+            {
+                await tx.RunAsync(
+                    """
+                    MATCH (a:Artifact {id: $artifactId, verified: true})
+                    MATCH (c:Certificate {id: $certificateHash})
+                    MERGE (a)-[:CERTIFIED_BY]->(c)
+                    """,
+                    new { artifactId = record.ArtifactId, certificateHash = record.CertificateHash }).ConfigureAwait(false);
+
+                if (!string.IsNullOrWhiteSpace(record.PriorCertificateHash))
                 {
-                    artifactId = bundle.ArtifactId,
-                    artifactKind = bundle.ArtifactKind.ToString().ToLowerInvariant(),
-                    certificateHash,
-                    issuedAt = bundle.IssuedAt.UtcDateTime,
-                    signerKeyId
-                }).ConfigureAwait(false);
+                    await RequireNodeAsync(tx, "Certificate", record.PriorCertificateHash).ConfigureAwait(false);
+                    await tx.RunAsync(
+                        """
+                        MATCH (c:Certificate {id: $certificateHash, verified: true})
+                        MATCH (prior:Certificate {id: $priorHash, verified: true})
+                        MERGE (c)-[:CHAINS_TO]->(prior)
+                        """,
+                        new
+                        {
+                            certificateHash = record.CertificateHash,
+                            priorHash = record.PriorCertificateHash
+                        }).ConfigureAwait(false);
+                }
 
-            if (!string.IsNullOrWhiteSpace(bundle.PriorCertificateHash))
-            {
-                await tx.RunAsync(
-                    """
-                    MATCH (c:Certificate {id: $certificateHash})
-                    MERGE (prior:Certificate {id: $priorHash})
-                    MERGE (c)-[:CHAINS_TO]->(prior)
-                    """,
-                    new { certificateHash, priorHash = bundle.PriorCertificateHash }).ConfigureAwait(false);
+                if (!string.IsNullOrWhiteSpace(record.PolicyName) && !string.IsNullOrWhiteSpace(record.PolicyVersion))
+                {
+                    var policyId = ProvenanceCertificateHasher.ComputePolicyVersionId(record.PolicyName, record.PolicyVersion);
+                    await tx.RunAsync(
+                        """
+                        MATCH (c:Certificate {id: $certificateHash, verified: true})
+                        MERGE (p:PolicyVersion {id: $policyId})
+                        SET p.name = $policyName, p.version = $policyVersion, p.verified = true
+                        MERGE (c)-[:ISSUED_UNDER]->(p)
+                        """,
+                        new
+                        {
+                            certificateHash = record.CertificateHash,
+                            policyId,
+                            policyName = record.PolicyName,
+                            policyVersion = record.PolicyVersion
+                        }).ConfigureAwait(false);
+                }
+
+                if (!string.IsNullOrWhiteSpace(record.ProducerAgentId) && record.ProducerAgentKind.HasValue)
+                {
+                    await tx.RunAsync(
+                        """
+                        MATCH (a:Artifact {id: $artifactId, verified: true})
+                        MERGE (g:Agent {id: $agentId})
+                        SET g.kind = $agentKind, g.verified = true
+                        MERGE (a)-[:PRODUCED_BY]->(g)
+                        """,
+                        new
+                        {
+                            artifactId = record.ArtifactId,
+                            agentId = record.ProducerAgentId,
+                            agentKind = record.ProducerAgentKind.Value.ToString().ToLowerInvariant()
+                        }).ConfigureAwait(false);
+                }
+
+                foreach (var dependency in record.DependsOnArtifactIds)
+                {
+                    await RequireNodeAsync(tx, "Artifact", dependency).ConfigureAwait(false);
+                    await tx.RunAsync(
+                        """
+                        MATCH (a:Artifact {id: $artifactId, verified: true})
+                        MATCH (dep:Artifact {id: $depId, verified: true})
+                        MERGE (a)-[:DEPENDS_ON]->(dep)
+                        """,
+                        new { artifactId = record.ArtifactId, depId = dependency }).ConfigureAwait(false);
+                }
             }
 
-            if (!string.IsNullOrWhiteSpace(bundle.PolicyName) && !string.IsNullOrWhiteSpace(bundle.PolicyVersion))
-            {
-                var policyId = ProvenanceCertificateHasher.ComputePolicyVersionId(bundle.PolicyName, bundle.PolicyVersion);
-                await tx.RunAsync(
-                    """
-                    MATCH (c:Certificate {id: $certificateHash})
-                    MERGE (p:PolicyVersion {id: $policyId})
-                    SET p.name = $policyName, p.version = $policyVersion
-                    MERGE (c)-[:ISSUED_UNDER]->(p)
-                    """,
-                    new
-                    {
-                        certificateHash,
-                        policyId,
-                        policyName = bundle.PolicyName,
-                        policyVersion = bundle.PolicyVersion
-                    }).ConfigureAwait(false);
-            }
-
-            if (!string.IsNullOrWhiteSpace(bundle.ProducerAgentId) && bundle.ProducerAgentKind.HasValue)
-            {
-                await tx.RunAsync(
-                    """
-                    MATCH (a:Artifact {id: $artifactId})
-                    MERGE (g:Agent {id: $agentId})
-                    SET g.kind = $agentKind
-                    MERGE (a)-[:PRODUCED_BY]->(g)
-                    """,
-                    new
-                    {
-                        artifactId = bundle.ArtifactId,
-                        agentId = bundle.ProducerAgentId,
-                        agentKind = bundle.ProducerAgentKind.Value.ToString().ToLowerInvariant()
-                    }).ConfigureAwait(false);
-            }
-
-            foreach (var dep in bundle.DependsOnArtifactIds)
-            {
-                await tx.RunAsync(
-                    """
-                    MATCH (a:Artifact {id: $artifactId})
-                    MERGE (dep:Artifact {id: $depId})
-                    MERGE (a)-[:DEPENDS_ON]->(dep)
-                    """,
-                    new { artifactId = bundle.ArtifactId, depId = dep }).ConfigureAwait(false);
-            }
-        }).ConfigureAwait(false);
-    }
-
-    public async Task SetMetadataAsync(ProvenanceGraphMetadata metadata, CancellationToken cancellationToken = default)
-    {
-        await using var session = _driver.AsyncSession();
-        await session.ExecuteWriteAsync(async tx =>
-        {
             await tx.RunAsync(
                 """
                 MERGE (m:GraphMetadata {id: 'provenance'})
@@ -120,6 +134,24 @@ public sealed class Neo4jProvenanceGraphStore : IProvenanceGraphStore, IAsyncDis
                     projectedAt = metadata.ProjectedAt.UtcDateTime
                 }).ConfigureAwait(false);
         }).ConfigureAwait(false);
+    }
+
+    private static async Task RequireNodeAsync(IAsyncQueryRunner tx, string label, string id)
+    {
+        var query = label switch
+        {
+            "Artifact" => "MATCH (n:Artifact {id: $id, verified: true}) RETURN count(n) AS count",
+            "Certificate" => "MATCH (n:Certificate {id: $id, verified: true}) RETURN count(n) AS count",
+            _ => throw new ArgumentOutOfRangeException(nameof(label))
+        };
+
+        var cursor = await tx.RunAsync(query, new { id }).ConfigureAwait(false);
+        var record = await cursor.SingleAsync().ConfigureAwait(false);
+        if (record["count"].As<long>() != 1)
+        {
+            throw new InvalidOperationException(
+                $"Cannot project relationship to unverified {label.ToLowerInvariant()} '{id}'.");
+        }
     }
 
     public async Task<ProvenanceGraphMetadata?> GetMetadataAsync(CancellationToken cancellationToken = default)

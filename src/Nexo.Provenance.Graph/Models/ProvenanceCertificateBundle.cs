@@ -23,24 +23,27 @@ public sealed record ProvenanceCertificateBundle
     /// <summary>Issuer Ed25519 public key (32 bytes).</summary>
     public required byte[] IssuerPublicKey { get; init; }
 
-    /// <summary>UTC issuance timestamp recorded in the graph.</summary>
+    /// <summary>
+    /// Compatibility mirror of the signed claims issuance timestamp.
+    /// The projector never trusts this field as an independent source.
+    /// </summary>
     public required DateTimeOffset IssuedAt { get; init; }
 
-    /// <summary>Policy name for <c>ISSUED_UNDER</c> edge (optional).</summary>
+    /// <summary>Mirror of the signed policy claim; mismatches are rejected.</summary>
     public string? PolicyName { get; init; }
 
-    /// <summary>Policy version for <c>ISSUED_UNDER</c> edge (optional).</summary>
+    /// <summary>Mirror of the signed policy-version claim; mismatches are rejected.</summary>
     public string? PolicyVersion { get; init; }
 
-    /// <summary>Producer agent id for <c>PRODUCED_BY</c> edge (optional).</summary>
+    /// <summary>Mirror of the signed producer claim; mismatches are rejected.</summary>
     public string? ProducerAgentId { get; init; }
 
-    /// <summary>Producer agent kind for <c>PRODUCED_BY</c> edge (optional).</summary>
+    /// <summary>Mirror of the signed producer-kind claim; mismatches are rejected.</summary>
     public AgentKind? ProducerAgentKind { get; init; }
 
-    /// <summary>Upstream artifact content hashes for composition <c>DEPENDS_ON</c> edges.</summary>
+    /// <summary>Mirror of signed dependency claims; mismatches are rejected.</summary>
     public IReadOnlyList<string> DependsOnArtifactIds { get; init; } = Array.Empty<string>();
 
-    /// <summary>Prior certificate hash for <c>CHAINS_TO</c> edge (optional).</summary>
+    /// <summary>Mirror of the signed prior-certificate claim; mismatches are rejected.</summary>
     public string? PriorCertificateHash { get; init; }
 }

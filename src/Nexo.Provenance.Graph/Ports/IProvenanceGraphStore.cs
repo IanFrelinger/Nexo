@@ -13,11 +13,14 @@ public interface IProvenanceGraphStore
     /// <summary>Apply schema constraints (idempotent).</summary>
     Task EnsureSchemaAsync(CancellationToken cancellationToken = default);
 
-    /// <summary>Project a verified bundle into the graph using MERGE semantics.</summary>
-    Task ProjectBundleAsync(ProvenanceCertificateBundle bundle, string certificateHash, CancellationToken cancellationToken = default);
-
-    /// <summary>Record graph metadata including chain-head hash.</summary>
-    Task SetMetadataAsync(ProvenanceGraphMetadata metadata, CancellationToken cancellationToken = default);
+    /// <summary>
+    /// Atomically project a fully verified batch and its chain-head metadata using MERGE semantics.
+    /// Implementations must leave the graph unchanged if any operation fails.
+    /// </summary>
+    Task ProjectBatchAsync(
+        IReadOnlyList<VerifiedProvenanceRecord> records,
+        ProvenanceGraphMetadata metadata,
+        CancellationToken cancellationToken = default);
 
     /// <summary>Read current graph metadata.</summary>
     Task<ProvenanceGraphMetadata?> GetMetadataAsync(CancellationToken cancellationToken = default);

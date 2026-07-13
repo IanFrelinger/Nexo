@@ -53,7 +53,24 @@ public static class WitnessCertificateBuilder
         configure?.Invoke(options);
 
         var assetHash = AssetContentHasher.ComputeSha256Hex(assetBytes);
-        var unsigned = CreateUnsigned(assetHash, options.AtomId, options.BindingScope);
+        var claims = new ProvenanceClaims
+        {
+            ArtifactKind = options.ArtifactKind,
+            IssuedAt = options.IssuedAt,
+            PolicyName = options.PolicyName,
+            PolicyVersion = options.PolicyVersion,
+            ProducerAgentId = options.ProducerAgentId,
+            ProducerAgentKind = options.ProducerAgentKind,
+            DependsOnArtifactIds = options.DependsOnArtifactIds,
+            PriorCertificateHash = options.PriorCertificateHash
+        };
+        var unsigned = CreateUnsigned(assetHash, options.AtomId, options.BindingScope) with
+        {
+            Extensions = new Dictionary<string, byte[]>(StringComparer.Ordinal)
+            {
+                [ProvenanceClaims.ExtensionKey] = ProvenanceClaimsCodec.Encode(claims)
+            }
+        };
         var signed = Sign(unsigned, privateKey);
 
         return new ProvenanceCertificateBundle

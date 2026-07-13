@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <Content Include="../../samples/physical-atom-cert/**/*" CopyToOutputDirectory="PreserveNewest" Link="physical-atom-cert/%(RecursiveDir)%(Filename)%(Extension)" />
+    <Content Include="../../samples/provenance-graph/**/*" CopyToOutputDirectory="PreserveNewest" Link="provenance-graph/%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 
   <ItemGroup>

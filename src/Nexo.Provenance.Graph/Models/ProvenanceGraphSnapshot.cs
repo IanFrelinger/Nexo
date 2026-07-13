@@ -13,7 +13,7 @@ public sealed record ProvenanceGraphSnapshot
 
 public sealed record GraphArtifactNode(string Id, ArtifactKind Kind);
 
-public sealed record GraphCertificateNode(string Id, DateTimeOffset IssuedAt, string SignerKeyId);
+public sealed record GraphCertificateNode(string Id, DateTimeOffset? IssuedAt, string SignerKeyId);
 
 public sealed record GraphPolicyVersionNode(string Id, string Name, string Version);
 
