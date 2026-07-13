@@ -7,13 +7,22 @@ namespace Nexo.Provenance.Graph.InMemory;
 public sealed class InMemoryProvenanceGraphQueries : IProvenanceGraphQueries
 {
     private readonly InMemoryProvenanceGraphStore _store;
+    private readonly IProvenanceChainHeadAuthority _chainHeadAuthority;
 
-    public InMemoryProvenanceGraphQueries(InMemoryProvenanceGraphStore store) =>
+    public InMemoryProvenanceGraphQueries(
+        InMemoryProvenanceGraphStore store,
+        IProvenanceChainHeadAuthority chainHeadAuthority)
+    {
         _store = store ?? throw new ArgumentNullException(nameof(store));
+        _chainHeadAuthority = chainHeadAuthority ?? throw new ArgumentNullException(nameof(chainHeadAuthority));
+    }
 
-    public async Task<LineageQueryResult> LineageOfAsync(string artifactId, string currentChainHeadHash, CancellationToken cancellationToken = default)
+    public async Task<LineageQueryResult> LineageOfAsync(string artifactId, CancellationToken cancellationToken = default)
     {
         var metadata = await _store.GetMetadataAsync(cancellationToken).ConfigureAwait(false);
+        var currentChainHeadHash = await _chainHeadAuthority
+            .GetCurrentChainHeadHashAsync(cancellationToken)
+            .ConfigureAwait(false);
         EnsureFresh(metadata, currentChainHeadHash);
 
         var snapshot = await _store.GetSnapshotAsync(cancellationToken).ConfigureAwait(false)
@@ -40,9 +49,12 @@ public sealed class InMemoryProvenanceGraphQueries : IProvenanceGraphQueries
         };
     }
 
-    public async Task<ArtifactsUnderPolicyResult> ArtifactsUnderPolicyAsync(string policyId, string policyVersion, string currentChainHeadHash, CancellationToken cancellationToken = default)
+    public async Task<ArtifactsUnderPolicyResult> ArtifactsUnderPolicyAsync(string policyId, string policyVersion, CancellationToken cancellationToken = default)
     {
         var metadata = await _store.GetMetadataAsync(cancellationToken).ConfigureAwait(false);
+        var currentChainHeadHash = await _chainHeadAuthority
+            .GetCurrentChainHeadHashAsync(cancellationToken)
+            .ConfigureAwait(false);
         EnsureFresh(metadata, currentChainHeadHash);
 
         var snapshot = await _store.GetSnapshotAsync(cancellationToken).ConfigureAwait(false)
@@ -66,9 +78,9 @@ public sealed class InMemoryProvenanceGraphQueries : IProvenanceGraphQueries
         };
     }
 
-    public async Task<BlastRadiusResult> BlastRadiusOfAsync(string policyId, string policyVersion, string currentChainHeadHash, CancellationToken cancellationToken = default)
+    public async Task<BlastRadiusResult> BlastRadiusOfAsync(string policyId, string policyVersion, CancellationToken cancellationToken = default)
     {
-        var underPolicy = await ArtifactsUnderPolicyAsync(policyId, policyVersion, currentChainHeadHash, cancellationToken)
+        var underPolicy = await ArtifactsUnderPolicyAsync(policyId, policyVersion, cancellationToken)
             .ConfigureAwait(false);
 
         var snapshot = await _store.GetSnapshotAsync(cancellationToken).ConfigureAwait(false)

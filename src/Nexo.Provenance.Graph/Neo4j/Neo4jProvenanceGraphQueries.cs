@@ -8,13 +8,19 @@ namespace Nexo.Provenance.Graph.Neo4j;
 public sealed class Neo4jProvenanceGraphQueries : IProvenanceGraphQueries
 {
     private readonly IDriver _driver;
+    private readonly IProvenanceChainHeadAuthority _chainHeadAuthority;
 
-    public Neo4jProvenanceGraphQueries(IDriver driver) =>
-        _driver = driver ?? throw new ArgumentNullException(nameof(driver));
-
-    public async Task<LineageQueryResult> LineageOfAsync(string artifactId, string currentChainHeadHash, CancellationToken cancellationToken = default)
+    public Neo4jProvenanceGraphQueries(
+        IDriver driver,
+        IProvenanceChainHeadAuthority chainHeadAuthority)
     {
-        var chainHead = await RequireFreshChainHeadAsync(currentChainHeadHash, cancellationToken).ConfigureAwait(false);
+        _driver = driver ?? throw new ArgumentNullException(nameof(driver));
+        _chainHeadAuthority = chainHeadAuthority ?? throw new ArgumentNullException(nameof(chainHeadAuthority));
+    }
+
+    public async Task<LineageQueryResult> LineageOfAsync(string artifactId, CancellationToken cancellationToken = default)
+    {
+        var chainHead = await RequireFreshChainHeadAsync(cancellationToken).ConfigureAwait(false);
         await using var session = _driver.AsyncSession();
 
         var certCursor = await session.RunAsync(
@@ -24,15 +30,17 @@ public sealed class Neo4jProvenanceGraphQueries : IProvenanceGraphQueries
             WITH c, chain
             ORDER BY length(chain) DESC
             LIMIT 1
-            WITH nodes(chain) AS certs
-            UNWIND certs AS cert
+            WITH reverse(nodes(chain)) AS certs
+            UNWIND range(0, size(certs) - 1) AS position
+            WITH certs[position] AS cert, position
             OPTIONAL MATCH (cert)-[:ISSUED_UNDER]->(p:PolicyVersion)
             RETURN DISTINCT cert.id AS certHash,
                    cert.issuedAt AS issuedAt,
                    cert.signerKeyId AS signerKeyId,
                    p.name AS policyName,
-                   p.version AS policyVersion
-            ORDER BY cert.issuedAt
+                   p.version AS policyVersion,
+                   position
+            ORDER BY position
             """,
             new { artifactId }).ConfigureAwait(false);
 
@@ -42,7 +50,9 @@ public sealed class Neo4jProvenanceGraphQueries : IProvenanceGraphQueries
             certificates.Add(new LineageCertificateEntry
             {
                 CertificateHash = record["certHash"].As<string>(),
-                IssuedAt = DateTime.SpecifyKind(record["issuedAt"].As<DateTime>(), DateTimeKind.Utc),
+                IssuedAt = record["issuedAt"] is null
+                    ? null
+                    : DateTime.SpecifyKind(record["issuedAt"].As<DateTime>(), DateTimeKind.Utc),
                 SignerKeyId = record["signerKeyId"].As<string>(),
                 PolicyId = record["policyName"] as string,
                 PolicyVersion = record["policyVersion"] as string
@@ -70,9 +80,9 @@ public sealed class Neo4jProvenanceGraphQueries : IProvenanceGraphQueries
         };
     }
 
-    public async Task<ArtifactsUnderPolicyResult> ArtifactsUnderPolicyAsync(string policyId, string policyVersion, string currentChainHeadHash, CancellationToken cancellationToken = default)
+    public async Task<ArtifactsUnderPolicyResult> ArtifactsUnderPolicyAsync(string policyId, string policyVersion, CancellationToken cancellationToken = default)
     {
-        var chainHead = await RequireFreshChainHeadAsync(currentChainHeadHash, cancellationToken).ConfigureAwait(false);
+        var chainHead = await RequireFreshChainHeadAsync(cancellationToken).ConfigureAwait(false);
         var policyNodeId = $"{policyId}@{policyVersion}";
         await using var session = _driver.AsyncSession();
 
@@ -101,9 +111,9 @@ public sealed class Neo4jProvenanceGraphQueries : IProvenanceGraphQueries
         };
     }
 
-    public async Task<BlastRadiusResult> BlastRadiusOfAsync(string policyId, string policyVersion, string currentChainHeadHash, CancellationToken cancellationToken = default)
+    public async Task<BlastRadiusResult> BlastRadiusOfAsync(string policyId, string policyVersion, CancellationToken cancellationToken = default)
     {
-        var underPolicy = await ArtifactsUnderPolicyAsync(policyId, policyVersion, currentChainHeadHash, cancellationToken)
+        var underPolicy = await ArtifactsUnderPolicyAsync(policyId, policyVersion, cancellationToken)
             .ConfigureAwait(false);
 
         await using var session = _driver.AsyncSession();
@@ -130,8 +140,11 @@ public sealed class Neo4jProvenanceGraphQueries : IProvenanceGraphQueries
         };
     }
 
-    private async Task<string> RequireFreshChainHeadAsync(string currentChainHeadHash, CancellationToken cancellationToken)
+    private async Task<string> RequireFreshChainHeadAsync(CancellationToken cancellationToken)
     {
+        var currentChainHeadHash = await _chainHeadAuthority
+            .GetCurrentChainHeadHashAsync(cancellationToken)
+            .ConfigureAwait(false);
         await using var session = _driver.AsyncSession();
         var cursor = await session.RunAsync(
             """

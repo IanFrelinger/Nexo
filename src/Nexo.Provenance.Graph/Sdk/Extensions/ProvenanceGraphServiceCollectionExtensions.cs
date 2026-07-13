@@ -14,6 +14,7 @@ public static class ProvenanceGraphServiceCollectionExtensions
     /// <summary>Register null provenance graph (default — no Neo4j dependency).</summary>
     public static IServiceCollection AddProvenanceGraph(this IServiceCollection services)
     {
+        services.TryAddSingleton<IProvenanceChainHeadAuthority, UnavailableProvenanceChainHeadAuthority>();
         services.TryAddSingleton<IProvenanceGraphStore, NullProvenanceGraphStore>();
         services.TryAddSingleton<IProvenanceGraphQueries, NullProvenanceGraphQueries>();
         services.TryAddSingleton<ProvenanceProjector>();
@@ -29,6 +30,7 @@ public static class ProvenanceGraphServiceCollectionExtensions
         services.AddSingleton(options);
         services.AddSingleton<IDriver>(_ =>
             GraphDatabase.Driver(options.Uri, AuthTokens.Basic(options.Username, options.Password)));
+        services.TryAddSingleton<IProvenanceChainHeadAuthority, UnavailableProvenanceChainHeadAuthority>();
         services.AddSingleton<IProvenanceGraphStore, Neo4jProvenanceGraphStore>();
         services.AddSingleton<IProvenanceGraphQueries, Neo4jProvenanceGraphQueries>();
         services.TryAddSingleton<ProvenanceProjector>();

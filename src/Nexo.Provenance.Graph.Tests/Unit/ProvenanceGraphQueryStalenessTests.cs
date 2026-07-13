@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Nexo.Provenance.Graph.Ingestion;
 using Nexo.Provenance.Graph.InMemory;
+using Nexo.Provenance.Graph.Ports;
 using Nexo.Provenance.Graph.Tests.Witness;
 using Xunit;
 
@@ -17,13 +18,14 @@ public sealed class ProvenanceGraphQueryStalenessTests
     public async Task LineageOf_RefusesStaleGraph_WithFailClosedError()
     {
         var store = new InMemoryProvenanceGraphStore();
-        var queries = new InMemoryProvenanceGraphQueries(store);
+        var authority = new InMemoryProvenanceChainHeadAuthority("stale-chain-head-hash");
+        var queries = new InMemoryProvenanceGraphQueries(store, authority);
         var projector = new ProvenanceProjector(store, NullLogger<ProvenanceProjector>.Instance);
 
         var bundle = WitnessCertificateBuilder.CreateBundle(WitnessAssetBytes, Keys.PrivateKey, Keys.PublicKey);
         var report = await projector.ProjectAsync([bundle]);
 
-        var act = () => queries.LineageOfAsync(bundle.ArtifactId, "stale-chain-head-hash");
+        var act = () => queries.LineageOfAsync(bundle.ArtifactId);
 
         await act.Should().ThrowAsync<ProvenanceGraphStaleException>()
             .Where(ex => ex.CurrentChainHead == "stale-chain-head-hash");
@@ -33,7 +35,8 @@ public sealed class ProvenanceGraphQueryStalenessTests
     public async Task ArtifactsUnderPolicy_RefusesStaleGraph_WithFailClosedError()
     {
         var store = new InMemoryProvenanceGraphStore();
-        var queries = new InMemoryProvenanceGraphQueries(store);
+        var authority = new InMemoryProvenanceChainHeadAuthority("wrong-head");
+        var queries = new InMemoryProvenanceGraphQueries(store, authority);
         var projector = new ProvenanceProjector(store, NullLogger<ProvenanceProjector>.Instance);
 
         var bundle = WitnessCertificateBuilder.CreateBundle(
@@ -50,9 +53,27 @@ public sealed class ProvenanceGraphQueryStalenessTests
 
         var act = () => queries.ArtifactsUnderPolicyAsync(
             "SelfProducedBrickCertificationPolicy",
-            "1.0.0",
-            "wrong-head");
+            "1.0.0");
 
         await act.Should().ThrowAsync<ProvenanceGraphStaleException>();
+    }
+
+    [Fact]
+    public async Task BlastRadius_RefusesStaleGraph_FromAuthority()
+    {
+        var store = new InMemoryProvenanceGraphStore();
+        var authority = new InMemoryProvenanceChainHeadAuthority("authority-moved");
+        var queries = new InMemoryProvenanceGraphQueries(store, authority);
+        var projector = new ProvenanceProjector(store, NullLogger<ProvenanceProjector>.Instance);
+        var bundle = WitnessCertificateBuilder.CreateBundle(
+            WitnessAssetBytes,
+            Keys.PrivateKey,
+            Keys.PublicKey);
+        await projector.ProjectAsync([bundle]);
+
+        var act = () => queries.BlastRadiusOfAsync("policy", "1.0.0");
+
+        await act.Should().ThrowAsync<ProvenanceGraphStaleException>()
+            .Where(ex => ex.CurrentChainHead == "authority-moved");
     }
 }

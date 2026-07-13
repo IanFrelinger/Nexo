@@ -6,12 +6,12 @@ namespace Nexo.Provenance.Graph.Null;
 /// <summary>No-op query implementation paired with <see cref="NullProvenanceGraphStore"/>.</summary>
 public sealed class NullProvenanceGraphQueries : IProvenanceGraphQueries
 {
-    public Task<LineageQueryResult> LineageOfAsync(string artifactId, string currentChainHeadHash, CancellationToken cancellationToken = default) =>
+    public Task<LineageQueryResult> LineageOfAsync(string artifactId, CancellationToken cancellationToken = default) =>
         throw new InvalidOperationException("Provenance graph is not enabled.");
 
-    public Task<ArtifactsUnderPolicyResult> ArtifactsUnderPolicyAsync(string policyId, string policyVersion, string currentChainHeadHash, CancellationToken cancellationToken = default) =>
+    public Task<ArtifactsUnderPolicyResult> ArtifactsUnderPolicyAsync(string policyId, string policyVersion, CancellationToken cancellationToken = default) =>
         throw new InvalidOperationException("Provenance graph is not enabled.");
 
-    public Task<BlastRadiusResult> BlastRadiusOfAsync(string policyId, string policyVersion, string currentChainHeadHash, CancellationToken cancellationToken = default) =>
+    public Task<BlastRadiusResult> BlastRadiusOfAsync(string policyId, string policyVersion, CancellationToken cancellationToken = default) =>
         throw new InvalidOperationException("Provenance graph is not enabled.");
 }
