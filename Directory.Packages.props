@@ -22,6 +22,8 @@
     <PackageVersion Include="OsmSharp" Version="6.2.0" />
     <PackageVersion Include="PublicApiGenerator" Version="11.5.4" />
     <PackageVersion Include="Testcontainers.DynamoDb" Version="4.11.0" />
+    <PackageVersion Include="Testcontainers.Neo4j" Version="4.11.0" />
+    <PackageVersion Include="Neo4j.Driver" Version="5.28.1" />
   </ItemGroup>
   <!-- System Packages -->
   <ItemGroup>

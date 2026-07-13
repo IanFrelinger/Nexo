@@ -1,0 +1,22 @@
+version: "3.8"
+
+services:
+  neo4j-provenance:
+    image: neo4j:5.26-community
+    container_name: nexo-neo4j-provenance
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      NEO4J_AUTH: neo4j/provenance-graph
+      NEO4J_PLUGINS: '[]'
+    volumes:
+      - neo4j-provenance-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://localhost:7474 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  neo4j-provenance-data:
