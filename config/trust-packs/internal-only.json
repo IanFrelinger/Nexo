@@ -16,5 +16,35 @@
     "git": true,
     "vscode": true
   },
-  "projectRules": []
+  "projectRules": [],
+  "skillRules": {
+    "visibility": {
+      "Trusted": {
+        "allow": ["nexo-trust-inspector", "nexo-active-policy-pack"],
+        "deny": []
+      },
+      "Untrusted": {
+        "allow": ["nexo-trust-inspector"],
+        "deny": ["nexo-active-policy-pack"]
+      },
+      "Unknown": {
+        "allow": [],
+        "deny": ["*"]
+      }
+    },
+    "allowedScripts": {
+      "nexo-trust-inspector": ["scripts/list-packs.sh"]
+    },
+    "autoApproveScripts": [
+      {
+        "skill": "nexo-trust-inspector",
+        "script": "scripts/list-packs.sh",
+        "tiers": ["Trusted"]
+      }
+    ],
+    "scriptLimits": {
+      "timeoutSeconds": 30,
+      "maxOutputBytes": 65536
+    }
+  }
 }

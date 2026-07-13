@@ -27,6 +27,7 @@
     <ProjectReference Include="..\Nexo.Contracts\Nexo.Contracts.csproj" />
     <ProjectReference Include="..\Nexo.Transport.Grpc\Nexo.Transport.Grpc.csproj" />
     <ProjectReference Include="..\Nexo.Runtime\Nexo.Runtime.csproj" />
+    <ProjectReference Include="..\Nexo.Skills.AgentFramework\Nexo.Skills.AgentFramework.csproj" />
   </ItemGroup>
 
   <ItemGroup>

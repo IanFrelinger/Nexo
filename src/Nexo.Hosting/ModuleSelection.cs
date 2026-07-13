@@ -17,5 +17,6 @@ internal sealed record ModuleSelection(
     bool IncludeBackgroundAgentRag,
     bool IncludeObservationPipeline,
     bool IncludeTrustServices,
+    bool IncludeSkills,
     bool IncludeWorkflowIntegrations,
     bool IncludeTestingAdapters);

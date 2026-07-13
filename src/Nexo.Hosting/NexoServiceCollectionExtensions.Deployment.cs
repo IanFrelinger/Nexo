@@ -82,6 +82,7 @@ public static partial class NexoServiceCollectionExtensions
                 IncludeBackgroundAgentRag: true,
                 IncludeObservationPipeline: true,
                 IncludeTrustServices: true,
+                IncludeSkills: true,
                 IncludeWorkflowIntegrations: true,
                 IncludeTestingAdapters: true),
             NexoDeploymentProfile.Server => new ModuleSelection(
@@ -94,6 +95,7 @@ public static partial class NexoServiceCollectionExtensions
                 IncludeBackgroundAgentRag: true,
                 IncludeObservationPipeline: true,
                 IncludeTrustServices: true,
+                IncludeSkills: true,
                 IncludeWorkflowIntegrations: true,
                 IncludeTestingAdapters: true),
             NexoDeploymentProfile.Edge => new ModuleSelection(
@@ -106,6 +108,7 @@ public static partial class NexoServiceCollectionExtensions
                 IncludeBackgroundAgentRag: false,
                 IncludeObservationPipeline: false,
                 IncludeTrustServices: false,
+                IncludeSkills: false,
                 IncludeWorkflowIntegrations: false,
                 IncludeTestingAdapters: false),
             NexoDeploymentProfile.AirGapped => new ModuleSelection(
@@ -118,6 +121,7 @@ public static partial class NexoServiceCollectionExtensions
                 IncludeBackgroundAgentRag: false,
                 IncludeObservationPipeline: false,
                 IncludeTrustServices: false,
+                IncludeSkills: false,
                 IncludeWorkflowIntegrations: false,
                 IncludeTestingAdapters: false),
             NexoDeploymentProfile.System => new ModuleSelection(
@@ -130,6 +134,7 @@ public static partial class NexoServiceCollectionExtensions
                 IncludeBackgroundAgentRag: false,
                 IncludeObservationPipeline: false,
                 IncludeTrustServices: false,
+                IncludeSkills: false,
                 IncludeWorkflowIntegrations: false,
                 IncludeTestingAdapters: false),
             _ => throw new ArgumentOutOfRangeException(nameof(profile), profile, "Unknown Nexo deployment profile.")

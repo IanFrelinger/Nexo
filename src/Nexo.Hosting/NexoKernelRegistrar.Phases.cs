@@ -24,12 +24,14 @@ using Nexo.Infrastructure.Execution.Ephemeral;
 using Nexo.Infrastructure.Execution.LoadPolicy;
 using Nexo.Infrastructure.Knowledge;
 using Nexo.Infrastructure.MeshLab;
+using Nexo.Infrastructure.Skills.Sdk.Extensions;
 using Nexo.Infrastructure.Persistence.Ephemeral;
 using Nexo.Orchestration;
 using Nexo.Orchestration.Models;
 using Nexo.Orchestration.Transport;
 using Nexo.Runtime;
 using Nexo.Runtime.Routing;
+using Nexo.Skills.AgentFramework;
 using Nexo.Transport.Grpc;
 
 namespace Nexo.Hosting;
@@ -413,6 +415,25 @@ internal static partial class NexoKernelRegistrar
         if (modules.IncludeTrustServices)
         {
             services.AddTrustServices(useSanitizingProviderFactory: trustEnabled, ephemeralLifecycle: ephemeralModels, skipProviderRegistration: useAdaptive);
+        }
+
+        if (modules.IncludeSkills)
+        {
+            services.AddNexoSkills();
+            services.AddNexoAgentFrameworkSkills(options =>
+            {
+                var repoRoot = RepoPathResolver.FindRepoRoot();
+                options.SkillRootPaths.Add(Path.Combine(repoRoot, "skills"));
+            });
+
+            services.TryAddSingleton<Nexo.Core.Application.Skills.Ports.INexoSkillApprovalGate>(sp =>
+            {
+                var backgroundGate = sp.GetService<Nexo.BackgroundAgents.Configuration.IApprovalGate>();
+                if (backgroundGate != null)
+                    return new Nexo.BackgroundAgents.Skills.ApprovalGateSkillApprovalBridge(backgroundGate);
+
+                return new Nexo.Infrastructure.Skills.DenySkillApprovalGate();
+            });
         }
 
         // Path A: adaptive load-balancing wraps everything
