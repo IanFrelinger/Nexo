@@ -19,7 +19,7 @@ public static class SkillsServiceCollectionExtensions
         services.TryAddSingleton<INexoScriptSandbox, LocalProcessScriptSandbox>();
         services.TryAddSingleton<INexoScriptRunner, NexoScriptRunner>();
         services.TryAddSingleton<INexoSkillApprovalStore, InMemorySkillApprovalStore>();
-        services.TryAddSingleton<INexoSkillApprovalGate, DenySkillApprovalGate>();
+        services.TryAddSingleton<INexoSkillApprovalGate, HumanInTheLoopSkillApprovalGate>();
         services.TryAddSingleton<INexoSkillApprovalResolver, SkillApprovalResolver>();
         services.TryAddSingleton<INexoSkillAuditLog, SkillAuditEmitter>();
         services.TryAddSingleton<INexoSkillCacheController, SkillContentHashCacheController>();

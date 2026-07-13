@@ -17,6 +17,9 @@ using Nexo.Core.Application.Bricks;
 using Nexo.Core.Application.NodeCapabilityRuntime.Models;
 using Nexo.Core.Application.NodeCapabilityRuntime.Ports;
 using Nexo.Core.Application.Trust.Ports;
+using Nexo.Core.Application.Skills.Models;
+using Nexo.Core.Application.Skills.Ports;
+using Nexo.Core.Application.Mesh.Models;
 using Nexo.Core.Application.Validation.UseCases.RunValidation;
 using Nexo.Abstractions;
 using Nexo.BackgroundAgents.Configuration;
@@ -232,6 +235,24 @@ public static class NexoEndpoints
             .WithSummary("Update trust allow/deny rules for category/source")
             .Produces<TrustBoundaryMutationResponse>(StatusCodes.Status200OK)
             .ProducesProblem(StatusCodes.Status400BadRequest);
+
+        group.MapGet("/skills", ListSkillsAsync)
+            .WithName("ListSkills")
+            .WithSummary("Advertise visible skills for a trust tier")
+            .Produces<SkillListResponse>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest);
+
+        group.MapGet("/skills/approvals", ListSkillApprovalsAsync)
+            .WithName("ListSkillApprovals")
+            .WithSummary("List pending skill script approvals")
+            .Produces<SkillApprovalsResponse>(StatusCodes.Status200OK);
+
+        group.MapPost("/skills/approvals/{requestId}/resolve", ResolveSkillApprovalAsync)
+            .WithName("ResolveSkillApproval")
+            .WithSummary("Approve or deny a pending skill script")
+            .Produces<SkillApprovalItem>(StatusCodes.Status200OK)
+            .ProducesProblem(StatusCodes.Status400BadRequest)
+            .ProducesProblem(StatusCodes.Status404NotFound);
 
         group.MapGet("/knowledge/query", QueryKnowledgeAsync)
             .WithName("QueryKnowledge")
@@ -1038,6 +1059,78 @@ public static class NexoEndpoints
             IsPaused: paused,
             RecentAudit: audit,
             AuditByType: byType));
+    }
+
+    private static async Task<IResult> ListSkillsAsync(
+        [FromServices] INexoSkillCatalog? catalog,
+        [FromServices] INexoSkillExecutionContextFactory? contextFactory,
+        [FromQuery] string tier = "Trusted",
+        CancellationToken cancellationToken = default)
+    {
+        if (catalog is null || contextFactory is null)
+            return Results.BadRequest(new ProblemDetails { Title = "Skills subsystem is not registered." });
+
+        if (!Enum.TryParse<PeerTrustTier>(tier, ignoreCase: true, out var trustTier))
+            return Results.BadRequest(new ProblemDetails { Title = $"Unknown trust tier '{tier}'." });
+
+        var context = contextFactory.Create(trustTier, "api-operator");
+        var skills = await catalog.AdvertiseAsync(context, cancellationToken).ConfigureAwait(false);
+        return Results.Ok(new SkillListResponse(
+            trustTier.ToString(),
+            skills.Select(static s => new SkillDescriptorItem(s.Name, s.Description)).ToList()));
+    }
+
+    private static Task<IResult> ListSkillApprovalsAsync(
+        [FromServices] INexoSkillApprovalStore? approvalStore,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        var pending = approvalStore?.GetPending() ?? [];
+        return Task.FromResult(Results.Ok(new SkillApprovalsResponse(
+            pending.Select(static r => new SkillApprovalItem(
+                r.RequestId,
+                r.Key.SkillName,
+                r.Key.ScriptPath,
+                r.Key.TrustTier.ToString(),
+                r.Key.BarrierLevel,
+                r.Key.PolicyPackId,
+                r.Description,
+                r.Status.ToString(),
+                r.RequestedAt)).ToList())));
+    }
+
+    private static Task<IResult> ResolveSkillApprovalAsync(
+        string requestId,
+        [FromBody] ResolveSkillApprovalRequest request,
+        [FromServices] INexoSkillApprovalStore? approvalStore,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (approvalStore is null)
+            return Task.FromResult(Results.BadRequest(new ProblemDetails { Title = "Skill approval store is not registered." }));
+
+        if (!Enum.TryParse<NexoSkillApprovalStatus>(request.Decision, ignoreCase: true, out var status)
+            || status is not (NexoSkillApprovalStatus.Approved or NexoSkillApprovalStatus.Denied))
+        {
+            return Task.FromResult(Results.BadRequest(new ProblemDetails
+            {
+                Title = "Decision must be Approved or Denied.",
+            }));
+        }
+
+        if (!approvalStore.TryResolve(requestId, status, out var resolved) || resolved is null)
+            return Task.FromResult(Results.NotFound(new ProblemDetails { Title = $"Approval '{requestId}' not found." }));
+
+        return Task.FromResult(Results.Ok(new SkillApprovalItem(
+            resolved.RequestId,
+            resolved.Key.SkillName,
+            resolved.Key.ScriptPath,
+            resolved.Key.TrustTier.ToString(),
+            resolved.Key.BarrierLevel,
+            resolved.Key.PolicyPackId,
+            resolved.Description,
+            resolved.Status.ToString(),
+            resolved.RequestedAt)));
     }
 
     private static async Task<IResult> SetTrustPauseAsync(

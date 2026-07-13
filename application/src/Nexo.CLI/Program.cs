@@ -111,6 +111,7 @@ static partial class Program
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.OperatorDashboardBackgroundAgentCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.SensitivityCommand>();
         services.AddScoped<TrustCommand>();
+        services.AddScoped<SkillsCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.RAGCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.WebSearchCommand>();
 

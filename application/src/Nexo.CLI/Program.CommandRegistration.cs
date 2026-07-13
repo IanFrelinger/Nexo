@@ -218,6 +218,7 @@ static partial class Program
 
 
         var trustCmd = BuildTrustCommand(jsonOpt);
+        var skillsCmd = BuildSkillsCommand(jsonOpt);
 
 
         // nexo test - Multi-platform test execution
@@ -608,6 +609,8 @@ static partial class Program
         root.AddCommand(new ComposeCommand());
         var meshCmd = new MeshCommand();
         root.AddCommand(meshCmd);
+        root.AddCommand(trustCmd);
+        root.AddCommand(skillsCmd);
         root.AddCommand(backgroundAgentCmd);
         root.AddCommand(testCmd);
         root.AddCommand(escalateCmd);

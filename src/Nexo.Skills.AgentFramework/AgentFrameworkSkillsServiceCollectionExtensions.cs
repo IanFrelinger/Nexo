@@ -23,7 +23,10 @@ public static class AgentFrameworkSkillsServiceCollectionExtensions
 
         services.TryAddSingleton<AgentFrameworkScriptRunnerBridge>();
         services.TryAddSingleton<NexoActivePolicyPackSkill>();
-        services.TryAddSingleton<INexoSkillCatalog, AgentFrameworkSkillCatalog>();
+        services.TryAddSingleton<AgentFrameworkSkillCatalog>();
+        services.TryAddSingleton<INexoSkillCatalog>(sp => sp.GetRequiredService<AgentFrameworkSkillCatalog>());
+        services.TryAddSingleton<INexoSkillAgentBridge>(sp => sp.GetRequiredService<AgentFrameworkSkillCatalog>());
+        services.TryAddSingleton(sp => sp.GetRequiredService<AgentFrameworkSkillCatalog>().Provider);
         return services;
     }
 }

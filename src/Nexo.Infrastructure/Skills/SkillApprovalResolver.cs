@@ -1,11 +1,11 @@
 using Nexo.Core.Application.Skills.Models;
 using Nexo.Core.Application.Skills.Ports;
-using Nexo.Core.Application.Trust.Ports;
 
 namespace Nexo.Infrastructure.Skills;
 
 /// <summary>
-/// Resolves skill script approval via policy auto-approve or the human-in-the-loop gate.
+/// Resolves skill script approval via policy auto-approve, immediate gate decision,
+/// or human-in-the-loop wait on the approval store.
 /// </summary>
 public sealed class SkillApprovalResolver : INexoSkillApprovalResolver
 {
@@ -36,9 +36,18 @@ public sealed class SkillApprovalResolver : INexoSkillApprovalResolver
         if (_policyEvaluator.IsScriptAutoApproved(key.SkillName, key.ScriptPath, CreateContext(key)))
             return NexoSkillApprovalStatus.AutoApproved;
 
-        _approvalStore.RegisterPending(key, description);
-        return await _approvalGate.RequestApprovalAsync(description, _approvalTimeout, cancellationToken)
+        var pending = _approvalStore.RegisterPending(key, description);
+        var gateResult = await _approvalGate.RequestApprovalAsync(description, _approvalTimeout, cancellationToken)
             .ConfigureAwait(false);
+
+        if (gateResult == NexoSkillApprovalStatus.Pending)
+        {
+            return await _approvalStore.WaitForResolutionAsync(pending.RequestId, _approvalTimeout, cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        _approvalStore.TryResolve(pending.RequestId, gateResult, out _);
+        return gateResult;
     }
 
     private static NexoSkillExecutionContext CreateContext(SkillScriptApprovalKey key)

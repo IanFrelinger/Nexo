@@ -425,15 +425,6 @@ internal static partial class NexoKernelRegistrar
                 var repoRoot = RepoPathResolver.FindRepoRoot();
                 options.SkillRootPaths.Add(Path.Combine(repoRoot, "skills"));
             });
-
-            services.TryAddSingleton<Nexo.Core.Application.Skills.Ports.INexoSkillApprovalGate>(sp =>
-            {
-                var backgroundGate = sp.GetService<Nexo.BackgroundAgents.Configuration.IApprovalGate>();
-                if (backgroundGate != null)
-                    return new Nexo.BackgroundAgents.Skills.ApprovalGateSkillApprovalBridge(backgroundGate);
-
-                return new Nexo.Infrastructure.Skills.DenySkillApprovalGate();
-            });
         }
 
         // Path A: adaptive load-balancing wraps everything

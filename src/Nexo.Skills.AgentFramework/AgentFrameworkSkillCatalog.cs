@@ -13,7 +13,7 @@ namespace Nexo.Skills.AgentFramework;
 /// <summary>
 /// Nexo skill catalog adapter over Microsoft Agent Skills provider builder.
 /// </summary>
-public sealed class AgentFrameworkSkillCatalog : INexoSkillCatalog, IDisposable
+public sealed class AgentFrameworkSkillCatalog : INexoSkillCatalog, INexoSkillAgentBridge, IDisposable
 {
     private readonly AgentSkillsProvider _provider;
     private readonly AgentSkillsSource _source;
@@ -62,6 +62,28 @@ public sealed class AgentFrameworkSkillCatalog : INexoSkillCatalog, IDisposable
 
     /// <summary>Exposes the underlying Microsoft Agent Skills provider for agent wiring.</summary>
     public AgentSkillsProvider Provider => _provider;
+
+    /// <inheritdoc />
+    public async Task<string> BuildSkillInstructionsAsync(
+        NexoSkillExecutionContext context,
+        CancellationToken cancellationToken = default)
+    {
+        var skills = await AdvertiseAsync(context, cancellationToken).ConfigureAwait(false);
+        if (skills.Count == 0)
+            return string.Empty;
+
+        var lines = new List<string>
+        {
+            "## Available Nexo skills",
+            "Use load_skill / read_skill_resource / run_skill_script to progressively disclose capability packages.",
+            string.Empty,
+        };
+
+        foreach (var skill in skills)
+            lines.Add($"- **{skill.Name}**: {skill.Description}");
+
+        return string.Join(Environment.NewLine, lines);
+    }
 
     /// <inheritdoc />
     public async Task<IReadOnlyList<NexoSkillDescriptor>> AdvertiseAsync(

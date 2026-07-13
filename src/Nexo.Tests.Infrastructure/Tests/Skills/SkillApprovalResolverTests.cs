@@ -14,7 +14,7 @@ public sealed class SkillApprovalResolverTests
     {
         var evaluator = new StubPolicyEvaluator(autoApprove: true);
         var store = new InMemorySkillApprovalStore();
-        var resolver = new SkillApprovalResolver(evaluator, store, new StubApprovalGate(NexoSkillApprovalStatus.Denied));
+        var resolver = new SkillApprovalResolver(evaluator, store, new HumanInTheLoopSkillApprovalGate());
 
         var status = await resolver.ResolveScriptApprovalAsync(
             new SkillScriptApprovalKey("skill", "scripts/a.sh", PeerTrustTier.Trusted, "internal", "pack"),
@@ -25,18 +25,27 @@ public sealed class SkillApprovalResolverTests
     }
 
     [Fact]
-    public async Task ResolveScriptApprovalAsync_registers_pending_and_uses_gate()
+    public async Task ResolveScriptApprovalAsync_waits_for_operator_approve()
     {
         var evaluator = new StubPolicyEvaluator(autoApprove: false);
         var store = new InMemorySkillApprovalStore();
-        var resolver = new SkillApprovalResolver(evaluator, store, new StubApprovalGate(NexoSkillApprovalStatus.Approved));
+        var resolver = new SkillApprovalResolver(
+            evaluator,
+            store,
+            new HumanInTheLoopSkillApprovalGate(),
+            approvalTimeout: TimeSpan.FromSeconds(5));
 
-        var status = await resolver.ResolveScriptApprovalAsync(
+        var resolveTask = resolver.ResolveScriptApprovalAsync(
             new SkillScriptApprovalKey("skill", "scripts/a.sh", PeerTrustTier.Untrusted, "internal", "pack"),
             "test");
 
+        await WaitForPendingAsync(store);
+        var pending = store.GetPending().Single();
+        store.TryResolve(pending.RequestId, NexoSkillApprovalStatus.Approved, out _).Should().BeTrue();
+
+        var status = await resolveTask;
         status.Should().Be(NexoSkillApprovalStatus.Approved);
-        store.GetPending().Should().ContainSingle(p => p.Status == NexoSkillApprovalStatus.Pending);
+        store.GetPending().Should().BeEmpty();
     }
 
     [Fact]
@@ -44,13 +53,26 @@ public sealed class SkillApprovalResolverTests
     {
         var evaluator = new StubPolicyEvaluator(autoApprove: false);
         var store = new InMemorySkillApprovalStore();
-        var resolver = new SkillApprovalResolver(evaluator, store, new StubApprovalGate(NexoSkillApprovalStatus.Denied));
+        var resolver = new SkillApprovalResolver(evaluator, store, new DenySkillApprovalGate());
 
         var status = await resolver.ResolveScriptApprovalAsync(
             new SkillScriptApprovalKey("skill", "scripts/a.sh", PeerTrustTier.Untrusted, "internal", "pack"),
             "test");
 
         status.Should().Be(NexoSkillApprovalStatus.Denied);
+        store.GetPending().Should().BeEmpty();
+    }
+
+    private static async Task WaitForPendingAsync(INexoSkillApprovalStore store)
+    {
+        for (var i = 0; i < 50; i++)
+        {
+            if (store.GetPending().Count > 0)
+                return;
+            await Task.Delay(20);
+        }
+
+        throw new TimeoutException("Pending approval was not registered.");
     }
 
     private sealed class StubPolicyEvaluator(bool autoApprove) : INexoSkillPolicyEvaluator
@@ -65,14 +87,5 @@ public sealed class SkillApprovalResolverTests
             => new(TimeSpan.FromSeconds(5), 4096, Path.GetTempPath());
 
         public SkillPolicyRules? GetActiveSkillRules() => null;
-    }
-
-    private sealed class StubApprovalGate(NexoSkillApprovalStatus status) : INexoSkillApprovalGate
-    {
-        public Task<NexoSkillApprovalStatus> RequestApprovalAsync(
-            string actionDescription,
-            TimeSpan timeout,
-            CancellationToken cancellationToken = default)
-            => Task.FromResult(status);
     }
 }

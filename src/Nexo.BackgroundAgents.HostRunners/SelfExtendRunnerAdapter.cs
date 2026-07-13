@@ -10,6 +10,9 @@ using Nexo.BackgroundAgents.Observations;
 using Nexo.BackgroundAgents.Registry;
 using Nexo.BackgroundAgents.Security;
 using Nexo.Core.Application.Certification.Ports;
+using Nexo.Core.Application.Mesh.Models;
+using Nexo.Core.Application.Skills.Models;
+using Nexo.Core.Application.Skills.Ports;
 using Nexo.Runtime;
 
 namespace Nexo.BackgroundAgents.HostRunners;
@@ -39,6 +42,8 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
     private readonly ICertificationRecordStore _certificationStore;
     private readonly IBackgroundAgentRegistry? _agentRegistry;
     private readonly IDataSensitivityRegistry? _sensitivityRegistry;
+    private readonly INexoSkillAgentBridge? _skillAgentBridge;
+    private readonly INexoSkillCacheController? _skillCacheController;
 
     public SelfExtendRunnerAdapter(
         IModel model,
@@ -50,7 +55,9 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
         IAggressivenessModeStore? modeStore = null,
         ICertificationRecordStore? certificationStore = null,
         IBackgroundAgentRegistry? agentRegistry = null,
-        IDataSensitivityRegistry? sensitivityRegistry = null)
+        IDataSensitivityRegistry? sensitivityRegistry = null,
+        INexoSkillAgentBridge? skillAgentBridge = null,
+        INexoSkillCacheController? skillCacheController = null)
     {
         _model = model ?? throw new ArgumentNullException(nameof(model));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -62,6 +69,8 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
         _certificationStore = certificationStore ?? FailClosedCertificationRecordStore.Instance;
         _agentRegistry = agentRegistry;
         _sensitivityRegistry = sensitivityRegistry;
+        _skillAgentBridge = skillAgentBridge;
+        _skillCacheController = skillCacheController;
     }
 
     /// <inheritdoc />
@@ -170,14 +179,16 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
                 modelName);
             var scratchpadPath = ResolveScratchpadPath(repoRoot!, resolvedAgentName);
             var recent = LoadRecentObservations();
-            var snapshot = BuildSnapshot(
-                repoRoot!,
-                resolvedAgentName,
-                resolvedAgentId,
-                effectiveObjective,
-                scratchpadPath,
-                recent,
-                claimed);
+            var snapshot = await WithSkillInstructionsAsync(
+                BuildSnapshot(
+                    repoRoot!,
+                    resolvedAgentName,
+                    resolvedAgentId,
+                    effectiveObjective,
+                    scratchpadPath,
+                    recent,
+                    claimed),
+                cancellationToken).ConfigureAwait(false);
 
             // Multi-turn ReAct: agent loops up to MaxIterations, executing tool calls inline
             // through the policy engine and feeding observations back into the conversation.
@@ -191,6 +202,7 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
             var writePaths = cycle.MergedDelta is null
                 ? Array.Empty<string>()
                 : ExtractWritePaths(cycle.MergedDelta.Log);
+            InvalidateSkillCacheIfNeeded(repoRoot!, writePaths);
             PlannerScratchpad.Append(scratchpadPath, new ScratchpadEntry(
                 DateTimeOffset.UtcNow,
                 resolvedAgentName,
@@ -452,5 +464,58 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
                 result.Add(path);
         }
         return result;
+    }
+
+    private async Task<WorldSnapshot> WithSkillInstructionsAsync(WorldSnapshot snapshot, CancellationToken cancellationToken)
+    {
+        if (_skillAgentBridge is null)
+            return snapshot;
+
+        try
+        {
+            var context = new NexoSkillExecutionContext(
+                ActingIdentity: snapshot.Data.TryGetValue("AgentName", out var name) ? name?.ToString() ?? "self-extend" : "self-extend",
+                BarrierLevel: "internal",
+                TrustTier: PeerTrustTier.Trusted,
+                PolicyPackId: null,
+                CorrelationId: Guid.NewGuid().ToString("N"));
+
+            var instructions = await _skillAgentBridge.BuildSkillInstructionsAsync(context, cancellationToken)
+                .ConfigureAwait(false);
+            if (string.IsNullOrWhiteSpace(instructions))
+                return snapshot;
+
+            var data = new Dictionary<string, object?>(snapshot.Data)
+            {
+                ["AvailableSkills"] = instructions
+            };
+            return snapshot with { Data = data };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Skill instruction injection skipped");
+            return snapshot;
+        }
+    }
+
+    private void InvalidateSkillCacheIfNeeded(string repoRoot, IReadOnlyList<string> writePaths)
+    {
+        if (_skillCacheController is null || writePaths.Count == 0)
+            return;
+
+        var skillsRoot = Path.GetFullPath(Path.Combine(repoRoot, "skills"));
+        var touchedSkills = writePaths.Any(path =>
+        {
+            var full = Path.IsPathRooted(path)
+                ? Path.GetFullPath(path)
+                : Path.GetFullPath(Path.Combine(repoRoot, path));
+            return full.StartsWith(skillsRoot, StringComparison.OrdinalIgnoreCase);
+        });
+
+        if (!touchedSkills)
+            return;
+
+        _skillCacheController.InvalidateIfContentChanged(skillsRoot);
+        _logger.LogInformation("Invalidated skill cache after skill rewrite under {SkillsRoot}", skillsRoot);
     }
 }
