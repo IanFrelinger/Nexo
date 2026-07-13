@@ -49,4 +49,37 @@ public sealed class DataDecisionAuditEntry
 
     /// <summary>Assigned sensitivity or trust level name.</summary>
     public string? LevelName { get; init; }
+
+    /// <summary>Skill name for skill disclosure audit events.</summary>
+    public string? SkillName { get; init; }
+
+    /// <summary>Acting identity for skill disclosure audit events.</summary>
+    public string? ActingIdentity { get; init; }
+
+    /// <summary>Barrier level for skill disclosure audit events.</summary>
+    public string? BarrierLevel { get; init; }
+
+    /// <summary>Trust tier for skill disclosure audit events.</summary>
+    public string? TrustTier { get; init; }
+
+    /// <summary>Active policy pack id for skill disclosure audit events.</summary>
+    public string? PolicyPackId { get; init; }
+
+    /// <summary>Correlation id for skill disclosure audit events.</summary>
+    public string? CorrelationId { get; init; }
+
+    /// <summary>Resource path for skill resource-read events.</summary>
+    public string? ResourcePath { get; init; }
+
+    /// <summary>Script path for skill script events.</summary>
+    public string? ScriptPath { get; init; }
+
+    /// <summary>SHA-256 hash of script content for skill script events.</summary>
+    public string? ScriptContentHash { get; init; }
+
+    /// <summary>Execution outcome for skill script events.</summary>
+    public string? Outcome { get; init; }
+
+    /// <summary>Execution duration in milliseconds for skill script events.</summary>
+    public long? DurationMs { get; init; }
 }

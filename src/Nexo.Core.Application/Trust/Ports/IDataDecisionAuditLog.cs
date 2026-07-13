@@ -1,3 +1,4 @@
+using Nexo.Core.Application.Skills.Models;
 using Nexo.Core.Application.Trust.Models;
 
 namespace Nexo.Core.Application.Trust.Ports;
@@ -32,6 +33,9 @@ public interface IDataDecisionAuditLog
 
     /// <summary>Log a copilot task completion for tenant-scoped audit trails (Product Fleet Phase 0.5).</summary>
     void LogCopilotTask(string tenantId, string taskId, bool success);
+
+    /// <summary>Log a skill disclosure or script execution audit event.</summary>
+    void LogSkillDisclosure(NexoSkillAuditEvent auditEvent);
 
     /// <summary>Get recent audit entries (all types).</summary>
     IReadOnlyList<DataDecisionAuditEntry> GetRecent(int maxCount, DateTimeOffset? since = null, DateTimeOffset? until = null, string? eventType = null);

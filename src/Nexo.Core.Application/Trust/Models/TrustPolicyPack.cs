@@ -1,3 +1,5 @@
+using Nexo.Core.Application.Skills.Models;
+
 namespace Nexo.Core.Application.Trust.Models;
 
 /// <summary>
@@ -12,6 +14,7 @@ namespace Nexo.Core.Application.Trust.Models;
 /// <param name="SourceRules">Global source allow/deny rules (true = allowed).</param>
 /// <param name="ProjectRules">Per-project source override rules.</param>
 /// <param name="RecommendedFor">Optional audience hint (e.g. enterprise, developer).</param>
+/// <param name="SkillRules">Optional agent skill visibility, script allow-list, and approval rules.</param>
 public sealed record TrustPolicyPack(
     string Id,
     string Version,
@@ -21,4 +24,5 @@ public sealed record TrustPolicyPack(
     IReadOnlyDictionary<string, bool> CategoryRules,
     IReadOnlyDictionary<string, bool> SourceRules,
     IReadOnlyList<TrustPolicyPackProjectRule> ProjectRules,
-    string? RecommendedFor = null);
+    string? RecommendedFor = null,
+    SkillPolicyRules? SkillRules = null);
