@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using System.Text.Json;
 using LiteDB;
+using Nexo.Core.Application.Skills.Models;
 using Nexo.Core.Application.Trust.Models;
 using Nexo.Core.Application.Trust.Ports;
 
@@ -116,6 +117,28 @@ public sealed class LiteDbDataDecisionAuditLog : IDataDecisionAuditLog, ISanitiz
             TenantId = tenantId,
             SourceId = taskId,
             Disposition = success ? "Success" : "Failure",
+        });
+    }
+
+    /// <inheritdoc />
+    public void LogSkillDisclosure(NexoSkillAuditEvent auditEvent)
+    {
+        Append(new DataDecisionAuditEntry
+        {
+            EventType = auditEvent.EventType,
+            Timestamp = auditEvent.OccurredAt,
+            SkillName = auditEvent.SkillName,
+            ActingIdentity = auditEvent.ActingIdentity,
+            BarrierLevel = auditEvent.BarrierLevel,
+            TrustTier = auditEvent.TrustTier,
+            PolicyPackId = auditEvent.PolicyPackId,
+            CorrelationId = auditEvent.CorrelationId,
+            ResourcePath = auditEvent.ResourcePath,
+            ScriptPath = auditEvent.ScriptPath,
+            ScriptContentHash = auditEvent.ScriptContentHash,
+            Outcome = auditEvent.Outcome,
+            DurationMs = auditEvent.DurationMs,
+            Reason = auditEvent.Detail,
         });
     }
 
