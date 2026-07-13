@@ -24,6 +24,27 @@ graph LR
 
 Constraints are applied idempotently via `Neo4j/Neo4jSchemaMigration.cypher`.
 
+## Trust and edge authority
+
+The projector never accepts free-form relationship metadata. Optional graph claims are encoded under the `nexo.provenance.v1` certificate extension and therefore covered by the certificate's Ed25519 signature:
+
+```json
+{
+  "artifactKind": "atom",
+  "issuedAt": "2026-07-13T12:00:00+00:00",
+  "policyName": "SelfProducedBrickCertificationPolicy",
+  "policyVersion": "1.0.0",
+  "producerAgentId": "nexo-demo-agent",
+  "producerAgentKind": "self",
+  "dependsOnArtifactIds": [],
+  "priorCertificateHash": null
+}
+```
+
+`CERTIFIED_BY` is derived from the verified certificate's `assetHash`. The other four relationship types are emitted only from these signed claims. Malformed claims, unsigned overlays, missing dependency targets, missing prior certificates, cycles, and multiple chain heads reject the entire batch before any write.
+
+Projection is one transaction: verified nodes, relationships, and `GraphMetadata` commit together or roll back together. Queries obtain the current head through `IProvenanceChainHeadAuthority`, independently of graph metadata, and fail closed on mismatch.
+
 ## Local setup (one command)
 
 ```bash
@@ -49,10 +70,10 @@ Returns upstream certificate chain and `DEPENDS_ON` edges for an artifact. Resul
 Sample output:
 
 ```
-Artifact:   18301e3630ca2816dcb1e23264aaec41d9ed4108337c9b5a936e39565d01c742
-Chain head: a3f2... (terminal cert hash)
+Artifact:   8f168a714d1b9833b60055ba3d3b0da110198c5672a1ec73e4baf52c126a02e6
+Chain head: f2d66709cdbdfcd67841996ca7c7b8cb8a37921819b261fed60cd15fe8c161cd
 Certificates:
-  - hash=7b1c... policy=SelfProducedBrickCertificationPolicy@1.0.0
+  - hash=f2d66709... policy=SelfProducedBrickCertificationPolicy@1.0.0
 Dependencies: (none)
 ```
 
@@ -65,9 +86,9 @@ Sample output:
 ```
 === ArtifactsUnderPolicy Demo ===
 Policy:     SelfProducedBrickCertificationPolicy@1.0.0
-Chain head: a3f2c8e1...
+Chain head: f2d66709cdbdfcd67841996ca7c7b8cb8a37921819b261fed60cd15fe8c161cd
 Artifacts (1):
-  - 18301e3630ca2816dcb1e23264aaec41d9ed4108337c9b5a936e39565d01c742
+  - 8f168a714d1b9833b60055ba3d3b0da110198c5672a1ec73e4baf52c126a02e6
 ```
 
 ### `BlastRadiusOf(policyId, version)`
@@ -87,9 +108,12 @@ NEXO_RUN_NEO4J_CONTAINER=1 dotnet test src/Nexo.Provenance.Graph.Tests/Nexo.Prov
 Rejection tests (written first) verify:
 - Invalid Ed25519 signatures are rejected and never projected
 - Content-hash mismatches are rejected
+- Unsigned relationship overlays and malformed signed claims are rejected
+- Ambiguous chains and unknown relationship targets reject atomically
 - Stale graph chain-head causes fail-closed query errors
-- Round-trip: every edge is witness-derivable from cert payloads
+- Round-trip: every edge is independently witness-derived from signed certificate bytes
 - Idempotent projection (MERGE semantics)
+- Neo4j batch rollback keeps graph metadata and nodes consistent
 
 ## DI registration
 
@@ -97,6 +121,10 @@ Neo4j is **optional**. Default registration uses null/no-op implementations:
 
 ```csharp
 services.AddProvenanceGraph(); // no Neo4j
+
+services.AddSingleton<IProvenanceSourceAdapter>(
+    new PhysicalAtomDirectorySourceAdapter("cert-artifacts"));
+services.AddSingleton<IProvenanceChainHeadAuthority, SourceProvenanceChainHeadAuthority>();
 
 services.AddNeo4jProvenanceGraph(new Neo4jProvenanceGraphOptions
 {

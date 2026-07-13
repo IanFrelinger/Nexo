@@ -1,4 +1,3 @@
-using DotNet.Testcontainers.Builders;
 using Neo4j.Driver;
 using Testcontainers.Neo4j;
 using Xunit;
@@ -19,20 +18,13 @@ public sealed class Neo4jProvenanceDockerFixture : IAsyncLifetime
         if (!ShouldRunNeo4jTests())
             return;
 
-        try
-        {
-            _container = new Neo4jBuilder("neo4j:5.26-community")
-                .WithEnvironment("NEO4J_AUTH", "neo4j/provenance-graph")
-                .Build();
+        _container = new Neo4jBuilder("neo4j:5.26-community")
+            .WithEnvironment("NEO4J_AUTH", "neo4j/provenance-graph")
+            .Build();
 
-            await _container.StartAsync().ConfigureAwait(false);
-            Driver = GraphDatabase.Driver(_container.GetConnectionString(), AuthTokens.Basic("neo4j", "provenance-graph"));
-            IsAvailable = true;
-        }
-        catch (Exception ex) when (IsDockerUnavailable(ex))
-        {
-            IsAvailable = false;
-        }
+        await _container.StartAsync().ConfigureAwait(false);
+        Driver = GraphDatabase.Driver(_container.GetConnectionString(), AuthTokens.Basic("neo4j", "provenance-graph"));
+        IsAvailable = true;
     }
 
     public async Task DisposeAsync()
@@ -62,10 +54,6 @@ public sealed class Neo4jProvenanceDockerFixture : IAsyncLifetime
         return string.Equals(flag, "1", StringComparison.OrdinalIgnoreCase)
             || string.Equals(flag, "true", StringComparison.OrdinalIgnoreCase);
     }
-
-    private static bool IsDockerUnavailable(Exception ex) =>
-        ex is DockerUnavailableException
-        || (ex is AggregateException agg && agg.InnerExceptions.Any(e => e is DockerUnavailableException));
 }
 
 [CollectionDefinition("Neo4jProvenance")]

@@ -4,6 +4,7 @@ using Neo4j.Driver;
 using Nexo.Provenance.Graph.Ingestion;
 using Nexo.Provenance.Graph.Models;
 using Nexo.Provenance.Graph.Neo4j;
+using Nexo.Provenance.Graph.Ports;
 using Nexo.Provenance.Graph.Tests.Witness;
 using Testcontainers.Neo4j;
 using Xunit;
@@ -53,11 +54,11 @@ public sealed class Neo4jProvenanceGraphIntegrationTests
         var report = await projector.ProjectAsync([bundle]);
         report.AcceptedCount.Should().Be(1);
 
-        var queries = new Neo4jProvenanceGraphQueries(_fixture.Driver!);
+        var authority = new InMemoryProvenanceChainHeadAuthority(report.ChainHeadHash);
+        var queries = new Neo4jProvenanceGraphQueries(_fixture.Driver!, authority);
         var result = await queries.ArtifactsUnderPolicyAsync(
             "SelfProducedBrickCertificationPolicy",
-            "1.0.0",
-            report.ChainHeadHash);
+            "1.0.0");
 
         result.ArtifactIds.Should().Contain(bundle.ArtifactId);
         result.ChainHeadHash.Should().Be(report.ChainHeadHash);
@@ -89,5 +90,61 @@ public sealed class Neo4jProvenanceGraphIntegrationTests
         var record = await cursor.SingleAsync();
         var count = record["c"];
         Convert.ToInt64(count).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Neo4j_BatchTransaction_RollsBackOnUnknownRelationshipTarget()
+    {
+        if (!_fixture.IsAvailable)
+            return;
+
+        var store = new Neo4jProvenanceGraphStore(_fixture.Driver!);
+        await store.ClearAsync();
+        await store.EnsureSchemaAsync();
+        var record = new VerifiedProvenanceRecord
+        {
+            ArtifactId = new string('1', 64),
+            ArtifactKind = ArtifactKind.Composition,
+            CertificateHash = new string('2', 64),
+            SignerKeyId = "integration-signer",
+            DependsOnArtifactIds = [new string('3', 64)]
+        };
+        var metadata = new ProvenanceGraphMetadata
+        {
+            ChainHeadHash = record.CertificateHash,
+            ProjectedAt = DateTimeOffset.Parse("2026-01-01T00:00:00Z")
+        };
+
+        var act = () => store.ProjectBatchAsync([record], metadata);
+
+        await act.Should().ThrowAsync<InvalidOperationException>();
+        await using var session = _fixture.Driver!.AsyncSession();
+        var cursor = await session.RunAsync("MATCH (n) RETURN count(n) AS c");
+        var persisted = await cursor.SingleAsync();
+        Convert.ToInt64(persisted["c"]).Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Neo4j_QueryRefusesAuthorityOwnedStaleChainHead()
+    {
+        if (!_fixture.IsAvailable)
+            return;
+
+        var store = new Neo4jProvenanceGraphStore(_fixture.Driver!);
+        await store.ClearAsync();
+        await store.EnsureSchemaAsync();
+        var keys = WitnessCertificateBuilder.CreateKeyPair();
+        var bundle = WitnessCertificateBuilder.CreateBundle(
+            "neo4j-staleness-asset"u8.ToArray(),
+            keys.PrivateKey,
+            keys.PublicKey);
+        var projector = new ProvenanceProjector(store, NullLogger<ProvenanceProjector>.Instance);
+        await projector.ProjectAsync([bundle]);
+        var authority = new InMemoryProvenanceChainHeadAuthority("authority-has-moved");
+        var queries = new Neo4jProvenanceGraphQueries(_fixture.Driver!, authority);
+
+        var act = () => queries.LineageOfAsync(bundle.ArtifactId);
+
+        await act.Should().ThrowAsync<ProvenanceGraphStaleException>();
     }
 }

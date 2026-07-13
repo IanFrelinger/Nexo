@@ -1,18 +1,21 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Nexo.Provenance.Graph.Ingestion;
-using Nexo.Provenance.Graph.Loading;
-using Nexo.Provenance.Graph.Models;
 using Nexo.Provenance.Graph.Neo4j;
+using Nexo.Provenance.Graph.Ports;
 using Nexo.Provenance.Graph.Sdk.Extensions;
+using Nexo.Provenance.Graph.Sources;
 
 var repoRoot = args.Length > 0 ? args[0] : FindRepoRoot();
-var certDir = Path.Combine(repoRoot, "samples", "physical-atom-cert");
+var certDir = Path.Combine(repoRoot, "samples", "provenance-graph");
 var policyName = "SelfProducedBrickCertificationPolicy";
 var policyVersion = "1.0.0";
+var source = new PhysicalAtomDirectorySourceAdapter(certDir);
 
 var services = new ServiceCollection();
 services.AddLogging(b => b.AddConsole().SetMinimumLevel(LogLevel.Information));
+services.AddSingleton<IProvenanceSourceAdapter>(source);
+services.AddSingleton<IProvenanceChainHeadAuthority, SourceProvenanceChainHeadAuthority>();
 services.AddNeo4jProvenanceGraph(new Neo4jProvenanceGraphOptions
 {
     Enabled = true,
@@ -29,27 +32,8 @@ var logger = provider.GetRequiredService<ILogger<Program>>();
 
 await store.EnsureSchemaAsync();
 
-var bundles = PhysicalAtomBundleLoader.FindBundleFiles(certDir)
-    .Select(path =>
-    {
-        logger.LogInformation("Loading cert artifact: {Path}", path);
-        return PhysicalAtomBundleLoader.LoadFromJsonFile(
-            path,
-            ArtifactKind.Atom,
-            b =>
-            {
-                // Demo policy annotation for ArtifactsUnderPolicy query
-            });
-    })
-    .Select(b => b with
-    {
-        PolicyName = policyName,
-        PolicyVersion = policyVersion,
-        ProducerAgentId = "nexo-demo-agent",
-        ProducerAgentKind = AgentKind.Self,
-        IssuedAt = DateTimeOffset.UtcNow
-    })
-    .ToList();
+logger.LogInformation("Loading authoritative certificate artifacts from {Directory}", certDir);
+var bundles = await source.ReadAsync();
 
 if (bundles.Count == 0)
 {
@@ -64,7 +48,7 @@ logger.LogInformation("Projection complete: accepted={Accepted}, rejected={Rejec
 foreach (var rejection in report.Rejections)
     logger.LogWarning("Rejected {Hash}: {Code} — {Reason}", rejection.CertificateHash, rejection.FailureCode, rejection.Reason);
 
-var result = await queries.ArtifactsUnderPolicyAsync(policyName, policyVersion, report.ChainHeadHash);
+var result = await queries.ArtifactsUnderPolicyAsync(policyName, policyVersion);
 
 Console.WriteLine();
 Console.WriteLine("=== ArtifactsUnderPolicy Demo ===");
