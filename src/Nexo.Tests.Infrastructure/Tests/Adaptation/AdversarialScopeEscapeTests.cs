@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Text.Json;
 using FluentAssertions;
 using Nexo.Abstractions;
+using Nexo.Core.Application.Skills.Models;
 using Nexo.Core.Application.Trust.Models;
 using Nexo.Core.Application.Trust.Ports;
 using Nexo.Policies.Dev;
@@ -207,6 +208,8 @@ public sealed class AdversarialScopeEscapeTests
         public void LogAmbientAction(string agentId, string summary, int toolCallsExecuted) { }
 
         public void LogCopilotTask(string tenantId, string taskId, bool success) { }
+
+        public void LogSkillDisclosure(NexoSkillAuditEvent auditEvent) { }
 
         public void LogSanitization(SanitizationAuditEntryDto entry) { }
         public void LogBoundaryChange(BoundaryChangeEvent evt) { }

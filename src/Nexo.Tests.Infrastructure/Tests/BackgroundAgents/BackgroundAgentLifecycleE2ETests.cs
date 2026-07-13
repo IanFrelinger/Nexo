@@ -11,6 +11,7 @@ using Nexo.BackgroundAgents.Logging;
 using Nexo.BackgroundAgents.Registry;
 using Nexo.BackgroundAgents.Scheduling;
 using Nexo.BackgroundAgents.Trust;
+using Nexo.Core.Application.Skills.Models;
 using Nexo.Core.Application.Trust.Models;
 using Nexo.Core.Application.Trust.Ports;
 using Nexo.Core.Domain;
@@ -236,6 +237,7 @@ public sealed class BackgroundAgentLifecycleE2ETests
         public void LogAmbientAction(string agentId, string summary, int toolCallsExecuted) =>
             _captured.Add((agentId, summary, toolCallsExecuted));
         public void LogCopilotTask(string tenantId, string taskId, bool success) { }
+        public void LogSkillDisclosure(NexoSkillAuditEvent auditEvent) { }
         public void LogSanitization(SanitizationAuditEntryDto entry) { }
         public void LogBoundaryChange(BoundaryChangeEvent evt) { }
         public void LogClassification(string dataType, string levelName, string? reason) { }

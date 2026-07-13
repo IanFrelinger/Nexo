@@ -85,6 +85,7 @@
     <ProjectReference Include="..\Nexo.Runtime\Nexo.Runtime.csproj" />
     <ProjectReference Include="..\Nexo.Bricks.Owasp\Nexo.Bricks.Owasp.csproj" />
     <ProjectReference Include="..\Nexo.Hosting\Nexo.Hosting.csproj" />
+    <ProjectReference Include="..\Nexo.Skills.AgentFramework\Nexo.Skills.AgentFramework.csproj" />
     <ProjectReference Include="..\Nexo.Ingress.DynamoDb\Nexo.Ingress.DynamoDb.csproj" />
     <ProjectReference Include="..\Nexo.Client\Nexo.Client.csproj" />
   </ItemGroup>
