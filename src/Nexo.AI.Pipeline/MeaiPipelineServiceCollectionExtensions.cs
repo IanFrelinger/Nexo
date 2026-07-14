@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Nexo.AI.Pipeline.Clients;
 using Nexo.AI.Pipeline.Governance;
+using Nexo.AI.Pipeline.Routing;
 
 namespace Nexo.AI.Pipeline;
 
@@ -47,14 +48,16 @@ public static class MeaiPipelineServiceCollectionExtensions
 
     /// <summary>
     /// Registers keyed <see cref="IChatClient"/> pipelines for <c>local:ollama</c> and <c>local:onnx</c>
-    /// with the fixed Nexo governance stack. Raw provider clients are never registered in DI.
+    /// with the fixed Nexo governance stack, plus a default auditing <see cref="RoutingChatClient"/>.
+    /// Raw provider clients are never registered in DI.
     /// </summary>
     public static IServiceCollection AddNexoMeaiPipeline(
         this IServiceCollection services,
         IConfiguration? configuration = null,
         Action<MeaiPipelineOptions>? configure = null,
         Func<IServiceProvider, IChatClient>? ollamaInnerFactory = null,
-        Func<IServiceProvider, IChatClient>? onnxInnerFactory = null)
+        Func<IServiceProvider, IChatClient>? onnxInnerFactory = null,
+        bool registerDefaultRouter = true)
     {
         var options = new MeaiPipelineOptions();
         if (configuration is not null)
@@ -66,6 +69,7 @@ public static class MeaiPipelineServiceCollectionExtensions
         services.AddSingleton(Options.Create(options));
 
         RegisterGovernanceDefaults(services);
+        RegisterRoutingDefaults(services);
 
         Func<IServiceProvider, IChatClient> defaultOllama = sp =>
             new OllamaHttpChatClient(sp.GetRequiredService<IOptions<MeaiPipelineOptions>>());
@@ -82,7 +86,32 @@ public static class MeaiPipelineServiceCollectionExtensions
                 sp => (onnxInnerFactory ?? defaultOnnx)(sp))
             .UseNexoGovernance(MeaiTargetKeys.LocalOnnx);
 
+        if (registerDefaultRouter)
+        {
+            // Router sits outside per-target stacks; wrap only with Auditing (plan Phase 3).
+            services.AddChatClient(sp =>
+            {
+                var router = ActivatorUtilities.CreateInstance<RoutingChatClient>(sp);
+                var auditor = sp.GetRequiredService<IChatInvocationAuditor>();
+                return new AuditingChatClient(router, auditor, RoutingChatClient.RouterTargetKey);
+            });
+        }
+
         return services;
+    }
+
+    /// <summary>
+    /// Registers a governed keyed <see cref="IChatClient"/> for an additional target (e.g. cloud stubs in tests).
+    /// </summary>
+    public static ChatClientBuilder AddNexoGovernedChatClient(
+        this IServiceCollection services,
+        string targetKey,
+        Func<IServiceProvider, IChatClient> innerFactory)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(targetKey);
+        RegisterGovernanceDefaults(services);
+        return services.AddKeyedChatClient(targetKey, innerFactory)
+            .UseNexoGovernance(targetKey);
     }
 
     /// <summary>
@@ -94,6 +123,17 @@ public static class MeaiPipelineServiceCollectionExtensions
         services.TryAddSingleton<IChatMessageSanitizer, DefaultChatMessageSanitizer>();
         services.TryAddSingleton<ITargetSanitizePolicy, DefaultTargetSanitizePolicy>();
         services.TryAddSingleton<IChatInvocationAuditor, InMemoryChatInvocationAuditor>();
+        return services;
+    }
+
+    /// <summary>
+    /// Registers default routing services if not already present.
+    /// </summary>
+    public static IServiceCollection RegisterRoutingDefaults(this IServiceCollection services)
+    {
+        services.TryAddSingleton<IRouteCandidateTable, DefaultRouteCandidateTable>();
+        services.TryAddSingleton<ITargetAvailability, InMemoryTargetAvailability>();
+        services.TryAddSingleton<IChatRouter, LocalFirstChatRouter>();
         return services;
     }
 

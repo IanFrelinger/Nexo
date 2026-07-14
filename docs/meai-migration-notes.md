@@ -328,7 +328,7 @@ Router (Phase 3) sits **outside** per-target stacks and is itself wrapped in Aud
 | 0 | This notes file | **Done** |
 | 1 | `Nexo.AI.Pipeline` + Ollama/LLamaSharp `IChatClient` + flag off | **Done** |
 | 2 | PolicyGate / Sanitizing / Auditing middleware + DI architecture tests | **Done** |
-| 3 | `RoutingChatClient` + policy × availability matrix tests | Pending |
+| 3 | `RoutingChatClient` + policy × availability matrix tests | **Done** |
 | 4 | Bedrock tiered targets + env-gated integration test | Pending |
 | 5 | VectorData RAG + embedding middleware + reindex CLI | Pending |
 | 6 | Flag default on; delete legacy; `docs/governed-pipeline.md` | Pending |
@@ -369,3 +369,19 @@ Landing branch: `cursor/meai-phase2-governance-5a04`
 ### Follow-ups for later phases
 - Wire adapters to existing `ICloudSanitizationProxy` / `IDataDecisionAuditLog` / trust packs (ports are ready)
 - Phase 3 router wraps governed per-target pipelines and audits route decisions
+
+---
+
+## Phase 3 implementation notes (2026-07-14)
+
+Landing branch: `cursor/meai-phase3-router-5a04`
+
+### Delivered
+- `RoutingChatClient` + `LocalFirstChatRouter` + `DefaultRouteCandidateTable` + `ITargetAvailability`
+- Capability hints via `ChatOptions.AdditionalProperties["nexo.route.capability"]` (fast/balanced/heavy)
+- Local-first escalation; cloud candidates only when policy allow-lists cloud keys
+- Router emits audit records (`router:default`) with candidates + reason; default DI wraps router in `AuditingChatClient`
+- Table-driven policy × availability matrix tests + scenario tests (cloud forbidden / local down fallback / hard fail)
+
+### Follow-ups
+- Phase 4 registers real `cloud:bedrock:*` governed clients; stubs already reserved in the candidate table
