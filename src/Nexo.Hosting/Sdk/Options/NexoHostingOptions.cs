@@ -30,8 +30,9 @@ public sealed class NexoHostingOptions
 
     /// <summary>
     /// When true, registers the Microsoft.Extensions.AI governed chat pipeline
-    /// (keyed <c>IChatClient</c> targets). Default: from <c>Nexo:UseMeaiPipeline</c>
-    /// / <c>NEXO_USE_MEAI_PIPELINE</c>, or false (legacy <c>IProviderFactory</c> path).
+    /// (keyed <c>IChatClient</c> targets) and wires <c>IModel</c> through <c>MeaiBackedModel</c>.
+    /// Default: ON (Phase 6). Opt out via <c>Nexo:UseMeaiPipeline=false</c>
+    /// / <c>NEXO_USE_MEAI_PIPELINE=0</c> to restore the legacy <c>IProviderFactory</c> <c>IModel</c> leaf.
     /// </summary>
     public bool? UseMeaiPipeline { get; set; }
 

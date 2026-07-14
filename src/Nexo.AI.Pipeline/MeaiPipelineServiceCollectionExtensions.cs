@@ -18,6 +18,8 @@ public static class MeaiPipelineServiceCollectionExtensions
 {
     /// <summary>
     /// Returns true when the MEAI pipeline should be registered.
+    /// Phase 6+: defaults to <c>true</c>. Opt out with config <c>false</c>/<c>0</c>
+    /// or env <c>NEXO_USE_MEAI_PIPELINE=0|false</c>.
     /// </summary>
     public static bool IsMeaiPipelineEnabled(IConfiguration? configuration, bool? explicitEnable = null)
     {
@@ -29,21 +31,40 @@ public static class MeaiPipelineServiceCollectionExtensions
         if (configuration is not null)
         {
             var flagged = configuration[MeaiPipelineOptions.FeatureFlagKey];
-            if (!string.IsNullOrWhiteSpace(flagged)
-                && bool.TryParse(flagged, out var parsed))
+            if (!string.IsNullOrWhiteSpace(flagged))
             {
-                return parsed;
-            }
+                if (bool.TryParse(flagged, out var parsed))
+                {
+                    return parsed;
+                }
 
-            if (string.Equals(flagged, "1", StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
+                if (string.Equals(flagged, "1", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+
+                if (string.Equals(flagged, "0", StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
             }
         }
 
         var env = Environment.GetEnvironmentVariable(MeaiPipelineOptions.FeatureFlagEnvVar);
-        return string.Equals(env, "1", StringComparison.OrdinalIgnoreCase)
-               || string.Equals(env, "true", StringComparison.OrdinalIgnoreCase);
+        if (string.Equals(env, "0", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(env, "false", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        if (string.Equals(env, "1", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(env, "true", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        // Phase 6 default: MEAI pipeline on.
+        return true;
     }
 
     /// <summary>

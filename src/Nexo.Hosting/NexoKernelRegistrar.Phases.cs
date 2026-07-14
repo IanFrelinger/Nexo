@@ -314,7 +314,7 @@ internal static partial class NexoKernelRegistrar
         // ── Model decorator chain ──────────────────────────────────────
         // The IModel abstraction is built as a three-layer decorator:
         //
-        //   1. ProviderBackedModel     – delegates to IProviderFactory
+        //   1. MeaiBackedModel (default) or ProviderBackedModel (opt-out)
         //   2. HotSwappableModel       – allows runtime model switching
         //                                without restarting the host
         //   3. OrchestrationRuntimeModelDecorator
@@ -325,15 +325,30 @@ internal static partial class NexoKernelRegistrar
         // HotSwappableModel is registered as a concrete singleton so that
         // administrative endpoints can resolve it directly for hot-swap
         // operations, while IModel always returns the fully decorated chain.
+        // The factory runs after Phase 13b so MEAI IChatClient is available when enabled.
         services.AddSingleton<Nexo.Infrastructure.Execution.Models.HotSwappableModel>(sp =>
         {
-            IProviderFactory providerFactory = sp.GetRequiredService<Nexo.Infrastructure.Execution.IProviderFactory>();
-            var providerBacked = new Nexo.Infrastructure.Execution.Models.ProviderBackedModel(
-                providerFactory,
-                sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Execution.Models.ProviderBackedModel>>());
-            return new Nexo.Infrastructure.Execution.Models.HotSwappableModel(
-                providerBacked,
-                sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Execution.Models.HotSwappableModel>>());
+            var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Execution.Models.HotSwappableModel>>();
+            bool meai = MeaiPipelineServiceCollectionExtensions.IsMeaiPipelineEnabled(
+                ctx.Configuration,
+                ctx.Options.UseMeaiPipeline);
+
+            Nexo.Abstractions.IModel agentic;
+            if (meai)
+            {
+                agentic = new Nexo.AI.Pipeline.Models.MeaiBackedModel(
+                    sp.GetRequiredService<Microsoft.Extensions.AI.IChatClient>(),
+                    sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.AI.Pipeline.Models.MeaiBackedModel>>());
+            }
+            else
+            {
+                IProviderFactory providerFactory = sp.GetRequiredService<Nexo.Infrastructure.Execution.IProviderFactory>();
+                agentic = new Nexo.Infrastructure.Execution.Models.ProviderBackedModel(
+                    providerFactory,
+                    sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Execution.Models.ProviderBackedModel>>());
+            }
+
+            return new Nexo.Infrastructure.Execution.Models.HotSwappableModel(agentic, logger);
         });
 
         services.AddSingleton<Nexo.Abstractions.IModel>(sp =>
@@ -349,8 +364,9 @@ internal static partial class NexoKernelRegistrar
     }
 
     /// <summary>
-    /// Phase 13b: Microsoft.Extensions.AI VectorData RAG (always, additive) and optional chat pipeline (feature-flagged; default off).
-    /// Legacy <c>IProviderFactory</c> / legacy RAG paths remain the default until Phase 6.
+    /// Phase 13b: Microsoft.Extensions.AI pipeline (default on since Phase 6) + VectorData RAG as default IRAGService.
+    /// Opt out of MEAI chat with <c>Nexo:UseMeaiPipeline=false</c> / <c>NEXO_USE_MEAI_PIPELINE=0</c>.
+    /// Legacy <c>IProviderFactory</c> remains registered for direct non-chat callers.
     /// </summary>
     private static void RegisterPhase13b_MeaiPipeline(NexoKernelRegistrationContext ctx)
     {
@@ -358,9 +374,13 @@ internal static partial class NexoKernelRegistrar
         NexoHostingOptions options = ctx.Options;
         IConfiguration configuration = ctx.Configuration;
 
-        // VectorData RAG is additive; legacy IRAGService stays the default until Phase 6.
         MeaiPipelineServiceCollectionExtensions.RegisterGovernanceDefaults(services);
         MeaiPipelineServiceCollectionExtensions.RegisterVectorDataRag(services);
+
+        // Prefer VectorData-backed IRAGService (last registration wins over Phase 11 legacy).
+        services.AddSingleton<Nexo.BackgroundAgents.RAG.IRAGService>(sp =>
+            new Nexo.Hosting.Meai.MeaiVectorDataRagAdapter(
+                sp.GetRequiredService<Nexo.AI.Pipeline.Rag.VectorDataRagService>()));
 
         bool enabled = MeaiPipelineServiceCollectionExtensions.IsMeaiPipelineEnabled(
             configuration,

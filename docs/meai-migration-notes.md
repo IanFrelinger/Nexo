@@ -331,7 +331,7 @@ Router (Phase 3) sits **outside** per-target stacks and is itself wrapped in Aud
 | 3 | `RoutingChatClient` + policy × availability matrix tests | **Done** |
 | 4 | Bedrock tiered targets + env-gated integration test | **Done** |
 | 5 | VectorData RAG + embedding middleware + reindex CLI | **Done** |
-| 6 | Flag default on; delete legacy; `docs/governed-pipeline.md` | Pending |
+| 6 | Flag default on; delete legacy; `docs/governed-pipeline.md` | **Done** |
 
 ---
 
@@ -417,3 +417,25 @@ Landing branch: `cursor/meai-phase5-vectordata-5a04`
 - Default `Nexo:UseMeaiPipeline` on; remove legacy `IProviderFactory` chat path and legacy RAG write path
 - Publish `docs/governed-pipeline.md` + architecture tests in CI
 - Optional: swap in-process VectorData store for a durable connector when one matches Abstractions 10.7
+
+---
+
+## Phase 6 implementation notes (2026-07-14)
+
+Landing branch: `cursor/meai-phase6-cutover-5a04`
+
+### Delivered
+- Feature flag **defaults ON**; opt out with `Nexo:UseMeaiPipeline=false` / `NEXO_USE_MEAI_PIPELINE=0`
+- `MeaiBackedModel` (`IModel` → governed `IChatClient`); Hosting Phase 13 uses it as the HotSwappable agentic leaf when MEAI is on
+- `HotSwappableModel` accepts `IModel` (not `ProviderBackedModel` only)
+- Default `IRAGService` → `MeaiVectorDataRagAdapter` over `VectorDataRagService`
+- Operator doc: `docs/governed-pipeline.md`
+- CI: `make meai-pipeline-gate` hooked into `make kernel-gate`
+
+### Soft-gated (kept)
+- `IProviderFactory` / `ProviderFactory` / `SanitizingProviderFactory` for direct non-chat callers (NCR, bricks, content generators)
+- Legacy `RAGService` types remain for opt-out/custom hosts
+
+### Remaining debt
+- Migrate remaining direct `IProviderFactory.ExecuteLLMAsync` callers onto MEAI or shared policy helpers
+- Durable VectorData connector when GA versions align

@@ -15,16 +15,20 @@ namespace Nexo.Infrastructure.Execution.Models;
 /// </summary>
 public sealed class HotSwappableModel : IModel
 {
-    private readonly ProviderBackedModel _agentic;
+    private readonly IModel _agentic;
     private readonly IModel _deterministic;
     private readonly ILogger<HotSwappableModel> _logger;
 
-    /// <summary>Initializes a new hot swappable model.</summary>
+    /// <summary>
+    /// Initializes a new hot swappable model.
+    /// <paramref name="agentic"/> is typically <see cref="ProviderBackedModel"/> (legacy)
+    /// or an MEAI-backed <see cref="IModel"/> when the MEAI pipeline is enabled.
+    /// </summary>
     public HotSwappableModel(
-        ProviderBackedModel agentic,
+        IModel agentic,
         ILogger<HotSwappableModel> logger)
     {
-        _agentic = agentic;
+        _agentic = agentic ?? throw new ArgumentNullException(nameof(agentic));
         _deterministic = new EchoDeterministicModel();
         _logger = logger;
     }

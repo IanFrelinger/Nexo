@@ -11,12 +11,28 @@ namespace Nexo.Tests.AI.Pipeline;
 public sealed class MeaiPipelineRegistrationTests
 {
     [Fact]
-    public void IsMeaiPipelineEnabled_defaults_to_false()
+    public void IsMeaiPipelineEnabled_defaults_to_true()
     {
         var previous = Environment.GetEnvironmentVariable(MeaiPipelineOptions.FeatureFlagEnvVar);
         try
         {
             Environment.SetEnvironmentVariable(MeaiPipelineOptions.FeatureFlagEnvVar, null);
+            MeaiPipelineServiceCollectionExtensions.IsMeaiPipelineEnabled(configuration: null)
+                .Should().BeTrue();
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable(MeaiPipelineOptions.FeatureFlagEnvVar, previous);
+        }
+    }
+
+    [Fact]
+    public void IsMeaiPipelineEnabled_env_zero_opts_out()
+    {
+        var previous = Environment.GetEnvironmentVariable(MeaiPipelineOptions.FeatureFlagEnvVar);
+        try
+        {
+            Environment.SetEnvironmentVariable(MeaiPipelineOptions.FeatureFlagEnvVar, "0");
             MeaiPipelineServiceCollectionExtensions.IsMeaiPipelineEnabled(configuration: null)
                 .Should().BeFalse();
         }

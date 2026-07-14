@@ -111,6 +111,26 @@ public sealed class VectorDataRagService
         return count;
     }
 
+    /// <summary>Removes a chunk by key.</summary>
+    public Task RemoveAsync(string key, CancellationToken cancellationToken = default) =>
+        _collection.DeleteAsync(key, cancellationToken);
+
+    /// <summary>Clears the default collection.</summary>
+    public Task ClearAsync(CancellationToken cancellationToken = default) =>
+        _collection.EnsureCollectionDeletedAsync(cancellationToken);
+
+    /// <summary>Returns the number of indexed chunks when the store is in-process.</summary>
+    public Task<int> GetDocumentCountAsync(CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (_collection is InProcessChunkCollection inProcess)
+        {
+            return Task.FromResult(inProcess.Count);
+        }
+
+        return Task.FromResult(-1);
+    }
+
     private async Task<float[]> EmbedAsync(string text, CancellationToken cancellationToken)
     {
         var generated = await _embeddings.GenerateAsync([text], cancellationToken: cancellationToken)

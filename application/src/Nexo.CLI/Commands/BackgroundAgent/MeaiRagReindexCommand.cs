@@ -5,8 +5,8 @@ using Nexo.AI.Pipeline.Rag;
 namespace Nexo.CLI.Commands.BackgroundAgent;
 
 /// <summary>
-/// Migrates file content into the MEAI VectorData store while leaving the legacy RAG store read-only.
-/// Requires <c>Nexo:UseMeaiPipeline</c> / <c>NEXO_USE_MEAI_PIPELINE=1</c>.
+/// Migrates file content into the MEAI VectorData store.
+/// Hosting registers VectorData as the default <c>IRAGService</c> (Phase 6).
 /// </summary>
 public sealed class MeaiRagReindexCommand
 {
