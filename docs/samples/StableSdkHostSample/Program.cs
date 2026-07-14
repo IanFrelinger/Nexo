@@ -5,6 +5,7 @@ using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Execution;
 using Nexo.Hosting;
 using Nexo.Hosting.Sdk;
+using Nexo.Hosting.Sdk.Extensions;
 
 var services = new ServiceCollection();
 
@@ -28,7 +29,7 @@ services.AddNexo(options =>
 using var provider = services.BuildServiceProvider();
 Console.WriteLine("Stable SDK host sample bootstrapped successfully.");
 
-public sealed class SampleHostBrick : DomainBrick
+public sealed class SampleHostBrick : Brick
 {
     public SampleHostBrick()
     {
