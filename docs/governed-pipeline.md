@@ -42,7 +42,7 @@ Raw provider types (`OllamaHttpChatClient`, Bedrock SDK client, LLamaSharp sessi
 ## RAG
 
 - Default `IRAGService` → `MeaiVectorDataRagAdapter` over `VectorDataRagService` (in-process VectorData store + governed embeddings).
-- Reindex CLI: `nexo background-agent rag reindex-meai <paths…>`
+- Reindex: call `VectorDataRagService.ReindexAsync` from Hosting DI (CLI `reindex-meai` lands on an `application/*` PR per layer-boundary rules).
 - Legacy `RAGService` / store types remain in-tree for opt-out / migration but are not the Hosting default.
 
 ## Operator notes

@@ -417,6 +417,7 @@ Landing branch: `cursor/meai-phase5-vectordata-5a04`
 - Default `Nexo:UseMeaiPipeline` on; remove legacy `IProviderFactory` chat path and legacy RAG write path
 - Publish `docs/governed-pipeline.md` + architecture tests in CI
 - Optional: swap in-process VectorData store for a durable connector when one matches Abstractions 10.7
+- **CLI reindex:** deferred to an `application/*` PR (layer-boundary: master cannot change `application/`) — use `VectorDataRagService.ReindexAsync` via Hosting DI until then
 
 ---
 
@@ -431,6 +432,8 @@ Landing branch: `cursor/meai-phase6-cutover-5a04`
 - Default `IRAGService` → `MeaiVectorDataRagAdapter` over `VectorDataRagService`
 - Operator doc: `docs/governed-pipeline.md`
 - CI: `make meai-pipeline-gate` hooked into `make kernel-gate`
+- Pack graph: `Nexo.AI.Pipeline` added to `pack-nexo-hosting-graph.{sh,ps1}`
+- ProdStyle Hosting smoke: default MEAI + VectorData RAG wiring / opt-out
 
 ### Soft-gated (kept)
 - `IProviderFactory` / `ProviderFactory` / `SanitizingProviderFactory` for direct non-chat callers (NCR, bricks, content generators)
@@ -439,3 +442,4 @@ Landing branch: `cursor/meai-phase6-cutover-5a04`
 ### Remaining debt
 - Migrate remaining direct `IProviderFactory.ExecuteLLMAsync` callers onto MEAI or shared policy helpers
 - Durable VectorData connector when GA versions align
+- Application-layer CLI: `nexo background-agent rag reindex-meai` (blocked on master by layer-boundary; land on `application/*`)

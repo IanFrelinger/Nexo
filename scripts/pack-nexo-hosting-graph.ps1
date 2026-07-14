@@ -38,6 +38,7 @@ Pack-Project "src/Nexo.Certification.Physical/Nexo.Certification.Physical.csproj
 Pack-Project "src/Nexo.Infrastructure/Nexo.Infrastructure.csproj"
 Pack-Project "src/Nexo.Orchestration/Nexo.Orchestration.csproj"
 Pack-Project "src/Nexo.BackgroundAgents/Nexo.BackgroundAgents.csproj"
+Pack-Project "src/Nexo.AI.Pipeline/Nexo.AI.Pipeline.csproj"
 Pack-Project "src/Nexo.Hosting/Nexo.Hosting.csproj"
 
 $cfg = Join-Path $OutputDir "PackBundle.NuGet.Config"

@@ -661,21 +661,6 @@ static partial class Program
             Environment.Exit(await cmd.ClearAsync(formatJson));
         }, jsonOpt);
         ragCmd.AddCommand(ragClearCmd);
-        var ragReindexPathsOpt = new Option<string[]>("--paths", "Paths to re-index into the MEAI VectorData store") { IsRequired = true, AllowMultipleArgumentsPerToken = true };
-        var ragReindexTierOpt = new Option<string?>("--trust-tier", () => "Public", "Trust tier tag for reindexed chunks");
-        var ragReindexCmd = new Command("reindex-meai", "Re-index files into the MEAI VectorData store (legacy store stays read-only until Phase 6)")
-        {
-            ragReindexPathsOpt,
-            ragReindexTierOpt,
-        };
-        ragReindexCmd.SetHandler(
-            async (string[] paths, string? trustTier, bool formatJson) =>
-            {
-                var cmd = ServiceProvider.GetRequiredService<Nexo.CLI.Commands.BackgroundAgent.MeaiRagReindexCommand>();
-                Environment.Exit(await cmd.ReindexAsync(paths ?? Array.Empty<string>(), trustTier, formatJson));
-            },
-            ragReindexPathsOpt, ragReindexTierOpt, jsonOpt);
-        ragCmd.AddCommand(ragReindexCmd);
         backgroundAgentCmd.AddCommand(ragCmd);
 
         // nexo background-agent websearch

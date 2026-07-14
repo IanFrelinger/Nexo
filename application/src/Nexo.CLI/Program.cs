@@ -112,7 +112,6 @@ static partial class Program
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.SensitivityCommand>();
         services.AddScoped<TrustCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.RAGCommand>();
-        services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.MeaiRagReindexCommand>();
         services.AddScoped<Nexo.CLI.Commands.BackgroundAgent.WebSearchCommand>();
 
         // CLI-specific: console renderer for output formatting
