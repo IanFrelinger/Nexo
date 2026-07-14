@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using GameDirector.Mcp.Endpoints;
+using Nexo.API.Endpoints;
 using Nexo.API.Middleware.Ingress;
 using Nexo.API.Security;
 using Nexo.BackgroundAgents.Extending;
