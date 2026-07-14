@@ -1,8 +1,10 @@
 using Microsoft.Extensions.AI;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Nexo.AI.Pipeline.Clients;
+using Nexo.AI.Pipeline.Governance;
 
 namespace Nexo.AI.Pipeline;
 
@@ -44,19 +46,9 @@ public static class MeaiPipelineServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Registers keyed <see cref="IChatClient"/> pipelines for <c>local:ollama</c> and <c>local:onnx</c>.
-    /// Raw provider clients (<c>OllamaApiClient</c>, LLamaSharp sessions) are never registered in DI.
+    /// Registers keyed <see cref="IChatClient"/> pipelines for <c>local:ollama</c> and <c>local:onnx</c>
+    /// with the fixed Nexo governance stack. Raw provider clients are never registered in DI.
     /// </summary>
-    /// <param name="services">Service collection.</param>
-    /// <param name="configuration">Optional configuration for options binding.</param>
-    /// <param name="configure">Optional options mutation.</param>
-    /// <param name="ollamaInnerFactory">
-    /// Optional replacement for the Ollama inner client (tests). When null, OllamaSharp is used.
-    /// </param>
-    /// <param name="onnxInnerFactory">
-    /// Optional replacement for the local offline inner client (tests). When null, LLamaSharp is used.
-    /// </param>
-    /// <returns>The service collection.</returns>
     public static IServiceCollection AddNexoMeaiPipeline(
         this IServiceCollection services,
         IConfiguration? configuration = null,
@@ -73,26 +65,40 @@ public static class MeaiPipelineServiceCollectionExtensions
         configure?.Invoke(options);
         services.AddSingleton(Options.Create(options));
 
-        // Keyed pipelines via MEAI ChatClientBuilder — inner factories stay private.
+        RegisterGovernanceDefaults(services);
+
         Func<IServiceProvider, IChatClient> defaultOllama = sp =>
             new OllamaHttpChatClient(sp.GetRequiredService<IOptions<MeaiPipelineOptions>>());
         Func<IServiceProvider, IChatClient> defaultOnnx = sp =>
             new LlamaSharpChatClient(sp.GetRequiredService<IOptions<MeaiPipelineOptions>>());
 
         services.AddKeyedChatClient(
-            MeaiTargetKeys.LocalOllama,
-            sp => (ollamaInnerFactory ?? defaultOllama)(sp));
+                MeaiTargetKeys.LocalOllama,
+                sp => (ollamaInnerFactory ?? defaultOllama)(sp))
+            .UseNexoGovernance(MeaiTargetKeys.LocalOllama);
 
         services.AddKeyedChatClient(
-            MeaiTargetKeys.LocalOnnx,
-            sp => (onnxInnerFactory ?? defaultOnnx)(sp));
+                MeaiTargetKeys.LocalOnnx,
+                sp => (onnxInnerFactory ?? defaultOnnx)(sp))
+            .UseNexoGovernance(MeaiTargetKeys.LocalOnnx);
 
+        return services;
+    }
+
+    /// <summary>
+    /// Registers default governance services if not already present.
+    /// </summary>
+    public static IServiceCollection RegisterGovernanceDefaults(this IServiceCollection services)
+    {
+        services.TryAddSingleton<IChatTargetAccessPolicy, DefaultChatTargetAccessPolicy>();
+        services.TryAddSingleton<IChatMessageSanitizer, DefaultChatMessageSanitizer>();
+        services.TryAddSingleton<ITargetSanitizePolicy, DefaultTargetSanitizePolicy>();
+        services.TryAddSingleton<IChatInvocationAuditor, InMemoryChatInvocationAuditor>();
         return services;
     }
 
     private static void BindSection(IConfiguration section, MeaiPipelineOptions options)
     {
-        // Lightweight bind without Configuration.Binder package dependency.
         var ollamaBase = section["OllamaBaseUrl"];
         if (!string.IsNullOrWhiteSpace(ollamaBase))
         {

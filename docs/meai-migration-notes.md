@@ -327,7 +327,7 @@ Router (Phase 3) sits **outside** per-target stacks and is itself wrapped in Aud
 |-------|-------------|--------|
 | 0 | This notes file | **Done** |
 | 1 | `Nexo.AI.Pipeline` + Ollama/LLamaSharp `IChatClient` + flag off | **Done** |
-| 2 | PolicyGate / Sanitizing / Auditing middleware + DI architecture tests | Pending |
+| 2 | PolicyGate / Sanitizing / Auditing middleware + DI architecture tests | **Done** |
 | 3 | `RoutingChatClient` + policy × availability matrix tests | Pending |
 | 4 | Bedrock tiered targets + env-gated integration test | Pending |
 | 5 | VectorData RAG + embedding middleware + reindex CLI | Pending |
@@ -352,3 +352,20 @@ Landing branch: `cursor/meai-phase1-pipeline-5a04`
 3. Host libraries remain **net8.0**; Pipeline dual-targets so Hosting can consume net8 while still shipping net9.
 4. Governance middleware (`UseNexoGovernance`) is **Phase 2** — Phase 1 registers bare keyed clients through `ChatClientBuilder` with no policy/sanitize/audit stack yet.
 
+---
+
+## Phase 2 implementation notes (2026-07-14)
+
+Landing branch: `cursor/meai-phase2-governance-5a04`
+
+### Delivered
+- `UseNexoGovernance(targetKey)` — fixed order **PolicyGate → Sanitizing → Auditing → provider**
+- `PolicyViolationException` with structured `Code` / target / details (no raw secrets)
+- Ports: `IChatTargetAccessPolicy`, `IChatMessageSanitizer`, `ITargetSanitizePolicy`, `IChatInvocationAuditor`
+- Defaults: local allow / cloud deny; local sanitize=Pass; cloud sanitize=BlockOnSecretRedactOnPii
+- `AddNexoMeaiPipeline` always applies `UseNexoGovernance` (hosts cannot register ungoverned keyed clients through this API)
+- Unit tests: deny short-circuit, PII redact before spy, audit on success/fault/cancel, composition order, architecture (resolved client is `PolicyGateChatClient`)
+
+### Follow-ups for later phases
+- Wire adapters to existing `ICloudSanitizationProxy` / `IDataDecisionAuditLog` / trust packs (ports are ready)
+- Phase 3 router wraps governed per-target pipelines and audits route decisions
