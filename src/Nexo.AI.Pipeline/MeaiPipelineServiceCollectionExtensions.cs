@@ -16,8 +16,6 @@ public static class MeaiPipelineServiceCollectionExtensions
 {
     /// <summary>
     /// Returns true when the MEAI pipeline should be registered.
-    /// Resolution order: explicit <paramref name="explicitEnable"/> →
-    /// <c>Nexo:UseMeaiPipeline</c> config → <c>NEXO_USE_MEAI_PIPELINE</c> env → false.
     /// </summary>
     public static bool IsMeaiPipelineEnabled(IConfiguration? configuration, bool? explicitEnable = null)
     {
@@ -47,8 +45,7 @@ public static class MeaiPipelineServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Registers keyed <see cref="IChatClient"/> pipelines for <c>local:ollama</c> and <c>local:onnx</c>
-    /// with the fixed Nexo governance stack, plus a default auditing <see cref="RoutingChatClient"/>.
+    /// Registers keyed local (and optional Bedrock) governed pipelines plus an auditing router.
     /// Raw provider clients are never registered in DI.
     /// </summary>
     public static IServiceCollection AddNexoMeaiPipeline(
@@ -57,6 +54,7 @@ public static class MeaiPipelineServiceCollectionExtensions
         Action<MeaiPipelineOptions>? configure = null,
         Func<IServiceProvider, IChatClient>? ollamaInnerFactory = null,
         Func<IServiceProvider, IChatClient>? onnxInnerFactory = null,
+        Func<IServiceProvider, string, IChatClient>? bedrockInnerFactory = null,
         bool registerDefaultRouter = true)
     {
         var options = new MeaiPipelineOptions();
@@ -66,10 +64,12 @@ public static class MeaiPipelineServiceCollectionExtensions
         }
 
         configure?.Invoke(options);
+        ApplyBedrockAllowListDefaults(options);
         services.AddSingleton(Options.Create(options));
 
-        RegisterGovernanceDefaults(services);
+        RegisterGovernanceDefaults(services, options);
         RegisterRoutingDefaults(services);
+        services.TryAddSingleton<IBedrockChatClientFactory, AwsBedrockChatClientFactory>();
 
         Func<IServiceProvider, IChatClient> defaultOllama = sp =>
             new OllamaHttpChatClient(sp.GetRequiredService<IOptions<MeaiPipelineOptions>>());
@@ -86,9 +86,13 @@ public static class MeaiPipelineServiceCollectionExtensions
                 sp => (onnxInnerFactory ?? defaultOnnx)(sp))
             .UseNexoGovernance(MeaiTargetKeys.LocalOnnx);
 
+        if (options.Bedrock.Enabled)
+        {
+            RegisterBedrockTier(services, options, bedrockInnerFactory);
+        }
+
         if (registerDefaultRouter)
         {
-            // Router sits outside per-target stacks; wrap only with Auditing (plan Phase 3).
             services.AddChatClient(sp =>
             {
                 var router = ActivatorUtilities.CreateInstance<RoutingChatClient>(sp);
@@ -101,7 +105,7 @@ public static class MeaiPipelineServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Registers a governed keyed <see cref="IChatClient"/> for an additional target (e.g. cloud stubs in tests).
+    /// Registers a governed keyed <see cref="IChatClient"/> for an additional target.
     /// </summary>
     public static ChatClientBuilder AddNexoGovernedChatClient(
         this IServiceCollection services,
@@ -114,27 +118,106 @@ public static class MeaiPipelineServiceCollectionExtensions
             .UseNexoGovernance(targetKey);
     }
 
-    /// <summary>
-    /// Registers default governance services if not already present.
-    /// </summary>
-    public static IServiceCollection RegisterGovernanceDefaults(this IServiceCollection services)
+    /// <summary>Registers default governance services if not already present.</summary>
+    public static IServiceCollection RegisterGovernanceDefaults(this IServiceCollection services) =>
+        RegisterGovernanceDefaults(services, options: null);
+
+    /// <summary>Registers default governance services, applying cloud allow-list from options.</summary>
+    public static IServiceCollection RegisterGovernanceDefaults(
+        this IServiceCollection services,
+        MeaiPipelineOptions? options)
     {
-        services.TryAddSingleton<IChatTargetAccessPolicy, DefaultChatTargetAccessPolicy>();
+        services.TryAddSingleton<IChatTargetAccessPolicy>(_ =>
+        {
+            var policy = new DefaultChatTargetAccessPolicy();
+            if (options?.AllowedCloudTargets is { Count: > 0 } allowed)
+            {
+                foreach (var key in allowed)
+                {
+                    if (!string.IsNullOrWhiteSpace(key))
+                    {
+                        policy.AllowedCloudTargets.Add(key.Trim());
+                    }
+                }
+            }
+
+            return policy;
+        });
         services.TryAddSingleton<IChatMessageSanitizer, DefaultChatMessageSanitizer>();
         services.TryAddSingleton<ITargetSanitizePolicy, DefaultTargetSanitizePolicy>();
         services.TryAddSingleton<IChatInvocationAuditor, InMemoryChatInvocationAuditor>();
         return services;
     }
 
-    /// <summary>
-    /// Registers default routing services if not already present.
-    /// </summary>
+    /// <summary>Registers default routing services if not already present.</summary>
     public static IServiceCollection RegisterRoutingDefaults(this IServiceCollection services)
     {
         services.TryAddSingleton<IRouteCandidateTable, DefaultRouteCandidateTable>();
         services.TryAddSingleton<ITargetAvailability, InMemoryTargetAvailability>();
         services.TryAddSingleton<IChatRouter, LocalFirstChatRouter>();
         return services;
+    }
+
+    private static void RegisterBedrockTier(
+        IServiceCollection services,
+        MeaiPipelineOptions options,
+        Func<IServiceProvider, string, IChatClient>? bedrockInnerFactory)
+    {
+        RegisterTier(
+            services,
+            DefaultRouteCandidateTable.CloudBedrockFast,
+            options.Bedrock.FastModelId,
+            bedrockInnerFactory);
+        RegisterTier(
+            services,
+            DefaultRouteCandidateTable.CloudBedrockBalanced,
+            options.Bedrock.BalancedModelId,
+            bedrockInnerFactory);
+        RegisterTier(
+            services,
+            DefaultRouteCandidateTable.CloudBedrockHeavy,
+            options.Bedrock.HeavyModelId,
+            bedrockInnerFactory);
+    }
+
+    private static void RegisterTier(
+        IServiceCollection services,
+        string targetKey,
+        string modelId,
+        Func<IServiceProvider, string, IChatClient>? bedrockInnerFactory)
+    {
+        services.AddKeyedChatClient(
+                targetKey,
+                sp =>
+                {
+                    if (bedrockInnerFactory is not null)
+                    {
+                        return bedrockInnerFactory(sp, modelId);
+                    }
+
+                    return sp.GetRequiredService<IBedrockChatClientFactory>().Create(modelId);
+                })
+            .UseNexoGovernance(targetKey);
+    }
+
+    private static void ApplyBedrockAllowListDefaults(MeaiPipelineOptions options)
+    {
+        if (!options.Bedrock.Enabled)
+        {
+            return;
+        }
+
+        void Add(string key)
+        {
+            if (!options.AllowedCloudTargets.Contains(key, StringComparer.OrdinalIgnoreCase))
+            {
+                options.AllowedCloudTargets.Add(key);
+            }
+        }
+
+        Add(DefaultRouteCandidateTable.CloudBedrockFast);
+        Add(DefaultRouteCandidateTable.CloudBedrockBalanced);
+        Add(DefaultRouteCandidateTable.CloudBedrockHeavy);
     }
 
     private static void BindSection(IConfiguration section, MeaiPipelineOptions options)
@@ -165,6 +248,48 @@ public static class MeaiPipelineServiceCollectionExtensions
         if (int.TryParse(section["LocalMaxTokens"], out var max) && max > 0)
         {
             options.LocalMaxTokens = max;
+        }
+
+        var bedrock = section.GetSection("Bedrock");
+        if (bedrock.Exists())
+        {
+            if (bool.TryParse(bedrock["Enabled"], out var enabled))
+            {
+                options.Bedrock.Enabled = enabled;
+            }
+
+            var region = bedrock["Region"];
+            if (!string.IsNullOrWhiteSpace(region))
+            {
+                options.Bedrock.Region = region;
+            }
+
+            var fast = bedrock["FastModelId"];
+            if (!string.IsNullOrWhiteSpace(fast))
+            {
+                options.Bedrock.FastModelId = fast;
+            }
+
+            var balanced = bedrock["BalancedModelId"];
+            if (!string.IsNullOrWhiteSpace(balanced))
+            {
+                options.Bedrock.BalancedModelId = balanced;
+            }
+
+            var heavy = bedrock["HeavyModelId"];
+            if (!string.IsNullOrWhiteSpace(heavy))
+            {
+                options.Bedrock.HeavyModelId = heavy;
+            }
+        }
+
+        var allowed = section.GetSection("AllowedCloudTargets").GetChildren();
+        foreach (var child in allowed)
+        {
+            if (!string.IsNullOrWhiteSpace(child.Value))
+            {
+                options.AllowedCloudTargets.Add(child.Value.Trim());
+            }
         }
     }
 }

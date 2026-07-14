@@ -32,4 +32,13 @@ public sealed class MeaiPipelineOptions
 
     /// <summary>Max tokens for LLamaSharp local inference.</summary>
     public int LocalMaxTokens { get; set; } = 4096;
+
+    /// <summary>AWS Bedrock tiered cloud targets.</summary>
+    public BedrockMeaiOptions Bedrock { get; set; } = new();
+
+    /// <summary>
+    /// Explicit cloud target keys the default access policy should allow
+    /// (e.g. <c>cloud:bedrock:balanced</c>). Empty = cloud denied.
+    /// </summary>
+    public List<string> AllowedCloudTargets { get; set; } = new();
 }

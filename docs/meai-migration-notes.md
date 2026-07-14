@@ -329,7 +329,7 @@ Router (Phase 3) sits **outside** per-target stacks and is itself wrapped in Aud
 | 1 | `Nexo.AI.Pipeline` + Ollama/LLamaSharp `IChatClient` + flag off | **Done** |
 | 2 | PolicyGate / Sanitizing / Auditing middleware + DI architecture tests | **Done** |
 | 3 | `RoutingChatClient` + policy × availability matrix tests | **Done** |
-| 4 | Bedrock tiered targets + env-gated integration test | Pending |
+| 4 | Bedrock tiered targets + env-gated integration test | **Done** |
 | 5 | VectorData RAG + embedding middleware + reindex CLI | Pending |
 | 6 | Flag default on; delete legacy; `docs/governed-pipeline.md` | Pending |
 
@@ -385,3 +385,16 @@ Landing branch: `cursor/meai-phase3-router-5a04`
 
 ### Follow-ups
 - Phase 4 registers real `cloud:bedrock:*` governed clients; stubs already reserved in the candidate table
+
+---
+
+## Phase 4 implementation notes (2026-07-14)
+
+Landing branch: `cursor/meai-phase4-bedrock-5a04`
+
+### Delivered
+- Packages: `AWSSDK.BedrockRuntime` + `AWSSDK.Extensions.Bedrock.MEAI` (AWS MEAI `AsIChatClient`)
+- Targets `cloud:bedrock:fast|balanced|heavy` with config model ids (`Nexo:Meai:Bedrock`)
+- Credentials: `new AmazonBedrockRuntimeClient()` — same default chain as DynamoDB ingress; client **not** in DI
+- Cloud sanitize defaults already strict (`BlockOnSecretRedactOnPii`); Bedrock enable auto-allow-lists cloud target keys
+- Unit tests with fake transport; live test gated by `NEXO_TEST_BEDROCK=1`
