@@ -330,7 +330,7 @@ Router (Phase 3) sits **outside** per-target stacks and is itself wrapped in Aud
 | 2 | PolicyGate / Sanitizing / Auditing middleware + DI architecture tests | **Done** |
 | 3 | `RoutingChatClient` + policy × availability matrix tests | **Done** |
 | 4 | Bedrock tiered targets + env-gated integration test | **Done** |
-| 5 | VectorData RAG + embedding middleware + reindex CLI | Pending |
+| 5 | VectorData RAG + embedding middleware + reindex CLI | **Done** |
 | 6 | Flag default on; delete legacy; `docs/governed-pipeline.md` | Pending |
 
 ---
@@ -398,3 +398,22 @@ Landing branch: `cursor/meai-phase4-bedrock-5a04`
 - Credentials: `new AmazonBedrockRuntimeClient()` — same default chain as DynamoDB ingress; client **not** in DI
 - Cloud sanitize defaults already strict (`BlockOnSecretRedactOnPii`); Bedrock enable auto-allow-lists cloud target keys
 - Unit tests with fake transport; live test gated by `NEXO_TEST_BEDROCK=1`
+
+---
+
+## Phase 5 implementation notes (2026-07-14)
+
+Landing branch: `cursor/meai-phase5-vectordata-5a04`
+
+### Delivered
+- Package: `Microsoft.Extensions.VectorData.Abstractions` **10.7.0** + in-process `InProcessVectorStore` / `InProcessChunkCollection` (no preview SK connector — version mismatch with VectorData 10.7)
+- `ChunkRecord`, `TrustTierOrder`, `VectorDataRagService` (index / search with caller-tier filter / reindex)
+- Governed embeddings: `TokenHashEmbeddingGenerator` → **Auditing** → **Sanitizing** (outer) — same AsyncLocal visibility pattern as chat
+- Hosting Phase 13b: VectorData RAG + governance defaults always; chat pipeline still flag-gated
+- CLI: `nexo background-agent rag reindex-meai` (`MeaiRagReindexCommand`) — leaves legacy RAG store read-only
+- AWS CPM aligned to v4 so Bedrock MEAI + DynamoDB co-restore: Core `4.0.100.4`, DynamoDBv2 `4.0.101.1`, S3 `4.0.101`, Lambda `4.0.103`
+
+### Follow-ups for Phase 6
+- Default `Nexo:UseMeaiPipeline` on; remove legacy `IProviderFactory` chat path and legacy RAG write path
+- Publish `docs/governed-pipeline.md` + architecture tests in CI
+- Optional: swap in-process VectorData store for a durable connector when one matches Abstractions 10.7

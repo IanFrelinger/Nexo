@@ -4,7 +4,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Options;
 using Nexo.AI.Pipeline.Clients;
+using Nexo.AI.Pipeline.Embeddings;
 using Nexo.AI.Pipeline.Governance;
+using Nexo.AI.Pipeline.Rag;
 using Nexo.AI.Pipeline.Routing;
 
 namespace Nexo.AI.Pipeline;
@@ -91,6 +93,8 @@ public static class MeaiPipelineServiceCollectionExtensions
             RegisterBedrockTier(services, options, bedrockInnerFactory);
         }
 
+        RegisterVectorDataRag(services);
+
         if (registerDefaultRouter)
         {
             services.AddChatClient(sp =>
@@ -101,6 +105,33 @@ public static class MeaiPipelineServiceCollectionExtensions
             });
         }
 
+        return services;
+    }
+
+    /// <summary>
+    /// Registers VectorData RAG (in-process store + governed embeddings). Legacy RAG remains until Phase 6.
+    /// </summary>
+    public static IServiceCollection RegisterVectorDataRag(this IServiceCollection services)
+    {
+        services.TryAddSingleton<InProcessVectorStore>();
+        services.TryAddSingleton(sp =>
+        {
+            var store = sp.GetRequiredService<InProcessVectorStore>();
+            return store.GetCollection<string, ChunkRecord>(VectorDataRagService.DefaultCollectionName);
+        });
+        services.TryAddSingleton<IEmbeddingGenerator<string, Embedding<float>>>(sp =>
+        {
+            // Same stack as chat governance: Sanitizing → Auditing → provider.
+            // Auditing must sit inside Sanitizing so SanitizationCallContext is visible
+            // while Emit runs (AsyncLocal does not flow back to an outer awaiter).
+            IEmbeddingGenerator<string, Embedding<float>> inner = new TokenHashEmbeddingGenerator();
+            var sanitizer = sp.GetRequiredService<IChatMessageSanitizer>();
+            var auditor = sp.GetRequiredService<IChatInvocationAuditor>();
+            inner = new AuditingEmbeddingGenerator(inner, auditor);
+            inner = new SanitizingEmbeddingGenerator(inner, sanitizer, SanitizeDisposition.Redact);
+            return inner;
+        });
+        services.TryAddSingleton<VectorDataRagService>();
         return services;
     }
 

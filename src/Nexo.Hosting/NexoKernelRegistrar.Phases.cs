@@ -349,14 +349,18 @@ internal static partial class NexoKernelRegistrar
     }
 
     /// <summary>
-    /// Phase 13b: optional Microsoft.Extensions.AI keyed chat pipeline (feature-flagged; default off).
-    /// Legacy <c>IProviderFactory</c> path remains the default until Phase 6.
+    /// Phase 13b: Microsoft.Extensions.AI VectorData RAG (always, additive) and optional chat pipeline (feature-flagged; default off).
+    /// Legacy <c>IProviderFactory</c> / legacy RAG paths remain the default until Phase 6.
     /// </summary>
     private static void RegisterPhase13b_MeaiPipeline(NexoKernelRegistrationContext ctx)
     {
         IServiceCollection services = ctx.Services;
         NexoHostingOptions options = ctx.Options;
         IConfiguration configuration = ctx.Configuration;
+
+        // VectorData RAG is additive; legacy IRAGService stays the default until Phase 6.
+        MeaiPipelineServiceCollectionExtensions.RegisterGovernanceDefaults(services);
+        MeaiPipelineServiceCollectionExtensions.RegisterVectorDataRag(services);
 
         bool enabled = MeaiPipelineServiceCollectionExtensions.IsMeaiPipelineEnabled(
             configuration,

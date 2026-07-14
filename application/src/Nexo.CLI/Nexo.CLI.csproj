@@ -45,6 +45,7 @@
     <ProjectReference Include="../../../src/Nexo.Core/Nexo.Core.csproj" />
     <ProjectReference Include="../../../src/Nexo.Adapters.Models/Nexo.Adapters.Models.csproj" />
     <ProjectReference Include="../../../src/Nexo.Hosting/Nexo.Hosting.csproj" />
+    <ProjectReference Include="../../../src/Nexo.AI.Pipeline/Nexo.AI.Pipeline.csproj" />
     <ProjectReference Include="../../../src/Nexo.Infrastructure/Nexo.Infrastructure.csproj" />
     <ProjectReference Include="../../../src/Nexo.Bricks.Owasp/Nexo.Bricks.Owasp.csproj" />
     <ProjectReference Include="../../../src/Nexo.Orchestration/Nexo.Orchestration.csproj" />
