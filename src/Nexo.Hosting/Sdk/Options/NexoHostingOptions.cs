@@ -29,6 +29,13 @@ public sealed class NexoHostingOptions
     public bool? TrustEnabled { get; set; }
 
     /// <summary>
+    /// When true, registers the Microsoft.Extensions.AI governed chat pipeline
+    /// (keyed <c>IChatClient</c> targets). Default: from <c>Nexo:UseMeaiPipeline</c>
+    /// / <c>NEXO_USE_MEAI_PIPELINE</c>, or false (legacy <c>IProviderFactory</c> path).
+    /// </summary>
+    public bool? UseMeaiPipeline { get; set; }
+
+    /// <summary>
     /// When true, registers background agents as IHostedService (for long-running hosts).
     /// Default: false (CLI mode; agents run on-demand).
     /// </summary>

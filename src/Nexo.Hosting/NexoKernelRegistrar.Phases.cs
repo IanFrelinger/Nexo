@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Nexo.Abstractions.Routing;
+using Nexo.AI.Pipeline;
 using Nexo.BackgroundAgents;
 using Nexo.BackgroundAgents.Trust;
 using Nexo.Contracts;
@@ -345,6 +346,28 @@ internal static partial class NexoKernelRegistrar
                 sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Orchestration.Models.OrchestrationRuntimeModelDecorator>>());
         });
 
+    }
+
+    /// <summary>
+    /// Phase 13b: optional Microsoft.Extensions.AI keyed chat pipeline (feature-flagged; default off).
+    /// Legacy <c>IProviderFactory</c> path remains the default until Phase 6.
+    /// </summary>
+    private static void RegisterPhase13b_MeaiPipeline(NexoKernelRegistrationContext ctx)
+    {
+        IServiceCollection services = ctx.Services;
+        NexoHostingOptions options = ctx.Options;
+        IConfiguration configuration = ctx.Configuration;
+
+        bool enabled = MeaiPipelineServiceCollectionExtensions.IsMeaiPipelineEnabled(
+            configuration,
+            options.UseMeaiPipeline);
+
+        if (!enabled)
+        {
+            return;
+        }
+
+        services.AddNexoMeaiPipeline(configuration);
     }
 
     /// <summary>Phase 14: ephemeral model and database lifecycle.</summary>

@@ -326,9 +326,29 @@ Router (Phase 3) sits **outside** per-target stacks and is itself wrapped in Aud
 | Phase | Deliverable | Status |
 |-------|-------------|--------|
 | 0 | This notes file | **Done** |
-| 1 | `Nexo.AI.Pipeline` + Ollama/LLamaSharp `IChatClient` + flag off | Pending |
+| 1 | `Nexo.AI.Pipeline` + Ollama/LLamaSharp `IChatClient` + flag off | **Done** |
 | 2 | PolicyGate / Sanitizing / Auditing middleware + DI architecture tests | Pending |
 | 3 | `RoutingChatClient` + policy × availability matrix tests | Pending |
 | 4 | Bedrock tiered targets + env-gated integration test | Pending |
 | 5 | VectorData RAG + embedding middleware + reindex CLI | Pending |
 | 6 | Flag default on; delete legacy; `docs/governed-pipeline.md` | Pending |
+
+---
+
+## Phase 1 implementation notes (2026-07-14)
+
+Landing branch: `cursor/meai-phase1-pipeline-5a04`
+
+### Delivered
+- New project `src/Nexo.AI.Pipeline` (TFMs `net8.0;net9.0`) + tests `src/Nexo.Tests.AI.Pipeline`
+- Keyed `IChatClient` targets: `local:ollama` (`OllamaHttpChatClient`), `local:onnx` (`LlamaSharpChatClient`)
+- Hosting Phase **13b** registers the pipeline only when `Nexo:UseMeaiPipeline` / `NEXO_USE_MEAI_PIPELINE` / `NexoHostingOptions.UseMeaiPipeline` is true (**default off**)
+- Raw `OllamaHttpChatClient` / `LlamaSharpChatClient` are **not** registered in DI — only keyed `IChatClient` via `AddKeyedChatClient`
+- Packages: `Microsoft.Extensions.AI` + `Abstractions` **10.7.0**; CPM bumped related `Microsoft.Extensions.*` / `System.Text.*` **10.0.8 → 10.0.9** for MEAI
+
+### Discovery changes for later phases
+1. **OllamaSharp deferred:** package 5.4.25 ships a Roslyn 5 analyzer incompatible with this repo's pinned C# 12 / compiler 4.14. Phase 1 uses a thin `OllamaHttpChatClient` over `/api/chat` instead (plan-allowed). Revisit OllamaSharp when the repo moves to a Roslyn 5-capable toolchain.
+2. **`local:onnx` = LLamaSharp GGUF** confirmed in code comments + options; not ONNX Runtime GenAI.
+3. Host libraries remain **net8.0**; Pipeline dual-targets so Hosting can consume net8 while still shipping net9.
+4. Governance middleware (`UseNexoGovernance`) is **Phase 2** — Phase 1 registers bare keyed clients through `ChatClientBuilder` with no policy/sanitize/audit stack yet.
+
