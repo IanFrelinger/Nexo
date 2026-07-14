@@ -149,4 +149,44 @@ public sealed class HostingE2ESmokeTests
             Environment.SetEnvironmentVariable(profileKey, previous);
         }
     }
+
+    [Fact(Timeout = TestTimeouts.E2E)]
+    public async Task AddNexo_Defaults_To_Meai_Pipeline_And_VectorData_Rag()
+    {
+        await Task.CompletedTask;
+        var previous = Environment.GetEnvironmentVariable("NEXO_USE_MEAI_PIPELINE");
+        try
+        {
+            Environment.SetEnvironmentVariable("NEXO_USE_MEAI_PIPELINE", null);
+            var services = new ServiceCollection();
+            services.AddLogging();
+            services.AddNexo();
+            using var sp = services.BuildServiceProvider();
+
+            sp.GetService<Microsoft.Extensions.AI.IChatClient>().Should().NotBeNull(
+                "Phase 6 defaults the MEAI governed chat pipeline on");
+            sp.GetRequiredService<Nexo.BackgroundAgents.RAG.IRAGService>()
+                .Should().BeOfType<Nexo.Hosting.Meai.MeaiVectorDataRagAdapter>();
+            sp.GetRequiredService<Nexo.AI.Pipeline.Rag.VectorDataRagService>().Should().NotBeNull();
+            sp.GetRequiredService<Nexo.Infrastructure.Execution.Models.HotSwappableModel>().Should().NotBeNull();
+        }
+        finally
+        {
+            Environment.SetEnvironmentVariable("NEXO_USE_MEAI_PIPELINE", previous);
+        }
+    }
+
+    [Fact(Timeout = TestTimeouts.E2E)]
+    public async Task AddNexo_Meai_OptOut_Skips_ChatClient_But_Keeps_VectorData_Rag()
+    {
+        await Task.CompletedTask;
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddNexo(o => o.UseMeaiPipeline = false);
+        using var sp = services.BuildServiceProvider();
+
+        sp.GetService<Microsoft.Extensions.AI.IChatClient>().Should().BeNull();
+        sp.GetRequiredService<Nexo.BackgroundAgents.RAG.IRAGService>()
+            .Should().BeOfType<Nexo.Hosting.Meai.MeaiVectorDataRagAdapter>();
+    }
 }

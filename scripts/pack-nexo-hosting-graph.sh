@@ -34,6 +34,7 @@ pack src/Nexo.Certification.Physical/Nexo.Certification.Physical.csproj
 pack src/Nexo.Infrastructure/Nexo.Infrastructure.csproj
 pack src/Nexo.Orchestration/Nexo.Orchestration.csproj
 pack src/Nexo.BackgroundAgents/Nexo.BackgroundAgents.csproj
+pack src/Nexo.AI.Pipeline/Nexo.AI.Pipeline.csproj
 pack src/Nexo.Hosting/Nexo.Hosting.csproj
 
 CFG="${OUT}/PackBundle.NuGet.Config"

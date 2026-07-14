@@ -64,6 +64,7 @@ internal static partial class NexoKernelRegistrar
         RegisterPhase11_BackgroundAgentsRAG(ctx);
         RegisterPhase12_ObservationPipeline(ctx);
         RegisterPhase13_ModelDecoratorChain(ctx);
+        RegisterPhase13b_MeaiPipeline(ctx);
         RegisterPhase14_EphemeralLifecycle(ctx);
         RegisterPhase15_TrustProviderFactory3wayBranching(ctx);
         RegisterPhase16_ExecutionCoreWorkflow(ctx);
