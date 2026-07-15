@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net8.0</TargetFrameworks>
+    <LangVersion>12.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <IsPackable>true</IsPackable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+    <PackageId>Nexo.GameDomain</PackageId>
+    <Title>Nexo Game Domain</Title>
+    <Description>Deterministic gameplay bricks, registry, and runner for Unity/netstandard2.0 hosts. Brick.Contracts only — no Hosting, Orchestration, or LLM providers.</Description>
+    <PackageTags>nexo;gameplay;bricks;unity;deterministic;netstandard</PackageTags>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Nexo.Brick.Contracts\Nexo.Brick.Contracts.csproj" />
+  </ItemGroup>
+
+</Project>

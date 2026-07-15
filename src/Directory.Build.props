@@ -29,7 +29,9 @@
       '$(MSBuildProjectName)' == 'Nexo.Commercial.Tests.Fleet' OR
       '$(MSBuildProjectName)' == 'Nexo.Tests.GameDirector' OR
       '$(MSBuildProjectName)' == 'HelloBrick' OR
-      '$(MSBuildProjectName)' == 'Nexo.Certified.DamageResolver'
+      '$(MSBuildProjectName)' == 'Nexo.Certified.DamageResolver' OR
+      '$(MSBuildProjectName)' == 'Nexo.GameDomain' OR
+      '$(MSBuildProjectName)' == 'Nexo.Tests.GameDomain'
       ">true</NexoIncludeDomainBrickGlobalUsing>
   </PropertyGroup>
 

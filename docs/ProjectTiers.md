@@ -16,6 +16,7 @@ Tiers depend **inward** only (satellites reference the spine, not the reverse). 
 | `Nexo.Core.Application` | Use cases and ports |
 | `Nexo.Contracts` | Cross-cutting contracts |
 | `Nexo.Brick.Contracts` | Brick extension contracts |
+| `Nexo.GameDomain` | Deterministic gameplay bricks + runner (`netstandard2.0` / Unity-friendly) |
 | `Nexo.Policies` | Policy primitives |
 | `Nexo.Infrastructure` | Execution, persistence, adapters; open `MeshLab` worker executor (polls commercial fleet director) |
 | `Nexo.Orchestration` | Orchestrator, routing, coordination |
@@ -63,7 +64,7 @@ The CLI project also references spine-adjacent packs: **`Nexo.Bricks.Owasp`**, *
 | Area | Projects / paths |
 |------|------------------|
 | Game Director | `commercial/src/Nexo.Commercial.GameDirector.Domain`, `Nexo.Commercial.GameDirector.Agents`, `Nexo.Commercial.GameDirector.Bricks`, `Nexo.Commercial.GameDirector.Host`, `Nexo.Commercial.GameDirector.Mcp` |
-| Game domain | `commercial/src/Nexo.Commercial.GameDomain` |
+| Game domain | Open-core: `src/Nexo.GameDomain` (deterministic gameplay bricks). Commercial: `commercial/src/Nexo.Commercial.GameDomain` |
 | Fleet | `commercial/src/Nexo.Commercial.Fleet.Contracts`, `commercial/src/Nexo.Commercial.Fleet.Infrastructure`, `commercial/src/Nexo.Commercial.Fleet.Api`, `commercial/src/Nexo.Commercial.Fleet.Host`, `commercial/src/Nexo.Commercial.MeshDirector` |
 | App configs | `apps/runtime-studio`, `apps/nexo-forge`, `apps/game-director`, `apps/release-manager` |
 | Tools | `tools/Nexo.UnitySidecarDemo`, `tools/ApplyFeedbackChanges` |
@@ -75,6 +76,7 @@ The CLI project also references spine-adjacent packs: **`Nexo.Bricks.Owasp`**, *
 | Project | Role |
 |---------|------|
 | `Nexo.Tests.Domain` | Domain unit tests |
+| `Nexo.Tests.GameDomain` | Open-core gameplay brick / runner tests |
 | `Nexo.Tests.Application` | Application-layer tests |
 | `Nexo.Tests.Infrastructure` | Infrastructure / pipeline tests |
 | `Nexo.Tests.Orchestration` | Orchestration tests |
