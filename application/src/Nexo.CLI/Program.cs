@@ -85,6 +85,12 @@ static partial class Program
         services.TryAddSingleton<Nexo.BackgroundAgents.HostRunners.SelfExtendRunnerAdapter>();
         services.TryAddSingleton<Nexo.BackgroundAgents.Extending.ISelfExtendRunner>(
             sp => sp.GetRequiredService<Nexo.BackgroundAgents.HostRunners.SelfExtendRunnerAdapter>());
+        services.TryAddSingleton<Nexo.BackgroundAgents.HostRunners.UnityWeaponLabGameRunner>();
+        services.TryAddSingleton<Nexo.Orchestration.Playtest.Ports.IGameRunner>(
+            sp => sp.GetRequiredService<Nexo.BackgroundAgents.HostRunners.UnityWeaponLabGameRunner>());
+        services.TryAddSingleton<
+            Nexo.BackgroundAgents.Playtesting.IPlaytestRunRunner,
+            Nexo.BackgroundAgents.HostRunners.PlaytestRunRunnerAdapter>();
 
         // Register CLI commands
         services.AddScoped<AnalyzeCommand>();

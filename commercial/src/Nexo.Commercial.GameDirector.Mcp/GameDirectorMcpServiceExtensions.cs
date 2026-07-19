@@ -1,5 +1,6 @@
 using GameDirector.Mcp.Tools;
 using Microsoft.Extensions.DependencyInjection;
+using Nexo.BackgroundAgents.Playtesting;
 using Nexo.Core.Domain.Execution;
 
 namespace GameDirector.Mcp;
@@ -15,6 +16,12 @@ public static class GameDirectorMcpServiceExtensions
         services.AddSingleton<GenerateContentTool>();
         services.AddSingleton<GetAuditTrailTool>();
         services.AddSingleton<QueryPatternsTool>();
+        if (services.Any(descriptor =>
+                descriptor.ServiceType == typeof(IPlaytestRunRunner)))
+        {
+            services.AddSingleton<RunBrPlaytestTool>();
+            services.AddSingleton<GetBrPlaytestReportTool>();
+        }
         services.AddSingleton<McpToolRegistry>();
         return services;
     }

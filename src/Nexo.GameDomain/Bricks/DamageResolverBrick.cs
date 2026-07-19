@@ -1,5 +1,7 @@
 using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Execution;
+using Nexo.GameDomain.Contracts;
+using Nexo.GameDomain.Rules.Combat;
 
 namespace Nexo.GameDomain.Bricks;
 
@@ -38,10 +40,17 @@ public sealed class DamageResolverBrick : DeterministicGameplayBrick
         var armor = input.Get<int>("armor");
         var isCrit = input.Get<bool>("isCrit");
 
-        var raw = isCrit
-            ? baseDamage * critMultiplierPercent / 100
-            : baseDamage;
-        var finalDamage = Math.Max(0, raw - armor);
+        // The brick is an authoring/certification adapter. The authoritative
+        // server calls DamageRules directly with typed state.
+        var command = new DamageCommand(
+            new EntityId(1),
+            new EntityId(2),
+            baseDamage,
+            critMultiplierPercent,
+            isCrit);
+        var damageContext = new DamageContext(int.MaxValue, armor);
+        var result = DamageRules.Resolve(command, damageContext);
+        var finalDamage = result.AppliedDamage;
 
         var output = new BrickOutput { Summary = $"Final damage: {finalDamage}" };
         output.Set("finalDamage", finalDamage);

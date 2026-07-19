@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
 using Nexo.Abstractions;
 using Nexo.BackgroundAgents.Agents;
 using Nexo.BackgroundAgents.Configuration;
@@ -37,7 +38,7 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
     private readonly IChangeProposalStore? _proposals;
     private readonly IAggressivenessModeStore? _modeStore;
     private readonly ICertificationRecordStore _certificationStore;
-    private readonly IBackgroundAgentRegistry? _agentRegistry;
+    private readonly IServiceProvider? _serviceProvider;
     private readonly IDataSensitivityRegistry? _sensitivityRegistry;
 
     public SelfExtendRunnerAdapter(
@@ -49,7 +50,7 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
         IChangeProposalStore? proposals = null,
         IAggressivenessModeStore? modeStore = null,
         ICertificationRecordStore? certificationStore = null,
-        IBackgroundAgentRegistry? agentRegistry = null,
+        IServiceProvider? serviceProvider = null,
         IDataSensitivityRegistry? sensitivityRegistry = null)
     {
         _model = model ?? throw new ArgumentNullException(nameof(model));
@@ -60,7 +61,7 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
         _proposals = proposals;
         _modeStore = modeStore;
         _certificationStore = certificationStore ?? FailClosedCertificationRecordStore.Instance;
-        _agentRegistry = agentRegistry;
+        _serviceProvider = serviceProvider;
         _sensitivityRegistry = sensitivityRegistry;
     }
 
@@ -148,7 +149,8 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
                 proposals: _proposals,
                 modeStore: _modeStore,
                 certificationStore: _certificationStore,
-                agentRegistry: _agentRegistry,
+                agentRegistry:
+                    _serviceProvider?.GetService<IBackgroundAgentRegistry>(),
                 sensitivityRegistry: _sensitivityRegistry);
             budget.Reset();
             // Register objective lifecycle tools only when a store is wired — the

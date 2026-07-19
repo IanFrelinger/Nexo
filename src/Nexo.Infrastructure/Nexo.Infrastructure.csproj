@@ -37,6 +37,7 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="Google.Apis.Drive.v3" />
         <PackageReference Include="Microsoft.Extensions.Configuration" />
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
         <PackageReference Include="Microsoft.Extensions.Http" />

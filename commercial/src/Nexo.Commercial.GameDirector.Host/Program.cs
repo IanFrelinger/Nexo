@@ -54,6 +54,12 @@ builder.Services.TryAddSingleton<ICodeAnalysisRunner, CodeAnalysisRunnerAdapter>
 builder.Services.TryAddSingleton<ITestRunRunner, TestRunRunnerAdapter>();
 builder.Services.TryAddSingleton<SelfExtendRunnerAdapter>();
 builder.Services.TryAddSingleton<ISelfExtendRunner>(sp => sp.GetRequiredService<SelfExtendRunnerAdapter>());
+builder.Services.TryAddSingleton<UnityWeaponLabGameRunner>();
+builder.Services.TryAddSingleton<Nexo.Orchestration.Playtest.Ports.IGameRunner>(
+    sp => sp.GetRequiredService<UnityWeaponLabGameRunner>());
+builder.Services.TryAddSingleton<
+    Nexo.BackgroundAgents.Playtesting.IPlaytestRunRunner,
+    PlaytestRunRunnerAdapter>();
 builder.Services.AddSingleton<HeuristicMaterialIntelligenceService>();
 builder.Services.AddSingleton<IMaterialIntelligenceService>(sp =>
     new ModelAugmentedMaterialIntelligenceService(

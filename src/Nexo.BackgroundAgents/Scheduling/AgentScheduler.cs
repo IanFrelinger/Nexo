@@ -44,7 +44,12 @@ public sealed class AgentScheduler : IAgentScheduler
         }
 
         var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        var task = _executor.ExecuteAsync(instance, executeOnce, cts.Token);
+        // Never execute a schedule inline on IHostedService.StartAsync. Inline
+        // execution can block host startup when a schedule has no initial await,
+        // and previously raced instance.State while it was still Starting.
+        var task = Task.Run(
+            () => _executor.ExecuteAsync(instance, executeOnce, cts.Token),
+            CancellationToken.None);
 
         _running[agentId] = (cts, task);
         _logger?.LogInformation("Started schedule for agent: {AgentId}", agentId);

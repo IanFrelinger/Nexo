@@ -1,0 +1,37 @@
+{
+  "BackgroundAgents": {
+    "Agents": [
+      {
+        "Id": "nexo-br-weapon-content",
+        "Name": "Nexo BR Weapon Content Author",
+        "Role": "extender",
+        "ModelProvider": "ollama",
+        "ModelName": "qwen2.5-coder:7b",
+        "Commands": [
+          "read-schema",
+          "author-descriptor",
+          "validate-import"
+        ],
+        "Parameters": {
+          "RepoRoot": "../NexoBattleRoyale",
+          "Objective": "Create a draft under .nexo/br-director/proposals/<proposal-id>/ containing proposal.json and descriptor.weapon.json. Follow Assets/Game/Content/Weapons/weapon.schema.json. Do not edit live descriptors, runtime C#, or generated assets.",
+          "AgentName": "nexo-br-weapon-content"
+        },
+        "Schedule": {
+          "Type": "Interval",
+          "Interval": "01:00:00",
+          "InitialDelay": "00:00:30"
+        },
+        "Enabled": false,
+        "MaxDataSensitivity": "Internal",
+        "ExfiltrationPolicy": {
+          "BlockExternalLLMs": true,
+          "BlockWebSearch": true,
+          "BlockNetworkExports": true,
+          "RequireLocalOnly": true,
+          "MaxAllowedLevel": "Internal"
+        }
+      }
+    ]
+  }
+}

@@ -6,6 +6,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Nexo.BackgroundAgents.Trust;
+using Nexo.BackgroundAgents.Configuration;
+using Nexo.BackgroundAgents.Playtesting;
 using Nexo.Client;
 using Nexo.Core.Application.Trust.Ports;
 using Nexo.Core.Domain.Execution;
@@ -39,5 +41,40 @@ public sealed class McpServiceExtensionsTests
         provider.GetService<GetAuditTrailTool>().Should().NotBeNull();
         provider.GetService<QueryPatternsTool>().Should().NotBeNull();
         provider.GetService<McpToolRegistry>().Should().NotBeNull();
+    }
+
+    [Fact]
+    public void AddGameDirectorMcp_adds_br_tools_when_playtest_runner_exists()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging(b => b.AddProvider(NullLoggerProvider.Instance));
+        services.AddSingleton<IDataDecisionAuditLog>(
+            GameDirectorTestHost.CreateAuditLog());
+        services.AddSingleton<IBrickRegistry>(
+            GameDirectorTestHost.CreateBrickRegistry());
+        services.AddSingleton<INexoClient>(
+            new GameDirectorTestHost.StubNexoClient());
+        services.AddSingleton<IPlaytestRunRunner, FakePlaytestRunner>();
+
+        services.AddGameDirectorMcp();
+
+        using var provider = services.BuildServiceProvider();
+        var names = provider.GetRequiredService<McpToolRegistry>()
+            .ListTools()
+            .Select(tool => tool.Name);
+        names.Should().Contain("br_run_playtest");
+        names.Should().Contain("br_get_playtest_report");
+    }
+
+    private sealed class FakePlaytestRunner : IPlaytestRunRunner
+    {
+        public Task<PlaytestRunResult> RunAsync(
+            BackgroundAgentConfig config,
+            CancellationToken cancellationToken = default)
+            => Task.FromResult(new PlaytestRunResult(
+                true,
+                "ok",
+                "/tmp/report.json",
+                1));
     }
 }

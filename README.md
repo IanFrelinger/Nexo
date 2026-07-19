@@ -66,7 +66,7 @@ For layer-by-layer detail see [`docs/Architecture.md`](docs/Architecture.md); fo
 - **Mesh:** peer discovery, capability advertisement, director/hub flows, trust-tier placement, virtual labs, and phase docs for federation.
 - **Transport and ingress:** optional gRPC transport plus AWS SNS and DynamoDB ingress adapters.
 - **Hosts:** `application/src/Nexo.CLI` (`nexo`) and `application/src/Nexo.API` (ASP.NET Core HTTP/portal host).
-- **Apps:** `apps/game-director`, `apps/nexo-forge`, `apps/release-manager`, and `apps/runtime-studio` are application-level agent-set/configuration surfaces.
+- **Apps:** `apps/game-director`, `apps/nexo-forge`, `apps/br-playtest`, `apps/release-manager`, and `apps/runtime-studio` are application-level agent-set/configuration surfaces.
 - **Distribution:** NuGet packages (`Nexo.Hosting`, bundles, SDK/client/lite/runtime packages), GHCR images, Dockerfiles, compose stacks, and source/monorepo integration.
 
 For the canonical tier-by-tier project map, see [`docs/ProjectTiers.md`](docs/ProjectTiers.md). For distribution channels and their validation gates, see [`docs/DistributionModels.md`](docs/DistributionModels.md).
@@ -268,6 +268,7 @@ For operator runbooks, images, and hardening, see [Deploy (operators)](#deploy-o
 |-----|------------|-----------|
 | `apps/game-director` | Self-hosted, MCP-exposed AI sidecar for game balance, map validation, and content generation. | [`apps/game-director/README.md`](apps/game-director/README.md) |
 | `apps/nexo-forge` | Vertical agent-set configuration for adaptive multiplayer FPS prototyping. | [`apps/nexo-forge/README.md`](apps/nexo-forge/README.md) |
+| `apps/br-playtest` | Local-only Unity Weapon Lab playtest agent with scoped input, screenshots, telemetry, and reports. | [`apps/br-playtest/README.md`](apps/br-playtest/README.md) |
 | `apps/release-manager` | Release-readiness automation agent set for repo monitoring, tests, SLO evidence, and reports. | [`apps/release-manager/README.md`](apps/release-manager/README.md) |
 | `apps/runtime-studio` | Planner/worker Runtime Studio agent set and operator scripts hosted by CLI or API. | [`apps/runtime-studio/README.md`](apps/runtime-studio/README.md) |
 

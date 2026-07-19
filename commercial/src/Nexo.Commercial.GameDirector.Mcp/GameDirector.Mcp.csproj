@@ -14,6 +14,7 @@
     <PackageReference Include="LiteDB" />
     <ProjectReference Include="..\Nexo.Commercial.GameDirector.Domain\GameDirector.Domain.csproj" />
     <ProjectReference Include="..\..\..\src\Nexo.Abstractions\Nexo.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\src\Nexo.BackgroundAgents\Nexo.BackgroundAgents.csproj" />
     <ProjectReference Include="..\..\..\src\Nexo.Client\Nexo.Client.csproj" />
     <ProjectReference Include="..\..\..\src\Nexo.Core.Application\Nexo.Core.Application.csproj" />
     <ProjectReference Include="..\..\..\src\Nexo.Core.Domain\Nexo.Core.Domain.csproj" />

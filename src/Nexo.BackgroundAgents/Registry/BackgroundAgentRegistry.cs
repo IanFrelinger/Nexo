@@ -7,6 +7,7 @@ using Nexo.BackgroundAgents.Extending;
 using Nexo.BackgroundAgents.Logging;
 using Nexo.BackgroundAgents.Observations;
 using Nexo.BackgroundAgents.Optimization;
+using Nexo.BackgroundAgents.Playtesting;
 using Nexo.BackgroundAgents.Scheduling;
 using Nexo.BackgroundAgents.Security;
 using Nexo.BackgroundAgents.Telemetry;
@@ -52,6 +53,7 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
     private readonly ICodeAnalysisRunner? _codeAnalysisRunner;
     private readonly ITestRunRunner? _testRunRunner;
     private readonly ISelfExtendRunner? _selfExtendRunner;
+    private readonly IPlaytestRunRunner? _playtestRunRunner;
     private readonly ISelfImprovementLoop? _selfImprovementLoop;
     private readonly IAggressivenessModeStore? _modeStore;
     private readonly IApprovalGate? _approvalGate;
@@ -91,7 +93,8 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
         IDataDecisionAuditLog? auditLog = null,
         CycleEventStore? cycleEvents = null,
         Observations.IObservationStore? observations = null,
-        TimeSpan? shutdownGracePeriod = null)
+        TimeSpan? shutdownGracePeriod = null,
+        IPlaytestRunRunner? playtestRunRunner = null)
     {
         _scheduler = scheduler ?? throw new ArgumentNullException(nameof(scheduler));
         _logger = logger;
@@ -99,6 +102,7 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
         _codeAnalysisRunner = codeAnalysisRunner;
         _testRunRunner = testRunRunner;
         _selfExtendRunner = selfExtendRunner;
+        _playtestRunRunner = playtestRunRunner;
         _selfImprovementLoop = selfImprovementLoop;
         _modeStore = modeStore;
         _approvalGate = approvalGate;
@@ -276,9 +280,11 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
         instance.State = BackgroundAgentState.Starting;
         instance.LastStartedAt = DateTimeOffset.UtcNow;
 
-        _scheduler.StartAsync(instance, TrackedExecuteAgentAsync, cancellationToken);
-
         instance.State = BackgroundAgentState.Running;
+        _scheduler.StartAsync(
+            instance,
+            TrackedExecuteAgentAsync,
+            cancellationToken);
         _logger?.LogInformation("Started background agent: {AgentId}", agentId);
         return Task.CompletedTask;
     }
@@ -404,6 +410,50 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
                 telemSuccess = result.Success;
                 telemRationale = result.Summary;
                 telemStoppedReason = "code_analysis";
+                return;
+            }
+
+            // Game playtest agents run engine-specific sessions through the registered adapter.
+            if (string.Equals(
+                    instance.Config.Role,
+                    "playtest",
+                    StringComparison.OrdinalIgnoreCase) &&
+                _playtestRunRunner != null)
+            {
+                var result = await _playtestRunRunner
+                    .RunAsync(instance.Config, cancellationToken)
+                    .ConfigureAwait(false);
+                _logStore?.Append(
+                    agentId,
+                    result.Success ? "Info" : "Warning",
+                    $"Playtest: {result.Summary}");
+                _logger?.LogInformation(
+                    "Background agent {AgentId} playtest: {Summary}",
+                    agentId,
+                    result.Summary);
+                var facts = result.Facts is null
+                    ? new Dictionary<string, string>()
+                    : new Dictionary<string, string>(result.Facts);
+                facts["success"] = result.Success ? "true" : "false";
+                facts["actions"] = result.ActionsExecuted.ToString(
+                    System.Globalization.CultureInfo.InvariantCulture);
+                facts["report_path"] = result.ReportPath ?? string.Empty;
+                _observations?.Append(new RuntimeObservation(
+                    ts: DateTimeOffset.UtcNow,
+                    source: agentId,
+                    kind: ObservationKind.Test,
+                    summary: $"Playtest: {result.Summary}",
+                    severity: result.Success
+                        ? ObservationSeverity.Info
+                        : ObservationSeverity.Error,
+                    facts: facts,
+                    agentCycle: instance.ExecutionCount));
+                instance.LastCompletedAt = DateTimeOffset.UtcNow;
+                instance.SuccessCount++;
+                telemSuccess = result.Success;
+                telemExecuted = result.ActionsExecuted;
+                telemRationale = result.Summary;
+                telemStoppedReason = "playtest";
                 return;
             }
 

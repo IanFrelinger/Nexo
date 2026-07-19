@@ -13,16 +13,23 @@ public sealed class McpToolRegistry
         ValidateMapTool validateMap,
         GenerateContentTool generateContent,
         GetAuditTrailTool getAuditTrail,
-        QueryPatternsTool queryPatterns)
+        QueryPatternsTool queryPatterns,
+        RunBrPlaytestTool? runBrPlaytest = null,
+        GetBrPlaytestReportTool? getBrPlaytestReport = null)
     {
-        _tools =
-        [
+        var tools = new List<IMcpTool>
+        {
             analyzeBalance,
             validateMap,
             generateContent,
             getAuditTrail,
             queryPatterns
-        ];
+        };
+        if (runBrPlaytest is not null)
+            tools.Add(runBrPlaytest);
+        if (getBrPlaytestReport is not null)
+            tools.Add(getBrPlaytestReport);
+        _tools = tools;
     }
 
     /// <summary>List tools.</summary>

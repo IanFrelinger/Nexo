@@ -5,6 +5,7 @@ using Nexo.BackgroundAgents.DataSensitivity;
 using Nexo.BackgroundAgents.Extending;
 using Nexo.BackgroundAgents.Observations;
 using Nexo.BackgroundAgents.Optimization;
+using Nexo.BackgroundAgents.Playtesting;
 using Nexo.BackgroundAgents.Registry;
 using Nexo.BackgroundAgents.Scheduling;
 using Nexo.BackgroundAgents.Testing;
@@ -97,6 +98,35 @@ public sealed class ObservationsPublishingTests
     }
 
     [Fact]
+    public async Task Playtest_role_runs_adapter_and_publishes_report_observation()
+    {
+        var store = new InMemoryObservationStore();
+        var runner = new FakePlaytestRunner();
+        var registry = BuildRegistry(
+            playtestRunRunner: runner,
+            observations: store);
+        var config = new BackgroundAgentConfig
+        {
+            Id = "playtest-1",
+            Role = "playtest",
+            Enabled = true,
+            Commands = ["playtest"]
+        };
+        await registry.RegisterAuthoredAsync(
+            new GenericAgent(BuildSpec(config), NullLogger<GenericAgent>.Instance),
+            config);
+
+        await registry.ExecuteOnceAsync(config.Id);
+
+        runner.Invocations.Should().Be(1);
+        var observation = store.All.Should().ContainSingle().Subject;
+        observation.kind.Should().Be(ObservationKind.Test);
+        observation.severity.Should().Be(ObservationSeverity.Info);
+        observation.facts!["report_path"].Should().Be("/tmp/playtest-report.json");
+        observation.facts!["actions"].Should().Be("6");
+    }
+
+    [Fact]
     public async Task Registry_does_not_throw_when_observation_store_absent()
     {
         // Regression: the publishing call sites must remain null-conditional. If
@@ -117,6 +147,7 @@ public sealed class ObservationsPublishingTests
         ICodeAnalysisRunner? codeAnalysisRunner = null,
         ITestRunRunner? testRunRunner = null,
         ISelfExtendRunner? selfExtendRunner = null,
+        IPlaytestRunRunner? playtestRunRunner = null,
         IObservationStore? observations = null)
     {
         var scheduler = new AgentScheduler(new ScheduleExecutor(), NullLogger<AgentScheduler>.Instance);
@@ -132,7 +163,8 @@ public sealed class ObservationsPublishingTests
             approvalGate: null,
             auditLog: null,
             cycleEvents: null,
-            observations: observations);
+            observations: observations,
+            playtestRunRunner: playtestRunRunner);
     }
 
     private static Orchestration.Architect.Models.AgentSpawnSpec BuildSpec(BackgroundAgentConfig c)
@@ -161,6 +193,23 @@ public sealed class ObservationsPublishingTests
 
         public Task<TestRunResult> RunAsync(string? filter, CancellationToken cancellationToken = default)
             => Task.FromResult(_result);
+    }
+
+    private sealed class FakePlaytestRunner : IPlaytestRunRunner
+    {
+        public int Invocations { get; private set; }
+
+        public Task<PlaytestRunResult> RunAsync(
+            BackgroundAgentConfig config,
+            CancellationToken cancellationToken = default)
+        {
+            Invocations++;
+            return Task.FromResult(new PlaytestRunResult(
+                true,
+                "playtest green",
+                "/tmp/playtest-report.json",
+                6));
+        }
     }
 
     private sealed class FakeCodeAnalysisRunner : ICodeAnalysisRunner

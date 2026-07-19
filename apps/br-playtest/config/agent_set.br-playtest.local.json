@@ -1,0 +1,47 @@
+{
+  "BackgroundAgents": {
+    "Agents": [
+      {
+        "Id": "nexo-br-playtester",
+        "Name": "Nexo BR Weapon Lab Playtester",
+        "Role": "playtest",
+        "Commands": [
+          "launch",
+          "keyboard",
+          "look",
+          "capture",
+          "inspect",
+          "report"
+        ],
+        "Parameters": {
+          "GameRoot": "../NexoBattleRoyale",
+          "BuildPath": "../NexoBattleRoyale/Builds/WeaponLab/NexoBRWeaponLab.app",
+          "ArtifactRoot": ".nexo/playtest/br-weapon-lab",
+          "Port": 17420,
+          "Objective": "Exercise movement, weapon pickup, reload, shooting, FPS camera visibility, screenshots, and emit a structured playtest report."
+        },
+        "Schedule": {
+          "Type": "Interval",
+          "Interval": "00:30:00",
+          "InitialDelay": "00:00:10"
+        },
+        "Enabled": true,
+        "MaxDataSensitivity": "Internal",
+        "AllowedDataSensitivityLevels": [
+          "Public",
+          "Internal"
+        ],
+        "ExfiltrationPolicy": {
+          "BlockExternalLLMs": true,
+          "BlockWebSearch": true,
+          "BlockNetworkExports": true,
+          "RequireLocalOnly": true,
+          "MaxAllowedLevel": "Internal",
+          "AllowedDestinations": [
+            "127.0.0.1"
+          ]
+        }
+      }
+    ]
+  }
+}

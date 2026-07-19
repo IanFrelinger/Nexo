@@ -1,0 +1,45 @@
+{
+  "BackgroundAgents": {
+    "Agents": [
+      {
+        "Id": "nexo-br-virtual-player",
+        "Name": "Nexo BR OS Virtual Player",
+        "Role": "playtest",
+        "ModelProvider": "deterministic-local",
+        "ModelName": "os-input-first-pass",
+        "Commands": [
+          "launch-window",
+          "keyboard",
+          "mouse",
+          "screen-capture",
+          "verify",
+          "report"
+        ],
+        "Parameters": {
+          "BuildPath": "../NexoBattleRoyale/Builds/WeaponLab/NexoBRWeaponLab.app",
+          "ArtifactRoot": ".nexo/playtest/br-weapon-lab",
+          "Port": 17420,
+          "RequiresAccessibility": true,
+          "RequiresScreenRecording": true
+        },
+        "Schedule": {
+          "Type": "Interval",
+          "Interval": "06:00:00",
+          "InitialDelay": "00:01:00"
+        },
+        "Enabled": false,
+        "MaxDataSensitivity": "Internal",
+        "ExfiltrationPolicy": {
+          "BlockExternalLLMs": true,
+          "BlockWebSearch": true,
+          "BlockNetworkExports": true,
+          "RequireLocalOnly": true,
+          "MaxAllowedLevel": "Internal",
+          "AllowedDestinations": [
+            "127.0.0.1"
+          ]
+        }
+      }
+    ]
+  }
+}

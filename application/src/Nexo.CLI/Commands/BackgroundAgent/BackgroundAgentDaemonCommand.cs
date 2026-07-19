@@ -41,6 +41,7 @@ public sealed class BackgroundAgentDaemonCommand
                 return WriteError(formatJson, $"Invalid --duration value '{duration}'. Use formats like 30s, 5m, or 1h.");
             }
 
+            var diagnosticHostedTypes = new List<Type>();
             var builder = Host.CreateDefaultBuilder()
                 .ConfigureAppConfiguration((context, config) =>
                 {
@@ -81,9 +82,52 @@ public sealed class BackgroundAgentDaemonCommand
                     services.TryAddSingleton<SelfExtendRunnerAdapter>();
                     services.TryAddSingleton<ISelfExtendRunner>(sp =>
                         sp.GetRequiredService<SelfExtendRunnerAdapter>());
+                    services.TryAddSingleton<UnityWeaponLabGameRunner>();
+                    services.TryAddSingleton<
+                        Nexo.Orchestration.Playtest.Ports.IGameRunner>(
+                        sp => sp.GetRequiredService<UnityWeaponLabGameRunner>());
+                    services.TryAddSingleton<
+                        Nexo.BackgroundAgents.Playtesting.IPlaytestRunRunner,
+                        PlaytestRunRunnerAdapter>();
+
+                    if (Environment.GetEnvironmentVariable(
+                            "NEXO_DIAGNOSE_HOST_START") == "1")
+                    {
+                        foreach (var descriptor in services.Where(
+                                     descriptor =>
+                                         descriptor.ServiceType ==
+                                         typeof(IHostedService)))
+                        {
+                            Console.Error.WriteLine(
+                                "HOSTED_DESCRIPTOR " +
+                                (descriptor.ImplementationType?.FullName ??
+                                 descriptor.ImplementationInstance?.GetType().FullName ??
+                                 descriptor.ImplementationFactory?.Method
+                                     .DeclaringType?.FullName ??
+                                 "factory"));
+                            if (descriptor.ImplementationType is not null)
+                                diagnosticHostedTypes.Add(
+                                    descriptor.ImplementationType);
+                        }
+                    }
                 });
 
+            if (Environment.GetEnvironmentVariable("NEXO_DIAGNOSE_HOST_START") == "1")
+                Console.Error.WriteLine("HOST_BUILD_BEGIN");
             using var host = builder.Build();
+            if (Environment.GetEnvironmentVariable("NEXO_DIAGNOSE_HOST_START") == "1")
+                Console.Error.WriteLine("HOST_BUILD_OK");
+            if (string.Equals(
+                    Environment.GetEnvironmentVariable(
+                        "NEXO_DIAGNOSE_HOST_START"),
+                    "1",
+                    StringComparison.Ordinal))
+            {
+                return await DiagnoseHostedServicesAsync(
+                    host.Services,
+                    diagnosticHostedTypes,
+                    cancellationToken).ConfigureAwait(false);
+            }
             await host.StartAsync(cancellationToken).ConfigureAwait(false);
             WriteStarted(formatJson, runDuration, disableObservation);
 
@@ -108,6 +152,67 @@ public sealed class BackgroundAgentDaemonCommand
         {
             return WriteError(formatJson, $"Background agent daemon failed: {ex.Message}");
         }
+    }
+
+    private static async Task<int> DiagnoseHostedServicesAsync(
+        IServiceProvider services,
+        IReadOnlyList<Type> hostedTypes,
+        CancellationToken cancellationToken)
+    {
+        foreach (var type in hostedTypes)
+        {
+            Console.Error.WriteLine(
+                $"HOSTED_CONSTRUCT_BEGIN {type.FullName}");
+            var construct = Task.Run(
+                () => ActivatorUtilities.GetServiceOrCreateInstance(
+                    services,
+                    type),
+                CancellationToken.None);
+            try
+            {
+                await construct.WaitAsync(
+                    TimeSpan.FromSeconds(5),
+                    cancellationToken).ConfigureAwait(false);
+                Console.Error.WriteLine(
+                    $"HOSTED_CONSTRUCT_OK {type.FullName}");
+            }
+            catch (TimeoutException)
+            {
+                Console.Error.WriteLine(
+                    $"HOSTED_CONSTRUCT_BLOCKED {type.FullName}");
+                return 4;
+            }
+        }
+
+        foreach (var service in services.GetServices<IHostedService>())
+        {
+            var type = service.GetType().FullName ?? service.GetType().Name;
+            Console.Error.WriteLine($"HOSTED_START_BEGIN {type}");
+            var start = Task.Run(
+                () => service.StartAsync(cancellationToken),
+                CancellationToken.None);
+            try
+            {
+                await start.WaitAsync(
+                    TimeSpan.FromSeconds(5),
+                    cancellationToken).ConfigureAwait(false);
+                Console.Error.WriteLine($"HOSTED_START_OK {type}");
+            }
+            catch (TimeoutException)
+            {
+                Console.Error.WriteLine($"HOSTED_START_BLOCKED {type}");
+                return 2;
+            }
+            catch (Exception exception)
+            {
+                Console.Error.WriteLine(
+                    $"HOSTED_START_FAILED {type}: {exception.Message}");
+                return 3;
+            }
+        }
+
+        Console.Error.WriteLine("HOSTED_START_ALL_OK");
+        return 0;
     }
 
     private static bool TryParseDuration(string? value, out TimeSpan? duration)

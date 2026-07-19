@@ -83,4 +83,41 @@ public class AgentSchedulerTests
         await scheduler.StartAsync(instance, ExecuteOnce);
         scheduler.Stop("agent-1");
     }
+
+    [Fact]
+    public async Task StartAsync_DoesNotInlineBlockingAgentWork()
+    {
+        var scheduler = new AgentScheduler(new ScheduleExecutor());
+        var release = new ManualResetEventSlim(false);
+        var entered = new TaskCompletionSource(
+            TaskCreationOptions.RunContinuationsAsynchronously);
+        var instance = new BackgroundAgentInstance
+        {
+            Config = new BackgroundAgentConfig
+            {
+                Id = "blocking-agent",
+                Schedule = new BackgroundAgentSchedule
+                {
+                    Type = ScheduleType.Continuous
+                }
+            },
+            State = BackgroundAgentState.Running
+        };
+
+        Task ExecuteOnce(
+            BackgroundAgentInstance ignored,
+            CancellationToken ignoredToken)
+        {
+            entered.TrySetResult();
+            release.Wait(TimeSpan.FromSeconds(5));
+            instance.State = BackgroundAgentState.Stopped;
+            return Task.CompletedTask;
+        }
+
+        var start = scheduler.StartAsync(instance, ExecuteOnce);
+        await start.WaitAsync(TimeSpan.FromMilliseconds(500));
+        await entered.Task.WaitAsync(TimeSpan.FromSeconds(2));
+        release.Set();
+        scheduler.Stop(instance.Config.Id);
+    }
 }

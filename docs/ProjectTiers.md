@@ -67,7 +67,7 @@ The CLI project also references spine-adjacent packs: **`Nexo.Bricks.Owasp`**, *
 | Game domain | Open-core: `src/Nexo.GameDomain` (deterministic gameplay bricks). Commercial: `commercial/src/Nexo.Commercial.GameDomain` |
 | Fleet | `commercial/src/Nexo.Commercial.Fleet.Contracts`, `commercial/src/Nexo.Commercial.Fleet.Infrastructure`, `commercial/src/Nexo.Commercial.Fleet.Api`, `commercial/src/Nexo.Commercial.Fleet.Host`, `commercial/src/Nexo.Commercial.MeshDirector` |
 | App configs | `apps/runtime-studio`, `apps/nexo-forge`, `apps/game-director`, `apps/release-manager` |
-| Tools | `tools/Nexo.UnitySidecarDemo`, `tools/ApplyFeedbackChanges` |
+| Tools | `tools/Nexo.UnitySidecarDemo`, `tools/Nexo.BRPlaytestAgent`, `tools/ApplyFeedbackChanges` |
 | Demos | `docs/demos/Nexo.Demos.Avalonia`, `Nexo.Demos.BlazorWeb`, `Nexo.Demos.ConsoleClient` |
 | Samples | `docs/samples/*` (e.g. `StableSdkHostSample`, NuGet restore verify samples); commercial samples such as `commercial/samples/ForgeMapHostSample` live under `commercial/samples/` |
 
