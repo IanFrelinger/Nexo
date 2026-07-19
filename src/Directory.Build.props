@@ -14,6 +14,7 @@
       '$(MSBuildProjectName)' == 'Nexo.BackgroundAgents' OR
       '$(MSBuildProjectName)' == 'Nexo.Orchestration' OR
       '$(MSBuildProjectName)' == 'Nexo.Bricks.Owasp' OR
+      '$(MSBuildProjectName)' == 'Nexo.Bricks.DepExtract' OR
       '$(MSBuildProjectName)' == 'Nexo.Tests.Infrastructure' OR
       '$(MSBuildProjectName)' == 'Nexo.Tests.Application' OR
       '$(MSBuildProjectName)' == 'Nexo.Tests.Domain' OR

@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+    <PropertyGroup>
+        <TargetFramework>net8.0</TargetFramework>
+        <LangVersion>12.0</LangVersion>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <InvariantGlobalization>true</InvariantGlobalization>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Nexo.Bricks.DepExtract\Nexo.Bricks.DepExtract.csproj" />
+        <ProjectReference Include="..\Nexo.Infrastructure\Nexo.Infrastructure.csproj" />
+    </ItemGroup>
+
+</Project>

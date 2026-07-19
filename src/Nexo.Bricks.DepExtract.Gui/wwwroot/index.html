@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>C++ parser extraction &amp; adaptation</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --bg: #f5f5f4; --panel: #fff; --border: #e2e2e0; --text: #1c1c1a; --text-2: #6b6b66;
+    --accent: #0071e3; --accent-h: #0064cc; --fill: #f0f0ee; --red: #c0392b; --red-bg: #fdecea;
+    --amber: #9a6700; --amber-bg: #fff6e5; --green: #1e7d34; --green-bg: #eaf7ee; --mono: ui-monospace, "SF Mono", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#111; --panel:#1a1a1a; --border:#2c2c2a; --text:#f2f2f0; --text-2:#9a9a95; --fill:#232322; --red-bg:#3a1f1c; --amber-bg:#332a10; --green-bg:#152a1c; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.5 -apple-system, "Segoe UI", sans-serif; }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 28px 20px 60px; }
+  h1 { font-size: 18px; font-weight: 600; margin: 0 0 4px; }
+  .sub { color: var(--text-2); font-size: 13px; margin: 0 0 20px; }
+  .status { display: flex; gap: 14px; margin-bottom: 20px; font-size: 12px; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 980px; background: var(--fill); }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: #999; }
+  .dot.ok { background: var(--green); } .dot.bad { background: var(--red); }
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 18px 20px; margin-bottom: 16px; }
+  .row { display: flex; gap: 12px; margin-bottom: 12px; }
+  .row > div { flex: 1; }
+  label { display: block; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--text-2); margin-bottom: 5px; }
+  input[type=text], input[type=number], textarea { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: 8px; background: var(--fill); color: var(--text); font: 13px var(--mono); }
+  textarea { resize: vertical; min-height: 60px; }
+  input:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  .checks { display: flex; gap: 18px; align-items: center; font-size: 13px; margin: 4px 0 14px; }
+  .checks label { display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 400; text-transform: none; letter-spacing: 0; margin: 0; }
+  details summary { cursor: pointer; font-size: 12px; color: var(--text-2); margin-bottom: 10px; }
+  button { border: none; background: var(--accent); color: #fff; font-size: 13px; font-weight: 500; padding: 9px 20px; border-radius: 980px; cursor: pointer; }
+  button:hover { background: var(--accent-h); } button:disabled { opacity: .5; cursor: default; }
+  .hint { font-size: 12px; color: var(--text-2); margin-top: 10px; }
+  .hd { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--text-2); margin: 0 0 8px; }
+  .banner { border-radius: 10px; padding: 10px 14px; font-size: 13px; margin-bottom: 12px; }
+  .banner.warn { background: var(--amber-bg); color: var(--amber); }
+  .banner.err { background: var(--red-bg); color: var(--red); }
+  .banner.ok { background: var(--green-bg); color: var(--green); }
+  .lists { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+  .lists h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-2); margin: 0 0 6px; }
+  .lists ul { margin: 0; padding-left: 16px; font: 12px var(--mono); max-height: 160px; overflow: auto; }
+  .lists li { margin-bottom: 2px; word-break: break-all; }
+  pre { background: var(--fill); border-radius: 8px; padding: 14px; overflow: auto; font: 12px/1.5 var(--mono); max-height: 480px; }
+  .path { font: 12px var(--mono); color: var(--text-2); word-break: break-all; }
+  .spinner { display: inline-block; width: 13px; height: 13px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; vertical-align: -2px; margin-right: 6px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>C++ parser extraction &amp; adaptation</h1>
+  <p class="sub">Extracts a C/C++ parser's real #include closure, then drafts an IEventReader adapter over it using a local model. Nothing leaves this machine.</p>
+
+  <div class="status">
+    <span class="pill"><span class="dot" id="dockerDot"></span><span id="dockerTxt">docker&nbsp;…</span></span>
+    <span class="pill"><span class="dot" id="ollamaDot"></span><span id="ollamaTxt">ollama&nbsp;…</span></span>
+  </div>
+
+  <div class="panel">
+    <div class="row">
+      <div>
+        <label for="srcDir">Source directory</label>
+        <input type="text" id="srcDir" placeholder="C:\path\to\your\proprietary\code (or /mnt/c/... from WSL)">
+      </div>
+    </div>
+    <div class="row">
+      <div>
+        <label for="entries">Entry files <span style="text-transform:none;font-weight:400">(one per line, relative to source directory)</span></label>
+        <textarea id="entries" placeholder="parser/MyParser.cpp&#10;parser/MyParser.hpp"></textarea>
+      </div>
+    </div>
+
+    <details>
+      <summary>Advanced options</summary>
+      <div class="row">
+        <div><label for="scanDir">Scan dir (reverse deps)</label><input type="text" id="scanDir" placeholder="."></div>
+        <div><label for="model">Local model</label><input type="text" id="model" placeholder="codellama:7b"></div>
+        <div><label for="maxRetries">Max retries</label><input type="number" id="maxRetries" min="1" value="3"></div>
+      </div>
+      <div class="row">
+        <div><label for="includeDirs">Include dirs <span style="text-transform:none;font-weight:400">(comma-separated)</span></label><input type="text" id="includeDirs" placeholder="include, third_party/include"></div>
+        <div><label for="defines">Defines <span style="text-transform:none;font-weight:400">(comma-separated KEY=VAL)</span></label><input type="text" id="defines" placeholder="USE_PLATFORM_B=1"></div>
+      </div>
+      <div class="checks">
+        <label><input type="checkbox" id="includeUpper"> Include upper (dependents) in duplicate</label>
+        <label><input type="checkbox" id="manifestOnly"> Manifest only (skip duplicate + adaptation)</label>
+      </div>
+    </details>
+
+    <button id="runBtn" onclick="run()">Run</button>
+    <span class="hint" id="statusHint"></span>
+  </div>
+
+  <div id="results"></div>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+
+async function checkStatus() {
+  try {
+    const s = await (await fetch('/api/status')).json();
+    setDot('docker', s.docker); setDot('ollama', s.ollama);
+  } catch { setDot('docker', false); setDot('ollama', false); }
+}
+function setDot(name, ok) {
+  $(`#${name}Dot`).className = 'dot ' + (ok ? 'ok' : 'bad');
+  $(`#${name}Txt`).textContent = name + (ok ? ' ready' : ' unreachable');
+}
+
+function splitLines(s) { return s.split('\n').map(x => x.trim()).filter(Boolean); }
+function splitCsv(s) { return s.split(',').map(x => x.trim()).filter(Boolean); }
+
+async function run() {
+  const srcDir = $('#srcDir').value.trim();
+  const entries = splitLines($('#entries').value);
+  if (!srcDir) { alert('Source directory is required.'); return; }
+  if (!entries.length) { alert('At least one entry file is required.'); return; }
+
+  const body = {
+    srcDir, entries,
+    scanDir: $('#scanDir').value.trim() || null,
+    includeDirs: splitCsv($('#includeDirs').value),
+    defines: splitCsv($('#defines').value),
+    includeUpper: $('#includeUpper').checked,
+    manifestOnly: $('#manifestOnly').checked,
+    model: $('#model').value.trim() || null,
+    maxRetries: parseInt($('#maxRetries').value, 10) || 3,
+  };
+
+  const btn = $('#runBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spinner"></span>Running…';
+  $('#statusHint').textContent = body.manifestOnly ? 'Extracting…' : 'Extracting, then drafting via the local model (this can take 10-60s)…';
+  $('#results').innerHTML = '';
+
+  try {
+    const resp = await fetch('/api/run', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+    const data = await resp.json();
+    if (!resp.ok) { renderError(data); return; }
+    renderResults(data);
+  } catch (e) {
+    renderError({ title: 'request failed', detail: String(e) });
+  } finally {
+    btn.disabled = false; btn.textContent = 'Run'; $('#statusHint').textContent = '';
+  }
+}
+
+function renderError(data) {
+  $('#results').innerHTML = `<div class="panel"><div class="banner err">${esc(data.title || 'error')}: ${esc(data.detail || '')}</div></div>`;
+}
+
+function renderResults(d) {
+  let html = '<div class="panel">';
+  html += `<div class="banner ok">${esc(d.summary)}</div>`;
+  html += `<div class="lists">
+    <div><h3>Lower (${d.lower.length})</h3><ul>${d.lower.map(x => `<li>${esc(x)}</li>`).join('') || '<li>—</li>'}</ul></div>
+    <div><h3>Upper (${d.upper.length})</h3><ul>${d.upper.map(x => `<li>${esc(x)}</li>`).join('') || '<li>—</li>'}</ul></div>
+    <div><h3>External (${d.external.length})</h3><ul>${d.external.map(x => `<li>${esc(x)}</li>`).join('') || '<li>—</li>'}</ul></div>
+  </div>`;
+  if (d.duplicatePath) html += `<div class="path">duplicate: ${esc(d.duplicatePath)}</div>`;
+  html += '</div>';
+
+  if (d.adapterCode) {
+    html += '<div class="panel">';
+    html += '<p class="hd">Drafted adapter</p>';
+    if (d.looksLikeTemplateEcho) {
+      html += `<div class="banner warn">Low source coverage (${Math.round(d.sourceApiCoverage * 100)}%) — this looks like the bare template, not a real integration. Try again, or expect to write most of this by hand.</div>`;
+    }
+    if (d.possibleHallucinations && d.possibleHallucinations.length) {
+      html += `<div class="banner warn">Possible invented symbols — check these before compiling: ${d.possibleHallucinations.map(esc).join(', ')}</div>`;
+    }
+    html += `<div class="path">written to: ${esc(d.adapterOutputPath)} &middot; source coverage: ${Math.round((d.sourceApiCoverage ?? 0) * 100)}%</div>`;
+    html += `<pre>${esc(d.adapterCode)}</pre>`;
+    html += '</div>';
+  }
+  $('#results').innerHTML = html;
+}
+
+function esc(s) { return String(s).replace(/[&<>]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c])); }
+
+checkStatus();
+</script>
+</body>
+</html>
