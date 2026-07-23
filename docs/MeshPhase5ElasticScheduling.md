@@ -15,6 +15,7 @@ Placement orders eligible nodes by **`ReportedQueueDepth` ascending**, then fres
 ## Elastic status
 
 - **`GET /api/mesh/elastic/status`** — task counts by status + non-drained workers with **`reportedQueueDepth`** and last heartbeat (operator / autoscaler signal).
+- To **create/destroy worker replicas** from that signal, use the swappable [`IWorkloadScaler`](WorkloadScaling.md) (Kubernetes-first). Phase 5 places work; WorkloadScaling changes capacity.
 
 ## Background rebalancer
 

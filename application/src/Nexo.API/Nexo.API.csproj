@@ -23,6 +23,7 @@
 
   <ItemGroup>
     <PackageReference Include="MediatR" />
+    <PackageReference Include="Microsoft.Extensions.AI" />
     <PackageReference Include="Swashbuckle.AspNetCore" />
     <ProjectReference Include="../../../src/Nexo.BackgroundAgents.HostRunners/Nexo.BackgroundAgents.HostRunners.csproj" />
     <ProjectReference Include="../../../src/Nexo.Brick.Contracts/Nexo.Brick.Contracts.csproj" />

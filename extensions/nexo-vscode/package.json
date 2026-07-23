@@ -1,0 +1,215 @@
+{
+  "name": "nexo",
+  "displayName": "Nexo",
+  "description": "Offline multi-agent coding assistant powered by the Nexo local agent server (Ollama / LLamaSharp).",
+  "version": "0.5.2",
+  "publisher": "nexo",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "AI",
+    "Chat",
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "nexo.checkConnection",
+        "title": "Nexo: Check Connection"
+      },
+      {
+        "command": "nexo.configureConnection",
+        "title": "Nexo: Configure Connection (Host / Port)"
+      },
+      {
+        "command": "nexo.openChat",
+        "title": "Nexo: Open Chat"
+      },
+      {
+        "command": "nexo.askSelection",
+        "title": "Nexo: Ask About Selection"
+      },
+      {
+        "command": "nexo.planWithPrompt",
+        "title": "Nexo: Plan With Prompt"
+      },
+      {
+        "command": "nexo.editWithPrompt",
+        "title": "Nexo: Edit With Prompt"
+      },
+      {
+        "command": "nexo.directorGoal",
+        "title": "Nexo: Director Goal (Multi-Agent)"
+      },
+      {
+        "command": "nexo.cancelActiveRun",
+        "title": "Nexo: Cancel Active Run"
+      },
+      {
+        "command": "nexo.showRuns",
+        "title": "Nexo: Show Run Timeline"
+      },
+      {
+        "command": "nexo.showWorkloads",
+        "title": "Nexo: Show Workloads"
+      },
+      {
+        "command": "nexo.scaleWorkload",
+        "title": "Nexo: Scale Workload"
+      },
+      {
+        "command": "nexo.applyAllPatches",
+        "title": "Nexo: Apply All Pending Patches"
+      },
+      {
+        "command": "nexo.rejectAllPatches",
+        "title": "Nexo: Reject All Pending Patches"
+      },
+      {
+        "command": "nexo.undoLastApply",
+        "title": "Nexo: Undo Last Apply"
+      },
+      {
+        "command": "nexo.showPendingPatches",
+        "title": "Nexo: Show Pending Patches"
+      },
+      {
+        "command": "nexo.refreshModels",
+        "title": "Nexo: Refresh Models"
+      },
+      {
+        "command": "nexo.startLocalStack",
+        "title": "Nexo: Start Local Stack"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "nexo",
+          "title": "Nexo",
+          "icon": "media/nexo.svg"
+        }
+      ]
+    },
+    "views": {
+      "nexo": [
+        {
+          "type": "webview",
+          "id": "nexo.chatView",
+          "name": "Chat"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Nexo",
+      "properties": {
+        "nexo.apiHost": {
+          "type": "string",
+          "default": "127.0.0.1",
+          "description": "Agent-server host (used when nexo.baseUrl is empty)."
+        },
+        "nexo.apiPort": {
+          "type": "number",
+          "default": 8088,
+          "description": "Agent-server HTTP port (used when nexo.baseUrl is empty). Match NEXO_AGENT_SERVER_HTTP_PORT in .env."
+        },
+        "nexo.baseUrl": {
+          "type": "string",
+          "default": "",
+          "description": "Optional full API base URL override (e.g. http://127.0.0.1:8090). Empty = http://{apiHost}:{apiPort}."
+        },
+        "nexo.ollamaHost": {
+          "type": "string",
+          "default": "127.0.0.1",
+          "description": "Host Ollama address for Start Local Stack (maps to NEXO_OLLAMA_HOST_PORT / OLLAMA_BASE_URL)."
+        },
+        "nexo.ollamaPort": {
+          "type": "number",
+          "default": 11434,
+          "description": "Host Ollama port passed to Start-FullstackAgentServer.ps1."
+        },
+        "nexo.defaultModel": {
+          "type": "string",
+          "default": "",
+          "description": "Default local model id (Ollama tag). Empty = server default. Also passed to Start Local Stack when set."
+        },
+        "nexo.defaultAgent": {
+          "type": "string",
+          "default": "",
+          "description": "Optional default agent id from the configured agent set."
+        },
+        "nexo.includeActiveFile": {
+          "type": "boolean",
+          "default": true,
+          "description": "Include the active editor file as chat/edit context."
+        },
+        "nexo.includeOpenEditors": {
+          "type": "boolean",
+          "default": false,
+          "description": "Include all open text editors as additional context (capped)."
+        },
+        "nexo.maxContextChars": {
+          "type": "number",
+          "default": 24000,
+          "description": "Max characters of file content sent per request."
+        },
+        "nexo.autoOpenDiffs": {
+          "type": "boolean",
+          "default": true,
+          "description": "Open side-by-side diffs when a proposal arrives."
+        },
+        "nexo.pollRunsMs": {
+          "type": "number",
+          "default": 3000,
+          "description": "How often to refresh the run timeline (ms). 0 disables."
+        },
+        "nexo.pollWorkloadsMs": {
+          "type": "number",
+          "default": 10000,
+          "description": "How often to refresh workload scale status (ms). 0 disables."
+        },
+        "nexo.streamingChat": {
+          "type": "boolean",
+          "default": true,
+          "description": "Stream chat tokens via /api/ide/chat/stream (falls back to non-streaming)."
+        },
+        "nexo.startStackScript": {
+          "type": "string",
+          "default": "",
+          "description": "Optional path to Start-FullstackAgentServer.ps1 (auto-detected from workspace if empty)."
+        },
+        "nexo.useBundledOllama": {
+          "type": "boolean",
+          "default": false,
+          "description": "When starting the local stack, use compose ollama service (OLLAMA_BASE_URL=http://ollama:11434) instead of host Ollama."
+        }
+      }
+    },
+    "menus": {
+      "editor/context": [
+        {
+          "command": "nexo.askSelection",
+          "group": "nexo@1",
+          "when": "editorHasSelection"
+        },
+        {
+          "command": "nexo.planWithPrompt",
+          "group": "nexo@2"
+        },
+        {
+          "command": "nexo.editWithPrompt",
+          "group": "nexo@3"
+        },
+        {
+          "command": "nexo.directorGoal",
+          "group": "nexo@4"
+        }
+      ]
+    }
+  }
+}

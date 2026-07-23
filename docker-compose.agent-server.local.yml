@@ -1,0 +1,41 @@
+# Local Docker Desktop override for the full-stack agent server.
+# Host ports / Ollama URL come from repo-root .env (see scripts/Start-FullstackAgentServer.ps1):
+#   NEXO_AGENT_SERVER_HTTP_PORT   host port published for the API/portal (default 8088)
+#   NEXO_OLLAMA_HOST_PORT         host port for Ollama when using host or bundled ollama (default 11434)
+#   OLLAMA_BASE_URL               where the API reaches Ollama (host.docker.internal:<port> or http://ollama:11434)
+#   OLLAMA_MODEL                  model tag
+#
+# Usage:
+#   docker compose -f docker-compose.agent-server.yml -f docker-compose.agent-server.local.yml up -d --build nexo-api --no-deps
+services:
+  nexo-api:
+    working_dir: /app
+    environment:
+      ASPNETCORE_CONTENTROOT: /app
+      ASPNETCORE_URLS: http://+:8080
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-codellama:7b}
+      Nexo__NodeCapabilityRuntime__Ollama__BaseUrl: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      Nexo__Meai__OllamaBaseUrl: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      Nexo__Meai__OllamaModel: ${OLLAMA_MODEL:-codellama:7b}
+      NEXO_DAILIES_PATH: /data/dailies
+      NEXO_BACKGROUND_AGENTS_CONFIG: ${NEXO_BACKGROUND_AGENTS_CONFIG:-/agents/agent_set.fullstack.local.json}
+      Nexo__Barriers__RequireExplicitBarrier: "false"
+      NEXO_OBSERVATION_DEGRADED_MODE: "1"
+      # Scheduler hangs host start on large Docker Desktop bind mounts; use on-demand
+      # POST /api/agent|/api/orchestrate|/api/director/run. Flip to true under WSL path.
+      Nexo__RegisterBackgroundAgentHostedService: ${Nexo__RegisterBackgroundAgentHostedService:-false}
+      Logging__LogLevel__Default: Information
+      Logging__LogLevel__Microsoft.AspNetCore: Warning
+    volumes:
+      - nexo-dailies:/data/dailies
+      - ./apps/runtime-studio/config/agent_set.fullstack.local.json:/agents/agent_set.fullstack.local.json:ro
+      - ${NEXO_REPO_ROOT:-.}:/work
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 180s
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

@@ -1,0 +1,180 @@
+{
+  "BackgroundAgents": {
+    "Agents": [
+      {
+        "Id": "fullstack-planner",
+        "Name": "Full-Stack Planner",
+        "Role": "extender",
+        "ModelProvider": "ollama",
+        "ModelName": "codellama:7b",
+        "Commands": [
+          "plan",
+          "decompose",
+          "propose_changes",
+          "self_extend"
+        ],
+        "Parameters": {
+          "RepoRoot": ".",
+          "Objective": "Plan and drive iterative full-stack improvements across API, hosting, UI, and tests. Prefer small reviewable diffs, keep local-only policy, and leave a clear trail of decisions.",
+          "AgentName": "fullstack-planner"
+        },
+        "Schedule": {
+          "Type": "Interval",
+          "Interval": "00:03:00",
+          "InitialDelay": "00:00:10"
+        },
+        "Enabled": true,
+        "MaxDataSensitivity": "Internal",
+        "AllowedDataSensitivityLevels": [
+          "Public",
+          "Internal"
+        ],
+        "ExfiltrationPolicy": {
+          "BlockExternalLLMs": true,
+          "BlockWebSearch": true,
+          "BlockNetworkExports": true,
+          "RequireLocalOnly": true,
+          "MaxAllowedLevel": "Internal"
+        }
+      },
+      {
+        "Id": "fullstack-backend",
+        "Name": "Backend Worker",
+        "Role": "extender",
+        "ParentId": "fullstack-planner",
+        "ModelProvider": "ollama",
+        "ModelName": "codellama:7b",
+        "Commands": [
+          "self_extend",
+          "propose_changes",
+          "analyze"
+        ],
+        "Parameters": {
+          "RepoRoot": ".",
+          "Objective": "Implement and harden backend/API/hosting changes: contracts, DI wiring, MEAI pipeline, persistence, and service boundaries. Keep changes compile-clean and policy-safe.",
+          "AgentName": "fullstack-backend"
+        },
+        "Schedule": {
+          "Type": "Interval",
+          "Interval": "00:04:00",
+          "InitialDelay": "00:00:20"
+        },
+        "Enabled": true,
+        "MaxDataSensitivity": "Internal",
+        "AllowedDataSensitivityLevels": [
+          "Public",
+          "Internal"
+        ],
+        "ExfiltrationPolicy": {
+          "BlockExternalLLMs": true,
+          "BlockWebSearch": true,
+          "BlockNetworkExports": true,
+          "RequireLocalOnly": true,
+          "MaxAllowedLevel": "Internal"
+        }
+      },
+      {
+        "Id": "fullstack-frontend",
+        "Name": "Frontend Worker",
+        "Role": "extender",
+        "ParentId": "fullstack-planner",
+        "ModelProvider": "ollama",
+        "ModelName": "codellama:7b",
+        "Commands": [
+          "self_extend",
+          "propose_changes",
+          "analyze"
+        ],
+        "Parameters": {
+          "RepoRoot": ".",
+          "Objective": "Implement portal/UI and client-facing surfaces that consume the API. Prefer clear UX, accessibility, and thin clients over duplicated business logic.",
+          "AgentName": "fullstack-frontend"
+        },
+        "Schedule": {
+          "Type": "Interval",
+          "Interval": "00:04:00",
+          "InitialDelay": "00:00:30"
+        },
+        "Enabled": true,
+        "MaxDataSensitivity": "Internal",
+        "AllowedDataSensitivityLevels": [
+          "Public",
+          "Internal"
+        ],
+        "ExfiltrationPolicy": {
+          "BlockExternalLLMs": true,
+          "BlockWebSearch": true,
+          "BlockNetworkExports": true,
+          "RequireLocalOnly": true,
+          "MaxAllowedLevel": "Internal"
+        }
+      },
+      {
+        "Id": "fullstack-tester",
+        "Name": "Test Worker",
+        "Role": "tester",
+        "ParentId": "fullstack-planner",
+        "ModelProvider": "ollama",
+        "ModelName": "codellama:7b",
+        "Commands": [
+          "test",
+          "analyze"
+        ],
+        "Parameters": {
+          "Filter": "FullyQualifiedName~Hosting|FullyQualifiedName~AI.Pipeline|FullyQualifiedName~API"
+        },
+        "Schedule": {
+          "Type": "Interval",
+          "Interval": "00:05:00",
+          "InitialDelay": "00:00:40"
+        },
+        "Enabled": true,
+        "MaxDataSensitivity": "Internal",
+        "AllowedDataSensitivityLevels": [
+          "Public",
+          "Internal"
+        ],
+        "ExfiltrationPolicy": {
+          "BlockExternalLLMs": true,
+          "BlockWebSearch": true,
+          "BlockNetworkExports": true,
+          "RequireLocalOnly": true,
+          "MaxAllowedLevel": "Internal"
+        }
+      },
+      {
+        "Id": "fullstack-optimizer",
+        "Name": "Optimizer Worker",
+        "Role": "optimizer",
+        "ParentId": "fullstack-planner",
+        "ModelProvider": "ollama",
+        "ModelName": "codellama:7b",
+        "Commands": [
+          "analyze",
+          "suggest"
+        ],
+        "Parameters": {
+          "AnalysisPath": "."
+        },
+        "Schedule": {
+          "Type": "Interval",
+          "Interval": "00:06:00",
+          "InitialDelay": "00:00:50"
+        },
+        "Enabled": true,
+        "MaxDataSensitivity": "Internal",
+        "AllowedDataSensitivityLevels": [
+          "Public",
+          "Internal"
+        ],
+        "ExfiltrationPolicy": {
+          "BlockExternalLLMs": true,
+          "BlockWebSearch": true,
+          "BlockNetworkExports": true,
+          "RequireLocalOnly": true,
+          "MaxAllowedLevel": "Internal"
+        }
+      }
+    ]
+  }
+}

@@ -57,6 +57,8 @@ public static class NexoEndpoints
             .ExcludeFromDescription();
 
         var group = app.MapGroup("/api").WithTags("Nexo");
+        group.MapWorkloadScalingEndpoints();
+        group.MapIdeEndpoints();
 
         group.MapPost("/agent", RunAgentAsync)
             .WithName("RunAgent")

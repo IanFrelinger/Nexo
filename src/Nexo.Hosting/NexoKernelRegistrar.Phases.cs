@@ -659,6 +659,9 @@ internal static partial class NexoKernelRegistrar
             services.AddArtifactCleanup();
         }
 
+        // Swappable container workload scaler (null | kubernetes | compose). See docs/WorkloadScaling.md.
+        Nexo.Infrastructure.Scaling.Sdk.Extensions.WorkloadScalingServiceCollectionExtensions
+            .AddNexoWorkloadScaling(services, ctx.Configuration);
     }
 
     /// <summary>Phase 20: analysis rule engine and mesh-lab worker executor.</summary>
