@@ -155,6 +155,7 @@ public sealed class AdaptInstallLoop
             bool? compileOk = null;
             string? compileLog = null;
             CompanionFileDto[]? shimCompanions = null;
+            var usedModel = false;
             try
             {
                 var adaptOut = await _adapter.ExecuteAsync(
@@ -177,7 +178,7 @@ public sealed class AdaptInstallLoop
                 // inside CppParserAdapterBrick when the surface isn't scaffoldable or the scaffold draft
                 // fails its own compile gate). rawModelResponse is the one signal that reflects what
                 // really happened this call: the scaffold path always sets it to a fixed sentinel.
-                var usedModel = dict.TryGetValue("rawModelResponse", out var rmr)
+                usedModel = dict.TryGetValue("rawModelResponse", out var rmr)
                     && rmr is string rmrs
                     && !string.Equals(rmrs, "(scaffold — no model call)", StringComparison.Ordinal);
                 lastAttemptUsedModel = usedModel;
@@ -208,9 +209,27 @@ public sealed class AdaptInstallLoop
                 continue;
             }
 
+            if (usedModel)
+            {
+                var scan = AdapterContentScan.Scan(code!, isModelAuthored: true);
+                if (!scan.Ok)
+                {
+                    var detail = string.Join("; ", scan.Hits.Select(h => $"{h.Rule} @ {h.Excerpt}"));
+                    var msg = "Content scan blocked model-authored adapter before install: " + detail;
+                    attempts.Add(new Attempt(i, true, code, compileOk, compileLog, false, null, null, msg));
+                    return new Result(false, req.PlanId, code, lastPath, lastImage, null, msg, attempts);
+                }
+                if (scan.OverrideUsed)
+                    _log.LogWarning("Content-scan override used: {Reason}; hits={Hits}",
+                        scan.OverrideReason, scan.Hits.Count);
+            }
+
             session = session with { Status = "implemented" };
             savePlan(session);
 
+            var modelPin = usedModel
+                ? await OllamaModelPin.ResolveAsync(model, logger: _log, ct: ct).ConfigureAwait(false)
+                : null;
             var installReq = new InstallWorkRequest(
                 code,
                 null,
@@ -222,7 +241,14 @@ public sealed class AdaptInstallLoop
                 req.RecreateEvtx,
                 Smoke: !string.IsNullOrWhiteSpace(req.SmokeExtractFile) || req.RebuildImage,
                 WaitHealthy: true,
-                SmokeExtractFile: req.SmokeExtractFile);
+                SmokeExtractFile: req.SmokeExtractFile,
+                Strategy: usedModel ? "model" : (preferScaffold ? "scaffold" : "deterministic"),
+                ModelTag: modelPin?.Tag,
+                ModelDigest: modelPin?.Digest,
+                CompileGatePassed: compileOk,
+                OracleResult: req.OracleAutoInstall ? "pending" : "n/a",
+                ReviewedBy: req.ConfirmModelReview ? "human" : (req.OracleAutoInstall ? "oracle" : "none"),
+                IsModelAuthored: usedModel);
 
             InstallResult install;
             try

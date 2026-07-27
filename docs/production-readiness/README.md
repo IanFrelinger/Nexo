@@ -25,6 +25,8 @@ This folder helps you **support every major production concern** in one place: r
 | Reliability | [Reliability and chaos](ReliabilityAndChaos.md) | Failure modes, limits, idempotency, drills |
 | Testing & CI | [Testing strategy pivot v1](../architecture/TestingStrategyPivot-v1.md) · [Testing and quality gates](TestingAndQualityGates.md) · [Coverage gates v1](CoverageGates-v1.md) | Layered proof; line floors (Domain 100%, Infra 84%, App 67%) |
 | Operators | [Operator deployment](OperatorDeployment.md) | Production install, upgrades, backups pointer |
+| Parser pipeline ship | [Parser pipeline deployment ship](ParserPipelineDeploymentShip.md) | Digest locks, preflight, rehearsal, GHCR promote, evidence archive |
+| DepExtract model pin | [DepExtract model reproducibility](DepExtractModelReproducibility.md) | Scaffold is the reproducible path; pin OLLAMA_MODEL by digest |
 | Audience fit | [Catalog by deployment type](CatalogByDeploymentType.md) | SMB vs enterprise vs SaaS: which items matter most |
 
 ## How to use this
