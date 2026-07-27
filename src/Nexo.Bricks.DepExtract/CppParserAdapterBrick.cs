@@ -18,7 +18,7 @@ namespace Nexo.Bricks.DepExtract;
 /// HTTP request to an Ollama daemon on localhost, never off-box) so the whole
 /// extract-then-adapt pipeline stays air-gapped.
 /// </summary>
-public sealed class CppParserAdapterBrick : DomainBrick
+public sealed class CppParserAdapterBrick : GenerativeBrick
 {
     private static string DefaultModel =>
         Environment.GetEnvironmentVariable("OLLAMA_MODEL") ?? "qwen2.5-coder:7b";
@@ -67,7 +67,9 @@ public sealed class CppParserAdapterBrick : DomainBrick
             [
                 new BrickOutputDefinition("adapterCode", "string", "The generated C++ source"),
                 new BrickOutputDefinition("outputPath", "string", "Where the adapter was written"),
-                new BrickOutputDefinition("rawModelResponse", "string", "Unprocessed model output, for auditing"),
+                new BrickOutputDefinition("rawModelResponse", "string", "Unprocessed model output, for auditing (absent on templated/scaffold path)"),
+                new BrickOutputDefinition(ProvenanceOutputKey, "object", "GenerativeProvenance: strategy, verified, warnings, RequiresHumanReview"),
+                new BrickOutputDefinition("generationStrategy", "string", "Deterministic | Templated | Model"),
                 new BrickOutputDefinition("sourceApiCoverage", "number", "Fraction (0-1) of the extracted parser's own identifiers that the draft actually references — low values mean the model likely echoed the bare template instead of integrating"),
                 new BrickOutputDefinition("looksLikeTemplateEcho", "bool", "True when sourceApiCoverage is low enough that this draft is probably not a real integration attempt"),
                 new BrickOutputDefinition("possibleHallucinations", "string[]", "Method/constant names the draft calls that appear nowhere in the extracted source or the target contract — candidates for invented APIs; always review these before compiling"),
@@ -240,7 +242,6 @@ public sealed class CppParserAdapterBrick : DomainBrick
                     };
                     outputSc.Set("adapterCode", scaffold);
                     outputSc.Set("outputPath", outputPath);
-                    outputSc.Set("rawModelResponse", "(scaffold — no model call)");
                     outputSc.Set("sourceApiCoverage", coverageSc);
                     outputSc.Set("looksLikeTemplateEcho", echoSc);
                     outputSc.Set("possibleHallucinations", Array.Empty<string>());
@@ -249,6 +250,21 @@ public sealed class CppParserAdapterBrick : DomainBrick
                     outputSc.Set("compileLog", scCompile?.Log ?? "compile gate not requested");
                     outputSc.Set("compileAttempts", scaffoldCompileAttempts);
                     if (qtShims.Count > 0) outputSc.Set("qtShims", qtShims);
+                    var scaffoldProvenance = ApplyAuditPolicy(
+                        GenerativeProvenance.Create(
+                            GenerationStrategy.Templated,
+                            verified: scaffoldVerified,
+                            confidence: scaffoldVerified ? 0.7 : 0.3,
+                            warnings: scWarnings,
+                            assumptions: new[]
+                            {
+                                "pull method takes a long& out-param",
+                                "file-backed timestamps are millisecond ticks",
+                                "t_end opened to a 1e300 sentinel"
+                            },
+                            requiresHumanReview: !scaffoldVerified || echoSc),
+                        context);
+                    EmitProvenance(outputSc, scaffoldProvenance);
                     if (scWarnings.Count > 0)
                         _logger.LogWarning("Deterministic scaffold for {OutputPath} is unverified: {Warnings}", outputPath, string.Join("; ", scWarnings));
                     else
@@ -386,6 +402,16 @@ public sealed class CppParserAdapterBrick : DomainBrick
         output.Set("compileLog", compile?.Log ?? "");
         output.Set("compileAttempts", compileAttempts);
         if (qtShims.Count > 0) output.Set("qtShims", qtShims);
+        var modelProvenance = ApplyAuditPolicy(
+            GenerativeProvenance.Create(
+                GenerationStrategy.Model,
+                verified: compile?.Ok == true,
+                confidence: looksLikeTemplateEcho ? 0.2 : Math.Clamp(coverage, 0, 1),
+                warnings: warnings,
+                unsupportedReferences: hallucinations,
+                requiresHumanReview: true),
+            context);
+        EmitProvenance(output, modelProvenance);
         if (warnings.Count > 0)
             _logger.LogWarning("Adapter draft for {OutputPath} has quality warnings: {Warnings}", outputPath, string.Join("; ", warnings));
         return output;

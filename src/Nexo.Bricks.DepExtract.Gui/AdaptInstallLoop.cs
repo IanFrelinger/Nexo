@@ -176,11 +176,19 @@ public sealed class AdaptInstallLoop
                 // Whether THIS attempt actually drew on the local model (not merely what strategy/
                 // preferScaffold was requested — a scaffold attempt can silently fall back to the model
                 // inside CppParserAdapterBrick when the surface isn't scaffoldable or the scaffold draft
-                // fails its own compile gate). rawModelResponse is the one signal that reflects what
-                // really happened this call: the scaffold path always sets it to a fixed sentinel.
-                usedModel = dict.TryGetValue("rawModelResponse", out var rmr)
-                    && rmr is string rmrs
-                    && !string.Equals(rmrs, "(scaffold — no model call)", StringComparison.Ordinal);
+                // fails its own compile gate). Prefer typed GenerativeProvenance; fall back to
+                // rawModelResponse presence for older brick outputs.
+                if (dict.TryGetValue(GenerativeBrick.ProvenanceOutputKey, out var provObj)
+                    && provObj is GenerativeProvenance prov)
+                {
+                    usedModel = prov.Strategy == GenerationStrategy.Model;
+                }
+                else
+                {
+                    usedModel = dict.TryGetValue("rawModelResponse", out var rmr)
+                        && rmr is string rmrs
+                        && !string.IsNullOrWhiteSpace(rmrs);
+                }
                 lastAttemptUsedModel = usedModel;
                 if (usedModel && !req.ConfirmModelReview && !req.OracleAutoInstall)
                 {

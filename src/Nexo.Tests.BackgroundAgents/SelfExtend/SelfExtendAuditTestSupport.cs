@@ -2,6 +2,7 @@ using System.Reflection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Nexo.Abstractions;
 using Nexo.BackgroundAgents.Configuration;
+using Nexo.Core.Application.Trust.Ports;
 using Nexo.BackgroundAgents.DataSensitivity;
 using Nexo.BackgroundAgents.Extending;
 using Nexo.BackgroundAgents.Registry;
