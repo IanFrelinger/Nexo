@@ -39,7 +39,9 @@ public sealed class GenerativeArtifactBrick : GenerativeBrick
                 new BrickInputDefinition("target", "string", "Agent profile target id"),
                 new BrickInputDefinition("grounding", "string", "Context/grounding for the drafter", required: false, defaultValue: ""),
                 new BrickInputDefinition("outputPath", "string", "Optional output path / deployment ref", required: false),
-                new BrickInputDefinition("maxRepairAttempts", "number", "Override profile repair attempts", required: false)
+                new BrickInputDefinition("maxRepairAttempts", "number", "Override profile repair attempts", required: false),
+                new BrickInputDefinition("preferDeterministic", "bool", "Override profile PreferDeterministic for this call", required: false),
+                new BrickInputDefinition("overrides", "object", "Opaque GenerationRequest.Overrides bag for the profile", required: false)
             ],
             Outputs =
             [
@@ -67,20 +69,30 @@ public sealed class GenerativeArtifactBrick : GenerativeBrick
         var profile = _registry.Resolve(target)
             ?? throw new InvalidOperationException($"No agent profile registered for target '{target}'.");
 
+        var overrides = new Dictionary<string, object>(StringComparer.OrdinalIgnoreCase);
+        if (input.Get<IReadOnlyDictionary<string, object>?>("overrides", null) is { } bag)
+        {
+            foreach (var kv in bag)
+                overrides[kv.Key] = kv.Value;
+        }
+
         var request = new GenerationRequest
         {
             TargetId = target,
             Grounding = input.Get("grounding", "") ?? "",
             OutputPath = input.Get<string>("outputPath", null),
+            Overrides = overrides
         };
 
         var maxAttempts = input.Get("maxRepairAttempts", profile.Tunables.MaxRepairAttempts);
         maxAttempts = Math.Max(1, maxAttempts);
+        var preferDeterministic = input.Get<bool?>("preferDeterministic", null)
+            ?? profile.Tunables.PreferDeterministic;
 
         GeneratedArtifact artifact;
         GenerativeProvenance provenance;
 
-        if (profile.Tunables.PreferDeterministic
+        if (preferDeterministic
             && profile.Capabilities.SupportsDeterministic
             && profile.DeterministicDrafter is { } det
             && det.TryDraft(request, out var detArtifact)

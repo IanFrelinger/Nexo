@@ -40,11 +40,13 @@ public sealed class GxxCompileValidator : IPostValidator<GeneratedArtifact>
             return (false, "adapter artifact is empty");
 
         var poco = _options.PocoContext ?? Environment.GetEnvironmentVariable("POCO_CONTEXT");
+        var requireSuccess = CompileGateRequestContext.Resolve(_options.RequireSuccess);
+
         if (string.IsNullOrWhiteSpace(poco)
             || !File.Exists(Path.Combine(poco, "common", "processing.hpp")))
         {
             var msg = "compile validation: POCO_CONTEXT/common/processing.hpp not available";
-            return _options.RequireSuccess
+            return requireSuccess
                 ? (false, msg)
                 : (true, null);
         }
@@ -56,7 +58,7 @@ public sealed class GxxCompileValidator : IPostValidator<GeneratedArtifact>
         }
         catch (Exception ex)
         {
-            return _options.RequireSuccess
+            return requireSuccess
                 ? (false, "compile validation: poco context not allowed: " + ex.Message)
                 : (true, null);
         }
@@ -72,7 +74,7 @@ public sealed class GxxCompileValidator : IPostValidator<GeneratedArtifact>
             catch (Exception ex)
             {
                 var msg = "compile validation: parserDir not allowed: " + ex.Message;
-                return _options.RequireSuccess ? (false, msg) : (true, null);
+                return requireSuccess ? (false, msg) : (true, null);
             }
         }
 
@@ -124,7 +126,7 @@ public sealed class GxxCompileValidator : IPostValidator<GeneratedArtifact>
         {
             result = await _runner.RunAsync(spec, ct).ConfigureAwait(false);
         }
-        catch (Exception ex) when (_options.RequireSuccess)
+        catch (Exception ex) when (requireSuccess)
         {
             return (false, "compile validation failed to start sandbox: " + ex.Message);
         }

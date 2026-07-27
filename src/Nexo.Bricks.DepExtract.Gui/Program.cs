@@ -1,11 +1,24 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Nexo.Bricks.DepExtract;
 using Nexo.Bricks.DepExtract.Gui;
 using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Execution;
 using Nexo.Infrastructure.Execution;
+
+// Avoid Results.Json → PipeWriter.UnflushedBytes failures under ASP.NET 8 TestHost
+// with System.Text.Json 9/10 (serialize to string, then Content).
+static IResult SafeJson<T>(T value, int statusCode = 200)
+{
+    var json = JsonSerializer.Serialize(value, new JsonSerializerOptions
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+    });
+    return Results.Content(json, "application/json", statusCode: statusCode);
+}
 
 var plans = new ConcurrentDictionary<string, PlanSession>(StringComparer.Ordinal);
 try { PlanSessionStore.LoadInto(plans); } catch { /* best-effort hydrate */ }
@@ -53,8 +66,15 @@ catch { /* best-effort — agent still runs; recreate endpoints will explain wha
 
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddSingleton<IProviderFactory, ProviderFactory>();
+builder.Services.AddSingleton<Nexo.Infrastructure.Scaling.IProcessCommandRunner, Nexo.Infrastructure.Scaling.ProcessCommandRunner>();
+builder.Services.AddSingleton<Nexo.Core.Application.Execution.Ports.ISandboxedCommandRunner, Nexo.Infrastructure.Execution.Sandbox.DockerSandboxedCommandRunner>();
+builder.Services.AddSingleton<Nexo.Core.Application.Execution.Ports.IScratchSpace, Nexo.Infrastructure.Execution.Scratch.FileScratchSpace>();
+builder.Services.AddSingleton<Nexo.Core.Application.Execution.Ports.IManagedFileSet, Nexo.Infrastructure.Execution.Scratch.SnapshotManagedFileSet>();
+builder.Services.AddSingleton<Nexo.Core.Application.Execution.Ports.ISingleFlightGuard, Nexo.Infrastructure.Execution.Scratch.SingleFlightGuard>();
+builder.Services.AddSingleton<Nexo.Bricks.DepExtract.Profile.IPocoDeploymentOps, GuiPocoDeploymentOps>();
+builder.Services.AddNexoCppEvtxAgentProfile();
+builder.Services.AddSingleton<Nexo.Core.Application.Generation.GenerativeArtifactBrick>();
 builder.Services.AddSingleton<CppDependencyExtractorBrick>();
-builder.Services.AddSingleton<CppParserAdapterBrick>();
 builder.Services.AddSingleton<CppProjectOutlineBrick>();
 builder.Services.AddSingleton<InstallExecutor>();
 builder.Services.AddSingleton<IInstallExecutor>(sp => sp.GetRequiredService<InstallExecutor>());
@@ -94,7 +114,7 @@ app.MapGet("/api/status", async (IProviderFactory pf, CancellationToken ct) =>
     var compileGate = string.Equals(Environment.GetEnvironmentVariable("COMPILE_GATE"), "1", StringComparison.Ordinal);
     var preferScaffoldDefault = string.Equals(Environment.GetEnvironmentVariable("PREFER_SCAFFOLD"), "1", StringComparison.Ordinal);
     var (stackOk, stackDetail) = ComposePipeline.TryCheckStackIdentity();
-    return Results.Json(new StatusResponse(
+    return SafeJson(new StatusResponse(
         docker.Ok, ollama, docker.Detail, ollamaError,
         workspace, poco, extractReady, adaptReady, depExtractImage.Detail,
         PortSettingsStore.ParserUiUrl(ports), compileGate, preferScaffoldDefault,
@@ -120,7 +140,7 @@ app.MapGet("/api/pipeline", () =>
         var md = Path.Combine(ws, "PIPELINE.md");
         if (File.Exists(md)) pipelineMd = md;
     }
-    return Results.Json(new PipelineResponse(
+    return SafeJson(new PipelineResponse(
         ComposePipeline.ProjectName,
         compose,
         envFile,
@@ -136,7 +156,7 @@ app.MapGet("/api/pipeline", () =>
 app.MapGet("/api/ports", () =>
 {
     var ports = PortSettingsStore.Load();
-    return Results.Json(new PortsResponse(
+    return SafeJson(new PortsResponse(
         ports.ParserHostPort,
         ports.AgentHostPort,
         PortSettingsStore.ParserUiUrl(ports),
@@ -158,7 +178,7 @@ app.MapPut("/api/ports", (PortsRequest req) =>
             return ApiError(400, "invalid_input", "Parser and agent host ports must differ");
 
         var saved = PortSettingsStore.Save(parser, agent);
-        return Results.Json(new PortsResponse(
+        return SafeJson(new PortsResponse(
             saved.ParserHostPort,
             saved.AgentHostPort,
             PortSettingsStore.ParserUiUrl(saved),
@@ -191,7 +211,7 @@ app.MapGet("/api/ports/suggest", async (int? preferParser, int? preferAgent, boo
             saved = PortSettingsStore.Save(suggestion.ParserHostPort, suggestion.AgentHostPort);
 
         var ports = saved ?? new PortSettings(suggestion.ParserHostPort, suggestion.AgentHostPort);
-        return Results.Json(new PortsSuggestResponse(
+        return SafeJson(new PortsSuggestResponse(
             ports.ParserHostPort,
             ports.AgentHostPort,
             PortSettingsStore.ParserUiUrl(ports),
@@ -222,7 +242,7 @@ app.MapPost("/api/ports/auto", async (PortsAutoRequest? req, CancellationToken c
             req?.PreferAgentHostPort ?? current.AgentHostPort,
             ct);
         var saved = PortSettingsStore.Save(suggestion.ParserHostPort, suggestion.AgentHostPort);
-        return Results.Json(new PortsSuggestResponse(
+        return SafeJson(new PortsSuggestResponse(
             saved.ParserHostPort,
             saved.AgentHostPort,
             PortSettingsStore.ParserUiUrl(saved),
@@ -271,7 +291,7 @@ app.MapPost("/api/ports/recreate", async (PortsRecreateRequest? req, Cancellatio
         if (!string.IsNullOrWhiteSpace(result.HealthLog))
             log = (log + "\n" + result.HealthLog).Trim();
 
-        return Results.Json(new PortsRecreateResponse(
+        return SafeJson(new PortsRecreateResponse(
             true,
             log,
             result.Project,
@@ -318,7 +338,7 @@ app.MapGet("/api/workspace", (string? path, int? depth) =>
 
     var maxDepth = Math.Clamp(depth ?? 2, 0, 4);
     var entries = ListWorkspace(target, root, maxDepth, 0);
-    return Results.Json(new WorkspaceResponse(root, Path.GetRelativePath(root, target).Replace('\\', '/'), entries));
+    return SafeJson(new WorkspaceResponse(root, Path.GetRelativePath(root, target).Replace('\\', '/'), entries));
 });
 
 /// <summary>Extract deps + return a diagrammed adapt plan for operator approve / feedback.</summary>
@@ -365,7 +385,7 @@ app.MapPost("/api/plan", async (PlanRequest req, CppDependencyExtractorBrick ext
     plans[planId] = session;
     PlanSessionStore.Save(session);
     log.LogInformation("Created adapt plan {PlanId} for {SrcDir} strategy={Strategy}", planId, prepared.SrcDir, draft.Strategy);
-    return Results.Json(ToPlanResponse(session));
+    return SafeJson(ToPlanResponse(session));
 });
 
 /// <summary>Revise a proposed plan from operator feedback (re-renders diagram + narrative).</summary>
@@ -401,11 +421,11 @@ app.MapPost("/api/plan/revise", (RevisePlanRequest req) =>
     var revised = session with { Draft = draft, Status = "revised" };
     plans[req.PlanId] = revised;
     PlanSessionStore.Save(revised);
-    return Results.Json(ToPlanResponse(revised));
+    return SafeJson(ToPlanResponse(revised));
 });
 
 /// <summary>Operator approved the plan — run adaptation (scaffold/model) against the stored extract.</summary>
-app.MapPost("/api/plan/implement", async (ImplementPlanRequest req, CppParserAdapterBrick adapter, ILoggerFactory logFactory, CancellationToken ct) =>
+app.MapPost("/api/plan/implement", async (ImplementPlanRequest req, Nexo.Core.Application.Generation.GenerativeArtifactBrick generator, ILoggerFactory logFactory, CancellationToken ct) =>
 {
     var log = logFactory.CreateLogger("DepExtract.Plan");
     if (string.IsNullOrWhiteSpace(req.PlanId))
@@ -422,25 +442,23 @@ app.MapPost("/api/plan/implement", async (ImplementPlanRequest req, CppParserAda
         guidance = string.IsNullOrWhiteSpace(guidance)
             ? req.ExtraGuidance!.Trim()
             : guidance.TrimEnd() + "\n\n" + req.ExtraGuidance.Trim();
-    var adaptValues = new Dictionary<string, object>
-    {
-        ["parserDir"] = session.DuplicatePath,
-        ["entryFiles"] = session.Entries,
-        ["outputPath"] = Path.Combine(session.OutDir, "adapted_reader.hpp"),
-        ["requireCompile"] = requireCompile,
-        ["preferScaffold"] = preferScaffold,
-        ["operatorGuidance"] = guidance,
-    };
-    if (!string.IsNullOrWhiteSpace(req.Model ?? session.Model)) adaptValues["model"] = (req.Model ?? session.Model)!;
-    if ((req.MaxRetries ?? session.MaxRetries) is { } mr) adaptValues["maxRetries"] = mr;
-    if ((req.MaxCompileRetries ?? session.MaxCompileRetries) is { } mcr) adaptValues["maxCompileRetries"] = mcr;
     var poco = Environment.GetEnvironmentVariable("POCO_CONTEXT");
-    if (!string.IsNullOrWhiteSpace(poco)) adaptValues["pocoContext"] = poco;
 
-    BrickOutput adaptOut;
+    CppEvtxAdaptRunner.AdaptResult adapt;
     try
     {
-        adaptOut = await adapter.ExecuteAsync(new BrickInput(adaptValues), ImplementationType.Agentic, new GuiExecutionContext(), ct);
+        adapt = await CppEvtxAdaptRunner.RunAsync(
+            generator,
+            session.DuplicatePath,
+            session.Entries,
+            Path.Combine(session.OutDir, "adapted_reader.hpp"),
+            preferScaffold,
+            requireCompile,
+            guidance,
+            poco,
+            req.MaxCompileRetries ?? session.MaxCompileRetries,
+            new GuiExecutionContext(),
+            ct);
     }
     catch (Exception ex)
     {
@@ -456,26 +474,20 @@ app.MapPost("/api/plan/implement", async (ImplementPlanRequest req, CppParserAda
         });
     }
 
-    bool? compileOk = null;
-    string? compileLog = null;
-    var adaptDict = adaptOut.ToDictionary();
-    if (adaptDict.TryGetValue("compileOk", out var co) && co is bool cob) compileOk = cob;
-    if (adaptDict.TryGetValue("compileLog", out var cl) && cl is string cls) compileLog = cls;
-
     var done = session with { Status = "implemented" };
     plans[req.PlanId] = done;
     PlanSessionStore.Save(done);
 
-    return Results.Json(new RunResponse(
+    return SafeJson(new RunResponse(
         session.Lower, session.Upper, session.External, session.ManifestText, session.DuplicatePath,
-        adaptOut.Get<string>("adapterCode"),
-        adaptOut.Get<string>("outputPath"),
-        adaptOut.Get<double>("sourceApiCoverage"),
-        adaptOut.Get<bool>("looksLikeTemplateEcho"),
-        adaptOut.Get<string[]>("possibleHallucinations"),
-        adaptOut.Summary ?? "",
-        compileOk,
-        compileLog,
+        adapt.AdapterCode,
+        adapt.OutputPath,
+        adapt.SourceApiCoverage,
+        adapt.LooksLikeTemplateEcho,
+        adapt.PossibleHallucinations,
+        adapt.Summary,
+        adapt.CompileOk,
+        adapt.CompileLog,
         session.PlanId));
 });
 
@@ -483,7 +495,7 @@ app.MapGet("/api/plan/{planId}", (string planId) =>
 {
     if (!TryGetPlan(plans, planId, out var session) || session is null)
         return ApiError(404, "not_found", $"unknown planId: {planId}");
-    return Results.Json(ToPlanResponse(session));
+    return SafeJson(ToPlanResponse(session));
 });
 
 app.MapGet("/api/plan/{planId}/export.md", (string planId) =>
@@ -496,7 +508,7 @@ app.MapGet("/api/plan/{planId}/export.md", (string planId) =>
     return Results.Text(md, "text/markdown", System.Text.Encoding.UTF8);
 });
 
-app.MapPost("/api/run", async (RunRequest req, CppDependencyExtractorBrick extractor, CppParserAdapterBrick adapter, ILoggerFactory logFactory, CancellationToken ct) =>
+app.MapPost("/api/run", async (RunRequest req, CppDependencyExtractorBrick extractor, Nexo.Core.Application.Generation.GenerativeArtifactBrick generator, ILoggerFactory logFactory, CancellationToken ct) =>
 {
     var log = logFactory.CreateLogger("DepExtract.Agent");
     if (string.IsNullOrWhiteSpace(req.SrcDir))
@@ -567,7 +579,7 @@ app.MapPost("/api/run", async (RunRequest req, CppDependencyExtractorBrick extra
 
     if (req.ManifestOnly || req.ExtractOnly || duplicatePath is null)
     {
-        return Results.Json(new RunResponse(lower, upper, external, manifestText, duplicatePath,
+        return SafeJson(new RunResponse(lower, upper, external, manifestText, duplicatePath,
             null, null, null, null, null, extractOut.Summary ?? "", null, null, null));
     }
 
@@ -575,24 +587,22 @@ app.MapPost("/api/run", async (RunRequest req, CppDependencyExtractorBrick extra
         ?? string.Equals(Environment.GetEnvironmentVariable("COMPILE_GATE"), "1", StringComparison.Ordinal);
     var preferScaffold = req.PreferScaffold
         ?? string.Equals(Environment.GetEnvironmentVariable("PREFER_SCAFFOLD"), "1", StringComparison.Ordinal);
-    var adaptValues = new Dictionary<string, object>
-    {
-        ["parserDir"] = duplicatePath,
-        ["entryFiles"] = req.Entries,
-        ["outputPath"] = Path.Combine(outDir, "adapted_reader.hpp"),
-        ["requireCompile"] = requireCompile,
-        ["preferScaffold"] = preferScaffold,
-    };
-    if (!string.IsNullOrWhiteSpace(req.Model)) adaptValues["model"] = req.Model!;
-    if (req.MaxRetries is { } mr) adaptValues["maxRetries"] = mr;
-    if (req.MaxCompileRetries is { } mcr) adaptValues["maxCompileRetries"] = mcr;
     var poco = Environment.GetEnvironmentVariable("POCO_CONTEXT");
-    if (!string.IsNullOrWhiteSpace(poco)) adaptValues["pocoContext"] = poco;
-
-    BrickOutput adaptOut;
+    CppEvtxAdaptRunner.AdaptResult adapt;
     try
     {
-        adaptOut = await adapter.ExecuteAsync(new BrickInput(adaptValues), ImplementationType.Agentic, ctx, ct);
+        adapt = await CppEvtxAdaptRunner.RunAsync(
+            generator,
+            duplicatePath,
+            req.Entries,
+            Path.Combine(outDir, "adapted_reader.hpp"),
+            preferScaffold,
+            requireCompile,
+            operatorGuidance: null,
+            poco,
+            req.MaxCompileRetries,
+            ctx,
+            ct);
     }
     catch (Exception ex)
     {
@@ -607,24 +617,16 @@ app.MapPost("/api/run", async (RunRequest req, CppDependencyExtractorBrick extra
         });
     }
 
-    bool? compileOk = null;
-    string? compileLog = null;
-    var adaptDict = adaptOut.ToDictionary();
-    if (adaptDict.TryGetValue("compileOk", out var co) && co is bool cob)
-        compileOk = cob;
-    if (adaptDict.TryGetValue("compileLog", out var cl) && cl is string cls)
-        compileLog = cls;
-
-    return Results.Json(new RunResponse(
+    return SafeJson(new RunResponse(
         lower, upper, external, manifestText, duplicatePath,
-        adaptOut.Get<string>("adapterCode"),
-        adaptOut.Get<string>("outputPath"),
-        adaptOut.Get<double>("sourceApiCoverage"),
-        adaptOut.Get<bool>("looksLikeTemplateEcho"),
-        adaptOut.Get<string[]>("possibleHallucinations"),
-        adaptOut.Summary ?? "",
-        compileOk,
-        compileLog,
+        adapt.AdapterCode,
+        adapt.OutputPath,
+        adapt.SourceApiCoverage,
+        adapt.LooksLikeTemplateEcho,
+        adapt.PossibleHallucinations,
+        adapt.Summary,
+        adapt.CompileOk,
+        adapt.CompileLog,
         null));
 });
 
@@ -678,7 +680,7 @@ app.MapPost("/api/install", async (InstallRequest req, InstallExecutor installer
             });
         }
 
-        return Results.Json(new InstallResponse(
+        return SafeJson(new InstallResponse(
             result.AdaptedReaderPath,
             result.ImageTag,
             result.BuildLog,
@@ -724,7 +726,7 @@ app.MapPost("/api/onboard", async (OnboardApiRequest req, OnboardLoop onboard, C
                 req.MaxBuildRetries ?? 2, req.MaxCompileRetries ?? 3,
                 req.PreferScaffold ?? true),
             Resolve, Save, ct).ConfigureAwait(false);
-        return Results.Json(result, statusCode: result.Ok ? 200 : 422);
+        return SafeJson(result, statusCode: result.Ok ? 200 : 422);
     }
     catch (Exception ex)
     {
@@ -749,7 +751,7 @@ app.MapPost("/api/outline", async (OutlineRequest req, CppProjectOutlineBrick ou
         var result = await outliner.ExecuteAsync(
             new BrickInput(values), ImplementationType.Agentic, new GuiExecutionContext(), ct);
         var dict = result.ToDictionary();
-        return Results.Json(new OutlineResponse(
+        return SafeJson(new OutlineResponse(
             true,
             dict.TryGetValue("outlinePath", out var p) ? p as string : null,
             dict.TryGetValue("outlineMarkdown", out var m) ? m as string : null,
@@ -820,7 +822,7 @@ app.MapPost("/api/adapt-cycle", async (AdaptCycleRequest req, AdaptInstallLoop l
                 ["buildLog"] = result.Attempts.LastOrDefault()?.BuildLog,
             });
 
-        return Results.Json(dto);
+        return SafeJson(dto);
     }
     catch (Exception ex)
     {
@@ -835,7 +837,7 @@ app.MapGet("/api/install/{jobId}", (string jobId, InstallExecutor installer) =>
         return ApiError(404, "not_found", $"install job not found: {jobId}");
     IReadOnlyList<string> log;
     lock (job.Log) log = job.Log.ToList();
-    return Results.Json(new InstallJobStatus(
+    return SafeJson(new InstallJobStatus(
         job.Id,
         job.Status,
         job.Error,
@@ -937,7 +939,7 @@ static PlanResponse ToPlanResponse(PlanSession s) => new(
     $"/api/plan/{s.PlanId}/export.md");
 
 static IResult ApiError(int status, string code, string detail, IDictionary<string, object?>? extras = null) =>
-    Results.Json(new ErrorResponse(code, detail, extras), statusCode: status);
+    SafeJson(new ErrorResponse(code, detail, extras), statusCode: status);
 
 static IResult MapException(Exception ex, string title, IDictionary<string, object?>? extras = null)
 {

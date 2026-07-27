@@ -1,27 +1,30 @@
 using System.Text;
 using Microsoft.Extensions.Logging;
 using Nexo.Bricks.DepExtract;
+using Nexo.Bricks.DepExtract.Profile;
+using Nexo.Core.Application.Generation;
 using Nexo.Core.Domain.Bricks;
+using Nexo.Core.Domain.Bricks.Ports;
 using Nexo.Core.Domain.Execution;
 
 namespace Nexo.Bricks.DepExtract.Gui;
 
 /// <summary>
-/// Closed loop: implement (compile gate) → install → docker build → optional extract smoke,
-/// feeding build/extract failures back into the next implement attempt.
+/// Closed loop: implement (compile gate via cpp-evtx profile) → install → docker build →
+/// optional extract smoke, feeding build/extract failures back into the next implement attempt.
 /// </summary>
 public sealed class AdaptInstallLoop
 {
-    private readonly CppParserAdapterBrick _adapter;
+    private readonly GenerativeArtifactBrick _generator;
     private readonly IInstallExecutor _installer;
     private readonly ILogger<AdaptInstallLoop> _log;
 
     public AdaptInstallLoop(
-        CppParserAdapterBrick adapter,
+        GenerativeArtifactBrick generator,
         IInstallExecutor installer,
         ILogger<AdaptInstallLoop> log)
     {
-        _adapter = adapter;
+        _generator = generator;
         _installer = installer;
         _log = log;
     }
@@ -104,11 +107,6 @@ public sealed class AdaptInstallLoop
             _log.LogInformation("Adapt-cycle attempt {Attempt}/{Max} for plan {PlanId}", i, maxAttempts, req.PlanId);
 
             var preferScaffold = req.PreferScaffold ?? session.PreferScaffold;
-            // After a *compile/link* failure, force model path so scaffold cannot ignore the feedback.
-            // Smoke/oracle-only failures after a deterministic scaffold mean the proprietary wire
-            // format (or sample) is wrong — thrashing the local model rarely helps. Surface the
-            // oracle error instead. Model-authored drafts may still retry on smoke (adapt-cycle).
-            // SKIP_OLLAMA=1 always surfaces the install error without a model retry.
             var skipOllama = string.Equals(
                 Environment.GetEnvironmentVariable("SKIP_OLLAMA"), "1", StringComparison.Ordinal);
             if (i > 1 && failureFeedback.Length > 0)
@@ -134,23 +132,18 @@ public sealed class AdaptInstallLoop
             if (failureFeedback.Length > 0)
                 guidance = (guidance.TrimEnd() + "\n\n" + failureFeedback).Trim();
 
-            var adaptValues = new Dictionary<string, object>
-            {
-                ["parserDir"] = session.DuplicatePath,
-                ["entryFiles"] = session.Entries,
-                ["outputPath"] = Path.Combine(session.OutDir, "adapted_reader.hpp"),
-                ["requireCompile"] = requireCompile,
-                ["preferScaffold"] = preferScaffold,
-                ["operatorGuidance"] = guidance,
-            };
-            var model = req.Model ?? session.Model;
-            if (!string.IsNullOrWhiteSpace(model)) adaptValues["model"] = model!;
-            if (session.MaxRetries is { } mr) adaptValues["maxRetries"] = mr;
-            if ((req.MaxCompileRetries ?? session.MaxCompileRetries) is { } mcr)
-                adaptValues["maxCompileRetries"] = mcr;
             var poco = req.PocoContext ?? Environment.GetEnvironmentVariable("POCO_CONTEXT");
-            if (!string.IsNullOrWhiteSpace(poco)) adaptValues["pocoContext"] = poco!;
+            string grounding;
+            try
+            {
+                grounding = CppAdapterPrompt.AssembleGrounding(session.DuplicatePath, session.Entries);
+            }
+            catch (Exception ex)
+            {
+                throw DepExtractException.InvalidInput(ex.Message);
+            }
 
+            CompileGateRequestContext.RequireSuccess = requireCompile;
             string? code;
             bool? compileOk = null;
             string? compileLog = null;
@@ -158,38 +151,66 @@ public sealed class AdaptInstallLoop
             var usedModel = false;
             try
             {
-                var adaptOut = await _adapter.ExecuteAsync(
+                var entryInclude = session.Entries is { Length: > 0 }
+                    ? session.Entries[0].Replace('\\', '/').TrimStart('/')
+                    : null;
+                var overrides = new Dictionary<string, object>
+                {
+                    ["operatorGuidance"] = guidance,
+                    ["entryFiles"] = session.Entries,
+                };
+                if (!string.IsNullOrWhiteSpace(poco))
+                    overrides["pocoContext"] = poco!;
+                if (!string.IsNullOrWhiteSpace(entryInclude))
+                    overrides["entryInclude"] = entryInclude!;
+
+                var adaptValues = new Dictionary<string, object>
+                {
+                    ["target"] = CppEvtxProfileFactory.TargetId,
+                    ["grounding"] = grounding,
+                    ["outputPath"] = Path.Combine(session.OutDir, "adapted_reader.hpp"),
+                    ["preferDeterministic"] = preferScaffold,
+                    ["overrides"] = overrides,
+                };
+                if ((req.MaxCompileRetries ?? session.MaxCompileRetries) is { } mcr)
+                    adaptValues["maxRepairAttempts"] = mcr;
+
+                var adaptOut = await _generator.ExecuteAsync(
                     new BrickInput(adaptValues), ImplementationType.Agentic, CycleExecutionContext.Instance, ct)
                     .ConfigureAwait(false);
-                code = adaptOut.Get<string>("adapterCode");
+
+                var artifact = adaptOut.Get<GeneratedArtifact>("artifact");
+                code = artifact?.Content;
                 lastCode = code;
-                var dict = adaptOut.ToDictionary();
-                if (dict.TryGetValue("compileOk", out var co) && co is bool cob) compileOk = cob;
-                if (dict.TryGetValue("compileLog", out var cl) && cl is string cls) compileLog = cls;
+                if (string.IsNullOrWhiteSpace(code))
+                    throw DepExtractException.EmptyModelResponse();
 
-                // Qt-shim headers (generated when the parser includes Qt) must ship as
-                // explicit companions: they're extensionless, so the duplicate-tree
-                // auto-copy (which requires C/C++ extensions) would skip them.
-                if (dict.TryGetValue("qtShims", out var qsv) && qsv is Dictionary<string, string> { Count: > 0 } qsd)
-                    shimCompanions = qsd.Select(kv => new CompanionFileDto(kv.Key, kv.Value)).ToArray();
+                var outPath = Path.Combine(session.OutDir, "adapted_reader.hpp");
+                Directory.CreateDirectory(session.OutDir);
+                await File.WriteAllTextAsync(outPath, code, ct).ConfigureAwait(false);
 
-                // Whether THIS attempt actually drew on the local model (not merely what strategy/
-                // preferScaffold was requested — a scaffold attempt can silently fall back to the model
-                // inside CppParserAdapterBrick when the surface isn't scaffoldable or the scaffold draft
-                // fails its own compile gate). Prefer typed GenerativeProvenance; fall back to
-                // rawModelResponse presence for older brick outputs.
-                if (dict.TryGetValue(GenerativeBrick.ProvenanceOutputKey, out var provObj)
-                    && provObj is GenerativeProvenance prov)
-                {
-                    usedModel = prov.Strategy == GenerationStrategy.Model;
-                }
-                else
-                {
-                    usedModel = dict.TryGetValue("rawModelResponse", out var rmr)
-                        && rmr is string rmrs
-                        && !string.IsNullOrWhiteSpace(rmrs);
-                }
+                var verified = adaptOut.Get<bool>("verified");
+                compileOk = verified;
+                var prov = adaptOut.Get<GenerativeProvenance>(GenerativeBrick.ProvenanceOutputKey);
+                if (prov?.Warnings is { Count: > 0 })
+                    compileLog = string.Join("\n", prov.Warnings);
+                usedModel = prov?.Strategy == GenerationStrategy.Model;
                 lastAttemptUsedModel = usedModel;
+
+                // Qt shims for install companions (sandbox shim dir is ephemeral).
+                var shimDir = Path.Combine(Path.GetTempPath(), "qt-shims-" + Guid.NewGuid().ToString("n"));
+                Directory.CreateDirectory(shimDir);
+                try
+                {
+                    var qsd = QtHeaderShims.EnsureForDirectory(grounding, session.DuplicatePath, shimDir, _log);
+                    if (qsd.Count > 0)
+                        shimCompanions = qsd.Select(kv => new CompanionFileDto(kv.Key, kv.Value)).ToArray();
+                }
+                finally
+                {
+                    try { Directory.Delete(shimDir, recursive: true); } catch { /* ignore */ }
+                }
+
                 if (usedModel && !req.ConfirmModelReview && !req.OracleAutoInstall)
                 {
                     attempts.Add(new Attempt(i, true, code, compileOk, compileLog, null, null, null,
@@ -216,6 +237,10 @@ public sealed class AdaptInstallLoop
                 }
                 continue;
             }
+            finally
+            {
+                CompileGateRequestContext.RequireSuccess = null;
+            }
 
             if (usedModel)
             {
@@ -235,6 +260,7 @@ public sealed class AdaptInstallLoop
             session = session with { Status = "implemented" };
             savePlan(session);
 
+            var model = req.Model ?? session.Model;
             var modelPin = usedModel
                 ? await OllamaModelPin.ResolveAsync(model, logger: _log, ct: ct).ConfigureAwait(false)
                 : null;
