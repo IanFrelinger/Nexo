@@ -16,11 +16,12 @@ public sealed class OracleEvaluatorTests
     public void Multi_sample_requires_all_to_clear_bar()
     {
         var csvGood = "ts,value\n2020-01-01T00:00:00Z,1\n2020-01-01T00:00:01Z,2\n2020-01-01T00:00:02Z,3\n2020-01-01T00:00:03Z,4\n2020-01-01T00:00:04Z,5\n";
+        var csvShort = "ts,value\n2020-01-01T00:00:00Z,1\n2020-01-01T00:00:01Z,2\n";
         var v = OracleEvaluator.Evaluate(
-            new[]
+            new (string, string?, string?)[]
             {
                 ("a.bin", "rows=5", csvGood),
-                ("b.bin", "rows=2", csvGood), // row parse from smoke says 2 — fails min
+                ("b.bin", "rows=2", csvShort), // second sample under minEvents
             },
             minEvents: 5);
         v.AllPassed.Should().BeFalse();
@@ -40,7 +41,7 @@ public sealed class OracleEvaluatorTests
     {
         var csv = "SystemTime,value\n2020-01-01T00:00:00Z,1\n2020-01-01T00:00:01Z,2\n2020-01-01T00:00:02Z,3\n2020-01-01T00:00:03Z,4\n2020-01-01T00:00:04Z,5\n";
         var v = OracleEvaluator.Evaluate(
-            new[]
+            new (string, string?, string?)[]
             {
                 ("a.bin", "rows=5", csv),
                 ("b.bin", "rows=5", csv),

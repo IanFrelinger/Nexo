@@ -13,11 +13,11 @@ namespace Nexo.Bricks.DepExtract.Gui;
 ///   Qt triage via stub-compile probe → draft/gate/install →
 ///   golden-file oracle against operator-supplied sample files.
 ///
-/// The oracle substitutes for human review: when samples are provided, a draft
-/// is auto-approved only if the finished Poco app actually parses the samples
-/// (>= minEvents rows). Without samples, model drafts stop for human review
-/// exactly as before. Everything runs against the local model and local
-/// Docker — the air-gap is never crossed.
+/// The oracle substitutes for human review only when <see cref="OracleEvaluator"/>
+/// passes every check (min events, multi-sample agreement, field sanity). Without
+/// samples, model drafts stop for human review. Failed post-install oracle checks
+/// trigger <see cref="InstallExecutor.RollbackPreviousAsync"/>. Everything runs
+/// against the local model and local Docker — the air-gap is never crossed.
 /// </summary>
 public sealed class OnboardLoop
 {
@@ -259,10 +259,26 @@ public sealed class OnboardLoop
             verdict = OracleEvaluator.Evaluate(sampleInputs, minEvents);
             rows = verdict.Samples.Count > 0 ? verdict.Samples.Min(s => s.Rows) : null;
             oracleOk = run.Ok && verdict.AllPassed;
-            if (run.Ok && !verdict.AllPassed)
+            if (run.Ok && verdict.AllPassed)
             {
-                _log.LogWarning("Oracle checks failed after install — {Summary}", verdict.Summary);
-                // Rollback wired in InstallExecutor transactional path (caller may invoke).
+                await InstallExecutor.UpdateInstalledProvenanceAsync(poco, "pass", "oracle", ct)
+                    .ConfigureAwait(false);
+            }
+            else if (run.Ok && !verdict.AllPassed)
+            {
+                _log.LogWarning("Oracle checks failed after install — rolling back: {Summary}", verdict.Summary);
+                try
+                {
+                    await InstallExecutor.UpdateInstalledProvenanceAsync(poco, "fail", "oracle", ct)
+                        .ConfigureAwait(false);
+                    await InstallExecutor.RollbackPreviousAsync(
+                        poco, run.ImageTag, line => _log.LogInformation("[rollback] {Line}", line), ct)
+                        .ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    _log.LogError(ex, "Oracle rollback failed after failed checks");
+                }
             }
         }
 

@@ -73,6 +73,57 @@ public sealed class InstallExecutor : IInstallExecutor
         return job.Result ?? Fail(job.Error ?? "install failed", job.Log);
     }
 
+    /// <summary>
+    /// Restore <c>common/adapted_reader.hpp</c> + companions from <c>.nexo-prev</c> snapshots,
+    /// retag <paramref name="imageTag"/>-prev → <paramref name="imageTag"/>, and recreate evtx.
+    /// Used when post-install oracle checks fail after a successful build/recreate.
+    /// </summary>
+    public static async Task RollbackPreviousAsync(
+        string? pocoContext,
+        string? imageTag,
+        Action<string>? onLog,
+        CancellationToken ct)
+    {
+        var poco = string.IsNullOrWhiteSpace(pocoContext)
+            ? Environment.GetEnvironmentVariable("POCO_CONTEXT")
+            : pocoContext;
+        if (string.IsNullOrWhiteSpace(poco))
+            throw new InvalidOperationException("pocoContext is required for rollback");
+        poco = DepExtractPathRules.RequireExistingDirectory(poco, "pocoContext");
+        DepExtractPathRules.EnsurePocoContextAllowed(poco);
+
+        void Log(string line) => onLog?.Invoke(line);
+
+        var dest = Path.Combine(poco, "common", "adapted_reader.hpp");
+        var destPrev = dest + ".nexo-prev";
+        var destTmp = dest + ".nexo-tmp";
+        var companionManifest = Path.Combine(poco, "common", ".nexo-adapter-companions");
+        var companionManifestPrev = companionManifest + ".nexo-prev";
+        var tag = string.IsNullOrWhiteSpace(imageTag) ? "evtx:custom" : imageTag!;
+        await RollbackFullAsync(
+            poco, dest, destPrev, destTmp, companionManifest, companionManifestPrev,
+            tag, tag + "-prev", Log, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>Rewrite the greppable provenance oracle/reviewed_by lines on an installed adapter.</summary>
+    public static async Task UpdateInstalledProvenanceAsync(
+        string? pocoContext,
+        string oracleResult,
+        string reviewedBy,
+        CancellationToken ct)
+    {
+        var poco = string.IsNullOrWhiteSpace(pocoContext)
+            ? Environment.GetEnvironmentVariable("POCO_CONTEXT")
+            : pocoContext;
+        if (string.IsNullOrWhiteSpace(poco)) return;
+        var dest = Path.Combine(poco, "common", "adapted_reader.hpp");
+        if (!File.Exists(dest)) return;
+        var body = await File.ReadAllTextAsync(dest, ct).ConfigureAwait(false);
+        var updated = AdapterProvenance.UpdateOracle(body, oracleResult, reviewedBy);
+        if (!ReferenceEquals(updated, body) && updated != body)
+            await File.WriteAllTextAsync(dest, updated, ct).ConfigureAwait(false);
+    }
+
     private async Task RunJobAsync(
         InstallJob job,
         InstallWorkRequest req,
@@ -163,8 +214,48 @@ public sealed class InstallExecutor : IInstallExecutor
             throw new InvalidOperationException("adapterCode or adapterPath is required");
         }
 
+        // Content scan (model-authored only)
+        var scan = AdapterContentScan.Scan(code, req.IsModelAuthored);
+        if (!scan.Ok)
+        {
+            var detail = string.Join("; ", scan.Hits.Select(h => $"{h.Rule} @ {h.Excerpt}"));
+            throw new InvalidOperationException(
+                "Adapter content scan blocked install: " + detail +
+                (scan.OverrideReason is not null ? " (" + scan.OverrideReason + ")" : "") +
+                ". Set NEXO_ALLOW_UNSAFE_ADAPTER=1 and NEXO_UNSAFE_ADAPTER_REASON=… to override.");
+        }
+        if (scan.OverrideUsed)
+            log($"WARN: content-scan override used — reason={scan.OverrideReason}; hits={scan.Hits.Count}");
+
+        var strategy = req.Strategy
+            ?? (req.IsModelAuthored ? "model" : "scaffold");
+        var reviewedBy = req.ReviewedBy
+            ?? (string.Equals(strategy, "model", StringComparison.OrdinalIgnoreCase) ? "none" : "none");
+        code = AdapterProvenance.Prepend(code, new AdapterProvenance.Info(
+            strategy,
+            req.ModelTag,
+            req.ModelDigest,
+            req.CompileGatePassed,
+            req.OracleResult ?? "n/a",
+            reviewedBy));
+
         var dest = Path.Combine(poco, "common", "adapted_reader.hpp");
+        var destTmp = dest + ".nexo-tmp";
+        var destPrev = dest + ".nexo-prev";
         var companionManifest = Path.Combine(poco, "common", ".nexo-adapter-companions");
+        var companionManifestPrev = companionManifest + ".nexo-prev";
+        var imageTag = string.IsNullOrWhiteSpace(req.ImageTag) ? "evtx:custom" : req.ImageTag!;
+        var imagePrevTag = imageTag + "-prev";
+
+        // Snapshot previous good adapter + companion manifest for rollback.
+        if (File.Exists(dest))
+        {
+            File.Copy(dest, destPrev, overwrite: true);
+            log($"snapshot previous adapter → {destPrev}");
+        }
+        if (File.Exists(companionManifest))
+            File.Copy(companionManifest, companionManifestPrev, overwrite: true);
+
         if (File.Exists(companionManifest))
         {
             foreach (var previous in await File.ReadAllLinesAsync(companionManifest, ct).ConfigureAwait(false))
@@ -176,8 +267,14 @@ public sealed class InstallExecutor : IInstallExecutor
                     File.Delete(oldPath);
             }
         }
-        await File.WriteAllTextAsync(dest, code, ct).ConfigureAwait(false);
-        log($"wrote adapter → {dest} ({code.Length} bytes)");
+
+        // Write to temp; promote only after successful build (transactional).
+        await File.WriteAllTextAsync(destTmp, code, ct).ConfigureAwait(false);
+        log($"staged adapter → {destTmp} ({code.Length} bytes)");
+        // Build context reads common/adapted_reader.hpp — swap into place for the build,
+        // keeping .nexo-prev for rollback.
+        File.Copy(destTmp, dest, overwrite: true);
+        log($"wrote adapter → {dest} (pending build confirmation)");
 
         var companions = new List<string>();
         // Relative paths under common/ (structure-preserving). Also track leaf names
@@ -300,29 +397,38 @@ public sealed class InstallExecutor : IInstallExecutor
             companions.Select(p => Path.GetRelativePath(Path.Combine(poco, "common"), p)),
             ct).ConfigureAwait(false);
 
-        string? imageTag = null;
         string? buildLog = null;
+        string? recreateLog = null;
         if (req.RebuildImage)
         {
-            imageTag = string.IsNullOrWhiteSpace(req.ImageTag) ? "evtx:custom" : req.ImageTag!;
-            log($"compile gate: docker build -f Dockerfile.custom -t {imageTag}");
+            // Preserve prior image as evtx:custom-prev (best-effort) before replacing the tag.
+            await DockerRetagAsync(imageTag, imagePrevTag, log, ct).ConfigureAwait(false);
+
+            log($"compile gate: docker build --network=none -f Dockerfile.custom -t {imageTag}");
             var (ok, blog) = await DockerBuildAsync(poco, imageTag, ct).ConfigureAwait(false);
             buildLog = blog;
             foreach (var line in blog.Split('\n', StringSplitOptions.RemoveEmptyEntries).TakeLast(30))
                 log(line);
             if (!ok)
             {
+                await RollbackAdapterFilesAsync(dest, destPrev, destTmp, companionManifest, companionManifestPrev, log, ct)
+                    .ConfigureAwait(false);
                 return new InstallResult(false, "docker build failed (companion compile gate)", dest, imageTag, buildLog,
-                    PortSettingsStore.ParserUiUrl(), "Custom image build failed.", companions.ToArray(), null,
+                    PortSettingsStore.ParserUiUrl(), "Custom image build failed; adapter rolled back.", companions.ToArray(), null,
                     false, null, null, Array.Empty<string>());
             }
+            // Build succeeded — commit temp staging.
+            try { File.Delete(destTmp); } catch { /* ignore */ }
             PortSettingsStore.UpsertEnvVar("EVTX_IMAGE", imageTag);
             log($"EVTX_IMAGE={imageTag}");
         }
+        else
+        {
+            try { File.Delete(destTmp); } catch { /* ignore */ }
+        }
 
-        string? recreateLog = null;
         var recreate = req.RecreateEvtx ?? req.RebuildImage;
-        if (recreate && !string.IsNullOrWhiteSpace(imageTag))
+        if (recreate && req.RebuildImage)
         {
             log("recreate: evtx");
             try
@@ -336,15 +442,30 @@ public sealed class InstallExecutor : IInstallExecutor
                     previousAgentPort: null,
                     onLog: log).ConfigureAwait(false);
                 recreateLog = string.Join("\n", new[] { result.Log, result.HealthLog }.Where(s => !string.IsNullOrWhiteSpace(s)));
-                if (!result.Ok)
-                    log("warn: evtx recreate failed: " + result.Log);
-                else
-                    log("evtx recreate ok");
+                if (!result.Ok || (req.WaitHealthy is not false && result.HealthLog is not null
+                        && (result.HealthLog.Contains("timed out", StringComparison.OrdinalIgnoreCase)
+                            || result.HealthLog.Contains("unhealthy", StringComparison.OrdinalIgnoreCase))))
+                {
+                    log("evtx recreate/health failed — rolling back to previous image + adapter");
+                    await RollbackFullAsync(
+                        poco, dest, destPrev, destTmp, companionManifest, companionManifestPrev,
+                        imageTag, imagePrevTag, log, ct).ConfigureAwait(false);
+                    return new InstallResult(false, "evtx recreate/health failed; rolled back", dest, imageTag, buildLog,
+                        PortSettingsStore.ParserUiUrl(), "Rolled back after unhealthy recreate.", companions.ToArray(), recreateLog,
+                        false, null, null, Array.Empty<string>());
+                }
+                log("evtx recreate ok");
             }
             catch (Exception ex)
             {
                 recreateLog = ex.Message;
-                log("warn: evtx recreate skipped: " + ex.Message);
+                log("evtx recreate error — rolling back: " + ex.Message);
+                await RollbackFullAsync(
+                    poco, dest, destPrev, destTmp, companionManifest, companionManifestPrev,
+                    imageTag, imagePrevTag, log, ct).ConfigureAwait(false);
+                return new InstallResult(false, "evtx recreate failed; rolled back: " + ex.Message, dest, imageTag, buildLog,
+                    PortSettingsStore.ParserUiUrl(), "Rolled back after recreate error.", companions.ToArray(), recreateLog,
+                    false, null, null, Array.Empty<string>());
             }
         }
 
@@ -363,8 +484,15 @@ public sealed class InstallExecutor : IInstallExecutor
             log(ok ? "smoke ok: " + detail : "smoke failed: " + detail);
             if (!ok)
             {
+                if (req.RebuildImage)
+                {
+                    log("smoke failed — rolling back adapter + image");
+                    await RollbackFullAsync(
+                        poco, dest, destPrev, destTmp, companionManifest, companionManifestPrev,
+                        imageTag, imagePrevTag, log, ct).ConfigureAwait(false);
+                }
                 return new InstallResult(false, "Install completed but smoke failed: " + detail, dest, imageTag, buildLog,
-                    PortSettingsStore.ParserUiUrl(), "Smoke failed.", companions.ToArray(), recreateLog,
+                    PortSettingsStore.ParserUiUrl(), "Smoke failed; rolled back when possible.", companions.ToArray(), recreateLog,
                     true, false, detail, Array.Empty<string>());
             }
         }
@@ -373,11 +501,108 @@ public sealed class InstallExecutor : IInstallExecutor
         var summary = companions.Count == 0
             ? "Adapter installed. Open the Poco parser GUI to run extractions."
             : $"Adapter installed with {companions.Count} companion source(s). Open the Poco parser GUI to run extractions.";
-        if (!string.IsNullOrWhiteSpace(imageTag))
-            summary += $" EVTX_IMAGE={imageTag}.";
+        string? resultImage = req.RebuildImage ? imageTag : null;
+        if (!string.IsNullOrWhiteSpace(resultImage))
+            summary += $" EVTX_IMAGE={resultImage}.";
 
-        return new InstallResult(true, null, dest, imageTag, buildLog, parserUiUrl, summary,
+        return new InstallResult(true, null, dest, resultImage, buildLog, parserUiUrl, summary,
             companions.ToArray(), recreateLog, smokeRan, smokeOk, smokeDetail, Array.Empty<string>());
+    }
+
+    private static async Task DockerRetagAsync(string fromTag, string toTag, Action<string> log, CancellationToken ct)
+    {
+        try
+        {
+            var psi = new ProcessStartInfo
+            {
+                FileName = "docker",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+            };
+            psi.ArgumentList.Add("image");
+            psi.ArgumentList.Add("inspect");
+            psi.ArgumentList.Add(fromTag);
+            using var inspect = Process.Start(psi);
+            if (inspect is null) return;
+            await inspect.WaitForExitAsync(ct).ConfigureAwait(false);
+            if (inspect.ExitCode != 0) return;
+
+            var tagPsi = new ProcessStartInfo
+            {
+                FileName = "docker",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+            };
+            tagPsi.ArgumentList.Add("tag");
+            tagPsi.ArgumentList.Add(fromTag);
+            tagPsi.ArgumentList.Add(toTag);
+            using var tag = Process.Start(tagPsi);
+            if (tag is null) return;
+            await tag.WaitForExitAsync(ct).ConfigureAwait(false);
+            if (tag.ExitCode == 0)
+                log($"retagged {fromTag} → {toTag}");
+        }
+        catch (Exception ex)
+        {
+            log("warn: could not snapshot previous image: " + ex.Message);
+        }
+    }
+
+    private static async Task RollbackAdapterFilesAsync(
+        string dest, string destPrev, string destTmp,
+        string companionManifest, string companionManifestPrev,
+        Action<string> log, CancellationToken ct)
+    {
+        try
+        {
+            if (File.Exists(destTmp)) File.Delete(destTmp);
+            if (File.Exists(destPrev))
+            {
+                File.Copy(destPrev, dest, overwrite: true);
+                log($"rollback adapter ← {destPrev}");
+            }
+            if (File.Exists(companionManifestPrev))
+            {
+                File.Copy(companionManifestPrev, companionManifest, overwrite: true);
+                log("rollback companion manifest");
+            }
+        }
+        catch (Exception ex)
+        {
+            log("warn: adapter file rollback failed: " + ex.Message);
+        }
+        await Task.CompletedTask.ConfigureAwait(false);
+    }
+
+    private static async Task RollbackFullAsync(
+        string poco,
+        string dest, string destPrev, string destTmp,
+        string companionManifest, string companionManifestPrev,
+        string imageTag, string imagePrevTag,
+        Action<string> log, CancellationToken ct)
+    {
+        await RollbackAdapterFilesAsync(dest, destPrev, destTmp, companionManifest, companionManifestPrev, log, ct)
+            .ConfigureAwait(false);
+        await DockerRetagAsync(imagePrevTag, imageTag, log, ct).ConfigureAwait(false);
+        PortSettingsStore.UpsertEnvVar("EVTX_IMAGE", imageTag);
+        try
+        {
+            var result = await ComposePipeline.RecreateAsync(
+                new[] { "evtx" },
+                withExtractAgent: false,
+                ct,
+                dryRun: false,
+                waitHealthy: true,
+                previousAgentPort: null,
+                onLog: log).ConfigureAwait(false);
+            log(result.Ok ? "rollback recreate ok" : "rollback recreate failed: " + result.Log);
+        }
+        catch (Exception ex)
+        {
+            log("warn: rollback recreate failed: " + ex.Message);
+        }
     }
 
     private static async Task<(bool Ok, string Detail)> SmokeEvtxAsync(string? extractFile, CancellationToken ct)
@@ -549,6 +774,13 @@ public sealed record InstallWorkRequest(
     bool? RecreateEvtx,
     bool? Smoke,
     bool? WaitHealthy,
-    string? SmokeExtractFile = null);
+    string? SmokeExtractFile = null,
+    string? Strategy = null,
+    string? ModelTag = null,
+    string? ModelDigest = null,
+    bool? CompileGatePassed = null,
+    string? OracleResult = null,
+    string? ReviewedBy = null,
+    bool IsModelAuthored = false);
 
 public sealed record CompanionFileDto(string Name, string Content);
