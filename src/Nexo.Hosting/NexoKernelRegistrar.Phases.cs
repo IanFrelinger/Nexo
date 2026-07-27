@@ -468,6 +468,7 @@ internal static partial class NexoKernelRegistrar
         services.TryAddSingleton<ISandboxedCommandRunner, DockerSandboxedCommandRunner>();
         services.TryAddSingleton<IScratchSpace, FileScratchSpace>();
         services.TryAddSingleton<IWorkspacePathPolicy, WorkspacePathPolicy>();
+        services.TryAddSingleton<IManagedFileSet, SnapshotManagedFileSet>();
         services.TryAddSingleton<ISingleFlightGuard, SingleFlightGuard>();
 
         if (modules.IncludeTrustServices)
