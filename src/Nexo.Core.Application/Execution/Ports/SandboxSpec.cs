@@ -43,9 +43,14 @@ public sealed record ResourceLimits(
 /// <param name="Network">Network policy (default callers should pass <see cref="NetworkAccess.None"/>).</param>
 /// <param name="Command">Argv to execute inside the sandbox (argv[0] is the program).</param>
 /// <param name="Limits">Optional resource caps.</param>
+/// <param name="Entrypoint">
+/// Optional opaque entrypoint override for the sandbox backend (domain-neutral —
+/// profiles supply the program name; core never names a toolchain).
+/// </param>
 public sealed record SandboxSpec(
     string? Image,
     IReadOnlyList<Mount> Mounts,
     NetworkAccess Network,
     IReadOnlyList<string> Command,
-    ResourceLimits? Limits = null);
+    ResourceLimits? Limits = null,
+    string? Entrypoint = null);

@@ -65,6 +65,21 @@ public sealed class SandboxedCommandRunnerTests
     }
 
     [Fact]
+    public void BuildDockerArguments_IncludesEntrypoint_WhenSet()
+    {
+        var spec = new SandboxSpec(
+            Image: "tool:latest",
+            Mounts: Array.Empty<Mount>(),
+            Network: NetworkAccess.None,
+            Command: new[] { "-std=c++20", "a.cpp" },
+            Entrypoint: "g++");
+
+        var args = DockerSandboxedCommandRunner.BuildDockerArguments(spec);
+
+        args.Should().ContainInOrder("--entrypoint", "g++", "tool:latest", "-std=c++20", "a.cpp");
+    }
+
+    [Fact]
     public void BuildDockerArguments_Throws_WhenImageMissing()
     {
         var spec = new SandboxSpec(

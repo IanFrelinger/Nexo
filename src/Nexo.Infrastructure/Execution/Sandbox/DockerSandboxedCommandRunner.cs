@@ -104,6 +104,12 @@ public sealed class DockerSandboxedCommandRunner : ISandboxedCommandRunner
             args.Add($"{host}:{container}{suffix}");
         }
 
+        if (!string.IsNullOrWhiteSpace(spec.Entrypoint))
+        {
+            args.Add("--entrypoint");
+            args.Add(spec.Entrypoint!);
+        }
+
         args.Add(spec.Image!);
         args.AddRange(spec.Command);
         return args;
