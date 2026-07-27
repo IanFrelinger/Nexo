@@ -68,9 +68,13 @@ public sealed class DockerSandboxProvider : ISandboxProvider
             CopyParserLeaves(parserFull, scratchRoot);
         }
 
-        string? shimFull = null;
-        if (!string.IsNullOrWhiteSpace(_options.ShimDir) && Directory.Exists(_options.ShimDir))
-            shimFull = Path.GetFullPath(_options.ShimDir);
+        // Qt shims go into the sandbox shim dir (never the operator source tree).
+        var shimFull = ResolveShimDir(scratchRoot);
+        var groundingForShims = artifact.Content ?? "";
+        if (parserFull is not null)
+            QtHeaderShims.EnsureForDirectory(groundingForShims, parserFull, shimFull);
+        else
+            QtHeaderShims.EnsureForSource(groundingForShims, shimFull);
 
         foreach (var (rel, content) in artifact.Files ?? new Dictionary<string, string>())
         {
@@ -90,6 +94,20 @@ public sealed class DockerSandboxProvider : ISandboxProvider
             shimDir: shimFull,
             image: _options.Image,
             entrypoint: _options.Entrypoint);
+    }
+
+    private string ResolveShimDir(string scratchRoot)
+    {
+        if (!string.IsNullOrWhiteSpace(_options.ShimDir))
+        {
+            var configured = Path.GetFullPath(_options.ShimDir);
+            Directory.CreateDirectory(configured);
+            return configured;
+        }
+
+        var underScratch = Path.Combine(scratchRoot, "qt-shims");
+        Directory.CreateDirectory(underScratch);
+        return underScratch;
     }
 
     private static void CopyParserLeaves(string parserRoot, string work)

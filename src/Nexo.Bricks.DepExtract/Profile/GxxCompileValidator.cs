@@ -76,10 +76,6 @@ public sealed class GxxCompileValidator : IPostValidator<GeneratedArtifact>
             }
         }
 
-        string? shimFull = null;
-        if (!string.IsNullOrWhiteSpace(_options.ShimDir) && Directory.Exists(_options.ShimDir))
-            shimFull = Path.GetFullPath(_options.ShimDir);
-
         using var scratch = _scratch.CreateScratchDir("adapter-compile");
         var work = scratch.Path;
 
@@ -99,6 +95,16 @@ public sealed class GxxCompileValidator : IPostValidator<GeneratedArtifact>
             Directory.CreateDirectory(Path.GetDirectoryName(dest)!);
             await File.WriteAllTextAsync(dest, content ?? "", ct).ConfigureAwait(false);
         }
+
+        // Qt shims into sandbox shim dir only (never parser source tree).
+        var shimFull = !string.IsNullOrWhiteSpace(_options.ShimDir)
+            ? Path.GetFullPath(_options.ShimDir)
+            : Path.Combine(work, "qt-shims");
+        Directory.CreateDirectory(shimFull);
+        if (parserFull is not null)
+            QtHeaderShims.EnsureForDirectory(output.Content ?? "", parserFull, shimFull, _logger);
+        else
+            QtHeaderShims.EnsureForSource(output.Content ?? "", shimFull, _logger);
 
         await File.WriteAllTextAsync(
             Path.Combine(work, "smoke.cpp"),
