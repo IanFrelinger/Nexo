@@ -1,3 +1,5 @@
+using Nexo.Core.Application.Execution.Ports;
+
 namespace Nexo.Infrastructure.Scaling;
 
 /// <summary>
@@ -10,11 +12,4 @@ public interface IProcessCommandRunner
         string fileName,
         IReadOnlyList<string> arguments,
         CancellationToken cancellationToken = default);
-}
-
-/// <summary>Result of a subprocess invocation.</summary>
-public sealed record ProcessCommandResult(int ExitCode, string StdOut, string StdErr)
-{
-    /// <summary>True when <see cref="ExitCode"/> is zero.</summary>
-    public bool Succeeded => ExitCode == 0;
 }

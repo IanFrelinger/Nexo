@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
+using Nexo.Core.Application.Execution.Ports;
 using Nexo.Core.Application.Scaling.Models;
 using Nexo.Infrastructure.Scaling;
 using Xunit;

@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text;
+using Nexo.Core.Application.Execution.Ports;
 
 namespace Nexo.Infrastructure.Scaling;
 

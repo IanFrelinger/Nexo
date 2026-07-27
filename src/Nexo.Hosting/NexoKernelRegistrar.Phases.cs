@@ -14,6 +14,7 @@ using Nexo.Core.Application.Common.Services;
 using Nexo.Core.Application.Copilot.Ports;
 using Nexo.Core.Application.Ephemeral.Ports;
 using Nexo.Core.Application.Knowledge.Ports;
+using Nexo.Core.Application.Execution.Ports;
 using Nexo.Core.Application.Resilience.Ports;
 using Nexo.Core.Application.Observation.Ports;
 using Nexo.Core.Application.Paths;
@@ -24,7 +25,9 @@ using Nexo.Infrastructure.Environments;
 using Nexo.Infrastructure.Execution;
 using Nexo.Infrastructure.Execution.Ephemeral;
 using Nexo.Infrastructure.Execution.LoadPolicy;
+using Nexo.Infrastructure.Execution.Sandbox;
 using Nexo.Infrastructure.Resilience;
+using Nexo.Infrastructure.Scaling;
 using Nexo.Infrastructure.Knowledge;
 using Nexo.Infrastructure.MeshLab;
 using Nexo.Infrastructure.Persistence.Ephemeral;
@@ -460,6 +463,8 @@ internal static partial class NexoKernelRegistrar
         bool useAdaptive = options.UseAdaptiveLoadBalancing ?? !string.IsNullOrEmpty(loadPref);
 
         services.TryAddSingleton<IResilientExecutor, ResilientExecutor>();
+        services.TryAddSingleton<IProcessCommandRunner, ProcessCommandRunner>();
+        services.TryAddSingleton<ISandboxedCommandRunner, DockerSandboxedCommandRunner>();
 
         if (modules.IncludeTrustServices)
         {
