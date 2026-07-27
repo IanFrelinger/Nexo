@@ -26,6 +26,7 @@ using Nexo.Infrastructure.Execution;
 using Nexo.Infrastructure.Execution.Ephemeral;
 using Nexo.Infrastructure.Execution.LoadPolicy;
 using Nexo.Infrastructure.Execution.Sandbox;
+using Nexo.Infrastructure.Execution.Scratch;
 using Nexo.Infrastructure.Resilience;
 using Nexo.Infrastructure.Scaling;
 using Nexo.Infrastructure.Knowledge;
@@ -465,6 +466,9 @@ internal static partial class NexoKernelRegistrar
         services.TryAddSingleton<IResilientExecutor, ResilientExecutor>();
         services.TryAddSingleton<IProcessCommandRunner, ProcessCommandRunner>();
         services.TryAddSingleton<ISandboxedCommandRunner, DockerSandboxedCommandRunner>();
+        services.TryAddSingleton<IScratchSpace, FileScratchSpace>();
+        services.TryAddSingleton<IWorkspacePathPolicy, WorkspacePathPolicy>();
+        services.TryAddSingleton<ISingleFlightGuard, SingleFlightGuard>();
 
         if (modules.IncludeTrustServices)
         {

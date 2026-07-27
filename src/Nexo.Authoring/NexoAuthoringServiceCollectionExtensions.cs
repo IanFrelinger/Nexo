@@ -57,10 +57,3 @@ public static class NexoAuthoringServiceCollectionExtensions
             services.GetRequiredService<TProfile>().Create(services);
     }
 }
-
-/// <summary>Factory that builds an <see cref="AgentProfile"/> from DI.</summary>
-public interface IAgentProfileFactory
-{
-    /// <summary>Creates the profile instance.</summary>
-    AgentProfile Create(IServiceProvider services);
-}
