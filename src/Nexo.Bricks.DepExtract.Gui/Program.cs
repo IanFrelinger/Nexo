@@ -720,7 +720,7 @@ app.MapPost("/api/onboard", async (OnboardApiRequest req, OnboardLoop onboard, C
         var result = await onboard.RunAsync(
             new OnboardLoop.Request(
                 req.SrcDir, req.Entries, req.Samples, req.Model,
-                req.OutlineFiles ?? 0, req.MinEvents ?? 1,
+                req.OutlineFiles ?? 0, req.MinEvents ?? 0,
                 req.MaxBuildRetries ?? 2, req.MaxCompileRetries ?? 3,
                 req.PreferScaffold ?? true),
             Resolve, Save, ct).ConfigureAwait(false);
