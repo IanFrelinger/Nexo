@@ -14,6 +14,7 @@ using Nexo.Core.Application.Common.Services;
 using Nexo.Core.Application.Copilot.Ports;
 using Nexo.Core.Application.Ephemeral.Ports;
 using Nexo.Core.Application.Knowledge.Ports;
+using Nexo.Core.Application.Resilience.Ports;
 using Nexo.Core.Application.Observation.Ports;
 using Nexo.Core.Application.Paths;
 using Nexo.Core.Application.Testing.UseCases.RunTests;
@@ -23,6 +24,7 @@ using Nexo.Infrastructure.Environments;
 using Nexo.Infrastructure.Execution;
 using Nexo.Infrastructure.Execution.Ephemeral;
 using Nexo.Infrastructure.Execution.LoadPolicy;
+using Nexo.Infrastructure.Resilience;
 using Nexo.Infrastructure.Knowledge;
 using Nexo.Infrastructure.MeshLab;
 using Nexo.Infrastructure.Persistence.Ephemeral;
@@ -457,6 +459,8 @@ internal static partial class NexoKernelRegistrar
         string? loadPref = Environment.GetEnvironmentVariable("NEXO_LOAD_PREFERENCE")?.Trim();
         bool useAdaptive = options.UseAdaptiveLoadBalancing ?? !string.IsNullOrEmpty(loadPref);
 
+        services.TryAddSingleton<IResilientExecutor, ResilientExecutor>();
+
         if (modules.IncludeTrustServices)
         {
             services.AddTrustServices(useSanitizingProviderFactory: trustEnabled, ephemeralLifecycle: ephemeralModels, skipProviderRegistration: useAdaptive);
@@ -469,7 +473,8 @@ internal static partial class NexoKernelRegistrar
             {
                 Microsoft.Extensions.Logging.ILogger<ProviderFactory> logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<ProviderFactory>>();
                 IEphemeralModelLifecycle? lifecycle = sp.GetService<IEphemeralModelLifecycle>();
-                return new ProviderFactory(logger, lifecycle);
+                IResilientExecutor resilient = sp.GetRequiredService<IResilientExecutor>();
+                return new ProviderFactory(logger, lifecycle, resilient);
             });
             services.TryAddSingleton<ILoadPolicy, PreferenceLoadPolicy>();
             services.AddSingleton<IProviderFactory>(sp =>
@@ -491,7 +496,8 @@ internal static partial class NexoKernelRegistrar
             {
                 Microsoft.Extensions.Logging.ILogger<ProviderFactory> logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<ProviderFactory>>();
                 IEphemeralModelLifecycle? lifecycle = sp.GetService<IEphemeralModelLifecycle>();
-                return new ProviderFactory(logger, lifecycle);
+                IResilientExecutor resilient = sp.GetRequiredService<IResilientExecutor>();
+                return new ProviderFactory(logger, lifecycle, resilient);
             });
         }
 

@@ -1,9 +1,9 @@
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Ephemeral.Ports;
+using Nexo.Core.Application.Resilience.Ports;
 using Nexo.Core.Domain;
 using Nexo.Infrastructure.Execution.Ollama;
-using Polly;
-using Polly.Retry;
+using Nexo.Infrastructure.Resilience;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
@@ -27,47 +27,34 @@ namespace Nexo.Infrastructure.Execution;
 /// <see cref="IsProviderAvailable"/>, and add instantiation logic in the
 /// provider-creation path.</para>
 ///
-/// <para><b>Retry policy:</b> A static Polly <see cref="AsyncRetryPolicy{T}"/>
-/// applies exponential back-off (2^attempt seconds) for HTTP 5xx,
-/// <c>429 TooManyRequests</c>, <see cref="HttpRequestException"/>, and
-/// <see cref="TaskCanceledException"/>. The retry count is read once at type
-/// initialization from <c>NEXO_LLM_RETRY_COUNT</c> (non-negative int), falling
-/// back to <see cref="NexoDefaults.LlmRetryCount"/>.</para>
+/// <para><b>Retry policy:</b> LLM/HTTP calls are folded through
+/// <see cref="IResilientExecutor"/> with exponential back-off from a 2s base
+/// delay. Transient HTTP statuses (5xx / 429) are converted to
+/// <see cref="HttpRequestException"/> so the domain-neutral
+/// <see cref="TransientClassifiers.Network"/> classifier can retry them.
+/// Provider-specific faults (e.g. <see cref="ModelUnavailableException"/>)
+/// are classified only in this infrastructure layer — never in core ports.
+/// Retry count is read from <c>NEXO_LLM_RETRY_COUNT</c> (non-negative int),
+/// falling back to <see cref="NexoDefaults.LlmRetryCount"/>.</para>
 ///
 /// <para><b>Mock provider gating:</b> Mock/offline providers are only available
 /// when <c>NEXO_ALLOW_MOCK=1</c>. This prevents accidental use in production
 /// while allowing integration tests to opt-in.</para>
 ///
-/// <para><b>Thread-safety:</b> <c>Http</c> and <c>HttpRetryPolicy</c> are static
-/// and safe for concurrent use. The Ollama provider instance is lazily cached
-/// behind <c>_ollamaProviderLock</c> and re-created only when the base URL
-/// changes (e.g. ephemeral container restart).</para>
+/// <para><b>Thread-safety:</b> <c>Http</c> is static and safe for concurrent use.
+/// The Ollama provider instance is lazily cached behind <c>_ollamaProviderLock</c>
+/// and re-created only when the base URL changes (e.g. ephemeral container restart).</para>
 /// </summary>
 public class ProviderFactory : IProviderFactory
 {
     private readonly ILogger<ProviderFactory> _logger;
     private readonly IEphemeralModelLifecycle? _ephemeralLifecycle;
+    private readonly IResilientExecutor _resilientExecutor;
     private readonly object _ollamaProviderLock = new();
     private OllamaProvider? _ollamaProvider;
     private string? _ollamaProviderBaseUrl;
     private HttpClient? _ollamaHttpClient;
     private static readonly HttpClient Http = new();
-    private static readonly AsyncRetryPolicy<HttpResponseMessage> HttpRetryPolicy = CreateHttpRetryPolicy();
-
-    // --- Retry policy (static, initialized once per AppDomain) ---
-
-    private static AsyncRetryPolicy<HttpResponseMessage> CreateHttpRetryPolicy()
-    {
-        var maxRetries = int.TryParse(Environment.GetEnvironmentVariable("NEXO_LLM_RETRY_COUNT"), out var c) && c >= 0 ? c : NexoDefaults.LlmRetryCount;
-
-        return Policy
-            .HandleResult<HttpResponseMessage>(r => (int)r.StatusCode >= 500 || r.StatusCode == HttpStatusCode.TooManyRequests)
-            .Or<HttpRequestException>()
-            .Or<TaskCanceledException>()
-            .WaitAndRetryAsync(
-                maxRetries,
-                attempt => TimeSpan.FromSeconds(Math.Pow(2, attempt)));
-    }
 
     // --- Provider catalogue ---
 
@@ -97,10 +84,15 @@ public class ProviderFactory : IProviderFactory
     /// </summary>
     /// <param name="logger">Logger for diagnostics.</param>
     /// <param name="ephemeralLifecycle">Optional ephemeral model lifecycle. When NEXO_EPHEMERAL_MODELS=1, use to resolve Ollama URL from container.</param>
-    public ProviderFactory(ILogger<ProviderFactory> logger, IEphemeralModelLifecycle? ephemeralLifecycle = null)
+    /// <param name="resilientExecutor">Optional resilient executor; defaults to <see cref="ResilientExecutor"/>.</param>
+    public ProviderFactory(
+        ILogger<ProviderFactory> logger,
+        IEphemeralModelLifecycle? ephemeralLifecycle = null,
+        IResilientExecutor? resilientExecutor = null)
     {
         _logger = logger;
         _ephemeralLifecycle = ephemeralLifecycle;
+        _resilientExecutor = resilientExecutor ?? new ResilientExecutor();
 
         try
         {
@@ -111,6 +103,43 @@ public class ProviderFactory : IProviderFactory
         {
             _logger.LogWarning(ex, "Failed to initialize Ollama provider manifest during ProviderFactory startup.");
         }
+    }
+
+    private static RetryPolicy CreateLlmRetryPolicy(Func<Exception, bool>? isTransient = null)
+    {
+        var retryCount = int.TryParse(Environment.GetEnvironmentVariable("NEXO_LLM_RETRY_COUNT"), out var c) && c >= 0
+            ? c
+            : NexoDefaults.LlmRetryCount;
+        // Polly WaitAndRetryAsync(n) performed n retries after the first try → n+1 attempts.
+        return new RetryPolicy(
+            MaxAttempts: Math.Max(1, retryCount + 1),
+            BaseDelay: TimeSpan.FromSeconds(2),
+            IsTransient: isTransient);
+    }
+
+    /// <summary>
+    /// Infrastructure-only classifier: network defaults plus provider-local
+    /// <see cref="ModelUnavailableException"/>. Kept out of core ports.
+    /// </summary>
+    private static bool IsProviderCallTransient(Exception ex) =>
+        TransientClassifiers.Network(ex) || ex is ModelUnavailableException;
+
+    private Task<HttpResponseMessage> SendHttpWithResilienceAsync(
+        Func<CancellationToken, Task<HttpResponseMessage>> send,
+        CancellationToken cancellationToken)
+    {
+        return _resilientExecutor.ExecuteAsync(async ct =>
+        {
+            var resp = await send(ct).ConfigureAwait(false);
+            if ((int)resp.StatusCode >= 500 || resp.StatusCode == HttpStatusCode.TooManyRequests)
+            {
+                var code = (int)resp.StatusCode;
+                resp.Dispose();
+                throw new HttpRequestException($"Transient HTTP status {code}");
+            }
+
+            return resp;
+        }, CreateLlmRetryPolicy(), cancellationToken);
     }
     
     /// <inheritdoc />
@@ -198,7 +227,12 @@ public class ProviderFactory : IProviderFactory
         }
 
         if (provider is "ollama")
-            return await ExecuteOllamaAsync(systemPrompt, userPrompt, null, config, cancellationToken);
+        {
+            return await _resilientExecutor.ExecuteAsync(
+                ct => ExecuteOllamaAsync(systemPrompt, userPrompt, null, config, ct),
+                CreateLlmRetryPolicy(IsProviderCallTransient),
+                cancellationToken).ConfigureAwait(false);
+        }
 
         if (provider is "local")
             return await LocalModelProvider.ExecuteAsync(systemPrompt, userPrompt, config, cancellationToken);
@@ -214,7 +248,7 @@ public class ProviderFactory : IProviderFactory
         return await ExecuteOpenAiChatCompletionAsync(url, apiKey, model, systemPrompt, userPrompt, ct);
     }
 
-    private static async Task<string> ExecuteOpenAiChatCompletionAsync(
+    private async Task<string> ExecuteOpenAiChatCompletionAsync(
         string requestUrl,
         string apiKey,
         string model,
@@ -234,14 +268,14 @@ public class ProviderFactory : IProviderFactory
         };
         var json = JsonSerializer.Serialize(payload);
 
-        using var resp = await HttpRetryPolicy.ExecuteAsync(() =>
+        using var resp = await SendHttpWithResilienceAsync(token =>
         {
             using var req = new HttpRequestMessage(HttpMethod.Post, requestUrl);
             req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", apiKey);
             req.Content = new StringContent(json);
             req.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-            return Http.SendAsync(req, ct);
-        });
+            return Http.SendAsync(req, token);
+        }, ct).ConfigureAwait(false);
         var body = await resp.Content.ReadAsStringAsync(ct);
         resp.EnsureSuccessStatusCode();
 
@@ -272,14 +306,14 @@ public class ProviderFactory : IProviderFactory
         };
         var json = JsonSerializer.Serialize(payload);
 
-        using var resp = await HttpRetryPolicy.ExecuteAsync(() =>
+        using var resp = await SendHttpWithResilienceAsync(token =>
         {
             using var req = new HttpRequestMessage(HttpMethod.Post, url);
             req.Headers.Add("api-key", apiKey);
             req.Content = new StringContent(json);
             req.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-            return Http.SendAsync(req, ct);
-        });
+            return Http.SendAsync(req, token);
+        }, ct).ConfigureAwait(false);
         var body = await resp.Content.ReadAsStringAsync(ct);
         resp.EnsureSuccessStatusCode();
 
