@@ -125,14 +125,18 @@ public sealed class GenerativeArtifactBrick : GenerativeBrick
             }
         }
 
-        // Re-validate deterministic path through profile validators when present.
-        if (artifact.Provenance is null
-            && profile.Validators.OfType<IPostValidator<GeneratedArtifact>>().Any())
+        // Profile drafters may attach grounding signals (UnsupportedReferences,
+        // Confidence, Assumptions). Preserve them when the brick synthesizes the
+        // final provenance. Re-run validators on non-model paths even when the
+        // drafter already set artifact.Provenance (model path already validated
+        // inside GenerationRepairLoop).
+        var draftProv = artifact.Provenance;
+        var postValidators = profile.Validators.OfType<IPostValidator<GeneratedArtifact>>().ToArray();
+        if (provenance.Strategy != GenerationStrategy.Model && postValidators.Length > 0)
         {
-            var validators = profile.Validators.OfType<IPostValidator<GeneratedArtifact>>().ToArray();
             var allOk = true;
             var warnings = new List<string>();
-            foreach (var v in validators)
+            foreach (var v in postValidators)
             {
                 var (ok, reason) = await v.ValidateAsync(artifact, cancellationToken).ConfigureAwait(false);
                 if (!ok)
@@ -147,8 +151,26 @@ public sealed class GenerativeArtifactBrick : GenerativeBrick
                 GenerativeProvenance.Create(
                     provenance.Strategy,
                     verified: allOk,
-                    warnings: warnings,
-                    requiresHumanReview: provenance.RequiresHumanReview || !allOk),
+                    confidence: draftProv?.Confidence,
+                    warnings: MergeNotes(warnings, draftProv?.Warnings),
+                    assumptions: draftProv?.Assumptions,
+                    unsupportedReferences: draftProv?.UnsupportedReferences,
+                    requiresHumanReview: provenance.RequiresHumanReview
+                        || !allOk
+                        || (draftProv?.RequiresHumanReview ?? false)),
+                context);
+        }
+        else if (draftProv is not null)
+        {
+            provenance = ApplyAuditPolicy(
+                GenerativeProvenance.Create(
+                    provenance.Strategy,
+                    verified: provenance.Verified,
+                    confidence: draftProv.Confidence ?? provenance.Confidence,
+                    warnings: MergeNotes(provenance.Warnings, draftProv.Warnings),
+                    assumptions: draftProv.Assumptions.Count > 0 ? draftProv.Assumptions : provenance.Assumptions,
+                    unsupportedReferences: draftProv.UnsupportedReferences,
+                    requiresHumanReview: provenance.RequiresHumanReview || draftProv.RequiresHumanReview),
                 context);
         }
 
@@ -180,5 +202,16 @@ public sealed class GenerativeArtifactBrick : GenerativeBrick
             output.Set("deploymentResult", deployment);
         EmitProvenance(output, provenance);
         return output;
+    }
+
+    private static IReadOnlyList<string> MergeNotes(
+        IReadOnlyList<string>? primary,
+        IReadOnlyList<string>? secondary)
+    {
+        if (primary is null || primary.Count == 0)
+            return secondary ?? Array.Empty<string>();
+        if (secondary is null || secondary.Count == 0)
+            return primary;
+        return primary.Concat(secondary).Distinct(StringComparer.Ordinal).ToArray();
     }
 }
