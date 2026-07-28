@@ -1,4 +1,5 @@
 using Nexo.Core.Application.Execution.Ports;
+using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Bricks.Ports;
 
 namespace Nexo.Bricks.DepExtract.Profile;
@@ -58,10 +59,11 @@ public sealed class PocoInstallTargetOptions
 /// <summary>
 /// Profile <see cref="IDeploymentTarget"/>: ports InstallExecutor onto
 /// <see cref="IManagedFileSet"/> + <see cref="ISingleFlightGuard"/> + injectable
-/// <see cref="IPocoDeploymentOps"/>. Failed build/recreate/smoke rolls back the
-/// managed file set and prior image tag.
+/// <see cref="IPocoDeploymentOps"/>. Failed build/recreate rolls back the
+/// managed file set and prior image tag. The post-smoke ship/rollback verdict is
+/// delegated to the profile's <see cref="IAcceptanceEvaluator"/>.
 /// </summary>
-public sealed class PocoInstallTarget : IDeploymentTarget
+public sealed class PocoInstallTarget : IAcceptanceGatedDeploymentTarget
 {
     /// <summary>Services the agent may recreate (parity with ComposePipeline).</summary>
     public static readonly HashSet<string> AllowedServices = new(StringComparer.OrdinalIgnoreCase)
@@ -94,18 +96,27 @@ public sealed class PocoInstallTarget : IDeploymentTarget
     /// <inheritdoc />
     public Task<DeploymentApplyResult> ApplyAsync(
         GeneratedArtifact artifact,
+        CancellationToken cancellationToken = default) =>
+        ApplyAsync(artifact, DefaultAcceptanceEvaluator.Instance, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<DeploymentApplyResult> ApplyAsync(
+        GeneratedArtifact artifact,
+        IAcceptanceEvaluator acceptance,
         CancellationToken cancellationToken = default)
     {
         if (artifact is null) throw new ArgumentNullException(nameof(artifact));
+        if (acceptance is null) throw new ArgumentNullException(nameof(acceptance));
 
         return _flight.RunExclusiveAsync(
             _options.FlightKey,
-            ct => ApplyCoreAsync(artifact, ct),
+            ct => ApplyCoreAsync(artifact, acceptance, ct),
             cancellationToken);
     }
 
     private async Task<DeploymentApplyResult> ApplyCoreAsync(
         GeneratedArtifact artifact,
+        IAcceptanceEvaluator acceptance,
         CancellationToken ct)
     {
         _ops.EnsureStackIdentity();
@@ -249,16 +260,30 @@ public sealed class PocoInstallTarget : IDeploymentTarget
             }
         }
 
+        // Capture smoke output; the verdict on it is not ours to make.
+        var smoke = DeploymentSmokeResult.NotRun;
         if (_options.Smoke || !string.IsNullOrWhiteSpace(_options.SmokeExtractFile))
         {
             var (smokeOk, detail) = await _ops.SmokeAsync(_options.SmokeExtractFile, ct)
                 .ConfigureAwait(false);
-            if (!smokeOk)
-            {
-                if (_options.RebuildImage)
-                    await RollbackFullAsync(ct).ConfigureAwait(false);
-                return Fail("Install completed but smoke failed: " + detail, imageTag);
-            }
+            smoke = smokeOk
+                ? DeploymentSmokeResult.Pass(detail)
+                : DeploymentSmokeResult.Fail(detail);
+        }
+
+        // Acceptance runs AFTER smoke and BEFORE the deployment is committed.
+        var verdict = acceptance.Evaluate(new AcceptanceContext(artifact, ProvenanceOf(artifact), smoke));
+        if (verdict.Decision == AcceptanceDecision.Rollback)
+        {
+            if (_options.RebuildImage)
+                await RollbackFullAsync(ct).ConfigureAwait(false);
+            else
+                await RollbackFilesAsync(ct).ConfigureAwait(false);
+
+            var signals = verdict.Signals.Count == 0
+                ? ""
+                : " [" + string.Join(", ", verdict.Signals) + "]";
+            return Fail("acceptance rejected the deployment: " + verdict.Reason + signals, imageTag);
         }
 
         var dest = Path.Combine(commonRoot, "adapted_reader.hpp");
@@ -271,6 +296,13 @@ public sealed class PocoInstallTarget : IDeploymentTarget
             Destination = dest
         };
     }
+
+    // The engine attaches provenance before deploying. Direct callers (host loops,
+    // tests) may hand over a bare artifact; treat that as a verified scaffold so the
+    // acceptance verdict rests on the smoke evidence rather than a missing header.
+    private static GenerativeProvenance ProvenanceOf(GeneratedArtifact artifact) =>
+        artifact.Provenance
+        ?? GenerativeProvenance.Create(GenerationStrategy.Templated, verified: true);
 
     private string ResolvePocoContext()
     {

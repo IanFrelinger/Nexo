@@ -54,6 +54,13 @@ public sealed class AgentProfile
     /// <summary>Optional deployment target.</summary>
     public IDeploymentTarget? Deployment { get; init; }
 
+    /// <summary>
+    /// Optional post-install ship/rollback function. Distinct from
+    /// <see cref="Validators"/>, which give the in-loop verdict on a draft. When
+    /// null the deploy flow uses <see cref="DefaultAcceptanceEvaluator"/>.
+    /// </summary>
+    public IAcceptanceEvaluator? Acceptance { get; init; }
+
     /// <summary>Domain knowledge for prompts/rules.</summary>
     public DomainKnowledge Knowledge { get; init; } = new();
 

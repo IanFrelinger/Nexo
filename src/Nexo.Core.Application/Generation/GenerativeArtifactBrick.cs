@@ -199,7 +199,12 @@ public sealed class GenerativeArtifactBrick : GenerativeBrick
             && provenance.Verified
             && !provenance.RequiresHumanReview)
         {
-            deployment = await profile.Deployment.ApplyAsync(artifact, cancellationToken).ConfigureAwait(false);
+            // AgentProfile.Acceptance is the single source of truth for the
+            // post-install verdict; targets that gate on it receive it here.
+            var acceptance = profile.Acceptance ?? DefaultAcceptanceEvaluator.Instance;
+            deployment = profile.Deployment is IAcceptanceGatedDeploymentTarget gated
+                ? await gated.ApplyAsync(artifact, acceptance, cancellationToken).ConfigureAwait(false)
+                : await profile.Deployment.ApplyAsync(artifact, cancellationToken).ConfigureAwait(false);
         }
 
         var output = new BrickOutput
