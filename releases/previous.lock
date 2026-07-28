@@ -1,4 +1,0 @@
-# Immutable index-manifest refs promoted for the current extractor release.
-DEPLOY_AGENT_IMAGE=ghcr.io/ianfrelinger/nexo-dep-extract-agent@sha256:e70328b3a5631de11ca2aadd2873fe7cd49e663ac8ba8bba5679ec02ee048a04
-DEPLOY_TOOL_IMAGE=ghcr.io/ianfrelinger/nexo-dep-extract-tool@sha256:8f8baaf48d5f1f7a75f13e72a8b1734629a1a0e339d5056bf4b614fedefa0905
-DEPLOY_DIGEST_KIND=index

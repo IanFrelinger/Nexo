@@ -1,7 +1,0 @@
-# dep_extract manifest
-# entry file(s):
-#   QThreadEvtqStream.hpp
-#
-# LOWER — needed to compile the entry (bring these along): 0 files
-#
-# UPPER — files under . that (transitively) include the entry: 0 files

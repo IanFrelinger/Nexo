@@ -1,5 +1,0 @@
-# Local shipping-candidate (not for production pull). Promote via scripts/promote-shipping-candidate.sh.
-# Requires NEXO_ALLOW_LOCAL_IMAGES=1 until pushed to GHCR.
-DEPLOY_AGENT_IMAGE=nexo-dep-extract-agent:shipping-candidate
-DEPLOY_TOOL_IMAGE=ghcr.io/ianfrelinger/nexo-dep-extract-tool@sha256:8f8baaf48d5f1f7a75f13e72a8b1734629a1a0e339d5056bf4b614fedefa0905
-DEPLOY_DIGEST_KIND=local-candidate

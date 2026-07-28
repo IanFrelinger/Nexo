@@ -1,9 +1,0 @@
-# dep_extract manifest
-# entry file(s):
-#   core/NestedStream.hpp
-#
-# LOWER — needed to compile the entry (bring these along): 2 files
-lower  core/Checksum.hpp
-lower  util/Types.hpp
-#
-# UPPER — files under . that (transitively) include the entry: 0 files
