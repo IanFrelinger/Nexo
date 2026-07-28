@@ -215,6 +215,14 @@ public sealed class GenerativeArtifactBrick : GenerativeBrick
                 // AgentProfile.Acceptance is the single source of truth for the
                 // post-install verdict; targets that gate on it receive it here.
                 var acceptance = profile.Acceptance ?? DefaultAcceptanceEvaluator.Instance;
+
+                // The artifact still carries RequiresHumanReview, and evaluators
+                // rightly rollback on that signal. Without this the gate would be
+                // theatre: the human approves, then acceptance rejects on the very
+                // ground the approval just cleared. Carry the verdict forward.
+                if (humanApproved == true)
+                    acceptance = new HumanApprovedAcceptanceEvaluator(acceptance);
+
                 deployment = profile.Deployment is IAcceptanceGatedDeploymentTarget gated
                     ? await gated.ApplyAsync(artifact, acceptance, cancellationToken).ConfigureAwait(false)
                     : await profile.Deployment.ApplyAsync(artifact, cancellationToken).ConfigureAwait(false);
@@ -235,6 +243,35 @@ public sealed class GenerativeArtifactBrick : GenerativeBrick
             output.Set("humanApproved", approved);
         EmitProvenance(output, provenance);
         return output;
+    }
+
+    /// <summary>
+    /// Decorates the profile's evaluator for an artifact a human has already
+    /// approved: a Rollback caused SOLELY by the pending-human-review signal
+    /// becomes a Ship, because the approval gate just cleared exactly that.
+    /// Every other Rollback ground — failed smoke, unverified provenance —
+    /// still stands. Approval is permission to ship a *reviewed* artifact, not
+    /// permission to overrule evidence.
+    /// </summary>
+    private sealed class HumanApprovedAcceptanceEvaluator : IAcceptanceEvaluator
+    {
+        private readonly IAcceptanceEvaluator _inner;
+
+        public HumanApprovedAcceptanceEvaluator(IAcceptanceEvaluator inner) => _inner = inner;
+
+        public AcceptanceResult Evaluate(AcceptanceContext context)
+        {
+            var verdict = _inner.Evaluate(context);
+            if (verdict.Decision != AcceptanceDecision.Rollback
+                || !AcceptanceRouting.RequiresHumanReview(verdict))
+            {
+                return verdict;
+            }
+
+            return AcceptanceResult.Ship(
+                "approved by human review: " + verdict.Reason,
+                verdict.Signals.Concat(new[] { "human-approved" }).ToArray());
+        }
     }
 
     /// <summary>
