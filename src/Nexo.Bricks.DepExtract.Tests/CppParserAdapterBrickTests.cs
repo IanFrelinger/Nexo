@@ -7,6 +7,7 @@ using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Bricks.Ports;
 using Nexo.Core.Domain.Execution;
 using Nexo.Infrastructure.Execution;
+using Nexo.Agents.TestKit;
 using Xunit;
 
 namespace Nexo.Bricks.DepExtract.Tests;
@@ -28,7 +29,7 @@ public sealed class CppParserAdapterBrickTests : IDisposable
 
     private static FakeContext Ctx() => new();
 
-    [Fact]
+    [LiveModelFact]
     public async Task Pipeline_extract_then_adapt_produces_draft_referencing_real_api()
     {
         var extractInput = new BrickInput(new Dictionary<string, object>

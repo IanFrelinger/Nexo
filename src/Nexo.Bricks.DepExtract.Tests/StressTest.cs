@@ -10,6 +10,7 @@ using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Bricks.Ports;
 using Nexo.Core.Domain.Execution;
 using Nexo.Infrastructure.Execution;
+using Nexo.Agents.TestKit;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -73,7 +74,7 @@ public sealed class StressTest
             ["GraphReader", "open", "next", "seekRecord", "PluginBridge"], "deep relative includes across engine/ + plugins/");
     }
 
-    [Theory]
+    [LiveStackTheory]
     [MemberData(nameof(Tiers))]
     public async Task Pipeline_handles_tier(string dir, string[] entries, string[] knownSymbols, string note,
         string[] includeDirs, string[] defines)

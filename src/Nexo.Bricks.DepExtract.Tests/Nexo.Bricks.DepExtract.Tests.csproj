@@ -9,6 +9,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Nexo.Bricks.DepExtract\Nexo.Bricks.DepExtract.csproj" />
+    <ProjectReference Include="..\Nexo.Agents.TestKit\Nexo.Agents.TestKit.csproj" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />

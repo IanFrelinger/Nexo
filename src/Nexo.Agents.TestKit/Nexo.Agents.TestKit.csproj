@@ -18,4 +18,12 @@
     <ProjectReference Include="..\Nexo.Infrastructure\Nexo.Infrastructure.csproj" />
   </ItemGroup>
 
+  <!-- The conformance base suite ships [Fact]s that derived test projects inherit;
+       xunit is a library dependency here, not a test-runner dependency. -->
+  <ItemGroup>
+    <PackageReference Include="xunit" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+  </ItemGroup>
+
 </Project>
