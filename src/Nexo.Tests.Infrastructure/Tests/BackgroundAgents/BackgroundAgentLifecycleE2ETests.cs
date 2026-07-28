@@ -13,7 +13,6 @@ using Nexo.BackgroundAgents.Registry;
 using Nexo.BackgroundAgents.Scheduling;
 using Nexo.BackgroundAgents.Trust;
 using Nexo.Core.Application.Trust.Models;
-using Nexo.Core.Application.Trust.Ports;
 using Nexo.Core.Domain;
 using Nexo.Orchestration.Agents;
 using Nexo.Tests.Infrastructure.Helpers;

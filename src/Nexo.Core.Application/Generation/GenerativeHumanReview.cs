@@ -21,7 +21,7 @@ public static class GenerativeHumanReview
         TimeSpan timeout,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(provenance);
+        if (provenance is null) throw new ArgumentNullException(nameof(provenance)); // ThrowIfNull unavailable on netstandard2.0
         if (!provenance.RequiresHumanReview)
             return Task.FromResult(ApprovalResult.Approved);
 
