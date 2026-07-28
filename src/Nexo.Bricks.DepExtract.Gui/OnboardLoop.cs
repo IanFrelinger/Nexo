@@ -2,7 +2,9 @@ using System.Diagnostics;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using Nexo.Bricks.DepExtract;
+using Nexo.Bricks.DepExtract.Profile;
 using Nexo.Core.Domain.Bricks;
+using Nexo.Core.Domain.Bricks.Ports;
 using Nexo.Core.Domain.Execution;
 
 namespace Nexo.Bricks.DepExtract.Gui;
@@ -13,7 +15,7 @@ namespace Nexo.Bricks.DepExtract.Gui;
 ///   Qt triage via stub-compile probe → draft/gate/install →
 ///   golden-file oracle against operator-supplied sample files.
 ///
-/// The oracle substitutes for human review only when <see cref="OracleEvaluator"/>
+/// The oracle substitutes for human review only when <see cref="Nexo.Bricks.DepExtract.Profile.CsvSmokeEvaluator"/>
 /// passes every check (min events, multi-sample agreement, field sanity). Without
 /// samples, model drafts stop for human review. Failed post-install oracle checks
 /// trigger <see cref="InstallExecutor.RollbackPreviousAsync"/>. Everything runs
@@ -44,7 +46,7 @@ public sealed class OnboardLoop
         string[]? Samples,          // workspace paths to native-format sample files (golden oracle)
         string? Model,
         int OutlineFiles = 0,       // 0 = skip the outline pass
-        int MinEvents = 0, // 0 → OracleEvaluator.DefaultMinEvents (>= 5)
+        int MinEvents = 0, // 0 → CsvSmokeEvaluatorOptions.DefaultMinRows (>= 5)
         int MaxBuildRetries = 2,
         int? MaxCompileRetries = 3,
         bool PreferScaffold = true);
@@ -206,7 +208,7 @@ public sealed class OnboardLoop
 
         // ---- 6. Oracle staging ---------------------------------------------------
         var oracleMode = req.Samples is { Length: > 0 };
-        var minEvents = req.MinEvents > 0 ? req.MinEvents : OracleEvaluator.DefaultMinEvents;
+        var minEvents = req.MinEvents > 0 ? req.MinEvents : CsvSmokeEvaluatorOptions.DefaultMinRows;
         var stagedSamples = new List<(string Original, string Staged)>();
         string? smokeFile = null;
         if (oracleMode)
@@ -224,7 +226,7 @@ public sealed class OnboardLoop
         // ---- 7. Draft → gate → install → smoke(oracle) ----------------------------
         // Model drafts still require ConfirmModelReview for /api/adapt-cycle.
         // Onboard oracle path may auto-install model output ONLY via OracleAutoInstall;
-        // Ok stays false unless OracleEvaluator passes every check (multi-sample + fields).
+        // Ok stays false unless CsvSmokeEvaluator passes every check (multi-sample + fields).
         var loopReq = new AdaptInstallLoop.Request(
             planId,
             poco,
@@ -243,30 +245,48 @@ public sealed class OnboardLoop
         var run = await _adaptLoop.RunAsync(loopReq, resolvePlan, savePlan, ct).ConfigureAwait(false);
 
         int? rows = null;
-        OracleEvaluator.Verdict? verdict = null;
+        AcceptanceResult? verdict = null;
         var oracleOk = !oracleMode;
         if (oracleMode)
         {
-            var sampleInputs = new List<(string Sample, string? SmokeDetail, string? Csv)>();
+            // Capture evidence only; the verdict belongs to the profile's evaluator.
+            var captured = new Dictionary<string, string>(StringComparer.Ordinal);
+            var details = new List<string>();
+            var allReached = true;
             foreach (var (orig, staged) in stagedSamples)
             {
-                var (ok, smokeDetail, body) = await SmokeSampleAsync(staged, ct).ConfigureAwait(false);
-                if (!ok)
-                    _log.LogWarning("Oracle sample {Sample} smoke failed: {Detail}", orig, smokeDetail);
-                sampleInputs.Add((orig, smokeDetail, body));
+                var (reached, smokeDetail, body) = await SmokeSampleAsync(staged, ct).ConfigureAwait(false);
+                if (!reached)
+                {
+                    allReached = false;
+                    _log.LogWarning("Oracle sample {Sample} smoke did not complete: {Detail}", orig, smokeDetail);
+                }
+                details.Add($"{orig}: {smokeDetail}");
+                if (!string.IsNullOrWhiteSpace(body))
+                    captured[orig] = body!;
             }
 
-            verdict = OracleEvaluator.Evaluate(sampleInputs, minEvents);
-            rows = verdict.Samples.Count > 0 ? verdict.Samples.Min(s => s.Rows) : null;
-            oracleOk = run.Ok && verdict.AllPassed;
-            if (run.Ok && verdict.AllPassed)
+            var smoke = allReached
+                ? DeploymentSmokeResult.Pass(string.Join("; ", details), captured)
+                : DeploymentSmokeResult.Fail(string.Join("; ", details), captured);
+
+            verdict = new CsvSmokeEvaluator(new CsvSmokeEvaluatorOptions { MinRows = minEvents })
+                .Evaluate(new AcceptanceContext(
+                    new GeneratedArtifact { Content = "" },
+                    GenerativeProvenance.Create(GenerationStrategy.Templated, verified: run.Ok),
+                    smoke));
+
+            rows = captured.Count > 0 ? captured.Values.Min(CountDataRows) : null;
+            var accepted = verdict.Decision == AcceptanceDecision.Ship;
+            oracleOk = run.Ok && accepted;
+            if (run.Ok && accepted)
             {
                 await InstallExecutor.UpdateInstalledProvenanceAsync(poco, "pass", "oracle", ct)
                     .ConfigureAwait(false);
             }
-            else if (run.Ok && !verdict.AllPassed)
+            else if (run.Ok && !accepted)
             {
-                _log.LogWarning("Oracle checks failed after install — rolling back: {Summary}", verdict.Summary);
+                _log.LogWarning("Acceptance rejected the install — rolling back: {Reason}", verdict.Reason);
                 try
                 {
                     await InstallExecutor.UpdateInstalledProvenanceAsync(poco, "fail", "oracle", ct)
@@ -285,8 +305,8 @@ public sealed class OnboardLoop
         var stage = run.Ok ? (oracleOk ? "done" : "oracle") : "adapt";
         var summary = run.Ok
             ? oracleOk
-                ? $"Onboarded via {triage} path: {run.Summary} {verdict?.Summary ?? $"Oracle: rows>={minEvents}"}"
-                : $"Installed but oracle UNVERIFIED — {verdict?.Summary ?? $"rows={rows} < min={minEvents}"}"
+                ? $"Onboarded via {triage} path: {run.Summary} {verdict?.Reason ?? $"Acceptance: rows>={minEvents}"}"
+                : $"Installed but acceptance REJECTED — {verdict?.Reason ?? $"rows={rows} < min={minEvents}"}"
             : run.Summary;
 
         return new Result(
@@ -347,14 +367,22 @@ public sealed class OnboardLoop
             var csv = await result.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
             if (!result.IsSuccessStatusCode)
                 return (false, $"result HTTP {(int)result.StatusCode}", null);
-            var dataRows = OracleEvaluator.CountDataRows(csv);
-            return (dataRows > 0, $"health+extract ok rows={dataRows} job={jobId}", csv);
+            // Reaching here means the extract round-trip completed. Whether the CSV
+            // is GOOD ENOUGH is the acceptance evaluator's call, not ours — a bare
+            // rows>0 here was the MinEvents=1 oracle.
+            var dataRows = CountDataRows(csv);
+            return (true, $"health+extract ok rows={dataRows} job={jobId}", csv);
         }
         catch (Exception ex)
         {
             return (false, ex.Message, null);
         }
     }
+
+    static int CountDataRows(string csv) =>
+        csv.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Skip(1)
+            .Count();
 
     // ------------------------------------------------------------------------
 

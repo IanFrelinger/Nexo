@@ -27,6 +27,8 @@ public sealed class SqlAgentProfileFactory : IAgentProfileFactory
             Validators = new object[] { new SqlParseValidator() },
             Sandbox = null,
             Deployment = null,
+            // Same port as the C++ profile, no container in sight.
+            Acceptance = new ExplainAcceptanceEvaluator(),
             Knowledge = new DomainKnowledge
             {
                 Standards = new[] { "SQL-92 subset" },

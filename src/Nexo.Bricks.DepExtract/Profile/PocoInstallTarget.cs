@@ -264,11 +264,12 @@ public sealed class PocoInstallTarget : IAcceptanceGatedDeploymentTarget
         var smoke = DeploymentSmokeResult.NotRun;
         if (_options.Smoke || !string.IsNullOrWhiteSpace(_options.SmokeExtractFile))
         {
-            var (smokeOk, detail) = await _ops.SmokeAsync(_options.SmokeExtractFile, ct)
+            var (smokeOk, detail, outputs) = await _ops
+                .SmokeWithOutputsAsync(_options.SmokeExtractFile, ct)
                 .ConfigureAwait(false);
             smoke = smokeOk
-                ? DeploymentSmokeResult.Pass(detail)
-                : DeploymentSmokeResult.Fail(detail);
+                ? DeploymentSmokeResult.Pass(detail, outputs)
+                : DeploymentSmokeResult.Fail(detail, outputs);
         }
 
         // Acceptance runs AFTER smoke and BEFORE the deployment is committed.

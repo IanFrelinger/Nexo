@@ -96,6 +96,9 @@ public sealed class CppEvtxProfileFactory : IAgentProfileFactory
                     RecreateEvtx = true,
                     Strategy = "scaffold"
                 }),
+            // Post-install ship/rollback verdict. Row-count sanity + field/shape
+            // checks on the captured extract — never "one row is enough".
+            Acceptance = new CsvSmokeEvaluator(),
             Knowledge = new DomainKnowledge
             {
                 Standards = new[] { "IEventReader / fileproc contract", "air-gapped local model draft" },

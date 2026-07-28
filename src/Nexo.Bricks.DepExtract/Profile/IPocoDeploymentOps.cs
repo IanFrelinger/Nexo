@@ -27,6 +27,20 @@ public interface IPocoDeploymentOps
     /// <summary>Smoke health and optional /extract.</summary>
     Task<(bool Ok, string Detail)> SmokeAsync(string? extractFile, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Smoke health and optional /extract, additionally returning captured bodies
+    /// keyed by sample name so an <see cref="Nexo.Core.Domain.Bricks.Ports.IAcceptanceEvaluator"/>
+    /// can judge the content rather than a bare pass/fail. Implementations that cannot
+    /// capture bodies inherit the default and report none.
+    /// </summary>
+    async Task<(bool Ok, string Detail, IReadOnlyDictionary<string, string> Outputs)> SmokeWithOutputsAsync(
+        string? extractFile,
+        CancellationToken cancellationToken)
+    {
+        var (ok, detail) = await SmokeAsync(extractFile, cancellationToken).ConfigureAwait(false);
+        return (ok, detail, new Dictionary<string, string>());
+    }
+
     /// <summary>Upsert a compose/env variable (e.g. EVTX_IMAGE).</summary>
     void UpsertEnvVar(string key, string value);
 }

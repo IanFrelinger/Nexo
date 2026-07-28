@@ -45,7 +45,7 @@ public sealed class AdaptInstallLoop
         /// <summary>
         /// When true (golden-file oracle path), a model-authored draft may install without
         /// human ConfirmModelReview — but the caller MUST treat Ok as failure unless
-        /// <see cref="OracleEvaluator"/> passes all checks (and should roll back on fail).
+        /// the profile acceptance evaluator passes all checks (and should roll back on fail).
         /// </summary>
         bool OracleAutoInstall = false);
 
