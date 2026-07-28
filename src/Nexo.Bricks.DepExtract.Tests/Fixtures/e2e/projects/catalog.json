@@ -1,0 +1,118 @@
+{
+  "description": "Mock proprietary parsers for DepExtract → Poco adapt E2E coverage.",
+  "projects": [
+    {
+      "id": "P01_SimpleTickPull",
+      "title": "Single-class advance(long&) pull API",
+      "expectedStrategy": "scaffold",
+      "entries": ["SimpleTickStream.hpp"],
+      "requireCompile": true,
+      "fullExtract": false,
+      "must": ["Drive next() from SimpleTickStream::advance"],
+      "mustNot": ["Ignore the recording path"]
+    },
+    {
+      "id": "P02_NextEventNamed",
+      "title": "nextEvent naming variant (scaffold maps pull alias)",
+      "expectedStrategy": "scaffold",
+      "entries": ["SensorTap.hpp"],
+      "requireCompile": true,
+      "fullExtract": false,
+      "must": ["Call SensorTap::nextEvent from CustomEventReader::next"],
+      "mustNot": ["Synthesize events without calling nextEvent"]
+    },
+    {
+      "id": "P03_DualHeaderBody",
+      "title": "Two-class surface (header + body reader)",
+      "expectedStrategy": "scaffold",
+      "entries": ["FlightBodyReader.hpp"],
+      "requireCompile": true,
+      "fullExtract": false,
+      "must": ["Use FlightBodyReader as the pull surface"],
+      "mustNot": ["Call APIs that are not declared on FlightBodyReader"]
+    },
+    {
+      "id": "P04_LegacyRadar",
+      "title": "Irregular proprietary radar log (forces model strategy)",
+      "expectedStrategy": "model",
+      "entries": ["LegacyRadarLog.hpp"],
+      "requireCompile": true,
+      "includeUpper": true,
+      "fullExtract": false,
+      "needsLlm": true,
+      "must": [
+        "Call LegacyRadarLog::readNextContact to drive CustomEventReader::next",
+        "Map RadarContact.timestampSeconds into Event.t"
+      ],
+      "mustNot": ["Invent APIs that are not on LegacyRadarLog"]
+    },
+    {
+      "id": "P05_SessionFactory",
+      "title": "Factory + abstract session (forces model strategy)",
+      "expectedStrategy": "model",
+      "entries": ["SessionFactory.hpp"],
+      "requireCompile": true,
+      "includeUpper": true,
+      "fullExtract": false,
+      "needsLlm": true,
+      "must": ["Open sessions via SessionFactory and read via ISession::readRecord"],
+      "mustNot": ["Bypass the factory and construct concrete sessions directly without the factory API"]
+    },
+    {
+      "id": "P06_ChunkedCursor",
+      "title": "Chunked cursor with seek (forces model strategy)",
+      "expectedStrategy": "model",
+      "entries": ["ChunkCursor.hpp"],
+      "requireCompile": true,
+      "includeUpper": true,
+      "fullExtract": false,
+      "needsLlm": true,
+      "must": ["Use ChunkCursor::readChunk / seekTo to populate Event fields"],
+      "mustNot": ["Assume contiguous scalar advance(long&) only"]
+    },
+    {
+      "id": "P07_EvtqTwin",
+      "title": "EVTQ-compatible twin (scaffold + full install/extract)",
+      "expectedStrategy": "scaffold",
+      "entries": ["TwinEvtqStream.hpp"],
+      "requireCompile": true,
+      "fullExtract": true,
+      "extractFile": "tiny_smoke.evtq",
+      "adaptCycle": true,
+      "must": ["Drive next() from TwinEvtqStream::pull reading the EVTQ file path"],
+      "mustNot": ["Ignore the recording path / synthesize counter-only events"]
+    },
+    {
+      "id": "P08_NoPullSurface",
+      "title": "No pull/advance API (must not scaffold successfully)",
+      "expectedStrategy": "model",
+      "entries": ["ConfigBlob.hpp"],
+      "requireCompile": false,
+      "fullExtract": false,
+      "needsLlm": true,
+      "must": ["Do not invent a pull API on ConfigBlob"],
+      "mustNot": ["Call advance/next/pull on ConfigBlob"]
+    },
+    {
+      "id": "P09_Path With Spaces",
+      "title": "Proprietary directory path contains spaces",
+      "expectedStrategy": "scaffold",
+      "entries": ["TickSpaceStream.hpp"],
+      "requireCompile": true,
+      "fullExtract": false,
+      "must": ["Drive next() from TickSpaceStream::advance"],
+      "mustNot": ["Ignore the recording path"]
+    },
+    {
+      "id": "P10_NeedsCompanion",
+      "title": "Out-of-line .cpp definition (compile gate must link companion)",
+      "expectedStrategy": "scaffold",
+      "entries": ["StreamWithCpp.hpp"],
+      "includeUpper": true,
+      "requireCompile": true,
+      "fullExtract": false,
+      "must": ["Drive next() from StreamWithCpp::advance"],
+      "mustNot": ["Ignore StreamWithCpp.cpp"]
+    }
+  ]
+}
