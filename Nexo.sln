@@ -145,6 +145,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.Tests.AI.Pipeline", "s
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.Bricks.SqlProfile", "src\Nexo.Bricks.SqlProfile\Nexo.Bricks.SqlProfile.csproj", "{AD699FA0-BD04-480A-9FAD-11A0E8972EA6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.Agents.TestKit", "src\Nexo.Agents.TestKit\Nexo.Agents.TestKit.csproj", "{275010BE-F67F-4538-946D-A5F8BC6BFCB1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -947,6 +949,18 @@ Global
 		{AD699FA0-BD04-480A-9FAD-11A0E8972EA6}.Release|x64.Build.0 = Release|Any CPU
 		{AD699FA0-BD04-480A-9FAD-11A0E8972EA6}.Release|x86.ActiveCfg = Release|Any CPU
 		{AD699FA0-BD04-480A-9FAD-11A0E8972EA6}.Release|x86.Build.0 = Release|Any CPU
+		{275010BE-F67F-4538-946D-A5F8BC6BFCB1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{275010BE-F67F-4538-946D-A5F8BC6BFCB1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{275010BE-F67F-4538-946D-A5F8BC6BFCB1}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{275010BE-F67F-4538-946D-A5F8BC6BFCB1}.Debug|x64.Build.0 = Debug|Any CPU
+		{275010BE-F67F-4538-946D-A5F8BC6BFCB1}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{275010BE-F67F-4538-946D-A5F8BC6BFCB1}.Debug|x86.Build.0 = Debug|Any CPU
+		{275010BE-F67F-4538-946D-A5F8BC6BFCB1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{275010BE-F67F-4538-946D-A5F8BC6BFCB1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{275010BE-F67F-4538-946D-A5F8BC6BFCB1}.Release|x64.ActiveCfg = Release|Any CPU
+		{275010BE-F67F-4538-946D-A5F8BC6BFCB1}.Release|x64.Build.0 = Release|Any CPU
+		{275010BE-F67F-4538-946D-A5F8BC6BFCB1}.Release|x86.ActiveCfg = Release|Any CPU
+		{275010BE-F67F-4538-946D-A5F8BC6BFCB1}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1019,6 +1033,7 @@ Global
 		{AE1A6E76-6D57-4A38-9EB7-989083F7DD92} = {9D4F8B1A-0B6E-4A3E-8A6A-0DE12C7C6E2F}
 		{41A42E00-05DC-40E7-9BC5-61B145A4614D} = {9D4F8B1A-0B6E-4A3E-8A6A-0DE12C7C6E2F}
 		{AD699FA0-BD04-480A-9FAD-11A0E8972EA6} = {9D4F8B1A-0B6E-4A3E-8A6A-0DE12C7C6E2F}
+		{275010BE-F67F-4538-946D-A5F8BC6BFCB1} = {9D4F8B1A-0B6E-4A3E-8A6A-0DE12C7C6E2F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {12345678-1234-1234-1234-123456789ABC}
