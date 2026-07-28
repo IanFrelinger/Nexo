@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "record_type", "deployment_run_id", "started_at", "finished_at", "outcome", "host", "images"],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "record_type": { "const": "deployment_evidence" },
+    "deployment_run_id": { "type": "string", "minLength": 1 },
+    "started_at": { "type": "string", "format": "date-time" },
+    "finished_at": { "type": "string", "format": "date-time" },
+    "outcome": { "enum": ["PASS", "FAIL", "PARTIAL"] },
+    "fail_reason": { "type": ["string", "null"] },
+    "host": {
+      "type": "object",
+      "required": ["filesystem", "disk_free_gb", "ram_total_gb", "preflight_pass"],
+      "properties": {
+        "filesystem": { "enum": ["NTFS", "exFAT", "ext4", "v9fs", "other"] },
+        "disk_free_gb": { "type": "number" },
+        "ram_total_gb": { "type": "number" },
+        "gpu": { "type": ["string", "null"] },
+        "selected_profile": { "type": "string" },
+        "preflight_pass": { "type": "boolean" }
+      },
+      "additionalProperties": true
+    },
+    "images": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "ref", "digest"],
+        "properties": {
+          "name": { "type": "string" },
+          "ref": { "type": "string" },
+          "digest": { "type": "string", "pattern": "^sha256:[a-f0-9]{64}$" }
+        },
+        "additionalProperties": true
+      }
+    },
+    "tests": { "type": "array" },
+    "onboarding_run_ids": { "type": "array", "items": { "type": "string" } }
+  }
+}

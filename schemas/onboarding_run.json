@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "record_type", "onboarding_run_id", "deployment_run_id", "project", "timing", "adapter", "output", "triage", "outcome"],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "record_type": { "const": "onboarding_run" },
+    "onboarding_run_id": { "type": "string", "minLength": 1 },
+    "deployment_run_id": { "type": "string", "minLength": 1 },
+    "project": { "type": "object", "required": ["id"], "properties": { "id": { "type": "string" } }, "additionalProperties": true },
+    "timing": { "type": "object", "required": ["time_to_valid_rows_s"], "properties": { "time_to_valid_rows_s": { "type": "number", "minimum": 0 } }, "additionalProperties": true },
+    "adapter": { "type": "object", "required": ["source"], "properties": { "source": { "enum": ["deterministic", "model_assisted"] } }, "additionalProperties": true },
+    "output": { "type": "object", "required": ["rows_valid", "oracle"], "properties": { "rows_valid": { "type": "integer", "minimum": 0 }, "oracle": { "type": "object", "required": ["pass"], "properties": { "pass": { "type": "boolean" } }, "additionalProperties": true } }, "additionalProperties": true },
+    "triage": { "type": "object", "required": ["verdict"], "properties": { "verdict": { "enum": ["no-qt", "qt-peripheral", "qt-core", "unknown"] }, "correct": { "type": ["boolean", "null"] } }, "additionalProperties": true },
+    "outcome": { "enum": ["PASS", "FAIL"] }
+  }
+}

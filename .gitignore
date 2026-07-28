@@ -105,3 +105,8 @@ src/studio/
 !.env.example
 !docs/config/agent-server.env.example
 
+# Vendored Compose plugin binary (download via scripts/vendor-docker-compose.sh)
+docker/dep-extract-gui/vendor/docker-compose-linux-*
+!docker/dep-extract-gui/vendor/README.md
+!docker/dep-extract-gui/vendor/.gitkeep
+

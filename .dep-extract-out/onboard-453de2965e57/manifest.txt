@@ -1,0 +1,10 @@
+# dep_extract manifest
+# entry file(s):
+#   InternalDepsStream.hpp
+#
+# LOWER — needed to compile the entry (bring these along): 3 files
+lower  ChecksumUtil.hpp
+lower  RecordHeader.hpp
+lower  WireTypes.hpp
+#
+# UPPER — files under . that (transitively) include the entry: 0 files

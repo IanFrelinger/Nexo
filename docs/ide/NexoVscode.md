@@ -59,7 +59,14 @@ Streaming uses MEAI `IChatClient.GetStreamingResponseAsync` when registered; oth
 | `OLLAMA_BASE_URL` | Where API reaches Ollama | `http://host.docker.internal:11434` |
 | `OLLAMA_MODEL` | Model tag | `codellama:7b` |
 
-Command **Nexo: Configure Connection (Host / Port)** updates workspace settings. **Nexo: Start Local Stack** passes those values into `Start-FullstackAgentServer.ps1`, which upserts `.env`.
+Change the port in any of these places:
+
+1. **Chat sidebar** — host + port fields, then **Apply** (or Enter)
+2. Status bar **Nexo :<port>** — click for the full configure wizard
+3. Command **Nexo: Configure Connection (Host / Port)**
+4. Settings `nexo.apiHost` / `nexo.apiPort`
+
+**Nexo: Start Local Stack** passes those values into `Start-FullstackAgentServer.ps1`, which upserts `.env`.
 
 ## Local stack
 

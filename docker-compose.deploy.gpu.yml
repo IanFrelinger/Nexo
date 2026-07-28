@@ -1,0 +1,24 @@
+# Optional GPU override for docker-compose.deploy.yml — NVIDIA passthrough for
+# the Ollama service. Only use on a box with a working NVIDIA driver + Docker
+# GPU support (keep the base file's CPU-only default everywhere else).
+#
+# Usage (WSL, target machine):
+#   export OLLAMA_CUDA_DEVICES=0
+#   docker compose -f docker-compose.deploy.yml -f docker-compose.deploy.gpu.yml up -d
+#
+# 4 GB VRAM guidance:
+#   - qwen2.5-coder:7b (~4.7 GB) partially offloads — expect ~1.5-2.5x over CPU.
+#   - qwen2.5-coder:3b fits fully in VRAM — much faster; good for the outline
+#     tool (pass "model" per request), keep 7b for adapter drafting.
+# Verify offload after first generate:  curl -s http://127.0.0.1:11434/api/ps
+# (needs the port published or exec into the container) — look for size_vram > 0.
+
+services:
+  ollama:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

@@ -72,6 +72,20 @@ function activate(context) {
     vscode.commands.registerCommand("nexo.diffPatch", (filePath) => openPatchDiff(filePath))
   );
 
+  context.subscriptions.push(
+    vscode.workspace.onDidChangeConfiguration((e) => {
+      if (
+        e.affectsConfiguration("nexo.apiHost") ||
+        e.affectsConfiguration("nexo.apiPort") ||
+        e.affectsConfiguration("nexo.baseUrl") ||
+        e.affectsConfiguration("nexo.ollamaPort")
+      ) {
+        chatProvider?.postConnectionSettings(getConnection());
+        checkConnection(false);
+      }
+    })
+  );
+
   checkConnection(false);
   refreshRuns().catch(() => {});
   refreshWorkloads().catch(() => {});
@@ -140,6 +154,40 @@ function getBaseUrl() {
 }
 
 /**
+ * Persist host/port (and optional ollama/model) and re-check.
+ * Clears nexo.baseUrl so apiHost/apiPort take effect.
+ * @param {{ host: string, port: number, ollamaPort?: number, model?: string|null, notify?: boolean }} opts
+ */
+async function applyConnectionSettings(opts) {
+  const host = String(opts.host || "").trim() || "127.0.0.1";
+  const port = Number(opts.port);
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    throw new Error("Port must be an integer 1–65535");
+  }
+  const cfg = vscode.workspace.getConfiguration("nexo");
+  await cfg.update("apiHost", host, vscode.ConfigurationTarget.Workspace);
+  await cfg.update("apiPort", port, vscode.ConfigurationTarget.Workspace);
+  await cfg.update("baseUrl", "", vscode.ConfigurationTarget.Workspace);
+  if (opts.ollamaPort != null) {
+    const op = Number(opts.ollamaPort);
+    if (!Number.isInteger(op) || op < 1 || op > 65535) {
+      throw new Error("Ollama port must be an integer 1–65535");
+    }
+    await cfg.update("ollamaPort", op, vscode.ConfigurationTarget.Workspace);
+  }
+  if (opts.model != null && String(opts.model).trim()) {
+    await cfg.update("defaultModel", String(opts.model).trim(), vscode.ConfigurationTarget.Workspace);
+  }
+  const base = getBaseUrl();
+  if (opts.notify !== false) {
+    vscode.window.showInformationMessage(`Nexo API set to ${base}`);
+  }
+  chatProvider?.postConnectionSettings(getConnection());
+  await checkConnection(opts.notify !== false);
+  return base;
+}
+
+/**
  * Interactive host/port (and optional model) configuration.
  */
 async function configureConnection() {
@@ -164,7 +212,6 @@ async function configureConnection() {
     },
   });
   if (portStr === undefined) return;
-  const port = Number(portStr);
 
   const ollamaPortStr = await vscode.window.showInputBox({
     prompt: "Host Ollama port (NEXO_OLLAMA_HOST_PORT)",
@@ -185,17 +232,17 @@ async function configureConnection() {
   });
   if (model === undefined) return;
 
-  await cfg.update("apiHost", host.trim(), vscode.ConfigurationTarget.Workspace);
-  await cfg.update("apiPort", port, vscode.ConfigurationTarget.Workspace);
-  await cfg.update("baseUrl", "", vscode.ConfigurationTarget.Workspace);
-  await cfg.update("ollamaPort", Number(ollamaPortStr), vscode.ConfigurationTarget.Workspace);
-  if (model.trim()) {
-    await cfg.update("defaultModel", model.trim(), vscode.ConfigurationTarget.Workspace);
+  try {
+    await applyConnectionSettings({
+      host,
+      port: Number(portStr),
+      ollamaPort: Number(ollamaPortStr),
+      model,
+      notify: true,
+    });
+  } catch (err) {
+    vscode.window.showErrorMessage(`Nexo connection settings: ${err.message}`);
   }
-
-  const base = getBaseUrl();
-  vscode.window.showInformationMessage(`Nexo API set to ${base}`);
-  await checkConnection(true);
 }
 
 /**
@@ -406,13 +453,17 @@ function streamChatRequest(body, opts = {}) {
 
 function updateBusyStatus() {
   const pending = patchStore ? patchStore.pendingCount() : 0;
+  const conn = getConnection();
   if (activeRun) {
-    statusBar.text = `$(sync~spin) Nexo ${activeRun.kind}`;
-    statusBar.tooltip = `Running ${activeRun.kind}… click to check connection`;
+    statusBar.text = `$(sync~spin) Nexo :${conn.port} ${activeRun.kind}`;
+    statusBar.tooltip = `Running ${activeRun.kind}… click to change host/port`;
     return;
   }
   if (statusBar && !String(statusBar.text).includes("debug-disconnect")) {
-    statusBar.text = pending > 0 ? `$(git-pull-request) Nexo (${pending})` : "$(check) Nexo";
+    statusBar.text =
+      pending > 0
+        ? `$(git-pull-request) Nexo :${conn.port} (${pending})`
+        : `$(check) Nexo :${conn.port}`;
   }
 }
 
@@ -1025,7 +1076,11 @@ async function runEdit(prompt, modelId, agentId) {
 function updatePendingStatus() {
   const pending = patchStore.pendingCount();
   if (statusBar.text.startsWith("$(debug-disconnect)")) return;
-  statusBar.text = pending > 0 ? `$(git-pull-request) Nexo (${pending})` : "$(check) Nexo";
+  const conn = getConnection();
+  statusBar.text =
+    pending > 0
+      ? `$(git-pull-request) Nexo :${conn.port} (${pending})`
+      : `$(check) Nexo :${conn.port}`;
   chatProvider?.postPatches(patchStore.listPending());
 }
 
@@ -1388,6 +1443,19 @@ class ChatViewProvider {
         await checkConnection(false);
       } else if (msg.type === "check") {
         await checkConnection(true);
+      } else if (msg.type === "setConnection") {
+        try {
+          await applyConnectionSettings({
+            host: msg.host,
+            port: Number(msg.port),
+            ollamaPort: msg.ollamaPort != null ? Number(msg.ollamaPort) : undefined,
+            notify: true,
+          });
+        } catch (err) {
+          vscode.window.showErrorMessage(`Nexo port/host: ${err.message}`);
+        }
+      } else if (msg.type === "configureConnection") {
+        await configureConnection();
       } else if (msg.type === "cancel") {
         await cancelActiveRun();
       } else if (msg.type === "applyAll") {
@@ -1418,11 +1486,31 @@ class ChatViewProvider {
     refreshModels().catch(() => {});
     refreshRuns().catch(() => {});
     refreshWorkloads().catch(() => {});
+    this.postConnectionSettings(getConnection());
     checkConnection(false);
   }
 
+  postConnectionSettings(conn) {
+    const cfg = vscode.workspace.getConfiguration("nexo");
+    this.view?.webview.postMessage({
+      type: "connectionSettings",
+      host: conn.host,
+      port: conn.port,
+      baseUrl: conn.baseUrl,
+      ollamaPort: Number(cfg.get("ollamaPort") || 11434),
+    });
+  }
+
   postConnection(ok, health) {
-    this.view?.webview.postMessage({ type: "connection", ok, health, baseUrl: getBaseUrl() });
+    const conn = getConnection();
+    this.view?.webview.postMessage({
+      type: "connection",
+      ok,
+      health,
+      baseUrl: conn.baseUrl,
+      host: conn.host,
+      port: conn.port,
+    });
   }
 
   postCatalog(models, agents) {
@@ -1474,10 +1562,14 @@ class ChatViewProvider {
   <style>
     :root { color-scheme: light dark; }
     body { font-family: var(--vscode-font-family); font-size: var(--vscode-font-size); margin: 0; padding: 8px; color: var(--vscode-foreground); }
-    .status { font-size: 12px; opacity: 0.85; margin-bottom: 8px; }
+    .status { font-size: 12px; opacity: 0.85; margin-bottom: 6px; }
     .ok { color: var(--vscode-testing-iconPassed); }
     .bad { color: var(--vscode-testing-iconFailed); }
-    #log { height: calc(100vh - 360px); min-height: 100px; overflow: auto; border: 1px solid var(--vscode-widget-border); padding: 8px; margin-bottom: 8px; white-space: pre-wrap; }
+    .conn { display: grid; grid-template-columns: 1fr 72px 64px; gap: 4px; margin-bottom: 8px; align-items: center; }
+    .conn label { display: none; }
+    .conn input { width: 100%; box-sizing: border-box; background: var(--vscode-input-background); color: var(--vscode-input-foreground); border: 1px solid var(--vscode-input-border); padding: 4px 6px; font-size: 12px; }
+    .conn button { flex: none; padding: 4px 6px; font-size: 11px; }
+    #log { height: calc(100vh - 400px); min-height: 100px; overflow: auto; border: 1px solid var(--vscode-widget-border); padding: 8px; margin-bottom: 8px; white-space: pre-wrap; }
     .msg { margin: 0 0 10px; }
     .role { font-weight: 600; font-size: 11px; text-transform: uppercase; opacity: 0.7; }
     textarea { width: 100%; box-sizing: border-box; min-height: 56px; resize: vertical; background: var(--vscode-input-background); color: var(--vscode-input-foreground); border: 1px solid var(--vscode-input-border); padding: 6px; }
@@ -1497,6 +1589,11 @@ class ChatViewProvider {
 </head>
 <body>
   <div id="status" class="status bad">Checking Nexo…</div>
+  <div class="conn" title="Agent-server host and HTTP port (NEXO_AGENT_SERVER_HTTP_PORT)">
+    <input id="apiHost" type="text" placeholder="127.0.0.1" aria-label="Host" />
+    <input id="apiPort" type="number" min="1" max="65535" placeholder="8088" aria-label="Port" />
+    <button id="applyConn" class="secondary" title="Apply host/port">Apply</button>
+  </div>
   <select id="models" title="Model"></select>
   <select id="agents" title="Agent"></select>
   <div id="agentsRoster"></div>
@@ -1525,6 +1622,8 @@ class ChatViewProvider {
     const vscode = acquireVsCodeApi();
     const log = document.getElementById('log');
     const status = document.getElementById('status');
+    const apiHost = document.getElementById('apiHost');
+    const apiPort = document.getElementById('apiPort');
     const models = document.getElementById('models');
     const agents = document.getElementById('agents');
     const prompt = document.getElementById('prompt');
@@ -1532,6 +1631,11 @@ class ChatViewProvider {
     const runsEl = document.getElementById('runs');
     const agentsRoster = document.getElementById('agentsRoster');
     const workloadsEl = document.getElementById('workloads');
+
+    function fillConnection(host, port) {
+      if (host != null) apiHost.value = host;
+      if (port != null) apiPort.value = String(port);
+    }
 
     function addMsg(role, text) {
       const div = document.createElement('div');
@@ -1665,13 +1769,16 @@ class ChatViewProvider {
 
     window.addEventListener('message', (event) => {
       const msg = event.data;
-      if (msg.type === 'connection') {
+      if (msg.type === 'connectionSettings') {
+        fillConnection(msg.host, msg.port);
+      } else if (msg.type === 'connection') {
         status.className = 'status ' + (msg.ok ? 'ok' : 'bad');
         status.textContent = msg.ok
           ? ('Connected · ' + (msg.health?.ollamaAvailable ? 'Ollama' : 'Ollama offline')
               + (msg.health?.features?.chatStream ? ' · stream' : '')
               + (msg.baseUrl ? ' · ' + msg.baseUrl : ''))
-          : ('Offline — ' + (msg.baseUrl || 'start agent-server'));
+          : ('Offline — ' + (msg.baseUrl || 'start agent-server') + ' · edit port above');
+        if (msg.host != null || msg.port != null) fillConnection(msg.host, msg.port);
       } else if (msg.type === 'catalog') {
         fillSelect(models, msg.models?.models, m => m.id, m => m.id + (m.localOnly ? ' (local)' : ''), 'Default model');
         fillSelect(agents, msg.agents?.agents, a => a.id, a => a.name + ' [' + a.role + ']', 'Default agent');
@@ -1732,6 +1839,21 @@ class ChatViewProvider {
     document.getElementById('undo').onclick = () => vscode.postMessage({ type: 'undo' });
     document.getElementById('refresh').onclick = () => vscode.postMessage({ type: 'refresh' });
     document.getElementById('check').onclick = () => vscode.postMessage({ type: 'check' });
+    document.getElementById('applyConn').onclick = () => {
+      const port = Number(apiPort.value);
+      if (!Number.isInteger(port) || port < 1 || port > 65535) {
+        status.className = 'status bad';
+        status.textContent = 'Port must be 1–65535';
+        return;
+      }
+      vscode.postMessage({ type: 'setConnection', host: apiHost.value.trim() || '127.0.0.1', port });
+    };
+    apiPort.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('applyConn').click();
+    });
+    apiHost.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('applyConn').click();
+    });
   </script>
 </body>
 </html>`;

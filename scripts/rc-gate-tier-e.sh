@@ -43,7 +43,7 @@ def parse_minimal(src):
       key: value
       key: []            (empty inline list)
       key:               (block list of mappings)
-        - foo: bar
+        - foo: ba
           baz: qux
     """
     lines = [ln.rstrip() for ln in src.splitlines()

@@ -63,6 +63,10 @@ Offline multi-agent coding UX on top of the Nexo agent-server.
 - **Nexo: Configure Connection**
 - Start Local Stack / `.env` / smoke share the same port knobs
 
+### v0.5.3
+- Chat sidebar: editable **host + port** with Apply (Enter works)
+- Status bar keeps showing `Nexo :<port>`; click it for full configure wizard
+
 ## Commands
 
 | Command | Action |

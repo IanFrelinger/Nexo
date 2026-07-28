@@ -2,7 +2,7 @@
   "name": "nexo",
   "displayName": "Nexo",
   "description": "Offline multi-agent coding assistant powered by the Nexo local agent server (Ollama / LLamaSharp).",
-  "version": "0.5.2",
+  "version": "0.5.3",
   "publisher": "nexo",
   "engines": {
     "vscode": "^1.85.0"
