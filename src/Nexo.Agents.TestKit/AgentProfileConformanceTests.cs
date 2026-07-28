@@ -91,6 +91,23 @@ public abstract class AgentProfileConformanceTests<TProfileFactory>
             "SupportsDeterministic is a promise that DeterministicDrafter keeps");
     }
 
+    /// <summary>Conformance: Every_declared_validator_is_engine_usable.</summary>
+    [Fact]
+    public void Every_declared_validator_is_engine_usable()
+    {
+        using var env = new OfflineAgentEnvironment();
+        var profile = CreateProfile(env);
+
+        // The engine filters Validators with OfType<IPostValidator<GeneratedArtifact>>;
+        // any other type would be silently skipped — i.e. no validation at all with
+        // no error anywhere. The registry rejects such profiles; this catches the
+        // same bug at profile-conformance time.
+        var usable = profile.Validators.OfType<IPostValidator<GeneratedArtifact>>().Count();
+        usable.Should().Be(
+            profile.Validators.Count,
+            "every declared validator must implement IPostValidator<GeneratedArtifact> or it will never run");
+    }
+
     /// <summary>Conformance: Offline_run_produces_a_valid_artifact_and_provenance.</summary>
     [Fact]
     public async Task Offline_run_produces_a_valid_artifact_and_provenance()

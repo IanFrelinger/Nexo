@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using Nexo.Core.Application.Generation.Ports;
+using Nexo.Core.Application.Orchestration;
 using Nexo.Core.Domain.Bricks.Ports;
 
 namespace Nexo.Core.Application.Generation;
@@ -48,6 +49,31 @@ public sealed class AgentProfileRegistry : IAgentProfileRegistry
         if (profile is null) throw new ArgumentNullException(nameof(profile));
         if (string.IsNullOrWhiteSpace(profile.TargetId))
             throw new ArgumentException("AgentProfile.TargetId is required.", nameof(profile));
-        _profiles[profile.TargetId.Trim()] = profile;
+
+        // Fail loudly on validators the engine would silently skip: the engine
+        // filters with OfType<IPostValidator<GeneratedArtifact>>, so a mistyped
+        // validator would otherwise mean "no validation at all" with no error —
+        // a silent verification downgrade. Make it a registration error instead.
+        var unusable = profile.Validators
+            .Where(v => v is not IPostValidator<GeneratedArtifact>)
+            .Select(v => v?.GetType().FullName ?? "(null)")
+            .ToArray();
+        if (unusable.Length > 0)
+        {
+            throw new ArgumentException(
+                $"AgentProfile '{profile.TargetId}' declares validator(s) the engine cannot use: "
+                + string.Join(", ", unusable)
+                + ". Validators must implement IPostValidator<GeneratedArtifact>.",
+                nameof(profile));
+        }
+
+        var key = profile.TargetId.Trim();
+        if (!_profiles.TryAdd(key, profile))
+        {
+            throw new InvalidOperationException(
+                $"An agent profile for target '{key}' is already registered. "
+                + "Duplicate registration is almost always a wiring bug; last-write-wins "
+                + "silently masking one profile with another is never the right outcome.");
+        }
     }
 }

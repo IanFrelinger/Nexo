@@ -44,7 +44,7 @@ public sealed class SqlAgentProfileAcceptanceTests
         var artifact = output.Get<GeneratedArtifact>("artifact");
         artifact.Content.Should().Be("SELECT * FROM events;");
         output.Get<bool>("verified").Should().BeTrue();
-        output.Get<string>("generationStrategy").Should().Be("Templated");
+        output.Get<string>("generationStrategy").Should().Be("Deterministic");
     }
 
     [Fact]

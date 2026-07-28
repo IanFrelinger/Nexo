@@ -12,6 +12,14 @@ public sealed class GenerationTunables
 
     /// <summary>When true, prefer deterministic drafter before the model path.</summary>
     public bool PreferDeterministic { get; init; } = true;
+
+    /// <summary>
+    /// When true (default), model-drafted artifacts always require human review
+    /// before deployment, regardless of validation outcome. The engine routes
+    /// the review through the host's approval gate when one is configured;
+    /// without a gate, review-required artifacts are never deployed.
+    /// </summary>
+    public bool RequireHumanReviewForModelDrafts { get; init; } = true;
 }
 
 /// <summary>
@@ -23,7 +31,12 @@ public sealed class AgentProfileCapabilities
     /// <summary>Profile can produce a draft without a model.</summary>
     public bool SupportsDeterministic { get; init; }
 
-    /// <summary>Profile supplies a sandbox provider for verification.</summary>
+    /// <summary>
+    /// Profile supplies a sandbox provider for verification. NOTE: the fixed
+    /// engine never invokes the sandbox itself — by convention the profile's own
+    /// validators consume <see cref="AgentProfile.Sandbox"/> when they need
+    /// isolated execution. This flag is advisory metadata for hosts/schedulers.
+    /// </summary>
     public bool SupportsSandbox { get; init; }
 
     /// <summary>Profile can deploy/install the artifact.</summary>
@@ -48,7 +61,11 @@ public sealed class AgentProfile
     /// <summary>Post-draft validators (domain-neutral port; typically IPostValidator wrappers).</summary>
     public IReadOnlyList<object> Validators { get; init; } = Array.Empty<object>();
 
-    /// <summary>Optional sandbox provider.</summary>
+    /// <summary>
+    /// Optional sandbox provider. Consumed by the profile's own validators
+    /// (the fixed engine does not invoke it directly) — see
+    /// <see cref="AgentProfileCapabilities.SupportsSandbox"/>.
+    /// </summary>
     public ISandboxProvider? Sandbox { get; init; }
 
     /// <summary>Optional deployment target.</summary>

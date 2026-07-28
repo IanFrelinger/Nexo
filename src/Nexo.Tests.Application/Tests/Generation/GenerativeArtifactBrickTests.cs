@@ -40,7 +40,10 @@ public sealed class GenerativeArtifactBrickTests
 
         var artifact = output.Get<GeneratedArtifact>("artifact");
         artifact.Content.Should().Be("SELECT 1");
-        output.Get<string>("generationStrategy").Should().Be("Templated");
+        // The deterministic drafter reports Deterministic, not Templated: a
+        // template-expanded draft and a code-generated one are different
+        // provenance claims and must not be conflated.
+        output.Get<string>("generationStrategy").Should().Be("Deterministic");
     }
 
     [Fact]

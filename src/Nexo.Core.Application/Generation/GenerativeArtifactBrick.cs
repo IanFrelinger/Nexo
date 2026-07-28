@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Generation.Ports;
 using Nexo.Core.Application.Orchestration;
+using Nexo.Core.Application.Resilience.Ports;
+using Nexo.Core.Application.Trust.Ports;
 using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Bricks.Ports;
 using Nexo.Core.Domain.Execution;
@@ -16,14 +18,30 @@ public sealed class GenerativeArtifactBrick : GenerativeBrick
 {
     private readonly IAgentProfileRegistry _registry;
     private readonly ILogger<GenerativeArtifactBrick>? _logger;
+    private readonly IResilientExecutor? _resilience;
+    private readonly IApprovalGate? _approvalGate;
 
     /// <summary>Creates the generic generative artifact brick.</summary>
+    /// <param name="registry">Profile registry.</param>
+    /// <param name="logger">Optional logger.</param>
+    /// <param name="resilience">
+    /// Optional resilient executor; when present, drafter calls are retried on
+    /// transient failures instead of aborting the repair loop.
+    /// </param>
+    /// <param name="approvalGate">
+    /// Optional approval gate; when present, review-required artifacts are routed
+    /// through it before deployment instead of being unconditionally blocked.
+    /// </param>
     public GenerativeArtifactBrick(
         IAgentProfileRegistry registry,
-        ILogger<GenerativeArtifactBrick>? logger = null)
+        ILogger<GenerativeArtifactBrick>? logger = null,
+        IResilientExecutor? resilience = null,
+        IApprovalGate? approvalGate = null)
     {
         _registry = registry ?? throw new ArgumentNullException(nameof(registry));
         _logger = logger;
+        _resilience = resilience;
+        _approvalGate = approvalGate;
 
         Id = "generative-artifact";
         Name = "Generative Artifact";
@@ -49,7 +67,8 @@ public sealed class GenerativeArtifactBrick : GenerativeBrick
                 new BrickOutputDefinition(ProvenanceOutputKey, "object", "GenerativeProvenance"),
                 new BrickOutputDefinition("generationStrategy", "string", "Strategy name"),
                 new BrickOutputDefinition("verified", "bool", "True when validators passed"),
-                new BrickOutputDefinition("deploymentResult", "object", "DeploymentApplyResult when deployment ran")
+                new BrickOutputDefinition("deploymentResult", "object", "DeploymentApplyResult when deployment ran"),
+                new BrickOutputDefinition("humanApproved", "bool", "Present when human review was required before deployment: true when the approval gate approved, false when denied/absent")
             ]
         };
 
@@ -101,7 +120,7 @@ public sealed class GenerativeArtifactBrick : GenerativeBrick
             artifact = detArtifact;
             provenance = ApplyAuditPolicy(
                 GenerativeProvenance.Create(
-                    GenerationStrategy.Templated,
+                    GenerationStrategy.Deterministic,
                     verified: true,
                     requiresHumanReview: false),
                 context);
@@ -113,7 +132,14 @@ public sealed class GenerativeArtifactBrick : GenerativeBrick
                 async (prior, ct) =>
                 {
                     var reasons = prior.Select(p => p.Reason).ToArray();
-                    return await profile.Drafter.DraftAsync(request, reasons, ct).ConfigureAwait(false);
+                    // Transient provider failures must not abort the repair loop;
+                    // retry them when a resilient executor is configured.
+                    if (_resilience is null)
+                        return await profile.Drafter.DraftAsync(request, reasons, ct).ConfigureAwait(false);
+                    return await _resilience.ExecuteAsync(
+                        innerCt => profile.Drafter.DraftAsync(request, reasons, innerCt),
+                        RetryPolicy.Default,
+                        ct).ConfigureAwait(false);
                 },
                 validators,
                 new RepairOptions(maxAttempts));
@@ -125,7 +151,10 @@ public sealed class GenerativeArtifactBrick : GenerativeBrick
                     GenerationStrategy.Model,
                     verified: result.Succeeded,
                     warnings: result.Feedback.Select(f => f.Reason).ToArray(),
-                    requiresHumanReview: !result.Succeeded || implementation == ImplementationType.Agentic),
+                    // Policy, not plumbing: model drafts require review per the
+                    // profile's tunable (default true), never per the caller's
+                    // ImplementationType argument.
+                    requiresHumanReview: !result.Succeeded || profile.Tunables.RequireHumanReviewForModelDrafts),
                 context);
 
             if (!result.Succeeded)
@@ -137,11 +166,91 @@ public sealed class GenerativeArtifactBrick : GenerativeBrick
             }
         }
 
-        // Profile drafters may attach grounding signals (UnsupportedReferences,
-        // Confidence, Assumptions). Preserve them when the brick synthesizes the
-        // final provenance. Re-run validators on non-model paths even when the
-        // drafter already set artifact.Provenance (model path already validated
-        // inside GenerationRepairLoop).
+        provenance = await SynthesizeFinalProvenanceAsync(profile, artifact, provenance, context, cancellationToken)
+            .ConfigureAwait(false);
+
+        artifact = new GeneratedArtifact
+        {
+            Content = artifact.Content,
+            Files = artifact.Files,
+            Provenance = provenance
+        };
+
+        DeploymentApplyResult? deployment = null;
+        bool? humanApproved = null;
+        if (profile.Capabilities.SupportsDeployment
+            && profile.Deployment is not null
+            && provenance.Verified)
+        {
+            // Review-required artifacts are routed through the approval gate
+            // instead of being unconditionally blocked: a human can convert
+            // "requires review" into a deploy. No gate configured = deny.
+            var mayDeploy = !provenance.RequiresHumanReview;
+            if (!mayDeploy)
+            {
+                var approval = await GenerativeHumanReview.RouteAsync(
+                        provenance,
+                        _approvalGate,
+                        $"Deploy generated artifact for target '{target}' ({provenance.Strategy} draft).",
+                        AcceptanceRouting.DefaultApprovalTimeout,
+                        cancellationToken)
+                    .ConfigureAwait(false);
+                humanApproved = approval == ApprovalResult.Approved;
+                mayDeploy = humanApproved.Value;
+                if (!mayDeploy)
+                {
+                    _logger?.LogInformation(
+                        "Deployment for target {Target} withheld: human review {Approval}.",
+                        target, approval);
+                    deployment = new DeploymentApplyResult
+                    {
+                        Succeeded = false,
+                        Message = $"deployment withheld: artifact requires human review (approval: {approval})"
+                    };
+                }
+            }
+
+            if (mayDeploy)
+            {
+                // AgentProfile.Acceptance is the single source of truth for the
+                // post-install verdict; targets that gate on it receive it here.
+                var acceptance = profile.Acceptance ?? DefaultAcceptanceEvaluator.Instance;
+                deployment = profile.Deployment is IAcceptanceGatedDeploymentTarget gated
+                    ? await gated.ApplyAsync(artifact, acceptance, cancellationToken).ConfigureAwait(false)
+                    : await profile.Deployment.ApplyAsync(artifact, cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        var output = new BrickOutput
+        {
+            Summary = provenance.Verified
+                ? $"Generated artifact for target '{target}' ({provenance.Strategy})."
+                : $"Generated artifact for target '{target}' with validation issues."
+        };
+        output.Set("artifact", artifact);
+        output.Set("verified", provenance.Verified);
+        if (deployment is not null)
+            output.Set("deploymentResult", deployment);
+        if (humanApproved is { } approved)
+            output.Set("humanApproved", approved);
+        EmitProvenance(output, provenance);
+        return output;
+    }
+
+    /// <summary>
+    /// Synthesizes the final provenance for the artifact. Profile drafters may
+    /// attach grounding signals (UnsupportedReferences, Confidence, Assumptions);
+    /// these are preserved. Non-model paths re-run the profile's validators here
+    /// (the model path was already validated inside the repair loop); the model
+    /// path only merges the drafter's signals.
+    /// </summary>
+    private static async Task<GenerativeProvenance> SynthesizeFinalProvenanceAsync(
+        AgentProfile profile,
+        GeneratedArtifact artifact,
+        GenerativeProvenance provenance,
+        IExecutionContext context,
+        CancellationToken cancellationToken)
+    {
         var draftProv = artifact.Provenance;
         var postValidators = profile.Validators.OfType<IPostValidator<GeneratedArtifact>>().ToArray();
         if (provenance.Strategy != GenerationStrategy.Model && postValidators.Length > 0)
@@ -159,7 +268,7 @@ public sealed class GenerativeArtifactBrick : GenerativeBrick
                 }
             }
 
-            provenance = ApplyAuditPolicy(
+            return ApplyAuditPolicy(
                 GenerativeProvenance.Create(
                     provenance.Strategy,
                     verified: allOk,
@@ -172,9 +281,10 @@ public sealed class GenerativeArtifactBrick : GenerativeBrick
                         || (draftProv?.RequiresHumanReview ?? false)),
                 context);
         }
-        else if (draftProv is not null)
+
+        if (draftProv is not null)
         {
-            provenance = ApplyAuditPolicy(
+            return ApplyAuditPolicy(
                 GenerativeProvenance.Create(
                     provenance.Strategy,
                     verified: provenance.Verified,
@@ -186,39 +296,7 @@ public sealed class GenerativeArtifactBrick : GenerativeBrick
                 context);
         }
 
-        artifact = new GeneratedArtifact
-        {
-            Content = artifact.Content,
-            Files = artifact.Files,
-            Provenance = provenance
-        };
-
-        DeploymentApplyResult? deployment = null;
-        if (profile.Capabilities.SupportsDeployment
-            && profile.Deployment is not null
-            && provenance.Verified
-            && !provenance.RequiresHumanReview)
-        {
-            // AgentProfile.Acceptance is the single source of truth for the
-            // post-install verdict; targets that gate on it receive it here.
-            var acceptance = profile.Acceptance ?? DefaultAcceptanceEvaluator.Instance;
-            deployment = profile.Deployment is IAcceptanceGatedDeploymentTarget gated
-                ? await gated.ApplyAsync(artifact, acceptance, cancellationToken).ConfigureAwait(false)
-                : await profile.Deployment.ApplyAsync(artifact, cancellationToken).ConfigureAwait(false);
-        }
-
-        var output = new BrickOutput
-        {
-            Summary = provenance.Verified
-                ? $"Generated artifact for target '{target}' ({provenance.Strategy})."
-                : $"Generated artifact for target '{target}' with validation issues."
-        };
-        output.Set("artifact", artifact);
-        output.Set("verified", provenance.Verified);
-        if (deployment is not null)
-            output.Set("deploymentResult", deployment);
-        EmitProvenance(output, provenance);
-        return output;
+        return provenance;
     }
 
     private static IReadOnlyList<string> MergeNotes(
