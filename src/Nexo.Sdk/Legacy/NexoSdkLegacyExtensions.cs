@@ -3,7 +3,11 @@
 using Microsoft.Extensions.DependencyInjection;
 using Nexo.Sdk.Client;
 
-namespace Nexo.Sdk.Legacy;
+// Namespace is deliberately Nexo.Sdk, NOT Nexo.Sdk.Legacy: `services.AddNexoSdk(...)`
+// resolves only when this extension class sits in the namespace the caller already
+// has a `using` for. A .Legacy namespace makes the shim invisible to the very code
+// it exists to keep compiling.
+namespace Nexo.Sdk;
 
 /// <summary>Obsolete entry points preserved for binary compatibility.</summary>
 public static class NexoSdkLegacyExtensions
