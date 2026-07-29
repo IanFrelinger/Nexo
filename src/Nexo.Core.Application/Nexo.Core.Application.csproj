@@ -13,7 +13,6 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Nexo.Core.Domain\Nexo.Core.Domain.csproj" />
-        <ProjectReference Include="..\Nexo.Core\Nexo.Core.csproj" />
     </ItemGroup>
 
     <!-- Package references -->

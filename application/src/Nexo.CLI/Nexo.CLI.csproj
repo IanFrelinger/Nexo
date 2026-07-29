@@ -42,7 +42,6 @@
   <ItemGroup>
     <ProjectReference Include="../../../src/Nexo.Core.Domain/Nexo.Core.Domain.csproj" />
     <ProjectReference Include="../../../src/Nexo.Core.Application/Nexo.Core.Application.csproj" />
-    <ProjectReference Include="../../../src/Nexo.Core/Nexo.Core.csproj" />
     <ProjectReference Include="../../../src/Nexo.Adapters.Models/Nexo.Adapters.Models.csproj" />
     <ProjectReference Include="../../../src/Nexo.Hosting/Nexo.Hosting.csproj" />
     <ProjectReference Include="../../../src/Nexo.Infrastructure/Nexo.Infrastructure.csproj" />

@@ -24,7 +24,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Nexo.Abstractions\Nexo.Abstractions.csproj" />
     <ProjectReference Include="..\Nexo.Brick.Contracts\Nexo.Brick.Contracts.csproj" />
-    <ProjectReference Include="..\Nexo.Core\Nexo.Core.csproj" />
     <ProjectReference Include="..\Nexo.Policies\Nexo.Policies.csproj" />
     <ProjectReference Include="..\Nexo.Policies.Dev\Nexo.Policies.Dev.csproj" />
     <ProjectReference Include="..\Nexo.Tools.Assembly\Nexo.Tools.Assembly.csproj" />

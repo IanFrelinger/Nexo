@@ -9,8 +9,12 @@ namespace Nexo.Tests.Kernel;
 /// <summary>Tests for assembly tools.</summary>
 public class AssemblyToolsTests
 {
-    private static string CoreDllPath =>
-        Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "Nexo.Core.dll"));
+    // Any real, built Nexo assembly works here — these tests exercise the assembly
+    // TOOLS (analyze/decompile/security-scan), not this particular library. It used
+    // to point at Nexo.Core.dll; that project was retired, so it now uses
+    // Nexo.Core.Domain.dll, which the test project already copies to its output.
+    private static string SampleAssemblyPath =>
+        Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "Nexo.Core.Domain.dll"));
 
     /// <summary>Call.</summary>
     /// <param name="id">Id.</param>
@@ -23,12 +27,12 @@ public class AssemblyToolsTests
     [Fact]
     public async Task AssemblyAnalyzeTool_reads_metadata_from_built_assembly()
     {
-        File.Exists(CoreDllPath).Should().BeTrue(CoreDllPath);
+        File.Exists(SampleAssemblyPath).Should().BeTrue(SampleAssemblyPath);
         var tool = new AssemblyAnalyzeTool();
         tool.Id.Should().Be("assembly.analyze");
         tool.Schema.Id.Should().Be("assembly.analyze");
 
-        var result = await tool.InvokeAsync(Call("assembly.analyze", new { path = CoreDllPath }), Snap, CancellationToken.None);
+        var result = await tool.InvokeAsync(Call("assembly.analyze", new { path = SampleAssemblyPath }), Snap, CancellationToken.None);
         result.Delta.Log.Should().ContainSingle().Which.Should().Contain("Nexo.Core");
         result.Payload.Should().NotBeNull();
         var payload = JsonSerializer.SerializeToElement(result.Payload);
@@ -83,13 +87,13 @@ public class AssemblyToolsTests
     [Fact]
     public async Task AssemblyDecompileTool_writes_output_for_valid_assembly()
     {
-        File.Exists(CoreDllPath).Should().BeTrue();
+        File.Exists(SampleAssemblyPath).Should().BeTrue();
         var tool = new AssemblyDecompileTool();
         var outDir = Path.Combine(Path.GetTempPath(), "nexo-decompile-" + Guid.NewGuid().ToString("N"));
         try
         {
             var result = await tool.InvokeAsync(
-                Call("assembly.decompile", new { path = CoreDllPath, output = outDir }),
+                Call("assembly.decompile", new { path = SampleAssemblyPath, output = outDir }),
                 Snap,
                 CancellationToken.None);
             result.Delta.Log.Should().ContainSingle().Which.Should().Contain("decompile");
@@ -137,12 +141,12 @@ public class AssemblyToolsTests
     [Fact]
     public async Task AssemblySecurityScanTool_scans_built_assembly()
     {
-        File.Exists(CoreDllPath).Should().BeTrue();
+        File.Exists(SampleAssemblyPath).Should().BeTrue();
         var tool = new AssemblySecurityScanTool();
         tool.Id.Should().Be("assembly.security_scan");
 
         var result = await tool.InvokeAsync(
-            Call("assembly.security_scan", new { path = CoreDllPath }),
+            Call("assembly.security_scan", new { path = SampleAssemblyPath }),
             Snap,
             CancellationToken.None);
         result.Delta.Log.Should().NotBeEmpty();
