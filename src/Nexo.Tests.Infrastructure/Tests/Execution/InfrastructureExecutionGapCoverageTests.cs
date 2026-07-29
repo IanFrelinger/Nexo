@@ -1,3 +1,4 @@
+using Nexo.Agents.TestKit;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -158,7 +159,7 @@ public class InfrastructureExecutionGapCoverageTests
             Output = new Dictionary<string, object> { ["result"] = "done" },
         };
         var json = JsonSerializer.Serialize(response);
-        var handler = new FakeHttpMessageHandler((req, _) =>
+        var handler = new StubHttpMessageHandler((req, _) =>
         {
             req.RequestUri!.AbsolutePath.Should().Contain("/api/bricks/remote-1/execute");
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
@@ -337,7 +338,7 @@ public class InfrastructureExecutionGapCoverageTests
     [Fact]
     public async Task HttpRemoteBrickCatalog_returns_empty_on_failures()
     {
-        var handler = new FakeHttpMessageHandler((_, _) => throw new HttpRequestException("catalog down"));
+        var handler = new StubHttpMessageHandler((_, _) => throw new HttpRequestException("catalog down"));
         using var client = new HttpClient(handler) { BaseAddress = new Uri("http://remote:8080/") };
         var catalog = new HttpRemoteBrickCatalog(client, NullLogger<HttpRemoteBrickCatalog>.Instance);
 
@@ -587,16 +588,4 @@ public class InfrastructureExecutionGapCoverageTests
     }
 
     /// <summary>Tests for fake http message handler.</summary>
-    private sealed class FakeHttpMessageHandler : HttpMessageHandler
-    {
-        private readonly Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> _handler;
-
-        public FakeHttpMessageHandler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> handler)
-        {
-            _handler = handler;
-        }
-
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-            => _handler(request, cancellationToken);
-    }
 }

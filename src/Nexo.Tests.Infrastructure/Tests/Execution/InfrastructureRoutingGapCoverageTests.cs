@@ -274,7 +274,7 @@ public class InfrastructureRoutingGapCoverageTests
         Func<HttpRequestMessage, CancellationToken, HttpResponseMessage> handler,
         string? apiKey = null)
     {
-        var client = new HttpClient(new FakeHttpMessageHandler(handler))
+        var client = new HttpClient(StubHttpMessageHandler.FromSync(handler))
         {
             BaseAddress = new Uri("https://api.runpod.io/"),
         };
@@ -295,21 +295,6 @@ public class InfrastructureRoutingGapCoverageTests
         new(status) { Content = new StringContent(json, Encoding.UTF8, "application/json") };
 
     /// <summary>Tests for fake http message handler.</summary>
-    private sealed class FakeHttpMessageHandler : HttpMessageHandler
-    {
-        private readonly Func<HttpRequestMessage, CancellationToken, HttpResponseMessage> _handler;
-
-        /// <summary>Fake http message handler.</summary>
-        /// <param name="handler">Handler.</param>
-        public FakeHttpMessageHandler(Func<HttpRequestMessage, CancellationToken, HttpResponseMessage> handler) =>
-            _handler = handler;
-
-        /// <summary>Send async.</summary>
-        /// <param name="request">Request.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
-            Task.FromResult(_handler(request, cancellationToken));
-    }
 
     /// <summary>Tests for stub capability router.</summary>
     private sealed class StubCapabilityRouter(ExecutionTarget target) : ICapabilityRouter

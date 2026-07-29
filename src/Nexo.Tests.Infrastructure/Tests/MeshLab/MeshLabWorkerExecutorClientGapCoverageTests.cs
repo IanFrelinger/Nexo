@@ -1,3 +1,4 @@
+using Nexo.Agents.TestKit;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -87,7 +88,7 @@ public sealed class MeshLabWorkerExecutorClientGapCoverageTests
     {
         var client = CreateClient(
             /// <summary>Fake fleet handler.</summary>
-            new FakeFleetHandler((_, _) => Json(HttpStatusCode.OK, "[]")),
+            StubHttpMessageHandler.FromSync((_, _) => Json(HttpStatusCode.OK, "[]")),
             new MeshLabWorkerExecutorOptions
             {
                 ApiKey = "test-key",
@@ -103,7 +104,7 @@ public sealed class MeshLabWorkerExecutorClientGapCoverageTests
     {
         var client = CreateClient(
             /// <summary>Fake fleet handler.</summary>
-            new FakeFleetHandler((req, _) =>
+            StubHttpMessageHandler.FromSync((req, _) =>
             {
                 if (req.Method == HttpMethod.Get)
                 {
@@ -133,7 +134,7 @@ public sealed class MeshLabWorkerExecutorClientGapCoverageTests
         var patchCount = 0;
         var client = CreateClient(
             /// <summary>Fake fleet handler.</summary>
-            new FakeFleetHandler((req, _) =>
+            StubHttpMessageHandler.FromSync((req, _) =>
             {
                 if (req.Method == HttpMethod.Get)
                 {
@@ -169,7 +170,7 @@ public sealed class MeshLabWorkerExecutorClientGapCoverageTests
     {
         var client = CreateClient(
             /// <summary>Fake fleet handler.</summary>
-            new FakeFleetHandler((_, _) => Json(HttpStatusCode.OK, """
+            StubHttpMessageHandler.FromSync((_, _) => Json(HttpStatusCode.OK, """
                 [{"taskId":"t3","name":"mesh-lab-worker-exec-no-key","status":"Assigned","assignedApiBaseUrl":"http://peer:8080","leaseToken":"tok"}]
                 """)),
             new MeshLabWorkerExecutorOptions
@@ -188,7 +189,7 @@ public sealed class MeshLabWorkerExecutorClientGapCoverageTests
         var patchCount = 0;
         var client = CreateClient(
             /// <summary>Fake fleet handler.</summary>
-            new FakeFleetHandler((req, _) =>
+            StubHttpMessageHandler.FromSync((req, _) =>
             {
                 if (req.Method == HttpMethod.Get)
                 {
@@ -219,7 +220,7 @@ public sealed class MeshLabWorkerExecutorClientGapCoverageTests
         var patchCount = 0;
         var client = CreateClient(
             /// <summary>Fake fleet handler.</summary>
-            new FakeFleetHandler((req, _) =>
+            StubHttpMessageHandler.FromSync((req, _) =>
             {
                 var path = req.RequestUri!.AbsolutePath;
                 if (path.EndsWith("/api/mesh/tasks", StringComparison.Ordinal))
@@ -255,7 +256,7 @@ public sealed class MeshLabWorkerExecutorClientGapCoverageTests
         var executed = false;
         var client = CreateClient(
             /// <summary>Fake fleet handler.</summary>
-            new FakeFleetHandler((req, _) =>
+            StubHttpMessageHandler.FromSync((req, _) =>
             {
                 var path = req.RequestUri!.AbsolutePath;
                 if (path.EndsWith("/api/mesh/tasks", StringComparison.Ordinal))
@@ -297,7 +298,7 @@ public sealed class MeshLabWorkerExecutorClientGapCoverageTests
         var patchCount = 0;
         var client = CreateClient(
             /// <summary>Fake fleet handler.</summary>
-            new FakeFleetHandler((req, _) =>
+            StubHttpMessageHandler.FromSync((req, _) =>
             {
                 var path = req.RequestUri!.AbsolutePath;
                 if (path.EndsWith("/api/mesh/tasks", StringComparison.Ordinal) && req.Method == HttpMethod.Get)
@@ -333,7 +334,7 @@ public sealed class MeshLabWorkerExecutorClientGapCoverageTests
     {
         var client = CreateClient(
             /// <summary>Fake fleet handler.</summary>
-            new FakeFleetHandler((req, _) =>
+            StubHttpMessageHandler.FromSync((req, _) =>
             {
                 var path = req.RequestUri!.AbsolutePath;
                 if (path.EndsWith("/api/mesh/tasks", StringComparison.Ordinal))
@@ -368,7 +369,7 @@ public sealed class MeshLabWorkerExecutorClientGapCoverageTests
         var executed = false;
         var client = CreateClient(
             /// <summary>Fake fleet handler.</summary>
-            new FakeFleetHandler((req, _) =>
+            StubHttpMessageHandler.FromSync((req, _) =>
             {
                 var path = req.RequestUri!.AbsolutePath;
                 if (path.EndsWith("/api/mesh/tasks", StringComparison.Ordinal))
@@ -427,16 +428,6 @@ public sealed class MeshLabWorkerExecutorClientGapCoverageTests
     private static HttpResponseMessage Json(HttpStatusCode status, string json) =>
         new(status) { Content = new StringContent(json, Encoding.UTF8, "application/json") };
 
-    /// <summary>Tests for fake fleet handler.</summary>
-    private sealed class FakeFleetHandler(Func<HttpRequestMessage, CancellationToken, HttpResponseMessage> handler)
-        : HttpMessageHandler
-    {
-        /// <summary>Send async.</summary>
-        /// <param name="request">Request.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
-            Task.FromResult(handler(request, cancellationToken));
-    }
 
     /// <summary>Tests for static options monitor.</summary>
     private sealed class StaticOptionsMonitor<T>(T value) : Microsoft.Extensions.Options.IOptionsMonitor<T> where T : class

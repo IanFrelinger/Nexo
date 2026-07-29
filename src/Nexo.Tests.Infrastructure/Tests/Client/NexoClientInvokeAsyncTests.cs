@@ -1,3 +1,4 @@
+using Nexo.Agents.TestKit;
 using System.Net;
 using System.Text;
 using FluentAssertions;
@@ -12,7 +13,7 @@ public sealed class NexoClientInvokeAsyncTests
     [Fact]
     public async Task InvokeAsync_SendsRelativePathAndMethod()
     {
-        var handler = new CapturingHandler();
+        var handler = StubHttpMessageHandler.Always(HttpStatusCode.OK);
         var services = new ServiceCollection();
         services.AddHttpClient<INexoClient, NexoClient>()
             .ConfigureHttpClient(c => c.BaseAddress = new Uri("http://localhost/", UriKind.Absolute))
@@ -29,19 +30,4 @@ public sealed class NexoClientInvokeAsyncTests
         handler.LastRequestUri!.ToString().Should().Be("http://localhost/api/copilot/task");
     }
 
-    /// <summary>Tests for capturing handler.</summary>
-    private sealed class CapturingHandler : HttpMessageHandler
-    {
-        /// <summary>Last method.</summary>
-        public HttpMethod? LastMethod { get; private set; }
-        /// <summary>Last request uri.</summary>
-        public Uri? LastRequestUri { get; private set; }
-
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-        {
-            LastMethod = request.Method;
-            LastRequestUri = request.RequestUri;
-            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK));
-        }
-    }
 }

@@ -1,3 +1,4 @@
+using Nexo.Agents.TestKit;
 using System.Net;
 using System.Text;
 using FluentAssertions;
@@ -12,7 +13,7 @@ public sealed class OllamaProviderTests
     [Fact]
     public void Constructor_LoadsManifest_FromTagsEndpoint()
     {
-        var handler = new FakeHttpMessageHandler(_ => JsonResponse("""
+        var handler = new StubHttpMessageHandler(_ => JsonResponse("""
         {
           "models": [
             { "name": "llama3.2:3b", "size": 1234, "modified_at": "2026-01-05T12:00:00Z" },
@@ -40,7 +41,7 @@ public sealed class OllamaProviderTests
             JsonResponse("""{ "models": [ { "name": "qwen2.5:7b", "size": 4321 } ] }""")
         });
 
-        var handler = new FakeHttpMessageHandler(_ => responses.Dequeue());
+        var handler = new StubHttpMessageHandler(_ => responses.Dequeue());
         using var httpClient = new HttpClient(handler);
         var sut = new OllamaProvider(httpClient, "http://localhost:11434");
 
@@ -54,7 +55,7 @@ public sealed class OllamaProviderTests
     [Fact]
     public void ValidateModel_ResolvesBareFamilyName_ToLatestTag()
     {
-        var handler = new FakeHttpMessageHandler(_ => JsonResponse("""
+        var handler = new StubHttpMessageHandler(_ => JsonResponse("""
         {
           "models": [
             { "name": "llama3.1:latest", "size": 1234 }
@@ -74,7 +75,7 @@ public sealed class OllamaProviderTests
     [Fact]
     public void ValidateModel_WhenMissing_ReturnsStructuredResultError()
     {
-        var handler = new FakeHttpMessageHandler(_ => JsonResponse("""
+        var handler = new StubHttpMessageHandler(_ => JsonResponse("""
         {
           "models": [
             { "name": "llama3.2:3b", "size": 1234 }
@@ -97,7 +98,7 @@ public sealed class OllamaProviderTests
     public async Task CheckHealthAsync_WhenUnreachable_MarksProviderUnavailable()
     {
         var requestCount = 0;
-        var handler = new FakeHttpMessageHandler(_ =>
+        var handler = new StubHttpMessageHandler(_ =>
         {
             requestCount++;
             if (requestCount == 1)
@@ -127,7 +128,7 @@ public sealed class OllamaProviderTests
     [Fact]
     public async Task ExecuteChatAsync_WhenModelMissing_DoesNotCallChatEndpoint()
     {
-        var handler = new FakeHttpMessageHandler(request =>
+        var handler = new StubHttpMessageHandler(request =>
         {
             request.RequestUri!.AbsolutePath.Should().Be("/api/tags");
             return JsonResponse("""
@@ -160,22 +161,4 @@ public sealed class OllamaProviderTests
     }
 
     /// <summary>Tests for fake http message handler.</summary>
-    private sealed class FakeHttpMessageHandler : HttpMessageHandler
-    {
-        private readonly Func<HttpRequestMessage, HttpResponseMessage> _handler;
-
-        /// <summary>Requests.</summary>
-        public List<HttpRequestMessage> Requests { get; } = new();
-
-        public FakeHttpMessageHandler(Func<HttpRequestMessage, HttpResponseMessage> handler)
-        {
-            _handler = handler;
-        }
-
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-        {
-            Requests.Add(request);
-            return Task.FromResult(_handler(request));
-        }
-    }
 }

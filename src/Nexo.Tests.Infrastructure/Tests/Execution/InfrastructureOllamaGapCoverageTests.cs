@@ -1,3 +1,4 @@
+using Nexo.Agents.TestKit;
 using System.Net;
 using System.Text;
 using FluentAssertions;
@@ -12,7 +13,7 @@ public class InfrastructureOllamaGapCoverageTests
     [Fact]
     public async Task OllamaProvider_execute_chat_succeeds_with_text_and_vision_payload()
     {
-        var handler = new FakeHandler(request =>
+        var handler = new StubHttpMessageHandler(request =>
         {
             if (request.RequestUri!.AbsolutePath == "/api/tags")
             {
@@ -46,7 +47,7 @@ public class InfrastructureOllamaGapCoverageTests
     [Fact]
     public void OllamaProvider_validate_model_handles_empty_and_prefix_resolution()
     {
-        using var client = new HttpClient(new FakeHandler(_ => Json("""
+        using var client = new HttpClient(new StubHttpMessageHandler(_ => Json("""
         {
           "models": [
             { "name": "llama3.2:3b", "size": 1 },
@@ -65,14 +66,14 @@ public class InfrastructureOllamaGapCoverageTests
     [Fact]
     public async Task OllamaProvider_refresh_handles_http_and_json_errors()
     {
-        using var httpClient = new HttpClient(new FakeHandler(_ => new HttpResponseMessage(HttpStatusCode.ServiceUnavailable)))
+        using var httpClient = new HttpClient(new StubHttpMessageHandler(_ => new HttpResponseMessage(HttpStatusCode.ServiceUnavailable)))
         {
             BaseAddress = new Uri("http://localhost:11434/"),
         };
         var httpError = new OllamaProvider(httpClient);
         (await httpError.RefreshModelsAsync()).Error!.Code.Should().Be("OLLAMA_TAGS_HTTP_ERROR");
 
-        using var jsonClient = new HttpClient(new FakeHandler(_ => Json("not-json"))) { BaseAddress = new Uri("http://localhost:11434/") };
+        using var jsonClient = new HttpClient(new StubHttpMessageHandler(_ => Json("not-json"))) { BaseAddress = new Uri("http://localhost:11434/") };
         var jsonError = new OllamaProvider(jsonClient);
         (await jsonError.RefreshModelsAsync()).Error!.Code.Should().Be("OLLAMA_TAGS_INVALID_JSON");
     }
@@ -80,7 +81,7 @@ public class InfrastructureOllamaGapCoverageTests
     [Fact]
     public async Task OllamaProvider_refresh_handles_network_errors()
     {
-        using var client = new HttpClient(new FakeHandler(_ => throw new HttpRequestException("down"))) { BaseAddress = new Uri("http://localhost:11434/") };
+        using var client = new HttpClient(new StubHttpMessageHandler(_ => throw new HttpRequestException("down"))) { BaseAddress = new Uri("http://localhost:11434/") };
         var sut = new OllamaProvider(client);
         (await sut.RefreshModelsAsync()).Error!.Code.Should().Be("OLLAMA_UNREACHABLE");
         sut.IsAvailable.Should().BeFalse();
@@ -89,7 +90,7 @@ public class InfrastructureOllamaGapCoverageTests
     [Fact]
     public async Task OllamaProvider_chat_handles_http_invalid_response_and_cancel()
     {
-        using var client = new HttpClient(new FakeHandler(request =>
+        using var client = new HttpClient(new StubHttpMessageHandler(request =>
         {
             if (request.RequestUri!.AbsolutePath == "/api/tags")
                 /// <summary>Json.</summary>
@@ -106,7 +107,7 @@ public class InfrastructureOllamaGapCoverageTests
         var sut = new OllamaProvider(client);
         (await sut.ExecuteChatAsync("m", "s", "u", null)).Error!.Code.Should().Be("OLLAMA_CHAT_MODEL_NOT_FOUND");
 
-        using var badJsonClient = new HttpClient(new FakeHandler(request =>
+        using var badJsonClient = new HttpClient(new StubHttpMessageHandler(request =>
         {
             if (request.RequestUri!.AbsolutePath == "/api/tags")
                 /// <summary>Json.</summary>
@@ -123,7 +124,7 @@ public class InfrastructureOllamaGapCoverageTests
 
         using var cts = new CancellationTokenSource();
         cts.Cancel();
-        using var cancelClient = new HttpClient(new FakeHandler(_ => throw new TaskCanceledException())) { BaseAddress = new Uri("http://localhost:11434/") };
+        using var cancelClient = new HttpClient(new StubHttpMessageHandler(_ => throw new TaskCanceledException())) { BaseAddress = new Uri("http://localhost:11434/") };
         var cancelled = new OllamaProvider(cancelClient);
         (await cancelled.RefreshModelsAsync(cts.Token)).Error!.Code.Should().Be("OLLAMA_TAGS_CANCELLED");
     }
@@ -131,7 +132,7 @@ public class InfrastructureOllamaGapCoverageTests
     [Fact]
     public void OllamaProvider_constructor_tolerates_failed_initial_refresh()
     {
-        using var client = new HttpClient(new FakeHandler(_ => throw new HttpRequestException("offline")))
+        using var client = new HttpClient(new StubHttpMessageHandler(_ => throw new HttpRequestException("offline")))
         {
             BaseAddress = new Uri("http://localhost:11434/"),
         };
@@ -146,18 +147,4 @@ public class InfrastructureOllamaGapCoverageTests
         new(HttpStatusCode.OK) { Content = new StringContent(json, Encoding.UTF8, "application/json") };
 
     /// <summary>Tests for fake handler.</summary>
-    private sealed class FakeHandler : HttpMessageHandler
-    {
-        private readonly Func<HttpRequestMessage, HttpResponseMessage> _handler;
-
-        /// <summary>Fake handler.</summary>
-        /// <param name="handler">Handler.</param>
-        public FakeHandler(Func<HttpRequestMessage, HttpResponseMessage> handler) => _handler = handler;
-
-        /// <summary>Send async.</summary>
-        /// <param name="request">Request.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
-            Task.FromResult(_handler(request));
-    }
 }

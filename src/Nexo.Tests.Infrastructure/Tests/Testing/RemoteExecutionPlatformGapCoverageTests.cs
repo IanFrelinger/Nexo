@@ -1,3 +1,4 @@
+using Nexo.Agents.TestKit;
 using System.Formats.Tar;
 using System.IO.Compression;
 using System.Net;
@@ -24,7 +25,7 @@ public sealed class RemoteExecutionPlatformGapCoverageTests
     [Fact]
     public async Task BuildImageAsync_returns_failure_details_from_remote_response()
     {
-        var handler = new FakeTestingHandler((req, _) =>
+        var handler = StubHttpMessageHandler.FromSync((req, _) =>
         {
             if (req.RequestUri!.AbsolutePath.Contains("build", StringComparison.Ordinal))
             {
@@ -52,14 +53,4 @@ public sealed class RemoteExecutionPlatformGapCoverageTests
     private static HttpResponseMessage Json(HttpStatusCode status, string json) =>
         new(status) { Content = new StringContent(json, Encoding.UTF8, "application/json") };
 
-    /// <summary>Tests for fake testing handler.</summary>
-    private sealed class FakeTestingHandler(Func<HttpRequestMessage, CancellationToken, HttpResponseMessage> handler)
-        : HttpMessageHandler
-    {
-        /// <summary>Send async.</summary>
-        /// <param name="request">Request.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
-            Task.FromResult(handler(request, cancellationToken));
-    }
 }

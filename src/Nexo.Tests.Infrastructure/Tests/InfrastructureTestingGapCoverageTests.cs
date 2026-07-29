@@ -1,3 +1,4 @@
+using Nexo.Agents.TestKit;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -56,7 +57,7 @@ public class InfrastructureTestingGapCoverageTests
     [Fact]
     public async Task RemoteExecutionPlatform_builds_runs_and_handles_failures()
     {
-        var handler = new FakeTestingHandler((req, _) =>
+        var handler = StubHttpMessageHandler.FromSync((req, _) =>
         {
             if (req.RequestUri!.AbsolutePath.Contains("status"))
                 /// <summary>Json.</summary>
@@ -85,7 +86,7 @@ public class InfrastructureTestingGapCoverageTests
     [Fact]
     public async Task RemoteExecutionPlatform_returns_false_when_unreachable()
     {
-        using var client = new HttpClient(new FakeTestingHandler((_, _) => throw new HttpRequestException("down")))
+        using var client = new HttpClient(StubHttpMessageHandler.FromSync((_, _) => throw new HttpRequestException("down")))
         {
             BaseAddress = new Uri("https://remote.example/"),
         };
@@ -112,12 +113,4 @@ public class InfrastructureTestingGapCoverageTests
         new(status) { Content = new StringContent(json, Encoding.UTF8, "application/json") };
 
     /// <summary>Tests for fake testing handler.</summary>
-    private sealed class FakeTestingHandler(Func<HttpRequestMessage, CancellationToken, HttpResponseMessage> handler) : HttpMessageHandler
-    {
-        /// <summary>Send async.</summary>
-        /// <param name="request">Request.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
-            Task.FromResult(handler(request, cancellationToken));
-    }
 }

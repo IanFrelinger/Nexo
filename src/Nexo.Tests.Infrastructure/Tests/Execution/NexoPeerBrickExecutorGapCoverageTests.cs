@@ -1,3 +1,4 @@
+using Nexo.Agents.TestKit;
 using System.Net;
 using System.Text;
 using FluentAssertions;
@@ -16,7 +17,7 @@ public sealed class NexoPeerBrickExecutorGapCoverageTests
     [Fact]
     public async Task ExecuteAsync_returns_invalid_response_when_peer_returns_non_json()
     {
-        using var httpClient = new HttpClient(new FakeHandler((_, _) =>
+        using var httpClient = new HttpClient(new StubHttpMessageHandler((_, _) =>
             Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new StringContent("not-json", Encoding.UTF8, "application/json"),
@@ -45,7 +46,7 @@ public sealed class NexoPeerBrickExecutorGapCoverageTests
     [Fact]
     public async Task ExecuteAsync_returns_execution_failed_when_peer_reports_success_false()
     {
-        using var httpClient = new HttpClient(new FakeHandler((_, _) =>
+        using var httpClient = new HttpClient(new StubHttpMessageHandler((_, _) =>
             Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new StringContent("""{"success":false,"errorMessage":"peer refused"}""", Encoding.UTF8, "application/json"),
@@ -74,7 +75,7 @@ public sealed class NexoPeerBrickExecutorGapCoverageTests
     [Fact]
     public async Task ExecuteAsync_skips_peers_with_invalid_endpoints()
     {
-        var sut = CreateExecutor(new HttpClient(new FakeHandler((_, _) =>
+        var sut = CreateExecutor(new HttpClient(new StubHttpMessageHandler((_, _) =>
             Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)))), [
             new PeerExecutionCandidate
             {
@@ -98,7 +99,7 @@ public sealed class NexoPeerBrickExecutorGapCoverageTests
     [Fact]
     public async Task ExecuteAsync_filters_peers_by_vram_and_queue_depth()
     {
-        var sut = CreateExecutor(new HttpClient(new FakeHandler((_, _) =>
+        var sut = CreateExecutor(new HttpClient(new StubHttpMessageHandler((_, _) =>
             Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)))), [
             new PeerExecutionCandidate
             {
@@ -129,7 +130,7 @@ public sealed class NexoPeerBrickExecutorGapCoverageTests
     [Fact]
     public async Task ExecuteAsync_returns_invalid_output_when_success_has_empty_payload()
     {
-        using var httpClient = new HttpClient(new FakeHandler((_, _) =>
+        using var httpClient = new HttpClient(new StubHttpMessageHandler((_, _) =>
             Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new StringContent("""{"success":true,"payload":""}""", Encoding.UTF8, "application/json"),
@@ -146,7 +147,7 @@ public sealed class NexoPeerBrickExecutorGapCoverageTests
     [Fact]
     public async Task ExecuteAsync_returns_invalid_response_when_success_flag_missing()
     {
-        using var httpClient = new HttpClient(new FakeHandler((_, _) =>
+        using var httpClient = new HttpClient(new StubHttpMessageHandler((_, _) =>
             Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new StringContent("""{"summary":"no success flag"}""", Encoding.UTF8, "application/json"),
@@ -163,7 +164,7 @@ public sealed class NexoPeerBrickExecutorGapCoverageTests
     public async Task ExecuteAsync_succeeds_with_inline_base64_payload()
     {
         var payload = Convert.ToBase64String(new byte[] { 5, 6, 7 });
-        using var httpClient = new HttpClient(new FakeHandler((_, _) =>
+        using var httpClient = new HttpClient(new StubHttpMessageHandler((_, _) =>
             Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new StringContent(
@@ -182,7 +183,7 @@ public sealed class NexoPeerBrickExecutorGapCoverageTests
     [Fact]
     public async Task ExecuteAsync_maps_http_request_failures()
     {
-        using var httpClient = new HttpClient(new FakeHandler((_, _) =>
+        using var httpClient = new HttpClient(new StubHttpMessageHandler((_, _) =>
             Task.FromException<HttpResponseMessage>(new HttpRequestException("connection reset"))));
         var sut = CreateExecutor(httpClient, [EligiblePeer("peer-a", "http://peer-a:8080")]);
 
@@ -195,7 +196,7 @@ public sealed class NexoPeerBrickExecutorGapCoverageTests
     [Fact]
     public async Task ExecuteAsync_times_out_slow_peer()
     {
-        using var httpClient = new HttpClient(new FakeHandler(async (_, ct) =>
+        using var httpClient = new HttpClient(new StubHttpMessageHandler(async (_, ct) =>
         {
             await Task.Delay(TimeSpan.FromSeconds(2), ct);
             /// <summary>Http response message.</summary>
@@ -232,7 +233,7 @@ public sealed class NexoPeerBrickExecutorGapCoverageTests
     [Fact]
     public async Task ExecuteAsync_returns_null_response_when_peer_body_empty()
     {
-        using var httpClient = new HttpClient(new FakeHandler((_, _) =>
+        using var httpClient = new HttpClient(new StubHttpMessageHandler((_, _) =>
             Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new StringContent("", Encoding.UTF8, "application/json"),
@@ -260,7 +261,7 @@ public sealed class NexoPeerBrickExecutorGapCoverageTests
           }
         }
         """;
-        using var httpClient = new HttpClient(new FakeHandler((_, _) =>
+        using var httpClient = new HttpClient(new StubHttpMessageHandler((_, _) =>
             Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new StringContent(json, Encoding.UTF8, "application/json"),
@@ -279,7 +280,7 @@ public sealed class NexoPeerBrickExecutorGapCoverageTests
     public async Task ExecuteAsync_deduplicates_peers_by_endpoint_authority()
     {
         var callCount = 0;
-        using var httpClient = new HttpClient(new FakeHandler((_, _) =>
+        using var httpClient = new HttpClient(new StubHttpMessageHandler((_, _) =>
         {
             Interlocked.Increment(ref callCount);
             var payload = Convert.ToBase64String(new byte[] { 9 });
@@ -307,7 +308,7 @@ public sealed class NexoPeerBrickExecutorGapCoverageTests
     [Fact]
     public async Task ExecuteAsync_filters_peers_by_compute_class()
     {
-        var sut = CreateExecutor(new HttpClient(new FakeHandler((_, _) =>
+        var sut = CreateExecutor(new HttpClient(new StubHttpMessageHandler((_, _) =>
             Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)))), [
             new PeerExecutionCandidate
             {
@@ -331,7 +332,7 @@ public sealed class NexoPeerBrickExecutorGapCoverageTests
     public async Task ExecuteAsync_uses_custom_peer_routing_brick_id_in_request_uri()
     {
         string? requestedPath = null;
-        using var httpClient = new HttpClient(new FakeHandler((request, _) =>
+        using var httpClient = new HttpClient(new StubHttpMessageHandler((request, _) =>
         {
             requestedPath = request.RequestUri?.AbsolutePath;
             var payload = Convert.ToBase64String(new byte[] { 7 });
@@ -363,7 +364,7 @@ public sealed class NexoPeerBrickExecutorGapCoverageTests
     [Fact]
     public async Task ExecuteAsync_maps_http_status_errors()
     {
-        using var httpClient = new HttpClient(new FakeHandler((_, _) =>
+        using var httpClient = new HttpClient(new StubHttpMessageHandler((_, _) =>
             Task.FromResult(new HttpResponseMessage(HttpStatusCode.BadGateway)
             {
                 ReasonPhrase = "Bad Gateway",
@@ -379,7 +380,7 @@ public sealed class NexoPeerBrickExecutorGapCoverageTests
     [Fact]
     public async Task ExecuteAsync_maps_unexpected_dispatch_exceptions()
     {
-        using var httpClient = new HttpClient(new FakeHandler((_, _) =>
+        using var httpClient = new HttpClient(new StubHttpMessageHandler((_, _) =>
             Task.FromException<HttpResponseMessage>(new InvalidOperationException("handler blew up"))));
 
         var sut = CreateExecutor(httpClient, [EligiblePeer("peer-a", "http://peer-a:8080")]);
@@ -392,7 +393,7 @@ public sealed class NexoPeerBrickExecutorGapCoverageTests
     [Fact]
     public async Task ExecuteAsync_rejects_invalid_base64_payload()
     {
-        using var httpClient = new HttpClient(new FakeHandler((_, _) =>
+        using var httpClient = new HttpClient(new StubHttpMessageHandler((_, _) =>
             Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new StringContent(
@@ -412,7 +413,7 @@ public sealed class NexoPeerBrickExecutorGapCoverageTests
     public async Task ExecuteAsync_serializes_rich_execution_context_variables()
     {
         string? body = null;
-        using var httpClient = new HttpClient(new FakeHandler(async (request, _) =>
+        using var httpClient = new HttpClient(new StubHttpMessageHandler(async (request, _) =>
         {
             body = request.Content is null ? null : await request.Content.ReadAsStringAsync();
             var payload = Convert.ToBase64String(new byte[] { 3 });
@@ -471,7 +472,7 @@ public sealed class NexoPeerBrickExecutorGapCoverageTests
     public async Task ExecuteAsync_serializes_non_generic_idictionary_variables()
     {
         string? body = null;
-        using var httpClient = new HttpClient(new FakeHandler(async (request, _) =>
+        using var httpClient = new HttpClient(new StubHttpMessageHandler(async (request, _) =>
         {
             body = request.Content is null ? null : await request.Content.ReadAsStringAsync();
             var payload = Convert.ToBase64String(new byte[] { 1 });
@@ -507,7 +508,7 @@ public sealed class NexoPeerBrickExecutorGapCoverageTests
     public async Task ExecuteAsync_escapes_special_characters_in_request_json()
     {
         string? body = null;
-        using var httpClient = new HttpClient(new FakeHandler(async (request, _) =>
+        using var httpClient = new HttpClient(new StubHttpMessageHandler(async (request, _) =>
         {
             body = request.Content is null ? null : await request.Content.ReadAsStringAsync();
             var payload = Convert.ToBase64String(new byte[] { 2 });
@@ -539,7 +540,7 @@ public sealed class NexoPeerBrickExecutorGapCoverageTests
     public async Task ExecuteAsync_falls_back_to_second_peer_after_first_fails()
     {
         var hosts = new List<string>();
-        using var httpClient = new HttpClient(new FakeHandler((request, _) =>
+        using var httpClient = new HttpClient(new StubHttpMessageHandler((request, _) =>
         {
             hosts.Add(request.RequestUri?.Host ?? string.Empty);
             if (request.RequestUri?.Host == "peer-a")
@@ -638,13 +639,4 @@ public sealed class NexoPeerBrickExecutorGapCoverageTests
     }
 
     /// <summary>Tests for fake handler.</summary>
-    private sealed class FakeHandler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> handler) : HttpMessageHandler
-    {
-        /// <summary>Send async.</summary>
-        /// <param name="request">Request.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
-            /// <summary>Handler.</summary>
-            handler(request, cancellationToken);
-    }
 }
