@@ -1,3 +1,4 @@
+using Nexo.Agents.TestKit;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Nexo.Core.Application.Common.Ports;
@@ -213,7 +214,7 @@ public class InfrastructureBehaviorGapCoverageTests
         var cache = new SemanticCache(NullLogger<SemanticCache>.Instance);
         return new BehaviorExecutor(
             registry,
-            new StubProviderFactory(),
+            new FakeProviderFactory("{}") { Available = true, OllamaReachable = true },
             cache,
             new SequentialLoopKernel(),
             NullLogger<BehaviorExecutor>.Instance);
@@ -229,47 +230,6 @@ public class InfrastructureBehaviorGapCoverageTests
         public IReadOnlyList<DomainBrick> GetAllBricks() => [brick];
     }
 
-    /// <summary>Tests for stub provider factory.</summary>
-    private sealed class StubProviderFactory : IProviderFactory
-    {
-        /// <summary>Returns whether  provider available.</summary>
-        /// <param name="provider">Provider.</param>
-        public bool IsProviderAvailable(string provider) => true;
-        /// <summary>Execute llm async.</summary>
-        /// <param name="provider">Provider.</param>
-        /// <param name="systemPrompt">System prompt.</param>
-        /// <param name="userPrompt">User prompt.</param>
-        /// <param name="config">Config.</param>
-        /// <param name="default">Default.</param>
-        public Task<string> ExecuteLLMAsync(string provider, string systemPrompt, string userPrompt, object config, CancellationToken cancellationToken = default) => Task.FromResult("{}");
-        /// <summary>Execute vision async.</summary>
-        /// <param name="provider">Provider.</param>
-        /// <param name="systemPrompt">System prompt.</param>
-        /// <param name="userPrompt">User prompt.</param>
-        /// <param name="imageBytes">Image bytes.</param>
-        /// <param name="config">Config.</param>
-        /// <param name="default">Default.</param>
-        public Task<string> ExecuteVisionAsync(string provider, string systemPrompt, string userPrompt, byte[] imageBytes, object config, CancellationToken cancellationToken = default) => Task.FromResult("{}");
-        /// <summary>Execute vision multi frame async.</summary>
-        /// <param name="provider">Provider.</param>
-        /// <param name="systemPrompt">System prompt.</param>
-        /// <param name="userPrompt">User prompt.</param>
-        /// <param name="frameBytes">Frame bytes.</param>
-        /// <param name="config">Config.</param>
-        /// <param name="default">Default.</param>
-        public Task<string> ExecuteVisionMultiFrameAsync(string provider, string systemPrompt, string userPrompt, IReadOnlyList<byte[]> frameBytes, object config, CancellationToken cancellationToken = default) => Task.FromResult("{}");
-        /// <summary>Execute video async.</summary>
-        /// <param name="systemPrompt">System prompt.</param>
-        /// <param name="userPrompt">User prompt.</param>
-        /// <param name="frameBytes">Frame bytes.</param>
-        /// <param name="config">Config.</param>
-        /// <param name="default">Default.</param>
-        public Task<string> ExecuteVideoAsync(string systemPrompt, string userPrompt, IReadOnlyList<byte[]> frameBytes, object config, CancellationToken cancellationToken = default) => Task.FromResult("{}");
-        /// <summary>Ensure ollama reachable async.</summary>
-        /// <param name="requireVisionModel">Require vision model.</param>
-        /// <param name="default">Default.</param>
-        public Task EnsureOllamaReachableAsync(bool requireVisionModel, CancellationToken cancellationToken = default) => Task.CompletedTask;
-    }
 
     /// <summary>Tests for flaky deterministic behavior brick.</summary>
     private sealed class FlakyDeterministicBehaviorBrick : DomainBrick

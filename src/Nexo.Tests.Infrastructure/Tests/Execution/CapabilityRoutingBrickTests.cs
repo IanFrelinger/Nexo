@@ -1,3 +1,4 @@
+using Nexo.Agents.TestKit;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -68,7 +69,7 @@ public sealed class CapabilityRoutingBrickTests
                 ComputeClass = GpuComputeClass.Medium,
                 EstimatedDuration = TimeSpan.FromSeconds(10)
             },
-            new TestExecutionContext());
+            TestExecutionContext());
 
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().NotBeNull();
@@ -143,7 +144,7 @@ public sealed class CapabilityRoutingBrickTests
                 ComputeClass = GpuComputeClass.High,
                 EstimatedDuration = TimeSpan.FromMinutes(1)
             },
-            new TestExecutionContext());
+            TestExecutionContext());
 
         result.IsSuccess.Should().BeTrue();
         result.Value.Should().NotBeNull();
@@ -268,7 +269,7 @@ public sealed class CapabilityRoutingBrickTests
         var result = await brick.ExecuteAsync(
             new RunPodJobPayload { ModelId = "m", Prompt = "timeout please" },
             new JobRequirements { ModelId = "m" },
-            new TestExecutionContext());
+            TestExecutionContext());
 
         result.IsFailure.Should().BeTrue();
         result.Error.Should().NotBeNull();
@@ -302,7 +303,7 @@ public sealed class CapabilityRoutingBrickTests
         var result = await brick.ExecuteAsync(
             new RunPodJobPayload { ModelId = "m", Prompt = "fail dispatch" },
             new JobRequirements { ModelId = "m" },
-            new TestExecutionContext());
+            TestExecutionContext());
 
         result.IsFailure.Should().BeTrue();
         result.Error.Should().NotBeNull();
@@ -327,7 +328,7 @@ public sealed class CapabilityRoutingBrickTests
 
         var services = new ServiceCollection();
         services.AddLogging();
-        services.AddSingleton<IProviderFactory, StubProviderFactory>();
+        services.AddSingleton<IProviderFactory>(new FakeProviderFactory("ok") { Available = true, OllamaReachable = true });
         services.AddRunPodCapabilityRouting(configuration);
         using var provider = services.BuildServiceProvider();
 
@@ -607,7 +608,7 @@ public sealed class CapabilityRoutingBrickTests
         var result = await remote.Executor.ExecuteAsync(
             new RunPodJobPayload { ModelId = "m", Prompt = "p" },
             new JobRequirements { ModelId = "m" },
-            new TestExecutionContext());
+            TestExecutionContext());
         result.IsFailure.Should().BeTrue();
         result.Error.Should().NotBeNull();
         result.Error!.Code.Should().Be("peer-routing.no_eligible_peers");
@@ -749,39 +750,17 @@ public sealed class CapabilityRoutingBrickTests
     }
 
     /// <summary>Tests for test execution context.</summary>
-    private sealed class TestExecutionContext : IExecutionContext
+    // Execution context for these tests. The IExecutionContext implementation now
+    // lives in Nexo.Agents.TestKit.FakeExecutionContext; only the fixture values
+    // that are specific to this suite stay here.
+    private static FakeExecutionContext TestExecutionContext() => new()
     {
-        /// <summary>Agent id.</summary>
-        public string AgentId { get; init; } = "test-agent";
-        /// <summary>Behavior id.</summary>
-        public string BehaviorId { get; init; } = "test-behavior";
-        /// <summary>Is air gapped.</summary>
-        public bool IsAirGapped { get; init; }
-        /// <summary>Audit mode.</summary>
-        public bool AuditMode { get; init; } = true;
-        /// <summary>Provider.</summary>
-        public string Provider { get; init; } = "ollama";
-        /// <summary>Variables.</summary>
-        public IReadOnlyDictionary<string, object> Variables { get; init; } = new Dictionary<string, object>();
-    }
+        AgentId = "test-agent",
+        BehaviorId = "test-behavior",
+        AuditMode = true,
+        Provider = "ollama"
+    };
 
-    /// <summary>Tests for stub provider factory.</summary>
-    private sealed class StubProviderFactory : IProviderFactory
-    {
-        /// <summary>Returns whether  provider available.</summary>
-        /// <param name="provider">Provider.</param>
-        public bool IsProviderAvailable(string provider) => true;
-        public Task<string> ExecuteLLMAsync(string provider, string systemPrompt, string userPrompt, object config, CancellationToken cancellationToken = default)
-            => Task.FromResult("ok");
-        public Task<string> ExecuteVisionAsync(string provider, string systemPrompt, string userPrompt, byte[] imageBytes, object config, CancellationToken cancellationToken = default)
-            => Task.FromResult("ok");
-        public Task<string> ExecuteVisionMultiFrameAsync(string provider, string systemPrompt, string userPrompt, IReadOnlyList<byte[]> frameBytes, object config, CancellationToken cancellationToken = default)
-            => Task.FromResult("ok");
-        public Task<string> ExecuteVideoAsync(string systemPrompt, string userPrompt, IReadOnlyList<byte[]> frameBytes, object config, CancellationToken cancellationToken = default)
-            => Task.FromResult("ok");
-        public Task EnsureOllamaReachableAsync(bool requireVisionModel, CancellationToken cancellationToken = default)
-            => Task.CompletedTask;
-    }
 
     /// <summary>Tests for stub peer executor.</summary>
     private sealed class StubPeerExecutor : IPeerExecutor

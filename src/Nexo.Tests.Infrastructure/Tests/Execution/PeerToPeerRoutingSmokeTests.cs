@@ -1,3 +1,4 @@
+using Nexo.Agents.TestKit;
 using System.Net;
 using System.Text;
 using FluentAssertions;
@@ -69,7 +70,7 @@ public sealed class PeerToPeerRoutingSmokeTests
         var result = await sut.ExecuteAsync(
             new RunPodJobPayload { ModelId = "model-x", Prompt = "hello" },
             new JobRequirements { ModelId = "model-x", MinimumVramBytes = 1, ComputeClass = GpuComputeClass.Low },
-            new TestExecutionContext());
+            TestExecutionContext());
 
         result.IsSuccess.Should().BeTrue($"{result.Error?.Code}:{result.Error?.Message}:{result.Error?.Detail}");
         result.Value.Should().NotBeNull();
@@ -133,7 +134,7 @@ public sealed class PeerToPeerRoutingSmokeTests
         var result = await sut.ExecuteAsync(
             new RunPodJobPayload { ModelId = "model-timeout", Prompt = "timeout test" },
             new JobRequirements { ModelId = "model-timeout", MinimumVramBytes = 1, ComputeClass = GpuComputeClass.Low },
-            new TestExecutionContext());
+            TestExecutionContext());
 
         result.IsSuccess.Should().BeTrue($"{result.Error?.Code}:{result.Error?.Message}:{result.Error?.Detail}");
         result.Value.Should().NotBeNull();
@@ -193,7 +194,7 @@ public sealed class PeerToPeerRoutingSmokeTests
         var result = await sut.ExecuteAsync(
             new RunPodJobPayload { ModelId = "model-parse", Prompt = "parse test" },
             new JobRequirements { ModelId = "model-parse", MinimumVramBytes = 1, ComputeClass = GpuComputeClass.Low },
-            new TestExecutionContext());
+            TestExecutionContext());
 
         result.IsSuccess.Should().BeTrue($"{result.Error?.Code}:{result.Error?.Message}:{result.Error?.Detail}");
         result.Value.Should().NotBeNull();
@@ -249,7 +250,7 @@ public sealed class PeerToPeerRoutingSmokeTests
         var result = await sut.ExecuteAsync(
             new RunPodJobPayload { ModelId = "model-fail", Prompt = "all fail" },
             new JobRequirements { ModelId = "model-fail", MinimumVramBytes = 1, ComputeClass = GpuComputeClass.Low },
-            new TestExecutionContext());
+            TestExecutionContext());
 
         result.IsFailure.Should().BeTrue();
         result.Error.Should().NotBeNull();
@@ -292,7 +293,7 @@ public sealed class PeerToPeerRoutingSmokeTests
         var result = await sut.ExecuteAsync(
             new RunPodJobPayload { ModelId = "model-trust", Prompt = "trust check" },
             new JobRequirements { ModelId = "model-trust", MinimumVramBytes = 1, ComputeClass = GpuComputeClass.Low },
-            new TestExecutionContext());
+            TestExecutionContext());
 
         result.IsFailure.Should().BeTrue();
         result.Error.Should().NotBeNull();
@@ -404,7 +405,7 @@ public sealed class PeerToPeerRoutingSmokeTests
                     MinimumVramBytes = 1,
                     ComputeClass = GpuComputeClass.Low
                 },
-                new TestExecutionContext()))
+                TestExecutionContext()))
             .ToArray();
 
         var results = await Task.WhenAll(tasks);
@@ -537,7 +538,7 @@ public sealed class PeerToPeerRoutingSmokeTests
                     MinimumVramBytes = 1,
                     ComputeClass = GpuComputeClass.Low
                 },
-                new TestExecutionContext()))
+                TestExecutionContext()))
             .ToArray();
 
         var results = await Task.WhenAll(tasks);
@@ -611,19 +612,14 @@ public sealed class PeerToPeerRoutingSmokeTests
     }
 
     /// <summary>Tests for test execution context.</summary>
-    private sealed class TestExecutionContext : IExecutionContext
+    // Execution context for these tests. The IExecutionContext implementation now
+    // lives in Nexo.Agents.TestKit.FakeExecutionContext; only the fixture values
+    // that are specific to this suite stay here.
+    private static FakeExecutionContext TestExecutionContext() => new()
     {
-        /// <summary>Agent id.</summary>
-        public string AgentId { get; init; } = "smoke-agent";
-        /// <summary>Behavior id.</summary>
-        public string BehaviorId { get; init; } = "smoke-behavior";
-        /// <summary>Is air gapped.</summary>
-        public bool IsAirGapped { get; init; }
-        /// <summary>Audit mode.</summary>
-        public bool AuditMode { get; init; } = true;
-        /// <summary>Provider.</summary>
-        public string Provider { get; init; } = "nexo";
-        /// <summary>Variables.</summary>
-        public IReadOnlyDictionary<string, object> Variables { get; init; } = new Dictionary<string, object>();
-    }
+        AgentId = "smoke-agent",
+        BehaviorId = "smoke-behavior",
+        AuditMode = true,
+        Provider = "nexo"
+    };
 }

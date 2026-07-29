@@ -1,3 +1,4 @@
+using Nexo.Agents.TestKit;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
@@ -187,7 +188,7 @@ public sealed class MultiSystemNcrSimulationTests
         peerBrick.Router.ResolveExecutionTarget(reqs).Should().BeOfType<ExecutionTarget.Remote>();
         cloudBrick.Router.ResolveExecutionTarget(reqs).Should().BeOfType<ExecutionTarget.Remote>();
 
-        var ctx = new TestExecutionContext();
+        var ctx = TestExecutionContext();
 
         // Async brick execution — includes deliberately delayed peer executor to mimic async capacity.
         var tLocal = localBrick.Brick.ExecuteAsync(payload, reqs, ctx);
@@ -439,13 +440,14 @@ public sealed class MultiSystemNcrSimulationTests
             => Task.FromResult(TerminateResult);
     }
 
-    private sealed class TestExecutionContext : IExecutionContext
+    // Execution context for these tests. The IExecutionContext implementation now
+    // lives in Nexo.Agents.TestKit.FakeExecutionContext; only the fixture values
+    // that are specific to this suite stay here.
+    private static FakeExecutionContext TestExecutionContext() => new()
     {
-        public string AgentId { get; init; } = "ncr-sim-agent";
-        public string BehaviorId { get; init; } = "ncr-sim-behavior";
-        public bool IsAirGapped { get; init; }
-        public bool AuditMode { get; init; } = true;
-        public string Provider { get; init; } = "simulation";
-        public IReadOnlyDictionary<string, object> Variables { get; init; } = new Dictionary<string, object>();
-    }
+        AgentId = "ncr-sim-agent",
+        BehaviorId = "ncr-sim-behavior",
+        AuditMode = true,
+        Provider = "simulation"
+    };
 }

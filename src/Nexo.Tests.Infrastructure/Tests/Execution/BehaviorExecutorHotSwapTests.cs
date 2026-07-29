@@ -1,3 +1,4 @@
+using Nexo.Agents.TestKit;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Nexo.Abstractions;
@@ -214,7 +215,7 @@ public sealed class BehaviorExecutorHotSwapTests : UnitTestBase
         var loggerFactory = LoggerFactory.Create(b => { });
 
         var registry = new SingleBrickRegistry(brick);
-        var providerFactory = new StubProviderFactory(providerAvailable);
+        var providerFactory = new FakeProviderFactory("{}") { Available = providerAvailable, OllamaReachable = true };
         var cache = new SemanticCache(loggerFactory.CreateLogger<SemanticCache>());
 
         return new BehaviorExecutor(
@@ -242,27 +243,6 @@ public sealed class BehaviorExecutorHotSwapTests : UnitTestBase
         public IReadOnlyList<DomainBrick> GetAllBricks() => new[] { _brick };
     }
 
-    /// <summary>Tests for stub provider factory.</summary>
-    private sealed class StubProviderFactory : IProviderFactory
-    {
-        private readonly bool _available;
-        /// <summary>Stub provider factory.</summary>
-        /// <param name="available">Available.</param>
-        public StubProviderFactory(bool available) => _available = available;
-        /// <summary>Returns whether  provider available.</summary>
-        /// <param name="provider">Provider.</param>
-        public bool IsProviderAvailable(string provider) => _available;
-        public Task<string> ExecuteLLMAsync(string provider, string systemPrompt, string userPrompt, object config, CancellationToken cancellationToken = default)
-            => Task.FromResult("{}");
-        public Task<string> ExecuteVisionAsync(string provider, string systemPrompt, string userPrompt, byte[] imageBytes, object config, CancellationToken cancellationToken = default)
-            => Task.FromResult("{}");
-        public Task<string> ExecuteVisionMultiFrameAsync(string provider, string systemPrompt, string userPrompt, IReadOnlyList<byte[]> frameBytes, object config, CancellationToken cancellationToken = default)
-            => Task.FromResult("{}");
-        public Task<string> ExecuteVideoAsync(string systemPrompt, string userPrompt, IReadOnlyList<byte[]> frameBytes, object config, CancellationToken cancellationToken = default)
-            => Task.FromResult("{}");
-        public Task EnsureOllamaReachableAsync(bool requireVisionModel, CancellationToken cancellationToken = default)
-            => Task.CompletedTask;
-    }
 
     /// <summary>Tests for flaky agentic brick.</summary>
     private sealed class FlakyAgenticBrick : DomainBrick

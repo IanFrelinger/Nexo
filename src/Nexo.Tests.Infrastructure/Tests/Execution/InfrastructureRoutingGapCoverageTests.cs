@@ -1,3 +1,4 @@
+using Nexo.Agents.TestKit;
 using System.Net;
 using System.Text;
 using FluentAssertions;
@@ -243,7 +244,7 @@ public class InfrastructureRoutingGapCoverageTests
         var success = await brick.ExecuteAsync(
             input,
             ImplementationType.Deterministic,
-            new RoutingTestExecutionContext(),
+            RoutingTestExecutionContext(),
             CancellationToken.None);
         success.Get<bool>("success").Should().BeTrue();
         success.Get<string>("routedTarget").Should().Be("Local");
@@ -255,7 +256,7 @@ public class InfrastructureRoutingGapCoverageTests
         var failure = await failingBrick.ExecuteAsync(
             input,
             ImplementationType.Deterministic,
-            new RoutingTestExecutionContext(),
+            RoutingTestExecutionContext(),
             CancellationToken.None);
         failure.Get<bool>("success").Should().BeFalse();
         failure.Get<string>("errorCode").Should().Be("exec.fail");
@@ -330,19 +331,14 @@ public class InfrastructureRoutingGapCoverageTests
     }
 
     /// <summary>Tests for routing test execution context.</summary>
-    private sealed class RoutingTestExecutionContext : IExecutionContext
+    // Execution context for these tests. The IExecutionContext implementation now
+    // lives in Nexo.Agents.TestKit.FakeExecutionContext; only the fixture values
+    // that are specific to this suite stay here.
+    private static FakeExecutionContext RoutingTestExecutionContext() => new()
     {
-        /// <summary>Agent id.</summary>
-        public string AgentId { get; init; } = "routing-gap";
-        /// <summary>Behavior id.</summary>
-        public string BehaviorId { get; init; } = "generation";
-        /// <summary>Is air gapped.</summary>
-        public bool IsAirGapped { get; init; }
-        /// <summary>Audit mode.</summary>
-        public bool AuditMode { get; init; } = true;
-        /// <summary>Provider.</summary>
-        public string Provider { get; init; } = "local";
-        /// <summary>Variables.</summary>
-        public IReadOnlyDictionary<string, object> Variables { get; init; } = new Dictionary<string, object>();
-    }
+        AgentId = "routing-gap",
+        BehaviorId = "generation",
+        AuditMode = true,
+        Provider = "local"
+    };
 }
