@@ -24,7 +24,7 @@ public sealed record RecordedHttpRequest(HttpMethod Method, Uri? RequestUri, str
 /// </summary>
 public sealed class StubHttpMessageHandler : HttpMessageHandler
 {
-    private readonly Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> _respond;
+    private Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> _respond;
 
     /// <summary>Creates a handler from an async responder.</summary>
     /// <param name="respond">Produces the response for each request.</param>
@@ -38,6 +38,23 @@ public sealed class StubHttpMessageHandler : HttpMessageHandler
         : this((request, _) => Task.FromResult(
             (respond ?? throw new ArgumentNullException(nameof(respond)))(request)))
     {
+    }
+
+    /// <summary>
+    /// Creates a handler from a synchronous responder that also sees the token.
+    ///
+    /// This is a named factory rather than a constructor overload on purpose:
+    /// a two-parameter lambda cannot be resolved between
+    /// <c>Func&lt;…, HttpResponseMessage&gt;</c> and
+    /// <c>Func&lt;…, Task&lt;HttpResponseMessage&gt;&gt;</c>, so overloading on the
+    /// return type would make every <c>(req, ct) =&gt; …</c> call site ambiguous.
+    /// </summary>
+    /// <param name="respond">Produces the response for each request.</param>
+    public static StubHttpMessageHandler FromSync(
+        Func<HttpRequestMessage, CancellationToken, HttpResponseMessage> respond)
+    {
+        if (respond is null) throw new ArgumentNullException(nameof(respond));
+        return new StubHttpMessageHandler((request, ct) => Task.FromResult(respond(request, ct)));
     }
 
     /// <summary>Requests seen, in order, with their bodies already read.</summary>
@@ -54,6 +71,26 @@ public sealed class StubHttpMessageHandler : HttpMessageHandler
 
     /// <summary>True when the handler was never called.</summary>
     public bool WasNeverCalled => Requests.Count == 0;
+
+    /// <summary>
+    /// Replaces the responder mid-test, keeping the recorded history.
+    ///
+    /// Needed for subjects that are driven through more than one server state on a
+    /// single client — e.g. "model absent, then present after a pull" — where a new
+    /// handler would also mean a new HttpClient and lose the request log.
+    /// </summary>
+    /// <param name="respond">New responder.</param>
+    public void SetResponder(
+        Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> respond) =>
+        _respond = respond ?? throw new ArgumentNullException(nameof(respond));
+
+    /// <summary>Replaces the responder mid-test with a synchronous one.</summary>
+    /// <param name="respond">New responder.</param>
+    public void SetResponder(Func<HttpRequestMessage, HttpResponseMessage> respond)
+    {
+        if (respond is null) throw new ArgumentNullException(nameof(respond));
+        _respond = (request, _) => Task.FromResult(respond(request));
+    }
 
     /// <summary>Answers every request with the same status and body.</summary>
     /// <param name="status">Status code to return.</param>
@@ -77,6 +114,52 @@ public sealed class StubHttpMessageHandler : HttpMessageHandler
     /// <param name="error">Exception to throw.</param>
     public static StubHttpMessageHandler Throws(Exception error) =>
         new((_, _) => Task.FromException<HttpResponseMessage>(error));
+
+    /// <summary>
+    /// Answers requests whose path matches <paramref name="absolutePath"/> with
+    /// <paramref name="content"/>, and everything else with 404.
+    ///
+    /// This is the shape several Ollama-facing suites hand-rolled: the subject is
+    /// only correct if it calls the RIGHT endpoint, so a wrong path must 404 rather
+    /// than be quietly served the happy-path body.
+    /// </summary>
+    /// <param name="absolutePath">Path to match, compared case-insensitively ignoring a trailing slash.</param>
+    /// <param name="content">Body returned on a match.</param>
+    /// <param name="mediaType">Body media type.</param>
+    public static StubHttpMessageHandler ForPath(
+        string absolutePath,
+        string content,
+        string mediaType = "application/json")
+    {
+        var wanted = absolutePath.TrimEnd('/');
+        return new StubHttpMessageHandler(request =>
+            request.RequestUri is not null
+            && string.Equals(
+                request.RequestUri.AbsolutePath.TrimEnd('/'),
+                wanted,
+                StringComparison.OrdinalIgnoreCase)
+                ? Respond(HttpStatusCode.OK, content, mediaType)
+                : Respond(HttpStatusCode.NotFound));
+    }
+
+    /// <summary>Answers every request with a binary body.</summary>
+    /// <param name="content">Body bytes.</param>
+    /// <param name="mediaType">Body media type.</param>
+    /// <param name="status">Status code.</param>
+    public static StubHttpMessageHandler AlwaysBytes(
+        byte[] content,
+        string mediaType,
+        HttpStatusCode status = HttpStatusCode.OK) =>
+        new(_ =>
+        {
+            var response = new HttpResponseMessage(status)
+            {
+                Content = new ByteArrayContent(content)
+            };
+            response.Content.Headers.ContentType =
+                new System.Net.Http.Headers.MediaTypeHeaderValue(mediaType);
+            return response;
+        });
 
     /// <summary>Builds a response message without the usual boilerplate.</summary>
     /// <param name="status">Status code.</param>
