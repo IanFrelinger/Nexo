@@ -1,6 +1,8 @@
 using Nexo.Core.Domain.Agents;
 
-namespace Nexo.Hosting.Sdk.Options;
+// Namespace is deliberately Nexo.Hosting.Sdk (its pre-#223 home), not the folder
+// path. See the note in NexoHostingOptions.cs.
+namespace Nexo.Hosting.Sdk;
 /// <summary>
 /// Options for SDK-registered components. Populated by INexoSdkBuilder.
 /// </summary>

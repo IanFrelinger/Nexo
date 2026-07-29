@@ -24,7 +24,6 @@ using Nexo.Commercial.GameDomain.Materials;
 using Nexo.API.Endpoints;
 using Nexo.Hosting;
 using Nexo.Hosting.Sdk.Extensions;
-using Nexo.Hosting.Sdk.Options;
 
 var builder = WebApplication.CreateBuilder(args);
 

@@ -1,4 +1,10 @@
-namespace Nexo.Hosting.Sdk.Options;
+// Namespace is deliberately Nexo.Hosting and NOT Nexo.Hosting.Sdk.Options, even
+// though this file sits under Sdk/Options/. This type is the public surface of
+// AddNexo(); its namespace is the contract consumers bind against, and the
+// folder layout is organisation only. #96 moved the file here and kept the
+// namespace on purpose. Do not let a folder-matches-namespace sweep "fix" it.
+namespace Nexo.Hosting;
+
 /// <summary>
 /// Options for configuring the Nexo kernel when using AddNexo().
 /// </summary>
