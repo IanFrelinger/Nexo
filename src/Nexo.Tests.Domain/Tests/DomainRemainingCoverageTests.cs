@@ -504,10 +504,10 @@ public sealed class DomainRemainingCoverageTests
         {
             Name = "Results",
             Type = OutputType.File,
-            Format = Nexo.Core.Domain.Workflows.OutputFormat.Json,
+            Format = WorkflowOutputFormat.Json,
             FilePath = "/out/result.json",
         };
-        output.Format.Should().Be(Nexo.Core.Domain.Workflows.OutputFormat.Json);
+        output.Format.Should().Be(WorkflowOutputFormat.Json);
 
         var transform = new TransformNode { Name = "Map", Operation = TransformOperation.Filter, Expression = "x > 0" };
         transform.Operation.Should().Be(TransformOperation.Filter);

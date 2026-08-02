@@ -13,7 +13,7 @@ public record OutputNode : WorkflowNode
     public OutputType Type { get; init; } = OutputType.Display;
 
     /// <summary>Serialization format for emitted output.</summary>
-    public OutputFormat Format { get; init; } = OutputFormat.Json;
+    public WorkflowOutputFormat Format { get; init; } = WorkflowOutputFormat.Json;
 
     /// <summary>Filesystem destination when <see cref="Type"/> is <see cref="OutputType.File"/>.</summary>
     public string? FilePath { get; init; }

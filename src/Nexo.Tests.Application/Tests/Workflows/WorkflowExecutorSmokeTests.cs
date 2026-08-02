@@ -100,7 +100,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
                     Id = "output-1",
                     Name = "Output",
                     Type = OutputType.Display,
-                    Format = OutputFormat.Json,
+                    Format = WorkflowOutputFormat.Json,
                     Inputs = new List<NodePort>
                     {
                         new NodePort { Id = "input-1", Name = "input", Direction = PortDirection.Input, DataType = "string" }
@@ -605,7 +605,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
                     Id = "output-1",
                     Name = "Output",
                     Type = OutputType.File,
-                    Format = OutputFormat.Pdf,
+                    Format = WorkflowOutputFormat.Pdf,
                     FilePath = tempPath,
                     Inputs = new List<NodePort>
                     {
@@ -696,7 +696,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
                     Id = "output-1",
                     Name = "Output",
                     Type = OutputType.Display,
-                    Format = OutputFormat.Json,
+                    Format = WorkflowOutputFormat.Json,
                     Inputs = new List<NodePort>
                     {
                         new NodePort { Id = "in-1", Name = "input", Direction = PortDirection.Input, DataType = "object" }
@@ -818,7 +818,7 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
 
     private async Task TestWorkflowOutputFormats(CancellationToken cancellationToken = default)
     {
-        var formats = new[] { OutputFormat.Xml, OutputFormat.Csv, OutputFormat.Markdown, OutputFormat.Html };
+        var formats = new[] { WorkflowOutputFormat.Xml, WorkflowOutputFormat.Csv, WorkflowOutputFormat.Markdown, WorkflowOutputFormat.Html };
         var dataBrick = new TestBrickWithDataOutput();
 
         foreach (var format in formats)
@@ -900,16 +900,16 @@ public class WorkflowExecutorSmokeTests : UnitTestBase
 
             switch (format)
             {
-                case OutputFormat.Xml:
+                case WorkflowOutputFormat.Xml:
                     AssertTrue(writtenContent.Contains("<") || writtenContent.StartsWith("<?xml"), $"Expected XML for {format}");
                     break;
-                case OutputFormat.Csv:
+                case WorkflowOutputFormat.Csv:
                     AssertTrue(writtenContent.Contains(",") || writtenContent.Contains("\n"), $"Expected CSV for {format}");
                     break;
-                case OutputFormat.Markdown:
+                case WorkflowOutputFormat.Markdown:
                     AssertTrue(writtenContent.Contains("|") || writtenContent.Contains("-"), $"Expected Markdown for {format}");
                     break;
-                case OutputFormat.Html:
+                case WorkflowOutputFormat.Html:
                     AssertTrue(writtenContent.Contains("<") && (writtenContent.Contains("table") || writtenContent.Contains("pre")), $"Expected HTML for {format}");
                     break;
             }
