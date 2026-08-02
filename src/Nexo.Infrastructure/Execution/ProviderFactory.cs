@@ -1,3 +1,5 @@
+using Nexo.Infrastructure.Execution.Scratch;
+using Nexo.Core.Application.Execution.Ports;
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Ephemeral.Ports;
 using Nexo.Core.Application.Resilience.Ports;
@@ -50,6 +52,7 @@ public class ProviderFactory : IProviderFactory
     private readonly ILogger<ProviderFactory> _logger;
     private readonly IEphemeralModelLifecycle? _ephemeralLifecycle;
     private readonly IResilientExecutor _resilientExecutor;
+    private readonly IScratchSpace _scratchSpace;
     private readonly object _ollamaProviderLock = new();
     private OllamaProvider? _ollamaProvider;
     private string? _ollamaProviderBaseUrl;
@@ -85,14 +88,17 @@ public class ProviderFactory : IProviderFactory
     /// <param name="logger">Logger for diagnostics.</param>
     /// <param name="ephemeralLifecycle">Optional ephemeral model lifecycle. When NEXO_EPHEMERAL_MODELS=1, use to resolve Ollama URL from container.</param>
     /// <param name="resilientExecutor">Optional resilient executor; defaults to <see cref="ResilientExecutor"/>.</param>
+    /// <param name="scratchSpace">Optional scratch space for transient working directories; defaults to <see cref="FileScratchSpace"/>.</param>
     public ProviderFactory(
         ILogger<ProviderFactory> logger,
         IEphemeralModelLifecycle? ephemeralLifecycle = null,
-        IResilientExecutor? resilientExecutor = null)
+        IResilientExecutor? resilientExecutor = null,
+        IScratchSpace? scratchSpace = null)
     {
         _logger = logger;
         _ephemeralLifecycle = ephemeralLifecycle;
         _resilientExecutor = resilientExecutor ?? new ResilientExecutor();
+        _scratchSpace = scratchSpace ?? new FileScratchSpace();
 
         try
         {
@@ -633,8 +639,11 @@ public class ProviderFactory : IProviderFactory
             throw new InvalidOperationException("VIDEO_SERVICE_URL is not set. Start the SmolVLM2 video container and set VIDEO_SERVICE_URL.");
 
         var fps = NexoDefaults.VideoDefaultFps;
-        var tmpDir = Path.Combine(Path.GetTempPath(), "nexo-video-" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(tmpDir);
+        // Both the creation and the teardown of this directory go through
+        // IScratchSpace now, so the temp-dir convention lives in one place
+        // instead of being re-invented per call site.
+        var scratch = _scratchSpace.CreateScratchDir("nexo-video");
+        var tmpDir = scratch.Path;
         try
         {
             for (var i = 0; i < frames.Count; i++)
@@ -691,7 +700,7 @@ public class ProviderFactory : IProviderFactory
         }
         finally
         {
-            try { Directory.Delete(tmpDir, recursive: true); } catch { /* ignore */ }
+            scratch.Dispose();
         }
     }
 
