@@ -195,28 +195,13 @@ public class ClusterExecutor : IClusterExecutor
             clusterOutput);
     }
 
-    private static IReadOnlyList<ImplementationType> BuildChain(DomainBrick brick, ImplementationType preferred, IExecutionContext ctx)
-    {
-        if (ctx.IsAirGapped)
-        {
-            return brick.Implementations.HasDeterministic ? new[] { ImplementationType.Deterministic } : Array.Empty<ImplementationType>();
-        }
-
-        var chain = new List<ImplementationType>();
-        if (preferred != ImplementationType.Auto) chain.Add(preferred);
-        foreach (var f in brick.FallbackChain)
-        {
-            if (!chain.Contains(f)) chain.Add(f);
-        }
-        if (chain.Count == 0) chain.Add(brick.DefaultImplementation);
-
-        return chain.Where(t => t switch
-        {
-            ImplementationType.Deterministic => brick.Implementations.HasDeterministic,
-            ImplementationType.Agentic => brick.Implementations.HasAgentic,
-            _ => false
-        }).ToList();
-    }
+    /// <summary>
+    /// Delegates to the one framework-wide selection rule. Availability stays
+    /// "declared only" here, matching this executor's prior behaviour.
+    /// </summary>
+    private static IReadOnlyList<ImplementationType> BuildChain(DomainBrick brick, ImplementationType preferred, IExecutionContext ctx) =>
+        ImplementationChainResolver.Instance.Resolve(
+            new ImplementationChainRequest(brick, ctx, preferred));
     
     /// <summary>
     /// Executes multiple instances of a cluster in parallel with controlled concurrency.

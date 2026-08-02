@@ -273,9 +273,10 @@ public class WorkflowExecutor
             throw new InvalidOperationException($"DomainBrick not found: {node.BrickId}");
         }
 
-        // Use the same swap-on-failure/fallback semantics as BehaviorExecutor.
-        var preferred = node.Implementation == ImplementationType.Auto ? brick.DefaultImplementation : node.Implementation;
-        var chain = BuildBrickExecutionChain(brick, preferred, context.ExecutionContext);
+        // Auto is passed through rather than collapsed to DefaultImplementation:
+        // that collapse is exactly what used to make this executor ignore the
+        // brick's Selector. The shared resolver decides.
+        var chain = BuildBrickExecutionChain(brick, node.Implementation, context.ExecutionContext);
 
         var brickInput = new BrickInput(inputs);
         BrickInputDefaults.Apply(brick, brickInput);
@@ -312,34 +313,17 @@ public class WorkflowExecutor
         };
     }
 
+    /// <summary>
+    /// Delegates to the one framework-wide selection rule. The availability
+    /// filter stays "declared only" here — provider reachability is enforced by
+    /// the brick/provider path itself, and a failure falls back through the chain.
+    /// </summary>
     private static IReadOnlyList<ImplementationType> BuildBrickExecutionChain(
         DomainBrick brick,
         ImplementationType preferred,
-        IExecutionContext ctx)
-    {
-        if (ctx.IsAirGapped)
-        {
-            return brick.Implementations.HasDeterministic ? new[] { ImplementationType.Deterministic } : Array.Empty<ImplementationType>();
-        }
-
-        var chain = new List<ImplementationType>();
-        if (preferred != ImplementationType.Auto) chain.Add(preferred);
-        foreach (var f in brick.FallbackChain)
-        {
-            if (!chain.Contains(f)) chain.Add(f);
-        }
-        if (chain.Count == 0) chain.Add(brick.DefaultImplementation);
-
-        bool Available(ImplementationType t) => t switch
-        {
-            ImplementationType.Deterministic => brick.Implementations.HasDeterministic,
-            // Provider availability is enforced by the brick/provider path itself; on failure we fall back.
-            ImplementationType.Agentic => brick.Implementations.HasAgentic,
-            _ => false
-        };
-
-        return chain.Where(Available).ToList();
-    }
+        IExecutionContext ctx) =>
+        ImplementationChainResolver.Instance.Resolve(
+            new ImplementationChainRequest(brick, ctx, preferred));
     
     /// <summary>
     /// Executes a cluster node by loading the cluster definition and running its bricks in topological order.
@@ -376,8 +360,8 @@ public class WorkflowExecutor
                 continue;
             }
 
-            var preferred = clusterBrick.DefaultImplementation == ImplementationType.Auto ? brick.DefaultImplementation : clusterBrick.DefaultImplementation;
-            var chain = BuildBrickExecutionChain(brick, preferred, context.ExecutionContext);
+            // Auto passed through so the brick's Selector is honoured here too.
+            var chain = BuildBrickExecutionChain(brick, clusterBrick.DefaultImplementation, context.ExecutionContext);
             var brickInput = BuildClusterBrickInput(step, cluster, resolvedParams, brickOutputs);
             BrickInputDefaults.Apply(brick, brickInput);
 
