@@ -16,6 +16,8 @@ using Nexo.Orchestration.Barriers;
 using Nexo.Orchestration.Resilience;
 using Nexo.Orchestration.Models;
 using Nexo.Orchestration.Transport;
+using Nexo.Core.Application.Resilience.Ports;
+using Nexo.Infrastructure.Resilience;
 using Nexo.Core.Application.Common.Ports;
 
 namespace Nexo.Orchestration.Coordination;
@@ -56,6 +58,7 @@ public sealed class Orchestrator
     private readonly NegotiationProtocol? _negotiationProtocol;
     private readonly OrchestrationMetrics? _metrics;
     private readonly RetryPolicy _retryPolicy;
+    private readonly IResilientExecutor _resilientExecutor;
     private readonly CircuitBreaker _circuitBreaker;
     private readonly ILoopKernel _loops;
     private readonly ILogger<Orchestrator> _logger;
@@ -109,7 +112,8 @@ public sealed class Orchestrator
         BarrierHierarchy? barrierHierarchy = null,
         IBarrierAuditLog? barrierAuditLog = null,
         IOptions<BarrierOptions>? barrierOptions = null,
-        IEnumerable<IAgentTransportInvocationHook>? invocationHooks = null)
+        IEnumerable<IAgentTransportInvocationHook>? invocationHooks = null,
+        IResilientExecutor? resilientExecutor = null)
     {
         _architect = architect ?? throw new ArgumentNullException(nameof(architect));
         _agentRuntimeFactory = agentRuntimeFactory ?? throw new ArgumentNullException(nameof(agentRuntimeFactory));
@@ -122,11 +126,14 @@ public sealed class Orchestrator
         _outputIntegrator = outputIntegrator ?? throw new ArgumentNullException(nameof(outputIntegrator));
         _agentBus = agentBus ?? throw new ArgumentNullException(nameof(agentBus));
         _agentTransport = agentTransport ?? throw new ArgumentNullException(nameof(agentTransport));
-        _retryPolicy = new RetryPolicy(
-            strategy: RetryStrategy.Fixed,
+        // Same shape as before the two RetryPolicy types were merged: fixed 1ms
+        // delay, 3 attempts, retry only on transport timeouts. The retry-on-what
+        // predicate now lives in the policy instead of being passed per call.
+        _retryPolicy = RetryPolicy.FixedDelay(
             maxAttempts: 3,
-            initialDelay: TimeSpan.FromMilliseconds(1),
-            maxDelay: TimeSpan.FromMilliseconds(1));
+            delay: TimeSpan.FromMilliseconds(1),
+            isTransient: static ex => ex is TimeoutException);
+        _resilientExecutor = resilientExecutor ?? new ResilientExecutor();
         _circuitBreaker = new CircuitBreaker(
             name: "orchestration-agent-transport",
             failureThreshold: 3,
@@ -553,21 +560,24 @@ public sealed class Orchestrator
     {
         try
         {
-            return await _retryPolicy.ExecuteAsync(async () =>
-            {
-                var retryResult = await _agentTransport.SendAsync(request, cancellationToken);
-                if (retryResult.Success)
+            return await _resilientExecutor.ExecuteAsync(
+                async ct =>
                 {
+                    var retryResult = await _agentTransport.SendAsync(request, ct);
+                    if (retryResult.Success)
+                    {
+                        return retryResult;
+                    }
+
+                    if (string.Equals(GetErrorCode(retryResult), "TIMEOUT", StringComparison.OrdinalIgnoreCase))
+                    {
+                        throw new TimeoutException(retryResult.ErrorMessage ?? "Agent transport timed out.");
+                    }
+
                     return retryResult;
-                }
-
-                if (string.Equals(GetErrorCode(retryResult), "TIMEOUT", StringComparison.OrdinalIgnoreCase))
-                {
-                    throw new TimeoutException(retryResult.ErrorMessage ?? "Agent transport timed out.");
-                }
-
-                return retryResult;
-            }, ex => ex is TimeoutException, cancellationToken);
+                },
+                _retryPolicy,
+                cancellationToken);
         }
         catch (TimeoutException ex)
         {

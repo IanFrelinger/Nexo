@@ -4,9 +4,9 @@ using Nexo.Core.Application.Resilience.Ports;
 namespace Nexo.Infrastructure.Resilience;
 
 /// <summary>
-/// Default <see cref="IResilientExecutor"/>: exponential backoff from
-/// <see cref="RetryPolicy.BaseDelay"/>, never retries when the caller's token
-/// is cancelled.
+/// Default <see cref="IResilientExecutor"/>: delays come from
+/// <see cref="RetryPolicy.DelayForAttempt"/>, so the policy's chosen backoff
+/// shape applies. Never retries when the caller's token is cancelled.
 /// </summary>
 public sealed class ResilientExecutor : IResilientExecutor
 {
@@ -52,8 +52,11 @@ public sealed class ResilientExecutor : IResilientExecutor
                 if (!canRetry)
                     throw;
 
-                var delay = TimeSpan.FromMilliseconds(
-                    policy.BaseDelay.TotalMilliseconds * Math.Pow(2, attempt - 1));
+                // Backoff lives on the policy, not here: Fixed/Linear/Exponential/
+                // Jittered all resolve through one implementation, and the call
+                // sites that cannot be an ExecuteAsync (result-flag retries, delay
+                // advisors) share it too.
+                var delay = policy.DelayForAttempt(attempt);
 
                 _logger?.LogWarning(
                     ex,

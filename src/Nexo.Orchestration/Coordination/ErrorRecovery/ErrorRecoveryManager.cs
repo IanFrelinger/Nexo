@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Nexo.Orchestration.Agents;
 using Nexo.Abstractions.Agents;
+using Nexo.Core.Application.Resilience.Ports;
 
 namespace Nexo.Orchestration.Coordination.ErrorRecovery;
 
@@ -21,7 +22,16 @@ public sealed class ErrorRecoveryManager
     private readonly ILogger<ErrorRecoveryManager> _logger;
     private readonly Dictionary<string, RetryInfo> _retryInfo = new();
     private readonly int _maxRetries;
-    private readonly TimeSpan _retryDelay;
+    /// <summary>
+    /// The one retry policy type, used here for its backoff calculation.
+    ///
+    /// This class ADVISES on retries (it returns ShouldRetry/RetryDelay for a
+    /// caller to act on) rather than wrapping an operation, so it is not an
+    /// IResilientExecutor.ExecuteAsync call site. What it shares with the executor
+    /// is the backoff maths, which now comes from RetryPolicy.DelayForAttempt
+    /// instead of a second hand-rolled exponential.
+    /// </summary>
+    private readonly RetryPolicy _retryPolicy;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ErrorRecoveryManager"/> class.
@@ -36,7 +46,9 @@ public sealed class ErrorRecoveryManager
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _maxRetries = maxRetries;
-        _retryDelay = retryDelay ?? TimeSpan.FromSeconds(5);
+        _retryPolicy = new RetryPolicy(
+            MaxAttempts: Math.Max(1, maxRetries),
+            BaseDelay: retryDelay ?? TimeSpan.FromSeconds(5));
     }
 
     /// <summary>
@@ -115,9 +127,8 @@ public sealed class ErrorRecoveryManager
             };
         }
 
-        // Calculate exponential backoff
-        var delay = TimeSpan.FromMilliseconds(
-            _retryDelay.TotalMilliseconds * Math.Pow(2, retryInfo.RetryCount - 1));
+        // Backoff comes from the single policy, not a second exponential here.
+        var delay = _retryPolicy.DelayForAttempt(retryInfo.RetryCount);
 
         _logger.LogInformation(
             "Scheduling retry for agent {AgentId} in {Delay}ms (attempt {Attempt})",

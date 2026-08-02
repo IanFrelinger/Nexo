@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nexo.Core.Application.Pipelines.Models;
 using Nexo.Core.Application.Pipelines.Ports;
+using Nexo.Core.Application.Resilience.Ports;
 
 namespace Nexo.Infrastructure.Pipelines;
 
@@ -293,7 +294,16 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
                 continue;
             }
 
-            var maxAttempts = Math.Max(1, _options.MaxRetryAttempts);
+            // This loop deliberately is NOT an IResilientExecutor.ExecuteAsync call.
+            // It retries on a non-exceptional RESULT flag (result.Retryable), and the
+            // retry is interleaved with fallback-chain traversal and a stage-wide
+            // attempt counter that the executor knows nothing about. Forcing it
+            // through the executor would mean throwing exceptions to signal ordinary
+            // outcomes. What it does share is the policy and its backoff.
+            var retryPolicy = RetryPolicy.FixedDelay(
+                maxAttempts: Math.Max(1, _options.MaxRetryAttempts),
+                delay: TimeSpan.FromMilliseconds(Math.Max(0, _options.RetryDelayMs)));
+            var maxAttempts = retryPolicy.MaxAttempts;
             for (var localAttempt = 1; localAttempt <= maxAttempts; localAttempt++)
             {
                 cancellationToken.ThrowIfCancellationRequested();
@@ -350,7 +360,7 @@ public sealed class PipelineOrchestrator : IPipelineOrchestrator
                     };
                 }
 
-                await Task.Delay(TimeSpan.FromMilliseconds(Math.Max(0, _options.RetryDelayMs)), cancellationToken);
+                await Task.Delay(retryPolicy.DelayForAttempt(localAttempt), cancellationToken);
             }
         }
 
