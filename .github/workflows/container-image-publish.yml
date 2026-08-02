@@ -27,7 +27,6 @@ on:
       - "src/Nexo.Hosting/**"
       - "src/Nexo.Runtime/**"
       - "src/Nexo.Abstractions/**"
-      - "src/Nexo.Core/**"
       - "src/Nexo.Core.Domain/**"
       - "src/Nexo.Brick.Contracts/**"
       - "src/Nexo.Orchestration/**"

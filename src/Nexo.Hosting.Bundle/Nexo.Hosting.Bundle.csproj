@@ -26,7 +26,6 @@
   <ItemGroup>
     <PackageReference Include="Nexo.Abstractions" Version="$(PackageVersion)" />
     <PackageReference Include="Nexo.Core.Domain" Version="$(PackageVersion)" />
-    <PackageReference Include="Nexo.Core" Version="$(PackageVersion)" />
     <PackageReference Include="Nexo.Core.Application" Version="$(PackageVersion)" />
     <PackageReference Include="Nexo.Brick.Contracts" Version="$(PackageVersion)" />
     <PackageReference Include="Nexo.Policies" Version="$(PackageVersion)" />
