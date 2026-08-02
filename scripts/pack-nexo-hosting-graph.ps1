@@ -25,7 +25,6 @@ function Pack-Project([string] $RelativePath) {
 Pack-Project "src/Nexo.Abstractions/Nexo.Abstractions.csproj"
 Pack-Project "src/Nexo.Contracts/Nexo.Contracts.csproj"
 Pack-Project "src/Nexo.Core.Domain/Nexo.Core.Domain.csproj"
-Pack-Project "src/Nexo.Core/Nexo.Core.csproj"
 Pack-Project "src/Nexo.Core.Application/Nexo.Core.Application.csproj"
 Pack-Project "src/Nexo.Brick.Contracts/Nexo.Brick.Contracts.csproj"
 Pack-Project "src/Nexo.Policies/Nexo.Policies.csproj"

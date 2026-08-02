@@ -11,7 +11,6 @@ Tiers depend **inward** only (satellites reference the spine, not the reverse). 
 | Project | Role |
 |---------|------|
 | `Nexo.Abstractions` | Shared interfaces (`IAgent`, `IModel`, …) |
-| `Nexo.Core` | Shared primitives |
 | `Nexo.Core.Domain` | Domain model, `NexoDefaults` |
 | `Nexo.Core.Application` | Use cases and ports |
 | `Nexo.Contracts` | Cross-cutting contracts |
