@@ -232,7 +232,7 @@ public sealed class WorkflowExecutorIntegrationTests
         mockBricks.Setup(b => b.GetBrick("data-brick")).Returns(brick);
         var executor = CreateExecutorWithFs(mockBricks.Object, mockFs.Object);
 
-        var workflow = CreateOutputFormatWorkflow(OutputFormat.Xml);
+        var workflow = CreateOutputFormatWorkflow(WorkflowOutputFormat.Xml);
         var result = await executor.ExecuteAsync(workflow, new WorkflowInput());
 
         result.Success.Should().BeTrue();
@@ -254,7 +254,7 @@ public sealed class WorkflowExecutorIntegrationTests
         mockBricks.Setup(b => b.GetBrick("data-brick")).Returns(brick);
         var executor = CreateExecutorWithFs(mockBricks.Object, mockFs.Object);
 
-        var workflow = CreateOutputFormatWorkflow(OutputFormat.Csv);
+        var workflow = CreateOutputFormatWorkflow(WorkflowOutputFormat.Csv);
         var result = await executor.ExecuteAsync(workflow, new WorkflowInput());
 
         result.Success.Should().BeTrue();
@@ -276,7 +276,7 @@ public sealed class WorkflowExecutorIntegrationTests
         mockBricks.Setup(b => b.GetBrick("data-brick")).Returns(brick);
         var executor = CreateExecutorWithFs(mockBricks.Object, mockFs.Object);
 
-        var workflow = CreateOutputFormatWorkflow(OutputFormat.Markdown);
+        var workflow = CreateOutputFormatWorkflow(WorkflowOutputFormat.Markdown);
         var result = await executor.ExecuteAsync(workflow, new WorkflowInput());
 
         result.Success.Should().BeTrue();
@@ -298,7 +298,7 @@ public sealed class WorkflowExecutorIntegrationTests
         mockBricks.Setup(b => b.GetBrick("data-brick")).Returns(brick);
         var executor = CreateExecutorWithFs(mockBricks.Object, mockFs.Object);
 
-        var workflow = CreateOutputFormatWorkflow(OutputFormat.Html);
+        var workflow = CreateOutputFormatWorkflow(WorkflowOutputFormat.Html);
         var result = await executor.ExecuteAsync(workflow, new WorkflowInput());
 
         result.Success.Should().BeTrue();
@@ -377,7 +377,7 @@ public sealed class WorkflowExecutorIntegrationTests
         };
     }
 
-    private static WorkflowDefinition CreateOutputFormatWorkflow(OutputFormat format)
+    private static WorkflowDefinition CreateOutputFormatWorkflow(WorkflowOutputFormat format)
     {
         var tempPath = Path.GetTempFileName();
         return new WorkflowDefinition

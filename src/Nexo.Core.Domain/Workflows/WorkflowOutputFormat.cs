@@ -1,7 +1,7 @@
 namespace Nexo.Core.Domain.Workflows;
 
 /// <summary>Serialization format for <see cref="OutputNode"/> results.</summary>
-public enum OutputFormat
+public enum WorkflowOutputFormat
 {
     /// <summary>JSON object or array.</summary>
     Json,

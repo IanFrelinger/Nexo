@@ -701,11 +701,11 @@ public class WorkflowExecutor
             case OutputType.File:
                 if (node.FilePath != null && data != null)
                 {
-                    if (node.Format == OutputFormat.Pdf)
+                    if (node.Format == WorkflowOutputFormat.Pdf)
                     {
                         if (_pdfExporter == null)
                             throw new NotSupportedException("PDF export requires IWorkflowPdfExporter to be registered");
-                        var markdown = SerializeOutput(data, OutputFormat.Markdown);
+                        var markdown = SerializeOutput(data, WorkflowOutputFormat.Markdown);
                         var pdfBytes = await _pdfExporter.ExportToPdfAsync(markdown, ct);
                         await _fs.WriteAllBytesAsync(node.FilePath, pdfBytes, ct);
                     }
@@ -938,16 +938,16 @@ public class WorkflowExecutor
         return groups;
     }
     
-    private string SerializeOutput(object data, OutputFormat format)
+    private string SerializeOutput(object data, WorkflowOutputFormat format)
     {
         return format switch
         {
-            OutputFormat.Json => System.Text.Json.JsonSerializer.Serialize(data),
-            OutputFormat.Xml => SerializeToXml(data),
-            OutputFormat.Csv => SerializeToCsv(data),
-            OutputFormat.Markdown => SerializeToMarkdown(data),
-            OutputFormat.Html => SerializeToHtml(data),
-            OutputFormat.Pdf => throw new NotSupportedException("PDF is binary; use file output with IWorkflowPdfExporter or Json/Xml/Markdown/Html for string output"),
+            WorkflowOutputFormat.Json => System.Text.Json.JsonSerializer.Serialize(data),
+            WorkflowOutputFormat.Xml => SerializeToXml(data),
+            WorkflowOutputFormat.Csv => SerializeToCsv(data),
+            WorkflowOutputFormat.Markdown => SerializeToMarkdown(data),
+            WorkflowOutputFormat.Html => SerializeToHtml(data),
+            WorkflowOutputFormat.Pdf => throw new NotSupportedException("PDF is binary; use file output with IWorkflowPdfExporter or Json/Xml/Markdown/Html for string output"),
             _ => data.ToString() ?? ""
         };
     }

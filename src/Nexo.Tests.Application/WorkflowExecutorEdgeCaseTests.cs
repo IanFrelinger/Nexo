@@ -160,7 +160,7 @@ public sealed class WorkflowExecutorEdgeCaseTests
                 {
                     Id = "output",
                     Type = OutputType.Display,
-                    Format = OutputFormat.Json,
+                    Format = WorkflowOutputFormat.Json,
                     Inputs = new List<NodePort> { new NodePort { Id = "in", Name = "input", Direction = PortDirection.Input, DataType = "number" } },
                 },
             },
@@ -365,7 +365,7 @@ public sealed class WorkflowExecutorEdgeCaseTests
                 {
                     Id = "file-out",
                     Type = OutputType.File,
-                    Format = OutputFormat.Json,
+                    Format = WorkflowOutputFormat.Json,
                     FilePath = "/tmp/out.json",
                     Inputs = new List<NodePort> { new NodePort { Id = "in", Name = "data", Direction = PortDirection.Input, DataType = "any" } },
                 },
@@ -514,7 +514,7 @@ public sealed class WorkflowExecutorEdgeCaseTests
                 {
                     Id = "output",
                     Type = OutputType.Display,
-                    Format = OutputFormat.Json,
+                    Format = WorkflowOutputFormat.Json,
                     Inputs = new List<NodePort> { new NodePort { Id = "in", Name = "input", Direction = PortDirection.Input, DataType = "string" } },
                 },
             },
@@ -755,7 +755,7 @@ public sealed class WorkflowExecutorEdgeCaseTests
                 {
                     Id = "display",
                     Type = OutputType.Display,
-                    Format = OutputFormat.Json,
+                    Format = WorkflowOutputFormat.Json,
                     Inputs = new List<NodePort> { new NodePort { Id = "in", Name = "data", Direction = PortDirection.Input, DataType = "any" } },
                 },
             },
@@ -792,7 +792,7 @@ public sealed class WorkflowExecutorEdgeCaseTests
                 {
                     Id = "file-out",
                     Type = OutputType.File,
-                    Format = OutputFormat.Html,
+                    Format = WorkflowOutputFormat.Html,
                     FilePath = "/tmp/scalar.html",
                     Inputs = new List<NodePort> { new NodePort { Id = "in", Name = "data", Direction = PortDirection.Input, DataType = "any" } },
                 },
@@ -819,7 +819,7 @@ public sealed class WorkflowExecutorEdgeCaseTests
             Nodes = new List<WorkflowNode>
             {
                 new InputNode { Id = "input", Type = InputType.Content, Content = "x", Outputs = new List<NodePort> { new NodePort { Id = "out", Name = "data", Direction = PortDirection.Output, DataType = "any" } } },
-                new OutputNode { Id = "out", Type = OutputType.File, Format = OutputFormat.Pdf, FilePath = "/tmp/x.pdf", Inputs = new List<NodePort> { new NodePort { Id = "in", Name = "data", Direction = PortDirection.Input, DataType = "any" } } },
+                new OutputNode { Id = "out", Type = OutputType.File, Format = WorkflowOutputFormat.Pdf, FilePath = "/tmp/x.pdf", Inputs = new List<NodePort> { new NodePort { Id = "in", Name = "data", Direction = PortDirection.Input, DataType = "any" } } },
             },
             Connections = new List<VisualWorkflowConnection> { new() { FromNodeId = "input", FromPortId = "out", ToNodeId = "out", ToPortId = "in" } },
         }, new WorkflowInput());
@@ -975,7 +975,7 @@ public sealed class WorkflowExecutorEdgeCaseTests
             Nodes = new List<WorkflowNode>
             {
                 new InputNode { Id = "input", Type = InputType.Content, Content = "[]", Outputs = new List<NodePort> { new NodePort { Id = "out", Name = "data", Direction = PortDirection.Output, DataType = "any" } } },
-                new OutputNode { Id = "out", Type = OutputType.File, Format = OutputFormat.Csv, FilePath = "/tmp/empty.csv", Inputs = new List<NodePort> { new NodePort { Id = "in", Name = "data", Direction = PortDirection.Input, DataType = "any" } } },
+                new OutputNode { Id = "out", Type = OutputType.File, Format = WorkflowOutputFormat.Csv, FilePath = "/tmp/empty.csv", Inputs = new List<NodePort> { new NodePort { Id = "in", Name = "data", Direction = PortDirection.Input, DataType = "any" } } },
             },
             Connections = new List<VisualWorkflowConnection> { new() { FromNodeId = "input", FromPortId = "out", ToNodeId = "out", ToPortId = "in" } },
         }, new WorkflowInput());
@@ -987,7 +987,7 @@ public sealed class WorkflowExecutorEdgeCaseTests
             Nodes = new List<WorkflowNode>
             {
                 new InputNode { Id = "input", Type = InputType.Content, Content = "[]", Outputs = new List<NodePort> { new NodePort { Id = "out", Name = "data", Direction = PortDirection.Output, DataType = "any" } } },
-                new OutputNode { Id = "out", Type = OutputType.File, Format = OutputFormat.Markdown, FilePath = "/tmp/empty.md", Inputs = new List<NodePort> { new NodePort { Id = "in", Name = "data", Direction = PortDirection.Input, DataType = "any" } } },
+                new OutputNode { Id = "out", Type = OutputType.File, Format = WorkflowOutputFormat.Markdown, FilePath = "/tmp/empty.md", Inputs = new List<NodePort> { new NodePort { Id = "in", Name = "data", Direction = PortDirection.Input, DataType = "any" } } },
             },
             Connections = new List<VisualWorkflowConnection> { new() { FromNodeId = "input", FromPortId = "out", ToNodeId = "out", ToPortId = "in" } },
         }, new WorkflowInput());
@@ -999,7 +999,7 @@ public sealed class WorkflowExecutorEdgeCaseTests
             Nodes = new List<WorkflowNode>
             {
                 new InputNode { Id = "input", Type = InputType.Content, Content = """[{"name":"a,b","note":"line\nbreak"}]""", Outputs = new List<NodePort> { new NodePort { Id = "out", Name = "data", Direction = PortDirection.Output, DataType = "any" } } },
-                new OutputNode { Id = "out", Type = OutputType.File, Format = OutputFormat.Csv, FilePath = "/tmp/escaped.csv", Inputs = new List<NodePort> { new NodePort { Id = "in", Name = "data", Direction = PortDirection.Input, DataType = "any" } } },
+                new OutputNode { Id = "out", Type = OutputType.File, Format = WorkflowOutputFormat.Csv, FilePath = "/tmp/escaped.csv", Inputs = new List<NodePort> { new NodePort { Id = "in", Name = "data", Direction = PortDirection.Input, DataType = "any" } } },
             },
             Connections = new List<VisualWorkflowConnection> { new() { FromNodeId = "input", FromPortId = "out", ToNodeId = "out", ToPortId = "in" } },
         }, new WorkflowInput());
@@ -1026,7 +1026,7 @@ public sealed class WorkflowExecutorEdgeCaseTests
             Nodes = new List<WorkflowNode>
             {
                 new InputNode { Id = "input", Type = InputType.Content, Content = "x", Outputs = new List<NodePort> { new NodePort { Id = "out", Name = "data", Direction = PortDirection.Output, DataType = "string" } } },
-                new OutputNode { Id = "output", Type = OutputType.Display, Format = OutputFormat.Json, Inputs = new List<NodePort> { new NodePort { Id = "in", Name = "data", Direction = PortDirection.Input, DataType = "number" } } },
+                new OutputNode { Id = "output", Type = OutputType.Display, Format = WorkflowOutputFormat.Json, Inputs = new List<NodePort> { new NodePort { Id = "in", Name = "data", Direction = PortDirection.Input, DataType = "number" } } },
             },
             Connections = new List<VisualWorkflowConnection> { new() { FromNodeId = "input", FromPortId = "out", ToNodeId = "output", ToPortId = "in" } },
         };
@@ -1041,7 +1041,7 @@ public sealed class WorkflowExecutorEdgeCaseTests
             Nodes = new List<WorkflowNode>
             {
                 new InputNode { Id = "input", Type = InputType.Content, Content = "x", Outputs = new List<NodePort> { new NodePort { Id = "out", Name = "data", Direction = PortDirection.Output, DataType = "any" } } },
-                new OutputNode { Id = "output", Type = OutputType.Display, Format = OutputFormat.Json, Inputs = new List<NodePort> { new NodePort { Id = "in", Name = "data", Direction = PortDirection.Input, DataType = "any" } } },
+                new OutputNode { Id = "output", Type = OutputType.Display, Format = WorkflowOutputFormat.Json, Inputs = new List<NodePort> { new NodePort { Id = "in", Name = "data", Direction = PortDirection.Input, DataType = "any" } } },
             },
             Connections = new List<VisualWorkflowConnection> { new() { FromNodeId = "input", FromPortId = "missing-out", ToNodeId = "output", ToPortId = "in" } },
         };
@@ -1111,7 +1111,7 @@ public sealed class WorkflowExecutorEdgeCaseTests
                     Id = "xml-out",
                     Name = "xmlResult",
                     Type = OutputType.File,
-                    Format = OutputFormat.Xml,
+                    Format = WorkflowOutputFormat.Xml,
                     FilePath = "/tmp/object.xml",
                     Inputs = new List<NodePort> { new NodePort { Id = "in", Name = "data", Direction = PortDirection.Input, DataType = "any" } },
                 },
@@ -1120,7 +1120,7 @@ public sealed class WorkflowExecutorEdgeCaseTests
                     Id = "md-out",
                     Name = "mdResult",
                     Type = OutputType.File,
-                    Format = OutputFormat.Markdown,
+                    Format = WorkflowOutputFormat.Markdown,
                     FilePath = "/tmp/object.md",
                     Inputs = new List<NodePort> { new NodePort { Id = "in", Name = "data", Direction = PortDirection.Input, DataType = "any" } },
                 },
@@ -1210,7 +1210,7 @@ public sealed class WorkflowExecutorEdgeCaseTests
                 {
                     Id = "xml-out",
                     Type = OutputType.File,
-                    Format = OutputFormat.Xml,
+                    Format = WorkflowOutputFormat.Xml,
                     FilePath = "/tmp/flag.xml",
                     Inputs = new List<NodePort> { new NodePort { Id = "in", Name = "data", Direction = PortDirection.Input, DataType = "any" } },
                 },
@@ -1348,7 +1348,7 @@ public sealed class WorkflowExecutorEdgeCaseTests
             Nodes = new List<WorkflowNode>
             {
                 new InputNode { Id = "input", Type = InputType.Content, Content = "[1,2,3]", Outputs = new List<NodePort> { new NodePort { Id = "out", Name = "data", Direction = PortDirection.Output, DataType = "any" } } },
-                new OutputNode { Id = "html-out", Type = OutputType.File, Format = OutputFormat.Html, FilePath = "/tmp/scalar-array.html", Inputs = new List<NodePort> { new NodePort { Id = "in", Name = "data", Direction = PortDirection.Input, DataType = "any" } } },
+                new OutputNode { Id = "html-out", Type = OutputType.File, Format = WorkflowOutputFormat.Html, FilePath = "/tmp/scalar-array.html", Inputs = new List<NodePort> { new NodePort { Id = "in", Name = "data", Direction = PortDirection.Input, DataType = "any" } } },
             },
             Connections = new List<VisualWorkflowConnection> { new() { FromNodeId = "input", FromPortId = "out", ToNodeId = "html-out", ToPortId = "in" } },
         }, new WorkflowInput());
@@ -1406,7 +1406,7 @@ public sealed class WorkflowExecutorEdgeCaseTests
             Nodes = new List<WorkflowNode>
             {
                 new InputNode { Id = "input", Type = InputType.Content, Content = "42", Outputs = new List<NodePort> { new NodePort { Id = "out", Name = "data", Direction = PortDirection.Output, DataType = "any" } } },
-                new OutputNode { Id = "csv-out", Type = OutputType.File, Format = OutputFormat.Csv, FilePath = "/tmp/scalar.csv", Inputs = new List<NodePort> { new NodePort { Id = "in", Name = "data", Direction = PortDirection.Input, DataType = "any" } } },
+                new OutputNode { Id = "csv-out", Type = OutputType.File, Format = WorkflowOutputFormat.Csv, FilePath = "/tmp/scalar.csv", Inputs = new List<NodePort> { new NodePort { Id = "in", Name = "data", Direction = PortDirection.Input, DataType = "any" } } },
             },
             Connections = new List<VisualWorkflowConnection> { new() { FromNodeId = "input", FromPortId = "out", ToNodeId = "csv-out", ToPortId = "in" } },
         }, new WorkflowInput());
@@ -1433,7 +1433,7 @@ public sealed class WorkflowExecutorEdgeCaseTests
             Nodes = new List<WorkflowNode>
             {
                 new BrickNode { Id = "source", BrickId = "invalid-xml-keys", Outputs = new List<NodePort> { new NodePort { Id = "out", Name = "data", Direction = PortDirection.Output, DataType = "any" } } },
-                new OutputNode { Id = "xml-out", Type = OutputType.File, Format = OutputFormat.Xml, FilePath = "/tmp/sanitize.xml", Inputs = new List<NodePort> { new NodePort { Id = "in", Name = "data", Direction = PortDirection.Input, DataType = "any" } } },
+                new OutputNode { Id = "xml-out", Type = OutputType.File, Format = WorkflowOutputFormat.Xml, FilePath = "/tmp/sanitize.xml", Inputs = new List<NodePort> { new NodePort { Id = "in", Name = "data", Direction = PortDirection.Input, DataType = "any" } } },
             },
             Connections = new List<VisualWorkflowConnection> { new() { FromNodeId = "source", FromPortId = "out", ToNodeId = "xml-out", ToPortId = "in" } },
         }, new WorkflowInput());
