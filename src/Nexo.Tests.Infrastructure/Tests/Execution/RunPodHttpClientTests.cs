@@ -1,3 +1,4 @@
+using Nexo.Agents.TestKit;
 using System.Net;
 using System.Text;
 using FluentAssertions;
@@ -15,7 +16,7 @@ public sealed class RunPodHttpClientTests
     [Fact]
     public async Task PollJobStatus_MapsCancelledState_ToFailed()
     {
-        using var httpClient = new HttpClient(new FakeHttpMessageHandler((request, _) =>
+        using var httpClient = new HttpClient(new StubHttpMessageHandler((request, _) =>
         {
             request.RequestUri!.AbsolutePath.Should().Contain("/v2/jobs/job-123");
             return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
@@ -51,16 +52,4 @@ public sealed class RunPodHttpClientTests
     }
 
     /// <summary>Tests for fake http message handler.</summary>
-    private sealed class FakeHttpMessageHandler : HttpMessageHandler
-    {
-        private readonly Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> _handler;
-
-        public FakeHttpMessageHandler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> handler)
-        {
-            _handler = handler;
-        }
-
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-            => _handler(request, cancellationToken);
-    }
 }

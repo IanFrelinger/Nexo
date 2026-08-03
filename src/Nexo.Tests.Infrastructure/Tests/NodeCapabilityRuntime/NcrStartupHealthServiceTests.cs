@@ -1,3 +1,4 @@
+using Nexo.Agents.TestKit;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Nexo.Infrastructure.NodeCapabilityRuntime;
@@ -44,7 +45,7 @@ public sealed class NcrStartupHealthServiceTests
     [Fact]
     public async Task StartAsync_DoesNotThrow_WhenOllamaAvailable()
     {
-        using var httpClient = new HttpClient(new TagsOkHandler());
+        using var httpClient = new HttpClient(StubHttpMessageHandler.Always(HttpStatusCode.OK, """{"models":[]}"""));
         var service = new NcrStartupHealthService(
             new OllamaModelServingBackend(
                 httpClient,
@@ -58,7 +59,7 @@ public sealed class NcrStartupHealthServiceTests
     [Fact]
     public async Task StartAsync_DoesNotThrow_WhenOllamaReturnsUnavailableStatus()
     {
-        using var httpClient = new HttpClient(new StatusHandler(HttpStatusCode.ServiceUnavailable));
+        using var httpClient = new HttpClient(StubHttpMessageHandler.Always(HttpStatusCode.ServiceUnavailable));
         var service = new NcrStartupHealthService(
             new OllamaModelServingBackend(
                 httpClient,
@@ -83,7 +84,7 @@ public sealed class NcrStartupHealthServiceTests
     [Fact]
     public async Task StartAsync_DoesNotThrow_WhenOllamaUnavailable()
     {
-        using var httpClient = new HttpClient(new ThrowingHandler());
+        using var httpClient = new HttpClient(StubHttpMessageHandler.Throws(new HttpRequestException("No route to host")));
         var service = new NcrStartupHealthService(
             new OllamaModelServingBackend(
                 httpClient,
@@ -97,32 +98,8 @@ public sealed class NcrStartupHealthServiceTests
     }
 
     /// <summary>Tests for throwing handler.</summary>
-    private sealed class ThrowingHandler : HttpMessageHandler
-    {
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-            => throw new HttpRequestException("No route to host");
-    }
 
     /// <summary>Tests for tags ok handler.</summary>
-    private sealed class TagsOkHandler : HttpMessageHandler
-    {
-        /// <summary>Send async.</summary>
-        /// <param name="request">Request.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
-            Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent("""{"models":[]}""", Encoding.UTF8, "application/json"),
-            });
-    }
 
     /// <summary>Tests for status handler.</summary>
-    private sealed class StatusHandler(HttpStatusCode status) : HttpMessageHandler
-    {
-        /// <summary>Send async.</summary>
-        /// <param name="request">Request.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
-            Task.FromResult(new HttpResponseMessage(status));
-    }
 }

@@ -1,3 +1,4 @@
+using Nexo.Agents.TestKit;
 using System.Net;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
@@ -13,7 +14,7 @@ public sealed class OllamaTagsModelArtifactCatalogSourceTests
     [Fact]
     public async Task ListAsync_ParsesTagsResponse()
     {
-        var handler = new TagsJsonHandler(
+        var handler = StubHttpMessageHandler.ForPath("/api/tags", 
             """{"models":[{"name":"phi3:mini","size":2048,"modified_at":"2024-01-02T00:00:00Z"}]}""");
 
         await using var provider = new ServiceCollection()
@@ -35,28 +36,4 @@ public sealed class OllamaTagsModelArtifactCatalogSourceTests
     }
 
     /// <summary>Tests for tags json handler.</summary>
-    private sealed class TagsJsonHandler : HttpMessageHandler
-    {
-        private readonly string _json;
-
-        /// <summary>Tags json handler.</summary>
-        /// <param name="json">Json.</param>
-        public TagsJsonHandler(string json) => _json = json;
-
-        protected override Task<HttpResponseMessage> SendAsync(
-            HttpRequestMessage request,
-            CancellationToken cancellationToken)
-        {
-            if (request.RequestUri is null ||
-                !string.Equals(request.RequestUri.AbsolutePath.TrimEnd('/'), "/api/tags", StringComparison.OrdinalIgnoreCase))
-            {
-                return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotFound));
-            }
-
-            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
-            {
-                Content = new StringContent(_json, System.Text.Encoding.UTF8, "application/json")
-            });
-        }
-    }
 }

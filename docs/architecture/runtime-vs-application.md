@@ -19,7 +19,6 @@ Conceptually **runtime** includes:
 | Concern | Projects (examples) |
 |--------|---------------------|
 | Contracts | `Nexo.Abstractions`, `Nexo.Brick.Contracts`, `Nexo.Contracts` |
-| Shared primitives | `Nexo.Core` |
 | Domain rules | `Nexo.Core.Domain` |
 | Application ports and use cases | `Nexo.Core.Application` |
 | Policy primitives | `Nexo.Policies`, `Nexo.Policies.Dev` |

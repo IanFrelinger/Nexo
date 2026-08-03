@@ -1,3 +1,4 @@
+using Nexo.Agents.TestKit;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Nexo.Infrastructure.Trust;
@@ -106,7 +107,7 @@ public sealed class CloudAvailabilityResolverGapCoverageTests : IDisposable
     {
         Environment.SetEnvironmentVariable("NEXO_AIRGAP", null);
 
-        var handler = new FakeTrustHandler((_, _) => new HttpResponseMessage(System.Net.HttpStatusCode.OK));
+        var handler = StubHttpMessageHandler.FromSync((_, _) => new HttpResponseMessage(System.Net.HttpStatusCode.OK));
         var resolver = new CloudAvailabilityResolver(
             NullLogger<CloudAvailabilityResolver>.Instance,
             configPath: "/does/not/exist",
@@ -130,19 +131,4 @@ public sealed class CloudAvailabilityResolverGapCoverageTests : IDisposable
     }
 
     /// <summary>Tests for fake trust handler.</summary>
-    private sealed class FakeTrustHandler : HttpMessageHandler
-    {
-        private readonly Func<HttpRequestMessage, CancellationToken, HttpResponseMessage> _handler;
-
-        /// <summary>Fake trust handler.</summary>
-        /// <param name="handler">Handler.</param>
-        public FakeTrustHandler(Func<HttpRequestMessage, CancellationToken, HttpResponseMessage> handler) =>
-            _handler = handler;
-
-        /// <summary>Send async.</summary>
-        /// <param name="request">Request.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
-            Task.FromResult(_handler(request, cancellationToken));
-    }
 }

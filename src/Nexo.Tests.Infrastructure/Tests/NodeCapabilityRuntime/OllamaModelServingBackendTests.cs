@@ -1,3 +1,4 @@
+using Nexo.Agents.TestKit;
 using System.Net;
 using System.Net.Http;
 using System.Text;
@@ -15,7 +16,7 @@ public sealed class OllamaModelServingBackendTests
     [Fact]
     public async Task RunInferenceAsync_UsesChatEndpoint_AndParsesContent()
     {
-        var handler = new FakeHttpMessageHandler((request, ct) =>
+        var handler = new StubHttpMessageHandler((request, ct) =>
         {
             request.RequestUri!.AbsolutePath.Should().Be("/api/chat");
             return Task.FromResult(JsonResponse("""
@@ -44,7 +45,7 @@ public sealed class OllamaModelServingBackendTests
     [Fact]
     public async Task PullLoadUnload_ListLoadedModels_UsesExpectedOllamaEndpoints()
     {
-        var handler = new FakeHttpMessageHandler((request, ct) =>
+        var handler = new StubHttpMessageHandler((request, ct) =>
         {
             return request.RequestUri!.AbsolutePath switch
             {
@@ -93,23 +94,4 @@ public sealed class OllamaModelServingBackendTests
     }
 
     /// <summary>Tests for fake http message handler.</summary>
-    private sealed class FakeHttpMessageHandler : HttpMessageHandler
-    {
-        private readonly Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> _handler;
-
-        /// <summary>Requests.</summary>
-        public List<HttpRequestMessage> Requests { get; } = new();
-
-        public FakeHttpMessageHandler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> handler)
-        {
-            _handler = handler;
-        }
-
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-        {
-            Requests.Add(request);
-            /// <summary>_handler.</summary>
-            return _handler(request, cancellationToken);
-        }
-    }
 }

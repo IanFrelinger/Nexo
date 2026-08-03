@@ -25,7 +25,6 @@ on:
       - "application/src/Nexo.CLI/**"
       - "src/Nexo.Hosting/**"
       - "src/Nexo.Abstractions/**"
-      - "src/Nexo.Core/**"
       - "src/Nexo.Core.Domain/**"
       - "src/Nexo.Core.Application/**"
       - "src/Nexo.Brick.Contracts/**"

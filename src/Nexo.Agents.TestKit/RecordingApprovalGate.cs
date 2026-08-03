@@ -70,6 +70,17 @@ public sealed class FakeProviderFactory : IProviderFactory
     /// <summary>Whether <see cref="IsProviderAvailable"/> reports availability.</summary>
     public bool Available { get; init; }
 
+    /// <summary>
+    /// Whether <see cref="EnsureOllamaReachableAsync"/> succeeds instead of throwing.
+    ///
+    /// Default false keeps the offline-hostile stance: a component that quietly
+    /// depends on a live Ollama fails loudly rather than hanging on a socket. Set
+    /// true for tests whose subject legitimately calls the reachability probe and
+    /// treats a throw as cause to retry — there, throwing turns a fast assertion
+    /// into a hung suite.
+    /// </summary>
+    public bool OllamaReachable { get; init; }
+
     /// <inheritdoc />
     public bool IsProviderAvailable(string provider) => Available;
 
@@ -120,7 +131,7 @@ public sealed class FakeProviderFactory : IProviderFactory
     public Task EnsureOllamaReachableAsync(
         bool requireVisionModel,
         CancellationToken cancellationToken = default) =>
-        Task.FromException(Offline());
+        OllamaReachable ? Task.CompletedTask : Task.FromException(Offline());
 
     private static InvalidOperationException Offline() =>
         new("FakeProviderFactory is offline: no scripted model response was configured.");

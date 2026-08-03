@@ -1,3 +1,4 @@
+using Nexo.Agents.TestKit;
 using System.Net;
 using System.Text;
 using FluentAssertions;
@@ -31,7 +32,7 @@ public sealed class HttpRemoteBrickCatalogStaleGuardrailTests
             static _ => throw new HttpRequestException("network down")
         ]);
 
-        using var httpClient = new HttpClient(new FakeHttpMessageHandler((req, _) => Task.FromResult(responses.Dequeue().Invoke(req))))
+        using var httpClient = new HttpClient(new StubHttpMessageHandler((req, _) => Task.FromResult(responses.Dequeue().Invoke(req))))
         {
             BaseAddress = new Uri("http://remote:7777", UriKind.Absolute)
         };
@@ -72,7 +73,7 @@ public sealed class HttpRemoteBrickCatalogStaleGuardrailTests
             static _ => throw new HttpRequestException("network down")
         ]);
 
-        using var httpClient = new HttpClient(new FakeHttpMessageHandler((req, _) => Task.FromResult(responses.Dequeue().Invoke(req))))
+        using var httpClient = new HttpClient(new StubHttpMessageHandler((req, _) => Task.FromResult(responses.Dequeue().Invoke(req))))
         {
             BaseAddress = new Uri("http://remote:7777", UriKind.Absolute)
         };
@@ -102,16 +103,4 @@ public sealed class HttpRemoteBrickCatalogStaleGuardrailTests
     }
 
     /// <summary>Tests for fake http message handler.</summary>
-    private sealed class FakeHttpMessageHandler : HttpMessageHandler
-    {
-        private readonly Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> _handler;
-
-        public FakeHttpMessageHandler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> handler)
-        {
-            _handler = handler;
-        }
-
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-            => _handler(request, cancellationToken);
-    }
 }

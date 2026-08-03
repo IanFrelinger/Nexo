@@ -3,7 +3,6 @@
     "path": "Nexo.sln",
     "projects": [
       "src/Nexo.Abstractions/Nexo.Abstractions.csproj",
-      "src/Nexo.Core/Nexo.Core.csproj",
       "src/Nexo.Core.Domain/Nexo.Core.Domain.csproj",
       "src/Nexo.Core.Application/Nexo.Core.Application.csproj",
       "src/Nexo.Contracts/Nexo.Contracts.csproj",

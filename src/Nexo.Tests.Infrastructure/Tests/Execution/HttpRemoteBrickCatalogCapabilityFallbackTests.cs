@@ -1,3 +1,4 @@
+using Nexo.Agents.TestKit;
 using System.Net;
 using System.Text;
 using FluentAssertions;
@@ -33,7 +34,7 @@ public sealed class HttpRemoteBrickCatalogCapabilityFallbackTests
             static _ => throw new HttpRequestException("network down")
         ]);
 
-        using var httpClient = new HttpClient(new FakeHttpMessageHandler((req, _) => Task.FromResult(responses.Dequeue().Invoke(req))))
+        using var httpClient = new HttpClient(new StubHttpMessageHandler((req, _) => Task.FromResult(responses.Dequeue().Invoke(req))))
         {
             BaseAddress = new Uri("http://remote:7777", UriKind.Absolute)
         };
@@ -73,7 +74,7 @@ public sealed class HttpRemoteBrickCatalogCapabilityFallbackTests
             GeneratedAt = tooOld
         });
 
-        using var httpClient = new HttpClient(new FakeHttpMessageHandler((req, _) =>
+        using var httpClient = new HttpClient(new StubHttpMessageHandler((req, _) =>
             Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable))))
         {
             BaseAddress = new Uri("http://remote:7777", UriKind.Absolute)
@@ -107,7 +108,7 @@ public sealed class HttpRemoteBrickCatalogCapabilityFallbackTests
             GeneratedAt = DateTimeOffset.UtcNow.AddHours(1)
         });
 
-        using var httpClient = new HttpClient(new FakeHttpMessageHandler((req, _) =>
+        using var httpClient = new HttpClient(new StubHttpMessageHandler((req, _) =>
             Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable))))
         {
             BaseAddress = new Uri("http://remote:7777", UriKind.Absolute)
@@ -131,7 +132,7 @@ public sealed class HttpRemoteBrickCatalogCapabilityFallbackTests
         var freshGeneratedAt = DateTimeOffset.UtcNow.AddSeconds(-5).ToString("O");
         var capabilitiesCalls = 0;
         var brickCalls = 0;
-        using var httpClient = new HttpClient(new FakeHttpMessageHandler((req, _) =>
+        using var httpClient = new HttpClient(new StubHttpMessageHandler((req, _) =>
         {
             if (req.RequestUri!.AbsolutePath == "/api/capabilities")
             {
@@ -210,7 +211,7 @@ public sealed class HttpRemoteBrickCatalogCapabilityFallbackTests
     [Fact]
     public async Task GetByIdAsync_returns_null_for_empty_id()
     {
-        using var httpClient = new HttpClient(new FakeHttpMessageHandler((_, _) =>
+        using var httpClient = new HttpClient(new StubHttpMessageHandler((_, _) =>
             Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK))))
         {
             BaseAddress = new Uri("http://remote:7777/", UriKind.Absolute)
@@ -223,7 +224,7 @@ public sealed class HttpRemoteBrickCatalogCapabilityFallbackTests
     [Fact]
     public async Task GetByIdAsync_returns_entry_with_capabilities_when_found()
     {
-        using var httpClient = new HttpClient(new FakeHttpMessageHandler((req, _) =>
+        using var httpClient = new HttpClient(new StubHttpMessageHandler((req, _) =>
         {
             if (req.RequestUri!.AbsolutePath == "/api/capabilities")
             {
@@ -273,7 +274,7 @@ public sealed class HttpRemoteBrickCatalogCapabilityFallbackTests
     [Fact]
     public async Task GetByIdAsync_returns_null_when_remote_errors()
     {
-        using var httpClient = new HttpClient(new FakeHttpMessageHandler((_, _) =>
+        using var httpClient = new HttpClient(new StubHttpMessageHandler((_, _) =>
             Task.FromResult(new HttpResponseMessage(HttpStatusCode.InternalServerError))))
         {
             BaseAddress = new Uri("http://remote:7777/", UriKind.Absolute)
@@ -286,7 +287,7 @@ public sealed class HttpRemoteBrickCatalogCapabilityFallbackTests
     [Fact]
     public async Task GetAllAsync_parses_full_brick_catalog_payload()
     {
-        using var httpClient = new HttpClient(new FakeHttpMessageHandler((req, _) =>
+        using var httpClient = new HttpClient(new StubHttpMessageHandler((req, _) =>
         {
             if (req.RequestUri!.AbsolutePath == "/api/capabilities")
             {
@@ -363,7 +364,7 @@ public sealed class HttpRemoteBrickCatalogCapabilityFallbackTests
     public async Task GetCapabilitiesWithStaleness_returns_cached_value_within_ttl_without_refetch()
     {
         var capabilityCalls = 0;
-        using var httpClient = new HttpClient(new FakeHttpMessageHandler((req, _) =>
+        using var httpClient = new HttpClient(new StubHttpMessageHandler((req, _) =>
         {
             if (req.RequestUri!.AbsolutePath == "/api/capabilities")
             {
@@ -403,7 +404,7 @@ public sealed class HttpRemoteBrickCatalogCapabilityFallbackTests
     [Fact]
     public async Task GetAllAsync_returns_empty_when_payload_has_no_bricks_array()
     {
-        using var httpClient = new HttpClient(new FakeHttpMessageHandler((req, _) =>
+        using var httpClient = new HttpClient(new StubHttpMessageHandler((req, _) =>
         {
             if (req.RequestUri!.AbsolutePath == "/api/bricks")
                 return Task.FromResult(JsonResponse("""{"items":[]}"""));
@@ -427,16 +428,4 @@ public sealed class HttpRemoteBrickCatalogCapabilityFallbackTests
     }
 
     /// <summary>Tests for fake http message handler.</summary>
-    private sealed class FakeHttpMessageHandler : HttpMessageHandler
-    {
-        private readonly Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> _handler;
-
-        public FakeHttpMessageHandler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> handler)
-        {
-            _handler = handler;
-        }
-
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-            => _handler(request, cancellationToken);
-    }
 }

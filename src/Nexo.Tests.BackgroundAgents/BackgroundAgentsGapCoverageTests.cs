@@ -1,3 +1,4 @@
+using Nexo.Agents.TestKit;
 using System.Net;
 using System.Text;
 using FluentAssertions;
@@ -100,7 +101,7 @@ public class BackgroundAgentsGapCoverageTests
               }
             }
             """;
-        var handler = new FakeHttpMessageHandler((request, _) =>
+        var handler = new StubHttpMessageHandler((request, _) =>
         {
             request.Headers.Contains("Ocp-Apim-Subscription-Key").Should().BeTrue();
             request.RequestUri!.Query.Should().Contain("q=nexo");
@@ -123,7 +124,7 @@ public class BackgroundAgentsGapCoverageTests
     [Fact]
     public async Task BingWebSearchProvider_http_failure_returns_empty()
     {
-        var handler = new FakeHttpMessageHandler((_, _) =>
+        var handler = new StubHttpMessageHandler((_, _) =>
             Task.FromResult(new HttpResponseMessage(HttpStatusCode.InternalServerError)));
         using var client = new HttpClient(handler);
         var provider = new BingWebSearchProvider(client, "test-key", "https://bing.test/search");
@@ -134,7 +135,7 @@ public class BackgroundAgentsGapCoverageTests
     [Fact]
     public async Task BingWebSearchProvider_malformed_json_returns_empty()
     {
-        var handler = new FakeHttpMessageHandler((_, _) =>
+        var handler = new StubHttpMessageHandler((_, _) =>
             Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new StringContent("not-json", Encoding.UTF8, "application/json"),
@@ -162,17 +163,4 @@ public class BackgroundAgentsGapCoverageTests
         level.AllowsWebSearch.Should().BeTrue();
     }
 
-    /// <summary>Handles fake http message requests.</summary>
-    private sealed class FakeHttpMessageHandler : HttpMessageHandler
-    {
-        private readonly Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> _handler;
-
-        public FakeHttpMessageHandler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> handler)
-        {
-            _handler = handler;
-        }
-
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-            => _handler(request, cancellationToken);
-    }
 }

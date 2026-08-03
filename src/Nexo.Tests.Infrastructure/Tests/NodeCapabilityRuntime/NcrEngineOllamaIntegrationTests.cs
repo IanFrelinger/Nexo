@@ -1,3 +1,4 @@
+using Nexo.Agents.TestKit;
 using System.Net;
 using System.Text;
 using FluentAssertions;
@@ -35,7 +36,7 @@ public sealed class NcrEngineOllamaIntegrationTests
     [Fact]
     public async Task ResolveEnsureInference_RecordOutcome_RoundTrip_Works()
     {
-        var handler = new FakeHttpMessageHandler((request, ct) =>
+        var handler = new StubHttpMessageHandler((request, ct) =>
         {
             return request.RequestUri!.AbsolutePath switch
             {
@@ -140,7 +141,7 @@ public sealed class NcrEngineOllamaIntegrationTests
     [Fact]
     public async Task ResolveModel_WhenBackendUnavailable_Throws_AndRecordsFailureSignal()
     {
-        var handler = new FakeHttpMessageHandler((request, ct) =>
+        var handler = new StubHttpMessageHandler((request, ct) =>
         {
             return request.RequestUri!.AbsolutePath switch
             {
@@ -212,7 +213,7 @@ public sealed class NcrEngineOllamaIntegrationTests
     [Fact]
     public async Task RunInference_WhenSlowResponse_Completes_WithMeasuredDuration()
     {
-        var handler = new FakeHttpMessageHandler(async (request, ct) =>
+        var handler = new StubHttpMessageHandler(async (request, ct) =>
         {
             if (request.RequestUri!.AbsolutePath == "/api/chat")
             {
@@ -250,7 +251,7 @@ public sealed class NcrEngineOllamaIntegrationTests
     public async Task RunInference_WithIntermittentFailures_CompletesAcrossAttempts()
     {
         var attempts = 0;
-        var handler = new FakeHttpMessageHandler((request, ct) =>
+        var handler = new StubHttpMessageHandler((request, ct) =>
         {
             if (request.RequestUri!.AbsolutePath != "/api/chat")
             {
@@ -409,20 +410,4 @@ public sealed class NcrEngineOllamaIntegrationTests
         };
     }
 
-    private sealed class FakeHttpMessageHandler : HttpMessageHandler
-    {
-        private readonly Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> _handler;
-        public List<HttpRequestMessage> Requests { get; } = new();
-
-        public FakeHttpMessageHandler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> handler)
-        {
-            _handler = handler;
-        }
-
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-        {
-            Requests.Add(request);
-            return _handler(request, cancellationToken);
-        }
-    }
 }

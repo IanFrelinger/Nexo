@@ -1,3 +1,4 @@
+using Nexo.Agents.TestKit;
 using FluentAssertions;
 using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -44,7 +45,7 @@ public sealed class NexoPeerBrickExecutorTrustTests
         var result = await sut.ExecuteAsync(
             new RunPodJobPayload { ModelId = "m", Prompt = "x" },
             new JobRequirements { ModelId = "m", MinimumVramBytes = 1, ComputeClass = GpuComputeClass.Low },
-            new TestExecutionContext());
+            TestExecutionContext());
 
         result.IsSuccess.Should().BeFalse();
         result.Error?.Code.Should().Be("peer-routing.no_eligible_peers");
@@ -73,19 +74,14 @@ public sealed class NexoPeerBrickExecutorTrustTests
     }
 
     /// <summary>Tests for test execution context.</summary>
-    private sealed class TestExecutionContext : IExecutionContext
+    // Execution context for these tests. The IExecutionContext implementation now
+    // lives in Nexo.Agents.TestKit.FakeExecutionContext; only the fixture values
+    // that are specific to this suite stay here.
+    private static FakeExecutionContext TestExecutionContext() => new()
     {
-        /// <summary>Agent id.</summary>
-        public string AgentId { get; init; } = "test-agent";
-        /// <summary>Behavior id.</summary>
-        public string BehaviorId { get; init; } = "test-behavior";
-        /// <summary>Is air gapped.</summary>
-        public bool IsAirGapped { get; init; }
-        /// <summary>Audit mode.</summary>
-        public bool AuditMode { get; init; } = true;
-        /// <summary>Provider.</summary>
-        public string Provider { get; init; } = "nexo";
-        /// <summary>Variables.</summary>
-        public IReadOnlyDictionary<string, object> Variables { get; init; } = new Dictionary<string, object>();
-    }
+        AgentId = "test-agent",
+        BehaviorId = "test-behavior",
+        AuditMode = true,
+        Provider = "nexo"
+    };
 }

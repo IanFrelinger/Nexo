@@ -1,3 +1,4 @@
+using Nexo.Agents.TestKit;
 using System.Net;
 using System.Text;
 using FluentAssertions;
@@ -15,10 +16,10 @@ public sealed class MeshLabWorkerExecutorBackgroundServiceGapCoverageTests
     [Fact]
     public async Task ExecuteAsync_skips_processing_when_disabled()
     {
-        var requestCount = 0;
+        var handler = StubHttpMessageHandler.Always(HttpStatusCode.OK, "[]");
         var client = CreateClient(
-            /// <summary>Counting handler.</summary>
-            new CountingHandler(() => Interlocked.Increment(ref requestCount)),
+
+            handler,
             new MeshLabWorkerExecutorOptions { Enabled = false, ApiKey = "key" },
             new ConfigurationBuilder().Build());
 
@@ -33,14 +34,14 @@ public sealed class MeshLabWorkerExecutorBackgroundServiceGapCoverageTests
         await cts.CancelAsync();
         await service.StopAsync(CancellationToken.None);
 
-        requestCount.Should().Be(0);
+        handler.WasNeverCalled.Should().BeTrue();
     }
 
     [Fact]
     public async Task ExecuteAsync_processes_task_when_enabled()
     {
         var patchCount = 0;
-        var handler = new FakeFleetHandler((req, _) =>
+        var handler = StubHttpMessageHandler.FromSync((req, _) =>
         {
             if (req.Method == HttpMethod.Get)
             {
@@ -81,7 +82,7 @@ public sealed class MeshLabWorkerExecutorBackgroundServiceGapCoverageTests
     [Fact]
     public async Task ExecuteAsync_survives_director_http_failures()
     {
-        var handler = new FakeFleetHandler((_, _) => throw new HttpRequestException("director down"));
+        var handler = StubHttpMessageHandler.FromSync((_, _) => throw new HttpRequestException("director down"));
         var options = new MeshLabWorkerExecutorOptions
         {
             Enabled = true,
@@ -110,7 +111,7 @@ public sealed class MeshLabWorkerExecutorBackgroundServiceGapCoverageTests
     [Fact]
     public async Task ExecuteAsync_logs_and_continues_after_unexpected_errors()
     {
-        var handler = new FakeFleetHandler((_, _) => throw new InvalidOperationException("unexpected"));
+        var handler = StubHttpMessageHandler.FromSync((_, _) => throw new InvalidOperationException("unexpected"));
         var options = new MeshLabWorkerExecutorOptions
         {
             Enabled = true,
@@ -134,10 +135,10 @@ public sealed class MeshLabWorkerExecutorBackgroundServiceGapCoverageTests
     [Fact]
     public async Task ExecuteAsync_keeps_polling_while_disabled()
     {
-        var requestCount = 0;
+        var handler = StubHttpMessageHandler.Always(HttpStatusCode.OK, "[]");
         var client = CreateClient(
-            /// <summary>Counting handler.</summary>
-            new CountingHandler(() => Interlocked.Increment(ref requestCount)),
+
+            handler,
             new MeshLabWorkerExecutorOptions { Enabled = false, ApiKey = "key" },
             new ConfigurationBuilder().Build());
 
@@ -152,14 +153,14 @@ public sealed class MeshLabWorkerExecutorBackgroundServiceGapCoverageTests
         await cts.CancelAsync();
         await service.StopAsync(CancellationToken.None);
 
-        requestCount.Should().Be(0);
+        handler.WasNeverCalled.Should().BeTrue();
     }
 
     [Fact]
     public async Task ExecuteAsync_clamps_poll_interval_to_minimum()
     {
-        var requestCount = 0;
-        var handler = new CountingHandler(() => Interlocked.Increment(ref requestCount));
+        var handler = StubHttpMessageHandler.Always(HttpStatusCode.OK, "[]");
+
         var options = new MeshLabWorkerExecutorOptions
         {
             Enabled = true,
@@ -179,7 +180,7 @@ public sealed class MeshLabWorkerExecutorBackgroundServiceGapCoverageTests
         await cts.CancelAsync();
         await service.StopAsync(CancellationToken.None);
 
-        requestCount.Should().BeGreaterThan(0);
+        handler.Requests.Should().NotBeEmpty();
     }
 
     private static MeshLabWorkerExecutorClient CreateClient(
@@ -205,27 +206,7 @@ public sealed class MeshLabWorkerExecutorBackgroundServiceGapCoverageTests
     private static HttpResponseMessage Json(HttpStatusCode status, string json) =>
         new(status) { Content = new StringContent(json, Encoding.UTF8, "application/json") };
 
-    /// <summary>Tests for fake fleet handler.</summary>
-    private sealed class FakeFleetHandler(Func<HttpRequestMessage, CancellationToken, HttpResponseMessage> handler)
-        : HttpMessageHandler
-    {
-        /// <summary>Send async.</summary>
-        /// <param name="request">Request.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken) =>
-            Task.FromResult(handler(request, cancellationToken));
-    }
 
-    /// <summary>Tests for counting handler.</summary>
-    private sealed class CountingHandler(Action onRequest) : HttpMessageHandler
-    {
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-        {
-            /// <summary>On request.</summary>
-            onRequest();
-            return Task.FromResult(Json(HttpStatusCode.OK, "[]"));
-        }
-    }
 
     /// <summary>Tests for static options monitor.</summary>
     private sealed class StaticOptionsMonitor<T>(T value) : Microsoft.Extensions.Options.IOptionsMonitor<T> where T : class

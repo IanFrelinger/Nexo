@@ -1,3 +1,4 @@
+using Nexo.Agents.TestKit;
 using System.Net;
 using System.Text;
 using FluentAssertions;
@@ -16,7 +17,7 @@ public sealed class OllamaModelServingBackendGapCoverageTests
     [Fact]
     public void BackendType_is_ollama()
     {
-        using var client = new HttpClient(new FakeHandler((_, _) => Task.FromResult(Ok("{}"))))
+        using var client = new HttpClient(new StubHttpMessageHandler((_, _) => Task.FromResult(Ok("{}"))))
         {
             BaseAddress = new Uri("http://127.0.0.1:11434/"),
         };
@@ -40,7 +41,7 @@ public sealed class OllamaModelServingBackendGapCoverageTests
     public async Task IsAvailableAsync_records_metrics_for_success_and_failure()
     {
         var metrics = new RecordingMetrics();
-        var handler = new FakeHandler((req, _) =>
+        var handler = new StubHttpMessageHandler((req, _) =>
         {
             return req.RequestUri!.AbsolutePath == "/api/tags"
                 ? Task.FromResult(new HttpResponseMessage(HttpStatusCode.ServiceUnavailable))
@@ -62,7 +63,7 @@ public sealed class OllamaModelServingBackendGapCoverageTests
     public async Task IsAvailableAsync_records_error_metrics_when_request_throws()
     {
         var metrics = new RecordingMetrics();
-        using var client = new HttpClient(new FakeHandler((_, _) => throw new HttpRequestException("down")))
+        using var client = new HttpClient(new StubHttpMessageHandler((_, _) => throw new HttpRequestException("down")))
         {
             BaseAddress = new Uri("http://127.0.0.1:11434/"),
         };
@@ -80,7 +81,7 @@ public sealed class OllamaModelServingBackendGapCoverageTests
     public async Task RunInferenceAsync_supports_system_prompt_parameters_and_json_escaping()
     {
         string? capturedBody = null;
-        var handler = new FakeHandler((req, _) =>
+        var handler = new StubHttpMessageHandler((req, _) =>
         {
             capturedBody = req.Content!.ReadAsStringAsync().Result;
             return Task.FromResult(Ok("""
@@ -126,7 +127,7 @@ public sealed class OllamaModelServingBackendGapCoverageTests
     [Fact]
     public async Task RunInferenceAsync_rejects_missing_model_id()
     {
-        using var client = new HttpClient(new FakeHandler((_, _) => Task.FromResult(Ok("{}"))));
+        using var client = new HttpClient(new StubHttpMessageHandler((_, _) => Task.FromResult(Ok("{}"))));
         var sut = new OllamaModelServingBackend(
             client,
             Options.Create(new OllamaBackendOptions { BaseUrl = "http://127.0.0.1:11434" }));
@@ -140,7 +141,7 @@ public sealed class OllamaModelServingBackendGapCoverageTests
     {
         var progressReports = new List<PullProgress>();
         var metrics = new RecordingMetrics();
-        using var client = new HttpClient(new FakeHandler((_, _) => Task.FromResult(Ok("""{ "status":"success" }"""))));
+        using var client = new HttpClient(new StubHttpMessageHandler((_, _) => Task.FromResult(Ok("""{ "status":"success" }"""))));
         var sut = new OllamaModelServingBackend(
             client,
             Options.Create(new OllamaBackendOptions { BaseUrl = "http://127.0.0.1:11434" }),
@@ -155,7 +156,7 @@ public sealed class OllamaModelServingBackendGapCoverageTests
     [Fact]
     public async Task ListLoadedModelsAsync_returns_empty_when_ps_fails_or_has_no_models()
     {
-        var handler = new FakeHandler((req, _) => req.RequestUri!.AbsolutePath switch
+        var handler = new StubHttpMessageHandler((req, _) => req.RequestUri!.AbsolutePath switch
         {
             "/api/ps" => Task.FromResult(new HttpResponseMessage(HttpStatusCode.InternalServerError)),
             _ => Task.FromResult(Ok("{}")),
@@ -168,7 +169,7 @@ public sealed class OllamaModelServingBackendGapCoverageTests
 
         (await sut.ListLoadedModelsAsync()).Should().BeEmpty();
 
-        handler.SetHandler((req, _) => req.RequestUri!.AbsolutePath == "/api/ps"
+        handler.SetResponder((req, _) => req.RequestUri!.AbsolutePath == "/api/ps"
             ? Task.FromResult(Ok("""{ "models": [] }"""))
             : Task.FromResult(Ok("{}")));
 
@@ -178,7 +179,7 @@ public sealed class OllamaModelServingBackendGapCoverageTests
     [Fact]
     public async Task ListLoadedModelsAsync_returns_model_names_from_ps_response()
     {
-        using var client = new HttpClient(new FakeHandler((req, _) => req.RequestUri!.AbsolutePath == "/api/ps"
+        using var client = new HttpClient(new StubHttpMessageHandler((req, _) => req.RequestUri!.AbsolutePath == "/api/ps"
             ? Task.FromResult(Ok("""
             {
               "models": [
@@ -205,7 +206,7 @@ public sealed class OllamaModelServingBackendGapCoverageTests
     public async Task ListLoadedModelsAsync_records_error_metrics_when_request_throws()
     {
         var metrics = new RecordingMetrics();
-        using var client = new HttpClient(new FakeHandler((_, _) => throw new HttpRequestException("down")));
+        using var client = new HttpClient(new StubHttpMessageHandler((_, _) => throw new HttpRequestException("down")));
         var sut = new OllamaModelServingBackend(
             client,
             Options.Create(new OllamaBackendOptions { BaseUrl = "http://127.0.0.1:11434" }),
@@ -220,7 +221,7 @@ public sealed class OllamaModelServingBackendGapCoverageTests
     public async Task PullModelAsync_records_error_metrics_when_pull_fails()
     {
         var metrics = new RecordingMetrics();
-        using var client = new HttpClient(new FakeHandler((_, _) =>
+        using var client = new HttpClient(new StubHttpMessageHandler((_, _) =>
             Task.FromResult(new HttpResponseMessage(HttpStatusCode.BadRequest))));
         var sut = new OllamaModelServingBackend(
             client,
@@ -236,7 +237,7 @@ public sealed class OllamaModelServingBackendGapCoverageTests
     public async Task LoadUnload_and_inference_record_error_metrics_on_http_failures()
     {
         var metrics = new RecordingMetrics();
-        using var client = new HttpClient(new FakeHandler((_, _) =>
+        using var client = new HttpClient(new StubHttpMessageHandler((_, _) =>
             Task.FromResult(new HttpResponseMessage(HttpStatusCode.BadRequest))));
         var sut = new OllamaModelServingBackend(
             client,
@@ -261,21 +262,6 @@ public sealed class OllamaModelServingBackendGapCoverageTests
         new(HttpStatusCode.OK) { Content = new StringContent(json, Encoding.UTF8, "application/json") };
 
     /// <summary>Tests for fake handler.</summary>
-    private sealed class FakeHandler : HttpMessageHandler
-    {
-        private Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> _handler;
-
-        public FakeHandler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> handler)
-        {
-            _handler = handler;
-        }
-
-        public void SetHandler(Func<HttpRequestMessage, CancellationToken, Task<HttpResponseMessage>> handler)
-            => _handler = handler;
-
-        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-            => _handler(request, cancellationToken);
-    }
 
     /// <summary>Tests for recording metrics.</summary>
     private sealed class RecordingMetrics : IMetricsCollector

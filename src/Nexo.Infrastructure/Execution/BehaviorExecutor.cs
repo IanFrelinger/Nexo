@@ -403,34 +403,25 @@ public class BehaviorExecutor : Nexo.Core.Domain.Execution.IBehaviorExecutor
         };
     }
     
+    /// <summary>
+    /// Delegates to the one framework-wide selection rule, supplying this
+    /// executor's stricter availability filter: an agentic implementation also
+    /// requires a reachable provider here, which the workflow and cluster paths
+    /// deliberately leave to the call itself.
+    /// </summary>
     private IReadOnlyList<ImplementationType> BuildChain(
         ImplementationType first,
         ExecutionOptions options,
         DomainBrick brick,
         ExecutionContext context,
-        BrickRuntimeSpec? runtimeSpec = null)
-    {
-        var chain = new List<ImplementationType>();
-        if (first != ImplementationType.Auto) chain.Add(first);
-
-        var fallbacks = runtimeSpec?.Fallback ?? brick.FallbackChain;
-        foreach (var f in fallbacks)
-        {
-            if (!chain.Contains(f)) chain.Add(f);
-        }
-
-        // If initial was Auto, use brick default.
-        if (chain.Count == 0)
-        {
-            chain.Add(brick.DefaultImplementation);
-            foreach (var f in brick.FallbackChain)
-            {
-                if (!chain.Contains(f)) chain.Add(f);
-            }
-        }
-
-        return chain.Where(t => IsImplementationAvailable(brick, t, context)).ToList();
-    }
+        BrickRuntimeSpec? runtimeSpec = null) =>
+        ImplementationChainResolver.Instance.Resolve(
+            new ImplementationChainRequest(
+                brick,
+                context,
+                first,
+                runtimeSpec,
+                (b, t, ctx) => IsImplementationAvailable(b, t, (ExecutionContext)ctx)));
 
     private static ImplementationType PreferToImplementation(
         string? prefer,
