@@ -1,4 +1,7 @@
-namespace Nexo.Hosting.Sdk.Options;
+// Namespace is deliberately Nexo.Hosting, not the folder path: this is the type
+// of NexoHostingOptions.StrictMode, so it must be nameable by anyone who can
+// name NexoHostingOptions. See the note in NexoHostingOptions.cs.
+namespace Nexo.Hosting;
 /// <summary>
 /// Controls Nexo strict mode behavior. When enabled, the system fails fast with
 /// verbose diagnostics — ideal for development and CI. Flip to permissive once

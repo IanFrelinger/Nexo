@@ -1,4 +1,7 @@
-namespace Nexo.Hosting.Sdk.Options;
+// Namespace is deliberately Nexo.Hosting, not the folder path: this is the type
+// of NexoHostingOptions.DeploymentProfile, so it must be nameable by anyone who
+// can name NexoHostingOptions. See the note in NexoHostingOptions.cs.
+namespace Nexo.Hosting;
 /// <summary>
 /// Deployment profiles that control which optional Nexo modules are registered
 /// into the DI container. Each profile maps to a <c>ModuleSelection</c> record

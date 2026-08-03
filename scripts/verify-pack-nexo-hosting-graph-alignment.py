@@ -69,6 +69,15 @@ def msbuild_project_refs(csproj: Path) -> list[Path]:
     items = (data.get("Items") or {}).get("ProjectReference") or []
     out: list[Path] = []
     for it in items:
+        # Analyzer-only references (OutputItemType=Analyzer / ReferenceOutputAssembly=false)
+        # contribute no assembly to the runtime graph and are never packable, so they are
+        # not part of "the projects the hosting graph ships". Without this, adding a Roslyn
+        # analyzer to the solution demands it be added to the pack scripts, which would try
+        # to pack an IsPackable=false project.
+        if (it.get("OutputItemType") or "").strip().lower() == "analyzer":
+            continue
+        if (it.get("ReferenceOutputAssembly") or "").strip().lower() == "false":
+            continue
         fp = it.get("FullPath") or it.get("Identity")
         if fp:
             out.append(Path(fp).resolve())

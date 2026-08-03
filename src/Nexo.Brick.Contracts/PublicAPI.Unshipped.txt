@@ -1,1 +1,28 @@
 #nullable enable
+Nexo.Core.Domain.Bricks.GenerationStrategy
+Nexo.Core.Domain.Bricks.GenerationStrategy.Deterministic = 0 -> Nexo.Core.Domain.Bricks.GenerationStrategy
+Nexo.Core.Domain.Bricks.GenerationStrategy.Templated = 1 -> Nexo.Core.Domain.Bricks.GenerationStrategy
+Nexo.Core.Domain.Bricks.GenerationStrategy.Model = 2 -> Nexo.Core.Domain.Bricks.GenerationStrategy
+Nexo.Core.Domain.Bricks.GenerativeProvenance
+Nexo.Core.Domain.Bricks.GenerativeProvenance.GenerativeProvenance() -> void
+Nexo.Core.Domain.Bricks.GenerativeProvenance.Strategy.get -> Nexo.Core.Domain.Bricks.GenerationStrategy
+Nexo.Core.Domain.Bricks.GenerativeProvenance.Strategy.init -> void
+Nexo.Core.Domain.Bricks.GenerativeProvenance.Verified.get -> bool
+Nexo.Core.Domain.Bricks.GenerativeProvenance.Verified.init -> void
+Nexo.Core.Domain.Bricks.GenerativeProvenance.Confidence.get -> double?
+Nexo.Core.Domain.Bricks.GenerativeProvenance.Confidence.init -> void
+Nexo.Core.Domain.Bricks.GenerativeProvenance.Warnings.get -> System.Collections.Generic.IReadOnlyList<string>
+Nexo.Core.Domain.Bricks.GenerativeProvenance.Warnings.init -> void
+Nexo.Core.Domain.Bricks.GenerativeProvenance.Assumptions.get -> System.Collections.Generic.IReadOnlyList<string>
+Nexo.Core.Domain.Bricks.GenerativeProvenance.Assumptions.init -> void
+Nexo.Core.Domain.Bricks.GenerativeProvenance.UnsupportedReferences.get -> System.Collections.Generic.IReadOnlyList<string>
+Nexo.Core.Domain.Bricks.GenerativeProvenance.UnsupportedReferences.init -> void
+Nexo.Core.Domain.Bricks.GenerativeProvenance.RequiresHumanReview.get -> bool
+Nexo.Core.Domain.Bricks.GenerativeProvenance.RequiresHumanReview.init -> void
+static Nexo.Core.Domain.Bricks.GenerativeProvenance.Create(Nexo.Core.Domain.Bricks.GenerationStrategy strategy, bool verified = false, double? confidence = null, System.Collections.Generic.IReadOnlyList<string> warnings = null, System.Collections.Generic.IReadOnlyList<string> assumptions = null, System.Collections.Generic.IReadOnlyList<string> unsupportedReferences = null, bool requiresHumanReview = false) -> Nexo.Core.Domain.Bricks.GenerativeProvenance
+Nexo.Core.Domain.Bricks.GenerativeBrick
+Nexo.Core.Domain.Bricks.GenerativeBrick.GenerativeBrick() -> void
+const Nexo.Core.Domain.Bricks.GenerativeBrick.ProvenanceOutputKey = "generativeProvenance" -> string
+static Nexo.Core.Domain.Bricks.GenerativeBrick.ApplyAuditPolicy(Nexo.Core.Domain.Bricks.GenerativeProvenance provenance, Nexo.Core.Domain.Execution.IExecutionContext context) -> Nexo.Core.Domain.Bricks.GenerativeProvenance
+static Nexo.Core.Domain.Bricks.GenerativeBrick.EmitProvenance(Nexo.Core.Domain.Execution.BrickOutput output, Nexo.Core.Domain.Bricks.GenerativeProvenance provenance) -> void
+static Nexo.Core.Domain.Bricks.GenerativeBrick.RouteHumanReviewIfRequiredAsync(Nexo.Core.Domain.Bricks.GenerativeProvenance provenance, System.Func<string, System.TimeSpan, System.Threading.CancellationToken, System.Threading.Tasks.Task<bool>> requestApproval, string actionDescription, System.TimeSpan timeout, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<bool>

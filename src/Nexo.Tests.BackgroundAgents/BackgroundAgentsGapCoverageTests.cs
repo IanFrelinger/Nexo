@@ -8,6 +8,7 @@ using Nexo.BackgroundAgents.Metrics;
 using Nexo.BackgroundAgents.Observation;
 using Nexo.BackgroundAgents.WebSearch;
 using Nexo.Core.Application.Observation.Models;
+using Nexo.Core.Application.Trust.Ports;
 using Xunit;
 
 namespace Nexo.Tests.BackgroundAgents;

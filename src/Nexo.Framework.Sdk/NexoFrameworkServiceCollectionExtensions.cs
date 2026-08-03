@@ -1,6 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
 using Nexo.Hosting;
-using Nexo.Hosting.Sdk.Options;
 
 namespace Nexo.Framework.Sdk;
 

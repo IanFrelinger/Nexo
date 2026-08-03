@@ -138,11 +138,11 @@ echo "lab network: ${NET}"
 echo "-- recreate worker tier without host port bindings (scale-safe) --"
 compose stop worker 2>/dev/null || true
 compose rm -f -s worker 2>/dev/null || true
-compose up -d --no-deps --scale worker=1 worker
+compose up -d --no-deps --scale worker=1 worke
 
 for ((w = STEP; w <= MAX_W; w += STEP)); do
   echo "-- scale worker -> ${w} --"
-  compose up -d --no-deps --scale "worker=${w}" worker
+  compose up -d --no-deps --scale "worker=${w}" worke
   sleep "$PAUSE"
   echo "-- parallel /health burst --"
   if ! parallel_health_burst "$NET" "$REQS"; then

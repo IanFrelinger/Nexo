@@ -51,7 +51,7 @@ for pid in mesh-lab-retry-a mesh-lab-retry-b mesh-lab-verify-peer; do
   mesh_delete "http://${PEER_A_HOST}/api/mesh/fleet/nodes/${pid}"
 done
 
-# peer-b (low queue) vs peer-a self (high queue) — retry should skip first peer
+# peer-b (low queue) vs peer-a self (high queue) — retry should skip first pee
 mesh_post -d "$(mesh_lab_fleet_register_json mesh-lab-retry-a http://peer-b:8080 Trusted 0)" \
   "http://${PEER_A_HOST}/api/mesh/fleet/nodes" >/dev/null
 mesh_post -d "$(mesh_lab_fleet_register_json mesh-lab-retry-b http://peer-a:8080 Trusted 99)" \

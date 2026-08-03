@@ -175,11 +175,13 @@ public static class ServiceCollectionExtensions
 
         if (useSanitizingProviderFactory && !skipProviderRegistration)
         {
+            services.TryAddSingleton<Nexo.Core.Application.Resilience.Ports.IResilientExecutor, Nexo.Infrastructure.Resilience.ResilientExecutor>();
             services.AddSingleton<Nexo.Infrastructure.Execution.ProviderFactory>(sp =>
             {
                 var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Nexo.Infrastructure.Execution.ProviderFactory>>();
                 var lifecycle = ephemeralLifecycle ? sp.GetService<Nexo.Core.Application.Ephemeral.Ports.IEphemeralModelLifecycle>() : null;
-                return new Nexo.Infrastructure.Execution.ProviderFactory(logger, lifecycle);
+                var resilient = sp.GetRequiredService<Nexo.Core.Application.Resilience.Ports.IResilientExecutor>();
+                return new Nexo.Infrastructure.Execution.ProviderFactory(logger, lifecycle, resilient);
             });
             services.AddSingleton<Nexo.Infrastructure.Execution.IProviderFactory>(sp =>
             {

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Run Stryker mutation testing on kernel components.
-# Install first: dotnet tool install -g dotnet-stryker
+# Install first: dotnet tool install -g dotnet-stryke
 # Open ./mutation-reports/*/reports/mutation-report.html to review surviving mutants.
 set -e
 cd "$(dirname "$0")/.."
