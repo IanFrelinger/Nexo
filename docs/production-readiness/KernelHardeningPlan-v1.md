@@ -84,4 +84,3 @@ Pre-application validation for the Nexo execution kernel (`src/`, `Nexo.Hosting`
 
 - [Runtime vs application](../architecture/runtime-vs-application.md)
 - [Testing model](../architecture/TestingModel.md)
-- [Production readiness README](README.md)
