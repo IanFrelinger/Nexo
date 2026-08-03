@@ -47,7 +47,7 @@
 |-----------|--------|-------|
 | Observe → Improve Path | RESOLVED | SelfImprovementLoop queries IPatternStore for `repeated-edits` and `edit-then-build`; [SelfImprovementLoopPatternTests](../src/Nexo.Tests.Infrastructure/Tests/SelfImprovement/SelfImprovementLoopPatternTests.cs) validates. |
 | Holdout Test Set | RESOLVED | HoldoutTestOptions, `nexo improve --self --holdout-filter`, [SelfImprovementLoopHoldoutTests](../src/Nexo.Tests.Infrastructure/Tests/SelfImprovement/SelfImprovementLoopHoldoutTests.cs). |
-| Aggressiveness Dial | RESOLVED | Four modes with distinct behavior: Passive (skip), SemiActive (approval gate), Active (run), Ambient (run silently). See [IApprovalGate](../src/Nexo.BackgroundAgents/Configuration/IApprovalGate.cs). |
+| Aggressiveness Dial | RESOLVED | Four modes with distinct behavior: Passive (skip), SemiActive (approval gate), Active (run), Ambient (run silently). See [IApprovalGate](../src/Nexo.Core.Application/Trust/Ports/IApprovalGate.cs). |
 
 ---
 
