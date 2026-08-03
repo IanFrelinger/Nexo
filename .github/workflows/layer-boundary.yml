@@ -57,10 +57,72 @@ jobs:
             echo "Nexo.Authoring distribution paths changed — allowing coordinated application/ + src/ integration merge."
           fi
 
+          # --- Forced cleanup after a kernel project is deleted ---
+          # Retiring a src/ project makes application/ csproj files that reference it
+          # unbuildable, so the reference MUST come out in the same PR. That is a
+          # mechanical consequence of a kernel change, not an application change.
+          #
+          # Deliberately hostile to everything else. To qualify, EVERY changed
+          # application/ path must satisfy all of:
+          #   * the file is a .csproj
+          #   * the diff adds NO lines at all (pure removal)
+          #   * every removed line is a <ProjectReference ... Include="...src/...csproj">
+          #   * that reference's target no longer exists on the head commit
+          # So an application .cs edit, an added PackageReference, a removed
+          # ProjectReference whose target still exists, or any other removed line
+          # all fail and the guard still rejects the PR.
+          FORCED_KERNEL_CLEANUP=0
+          APP_CHANGED=$(echo "$CHANGED" | grep '^application/' || true)
+          if [ -n "$APP_CHANGED" ]; then
+            QUALIFIES=1
+            REMOVED_FILE=$(mktemp)
+            for f in $APP_CHANGED; do
+              case "$f" in
+                *.csproj) ;;
+                *) QUALIFIES=0; break ;;
+              esac
+
+              # Any added line at all disqualifies: this exemption is for pure removal.
+              if git diff --unified=0 "$BASE_SHA" "$HEAD_SHA" -- "$f" \
+                   | grep -E '^\+' | grep -vE '^\+\+\+' | grep -q .; then
+                QUALIFIES=0; break
+              fi
+
+              git diff --unified=0 "$BASE_SHA" "$HEAD_SHA" -- "$f" \
+                | grep -E '^-' | grep -vE '^---' > "$REMOVED_FILE" || true
+
+              while IFS= read -r line; do
+                [ -z "$line" ] && continue
+                case "$line" in
+                  *"<ProjectReference"*Include=*.csproj*) ;;
+                  *) QUALIFIES=0; break ;;
+                esac
+                TARGET=$(printf '%s' "$line" | sed -n 's/.*Include="\([^"]*\)".*/\1/p' | tr '\134' '/')
+                case "$TARGET" in
+                  */src/*|src/*) ;;
+                  *) QUALIFIES=0; break ;;
+                esac
+                # The reference must be dangling on the head commit — if the target
+                # still exists this is an ordinary application edit, not forced cleanup.
+                RESOLVED=$(realpath -m "$(dirname "$f")/$TARGET" 2>/dev/null || true)
+                if [ -z "$RESOLVED" ] || [ -e "$RESOLVED" ]; then
+                  QUALIFIES=0; break
+                fi
+              done < "$REMOVED_FILE"
+
+              [ "$QUALIFIES" -eq 0 ] && break
+            done
+            rm -f "$REMOVED_FILE"
+            if [ "$QUALIFIES" -eq 1 ]; then
+              FORCED_KERNEL_CLEANUP=1
+              echo "application/ diff is only removal of ProjectReference(s) to deleted src/ project(s) — allowing forced cleanup."
+            fi
+          fi
+
           # --- Runtime bases: no application/ (except coordinated integration merges) ---
           case "$BASE_REF" in
             master|main|runtime/*)
-              if [[ "$COMMERCIAL_INTEGRATION" -eq 0 && "$DISTRIBUTION_AUTHORING" -eq 0 ]] && echo "$CHANGED" | grep -q '^application/'; then
+              if [[ "$COMMERCIAL_INTEGRATION" -eq 0 && "$DISTRIBUTION_AUTHORING" -eq 0 && "$FORCED_KERNEL_CLEANUP" -eq 0 ]] && echo "$CHANGED" | grep -q '^application/'; then
                 echo "::error::Base branch '$BASE_REF' is runtime/kernel-first. This PR changes application/ — retarget or remove those paths."
                 exit 1
               fi
