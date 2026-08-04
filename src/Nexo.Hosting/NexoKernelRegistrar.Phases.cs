@@ -198,9 +198,24 @@ internal static partial class NexoKernelRegistrar
         // ── Adaptation ─────────────────────────────────────────────────
         // Pattern store path is forwarded so the adaptation layer knows
         // where to persist learned patterns on disk.
+        //
+        // Observation core (IPatternStore / IPatternProcessedStore /
+        // IContextAssembler) is registered by exactly one phase. Phase 12
+        // owns it whenever the observation pipeline is active; adaptation
+        // owns it otherwise. Previously BOTH registered it with AddSingleton
+        // and Phase 12 silently won on last-wins wherever both ran — which
+        // also meant the two disagreed about the store path, since Phase 12
+        // combines it with the repo root and adaptation used it verbatim.
+        // Adaptation's registration was therefore dead in Full/Server but
+        // load-bearing in AirGapped and whenever the pipeline is disabled.
         if (modules.IncludeAdaptation)
         {
-            services.AddAdaptationInfrastructure(options.PatternStorePath);
+            bool observationPipelineOwnsObservationCore =
+                modules.IncludeObservationPipeline && !options.DisableObservationPipeline;
+
+            services.AddAdaptationInfrastructure(
+                options.PatternStorePath,
+                registerObservationCore: !observationPipelineOwnsObservationCore);
             services.AddNexoFederatedBrickMesh(configuration);
         }
 
