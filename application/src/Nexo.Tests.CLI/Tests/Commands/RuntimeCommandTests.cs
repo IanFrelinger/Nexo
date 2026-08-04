@@ -324,8 +324,6 @@ public sealed class RuntimeCommandTests : UnitTestBase
     {
         var root = new RootCommand();
         root.AddCommand(new RuntimeCommand());
-        var previousOut = Console.Out;
-        var previousError = Console.Error;
         var output = new StringWriter();  // not disposed on purpose: a disposed writer left in Console.Out poisons later tests
         try
         {
@@ -336,8 +334,8 @@ public sealed class RuntimeCommandTests : UnitTestBase
         }
         finally
         {
-            Console.SetOut(previousOut);
-            Console.SetError(previousError);
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
         }
     }
 
