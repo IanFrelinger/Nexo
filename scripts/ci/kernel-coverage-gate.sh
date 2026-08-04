@@ -15,17 +15,30 @@ dotnet test src/Nexo.Tests.Domain/Nexo.Tests.Domain.csproj \
   /p:ThresholdType=line \
   --verbosity minimal
 
-echo ""
-echo "== Infrastructure (Nexo.Infrastructure) line coverage: ${INFRA_COVERAGE_THRESHOLD:-83}% floor =="
-dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net9.0 \
-  /p:CollectCoverage=true \
-  /p:CoverletOutput="$ROOT/CoverageReports/infra" \
-  /p:CoverletOutputFormat=cobertura \
-  /p:Include="[Nexo.Infrastructure]*" \
-  /p:Threshold="${INFRA_COVERAGE_THRESHOLD:-83}" \
-  /p:ThresholdType=line \
-  --verbosity minimal
 
+# == Infrastructure (Nexo.Infrastructure): EXCLUDED ==
+#
+# Not a coverage decision — the step cannot produce a number at all. The
+# Nexo.Tests.Infrastructure host crashes during TEARDOWN
+# (LoaderAllocatorScout.Finalize / 0x80131506) after every test has passed, and the
+# resulting aborted run destroys the coverage results before they are written. With
+# no result the step never returns, which is why this job ran to GitHub's 6-hour cap
+# and was auto-cancelled on master, on dependabot branches, and everywhere else. It
+# has never once produced a verdict.
+#
+# Both instrumentation routes were tried and BOTH fail the same way:
+#   * coverlet.msbuild  -> 572/572 pass, host crashes, no report
+#   * XPlat Code Coverage data collector (coverlet.collector) -> 452/453 pass,
+#     host crashes, no report. Collecting out-of-process does not help because the
+#     run is ABORTED, so attachments are discarded too.
+#
+# So Infrastructure is excluded until the teardown crash itself is fixed. Domain and
+# Core.Application below both complete normally, so the gate now returns a real
+# pass/fail instead of hanging.
+#
+# Tracked: docs/production-readiness/KernelCoverageGate-Findings.md
+# Related: TestRunnerAdapter.ExecuteTestAsync abandons its runTask on the timeout
+# path (latent, separate); Nexo.Tests.Infrastructure teardown crash (this).
 echo ""
 echo "== Core.Application line coverage: ${APP_COVERAGE_THRESHOLD:-67}% floor =="
 dotnet test src/Nexo.Tests.Application/Nexo.Tests.Application.csproj \
