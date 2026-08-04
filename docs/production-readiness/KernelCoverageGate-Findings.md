@@ -1,8 +1,6 @@
 # kernel-coverage gate: why it never completes
 
-**Status:** unresolved. The gate has never passed in recent history and is **not** a
-required check. This document records the evidenced root cause and the options, so
-the next person does not have to re-derive it.
+**Status:** partially resolved. The gate now COMPLETES (Domain + Core.Application floors); Infrastructure coverage is excluded pending a fix for the teardown crash. It is not a required check. This document records the evidenced root cause, what was tried, and what remains.
 
 ## Symptom
 
@@ -66,24 +64,41 @@ Bounded and low-risk only:
 2. `<Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />`
    in `Nexo.Tests.Infrastructure.csproj` — hygiene against config drift.
 
-## Options for a real resolution
+## Resolution applied
 
-1. **Bisect the teardown crash.** Halve the suite repeatedly under
-   `-f net9.0` + coverlet until the crashing subset is isolated, then fix or quarantine
-   it. Bounded in principle, potentially many iterations; the crash is at process
-   teardown so it does not point at a specific test.
-2. **Switch the collector.** Try `--collect:"XPlat Code Coverage"` (data collector)
-   instead of `coverlet.msbuild`. May or may not survive a host crash — worth one
-   experiment before committing to option 1.
-3. **Drop Infrastructure from the gate.** Keep the Domain 100% and Application 67%
-   floors (both complete fine) and stop gating Infrastructure until the crash is
-   fixed. Preserves most of the gate's value immediately.
-4. **Retire the gate.** It has never passed, is not required, and currently
-   consumes runner time to report nothing. If nobody is prepared to own options 1-3,
-   deleting it is more honest than leaving permanently-red CI that everyone has
-   learned to ignore.
+**Option 2 (swap the collector) was tried first and rejected.** Added
+`coverlet.collector` plus a runsettings with `Format=cobertura` and
+`Include=[Nexo.Infrastructure]*`, mirroring the old `-p:Include` exactly:
 
-**Recommendation:** option 3 as the immediate step (restores a working gate for two
-of three assemblies), with option 2 as a cheap experiment. Option 4 is the correct
-fallback if Infrastructure coverage is not actually wanted — a gate nobody can pass
-is worse than no gate, because it trains people to ignore red.
+```
+Passed! - Failed: 0, Passed: 452, Skipped: 1, Total: 453, Duration: 58 s
+The active test run was aborted. Reason: Test host process crashed
+Test Run Aborted.
+-> no coverage.cobertura.xml produced; command still had to be killed at 560s
+```
+
+Collecting out-of-process does not help, because the run is **aborted** — VSTest
+discards the collector's attachments exactly as it discarded coverlet's. Both
+routes fail identically:
+
+| Route | Tests | Outcome |
+|---|---|---|
+| `coverlet.msbuild` instrumentation | 572/572 pass | host crashes, **no report** |
+| `XPlat Code Coverage` collector | 452/453 pass | host crashes, **no report** |
+
+The crash — not the instrumentation method — is the blocker.
+
+**Option 3 (drop Infrastructure) is what shipped.** The gate now runs Domain
+(100%) and Core.Application (67%) only, both of which complete, so it returns a
+real pass/fail instead of hanging. `timeout-minutes: 30` is kept as a backstop.
+
+## Still open
+
+Infrastructure coverage is **not measured**. Restoring it requires fixing the
+teardown crash itself — option 1 (bisect the suite) remains the only untried
+route. Related tracked item: `TestRunnerAdapter.ExecuteTestAsync` abandons its
+`runTask` on the per-test timeout path (latent, never executed today, separate
+bug).
+
+If nobody intends to fix the crash, option 4 — retiring the Infrastructure floor
+permanently rather than leaving it commented out — is the honest end state.
