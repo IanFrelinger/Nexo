@@ -64,8 +64,7 @@ public sealed class DoctorCommandTests : UnitTestBase
 
     private async Task TestJsonOutputContainsOkField()
     {
-        var originalOut = Console.Out;
-        using var writer = new StringWriter();
+        var writer = new StringWriter();  // not disposed on purpose: a disposed writer left in Console.Out poisons later tests
         Console.SetOut(writer);
         try
         {
@@ -91,14 +90,13 @@ public sealed class DoctorCommandTests : UnitTestBase
         }
         finally
         {
-            Console.SetOut(originalOut);
+            Console.SetOut(ConsoleCapture.Out);
         }
     }
 
     private async Task TestJsonOutputIncludesRemediationSection()
     {
-        var originalOut = Console.Out;
-        using var writer = new StringWriter();
+        var writer = new StringWriter();  // not disposed on purpose: a disposed writer left in Console.Out poisons later tests
         Console.SetOut(writer);
         try
         {
@@ -119,7 +117,7 @@ public sealed class DoctorCommandTests : UnitTestBase
         }
         finally
         {
-            Console.SetOut(originalOut);
+            Console.SetOut(ConsoleCapture.Out);
         }
     }
 }

@@ -101,8 +101,7 @@ public class Bar { }";
     public async Task ValidateProjectRoot_MissingDirectory_ReturnsFalse()
     {
         await Task.CompletedTask;
-        var originalErr = Console.Error;
-        using var errWriter = new StringWriter();
+        var errWriter = new StringWriter();  // not disposed on purpose: a disposed writer left in Console.Out poisons later tests
         Console.SetError(errWriter);
         try
         {
@@ -112,7 +111,7 @@ public class Bar { }";
         }
         finally
         {
-            Console.SetError(originalErr);
+            Console.SetError(ConsoleCapture.Error);
         }
     }
 
@@ -124,8 +123,7 @@ public class Bar { }";
         Directory.CreateDirectory(tempDir);
         try
         {
-            var originalErr = Console.Error;
-            using var errWriter = new StringWriter();
+            var errWriter = new StringWriter();  // not disposed on purpose: a disposed writer left in Console.Out poisons later tests
             Console.SetError(errWriter);
             try
             {
@@ -135,7 +133,7 @@ public class Bar { }";
             }
             finally
             {
-                Console.SetError(originalErr);
+                Console.SetError(ConsoleCapture.Error);
             }
         }
         finally
@@ -164,8 +162,7 @@ public class Bar { }";
     public async Task ValidateProjectRoot_Json_MissingDirectory_EmitsJsonError()
     {
         await Task.CompletedTask;
-        var originalOut = Console.Out;
-        using var outWriter = new StringWriter();
+        var outWriter = new StringWriter();  // not disposed on purpose: a disposed writer left in Console.Out poisons later tests
         Console.SetOut(outWriter);
         try
         {
@@ -179,7 +176,7 @@ public class Bar { }";
         }
         finally
         {
-            Console.SetOut(originalOut);
+            Console.SetOut(ConsoleCapture.Out);
         }
     }
 
@@ -224,8 +221,7 @@ public class Bar { }";
         Directory.CreateDirectory(Path.Combine(tempDir, "Assets"));
         try
         {
-            var originalOut = Console.Out;
-            using var writer = new StringWriter();
+            var writer = new StringWriter();  // not disposed on purpose: a disposed writer left in Console.Out poisons later tests
             Console.SetOut(writer);
             try
             {
@@ -239,7 +235,7 @@ public class Bar { }";
             }
             finally
             {
-                Console.SetOut(originalOut);
+                Console.SetOut(ConsoleCapture.Out);
             }
         }
         finally
@@ -258,8 +254,7 @@ public class Bar { }";
         File.WriteAllText(Path.Combine(genDir, "Gun.cs"), "public class Gun {}");
         try
         {
-            var originalOut = Console.Out;
-            using var writer = new StringWriter();
+            var writer = new StringWriter();  // not disposed on purpose: a disposed writer left in Console.Out poisons later tests
             Console.SetOut(writer);
             try
             {
@@ -276,7 +271,7 @@ public class Bar { }";
             }
             finally
             {
-                Console.SetOut(originalOut);
+                Console.SetOut(ConsoleCapture.Out);
             }
         }
         finally

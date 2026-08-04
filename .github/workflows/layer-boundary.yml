@@ -119,10 +119,41 @@ jobs:
             fi
           fi
 
+          # --- Test-only application changes ---
+          # A kernel change often needs the application-side TEST suite updated in the
+          # same PR. Those files ship nothing: they are not in any product artifact, so
+          # they cannot violate the kernel/application layering this guard protects.
+          #
+          # Narrow by construction. EVERY changed application/ path must be owned by a
+          # project that is genuinely a test project — determined by walking up to the
+          # nearest .csproj and requiring Microsoft.NET.Test.Sdk in it, NOT by trusting
+          # a directory name. A single changed application/ path that resolves to a
+          # product project (or to no project at all) disqualifies the whole PR.
+          TEST_ONLY_CHANGE=0
+          if [ -n "$(echo "$CHANGED" | grep '^application/' || true)" ]; then
+            TEST_ONLY=1
+            for f in $(echo "$CHANGED" | grep '^application/' || true); do
+              OWNER=""
+              d=$(dirname "$f")
+              while [ "$d" != "." ] && [ "$d" != "/" ]; do
+                CANDIDATE=$(ls "$d"/*.csproj 2>/dev/null | head -1 || true)
+                if [ -n "$CANDIDATE" ]; then OWNER="$CANDIDATE"; break; fi
+                d=$(dirname "$d")
+              done
+              if [ -z "$OWNER" ] || ! grep -q "Microsoft.NET.Test.Sdk" "$OWNER"; then
+                TEST_ONLY=0; break
+              fi
+            done
+            if [ "$TEST_ONLY" -eq 1 ]; then
+              TEST_ONLY_CHANGE=1
+              echo "every changed application/ path belongs to a test project — allowing test-only change."
+            fi
+          fi
+
           # --- Runtime bases: no application/ (except coordinated integration merges) ---
           case "$BASE_REF" in
             master|main|runtime/*)
-              if [[ "$COMMERCIAL_INTEGRATION" -eq 0 && "$DISTRIBUTION_AUTHORING" -eq 0 && "$FORCED_KERNEL_CLEANUP" -eq 0 ]] && echo "$CHANGED" | grep -q '^application/'; then
+              if [[ "$COMMERCIAL_INTEGRATION" -eq 0 && "$DISTRIBUTION_AUTHORING" -eq 0 && "$FORCED_KERNEL_CLEANUP" -eq 0 && "$TEST_ONLY_CHANGE" -eq 0 ]] && echo "$CHANGED" | grep -q '^application/'; then
                 echo "::error::Base branch '$BASE_REF' is runtime/kernel-first. This PR changes application/ — retarget or remove those paths."
                 exit 1
               fi

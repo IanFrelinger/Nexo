@@ -265,9 +265,7 @@ public sealed class WorkflowCommandTests : UnitTestBase
 
     private static async Task<(int ExitCode, string Output)> CaptureConsoleAsync(Func<Task<int>> action)
     {
-        var previousOut = Console.Out;
-        var previousErr = Console.Error;
-        using var writer = new StringWriter();
+        var writer = new StringWriter();  // not disposed on purpose: a disposed writer left in Console.Out poisons later tests
         try
         {
             Console.SetOut(writer);
@@ -277,8 +275,8 @@ public sealed class WorkflowCommandTests : UnitTestBase
         }
         finally
         {
-            Console.SetOut(previousOut);
-            Console.SetError(previousErr);
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
         }
     }
 

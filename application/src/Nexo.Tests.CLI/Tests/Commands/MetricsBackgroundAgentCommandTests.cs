@@ -103,8 +103,7 @@ public class MetricsBackgroundAgentCommandTests : UnitTestBase
         var logger = new Mock<ILogger<MetricsBackgroundAgentCommand>>();
         var command = new MetricsBackgroundAgentCommand(registry.Object, modeStore, logger.Object);
 
-        using var sw = new StringWriter();
-        var prevOut = Console.Out;
+        var sw = new StringWriter();  // not disposed on purpose: a disposed writer left in Console.Out poisons later tests
         try
         {
             Console.SetOut(sw);
@@ -112,7 +111,7 @@ public class MetricsBackgroundAgentCommandTests : UnitTestBase
         }
         finally
         {
-            Console.SetOut(prevOut);
+            Console.SetOut(ConsoleCapture.Out);
         }
 
         var output = sw.ToString();

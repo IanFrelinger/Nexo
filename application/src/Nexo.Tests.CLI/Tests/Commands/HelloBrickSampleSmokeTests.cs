@@ -43,7 +43,10 @@ public sealed class HelloBrickSampleSmokeTests
 
     private static string FindRepoRoot()
     {
-        var current = new DirectoryInfo(Environment.CurrentDirectory);
+        // Anchored on the test assembly's location rather than the process-global
+        // Environment.CurrentDirectory, which other suites in this assembly move.
+        // See the note in BrickAuthoringPublicApiSnapshotTests.FindSnapshotRoot.
+        var current = new DirectoryInfo(AppContext.BaseDirectory);
         while (current is not null)
         {
             if (File.Exists(Path.Combine(current.FullName, "Nexo.sln")))

@@ -119,11 +119,9 @@ public class TestCommandTests : UnitTestBase
             .ReturnsAsync(result);
 
         // Redirect console output to prevent it from being captured as test output
-        var originalOut = Console.Out;
-        var originalError = Console.Error;
         try
         {
-            using var stringWriter = new StringWriter();
+            var stringWriter = new StringWriter();  // not disposed on purpose: a disposed writer left in Console.Out poisons later tests
             Console.SetOut(stringWriter);
             Console.SetError(stringWriter);
 
@@ -134,8 +132,8 @@ public class TestCommandTests : UnitTestBase
         }
         finally
         {
-            Console.SetOut(originalOut);
-            Console.SetError(originalError);
+            Console.SetOut(ConsoleCapture.Out);
+            Console.SetError(ConsoleCapture.Error);
         }
     }
 
