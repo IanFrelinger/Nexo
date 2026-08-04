@@ -31,4 +31,11 @@
     <ProjectReference Include="../../../src/Nexo.Authoring/Nexo.Authoring.csproj" />
   </ItemGroup>
 
+  <!-- Without this the file never reaches bin\ and xunit reads whatever stale copy
+       is already there — which is exactly how collection parallelism stayed on
+       despite the json saying otherwise. Matches Nexo.Tests.Application. -->
+  <ItemGroup>
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
