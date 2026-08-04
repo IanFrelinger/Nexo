@@ -123,7 +123,7 @@ public class TestCommandTests : UnitTestBase
         var originalError = Console.Error;
         try
         {
-            using var stringWriter = new StringWriter();
+            var stringWriter = new StringWriter();  // not disposed on purpose: a disposed writer left in Console.Out poisons later tests
             Console.SetOut(stringWriter);
             Console.SetError(stringWriter);
 

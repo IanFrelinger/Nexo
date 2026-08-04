@@ -326,7 +326,7 @@ public sealed class RuntimeCommandTests : UnitTestBase
         root.AddCommand(new RuntimeCommand());
         var previousOut = Console.Out;
         var previousError = Console.Error;
-        using var output = new StringWriter();
+        var output = new StringWriter();  // not disposed on purpose: a disposed writer left in Console.Out poisons later tests
         try
         {
             Console.SetOut(output);

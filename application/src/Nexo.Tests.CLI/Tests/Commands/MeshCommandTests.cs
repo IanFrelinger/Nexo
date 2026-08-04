@@ -69,7 +69,7 @@ public sealed class MeshCommandTests : UnitTestBase
         var previousPath = Environment.GetEnvironmentVariable("NEXO_MESH_INSTANCES_PATH");
         Environment.SetEnvironmentVariable("NEXO_MESH_INSTANCES_PATH", instancesPath);
         var previousOut = Console.Out;
-        using var writer = new StringWriter();
+        var writer = new StringWriter();  // not disposed on purpose: a disposed writer left in Console.Out poisons later tests
         Console.SetOut(writer);
         try
         {
@@ -114,7 +114,7 @@ public sealed class MeshCommandTests : UnitTestBase
         Environment.SetEnvironmentVariable("NEXO_MESH_INSTANCES_PATH", instancesPath);
         var previousOut = Console.Out;
         var previousErr = Console.Error;
-        using var writer = new StringWriter();
+        var writer = new StringWriter();  // not disposed on purpose: a disposed writer left in Console.Out poisons later tests
         Console.SetOut(writer);
         Console.SetError(writer);
         try

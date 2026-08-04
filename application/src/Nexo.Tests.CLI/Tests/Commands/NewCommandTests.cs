@@ -66,7 +66,7 @@ public sealed class NewCommandTests
     {
         var output = Path.Combine(Path.GetTempPath(), $"nexo-new-brick-{Guid.NewGuid():N}");
         var originalOut = Console.Out;
-        using var writer = new StringWriter();
+        var writer = new StringWriter();  // not disposed on purpose: a disposed writer left in Console.Out poisons later tests
         Console.SetOut(writer);
         try
         {

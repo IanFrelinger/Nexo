@@ -102,7 +102,7 @@ public class Bar { }";
     {
         await Task.CompletedTask;
         var originalErr = Console.Error;
-        using var errWriter = new StringWriter();
+        var errWriter = new StringWriter();  // not disposed on purpose: a disposed writer left in Console.Out poisons later tests
         Console.SetError(errWriter);
         try
         {
@@ -125,7 +125,7 @@ public class Bar { }";
         try
         {
             var originalErr = Console.Error;
-            using var errWriter = new StringWriter();
+            var errWriter = new StringWriter();  // not disposed on purpose: a disposed writer left in Console.Out poisons later tests
             Console.SetError(errWriter);
             try
             {
@@ -165,7 +165,7 @@ public class Bar { }";
     {
         await Task.CompletedTask;
         var originalOut = Console.Out;
-        using var outWriter = new StringWriter();
+        var outWriter = new StringWriter();  // not disposed on purpose: a disposed writer left in Console.Out poisons later tests
         Console.SetOut(outWriter);
         try
         {
@@ -225,7 +225,7 @@ public class Bar { }";
         try
         {
             var originalOut = Console.Out;
-            using var writer = new StringWriter();
+            var writer = new StringWriter();  // not disposed on purpose: a disposed writer left in Console.Out poisons later tests
             Console.SetOut(writer);
             try
             {
@@ -259,7 +259,7 @@ public class Bar { }";
         try
         {
             var originalOut = Console.Out;
-            using var writer = new StringWriter();
+            var writer = new StringWriter();  // not disposed on purpose: a disposed writer left in Console.Out poisons later tests
             Console.SetOut(writer);
             try
             {

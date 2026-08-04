@@ -267,7 +267,7 @@ public sealed class WorkflowCommandTests : UnitTestBase
     {
         var previousOut = Console.Out;
         var previousErr = Console.Error;
-        using var writer = new StringWriter();
+        var writer = new StringWriter();  // not disposed on purpose: a disposed writer left in Console.Out poisons later tests
         try
         {
             Console.SetOut(writer);

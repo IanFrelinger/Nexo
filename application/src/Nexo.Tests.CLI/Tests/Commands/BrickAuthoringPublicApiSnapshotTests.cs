@@ -39,7 +39,13 @@ public sealed class BrickAuthoringPublicApiSnapshotTests
 
     private static string FindSnapshotRoot()
     {
-        var current = new DirectoryInfo(Environment.CurrentDirectory);
+        // Anchored on the test assembly's own location, NOT Environment.CurrentDirectory.
+        // CWD is process-global and other suites in this assembly (WorkflowCommandTests
+        // sets it in ~17 tests) legitimately move it; anything that outlives its test —
+        // an async continuation, background work started by a command under test — can
+        // leave it stranded, and this walk then fails with "Repository root not found".
+        // AppContext.BaseDirectory is fixed for the life of the process.
+        var current = new DirectoryInfo(AppContext.BaseDirectory);
         while (current is not null)
         {
             if (File.Exists(Path.Combine(current.FullName, "Nexo.sln")))
