@@ -94,5 +94,15 @@
     <Compile Include="..\Nexo.Hosting\GlobalUsings.Infrastructure.Sdk.cs" Link="GlobalUsings.Infrastructure.Sdk.cs" />
   </ItemGroup>
 
+  <!-- Hygiene, not a behaviour change: without this the json never reaches bin\ and
+       xunit reads whatever stale copy is already there. That drift is exactly what
+       kept Nexo.Tests.CLI silently parallel (see 5fc20270). Here the stale copy and
+       the source are behaviourally identical — the only difference is an explicit
+       parallelizeTestCollections:true, which is also the default — so this changes
+       nothing today and prevents the same trap tomorrow. -->
+  <ItemGroup>
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
 
