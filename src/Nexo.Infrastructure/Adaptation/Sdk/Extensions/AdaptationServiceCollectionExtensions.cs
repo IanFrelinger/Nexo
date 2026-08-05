@@ -30,8 +30,34 @@ public static class AdaptationServiceCollectionExtensions
     /// required for BrickRecompiler and ObservationContextBrick.
     /// </summary>
     public static IServiceCollection AddAdaptationInfrastructure(this IServiceCollection services, string? patternStorePath = null)
+        => services.AddAdaptationInfrastructure(patternStorePath, registerObservationCore: true);
+
+    /// <summary>
+    /// As <see cref="AddAdaptationInfrastructure(IServiceCollection, string?)"/>, but lets the
+    /// caller state who owns the observation-core registrations
+    /// (<see cref="IPatternStore"/>, <see cref="IPatternProcessedStore"/>,
+    /// <see cref="IContextAssembler"/>).
+    /// </summary>
+    /// <remarks>
+    /// Adaptation needs those services but does not have to be the one that registers them.
+    /// A host that also adds the observation pipeline registers them there, from a different
+    /// path calculation, and — because both used AddSingleton — silently won on last-wins.
+    /// Passing <paramref name="registerObservationCore"/> as false makes that ownership
+    /// explicit instead of leaving a registration that is overwritten in some configurations
+    /// and load-bearing in others.
+    /// </remarks>
+    /// <param name="services">The service collection.</param>
+    /// <param name="patternStorePath">Pattern store path, or null to skip path-derived registrations.</param>
+    /// <param name="registerObservationCore">
+    /// False when the caller registers observation core itself; the services must still end up
+    /// registered, because adaptation resolves them.
+    /// </param>
+    public static IServiceCollection AddAdaptationInfrastructure(
+        this IServiceCollection services,
+        string? patternStorePath,
+        bool registerObservationCore)
     {
-        if (!string.IsNullOrEmpty(patternStorePath))
+        if (registerObservationCore && !string.IsNullOrEmpty(patternStorePath))
             services.AddObservationCore(patternStorePath);
 
         services.AddOptions<AdaptationBrickOptions>();
@@ -176,7 +202,7 @@ public static class AdaptationServiceCollectionExtensions
     /// <summary>
     /// Registers additional brick types for the adaptation pipeline.
     /// Bricks are resolved via DI (e.g. <see cref="IProviderFactory"/> for OWASPScannerBrick).
-    /// Call after <see cref="AddAdaptationInfrastructure"/> and ensure required services (e.g. IProviderFactory) are registered.
+    /// Call after <see cref="AddAdaptationInfrastructure(IServiceCollection, string?)"/> and ensure required services (e.g. IProviderFactory) are registered.
     /// </summary>
     public static IServiceCollection AddAdaptationBricks(this IServiceCollection services, params Type[] brickTypes)
     {

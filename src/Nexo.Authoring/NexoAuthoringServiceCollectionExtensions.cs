@@ -31,6 +31,21 @@ public static class NexoAuthoringServiceCollectionExtensions
     {
         services.TryAddSingleton<IAgentProfileRegistry>(sp =>
             new AgentProfileRegistry(sp.GetServices<IAgentProfileSource>(), sp));
+        // These two lines register the brick for two different consumers, and the
+        // container therefore holds TWO GenerativeArtifactBrick objects:
+        //
+        //   TryAddSingleton    the DI singleton, for anything resolving the brick
+        //                      type directly.
+        //   AddNexoBrick       adds the TYPE to NexoSdkOptions.BrickTypes, which
+        //                      AdaptationBrickOptions.AdditionalBrickTypes feeds to
+        //                      ActivatorUtilities.CreateInstance when BrickRegistry
+        //                      is built — constructing a fresh instance rather than
+        //                      resolving the singleton above.
+        //
+        // Left as-is on purpose. The brick is stateless, so two instances are
+        // harmless, and routing the registry through the container instead would
+        // change instance identity for EVERY additional brick type, not just this
+        // one — a behaviour change well outside a DI-composition cleanup.
         services.TryAddSingleton<GenerativeArtifactBrick>();
         return services.AddNexoBrick<GenerativeArtifactBrick>();
     }

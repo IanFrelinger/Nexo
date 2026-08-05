@@ -198,9 +198,24 @@ internal static partial class NexoKernelRegistrar
         // ── Adaptation ─────────────────────────────────────────────────
         // Pattern store path is forwarded so the adaptation layer knows
         // where to persist learned patterns on disk.
+        //
+        // Observation core (IPatternStore / IPatternProcessedStore /
+        // IContextAssembler) is registered by exactly one phase. Phase 12
+        // owns it whenever the observation pipeline is active; adaptation
+        // owns it otherwise. Previously BOTH registered it with AddSingleton
+        // and Phase 12 silently won on last-wins wherever both ran — which
+        // also meant the two disagreed about the store path, since Phase 12
+        // combines it with the repo root and adaptation used it verbatim.
+        // Adaptation's registration was therefore dead in Full/Server but
+        // load-bearing in AirGapped and whenever the pipeline is disabled.
         if (modules.IncludeAdaptation)
         {
-            services.AddAdaptationInfrastructure(options.PatternStorePath);
+            bool observationPipelineOwnsObservationCore =
+                modules.IncludeObservationPipeline && !options.DisableObservationPipeline;
+
+            services.AddAdaptationInfrastructure(
+                options.PatternStorePath,
+                registerObservationCore: !observationPipelineOwnsObservationCore);
             services.AddNexoFederatedBrickMesh(configuration);
         }
 
@@ -383,7 +398,15 @@ internal static partial class NexoKernelRegistrar
         MeaiPipelineServiceCollectionExtensions.RegisterGovernanceDefaults(services);
         MeaiPipelineServiceCollectionExtensions.RegisterVectorDataRag(services);
 
-        // Prefer VectorData-backed IRAGService (last registration wins over Phase 11 legacy).
+        // INTENTIONAL override, not an accident of ordering. Phase 11 registers
+        // IRAGService -> RAGService via AddBackgroundAgentsRAG; this registration
+        // runs later and therefore wins on last-wins, so IRAGService always
+        // resolves to the VectorData-backed adapter. It is deliberately NOT
+        // TryAdd — TryAdd here would invert the intent and hand the contract back
+        // to the legacy implementation. It is also deliberately not a Replace of
+        // the Phase 11 descriptor: nothing enumerates IEnumerable<IRAGService>
+        // today, but removing the legacy entry would change that enumeration for
+        // anyone who starts.
         services.AddSingleton<Nexo.BackgroundAgents.RAG.IRAGService>(sp =>
             new Nexo.Hosting.Meai.MeaiVectorDataRagAdapter(
                 sp.GetRequiredService<Nexo.AI.Pipeline.Rag.VectorDataRagService>()));
@@ -438,20 +461,26 @@ internal static partial class NexoKernelRegistrar
 
         // ── Trust & provider factory (3-way branching) ─────────────────
         // The provider factory is the gateway through which every LLM
-        // call flows.  Three mutually-exclusive wiring paths exist:
+        // call flows.  It is composed as a decorator chain, built bottom-up
+        // from two independent switches — sanitize and adaptive — rather
+        // than as three hand-maintained alternatives:
         //
-        //   Path A — Adaptive load-balancing (NEXO_LOAD_PREFERENCE set):
-        //     ProviderFactory → (optional SanitizingProviderFactory if
-        //     trust is on) → AdaptiveProviderFactory.
-        //     Load policy is driven by NEXO_LOAD_PREFERENCE value.
+        //   ProviderFactory                         (always the innermost)
+        //     → SanitizingProviderFactory           (when trust is on)
+        //       → AdaptiveProviderFactory           (when a load pref is set)
         //
-        //   Path B — Trust without adaptive (NEXO_TRUST_ENABLED=1,
-        //     no load pref):
-        //     Trust module registers its own SanitizingProviderFactory
-        //     via AddTrustServices (skipProviderRegistration: false).
+        // which yields the four combinations the kernel actually ships:
         //
-        //   Path C — Plain (neither trust nor adaptive):
-        //     Bare ProviderFactory is registered directly.
+        //   plain      ProviderFactory
+        //   trust      Sanitizing → ProviderFactory
+        //   adaptive   Adaptive → ProviderFactory
+        //   both       Adaptive → Sanitizing → ProviderFactory
+        //
+        // This used to be three `if` branches, one of which lived in
+        // Nexo.BackgroundAgents.AddTrustServices rather than here, and the
+        // two assemblies stayed consistent only because the flags passed
+        // between them happened to be mutually exclusive. The wiring is now
+        // owned entirely by this phase.
         //
         // NEXO_TRUST_ENABLED ("1"): activates the sanitization proxy
         //   that scrubs PII before LLM calls leave the trust boundary.
@@ -463,6 +492,11 @@ internal static partial class NexoKernelRegistrar
         string? loadPref = Environment.GetEnvironmentVariable("NEXO_LOAD_PREFERENCE")?.Trim();
         bool useAdaptive = options.UseAdaptiveLoadBalancing ?? !string.IsNullOrEmpty(loadPref);
 
+        // IResilientExecutor is registered here and nowhere else in the kernel.
+        // AddTrustServices also TryAdds it, but only inside the provider branch the
+        // kernel no longer takes; even when it did, this registration ran first and
+        // won, so the two never disagreed. TryAdd is kept so a host can substitute
+        // its own executor before calling AddNexo.
         services.TryAddSingleton<IResilientExecutor, ResilientExecutor>();
         services.TryAddSingleton<IProcessCommandRunner, ProcessCommandRunner>();
         services.TryAddSingleton<ISandboxedCommandRunner, DockerSandboxedCommandRunner>();
@@ -473,44 +507,91 @@ internal static partial class NexoKernelRegistrar
 
         if (modules.IncludeTrustServices)
         {
-            services.AddTrustServices(useSanitizingProviderFactory: trustEnabled, ephemeralLifecycle: ephemeralModels, skipProviderRegistration: useAdaptive);
+            // Trust registers taxonomy, sanitization proxy, and audit log only.
+            // skipProviderRegistration is ALWAYS true: the kernel never delegates
+            // provider-factory wiring to the trust module, so all three paths are
+            // decided in the single block below instead of being split across two
+            // assemblies and kept consistent by the flags happening to agree.
+            // (AddTrustServices keeps its own provider branch for SDK consumers
+            // that call it directly; the kernel simply does not use it.)
+            services.AddTrustServices(useSanitizingProviderFactory: false, ephemeralLifecycle: ephemeralModels, skipProviderRegistration: true);
         }
 
-        // Path A: adaptive load-balancing wraps everything
+        // ── The one place the provider-factory chain is decided ─────────
+        // sanitize implies the trust module is present: trustEnabled already
+        // requires modules.IncludeTrustServices, so ICloudSanitizationProxy is
+        // guaranteed resolvable wherever it is used below.
+        bool sanitize = trustEnabled;
+
+        // Path A and Path B both wrap the bare factory, so they need it resolvable
+        // as a concrete service. Path C does not register it — a host asking for
+        // ProviderFactory (rather than IProviderFactory) gets null there, and that
+        // asymmetry is preserved deliberately.
+        if (useAdaptive || sanitize)
+        {
+            services.AddSingleton<ProviderFactory>(sp => CreateProviderFactory(sp, useAdaptive, sanitize, ephemeralModels));
+        }
+
         if (useAdaptive)
         {
-            services.AddSingleton<ProviderFactory>(sp =>
-            {
-                Microsoft.Extensions.Logging.ILogger<ProviderFactory> logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<ProviderFactory>>();
-                IEphemeralModelLifecycle? lifecycle = sp.GetService<IEphemeralModelLifecycle>();
-                IResilientExecutor resilient = sp.GetRequiredService<IResilientExecutor>();
-                return new ProviderFactory(logger, lifecycle, resilient);
-            });
             services.TryAddSingleton<ILoadPolicy, PreferenceLoadPolicy>();
-            services.AddSingleton<IProviderFactory>(sp =>
-            {
-                ProviderFactory pf = sp.GetRequiredService<ProviderFactory>();
-                Nexo.Infrastructure.Execution.IProviderFactory inner = trustEnabled
-                    ? new SanitizingProviderFactory(pf, sp.GetRequiredService<ICloudSanitizationProxy>(),
-                        sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<SanitizingProviderFactory>>())
-                    : pf;
-                ILoadPolicy policy = sp.GetRequiredService<ILoadPolicy>();
-                Microsoft.Extensions.Logging.ILogger<AdaptiveProviderFactory>? logger = sp.GetService<Microsoft.Extensions.Logging.ILogger<AdaptiveProviderFactory>>();
-                return new AdaptiveProviderFactory(inner, policy, logger);
-            });
-        }
-        // Path C: plain provider (Path B is handled inside AddTrustServices)
-        else if (!trustEnabled)
-        {
-            services.AddSingleton<IProviderFactory>(sp =>
-            {
-                Microsoft.Extensions.Logging.ILogger<ProviderFactory> logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<ProviderFactory>>();
-                IEphemeralModelLifecycle? lifecycle = sp.GetService<IEphemeralModelLifecycle>();
-                IResilientExecutor resilient = sp.GetRequiredService<IResilientExecutor>();
-                return new ProviderFactory(logger, lifecycle, resilient);
-            });
         }
 
+        services.AddSingleton<IProviderFactory>(sp =>
+        {
+            // Innermost: the bare factory. Resolved when it was registered above so
+            // wrapper and wrapped share one instance; constructed inline on Path C.
+            Nexo.Infrastructure.Execution.IProviderFactory chain = useAdaptive || sanitize
+                ? sp.GetRequiredService<ProviderFactory>()
+                : CreateProviderFactory(sp, useAdaptive, sanitize, ephemeralModels);
+
+            // Middle: PII scrubbing before anything leaves the trust boundary.
+            if (sanitize)
+            {
+                chain = new SanitizingProviderFactory(
+                    chain,
+                    sp.GetRequiredService<ICloudSanitizationProxy>(),
+                    sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<SanitizingProviderFactory>>());
+            }
+
+            // Outermost: load-balancing across providers.
+            if (useAdaptive)
+            {
+                chain = new AdaptiveProviderFactory(
+                    chain,
+                    sp.GetRequiredService<ILoadPolicy>(),
+                    sp.GetService<Microsoft.Extensions.Logging.ILogger<AdaptiveProviderFactory>>());
+            }
+
+            return chain;
+        });
+
+    }
+
+    /// <summary>
+    /// Builds the bare <see cref="ProviderFactory"/> that sits at the bottom of the
+    /// chain in every wiring path.
+    /// </summary>
+    /// <remarks>
+    /// The lifecycle probe is not uniform, and that is preserved rather than tidied.
+    /// Before consolidation the sanitizing path (registered inside AddTrustServices)
+    /// only asked for <see cref="IEphemeralModelLifecycle"/> when ephemeral models
+    /// were enabled, while the adaptive and plain paths always asked. Those forms
+    /// are identical in practice — the kernel registers the lifecycle only when
+    /// ephemeral models are on — but they differ if a host pre-registers its own
+    /// lifecycle, so each path keeps the probe it had.
+    /// </remarks>
+    private static ProviderFactory CreateProviderFactory(
+        IServiceProvider sp,
+        bool useAdaptive,
+        bool sanitize,
+        bool ephemeralModels)
+    {
+        bool probeLifecycle = useAdaptive || !sanitize || ephemeralModels;
+        return new ProviderFactory(
+            sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<ProviderFactory>>(),
+            probeLifecycle ? sp.GetService<IEphemeralModelLifecycle>() : null,
+            sp.GetRequiredService<IResilientExecutor>());
     }
 
     /// <summary>Phase 16: execution core, workflow integrations, and behavior pipeline.</summary>

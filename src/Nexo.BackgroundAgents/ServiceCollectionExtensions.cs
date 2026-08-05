@@ -173,6 +173,12 @@ public static class ServiceCollectionExtensions
         });
         services.TryAddSingleton<ITrustPolicyPackRegistry, TrustPolicyPackRegistry>();
 
+        // NOTE: the Nexo kernel never takes this branch — NexoKernelRegistrar
+        // always calls this method with skipProviderRegistration: true and owns
+        // the whole provider-factory chain itself (Phase 15). The branch is kept
+        // for SDK consumers that call AddTrustServices directly and want the
+        // sanitizing factory wired for them; changing or deleting it would be a
+        // behaviour break for those callers, not a kernel change.
         if (useSanitizingProviderFactory && !skipProviderRegistration)
         {
             services.TryAddSingleton<Nexo.Core.Application.Resilience.Ports.IResilientExecutor, Nexo.Infrastructure.Resilience.ResilientExecutor>();
