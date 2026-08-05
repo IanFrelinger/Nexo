@@ -22,7 +22,7 @@ namespace Nexo.Tests.Infrastructure.Tests.Hosting;
 [Trait("Category", "ProdStyle")]
 [Trait("Category", "E2E")]
 [Collection("EnvironmentVariables")]
-public sealed class KernelDiCompositionPinningTests : IDisposable
+public sealed class KernelDiCompositionProdStyleTests : IDisposable
 {
     private readonly string? _trust = Environment.GetEnvironmentVariable("NEXO_TRUST_ENABLED");
     private readonly string? _loadPref = Environment.GetEnvironmentVariable("NEXO_LOAD_PREFERENCE");
