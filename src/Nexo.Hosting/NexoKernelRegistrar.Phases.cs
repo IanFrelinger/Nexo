@@ -398,7 +398,15 @@ internal static partial class NexoKernelRegistrar
         MeaiPipelineServiceCollectionExtensions.RegisterGovernanceDefaults(services);
         MeaiPipelineServiceCollectionExtensions.RegisterVectorDataRag(services);
 
-        // Prefer VectorData-backed IRAGService (last registration wins over Phase 11 legacy).
+        // INTENTIONAL override, not an accident of ordering. Phase 11 registers
+        // IRAGService -> RAGService via AddBackgroundAgentsRAG; this registration
+        // runs later and therefore wins on last-wins, so IRAGService always
+        // resolves to the VectorData-backed adapter. It is deliberately NOT
+        // TryAdd — TryAdd here would invert the intent and hand the contract back
+        // to the legacy implementation. It is also deliberately not a Replace of
+        // the Phase 11 descriptor: nothing enumerates IEnumerable<IRAGService>
+        // today, but removing the legacy entry would change that enumeration for
+        // anyone who starts.
         services.AddSingleton<Nexo.BackgroundAgents.RAG.IRAGService>(sp =>
             new Nexo.Hosting.Meai.MeaiVectorDataRagAdapter(
                 sp.GetRequiredService<Nexo.AI.Pipeline.Rag.VectorDataRagService>()));
@@ -484,6 +492,11 @@ internal static partial class NexoKernelRegistrar
         string? loadPref = Environment.GetEnvironmentVariable("NEXO_LOAD_PREFERENCE")?.Trim();
         bool useAdaptive = options.UseAdaptiveLoadBalancing ?? !string.IsNullOrEmpty(loadPref);
 
+        // IResilientExecutor is registered here and nowhere else in the kernel.
+        // AddTrustServices also TryAdds it, but only inside the provider branch the
+        // kernel no longer takes; even when it did, this registration ran first and
+        // won, so the two never disagreed. TryAdd is kept so a host can substitute
+        // its own executor before calling AddNexo.
         services.TryAddSingleton<IResilientExecutor, ResilientExecutor>();
         services.TryAddSingleton<IProcessCommandRunner, ProcessCommandRunner>();
         services.TryAddSingleton<ISandboxedCommandRunner, DockerSandboxedCommandRunner>();
