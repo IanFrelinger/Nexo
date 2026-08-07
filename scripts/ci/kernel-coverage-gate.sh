@@ -42,7 +42,14 @@ dotnet test src/Nexo.Tests.Domain/Nexo.Tests.Domain.csproj \
 # path (latent, separate).
 echo ""
 echo "== Infrastructure (Nexo.Infrastructure) line coverage: PROVISIONAL floor ${INFRA_COVERAGE_THRESHOLD:-0}% (measuring the real number) =="
+# RuntimeStudioBlackBoxSmokeTests is excluded from the COVERAGE run only (it still
+# runs in the normal test job). Those three tests shell out to the real CLI daemon
+# and each burn a ~2.5 minute timeout before failing — they fail on master too, so
+# they are environmental rather than a regression. That is ~7.5 minutes of a
+# time-capped job spent on tests that exercise a spawned process, whose coverage
+# this instrumentation cannot attribute to [Nexo.Infrastructure] anyway.
 dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net9.0 \
+  --filter "FullyQualifiedName!~RuntimeStudioBlackBoxSmokeTests" \
   /p:CollectCoverage=true \
   /p:CoverletOutput="$ROOT/CoverageReports/infra" \
   /p:CoverletOutputFormat=cobertura \
