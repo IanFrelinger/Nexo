@@ -16,29 +16,41 @@ dotnet test src/Nexo.Tests.Domain/Nexo.Tests.Domain.csproj \
   --verbosity minimal
 
 
-# == Infrastructure (Nexo.Infrastructure): EXCLUDED ==
+# == Infrastructure (Nexo.Infrastructure) ==
 #
-# Not a coverage decision — the step cannot produce a number at all. The
-# Nexo.Tests.Infrastructure host crashes during TEARDOWN
-# (LoaderAllocatorScout.Finalize / 0x80131506) after every test has passed, and the
-# resulting aborted run destroys the coverage results before they are written. With
-# no result the step never returns, which is why this job ran to GitHub's 6-hour cap
-# and was auto-cancelled on master, on dependabot branches, and everywhere else. It
-# has never once produced a verdict.
+# Restored. This step used to be impossible to run: the Nexo.Tests.Infrastructure
+# host crashed mid-run (LoaderAllocatorScout.Finalize / 0x80131506) while finalizing
+# overlapping collectible AssemblyLoadContexts from the certification mutation
+# engine. The aborted run discarded the coverage results before they were written,
+# so the step never produced a number and the job ran to GitHub's 6-hour cap. Fixed
+# by giving those load contexts a single owner and serialising their teardown.
 #
-# Both instrumentation routes were tried and BOTH fail the same way:
-#   * coverlet.msbuild  -> 572/572 pass, host crashes, no report
-#   * XPlat Code Coverage data collector (coverlet.collector) -> 452/453 pass,
-#     host crashes, no report. Collecting out-of-process does not help because the
-#     run is ABORTED, so attachments are discarded too.
+# THE FLOOR BELOW IS PROVISIONAL — deliberately 0, not a real floor.
 #
-# So Infrastructure is excluded until the teardown crash itself is fixed. Domain and
-# Core.Application below both complete normally, so the gate now returns a real
-# pass/fail instead of hanging.
+# Every previous run of this suite was truncated by the crash at a different point
+# (52, 77, 182, 199, 217, 243, 461 tests across runs), so the historical 83% floor
+# was never measured against a complete run and no trustworthy number exists. This
+# first CI run exists to establish two things: that the instrumented run now
+# COMPLETES, and what the real coverage actually is. A floor of 0 keeps those two
+# outcomes distinguishable — a hang or crash still fails the step, whereas a
+# genuine-but-low number is reported rather than masked as a failure.
+#
+# The real floor is set in a follow-up once that number is known.
 #
 # Tracked: docs/production-readiness/KernelCoverageGate-Findings.md
 # Related: TestRunnerAdapter.ExecuteTestAsync abandons its runTask on the timeout
-# path (latent, separate); Nexo.Tests.Infrastructure teardown crash (this).
+# path (latent, separate).
+echo ""
+echo "== Infrastructure (Nexo.Infrastructure) line coverage: PROVISIONAL floor ${INFRA_COVERAGE_THRESHOLD:-0}% (measuring the real number) =="
+dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net9.0 \
+  /p:CollectCoverage=true \
+  /p:CoverletOutput="$ROOT/CoverageReports/infra" \
+  /p:CoverletOutputFormat=cobertura \
+  /p:Include="[Nexo.Infrastructure]*" \
+  /p:Threshold="${INFRA_COVERAGE_THRESHOLD:-0}" \
+  /p:ThresholdType=line \
+  --verbosity minimal
+
 echo ""
 echo "== Core.Application line coverage: ${APP_COVERAGE_THRESHOLD:-67}% floor =="
 dotnet test src/Nexo.Tests.Application/Nexo.Tests.Application.csproj \
