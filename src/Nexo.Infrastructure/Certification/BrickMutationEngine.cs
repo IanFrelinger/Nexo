@@ -207,6 +207,16 @@ internal sealed class BrickMutationEngine
     /// </remarks>
     private static void WaitForContextRelease(WeakReference contextRef)
     {
+        // Cheap check first. Once the owning frame has exited, the context is usually
+        // already unreachable and a background collection will reclaim it without any
+        // help — in which case forcing a blocking full GC per mutant buys nothing and
+        // costs a great deal across a whole certification run.
+        if (!contextRef.IsAlive)
+            return;
+
+        // Still reachable, so collection has to be driven. This is the case the gate
+        // exists for: the next mutant must not be loaded while this allocator is
+        // waiting to be finalized.
         const int maxAttempts = 10;
         for (int attempt = 0; attempt < maxAttempts && contextRef.IsAlive; attempt++)
         {
