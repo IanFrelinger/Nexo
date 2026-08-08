@@ -37,12 +37,15 @@ jobs:
   kernel-coverage:
     name: kernel-coverage
     runs-on: ubuntu-latest
-    # This job has never completed: the Infrastructure coverage step's test host
-    # crashes at teardown, VSTest never returns, and with no explicit limit the job
-    # burned GitHub's 6-hour default before being auto-cancelled — on master and on
-    # dependabot branches alike. The underlying crash is NOT fixed here (see
-    # docs/production-readiness/KernelCoverageGate-Findings.md); this simply stops it
-    # wasting six hours of runner time per push to report the same non-answer.
+    # Backstop, kept deliberately. The job used to burn GitHub's 6-hour default
+    # because the Infrastructure coverage step could never return.
+    #
+    # That step's crash is now fixed, but Infrastructure remains excluded from the
+    # gate because fixing it exposed a separate hang in that suite (see
+    # docs/production-readiness/KernelCoverageGate-Findings.md). With only Domain and
+    # Core.Application running, this job finishes in ~90 seconds, so 30 minutes is
+    # pure headroom rather than a working limit — and it stays as insurance against
+    # a future step wedging again.
     timeout-minutes: 30
     steps:
       - name: Checkout
