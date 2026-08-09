@@ -78,8 +78,19 @@ jobs:
           fi
           dotnet tool install --global dotnet-dump >/dev/null 2>&1
           export PATH="$PATH:$HOME/.dotnet/tools"
+
+          # dumpasync is the one that matters. A hosted service whose StartAsync is
+          # awaiting a network call owns NO thread, so it is invisible to clrstack —
+          # which is exactly why the previous round could name the blocking PATTERN
+          # (sync-over-async on host.StartAsync) but not the service responsible.
+          echo "=== pending async state machines ==="
+          dotnet-dump analyze "$dump" -c "dumpasync -completed" -c "exit" 2>&1 | head -250
+          echo ""
+          echo "=== async frames mentioning Nexo ==="
+          dotnet-dump analyze "$dump" -c "dumpasync" -c "exit" 2>&1 | grep -iE 'Nexo|Ollama|HostedService|StartAsync|Ncr' | head -60
+          echo ""
           echo "=== managed stacks, all threads ==="
-          dotnet-dump analyze "$dump" -c "clrstack -all" -c "exit" 2>&1 | head -400
+          dotnet-dump analyze "$dump" -c "clrstack -all" -c "exit" 2>&1 | head -200
 
       - name: Upload dumps
         if: always()
