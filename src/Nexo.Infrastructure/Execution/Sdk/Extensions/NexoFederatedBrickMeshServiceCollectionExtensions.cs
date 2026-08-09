@@ -38,8 +38,14 @@ public static class NexoFederatedBrickMeshServiceCollectionExtensions
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
-            var local = sp.GetService<BrickRegistry>() as IBrickRegistry
-                ?? sp.GetService<IBrickRegistry>();
+            // Only the CONCRETE BrickRegistry may be resolved here. Asking for
+            // IBrickRegistry as a fallback re-enters this very factory: this
+            // registration is the last IBrickRegistry descriptor, so it always wins
+            // last-wins and resolves to itself. That fallback therefore never returned
+            // an alternative registry — it recursed until the process stopped making
+            // progress, with no exception and no stack overflow, which is precisely the
+            // case the guard below was written to report cleanly.
+            var local = sp.GetService<BrickRegistry>() as IBrickRegistry;
             if (local is null)
                 throw new InvalidOperationException(
                     "Federated brick mesh requires a local BrickRegistry (enable adaptation in the deployment profile).");
