@@ -1,14 +1,21 @@
 # TEMPORARY diagnostic workflow — delete once the Infrastructure suite hang is fixed.
 #
-# The Nexo.Tests.Infrastructure ALC crash is fixed, and fixing it exposed a hang that
-# the crash had been masking: the process used to die long before reaching whatever
-# blocks. Two kernel-coverage runs were cancelled at 30m20s and 60m20s with zero
-# crash signatures, and doubling the budget changed nothing.
+# Round 1 ran the whole suite under --blame-hang and named two incomplete tests
+# (maxParallelThreads is 2, so both in-flight slots were stalled):
 #
-# This runs the suite under `--blame-hang`, which aborts a test after a period of
-# inactivity, dumps the hung process, and — the point of the exercise — names the
-# test that was running. That is the one thing the cancelled runs could never tell
-# us, because a job cancellation kills the runner without a diagnosis.
+#   Tests.API.ApiDevelopmentHostDiTests.Development_host_di_graph_builds_without_scoped_singleton_violations
+#   Tests.Execution.InfrastructureRoutingGapCoverageTests.AddNexoFederatedBrickMesh_throws_without_local_registry
+#
+# The second is pure in-memory DI with no I/O and has no plausible way to block, so
+# it is almost certainly collateral — it just held the other parallel slot. This
+# round isolates the first one to establish that it really is the blocker, and
+# crucially WHAT it blocks on: naming the test is not the same as knowing the cause,
+# and the fix differs entirely between an unreachable Docker daemon, a port bind, and
+# a genuine startup deadlock.
+#
+# A hang dump alone does not answer that, so the dump is analysed in-job with
+# dotnet-dump to print managed stacks for every thread. The blocked frame is the
+# evidence.
 name: Infra hang diagnosis (temporary)
 
 on:
@@ -18,14 +25,10 @@ on:
   workflow_dispatch:
 
 jobs:
-  blame-hang:
-    name: blame-hang (net9.0)
+  isolate-api-host-test:
+    name: isolate ApiDevelopmentHostDiTests
     runs-on: ubuntu-latest
-    # Generous, but bounded: blame-hang should abort the offending test at the 5
-    # minute inactivity mark long before this, so hitting this cap would itself be
-    # information — it would mean the suite is not hanging on one test but making
-    # slow forward progress.
-    timeout-minutes: 45
+    timeout-minutes: 25
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,39 +38,54 @@ jobs:
         with:
           dotnet-version: "9.0.x"
 
+      - name: Environment facts
+        # Recorded up front so the stacks can be read against what was actually
+        # available. If Docker is reachable here, "the daemon is missing" is ruled out
+        # and the cause lies elsewhere.
+        run: |
+          echo "=== docker ==="
+          docker info >/dev/null 2>&1 && echo "docker: AVAILABLE" || echo "docker: UNAVAILABLE"
+          docker version 2>&1 | head -5 || true
+          echo "=== DOCKER_HOST ==="
+          echo "${DOCKER_HOST:-<unset>}"
+          echo "=== docker socket ==="
+          ls -l /var/run/docker.sock 2>&1 || echo "no /var/run/docker.sock"
+
       - name: Build
         run: dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net9.0 --verbosity minimal
 
-      - name: Test under blame-hang
-        # 5 minutes of INACTIVITY, not total runtime. The slowest legitimate tests in
-        # this suite are the ~2.5 minute daemon black-box ones, so 5 leaves headroom
-        # without waiting out a genuine hang.
+      - name: Run ONLY ApiDevelopmentHostDiTests under blame-hang
+        # 3 minutes of inactivity is plenty for a single DI-graph validation; if it
+        # has not finished by then it is blocked, not slow.
         run: |
           dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
             -f net9.0 --no-build \
-            --blame-hang --blame-hang-timeout 5m --blame-hang-dump-type mini \
+            --filter "FullyQualifiedName~ApiDevelopmentHostDiTests" \
+            --blame-hang --blame-hang-timeout 3m --blame-hang-dump-type full \
             --logger "console;verbosity=normal" \
             --results-directory "$GITHUB_WORKSPACE/HangResults"
 
-      - name: Report what was running
-        # Runs even on failure — especially on failure, since that is when
-        # blame-hang has written the sequence file naming the culprit.
+      - name: Analyse the hang dump
         if: always()
+        # This is the step that actually answers "what is it waiting on".
         run: |
-          echo "=== sequence / hang files ==="
-          find "$GITHUB_WORKSPACE/HangResults" -type f \( -name '*.xml' -o -name '*Sequence*' \) 2>/dev/null | head -20
-          echo ""
-          echo "=== contents ==="
-          for f in $(find "$GITHUB_WORKSPACE/HangResults" -type f -name '*Sequence*.xml' 2>/dev/null | head -5); do
-            echo "--- $f ---"
-            cat "$f"
-          done
+          set +e
+          dump=$(find "$GITHUB_WORKSPACE/HangResults" -name '*.dmp' | head -1)
+          echo "dump: ${dump:-<none found>}"
+          if [ -z "$dump" ]; then
+            echo "No dump produced — the test did not hang in this configuration."
+            exit 0
+          fi
+          dotnet tool install --global dotnet-dump >/dev/null 2>&1
+          export PATH="$PATH:$HOME/.dotnet/tools"
+          echo "=== managed stacks, all threads ==="
+          dotnet-dump analyze "$dump" -c "clrstack -all" -c "exit" 2>&1 | head -400
 
       - name: Upload dumps
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: infra-hang-dumps
+          name: api-host-hang-dump
           path: HangResults/
           if-no-files-found: warn
           retention-days: 7
