@@ -1,0 +1,73 @@
+# TEMPORARY diagnostic workflow — delete once the Infrastructure suite hang is fixed.
+#
+# The Nexo.Tests.Infrastructure ALC crash is fixed, and fixing it exposed a hang that
+# the crash had been masking: the process used to die long before reaching whatever
+# blocks. Two kernel-coverage runs were cancelled at 30m20s and 60m20s with zero
+# crash signatures, and doubling the budget changed nothing.
+#
+# This runs the suite under `--blame-hang`, which aborts a test after a period of
+# inactivity, dumps the hung process, and — the point of the exercise — names the
+# test that was running. That is the one thing the cancelled runs could never tell
+# us, because a job cancellation kills the runner without a diagnosis.
+name: Infra hang diagnosis (temporary)
+
+on:
+  push:
+    branches:
+      - cursor/infra-suite-hang
+  workflow_dispatch:
+
+jobs:
+  blame-hang:
+    name: blame-hang (net9.0)
+    runs-on: ubuntu-latest
+    # Generous, but bounded: blame-hang should abort the offending test at the 5
+    # minute inactivity mark long before this, so hitting this cap would itself be
+    # information — it would mean the suite is not hanging on one test but making
+    # slow forward progress.
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "9.0.x"
+
+      - name: Build
+        run: dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net9.0 --verbosity minimal
+
+      - name: Test under blame-hang
+        # 5 minutes of INACTIVITY, not total runtime. The slowest legitimate tests in
+        # this suite are the ~2.5 minute daemon black-box ones, so 5 leaves headroom
+        # without waiting out a genuine hang.
+        run: |
+          dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+            -f net9.0 --no-build \
+            --blame-hang --blame-hang-timeout 5m --blame-hang-dump-type mini \
+            --logger "console;verbosity=normal" \
+            --results-directory "$GITHUB_WORKSPACE/HangResults"
+
+      - name: Report what was running
+        # Runs even on failure — especially on failure, since that is when
+        # blame-hang has written the sequence file naming the culprit.
+        if: always()
+        run: |
+          echo "=== sequence / hang files ==="
+          find "$GITHUB_WORKSPACE/HangResults" -type f \( -name '*.xml' -o -name '*Sequence*' \) 2>/dev/null | head -20
+          echo ""
+          echo "=== contents ==="
+          for f in $(find "$GITHUB_WORKSPACE/HangResults" -type f -name '*Sequence*.xml' 2>/dev/null | head -5); do
+            echo "--- $f ---"
+            cat "$f"
+          done
+
+      - name: Upload dumps
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: infra-hang-dumps
+          path: HangResults/
+          if-no-files-found: warn
+          retention-days: 7
