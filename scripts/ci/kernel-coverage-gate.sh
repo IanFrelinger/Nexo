@@ -23,19 +23,28 @@ dotnet test src/Nexo.Tests.Domain/Nexo.Tests.Domain.csproj \
 # (see BrickMutationEngine: overlapping collectible AssemblyLoadContexts in the
 # certification mutation engine).
 #
-# Fixing it revealed a SECOND, previously invisible defect: the full
-# Nexo.Tests.Infrastructure suite HANGS. The crash had been masking it — the process
-# always died long before reaching whatever blocks. Two CI runs, zero crash
-# signatures in either, neither completing:
+# Fixing it revealed a SECOND defect, now also FIXED: a dependency CYCLE that hung
+# API host startup. IBackgroundAgentRegistry -> ISelfExtendRunner ->
+# SelfExtendRunnerAdapter -> IBackgroundAgentRegistry, laundered through factory
+# lambdas so Microsoft.Extensions.DependencyInjection could not detect it — the graph
+# passed ValidateOnBuild and then recursed at resolution time. Broken by deferring the
+# registry behind Lazy<T>.
 #
-#   30-minute cap -> cancelled at 30m20s
-#   60-minute cap -> cancelled at 60m20s
+# And fixing THAT revealed a THIRD, which is why this step is still excluded: a
+# process-lifetime leak. InfrastructureRoutingGapCoverageTests passes 7/7 in under a
+# second and then the test host NEVER EXITS. coverlet.msbuild writes its report only
+# after the host exits, so the step waits forever and the job is killed by its cap —
+# with no crash, no failing test, and no output. Three capped runs died this way:
 #
-# Doubling the budget changed nothing, which is a hang rather than slowness.
+#   30-minute cap -> cancelled at 30m20s, 0 crash signatures
+#   60-minute cap -> cancelled at 60m20s, 0 crash signatures
+#   45-minute cap -> cancelled at 45m21s, 0 crash signatures
 #
-# So Infrastructure stays out until that hang is diagnosed. Domain and
-# Core.Application below both complete normally, so the gate returns a real
-# pass/fail rather than burning the runner.
+# Raising the cap cannot help: the process never exits, so no cap is large enough.
+#
+# Each defect was invisible until the one in front of it was fixed. Domain and
+# Core.Application below both complete normally, so the gate returns a real pass/fail
+# rather than burning the runner.
 #
 # NOTE ON THE OLD 83% FLOOR: it was never measured against a complete run. Every
 # historical run was truncated by the crash at a different point, so 83 is not a
@@ -43,7 +52,7 @@ dotnet test src/Nexo.Tests.Domain/Nexo.Tests.Domain.csproj \
 #
 # Tracked: docs/production-readiness/KernelCoverageGate-Findings.md
 # Related: TestRunnerAdapter.ExecuteTestAsync abandons its runTask on the timeout
-# path (latent, separate); the Infrastructure suite hang (open).
+# path (latent, separate); the test-host process-lifetime leak (open, blocks this step).
 echo ""
 echo "== Core.Application line coverage: ${APP_COVERAGE_THRESHOLD:-67}% floor =="
 dotnet test src/Nexo.Tests.Application/Nexo.Tests.Application.csproj \

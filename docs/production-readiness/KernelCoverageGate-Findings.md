@@ -2,24 +2,56 @@
 
 **Status:** the crash is FIXED. The gate COMPLETES (Domain + Core.Application floors). Infrastructure coverage remains excluded, but the reason has changed: fixing the crash exposed a **separate, previously invisible hang** in the full Infrastructure suite. It is not a required check. This document records the evidenced root cause, what was tried, and what remains.
 
-> **Two defects, not one.** Everything below the "Symptom" heading was written when
+> **THREE defects, stacked.** Everything below the "Symptom" heading was written when
 > only the first was known, and parts of it are wrong — corrected inline.
+>
+> Each one was invisible until the one in front of it was fixed. That is the real
+> lesson of this document: a failure that kills the process early hides everything
+> behind it, and every "we ruled that out" conclusion drawn from a truncated run is
+> worthless.
 >
 > 1. **The collectible-`AssemblyLoadContext` crash — FIXED.** The certification
 >    mutation engine tore down overlapping collectible load contexts; finalizing them
 >    killed the process. Fixed in `BrickMutationEngine` (single owner, serialised
 >    teardown, unconditional unload). Proven crash-free across ~2 hours of CI, where
 >    the process previously could not survive half a minute.
-> 2. **A hang in the full Infrastructure suite — OPEN, newly discovered.** The crash
->    was masking it: the process always died long before reaching whatever hangs.
->    With the crash gone the suite runs on and never terminates. Two CI runs, neither
->    completing, **no crash signature in either**: cancelled at 30m20s under a 30-min
->    cap, and at 60m20s under a 60-min cap. Doubling the budget changed nothing,
->    which is the signature of a hang rather than slowness. Suspects are the
->    Docker/Testcontainers fixtures (`DynamoDbSmsIngressDockerTests` and its
->    collection fixture) and the process-spawning helpers (`MeshLabProcessRunner`,
->    `E2ETestBase`); `maxParallelThreads: 2` means one stuck test starves half the
->    runner. Not yet diagnosed — tracked separately.
+>
+> 2. **A dependency cycle that hung API host startup — FIXED.** Not a deadlock and not
+>    environmental:
+>
+>    ```
+>    IBackgroundAgentRegistry factory  -> sp.GetService<ISelfExtendRunner>()
+>    ISelfExtendRunner factory         -> sp.GetRequiredService<SelfExtendRunnerAdapter>()
+>    SelfExtendRunnerAdapter ctor      -> IBackgroundAgentRegistry   (back to the top)
+>    ```
+>
+>    A full dump caught ~298 repetitions of that pair across 8,340 stack lines, on one
+>    thread, with `WebApplicationFactory.get_Services()` blocked on host startup and no
+>    exception ever thrown. **Microsoft.Extensions.DependencyInjection cannot detect
+>    this**: its circular-dependency check inspects constructor-injected graphs at
+>    validation time, and the loop is laundered through two factory lambdas, so the
+>    graph passes `ValidateOnBuild` and then recurses at *resolution* time. The
+>    parameter being optional does not help — the registry is registered, so DI
+>    re-enters the factory rather than passing null. Fixed by deferring the registry
+>    behind `Lazy<T>`, registered beside `IBackgroundAgentRegistry` itself so the two
+>    can never be wired apart. `ApiDevelopmentHostDiTests` went from unbounded to 1s.
+>
+>    *Follow-up (not done):* `SelfExtendRunnerAdapter` never calls a single method on
+>    the registry — it passes it straight through to `RepoFsToolboxFactory`. That is
+>    accidental coupling; segregating the slice the toolbox actually needs would remove
+>    the cycle structurally rather than deferring it.
+>
+> 3. **A process-lifetime leak — OPEN, newly discovered, and the current blocker.**
+>    `InfrastructureRoutingGapCoverageTests` passes **7/7 in 588ms** and then the test
+>    host **never exits**. `coverlet.msbuild` writes its report only after the host
+>    exits, so the coverage step waits forever — no crash, no failing test, no output.
+>    Three capped runs died exactly this way, all with **zero** crash signatures:
+>    30m20s, 60m20s, 45m21s. **Raising the cap cannot help**, because the process never
+>    exits at all. A single trivial test from the same assembly exits cleanly, so this
+>    is test-specific rather than assembly-wide. Suspect: the federated-mesh path
+>    (`RemoteCatalogBaseUrls: https://peer.example`) starting something with a
+>    non-background thread. This is also the cause of the orphaned `testhost` processes
+>    that lock output DLLs and silently make `--no-build` runs execute stale binaries.
 >
 > Infrastructure coverage is therefore still unmeasured, and **no trustworthy
 > coverage number for it exists**: every historical run was truncated by the crash at
@@ -163,28 +195,52 @@ throwing witness leaked the context outright; and the temp directory was deleted
 while the DLL was still memory-mapped, so the delete silently failed and those
 directories accumulated for the life of the process.
 
-## Still open: the hang the crash was hiding
+## Still open: a process-lifetime leak
 
-Infrastructure coverage is **still not measured**, now for a different reason.
+Infrastructure coverage is **still not measured**, now for a third reason.
 
-With the crash fixed the suite runs on and never terminates. Two CI runs, neither
-completing, **zero crash signatures in either**:
+The hang that followed the crash was diagnosed and fixed (the DI cycle above). What
+remains is different in kind: the suite *passes*, and the process simply never exits.
 
-| cap | outcome | `0x80131506` occurrences |
+| cap | outcome | crash signatures |
 |---|---|---|
 | 30 min | cancelled at 30m20s | 0 |
 | 60 min | cancelled at 60m20s | 0 |
+| 45 min | cancelled at 45m21s | 0 |
 
-Doubling the budget changed nothing — a hang, not slowness. Excluding the three
-`RuntimeStudioBlackBoxSmokeTests` daemon tests (~7.5 min of pure timeout) made no
-difference to the outcome either.
+Local reproduction, in under a second:
 
-Not yet diagnosed. Suspects: the Docker/Testcontainers fixtures
-(`DynamoDbSmsIngressDockerTests` and its collection fixture) and the process-spawning
-helpers (`MeshLabProcessRunner`, `E2ETestBase`, `Phases59CliE2ETests`). A fixture
-blocking on a container it cannot get is the classic shape, and
-`maxParallelThreads: 2` means one stuck test starves half the runner. Next step is a
-single run under `--blame-hang --blame-hang-timeout 5m` to name it.
+```
+dotnet test --filter FullyQualifiedName~InfrastructureRoutingGapCoverageTests
+Passed!  - Failed: 0, Passed: 7, Skipped: 0, Total: 7, Duration: 588 ms
+-> process still alive; killed externally after 180s
+```
+
+A single trivial test from the same assembly exits cleanly, so this is **test-specific,
+not assembly-wide**. Something that test starts holds a foreground thread. The likely
+area is the federated-mesh registry resolution it performs with
+`RemoteCatalogBaseUrls: https://peer.example`.
+
+Two consequences worth stating plainly:
+
+- **No cap can fix it.** `coverlet.msbuild` writes its report after the host exits, and
+  the host never exits. Raising the limit only changes how long the runner burns.
+- **It has been corrupting local runs all along.** The orphaned `testhost` processes
+  that hold output DLLs — making builds fail and `--no-build` silently execute *stale*
+  binaries — are this leak. Results produced that way looked authoritative and were
+  meaningless.
+
+Whether this is a test-side leak (a fixture not disposing) or a product bug (a mesh
+service spawning a non-background thread it never disposes, which would leak in
+production too, exactly as the DI cycle did) is not yet established. Next step is a
+`dotnet-dump collect` against the live non-exiting process to name the thread.
+
+## Method note
+
+Three separate conclusions in this document were drawn from runs that had already been
+truncated by an earlier defect, and all three were wrong: "all 572 tests pass", "not a
+slow or hanging test", and the 83% floor. Evidence gathered after a process dies early
+describes the prefix, not the system.
 
 **There is no trustworthy Infrastructure coverage number, and the 83% floor was never
 measured.** Every historical run was truncated by the crash at a different point, so

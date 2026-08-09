@@ -1,6 +1,7 @@
 using System.Reflection;
 using Nexo.Infrastructure.Testing;
 using Xunit;
+using Nexo.Tests.Infrastructure.Helpers;
 
 namespace Nexo.Tests.Infrastructure.Framework;
 
@@ -25,7 +26,7 @@ public sealed class UnitTestBridgeTests
         return data;
     }
 
-    [Theory]
+    [Theory(Timeout = TestTimeouts.Integration)]
     [MemberData(nameof(UnitTestTypes))]
     public async Task Framework_unit_test_passes(Type testType)
     {
