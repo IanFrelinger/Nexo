@@ -40,13 +40,12 @@ jobs:
     # Backstop, kept deliberately. The job used to burn GitHub's 6-hour default
     # because the Infrastructure coverage step could never return.
     #
-    # That step's crash is now fixed, but Infrastructure remains excluded from the
-    # gate because fixing it exposed a separate hang in that suite (see
-    # docs/production-readiness/KernelCoverageGate-Findings.md). With only Domain and
-    # Core.Application running, this job finishes in ~90 seconds, so 30 minutes is
-    # pure headroom rather than a working limit — and it stays as insurance against
-    # a future step wedging again.
-    timeout-minutes: 30
+    # TEMPORARILY 45 for one measurement round. Four stacked defects kept that step
+    # from ever returning; all are fixed and Infrastructure is back in the gate (see
+    # docs/production-readiness/KernelCoverageGate-Findings.md). A suite that finishes
+    # is necessarily slower than one that died partway through, so the permanent cap is
+    # set from an OBSERVED clean duration rather than a guess.
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@v4

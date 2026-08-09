@@ -16,43 +16,40 @@ dotnet test src/Nexo.Tests.Domain/Nexo.Tests.Domain.csproj \
   --verbosity minimal
 
 
-# == Infrastructure (Nexo.Infrastructure): EXCLUDED ==
+# == Infrastructure (Nexo.Infrastructure) ==
 #
-# Still excluded, but NOT for the reason this comment used to give. The
-# LoaderAllocatorScout / 0x80131506 crash that made this step impossible is FIXED
-# (see BrickMutationEngine: overlapping collectible AssemblyLoadContexts in the
-# certification mutation engine).
+# RESTORED. Four defects blocked this step, each hidden by the one before it, all now
+# fixed:
 #
-# Fixing it revealed a SECOND defect, now also FIXED: a dependency CYCLE that hung
-# API host startup. IBackgroundAgentRegistry -> ISelfExtendRunner ->
-# SelfExtendRunnerAdapter -> IBackgroundAgentRegistry, laundered through factory
-# lambdas so Microsoft.Extensions.DependencyInjection could not detect it — the graph
-# passed ValidateOnBuild and then recursed at resolution time. Broken by deferring the
-# registry behind Lazy<T>.
+#   1. Collectible-AssemblyLoadContext crash in the certification mutation engine.
+#   2. A DI cycle that hung API host startup (registry -> self-extend -> registry).
+#   3. AddNexoFederatedBrickMesh recursing into its own registration, so a test never
+#      completed and the test host never exited -- which is what actually starved this
+#      step, since coverlet writes its report only after the host exits.
+#   4. ProviderFactory doing blocking network I/O in its constructor.
 #
-# And fixing THAT revealed a THIRD, which is why this step is still excluded: a
-# process-lifetime leak. InfrastructureRoutingGapCoverageTests passes 7/7 in under a
-# second and then the test host NEVER EXITS. coverlet.msbuild writes its report only
-# after the host exits, so the step waits forever and the job is killed by its cap —
-# with no crash, no failing test, and no output. Three capped runs died this way:
-#
-#   30-minute cap -> cancelled at 30m20s, 0 crash signatures
-#   60-minute cap -> cancelled at 60m20s, 0 crash signatures
-#   45-minute cap -> cancelled at 45m21s, 0 crash signatures
-#
-# Raising the cap cannot help: the process never exits, so no cap is large enough.
-#
-# Each defect was invisible until the one in front of it was fixed. Domain and
-# Core.Application below both complete normally, so the gate returns a real pass/fail
-# rather than burning the runner.
-#
-# NOTE ON THE OLD 83% FLOOR: it was never measured against a complete run. Every
-# historical run was truncated by the crash at a different point, so 83 is not a
-# figure to restore — the real floor should come from the first run that finishes.
+# THE FLOOR BELOW IS PROVISIONAL (0), for one measurement run. No trustworthy figure
+# has ever existed: every historical run was truncated, so the old 83% was never
+# measured against a complete run. A floor of 0 keeps "completes but low" (reported)
+# distinguishable from "crashes or hangs" (fails). The real floor follows once this
+# reports.
 #
 # Tracked: docs/production-readiness/KernelCoverageGate-Findings.md
-# Related: TestRunnerAdapter.ExecuteTestAsync abandons its runTask on the timeout
-# path (latent, separate); the test-host process-lifetime leak (open, blocks this step).
+# Related: TestRunnerAdapter.ExecuteTestAsync abandons its runTask on the timeout path
+# (latent, separate); OllamaProvider still blocks in its constructor (separate).
+echo ""
+echo "== Infrastructure (Nexo.Infrastructure) line coverage: PROVISIONAL floor ${INFRA_COVERAGE_THRESHOLD:-0}% (measuring the real number) =="
+# Daemon black-box tests excluded from the COVERAGE run only: ~7.5 min of spawned-
+# process timeouts whose work cannot be attributed to [Nexo.Infrastructure] anyway.
+dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net9.0 \
+  --filter "FullyQualifiedName!~RuntimeStudioBlackBoxSmokeTests" \
+  /p:CollectCoverage=true \
+  /p:CoverletOutput="$ROOT/CoverageReports/infra" \
+  /p:CoverletOutputFormat=cobertura \
+  /p:Include="[Nexo.Infrastructure]*" \
+  /p:Threshold="${INFRA_COVERAGE_THRESHOLD:-0}" \
+  /p:ThresholdType=line \
+  --verbosity minimal
 echo ""
 echo "== Core.Application line coverage: ${APP_COVERAGE_THRESHOLD:-67}% floor =="
 dotnet test src/Nexo.Tests.Application/Nexo.Tests.Application.csproj \
