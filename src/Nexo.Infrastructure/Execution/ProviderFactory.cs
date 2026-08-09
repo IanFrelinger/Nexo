@@ -100,15 +100,23 @@ public class ProviderFactory : IProviderFactory
         _resilientExecutor = resilientExecutor ?? new ResilientExecutor();
         _scratchSpace = scratchSpace ?? new FileScratchSpace();
 
-        try
-        {
-            var baseUrl = GetOllamaBaseUrlAsync(CancellationToken.None).GetAwaiter().GetResult();
-            _ = GetOrCreateOllamaProvider(baseUrl);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to initialize Ollama provider manifest during ProviderFactory startup.");
-        }
+        // NO I/O HERE, deliberately.
+        //
+        // This constructor used to warm the Ollama provider eagerly:
+        //
+        //     var baseUrl = GetOllamaBaseUrlAsync(CancellationToken.None).GetAwaiter().GetResult();
+        //     _ = GetOrCreateOllamaProvider(baseUrl);
+        //
+        // Both lines block on network I/O, so CONSTRUCTING this type — and therefore
+        // every resolution of IProviderFactory, including during host startup — did a
+        // synchronous HTTP round trip against Ollama. The result was discarded (`_ =`)
+        // and every exception swallowed, so the warm-up could not report success or
+        // failure to anyone: its only observable effect was the delay.
+        //
+        // The provider is created on demand at each real use site
+        // (GetOrCreateOllamaProvider is called from the execution paths below), so
+        // dropping the warm-up changes nothing except that resolving this service no
+        // longer waits on a machine that may not be listening.
     }
 
     private static RetryPolicy CreateLlmRetryPolicy(Func<Exception, bool>? isTransient = null)
