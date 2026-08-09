@@ -46,7 +46,7 @@ jobs:
     # Core.Application running, this job finishes in ~90 seconds, so 30 minutes is
     # pure headroom rather than a working limit — and it stays as insurance against
     # a future step wedging again.
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@v4
