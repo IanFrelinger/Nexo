@@ -3,6 +3,7 @@ using Nexo.Core.Application.Mesh.Models;
 using Nexo.Core.Application.Mesh.Ports;
 using Nexo.Infrastructure.Mesh;
 using Xunit;
+using Nexo.Tests.Infrastructure.Helpers;
 
 namespace Nexo.Tests.Infrastructure.Tests.Mesh;
 
@@ -15,9 +16,10 @@ public sealed class ArtifactNegotiatorTests
 {
     private readonly IArtifactNegotiator _negotiator = new ArtifactNegotiator();
 
-    [Fact]
-    public void Negotiate_PreferredFormatInCommon_ReturnsPreferred()
+    [Fact(Timeout = TestTimeouts.Integration)]
+    public async Task Negotiate_PreferredFormatInCommon_ReturnsPreferred()
     {
+        await Task.CompletedTask;
         var requester = new InstanceCapabilities(new[] { ArtifactFormat.Source }, ArtifactFormat.Source);
         var fulfiller = new InstanceCapabilities(new[] { ArtifactFormat.Source }, ArtifactFormat.Source);
 
@@ -26,9 +28,10 @@ public sealed class ArtifactNegotiatorTests
         result.Should().Be(ArtifactFormat.Source);
     }
 
-    [Fact]
-    public void Negotiate_PreferredNotInCommon_FallsBackToFulfillerPreferred()
+    [Fact(Timeout = TestTimeouts.Integration)]
+    public async Task Negotiate_PreferredNotInCommon_FallsBackToFulfillerPreferred()
     {
+        await Task.CompletedTask;
         var requester = new InstanceCapabilities(new[] { ArtifactFormat.Binary, ArtifactFormat.Config });
         var fulfiller = new InstanceCapabilities(
             new[] { ArtifactFormat.Source, ArtifactFormat.Binary, ArtifactFormat.Config },
@@ -39,9 +42,10 @@ public sealed class ArtifactNegotiatorTests
         result.Should().Be(ArtifactFormat.Binary, "requester preferred Source not in common; fulfiller preferred Binary is in common");
     }
 
-    [Fact]
-    public void Negotiate_NoCommonFormat_ReturnsNull()
+    [Fact(Timeout = TestTimeouts.Integration)]
+    public async Task Negotiate_NoCommonFormat_ReturnsNull()
     {
+        await Task.CompletedTask;
         var requester = new InstanceCapabilities(new[] { ArtifactFormat.Source });
         var fulfiller = new InstanceCapabilities(new[] { ArtifactFormat.Binary });
 
@@ -50,9 +54,10 @@ public sealed class ArtifactNegotiatorTests
         result.Should().BeNull();
     }
 
-    [Fact]
-    public void Negotiate_AllFormats_ReturnsPreferredWhenSupported()
+    [Fact(Timeout = TestTimeouts.Integration)]
+    public async Task Negotiate_AllFormats_ReturnsPreferredWhenSupported()
     {
+        await Task.CompletedTask;
         var result = _negotiator.Negotiate(
             InstanceCapabilities.AllFormats,
             InstanceCapabilities.AllFormats,
@@ -61,9 +66,10 @@ public sealed class ArtifactNegotiatorTests
         result.Should().Be(ArtifactFormat.Binary);
     }
 
-    [Fact]
-    public void InstanceCapabilities_AllFormats_HasAllThreeFormats()
+    [Fact(Timeout = TestTimeouts.Integration)]
+    public async Task InstanceCapabilities_AllFormats_HasAllThreeFormats()
     {
+        await Task.CompletedTask;
         var caps = InstanceCapabilities.AllFormats;
 
         caps.SupportedFormats.Should().Contain(ArtifactFormat.Source);
@@ -72,9 +78,10 @@ public sealed class ArtifactNegotiatorTests
         caps.PreferredFormat.Should().Be(ArtifactFormat.Source);
     }
 
-    [Fact]
-    public void ArtifactNegotiator_SelectsSourceCode_WhenTargetCanCompile()
+    [Fact(Timeout = TestTimeouts.Integration)]
+    public async Task ArtifactNegotiator_SelectsSourceCode_WhenTargetCanCompile()
     {
+        await Task.CompletedTask;
         var requester = new InstanceCapabilities(
             new[] { ArtifactFormat.Source, ArtifactFormat.Binary },
             preferredFormat: null,
@@ -88,9 +95,10 @@ public sealed class ArtifactNegotiatorTests
         result.Should().Be(ArtifactFormat.Source, "requester CanCompile prefers Source");
     }
 
-    [Fact]
-    public void ArtifactNegotiator_SelectsDockerImage_WhenTargetHasDockerRuntime()
+    [Fact(Timeout = TestTimeouts.Integration)]
+    public async Task ArtifactNegotiator_SelectsDockerImage_WhenTargetHasDockerRuntime()
     {
+        await Task.CompletedTask;
         var requester = new InstanceCapabilities(
             new[] { ArtifactFormat.DockerImage, ArtifactFormat.Binary },
             preferredFormat: null,
@@ -104,9 +112,10 @@ public sealed class ArtifactNegotiatorTests
         result.Should().Be(ArtifactFormat.DockerImage, "requester HasDockerRuntime prefers DockerImage");
     }
 
-    [Fact]
-    public void ArtifactNegotiator_SelectsWasmModule_WhenTargetHasWasmRuntime()
+    [Fact(Timeout = TestTimeouts.Integration)]
+    public async Task ArtifactNegotiator_SelectsWasmModule_WhenTargetHasWasmRuntime()
     {
+        await Task.CompletedTask;
         var requester = new InstanceCapabilities(
             new[] { ArtifactFormat.WasmModule, ArtifactFormat.Binary },
             preferredFormat: null,
@@ -120,9 +129,10 @@ public sealed class ArtifactNegotiatorTests
         result.Should().Be(ArtifactFormat.WasmModule, "requester HasWasmRuntime prefers WasmModule");
     }
 
-    [Fact]
-    public void InstanceCapabilities_LocalNexo_HasCanCompileAndComponents()
+    [Fact(Timeout = TestTimeouts.Integration)]
+    public async Task InstanceCapabilities_LocalNexo_HasCanCompileAndComponents()
     {
+        await Task.CompletedTask;
         var caps = InstanceCapabilities.LocalNexo;
 
         caps.CanCompile.Should().BeTrue();

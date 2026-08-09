@@ -4,6 +4,7 @@ using Nexo.Abstractions.Barriers.Identity;
 using Nexo.Orchestration.Barriers;
 using Nexo.Runtime.Barriers.Identity;
 using Xunit;
+using Nexo.Tests.Infrastructure.Helpers;
 
 namespace Nexo.Tests.Infrastructure.Barriers.Identity;
 
@@ -12,7 +13,7 @@ namespace Nexo.Tests.Infrastructure.Barriers.Identity;
 [Trait("Category", "ProdStyle")]
 public sealed class BarrierResolutionIntegrationTests
 {
-    [Fact]
+    [Fact(Timeout = TestTimeouts.Integration)]
     public async Task FullPipeline_PkiPriority_WinsOverJwt()
     {
         var hierarchy = CreateHierarchy();
@@ -29,7 +30,7 @@ public sealed class BarrierResolutionIntegrationTests
         hierarchy.IsKnown(resolved.ResolvedLevel).Should().BeTrue();
     }
 
-    [Fact]
+    [Fact(Timeout = TestTimeouts.Integration)]
     public async Task RequireExplicitTrue_NoResolverMatch_ThrowsBarrierContextMissing()
     {
         var pipeline = new DefaultBarrierIdentityResolverPipeline(
@@ -49,7 +50,7 @@ public sealed class BarrierResolutionIntegrationTests
         await act.Should().ThrowAsync<BarrierContextMissingException>();
     }
 
-    [Fact]
+    [Fact(Timeout = TestTimeouts.Integration)]
     public async Task RequireExplicitFalse_NoResolverMatch_DefaultsToFloor()
     {
         var hierarchy = CreateHierarchy();
@@ -71,7 +72,7 @@ public sealed class BarrierResolutionIntegrationTests
         context.AuthoritySource.Should().Be(BarrierAuthoritySource.Default);
     }
 
-    [Fact]
+    [Fact(Timeout = TestTimeouts.Integration)]
     public async Task IdentityResolved_AuditEvent_EmittedWithResolverNameAndDetail()
     {
         var hierarchy = CreateHierarchy();

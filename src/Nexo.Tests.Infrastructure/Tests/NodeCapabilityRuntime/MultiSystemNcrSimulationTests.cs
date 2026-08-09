@@ -8,6 +8,7 @@ using Nexo.Core.Domain;
 using Nexo.Core.Domain.Execution;
 using Nexo.Infrastructure.Execution.Routing;
 using Xunit;
+using Nexo.Tests.Infrastructure.Helpers;
 
 namespace Nexo.Tests.Infrastructure.Tests.NodeCapabilityRuntime;
 
@@ -20,9 +21,10 @@ namespace Nexo.Tests.Infrastructure.Tests.NodeCapabilityRuntime;
 [Trait("Category", "ProdStyle")]
 public sealed class MultiSystemNcrSimulationTests
 {
-    [Fact]
-    public void SyncRouting_SequentialVirtualNodes_ReflectsDistinctLocalAndPeerCapabilityViews()
+    [Fact(Timeout = TestTimeouts.Integration)]
+    public async Task SyncRouting_SequentialVirtualNodes_ReflectsDistinctLocalAndPeerCapabilityViews()
     {
+        await Task.CompletedTask;
         var reqs = new JobRequirements
         {
             ModelId = "gen",
@@ -75,7 +77,7 @@ public sealed class MultiSystemNcrSimulationTests
         ((ExecutionTarget.Remote)tSat).Executor.Should().BeAssignableTo<RunPodBrick>();
     }
 
-    [Fact]
+    [Fact(Timeout = TestTimeouts.Integration)]
     public async Task AsyncRouting_ParallelVirtualNodes_ConcurrentResolutionWithoutCrossTalk()
     {
         const int iterations = 64;
@@ -124,7 +126,7 @@ public sealed class MultiSystemNcrSimulationTests
         flags.Should().OnlyContain(x => x);
     }
 
-    [Fact]
+    [Fact(Timeout = TestTimeouts.Integration)]
     public async Task MixedSyncRouterAndAsyncBrick_EndToEnd_LocalPeerAndCloudPaths()
     {
         var tmp = Path.Combine(Path.GetTempPath(), $"nexo-ncr-multi-{Guid.NewGuid():N}");
