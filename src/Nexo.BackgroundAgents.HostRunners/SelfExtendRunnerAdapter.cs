@@ -37,9 +37,35 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
     private readonly IChangeProposalStore? _proposals;
     private readonly IAggressivenessModeStore? _modeStore;
     private readonly ICertificationRecordStore _certificationStore;
-    private readonly IBackgroundAgentRegistry? _agentRegistry;
+    // Lazy on purpose — see the constructor remarks. Resolving this eagerly closes a
+    // dependency cycle that hangs host startup.
+    private readonly Lazy<IBackgroundAgentRegistry>? _agentRegistry;
     private readonly IDataSensitivityRegistry? _sensitivityRegistry;
 
+    /// <summary>
+    /// Creates the adapter.
+    /// </summary>
+    /// <param name="agentRegistry">
+    /// The agent registry, deferred. MUST stay <see cref="Lazy{T}"/> — taking
+    /// <c>IBackgroundAgentRegistry</c> directly reintroduces a dependency cycle that
+    /// hangs host startup:
+    /// <code>
+    /// IBackgroundAgentRegistry factory  -> sp.GetService&lt;ISelfExtendRunner&gt;()
+    /// ISelfExtendRunner factory         -> sp.GetRequiredService&lt;SelfExtendRunnerAdapter&gt;()
+    /// SelfExtendRunnerAdapter ctor      -> IBackgroundAgentRegistry   (back to the top)
+    /// </code>
+    /// Microsoft.Extensions.DependencyInjection cannot catch this. Its circular-dependency
+    /// check inspects constructor-injected graphs at validation time, and here the loop is
+    /// laundered through two factory lambdas, which the validator cannot see through. The
+    /// graph therefore passes ValidateOnBuild and then recurses at RESOLUTION time — the
+    /// observed failure was ~298 repetitions of that pair on a single thread, with
+    /// WebApplicationFactory blocked forever on host startup and no exception ever thrown.
+    /// Making the parameter optional does not help either: it is registered, so DI
+    /// dutifully re-enters the factory rather than passing null.
+    ///
+    /// The registry is only read when a self-extend run actually executes, long after the
+    /// container is built, so deferring costs nothing.
+    /// </param>
     public SelfExtendRunnerAdapter(
         IModel model,
         ILogger<SelfExtendRunnerAdapter> logger,
@@ -49,7 +75,7 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
         IChangeProposalStore? proposals = null,
         IAggressivenessModeStore? modeStore = null,
         ICertificationRecordStore? certificationStore = null,
-        IBackgroundAgentRegistry? agentRegistry = null,
+        Lazy<IBackgroundAgentRegistry>? agentRegistry = null,
         IDataSensitivityRegistry? sensitivityRegistry = null)
     {
         _model = model ?? throw new ArgumentNullException(nameof(model));
@@ -148,7 +174,9 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
                 proposals: _proposals,
                 modeStore: _modeStore,
                 certificationStore: _certificationStore,
-                agentRegistry: _agentRegistry,
+                // .Value here, not in the constructor: by the time a self-extend run
+                // executes, the registry is fully built and resolving it is a no-op.
+                agentRegistry: _agentRegistry?.Value,
                 sensitivityRegistry: _sensitivityRegistry);
             budget.Reset();
             // Register objective lifecycle tools only when a store is wired — the

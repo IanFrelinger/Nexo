@@ -109,6 +109,18 @@ public static class ServiceCollectionExtensions
             var observations = sp.GetService<IObservationStore>();
             return new BackgroundAgentRegistry(scheduler, logger, logStore, codeAnalysisRunner, testRunRunner, selfExtendRunner, selfImprovementLoop, modeStore, approvalGate, sensitivityRegistry, auditLog, cycleEvents, observations);
         });
+        // Registered here, immediately beside IBackgroundAgentRegistry, so the two can
+        // never be wired independently: wherever the registry exists, its deferred form
+        // exists too. SelfExtendRunnerAdapter depends on the Lazy rather than the
+        // registry to break a resolution cycle (see that constructor's remarks), and it
+        // takes the dependency optionally — so a host that registered the registry but
+        // not the Lazy would silently receive null and quietly lose the registry instead
+        // of failing. Keeping them together removes that trap, and matters because three
+        // separate hosts wire this adapter (Nexo.API, the CLI daemon command, and the
+        // CLI root).
+        services.TryAddSingleton(sp => new Lazy<IBackgroundAgentRegistry>(
+            sp.GetRequiredService<IBackgroundAgentRegistry>));
+
         services.TryAddSingleton<BackgroundAgentConfigLoader>();
         services.TryAddSingleton<BackgroundAgentSpecBuilder>();
         services.TryAddSingleton<AgentManagementToolbox>(sp =>
