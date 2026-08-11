@@ -8,10 +8,42 @@ namespace Nexo.Infrastructure.Certification.Sdk.Extensions;
 public static class CertificationServiceCollectionExtensions
 {
     /// <summary>Adds certification infrastructure.</summary>
-    public static IServiceCollection AddCertificationInfrastructure(this IServiceCollection services)
+    /// <param name="services">The service collection.</param>
+    /// <param name="recordStorePath">
+    /// Directory for DURABLE certification records. When supplied, admissions survive the
+    /// process; when null the store is in-memory, as before.
+    /// </param>
+    /// <remarks>
+    /// The in-memory default means a certification granted in one process is invisible to
+    /// the next, so nothing can ever be admitted from prior state. That is fine for a
+    /// single-process host that certifies as it goes, and fatal for the CLI, where each
+    /// invocation is a fresh process: <c>nexo adapt --store-path ...</c> could never find
+    /// an admitted brick, whatever had been certified earlier.
+    ///
+    /// Durability does not weaken admission. Records are written signed and re-verified on
+    /// load by <see cref="FileCertificationRecordStore"/>, and the signature covers the
+    /// record's ContentHash, so a mutated record reads as uncertified rather than as
+    /// admitted.
+    /// </remarks>
+    public static IServiceCollection AddCertificationInfrastructure(
+        this IServiceCollection services,
+        string? recordStorePath = null)
     {
         services.AddSingleton<CertificationRecordSigner>();
-        services.AddSingleton<ICertificationRecordStore, InMemoryCertificationRecordStore>();
+
+        if (string.IsNullOrWhiteSpace(recordStorePath))
+        {
+            services.AddSingleton<ICertificationRecordStore, InMemoryCertificationRecordStore>();
+        }
+        else
+        {
+            var directory = recordStorePath;
+            services.AddSingleton<ICertificationRecordStore>(sp =>
+                new FileCertificationRecordStore(
+                    directory,
+                    sp.GetRequiredService<CertificationRecordSigner>()));
+        }
+
         services.AddSingleton<ICertificationGate, CertificationGate>();
         services.AddSingleton<CompositionCertificationRecordSigner>();
         services.AddSingleton<ICompositionCertificationRecordStore, InMemoryCompositionCertificationRecordStore>();

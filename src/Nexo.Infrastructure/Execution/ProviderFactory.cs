@@ -78,10 +78,13 @@ public class ProviderFactory : IProviderFactory
     private static bool AllowMock => string.Equals(Environment.GetEnvironmentVariable("NEXO_ALLOW_MOCK"), "1", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>
-    /// Creates a new <see cref="ProviderFactory"/> and eagerly initializes the
-    /// Ollama provider. Eager init is intentional: Ollama requires pulling a
-    /// model manifest on first contact, which is slow (~seconds). Doing this at
-    /// construction time avoids a latency spike on the first user request.
+    /// Creates a new <see cref="ProviderFactory"/> and starts warming the Ollama
+    /// provider in the background. Warming is intentional: Ollama requires pulling a
+    /// model manifest on first contact, which is slow (~seconds), so priming it ahead
+    /// of time avoids a latency spike on the first user request. It runs OFF the
+    /// calling thread — constructing this factory must never block on the network,
+    /// because that makes every <see cref="IProviderFactory"/> resolution, host startup
+    /// included, wait on a machine that may not be listening.
     /// Failure is non-fatal — Ollama simply won't be available until the next
     /// lazy attempt.
     /// </summary>
@@ -100,15 +103,31 @@ public class ProviderFactory : IProviderFactory
         _resilientExecutor = resilientExecutor ?? new ResilientExecutor();
         _scratchSpace = scratchSpace ?? new FileScratchSpace();
 
-        try
+        // Warm the Ollama manifest in the BACKGROUND, never on this thread.
+        //
+        // The warm-up itself is deliberate and worth keeping: pulling the manifest on
+        // first contact costs seconds, and doing it ahead of time avoids that latency
+        // on the first user request. What was wrong was doing it synchronously here.
+        // Both GetOllamaBaseUrlAsync and OllamaProvider's constructor block on network
+        // I/O, so CONSTRUCTING this type — and therefore every resolution of
+        // IProviderFactory, including during host startup — waited on a machine that
+        // may not be listening.
+        //
+        // Fire-and-forget is safe precisely because the warm-up is an optimisation and
+        // nothing depends on it: the provider is created on demand at each real use
+        // site, and failure here has always been non-fatal by design.
+        _ = Task.Run(async () =>
         {
-            var baseUrl = GetOllamaBaseUrlAsync(CancellationToken.None).GetAwaiter().GetResult();
-            _ = GetOrCreateOllamaProvider(baseUrl);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to initialize Ollama provider manifest during ProviderFactory startup.");
-        }
+            try
+            {
+                var baseUrl = await GetOllamaBaseUrlAsync(CancellationToken.None).ConfigureAwait(false);
+                _ = GetOrCreateOllamaProvider(baseUrl);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to initialize Ollama provider manifest during ProviderFactory startup.");
+            }
+        });
     }
 
     private static RetryPolicy CreateLlmRetryPolicy(Func<Exception, bool>? isTransient = null)

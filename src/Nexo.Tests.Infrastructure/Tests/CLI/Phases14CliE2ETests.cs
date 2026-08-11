@@ -1,3 +1,5 @@
+using Nexo.Core.Application.Certification.Models;
+using Nexo.Infrastructure.Certification;
 using Nexo.Tests.Application.Helpers;
 using Nexo.Tests.Infrastructure.Helpers;
 using Xunit;
@@ -17,10 +19,54 @@ public sealed class Phases14CliE2ETests : E2ETestBase
     [Fact(Timeout = 60000)]
     public async Task AdaptCommand_DryRun_ExitsZero()
     {
+        // The brick registry only offers bricks that carry a valid admission record, so
+        // `adapt` on an empty store correctly reports "brick not found". Seeding a real
+        // signed record is what lets this test exercise the decomposition it is named
+        // for, rather than the not-found branch.
+        SeedAdmittedObservationContextRecord();
+
         var (code, stdout, _) = await RunCliAsync($"adapt --dry-run --store-path \"{TempDir}\"");
 
         Assert.Equal(0, code);
         Assert.Contains("Decomposed", stdout, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Writes a genuinely signed, admitted record for <c>observation.context</c> where the
+    /// CLI will look for it.
+    /// </summary>
+    /// <remarks>
+    /// Signed with the same <see cref="CertificationRecordSigner"/> the CLI uses, so the
+    /// record survives the re-verification the store performs on load. Hand-writing the
+    /// JSON would not work, and should not: an unsigned or edited record is rejected as
+    /// uncertified, which is the property that makes durable certification safe.
+    ///
+    /// The path mirrors AddAdaptationInfrastructure, which places records beside the
+    /// pattern store.
+    /// </remarks>
+    private void SeedAdmittedObservationContextRecord()
+    {
+        var signer = new CertificationRecordSigner();
+        var record = new CertificationRecord
+        {
+            Status = "PASS",
+            Stage = "certification",
+            Admitted = true,
+            Signed = true,
+            Timestamp = DateTimeOffset.UtcNow,
+            BrickId = "observation.context",
+            ContentHash = "seeded-e2e-fixture",
+            EscapeRate = 0d,
+            TotalMutants = 0,
+            SurvivingMutants = 0,
+        };
+
+        record = record with { Signature = signer.Sign(record) };
+
+        var store = new FileCertificationRecordStore(
+            Path.Combine(TempDir, "nexo-certifications"),
+            signer);
+        store.Save(record);
     }
 
     [Fact(Timeout = 60000)]

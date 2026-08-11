@@ -1,6 +1,20 @@
-# kernel-coverage gate: why it never completes
+# kernel-coverage gate: why it never completed
 
-**Status:** the crash is FIXED. The gate COMPLETES (Domain + Core.Application floors). Infrastructure coverage remains excluded, but the reason has changed: fixing the crash exposed a **separate, previously invisible hang** in the full Infrastructure suite. It is not a required check. This document records the evidenced root cause, what was tried, and what remains.
+**Status: CLOSED.** The gate runs Domain, **Infrastructure**, and Core.Application, and passes. Infrastructure line coverage has been measured for the first time: **80.3%**, from the first complete run of that suite (1,764 passed / 1 skipped / 1,765 total). Floor set to **80%** as a ratchet; target remains 83.
+
+Five defects had to be fixed to get a number, and **each was invisible until the one in front of it was fixed**:
+
+| # | defect | why it hid the next one |
+|---|---|---|
+| 1 | Collectible-`AssemblyLoadContext` crash in the certification mutation engine | killed the process in ~21s |
+| 2 | DI cycle hanging API host startup (`registry → self-extend → registry`) | wedged 2 of 2 parallel slots |
+| 3 | `AddNexoFederatedBrickMesh` recursing into its own registration | a test never completed, so the host never exited |
+| 4 | `ProviderFactory` doing blocking network I/O in its constructor | stalled a 1,000-iteration stress test |
+| 5 | Certification records held in a non-durable in-memory store | `adapt` could never find an admitted brick |
+
+The single most expensive lesson is recorded in the method note at the end: **three conclusions in earlier versions of this document were drawn from runs that had already been truncated, and all three were wrong.**
+
+This document keeps the original investigation below, corrected inline, because the sequence of wrong turns is the useful part.
 
 > **THREE defects, stacked.** Everything below the "Symptom" heading was written when
 > only the first was known, and parts of it are wrong — corrected inline.
@@ -195,7 +209,78 @@ throwing witness leaked the context outright; and the temp directory was deleted
 while the DLL was still memory-mapped, so the delete silently failed and those
 directories accumulated for the life of the process.
 
-## Still open: a process-lifetime leak
+## Resolution: all five defects fixed, coverage measured
+
+**Defect 3 — mesh registration recursed into itself.** `AddNexoFederatedBrickMesh`
+resolved `IBrickRegistry` as a fallback for the local registry, but that registration
+*is* the last `IBrickRegistry` descriptor, so it re-entered itself. The
+`InvalidOperationException` written three lines below to report a missing local
+registry was unreachable; resolution recursed instead, with no exception and no stack
+overflow. A test therefore never completed, so xunit never signalled
+assembly-finished, so the test host never exited, so coverlet never wrote a report —
+which is what actually starved this gate. Fixed by resolving only the concrete
+`BrickRegistry`.
+
+**Defect 4 — `ProviderFactory` blocked in its constructor.** It warmed the Ollama
+manifest with `GetAwaiter().GetResult()`, so *constructing* the factory — and hence
+every `IProviderFactory` resolution, host startup included — performed a synchronous
+HTTP round trip against a machine that may not be listening. The warm-up is a
+deliberate, documented latency optimisation and is kept; it now runs fire-and-forget,
+off the calling thread. An earlier attempt deleted it outright, which threw away a
+considered design decision to fix a placement bug.
+
+**Defect 5 — certification records were not durable.** `AddCertificationInfrastructure`
+registered `InMemoryCertificationRecordStore` unconditionally, so every process began
+with an empty admission catalogue and nothing certified earlier could ever be found.
+Harmless for a single-process host that certifies as it goes; fatal for the CLI, where
+each invocation is a fresh process — `nexo adapt --store-path ...` could never locate
+an admitted brick, and the command's own error text advertises a flow that could not
+work. `FileCertificationRecordStore` already existed and was wired nowhere.
+
+Durability did not weaken admission, which matters because these records decide whether
+generated code may run:
+
+- Records are written signed and **re-verified on load**. The HMAC covers the record
+  with the signature field cleared, so editing the admission flags *or* the
+  `ContentHash` invalidates it — a mutated record reads as uncertified.
+- A record failing verification is reported **absent**, not as an untrusted record, so
+  callers refuse the brick and tampering fails **closed**.
+- `IsAdmitted`'s flag checks now run only on cryptographically vouched records.
+  Previously those flags were the *only* gate, so a hand-edited file claiming
+  `Admitted/Signed/PASS` would have been believed — a hole that existed independently
+  of persistence.
+
+## Measured coverage and the floor
+
+| assembly | line | branch | method |
+|---|---|---|---|
+| `Nexo.Core.Domain` | 100% | 73.36% | 100% |
+| **`Nexo.Infrastructure`** | **80.3%** | 64.48% | 84.92% |
+| `Nexo.Core.Application` | 68.31% | 64.84% | 40.37% |
+
+Job: 13m53s, Infrastructure step 11m45s — comfortably inside the 30-minute cap, which
+is therefore kept unchanged.
+
+**Floor set to 80%, as a ratchet: raise it, never lower it.** The old 83% was never
+measured against a complete run — it was an aspiration recorded as though it were a
+baseline, which is exactly what a floor nobody can check degenerates into. 80 sits just
+below the measured figure so ordinary variation does not fail the build. The target
+remains 83, and branch coverage at 64.48% shows the headroom is real.
+
+## Tracked follow-ups
+
+- **`SelfExtendRunnerAdapter` interface segregation.** It never calls a method on
+  `IBackgroundAgentRegistry` — it hands it straight to `RepoFsToolboxFactory`.
+  Segregating that slice would remove the cycle *structurally* rather than deferring it
+  behind `Lazy<T>`.
+- **`OllamaProvider` still blocks in its constructor** (`RefreshModelsAsync(...)
+  .GetAwaiter().GetResult()`). Reached only when something genuinely wants a provider,
+  and changing when its manifest populates would alter `IsAvailable`/`Manifest`
+  semantics, so it was left alone here.
+- **`TestRunnerAdapter.ExecuteTestAsync`** abandons its `runTask` on the per-test
+  timeout path. Latent — never executed today.
+
+## Superseded: the process-lifetime leak framing
 
 Infrastructure coverage is **still not measured**, now for a third reason.
 
@@ -230,10 +315,17 @@ Two consequences worth stating plainly:
   binaries — are this leak. Results produced that way looked authoritative and were
   meaningless.
 
-Whether this is a test-side leak (a fixture not disposing) or a product bug (a mesh
-service spawning a non-background thread it never disposes, which would leak in
-production too, exactly as the DI cycle did) is not yet established. Next step is a
-`dotnet-dump collect` against the live non-exiting process to name the thread.
+**CORRECTED — "process-lifetime leak" was the wrong shape for the evidence.** There was
+no leaked thread at all. The dump showed 14 of 15 managed threads were background, and
+the single foreground thread was `testhost.Main` doing exactly its job. The process
+stayed alive because a **test never completed** (the mesh self-recursion above), so
+xunit never signalled assembly-finished and `Main` never returned.
+
+The methodological error is worth keeping: I dumped the *live idle process*, which
+showed only the aftermath — everything patiently waiting for a signal nobody would
+send. That is consistent with a dozen causes and identifies none. The cause was named
+only by a `--blame-hang` dump taken **at the stall**, while the offending test was
+still executing.
 
 ## Method note
 

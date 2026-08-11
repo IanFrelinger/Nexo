@@ -28,4 +28,22 @@ public static class TestTimeouts
 
     /// <summary>30 seconds for mesh/discover/advertise.</summary>
     public const int Mesh = 30_000;
+
+    /// <summary>
+    /// 4 minutes for host-touching (E2E / ProdStyle) tests. A HANG NET, not a
+    /// performance budget.
+    /// </summary>
+    /// <remarks>
+    /// Deliberately far above what these tests take when healthy — several run in
+    /// single-digit seconds. The value has to clear the worst legitimate case, and the
+    /// worst case is a coverlet-instrumented run on a loaded CI runner, where the same
+    /// suite has gone from ~4.5 to ~11 minutes end to end. Sizing this to observed
+    /// healthy duration converts an instrumented slow run into a red build, which is
+    /// how a 60-second bound was chosen first and why it failed.
+    ///
+    /// What it must still catch is a test that never finishes at all — the failure mode
+    /// that cost three CI runs of 30, 60 and 45 minutes and produced no diagnosis. Four
+    /// minutes catches that and tolerates instrumentation.
+    /// </remarks>
+    public const int HostTouching = 240_000;
 }

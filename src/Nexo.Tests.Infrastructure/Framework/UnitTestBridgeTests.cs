@@ -26,7 +26,7 @@ public sealed class UnitTestBridgeTests
         return data;
     }
 
-    [Theory(Timeout = TestTimeouts.Integration)]
+    [Theory(Timeout = TestTimeouts.HostTouching)]
     [MemberData(nameof(UnitTestTypes))]
     public async Task Framework_unit_test_passes(Type testType)
     {

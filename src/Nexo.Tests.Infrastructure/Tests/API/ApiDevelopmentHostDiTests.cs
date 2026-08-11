@@ -12,7 +12,7 @@ namespace Nexo.Tests.Infrastructure.Tests.API;
 [Trait("Category", "ProdStyle")]
 public sealed class ApiDevelopmentHostDiTests
 {
-    [Fact(Timeout = TestTimeouts.Integration)]
+    [Fact(Timeout = TestTimeouts.HostTouching)]
     public async Task Development_host_di_graph_builds_without_scoped_singleton_violations()
     {
         await Task.CompletedTask;

@@ -21,7 +21,7 @@ namespace Nexo.Tests.Infrastructure.Tests.NodeCapabilityRuntime;
 [Trait("Category", "ProdStyle")]
 public sealed class VirtualProductionNcrRoutingTests
 {
-    [Fact(Timeout = TestTimeouts.Integration)]
+    [Fact(Timeout = TestTimeouts.HostTouching)]
     public async Task NcrCapabilityPoller_exposes_environment_hardware_profiler_snapshot()
     {
         const long expectedVram = 24L * 1024 * 1024 * 1024;
@@ -37,7 +37,7 @@ public sealed class VirtualProductionNcrRoutingTests
         Assert.Equal(GpuComputeClass.Extreme, snap.ComputeClass);
     }
 
-    [Fact(Timeout = TestTimeouts.Integration)]
+    [Fact(Timeout = TestTimeouts.HostTouching)]
     public async Task Peer_snapshot_refresh_changes_routing_preference_cloud_then_peer()
     {
         await using var env = await VirtualProductionNcrRoutingHost.StartAsync(o =>
@@ -88,7 +88,7 @@ public sealed class VirtualProductionNcrRoutingTests
         ((ExecutionTarget.Remote)afterPeer).Executor.Should().BeAssignableTo<IPeerExecutor>();
     }
 
-    [Fact(Timeout = TestTimeouts.Integration)]
+    [Fact(Timeout = TestTimeouts.HostTouching)]
     public async Task CapabilityRoutingBrick_executes_locally_via_ProviderFactory_when_ncr_snapshot_satisfies_job()
     {
         await using var env = await VirtualProductionNcrRoutingHost.StartAsync(o =>
