@@ -45,7 +45,7 @@ jobs:
     # docs/production-readiness/KernelCoverageGate-Findings.md). A suite that finishes
     # is necessarily slower than one that died partway through, so the permanent cap is
     # set from an OBSERVED clean duration rather than a guess.
-    timeout-minutes: 45
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v4

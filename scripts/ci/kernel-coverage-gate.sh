@@ -28,17 +28,26 @@ dotnet test src/Nexo.Tests.Domain/Nexo.Tests.Domain.csproj \
 #      step, since coverlet writes its report only after the host exits.
 #   4. ProviderFactory doing blocking network I/O in its constructor.
 #
-# THE FLOOR BELOW IS PROVISIONAL (0), for one measurement run. No trustworthy figure
-# has ever existed: every historical run was truncated, so the old 83% was never
-# measured against a complete run. A floor of 0 keeps "completes but low" (reported)
-# distinguishable from "crashes or hangs" (fails). The real floor follows once this
-# reports.
+# FLOOR: 80%, and it is a RATCHET — it may be raised, never lowered.
+#
+# 80.3% is the first Infrastructure line coverage ever actually measured, from the
+# first complete run of this suite (1,764 passed / 1 skipped / 1,765 total, 11m45s).
+# The previous 83% was never measured against anything: every historical run was
+# truncated by one of the defects above, so 83 was an aspiration recorded as though it
+# were a baseline. 80 is the honest starting point, set just below the measured figure
+# so ordinary variation does not fail the build.
+#
+# THE TARGET REMAINS 83. This floor exists to stop coverage sliding now that the gate
+# can finally see it — not to bless 80.3% as sufficient. Branch coverage is 64.48%, so
+# there is real headroom. Raise this when tests earn it. Do not lower it to turn a red
+# build green: a floor that moves down on demand measures nothing, and the 83 that was
+# never met is precisely what a floor nobody could check looks like.
 #
 # Tracked: docs/production-readiness/KernelCoverageGate-Findings.md
 # Related: TestRunnerAdapter.ExecuteTestAsync abandons its runTask on the timeout path
 # (latent, separate); OllamaProvider still blocks in its constructor (separate).
 echo ""
-echo "== Infrastructure (Nexo.Infrastructure) line coverage: PROVISIONAL floor ${INFRA_COVERAGE_THRESHOLD:-0}% (measuring the real number) =="
+echo "== Infrastructure (Nexo.Infrastructure) line coverage: ${INFRA_COVERAGE_THRESHOLD:-80}% floor (measured 80.3%; target 83) =="
 # Daemon black-box tests excluded from the COVERAGE run only: ~7.5 min of spawned-
 # process timeouts whose work cannot be attributed to [Nexo.Infrastructure] anyway.
 dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net9.0 \
@@ -47,7 +56,7 @@ dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f ne
   /p:CoverletOutput="$ROOT/CoverageReports/infra" \
   /p:CoverletOutputFormat=cobertura \
   /p:Include="[Nexo.Infrastructure]*" \
-  /p:Threshold="${INFRA_COVERAGE_THRESHOLD:-0}" \
+  /p:Threshold="${INFRA_COVERAGE_THRESHOLD:-80}" \
   /p:ThresholdType=line \
   --verbosity minimal
 echo ""
