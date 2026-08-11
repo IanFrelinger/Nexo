@@ -315,10 +315,17 @@ Two consequences worth stating plainly:
   binaries — are this leak. Results produced that way looked authoritative and were
   meaningless.
 
-Whether this is a test-side leak (a fixture not disposing) or a product bug (a mesh
-service spawning a non-background thread it never disposes, which would leak in
-production too, exactly as the DI cycle did) is not yet established. Next step is a
-`dotnet-dump collect` against the live non-exiting process to name the thread.
+**CORRECTED — "process-lifetime leak" was the wrong shape for the evidence.** There was
+no leaked thread at all. The dump showed 14 of 15 managed threads were background, and
+the single foreground thread was `testhost.Main` doing exactly its job. The process
+stayed alive because a **test never completed** (the mesh self-recursion above), so
+xunit never signalled assembly-finished and `Main` never returned.
+
+The methodological error is worth keeping: I dumped the *live idle process*, which
+showed only the aftermath — everything patiently waiting for a signal nobody would
+send. That is consistent with a dozen causes and identifies none. The cause was named
+only by a `--blame-hang` dump taken **at the stall**, while the offending test was
+still executing.
 
 ## Method note
 
