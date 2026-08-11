@@ -62,7 +62,14 @@ public static class AdaptationServiceCollectionExtensions
 
         services.AddOptions<AdaptationBrickOptions>();
 
-        services.AddCertificationInfrastructure();
+        // Certification records live beside the pattern store, in the same way the
+        // adaptation log, audit log and snapshots do below. Supplying a store path is
+        // what makes admissions durable: without it the records are in-memory and no
+        // brick certified in an earlier process can ever be found again.
+        var certificationRecordPath = !string.IsNullOrEmpty(patternStorePath)
+            ? Path.Combine(Path.GetDirectoryName(patternStorePath) ?? ".", "nexo-certifications")
+            : null;
+        services.AddCertificationInfrastructure(certificationRecordPath);
 
         services.AddSingleton<CertifiedBrickRegistry>(sp =>
         {
