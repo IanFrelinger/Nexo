@@ -3,6 +3,10 @@ namespace Nexo.Tests.Infrastructure.Helpers;
 /// <summary>
 /// Central timeout constants for tests. Use with [Fact(Timeout = TestTimeouts.Integration)] etc.
 /// Aligns with docs/Testing.md and blame-hang-timeout (1.5x max per-test timeout).
+///
+/// Pick the constant that matches what the test TOUCHES, not how long it happens to take
+/// today: a timeout sized to healthy duration turns an instrumented or loaded run into a
+/// red build, which is a worse failure than the hang it was meant to catch.
 /// </summary>
 public static class TestTimeouts
 {
