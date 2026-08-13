@@ -23,8 +23,11 @@ internal sealed class BrickMutationEngine
     /// (<c>LoaderAllocatorScout.Finalize</c> / <c>0x80131506</c>), and it takes the whole
     /// process down rather than failing the caller. Mutation runs are dominated by Roslyn
     /// compilation anyway, so making them mutually exclusive costs little.
+    /// The gate is shared with the hot-swap host
+    /// (<see cref="HotSwap.CollectibleLoadContextGate"/>): a mutant context and a brick
+    /// generation must never be torn down concurrently either.
     /// </remarks>
-    private static readonly SemaphoreSlim MutantContextGate = new(1, 1);
+    private static SemaphoreSlim MutantContextGate => HotSwap.CollectibleLoadContextGate.Instance;
 
     /// <summary>Gets mutation strategy names.</summary>
     public IReadOnlyList<string> GetMutationStrategyNames() =>
