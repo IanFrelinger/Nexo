@@ -1,4 +1,6 @@
 using FluentAssertions;
+using Nexo.Analyzers;
+using Nexo.Core.Domain.Bricks.Ports;
 using Nexo.Infrastructure.Certification;
 using Nexo.Tests.Infrastructure.Certification.Fixtures;
 using Xunit;
@@ -135,5 +137,65 @@ public sealed class AnalyzerFenceGateTests
     {
         AnalyzerFenceGate.CatalogAnalyzers().Should().NotBeEmpty(
             "an empty analyzer set where the catalog declares rules must be impossible by construction");
+    }
+
+    // --- manifest-derived rules (extension spec A2) --------------------------------------
+
+    [Fact]
+    public async Task Manifest_rules_run_alongside_the_catalog_and_restate_the_instruction_verbatim()
+    {
+        var manifest = new BrickConstraintManifest { ForbiddenApiTokens = new[] { "DateTime.Now" } };
+
+        var outcome = await Gate().EvaluateAsync(DirtyBrickSource, ContractReferences, manifest);
+
+        outcome.Passed.Should().BeFalse();
+        outcome.GatePassConfiguration.Should().Contain("manifestRules=attached");
+        outcome.Findings.Should().Contain(f => f.Id == "NEXO0006", "the static catalog still runs");
+        var manifestFinding = outcome.Findings.Should()
+            .ContainSingle(f => f.Id == BrickConstraintManifestAnalyzer.ForbiddenApiId).Subject;
+        manifestFinding.Message.Should().Contain(manifest.ForbiddenApiInstruction("DateTime.Now"),
+            "the finding must restate the instruction verbatim from the same manifest instance (A2.3/A3.2)");
+        manifestFinding.Line.Should().BeGreaterThan(0);
+    }
+
+    [Fact]
+    public async Task Candidate_text_inside_a_forbidden_namespace_fails_the_gate()
+    {
+        var manifest = new BrickConstraintManifest { ForbiddenNamespaces = new[] { "System.Collections" } };
+
+        var outcome = await Gate().EvaluateAsync(MutationProbeBrickSource.Code, ContractReferences, manifest);
+
+        outcome.Passed.Should().BeFalse("the candidate creates and uses a List<string>, which lives under System.Collections");
+        var findings = outcome.Findings
+            .Where(f => f.Id == BrickConstraintManifestAnalyzer.ForbiddenNamespaceId).ToArray();
+        findings.Should().NotBeEmpty();
+        findings.Should().OnlyContain(f => f.Line > 0,
+            "every finding must point at the candidate's own collection operations, never at wrapper text");
+    }
+
+    [Fact]
+    public async Task Wrapper_injected_text_is_exempt_from_manifest_rules()
+    {
+        // The certification wrap prepends `using System.Collections.Generic;` and injects an
+        // audit context that creates a Dictionary — text the proposer did not write and cannot
+        // repair. With System.Collections forbidden, a candidate whose OWN text never touches
+        // collections must fail only for its own defect (the wall clock), never for the wrapper.
+        var manifest = new BrickConstraintManifest { ForbiddenNamespaces = new[] { "System.Collections" } };
+
+        var outcome = await Gate().EvaluateAsync(DirtyBrickSource, ContractReferences, manifest);
+
+        outcome.Passed.Should().BeFalse();
+        outcome.Findings.Should().OnlyContain(f => f.Id == "NEXO0006",
+            "wrapper-owned preamble/audit text maps to candidate line 0 and is structurally exempt from manifest rules");
+    }
+
+    [Fact]
+    public async Task Without_a_manifest_the_configuration_records_none()
+    {
+        var outcome = await Gate().EvaluateAsync(MutationProbeBrickSource.Code, ContractReferences);
+
+        outcome.Passed.Should().BeTrue(outcome.FormatProposerFeedback());
+        outcome.GatePassConfiguration.Should().Contain("manifestRules=none",
+            "A1.5: whether manifest rules governed the verdict is part of the recorded gate configuration");
     }
 }

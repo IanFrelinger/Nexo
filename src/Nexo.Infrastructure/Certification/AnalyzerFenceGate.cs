@@ -5,6 +5,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Nexo.Analyzers;
+using Nexo.Core.Domain.Bricks.Ports;
 using Nexo.Infrastructure.Testing.CodeAnalysis;
 
 namespace Nexo.Infrastructure.Certification;
@@ -49,14 +50,22 @@ public sealed class AnalyzerFenceGate
         new BrickDeterminismAnalyzer(),
         new BrickEmptyCatchAnalyzer());
 
-    /// <summary>Runs the analyzer catalog over the candidate and produces the gate verdict.</summary>
+    /// <summary>
+    /// Runs the analyzer catalog — plus, when the request carries a constraint manifest, the
+    /// manifest-derived rules (A2) — over the candidate and produces the gate verdict.
+    /// </summary>
     public async Task<AnalyzerGateOutcome> EvaluateAsync(
         string candidateSource,
         IEnumerable<string>? compilationReferences,
+        BrickConstraintManifest? constraintManifest = null,
         CancellationToken cancellationToken = default)
     {
         var floor = ResolveSeverityFloor();
         var analyzers = CatalogAnalyzers();
+        // A2.3: the analyzer is constructed with the manifest INSTANCE — the same object the
+        // proposer's instructions were rendered from — so rules and prompt cannot drift.
+        if (constraintManifest is not null)
+            analyzers = analyzers.Add(new BrickConstraintManifestAnalyzer(constraintManifest));
         var analyzerVersion = typeof(BrickInterfaceDriftAnalyzer).Assembly.GetName().Version?.ToString() ?? "0.0.0.0";
 
         if (analyzers.IsEmpty)
@@ -124,6 +133,11 @@ public sealed class AnalyzerFenceGate
                 .Where(d => d.Id.StartsWith(DiagnosticIdPrefix, StringComparison.Ordinal) && d.Severity >= floor)
                 .OrderBy(d => d.Location.SourceSpan.Start)
                 .Select(d => ToFinding(d, candidateSource))
+                // Manifest rules apply to every line of the compilation (unlike the brick-scoped
+                // catalog), so they also fire on the wrapper-injected preamble/audit text — code
+                // the proposer did not write and cannot repair. Findings there map to candidate
+                // line 0 and are structurally exempt. Catalog findings are never dropped.
+                .Where(f => f.Line != 0 || !BrickConstraintManifestAnalyzer.ManifestRuleIds.Contains(f.Id))
                 .ToArray();
 
             return new AnalyzerGateOutcome
@@ -134,6 +148,7 @@ public sealed class AnalyzerFenceGate
                 DiagnosticsEvaluated = diagnostics.Length,
                 AnalyzerAssemblyVersion = analyzerVersion,
                 SeverityFloor = floor.ToString(),
+                ManifestRulesAttached = constraintManifest is not null,
             };
         }
         catch (OperationCanceledException)
@@ -209,9 +224,13 @@ public sealed record AnalyzerGateOutcome
     /// <summary>The severity floor the verdict was computed at (A1.5).</summary>
     public required string SeverityFloor { get; init; }
 
+    /// <summary>Whether manifest-derived rules (NEXO0010–0012) were attached for this run (A2).</summary>
+    public bool ManifestRulesAttached { get; init; }
+
     /// <summary>The certificate's gates_passed configuration string (A1.5).</summary>
     public string GatePassConfiguration =>
-        $"analyzerAssemblyVersion={AnalyzerAssemblyVersion};severityFloor={SeverityFloor};diagnosticsEvaluated={DiagnosticsEvaluated}";
+        $"analyzerAssemblyVersion={AnalyzerAssemblyVersion};severityFloor={SeverityFloor};diagnosticsEvaluated={DiagnosticsEvaluated}"
+        + $";manifestRules={(ManifestRulesAttached ? "attached" : "none")}";
 
     /// <summary>Creates a fail-closed outcome for gate-infrastructure failures (A1.4).</summary>
     public static AnalyzerGateOutcome Failed(string reason, DiagnosticSeverity floor, string analyzerVersion) => new()

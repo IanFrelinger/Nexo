@@ -141,7 +141,12 @@ Dynamic ≠ unsupervised. Tier by blast radius:
    on non-compiling candidates, unresolvable brick anchors, and
    analyzer crashes (A1.4); A1.5 metadata recorded on `gates_passed`;
    A3-conformant verbatim feedback via
-   `AnalyzerGateOutcome.FormatProposerFeedback`. The diagnostic-probe
+   `AnalyzerGateOutcome.FormatProposerFeedback`. Constraint manifests are
+   now also enforced semantically at certification (A2):
+   `BrickConstraintManifestAnalyzer` is constructed with the manifest
+   instance carried on `CertificationRequest.ConstraintManifest`
+   (NEXO0010–0012 — using allowlist, forbidden APIs, forbidden namespaces —
+   symbol-resolved, so aliasing cannot dodge them). The diagnostic-probe
    half (`IDiagnosticProbe`) remains open.*
 5. **PR-E:** Harness progress discipline + ledger (G5, G6).
 6. **PR-F:** Adversarial campaign (G7) — gates production-readiness

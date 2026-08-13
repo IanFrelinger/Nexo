@@ -14,3 +14,6 @@ NEXO0006 | Nexo.TrustLoop | Warning | BrickDeterminismAnalyzer: brick reads Date
 NEXO0007 | Nexo.TrustLoop | Warning | BrickDeterminismAnalyzer: brick uses unseeded randomness (new Random() or Random.Shared).
 NEXO0008 | Nexo.TrustLoop | Warning | BrickDeterminismAnalyzer: brick declares mutable static state.
 NEXO0009 | Nexo.TrustLoop | Warning | BrickEmptyCatchAnalyzer: empty catch block in brick execution paths.
+NEXO0010 | Nexo.TrustLoop | Warning | BrickConstraintManifestAnalyzer: using directive outside the manifest allowlist.
+NEXO0011 | Nexo.TrustLoop | Warning | BrickConstraintManifestAnalyzer: resolved reference matches a forbidden API token.
+NEXO0012 | Nexo.TrustLoop | Warning | BrickConstraintManifestAnalyzer: resolved reference lives inside a forbidden namespace.

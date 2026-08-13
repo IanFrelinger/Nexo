@@ -53,6 +53,7 @@ public sealed class CertificationGate : ICertificationGate
         var analyzerOutcome = await _analyzerGate.EvaluateAsync(
             request.SourceCode,
             request.CompilationReferences,
+            request.ConstraintManifest,
             cancellationToken).ConfigureAwait(false);
         var analyzerGatePass = new CertificationGatePass
         {

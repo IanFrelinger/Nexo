@@ -1,5 +1,6 @@
 using Nexo.Certification.Contracts;
 using Nexo.Core.Domain.Bricks;
+using Nexo.Core.Domain.Bricks.Ports;
 
 namespace Nexo.Core.Application.Certification.Models;
 
@@ -33,4 +34,13 @@ public sealed record CertificationRequest
     /// recorded under the v2 signature, in authored order after the witness input.
     /// </summary>
     public IReadOnlyList<CertificationInput> AdditionalInputs { get; init; } = Array.Empty<CertificationInput>();
+
+    /// <summary>
+    /// The constraint manifest this candidate was generated under, when there is one.
+    /// Pass the SAME instance the proposer's instructions were rendered from (extension spec
+    /// A2.3): the analyzer gate constructs its manifest-derived rules from this object, which is
+    /// what keeps prompt and enforcement from drifting. Null = no manifest rules; the static
+    /// analyzer catalog still runs.
+    /// </summary>
+    public BrickConstraintManifest? ConstraintManifest { get; init; }
 }

@@ -26,6 +26,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- netstandard2.0 leg of the contracts package. Safe for the build-time analyzer role:
+         the only type using it (BrickConstraintManifestAnalyzer) carries no [DiagnosticAnalyzer]
+         attribute, so compiler discovery never instantiates it — it is constructed
+         programmatically by the certification gate WITH a manifest instance (spec A2.3:
+         the manifest object itself is the single source, used twice). -->
+    <ProjectReference Include="..\Nexo.Brick.Contracts\Nexo.Brick.Contracts.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
     <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
   </ItemGroup>
