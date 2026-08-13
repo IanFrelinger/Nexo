@@ -29,6 +29,20 @@ public static class CertificationTrustVerifier
         if (!CertificationRecordSigning.VerifySignature(record, hmacKey))
             return Untrusted("signature-invalid", "Certification record signature is invalid.");
 
+#if NET8_0_OR_GREATER
+        // Dual-write window: the Ed25519 signature is enforced whenever present.
+        // netstandard2.0 consumers cannot check it (no NSec target) and rely on the
+        // HMAC payload, which covers the Ed25519 public key.
+        if (!string.IsNullOrWhiteSpace(record.Ed25519Signature))
+        {
+            if (string.IsNullOrWhiteSpace(record.Ed25519PublicKey))
+                return Untrusted("ed25519-key-missing", "Certification record carries an Ed25519 signature but no public key.");
+
+            if (!CertificationRecordEd25519.VerifySignature(record))
+                return Untrusted("ed25519-signature-invalid", "Certification record Ed25519 signature is invalid.");
+        }
+#endif
+
         var actualHash = BrickContentHasher.ComputeSha256(brickSource);
         if (!string.Equals(actualHash, record.ContentHash, StringComparison.Ordinal))
         {
