@@ -40,6 +40,13 @@ public interface ISandboxedSession : IAsyncDisposable
     Task<ProcessCommandResult> ExecAsync(IReadOnlyList<string> command, CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Attests what the session's environment actually is (resolved image identity, engine
+    /// version, effective limits). Fail-closed: a session whose environment cannot be
+    /// attested throws — certification must never record an unverified environment.
+    /// </summary>
+    Task<SessionAttestation> AttestAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Stops the session and destroys its isolated environment. Idempotent; disposal calls
     /// this. Teardown failures are logged by backends but never thrown — a failed teardown
     /// must not mask the work's own result (the reaper is the backstop).

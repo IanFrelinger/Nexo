@@ -65,6 +65,13 @@ public sealed class FakeSandboxedSession : ISandboxedSession
     /// <summary>Whether the session has been stopped (via <see cref="StopAsync"/> or disposal).</summary>
     public bool Stopped { get; private set; }
 
+    /// <summary>
+    /// Attestation returned by <see cref="AttestAsync"/>. Defaults to a faithful environment
+    /// (digest resolved, requested limits echoed as effective — zero shortfalls); tests
+    /// override it to script a weaker-than-requested environment.
+    /// </summary>
+    public SessionAttestation? AttestationOverride { get; set; }
+
     /// <inheritdoc />
     public Task<ProcessCommandResult> ExecAsync(
         IReadOnlyList<string> command,
@@ -80,6 +87,27 @@ public sealed class FakeSandboxedSession : ISandboxedSession
 
         ExecCommands.Add(command);
         return Task.FromResult(_execResults.Next());
+    }
+
+    /// <inheritdoc />
+    public Task<SessionAttestation> AttestAsync(CancellationToken cancellationToken = default)
+    {
+        if (Stopped)
+            throw new InvalidOperationException($"Fake sandbox session '{SessionId}' has been stopped.");
+
+        var attestation = AttestationOverride ?? new SessionAttestation
+        {
+            SessionId = SessionId,
+            Image = Spec.Image ?? "",
+            ImageDigest = $"sha256:fake-{SessionId}",
+            EngineVersion = "fake-engine",
+            Requested = Spec.Limits ?? new ResourceLimits(),
+            EffectiveMemoryBytes = Spec.Limits?.Memory is { } m ? SessionAttestation.ParseMemoryToBytes(m) : null,
+            EffectivePidsLimit = Spec.Limits?.Pids,
+            EffectiveNanoCpus = Spec.Limits?.Cpus is { } c ? SessionAttestation.ParseCpusToNano(c) : null,
+            AttestedAt = DateTimeOffset.UtcNow,
+        };
+        return Task.FromResult(attestation);
     }
 
     /// <inheritdoc />

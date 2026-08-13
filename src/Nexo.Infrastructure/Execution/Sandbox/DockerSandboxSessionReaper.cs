@@ -19,17 +19,20 @@ public sealed class DockerSandboxSessionReaper
 {
     private readonly IProcessCommandRunner _processRunner;
     private readonly TimeProvider _clock;
+    private readonly ISessionProvenanceSink? _provenance;
     private readonly ILogger<DockerSandboxSessionReaper>? _logger;
 
     /// <summary>Creates the reaper.</summary>
     public DockerSandboxSessionReaper(
         IProcessCommandRunner processRunner,
         TimeProvider? clock = null,
-        ILogger<DockerSandboxSessionReaper>? logger = null)
+        ILogger<DockerSandboxSessionReaper>? logger = null,
+        ISessionProvenanceSink? provenance = null)
     {
         _processRunner = processRunner ?? throw new ArgumentNullException(nameof(processRunner));
         _clock = clock ?? TimeProvider.System;
         _logger = logger;
+        _provenance = provenance;
     }
 
     /// <summary>
@@ -77,6 +80,23 @@ public sealed class DockerSandboxSessionReaper
             {
                 reaped.Add(name);
                 _logger?.LogWarning("Reaped expired sandbox session '{SessionId}'.", name);
+                try
+                {
+                    _provenance?.Record(new SessionProvenanceEvent
+                    {
+                        SessionId = name,
+                        Outcome = SessionProvenanceOutcomes.Reaped,
+                        Timestamp = now,
+                        Reason = session.Value.DeadlineUnixSeconds is null
+                            ? "deadline label missing or unreadable"
+                            : "deadline passed",
+                    });
+                }
+                catch (Exception ex)
+                {
+                    // A provenance sink failure must never fail a sweep.
+                    _logger?.LogWarning(ex, "Session provenance sink threw during reap; sweep proceeds");
+                }
             }
             else
             {
