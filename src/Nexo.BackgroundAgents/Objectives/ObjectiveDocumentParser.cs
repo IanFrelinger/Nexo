@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using Nexo.Core.Application.Autonomy;
 
 namespace Nexo.BackgroundAgents.Objectives;
 
@@ -54,6 +55,20 @@ public static class ObjectiveDocumentParser
         var attempts = ParseInt(GetString(fields, "attempts")) ?? 0;
         var blockedReason = GetString(fields, "blocked_reason");
         var tags = ParseList(GetString(fields, "tags"));
+        // Objective files are operator-authored artifacts, so a missing source parses as
+        // Human (the trust root); machine intake stamps its source explicitly (R1.1).
+        var source = ParseEnum<ObjectiveSource>(GetString(fields, "source")) ?? ObjectiveSource.Human;
+        var touchPaths = ParseList(GetString(fields, "touch_paths"));
+        var touchNamespaces = ParseList(GetString(fields, "touch_namespaces"));
+        var touchCapabilities = ParseList(GetString(fields, "touch_capabilities"));
+        var touch = touchPaths.Count > 0 || touchNamespaces.Count > 0 || touchCapabilities.Count > 0
+            ? new TouchSet
+            {
+                PathPrefixes = touchPaths,
+                Namespaces = touchNamespaces,
+                Capabilities = touchCapabilities,
+            }
+            : null;
         var now = DateTimeOffset.UtcNow;
         var createdAt = ParseTimestamp(GetString(fields, "created_at")) ?? now;
         var updatedAt = ParseTimestamp(GetString(fields, "updated_at")) ?? createdAt;
@@ -68,6 +83,8 @@ public static class ObjectiveDocumentParser
             Attempts = attempts,
             BlockedReason = blockedReason,
             Tags = tags,
+            Source = source,
+            Touch = touch,
             CreatedAt = createdAt,
             UpdatedAt = updatedAt,
             Body = body.Trim()
