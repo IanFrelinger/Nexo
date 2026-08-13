@@ -14,7 +14,7 @@ services:
 
   game-director:
     build:
-      context: ${NEXO_BUILD_CONTEXT:-.}
+      context: ${NEXO_BUILD_CONTEXT:-../..}
       dockerfile: ${NEXO_GAME_DIRECTOR_DOCKERFILE:-.docker/Dockerfile.game-director}
     depends_on:
       - ollama

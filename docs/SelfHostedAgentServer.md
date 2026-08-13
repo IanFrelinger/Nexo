@@ -30,13 +30,13 @@ The API process registers the same **dogfood runners** as `nexo background-agent
 From the **repository root**:
 
 ```bash
-docker compose -f docker-compose.agent-server.yml up -d --build
+docker compose -f deploy/compose/docker-compose.agent-server.yml up -d --build
 ```
 
 Pull the model referenced by your agent config (Runtime Studio default is **llama3.1:latest**):
 
 ```bash
-docker compose -f docker-compose.agent-server.yml exec ollama ollama pull llama3.1:latest
+docker compose -f deploy/compose/docker-compose.agent-server.yml exec ollama ollama pull llama3.1:latest
 ```
 
 Smoke check:
@@ -48,8 +48,8 @@ curl -s "http://localhost:${NEXO_AGENT_SERVER_HTTP_PORT:-8080}/api/status"
 **Windows (PowerShell)** from repo root:
 
 ```powershell
-docker compose -f docker-compose.agent-server.yml up -d --build
-docker compose -f docker-compose.agent-server.yml exec ollama ollama pull llama3.1:latest
+docker compose -f deploy/compose/docker-compose.agent-server.yml up -d --build
+docker compose -f deploy/compose/docker-compose.agent-server.yml exec ollama ollama pull llama3.1:latest
 Invoke-RestMethod "http://localhost:8080/api/status"
 ```
 
@@ -63,7 +63,7 @@ Copy the template and edit:
 - Typical usage: save as **`.env`** in the repo root (Compose loads it automatically), or:
 
 ```bash
-docker compose --env-file ./docs/config/agent-server.env.example -f docker-compose.agent-server.yml up -d --build
+docker compose --env-file ./docs/config/agent-server.env.example -f deploy/compose/docker-compose.agent-server.yml up -d --build
 ```
 
 Use **one `.env` per machine** or per environment (`dev`, `staging`) and swap `--env-file` as needed.
@@ -115,14 +115,14 @@ Use **one `.env` per machine** or per environment (`dev`, `staging`) and swap `-
 2. Start **only** the API so Compose does not start the bundled Ollama container:
 
 ```bash
-docker compose -f docker-compose.agent-server.yml up -d --build nexo-api --no-deps
+docker compose -f deploy/compose/docker-compose.agent-server.yml up -d --build nexo-api --no-deps
 ```
 
 Run `ollama serve` (or your package manager service) on the host on the port you point to.
 
 ### 5) Local compose overrides (advanced)
 
-Create a **gitignored** file such as `docker-compose.agent-server.local.yml` beside the repo compose file:
+Create a **gitignored** file such as `deploy/compose/docker-compose.agent-server.local.yml` beside the repo compose file:
 
 ```yaml
 services:
@@ -136,14 +136,14 @@ services:
 Merge explicitly (order matters — later files override):
 
 ```bash
-docker compose -f docker-compose.agent-server.yml -f docker-compose.agent-server.local.yml up -d --build
+docker compose -f deploy/compose/docker-compose.agent-server.yml -f deploy/compose/docker-compose.agent-server.local.yml up -d --build
 ```
 
 Never commit secrets; keep overrides local or in your deployment pipeline.
 
 ## Image choice
 
-`docker-compose.agent-server.yml` builds from `.docker/Dockerfile.agent-server`, which uses the **.NET SDK** in the final image so **test** and **build** style agents can run `dotnet` against the mounted workspace. The lighter `docker-compose.portal.yml` image (`Dockerfile.api`) remains appropriate when you only need the portal + API **without** a full agent cluster on a mounted repo.
+`deploy/compose/docker-compose.agent-server.yml` builds from `.docker/Dockerfile.agent-server`, which uses the **.NET SDK** in the final image so **test** and **build** style agents can run `dotnet` against the mounted workspace. The lighter `deploy/compose/docker-compose.portal.yml` image (`Dockerfile.api`) remains appropriate when you only need the portal + API **without** a full agent cluster on a mounted repo.
 
 ## Hardening
 
@@ -154,7 +154,7 @@ For anything beyond a trusted LAN, put **TLS + authentication** in front of the 
 ## Stop
 
 ```bash
-docker compose -f docker-compose.agent-server.yml down
+docker compose -f deploy/compose/docker-compose.agent-server.yml down
 ```
 
 Named volumes (`ollama-models`, `nexo-dailies`) are kept unless you `down -v`.

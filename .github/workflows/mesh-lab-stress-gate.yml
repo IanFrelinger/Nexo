@@ -62,13 +62,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          docker compose --profile workers -f docker-compose.mesh-lab.yml --env-file .env.mesh-lab.ci config -q
+          docker compose --profile workers -f deploy/compose/docker-compose.mesh-lab.yml --env-file .env.mesh-lab.ci config -q
 
       - name: Start mesh lab (workers profile)
         shell: bash
         run: |
           set -euo pipefail
-          docker compose --profile workers -f docker-compose.mesh-lab.yml --env-file .env.mesh-lab.ci up -d --build
+          docker compose --profile workers -f deploy/compose/docker-compose.mesh-lab.yml --env-file .env.mesh-lab.ci up -d --build
 
       - name: Run verify scripts (standard + deep)
         shell: bash
@@ -102,5 +102,5 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          docker compose --profile workers -f docker-compose.mesh-lab.yml --env-file .env.mesh-lab.ci down -v || true
+          docker compose --profile workers -f deploy/compose/docker-compose.mesh-lab.yml --env-file .env.mesh-lab.ci down -v || true
           rm -f .env.mesh-lab.ci

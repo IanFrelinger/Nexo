@@ -3,7 +3,7 @@
 #
 #   ./scripts/mesh-lab-verify-tls.sh .env.mesh-lab
 #
-# Prerequisite: compose up with docker-compose.mesh-lab-tls.override.yml
+# Prerequisite: compose up with deploy/compose/docker-compose.mesh-lab-tls.override.yml
 
 set -euo pipefail
 

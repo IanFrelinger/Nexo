@@ -10,7 +10,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.mesh-lab.yml}"
+COMPOSE_FILE="${COMPOSE_FILE:-deploy/compose/docker-compose.mesh-lab.yml}"
 COMPOSE_ENV_FILE="${1:-${COMPOSE_ENV_FILE:-.env.mesh-lab}}"
 
 if [[ ! -f "$COMPOSE_ENV_FILE" ]]; then

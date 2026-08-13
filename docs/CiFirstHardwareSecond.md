@@ -23,7 +23,7 @@ pwsh -NoProfile -File ./scripts/Verify-DevContainer.ps1
 | Workflow | Use when |
 |----------|----------|
 | `devcontainer-gate.yml` | You changed `.devcontainer/` or the setup-gate restore graph (same smoke as `scripts/Verify-DevContainer.ps1`). |
-| `compose-gate.yml` | You changed `docker-compose.test.yml` / ephemeral lanes or need full test-container run + Postgres smoke. |
+| `compose-gate.yml` | You changed `deploy/compose/docker-compose.test.yml` / ephemeral lanes or need full test-container run + Postgres smoke. |
 | `container-image-gate.yml` | You changed `.docker/Dockerfile.cli` or CLI dependencies. |
 | `environment-setup-gate-v1.yml` | You need **macOS + Windows** native `setup.ps1` / `setup.sh`, not only Ubuntu. |
 | `onboarding-quickstart-gate.yml` | You changed onboarding scripts or want taxonomy artifacts. |

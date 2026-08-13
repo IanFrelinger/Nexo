@@ -20,13 +20,13 @@ Target recovery objectives for pilot Private customers:
 ## Backup procedure (reference stack)
 
 ```bash
-docker compose -f docker-compose.private-single-tenant.yml stop nexo-api
+docker compose -f deploy/compose/docker-compose.private-single-tenant.yml stop nexo-api
 docker run --rm \
   -v nexo-dailies:/data/dailies:ro \
   -v nexo-copilot-data:/data/copilot:ro \
   -v "$(pwd)/backups:/backup" \
   alpine sh -c 'tar czf /backup/nexo-private-$(date -u +%Y%m%dT%H%M%SZ).tgz /data'
-docker compose -f docker-compose.private-single-tenant.yml start nexo-api
+docker compose -f deploy/compose/docker-compose.private-single-tenant.yml start nexo-api
 ```
 
 Store archives off-host (S3-compatible object storage or customer backup appliance). Encrypt at rest.
@@ -44,7 +44,7 @@ docker run --rm -v nexo-dailies:/data/dailies -v nexo-copilot-data:/data/copilot
 ```
 
 4. Restore license file and environment variables.
-5. `docker compose -f docker-compose.private-single-tenant.yml up -d`
+5. `docker compose -f deploy/compose/docker-compose.private-single-tenant.yml up -d`
 6. Verify: `/health`, `/api/support/diagnostics`, and one read-only copilot task list call.
 
 ## Test cadence

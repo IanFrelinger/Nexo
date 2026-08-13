@@ -6,7 +6,7 @@ on:
     paths:
       - 'applications/Nexo.Provenance.Graph/**'
       - 'applications/Nexo.Provenance.Graph.Tests/**'
-      - 'docker-compose.provenance.yml'
+      - 'deploy/compose/docker-compose.provenance.yml'
       - '.github/workflows/provenance-graph-gate.yml'
 
 permissions:

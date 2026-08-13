@@ -38,7 +38,7 @@ Documentation index for the Nexo platform. Start here to find what you need.
 - `docs/ProductionReadinessGate-v1.md` — production gate commands and expected assertions (binary PASS/FAIL technical gate).
 - `.github/workflows/production-readiness-gate-v1.yml` — automated production readiness gate.
 - `.github/workflows/environment-setup-gate-v1.yml` — environment bootstrap + dependency setup gate (Linux/macOS/Windows).
-- `.github/workflows/compose-gate.yml` — validates `docker-compose.test.yml` and `docker-compose.ephemeral.yml` lanes.
+- `.github/workflows/compose-gate.yml` — validates `deploy/compose/docker-compose.test.yml` and `deploy/compose/docker-compose.ephemeral.yml` lanes.
 - `.github/workflows/devcontainer-gate.yml` — validates `.devcontainer/post-create.sh` restore + `Nexo.CLI` build inside the dev image.
 - `.github/workflows/setup-smoke-suite.yml` — **parallel** dev container + compose `config` + native Ubuntu `setup.sh`; run manually before target-hardware iteration (`docs/CiFirstHardwareSecond.md`).
 - `docs/CiFirstHardwareSecond.md` — **CI first, hardware second**: which workflows to run and what still needs a physical host.
@@ -106,10 +106,10 @@ Documentation index for the Nexo platform. Start here to find what you need.
 - `docs/runtime/specs/README.md` — runtime spec documents.
 - `docs/runtime/benchmarks/README.md` — runtime benchmark goals and notes.
 - `apps/runtime-studio/README.md` — **hub** for the Runtime Studio agent-set JSON, CLI vs API-hosted background agents, and how the Director portal fits; anchor [How this fits](../apps/runtime-studio/README.md#how-runtime-studio-fits-with-nexo-api).
-- `docs/SelfHostedGameServerPortal.md` — `docker-compose.portal.yml`: Director portal + dailies API (lighter stack).
-- `docs/SelfHostedAgentServer.md` — `docker-compose.agent-server.yml`: mounted workspace + env template `docs/config/agent-server.env.example`.
+- `docs/SelfHostedGameServerPortal.md` — `deploy/compose/docker-compose.portal.yml`: Director portal + dailies API (lighter stack).
+- `docs/SelfHostedAgentServer.md` — `deploy/compose/docker-compose.agent-server.yml`: mounted workspace + env template `docs/config/agent-server.env.example`.
 - `docs/ide/NexoVscode.md` — VS Code / Cursor extension + `/api/ide/*` bridge (chat, patches, runs, workloads, streaming).
-- `docs/Phase1SecureCopilotWalkthrough.md` — first-success secure copilot MVP walkthrough using `docker-compose.agent-server.yml`.
+- `docs/Phase1SecureCopilotWalkthrough.md` — first-success secure copilot MVP walkthrough using `deploy/compose/docker-compose.agent-server.yml`.
 
 ## Planning & Roadmap
 
@@ -129,6 +129,6 @@ Documentation index for the Nexo platform. Start here to find what you need.
 - `docs/communications/linkedin-distribution-channels.md` — optional **LinkedIn** copy emphasizing **distribution channels** (NuGet, HTTP, CLI, Compose, mesh) with pointers to **`docs/DistributionModels.md`**.
 - `docs/Persistence.md` — persistence behavior and options.
 - `docs/ComponentLibrary.md` — component catalog references.
-- `docker-compose.test.yml` — containerized test lane (`test-ubuntu`) with mounted test artifacts.
-- `docker-compose.ollama.yml` — Ollama-only stack (named volume for models; pair with host-run Nexo).
-- `docker-compose.ephemeral.yml` — disposable local dependencies (Ollama, optional Postgres profile).
+- `deploy/compose/docker-compose.test.yml` — containerized test lane (`test-ubuntu`) with mounted test artifacts.
+- `deploy/compose/docker-compose.ollama.yml` — Ollama-only stack (named volume for models; pair with host-run Nexo).
+- `deploy/compose/docker-compose.ephemeral.yml` — disposable local dependencies (Ollama, optional Postgres profile).

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# One-shot: bring up docker-compose.mesh-lab.yml, run mesh-lab-verify.sh, tear down.
+# One-shot: bring up deploy/compose/docker-compose.mesh-lab.yml, run mesh-lab-verify.sh, tear down.
 #
 #   ./scripts/run-mesh-lab-e2e.sh
 #   ./scripts/run-mesh-lab-e2e.sh .env.mesh-lab   # use your secrets file (gitignored)
@@ -70,9 +70,9 @@ fi
 
 compose_cmd() {
   if [[ "${#WORKERS_PROFILE_ARGS[@]}" -gt 0 ]]; then
-    docker compose "${WORKERS_PROFILE_ARGS[@]}" -f docker-compose.mesh-lab.yml --env-file "$ENV_FILE" "$@"
+    docker compose "${WORKERS_PROFILE_ARGS[@]}" -f deploy/compose/docker-compose.mesh-lab.yml --env-file "$ENV_FILE" "$@"
   else
-    docker compose -f docker-compose.mesh-lab.yml --env-file "$ENV_FILE" "$@"
+    docker compose -f deploy/compose/docker-compose.mesh-lab.yml --env-file "$ENV_FILE" "$@"
   fi
 }
 

@@ -19,7 +19,7 @@ services:
 
   nexo-api:
     build:
-      context: ${NEXO_BUILD_CONTEXT:-.}
+      context: ${NEXO_BUILD_CONTEXT:-../..}
       dockerfile: ${NEXO_AGENT_SERVER_DOCKERFILE:-.docker/Dockerfile.agent-server}
     depends_on:
       - ollama

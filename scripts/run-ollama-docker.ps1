@@ -16,7 +16,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 $RepoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
-$compose = Join-Path $RepoRoot "docker-compose.ollama.yml"
+$compose = Join-Path $RepoRoot "deploy/compose/docker-compose.ollama.yml"
 
 $env:NEXO_OLLAMA_HOST_PORT = "$Port"
 Set-Location $RepoRoot
@@ -40,5 +40,5 @@ Manual env for Nexo:
   `$env:OLLAMA_MODEL = '$Model'
   `$env:Nexo__NodeCapabilityRuntime__Ollama__BaseUrl = 'http://127.0.0.1:$Port'
 
-Stop Ollama: docker compose -f docker-compose.ollama.yml down
+Stop Ollama: docker compose -f deploy/compose/docker-compose.ollama.yml down
 "@

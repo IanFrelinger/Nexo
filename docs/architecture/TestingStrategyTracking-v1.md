@@ -46,7 +46,7 @@ Living checklist for [Testing strategy pivot v1](TestingStrategyPivot-v1.md). Up
 | `src/Nexo.Infrastructure/**`, `src/Nexo.Runtime/**`, `src/Nexo.Hosting/**` | `kernel-coverage`, `kernel-gate`, `cross-platform-tests` (path-filtered) |
 | Production wiring (routing, barriers, API host) | `testing-strategy` · `make test-prod-style` · `kernel-gate-tier-c` |
 | `application/src/Nexo.API/**`, `application/src/Nexo.CLI/**` | `application-gate`, `testing-strategy` |
-| `src/**/Mesh/**`, `src/**/Fleet/**`, `docker-compose.mesh*` | `composition-mesh-gate`, `mesh-lab-gate` |
+| `src/**/Mesh/**`, `src/**/Fleet/**`, `deploy/compose/docker-compose.mesh*` | `composition-mesh-gate`, `mesh-lab-gate` |
 | `src/Nexo.Ingress.*`, middleware ingress | `cross-platform-tests`, trust workflows |
 | `commercial/src/Nexo.Commercial.GameDirector.*`, `commercial/tests/Nexo.Commercial.Tests.GameDirector` | `application-gate`, relevant app tests |
 | Trust / security / barriers policy | `security-gate`, `test-trust-multi-env` |

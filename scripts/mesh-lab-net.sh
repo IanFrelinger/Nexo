@@ -2,7 +2,7 @@
 # Shared Docker network helpers for mesh lab verify scripts.
 
 mesh_lab_compose() {
-  docker compose -f "${COMPOSE_FILE:-docker-compose.mesh-lab.yml}" --env-file "${COMPOSE_ENV_FILE:?}" "$@"
+  docker compose -f "${COMPOSE_FILE:-deploy/compose/docker-compose.mesh-lab.yml}" --env-file "${COMPOSE_ENV_FILE:?}" "$@"
 }
 
 mesh_lab_network() {

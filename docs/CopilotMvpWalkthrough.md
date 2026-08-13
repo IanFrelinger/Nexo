@@ -92,7 +92,7 @@ dotnet run --project application/src/Nexo.CLI -- trust boundary
 ## 6. Docker Compose Launch
 
 ```bash
-docker compose -f docker-compose.agent-server.yml up -d
+docker compose -f deploy/compose/docker-compose.agent-server.yml up -d
 # Portal at http://localhost:8080 (compose maps to port 8080)
 ```
 

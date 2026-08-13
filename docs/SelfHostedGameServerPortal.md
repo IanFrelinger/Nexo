@@ -1,6 +1,6 @@
 # Self-Hosted Nexo Game Dev Server Portal
 
-**Compose:** this page describes **`docker-compose.portal.yml`** (portal + API + Ollama, no default mounted-workspace agent cluster). For portal + **mounted repo** + background agents using Runtime Studio’s JSON, use **`docker-compose.agent-server.yml`** — `docs/SelfHostedAgentServer.md`. How those pieces relate: `apps/runtime-studio/README.md` → [How this fits](../apps/runtime-studio/README.md#how-runtime-studio-fits-with-nexo-api).
+**Compose:** this page describes **`deploy/compose/docker-compose.portal.yml`** (portal + API + Ollama, no default mounted-workspace agent cluster). For portal + **mounted repo** + background agents using Runtime Studio’s JSON, use **`deploy/compose/docker-compose.agent-server.yml`** — `docs/SelfHostedAgentServer.md`. How those pieces relate: `apps/runtime-studio/README.md` → [How this fits](../apps/runtime-studio/README.md#how-runtime-studio-fits-with-nexo-api).
 
 This setup gives you a remote web portal for a **directorial workflow**:
 
@@ -21,7 +21,7 @@ The portal is served by `Nexo.API` at `/` and uses:
 From repo root:
 
 ```bash
-docker compose -f docker-compose.portal.yml up -d --build
+docker compose -f deploy/compose/docker-compose.portal.yml up -d --build
 ```
 
 Check service health:
@@ -93,7 +93,7 @@ Suggested baseline:
 
 - Port-forward **plain HTTP 8080** from your router to Nexo (no TLS, no auth).
 - Publish **Ollama** (`11434`) or **Docker API** to the Internet.
-- Run **`docker-compose.agent-server.yml` with a read/write repo mount** against the open Internet without strong edge controls — that is arbitrary-code / arbitrary-change territory.
+- Run **`deploy/compose/docker-compose.agent-server.yml` with a read/write repo mount** against the open Internet without strong edge controls — that is arbitrary-code / arbitrary-change territory.
 
 **Operational extras that help:**
 
@@ -136,5 +136,5 @@ curl -X POST http://localhost:8080/api/director/run \
 ## 5) Stop services
 
 ```bash
-docker compose -f docker-compose.portal.yml down
+docker compose -f deploy/compose/docker-compose.portal.yml down
 ```

@@ -14,7 +14,7 @@ This doc maps the **three remaining “go to sea” checks** to automation tiers
 
 ## 1. TLS (automated)
 
-**Idea:** Nexo stays HTTP on `peer-a:8080`; **Caddy** terminates HTTPS on the lab bridge ([`docker-compose.mesh-lab-tls.override.yml`](../docker-compose.mesh-lab-tls.override.yml)).
+**Idea:** Nexo stays HTTP on `peer-a:8080`; **Caddy** terminates HTTPS on the lab bridge ([`deploy/compose/docker-compose.mesh-lab-tls.override.yml`](../docker-compose.mesh-lab-tls.override.yml)).
 
 ```bash
 make mesh-lab-e2e-tls

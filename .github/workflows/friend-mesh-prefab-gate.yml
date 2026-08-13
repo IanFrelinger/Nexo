@@ -8,7 +8,7 @@ on:
       - "cursor/**"
     paths:
       - ".github/workflows/friend-mesh-prefab-gate.yml"
-      - "docker-compose.friend-mesh.yml"
+      - "deploy/compose/docker-compose.friend-mesh.yml"
       - ".docker/Dockerfile.api"
       - "docs/config/friend-mesh.env.example"
       - "docs/config/friend-mesh.Caddyfile.example"
@@ -57,13 +57,13 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          docker compose -f docker-compose.friend-mesh.yml --env-file .env.friend-mesh.ci config -q
+          docker compose -f deploy/compose/docker-compose.friend-mesh.yml --env-file .env.friend-mesh.ci config -q
 
       - name: Build and start friend-mesh stack
         shell: bash
         run: |
           set -euo pipefail
-          docker compose -f docker-compose.friend-mesh.yml --env-file .env.friend-mesh.ci up -d --build
+          docker compose -f deploy/compose/docker-compose.friend-mesh.yml --env-file .env.friend-mesh.ci up -d --build
 
       - name: Wait for health endpoint
         shell: bash
@@ -78,7 +78,7 @@ jobs:
             sleep 5
           done
           echo "::error::Nexo.API did not become healthy in time"
-          docker compose -f docker-compose.friend-mesh.yml --env-file .env.friend-mesh.ci logs
+          docker compose -f deploy/compose/docker-compose.friend-mesh.yml --env-file .env.friend-mesh.ci logs
           exit 1
 
       - name: Mutating request without API key is rejected
@@ -109,5 +109,5 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          docker compose -f docker-compose.friend-mesh.yml --env-file .env.friend-mesh.ci down -v || true
+          docker compose -f deploy/compose/docker-compose.friend-mesh.yml --env-file .env.friend-mesh.ci down -v || true
           rm -f .env.friend-mesh.ci

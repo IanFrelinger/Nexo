@@ -23,8 +23,8 @@ There is **no second “Runtime Studio app”** in the repo — only this folder
 
 **Compose (pick the lane you need):**
 
-- **`docker-compose.portal.yml`** — portal + API + Ollama; **no** mounted workspace / default agent-server cluster wiring.
-- **`docker-compose.agent-server.yml`** — portal + API + Ollama + **mounted repo** + default `NEXO_BACKGROUND_AGENTS_CONFIG` → this folder’s JSON.
+- **`deploy/compose/docker-compose.portal.yml`** — portal + API + Ollama; **no** mounted workspace / default agent-server cluster wiring.
+- **`deploy/compose/docker-compose.agent-server.yml`** — portal + API + Ollama + **mounted repo** + default `NEXO_BACKGROUND_AGENTS_CONFIG` → this folder’s JSON.
 
 Cross-platform env tuning: `docs/config/agent-server.env.example`.
 

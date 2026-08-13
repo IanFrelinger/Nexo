@@ -14,21 +14,21 @@ set -euo pipefail
 
 usage() {
   echo "Usage: $0 [--portal|--agent-server] [--keep-up] [--no-build]"
-  echo "  --portal         docker-compose.portal.yml (default)"
-  echo "  --agent-server   docker-compose.agent-server.yml (mounted workspace)"
+  echo "  --portal         deploy/compose/docker-compose.portal.yml (default)"
+  echo "  --agent-server   deploy/compose/docker-compose.agent-server.yml (mounted workspace)"
   echo "  --keep-up        leave containers running after checks"
   echo "  --no-build       skip docker compose build"
   exit 1
 }
 
-COMPOSE_FILE="docker-compose.portal.yml"
+COMPOSE_FILE="deploy/compose/docker-compose.portal.yml"
 KEEP_UP=""
 NO_BUILD=""
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --portal) COMPOSE_FILE="docker-compose.portal.yml"; shift ;;
-    --agent-server) COMPOSE_FILE="docker-compose.agent-server.yml"; shift ;;
+    --portal) COMPOSE_FILE="deploy/compose/docker-compose.portal.yml"; shift ;;
+    --agent-server) COMPOSE_FILE="deploy/compose/docker-compose.agent-server.yml"; shift ;;
     --keep-up) KEEP_UP=1; shift ;;
     --no-build) NO_BUILD=1; shift ;;
     -h|--help) usage ;;

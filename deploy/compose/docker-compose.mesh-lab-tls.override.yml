@@ -13,7 +13,7 @@ services:
     ports:
       - "${MESH_LAB_TLS_PUBLISH:-127.0.0.1:18443}:443"
     volumes:
-      - ./docs/config/mesh-lab-caddy.Caddyfile:/etc/caddy/Caddyfile:ro
+      - ../../docs/config/mesh-lab-caddy.Caddyfile:/etc/caddy/Caddyfile:ro
       - ${MESH_LAB_TLS_CERT_DIR:-./.mesh-lab-tls-certs}:/certs:ro
     depends_on:
       - peer-a
