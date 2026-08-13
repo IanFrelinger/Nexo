@@ -54,6 +54,7 @@ public sealed class CertificationGate : ICertificationGate
             request.SourceCode,
             request.CompilationReferences,
             request.ConstraintManifest,
+            request.TouchSet,
             cancellationToken).ConfigureAwait(false);
         var analyzerGatePass = new CertificationGatePass
         {
