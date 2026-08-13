@@ -33,7 +33,12 @@ internal static class RepoFsToolboxFactory
     /// Creates the original minimal toolbox (read/list/write/search_replace).
     /// Preserved for callers that don't want build/test capability surface.
     /// </summary>
-    public static (CapabilityRegistry tools, PolicyEngine policies) CreateMinimal()
+    /// <param name="extraTools">Additional tools folded in after the built-ins (e.g. proxies from
+    /// <see cref="IToolSource"/> providers such as remote MCP servers). Registered last, so an
+    /// extra tool with a clashing id wins per <see cref="CapabilityRegistry.Register"/> semantics —
+    /// providers are expected to namespace their ids (e.g. <c>mcp:server:tool</c>).</param>
+    public static (CapabilityRegistry tools, PolicyEngine policies) CreateMinimal(
+        IEnumerable<ITool>? extraTools = null)
     {
         var tools = new CapabilityRegistry();
         tools.Register(new RepoFsListTool());
@@ -41,6 +46,7 @@ internal static class RepoFsToolboxFactory
         tools.Register(new RepoFsWriteTool());
         tools.Register(new RepoFsSearchReplaceTool());
         tools.Register(new TileMapRenderTool());
+        RegisterExtraTools(tools, extraTools);
 
         var policies = new PolicyEngine(new IPolicy[]
         {
@@ -71,7 +77,8 @@ internal static class RepoFsToolboxFactory
         IAggressivenessModeStore? modeStore = null,
         ICertificationRecordStore? certificationStore = null,
         IBackgroundAgentRegistry? agentRegistry = null,
-        IDataSensitivityRegistry? sensitivityRegistry = null)
+        IDataSensitivityRegistry? sensitivityRegistry = null,
+        IEnumerable<ITool>? extraTools = null)
     {
         var tools = new CapabilityRegistry();
         tools.Register(new RepoFsListTool());
@@ -79,6 +86,7 @@ internal static class RepoFsToolboxFactory
         tools.Register(new RepoFsWriteTool());
         tools.Register(new RepoFsSearchReplaceTool());
         tools.Register(new TileMapRenderTool());
+        RegisterExtraTools(tools, extraTools);
 
         ITool buildTool = new DotnetBuildTool();
         ITool testTool = new DotnetTestTool();
@@ -147,5 +155,18 @@ internal static class RepoFsToolboxFactory
         var policies = new PolicyEngine(policyList.ToArray());
 
         return (tools, policies, budget);
+    }
+
+    private static void RegisterExtraTools(CapabilityRegistry tools, IEnumerable<ITool>? extraTools)
+    {
+        if (extraTools is null)
+        {
+            return;
+        }
+
+        foreach (var tool in extraTools)
+        {
+            tools.Register(tool);
+        }
     }
 }
