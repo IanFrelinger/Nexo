@@ -30,7 +30,11 @@
          the only type using it (BrickConstraintManifestAnalyzer) carries no [DiagnosticAnalyzer]
          attribute, so compiler discovery never instantiates it — it is constructed
          programmatically by the certification gate WITH a manifest instance (spec A2.3:
-         the manifest object itself is the single source, used twice). -->
+         the manifest object itself is the single source, used twice).
+         Consumers reference THIS project with UndefineProperties="TargetFramework" so a
+         host's global -p:TargetFramework (e.g. the CLI image) never reaches this
+         netstandard2.0-only subtree; nearest-TF negotiation then picks the contracts
+         package's ns2.0 leg here normally. -->
     <ProjectReference Include="..\Nexo.Brick.Contracts\Nexo.Brick.Contracts.csproj" />
   </ItemGroup>
 

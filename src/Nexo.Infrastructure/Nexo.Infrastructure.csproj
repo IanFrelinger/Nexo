@@ -68,10 +68,14 @@
   <ItemGroup>
     <!-- ReferenceOutputAssembly=true (not the usual false): AnalyzerFenceGate attaches this
          same catalog to candidate compilations in the certification chain (spec A1.2), so the
-         assembly is a library dependency here in addition to running as an analyzer. -->
+         assembly is a library dependency here in addition to running as an analyzer.
+         UndefineProperties: hosts build with a global -p:TargetFramework (e.g. the CLI
+         image); the analyzer project is netstandard2.0-only, so that global must not leak
+         into its evaluation — nearest-TF negotiation picks the ns2.0 output. -->
     <ProjectReference Include="..\Nexo.Analyzers\Nexo.Analyzers.csproj"
                       OutputItemType="Analyzer"
-                      ReferenceOutputAssembly="true" />
+                      ReferenceOutputAssembly="true"
+                      UndefineProperties="TargetFramework" />
   </ItemGroup>
 
 </Project>
