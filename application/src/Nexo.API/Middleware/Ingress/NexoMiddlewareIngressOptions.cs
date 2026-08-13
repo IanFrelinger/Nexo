@@ -71,6 +71,22 @@ public sealed class NexoMiddlewareIngressOptions
     public string SmsIngressApprovalStore { get; set; } = SmsIngressApprovalStoreKind.Memory;
 
     /// <summary>
+    /// When greater than zero, applies a per-IP fixed-window rate limit to the MCP endpoint (<c>/api/mcp</c>).
+    /// </summary>
+    public int McpRateLimitPermitLimit { get; set; }
+
+    /// <summary>Window length in seconds for <see cref="McpRateLimitPermitLimit"/> (default 60).</summary>
+    public int McpRateLimitWindowSeconds { get; set; } = 60;
+
+    /// <summary>
+    /// When greater than zero, applies a per-IP fixed-window rate limit to the A2A endpoints (<c>/api/a2a/*</c> and agent cards).
+    /// </summary>
+    public int A2ARateLimitPermitLimit { get; set; }
+
+    /// <summary>Window length in seconds for <see cref="A2ARateLimitPermitLimit"/> (default 60).</summary>
+    public int A2ARateLimitWindowSeconds { get; set; } = 60;
+
+    /// <summary>
     /// Optional per-tenant allowlists for guarded capabilities (fail closed when the tenant header matches a key).
     /// Keys are matched against <c>X-Nexo-Tenant</c>.
     /// </summary>
