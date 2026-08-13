@@ -1,0 +1,145 @@
+using Nexo.Certification.Contracts;
+
+namespace Nexo.Infrastructure.Certification.HotSwap;
+
+/// <summary>
+/// One brick to load in a generation swap: exact source bytes plus the certification
+/// record the host re-verifies against them at load time.
+/// </summary>
+public sealed record CertifiedBrickLoadRequest
+{
+    /// <summary>Brick identifier the record was minted for; must match the instantiated brick's Id.</summary>
+    public required string BrickId { get; init; }
+
+    /// <summary>Exact certified brick source; hashed and compared to the record's content hash before any load.</summary>
+    public required string SourceCode { get; init; }
+
+    /// <summary>Certification record covering <see cref="SourceCode"/>.</summary>
+    public required CertificationRecordData Record { get; init; }
+
+    /// <summary>Optional fully-qualified brick type name; discovered from the assembly when null.</summary>
+    public string? BrickTypeName { get; init; }
+
+    /// <summary>Additional compilation reference paths beyond the brick contract assemblies.</summary>
+    public IReadOnlyList<string> AdditionalCompilationReferences { get; init; } = Array.Empty<string>();
+}
+
+/// <summary>Stage at which a brick (and therefore the whole swap) was refused.</summary>
+public enum BrickSwapRefusalStage
+{
+    /// <summary>Request shape was invalid (duplicate/mismatched brick id).</summary>
+    Request,
+
+    /// <summary>Certification verification failed (record not admitted, signature, content hash).</summary>
+    Verification,
+
+    /// <summary>The certified source did not compile.</summary>
+    Compilation,
+
+    /// <summary>The compiled assembly could not be loaded or the brick type was not found.</summary>
+    Load,
+
+    /// <summary>The brick could not be instantiated as a domain brick, or its Id did not match.</summary>
+    Instantiation
+}
+
+/// <summary>One refused brick within a refused swap.</summary>
+public sealed record BrickSwapRefusal
+{
+    /// <summary>Brick the refusal applies to.</summary>
+    public required string BrickId { get; init; }
+
+    /// <summary>Stage that refused.</summary>
+    public required BrickSwapRefusalStage Stage { get; init; }
+
+    /// <summary>Machine-readable failure code (verifier codes such as <c>content-hash-mismatch</c>, or host codes).</summary>
+    public string? FailureCode { get; init; }
+
+    /// <summary>Human-readable reason.</summary>
+    public string? Reason { get; init; }
+}
+
+/// <summary>Outcome of a swap attempt. A refused swap leaves the previous generation serving.</summary>
+public sealed record CertifiedBrickSwapResult
+{
+    /// <summary>Whether the new generation was committed.</summary>
+    public required bool Swapped { get; init; }
+
+    /// <summary>Committed generation number when <see cref="Swapped"/>.</summary>
+    public int? GenerationId { get; init; }
+
+    /// <summary>Load-context name of the committed generation (leak attribution).</summary>
+    public string? GenerationContextName { get; init; }
+
+    /// <summary>Brick ids serving in the committed generation.</summary>
+    public IReadOnlyList<string> LoadedBrickIds { get; init; } = Array.Empty<string>();
+
+    /// <summary>Every refusal when the swap was refused; empty on success.</summary>
+    public IReadOnlyList<BrickSwapRefusal> Refusals { get; init; } = Array.Empty<BrickSwapRefusal>();
+
+    /// <summary>Whether the retired generation's load context was observed collected before returning.</summary>
+    public bool PreviousGenerationCollected { get; init; }
+
+    /// <summary>Load-context name of the retired generation, when one existed.</summary>
+    public string? PreviousGenerationContextName { get; init; }
+}
+
+/// <summary>
+/// Provenance event emitted for every swap outcome — committed and refused alike — and
+/// for each generation lifecycle transition (spec §3: cert identity, content hash,
+/// generation, outcome).
+/// </summary>
+public sealed record BrickSwapProvenanceEvent
+{
+    /// <summary>Generation number the event concerns.</summary>
+    public required int Generation { get; init; }
+
+    /// <summary>Event outcome (see <see cref="BrickSwapProvenanceOutcomes"/>).</summary>
+    public required string Outcome { get; init; }
+
+    /// <summary>UTC event time.</summary>
+    public required DateTimeOffset Timestamp { get; init; }
+
+    /// <summary>Brick the event concerns; null for generation-level events.</summary>
+    public string? BrickId { get; init; }
+
+    /// <summary>Content hash bound into the brick's certification record.</summary>
+    public string? ContentHash { get; init; }
+
+    /// <summary>Signature of the certification record (certificate identity alongside brick id + hash).</summary>
+    public string? CertificateSignature { get; init; }
+
+    /// <summary>Machine-readable failure code on refusals.</summary>
+    public string? FailureCode { get; init; }
+
+    /// <summary>Human-readable detail.</summary>
+    public string? Reason { get; init; }
+
+    /// <summary>Load-context name for generation-level events (leak attribution).</summary>
+    public string? ContextName { get; init; }
+}
+
+/// <summary>Well-known <see cref="BrickSwapProvenanceEvent.Outcome"/> values.</summary>
+public static class BrickSwapProvenanceOutcomes
+{
+    /// <summary>A brick passed verify-at-load and was loaded into the new generation.</summary>
+    public const string BrickLoaded = "brick-loaded";
+
+    /// <summary>A brick was refused; the whole swap is refused with it.</summary>
+    public const string BrickRefused = "brick-refused";
+
+    /// <summary>The new generation was committed and is serving.</summary>
+    public const string SwapCommitted = "swap-committed";
+
+    /// <summary>The swap was refused; the previous generation keeps serving.</summary>
+    public const string SwapRefused = "swap-refused";
+
+    /// <summary>A previous generation drained and its unload was requested.</summary>
+    public const string GenerationRetired = "generation-retired";
+
+    /// <summary>A retired generation's load context was observed collected.</summary>
+    public const string GenerationCollected = "generation-collected";
+
+    /// <summary>A retired generation's load context stayed alive after forced collection; attributable by <see cref="BrickSwapProvenanceEvent.ContextName"/>.</summary>
+    public const string GenerationLeakSuspected = "generation-leak-suspected";
+}
