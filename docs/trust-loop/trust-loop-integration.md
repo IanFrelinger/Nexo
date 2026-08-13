@@ -134,6 +134,15 @@ Dynamic ≠ unsupervised. Tier by blast radius:
 4. **PR-D:** Probe/fence catalog v1 (G4) — start with the failure
    classes already in your CI history (the triage skill's clusters
    feed this directly).
+   *Status: the analyzer half landed via the extension spec
+   ("Analyzer Gate & Container Isolation" Part A): catalog v1
+   NEXO0003–0009 with per-rule triads in `Nexo.Analyzers`, and the
+   `analyzer-gate` running first in `CertificationGate` — fail-closed
+   on non-compiling candidates, unresolvable brick anchors, and
+   analyzer crashes (A1.4); A1.5 metadata recorded on `gates_passed`;
+   A3-conformant verbatim feedback via
+   `AnalyzerGateOutcome.FormatProposerFeedback`. The diagnostic-probe
+   half (`IDiagnosticProbe`) remains open.*
 5. **PR-E:** Harness progress discipline + ledger (G5, G6).
 6. **PR-F:** Adversarial campaign (G7) — gates production-readiness
    of the whole loop, per spec §7.

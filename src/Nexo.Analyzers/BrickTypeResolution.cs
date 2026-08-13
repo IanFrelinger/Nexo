@@ -13,7 +13,7 @@ namespace Nexo.Analyzers;
 /// candidate compilation; that check lives in the gate, not here, so IDE builds of unrelated
 /// code are not spammed.)
 /// </summary>
-internal static class BrickTypeResolution
+public static class BrickTypeResolution
 {
     /// <summary>Metadata name of the canonical brick base type.</summary>
     public const string BrickMetadataName = "Nexo.Core.Domain.Bricks.Brick";

@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Nexo.Agents.TestKit;
 using Nexo.Core.Application.Generation;
+using Nexo.Core.Application.Orchestration;
 using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Bricks.Ports;
 using Nexo.Core.Domain.Execution;
@@ -63,6 +64,12 @@ public sealed class ConstraintManifestEngineWiringTests
         output.Get<bool>("verified").Should().BeTrue("no manifest means nothing is enforced");
     }
 
+    private sealed class AlwaysPassValidator : IPostValidator<GeneratedArtifact>
+    {
+        public ValueTask<(bool ok, string? reason)> ValidateAsync(GeneratedArtifact output, CancellationToken ct)
+            => new((true, null));
+    }
+
     private static GenerativeArtifactBrick BrickFor(FakeArtifactDrafter drafter, BrickConstraintManifest? manifest)
     {
         var registry = new AgentProfileRegistry();
@@ -78,7 +85,10 @@ public sealed class ConstraintManifestEngineWiringTests
                 RequireHumanReviewForModelDrafts = false
             },
             Capabilities = new AgentProfileCapabilities(),
-            Validators = Array.Empty<object>()
+            // Manifest-bearing profiles are gated by the engine-prepended manifest validator;
+            // the no-manifest case needs one declared gate to satisfy fail-closed registration
+            // while still proving that no *manifest* enforcement runs.
+            Validators = manifest is null ? new object[] { new AlwaysPassValidator() } : Array.Empty<object>()
         });
         return new GenerativeArtifactBrick(registry);
     }

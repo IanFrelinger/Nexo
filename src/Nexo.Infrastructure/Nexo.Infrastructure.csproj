@@ -66,9 +66,12 @@
   <!-- Brick contract drift rule (NEXO0001/NEXO0002): keeps BrickInterface and the
        Get/Set keys a brick actually uses from silently diverging. -->
   <ItemGroup>
+    <!-- ReferenceOutputAssembly=true (not the usual false): AnalyzerFenceGate attaches this
+         same catalog to candidate compilations in the certification chain (spec A1.2), so the
+         assembly is a library dependency here in addition to running as an analyzer. -->
     <ProjectReference Include="..\Nexo.Analyzers\Nexo.Analyzers.csproj"
                       OutputItemType="Analyzer"
-                      ReferenceOutputAssembly="false" />
+                      ReferenceOutputAssembly="true" />
   </ItemGroup>
 
 </Project>
