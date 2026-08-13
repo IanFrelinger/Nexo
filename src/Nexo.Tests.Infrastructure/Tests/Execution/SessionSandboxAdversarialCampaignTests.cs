@@ -6,7 +6,7 @@ using Nexo.Infrastructure.Execution.Sandbox;
 using Nexo.Infrastructure.Scaling;
 using Xunit;
 
-namespace Nexo.Tests.Application.Tests.Execution;
+namespace Nexo.Tests.Infrastructure.Tests.Execution;
 
 /// <summary>
 /// Adversarial validation campaign, session half (extension spec §12): scripted
