@@ -28,6 +28,27 @@ public sealed class TransportLayeringTests
         references.Should().NotContain(r => r.Contains("Nexo.Core.Domain", StringComparison.OrdinalIgnoreCase));
     }
 
+    [Fact]
+    public void NexoTransportA2A_MustNotReference_NexoRuntime()
+    {
+        var references = ReadProjectReferences("Nexo.Transport.A2A/Nexo.Transport.A2A.csproj");
+        references.Should().NotContain(r => r.Contains("Nexo.Runtime", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void NexoTransportA2A_MustNotReference_NexoOrchestration()
+    {
+        var references = ReadProjectReferences("Nexo.Transport.A2A/Nexo.Transport.A2A.csproj");
+        references.Should().NotContain(r => r.Contains("Nexo.Orchestration", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
+    public void NexoTransportA2AServer_MustNotReference_NexoCoreDomain()
+    {
+        var references = ReadProjectReferences("Nexo.Transport.A2A.Server/Nexo.Transport.A2A.Server.csproj");
+        references.Should().NotContain(r => r.Contains("Nexo.Core.Domain", StringComparison.OrdinalIgnoreCase));
+    }
+
     private static IReadOnlyList<string> ReadProjectReferences(string relativeProjectPath)
     {
         var srcRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../"));

@@ -131,16 +131,60 @@ Nexo__Mcp__Client__Servers__0__ApiKeyEnvVar=GITHUB_MCP_TOKEN
 Nexo__Mcp__Client__Servers__0__AllowedTools__0=search_issues
 ```
 
+## Phase 3 (this phase): A2A server core + client transport
+
+Projects: `src/Nexo.Transport.A2A/` (client transport), `src/Nexo.Transport.A2A.Server/`
+(server core), test satellites for both (the server suite drives the real client transport
+through the really-mapped endpoints over an ASP.NET TestServer). Built on the official `A2A` +
+`A2A.AspNetCore` SDK (1.0.0-preview2, A2A v1.0 spec) — both projects are `IsPackable=false`
+until a stable SDK ships.
+
+### A2A client (`A2AAgentTransport : IAgentTransport`)
+
+Peers are ordinary routing endpoints with an **`a2a+` scheme prefix**
+(`a2a+https://peer.example.com/api/a2a/agent`): capability routing, health filtering, and
+barrier levels on `EndpointDescriptor` work unchanged, and no kernel public API moved. The
+runtime's `AddNexoRuntimeTransport` now wraps the remote side in a scheme-dispatching composite
+whenever `AgentTransportSchemeRegistration`s exist in DI — with none registered the composition
+is byte-for-byte the old gRPC-only behavior. Hosts opt in with
+`services.AddNexoA2ATransport(configuration)` **before** `AddNexo()`
+(`Nexo:A2A:Transport:Enabled=true`; refused under AirGapped).
+
+Correlation, span, and ambient barrier context propagate as protocol metadata
+(`nexo.correlationId`, `nexo.barrier`, …) on both the message and the request — the A2A
+counterpart of the gRPC transport's `x-nexo-*` headers, with the same audit-log event. Remote
+task states map to typed results (`a2a.task.failed`, `a2a.timeout`, …); transport-level
+`HttpRequestException`s honor `MaxRetries`, task-level failures are never retried. Per-endpoint
+API keys are env-var named (`Nexo:A2A:Transport:Endpoints:0:ApiKeyHeader/ApiKeyEnvVar`).
+
+### A2A server (`src/Nexo.Transport.A2A.Server/`)
+
+- **Exposure**: explicit `ExposedAgentIds` allowlist, plus opt-in
+  `ExposeByCoordinationProtocol` for agents whose domain card declares the `a2a` coordination
+  protocol. Deny-by-default; enabled-with-zero-agents refuses to boot.
+- **Execution**: `NexoA2AAgentHandler` deliberately mirrors the gRPC facade — agent identity is
+  fixed at construction from the allowlisted descriptor and execution flows through
+  `IAgentTransport.SendAsync` with a bounded budget (`AgentConstraints.MaxExecutionTime`, else
+  `DefaultExecutionTimeout`). It never touches the reflection-scanning
+  `RunAgentCommand`/`AgentExecutorAdapter` path.
+- **Cards**: `INexoA2ACardProjector` builds spec cards (behaviors → skills,
+  `streaming=false, pushNotifications=false` in the synchronous v1). The domain's own
+  `Nexo.Core.Domain.Agents.AgentCard` is untouched; the colliding spec type never leaves the
+  adapter. Hosts implement `INexoA2AAgentCatalog` over their agent registry (the adapter cannot
+  reference the domain model per transport layering rules).
+- **Mapping**: `MapNexoA2AEndpoints()` maps, per exposed agent, a JSON-RPC endpoint + card at
+  `/api/a2a/{agentId}`, plus the **primary** agent's card at `/.well-known/agent-card.json`
+  (explicit `PrimaryAgentId` required when several agents are exposed). RPC and card endpoint
+  builders are returned separately so hosts can auth-gate them differently
+  (`AllowAnonymousAgentCard` is the public-discovery opt-out, default off).
+- **Tasks**: synchronous terminal tasks in an in-memory per-agent store — `tasks/get` works
+  within the process lifetime; durable tasks/streaming are deferred.
+
 ## Later phases (planned)
 
-- **A2A server** — agent-card projection of allowlisted `AgentCard`s; task execution through the
-  gRPC-facade pattern (barrier identity resolution → registry-validated agent name →
-  `IAgentTransport.SendAsync`); synchronous terminal tasks in v1.
-- **A2A client** — `A2AAgentTransport : IAgentTransport`; peers are ordinary
-  `EndpointDescriptor`s using an `a2a+https://` scheme convention, dispatched by a
-  scheme-routing composite so gRPC and A2A coexist.
 - **Nexo.API wiring** — `/api/mcp` + `/api/a2a/*` behind an explicit all-verbs auth filter and
-  rate limiting; `IngressCatalog` rows; per-tenant capability allowlists.
+  rate limiting; `IngressCatalog` rows; per-tenant capability allowlists; an
+  `INexoA2AAgentCatalog` adapter over `IAgentRegistry`.
 
 ## Deliberately deferred
 

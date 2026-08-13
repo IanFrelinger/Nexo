@@ -57,6 +57,10 @@ Rationale: this tier protects two moats at once — an extensible SDK and a sing
 | OPEN | `src/Nexo.Mcp.Server.Tests/Nexo.Mcp.Server.Tests.csproj` |
 | OPEN | `src/Nexo.Mcp.Client/Nexo.Mcp.Client.csproj` |
 | OPEN | `src/Nexo.Mcp.Client.Tests/Nexo.Mcp.Client.Tests.csproj` |
+| OPEN | `src/Nexo.Transport.A2A/Nexo.Transport.A2A.csproj` |
+| OPEN | `src/Nexo.Transport.A2A.Server/Nexo.Transport.A2A.Server.csproj` |
+| OPEN | `src/Nexo.Transport.A2A.Tests/Nexo.Transport.A2A.Tests.csproj` |
+| OPEN | `src/Nexo.Transport.A2A.Server.Tests/Nexo.Transport.A2A.Server.Tests.csproj` |
 | OPEN | `src/Nexo.Tests.Application/Nexo.Tests.Application.csproj` |
 | OPEN | `src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj` |
 | OPEN | `src/Nexo.Tests.Contracts/Nexo.Tests.Contracts.csproj` |
