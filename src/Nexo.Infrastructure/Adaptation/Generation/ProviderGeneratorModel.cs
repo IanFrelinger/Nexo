@@ -1,28 +1,35 @@
 using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Adaptation.Models;
 using Nexo.Core.Application.Adaptation.Ports;
+using Nexo.Core.Domain.Bricks.Ports;
 using Nexo.Infrastructure.Execution;
 
 namespace Nexo.Infrastructure.Adaptation.Generation;
 
 /// <summary>
 /// Real model implementation behind the sealed seam. Marked isolation-enforced; not used in hermetic tests.
+/// Structural rules in the prompt come from a <see cref="BrickConstraintManifest"/>
+/// (spec R3.5) rather than prose, so the instructions the proposer sees are the same
+/// object an ingest gate enforces.
 /// </summary>
 public sealed class ProviderGeneratorModel : IGeneratorModel
 {
     private readonly IProviderFactory _providerFactory;
     private readonly ILogger<ProviderGeneratorModel>? _logger;
     private readonly string _provider;
+    private readonly BrickConstraintManifest _constraints;
 
     /// <summary>Initializes a new provider generator model.</summary>
     public ProviderGeneratorModel(
         IProviderFactory providerFactory,
         string provider = "ollama",
-        ILogger<ProviderGeneratorModel>? logger = null)
+        ILogger<ProviderGeneratorModel>? logger = null,
+        BrickConstraintManifest? constraints = null)
     {
         _providerFactory = providerFactory ?? throw new ArgumentNullException(nameof(providerFactory));
         _provider = provider;
         _logger = logger;
+        _constraints = constraints ?? DamageResolverBrickConstraints.Default;
     }
 
     /// <summary>Generate asynchronously.</summary>
@@ -31,13 +38,11 @@ public sealed class ProviderGeneratorModel : IGeneratorModel
         WitnessSignature witnessSignature,
         CancellationToken cancellationToken = default)
     {
-        var systemPrompt = """
+        var systemPrompt = $"""
 You generate deterministic C# brick implementations for Nexo.
 Rules:
-- Target net8, inherit DomainBrick, override ExecuteAsync only.
-- Use only: using Nexo.Core.Domain.Bricks; using Nexo.Core.Domain.Execution;
-- Namespace Nexo.Certified.DamageResolver, class name ends with Brick.
-- No DateTime.Now, Random, or nondeterministic APIs.
+- Target net8, override ExecuteAsync only.
+{_constraints.RenderInstructions()}
 - Return ONLY the C# source file contents.
 """;
 
@@ -91,9 +96,13 @@ Outputs: {string.Join(", ", witnessSignature.Outputs.Select(o => $"{o.Name}:{o.T
         return match.Success ? match.Groups[1].Value : "GeneratedBrick";
     }
 
-    private static string InferNamespace(string source)
+    private string InferNamespace(string source)
     {
         var match = System.Text.RegularExpressions.Regex.Match(source, @"namespace\s+([\w.]+)");
-        return match.Success ? match.Groups[1].Value : "Nexo.Certified.DamageResolver";
+        if (match.Success)
+            return match.Groups[1].Value;
+        // Fall back to the manifest's required namespace instead of a second
+        // hard-coded copy of it; ingest gating (PR-D) rejects rather than infers.
+        return _constraints.RequiredNamespace ?? "Nexo.Certified.DamageResolver";
     }
 }
