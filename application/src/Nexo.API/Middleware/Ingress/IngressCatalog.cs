@@ -16,5 +16,7 @@ public static class IngressCatalog
         new IngressCatalogEntry("SmsSimulation", "/api/ingress/sms/simulate", "Optional inbound SMS keyword lab (feature-flagged)."),
         new IngressCatalogEntry("AwsSnsSms", "/api/ingress/sms/sns", "Amazon SNS HTTP(S) webhook (optional; verify signatures in production)."),
         new IngressCatalogEntry("GrpcTransportHost", "(separate host)", "See Nexo.Transport.Grpc.Server.Host — not co-hosted in Nexo.API."),
+        new IngressCatalogEntry("McpServer", "/api/mcp", "MCP streamable-HTTP server (feature-flagged, allowlisted tools; stdio variant via Nexo.Mcp.Server.Host)."),
+        new IngressCatalogEntry("A2AAgents", "/api/a2a/{agentId} + /.well-known/agent-card.json", "A2A v1.0 JSON-RPC agent endpoints and discovery cards (feature-flagged, allowlisted agents)."),
     ]);
 }

@@ -15,14 +15,22 @@ public sealed class NexoApiKeyAuthMiddleware
     private const string DefaultAuthorizationHeaderName = "Authorization";
     private const string DefaultBearerScheme = "Bearer";
     private const string DefaultBasicScheme = "Basic";
+    private const string McpPathPrefix = "/api/mcp";
+    private const string A2APathPrefix = "/api/a2a";
+    private const string RootAgentCardPath = "/.well-known/agent-card.json";
     private readonly RequestDelegate _next;
     private readonly NexoSecurityOptions _options;
+    private readonly NexoProtocolIngressOptions _protocolOptions;
 
     /// <summary>Creates middleware that validates built-in Nexo API credentials.</summary>
-    public NexoApiKeyAuthMiddleware(RequestDelegate next, IOptions<NexoSecurityOptions> optionsAccessor)
+    public NexoApiKeyAuthMiddleware(
+        RequestDelegate next,
+        IOptions<NexoSecurityOptions> optionsAccessor,
+        IOptions<NexoProtocolIngressOptions>? protocolOptionsAccessor = null)
     {
         _next = next;
         _options = optionsAccessor.Value;
+        _protocolOptions = protocolOptionsAccessor?.Value ?? new NexoProtocolIngressOptions();
     }
 
     /// <summary>Validates built-in credentials and assigns the resolved auth tier for protected API routes.</summary>
@@ -69,7 +77,13 @@ public sealed class NexoApiKeyAuthMiddleware
 
     private bool ShouldProtect(HttpRequest request, NexoAuthorizationMode mode)
     {
-        if (!request.Path.StartsWithSegments("/api", StringComparison.OrdinalIgnoreCase))
+        // Agent-protocol surfaces (MCP, A2A) are protocol traffic on every verb — the MCP SSE
+        // listen channel is a GET, and A2A discovery cards are GETs — so the mutating-verb scope
+        // logic below must not apply to them. The root agent card also lives outside /api
+        // (spec-mandated /.well-known path), which the /api prefix check would otherwise skip.
+        var isProtocolIngressPath = IsProtocolIngressPath(request.Path);
+
+        if (!request.Path.StartsWithSegments("/api", StringComparison.OrdinalIgnoreCase) && !isProtocolIngressPath)
             return false;
 
         if (IsExcludedPath(request.Path))
@@ -77,6 +91,13 @@ public sealed class NexoApiKeyAuthMiddleware
 
         if (mode == NexoAuthorizationMode.None)
             return false;
+
+        if (isProtocolIngressPath)
+        {
+            // Cards may be operator-opted into anonymous ecosystem discovery; every other
+            // protocol request stays credentialed on all verbs.
+            return !(_protocolOptions.AllowAnonymousAgentCard && IsAgentCardPath(request.Path));
+        }
 
         var scope = ResolveAuthorizationScope();
         var method = request.Method;
@@ -99,6 +120,19 @@ public sealed class NexoApiKeyAuthMiddleware
     {
         var value = path.Value ?? string.Empty;
         return value.StartsWith("/api/copilot/tasks", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool IsProtocolIngressPath(PathString path)
+        => path.StartsWithSegments(McpPathPrefix, StringComparison.OrdinalIgnoreCase) ||
+           path.StartsWithSegments(A2APathPrefix, StringComparison.OrdinalIgnoreCase) ||
+           IsAgentCardPath(path);
+
+    private static bool IsAgentCardPath(PathString path)
+    {
+        var value = path.Value ?? string.Empty;
+        return string.Equals(value, RootAgentCardPath, StringComparison.OrdinalIgnoreCase) ||
+               (value.StartsWith(A2APathPrefix, StringComparison.OrdinalIgnoreCase) &&
+                value.EndsWith("/.well-known/agent-card.json", StringComparison.OrdinalIgnoreCase));
     }
 
     private void AssignAuthTier(HttpContext context)
