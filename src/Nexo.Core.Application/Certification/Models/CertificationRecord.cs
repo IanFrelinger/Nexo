@@ -1,3 +1,5 @@
+using Nexo.Certification.Contracts;
+
 namespace Nexo.Core.Application.Certification.Models;
 
 /// <summary>
@@ -49,4 +51,25 @@ public sealed record CertificationRecord
 
     /// <summary>Gate identifier that produced this record.</summary>
     public string? Gate { get; init; }
+
+    /// <summary>Certificate schema version; null means legacy v1 (pre-trust-loop payload).</summary>
+    public int? SchemaVersion { get; init; }
+
+    /// <summary>Ordered chain of gates evaluated at the recorded content hash; on FAIL records, the gates passed before the failure.</summary>
+    public IReadOnlyList<CertificationGatePass> GatesPassed { get; init; } = Array.Empty<CertificationGatePass>();
+
+    /// <summary>Hashes of the truth sources and context used during certification.</summary>
+    public IReadOnlyList<CertificationInput> Inputs { get; init; } = Array.Empty<CertificationInput>();
+
+    /// <summary>Identity and parameters of the proposer of the certified artifact.</summary>
+    public CertificationProposer? Proposer { get; init; }
+
+    /// <summary>Effort ledger of proposal/repair attempts.</summary>
+    public IReadOnlyList<CertificationAttempt> Attempts { get; init; } = Array.Empty<CertificationAttempt>();
+
+    /// <summary>Base64 Ed25519 signature dual-written alongside <see cref="Signature"/>.</summary>
+    public string? Ed25519Signature { get; init; }
+
+    /// <summary>Base64 raw Ed25519 public key of the minter; covered by the signed payload.</summary>
+    public string? Ed25519PublicKey { get; init; }
 }

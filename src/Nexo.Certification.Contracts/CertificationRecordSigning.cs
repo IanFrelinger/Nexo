@@ -65,12 +65,60 @@ public static class CertificationRecordSigning
 #endif
     }
 
+    private static readonly JsonSerializerOptions PayloadOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+
     /// <summary>
     /// Builds the canonical JSON payload used for signing and verification.
-    /// Mutant id lists are sorted for deterministic serialization.
+    /// Records without a <see cref="CertificationRecordData.SchemaVersion"/> use the
+    /// legacy v1 payload byte-for-byte, so pre-trust-loop signatures stay valid.
+    /// Versioned records sign the extended payload, which additionally covers
+    /// <c>Gate</c>, the trust-loop evidence fields, and the Ed25519 public key.
+    /// Both signature fields are structurally excluded. Mutant id lists and input
+    /// entries are sorted for deterministic serialization; gate and attempt order
+    /// is semantic and preserved.
     /// </summary>
     /// <param name="record">Record to serialize.</param>
     public static string BuildPayload(CertificationRecordData record)
+    {
+        if (record.SchemaVersion is null)
+            return BuildLegacyPayload(record);
+
+        var clone = new VersionedPayload(
+            record.SchemaVersion.Value,
+            record.Status,
+            record.Stage,
+            record.Admitted,
+            record.Signed,
+            record.Timestamp.UtcDateTime.ToString("O"),
+            record.BrickId,
+            record.ContentHash,
+            record.EscapeRate,
+            record.TotalMutants,
+            record.SurvivingMutants,
+            record.KilledMutants.OrderBy(x => x, StringComparer.Ordinal).ToArray(),
+            record.SurvivingMutantIds.OrderBy(x => x, StringComparer.Ordinal).ToArray(),
+            record.Reason,
+            record.Gate,
+            record.GatesPassed.Select(g => new GatePassPayload(g.Name, g.Version, g.Configuration)).ToArray(),
+            record.Inputs
+                .OrderBy(i => i.Kind, StringComparer.Ordinal)
+                .ThenBy(i => i.Id, StringComparer.Ordinal)
+                .Select(i => new InputPayload(i.Kind, i.Id, i.Hash))
+                .ToArray(),
+            record.Proposer is null
+                ? null
+                : new ProposerPayload(
+                    record.Proposer.Identity,
+                    record.Proposer.Parameters
+                        .OrderBy(p => p.Key, StringComparer.Ordinal)
+                        .ToDictionary(p => p.Key, p => p.Value),
+                    record.Proposer.Seed),
+            record.Attempts.Select(a => new AttemptPayload(a.Index, a.Outcome, a.FailureCategory, a.DurationSeconds)).ToArray(),
+            record.Ed25519PublicKey);
+        return JsonSerializer.Serialize(clone, PayloadOptions);
+    }
+
+    private static string BuildLegacyPayload(CertificationRecordData record)
     {
         var clone = new
         {
@@ -88,8 +136,38 @@ public static class CertificationRecordSigning
             SurvivingMutantIds = record.SurvivingMutantIds.OrderBy(x => x, StringComparer.Ordinal).ToArray(),
             record.Reason
         };
-        return JsonSerializer.Serialize(clone, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+        return JsonSerializer.Serialize(clone, PayloadOptions);
     }
+
+    private sealed record VersionedPayload(
+        int SchemaVersion,
+        string Status,
+        string Stage,
+        bool Admitted,
+        bool Signed,
+        string Timestamp,
+        string BrickId,
+        string? ContentHash,
+        double? EscapeRate,
+        int? TotalMutants,
+        int? SurvivingMutants,
+        string[] KilledMutants,
+        string[] SurvivingMutantIds,
+        string? Reason,
+        string? Gate,
+        GatePassPayload[] GatesPassed,
+        InputPayload[] Inputs,
+        ProposerPayload? Proposer,
+        AttemptPayload[] Attempts,
+        string? Ed25519PublicKey);
+
+    private sealed record GatePassPayload(string Name, string? Version, string? Configuration);
+
+    private sealed record InputPayload(string Kind, string Id, string Hash);
+
+    private sealed record ProposerPayload(string Identity, Dictionary<string, string> Parameters, string? Seed);
+
+    private sealed record AttemptPayload(int Index, string Outcome, string? FailureCategory, double? DurationSeconds);
 
     private static string ResolveKey(string? hmacKey)
     {

@@ -13,6 +13,10 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Nexo.Core.Domain\Nexo.Core.Domain.csproj" />
+        <!-- Certification evidence types (gates-passed/inputs/proposer/attempts) are
+             shared with the portable wire record so the two cannot drift. Contracts
+             is a zero-dependency leaf package, not an outer layer. -->
+        <ProjectReference Include="..\Nexo.Certification.Contracts\Nexo.Certification.Contracts.csproj" />
     </ItemGroup>
 
     <!-- Package references -->
