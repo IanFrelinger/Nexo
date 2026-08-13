@@ -8,6 +8,9 @@ using Nexo.AI.Pipeline.Embeddings;
 using Nexo.AI.Pipeline.Governance;
 using Nexo.AI.Pipeline.Rag;
 using Nexo.AI.Pipeline.Routing;
+// MEAI 10.9.0 ships its own Microsoft.Extensions.AI.RoutingChatClient; alias the Nexo router
+// explicitly so the simple name keeps binding to ours (CS0104 otherwise).
+using RoutingChatClient = Nexo.AI.Pipeline.Routing.RoutingChatClient;
 
 namespace Nexo.AI.Pipeline;
 
