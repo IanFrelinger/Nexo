@@ -53,17 +53,23 @@ public sealed class ConstraintManifestEngineWiringTests
     [Fact]
     public async Task WithoutAManifest_NoPreGateRuns_AndInstructionsStayEmpty()
     {
+        // The profile carries one always-passing gate: registration requires a gate
+        // (validator or manifest), and this test's point is that no MANIFEST rules
+        // run — the forbidden token sails through the declared validator untouched.
         var drafter = FakeArtifactDrafter.OfContent("var t = DateTime.Now;");
-        var brick = BrickFor(drafter, manifest: null);
+        var brick = BrickFor(drafter, manifest: null, new AlwaysPassValidator());
 
         var output = await Execute(brick, "manifest-demo");
 
         drafter.Attempts.Should().Be(1);
         drafter.Requests[0].ConstraintInstructions.Should().BeEmpty();
-        output.Get<bool>("verified").Should().BeTrue("no manifest means nothing is enforced");
+        output.Get<bool>("verified").Should().BeTrue("no manifest means no manifest rules are enforced");
     }
 
-    private static GenerativeArtifactBrick BrickFor(FakeArtifactDrafter drafter, BrickConstraintManifest? manifest)
+    private static GenerativeArtifactBrick BrickFor(
+        FakeArtifactDrafter drafter,
+        BrickConstraintManifest? manifest,
+        params object[] validators)
     {
         var registry = new AgentProfileRegistry();
         registry.Register(new AgentProfile
@@ -78,9 +84,15 @@ public sealed class ConstraintManifestEngineWiringTests
                 RequireHumanReviewForModelDrafts = false
             },
             Capabilities = new AgentProfileCapabilities(),
-            Validators = Array.Empty<object>()
+            Validators = validators
         });
         return new GenerativeArtifactBrick(registry);
+    }
+
+    private sealed class AlwaysPassValidator : Nexo.Core.Application.Orchestration.IPostValidator<GeneratedArtifact>
+    {
+        public ValueTask<(bool ok, string? reason)> ValidateAsync(GeneratedArtifact output, CancellationToken ct) =>
+            new((true, (string?)null));
     }
 
     private static async Task<BrickOutput> Execute(GenerativeArtifactBrick brick, string target)

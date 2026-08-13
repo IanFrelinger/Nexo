@@ -89,6 +89,52 @@ public sealed class AgentProfileRegistryTests
             .WithMessage("*cannot use*");
     }
 
+    [Fact]
+    public void Register_accepts_a_manifest_only_profile()
+    {
+        // A ConstraintManifest is a gate by construction: the engine prepends its
+        // enforcement validator ahead of the declared chain, so at least one real
+        // gate always runs for this profile.
+        var registry = new AgentProfileRegistry();
+        var profile = new AgentProfile
+        {
+            TargetId = "manifest-gated",
+            Drafter = new StubDrafter(),
+            Validators = Array.Empty<object>(),
+            ConstraintManifest = new BrickConstraintManifest
+            {
+                ForbiddenApiTokens = new[] { "DateTime.Now" }
+            }
+        };
+
+        registry.Register(profile);
+
+        registry.Resolve("manifest-gated").Should().BeSameAs(profile);
+    }
+
+    [Fact]
+    public void Register_still_rejects_a_manifest_only_profile_with_a_mistyped_validator()
+    {
+        // The manifest satisfies the at-least-one-gate rule, but a mistyped
+        // validator is still a silent skip the engine would never run — that
+        // refusal must not be weakened by declaring a manifest.
+        var registry = new AgentProfileRegistry();
+
+        var act = () => registry.Register(new AgentProfile
+        {
+            TargetId = "manifest-mistyped",
+            Drafter = new StubDrafter(),
+            Validators = new object[] { new NotAPostValidator() },
+            ConstraintManifest = new BrickConstraintManifest
+            {
+                ForbiddenApiTokens = new[] { "DateTime.Now" }
+            }
+        });
+
+        act.Should().Throw<ArgumentException>()
+            .WithMessage("*cannot use*");
+    }
+
     private sealed class StubDrafter : IArtifactDrafter
     {
         public Task<GeneratedArtifact> DraftAsync(

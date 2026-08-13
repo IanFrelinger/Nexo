@@ -77,12 +77,18 @@ public sealed class AgentProfileRegistry : IAgentProfileRegistry
         // "verified" is a claim about nothing. A verdict must be backed by at
         // least one real gate, so refuse the profile at registration rather than
         // letting it mint hollow verdicts for the rest of the process lifetime.
-        if (!declared.OfType<IPostValidator<GeneratedArtifact>>().Any())
+        // A ConstraintManifest satisfies the requirement by construction: the
+        // engine prepends its enforcement validator ahead of the declared chain
+        // (GenerativeArtifactBrick.ResolveValidators), so a manifest-only profile
+        // always runs at least that gate.
+        if (!declared.OfType<IPostValidator<GeneratedArtifact>>().Any()
+            && profile.ConstraintManifest is null)
         {
             throw new ArgumentException(
-                $"AgentProfile '{profile.TargetId}' declares no usable validators. A profile "
-                + "with no gate reports 'verified' without anything having been checked. "
-                + "Declare at least one IPostValidator<GeneratedArtifact>.",
+                $"AgentProfile '{profile.TargetId}' declares no usable validators and no "
+                + "constraint manifest. A profile with no gate reports 'verified' without "
+                + "anything having been checked. Declare at least one "
+                + "IPostValidator<GeneratedArtifact> or a ConstraintManifest.",
                 nameof(profile));
         }
 
