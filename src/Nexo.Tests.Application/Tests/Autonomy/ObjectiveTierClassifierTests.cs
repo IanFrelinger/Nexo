@@ -96,8 +96,8 @@ public sealed class ObjectiveTierClassifierTests
         var touch = new TouchSet { PathPrefixes = new[] { "src/Nexo.Bricks.Weather/" } };
 
         touch.ToProposerConfinement().ToPathAllowlistPrefixes()
-            .Should().Equal("src/Nexo.Bricks.Weather/",
-                "the tier classifier and the sandbox confinement must read one declaration");
+            .Should().ContainSingle("the tier classifier and the sandbox confinement must read one declaration")
+            .Which.Should().Be("src/Nexo.Bricks.Weather/");
     }
 
     [Fact]

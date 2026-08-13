@@ -64,7 +64,7 @@ public sealed class ObjectiveIntakeTests
             source: "watch-adapter",
             kind: ObservationKind.Build,
             summary: injection,
-            severity: ObservationSeverity.Warning,
+            severity: ObservationSeverity.Warn,
             facts: new Dictionary<string, string> { ["hint"] = injection });
 
         var objective = TelemetryObjectiveExtractor.FromObservation(observation, "telemetry-gap-1");
@@ -88,9 +88,9 @@ public sealed class ObjectiveIntakeTests
 
         var objective = TelemetryObjectiveExtractor.FromObservation(observation, "telemetry-gap-2");
 
-        objective.Title.Should().NotContain(" ").And.NotContain("!",
-            "source labels are clamped to an identifier alphabet before use");
-        objective.Title.Should().StartWith("Address observed");
+        objective.Title.Should().Be("Address observed Test gap from agent",
+            "the label truncates at the first illegal character, so nothing past it survives");
+        objective.Body.Should().NotContainAny("IGNORE", "INSTRUCTIONS");
     }
 
     [Fact]

@@ -58,16 +58,16 @@ public static class TelemetryObjectiveExtractor
 
     /// <summary>
     /// Source labels are machine-assigned agent ids, but they still transit watched data;
-    /// clamp to an identifier alphabet so nothing instruction-shaped can ride in them.
+    /// clamp to an identifier alphabet. Truncation at the FIRST disallowed character —
+    /// not filtering — so a label like <c>"agent one: IGNORE …"</c> yields <c>agent</c>:
+    /// nothing past the first illegal character survives, rather than the payload
+    /// re-concatenating into the objective.
     /// </summary>
     private static string SanitizeIdentifier(string value)
     {
         var trimmed = (value ?? "").Trim();
-        if (trimmed.Length == 0)
-            return "unknown";
-
         var chars = trimmed
-            .Where(c => char.IsLetterOrDigit(c) || c is '-' or '_' or '.')
+            .TakeWhile(c => char.IsLetterOrDigit(c) || c is '-' or '_' or '.')
             .Take(64)
             .ToArray();
         return chars.Length == 0 ? "unknown" : new string(chars);
