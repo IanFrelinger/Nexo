@@ -147,6 +147,11 @@ vibeOS demo before the full autonomy loop is done.
 
 - Does `Gate` (singular, string) on today's record ever hold multiple
   values in practice? Determines whether G1 is additive or a v2 schema.
+  **Resolved (PR-A):** always a single hard-coded gate type name; nothing
+  reads it and no test asserts its shape. G1 landed additively —
+  `SchemaVersion` (null = legacy v1) selects the signing payload, so
+  existing sidecars verify byte-for-byte while v2 records sign the
+  extended payload (which also closes the unsigned-`Gate` hole).
 - Where should Tier 0/1 classification live — constraint manifest
   field, or path convention like `BrickAdmissionPathHelper` uses?
 - Throughput guard baseline: session median (spec) or fixed floor?

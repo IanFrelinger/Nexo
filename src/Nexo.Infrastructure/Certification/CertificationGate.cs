@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Nexo.Certification.Contracts;
 using Nexo.Core.Application.Certification.Models;
@@ -8,6 +9,18 @@ namespace Nexo.Infrastructure.Certification;
 /// <summary>Certification gate: mutation testing, dependency checks, signing, and admit/reject decisions.</summary>
 public sealed class CertificationGate : ICertificationGate
 {
+    private const string GateVersion = "1";
+
+    private static readonly CertificationGatePass CorrectnessGatePass = new() { Name = "correctness-witness", Version = GateVersion };
+    private static readonly CertificationGatePass MutationGatePass = new() { Name = "mutation-gate", Version = GateVersion, Configuration = "escapeRateThreshold=0" };
+    private static readonly CertificationGatePass DeterminismGatePass = new() { Name = "determinism", Version = GateVersion };
+    private static readonly CertificationGatePass DependencyGatePass = new() { Name = "dependency-graph", Version = GateVersion };
+
+    private static readonly IReadOnlyList<CertificationGatePass> AllGatePasses =
+        new[] { CorrectnessGatePass, MutationGatePass, DeterminismGatePass, DependencyGatePass };
+
+    private static readonly JsonSerializerOptions WitnessHashOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+
     private readonly BrickMutationEngine _mutationEngine = new();
     private readonly CertificationRecordSigner _signer;
     private readonly ILogger<CertificationGate>? _logger;
@@ -30,6 +43,7 @@ public sealed class CertificationGate : ICertificationGate
         var timestamp = DateTimeOffset.UtcNow;
 
         var contentHash = BrickContentHasher.ComputeSha256(request.SourceCode);
+        var inputs = BuildInputs(request);
 
         CertificationRecord Fail(string check, string reason, MutationTestResult? mutation = null) =>
             BuildRecord(
@@ -40,7 +54,9 @@ public sealed class CertificationGate : ICertificationGate
                 timestamp,
                 contentHash,
                 reason,
-                mutation);
+                mutation,
+                GatesPassedBefore(check),
+                inputs);
 
         var witnessResult = await WitnessRunner.RunAsync(
             request.Brick,
@@ -130,8 +146,10 @@ public sealed class CertificationGate : ICertificationGate
             timestamp,
             contentHash,
             reason: null,
-            mutation: mutationResult);
-        admittedRecord = admittedRecord with { Signature = _signer.Sign(admittedRecord) };
+            mutation: mutationResult,
+            gatesPassed: AllGatePasses,
+            inputs: inputs);
+        admittedRecord = _signer.SignRecord(admittedRecord);
 
         _logger?.LogInformation("Certification ADMIT {BrickId} escape_rate=0", brickId);
         return new CertificationDecision
@@ -139,6 +157,40 @@ public sealed class CertificationGate : ICertificationGate
             Admitted = true,
             Record = admittedRecord
         };
+    }
+
+    /// <summary>Gates that had already passed when the named check failed (R2.4 "furthest gate reached").</summary>
+    private static IReadOnlyList<CertificationGatePass> GatesPassedBefore(string failedCheck) => failedCheck switch
+    {
+        "mutation" => new[] { CorrectnessGatePass },
+        "determinism" => new[] { CorrectnessGatePass, MutationGatePass },
+        "dependency" => new[] { CorrectnessGatePass, MutationGatePass, DeterminismGatePass },
+        _ => Array.Empty<CertificationGatePass>()
+    };
+
+    private IReadOnlyList<CertificationInput> BuildInputs(CertificationRequest request)
+    {
+        try
+        {
+            var witnessJson = JsonSerializer.Serialize(request.Witness, WitnessHashOptions);
+            return new[]
+            {
+                new CertificationInput
+                {
+                    Kind = "witness",
+                    Id = request.Witness.BrickId,
+                    Hash = BrickContentHasher.ComputeSha256(witnessJson)
+                }
+            };
+        }
+        catch (NotSupportedException ex)
+        {
+            _logger?.LogWarning(
+                ex,
+                "Witness spec for {BrickId} could not be serialized for input hashing; omitting the witness input",
+                request.Witness.BrickId);
+            return Array.Empty<CertificationInput>();
+        }
     }
 
     private static CertificationRecord BuildRecord(
@@ -149,7 +201,9 @@ public sealed class CertificationGate : ICertificationGate
         DateTimeOffset timestamp,
         string contentHash,
         string? reason,
-        MutationTestResult? mutation)
+        MutationTestResult? mutation,
+        IReadOnlyList<CertificationGatePass> gatesPassed,
+        IReadOnlyList<CertificationInput> inputs)
     {
         return new CertificationRecord
         {
@@ -166,7 +220,10 @@ public sealed class CertificationGate : ICertificationGate
             KilledMutants = mutation?.KilledMutantIds ?? Array.Empty<string>(),
             SurvivingMutantIds = mutation?.SurvivingMutantIds ?? Array.Empty<string>(),
             Reason = reason,
-            Gate = "Nexo.Infrastructure.Certification.CertificationGate"
+            Gate = "Nexo.Infrastructure.Certification.CertificationGate",
+            SchemaVersion = CertificationRecordData.TrustLoopSchemaVersion,
+            GatesPassed = gatesPassed,
+            Inputs = inputs
         };
     }
 }
