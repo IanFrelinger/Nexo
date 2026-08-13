@@ -94,10 +94,45 @@ by the operator explicitly in their own host.
 mapping helper deliberately refuses the commercial endpoint's `AllowAnonymous()` pattern and maps
 nothing at all while disabled.
 
+## Phase 2 (this phase): Nexo as MCP client
+
+Projects: `src/Nexo.Mcp.Client/` (+ `src/Nexo.Mcp.Client.Tests/`, whose round-trip suite runs a
+real `McpClient` against the Phase-1 server bridge over in-memory pipes).
+
+External MCP servers are configured under `Nexo:Mcp:Client` (streamable HTTP only in v1) and
+their tools surface as `ITool`s through the `IToolSource` seam:
+
+1. **Connect + pin at startup.** `McpClientConnectionManager` (a hosted service) dials each
+   configured server, lists tools (optionally narrowed by a per-server `AllowedTools` list), and
+   pins each definition — name, description, raw JSON schema — for the process lifetime.
+2. **Namespaced ids.** Proxies register as `mcp:{server}:{tool}`, so a remote server can never
+   shadow a native tool id (`CapabilityRegistry` registration is last-wins by id).
+3. **Drift faults, never follows.** A periodic re-list compares against the pins; a changed or
+   vanished definition marks the tool faulted (withdrawn from toolboxes, calls fail with the
+   reason) until a restart re-pins. Remote servers do not get to redefine an agent's tools
+   mid-flight.
+4. **Failures degrade, not crash.** An unreachable server contributes zero tools; remote
+   `isError` results and transport failures come back as error payloads (repo tool convention),
+   visible to the calling model.
+5. **Secrets via environment.** Per-server API keys are named by env var
+   (`ApiKeyHeader`/`ApiKeyEnvVar` pair); a referenced-but-unset variable fails startup.
+
+Toolboxes pick proxies up through `Nexo.Abstractions.IToolSource`:
+`RepoFsToolboxFactory.CreateMinimal/CreateWithBuildTest` accept `extraTools`, and
+`SelfExtendRunnerAdapter` folds all DI-registered `IToolSource`s in per cycle. Hosts wire it with
+`services.AddNexoMcpClient(configuration)`.
+
+```bash
+Nexo__Mcp__Client__Enabled=true
+Nexo__Mcp__Client__Servers__0__Name=github
+Nexo__Mcp__Client__Servers__0__Url=https://mcp.example.com/mcp
+Nexo__Mcp__Client__Servers__0__ApiKeyHeader=Authorization
+Nexo__Mcp__Client__Servers__0__ApiKeyEnvVar=GITHUB_MCP_TOKEN
+Nexo__Mcp__Client__Servers__0__AllowedTools__0=search_issues
+```
+
 ## Later phases (planned)
 
-- **MCP client** — external MCP servers' tools proxied as namespaced `ITool`s
-  (`mcp:{server}:{tool}`) with pinned descriptions, HTTP transports only in v1.
 - **A2A server** — agent-card projection of allowlisted `AgentCard`s; task execution through the
   gRPC-facade pattern (barrier identity resolution → registry-validated agent name →
   `IAgentTransport.SendAsync`); synchronous terminal tasks in v1.

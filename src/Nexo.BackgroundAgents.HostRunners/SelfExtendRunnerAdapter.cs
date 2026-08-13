@@ -76,7 +76,8 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
         IAggressivenessModeStore? modeStore = null,
         ICertificationRecordStore? certificationStore = null,
         Lazy<IBackgroundAgentRegistry>? agentRegistry = null,
-        IDataSensitivityRegistry? sensitivityRegistry = null)
+        IDataSensitivityRegistry? sensitivityRegistry = null,
+        IEnumerable<IToolSource>? toolSources = null)
     {
         _model = model ?? throw new ArgumentNullException(nameof(model));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -88,7 +89,10 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
         _certificationStore = certificationStore ?? FailClosedCertificationRecordStore.Instance;
         _agentRegistry = agentRegistry;
         _sensitivityRegistry = sensitivityRegistry;
+        _toolSources = toolSources;
     }
+
+    private readonly IEnumerable<IToolSource>? _toolSources;
 
     /// <inheritdoc />
     public async Task<SelfExtendRunResult> RunAsync(string repoRoot, CancellationToken cancellationToken = default)
@@ -177,7 +181,10 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
                 // .Value here, not in the constructor: by the time a self-extend run
                 // executes, the registry is fully built and resolving it is a no-op.
                 agentRegistry: _agentRegistry?.Value,
-                sensitivityRegistry: _sensitivityRegistry);
+                sensitivityRegistry: _sensitivityRegistry,
+                // Sources are snapshotted per cycle: discovery (e.g. remote MCP servers)
+                // completes after DI build, so the tool set is only known here.
+                extraTools: _toolSources?.SelectMany(s => s.GetTools()));
             budget.Reset();
             // Register objective lifecycle tools only when a store is wired — the
             // tools cannot operate without one and must not be advertised to the LLM
