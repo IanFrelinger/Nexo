@@ -56,10 +56,17 @@ using Nexo.BackgroundAgents.Extending;
 using Nexo.BackgroundAgents.HostRunners;
 using Nexo.BackgroundAgents.Optimization;
 using Nexo.BackgroundAgents.Testing;
+using Nexo.Abstractions;
+using Nexo.API.Protocols;
 using Nexo.Hosting;
 using Nexo.Ingress.AwsSns;
 using Nexo.Ingress.DynamoDb;
+using Nexo.Mcp.Client;
+using Nexo.Mcp.Server;
 using Nexo.Runtime;
+using Nexo.Tools.Dev;
+using Nexo.Transport.A2A;
+using Nexo.Transport.A2A.Server;
 using Nexo.Transport.Grpc;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -119,6 +126,24 @@ builder.Services.AddSwaggerGen(static options =>
     options.SwaggerDoc("v1", new OpenApiInfo { Title = "Nexo.API", Version = "v1" }));
 builder.Services.AddNexoRuntimeRouting(builder.Configuration);
 
+// --- Agent-protocol adapters (MCP + A2A) ---
+// All four directions are feature-flagged off by default (Nexo:Mcp:*, Nexo:A2A:*); registering
+// them here only makes the surfaces *available*. AddNexoA2ATransport must run before AddNexo so
+// its scheme registration participates in the kernel's remote-transport composition.
+builder.Services.AddNexoMcpServer(builder.Configuration).WithHttpTransport();
+builder.Services.AddNexoMcpClient(builder.Configuration);
+builder.Services.AddNexoA2AServer(builder.Configuration);
+builder.Services.AddNexoA2ATransport(builder.Configuration);
+builder.Services.AddSingleton<INexoA2AAgentCatalog, AgentRegistryA2ACatalog>();
+// Mirror of the A2A card-anonymity decision for the auth middleware (see
+// NexoProtocolIngressOptions) — bound from the same section so there is a single source key.
+builder.Services.Configure<NexoProtocolIngressOptions>(
+    builder.Configuration.GetSection(NexoA2AServerOptions.SectionPath));
+// Read-only repo tools available for MCP allowlisting (exposure still requires
+// Nexo:Mcp:Server:ExposedToolIds entries); mutating tools are deliberately not pre-registered.
+builder.Services.AddSingleton<ITool, RepoFsReadTool>();
+builder.Services.AddSingleton<ITool, RepoFsListTool>();
+
 builder.Services.AddSingleton<INexoIngressAccessor, HttpNexoIngressAccessor>();
 builder.Services.AddHttpClient("nexo-sns-signing", c => c.Timeout = TimeSpan.FromSeconds(15));
 builder.Services.AddSingleton<ISnsSignatureVerifier, SnsRsaSignatureVerifier>();
@@ -153,6 +178,16 @@ builder.Services.AddRateLimiter(static o =>
                 QueueLimit = 0,
                 AutoReplenishment = true,
             });
+    });
+    o.AddPolicy<string>("nexo-mcp", static httpContext =>
+    {
+        var opts = httpContext.RequestServices.GetRequiredService<IOptionsMonitor<NexoMiddlewareIngressOptions>>().CurrentValue;
+        return BuildPerIpFixedWindowPartition(httpContext, opts.McpRateLimitPermitLimit, opts.McpRateLimitWindowSeconds);
+    });
+    o.AddPolicy<string>("nexo-a2a", static httpContext =>
+    {
+        var opts = httpContext.RequestServices.GetRequiredService<IOptionsMonitor<NexoMiddlewareIngressOptions>>().CurrentValue;
+        return BuildPerIpFixedWindowPartition(httpContext, opts.A2ARateLimitPermitLimit, opts.A2ARateLimitWindowSeconds);
     });
 });
 
@@ -262,9 +297,58 @@ app.UseSwagger();
 app.UseSwaggerUI(static c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Nexo.API v1"));
 app.MapNexoEndpoints();
 app.MapIngressEndpoints();
+
+// --- Agent-protocol endpoints (map nothing while disabled; see IngressCatalog rows) ---
+// Both live under /api so NexoApiKeyAuthMiddleware protects them (all verbs — see
+// ShouldProtect's protocol-path handling); the root agent card is the /.well-known exception
+// handled explicitly there. NO AllowAnonymous anywhere on these surfaces.
+app.MapNexoMcpEndpoint()?.RequireRateLimiting("nexo-mcp");
+var a2aEndpoints = app.MapNexoA2AEndpoints();
+if (a2aEndpoints is not null)
+{
+    foreach (var rpcEndpoint in a2aEndpoints.RpcEndpoints)
+    {
+        rpcEndpoint.RequireRateLimiting("nexo-a2a");
+    }
+
+    foreach (var cardEndpoint in a2aEndpoints.CardEndpoints)
+    {
+        cardEndpoint.RequireRateLimiting("nexo-a2a");
+    }
+}
+
 app.MapFallbackToFile("index.html");
 
 app.Run();
+
+static RateLimitPartition<string> BuildPerIpFixedWindowPartition(
+    HttpContext httpContext, int permitLimit, int windowSeconds)
+{
+    if (permitLimit <= 0)
+    {
+        return RateLimitPartition.GetFixedWindowLimiter(
+            "off",
+            static _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = int.MaxValue,
+                Window = TimeSpan.FromDays(1),
+                QueueLimit = 0,
+                AutoReplenishment = true,
+            });
+    }
+
+    var key = httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous";
+    var window = windowSeconds > 0 ? windowSeconds : 60;
+    return RateLimitPartition.GetFixedWindowLimiter(
+        key,
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = permitLimit,
+            Window = TimeSpan.FromSeconds(window),
+            QueueLimit = 0,
+            AutoReplenishment = true,
+        });
+}
 
 /// <summary>
 /// Exposes the implicit Program entry point for ASP.NET Core integration tests (<c>WebApplicationFactory&lt;Program&gt;</c>).
