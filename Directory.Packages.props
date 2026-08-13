@@ -218,4 +218,11 @@
     <PackageVersion Include="NSec.Cryptography" Version="25.4.0" />
     <PackageVersion Include="pocketken.H3" Version="4.0.0" />
   </ItemGroup>
+  <!-- MCP / A2A protocol adapters (Tier-2 adapter projects and hosts only; the kernel
+       spine — Nexo.Abstractions / Nexo.Core.* / Nexo.Contracts / Nexo.Hosting — must
+       never reference these packages, or every AddNexo consumer inherits them. -->
+  <ItemGroup>
+    <PackageVersion Include="ModelContextProtocol" Version="2.2.0" />
+    <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="2.2.0" />
+  </ItemGroup>
 </Project>

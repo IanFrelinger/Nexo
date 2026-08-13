@@ -102,6 +102,7 @@ Documentation index for the Nexo platform. Start here to find what you need.
 - `docs/samples/StableSdkHostSample/Program.cs` — reference host integration that only uses stable SDK extension points.
 - `docs/runtime/ExecutionRouting.md` — NCR-based generation routing (local, peer network, RunPod), preferences, and resilience behavior.
 - `docs/AgentExecutionIsolation.md` — per-agent isolation tiers (in-process through container-per-agent), JSON field, and invocation metadata for transports.
+- `docs/architecture/ProtocolIntegration-MCP-A2A.md` — MCP + A2A protocol adapters: MCP server bridge over `ITool` (allowlists, policy gate, stdio host), planned MCP client and A2A server/client phases.
 - `docs/runtime/specs/README.md` — runtime spec documents.
 - `docs/runtime/benchmarks/README.md` — runtime benchmark goals and notes.
 - `apps/runtime-studio/README.md` — **hub** for the Runtime Studio agent-set JSON, CLI vs API-hosted background agents, and how the Director portal fits; anchor [How this fits](../apps/runtime-studio/README.md#how-runtime-studio-fits-with-nexo-api).
