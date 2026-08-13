@@ -259,6 +259,50 @@ public sealed class TrustLoopRecordSchemaTests
     // ---------- The real minter dual-writes ----------
 
     [Fact]
+    public async Task Gate_Admit_RecordsAdditionalContextInputs_UnderTheSignature()
+    {
+        var signer = new CertificationRecordSigner(HmacKey);
+        var gate = new CertificationGate(signer);
+        var contextInput = new CertificationInput
+        {
+            Kind = "context",
+            Id = "mutation-probe-brick",
+            Hash = "assembled-context-hash"
+        };
+        var request = new CertificationRequest
+        {
+            Brick = new MutationProbeBrick(),
+            Witness = StrongWitness,
+            SourceCode = MutationProbeBrickSource.Code,
+            ProjectPath = CreateCleanProjectFile(),
+            CompilationReferences = CompilationReferences(),
+            BrickTypeName = typeof(MutationProbeBrick).FullName,
+            AdditionalInputs = new[] { contextInput }
+        };
+
+        var decision = await gate.CertifyAsync(request);
+
+        decision.Admitted.Should().BeTrue();
+        var data = CertificationRecordMapper.ToData(decision.Record);
+        data.Inputs.Should().HaveCount(2);
+        data.Inputs[0].Kind.Should().Be("witness", "the witness input always comes first");
+        data.Inputs.Should().ContainSingle(i =>
+            i.Kind == "context" && i.Id == "mutation-probe-brick" && i.Hash == "assembled-context-hash");
+
+        var trust = CertificationTrustVerifier.Verify(data, MutationProbeBrickSource.Code, HmacKey);
+        trust.Trusted.Should().BeTrue($"{trust.FailureCode}: {trust.Reason}");
+
+        var tampered = data with
+        {
+            Inputs = data.Inputs
+                .Select(i => i.Kind == "context" ? i with { Hash = "forged-context-hash" } : i)
+                .ToArray()
+        };
+        CertificationRecordSigning.VerifySignature(tampered, HmacKey).Should().BeFalse(
+            "the v2 payload covers context inputs, so tampering the recorded context hash must invalidate the signature");
+    }
+
+    [Fact]
     public async Task Gate_Admit_MintsDualSignedTrustLoopCertificate()
     {
         var (privateKey, publicKey) = CreateEd25519Key();

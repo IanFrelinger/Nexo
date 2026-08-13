@@ -173,7 +173,7 @@ public sealed class CertificationGate : ICertificationGate
         try
         {
             var witnessJson = JsonSerializer.Serialize(request.Witness, WitnessHashOptions);
-            return new[]
+            var inputs = new List<CertificationInput>
             {
                 new CertificationInput
                 {
@@ -182,6 +182,8 @@ public sealed class CertificationGate : ICertificationGate
                     Hash = BrickContentHasher.ComputeSha256(witnessJson)
                 }
             };
+            inputs.AddRange(request.AdditionalInputs);
+            return inputs;
         }
         catch (NotSupportedException ex)
         {
@@ -189,7 +191,7 @@ public sealed class CertificationGate : ICertificationGate
                 ex,
                 "Witness spec for {BrickId} could not be serialized for input hashing; omitting the witness input",
                 request.Witness.BrickId);
-            return Array.Empty<CertificationInput>();
+            return request.AdditionalInputs;
         }
     }
 
