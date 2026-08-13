@@ -35,7 +35,8 @@ public static class ObjectiveTierClassifier
     /// <summary>Classifies one declared touch-set (R3.1) fail-closed (R1.4).</summary>
     public static TierClassification Classify(TouchSet touchSet)
     {
-        ArgumentNullException.ThrowIfNull(touchSet);
+        if (touchSet is null)
+            throw new ArgumentNullException(nameof(touchSet));
         var normalized = touchSet.Normalize();
 
         if (!normalized.IsDeclared)
