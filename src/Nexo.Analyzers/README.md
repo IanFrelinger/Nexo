@@ -1,7 +1,38 @@
 # Nexo.Analyzers
 
 Build-time rules that keep a brick's **declared** contract and its **actual**
-behaviour from drifting apart.
+behaviour from drifting apart — the trust loop's fence catalog with a
+compiler's eyes (extension spec Part A). The catalog grows monotonically:
+each recurring agent failure class diagnosed in CI triage or ledger review is
+promoted to a rule here, with the decision recorded in this table.
+
+## Catalog
+
+| Id | Rule | Failure class it was promoted from |
+|----|------|-------------------------------------|
+| `NEXO0001` | Brick reads an undeclared input key | `preferScaffold`/`qtShims` interface drift |
+| `NEXO0002` | Brick writes an undeclared output key | same drift class, output side |
+| `NEXO0003` | Brick constructor/initializer performs file I/O | side effects during registration and hot-swap materialization are unattributable and ungated |
+| `NEXO0004` | Brick constructor/initializer performs network access | same class; egress additionally bypasses session network policy |
+| `NEXO0005` | Service factory resolves its own service type | the `ValidateOnBuild`-passing resolution-time hang observed in `SelfExtendRunnerAdapter` DI wiring (~298 silent factory re-entries) |
+| `NEXO0006` | Brick reads `DateTime.Now`/`DateTimeOffset.Now` | determinism-gate rejections traceable to wall-clock reads; `UtcNow` is the named fix |
+| `NEXO0007` | Brick uses unseeded randomness (`new Random()`, `Random.Shared`) | determinism-gate rejections traceable to environment seeding |
+| `NEXO0008` | Brick declares mutable static state | cross-execution state makes the determinism gate's second run see a different world |
+| `NEXO0009` | Empty catch block in brick code | swallowed failures become silent wrong output instead of explained failure |
+
+Every rule ships with a three-case test triad in `Nexo.Analyzers.Tests`: at
+least one true positive, one true negative, and one deliberately-unresolvable
+case that produces no diagnostic (the honesty discipline below, verified).
+
+## Honesty discipline (applies to every rule)
+
+Rules reason only over statically-resolvable facts. A key, symbol, or target
+that cannot be resolved at compile time is left alone, never guessed —
+false-positive suppression by guessing is non-conformant for the `NEXO*`
+range. Concretely: helper-method indirection is not chased, method-group
+factories are not judged, readonly containers are not assumed mutated, and a
+compilation that cannot resolve the anchor types produces silence here (the
+certification analyzer gate separately fails closed on missing anchors).
 
 ## NEXO0001 / NEXO0002 — BrickInterface drift
 
