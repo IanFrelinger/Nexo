@@ -21,7 +21,15 @@ namespace Nexo.Infrastructure.Testing;
 /// </summary>
 public class TestRunnerAdapter : ITestRunner
 {
-    private static readonly TimeSpan DefaultPerTestTimeout = TimeSpan.FromSeconds(60);
+    // A HANG NET, not a performance budget — same sizing rule as the test suite's
+    // TestTimeouts.HostTouching (480s): it must clear the worst legitimate case, which
+    // is a coverlet-instrumented run on a loaded CI runner. At 60s this fired on tests
+    // that were still making progress, and firing spuriously is worse here than in the
+    // xUnit harness: the timed-out runTask cannot be killed, so it keeps consuming the
+    // already-saturated machine while the tests after it run against that load. See
+    // docs/production-readiness/KernelCoverageGate-Findings.md, "Intermittent timeouts
+    // under instrumentation".
+    private static readonly TimeSpan DefaultPerTestTimeout = TimeSpan.FromSeconds(480);
 
     private readonly ILogger<TestRunnerAdapter> _logger;
     private readonly IServiceProvider _serviceProvider;
