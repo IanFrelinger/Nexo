@@ -16,22 +16,24 @@ public sealed class CertificationGate : ICertificationGate
     private static readonly CertificationGatePass DeterminismGatePass = new() { Name = "determinism", Version = GateVersion };
     private static readonly CertificationGatePass DependencyGatePass = new() { Name = "dependency-graph", Version = GateVersion };
 
-    private static readonly IReadOnlyList<CertificationGatePass> AllGatePasses =
-        new[] { CorrectnessGatePass, MutationGatePass, DeterminismGatePass, DependencyGatePass };
-
     private static readonly JsonSerializerOptions WitnessHashOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
 
     private readonly BrickMutationEngine _mutationEngine = new();
     private readonly CertificationRecordSigner _signer;
+    private readonly AnalyzerFenceGate _analyzerGate;
     private readonly ILogger<CertificationGate>? _logger;
 
     /// <summary>Initializes a new certification gate.</summary>
     public CertificationGate(
         CertificationRecordSigner signer,
-        ILogger<CertificationGate>? logger = null)
+        ILogger<CertificationGate>? logger = null,
+        AnalyzerFenceGate? analyzerGate = null)
     {
         _signer = signer ?? throw new ArgumentNullException(nameof(signer));
         _logger = logger;
+        // Defaulting the gate on (rather than null-meaning-skip) keeps the chain fail-closed:
+        // no construction path exists that certifies without the analyzer fence.
+        _analyzerGate = analyzerGate ?? new AnalyzerFenceGate();
     }
 
     /// <summary>Certify asynchronously.</summary>
@@ -45,6 +47,32 @@ public sealed class CertificationGate : ICertificationGate
         var contentHash = BrickContentHasher.ComputeSha256(request.SourceCode);
         var inputs = BuildInputs(request);
 
+        // Spec A1.1/I-A: the analyzer fence runs first — a candidate carrying a defect a
+        // deterministic analyzer can name never reaches the expensive witness/mutation gates.
+        // Its gates_passed entry is per-run because A1.5 records the evaluated-diagnostic count.
+        var analyzerOutcome = await _analyzerGate.EvaluateAsync(
+            request.SourceCode,
+            request.CompilationReferences,
+            request.ConstraintManifest,
+            cancellationToken).ConfigureAwait(false);
+        var analyzerGatePass = new CertificationGatePass
+        {
+            Name = "analyzer-gate",
+            Version = GateVersion,
+            Configuration = analyzerOutcome.GatePassConfiguration,
+        };
+
+        // R2.4 "furthest gate reached": the ordered prefix of gates already passed when the
+        // named check failed. Local because the analyzer entry is per-run.
+        IReadOnlyList<CertificationGatePass> GatesPassedBefore(string failedCheck) => failedCheck switch
+        {
+            "correctness" => new[] { analyzerGatePass },
+            "mutation" => new[] { analyzerGatePass, CorrectnessGatePass },
+            "determinism" => new[] { analyzerGatePass, CorrectnessGatePass, MutationGatePass },
+            "dependency" => new[] { analyzerGatePass, CorrectnessGatePass, MutationGatePass, DeterminismGatePass },
+            _ => Array.Empty<CertificationGatePass>()
+        };
+
         CertificationRecord Fail(string check, string reason, MutationTestResult? mutation = null) =>
             BuildRecord(
                 admitted: false,
@@ -57,6 +85,18 @@ public sealed class CertificationGate : ICertificationGate
                 mutation,
                 GatesPassedBefore(check),
                 inputs);
+
+        if (!analyzerOutcome.Passed)
+        {
+            var reason = analyzerOutcome.FormatProposerFeedback();
+            _logger?.LogWarning("Certification REJECT {BrickId}: {Reason}", brickId, reason);
+            return new CertificationDecision
+            {
+                Admitted = false,
+                FailureCheck = "analyzer",
+                Record = Fail("analyzer", reason)
+            };
+        }
 
         var witnessResult = await WitnessRunner.RunAsync(
             request.Brick,
@@ -147,7 +187,10 @@ public sealed class CertificationGate : ICertificationGate
             contentHash,
             reason: null,
             mutation: mutationResult,
-            gatesPassed: AllGatePasses,
+            gatesPassed: new[]
+            {
+                analyzerGatePass, CorrectnessGatePass, MutationGatePass, DeterminismGatePass, DependencyGatePass
+            },
             inputs: inputs);
         admittedRecord = _signer.SignRecord(admittedRecord);
 
@@ -158,15 +201,6 @@ public sealed class CertificationGate : ICertificationGate
             Record = admittedRecord
         };
     }
-
-    /// <summary>Gates that had already passed when the named check failed (R2.4 "furthest gate reached").</summary>
-    private static IReadOnlyList<CertificationGatePass> GatesPassedBefore(string failedCheck) => failedCheck switch
-    {
-        "mutation" => new[] { CorrectnessGatePass },
-        "determinism" => new[] { CorrectnessGatePass, MutationGatePass },
-        "dependency" => new[] { CorrectnessGatePass, MutationGatePass, DeterminismGatePass },
-        _ => Array.Empty<CertificationGatePass>()
-    };
 
     private IReadOnlyList<CertificationInput> BuildInputs(CertificationRequest request)
     {

@@ -228,39 +228,8 @@ internal sealed class BrickMutationEngine
         }
     }
 
+    // The wrap lives in CandidateSourceWrapper so the analyzer gate compiles byte-identical
+    // candidate text (spec A1.2: analyzer and compiler must see the same bytes).
     private static string WrapWithGlobalUsings(string sourceCode)
-    {
-        const string systemUsings = """
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-using DomainBrick = Nexo.Core.Domain.Bricks.Brick;
-
-""";
-
-        const string auditContext = """
-
-internal sealed class CertAuditContext : Nexo.Core.Domain.Execution.IExecutionContext
-{
-    public string AgentId => "cert-gate";
-    public string BehaviorId => "cert-gate";
-    public bool IsAirGapped => true;
-    public bool AuditMode => true;
-    public string Provider => "deterministic";
-    public IReadOnlyDictionary<string, object> Variables { get; } = new Dictionary<string, object>();
-}
-
-""";
-
-        var namespaceIndex = sourceCode.IndexOf("namespace ", StringComparison.Ordinal);
-        if (namespaceIndex < 0)
-            return systemUsings + sourceCode;
-
-        var braceIndex = sourceCode.IndexOf('{', namespaceIndex);
-        if (braceIndex < 0)
-            return systemUsings + sourceCode;
-
-        return systemUsings + sourceCode.Insert(braceIndex + 1, auditContext);
-    }
+        => CandidateSourceWrapper.Wrap(sourceCode);
 }

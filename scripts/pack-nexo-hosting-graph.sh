@@ -23,6 +23,7 @@ pack src/Nexo.Contracts/Nexo.Contracts.csproj
 pack src/Nexo.Core.Domain/Nexo.Core.Domain.csproj
 pack src/Nexo.Core.Application/Nexo.Core.Application.csproj
 pack src/Nexo.Brick.Contracts/Nexo.Brick.Contracts.csproj
+pack src/Nexo.Analyzers/Nexo.Analyzers.csproj
 pack src/Nexo.Policies/Nexo.Policies.csproj
 pack src/Nexo.Tools.Assembly/Nexo.Tools.Assembly.csproj
 pack src/Nexo.Tools.Dev/Nexo.Tools.Dev.csproj

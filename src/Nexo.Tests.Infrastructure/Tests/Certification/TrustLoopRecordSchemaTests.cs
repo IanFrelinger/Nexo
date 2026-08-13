@@ -324,7 +324,10 @@ public sealed class TrustLoopRecordSchemaTests
         var record = decision.Record;
         record.SchemaVersion.Should().Be(CertificationRecordData.TrustLoopSchemaVersion);
         record.GatesPassed.Select(g => g.Name).Should().Equal(
-            "correctness-witness", "mutation-gate", "determinism", "dependency-graph");
+            "analyzer-gate", "correctness-witness", "mutation-gate", "determinism", "dependency-graph");
+        record.GatesPassed[0].Configuration.Should()
+            .Contain("analyzerAssemblyVersion=").And.Contain("severityFloor=Warning").And.Contain("diagnosticsEvaluated=",
+                "A1.5: the analyzer gate records versions, floor, and evaluated-diagnostic count");
         record.Inputs.Should().ContainSingle(i =>
             i.Kind == "witness" && i.Id == "mutation-probe-brick" && !string.IsNullOrWhiteSpace(i.Hash));
         record.Ed25519PublicKey.Should().Be(publicKey);
@@ -355,7 +358,9 @@ public sealed class TrustLoopRecordSchemaTests
         decision.Admitted.Should().BeFalse();
         decision.FailureCheck.Should().Be("correctness");
         decision.Record.SchemaVersion.Should().Be(CertificationRecordData.TrustLoopSchemaVersion);
-        decision.Record.GatesPassed.Should().BeEmpty("no gate passed before the correctness failure (R2.4)");
+        decision.Record.GatesPassed.Select(g => g.Name).Should().Equal(
+            new[] { "analyzer-gate" },
+            "the analyzer fence runs before correctness, so it is the only gate passed before a correctness failure (R2.4)");
         decision.Record.Signature.Should().BeNull("FAIL records are never signed");
     }
 

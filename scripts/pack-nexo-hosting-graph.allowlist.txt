@@ -1,3 +1,7 @@
 # Optional: relative csproj paths (posix) that pack-nexo-hosting-graph.{sh,ps1} may pack
 # even when they are not transitive ProjectReferences of Nexo.Hosting.
 # Keep this file empty unless you intentionally ship extra Nexo.* packages in the same graph.
+
+# Runtime dependency of Nexo.Infrastructure (AnalyzerFenceGate instantiates the catalog),
+# but referenced with OutputItemType=Analyzer, which the closure walk deliberately skips.
+src/Nexo.Analyzers/Nexo.Analyzers.csproj

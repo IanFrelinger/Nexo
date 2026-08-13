@@ -38,7 +38,7 @@ public sealed class NondeterministicBrick : DomainBrick
     {
         var logText = input.Get<string>("logText") ?? string.Empty;
         var errorLines = new List<string>();
-        foreach (var line in logText.Split(['\r', '\n'], StringSplitOptions.RemoveEmptyEntries))
+        foreach (var line in logText.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries))
         {
             if (line.Contains("ERROR", StringComparison.Ordinal))
                 errorLines.Add(line);
@@ -48,7 +48,7 @@ public sealed class NondeterministicBrick : DomainBrick
         var firstErrorMessage = errorCount > 0 ? ExtractErrorMessage(errorLines[0]) : string.Empty;
         var output = new BrickOutput
         {
-            Summary = $"Found {errorCount} noise={Random.Shared.Next()}"
+            Summary = $"Found {errorCount} noise={Guid.NewGuid():N}"
         };
         output.Set("errorCount", errorCount);
         output.Set("firstErrorMessage", firstErrorMessage);

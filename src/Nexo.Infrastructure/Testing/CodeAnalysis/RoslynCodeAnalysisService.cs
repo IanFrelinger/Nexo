@@ -50,19 +50,8 @@ public class RoslynCodeAnalysisService : ICodeAnalysisService
                 // Parse the source code
                 var syntaxTree = CSharpSyntaxTree.ParseText(sourceCode, cancellationToken: cancellationToken);
 
-            // Get default references (core .NET libraries)
-            var defaultReferences = GetDefaultReferences();
-            var allReferences = defaultReferences;
-
-            // Add custom references if provided
-            if (references != null)
-            {
-                var customReferences = references
-                    .Where(r => File.Exists(r))
-                    .Select(r => MetadataReference.CreateFromFile(r))
-                    .ToList();
-                allReferences = defaultReferences.Concat(customReferences).ToList();
-            }
+            // Default references (core .NET libraries) plus any provided custom references.
+            var allReferences = BuildReferenceSet(references);
 
             // Create compilation
             var compilation = CSharpCompilation.Create(
@@ -277,6 +266,23 @@ public class RoslynCodeAnalysisService : ICodeAnalysisService
                     duration);
             }
         }, cancellationToken);
+    }
+
+    /// <summary>
+    /// Default references plus any existing custom reference paths — shared with the analyzer
+    /// fence gate so gate and compiler resolve against the identical reference set.
+    /// </summary>
+    internal static List<MetadataReference> BuildReferenceSet(IEnumerable<string>? references)
+    {
+        var allReferences = GetDefaultReferences();
+        if (references != null)
+        {
+            allReferences.AddRange(references
+                .Where(File.Exists)
+                .Select(r => (MetadataReference)MetadataReference.CreateFromFile(r)));
+        }
+
+        return allReferences;
     }
 
     private static List<MetadataReference> GetDefaultReferences()

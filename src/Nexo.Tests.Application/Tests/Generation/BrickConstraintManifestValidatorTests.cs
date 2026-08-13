@@ -162,6 +162,17 @@ public sealed class ResolveDamageBrick : DomainBrick
     }
 
     [Fact]
+    public void ForbiddenNamespaces_AreRenderedForTheProposer_WhileEnforcementIsAnalyzerSide()
+    {
+        // First use (prompt) happens here; the second use is the certification analyzer gate,
+        // which resolves symbols — this textual validator deliberately does not duplicate it
+        // (extension spec A2.1: semantic rules have exactly one governing enforcement point).
+        var manifest = new BrickConstraintManifest { ForbiddenNamespaces = ["System.IO"] };
+
+        manifest.RenderInstructions().Should().Contain(manifest.ForbiddenNamespaceInstruction("System.IO"));
+    }
+
+    [Fact]
     public async Task UnconfiguredRules_AreNeitherRenderedNorEnforced()
     {
         var empty = new BrickConstraintManifest();

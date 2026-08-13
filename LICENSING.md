@@ -21,6 +21,7 @@ Rationale: this tier protects two moats at once — an extensible SDK and a sing
 | OPEN | `src/Nexo.Abstractions/Nexo.Abstractions.csproj` |
 | OPEN | `src/Nexo.Contracts/Nexo.Contracts.csproj` |
 | OPEN | `src/Nexo.Brick.Contracts/Nexo.Brick.Contracts.csproj` |
+| OPEN | `src/Nexo.Analyzers/Nexo.Analyzers.csproj` |
 | OPEN | `src/Nexo.Sdk/Nexo.Sdk.csproj` |
 | OPEN | `src/Nexo.Framework.Sdk/Nexo.Framework.Sdk.csproj` |
 | OPEN | `src/Nexo.Client/Nexo.Client.csproj` |

@@ -76,6 +76,37 @@ public sealed class CertificationGateTeethTests
     }
 
     [Fact]
+    public async Task RequestManifest_ReachesTheAnalyzerGate_AndItsInstructionReachesTheRecord()
+    {
+        // A2.3 end-to-end: the manifest instance on the request is the one whose rules reject
+        // the candidate, and the failure reason restates that instance's instruction verbatim.
+        var manifest = new Nexo.Core.Domain.Bricks.Ports.BrickConstraintManifest
+        {
+            ForbiddenNamespaces = ["System.Collections"]
+        };
+        var gate = CreateGate();
+        var request = new CertificationRequest
+        {
+            Brick = new MutationProbeBrick(),
+            Witness = StrongWitness,
+            SourceCode = MutationProbeBrickSource.Code,
+            ProjectPath = CreateCleanProjectFile(),
+            CompilationReferences = CompilationReferences(),
+            BrickTypeName = typeof(MutationProbeBrick).FullName,
+            ConstraintManifest = manifest
+        };
+
+        var decision = await gate.CertifyAsync(request);
+
+        decision.Admitted.Should().BeFalse();
+        decision.FailureCheck.Should().Be("analyzer");
+        decision.Record.Reason.Should().Contain("NEXO0012")
+            .And.Contain(manifest.ForbiddenNamespaceInstruction("System.Collections"));
+        decision.Record.GatesPassed.Should().BeEmpty(
+            "the analyzer fence is the first gate, so nothing precedes it in the furthest-gate prefix");
+    }
+
+    [Fact]
     public async Task BadWitnessBrick_Rejects_OnCorrectness()
     {
         var gate = CreateGate();
