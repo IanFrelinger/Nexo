@@ -1,4 +1,5 @@
 using System.Text;
+using Nexo.Certification.Contracts;
 
 namespace Nexo.Core.Application.Generation;
 
@@ -88,6 +89,20 @@ public sealed record ProposalContext
 
     /// <summary>Recorded seed for any randomized preparation step (spec R1.2); null when none was used.</summary>
     public string? Seed { get; init; }
+
+    /// <summary>
+    /// This context as a certificate input (trust-loop spec §2.1 <c>inputs</c>): the
+    /// bridge from stage-1 assembly to the v2 certification record. Pass it through
+    /// <c>CertificationRequest.AdditionalInputs</c> so the minted certificate records
+    /// which context produced the artifact.
+    /// </summary>
+    /// <param name="id">Identifier for this context within the <c>context</c> kind (e.g. the target id).</param>
+    public CertificationInput ToCertificationInput(string id) => new()
+    {
+        Kind = "context",
+        Id = id,
+        Hash = Hash
+    };
 
     /// <summary>
     /// Deterministic text rendering for prompts/grounding: one titled section per

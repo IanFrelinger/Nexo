@@ -164,6 +164,20 @@ public sealed class ProposalContextAssemblerTests
         text.Should().Contain("the-content");
     }
 
+    [Fact]
+    public void ToCertificationInput_BridgesTheContextHashToCertificateInputs()
+    {
+        var assembler = new ProposalContextAssembler(defaultMaxCharsPerKind: 1000);
+        var context = assembler.Assemble(new[] { Source("witness", "w1", "alpha") });
+
+        var input = context.ToCertificationInput("sql");
+
+        input.Kind.Should().Be("context");
+        input.Id.Should().Be("sql");
+        input.Hash.Should().Be(context.Hash,
+            "the certificate must record exactly the context hash stage-1 assembly produced (spec §2.1 inputs)");
+    }
+
     private static ProposalContextSource Source(
         string kind,
         string id,

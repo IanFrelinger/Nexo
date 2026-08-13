@@ -1,3 +1,4 @@
+using Nexo.Certification.Contracts;
 using Nexo.Core.Domain.Bricks;
 
 namespace Nexo.Core.Application.Certification.Models;
@@ -24,4 +25,12 @@ public sealed record CertificationRequest
 
     /// <summary>Optional fully-qualified brick type name override.</summary>
     public string? BrickTypeName { get; init; }
+
+    /// <summary>
+    /// Extra hash-identified inputs to record on the certificate beyond the witness
+    /// (trust-loop spec §2.1 <c>inputs</c>) — e.g. the assembled proposal context via
+    /// <c>ProposalContext.ToCertificationInput</c>. Evidence, not a gate: entries are
+    /// recorded under the v2 signature, in authored order after the witness input.
+    /// </summary>
+    public IReadOnlyList<CertificationInput> AdditionalInputs { get; init; } = Array.Empty<CertificationInput>();
 }
