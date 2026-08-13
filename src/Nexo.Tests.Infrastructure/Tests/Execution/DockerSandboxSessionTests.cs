@@ -207,6 +207,38 @@ public sealed class DockerSandboxSessionTests
         rmCalls.Should().Be(0, "an unreadable listing must not trigger blind removals — the next sweep retries");
     }
 
+    // --- confinement + network modes (extension spec Part B) -----------------------------
+
+    [Fact]
+    public void DockerBackends_RefuseHostServicesOnly_FailClosed()
+    {
+        var spec = new SandboxSpec(
+            "img", Array.Empty<Mount>(), NetworkAccess.HostServicesOnly, new[] { "sleep", "infinity" });
+
+        var oneShot = () => DockerSandboxedCommandRunner.BuildDockerArguments(spec);
+        var session = () => DockerSandboxedSessionRunner.BuildStartArguments(spec, "nexo-session-x", 0);
+
+        oneShot.Should().Throw<NotSupportedException>().WithMessage("*fail-closed*");
+        session.Should().Throw<NotSupportedException>().WithMessage("*fail-closed*",
+            "a session believing itself contained while holding open egress is worse than no session");
+    }
+
+    [Fact]
+    public void ConfinementMounts_FlowIntoASessionSpec_Unchanged()
+    {
+        var confinement = new ProposerConfinement { WritablePrefixes = new[] { "src/" } };
+        var spec = new SandboxSpec(
+            "proposer:latest",
+            confinement.ToMounts("/repo"),
+            NetworkAccess.None,
+            new[] { "sleep", "infinity" });
+
+        var args = DockerSandboxedSessionRunner.BuildStartArguments(spec, "nexo-session-x", 42);
+
+        args.Should().Contain("/repo:/workspace:ro", "context is read-only");
+        args.Should().Contain("/repo/src:/workspace/src", "the declared surface is the only writable mount");
+    }
+
     // --- helpers -------------------------------------------------------------------------
 
     private sealed class FrozenClock : TimeProvider
