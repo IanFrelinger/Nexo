@@ -1,6 +1,6 @@
 # kernel-coverage gate: why it never completed
 
-**Status: CLOSED.** The gate runs Domain, **Infrastructure**, and Core.Application, and passes. Infrastructure line coverage has been measured for the first time: **80.3%**, from the first complete run of that suite (1,764 passed / 1 skipped / 1,765 total). Floor set to **80%** as a ratchet; target remains 83.
+**Status: CLOSED.** The gate runs Domain, **Infrastructure**, and Core.Application, and passes. Infrastructure line coverage has been measured for the first time: **80.3%**, from the first complete run of that suite (1,764 passed / 1 skipped / 1,765 total). Floor set to **80%** as a ratchet; target remains 83. A later round of intermittent instrumentation-load timeouts is documented at the end ("2026-08-13: intermittent timeouts under instrumentation").
 
 Five defects had to be fixed to get a number, and **each was invisible until the one in front of it was fixed**:
 
@@ -278,7 +278,13 @@ remains 83, and branch coverage at 64.48% shows the headroom is real.
   and changing when its manifest populates would alter `IsAvailable`/`Manifest`
   semantics, so it was left alone here.
 - **`TestRunnerAdapter.ExecuteTestAsync`** abandons its `runTask` on the per-test
-  timeout path. Latent — never executed today.
+  timeout path. ~~Latent — never executed today.~~ **No longer latent:** the path
+  executed on 2026-08-13 (run 31665068194, attempt 1) and its side effect is worse
+  than "abandons" suggests — the given-up-on work keeps running and consuming the
+  saturated machine while later tests execute against that load. The per-test timeout
+  has been resized so the path is rare again (see the 2026-08-13 section), but the
+  abandonment itself is unfixed: in-process CPU-bound work cannot be killed, so the
+  structural fix would be out-of-process execution.
 
 ## Superseded: the process-lifetime leak framing
 
@@ -340,4 +346,63 @@ restoring 83 would be restoring a figure nobody ever verified. The real floor sh
 be set from the first complete run, not inherited.
 
 Related tracked item: `TestRunnerAdapter.ExecuteTestAsync` abandons its `runTask` on
-the per-test timeout path (latent, never executed today, separate bug).
+the per-test timeout path (no longer latent — see the follow-ups list and the
+2026-08-13 section below).
+
+## 2026-08-13: intermittent timeouts under instrumentation
+
+The gate completes now, but went intermittently red on branch pushes while master
+stayed green. Two runs failed on attempt 1 and passed on a manual re-run — both
+recorded conclusions are attempt 2, i.e. a human pressing retry:
+
+- **31657562601** (`cursor/trust-loop-cert-schema`) — failed on the **identical
+  commit** that run 31657543917 had already passed, which is what proves flakiness
+  rather than a code defect.
+- **31665068194** (`cursor/trust-loop-context-assembler`).
+
+Three failures across the two attempt-1 logs:
+
+| run (attempt 1) | test | bound hit | observed |
+|---|---|---|---|
+| 31665068194 | bridge case `RoslynAnalyzeToolTests` | `TestRunnerAdapter` 60s per-test timeout | "Test timed out after 60s", reported at 1m58s suite elapsed |
+| 31665068194 | bridge case `BehaviorExecutorNcrEscalationTests` | 240s `[Theory(Timeout)]` cap | killed at the cap; its case started seconds after the case above failed |
+| 31657562601 | `FileSystemEventSourceTests.SubscribeAsync_FileCreated_EmitsEvent` | its own 20s internal cancellation token | `OperationCanceledException` out of `File.WriteAllTextAsync`, test duration **6m17s** |
+
+**One cause family, not three.** Under coverlet instrumentation on the 2-core runner
+the suite intermittently saturates CPU and the thread pool badly enough that queued
+work items execute **minutes** late — the 6m17s figure is a file write that sat
+queued while a 20s token expired behind it. Every fixed bound sized to healthy
+duration then converts a slow-but-progressing run into a red build. This is the
+exact failure mode the `TestTimeouts` doctrine warns about, observed at three
+different bounds in one gate.
+
+The 60s per-test timeout also **amplifies the load it mismeasures**: its timeout
+path abandons `runTask`, so the instrumented Roslyn compile it gave up on kept
+burning both cores while the next bridge case ran — which is plausibly why that next
+case blew through a 240s cap that normally has minutes of headroom.
+
+**What changed** — all three bounds resized as hang nets that clear the worst
+observed stall (~6m20s) with margin, per the sizing rule in `TestTimeouts`:
+
+- `TestTimeouts.HostTouching`: 240s → **480s** (covers the bridge theory cap and the
+  other ProdStyle hang nets).
+- `TestRunnerAdapter.DefaultPerTestTimeout`: 60s → **480s**.
+- `FileSystemEventSourceTests` internal token: 20s → `TestTimeouts.HostTouching`.
+
+**Considered and rejected:**
+
+- **Excluding `RoslynAnalyzeToolTests` / `BehaviorExecutorNcrEscalationTests` from
+  the bridge matrix.** Deletes the proof and the coverage: the Infrastructure floor
+  has 0.3pt of margin (80.3% measured against a floor of 80), and these suites cover
+  `RoslynAnalyzeTool` and the NCR escalation path in `[Nexo.Infrastructure]`.
+- **Scaling timeouts only under instrumentation (env var).** Two timing regimes and
+  a hidden coupling, for no benefit: the doctrine already says a bound sized to
+  healthy duration is wrong on any sufficiently loaded machine, instrumented or not.
+- **Auto-retrying the job once.** Institutionalizes the flake — both cited runs are
+  attempt-2 passes, so the retry was already happening by hand, and the point of
+  this gate is that red means something.
+
+**Determinism claim, stated honestly:** 480s clears the worst stall observed so far
+by ~100s. If a future run stalls longer, this gate goes red again and this table
+gets a new row — like the coverage floor, the number is sized from observation, not
+proven against a bound.
