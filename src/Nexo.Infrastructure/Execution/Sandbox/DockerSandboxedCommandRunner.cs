@@ -85,6 +85,19 @@ public sealed class DockerSandboxedCommandRunner : ISandboxedCommandRunner
     /// </summary>
     internal static void AppendSpecArguments(List<string> args, SandboxSpec spec)
     {
+        if (spec.Network == NetworkAccess.HostServicesOnly)
+        {
+            // v1 fail-closed refusal (spec Part B): plain bridge networking cannot express
+            // "these host services and nothing else" — realizing it needs a per-session
+            // network + egress rules this backend does not manage yet. Degrading to
+            // unrestricted egress while the spec promises containment would be the worst
+            // possible outcome, so the spec is refused instead.
+            throw new NotSupportedException(
+                "NetworkAccess.HostServicesOnly is not realizable by the Docker backend in v1; "
+                + "refusing fail-closed rather than degrading to unrestricted egress. "
+                + "Use NetworkAccess.None, or run the dependent service inside the session image.");
+        }
+
         if (spec.Network == NetworkAccess.None)
             args.Add("--network=none");
 

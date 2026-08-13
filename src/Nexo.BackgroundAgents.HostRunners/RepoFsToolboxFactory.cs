@@ -69,6 +69,12 @@ internal static class RepoFsToolboxFactory
     /// <returns>The toolbox, the policy engine, and the budget instance — exposed so
     /// callers (typically the agent runner) can call <see cref="BuildTestBudget.Reset"/>
     /// at cycle boundaries.</returns>
+    /// <param name="confinement">
+    /// Optional single-source confinement declaration (extension spec Part B). When present,
+    /// the write allowlist is derived from EXACTLY its writable prefixes — no built-in
+    /// defaults, no environment widening — the same declaration that derives the session's
+    /// bind mounts. Null preserves the historical default allowlist.
+    /// </param>
     public static (CapabilityRegistry tools, PolicyEngine policies, BuildTestBudget budget) CreateWithBuildTest(
         IObservationStore? observations = null,
         string source = "self-extend",
@@ -78,7 +84,8 @@ internal static class RepoFsToolboxFactory
         ICertificationRecordStore? certificationStore = null,
         IBackgroundAgentRegistry? agentRegistry = null,
         IDataSensitivityRegistry? sensitivityRegistry = null,
-        IEnumerable<ITool>? extraTools = null)
+        IEnumerable<ITool>? extraTools = null,
+        Nexo.Core.Application.Execution.Ports.ProposerConfinement? confinement = null)
     {
         var tools = new CapabilityRegistry();
         tools.Register(new RepoFsListTool());
@@ -131,7 +138,9 @@ internal static class RepoFsToolboxFactory
         var budget = new BuildTestBudget();
         var policyList = new List<IPolicy>
         {
-            new PathAllowlist(),
+            confinement is null
+                ? new PathAllowlist()
+                : PathAllowlist.FromExactPrefixes(confinement.ToPathAllowlistPrefixes()),
             new MaxWriteSize(),
             budget
         };
