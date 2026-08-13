@@ -70,6 +70,21 @@ public sealed class DockerSandboxedCommandRunner : ISandboxedCommandRunner
             "--rm"
         };
 
+        AppendSpecArguments(args, spec);
+
+        args.Add(spec.Image!);
+        args.AddRange(spec.Command);
+        return args;
+    }
+
+    /// <summary>
+    /// Appends the isolation-policy portion of a <c>docker run</c> argv (network, resource
+    /// limits, mounts, entrypoint) for <paramref name="spec"/>. Shared with
+    /// <see cref="DockerSandboxedSessionRunner"/> so one-shot commands and long-lived
+    /// sessions translate a spec identically — two translations would drift.
+    /// </summary>
+    internal static void AppendSpecArguments(List<string> args, SandboxSpec spec)
+    {
         if (spec.Network == NetworkAccess.None)
             args.Add("--network=none");
 
@@ -109,9 +124,5 @@ public sealed class DockerSandboxedCommandRunner : ISandboxedCommandRunner
             args.Add("--entrypoint");
             args.Add(spec.Entrypoint!);
         }
-
-        args.Add(spec.Image!);
-        args.AddRange(spec.Command);
-        return args;
     }
 }
