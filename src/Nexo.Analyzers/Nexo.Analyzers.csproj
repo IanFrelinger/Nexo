@@ -8,9 +8,16 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <IsPackable>false</IsPackable>
+    <!-- Packable as an ordinary library: Nexo.Infrastructure consumes this assembly at
+         RUNTIME (AnalyzerFenceGate instantiates the catalog), so the packed hosting graph
+         needs it in the local feed. In-repo projects additionally attach it in the
+         analyzer role via ProjectReference; package consumers only need the library. -->
+    <IsPackable>true</IsPackable>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
-    <IncludeBuildOutput>false</IncludeBuildOutput>
+    <PackageId>Nexo.Analyzers</PackageId>
+    <Title>Nexo Trust-Loop Analyzers</Title>
+    <Description>Roslyn rules for Nexo brick code: contract drift, constructor purity, determinism, and the certification analyzer-gate catalog.</Description>
+    <PackageTags>nexo;analyzers;roslyn;trust-loop;certification</PackageTags>
   </PropertyGroup>
 
   <ItemGroup>
