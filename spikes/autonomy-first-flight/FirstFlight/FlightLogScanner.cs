@@ -149,6 +149,19 @@ public sealed class FlightLogScannerBrick : DomainBrick
                 {
                     ["errorCount"] = 0,
                     ["firstErrorMessage"] = ""
+                }),
+            // Boundary case, added after the first model-proposed flight: the mutation
+            // gate rejected that proposal with three surviving boundary-index mutants
+            // (skip-first-character equivalents), naming a REAL gap — the witness never
+            // pinned markers at the start of the text or of a line. Contract-derived
+            // hardening, not implementation-fitting: any correct scanner must count
+            // edge-positioned markers and extract their messages.
+            new WitnessCase(
+                new Dictionary<string, object> { ["logText"] = "ERROR first\nERROR second" },
+                new Dictionary<string, object>
+                {
+                    ["errorCount"] = 2,
+                    ["firstErrorMessage"] = "first"
                 })
         ]);
 
