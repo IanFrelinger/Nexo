@@ -52,4 +52,12 @@ public sealed record CertificationRequest
     /// trust kernel is a certification FAIL. Null = no touch-set rules.
     /// </summary>
     public Autonomy.TouchSet? TouchSet { get; init; }
+
+    /// <summary>
+    /// The candidate's recursion pedigree (autonomy spec R4.1). Null is treated as
+    /// human-authored context (depth 0) — the certifier validates coherent lineages
+    /// (laundering matrix) and enforces the depth ceiling before any other gate runs, and
+    /// records the depth plus a parent-chain hash into the certificate's inputs.
+    /// </summary>
+    public Autonomy.GenerationLineage? Lineage { get; init; }
 }
