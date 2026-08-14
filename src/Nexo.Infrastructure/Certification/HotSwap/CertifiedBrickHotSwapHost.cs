@@ -42,6 +42,9 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
     private readonly ILogger<CertifiedBrickHotSwapHost>? _logger;
     private readonly string? _hmacKey;
     private readonly TimeSpan _drainTimeout;
+    private readonly Nexo.Core.Application.Autonomy.ICertificateRevocationList? _revocations;
+    private readonly int _retentionWindow;
+    private readonly List<RetainedGeneration> _retained = new();
 
     private BrickGeneration? _current;
     private int _generationCounter;
@@ -51,17 +54,25 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
     /// <param name="logger">Optional diagnostics logger.</param>
     /// <param name="hmacKey">Explicit record-verification key; falls back to environment/dev key.</param>
     /// <param name="drainTimeout">How long a retired generation may drain before it is unloaded anyway.</param>
+    /// <param name="revocations">Quarantine list; any request whose certificate content hash is revoked is refused permanently (R5.3).</param>
+    /// <param name="retentionWindow">How many committed generations stay reactivatable via <see cref="RollbackToAsync"/> (R5.1). 0 disables retention.</param>
     public CertifiedBrickHotSwapHost(
         ICertifiedBrickSwapProvenanceSink? provenanceSink = null,
         ILogger<CertifiedBrickHotSwapHost>? logger = null,
         string? hmacKey = null,
-        TimeSpan? drainTimeout = null)
+        TimeSpan? drainTimeout = null,
+        Nexo.Core.Application.Autonomy.ICertificateRevocationList? revocations = null,
+        int retentionWindow = 2)
     {
         _provenanceSink = provenanceSink;
         _logger = logger;
         _hmacKey = hmacKey;
         _drainTimeout = drainTimeout ?? DefaultDrainTimeout;
+        _revocations = revocations;
+        _retentionWindow = Math.Max(0, retentionWindow);
     }
+
+    private sealed record RetainedGeneration(int GenerationId, IReadOnlyList<CertifiedBrickLoadRequest> Requests);
 
     /// <summary>Generation currently serving, or null before the first successful swap.</summary>
     public int? CurrentGenerationId => Volatile.Read(ref _current)?.Id;
@@ -107,6 +118,7 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
 
             _generationCounter = generationId;
             var previous = Interlocked.Exchange(ref _current, materialized.Generation);
+            RetainCommitted(generationId, requests, materialized.EmittedImages);
 
             foreach (var request in requests)
             {
@@ -213,6 +225,82 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
         TryDeleteDirectory(current.TempDirectory);
     }
 
+    /// <summary>
+    /// Reactivates a retained generation (autonomy spec R5.1): the retained certificates
+    /// and source are re-verified, the retained EMITTED IMAGES load into a fresh context —
+    /// no build, no network, no model — and the standard fail-closed swap semantics apply
+    /// (a revoked hash in the retained set refuses the rollback; R5.3 outranks R5.1).
+    /// </summary>
+    public async Task<CertifiedBrickSwapResult> RollbackToAsync(
+        int generationId,
+        CancellationToken cancellationToken = default)
+    {
+        RetainedGeneration? retained;
+        lock (_retained)
+        {
+            retained = _retained.FirstOrDefault(r => r.GenerationId == generationId);
+        }
+
+        if (retained is null)
+        {
+            return new CertifiedBrickSwapResult
+            {
+                Swapped = false,
+                Refusals = new[]
+                {
+                    new BrickSwapRefusal
+                    {
+                        BrickId = "*",
+                        Stage = BrickSwapRefusalStage.Request,
+                        FailureCode = "no-retained-generation",
+                        Reason = $"Generation {generationId} is not in the retention window "
+                            + $"({_retentionWindow} generation(s) retained)."
+                    }
+                }
+            };
+        }
+
+        var result = await SwapAsync(retained.Requests, cancellationToken).ConfigureAwait(false);
+        if (result.Swapped)
+        {
+            Emit(new BrickSwapProvenanceEvent
+            {
+                Generation = result.GenerationId ?? 0,
+                Outcome = BrickSwapProvenanceOutcomes.RollbackCommitted,
+                Timestamp = DateTimeOffset.UtcNow,
+                ContextName = result.GenerationContextName,
+                Reason = $"Reactivated retained generation {generationId} from its emitted images."
+            });
+        }
+
+        return result;
+    }
+
+    private void RetainCommitted(
+        int generationId,
+        IReadOnlyList<CertifiedBrickLoadRequest> requests,
+        IReadOnlyDictionary<string, byte[]>? emittedImages)
+    {
+        if (_retentionWindow == 0 || emittedImages is null)
+            return;
+
+        var snapshot = requests
+            .Select(r => r with
+            {
+                PrecompiledAssembly = emittedImages.TryGetValue(r.BrickId, out var image) ? image : null,
+            })
+            .ToArray();
+        if (snapshot.Any(r => r.PrecompiledAssembly is null))
+            return; // A generation we cannot fully reactivate without a build is not retained.
+
+        lock (_retained)
+        {
+            _retained.Add(new RetainedGeneration(generationId, snapshot));
+            while (_retained.Count > _retentionWindow)
+                _retained.RemoveAt(0);
+        }
+    }
+
     private List<BrickSwapRefusal> VerifyAll(IReadOnlyList<CertifiedBrickLoadRequest> requests)
     {
         var refusals = new List<BrickSwapRefusal>();
@@ -253,6 +341,55 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
                     FailureCode = trust.FailureCode,
                     Reason = trust.Reason
                 });
+                continue;
+            }
+
+            // R5.3: quarantine is permanent. A revoked content hash never loads again —
+            // rollbacks and bit-identical resubmissions included. Re-earning admission
+            // means re-certifying a new candidate, never resurrecting the old hash.
+            if (_revocations?.IsRevoked(request.Record.ContentHash ?? "") == true)
+            {
+                refusals.Add(new BrickSwapRefusal
+                {
+                    BrickId = request.BrickId,
+                    Stage = BrickSwapRefusalStage.Verification,
+                    FailureCode = "revoked-hash",
+                    Reason = "Certificate content hash is revoked (quarantined): "
+                        + (_revocations.TryGetReason(request.Record.ContentHash ?? "") ?? "no reason recorded")
+                });
+                continue;
+            }
+
+            // Autonomy spec R3.2 (swap-host leg) + R4.2 (independent ceiling): when the
+            // LOOP drives the swap, only Tier-0 classifications may auto-swap, and the
+            // recursion rules are re-checked here regardless of what the certifier did.
+            if (request.Autonomous is { } autonomous)
+            {
+                if (autonomous.Tier != Nexo.Core.Application.Autonomy.ObjectiveTier.Tier0Autonomous)
+                {
+                    refusals.Add(new BrickSwapRefusal
+                    {
+                        BrickId = request.BrickId,
+                        Stage = BrickSwapRefusalStage.Request,
+                        FailureCode = "tier-requires-human-admission",
+                        Reason = $"Objective tier {autonomous.Tier} cannot auto-swap; admission waits for "
+                            + "the human gate (autonomy spec R3.1)."
+                    });
+                    continue;
+                }
+
+                var lineage = autonomous.Lineage ?? Nexo.Core.Application.Autonomy.GenerationLineage.HumanAuthored;
+                var recursion = Nexo.Core.Application.Autonomy.RecursionDiscipline.FindViolations(lineage);
+                if (recursion.Count > 0)
+                {
+                    refusals.Add(new BrickSwapRefusal
+                    {
+                        BrickId = request.BrickId,
+                        Stage = BrickSwapRefusalStage.Request,
+                        FailureCode = "recursion-refused",
+                        Reason = "Recursion discipline failed at the swap host: " + string.Join(" | ", recursion)
+                    });
+                }
             }
         }
 
@@ -304,7 +441,8 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
         BrickGeneration? Generation,
         IReadOnlyList<BrickSwapRefusal> Refusals,
         WeakReference AbortedContextRef,
-        string TempDirectory);
+        string TempDirectory,
+        IReadOnlyDictionary<string, byte[]>? EmittedImages = null);
 
     /// <summary>
     /// Compiles and loads every brick into one new collectible context. On any failure the
@@ -324,6 +462,7 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
 
         var context = new BrickGenerationLoadContext(contextName);
         var bricks = new Dictionary<string, DomainBrick>(StringComparer.OrdinalIgnoreCase);
+        var emittedImages = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
         var refusals = new List<BrickSwapRefusal>();
         var compiler = new RoslynCodeAnalysisService(NullLogger<RoslynCodeAnalysisService>.Instance);
 
@@ -340,29 +479,39 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
                 };
                 references.AddRange(request.AdditionalCompilationReferences);
 
-                var compile = await compiler.CompileAsync(
-                    WrapForRoslynCompile(request.SourceCode),
-                    assemblyName,
-                    outputPath,
-                    references,
-                    cancellationToken).ConfigureAwait(false);
-
-                if (!compile.Success || string.IsNullOrWhiteSpace(compile.AssemblyPath) || !File.Exists(compile.AssemblyPath))
+                // Rollback path (R5.1): a retained generation reactivates from its exact
+                // emitted image — no compiler runs. Verify-at-load already re-checked the
+                // source hash against the certificate before this frame.
+                if (request.PrecompiledAssembly is { } image)
                 {
-                    refusals.Add(new BrickSwapRefusal
+                    File.WriteAllBytes(outputPath, image);
+                }
+                else
+                {
+                    var compile = await compiler.CompileAsync(
+                        WrapForRoslynCompile(request.SourceCode),
+                        assemblyName,
+                        outputPath,
+                        references,
+                        cancellationToken).ConfigureAwait(false);
+
+                    if (!compile.Success || string.IsNullOrWhiteSpace(compile.AssemblyPath) || !File.Exists(compile.AssemblyPath))
                     {
-                        BrickId = request.BrickId,
-                        Stage = BrickSwapRefusalStage.Compilation,
-                        FailureCode = "compile-failed",
-                        Reason = string.Join("; ", compile.Errors.DefaultIfEmpty("no assembly produced"))
-                    });
-                    continue;
+                        refusals.Add(new BrickSwapRefusal
+                        {
+                            BrickId = request.BrickId,
+                            Stage = BrickSwapRefusalStage.Compilation,
+                            FailureCode = "compile-failed",
+                            Reason = string.Join("; ", compile.Errors.DefaultIfEmpty("no assembly produced"))
+                        });
+                        continue;
+                    }
                 }
 
                 Assembly assembly;
                 try
                 {
-                    assembly = context.LoadFromAssemblyPath(compile.AssemblyPath);
+                    assembly = context.LoadFromAssemblyPath(outputPath);
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException)
                 {
@@ -424,6 +573,9 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
                 }
 
                 bricks[request.BrickId] = brick;
+                // Captured for generation retention (R5.1): rollback reactivates from
+                // these exact bytes with no compiler involved.
+                emittedImages[request.BrickId] = File.ReadAllBytes(outputPath);
             }
         }
         catch (OperationCanceledException)
@@ -457,7 +609,8 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
             new BrickGeneration(generationId, contextName, tempDirectory, context, bricks),
             Array.Empty<BrickSwapRefusal>(),
             new WeakReference(null),
-            tempDirectory);
+            tempDirectory,
+            emittedImages);
     }
 
     private async Task<bool> RetireAsync(BrickGeneration previous)
