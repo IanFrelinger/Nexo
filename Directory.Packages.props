@@ -122,7 +122,7 @@
     <PackageVersion Include="AWSSDK.Lambda" Version="4.0.103" />
     <PackageVersion Include="AWSSDK.DynamoDBv2" Version="4.0.101.1" />
     <PackageVersion Include="AWSSDK.Core" Version="4.0.100.4" />
-    <PackageVersion Include="AWSSDK.BedrockRuntime" Version="4.0.100.3" />
+    <PackageVersion Include="AWSSDK.BedrockRuntime" Version="4.0.101.1" />
     <PackageVersion Include="AWSSDK.Extensions.Bedrock.MEAI" Version="4.0.101.3" />
   </ItemGroup>
   <!-- Entity Framework Packages -->
