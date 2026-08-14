@@ -162,6 +162,17 @@ public sealed class FlightLogScannerBrick : DomainBrick
                 {
                     ["errorCount"] = 2,
                     ["firstErrorMessage"] = "first"
+                }),
+            // Second hardening from the same flight campaign: a LEADING newline. The
+            // remaining survivor mutated the newline-boundary sentinel so that a text
+            // beginning with a newline collapses into one segment — which changes both
+            // outputs here, and nowhere else in the witness.
+            new WitnessCase(
+                new Dictionary<string, object> { ["logText"] = "\nERROR a\nERROR b" },
+                new Dictionary<string, object>
+                {
+                    ["errorCount"] = 2,
+                    ["firstErrorMessage"] = "a"
                 })
         ]);
 
