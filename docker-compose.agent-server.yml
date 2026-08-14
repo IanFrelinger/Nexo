@@ -36,6 +36,12 @@ services:
       NEXO_BACKGROUND_AGENTS_CONFIG: ${NEXO_BACKGROUND_AGENTS_CONFIG:-/work/apps/runtime-studio/config/agent_set.local.json}
       Nexo__Barriers__RequireExplicitBarrier: ${Nexo__Barriers__RequireExplicitBarrier:-false}
       NEXO_OBSERVATION_DEGRADED_MODE: ${NEXO_OBSERVATION_DEGRADED_MODE:-1}
+      # MCP/A2A protocol ingress is OFF unless explicitly enabled (fail-closed defaults;
+      # see docs/architecture/ProtocolIntegration-MCP-A2A.md before flipping any of these).
+      Nexo__Mcp__Server__Enabled: ${Nexo__Mcp__Server__Enabled:-false}
+      Nexo__Mcp__Client__Enabled: ${Nexo__Mcp__Client__Enabled:-false}
+      Nexo__A2A__Server__Enabled: ${Nexo__A2A__Server__Enabled:-false}
+      Nexo__A2A__Transport__Enabled: ${Nexo__A2A__Transport__Enabled:-false}
     ports:
       - "127.0.0.1:${NEXO_AGENT_SERVER_HTTP_PORT:-8080}:8080"
     volumes:
