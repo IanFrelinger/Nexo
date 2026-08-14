@@ -322,34 +322,46 @@ foreach (var unit in job.Units)
                 foreach (var (key, value) in job.Cases[caseIndex].Inputs)
                     inputs[key] = Coerce(value);
 
-                var brickInput = Activator.CreateInstance(inputType, inputs);
-                var implementation = Enum.Parse(implType, "Deterministic");
-                var task = (Task)execute.Invoke(instance, new[] { brickInput, implementation, auditContext, (object)CancellationToken.None });
-                var winner = await Task.WhenAny(task, Task.Delay(TimeSpan.FromSeconds(job.TimeoutSeconds))).ConfigureAwait(false);
-                if (winner != task)
+                // The ENTIRE invoke runs inside Task.Run: a synchronous brick (Task.FromResult
+                // shape) executes its body inside Invoke itself, so a nonterminating mutant
+                // would otherwise spin on this thread and the timeout race could never start.
+                var work = Task.Run(() =>
+                {
+                    var brickInput = Activator.CreateInstance(inputType, inputs);
+                    var implementation = Enum.Parse(implType, "Deterministic");
+                    var task = (Task)execute.Invoke(instance, new object[] { brickInput, implementation, auditContext, CancellationToken.None });
+                    task.GetAwaiter().GetResult();
+                    var output = task.GetType().GetProperty("Result").GetValue(task);
+                    if (output is null)
+                        return (Summary: (string)null, Outputs: (Dictionary<string, object>)null, Error: "execution returned null output");
+
+                    var summary = output.GetType().GetProperty("Summary")?.GetValue(output) as string;
+                    var raw = output.GetType().GetMethod("ToDictionary").Invoke(output, null);
+                    var outputs = new Dictionary<string, object>();
+                    foreach (var entry in (IReadOnlyDictionary<string, object>)raw)
+                        outputs[entry.Key] = entry.Value;
+                    return (Summary: summary, Outputs: outputs, Error: (string)null);
+                });
+
+                var winner = await Task.WhenAny(work, Task.Delay(TimeSpan.FromSeconds(job.TimeoutSeconds))).ConfigureAwait(false);
+                if (winner != work)
                 {
                     // A nonterminating execution is a behavioral fact, reported as such —
                     // the judge kills a timed-out mutant and rejects a timed-out candidate.
+                    // The spinning thread dies with the process at batch end.
                     deadUnit = $"execution timed out after {job.TimeoutSeconds}s";
                     observations.Add(new Observation(unit.UnitId, caseIndex, repeat, true, deadUnit, null, null));
                     continue;
                 }
 
-                await task.ConfigureAwait(false);
-                var output = task.GetType().GetProperty("Result").GetValue(task);
-                if (output is null)
+                var result = await work.ConfigureAwait(false);
+                if (result.Error is not null)
                 {
-                    observations.Add(new Observation(unit.UnitId, caseIndex, repeat, true, "execution returned null output", null, null));
+                    observations.Add(new Observation(unit.UnitId, caseIndex, repeat, true, result.Error, null, null));
                     continue;
                 }
 
-                var summary = output.GetType().GetProperty("Summary")?.GetValue(output) as string;
-                var raw = output.GetType().GetMethod("ToDictionary").Invoke(output, null);
-                var outputs = new Dictionary<string, object>();
-                foreach (var entry in (IReadOnlyDictionary<string, object>)raw)
-                    outputs[entry.Key] = entry.Value;
-
-                observations.Add(new Observation(unit.UnitId, caseIndex, repeat, false, null, summary, outputs));
+                observations.Add(new Observation(unit.UnitId, caseIndex, repeat, false, null, result.Summary, result.Outputs));
             }
             catch (Exception ex)
             {
