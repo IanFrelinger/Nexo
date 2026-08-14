@@ -27,6 +27,16 @@ public sealed class SessionExecutionBackend : ICandidateExecutionBackend
     private const string UnitsDir = ExecDir + "/units";
     private const string RunnerDll = RunnerDir + "/bin/Release/net9.0/SessionExecutionRunner.dll";
 
+    /// <summary>
+    /// Per-execution wall-clock ceiling inside the runner. Witness cases are
+    /// millisecond-scale; anything near this is behaviorally dead. Load-bearing for
+    /// mutation testing: a mutant that turns a loop nonterminating must become a
+    /// TIMED-OUT OBSERVATION (judged as killed) rather than hanging the batch until the
+    /// iteration's budget ceiling kills the whole flight — the first proposed-candidate
+    /// flight found exactly that mutant.
+    /// </summary>
+    private const int PerExecutionTimeoutSeconds = 10;
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -81,7 +91,8 @@ public sealed class SessionExecutionBackend : ICandidateExecutionBackend
             new[] { SessionCandidateBuild.BuiltAssemblyDirectory },
             job.Units.Select(u => new RunnerUnit(u.UnitId, unitPaths[u.UnitId], u.TypeName)).ToArray(),
             job.Witness.Cases.Select(c => new RunnerCase(c.Input)).ToArray(),
-            job.Repeats);
+            job.Repeats,
+            PerExecutionTimeoutSeconds);
         await UploadOrThrowAsync(
             $"{ExecDir}/job.json",
             JsonSerializer.SerializeToUtf8Bytes(jobPayload, JsonOptions),
@@ -188,7 +199,8 @@ public sealed class SessionExecutionBackend : ICandidateExecutionBackend
         IReadOnlyList<string> ProbeDirs,
         IReadOnlyList<RunnerUnit> Units,
         IReadOnlyList<RunnerCase> Cases,
-        int Repeats);
+        int Repeats,
+        int TimeoutSeconds);
 
     private sealed record RunnerUnit(string UnitId, string? AssemblyPath, string TypeName);
 
@@ -282,6 +294,12 @@ foreach (var unit in job.Units)
         loadError = $"unit load failed: {ex.GetBaseException().Message}";
     }
 
+    // Once one execution of a unit times out, the unit is dead: its remaining slots are
+    // reported timed-out WITHOUT executing, so at most one spinning thread exists per
+    // hung unit (the process exits at batch end and takes any spinners with it — an
+    // isolation move the in-process path could never afford).
+    string deadUnit = null;
+
     for (var caseIndex = 0; caseIndex < job.Cases.Count; caseIndex++)
     {
         for (var repeat = 0; repeat < job.Repeats; repeat++)
@@ -289,6 +307,12 @@ foreach (var unit in job.Units)
             if (loadError is not null)
             {
                 observations.Add(new Observation(unit.UnitId, caseIndex, repeat, true, loadError, null, null));
+                continue;
+            }
+
+            if (deadUnit is not null)
+            {
+                observations.Add(new Observation(unit.UnitId, caseIndex, repeat, true, deadUnit, null, null));
                 continue;
             }
 
@@ -301,6 +325,16 @@ foreach (var unit in job.Units)
                 var brickInput = Activator.CreateInstance(inputType, inputs);
                 var implementation = Enum.Parse(implType, "Deterministic");
                 var task = (Task)execute.Invoke(instance, new[] { brickInput, implementation, auditContext, (object)CancellationToken.None });
+                var winner = await Task.WhenAny(task, Task.Delay(TimeSpan.FromSeconds(job.TimeoutSeconds))).ConfigureAwait(false);
+                if (winner != task)
+                {
+                    // A nonterminating execution is a behavioral fact, reported as such —
+                    // the judge kills a timed-out mutant and rejects a timed-out candidate.
+                    deadUnit = $"execution timed out after {job.TimeoutSeconds}s";
+                    observations.Add(new Observation(unit.UnitId, caseIndex, repeat, true, deadUnit, null, null));
+                    continue;
+                }
+
                 await task.ConfigureAwait(false);
                 var output = task.GetType().GetProperty("Result").GetValue(task);
                 if (output is null)
@@ -345,7 +379,8 @@ internal sealed record Job(
     IReadOnlyList<string> ProbeDirs,
     IReadOnlyList<Unit> Units,
     IReadOnlyList<Case> Cases,
-    int Repeats);
+    int Repeats,
+    int TimeoutSeconds);
 internal sealed record Unit(string UnitId, string AssemblyPath, string TypeName);
 internal sealed record Case(Dictionary<string, JsonElement> Inputs);
 internal sealed record Observation(
