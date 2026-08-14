@@ -21,6 +21,7 @@ Version pin: `0.1.0` (from `VERSION`)
 | Autonomy in-session build (P3) | Same flight with `-SessionBuild` — candidate compiles INSIDE the attested `dotnet/sdk:9.0` session over `ExecAsync`, offline | **PASS**, `session-build` input on the certificate | Local spike @ `d71d045f` |
 | Autonomy in-session execution (P5a) | Flight with `-SessionExecute` — witness, determinism, and every mutant EXECUTE inside the session; the gate judges raw observations | **PASS**, `session-execution` input, `escape_rate=0` | Local spike @ `bf8821db` |
 | Model-proposed candidate (P5b) | Flight with `-Proposed` — recorded model proposal, proposer signature in lineage, full containment; admitted only after two honest mutation REJECTs forced witness hardening | **PASS** after campaign: 2× `BudgetExhausted`, REJECT 0.16, REJECT 0.05, then `AdmittedAndSwapped` | Local spike @ `bf8821db` |
+| LIVE model proposal (P6) | Flight with `-Live` — ollama `codellama:7b` called AT FLIGHT TIME, witness-blind prompt, recording committed; the gate judges each sample | **PASS on sample 4** (`AdmittedAndSwapped`, escape 0); measured acceptance 1/4 — 2 mutation REJECTs, 1 swap-host identity hold | Local spike @ `4ad4d05e`; recordings in `spikes/autonomy-first-flight/recordings/` |
 
 **Dogfood summary:** `honest=ADMIT`, `buggy=REJECT`, `tests_executed=19` — CI-confirmed on PR #191.
 
@@ -370,6 +371,35 @@ process — an isolation move the in-process path could never afford.
 In-container suites after all of it: 66/66 (gate execution-seam facts, backend orchestration
 facts, teeth, campaigns, harness, composition, watch window, digest).
 
+### P6: LIVE model proposals at flight time
+
+The last open leg, flown 2026-08-14: `run-first-flight.ps1 -Live` calls the LOCAL provider —
+**ollama `codellama:7b`**, the seam the general-generation arc named as production
+(`model:ollama:isolation-enforced`) — at flight time, with a committed witness-blind prompt
+(objective + interface contract only), records the raw exchange to
+`spikes/autonomy-first-flight/recordings/` (committed evidence artifacts), and mounts the
+recording into the flight as a read-only input. The spike extracts the source mechanically and
+does no validation beyond locating a class name: **the gate is the judge**, and every `-Live`
+run is a fresh acceptance sample.
+
+| Sample | Generation | Verdict |
+|--------|-----------|---------|
+| 1 (`live-…121237`) | 57 s | **REJECT `mutation`** — `escape_rate=0.08`; the `IndexOf + 5` offset mutant, trim-shadowed by every existing witness message (real witness gap #3) |
+| 2 (`live-…121507`) | 8 s | **REJECT `mutation`** — same survivor against the five-case witness (hardening #3, the colon-adjacent case, was necessary but not sufficient) |
+| 3 (`live-…121708`) | 7 s | **CERTIFIED — signed, `escape_rate=0` — then HELD by the swap host**: the model omitted the constructor, so the compiled brick self-declared an empty Id and verify-at-load refused the identity mismatch (`brick-id-mismatch`). Defense-in-depth demonstrated on a live candidate: the gate certifies, the host independently re-verifies |
+| 4 (`live-…121844`) | 10 s | **PASS — `AdmittedAndSwapped`** as generation 1 in 13.3 s: signed, `escape_rate=0` against the six-case witness, full session containment, 3/3 post-swap invocations, zero sessions leaked |
+
+**Measured live acceptance: 1/4 (0.25) — reported, not targeted** (the P3-S3 discipline). The
+campaign forced two further contract-derived witness hardenings (the colon-adjacent marker; the
+marker-terminal line, which kills the trim-shadowed offset class outright), and one prompt
+reshape (skeleton-completion form — the constructor arrives verbatim, the model contributes the
+behavior, which is exactly the A2.3 manifest-scaffold shape).
+
+**The proposer-diversity observation, worth keeping:** every distinct implementation shape that
+traversed this loop — hand-authored, recorded model, live model — surfaced a witness gap the
+previous shapes could not express. Six witness cases now exist; four were demanded by the gate
+rejecting real candidates. Proposer diversity is adversarial witness-hardening.
+
 ## Settled decisions
 
 - **`NetworkAccess.HostServicesOnly` stays a fail-closed refusal — permanently.** Every shipped
@@ -413,13 +443,12 @@ facts, teeth, campaigns, harness, composition, watch window, digest).
    to before. The **write** surface is confined separately, by `ProposerConfinement`'s
    single-declaration tool allowlist.
 
-5. **Model-produced candidates: one recorded proposal has traversed the loop; live-API
-   proposing remains unflown.** The P5 campaign closed the core of this limitation: a
-   model-authored candidate (recorded, provenance in the lineage's proposer signature)
-   traversed intake → attested session → full chain with in-session build AND execution →
-   autonomous Tier-0 swap on a live engine — after the mutation gate honestly rejected it
-   twice and forced contract-derived witness hardening. The remaining boundary, stated
-   plainly: it was ONE recorded proposal on ONE task (the record/replay discipline the
-   agent-composer arc established), authored by the session's assisting model. A live
-   proposer loop — model called at iteration time, multiple objectives, acceptance rates
-   measured — is operational work on the existing seams, not a missing mechanism.
+5. **Model proposing: CLOSED for the mechanism; the remaining boundary is scale.** Both
+   legs have now flown: a recorded model proposal (P5) and a LIVE local-model proposal
+   (P6 — ollama called at flight time, admitted on sample 4 with measured acceptance
+   1/4). Every stage the spec demands has real evidence: model identity hash-bound in
+   lineage, witness-blind prompting, full session containment, honest gate rejections,
+   a swap-host identity hold, and an autonomous Tier-0 swap of live model output. What
+   remains is breadth, not mechanism: one objective and one task family so far; a
+   standing proposer loop over many objectives with acceptance tracked per lineage is
+   host-operations work on seams that all exist.
