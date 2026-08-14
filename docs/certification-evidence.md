@@ -296,3 +296,25 @@ Projects: `Nexo.Spatial.Platform.ARKit`, `Nexo.Spatial.Platform.XREAL`, `Nexo.Sp
 2. **Composition seam check is TYPE-level only.** The seam validator checks producer/consumer type compatibility (e.g. `string` vs `int`) but not semantic mismatches where types align (e.g. file path vs URL, both `string`). Graph-mutation teeth only partially compensate for this gap.
 
 3. **cert-gate expected count is derived at runtime.** The zero-test guard compares executed count against `dotnet test --list-tests` on the cert-gate filter (see `scripts/cert-gate-config.sh`). If the filter or test discovery breaks, the guard fails closed.
+
+4. **Sandbox session inputs are provisioning evidence, not containment.** When an autonomous
+   iteration supplies a `SandboxSpec`, `AutonomousIterationHarness` starts the session,
+   attests it (image digest, engine version, effective resource caps — refusing an
+   environment weaker than requested), records `image-digest` / `sandbox-spec` /
+   `attestation` inputs onto the certificate, and tears the session down with the
+   iteration. It does **not** execute the candidate inside that session: the harness never
+   calls `ISandboxedSession.ExecAsync`, so the compile, witness run, and mutation run all
+   happen in the harness process. Read those certificate inputs as *"this environment was
+   provisioned and verified for the iteration"* — not as *"the candidate was built and run
+   inside a container."* The **write** surface is confined separately and genuinely, by
+   `ProposerConfinement`'s single-declaration tool allowlist. Closing the difference needs
+   build/test routed through `ExecAsync` against a pinned SDK image with a primed NuGet
+   cache (restore-without-network is the real obstacle, not the image); tracked as the
+   in-container toolchain change.
+
+5. **The autonomous loop has not yet run against a live container engine or a real
+   proposer.** Every session test drives a fake process runner, and no host composes
+   `DockerSandboxedSessionRunner`, so `docker run`/`exec`/`rm` argv construction is proven
+   only against itself. The adversarial campaigns exercise the real gate and real swap
+   host; the positive end-to-end path has only ever run against fixtures. A first-flight
+   run is the outstanding acceptance step.

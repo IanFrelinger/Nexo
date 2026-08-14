@@ -89,6 +89,20 @@ public sealed record ProposalCandidate
 /// per iteration and torn down with it (B9.3 restart-on-patch holds by construction: no
 /// session outlives the image decision it started under). The budget ceiling (R4.6 /
 /// B11.2) bounds the whole iteration's wall clock, tightened by the throughput guard.
+///
+/// <para><b>What the session does and does not do today.</b> When a
+/// <see cref="ProposalIterationContext.SessionSpec"/> is supplied, the session is started,
+/// attested (image digest, engine version, effective resource caps — refused if weaker
+/// than requested), recorded onto the certificate as environment inputs, and torn down
+/// with the iteration. It does <b>not</b> yet execute the candidate: this harness never
+/// calls <see cref="ISandboxedSession.ExecAsync"/>, so the candidate's compile, witness
+/// run, and mutation run all happen <b>in the harness process</b>. The session therefore
+/// attests <i>what environment was provisioned for the iteration</i>; it does not confine
+/// the certification work itself. Routing build/test through the session is tracked as
+/// the in-container toolchain change; until it lands, read
+/// <c>sandbox-spec</c>/<c>attestation</c> certificate inputs as provisioning evidence,
+/// not as a containment guarantee. The write surface IS confined separately, by
+/// <c>ProposerConfinement</c>'s tool allowlist.</para>
 /// </summary>
 public sealed class AutonomousIterationHarness
 {
