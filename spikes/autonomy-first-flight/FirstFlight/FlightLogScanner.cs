@@ -173,6 +173,18 @@ public sealed class FlightLogScannerBrick : DomainBrick
                 {
                     ["errorCount"] = 2,
                     ["firstErrorMessage"] = "a"
+                }),
+            // Third hardening, demanded by the FIRST LIVE proposal's survivor: the
+            // colon-adjacent marker. The contract trims a leading ':' from the message,
+            // but no earlier case had "ERROR:" adjacency, so mutating the ':' literal was
+            // behaviorally invisible. Found by a third implementation shape — proposer
+            // diversity is adversarial witness-hardening.
+            new WitnessCase(
+                new Dictionary<string, object> { ["logText"] = "2026-01-01 ERROR: disk full" },
+                new Dictionary<string, object>
+                {
+                    ["errorCount"] = 1,
+                    ["firstErrorMessage"] = "disk full"
                 })
         ]);
 
