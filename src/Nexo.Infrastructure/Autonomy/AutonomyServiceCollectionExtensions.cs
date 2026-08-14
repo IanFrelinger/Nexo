@@ -80,6 +80,9 @@ public static class AutonomyServiceCollectionExtensions
                     MinInvocations = options.WatchMinInvocations,
                     MaxErrorRateDelta = options.WatchMaxErrorRateDelta,
                     MaxLatencyFactor = options.WatchMaxLatencyFactor,
+                    MaxInvocationDuration = options.WatchMaxInvocationSeconds > 0
+                        ? TimeSpan.FromSeconds(options.WatchMaxInvocationSeconds)
+                        : null,
                 },
                 lineageAuthority: sp.GetRequiredService<ILineageAuthority>(),
                 pauseControl: sp.GetRequiredService<LoopPauseControl>(),
@@ -130,6 +133,27 @@ public static class AutonomyServiceCollectionExtensions
     public static IServiceCollection AddNexoAutonomySessionReaper(this IServiceCollection services)
     {
         services.AddHostedService<SandboxSessionReaperService>();
+        return services;
+    }
+
+    /// <summary>
+    /// Adds the periodic human-digest render (spec §7): swap provenance is retained in a
+    /// bounded ring and rendered to the log every <see cref="NexoAutonomyOptions.DigestIntervalSeconds"/>.
+    /// Separate opt-in for the same reason as the reaper — and it TAKES OVER the swap
+    /// provenance sink binding with <see cref="RecordingBrickSwapProvenanceSink"/> (which
+    /// still logs every event, so R2.1 holds). Order-independent with
+    /// <see cref="AddNexoAutonomy"/>; a host with its own sink should compose retention
+    /// into that sink instead of calling this.
+    /// </summary>
+    public static IServiceCollection AddNexoAutonomyDigestJob(this IServiceCollection services)
+    {
+        services.TryAddSingleton<RecordingBrickSwapProvenanceSink>();
+        // Deliberately AddSingleton, not TryAdd: whichever order the host called
+        // AddNexoAutonomy and this in, the LAST single-service registration wins at
+        // resolution, so the retaining sink serves the host either way.
+        services.AddSingleton<ICertifiedBrickSwapProvenanceSink>(sp =>
+            sp.GetRequiredService<RecordingBrickSwapProvenanceSink>());
+        services.AddHostedService<AutonomyDigestService>();
         return services;
     }
 }

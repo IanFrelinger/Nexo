@@ -72,6 +72,12 @@ public sealed class ValidateNexoAutonomyOptions : IValidateOptions<NexoAutonomyO
         if (options.CadenceFloorSeconds < 0)
             failures.Add($"{nameof(NexoAutonomyOptions.CadenceFloorSeconds)} cannot be negative.");
 
+        if (options.WatchMaxInvocationSeconds < 0)
+            failures.Add($"{nameof(NexoAutonomyOptions.WatchMaxInvocationSeconds)} cannot be negative (0 disables the leg).");
+
+        if (options.DigestIntervalSeconds < 0)
+            failures.Add($"{nameof(NexoAutonomyOptions.DigestIntervalSeconds)} cannot be negative (0 disables the job).");
+
         return failures.Count > 0
             ? ValidateOptionsResult.Fail(failures)
             : ValidateOptionsResult.Success;

@@ -329,6 +329,17 @@ The dry `-Dry -SessionBuild` leg passed identically (fake sessions, same input k
 test suite: 20/20 (`AutonomousIterationHarnessTests` including the in-session-build facts,
 `AutonomyCompositionTests` including the `BuildCandidateInSession` misconfiguration row).
 
+## Settled decisions
+
+- **`NetworkAccess.HostServicesOnly` stays a fail-closed refusal — permanently.** Every shipped
+  backend refuses the mode rather than approximating it, and this is now the settled posture,
+  not a v1 gap. The one workload that seemed to need it — package restore during the in-session
+  candidate build — was solved **without** network (P3: offline restore from the SDK's installed
+  packs, cleared sources), and a model server, the other imagined consumer, belongs on the
+  proposer side of the boundary, not inside a certification session. The enum member stays
+  declared (and `AllowedEndpoints` stays attestation-relevant) for a backend that can genuinely
+  realize per-session egress rules; none is planned.
+
 ## Contract-stability gaps
 
 - Generated brick uses Nexo.Core.Domain.* namespaces (shipped via Nexo.Authoring/Nexo.Brick.Contracts but not the pinned package IDs)

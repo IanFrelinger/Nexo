@@ -47,11 +47,25 @@ public sealed class NexoAutonomyOptions
     /// <summary>Tolerated mean-latency multiple of the baseline.</summary>
     public double WatchMaxLatencyFactor { get; set; } = 3.0;
 
+    /// <summary>
+    /// Absolute wall-clock ceiling for a single invocation, in seconds; 0 disables the
+    /// leg. Unlike the relative legs this needs no baseline — a first-generation deploy
+    /// is exactly who needs it. Wall clock is the one per-invocation resource honestly
+    /// measurable in a shared host process.
+    /// </summary>
+    public double WatchMaxInvocationSeconds { get; set; }
+
     /// <summary>Rollbacks on one lineage before it loses Tier-0 autonomy (R5.5).</summary>
     public int LineageDemotionThreshold { get; set; } = 2;
 
     /// <summary>Seconds between leaked-session reaper sweeps. 0 disables the sweep service.</summary>
     public int ReaperSweepSeconds { get; set; } = 60;
+
+    /// <summary>
+    /// Seconds between human-digest renders (spec §7) when the digest job is added.
+    /// 0 disables the job without unregistering it.
+    /// </summary>
+    public int DigestIntervalSeconds { get; set; } = 3600;
 
     /// <summary>Absolute per-iteration wall-clock ceiling in seconds (R4.6/B11.2).</summary>
     public int IterationCeilingSeconds { get; set; } = 600;

@@ -88,6 +88,8 @@ public sealed class AutonomyCompositionTests
     [InlineData("RetentionWindow")]
     [InlineData("ThroughputGuardFactor")]
     [InlineData("BuildCandidateInSession")]
+    [InlineData("WatchMaxInvocationSeconds")]
+    [InlineData("DigestIntervalSeconds")]
     public void EnabledButMisconfigured_FailsValidation(string broken)
     {
         var options = new NexoAutonomyOptions
@@ -100,6 +102,8 @@ public sealed class AutonomyCompositionTests
             SessionImage = broken == "SessionImage" ? null : "proposer:latest",
             RetentionWindow = broken == "RetentionWindow" ? 0 : 2,
             ThroughputGuardFactor = broken == "ThroughputGuardFactor" ? 1 : 4,
+            WatchMaxInvocationSeconds = broken == "WatchMaxInvocationSeconds" ? -1 : 0,
+            DigestIntervalSeconds = broken == "DigestIntervalSeconds" ? -1 : 3600,
         };
 
         var result = new ValidateNexoAutonomyOptions().Validate(null, options);
