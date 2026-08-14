@@ -87,12 +87,16 @@ public sealed class AutonomyCompositionTests
     [InlineData("SessionImage")]
     [InlineData("RetentionWindow")]
     [InlineData("ThroughputGuardFactor")]
+    [InlineData("BuildCandidateInSession")]
     public void EnabledButMisconfigured_FailsValidation(string broken)
     {
         var options = new NexoAutonomyOptions
         {
             Enabled = true,
-            UseSandboxSessions = true,
+            // Demanding the in-session build without sessions is an always-refusing loop —
+            // a configuration error the validator must catch at boot, not per iteration.
+            UseSandboxSessions = broken != "BuildCandidateInSession",
+            BuildCandidateInSession = broken == "BuildCandidateInSession",
             SessionImage = broken == "SessionImage" ? null : "proposer:latest",
             RetentionWindow = broken == "RetentionWindow" ? 0 : 2,
             ThroughputGuardFactor = broken == "ThroughputGuardFactor" ? 1 : 4,
@@ -159,6 +163,7 @@ public sealed class AutonomyCompositionTests
             {
                 ["Nexo:Autonomy:Enabled"] = "true",
                 ["Nexo:Autonomy:UseSandboxSessions"] = "true",
+                ["Nexo:Autonomy:BuildCandidateInSession"] = "true",
                 ["Nexo:Autonomy:SessionImage"] = "proposer:latest",
                 ["Nexo:Autonomy:CadenceFloorSeconds"] = "42",
             })
@@ -169,6 +174,7 @@ public sealed class AutonomyCompositionTests
 
         options.Enabled.Should().BeTrue();
         options.SessionImage.Should().Be("proposer:latest");
+        options.BuildCandidateInSession.Should().BeTrue();
         options.CadenceFloorSeconds.Should().Be(42);
     }
 

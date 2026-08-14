@@ -115,7 +115,9 @@ public static class AutonomyServiceCollectionExtensions
             sp.GetRequiredService<ILineageAuthority>(),
             sp.GetRequiredService<ISandboxedSessionRunner>(),
             sp.GetRequiredService<ClusterBudget>(),
-            sp.GetService<ILogger<AutonomousIterationHarness>>()));
+            sp.GetService<ILogger<AutonomousIterationHarness>>(),
+            buildCandidateInSession: sp.GetRequiredService<IOptions<NexoAutonomyOptions>>()
+                .Value.BuildCandidateInSession));
 
         return services;
     }

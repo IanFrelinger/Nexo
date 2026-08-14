@@ -35,6 +35,15 @@ public sealed class ValidateNexoAutonomyOptions : IValidateOptions<NexoAutonomyO
                 + "attested, and an unattestable environment must never reach a certificate.");
         }
 
+        if (options.BuildCandidateInSession && !options.UseSandboxSessions)
+        {
+            failures.Add(
+                $"{nameof(NexoAutonomyOptions.BuildCandidateInSession)}=true requires "
+                + $"{nameof(NexoAutonomyOptions.UseSandboxSessions)}=true: the in-session build leg "
+                + "cannot run without sessions, and every iteration would refuse fail-closed — an "
+                + "always-refusing loop is a configuration error, not a policy.");
+        }
+
         if (options.RetentionWindow < 1)
         {
             failures.Add(

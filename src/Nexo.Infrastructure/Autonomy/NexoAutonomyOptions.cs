@@ -23,6 +23,15 @@ public sealed class NexoAutonomyOptions
     /// <summary>Whether iterations open sandbox sessions at all (attestation + environment inputs).</summary>
     public bool UseSandboxSessions { get; set; }
 
+    /// <summary>
+    /// Whether every iteration must compile its candidate INSIDE the attested session
+    /// (the in-container toolchain leg). Requires <see cref="UseSandboxSessions"/> and a
+    /// <see cref="SessionImage"/> whose SDK can target the candidate project (e.g.
+    /// <c>mcr.microsoft.com/dotnet/sdk:9.0</c>). Iterations without a session then refuse
+    /// fail-closed rather than building on the host.
+    /// </summary>
+    public bool BuildCandidateInSession { get; set; }
+
     /// <summary>Committed generations retained for no-build rollback (R5.1). Minimum 1 to roll back at all.</summary>
     public int RetentionWindow { get; set; } = 2;
 

@@ -19,15 +19,22 @@ session image (alpine) is pulled by the HOST daemon on first use.
 .PARAMETER Dry
 Use the TestKit fake session runner instead of the live daemon (wiring proof only).
 
+.PARAMETER SessionBuild
+Enable the P3 leg: the candidate must compile INSIDE the attested session, so the
+session image becomes the pinned SDK image (mcr.microsoft.com/dotnet/sdk:9.0) and the
+certificate gains a session-build input.
+
 .PARAMETER Ref
 Git ref to fly. Defaults to HEAD.
 
 .EXAMPLE
 powershell -NoProfile -File spikes/autonomy-first-flight/run-first-flight.ps1 -Dry
 powershell -NoProfile -File spikes/autonomy-first-flight/run-first-flight.ps1
+powershell -NoProfile -File spikes/autonomy-first-flight/run-first-flight.ps1 -SessionBuild
 #>
 param(
     [switch]$Dry,
+    [switch]$SessionBuild,
     [string]$Ref = "HEAD"
 )
 
@@ -39,7 +46,9 @@ $sha = (git rev-parse $Ref)
 
 $image = "mcr.microsoft.com/devcontainers/dotnet:9.0-bookworm"
 $dryArg = if ($Dry) { "--dry" } else { "" }
+if ($SessionBuild) { $dryArg = "$dryArg --session-build".Trim() }
 $mode = if ($Dry) { "DRY" } else { "REAL (host daemon via docker.sock)" }
+if ($SessionBuild) { $mode = "$mode + in-session build" }
 
 Write-Host "== autonomy first flight: $sha [$mode] =="
 

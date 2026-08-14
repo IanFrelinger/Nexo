@@ -30,8 +30,12 @@ using Nexo.Infrastructure.Certification.Sdk.Extensions;
 using Nexo.Spikes.FirstFlight;
 
 var dry = args.Contains("--dry", StringComparer.OrdinalIgnoreCase);
-var sessionImage = dry ? "fake:local" : "alpine:3.20";
-Console.WriteLine($"== autonomy first flight ({(dry ? "DRY — fake session runner" : "REAL — live docker daemon")}) ==");
+// --session-build: the P3 leg — the candidate must COMPILE inside the attested session,
+// which therefore needs an SDK image rather than bare alpine.
+var sessionBuild = args.Contains("--session-build", StringComparer.OrdinalIgnoreCase);
+var sessionImage = dry ? "fake:local" : sessionBuild ? "mcr.microsoft.com/dotnet/sdk:9.0" : "alpine:3.20";
+Console.WriteLine($"== autonomy first flight ({(dry ? "DRY — fake session runner" : "REAL — live docker daemon")}"
+    + $"{(sessionBuild ? ", in-session candidate build" : "")}) ==");
 
 // --- compose exactly the way a host would -------------------------------------------
 var services = new ServiceCollection();
@@ -41,7 +45,7 @@ services.AddSingleton<ICertifiedBrickSwapProvenanceSink>(swapSink);
 FakeSandboxedSessionRunner? fakeSessions = null;
 if (dry)
 {
-    fakeSessions = new FakeSandboxedSessionRunner(FakeSandboxedSessionRunner.Success());
+    fakeSessions = new FakeSandboxedSessionRunner(FakeSandboxedSessionRunner.Success("9.0.100-fake"));
     services.AddSingleton<ISandboxedSessionRunner>(fakeSessions);
 }
 
@@ -51,6 +55,7 @@ services.AddNexoAutonomy(new ConfigurationBuilder()
     {
         ["Nexo:Autonomy:Enabled"] = "true",
         ["Nexo:Autonomy:UseSandboxSessions"] = "true",
+        ["Nexo:Autonomy:BuildCandidateInSession"] = sessionBuild ? "true" : "false",
         ["Nexo:Autonomy:SessionImage"] = sessionImage,
         ["Nexo:Autonomy:CadenceFloorSeconds"] = "0",
         ["Nexo:Autonomy:WatchMinInvocations"] = "2",
