@@ -13,11 +13,12 @@ namespace Nexo.Infrastructure.Certification;
 ///
 /// <para><b>Read these inputs precisely.</b> They record the environment that was started
 /// and attested for the iteration — image identity, engine version, effective resource
-/// caps. As of today they do <b>not</b> assert that the candidate was compiled or executed
-/// inside that environment: <c>AutonomousIterationHarness</c> certifies in-process and
-/// never calls <c>ISandboxedSession.ExecAsync</c>. Provisioning evidence, not a
-/// containment guarantee — see the harness's remarks for the tracked change that closes
-/// the difference.</para>
+/// caps. They do <b>not</b> themselves assert that the candidate was compiled or executed
+/// inside that environment: these three are provisioning evidence. Compilation containment
+/// is a SEPARATE claim carried by the <c>session-build</c> input, minted only when the
+/// harness's in-session build leg is enabled and passes
+/// (<c>SessionCandidateBuild</c>); witness and mutation execution are not yet contained
+/// by any input — see the harness's remarks for the honest boundary.</para>
 /// </summary>
 public static class SessionEnvironmentInputs
 {

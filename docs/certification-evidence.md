@@ -18,6 +18,7 @@ Version pin: `0.1.0` (from `VERSION`)
 | Damage-resolver dogfood (honest) | `DamageResolverDogfoodTests.HonestCursorGeneration_Admits_WithZeroEscapeRate` | **ADMIT**, `escape_rate=0`, `signed=true` | [Cert gate 27918244198](https://github.com/IanFrelinger/Nexo/actions/runs/27918244198) @ `802e6d18` |
 | Damage-resolver dogfood (buggy) | `DamageResolverDogfoodTests.BuggyCursorGeneration_Rejects` | **REJECT**, `correctness` \| `mutation` | [Cert gate 27918244198](https://github.com/IanFrelinger/Nexo/actions/runs/27918244198) @ `802e6d18` |
 | Autonomy first flight (live engine) | `spikes/autonomy-first-flight/run-first-flight.ps1` — one real iteration: attested Docker session → full chain → Tier-0 swap → watch window | **PASS**, `AdmittedAndSwapped`, `escape_rate=0` | Local spike @ `1afac86d`; re-run the script for a fresh flight |
+| Autonomy in-session build (P3) | Same flight with `-SessionBuild` — candidate compiles INSIDE the attested `dotnet/sdk:9.0` session over `ExecAsync`, offline | **PASS**, `session-build` input on the certificate | Local spike @ `d71d045f` |
 
 **Dogfood summary:** `honest=ADMIT`, `buggy=REJECT`, `tests_executed=19` — CI-confirmed on PR #191.
 
@@ -307,12 +308,26 @@ A `--dry` leg (TestKit fake runner, same wiring) also passed, with an explicit z
 assertion. The dry and real runs produced identical outcomes and identical certificate-input kinds;
 only the attestation values differ (fake vs. live daemon) — which is exactly the seam's contract.
 
-**Boundary (unchanged by the flight):** the session remains provisioning attestation per known
-limitation 4 — the candidate still compiles and runs witness/mutation legs in the harness process,
-and the flight's `SandboxSpec` deliberately carries no mounts (sessions are sibling containers on
-the host daemon; container-local paths would be meaningless to it). The **real-proposer** leg of
-old limitation 5 also remains open: this flight's candidate was hand-authored to the gate-teeth
-shape, not produced by a model.
+**Boundary:** the P2 flight's session was provisioning attestation only; the **P3 leg below**
+closed the compilation half of that gap. The **real-proposer** leg of old limitation 5 remains
+open: every flight candidate was hand-authored to the gate-teeth shape, not produced by a model.
+
+### P3 acceptance: the candidate compiled inside the session
+
+Re-flown 2026-08-14 from commit `d71d045f` with `-SessionBuild`: the loop's iteration required the
+candidate to compile **inside** the attested session (`Nexo:Autonomy:BuildCandidateInSession=true`),
+against the pinned SDK image on the live daemon.
+
+| Step | Result |
+|------|--------|
+| Session image | `mcr.microsoft.com/dotnet/sdk:9.0` @ `sha256:35048e3a81e6a07c316e7bbbd80d80d2ba705fe5f23a8ed42b6638c8f4c20d30`, engine `29.7.2`, same effective-caps verification as P2 |
+| In-session compile (`SessionCandidateBuild` over `ExecAsync`: base64-chunk uploads, zero-`PackageReference` project, cleared NuGet sources, `NetworkAccess.None`) | **PASS** — the exact `CandidateSourceWrapper.Wrap` bytes every certification-path compile sees |
+| Certificate inputs | Six kinds: `witness`, `image-digest`, `sandbox-spec`, `attestation`, **`session-build`**, `generation-depth` |
+| Outcome | **`AdmittedAndSwapped`** as generation 1, 7.0 s end to end; 3/3 post-swap invocations; digest rendered; zero `nexo-session-*` containers left on the daemon |
+
+The dry `-Dry -SessionBuild` leg passed identically (fake sessions, same input kinds). In-container
+test suite: 20/20 (`AutonomousIterationHarnessTests` including the in-session-build facts,
+`AutonomyCompositionTests` including the `BuildCandidateInSession` misconfiguration row).
 
 ## Contract-stability gaps
 
@@ -332,20 +347,20 @@ shape, not produced by a model.
 
 3. **cert-gate expected count is derived at runtime.** The zero-test guard compares executed count against `dotnet test --list-tests` on the cert-gate filter (see `scripts/cert-gate-config.sh`). If the filter or test discovery breaks, the guard fails closed.
 
-4. **Sandbox session inputs are provisioning evidence, not containment.** When an autonomous
-   iteration supplies a `SandboxSpec`, `AutonomousIterationHarness` starts the session,
-   attests it (image digest, engine version, effective resource caps — refusing an
-   environment weaker than requested), records `image-digest` / `sandbox-spec` /
-   `attestation` inputs onto the certificate, and tears the session down with the
-   iteration. It does **not** execute the candidate inside that session: the harness never
-   calls `ISandboxedSession.ExecAsync`, so the compile, witness run, and mutation run all
-   happen in the harness process. Read those certificate inputs as *"this environment was
-   provisioned and verified for the iteration"* — not as *"the candidate was built and run
-   inside a container."* The **write** surface is confined separately and genuinely, by
-   `ProposerConfinement`'s single-declaration tool allowlist. Closing the difference needs
-   build/test routed through `ExecAsync` against a pinned SDK image with a primed NuGet
-   cache (restore-without-network is the real obstacle, not the image); tracked as the
-   in-container toolchain change.
+4. **Session containment covers compilation (opt-in), not yet execution.** With
+   `Nexo:Autonomy:BuildCandidateInSession=true`, every iteration must compile its candidate
+   inside the attested session via `ISandboxedSession.ExecAsync` (`SessionCandidateBuild`:
+   the exact `CandidateSourceWrapper.Wrap` bytes every certification-path compile sees,
+   uploaded as base64 argv chunks, built offline against cleared NuGet sources), refusing
+   fail-closed when no session exists; a pass is recorded as a `session-build` certificate
+   input. What is still **not** contained: the witness run and the mutation run execute in
+   the harness process, so `sandbox-spec` / `attestation` inputs remain provisioning
+   evidence and `session-build` claims compilation containment only. With the flag off
+   (the default), sessions remain attestation-only exactly as before. The **write** surface
+   is confined separately and genuinely, by `ProposerConfinement`'s single-declaration tool
+   allowlist. Closing the rest means routing witness/mutation execution through the session,
+   which requires shipping a certification runner into the image — a deliberate, separate
+   step, not an increment of this one.
 
 5. **The autonomous loop has not yet run against a real proposer.** The live-container-engine
    leg of this limitation was closed by the first flight (see "Autonomy first flight (P2)"
