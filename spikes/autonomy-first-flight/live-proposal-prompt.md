@@ -1,39 +1,45 @@
-You are proposing a C# brick implementation for a certification gate. Output ONLY one C# code block and nothing else — no explanation before or after.
+You are proposing a C# brick implementation for a certification gate. Below is a complete file with one method body missing. Output the COMPLETE file — every line shown, byte-for-byte unchanged, including the constructor — with the `ExecuteAsync` body implemented. Output ONLY one ```csharp code block, nothing else.
 
-Objective: provide a deterministic error-count brick for a log-scanning fixture.
+```csharp
+using Nexo.Core.Domain.Bricks;
+using Nexo.Core.Domain.Execution;
 
-Contract, exactly:
-- Namespace must be `Nexo.Spikes.FirstFlight`.
-- One public sealed class named `LiveProposedLogScannerBrick` inheriting `DomainBrick`.
-- The constructor must set `Id = "first-flight-log-scanner"`, a `Name`, a `Description`, and this exact interface:
+namespace Nexo.Spikes.FirstFlight;
 
-```
-Interface = new BrickInterface
+public sealed class LiveProposedLogScannerBrick : DomainBrick
 {
-    Inputs = [new BrickInputDefinition("logText", "string", "log")],
-    Outputs =
-    [
-        new BrickOutputDefinition("errorCount", "int", "count"),
-        new BrickOutputDefinition("firstErrorMessage", "string", "first")
-    ]
-};
-```
+    public LiveProposedLogScannerBrick()
+    {
+        Id = "first-flight-log-scanner";
+        Name = "Live Proposed Log Scanner";
+        Description = "Live model-proposed deterministic error-count brick.";
+        Interface = new BrickInterface
+        {
+            Inputs = [new BrickInputDefinition("logText", "string", "log")],
+            Outputs =
+            [
+                new BrickOutputDefinition("errorCount", "int", "count"),
+                new BrickOutputDefinition("firstErrorMessage", "string", "first")
+            ]
+        };
+    }
 
-- Override this method exactly:
-
-```
-public override Task<BrickOutput> ExecuteAsync(
-    BrickInput input,
-    ImplementationType implementation,
-    IExecutionContext context,
-    CancellationToken cancellationToken = default)
+    public override Task<BrickOutput> ExecuteAsync(
+        BrickInput input,
+        ImplementationType implementation,
+        IExecutionContext context,
+        CancellationToken cancellationToken = default)
+    {
+        // IMPLEMENT THIS BODY.
+    }
+}
 ```
 
 Behavior of ExecuteAsync:
 1. Read the input: `var logText = input.Get<string>("logText") ?? string.Empty;`
 2. Split the text into lines on '\r' and '\n', ignoring empty lines.
 3. `errorCount` = the number of lines that contain the marker `ERROR` (ordinal comparison).
-4. `firstErrorMessage` = for the FIRST line containing the marker: the substring AFTER the first occurrence of `ERROR`, with leading ':' and ' ' characters trimmed from its start. If no line contains the marker, the empty string.
+4. `firstErrorMessage` = for the FIRST line containing the marker: the substring AFTER the first occurrence of `ERROR`, with leading ':' and ' ' characters trimmed from its start. If the marker ends the line, the empty string. If no line contains the marker, the empty string.
 5. Build the output:
 
 ```
@@ -44,11 +50,7 @@ return Task.FromResult(output);
 ```
 
 Hard constraints (the gate rejects violations):
-- File starts with exactly these two usings, then the namespace:
-  `using Nexo.Core.Domain.Bricks;` and `using Nexo.Core.Domain.Execution;`
-  then `namespace Nexo.Spikes.FirstFlight;`
-- Deterministic only: no DateTime.Now, no Random, no Guid.NewGuid, no file or network I/O, no static mutable state, no try/catch with an empty catch.
-- The marker comparison must handle the marker appearing at the very start of the text, at the start of any line, and immediately before the end of a line.
+- Deterministic only: no DateTime.Now, no Random, no Guid.NewGuid, no file or network I/O, no static mutable state, no empty catch blocks.
+- Handle the marker at the very start of the text, at the start of any line, immediately followed by ':' or the end of the line.
 - Every loop must provably terminate.
-
-Output the complete file as one ```csharp code block.
+- Do not add, remove, or reorder any member shown in the skeleton.
