@@ -45,9 +45,15 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
     private readonly Nexo.Core.Application.Autonomy.ICertificateRevocationList? _revocations;
     private readonly int _retentionWindow;
     private readonly List<RetainedGeneration> _retained = new();
+    private readonly WatchThresholds? _watchThresholds;
+    private readonly Nexo.Core.Application.Autonomy.ILineageAuthority? _lineageAuthority;
 
     private BrickGeneration? _current;
     private int _generationCounter;
+    private GenerationWatchStats? _watchBaseline;
+    private GenerationWatchStats? _watchCurrent;
+    private int _watchGenerationId;
+    private int _watchBreachLatch;
 
     /// <summary>Initializes the host.</summary>
     /// <param name="provenanceSink">Receives swap/generation provenance events; null records nothing.</param>
@@ -56,13 +62,17 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
     /// <param name="drainTimeout">How long a retired generation may drain before it is unloaded anyway.</param>
     /// <param name="revocations">Quarantine list; any request whose certificate content hash is revoked is refused permanently (R5.3).</param>
     /// <param name="retentionWindow">How many committed generations stay reactivatable via <see cref="RollbackToAsync"/> (R5.1). 0 disables retention.</param>
+    /// <param name="watchThresholds">Post-swap watch thresholds (R5.2); breach quarantines the generation and rolls back automatically. Null = no watch (human-driven flow).</param>
+    /// <param name="lineageAuthority">Rollback ledger per objective lineage (R5.5); demoted lineages lose auto-swap.</param>
     public CertifiedBrickHotSwapHost(
         ICertifiedBrickSwapProvenanceSink? provenanceSink = null,
         ILogger<CertifiedBrickHotSwapHost>? logger = null,
         string? hmacKey = null,
         TimeSpan? drainTimeout = null,
         Nexo.Core.Application.Autonomy.ICertificateRevocationList? revocations = null,
-        int retentionWindow = 2)
+        int retentionWindow = 2,
+        WatchThresholds? watchThresholds = null,
+        Nexo.Core.Application.Autonomy.ILineageAuthority? lineageAuthority = null)
     {
         _provenanceSink = provenanceSink;
         _logger = logger;
@@ -70,9 +80,36 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
         _drainTimeout = drainTimeout ?? DefaultDrainTimeout;
         _revocations = revocations;
         _retentionWindow = Math.Max(0, retentionWindow);
+        _watchThresholds = watchThresholds;
+        _lineageAuthority = lineageAuthority;
     }
 
     private sealed record RetainedGeneration(int GenerationId, IReadOnlyList<CertifiedBrickLoadRequest> Requests);
+
+    /// <summary>Per-generation runtime signals for the watch window (R5.2). Interlocked counters only.</summary>
+    private sealed class GenerationWatchStats
+    {
+        private long _invocations;
+        private long _faults;
+        private long _latencyTicks;
+        private long _undeclaredWrites;
+
+        public void Record(long elapsedTicks, bool faulted, int undeclaredWrites)
+        {
+            Interlocked.Increment(ref _invocations);
+            Interlocked.Add(ref _latencyTicks, elapsedTicks);
+            if (faulted)
+                Interlocked.Increment(ref _faults);
+            if (undeclaredWrites > 0)
+                Interlocked.Add(ref _undeclaredWrites, undeclaredWrites);
+        }
+
+        public (long Invocations, long Faults, long LatencyTicks, long UndeclaredWrites) Snapshot() => (
+            Interlocked.Read(ref _invocations),
+            Interlocked.Read(ref _faults),
+            Interlocked.Read(ref _latencyTicks),
+            Interlocked.Read(ref _undeclaredWrites));
+    }
 
     /// <summary>Generation currently serving, or null before the first successful swap.</summary>
     public int? CurrentGenerationId => Volatile.Read(ref _current)?.Id;
@@ -119,6 +156,12 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
             _generationCounter = generationId;
             var previous = Interlocked.Exchange(ref _current, materialized.Generation);
             RetainCommitted(generationId, requests, materialized.EmittedImages);
+            // Watch rotation (R5.2): the outgoing generation's runtime signals become the
+            // baseline the incoming generation is judged against; the breach latch resets.
+            _watchBaseline = _watchCurrent;
+            _watchCurrent = new GenerationWatchStats();
+            Volatile.Write(ref _watchGenerationId, generationId);
+            Volatile.Write(ref _watchBreachLatch, 0);
 
             foreach (var request in requests)
             {
@@ -193,22 +236,157 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
             if (!generation.TryEnter())
                 continue;
 
+            BrickOutput? output = null;
+            Exception? brickFault = null;
+            DomainBrick? brick = null;
+            var startTicks = System.Diagnostics.Stopwatch.GetTimestamp();
             try
             {
-                var brick = generation.GetBrick(brickId)
+                brick = generation.GetBrick(brickId)
                     ?? throw new KeyNotFoundException(
                         $"No certified brick '{brickId}' in generation {generation.Id}.");
-                return await brick.ExecuteAsync(input, implementation, context, cancellationToken)
-                    .ConfigureAwait(false);
+                try
+                {
+                    output = await brick.ExecuteAsync(input, implementation, context, cancellationToken)
+                        .ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    // Host-side cancellation is not brick misbehavior; no watch signal.
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    brickFault = ex;
+                }
             }
             finally
             {
                 generation.Exit();
             }
+
+            // Watch observation runs OUTSIDE the lease so a breach-triggered rollback can
+            // drain this generation without deadlocking on its own invocation (R5.2).
+            if (_watchThresholds is not null && brick is not null
+                && generation.Id == Volatile.Read(ref _watchGenerationId))
+            {
+                var elapsed = System.Diagnostics.Stopwatch.GetTimestamp() - startTicks;
+                var undeclared = output is null ? 0 : CountUndeclaredWrites(brick, output);
+                _watchCurrent?.Record(elapsed, brickFault is not null, undeclared);
+                var breachReasons = EvaluateWatch();
+                if (breachReasons is not null)
+                    await QuarantineCurrentAsync(breachReasons, cancellationToken).ConfigureAwait(false);
+            }
+
+            if (brickFault is not null)
+                System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(brickFault).Throw();
+            return output!;
         }
 
         throw new InvalidOperationException(
             "Could not lease a serving generation; swaps kept retiring it mid-read.");
+    }
+
+    private static int CountUndeclaredWrites(DomainBrick brick, BrickOutput output)
+    {
+        var declared = brick.Interface?.Outputs;
+        if (declared is null || declared.Count == 0)
+            return 0; // No declared contract to check — honesty over guessing.
+
+        var declaredNames = new HashSet<string>(declared.Select(o => o.Name), StringComparer.Ordinal);
+        return output.ToDictionary().Keys.Count(k => !declaredNames.Contains(k));
+    }
+
+    /// <summary>Breach reasons when the watch thresholds are crossed; null otherwise (R5.2).</summary>
+    private IReadOnlyList<string>? EvaluateWatch()
+    {
+        var thresholds = _watchThresholds;
+        var current = _watchCurrent;
+        if (thresholds is null || current is null || Volatile.Read(ref _watchBreachLatch) != 0)
+            return null;
+
+        var (invocations, faults, latencyTicks, undeclared) = current.Snapshot();
+        var reasons = new List<string>();
+
+        // Contract conformance is absolute — no baseline needed (R5.2).
+        if (undeclared > thresholds.MaxUndeclaredWrites)
+            reasons.Add($"{undeclared} undeclared output write(s) exceed the tolerated {thresholds.MaxUndeclaredWrites}");
+
+        if (invocations >= thresholds.MinInvocations && _watchBaseline is { } baseline)
+        {
+            var (bInv, bFaults, bLatency, _) = baseline.Snapshot();
+            if (bInv > 0)
+            {
+                var errorRate = (double)faults / invocations;
+                var baselineRate = (double)bFaults / bInv;
+                if (errorRate > baselineRate + thresholds.MaxErrorRateDelta)
+                    reasons.Add($"error rate {errorRate:F2} exceeds baseline {baselineRate:F2} by more than {thresholds.MaxErrorRateDelta:F2}");
+
+                var meanLatency = (double)latencyTicks / invocations;
+                var baselineMean = (double)bLatency / bInv;
+                if (baselineMean > 0 && meanLatency > baselineMean * thresholds.MaxLatencyFactor)
+                    reasons.Add($"mean latency is {meanLatency / baselineMean:F1}x the baseline (max {thresholds.MaxLatencyFactor:F1}x)");
+            }
+        }
+
+        if (reasons.Count == 0)
+            return null;
+
+        // One quarantine per generation: first observer wins the latch.
+        return Interlocked.CompareExchange(ref _watchBreachLatch, 1, 0) == 0 ? reasons : null;
+    }
+
+    /// <summary>
+    /// Quarantines the current generation after a watch breach (R5.2/R5.3): revokes its
+    /// certificate hashes, records the rollback against its lineage (R5.5), emits
+    /// provenance, and reactivates the previous retained generation. All fail-closed:
+    /// with nothing retained to roll back to, the quarantine is still recorded loudly.
+    /// </summary>
+    private async Task QuarantineCurrentAsync(IReadOnlyList<string> reasons, CancellationToken cancellationToken)
+    {
+        RetainedGeneration? currentRetained = null;
+        RetainedGeneration? previousRetained = null;
+        lock (_retained)
+        {
+            if (_retained.Count > 0)
+                currentRetained = _retained[^1];
+            if (_retained.Count > 1)
+                previousRetained = _retained[^2];
+        }
+
+        var reason = "Watch breach: " + string.Join(" | ", reasons);
+        _logger?.LogWarning("hot-swap watch breach on generation {Generation}: {Reason}",
+            currentRetained?.GenerationId, reason);
+
+        if (currentRetained is not null)
+        {
+            foreach (var request in currentRetained.Requests)
+            {
+                if (_revocations is not null && !string.IsNullOrWhiteSpace(request.Record.ContentHash))
+                    _revocations.Revoke(request.Record.ContentHash!, reason);
+                if (_lineageAuthority is not null && request.Autonomous?.LineageKey is { } lineageKey)
+                    _lineageAuthority.RecordRollback(lineageKey);
+            }
+        }
+
+        Emit(new BrickSwapProvenanceEvent
+        {
+            Generation = currentRetained?.GenerationId ?? Volatile.Read(ref _watchGenerationId),
+            Outcome = BrickSwapProvenanceOutcomes.WatchBreachQuarantined,
+            Timestamp = DateTimeOffset.UtcNow,
+            Reason = reason
+        });
+
+        if (previousRetained is not null)
+        {
+            await RollbackToAsync(previousRetained.GenerationId, cancellationToken).ConfigureAwait(false);
+        }
+        else
+        {
+            _logger?.LogError(
+                "watch breach quarantined generation {Generation} but no earlier generation is retained to roll back to",
+                currentRetained?.GenerationId);
+        }
     }
 
     /// <inheritdoc />
@@ -365,6 +543,24 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
             // recursion rules are re-checked here regardless of what the certifier did.
             if (request.Autonomous is { } autonomous)
             {
+                // R5.5: a lineage demoted on rollback evidence has lost Tier-0 autonomy —
+                // its swaps wait for the human gate no matter what tier the objective
+                // classified at. Autonomy is lost on evidence, never gained on it.
+                if (_lineageAuthority is not null
+                    && autonomous.LineageKey is { } lineageKey
+                    && _lineageAuthority.IsDemoted(lineageKey))
+                {
+                    refusals.Add(new BrickSwapRefusal
+                    {
+                        BrickId = request.BrickId,
+                        Stage = BrickSwapRefusalStage.Request,
+                        FailureCode = "lineage-demoted",
+                        Reason = $"Objective lineage '{lineageKey}' lost Tier-0 autonomy after repeated "
+                            + "rollback (R5.5); admission now waits for the human gate."
+                    });
+                    continue;
+                }
+
                 if (autonomous.Tier != Nexo.Core.Application.Autonomy.ObjectiveTier.Tier0Autonomous)
                 {
                     refusals.Add(new BrickSwapRefusal

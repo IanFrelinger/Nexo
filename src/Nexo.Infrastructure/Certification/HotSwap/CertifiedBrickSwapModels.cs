@@ -52,6 +52,34 @@ public sealed record AutonomousAdmission
 
     /// <summary>The candidate's recursion pedigree; null claims human-authored context.</summary>
     public Nexo.Core.Application.Autonomy.GenerationLineage? Lineage { get; init; }
+
+    /// <summary>
+    /// Objective lineage key (R5.5): repeated rollback on one lineage demotes it to Tier 1,
+    /// and the host refuses further auto-swaps for it. Null = unattributed (no demotion
+    /// tracking, no demotion protection either).
+    /// </summary>
+    public string? LineageKey { get; init; }
+}
+
+/// <summary>
+/// Post-swap watch thresholds (autonomy spec R5.2): declared-contract conformance,
+/// error-rate delta and latency factor versus the previous generation's baseline. Breach
+/// triggers automatic quarantine + rollback. Null thresholds on the host = no watch
+/// (the human-driven flow).
+/// </summary>
+public sealed record WatchThresholds
+{
+    /// <summary>Invocations of the new generation before verdicts are meaningful.</summary>
+    public int MinInvocations { get; init; } = 5;
+
+    /// <summary>Tolerated error-rate increase over the baseline (0.2 = +20 points).</summary>
+    public double MaxErrorRateDelta { get; init; } = 0.2;
+
+    /// <summary>Tolerated mean-latency multiple of the baseline.</summary>
+    public double MaxLatencyFactor { get; init; } = 3.0;
+
+    /// <summary>Tolerated writes of keys the brick's declared interface does not name.</summary>
+    public int MaxUndeclaredWrites { get; init; }
 }
 
 /// <summary>Stage at which a brick (and therefore the whole swap) was refused.</summary>
@@ -175,4 +203,7 @@ public static class BrickSwapProvenanceOutcomes
 
     /// <summary>A retained earlier generation was reactivated (autonomy spec R5.1 rollback).</summary>
     public const string RollbackCommitted = "rollback-committed";
+
+    /// <summary>The watch window breached its thresholds; the generation was quarantined (R5.2/R5.3).</summary>
+    public const string WatchBreachQuarantined = "watch-breach-quarantined";
 }

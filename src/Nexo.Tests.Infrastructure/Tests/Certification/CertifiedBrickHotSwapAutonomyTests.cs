@@ -16,6 +16,7 @@ namespace Nexo.Tests.Infrastructure.Tests.Certification;
 /// rollback included.
 /// </summary>
 [Trait("Category", "Certification")]
+[Collection("hot-swap-host")]
 public sealed class CertifiedBrickHotSwapAutonomyTests
 {
     private const string HmacKey = "hot-swap-autonomy-test-hmac";

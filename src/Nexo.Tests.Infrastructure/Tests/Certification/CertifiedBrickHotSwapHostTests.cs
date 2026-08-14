@@ -13,6 +13,7 @@ namespace Nexo.Tests.Infrastructure.Tests.Certification;
 /// generation succession with drain + collection, and provenance events per outcome.
 /// </summary>
 [Trait("Category", "Certification")]
+[Collection("hot-swap-host")]
 public sealed class CertifiedBrickHotSwapHostTests
 {
     private const string HmacKey = "hot-swap-host-test-hmac";
