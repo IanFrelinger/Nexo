@@ -87,6 +87,18 @@ public sealed class FileCertificationRecordStore : ICertificationRecordStore
                string.Equals(record.Status, "PASS", StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// Every verifiable record in the directory. Routed through <see cref="Get"/> per
+    /// file, so tampered or unsigned records are excluded exactly as they are for point
+    /// lookups — a ledger scan must never treat unverified JSON as evidence.
+    /// </summary>
+    public IReadOnlyList<CertificationRecord> All() =>
+        Directory.EnumerateFiles(_directory, "*.json")
+            .Select(path => Get(Path.GetFileNameWithoutExtension(path)))
+            .Where(record => record is not null)
+            .Select(record => record!)
+            .ToArray();
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,

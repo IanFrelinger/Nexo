@@ -28,4 +28,7 @@ public sealed class InMemoryCertificateRevocationList : ICertificateRevocationLi
     /// <inheritdoc />
     public string? TryGetReason(string contentHash) =>
         _revoked.TryGetValue(contentHash ?? "", out var reason) ? reason : null;
+
+    /// <inheritdoc />
+    public IReadOnlyCollection<string> Snapshot() => _revoked.Keys.ToArray();
 }

@@ -27,19 +27,53 @@ public sealed class CertificationGate : ICertificationGate
     public CertificationGate(
         CertificationRecordSigner signer,
         ILogger<CertificationGate>? logger = null,
-        AnalyzerFenceGate? analyzerGate = null)
+        AnalyzerFenceGate? analyzerGate = null,
+        IEnumerable<IDiagnosticProbe>? probes = null)
     {
         _signer = signer ?? throw new ArgumentNullException(nameof(signer));
         _logger = logger;
         // Defaulting the gate on (rather than null-meaning-skip) keeps the chain fail-closed:
         // no construction path exists that certifies without the analyzer fence.
         _analyzerGate = analyzerGate ?? new AnalyzerFenceGate();
+        _probes = probes?.ToArray() ?? Probes.CertificationProbeCatalog.Default;
     }
 
-    /// <summary>Certify asynchronously.</summary>
+    private readonly IReadOnlyList<IDiagnosticProbe> _probes;
+
+    /// <summary>Certify asynchronously; on rejection, diagnostic probes attach structured findings (G4).</summary>
     public async Task<CertificationDecision> CertifyAsync(
         CertificationRequest request,
         CancellationToken cancellationToken = default)
+    {
+        var decision = await CertifyCoreAsync(request, cancellationToken).ConfigureAwait(false);
+        return decision.Admitted ? decision : decision with { ProbeFindings = RunProbes(request, decision) };
+    }
+
+    private IReadOnlyList<DiagnosticProbeFinding> RunProbes(
+        CertificationRequest request, CertificationDecision decision)
+    {
+        var findings = new List<DiagnosticProbeFinding>();
+        foreach (var probe in _probes.Where(p => p.FailureCheck == decision.FailureCheck))
+        {
+            try
+            {
+                if (probe.Probe(request, decision) is { } finding)
+                    findings.Add(finding);
+            }
+            catch (Exception ex)
+            {
+                // A probe holds no authority: it can neither change a verdict nor break
+                // the decision path. Skipped and logged.
+                _logger?.LogWarning(ex, "Diagnostic probe {Probe} threw; verdict unaffected", probe.GetType().Name);
+            }
+        }
+
+        return findings;
+    }
+
+    private async Task<CertificationDecision> CertifyCoreAsync(
+        CertificationRequest request,
+        CancellationToken cancellationToken)
     {
         var brickId = request.Brick.Id;
         var timestamp = DateTimeOffset.UtcNow;

@@ -18,7 +18,8 @@ public static class AutonomyDigest
     /// <summary>Renders the digest for a set of provenance events and held artifacts.</summary>
     public static string Render(
         IReadOnlyList<BrickSwapProvenanceEvent> events,
-        IReadOnlyList<HeldArtifact>? held = null)
+        IReadOnlyList<HeldArtifact>? held = null,
+        AutonomyLedgerScan.Report? ledgerScan = null)
     {
         if (events is null)
             throw new ArgumentNullException(nameof(events));
@@ -66,6 +67,34 @@ public static class AutonomyDigest
                 sb.Append("- **HELD** ").Append(artifact.BrickId)
                     .Append(" (").Append(artifact.ContentHash).Append(") — ")
                     .AppendLine(artifact.Reason);
+            }
+        }
+
+        if (ledgerScan is not null)
+        {
+            sb.AppendLine();
+            sb.AppendLine("## Ledger scan");
+            sb.AppendLine();
+            if (ledgerScan.IsClean)
+            {
+                sb.AppendLine("- clean: no revocation-chain suspects, no depth contradictions");
+            }
+            else
+            {
+                foreach (var suspect in ledgerScan.RevocationSuspects)
+                {
+                    sb.Append("- **SUSPECT** ").Append(suspect.BrickId)
+                        .Append(" (").Append(suspect.ContentHash)
+                        .AppendLine(") — inputs include a revoked artifact; flag for re-verification (R5.4)");
+                }
+
+                foreach (var contradiction in ledgerScan.LaunderingContradictions)
+                {
+                    sb.Append("- **DEPTH CONTRADICTION** ").Append(contradiction.ContentHash)
+                        .Append(" certified at depths [")
+                        .Append(string.Join(", ", contradiction.RecordedDepths))
+                        .AppendLine("] — possible laundering (§8)");
+                }
             }
         }
 

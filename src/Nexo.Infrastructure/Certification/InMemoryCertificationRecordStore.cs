@@ -21,4 +21,7 @@ public sealed class InMemoryCertificationRecordStore : ICertificationRecordStore
         record.Admitted &&
         record.Signed &&
         string.Equals(record.Status, "PASS", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Every stored record, for ledger scans.</summary>
+    public IReadOnlyList<CertificationRecord> All() => _records.Values.ToArray();
 }

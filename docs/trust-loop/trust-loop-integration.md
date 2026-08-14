@@ -168,5 +168,21 @@ vibeOS demo before the full autonomy loop is done.
   extended payload (which also closes the unsigned-`Gate` hole).
 - Where should Tier 0/1 classification live — constraint manifest
   field, or path convention like `BrickAdmissionPathHelper` uses?
+  **Resolved (autonomy U1):** neither — tiers classify from the
+  objective's declared `TouchSet` (`ObjectiveTierClassifier`), a pure
+  function of blast radius against the static `TrustKernel`
+  enumeration. Manifests stay behavioral constraints; paths stay
+  admission plumbing.
 - Throughput guard baseline: session median (spec) or fixed floor?
   Median needs ≥3 completed tasks before it's meaningful.
+- Should the analyzer fence also run in
+  `CompositionCertificationGate`'s chain ("every brick gate chain")?
+  **Resolved (backlog V6): no.** A `CompositionCertificationRequest`
+  carries no candidate source — compositions are graph specs over
+  already-certified bricks, so the fence's subject does not exist at
+  that level and requiring it would be enforcement theater. The
+  guarantee compositions need is that every constituent IS
+  brick-certified (where the fence already ran), which the composition
+  admission path checks. If compositions ever gain inline glue code,
+  that code becomes a brick-shaped candidate and the fence applies to
+  it as such.
