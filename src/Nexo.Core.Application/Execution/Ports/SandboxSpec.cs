@@ -11,6 +11,16 @@ public enum NetworkAccess
 
     /// <summary>Unrestricted network as provided by the sandbox backend.</summary>
     Unrestricted = 1,
+
+    /// <summary>
+    /// Reach only services the host explicitly publishes to the sandbox — the endpoints
+    /// listed in <see cref="SandboxSpec.AllowedEndpoints"/> (e.g. a local model server) —
+    /// with no general egress (extension spec Part B). Backends that cannot actually
+    /// realize this containment MUST refuse the spec fail-closed rather than degrade to
+    /// <see cref="Unrestricted"/>: a session believing itself air-gapped while holding
+    /// open egress is strictly worse than no session.
+    /// </summary>
+    HostServicesOnly = 2,
 }
 
 /// <summary>Host→container (or host→jail) bind mount.</summary>
@@ -53,4 +63,13 @@ public sealed record SandboxSpec(
     NetworkAccess Network,
     IReadOnlyList<string> Command,
     ResourceLimits? Limits = null,
-    string? Entrypoint = null);
+    string? Entrypoint = null)
+{
+    /// <summary>
+    /// The host services a <see cref="NetworkAccess.HostServicesOnly"/> sandbox may reach
+    /// (<c>host:port</c> entries). Part of the spec — and therefore of resource
+    /// attestation — even before a backend can enforce it: what a session was ALLOWED to
+    /// reach is certificate-relevant either way. Ignored for other network modes.
+    /// </summary>
+    public IReadOnlyList<string> AllowedEndpoints { get; init; } = Array.Empty<string>();
+}
