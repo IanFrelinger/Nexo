@@ -40,6 +40,10 @@ var sessionExecute = args.Contains("--session-execute", StringComparer.OrdinalIg
 // proposed source is untrusted by definition, so it may only fly with full session
 // containment — its in-process handle throws if anything tries to execute it here.
 var proposed = args.Contains("--proposed", StringComparer.OrdinalIgnoreCase);
+// --live: fly a proposal produced by a model AT FLIGHT TIME (the run script called the
+// local provider and mounted the raw recording at /nexo-live). Same containment rules
+// as --proposed; the loop's verdict on it — either way — is the evidence.
+var live = args.Contains("--live", StringComparer.OrdinalIgnoreCase);
 if (sessionExecute && !sessionBuild)
 {
     Console.WriteLine("--session-execute requires --session-build (the execution leg loads the session-built assembly)");
@@ -50,10 +54,23 @@ if (sessionExecute && dry)
     Console.WriteLine("--session-execute needs the real daemon: the fake session cannot produce runner output");
     return 1;
 }
-if (proposed && !sessionExecute)
+if ((proposed || live) && !sessionExecute)
 {
-    Console.WriteLine("--proposed requires --session-execute: model-proposed code never executes in this process");
+    Console.WriteLine("--proposed/--live require --session-execute: model-proposed code never executes in this process");
     return 1;
+}
+if (proposed && live)
+{
+    Console.WriteLine("--proposed and --live are mutually exclusive");
+    return 1;
+}
+
+LiveProposal? liveProposal = null;
+if (live)
+{
+    liveProposal = LiveProposal.Load("/nexo-live/recording.json");
+    if (liveProposal is null)
+        return 1; // Load printed the reason: a garbled recording never reaches the gate.
 }
 
 var sessionImage = dry ? "fake:local" : sessionBuild ? "mcr.microsoft.com/dotnet/sdk:9.0" : "alpine:3.20";
@@ -121,11 +138,13 @@ var context = new ProposalIterationContext
     ObjectiveId = objective.Id,
     Source = objective.Source,
     Touch = objective.Touch,
-    // The proposer signature IS the provenance channel (R4.1): for the recorded model
-    // proposal, the model identity gets hash-bound into the generation-depth input.
+    // The proposer signature IS the provenance channel (R4.1): for model proposals —
+    // recorded or live — the model identity gets hash-bound into the generation-depth input.
     Lineage = GenerationLineage.Child(
         GenerationLineage.HumanAuthored,
-        proposed ? RecordedProposal.ProposerSignature : "sig-first-flight-proposer"),
+        live ? liveProposal!.Signature
+        : proposed ? RecordedProposal.ProposerSignature
+        : "sig-first-flight-proposer"),
     SessionSpec = new SandboxSpec(
         Image: sessionImage,
         // No mounts, deliberately: the session's certified role today is provisioning
@@ -146,18 +165,29 @@ Console.WriteLine($"objective '{objective.Id}' source={objective.Source} tier={v
 // same objective, same independent witness (authored before the proposal and never shown
 // to the proposer), different implementation. The proposed handle's ExecuteAsync throws:
 // with the execution leg on, nothing may run model-proposed code in this process.
-var candidate = proposed
+var references = new[]
+{
+    typeof(DomainBrick).Assembly.Location,
+    typeof(BrickInput).Assembly.Location,
+};
+var candidate = live
+    ? new ProposalCandidate
+    {
+        Brick = new ProposedBrickHandle(),
+        SourceCode = liveProposal!.Source,
+        Witness = FlightLogScannerSource.StrongWitness,
+        ProjectPath = FlightLogScannerSource.WriteCleanProjectFile(),
+        CompilationReferences = references,
+        BrickTypeName = liveProposal.TypeName,
+    }
+    : proposed
     ? new ProposalCandidate
     {
         Brick = new ProposedBrickHandle(),
         SourceCode = RecordedProposal.Source,
         Witness = FlightLogScannerSource.StrongWitness,
         ProjectPath = FlightLogScannerSource.WriteCleanProjectFile(),
-        CompilationReferences = new[]
-        {
-            typeof(DomainBrick).Assembly.Location,
-            typeof(BrickInput).Assembly.Location,
-        },
+        CompilationReferences = references,
         BrickTypeName = RecordedProposal.TypeName,
     }
     : new ProposalCandidate
@@ -166,15 +196,17 @@ var candidate = proposed
         SourceCode = FlightLogScannerSource.Code,
         Witness = FlightLogScannerSource.StrongWitness,
         ProjectPath = FlightLogScannerSource.WriteCleanProjectFile(),
-        CompilationReferences = new[]
-        {
-            typeof(DomainBrick).Assembly.Location,
-            typeof(BrickInput).Assembly.Location,
-        },
+        CompilationReferences = references,
         BrickTypeName = typeof(FlightLogScannerBrick).FullName,
     };
 if (proposed)
     Console.WriteLine($"candidate  : RECORDED MODEL PROPOSAL, proposer signature '{RecordedProposal.ProposerSignature}'");
+if (live)
+{
+    Console.WriteLine($"candidate  : LIVE MODEL PROPOSAL ({liveProposal!.Provider}/{liveProposal.Model}, "
+        + $"{liveProposal.DurationSeconds:F0}s at flight time), signature '{liveProposal.Signature}'");
+    Console.WriteLine($"             type '{liveProposal.TypeName}', {liveProposal.Source.Length} chars of source");
+}
 
 // --- one iteration, four possible terminal states ------------------------------------
 var started = DateTimeOffset.UtcNow;
