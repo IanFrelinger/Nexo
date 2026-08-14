@@ -43,4 +43,21 @@ public sealed record CertificationRequest
     /// analyzer catalog still runs.
     /// </summary>
     public BrickConstraintManifest? ConstraintManifest { get; init; }
+
+    /// <summary>
+    /// The objective's declared touch-set, when the candidate came from a tiered objective
+    /// (autonomous self-extension spec R1.3/R3.2). Pass the SAME declaration that classified
+    /// the tier and derived the session's sandbox mounts: the analyzer gate enforces the
+    /// candidate's actual reference graph against it, and an undeclared reference into the
+    /// trust kernel is a certification FAIL. Null = no touch-set rules.
+    /// </summary>
+    public Autonomy.TouchSet? TouchSet { get; init; }
+
+    /// <summary>
+    /// The candidate's recursion pedigree (autonomy spec R4.1). Null is treated as
+    /// human-authored context (depth 0) — the certifier validates coherent lineages
+    /// (laundering matrix) and enforces the depth ceiling before any other gate runs, and
+    /// records the depth plus a parent-chain hash into the certificate's inputs.
+    /// </summary>
+    public Autonomy.GenerationLineage? Lineage { get; init; }
 }

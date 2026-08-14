@@ -22,6 +22,8 @@ promoted to a rule here, with the decision recorded in this table.
 | `NEXO0010` | Using directive outside the constraint-manifest allowlist | manifest-derived (A2); prompt-vs-gate drift killed by construction |
 | `NEXO0011` | Resolved reference matches a forbidden API token | manifest-derived (A2); textual matching was dodgeable by aliasing/qualification |
 | `NEXO0012` | Resolved reference inside a forbidden namespace | manifest-derived (A2); fully-qualified calls dodge any using-directive check |
+| `NEXO0013` | Resolved reference outside the objective's declared touch-set | autonomy spec R3.2: the tier was classified from the declaration; reaching beyond it invalidates the classification |
+| `NEXO0014` | Undeclared resolved reference into the trust kernel | autonomy spec I-1: kernel-touch smuggling forfeits certification outright; reflection/transitive reach is owned by the swap-host and runtime legs of the triple check |
 
 Every rule ships with a three-case test triad in `Nexo.Analyzers.Tests`: at
 least one true positive, one true negative, and one deliberately-unresolvable

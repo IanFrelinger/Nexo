@@ -52,12 +52,15 @@ public sealed class AnalyzerFenceGate
 
     /// <summary>
     /// Runs the analyzer catalog — plus, when the request carries a constraint manifest, the
-    /// manifest-derived rules (A2) — over the candidate and produces the gate verdict.
+    /// manifest-derived rules (A2), and, when it carries a declared touch-set, the touch-set
+    /// reference rules (autonomy spec R3.2 analyzer leg) — over the candidate and produces
+    /// the gate verdict.
     /// </summary>
     public async Task<AnalyzerGateOutcome> EvaluateAsync(
         string candidateSource,
         IEnumerable<string>? compilationReferences,
         BrickConstraintManifest? constraintManifest = null,
+        Nexo.Core.Application.Autonomy.TouchSet? touchSet = null,
         CancellationToken cancellationToken = default)
     {
         var floor = ResolveSeverityFloor();
@@ -66,6 +69,15 @@ public sealed class AnalyzerFenceGate
         // proposer's instructions were rendered from — so rules and prompt cannot drift.
         if (constraintManifest is not null)
             analyzers = analyzers.Add(new BrickConstraintManifestAnalyzer(constraintManifest));
+        // R3.2/R1.3: the same declaration that classified the tier and derived the mounts is
+        // enforced against the candidate's actual reference graph. The kernel enumeration
+        // comes from TrustKernel — the analyzer never trusts a caller-supplied kernel list.
+        if (touchSet is not null)
+        {
+            analyzers = analyzers.Add(new TouchSetReferenceAnalyzer(
+                touchSet.Normalize().Namespaces,
+                Nexo.Core.Application.Autonomy.TrustKernel.KernelNamespacePrefixes));
+        }
         var analyzerVersion = typeof(BrickInterfaceDriftAnalyzer).Assembly.GetName().Version?.ToString() ?? "0.0.0.0";
 
         if (analyzers.IsEmpty)
@@ -133,11 +145,12 @@ public sealed class AnalyzerFenceGate
                 .Where(d => d.Id.StartsWith(DiagnosticIdPrefix, StringComparison.Ordinal) && d.Severity >= floor)
                 .OrderBy(d => d.Location.SourceSpan.Start)
                 .Select(d => ToFinding(d, candidateSource))
-                // Manifest rules apply to every line of the compilation (unlike the brick-scoped
-                // catalog), so they also fire on the wrapper-injected preamble/audit text — code
-                // the proposer did not write and cannot repair. Findings there map to candidate
-                // line 0 and are structurally exempt. Catalog findings are never dropped.
-                .Where(f => f.Line != 0 || !BrickConstraintManifestAnalyzer.ManifestRuleIds.Contains(f.Id))
+                // Manifest and touch-set rules apply to every line of the compilation (unlike
+                // the brick-scoped catalog), so they also fire on the wrapper-injected
+                // preamble/audit text — code the proposer did not write and cannot repair.
+                // Findings there map to candidate line 0 and are structurally exempt.
+                // Catalog findings are never dropped.
+                .Where(f => f.Line != 0 || !IsWholeCompilationRule(f.Id))
                 .ToArray();
 
             return new AnalyzerGateOutcome
@@ -149,6 +162,7 @@ public sealed class AnalyzerFenceGate
                 AnalyzerAssemblyVersion = analyzerVersion,
                 SeverityFloor = floor.ToString(),
                 ManifestRulesAttached = constraintManifest is not null,
+                TouchSetRulesAttached = touchSet is not null,
             };
         }
         catch (OperationCanceledException)
@@ -161,6 +175,10 @@ public sealed class AnalyzerFenceGate
             return AnalyzerGateOutcome.Failed($"analyzer gate crashed: {ex.Message}", floor, analyzerVersion);
         }
     }
+
+    private static bool IsWholeCompilationRule(string id) =>
+        BrickConstraintManifestAnalyzer.ManifestRuleIds.Contains(id)
+        || TouchSetReferenceAnalyzer.TouchSetRuleIds.Contains(id);
 
     private DiagnosticSeverity ResolveSeverityFloor()
     {
@@ -227,10 +245,14 @@ public sealed record AnalyzerGateOutcome
     /// <summary>Whether manifest-derived rules (NEXO0010–0012) were attached for this run (A2).</summary>
     public bool ManifestRulesAttached { get; init; }
 
+    /// <summary>Whether touch-set rules (NEXO0013–0014) were attached for this run (autonomy R3.2).</summary>
+    public bool TouchSetRulesAttached { get; init; }
+
     /// <summary>The certificate's gates_passed configuration string (A1.5).</summary>
     public string GatePassConfiguration =>
         $"analyzerAssemblyVersion={AnalyzerAssemblyVersion};severityFloor={SeverityFloor};diagnosticsEvaluated={DiagnosticsEvaluated}"
-        + $";manifestRules={(ManifestRulesAttached ? "attached" : "none")}";
+        + $";manifestRules={(ManifestRulesAttached ? "attached" : "none")}"
+        + $";touchSet={(TouchSetRulesAttached ? "attached" : "none")}";
 
     /// <summary>Creates a fail-closed outcome for gate-infrastructure failures (A1.4).</summary>
     public static AnalyzerGateOutcome Failed(string reason, DiagnosticSeverity floor, string analyzerVersion) => new()

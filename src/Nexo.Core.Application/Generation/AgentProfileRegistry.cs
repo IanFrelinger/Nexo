@@ -69,6 +69,30 @@ public sealed class AgentProfileRegistry : IAgentProfileRegistry
                 nameof(profile));
         }
 
+        // Autonomy spec R4.3: the loop may not grow its own judges. A validator whose
+        // type lives in a COLLECTIBLE assembly is self-produced code — hot-swap
+        // generations and mutation sandboxes are the only collectible load contexts in
+        // this process — and self-produced artifacts must not serve as gates, probes,
+        // fences, or analyzers for other candidates until a human admits them into the
+        // verification role via an authored (non-collectible) registration.
+        // (netstandard2.0 leg: Assembly.IsCollectible does not exist; trust-loop hosts
+        // run net8+, where this check is active.)
+#if NET
+        var selfProducedJudges = declared
+            .Where(v => v is not null && v.GetType().Assembly.IsCollectible)
+            .Select(v => v!.GetType().FullName ?? "(unknown)")
+            .ToArray();
+        if (selfProducedJudges.Length > 0)
+        {
+            throw new ArgumentException(
+                $"AgentProfile '{profile.TargetId}' declares validator(s) from a collectible load "
+                + "context (self-produced code): " + string.Join(", ", selfProducedJudges)
+                + ". Self-produced artifacts must not serve as judges without human admission "
+                + "(autonomy spec R4.3).",
+                nameof(profile));
+        }
+#endif
+
         // Same family of bug, arrived at from the other side: a profile with NO
         // usable validator passes the check above vacuously, then reports
         // verified with no gate ever run. The deterministic branch mints

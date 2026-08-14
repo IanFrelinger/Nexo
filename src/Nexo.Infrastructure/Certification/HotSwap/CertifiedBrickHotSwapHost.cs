@@ -42,25 +42,87 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
     private readonly ILogger<CertifiedBrickHotSwapHost>? _logger;
     private readonly string? _hmacKey;
     private readonly TimeSpan _drainTimeout;
+    private readonly Nexo.Core.Application.Autonomy.ICertificateRevocationList? _revocations;
+    private readonly int _retentionWindow;
+    private readonly List<RetainedGeneration> _retained = new();
+    private readonly WatchThresholds? _watchThresholds;
+    private readonly Nexo.Core.Application.Autonomy.ILineageAuthority? _lineageAuthority;
+    private readonly Nexo.Core.Application.Autonomy.LoopPauseControl? _pauseControl;
+    private readonly TimeSpan? _cadenceFloor;
+    private readonly TimeProvider _clock;
 
     private BrickGeneration? _current;
     private int _generationCounter;
+    private GenerationWatchStats? _watchBaseline;
+    private GenerationWatchStats? _watchCurrent;
+    private int _watchGenerationId;
+    private int _watchBreachLatch;
+    private DateTimeOffset? _lastAutonomousSwapUtc;
+    private IReadOnlyList<string> _currentLineageKeys = Array.Empty<string>();
 
     /// <summary>Initializes the host.</summary>
     /// <param name="provenanceSink">Receives swap/generation provenance events; null records nothing.</param>
     /// <param name="logger">Optional diagnostics logger.</param>
     /// <param name="hmacKey">Explicit record-verification key; falls back to environment/dev key.</param>
     /// <param name="drainTimeout">How long a retired generation may drain before it is unloaded anyway.</param>
+    /// <param name="revocations">Quarantine list; any request whose certificate content hash is revoked is refused permanently (R5.3).</param>
+    /// <param name="retentionWindow">How many committed generations stay reactivatable via <see cref="RollbackToAsync"/> (R5.1). 0 disables retention.</param>
+    /// <param name="watchThresholds">Post-swap watch thresholds (R5.2); breach quarantines the generation and rolls back automatically. Null = no watch (human-driven flow).</param>
+    /// <param name="lineageAuthority">Rollback ledger per objective lineage (R5.5); demoted lineages lose auto-swap.</param>
+    /// <param name="pauseControl">Global pause (R6.2): while paused, autonomous swaps are refused; human-driven swaps proceed.</param>
+    /// <param name="cadenceFloor">Minimum interval between autonomous swaps (R6.1) so the runtime never absorbs changes faster than watch windows clear.</param>
+    /// <param name="clock">Clock for cadence decisions; system time when null.</param>
     public CertifiedBrickHotSwapHost(
         ICertifiedBrickSwapProvenanceSink? provenanceSink = null,
         ILogger<CertifiedBrickHotSwapHost>? logger = null,
         string? hmacKey = null,
-        TimeSpan? drainTimeout = null)
+        TimeSpan? drainTimeout = null,
+        Nexo.Core.Application.Autonomy.ICertificateRevocationList? revocations = null,
+        int retentionWindow = 2,
+        WatchThresholds? watchThresholds = null,
+        Nexo.Core.Application.Autonomy.ILineageAuthority? lineageAuthority = null,
+        Nexo.Core.Application.Autonomy.LoopPauseControl? pauseControl = null,
+        TimeSpan? cadenceFloor = null,
+        TimeProvider? clock = null)
     {
         _provenanceSink = provenanceSink;
         _logger = logger;
         _hmacKey = hmacKey;
         _drainTimeout = drainTimeout ?? DefaultDrainTimeout;
+        _revocations = revocations;
+        _retentionWindow = Math.Max(0, retentionWindow);
+        _watchThresholds = watchThresholds;
+        _lineageAuthority = lineageAuthority;
+        _pauseControl = pauseControl;
+        _cadenceFloor = cadenceFloor;
+        _clock = clock ?? TimeProvider.System;
+    }
+
+    private sealed record RetainedGeneration(int GenerationId, IReadOnlyList<CertifiedBrickLoadRequest> Requests);
+
+    /// <summary>Per-generation runtime signals for the watch window (R5.2). Interlocked counters only.</summary>
+    private sealed class GenerationWatchStats
+    {
+        private long _invocations;
+        private long _faults;
+        private long _latencyTicks;
+        private long _undeclaredWrites;
+
+        public void Record(long elapsedTicks, bool faulted, int undeclaredWrites)
+        {
+            Interlocked.Increment(ref _invocations);
+            Interlocked.Add(ref _latencyTicks, elapsedTicks);
+            if (faulted)
+                Interlocked.Increment(ref _faults);
+            if (undeclaredWrites > 0)
+                Interlocked.Add(ref _undeclaredWrites, undeclaredWrites);
+        }
+
+        public (long Invocations, long Faults, long LatencyTicks, long UndeclaredWrites) Snapshot() => (
+            Interlocked.Read(ref _invocations),
+            Interlocked.Read(ref _faults),
+            Interlocked.Read(ref _latencyTicks),
+            Interlocked.Read(ref _undeclaredWrites));
     }
 
     /// <summary>Generation currently serving, or null before the first successful swap.</summary>
@@ -107,6 +169,25 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
 
             _generationCounter = generationId;
             var previous = Interlocked.Exchange(ref _current, materialized.Generation);
+            RetainCommitted(generationId, requests, materialized.EmittedImages);
+            // Watch rotation (R5.2): the outgoing generation's runtime signals become the
+            // baseline the incoming generation is judged against; the breach latch resets.
+            _watchBaseline = _watchCurrent;
+            _watchCurrent = new GenerationWatchStats();
+            Volatile.Write(ref _watchGenerationId, generationId);
+            Volatile.Write(ref _watchBreachLatch, 0);
+
+            // Cadence + in-flight bookkeeping (R6.1) for autonomous swaps.
+            var autonomousKeys = requests
+                .Where(r => r.Autonomous is not null)
+                .Select(r => r.Autonomous!.LineageKey)
+                .Where(k => !string.IsNullOrWhiteSpace(k))
+                .Select(k => k!)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+            if (requests.Any(r => r.Autonomous is not null))
+                _lastAutonomousSwapUtc = _clock.GetUtcNow();
+            _currentLineageKeys = autonomousKeys;
 
             foreach (var request in requests)
             {
@@ -181,22 +262,175 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
             if (!generation.TryEnter())
                 continue;
 
+            BrickOutput? output = null;
+            Exception? brickFault = null;
+            DomainBrick? brick = null;
+            var startTicks = System.Diagnostics.Stopwatch.GetTimestamp();
             try
             {
-                var brick = generation.GetBrick(brickId)
+                brick = generation.GetBrick(brickId)
                     ?? throw new KeyNotFoundException(
                         $"No certified brick '{brickId}' in generation {generation.Id}.");
-                return await brick.ExecuteAsync(input, implementation, context, cancellationToken)
-                    .ConfigureAwait(false);
+                try
+                {
+                    output = await brick.ExecuteAsync(input, implementation, context, cancellationToken)
+                        .ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    // Host-side cancellation is not brick misbehavior; no watch signal.
+                    throw;
+                }
+                catch (Exception ex)
+                {
+                    brickFault = ex;
+                }
             }
             finally
             {
                 generation.Exit();
             }
+
+            // Watch observation runs OUTSIDE the lease so a breach-triggered rollback can
+            // drain this generation without deadlocking on its own invocation (R5.2).
+            if (_watchThresholds is not null && brick is not null
+                && generation.Id == Volatile.Read(ref _watchGenerationId))
+            {
+                var elapsed = System.Diagnostics.Stopwatch.GetTimestamp() - startTicks;
+                var undeclared = output is null ? 0 : CountUndeclaredWrites(brick, output);
+                _watchCurrent?.Record(elapsed, brickFault is not null, undeclared);
+                var breachReasons = EvaluateWatch();
+                if (breachReasons is not null)
+                    await QuarantineCurrentAsync(breachReasons, cancellationToken).ConfigureAwait(false);
+            }
+
+            if (brickFault is not null)
+                System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(brickFault).Throw();
+            return output!;
         }
 
         throw new InvalidOperationException(
             "Could not lease a serving generation; swaps kept retiring it mid-read.");
+    }
+
+    private static int CountUndeclaredWrites(DomainBrick brick, BrickOutput output)
+    {
+        var declared = brick.Interface?.Outputs;
+        if (declared is null || declared.Count == 0)
+            return 0; // No declared contract to check — honesty over guessing.
+
+        var declaredNames = new HashSet<string>(declared.Select(o => o.Name), StringComparer.Ordinal);
+        return output.ToDictionary().Keys.Count(k => !declaredNames.Contains(k));
+    }
+
+    /// <summary>
+    /// Whether the current generation's watch window is still in flight for a lineage:
+    /// thresholds active, the lineage is among the serving generation's autonomous keys,
+    /// no breach yet, and fewer than MinInvocations observed (R6.1).
+    /// </summary>
+    private bool WatchWindowInFlight(string lineageKey)
+    {
+        if (_watchThresholds is null || _watchCurrent is null)
+            return false;
+        if (!_currentLineageKeys.Contains(lineageKey, StringComparer.OrdinalIgnoreCase))
+            return false;
+        if (Volatile.Read(ref _watchBreachLatch) != 0)
+            return false; // Breached windows resolve via quarantine, not by blocking.
+
+        var (invocations, _, _, _) = _watchCurrent.Snapshot();
+        return invocations < _watchThresholds.MinInvocations;
+    }
+
+    /// <summary>Breach reasons when the watch thresholds are crossed; null otherwise (R5.2).</summary>
+    private IReadOnlyList<string>? EvaluateWatch()
+    {
+        var thresholds = _watchThresholds;
+        var current = _watchCurrent;
+        if (thresholds is null || current is null || Volatile.Read(ref _watchBreachLatch) != 0)
+            return null;
+
+        var (invocations, faults, latencyTicks, undeclared) = current.Snapshot();
+        var reasons = new List<string>();
+
+        // Contract conformance is absolute — no baseline needed (R5.2).
+        if (undeclared > thresholds.MaxUndeclaredWrites)
+            reasons.Add($"{undeclared} undeclared output write(s) exceed the tolerated {thresholds.MaxUndeclaredWrites}");
+
+        if (invocations >= thresholds.MinInvocations && _watchBaseline is { } baseline)
+        {
+            var (bInv, bFaults, bLatency, _) = baseline.Snapshot();
+            if (bInv > 0)
+            {
+                var errorRate = (double)faults / invocations;
+                var baselineRate = (double)bFaults / bInv;
+                if (errorRate > baselineRate + thresholds.MaxErrorRateDelta)
+                    reasons.Add($"error rate {errorRate:F2} exceeds baseline {baselineRate:F2} by more than {thresholds.MaxErrorRateDelta:F2}");
+
+                var meanLatency = (double)latencyTicks / invocations;
+                var baselineMean = (double)bLatency / bInv;
+                if (baselineMean > 0 && meanLatency > baselineMean * thresholds.MaxLatencyFactor)
+                    reasons.Add($"mean latency is {meanLatency / baselineMean:F1}x the baseline (max {thresholds.MaxLatencyFactor:F1}x)");
+            }
+        }
+
+        if (reasons.Count == 0)
+            return null;
+
+        // One quarantine per generation: first observer wins the latch.
+        return Interlocked.CompareExchange(ref _watchBreachLatch, 1, 0) == 0 ? reasons : null;
+    }
+
+    /// <summary>
+    /// Quarantines the current generation after a watch breach (R5.2/R5.3): revokes its
+    /// certificate hashes, records the rollback against its lineage (R5.5), emits
+    /// provenance, and reactivates the previous retained generation. All fail-closed:
+    /// with nothing retained to roll back to, the quarantine is still recorded loudly.
+    /// </summary>
+    private async Task QuarantineCurrentAsync(IReadOnlyList<string> reasons, CancellationToken cancellationToken)
+    {
+        RetainedGeneration? currentRetained = null;
+        RetainedGeneration? previousRetained = null;
+        lock (_retained)
+        {
+            if (_retained.Count > 0)
+                currentRetained = _retained[^1];
+            if (_retained.Count > 1)
+                previousRetained = _retained[^2];
+        }
+
+        var reason = "Watch breach: " + string.Join(" | ", reasons);
+        _logger?.LogWarning("hot-swap watch breach on generation {Generation}: {Reason}",
+            currentRetained?.GenerationId, reason);
+
+        if (currentRetained is not null)
+        {
+            foreach (var request in currentRetained.Requests)
+            {
+                if (_revocations is not null && !string.IsNullOrWhiteSpace(request.Record.ContentHash))
+                    _revocations.Revoke(request.Record.ContentHash!, reason);
+                if (_lineageAuthority is not null && request.Autonomous?.LineageKey is { } lineageKey)
+                    _lineageAuthority.RecordRollback(lineageKey);
+            }
+        }
+
+        Emit(new BrickSwapProvenanceEvent
+        {
+            Generation = currentRetained?.GenerationId ?? Volatile.Read(ref _watchGenerationId),
+            Outcome = BrickSwapProvenanceOutcomes.WatchBreachQuarantined,
+            Timestamp = DateTimeOffset.UtcNow,
+            Reason = reason
+        });
+
+        if (previousRetained is not null)
+        {
+            await RollbackToAsync(previousRetained.GenerationId, cancellationToken).ConfigureAwait(false);
+        }
+        else
+        {
+            _logger?.LogError(
+                "watch breach quarantined generation {Generation} but no earlier generation is retained to roll back to",
+                currentRetained?.GenerationId);
+        }
     }
 
     /// <inheritdoc />
@@ -211,6 +445,82 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
         _ = current.RetireAndSignal();
         _ = current.DetachAndUnload();
         TryDeleteDirectory(current.TempDirectory);
+    }
+
+    /// <summary>
+    /// Reactivates a retained generation (autonomy spec R5.1): the retained certificates
+    /// and source are re-verified, the retained EMITTED IMAGES load into a fresh context —
+    /// no build, no network, no model — and the standard fail-closed swap semantics apply
+    /// (a revoked hash in the retained set refuses the rollback; R5.3 outranks R5.1).
+    /// </summary>
+    public async Task<CertifiedBrickSwapResult> RollbackToAsync(
+        int generationId,
+        CancellationToken cancellationToken = default)
+    {
+        RetainedGeneration? retained;
+        lock (_retained)
+        {
+            retained = _retained.FirstOrDefault(r => r.GenerationId == generationId);
+        }
+
+        if (retained is null)
+        {
+            return new CertifiedBrickSwapResult
+            {
+                Swapped = false,
+                Refusals = new[]
+                {
+                    new BrickSwapRefusal
+                    {
+                        BrickId = "*",
+                        Stage = BrickSwapRefusalStage.Request,
+                        FailureCode = "no-retained-generation",
+                        Reason = $"Generation {generationId} is not in the retention window "
+                            + $"({_retentionWindow} generation(s) retained)."
+                    }
+                }
+            };
+        }
+
+        var result = await SwapAsync(retained.Requests, cancellationToken).ConfigureAwait(false);
+        if (result.Swapped)
+        {
+            Emit(new BrickSwapProvenanceEvent
+            {
+                Generation = result.GenerationId ?? 0,
+                Outcome = BrickSwapProvenanceOutcomes.RollbackCommitted,
+                Timestamp = DateTimeOffset.UtcNow,
+                ContextName = result.GenerationContextName,
+                Reason = $"Reactivated retained generation {generationId} from its emitted images."
+            });
+        }
+
+        return result;
+    }
+
+    private void RetainCommitted(
+        int generationId,
+        IReadOnlyList<CertifiedBrickLoadRequest> requests,
+        IReadOnlyDictionary<string, byte[]>? emittedImages)
+    {
+        if (_retentionWindow == 0 || emittedImages is null)
+            return;
+
+        var snapshot = requests
+            .Select(r => r with
+            {
+                PrecompiledAssembly = emittedImages.TryGetValue(r.BrickId, out var image) ? image : null,
+            })
+            .ToArray();
+        if (snapshot.Any(r => r.PrecompiledAssembly is null))
+            return; // A generation we cannot fully reactivate without a build is not retained.
+
+        lock (_retained)
+        {
+            _retained.Add(new RetainedGeneration(generationId, snapshot));
+            while (_retained.Count > _retentionWindow)
+                _retained.RemoveAt(0);
+        }
     }
 
     private List<BrickSwapRefusal> VerifyAll(IReadOnlyList<CertifiedBrickLoadRequest> requests)
@@ -253,6 +563,118 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
                     FailureCode = trust.FailureCode,
                     Reason = trust.Reason
                 });
+                continue;
+            }
+
+            // R5.3: quarantine is permanent. A revoked content hash never loads again —
+            // rollbacks and bit-identical resubmissions included. Re-earning admission
+            // means re-certifying a new candidate, never resurrecting the old hash.
+            if (_revocations?.IsRevoked(request.Record.ContentHash ?? "") == true)
+            {
+                refusals.Add(new BrickSwapRefusal
+                {
+                    BrickId = request.BrickId,
+                    Stage = BrickSwapRefusalStage.Verification,
+                    FailureCode = "revoked-hash",
+                    Reason = "Certificate content hash is revoked (quarantined): "
+                        + (_revocations.TryGetReason(request.Record.ContentHash ?? "") ?? "no reason recorded")
+                });
+                continue;
+            }
+
+            // Autonomy spec R3.2 (swap-host leg) + R4.2 (independent ceiling): when the
+            // LOOP drives the swap, only Tier-0 classifications may auto-swap, and the
+            // recursion rules are re-checked here regardless of what the certifier did.
+            if (request.Autonomous is { } autonomous)
+            {
+                // R6.2: the global pause halts autonomous swaps immediately. Human-driven
+                // swaps (null Autonomous) proceed — pause bounds the LOOP, not the operator.
+                if (_pauseControl?.IsPaused == true)
+                {
+                    refusals.Add(new BrickSwapRefusal
+                    {
+                        BrickId = request.BrickId,
+                        Stage = BrickSwapRefusalStage.Request,
+                        FailureCode = "loop-paused",
+                        Reason = $"The autonomy loop is paused: {_pauseControl.PausedReason}"
+                    });
+                    continue;
+                }
+
+                // R6.1: the cadence floor keeps the runtime from absorbing autonomous
+                // changes faster than watch windows can clear them.
+                if (_cadenceFloor is { } floor && _lastAutonomousSwapUtc is { } last
+                    && _clock.GetUtcNow() - last < floor)
+                {
+                    refusals.Add(new BrickSwapRefusal
+                    {
+                        BrickId = request.BrickId,
+                        Stage = BrickSwapRefusalStage.Request,
+                        FailureCode = "cadence-floor",
+                        Reason = $"Autonomous swap cadence floor of {floor.TotalSeconds:F0}s has not elapsed "
+                            + "since the previous autonomous swap (R6.1)."
+                    });
+                    continue;
+                }
+
+                // R6.1: an in-flight watch window blocks the next autonomous swap of the
+                // SAME lineage until the window clears (MinInvocations without breach).
+                if (autonomous.LineageKey is { } inFlightKey && WatchWindowInFlight(inFlightKey))
+                {
+                    refusals.Add(new BrickSwapRefusal
+                    {
+                        BrickId = request.BrickId,
+                        Stage = BrickSwapRefusalStage.Request,
+                        FailureCode = "watch-window-in-flight",
+                        Reason = $"Lineage '{inFlightKey}' has an in-flight watch window; the next "
+                            + "autonomous swap of this lineage waits for it to clear (R6.1)."
+                    });
+                    continue;
+                }
+
+                // R5.5: a lineage demoted on rollback evidence has lost Tier-0 autonomy —
+                // its swaps wait for the human gate no matter what tier the objective
+                // classified at. Autonomy is lost on evidence, never gained on it.
+                if (_lineageAuthority is not null
+                    && autonomous.LineageKey is { } lineageKey
+                    && _lineageAuthority.IsDemoted(lineageKey))
+                {
+                    refusals.Add(new BrickSwapRefusal
+                    {
+                        BrickId = request.BrickId,
+                        Stage = BrickSwapRefusalStage.Request,
+                        FailureCode = "lineage-demoted",
+                        Reason = $"Objective lineage '{lineageKey}' lost Tier-0 autonomy after repeated "
+                            + "rollback (R5.5); admission now waits for the human gate."
+                    });
+                    continue;
+                }
+
+                if (autonomous.Tier != Nexo.Core.Application.Autonomy.ObjectiveTier.Tier0Autonomous)
+                {
+                    refusals.Add(new BrickSwapRefusal
+                    {
+                        BrickId = request.BrickId,
+                        Stage = BrickSwapRefusalStage.Request,
+                        FailureCode = "tier-requires-human-admission",
+                        Reason = $"Objective tier {autonomous.Tier} cannot auto-swap; admission waits for "
+                            + "the human gate (autonomy spec R3.1)."
+                    });
+                    continue;
+                }
+
+                var lineage = autonomous.Lineage ?? Nexo.Core.Application.Autonomy.GenerationLineage.HumanAuthored;
+                var recursion = Nexo.Core.Application.Autonomy.RecursionDiscipline.FindViolations(lineage);
+                if (recursion.Count > 0)
+                {
+                    refusals.Add(new BrickSwapRefusal
+                    {
+                        BrickId = request.BrickId,
+                        Stage = BrickSwapRefusalStage.Request,
+                        FailureCode = "recursion-refused",
+                        Reason = "Recursion discipline failed at the swap host: " + string.Join(" | ", recursion)
+                    });
+                }
             }
         }
 
@@ -304,7 +726,8 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
         BrickGeneration? Generation,
         IReadOnlyList<BrickSwapRefusal> Refusals,
         WeakReference AbortedContextRef,
-        string TempDirectory);
+        string TempDirectory,
+        IReadOnlyDictionary<string, byte[]>? EmittedImages = null);
 
     /// <summary>
     /// Compiles and loads every brick into one new collectible context. On any failure the
@@ -324,6 +747,7 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
 
         var context = new BrickGenerationLoadContext(contextName);
         var bricks = new Dictionary<string, DomainBrick>(StringComparer.OrdinalIgnoreCase);
+        var emittedImages = new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
         var refusals = new List<BrickSwapRefusal>();
         var compiler = new RoslynCodeAnalysisService(NullLogger<RoslynCodeAnalysisService>.Instance);
 
@@ -340,29 +764,39 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
                 };
                 references.AddRange(request.AdditionalCompilationReferences);
 
-                var compile = await compiler.CompileAsync(
-                    WrapForRoslynCompile(request.SourceCode),
-                    assemblyName,
-                    outputPath,
-                    references,
-                    cancellationToken).ConfigureAwait(false);
-
-                if (!compile.Success || string.IsNullOrWhiteSpace(compile.AssemblyPath) || !File.Exists(compile.AssemblyPath))
+                // Rollback path (R5.1): a retained generation reactivates from its exact
+                // emitted image — no compiler runs. Verify-at-load already re-checked the
+                // source hash against the certificate before this frame.
+                if (request.PrecompiledAssembly is { } image)
                 {
-                    refusals.Add(new BrickSwapRefusal
+                    File.WriteAllBytes(outputPath, image);
+                }
+                else
+                {
+                    var compile = await compiler.CompileAsync(
+                        WrapForRoslynCompile(request.SourceCode),
+                        assemblyName,
+                        outputPath,
+                        references,
+                        cancellationToken).ConfigureAwait(false);
+
+                    if (!compile.Success || string.IsNullOrWhiteSpace(compile.AssemblyPath) || !File.Exists(compile.AssemblyPath))
                     {
-                        BrickId = request.BrickId,
-                        Stage = BrickSwapRefusalStage.Compilation,
-                        FailureCode = "compile-failed",
-                        Reason = string.Join("; ", compile.Errors.DefaultIfEmpty("no assembly produced"))
-                    });
-                    continue;
+                        refusals.Add(new BrickSwapRefusal
+                        {
+                            BrickId = request.BrickId,
+                            Stage = BrickSwapRefusalStage.Compilation,
+                            FailureCode = "compile-failed",
+                            Reason = string.Join("; ", compile.Errors.DefaultIfEmpty("no assembly produced"))
+                        });
+                        continue;
+                    }
                 }
 
                 Assembly assembly;
                 try
                 {
-                    assembly = context.LoadFromAssemblyPath(compile.AssemblyPath);
+                    assembly = context.LoadFromAssemblyPath(outputPath);
                 }
                 catch (Exception ex) when (ex is not OperationCanceledException)
                 {
@@ -424,6 +858,9 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
                 }
 
                 bricks[request.BrickId] = brick;
+                // Captured for generation retention (R5.1): rollback reactivates from
+                // these exact bytes with no compiler involved.
+                emittedImages[request.BrickId] = File.ReadAllBytes(outputPath);
             }
         }
         catch (OperationCanceledException)
@@ -457,7 +894,8 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
             new BrickGeneration(generationId, contextName, tempDirectory, context, bricks),
             Array.Empty<BrickSwapRefusal>(),
             new WeakReference(null),
-            tempDirectory);
+            tempDirectory,
+            emittedImages);
     }
 
     private async Task<bool> RetireAsync(BrickGeneration previous)

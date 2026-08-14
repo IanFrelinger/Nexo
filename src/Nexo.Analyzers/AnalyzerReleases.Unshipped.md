@@ -17,3 +17,5 @@ NEXO0009 | Nexo.TrustLoop | Warning | BrickEmptyCatchAnalyzer: empty catch block
 NEXO0010 | Nexo.TrustLoop | Warning | BrickConstraintManifestAnalyzer: using directive outside the manifest allowlist.
 NEXO0011 | Nexo.TrustLoop | Warning | BrickConstraintManifestAnalyzer: resolved reference matches a forbidden API token.
 NEXO0012 | Nexo.TrustLoop | Warning | BrickConstraintManifestAnalyzer: resolved reference lives inside a forbidden namespace.
+NEXO0013 | Nexo.TrustLoop | Warning | TouchSetReferenceAnalyzer: resolved reference outside the objective's declared touch-set.
+NEXO0014 | Nexo.TrustLoop | Warning | TouchSetReferenceAnalyzer: undeclared resolved reference into the trust kernel.

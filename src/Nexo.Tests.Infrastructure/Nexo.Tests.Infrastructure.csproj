@@ -79,6 +79,8 @@
     <ProjectReference Include="..\Nexo.Tests.Contracts\Nexo.Tests.Contracts.csproj" />
     <ProjectReference Include="..\Nexo.Infrastructure\Nexo.Infrastructure.csproj" />
     <ProjectReference Include="..\Nexo.Agents.TestKit\Nexo.Agents.TestKit.csproj" />
+    <!-- Autonomy campaign (spec §8): objective intake lives in BackgroundAgents. -->
+    <ProjectReference Include="..\Nexo.BackgroundAgents\Nexo.BackgroundAgents.csproj" />
     <ProjectReference Include="..\..\application\src\Nexo.API\Nexo.API.csproj" />
     <ProjectReference Include="..\Nexo.Policies.Dev\Nexo.Policies.Dev.csproj" />
     <ProjectReference Include="..\Nexo.Orchestration\Nexo.Orchestration.csproj" />

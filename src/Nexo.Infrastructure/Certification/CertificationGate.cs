@@ -47,6 +47,30 @@ public sealed class CertificationGate : ICertificationGate
         var contentHash = BrickContentHasher.ComputeSha256(request.SourceCode);
         var inputs = BuildInputs(request);
 
+        // Declared ahead of the recursion refusal because the shared Fail/GatesPassedBefore
+        // closures reference it; it is re-assigned with the real per-run configuration once
+        // the analyzer fence actually evaluates. A recursion refusal never reads it
+        // (GatesPassedBefore("recursion") is the empty prefix).
+        var analyzerGatePass = new CertificationGatePass { Name = "analyzer-gate", Version = GateVersion };
+
+        // Autonomy spec R4.1/R4.2: the recursion check runs before EVERYTHING — an
+        // incoherent depth claim (laundering) or a candidate past the ceiling must not
+        // even be analyzed. Null lineage = human-authored context (depth 0), always
+        // coherent and under the ceiling.
+        var lineage = request.Lineage ?? Nexo.Core.Application.Autonomy.GenerationLineage.HumanAuthored;
+        var recursionViolations = Nexo.Core.Application.Autonomy.RecursionDiscipline.FindViolations(lineage);
+        if (recursionViolations.Count > 0)
+        {
+            var reason = "Recursion discipline failed: " + string.Join(" | ", recursionViolations);
+            _logger?.LogWarning("Certification REJECT {BrickId}: {Reason}", brickId, reason);
+            return new CertificationDecision
+            {
+                Admitted = false,
+                FailureCheck = "recursion",
+                Record = Fail("recursion", reason)
+            };
+        }
+
         // Spec A1.1/I-A: the analyzer fence runs first — a candidate carrying a defect a
         // deterministic analyzer can name never reaches the expensive witness/mutation gates.
         // Its gates_passed entry is per-run because A1.5 records the evaluated-diagnostic count.
@@ -54,8 +78,9 @@ public sealed class CertificationGate : ICertificationGate
             request.SourceCode,
             request.CompilationReferences,
             request.ConstraintManifest,
+            request.TouchSet,
             cancellationToken).ConfigureAwait(false);
-        var analyzerGatePass = new CertificationGatePass
+        analyzerGatePass = new CertificationGatePass
         {
             Name = "analyzer-gate",
             Version = GateVersion,
@@ -217,6 +242,12 @@ public sealed class CertificationGate : ICertificationGate
                 }
             };
             inputs.AddRange(request.AdditionalInputs);
+            // Autonomy R4.1: an explicitly declared lineage is recorded — depth bound to a
+            // hash over the parent certificate chain — on PASS and FAIL records alike, so
+            // even a refused laundering attempt leaves its claim in evidence. Requests
+            // without a lineage (the human-authored default) record nothing extra.
+            if (request.Lineage is { } lineage)
+                inputs.Add(GenerationLineageInputs.From(lineage));
             return inputs;
         }
         catch (NotSupportedException ex)

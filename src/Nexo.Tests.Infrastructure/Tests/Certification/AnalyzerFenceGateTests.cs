@@ -197,5 +197,49 @@ public sealed class AnalyzerFenceGateTests
         outcome.Passed.Should().BeTrue(outcome.FormatProposerFeedback());
         outcome.GatePassConfiguration.Should().Contain("manifestRules=none",
             "A1.5: whether manifest rules governed the verdict is part of the recorded gate configuration");
+        outcome.GatePassConfiguration.Should().Contain("touchSet=none");
+    }
+
+    // --- touch-set rules (autonomy spec R3.2, analyzer leg) ------------------------------
+
+    [Fact]
+    public async Task DeclaredTouchSet_PassesACandidateThatStaysInside()
+    {
+        var touchSet = new Nexo.Core.Application.Autonomy.TouchSet
+        {
+            Namespaces = ["Nexo.Tests.Infrastructure.Certification.Fixtures"],
+        };
+
+        var outcome = await Gate().EvaluateAsync(
+            MutationProbeBrickSource.Code, ContractReferences, touchSet: touchSet);
+
+        outcome.Passed.Should().BeTrue(outcome.FormatProposerFeedback());
+        outcome.GatePassConfiguration.Should().Contain("touchSet=attached");
+    }
+
+    [Fact]
+    public async Task UndeclaredKernelReference_FailsTheGate_WithTheSmugglingDiagnostic()
+    {
+        // The candidate reaches into the REAL trust-kernel enumeration (the autonomy
+        // enforcement namespace) without declaring it.
+        var touchSet = new Nexo.Core.Application.Autonomy.TouchSet
+        {
+            Namespaces = ["Nexo.Tests.Infrastructure.Certification.Fixtures"],
+        };
+        var attack = MutationProbeBrickSource.Code.Replace(
+            "var errorCount = errorLines.Count;",
+            "var errorCount = errorLines.Count + "
+            + "(Nexo.Core.Application.Autonomy.TrustKernel.KernelPathPrefixes.Count * 0);");
+
+        var outcome = await Gate().EvaluateAsync(
+            attack,
+            ContractReferences.Append(typeof(Nexo.Core.Application.Autonomy.TrustKernel).Assembly.Location),
+            touchSet: touchSet);
+
+        outcome.Passed.Should().BeFalse();
+        var finding = outcome.Findings.First(
+            f => f.Id == Nexo.Analyzers.TouchSetReferenceAnalyzer.UndeclaredKernelReferenceId);
+        finding.Message.Should().Contain("trust-kernel");
+        finding.Line.Should().BeGreaterThan(0, "the finding points at the candidate's own smuggling line");
     }
 }
