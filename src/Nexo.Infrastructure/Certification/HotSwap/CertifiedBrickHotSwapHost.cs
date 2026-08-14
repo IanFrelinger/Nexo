@@ -47,6 +47,9 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
     private readonly List<RetainedGeneration> _retained = new();
     private readonly WatchThresholds? _watchThresholds;
     private readonly Nexo.Core.Application.Autonomy.ILineageAuthority? _lineageAuthority;
+    private readonly Nexo.Core.Application.Autonomy.LoopPauseControl? _pauseControl;
+    private readonly TimeSpan? _cadenceFloor;
+    private readonly TimeProvider _clock;
 
     private BrickGeneration? _current;
     private int _generationCounter;
@@ -54,6 +57,8 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
     private GenerationWatchStats? _watchCurrent;
     private int _watchGenerationId;
     private int _watchBreachLatch;
+    private DateTimeOffset? _lastAutonomousSwapUtc;
+    private IReadOnlyList<string> _currentLineageKeys = Array.Empty<string>();
 
     /// <summary>Initializes the host.</summary>
     /// <param name="provenanceSink">Receives swap/generation provenance events; null records nothing.</param>
@@ -64,6 +69,9 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
     /// <param name="retentionWindow">How many committed generations stay reactivatable via <see cref="RollbackToAsync"/> (R5.1). 0 disables retention.</param>
     /// <param name="watchThresholds">Post-swap watch thresholds (R5.2); breach quarantines the generation and rolls back automatically. Null = no watch (human-driven flow).</param>
     /// <param name="lineageAuthority">Rollback ledger per objective lineage (R5.5); demoted lineages lose auto-swap.</param>
+    /// <param name="pauseControl">Global pause (R6.2): while paused, autonomous swaps are refused; human-driven swaps proceed.</param>
+    /// <param name="cadenceFloor">Minimum interval between autonomous swaps (R6.1) so the runtime never absorbs changes faster than watch windows clear.</param>
+    /// <param name="clock">Clock for cadence decisions; system time when null.</param>
     public CertifiedBrickHotSwapHost(
         ICertifiedBrickSwapProvenanceSink? provenanceSink = null,
         ILogger<CertifiedBrickHotSwapHost>? logger = null,
@@ -72,7 +80,10 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
         Nexo.Core.Application.Autonomy.ICertificateRevocationList? revocations = null,
         int retentionWindow = 2,
         WatchThresholds? watchThresholds = null,
-        Nexo.Core.Application.Autonomy.ILineageAuthority? lineageAuthority = null)
+        Nexo.Core.Application.Autonomy.ILineageAuthority? lineageAuthority = null,
+        Nexo.Core.Application.Autonomy.LoopPauseControl? pauseControl = null,
+        TimeSpan? cadenceFloor = null,
+        TimeProvider? clock = null)
     {
         _provenanceSink = provenanceSink;
         _logger = logger;
@@ -82,6 +93,9 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
         _retentionWindow = Math.Max(0, retentionWindow);
         _watchThresholds = watchThresholds;
         _lineageAuthority = lineageAuthority;
+        _pauseControl = pauseControl;
+        _cadenceFloor = cadenceFloor;
+        _clock = clock ?? TimeProvider.System;
     }
 
     private sealed record RetainedGeneration(int GenerationId, IReadOnlyList<CertifiedBrickLoadRequest> Requests);
@@ -162,6 +176,18 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
             _watchCurrent = new GenerationWatchStats();
             Volatile.Write(ref _watchGenerationId, generationId);
             Volatile.Write(ref _watchBreachLatch, 0);
+
+            // Cadence + in-flight bookkeeping (R6.1) for autonomous swaps.
+            var autonomousKeys = requests
+                .Where(r => r.Autonomous is not null)
+                .Select(r => r.Autonomous!.LineageKey)
+                .Where(k => !string.IsNullOrWhiteSpace(k))
+                .Select(k => k!)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+            if (requests.Any(r => r.Autonomous is not null))
+                _lastAutonomousSwapUtc = _clock.GetUtcNow();
+            _currentLineageKeys = autonomousKeys;
 
             foreach (var request in requests)
             {
@@ -295,6 +321,24 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
 
         var declaredNames = new HashSet<string>(declared.Select(o => o.Name), StringComparer.Ordinal);
         return output.ToDictionary().Keys.Count(k => !declaredNames.Contains(k));
+    }
+
+    /// <summary>
+    /// Whether the current generation's watch window is still in flight for a lineage:
+    /// thresholds active, the lineage is among the serving generation's autonomous keys,
+    /// no breach yet, and fewer than MinInvocations observed (R6.1).
+    /// </summary>
+    private bool WatchWindowInFlight(string lineageKey)
+    {
+        if (_watchThresholds is null || _watchCurrent is null)
+            return false;
+        if (!_currentLineageKeys.Contains(lineageKey, StringComparer.OrdinalIgnoreCase))
+            return false;
+        if (Volatile.Read(ref _watchBreachLatch) != 0)
+            return false; // Breached windows resolve via quarantine, not by blocking.
+
+        var (invocations, _, _, _) = _watchCurrent.Snapshot();
+        return invocations < _watchThresholds.MinInvocations;
     }
 
     /// <summary>Breach reasons when the watch thresholds are crossed; null otherwise (R5.2).</summary>
@@ -543,6 +587,51 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
             // recursion rules are re-checked here regardless of what the certifier did.
             if (request.Autonomous is { } autonomous)
             {
+                // R6.2: the global pause halts autonomous swaps immediately. Human-driven
+                // swaps (null Autonomous) proceed — pause bounds the LOOP, not the operator.
+                if (_pauseControl?.IsPaused == true)
+                {
+                    refusals.Add(new BrickSwapRefusal
+                    {
+                        BrickId = request.BrickId,
+                        Stage = BrickSwapRefusalStage.Request,
+                        FailureCode = "loop-paused",
+                        Reason = $"The autonomy loop is paused: {_pauseControl.PausedReason}"
+                    });
+                    continue;
+                }
+
+                // R6.1: the cadence floor keeps the runtime from absorbing autonomous
+                // changes faster than watch windows can clear them.
+                if (_cadenceFloor is { } floor && _lastAutonomousSwapUtc is { } last
+                    && _clock.GetUtcNow() - last < floor)
+                {
+                    refusals.Add(new BrickSwapRefusal
+                    {
+                        BrickId = request.BrickId,
+                        Stage = BrickSwapRefusalStage.Request,
+                        FailureCode = "cadence-floor",
+                        Reason = $"Autonomous swap cadence floor of {floor.TotalSeconds:F0}s has not elapsed "
+                            + "since the previous autonomous swap (R6.1)."
+                    });
+                    continue;
+                }
+
+                // R6.1: an in-flight watch window blocks the next autonomous swap of the
+                // SAME lineage until the window clears (MinInvocations without breach).
+                if (autonomous.LineageKey is { } inFlightKey && WatchWindowInFlight(inFlightKey))
+                {
+                    refusals.Add(new BrickSwapRefusal
+                    {
+                        BrickId = request.BrickId,
+                        Stage = BrickSwapRefusalStage.Request,
+                        FailureCode = "watch-window-in-flight",
+                        Reason = $"Lineage '{inFlightKey}' has an in-flight watch window; the next "
+                            + "autonomous swap of this lineage waits for it to clear (R6.1)."
+                    });
+                    continue;
+                }
+
                 // R5.5: a lineage demoted on rollback evidence has lost Tier-0 autonomy —
                 // its swaps wait for the human gate no matter what tier the objective
                 // classified at. Autonomy is lost on evidence, never gained on it.

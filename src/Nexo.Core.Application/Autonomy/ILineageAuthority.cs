@@ -13,6 +13,12 @@ public interface ILineageAuthority
 
     /// <summary>Whether the lineage has lost Tier-0 autonomy.</summary>
     bool IsDemoted(string lineageKey);
+
+    /// <summary>
+    /// Demotes a lineage outright (R7.2: a human may demote any lineage at any time as a
+    /// single operation, no proposal session required). There is no promote counterpart.
+    /// </summary>
+    void Demote(string lineageKey, string reason);
 }
 
 /// <summary>Shared default for how many rollbacks demote a lineage (spec default 2).</summary>

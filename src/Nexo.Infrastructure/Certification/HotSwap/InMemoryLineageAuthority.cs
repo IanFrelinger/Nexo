@@ -24,4 +24,12 @@ public sealed class InMemoryLineageAuthority : ILineageAuthority
         !string.IsNullOrWhiteSpace(lineageKey)
         && _rollbacks.TryGetValue(lineageKey, out var count)
         && count >= _threshold;
+
+    /// <inheritdoc />
+    public void Demote(string lineageKey, string reason)
+    {
+        if (string.IsNullOrWhiteSpace(lineageKey))
+            throw new ArgumentException("Lineage key is required.", nameof(lineageKey));
+        _rollbacks.AddOrUpdate(lineageKey, _threshold, (_, count) => Math.Max(count, _threshold));
+    }
 }

@@ -178,7 +178,9 @@ public sealed class HotSwapProbeBrick : DomainBrick
             new WatchThresholds { MinInvocations = 99, MaxUndeclaredWrites = 0 });
 
         (await host.SwapAsync(new[] { AutonomousRequest(Healthy("v1"), "lineage-a") })).Swapped.Should().BeTrue();
-        (await host.SwapAsync(new[] { AutonomousRequest(SneakyWriterSource, "lineage-a") })).Swapped.Should().BeTrue();
+        // A different lineage: lineage-a's still-in-flight window must not block it (R6.1
+        // is per-lineage), and the contract leg needs no baseline from it either.
+        (await host.SwapAsync(new[] { AutonomousRequest(SneakyWriterSource, "lineage-b") })).Swapped.Should().BeTrue();
 
         // A single undeclared write breaches immediately — contract conformance is
         // absolute, no MinInvocations, no baseline (R5.2).
