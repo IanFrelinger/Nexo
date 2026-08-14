@@ -115,12 +115,17 @@ public sealed class AutonomousIterationHarness
     private readonly ClusterBudget _budget;
     private readonly ILogger<AutonomousIterationHarness>? _logger;
     private readonly bool _buildCandidateInSession;
+    private readonly bool _executeCandidateInSession;
 
     /// <summary>
     /// Creates the harness over the real gate and swap host. With
     /// <c>buildCandidateInSession</c> true, every iteration MUST compile its candidate
     /// inside the attested session (<see cref="SessionCandidateBuild"/>); an iteration
     /// without a session then refuses fail-closed rather than silently building on the host.
+    /// With <c>executeCandidateInSession</c> additionally true, the gate's witness,
+    /// determinism, and mutation legs EXECUTE candidate and mutant code inside that same
+    /// session (<see cref="SessionExecutionBackend"/> over the session-built assembly) —
+    /// untrusted candidate code then never runs in this process.
     /// </summary>
     public AutonomousIterationHarness(
         ICertificationGate gate,
@@ -130,7 +135,8 @@ public sealed class AutonomousIterationHarness
         ISandboxedSessionRunner? sandbox = null,
         ClusterBudget? budget = null,
         ILogger<AutonomousIterationHarness>? logger = null,
-        bool buildCandidateInSession = false)
+        bool buildCandidateInSession = false,
+        bool executeCandidateInSession = false)
     {
         _gate = gate ?? throw new ArgumentNullException(nameof(gate));
         _host = host ?? throw new ArgumentNullException(nameof(host));
@@ -140,6 +146,7 @@ public sealed class AutonomousIterationHarness
         _budget = budget ?? new ClusterBudget();
         _logger = logger;
         _buildCandidateInSession = buildCandidateInSession;
+        _executeCandidateInSession = executeCandidateInSession;
     }
 
     /// <summary>Runs one iteration to a terminal state. Never throws for loop-shaped failures.</summary>
@@ -259,6 +266,14 @@ public sealed class AutonomousIterationHarness
                     .ToArray();
             }
 
+            // The execution leg rides the build leg: it loads the session-built assembly,
+            // so demanding it without the build is a configuration error the validator
+            // refuses at boot. Reaching here without a session is impossible for the same
+            // reason (the build leg above already refused).
+            SessionExecutionBackend? executionBackend = null;
+            if (_executeCandidateInSession && session is not null)
+                executionBackend = new SessionExecutionBackend(session);
+
             var decision = await _gate.CertifyAsync(new CertificationRequest
             {
                 Brick = candidate.Brick,
@@ -271,6 +286,7 @@ public sealed class AutonomousIterationHarness
                 TouchSet = context.Touch,
                 Lineage = context.Lineage,
                 AdditionalInputs = environmentInputs,
+                ExecutionBackend = executionBackend,
             }, cancellationToken).ConfigureAwait(false);
 
             if (!decision.Admitted)

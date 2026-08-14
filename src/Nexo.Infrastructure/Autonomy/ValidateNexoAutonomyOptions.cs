@@ -44,6 +44,15 @@ public sealed class ValidateNexoAutonomyOptions : IValidateOptions<NexoAutonomyO
                 + "always-refusing loop is a configuration error, not a policy.");
         }
 
+        if (options.ExecuteCandidateInSession && !options.BuildCandidateInSession)
+        {
+            failures.Add(
+                $"{nameof(NexoAutonomyOptions.ExecuteCandidateInSession)}=true requires "
+                + $"{nameof(NexoAutonomyOptions.BuildCandidateInSession)}=true: the execution leg "
+                + "loads the session-built candidate assembly, so there is nothing to execute "
+                + "without the build leg.");
+        }
+
         if (options.RetentionWindow < 1)
         {
             failures.Add(

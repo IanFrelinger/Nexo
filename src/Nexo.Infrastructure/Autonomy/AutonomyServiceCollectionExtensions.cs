@@ -120,7 +120,9 @@ public static class AutonomyServiceCollectionExtensions
             sp.GetRequiredService<ClusterBudget>(),
             sp.GetService<ILogger<AutonomousIterationHarness>>(),
             buildCandidateInSession: sp.GetRequiredService<IOptions<NexoAutonomyOptions>>()
-                .Value.BuildCandidateInSession));
+                .Value.BuildCandidateInSession,
+            executeCandidateInSession: sp.GetRequiredService<IOptions<NexoAutonomyOptions>>()
+                .Value.ExecuteCandidateInSession));
 
         return services;
     }

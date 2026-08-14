@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.Loader;
 using Microsoft.Extensions.Logging.Abstractions;
 using Nexo.Core.Application.Certification.Models;
+using Nexo.Core.Application.Certification.Ports;
 using Nexo.Core.Domain.Bricks;
 using Nexo.Infrastructure.Testing.CodeAnalysis;
 
@@ -40,17 +41,26 @@ internal sealed class BrickMutationEngine
         "swap-logical-op"
     ];
 
-    /// <summary>Run asynchronously.</summary>
+    /// <summary>
+    /// Run asynchronously. With an execution <paramref name="backend"/>, mutants still
+    /// COMPILE in this process (Roslyn is trusted; the mutant never executes here) but
+    /// every mutant EXECUTION routes through the backend in one batch, and the kill
+    /// verdicts are judged here from raw observations. Backend infrastructure failures
+    /// throw — a mutant must never count as killed because the backend fell over
+    /// (vacuous kills are the failure mode this gate exists to prevent).
+    /// </summary>
     public async Task<MutationTestResult> RunAsync(
         string sourceCode,
         string brickTypeName,
         WitnessSpec witness,
         IReadOnlyList<string> compilationReferences,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        ICandidateExecutionBackend? backend = null)
     {
         var survivors = new List<string>();
         var killed = new List<string>();
         var mutations = AstMutationCatalog.CollectMutations(sourceCode);
+        var pendingUnits = new List<CandidateExecutionUnit>();
 
         foreach (var mutation in mutations)
         {
@@ -59,6 +69,17 @@ internal sealed class BrickMutationEngine
             if (string.Equals(mutatedSource, sourceCode, StringComparison.Ordinal))
             {
                 killed.Add(mutation.Id);
+                continue;
+            }
+
+            if (backend is not null)
+            {
+                var image = await CompileMutantAsync(
+                    mutatedSource, compilationReferences, cancellationToken).ConfigureAwait(false);
+                if (image is null)
+                    killed.Add(mutation.Id); // Non-compiling mutant: dead on arrival, as in-proc.
+                else
+                    pendingUnits.Add(new CandidateExecutionUnit(mutation.Id, image, brickTypeName));
                 continue;
             }
 
@@ -75,9 +96,56 @@ internal sealed class BrickMutationEngine
                 killed.Add(mutation.Id);
         }
 
+        if (backend is not null && pendingUnits.Count > 0)
+        {
+            var report = await backend.ExecuteAsync(
+                new CandidateExecutionJob(pendingUnits, witness, Repeats: 1),
+                cancellationToken).ConfigureAwait(false);
+
+            foreach (var unit in pendingUnits)
+            {
+                var observations = report.Observations.Where(o => o.UnitId == unit.UnitId).ToArray();
+                if (WitnessRunner.JudgeMutantObservations(witness, observations))
+                    survivors.Add(unit.UnitId);
+                else
+                    killed.Add(unit.UnitId);
+            }
+        }
+
         var total = survivors.Count + killed.Count;
         var escapeRate = total == 0 ? 0d : (double)survivors.Count / total;
         return new MutationTestResult(total, survivors, killed, escapeRate);
+    }
+
+    /// <summary>Compiles one mutant to PE bytes for backend execution; null = did not compile.</summary>
+    private static async Task<byte[]?> CompileMutantAsync(
+        string mutatedSource,
+        IReadOnlyList<string> compilationReferences,
+        CancellationToken cancellationToken)
+    {
+        var tempDir = Path.Combine(Path.GetTempPath(), "nexo-cert-mut", Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(tempDir);
+        try
+        {
+            var assemblyName = $"MutantBrick_{Guid.NewGuid():N}";
+            var outputPath = Path.Combine(tempDir, $"{assemblyName}.dll");
+            var compiler = new RoslynCodeAnalysisService(NullLogger<RoslynCodeAnalysisService>.Instance);
+            var compile = await compiler.CompileAsync(
+                WrapWithGlobalUsings(mutatedSource),
+                assemblyName,
+                outputPath,
+                compilationReferences,
+                cancellationToken).ConfigureAwait(false);
+
+            if (!compile.Success || string.IsNullOrWhiteSpace(compile.AssemblyPath) || !File.Exists(compile.AssemblyPath))
+                return null;
+
+            return await File.ReadAllBytesAsync(compile.AssemblyPath, cancellationToken).ConfigureAwait(false);
+        }
+        finally
+        {
+            try { Directory.Delete(tempDir, recursive: true); } catch { /* best effort */ }
+        }
     }
 
     /// <summary>

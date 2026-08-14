@@ -60,4 +60,14 @@ public sealed record CertificationRequest
     /// records the depth plus a parent-chain hash into the certificate's inputs.
     /// </summary>
     public Autonomy.GenerationLineage? Lineage { get; init; }
+
+    /// <summary>
+    /// Where candidate and mutant code EXECUTES during certification. Null (the default)
+    /// keeps today's in-process path byte-for-byte. When set, the witness, determinism,
+    /// and mutation legs run every execution of untrusted candidate code through this
+    /// backend and judge the raw observations in the gate — the backend runs, the gate
+    /// decides. A <c>session-execution</c> input naming the backend is recorded on the
+    /// certificate either way the verdict goes.
+    /// </summary>
+    public Ports.ICandidateExecutionBackend? ExecutionBackend { get; init; }
 }

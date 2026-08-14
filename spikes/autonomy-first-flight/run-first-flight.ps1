@@ -35,6 +35,8 @@ powershell -NoProfile -File spikes/autonomy-first-flight/run-first-flight.ps1 -S
 param(
     [switch]$Dry,
     [switch]$SessionBuild,
+    [switch]$SessionExecute,
+    [switch]$Proposed,
     [string]$Ref = "HEAD"
 )
 
@@ -47,8 +49,12 @@ $sha = (git rev-parse $Ref)
 $image = "mcr.microsoft.com/devcontainers/dotnet:9.0-bookworm"
 $dryArg = if ($Dry) { "--dry" } else { "" }
 if ($SessionBuild) { $dryArg = "$dryArg --session-build".Trim() }
+if ($SessionExecute) { $dryArg = "$dryArg --session-execute".Trim() }
+if ($Proposed) { $dryArg = "$dryArg --proposed".Trim() }
 $mode = if ($Dry) { "DRY" } else { "REAL (host daemon via docker.sock)" }
 if ($SessionBuild) { $mode = "$mode + in-session build" }
+if ($SessionExecute) { $mode = "$mode + in-session execution" }
+if ($Proposed) { $mode = "$mode + MODEL-PROPOSED candidate" }
 
 Write-Host "== autonomy first flight: $sha [$mode] =="
 

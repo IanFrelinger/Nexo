@@ -33,9 +33,33 @@ var dry = args.Contains("--dry", StringComparer.OrdinalIgnoreCase);
 // --session-build: the P3 leg — the candidate must COMPILE inside the attested session,
 // which therefore needs an SDK image rather than bare alpine.
 var sessionBuild = args.Contains("--session-build", StringComparer.OrdinalIgnoreCase);
+// --session-execute: the P5 leg — witness/determinism/mutation EXECUTIONS also happen
+// inside the session (real runner output required, so real mode only).
+var sessionExecute = args.Contains("--session-execute", StringComparer.OrdinalIgnoreCase);
+// --proposed: fly the RECORDED MODEL PROPOSAL instead of the hand-authored brick. The
+// proposed source is untrusted by definition, so it may only fly with full session
+// containment — its in-process handle throws if anything tries to execute it here.
+var proposed = args.Contains("--proposed", StringComparer.OrdinalIgnoreCase);
+if (sessionExecute && !sessionBuild)
+{
+    Console.WriteLine("--session-execute requires --session-build (the execution leg loads the session-built assembly)");
+    return 1;
+}
+if (sessionExecute && dry)
+{
+    Console.WriteLine("--session-execute needs the real daemon: the fake session cannot produce runner output");
+    return 1;
+}
+if (proposed && !sessionExecute)
+{
+    Console.WriteLine("--proposed requires --session-execute: model-proposed code never executes in this process");
+    return 1;
+}
+
 var sessionImage = dry ? "fake:local" : sessionBuild ? "mcr.microsoft.com/dotnet/sdk:9.0" : "alpine:3.20";
 Console.WriteLine($"== autonomy first flight ({(dry ? "DRY — fake session runner" : "REAL — live docker daemon")}"
-    + $"{(sessionBuild ? ", in-session candidate build" : "")}) ==");
+    + $"{(sessionBuild ? ", in-session build" : "")}{(sessionExecute ? " + execution" : "")}"
+    + $"{(proposed ? ", MODEL-PROPOSED candidate" : "")}) ==");
 
 // --- compose exactly the way a host would -------------------------------------------
 var services = new ServiceCollection();
@@ -56,6 +80,7 @@ services.AddNexoAutonomy(new ConfigurationBuilder()
         ["Nexo:Autonomy:Enabled"] = "true",
         ["Nexo:Autonomy:UseSandboxSessions"] = "true",
         ["Nexo:Autonomy:BuildCandidateInSession"] = sessionBuild ? "true" : "false",
+        ["Nexo:Autonomy:ExecuteCandidateInSession"] = sessionExecute ? "true" : "false",
         ["Nexo:Autonomy:SessionImage"] = sessionImage,
         ["Nexo:Autonomy:CadenceFloorSeconds"] = "0",
         ["Nexo:Autonomy:WatchMinInvocations"] = "2",
@@ -96,7 +121,11 @@ var context = new ProposalIterationContext
     ObjectiveId = objective.Id,
     Source = objective.Source,
     Touch = objective.Touch,
-    Lineage = GenerationLineage.Child(GenerationLineage.HumanAuthored, "sig-first-flight-proposer"),
+    // The proposer signature IS the provenance channel (R4.1): for the recorded model
+    // proposal, the model identity gets hash-bound into the generation-depth input.
+    Lineage = GenerationLineage.Child(
+        GenerationLineage.HumanAuthored,
+        proposed ? RecordedProposal.ProposerSignature : "sig-first-flight-proposer"),
     SessionSpec = new SandboxSpec(
         Image: sessionImage,
         // No mounts, deliberately: the session's certified role today is provisioning
@@ -112,20 +141,40 @@ var context = new ProposalIterationContext
 var verdict = ObjectiveTierClassifier.Classify(objective.Touch!);
 Console.WriteLine($"objective '{objective.Id}' source={objective.Source} tier={verdict.Tier}");
 
-// --- the candidate the (out-of-scope) proposer produced ------------------------------
-var candidate = new ProposalCandidate
-{
-    Brick = new FlightLogScannerBrick(),
-    SourceCode = FlightLogScannerSource.Code,
-    Witness = FlightLogScannerSource.StrongWitness,
-    ProjectPath = FlightLogScannerSource.WriteCleanProjectFile(),
-    CompilationReferences = new[]
+// --- the candidate ------------------------------------------------------------------
+// Default: the hand-authored gate-teeth shape. --proposed: the recorded MODEL proposal —
+// same objective, same independent witness (authored before the proposal and never shown
+// to the proposer), different implementation. The proposed handle's ExecuteAsync throws:
+// with the execution leg on, nothing may run model-proposed code in this process.
+var candidate = proposed
+    ? new ProposalCandidate
     {
-        typeof(DomainBrick).Assembly.Location,
-        typeof(BrickInput).Assembly.Location,
-    },
-    BrickTypeName = typeof(FlightLogScannerBrick).FullName,
-};
+        Brick = new ProposedBrickHandle(),
+        SourceCode = RecordedProposal.Source,
+        Witness = FlightLogScannerSource.StrongWitness,
+        ProjectPath = FlightLogScannerSource.WriteCleanProjectFile(),
+        CompilationReferences = new[]
+        {
+            typeof(DomainBrick).Assembly.Location,
+            typeof(BrickInput).Assembly.Location,
+        },
+        BrickTypeName = RecordedProposal.TypeName,
+    }
+    : new ProposalCandidate
+    {
+        Brick = new FlightLogScannerBrick(),
+        SourceCode = FlightLogScannerSource.Code,
+        Witness = FlightLogScannerSource.StrongWitness,
+        ProjectPath = FlightLogScannerSource.WriteCleanProjectFile(),
+        CompilationReferences = new[]
+        {
+            typeof(DomainBrick).Assembly.Location,
+            typeof(BrickInput).Assembly.Location,
+        },
+        BrickTypeName = typeof(FlightLogScannerBrick).FullName,
+    };
+if (proposed)
+    Console.WriteLine($"candidate  : RECORDED MODEL PROPOSAL, proposer signature '{RecordedProposal.ProposerSignature}'");
 
 // --- one iteration, four possible terminal states ------------------------------------
 var started = DateTimeOffset.UtcNow;

@@ -32,6 +32,14 @@ public sealed class NexoAutonomyOptions
     /// </summary>
     public bool BuildCandidateInSession { get; set; }
 
+    /// <summary>
+    /// Whether the gate's witness, determinism, and mutation legs EXECUTE candidate and
+    /// mutant code inside the attested session — untrusted candidate code then never runs
+    /// in the host process. Requires <see cref="BuildCandidateInSession"/>: the execution
+    /// leg loads the session-built assembly.
+    /// </summary>
+    public bool ExecuteCandidateInSession { get; set; }
+
     /// <summary>Committed generations retained for no-build rollback (R5.1). Minimum 1 to roll back at all.</summary>
     public int RetentionWindow { get; set; } = 2;
 

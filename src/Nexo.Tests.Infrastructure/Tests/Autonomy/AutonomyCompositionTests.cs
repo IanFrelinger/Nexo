@@ -88,6 +88,7 @@ public sealed class AutonomyCompositionTests
     [InlineData("RetentionWindow")]
     [InlineData("ThroughputGuardFactor")]
     [InlineData("BuildCandidateInSession")]
+    [InlineData("ExecuteCandidateInSession")]
     [InlineData("WatchMaxInvocationSeconds")]
     [InlineData("DigestIntervalSeconds")]
     public void EnabledButMisconfigured_FailsValidation(string broken)
@@ -97,8 +98,11 @@ public sealed class AutonomyCompositionTests
             Enabled = true,
             // Demanding the in-session build without sessions is an always-refusing loop —
             // a configuration error the validator must catch at boot, not per iteration.
+            // Demanding execution without the build has nothing to execute. Both are
+            // boot-time refusals, not per-iteration ones.
             UseSandboxSessions = broken != "BuildCandidateInSession",
             BuildCandidateInSession = broken == "BuildCandidateInSession",
+            ExecuteCandidateInSession = broken is "BuildCandidateInSession" or "ExecuteCandidateInSession",
             SessionImage = broken == "SessionImage" ? null : "proposer:latest",
             RetentionWindow = broken == "RetentionWindow" ? 0 : 2,
             ThroughputGuardFactor = broken == "ThroughputGuardFactor" ? 1 : 4,

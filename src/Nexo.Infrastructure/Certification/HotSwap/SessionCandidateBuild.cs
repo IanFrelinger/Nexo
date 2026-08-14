@@ -58,11 +58,11 @@ public static class SessionCandidateBuild
     /// <summary>Session-side working directory. Reset at the start of every build.</summary>
     public const string WorkDir = "/nexo-candidate";
 
-    /// <summary>
-    /// Raw bytes per upload chunk. Base64 expands 4/3, so 64 KiB raw is ~87 KiB of argv —
-    /// comfortably under Linux's 128 KiB single-argument ceiling (MAX_ARG_STRLEN).
-    /// </summary>
-    internal const int ChunkSize = 64 * 1024;
+    /// <summary>Where the built candidate assembly lands (with its copy-local references beside it).</summary>
+    public const string BuiltAssemblyDirectory = WorkDir + "/bin/Release/net9.0";
+
+    /// <summary>The built candidate assembly itself — the execution leg loads this.</summary>
+    public const string BuiltAssemblyPath = BuiltAssemblyDirectory + "/Candidate.dll";
 
     private const int TailLength = 2000;
 
@@ -187,34 +187,9 @@ public static class SessionCandidateBuild
         };
     }
 
-    private static async Task<ProcessCommandResult?> UploadFileAsync(
-        ISandboxedSession session, string path, byte[] bytes, CancellationToken cancellationToken)
-    {
-        var b64Path = path + ".b64";
-        for (var offset = 0; offset < bytes.Length; offset += ChunkSize)
-        {
-            var chunk = Convert.ToBase64String(bytes, offset, Math.Min(ChunkSize, bytes.Length - offset));
-            // The chunk rides as its own argv element ($1), never inside the script text —
-            // no quoting surface at all.
-            var append = await session.ExecAsync(
-                new[] { "sh", "-c", $"printf '%s' \"$1\" >> {b64Path}", "nexo", chunk }, cancellationToken)
-                .ConfigureAwait(false);
-            if (!append.Succeeded)
-                return append;
-        }
-
-        if (bytes.Length == 0)
-        {
-            var touch = await session.ExecAsync(
-                new[] { "sh", "-c", $": > {path}" }, cancellationToken).ConfigureAwait(false);
-            return touch.Succeeded ? null : touch;
-        }
-
-        var decode = await session.ExecAsync(
-            new[] { "sh", "-c", $"base64 -d {b64Path} > {path} && rm {b64Path}" }, cancellationToken)
-            .ConfigureAwait(false);
-        return decode.Succeeded ? null : decode;
-    }
+    private static Task<ProcessCommandResult?> UploadFileAsync(
+        ISandboxedSession session, string path, byte[] bytes, CancellationToken cancellationToken) =>
+        SessionFileTransfer.UploadAsync(session, path, bytes, cancellationToken);
 
     private static SessionBuildResult Failed(ProcessCommandResult step, string what, string toolchain) => new()
     {
@@ -238,7 +213,7 @@ public static class SessionCandidateBuild
         return builder.ToString();
     }
 
-    private const string NuGetConfig = """
+    internal const string NuGetConfig = """
 <?xml version="1.0" encoding="utf-8"?>
 <configuration>
   <packageSources>
