@@ -17,4 +17,7 @@ public interface ICertificateRevocationList
 
     /// <summary>The recorded reason, when revoked; null otherwise.</summary>
     string? TryGetReason(string contentHash);
+
+    /// <summary>All revoked hashes, for ledger scans (R5.4 chain propagation).</summary>
+    IReadOnlyCollection<string> Snapshot();
 }

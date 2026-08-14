@@ -18,4 +18,12 @@ public interface ICertificationRecordStore
     /// <summary>Returns true when the brick is admitted in this store.</summary>
     /// <param name="brickId">Brick identifier to check.</param>
     bool IsAdmitted(string brickId);
+
+    /// <summary>
+    /// Every verifiable record in the store, for ledger scans (autonomy spec R5.4 chain
+    /// propagation, §8 depth-laundering detection). Implementations apply the same
+    /// trust rules as <see cref="Get"/> — a record that fails verification is absent
+    /// here too, never surfaced as data.
+    /// </summary>
+    IReadOnlyList<CertificationRecord> All();
 }
