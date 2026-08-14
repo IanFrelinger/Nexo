@@ -17,6 +17,7 @@ Version pin: `0.1.0` (from `VERSION`)
 | Composition gate 4c (weak witness) | `CompositionCertificationGateTeethTests.CorrectComposition_WeakWitness_Rejects_WithStructuralTeeth` | **REJECT**, `mutation`, `composition_escape_rate > 0` | [Cert gate 27918340788](https://github.com/IanFrelinger/Nexo/actions/runs/27918340788) |
 | Damage-resolver dogfood (honest) | `DamageResolverDogfoodTests.HonestCursorGeneration_Admits_WithZeroEscapeRate` | **ADMIT**, `escape_rate=0`, `signed=true` | [Cert gate 27918244198](https://github.com/IanFrelinger/Nexo/actions/runs/27918244198) @ `802e6d18` |
 | Damage-resolver dogfood (buggy) | `DamageResolverDogfoodTests.BuggyCursorGeneration_Rejects` | **REJECT**, `correctness` \| `mutation` | [Cert gate 27918244198](https://github.com/IanFrelinger/Nexo/actions/runs/27918244198) @ `802e6d18` |
+| Autonomy first flight (live engine) | `spikes/autonomy-first-flight/run-first-flight.ps1` — one real iteration: attested Docker session → full chain → Tier-0 swap → watch window | **PASS**, `AdmittedAndSwapped`, `escape_rate=0` | Local spike @ `1afac86d`; re-run the script for a fresh flight |
 
 **Dogfood summary:** `honest=ADMIT`, `buggy=REJECT`, `tests_executed=19` — CI-confirmed on PR #191.
 
@@ -279,6 +280,40 @@ Projects: `Nexo.Spatial.Platform.ARKit`, `Nexo.Spatial.Platform.XREAL`, `Nexo.Sp
 
 **Architecture notes:** ARKit session lifecycle is host-owned via `IArKitNativeSession`. Vision Pro is a separate package (not an ARKit variant) for visionOS consumer isolation + immersive-space gating. Provider priority: `visionpro` → `arkit` → `xreal` (ordinal tie-break).
 
+## Autonomy first flight (P2)
+
+One real autonomous iteration, end to end, against a **live container engine** — the acceptance
+step previously recorded as outstanding under known limitation 5. Flown 2026-08-14 from commit
+`1afac86d` via `spikes/autonomy-first-flight/run-first-flight.ps1` (devcontainer image +
+`/var/run/docker.sock` pass-through; only committed state flies).
+
+The spike composes `AddCertificationGate` + `AddNexoAutonomy` exactly as a host would
+(`ValidateOnBuild`/`ValidateScopes`), hand-authors a Triage objective, and runs one
+`AutonomousIterationHarness.RunIterationAsync` with a candidate whose source, witness, and clean
+project file mirror the proven gate-teeth shape.
+
+| Step | Result |
+|------|--------|
+| Objective intake (`Triage` source, touch-set: `spikes/autonomy-first-flight/generated/`) | Tier = `Tier0Autonomous` |
+| Sandbox session against live daemon (`alpine:3.20`, no mounts, `NetworkAccess.None`) | Provisioned + attested: digest `sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc`, engine `29.7.2`, effective caps `mem=268435456` / `pids=64` / `nanoCpus=1000000000` (matched request — not weaker) |
+| Certification chain (analyzer fence + touch-set, witness, mutation, determinism, dependency) | **ADMIT** — `signed=true`, `escape_rate=0` |
+| Certificate inputs | `witness`, `image-digest`, `sandbox-spec`, `attestation`, `generation-depth` (depth 1) all recorded |
+| Autonomous Tier-0 swap (`AutonomousAdmission` with lineage key) | **`AdmittedAndSwapped`** as generation 1, 4.4 s end to end |
+| Post-swap serving | 3/3 invocations correct (`errorCount=1`, first message extracted) — watch window cleared |
+| Session teardown | `docker ps -a` on the host daemon shows **zero** `nexo-session-*` containers after the run |
+| Digest | `AutonomyDigest` renders the swap-committed event; nothing held |
+
+A `--dry` leg (TestKit fake runner, same wiring) also passed, with an explicit zero-leaked-sessions
+assertion. The dry and real runs produced identical outcomes and identical certificate-input kinds;
+only the attestation values differ (fake vs. live daemon) — which is exactly the seam's contract.
+
+**Boundary (unchanged by the flight):** the session remains provisioning attestation per known
+limitation 4 — the candidate still compiles and runs witness/mutation legs in the harness process,
+and the flight's `SandboxSpec` deliberately carries no mounts (sessions are sibling containers on
+the host daemon; container-local paths would be meaningless to it). The **real-proposer** leg of
+old limitation 5 also remains open: this flight's candidate was hand-authored to the gate-teeth
+shape, not produced by a model.
+
 ## Contract-stability gaps
 
 - Generated brick uses Nexo.Core.Domain.* namespaces (shipped via Nexo.Authoring/Nexo.Brick.Contracts but not the pinned package IDs)
@@ -312,9 +347,11 @@ Projects: `Nexo.Spatial.Platform.ARKit`, `Nexo.Spatial.Platform.XREAL`, `Nexo.Sp
    cache (restore-without-network is the real obstacle, not the image); tracked as the
    in-container toolchain change.
 
-5. **The autonomous loop has not yet run against a live container engine or a real
-   proposer.** Every session test drives a fake process runner, and no host composes
-   `DockerSandboxedSessionRunner`, so `docker run`/`exec`/`rm` argv construction is proven
-   only against itself. The adversarial campaigns exercise the real gate and real swap
-   host; the positive end-to-end path has only ever run against fixtures. A first-flight
-   run is the outstanding acceptance step.
+5. **The autonomous loop has not yet run against a real proposer.** The live-container-engine
+   leg of this limitation was closed by the first flight (see "Autonomy first flight (P2)"
+   above): `DockerSandboxedSessionRunner` provisioned, attested, and tore down a real session
+   on a live daemon inside one `AdmittedAndSwapped` iteration. What remains open is the
+   proposer: every candidate the loop has admitted was hand-authored (fixtures, gate-teeth
+   shapes, the flight brick). No model-produced candidate has traversed the autonomous path
+   end to end; the closest evidence is the recorded real-model *composition* proposals in
+   the agent-composer arc, which traverse the composition gate, not this loop.
