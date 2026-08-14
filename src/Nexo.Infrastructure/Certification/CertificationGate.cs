@@ -87,6 +87,21 @@ public sealed class CertificationGate : ICertificationGate
         // (GatesPassedBefore("recursion") is the empty prefix).
         var analyzerGatePass = new CertificationGatePass { Name = "analyzer-gate", Version = GateVersion };
 
+        // Execution-backend routing: when the request names one, every EXECUTION of
+        // candidate/mutant code goes through it and the gate judges raw observations.
+        // The per-run gate passes record where execution actually happened. Declared here
+        // for the same closure reason as the analyzer pass above.
+        var backend = request.ExecutionBackend;
+        var correctnessPass = backend is null
+            ? CorrectnessGatePass
+            : CorrectnessGatePass with { Configuration = $"execution={backend.Describe()}" };
+        var mutationPass = backend is null
+            ? MutationGatePass
+            : MutationGatePass with { Configuration = $"escapeRateThreshold=0;execution={backend.Describe()}" };
+        var determinismPass = backend is null
+            ? DeterminismGatePass
+            : DeterminismGatePass with { Configuration = $"execution={backend.Describe()}" };
+
         // Autonomy spec R4.1/R4.2: the recursion check runs before EVERYTHING — an
         // incoherent depth claim (laundering) or a candidate past the ceiling must not
         // even be analyzed. Null lineage = human-authored context (depth 0), always
@@ -126,9 +141,9 @@ public sealed class CertificationGate : ICertificationGate
         IReadOnlyList<CertificationGatePass> GatesPassedBefore(string failedCheck) => failedCheck switch
         {
             "correctness" => new[] { analyzerGatePass },
-            "mutation" => new[] { analyzerGatePass, CorrectnessGatePass },
-            "determinism" => new[] { analyzerGatePass, CorrectnessGatePass, MutationGatePass },
-            "dependency" => new[] { analyzerGatePass, CorrectnessGatePass, MutationGatePass, DeterminismGatePass },
+            "mutation" => new[] { analyzerGatePass, correctnessPass },
+            "determinism" => new[] { analyzerGatePass, correctnessPass, mutationPass },
+            "dependency" => new[] { analyzerGatePass, correctnessPass, mutationPass, determinismPass },
             _ => Array.Empty<CertificationGatePass>()
         };
 
@@ -157,11 +172,32 @@ public sealed class CertificationGate : ICertificationGate
             };
         }
 
-        var witnessResult = await WitnessRunner.RunAsync(
-            request.Brick,
-            request.Witness,
-            new AuditExecutionContext(),
-            cancellationToken).ConfigureAwait(false);
+        var brickTypeName = request.BrickTypeName ?? request.Brick.GetType().FullName ?? request.Brick.GetType().Name;
+
+        // With a backend: one batched candidate execution (repeats=2) serves BOTH the
+        // witness leg (repeat 0) and the determinism leg (repeat 0 vs 1 of case 0) —
+        // observed before mutation so a mutant run can never poison the candidate's own
+        // evidence. Backend infrastructure failures THROW (they are not candidate
+        // evidence and must never become a signed verdict either way).
+        IReadOnlyList<Nexo.Core.Application.Certification.Ports.CandidateCaseObservation>? candidateObservations = null;
+        if (backend is not null)
+        {
+            var report = await backend.ExecuteAsync(
+                new Nexo.Core.Application.Certification.Ports.CandidateExecutionJob(
+                    new[] { new Nexo.Core.Application.Certification.Ports.CandidateExecutionUnit("candidate", null, brickTypeName) },
+                    request.Witness,
+                    Repeats: 2),
+                cancellationToken).ConfigureAwait(false);
+            candidateObservations = report.Observations.Where(o => o.UnitId == "candidate").ToArray();
+        }
+
+        var witnessResult = backend is null
+            ? await WitnessRunner.RunAsync(
+                request.Brick,
+                request.Witness,
+                new AuditExecutionContext(),
+                cancellationToken).ConfigureAwait(false)
+            : WitnessRunner.JudgeObservations(request.Witness, candidateObservations!);
 
         if (!witnessResult.Passed)
         {
@@ -175,13 +211,13 @@ public sealed class CertificationGate : ICertificationGate
             };
         }
 
-        var brickTypeName = request.BrickTypeName ?? request.Brick.GetType().FullName ?? request.Brick.GetType().Name;
         var mutationResult = await _mutationEngine.RunAsync(
             request.SourceCode,
             brickTypeName,
             request.Witness,
             request.CompilationReferences,
-            cancellationToken).ConfigureAwait(false);
+            cancellationToken,
+            backend).ConfigureAwait(false);
 
         if (mutationResult.TotalMutants == 0)
         {
@@ -207,10 +243,12 @@ public sealed class CertificationGate : ICertificationGate
             };
         }
 
-        var determinism = await WitnessRunner.CheckDeterminismAsync(
-            request.Brick,
-            request.Witness,
-            cancellationToken).ConfigureAwait(false);
+        var determinism = backend is null
+            ? await WitnessRunner.CheckDeterminismAsync(
+                request.Brick,
+                request.Witness,
+                cancellationToken).ConfigureAwait(false)
+            : JudgeObservationDeterminism(candidateObservations!);
 
         if (!determinism.Identical)
         {
@@ -248,7 +286,7 @@ public sealed class CertificationGate : ICertificationGate
             mutation: mutationResult,
             gatesPassed: new[]
             {
-                analyzerGatePass, CorrectnessGatePass, MutationGatePass, DeterminismGatePass, DependencyGatePass
+                analyzerGatePass, correctnessPass, mutationPass, determinismPass, DependencyGatePass
             },
             inputs: inputs);
         admittedRecord = _signer.SignRecord(admittedRecord);
@@ -259,6 +297,26 @@ public sealed class CertificationGate : ICertificationGate
             Admitted = true,
             Record = admittedRecord
         };
+    }
+
+    /// <summary>
+    /// Determinism verdict over backend observations: case 0's two repeats must
+    /// canonicalize identically (mirror of <see cref="WitnessRunner.CheckDeterminismAsync"/>).
+    /// A missing repeat is nondeterminism-by-absence — fail-closed, never vacuously identical.
+    /// </summary>
+    private static (bool Identical, string? First, string? Second) JudgeObservationDeterminism(
+        IReadOnlyList<Nexo.Core.Application.Certification.Ports.CandidateCaseObservation> observations)
+    {
+        var first = observations.FirstOrDefault(o => o.CaseIndex == 0 && o.Repeat == 0);
+        var second = observations.FirstOrDefault(o => o.CaseIndex == 0 && o.Repeat == 1);
+        if (first is null && second is null)
+            return (true, null, null); // No cases — same as the in-proc empty-witness path.
+        if (first is null || second is null)
+            return (false, first is null ? "<missing>" : "present", second is null ? "<missing>" : "present");
+
+        var firstJson = WitnessRunner.CanonicalizeObservation(first);
+        var secondJson = WitnessRunner.CanonicalizeObservation(second);
+        return (firstJson == secondJson, firstJson, secondJson);
     }
 
     private IReadOnlyList<CertificationInput> BuildInputs(CertificationRequest request)
@@ -276,6 +334,17 @@ public sealed class CertificationGate : ICertificationGate
                 }
             };
             inputs.AddRange(request.AdditionalInputs);
+            // Where execution happened is certificate-relevant on PASS and FAIL alike:
+            // a verdict minted over backend observations names the backend.
+            if (request.ExecutionBackend is { } executionBackend)
+            {
+                inputs.Add(new CertificationInput
+                {
+                    Kind = "session-execution",
+                    Id = executionBackend.Describe(),
+                    Hash = BrickContentHasher.ComputeSha256(executionBackend.Describe()),
+                });
+            }
             // Autonomy R4.1: an explicitly declared lineage is recorded — depth bound to a
             // hash over the parent certificate chain — on PASS and FAIL records alike, so
             // even a refused laundering attempt leaves its claim in evidence. Requests

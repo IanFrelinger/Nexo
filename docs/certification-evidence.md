@@ -17,6 +17,10 @@ Version pin: `0.1.0` (from `VERSION`)
 | Composition gate 4c (weak witness) | `CompositionCertificationGateTeethTests.CorrectComposition_WeakWitness_Rejects_WithStructuralTeeth` | **REJECT**, `mutation`, `composition_escape_rate > 0` | [Cert gate 27918340788](https://github.com/IanFrelinger/Nexo/actions/runs/27918340788) |
 | Damage-resolver dogfood (honest) | `DamageResolverDogfoodTests.HonestCursorGeneration_Admits_WithZeroEscapeRate` | **ADMIT**, `escape_rate=0`, `signed=true` | [Cert gate 27918244198](https://github.com/IanFrelinger/Nexo/actions/runs/27918244198) @ `802e6d18` |
 | Damage-resolver dogfood (buggy) | `DamageResolverDogfoodTests.BuggyCursorGeneration_Rejects` | **REJECT**, `correctness` \| `mutation` | [Cert gate 27918244198](https://github.com/IanFrelinger/Nexo/actions/runs/27918244198) @ `802e6d18` |
+| Autonomy first flight (live engine) | `spikes/autonomy-first-flight/run-first-flight.ps1` — one real iteration: attested Docker session → full chain → Tier-0 swap → watch window | **PASS**, `AdmittedAndSwapped`, `escape_rate=0` | Local spike @ `1afac86d`; re-run the script for a fresh flight |
+| Autonomy in-session build (P3) | Same flight with `-SessionBuild` — candidate compiles INSIDE the attested `dotnet/sdk:9.0` session over `ExecAsync`, offline | **PASS**, `session-build` input on the certificate | Local spike @ `d71d045f` |
+| Autonomy in-session execution (P5a) | Flight with `-SessionExecute` — witness, determinism, and every mutant EXECUTE inside the session; the gate judges raw observations | **PASS**, `session-execution` input, `escape_rate=0` | Local spike @ `bf8821db` |
+| Model-proposed candidate (P5b) | Flight with `-Proposed` — recorded model proposal, proposer signature in lineage, full containment; admitted only after two honest mutation REJECTs forced witness hardening | **PASS** after campaign: 2× `BudgetExhausted`, REJECT 0.16, REJECT 0.05, then `AdmittedAndSwapped` | Local spike @ `bf8821db` |
 
 **Dogfood summary:** `honest=ADMIT`, `buggy=REJECT`, `tests_executed=19` — CI-confirmed on PR #191.
 
@@ -279,6 +283,104 @@ Projects: `Nexo.Spatial.Platform.ARKit`, `Nexo.Spatial.Platform.XREAL`, `Nexo.Sp
 
 **Architecture notes:** ARKit session lifecycle is host-owned via `IArKitNativeSession`. Vision Pro is a separate package (not an ARKit variant) for visionOS consumer isolation + immersive-space gating. Provider priority: `visionpro` → `arkit` → `xreal` (ordinal tie-break).
 
+## Autonomy first flight (P2)
+
+One real autonomous iteration, end to end, against a **live container engine** — the acceptance
+step previously recorded as outstanding under known limitation 5. Flown 2026-08-14 from commit
+`1afac86d` via `spikes/autonomy-first-flight/run-first-flight.ps1` (devcontainer image +
+`/var/run/docker.sock` pass-through; only committed state flies).
+
+The spike composes `AddCertificationGate` + `AddNexoAutonomy` exactly as a host would
+(`ValidateOnBuild`/`ValidateScopes`), hand-authors a Triage objective, and runs one
+`AutonomousIterationHarness.RunIterationAsync` with a candidate whose source, witness, and clean
+project file mirror the proven gate-teeth shape.
+
+| Step | Result |
+|------|--------|
+| Objective intake (`Triage` source, touch-set: `spikes/autonomy-first-flight/generated/`) | Tier = `Tier0Autonomous` |
+| Sandbox session against live daemon (`alpine:3.20`, no mounts, `NetworkAccess.None`) | Provisioned + attested: digest `sha256:d9e853e87e55526f6b2917df91a2115c36dd7c696a35be12163d44e6e2a4b6bc`, engine `29.7.2`, effective caps `mem=268435456` / `pids=64` / `nanoCpus=1000000000` (matched request — not weaker) |
+| Certification chain (analyzer fence + touch-set, witness, mutation, determinism, dependency) | **ADMIT** — `signed=true`, `escape_rate=0` |
+| Certificate inputs | `witness`, `image-digest`, `sandbox-spec`, `attestation`, `generation-depth` (depth 1) all recorded |
+| Autonomous Tier-0 swap (`AutonomousAdmission` with lineage key) | **`AdmittedAndSwapped`** as generation 1, 4.4 s end to end |
+| Post-swap serving | 3/3 invocations correct (`errorCount=1`, first message extracted) — watch window cleared |
+| Session teardown | `docker ps -a` on the host daemon shows **zero** `nexo-session-*` containers after the run |
+| Digest | `AutonomyDigest` renders the swap-committed event; nothing held |
+
+A `--dry` leg (TestKit fake runner, same wiring) also passed, with an explicit zero-leaked-sessions
+assertion. The dry and real runs produced identical outcomes and identical certificate-input kinds;
+only the attestation values differ (fake vs. live daemon) — which is exactly the seam's contract.
+
+**Boundary:** the P2 flight's session was provisioning attestation only; the **P3 leg below**
+closed the compilation half of that gap. The **real-proposer** leg of old limitation 5 remains
+open: every flight candidate was hand-authored to the gate-teeth shape, not produced by a model.
+
+### P3 acceptance: the candidate compiled inside the session
+
+Re-flown 2026-08-14 from commit `d71d045f` with `-SessionBuild`: the loop's iteration required the
+candidate to compile **inside** the attested session (`Nexo:Autonomy:BuildCandidateInSession=true`),
+against the pinned SDK image on the live daemon.
+
+| Step | Result |
+|------|--------|
+| Session image | `mcr.microsoft.com/dotnet/sdk:9.0` @ `sha256:35048e3a81e6a07c316e7bbbd80d80d2ba705fe5f23a8ed42b6638c8f4c20d30`, engine `29.7.2`, same effective-caps verification as P2 |
+| In-session compile (`SessionCandidateBuild` over `ExecAsync`: base64-chunk uploads, zero-`PackageReference` project, cleared NuGet sources, `NetworkAccess.None`) | **PASS** — the exact `CandidateSourceWrapper.Wrap` bytes every certification-path compile sees |
+| Certificate inputs | Six kinds: `witness`, `image-digest`, `sandbox-spec`, `attestation`, **`session-build`**, `generation-depth` |
+| Outcome | **`AdmittedAndSwapped`** as generation 1, 7.0 s end to end; 3/3 post-swap invocations; digest rendered; zero `nexo-session-*` containers left on the daemon |
+
+The dry `-Dry -SessionBuild` leg passed identically (fake sessions, same input kinds). In-container
+test suite: 20/20 (`AutonomousIterationHarnessTests` including the in-session-build facts,
+`AutonomyCompositionTests` including the `BuildCandidateInSession` misconfiguration row).
+
+### P5: execution containment, and the recorded model proposal
+
+Two closures flown 2026-08-14. With `ExecuteCandidateInSession=true`, the gate's witness,
+determinism, and mutation legs EXECUTE candidate and mutant code inside the attested session
+(`SessionExecutionBackend`: a dumb runner built in-session from embedded source, per-unit load
+contexts, raw observations only — the gate judges). With both legs on, untrusted candidate code
+never runs in the harness process; what remains on the host is orchestration, Roslyn compilation
+of mutants, and judgment.
+
+**Full-containment flight (hand-authored candidate):** `AdmittedAndSwapped`, seven certificate
+inputs including `session-execution`, `escape_rate=0` with every mutant executed in-session —
+12.3 s at the two-case witness (`3b199a67`), re-flown PASS at the hardened four-case witness
+(`bf8821db`).
+
+**The recorded model proposal** — the first candidate in this repository authored by a model
+(Claude Fable 5, recorded 2026-08-14; proposer signature `model:claude-fable-5:recorded:2026-08-14`
+hash-bound into the `generation-depth` input; authored from the objective and interface contract
+only, never shown the witness; deliberately a different implementation shape). **The campaign it
+took to admit it is the strongest teeth evidence this ledger has:**
+
+| Flight | Commit | Outcome |
+|--------|--------|---------|
+| 1 | `3b199a67` | **`BudgetExhausted`** at the 600 s ceiling (R4.6 working as specced): a `mutate-int-literal` mutant turned the proposal's position-advancing loop nonterminating and hung the in-session runner |
+| 2 | `80a9edc4` | **`BudgetExhausted`** again: the first fix raced the brick's *returned* task, but a synchronous brick executes inside `MethodInfo.Invoke` — the race never started. Fixed by racing the whole invoke inside `Task.Run` |
+| 3 | `56ad61ae` | **REJECT `mutation`**, `escape_rate=0.16`, 3 survivors — boundary-index equivalents the two-case witness could not distinguish (no case pinned an ERROR marker at the start of the text or of a line). 23.6 s |
+| 4 | `9e6776c3` | **REJECT `mutation`**, `escape_rate=0.05`, 1 survivor — the leading-newline sentinel. 23.2 s |
+| 5 | `bf8821db` | **PASS** — `AdmittedAndSwapped` as generation 1, `escape_rate=0` against the hardened witness, 23.5 s, 3/3 post-swap invocations, zero sessions leaked |
+
+Flights 3–4 are the mutation gate REJECTING a model-produced candidate on a live engine with full
+session containment — and the survivors named REAL witness gaps, fixed by contract-derived
+hardening cases (edge-positioned markers; leading newline), not by fitting the witness to the
+implementation. Flight 1 additionally proved the budget ceiling catches nonterminating mutants,
+and produced the runner's per-execution timeout: a timed-out execution is now an observation
+(judged as a killed mutant or rejected candidate), and the spinning thread dies with the runner
+process — an isolation move the in-process path could never afford.
+
+In-container suites after all of it: 66/66 (gate execution-seam facts, backend orchestration
+facts, teeth, campaigns, harness, composition, watch window, digest).
+
+## Settled decisions
+
+- **`NetworkAccess.HostServicesOnly` stays a fail-closed refusal — permanently.** Every shipped
+  backend refuses the mode rather than approximating it, and this is now the settled posture,
+  not a v1 gap. The one workload that seemed to need it — package restore during the in-session
+  candidate build — was solved **without** network (P3: offline restore from the SDK's installed
+  packs, cleared sources), and a model server, the other imagined consumer, belongs on the
+  proposer side of the boundary, not inside a certification session. The enum member stays
+  declared (and `AllowedEndpoints` stays attestation-relevant) for a backend that can genuinely
+  realize per-session egress rules; none is planned.
+
 ## Contract-stability gaps
 
 - Generated brick uses Nexo.Core.Domain.* namespaces (shipped via Nexo.Authoring/Nexo.Brick.Contracts but not the pinned package IDs)
@@ -296,3 +398,28 @@ Projects: `Nexo.Spatial.Platform.ARKit`, `Nexo.Spatial.Platform.XREAL`, `Nexo.Sp
 2. **Composition seam check is TYPE-level only.** The seam validator checks producer/consumer type compatibility (e.g. `string` vs `int`) but not semantic mismatches where types align (e.g. file path vs URL, both `string`). Graph-mutation teeth only partially compensate for this gap.
 
 3. **cert-gate expected count is derived at runtime.** The zero-test guard compares executed count against `dotnet test --list-tests` on the cert-gate filter (see `scripts/cert-gate-config.sh`). If the filter or test discovery breaks, the guard fails closed.
+
+4. **Session containment is opt-in and covers compilation + execution; the host keeps
+   orchestration, mutant compilation, and judgment.** With `BuildCandidateInSession=true`,
+   candidates compile inside the attested session (`session-build` input); with
+   `ExecuteCandidateInSession=true` additionally, the witness, determinism, and mutation
+   legs EXECUTE candidate and mutant code inside that session (`session-execution` input)
+   and untrusted candidate code never runs in the harness process. What deliberately stays
+   on the host: iteration orchestration, Roslyn compilation of mutants (trusted tooling —
+   the mutant never executes here), and ALL judgment — backends return raw observations
+   and the gate compares, because a backend that judged its own executions could be lied
+   to once and would then lie to the certificate forever. With both flags off (the
+   default), sessions remain attestation-only and the in-process path is byte-identical
+   to before. The **write** surface is confined separately, by `ProposerConfinement`'s
+   single-declaration tool allowlist.
+
+5. **Model-produced candidates: one recorded proposal has traversed the loop; live-API
+   proposing remains unflown.** The P5 campaign closed the core of this limitation: a
+   model-authored candidate (recorded, provenance in the lineage's proposer signature)
+   traversed intake → attested session → full chain with in-session build AND execution →
+   autonomous Tier-0 swap on a live engine — after the mutation gate honestly rejected it
+   twice and forced contract-derived witness hardening. The remaining boundary, stated
+   plainly: it was ONE recorded proposal on ONE task (the record/replay discipline the
+   agent-composer arc established), authored by the session's assisting model. A live
+   proposer loop — model called at iteration time, multiple objectives, acceptance rates
+   measured — is operational work on the existing seams, not a missing mechanism.

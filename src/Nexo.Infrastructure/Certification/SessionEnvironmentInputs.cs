@@ -8,8 +8,17 @@ namespace Nexo.Infrastructure.Certification;
 /// Projects a sandbox session's environment into certificate <c>inputs</c> (extension spec
 /// Part B: image digest, sandbox-spec hash, attestation hash — trust-loop §2.1). Evidence,
 /// not a gate: callers append these to <c>CertificationRequest.AdditionalInputs</c> so the
-/// certificate records the environment its candidate was actually evaluated in, under the
-/// v2 signature.
+/// certificate records the environment provisioned for its candidate, under the v2
+/// signature.
+///
+/// <para><b>Read these inputs precisely.</b> They record the environment that was started
+/// and attested for the iteration — image identity, engine version, effective resource
+/// caps. They do <b>not</b> themselves assert that the candidate was compiled or executed
+/// inside that environment: these three are provisioning evidence. Compilation containment
+/// is a SEPARATE claim carried by the <c>session-build</c> input, minted only when the
+/// harness's in-session build leg is enabled and passes
+/// (<c>SessionCandidateBuild</c>); witness and mutation execution are not yet contained
+/// by any input — see the harness's remarks for the honest boundary.</para>
 /// </summary>
 public static class SessionEnvironmentInputs
 {
