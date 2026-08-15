@@ -81,7 +81,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -233,7 +233,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
@@ -317,7 +317,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: "Setup — build CLI Docker image"
         run: docker build -f .docker/Dockerfile.cli -t nexo-cli:readiness .
@@ -361,7 +361,7 @@ jobs:
             smoke: "dotnet Nexo.API.dll --help || true"
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: "Build ${{ matrix.label }}"
         run: docker build -f ${{ matrix.dockerfile }} -t nexo-${{ matrix.label }}:gate .

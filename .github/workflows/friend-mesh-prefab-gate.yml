@@ -26,7 +26,7 @@ jobs:
       COMPOSE_PROJECT_NAME: nexo_friend_mesh_ci
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Verify Docker and Compose
         shell: bash
