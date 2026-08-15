@@ -34,7 +34,6 @@
     <PackageReference Include="Nexo.Transport.Grpc" Version="$(PackageVersion)" />
     <PackageReference Include="Nexo.Runtime" Version="$(PackageVersion)" />
     <PackageReference Include="Nexo.Certification.Contracts" Version="$(PackageVersion)" />
-    <PackageReference Include="Nexo.Certification.Physical" Version="$(PackageVersion)" />
     <PackageReference Include="Nexo.Infrastructure" Version="$(PackageVersion)" />
     <PackageReference Include="Nexo.Orchestration" Version="$(PackageVersion)" />
     <PackageReference Include="Nexo.BackgroundAgents" Version="$(PackageVersion)" />
