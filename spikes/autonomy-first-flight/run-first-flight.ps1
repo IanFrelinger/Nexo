@@ -33,6 +33,7 @@ powershell -NoProfile -File spikes/autonomy-first-flight/run-first-flight.ps1
 powershell -NoProfile -File spikes/autonomy-first-flight/run-first-flight.ps1 -SessionBuild
 #>
 param(
+    [switch]$Sweep,
     [switch]$Dry,
     [switch]$SessionBuild,
     [switch]$SessionExecute,
@@ -52,6 +53,7 @@ $dryArg = if ($Dry) { "--dry" } else { "" }
 if ($SessionBuild) { $dryArg = "$dryArg --session-build".Trim() }
 if ($SessionExecute) { $dryArg = "$dryArg --session-execute".Trim() }
 if ($Proposed) { $dryArg = "$dryArg --proposed".Trim() }
+if ($Sweep) { $dryArg = "--sweep" }
 if ($Live) { $dryArg = "$dryArg --live".Trim() }
 $mode = if ($Dry) { "DRY" } else { "REAL (host daemon via docker.sock)" }
 if ($SessionBuild) { $mode = "$mode + in-session build" }
@@ -105,6 +107,6 @@ docker run --rm --user root `
     @liveMount `
     -e DOTNET_ROLL_FORWARD=LatestMajor `
     $image `
-    bash -lc "set -e; if [ ! -x /usr/local/bin/docker ]; then curl -fsSL https://download.docker.com/linux/static/stable/x86_64/docker-27.5.1.tgz | tar -xz --strip 1 -C /usr/local/bin docker/docker; fi; git config --global safe.directory '*'; git clone -q /src-mirror /repo; cd /repo; git checkout -q $sha; dotnet run --project spikes/autonomy-first-flight/FirstFlight/FirstFlight.csproj -c Release -- $dryArg"
+    bash -lc "set -e; if [ ! -x /usr/local/bin/docker ]; then curl -fsSL https://download.docker.com/linux/static/stable/x86_64/docker-27.5.1.tgz | tar -xz --strip 1 -C /usr/local/bin docker/docker; fi; git config --global safe.directory '*'; git clone -q /src-mirror /repo; cd /repo; git checkout -q $sha; mkdir -p .nexo/runtime-studio/objectives/pending; cp samples/autonomy-objectives/tag-scan-classifier.* .nexo/runtime-studio/objectives/pending/ 2>/dev/null || true; dotnet run --project spikes/autonomy-first-flight/FirstFlight/FirstFlight.csproj -c Release -- $dryArg"
 
 exit $LASTEXITCODE
