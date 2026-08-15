@@ -259,10 +259,10 @@ jobs:
           print(json.dumps(out, indent=2))
           PY
 
-                - name: Upload categorized failure taxonomy
-                  if: always()
-                  uses: actions/upload-artifact@v4
-                  with:
+      - name: Upload categorized failure taxonomy
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
           name: onboarding-failure-categorization
           path: categorized/
           retention-days: 14
