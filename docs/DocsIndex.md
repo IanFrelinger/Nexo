@@ -125,6 +125,7 @@ Documentation index for the Nexo platform. Start here to find what you need.
 
 ## Additional Material
 
+- `assets/brand/BRAND.md` — the **brand kit**: palette, wordmark/icon SVG masters, NuGet/GitHub/social assets, and where each file gets wired; `docs/nexo-terminal-style.md` — the CLI's **terminal style guide** (palette roles, glyph vocabulary, line format), implemented by the reference `assets/brand/NexoConsole.cs`.
 - `docs/communications/linkedin-distribution-channels.md` — optional **LinkedIn** copy emphasizing **distribution channels** (NuGet, HTTP, CLI, Compose, mesh) with pointers to **`docs/DistributionModels.md`**.
 - `docs/Persistence.md` — persistence behavior and options.
 - `docs/ComponentLibrary.md` — component catalog references.
