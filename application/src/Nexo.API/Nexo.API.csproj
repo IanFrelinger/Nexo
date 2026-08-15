@@ -32,6 +32,13 @@
     <ProjectReference Include="../../../src/Nexo.Ingress.DynamoDb/Nexo.Ingress.DynamoDb.csproj" />
     <ProjectReference Include="../../../src/Nexo.Ingress.AwsSns/Nexo.Ingress.AwsSns.csproj" />
     <ProjectReference Include="../../../src/Nexo.Infrastructure/Nexo.Infrastructure.csproj" />
+    <!-- Agent-protocol adapters (feature-flagged off by default). Note: the A2A projects are
+         IsPackable=false while the A2A SDK is prerelease; Nexo.API is not packed by any release
+         workflow today, but if it ever is, these references must be revisited (NU5104). -->
+    <ProjectReference Include="../../../src/Nexo.Mcp.Server/Nexo.Mcp.Server.csproj" />
+    <ProjectReference Include="../../../src/Nexo.Mcp.Client/Nexo.Mcp.Client.csproj" />
+    <ProjectReference Include="../../../src/Nexo.Transport.A2A/Nexo.Transport.A2A.csproj" />
+    <ProjectReference Include="../../../src/Nexo.Transport.A2A.Server/Nexo.Transport.A2A.Server.csproj" />
   </ItemGroup>
 
 </Project>

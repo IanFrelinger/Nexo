@@ -6,6 +6,7 @@ using Nexo.Authoring;
 using Nexo.Core.Application.Trust.Ports;
 using Nexo.Bricks.SqlProfile;
 using Nexo.Core.Application.Generation;
+using Nexo.Core.Application.Orchestration;
 using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Bricks.Ports;
 using Nexo.Core.Domain.Execution;
@@ -109,6 +110,9 @@ public sealed class BrickContractTests
             Drafter = new FixedDrafter(),
             Tunables = new GenerationTunables { PreferDeterministic = false },
             Capabilities = new AgentProfileCapabilities { SupportsDeployment = true },
+            // A gate is mandatory at registration; this scan is about emitted
+            // output keys, so the gate is the trivially-passing one.
+            Validators = new object[] { new AlwaysOkValidator() },
             Deployment = new FakeDeploymentTarget(
                 new FakeManagedFileSet(),
                 Scripted<DeploymentSmokeResult>.Always(DeploymentSmokeResult.Pass("ok")))
@@ -199,6 +203,13 @@ public sealed class BrickContractTests
         {
             return ex.Types.Where(t => t is not null)!;
         }
+    }
+
+    private sealed class AlwaysOkValidator : IPostValidator<GeneratedArtifact>
+    {
+        public ValueTask<(bool ok, string? reason)> ValidateAsync(
+            GeneratedArtifact output, CancellationToken ct) =>
+            new((true, (string?)null));
     }
 
     private sealed class FixedDrafter : IArtifactDrafter

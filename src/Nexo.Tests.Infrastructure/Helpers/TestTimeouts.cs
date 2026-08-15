@@ -34,7 +34,7 @@ public static class TestTimeouts
     public const int Mesh = 30_000;
 
     /// <summary>
-    /// 4 minutes for host-touching (E2E / ProdStyle) tests. A HANG NET, not a
+    /// 8 minutes for host-touching (E2E / ProdStyle) tests. A HANG NET, not a
     /// performance budget.
     /// </summary>
     /// <remarks>
@@ -45,9 +45,15 @@ public static class TestTimeouts
     /// healthy duration converts an instrumented slow run into a red build, which is
     /// how a 60-second bound was chosen first and why it failed.
     ///
+    /// 240s was the next guess and it too was breached by a legitimate run: under
+    /// kernel-coverage-gate instrumentation a bridged suite case was killed at the
+    /// 240s cap while still making progress, and in a sibling run a queued
+    /// thread-pool work item executed 6m17s late (see "Intermittent timeouts under
+    /// instrumentation" in docs/production-readiness/KernelCoverageGate-Findings.md).
+    /// Eight minutes clears the worst stall observed so far with margin.
+    ///
     /// What it must still catch is a test that never finishes at all — the failure mode
-    /// that cost three CI runs of 30, 60 and 45 minutes and produced no diagnosis. Four
-    /// minutes catches that and tolerates instrumentation.
+    /// that cost three CI runs of 30, 60 and 45 minutes and produced no diagnosis.
     /// </remarks>
-    public const int HostTouching = 240_000;
+    public const int HostTouching = 480_000;
 }

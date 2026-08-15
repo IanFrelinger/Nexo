@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Nexo.Infrastructure.Observation;
+using Nexo.Tests.Infrastructure.Helpers;
 using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Observation;
@@ -36,7 +37,11 @@ public class FileSystemEventSourceTests : IDisposable
     {
         var source = new FileSystemEventSource(new[] { _tempDir }, _tempDir, new[] { "*" }, null);
         var events = new List<Nexo.Core.Application.Observation.Models.NormalizedEvent>();
-        var cts = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+        // Hang net, not a performance budget: healthy runs finish in under a second, but
+        // under kernel-coverage-gate instrumentation this test's file write once executed
+        // 6m17s late and a 20s token turned that stall into a red build (see
+        // docs/production-readiness/KernelCoverageGate-Findings.md).
+        var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(TestTimeouts.HostTouching));
 
         var consumeTask = Task.Run(async () =>
         {

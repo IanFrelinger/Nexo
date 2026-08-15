@@ -26,6 +26,14 @@ public static class RuntimeServiceCollectionExtensions
     /// Registers routing transport composition using explicitly-provided local and remote transport types.
     /// Uses TryAdd so host applications can fully override registration.
     /// </summary>
+    /// <remarks>
+    /// When protocol adapters have contributed <see cref="AgentTransportSchemeRegistration"/>s
+    /// (e.g. the A2A transport registering the <c>a2a+</c> endpoint prefix), the remote side is
+    /// wrapped in a <see cref="Transport.SchemeDispatchingAgentTransport"/> so multiple remote
+    /// protocols coexist behind the single-remote <see cref="RoutingAgentTransport"/> without
+    /// any change to <c>EndpointDescriptor</c> or the kernel registrar. With no registrations
+    /// the composition is byte-for-byte the previous behavior.
+    /// </remarks>
     public static IServiceCollection AddNexoRuntimeTransport<TInProcessTransport, TRemoteTransport>(
         this IServiceCollection services)
         where TInProcessTransport : class, IAgentTransport
@@ -34,10 +42,24 @@ public static class RuntimeServiceCollectionExtensions
         services.TryAddSingleton<TInProcessTransport>();
         services.TryAddSingleton<TRemoteTransport>();
         services.TryAddSingleton<IAgentTransport>(sp =>
-            new RoutingAgentTransport(
+        {
+            IAgentTransport remote = sp.GetRequiredService<TRemoteTransport>();
+
+            var schemes = sp.GetServices<AgentTransportSchemeRegistration>().ToList();
+            if (schemes.Count > 0)
+            {
+                remote = new Transport.SchemeDispatchingAgentTransport(
+                    schemes.Select(s => new KeyValuePair<string, IAgentTransport>(
+                        s.EndpointPrefix, s.TransportFactory(sp))),
+                    fallback: remote,
+                    sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<Transport.SchemeDispatchingAgentTransport>>());
+            }
+
+            return new RoutingAgentTransport(
                 sp.GetRequiredService<TInProcessTransport>(),
-                sp.GetRequiredService<TRemoteTransport>(),
-                sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<RoutingAgentTransport>>()));
+                remote,
+                sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<RoutingAgentTransport>>());
+        });
         return services;
     }
 

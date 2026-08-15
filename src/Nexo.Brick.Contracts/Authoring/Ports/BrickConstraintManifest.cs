@@ -31,6 +31,14 @@ public sealed class BrickConstraintManifest
     /// <summary>Denylisted API tokens (e.g. <c>DateTime.Now</c>, <c>Random</c>); any occurrence rejects the candidate.</summary>
     public IReadOnlyList<string> ForbiddenApiTokens { get; init; } = Array.Empty<string>();
 
+    /// <summary>
+    /// Denylisted namespaces (e.g. <c>System.IO</c>): any reference to a symbol inside one of
+    /// these namespaces (or a sub-namespace) rejects the candidate. Enforced semantically by the
+    /// certification analyzer gate (extension spec A2.2) — resolved symbols, not text — so
+    /// fully-qualified calls and aliases cannot dodge it.
+    /// </summary>
+    public IReadOnlyList<string> ForbiddenNamespaces { get; init; } = Array.Empty<string>();
+
     /// <summary>Declarations the candidate must contain verbatim (e.g. <c>override ExecuteAsync</c>).</summary>
     public IReadOnlyList<string> RequiredDeclarations { get; init; } = Array.Empty<string>();
 
@@ -48,6 +56,9 @@ public sealed class BrickConstraintManifest
 
     /// <summary>Instruction line for one entry of <see cref="ForbiddenApiTokens"/>.</summary>
     public string ForbiddenApiInstruction(string token) => $"Never use {token}.";
+
+    /// <summary>Instruction line for one entry of <see cref="ForbiddenNamespaces"/>.</summary>
+    public string ForbiddenNamespaceInstruction(string ns) => $"Never reference anything from the {ns} namespace.";
 
     /// <summary>Instruction line for one entry of <see cref="RequiredDeclarations"/>.</summary>
     public string RequiredDeclarationInstruction(string declaration) => $"The artifact must contain: {declaration}";
@@ -70,6 +81,8 @@ public sealed class BrickConstraintManifest
             builder.Append("- ").AppendLine(ClassNameInstruction());
         foreach (var token in ForbiddenApiTokens)
             builder.Append("- ").AppendLine(ForbiddenApiInstruction(token));
+        foreach (var ns in ForbiddenNamespaces)
+            builder.Append("- ").AppendLine(ForbiddenNamespaceInstruction(ns));
         foreach (var declaration in RequiredDeclarations)
             builder.Append("- ").AppendLine(RequiredDeclarationInstruction(declaration));
         return builder.ToString().TrimEnd('\r', '\n');

@@ -17,6 +17,8 @@ public sealed class FailClosedCertificationRecordStore : ICertificationRecordSto
 
     public bool IsAdmitted(string brickId) => false;
 
+    public IReadOnlyList<CertificationRecord> All() => Array.Empty<CertificationRecord>();
+
     public void Save(CertificationRecord record) =>
         throw new InvalidOperationException("Fail-closed certification store cannot persist records.");
 }

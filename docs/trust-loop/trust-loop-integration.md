@@ -134,6 +134,20 @@ Dynamic ≠ unsupervised. Tier by blast radius:
 4. **PR-D:** Probe/fence catalog v1 (G4) — start with the failure
    classes already in your CI history (the triage skill's clusters
    feed this directly).
+   *Status: the analyzer half landed via the extension spec
+   ("Analyzer Gate & Container Isolation" Part A): catalog v1
+   NEXO0003–0009 with per-rule triads in `Nexo.Analyzers`, and the
+   `analyzer-gate` running first in `CertificationGate` — fail-closed
+   on non-compiling candidates, unresolvable brick anchors, and
+   analyzer crashes (A1.4); A1.5 metadata recorded on `gates_passed`;
+   A3-conformant verbatim feedback via
+   `AnalyzerGateOutcome.FormatProposerFeedback`. Constraint manifests are
+   now also enforced semantically at certification (A2):
+   `BrickConstraintManifestAnalyzer` is constructed with the manifest
+   instance carried on `CertificationRequest.ConstraintManifest`
+   (NEXO0010–0012 — using allowlist, forbidden APIs, forbidden namespaces —
+   symbol-resolved, so aliasing cannot dodge them). The diagnostic-probe
+   half (`IDiagnosticProbe`) remains open.*
 5. **PR-E:** Harness progress discipline + ledger (G5, G6).
 6. **PR-F:** Adversarial campaign (G7) — gates production-readiness
    of the whole loop, per spec §7.
@@ -154,5 +168,21 @@ vibeOS demo before the full autonomy loop is done.
   extended payload (which also closes the unsigned-`Gate` hole).
 - Where should Tier 0/1 classification live — constraint manifest
   field, or path convention like `BrickAdmissionPathHelper` uses?
+  **Resolved (autonomy U1):** neither — tiers classify from the
+  objective's declared `TouchSet` (`ObjectiveTierClassifier`), a pure
+  function of blast radius against the static `TrustKernel`
+  enumeration. Manifests stay behavioral constraints; paths stay
+  admission plumbing.
 - Throughput guard baseline: session median (spec) or fixed floor?
   Median needs ≥3 completed tasks before it's meaningful.
+- Should the analyzer fence also run in
+  `CompositionCertificationGate`'s chain ("every brick gate chain")?
+  **Resolved (backlog V6): no.** A `CompositionCertificationRequest`
+  carries no candidate source — compositions are graph specs over
+  already-certified bricks, so the fence's subject does not exist at
+  that level and requiring it would be enforcement theater. The
+  guarantee compositions need is that every constituent IS
+  brick-certified (where the fence already ran), which the composition
+  admission path checks. If compositions ever gain inline glue code,
+  that code becomes a brick-shaped candidate and the fence applies to
+  it as such.

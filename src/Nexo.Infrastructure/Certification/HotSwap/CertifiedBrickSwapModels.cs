@@ -22,6 +22,74 @@ public sealed record CertifiedBrickLoadRequest
 
     /// <summary>Additional compilation reference paths beyond the brick contract assemblies.</summary>
     public IReadOnlyList<string> AdditionalCompilationReferences { get; init; } = Array.Empty<string>();
+
+    /// <summary>
+    /// Present when the LOOP is driving this swap (autonomous self-extension spec R3.2,
+    /// swap-host leg). Null means a human is driving — the historical hand-certified flow.
+    /// When present, the host independently refuses non-Tier-0 admissions and re-enforces
+    /// the recursion ceiling: three checks, one declaration, no shared failure mode.
+    /// </summary>
+    public AutonomousAdmission? Autonomous { get; init; }
+
+    /// <summary>
+    /// Pre-compiled assembly image for this exact certified source. Populated by the
+    /// host's retention/rollback path so a rollback loads without any build (R5.1);
+    /// external callers leave it null. Verify-at-load still runs against
+    /// <see cref="SourceCode"/> either way.
+    /// </summary>
+    public byte[]? PrecompiledAssembly { get; init; }
+}
+
+/// <summary>
+/// The autonomy context of a loop-driven swap request: the tier its objective classified
+/// at and the candidate's recursion pedigree. The swap host enforces both independently
+/// of the certifier (defense in depth, R3.2/R4.2).
+/// </summary>
+public sealed record AutonomousAdmission
+{
+    /// <summary>Tier the objective's touch-set classified at (only Tier 0 may auto-swap).</summary>
+    public required Nexo.Core.Application.Autonomy.ObjectiveTier Tier { get; init; }
+
+    /// <summary>The candidate's recursion pedigree; null claims human-authored context.</summary>
+    public Nexo.Core.Application.Autonomy.GenerationLineage? Lineage { get; init; }
+
+    /// <summary>
+    /// Objective lineage key (R5.5): repeated rollback on one lineage demotes it to Tier 1,
+    /// and the host refuses further auto-swaps for it. Null = unattributed (no demotion
+    /// tracking, no demotion protection either).
+    /// </summary>
+    public string? LineageKey { get; init; }
+}
+
+/// <summary>
+/// Post-swap watch thresholds (autonomy spec R5.2): declared-contract conformance,
+/// error-rate delta and latency factor versus the previous generation's baseline. Breach
+/// triggers automatic quarantine + rollback. Null thresholds on the host = no watch
+/// (the human-driven flow).
+/// </summary>
+public sealed record WatchThresholds
+{
+    /// <summary>Invocations of the new generation before verdicts are meaningful.</summary>
+    public int MinInvocations { get; init; } = 5;
+
+    /// <summary>Tolerated error-rate increase over the baseline (0.2 = +20 points).</summary>
+    public double MaxErrorRateDelta { get; init; } = 0.2;
+
+    /// <summary>Tolerated mean-latency multiple of the baseline.</summary>
+    public double MaxLatencyFactor { get; init; } = 3.0;
+
+    /// <summary>Tolerated writes of keys the brick's declared interface does not name.</summary>
+    public int MaxUndeclaredWrites { get; init; }
+
+    /// <summary>
+    /// Absolute wall-clock ceiling for a SINGLE invocation; null disables the leg. Like the
+    /// contract-conformance leg, this needs no baseline and no minimum invocation count — a
+    /// first-generation deploy (which HAS no baseline for the relative legs to judge
+    /// against) is exactly who needs it. Wall clock is the one per-invocation resource
+    /// honestly measurable in a shared host process: per-brick memory/CPU attribution is
+    /// not, and pretending otherwise would be a fake ceiling.
+    /// </summary>
+    public TimeSpan? MaxInvocationDuration { get; init; }
 }
 
 /// <summary>Stage at which a brick (and therefore the whole swap) was refused.</summary>
@@ -142,4 +210,10 @@ public static class BrickSwapProvenanceOutcomes
 
     /// <summary>A retired generation's load context stayed alive after forced collection; attributable by <see cref="BrickSwapProvenanceEvent.ContextName"/>.</summary>
     public const string GenerationLeakSuspected = "generation-leak-suspected";
+
+    /// <summary>A retained earlier generation was reactivated (autonomy spec R5.1 rollback).</summary>
+    public const string RollbackCommitted = "rollback-committed";
+
+    /// <summary>The watch window breached its thresholds; the generation was quarantined (R5.2/R5.3).</summary>
+    public const string WatchBreachQuarantined = "watch-breach-quarantined";
 }

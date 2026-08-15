@@ -3,7 +3,7 @@ using Nexo.Core.Domain.Execution;
 
 namespace Nexo.Tests.Infrastructure.Certification.Fixtures;
 
-/// <summary>Uses Random — fails determinism check under AuditMode.</summary>
+/// <summary>Uses Guid.NewGuid — fails the determinism check under AuditMode while staying invisible to the static analyzer catalog (the honesty discipline leaves Guid.NewGuid alone), so this fixture exercises the runtime gate, not the analyzer fence.</summary>
 public sealed class NondeterministicBrick : DomainBrick
 {
     public NondeterministicBrick()
@@ -42,7 +42,7 @@ public sealed class NondeterministicBrick : DomainBrick
         var firstErrorMessage = errorCount > 0 ? ExtractErrorMessage(errorLines[0]) : string.Empty;
         var output = new BrickOutput
         {
-            Summary = $"Found {errorCount} noise={Random.Shared.Next()}"
+            Summary = $"Found {errorCount} noise={Guid.NewGuid():N}"
         };
         output.Set("errorCount", errorCount);
         output.Set("firstErrorMessage", firstErrorMessage);

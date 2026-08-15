@@ -76,6 +76,113 @@ public sealed class CertificationGateTeethTests
     }
 
     [Fact]
+    public async Task RequestManifest_ReachesTheAnalyzerGate_AndItsInstructionReachesTheRecord()
+    {
+        // A2.3 end-to-end: the manifest instance on the request is the one whose rules reject
+        // the candidate, and the failure reason restates that instance's instruction verbatim.
+        var manifest = new Nexo.Core.Domain.Bricks.Ports.BrickConstraintManifest
+        {
+            ForbiddenNamespaces = ["System.Collections"]
+        };
+        var gate = CreateGate();
+        var request = new CertificationRequest
+        {
+            Brick = new MutationProbeBrick(),
+            Witness = StrongWitness,
+            SourceCode = MutationProbeBrickSource.Code,
+            ProjectPath = CreateCleanProjectFile(),
+            CompilationReferences = CompilationReferences(),
+            BrickTypeName = typeof(MutationProbeBrick).FullName,
+            ConstraintManifest = manifest
+        };
+
+        var decision = await gate.CertifyAsync(request);
+
+        decision.Admitted.Should().BeFalse();
+        decision.FailureCheck.Should().Be("analyzer");
+        decision.Record.Reason.Should().Contain("NEXO0012")
+            .And.Contain(manifest.ForbiddenNamespaceInstruction("System.Collections"));
+        decision.Record.GatesPassed.Should().BeEmpty(
+            "the analyzer fence is the first gate, so nothing precedes it in the furthest-gate prefix");
+    }
+
+    [Fact]
+    public async Task DepthPastTheCeiling_RejectsBeforeAnyGateRuns()
+    {
+        var request = new CertificationRequest
+        {
+            Brick = new MutationProbeBrick(),
+            Witness = StrongWitness,
+            SourceCode = MutationProbeBrickSource.Code,
+            ProjectPath = CreateCleanProjectFile(),
+            CompilationReferences = CompilationReferences(),
+            BrickTypeName = typeof(MutationProbeBrick).FullName,
+            Lineage = new Nexo.Core.Application.Autonomy.GenerationLineage
+            {
+                Depth = 3,
+                ParentCertificateSignatures = ["sig-a", "sig-b", "sig-c"],
+            }
+        };
+
+        var decision = await CreateGate().CertifyAsync(request);
+
+        decision.Admitted.Should().BeFalse();
+        decision.FailureCheck.Should().Be("recursion");
+        decision.Record.Reason.Should().Contain("ceiling").And.Contain("Tier 2");
+        decision.Record.GatesPassed.Should().BeEmpty("the recursion check precedes every gate");
+        decision.Record.Inputs.Should().Contain(i => i.Kind == "generation-depth" && i.Id == "3",
+            "even a refused depth claim leaves its evidence on the record");
+    }
+
+    [Fact]
+    public async Task LaunderedDepthClaim_Rejects()
+    {
+        // §8 depth laundering: a fresh session claims depth 2 with no parent certificates.
+        var request = new CertificationRequest
+        {
+            Brick = new MutationProbeBrick(),
+            Witness = StrongWitness,
+            SourceCode = MutationProbeBrickSource.Code,
+            ProjectPath = CreateCleanProjectFile(),
+            CompilationReferences = CompilationReferences(),
+            BrickTypeName = typeof(MutationProbeBrick).FullName,
+            Lineage = new Nexo.Core.Application.Autonomy.GenerationLineage { Depth = 2 }
+        };
+
+        var decision = await CreateGate().CertifyAsync(request);
+
+        decision.Admitted.Should().BeFalse();
+        decision.FailureCheck.Should().Be("recursion");
+        decision.Record.Reason.Should().Contain("laundering");
+    }
+
+    [Fact]
+    public async Task CoherentDepthUnderTheCeiling_Admits_AndRecordsTheLineageInput()
+    {
+        var lineage = Nexo.Core.Application.Autonomy.GenerationLineage.Child(
+            Nexo.Core.Application.Autonomy.GenerationLineage.HumanAuthored, "sig-parent");
+        var request = new CertificationRequest
+        {
+            Brick = new MutationProbeBrick(),
+            Witness = StrongWitness,
+            SourceCode = MutationProbeBrickSource.Code,
+            ProjectPath = CreateCleanProjectFile(),
+            CompilationReferences = CompilationReferences(),
+            BrickTypeName = typeof(MutationProbeBrick).FullName,
+            Lineage = lineage
+        };
+
+        var decision = await CreateGate().CertifyAsync(request);
+
+        decision.Admitted.Should().BeTrue(decision.Record.Reason);
+        var input = decision.Record.Inputs.Should()
+            .ContainSingle(i => i.Kind == "generation-depth").Subject;
+        input.Id.Should().Be("1");
+        input.Hash.Should().NotBeNullOrWhiteSpace(
+            "the depth is bound to a hash over the parent certificate chain (anti-laundering)");
+    }
+
+    [Fact]
     public async Task BadWitnessBrick_Rejects_OnCorrectness()
     {
         var gate = CreateGate();
