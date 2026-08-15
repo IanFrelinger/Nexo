@@ -6,6 +6,7 @@ Checks:
   1. No OPEN .csproj may ProjectReference a COMMERCIAL .csproj.
   2. Every COMMERCIAL .csproj directory contains COMMERCIAL-LICENSE.md.
   3. Every OPEN packable .csproj resolves PackageLicenseExpression=Apache-2.0.
+  4. No core (src/) .csproj may ProjectReference an applications/ .csproj.
 
 Optional allowlists (repo-relative paths, # comments allowed):
   scripts/dependency-boundary.open-to-commercial.allowlist.txt
@@ -198,6 +199,26 @@ def main() -> int:
             errors.append(
                 f"open project references commercial project: {project.rel} -> {ref_rel}"
             )
+
+    # 1b) core (src/) -> applications/ references
+    #     Layout is policy in this repo: TrustKernel.KernelPathPrefixes is a list of
+    #     src/ path prefixes and ObjectiveTierClassifier is a pure function of it, so
+    #     where a project lives decides its autonomy tier. An application dragged back
+    #     into src/ -- or referenced from the core -- would silently re-acquire kernel
+    #     tiering and re-invert the layering. Applications depend on the core; never
+    #     the reverse.
+    for project in projects:
+        if not project.rel.startswith("src/"):
+            continue
+        try:
+            refs = parse_project_references(project, root)
+        except FileNotFoundError:
+            continue  # already reported by check 1
+        for ref_rel in refs:
+            if ref_rel.startswith("applications/"):
+                errors.append(
+                    f"core project references application project: {project.rel} -> {ref_rel}"
+                )
 
     # 2) commercial license stubs
     for project in projects:
