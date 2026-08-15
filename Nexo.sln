@@ -169,6 +169,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.Provenance.Graph", "ap
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.Provenance.Graph.Tests", "applications\Nexo.Provenance.Graph.Tests\Nexo.Provenance.Graph.Tests.csproj", "{EFDBABA1-282F-475A-B839-7C9F78394D8B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nexo.Applications.Tests", "applications\Nexo.Applications.Tests\Nexo.Applications.Tests.csproj", "{E012503A-F24F-484E-83CF-F2B3C1227059}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1103,6 +1105,18 @@ Global
 		{EFDBABA1-282F-475A-B839-7C9F78394D8B}.Release|x64.Build.0 = Release|Any CPU
 		{EFDBABA1-282F-475A-B839-7C9F78394D8B}.Release|x86.ActiveCfg = Release|Any CPU
 		{EFDBABA1-282F-475A-B839-7C9F78394D8B}.Release|x86.Build.0 = Release|Any CPU
+		{E012503A-F24F-484E-83CF-F2B3C1227059}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E012503A-F24F-484E-83CF-F2B3C1227059}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E012503A-F24F-484E-83CF-F2B3C1227059}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{E012503A-F24F-484E-83CF-F2B3C1227059}.Debug|x64.Build.0 = Debug|Any CPU
+		{E012503A-F24F-484E-83CF-F2B3C1227059}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{E012503A-F24F-484E-83CF-F2B3C1227059}.Debug|x86.Build.0 = Debug|Any CPU
+		{E012503A-F24F-484E-83CF-F2B3C1227059}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E012503A-F24F-484E-83CF-F2B3C1227059}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E012503A-F24F-484E-83CF-F2B3C1227059}.Release|x64.ActiveCfg = Release|Any CPU
+		{E012503A-F24F-484E-83CF-F2B3C1227059}.Release|x64.Build.0 = Release|Any CPU
+		{E012503A-F24F-484E-83CF-F2B3C1227059}.Release|x86.ActiveCfg = Release|Any CPU
+		{E012503A-F24F-484E-83CF-F2B3C1227059}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1187,6 +1201,7 @@ Global
 		{0FF44C6A-4329-47F0-A8A0-F10FC764EE7A} = {A10A91C2-6485-6656-963B-F6FCBC812542}
 		{CD5190D1-D2AE-4A32-9AF1-51C09CB92985} = {A10A91C2-6485-6656-963B-F6FCBC812542}
 		{EFDBABA1-282F-475A-B839-7C9F78394D8B} = {A10A91C2-6485-6656-963B-F6FCBC812542}
+		{E012503A-F24F-484E-83CF-F2B3C1227059} = {A10A91C2-6485-6656-963B-F6FCBC812542}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {12345678-1234-1234-1234-123456789ABC}
