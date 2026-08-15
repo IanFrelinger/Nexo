@@ -34,7 +34,7 @@ jobs:
       cli_sha_tag: ${{ steps.meta.outputs.sha_tag }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -124,7 +124,7 @@ jobs:
       api_sha_tag: ${{ steps.meta.outputs.sha_tag }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3

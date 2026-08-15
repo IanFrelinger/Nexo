@@ -15,7 +15,7 @@ jobs:
     name: Trust - Ubuntu
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: docker/setup-buildx-action@v3
       - name: Build & run Trust tests (Ubuntu)
         run: |
@@ -37,7 +37,7 @@ jobs:
     name: Trust - Alpine
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: docker/setup-buildx-action@v3
       - name: Build & run Trust tests (Alpine)
         run: |
@@ -59,7 +59,7 @@ jobs:
     name: Trust - Debian
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: docker/setup-buildx-action@v3
       - name: Build & run Trust tests (Debian)
         run: |

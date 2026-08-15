@@ -7,7 +7,7 @@
 | PR | [#192](https://github.com/IanFrelinger/Nexo/pull/192) |
 | Branch | `cursor/integration-cert-tower-921c` → `master` |
 | Head SHA | `1cd62fc380433f4c387358e08880262272c87629` |
-| Evidence ledger | [`docs/certification-evidence.md`](docs/certification-evidence.md) |
+| Evidence ledger | [`docs/certification-evidence.md`](../certification-evidence.md) |
 
 ## cert-gate (authoritative)
 
@@ -33,7 +33,7 @@
 
 ## Known unrelated checks
 
-- **Full Platform Readiness Gate** (`setup · discover · dry-run` on Linux/macOS/Windows) — **not triggered** on this PR. Documented as pre-existing RED on `master` in [`docs/ci-pre-existing-failures.md`](docs/ci-pre-existing-failures.md).
+- **Full Platform Readiness Gate** (`setup · discover · dry-run` on Linux/macOS/Windows) — **not triggered** on this PR. Documented as pre-existing RED on `master` in [`docs/ci-pre-existing-failures.md`](../ci-pre-existing-failures.md).
 - `lychee (README + docs)` — **fail** on this PR (unrelated to certification; pre-existing link-check noise).
 
 ## Human action required
