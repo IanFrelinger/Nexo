@@ -2,6 +2,16 @@
 
 Thanks for contributing.
 
+## Branching and releases
+
+Development is trunk-based: `master` is the only long-lived branch, protected by required CI gates.
+
+- Branch from the latest `master`, keep branches short-lived (days, not weeks), one concern per branch.
+- Name branches `<type>/<topic>` using the same types as Conventional Commits: `feat/…`, `fix/…`, `docs/…`, `chore/…`, `ci/…`, `refactor/…`, `test/…`. For multi-PR efforts, put the epic name at the front of the topic so related branches sort together: `feat/trust-loop-hot-swap`, `feat/trust-loop-fence-probe`.
+- Everything lands through a PR into `master`. Commit messages follow Conventional Commits (enforced by commitlint). Merged head branches are deleted automatically.
+- Spikes that should not merge get an `archive/spike-<name>` tag on their tip, then the branch is deleted — the work stays reachable without cluttering the branch list.
+- Releases are tags on `master`: bump `VERSION`, move the `[Unreleased]` notes in `CHANGELOG.md` under the new version heading, tag `vX.Y.Z`, and publish a GitHub Release (`scripts/changelog-snippet-for-release.sh` drafts the notes). Release branches (`release/x.y`) only appear if an old version ever needs long-term patch support.
+
 ## Recommended dev workflow (container + CLI)
 
 1. **Docker** and **Git** on the host.

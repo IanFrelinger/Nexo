@@ -152,6 +152,75 @@ public sealed class AutonomousIterationHarnessTests
     }
 
     [Fact]
+    public async Task InSessionBuild_CompilesInsideTheSession_AndRecordsTheInput()
+    {
+        // Scripted: the toolchain probe answers a version; every later exec (uploads,
+        // decode, build) repeats that success — stdout content is irrelevant to them.
+        var sandbox = new FakeSandboxedSessionRunner(FakeSandboxedSessionRunner.Success("9.0.100"));
+        var harness = Harness(sandbox: sandbox, buildInSession: true);
+
+        var result = await harness.RunIterationAsync(SessionContext("obj-in-session"), Candidate());
+
+        result.Outcome.Should().Be(IterationOutcome.AdmittedAndSwapped, result.Explanation);
+        result.Decision!.Record.Inputs.Should().Contain(i => i.Kind == "session-build",
+            "a passed in-session build is certificate evidence, bound to the source hash");
+
+        var session = sandbox.Sessions.Single();
+        session.ExecCommands.First().Should().Equal(new[] { "dotnet", "--version" },
+            "the leg probes the toolchain before uploading anything");
+        session.ExecCommands.Should().Contain(c => c.Count >= 2 && c[0] == "dotnet" && c[1] == "build",
+            "the candidate compiles via the session, not the harness process");
+        sandbox.ActiveSessions.Should().Be(0, "the build leg must not leak the session");
+    }
+
+    [Fact]
+    public async Task InSessionBuild_ToolchainOrStepFailure_TerminatesAsExplainedFailure()
+    {
+        // First exec (the probe) fails: no dotnet in the image.
+        var noToolchain = new FakeSandboxedSessionRunner(
+            FakeSandboxedSessionRunner.Failure("sh: dotnet: not found", 127));
+        var harness = Harness(sandbox: noToolchain, buildInSession: true);
+
+        var result = await harness.RunIterationAsync(SessionContext("obj-no-dotnet"), Candidate());
+
+        result.Outcome.Should().Be(IterationOutcome.ExplainedFailure);
+        result.Explanation.Should().Contain("session-build").And.Contain("dotnet");
+        result.Decision.Should().BeNull("the candidate never reached the gate");
+        noToolchain.ActiveSessions.Should().Be(0, "failure paths tear the session down too");
+
+        // Probe passes, the very next step (work-directory reset) fails.
+        var midFailure = new FakeSandboxedSessionRunner(
+            FakeSandboxedSessionRunner.Success("9.0.100"),
+            FakeSandboxedSessionRunner.Failure("mkdir: cannot create directory", 1));
+        harness = Harness(sandbox: midFailure, buildInSession: true);
+
+        result = await harness.RunIterationAsync(SessionContext("obj-mid-fail"), Candidate());
+
+        result.Outcome.Should().Be(IterationOutcome.ExplainedFailure);
+        result.Explanation.Should().Contain("session-build");
+        midFailure.ActiveSessions.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task InSessionBuild_WithoutASession_RefusesFailClosed()
+    {
+        // The flag demands compilation containment; an iteration with no session must
+        // refuse, never quietly fall back to building on the host.
+        var noSpec = Harness(sandbox: new FakeSandboxedSessionRunner(
+            FakeSandboxedSessionRunner.Success()), buildInSession: true);
+        (await noSpec.RunIterationAsync(Context("obj-no-spec"), Candidate()))
+            .Should().Match<IterationResult>(r =>
+                r.Outcome == IterationOutcome.ExplainedFailure
+                && r.Explanation.Contains("fail-closed")
+                && r.Decision == null);
+
+        var noRunner = Harness(sandbox: null, buildInSession: true);
+        (await noRunner.RunIterationAsync(SessionContext("obj-no-runner"), Candidate()))
+            .Should().Match<IterationResult>(r =>
+                r.Outcome == IterationOutcome.ExplainedFailure && r.Explanation.Contains("fail-closed"));
+    }
+
+    [Fact]
     public async Task BudgetCeiling_TerminatesAsBudgetExhausted()
     {
         var harness = Harness(budget: new ClusterBudget(TimeSpan.FromMilliseconds(1)));
@@ -182,14 +251,16 @@ public sealed class AutonomousIterationHarnessTests
         LoopPauseControl? pause = null,
         ILineageAuthority? lineages = null,
         ISandboxedSessionRunner? sandbox = null,
-        ClusterBudget? budget = null) =>
+        ClusterBudget? budget = null,
+        bool buildInSession = false) =>
         new(
             new CertificationGate(new CertificationRecordSigner()),
             new CertifiedBrickHotSwapHost(
                 hmacKey: null, drainTimeout: TimeSpan.FromSeconds(10),
                 revocations: new InMemoryCertificateRevocationList(),
                 lineageAuthority: lineages),
-            pause, lineages, sandbox, budget);
+            pause, lineages, sandbox, budget,
+            buildCandidateInSession: buildInSession);
 
     private static ProposalIterationContext Context(string objectiveId) => new()
     {
@@ -197,6 +268,14 @@ public sealed class AutonomousIterationHarnessTests
         Source = ObjectiveSource.Triage,
         Touch = LeafTouch,
     };
+
+    private static ProposalIterationContext SessionContext(string objectiveId) =>
+        Context(objectiveId) with
+        {
+            SessionSpec = new SandboxSpec(
+                "sdk:pinned", Array.Empty<Mount>(), NetworkAccess.None,
+                new[] { "sleep", "infinity" }, new ResourceLimits(Memory: "2g")),
+        };
 
     private static ProposalCandidate Candidate() => new()
     {

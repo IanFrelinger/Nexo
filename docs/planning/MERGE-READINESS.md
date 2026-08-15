@@ -18,7 +18,7 @@ The tower is linear: each PR branch was stacked, not independent forks off `mast
 1. **Human** merges `cursor/integration-cert-tower-921c` → `master` (or merges `cursor/merge-readiness-921c` — equivalent content).
 2. Expect **36 commits** fast-forward (or one squash at maintainer discretion).
 3. Post-merge: confirm **`cert-gate`** workflow is green on `master`.
-4. Ignore unrelated reds documented in [`docs/ci-pre-existing-failures.md`](docs/ci-pre-existing-failures.md).
+4. Ignore unrelated reds documented in [`docs/ci-pre-existing-failures.md`](../ci-pre-existing-failures.md).
 
 ## Conflicts
 

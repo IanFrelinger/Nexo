@@ -80,6 +80,16 @@ public sealed record WatchThresholds
 
     /// <summary>Tolerated writes of keys the brick's declared interface does not name.</summary>
     public int MaxUndeclaredWrites { get; init; }
+
+    /// <summary>
+    /// Absolute wall-clock ceiling for a SINGLE invocation; null disables the leg. Like the
+    /// contract-conformance leg, this needs no baseline and no minimum invocation count — a
+    /// first-generation deploy (which HAS no baseline for the relative legs to judge
+    /// against) is exactly who needs it. Wall clock is the one per-invocation resource
+    /// honestly measurable in a shared host process: per-brick memory/CPU attribution is
+    /// not, and pretending otherwise would be a fake ceiling.
+    /// </summary>
+    public TimeSpan? MaxInvocationDuration { get; init; }
 }
 
 /// <summary>Stage at which a brick (and therefore the whole swap) was refused.</summary>
