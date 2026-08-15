@@ -133,6 +133,39 @@ public sealed class HotSwapProbeBrick : DomainBrick
 }
 """;
 
+    private const string SlowSource = """
+using Nexo.Core.Domain.Bricks;
+using Nexo.Core.Domain.Execution;
+
+namespace Nexo.Tests.HotSwapProbe;
+
+public sealed class HotSwapProbeBrick : DomainBrick
+{
+    public HotSwapProbeBrick()
+    {
+        Id = "hot-swap-probe";
+        Name = "Hot Swap Probe";
+        Interface = new BrickInterface
+        {
+            Inputs = [],
+            Outputs = [new BrickOutputDefinition("marker", "string", "marker")]
+        };
+    }
+
+    public override async Task<BrickOutput> ExecuteAsync(
+        BrickInput input,
+        ImplementationType implementation,
+        IExecutionContext context,
+        CancellationToken cancellationToken = default)
+    {
+        await Task.Delay(50, cancellationToken);
+        var output = new BrickOutput { Summary = "slow" };
+        output.Set("marker", "slow");
+        return output;
+    }
+}
+""";
+
     [Fact]
     public async Task RegressionTheater_IsCaughtByTheWatch_QuarantinedAndRolledBack()
     {
@@ -190,6 +223,34 @@ public sealed class HotSwapProbeBrick : DomainBrick
         sink.Snapshot().Should().Contain(e =>
             e.Outcome == BrickSwapProvenanceOutcomes.WatchBreachQuarantined &&
             e.Reason!.Contains("undeclared"));
+    }
+
+    [Fact]
+    public async Task SlowInvocation_BreachesTheAbsoluteDurationCeiling_WithoutNeedingABaseline()
+    {
+        var revocations = new InMemoryCertificateRevocationList();
+        var sink = new RecordingSink();
+        // MinInvocations of 99 proves the point: the duration ceiling, like the contract
+        // leg, judges immediately — a first-generation deploy has no baseline, and a
+        // pathological single invocation must not hide inside a healthy mean.
+        using var host = CreateHost(sink, revocations, lineage: null,
+            new WatchThresholds
+            {
+                MinInvocations = 99,
+                MaxInvocationDuration = TimeSpan.FromMilliseconds(1),
+            });
+
+        (await host.SwapAsync(new[] { AutonomousRequest(Healthy("v1"), "lineage-a") })).Swapped.Should().BeTrue();
+        (await host.SwapAsync(new[] { AutonomousRequest(SlowSource, "lineage-b") })).Swapped.Should().BeTrue();
+
+        // One slow invocation (~50ms against a 1ms cap) breaches.
+        await Execute(host);
+
+        (await Execute(host)).Get<string>("marker").Should().Be("v1",
+            "the duration breach must reactivate the healthy generation");
+        sink.Snapshot().Should().Contain(e =>
+            e.Outcome == BrickSwapProvenanceOutcomes.WatchBreachQuarantined &&
+            e.Reason!.Contains("ceiling"));
     }
 
     [Fact]

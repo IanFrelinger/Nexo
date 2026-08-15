@@ -15,7 +15,7 @@ jobs:
     if: github.event.label.name == 'release:staging'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Abort if nuget.org publish mode is enabled
         shell: bash

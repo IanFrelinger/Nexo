@@ -107,6 +107,7 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
         private long _faults;
         private long _latencyTicks;
         private long _undeclaredWrites;
+        private long _maxLatencyTicks;
 
         public void Record(long elapsedTicks, bool faulted, int undeclaredWrites)
         {
@@ -116,13 +117,23 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
                 Interlocked.Increment(ref _faults);
             if (undeclaredWrites > 0)
                 Interlocked.Add(ref _undeclaredWrites, undeclaredWrites);
+
+            // Lock-free running maximum for the absolute-duration leg.
+            for (var seen = Interlocked.Read(ref _maxLatencyTicks);
+                 elapsedTicks > seen;
+                 seen = Interlocked.Read(ref _maxLatencyTicks))
+            {
+                if (Interlocked.CompareExchange(ref _maxLatencyTicks, elapsedTicks, seen) == seen)
+                    break;
+            }
         }
 
-        public (long Invocations, long Faults, long LatencyTicks, long UndeclaredWrites) Snapshot() => (
+        public (long Invocations, long Faults, long LatencyTicks, long UndeclaredWrites, long MaxLatencyTicks) Snapshot() => (
             Interlocked.Read(ref _invocations),
             Interlocked.Read(ref _faults),
             Interlocked.Read(ref _latencyTicks),
-            Interlocked.Read(ref _undeclaredWrites));
+            Interlocked.Read(ref _undeclaredWrites),
+            Interlocked.Read(ref _maxLatencyTicks));
     }
 
     /// <summary>Generation currently serving, or null before the first successful swap.</summary>
@@ -337,7 +348,7 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
         if (Volatile.Read(ref _watchBreachLatch) != 0)
             return false; // Breached windows resolve via quarantine, not by blocking.
 
-        var (invocations, _, _, _) = _watchCurrent.Snapshot();
+        var (invocations, _, _, _, _) = _watchCurrent.Snapshot();
         return invocations < _watchThresholds.MinInvocations;
     }
 
@@ -349,16 +360,25 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
         if (thresholds is null || current is null || Volatile.Read(ref _watchBreachLatch) != 0)
             return null;
 
-        var (invocations, faults, latencyTicks, undeclared) = current.Snapshot();
+        var (invocations, faults, latencyTicks, undeclared, maxLatencyTicks) = current.Snapshot();
         var reasons = new List<string>();
 
         // Contract conformance is absolute — no baseline needed (R5.2).
         if (undeclared > thresholds.MaxUndeclaredWrites)
             reasons.Add($"{undeclared} undeclared output write(s) exceed the tolerated {thresholds.MaxUndeclaredWrites}");
 
+        // The duration ceiling is absolute too: a first-generation deploy has no baseline
+        // for the relative legs, and a pathological single invocation must not hide in a
+        // healthy mean.
+        if (thresholds.MaxInvocationDuration is { } durationCap && maxLatencyTicks > durationCap.Ticks)
+        {
+            reasons.Add($"an invocation took {TimeSpan.FromTicks(maxLatencyTicks).TotalMilliseconds:F0}ms, "
+                + $"exceeding the absolute ceiling of {durationCap.TotalMilliseconds:F0}ms");
+        }
+
         if (invocations >= thresholds.MinInvocations && _watchBaseline is { } baseline)
         {
-            var (bInv, bFaults, bLatency, _) = baseline.Snapshot();
+            var (bInv, bFaults, bLatency, _, _) = baseline.Snapshot();
             if (bInv > 0)
             {
                 var errorRate = (double)faults / invocations;

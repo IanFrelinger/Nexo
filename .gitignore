@@ -105,3 +105,6 @@ src/studio/
 !.env.example
 !docs/config/agent-server.env.example
 
+
+# Generated local artifacts
+brick.pp
