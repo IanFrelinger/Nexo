@@ -40,6 +40,14 @@ public sealed class NexoAutonomyOptions
     /// </summary>
     public bool ExecuteCandidateInSession { get; set; }
 
+    /// <summary>
+    /// Certify fully but admit nothing without a human. Default TRUE: a loop that starts
+    /// swapping the moment it is wired up gives its operator no chance to read the
+    /// evidence first. Distinct from the pause control, which halts intake entirely -
+    /// hold runs the whole chain and stops at the swap, so evidence still accrues.
+    /// </summary>
+    public bool HoldAdmission { get; set; } = true;
+
     /// <summary>Committed generations retained for no-build rollback (R5.1). Minimum 1 to roll back at all.</summary>
     public int RetentionWindow { get; set; } = 2;
 
