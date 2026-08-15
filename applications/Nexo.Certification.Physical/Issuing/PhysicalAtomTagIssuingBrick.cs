@@ -2,7 +2,7 @@ using Nexo.Certification.Physical;
 using Nexo.Certification.Physical.Resolution;
 using Nexo.Certification.Physical.Tagging;
 
-namespace Nexo.Infrastructure.Certification.Physical;
+namespace Nexo.Certification.Physical.Issuing;
 
 /// <summary>
 /// Phase 2 deterministic tag issuer: encodes certified atom references for QR and NFC payloads.

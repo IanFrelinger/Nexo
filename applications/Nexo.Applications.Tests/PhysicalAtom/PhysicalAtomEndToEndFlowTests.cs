@@ -3,7 +3,7 @@ using Nexo.Certification.Physical;
 using Nexo.Certification.Physical.Resolution;
 using Nexo.Certification.Physical.Resolution.Http;
 using Nexo.Certification.Physical.Tagging;
-using Nexo.Infrastructure.Certification.Physical;
+using Nexo.Certification.Physical.Issuing;
 using NSec.Cryptography;
 using Xunit;
 

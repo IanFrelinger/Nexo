@@ -21,7 +21,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Nexo.Certification.Contracts\Nexo.Certification.Contracts.csproj" />
-    <ProjectReference Include="..\Nexo.Certification.Physical\Nexo.Certification.Physical.csproj" />
     <ProjectReference Include="..\Nexo.Brick.Contracts\Nexo.Brick.Contracts.csproj" />
     <ProjectReference Include="..\Nexo.Core.Application\Nexo.Core.Application.csproj" />
     <ProjectReference Include="..\Nexo.Core.Domain\Nexo.Core.Domain.csproj" />

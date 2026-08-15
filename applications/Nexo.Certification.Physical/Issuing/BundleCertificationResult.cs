@@ -1,6 +1,6 @@
 using Nexo.Certification.Physical;
 
-namespace Nexo.Infrastructure.Certification.Physical;
+namespace Nexo.Certification.Physical.Issuing;
 
 /// <summary>Result of physical-atom bundle certification.</summary>
 /// <param name="Succeeded">Whether certification succeeded.</param>

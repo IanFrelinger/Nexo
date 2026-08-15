@@ -1,6 +1,6 @@
 using Nexo.Certification.Physical;
 
-namespace Nexo.Infrastructure.Certification.Physical;
+namespace Nexo.Certification.Physical.Issuing;
 
 /// <summary>
 /// Input to deterministic physical-atom certificate issuance.

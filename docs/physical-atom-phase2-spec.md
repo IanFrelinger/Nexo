@@ -53,6 +53,6 @@ QR image rasterization, NFC writer hardware, HTTP resolution backend, XR clients
 
 ## Implementation
 
-- Codecs: `src/Nexo.Certification.Physical/Tagging/`
+- Codecs: `applications/Nexo.Certification.Physical/Tagging/`
 - Issuer: `src/Nexo.Infrastructure/Certification/Physical/PhysicalAtomTagIssuingBrick.cs`
 - Sample: `samples/physical-atom-cert/design-scope.tag-qr.txt`

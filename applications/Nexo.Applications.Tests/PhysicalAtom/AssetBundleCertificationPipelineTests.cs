@@ -1,7 +1,7 @@
 using FluentAssertions;
 using Nexo.Certification.Physical;
 using Nexo.Certification.Physical.Resolution;
-using Nexo.Infrastructure.Certification.Physical;
+using Nexo.Certification.Physical.Issuing;
 using NSec.Cryptography;
 using Xunit;
 

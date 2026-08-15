@@ -79,6 +79,6 @@ Asset generation, QR/NFC encoding, XR clients, hosting/resolution backend, relea
 
 ## Implementation
 
-- Library: `src/Nexo.Certification.Physical/`
+- Library: `applications/Nexo.Certification.Physical/`
 - Issuance: `src/Nexo.Infrastructure/Certification/Physical/BundleCertificationBrick.cs`
 - Tests: `src/Nexo.Tests.Infrastructure/Tests/Certification/PhysicalAtomCertificateVerifierTests.cs`, `BundleCertificationBrickTests.cs`
