@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="assets/brand/nexo-logo-chaos.svg" alt="Nexo" width="520">
+</p>
+
 # Nexo
 
 [![Kernel Gate](https://github.com/IanFrelinger/Nexo/actions/workflows/kernel-gate.yml/badge.svg?branch=master)](https://github.com/IanFrelinger/Nexo/actions/workflows/kernel-gate.yml)

@@ -8,24 +8,30 @@ Type: Baloo 2 ExtraBold (wordmark) · Caveat SemiBold (annotations). Both embedd
 
 | File | Destination |
 |------|-------------|
-| `nexo-logo-chaos.svg` | README hero: `![nexo](assets/brand/nexo-logo-chaos.svg)` |
-| `nexo-icon-nuget-128.png` | NuGet package icon (see csproj snippet below) |
+| `nexo-logo-chaos.svg` | README hero — **wired**, centred `<img>` at the top of `README.md` |
+| `nexo-icon-nuget-128.png` | NuGet package icon — **wired** repo-wide in `Directory.Build.props` (see below) |
 | `nexo-icon-github-512.png` | GitHub org/repo avatar — Settings → upload |
 | `nexo-social-card-1280x640.png` | Repo → Settings → General → Social preview (100 KB, under the 1 MB limit) |
 | `nexo-terminal-preview.svg` | docs/marketing use — mock CLI session |
 | `*.svg` sources | keep in `assets/brand/` as the editable masters |
-| `src/NexoConsole.cs` | your CLI project; see `docs/nexo-terminal-style.md` |
+| `NexoConsole.cs` | reference implementation, kept HERE not in the CLI: `application/**` changes need the application integration-branch flow. Wiring it into `Nexo.CLI` is an open follow-up; see `docs/nexo-terminal-style.md` |
 
-## NuGet icon wiring
+## NuGet icon wiring — already done
+
+Wired repo-wide in `Directory.Build.props`; every packable project picks it up, no per-project
+change needed:
 
 ```xml
-<PropertyGroup>
-  <PackageIcon>icon.png</PackageIcon>
-</PropertyGroup>
-<ItemGroup>
-  <None Include="assets/brand/nexo-icon-nuget-128.png" Pack="true" PackagePath="icon.png" />
+<PackageIcon Condition="Exists('$(MSBuildThisFileDirectory)assets/brand/nexo-icon-nuget-128.png')">icon.png</PackageIcon>
+...
+<ItemGroup Condition="'$(IsPackable)' == 'true' AND Exists('$(MSBuildThisFileDirectory)assets/brand/nexo-icon-nuget-128.png')">
+  <None Include="$(MSBuildThisFileDirectory)assets/brand/nexo-icon-nuget-128.png" Pack="true" PackagePath="icon.png" Visible="false" />
 </ItemGroup>
 ```
+
+The asset is packed straight from `assets/brand/` rather than copied to a root `icon.png`, so
+there is one copy of the bytes. Both parts are required: `PackageIcon` alone (without the packed
+`None`) fails packing with NU5046, exactly as `PackageReadmeFile` alone fails with NU5039.
 
 ## Signature rules
 
