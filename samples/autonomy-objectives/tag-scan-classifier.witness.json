@@ -1,0 +1,25 @@
+{
+  "brickId": "tag-scan-classifier",
+  "cases": [
+    {
+      "input": { "payload": "nexo-atom:v1:AQEAhA5Vm-LUQacWRGZVRAABGDAeNjDKKBbcseIyZKrsQdntQQgzfJtak245Vl0Bx0IFMS4wLjC9gUnjWtwkSk1oEgc" },
+      "expectedOutput": { "isValid": true, "failureCode": "" }
+    },
+    {
+      "input": { "payload": "https://example.com/not-a-tag" },
+      "expectedOutput": { "isValid": false, "failureCode": "tag-prefix-invalid" }
+    },
+    {
+      "input": { "payload": "" },
+      "expectedOutput": { "isValid": false, "failureCode": "tag-prefix-invalid" }
+    },
+    {
+      "input": { "payload": "nexo-atom:v1:!!!not-base64url!!!" },
+      "expectedOutput": { "isValid": false, "failureCode": "tag-payload-malformed" }
+    },
+    {
+      "input": { "payload": "nexo-atom:v2:AQEAhA5Vm-LUQacWRGZVRAABGDAeNjDKKBbcseIyZKrsQdntQQgzfJtak245Vl0Bx0IFMS4wLjC9gUnjWtwkSk1oEgc" },
+      "expectedOutput": { "isValid": false, "failureCode": "tag-prefix-invalid" }
+    }
+  ]
+}
