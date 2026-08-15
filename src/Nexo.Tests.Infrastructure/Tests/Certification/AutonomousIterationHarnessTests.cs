@@ -44,6 +44,26 @@ public sealed class AutonomousIterationHarnessTests
     };
 
     [Fact]
+    public async Task HoldAdmission_CertifiesFully_ButRefusesToSwap_EvenAtTier0()
+    {
+        // The operator hold is the difference between a loop that reports and a loop
+        // that acts. A Tier-0 objective is precisely the case that WOULD swap unattended,
+        // so that is the case worth pinning.
+        var sandbox = new FakeSandboxedSessionRunner(FakeSandboxedSessionRunner.Success());
+        var harness = Harness(sandbox: sandbox, holdAdmission: true);
+
+        var result = await harness.RunIterationAsync(Context("obj-hold"), Candidate());
+
+        result.Tier!.Tier.Should().Be(ObjectiveTier.Tier0Autonomous,
+            "this objective would otherwise have swapped without a human");
+        result.Outcome.Should().Be(IterationOutcome.CertifiedButHeld, result.Explanation);
+        result.Explanation.Should().Contain("hold mode");
+        result.Decision!.Admitted.Should().BeTrue(
+            "hold stops ADMISSION, not certification - the evidence must still accrue");
+        result.Decision.Record.Signed.Should().BeTrue();
+    }
+
+    [Fact]
     public async Task IntakeGating_RefusesBeforeAnyWork()
     {
         var pause = new LoopPauseControl();
@@ -252,6 +272,7 @@ public sealed class AutonomousIterationHarnessTests
         ILineageAuthority? lineages = null,
         ISandboxedSessionRunner? sandbox = null,
         ClusterBudget? budget = null,
+        bool holdAdmission = false,
         bool buildInSession = false) =>
         new(
             new CertificationGate(new CertificationRecordSigner()),
@@ -260,7 +281,8 @@ public sealed class AutonomousIterationHarnessTests
                 revocations: new InMemoryCertificateRevocationList(),
                 lineageAuthority: lineages),
             pause, lineages, sandbox, budget,
-            buildCandidateInSession: buildInSession);
+            buildCandidateInSession: buildInSession,
+            holdAdmission: holdAdmission);
 
     private static ProposalIterationContext Context(string objectiveId) => new()
     {

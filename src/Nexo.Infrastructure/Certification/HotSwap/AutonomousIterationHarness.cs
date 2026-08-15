@@ -116,6 +116,7 @@ public sealed class AutonomousIterationHarness
     private readonly ILogger<AutonomousIterationHarness>? _logger;
     private readonly bool _buildCandidateInSession;
     private readonly bool _executeCandidateInSession;
+    private readonly bool _holdAdmission;
 
     /// <summary>
     /// Creates the harness over the real gate and swap host. With
@@ -136,7 +137,8 @@ public sealed class AutonomousIterationHarness
         ClusterBudget? budget = null,
         ILogger<AutonomousIterationHarness>? logger = null,
         bool buildCandidateInSession = false,
-        bool executeCandidateInSession = false)
+        bool executeCandidateInSession = false,
+        bool holdAdmission = false)
     {
         _gate = gate ?? throw new ArgumentNullException(nameof(gate));
         _host = host ?? throw new ArgumentNullException(nameof(host));
@@ -147,6 +149,7 @@ public sealed class AutonomousIterationHarness
         _logger = logger;
         _buildCandidateInSession = buildCandidateInSession;
         _executeCandidateInSession = executeCandidateInSession;
+        _holdAdmission = holdAdmission;
     }
 
     /// <summary>Runs one iteration to a terminal state. Never throws for loop-shaped failures.</summary>
@@ -294,6 +297,19 @@ public sealed class AutonomousIterationHarness
                 return new IterationResult(IterationOutcome.ExplainedFailure,
                     $"certification rejected at '{decision.FailureCheck}' with {decision.ProbeFindings.Count} probe finding(s): "
                     + decision.Record.Reason,
+                    tier, decision, attestation);
+            }
+
+            // Operator hold (host-level): certify fully, admit nothing. Distinct from
+            // LoopPauseControl, which halts intake before any work happens - this runs the
+            // whole chain and stops at the swap, so the evidence accrues while a human
+            // still decides. Deliberately checked BEFORE the tier gate so hold covers
+            // Tier 0 too, which is the only tier that would otherwise swap unattended.
+            if (_holdAdmission)
+            {
+                return new IterationResult(IterationOutcome.CertifiedButHeld,
+                    "certified; the operator holds admission (loop is in hold mode, no unattended "
+                    + "swap) with full evidence on the record",
                     tier, decision, attestation);
             }
 

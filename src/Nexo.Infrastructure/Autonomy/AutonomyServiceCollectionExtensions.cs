@@ -122,7 +122,9 @@ public static class AutonomyServiceCollectionExtensions
             buildCandidateInSession: sp.GetRequiredService<IOptions<NexoAutonomyOptions>>()
                 .Value.BuildCandidateInSession,
             executeCandidateInSession: sp.GetRequiredService<IOptions<NexoAutonomyOptions>>()
-                .Value.ExecuteCandidateInSession));
+                .Value.ExecuteCandidateInSession,
+            holdAdmission: sp.GetRequiredService<IOptions<NexoAutonomyOptions>>()
+                .Value.HoldAdmission));
 
         return services;
     }
