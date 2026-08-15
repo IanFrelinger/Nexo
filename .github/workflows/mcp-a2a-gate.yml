@@ -34,7 +34,7 @@ jobs:
       # 9.x runs the net8 suites via roll-forward-compatible SDK behavior and is required for
       # the net9-only suites (TestServer + System.Text.Json 10 needs the 9.0 TestHost).
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: |
             8.0.x
@@ -77,7 +77,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@v6
         with:
           dotnet-version: |
             8.0.x
