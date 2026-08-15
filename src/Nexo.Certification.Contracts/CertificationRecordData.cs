@@ -5,6 +5,14 @@ namespace Nexo.Certification.Contracts;
 /// </summary>
 public sealed record CertificationRecordData
 {
+    /// <summary>
+    /// Schema version stamped on records minted under the trust-loop spec. Records
+    /// with this version sign the extended payload (including <see cref="Gate"/> and
+    /// the trust-loop evidence fields); records with a null <see cref="SchemaVersion"/>
+    /// are legacy v1 and keep the original payload so existing sidecars stay valid.
+    /// </summary>
+    public const int TrustLoopSchemaVersion = 2;
+
     /// <summary>Overall certification outcome (e.g. <c>PASS</c>, <c>FAIL</c>).</summary>
     public required string Status { get; init; }
 
@@ -47,6 +55,42 @@ public sealed record CertificationRecordData
     /// <summary>Human-readable reason when certification failed or was deferred.</summary>
     public string? Reason { get; init; }
 
-    /// <summary>Gate name that emitted or validated this record.</summary>
+    /// <summary>
+    /// Gate name that emitted or validated this record. Unsigned in legacy (v1)
+    /// records; covered by the signature from <see cref="TrustLoopSchemaVersion"/> on.
+    /// </summary>
     public string? Gate { get; init; }
+
+    /// <summary>Certificate schema version; null means legacy v1 (pre-trust-loop payload).</summary>
+    public int? SchemaVersion { get; init; }
+
+    /// <summary>
+    /// Ordered chain of gates evaluated at the recorded content hash (spec §2.1
+    /// <c>gates_passed</c>). On FAIL records this holds the gates passed before the
+    /// failing gate (R2.4 "furthest gate reached"). The <c>mutation-gate</c> entry's
+    /// measured payload remains the record's escape-rate and mutant fields.
+    /// </summary>
+    public IReadOnlyList<CertificationGatePass> GatesPassed { get; init; } = Array.Empty<CertificationGatePass>();
+
+    /// <summary>Hashes of the truth sources and context used during certification (spec §2.1 <c>inputs</c>).</summary>
+    public IReadOnlyList<CertificationInput> Inputs { get; init; } = Array.Empty<CertificationInput>();
+
+    /// <summary>Identity and parameters of the proposer of the certified artifact (spec §2.1 <c>proposer</c>).</summary>
+    public CertificationProposer? Proposer { get; init; }
+
+    /// <summary>Effort ledger of proposal/repair attempts (spec §2.1 <c>attempts</c>).</summary>
+    public IReadOnlyList<CertificationAttempt> Attempts { get; init; } = Array.Empty<CertificationAttempt>();
+
+    /// <summary>
+    /// Base64 Ed25519 signature over the same canonical payload as
+    /// <see cref="Signature"/>, written alongside it during the dual-write
+    /// transition window. Verified whenever present; absent on HMAC-only records.
+    /// </summary>
+    public string? Ed25519Signature { get; init; }
+
+    /// <summary>
+    /// Base64 raw 32-byte Ed25519 public key of the minter. Part of the signed
+    /// payload, so key substitution invalidates the HMAC signature.
+    /// </summary>
+    public string? Ed25519PublicKey { get; init; }
 }

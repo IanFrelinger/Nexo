@@ -55,7 +55,14 @@ public static class ProjectBTrustConsumer
         SurvivingMutantIds = record.SurvivingMutantIds,
         Signature = record.Signature,
         Reason = record.Reason,
-        Gate = record.Gate
+        Gate = record.Gate,
+        SchemaVersion = record.SchemaVersion,
+        GatesPassed = record.GatesPassed,
+        Inputs = record.Inputs,
+        Proposer = record.Proposer,
+        Attempts = record.Attempts,
+        Ed25519Signature = record.Ed25519Signature,
+        Ed25519PublicKey = record.Ed25519PublicKey
     };
 
     public static void AssertProjectBProjectHasNoGateOrGeneratorReferences(string projectBcsprojPath)

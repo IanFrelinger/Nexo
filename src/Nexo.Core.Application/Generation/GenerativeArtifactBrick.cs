@@ -59,7 +59,8 @@ public sealed class GenerativeArtifactBrick : GenerativeBrick
                 new BrickInputDefinition("outputPath", "string", "Optional output path / deployment ref", required: false),
                 new BrickInputDefinition("maxRepairAttempts", "number", "Override profile repair attempts", required: false),
                 new BrickInputDefinition("preferDeterministic", "bool", "Override profile PreferDeterministic for this call", required: false),
-                new BrickInputDefinition("overrides", "object", "Opaque GenerationRequest.Overrides bag for the profile", required: false)
+                new BrickInputDefinition("overrides", "object", "Opaque GenerationRequest.Overrides bag for the profile", required: false),
+                new BrickInputDefinition("contextHash", "string", "Canonical hash of the assembled proposal context that produced 'grounding'", required: false)
             ],
             Outputs =
             [
@@ -74,6 +75,20 @@ public sealed class GenerativeArtifactBrick : GenerativeBrick
 
         DefaultImplementation = ImplementationType.Agentic;
         FallbackChain = [ImplementationType.Agentic, ImplementationType.Deterministic];
+    }
+
+    /// <summary>
+    /// The profile's validator chain, with the constraint-manifest pre-gate prepended
+    /// when the profile declares a manifest (spec R3.5, second use). Prepending here —
+    /// rather than in profile <c>Validators</c> arrays — keeps enforcement engine-owned:
+    /// a profile cannot declare a manifest and skip its gate.
+    /// </summary>
+    private static IPostValidator<GeneratedArtifact>[] ResolveValidators(AgentProfile profile)
+    {
+        var declared = profile.Validators.OfType<IPostValidator<GeneratedArtifact>>();
+        return profile.ConstraintManifest is { } manifest
+            ? declared.Prepend(new BrickConstraintManifestValidator(manifest)).ToArray()
+            : declared.ToArray();
     }
 
     /// <inheritdoc />
@@ -99,6 +114,10 @@ public sealed class GenerativeArtifactBrick : GenerativeBrick
         {
             TargetId = target,
             Grounding = input.Get("grounding", "") ?? "",
+            // R3.5 first use: the manifest's rendered instructions travel with the
+            // request so the profile's drafter puts them in the proposer prompt.
+            ConstraintInstructions = profile.ConstraintManifest?.RenderInstructions() ?? "",
+            ContextHash = input.Get<string>("contextHash", null),
             OutputPath = input.Get<string>("outputPath", null),
             Overrides = overrides
         };
@@ -127,7 +146,7 @@ public sealed class GenerativeArtifactBrick : GenerativeBrick
         }
         else
         {
-            var validators = profile.Validators.OfType<IPostValidator<GeneratedArtifact>>().ToArray();
+            var validators = ResolveValidators(profile);
             var loop = new GenerationRepairLoop<GeneratedArtifact>(
                 async (prior, ct) =>
                 {
@@ -289,7 +308,7 @@ public sealed class GenerativeArtifactBrick : GenerativeBrick
         CancellationToken cancellationToken)
     {
         var draftProv = artifact.Provenance;
-        var postValidators = profile.Validators.OfType<IPostValidator<GeneratedArtifact>>().ToArray();
+        var postValidators = ResolveValidators(profile);
         if (provenance.Strategy != GenerationStrategy.Model && postValidators.Length > 0)
         {
             var allOk = true;

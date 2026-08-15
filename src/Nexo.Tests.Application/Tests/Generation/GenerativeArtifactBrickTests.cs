@@ -24,7 +24,9 @@ public sealed class GenerativeArtifactBrickTests
             DeterministicDrafter = new FixedDeterministic("SELECT 1"),
             Tunables = new GenerationTunables { PreferDeterministic = true },
             Capabilities = new AgentProfileCapabilities { SupportsDeterministic = true },
-            Validators = Array.Empty<object>()
+            // A gate is mandatory at registration — this test is about which
+            // drafter runs, so the gate is the trivially-passing one.
+            Validators = new object[] { new AlwaysOkValidator() }
         });
 
         var brick = new GenerativeArtifactBrick(registry);
@@ -118,6 +120,13 @@ public sealed class GenerativeArtifactBrickTests
             Calls++;
             return Task.FromResult(new GeneratedArtifact { Content = $"draft-{Calls}" });
         }
+    }
+
+    private sealed class AlwaysOkValidator : IPostValidator<GeneratedArtifact>
+    {
+        public ValueTask<(bool ok, string? reason)> ValidateAsync(
+            GeneratedArtifact output, CancellationToken ct) =>
+            new((true, (string?)null));
     }
 
     private sealed class PassOnSecondValidator : IPostValidator<GeneratedArtifact>

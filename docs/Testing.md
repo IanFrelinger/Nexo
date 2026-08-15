@@ -26,7 +26,7 @@ Nexo uses multiple mechanisms to prevent tests from hanging indefinitely and kee
 - **Makefile `test-all-platforms`**: Local 30s; Docker runs 60s
 - **CI (cross-platform-tests.yml)**: Per-scope as above
 - **TestCommandRunner**: 10 min global timeout for `nexo test local`
-- **TestRunnerAdapter**: 60s per-test for TestBase-based tests
+- **TestRunnerAdapter**: 480s per-test hang net for TestBase-based tests (sized to survive coverlet-instrumented CI runs; see `docs/production-readiness/KernelCoverageGate-Findings.md`)
 - **MultiPlatformTestCommand**: 5 min for native platform runs
 - **WorkflowExecutorIntegrationTests**: `[Fact(Timeout = 15000)]` on each test
 

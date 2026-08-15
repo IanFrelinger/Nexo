@@ -1,0 +1,93 @@
+name: MCP + A2A protocol gate
+
+on:
+  push:
+    branches:
+      - master
+      - main
+      - "cursor/**"
+      - "application/**"
+    paths:
+      - ".github/workflows/mcp-a2a-gate.yml"
+      - "src/Nexo.Mcp.Server/**"
+      - "src/Nexo.Mcp.Server.Host/**"
+      - "src/Nexo.Mcp.Server.Tests/**"
+      - "src/Nexo.Mcp.Client/**"
+      - "src/Nexo.Mcp.Client.Tests/**"
+      - "src/Nexo.Transport.A2A/**"
+      - "src/Nexo.Transport.A2A.Server/**"
+      - "src/Nexo.Transport.A2A.Tests/**"
+      - "src/Nexo.Transport.A2A.Server.Tests/**"
+      - "src/Nexo.Runtime/Transport/**"
+      - "application/src/Nexo.API/**"
+  workflow_dispatch:
+
+jobs:
+  protocol-adapters:
+    name: MCP/A2A adapter suites
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # 9.x runs the net8 suites via roll-forward-compatible SDK behavior and is required for
+      # the net9-only suites (TestServer + System.Text.Json 10 needs the 9.0 TestHost).
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+
+      - name: MCP server bridge tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          dotnet test src/Nexo.Mcp.Server.Tests/Nexo.Mcp.Server.Tests.csproj \
+            --blame-hang-timeout 120s
+
+      - name: MCP client tests (incl. client<->server protocol round trips)
+        shell: bash
+        run: |
+          set -euo pipefail
+          dotnet test src/Nexo.Mcp.Client.Tests/Nexo.Mcp.Client.Tests.csproj \
+            --blame-hang-timeout 120s
+
+      - name: A2A transport tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          dotnet test src/Nexo.Transport.A2A.Tests/Nexo.Transport.A2A.Tests.csproj \
+            --blame-hang-timeout 120s
+
+      - name: A2A server tests (incl. full-wire TestServer round trips)
+        shell: bash
+        run: |
+          set -euo pipefail
+          dotnet test src/Nexo.Transport.A2A.Server.Tests/Nexo.Transport.A2A.Server.Tests.csproj \
+            --blame-hang-timeout 120s
+
+  protocol-prodstyle:
+    name: Nexo.API protocol endpoints (ProdStyle)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+
+      - name: ProdStyle protocol ingress tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+            -f net9.0 \
+            --filter "FullyQualifiedName~McpA2AProtocolIngress" \
+            --blame-hang-timeout 120s

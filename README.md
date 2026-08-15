@@ -1,5 +1,10 @@
 # Nexo
 
+[![Kernel Gate](https://github.com/IanFrelinger/Nexo/actions/workflows/kernel-gate.yml/badge.svg?branch=master)](https://github.com/IanFrelinger/Nexo/actions/workflows/kernel-gate.yml)
+[![Kernel Coverage Gate](https://github.com/IanFrelinger/Nexo/actions/workflows/kernel-coverage-gate.yml/badge.svg?branch=master)](https://github.com/IanFrelinger/Nexo/actions/workflows/kernel-coverage-gate.yml)
+[![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![.NET 9](https://img.shields.io/badge/.NET-9.0-512BD4.svg)](global.json)
+
 > **Nexo is a local-first .NET AI runtime for running auditable AI workflows** — routing work across local, cloud, and peer execution targets, and extending its own capabilities under policy-controlled trust boundaries.
 
 **New here? Start with one of three lanes:** [**Try**](#lane-1--try-run-the-portal) (run the portal in Docker) · [**Develop**](#lane-2--develop-dev-container--cli) (dev container + CLI) · [**Deploy**](#lane-3--deploy-operators) (GHCR images + compose).

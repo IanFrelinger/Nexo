@@ -64,6 +64,8 @@ public class ContractsDtoTests
     public void Middleware_ingress_contracts_round_trip()
     {
         NexoIngressTransports.Http.Should().Be("http");
+        NexoIngressTransports.Mcp.Should().Be("mcp");
+        NexoIngressTransports.A2A.Should().Be("a2a");
         new NexoIngressEnvelope("c1", NexoIngressTransports.WebSocket, "idem", "v1", "t1", "app")
             .TenantId.Should().Be("t1");
         new SmsInboundSimulationResponse(true, "tok", "ok", false).Accepted.Should().BeTrue();

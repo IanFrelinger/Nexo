@@ -1,4 +1,5 @@
 using System.Text;
+using Nexo.Core.Application.Autonomy;
 
 namespace Nexo.BackgroundAgents.Objectives;
 
@@ -48,6 +49,20 @@ public sealed record ObjectiveDocument
     /// <summary>Optional free-form tags used for grouping and reporting.</summary>
     public IReadOnlyList<string> Tags { get; init; } = Array.Empty<string>();
 
+    /// <summary>
+    /// Where this objective came from (autonomous self-extension spec R1.1). Files parse
+    /// as <see cref="ObjectiveSource.Human"/> by default — an objective markdown file is
+    /// an operator-authored artifact — and machine intake paths stamp their source
+    /// explicitly (the telemetry extractor always stamps <see cref="ObjectiveSource.Telemetry"/>).
+    /// </summary>
+    public ObjectiveSource Source { get; init; } = ObjectiveSource.Human;
+
+    /// <summary>
+    /// The declared blast radius (R1.3): what the extension is permitted to affect.
+    /// Null = undeclared, which classifies at the most restrictive applicable tier (R1.4).
+    /// </summary>
+    public TouchSet? Touch { get; init; }
+
     /// <summary>UTC timestamp when the objective was first created (file mtime fallback).</summary>
     public DateTimeOffset CreatedAt { get; init; }
 
@@ -77,6 +92,16 @@ public sealed record ObjectiveDocument
             sb.Append("blocked_reason: ").AppendLine(EscapeYamlString(BlockedReason!));
         if (Tags.Count > 0)
             sb.Append("tags: [").Append(string.Join(", ", Tags.Select(EscapeYamlString))).AppendLine("]");
+        sb.Append("source: ").AppendLine(Source.ToString());
+        if (Touch is { } touch)
+        {
+            if (touch.PathPrefixes.Count > 0)
+                sb.Append("touch_paths: [").Append(string.Join(", ", touch.PathPrefixes.Select(EscapeYamlString))).AppendLine("]");
+            if (touch.Namespaces.Count > 0)
+                sb.Append("touch_namespaces: [").Append(string.Join(", ", touch.Namespaces.Select(EscapeYamlString))).AppendLine("]");
+            if (touch.Capabilities.Count > 0)
+                sb.Append("touch_capabilities: [").Append(string.Join(", ", touch.Capabilities.Select(EscapeYamlString))).AppendLine("]");
+        }
         sb.Append("created_at: ").AppendLine(CreatedAt.ToString("u", System.Globalization.CultureInfo.InvariantCulture));
         sb.Append("updated_at: ").AppendLine(UpdatedAt.ToString("u", System.Globalization.CultureInfo.InvariantCulture));
         sb.AppendLine("---");

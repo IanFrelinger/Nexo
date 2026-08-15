@@ -12,13 +12,19 @@ COPY . .
 
 # Skip CopyAssemblies (test infra script; not needed for CLI publish)
 ENV SkipCopyAssemblies=true
-ENV TARGETFRAMEWORK=${TARGETFRAMEWORK:-net8.0}
 
 # Restore and publish CLI - framework dependent by default.
 # Use single-node MSBuild in container builds to avoid intermittent file-lock races.
-RUN dotnet restore application/src/Nexo.CLI/Nexo.CLI.csproj -p:TargetFramework="${TARGETFRAMEWORK}" -m:1 && \
+# The framework is selected with -f on the ENTRY project only, and the TARGETFRAMEWORK
+# variable is captured then UNSET before dotnet runs: MSBuild lifts environment
+# variables into global properties, and a global TargetFramework poisons single-TF
+# projects in the graph (the netstandard2.0-only analyzers referencing multi-TF
+# contracts fail with net8-vs-ns2.0 mismatches). Per-reference framework negotiation
+# is the supported idiom; nothing in the environment may override it.
+RUN TFM="${TARGETFRAMEWORK:-net8.0}" && unset TARGETFRAMEWORK && \
+    dotnet restore application/src/Nexo.CLI/Nexo.CLI.csproj -m:1 && \
     dotnet publish application/src/Nexo.CLI/Nexo.CLI.csproj -c Release -o /app/publish \
-        -m:1 --self-contained false -p:TargetFramework="${TARGETFRAMEWORK}" -p:BuildInParallel=false -p:UseAppHost=false -p:SkipCopyAssemblies=true \
+        -m:1 --self-contained false -f "$TFM" -p:BuildInParallel=false -p:UseAppHost=false -p:SkipCopyAssemblies=true \
         -p:ErrorOnDuplicatePublishOutputFiles=false
 
 # Runtime stage

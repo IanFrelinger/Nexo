@@ -70,6 +70,36 @@ public sealed class DockerSandboxedCommandRunner : ISandboxedCommandRunner
             "--rm"
         };
 
+        AppendSpecArguments(args, spec);
+
+        args.Add(spec.Image!);
+        args.AddRange(spec.Command);
+        return args;
+    }
+
+    /// <summary>
+    /// Appends the isolation-policy portion of a <c>docker run</c> argv (network, resource
+    /// limits, mounts, entrypoint) for <paramref name="spec"/>. Shared with
+    /// <see cref="DockerSandboxedSessionRunner"/> so one-shot commands and long-lived
+    /// sessions translate a spec identically — two translations would drift.
+    /// </summary>
+    internal static void AppendSpecArguments(List<string> args, SandboxSpec spec)
+    {
+        if (spec.Network == NetworkAccess.HostServicesOnly)
+        {
+            // Permanent fail-closed refusal (spec Part B), not a v1 gap: plain bridge
+            // networking cannot express "these host services and nothing else", and the
+            // one workload that seemed to need the mode — in-session package restore —
+            // was solved offline instead (SessionCandidateBuild restores from the SDK's
+            // installed packs with cleared sources). Degrading to unrestricted egress
+            // while the spec promises containment would be the worst possible outcome.
+            throw new NotSupportedException(
+                "NetworkAccess.HostServicesOnly is not realizable by the Docker backend; "
+                + "refusing fail-closed rather than degrading to unrestricted egress. This is "
+                + "the settled posture: in-session builds restore offline, so use "
+                + "NetworkAccess.None, or run the dependent service inside the session image.");
+        }
+
         if (spec.Network == NetworkAccess.None)
             args.Add("--network=none");
 
@@ -109,9 +139,5 @@ public sealed class DockerSandboxedCommandRunner : ISandboxedCommandRunner
             args.Add("--entrypoint");
             args.Add(spec.Entrypoint!);
         }
-
-        args.Add(spec.Image!);
-        args.AddRange(spec.Command);
-        return args;
     }
 }
