@@ -78,6 +78,16 @@ public sealed class AgentProfile
     /// </summary>
     public IAcceptanceEvaluator? Acceptance { get; init; }
 
+    /// <summary>
+    /// Optional machine-checkable structural constraints for this brick class
+    /// (trust-loop spec R3.5). When set, the engine injects
+    /// <see cref="BrickConstraintManifest.RenderInstructions"/> into the
+    /// <c>GenerationRequest</c> and enforces the same manifest as a pre-gate ahead of
+    /// <see cref="Validators"/>. Profiles never add the enforcement validator to
+    /// <see cref="Validators"/> themselves.
+    /// </summary>
+    public BrickConstraintManifest? ConstraintManifest { get; init; }
+
     /// <summary>Domain knowledge for prompts/rules.</summary>
     public DomainKnowledge Knowledge { get; init; } = new();
 

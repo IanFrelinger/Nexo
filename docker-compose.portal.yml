@@ -22,6 +22,12 @@ services:
       # Nexo__Security__ExposureProfile: Tailnet
       # Nexo__Security__ShowAdvisoryInPortal: "true"
       # Nexo__Security__CustomAdvisory: "Restrict with Tailscale ACLs; Ollama not on funnel."
+      # MCP/A2A protocol ingress is OFF unless explicitly enabled (fail-closed defaults;
+      # see docs/architecture/ProtocolIntegration-MCP-A2A.md before flipping any of these).
+      Nexo__Mcp__Server__Enabled: ${Nexo__Mcp__Server__Enabled:-false}
+      Nexo__Mcp__Client__Enabled: ${Nexo__Mcp__Client__Enabled:-false}
+      Nexo__A2A__Server__Enabled: ${Nexo__A2A__Server__Enabled:-false}
+      Nexo__A2A__Transport__Enabled: ${Nexo__A2A__Transport__Enabled:-false}
     ports:
       - "127.0.0.1:8080:8080"
     volumes:

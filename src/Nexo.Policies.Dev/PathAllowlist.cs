@@ -41,12 +41,32 @@ public sealed class PathAllowlist : IPolicy
                 merged.Add(entry);
         }
 
-        _allowedPrefixes = merged
-            .Select(NormalizePrefix)
-            .Where(p => !string.IsNullOrWhiteSpace(p))
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToArray()!;
+        _allowedPrefixes = Normalize(merged);
     }
+
+    private PathAllowlist(string[] normalizedExactPrefixes) => _allowedPrefixes = normalizedExactPrefixes;
+
+    /// <summary>
+    /// An allowlist of EXACTLY the given prefixes — no built-in defaults and no
+    /// <c>NEXO_PATH_ALLOWLIST_EXTRA</c> widening. This is the confinement-declaration mode
+    /// (extension spec Part B): when a <c>ProposerConfinement</c> derives the write policy,
+    /// that declaration is the single source, and an environment variable silently widening
+    /// it would reopen exactly the drift the declaration exists to close.
+    /// </summary>
+    public static PathAllowlist FromExactPrefixes(IEnumerable<string> prefixes)
+    {
+        ArgumentNullException.ThrowIfNull(prefixes);
+        var normalized = Normalize(prefixes.ToList());
+        if (normalized.Length == 0)
+            throw new ArgumentException("An exact allowlist with zero valid prefixes would deny every write.", nameof(prefixes));
+        return new PathAllowlist(normalized);
+    }
+
+    private static string[] Normalize(List<string> prefixes) => prefixes
+        .Select(NormalizePrefix)
+        .Where(p => !string.IsNullOrWhiteSpace(p))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToArray()!;
 
     public bool Approve(ToolCall call, WorldSnapshot s, out string reason)
     {

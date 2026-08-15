@@ -9,6 +9,7 @@ High-level maps of how Nexo is structured. For day-to-day commands, see the repo
 | [Kernel phase matrix](KernelPhaseMatrix.md) | `NexoKernelRegistrar` phases, module flags, and `make kernel-gate` proof. |
 | [.NET SDK and target frameworks](DotnetVersions.md) | Why `global.json` pins SDK 9.x while many libraries target `net8.0`. |
 | [Runtime vs application layout](runtime-vs-application.md) | `src/` kernel vs `application/src/` hosts; `Nexo.Runtime.sln`, `Nexo.Runtime.Bundle`, NuGet metapackages, and packing scripts. |
+| [Protocol integration: MCP + A2A](ProtocolIntegration-MCP-A2A.md) | MCP server bridge over `ITool` (allowlists, policy gate, stdio host) and the planned MCP client / A2A phases. |
 | [Shipping and consumption (all audiences)](../DistributionModels.md) | How Nexo is packaged (NuGet, containers, HTTP); pinning; **distribution-matrix** CI jobs per channel. |
 | [Forge map adaptation](forge-map-adaptation.md) | `MapAdaptationPlanner`, dry-run pipeline, engine manifest JSON, and Forge persistence options. |
 | [Forge map host integration](forge-map-host-integration.md) | Milestones M1–M6; terrain payload summaries; optional material **`IModel`** augmentation; tile cache; Unity/Godot package layouts. |

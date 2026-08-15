@@ -21,7 +21,8 @@
     <ItemGroup>
         <ProjectReference Include="..\Nexo.Analyzers\Nexo.Analyzers.csproj"
                           OutputItemType="Analyzer"
-                          ReferenceOutputAssembly="false" />
+                          ReferenceOutputAssembly="false"
+                          UndefineProperties="TargetFramework" />
     </ItemGroup>
 
 </Project>

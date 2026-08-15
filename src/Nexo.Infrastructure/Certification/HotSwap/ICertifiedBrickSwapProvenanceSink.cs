@@ -1,0 +1,40 @@
+using Microsoft.Extensions.Logging;
+
+namespace Nexo.Infrastructure.Certification.HotSwap;
+
+/// <summary>
+/// Receives every hot-swap provenance event. The trust-loop plan projects these into the
+/// provenance graph; until that projection lands, the default sink writes structured logs.
+/// Implementations must not throw — a provenance sink failure must never fail a swap.
+/// </summary>
+public interface ICertifiedBrickSwapProvenanceSink
+{
+    /// <summary>Records one provenance event.</summary>
+    void Record(BrickSwapProvenanceEvent provenanceEvent);
+}
+
+/// <summary>Default sink: structured log lines, one per event.</summary>
+public sealed class LoggingBrickSwapProvenanceSink : ICertifiedBrickSwapProvenanceSink
+{
+    private readonly ILogger<LoggingBrickSwapProvenanceSink> _logger;
+
+    /// <summary>Initializes the logging sink.</summary>
+    public LoggingBrickSwapProvenanceSink(ILogger<LoggingBrickSwapProvenanceSink> logger)
+    {
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
+
+    /// <inheritdoc />
+    public void Record(BrickSwapProvenanceEvent provenanceEvent)
+    {
+        _logger.LogInformation(
+            "hot-swap {Outcome} gen={Generation} brick={BrickId} contentHash={ContentHash} context={ContextName} code={FailureCode} {Reason}",
+            provenanceEvent.Outcome,
+            provenanceEvent.Generation,
+            provenanceEvent.BrickId,
+            provenanceEvent.ContentHash,
+            provenanceEvent.ContextName,
+            provenanceEvent.FailureCode,
+            provenanceEvent.Reason);
+    }
+}

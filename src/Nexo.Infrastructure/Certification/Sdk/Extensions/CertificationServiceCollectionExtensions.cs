@@ -1,6 +1,9 @@
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using Nexo.Core.Application.Certification.Ports;
 using Nexo.Infrastructure.Certification.Composition;
+using Nexo.Infrastructure.Certification.HotSwap;
 
 namespace Nexo.Infrastructure.Certification.Sdk.Extensions;
 
@@ -61,6 +64,20 @@ public static class CertificationServiceCollectionExtensions
         services.AddSingleton<ICertifiedCompositionAdmission, CertifiedCompositionAdmission>();
         services.AddSingleton<Nexo.Core.Domain.Execution.IBrickRegistry>(sp =>
             sp.GetRequiredService<CertifiedBrickRegistry>());
+        return services;
+    }
+
+    /// <summary>
+    /// Adds the certified brick hot-swap host: verify-at-load, one collectible load
+    /// context per generation, fail-closed swaps, provenance events per swap outcome.
+    /// TryAdd throughout so hosts can substitute their own provenance sink.
+    /// </summary>
+    public static IServiceCollection AddCertifiedBrickHotSwapHost(this IServiceCollection services)
+    {
+        services.TryAddSingleton<ICertifiedBrickSwapProvenanceSink, LoggingBrickSwapProvenanceSink>();
+        services.TryAddSingleton(sp => new CertifiedBrickHotSwapHost(
+            sp.GetRequiredService<ICertifiedBrickSwapProvenanceSink>(),
+            sp.GetService<ILogger<CertifiedBrickHotSwapHost>>()));
         return services;
     }
 }

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Nexo.Certification.Contracts;
 using Nexo.Core.Application.Certification.Models;
@@ -8,28 +9,143 @@ namespace Nexo.Infrastructure.Certification;
 /// <summary>Certification gate: mutation testing, dependency checks, signing, and admit/reject decisions.</summary>
 public sealed class CertificationGate : ICertificationGate
 {
+    private const string GateVersion = "1";
+
+    private static readonly CertificationGatePass CorrectnessGatePass = new() { Name = "correctness-witness", Version = GateVersion };
+    private static readonly CertificationGatePass MutationGatePass = new() { Name = "mutation-gate", Version = GateVersion, Configuration = "escapeRateThreshold=0" };
+    private static readonly CertificationGatePass DeterminismGatePass = new() { Name = "determinism", Version = GateVersion };
+    private static readonly CertificationGatePass DependencyGatePass = new() { Name = "dependency-graph", Version = GateVersion };
+
+    private static readonly JsonSerializerOptions WitnessHashOptions = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+
     private readonly BrickMutationEngine _mutationEngine = new();
     private readonly CertificationRecordSigner _signer;
+    private readonly AnalyzerFenceGate _analyzerGate;
     private readonly ILogger<CertificationGate>? _logger;
 
     /// <summary>Initializes a new certification gate.</summary>
     public CertificationGate(
         CertificationRecordSigner signer,
-        ILogger<CertificationGate>? logger = null)
+        ILogger<CertificationGate>? logger = null,
+        AnalyzerFenceGate? analyzerGate = null,
+        IEnumerable<IDiagnosticProbe>? probes = null)
     {
         _signer = signer ?? throw new ArgumentNullException(nameof(signer));
         _logger = logger;
+        // Defaulting the gate on (rather than null-meaning-skip) keeps the chain fail-closed:
+        // no construction path exists that certifies without the analyzer fence.
+        _analyzerGate = analyzerGate ?? new AnalyzerFenceGate();
+        _probes = probes?.ToArray() ?? Probes.CertificationProbeCatalog.Default;
     }
 
-    /// <summary>Certify asynchronously.</summary>
+    private readonly IReadOnlyList<IDiagnosticProbe> _probes;
+
+    /// <summary>Certify asynchronously; on rejection, diagnostic probes attach structured findings (G4).</summary>
     public async Task<CertificationDecision> CertifyAsync(
         CertificationRequest request,
         CancellationToken cancellationToken = default)
+    {
+        var decision = await CertifyCoreAsync(request, cancellationToken).ConfigureAwait(false);
+        return decision.Admitted ? decision : decision with { ProbeFindings = RunProbes(request, decision) };
+    }
+
+    private IReadOnlyList<DiagnosticProbeFinding> RunProbes(
+        CertificationRequest request, CertificationDecision decision)
+    {
+        var findings = new List<DiagnosticProbeFinding>();
+        foreach (var probe in _probes.Where(p => p.FailureCheck == decision.FailureCheck))
+        {
+            try
+            {
+                if (probe.Probe(request, decision) is { } finding)
+                    findings.Add(finding);
+            }
+            catch (Exception ex)
+            {
+                // A probe holds no authority: it can neither change a verdict nor break
+                // the decision path. Skipped and logged.
+                _logger?.LogWarning(ex, "Diagnostic probe {Probe} threw; verdict unaffected", probe.GetType().Name);
+            }
+        }
+
+        return findings;
+    }
+
+    private async Task<CertificationDecision> CertifyCoreAsync(
+        CertificationRequest request,
+        CancellationToken cancellationToken)
     {
         var brickId = request.Brick.Id;
         var timestamp = DateTimeOffset.UtcNow;
 
         var contentHash = BrickContentHasher.ComputeSha256(request.SourceCode);
+        var inputs = BuildInputs(request);
+
+        // Declared ahead of the recursion refusal because the shared Fail/GatesPassedBefore
+        // closures reference it; it is re-assigned with the real per-run configuration once
+        // the analyzer fence actually evaluates. A recursion refusal never reads it
+        // (GatesPassedBefore("recursion") is the empty prefix).
+        var analyzerGatePass = new CertificationGatePass { Name = "analyzer-gate", Version = GateVersion };
+
+        // Execution-backend routing: when the request names one, every EXECUTION of
+        // candidate/mutant code goes through it and the gate judges raw observations.
+        // The per-run gate passes record where execution actually happened. Declared here
+        // for the same closure reason as the analyzer pass above.
+        var backend = request.ExecutionBackend;
+        var correctnessPass = backend is null
+            ? CorrectnessGatePass
+            : CorrectnessGatePass with { Configuration = $"execution={backend.Describe()}" };
+        var mutationPass = backend is null
+            ? MutationGatePass
+            : MutationGatePass with { Configuration = $"escapeRateThreshold=0;execution={backend.Describe()}" };
+        var determinismPass = backend is null
+            ? DeterminismGatePass
+            : DeterminismGatePass with { Configuration = $"execution={backend.Describe()}" };
+
+        // Autonomy spec R4.1/R4.2: the recursion check runs before EVERYTHING — an
+        // incoherent depth claim (laundering) or a candidate past the ceiling must not
+        // even be analyzed. Null lineage = human-authored context (depth 0), always
+        // coherent and under the ceiling.
+        var lineage = request.Lineage ?? Nexo.Core.Application.Autonomy.GenerationLineage.HumanAuthored;
+        var recursionViolations = Nexo.Core.Application.Autonomy.RecursionDiscipline.FindViolations(lineage);
+        if (recursionViolations.Count > 0)
+        {
+            var reason = "Recursion discipline failed: " + string.Join(" | ", recursionViolations);
+            _logger?.LogWarning("Certification REJECT {BrickId}: {Reason}", brickId, reason);
+            return new CertificationDecision
+            {
+                Admitted = false,
+                FailureCheck = "recursion",
+                Record = Fail("recursion", reason)
+            };
+        }
+
+        // Spec A1.1/I-A: the analyzer fence runs first — a candidate carrying a defect a
+        // deterministic analyzer can name never reaches the expensive witness/mutation gates.
+        // Its gates_passed entry is per-run because A1.5 records the evaluated-diagnostic count.
+        var analyzerOutcome = await _analyzerGate.EvaluateAsync(
+            request.SourceCode,
+            request.CompilationReferences,
+            request.ConstraintManifest,
+            request.TouchSet,
+            cancellationToken).ConfigureAwait(false);
+        analyzerGatePass = new CertificationGatePass
+        {
+            Name = "analyzer-gate",
+            Version = GateVersion,
+            Configuration = analyzerOutcome.GatePassConfiguration,
+        };
+
+        // R2.4 "furthest gate reached": the ordered prefix of gates already passed when the
+        // named check failed. Local because the analyzer entry is per-run.
+        IReadOnlyList<CertificationGatePass> GatesPassedBefore(string failedCheck) => failedCheck switch
+        {
+            "correctness" => new[] { analyzerGatePass },
+            "mutation" => new[] { analyzerGatePass, correctnessPass },
+            "determinism" => new[] { analyzerGatePass, correctnessPass, mutationPass },
+            "dependency" => new[] { analyzerGatePass, correctnessPass, mutationPass, determinismPass },
+            _ => Array.Empty<CertificationGatePass>()
+        };
 
         CertificationRecord Fail(string check, string reason, MutationTestResult? mutation = null) =>
             BuildRecord(
@@ -40,13 +156,48 @@ public sealed class CertificationGate : ICertificationGate
                 timestamp,
                 contentHash,
                 reason,
-                mutation);
+                mutation,
+                GatesPassedBefore(check),
+                inputs);
 
-        var witnessResult = await WitnessRunner.RunAsync(
-            request.Brick,
-            request.Witness,
-            new AuditExecutionContext(),
-            cancellationToken).ConfigureAwait(false);
+        if (!analyzerOutcome.Passed)
+        {
+            var reason = analyzerOutcome.FormatProposerFeedback();
+            _logger?.LogWarning("Certification REJECT {BrickId}: {Reason}", brickId, reason);
+            return new CertificationDecision
+            {
+                Admitted = false,
+                FailureCheck = "analyzer",
+                Record = Fail("analyzer", reason)
+            };
+        }
+
+        var brickTypeName = request.BrickTypeName ?? request.Brick.GetType().FullName ?? request.Brick.GetType().Name;
+
+        // With a backend: one batched candidate execution (repeats=2) serves BOTH the
+        // witness leg (repeat 0) and the determinism leg (repeat 0 vs 1 of case 0) —
+        // observed before mutation so a mutant run can never poison the candidate's own
+        // evidence. Backend infrastructure failures THROW (they are not candidate
+        // evidence and must never become a signed verdict either way).
+        IReadOnlyList<Nexo.Core.Application.Certification.Ports.CandidateCaseObservation>? candidateObservations = null;
+        if (backend is not null)
+        {
+            var report = await backend.ExecuteAsync(
+                new Nexo.Core.Application.Certification.Ports.CandidateExecutionJob(
+                    new[] { new Nexo.Core.Application.Certification.Ports.CandidateExecutionUnit("candidate", null, brickTypeName) },
+                    request.Witness,
+                    Repeats: 2),
+                cancellationToken).ConfigureAwait(false);
+            candidateObservations = report.Observations.Where(o => o.UnitId == "candidate").ToArray();
+        }
+
+        var witnessResult = backend is null
+            ? await WitnessRunner.RunAsync(
+                request.Brick,
+                request.Witness,
+                new AuditExecutionContext(),
+                cancellationToken).ConfigureAwait(false)
+            : WitnessRunner.JudgeObservations(request.Witness, candidateObservations!);
 
         if (!witnessResult.Passed)
         {
@@ -60,13 +211,13 @@ public sealed class CertificationGate : ICertificationGate
             };
         }
 
-        var brickTypeName = request.BrickTypeName ?? request.Brick.GetType().FullName ?? request.Brick.GetType().Name;
         var mutationResult = await _mutationEngine.RunAsync(
             request.SourceCode,
             brickTypeName,
             request.Witness,
             request.CompilationReferences,
-            cancellationToken).ConfigureAwait(false);
+            cancellationToken,
+            backend).ConfigureAwait(false);
 
         if (mutationResult.TotalMutants == 0)
         {
@@ -92,10 +243,12 @@ public sealed class CertificationGate : ICertificationGate
             };
         }
 
-        var determinism = await WitnessRunner.CheckDeterminismAsync(
-            request.Brick,
-            request.Witness,
-            cancellationToken).ConfigureAwait(false);
+        var determinism = backend is null
+            ? await WitnessRunner.CheckDeterminismAsync(
+                request.Brick,
+                request.Witness,
+                cancellationToken).ConfigureAwait(false)
+            : JudgeObservationDeterminism(candidateObservations!);
 
         if (!determinism.Identical)
         {
@@ -130,8 +283,13 @@ public sealed class CertificationGate : ICertificationGate
             timestamp,
             contentHash,
             reason: null,
-            mutation: mutationResult);
-        admittedRecord = admittedRecord with { Signature = _signer.Sign(admittedRecord) };
+            mutation: mutationResult,
+            gatesPassed: new[]
+            {
+                analyzerGatePass, correctnessPass, mutationPass, determinismPass, DependencyGatePass
+            },
+            inputs: inputs);
+        admittedRecord = _signer.SignRecord(admittedRecord);
 
         _logger?.LogInformation("Certification ADMIT {BrickId} escape_rate=0", brickId);
         return new CertificationDecision
@@ -139,6 +297,70 @@ public sealed class CertificationGate : ICertificationGate
             Admitted = true,
             Record = admittedRecord
         };
+    }
+
+    /// <summary>
+    /// Determinism verdict over backend observations: case 0's two repeats must
+    /// canonicalize identically (mirror of <see cref="WitnessRunner.CheckDeterminismAsync"/>).
+    /// A missing repeat is nondeterminism-by-absence — fail-closed, never vacuously identical.
+    /// </summary>
+    private static (bool Identical, string? First, string? Second) JudgeObservationDeterminism(
+        IReadOnlyList<Nexo.Core.Application.Certification.Ports.CandidateCaseObservation> observations)
+    {
+        var first = observations.FirstOrDefault(o => o.CaseIndex == 0 && o.Repeat == 0);
+        var second = observations.FirstOrDefault(o => o.CaseIndex == 0 && o.Repeat == 1);
+        if (first is null && second is null)
+            return (true, null, null); // No cases — same as the in-proc empty-witness path.
+        if (first is null || second is null)
+            return (false, first is null ? "<missing>" : "present", second is null ? "<missing>" : "present");
+
+        var firstJson = WitnessRunner.CanonicalizeObservation(first);
+        var secondJson = WitnessRunner.CanonicalizeObservation(second);
+        return (firstJson == secondJson, firstJson, secondJson);
+    }
+
+    private IReadOnlyList<CertificationInput> BuildInputs(CertificationRequest request)
+    {
+        try
+        {
+            var witnessJson = JsonSerializer.Serialize(request.Witness, WitnessHashOptions);
+            var inputs = new List<CertificationInput>
+            {
+                new CertificationInput
+                {
+                    Kind = "witness",
+                    Id = request.Witness.BrickId,
+                    Hash = BrickContentHasher.ComputeSha256(witnessJson)
+                }
+            };
+            inputs.AddRange(request.AdditionalInputs);
+            // Where execution happened is certificate-relevant on PASS and FAIL alike:
+            // a verdict minted over backend observations names the backend.
+            if (request.ExecutionBackend is { } executionBackend)
+            {
+                inputs.Add(new CertificationInput
+                {
+                    Kind = "session-execution",
+                    Id = executionBackend.Describe(),
+                    Hash = BrickContentHasher.ComputeSha256(executionBackend.Describe()),
+                });
+            }
+            // Autonomy R4.1: an explicitly declared lineage is recorded — depth bound to a
+            // hash over the parent certificate chain — on PASS and FAIL records alike, so
+            // even a refused laundering attempt leaves its claim in evidence. Requests
+            // without a lineage (the human-authored default) record nothing extra.
+            if (request.Lineage is { } lineage)
+                inputs.Add(GenerationLineageInputs.From(lineage));
+            return inputs;
+        }
+        catch (NotSupportedException ex)
+        {
+            _logger?.LogWarning(
+                ex,
+                "Witness spec for {BrickId} could not be serialized for input hashing; omitting the witness input",
+                request.Witness.BrickId);
+            return request.AdditionalInputs;
+        }
     }
 
     private static CertificationRecord BuildRecord(
@@ -149,7 +371,9 @@ public sealed class CertificationGate : ICertificationGate
         DateTimeOffset timestamp,
         string contentHash,
         string? reason,
-        MutationTestResult? mutation)
+        MutationTestResult? mutation,
+        IReadOnlyList<CertificationGatePass> gatesPassed,
+        IReadOnlyList<CertificationInput> inputs)
     {
         return new CertificationRecord
         {
@@ -166,7 +390,10 @@ public sealed class CertificationGate : ICertificationGate
             KilledMutants = mutation?.KilledMutantIds ?? Array.Empty<string>(),
             SurvivingMutantIds = mutation?.SurvivingMutantIds ?? Array.Empty<string>(),
             Reason = reason,
-            Gate = "Nexo.Infrastructure.Certification.CertificationGate"
+            Gate = "Nexo.Infrastructure.Certification.CertificationGate",
+            SchemaVersion = CertificationRecordData.TrustLoopSchemaVersion,
+            GatesPassed = gatesPassed,
+            Inputs = inputs
         };
     }
 }
