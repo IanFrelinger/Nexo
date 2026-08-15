@@ -99,10 +99,10 @@ Downstream artifacts that would be affected if the policy version were revoked (
 
 ```bash
 # Unit tests only (no Neo4j)
-dotnet test src/Nexo.Provenance.Graph.Tests/Nexo.Provenance.Graph.Tests.csproj --filter "Category!=Integration"
+dotnet test applications/Nexo.Provenance.Graph.Tests/Nexo.Provenance.Graph.Tests.csproj --filter "Category!=Integration"
 
 # Integration tests (Testcontainers Neo4j)
-NEXO_RUN_NEO4J_CONTAINER=1 dotnet test src/Nexo.Provenance.Graph.Tests/Nexo.Provenance.Graph.Tests.csproj --filter "Category=Integration"
+NEXO_RUN_NEO4J_CONTAINER=1 dotnet test applications/Nexo.Provenance.Graph.Tests/Nexo.Provenance.Graph.Tests.csproj --filter "Category=Integration"
 ```
 
 Rejection tests (written first) verify:

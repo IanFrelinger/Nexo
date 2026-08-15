@@ -44,6 +44,6 @@ Failure codes include: `tag-prefix-invalid`, `tag-issuer-fingerprint-mismatch`, 
 
 ## Implementation
 
-- HTTP: `src/Nexo.Certification.Physical/Resolution/Http/`
-- Orchestrator: `src/Nexo.Certification.Physical/Resolution/PhysicalAtomTagVerifyOrchestrator.cs`
+- HTTP: `applications/Nexo.Certification.Physical/Resolution/Http/`
+- Orchestrator: `applications/Nexo.Certification.Physical/Resolution/PhysicalAtomTagVerifyOrchestrator.cs`
 - Tests: `PhysicalAtomTagVerifyOrchestratorTests`, `HttpAssetResolutionRouterTests`, `PhysicalAtomEndToEndFlowTests`
