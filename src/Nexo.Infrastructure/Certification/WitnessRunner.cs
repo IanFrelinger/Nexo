@@ -220,6 +220,32 @@ internal static class WitnessRunner
         _ => el.GetRawText()
     };
 
-    private static string FormatValue(object value) =>
-        Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture) ?? "<null>";
+    /// <summary>
+    /// Renders a witness value for a failure message. Distinguishing null from the empty
+    /// string matters more than it looks: this text is the repair feedback a proposer sees,
+    /// and "expected  got " (which is what Convert.ToString produces for both, since it
+    /// returns "" for null and JsonElement renders JsonValueKind.Null as empty) tells a
+    /// proposer nothing it can act on. Strings are quoted so an empty one is visible.
+    /// </summary>
+    private static string FormatValue(object? value)
+    {
+        if (value is null)
+            return "<null>";
+
+        if (value is JsonElement element)
+        {
+            return element.ValueKind switch
+            {
+                JsonValueKind.Null or JsonValueKind.Undefined => "<null>",
+                JsonValueKind.String => Quote(element.GetString()),
+                _ => element.GetRawText(),
+            };
+        }
+
+        return value is string text
+            ? Quote(text)
+            : Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture) ?? "<null>";
+    }
+
+    private static string Quote(string? value) => value is null ? "<null>" : $"\"{value}\"";
 }
