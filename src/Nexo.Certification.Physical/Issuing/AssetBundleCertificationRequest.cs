@@ -1,7 +1,7 @@
 using Nexo.Certification.Physical;
 using Nexo.Certification.Physical.Resolution;
 
-namespace Nexo.Infrastructure.Certification.Physical;
+namespace Nexo.Certification.Physical.Issuing;
 
 /// <summary>
 /// Input to deterministic asset bundle certification and registration.

@@ -1,7 +1,7 @@
 using Nexo.Certification.Physical;
 using Nexo.Certification.Physical.Resolution;
 
-namespace Nexo.Infrastructure.Certification.Physical;
+namespace Nexo.Certification.Physical.Issuing;
 
 /// <summary>
 /// Phase 1 pipeline: issue certificate, register asset + cert in resolution store, emit portable bundle.

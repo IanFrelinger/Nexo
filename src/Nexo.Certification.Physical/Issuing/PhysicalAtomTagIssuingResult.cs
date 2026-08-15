@@ -2,7 +2,7 @@ using Nexo.Certification.Physical;
 using Nexo.Certification.Physical.Resolution;
 using Nexo.Certification.Physical.Tagging;
 
-namespace Nexo.Infrastructure.Certification.Physical;
+namespace Nexo.Certification.Physical.Issuing;
 
 /// <summary>Result of physical-atom tag issuing.</summary>
 /// <param name="Succeeded">Whether tag issuing succeeded.</param>
