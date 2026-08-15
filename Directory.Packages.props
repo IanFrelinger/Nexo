@@ -120,7 +120,7 @@
   <ItemGroup>
     <PackageVersion Include="AWSSDK.S3" Version="4.0.101" />
     <PackageVersion Include="AWSSDK.Lambda" Version="4.0.103" />
-    <PackageVersion Include="AWSSDK.DynamoDBv2" Version="4.0.101.1" />
+    <PackageVersion Include="AWSSDK.DynamoDBv2" Version="4.0.103.1" />
     <PackageVersion Include="AWSSDK.Core" Version="4.0.100.4" />
     <PackageVersion Include="AWSSDK.BedrockRuntime" Version="4.0.101.1" />
     <PackageVersion Include="AWSSDK.Extensions.Bedrock.MEAI" Version="4.0.101.8" />
@@ -167,8 +167,8 @@
   </ItemGroup>
   <!-- Avalonia Packages -->
   <ItemGroup>
-    <PackageVersion Include="Avalonia" Version="12.0.3" />
-    <PackageVersion Include="Avalonia.Desktop" Version="12.0.3" />
+    <PackageVersion Include="Avalonia" Version="12.1.1" />
+    <PackageVersion Include="Avalonia.Desktop" Version="12.1.1" />
     <PackageVersion Include="Avalonia.Headless" Version="12.0.3" />
     <PackageVersion Include="Avalonia.Themes.Fluent" Version="12.0.3" />
     <PackageVersion Include="Avalonia.Fonts.Inter" Version="12.0.3" />
