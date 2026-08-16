@@ -662,6 +662,36 @@ what `OllamaProposalOptions.Think` and `-ThinkOff` exist for.
 **Nothing was admitted.** Three campaigns, twenty proposals, hold mode throughout; every rejection
 names its stage and says why.
 
+**Replication: both models re-run end to end, same dials, nothing else changed.** The point was to
+find out whether 2/5 versus 3/5 is a capability difference or a lucky draw. Every objective
+reproduced its exact verdict and its exact failure stage, for both models — `qwen2.5-coder:7b` 2/5
+certified (semver at `correctness`, two compile failures), `qwen3.8:27b` 3/5 (semver at `mutation`,
+`text-slug` at `correctness`); 164.3 s and 1145.6 s against 171.9 s and 1174.9 s. The gap is real.
+
+The two models get there differently, and only one of those is good news:
+
+- **`qwen2.5-coder:7b` is very nearly deterministic at temperature 0.2** — 4 of its 5 candidates
+  are **byte-identical** across independent runs (only `text-slug` differed, and it failed to
+  compile either way). So repeat runs at these dials do not measure sampling variance; they mostly
+  re-measure one sample. Anything about run-to-run spread needs a higher temperature, not more
+  repeats. It also means S4's "results swing between runs" belongs to `codellama:7b` or to the loop
+  changes between those campaigns — it is not a property of the harness at 0.2.
+- **`qwen3.8:27b` is not deterministic** — 3 of its 5 candidates differ across runs — and it
+  reached identical verdicts anyway. That is the stronger result: the same five outcomes from
+  genuinely different code.
+
+**And the equivalent-mutant finding replicated on a different candidate.** The 27B's second
+`semver-parse` attempt is structurally different from the first (`IndexOf` + `TryParseNumericPart`
+rather than a hand-rolled scan), and its survivor is a different line —
+`mutate-int-literal-47`, `if (prereleaseIndex >= 0)` rewritten to `>= 2`. It is equivalent for the
+same class of reason: the two differ only when `'-'` sits at index 0 or 1, and in every such case
+the mutant's `corePart` retains the `'-'` so `TryParseNumericPart` rejects it, while the original's
+`corePart` is too short to split into three parts — both return `isValid=false` with defaults. Two
+independent candidates, two different redundant guards, both unkillable, both rejected at
+`escape_rate=0.04`. This is not a quirk of one proposal: **`EscapeRate > 0` as a hard reject
+systematically refuses correct implementations that happen to carry a redundant guard**, and a
+redundant guard is exactly what a careful proposer writes.
+
 ## Settled decisions
 
 - **`NetworkAccess.HostServicesOnly` stays a fail-closed refusal — permanently.** Every shipped
