@@ -90,8 +90,22 @@ public static class CliRunner
     }
 
     /// <summary>
+    /// Set to <c>1</c>/<c>true</c> to rebuild the CLI from inside the test host even when a
+    /// built <c>Nexo.CLI.dll</c> already exists (local edit-run loops on the CLI itself).
+    /// </summary>
+    public const string ForceRebuildVariable = "NEXO_CLI_FORCE_REBUILD";
+
+    /// <summary>
     /// Ensures the Nexo CLI is built and returns the path to Nexo.CLI.dll.
-    /// Builds once and caches the path for subsequent calls.
+    ///
+    /// <para>An already-built CLI wins. Every CI lane that runs these tests builds the CLI in a
+    /// setup step before any test host exists (the readiness gate's "Setup — build CLI", the
+    /// cross-platform matrix's <c>dotnet build Nexo.sln</c>). Building it again from INSIDE a
+    /// test host is what failed every RuntimeStudio smoke test on Windows: the CLI's project
+    /// graph includes the test projects (its <c>test</c> command discovers them by assembly
+    /// name), so the build also rebuilt <c>Nexo.Tests.Infrastructure</c> — into the very
+    /// <c>bin</c> the running testhost had locked. Only when no CLI has been built yet does
+    /// this fall back to building one (once, serialized across hosts).</para>
     /// </summary>
     /// <param name="repoRoot">Repository root (contains application/src/Nexo.CLI).</param>
     /// <param name="buildConfiguration">Debug (default) or Release for production-shaped binaries.</param>
@@ -107,6 +121,12 @@ public static class CliRunner
         {
             if (_cachedCliPaths.TryGetValue(buildConfiguration, out var cached) && File.Exists(cached))
                 return Task.FromResult(cached);
+
+            if (File.Exists(cliDll) && !ForceRebuildRequested())
+            {
+                _cachedCliPaths[buildConfiguration] = cliDll;
+                return Task.FromResult(cliDll);
+            }
         }
 
         var acquired = false;
@@ -158,5 +178,12 @@ public static class CliRunner
             if (acquired)
                 s_crossProcessBuild.ReleaseMutex();
         }
+    }
+
+    private static bool ForceRebuildRequested()
+    {
+        var value = Environment.GetEnvironmentVariable(ForceRebuildVariable);
+        return string.Equals(value, "1", StringComparison.Ordinal)
+            || string.Equals(value, "true", StringComparison.OrdinalIgnoreCase);
     }
 }
