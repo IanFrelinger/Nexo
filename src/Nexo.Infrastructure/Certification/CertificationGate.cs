@@ -207,7 +207,8 @@ public sealed class CertificationGate : ICertificationGate
             {
                 Admitted = false,
                 FailureCheck = "correctness",
-                Record = Fail("correctness", reason)
+                Record = Fail("correctness", reason),
+                WitnessFindings = witnessResult.Findings,
             };
         }
 

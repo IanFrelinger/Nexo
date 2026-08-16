@@ -29,6 +29,15 @@ public sealed class AutonomyLoopSettings
 
     /// <summary>Reference assemblies handed to the candidate compile.</summary>
     public IReadOnlyList<string> CompilationReferences { get; set; } = Array.Empty<string>();
+
+    /// <summary>
+    /// The repair channel's dial: how much of a rejection the proposer may see, and how many
+    /// repair rounds an objective gets before it is held for a human. Model-independent by
+    /// design — a large hosted model and a small local one need different settings on the
+    /// same loop. Default: locations and the proposer's own output, never the witness;
+    /// two attempts.
+    /// </summary>
+    public RepairFeedbackPolicy Repair { get; set; } = RepairFeedbackPolicy.Default();
 }
 
 /// <summary>
@@ -175,7 +184,65 @@ public sealed class AutonomyLoopService : BackgroundService
         return ObjectiveArtifacts.LoadRecordedProposal(path);
     }
 
+    /// <summary>
+    /// Runs the objective through the harness, and — when a live proposer is composed and
+    /// the verdict is a rejection with something to say — hands the proposer a
+    /// policy-projected view of that rejection and tries again, up to
+    /// <see cref="RepairFeedbackPolicy.MaxAttemptsPerObjective"/> repairs. Every attempt is
+    /// its own full iteration (session, attestation, chain), so the evidence for each round
+    /// stands on its own; nothing here shortcuts the gate.
+    /// </summary>
     private async Task RunOneAsync(
+        ObjectiveDocument objective,
+        WitnessSpec witness,
+        ProposedSource proposal,
+        CancellationToken cancellationToken)
+    {
+        var policy = _settings.Repair;
+        var current = proposal;
+
+        for (var attempt = 0; ; attempt++)
+        {
+            var result = await RunIterationAsync(objective, witness, current, cancellationToken)
+                .ConfigureAwait(false);
+
+            _logger.LogInformation(
+                "Autonomy iteration for {Id} (attempt {Attempt}): {Outcome} — {Explanation}",
+                objective.Id, attempt + 1, result.Outcome, result.Explanation);
+
+            // Repair only a certification rejection with a decision to project; intake
+            // refusals, budget exhaustion, and held/admitted outcomes are terminal here.
+            if (result.Outcome != IterationOutcome.ExplainedFailure || result.Decision is null)
+                return;
+            if (_proposals is null || attempt >= policy.MaxAttemptsPerObjective)
+            {
+                if (_proposals is not null)
+                {
+                    _logger.LogInformation(
+                        "Objective {Id}: repair budget of {Max} exhausted; holding for a human",
+                        objective.Id, policy.MaxAttemptsPerObjective);
+                }
+                return;
+            }
+
+            // The proposer sees the projection, never the raw rejection.
+            var feedback = RepairFeedback.Render(result.Decision, policy);
+            var request = new ProposalRequest(objective.Id, objective.Title, objective.Body, objective.Touch)
+            {
+                Repair = new RepairContext(current.SourceCode, feedback, attempt + 1),
+            };
+            var repaired = await _proposals.ProposeAsync(request, cancellationToken).ConfigureAwait(false);
+            if (repaired is null)
+            {
+                _logger.LogInformation("Objective {Id}: proposer declined to repair", objective.Id);
+                return;
+            }
+
+            current = repaired;
+        }
+    }
+
+    private async Task<IterationResult> RunIterationAsync(
         ObjectiveDocument objective,
         WitnessSpec witness,
         ProposedSource proposal,
@@ -209,12 +276,8 @@ public sealed class AutonomyLoopService : BackgroundService
             BrickTypeName = proposal.TypeName,
         };
 
-        var result = await _harness.RunIterationAsync(context, candidate, cancellationToken)
+        return await _harness.RunIterationAsync(context, candidate, cancellationToken)
             .ConfigureAwait(false);
-
-        _logger.LogInformation(
-            "Autonomy iteration for {Id}: {Outcome} — {Explanation}",
-            objective.Id, result.Outcome, result.Explanation);
     }
 
     private static string CleanProjectFile()

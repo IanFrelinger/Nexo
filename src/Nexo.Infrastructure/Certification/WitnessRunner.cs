@@ -19,6 +19,7 @@ internal static class WitnessRunner
         IReadOnlyList<CandidateCaseObservation> observations)
     {
         var failures = new List<string>();
+        var findings = new List<WitnessFinding>();
 
         foreach (var (caseIndex, witnessCase) in witness.Cases.Select((c, i) => (i, c)))
         {
@@ -26,12 +27,14 @@ internal static class WitnessRunner
             if (observation is null)
             {
                 failures.Add($"case {caseIndex}: the execution backend returned no observation");
+                findings.Add(new WitnessFinding(caseIndex, WitnessFindingKind.NoObservation));
                 continue;
             }
 
             if (observation.Threw)
             {
                 failures.Add($"case {caseIndex}: execution threw {observation.Error}");
+                findings.Add(new WitnessFinding(caseIndex, WitnessFindingKind.Threw, Detail: observation.Error));
                 continue;
             }
 
@@ -41,6 +44,7 @@ internal static class WitnessRunner
                 if (!outputs.TryGetValue(key, out var actual) || actual is null)
                 {
                     failures.Add($"case {caseIndex}: missing output key '{key}'");
+                    findings.Add(new WitnessFinding(caseIndex, WitnessFindingKind.MissingKey, key, FormatValue(expected)));
                     continue;
                 }
 
@@ -48,11 +52,28 @@ internal static class WitnessRunner
                 {
                     failures.Add(
                         $"case {caseIndex}: output['{key}'] expected {FormatValue(expected)} got {FormatValue(actual)}");
+                    findings.Add(new WitnessFinding(
+                        caseIndex, WitnessFindingKind.Mismatch, key, FormatValue(expected), FormatValue(actual)));
                 }
             }
         }
 
-        return new WitnessRunResult(failures.Count == 0, failures);
+        return new WitnessRunResult(failures.Count == 0, failures, findings);
+    }
+
+    /// <summary>
+    /// The witness-observable view of a session observation: keyed outputs plus the summary
+    /// under <see cref="WitnessObservableOutput.SummaryKey"/> — the same projection the
+    /// in-process judges apply, so a witness sees one shape regardless of where the
+    /// candidate executed.
+    /// </summary>
+    private static IReadOnlyDictionary<string, object?> ProjectObservation(CandidateCaseObservation observation)
+    {
+        var view = new Dictionary<string, object?>(
+            observation.Outputs ?? new Dictionary<string, object?>(), StringComparer.Ordinal);
+        if (observation.Summary is not null)
+            view[WitnessObservableOutput.SummaryKey] = observation.Summary;
+        return view;
     }
 
     /// <summary>
@@ -105,21 +126,6 @@ internal static class WitnessRunner
         return JsonSerializer.Serialize(new object?[] { observation.Summary, observation.Threw, outputs });
     }
 
-    /// <summary>
-    /// The witness-observable view of a session observation: keyed outputs plus the summary
-    /// under <see cref="WitnessObservableOutput.SummaryKey"/> — the same projection the
-    /// in-process judges apply, so a witness sees one shape regardless of where the
-    /// candidate executed.
-    /// </summary>
-    private static IReadOnlyDictionary<string, object?> ProjectObservation(CandidateCaseObservation observation)
-    {
-        var view = new Dictionary<string, object?>(
-            observation.Outputs ?? new Dictionary<string, object?>(), StringComparer.Ordinal);
-        if (observation.Summary is not null)
-            view[WitnessObservableOutput.SummaryKey] = observation.Summary;
-        return view;
-    }
-
     /// <summary>Unwraps a JSON transport value to its CLR shape; non-JSON values pass through.</summary>
     public static object UnwrapJson(object value) =>
         value is JsonElement el ? FromJsonElement(el) : value;
@@ -132,6 +138,7 @@ internal static class WitnessRunner
         CancellationToken cancellationToken)
     {
         var failures = new List<string>();
+        var findings = new List<WitnessFinding>();
 
         foreach (var (caseIndex, witnessCase) in witness.Cases.Select((c, i) => (i, c)))
         {
@@ -149,14 +156,17 @@ internal static class WitnessRunner
             catch (Exception ex)
             {
                 failures.Add($"case {caseIndex}: execution threw {ex.Message}");
+                findings.Add(new WitnessFinding(caseIndex, WitnessFindingKind.Threw, Detail: ex.Message));
                 continue;
             }
 
+            var observable = WitnessObservableOutput.Project(output.ToDictionary(), output.Summary);
             foreach (var (key, expected) in witnessCase.ExpectedOutput)
             {
-                if (!WitnessObservableOutput.Project(output.ToDictionary(), output.Summary).TryGetValue(key, out var actual))
+                if (!observable.TryGetValue(key, out var actual))
                 {
                     failures.Add($"case {caseIndex}: missing output key '{key}'");
+                    findings.Add(new WitnessFinding(caseIndex, WitnessFindingKind.MissingKey, key, FormatValue(expected)));
                     continue;
                 }
 
@@ -164,11 +174,13 @@ internal static class WitnessRunner
                 {
                     failures.Add(
                         $"case {caseIndex}: output['{key}'] expected {FormatValue(expected)} got {FormatValue(actual)}");
+                    findings.Add(new WitnessFinding(
+                        caseIndex, WitnessFindingKind.Mismatch, key, FormatValue(expected), FormatValue(actual)));
                 }
             }
         }
 
-        return new WitnessRunResult(failures.Count == 0, failures);
+        return new WitnessRunResult(failures.Count == 0, failures, findings);
     }
 
     /// <summary>Runs the witness twice and compares serialized outputs for determinism.</summary>
