@@ -217,7 +217,8 @@ public sealed class CertificationGate : ICertificationGate
             request.Witness,
             request.CompilationReferences,
             cancellationToken,
-            backend).ConfigureAwait(false);
+            backend,
+            _analyzerGate).ConfigureAwait(false);
 
         if (mutationResult.TotalMutants == 0)
         {
