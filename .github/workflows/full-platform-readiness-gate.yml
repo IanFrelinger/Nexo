@@ -345,20 +345,19 @@ jobs:
     name: "Docker ${{ matrix.label }} — build · smoke"
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    # Builds take ~1 minute each (layer cache); the smoke below is bounded at 2 minutes.
+    # The previous 90-minute budget only ever measured how long a hung smoke could hang.
+    timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
         include:
           - dockerfile: .docker/Dockerfile.api
             label: api
-            smoke: "dotnet Nexo.API.dll --help || true"
           - dockerfile: .docker/Dockerfile.quickstart
             label: quickstart
-            smoke: "dotnet Nexo.API.dll --help || true"
           - dockerfile: .docker/Dockerfile.agent-server
             label: agent-server
-            smoke: "dotnet Nexo.API.dll --help || true"
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -366,8 +365,30 @@ jobs:
       - name: "Build ${{ matrix.label }}"
         run: docker build -f ${{ matrix.dockerfile }} -t nexo-${{ matrix.label }}:gate .
 
-      - name: "Smoke ${{ matrix.label }}"
-        run: docker run --rm nexo-${{ matrix.label }}:gate bash -c "${{ matrix.smoke }}"
+      # All three images ENTRYPOINT `dotnet Nexo.API.dll` on :8080 with a /health HEALTHCHECK.
+      # The old smoke ran `dotnet Nexo.API.dll --help || true` — an ASP.NET host does not treat
+      # --help as a switch, it starts the server and runs forever, so the step hung until the
+      # job timeout on every run. Smoke the thing the image is for instead: start it with the
+      # mock provider and require /health to answer, the same shape as
+      # scripts/ci/distribution-matrix-api-http-smoke.sh.
+      - name: "Smoke ${{ matrix.label }} — start, /health"
+        run: |
+          set -euo pipefail
+          name="nexo-${{ matrix.label }}-gate"
+          trap 'docker rm -f "$name" >/dev/null 2>&1 || true' EXIT
+          docker run -d --name "$name" -p 18080:8080 -e NEXO_ALLOW_MOCK=1 "nexo-${{ matrix.label }}:gate"
+          start=$(date +%s)
+          until curl -fsS http://127.0.0.1:18080/health >/dev/null 2>&1; do
+            if (( $(date +%s) - start > 120 )); then
+              echo "::error::${{ matrix.label }}: /health did not answer within 120s"
+              docker logs "$name" >&2 || true
+              exit 1
+            fi
+            sleep 2
+          done
+          echo "${{ matrix.label }}: /health OK after $(( $(date +%s) - start ))s"
+          curl -fsS http://127.0.0.1:18080/health | head -c 256 || true
+          echo
 
   # ─────────────────────────────────────────────────────────────────────
   # Summary gate: fails if any platform failed
