@@ -13,7 +13,7 @@ using Nexo.Tests.Infrastructure.Helpers;
 using Nexo.Tests.Infrastructure.Helpers.VirtualProduction;
 using Xunit;
 
-namespace Nexo.Tests.Infrastructure.Tests.API;
+namespace Nexo.Tests.Infrastructure.Tests.VirtualProduction;
 
 /// <summary>
 /// The API host never registers a barrier middleware, so no request ever carries an explicit
