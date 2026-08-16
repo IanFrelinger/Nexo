@@ -7,6 +7,7 @@ using Xunit;
 namespace Nexo.Tests.Infrastructure.Barriers.Sinks;
 
 /// <summary>Tests for file barrier audit sink gap coverage.</summary>
+[Collection("ProcessCwd")] // one test sets the process cwd — see Helpers/ProcessCwdCollection
 public sealed class FileBarrierAuditSinkGapCoverageTests
 {
     [Fact]
@@ -61,9 +62,12 @@ public sealed class FileBarrierAuditSinkGapCoverageTests
                 OccurredAt: DateTimeOffset.UtcNow,
                 Detail: "normalized"));
 
-            await Task.Delay(100);
-            Directory.Exists(Path.Combine(testDir, "audit")).Should().BeTrue();
-            GetAuditFiles(Path.Combine(testDir, "audit"), "audit-barriers").Should().NotBeEmpty();
+            // The sink appends on a background drain task; wait for the write to land rather
+            // than for a fixed interval that a loaded runner under coverlet can overshoot.
+            var auditDir = Path.Combine(testDir, "audit");
+            await WaitUntilAsync(() => GetAuditFiles(auditDir, "audit-barriers").Length > 0);
+            Directory.Exists(auditDir).Should().BeTrue();
+            GetAuditFiles(auditDir, "audit-barriers").Should().NotBeEmpty();
         }
         finally
         {
@@ -199,11 +203,24 @@ public sealed class FileBarrierAuditSinkGapCoverageTests
             OccurredAt: DateTimeOffset.UtcNow,
             Detail: "detail"));
 
-        await Task.Delay(200);
+        await WaitUntilAsync(() => logger.Entries.Any(entry =>
+            entry.Level == Microsoft.Extensions.Logging.LogLevel.Warning));
 
         logger.Entries.Should().Contain(entry =>
             entry.Level == Microsoft.Extensions.Logging.LogLevel.Warning &&
             entry.Message.Contains("Failed to append barrier audit event", StringComparison.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    /// Polls until <paramref name="condition"/> holds or the timeout elapses; the assertion that
+    /// follows reports the failure. The sink does its I/O on a background drain task, so tests
+    /// wait for the observable effect, never for a guessed interval.
+    /// </summary>
+    private static async Task WaitUntilAsync(Func<bool> condition, int timeoutMs = 5000)
+    {
+        var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+        while (!condition() && DateTime.UtcNow < deadline)
+            await Task.Delay(25);
     }
 
     private static FileBarrierAuditSink CreateSink(string directory, TestLogger<FileBarrierAuditSink> logger)

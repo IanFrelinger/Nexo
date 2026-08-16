@@ -68,6 +68,15 @@ public class TrxTestResultParser : ITestResultParser
                     errorMessage = message?.Value;
                 }
 
+                // A skipped test ("NotExecuted" in TRX; also "Inconclusive") is neither a pass
+                // nor a failure. It is reported faithfully with Skipped=true so aggregators can
+                // keep it out of the failure count — a `[Fact(Skip = "...")]` gap marker must
+                // not read as a red test. The skip reason, when the runner recorded one, is the
+                // message.
+                var skipped = outcome == "NotExecuted" || outcome == "Inconclusive";
+                if (skipped)
+                    errorMessage = ExtractSkipReason(unitTestResult, ns);
+
                 // Extract category/trait if available
                 var category = ExtractCategory(unitTestResult, ns);
 
@@ -77,6 +86,7 @@ public class TrxTestResultParser : ITestResultParser
                 {
                     Name = testName,
                     Passed = passed,
+                    Skipped = skipped,
                     Message = errorMessage,
                     Category = category
                 });
@@ -94,6 +104,19 @@ public class TrxTestResultParser : ITestResultParser
             _logger.LogError(ex, "Failed to parse TRX file: {Path}", resultFile.FullName);
             return Task.FromResult<IReadOnlyList<TestResult>>(Array.Empty<TestResult>());
         }
+    }
+
+    /// <summary>
+    /// The runner's skip reason, if it recorded one. xUnit's TRX logger writes it under
+    /// Output/ErrorInfo/Message; some runners use Output/StdOut. Null when neither is present.
+    /// </summary>
+    private static string? ExtractSkipReason(XElement unitTestResult, XNamespace ns)
+    {
+        var output = unitTestResult.Element(ns + "Output");
+        var reason = output?.Element(ns + "ErrorInfo")?.Element(ns + "Message")?.Value
+                     ?? output?.Element(ns + "StdOut")?.Value;
+        reason = reason?.Trim();
+        return string.IsNullOrEmpty(reason) ? null : reason;
     }
 
     private static string? ExtractCategory(XElement unitTestResult, XNamespace ns)

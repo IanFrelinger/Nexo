@@ -55,9 +55,7 @@ public class ValidationServiceAdapter : IValidationService
             // Find test projects in current directory
             var currentDir = new DirectoryInfo(Directory.GetCurrentDirectory());
             var testProjects = currentDir.GetFiles("*.csproj", SearchOption.AllDirectories)
-                .Where(f => f.Name.Contains("Test", StringComparison.OrdinalIgnoreCase) ||
-                           f.DirectoryName?.Contains("test", StringComparison.OrdinalIgnoreCase) == true)
-                .Where(f => !f.Name.Equals("copy-assemblies.csproj", StringComparison.OrdinalIgnoreCase))
+                .Where(f => IsDiscoverableTestProject(f, currentDir))
                 .ToList();
 
             if (testProjects.Count == 0)
@@ -90,6 +88,7 @@ public class ValidationServiceAdapter : IValidationService
             int totalTestsRun = 0;
             int totalTestsPassed = 0;
             int totalTestsFailed = 0;
+            int totalTestsSkipped = 0;
             var totalProjects = testProjects.Count;
             var currentProject = 0;
 
@@ -138,9 +137,15 @@ public class ValidationServiceAdapter : IValidationService
                         continue;
                     }
 
-                    // Single net8.0 run avoids duplicate net8+net9 hosts under load (validate is not a full matrix run).
+                    // One framework per project: a multi-target project runs a single TFM (net8.0
+                    // when it has it) so validate does not double the hosts under load, and a
+                    // single-target project runs the TFM it actually declares — forcing net8.0 on
+                    // a net9.0-only project produced "The argument <dll> is invalid" from VSTest
+                    // for an output that was never built.
+                    var framework = SelectTestFramework(csprojPath);
                     var exitCode = await RunDotnetTestForValidateAsync(
                         csprojPath,
+                        framework,
                         streamOutput: progress != null,
                         cancellationToken).ConfigureAwait(false);
 
@@ -158,11 +163,25 @@ public class ValidationServiceAdapter : IValidationService
                     {
                         // Parse TRX file for detailed results
                         var parsedResults = await _testResultParser.ParseAsync(trxFiles.First(), cancellationToken);
-                        allTestResults.AddRange(parsedResults);
-                        
-                        totalTestsRun += parsedResults.Count;
-                        totalTestsPassed += parsedResults.Count(r => r.Passed);
-                        totalTestsFailed += parsedResults.Count(r => !r.Passed);
+
+                        // Skipped tests were not run: they are neither passes nor failures and
+                        // stay out of the per-test list (consumers list `!Passed` as failures).
+                        // Their count is still reported.
+                        var executed = parsedResults.Where(r => !r.Skipped).ToList();
+                        var skipped = parsedResults.Count - executed.Count;
+                        if (skipped > 0)
+                        {
+                            _logger.LogInformation(
+                                "{Project}: {Skipped} test(s) skipped (not counted as failures)",
+                                testProject.Name,
+                                skipped);
+                        }
+
+                        allTestResults.AddRange(executed);
+                        totalTestsRun += executed.Count;
+                        totalTestsPassed += executed.Count(r => r.Passed);
+                        totalTestsFailed += executed.Count(r => !r.Passed);
+                        totalTestsSkipped += skipped;
                     }
                     else
                     {
@@ -206,15 +225,17 @@ public class ValidationServiceAdapter : IValidationService
                 TotalSteps = totalProjects
             });
 
+            var skippedSuffix = totalTestsSkipped > 0 ? $", {totalTestsSkipped} skipped" : string.Empty;
             return new ValidationResult
             {
                 Passed = passed,
                 Message = passed
-                    ? $"Validation passed ({totalTestsPassed}/{totalTestsRun} tests)"
-                    : $"Validation failed ({totalTestsFailed}/{totalTestsRun} tests failed)",
+                    ? $"Validation passed ({totalTestsPassed}/{totalTestsRun} tests{skippedSuffix})"
+                    : $"Validation failed ({totalTestsFailed}/{totalTestsRun} tests failed{skippedSuffix})",
                 TestsRun = totalTestsRun,
                 TestsPassed = totalTestsPassed,
                 TestsFailed = totalTestsFailed,
+                TestsSkipped = totalTestsSkipped,
                 TestResults = allTestResults
             };
         }
@@ -229,6 +250,89 @@ public class ValidationServiceAdapter : IValidationService
                 TestsPassed = 0,
                 TestsFailed = 0
             };
+        }
+    }
+
+    /// <summary>
+    /// Whether a <c>.csproj</c> under the validation root is a test project we should build and
+    /// run. A project qualifies by name or directory ("Test"), and is excluded when it is a
+    /// build helper, lives under a hidden directory (<c>.git</c>, <c>.claude</c> worktrees — a
+    /// full second checkout would double every run), lives under a <c>templates</c> directory,
+    /// or is itself a template whose name still carries a <c>__Placeholder__</c> token — those
+    /// exist to be stamped by <c>nexo new</c>, not compiled in place.
+    /// </summary>
+    internal static bool IsDiscoverableTestProject(FileInfo project, DirectoryInfo root)
+    {
+        var name = project.Name;
+        var directory = project.DirectoryName ?? string.Empty;
+
+        var looksLikeTests =
+            name.Contains("Test", StringComparison.OrdinalIgnoreCase) ||
+            directory.Contains("test", StringComparison.OrdinalIgnoreCase);
+        if (!looksLikeTests)
+            return false;
+
+        if (name.Equals("copy-assemblies.csproj", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        if (PlaceholderToken.IsMatch(name))
+            return false;
+
+        // Only the segments below the validation root matter: the root itself may legitimately
+        // sit under a hidden or "templates" directory.
+        var relative = Path.GetRelativePath(root.FullName, directory);
+        foreach (var segment in relative.Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar))
+        {
+            if (segment.Length == 0 || segment == ".")
+                continue;
+            if (segment.StartsWith('.'))
+                return false;
+            if (segment.Equals("bin", StringComparison.OrdinalIgnoreCase) ||
+                segment.Equals("obj", StringComparison.OrdinalIgnoreCase))
+                return false;
+            if (segment.Equals("templates", StringComparison.OrdinalIgnoreCase) ||
+                segment.Equals("template", StringComparison.OrdinalIgnoreCase))
+                return false;
+        }
+
+        return true;
+    }
+
+    private static readonly System.Text.RegularExpressions.Regex PlaceholderToken =
+        new("__[A-Za-z0-9]+__", System.Text.RegularExpressions.RegexOptions.Compiled);
+
+    /// <summary>
+    /// The single target framework validate should run for a project, read from the project
+    /// file: a multi-target project (<c>TargetFrameworks</c>) runs <c>net8.0</c> when it lists it
+    /// (one host, not two, under load), otherwise its first framework; a single-target project
+    /// runs the framework it declares. Null when the project declares neither, in which case
+    /// <c>dotnet test</c> is left to its own resolution.
+    /// </summary>
+    internal static string? SelectTestFramework(string csprojPath)
+    {
+        try
+        {
+            var doc = System.Xml.Linq.XDocument.Load(csprojPath);
+            var multi = doc.Descendants()
+                .FirstOrDefault(e => e.Name.LocalName == "TargetFrameworks")?.Value;
+            if (!string.IsNullOrWhiteSpace(multi))
+            {
+                var frameworks = multi.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+                if (frameworks.Length == 0)
+                    return null;
+                return frameworks.FirstOrDefault(f => f.Equals("net8.0", StringComparison.OrdinalIgnoreCase))
+                       ?? frameworks[0];
+            }
+
+            var single = doc.Descendants()
+                .FirstOrDefault(e => e.Name.LocalName == "TargetFramework")?.Value?.Trim();
+            return string.IsNullOrEmpty(single) ? null : single;
+        }
+        catch (Exception)
+        {
+            // An unreadable project file surfaces at build; the framework choice is not the
+            // place to fail it.
+            return null;
         }
     }
 
@@ -268,13 +372,16 @@ public class ValidationServiceAdapter : IValidationService
     }
 
     /// <summary>
-    /// Runs <c>dotnet test</c> for validate: net8.0 only, TRX for parsing, optional console streaming.
+    /// Runs <c>dotnet test</c> for validate: one framework (see <see cref="SelectTestFramework"/>),
+    /// TRX for parsing, optional console streaming.
     /// </summary>
-    private static async Task<int> RunDotnetTestForValidateAsync(string csprojPath, bool streamOutput, CancellationToken ct)
+    private static async Task<int> RunDotnetTestForValidateAsync(
+        string csprojPath, string? framework, bool streamOutput, CancellationToken ct)
     {
         var verbosity = streamOutput ? "normal" : "minimal";
+        var frameworkArg = framework is null ? string.Empty : $"--framework {framework} ";
         var args =
-            $"test \"{csprojPath}\" --framework net8.0 --no-build " +
+            $"test \"{csprojPath}\" {frameworkArg}--no-build " +
             "--filter \"Category!=DockerOptional&Category!=Stress\" " +
             "--logger trx --blame-hang-timeout 120s --blame-hang-dump-type none " +
             $"--verbosity {verbosity}";

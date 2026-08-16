@@ -10,7 +10,7 @@ using Xunit;
 namespace Nexo.Tests.Infrastructure.Tests.Validation;
 
 /// <summary>Tests for validation service adapter gap coverage.</summary>
-[Collection("ValidationAdapterCwd")]
+[Collection("ProcessCwd")]
 public class ValidationServiceAdapterGapCoverageTests
 {
     [Fact]
@@ -137,6 +137,96 @@ public class ValidationServiceAdapterGapCoverageTests
         {
             Directory.SetCurrentDirectory(original);
             if (Directory.Exists(temp)) Directory.Delete(temp, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task ValidateAsync_does_not_count_skipped_tests_as_failures()
+    {
+        var parser = new Mock<ITestResultParser>();
+        parser.Setup(p => p.ParseAsync(It.IsAny<FileInfo>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new[]
+            {
+                new TestResult { Name = "PassTests.Ok", Passed = true },
+                new TestResult { Name = "PassTests.Gap", Passed = false, Skipped = true, Message = "GAP: not yet" },
+            });
+
+        var adapter = new ValidationServiceAdapter(NullLogger<ValidationServiceAdapter>.Instance, parser.Object);
+        var original = Directory.GetCurrentDirectory();
+        var temp = CreatePassingTestProjectDir();
+
+        try
+        {
+            Directory.SetCurrentDirectory(temp);
+            var result = await adapter.ValidateAsync(null, progress: null, CancellationToken.None);
+
+            result.Passed.Should().BeTrue("a documented skip is not a red test");
+            result.TestsRun.Should().Be(1, "skipped tests were not executed");
+            result.TestsPassed.Should().Be(1);
+            result.TestsFailed.Should().Be(0);
+            result.TestsSkipped.Should().Be(1);
+            result.Message.Should().Contain("1 skipped");
+            result.TestResults.Should().NotContain(r => r.Name == "PassTests.Gap",
+                "consumers list every !Passed result as a failure; a skip must not appear there");
+        }
+        finally
+        {
+            Directory.SetCurrentDirectory(original);
+            if (Directory.Exists(temp)) Directory.Delete(temp, recursive: true);
+        }
+    }
+
+    [Theory]
+    [InlineData("src/Nexo.Tests.Domain/Nexo.Tests.Domain.csproj", true)]
+    [InlineData("src/Nexo.Transport.A2A.Server.Tests/Nexo.Transport.A2A.Server.Tests.csproj", true)]
+    [InlineData("tests/anything/Whatever.csproj", true)]
+    [InlineData("src/Nexo.Runtime/Nexo.Runtime.csproj", false)]
+    [InlineData("tools/copy-assemblies.csproj", false)]
+    [InlineData("samples/templates/brick/__BrickName__Brick.Tests/__BrickName__Brick.Tests.csproj", false)]
+    [InlineData("samples/other/__Token__Tests/__Token__Tests.csproj", false)]
+    [InlineData(".claude/worktrees/x/src/Nexo.Tests.Domain/Nexo.Tests.Domain.csproj", false)]
+    [InlineData(".git/some/Tests.csproj", false)]
+    [InlineData("src/Foo.Tests/bin/Debug/Foo.Tests.csproj", false)]
+    public void Discovery_excludes_templates_placeholders_and_hidden_trees(string relativePath, bool expected)
+    {
+        // Pure predicate: no files need to exist. Root is a fixed absolute path; the candidate
+        // is placed relative to it exactly as GetFiles(AllDirectories) would report it.
+        var root = new DirectoryInfo(Path.Combine(Path.GetTempPath(), "nexo-discovery-root"));
+        var candidate = new FileInfo(Path.Combine(root.FullName, relativePath.Replace('/', Path.DirectorySeparatorChar)));
+
+        ValidationServiceAdapter.IsDiscoverableTestProject(candidate, root).Should().Be(expected);
+    }
+
+    [Fact]
+    public void Discovery_ignores_hidden_or_template_segments_ABOVE_the_root()
+    {
+        // Running validate from inside a hidden worktree is legitimate; only segments below the
+        // root are subject to the hidden/template rules.
+        var root = new DirectoryInfo(Path.Combine(Path.GetTempPath(), ".claude", "worktrees", "wt1"));
+        var candidate = new FileInfo(Path.Combine(root.FullName, "src", "Nexo.Tests.Domain", "Nexo.Tests.Domain.csproj"));
+
+        ValidationServiceAdapter.IsDiscoverableTestProject(candidate, root).Should().BeTrue();
+    }
+
+    [Theory]
+    [InlineData("<Project><PropertyGroup><TargetFrameworks>net8.0;net9.0</TargetFrameworks></PropertyGroup></Project>", "net8.0")]
+    [InlineData("<Project><PropertyGroup><TargetFrameworks>net9.0;net10.0</TargetFrameworks></PropertyGroup></Project>", "net9.0")]
+    [InlineData("<Project><PropertyGroup><TargetFramework>net9.0</TargetFramework></PropertyGroup></Project>", "net9.0")]
+    [InlineData("<Project><PropertyGroup><TargetFramework>net8.0</TargetFramework></PropertyGroup></Project>", "net8.0")]
+    [InlineData("<Project><PropertyGroup><Nullable>enable</Nullable></PropertyGroup></Project>", null)]
+    public void SelectTestFramework_runs_one_framework_the_project_actually_declares(string csproj, string? expected)
+    {
+        // The A2A server test project is net9.0-only (TestHost 8 lacks PipeWriter.UnflushedBytes);
+        // forcing --framework net8.0 on it asked VSTest for an output that was never built.
+        var path = Path.Combine(Path.GetTempPath(), "nexo-tfm-" + Guid.NewGuid() + ".csproj");
+        File.WriteAllText(path, csproj);
+        try
+        {
+            ValidationServiceAdapter.SelectTestFramework(path).Should().Be(expected);
+        }
+        finally
+        {
+            if (File.Exists(path)) File.Delete(path);
         }
     }
 

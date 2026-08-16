@@ -12,7 +12,7 @@ using Xunit;
 namespace Nexo.Tests.Infrastructure.Tests.Agent;
 
 /// <summary>Tests for agent executor adapter gap coverage.</summary>
-[Collection("AgentExecutorAdapterCwd")]
+[Collection("ProcessCwd")]
 public sealed class AgentExecutorAdapterGapCoverageTests
 {
     private static readonly object CwdGate = new();

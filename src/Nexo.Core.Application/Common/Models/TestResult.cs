@@ -23,6 +23,13 @@ public record TestResult
     /// <summary>Whether the test passed.</summary>
     public required bool Passed { get; init; }
 
+    /// <summary>
+    /// Whether the test was skipped (not executed) rather than run. A skipped test is neither
+    /// a pass nor a failure: <see cref="Passed"/> is false for it, so aggregators must consult
+    /// this flag before counting it against a run.
+    /// </summary>
+    public bool Skipped { get; init; }
+
     /// <summary>Optional informational message from the test run.</summary>
     public string? Message { get; init; }
 

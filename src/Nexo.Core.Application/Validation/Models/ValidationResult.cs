@@ -31,6 +31,12 @@ public record ValidationResult
     /// <summary>Number of tests that failed.</summary>
     public required int TestsFailed { get; init; }
 
+    /// <summary>
+    /// Number of tests that were skipped (not executed). Skipped tests are not counted in
+    /// <see cref="TestsRun"/> and never count as failures.
+    /// </summary>
+    public int TestsSkipped { get; init; }
+
     /// <summary>Per-test results when detailed output is available.</summary>
     public IReadOnlyList<TestResult>? TestResults { get; init; }
 }
