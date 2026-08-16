@@ -10,7 +10,12 @@ namespace Nexo.CLI;
 /// <summary>Program.</summary>
 static partial class Program
 {
-    private static RootCommand BuildRootCommand()
+    /// <summary>
+    /// Builds the CLI root command tree. Internal so Nexo.Tests.CLI can assert the
+    /// registered top-level commands without spawning the host (guards against a
+    /// built-but-never-added command, which is how `trust` went missing in #162).
+    /// </summary>
+    internal static RootCommand BuildRootCommand()
     {
         var root = new RootCommand("Nexo command-line interface")
         {
@@ -609,6 +614,7 @@ static partial class Program
         var meshCmd = new MeshCommand();
         root.AddCommand(meshCmd);
         root.AddCommand(backgroundAgentCmd);
+        root.AddCommand(trustCmd);
         root.AddCommand(testCmd);
         root.AddCommand(escalateCmd);
         root.AddCommand(metricsCmd);
