@@ -18,6 +18,15 @@ public sealed record SessionBuildResult
 
     /// <summary>Tail of the failing step's output — the diagnostic a human reads first.</summary>
     public required string OutputTail { get; init; }
+
+    /// <summary>
+    /// The compiler's diagnostics for the candidate, in the CANDIDATE's own line coordinates
+    /// (the wrapper's preamble mapped away), first occurrence of each distinct message, capped.
+    /// Empty when the failure was not a compile failure (restore, toolchain probe) or when the
+    /// candidate built. This is what a proposer is handed to repair a build failure — it is
+    /// about the candidate's own text and nothing else, so it discloses nothing of the witness.
+    /// </summary>
+    public IReadOnlyList<string> Diagnostics { get; init; } = Array.Empty<string>();
 }
 
 /// <summary>
@@ -152,7 +161,12 @@ public static class SessionCandidateBuild
             new[] { "dotnet", "build", $"{WorkDir}/Candidate.csproj", "-c", "Release", "--nologo", "-v", "quiet" },
             cancellationToken).ConfigureAwait(false);
         if (!build.Succeeded)
-            return Failed(build, "the candidate failed to compile inside the attested session", toolchain);
+        {
+            return Failed(build, "the candidate failed to compile inside the attested session", toolchain) with
+            {
+                Diagnostics = ExtractDiagnostics(build.StdOut + build.StdErr, candidate.SourceCode),
+            };
+        }
 
         return new SessionBuildResult
         {
@@ -203,6 +217,45 @@ public static class SessionCandidateBuild
     {
         var trimmed = text.Trim();
         return trimmed.Length <= TailLength ? trimmed : "…" + trimmed[^TailLength..];
+    }
+
+    /// <summary>Distinct diagnostics kept per build failure — the root causes, not the cascade.</summary>
+    public const int MaxDiagnostics = 12;
+
+    private static readonly System.Text.RegularExpressions.Regex DiagnosticLine = new(
+        @"Candidate\.cs\((?<line>\d+),(?<col>\d+)\):\s*error\s+(?<code>[A-Z]+\d+):\s*(?<message>.*?)(?:\s*\[[^\]]*\])?\s*$",
+        System.Text.RegularExpressions.RegexOptions.Compiled | System.Text.RegularExpressions.RegexOptions.Multiline);
+
+    /// <summary>
+    /// The compiler's error diagnostics from a build transcript, mapped to the candidate's own
+    /// line numbers (the certification wrapper prepends a preamble; see
+    /// <see cref="CandidateSourceWrapper.MapToCandidateLine"/>), first occurrence of each
+    /// distinct (code, message) kept in transcript order — a compile failure's first errors are
+    /// its causes and the rest are the cascade — capped at <see cref="MaxDiagnostics"/>.
+    /// </summary>
+    public static IReadOnlyList<string> ExtractDiagnostics(string transcript, string candidateSource)
+    {
+        if (string.IsNullOrEmpty(transcript))
+            return Array.Empty<string>();
+
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        var result = new List<string>();
+        foreach (System.Text.RegularExpressions.Match m in DiagnosticLine.Matches(transcript))
+        {
+            var code = m.Groups["code"].Value;
+            var message = m.Groups["message"].Value.Trim();
+            if (!seen.Add(code + "|" + message))
+                continue;
+
+            var wrappedLine = int.Parse(m.Groups["line"].Value, System.Globalization.CultureInfo.InvariantCulture);
+            var line = CandidateSourceWrapper.MapToCandidateLine(candidateSource, wrappedLine);
+            var where = line > 0 ? $"line {line}, col {m.Groups["col"].Value}" : "outside your source";
+            result.Add($"{where}: {code}: {message}");
+            if (result.Count >= MaxDiagnostics)
+                break;
+        }
+
+        return result;
     }
 
     private static string SanitizeFileName(string fileName)

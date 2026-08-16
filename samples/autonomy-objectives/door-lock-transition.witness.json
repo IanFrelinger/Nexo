@@ -1,0 +1,37 @@
+{
+  "brickId": "door-lock-transition",
+  "cases": [
+    {
+      "input": { "state": "locked", "trigger": "unlock" },
+      "expectedOutput": { "nextState": "unlocked", "accepted": true }
+    },
+    {
+      "input": { "state": "unlocked", "trigger": "open" },
+      "expectedOutput": { "nextState": "open", "accepted": true }
+    },
+    {
+      "input": { "state": "open", "trigger": "close" },
+      "expectedOutput": { "nextState": "unlocked", "accepted": true }
+    },
+    {
+      "input": { "state": "unlocked", "trigger": "lock" },
+      "expectedOutput": { "nextState": "locked", "accepted": true }
+    },
+    {
+      "input": { "state": "locked", "trigger": "open" },
+      "expectedOutput": { "nextState": "locked", "accepted": false }
+    },
+    {
+      "input": { "state": "open", "trigger": "lock" },
+      "expectedOutput": { "nextState": "open", "accepted": false }
+    },
+    {
+      "input": { "state": "ajar", "trigger": "close" },
+      "expectedOutput": { "nextState": "ajar", "accepted": false }
+    },
+    {
+      "input": { "state": "Locked", "trigger": "unlock" },
+      "expectedOutput": { "nextState": "Locked", "accepted": false }
+    }
+  ]
+}

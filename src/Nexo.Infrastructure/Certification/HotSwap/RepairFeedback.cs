@@ -20,6 +20,42 @@ namespace Nexo.Infrastructure.Certification.HotSwap;
 /// </summary>
 public static class RepairFeedback
 {
+    /// <summary>
+    /// Renders proposer-facing feedback for a candidate that did not compile inside the
+    /// session. Compiler diagnostics describe the candidate's own text — a position and a
+    /// message about what IT wrote — and nothing of the witness, so every level above
+    /// <see cref="RepairDisclosure.CheckOnly"/> shows them (bounded by
+    /// <see cref="RepairFeedbackPolicy.MaxFindings"/>). This is the cheapest repair there is,
+    /// and for a small model the most common one: dogfood campaign 1 rejected 5/5 objectives
+    /// at the build with one-line slips, and the loop had no way to say so.
+    /// </summary>
+    /// <param name="diagnostics">Compiler diagnostics in the candidate's own coordinates.</param>
+    /// <param name="policy">The disclosure policy.</param>
+    public static string RenderBuildFailure(IReadOnlyList<string> diagnostics, RepairFeedbackPolicy policy)
+    {
+        ArgumentNullException.ThrowIfNull(diagnostics);
+        ArgumentNullException.ThrowIfNull(policy);
+
+        var sb = new StringBuilder();
+        sb.Append("certification: REJECT at 'build' — the candidate did not compile");
+        if (policy.Disclosure == RepairDisclosure.CheckOnly)
+            return sb.ToString();
+
+        if (diagnostics.Count == 0)
+        {
+            sb.AppendLine().Append("  the compiler produced no parseable diagnostics; re-read the skeleton and produce the complete file exactly as declared");
+            return sb.ToString();
+        }
+
+        sb.Append(" — ").Append(diagnostics.Count).Append(" diagnostic(s):");
+        foreach (var d in diagnostics.Take(policy.MaxFindings))
+            sb.AppendLine().Append("  ").Append(d);
+        if (diagnostics.Count > policy.MaxFindings)
+            sb.AppendLine().Append("  (").Append(diagnostics.Count - policy.MaxFindings).Append(" further diagnostic(s) omitted)");
+        sb.AppendLine().Append("  fix every diagnostic; keep the class, namespace, Id and interface exactly as declared");
+        return sb.ToString();
+    }
+
     /// <summary>Renders proposer-facing feedback for a rejected decision.</summary>
     public static string Render(CertificationDecision decision, RepairFeedbackPolicy policy)
     {
@@ -90,12 +126,12 @@ public static class RepairFeedback
                     sb.Append("no result was observed for this case");
                     break;
                 case WitnessFindingKind.MissingKey:
-                    sb.Append("output['").Append(f.Key).Append("'] was not produced");
+                    sb.Append(DescribeKey(f.Key)).Append(" was not produced");
                     if (policy.Disclosure == RepairDisclosure.Full && f.Expected is not null)
                         sb.Append(" (expected ").Append(f.Expected).Append(')');
                     break;
                 case WitnessFindingKind.Mismatch:
-                    sb.Append("output['").Append(f.Key).Append("'] violates the contract; you produced ")
+                    sb.Append(DescribeKey(f.Key)).Append(" violates the contract; you produced ")
                       .Append(f.Actual ?? "<null>");
                     if (policy.Disclosure == RepairDisclosure.Full && f.Expected is not null)
                         sb.Append(" (expected ").Append(f.Expected).Append(')');
@@ -110,6 +146,17 @@ public static class RepairFeedback
               .Append(" further finding(s) omitted, in case order)");
         }
     }
+
+    /// <summary>
+    /// A finding's key in the proposer's vocabulary: declared outputs are <c>output['name']</c>;
+    /// the reserved <c>$summary</c> key is the output's <c>Summary</c> property, which the model
+    /// otherwise has no way to recognise (campaign 3: three attempts, "output['$summary'] was not
+    /// produced", no repair).
+    /// </summary>
+    private static string DescribeKey(string? key) =>
+        string.Equals(key, WitnessObservableOutput.SummaryKey, StringComparison.Ordinal)
+            ? "the output Summary (output.Summary)"
+            : "output['" + key + "']";
 
     private static void RenderMutation(StringBuilder sb, CertificationDecision decision, RepairFeedbackPolicy policy)
     {

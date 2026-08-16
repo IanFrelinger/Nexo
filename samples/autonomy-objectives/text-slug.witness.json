@@ -1,0 +1,29 @@
+{
+  "brickId": "text-slug",
+  "cases": [
+    {
+      "input": { "text": "Hello World" },
+      "expectedOutput": { "slug": "hello-world" }
+    },
+    {
+      "input": { "text": "  Multiple   spaces here  " },
+      "expectedOutput": { "slug": "multiple-spaces-here" }
+    },
+    {
+      "input": { "text": "Rock & Roll!" },
+      "expectedOutput": { "slug": "rock-roll" }
+    },
+    {
+      "input": { "text": "C# is #1" },
+      "expectedOutput": { "slug": "c-is-1" }
+    },
+    {
+      "input": { "text": "Café Olé" },
+      "expectedOutput": { "slug": "cafe-ole" }
+    },
+    {
+      "input": { "text": "!!!" },
+      "expectedOutput": { "slug": "" }
+    }
+  ]
+}

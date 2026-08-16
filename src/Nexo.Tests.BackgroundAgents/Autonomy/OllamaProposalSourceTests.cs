@@ -74,6 +74,25 @@ public sealed class OllamaProposalSourceTests
     }
 
     [Fact]
+    public void BuildRepairPrompt_AlwaysCarriesTheWholeBody_EvenWithContractOnlyOn()
+    {
+        // Campaign 2: a compile fix needs the skeleton and API notes, which the contract
+        // bullets do not carry — stripping them left the model re-emitting the same broken
+        // source three times over. Contract-only is a certification-repair setting.
+        var source = new OllamaProposalSource(new HttpClient(new FakeOllama("")), new OllamaProposalOptions { RepairWithContractOnly = true });
+        var request = new ProposalRequest("tag-scan-classifier", "Classify a scanned tag payload", Body, null)
+        {
+            Repair = new RepairContext(PreviousSource, "certification: REJECT at 'build' — the candidate did not compile — 1 diagnostic(s):\n  line 3, col 1: CS0117: no", 1, RepairKind.Build),
+        };
+
+        var prompt = source.BuildPrompt(request);
+
+        prompt.Should().Contain("Prefer the codec", "a build repair gets the whole objective, skeleton and API notes included");
+        prompt.Should().Contain("including the skeleton and API notes");
+        prompt.Should().Contain("CS0117");
+    }
+
+    [Fact]
     public void RepairPrompt_CarriesTheWholeBody_WhenContractOnlyIsSwitchedOff()
     {
         var options = new OllamaProposalOptions { RepairWithContractOnly = false };

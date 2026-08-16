@@ -25,11 +25,22 @@ public sealed record ProposalRequest(
     public RepairContext? Repair { get; init; }
 }
 
+/// <summary>What kind of rejection a repair answers — proposers may frame the two differently.</summary>
+public enum RepairKind
+{
+    /// <summary>The certification chain rejected a candidate that compiled (correctness, mutation, analyzer, …).</summary>
+    Certification = 0,
+
+    /// <summary>The candidate did not compile inside the session; the feedback is compiler diagnostics.</summary>
+    Build = 1,
+}
+
 /// <summary>What a proposer is handed to repair with. See <see cref="ProposalRequest.Repair"/>.</summary>
 /// <param name="PreviousSource">The proposer's own rejected source.</param>
 /// <param name="Feedback">Policy-projected feedback: locations and the proposer's own output, never the witness (unless the operator opted into full disclosure).</param>
 /// <param name="Attempt">1-based repair attempt number.</param>
-public sealed record RepairContext(string PreviousSource, string Feedback, int Attempt);
+/// <param name="Kind">Whether this answers a certification rejection or a build failure.</param>
+public sealed record RepairContext(string PreviousSource, string Feedback, int Attempt, RepairKind Kind = RepairKind.Certification);
 
 /// <summary>
 /// One proposed candidate. Source only: the proposer produces code, never a verdict about

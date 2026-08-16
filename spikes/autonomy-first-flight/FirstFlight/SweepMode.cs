@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Nexo.BackgroundAgents.Autonomy;
 using Nexo.BackgroundAgents.Objectives;
+using Nexo.Core.Application.Autonomy;
 using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Execution;
 using Nexo.Infrastructure.Autonomy;
@@ -76,11 +77,51 @@ public static class SweepMode
             },
         };
 
+        // Campaign mode: a LIVE proposer inside the loop, so the loop's own repair channel
+        // (policy-projected feedback, bounded attempts) is what runs — not a recorded proposal.
+        // Every proposal, and the exact projected feedback the model was handed for a repair,
+        // is recorded to the campaign directory: that is the evidence ledger's raw material.
+        IProposalSource? proposals = null;
+        var proposerKind = Environment.GetEnvironmentVariable("NEXO_SWEEP_PROPOSER");
+        if (string.Equals(proposerKind, "ollama", StringComparison.OrdinalIgnoreCase))
+        {
+            var options = new OllamaProposalOptions
+            {
+                BaseUrl = Environment.GetEnvironmentVariable("NEXO_OLLAMA_BASE_URL") ?? "http://host.docker.internal:11434",
+                Model = Environment.GetEnvironmentVariable("NEXO_OLLAMA_MODEL") ?? "codellama:7b",
+            };
+            // Operator preamble (house rules — here, the brick API a small model does not know).
+            // Data the proposer is handed, never a witness; the same knob a deployment would set.
+            var preamblePath = Environment.GetEnvironmentVariable("NEXO_OLLAMA_SYSTEM_PREAMBLE_FILE");
+            if (!string.IsNullOrWhiteSpace(preamblePath) && File.Exists(preamblePath))
+            {
+                options.SystemPreamble = File.ReadAllText(preamblePath).Trim();
+                Console.WriteLine($"preamble: {preamblePath} ({options.SystemPreamble.Length} chars)");
+            }
+            var campaignDir = Environment.GetEnvironmentVariable("NEXO_CAMPAIGN_DIR")
+                ?? Path.Combine(Path.GetDirectoryName(Path.GetFullPath(objectivesRoot))!, "campaign");
+            Directory.CreateDirectory(campaignDir);
+            var live = new OllamaProposalSource(
+                new HttpClient(),
+                options,
+                provider.GetRequiredService<ILogger<OllamaProposalSource>>());
+            proposals = new RecordingProposalSource(live, campaignDir);
+            Console.WriteLine($"proposer: LIVE ollama {options.Model} @ {options.BaseUrl}  (recording to {campaignDir})");
+        }
+        else
+        {
+            Console.WriteLine("proposer: recorded proposals beside each objective (set NEXO_SWEEP_PROPOSER=ollama for live)");
+        }
+
+        if (int.TryParse(Environment.GetEnvironmentVariable("NEXO_SWEEP_MAX_OBJECTIVES"), out var maxObjectives) && maxObjectives > 0)
+            settings.MaxObjectivesPerSweep = maxObjectives;
+
         var loop = new AutonomyLoopService(
             store,
             harness,
             settings,
-            provider.GetRequiredService<ILogger<AutonomyLoopService>>());
+            provider.GetRequiredService<ILogger<AutonomyLoopService>>(),
+            proposals);
 
         var started = DateTimeOffset.UtcNow;
         var attempted = await loop.SweepAsync();
@@ -99,5 +140,75 @@ public static class SweepMode
 
         Console.WriteLine("SWEEP: complete (see the iteration outcome logged above)");
         return 0;
+    }
+
+    /// <summary>
+    /// Records what a proposer was asked and what it answered, per objective and attempt, as
+    /// <c>{campaignDir}/{objectiveId}.attempt{N}.json</c>. The recording is downstream of the
+    /// policy projection: the <c>feedback</c> field is exactly what the model saw, so a
+    /// reviewer can check that no witness value reached it.
+    /// </summary>
+    private sealed class RecordingProposalSource : IProposalSource
+    {
+        private static readonly System.Text.Json.JsonSerializerOptions Json = new()
+        {
+            WriteIndented = true,
+            PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+        };
+
+        private readonly IProposalSource _inner;
+        private readonly string _dir;
+
+        public RecordingProposalSource(IProposalSource inner, string dir)
+        {
+            _inner = inner;
+            _dir = dir;
+        }
+
+        public async Task<ProposedSource?> ProposeAsync(ProposalRequest request, CancellationToken cancellationToken = default)
+        {
+            var sw = System.Diagnostics.Stopwatch.StartNew();
+            ProposedSource? proposed = null;
+            string? error = null;
+            try
+            {
+                proposed = await _inner.ProposeAsync(request, cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                error = ex.GetType().Name + ": " + ex.Message;
+                throw;
+            }
+            finally
+            {
+                sw.Stop();
+                var attempt = request.Repair?.Attempt ?? 0;
+                var record = new
+                {
+                    objectiveId = request.ObjectiveId,
+                    attempt,
+                    mode = request.Repair is null ? "initial" : $"repair{attempt}",
+                    proposedAt = DateTimeOffset.UtcNow,
+                    durationSeconds = Math.Round(sw.Elapsed.TotalSeconds, 1),
+                    feedback = request.Repair?.Feedback,
+                    signature = proposed?.ProposerSignature,
+                    typeName = proposed?.TypeName,
+                    sourceCode = proposed?.SourceCode,
+                    error,
+                };
+                var path = Path.Combine(_dir, $"{request.ObjectiveId}.attempt{attempt}.json");
+                try
+                {
+                    File.WriteAllText(path, System.Text.Json.JsonSerializer.Serialize(record, Json));
+                    Console.WriteLine($"  recorded {Path.GetFileName(path)} ({record.durationSeconds}s{(proposed is null ? ", NO PROPOSAL" : string.Empty)})");
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"  (could not record {path}: {ex.Message})");
+                }
+            }
+
+            return proposed;
+        }
     }
 }
