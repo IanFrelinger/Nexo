@@ -300,7 +300,11 @@ public sealed class PeerToPeerRoutingSmokeTests
         result.Error!.Code.Should().Be("peer-routing.no_eligible_peers");
     }
 
-    [Fact(Timeout = TestTimeouts.Integration)]
+    // Explicit longer hang net: 120 concurrent requests through the stub handler finish in
+    // seconds when healthy, but the 60 s Integration bound occasionally tripped under coverage
+    // instrumentation on the kernel-coverage-gate lane. There is no "Stress" trait on this
+    // class (it is Smoke), so the lane cannot filter it out; the timeout is the lever.
+    [Fact(Timeout = TestTimeouts.Stress)]
     public async Task PeerExecutor_StressBurstConcurrency_MaintainsHighSuccessRate()
     {
         const int requestCount = 120;

@@ -77,9 +77,10 @@ if command -v docker >/dev/null 2>&1; then
   fi
 
   info "Starting Nexo portal on port ${NEXO_PORT}..."
+  # Loopback only: the quickstart image runs with no auth (README.md "Security Defaults").
   docker run -d --rm \
     --name nexo-quickstart \
-    -p "${NEXO_PORT}:8080" \
+    -p "127.0.0.1:${NEXO_PORT}:8080" \
     nexo:quickstart
 
   ok "Portal running at http://localhost:${NEXO_PORT}"

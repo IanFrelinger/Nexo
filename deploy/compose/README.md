@@ -6,7 +6,7 @@ All Docker Compose deployment stacks live here. Run them **from the repository r
 docker compose -f deploy/compose/docker-compose.portal.yml up -d --build
 ```
 
-Build contexts inside these files point at the repository root (`../..`), so images build identically regardless of the invocation directory. Override files are passed as a second `-f` after their base file.
+Build contexts and repo bind mounts inside these files point at the repository root (`../..`; relative host paths resolve against the compose file's directory, not the CWD), so images build and mounts resolve identically regardless of the invocation directory. Compose v2 also loads `.env` from this directory (`deploy/compose/.env`), not the repo root — use `--env-file <path>` for a file kept elsewhere. Override files are passed as a second `-f` after their base file.
 
 | Stack | Purpose | Docs / entry point |
 |-------|---------|--------------------|

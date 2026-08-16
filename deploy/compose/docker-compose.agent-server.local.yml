@@ -1,12 +1,14 @@
 # Local Docker Desktop override for the full-stack agent server.
-# Host ports / Ollama URL come from repo-root .env (see scripts/Start-FullstackAgentServer.ps1):
+# Host ports / Ollama URL come from the .env Compose loads -- deploy/compose/.env (next to the compose
+# files, NOT the repo root) or an explicit --env-file <path> (see scripts/Start-FullstackAgentServer.ps1):
 #   NEXO_AGENT_SERVER_HTTP_PORT   host port published for the API/portal (default 8088)
 #   NEXO_OLLAMA_HOST_PORT         host port for Ollama when using host or bundled ollama (default 11434)
 #   OLLAMA_BASE_URL               where the API reaches Ollama (host.docker.internal:<port> or http://ollama:11434)
 #   OLLAMA_MODEL                  model tag
+#   NEXO_REPO_ROOT                host tree mounted at /work (default ../.. relative to this file = repo root)
 #
-# Usage:
-#   docker compose -f docker-compose.agent-server.yml -f docker-compose.agent-server.local.yml up -d --build nexo-api --no-deps
+# Usage (from repo root):
+#   docker compose -f deploy/compose/docker-compose.agent-server.yml -f deploy/compose/docker-compose.agent-server.local.yml up -d --build nexo-api --no-deps
 services:
   nexo-api:
     working_dir: /app
@@ -30,7 +32,7 @@ services:
     volumes:
       - nexo-dailies:/data/dailies
       - ../../apps/runtime-studio/config/agent_set.fullstack.local.json:/agents/agent_set.fullstack.local.json:ro
-      - ${NEXO_REPO_ROOT:-.}:/work
+      - ${NEXO_REPO_ROOT:-../..}:/work
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 10s

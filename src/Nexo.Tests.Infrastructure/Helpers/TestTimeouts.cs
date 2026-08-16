@@ -18,6 +18,13 @@ public static class TestTimeouts
     /// </summary>
     public const int FileSystemPipelineIntegration = 240_000;
 
+    /// <summary>
+    /// 120 seconds for in-process stress bursts (e.g. the PeerExecutor 120-request burst).
+    /// A hang net, not a budget: healthy runs finish in seconds, but the 60 s Integration
+    /// bound tripped intermittently under kernel-coverage-gate instrumentation on a loaded runner.
+    /// </summary>
+    public const int Stress = 120_000;
+
     /// <summary>90 seconds for E2E tests.</summary>
     public const int E2E = 90_000;
 

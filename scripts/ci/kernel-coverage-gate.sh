@@ -50,8 +50,12 @@ echo ""
 echo "== Infrastructure (Nexo.Infrastructure) line coverage: ${INFRA_COVERAGE_THRESHOLD:-80}% floor (measured 80.3%; target 83) =="
 # Daemon black-box tests excluded from the COVERAGE run only: ~7.5 min of spawned-
 # process timeouts whose work cannot be attributed to [Nexo.Infrastructure] anyway.
+# Category=External (Mapbox etc.) excluded too: those hit the public internet, so a
+# transient egress blip turned the README badge red on 2026-08-15. Their helpers
+# (MapboxTileUrls/Validators/TileMath) live in the test assembly, not
+# [Nexo.Infrastructure], so dropping them costs no measured coverage.
 dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net9.0 \
-  --filter "FullyQualifiedName!~RuntimeStudioBlackBoxSmokeTests" \
+  --filter "FullyQualifiedName!~RuntimeStudioBlackBoxSmokeTests&Category!=External" \
   /p:CollectCoverage=true \
   /p:CoverletOutput="$ROOT/CoverageReports/infra" \
   /p:CoverletOutputFormat=cobertura \
