@@ -23,8 +23,16 @@ public sealed class OllamaProposalOptions
     /// <summary>Max tokens generated. Small models over-run; the gate rejects garbage either way.</summary>
     public int MaxTokens { get; set; } = 1600;
 
-    /// <summary>Per-call timeout. Local 7B models can take a minute on a cold load.</summary>
+    /// <summary>Per-call timeout. Local 7B models can take a minute on a cold load; a 27B with CPU offload can take much longer.</summary>
     public TimeSpan Timeout { get; set; } = TimeSpan.FromMinutes(10);
+
+    /// <summary>
+    /// For "thinking" models (Qwen3 family and later): whether the model may think before
+    /// answering. Null omits the field (the daemon's default for the model). False is the
+    /// setting a certification proposer usually wants — the loop asks for one code block, and
+    /// a thinking pass spends the token budget (<see cref="MaxTokens"/>) before the code starts.
+    /// </summary>
+    public bool? Think { get; set; }
 
     /// <summary>
     /// How the request is framed. <see cref="PromptStyle.SkeletonCompletion"/> hands the model
@@ -104,13 +112,15 @@ public sealed class OllamaProposalSource : IProposalSource
         ArgumentNullException.ThrowIfNull(request);
 
         var prompt = BuildPrompt(request);
-        var body = new
+        var body = new Dictionary<string, object?>
         {
-            model = _options.Model,
-            prompt,
-            stream = false,
-            options = new { temperature = _options.Temperature, num_predict = _options.MaxTokens },
+            ["model"] = _options.Model,
+            ["prompt"] = prompt,
+            ["stream"] = false,
+            ["options"] = new { temperature = _options.Temperature, num_predict = _options.MaxTokens },
         };
+        if (_options.Think is { } think)
+            body["think"] = think; // only when set: older daemons and non-thinking models reject an unknown field
 
         using var response = await _http.PostAsJsonAsync(
             $"{_options.BaseUrl.TrimEnd('/')}/api/generate", body, Json, cancellationToken).ConfigureAwait(false);

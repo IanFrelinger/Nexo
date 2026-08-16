@@ -149,6 +149,23 @@ public sealed class OllamaProposalSourceTests
     }
 
     [Fact]
+    public async Task ProposeAsync_SendsThinkOnlyWhenSet()
+    {
+        // Thinking models (Qwen3 family) spend the token budget thinking before any code appears;
+        // think=false is what a certification proposer wants. Omitted entirely by default so
+        // daemons and models that do not know the field are unaffected.
+        var fake = new FakeOllama("```csharp\nnamespace P;\npublic sealed class X { }\n```");
+        await new OllamaProposalSource(new HttpClient(fake), new OllamaProposalOptions()).ProposeAsync(new ProposalRequest("x", "t", Body, null));
+        using (var sent = JsonDocument.Parse(fake.LastRequestBody!))
+            sent.RootElement.TryGetProperty("think", out _).Should().BeFalse("unset means omitted");
+
+        var fake2 = new FakeOllama("```csharp\nnamespace P;\npublic sealed class X { }\n```");
+        await new OllamaProposalSource(new HttpClient(fake2), new OllamaProposalOptions { Think = false }).ProposeAsync(new ProposalRequest("x", "t", Body, null));
+        using (var sent2 = JsonDocument.Parse(fake2.LastRequestBody!))
+            sent2.RootElement.GetProperty("think").GetBoolean().Should().BeFalse();
+    }
+
+    [Fact]
     public async Task ProposeAsync_ReturnsNull_WhenTheModelProducesNoCode()
     {
         var source = new OllamaProposalSource(new HttpClient(new FakeOllama("I cannot help with that.")), new OllamaProposalOptions());
