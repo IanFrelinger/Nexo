@@ -26,6 +26,7 @@ Version pin: `0.1.0` (from `VERSION`)
 | Repair loop to ADMIT (S2) | S1 rejection fed back to the model as repair input; loop re-run under hold + full containment | model fixed its one defective line; **ADMIT, `escape_rate=0` → `CertifiedButHeld`** after two trust-machinery holes were closed (analyzer-dead mutants as kills; `$summary` witnessable) | Local spike @ `7cdf9e88`; sample in `samples/autonomy-objectives/` |
 | Repair channel as policy (S3) | `RepairFeedbackPolicy` + ablation on codellama:7b, then the shipped loop path (5 objectives × 2-attempt budget, two temperatures) | **redaction costs nothing (3/3 vs 3/3 in ablation); through the shipped path 3/5 objectives converge within the budget at temp 0.2 and 0.7 alike**; the necessary ingredient was contract precision ("NEVER null"), and single-shot rate on a 7B model swings with formatting noise — the bounded retry is what makes it usable | Local ablation @ this PR |
 | Dogfood campaign 1 (S4) | five human-authored objectives, live codellama:7b in the loop, hold mode, four campaigns | **compiled 0/5 → 1/5 → 3/5 → 2/5 as the loop was fixed; first full-chain success `door-lock-transition` CertifiedButHeld (escape_rate=0) on the FIRST proposal; text-slug held on a witness the proposer never saw**; a 7B model re-emits on repair — the loop is model-agnostic and the next lever is the model | `.nexo/campaign/*` recordings; `samples/autonomy-objectives/door-lock-transition.proposal.json` |
+| Dogfood campaign 2 (S5) | the same five objectives, witnesses, preamble and hold mode — only `NEXO_OLLAMA_MODEL` varies: `codellama:7b` vs `qwen2.5-coder:7b` vs `qwen3.8:27b` | **certified-held 1/5 → 2/5 → 3/5 on model swap alone; at 27B compiled 5/5 and the failures move down the pipeline** — `semver-parse` survives correctness and is rejected at `mutation` (`escape_rate=0.04`, a witness weakness, not a model one). Repair stays weak at every size: byte-identical re-emission on 6/6 (7B) and 3/4 (27B) repair attempts, and every certified candidate certified on attempt 1 | `.nexo/campaign/*-qwen*` recordings; `samples/autonomy-objectives/rgb-hex-parse.proposal.json` |
 
 **Dogfood summary:** `honest=ADMIT`, `buggy=REJECT`, `tests_executed=19` — CI-confirmed on PR #191.
 
@@ -585,6 +586,66 @@ the analyzer fence, all eight witness cases, mutation (`escape_rate=0`) and dete
 loop held it: `CertifiedButHeld — certified; the operator holds admission … with full evidence on
 the record`. Recorded beside the objective as `door-lock-transition.proposal.json`. Nothing was
 admitted, in four campaigns and 60 attempts, and every rejection says why.
+
+### S5: dogfood campaign 2 — the same five objectives, three proposer models
+
+S4 ended with a claim rather than a measurement: the loop is model-agnostic by construction, so
+the next lever is the model and not the prompt. S5 tests exactly that. Everything else is pinned —
+the same five objectives and witnesses, the same operator preamble, hold mode, the same 2-attempt
+repair budget, the same attested session — and the only variable is `NEXO_OLLAMA_MODEL`. Two more
+proposers, one campaign each, back to back on one box (`run-first-flight.ps1 -SweepLive -Models`).
+
+| Proposer | Compiled | Judged by the witness | Certified (held) | Where the survivors failed | Repair behaviour | s/proposal |
+|---|---|---|---|---|---|---|
+| `codellama:7b` (S4, campaign 4) | 2/5 | 2 | 1 | compile | re-emits almost verbatim | 9.3 |
+| `qwen2.5-coder:7b` | 3/5 | 3 | **2** | 2 compile, 1 correctness | byte-identical on 6/6 repairs | 9.4 |
+| `qwen3.8:27b` | **5/5** | **5** | **3** | 1 mutation, 1 correctness | byte-identical on 3/4; one real edit | 117.7 |
+
+**The lever was real, and it moves the thing S4 could not move.** Swapping the model — no prompt
+change, no loop change — took certified-held from 1/5 to 2/5 to 3/5. `qwen3.8:27b` certified
+`tag-scan-classifier`, `door-lock-transition` and `rgb-hex-parse`, each on its FIRST proposal, each
+with `escape_rate=0`. `rgb-hex-parse` is the first parser to go the whole way and is recorded beside
+its objective as `rgb-hex-parse.proposal.json`.
+
+**The interesting result is not the count — it is that the failures moved down the pipeline.** At
+7B the dominant failure mode is writing C# that compiles against an API the model was just handed:
+`codellama` and `qwen2.5-coder` lose 2–3 objectives to `error CS1061` / `CS0103` before the witness
+ever runs. At 27B that failure mode disappears outright — 5/5 compiled, and the build-repair path
+introduced in S4 never fired once. What is left are the two failures the gate actually exists to
+catch:
+
+1. **`semver-parse` passed every correctness case and was rejected at `mutation`** —
+   `escape_rate=0.04, survivors=[mutate-int-literal-41]`, three attempts running. That is a finding
+   about OUR witness, not about the model: a mutant of the candidate that the witness does not kill.
+   At this model size the binding constraint starts to shift from the competence of the proposer to
+   the strength of the objectives, and the campaign starts testing us. This is the S3/S4
+   contract-precision lesson arriving one layer deeper.
+2. **`text-slug` failed at `correctness` on the plain cases**, not on the diacritics case it was
+   authored to hold on (`"hello-world"` → `"helo-wrd"`, `"rock-roll"` → `"rock-l"` — the candidate
+   eats repeated letters). So this run does not re-demonstrate S4's "held on a witness the proposer
+   never saw"; it failed earlier, for an ordinary reason.
+
+**Repair is still the weak channel, and size does not fix it.** This is the S4 finding surviving a
+family change and a 4x parameter increase. `qwen2.5-coder:7b` re-emitted **byte-identical** source
+on 6 of 6 repair attempts — same hash, same length, with populated feedback on the record every
+time. `qwen3.8:27b` did so on 3 of 4; its single genuine edit (`text-slug`, 1631 → 1474 chars)
+reproduced the identical failure. Every certified candidate in this campaign, at both sizes,
+certified on attempt 1. Bounded repair remains worth its cost as a guard, but on local models it is
+not where the wins come from — the first proposal is.
+
+**Redaction held on a second and third model.** `text-slug`'s projected feedback showed the model
+only its own output (`"café-ol"`); the expected `"cafe-ole"` appears in no recorded feedback
+anywhere in the campaign. The S3 policy is now measured across three proposers of two families.
+
+**Cost, honestly.** `qwen3.8:27b` is 18 GB q4 on a 12 GB card, so it runs partly on CPU: 117.7 s per
+proposal against 9.4 s, and 1174.9 s of wall clock for the sweep against 171.9 s — 12.5x per
+proposal, 6.8x per campaign. It needs fewer proposals (9 vs 11) because more objectives land first
+try, which earns a little of that back. It also cannot be run naively: Qwen3-family models spend the
+entire token budget reasoning and return an empty candidate unless `think: false` is sent, which is
+what `OllamaProposalOptions.Think` and `-ThinkOff` exist for.
+
+**Nothing was admitted.** Three campaigns, twenty proposals, hold mode throughout; every rejection
+names its stage and says why.
 
 ## Settled decisions
 
