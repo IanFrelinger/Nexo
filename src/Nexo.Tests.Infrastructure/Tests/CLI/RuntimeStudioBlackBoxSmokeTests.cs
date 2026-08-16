@@ -254,9 +254,15 @@ public sealed class RuntimeStudioBlackBoxSmokeTests : E2ETestBase
     }
 
     /// <summary>
-    /// Phase 3: extender with no pinned <c>Objective</c> parameter claims the next pending
-    /// backlog item during a timed daemon run, executes one self-extend cycle, then releases
-    /// it back to pending with <c>Attempts</c> incremented (see <c>SelfExtendRunnerAdapter</c>).
+    /// Phase 3: an ARMED extender with no pinned <c>Objective</c> parameter claims the next
+    /// pending backlog item during a timed daemon run, executes one self-extend cycle, then
+    /// releases it back to pending with <c>Attempts</c> incremented (see
+    /// <c>SelfExtendRunnerAdapter</c>).
+    ///
+    /// <para>"Armed" matters: since <c>20e6ded6</c> an unconfigured extender is denied — the
+    /// aggressiveness mode defaults to <c>passive</c> and the daemon must not act on a backlog
+    /// nobody switched on. The test pins that default first, then sets <c>active</c>; the claim
+    /// is the Active-mode contract, the untouched backlog is the default-mode contract.</para>
     /// </summary>
     [Fact(Timeout = 300_000)]
     public async Task Daemon_extender_claims_objective_from_store_increments_attempts()
@@ -269,6 +275,17 @@ public sealed class RuntimeStudioBlackBoxSmokeTests : E2ETestBase
         var envRoot = Path.Combine(root, "studio");
         var env = StudioEnv(envRoot);
         var id = "claim-" + Guid.NewGuid().ToString("N")[..8];
+
+        // Safety default: a fresh studio is passive, so an extender would be skipped.
+        var (modeCode, modeOut, modeErr) = await RunCliAsync("background-agent mode get", env, CliTimeout);
+        Assert.Equal(0, modeCode);
+        Assert.Equal(string.Empty, modeErr);
+        Assert.Contains("passive", modeOut, StringComparison.OrdinalIgnoreCase);
+
+        // Arm it: only Active runs the self-extend cycle that claims.
+        var (armCode, _, armErr) = await RunCliAsync("background-agent mode set --value active", env, CliTimeout);
+        Assert.Equal(0, armCode);
+        Assert.Equal(string.Empty, armErr);
 
         var (addCode, _, addErr) = await RunCliAsync(
             $"background-agent objectives add --id {id} --title \"Daemon claim smoke\" --body \"black-box\" --priority 1",
