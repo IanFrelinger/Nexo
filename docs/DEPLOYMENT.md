@@ -6,14 +6,14 @@ This document is the **default “what do I run in production?”** map. Other c
 
 **Use when:** you want the web portal, HTTP API on port 8080, and local Ollama on the same machine.
 
-- **Compose file:** `docker-compose.portal.yml`
+- **Compose file:** `deploy/compose/docker-compose.portal.yml`
 - **Build context:** repo root; API image builds from `.docker/Dockerfile.api`
 - **Bind:** API and Ollama default to **loopback** (`127.0.0.1`) — good for laptop + Tailscale / reverse proxy patterns (see `docs/TailscaleAndNexo.md`)
 
 **Pin a version (recommended):**
 
 1. Build and tag images yourself in CI or locally, **or** use GHCR images once you publish them with **semver or digest** tags (see below).
-2. In `docker-compose.portal.yml`, replace `build:` with `image: ghcr.io/<owner>/nexo-api:<tag>` (and pin `ollama/ollama` to a digest if you need full reproducibility).
+2. In `deploy/compose/docker-compose.portal.yml`, replace `build:` with `image: ghcr.io/<owner>/nexo-api:<tag>` (and pin `ollama/ollama` to a digest if you need full reproducibility).
 3. Never rely on **`latest`** for production unless you accept silent upgrades.
 
 ## Golden path B — CLI only (agents, CI, minimal host)
@@ -28,19 +28,19 @@ This document is the **default “what do I run in production?”** map. Other c
 
 **Use when:** background agents with a host-mounted repo (see `docs/SelfHostedAgentServer.md`).
 
-- **Compose file:** `docker-compose.agent-server.yml`
+- **Compose file:** `deploy/compose/docker-compose.agent-server.yml`
 - **Pin:** same rules as A — prefer **immutable image references** for `nexo-api` (or your wrapper image).
 
 ## Other compose files (not default production)
 
 | File | Role |
 |------|------|
-| `docker-compose.agent-server.yml` | Agent server + workspace |
-| `docker-compose.mesh-lab.yml` | Multi-node lab |
-| `docker-compose.friend-mesh.yml` | Friend mesh prefab |
-| `docker-compose.ollama.yml` | Ollama sidecar only |
-| `docker-compose.test.yml` | Test harness |
-| `docker-compose.ephemeral.yml` | Ephemeral stacks |
+| `deploy/compose/docker-compose.agent-server.yml` | Agent server + workspace |
+| `deploy/compose/docker-compose.mesh-lab.yml` | Multi-node lab |
+| `deploy/compose/docker-compose.friend-mesh.yml` | Friend mesh prefab |
+| `deploy/compose/docker-compose.ollama.yml` | Ollama sidecar only |
+| `deploy/compose/docker-compose.test.yml` | Test harness |
+| `deploy/compose/docker-compose.ephemeral.yml` | Ephemeral stacks |
 
 ## NuGet packages (embed or tool repos)
 

@@ -53,7 +53,7 @@ To run a custom set locally:
 dotnet run --project application/src/Nexo.CLI -- background-agent daemon --config path/to/your/agent_set.json
 ```
 
-Match sensitivity and exfiltration settings to your deployment tier. For mesh-related peer lists used at runtime, see `nexo mesh` commands and `NEXO_MESH_INSTANCES_PATH` if you relocate `instances.json`. To call a remote mesh **director** HTTP API from a headless host (CI, bare metal worker), use **commercial mesh director CLI** (`dotnet run --project commercial/src/Nexo.Commercial.MeshDirector -- director ...`) with **`NEXO_MESH_DIRECTOR_BASE_URL`** and optional **`NEXO_MESH_MUTATING_TOKEN`** / **`NEXO_MESH_API_KEY`** — see **`docs/MeshPhase7EdgeAlignment.md`**. For a **prefab two-person hub** (Compose + API key defaults), see **`docs/FriendMeshPrefab.md`** and **`docker-compose.friend-mesh.yml`**.
+Match sensitivity and exfiltration settings to your deployment tier. For mesh-related peer lists used at runtime, see `nexo mesh` commands and `NEXO_MESH_INSTANCES_PATH` if you relocate `instances.json`. To call a remote mesh **director** HTTP API from a headless host (CI, bare metal worker), use **commercial mesh director CLI** (`dotnet run --project commercial/src/Nexo.Commercial.MeshDirector -- director ...`) with **`NEXO_MESH_DIRECTOR_BASE_URL`** and optional **`NEXO_MESH_MUTATING_TOKEN`** / **`NEXO_MESH_API_KEY`** — see **`docs/MeshPhase7EdgeAlignment.md`**. For a **prefab two-person hub** (Compose + API key defaults), see **`docs/FriendMeshPrefab.md`** and **`deploy/compose/docker-compose.friend-mesh.yml`**.
 
 ## Compatibility matrix
 

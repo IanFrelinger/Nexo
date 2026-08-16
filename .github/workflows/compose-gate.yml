@@ -8,8 +8,8 @@ on:
       - "cursor/**"
     paths:
       - ".github/workflows/compose-gate.yml"
-      - "docker-compose.test.yml"
-      - "docker-compose.ephemeral.yml"
+      - "deploy/compose/docker-compose.test.yml"
+      - "deploy/compose/docker-compose.ephemeral.yml"
       - ".docker/Dockerfile.test-caching"
       - ".docker/Dockerfile.test-caching-alpine"
       - ".docker/Dockerfile.test-caching-debian"
@@ -33,12 +33,12 @@ jobs:
           docker --version
           docker compose version
 
-      - name: Run docker-compose.test.yml service
+      - name: Run deploy/compose/docker-compose.test.yml service
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p test-results
-          docker compose -f docker-compose.test.yml up --build --abort-on-container-exit --exit-code-from test-ubuntu test-ubuntu
+          docker compose -f deploy/compose/docker-compose.test.yml up --build --abort-on-container-exit --exit-code-from test-ubuntu test-ubuntu
           test -f test-results/ubuntu-results.json
           test -f test-results/ubuntu-logs.txt
 
@@ -67,7 +67,7 @@ jobs:
         if: always()
         shell: bash
         run: |
-          docker compose -f docker-compose.test.yml down --remove-orphans
+          docker compose -f deploy/compose/docker-compose.test.yml down --remove-orphans
 
       - name: Upload compose test artifacts
         if: always()
@@ -94,20 +94,20 @@ jobs:
           docker --version
           docker compose version
 
-      - name: Validate docker-compose.ephemeral.yml
+      - name: Validate deploy/compose/docker-compose.ephemeral.yml
         shell: bash
         run: |
           set -euo pipefail
-          docker compose -f docker-compose.ephemeral.yml config > "${RUNNER_TEMP}/compose-ephemeral.config.yaml"
-          docker compose -f docker-compose.ephemeral.yml --profile db config > "${RUNNER_TEMP}/compose-ephemeral-db.config.yaml"
+          docker compose -f deploy/compose/docker-compose.ephemeral.yml config > "${RUNNER_TEMP}/compose-ephemeral.config.yaml"
+          docker compose -f deploy/compose/docker-compose.ephemeral.yml --profile db config > "${RUNNER_TEMP}/compose-ephemeral-db.config.yaml"
 
       - name: Start and verify ephemeral postgres profile
         shell: bash
         run: |
           set -euo pipefail
-          docker compose -f docker-compose.ephemeral.yml --profile db up -d postgres
+          docker compose -f deploy/compose/docker-compose.ephemeral.yml --profile db up -d postgres
           sleep 5
-          POSTGRES_ID="$(docker compose -f docker-compose.ephemeral.yml --profile db ps -q postgres)"
+          POSTGRES_ID="$(docker compose -f deploy/compose/docker-compose.ephemeral.yml --profile db ps -q postgres)"
           test -n "${POSTGRES_ID}"
           POSTGRES_RUNNING="$(docker inspect --format='{{.State.Running}}' "${POSTGRES_ID}")"
           test "${POSTGRES_RUNNING}" = "true"
@@ -116,14 +116,14 @@ jobs:
         if: always()
         shell: bash
         run: |
-          docker compose -f docker-compose.ephemeral.yml --profile db ps > "${RUNNER_TEMP}/compose-ephemeral-db.ps.txt" || true
-          docker compose -f docker-compose.ephemeral.yml --profile db logs --no-color postgres > "${RUNNER_TEMP}/compose-ephemeral-postgres.log" || true
+          docker compose -f deploy/compose/docker-compose.ephemeral.yml --profile db ps > "${RUNNER_TEMP}/compose-ephemeral-db.ps.txt" || true
+          docker compose -f deploy/compose/docker-compose.ephemeral.yml --profile db logs --no-color postgres > "${RUNNER_TEMP}/compose-ephemeral-postgres.log" || true
 
       - name: Cleanup ephemeral lane
         if: always()
         shell: bash
         run: |
-          docker compose -f docker-compose.ephemeral.yml --profile db down --remove-orphans
+          docker compose -f deploy/compose/docker-compose.ephemeral.yml --profile db down --remove-orphans
 
       - name: Upload ephemeral lane artifacts
         if: always()

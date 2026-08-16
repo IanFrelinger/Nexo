@@ -100,7 +100,7 @@ public sealed class MeshLabDockerFixture : IAsyncLifetime
         await MeshLabProcessRunner.AssertSuccessAsync(
                 _repoRoot,
                 "docker",
-                $"compose --profile workers -f docker-compose.mesh-lab.yml --env-file \"{_envFilePath}\" config -q",
+                $"compose --profile workers -f deploy/compose/docker-compose.mesh-lab.yml --env-file \"{_envFilePath}\" config -q",
                 composeEnv,
                 TimeSpan.FromMinutes(3))
             .ConfigureAwait(false);
@@ -158,7 +158,7 @@ public sealed class MeshLabDockerFixture : IAsyncLifetime
             var (exitCode, _, stderr) = await MeshLabProcessRunner.RunAsync(
                     _repoRoot!,
                     "docker",
-                    $"compose --profile workers -f docker-compose.mesh-lab.yml --env-file \"{_envFilePath}\" up -d --build",
+                    $"compose --profile workers -f deploy/compose/docker-compose.mesh-lab.yml --env-file \"{_envFilePath}\" up -d --build",
                     composeEnv,
                     TimeSpan.FromMinutes(40))
                 .ConfigureAwait(false);
@@ -172,7 +172,7 @@ public sealed class MeshLabDockerFixture : IAsyncLifetime
             await MeshLabProcessRunner.RunAsync(
                     _repoRoot!,
                     "docker",
-                    $"compose --profile workers -f docker-compose.mesh-lab.yml --env-file \"{_envFilePath}\" down -v",
+                    $"compose --profile workers -f deploy/compose/docker-compose.mesh-lab.yml --env-file \"{_envFilePath}\" down -v",
                     composeEnv,
                     TimeSpan.FromMinutes(3))
                 .ConfigureAwait(false);
@@ -217,7 +217,7 @@ public sealed class MeshLabDockerFixture : IAsyncLifetime
                 await MeshLabProcessRunner.RunAsync(
                         _repoRoot,
                         "docker",
-                        $"compose --profile workers -f docker-compose.mesh-lab.yml --env-file \"{_envFilePath}\" down -v",
+                        $"compose --profile workers -f deploy/compose/docker-compose.mesh-lab.yml --env-file \"{_envFilePath}\" down -v",
                         composeEnv,
                         TimeSpan.FromMinutes(5))
                     .ConfigureAwait(false);

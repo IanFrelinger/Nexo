@@ -42,12 +42,12 @@ jobs:
             echo "=== ${f} $@ ==="
             docker compose -f "$f" "$@" config >"${RUNNER_TEMP}/compose-smoke/$(basename "$f" .yml).rendered.yaml"
           }
-          validate docker-compose.portal.yml
-          validate docker-compose.agent-server.yml
-          validate docker-compose.ephemeral.yml
-          validate docker-compose.ephemeral.yml --profile db
-          validate docker-compose.test.yml
-          validate docker-compose.ollama.yml
+          validate deploy/compose/docker-compose.portal.yml
+          validate deploy/compose/docker-compose.agent-server.yml
+          validate deploy/compose/docker-compose.ephemeral.yml
+          validate deploy/compose/docker-compose.ephemeral.yml --profile db
+          validate deploy/compose/docker-compose.test.yml
+          validate deploy/compose/docker-compose.ollama.yml
           echo "setup-smoke-suite compose-config: ok"
 
       - name: Upload rendered compose (debug)

@@ -14,7 +14,7 @@ if ! command -v python3 >/dev/null 2>&1; then
   exit 1
 fi
 
-COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.mesh-lab.yml}"
+COMPOSE_FILE="${COMPOSE_FILE:-deploy/compose/docker-compose.mesh-lab.yml}"
 COMPOSE_ENV_FILE="${1:-${COMPOSE_ENV_FILE:-.env.mesh-lab}}"
 PEER_A_HOST="${MESH_LAB_PEER_A_HOST:-127.0.0.1:18081}"
 PEER_B_HOST="${MESH_LAB_PEER_B_HOST:-127.0.0.1:18082}"

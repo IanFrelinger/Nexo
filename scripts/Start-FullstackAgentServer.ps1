@@ -74,8 +74,8 @@ Write-Host "        OLLAMA_BASE_URL=$OllamaBaseUrl"
 Write-Host "        .env=$envPath"
 
 $compose = @(
-    "-f", "docker-compose.agent-server.yml",
-    "-f", "docker-compose.agent-server.local.yml"
+    "-f", "deploy/compose/docker-compose.agent-server.yml",
+    "-f", "deploy/compose/docker-compose.agent-server.local.yml"
 )
 
 $upArgs = @("up", "-d")

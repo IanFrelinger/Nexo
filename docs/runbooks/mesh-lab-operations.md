@@ -60,7 +60,7 @@ There is **no distributed consensus** in the MVP director—last writer wins on 
 | `placement.peer_not_admitted` | Peer revoked on director | `POST …/admit` or `commercial mesh director CLI `admit <id>`` |
 | Register **400** missing key | `RequirePeerRegistrationKey=true` | Set **`MESH_LAB_PEER_REGISTRATION_KEY`** / **`NEXO_MESH_PEER_REGISTRATION_KEY`** |
 | Register **400** same as ApiKey | Policy rejects operator key as peer secret | Use a distinct registration secret |
-| Stress `port is already allocated` on scale | Host port publish on workers | Stress uses `docker-compose.mesh-lab-stress.override.yml` |
+| Stress `port is already allocated` on scale | Host port publish on workers | Stress uses `deploy/compose/docker-compose.mesh-lab-stress.override.yml` |
 | Stress burst high `fail` rate | Workers still starting | Increase `MESH_LAB_STRESS_PAUSE_SEC`; check `docker logs` |
 | Copilot quota verify fails | Shared tenant bucket | Restart worker container or use fresh `X-Nexo-Tenant` |
 | Director CLI verify skipped | No dotnet SDK on host | Install SDK or `MESH_LAB_SKIP_DIRECTOR_CLI_VERIFY=1` |

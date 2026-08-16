@@ -16,7 +16,7 @@ source "${ROOT}/scripts/mesh-lab-fleet.sh"
 source "${ROOT}/scripts/mesh-lab-net.sh"
 
 COMPOSE_ENV_FILE="${1:-${COMPOSE_ENV_FILE:-.env.mesh-lab}}"
-COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.mesh-lab.yml}"
+COMPOSE_FILE="${COMPOSE_FILE:-deploy/compose/docker-compose.mesh-lab.yml}"
 PEER_A_HOST="${MESH_LAB_PEER_A_HOST:-127.0.0.1:18081}"
 
 if [[ ! -f "$COMPOSE_ENV_FILE" ]]; then

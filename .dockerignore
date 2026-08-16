@@ -35,4 +35,5 @@ Thumbs.db
 # Docker files themselves
 .docker/
 docker-compose*.yml
+deploy/compose/
 Dockerfile*

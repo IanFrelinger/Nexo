@@ -12,7 +12,7 @@ Unit and integration tests (`Category=ProdStyle`, `VirtualProductionNcrRoutingHo
 
 ## Quick path — portal stack (minimal prod shape)
 
-Matches **Golden path A** in [`docs/DEPLOYMENT.md`](DEPLOYMENT.md): `docker-compose.portal.yml`, image from `.docker/Dockerfile.api`.
+Matches **Golden path A** in [`docs/DEPLOYMENT.md`](DEPLOYMENT.md): `deploy/compose/docker-compose.portal.yml`, image from `.docker/Dockerfile.api`.
 
 ```bash
 make prod-dry-run
@@ -24,7 +24,7 @@ The script **builds**, **starts** services, waits until **`GET /health`** succee
 
 ## Fuller path — agent server (mounted workspace + background agents)
 
-Matches **Golden path C**: `docker-compose.agent-server.yml`, image from `.docker/Dockerfile.agent-server`, optional **`NEXO_BACKGROUND_AGENTS_CONFIG`**.
+Matches **Golden path C**: `deploy/compose/docker-compose.agent-server.yml`, image from `.docker/Dockerfile.agent-server`, optional **`NEXO_BACKGROUND_AGENTS_CONFIG`**.
 
 ```bash
 make prod-dry-run-agent-server
@@ -39,7 +39,7 @@ Ensure **`NEXO_REPO_ROOT`** points at this repo on the host (defaults to the cur
 On first boot the API may wait while **Ollama** starts. If `/health` times out, pull a model once:
 
 ```bash
-docker compose -f docker-compose.portal.yml exec ollama ollama pull llama3.1:latest
+docker compose -f deploy/compose/docker-compose.portal.yml exec ollama ollama pull llama3.1:latest
 ```
 
 (Use the same compose file you chose for the dry run.)
@@ -56,8 +56,8 @@ docker compose -f docker-compose.portal.yml exec ollama ollama pull llama3.1:lat
 
 | Flag | Meaning |
 |------|---------|
-| `--portal` | Use `docker-compose.portal.yml` (default for `make prod-dry-run`) |
-| `--agent-server` | Use `docker-compose.agent-server.yml` |
+| `--portal` | Use `deploy/compose/docker-compose.portal.yml` (default for `make prod-dry-run`) |
+| `--agent-server` | Use `deploy/compose/docker-compose.agent-server.yml` |
 | `--keep-up` | Do not run `compose down` after checks |
 | `--no-build` | Skip `docker compose build` (reuse images) |
 

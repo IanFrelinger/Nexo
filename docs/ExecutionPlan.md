@@ -49,7 +49,7 @@ These items establish the first end-to-end product experience and close the most
 - `POST /api/copilot/task` endpoint with orchestration + audit trail (`NexoEndpoints.cs`).
 - Portal UI in `wwwroot/index.html` with chat-style copilot task flow.
 - Trust dashboard/pause/rules endpoints (`/api/trust/*`).
-- `docker-compose.agent-server.yml` for local deployment.
+- `deploy/compose/docker-compose.agent-server.yml` for local deployment.
 - Walkthrough doc (`docs/Phase1SecureCopilotWalkthrough.md`).
 
 **What remains:**

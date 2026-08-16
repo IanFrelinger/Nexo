@@ -7,9 +7,9 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 export NEXO_OLLAMA_HOST_PORT="${PORT}"
 cd "${ROOT}"
 echo "Starting Ollama container (port ${PORT})..."
-docker compose -f docker-compose.ollama.yml up -d
+docker compose -f deploy/compose/docker-compose.ollama.yml up -d
 echo "Pulling model '${MODEL}'..."
-docker compose -f docker-compose.ollama.yml exec ollama ollama pull "${MODEL}"
+docker compose -f deploy/compose/docker-compose.ollama.yml exec ollama ollama pull "${MODEL}"
 cat <<EOF
 
 Ollama: http://127.0.0.1:${PORT}
@@ -20,5 +20,5 @@ export OLLAMA_BASE_URL=http://127.0.0.1:${PORT}
 export OLLAMA_MODEL=${MODEL}
 export Nexo__NodeCapabilityRuntime__Ollama__BaseUrl=http://127.0.0.1:${PORT}
 
-Stop: docker compose -f docker-compose.ollama.yml down
+Stop: docker compose -f deploy/compose/docker-compose.ollama.yml down
 EOF

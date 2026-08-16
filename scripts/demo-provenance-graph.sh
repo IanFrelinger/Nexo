@@ -5,7 +5,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
 echo "==> Starting Neo4j (docker compose)..."
-docker compose -f docker-compose.provenance.yml up -d
+docker compose -f deploy/compose/docker-compose.provenance.yml up -d
 
 echo "==> Waiting for Neo4j bolt port..."
 for i in $(seq 1 30); do

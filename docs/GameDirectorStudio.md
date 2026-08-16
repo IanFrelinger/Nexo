@@ -12,8 +12,8 @@ Self-hosted, MCP-exposed AI sidecar for game studios. Monitors balance drift and
 ## Deploy
 
 ```bash
-docker compose -f docker-compose.game-director.yml up -d --build
-docker compose -f docker-compose.game-director.yml exec ollama ollama pull llama3.1:latest
+docker compose -f deploy/compose/docker-compose.game-director.yml up -d --build
+docker compose -f deploy/compose/docker-compose.game-director.yml exec ollama ollama pull llama3.1:latest
 ```
 
 Set `NEXO_API_KEY` in the environment for production. Default dev key: `game-director-dev-key`.

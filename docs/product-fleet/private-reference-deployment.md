@@ -12,7 +12,7 @@ This is the **smallest production-shaped** stack for Nexo Private pilots: one te
 ```bash
 export OLLAMA_MODEL=llama3.1:latest
 export NEXO_DEFAULT_TENANT_ID=acme-pilot
-docker compose -f docker-compose.private-single-tenant.yml up --build -d
+docker compose -f deploy/compose/docker-compose.private-single-tenant.yml up --build -d
 ```
 
 Wait for health:
@@ -80,7 +80,7 @@ Redacted config export for on-call — see [`on-call-playbook-v0.1.md`](./on-cal
 | Step | Action |
 |------|--------|
 | Pin version | Use release image digest or tagged `VERSION` from your order form |
-| First install | `docker compose -f docker-compose.private-single-tenant.yml up --build -d` |
+| First install | `docker compose -f deploy/compose/docker-compose.private-single-tenant.yml up --build -d` |
 | Minor upgrade | `pull` → `up -d --build`; verify `/health` and one copilot read call |
 | Data safety | Stop API before volume backup — see [`private-backup-restore.md`](./private-backup-restore.md) |
 
@@ -89,9 +89,9 @@ For air-gapped installs, build images on a connected machine, `docker save`, tra
 ## Upgrade / teardown
 
 ```bash
-docker compose -f docker-compose.private-single-tenant.yml pull
-docker compose -f docker-compose.private-single-tenant.yml up -d --build
-docker compose -f docker-compose.private-single-tenant.yml down
+docker compose -f deploy/compose/docker-compose.private-single-tenant.yml pull
+docker compose -f deploy/compose/docker-compose.private-single-tenant.yml up -d --build
+docker compose -f deploy/compose/docker-compose.private-single-tenant.yml down
 ```
 
 ## Related
@@ -99,4 +99,4 @@ docker compose -f docker-compose.private-single-tenant.yml down
 - [`docs/ProductFleetImplementationRoadmap.md`](../ProductFleetImplementationRoadmap.md) — Phase 0 exit criteria
 - [`private-backup-restore.md`](./private-backup-restore.md) — RPO/RTO and restore drill
 - [`private-byok-security.md`](./private-byok-security.md) — what never leaves the host
-- [`docker-compose.portal.yml`](../../docker-compose.portal.yml) — portal + Ollama without Private entitlements defaults
+- [`deploy/compose/docker-compose.portal.yml`](../../deploy/compose/docker-compose.portal.yml) — portal + Ollama without Private entitlements defaults

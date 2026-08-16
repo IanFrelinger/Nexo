@@ -111,12 +111,12 @@ main() {
 
   ensure_env_file
 
-  echo "Building and starting mesh lab (docker-compose.mesh-lab.yml)..."
+  echo "Building and starting mesh lab (deploy/compose/docker-compose.mesh-lab.yml)..."
   WORKERS_PROFILE_ARGS=()
   if [[ "${WITH_WORKERS}" == "true" ]]; then
     WORKERS_PROFILE_ARGS=(--profile workers)
   fi
-  docker compose "${WORKERS_PROFILE_ARGS[@]}" -f docker-compose.mesh-lab.yml --env-file .env.mesh-lab up -d --build
+  docker compose "${WORKERS_PROFILE_ARGS[@]}" -f deploy/compose/docker-compose.mesh-lab.yml --env-file .env.mesh-lab up -d --build
 
   if [[ "${SKIP_VERIFY}" == "true" ]]; then
     echo "Skip verify (--skip-verify). Peers: http://127.0.0.1:18081 and :18082 on this host."
@@ -136,7 +136,7 @@ main() {
   echo "  peer-a: http://127.0.0.1:18081"
   echo "  peer-b: http://127.0.0.1:18082"
   echo "SSH tunnel from laptop: ssh -L 18081:127.0.0.1:18081 -L 18082:127.0.0.1:18082 user@vm"
-  echo "Stop: docker compose --profile workers -f docker-compose.mesh-lab.yml --env-file .env.mesh-lab down -v"
+  echo "Stop: docker compose --profile workers -f deploy/compose/docker-compose.mesh-lab.yml --env-file .env.mesh-lab down -v"
 }
 
 main

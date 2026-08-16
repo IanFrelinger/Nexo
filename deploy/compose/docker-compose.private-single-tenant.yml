@@ -11,7 +11,7 @@ services:
 
   nexo-api:
     build:
-      context: .
+      context: ../..
       dockerfile: .docker/Dockerfile.api
     depends_on:
       - ollama

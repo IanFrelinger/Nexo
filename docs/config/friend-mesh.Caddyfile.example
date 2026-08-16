@@ -3,7 +3,7 @@
 #
 # 1. Copy to /etc/caddy/Caddyfile (or your path) and replace nexo.example.com with your DNS name.
 # 2. Point DNS A/AAAA at this host.
-# 3. Ensure docker-compose.friend-mesh publishes 127.0.0.1:8080 (default).
+# 3. Ensure deploy/compose/docker-compose.friend-mesh.yml publishes 127.0.0.1:8080 (default).
 # 4. `caddy run` (or systemctl start caddy).
 
 nexo.example.com {

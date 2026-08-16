@@ -2,7 +2,7 @@
 # Scale the mesh-lab worker tier over time and fire parallel /health requests each step.
 #
 # Prerequisite: lab stack running including workers:
-#   docker compose -f docker-compose.mesh-lab.yml --env-file .env.mesh-lab up -d --build
+#   docker compose -f deploy/compose/docker-compose.mesh-lab.yml --env-file .env.mesh-lab up -d --build
 #
 # Usage:
 #   ./scripts/mesh-lab-stress-ramp.sh .env.mesh-lab [max_workers] [step] [requests_per_step] [pause_sec]
@@ -19,7 +19,7 @@ cd "$ROOT"
 
 COMPOSE_ENV_FILE="${1:?env file path required (e.g. .env.mesh-lab)}"
 # Optional: export MESH_LAB_STRESS_NO_OVERRIDE=1 to use host-published worker port (single replica only).
-STRESS_OVERRIDE="${MESH_LAB_STRESS_OVERRIDE_FILE:-docker-compose.mesh-lab-stress.override.yml}"
+STRESS_OVERRIDE="${MESH_LAB_STRESS_OVERRIDE_FILE:-deploy/compose/docker-compose.mesh-lab-stress.override.yml}"
 MAX_W="${2:-8}"
 STEP="${3:-2}"
 REQS="${4:-30}"
@@ -29,7 +29,7 @@ CURL_IMAGE="${MESH_LAB_CURL_IMAGE:-curlimages/curl:8.5.0}"
 [[ -f "$COMPOSE_ENV_FILE" ]] || { echo "Missing $COMPOSE_ENV_FILE" >&2; exit 1; }
 
 compose() {
-  local -a files=(-f docker-compose.mesh-lab.yml)
+  local -a files=(-f deploy/compose/docker-compose.mesh-lab.yml)
   if [[ "${MESH_LAB_STRESS_NO_OVERRIDE:-}" != "1" && "${MESH_LAB_STRESS_NO_OVERRIDE:-}" != "true" && -f "$STRESS_OVERRIDE" ]]; then
     files+=(-f "$STRESS_OVERRIDE")
   fi

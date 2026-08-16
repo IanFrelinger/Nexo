@@ -66,7 +66,7 @@ make mesh-lab-down
 Equivalent raw Compose:
 
 ```bash
-docker compose -f docker-compose.mesh-lab.yml --env-file .env.mesh-lab up -d --build
+docker compose -f deploy/compose/docker-compose.mesh-lab.yml --env-file .env.mesh-lab up -d --build
 ./scripts/mesh-lab-verify.sh .env.mesh-lab
 ```
 
@@ -141,7 +141,7 @@ If Docker is already installed, omit **`--install-docker`**. For non-apt Linux, 
 ## Workers + stress ramp
 
 ```bash
-docker compose --profile workers -f docker-compose.mesh-lab.yml --env-file .env.mesh-lab up -d --scale worker=2 worker
+docker compose --profile workers -f deploy/compose/docker-compose.mesh-lab.yml --env-file .env.mesh-lab up -d --scale worker=2 worker
 ./scripts/mesh-lab-stress-ramp.sh .env.mesh-lab 8 2 30 4
 # one-shot (verify + deep + ramp):
 make mesh-lab-e2e-stress
@@ -170,7 +170,7 @@ Use host URLs from above; list local peers with `nexo mesh peers` or fleet nodes
 ## Stop
 
 ```bash
-docker compose --profile workers -f docker-compose.mesh-lab.yml --env-file .env.mesh-lab down -v
+docker compose --profile workers -f deploy/compose/docker-compose.mesh-lab.yml --env-file .env.mesh-lab down -v
 ```
 
 ## Remote networking (TLS, gRPC, Tailscale)
