@@ -60,6 +60,9 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+# -Models may arrive as one comma-joined token (powershell -File does not split arrays).
+$Models = @($Models | ForEach-Object { $_ -split "," } | ForEach-Object { $_.Trim() } | Where-Object { $_ })
+
 $repoRoot = (git rev-parse --show-toplevel)
 if (-not $repoRoot) { throw "Not inside a git repository." }
 $sha = (git rev-parse $Ref)
