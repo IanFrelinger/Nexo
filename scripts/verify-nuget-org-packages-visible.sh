@@ -2,7 +2,7 @@
 # Poll nuget.org flat container until all listed package versions return HTTP 200 (index lag after push).
 #
 # NEXO_NUGET_VERIFY_VERSION — required semver (no v prefix)
-# NEXO_NUGET_VERIFY_PACKAGE_IDS — comma-separated ids (default: Nexo.Hosting.Bundle,Nexo.Hosting,Nexo.Sdk)
+# NEXO_NUGET_VERIFY_PACKAGE_IDS — comma-separated ids (default: Nexo.Hosting.Bundle,Nexo.Hosting,Nexo.Sdk,Nexo.CLI)
 # NEXO_NUGET_VERIFY_PACKAGE_ID — if set and NEXO_NUGET_VERIFY_PACKAGE_IDS unset, a single id (backward compat)
 # NEXO_NUGET_VERIFY_ATTEMPTS / NEXO_NUGET_VERIFY_SLEEP_SEC — optional (defaults 12 / 15)
 set -euo pipefail
@@ -20,7 +20,7 @@ if [[ -n "${NEXO_NUGET_VERIFY_PACKAGE_IDS:-}" && "${NEXO_NUGET_VERIFY_PACKAGE_ID
 elif [[ -n "${NEXO_NUGET_VERIFY_PACKAGE_ID:-}" ]]; then
   IDS=("${NEXO_NUGET_VERIFY_PACKAGE_ID}")
 else
-  IDS=(Nexo.Hosting.Bundle Nexo.Hosting Nexo.Sdk)
+  IDS=(Nexo.Hosting.Bundle Nexo.Hosting Nexo.Sdk Nexo.CLI)
 fi
 
 if [[ "${#IDS[@]}" -eq 0 ]]; then

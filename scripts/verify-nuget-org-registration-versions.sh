@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Poll nuget.org registration5-gz-semver2 until each package lists VERSION.
-# Env: NEXO_NUGET_VERIFY_VERSION (required), NEXO_NUGET_VERIFY_PACKAGE_IDS (comma; default Bundle/Hosting/Sdk),
+# Env: NEXO_NUGET_VERIFY_VERSION (required), NEXO_NUGET_VERIFY_PACKAGE_IDS (comma; default Bundle/Hosting/Sdk/CLI),
 #      NEXO_NUGET_VERIFY_ATTEMPTS, NEXO_NUGET_VERIFY_SLEEP_SEC
 set -euo pipefail
 VER="${NEXO_NUGET_VERIFY_VERSION:?set NEXO_NUGET_VERIFY_VERSION}"
@@ -13,7 +13,7 @@ SLEEP_SEC="${NEXO_NUGET_VERIFY_SLEEP_SEC:-15}"
 if [[ -n "${NEXO_NUGET_VERIFY_PACKAGE_IDS:-}" && "${NEXO_NUGET_VERIFY_PACKAGE_IDS}" != "" ]]; then
   mapfile -t IDS < <(echo "${NEXO_NUGET_VERIFY_PACKAGE_IDS}" | tr ',' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep -v '^$' || true)
 else
-  IDS=(Nexo.Hosting.Bundle Nexo.Hosting Nexo.Sdk)
+  IDS=(Nexo.Hosting.Bundle Nexo.Hosting Nexo.Sdk Nexo.CLI)
 fi
 
 reg_has_version() {

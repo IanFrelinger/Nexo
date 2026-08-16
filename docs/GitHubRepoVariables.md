@@ -6,7 +6,7 @@ Set these under **Repository → Settings → Secrets and variables → Actions 
 |----------|--------|------|
 | **`NUGET_PUBLISH_MODE`** | `none`, `oidc`, `apikey` | Controls whether **`reusable-release-nuget.yml`** pushes to nuget.org. `none` = artifact only. |
 | **`NUGET_POST_PUSH_VERIFY`** | unset / `true` / `false` | Set **`false`** to skip post-push flat-container, registration, SHA256 download check, and nuget.org-only restores. |
-| **`NUGET_POST_PUSH_VERIFY_PACKAGE_IDS`** | e.g. `Nexo.Hosting.Bundle,Nexo.Hosting,Nexo.Sdk` | Comma list for visibility + registration polls (default if empty). |
+| **`NUGET_POST_PUSH_VERIFY_PACKAGE_IDS`** | e.g. `Nexo.Hosting.Bundle,Nexo.Hosting,Nexo.Sdk,Nexo.CLI` | Comma list for visibility + registration polls (default if empty). |
 | **`NUGET_POST_PUSH_ATTEMPTS`** | e.g. `12` | Poll rounds (empty = script default). |
 | **`NUGET_POST_PUSH_SLEEP_SEC`** | e.g. `15` | Seconds between polls. |
 | **`NUGET_RELEASE_SBOM`** | `true` / unset | When **`true`**, Syft generates SPDX JSON per `.nupkg` and uploads **`nuget-sbom-<version>`**. |
