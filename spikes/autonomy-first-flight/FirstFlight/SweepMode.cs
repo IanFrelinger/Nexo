@@ -90,6 +90,17 @@ public static class SweepMode
                 BaseUrl = Environment.GetEnvironmentVariable("NEXO_OLLAMA_BASE_URL") ?? "http://host.docker.internal:11434",
                 Model = Environment.GetEnvironmentVariable("NEXO_OLLAMA_MODEL") ?? "codellama:7b",
             };
+            // Per-model dials, all optional: a 27B with CPU offload needs a longer timeout; a
+            // thinking model needs think=false (or a much larger token budget) to reach the code.
+            if (int.TryParse(Environment.GetEnvironmentVariable("NEXO_OLLAMA_MAX_TOKENS"), out var maxTokens) && maxTokens > 0)
+                options.MaxTokens = maxTokens;
+            if (int.TryParse(Environment.GetEnvironmentVariable("NEXO_OLLAMA_TIMEOUT_MINUTES"), out var timeoutMinutes) && timeoutMinutes > 0)
+                options.Timeout = TimeSpan.FromMinutes(timeoutMinutes);
+            if (double.TryParse(Environment.GetEnvironmentVariable("NEXO_OLLAMA_TEMPERATURE"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var temperature))
+                options.Temperature = temperature;
+            if (bool.TryParse(Environment.GetEnvironmentVariable("NEXO_OLLAMA_THINK"), out var think))
+                options.Think = think;
+            Console.WriteLine($"proposer dials: max_tokens={options.MaxTokens} timeout={options.Timeout.TotalMinutes:F0}m temperature={options.Temperature} think={(options.Think is null ? "(model default)" : options.Think.ToString())}");
             // Operator preamble (house rules — here, the brick API a small model does not know).
             // Data the proposer is handed, never a witness; the same knob a deployment would set.
             var preamblePath = Environment.GetEnvironmentVariable("NEXO_OLLAMA_SYSTEM_PREAMBLE_FILE");

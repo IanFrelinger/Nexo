@@ -41,6 +41,15 @@ param(
     # container is gone. Hold admission stays on: certify everything, admit nothing.
     [switch]$SweepLive,
     [int]$MaxObjectives = 5,
+    # -SweepLive only: one campaign per model, in order, each in its own campaign directory
+    # (.../<stamp>-<model>/). The loop is model-agnostic; this is how that claim gets measured.
+    [string[]]$Models = @("codellama:7b"),
+    # -SweepLive only: per-call proposer dials passed straight through to the loop's proposer.
+    # ThinkOff sends think=false (Qwen3-family "thinking" models spend the token budget thinking
+    # before any code appears); a 27B with CPU offload needs the longer timeout.
+    [int]$MaxTokens = 0,
+    [int]$TimeoutMinutes = 0,
+    [switch]$ThinkOff,
     [switch]$Dry,
     [switch]$SessionBuild,
     [switch]$SessionExecute,
@@ -50,6 +59,9 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
+
+# -Models may arrive as one comma-joined token (powershell -File does not split arrays).
+$Models = @($Models | ForEach-Object { $_ -split "," } | ForEach-Object { $_.Trim() } | Where-Object { $_ })
 
 $repoRoot = (git rev-parse --show-toplevel)
 if (-not $repoRoot) { throw "Not inside a git repository." }
@@ -66,33 +78,10 @@ if ($Live) { $dryArg = "$dryArg --live".Trim() }
 $mode = if ($Dry) { "DRY" } else { "REAL (host daemon via docker.sock)" }
 if ($SweepLive) { $mode = "$mode + SWEEP with LIVE in-loop proposer (campaign)" }
 
-# -SweepLive: campaign directory on the host, mounted into the runner at /campaign.
-$campaignMount = @()
-$campaignEnv = @()
 $seedCmd = "mkdir -p .nexo/runtime-studio/objectives/pending; cp samples/autonomy-objectives/tag-scan-classifier.* .nexo/runtime-studio/objectives/pending/ 2>/dev/null || true;"
-$campaignDir = $null
 if ($SweepLive) {
-    $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
-    $campaignDir = Join-Path $repoRoot ".nexo/campaign/$stamp"
-    New-Item -ItemType Directory -Path (Join-Path $campaignDir "objectives/pending") -Force | Out-Null
-    New-Item -ItemType Directory -Path (Join-Path $campaignDir "proposals") -Force | Out-Null
-    Copy-Item (Join-Path $repoRoot "samples/autonomy-objectives/*.md") (Join-Path $campaignDir "objectives/pending/")
-    Copy-Item (Join-Path $repoRoot "samples/autonomy-objectives/*.witness.json") (Join-Path $campaignDir "objectives/pending/")
-    Remove-Item (Join-Path $campaignDir "objectives/pending/README.md") -ErrorAction SilentlyContinue
-    Remove-Item (Join-Path $campaignDir "objectives/pending/proposer-preamble.md") -ErrorAction SilentlyContinue
-    Copy-Item (Join-Path $repoRoot "samples/autonomy-objectives/proposer-preamble.md") (Join-Path $campaignDir "proposer-preamble.md")
-    $campaignMount = @("-v", "${campaignDir}:/campaign")
-    $campaignEnv = @(
-        "-e", "NEXO_SWEEP_PROPOSER=ollama",
-        "-e", "NEXO_OLLAMA_BASE_URL=http://host.docker.internal:11434",
-        "-e", "NEXO_OLLAMA_MODEL=codellama:7b",
-        "-e", "NEXO_OBJECTIVES_ROOT=/campaign/objectives",
-        "-e", "NEXO_CAMPAIGN_DIR=/campaign/proposals",
-        "-e", "NEXO_OLLAMA_SYSTEM_PREAMBLE_FILE=/campaign/proposer-preamble.md",
-        "-e", "NEXO_SWEEP_MAX_OBJECTIVES=$MaxObjectives"
-    )
     $seedCmd = ""  # objectives come from the mounted campaign store, not the clone
-    Write-Host "== campaign directory: $campaignDir =="
+    Write-Host "== campaign models: $($Models -join ', ') =="
 }
 if ($SessionBuild) { $mode = "$mode + in-session build" }
 if ($SessionExecute) { $mode = "$mode + in-session execution" }
@@ -141,22 +130,49 @@ Write-Host "== autonomy first flight: $sha [$mode] =="
 $runnerCmd = "set -e; if [ ! -x /usr/local/bin/docker ]; then curl -fsSL https://download.docker.com/linux/static/stable/x86_64/docker-27.5.1.tgz | tar -xz --strip 1 -C /usr/local/bin docker/docker; fi; git config --global safe.directory '*'; git clone -q /src-mirror /repo; cd /repo; git checkout -q $sha; $seedCmd dotnet run --project spikes/autonomy-first-flight/FirstFlight/FirstFlight.csproj -c Release -- $dryArg"
 
 if ($SweepLive) {
-    # Campaign: keep the whole transcript on the host beside the objectives and proposals.
-    # The tee runs INSIDE the container (PowerShell 5.1 turns native stderr into errors when
-    # redirected), writing to the mounted campaign directory.
-    $campaignCmd = "set -o pipefail; ( $runnerCmd ) 2>&1 | tee /campaign/sweep.log"
-    docker run --rm --user root `
-        -v "${repoRoot}:/src-mirror:ro" `
-        -v nexo-nuget-packages:/root/.nuget/packages `
-        -v /var/run/docker.sock:/var/run/docker.sock `
-        @campaignMount `
-        @campaignEnv `
-        -e DOTNET_ROLL_FORWARD=LatestMajor `
-        $image `
-        bash -lc $campaignCmd
-    $code = $LASTEXITCODE
-    Write-Host "== campaign complete: exit $code - see $campaignDir =="
-    exit $code
+    # One campaign per model, in order. Each gets its own host directory (objectives seeded
+    # fresh, proposals, full log). The tee runs INSIDE the container (PowerShell 5.1 turns
+    # native stderr into errors when redirected), writing to the mounted campaign directory.
+    $worst = 0
+    foreach ($model in $Models) {
+        $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
+        $modelSlug = ($model -replace '[^A-Za-z0-9.-]', '-')
+        $campaignDir = Join-Path $repoRoot ".nexo/campaign/$stamp-$modelSlug"
+        New-Item -ItemType Directory -Path (Join-Path $campaignDir "objectives/pending") -Force | Out-Null
+        New-Item -ItemType Directory -Path (Join-Path $campaignDir "proposals") -Force | Out-Null
+        Copy-Item (Join-Path $repoRoot "samples/autonomy-objectives/*.md") (Join-Path $campaignDir "objectives/pending/")
+        Copy-Item (Join-Path $repoRoot "samples/autonomy-objectives/*.witness.json") (Join-Path $campaignDir "objectives/pending/")
+        Remove-Item (Join-Path $campaignDir "objectives/pending/README.md") -ErrorAction SilentlyContinue
+        Remove-Item (Join-Path $campaignDir "objectives/pending/proposer-preamble.md") -ErrorAction SilentlyContinue
+        Copy-Item (Join-Path $repoRoot "samples/autonomy-objectives/proposer-preamble.md") (Join-Path $campaignDir "proposer-preamble.md")
+        $campaignEnv = @(
+            "-e", "NEXO_SWEEP_PROPOSER=ollama",
+            "-e", "NEXO_OLLAMA_BASE_URL=http://host.docker.internal:11434",
+            "-e", "NEXO_OLLAMA_MODEL=$model",
+            "-e", "NEXO_OBJECTIVES_ROOT=/campaign/objectives",
+            "-e", "NEXO_CAMPAIGN_DIR=/campaign/proposals",
+            "-e", "NEXO_OLLAMA_SYSTEM_PREAMBLE_FILE=/campaign/proposer-preamble.md",
+            "-e", "NEXO_SWEEP_MAX_OBJECTIVES=$MaxObjectives"
+        )
+        if ($MaxTokens -gt 0) { $campaignEnv += @("-e", "NEXO_OLLAMA_MAX_TOKENS=$MaxTokens") }
+        if ($TimeoutMinutes -gt 0) { $campaignEnv += @("-e", "NEXO_OLLAMA_TIMEOUT_MINUTES=$TimeoutMinutes") }
+        if ($ThinkOff) { $campaignEnv += @("-e", "NEXO_OLLAMA_THINK=false") }
+        Write-Host "== campaign [$model]: $campaignDir =="
+        $campaignCmd = "set -o pipefail; ( $runnerCmd ) 2>&1 | tee /campaign/sweep.log"
+        docker run --rm --user root `
+            -v "${repoRoot}:/src-mirror:ro" `
+            -v nexo-nuget-packages:/root/.nuget/packages `
+            -v /var/run/docker.sock:/var/run/docker.sock `
+            -v "${campaignDir}:/campaign" `
+            @campaignEnv `
+            -e DOTNET_ROLL_FORWARD=LatestMajor `
+            $image `
+            bash -lc $campaignCmd
+        $code = $LASTEXITCODE
+        Write-Host "== campaign [$model] complete: exit $code - see $campaignDir =="
+        if ($code -gt $worst) { $worst = $code }
+    }
+    exit $worst
 }
 
 docker run --rm --user root `

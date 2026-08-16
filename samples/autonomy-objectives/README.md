@@ -61,6 +61,10 @@ operator house rules, passed to the proposer through `OllamaProposalOptions.Syst
 campaign 4 — that built in the attested session, passed the analyzer fence, all eight witness
 cases, mutation (`escape_rate=0`) and determinism, and was held (`CertifiedButHeld`).
 
+`rgb-hex-parse.proposal.json` is the same thing from `qwen3.8:27b` in campaign 2 (S5) — the first
+parser to go the whole way, also on its first attempt. Both are recorded for replay; neither was
+admitted.
+
 ## Running the campaign
 
 ```powershell
