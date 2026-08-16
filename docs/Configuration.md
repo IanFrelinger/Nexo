@@ -335,6 +335,9 @@ See `docs/runtime/ExecutionRouting.md` for detailed execution flow and resilienc
 |----------|-------------|---------|
 | `NEXO_BACKGROUND_AGENTS_CONFIG` | Path to background agent set JSON configuration | unset |
 | `NEXO_AGENT_MODE_PATH` | Path to file-based aggressiveness mode store | unset |
+| `NEXO_EXTENSION_MAX_LINEAGE_DEPTH` | Extender ceiling (SX-AUDIT invariant D): max `ParentId` hops below a human-authored root an extender may sit and still extend. May only LOWER the built-in default. | 1 |
+| `NEXO_EXTENSION_MAX_UNATTENDED_CYCLES` | Extender ceiling: extend cycles since a human last armed the agent before it holds (re-arm: restart or `RearmExtension`). May only LOWER the default. | 8 |
+| `NEXO_EXTENSION_MAX_CYCLES_PER_HOUR` | Extender ceiling: extend cycles in any trailing hour. May only LOWER the default. | 4 |
 | `NEXO_OBSERVATION_DEGRADED_MODE` | `1` = start observation pipeline in degraded mode | unset |
 | `NEXO_OBSERVATION_FAIL_OPEN` | `1` = observation pipeline continues on store errors | unset |
 | `NEXO_BARRIER_MIDDLEWARE_ENABLED` | `1` = enable HTTP barrier context middleware | unset |

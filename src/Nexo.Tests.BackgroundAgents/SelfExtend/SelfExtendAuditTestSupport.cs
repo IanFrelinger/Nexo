@@ -32,16 +32,37 @@ internal static class SelfExtendAuditTestSupport
         ISelfExtendRunner? selfExtendRunner = null,
         IAggressivenessModeStore? modeStore = null,
         IApprovalGate? approvalGate = null,
-        IDataSensitivityRegistry? sensitivityRegistry = null)
+        IDataSensitivityRegistry? sensitivityRegistry = null,
+        Nexo.BackgroundAgents.Logging.IBackgroundAgentLogStore? logStore = null,
+        Nexo.BackgroundAgents.Observations.IObservationStore? observations = null,
+        ExtensionCeiling? extensionCeiling = null)
     {
         var scheduler = new AgentScheduler(new ScheduleExecutor(), NullLogger<AgentScheduler>.Instance);
         return new BackgroundAgentRegistry(
             scheduler,
             NullLogger<BackgroundAgentRegistry>.Instance,
+            logStore: logStore,
             selfExtendRunner: selfExtendRunner,
             modeStore: modeStore,
             approvalGate: approvalGate,
-            sensitivityRegistry: sensitivityRegistry ?? new DataSensitivityRegistry());
+            sensitivityRegistry: sensitivityRegistry ?? new DataSensitivityRegistry(),
+            observations: observations,
+            extensionCeiling: extensionCeiling);
+    }
+
+    /// <summary>Observation store that keeps everything in a list — enough to see refusals.</summary>
+    internal sealed class ListObservationStore : Nexo.BackgroundAgents.Observations.IObservationStore
+    {
+        public List<Nexo.BackgroundAgents.Observations.RuntimeObservation> All { get; } = new();
+
+        public string Location => "in-memory://sx-audit";
+
+        public void Append(Nexo.BackgroundAgents.Observations.RuntimeObservation observation) => All.Add(observation);
+
+        public IEnumerable<Nexo.BackgroundAgents.Observations.RuntimeObservation> ReadSince(
+            DateTimeOffset? since = null,
+            Nexo.BackgroundAgents.Observations.ObservationKind? kind = null,
+            int? limit = null) => All;
     }
 
     internal static InMemoryAggressivenessModeStore ActiveModeStore()

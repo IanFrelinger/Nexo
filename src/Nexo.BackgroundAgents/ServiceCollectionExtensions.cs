@@ -107,7 +107,10 @@ public static class ServiceCollectionExtensions
             var auditLog = sp.GetService<IDataDecisionAuditLog>();
             var cycleEvents = sp.GetService<CycleEventStore>();
             var observations = sp.GetService<IObservationStore>();
-            return new BackgroundAgentRegistry(scheduler, logger, logStore, codeAnalysisRunner, testRunRunner, selfExtendRunner, selfImprovementLoop, modeStore, approvalGate, sensitivityRegistry, auditLog, cycleEvents, observations);
+            // SX-AUDIT invariant D: a host may register a stricter ExtensionCeiling; absent one,
+            // the registry resolves the defaults lowered by the environment.
+            var extensionCeiling = sp.GetService<Extending.ExtensionCeiling>();
+            return new BackgroundAgentRegistry(scheduler, logger, logStore, codeAnalysisRunner, testRunRunner, selfExtendRunner, selfImprovementLoop, modeStore, approvalGate, sensitivityRegistry, auditLog, cycleEvents, observations, extensionCeiling: extensionCeiling);
         });
         // Registered here, immediately beside IBackgroundAgentRegistry, so the two can
         // never be wired independently: wherever the registry exists, its deferred form

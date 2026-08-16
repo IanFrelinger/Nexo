@@ -61,6 +61,12 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
     private readonly Observations.IObservationStore? _observations;
     private readonly TimeSpan _shutdownGracePeriod;
 
+    // SX-AUDIT invariant D. The ceiling is resolved once per registry (environment may only
+    // lower it); the ledgers live here, NOT on the agent instance, so re-registration — which
+    // an agent can do to itself — cannot reset them. See ExtensionCeiling.
+    private readonly ExtensionCeiling _extensionCeiling;
+    private readonly ConcurrentDictionary<string, ExtensionLedger> _extensionLedgers = new();
+
     /// <summary>
     /// Initializes the registry. The host (typically <c>BackgroundAgentService</c>)
     /// constructs agent instances and calls <see cref="RegisterAsync"/> before
@@ -77,6 +83,15 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
     /// <param name="modeStore">Optional aggressiveness mode store. When provided, Passive mode skips extender execution.</param>
     /// <param name="approvalGate">Optional approval gate for SemiActive mode. When provided and mode is SemiActive, execution requires approval.</param>
     /// <param name="auditLog">Optional audit log. When provided and mode is Ambient, actions are logged here (no user notification).</param>
+    /// <param name="cycleEvents">Optional cycle event store for per-cycle telemetry.</param>
+    /// <param name="observations">Optional observation store the planner reads.</param>
+    /// <param name="shutdownGracePeriod">Grace period for in-flight cycles on shutdown.</param>
+    /// <param name="extensionCeiling">
+    /// SX-AUDIT invariant D ceilings for extender agents. Null resolves
+    /// <see cref="ExtensionCeiling.Resolve()"/> — the defaults, lowered by the environment. A host
+    /// may pass a stricter ceiling; there is no way to pass a looser one than the defaults short
+    /// of constructing the record, which is a code change.
+    /// </param>
     public BackgroundAgentRegistry(
         IAgentScheduler scheduler,
         ILogger<BackgroundAgentRegistry>? logger = null,
@@ -91,7 +106,8 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
         IDataDecisionAuditLog? auditLog = null,
         CycleEventStore? cycleEvents = null,
         Observations.IObservationStore? observations = null,
-        TimeSpan? shutdownGracePeriod = null)
+        TimeSpan? shutdownGracePeriod = null,
+        ExtensionCeiling? extensionCeiling = null)
     {
         _scheduler = scheduler ?? throw new ArgumentNullException(nameof(scheduler));
         _logger = logger;
@@ -107,6 +123,57 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
         _cycleEvents = cycleEvents;
         _observations = observations;
         _shutdownGracePeriod = shutdownGracePeriod ?? DefaultShutdownGracePeriod;
+        _extensionCeiling = extensionCeiling ?? ExtensionCeiling.Resolve();
+    }
+
+    /// <summary>The invariant-D ceiling this registry enforces (before per-agent narrowing).</summary>
+    public ExtensionCeiling ExtensionCeiling => _extensionCeiling;
+
+    /// <summary>
+    /// The invariant-D ledger for an extender: unattended cycles since the last human arm and
+    /// cycles in the trailing hour. Read-only view for operators and digests.
+    /// </summary>
+    public ExtensionLedger GetExtensionLedger(string agentId) =>
+        _extensionLedgers.GetOrAdd(agentId, _ => new ExtensionLedger());
+
+    /// <summary>
+    /// A human re-arms an extender that has reached <see cref="Extending.ExtensionCeiling.MaxUnattendedCycles"/>.
+    /// This is an OPERATOR surface — it must never be registered as an agent tool, or an agent
+    /// could re-arm itself and the ceiling would bound nothing. Re-registration deliberately
+    /// does not re-arm for the same reason. The hourly rate ceiling is not affected.
+    /// </summary>
+    /// <returns>The unattended-cycle count that was cleared.</returns>
+    public int RearmExtension(string agentId)
+    {
+        if (string.IsNullOrWhiteSpace(agentId))
+            throw new ArgumentException("Agent id is required.", nameof(agentId));
+
+        var cleared = GetExtensionLedger(agentId).Rearm();
+        _logStore?.Append(agentId, "Info", $"Extension re-armed by operator ({cleared} unattended cycle(s) cleared).");
+        _logger?.LogInformation("Background agent {AgentId}: extension re-armed by operator ({Cleared} unattended cycles cleared)", agentId, cleared);
+        return cleared;
+    }
+
+    /// <summary>
+    /// How many <c>ParentId</c> hops separate an agent from a human-authored root. Roots are
+    /// depth 0. A <c>ParentId</c> that resolves to no registered agent still counts as a hop
+    /// (an unknown parent is not a reason to grant more authority). Bounded so a cyclic
+    /// parent graph cannot spin.
+    /// </summary>
+    internal int LineageDepth(BackgroundAgentConfig config)
+    {
+        var depth = 0;
+        var seen = new HashSet<string>(StringComparer.Ordinal) { config.Id };
+        var parentId = config.ParentId;
+        while (!string.IsNullOrWhiteSpace(parentId) && depth < 64)
+        {
+            depth++;
+            if (!seen.Add(parentId) || !_agents.TryGetValue(parentId, out var parent))
+                break;
+            parentId = parent.Config.ParentId;
+        }
+
+        return depth;
     }
 
     /// <summary>
@@ -477,6 +544,44 @@ public sealed class BackgroundAgentRegistry : IBackgroundAgentRegistry
                         return;
                     }
                 }
+
+                // SX-AUDIT invariant D: an Active (or approved) extender still may not extend
+                // without bound. Lineage depth, unattended cycles since a human armed it, and
+                // cycles in the trailing hour are each a refusal on their own; the refusal is
+                // recorded where the Passive skip is (log store, observation, telemetry) so a
+                // held extender is visible, not silent.
+                var ceiling = _extensionCeiling.NarrowedBy(instance.Config);
+                var ledger = GetExtensionLedger(agentId);
+                var refusal = ledger.Refusal(ceiling, LineageDepth(instance.Config));
+                if (refusal is not null)
+                {
+                    _logStore?.Append(agentId, "Warning", $"Extension refused (invariant D): {refusal}.");
+                    _logger?.LogWarning("Background agent {AgentId}: extension refused (invariant D): {Reason}", agentId, refusal);
+                    _observations?.Append(new RuntimeObservation(
+                        ts: DateTimeOffset.UtcNow,
+                        source: agentId,
+                        kind: ObservationKind.AgentAction,
+                        summary: $"Extension refused (invariant D): {refusal}",
+                        severity: ObservationSeverity.Warn,
+                        facts: new Dictionary<string, string>
+                        {
+                            ["repo_root"] = repoRoot,
+                            ["stopped_reason"] = "extension_ceiling",
+                            ["unattended_cycles"] = ledger.UnattendedCycles.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                            ["cycles_in_hour"] = ledger.CyclesInWindow.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                            ["mode"] = mode.ToString()
+                        },
+                        agentCycle: instance.ExecutionCount));
+                    instance.LastCompletedAt = DateTimeOffset.UtcNow;
+                    telemSuccess = false;
+                    telemRationale = refusal;
+                    telemStoppedReason = "extension_ceiling";
+                    return;
+                }
+
+                // Count the cycle only once it is actually handed to the runner: a Passive
+                // skip or an approval denial must not consume the agent's extension budget.
+                ledger.RecordCycle();
 
                 // Surface the agent's configured Objective, AgentName, ModelProvider, and ModelName
                 // so the LLM has goal context and the model chain routes to the configured backend.
