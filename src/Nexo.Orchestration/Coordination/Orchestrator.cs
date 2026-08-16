@@ -453,6 +453,21 @@ public sealed class Orchestrator
                     // Release resources
                     _resourceAllocator.ReleaseResources(agentId);
                 }
+                catch (BarrierContextMissingException ex)
+                {
+                    // Not an agent fault: the host never established a barrier context and
+                    // Nexo:Barriers:RequireExplicitBarrier is true. Escalate under the exception's
+                    // own error code (not the generic "AgentExecution" bucket) so callers can see
+                    // WHY nothing ran instead of a bare "0 agent(s) executed".
+                    _logger.LogError(ex, "Agent {AgentId} skipped: barrier context missing", agentId);
+                    _escalationManager.EscalateIssue(
+                        ex.ErrorCode,
+                        $"Agent {agentId} was not executed: {ex.Message} " +
+                        "Establish a barrier context before invoking agents, or set " +
+                        "Nexo:Barriers:RequireExplicitBarrier=false to default to the floor level.",
+                        EscalationSeverity.High,
+                        $"correlationId={ex.CorrelationId}");
+                }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Agent {AgentId} execution failed", agentId);

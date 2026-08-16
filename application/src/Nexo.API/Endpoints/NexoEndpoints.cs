@@ -358,10 +358,11 @@ public static class NexoEndpoints
             var result = await orchestrator.OrchestrateAsync(request.Request, cancellationToken);
             return Results.Ok(new OrchestrationResponse(
                 result.Success,
-                result.IntegratedOutput != null ? $"{result.IntegratedOutput.AgentOutputs.Count} agent(s) executed" : null,
+                BuildOrchestrationSummary(result),
                 result.IntegratedOutput?.IntegratedResults,
                 result.Conflicts.Count,
-                result.Escalations.Count));
+                result.Escalations.Count,
+                ResolveOrchestrationErrorCode(result)));
         }
         catch (Exception ex)
         {
@@ -415,7 +416,7 @@ public static class NexoEndpoints
             var result = await orchestrator.OrchestrateAsync(request.Task, cancellationToken);
             var auditCount = Math.Clamp(request.AuditCount <= 0 ? 25 : request.AuditCount, 1, 200);
             var recentAudit = auditLog?.GetRecent(auditCount) ?? [];
-            var summary = result.IntegratedOutput != null ? $"{result.IntegratedOutput.AgentOutputs.Count} agent(s) executed" : null;
+            var summary = BuildOrchestrationSummary(result);
             await copilotTaskStore.StoreAsync(new CopilotTaskRecord
             {
                 TenantId = tenantId,
@@ -1294,6 +1295,34 @@ public static class NexoEndpoints
         tenantId = organization.TenantId;
         return true;
     }
+
+    // "N agent(s) executed" is meaningless on its own when N is 0. On failure, append the
+    // most recent escalation's description so the caller sees WHY (e.g. barrier context
+    // missing) instead of a bare count with escalations:N and no reason. Most recent, not
+    // first: EscalationManager is a host singleton, so the list spans earlier requests.
+    private static string? BuildOrchestrationSummary(OrchestrationResult result)
+    {
+        if (result.IntegratedOutput == null)
+            return null;
+
+        var summary = $"{result.IntegratedOutput.AgentOutputs.Count} agent(s) executed";
+        if (result.Success)
+            return summary;
+
+        var reason = result.Escalations
+            .Select(e => e.Description)
+            .LastOrDefault(d => !string.IsNullOrWhiteSpace(d));
+        return string.IsNullOrWhiteSpace(reason) ? summary : $"{summary}: {reason}";
+    }
+
+    // The escalation issue type is the closest thing to a canonical code the orchestrator
+    // emits (BarrierContextMissingException escalates under its own ErrorCode).
+    private static string? ResolveOrchestrationErrorCode(OrchestrationResult result) =>
+        result.Success
+            ? null
+            : result.Escalations
+                .Select(e => e.IssueType)
+                .LastOrDefault(t => !string.IsNullOrWhiteSpace(t));
 
     // Preferences file lives next to the config file so it survives Docker
     // container restarts when the config directory is on a volume mount.
