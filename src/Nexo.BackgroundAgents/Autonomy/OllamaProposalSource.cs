@@ -42,6 +42,16 @@ public sealed class OllamaProposalOptions
     /// objectives.
     /// </summary>
     public string? SystemPreamble { get; set; }
+
+    /// <summary>
+    /// On REPAIR, hand the model only the objective's <c>Contract:</c> section rather than
+    /// the whole body. Measured, not assumed: on codellama:7b the same repair went from 3/3
+    /// with a two-line contract to 0/3 when the full 18-line objective narrative surrounded
+    /// it — the signal was buried, not missing. Larger models are unlikely to care; small
+    /// ones need the contract to be the loudest thing on the page. Falls back to the full
+    /// body when the objective has no <c>Contract:</c> heading.
+    /// </summary>
+    public bool RepairWithContractOnly { get; set; } = true;
 }
 
 /// <summary>Prompt framings; see <see cref="OllamaProposalOptions.Style"/>.</summary>
@@ -121,7 +131,7 @@ public sealed class OllamaProposalSource : IProposalSource
         return new ProposedSource(source, typeName, signature);
     }
 
-    private string BuildPrompt(ProposalRequest request)
+    internal string BuildPrompt(ProposalRequest request)
     {
         var sb = new StringBuilder();
         if (!string.IsNullOrWhiteSpace(_options.SystemPreamble))
@@ -144,13 +154,18 @@ public sealed class OllamaProposalSource : IProposalSource
             sb.AppendLine(repair.PreviousSource.TrimEnd());
             sb.AppendLine("```");
             sb.AppendLine();
-            sb.AppendLine("The contract it must satisfy (from the objective):");
+            // Repair scaffold kept deliberately terse: contract, then a one-sentence ask.
+            // Measured on codellama:7b (see docs/certification-evidence.md, S3): single-shot
+            // repair rate on this exact shape swung 0/3..3/3 with formatting noise alone, so
+            // no scaffold is "the" right one for a small model; through the loop's bounded
+            // retry, 3/5 objectives converged at temperature 0.2 and 0.7 alike. Tune the
+            // policy's attempt cap and these options per model rather than this text.
+            sb.AppendLine("The contract it must satisfy:");
+            sb.AppendLine(_options.RepairWithContractOnly ? ExtractContract(request.Body) : request.Body.Trim());
             sb.AppendLine();
-            sb.AppendLine(request.Body.Trim());
-            sb.AppendLine();
-            sb.AppendLine("Output the COMPLETE corrected file as one ```csharp code block, every line included, nothing else.");
-            sb.AppendLine("Do not add, remove, or reorder any member. Change only what the report requires.");
-            AppendConstraints(sb);
+            sb.Append("Output the COMPLETE corrected file as one ```csharp code block, every line included, nothing else. ")
+              .Append("Do not add, remove, or reorder any member. ")
+              .AppendLine("Deterministic only: no DateTime.Now, no Random, no Guid.NewGuid, no I/O, no empty catch blocks.");
             return sb.ToString();
         }
 
@@ -180,6 +195,42 @@ public sealed class OllamaProposalSource : IProposalSource
         sb.AppendLine("- Deterministic only: no DateTime.Now, no Random, no Guid.NewGuid, no file or network I/O, no static mutable state, no empty catch blocks.");
         sb.AppendLine("- Every loop must provably terminate.");
         sb.AppendLine("- Read only inputs the interface declares; write only outputs it declares.");
+    }
+
+    /// <summary>
+    /// The objective's <c>Contract:</c> section — the heading through the next blank-line-
+    /// separated paragraph that is not a list item — or the whole body when there is none.
+    /// </summary>
+    internal static string ExtractContract(string body)
+    {
+        var lines = body.Replace("\r", "").Split('\n');
+        var start = Array.FindIndex(lines, l => l.Trim().Equals("Contract:", StringComparison.OrdinalIgnoreCase));
+        if (start < 0)
+            return body.Trim();
+
+        var sb = new StringBuilder();
+        var seenItem = false;
+        for (var i = start + 1; i < lines.Length; i++)
+        {
+            var line = lines[i];
+            var trimmed = line.Trim();
+            if (trimmed.Length == 0)
+            {
+                if (seenItem) break; // end of the list block
+                continue;
+            }
+
+            if (!trimmed.StartsWith("- ", StringComparison.Ordinal) && !trimmed.StartsWith("* ", StringComparison.Ordinal))
+            {
+                if (seenItem) break;
+                continue;
+            }
+
+            seenItem = true;
+            sb.AppendLine(trimmed);
+        }
+
+        return seenItem ? sb.ToString().TrimEnd() : body.Trim();
     }
 
     private static string? ExtractSource(string text)

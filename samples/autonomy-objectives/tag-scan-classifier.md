@@ -27,7 +27,7 @@ Contract:
 
 - Input `payload` (string): the raw scanned text.
 - Output `isValid` (bool): true only when the payload decodes to a tag reference.
-- Output `failureCode` (string): the codec's failure code when invalid; empty string when valid.
+- Output `failureCode` (string): the codec's failure code when invalid; the EMPTY STRING when valid. NEVER null.
 
 Use `PhysicalAtomQrTagCodec.TryDecode` rather than re-implementing prefix or base64url
 handling — the point is to surface the existing decision, not to duplicate it.

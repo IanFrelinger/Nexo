@@ -48,7 +48,9 @@ public sealed class RepairFeedbackPolicy
     /// proposer can learn about the witness by iterating (even redacted feedback lets a
     /// proposer probe case indices, given enough rounds), and keeps acceptance rate an
     /// honest measurement rather than a number the loop can inflate by trying forever.
-    /// 0 disables repair entirely: every rejection is terminal.
+    /// 0 disables repair entirely: every rejection is terminal. Measured (S3 in the evidence
+    /// ledger): a 7B local model converged on 3/5 objectives within the default of 2; small
+    /// models may want 3, large hosted ones rarely need more than 1.
     /// </summary>
     public int MaxAttemptsPerObjective { get; set; } = 2;
 

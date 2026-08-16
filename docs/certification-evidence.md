@@ -24,6 +24,7 @@ Version pin: `0.1.0` (from `VERSION`)
 | LIVE model proposal (P6) | Flight with `-Live` — ollama `codellama:7b` called AT FLIGHT TIME, witness-blind prompt, recording committed; the gate judges each sample | **PASS on sample 4** (`AdmittedAndSwapped`, escape 0); measured acceptance 1/4 — 2 mutation REJECTs, 1 swap-host identity hold | Local spike @ `4ad4d05e`; recordings in `spikes/autonomy-first-flight/recordings/` |
 | Standing loop, first sweep (S1) | `run-first-flight.ps1 -Sweep` — an objective FILE in the store drives the loop: witness + proposal loaded, attested session, in-session compile, witness judged | **REJECT at `correctness` case 0** (`expected "" got <null>`) — hold mode, nothing swapped | Local spike @ `061c4f83`; example in `samples/autonomy-objectives/` |
 | Repair loop to ADMIT (S2) | S1 rejection fed back to the model as repair input; loop re-run under hold + full containment | model fixed its one defective line; **ADMIT, `escape_rate=0` → `CertifiedButHeld`** after two trust-machinery holes were closed (analyzer-dead mutants as kills; `$summary` witnessable) | Local spike @ `7cdf9e88`; sample in `samples/autonomy-objectives/` |
+| Repair channel as policy (S3) | `RepairFeedbackPolicy` + ablation on codellama:7b, then the shipped loop path (5 objectives × 2-attempt budget, two temperatures) | **redaction costs nothing (3/3 vs 3/3 in ablation); through the shipped path 3/5 objectives converge within the budget at temp 0.2 and 0.7 alike**; the necessary ingredient was contract precision ("NEVER null"), and single-shot rate on a 7B model swings with formatting noise — the bounded retry is what makes it usable | Local ablation @ this PR |
 
 **Dogfood summary:** `honest=ADMIT`, `buggy=REJECT`, `tests_executed=19` — CI-confirmed on PR #191.
 
@@ -477,8 +478,48 @@ and empty identically (`expected  got `), which is useless as repair feedback.
 
 **The design tension made concrete:** useful repair feedback necessarily leaks witness values to
 the proposer (`expected ""` IS a witness value). Repair trades generation-blindness for
-convergence one message at a time. That is a deliberate choice to make, not a bug — bound it
-(cap repair attempts per objective; consider redacting expected values) before running unattended.
+convergence one message at a time. That was the open question at the end of S2. S3 answers it.
+
+### S3: the repair channel made policy — and measured
+
+The tension is now resolved by construction: `RepairFeedbackPolicy` projects every rejection into
+a proposer view at a chosen disclosure level — `CheckOnly` / `OwnOutput` (default) / `Full` — from
+STRUCTURED witness findings, never by re-parsing prose. The default shows the proposer the failing
+check, case index, key, and its OWN observed value; expected values appear only under `Full`, which
+is opt-in and documented as weakening the certificate. Repairs are bounded per objective (default
+2), then held for a human. Everything is model-independent configuration; `OllamaProposalSource`
+adds prompt style, temperature, tokens and preamble as dials so the same loop serves a 7B local
+model or a large hosted one.
+
+**Then it was measured — twice, because the first measurement was too clean to trust.**
+
+Hand-built ablation on `codellama:7b`, 3 samples/arm at temperature 0.2, repairing the S1
+null-vs-empty defect:
+
+| Prompt | Expected value shown | "NEVER null" in contract | Repaired |
+|--------|----------------------|--------------------------|----------|
+| default `OwnOutput` | no | yes | 3/3 |
+| `Full` | yes | yes | 3/3 |
+| default, contract softened | no | no | 0/3 |
+| (13 earlier attempts, softened contract) | mixed | no | 0/13 |
+
+**Redacting the expected value costs nothing**; the necessary ingredient was two words in the
+CONTRACT ("NEVER null"). But the SHIPPED prompt — same disclosure, same contract — went 0/3
+single-shot, and ~60 further model calls could not isolate a single semantic cause: the swing
+between 0/3 and 3/3 tracked formatting noise (a blank line, "; the" vs ", and the",
+"valid tag" vs "tag reference"). That is a property of a 7B model at low temperature, and the
+loop must be robust to it rather than tuned to it.
+
+So the number that matters is the one users get. Through the shipped code path — default
+`OwnOutput` policy, `RepairWithContractOnly`, the loop's 2-attempt budget — **3/5 independent
+objectives converge, at temperature 0.2 and at 0.7 alike.** Not the 3/3 of a lucky prompt, not
+the 0/3 of an unlucky one. The retry budget is what turns "sometimes" into "usually", and it is
+bounded, so a proposer still cannot binary-search the witness.
+
+Three operating lessons, all now encoded as configuration rather than lore: (1) generation-
+blindness is free — keep the default; (2) when a small model will not repair, sharpen the
+CONTRACT before loosening the disclosure; (3) hand small models the contract alone, not the
+objective narrative (`RepairWithContractOnly`, measured 3/3 → 0/3 the other way).
 
 Worked example (objective, witness with `$summary` pinned, and the model-REPAIRED proposal):
 `samples/autonomy-objectives/`.
