@@ -52,7 +52,7 @@ Only start when Phase 0 is solid; overlap Phase 1 if you have capacity.
 | Step | What to implement | Done means | Status |
 |------|-------------------|------------|--------|
 | 2.1 | **AWS account structure**: prod/stage, IAM boundaries, secrets manager, VPC | No secrets in git; least-privilege roles | **Started:** [`cloud-aws-account-structure.md`](./product-fleet/cloud-aws-account-structure.md) |
-| 2.2 | **Isolation**: per-tenant DB schema or DB, or strict row-level security + proven tests; network policies between services | Third-party or internal pen test of **tenant escape** path | **Started:** `RequireOrgMembership` + `ProductFleetOrgControlPlaneTests`; [`deploy/compose/docker-compose.cloud-multi-tenant.yml`](../docker-compose.cloud-multi-tenant.yml) |
+| 2.2 | **Isolation**: per-tenant DB schema or DB, or strict row-level security + proven tests; network policies between services | Third-party or internal pen test of **tenant escape** path | **Started:** `RequireOrgMembership` + `ProductFleetOrgControlPlaneTests`; [`deploy/compose/docker-compose.cloud-multi-tenant.yml`](../deploy/compose/docker-compose.cloud-multi-tenant.yml) |
 | 2.3 | **Control plane**: signup, org creation, invite flow, role model (admin vs member) | Non-admin cannot read other org’s jobs | **Started:** `IOrganizationStore`, `/api/orgs/*`, admin-only invites |
 | 2.4 | **Stripe Billing**: products/prices for seats; optional metered usage for jobs/storage | Test subscription + upgrade + cancel in staging |
 | 2.5 | **Metering pipeline**: usage events → aggregation job → Stripe usage records (or internal ledger if invoiced) | Overage bill matches product-defined job definition |

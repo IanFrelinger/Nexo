@@ -99,4 +99,4 @@ docker compose -f deploy/compose/docker-compose.private-single-tenant.yml down
 - [`docs/ProductFleetImplementationRoadmap.md`](../ProductFleetImplementationRoadmap.md) — Phase 0 exit criteria
 - [`private-backup-restore.md`](./private-backup-restore.md) — RPO/RTO and restore drill
 - [`private-byok-security.md`](./private-byok-security.md) — what never leaves the host
-- [`deploy/compose/docker-compose.portal.yml`](../../docker-compose.portal.yml) — portal + Ollama without Private entitlements defaults
+- [`deploy/compose/docker-compose.portal.yml`](../../deploy/compose/docker-compose.portal.yml) — portal + Ollama without Private entitlements defaults
