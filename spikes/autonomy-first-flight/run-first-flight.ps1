@@ -152,7 +152,7 @@ if ($SweepLive) {
         $image `
         bash -lc $campaignCmd
     $code = $LASTEXITCODE
-    Write-Host "== campaign complete: exit $code — see $campaignDir =="
+    Write-Host "== campaign complete: exit $code - see $campaignDir =="
     exit $code
 }
 
