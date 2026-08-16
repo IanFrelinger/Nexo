@@ -90,6 +90,14 @@ public static class SweepMode
                 BaseUrl = Environment.GetEnvironmentVariable("NEXO_OLLAMA_BASE_URL") ?? "http://host.docker.internal:11434",
                 Model = Environment.GetEnvironmentVariable("NEXO_OLLAMA_MODEL") ?? "codellama:7b",
             };
+            // Operator preamble (house rules — here, the brick API a small model does not know).
+            // Data the proposer is handed, never a witness; the same knob a deployment would set.
+            var preamblePath = Environment.GetEnvironmentVariable("NEXO_OLLAMA_SYSTEM_PREAMBLE_FILE");
+            if (!string.IsNullOrWhiteSpace(preamblePath) && File.Exists(preamblePath))
+            {
+                options.SystemPreamble = File.ReadAllText(preamblePath).Trim();
+                Console.WriteLine($"preamble: {preamblePath} ({options.SystemPreamble.Length} chars)");
+            }
             var campaignDir = Environment.GetEnvironmentVariable("NEXO_CAMPAIGN_DIR")
                 ?? Path.Combine(Path.GetDirectoryName(Path.GetFullPath(objectivesRoot))!, "campaign");
             Directory.CreateDirectory(campaignDir);

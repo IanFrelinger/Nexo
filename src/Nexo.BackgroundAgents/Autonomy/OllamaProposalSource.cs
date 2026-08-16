@@ -50,6 +50,12 @@ public sealed class OllamaProposalOptions
     /// it — the signal was buried, not missing. Larger models are unlikely to care; small
     /// ones need the contract to be the loudest thing on the page. Falls back to the full
     /// body when the objective has no <c>Contract:</c> heading.
+    ///
+    /// <para>Applies to CERTIFICATION repairs only. A BUILD repair always gets the whole
+    /// body: dogfood campaign 2 showed a compile failure's fix usually needs the objective's
+    /// skeleton and API notes (<c>output.Set(...)</c>, the exact <c>TryDecode</c> shape),
+    /// which the contract bullets do not carry — stripping them left the model re-emitting
+    /// the same broken source three times over.</para>
     /// </summary>
     public bool RepairWithContractOnly { get; set; } = true;
 }
@@ -160,8 +166,11 @@ public sealed class OllamaProposalSource : IProposalSource
             // no scaffold is "the" right one for a small model; through the loop's bounded
             // retry, 3/5 objectives converged at temperature 0.2 and 0.7 alike. Tune the
             // policy's attempt cap and these options per model rather than this text.
-            sb.AppendLine("The contract it must satisfy:");
-            sb.AppendLine(_options.RepairWithContractOnly ? ExtractContract(request.Body) : request.Body.Trim());
+            // Build repairs always carry the whole objective — its skeleton and API notes are
+            // what a compile fix needs; contract-only is for certification repairs.
+            var contractOnly = _options.RepairWithContractOnly && repair.Kind != RepairKind.Build;
+            sb.AppendLine(contractOnly ? "The contract it must satisfy:" : "The objective it must satisfy, including the skeleton and API notes:");
+            sb.AppendLine(contractOnly ? ExtractContract(request.Body) : request.Body.Trim());
             sb.AppendLine();
             sb.Append("Output the COMPLETE corrected file as one ```csharp code block, every line included, nothing else. ")
               .Append("Do not add, remove, or reorder any member. ")

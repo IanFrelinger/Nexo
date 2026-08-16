@@ -237,7 +237,11 @@ public sealed class AutonomyLoopService : BackgroundService
                 : RepairFeedback.RenderBuildFailure(result.BuildDiagnostics!, policy);
             var request = new ProposalRequest(objective.Id, objective.Title, objective.Body, objective.Touch)
             {
-                Repair = new RepairContext(current.SourceCode, feedback, attempt + 1),
+                Repair = new RepairContext(
+                    current.SourceCode,
+                    feedback,
+                    attempt + 1,
+                    result.Decision is not null ? RepairKind.Certification : RepairKind.Build),
             };
             var repaired = await _proposals.ProposeAsync(request, cancellationToken).ConfigureAwait(false);
             if (repaired is null)

@@ -79,6 +79,8 @@ if ($SweepLive) {
     Copy-Item (Join-Path $repoRoot "samples/autonomy-objectives/*.md") (Join-Path $campaignDir "objectives/pending/")
     Copy-Item (Join-Path $repoRoot "samples/autonomy-objectives/*.witness.json") (Join-Path $campaignDir "objectives/pending/")
     Remove-Item (Join-Path $campaignDir "objectives/pending/README.md") -ErrorAction SilentlyContinue
+    Remove-Item (Join-Path $campaignDir "objectives/pending/proposer-preamble.md") -ErrorAction SilentlyContinue
+    Copy-Item (Join-Path $repoRoot "samples/autonomy-objectives/proposer-preamble.md") (Join-Path $campaignDir "proposer-preamble.md")
     $campaignMount = @("-v", "${campaignDir}:/campaign")
     $campaignEnv = @(
         "-e", "NEXO_SWEEP_PROPOSER=ollama",
@@ -86,6 +88,7 @@ if ($SweepLive) {
         "-e", "NEXO_OLLAMA_MODEL=codellama:7b",
         "-e", "NEXO_OBJECTIVES_ROOT=/campaign/objectives",
         "-e", "NEXO_CAMPAIGN_DIR=/campaign/proposals",
+        "-e", "NEXO_OLLAMA_SYSTEM_PREAMBLE_FILE=/campaign/proposer-preamble.md",
         "-e", "NEXO_SWEEP_MAX_OBJECTIVES=$MaxObjectives"
     )
     $seedCmd = ""  # objectives come from the mounted campaign store, not the clone
