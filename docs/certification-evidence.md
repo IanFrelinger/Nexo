@@ -25,6 +25,7 @@ Version pin: `0.1.0` (from `VERSION`)
 | Standing loop, first sweep (S1) | `run-first-flight.ps1 -Sweep` — an objective FILE in the store drives the loop: witness + proposal loaded, attested session, in-session compile, witness judged | **REJECT at `correctness` case 0** (`expected "" got <null>`) — hold mode, nothing swapped | Local spike @ `061c4f83`; example in `samples/autonomy-objectives/` |
 | Repair loop to ADMIT (S2) | S1 rejection fed back to the model as repair input; loop re-run under hold + full containment | model fixed its one defective line; **ADMIT, `escape_rate=0` → `CertifiedButHeld`** after two trust-machinery holes were closed (analyzer-dead mutants as kills; `$summary` witnessable) | Local spike @ `7cdf9e88`; sample in `samples/autonomy-objectives/` |
 | Repair channel as policy (S3) | `RepairFeedbackPolicy` + ablation on codellama:7b, then the shipped loop path (5 objectives × 2-attempt budget, two temperatures) | **redaction costs nothing (3/3 vs 3/3 in ablation); through the shipped path 3/5 objectives converge within the budget at temp 0.2 and 0.7 alike**; the necessary ingredient was contract precision ("NEVER null"), and single-shot rate on a 7B model swings with formatting noise — the bounded retry is what makes it usable | Local ablation @ this PR |
+| Dogfood campaign 1 (S4) | five human-authored objectives, live codellama:7b in the loop, hold mode, four campaigns | **compiled 0/5 → 1/5 → 3/5 → 2/5 as the loop was fixed; first full-chain success `door-lock-transition` CertifiedButHeld (escape_rate=0) on the FIRST proposal; text-slug held on a witness the proposer never saw**; a 7B model re-emits on repair — the loop is model-agnostic and the next lever is the model | `.nexo/campaign/*` recordings; `samples/autonomy-objectives/door-lock-transition.proposal.json` |
 
 **Dogfood summary:** `honest=ADMIT`, `buggy=REJECT`, `tests_executed=19` — CI-confirmed on PR #191.
 
@@ -523,6 +524,67 @@ objective narrative (`RepairWithContractOnly`, measured 3/3 → 0/3 the other wa
 
 Worked example (objective, witness with `$summary` pinned, and the model-REPAIRED proposal):
 `samples/autonomy-objectives/`.
+
+### S4: dogfood campaign 1 — the loop meets five objectives it has never seen
+
+Everything before this section was mechanism with a green gate behind it. What there was no
+evidence for was the standing loop meeting more than one real objective. So: five human-authored
+objectives with human-authored witnesses (`samples/autonomy-objectives/`) — a classifier, a state
+machine, two parsers, and `text-slug`, under-specified ON PURPOSE (its contract never addresses
+diacritics; the witness pins them) so the campaign could watch the repair channel hold rather
+than converge on a witness the proposer cannot see. A LIVE `codellama:7b` composed INSIDE the
+loop (so the loop's own policy-projected, bounded repair is what runs), hold admission on. Every
+proposal and the exact projected feedback the model was handed are recorded per attempt
+(`run-first-flight.ps1 -SweepLive`).
+
+Four campaigns in an afternoon, each ~2–5 minutes for all five objectives, each fixing what the
+previous one exposed:
+
+| Campaign | What changed | Compiled | Judged by the witness | Certified (held) |
+|---|---|---|---|---|
+| 1 | baseline | 0/5 | 0 | 0 |
+| 2 | build failures enter the repair channel | 1/5 (a `// TODO` stub) | 1 | 0 |
+| 3 | build repairs carry the whole objective; brick-API operator preamble | 3/5 | 3 | 0 |
+| 4 | authoring fixes: `event`→`trigger`, Summary stated, `$summary` worded | 2/5 | 2 | **1** |
+
+**Mechanism findings (fixed as they surfaced):**
+
+1. **Compile failures were terminal.** A session-build failure carried no `CertificationDecision`,
+   and the loop repaired only when there was one — so a small model's dominant failure mode (a
+   one-line C# slip: `output.Minor = …` for `output.Set("minor", …)`, a `Set(` without its
+   receiver, a missing `using System.Linq`) ended the objective after one attempt. Compiler
+   diagnostics are the safest feedback there is — they describe the candidate's own text, never
+   the witness — and now they ride on `IterationResult.BuildDiagnostics` in the candidate's own
+   line coordinates, projected by `RepairFeedback.RenderBuildFailure` under the same policy and
+   attempt cap.
+2. **Repair prompts stripped what a compile fix needs.** Contract-only repair (measured right for
+   the null-vs-empty case) dropped the skeleton and API notes; a build repair now carries the whole
+   objective (`RepairContext.Kind`).
+3. **A 7B model does not know the brick API** and cannot derive it from diagnostics. The existing
+   operator preamble knob now carries it as house rules (`proposer-preamble.md`) — data the
+   proposer is handed, never a witness, the same knob a deployment would set. Compiled went 1/5 → 3/5.
+4. **The reserved `$summary` key was opaque to a proposer** ("output['$summary'] was not
+   produced", three attempts, no repair). It is now worded as "the output Summary (output.Summary)".
+
+**Authoring findings — the campaign is as much about objectives as about the loop:** an input
+named `event` is a C# keyword (the model's natural `var event = …` can never compile, and
+"; expected" cannot tell a small model why); a witness that pins `$summary` needs a contract that
+states the Summary. Both were ours. The contract-precision lesson from S3, again.
+
+**What the model did, honestly.** `codellama:7b` re-emits its previous source almost verbatim on
+repair — every objective, both repair kinds, all four campaigns; identical diagnostics at identical
+lines. Feedback quality is not the constraint: the projections were precise and redaction held
+throughout (`text-slug` saw its own `"café-olé"` and never `"cafe-ole"`, and the loop held). At 7B
+the loop reaches the witness for 2–3 of 5 shapes and repair convergence is ~0 for anything beyond
+a one-token fix; results also swing between runs (`semver-parse` compiled in campaign 3, not in 4).
+The loop is model-agnostic by construction (`NEXO_OLLAMA_MODEL`); the next lever is the model.
+
+**And the first end-to-end success:** in campaign 4 `door-lock-transition`'s FIRST proposal —
+9.4 s from a 7B model, on an objective it had never seen — built in the attested session, passed
+the analyzer fence, all eight witness cases, mutation (`escape_rate=0`) and determinism, and the
+loop held it: `CertifiedButHeld — certified; the operator holds admission … with full evidence on
+the record`. Recorded beside the objective as `door-lock-transition.proposal.json`. Nothing was
+admitted, in four campaigns and 60 attempts, and every rejection says why.
 
 ## Settled decisions
 
