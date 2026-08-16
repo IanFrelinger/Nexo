@@ -27,12 +27,24 @@ public enum IterationOutcome
 }
 
 /// <summary>One iteration's terminal state with its evidence.</summary>
+/// <param name="Outcome">How the iteration ended.</param>
+/// <param name="Explanation">Human-facing account of why.</param>
+/// <param name="Tier">The objective's tier classification, once intake reached it.</param>
+/// <param name="Decision">The certification decision, when the chain ran.</param>
+/// <param name="Attestation">The session attestation, when a session was opened.</param>
+/// <param name="BuildDiagnostics">
+/// When the candidate failed to compile inside the session: the compiler's diagnostics in the
+/// candidate's own line coordinates (possibly empty if none parsed). Non-null marks the failure
+/// as REPAIRABLE — a proposer may be handed these, because they describe its own text and
+/// nothing of the witness. Null for every other outcome.
+/// </param>
 public sealed record IterationResult(
     IterationOutcome Outcome,
     string Explanation,
     TierClassification? Tier = null,
     CertificationDecision? Decision = null,
-    SessionAttestation? Attestation = null);
+    SessionAttestation? Attestation = null,
+    IReadOnlyList<string>? BuildDiagnostics = null);
 
 /// <summary>The context an iteration runs under: the objective's declarations, projected to core types.</summary>
 public sealed record ProposalIterationContext
@@ -255,10 +267,13 @@ public sealed class AutonomousIterationHarness
                     .ConfigureAwait(false);
                 if (!build.Passed)
                 {
+                    // A compile failure is REPAIRABLE: the diagnostics ride on the result so the
+                    // loop can hand them to the proposer. Nothing of the witness has run yet.
                     return new IterationResult(IterationOutcome.ExplainedFailure,
                         $"session-build failed (exit {build.ExitCode}, toolchain '{build.ToolchainVersion}'): "
                         + build.OutputTail,
-                        tier, null, attestation);
+                        tier, null, attestation,
+                        BuildDiagnostics: build.Diagnostics);
                 }
 
                 _logger?.LogInformation(

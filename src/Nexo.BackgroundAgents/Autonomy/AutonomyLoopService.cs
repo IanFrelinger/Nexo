@@ -186,11 +186,11 @@ public sealed class AutonomyLoopService : BackgroundService
 
     /// <summary>
     /// Runs the objective through the harness, and — when a live proposer is composed and
-    /// the verdict is a rejection with something to say — hands the proposer a
-    /// policy-projected view of that rejection and tries again, up to
-    /// <see cref="RepairFeedbackPolicy.MaxAttemptsPerObjective"/> repairs. Every attempt is
-    /// its own full iteration (session, attestation, chain), so the evidence for each round
-    /// stands on its own; nothing here shortcuts the gate.
+    /// the verdict is a rejection with something to say (a certification decision, or a
+    /// candidate that did not compile) — hands the proposer a policy-projected view of that
+    /// rejection and tries again, up to <see cref="RepairFeedbackPolicy.MaxAttemptsPerObjective"/>
+    /// repairs. Every attempt is its own full iteration (session, attestation, chain), so the
+    /// evidence for each round stands on its own; nothing here shortcuts the gate.
     /// </summary>
     private async Task RunOneAsync(
         ObjectiveDocument objective,
@@ -210,9 +210,15 @@ public sealed class AutonomyLoopService : BackgroundService
                 "Autonomy iteration for {Id} (attempt {Attempt}): {Outcome} — {Explanation}",
                 objective.Id, attempt + 1, result.Outcome, result.Explanation);
 
-            // Repair only a certification rejection with a decision to project; intake
-            // refusals, budget exhaustion, and held/admitted outcomes are terminal here.
-            if (result.Outcome != IterationOutcome.ExplainedFailure || result.Decision is null)
+            // Repair a certification rejection with a decision to project, or a candidate
+            // that did not compile (its diagnostics ride on the result); intake refusals,
+            // budget exhaustion, and held/admitted outcomes are terminal here. Dogfood
+            // campaign 1 showed why the build case matters: a small model's dominant failure
+            // is a one-line compile slip, and until this it was terminal after one attempt.
+            if (result.Outcome != IterationOutcome.ExplainedFailure)
+                return;
+            var repairable = result.Decision is not null || result.BuildDiagnostics is not null;
+            if (!repairable)
                 return;
             if (_proposals is null || attempt >= policy.MaxAttemptsPerObjective)
             {
@@ -226,7 +232,9 @@ public sealed class AutonomyLoopService : BackgroundService
             }
 
             // The proposer sees the projection, never the raw rejection.
-            var feedback = RepairFeedback.Render(result.Decision, policy);
+            var feedback = result.Decision is not null
+                ? RepairFeedback.Render(result.Decision, policy)
+                : RepairFeedback.RenderBuildFailure(result.BuildDiagnostics!, policy);
             var request = new ProposalRequest(objective.Id, objective.Title, objective.Body, objective.Touch)
             {
                 Repair = new RepairContext(current.SourceCode, feedback, attempt + 1),

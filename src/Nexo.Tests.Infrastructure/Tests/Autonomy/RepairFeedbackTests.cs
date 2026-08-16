@@ -118,6 +118,66 @@ public sealed class RepairFeedbackTests
         text.Should().Contain("the witness failed");
     }
 
+    [Fact]
+    public void BuildFailure_ShowsTheCompilerDiagnosticsAboveCheckOnly_AndOnlyTheCheckAtCheckOnly()
+    {
+        var diagnostics = new[]
+        {
+            "line 31, col 17: CS0117: 'BrickOutput' does not contain a definition for 'Minor'",
+            "line 40, col 13: CS0103: The name 'Set' does not exist in the current context",
+        };
+
+        var blind = RepairFeedback.RenderBuildFailure(diagnostics, RepairFeedbackPolicy.Blind());
+        blind.Should().Be("certification: REJECT at 'build' — the candidate did not compile");
+
+        var text = RepairFeedback.RenderBuildFailure(diagnostics, RepairFeedbackPolicy.Default());
+        text.Should().Contain("2 diagnostic(s)");
+        text.Should().Contain("line 31, col 17: CS0117").And.Contain("line 40, col 13: CS0103",
+            "diagnostics describe the candidate's own text, never the witness — the safest feedback there is");
+        text.Should().Contain("keep the class, namespace, Id and interface exactly as declared");
+    }
+
+    [Fact]
+    public void BuildFailure_IsTruncatedByPolicy_AndSaysSoWhenNothingParsed()
+    {
+        var many = Enumerable.Range(1, 5).Select(i => $"line {i}, col 1: CS0001: error {i}").ToArray();
+        var text = RepairFeedback.RenderBuildFailure(many, new RepairFeedbackPolicy { MaxFindings = 2 });
+        text.Should().Contain("error 1").And.Contain("error 2").And.NotContain("error 3");
+        text.Should().Contain("3 further diagnostic(s) omitted");
+
+        var none = RepairFeedback.RenderBuildFailure(Array.Empty<string>(), RepairFeedbackPolicy.Default());
+        none.Should().Contain("no parseable diagnostics");
+    }
+
+    [Fact]
+    public void BuildDiagnostics_AreExtractedInCandidateCoordinates_DistinctAndCapped()
+    {
+        // The wrapper prepends a usings preamble; the transcript's line numbers are WRAPPED
+        // coordinates and must map back to lines the proposer actually wrote.
+        const string source = "namespace P;\npublic sealed class X\n{\n    public int Y() => Z;\n}\n";
+        // Round trip through the real wrapper: find where the candidate's line 4 lands in the
+        // wrapped text (preamble + audit-context insertion), exactly as the compiler sees it.
+        var wrapped = Nexo.Infrastructure.Certification.CandidateSourceWrapper.Wrap(source);
+        var wrappedLine = wrapped.Split('\n').ToList().FindIndex(l => l.Contains("public int Y() => Z;", StringComparison.Ordinal)) + 1;
+        wrappedLine.Should().BeGreaterThan(4, "the wrapper prepends lines");
+        var preamble = Nexo.Infrastructure.Certification.CandidateSourceWrapper.PreambleLineCount;
+        var transcript =
+            $"/nexo-candidate/Candidate.cs({wrappedLine},23): error CS0103: The name 'Z' does not exist in the current context [/nexo-candidate/Candidate.csproj]\n" +
+            $"/nexo-candidate/Candidate.cs({wrappedLine},23): error CS0103: The name 'Z' does not exist in the current context [/nexo-candidate/Candidate.csproj]\n" +
+            "    0 Warning(s)\n    2 Error(s)\n";
+
+        var diags = SessionCandidateBuild.ExtractDiagnostics(transcript, source);
+
+        diags.Should().HaveCount(1, "the same (code, message) is reported once");
+        diags[0].Should().Be("line 4, col 23: CS0103: The name 'Z' does not exist in the current context");
+
+        var flood = string.Concat(Enumerable.Range(1, 30).Select(i =>
+            $"/nexo-candidate/Candidate.cs({preamble + 1},{i}): error CS{1000 + i}: distinct {i} [/x.csproj]\n"));
+        SessionCandidateBuild.ExtractDiagnostics(flood, source).Should().HaveCount(SessionCandidateBuild.MaxDiagnostics,
+            "the first errors are the causes; the rest is cascade");
+        SessionCandidateBuild.ExtractDiagnostics(string.Empty, source).Should().BeEmpty();
+    }
+
     // --- helpers -------------------------------------------------------------------------
 
     private static CertificationDecision CorrectnessRejection(params WitnessFinding[] findings) => new()
