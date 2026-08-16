@@ -81,11 +81,35 @@ public sealed class VirtualProductionNcrRoutingTests
             }
         ]);
 
-        await Task.Delay(600);
-
-        var afterPeer = router.ResolveExecutionTarget(reqs);
+        // The peer snapshot is refreshed by a background poller (150 ms cadence in this host);
+        // wait for the routing decision to actually flip rather than for a guessed interval a
+        // slow runner can overshoot. The assertions below still report a real failure.
+        var afterPeer = await WaitForTargetAsync(
+            () => router.ResolveExecutionTarget(reqs),
+            t => t is ExecutionTarget.Remote { Executor: IPeerExecutor });
         afterPeer.Should().BeOfType<ExecutionTarget.Remote>();
         ((ExecutionTarget.Remote)afterPeer).Executor.Should().BeAssignableTo<IPeerExecutor>();
+    }
+
+    /// <summary>
+    /// Polls <paramref name="resolve"/> until <paramref name="accept"/> holds or the timeout
+    /// elapses, returning the last resolved target either way so the caller's assertions
+    /// produce the diagnostic.
+    /// </summary>
+    private static async Task<ExecutionTarget> WaitForTargetAsync(
+        Func<ExecutionTarget> resolve,
+        Func<ExecutionTarget, bool> accept,
+        int timeoutMs = 10_000)
+    {
+        var deadline = DateTime.UtcNow.AddMilliseconds(timeoutMs);
+        var target = resolve();
+        while (!accept(target) && DateTime.UtcNow < deadline)
+        {
+            await Task.Delay(50);
+            target = resolve();
+        }
+
+        return target;
     }
 
     [Fact(Timeout = TestTimeouts.HostTouching)]
