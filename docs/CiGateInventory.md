@@ -114,6 +114,7 @@ Every workflow not in the required table remains available. Demotion means remov
 | `.github/workflows/runtime-studio-playground.yml` | Runtime Studio Playground | workflow_dispatch | Advisory / scheduled / manual |
 | `.github/workflows/security-gate.yml` | Security Gate | pull_request, workflow_dispatch | Required (branch protection) |
 | `.github/workflows/setup-smoke-suite.yml` | Setup Smoke Suite | workflow_dispatch | Advisory / scheduled / manual |
+| `.github/workflows/shell-lint.yml` | Shell lint | pull_request (paths: `scripts/**`), workflow_dispatch | Advisory / scheduled / manual |
 | `.github/workflows/ship-gate.yml` | Ship Gate | workflow_dispatch | Advisory / scheduled / manual |
 | `.github/workflows/test-air-gapped-no-network.yml` | Air-Gapped Multi-Env Tests | workflow_dispatch | Advisory / scheduled / manual |
 | `.github/workflows/test-caching-multi-env.yml` | Test Caching Multi-Environment | push, workflow_dispatch | Advisory / scheduled / manual |
