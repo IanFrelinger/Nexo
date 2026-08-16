@@ -3,7 +3,7 @@
   "cases": [
     {
       "input": { "payload": "nexo-atom:v1:AQEAhA5Vm-LUQacWRGZVRAABGDAeNjDKKBbcseIyZKrsQdntQQgzfJtak245Vl0Bx0IFMS4wLjC9gUnjWtwkSk1oEgc" },
-      "expectedOutput": { "isValid": true, "failureCode": "" }
+      "expectedOutput": { "isValid": true, "failureCode": "", "$summary": "valid nexo-atom tag" }
     },
     {
       "input": { "payload": "https://example.com/not-a-tag" },

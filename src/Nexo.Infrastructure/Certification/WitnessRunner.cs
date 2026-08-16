@@ -35,7 +35,7 @@ internal static class WitnessRunner
                 continue;
             }
 
-            var outputs = observation.Outputs ?? new Dictionary<string, object?>();
+            var outputs = ProjectObservation(observation);
             foreach (var (key, expected) in witnessCase.ExpectedOutput)
             {
                 if (!outputs.TryGetValue(key, out var actual) || actual is null)
@@ -74,7 +74,7 @@ internal static class WitnessRunner
 
             foreach (var (key, expected) in witnessCase.ExpectedOutput)
             {
-                if (!observation.Outputs.TryGetValue(key, out var actual) || actual is null)
+                if (!ProjectObservation(observation).TryGetValue(key, out var actual) || actual is null)
                     return false;
 
                 if (!WitnessValueComparer.AreEqual(expected, UnwrapJson(actual)))
@@ -103,6 +103,21 @@ internal static class WitnessRunner
         }
 
         return JsonSerializer.Serialize(new object?[] { observation.Summary, observation.Threw, outputs });
+    }
+
+    /// <summary>
+    /// The witness-observable view of a session observation: keyed outputs plus the summary
+    /// under <see cref="WitnessObservableOutput.SummaryKey"/> — the same projection the
+    /// in-process judges apply, so a witness sees one shape regardless of where the
+    /// candidate executed.
+    /// </summary>
+    private static IReadOnlyDictionary<string, object?> ProjectObservation(CandidateCaseObservation observation)
+    {
+        var view = new Dictionary<string, object?>(
+            observation.Outputs ?? new Dictionary<string, object?>(), StringComparer.Ordinal);
+        if (observation.Summary is not null)
+            view[WitnessObservableOutput.SummaryKey] = observation.Summary;
+        return view;
     }
 
     /// <summary>Unwraps a JSON transport value to its CLR shape; non-JSON values pass through.</summary>
@@ -139,7 +154,7 @@ internal static class WitnessRunner
 
             foreach (var (key, expected) in witnessCase.ExpectedOutput)
             {
-                if (!output.ToDictionary().TryGetValue(key, out var actual))
+                if (!WitnessObservableOutput.Project(output.ToDictionary(), output.Summary).TryGetValue(key, out var actual))
                 {
                     failures.Add($"case {caseIndex}: missing output key '{key}'");
                     continue;

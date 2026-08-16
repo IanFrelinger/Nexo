@@ -76,6 +76,55 @@ public sealed class CertificationGateTeethTests
     }
 
     [Fact]
+    public async Task Witness_CanPinTheSummary_UnderTheReservedKey()
+    {
+        // BrickOutput.ToDictionary() excludes Summary, so before the reserved key NO witness
+        // could observe it — a mutated summary literal was unkillable by any witness in the
+        // language, and the first model-proposed dogfood candidate was blocked at the
+        // mutation leg by exactly that survivor. The reserved "$summary" key makes it
+        // witnessable; this pins that a witness which states it is honoured on both legs.
+        var gate = CreateGate();
+        var withSummary = new WitnessSpec(
+            "mutation-probe-brick",
+            [
+                new WitnessCase(
+                    StrongWitness.Cases[0].Input,
+                    new Dictionary<string, object>(StrongWitness.Cases[0].ExpectedOutput)
+                    {
+                        [WitnessObservableOutput.SummaryKey] = "Found 2 ERROR line(s); first: First failure: connection reset",
+                    })
+            ]);
+        var wrongSummary = new WitnessSpec(
+            "mutation-probe-brick",
+            [
+                new WitnessCase(
+                    StrongWitness.Cases[0].Input,
+                    new Dictionary<string, object>(StrongWitness.Cases[0].ExpectedOutput)
+                    {
+                        [WitnessObservableOutput.SummaryKey] = "not what the brick says",
+                    })
+            ]);
+
+        var right = await gate.CertifyAsync(Request(withSummary));
+        var wrong = await gate.CertifyAsync(Request(wrongSummary));
+
+        right.Admitted.Should().BeTrue(right.Record.Reason);
+        wrong.Admitted.Should().BeFalse("a summary the brick does not produce must fail the witness");
+        wrong.FailureCheck.Should().Be("correctness");
+        wrong.Record.Reason.Should().Contain("$summary");
+
+        CertificationRequest Request(WitnessSpec witness) => new()
+        {
+            Brick = new MutationProbeBrick(),
+            Witness = witness,
+            SourceCode = MutationProbeBrickSource.Code,
+            ProjectPath = CreateCleanProjectFile(),
+            CompilationReferences = CompilationReferences(),
+            BrickTypeName = typeof(MutationProbeBrick).FullName
+        };
+    }
+
+    [Fact]
     public async Task RequestManifest_ReachesTheAnalyzerGate_AndItsInstructionReachesTheRecord()
     {
         // A2.3 end-to-end: the manifest instance on the request is the one whose rules reject

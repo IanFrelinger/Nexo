@@ -67,6 +67,10 @@ internal static class MutantWitnessExecutor
                 .GetType()
                 .GetMethod(nameof(BrickOutput.ToDictionary))!
                 .Invoke(mutantOutput, null)!;
+            // Same observable view the in-process witness judges: keyed data plus the summary
+            // under the reserved key, so a mutated summary literal is killable by a witness.
+            var mutantSummary = mutantOutput.GetType().GetProperty(nameof(BrickOutput.Summary))?.GetValue(mutantOutput) as string;
+            outputData = WitnessObservableOutput.Project(outputData, mutantSummary);
 
             foreach (var (key, expected) in witnessCase.ExpectedOutput)
             {
