@@ -34,6 +34,13 @@ powershell -NoProfile -File spikes/autonomy-first-flight/run-first-flight.ps1 -S
 #>
 param(
     [switch]$Sweep,
+    # -SweepLive: the campaign mode. One sweep of the standing loop with a LIVE ollama proposer
+    # composed INSIDE the loop (so the loop's own repair channel runs), every sample objective
+    # seeded, and a host-mounted campaign directory that keeps the objectives, every recorded
+    # proposal (with the exact projected feedback the model saw) and the full log after the
+    # container is gone. Hold admission stays on: certify everything, admit nothing.
+    [switch]$SweepLive,
+    [int]$MaxObjectives = 5,
     [switch]$Dry,
     [switch]$SessionBuild,
     [switch]$SessionExecute,
@@ -54,8 +61,36 @@ if ($SessionBuild) { $dryArg = "$dryArg --session-build".Trim() }
 if ($SessionExecute) { $dryArg = "$dryArg --session-execute".Trim() }
 if ($Proposed) { $dryArg = "$dryArg --proposed".Trim() }
 if ($Sweep) { $dryArg = "--sweep" }
+if ($SweepLive) { $dryArg = "--sweep" }
 if ($Live) { $dryArg = "$dryArg --live".Trim() }
 $mode = if ($Dry) { "DRY" } else { "REAL (host daemon via docker.sock)" }
+if ($SweepLive) { $mode = "$mode + SWEEP with LIVE in-loop proposer (campaign)" }
+
+# -SweepLive: campaign directory on the host, mounted into the runner at /campaign.
+$campaignMount = @()
+$campaignEnv = @()
+$seedCmd = "mkdir -p .nexo/runtime-studio/objectives/pending; cp samples/autonomy-objectives/tag-scan-classifier.* .nexo/runtime-studio/objectives/pending/ 2>/dev/null || true;"
+$campaignDir = $null
+if ($SweepLive) {
+    $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
+    $campaignDir = Join-Path $repoRoot ".nexo/campaign/$stamp"
+    New-Item -ItemType Directory -Path (Join-Path $campaignDir "objectives/pending") -Force | Out-Null
+    New-Item -ItemType Directory -Path (Join-Path $campaignDir "proposals") -Force | Out-Null
+    Copy-Item (Join-Path $repoRoot "samples/autonomy-objectives/*.md") (Join-Path $campaignDir "objectives/pending/")
+    Copy-Item (Join-Path $repoRoot "samples/autonomy-objectives/*.witness.json") (Join-Path $campaignDir "objectives/pending/")
+    Remove-Item (Join-Path $campaignDir "objectives/pending/README.md") -ErrorAction SilentlyContinue
+    $campaignMount = @("-v", "${campaignDir}:/campaign")
+    $campaignEnv = @(
+        "-e", "NEXO_SWEEP_PROPOSER=ollama",
+        "-e", "NEXO_OLLAMA_BASE_URL=http://host.docker.internal:11434",
+        "-e", "NEXO_OLLAMA_MODEL=codellama:7b",
+        "-e", "NEXO_OBJECTIVES_ROOT=/campaign/objectives",
+        "-e", "NEXO_CAMPAIGN_DIR=/campaign/proposals",
+        "-e", "NEXO_SWEEP_MAX_OBJECTIVES=$MaxObjectives"
+    )
+    $seedCmd = ""  # objectives come from the mounted campaign store, not the clone
+    Write-Host "== campaign directory: $campaignDir =="
+}
 if ($SessionBuild) { $mode = "$mode + in-session build" }
 if ($SessionExecute) { $mode = "$mode + in-session execution" }
 if ($Proposed) { $mode = "$mode + MODEL-PROPOSED candidate" }
@@ -100,6 +135,27 @@ if ($Live) {
 
 Write-Host "== autonomy first flight: $sha [$mode] =="
 
+$runnerCmd = "set -e; if [ ! -x /usr/local/bin/docker ]; then curl -fsSL https://download.docker.com/linux/static/stable/x86_64/docker-27.5.1.tgz | tar -xz --strip 1 -C /usr/local/bin docker/docker; fi; git config --global safe.directory '*'; git clone -q /src-mirror /repo; cd /repo; git checkout -q $sha; $seedCmd dotnet run --project spikes/autonomy-first-flight/FirstFlight/FirstFlight.csproj -c Release -- $dryArg"
+
+if ($SweepLive) {
+    # Campaign: keep the whole transcript on the host beside the objectives and proposals.
+    # The tee runs INSIDE the container (PowerShell 5.1 turns native stderr into errors when
+    # redirected), writing to the mounted campaign directory.
+    $campaignCmd = "set -o pipefail; ( $runnerCmd ) 2>&1 | tee /campaign/sweep.log"
+    docker run --rm --user root `
+        -v "${repoRoot}:/src-mirror:ro" `
+        -v nexo-nuget-packages:/root/.nuget/packages `
+        -v /var/run/docker.sock:/var/run/docker.sock `
+        @campaignMount `
+        @campaignEnv `
+        -e DOTNET_ROLL_FORWARD=LatestMajor `
+        $image `
+        bash -lc $campaignCmd
+    $code = $LASTEXITCODE
+    Write-Host "== campaign complete: exit $code — see $campaignDir =="
+    exit $code
+}
+
 docker run --rm --user root `
     -v "${repoRoot}:/src-mirror:ro" `
     -v nexo-nuget-packages:/root/.nuget/packages `
@@ -107,6 +163,6 @@ docker run --rm --user root `
     @liveMount `
     -e DOTNET_ROLL_FORWARD=LatestMajor `
     $image `
-    bash -lc "set -e; if [ ! -x /usr/local/bin/docker ]; then curl -fsSL https://download.docker.com/linux/static/stable/x86_64/docker-27.5.1.tgz | tar -xz --strip 1 -C /usr/local/bin docker/docker; fi; git config --global safe.directory '*'; git clone -q /src-mirror /repo; cd /repo; git checkout -q $sha; mkdir -p .nexo/runtime-studio/objectives/pending; cp samples/autonomy-objectives/tag-scan-classifier.* .nexo/runtime-studio/objectives/pending/ 2>/dev/null || true; dotnet run --project spikes/autonomy-first-flight/FirstFlight/FirstFlight.csproj -c Release -- $dryArg"
+    bash -lc $runnerCmd
 
 exit $LASTEXITCODE

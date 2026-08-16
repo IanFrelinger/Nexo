@@ -1,0 +1,45 @@
+{
+  "brickId": "semver-parse",
+  "cases": [
+    {
+      "input": { "version": "1.2.3" },
+      "expectedOutput": { "isValid": true, "major": 1, "minor": 2, "patch": 3, "prerelease": "" }
+    },
+    {
+      "input": { "version": "0.0.0" },
+      "expectedOutput": { "isValid": true, "major": 0, "minor": 0, "patch": 0, "prerelease": "" }
+    },
+    {
+      "input": { "version": "10.20.30-beta.1" },
+      "expectedOutput": { "isValid": true, "major": 10, "minor": 20, "patch": 30, "prerelease": "beta.1" }
+    },
+    {
+      "input": { "version": "1.2.3-rc-2" },
+      "expectedOutput": { "isValid": true, "major": 1, "minor": 2, "patch": 3, "prerelease": "rc-2" }
+    },
+    {
+      "input": { "version": "01.2.3" },
+      "expectedOutput": { "isValid": false, "major": 0, "minor": 0, "patch": 0, "prerelease": "" }
+    },
+    {
+      "input": { "version": "1.2" },
+      "expectedOutput": { "isValid": false, "major": 0, "minor": 0, "patch": 0, "prerelease": "" }
+    },
+    {
+      "input": { "version": "1.2.3-" },
+      "expectedOutput": { "isValid": false, "major": 0, "minor": 0, "patch": 0, "prerelease": "" }
+    },
+    {
+      "input": { "version": "v1.2.3" },
+      "expectedOutput": { "isValid": false, "major": 0, "minor": 0, "patch": 0, "prerelease": "" }
+    },
+    {
+      "input": { "version": "1.2.3+build.7" },
+      "expectedOutput": { "isValid": false, "major": 0, "minor": 0, "patch": 0, "prerelease": "" }
+    },
+    {
+      "input": { "version": "" },
+      "expectedOutput": { "isValid": false, "major": 0, "minor": 0, "patch": 0, "prerelease": "" }
+    }
+  ]
+}
