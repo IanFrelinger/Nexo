@@ -126,12 +126,12 @@ public static class RepairFeedback
                     sb.Append("no result was observed for this case");
                     break;
                 case WitnessFindingKind.MissingKey:
-                    sb.Append("output['").Append(f.Key).Append("'] was not produced");
+                    sb.Append(DescribeKey(f.Key)).Append(" was not produced");
                     if (policy.Disclosure == RepairDisclosure.Full && f.Expected is not null)
                         sb.Append(" (expected ").Append(f.Expected).Append(')');
                     break;
                 case WitnessFindingKind.Mismatch:
-                    sb.Append("output['").Append(f.Key).Append("'] violates the contract; you produced ")
+                    sb.Append(DescribeKey(f.Key)).Append(" violates the contract; you produced ")
                       .Append(f.Actual ?? "<null>");
                     if (policy.Disclosure == RepairDisclosure.Full && f.Expected is not null)
                         sb.Append(" (expected ").Append(f.Expected).Append(')');
@@ -146,6 +146,17 @@ public static class RepairFeedback
               .Append(" further finding(s) omitted, in case order)");
         }
     }
+
+    /// <summary>
+    /// A finding's key in the proposer's vocabulary: declared outputs are <c>output['name']</c>;
+    /// the reserved <c>$summary</c> key is the output's <c>Summary</c> property, which the model
+    /// otherwise has no way to recognise (campaign 3: three attempts, "output['$summary'] was not
+    /// produced", no repair).
+    /// </summary>
+    private static string DescribeKey(string? key) =>
+        string.Equals(key, WitnessObservableOutput.SummaryKey, StringComparison.Ordinal)
+            ? "the output Summary (output.Summary)"
+            : "output['" + key + "']";
 
     private static void RenderMutation(StringBuilder sb, CertificationDecision decision, RepairFeedbackPolicy policy)
     {

@@ -119,6 +119,20 @@ public sealed class RepairFeedbackTests
     }
 
     [Fact]
+    public void ReservedSummaryKey_IsDescribedInTheProposersVocabulary()
+    {
+        // Campaign 3: "output['$summary'] was not produced" three times, no repair — a proposer
+        // has no way to know the reserved key means the output's Summary property.
+        var decision = CorrectnessRejection(
+            new WitnessFinding(0, WitnessFindingKind.MissingKey, Nexo.Infrastructure.Certification.WitnessObservableOutput.SummaryKey, Expected: $"\"{Secret}\""));
+
+        var text = RepairFeedback.Render(decision, RepairFeedbackPolicy.Default());
+
+        text.Should().Contain("the output Summary (output.Summary) was not produced");
+        text.Should().NotContain("$summary").And.NotContain(Secret);
+    }
+
+    [Fact]
     public void BuildFailure_ShowsTheCompilerDiagnosticsAboveCheckOnly_AndOnlyTheCheckAtCheckOnly()
     {
         var diagnostics = new[]

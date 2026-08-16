@@ -2,35 +2,35 @@
   "brickId": "door-lock-transition",
   "cases": [
     {
-      "input": { "state": "locked", "event": "unlock" },
+      "input": { "state": "locked", "trigger": "unlock" },
       "expectedOutput": { "nextState": "unlocked", "accepted": true }
     },
     {
-      "input": { "state": "unlocked", "event": "open" },
+      "input": { "state": "unlocked", "trigger": "open" },
       "expectedOutput": { "nextState": "open", "accepted": true }
     },
     {
-      "input": { "state": "open", "event": "close" },
+      "input": { "state": "open", "trigger": "close" },
       "expectedOutput": { "nextState": "unlocked", "accepted": true }
     },
     {
-      "input": { "state": "unlocked", "event": "lock" },
+      "input": { "state": "unlocked", "trigger": "lock" },
       "expectedOutput": { "nextState": "locked", "accepted": true }
     },
     {
-      "input": { "state": "locked", "event": "open" },
+      "input": { "state": "locked", "trigger": "open" },
       "expectedOutput": { "nextState": "locked", "accepted": false }
     },
     {
-      "input": { "state": "open", "event": "lock" },
+      "input": { "state": "open", "trigger": "lock" },
       "expectedOutput": { "nextState": "open", "accepted": false }
     },
     {
-      "input": { "state": "ajar", "event": "close" },
+      "input": { "state": "ajar", "trigger": "close" },
       "expectedOutput": { "nextState": "ajar", "accepted": false }
     },
     {
-      "input": { "state": "Locked", "event": "unlock" },
+      "input": { "state": "Locked", "trigger": "unlock" },
       "expectedOutput": { "nextState": "Locked", "accepted": false }
     }
   ]

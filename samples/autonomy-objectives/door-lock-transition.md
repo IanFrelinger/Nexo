@@ -16,8 +16,8 @@ touch:
     - repo.fs.write
 ---
 
-A door lock has three states and four events. Provide a deterministic brick that, given the
-current state and one event, reports the next state and whether the event was accepted.
+A door lock has three states and four triggers. (The input is named `trigger`, not `event` — `event` is a C# keyword and cannot be a variable name.) Provide a deterministic brick that, given the
+current state and one trigger, reports the next state and whether the event was accepted.
 
 The brick is class `DoorLockTransitionBrick` in namespace `Nexo.Samples.Dogfood.Locks`, with
 `Id = "door-lock-transition"`.
@@ -25,7 +25,7 @@ The brick is class `DoorLockTransitionBrick` in namespace `Nexo.Samples.Dogfood.
 Contract:
 
 - Input `state` (string): the current state; one of `locked`, `unlocked`, `open`.
-- Input `event` (string): the event; one of `unlock`, `lock`, `open`, `close`.
+- Input `trigger` (string): the trigger; one of `unlock`, `lock`, `open`, `close`.
 - Output `nextState` (string): the resulting state. NEVER null.
 - Output `accepted` (bool): true only when the event is a valid transition from the state.
 
@@ -36,7 +36,7 @@ Transitions (all comparisons are case-sensitive, exact strings):
 - `unlocked` + `open` → `open`
 - `open` + `close` → `unlocked`
 
-Every other combination — including an unknown state or an unknown event — is rejected:
+Every other combination — including an unknown state or an unknown trigger — is rejected:
 `accepted` is false and `nextState` is exactly the input `state`, unchanged (an unknown state
 is echoed back as given).
 
@@ -60,7 +60,7 @@ public sealed class DoorLockTransitionBrick : DomainBrick
             Inputs =
             [
                 new BrickInputDefinition("state", "string", "current state"),
-                new BrickInputDefinition("event", "string", "event")
+                new BrickInputDefinition("trigger", "string", "trigger")
             ],
             Outputs =
             [
@@ -81,7 +81,7 @@ public sealed class DoorLockTransitionBrick : DomainBrick
 }
 ```
 
-Read inputs with `input.Get<string>("state", string.Empty) ?? string.Empty` (missing or null becomes the empty string).
+Read inputs with `input.Get<string>("state", string.Empty) ?? string.Empty` and likewise for `trigger` (missing or null becomes the empty string).
 Write outputs with `output.Set("nextState", value)` and `output.Set("accepted", value)` on a
 `new BrickOutput()`, and return `Task.FromResult(output)`.
 

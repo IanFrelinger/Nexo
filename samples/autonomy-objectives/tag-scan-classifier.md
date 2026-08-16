@@ -31,6 +31,7 @@ Contract:
 - Input `payload` (string): the raw scanned text.
 - Output `isValid` (bool): true only when the payload decodes to a tag reference.
 - Output `failureCode` (string): the codec's failure code when invalid; the EMPTY STRING when valid. NEVER null.
+- The output's `Summary` property (`output.Summary = ...`): exactly `valid nexo-atom tag` when valid; `invalid tag: ` followed by the failure code when invalid.
 
 Use `PhysicalAtomQrTagCodec.TryDecode` rather than re-implementing prefix or base64url
 handling — the point is to surface the existing decision, not to duplicate it. Its shape is
@@ -76,6 +77,7 @@ public sealed class TagScanClassifierBrick : DomainBrick
 ```
 
 Read the input with `input.Get<string>("payload", string.Empty) ?? string.Empty`. Write outputs
-with `output.Set(name, value)` on a `new BrickOutput()` and return `Task.FromResult(output)`.
+with `output.Set(name, value)` on a `new BrickOutput()`, set `output.Summary` as the contract
+says, and return `Task.FromResult(output)`.
 
 Deterministic only: no clock, no randomness, no I/O.
