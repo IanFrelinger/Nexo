@@ -23,6 +23,7 @@ Version pin: `0.1.0` (from `VERSION`)
 | Model-proposed candidate (P5b) | Flight with `-Proposed` — recorded model proposal, proposer signature in lineage, full containment; admitted only after two honest mutation REJECTs forced witness hardening | **PASS** after campaign: 2× `BudgetExhausted`, REJECT 0.16, REJECT 0.05, then `AdmittedAndSwapped` | Local spike @ `bf8821db` |
 | LIVE model proposal (P6) | Flight with `-Live` — ollama `codellama:7b` called AT FLIGHT TIME, witness-blind prompt, recording committed; the gate judges each sample | **PASS on sample 4** (`AdmittedAndSwapped`, escape 0); measured acceptance 1/4 — 2 mutation REJECTs, 1 swap-host identity hold | Local spike @ `4ad4d05e`; recordings in `spikes/autonomy-first-flight/recordings/` |
 | Standing loop, first sweep (S1) | `run-first-flight.ps1 -Sweep` — an objective FILE in the store drives the loop: witness + proposal loaded, attested session, in-session compile, witness judged | **REJECT at `correctness` case 0** (`expected "" got <null>`) — hold mode, nothing swapped | Local spike @ `061c4f83`; example in `samples/autonomy-objectives/` |
+| Repair loop to ADMIT (S2) | S1 rejection fed back to the model as repair input; loop re-run under hold + full containment | model fixed its one defective line; **ADMIT, `escape_rate=0` → `CertifiedButHeld`** after two trust-machinery holes were closed (analyzer-dead mutants as kills; `$summary` witnessable) | Local spike @ `7cdf9e88`; sample in `samples/autonomy-objectives/` |
 
 **Dogfood summary:** `honest=ADMIT`, `buggy=REJECT`, `tests_executed=19` — CI-confirmed on PR #191.
 
@@ -436,7 +437,50 @@ defect in model-generated code under full session containment.
    empty. The verdict was right and the feedback was useless. Since this text is the repair
    channel a proposer reads, it now renders `expected "" got <null>`.
 
-Worked example (objective, witness, and the verbatim proposal WITH its defect):
+### S2: repair loop to ADMIT — and two holes in the trust machinery it exposed
+
+The rejection message from S1 was fed back to the model as repair input, and the loop
+re-run after each fix. Full campaign, all under hold mode with full session containment:
+
+| Run | Verdict | What it taught |
+|-----|---------|----------------|
+| S1 | REJECT `correctness` case 0 (`expected "" got <null>`) | the witness catches the model's null-vs-empty defect |
+| repair | model returns `failureCode ?? string.Empty` — the one line at fault, nothing else | **the repair loop works on the correctness leg with a live model** |
+| S2a | correctness PASSES; REJECT `mutation`, escape 0.20, survivor `mutate-string-literal-33` | a survivor no witness could kill — see below |
+| fence triage | analyzer-dead mutants now count as kills (`BrickMutationEngine` runs the fence on SURVIVORS only) | mutants that could never certify were inflating escape rates |
+| S2b | still REJECT `mutation`, same survivor | that mutant was not analyzer-dead — deeper |
+| `$summary` | `WitnessObservableOutput` makes the summary witnessable under a reserved key at all three judge sites | the survivor was the SUMMARY literal, invisible to any witness |
+| S2c | **ADMIT, `escape_rate=0` → `CertifiedButHeld`** | the model-repaired candidate is fully certified; hold refuses the swap |
+
+**Two genuine holes in the trust machinery, found by getting to the bottom of one survivor:**
+
+1. **Analyzer-dead mutants counted as escapes.** Mutants were judged only by the witness; the
+   analyzer fence never ran on them. So a mutant that rewrites a declared key
+   (`Set("firstMatchingLine")` → `"firstMatchingLinX"`, NEXO0002) — which no proposer could ever
+   ship — was an "escape" no behavioural witness can observe. Fixed with precedent: a
+   non-compiling mutant was already "dead on arrival"; a fence-rejected one is the same case at an
+   earlier gate. Triage runs on survivors only and fails toward reporting the survivor.
+   **This exposed that `GoodGeneration_WeakWitness_Rejects_WithTeeth` had fake teeth** — all seven of
+   its surviving mutants were analyzer-dead; not one touched the logic the weak witness actually
+   fails to observe (`firstMatchingLine ??= line`). The catalog had no operator for `??=`. Added
+   `degrade-coalesce-assign` (`a ??= b` → `a = b`, "keep first" → "keep last", the buggy fixture's
+   exact defect class); the weak witness now rejects for the RIGHT reason.
+2. **The summary was unwitnessable.** `BrickOutput.ToDictionary()` excludes `Summary`, and every
+   judge compared against the dictionary alone — so a mutated summary literal was unkillable by any
+   witness expressible in the language. Reserved key `$summary`, projected identically at all three
+   judge sites; the contract-conformance leg reads `ToDictionary()` directly so it can never register
+   as an undeclared write.
+
+Also fixed en route: the proposal recorder did not unescape `XXXX` (CS1056 at the in-session build —
+the model's output was fine, the transcription was not), and witness failure messages rendered null
+and empty identically (`expected  got `), which is useless as repair feedback.
+
+**The design tension made concrete:** useful repair feedback necessarily leaks witness values to
+the proposer (`expected ""` IS a witness value). Repair trades generation-blindness for
+convergence one message at a time. That is a deliberate choice to make, not a bug — bound it
+(cap repair attempts per objective; consider redacting expected values) before running unattended.
+
+Worked example (objective, witness with `$summary` pinned, and the model-REPAIRED proposal):
 `samples/autonomy-objectives/`.
 
 ## Settled decisions
