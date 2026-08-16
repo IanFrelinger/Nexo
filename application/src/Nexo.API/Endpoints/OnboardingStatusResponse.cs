@@ -42,6 +42,15 @@ namespace Nexo.API.Endpoints;
 // ── Onboarding ──────────────────────────────────────────────────────
 
 /// <summary>First-run onboarding status for the Director portal.</summary>
+/// <remarks>
+/// <see cref="MeaiOllamaBaseUrl"/> / <see cref="MeaiOllamaModel"/> report what the default (MEAI) model
+/// path will actually dial, resolved by the same precedence as the client
+/// (<c>NEXO_OLLAMA_*</c> env → <c>Nexo:Meai:*</c> → legacy <c>OLLAMA_*</c> env → defaults). The
+/// <c>ollama</c> entry in <see cref="Providers"/> comes from the provider-factory path (legacy env only);
+/// <c>scripts/prod-dry-run.sh</c> compares the two so a container that would dial its own loopback fails
+/// the gate instead of "Ollama available" masking a connection-refused model path. Null when the MEAI
+/// pipeline is opted out (<c>NEXO_USE_MEAI_PIPELINE=0</c>).
+/// </remarks>
 public sealed record OnboardingStatusResponse(
     bool IsFirstRun,
     bool ApiReachable,
@@ -54,4 +63,6 @@ public sealed record OnboardingStatusResponse(
     bool BuiltInCredentialsConfigured,
     bool RequireAuthForCopilotReads,
     bool CopilotScopedKeyConfigured,
-    string ResolvedTenantId);
+    string ResolvedTenantId,
+    string? MeaiOllamaBaseUrl = null,
+    string? MeaiOllamaModel = null);

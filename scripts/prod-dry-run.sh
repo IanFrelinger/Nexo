@@ -104,6 +104,30 @@ curl -sfS "${BASE_URL}/api/status" | head -c 800 || {
 }
 echo ""
 
+# The default (MEAI) model path resolves its Ollama endpoint separately from the provider factory
+# that backs the "ollama" provider flag on this endpoint. Inside a container "localhost" is the
+# container itself, so a loopback endpoint here means model calls get connection-refused while the
+# status page still says Ollama is available. POST /api/orchestrate cannot expose that (non-Development
+# hosts mask exception detail), so assert on the resolved endpoint instead.
+echo "Checking /api/onboarding/status (default model path endpoint) ..."
+ONBOARDING_JSON="$(curl -sfS "${BASE_URL}/api/onboarding/status")" || {
+  echo "FAIL: /api/onboarding/status" >&2
+  exit 1
+}
+MODEL_BASE_URL="$(printf '%s' "$ONBOARDING_JSON" | sed -n 's/.*"meaiOllamaBaseUrl":"\([^"]*\)".*/\1/p')"
+if [[ -z "$MODEL_BASE_URL" ]]; then
+  echo "Default model path reports no Ollama endpoint (MEAI pipeline opted out); loopback check skipped."
+else
+  echo "Default model path Ollama endpoint: ${MODEL_BASE_URL}"
+  case "$MODEL_BASE_URL" in
+    *://localhost|*://localhost:*|*://localhost/*|*://127.0.0.1|*://127.0.0.1:*|*://127.0.0.1/*|*://\[::1\]*)
+      echo "FAIL: default model path would dial the container's own loopback (${MODEL_BASE_URL})." >&2
+      echo "      Set Nexo__Meai__OllamaBaseUrl (or OLLAMA_BASE_URL) to the ollama service in ${COMPOSE_FILE}." >&2
+      exit 1 ;;
+  esac
+fi
+echo ""
+
 echo "Prod-shaped dry run OK (${COMPOSE_FILE})."
 
 if [[ -z "${KEEP_UP:-}" ]]; then

@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using Nexo.Core.Application.ModelArtifacts.Ports;
 using Nexo.Infrastructure.ModelArtifacts;
 using Nexo.Infrastructure.NodeCapabilityRuntime.Backends;
+using Nexo.Infrastructure.NodeCapabilityRuntime.Sdk.Extensions;
 
 namespace Nexo.Infrastructure.ModelArtifacts.Sdk.Extensions;
 /// <summary>DI registration extensions for model artifact catalog.</summary>
@@ -21,8 +22,7 @@ public static class ModelArtifactCatalogServiceCollectionExtensions
         if (services is null) throw new ArgumentNullException(nameof(services));
         if (configuration is null) throw new ArgumentNullException(nameof(configuration));
 
-        services.AddOptions<OllamaBackendOptions>()
-            .Bind(configuration.GetSection(OllamaBackendOptions.SectionName));
+        services.AddOllamaBackendOptions(configuration);
         services.AddOptions<DockerOllamaModelArtifactCatalogOptions>()
             .Bind(configuration.GetSection(DockerOllamaModelArtifactCatalogOptions.SectionName));
         services.AddOptions<OllamaRemoteLibraryCatalogOptions>()

@@ -229,6 +229,8 @@ Run Nexo as a service using compose stacks on a host you control. Review the [se
 ```bash
 docker compose -f deploy/compose/docker-compose.portal.yml up -d --build
 docker compose -f deploy/compose/docker-compose.agent-server.yml up -d --build
+# First boot: the bundled Ollama has no models until you pull one (tag must match OLLAMA_MODEL).
+docker compose -f deploy/compose/docker-compose.portal.yml exec ollama ollama pull llama3.1:latest
 ```
 
 Validate a pipeline template from a mounted workspace with the published CLI image:

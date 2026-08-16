@@ -17,8 +17,13 @@ services:
       - ollama
     environment:
       ASPNETCORE_URLS: http://+:8080
+      # All three Ollama families point at the bundled service so the default (MEAI) model path and the
+      # NCR probe never dial the container's own localhost:11434 (docs/Configuration.md, "Ollama").
       OLLAMA_BASE_URL: http://ollama:11434
       OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1:latest}
+      Nexo__Meai__OllamaBaseUrl: http://ollama:11434
+      Nexo__Meai__OllamaModel: ${OLLAMA_MODEL:-llama3.1:latest}
+      Nexo__NodeCapabilityRuntime__Ollama__BaseUrl: http://ollama:11434
       NEXO_DAILIES_PATH: /data/dailies
       Nexo__Product__RequireOrgMembership: "true"
       Nexo__Entitlements__DeploymentMode: Cloud
