@@ -11,12 +11,14 @@ Self-hosted, MCP-exposed AI sidecar for game studios. Monitors balance drift and
 
 ## Deploy
 
+From the repo root:
+
 ```bash
 docker compose -f deploy/compose/docker-compose.game-director.yml up -d --build
 docker compose -f deploy/compose/docker-compose.game-director.yml exec ollama ollama pull llama3.1:latest
 ```
 
-Set `NEXO_API_KEY` in the environment for production. Default dev key: `game-director-dev-key`.
+The repo is bind-mounted at `/work` by default (`NEXO_REPO_ROOT` defaults to `../..` relative to `deploy/compose/`, i.e. the repo root, whatever your shell CWD); set `NEXO_REPO_ROOT` only to mount another tree. Set `NEXO_API_KEY` in the environment for production. Default dev key: `game-director-dev-key`.
 
 ## Cursor integration
 
