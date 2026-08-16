@@ -1300,6 +1300,11 @@ public static class NexoEndpoints
     // most recent escalation's description so the caller sees WHY (e.g. barrier context
     // missing) instead of a bare count with escalations:N and no reason. Most recent, not
     // first: EscalationManager is a host singleton, so the list spans earlier requests.
+    //
+    // Redaction: the generic "AgentExecution" escalation embeds the agent's ex.Message,
+    // and this endpoint's own catch deliberately hides exception text outside Development.
+    // Keep that posture — forward the description only for escalations whose text is
+    // ours and static (the barrier code), or when running in Development.
     private static string? BuildOrchestrationSummary(OrchestrationResult result)
     {
         if (result.IntegratedOutput == null)
@@ -1309,11 +1314,22 @@ public static class NexoEndpoints
         if (result.Success)
             return summary;
 
-        var reason = result.Escalations
-            .Select(e => e.Description)
-            .LastOrDefault(d => !string.IsNullOrWhiteSpace(d));
-        return string.IsNullOrWhiteSpace(reason) ? summary : $"{summary}: {reason}";
+        var last = result.Escalations.LastOrDefault(e => !string.IsNullOrWhiteSpace(e.Description));
+        if (last is null)
+            return summary;
+
+        var safeToForward = IsDevelopment()
+            || string.Equals(last.IssueType, BarrierContextMissingIssueType, StringComparison.Ordinal);
+        return safeToForward
+            ? $"{summary}: {last.Description}"
+            : $"{summary}: see escalations ({last.IssueType})";
     }
+
+    /// <summary>
+    /// Mirrors <c>BarrierContextMissingException.ErrorCode</c>, which is an instance property
+    /// and so cannot be used as a constant here.
+    /// </summary>
+    private const string BarrierContextMissingIssueType = "BARRIER_CONTEXT_MISSING";
 
     // The escalation issue type is the closest thing to a canonical code the orchestrator
     // emits (BarrierContextMissingException escalates under its own ErrorCode).
