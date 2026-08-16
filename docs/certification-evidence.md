@@ -26,7 +26,7 @@ Version pin: `0.1.0` (from `VERSION`)
 | Repair loop to ADMIT (S2) | S1 rejection fed back to the model as repair input; loop re-run under hold + full containment | model fixed its one defective line; **ADMIT, `escape_rate=0` → `CertifiedButHeld`** after two trust-machinery holes were closed (analyzer-dead mutants as kills; `$summary` witnessable) | Local spike @ `7cdf9e88`; sample in `samples/autonomy-objectives/` |
 | Repair channel as policy (S3) | `RepairFeedbackPolicy` + ablation on codellama:7b, then the shipped loop path (5 objectives × 2-attempt budget, two temperatures) | **redaction costs nothing (3/3 vs 3/3 in ablation); through the shipped path 3/5 objectives converge within the budget at temp 0.2 and 0.7 alike**; the necessary ingredient was contract precision ("NEVER null"), and single-shot rate on a 7B model swings with formatting noise — the bounded retry is what makes it usable | Local ablation @ this PR |
 | Dogfood campaign 1 (S4) | five human-authored objectives, live codellama:7b in the loop, hold mode, four campaigns | **compiled 0/5 → 1/5 → 3/5 → 2/5 as the loop was fixed; first full-chain success `door-lock-transition` CertifiedButHeld (escape_rate=0) on the FIRST proposal; text-slug held on a witness the proposer never saw**; a 7B model re-emits on repair — the loop is model-agnostic and the next lever is the model | `.nexo/campaign/*` recordings; `samples/autonomy-objectives/door-lock-transition.proposal.json` |
-| Dogfood campaign 2 (S5) | the same five objectives, witnesses, preamble and hold mode — only `NEXO_OLLAMA_MODEL` varies: `codellama:7b` vs `qwen2.5-coder:7b` vs `qwen3.8:27b` | **certified-held 1/5 → 2/5 → 3/5 on model swap alone; at 27B compiled 5/5 and the failures move down the pipeline** — `semver-parse` survives correctness and is rejected at `mutation` (`escape_rate=0.04`, a witness weakness, not a model one). Repair stays weak at every size: byte-identical re-emission on 6/6 (7B) and 3/4 (27B) repair attempts, and every certified candidate certified on attempt 1 | `.nexo/campaign/*-qwen*` recordings; `samples/autonomy-objectives/rgb-hex-parse.proposal.json` |
+| Dogfood campaign 2 (S5) | the same five objectives, witnesses, preamble and hold mode — only `NEXO_OLLAMA_MODEL` varies: `codellama:7b` vs `qwen2.5-coder:7b` vs `qwen3.8:27b` | **certified-held 1/5 → 2/5 → 3/5 on model swap alone; at 27B compiled 5/5 and the failures move down the pipeline** — and the survivor is a finding against the GATE: `semver-parse` passes every correctness case and is rejected at `mutation` on an **equivalent mutant** (`escape_rate=0.04`, a redundant length guard `0 => 2` that no witness case can kill), so a correct candidate can never certify. Repair re-emission is clean evidence at 7B (byte-identical on 6/6) but untested at 27B (2 of its 4 repairs had nothing to fix); every certified candidate certified on attempt 1 | `.nexo/campaign/*-qwen*` recordings; `samples/autonomy-objectives/rgb-hex-parse.proposal.json` |
 
 **Dogfood summary:** `honest=ADMIT`, `buggy=REJECT`, `tests_executed=19` — CI-confirmed on PR #191.
 
@@ -611,27 +611,42 @@ its objective as `rgb-hex-parse.proposal.json`.
 7B the dominant failure mode is writing C# that compiles against an API the model was just handed:
 `codellama` and `qwen2.5-coder` lose 2–3 objectives to `error CS1061` / `CS0103` before the witness
 ever runs. At 27B that failure mode disappears outright — 5/5 compiled, and the build-repair path
-introduced in S4 never fired once. What is left are the two failures the gate actually exists to
-catch:
+introduced in S4 never fired once. What is left are two failures deep in the pipeline — and running
+them down is what makes this campaign worth its cost, because only one of them is the proposer's
+fault:
 
 1. **`semver-parse` passed every correctness case and was rejected at `mutation`** —
-   `escape_rate=0.04, survivors=[mutate-int-literal-41]`, three attempts running. That is a finding
-   about OUR witness, not about the model: a mutant of the candidate that the witness does not kill.
-   At this model size the binding constraint starts to shift from the competence of the proposer to
-   the strength of the objectives, and the campaign starts testing us. This is the S3/S4
-   contract-precision lesson arriving one layer deeper.
+   `escape_rate=0.04, survivors=[mutate-int-literal-41]`, three attempts running. Run down, this is
+   **an equivalent mutant, and therefore a soundness hole in the gate — not a weak witness and not a
+   bad candidate.** Survivor ids are `mutate-int-literal-{line}`, so this is line 41,
+   `if (version.Length > 0)`, and the catalog rewrites `0 => 2` (`AstMutationCatalog`), giving
+   `if (version.Length > 2)`. The two differ only for inputs of length 1 or 2 — and no such input can
+   be a valid semver, because `isValid` is set only when `corePart.Split('.')` yields three parts
+   that each pass `IsValidNumericPart`; the sole length-≤2 string with two dots is `".."`, whose parts
+   are empty and rejected. So both versions return `isValid=false, 0, 0, 0, ""` on every input that
+   distinguishes them: the guard is redundant, the mutant is semantically identical, and **no witness
+   case can ever kill it.** `CertificationGate` rejects on `EscapeRate > 0`, so this candidate could
+   not have certified no matter what was added to the witness or how many repair attempts it got.
+   `BrickMutationEngine` already discounts three classes of unkillable mutant (source-identical,
+   non-compiling, analyzer-dead); semantic equivalence is a fourth it does not model, and it is
+   undecidable in general. This is the first time the campaign has caught the trust machinery being
+   wrong rather than the proposer, and it is the substantive finding of S5.
 2. **`text-slug` failed at `correctness` on the plain cases**, not on the diacritics case it was
    authored to hold on (`"hello-world"` → `"helo-wrd"`, `"rock-roll"` → `"rock-l"` — the candidate
    eats repeated letters). So this run does not re-demonstrate S4's "held on a witness the proposer
    never saw"; it failed earlier, for an ordinary reason.
 
-**Repair is still the weak channel, and size does not fix it.** This is the S4 finding surviving a
-family change and a 4x parameter increase. `qwen2.5-coder:7b` re-emitted **byte-identical** source
-on 6 of 6 repair attempts — same hash, same length, with populated feedback on the record every
-time. `qwen3.8:27b` did so on 3 of 4; its single genuine edit (`text-slug`, 1631 → 1474 chars)
-reproduced the identical failure. Every certified candidate in this campaign, at both sizes,
-certified on attempt 1. Bounded repair remains worth its cost as a guard, but on local models it is
-not where the wins come from — the first proposal is.
+**Repair at 7B is still the weak channel; at 27B this campaign cannot say.** `qwen2.5-coder:7b`
+re-emitted **byte-identical** source on 6 of 6 repair attempts — same hash, same length, with
+populated feedback on the record every time — and all three of its repaired objectives had genuine,
+fixable defects (two compile errors and a correctness bug), so that is clean evidence and it carries
+the S4 finding across a family change. The 27B number does **not** carry the same weight, and the
+equivalent-mutant finding above is why: of its 4 repair attempts, 2 were `semver-parse`, where no
+edit could have helped, so re-emitting identical source was the *correct* response rather than a
+failure to read the feedback. That leaves `text-slug` as the only valid test at 27B, and there it
+did change its source on one of two attempts (1631 → 1474 chars, reproducing the same failure).
+**One objective is not a measurement** — whether repair works at 27B is untested, not answered.
+What does hold at both sizes: every certified candidate certified on attempt 1.
 
 **Redaction held on a second and third model.** `text-slug`'s projected feedback showed the model
 only its own output (`"café-ol"`); the expected `"cafe-ole"` appears in no recorded feedback
