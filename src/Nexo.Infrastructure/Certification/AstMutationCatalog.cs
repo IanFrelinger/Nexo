@@ -24,6 +24,7 @@ internal static class AstMutationCatalog
         CollectMutateStringLiterals(root, mutations);
         CollectRemoveStatements(root, mutations);
         CollectSwapLogicalOperators(root, mutations);
+        CollectDegradeCoalesceAssignments(root, mutations);
 
         return mutations;
     }
@@ -171,6 +172,38 @@ internal static class AstMutationCatalog
             var flipped = node.WithOperatorToken(flippedToken.Value);
             var id = $"swap-logical-op-{node.GetLocation().GetLineSpan().StartLinePosition.Line + 1}";
             mutations.Add(new AstMutation(id, root.ReplaceNode(node, flipped)));
+            count++;
+        }
+    }
+
+    /// <summary>
+    /// Degrades a null-coalescing assignment (<c>a ??= b</c>) into a plain assignment
+    /// (<c>a = b</c>). Semantically this turns "keep the first value seen" into "keep the
+    /// last value seen" — the exact defect class of a first-match accumulator that reports
+    /// the LAST match, which is what the buggy fixture does on purpose. Without this operator
+    /// a witness that never pins the accumulated value has no mutant to fail against, so a
+    /// weak witness looked strong purely on the strength of mutants that were dead on
+    /// arrival at the analyzer fence.
+    /// </summary>
+    private static void CollectDegradeCoalesceAssignments(SyntaxNode root, List<AstMutation> mutations)
+    {
+        var count = 0;
+        foreach (var node in ExecutionScopeNodes(root).OfType<AssignmentExpressionSyntax>())
+        {
+            if (count >= MaxPerKind)
+                break;
+
+            if (node.Kind() != SyntaxKind.CoalesceAssignmentExpression)
+                continue;
+
+            var degraded = SyntaxFactory.AssignmentExpression(
+                    SyntaxKind.SimpleAssignmentExpression,
+                    node.Left,
+                    SyntaxFactory.Token(SyntaxKind.EqualsToken).WithTriviaFrom(node.OperatorToken),
+                    node.Right)
+                .WithTriviaFrom(node);
+            var id = $"degrade-coalesce-assign-{node.GetLocation().GetLineSpan().StartLinePosition.Line + 1}";
+            mutations.Add(new AstMutation(id, root.ReplaceNode(node, degraded)));
             count++;
         }
     }

@@ -29,6 +29,14 @@ using Nexo.Infrastructure.Certification.HotSwap;
 using Nexo.Infrastructure.Certification.Sdk.Extensions;
 using Nexo.Spikes.FirstFlight;
 
+// --sweep: drive ONE sweep of the standing loop against the real objective store.
+if (args.Contains("--sweep", StringComparer.OrdinalIgnoreCase))
+{
+    var root = Environment.GetEnvironmentVariable("NEXO_OBJECTIVES_ROOT")
+        ?? Path.Combine(Directory.GetCurrentDirectory(), ".nexo/runtime-studio/objectives");
+    return await SweepMode.RunAsync(root, "mcr.microsoft.com/dotnet/sdk:9.0");
+}
+
 var dry = args.Contains("--dry", StringComparer.OrdinalIgnoreCase);
 // --session-build: the P3 leg — the candidate must COMPILE inside the attested session,
 // which therefore needs an SDK image rather than bare alpine.

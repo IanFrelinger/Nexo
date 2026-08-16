@@ -14,7 +14,22 @@ public sealed record ProposalRequest(
     string ObjectiveId,
     string Title,
     string Body,
-    TouchSet? Touch);
+    TouchSet? Touch)
+{
+    /// <summary>
+    /// Repair context when this is a re-proposal after a rejection: the proposer's own
+    /// previous source and the gate's feedback, ALREADY PROJECTED by the host's
+    /// <c>RepairFeedbackPolicy</c>. A proposer never sees the raw rejection; what arrives
+    /// here is exactly what policy allows and nothing more. Null on a first proposal.
+    /// </summary>
+    public RepairContext? Repair { get; init; }
+}
+
+/// <summary>What a proposer is handed to repair with. See <see cref="ProposalRequest.Repair"/>.</summary>
+/// <param name="PreviousSource">The proposer's own rejected source.</param>
+/// <param name="Feedback">Policy-projected feedback: locations and the proposer's own output, never the witness (unless the operator opted into full disclosure).</param>
+/// <param name="Attempt">1-based repair attempt number.</param>
+public sealed record RepairContext(string PreviousSource, string Feedback, int Attempt);
 
 /// <summary>
 /// One proposed candidate. Source only: the proposer produces code, never a verdict about

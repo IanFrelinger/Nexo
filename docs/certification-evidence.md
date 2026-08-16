@@ -22,6 +22,9 @@ Version pin: `0.1.0` (from `VERSION`)
 | Autonomy in-session execution (P5a) | Flight with `-SessionExecute` — witness, determinism, and every mutant EXECUTE inside the session; the gate judges raw observations | **PASS**, `session-execution` input, `escape_rate=0` | Local spike @ `bf8821db` |
 | Model-proposed candidate (P5b) | Flight with `-Proposed` — recorded model proposal, proposer signature in lineage, full containment; admitted only after two honest mutation REJECTs forced witness hardening | **PASS** after campaign: 2× `BudgetExhausted`, REJECT 0.16, REJECT 0.05, then `AdmittedAndSwapped` | Local spike @ `bf8821db` |
 | LIVE model proposal (P6) | Flight with `-Live` — ollama `codellama:7b` called AT FLIGHT TIME, witness-blind prompt, recording committed; the gate judges each sample | **PASS on sample 4** (`AdmittedAndSwapped`, escape 0); measured acceptance 1/4 — 2 mutation REJECTs, 1 swap-host identity hold | Local spike @ `4ad4d05e`; recordings in `spikes/autonomy-first-flight/recordings/` |
+| Standing loop, first sweep (S1) | `run-first-flight.ps1 -Sweep` — an objective FILE in the store drives the loop: witness + proposal loaded, attested session, in-session compile, witness judged | **REJECT at `correctness` case 0** (`expected "" got <null>`) — hold mode, nothing swapped | Local spike @ `061c4f83`; example in `samples/autonomy-objectives/` |
+| Repair loop to ADMIT (S2) | S1 rejection fed back to the model as repair input; loop re-run under hold + full containment | model fixed its one defective line; **ADMIT, `escape_rate=0` → `CertifiedButHeld`** after two trust-machinery holes were closed (analyzer-dead mutants as kills; `$summary` witnessable) | Local spike @ `7cdf9e88`; sample in `samples/autonomy-objectives/` |
+| Repair channel as policy (S3) | `RepairFeedbackPolicy` + ablation on codellama:7b, then the shipped loop path (5 objectives × 2-attempt budget, two temperatures) | **redaction costs nothing (3/3 vs 3/3 in ablation); through the shipped path 3/5 objectives converge within the budget at temp 0.2 and 0.7 alike**; the necessary ingredient was contract precision ("NEVER null"), and single-shot rate on a 7B model swings with formatting noise — the bounded retry is what makes it usable | Local ablation @ this PR |
 
 **Dogfood summary:** `honest=ADMIT`, `buggy=REJECT`, `tests_executed=19` — CI-confirmed on PR #191.
 
@@ -399,6 +402,127 @@ behavior, which is exactly the A2.3 manifest-scaffold shape).
 traversed this loop — hand-authored, recorded model, live model — surfaced a witness gap the
 previous shapes could not express. Six witness cases now exist; four were demanded by the gate
 rejecting real candidates. Proposer diversity is adversarial witness-hardening.
+
+## S1: the first standing-loop sweep (objective file drives the loop)
+
+Flown 2026-08-15 from `061c4f83` via `run-first-flight.ps1 -Sweep`. Everything before this
+hand-constructed its candidate inside a spike; this is the first run where an objective FILE
+in the store drove the loop end to end.
+
+| Stage | Result |
+|-------|--------|
+| Objective read from `IObjectiveStore` | `tag-scan-classifier` (source=Human, priority=10) |
+| Witness loaded (human-authored, sibling file) | 5 cases |
+| Proposal loaded (live ollama `codellama:7b`, recorded) | witness-blind by construction |
+| Session started + attested on the live daemon | `mcr.microsoft.com/dotnet/sdk:9.0` @ `sha256:35048e3a...` |
+| Candidate compiled INSIDE the session | PASS, toolchain `9.0.317` |
+| Witness judged | **REJECT at `correctness`, case 0** |
+| Outcome | `ExplainedFailure`, session torn down, zero leaked containers, nothing swapped |
+
+**What the rejection caught.** The model wrote the codec's `failureCode` straight to its
+output; that value is `null` on the success path (`PhysicalAtomTagBinaryCodec.cs:113`) while
+the contract and the witness's first case require the empty string. A witness authored from
+the contract BEFORE the proposal existed, and never shown to the proposer, caught a real
+defect in model-generated code under full session containment.
+
+**Two defects the run exposed in our own work, both fixed:**
+
+1. The first sweep failed earlier, at the in-session build, with `CS1056 Unexpected
+   character '003c'`. The proposal-recording tool unescaped `
+`, `\"` and `\` but not
+   `XXXX`, so the stored source carried literal escape text. The MODEL's output was fine;
+   the transcription was not. The loop caught it at the earliest possible gate with an exact
+   diagnostic.
+2. The rejection message read `expected  got ` - both sides empty, because
+   `Convert.ToString` returns `""` for null and a `JsonElement` of kind Null stringifies to
+   empty. The verdict was right and the feedback was useless. Since this text is the repair
+   channel a proposer reads, it now renders `expected "" got <null>`.
+
+### S2: repair loop to ADMIT — and two holes in the trust machinery it exposed
+
+The rejection message from S1 was fed back to the model as repair input, and the loop
+re-run after each fix. Full campaign, all under hold mode with full session containment:
+
+| Run | Verdict | What it taught |
+|-----|---------|----------------|
+| S1 | REJECT `correctness` case 0 (`expected "" got <null>`) | the witness catches the model's null-vs-empty defect |
+| repair | model returns `failureCode ?? string.Empty` — the one line at fault, nothing else | **the repair loop works on the correctness leg with a live model** |
+| S2a | correctness PASSES; REJECT `mutation`, escape 0.20, survivor `mutate-string-literal-33` | a survivor no witness could kill — see below |
+| fence triage | analyzer-dead mutants now count as kills (`BrickMutationEngine` runs the fence on SURVIVORS only) | mutants that could never certify were inflating escape rates |
+| S2b | still REJECT `mutation`, same survivor | that mutant was not analyzer-dead — deeper |
+| `$summary` | `WitnessObservableOutput` makes the summary witnessable under a reserved key at all three judge sites | the survivor was the SUMMARY literal, invisible to any witness |
+| S2c | **ADMIT, `escape_rate=0` → `CertifiedButHeld`** | the model-repaired candidate is fully certified; hold refuses the swap |
+
+**Two genuine holes in the trust machinery, found by getting to the bottom of one survivor:**
+
+1. **Analyzer-dead mutants counted as escapes.** Mutants were judged only by the witness; the
+   analyzer fence never ran on them. So a mutant that rewrites a declared key
+   (`Set("firstMatchingLine")` → `"firstMatchingLinX"`, NEXO0002) — which no proposer could ever
+   ship — was an "escape" no behavioural witness can observe. Fixed with precedent: a
+   non-compiling mutant was already "dead on arrival"; a fence-rejected one is the same case at an
+   earlier gate. Triage runs on survivors only and fails toward reporting the survivor.
+   **This exposed that `GoodGeneration_WeakWitness_Rejects_WithTeeth` had fake teeth** — all seven of
+   its surviving mutants were analyzer-dead; not one touched the logic the weak witness actually
+   fails to observe (`firstMatchingLine ??= line`). The catalog had no operator for `??=`. Added
+   `degrade-coalesce-assign` (`a ??= b` → `a = b`, "keep first" → "keep last", the buggy fixture's
+   exact defect class); the weak witness now rejects for the RIGHT reason.
+2. **The summary was unwitnessable.** `BrickOutput.ToDictionary()` excludes `Summary`, and every
+   judge compared against the dictionary alone — so a mutated summary literal was unkillable by any
+   witness expressible in the language. Reserved key `$summary`, projected identically at all three
+   judge sites; the contract-conformance leg reads `ToDictionary()` directly so it can never register
+   as an undeclared write.
+
+Also fixed en route: the proposal recorder did not unescape `XXXX` (CS1056 at the in-session build —
+the model's output was fine, the transcription was not), and witness failure messages rendered null
+and empty identically (`expected  got `), which is useless as repair feedback.
+
+**The design tension made concrete:** useful repair feedback necessarily leaks witness values to
+the proposer (`expected ""` IS a witness value). Repair trades generation-blindness for
+convergence one message at a time. That was the open question at the end of S2. S3 answers it.
+
+### S3: the repair channel made policy — and measured
+
+The tension is now resolved by construction: `RepairFeedbackPolicy` projects every rejection into
+a proposer view at a chosen disclosure level — `CheckOnly` / `OwnOutput` (default) / `Full` — from
+STRUCTURED witness findings, never by re-parsing prose. The default shows the proposer the failing
+check, case index, key, and its OWN observed value; expected values appear only under `Full`, which
+is opt-in and documented as weakening the certificate. Repairs are bounded per objective (default
+2), then held for a human. Everything is model-independent configuration; `OllamaProposalSource`
+adds prompt style, temperature, tokens and preamble as dials so the same loop serves a 7B local
+model or a large hosted one.
+
+**Then it was measured — twice, because the first measurement was too clean to trust.**
+
+Hand-built ablation on `codellama:7b`, 3 samples/arm at temperature 0.2, repairing the S1
+null-vs-empty defect:
+
+| Prompt | Expected value shown | "NEVER null" in contract | Repaired |
+|--------|----------------------|--------------------------|----------|
+| default `OwnOutput` | no | yes | 3/3 |
+| `Full` | yes | yes | 3/3 |
+| default, contract softened | no | no | 0/3 |
+| (13 earlier attempts, softened contract) | mixed | no | 0/13 |
+
+**Redacting the expected value costs nothing**; the necessary ingredient was two words in the
+CONTRACT ("NEVER null"). But the SHIPPED prompt — same disclosure, same contract — went 0/3
+single-shot, and ~60 further model calls could not isolate a single semantic cause: the swing
+between 0/3 and 3/3 tracked formatting noise (a blank line, "; the" vs ", and the",
+"valid tag" vs "tag reference"). That is a property of a 7B model at low temperature, and the
+loop must be robust to it rather than tuned to it.
+
+So the number that matters is the one users get. Through the shipped code path — default
+`OwnOutput` policy, `RepairWithContractOnly`, the loop's 2-attempt budget — **3/5 independent
+objectives converge, at temperature 0.2 and at 0.7 alike.** Not the 3/3 of a lucky prompt, not
+the 0/3 of an unlucky one. The retry budget is what turns "sometimes" into "usually", and it is
+bounded, so a proposer still cannot binary-search the witness.
+
+Three operating lessons, all now encoded as configuration rather than lore: (1) generation-
+blindness is free — keep the default; (2) when a small model will not repair, sharpen the
+CONTRACT before loosening the disclosure; (3) hand small models the contract alone, not the
+objective narrative (`RepairWithContractOnly`, measured 3/3 → 0/3 the other way).
+
+Worked example (objective, witness with `$summary` pinned, and the model-REPAIRED proposal):
+`samples/autonomy-objectives/`.
 
 ## Settled decisions
 

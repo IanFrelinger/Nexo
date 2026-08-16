@@ -38,7 +38,8 @@ internal sealed class BrickMutationEngine
         "mutate-int-literal",
         "mutate-string-literal",
         "remove-statement",
-        "swap-logical-op"
+        "swap-logical-op",
+        "degrade-coalesce-assign"
     ];
 
     /// <summary>
@@ -55,12 +56,14 @@ internal sealed class BrickMutationEngine
         WitnessSpec witness,
         IReadOnlyList<string> compilationReferences,
         CancellationToken cancellationToken,
-        ICandidateExecutionBackend? backend = null)
+        ICandidateExecutionBackend? backend = null,
+        AnalyzerFenceGate? analyzerFence = null)
     {
         var survivors = new List<string>();
         var killed = new List<string>();
         var mutations = AstMutationCatalog.CollectMutations(sourceCode);
         var pendingUnits = new List<CandidateExecutionUnit>();
+        var pendingSources = new Dictionary<string, string>(StringComparer.Ordinal);
 
         foreach (var mutation in mutations)
         {
@@ -79,7 +82,10 @@ internal sealed class BrickMutationEngine
                 if (image is null)
                     killed.Add(mutation.Id); // Non-compiling mutant: dead on arrival, as in-proc.
                 else
+                {
                     pendingUnits.Add(new CandidateExecutionUnit(mutation.Id, image, brickTypeName));
+                    pendingSources[mutation.Id] = mutatedSource;
+                }
                 continue;
             }
 
@@ -90,10 +96,16 @@ internal sealed class BrickMutationEngine
                 compilationReferences,
                 cancellationToken).ConfigureAwait(false);
 
-            if (witnessPassed)
-                survivors.Add(mutation.Id);
-            else
+            if (!witnessPassed)
+            {
                 killed.Add(mutation.Id);
+                continue;
+            }
+
+            if (await FenceWouldRejectAsync(mutatedSource, analyzerFence, compilationReferences, cancellationToken).ConfigureAwait(false))
+                killed.Add(mutation.Id); // Analyzer-dead: could never certify, so not an escape.
+            else
+                survivors.Add(mutation.Id);
         }
 
         if (backend is not null && pendingUnits.Count > 0)
@@ -105,16 +117,61 @@ internal sealed class BrickMutationEngine
             foreach (var unit in pendingUnits)
             {
                 var observations = report.Observations.Where(o => o.UnitId == unit.UnitId).ToArray();
-                if (WitnessRunner.JudgeMutantObservations(witness, observations))
-                    survivors.Add(unit.UnitId);
-                else
+                if (!WitnessRunner.JudgeMutantObservations(witness, observations))
+                {
                     killed.Add(unit.UnitId);
+                    continue;
+                }
+
+                if (await FenceWouldRejectAsync(pendingSources[unit.UnitId], analyzerFence, compilationReferences, cancellationToken).ConfigureAwait(false))
+                    killed.Add(unit.UnitId); // Analyzer-dead, as in-proc.
+                else
+                    survivors.Add(unit.UnitId);
             }
         }
 
         var total = survivors.Count + killed.Count;
         var escapeRate = total == 0 ? 0d : (double)survivors.Count / total;
         return new MutationTestResult(total, survivors, killed, escapeRate);
+    }
+
+    /// <summary>
+    /// Whether the analyzer fence would reject a mutant outright. A mutant that survives
+    /// the witness but could never pass certification is not an escape — it is dead on
+    /// arrival at an earlier gate, exactly like a non-compiling mutant. The canonical case:
+    /// mutating a declared interface key so the code now reads an undeclared input
+    /// (NEXO0001), which no behavioural witness can observe and only the fence can name.
+    /// Counting such mutants as survivors inflates the escape rate against candidates that
+    /// are actually fine.
+    ///
+    /// <para>Runs on SURVIVORS only, so healthy candidates pay nothing. Fails toward
+    /// <c>false</c> (i.e. toward reporting the survivor): a fence error must never
+    /// manufacture a kill — a vacuous kill is precisely the failure mode this gate exists
+    /// to prevent.</para>
+    /// </summary>
+    private static async Task<bool> FenceWouldRejectAsync(
+        string mutatedSource,
+        AnalyzerFenceGate? analyzerFence,
+        IReadOnlyList<string> compilationReferences,
+        CancellationToken cancellationToken)
+    {
+        if (analyzerFence is null)
+            return false;
+
+        try
+        {
+            var outcome = await analyzerFence.EvaluateAsync(
+                mutatedSource, compilationReferences, cancellationToken: cancellationToken).ConfigureAwait(false);
+            return !outcome.Passed;
+        }
+        catch (OperationCanceledException)
+        {
+            throw;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     /// <summary>Compiles one mutant to PE bytes for backend execution; null = did not compile.</summary>

@@ -19,6 +19,7 @@ internal static class WitnessRunner
         IReadOnlyList<CandidateCaseObservation> observations)
     {
         var failures = new List<string>();
+        var findings = new List<WitnessFinding>();
 
         foreach (var (caseIndex, witnessCase) in witness.Cases.Select((c, i) => (i, c)))
         {
@@ -26,21 +27,24 @@ internal static class WitnessRunner
             if (observation is null)
             {
                 failures.Add($"case {caseIndex}: the execution backend returned no observation");
+                findings.Add(new WitnessFinding(caseIndex, WitnessFindingKind.NoObservation));
                 continue;
             }
 
             if (observation.Threw)
             {
                 failures.Add($"case {caseIndex}: execution threw {observation.Error}");
+                findings.Add(new WitnessFinding(caseIndex, WitnessFindingKind.Threw, Detail: observation.Error));
                 continue;
             }
 
-            var outputs = observation.Outputs ?? new Dictionary<string, object?>();
+            var outputs = ProjectObservation(observation);
             foreach (var (key, expected) in witnessCase.ExpectedOutput)
             {
                 if (!outputs.TryGetValue(key, out var actual) || actual is null)
                 {
                     failures.Add($"case {caseIndex}: missing output key '{key}'");
+                    findings.Add(new WitnessFinding(caseIndex, WitnessFindingKind.MissingKey, key, FormatValue(expected)));
                     continue;
                 }
 
@@ -48,11 +52,28 @@ internal static class WitnessRunner
                 {
                     failures.Add(
                         $"case {caseIndex}: output['{key}'] expected {FormatValue(expected)} got {FormatValue(actual)}");
+                    findings.Add(new WitnessFinding(
+                        caseIndex, WitnessFindingKind.Mismatch, key, FormatValue(expected), FormatValue(actual)));
                 }
             }
         }
 
-        return new WitnessRunResult(failures.Count == 0, failures);
+        return new WitnessRunResult(failures.Count == 0, failures, findings);
+    }
+
+    /// <summary>
+    /// The witness-observable view of a session observation: keyed outputs plus the summary
+    /// under <see cref="WitnessObservableOutput.SummaryKey"/> — the same projection the
+    /// in-process judges apply, so a witness sees one shape regardless of where the
+    /// candidate executed.
+    /// </summary>
+    private static IReadOnlyDictionary<string, object?> ProjectObservation(CandidateCaseObservation observation)
+    {
+        var view = new Dictionary<string, object?>(
+            observation.Outputs ?? new Dictionary<string, object?>(), StringComparer.Ordinal);
+        if (observation.Summary is not null)
+            view[WitnessObservableOutput.SummaryKey] = observation.Summary;
+        return view;
     }
 
     /// <summary>
@@ -74,7 +95,7 @@ internal static class WitnessRunner
 
             foreach (var (key, expected) in witnessCase.ExpectedOutput)
             {
-                if (!observation.Outputs.TryGetValue(key, out var actual) || actual is null)
+                if (!ProjectObservation(observation).TryGetValue(key, out var actual) || actual is null)
                     return false;
 
                 if (!WitnessValueComparer.AreEqual(expected, UnwrapJson(actual)))
@@ -117,6 +138,7 @@ internal static class WitnessRunner
         CancellationToken cancellationToken)
     {
         var failures = new List<string>();
+        var findings = new List<WitnessFinding>();
 
         foreach (var (caseIndex, witnessCase) in witness.Cases.Select((c, i) => (i, c)))
         {
@@ -134,14 +156,17 @@ internal static class WitnessRunner
             catch (Exception ex)
             {
                 failures.Add($"case {caseIndex}: execution threw {ex.Message}");
+                findings.Add(new WitnessFinding(caseIndex, WitnessFindingKind.Threw, Detail: ex.Message));
                 continue;
             }
 
+            var observable = WitnessObservableOutput.Project(output.ToDictionary(), output.Summary);
             foreach (var (key, expected) in witnessCase.ExpectedOutput)
             {
-                if (!output.ToDictionary().TryGetValue(key, out var actual))
+                if (!observable.TryGetValue(key, out var actual))
                 {
                     failures.Add($"case {caseIndex}: missing output key '{key}'");
+                    findings.Add(new WitnessFinding(caseIndex, WitnessFindingKind.MissingKey, key, FormatValue(expected)));
                     continue;
                 }
 
@@ -149,11 +174,13 @@ internal static class WitnessRunner
                 {
                     failures.Add(
                         $"case {caseIndex}: output['{key}'] expected {FormatValue(expected)} got {FormatValue(actual)}");
+                    findings.Add(new WitnessFinding(
+                        caseIndex, WitnessFindingKind.Mismatch, key, FormatValue(expected), FormatValue(actual)));
                 }
             }
         }
 
-        return new WitnessRunResult(failures.Count == 0, failures);
+        return new WitnessRunResult(failures.Count == 0, failures, findings);
     }
 
     /// <summary>Runs the witness twice and compares serialized outputs for determinism.</summary>
@@ -220,6 +247,32 @@ internal static class WitnessRunner
         _ => el.GetRawText()
     };
 
-    private static string FormatValue(object value) =>
-        Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture) ?? "<null>";
+    /// <summary>
+    /// Renders a witness value for a failure message. Distinguishing null from the empty
+    /// string matters more than it looks: this text is the repair feedback a proposer sees,
+    /// and "expected  got " (which is what Convert.ToString produces for both, since it
+    /// returns "" for null and JsonElement renders JsonValueKind.Null as empty) tells a
+    /// proposer nothing it can act on. Strings are quoted so an empty one is visible.
+    /// </summary>
+    private static string FormatValue(object? value)
+    {
+        if (value is null)
+            return "<null>";
+
+        if (value is JsonElement element)
+        {
+            return element.ValueKind switch
+            {
+                JsonValueKind.Null or JsonValueKind.Undefined => "<null>",
+                JsonValueKind.String => Quote(element.GetString()),
+                _ => element.GetRawText(),
+            };
+        }
+
+        return value is string text
+            ? Quote(text)
+            : Convert.ToString(value, System.Globalization.CultureInfo.InvariantCulture) ?? "<null>";
+    }
+
+    private static string Quote(string? value) => value is null ? "<null>" : $"\"{value}\"";
 }

@@ -21,4 +21,11 @@ public sealed record CertificationDecision
     /// </summary>
     public IReadOnlyList<Ports.DiagnosticProbeFinding> ProbeFindings { get; init; } =
         Array.Empty<Ports.DiagnosticProbeFinding>();
+
+    /// <summary>
+    /// Structured witness failures on a correctness rejection. The record's reason string
+    /// remains the human-facing evidence; these exist so repair feedback can be projected
+    /// at a policy-chosen disclosure level rather than re-parsed from prose.
+    /// </summary>
+    public IReadOnlyList<WitnessFinding> WitnessFindings { get; init; } = Array.Empty<WitnessFinding>();
 }

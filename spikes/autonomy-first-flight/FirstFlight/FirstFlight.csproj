@@ -21,6 +21,7 @@
     <ProjectReference Include="..\..\..\src\Nexo.Infrastructure\Nexo.Infrastructure.csproj" />
     <ProjectReference Include="..\..\..\src\Nexo.BackgroundAgents\Nexo.BackgroundAgents.csproj" />
     <ProjectReference Include="..\..\..\src\Nexo.Agents.TestKit\Nexo.Agents.TestKit.csproj" />
+    <ProjectReference Include="../../../applications/Nexo.Certification.Physical/Nexo.Certification.Physical.csproj" />
   </ItemGroup>
 
 </Project>
