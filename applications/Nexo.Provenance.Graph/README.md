@@ -55,7 +55,7 @@ Or step by step:
 
 ```bash
 # 1. Start Neo4j
-docker compose -f docker-compose.provenance.yml up -d
+docker compose -f deploy/compose/docker-compose.provenance.yml up -d
 
 # 2. Project cert artifacts + run demo query
 dotnet run --project tools/Nexo.Provenance.Demo/Nexo.Provenance.Demo.csproj

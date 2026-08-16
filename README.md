@@ -221,14 +221,14 @@ Run Nexo as a service using compose stacks on a host you control. Review the [se
 
 | File | Purpose |
 |------|---------|
-| `docker-compose.portal.yml` | Director portal + `nexo-api` + Ollama. |
-| `docker-compose.agent-server.yml` | Portal + API + Ollama + mounted workspace + default Runtime Studio agent set. |
-| `docker-compose.game-director.yml` | Game Director sidecar and MCP-facing workflow. |
-| `docker-compose.ephemeral.yml` | Disposable local dependencies for tests and labs. |
+| `deploy/compose/docker-compose.portal.yml` | Director portal + `nexo-api` + Ollama. |
+| `deploy/compose/docker-compose.agent-server.yml` | Portal + API + Ollama + mounted workspace + default Runtime Studio agent set. |
+| `deploy/compose/docker-compose.game-director.yml` | Game Director sidecar and MCP-facing workflow. |
+| `deploy/compose/docker-compose.ephemeral.yml` | Disposable local dependencies for tests and labs. |
 
 ```bash
-docker compose -f docker-compose.portal.yml up -d --build
-docker compose -f docker-compose.agent-server.yml up -d --build
+docker compose -f deploy/compose/docker-compose.portal.yml up -d --build
+docker compose -f deploy/compose/docker-compose.agent-server.yml up -d --build
 ```
 
 Validate a pipeline template from a mounted workspace with the published CLI image:
@@ -296,10 +296,10 @@ Ship Nexo from published container images and compose files. Host-native scripts
 
 ```bash
 # Director portal + API + Ollama
-docker compose -f docker-compose.portal.yml up -d --build
+docker compose -f deploy/compose/docker-compose.portal.yml up -d --build
 
 # Full agent-server stack with mounted workspace and Runtime Studio config
-docker compose -f docker-compose.agent-server.yml up -d --build
+docker compose -f deploy/compose/docker-compose.agent-server.yml up -d --build
 ```
 
 Operator runbooks and deployment references:

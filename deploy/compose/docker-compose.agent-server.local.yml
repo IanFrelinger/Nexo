@@ -29,7 +29,7 @@ services:
       Logging__LogLevel__Microsoft.AspNetCore: Warning
     volumes:
       - nexo-dailies:/data/dailies
-      - ./apps/runtime-studio/config/agent_set.fullstack.local.json:/agents/agent_set.fullstack.local.json:ro
+      - ../../apps/runtime-studio/config/agent_set.fullstack.local.json:/agents/agent_set.fullstack.local.json:ro
       - ${NEXO_REPO_ROOT:-.}:/work
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]

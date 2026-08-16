@@ -11,7 +11,7 @@ Local **staging shape** for Nexo Cloud: multiple orgs, membership enforcement, s
 
 ```bash
 export OLLAMA_MODEL=llama3.1:latest
-docker compose -f docker-compose.cloud-multi-tenant.yml up --build -d
+docker compose -f deploy/compose/docker-compose.cloud-multi-tenant.yml up --build -d
 curl -sS http://127.0.0.1:8080/health
 ```
 

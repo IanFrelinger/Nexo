@@ -48,7 +48,7 @@ unset NUGET_PACKAGES
 if [[ "${SKIP_DOCKER}" == "1" ]] || ! command -v docker >/dev/null 2>&1 || ! docker info >/dev/null 2>&1; then
   echo "Docker tier skipped (SKIP_DOCKER=1 or no engine)."
 else
-  for cf in docker-compose.agent-server.yml docker-compose.portal.yml docker-compose.test.yml docker-compose.ephemeral.yml docker-compose.ollama.yml; do
+  for cf in deploy/compose/docker-compose.agent-server.yml deploy/compose/docker-compose.portal.yml deploy/compose/docker-compose.test.yml deploy/compose/docker-compose.ephemeral.yml deploy/compose/docker-compose.ollama.yml; do
     [[ -f "${REPO_ROOT}/${cf}" ]] || continue
     proj="mtx-$(echo "${cf}" | tr -cd 'a-zA-Z0-9')"
     run_b "docker compose config ${cf}" docker compose -p "${proj}" -f "${cf}" config >/dev/null
@@ -59,8 +59,8 @@ else
     echo "SKIP docker-restore.ps1 (pwsh not installed)"
   fi
   if [[ "${SKIP_DOCKER_BUILD}" != "1" ]]; then
-    run_b "docker compose build agent-server" docker compose -f docker-compose.agent-server.yml build nexo-api
-    run_b "docker compose build portal" docker compose -p mtx-portal -f docker-compose.portal.yml build nexo-api
+    run_b "docker compose build agent-server" docker compose -f deploy/compose/docker-compose.agent-server.yml build nexo-api
+    run_b "docker compose build portal" docker compose -p mtx-portal -f deploy/compose/docker-compose.portal.yml build nexo-api
     if command -v pwsh >/dev/null 2>&1; then
       run_b "docker-restore.ps1 -Build" pwsh -NoProfile -ExecutionPolicy Bypass -File "${REPO_ROOT}/scripts/docker-restore.ps1" -RepoRoot "${REPO_ROOT}" -Build
     fi

@@ -15,7 +15,7 @@
 services:
   nexo-api:
     build:
-      context: ${NEXO_BUILD_CONTEXT:-.}
+      context: ${NEXO_BUILD_CONTEXT:-../..}
       dockerfile: ${NEXO_FRIEND_MESH_DOCKERFILE:-.docker/Dockerfile.api}
     environment:
       ASPNETCORE_URLS: http://+:8080

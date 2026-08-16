@@ -13,7 +13,7 @@ cd "$ROOT"
 # shellcheck source=scripts/mesh-lab-fleet.sh
 source "${ROOT}/scripts/mesh-lab-fleet.sh"
 
-COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.mesh-lab.yml}"
+COMPOSE_FILE="${COMPOSE_FILE:-deploy/compose/docker-compose.mesh-lab.yml}"
 COMPOSE_ENV_FILE="${1:-${COMPOSE_ENV_FILE:-.env.mesh-lab}}"
 PEER_A_HOST="${MESH_LAB_PEER_A_HOST:-127.0.0.1:18081}"
 PERSIST_PEER_ID="${MESH_LAB_PERSIST_PEER_ID:-mesh-lab-persist-peer}"

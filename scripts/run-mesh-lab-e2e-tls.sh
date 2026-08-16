@@ -31,7 +31,7 @@ if [[ -z "$ENV_FILE" || ! -f "$ENV_FILE" ]]; then
 fi
 
 cleanup() {
-  docker compose -f docker-compose.mesh-lab.yml -f docker-compose.mesh-lab-tls.override.yml \
+  docker compose -f deploy/compose/docker-compose.mesh-lab.yml -f deploy/compose/docker-compose.mesh-lab-tls.override.yml \
     --env-file "$ENV_FILE" down -v >/dev/null 2>&1 || true
   if [[ "$TEMP_ENV" == true ]]; then
     rm -f "$ENV_FILE"
@@ -47,7 +47,7 @@ MESH_LAB_TLS_CERT_DIR="$(./scripts/mesh-lab-tls-certs.sh)"
 export MESH_LAB_TLS_CERT_DIR
 
 echo "== Mesh lab TLS E2E (project=${COMPOSE_PROJECT_NAME}) =="
-docker compose -f docker-compose.mesh-lab.yml -f docker-compose.mesh-lab-tls.override.yml \
+docker compose -f deploy/compose/docker-compose.mesh-lab.yml -f deploy/compose/docker-compose.mesh-lab-tls.override.yml \
   --env-file "$ENV_FILE" up -d --build
 
 for _i in $(seq 1 60); do

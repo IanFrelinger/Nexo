@@ -23,7 +23,7 @@ networks:
 services:
   peer-a:
     build:
-      context: ${NEXO_BUILD_CONTEXT:-.}
+      context: ${NEXO_BUILD_CONTEXT:-../..}
       dockerfile: ${MESH_LAB_PEER_A_DOCKERFILE:-.docker/Dockerfile.fleet-host}
     networks:
       mesh_lab:
@@ -60,7 +60,7 @@ services:
 
   peer-b:
     build:
-      context: ${NEXO_BUILD_CONTEXT:-.}
+      context: ${NEXO_BUILD_CONTEXT:-../..}
       dockerfile: ${MESH_LAB_PEER_B_DOCKERFILE:-.docker/Dockerfile.quickstart}
     networks:
       mesh_lab:
@@ -89,7 +89,7 @@ services:
     profiles:
       - workers
     build:
-      context: ${NEXO_BUILD_CONTEXT:-.}
+      context: ${NEXO_BUILD_CONTEXT:-../..}
       dockerfile: ${MESH_LAB_WORKER_DOCKERFILE:-.docker/Dockerfile.api}
     networks:
       - mesh_lab

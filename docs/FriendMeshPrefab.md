@@ -4,7 +4,7 @@ This is a **small, opinionated** way to run **Nexo.API** so you and a friend can
 
 ## What you get
 
-- **`docker-compose.friend-mesh.yml`** — builds **`Nexo.API`** from **`.docker/Dockerfile.api`** and enables **API key auth** for mutating `/api/*` routes by default.
+- **`deploy/compose/docker-compose.friend-mesh.yml`** — builds **`Nexo.API`** from **`.docker/Dockerfile.api`** and enables **API key auth** for mutating `/api/*` routes by default.
 - **`docs/config/friend-mesh.env.example`** — copy to **`.env.friend-mesh`** (gitignored), fill in secrets, pass to Compose.
 
 ## Quick start
@@ -14,7 +14,7 @@ cd /path/to/Nexo
 cp docs/config/friend-mesh.env.example .env.friend-mesh
 # Edit .env.friend-mesh: set Nexo__Security__ApiKey (and optional mesh tokens if your build supports them).
 
-docker compose -f docker-compose.friend-mesh.yml --env-file .env.friend-mesh up -d --build
+docker compose -f deploy/compose/docker-compose.friend-mesh.yml --env-file .env.friend-mesh up -d --build
 ```
 
 Health check: `curl -sS http://127.0.0.1:8080/health` (or your published host/port).

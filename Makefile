@@ -551,7 +551,7 @@ mesh-lab-e2e-deep:
 mesh-lab-e2e-stress:
 	MESH_LAB_E2E_WORKERS=1 MESH_LAB_VERIFY_DEEP=1 MESH_LAB_RUN_STRESS=1 bash scripts/run-mesh-lab-e2e.sh
 
-# HTTPS director via Caddy + scripts/mesh-lab-tls-certs.sh — see docker-compose.mesh-lab-tls.override.yml
+# HTTPS director via Caddy + scripts/mesh-lab-tls-certs.sh — see deploy/compose/docker-compose.mesh-lab-tls.override.yml
 mesh-lab-e2e-tls:
 	bash scripts/run-mesh-lab-e2e-tls.sh
 
@@ -560,9 +560,9 @@ mesh-lab-e2e-tls:
 mesh-lab-up:
 	@test -f .env.mesh-lab || (echo "Missing .env.mesh-lab — cp docs/config/mesh-lab.env.example .env.mesh-lab && edit secrets"; exit 1)
 ifeq ($(strip $(MESH_LAB_WORKERS)),1)
-	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=nexo_mesh_lab_local docker compose --profile workers -f docker-compose.mesh-lab.yml --env-file .env.mesh-lab up -d --build
+	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=nexo_mesh_lab_local docker compose --profile workers -f deploy/compose/docker-compose.mesh-lab.yml --env-file .env.mesh-lab up -d --build
 else
-	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=nexo_mesh_lab_local docker compose -f docker-compose.mesh-lab.yml --env-file .env.mesh-lab up -d --build
+	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=nexo_mesh_lab_local docker compose -f deploy/compose/docker-compose.mesh-lab.yml --env-file .env.mesh-lab up -d --build
 endif
 
 mesh-lab-verify:
@@ -596,7 +596,7 @@ mesh-lab-verify-network-negative:
 mesh-lab-verify-tls:
 	@test -f .env.mesh-lab || (echo "Missing .env.mesh-lab"; exit 1)
 	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=nexo_mesh_lab_tls_local \
-		docker compose -f docker-compose.mesh-lab.yml -f docker-compose.mesh-lab-tls.override.yml --env-file .env.mesh-lab up -d
+		docker compose -f deploy/compose/docker-compose.mesh-lab.yml -f deploy/compose/docker-compose.mesh-lab-tls.override.yml --env-file .env.mesh-lab up -d
 	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} ./scripts/mesh-lab-verify-tls.sh .env.mesh-lab
 
 mesh-lab-verify-post-stress:
@@ -610,7 +610,7 @@ mesh-lab-stress:
 
 mesh-lab-down:
 	@test -f .env.mesh-lab || (echo "Missing .env.mesh-lab"; exit 1)
-	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=nexo_mesh_lab_local docker compose --profile workers -f docker-compose.mesh-lab.yml --env-file .env.mesh-lab down -v
+	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=nexo_mesh_lab_local docker compose --profile workers -f deploy/compose/docker-compose.mesh-lab.yml --env-file .env.mesh-lab down -v
 
 # Optional dotnet gate mirroring mesh-lab-gate (compose + mesh-lab-verify*.sh). Requires Docker + python3.
 test-mesh-lab:

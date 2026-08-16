@@ -6,8 +6,8 @@ Self-hosted, MCP-exposed AI sidecar for game balance, map validation, and conten
 
 ```bash
 # From repo root
-docker compose -f docker-compose.game-director.yml up -d --build
-docker compose -f docker-compose.game-director.yml exec ollama ollama pull llama3.1:latest
+docker compose -f deploy/compose/docker-compose.game-director.yml up -d --build
+docker compose -f deploy/compose/docker-compose.game-director.yml exec ollama ollama pull llama3.1:latest
 
 # Or run locally
 dotnet run --project commercial/src/Nexo.Commercial.GameDirector.Host

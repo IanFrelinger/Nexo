@@ -1,11 +1,11 @@
 services:
   test-ubuntu:
     build:
-      context: .
+      context: ../..
       dockerfile: .docker/Dockerfile.test-caching
     image: nexo-test:ubuntu
     volumes:
-      - ./test-results:/workspace/test-results
+      - ../../test-results:/workspace/test-results
     environment:
       - DOTNET_VERSION=9.0
     command: >

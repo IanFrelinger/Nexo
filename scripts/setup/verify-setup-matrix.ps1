@@ -181,11 +181,11 @@ elseif (-not (Test-DockerCli)) {
 }
 else {
     $composeFiles = @(
-        "docker-compose.agent-server.yml",
-        "docker-compose.portal.yml",
-        "docker-compose.test.yml",
-        "docker-compose.ephemeral.yml",
-        "docker-compose.ollama.yml"
+        "deploy/compose/docker-compose.agent-server.yml",
+        "deploy/compose/docker-compose.portal.yml",
+        "deploy/compose/docker-compose.test.yml",
+        "deploy/compose/docker-compose.ephemeral.yml",
+        "deploy/compose/docker-compose.ollama.yml"
     )
     foreach ($cf in $composeFiles) {
         $p = Join-Path $repo $cf
@@ -211,7 +211,7 @@ else {
         Invoke-Case -Tier "B" -Name "docker compose build (agent-server nexo-api)" -Action {
             Push-Location $repo
             try {
-                & docker compose -f "docker-compose.agent-server.yml" build nexo-api
+                & docker compose -f "deploy/compose/docker-compose.agent-server.yml" build nexo-api
                 if ($LASTEXITCODE -ne 0) { throw "exit $LASTEXITCODE" }
             }
             finally { Pop-Location }
@@ -219,7 +219,7 @@ else {
         Invoke-Case -Tier "B" -Name "docker compose build (portal nexo-api)" -Action {
             Push-Location $repo
             try {
-                & docker compose -p "mtx-portal" -f "docker-compose.portal.yml" build nexo-api
+                & docker compose -p "mtx-portal" -f "deploy/compose/docker-compose.portal.yml" build nexo-api
                 if ($LASTEXITCODE -ne 0) { throw "exit $LASTEXITCODE" }
             }
             finally { Pop-Location }
