@@ -16,6 +16,11 @@ on:
       - "docs/CiFirstHardwareSecond.md"
       - ".devcontainer/**"
       - ".github/workflows/onboarding-docs-guard.yml"
+      # Referenced-path guard inputs (see "Referenced repo paths must exist" below).
+      - "docs/**/*.md"
+      - "scripts/*.sh"
+      - "scripts/*.ps1"
+      - "Makefile"
   workflow_dispatch:
 
 jobs:
@@ -65,6 +70,36 @@ jobs:
           # Operator deploy section stays container-first.
           grep -nE "## Deploy \\(operators\\)" README.md
           grep -nE "docs/CiFirstHardwareSecond\\.md" README.md
+
+      # lychee (docs-link-check) only follows Markdown links; inline-code repo paths such as
+      # `scripts/foo.sh` are invisible to it. Commit 0bcc2718 deleted scripts/nexo-ready-gate.sh,
+      # scripts/start|stop-nexo-api-dev.{sh,ps1} and docs/production-readiness/README.md while
+      # ~20 docs, the Makefile and run-ollama-docker.* kept pointing at them. This step fails when
+      # a backtick-quoted repo path in README/docs/scripts/Makefile does not exist in the checkout.
+      - name: Referenced repo paths must exist
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          files=(README.md Makefile)
+          while IFS= read -r f; do files+=("$f"); done < <(find docs -type f -name '*.md' | sort)
+          while IFS= read -r f; do files+=("$f"); done < <(find scripts -maxdepth 1 -type f \( -name '*.sh' -o -name '*.ps1' \) | sort)
+
+          pattern='`(scripts|docs|deploy|\.github|src|application|applications|samples)/[A-Za-z0-9._/-]+\.(sh|ps1|md|yml|yaml|json|csproj|sln|slnf)`'
+          missing=0
+          while IFS= read -r token; do
+            path="${token#\`}"; path="${path%\`}"
+            # Placeholders such as `scripts/<name>.sh` or `docs/{a,b}.md` are not real paths.
+            case "$path" in *'<'*|*'{'*) continue ;; esac
+            if [ ! -e "$path" ]; then
+              echo "::error::referenced path does not exist: $path"
+              grep -lF -- "$token" "${files[@]}" | sed 's/^/    referenced by: /'
+              missing=$((missing + 1))
+            fi
+          done < <(grep -ohE -- "$pattern" "${files[@]}" | sort -u)
+
+          echo "referenced-path guard: ${missing} missing path(s)"
+          [ "$missing" -eq 0 ]
 
       - name: Emit onboarding docs guard summary
         if: always()
