@@ -22,6 +22,7 @@ Version pin: `0.1.0` (from `VERSION`)
 | Autonomy in-session execution (P5a) | Flight with `-SessionExecute` — witness, determinism, and every mutant EXECUTE inside the session; the gate judges raw observations | **PASS**, `session-execution` input, `escape_rate=0` | Local spike @ `bf8821db` |
 | Model-proposed candidate (P5b) | Flight with `-Proposed` — recorded model proposal, proposer signature in lineage, full containment; admitted only after two honest mutation REJECTs forced witness hardening | **PASS** after campaign: 2× `BudgetExhausted`, REJECT 0.16, REJECT 0.05, then `AdmittedAndSwapped` | Local spike @ `bf8821db` |
 | LIVE model proposal (P6) | Flight with `-Live` — ollama `codellama:7b` called AT FLIGHT TIME, witness-blind prompt, recording committed; the gate judges each sample | **PASS on sample 4** (`AdmittedAndSwapped`, escape 0); measured acceptance 1/4 — 2 mutation REJECTs, 1 swap-host identity hold | Local spike @ `4ad4d05e`; recordings in `spikes/autonomy-first-flight/recordings/` |
+| Standing loop, first sweep (S1) | `run-first-flight.ps1 -Sweep` — an objective FILE in the store drives the loop: witness + proposal loaded, attested session, in-session compile, witness judged | **REJECT at `correctness` case 0** (`expected "" got <null>`) — hold mode, nothing swapped | Local spike @ `061c4f83`; example in `samples/autonomy-objectives/` |
 
 **Dogfood summary:** `honest=ADMIT`, `buggy=REJECT`, `tests_executed=19` — CI-confirmed on PR #191.
 
@@ -399,6 +400,44 @@ behavior, which is exactly the A2.3 manifest-scaffold shape).
 traversed this loop — hand-authored, recorded model, live model — surfaced a witness gap the
 previous shapes could not express. Six witness cases now exist; four were demanded by the gate
 rejecting real candidates. Proposer diversity is adversarial witness-hardening.
+
+## S1: the first standing-loop sweep (objective file drives the loop)
+
+Flown 2026-08-15 from `061c4f83` via `run-first-flight.ps1 -Sweep`. Everything before this
+hand-constructed its candidate inside a spike; this is the first run where an objective FILE
+in the store drove the loop end to end.
+
+| Stage | Result |
+|-------|--------|
+| Objective read from `IObjectiveStore` | `tag-scan-classifier` (source=Human, priority=10) |
+| Witness loaded (human-authored, sibling file) | 5 cases |
+| Proposal loaded (live ollama `codellama:7b`, recorded) | witness-blind by construction |
+| Session started + attested on the live daemon | `mcr.microsoft.com/dotnet/sdk:9.0` @ `sha256:35048e3a...` |
+| Candidate compiled INSIDE the session | PASS, toolchain `9.0.317` |
+| Witness judged | **REJECT at `correctness`, case 0** |
+| Outcome | `ExplainedFailure`, session torn down, zero leaked containers, nothing swapped |
+
+**What the rejection caught.** The model wrote the codec's `failureCode` straight to its
+output; that value is `null` on the success path (`PhysicalAtomTagBinaryCodec.cs:113`) while
+the contract and the witness's first case require the empty string. A witness authored from
+the contract BEFORE the proposal existed, and never shown to the proposer, caught a real
+defect in model-generated code under full session containment.
+
+**Two defects the run exposed in our own work, both fixed:**
+
+1. The first sweep failed earlier, at the in-session build, with `CS1056 Unexpected
+   character '003c'`. The proposal-recording tool unescaped `
+`, `\"` and `\` but not
+   `XXXX`, so the stored source carried literal escape text. The MODEL's output was fine;
+   the transcription was not. The loop caught it at the earliest possible gate with an exact
+   diagnostic.
+2. The rejection message read `expected  got ` - both sides empty, because
+   `Convert.ToString` returns `""` for null and a `JsonElement` of kind Null stringifies to
+   empty. The verdict was right and the feedback was useless. Since this text is the repair
+   channel a proposer reads, it now renders `expected "" got <null>`.
+
+Worked example (objective, witness, and the verbatim proposal WITH its defect):
+`samples/autonomy-objectives/`.
 
 ## Settled decisions
 
