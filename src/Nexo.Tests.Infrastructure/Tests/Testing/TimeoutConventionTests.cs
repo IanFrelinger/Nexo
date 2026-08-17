@@ -39,6 +39,22 @@ public sealed class TimeoutConventionTests
     /// </remarks>
     private static readonly string[] TimeoutRequiredCategories = ["E2E", "ProdStyle"];
 
+    /// <summary>
+    /// xunit enforces Timeout by racing the returned Task against a delay, so it can only do it for a
+    /// Task-returning test; a void one is rejected at run time with "Tests marked with Timeout are only
+    /// supported for async tests". The two halves of the convention would otherwise contradict each other:
+    /// the timeout is required, and adding it to a void test turns a passing test into a failing one.
+    /// </summary>
+    private static bool ReturnsTask(MethodInfo method)
+    {
+        var returnType = method.ReturnType;
+        if (returnType == typeof(Task) || returnType == typeof(ValueTask)) return true;
+
+        return returnType.IsGenericType &&
+               (returnType.GetGenericTypeDefinition() == typeof(Task<>) ||
+                returnType.GetGenericTypeDefinition() == typeof(ValueTask<>));
+    }
+
     [Fact]
     public void HostTouchingTests_MustHaveExplicitTimeout()
     {
@@ -54,16 +70,20 @@ public sealed class TimeoutConventionTests
 
             foreach (var method in type.GetMethods(BindingFlags.Public | BindingFlags.Instance))
             {
+                // TheoryAttribute derives from FactAttribute, so one lookup covers both; the name is
+                // only used to quote the right attribute back at whoever has to fix it.
                 var fact = method.GetCustomAttribute<FactAttribute>();
-                if (fact != null && fact.Timeout == 0)
-                {
-                    violations.Add($"{type.Name}.{method.Name}: {category} test lacks [Fact(Timeout = N)]");
-                }
+                if (fact is null) continue;
 
-                var theory = method.GetCustomAttribute<TheoryAttribute>();
-                if (theory != null && theory.Timeout == 0)
+                var attribute = fact is TheoryAttribute ? "Theory" : "Fact";
+
+                if (fact.Timeout == 0)
                 {
-                    violations.Add($"{type.Name}.{method.Name}: {category} test lacks [Theory(Timeout = N)]");
+                    violations.Add($"{type.Name}.{method.Name}: {category} test lacks [{attribute}(Timeout = N)]");
+                }
+                else if (!ReturnsTask(method))
+                {
+                    violations.Add($"{type.Name}.{method.Name}: {category} test has [{attribute}(Timeout = N)] but returns {method.ReturnType.Name}; make it async Task (xunit only honours Timeout on Task-returning tests and fails the test at run time otherwise)");
                 }
             }
         }
