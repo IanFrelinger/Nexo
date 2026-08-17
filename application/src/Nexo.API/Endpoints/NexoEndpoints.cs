@@ -1550,6 +1550,22 @@ public static class NexoEndpoints
         var sec = securityOptions.Value;
         var authActive = IsBuiltInAuthActive(sec);
 
+        // The default (MEAI) model path resolves its Ollama endpoint independently of the provider
+        // factory that produced the "ollama" ProviderStatus above; surface it so operators (and the
+        // prod-dry-run gate) can see when the two disagree. IOptions<T> always resolves (open generic),
+        // so registration of the keyed local Ollama client is the signal that the pipeline is enabled.
+        var meaiRegistered = httpContext.RequestServices.GetService<IServiceProviderIsKeyedService>()
+            ?.IsKeyedService(typeof(Microsoft.Extensions.AI.IChatClient), Nexo.AI.Pipeline.MeaiTargetKeys.LocalOllama) == true;
+        var meaiOptions = meaiRegistered
+            ? httpContext.RequestServices.GetService<IOptions<Nexo.AI.Pipeline.MeaiPipelineOptions>>()?.Value
+            : null;
+        var meaiOllamaBaseUrl = meaiRegistered
+            ? Nexo.AI.Pipeline.Clients.OllamaEndpointResolver.ResolveBaseUrl(meaiOptions)
+            : null;
+        var meaiOllamaModel = meaiRegistered
+            ? Nexo.AI.Pipeline.Clients.OllamaEndpointResolver.ResolveModel(meaiOptions)
+            : null;
+
         return Results.Ok(new OnboardingStatusResponse(
             IsFirstRun: !hasTasks && !hasDailies,
             ApiReachable: true,
@@ -1562,6 +1578,8 @@ public static class NexoEndpoints
             BuiltInCredentialsConfigured: AreBuiltInAuthCredentialsConfigured(sec),
             RequireAuthForCopilotReads: sec.RequireAuthForCopilotReadApis,
             CopilotScopedKeyConfigured: !string.IsNullOrWhiteSpace(sec.CopilotScopedApiKey),
-            ResolvedTenantId: tenantId));
+            ResolvedTenantId: tenantId,
+            MeaiOllamaBaseUrl: meaiOllamaBaseUrl,
+            MeaiOllamaModel: meaiOllamaModel));
     }
 }

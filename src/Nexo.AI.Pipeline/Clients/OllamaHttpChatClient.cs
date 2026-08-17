@@ -34,7 +34,7 @@ public sealed class OllamaHttpChatClient : IChatClient, IDisposable
     public OllamaHttpChatClient(HttpClient http, string defaultModel, bool ownsHttp = false)
     {
         _http = http ?? throw new ArgumentNullException(nameof(http));
-        _defaultModel = string.IsNullOrWhiteSpace(defaultModel) ? "llama3.1:latest" : defaultModel;
+        _defaultModel = string.IsNullOrWhiteSpace(defaultModel) ? MeaiPipelineOptions.DefaultOllamaModel : defaultModel;
         _ownsHttp = ownsHttp;
     }
 
@@ -163,29 +163,11 @@ public sealed class OllamaHttpChatClient : IChatClient, IDisposable
         };
     }
 
-    private static string ResolveBaseUrl(MeaiPipelineOptions options)
-    {
-        var env = Environment.GetEnvironmentVariable("NEXO_OLLAMA_BASE_URL");
-        if (!string.IsNullOrWhiteSpace(env))
-        {
-            return env.Trim().TrimEnd('/');
-        }
+    // Precedence (NEXO_* env -> Nexo:Meai config -> legacy OLLAMA_* env -> default) lives in
+    // OllamaEndpointResolver so status endpoints can report the same URL this client dials.
+    private static string ResolveBaseUrl(MeaiPipelineOptions options) => OllamaEndpointResolver.ResolveBaseUrl(options);
 
-        return string.IsNullOrWhiteSpace(options.OllamaBaseUrl)
-            ? "http://localhost:11434"
-            : options.OllamaBaseUrl.Trim().TrimEnd('/');
-    }
-
-    private static string ResolveModel(MeaiPipelineOptions options)
-    {
-        var env = Environment.GetEnvironmentVariable("NEXO_OLLAMA_MODEL");
-        if (!string.IsNullOrWhiteSpace(env))
-        {
-            return env.Trim();
-        }
-
-        return string.IsNullOrWhiteSpace(options.OllamaModel) ? "llama3.1:latest" : options.OllamaModel.Trim();
-    }
+    private static string ResolveModel(MeaiPipelineOptions options) => OllamaEndpointResolver.ResolveModel(options);
 
     private sealed class OllamaChatResponse
     {

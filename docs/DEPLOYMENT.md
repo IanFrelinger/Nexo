@@ -9,6 +9,7 @@ This document is the **default “what do I run in production?”** map. Other c
 - **Compose file:** `deploy/compose/docker-compose.portal.yml`
 - **Build context:** repo root; API image builds from `.docker/Dockerfile.api`
 - **Bind:** API and Ollama default to **loopback** (`127.0.0.1`) — good for laptop + Tailscale / reverse proxy patterns (see `docs/TailscaleAndNexo.md`)
+- **First boot:** the bundled Ollama ships with no models — `docker compose -f deploy/compose/docker-compose.portal.yml exec ollama ollama pull llama3.1:latest` (or the tag you set in `OLLAMA_MODEL`). The stack points every Ollama key family at the `ollama` service; see `docs/Configuration.md`, "Ollama".
 
 **Pin a version (recommended):**
 

@@ -20,7 +20,7 @@ make prod-dry-run
 ./scripts/prod-dry-run.sh --portal
 ```
 
-The script **builds**, **starts** services, waits until **`GET /health`** succeeds, checks **`GET /api/status`**, then **`docker compose down`** unless you pass **`--keep-up`**.
+The script **builds**, **starts** services, waits until **`GET /health`** succeeds, checks **`GET /api/status`**, checks **`GET /api/onboarding/status`** and fails if the default model path's resolved Ollama endpoint (`meaiOllamaBaseUrl`) is a loopback address (inside a container that is the container itself, not the `ollama` service — see `docs/Configuration.md`, "Ollama"), then **`docker compose down`** unless you pass **`--keep-up`**.
 
 ## Fuller path — agent server (mounted workspace + background agents)
 

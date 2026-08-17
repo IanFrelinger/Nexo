@@ -27,8 +27,7 @@ public static class NodeCapabilityRuntimeServiceCollectionExtensions
 
         services.AddOptions<NodeCapabilityRuntimeOptions>()
             .Bind(configuration.GetSection(NodeCapabilityRuntimeOptions.SectionName));
-        services.AddOptions<OllamaBackendOptions>()
-            .Bind(configuration.GetSection(OllamaBackendOptions.SectionName));
+        services.AddOllamaBackendOptions(configuration);
 
         services.AddSingleton<IHardwareProfiler, EnvironmentHardwareProfiler>();
         services.AddSingleton<IModelServingBackend, NullModelServingBackend>();
@@ -80,6 +79,22 @@ public static class NodeCapabilityRuntimeServiceCollectionExtensions
         return AddPolicy<AndroidPolicy>(services);
     }
 
+    /// <summary>
+    /// Binds <see cref="OllamaBackendOptions"/> and applies the shared Ollama endpoint precedence
+    /// (<c>NEXO_OLLAMA_BASE_URL</c> → section → legacy <c>OLLAMA_BASE_URL</c> → default) so the NCR
+    /// probe dials the same host as the MEAI model path. Safe to call from several registrations.
+    /// </summary>
+    internal static IServiceCollection AddOllamaBackendOptions(
+        this IServiceCollection services,
+        IConfiguration configuration)
+    {
+        var section = configuration.GetSection(OllamaBackendOptions.SectionName);
+        services.AddOptions<OllamaBackendOptions>()
+            .Bind(section)
+            .PostConfigure(options => options.BaseUrl = OllamaBackendOptions.ResolveBaseUrl(section["BaseUrl"]));
+        return services;
+    }
+
     private static IServiceCollection AddPolicy<TPolicy>(IServiceCollection services)
         where TPolicy : class, IPlatformPolicy, new()
     {
@@ -97,8 +112,7 @@ public static class NodeCapabilityRuntimeServiceCollectionExtensions
         if (configuration is null) throw new ArgumentNullException(nameof(configuration));
 
         AddPolicy<TPolicy>(services);
-        services.AddOptions<OllamaBackendOptions>()
-            .Bind(configuration.GetSection(OllamaBackendOptions.SectionName));
+        services.AddOllamaBackendOptions(configuration);
 
         services.AddHttpClient(nameof(OllamaModelServingBackend), (sp, client) =>
         {
