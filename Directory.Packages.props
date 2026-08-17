@@ -113,7 +113,6 @@
     <PackageVersion Include="Azure.ResourceManager.ContainerService" Version="1.2.0" />
     <PackageVersion Include="Azure.ResourceManager.AppService" Version="1.2.0" />
     <PackageVersion Include="Azure.ResourceManager.Resources" Version="1.11.0" />
-    <PackageVersion Include="Azure.Identity" Version="1.11.0" />
     <PackageVersion Include="Azure.Core" Version="1.46.2" />
   </ItemGroup>
   <!-- AWS Packages -->
@@ -181,6 +180,10 @@
     <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.15.3" />
     <PackageVersion Include="OpenTelemetry.Exporter.Console" Version="1.15.3" />
     <PackageVersion Include="OpenTelemetry.Exporter.OpenTelemetryProtocol" Version="1.15.3" />
+    <!-- Instrumentation packages version independently of the SDK; these are the latest that pin
+         OpenTelemetry.Api.ProviderBuilderExtensions [1.15.3, 2.0.0), matching the 1.15.3 SDK above. -->
+    <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.2" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.15.1" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.3" />
   </ItemGroup>
   <!-- Code Analysis -->

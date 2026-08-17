@@ -1,6 +1,7 @@
 using System.Net;
 using FluentAssertions;
 using Nexo.Tests.Infrastructure.External;
+using Nexo.Tests.Infrastructure.Helpers;
 using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.External;
@@ -8,7 +9,8 @@ namespace Nexo.Tests.Infrastructure.Tests.External;
 /// <summary>
 /// White-box integration: tile indices from <see cref="MapboxWebMercatorTileMath"/>, URLs from
 /// <see cref="MapboxTileUrls"/>, response checks from <see cref="MapboxTileResponseValidators"/>,
-/// against the live Mapbox API when <c>NEXO_TEST_MAPBOX_TILES=1</c> and <c>MAPBOX_ACCESS_TOKEN</c> are set.
+/// against the live Mapbox API when <c>NEXO_TEST_MAPBOX_TILES=1</c> and <c>MAPBOX_ACCESS_TOKEN</c> are set
+/// (reported as Skipped otherwise, see <see cref="OptInFactAttribute"/>).
 /// </summary>
 [Trait("Category", "External")]
 [Trait("Category", "MapboxRealData")]
@@ -18,19 +20,12 @@ public sealed class MapboxTilesWhiteBoxRealDataTests
     private const string TokenEnv = "MAPBOX_ACCESS_TOKEN";
     private const string RasterTilesetEnv = "MAPBOX_TILESET_ID";
     private const string VectorTilesetEnv = "MAPBOX_VECTOR_TILESET_ID";
+    private const string Dependency = "Mapbox Tiles API (public internet)";
 
-    private static bool IsEnabled() =>
-        string.Equals(Environment.GetEnvironmentVariable(EnableEnv), "1", StringComparison.OrdinalIgnoreCase);
-
-    [Fact(Timeout = 90000)]
+    [OptInFact(EnableEnv, Dependency, RequiredEnvironmentVariables = new[] { TokenEnv }, Timeout = 90000)]
     public async Task RasterTile_ComputedTileIndexFromGeography_MatchesValidators()
     {
-        if (!IsEnabled())
-            return;
-
-        var token = Environment.GetEnvironmentVariable(TokenEnv);
-        if (string.IsNullOrWhiteSpace(token))
-            return;
+        var token = Environment.GetEnvironmentVariable(TokenEnv)!; // non-empty: enforced by RequiredEnvironmentVariables
 
         var tileset = Environment.GetEnvironmentVariable(RasterTilesetEnv)?.Trim();
         if (string.IsNullOrEmpty(tileset))
@@ -54,15 +49,10 @@ public sealed class MapboxTilesWhiteBoxRealDataTests
             bytes);
     }
 
-    [Fact(Timeout = 90000)]
+    [OptInFact(EnableEnv, Dependency, RequiredEnvironmentVariables = new[] { TokenEnv }, Timeout = 90000)]
     public async Task VectorTile_ComputedTileIndexFromGeography_MatchesValidators()
     {
-        if (!IsEnabled())
-            return;
-
-        var token = Environment.GetEnvironmentVariable(TokenEnv);
-        if (string.IsNullOrWhiteSpace(token))
-            return;
+        var token = Environment.GetEnvironmentVariable(TokenEnv)!; // non-empty: enforced by RequiredEnvironmentVariables
 
         var tileset = Environment.GetEnvironmentVariable(VectorTilesetEnv)?.Trim();
         if (string.IsNullOrEmpty(tileset))

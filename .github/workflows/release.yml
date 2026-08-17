@@ -18,7 +18,7 @@ on:
         required: true
         type: string
       skip_multi_arch:
-        description: "Skip arm64 for nexo-cli :latest (only when ref is master/main)"
+        description: "Skip arm64 for nexo-cli :latest (master/main) and :X.Y.Z (tags)"
         required: false
         default: false
         type: boolean
@@ -35,13 +35,16 @@ concurrency:
 jobs:
   validate:
     name: Validate release inputs
+    # Forks: every downstream job needs validate to succeed, so this one guard keeps a fork's
+    # tag push from publishing images/packages under its own namespace (docs/CiSecrets.md).
+    if: github.repository_owner == 'IanFrelinger'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v6
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: |
             9.0.x
@@ -50,6 +53,21 @@ jobs:
       - name: Verify global.json SDK pin matches installed SDKs
         shell: bash
         run: bash scripts/verify-release-sdk-pin.sh
+
+      # Directory.Build.props/.targets stamp every assembly and package from the root VERSION file,
+      # while the nuget job below takes package_version from the tag name. Without this guard a tag
+      # cut before VERSION was bumped ships nupkgs whose PackageVersion disagrees with their assemblies.
+      - name: Tag version must match root VERSION
+        if: github.ref_type == 'tag'
+        shell: bash
+        run: |
+          # shellcheck source=scripts/lib/release-staging-guards.sh
+          source scripts/lib/release-staging-guards.sh
+          if ! assert_version_matches_canonical "${GITHUB_REF_NAME}"; then
+            CANON="$(bash scripts/resolve-canonical-package-version.sh || true)"
+            echo "::error::Tag ${GITHUB_REF_NAME} does not match root VERSION (${CANON:-<unreadable>}). Bump VERSION (and CHANGELOG.md) on the release commit, then re-create the tag on it."
+            exit 1
+          fi
 
       - name: Dispatch on tag must match version input
         if: github.event_name == 'workflow_dispatch' && startsWith(github.ref, 'refs/tags/')
@@ -111,13 +129,13 @@ jobs:
         if: >-
           needs.images.result == 'success' && needs.nuget.result == 'success' &&
           vars.RELEASE_CROSS_VERIFY != 'false'
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Login to GHCR
         if: >-
           needs.images.result == 'success' && needs.nuget.result == 'success' &&
           vars.RELEASE_CROSS_VERIFY != 'false'
-        uses: docker/login-action@v3
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
@@ -181,9 +199,10 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      actions: read
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 
@@ -205,7 +224,7 @@ jobs:
             echo "Automated draft for **${TAG}**."
             echo ""
             echo "- Workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-            echo "- NuGet: \`Nexo.Hosting.Bundle\` **${VER}** (+ graph). Artifact: \`nuget-packages-${VER}\`."
+            echo "- NuGet: \`Nexo.Hosting.Bundle\` **${VER}** (+ graph). Packages, symbols, \`nuget-publish-manifest.json\` and per-package \`.sha256.txt\` are attached as release assets (also in the \`nuget-packages-${VER}\` workflow artifact)."
             echo "- Images: \`${{ needs.images.outputs.cli_sha_tag }}\`, \`${{ needs.images.outputs.api_sha_tag }}\`"
             echo ""
             cat "$SNIP"
@@ -215,6 +234,35 @@ jobs:
           rm -f "$SNIP"
           gh release create "$TAG" --repo "${{ github.repository }}" --draft --title "Release ${TAG}" --notes-file "$NOTES_FILE"
           rm -f "$NOTES_FILE"
+
+      # The nuget job keeps the packages only as a 90-day Actions artifact; the release page is the
+      # durable home for them (and lets consumers verify bytes against the manifest without a run URL).
+      - name: Download NuGet packages artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: nuget-packages-${{ needs.nuget.outputs.package_version }}
+          path: ${{ runner.temp }}/release-assets
+
+      - name: Attach NuGet packages + manifest to the release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ASSETS_DIR: ${{ runner.temp }}/release-assets
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          shopt -s nullglob
+          FILES=()
+          for f in "${ASSETS_DIR}"/*.nupkg "${ASSETS_DIR}"/*.snupkg "${ASSETS_DIR}"/*.sha256.txt "${ASSETS_DIR}"/nuget-publish-manifest.json; do
+            [ -f "$f" ] && FILES+=( "$f" )
+          done
+          if [ "${#FILES[@]}" -eq 0 ]; then
+            echo "::error::No release assets found under ${ASSETS_DIR} (artifact nuget-packages-${{ needs.nuget.outputs.package_version }} was empty?)."
+            exit 1
+          fi
+          printf 'Uploading %d asset(s) to %s:\n' "${#FILES[@]}" "$TAG"
+          printf '  %s\n' "${FILES[@]##*/}"
+          gh release upload "$TAG" "${FILES[@]}" --repo "${{ github.repository }}" --clobber
 
   notify:
     name: Release notification

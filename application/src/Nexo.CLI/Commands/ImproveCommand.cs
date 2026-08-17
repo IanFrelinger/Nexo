@@ -37,7 +37,7 @@ public sealed class ImproveCommand : Command
         var autonomyOpt = new Option<string>("--autonomy", () => "supervised", "Autonomy level: supervised | semi | full");
         var yesOpt = new Option<bool>("--yes", () => false, "Auto-approve all prompts (non-interactive, for CI/tests)");
         var skipRegressionOpt = new Option<bool>("--skip-regression", () => false, "Skip regression test after source fix (for CI/tests when fix is outside solution)");
-        var storePathOpt = new Option<string?>("--store-path", "Directory for nexo dbs (default: repo root)");
+        var storePathOpt = new Option<string?>("--store-path", "Directory for nexo dbs (default: NEXO_STATE_DIR, else <repo root>/.nexo/state)");
         var selfOpt = new Option<bool>("--self", () => false, "Run one cycle of the self-improvement loop (test failures → fix → validate → promote)");
         var holdoutFilterOpt = new Option<string?>("--holdout-filter", "xUnit filter for holdout tests (e.g. Category=Holdout). Excluded from per-fix regression; run at end (P3.4)");
         var fromObservationOpt = new Option<bool>("--from-observation", () => false, "Query recent observation patterns and prioritize analysis on affected file paths");
@@ -92,7 +92,7 @@ public sealed class ImproveCommand : Command
         var repoRoot = RepoPathResolver.FindRepoRoot();
         var storePath = !string.IsNullOrWhiteSpace(storePathOverride)
             ? Path.Combine(Path.GetFullPath(storePathOverride), "nexo-patterns.db")
-            : Path.Combine(repoRoot, "nexo-patterns.db");
+            : Path.Combine(RepoPathResolver.ResolveStateDirectory(repoRoot), "nexo-patterns.db");
         var targetPath = path ?? RepoPathResolver.FindBlock1ObservationPath(repoRoot);
 
         var trustEnabled = string.Equals(
@@ -518,7 +518,7 @@ public sealed class ImproveCommand : Command
         var repoRoot = path ?? RepoPathResolver.FindRepoRoot();
         var storePath = !string.IsNullOrWhiteSpace(storePathOverride)
             ? Path.Combine(Path.GetFullPath(storePathOverride), "nexo-patterns.db")
-            : Path.Combine(repoRoot, "nexo-patterns.db");
+            : Path.Combine(RepoPathResolver.ResolveStateDirectory(repoRoot), "nexo-patterns.db");
 
         using var cts = new CancellationTokenSource();
         Console.CancelKeyPress += (_, e) =>

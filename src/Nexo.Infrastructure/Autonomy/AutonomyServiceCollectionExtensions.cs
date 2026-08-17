@@ -117,22 +117,50 @@ public static class AutonomyServiceCollectionExtensions
 
         // The harness. Resolves the gate through the container rather than constructing
         // one, so a host that substituted its own ICertificationGate keeps it.
-        services.TryAddSingleton(sp => new AutonomousIterationHarness(
-            sp.GetRequiredService<ICertificationGate>(),
-            sp.GetRequiredService<CertifiedBrickHotSwapHost>(),
-            sp.GetRequiredService<LoopPauseControl>(),
-            sp.GetRequiredService<ILineageAuthority>(),
-            sp.GetRequiredService<ISandboxedSessionRunner>(),
-            sp.GetRequiredService<ClusterBudget>(),
-            sp.GetService<ILogger<AutonomousIterationHarness>>(),
-            buildCandidateInSession: sp.GetRequiredService<IOptions<NexoAutonomyOptions>>()
-                .Value.BuildCandidateInSession,
-            executeCandidateInSession: sp.GetRequiredService<IOptions<NexoAutonomyOptions>>()
-                .Value.ExecuteCandidateInSession,
-            holdAdmission: sp.GetRequiredService<IOptions<NexoAutonomyOptions>>()
-                .Value.HoldAdmission));
+        services.TryAddSingleton(sp =>
+        {
+            var options = sp.GetRequiredService<IOptions<NexoAutonomyOptions>>().Value;
+            var logger = sp.GetService<ILogger<AutonomousIterationHarness>>();
+            WarnIfCandidatesExecuteInProcess(options, logger);
+            return new AutonomousIterationHarness(
+                sp.GetRequiredService<ICertificationGate>(),
+                sp.GetRequiredService<CertifiedBrickHotSwapHost>(),
+                sp.GetRequiredService<LoopPauseControl>(),
+                sp.GetRequiredService<ILineageAuthority>(),
+                sp.GetRequiredService<ISandboxedSessionRunner>(),
+                sp.GetRequiredService<ClusterBudget>(),
+                logger,
+                buildCandidateInSession: options.BuildCandidateInSession,
+                executeCandidateInSession: options.ExecuteCandidateInSession,
+                holdAdmission: options.HoldAdmission);
+        });
 
         return services;
+    }
+
+    /// <summary>
+    /// The containment warning. The three session flags default to false so a bare
+    /// <c>AddNexoAutonomy()</c> stays valid, but an ENABLED loop running with
+    /// <see cref="NexoAutonomyOptions.ExecuteCandidateInSession"/> off executes model-proposed
+    /// candidate and mutant code inside the host process during the witness and mutation
+    /// legs (the hold still blocks the swap; it does not block execution). That is a legitimate
+    /// dev configuration and a wrong production one, so it is said once, loudly, when the
+    /// harness is composed — which for the standing loop is host start. The recommended
+    /// production trio is <c>UseSandboxSessions=true</c>, <c>BuildCandidateInSession=true</c>,
+    /// <c>ExecuteCandidateInSession=true</c> with a pinned <c>SessionImage</c>.
+    /// </summary>
+    internal static void WarnIfCandidatesExecuteInProcess(NexoAutonomyOptions options, ILogger? logger)
+    {
+        if (!options.Enabled || options.ExecuteCandidateInSession)
+            return;
+
+        logger?.LogWarning(
+            "Nexo:Autonomy is ENABLED with ExecuteCandidateInSession=false (UseSandboxSessions={UseSessions}, "
+            + "BuildCandidateInSession={BuildInSession}): the witness and mutation legs will EXECUTE model-proposed "
+            + "candidate and mutant code IN THIS PROCESS. HoldAdmission={Hold} blocks the swap, not the execution. "
+            + "For anything beyond local development set UseSandboxSessions=true, BuildCandidateInSession=true and "
+            + "ExecuteCandidateInSession=true with a pinned SessionImage (see docs/Configuration.md, Autonomy).",
+            options.UseSandboxSessions, options.BuildCandidateInSession, options.HoldAdmission);
     }
 
     /// <summary>

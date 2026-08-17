@@ -24,6 +24,9 @@ services:
       Nexo__Meai__OllamaModel: ${OLLAMA_MODEL:-llama3.1:latest}
       Nexo__NodeCapabilityRuntime__Ollama__BaseUrl: http://ollama:11434
       NEXO_DAILIES_PATH: /data/dailies
+      # Runtime state (LiteDB stores, snapshots) on a named volume so it survives `up --force-recreate`
+      # (docs/DEPLOYMENT.md, "Runtime state"). Keep aligned with the nexo-state mount below.
+      NEXO_STATE_DIR: /data/state
       # Optional: match portal advisory + startup logs to how you expose the API (see docs/TailscaleAndNexo.md).
       # Nexo__Security__ExposureProfile: Tailnet
       # Nexo__Security__ShowAdvisoryInPortal: "true"
@@ -38,8 +41,10 @@ services:
       - "127.0.0.1:8080:8080"
     volumes:
       - nexo-dailies:/data/dailies
+      - nexo-state:/data/state
     restart: unless-stopped
 
 volumes:
   ollama-models:
   nexo-dailies:
+  nexo-state:

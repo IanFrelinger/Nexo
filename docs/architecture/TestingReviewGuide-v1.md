@@ -39,8 +39,7 @@ For reviewers enforcing [Testing strategy pivot v1](TestingStrategyPivot-v1.md).
 | Check | Meaning |
 |-------|---------|
 | `testing-strategy` | Pivot policy (gap freeze, ProdStyle wiring) |
-| `domain-coverage` | Domain 100% line |
-| `kernel-coverage` | Composite coverage floors |
+| `kernel-coverage` | Composite coverage floors (Domain 100% line leg runs first; the separate `domain-coverage` check was folded in 2026-08-16) |
 | `kernel-gate` | Hosting/pipeline slice (path-filtered) |
 | `application-gate` | Product layer (path-filtered) |
 | `mesh-lab-gate` | Mesh changes (path-filtered) |

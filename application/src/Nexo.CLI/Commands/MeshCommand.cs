@@ -152,7 +152,7 @@ public sealed class MeshCommand : Command
         var services = new ServiceCollection()
             .AddLogging(b => b.AddConsole())
             .AddCodeAnalyzers()
-            .AddAdaptationInfrastructure() // Uses repo root for adaptation db
+            .AddAdaptationInfrastructure() // Adaptation db lives in the state dir (NEXO_STATE_DIR, else <repo root>/.nexo/state)
             .AddSharedAdaptationCache(sharedPath)
             .BuildServiceProvider();
 

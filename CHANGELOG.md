@@ -2,7 +2,7 @@
 
 All notable changes to Nexo are documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Commit messages follow Conventional Commits (enforced by commitlint); `scripts/changelog-snippet-for-release.sh` drafts release notes from the commits since the last `v*` tag.
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html). Commit messages follow Conventional Commits by convention (no commitlint hook or workflow enforces it); `scripts/changelog-snippet-for-release.sh` drafts release notes from the commits since the last `v*` tag.
 
 At release time, move the `[Unreleased]` notes under a new `[X.Y.Z] - YYYY-MM-DD` heading, bump `VERSION`, tag `vX.Y.Z`, and publish a GitHub Release.
 

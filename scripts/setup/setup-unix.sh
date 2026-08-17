@@ -19,7 +19,7 @@ Modes (same as setup.ps1 -Mode):
   check   — verify required tools
   apply   — install missing host dependencies where supported
   restore — dotnet restore for the setup-gate project graph
-  all     — apply + restore + optional Runtime Studio tune
+  all     — apply + restore (+ Runtime Studio tune only with --tune)
 
 Options (GNU-style or PowerShell-style for parity with setup.ps1):
   --include-optional / -IncludeOptional
@@ -28,11 +28,16 @@ Options (GNU-style or PowerShell-style for parity with setup.ps1):
       Non-interactive apply/all (no prompts).
   --guided / -Guided
       Guided apply output (where supported).
+  --tune / -Tune
+      Opt in to the Runtime Studio hardware benchmark during "all" (multi-minute
+      Ollama model benchmark; off by default). Output goes to the gitignored
+      .nexo/runtime-studio/agent_set.local.json, never to the tracked config.
   --skip-runtime-studio-tune / -SkipRuntimeStudioTune
-      Skip apps/runtime-studio auto-tune (same as NEXO_SKIP_RUNTIME_STUDIO_TUNE=1).
+      Legacy no-op kept for compatibility (the tune is already off unless --tune is passed);
+      still exports NEXO_SKIP_RUNTIME_STUDIO_TUNE=1 so it wins even when --tune is present.
 
 Environment:
-  NEXO_SKIP_RUNTIME_STUDIO_TUNE=1 — skip Runtime Studio benchmark during "all".
+  NEXO_SKIP_RUNTIME_STUDIO_TUNE=1 — force-skip the Runtime Studio benchmark even with --tune.
 EOF
 }
 
@@ -40,6 +45,7 @@ MODE=""
 INCLUDE_OPTIONAL=false
 AUTO_YES=false
 GUIDED=false
+TUNE=false
 SKIP_TUNE=false
 
 # Flags and mode can appear in any order (e.g. --yes all or all --yes).
@@ -89,6 +95,10 @@ while [[ $# -gt 0 ]]; do
       GUIDED=true
       shift
       ;;
+    --tune | -Tune)
+      TUNE=true
+      shift
+      ;;
     --skip-runtime-studio-tune | -SkipRuntimeStudioTune)
       SKIP_TUNE=true
       shift
@@ -135,6 +145,9 @@ if [[ "${AUTO_YES}" == "true" ]]; then
 fi
 if [[ "${GUIDED}" == "true" ]]; then
   FORWARD+=(--guided)
+fi
+if [[ "${TUNE}" == "true" ]]; then
+  FORWARD+=(--tune)
 fi
 
 case "${UNAME_S}" in

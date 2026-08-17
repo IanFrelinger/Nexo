@@ -302,12 +302,12 @@ public sealed class NcrEngineOllamaIntegrationTests
         attempts.Should().Be(3);
     }
 
-    [Fact(Timeout = Nexo.Tests.Infrastructure.Helpers.TestTimeouts.Integration)]
+    [Nexo.Tests.Infrastructure.Helpers.OptInFact(
+        "NEXO_TEST_REAL_NCR_OLLAMA",
+        "Live Ollama for NCR resolution + inference",
+        Timeout = Nexo.Tests.Infrastructure.Helpers.TestTimeouts.Integration)]
     public async Task LiveOllama_WhenEnabled_ResolvesAndInfers()
     {
-        if (!string.Equals(Environment.GetEnvironmentVariable("NEXO_TEST_REAL_NCR_OLLAMA"), "1", StringComparison.OrdinalIgnoreCase))
-            return;
-
         var baseUrl = (Environment.GetEnvironmentVariable("NEXO_NODECAP_OLLAMA_URL")
                        ?? Environment.GetEnvironmentVariable("OLLAMA_BASE_URL")
                        ?? "http://127.0.0.1:11434").TrimEnd('/');

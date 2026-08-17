@@ -43,8 +43,11 @@ public sealed record SessionBuildResult
 /// extended: every certification-path compile, host or session, sees the same bytes). A
 /// pass therefore attests: <i>this exact source compiles under the pinned session image's
 /// toolchain, offline, against exactly the reference assemblies the harness supplied.</i>
-/// The witness and mutation runs still execute in the harness process; the certificate's
-/// <c>session-build</c> input claims compilation containment only.</para>
+/// The certificate's <c>session-build</c> input claims compilation containment only.
+/// Execution containment is the SEPARATE <c>session-execution</c> claim, minted when the
+/// harness's execution leg (<c>ExecuteCandidateInSession</c>) runs the witness, determinism,
+/// and mutation legs over the assembly this build produced (<see cref="SessionExecutionBackend"/>);
+/// with that leg off, those runs happen in the harness process and no input says otherwise.</para>
 ///
 /// <para><b>How files travel.</b> Sessions may be sibling containers on a remote daemon
 /// (the first-flight setup), where host bind mounts are meaningless — so nothing is
