@@ -1,0 +1,98 @@
+name: uat-gate
+
+# Tests the CLAIMS the tester-facing docs make, against the commit under review.
+#
+# Deliberately excludes tier 3 (the autonomy loop): it needs a container engine and a local model
+# server, and a gate that depends on that infrastructure trains people to ignore red. Run that one
+# deliberately -- see tests/uat/README.md.
+#
+# No path filter. The defect that motivated this gate (#350) was a docs command broken by a csproj
+# change, so the set of files that can break these claims is "most of them"; a filter would have let
+# exactly that change through.
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: uat-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  uat:
+    name: uat (tiers 0-2, 4)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      UAT_REPO_DIR: ${{ github.workspace }}
+      UAT_OUT: ${{ github.workspace }}/uat-out
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      # Each tier runs to completion and the verdict is taken at the end, for the same reason the
+      # scripts collect failures instead of aborting on the first one: a failing tier must not hide
+      # what the next tier would have told you.
+      - name: Tiers 0-2 — quickstart, audit trail, certification gate
+        id: tier02
+        continue-on-error: true
+        shell: bash
+        run: bash tests/uat/tier0-2.sh
+
+      - name: Tier 4 — authoring and the fail-closed security claims
+        id: tier4
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: bash tests/uat/tier4.sh
+
+      - name: Summary
+        if: always()
+        shell: bash
+        run: |
+          {
+            echo '### UAT results'
+            echo
+            echo '| tier | check | verdict | detail |'
+            echo '| --- | --- | --- | --- |'
+            cat "${UAT_OUT}"/results*.tsv 2>/dev/null \
+              | awk -F'\t' '$1=="RESULT" { printf "| %s | `%s` | %s | %s |\n", $2, $3, $4, $5 }'
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Upload results and logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: uat-results
+          path: ${{ env.UAT_OUT }}
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Verdict
+        if: always()
+        shell: bash
+        run: |
+          set -uo pipefail
+          if ! ls "${UAT_OUT}"/results*.tsv >/dev/null 2>&1; then
+            echo "no results were produced -- a tier died before recording anything"
+            exit 1
+          fi
+          FAILED=$(cat "${UAT_OUT}"/results*.tsv | awk -F'\t' '$1=="RESULT" && $4=="FAIL"' || true)
+          if [ -n "$FAILED" ]; then
+            echo "$FAILED"
+            echo
+            echo "A claim the documentation makes is no longer true, or a check needs correcting."
+            echo "See tests/uat/README.md before assuming the product is at fault."
+            exit 1
+          fi
+          echo "every documented claim under test still holds"
