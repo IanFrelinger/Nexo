@@ -61,7 +61,7 @@ public sealed class NexoApiKeyAuthMiddlewareTests
     }
 
     [Fact]
-    public async Task InvokeAsync_WhenApiKeyNotConfigured_AllowsRequest()
+    public async Task InvokeAsync_WhenApiKeyRequiredButNotConfigured_RejectsMutatingRequest()
     {
         var nextCalled = false;
         var middleware = new NexoApiKeyAuthMiddleware(_ =>
@@ -74,7 +74,25 @@ public sealed class NexoApiKeyAuthMiddlewareTests
 
         await middleware.InvokeAsync(context);
 
-        nextCalled.Should().BeTrue("missing configured API key means middleware runs in disabled mode");
+        nextCalled.Should().BeFalse("legacy RequireApiKeyForMutatingEndpoints with no key must fail closed, not open");
+        context.Response.StatusCode.Should().Be(StatusCodes.Status401Unauthorized);
+    }
+
+    [Fact]
+    public async Task InvokeAsync_WhenApiKeyRequiredButNotConfigured_StillAllowsReadOnlyRequest()
+    {
+        var nextCalled = false;
+        var middleware = new NexoApiKeyAuthMiddleware(_ =>
+        {
+            nextCalled = true;
+            return Task.CompletedTask;
+        }, CreateOptions(apiKey: null, required: true));
+
+        var context = CreateContext("/api/status", method: "GET");
+
+        await middleware.InvokeAsync(context);
+
+        nextCalled.Should().BeTrue("MutatingApi scope leaves GET routes open regardless of key state");
     }
 
     [Fact]

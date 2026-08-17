@@ -36,14 +36,14 @@ public sealed class NexoApiKeyAuthMiddleware
     /// <summary>Validates built-in credentials and assigns the resolved auth tier for protected API routes.</summary>
     public async Task InvokeAsync(HttpContext context)
     {
-        var mode = ResolveAuthorizationMode(out var isLegacyApiKeyMode);
+        var mode = ResolveAuthorizationMode();
         if (!ShouldProtect(context.Request, mode))
         {
             await _next(context);
             return;
         }
 
-        if (!TryAuthorize(context.Request, mode, isLegacyApiKeyMode, out var failureDetail))
+        if (!TryAuthorize(context.Request, mode, out var failureDetail))
         {
             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
             context.Response.ContentType = "application/json";
@@ -56,24 +56,25 @@ public sealed class NexoApiKeyAuthMiddleware
         await _next(context);
     }
 
-    private NexoAuthorizationMode ResolveAuthorizationMode(out bool isLegacyApiKeyMode)
+    /// <summary>
+    /// Effective mode: explicit <see cref="NexoSecurityOptions.AuthorizationMode"/> wins; the legacy
+    /// <see cref="NexoSecurityOptions.RequireApiKeyForMutatingEndpoints"/> flag maps to ApiKey and, like
+    /// every other mode, fails closed when its credential is missing.
+    /// </summary>
+    internal static NexoAuthorizationMode ResolveAuthorizationMode(NexoSecurityOptions options)
     {
-        isLegacyApiKeyMode = false;
-
-        if (Enum.TryParse<NexoAuthorizationMode>(_options.AuthorizationMode, true, out var configuredMode)
+        if (Enum.TryParse<NexoAuthorizationMode>(options.AuthorizationMode, true, out var configuredMode)
             && configuredMode != NexoAuthorizationMode.None)
         {
             return configuredMode;
         }
 
-        if (_options.RequireApiKeyForMutatingEndpoints)
-        {
-            isLegacyApiKeyMode = true;
-            return NexoAuthorizationMode.ApiKey;
-        }
-
-        return NexoAuthorizationMode.None;
+        return options.RequireApiKeyForMutatingEndpoints
+            ? NexoAuthorizationMode.ApiKey
+            : NexoAuthorizationMode.None;
     }
+
+    private NexoAuthorizationMode ResolveAuthorizationMode() => ResolveAuthorizationMode(_options);
 
     private bool ShouldProtect(HttpRequest request, NexoAuthorizationMode mode)
     {
@@ -160,20 +161,19 @@ public sealed class NexoApiKeyAuthMiddleware
     private bool TryAuthorize(
         HttpRequest request,
         NexoAuthorizationMode mode,
-        bool isLegacyApiKeyMode,
         out string failureDetail)
     {
         return mode switch
         {
-            NexoAuthorizationMode.ApiKey => TryAuthorizeApiKey(request, isLegacyApiKeyMode, out failureDetail),
+            NexoAuthorizationMode.ApiKey => TryAuthorizeApiKey(request, out failureDetail),
             NexoAuthorizationMode.BearerToken => TryAuthorizeBearerToken(request, out failureDetail),
             NexoAuthorizationMode.Basic => TryAuthorizeBasic(request, out failureDetail),
             NexoAuthorizationMode.ApiKeyOrBearerToken => TryAuthorizeAny(
-                [() => TryAuthorizeApiKey(request, isLegacyApiKeyMode, out _), () => TryAuthorizeBearerToken(request, out _)],
+                [() => TryAuthorizeApiKey(request, out _), () => TryAuthorizeBearerToken(request, out _)],
                 "Missing or invalid API key or bearer token credentials.",
                 out failureDetail),
             NexoAuthorizationMode.ApiKeyOrBasic => TryAuthorizeAny(
-                [() => TryAuthorizeApiKey(request, isLegacyApiKeyMode, out _), () => TryAuthorizeBasic(request, out _)],
+                [() => TryAuthorizeApiKey(request, out _), () => TryAuthorizeBasic(request, out _)],
                 "Missing or invalid API key or basic auth credentials.",
                 out failureDetail),
             NexoAuthorizationMode.BearerTokenOrBasic => TryAuthorizeAny(
@@ -181,10 +181,10 @@ public sealed class NexoApiKeyAuthMiddleware
                 "Missing or invalid bearer token or basic auth credentials.",
                 out failureDetail),
             NexoAuthorizationMode.Any => TryAuthorizeAny(
-                [() => TryAuthorizeApiKey(request, isLegacyApiKeyMode, out _), () => TryAuthorizeBearerToken(request, out _), () => TryAuthorizeBasic(request, out _)],
+                [() => TryAuthorizeApiKey(request, out _), () => TryAuthorizeBearerToken(request, out _), () => TryAuthorizeBasic(request, out _)],
                 "Missing or invalid credentials for all configured built-in auth types (API key, bearer token, basic auth).",
                 out failureDetail),
-            _ => TryAuthorizeApiKey(request, isLegacyApiKeyMode, out failureDetail)
+            _ => TryAuthorizeApiKey(request, out failureDetail)
         };
     }
 
@@ -206,7 +206,7 @@ public sealed class NexoApiKeyAuthMiddleware
         return false;
     }
 
-    private bool TryAuthorizeApiKey(HttpRequest request, bool allowWhenUnconfigured, out string failureDetail)
+    private bool TryAuthorizeApiKey(HttpRequest request, out string failureDetail)
     {
         var headerName = string.IsNullOrWhiteSpace(_options.ApiKeyHeaderName)
             ? DefaultApiKeyHeaderName
@@ -231,12 +231,8 @@ public sealed class NexoApiKeyAuthMiddleware
 
         if (primary == null && copilot == null)
         {
-            if (allowWhenUnconfigured)
-            {
-                failureDetail = string.Empty;
-                return true;
-            }
-
+            // Fail closed for the legacy RequireApiKeyForMutatingEndpoints path too: an operator who
+            // asked for API-key protection but forgot the key must not get an open surface.
             failureDetail = "API key authorization is enabled, but Nexo:Security:ApiKey is not configured.";
             return false;
         }

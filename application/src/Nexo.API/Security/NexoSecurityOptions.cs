@@ -10,8 +10,17 @@ public sealed class NexoSecurityOptions
 
     /// <summary>
     /// One of: Localhost, Lan, Tailnet, Public (case-insensitive).
+    /// Lan, Tailnet and Public refuse to start when no built-in auth is configured unless
+    /// <see cref="AllowUnauthenticatedNetworkExposure"/> is set explicitly.
     /// </summary>
     public string ExposureProfile { get; set; } = "Localhost";
+
+    /// <summary>
+    /// Escape hatch for the exposure fail-closed rule: when true, a Lan/Tailnet/Public
+    /// <see cref="ExposureProfile"/> with <see cref="AuthorizationMode"/> None only logs instead of
+    /// throwing at startup. Set it only when an authenticating proxy or network ACL fronts the API.
+    /// </summary>
+    public bool AllowUnauthenticatedNetworkExposure { get; set; }
 
     /// <summary>
     /// Optional extra line appended to the portal advisory (e.g. team policy or on-call).
@@ -20,6 +29,7 @@ public sealed class NexoSecurityOptions
 
     /// <summary>
     /// When true, mutating API routes (POST/PUT/PATCH/DELETE under /api) require an API key header.
+    /// Fails closed: with no <see cref="ApiKey"/> configured every mutating request is rejected (401).
     /// </summary>
     public bool RequireApiKeyForMutatingEndpoints { get; set; }
 

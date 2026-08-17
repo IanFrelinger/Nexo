@@ -142,19 +142,29 @@ public static class NexoEndpoints
             .WithSummary("Get background agent status and mode")
             .Produces<StatusResponse>(StatusCodes.Status200OK);
 
-        group.MapPost("/execution/build", BuildImageAsync)
-            .WithName("BuildImage")
-            .WithSummary("Build a container image from Dockerfile (for RemoteExecutionPlatform)")
-            .Produces<ExecutionBuildResponse>(StatusCodes.Status200OK)
-            .ProducesProblem(StatusCodes.Status400BadRequest)
-            .ProducesProblem(StatusCodes.Status500InternalServerError);
+        // Remote execution surface: hands caller-chosen images, commands and host bind mounts to the
+        // local Docker daemon, so it is dark unless Nexo:Execution:ServeRemoteExecution=true. Even
+        // when opted in, the handlers refuse (403) while AuthorizationMode resolves to None.
+        var executionOptions = app.ServiceProvider.GetService<IOptions<NexoExecutionOptions>>()?.Value
+            ?? new NexoExecutionOptions();
+        if (executionOptions.ServeRemoteExecution)
+        {
+            group.MapPost("/execution/build", BuildImageAsync)
+                .WithName("BuildImage")
+                .WithSummary("Build a container image from Dockerfile (for RemoteExecutionPlatform; opt-in via Nexo:Execution:ServeRemoteExecution)")
+                .Produces<ExecutionBuildResponse>(StatusCodes.Status200OK)
+                .ProducesProblem(StatusCodes.Status400BadRequest)
+                .ProducesProblem(StatusCodes.Status403Forbidden)
+                .ProducesProblem(StatusCodes.Status500InternalServerError);
 
-        group.MapPost("/execution/run", RunContainerAsync)
-            .WithName("RunContainer")
-            .WithSummary("Run a container (for RemoteExecutionPlatform)")
-            .Produces<ExecutionRunResponse>(StatusCodes.Status200OK)
-            .ProducesProblem(StatusCodes.Status400BadRequest)
-            .ProducesProblem(StatusCodes.Status500InternalServerError);
+            group.MapPost("/execution/run", RunContainerAsync)
+                .WithName("RunContainer")
+                .WithSummary("Run a container (for RemoteExecutionPlatform; opt-in via Nexo:Execution:ServeRemoteExecution)")
+                .Produces<ExecutionRunResponse>(StatusCodes.Status200OK)
+                .ProducesProblem(StatusCodes.Status400BadRequest)
+                .ProducesProblem(StatusCodes.Status403Forbidden)
+                .ProducesProblem(StatusCodes.Status500InternalServerError);
+        }
 
         group.MapGet("/capabilities", GetCapabilitiesAsync)
             .WithName("GetCapabilities")
@@ -561,8 +571,12 @@ public static class NexoEndpoints
     private static async Task<IResult> BuildImageAsync(
         [FromBody] ExecutionBuildRequest request,
         [FromServices] IExecutionPlatform executionPlatform,
+        [FromServices] IOptions<NexoSecurityOptions> securityOptions,
         CancellationToken cancellationToken)
     {
+        if (RemoteExecutionAuthRefusal(securityOptions.Value) is { } refusal)
+            return refusal;
+
         if (string.IsNullOrWhiteSpace(request?.DockerfilePath) || string.IsNullOrWhiteSpace(request?.ImageTag) || string.IsNullOrWhiteSpace(request?.ContextPath))
             return Results.BadRequest(new ProblemDetails { Title = "DockerfilePath, ImageTag, and ContextPath are required" });
 
@@ -588,10 +602,18 @@ public static class NexoEndpoints
     private static async Task<IResult> RunContainerAsync(
         [FromBody] ExecutionRunRequest request,
         [FromServices] IExecutionPlatform executionPlatform,
+        [FromServices] IOptions<NexoSecurityOptions> securityOptions,
+        [FromServices] IOptions<NexoExecutionOptions> executionOptions,
         CancellationToken cancellationToken)
     {
+        if (RemoteExecutionAuthRefusal(securityOptions.Value) is { } refusal)
+            return refusal;
+
         if (string.IsNullOrWhiteSpace(request?.ImageTag) || request?.Command == null)
             return Results.BadRequest(new ProblemDetails { Title = "ImageTag and Command are required" });
+
+        if (!TryValidateVolumeMounts(request.VolumeMounts, executionOptions.Value.AllowedVolumeMountRoot, out var mountError))
+            return Results.BadRequest(new ProblemDetails { Title = "VolumeMounts rejected", Detail = mountError });
 
         try
         {
@@ -610,6 +632,87 @@ public static class NexoEndpoints
                 detail: IsDevelopment() ? ex.Message : "An internal error occurred. Check server logs for details.",
                 statusCode: StatusCodes.Status500InternalServerError);
         }
+    }
+
+    /// <summary>
+    /// The remote execution surface never runs unauthenticated: even with the operator opt-in, a
+    /// request is refused (403) while the effective built-in auth mode is None.
+    /// </summary>
+    private static IResult? RemoteExecutionAuthRefusal(NexoSecurityOptions security)
+    {
+        if (NexoApiKeyAuthMiddleware.ResolveAuthorizationMode(security) != NexoAuthorizationMode.None)
+            return null;
+
+        return Results.Problem(
+            title: "Remote execution requires built-in auth",
+            detail: "Nexo:Execution:ServeRemoteExecution is true but Nexo:Security:AuthorizationMode resolves to None. " +
+                    "Configure ApiKey, BearerToken or Basic auth (with credentials) before serving /api/execution/*.",
+            statusCode: StatusCodes.Status403Forbidden);
+    }
+
+    /// <summary>
+    /// Host bind mounts on the remote surface are accepted only under the single configured root
+    /// (<c>Nexo:Execution:AllowedVolumeMountRoot</c>); with no root configured any mount is rejected.
+    /// RemoteExecutionPlatform sends an empty dictionary when the caller has no mounts, so empty is fine.
+    /// </summary>
+    private static bool TryValidateVolumeMounts(Dictionary<string, string>? volumeMounts, string? allowedRoot, out string? error)
+    {
+        error = null;
+        if (volumeMounts is null || volumeMounts.Count == 0)
+            return true;
+
+        if (string.IsNullOrWhiteSpace(allowedRoot))
+        {
+            error = "VolumeMounts are not accepted on the remote execution surface unless Nexo:Execution:AllowedVolumeMountRoot names a single host directory.";
+            return false;
+        }
+
+        var separators = new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar };
+        var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
+        string root;
+        try
+        {
+            root = Path.GetFullPath(allowedRoot.Trim()).TrimEnd(separators);
+        }
+        catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            error = "Nexo:Execution:AllowedVolumeMountRoot is not a valid absolute path.";
+            return false;
+        }
+
+        foreach (var hostPath in volumeMounts.Keys)
+        {
+            var trimmed = hostPath?.Trim() ?? string.Empty;
+            string? full = null;
+            if (trimmed.Length > 0 && Path.IsPathRooted(trimmed))
+            {
+                try
+                {
+                    full = Path.GetFullPath(trimmed).TrimEnd(separators);
+                }
+                catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
+                {
+                    full = null;
+                }
+            }
+
+            if (full is null)
+            {
+                error = $"Volume mount host path '{hostPath}' must be an absolute path under the configured root.";
+                return false;
+            }
+
+            var underRoot = string.Equals(full, root, comparison)
+                || full.StartsWith(root + Path.DirectorySeparatorChar, comparison)
+                || full.StartsWith(root + Path.AltDirectorySeparatorChar, comparison);
+            if (!underRoot)
+            {
+                error = $"Volume mount host path '{hostPath}' is outside Nexo:Execution:AllowedVolumeMountRoot.";
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static async Task<IResult> GetCapabilitiesAsync(

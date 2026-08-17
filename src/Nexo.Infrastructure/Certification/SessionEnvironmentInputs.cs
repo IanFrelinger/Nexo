@@ -13,7 +13,10 @@ namespace Nexo.Infrastructure.Certification;
 ///
 /// <para><b>Read these inputs precisely.</b> They record the environment that was started
 /// and attested for the iteration — image identity, engine version, effective resource
-/// caps. They do <b>not</b> themselves assert that the candidate was compiled or executed
+/// caps, and the containment the engine reports it actually applied (network mode,
+/// read-only rootfs, dropped capabilities, security options — all inside the hashed
+/// attestation; the declared write surface rides in the hashed spec). They do <b>not</b>
+/// themselves assert that the candidate was compiled or executed
 /// inside that environment: these three are provisioning evidence. Compilation containment
 /// is a SEPARATE claim carried by the <c>session-build</c> input, minted only when the
 /// harness's in-session build leg is enabled and passes

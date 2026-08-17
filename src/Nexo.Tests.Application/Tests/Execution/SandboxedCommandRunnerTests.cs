@@ -51,6 +51,54 @@ public sealed class SandboxedCommandRunnerTests
     }
 
     [Fact]
+    public void BuildDockerArguments_AlwaysHardensTheContainer_RegardlessOfSpec()
+    {
+        // The hardening flags are not spec-optional: no capabilities, no privilege
+        // escalation, no image fetch, sealed rootfs — every sandbox container, every time.
+        var spec = new SandboxSpec(
+            Image: "tool:latest",
+            Mounts: Array.Empty<Mount>(),
+            Network: NetworkAccess.Unrestricted,
+            Command: new[] { "true" });
+
+        var args = DockerSandboxedCommandRunner.BuildDockerArguments(spec);
+
+        args.Should().ContainInOrder("--cap-drop", "ALL");
+        args.Should().ContainInOrder("--security-opt", "no-new-privileges");
+        args.Should().ContainInOrder("--pull", "never");
+        args.Should().Contain("--read-only");
+        args.Should().NotContain("--tmpfs", "a spec that declares no write surface gets no scratch");
+        var ordered = args.ToList();
+        ordered.IndexOf("--read-only").Should().BeLessThan(ordered.IndexOf("tool:latest"),
+            "hardening flags are docker options and must precede the image");
+    }
+
+    [Fact]
+    public void BuildDockerArguments_BacksEachScratchPath_WithACappedTmpfs()
+    {
+        var spec = new SandboxSpec(
+            Image: "tool:latest",
+            Mounts: Array.Empty<Mount>(),
+            Network: NetworkAccess.None,
+            Command: new[] { "make" })
+        {
+            ScratchPaths = new[] { "/work", "/tmp", " ", "C:\\odd\\path" },
+        };
+
+        var args = DockerSandboxedCommandRunner.BuildDockerArguments(spec);
+
+        args.Should().Contain("--read-only");
+        args.Should().ContainInOrder("--tmpfs", $"/work:{DockerSandboxedCommandRunner.ScratchPathMountOptions}");
+        args.Should().ContainInOrder("--tmpfs", $"/tmp:{DockerSandboxedCommandRunner.ScratchPathMountOptions}");
+        args.Should().Contain($"C:/odd/path:{DockerSandboxedCommandRunner.ScratchPathMountOptions}",
+            "separators are normalized like mounts are");
+        args.Count(a => a == "--tmpfs").Should().Be(3, "blank entries are skipped");
+        DockerSandboxedCommandRunner.ScratchPathMountOptions.Should().Contain("size=",
+            "scratch is capped, not unbounded host memory");
+        DockerSandboxedCommandRunner.ScratchPathMountOptions.Should().Contain("nosuid");
+    }
+
+    [Fact]
     public void BuildDockerArguments_OmitsNetworkNone_WhenUnrestricted()
     {
         var spec = new SandboxSpec(

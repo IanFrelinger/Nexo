@@ -14,22 +14,23 @@ Self-hosted, MCP-exposed AI sidecar for game studios. Monitors balance drift and
 From the repo root:
 
 ```bash
+export NEXO_API_KEY="$(openssl rand -hex 32)"   # required; compose refuses to start without it
 docker compose -f deploy/compose/docker-compose.game-director.yml up -d --build
 docker compose -f deploy/compose/docker-compose.game-director.yml exec ollama ollama pull llama3.1:latest
 ```
 
-The repo is bind-mounted at `/work` by default (`NEXO_REPO_ROOT` defaults to `../..` relative to `deploy/compose/`, i.e. the repo root, whatever your shell CWD); set `NEXO_REPO_ROOT` only to mount another tree. Set `NEXO_API_KEY` in the environment for production. Default dev key: `game-director-dev-key`.
+The repo is bind-mounted at `/work` by default (`NEXO_REPO_ROOT` defaults to `../..` relative to `deploy/compose/`, i.e. the repo root, whatever your shell CWD); set `NEXO_REPO_ROOT` only to mount another tree. `NEXO_API_KEY` is **required** — the host runs `AuthorizationMode=ApiKey` and neither the compose file nor `appsettings.json` ships a default key any more (running the host directly with `dotnet run` needs `Nexo__Security__ApiKey` in the environment for the same reason).
 
 ## Cursor integration
 
-Add to Cursor MCP settings:
+Add to Cursor MCP settings (use the same value you exported as `NEXO_API_KEY`):
 
 ```json
 {
   "mcpServers": {
     "nexo-game-director": {
       "url": "http://127.0.0.1:8080/mcp",
-      "headers": { "X-Nexo-Api-Key": "game-director-dev-key" }
+      "headers": { "X-Nexo-Api-Key": "<your NEXO_API_KEY>" }
     }
   }
 }

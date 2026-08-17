@@ -9,6 +9,7 @@ using Nexo.Infrastructure.Autonomy;
 using Nexo.Infrastructure.Certification.HotSwap;
 using Nexo.Infrastructure.Certification.Sdk.Extensions;
 using Nexo.Infrastructure.Execution.Sandbox;
+using Nexo.Infrastructure.Scaling;
 using Nexo.Tests.Infrastructure.Helpers;
 using Xunit;
 
@@ -92,6 +93,7 @@ public sealed class AutonomyCompositionTests
     [InlineData("ExecuteCandidateInSession")]
     [InlineData("WatchMaxInvocationSeconds")]
     [InlineData("DigestIntervalSeconds")]
+    [InlineData("SessionImageDigest")]
     public void EnabledButMisconfigured_FailsValidation(string broken)
     {
         var options = new NexoAutonomyOptions
@@ -105,6 +107,9 @@ public sealed class AutonomyCompositionTests
             BuildCandidateInSession = broken == "BuildCandidateInSession",
             ExecuteCandidateInSession = broken is "BuildCandidateInSession" or "ExecuteCandidateInSession",
             SessionImage = broken == "SessionImage" ? null : "proposer:latest",
+            // A pin that is a tag rather than an identity can never match: every session
+            // would refuse, which is a configuration error, not a policy.
+            SessionImageDigest = broken == "SessionImageDigest" ? "proposer:latest" : null,
             RetentionWindow = broken == "RetentionWindow" ? 0 : 2,
             ThroughputGuardFactor = broken == "ThroughputGuardFactor" ? 1 : 4,
             WatchMaxInvocationSeconds = broken == "WatchMaxInvocationSeconds" ? -1 : 0,
@@ -149,6 +154,7 @@ public sealed class AutonomyCompositionTests
                 ["Nexo:Autonomy:UseSandboxSessions"] = "true",
                 ["Nexo:Autonomy:BuildCandidateInSession"] = "true",
                 ["Nexo:Autonomy:SessionImage"] = "proposer:latest",
+                ["Nexo:Autonomy:SessionImageDigest"] = "sha256:0123abcd",
                 ["Nexo:Autonomy:CadenceFloorSeconds"] = "42",
             })
             .Build());
@@ -158,8 +164,58 @@ public sealed class AutonomyCompositionTests
 
         options.Enabled.Should().BeTrue();
         options.SessionImage.Should().Be("proposer:latest");
+        options.SessionImageDigest.Should().Be("sha256:0123abcd");
         options.BuildCandidateInSession.Should().BeTrue();
         options.CadenceFloorSeconds.Should().Be(42);
+    }
+
+    [Fact]
+    public async Task ConfiguredDigestPin_ReachesTheComposedSessionRunner_AndRefusesAMismatch()
+    {
+        // Wiring proof, not a unit test of the runner: the option bound from configuration
+        // must be the pin the composed ISandboxedSessionRunner enforces. A host-registered
+        // process runner stands in for the docker CLI (TryAdd — the host's wins).
+        var calls = new List<IReadOnlyList<string>>();
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton<IProcessCommandRunner>(new ScriptedProcessRunner(args =>
+        {
+            calls.Add(args.ToArray());
+            return args[0] == "image"
+                ? new ProcessCommandResult(0, "sha256:actually-present\n", "")
+                : new ProcessCommandResult(0, "", "");
+        }));
+        services.AddCertificationInfrastructure();
+        services.AddNexoAutonomy(new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Nexo:Autonomy:UseSandboxSessions"] = "true",
+                ["Nexo:Autonomy:SessionImage"] = "proposer:latest",
+                ["Nexo:Autonomy:SessionImageDigest"] = "sha256:pinned",
+            })
+            .Build());
+        using var provider = services.BuildServiceProvider();
+        var runner = provider.GetRequiredService<ISandboxedSessionRunner>();
+
+        var act = () => runner.StartAsync(new SandboxSpec(
+            "proposer:latest", Array.Empty<Mount>(), NetworkAccess.None, new[] { "sleep", "infinity" }));
+
+        await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*sha256:pinned*");
+        calls.Should().NotContain(c => c[0] == "run", "a refused pin never starts a container");
+    }
+
+    private sealed class ScriptedProcessRunner : IProcessCommandRunner
+    {
+        private readonly Func<IReadOnlyList<string>, ProcessCommandResult> _handler;
+
+        public ScriptedProcessRunner(Func<IReadOnlyList<string>, ProcessCommandResult> handler) =>
+            _handler = handler;
+
+        public Task<ProcessCommandResult> RunAsync(
+            string fileName,
+            IReadOnlyList<string> arguments,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult(_handler(arguments));
     }
 
     private static ServiceProvider BuildProvider()

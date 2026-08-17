@@ -35,6 +35,23 @@ public sealed record SessionAttestation
     /// <summary>Effective CPU cap in nano-cpus; null unknown, 0 = unlimited.</summary>
     public long? EffectiveNanoCpus { get; init; }
 
+    /// <summary>
+    /// Network mode the backend actually applied, in the backend's own vocabulary (for a
+    /// container engine: <c>none</c>, <c>bridge</c>, …); null when the backend did not
+    /// report it. Recorded so the certificate carries the containment that was applied,
+    /// not merely the containment that was requested.
+    /// </summary>
+    public string? EffectiveNetworkMode { get; init; }
+
+    /// <summary>Whether the sandbox's root filesystem was sealed read-only; null unknown.</summary>
+    public bool? EffectiveReadOnlyRootFilesystem { get; init; }
+
+    /// <summary>Privileges the backend dropped (backend encoding, e.g. <c>ALL</c>); empty when none or unknown.</summary>
+    public IReadOnlyList<string> EffectiveDroppedCapabilities { get; init; } = Array.Empty<string>();
+
+    /// <summary>Security options the backend applied (e.g. <c>no-new-privileges</c>); empty when none or unknown.</summary>
+    public IReadOnlyList<string> EffectiveSecurityOptions { get; init; } = Array.Empty<string>();
+
     /// <summary>UTC time the attestation was taken.</summary>
     public required DateTimeOffset AttestedAt { get; init; }
 

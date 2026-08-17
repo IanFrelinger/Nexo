@@ -59,14 +59,15 @@ All tunable constants are centralized in `Nexo.Core.Domain.NexoDefaults`. This e
 
 ## Nexo.API exposure (`Nexo__Security__*`)
 
-Advisory only — does not enforce firewalls or Tailscale ACLs. See **`docs/TailscaleAndNexo.md`** and **`docs/config/security-exposure.env.example`**.
+The profile does not enforce firewalls or Tailscale ACLs, but it **fails closed**: `Lan`, `Tailnet` and `Public` refuse to start while `AuthorizationMode` is `None` (and the legacy flag is off) unless `AllowUnauthenticatedNetworkExposure=true` is set explicitly. See **`SECURITY.md`** ("Default posture and in-scope surfaces"), **`docs/TailscaleAndNexo.md`** and **`docs/config/security-exposure.env.example`**.
 
 | Variable | Description | Default |
 |----------|-------------|---------|
-| `Nexo__Security__ExposureProfile` | `Localhost`, `Lan`, `Tailnet`, or `Public` (case-insensitive) | `Localhost` in `appsettings.json` |
+| `Nexo__Security__ExposureProfile` | `Localhost`, `Lan`, `Tailnet`, or `Public` (case-insensitive). Off-loopback values require built-in auth (see above) | `Localhost` in `appsettings.json` |
+| `Nexo__Security__AllowUnauthenticatedNetworkExposure` | `true` — escape hatch: start with an off-loopback profile and no built-in auth (logs a warning). Only when an authenticating proxy or network ACL fronts the API | `false` |
 | `Nexo__Security__CustomAdvisory` | Optional extra line shown in the Director portal advisory | unset |
 | `Nexo__Security__ShowAdvisoryInPortal` | `true` / `false` — show advisory banner in portal | `true` |
-| `Nexo__Security__RequireApiKeyForMutatingEndpoints` | `true` / `false` — enforce API key checks for POST/PUT/PATCH/DELETE under `/api/*` | `false` |
+| `Nexo__Security__RequireApiKeyForMutatingEndpoints` | `true` / `false` — legacy: enforce API key checks for POST/PUT/PATCH/DELETE under `/api/*`. Fails closed: with no `ApiKey` configured, mutating requests get 401 | `false` |
 | `Nexo__Security__ApiKey` | Shared secret required for protected mutating requests | unset (disabled) |
 | `Nexo__Security__ApiKeyHeaderName` | Header used for key checks | `X-Nexo-Api-Key` |
 | `Nexo__Security__ExcludedApiKeyPaths` | Comma-separated API path prefixes exempted from key checks | none |
@@ -82,7 +83,17 @@ Advisory only — does not enforce firewalls or Tailscale ACLs. See **`docs/Tail
 
 Notes:
 - If `AuthorizationMode` is set to anything except `None`, built-in auth mode takes precedence over legacy `RequireApiKeyForMutatingEndpoints`.
-- `RequireApiKeyForMutatingEndpoints` remains for backward compatibility with existing deployments.
+- `RequireApiKeyForMutatingEndpoints` remains for backward compatibility with existing deployments. Like every other mode it fails closed when its credential is missing.
+- `Nexo__Security__ApiKey` / `BearerToken` / `BasicAuthPassword` are compared in constant time against the configured plaintext value; they are not hashed at rest. Keep them in environment / secret stores, not in committed `appsettings.json`.
+
+## Remote execution surface (`Nexo__Execution__*`)
+
+`POST /api/execution/build` and `POST /api/execution/run` let a `RemoteExecutionPlatform` caller (`NEXO_EXECUTION_REMOTE_URL`) build images and run containers on this host's Docker daemon, including host bind mounts. They are **not mapped** unless opted in, and refuse `AuthorizationMode=None` (403) even when opted in.
+
+| Variable / config key | Description | Default |
+|------------------------|-------------|---------|
+| `Nexo__Execution__ServeRemoteExecution` | `true` maps `/api/execution/build` and `/api/execution/run`. Requires a built-in `Nexo__Security__AuthorizationMode` other than `None`; otherwise every request is refused with 403 | `false` (routes return 404) |
+| `Nexo__Execution__AllowedVolumeMountRoot` | Single host directory under which `VolumeMounts` host paths on `/api/execution/run` are accepted (the remote caller mounts only its test-results directory). Unset = any request carrying volume mounts is rejected with 400 | unset |
 
 ## Mesh and brick HTTP hardening (`Nexo__Security__Mesh__*`, Phase 2)
 
@@ -353,6 +364,15 @@ See `docs/runtime/ExecutionRouting.md` for detailed execution flow and resilienc
 | `NEXO_OBSERVATION_DEGRADED_MODE` | `1` = start observation pipeline in degraded mode | unset |
 | `NEXO_OBSERVATION_FAIL_OPEN` | `1` = observation pipeline continues on store errors | unset |
 | `BING_SEARCH_KEY` | API key for Bing web search provider | unset (falls back to mock) |
+
+## Autonomy sessions (`Nexo__Autonomy__*`)
+
+Bound from the `Nexo:Autonomy` section (see `NexoAutonomyOptions` for the full set; the loop is off unless `Enabled=true`).
+
+| Variable / config key | Description | Default |
+|-----------------------|-------------|---------|
+| `Nexo__Autonomy__SessionImage` | Container image proposal sessions start from; required when `UseSandboxSessions=true`. Must already be present on the engine — sessions run with `--pull never` and never fetch an image | unset |
+| `Nexo__Autonomy__SessionImageDigest` | Optional pin on the session image's identity: the engine image ID (`sha256:…`) that `SessionImage` must resolve to — the same value attestation records and certificates carry as their `image-digest` input, so pin by copying it from a certificate you have read. When set, a session whose image resolves to anything else refuses to start (checked before `docker run` and again at attestation); a value not of the form `sha256:…` fails validation at boot | unset (capture only) |
 
 ## Barriers (`Nexo__Barriers__*`)
 
