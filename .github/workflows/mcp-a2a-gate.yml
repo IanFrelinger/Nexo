@@ -31,14 +31,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 9.x runs the net8 suites via roll-forward-compatible SDK behavior and is required for
-      # the net9-only suites (TestServer + System.Text.Json 10 needs the 9.0 TestHost).
+      # 10.x builds everything (global.json) and is required for the net10-only suites
+      # (TestServer + System.Text.Json 10 needs the 10.0 TestHost); 8.x keeps the net8 suites
+      # on the real 8.0 runtime.
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
         with:
           dotnet-version: |
             8.0.x
-            9.0.x
+            10.0.x
 
       - name: MCP server bridge tests
         shell: bash
@@ -81,13 +82,13 @@ jobs:
         with:
           dotnet-version: |
             8.0.x
-            9.0.x
+            10.0.x
 
       - name: ProdStyle protocol ingress tests
         shell: bash
         run: |
           set -euo pipefail
           dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
-            -f net9.0 \
+            -f net10.0 \
             --filter "FullyQualifiedName~McpA2AProtocolIngress|FullyQualifiedName~AirGappedProfileApiHostProdStyleTests" \
             --blame-hang-timeout 120s

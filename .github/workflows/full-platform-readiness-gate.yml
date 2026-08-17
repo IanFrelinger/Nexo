@@ -83,14 +83,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
-      # SDK 9 only, on purpose: this is what the docs tell a native user to install. The CLI/API
-      # target net8.0 and rely on RollForward=Major (Directory.Build.targets) to run on the 9.x
-      # runtime; installing 8.0.x here used to hide a broken first `dotnet run`. Container lanes
-      # keep their own runtime setup.
+      # SDK 10 only, on purpose: this is what the docs tell a native user to install. The CLI/API
+      # ship net10.0; the net8.0 test hosts and samples rely on RollForward=Major
+      # (Directory.Build.targets) to run on the 10.x runtime; installing 8.0.x here used to hide a
+      # broken first `dotnet run`. Container lanes keep their own runtime setup.
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: 9.0.x
+          dotnet-version: 10.0.x
 
       - name: "Setup — verify hosting pack graph consistency"
         run: python3 scripts/verify-pack-nexo-hosting-graph-alignment.py
@@ -122,9 +122,9 @@ jobs:
       - name: "Setup — verify CLI runtimeconfig rolls forward across majors"
         shell: bash
         run: |
-          cfg=application/src/Nexo.CLI/bin/Debug/net8.0/Nexo.CLI.runtimeconfig.json
+          cfg=application/src/Nexo.CLI/bin/Debug/net10.0/Nexo.CLI.runtimeconfig.json
           grep -q '"rollForward": "Major"' "$cfg" || {
-            echo "::error::$cfg lacks \"rollForward\": \"Major\" — an SDK-9-only machine cannot run the CLI"
+            echo "::error::$cfg lacks \"rollForward\": \"Major\" — a machine with only a newer major runtime cannot run the CLI"
             cat "$cfg"
             exit 1
           }
@@ -237,13 +237,13 @@ jobs:
         include:
           - dockerfile: .docker/Dockerfile.test-caching
             label: Ubuntu-Container
-            build_arg: "DOTNET_VERSION=9.0"
+            build_arg: "DOTNET_VERSION=10.0"
           - dockerfile: .docker/Dockerfile.test-caching-alpine
             label: Alpine-Container
-            build_arg: "DOTNET_VERSION=9.0"
+            build_arg: "DOTNET_VERSION=10.0"
           - dockerfile: .docker/Dockerfile.test-caching-debian
             label: Debian-Container
-            build_arg: "DOTNET_VERSION=9.0"
+            build_arg: "DOTNET_VERSION=10.0"
 
     steps:
       - name: Checkout
@@ -253,7 +253,7 @@ jobs:
         uses: actions/setup-dotnet@v6
         with:
           dotnet-version: |
-            9.0.x
+            10.0.x
             8.0.x
 
       # ── Stage 1: Setup (build container) ────────────────────────────
@@ -293,7 +293,7 @@ jobs:
 
               echo "=== Smoke tests ==="
               dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
-                -f net9.0 \
+                -f net10.0 \
                 --no-build \
                 --blame-hang-timeout 180s \
                 --blame-hang-dump-type none \
@@ -302,7 +302,7 @@ jobs:
                 --logger "trx;LogFileName=smoke.trx" \
                 --results-directory /results/test-results
               dotnet test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj \
-                -f net9.0 \
+                -f net10.0 \
                 --no-build \
                 --blame-hang-timeout 60s \
                 --blame-hang-dump-type none \

@@ -26,7 +26,7 @@ jobs:
         uses: actions/setup-dotnet@v6
         with:
           dotnet-version: |
-            9.0.x
+            10.0.x
             8.0.x
 
       - name: Run setup check (Linux/macOS)
@@ -94,10 +94,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - image: mcr.microsoft.com/dotnet/sdk:9.0
-            image_id: dotnet-sdk-9-0
-          - image: mcr.microsoft.com/dotnet/sdk:9.0-bookworm-slim
-            image_id: dotnet-sdk-9-0-bookworm-slim
+          # sdk:10.0 has no Debian "-bookworm-slim" variant on MCR; the second distro is Ubuntu (noble).
+          - image: mcr.microsoft.com/dotnet/sdk:10.0
+            image_id: dotnet-sdk-10-0
+          - image: mcr.microsoft.com/dotnet/sdk:10.0-noble
+            image_id: dotnet-sdk-10-0-noble
 
     steps:
       - name: Checkout

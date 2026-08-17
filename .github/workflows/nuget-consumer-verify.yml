@@ -20,7 +20,9 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: "8.0.x"
+          dotnet-version: |
+            10.0.x
+            8.0.x
 
       - name: Pack + restore sample (same as pre-push)
         env:
@@ -37,7 +39,9 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: "8.0.x"
+          dotnet-version: |
+            10.0.x
+            8.0.x
 
       - name: Verify against nuget.org
         run: bash scripts/verify-stable-sdk-host-sample-published-feed.sh "${{ inputs.version }}"

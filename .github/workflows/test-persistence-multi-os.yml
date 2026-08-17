@@ -30,7 +30,9 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: '8.0.x'
+          dotnet-version: |
+            10.0.x
+            8.0.x
 
       - name: Restore
         run: dotnet restore Nexo.sln
@@ -83,7 +85,7 @@ jobs:
       - name: Build Windows Docker image
         run: |
           docker build -f .docker/Dockerfile.test-caching-windows `
-            --build-arg DOTNET_VERSION=8.0 `
+            --build-arg DOTNET_VERSION=10.0 `
             -t nexo-persistence-test:windows-8.0 `
             .
 
