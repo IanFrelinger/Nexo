@@ -41,7 +41,22 @@ This document is the **default “what do I run in production?”** map. Other c
 | `deploy/compose/docker-compose.friend-mesh.yml` | Friend mesh prefab |
 | `deploy/compose/docker-compose.ollama.yml` | Ollama sidecar only |
 | `deploy/compose/docker-compose.test.yml` | Test harness |
-| `deploy/compose/docker-compose.ephemeral.yml` | Ephemeral stacks |
+| `deploy/compose/docker-compose.ephemeral.yml` | Disposable Ollama / Postgres + `nexo` CLI (`.docker/Dockerfile.cli`) for one-off `run --rm nexo ...` |
+| `deploy/k8s/nexo-mesh-worker-deployment.yaml` | Kubernetes mesh-worker Deployment sample (`docs/WorkloadScaling.md`) |
+
+## Container health, readiness and hardening
+
+The API images (`.docker/Dockerfile.api`, `Dockerfile.quickstart`, `Dockerfile.fleet-host`) share one shape:
+
+- **`HEALTHCHECK`** probes `GET /health` with bash's `/dev/tcp` (the `mcr.microsoft.com/dotnet/aspnet` runtime images ship no `curl`), so `docker ps` shows `(healthy)` and `docker compose up --wait` returns as soon as the API answers. `scripts/prod-dry-run.sh` no longer hides `--wait` failures.
+- **`GET /health`** is liveness (constant 200 while the process serves HTTP). **`GET /ready`** is readiness: 200 once the host has finished starting (DI built, hosted services started) and 503 while starting or once shutdown begins (`IHostApplicationLifetime`), so orchestrators drain traffic before Kestrel closes. Both are unauthenticated and outside `/api`. Use `/ready` for Kubernetes `readinessProbe` / load-balancer checks and `/health` for `livenessProbe`; the k8s sample wires both.
+- **Non-root:** the runtime stages run as the aspnet image's unprivileged `app` user (`USER $APP_UID`, uid 1654 in .NET 8+). `/app` is root-owned and never written; everything the process writes lives under `/data` (owned by `app`). Named volumes created by **older, root-running images** keep root ownership — fix once with `docker run --rm -v <volume>:/v alpine chown -R 1654:1654 /v` (e.g. `nexo-dailies`) or recreate the volume.
+- **Swagger** (`/swagger`, `/swagger/v1/swagger.json`) is on only in the `Development` environment or when `Nexo__Api__EnableSwagger=true`; production images ship with it off.
+- **Kubernetes:** `NEXO_DEPLOYMENT_PROFILE` must be one of `full`, `server`, `edge`, `air-gapped`, `system` (`AddNexo` refuses anything else at startup); the mesh-worker sample uses `server`.
+
+## Runtime state (`NEXO_STATE_DIR`)
+
+LiteDB stores and snapshots (`nexo-patterns.db`, `nexo-adaptation.db`, `nexo-adaptation-audit.db`, `nexo-copilot-tasks.db`, `nexo-execution.db`, `nexo-test-failures.db`, `nexo-snapshots/`) default to **`<repo or app root>/.nexo/state/`** (gitignored) unless `Nexo:PatternStorePath` / `--store-path` names an explicit location. Set **`NEXO_STATE_DIR`** (absolute, or relative to that root) to move the whole directory. The images set `NEXO_STATE_DIR=/data/state`, and the portal and agent-server stacks mount the **`nexo-state`** named volume there, so state survives `docker compose up --force-recreate` and never lands in a bind-mounted repo. Existing installs that already have `nexo-*.db` at the repo root keep using them until you move the files into `.nexo/state/` (see `docs/Configuration.md`, "Runtime state").
 
 ## NuGet packages (embed or tool repos)
 

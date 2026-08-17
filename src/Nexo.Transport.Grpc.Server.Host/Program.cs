@@ -1,4 +1,7 @@
 // gRPC transport server host entry point.
+// Listen address, TLS and the client-side GrpcTransportOptions are documented in docs/GrpcHost.md;
+// defaults live in appsettings.json (Urls = http://127.0.0.1:5001, HTTP/2 only). ASPNETCORE_URLS
+// and Kestrel__Certificates__Default__* override them per environment.
 using Nexo.Hosting;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Nexo.Runtime;

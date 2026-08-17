@@ -1,10 +1,13 @@
 # Ephemeral stack for nexo orchestrate/agent with Ollama.
-# Usage: NEXO_EPHEMERAL_DB=postgres docker compose -f docker-compose.ephemeral.yml run --rm nexo [args]
-# When NEXO_EPHEMERAL_DB is set, postgres service is included.
-# Requires Docker and .NET SDK image for nexo build.
+# From repo root:
+#   NEXO_EPHEMERAL_DB=postgres docker compose -f deploy/compose/docker-compose.ephemeral.yml run --rm nexo [args]
+# When NEXO_EPHEMERAL_DB is set, postgres service is included (--profile db).
+# Requires Docker and the .NET SDK image for the nexo build.
 #
 # For in-process ephemeral (no container for nexo), use: nexo orchestrate "request" --ephemeral
 # That spins up ephemeral Ollama only; nexo runs on host.
+#
+# Relative host paths (build context, bind mount) resolve against THIS file's directory, so ../.. is the repo root.
 
 services:
   ollama:
@@ -24,19 +27,26 @@ services:
       - db
     # No volumes - data discarded on remove
 
-  # nexo service: build from repo, connect to ollama via OLLAMA_BASE_URL=http://ollama:11434
-  # Uncomment and use: docker compose -f docker-compose.ephemeral.yml run --rm nexo orchestrate "request"
-  # nexo:
-  #   build:
-  #     context: .
-  #     dockerfile: .docker/Dockerfile.ephemeral
-  #   environment:
-  #     OLLAMA_BASE_URL: http://ollama:11434
-  #     OLLAMA_MODEL: llama3.2
-  #   depends_on:
-  #     - ollama
-  #   working_dir: /workspace
-  #   volumes:
-  #     - .:/workspace
-  #   profiles:
-  #     - full
+  # nexo CLI built from the repo (.docker/Dockerfile.cli), talking to the ollama service above.
+  # `run` activates the service's profile automatically:
+  #   docker compose -f deploy/compose/docker-compose.ephemeral.yml run --rm nexo orchestrate "request"
+  # The image runs as the non-root 'app' user; the mounted workspace must be readable by that uid
+  # (add `user: "${UID:-1000}"` here if the CLI has to write into it). Runtime state stays in
+  # /data/state inside the container (NEXO_STATE_DIR) and is discarded with it.
+  nexo:
+    build:
+      context: ../..
+      dockerfile: .docker/Dockerfile.cli
+    environment:
+      OLLAMA_BASE_URL: http://ollama:11434
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.2}
+      Nexo__Meai__OllamaBaseUrl: http://ollama:11434
+      Nexo__Meai__OllamaModel: ${OLLAMA_MODEL:-llama3.2}
+      Nexo__NodeCapabilityRuntime__Ollama__BaseUrl: http://ollama:11434
+    depends_on:
+      - ollama
+    working_dir: /workspace
+    volumes:
+      - ../..:/workspace
+    profiles:
+      - full

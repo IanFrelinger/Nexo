@@ -109,6 +109,7 @@ Documentation index for the Nexo platform. Start here to find what you need.
 - `apps/runtime-studio/README.md` — **hub** for the Runtime Studio agent-set JSON, CLI vs API-hosted background agents, and how the Director portal fits; anchor [How this fits](../apps/runtime-studio/README.md#how-runtime-studio-fits-with-nexo-api).
 - `docs/SelfHostedGameServerPortal.md` — `deploy/compose/docker-compose.portal.yml`: Director portal + dailies API (lighter stack).
 - `docs/SelfHostedAgentServer.md` — `deploy/compose/docker-compose.agent-server.yml`: mounted workspace + env template `docs/config/agent-server.env.example`.
+- `docs/GrpcHost.md` — `src/Nexo.Transport.Grpc.Server.Host`: listen address, HTTP/2 (h2c vs TLS), the client-side `Nexo:GrpcTransport` `/run/secrets/*` defaults, compose secrets shape.
 - `docs/ide/NexoVscode.md` — VS Code / Cursor extension + `/api/ide/*` bridge (chat, patches, runs, workloads, streaming).
 - `docs/Phase1SecureCopilotWalkthrough.md` — first-success secure copilot MVP walkthrough using `deploy/compose/docker-compose.agent-server.yml`.
 
@@ -132,4 +133,4 @@ Documentation index for the Nexo platform. Start here to find what you need.
 - `docs/ComponentLibrary.md` — component catalog references.
 - `deploy/compose/docker-compose.test.yml` — containerized test lane (`test-ubuntu`) with mounted test artifacts.
 - `deploy/compose/docker-compose.ollama.yml` — Ollama-only stack (named volume for models; pair with host-run Nexo).
-- `deploy/compose/docker-compose.ephemeral.yml` — disposable local dependencies (Ollama, optional Postgres profile).
+- `deploy/compose/docker-compose.ephemeral.yml` — disposable local dependencies (Ollama, optional Postgres profile) plus a `nexo` CLI service built from `.docker/Dockerfile.cli` for `run --rm nexo ...`.
