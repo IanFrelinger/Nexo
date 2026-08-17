@@ -73,9 +73,10 @@ For layer-by-layer detail see [`docs/Architecture.md`](docs/Architecture.md); fo
 - **Kernel:** observe → adapt → improve loops, component/brick contracts, policy, persistence, orchestration, runtime routing, background agents.
 - **Trust:** data classification, sanitization before cloud calls, barrier identity resolution, local-first defaults, pause/resume controls, structured audit sinks.
 - **Mesh:** peer discovery, capability advertisement, director/hub flows, trust-tier placement, virtual labs, and phase docs for federation.
-- **Transport and ingress:** optional gRPC transport plus AWS SNS and DynamoDB ingress adapters.
+- **Transport, protocols and ingress:** optional gRPC transport, MCP server/client and A2A transport ([`docs/architecture/ProtocolIntegration-MCP-A2A.md`](docs/architecture/ProtocolIntegration-MCP-A2A.md)), plus AWS SNS and DynamoDB ingress adapters.
 - **Hosts:** `application/src/Nexo.CLI` (`nexo`) and `application/src/Nexo.API` (ASP.NET Core HTTP/portal host).
-- **Apps:** `apps/game-director`, `apps/nexo-forge`, `apps/release-manager`, and `apps/runtime-studio` are application-level agent-set/configuration surfaces.
+- **Applications on the core:** `applications/` (plural) holds open Apache-2.0 products built on the kernel — physical-atom certification, provenance graph, spatial anchors ([`applications/README.md`](applications/README.md)).
+- **Apps:** `apps/game-director`, `apps/nexo-forge`, `apps/release-manager`, and `apps/runtime-studio` are application-level agent-set/configuration surfaces (listed as commercial in [`LICENSING.md`](LICENSING.md)).
 - **Distribution:** NuGet packages (`Nexo.Hosting`, bundles, SDK/client/lite/runtime packages), GHCR images, Dockerfiles, compose stacks, and source/monorepo integration.
 
 For the canonical tier-by-tier project map, see [`docs/ProjectTiers.md`](docs/ProjectTiers.md). For distribution channels and their validation gates, see [`docs/DistributionModels.md`](docs/DistributionModels.md).
@@ -95,7 +96,9 @@ For the canonical tier-by-tier project map, see [`docs/ProjectTiers.md`](docs/Pr
 | Observe/adapt/improve | Pattern observation, analysis, adaptation, self-improvement, changelog, dogfood gates | [`docs/GapAnalysis.md`](docs/GapAnalysis.md), [`docs/DogfoodValidation.md`](docs/DogfoodValidation.md) |
 | Mesh/federation | Mesh phases, virtual lab, friend mesh prefab, trust-tier placement, leases/checkpoints | [`docs/MeshPhase0NorthStar.md`](docs/MeshPhase0NorthStar.md), [`docs/MeshVirtualLab.md`](docs/MeshVirtualLab.md) |
 | gRPC transport | Transport contracts, server, standalone host | `src/Nexo.Transport.Grpc*` |
+| MCP + A2A protocols | Nexo as MCP server (stdio/HTTP) and MCP client; A2A client transport and server core mounted by `Nexo.API` | `src/Nexo.Mcp.*`, `src/Nexo.Transport.A2A*`, [`docs/architecture/ProtocolIntegration-MCP-A2A.md`](docs/architecture/ProtocolIntegration-MCP-A2A.md) |
 | AWS ingress | SNS and DynamoDB adapters | `src/Nexo.Ingress.AwsSns`, `src/Nexo.Ingress.DynamoDb`, [`docs/MiddlewareIngress.md`](docs/MiddlewareIngress.md) |
+| Applications on the core | Physical-atom certification, provenance graph, spatial anchor contracts/runtime/platform providers (open, Apache-2.0) | [`applications/`](applications/), [`applications/README.md`](applications/README.md) |
 | App surfaces | Game Director, Nexo Forge, Release Manager, Runtime Studio agent sets and operator scripts | [`apps/`](apps/), [`docs/GameDirectorStudio.md`](docs/GameDirectorStudio.md), [`apps/runtime-studio/README.md`](apps/runtime-studio/README.md) |
 | Trust architecture | Barrier identity, data sensitivity, audit, policy packs, local-first controls | [`docs/TrustAndInformationArchitecture.md`](docs/TrustAndInformationArchitecture.md), [`docs/Architecture.md`](docs/Architecture.md) |
 | Distribution | NuGet, HTTP/API, CLI image, compose, source, mesh/federation | [`docs/DistributionModels.md`](docs/DistributionModels.md), [`docs/RELEASE.md`](docs/RELEASE.md) |
@@ -239,6 +242,8 @@ docker compose -f deploy/compose/docker-compose.portal.yml exec ollama ollama pu
 
 Run these from the repo root. Stacks that bind-mount the repository (agent server, Game Director) default `NEXO_REPO_ROOT` to `../..` relative to `deploy/compose/` — the repo root — so no extra variables are needed; a `.env` for these stacks belongs in `deploy/compose/` (or pass `--env-file`), not the repo root.
 
+The self-extending agent in these stacks is **Passive by default** (observe only): it is armed by the aggressiveness mode file (`nexo background-agent mode set --value active`; path `NEXO_AGENT_MODE_PATH`), and a missing file or an unrecognised value reads as Passive. See [`docs/SelfHostedAgentServer.md`](docs/SelfHostedAgentServer.md).
+
 Validate a pipeline template from a mounted workspace with the published CLI image:
 
 ```bash
@@ -337,27 +342,49 @@ See [`docs/Configuration.md`](docs/Configuration.md).
 
 ## Project layout
 
-The canonical repo map is [`docs/ProjectTiers.md`](docs/ProjectTiers.md). Use it to understand which projects are kernel spine, deployable hosts, distribution packages, optional transport/mesh, product satellites, and tests.
+The canonical repo map is [`docs/ProjectTiers.md`](docs/ProjectTiers.md). Use it to understand which projects are kernel spine, deployable hosts, distribution packages, optional transport/protocols/ingress, applications on the core, commercial satellites, and tests. Three similarly named folders mean three different things: singular **`application/`** = the CLI/API hosts, plural **`applications/`** = open products built on the core, **`apps/`** = agent-set/host configuration (see [`applications/README.md`](applications/README.md)).
 
 ```text
 Nexo/
-├── src/                          # kernel spine, runtime, distribution, optional transport/ingress, tests
-├── application/src/              # CLI/API hosts, Game Director projects, app tests
+├── src/                          # kernel spine, runtime, distribution/SDK, transport (gRPC, MCP, A2A), ingress, tests
+├── application/src/              # Nexo.CLI, Nexo.API hosts + Nexo.Tests.CLI (open)
+├── applications/                 # open products on the core: physical-atom cert, provenance graph, spatial (Apache-2.0)
 ├── apps/                         # runtime-studio, nexo-forge, game-director, release-manager configs
-├── docs/                         # architecture, operations, mesh, release, SDK, samples, runbooks
+├── commercial/                   # Game Director, GameDomain, Fleet, MeshDirector + tests (not Apache-2.0; LICENSING.md)
+├── docs/                         # architecture, operations, mesh, release, SDK, demos/, samples/, runbooks
+├── samples/                      # hello-brick, brick template, certified-brick-reuse, provenance/physical-atom inputs
+├── spikes/                       # autonomy first-flight, portability spike (evidence, not product)
+├── tools/                        # certify/export brick, provenance demo, sidecar demo, repo tools
+├── deploy/                       # compose/ stacks and k8s/ manifests
+├── infra/                        # terraform
+├── extensions/                   # nexo-vscode
+├── consumer-template/            # nuget.config + Directory.Packages.props for external consumers
 ├── config/                       # trust policy packs
 ├── scripts/                      # setup, install, CI, release helpers
-├── tools/                        # sidecars and repo tools
 ├── .devcontainer/
 ├── .docker/
 ├── .github/
-├── Nexo.sln                      # full repository solution
-├── Nexo.Kernel.sln               # kernel-focused solution
-├── Nexo.Runtime.sln              # runtime-focused solution
-├── Nexo.Core.slnf                # Tier 0 + CLI/API hosts
+├── Nexo.sln                      # everything open + 9 commercial projects (78 projects)
+├── Nexo.Kernel.sln               # kernel libraries + kernel tests (no CLI/API)
+├── Nexo.Runtime.sln              # embeddable runtime graph (no application/)
+├── Nexo.Demos.sln                # docs/demos/* clients
+├── Nexo.Core.slnf                # Tier 0 spine + CLI/API hosts
 ├── Nexo.LocalDevCore.slnf        # fast local CLI + core test slice
-└── Nexo.PrimeTime.slnf           # selected high-signal test projects
+├── Nexo.PrimeTime.slnf           # ProdStyle test gate (open + commercial GameDomain tests)
+└── application/Nexo.Application.sln  # CLI, API, Tests.CLI (open only)
 ```
+
+### Which solution do I open?
+
+| Goal | Open | Notes |
+|------|------|-------|
+| CLI / API / core dev loop | `Nexo.LocalDevCore.slnf` (`make build-core`) or `Nexo.Core.slnf` | Fastest restore; no `commercial/`. Add `Nexo.Kernel.sln` when you edit kernel libraries and their tests without the hosts. |
+| Everything open, one solution | `Nexo.sln` | Also pulls the Game Director / GameDomain commercial projects that ship in the sln (see [`docs/ProjectTiers.md`](docs/ProjectTiers.md)). |
+| Kernel libraries only | `Nexo.Kernel.sln` / `Nexo.Runtime.sln` | Kernel.sln adds kernel test projects; Runtime.sln is the NuGet-publishable graph. |
+| ProdStyle test gate | `Nexo.PrimeTime.slnf` (`make test-prime-time`) | Eight test assemblies, deliberately including `commercial/tests/Nexo.Commercial.Tests.GameDomain`. |
+| Hosts as the application gate builds them | `application/Nexo.Application.sln` | `Nexo.API`, `Nexo.CLI`, `Nexo.Tests.CLI` — open only. |
+| Demos | `Nexo.Demos.sln` | Avalonia, Blazor, console clients. |
+| Commercial verticals | project paths under `commercial/` | Not in the quickstart; see [`LICENSING.md`](LICENSING.md). |
 
 ## Testing
 
@@ -393,7 +420,7 @@ Start here:
 - [`docs/DistributionModels.md`](docs/DistributionModels.md) — NuGet, HTTP, CLI, compose, source, mesh distribution channels.
 - [`docs/Architecture.md`](docs/Architecture.md) — architecture and subsystem overview.
 - [`docs/Conventions.md`](docs/Conventions.md) — current code conventions and migration honesty.
-- [`docs/CiGateInventory.md`](docs/CiGateInventory.md) — CI workflow inventory and consolidation recommendations.
+- [`docs/CiGateInventory.md`](docs/CiGateInventory.md) — CI workflow trigger map and what branch protection actually requires (`cert-gate` only).
 - [`docs/TrustAndInformationArchitecture.md`](docs/TrustAndInformationArchitecture.md) — trust model, barriers, audit, sensitivity.
 - [`docs/Configuration.md`](docs/Configuration.md) — environment/config options.
 - [`docs/ProductionReadinessGate-v1.md`](docs/ProductionReadinessGate-v1.md) — production gate procedure.

@@ -102,20 +102,31 @@ public sealed record ProposalCandidate
 /// session outlives the image decision it started under). The budget ceiling (R4.6 /
 /// B11.2) bounds the whole iteration's wall clock, tightened by the throughput guard.
 ///
-/// <para><b>What the session does and does not do today.</b> When a
+/// <para><b>What the session does and does not do, precisely.</b> When a
 /// <see cref="ProposalIterationContext.SessionSpec"/> is supplied, the session is started,
 /// attested (image digest, engine version, effective resource caps — refused if weaker
-/// than requested), recorded onto the certificate as environment inputs, and torn down
-/// with the iteration. With the in-session build leg enabled
-/// (<c>buildCandidateInSession</c>), the harness additionally compiles the candidate
-/// INSIDE the session via <see cref="ISandboxedSession.ExecAsync"/> — the exact wrapped
-/// bytes every certification-path compile sees (<see cref="SessionCandidateBuild"/>) —
-/// refusing fail-closed when the leg is demanded but no session exists, and recording a
-/// <c>session-build</c> input on the certificate when it passes. The witness run and
-/// mutation run still happen <b>in the harness process</b>: <c>sandbox-spec</c>/
-/// <c>attestation</c> inputs remain provisioning evidence, <c>session-build</c> claims
-/// compilation containment only, and nothing yet claims contained execution. The write
-/// surface IS confined separately, by <c>ProposerConfinement</c>'s tool allowlist.</para>
+/// than requested — and the containment the engine reports it applied: network mode,
+/// read-only rootfs, dropped capabilities, security options), recorded onto the
+/// certificate as environment inputs, and torn down with the iteration. With the
+/// in-session build leg enabled (<c>buildCandidateInSession</c>), the harness compiles the
+/// candidate INSIDE the session via <see cref="ISandboxedSession.ExecAsync"/> — the exact
+/// wrapped bytes every certification-path compile sees (<see cref="SessionCandidateBuild"/>)
+/// — refusing fail-closed when the leg is demanded but no session exists, and recording a
+/// <c>session-build</c> input when it passes. With the execution leg additionally enabled
+/// (<c>executeCandidateInSession</c>), the gate's witness, determinism, and mutation legs
+/// EXECUTE candidate and mutant code inside that same session
+/// (<see cref="SessionExecutionBackend"/>; <c>session-execution</c> input) and untrusted
+/// candidate code never runs in this process. With both legs OFF — the option defaults —
+/// the witness and mutation runs happen <b>in the harness process</b>: <c>sandbox-spec</c>/
+/// <c>attestation</c> inputs are then provisioning evidence only, and the certificate
+/// claims no containment it did not have. Orchestration, Roslyn compilation of mutants,
+/// and all judgment stay on the host by design; the write surface is confined separately,
+/// by <c>ProposerConfinement</c>'s tool allowlist.</para>
+///
+/// <para><b>Hold is the default.</b> A harness constructed without an explicit
+/// <c>holdAdmission</c> certifies fully and admits nothing (<see cref="IterationOutcome.CertifiedButHeld"/>
+/// even at Tier 0), matching <c>NexoAutonomyOptions.HoldAdmission</c>. Unattended swapping
+/// is the opt-in, never the thing a caller gets by forgetting an argument.</para>
 /// </summary>
 public sealed class AutonomousIterationHarness
 {
@@ -138,7 +149,8 @@ public sealed class AutonomousIterationHarness
     /// With <c>executeCandidateInSession</c> additionally true, the gate's witness,
     /// determinism, and mutation legs EXECUTE candidate and mutant code inside that same
     /// session (<see cref="SessionExecutionBackend"/> over the session-built assembly) —
-    /// untrusted candidate code then never runs in this process.
+    /// untrusted candidate code then never runs in this process. <c>holdAdmission</c>
+    /// defaults to TRUE: pass false explicitly to let Tier-0 certificates swap unattended.
     /// </summary>
     public AutonomousIterationHarness(
         ICertificationGate gate,
@@ -150,7 +162,7 @@ public sealed class AutonomousIterationHarness
         ILogger<AutonomousIterationHarness>? logger = null,
         bool buildCandidateInSession = false,
         bool executeCandidateInSession = false,
-        bool holdAdmission = false)
+        bool holdAdmission = true)
     {
         _gate = gate ?? throw new ArgumentNullException(nameof(gate));
         _host = host ?? throw new ArgumentNullException(nameof(host));

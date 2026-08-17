@@ -136,7 +136,7 @@ See **`docs/production-readiness/SecurityHardeningPlan-v1.md`**.
 **Prime-time (whole automated framework slice):**  
 
 ```bash
-make test-prime-time          # Category=ProdStyle across Nexo.PrimeTime.slnf (nine test projects)
+make test-prime-time          # Category=ProdStyle across Nexo.PrimeTime.slnf (eight test projects)
 make test-prime-time-full    # ProdStyle gate then full slice excluding Category=ProdStyle
 ```
 

@@ -47,7 +47,7 @@ flowchart TB
 | # | Principle | Implication |
 |---|-----------|-------------|
 | P1 | **Domain is sacred** | `Nexo.Core.Domain` stays at **100% line** coverage; new domain types get tests in the same PR. |
-| P2 | **Coverage floors ratchet, not chase** | Infrastructure (~83% CI floor) and Core.Application (~67%) use **minimum CI thresholds**; raise floors only when gap tests land in touched code. |
+| P2 | **Coverage floors ratchet, not chase** | Infrastructure (80% CI floor, enforced by scripts/ci/kernel-coverage-gate.sh) and Core.Application (~67%) use **minimum CI thresholds**; raise floors only when gap tests land in touched code. |
 | P3 | **ProdStyle is the default for new kernel features** | New bricks, barriers, pipelines, routing, or `AddNexo` wiring → at least one **ProdStyle** or **WebApplicationFactory** test before merge. |
 | P4 | **Environment code uses environment gates** | Docker, Postgres ephemeral, live Ollama/RunPod, Playwright → **mesh-lab**, **kernel-gate-tier-e**, **security-gate**, not Coverlet 100%. |
 | P5 | **Gap tests are a scalpel** | Add `*GapCoverageTests` for small branchy adapters; do **not** add gap suites for megaclasses already covered by ProdStyle/virtual hosts. |
@@ -61,7 +61,7 @@ flowchart TB
 | Area | Today | Pivot stance |
 |------|--------|--------------|
 | `Nexo.Core.Domain` | **100%** line (CI) | Keep |
-| `Nexo.Infrastructure` | ~**83–84%** line, 1770+ xUnit tests | Floor + ProdStyle; no 100% goal |
+| `Nexo.Infrastructure` | ~**83–84%** line (floor 80%), 1770+ xUnit tests | Floor + ProdStyle; no 100% goal |
 | `Nexo.Core.Application` | ~**68%** line | Floor ratchet on change |
 | `*GapCoverageTests` | Large volume (Transport, Orchestration, Infrastructure, …) | **Freeze scope**; grow only with touched files |
 | ProdStyle | `make test-prod-style`, prime-time | **Mandatory** for routing/hosting/API PRs |

@@ -4,13 +4,24 @@ Thanks for contributing.
 
 ## Branching and releases
 
-Development is trunk-based: `master` is the only long-lived branch, protected by required CI gates.
+Development is trunk-based: `master` is the only long-lived branch. Branch protection requires **one** status check, `cert-gate` (plus "up to date with base"); every other workflow is advisory — see [`docs/CiGateInventory.md`](docs/CiGateInventory.md) and "Layer boundary and what master actually enforces" below.
 
 - Branch from the latest `master`, keep branches short-lived (days, not weeks), one concern per branch.
-- Name branches `<type>/<topic>` using the same types as Conventional Commits: `feat/…`, `fix/…`, `docs/…`, `chore/…`, `ci/…`, `refactor/…`, `test/…`. For multi-PR efforts, put the epic name at the front of the topic so related branches sort together: `feat/trust-loop-hot-swap`, `feat/trust-loop-fence-probe`.
-- Everything lands through a PR into `master`. Commit messages follow Conventional Commits (enforced by commitlint). Merged head branches are deleted automatically.
+- Name branches `<type>/<topic>` using the same types as Conventional Commits: `feat/…`, `fix/…`, `docs/…`, `chore/…`, `ci/…`, `refactor/…`, `test/…`. For multi-PR efforts, put the epic name at the front of the topic so related branches sort together: `feat/trust-loop-hot-swap`, `feat/trust-loop-fence-probe`. Do **not** name a head branch `application/*` when it targets `master` (the layer-boundary gate rejects that pairing).
+- Everything lands through a PR into `master`. Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/) **by convention** — `type(scope): subject`, WHY in the body — there is no commitlint hook or workflow enforcing it; `scripts/changelog-snippet-for-release.sh` relies on the convention to draft release notes. Merged head branches are deleted automatically.
 - Spikes that should not merge get an `archive/spike-<name>` tag on their tip, then the branch is deleted — the work stays reachable without cluttering the branch list.
 - Releases are tags on `master`: bump `VERSION`, move the `[Unreleased]` notes in `CHANGELOG.md` under the new version heading, tag `vX.Y.Z`, and publish a GitHub Release (`scripts/changelog-snippet-for-release.sh` drafts the notes). Release branches (`release/x.y`) only appear if an old version ever needs long-term patch support.
+
+## Layer boundary and what master actually enforces
+
+`.github/workflows/layer-boundary.yml` (job `verify`, runs on every PR — see [`docs/contributing/Branch-layer-rules.md`](docs/contributing/Branch-layer-rules.md)) encodes a kernel-first rule for PRs into `master` / `main` / `runtime/*`:
+
+- **Rejects** any PR that changes files under singular **`application/`** (the `Nexo.CLI` / `Nexo.API` hosts) …
+- … **unless** one of four exemptions holds: (1) the PR also changes `commercial/` (coordinated vertical integration); (2) the PR also changes `src/Nexo.Authoring/` or `scripts/verify-standalone-brick-authoring.sh` (authoring distribution); (3) every `application/` change is a pure removal of `<ProjectReference>` lines pointing at `src/` projects that no longer exist on the head commit (forced cleanup after a kernel project is deleted); (4) every changed `application/` path belongs to a project whose nearest `.csproj` contains `Microsoft.NET.Test.Sdk` (test-only change).
+- Also rejects head branches named `application/*` targeting those bases, and PRs into `application/*` bases that touch `src/`.
+- Plural `applications/` and `apps/` are **not** governed by this gate; `dependency-boundary` covers `applications/` (core must never reference it).
+
+**Reality check.** `layer-boundary / verify` is **not** a required status check — `master` requires only `cert-gate` — so a PR that edits `application/src/Nexo.API` or `Nexo.CLI` without an exemption **merges with a red, non-required `verify`**. That is exactly how the fixes to the hosts have landed (for example the MCP/A2A wiring in #269 and the 2026-08-16 API/CLI hardening PRs). This is a known gap: the rule as written would block routine host work, and requiring the check would need either an exemption redesign (e.g. allow `application/` changes into `master` when they carry a ProdStyle test) or an always-report job plus a branch-protection change (tracked in [`docs/CiGateInventory.md`](docs/CiGateInventory.md)). Until then: read a red `verify` before merging, and say in the PR description which exemption applies or why the host change is intended.
 
 ## Recommended dev workflow (container + CLI)
 
@@ -39,10 +50,13 @@ dotnet build Nexo.LocalDevCore.slnf -v minimal
 | Artifact | Typical use |
 | -------- | ----------- |
 | **`Nexo.sln`** | Full repository build — run locally after **`Nexo.Hosting`**, **`Nexo.Infrastructure`** Sdk surface, or registrar phase edits. |
-| **`Nexo.LocalDevCore.slnf`** | Faster slice (CLI + core tests); **`make restore-core`** / **`make build-core`**. |
-| **`Nexo.PrimeTime.slnf`** | Nine **`Nexo.Tests.*`** assemblies — **`make test-prime-time`** runs **`Category=ProdStyle`** across this filter; **`make test-prime-time-full`** runs the full test matrix after that gate. |
+| **`Nexo.LocalDevCore.slnf`** | Faster slice (CLI + `Nexo.Tests.Domain` + `Nexo.Tests.Infrastructure`, nothing under `commercial/`); **`make restore-core`** / **`make build-core`**. |
+| **`Nexo.PrimeTime.slnf`** | Eight test assemblies (seven **`Nexo.Tests.*`** plus `commercial/tests/Nexo.Commercial.Tests.GameDomain`) — **`make test-prime-time`** runs **`Category=ProdStyle`** across this filter; **`make test-prime-time-full`** runs the full test matrix after that gate. |
+| **`application/Nexo.Application.sln`** | `Nexo.API`, `Nexo.CLI`, `Nexo.Tests.CLI` only (open); what `scripts/application-gate-tier-a.sh` builds. |
 
-**Cross-platform workflow:** `.github/workflows/cross-platform-tests.yml` triggers on changes under **`src/Nexo.Infrastructure/**`** (among other paths) and runs **`dotnet restore`** / **`dotnet build`** on **`Nexo.sln`** (implicit via repo root). **Prod-shaped Compose:** `.github/workflows/prod-dry-run-pr.yml` runs **`scripts/prod-dry-run.sh`** on PRs to **`master`**, **`main`**, and **`cursor/**`** branches.
+Full "which solution do I open" table: [`README.md`](README.md#which-solution-do-i-open) and [`docs/ProjectTiers.md`](docs/ProjectTiers.md).
+
+**Cross-platform workflow:** `.github/workflows/cross-platform-tests.yml` is **`workflow_dispatch` only** — it does not run on pushes or PRs. Trigger it with `gh workflow run "Cross-Platform Tests" --ref <branch> -f scope=smoke`; it runs **`dotnet restore`** / **`dotnet build`** on **`Nexo.sln`** (implicit via repo root). **Prod-shaped Compose:** `.github/workflows/prod-dry-run-pr.yml` is likewise **dispatch only** despite its name; run **`scripts/prod-dry-run.sh`** locally or `gh workflow run "Prod dry run (Compose)" --ref <branch>`. The Compose dry run also runs inside the path-filtered **Application Gate** (Tier D) on PRs that touch `application/**`.
 
 For Infrastructure Sdk / Hosting registration changes, prefer **`dotnet build Nexo.sln`** then **`make test-framework-prod-first`** or **`make test-prime-time`** when validating framework-wide behaviour (see also **`Makefile`** targets **`test-prod-style`**, **`ci-verify`**).
 
