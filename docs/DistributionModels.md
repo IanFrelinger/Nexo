@@ -23,7 +23,7 @@ Release automation is summarized in **`docs/RELEASE.md`** (NuGet + GHCR from one
 | **NuGet client** | **`Nexo.Client`** / **`Nexo.Sdk`** | Package version | **`docs/sdk.md`** (client quick start) |
 | **HTTP-only** | Running **`Nexo.API`** | Base URL + TLS + API key policy | **`curl`** `GET /health`, `GET /api/status` (see **`docs/SelfHostedAgentServer.md`**) |
 | **CLI** | **`Nexo.CLI`** binary or **GHCR `nexo-cli`** image | Image tag or digest; CLI `--version` / package | **`docs/GettingStarted.md`** (`doctor`, `pipeline`) |
-| **Compose / operators** | Root **`docker-compose*.yml`** + operator docs | Compose file revision + image digests | **`docs/DEPLOYMENT.md`**, stack-specific guides |
+| **Compose / operators** | **`deploy/compose/docker-compose*.yml`** + operator docs | Compose file revision + image digests | **`docs/DEPLOYMENT.md`**, stack-specific guides |
 | **Source / monorepo** | `ProjectReference` into **`src/`** | Git commit / branch | **`docs/IntegratorGuide.md`** (project reference example) |
 | **Mesh / federation (open peers)** | Peer config, local mesh primitives, worker executor | `instances.json`, env vars | **`docs/IntegratorGuide.md`**, **`docs/FriendMeshPrefab.md`**, **`docs/MeshVirtualLab.md`** |
 | **Mesh fleet director (commercial)** | `Nexo.Commercial.Fleet.Host`, `/api/mesh/*` director APIs | Image tag + API key + peer registration key | **`.docker/Dockerfile.fleet-host`**, **`scripts/commercial-fleet-host-smoke.sh`**, mesh-lab peer-a |

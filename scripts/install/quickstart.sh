@@ -77,9 +77,10 @@ if command -v docker >/dev/null 2>&1; then
   fi
 
   info "Starting Nexo portal on port ${NEXO_PORT}..."
+  # Loopback only: the quickstart image runs with no auth (README.md "Security Defaults").
   docker run -d --rm \
     --name nexo-quickstart \
-    -p "${NEXO_PORT}:8080" \
+    -p "127.0.0.1:${NEXO_PORT}:8080" \
     nexo:quickstart
 
   ok "Portal running at http://localhost:${NEXO_PORT}"
@@ -139,7 +140,44 @@ NEXO_ALLOW_MOCK=1 ASPNETCORE_URLS="http://localhost:${NEXO_PORT}" \
   dotnet run --project application/src/Nexo.API --no-build &
 NEXO_PID=$!
 
-sleep 3
+# Bounded /health poll (up to 60s). The old `sleep 3` printed "Portal running" even when the
+# host had already died (e.g. missing shared runtime), which is exactly the failure this lane
+# exists to surface. Poll 127.0.0.1 explicitly: ASPNETCORE_URLS=http://localhost:PORT binds loopback.
+health_url="http://127.0.0.1:${NEXO_PORT}/health"
+probe_health() {
+  if command -v curl >/dev/null 2>&1; then
+    curl -fsS "$health_url" >/dev/null 2>&1
+  else
+    wget -qO- "$health_url" >/dev/null 2>&1
+  fi
+}
+if ! command -v curl >/dev/null 2>&1 && ! command -v wget >/dev/null 2>&1; then
+  # No HTTP client to probe with: the best we can do is confirm the process survived startup.
+  sleep 3
+  if ! kill -0 "${NEXO_PID}" 2>/dev/null; then
+    fail "Portal process exited during startup. See the dotnet output above."
+    exit 1
+  fi
+  info "curl/wget not found; skipped the ${health_url} probe (process is alive)."
+else
+  info "Waiting for ${health_url} (up to 60s)..."
+  health_ok=0
+  for _ in $(seq 1 30); do
+    if ! kill -0 "${NEXO_PID}" 2>/dev/null; then
+      break
+    fi
+    if probe_health; then
+      health_ok=1
+      break
+    fi
+    sleep 2
+  done
+  if [[ "${health_ok}" -ne 1 ]]; then
+    fail "Portal did not answer at ${health_url} within 60s (PID: ${NEXO_PID}). See the dotnet output above."
+    kill "${NEXO_PID}" 2>/dev/null || true
+    exit 1
+  fi
+fi
 ok "Portal running at http://localhost:${NEXO_PORT} (PID: ${NEXO_PID})"
 info "Stop with: kill ${NEXO_PID}"
 open_browser "http://localhost:${NEXO_PORT}"

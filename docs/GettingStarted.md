@@ -13,9 +13,11 @@ The **default** path is **containers + CLI**: develop inside the **Dev Container
 ```bash
 git clone https://github.com/IanFrelinger/Nexo.git && cd Nexo
 docker build -f .docker/Dockerfile.quickstart -t nexo:quickstart .
-docker run --rm -p 8080:8080 nexo:quickstart
+docker run --rm -p 127.0.0.1:8080:8080 nexo:quickstart
 # Open http://localhost:8080 — mock provider; no API keys needed.
 ```
+
+The image has no auth; publish on all interfaces (`-p 8080:8080`) only behind auth + TLS — see `README.md` → *Security Defaults* and `SECURITY.md`.
 
 **One-command script** (uses Docker when present, otherwise tries a local SDK): `bash scripts/install/quickstart.sh` — see `scripts/install/quickstart.sh`.
 
@@ -31,7 +33,7 @@ In ~10-15 minutes, you will:
 ## Prerequisites
 
 - **Default:** Docker (Desktop or Engine) and Git. You do **not** need a host .NET SDK for Dev Container, quickstart image, or `docker run … ghcr.io/ianfrelinger/nexo-cli`.
-- **Native lane:** .NET SDK **9.x** (repo is pinned in `global.json`).
+- **Native lane:** .NET SDK **9.x** (repo is pinned in `global.json`). The CLI and API target `net8.0` and roll forward onto the 9.x runtime (`RollForward=Major`), so an SDK-9-only machine works; no separate .NET 8 runtime is needed.
 - Optional: Ollama/OpenAI/Azure credentials (model-backed commands).
 
 ## 1) Choose your startup lane

@@ -11,6 +11,18 @@
     <Version>$(NexoPackageVersion)</Version>
   </PropertyGroup>
 
+  <!-- Executables and test hosts target net8.0, but a machine provisioned per the docs has only the
+       .NET 9 SDK, whose shared runtimes are Microsoft.NETCore.App/AspNetCore.App 9.x. Without a
+       roll-forward policy the very first `dotnet run` (or `dotnet Nexo.CLI.dll`) fails with
+       "You must install or update .NET to run this application" while `dotnet build` succeeds.
+       Lives here rather than in Directory.Build.props: OutputType is assigned by the project body,
+       which MSBuild imports after .props and before .targets, so a .props-side condition on it is
+       always empty. RollForward is only written into *.runtimeconfig.json (executables and test
+       hosts), so gating it costs nothing for libraries either way. -->
+  <PropertyGroup Condition="'$(OutputType)' == 'Exe' OR '$(IsTestProject)' == 'true'">
+    <RollForward Condition="'$(RollForward)' == ''">Major</RollForward>
+  </PropertyGroup>
+
   <!-- NetStandard compatibility shims (Unity 2019+): required members, init-only, etc.
        Evaluated statically (not inside a <Target>) so IDE/language-server design-time builds
        also see the polyfills; a Target-added <Compile> item is invisible to design-time builds,

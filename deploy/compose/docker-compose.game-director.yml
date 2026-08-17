@@ -1,7 +1,11 @@
 # Nexo Game Director Studio — portal + sidecar host + Ollama (air-gap friendly after image build).
 # From repo root:
-#   docker compose -f docker-compose.game-director.yml up -d --build
-#   docker compose -f docker-compose.game-director.yml exec ollama ollama pull llama3.1:latest
+#   docker compose -f deploy/compose/docker-compose.game-director.yml up -d --build
+#   docker compose -f deploy/compose/docker-compose.game-director.yml exec ollama ollama pull llama3.1:latest
+#
+# Relative host paths (bind mount, build context) resolve against THIS file's directory, not the
+# shell CWD, so the defaults below are ../.. = repo root. Set NEXO_REPO_ROOT to mount another tree.
+# Compose reads .env from this directory (deploy/compose/.env); use --env-file <path> otherwise.
 
 services:
   ollama:
@@ -40,7 +44,9 @@ services:
     ports:
       - "127.0.0.1:${NEXO_GAME_DIRECTOR_HTTP_PORT:-8080}:8080"
     volumes:
-      - ${NEXO_REPO_ROOT:-.}:${NEXO_CONTAINER_WORKDIR:-/work}${NEXO_REPO_MOUNT_SUFFIX:-}
+      # Default ../.. is the repo root (relative to deploy/compose/); '.' would mount only deploy/compose/
+      # and NEXO_BACKGROUND_AGENTS_CONFIG would be missing -> host throws at startup -> restart loop.
+      - ${NEXO_REPO_ROOT:-../..}:${NEXO_CONTAINER_WORKDIR:-/work}${NEXO_REPO_MOUNT_SUFFIX:-}
     restart: unless-stopped
 
 volumes:

@@ -83,12 +83,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      # SDK 9 only, on purpose: this is what the docs tell a native user to install. The CLI/API
+      # target net8.0 and rely on RollForward=Major (Directory.Build.targets) to run on the 9.x
+      # runtime; installing 8.0.x here used to hide a broken first `dotnet run`. Container lanes
+      # keep their own runtime setup.
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: |
-            9.0.x
-            8.0.x
+          dotnet-version: 9.0.x
 
       - name: "Setup — verify hosting pack graph consistency"
         run: python3 scripts/verify-pack-nexo-hosting-graph-alignment.py
@@ -114,6 +116,18 @@ jobs:
 
       - name: "Setup — build CLI"
         run: dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
+
+      # Hosted runner images may still carry a preinstalled 8.0 runtime, so "it ran" alone would not
+      # prove the roll-forward policy survived. Assert the generated runtimeconfig directly.
+      - name: "Setup — verify CLI runtimeconfig rolls forward across majors"
+        shell: bash
+        run: |
+          cfg=application/src/Nexo.CLI/bin/Debug/net8.0/Nexo.CLI.runtimeconfig.json
+          grep -q '"rollForward": "Major"' "$cfg" || {
+            echo "::error::$cfg lacks \"rollForward\": \"Major\" — an SDK-9-only machine cannot run the CLI"
+            cat "$cfg"
+            exit 1
+          }
 
       - name: "Setup — verify CLI starts"
         run: dotnet run --project application/src/Nexo.CLI --no-build -- --help

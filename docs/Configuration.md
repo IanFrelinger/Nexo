@@ -352,8 +352,19 @@ See `docs/runtime/ExecutionRouting.md` for detailed execution flow and resilienc
 | `NEXO_EXTENSION_MAX_CYCLES_PER_HOUR` | Extender ceiling: extend cycles in any trailing hour. May only LOWER the default. | 4 |
 | `NEXO_OBSERVATION_DEGRADED_MODE` | `1` = start observation pipeline in degraded mode | unset |
 | `NEXO_OBSERVATION_FAIL_OPEN` | `1` = observation pipeline continues on store errors | unset |
-| `NEXO_BARRIER_MIDDLEWARE_ENABLED` | `1` = enable HTTP barrier context middleware | unset |
 | `BING_SEARCH_KEY` | API key for Bing web search provider | unset (falls back to mock) |
+
+## Barriers (`Nexo__Barriers__*`)
+
+Bound from the `Nexo:Barriers` section (`appsettings.json` or `Nexo__Barriers__*` environment variables).
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `Nexo__Barriers__Levels__0`, `__1`, … | Ordered barrier levels, lowest (floor) to highest | `public, internal, confidential, restricted` in `Nexo.API/appsettings.json` |
+| `Nexo__Barriers__RequireExplicitBarrier` | `true` = an agent invocation with no explicit barrier context is refused and surfaces as escalation / `errorCode` `BARRIER_CONTEXT_MISSING` (the response says why `0 agent(s) executed`); `false` = missing context defaults to the floor level and records a `DefaultApplied` audit event | `false` (code default, `Nexo.API/appsettings.json`, agent-server compose, CLI daemon) |
+| `Nexo__Barriers__HostCeiling` | Highest level this host may process; unset disables the ceiling check | `confidential` in `Nexo.API/appsettings.json` |
+
+`Nexo.API` does not register an HTTP barrier-context middleware, so its requests never carry an explicit barrier context: leave `RequireExplicitBarrier` at `false` there, or opt in only from a host that establishes the context itself (`IBarrierContextAccessor.Initialize`, e.g. `nexo orchestrate --barrier <level>`). `HttpBarrierContextMiddleware` (gated by `NEXO_BARRIER_MIDDLEWARE_ENABLED`) exists in `Nexo.Runtime` but is not wired into any shipped host.
 
 ## Routing & Execution
 

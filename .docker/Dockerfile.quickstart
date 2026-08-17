@@ -1,8 +1,9 @@
 # All-in-one Nexo quickstart image: API + portal + mock provider enabled.
 # Usage:
 #   docker build -f .docker/Dockerfile.quickstart -t nexo:latest .
-#   docker run --rm -p 8080:8080 nexo:latest
+#   docker run --rm -p 127.0.0.1:8080:8080 nexo:latest
 #   Open http://localhost:8080
+# No auth in this image: publish on 0.0.0.0 only behind auth + TLS (README.md "Security Defaults").
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 

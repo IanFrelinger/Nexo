@@ -13,7 +13,8 @@ services:
   ollama:
     image: ${NEXO_OLLAMA_IMAGE:-ollama/ollama:latest}
     ports:
-      - "${NEXO_OLLAMA_HOST_PORT:-11434}:11434"
+      # Loopback only (matches the other stacks); Ollama has no auth, so do not publish it on 0.0.0.0.
+      - "127.0.0.1:${NEXO_OLLAMA_HOST_PORT:-11434}:11434"
     volumes:
       - ollama-models:/root/.ollama
     restart: unless-stopped

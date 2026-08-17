@@ -35,9 +35,9 @@ release-staging-and-verify:
 # All automated test projects in Nexo.PrimeTime.slnf (nine Nexo.Tests.* assemblies).
 PRIME_TIME_SLNF := Nexo.PrimeTime.slnf
 
-# Build the solution
+# Build the solution (root holds several .sln/.slnf; a bare `dotnet build` fails with MSB1011)
 build:
-	dotnet build
+	dotnet build Nexo.sln
 
 # Restore/build a small slice (CLI + domain tests + infra tests) — avoids full Nexo.sln workload requirements
 restore-core:
@@ -95,8 +95,8 @@ test:
 # For native macOS/Windows/Linux use: make test-cross-platform (triggers CI).
 test-all-platforms:
 	@echo "=== Local (current OS) ==="
-	dotnet build -v minimal
-	dotnet test --no-build --verbosity minimal --blame-hang-timeout 30s --blame-hang-dump-type none
+	dotnet build Nexo.sln -v minimal
+	dotnet test Nexo.sln --no-build --verbosity minimal --blame-hang-timeout 30s --blame-hang-dump-type none
 	@echo "=== Docker: Ubuntu 8.0 ==="
 	docker build -f .docker/Dockerfile.test-caching --build-arg DOTNET_VERSION=8.0 -t nexo-test-ubuntu:8.0 .
 	mkdir -p test-results
@@ -115,7 +115,7 @@ test-all-platforms:
 # Ephemeral: run tests in containers with no volume mounts; results discarded when container is removed
 test-all-platforms-ephemeral:
 	@echo "=== Ephemeral multi-platform tests (no host artifacts) ==="
-	dotnet build -v minimal
+	dotnet build Nexo.sln -v minimal
 	dotnet run --project application/src/Nexo.CLI -- test --platforms ubuntu alpine debian --ephemeral
 
 # Run tests on all platforms (C#-driven; works on Windows, macOS, Linux, mobile)
@@ -624,5 +624,5 @@ docker-cli:
 
 # Generate API docs (requires: dotnet tool install -g docfx)
 docs-api:
-	dotnet build -c Release
+	dotnet build Nexo.sln -c Release
 	cd docs/api && docfx
