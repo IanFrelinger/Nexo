@@ -4,7 +4,6 @@
     "projects": [
       "application/src/Nexo.CLI/Nexo.CLI.csproj",
       "src/Nexo.Tests.Domain/Nexo.Tests.Domain.csproj",
-      "commercial/tests/Nexo.Commercial.Tests.GameDomain/Nexo.Commercial.Tests.GameDomain.csproj",
       "src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj"
     ]
   }

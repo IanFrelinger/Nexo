@@ -76,6 +76,8 @@ Rationale: this tier protects two moats at once — an extensible SDK and a sing
 | OPEN | `docs/samples/StableSdkHostSample/StableSdkHostSample.csproj` |
 | OPEN | `docs/samples/StableSdkHostSample/package-consumer/StableSdkHostSample.Package.csproj` |
 | OPEN | `samples/**` |
+| OPEN | `applications/**` — open products on the core (physical-atom certification, provenance graph, spatial); Apache-2.0 by the `Directory.Build.targets` rule, no `NexoCommercialProject` flag; see [`applications/README.md`](applications/README.md) |
+| OPEN | `tools/**`, `spikes/**` — repo tools and evidence spikes, same rule |
 
 Open mesh **primitives** (local discovery, capability advertisement, trust middleware) remain under `src/Nexo.Core.Application/Mesh/**` and `src/Nexo.Infrastructure/Mesh/**`. Mesh-lab **workers** poll the commercial fleet director via open `src/Nexo.Infrastructure/MeshLab/**`.
 
@@ -88,7 +90,7 @@ These projects were explicitly inspected and placed:
 | `application/src/Nexo.API/Nexo.API.csproj` | OPEN | Single-node HTTP/API host over the open kernel. Fleet `/api/mesh/*` director endpoints live on `Nexo.Commercial.Fleet.Host`, not open `Nexo.API`. |
 | `src/Nexo.Transport.Grpc.Server/Nexo.Transport.Grpc.Server.csproj` | OPEN | Server implementation exposes the open gRPC transport surface; it is not a fleet-scale director/control-plane project. |
 | `src/Nexo.Transport.Grpc.Server.Host/Nexo.Transport.Grpc.Server.Host.csproj` | OPEN | Standalone gRPC host for the open transport server, not a governance tier. |
-| `application/Nexo.Application.sln` contents | OPEN for current contents | The solution contains `Nexo.API`, `Nexo.CLI`, and `Nexo.Tests.CLI` as open surfaces. Game domain and Game Director live under `commercial/`. |
+| `application/Nexo.Application.sln` contents | OPEN | The solution contains `Nexo.API`, `Nexo.CLI`, and `Nexo.Tests.CLI` only. It previously also listed `Nexo.Commercial.GameDomain` and its tests "for local dev"; those were removed so the tester quickstart never compiles commercial code. `Nexo.LocalDevCore.slnf` likewise pulls no `commercial/` project. Filters that deliberately span both tiers (`Nexo.PrimeTime.slnf`, `Nexo.sln`) say so in `docs/ProjectTiers.md`. |
 
 ## Tier 2 — COMMERCIAL (fleet + governance)
 
@@ -146,6 +148,14 @@ Stub text in each `COMMERCIAL-LICENSE.md`:
 > Not licensed under Apache-2.0. Commercial terms TBD. See /LICENSING.md.
 
 Commercial vertical projects may reference each other and the open core; open projects must not reference commercial projects.
+
+### Evaluation use of `commercial/` sources — PROPOSED TEXT, needs owner sign-off
+
+> **Status: draft, not in force.** The 21 `COMMERCIAL-LICENSE.md` stubs say "terms TBD", so today the `commercial/` sources in this public repository carry **no grant at all** beyond what copyright law and GitHub's terms allow (viewing and forking the repository). The paragraph below is a proposal for the repository owner to accept, edit, or reject; nothing here is a license until the stubs are replaced.
+>
+> *Proposed:* "Source code under `commercial/` is made visible for evaluation. You may build and run it locally, in CI on your own fork, and in non-production test environments, solely to evaluate Nexo. You may not deploy it in production, offer it as a service, or redistribute it (in source or binary form) without a separate written agreement. The open core under `src/`, `application/`, `applications/`, `samples/`, `tools/`, `docs/`, and `spikes/` remains Apache-2.0 and is unaffected by this paragraph."
+>
+> Until the owner signs off and updates each `COMMERCIAL-LICENSE.md`, contributors and evaluators should treat `commercial/` as **all rights reserved** and keep the tester quickstart (`Nexo.LocalDevCore.slnf`, `application/Nexo.Application.sln`, `Nexo.Core.slnf`) free of it, which it now is.
 
 Recommended future open-source candidate: `apps/release-manager` is the best single app to open later as a minimal SDK reference because it demonstrates generic release-readiness automation without making the defense-adjacent Game Director wedge open.
 
