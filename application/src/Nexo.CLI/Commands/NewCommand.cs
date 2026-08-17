@@ -73,7 +73,8 @@ public sealed class NewCommand : Command
             return 1;
         }
 
-        var replacements = BuildReplacements(normalizedName, ResolveNexoVersion(nexoVersion));
+        var resolvedNexoVersion = ResolveNexoVersion(nexoVersion);
+        var replacements = BuildReplacements(normalizedName, resolvedNexoVersion);
         CopyTemplate(templateFiles, root, replacements);
 
         var testProject = Path.Combine(testsRoot, $"{normalizedName}Brick.Tests.csproj");
@@ -85,7 +86,13 @@ public sealed class NewCommand : Command
                 outputDirectory = root,
                 project = Path.Combine(projectRoot, $"{normalizedName}Brick.csproj"),
                 testProject,
-                next = $"dotnet test \"{testProject}\""
+                next = $"dotnet test \"{testProject}\"",
+                // Nexo.Authoring is not published to nuget.org yet; without a feed the generated
+                // PackageReference fails restore with NU1101. Say so up front instead of at restore time.
+                restoreHint = $"Nexo.Authoring {resolvedNexoVersion} must be restorable: pass a local feed " +
+                              "(dotnet restore --source FEED --source https://api.nuget.org/v3/index.json) " +
+                              "or replace the PackageReference with a ProjectReference to src/Nexo.Authoring/Nexo.Authoring.csproj " +
+                              "(docs/AuthoringBricks.md, section Restoring Nexo.Authoring)."
             },
             json);
         return 0;

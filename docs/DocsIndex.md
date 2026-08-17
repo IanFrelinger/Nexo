@@ -81,6 +81,7 @@ Documentation index for the Nexo platform. Start here to find what you need.
 - `docs/physical-atom-phase2-test-report.md` — Phase 2 QR/NFC tag encoding test report.
 - `docs/spatial-multiplayer.md` — **Spatial P1:** single host authority per match scope (v1 decision).
 - `samples/physical-atom-cert/` — signed sample certificate + issuer public key for headless verification replay.
+- `samples/README.md` — index of every tracked sample (`hello-brick`, `certified-brick-reuse`, `provenance-graph`, `physical-atom-cert`, `autonomy-objectives`, ...): what each shows, run command, prerequisites.
 - `docs/FriendMeshPrefab.md` — prefab Docker Compose + env template for a small shared **Nexo.API** hub (friends / tailnet).
 - `docs/MeshPhase8OperatorHardening.md` — **Mesh Phase 8:** discovery admission, trust alias, `nexo mesh peers` / `mesh health` / `dotnet run --project commercial/src/Nexo.Commercial.MeshDirector -- director ...`, TLS example.
 - `docs/MeshVirtualLab.md` — **Virtual mesh lab:** two Nexo.API nodes in Docker + verify script (no extra hardware); **`scripts/bootstrap-cloud-mesh-lab.sh`** for Ubuntu/Debian cloud VMs.

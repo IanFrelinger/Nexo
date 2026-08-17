@@ -91,7 +91,7 @@ When **`NUGET_PUBLISH_MODE`** is **`oidc`** or **`apikey`** (and **`NUGET_POST_P
 | Variable | Purpose |
 |----------|---------|
 | **`NUGET_POST_PUSH_VERIFY`** | Set to **`false`** to skip steps 1–5. |
-| **`NUGET_POST_PUSH_VERIFY_PACKAGE_IDS`** | Comma-separated ids for steps 1–2 (default: `Nexo.Hosting.Bundle,Nexo.Hosting,Nexo.Sdk`). |
+| **`NUGET_POST_PUSH_VERIFY_PACKAGE_IDS`** | Comma-separated ids for steps 1–2 (default: `Nexo.Hosting.Bundle,Nexo.Hosting,Nexo.Sdk,Nexo.CLI`). |
 | **`NUGET_POST_PUSH_ATTEMPTS`** / **`NUGET_POST_PUSH_SLEEP_SEC`** | Poll tuning (empty uses defaults in scripts). |
 | **`NUGET_RELEASE_SBOM`** | Set to **`true`** to generate SPDX JSON per `.nupkg` with **Syft** and upload artifact **`nuget-sbom-<version>`**. |
 | **`NUGET_RELEASE_GRYPE`** | With **`NUGET_RELEASE_SBOM`**, run **Grype** on each SBOM (reports only; **`continue-on-error`** so vuln data does not fail the release). |

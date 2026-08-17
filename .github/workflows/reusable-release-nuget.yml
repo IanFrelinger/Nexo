@@ -72,6 +72,12 @@ jobs:
             -p:IncludeSymbols=true \
             -p:SymbolPackageFormat=snupkg \
             -v minimal
+          # Nexo.CLI is a PackAsTool package (embeds its ProjectReference outputs); without this line a
+          # release ships the authoring packages but not the `nexo` tool that scaffolds against them.
+          dotnet pack application/src/Nexo.CLI/Nexo.CLI.csproj -c Release -o "$OUT" \
+            -p:PackageVersion="${PACKAGE_VERSION}" \
+            -p:IncludeTestProjectReferences=false \
+            -v minimal
           ls -la "$OUT"
 
       - name: Release manifest (SHA-256 per nupkg)
