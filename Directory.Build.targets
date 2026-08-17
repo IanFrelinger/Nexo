@@ -11,9 +11,10 @@
     <Version>$(NexoPackageVersion)</Version>
   </PropertyGroup>
 
-  <!-- Executables and test hosts target net8.0, but a machine provisioned per the docs has only the
-       .NET 9 SDK, whose shared runtimes are Microsoft.NETCore.App/AspNetCore.App 9.x. Without a
-       roll-forward policy the very first `dotnet run` (or `dotnet Nexo.CLI.dll`) fails with
+  <!-- Many test hosts (and the net8.0 inner build of multi-targeted ones) still target net8.0, but a
+       machine provisioned per the docs has only the .NET 10 SDK, whose shared runtimes are
+       Microsoft.NETCore.App/AspNetCore.App 10.x. Without a roll-forward policy the very first
+       `dotnet test -f net8.0` (or `dotnet run` of a net8.0 sample) fails with
        "You must install or update .NET to run this application" while `dotnet build` succeeds.
        Lives here rather than in Directory.Build.props: OutputType is assigned by the project body,
        which MSBuild imports after .props and before .targets, so a .props-side condition on it is

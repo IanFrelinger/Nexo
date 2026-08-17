@@ -164,17 +164,17 @@ public class TestRunnerAdapter : ITestRunner
                 {
                     Path.Combine(baseDir, $"{assemblyName}.dll"),
                     Path.Combine(baseDir, "..", "..", "..", "src", assemblyName, "bin", "Debug", "net8.0", $"{assemblyName}.dll"),
-                    Path.Combine(baseDir, "..", "..", "..", "src", assemblyName, "bin", "Debug", "net9.0", $"{assemblyName}.dll"),
+                    Path.Combine(baseDir, "..", "..", "..", "src", assemblyName, "bin", "Debug", "net10.0", $"{assemblyName}.dll"),
                     Path.Combine(baseDir, "..", "..", "..", "src", assemblyName, "bin", "Debug", $"{assemblyName}.dll"),
                     Path.Combine(baseDir, "..", "..", "..", "src", assemblyName, "bin", "Release", "net8.0", $"{assemblyName}.dll"),
-                    Path.Combine(baseDir, "..", "..", "..", "src", assemblyName, "bin", "Release", "net9.0", $"{assemblyName}.dll"),
+                    Path.Combine(baseDir, "..", "..", "..", "src", assemblyName, "bin", "Release", "net10.0", $"{assemblyName}.dll"),
                     Path.Combine(baseDir, "..", "..", "..", "src", assemblyName, "bin", "Release", $"{assemblyName}.dll"),
                     Path.Combine(Directory.GetCurrentDirectory(), "src", assemblyName, "bin", "Debug", "net8.0", $"{assemblyName}.dll")
                     ,
-                    Path.Combine(Directory.GetCurrentDirectory(), "src", assemblyName, "bin", "Debug", "net9.0", $"{assemblyName}.dll"),
+                    Path.Combine(Directory.GetCurrentDirectory(), "src", assemblyName, "bin", "Debug", "net10.0", $"{assemblyName}.dll"),
                     Path.Combine(Directory.GetCurrentDirectory(), "src", assemblyName, "bin", "Debug", $"{assemblyName}.dll"),
                     Path.Combine(Directory.GetCurrentDirectory(), "src", assemblyName, "bin", "Release", "net8.0", $"{assemblyName}.dll"),
-                    Path.Combine(Directory.GetCurrentDirectory(), "src", assemblyName, "bin", "Release", "net9.0", $"{assemblyName}.dll"),
+                    Path.Combine(Directory.GetCurrentDirectory(), "src", assemblyName, "bin", "Release", "net10.0", $"{assemblyName}.dll"),
                     Path.Combine(Directory.GetCurrentDirectory(), "src", assemblyName, "bin", "Release", $"{assemblyName}.dll")
                 };
                 

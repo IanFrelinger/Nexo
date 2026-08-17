@@ -2,8 +2,9 @@
   <PropertyGroup>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <AnalysisLevel>latest</AnalysisLevel>
-    <!-- Pin C# 12 across all TFMs. On net9.0 the C# 13 compiler honors OverloadResolutionPriority,
-         which mis-binds FluentAssertions 8's object.Should() to the Should<TEnum> enum overload (CS0453). -->
+    <!-- Pin C# 12 across all TFMs. From net9.0 onward (C# 13 with SDK 9, C# 14 with SDK 10) the compiler
+         honors OverloadResolutionPriority, which mis-binds FluentAssertions 8's object.Should() to the
+         Should<TEnum> enum overload (CS0453). The pin is a language-version pin, so it stays valid on SDK 10. -->
     <LangVersion>12.0</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>

@@ -116,7 +116,7 @@ dotnet_major() {
 has_supported_dotnet() {
   local major
   major="$(dotnet_major)"
-  [[ "${major}" -ge 9 ]]
+  [[ "${major}" -ge 10 ]]
 }
 
 ensure_repo_files() {
@@ -145,7 +145,7 @@ ensure_repo_files() {
 run_restore() {
   ensure_repo_files
   if ! has_command dotnet; then
-    echo "dotnet not found. Install .NET SDK 9+ via your IDE, then re-run setup check/restore." >&2
+    echo "dotnet not found. Install .NET SDK 10+ via your IDE, then re-run setup check/restore." >&2
     return 1
   fi
 
@@ -184,9 +184,9 @@ check_dependencies() {
   fi
 
   if has_supported_dotnet; then
-    echo "  [OK] dotnet SDK >= 9"
+    echo "  [OK] dotnet SDK >= 10"
   else
-    echo "  [MISSING] dotnet SDK >= 9"
+    echo "  [MISSING] dotnet SDK >= 10"
     missing_required+=("dotnet")
   fi
 
@@ -236,7 +236,7 @@ print_missing_guidance() {
     git) echo "Install Git using Xcode Command Line Tools, Homebrew, or your IDE tooling." ;;
     curl) echo "Install curl using your system package manager." ;;
     brew) echo "Install Homebrew from https://brew.sh/." ;;
-    dotnet) echo "Install .NET SDK 9+ using your IDE installer (recommended)." ;;
+    dotnet) echo "Install .NET SDK 10+ using your IDE installer (recommended)." ;;
     docker) echo "Install Docker Desktop manually if you need container workflows." ;;
     ollama) echo "Install Ollama manually if you need local model execution." ;;
     zstd) echo "Install zstd manually if required by your workload." ;;
@@ -300,7 +300,7 @@ ensure_dotnet_ready_or_install() {
   if has_supported_dotnet; then
     return
   fi
-  echo "  [INSTALL] dotnet SDK >= 9 via Homebrew"
+  echo "  [INSTALL] dotnet SDK >= 10 via Homebrew"
   brew install --cask dotnet-sdk
 }
 

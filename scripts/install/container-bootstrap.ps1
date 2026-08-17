@@ -1,7 +1,7 @@
 [CmdletBinding()]
 param(
     [string]$Image = "ghcr.io/ianfrelinger/nexo-cli:latest",
-    [string]$SdkImage = "mcr.microsoft.com/dotnet/sdk:9.0",
+    [string]$SdkImage = "mcr.microsoft.com/dotnet/sdk:10.0",
     [string]$Workspace,
     [string]$StartDaemonDuration,
     [switch]$Guided,

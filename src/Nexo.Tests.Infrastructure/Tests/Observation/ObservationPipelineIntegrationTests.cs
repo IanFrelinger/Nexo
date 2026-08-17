@@ -37,7 +37,7 @@ public sealed class ObservationPipelineIntegrationTests : IDisposable
     [Fact(Timeout = TestTimeouts.FileSystemPipelineIntegration)]
     public async Task FullPipeline_FileSystemToPatternStore_StoresPatterns()
     {
-        // Multi-target `dotnet test` runs net8 + net9 hosts in parallel; Linux inotify/FileSystemWatcher can drop events when both run this test at once.
+        // Multi-target `dotnet test` runs net8 + net10 hosts in parallel; Linux inotify/FileSystemWatcher can drop events when both run this test at once.
         await using var crossHostGate = await CrossProcessLockDefaults.SharedProvider.AcquireAsync(
             "observation-fs-pipeline.integration",
             new CrossProcessLockOptions

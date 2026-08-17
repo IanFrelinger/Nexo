@@ -9,7 +9,7 @@ CLI_TESTS="application/src/Nexo.Tests.CLI/Nexo.Tests.CLI.csproj"
 
 echo "== Security Tier C: TrustCommand unit suite =="
 dotnet build "$CLI_TESTS" -v minimal
-NEXO_ALLOW_MOCK=1 dotnet test "$CLI_TESTS" -f net8.0 --no-build \
+NEXO_ALLOW_MOCK=1 dotnet test "$CLI_TESTS" -f net10.0 --no-build \
   --filter "FullyQualifiedName~TrustCommandTests" \
   --blame-hang-timeout 120s --blame-hang-dump-type none
 

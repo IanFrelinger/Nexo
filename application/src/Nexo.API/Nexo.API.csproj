@@ -1,7 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <!-- Ships on net10.0 (Dockerfiles publish -f net10.0). net8.0 is kept because Nexo.API is
+         also consumed as a library: the net8.0 inner build of Nexo.Tests.Infrastructure (Tests/API)
+         and the commercial hosts (GameDirector.Host, Fleet.Api, Fleet.Host) reference this project.
+         Multi-target means `dotnet run` on this project needs `-f net10.0` (see CONTRIBUTING.md). -->
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
     <LangVersion>12.0</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>

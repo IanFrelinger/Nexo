@@ -87,7 +87,7 @@ test-prime-time-full: test-prime-time
 
 # Run tests locally (blame-hang-timeout prevents indefinite freeze from hung tests)
 # --blame-hang-dump-type none avoids 6GB+ hang dumps that accumulate in TestResults/
-# NEXO_ALLOW_MOCK=1 matches CI so ProviderFactory / mock-provider tests pass on net9.0.
+# NEXO_ALLOW_MOCK=1 matches CI so ProviderFactory / mock-provider tests pass on net10.0.
 test:
 	NEXO_ALLOW_MOCK=1 dotnet test Nexo.sln --blame-hang-timeout 120s --blame-hang-dump-type none
 

@@ -21,7 +21,7 @@ Use the TestKit fake session runner instead of the live daemon (wiring proof onl
 
 .PARAMETER SessionBuild
 Enable the P3 leg: the candidate must compile INSIDE the attested session, so the
-session image becomes the pinned SDK image (mcr.microsoft.com/dotnet/sdk:9.0) and the
+session image becomes the pinned SDK image (mcr.microsoft.com/dotnet/sdk:10.0) and the
 certificate gains a session-build input.
 
 .PARAMETER Ref
@@ -67,7 +67,7 @@ $repoRoot = (git rev-parse --show-toplevel)
 if (-not $repoRoot) { throw "Not inside a git repository." }
 $sha = (git rev-parse $Ref)
 
-$image = "mcr.microsoft.com/devcontainers/dotnet:9.0-bookworm"
+$image = "mcr.microsoft.com/devcontainers/dotnet:10.0-noble"
 $dryArg = if ($Dry) { "--dry" } else { "" }
 if ($SessionBuild) { $dryArg = "$dryArg --session-build".Trim() }
 if ($SessionExecute) { $dryArg = "$dryArg --session-execute".Trim() }

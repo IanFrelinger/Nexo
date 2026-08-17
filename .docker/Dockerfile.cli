@@ -1,8 +1,8 @@
 # Dockerfile for Nexo CLI - multi-stage build
 # Flexible defaults for deployability across environments.
-ARG DOTNET_SDK_VERSION=9.0
-ARG DOTNET_RUNTIME_VERSION=8.0
-ARG TARGETFRAMEWORK=net8.0
+ARG DOTNET_SDK_VERSION=10.0
+ARG DOTNET_RUNTIME_VERSION=10.0
+ARG TARGETFRAMEWORK=net10.0
 ARG TARGETARCH=amd64
 FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:${DOTNET_SDK_VERSION} AS build
 ARG TARGETFRAMEWORK
@@ -21,7 +21,7 @@ ENV SkipCopyAssemblies=true
 # projects in the graph (the netstandard2.0-only analyzers referencing multi-TF
 # contracts fail with net8-vs-ns2.0 mismatches). Per-reference framework negotiation
 # is the supported idiom; nothing in the environment may override it.
-RUN TFM="${TARGETFRAMEWORK:-net8.0}" && unset TARGETFRAMEWORK && \
+RUN TFM="${TARGETFRAMEWORK:-net10.0}" && unset TARGETFRAMEWORK && \
     dotnet restore application/src/Nexo.CLI/Nexo.CLI.csproj -m:1 && \
     dotnet publish application/src/Nexo.CLI/Nexo.CLI.csproj -c Release -o /app/publish \
         -m:1 --self-contained false -f "$TFM" -p:BuildInParallel=false -p:UseAppHost=false -p:SkipCopyAssemblies=true \

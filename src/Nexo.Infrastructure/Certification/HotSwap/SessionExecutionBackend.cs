@@ -27,7 +27,7 @@ public sealed class SessionExecutionBackend : ICandidateExecutionBackend
 
     private const string RunnerDir = ExecDir + "/runner";
     private const string UnitsDir = ExecDir + "/units";
-    private const string RunnerDll = RunnerDir + "/bin/Release/net9.0/SessionExecutionRunner.dll";
+    private const string RunnerDll = RunnerDir + "/bin/Release/net10.0/SessionExecutionRunner.dll";
 
     /// <summary>
     /// Per-execution wall-clock ceiling inside the runner. Witness cases are
@@ -219,12 +219,12 @@ public sealed class SessionExecutionBackend : ICandidateExecutionBackend
 
     // The runner: deliberately DUMB. It executes and reports; it holds no expected
     // outputs, no thresholds, no comparers. Compiled in-session with zero package
-    // references (System.Text.Json is inbox on net9.0), so restore is offline-safe.
+    // references (System.Text.Json is inbox on net10.0), so restore is offline-safe.
     private const string RunnerProject = """
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <Nullable>disable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>

@@ -93,7 +93,7 @@ dotnet_major() {
 has_supported_dotnet() {
   local major
   major="$(dotnet_major)"
-  [[ "${major}" -ge 9 ]]
+  [[ "${major}" -ge 10 ]]
 }
 
 load_os_release() {
@@ -350,11 +350,11 @@ install_dotnet_sdk() {
 
   ensure_package_manager
   if [[ "${PKG_MANAGER}" == "brew" ]]; then
-    confirm_or_exit "Install .NET SDK 9.x using Homebrew?"
+    confirm_or_exit "Install .NET SDK 10.x using Homebrew?"
     brew install dotnet-sdk
     ensure_dotnet_path
     if ! has_supported_dotnet; then
-      echo "Failed to install .NET SDK 9.x via Homebrew." >&2
+      echo "Failed to install .NET SDK 10.x via Homebrew." >&2
       return 1
     fi
     return
@@ -364,18 +364,18 @@ install_dotnet_sdk() {
     install_system_dependency "curl"
   fi
 
-  confirm_or_exit "Install .NET SDK 9.x to ${HOME}/.dotnet?"
+  confirm_or_exit "Install .NET SDK 10.x to ${HOME}/.dotnet?"
 
   local installer
   installer="$(mktemp)"
   curl -fsSL https://dot.net/v1/dotnet-install.sh -o "${installer}"
-  bash "${installer}" --channel 9.0 --install-dir "${HOME}/.dotnet"
+  bash "${installer}" --channel 10.0 --install-dir "${HOME}/.dotnet"
   rm -f "${installer}"
 
   ensure_dotnet_path
 
   if ! has_supported_dotnet; then
-    echo "Failed to install .NET SDK 9.x automatically." >&2
+    echo "Failed to install .NET SDK 10.x automatically." >&2
     return 1
   fi
 }
@@ -429,7 +429,7 @@ ensure_repo_files() {
 run_restore() {
   ensure_repo_files
   if ! has_supported_dotnet; then
-    echo "dotnet SDK 9+ not found. Run apply mode first: bash scripts/setup/setup-linux.sh apply --yes" >&2
+    echo "dotnet SDK 10+ not found. Run apply mode first: bash scripts/setup/setup-linux.sh apply --yes" >&2
     return 1
   fi
 
@@ -451,7 +451,7 @@ print_missing_guidance() {
   case "${dep}" in
     git) echo "Run: bash scripts/setup/setup-linux.sh apply --yes (auto-installs git)." ;;
     curl) echo "Run: bash scripts/setup/setup-linux.sh apply --yes (auto-installs curl)." ;;
-    dotnet) echo "Run: bash scripts/setup/setup-linux.sh apply --yes (auto-installs .NET SDK 9 locally)." ;;
+    dotnet) echo "Run: bash scripts/setup/setup-linux.sh apply --yes (auto-installs .NET SDK 10 locally)." ;;
     docker) echo "Install Docker Desktop/Engine manually if you need container workflows." ;;
     ollama) echo "Install Ollama manually if you need local model execution." ;;
     zstd) echo "Install zstd manually if required by your workload." ;;
@@ -480,9 +480,9 @@ check_dependencies() {
   fi
 
   if has_supported_dotnet; then
-    echo "  [OK] dotnet SDK >= 9"
+    echo "  [OK] dotnet SDK >= 10"
   else
-    echo "  [MISSING] dotnet SDK >= 9"
+    echo "  [MISSING] dotnet SDK >= 10"
     missing_required+=("dotnet")
   fi
 
@@ -527,7 +527,7 @@ check_dependencies() {
 }
 
 apply_dependencies() {
-  guided_step "Checking and installing required developer tools (git, curl, .NET SDK 9+) if missing."
+  guided_step "Checking and installing required developer tools (git, curl, .NET SDK 10+) if missing."
   if ! has_command git; then
     guided_step "Git is missing; installing it now."
     install_system_dependency "git"
@@ -537,7 +537,7 @@ apply_dependencies() {
     install_system_dependency "curl"
   fi
   if ! has_supported_dotnet; then
-    guided_step ".NET SDK 9 is missing; installing it now."
+    guided_step ".NET SDK 10 is missing; installing it now."
     install_dotnet_sdk
   fi
 

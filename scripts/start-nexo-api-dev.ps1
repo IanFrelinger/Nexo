@@ -131,4 +131,4 @@ Write-Host ""
 Write-Host "Stop Ollama: docker compose -f deploy/compose/docker-compose.ollama.yml down"
 Write-Host "Or: powershell -File scripts/stop-nexo-api-dev.ps1"
 Write-Host ""
-dotnet run --project (Join-Path $RepoRoot "application/src/Nexo.API/Nexo.API.csproj")
+dotnet run --project (Join-Path $RepoRoot "application/src/Nexo.API/Nexo.API.csproj") -f net10.0

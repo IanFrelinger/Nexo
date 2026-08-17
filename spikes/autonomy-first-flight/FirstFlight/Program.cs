@@ -34,7 +34,7 @@ if (args.Contains("--sweep", StringComparer.OrdinalIgnoreCase))
 {
     var root = Environment.GetEnvironmentVariable("NEXO_OBJECTIVES_ROOT")
         ?? Path.Combine(Directory.GetCurrentDirectory(), ".nexo/runtime-studio/objectives");
-    return await SweepMode.RunAsync(root, "mcr.microsoft.com/dotnet/sdk:9.0");
+    return await SweepMode.RunAsync(root, "mcr.microsoft.com/dotnet/sdk:10.0");
 }
 
 var dry = args.Contains("--dry", StringComparer.OrdinalIgnoreCase);
@@ -81,7 +81,7 @@ if (live)
         return 1; // Load printed the reason: a garbled recording never reaches the gate.
 }
 
-var sessionImage = dry ? "fake:local" : sessionBuild ? "mcr.microsoft.com/dotnet/sdk:9.0" : "alpine:3.20";
+var sessionImage = dry ? "fake:local" : sessionBuild ? "mcr.microsoft.com/dotnet/sdk:10.0" : "alpine:3.20";
 Console.WriteLine($"== autonomy first flight ({(dry ? "DRY — fake session runner" : "REAL — live docker daemon")}"
     + $"{(sessionBuild ? ", in-session build" : "")}{(sessionExecute ? " + execution" : "")}"
     + $"{(proposed ? ", MODEL-PROPOSED candidate" : "")}) ==");

@@ -55,8 +55,10 @@ public sealed record SessionBuildResult
 /// <c>NuGet.config</c> with cleared sources: restore succeeds from the SDK's installed
 /// targeting packs alone, and anything that would need a download fails loudly instead of
 /// waiting on a network the session does not have. The project targets
-/// <c>net9.0</c>; hosts must pin a session image whose SDK can target it (e.g.
-/// <c>mcr.microsoft.com/dotnet/sdk:9.0</c>) — an older SDK fails the build with NETSDK1045,
+/// <c>net10.0</c> (the host's own TFM: reference assemblies streamed from a net10.0 host
+/// cannot be compiled against an older framework); hosts must pin a session image whose SDK
+/// can target it (e.g. <c>mcr.microsoft.com/dotnet/sdk:10.0</c>) — an older SDK fails the
+/// build with NETSDK1045,
 /// which is the correct fail-closed shape, not a silent host-side fallback.</para>
 /// </summary>
 public static class SessionCandidateBuild
@@ -68,7 +70,7 @@ public static class SessionCandidateBuild
     public const string WorkDir = "/nexo-candidate";
 
     /// <summary>Where the built candidate assembly lands (with its copy-local references beside it).</summary>
-    public const string BuiltAssemblyDirectory = WorkDir + "/bin/Release/net9.0";
+    public const string BuiltAssemblyDirectory = WorkDir + "/bin/Release/net10.0";
 
     /// <summary>The built candidate assembly itself — the execution leg loads this.</summary>
     public const string BuiltAssemblyPath = BuiltAssemblyDirectory + "/Candidate.dll";
@@ -283,7 +285,7 @@ public static class SessionCandidateBuild
     private static string ProjectFile(string referenceItems) => $"""
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net10.0</TargetFramework>
     <OutputType>Library</OutputType>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
     <ImplicitUsings>disable</ImplicitUsings>

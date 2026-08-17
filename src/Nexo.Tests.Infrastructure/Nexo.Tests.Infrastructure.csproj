@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net8.0;net9.0</TargetFrameworks>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
@@ -34,7 +34,7 @@
        Microsoft.AspNetCore.TestHost / Mvc.Testing 8.0 ResponseBodyPipeWriter
        does not override PipeWriter.UnflushedBytes, which System.Text.Json 9+
        (transitively pulled by other 10.x packages) requires. We therefore run
-       the in-process API tests on net9 only, and use the 9.0 TestHost there
+       the in-process API tests on net10 only, and use the 10.0 TestHost there
        (which adds the missing override). On net8 these files are excluded. -->
   <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
     <Compile Remove="Helpers/VirtualProduction/**/*.cs" />
@@ -42,10 +42,10 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing"
-                      VersionOverride="9.0.0"
-                      Condition="'$(TargetFramework)' == 'net9.0'" />
+                      VersionOverride="10.0.11"
+                      Condition="'$(TargetFramework)' == 'net10.0'" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing"
-                      Condition="'$(TargetFramework)' != 'net9.0'" />
+                      Condition="'$(TargetFramework)' != 'net10.0'" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="Microsoft.Extensions.Http" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" />
