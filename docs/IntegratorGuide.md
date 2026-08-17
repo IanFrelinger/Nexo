@@ -16,12 +16,14 @@ Add a project reference from your integrator assembly:
 </ItemGroup>
 ```
 
-Build and test from the repository root:
+Build and test from the repository root. `Nexo.Kernel.sln` is the kernel spine plus its tests (it also builds `Nexo.API`, which the infrastructure tests host in-process); the CLI is a separate project and restores on first use. `Nexo.sln` builds everything including the commercial satellites and is not needed for integration work:
 
 ```bash
-dotnet build Nexo.sln
-dotnet test Nexo.sln --filter "FullyQualifiedName~YourIntegrator.Tests"
+dotnet build Nexo.Kernel.sln
+dotnet test path/to/YourIntegrator.Tests/YourIntegrator.Tests.csproj
 ```
+
+`samples/hello-brick/HelloBrick.Tests/HelloBrick.Tests.csproj` is the smallest working example of that second line (a `ProjectReference` into `src/`, run from the repository root).
 
 Use the Nexo CLI for local validation and gates:
 

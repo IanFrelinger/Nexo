@@ -4,22 +4,32 @@ Documentation index for the Nexo platform. Start here to find what you need.
 
 ## Start Here
 
-1. `README.md` — **container-first** quickstart (Dev Container, quickstart image, GHCR CLI, compose); native paths are documented as escape hatches.
-2. `docs/ProjectTiers.md` — **canonical repo map** by project tier: kernel, hosts, distribution, transport/mesh, app surfaces, and tests.
-3. `docs/RELEASE.md` — **shipping** NuGet + GHCR (one hub linking runbook, publishing, variables, staging, signing).
-4. `.devcontainer/devcontainer.json` — default development environment (Cursor / VS Code).
-5. `docs/GettingStarted.md` — first commands, first pipeline, and first trust checks (aligned with container + CLI).
-6. `docs/DistributionModels.md` — how to **consume and ship** Nexo (NuGet, HTTP, CLI, compose, mesh) and the **distribution-matrix** CI workflow.
-7. `CONTRIBUTING.md` — recommended **Dev Container** workflow and PR checks.
-8. `scripts/install/container-bootstrap.sh` and `scripts/install/container-bootstrap.ps1` — one-shot container bootstrap (Docker + image pull + smoke run).
-9. `scripts/setup/setup.sh` (forwards to `setup-unix.sh` on macOS/Linux), `scripts/setup/setup-unix.sh`, and `scripts/setup/setup.ps1` — cross-platform **native** dependency bootstrap + restore helpers (CI and escape hatch).
-10. `docs/SetupMatrixVerification.md` + `scripts/setup/verify-setup-matrix.ps1` / `verify-setup-matrix.sh` — brute-force style setup combination checks (local + CI).
-11. `scripts/start-nexo-api-dev.ps1` / `scripts/start-nexo-api-dev.sh` — Docker Ollama + host `Nexo.API` dev stack (see `docs/Configuration.md` → Ollama).
-12. `docs/Architecture.md` — layered architecture and component boundaries.
-13. `docs/Conventions.md` — current code conventions as practiced today.
-14. `docs/OpenCoreBoundary.md` — authoritative open-vs-commercial boundary and guard policy.
-15. `docs/CommercialExtractionPlan.md` — historical commercial extraction sequence and completed phase record.
-16. `docs/FleetGovernanceExtractionInventory.md` — historical fleet/mesh governance classification inventory.
+1. `docs/TesterQuickstart.md` — **the one lane for a first run**: clone → `dotnet build Nexo.Kernel.sln` → `nexo doctor` → run the API on loopback, submit one task, read its audit trail → run the certification gate. No Docker, no API keys, verified paths only.
+2. `README.md` — the front door: what Nexo is (auditable workflows, certified artifacts, your infrastructure), the trust loop / certification section, and the Try / Develop / Deploy lanes (container-first; native paths are escape hatches).
+3. `docs/GettingStarted.md` — the longer tour after the quickstart: startup lanes, first pipeline, CLI commands, provider setup, testing.
+4. `docs/ProjectTiers.md` — **canonical repo map** by project tier: kernel, hosts, distribution, transport/protocols, applications on the core, commercial satellites, and tests.
+5. `docs/IntegratorGuide.md` — embedding Nexo in your own host: SDK packages, brick/agent registration, trust configuration, compatibility matrix.
+6. `consumer-template/CONSUMING.md` — `nuget.config` + `Directory.Packages.props` template for consuming Nexo packages from a feed you supply (nothing is on nuget.org yet).
+7. `docs/DistributionModels.md` — how to **consume and ship** Nexo (NuGet, HTTP, CLI, compose, mesh) and the **distribution-matrix** CI workflow.
+8. `CONTRIBUTING.md` — branching, the recommended **Dev Container** workflow, and the pre-PR checks; `.devcontainer/devcontainer.json` is the default development environment (Cursor / VS Code).
+9. `docs/Architecture.md` — layered architecture and component boundaries; `docs/Conventions.md` — current code conventions as practiced today.
+10. `docs/OpenCoreBoundary.md` — authoritative open-vs-commercial boundary and guard policy.
+
+Setup helpers (escape hatches, not the first-run path): `scripts/setup/setup.sh` (forwards to `setup-unix.sh` on macOS/Linux), `scripts/setup/setup-unix.sh`, and `scripts/setup/setup.ps1` — cross-platform **native** dependency bootstrap + restore (CI and escape hatch); `scripts/install/container-bootstrap.sh` / `scripts/install/container-bootstrap.ps1` — one-shot **container-lane** bootstrap (Docker + image pull + smoke run; they do not install a native toolchain); `scripts/install/quickstart.sh` — one command that uses Docker when present, otherwise a local SDK; `docs/SetupMatrixVerification.md` + `scripts/setup/verify-setup-matrix.ps1` / `verify-setup-matrix.sh` — brute-force setup combination checks; `scripts/start-nexo-api-dev.ps1` / `scripts/start-nexo-api-dev.sh` — Docker Ollama + host `Nexo.API` dev stack (see `docs/Configuration.md` → Ollama). Shipping (`docs/RELEASE.md`) lives under **Operator / Production Readiness** below.
+
+## Trust loop / certification (experimental, hold-mode)
+
+The trust loop is how "certified" is a checkable claim: analyzer fence → witness → mutation testing → determinism, then a signed certificate bound to the artifact's content hash. The gate is CI-proven (`cert-gate` is the only required check on `master`); the autonomy loop on top of it is **experimental and ships in hold mode** (`HoldAdmission=true` — it certifies fully and admits nothing), and its evidence is local spike runs.
+
+- `docs/certification-evidence.md` — the **falsifiable proof ledger**: every ADMIT/REJECT with the test or spike and the CI run that proved it; "Known v0 limitations" at the end. Read this before judging any "certified" claim.
+- `docs/trust-loop/nexo-trust-loop-spec.md` — the specification: core invariant, gate legs, proposer/witness separation, tier placement.
+- `docs/trust-loop/trust-loop-integration.md` and `docs/trust-loop/trust-loop-ext-autonomous-self-extension.md` — how the loop lands in the runtime, and the autonomous self-extension extension.
+- `docs/governed-pipeline.md` — the governed MEAI model pipeline every proposal flows through.
+- `docs/SELF-EXTEND-AUDIT.md` — background-agent self-extend safety audit (four invariants, all enforced on the live path as of 2026-08-16).
+- `docs/AuthoringBricks.md` + `samples/hello-brick/README.md` — author a brick the gate can judge (`ProjectReference` into `src/`; no NuGet feed needed).
+- `samples/autonomy-objectives/README.md` — a complete tracked objective + witness + recorded model proposal, and how to feed it to the loop.
+- `spikes/README.md` — what each spike under `spikes/` is, which ledger rows cite it, and why none of them is a supported entry point; `spikes/autonomy-first-flight/run-first-flight.ps1` flies one real iteration (Docker + Ollama).
+- `scripts/run-cert-gate.sh` + `scripts/cert-gate-config.sh` — reproduce the CI `cert-gate` locally with the same filter.
 
 ## Operator / Production Readiness
 
@@ -102,7 +112,7 @@ Documentation index for the Nexo platform. Start here to find what you need.
 - `docs/samples/StableSdkHostSample/Program.cs` — reference host integration that only uses stable SDK extension points.
 - `docs/runtime/ExecutionRouting.md` — NCR-based generation routing (local, peer network, RunPod), preferences, and resilience behavior.
 - `docs/AgentExecutionIsolation.md` — per-agent isolation tiers (in-process through container-per-agent), JSON field, and invocation metadata for transports.
-- `docs/architecture/ProtocolIntegration-MCP-A2A.md` — MCP + A2A protocol adapters: MCP server bridge over `ITool` (allowlists, policy gate, stdio host), planned MCP client and A2A server/client phases.
+- `docs/architecture/ProtocolIntegration-MCP-A2A.md` — MCP + A2A protocol adapters: MCP server bridge over `ITool` (allowlists, policy gate, stdio host), MCP client, A2A server core + client transport, and the `Nexo.API` wiring (`/api/mcp`, `/api/a2a/{agentId}`; all feature-flagged off by default).
 - `docs/runtime/specs/README.md` — runtime spec documents.
 - `docs/runtime/benchmarks/README.md` — runtime benchmark goals and notes.
 - `apps/runtime-studio/README.md` — **hub** for the Runtime Studio agent-set JSON, CLI vs API-hosted background agents, and how the Director portal fits; anchor [How this fits](../apps/runtime-studio/README.md#how-runtime-studio-fits-with-nexo-api).
@@ -112,17 +122,18 @@ Documentation index for the Nexo platform. Start here to find what you need.
 - `docs/ide/NexoVscode.md` — VS Code / Cursor extension + `/api/ide/*` bridge (chat, patches, runs, workloads, streaming).
 - `docs/Phase1SecureCopilotWalkthrough.md` — first-success secure copilot MVP walkthrough using `deploy/compose/docker-compose.agent-server.yml`.
 
-## Planning & Roadmap
+## Planning history (historical as of 2026-08-16)
 
-- `docs/OpenCoreBoundary.md` — authoritative open-vs-commercial boundary.
+The plans below describe programs that have since finished; they are kept as the record of *why* the tree looks the way it does. Current state lives in `docs/certification-evidence.md` (the ledger), `docs/ProjectTiers.md` (the repo map) and `CHANGELOG.md`; the two gap analyses carry a banner naming their still-open rows.
+
+- `docs/OpenCoreBoundary.md` — authoritative open-vs-commercial boundary (still current; listed under Start Here).
 - `docs/CommercialExtractionPlan.md` — commercial extraction plan (Phases A–F complete); optional CLI/governance follow-ups.
 - `docs/FleetGovernanceExtractionInventory.md` — classification inventory for open mesh primitives vs commercial fleet/governance code.
-- `docs/Conventions.md` — current conventions for errors, interfaces, abstract classes, and generics.
-- `docs/MeshPhase0NorthStar.md` — **Phase 0 (executed):** federated mesh north star, capability matrix by profile, trust boundary, SLOs (feeds mesh Phases 1–7).
+- `docs/MeshPhase0NorthStar.md` — **Phase 0 (executed):** federated mesh north star, capability matrix by profile, trust boundary, SLOs (fed mesh Phases 1–7).
 - `docs/ExecutionPlan.md` — phased execution plan with implementation tasks, dependencies, and success metrics.
 - `docs/IssueBatch_30-60-90_Roadmap.md` — 30/60/90 gap-closure issue batch (issue templates).
-- `docs/NorthStarGapAnalysis.md` — North Star vs codebase gap analysis with status tracking.
-- `docs/GapAnalysis.md` — dogfood, observe→improve, trust, and documentation gap analysis.
+- `docs/NorthStarGapAnalysis.md` — **historical** North Star vs codebase gap analysis; predates the trust loop. Remaining open rows: Document Editor / Spreadsheet products and the application suite.
+- `docs/GapAnalysis.md` — **historical** dogfood, observe→improve, trust, and documentation gap analysis; predates the trust loop. Remaining open rows: documentation cross-links (README ↔ IntegratorGuide closed by the front-door pass; ExecutionPlan deliberately not linked from the front door) and dogfood/mesh production workflow docs.
 
 ## Additional Material
 

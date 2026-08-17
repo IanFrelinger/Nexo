@@ -2,7 +2,9 @@
 
 This guide covers initial setup, trust configuration, and first pipeline validation. Nexo operates on local infrastructure with no external service dependencies. Trust controls are available but disabled by default — enable with `NEXO_TRUST_ENABLED=1`.
 
-The **default** path is **containers + CLI**: develop inside the **Dev Container** (or run published **GHCR** images / **compose** stacks). If you cannot use Docker at all, use **`scripts/setup/*`** on a machine with **.NET SDK 10** (no separate repo “installer” scripts). See `README.md` for the full map.
+**First run?** Use `docs/TesterQuickstart.md` instead: one lane (build `Nexo.Kernel.sln`, run the API on loopback, submit a task, read its audit trail, run the certification gate), no Docker, no API keys. This guide is the longer tour that follows it.
+
+The **default** path here is **containers + CLI**: develop inside the **Dev Container** (or run published **GHCR** images / **compose** stacks). If you cannot use Docker at all, use **`scripts/setup/*`** on a machine with **.NET SDK 10** — those are the only native bootstrap scripts. The `scripts/install/*` helpers are not installers: `container-bootstrap.*` bootstrap the **container** lane (Docker + image pull + smoke run) and `quickstart.sh` starts the portal with Docker or an already-installed SDK. See `README.md` for the full map.
 
 ## Quickest path (recommended)
 
@@ -88,7 +90,8 @@ After the CLI builds, optional **hero** checks (doctor + quickstart pipeline):
 
 ```bash
 dotnet run --project application/src/Nexo.CLI -- doctor --json
-# then run pipeline validate/run/diagnostics per README “First Successful Pipeline Run”
+# then run pipeline validate/run/diagnostics — section 3 and section 5 below
+# (the same sequence as README → "Lane 2 — Develop" → "Run your first pipeline")
 ```
 
 ```powershell
