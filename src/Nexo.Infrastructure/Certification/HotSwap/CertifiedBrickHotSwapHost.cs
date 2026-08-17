@@ -172,7 +172,7 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
             {
                 // Half-built context: unload was already requested inside the frame that
                 // owned it; drive collection so at most one allocator awaits finalization.
-                WaitForContextRelease(materialized.AbortedContextRef);
+                await WaitForContextReleaseAsync(materialized.AbortedContextRef).ConfigureAwait(false);
                 TryDeleteDirectory(materialized.TempDirectory);
                 cancellationToken.ThrowIfCancellationRequested();
                 return Refuse(generationId, requests, materialized.Refusals);
@@ -939,7 +939,7 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
                 : $"Drain timeout after {_drainTimeout.TotalSeconds:F0}s with {inFlight} invocation(s) in flight; unload requested anyway."
         });
 
-        WaitForContextRelease(contextRef);
+        await WaitForContextReleaseAsync(contextRef).ConfigureAwait(false);
         var collected = !contextRef.IsAlive;
         Emit(new BrickSwapProvenanceEvent
         {
@@ -977,18 +977,27 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
         }
     }
 
-    /// <summary>Same collection-driving loop as the mutation engine: Unload only requests;
-    /// the allocator is freed once the last reference drops, which needs a collection.</summary>
-    private static void WaitForContextRelease(WeakReference contextRef)
+    /// <summary>Drives collection after Unload, which only requests it: the allocator is
+    /// freed once the last reference drops, and that needs a collection. (The mutation
+    /// engine still uses a synchronous back-to-back loop; bringing it to parity is a follow-up.)
+    /// Bounded retry with a real yield between passes rather than back-to-back passes: the
+    /// swap is often reached inline on the thread that just completed the last invocation
+    /// of the retiring generation, and that thread's frames still root the finished
+    /// invocation's state machine (and with it a brick instance from the old context) until
+    /// they unwind. No number of collections frees a stack-rooted object; giving the stack
+    /// back does, so the pass after the first yield is the one that normally succeeds.</summary>
+    private static async Task WaitForContextReleaseAsync(WeakReference contextRef)
     {
         if (!contextRef.IsAlive)
             return;
 
-        const int maxAttempts = 10;
+        const int maxAttempts = 20;
         for (var attempt = 0; attempt < maxAttempts && contextRef.IsAlive; attempt++)
         {
             GC.Collect();
             GC.WaitForPendingFinalizers();
+            if (contextRef.IsAlive)
+                await Task.Delay(TimeSpan.FromMilliseconds(10), CancellationToken.None).ConfigureAwait(false);
         }
     }
 

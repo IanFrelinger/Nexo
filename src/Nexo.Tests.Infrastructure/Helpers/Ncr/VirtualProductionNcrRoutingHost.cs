@@ -136,16 +136,23 @@ public sealed class VirtualProductionNcrRoutingHost : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        await UnderlyingHost.StopAsync().ConfigureAwait(false);
-        UnderlyingHost.Dispose();
-        _runPodApi.Dispose();
-
-        foreach (var kv in _savedEnv)
+        try
         {
-            if (kv.Value is null)
-                Environment.SetEnvironmentVariable(kv.Key, null);
-            else
-                Environment.SetEnvironmentVariable(kv.Key, kv.Value);
+            await UnderlyingHost.StopAsync().ConfigureAwait(false);
+            UnderlyingHost.Dispose();
+            _runPodApi.Dispose();
+        }
+        finally
+        {
+            // The overrides are process-wide: restore them even when host teardown throws,
+            // or the next test in the collection inherits this test's VRAM figures.
+            foreach (var kv in _savedEnv)
+            {
+                if (kv.Value is null)
+                    Environment.SetEnvironmentVariable(kv.Key, null);
+                else
+                    Environment.SetEnvironmentVariable(kv.Key, kv.Value);
+            }
         }
     }
 }

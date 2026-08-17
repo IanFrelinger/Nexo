@@ -89,5 +89,5 @@ jobs:
           set -euo pipefail
           dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
             -f net9.0 \
-            --filter "FullyQualifiedName~McpA2AProtocolIngress" \
+            --filter "FullyQualifiedName~McpA2AProtocolIngress|FullyQualifiedName~AirGappedProfileApiHostProdStyleTests" \
             --blame-hang-timeout 120s

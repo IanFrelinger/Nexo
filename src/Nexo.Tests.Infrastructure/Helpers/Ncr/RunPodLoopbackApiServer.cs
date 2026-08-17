@@ -160,7 +160,23 @@ public sealed class RunPodLoopbackApiServer : IDisposable
             // ignore
         }
 
-        _listener.Close();
+        // Teardown must never fail a test that already passed. On macOS/Linux the managed
+        // HttpListener re-binds the prefix's endpoint while tearing it down and can throw
+        // HttpListenerException "Address already in use" from Close() when the just-released
+        // ephemeral port is still in TIME_WAIT (readiness run 31982502428).
+        try
+        {
+            _listener.Close();
+        }
+        catch (HttpListenerException)
+        {
+            // ignore
+        }
+        catch (ObjectDisposedException)
+        {
+            // ignore
+        }
+
         _cts.Dispose();
         try
         {

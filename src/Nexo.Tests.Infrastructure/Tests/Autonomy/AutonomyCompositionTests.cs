@@ -10,6 +10,7 @@ using Nexo.Infrastructure.Certification.HotSwap;
 using Nexo.Infrastructure.Certification.Sdk.Extensions;
 using Nexo.Infrastructure.Execution.Sandbox;
 using Nexo.Infrastructure.Scaling;
+using Nexo.Tests.Infrastructure.Helpers;
 using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Autonomy;
@@ -122,31 +123,6 @@ public sealed class AutonomyCompositionTests
     }
 
     [Fact]
-    public void AirGappedProfile_DoesNotRefuseAutonomy_UnlikeProtocolSurfaces()
-    {
-        var previous = Environment.GetEnvironmentVariable("NEXO_DEPLOYMENT_PROFILE");
-        Environment.SetEnvironmentVariable("NEXO_DEPLOYMENT_PROFILE", "airgapped");
-        try
-        {
-            var options = new NexoAutonomyOptions
-            {
-                Enabled = true,
-                UseSandboxSessions = true,
-                SessionImage = "proposer:latest",
-            };
-
-            new ValidateNexoAutonomyOptions().Validate(null, options).Succeeded.Should().BeTrue(
-                "R6.3 requires autonomy controls to work fully offline — an air-gapped host "
-                + "running a local model is a legitimate deployment, and refusing it would "
-                + "enforce the reverse of the invariant");
-        }
-        finally
-        {
-            Environment.SetEnvironmentVariable("NEXO_DEPLOYMENT_PROFILE", previous);
-        }
-    }
-
-    [Fact]
     public void HostsCanSubstituteAnyPiece_ByRegisteringItFirst()
     {
         var mine = new InMemoryCertificateRevocationList();
@@ -256,5 +232,34 @@ public sealed class AutonomyCompositionTests
             ValidateOnBuild = true,
             ValidateScopes = true,
         });
+    }
+}
+
+/// <summary>
+/// The one autonomy composition test that sets a process-wide environment variable. It lives
+/// in the serialized "EnvironmentVariables" collection: xunit runs collections in parallel, and
+/// NEXO_DEPLOYMENT_PROFILE=airgapped leaking into a concurrently running host-composition test
+/// (e.g. the API DI graph) turned unrelated readiness runs red.
+/// </summary>
+[Trait("Category", "Certification")]
+[Collection("EnvironmentVariables")]
+public sealed class AutonomyCompositionAirGappedProfileTests
+{
+    [Fact]
+    public void AirGappedProfile_DoesNotRefuseAutonomy_UnlikeProtocolSurfaces()
+    {
+        using var profile = new EnvironmentVariableScope("NEXO_DEPLOYMENT_PROFILE", "airgapped");
+
+        var options = new NexoAutonomyOptions
+        {
+            Enabled = true,
+            UseSandboxSessions = true,
+            SessionImage = "proposer:latest",
+        };
+
+        new ValidateNexoAutonomyOptions().Validate(null, options).Succeeded.Should().BeTrue(
+            "R6.3 requires autonomy controls to work fully offline — an air-gapped host "
+            + "running a local model is a legitimate deployment, and refusing it would "
+            + "enforce the reverse of the invariant");
     }
 }

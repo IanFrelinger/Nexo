@@ -13,8 +13,9 @@ namespace Nexo.Tests.Infrastructure.Tests.VirtualProduction;
 
 /// <summary>
 /// ProdStyle coverage for the MCP + A2A protocol surfaces on the real Nexo.API pipeline:
-/// dark-by-default, all-verbs auth, allowlisted exposure, card-anonymity opt-in, and the
-/// air-gapped enable refusal. Runs the production Program with the full middleware chain.
+/// dark-by-default, all-verbs auth, allowlisted exposure, and card-anonymity opt-in. Runs the
+/// production Program with the full middleware chain. The air-gapped enable refusal is in
+/// <see cref="AirGappedProfileApiHostProdStyleTests"/> because it sets a process env var.
 /// </summary>
 [Collection("Integration")]
 [Trait("Category", "Integration")]
@@ -235,30 +236,7 @@ public sealed class McpA2AProtocolIngressProdStyleTests
         artifactJson.Should().Contain("ping over a2a");
     }
 
-    [Fact(Timeout = 60000)]
-    public async Task Airgapped_profile_refuses_protocol_enablement_at_boot()
-    {
-        Environment.SetEnvironmentVariable("NEXO_DEPLOYMENT_PROFILE", "airgapped");
-        try
-        {
-            using var scope = CreateFactory(new Dictionary<string, string?>
-            {
-                ["Nexo:Mcp:Server:Enabled"] = "true",
-            });
-
-            var act = () =>
-            {
-                using var client = scope.CreateClient();
-                return Task.CompletedTask;
-            };
-
-            (await act.Should().ThrowAsync<Exception>("ValidateOnStart must stop the host"))
-                .Which.ToString().Should().Contain("AirGapped");
-        }
-        finally
-        {
-            Environment.SetEnvironmentVariable("NEXO_DEPLOYMENT_PROFILE", null);
-        }
-    }
-
+    // The air-gapped enable refusal sets the process-wide NEXO_DEPLOYMENT_PROFILE and therefore
+    // lives in AirGappedProfileApiHostProdStyleTests (the serialized "EnvironmentVariables"
+    // collection); a class can belong to only one collection.
 }

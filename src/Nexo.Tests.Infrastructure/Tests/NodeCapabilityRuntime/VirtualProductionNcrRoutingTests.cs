@@ -15,10 +15,13 @@ namespace Nexo.Tests.Infrastructure.Tests.NodeCapabilityRuntime;
 /// Uses production DI registrations (<see cref="RunPodHttpClient"/>, <see cref="ProviderFactoryLocalExecutor"/>,
 /// <see cref="EnvironmentHardwareProfiler"/>, <see cref="FileBasedInstanceDiscovery"/>) inside a generic host.
 /// RunPod traffic goes to <see cref="RunPodLoopbackApiServer"/> (same REST paths as cloud API).
+/// The host applies process-wide env overrides (NEXO_TOTAL_VRAM_BYTES / NEXO_AVAILABLE_VRAM_BYTES),
+/// so the class runs in the serialized "EnvironmentVariables" collection.
 /// </summary>
 [Trait("Category", "NCR")]
 [Trait("Category", "VirtualProduction")]
 [Trait("Category", "ProdStyle")]
+[Collection("EnvironmentVariables")]
 public sealed class VirtualProductionNcrRoutingTests
 {
     [Fact(Timeout = TestTimeouts.HostTouching)]

@@ -49,7 +49,7 @@ public sealed class EndpointHealthMonitorTests
             NullLogger<EndpointHealthMonitor>.Instance);
 
         await monitor.StartAsync(CancellationToken.None);
-        await Task.Delay(300);
+        await WaitForFirstUpdateAsync(registry.Updates);
         await monitor.StopAsync(CancellationToken.None);
 
         registry.Updates.Should().ContainSingle();
@@ -81,7 +81,7 @@ public sealed class EndpointHealthMonitorTests
             logger.Object);
 
         await monitor.StartAsync(CancellationToken.None);
-        await Task.Delay(300);
+        await WaitForFirstUpdateAsync(registry.Updates);
         await monitor.StopAsync(CancellationToken.None);
 
         registry.Updates.Should().ContainSingle();
@@ -125,7 +125,7 @@ public sealed class EndpointHealthMonitorTests
             logger.Object);
 
         await monitor.StartAsync(CancellationToken.None);
-        await Task.Delay(300);
+        await WaitForFirstUpdateAsync(registry.Updates);
         await monitor.StopAsync(CancellationToken.None);
 
         registry.Updates.Should().ContainSingle();
@@ -229,6 +229,51 @@ public sealed class EndpointHealthMonitorTests
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.AtLeastOnce);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WithoutGrpcTransport_StaysIdle_AndDoesNotTouchRegistry()
+    {
+        using var env = new EnvironmentVariableScope("DOTNET_ENVIRONMENT", "Development");
+        var registry = new TestEndpointRegistry([
+            new EndpointDescriptor(
+                Endpoint: "http://127.0.0.1:6553",
+                Name: "no-transport",
+                SupportedCapabilities: ["CodeGeneration"],
+                AcceptedBarrierLevels: [],
+                Region: null,
+                Priority: 1,
+                IsHealthy: true),
+        ]);
+
+        // Profiles without runtime transport (Edge/AirGapped/System) register the routing
+        // services but no GrpcAgentTransport; DI then falls back to the transport-less
+        // constructor and the monitor must still start (idle) instead of failing the host.
+        var monitor = new EndpointHealthMonitor(
+            registry,
+            Options.Create(new RoutingOptions { HealthCheckIntervalSeconds = 1 }),
+            NullLogger<EndpointHealthMonitor>.Instance);
+
+        await monitor.StartAsync(CancellationToken.None);
+        await Task.Delay(200);
+        await monitor.StopAsync(CancellationToken.None);
+
+        registry.Updates.Should().BeEmpty();
+    }
+
+    /// <summary>
+    /// Bounded poll instead of a fixed delay: the first probe is a real gRPC round-trip
+    /// (or a connection refusal) whose latency depends on the host, and StopAsync cancels a
+    /// probe that has not finished yet -- the registry would then be asserted before the
+    /// update it is waiting for was ever written.
+    /// </summary>
+    private static async Task WaitForFirstUpdateAsync(List<(string endpoint, bool isHealthy)> updates)
+    {
+        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(5);
+        while (updates.Count == 0 && DateTime.UtcNow < deadline)
+        {
+            await Task.Delay(50);
+        }
     }
 
     /// <summary>Throwing update endpoint registry.</summary>
