@@ -125,7 +125,7 @@ Run `ollama serve` (or your package manager service) on the host on the port you
 
 ### 5) Local compose overrides (advanced)
 
-Create a **gitignored** file such as `deploy/compose/docker-compose.agent-server.local.yml` beside the repo compose file:
+Create a **gitignored** file such as `deploy/compose/local/agent-server.yml` — `deploy/compose/local/` is ignored precisely for this, because the example below mounts a secrets file and a home-directory path. Do **not** use `deploy/compose/docker-compose.agent-server.local.yml`: that name belongs to a shipped Docker Desktop override that is tracked in the repo, so writing your own settings there both clobbers it and stages your machine's paths for commit.
 
 ```yaml
 services:
@@ -139,7 +139,7 @@ services:
 Merge explicitly (order matters — later files override):
 
 ```bash
-docker compose -f deploy/compose/docker-compose.agent-server.yml -f deploy/compose/docker-compose.agent-server.local.yml up -d --build
+docker compose -f deploy/compose/docker-compose.agent-server.yml -f deploy/compose/local/agent-server.yml up -d --build
 ```
 
 Never commit secrets; keep overrides local or in your deployment pipeline.

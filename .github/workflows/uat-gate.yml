@@ -56,6 +56,15 @@ jobs:
         shell: bash
         run: bash tests/uat/tier4.sh
 
+      # Runs on the runner rather than in a container: it needs the docker CLI to resolve the compose
+      # stacks. `config` only resolves them -- nothing is built or started, so this stays cheap.
+      - name: Tier 5 — the deploy claims DEPLOYMENT.md makes
+        id: tier5
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: bash tests/uat/tier5.sh
+
       - name: Summary
         if: always()
         shell: bash

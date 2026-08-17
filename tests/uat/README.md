@@ -11,6 +11,12 @@ each case the code was fine.
 | 1 | `tier0-2.sh` | Does a submitted task leave a retrievable record and a trust-log entry under its own id? |
 | 2 | `tier0-2.sh` | Does the certification gate admit correct code and reject a weak witness? |
 | 4 | `tier4.sh` | Does the reference brick build, and does the API actually fail closed? |
+| 5 | `tier5.sh` | Do the golden paths in `docs/DEPLOYMENT.md` describe the compose files an operator would run? |
+
+`tier5.sh` needs the docker CLI and so runs on the CI runner rather than inside the SDK container the
+other tiers use. It only calls `docker compose config`, which resolves a stack without building or
+starting anything; booting the portal stack and curling `/health` is a deliberate run, noted at the
+foot of that script.
 
 Tier 3 (the autonomy loop) is not here. It needs a container engine and a local model server, and a
 gate that depends on that infrastructure teaches people to ignore it. Run it deliberately:

@@ -99,6 +99,37 @@ else
 fi
 kill $AUTH_PID 2>/dev/null; wait $AUTH_PID 2>/dev/null; pkill -f 'Nexo\.API' 2>/dev/null
 
+say "4.5 a BLANK configured key must not authenticate anyone, least of all a blank one"
+# docker-compose.friend-mesh.yml interpolates Nexo__Security__ApiKey with no default, so an operator
+# who forgets the variable boots with AuthorizationMode=ApiKey and an empty key. Program.cs logs that
+# protected routes "will reject requests until configuration is complete"; this checks that they do.
+# The empty-header case is the one worth pinning: an empty presented credential must not compare equal
+# to an empty configured one, which is the trap that turns a misconfiguration into an open API.
+export Nexo__Security__AuthorizationMode=ApiKey
+export Nexo__Security__ApiKey=""
+export Nexo__Security__AuthorizationScope=AllApi
+dotnet run --project application/src/Nexo.API -f net10.0 >"$OUT/api-blank.log" 2>&1 &
+BLANK_PID=$!
+for _ in $(seq 1 90); do grep -q 'Now listening on:' "$OUT/api-blank.log" 2>/dev/null && break; kill -0 $BLANK_PID 2>/dev/null || break; sleep 2; done
+
+if grep -q 'Now listening on:' "$OUT/api-blank.log"; then
+  BAPI=$(grep -m1 -oE 'Now listening on: *http://[^ ]+' "$OUT/api-blank.log" \
+         | sed 's/Now listening on: *//; s#0\.0\.0\.0#localhost#; s#\[::\]#localhost#')
+  post() { curl -s -o /dev/null -w '%{http_code}' --max-time 60 "$BAPI/api/copilot/task" \
+             -H 'Content-Type: application/json' "$@" -d '{"task":"probe","auditCount":1}'; }
+  NONE=$(post)
+  EMPTY=$(post -H 'X-Nexo-Api-Key: ')
+  GUESS=$(post -H 'X-Nexo-Api-Key: anything')
+  if [ "$NONE" = "401" ] && [ "$EMPTY" = "401" ] && [ "$GUESS" = "401" ]; then
+    result 4 blank-key-authenticates-nobody PASS "blank configured key: no header=$NONE, empty header=$EMPTY, arbitrary=$GUESS"
+  else
+    result 4 blank-key-authenticates-nobody FAIL "SECURITY: blank configured key admitted a request -- no header=$NONE, empty header=$EMPTY, arbitrary=$GUESS"
+  fi
+else
+  result 4 blank-key-authenticates-nobody FAIL "API did not start with a blank key: $(tail -3 "$OUT/api-blank.log" | tr '\n' ' ')"
+fi
+kill $BLANK_PID 2>/dev/null; wait $BLANK_PID 2>/dev/null; pkill -f 'Nexo\.API' 2>/dev/null
+
 say "summary"
 printf 'PASS=%d FAIL=%d\n' "$PASS" "$FAIL" | tee "$OUT/summary-tier4.txt"
 [ "$FAIL" -eq 0 ]
