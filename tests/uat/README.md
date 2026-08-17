@@ -12,11 +12,12 @@ each case the code was fine.
 | 2 | `tier0-2.sh` | Does the certification gate admit correct code and reject a weak witness? |
 | 4 | `tier4.sh` | Does the reference brick build, and does the API actually fail closed? |
 | 5 | `tier5.sh` | Do the golden paths in `docs/DEPLOYMENT.md` describe the compose files an operator would run? |
-
 | 6 | `tier6.sh` | Turning MCP/A2A on does not open a door: protocol ingress stays credentialed on every verb |
 | 7 | `tier7.sh` | The security negatives `SECURITY.md` claims: what is unmapped, what refuses, what is credentialed |
-| 9 | `tier9.sh` | The release path: public-API baselines, and that the experimental surface is not in the stable promise |
 | 8 | `tier8.sh` | Do the docs still describe this repo — do the paths they name exist, and can the commands they print run? |
+| 9 | `tier9.sh` | The release path: public-API baselines, and that the experimental surface is not in the stable promise |
+| 10 | `tier10.sh` | Under concurrent submissions, is every task still on the record exactly once? |
+| 11 | *(no script)* | The `cross-platform` job: the deterministic tiers, on Windows |
 
 `tier6.sh` covers MCP ingress but **not** A2A ingress or agent-card anonymity: A2A refuses to start until
 an exposed agent is actually registered, which an out-of-process run of the shipped host cannot do
@@ -92,8 +93,6 @@ Four rules, each of which this suite violated at least once before it stopped ly
 And pair every negative with its positive control. "POST without an API key returns 401" proves
 nothing on its own — an endpoint that is simply broken also fails to return 200. The paired check
 ("...and the same POST *with* the key returns 200") is what makes the first one mean *authentication*.
-
-| 10 | `tier10.sh` | Under concurrent submissions, is every task still on the record exactly once? |
 
 `tier10.sh` is a correctness check, not a benchmark. Timings are recorded for information and nothing
 passes or fails on them, because a shared runner cannot support a latency claim. What it does assert is
