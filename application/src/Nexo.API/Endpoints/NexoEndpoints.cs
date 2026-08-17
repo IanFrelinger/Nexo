@@ -51,8 +51,17 @@ public static class NexoEndpoints
     /// <summary>Maps all Nexo REST API endpoints under <c>/api</c>.</summary>
     public static IEndpointRouteBuilder MapNexoEndpoints(this IEndpointRouteBuilder app)
     {
+        // Liveness: the process answers HTTP. Constant 200 by design (container HEALTHCHECK, k8s livenessProbe).
         app.MapGet("/health", () => Results.Ok(new { status = "healthy", timestamp = DateTimeOffset.UtcNow }))
             .WithName("HealthCheck")
+            .WithTags("Health")
+            .ExcludeFromDescription();
+
+        // Readiness: 200 only once the host has finished starting (DI built, hosted services started)
+        // and until shutdown begins; 503 while starting or stopping so orchestrators stop routing
+        // traffic before Kestrel closes (k8s readinessProbe, compose --wait, load balancers).
+        app.MapGet("/ready", GetReadiness)
+            .WithName("ReadinessCheck")
             .WithTags("Health")
             .ExcludeFromDescription();
 
@@ -277,6 +286,35 @@ public static class NexoEndpoints
             .Produces<OnboardingStatusResponse>(StatusCodes.Status200OK);
 
         return app;
+    }
+
+    private static IResult GetReadiness([FromServices] IHostApplicationLifetime lifetime, HttpResponse response)
+    {
+        response.Headers.CacheControl = "no-store";
+        var (statusCode, status) = EvaluateReadiness(lifetime.ApplicationStarted, lifetime.ApplicationStopping);
+        return Results.Json(new { status, timestamp = DateTimeOffset.UtcNow }, statusCode: statusCode);
+    }
+
+    /// <summary>
+    /// Readiness decision from the host lifetime tokens: <c>stopping</c> wins over everything (drain first),
+    /// then <c>starting</c> until <see cref="IHostApplicationLifetime.ApplicationStarted"/> has fired, then <c>ready</c>.
+    /// </summary>
+    /// <param name="applicationStarted">The host's <see cref="IHostApplicationLifetime.ApplicationStarted"/> token.</param>
+    /// <param name="applicationStopping">The host's <see cref="IHostApplicationLifetime.ApplicationStopping"/> token.</param>
+    /// <returns>HTTP status code (200 or 503) and the <c>status</c> string reported in the body.</returns>
+    internal static (int StatusCode, string Status) EvaluateReadiness(CancellationToken applicationStarted, CancellationToken applicationStopping)
+    {
+        if (applicationStopping.IsCancellationRequested)
+        {
+            return (StatusCodes.Status503ServiceUnavailable, "stopping");
+        }
+
+        if (!applicationStarted.IsCancellationRequested)
+        {
+            return (StatusCodes.Status503ServiceUnavailable, "starting");
+        }
+
+        return (StatusCodes.Status200OK, "ready");
     }
 
     private static async Task<IResult> RunAgentAsync(

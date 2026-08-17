@@ -42,6 +42,9 @@ services:
       Nexo__Meai__OllamaModel: ${OLLAMA_MODEL:-llama3.1:latest}
       Nexo__NodeCapabilityRuntime__Ollama__BaseUrl: ${OLLAMA_BASE_URL:-http://ollama:11434}
       NEXO_DAILIES_PATH: ${NEXO_DAILIES_PATH:-/data/dailies}
+      # Runtime state (LiteDB stores, snapshots) on a named volume, NOT in the mounted repo under /work
+      # (docs/DEPLOYMENT.md, "Runtime state"). Keep aligned with the nexo-state mount below.
+      NEXO_STATE_DIR: ${NEXO_STATE_DIR:-/data/state}
       NEXO_BACKGROUND_AGENTS_CONFIG: ${NEXO_BACKGROUND_AGENTS_CONFIG:-/work/apps/runtime-studio/config/agent_set.local.json}
       Nexo__Barriers__RequireExplicitBarrier: ${Nexo__Barriers__RequireExplicitBarrier:-false}
       NEXO_OBSERVATION_DEGRADED_MODE: ${NEXO_OBSERVATION_DEGRADED_MODE:-1}
@@ -59,6 +62,8 @@ services:
     volumes:
       # Named volume; keep mount path aligned with NEXO_DAILIES_PATH (default /data/dailies).
       - nexo-dailies:/data/dailies
+      # Named volume; keep mount path aligned with NEXO_STATE_DIR (default /data/state).
+      - nexo-state:/data/state
       # Default ../.. is the repo root (relative to deploy/compose/); '.' would mount only deploy/compose/
       # and NEXO_BACKGROUND_AGENTS_CONFIG would be missing -> Nexo.API throws at startup -> restart loop.
       - ${NEXO_REPO_ROOT:-../..}:${NEXO_CONTAINER_WORKDIR:-/work}${NEXO_REPO_MOUNT_SUFFIX:-}
@@ -67,3 +72,4 @@ services:
 volumes:
   ollama-models:
   nexo-dailies:
+  nexo-state:

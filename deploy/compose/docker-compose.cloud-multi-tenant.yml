@@ -28,6 +28,8 @@ services:
       Nexo__Meai__OllamaModel: ${OLLAMA_MODEL:-llama3.1:latest}
       Nexo__NodeCapabilityRuntime__Ollama__BaseUrl: http://ollama:11434
       NEXO_DAILIES_PATH: /data/dailies
+      # Runtime state (LiteDB stores incl. copilot tasks, snapshots) on a named volume (docs/DEPLOYMENT.md, "Runtime state").
+      NEXO_STATE_DIR: /data/state
       # Built-in auth on the shared API process. X-Nexo-Tenant / X-Nexo-User / X-Nexo-Org are trusted
       # only behind this credential (or an authenticating proxy that sets them).
       Nexo__Security__AuthorizationMode: ${NEXO_AUTH_MODE:-ApiKey}
@@ -43,9 +45,11 @@ services:
     volumes:
       - nexo-cloud-dailies:/data/dailies
       - nexo-cloud-data:/data/copilot
+      - nexo-cloud-state:/data/state
     restart: unless-stopped
 
 volumes:
   ollama-models:
   nexo-cloud-dailies:
   nexo-cloud-data:
+  nexo-cloud-state:

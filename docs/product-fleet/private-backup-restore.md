@@ -13,7 +13,7 @@ Target recovery objectives for pilot Private customers:
 |-------|---------------------------|--------|
 | Dailies / run artifacts | Docker volume `nexo-dailies` | `docker run --rm -v nexo-dailies:/data -v $(pwd):/backup alpine tar czf /backup/nexo-dailies.tgz /data` |
 | Copilot persistence | Docker volume `nexo-copilot-data` | Same pattern as dailies |
-| LiteDB audit / pattern stores | Host path from `Nexo:PatternStorePath` or agent config | Filesystem copy while API stopped |
+| LiteDB audit / pattern stores | Docker volume `nexo-state` (`NEXO_STATE_DIR=/data/state` in the reference images), or the host path from `Nexo:PatternStorePath` / agent config when set (`docs/Configuration.md`, "Runtime state") | Same pattern as dailies, or filesystem copy while API stopped |
 | License file | `NEXO_LICENSE_FILE` or `Nexo:PrivateLicense:LicenseFilePath` | Secure copy to secrets vault |
 | Configuration | Compose env + `appsettings` overrides | Version in git or sealed customer config repo |
 

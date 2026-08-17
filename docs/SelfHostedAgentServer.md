@@ -84,6 +84,7 @@ Use **one `.env` per machine** or per environment (`dev`, `staging`) and swap `-
 | `OLLAMA_MODEL` | `llama3.1:latest` | Default model hint for providers (align with `ollama pull`). |
 | `NEXO_BACKGROUND_AGENTS_CONFIG` | `/work/apps/runtime-studio/config/agent_set.local.json` | JSON with `BackgroundAgents:Agents`. If you change `NEXO_CONTAINER_WORKDIR`, update this path to match. |
 | `NEXO_DAILIES_PATH` | `/data/dailies` | App path for director dailies. Default compose keeps a **named volume** at `/data/dailies`; if you change this path, add a matching volume in a local override file. |
+| `NEXO_STATE_DIR` | `/data/state` | Runtime state (LiteDB `nexo-*.db`, `nexo-snapshots/`). Default compose keeps a **named volume** at `/data/state` so state never lands in the mounted repo under `/work`; if you change this path, add a matching volume in a local override file (see `docs/DEPLOYMENT.md`, "Runtime state"). |
 | `Nexo__Barriers__RequireExplicitBarrier` | `false` | Hosted-friendly barrier default; tighten for stricter deployments. |
 | `NEXO_OBSERVATION_DEGRADED_MODE` | `1` | Safer observation pipeline on some bind-mount / network FS setups. |
 | `NEXO_BUILD_CONTEXT` | `../..` (repo root, relative to `deploy/compose/`) | Docker build context (advanced monorepo layouts). |

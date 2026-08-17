@@ -28,7 +28,7 @@ public sealed class AdaptCommand : Command
         var brickOpt = new Option<string>("--brick", () => "observation.context", "Brick ID to adapt");
         var fixOpt = new Option<string?>("--fix", "Apply fix for failure type (e.g. EmptyCatch, MissingOutput)");
         var dryRunOpt = new Option<bool>("--dry-run", () => false, "Only decompose; do not recompile");
-        var storePathOpt = new Option<string?>("--store-path", "Directory for nexo-patterns.db and nexo-execution.db (default: repo root)");
+        var storePathOpt = new Option<string?>("--store-path", "Directory for nexo-patterns.db and nexo-execution.db (default: NEXO_STATE_DIR, else <repo root>/.nexo/state)");
 
         AddOption(brickOpt);
         AddOption(fixOpt);
@@ -50,7 +50,7 @@ public sealed class AdaptCommand : Command
         var repoRoot = RepoPathResolver.FindRepoRoot();
         var storePath = !string.IsNullOrWhiteSpace(storePathOverride)
             ? Path.Combine(Path.GetFullPath(storePathOverride), "nexo-patterns.db")
-            : Path.Combine(repoRoot, "nexo-patterns.db");
+            : Path.Combine(RepoPathResolver.ResolveStateDirectory(repoRoot), "nexo-patterns.db");
 
         var services = new ServiceCollection()
             .AddLogging(b => b.AddConsole())

@@ -17,6 +17,7 @@ The tables below list keys in `Nexo:A:B` form with the `Nexo__A__B` environment 
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `NEXO_CONFIG_PATH` | Path to config file | `~/.nexo/config.json` |
+| `NEXO_STATE_DIR` | Runtime-state directory for LiteDB stores and snapshots (see "Runtime state" below); absolute, or relative to the resolved repo/app root | `<repo or app root>/.nexo/state` |
 | `NEXO_MESH_INSTANCES_PATH` | Path to **`instances.json`** for **`nexo mesh`** discovery | `~/.nexo/instances.json` |
 | `NEXO_MESH_TRUST_POLICY` | Peer trust policy for `nexo mesh` discovery **and** capability requests: **`any`**, **`allowlist`** (only **`admitted: true`** peers), **`trusted-only`**, **`trusted-preferred`**; any other value normalizes to `trusted-preferred` (fail-closed). Falls back to `NEXO_PEER_TRUST_POLICY` when unset (`MeshTrustPolicyConfiguration`) | unset → **`any`** for discovery, **`trusted-preferred`** for capability requests |
 | `NEXO_MESH_DIRECTOR_BASE_URL` | Base URL for **commercial mesh director CLI** (`dotnet run --project commercial/src/Nexo.Commercial.MeshDirector -- director ...`) HTTP calls | unset |
@@ -63,6 +64,26 @@ export NEXO_STRICT_MODE=0
 # do not bind Nexo:StrictMode from appsettings.json — see "How Nexo:* options bind" above):
 # services.AddNexo(o => o.StrictMode.FailFastOnProviderErrors = true);
 ```
+
+## Runtime state (`NEXO_STATE_DIR`)
+
+LiteDB stores and rollback snapshots that Nexo writes at runtime — `nexo-patterns.db`, `nexo-adaptation.db`, `nexo-adaptation-audit.db`, `nexo-copilot-tasks.db`, `nexo-execution.db`, `nexo-test-failures.db`, `nexo-snapshots/` — resolve through `RepoPathResolver.ResolveStateDirectory`:
+
+1. `Nexo:PatternStorePath` (API / daemon) or `--store-path` (CLI) when set: everything is co-located with that file / directory.
+2. Otherwise `NEXO_STATE_DIR` when set — absolute, or relative to the resolved repo/app root.
+3. Otherwise **`<repo or app root>/.nexo/state/`** (the root is the nearest directory containing `Nexo.sln`, else the current directory). `.nexo/` is gitignored; the directory is created on first use.
+
+Backward compatibility: an install that already has `nexo-*.db` files directly at the repo root **and no `.nexo/state/` yet** keeps using the root (nothing is moved or logged). To migrate, stop Nexo and move the `nexo-*.db` files and `nexo-snapshots/` into `.nexo/state/`.
+
+Containers: the API and CLI images set `NEXO_STATE_DIR=/data/state` (owned by the non-root `app` user); the portal and agent-server compose stacks mount the `nexo-state` named volume there (`docs/DEPLOYMENT.md`, "Runtime state").
+
+## Nexo.API host (`Nexo__Api__*`)
+
+| Variable / config key | Description | Default |
+|-----------------------|-------------|---------|
+| `Nexo__Api__EnableSwagger` | Serve `/swagger` (UI) and `/swagger/v1/swagger.json`. The document enumerates every mapped route and schema, so it is off outside `Development` unless set | `true` in `Development`, else `false` |
+
+`GET /health` (liveness, constant 200) and `GET /ready` (readiness: 503 while the host is starting or shutting down, 200 in between) are always mapped, unauthenticated, and outside `/api`.
 
 ## Centralized Defaults (`NexoDefaults`)
 
