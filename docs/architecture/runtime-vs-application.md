@@ -1,14 +1,15 @@
 # Runtime vs application boundary
 
-This monorepo keeps **kernel/runtime libraries** under `src/` and **open application surfaces** under `application/src/` (CLI, HTTP API). Forge/game descriptors and the Game Director host live under **`commercial/`**. The same split matters when you consume Nexo as **NuGet packages** from another repository.
+This monorepo keeps **kernel/runtime libraries** under `src/`, **open application surfaces** under `application/src/` (CLI, HTTP API), and **open products built on the core** under `applications/`. Forge/game descriptors and the Game Director host live under **`commercial/`**. The same split matters when you consume Nexo as **NuGet packages** from another repository.
 
 ## Layout in this repository
 
 | Location | Role |
 |----------|------|
-| `src/` | Execution kernel: abstractions, core, hosting library, infrastructure, orchestration, runtime, agents, ingress adapters, and tests for the kernel graph |
+| `src/` | Execution kernel: abstractions, core, hosting library, infrastructure, orchestration, runtime, agents, transport/protocol adapters (gRPC, MCP, A2A), ingress adapters, and tests for the kernel graph |
 | `application/src/` | Open product hosts: `Nexo.API`, `Nexo.CLI`, plus `Nexo.Tests.CLI` |
-| `commercial/` | Commercial vertical: `Nexo.Commercial.GameDomain`, Game Director host/MCP, and `Nexo.Commercial.Tests.GameDomain` |
+| `applications/` | Open (Apache-2.0) products on top of the kernel — physical-atom certification, provenance graph, spatial contracts/runtime/platform providers. They reference `src/`; `src/` never references them (`dependency-boundary` check 4). Layout carries the autonomy tier (`TrustKernel.KernelPathPrefixes` lists `src/` prefixes), which is why these live outside `src/`. See [`applications/README.md`](../../applications/README.md). |
+| `commercial/` | Commercial vertical: `Nexo.Commercial.GameDomain`, Game Director host/MCP, Fleet, MeshDirector, and their tests |
 
 ## Runtime layer (NuGet / embeddable graph)
 
@@ -51,8 +52,8 @@ Product-specific deployables and descriptors stay under **`application/src/`** i
 | File | Purpose |
 |------|---------|
 | `Nexo.Runtime.sln` | Runtime kernel graph for CI and publishing libraries (and `Nexo.Runtime.Bundle`). |
-| `application/Nexo.Application.sln` | Open `application/src/*` plus commercial GameDomain projects referenced for local dev. |
-| `Nexo.sln` | Full monorepo: kernel, clients, infrastructure tests, `Nexo.Runtime.Bundle`, ingress projects, etc. Application code is built via **`dotnet build application/Nexo.Application.sln`** when you only need product surfaces. |
+| `application/Nexo.Application.sln` | Open `application/src/*` only (`Nexo.API`, `Nexo.CLI`, `Nexo.Tests.CLI`); it no longer pulls the commercial GameDomain projects. |
+| `Nexo.sln` | Full monorepo: kernel, clients, infrastructure tests, `Nexo.Runtime.Bundle`, ingress projects, `applications/`, plus the Game Director / GameDomain commercial projects. Application code is built via **`dotnet build application/Nexo.Application.sln`** when you only need product surfaces. |
 
 Build application layer:
 
