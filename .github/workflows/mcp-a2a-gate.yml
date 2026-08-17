@@ -6,7 +6,7 @@ on:
       - master
       - main
       - "cursor/**"
-      - "application/**"
+      - "application/**"   # branch-name pattern (application-tier work branches such as application/mcp-a2a), not a path
     paths:
       - ".github/workflows/mcp-a2a-gate.yml"
       - "src/Nexo.Mcp.Server/**"
@@ -29,7 +29,7 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # 9.x runs the net8 suites via roll-forward-compatible SDK behavior and is required for
       # the net9-only suites (TestServer + System.Text.Json 10 needs the 9.0 TestHost).
@@ -74,7 +74,7 @@ jobs:
     timeout-minutes: 20
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v6

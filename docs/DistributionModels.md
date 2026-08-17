@@ -11,7 +11,7 @@ For the authoritative open-vs-commercial boundary, see **`docs/OpenCoreBoundary.
 Ship the **same semantic version** across artifacts that belong together:
 
 - **NuGet:** all `Nexo.*` packages for a release share one `PackageVersion`; consumers often reference **`Nexo.Hosting.Bundle`**. See **`docs/PUBLISHING.md`**.
-- **Containers:** GHCR images tagged with the same **`vX.Y.Z`** (and digest pins for production). See **`docs/RELEASE.md`** and **`docs/DEPLOYMENT.md`**.
+- **Containers:** GHCR images tagged **`X.Y.Z`** (no `v`) from the same **`vX.Y.Z`** git tag. The semver tag is a manifest retag of the smoke-tested immutable **`sha-<12>`** tag, not a rebuild, so it resolves to the same digest and the same platforms (`nexo-cli`: linux/amd64 + linux/arm64 on release tags, like `:latest`; `nexo-api`: linux/amd64). Pin digests for production. See **`docs/RELEASE.md`** and **`docs/DEPLOYMENT.md`**.
 
 Release automation is summarized in **`docs/RELEASE.md`** (NuGet + GHCR from one tag when configured).
 

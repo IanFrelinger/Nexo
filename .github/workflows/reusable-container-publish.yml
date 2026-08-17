@@ -1,11 +1,18 @@
 # Reusable: build and push nexo-cli + nexo-api to GHCR.
 # Called from release.yml (tags / manual) or container-image-publish.yml (manual dispatch).
+#
+# Tag layout per image:
+#   sha-<12>  immutable, pushed on every run and smoke-tested before anything else is tagged
+#   latest    master/main only, rebuilt (nexo-cli: linux/amd64 + linux/arm64 unless skip_multi_arch)
+#   X.Y.Z     v* tags only; a manifest retag of the smoke-tested sha-<12> digest, never a rebuild,
+#             so it resolves to exactly the bytes that passed smoke (nexo-cli's sha tag is built
+#             multi-arch on v* tags so the semver tag covers the same platforms as :latest)
 
 on:
   workflow_call:
     inputs:
       skip_multi_arch:
-        description: "When true, publish latest nexo-cli as amd64 only (main branch builds)"
+        description: "When true, publish nexo-cli :latest (main) and :X.Y.Z (tags) as amd64 only"
         type: boolean
         required: false
         default: false
@@ -56,19 +63,27 @@ jobs:
           echo "sha_tag=${SHA_TAG}" >> "$GITHUB_OUTPUT"
           echo "IMAGE=${IMAGE}" >> "${GITHUB_ENV}"
           echo "SHA_TAG=${SHA_TAG}" >> "${GITHUB_ENV}"
+          # The semver tag is a retag of the sha digest (below), so on v* tags the sha tag itself
+          # carries every platform :latest offers; on branch builds it stays amd64-only (fast path).
+          SHA_PLATFORMS="linux/amd64"
           if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
             SEMVER="${GITHUB_REF_NAME#v}"
             echo "SEMVER_TAG=${IMAGE}:${SEMVER}" >> "${GITHUB_ENV}"
+            if [[ "${{ inputs.skip_multi_arch }}" != "true" ]]; then
+              SHA_PLATFORMS="linux/amd64,linux/arm64"
+            fi
           else
             echo "SEMVER_TAG=" >> "${GITHUB_ENV}"
           fi
+          echo "SHA_PLATFORMS=${SHA_PLATFORMS}" >> "${GITHUB_ENV}"
 
-      - name: Build and push linux/amd64 (immutable sha tag)
+      - name: Build and push immutable sha tag (amd64; + arm64 on release tags)
+        timeout-minutes: 35
         shell: bash
         run: |
           docker buildx build \
             --file .docker/Dockerfile.cli \
-            --platform linux/amd64 \
+            --platform "${SHA_PLATFORMS}" \
             --tag "${SHA_TAG}" \
             --push \
             .
@@ -105,16 +120,12 @@ jobs:
             --push \
             .
 
-      - name: Tag semver on release tag
+      - name: Tag semver on release tag (retag smoke-tested sha digest)
         if: startsWith(github.ref, 'refs/tags/v')
         shell: bash
         run: |
-          docker buildx build \
-            --file .docker/Dockerfile.cli \
-            --platform linux/amd64 \
-            --tag "${SEMVER_TAG}" \
-            --push \
-            .
+          docker buildx imagetools create --tag "${SEMVER_TAG}" "${SHA_TAG}"
+          docker buildx imagetools inspect "${SEMVER_TAG}"
 
   publish-api:
     name: GHCR nexo-api
@@ -187,13 +198,9 @@ jobs:
             --push \
             .
 
-      - name: Tag semver on release tag
+      - name: Tag semver on release tag (retag smoke-tested sha digest)
         if: startsWith(github.ref, 'refs/tags/v')
         shell: bash
         run: |
-          docker buildx build \
-            --file .docker/Dockerfile.api \
-            --platform linux/amd64 \
-            --tag "${SEMVER_TAG}" \
-            --push \
-            .
+          docker buildx imagetools create --tag "${SEMVER_TAG}" "${SHA_TAG}"
+          docker buildx imagetools inspect "${SEMVER_TAG}"
