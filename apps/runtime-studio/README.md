@@ -97,9 +97,9 @@ After bootstrap, benchmark workflow compositions on this machine and emit a reco
 bash apps/runtime-studio/scripts/optimize_agent_cluster.sh --objective 'your tuning goal' --verbose
 ```
 
-The script forwards **`--budget-runs`** to `nexo workflow optimize` (default **48** measured runs cap for laptop-friendly runs; use **`--budget-runs 0`** for no cap), then runs **`nexo runtime-studio apply-tune`** so the winning local model profile is written into **`apps/runtime-studio/config/agent_set.local.json`** (skip with **`--skip-apply-agent-set`**). Run **`bash apps/runtime-studio/scripts/optimize_agent_cluster.sh --help`** for all flags.
+The script forwards **`--budget-runs`** to `nexo workflow optimize` (default **48** measured runs cap for laptop-friendly runs; use **`--budget-runs 0`** for no cap), then runs **`nexo runtime-studio apply-tune`** so the winning local model profile is written into the **gitignored** **`.nexo/runtime-studio/agent_set.local.json`** (seeded from the tracked `config/agent_set.local.json` on first use; pass **`--config apps/runtime-studio/config/agent_set.local.json`** to tune the tracked file in place, or **`--skip-apply-agent-set`** to only benchmark). `run_agent_set_local.sh` and **`nexo runtime-studio status|doctor|apply-tune`** read the local copy first and fall back to the tracked file. Run **`bash apps/runtime-studio/scripts/optimize_agent_cluster.sh --help`** for all flags.
 
-Windows **`scripts/setup/setup.ps1 -Mode all`** runs the same optimize + apply flow after dependencies restore (skip with **`-SkipRuntimeStudioTune`** or **`NEXO_SKIP_RUNTIME_STUDIO_TUNE=1`**).
+The setup scripts run the same optimize + apply flow only when asked: **`bash scripts/setup/setup.sh all --tune`** (macOS/Linux) or **`scripts/setup/setup.ps1 -Mode all -Tune`** (Windows, needs Git Bash). Without the flag `setup … all` finishes after restore. **`NEXO_SKIP_RUNTIME_STUDIO_TUNE=1`** / **`-SkipRuntimeStudioTune`** force-skip even with the flag.
 
 Inspect current state anytime: **`dotnet run --project application/src/Nexo.CLI -- runtime-studio status`** (or **`--format-json`**).
 

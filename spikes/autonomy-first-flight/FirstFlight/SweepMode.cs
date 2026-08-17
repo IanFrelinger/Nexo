@@ -64,7 +64,6 @@ public static class SweepMode
         var settings = new AutonomyLoopSettings
         {
             IntervalSeconds = 0, // driven manually here, not on a timer
-            HoldAdmission = true,
             SessionImage = sessionImage,
             MaxObjectivesPerSweep = 5,
             CompilationReferences = new[]

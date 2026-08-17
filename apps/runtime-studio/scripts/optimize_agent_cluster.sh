@@ -2,7 +2,12 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-AGENT_SET_CONFIG="${REPO_ROOT}/apps/runtime-studio/config/agent_set.local.json"
+# Tracked agent-set definitions (roles, schedules, policies). Never written by this script.
+AGENT_SET_SOURCE="${REPO_ROOT}/apps/runtime-studio/config/agent_set.local.json"
+# Local, gitignored copy that receives the tuned Ollama ModelName values and drives the daemon.
+# Seeded from AGENT_SET_SOURCE on first use. Override with --config.
+AGENT_SET_CONFIG="${REPO_ROOT}/.nexo/runtime-studio/agent_set.local.json"
+AGENT_SET_CONFIG_EXPLICIT=0
 SPEC_PATH=""
 OBJECTIVE=""
 OBJECTIVE_FILE=""
@@ -36,6 +41,8 @@ Steps executed:
   3. Run \`nexo workflow optimize\` to benchmark composition/model candidates
      on local hardware, select a winner, and emit a recommendation report.
   4. Apply the winner to the agent-set JSON (\`nexo runtime-studio apply-tune\`) unless skipped.
+     Writes the gitignored .nexo/runtime-studio/agent_set.local.json (seeded from the tracked
+     apps/runtime-studio/config/agent_set.local.json on first use); the tracked file is not touched.
   5. (Optional) Start the background agent daemon with the agent-set config.
 
 Options:
@@ -53,8 +60,10 @@ Options:
   --ollama-model <model>      Override OLLAMA_MODEL env var.
   --duration <dur>            Daemon duration (e.g. 5m, 1h). If omitted the
                               daemon step is skipped.
-  --config <path>             Agent-set JSON for the daemon step
-                              (default: apps/runtime-studio/config/agent_set.local.json).
+  --config <path>             Agent-set JSON that apply-tune writes and the daemon step reads
+                              (default: .nexo/runtime-studio/agent_set.local.json, seeded from
+                              apps/runtime-studio/config/agent_set.local.json when missing).
+                              Pass the tracked path explicitly to tune it in place.
   --skip-optimize             Skip the optimize step (bootstrap + daemon only).
   --skip-apply-agent-set      Skip applying the optimize winner to the agent-set JSON.
   --skip-daemon               Skip the daemon step (bootstrap + optimize only).
@@ -79,7 +88,7 @@ while [[ $# -gt 0 ]]; do
     --prefer)          PREFER="${2:-}";           shift 2 ;;
     --ollama-model)    OLLAMA_MODEL_OVERRIDE="${2:-}"; shift 2 ;;
     --duration)        DURATION="${2:-}";         shift 2 ;;
-    --config)          AGENT_SET_CONFIG="${2:-}"; shift 2 ;;
+    --config)          AGENT_SET_CONFIG="${2:-}"; AGENT_SET_CONFIG_EXPLICIT=1; shift 2 ;;
     --skip-optimize)        SKIP_OPTIMIZE=1;          shift ;;
     --skip-apply-agent-set) SKIP_APPLY_AGENT_SET=1;   shift ;;
     --skip-daemon)     SKIP_DAEMON=1;            shift ;;
@@ -100,6 +109,23 @@ done
 if [[ -z "${DURATION}" && "${SKIP_DAEMON}" -eq 0 ]]; then
   SKIP_DAEMON=1
 fi
+
+# Seed the default (gitignored) agent-set copy from the tracked file on first use, so
+# apply-tune and the daemon never need to modify apps/runtime-studio/config/agent_set.local.json.
+# An explicit --config path is used as-is (missing files fail loudly in the steps below).
+ensure_local_agent_set() {
+  if [[ "${AGENT_SET_CONFIG_EXPLICIT}" -eq 1 || -f "${AGENT_SET_CONFIG}" ]]; then
+    return 0
+  fi
+  if [[ ! -f "${AGENT_SET_SOURCE}" ]]; then
+    echo "Missing tracked agent-set config: ${AGENT_SET_SOURCE}" >&2
+    return 1
+  fi
+  mkdir -p "$(dirname "${AGENT_SET_CONFIG}")"
+  cp "${AGENT_SET_SOURCE}" "${AGENT_SET_CONFIG}"
+  echo "Seeded local agent-set config from tracked file:"
+  echo "  ${AGENT_SET_SOURCE} -> ${AGENT_SET_CONFIG}"
+}
 
 export OLLAMA_BASE_URL="${OLLAMA_BASE_URL:-http://127.0.0.1:11434}"
 if [[ -n "${OLLAMA_MODEL_OVERRIDE}" ]]; then
@@ -185,6 +211,7 @@ if [[ "${SKIP_OPTIMIZE}" -eq 0 ]]; then
     echo "═══════════════════════════════════════════════════════════════"
     echo "  Apply tuned models → agent-set config"
     echo "═══════════════════════════════════════════════════════════════"
+    ensure_local_agent_set
     APPLY_CMD=(
       dotnet run --project "${REPO_ROOT}/application/src/Nexo.CLI" -- runtime-studio apply-tune
       --spec "${RESOLVED_SPEC}"
@@ -213,6 +240,7 @@ if [[ "${SKIP_DAEMON}" -eq 0 ]]; then
   echo "  Step 3/3  Start background agent daemon"
   echo "═══════════════════════════════════════════════════════════════"
 
+  ensure_local_agent_set
   if [[ ! -f "${AGENT_SET_CONFIG}" ]]; then
     echo "Missing agent-set config: ${AGENT_SET_CONFIG}" >&2
     exit 1

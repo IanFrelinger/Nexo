@@ -6,7 +6,8 @@ namespace Nexo.Tests.Infrastructure.Tests.Mesh;
 
 /// <summary>
 /// Optional end-to-end checks against the Docker mesh virtual lab (same scripts as CI <c>mesh-lab-gate</c>).
-/// Enable with <c>NEXO_RUN_MESH_LAB=1</c> (requires Docker, bash, python3). Default CI/dotnet runs skip these tests.
+/// Enable with <c>NEXO_RUN_MESH_LAB=1</c> (requires Docker, bash, python3). Default CI/dotnet runs report these
+/// tests as Skipped (see <see cref="OptInFactAttribute"/>); the fixture stays a no-op until opted in.
 /// </summary>
 [Collection("MeshLabDocker")]
 [Trait("Category", "DockerOptional")]
@@ -23,9 +24,11 @@ public sealed class MeshLabDockerE2ETests
     }
 
     /// <summary>Runs standard then deep verify scripts (same order as <c>mesh-lab-gate.yml</c>).</summary>
-    [Fact(Timeout = 900_000)]
+    [OptInFact("NEXO_RUN_MESH_LAB", "Docker mesh virtual lab (Docker, bash, python3)", Timeout = 900_000)]
     public async Task Mesh_lab_compose_gate_standard_and_deep_verify()
     {
+        // Opted in but the lab could not come up (no Docker daemon, ports busy, ...): keep the legacy
+        // soft return for the post-opt-in runtime case; the discovery-time gate is the attribute.
         if (!_fixture.IsReady)
         {
             _output.WriteLine(_fixture.SkipReason ?? "Mesh lab fixture not ready.");

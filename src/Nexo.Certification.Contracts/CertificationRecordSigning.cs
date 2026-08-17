@@ -9,8 +9,31 @@ namespace Nexo.Certification.Contracts;
 /// </summary>
 public static class CertificationRecordSigning
 {
-    /// <summary>Development-only default HMAC key; override via <c>NEXO_CERT_DEV_HMAC_KEY</c> in production.</summary>
+    /// <summary>
+    /// Development-only default HMAC key; override via <c>NEXO_CERT_DEV_HMAC_KEY</c> in production.
+    /// This constant is COMMITTED and PUBLIC: any record signed with it can be forged by anyone
+    /// who has read this file, so a signature under it proves integrity against accident, not
+    /// against an adversary. Signers warn at construction while it is in effect
+    /// (<see cref="UsesDevKey"/>).
+    /// </summary>
     public const string DefaultDevKey = "nexo-cert-dev-hmac-v0";
+
+    /// <summary>Environment variable that supplies the HMAC key when no explicit key is given.</summary>
+    public const string HmacKeyEnvVar = "NEXO_CERT_DEV_HMAC_KEY";
+
+    /// <summary>
+    /// Whether signing with <paramref name="hmacKey"/> (explicit key, else <see cref="HmacKeyEnvVar"/>,
+    /// else <see cref="DefaultDevKey"/>) would use the committed development key — or a blank one,
+    /// which is no better. True means every certificate minted or verified through this key is
+    /// forgeable by anyone with the source.
+    /// </summary>
+    /// <param name="hmacKey">Optional explicit key, resolved the same way <see cref="Sign"/> resolves it.</param>
+    public static bool UsesDevKey(string? hmacKey = null)
+    {
+        var effective = ResolveKey(hmacKey);
+        return string.IsNullOrWhiteSpace(effective)
+            || string.Equals(effective, DefaultDevKey, StringComparison.Ordinal);
+    }
 
     /// <summary>
     /// Computes the Base64 HMAC-SHA256 signature for a certification record.
@@ -173,6 +196,6 @@ public static class CertificationRecordSigning
     {
         if (!string.IsNullOrWhiteSpace(hmacKey))
             return hmacKey!;
-        return Environment.GetEnvironmentVariable("NEXO_CERT_DEV_HMAC_KEY") ?? DefaultDevKey;
+        return Environment.GetEnvironmentVariable(HmacKeyEnvVar) ?? DefaultDevKey;
     }
 }

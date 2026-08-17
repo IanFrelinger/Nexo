@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Nexo.Contracts;
 using Nexo.Ingress.DynamoDb;
+using Nexo.Tests.Infrastructure.Helpers;
 using Testcontainers.DynamoDb;
 using Xunit;
 using Xunit.Abstractions;
@@ -13,7 +14,8 @@ namespace Nexo.Tests.Infrastructure.Tests.Ingress;
 
 /// <summary>
 /// Optional integration tests against DynamoDB Local in Docker (Testcontainers).
-/// Enable with <c>NEXO_RUN_DYNAMODB_CONTAINER=1</c> (requires Docker). CI and default local runs skip these tests.
+/// Enable with <c>NEXO_RUN_DYNAMODB_CONTAINER=1</c> (requires Docker). CI and default local runs report these
+/// tests as Skipped (see <see cref="OptInFactAttribute"/>); the fixture stays a no-op until opted in.
 /// </summary>
 [Collection("IngressDynamoDbDocker")]
 [Trait("Category", "DockerOptional")]
@@ -28,12 +30,14 @@ public sealed class DynamoDbSmsIngressDockerTests
         _output = output;
     }
 
-    [Fact(Timeout = 180_000)]
+    [OptInFact("NEXO_RUN_DYNAMODB_CONTAINER", "DynamoDB Local in Docker (Testcontainers)", Timeout = 180_000)]
     public async Task Dynamo_store_records_and_replays_idempotently()
     {
+        // Opted in but the fixture produced no store (Docker unavailable / container failed): keep the
+        // legacy soft return for the post-opt-in runtime case; the discovery-time gate is the attribute.
         if (_fixture.Store is null)
         {
-            _output.WriteLine("Skipping DynamoDB Local integration: set NEXO_RUN_DYNAMODB_CONTAINER=1 with Docker available.");
+            _output.WriteLine("Skipping DynamoDB Local integration: NEXO_RUN_DYNAMODB_CONTAINER=1 is set but the DynamoDB Local container did not start.");
             return;
         }
 
