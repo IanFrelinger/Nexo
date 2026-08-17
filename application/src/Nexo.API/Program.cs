@@ -34,9 +34,17 @@
 //   • Static files + endpoints — DefaultFiles/StaticFiles serve the SPA;
 //     MapNexoEndpoints wires the API; MapFallbackToFile routes unknown paths
 //     to index.html for client-side routing.
+//   • Observability — console logging is human-readable by default and switches
+//     to JSON lines with Nexo:Logging:Json=true / NEXO_LOG_JSON=1. Metrics stay
+//     in-process (MemoryMetricsCollector) unless OTEL_EXPORTER_OTLP_ENDPOINT is
+//     set, in which case AddNexoOpenTelemetry exports the "Nexo" meter plus
+//     ASP.NET Core / HttpClient traces and metrics over OTLP.
 //
 // Environment variables consumed here:
 //   NEXO_BACKGROUND_AGENTS_CONFIG — path to agent-definition JSON file
+//   NEXO_LOG_JSON                 — 1/true = JSON console logging (also Nexo:Logging:Json)
+//   OTEL_EXPORTER_OTLP_ENDPOINT   — when set, enables OTLP trace + metric export
+//                                   (OTEL_SERVICE_NAME etc. are honoured by the OTel SDK)
 //   (see also NexoSecurityOptions for auth-related env vars)
 // ──────────────────────────────────────────────────────────────────────────────
 
@@ -63,6 +71,7 @@ using Nexo.BackgroundAgents.Testing;
 using Nexo.Abstractions;
 using Nexo.API.Protocols;
 using Nexo.Hosting;
+using Nexo.Hosting.Sdk.Extensions;
 using Nexo.Ingress.AwsSns;
 using Nexo.Ingress.DynamoDb;
 using Nexo.Mcp.Client;
@@ -72,6 +81,9 @@ using Nexo.Tools.Dev;
 using Nexo.Transport.A2A;
 using Nexo.Transport.A2A.Server;
 using Nexo.Transport.Grpc;
+using OpenTelemetry.Metrics;
+using OpenTelemetry.Resources;
+using OpenTelemetry.Trace;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -92,7 +104,10 @@ if (!string.IsNullOrWhiteSpace(agentsConfigPath))
     builder.Configuration.AddJsonFile(resolved, optional: false, reloadOnChange: true);
 }
 
-builder.Services.AddLogging(b => b.AddConsole());
+// --- Logging: console by default; JSON lines when Nexo:Logging:Json=true or NEXO_LOG_JSON=1 ---
+// Read through builder.Configuration (not the kernel's env-only options binding) so the key
+// works from appsettings, environment variables and UseSetting alike.
+builder.Services.AddLogging(b => b.AddConsole().AddNexoJsonConsoleIfRequested(builder.Configuration));
 builder.Services.AddHttpContextAccessor();
 builder.Services.Configure<GrpcTransportOptions>(
     builder.Configuration.GetSection("Nexo:GrpcTransport"));
@@ -214,6 +229,28 @@ builder.Services.AddNexo(options =>
 builder.Services.AddMediatR(cfg =>
     cfg.RegisterServicesFromAssembly(typeof(RecordSmsYesApprovalCommand).Assembly));
 
+// --- Observability: OTLP export (traces + metrics), enabled only by the standard OTel endpoint var ---
+// Must run after AddNexo: AddNexoOpenTelemetry replaces the in-process MemoryMetricsCollector
+// (the default when the endpoint is unset) with the OpenTelemetry-backed collector, whose "Nexo"
+// meter carries the ncr.* / nexo.* keys as attributes on nexo.operation.duration / .count.
+// The exporter batches in the background, so an unreachable endpoint never fails startup.
+var otlpEndpoint = builder.Configuration["OTEL_EXPORTER_OTLP_ENDPOINT"];
+if (!string.IsNullOrWhiteSpace(otlpEndpoint))
+{
+    var otelServiceName = builder.Configuration["OTEL_SERVICE_NAME"];
+    builder.Services.AddNexoOpenTelemetry(metrics => metrics
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation()
+        .AddOtlpExporter());
+    builder.Services.AddOpenTelemetry()
+        .ConfigureResource(resource => resource.AddService(
+            serviceName: string.IsNullOrWhiteSpace(otelServiceName) ? "Nexo.API" : otelServiceName))
+        .WithTracing(tracing => tracing
+            .AddAspNetCoreInstrumentation()
+            .AddHttpClientInstrumentation()
+            .AddOtlpExporter());
+}
+
 var app = builder.Build();
 
 app.UseMiddleware<CorrelationIdMiddleware>();
@@ -323,8 +360,23 @@ app.UseNexoCopilotScopedAuthorization();
 
 app.UseRateLimiter();
 
-app.UseSwagger();
-app.UseSwaggerUI(static c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Nexo.API v1"));
+// --- Swagger (OpenAPI document + UI): on in Development, otherwise opt-in via Nexo:Api:EnableSwagger ---
+// The document enumerates every mapped route and schema; keep it off the network by default and let
+// operators turn it on explicitly (Nexo__Api__EnableSwagger=true) when they front the host with auth.
+{
+    var enableSwagger = app.Configuration.GetValue<bool?>("Nexo:Api:EnableSwagger") ?? app.Environment.IsDevelopment();
+    if (enableSwagger)
+    {
+        app.UseSwagger();
+        app.UseSwaggerUI(static c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Nexo.API v1"));
+        if (!app.Environment.IsDevelopment())
+        {
+            app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Nexo.Security")
+                .LogInformation("Swagger UI is enabled outside Development (Nexo:Api:EnableSwagger=true): /swagger exposes the full route catalogue.");
+        }
+    }
+}
+
 app.MapNexoEndpoints();
 app.MapIngressEndpoints();
 

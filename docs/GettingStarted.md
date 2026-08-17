@@ -66,7 +66,9 @@ The published **`nexo-cli`** image is **runtime-only** (no `git`/`curl` in the c
 
 ### Lane C (escape hatch): native setup scripts + CLI build
 
-After **`bash scripts/setup/setup.sh all`** (same as **`bash scripts/setup/setup-unix.sh all`** on macOS/Linux; those dispatch to `setup-linux.sh` / `setup-macos.sh`), or Windows **`powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode all`**, Nexo runs a **bounded** Runtime Studio **`workflow optimize`** and writes the winning **Ollama `ModelName` values** into `apps/runtime-studio/config/agent_set.local.json`. Skip with **`NEXO_SKIP_RUNTIME_STUDIO_TUNE=1`** (Unix), **`-SkipRuntimeStudioTune`** (Windows `setup.ps1`), or rely on automatic skip in **CI** (`CI` / `GITHUB_ACTIONS`).
+**`bash scripts/setup/setup.sh all`** (same as **`bash scripts/setup/setup-unix.sh all`** on macOS/Linux; those dispatch to `setup-linux.sh` / `setup-macos.sh`) and Windows **`powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode all`** install missing host tools and run `dotnet restore` for the setup graph. They finish in the time a restore takes; **no model benchmark runs by default**.
+
+**Optional hardware tune (opt-in):** add **`--tune`** (Unix) or **`-Tune`** (Windows `setup.ps1`; requires Git Bash) to `all` and setup also runs a **bounded** Runtime Studio **`workflow optimize`** (`--budget-runs 24`, several minutes against local Ollama models) and writes the winning **Ollama `ModelName` values** into the **gitignored** `.nexo/runtime-studio/agent_set.local.json` (seeded from the tracked `apps/runtime-studio/config/agent_set.local.json`, which setup never modifies). `run_agent_set_local.sh`, `optimize_agent_cluster.sh` and `nexo runtime-studio status|doctor|apply-tune` read that local copy first and fall back to the tracked file. `NEXO_SKIP_RUNTIME_STUDIO_TUNE=1` / `-SkipRuntimeStudioTune` still force-skip it, and it is always skipped in **CI** (`CI` / `GITHUB_ACTIONS`).
 
 Clone the repo, then run setup and build (same graph CI uses):
 

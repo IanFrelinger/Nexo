@@ -1,34 +1,49 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using Nexo.BackgroundAgents.Objectives;
 using Nexo.Core.Application.Autonomy;
 using Nexo.Core.Application.Certification.Models;
 using Nexo.Core.Application.Execution.Ports;
+using Nexo.Core.Domain.Execution;
+using Nexo.Infrastructure.Autonomy;
 using Nexo.Infrastructure.Certification.HotSwap;
 
 namespace Nexo.BackgroundAgents.Autonomy;
 
-/// <summary>Where the loop runs and what it may do — the operator's dial.</summary>
+/// <summary>
+/// Where the loop runs and what it may do — the operator's dial for the LOOP itself
+/// (cadence, batch size, repair policy, compile references). Everything about the
+/// iteration — enablement, sessions, in-session build/execution, admission hold — is
+/// <see cref="NexoAutonomyOptions"/> (<c>Nexo:Autonomy</c>), read by the loop and enforced by
+/// the harness; there is deliberately no second copy of those switches here, because a
+/// setting that is logged but not enforced is worse than none.
+/// </summary>
 public sealed class AutonomyLoopSettings
 {
     /// <summary>Seconds between sweeps of the objective store. 0 disables the loop.</summary>
     public int IntervalSeconds { get; set; }
 
     /// <summary>
-    /// When true (the default), certify fully but admit nothing without a human. This is
-    /// deliberately the default: a loop that starts swapping the moment it is wired up
-    /// gives its operator no chance to read the evidence first.
+    /// Container image proposal sessions run in. Null falls back to
+    /// <see cref="NexoAutonomyOptions.SessionImage"/>; used only when
+    /// <see cref="NexoAutonomyOptions.UseSandboxSessions"/> is true.
     /// </summary>
-    public bool HoldAdmission { get; set; } = true;
-
-    /// <summary>Container image proposal sessions run in.</summary>
     public string? SessionImage { get; set; }
 
     /// <summary>Objectives attempted per sweep. Keeps one sweep bounded.</summary>
     public int MaxObjectivesPerSweep { get; set; } = 1;
 
-    /// <summary>Reference assemblies handed to the candidate compile.</summary>
-    public IReadOnlyList<string> CompilationReferences { get; set; } = Array.Empty<string>();
+    /// <summary>
+    /// Reference assemblies handed to the candidate compile. Defaults to the brick contract
+    /// assemblies (<c>DomainBrick</c>, <c>BrickInput</c>) — the minimum any candidate needs to
+    /// compile at all; add whatever else the objectives' candidates delegate to.
+    /// </summary>
+    public IReadOnlyList<string> CompilationReferences { get; set; } = DefaultCompilationReferences();
+
+    /// <summary>The brick contract assemblies every candidate compiles against.</summary>
+    public static IReadOnlyList<string> DefaultCompilationReferences() =>
+        new[] { typeof(DomainBrick).Assembly.Location, typeof(BrickInput).Assembly.Location };
 
     /// <summary>
     /// The repair channel's dial: how much of a rejection the proposer may see, and how many
@@ -55,33 +70,84 @@ public sealed class AutonomyLoopSettings
 /// means no run — never a run without acceptance criteria, because a certificate minted
 /// without them would be a claim about nothing. Proposal and iteration failures alike
 /// record an attempt and move on: one bad objective must not wedge the sweep.</para>
+///
+/// <para><b>Host options are read here, enforced by the harness.</b> The standing loop
+/// runs only under <see cref="NexoAutonomyOptions.Enabled"/>; sessions are opened only when
+/// <see cref="NexoAutonomyOptions.UseSandboxSessions"/> is set (image from the loop settings,
+/// else the host options); the admission hold the log reports is
+/// <see cref="NexoAutonomyOptions.HoldAdmission"/> — the value the composed harness enforces,
+/// not a second dial. A loop constructed by hand without options (the first-flight spike,
+/// tests) can be swept directly through <see cref="SweepAsync"/>; the timer never starts
+/// for it, because a background loop with no host switch to turn it off is not fail-closed.</para>
 /// </summary>
 public sealed class AutonomyLoopService : BackgroundService
 {
+    /// <summary>
+    /// Seconds a session's keepalive outlives the iteration ceiling. The keepalive command is
+    /// what keeps the container alive between execs; if it were EQUAL to the ceiling the
+    /// container could exit while the last exec of a long iteration was still in flight, and
+    /// the failure would read as a session fault rather than as the budget verdict it is.
+    /// </summary>
+    internal const int SessionKeepaliveMarginSeconds = 60;
+
+    private static readonly NexoAutonomyOptions OptionDefaults = new();
+
     private readonly IObjectiveStore _objectives;
     private readonly AutonomousIterationHarness _harness;
     private readonly IProposalSource? _proposals;
     private readonly AutonomyLoopSettings _settings;
+    private readonly NexoAutonomyOptions? _autonomy;
     private readonly ILogger<AutonomyLoopService> _logger;
 
     /// <summary>Creates the loop service.</summary>
+    /// <param name="objectives">The objective store the loop sweeps.</param>
+    /// <param name="harness">The iteration harness (composed by <c>AddNexoAutonomy</c>).</param>
+    /// <param name="settings">Loop-level settings: cadence, batch size, repair policy, references.</param>
+    /// <param name="logger">Logger.</param>
+    /// <param name="proposals">Optional live proposer; null replays recorded proposals beside each objective.</param>
+    /// <param name="autonomyOptions">
+    /// Host options (<c>Nexo:Autonomy</c>). Null only for hand-composed loops driven through
+    /// <see cref="SweepAsync"/>; the timer-driven loop refuses to start without them.
+    /// </param>
     public AutonomyLoopService(
         IObjectiveStore objectives,
         AutonomousIterationHarness harness,
         AutonomyLoopSettings settings,
         ILogger<AutonomyLoopService> logger,
-        IProposalSource? proposals = null)
+        IProposalSource? proposals = null,
+        IOptions<NexoAutonomyOptions>? autonomyOptions = null)
     {
         _objectives = objectives ?? throw new ArgumentNullException(nameof(objectives));
         _harness = harness ?? throw new ArgumentNullException(nameof(harness));
         _settings = settings ?? throw new ArgumentNullException(nameof(settings));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _proposals = proposals;
+        _autonomy = autonomyOptions?.Value;
     }
 
     /// <inheritdoc />
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        if (_autonomy is null)
+        {
+            // Fail-closed: the standing loop has exactly one master switch, Nexo:Autonomy:Enabled,
+            // and a loop composed without host options has no such switch. Sweeping by hand
+            // (SweepAsync) stays available for one-shot drivers.
+            _logger.LogWarning(
+                "Autonomy loop not started: no {Section} options were supplied, so there is no host "
+                + "switch governing it. Compose it with AddNexoAutonomy(configuration) or drive SweepAsync directly.",
+                NexoAutonomyOptions.SectionName);
+            return;
+        }
+
+        if (!_autonomy.Enabled)
+        {
+            _logger.LogInformation(
+                "Autonomy loop not started: {Section}:Enabled=false (IntervalSeconds={Interval})",
+                NexoAutonomyOptions.SectionName, _settings.IntervalSeconds);
+            return;
+        }
+
         if (_settings.IntervalSeconds <= 0)
         {
             _logger.LogInformation(
@@ -89,9 +155,13 @@ public sealed class AutonomyLoopService : BackgroundService
             return;
         }
 
+        // The hold reported here is the one the harness ENFORCES (AddNexoAutonomy passes the
+        // same option into it) — never a loop-level copy that could disagree.
         _logger.LogInformation(
-            "Autonomy loop starting: every {Interval}s, holdAdmission={Hold}",
-            _settings.IntervalSeconds, _settings.HoldAdmission);
+            "Autonomy loop starting: every {Interval}s, holdAdmission={Hold} (enforced by the harness), "
+            + "sessions={Sessions}, buildInSession={Build}, executeInSession={Execute}",
+            _settings.IntervalSeconds, _autonomy.HoldAdmission, _autonomy.UseSandboxSessions,
+            _autonomy.BuildCandidateInSession, _autonomy.ExecuteCandidateInSession);
 
         using var timer = new PeriodicTimer(TimeSpan.FromSeconds(_settings.IntervalSeconds));
         try
@@ -217,6 +287,22 @@ public sealed class AutonomyLoopService : BackgroundService
             // is a one-line compile slip, and until this it was terminal after one attempt.
             if (result.Outcome != IterationOutcome.ExplainedFailure)
                 return;
+            if (result.Decision is { } decision && ProposedBrickHandle.RefusedInProcessExecution(decision))
+            {
+                // Not a candidate defect and not repairable: the gate executed the loop's
+                // identity-only handle IN THIS PROCESS (no execution backend, i.e.
+                // ExecuteCandidateInSession=false) and the handle refused, as it must. Handing
+                // that refusal to the proposer as feedback would ask a model to fix the host's
+                // wiring. It terminates here as the explained failure it is.
+                _logger.LogError(
+                    "Objective {Id}: the certification gate ran the proposed candidate IN-PROCESS and the "
+                    + "identity handle refused. This is host wiring, not the candidate: the loop's candidates "
+                    + "execute only inside an attested session. Set {Section}:UseSandboxSessions, "
+                    + ":BuildCandidateInSession and :ExecuteCandidateInSession to true (with a SessionImage). "
+                    + "Nothing was sent to the proposer.",
+                    objective.Id, NexoAutonomyOptions.SectionName);
+                return;
+            }
             var repairable = result.Decision is not null || result.BuildDiagnostics is not null;
             if (!repairable)
                 return;
@@ -268,34 +354,77 @@ public sealed class AutonomyLoopService : BackgroundService
             // The proposer signature is the provenance channel (R4.1): it rides the lineage
             // and is hash-bound into the certificate's generation-depth input.
             Lineage = GenerationLineage.Child(GenerationLineage.HumanAuthored, proposal.ProposerSignature),
-            SessionSpec = new SandboxSpec(
-                Image: _settings.SessionImage,
-                // No mounts: sessions may be sibling containers on another daemon, and the
-                // candidate travels in over ExecAsync rather than through the filesystem.
-                Mounts: Array.Empty<Mount>(),
-                Network: NetworkAccess.None,
-                Command: new[] { "sleep", "600" },
-                Limits: new ResourceLimits(Memory: "512m", Pids: 128, Cpus: "1"))
-            {
-                // The declared write surface: the backend seals the rootfs read-only and
-                // gives back exactly these as ephemeral scratch, so the in-session build
-                // and execution legs work and anything writing elsewhere fails loudly.
-                ScratchPaths = SessionScratchPaths.Default,
-            },
+            SessionSpec = BuildSessionSpec(),
         };
 
-        var candidate = new ProposalCandidate
+        // The project file is a compile-time input only; nothing reads it after the
+        // iteration, so it must not outlive it (one sweep used to leak one per objective).
+        var projectPath = CleanProjectFile();
+        try
         {
-            Brick = new ProposedBrickHandle(witness.BrickId),
-            SourceCode = proposal.SourceCode,
-            Witness = witness,
-            ProjectPath = CleanProjectFile(),
-            CompilationReferences = _settings.CompilationReferences,
-            BrickTypeName = proposal.TypeName,
-        };
+            var candidate = new ProposalCandidate
+            {
+                Brick = new ProposedBrickHandle(witness.BrickId),
+                SourceCode = proposal.SourceCode,
+                Witness = witness,
+                ProjectPath = projectPath,
+                CompilationReferences = _settings.CompilationReferences,
+                BrickTypeName = proposal.TypeName,
+            };
 
-        return await _harness.RunIterationAsync(context, candidate, cancellationToken)
-            .ConfigureAwait(false);
+            return await _harness.RunIterationAsync(context, candidate, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        finally
+        {
+            try
+            {
+                File.Delete(projectPath);
+            }
+            catch (IOException)
+            {
+                // Best effort: a locked temp file is not worth failing the iteration over.
+            }
+            catch (UnauthorizedAccessException)
+            {
+            }
+        }
+    }
+
+    /// <summary>
+    /// The iteration's session spec, or null when the host does not use sessions. Under host
+    /// options, sessions follow <see cref="NexoAutonomyOptions.UseSandboxSessions"/> exactly —
+    /// no spec is built for a host that said no — with the image from the loop settings, else
+    /// the host options (which the validator guarantees is set when sessions are on). A
+    /// hand-composed loop (no options) opens a session when its settings name an image.
+    /// </summary>
+    private SandboxSpec? BuildSessionSpec()
+    {
+        var useSessions = _autonomy?.UseSandboxSessions ?? _settings.SessionImage is not null;
+        if (!useSessions)
+            return null;
+
+        var ceilingSeconds = _autonomy?.IterationCeilingSeconds ?? OptionDefaults.IterationCeilingSeconds;
+        return new SandboxSpec(
+            Image: _settings.SessionImage ?? _autonomy?.SessionImage,
+            // No mounts: sessions may be sibling containers on another daemon, and the
+            // candidate travels in over ExecAsync rather than through the filesystem.
+            Mounts: Array.Empty<Mount>(),
+            Network: NetworkAccess.None,
+            // Keepalive outlives the iteration ceiling by a margin (see the constant); the
+            // ceiling itself, not the keepalive, is what ends a runaway iteration.
+            Command: new[]
+            {
+                "sleep",
+                (ceilingSeconds + SessionKeepaliveMarginSeconds).ToString(System.Globalization.CultureInfo.InvariantCulture),
+            },
+            Limits: new ResourceLimits(Memory: "512m", Pids: 128, Cpus: "1"))
+        {
+            // The declared write surface: the backend seals the rootfs read-only and
+            // gives back exactly these as ephemeral scratch, so the in-session build
+            // and execution legs work and anything writing elsewhere fails loudly.
+            ScratchPaths = SessionScratchPaths.Default,
+        };
     }
 
     private static string CleanProjectFile()

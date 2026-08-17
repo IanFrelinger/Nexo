@@ -19,7 +19,7 @@ public sealed class RollbackCommand : Command
         var adaptationIdArg = new Argument<string?>("adaptation-id", "Adaptation ID to roll back");
         var toSnapshotOpt = new Option<string?>("--to-snapshot", "Snapshot ID to restore to");
         var previewOpt = new Option<bool>("--preview", () => false, "Preview rollback impact without executing");
-        var storePathOpt = new Option<string?>("--store-path", "Directory for nexo dbs (default: repo root)");
+        var storePathOpt = new Option<string?>("--store-path", "Directory for nexo dbs (default: NEXO_STATE_DIR, else <repo root>/.nexo/state)");
 
         AddArgument(adaptationIdArg);
         AddOption(toSnapshotOpt);
@@ -41,7 +41,7 @@ public sealed class RollbackCommand : Command
         var repoRoot = RepoPathResolver.FindRepoRoot();
         var storePath = !string.IsNullOrWhiteSpace(storePathOverride)
             ? Path.Combine(Path.GetFullPath(storePathOverride), "nexo-patterns.db")
-            : Path.Combine(repoRoot, "nexo-patterns.db");
+            : Path.Combine(RepoPathResolver.ResolveStateDirectory(repoRoot), "nexo-patterns.db");
 
         var services = new ServiceCollection()
             .AddLogging(b => b.AddConsole().SetMinimumLevel(LogLevel.Warning))

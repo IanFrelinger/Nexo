@@ -1,3 +1,8 @@
+# DORMANT: manual-only since 2026-08-11 (push trigger commented out below); last 15 automatic runs
+# were all red on the product assertion described under DISABLED. Kept because it is the only
+# Windows/macOS matrix in the repo and because scope=playground / scope=persistence replaced the
+# deleted runtime-studio-playground.yml and test-persistence-multi-os.yml (2026-08-16, PR ci/workflow-pruning).
+#
 # Cross-platform test server: one trigger runs build + test on Mac, Windows, and Linux.
 # Use this when you want to run tests on all platforms without changing hosts.
 # Trigger: Actions → Cross-Platform Tests → Run workflow, or: gh workflow run "Cross-Platform Tests"

@@ -5,6 +5,7 @@ param(
     [string]$Mode = "check",
     [switch]$IncludeOptional,
     [switch]$Yes,
+    [switch]$Tune,
     [switch]$SkipRuntimeStudioTune
 )
 
@@ -220,7 +221,16 @@ function Invoke-DependencyCheck {
     Write-Host "Dependency check passed."
 }
 
+# Opt-in (-Tune). The benchmark runs `nexo workflow optimize` against local Ollama models for
+# several minutes (needs Git Bash); the tuned ModelName values land in the gitignored
+# .nexo\runtime-studio\agent_set.local.json (seeded from the tracked
+# apps\runtime-studio\config\agent_set.local.json), so `-Mode all` never edits a tracked file.
 function Invoke-RuntimeStudioAutoTune {
+    if (-not $Tune.IsPresent) {
+        Write-Host "Runtime Studio hardware tune not requested (pass -Tune to run the optional multi-minute Ollama benchmark; requires Git Bash)."
+        return
+    }
+
     if ($SkipRuntimeStudioTune.IsPresent) {
         Write-Host "Skipping Runtime Studio hardware tune (-SkipRuntimeStudioTune)."
         return
@@ -274,7 +284,7 @@ Install Git for Windows, or run manually from repo root:
 
     Write-Host ""
     Write-Host "Runtime Studio: benchmarking local models/compositions (bounded budget). This may take several minutes."
-    Write-Host "To skip next time: -SkipRuntimeStudioTune on setup.ps1, or set NEXO_SKIP_RUNTIME_STUDIO_TUNE=1."
+    Write-Host "Tuned agent set is written to .nexo\runtime-studio\agent_set.local.json (gitignored)."
     Write-Host ""
 
     Push-Location $RepoRoot

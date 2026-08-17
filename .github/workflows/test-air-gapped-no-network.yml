@@ -1,3 +1,9 @@
+# DORMANT: manual-only and never green — all 11 recorded runs (2026-03-08 .. 2026-05-23) failed,
+# most recently with MSB1011 ("more than one project or solution file") raised by the
+# `nexo test multi-env` step, i.e. a CLI/harness defect rather than an air-gap regression.
+# Kept because docs/production-readiness/*HardeningPlan-v1.md cite it; treat it as an unproven
+# claim until a dispatch is green. 2026-08-16, PR ci/workflow-pruning.
+#
 # Air-gapped multi-env: run tests with --network none to validate no network access.
 # Proves tests pass in air-gapped deployment. Run from CI or manually.
 name: Air-Gapped Multi-Env Tests

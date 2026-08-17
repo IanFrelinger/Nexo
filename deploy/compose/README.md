@@ -22,6 +22,6 @@ Build contexts and repo bind mounts inside these files point at the repository r
 | `docker-compose.ollama.gpu.override.yml` | Override: GPU acceleration for Ollama | `docs/Configuration.md` |
 | `docker-compose.cloud-multi-tenant.yml` | Cloud multi-tenant deployment shape | `docs/DistributionModels.md` |
 | `docker-compose.private-single-tenant.yml` | Private single-tenant deployment shape | `docs/DistributionModels.md` |
-| `docker-compose.ephemeral.yml` | Ephemeral deployment shape | `docs/DistributionModels.md` |
+| `docker-compose.ephemeral.yml` | Disposable Ollama (+ optional Postgres, `--profile db`) plus a `nexo` CLI service built from `.docker/Dockerfile.cli` (`run --rm nexo ...`) | `docs/DistributionModels.md` |
 | `docker-compose.provenance.yml` | Provenance graph demo | `scripts/demo-provenance-graph.sh` |
 | `docker-compose.test.yml` | Cached test-runner image | `.docker/Dockerfile.test-caching` |

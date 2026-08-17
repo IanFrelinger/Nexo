@@ -547,7 +547,7 @@ These are smaller items that should be addressed opportunistically alongside the
 3. ~~Add proper failure aggregation in summary job~~ **Done.**
 4. ~~Fix Windows `|| true`~~ **N/A / resolved** in current workflow layout.
 
-**Files:** `.github/workflows/test-caching-multi-env.yml`  
+**Files:** `test-caching-multi-env.yml` (workflow deleted 2026-08-16 — muted since 2026-08-11 and red on every recorded run; see `docs/CiGateInventory.md`, "Pruning")  
 **Risk:** Low — failures now surface instead of being masked.
 
 ---

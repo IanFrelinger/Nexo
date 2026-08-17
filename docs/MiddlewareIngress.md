@@ -11,7 +11,7 @@ This document closes the operational gaps around **multi-transport middleware**:
 | Operator echo | `GET /api/middleware/correlation-echo` | Quick sanity check. |
 | Operator snapshot | `GET /api/middleware/ingress-context` | JSON view of mapped ingress (tests + debugging). |
 | Catalog | `GET /api/middleware/ingress-catalog` | Static list of ingress seams (HTTP, Forge, WS lab, SMS lab, Swagger). |
-| OpenAPI | `/swagger/v1/swagger.json`, Swagger UI | Contract visibility for integrators. |
+| OpenAPI | `/swagger/v1/swagger.json`, Swagger UI | Contract visibility for integrators. Served only in `Development` or with `Nexo__Api__EnableSwagger=true` (`docs/Configuration.md`, "Nexo.API host"). |
 | WebSocket lab | `GET /ws/v1/echo` | Feature-flagged echo (JSON hello + text echo). |
 | SMS lab | `POST /api/ingress/sms/simulate` | Parses `YES <token>`; in-memory idempotent store. **Not** signed AWS callbacks. |
 | AWS SNS webhook | `POST /api/ingress/sms/sns` | Optional signed SNS → same approval store (`Nexo.Ingress.AwsSns` helpers). |
@@ -95,7 +95,7 @@ From repo root against a running API:
 NEXO_BASE_URL=http://127.0.0.1:8080 ./scripts/middleware-ingress-smoke.sh
 ```
 
-Set `RUN_SMS_SMOKE=1` only when `EnableSmsSimulationIngress` is true on the server.
+Set `RUN_SMS_SMOKE=1` only when `EnableSmsSimulationIngress` is true on the server. The Swagger step needs the server started in `Development` or with `Nexo__Api__EnableSwagger=true`.
 
 ## Tests
 

@@ -66,8 +66,10 @@ if [[ -z "${NO_BUILD:-}" ]]; then
 fi
 
 echo "Starting stack..."
+# Keep stderr: a HEALTHCHECK that never goes healthy used to be swallowed here and burn ~90 s
+# in the fallback loop with no hint why.
 set +e
-"${DC[@]}" up -d --wait 2>/dev/null
+"${DC[@]}" up -d --wait
 WAIT_RC=$?
 set -e
 

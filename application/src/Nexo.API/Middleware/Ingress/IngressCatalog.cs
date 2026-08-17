@@ -10,6 +10,7 @@ public static class IngressCatalog
     [
         new IngressCatalogEntry("HttpApi", "/api/*", "Primary REST ingress via MapNexoEndpoints (MediatR-backed handlers)."),
         new IngressCatalogEntry("Health", "/health", "Liveness probe."),
+        new IngressCatalogEntry("Ready", "/ready", "Readiness probe (503 while starting or stopping)."),
         new IngressCatalogEntry("OpenApi", "/swagger/v1/swagger.json", "Swagger/OpenAPI document when enabled."),
         new IngressCatalogEntry("MiddlewareIngress", "/api/middleware/*", "Correlation echo, ingress catalog, ingress context snapshot."),
         new IngressCatalogEntry("WebSocketLab", "/ws/v1/echo", "Optional lab echo (feature-flagged)."),

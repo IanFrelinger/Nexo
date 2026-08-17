@@ -45,6 +45,9 @@ permissions:
 
 jobs:
   publish:
+    # Forks: a push to master would otherwise try to publish nexo-cli / nexo-api to the
+    # fork's own GHCR namespace. Only the upstream owner publishes (see docs/CiSecrets.md).
+    if: github.repository_owner == 'IanFrelinger'
     uses: ./.github/workflows/reusable-container-publish.yml
     secrets: inherit
     with:

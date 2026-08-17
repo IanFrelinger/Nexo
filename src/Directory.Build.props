@@ -34,6 +34,6 @@
   </PropertyGroup>
 
   <ItemGroup Condition="'$(NexoIncludeDomainBrickGlobalUsing)' == 'true'">
-    <Compile Include="$(MSBuildThisFileDirectory)../build/GlobalUsings.DomainBrick.cs" Link="GlobalUsings.DomainBrick.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Nexo.Compat/GlobalUsings.DomainBrick.cs" Link="GlobalUsings.DomainBrick.cs" />
   </ItemGroup>
 </Project>

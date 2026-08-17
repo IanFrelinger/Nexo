@@ -118,6 +118,58 @@ public sealed class RepoPathResolverTests : IDisposable
             .Should().Be(Directory.GetCurrentDirectory());
     }
 
+    // ------------------------------------------------- ResolveStateDirectory
+
+    [Fact]
+    public void State_defaults_to_dot_nexo_state_under_the_root_and_creates_it()
+    {
+        var repo = RepoWithSln();
+
+        var state = RepoPathResolver.ResolveStateDirectory(repo, configuredStateDirectory: null);
+
+        state.Should().Be(Path.Combine(repo, ".nexo", "state"),
+            "LiteDB stores must not land in the CWD / repo root (they used to litter it and get lost on container recreate)");
+        Directory.Exists(state).Should().BeTrue("LiteDB does not create parent directories, so the resolver must");
+    }
+
+    [Fact]
+    public void Configured_state_directory_wins_absolute_or_relative_to_the_root()
+    {
+        var repo = RepoWithSln();
+        var elsewhere = Dir("elsewhere");
+
+        RepoPathResolver.ResolveStateDirectory(repo, elsewhere).Should().Be(elsewhere,
+            "NEXO_STATE_DIR is how compose/k8s point state at a mounted volume");
+        RepoPathResolver.ResolveStateDirectory(repo, "var/state").Should().Be(Path.Combine(repo, "var", "state"),
+            "a relative override hangs off the root, not the CWD");
+    }
+
+    [Fact]
+    public void Legacy_root_layout_is_kept_until_the_new_directory_exists()
+    {
+        var repo = RepoWithSln();
+        File.WriteAllText(Path.Combine(repo, "nexo-patterns.db"), "");
+
+        RepoPathResolver.ResolveStateDirectory(repo, configuredStateDirectory: null).Should().Be(repo,
+            "an install with nexo-*.db already at the root must keep reading its data instead of silently starting fresh");
+        Directory.Exists(Path.Combine(repo, ".nexo", "state")).Should().BeFalse("the legacy branch must not create the new directory, or the next call would flip");
+
+        Directory.CreateDirectory(Path.Combine(repo, ".nexo", "state"));
+        RepoPathResolver.ResolveStateDirectory(repo, configuredStateDirectory: null).Should().Be(Path.Combine(repo, ".nexo", "state"),
+            "once the operator has migrated (created .nexo/state), the new layout wins even if stray root files remain");
+    }
+
+    [Fact]
+    public void Configured_state_directory_ignores_legacy_root_files()
+    {
+        var repo = RepoWithSln();
+        File.WriteAllText(Path.Combine(repo, "nexo-adaptation.db"), "");
+        var mounted = Dir("mounted-volume");
+
+        RepoPathResolver.ResolveStateDirectory(repo, mounted).Should().Be(mounted,
+            "an explicit location is an explicit decision; the legacy fallback only applies to the default");
+    }
+
     private string RepoWithSln()
     {
         var repo = Dir("repo");

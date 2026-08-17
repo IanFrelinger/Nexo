@@ -20,7 +20,7 @@ public static class RollbackServiceCollectionExtensions
         services.AddSingleton<IDependencyGraph, DependencyGraph>();
         services.AddSingleton<ISnapshotStore>(sp =>
         {
-            var path = snapshotBasePath ?? Path.Combine(RepoPathResolver.FindRepoRoot(), "nexo-snapshots");
+            var path = snapshotBasePath ?? Path.Combine(RepoPathResolver.ResolveStateDirectory(), "nexo-snapshots");
             return new FileSnapshotStore(path);
         });
         services.AddSingleton<IRollbackManager, RollbackManager>();
