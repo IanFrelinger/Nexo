@@ -45,22 +45,21 @@ Documentation index for the Nexo platform. Start here to find what you need.
 - `.github/workflows/onboarding-quickstart-gate.yml` — runs first-run onboarding commands in native + container lanes.
 - `.github/workflows/container-image-gate.yml` — container image buildability and smoke-run gate.
 - `.github/workflows/distribution-matrix-gate.yml` — **parallel** gates: NuGet local-pack consumer, CLI image + subcommand help smoke, API image + `curl` `/health` + `/api/status`, `Nexo.Client` in-process test, pack-graph alignment (plus **weekly** schedule).
-- `docs/CiGateInventory.md` — one-row-per-workflow inventory with blocking/advisory/release-tier notes and consolidation recommendations.
+- `docs/CiGateInventory.md` — one-row-per-workflow trigger map (62 files) and the enforced branch-protection state (`cert-gate` is the only required check).
 - `.github/workflows/release.yml` — **one entry**: tag `v*.*.*` → GHCR (`nexo-cli`, `nexo-api`) + NuGet; run summary with pin lines.
 - `.github/workflows/container-image-publish.yml` — GHCR on **main** path-filtered pushes + manual (tags use `release.yml` only).
 - `.github/workflows/release-nuget.yml` — **NuGet-only** manual dispatch; after push to nuget.org, **Verify NuGet consumer** (same reusable job as **release.yml**).
 - `.github/workflows/docs-link-check.yml` — **lychee** link validation on **`README.md`** + **`docs/**/*.md`** (loopback URLs ignored via **`.lycheeignore`**).
 - `.github/workflows/onboarding-docs-guard.yml` — prevent startup-doc regressions in quick-start commands.
-- `.github/workflows/cross-platform-tests.yml` — cross-platform tests on Ubuntu, macOS, and Windows.
+- `.github/workflows/cross-platform-tests.yml` — cross-platform tests on Ubuntu, macOS, and Windows (manual-only / dormant; `scope=persistence` and `scope=playground` replace the deleted persistence and playground workflows).
 - `.github/workflows/runtime-release-gate.yml` — runtime release quality gate.
-- `.github/workflows/runtime-release-promotion.yml` — runtime release promotion workflow.
+- `.github/workflows/runtime-release-promotion.yml` — runtime release promotion workflow (manual-only / dormant).
 - `.github/workflows/installer-bruteforce-gate.yml` — installer robustness gate.
 - `.github/workflows/perf-certification.yml` — performance certification workflow.
-- `.github/workflows/workflow-regression-gate.yml` — workflow regression gate.
-- `.github/workflows/test-trust-multi-env.yml` — trust tests across multiple Docker environments.
-- `.github/workflows/test-caching-multi-env.yml` — caching tests across multiple Docker environments.
-- `.github/workflows/test-persistence-multi-os.yml` — persistence tests across multiple OS targets.
-- `.github/workflows/test-air-gapped-no-network.yml` — air-gapped validation with zero network egress.
+- `.github/workflows/workflow-regression-gate.yml` — workflow regression gate (manual-only / dormant).
+- `.github/workflows/test-trust-multi-env.yml` — trust tests across multiple Docker environments (manual-only / dormant).
+- `.github/workflows/test-air-gapped-no-network.yml` — air-gapped validation with zero network egress (manual-only / dormant; never green — see the file header).
+- `docs/CiSecrets.md` — every secret / repository variable a workflow reads and what happens on a fork without it.
 - `docs/ReleaseCandidateChecklist-v1.md` — release candidate sign-off checklist.
 - `docs/Testing.md` — test guard rails, timeout policy, and workflow guidance.
 

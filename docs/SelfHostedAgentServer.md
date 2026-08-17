@@ -17,7 +17,7 @@ Not the Cursor IDE remote stack — Nexo is the framework that hosts agents over
 | `GET /api/status` | API + aggressiveness mode |
 | Background agents | Loaded from JSON; configurable path (`NEXO_BACKGROUND_AGENTS_CONFIG`) |
 
-The API process registers the same **dogfood runners** as `nexo background-agent daemon` (analysis, tests, self-extend), so scheduled agents can act on the **mounted repository**.
+The API process registers the same **dogfood runners** as `nexo background-agent daemon` (analysis, tests, self-extend), so scheduled agents can act on the **mounted repository**. The self-extender is **Passive by default** (observe only): it is armed by the aggressiveness mode file (`{"Mode":"active"}` written by `nexo background-agent mode set --value active`, path `NEXO_AGENT_MODE_PATH`, default `~/.nexo/agent-mode.json` — inside the container that is ephemeral, so point it at the mounted tree, e.g. `/work/.nexo/agent-mode.json`); a missing file, `{}` or an unknown value all read as Passive.
 
 ## Prerequisites
 

@@ -1,6 +1,16 @@
 # Configuration Reference
 
-Nexo configures via environment variables and optional `~/.nexo/config.json`. This document lists the primary configuration options. Additional options may be available via `appsettings.json` binding — see inline code comments for the full set.
+Nexo configures via environment variables and optional `~/.nexo/config.json`. This document lists the primary configuration options; see inline code comments for the full set. Read the next section before reaching for `appsettings.json`.
+
+## How `Nexo:*` options bind in the shipped hosts (read first)
+
+There are three kinds of `Nexo:*` option, and they do **not** read the same configuration:
+
+- **Kernel options — environment variables ONLY.** `AddNexo()` (`src/Nexo.Hosting/NexoServiceCollectionExtensions.cs`, `NexoServiceCollectionExtensions.AddNexo`) builds its **own** `IConfiguration` from `AddEnvironmentVariables()` alone and hands that to every module it composes. In **Nexo.API** and **Nexo.CLI** the options those modules bind therefore come from `Nexo__Section__Key` environment variables, and **`appsettings.json` does not reach them** — a `"Nexo": { "Meai": { ... } }` block in the API's `appsettings.json` is silently ignored. This covers at least `Nexo:Meai:*` / `Nexo:UseMeaiPipeline`, `Nexo:NodeCapabilityRuntime:*`, `Nexo:RemoteCapabilities:*`, `Nexo:RunPod:*`, `Nexo:WorkloadScaling:*` and `Nexo:MeshLab:WorkerExecutor:*`. Set them as `Nexo__Meai__OllamaBaseUrl=...` etc. (the compose stacks do exactly this). Documented as a known v0 limitation; the fix is architectural, not a docs fix.
+- **Host-owned options — the host's configuration (`appsettings.json` + environment).** Sections the API binds itself from `builder.Configuration` in `application/src/Nexo.API/Program.cs` — `Nexo:Security:*`, `Nexo:Execution:*`, `Nexo:Barriers:*`, `Nexo:Routing:*`, `Nexo:Mcp:*`, `Nexo:A2A:*`, `Nexo:GrpcTransport`, `Nexo:Product`, `Nexo:Entitlements`, `Nexo:PrivateLicense`, `Nexo:PatternStorePath` — read `appsettings.json` and `Nexo__*` variables alike, with the usual precedence (environment wins).
+- **Host-composed options — whatever configuration you pass.** `Nexo:Autonomy:*` is bound by `AddNexoAutonomy(configuration)`, which the shipped hosts do not call; a host that composes the loop decides what it passes.
+
+The tables below list keys in `Nexo:A:B` form with the `Nexo__A__B` environment spelling beside them; whether a JSON file can supply the key at all is decided by which of the three groups above the section belongs to, not by the form the table happens to use.
 
 ## Core
 
@@ -9,7 +19,7 @@ Nexo configures via environment variables and optional `~/.nexo/config.json`. Th
 | `NEXO_CONFIG_PATH` | Path to config file | `~/.nexo/config.json` |
 | `NEXO_STATE_DIR` | Runtime-state directory for LiteDB stores and snapshots (see "Runtime state" below); absolute, or relative to the resolved repo/app root | `<repo or app root>/.nexo/state` |
 | `NEXO_MESH_INSTANCES_PATH` | Path to **`instances.json`** for **`nexo mesh`** discovery | `~/.nexo/instances.json` |
-| `NEXO_MESH_TRUST_POLICY` | Discovery filter: **`any`**, **`allowlist`** (only **`admitted: true`** peers), **`trusted-only`**, **`trusted-preferred`** | **`any`** for discovery (see **`MeshTrustPolicyConfiguration`**) |
+| `NEXO_MESH_TRUST_POLICY` | Peer trust policy for `nexo mesh` discovery **and** capability requests: **`any`**, **`allowlist`** (only **`admitted: true`** peers), **`trusted-only`**, **`trusted-preferred`**; any other value normalizes to `trusted-preferred` (fail-closed). Falls back to `NEXO_PEER_TRUST_POLICY` when unset (`MeshTrustPolicyConfiguration`) | unset → **`any`** for discovery, **`trusted-preferred`** for capability requests |
 | `NEXO_MESH_DIRECTOR_BASE_URL` | Base URL for **commercial mesh director CLI** (`dotnet run --project commercial/src/Nexo.Commercial.MeshDirector -- director ...`) HTTP calls | unset |
 | `NEXO_MESH_API_KEY` | Optional **`X-Nexo-Api-Key`** for director CLI | unset |
 | `NEXO_MESH_MUTATING_TOKEN` | Optional **`X-Nexo-Mesh-Token`** for mutating mesh routes on the hub | unset |
@@ -50,8 +60,9 @@ export NEXO_STRICT_MODE=1
 
 # Fine-grained: strict for providers only
 export NEXO_STRICT_MODE=0
-# then in appsettings.json:
-# { "Nexo": { "StrictMode": { "FailFastOnProviderErrors": true } } }
+# then, in your host's composition (the sub-flags are set programmatically; the shipped hosts
+# do not bind Nexo:StrictMode from appsettings.json — see "How Nexo:* options bind" above):
+# services.AddNexo(o => o.StrictMode.FailFastOnProviderErrors = true);
 ```
 
 ## Runtime state (`NEXO_STATE_DIR`)
@@ -106,6 +117,18 @@ Notes:
 - If `AuthorizationMode` is set to anything except `None`, built-in auth mode takes precedence over legacy `RequireApiKeyForMutatingEndpoints`.
 - `RequireApiKeyForMutatingEndpoints` remains for backward compatibility with existing deployments. Like every other mode it fails closed when its credential is missing.
 - `Nexo__Security__ApiKey` / `BearerToken` / `BasicAuthPassword` are compared in constant time against the configured plaintext value; they are not hashed at rest. Keep them in environment / secret stores, not in committed `appsettings.json`.
+
+## Observability (`NEXO_LOG_JSON`, `OTEL_*`)
+
+Shipped hosts (`Nexo.API`, `nexo background-agent daemon`) log human-readable console lines and keep metrics in an in-process `MemoryMetricsCollector` by default. Structured output and export are opt-in and read through the **host** configuration (`builder.Configuration` in `Program.cs`), so `appsettings.json`, environment variables and `UseSetting` all work for these keys, unlike the env-only kernel `Nexo:*` options.
+
+| Variable / config key | Description | Default |
+|------------------------|-------------|---------|
+| `NEXO_LOG_JSON` (or `Nexo:Logging:Json` / `Nexo__Logging__Json`) | `1` / `true` switches the console logger to `AddJsonConsole` (one JSON object per line: `Timestamp` (UTC, ISO-8601), `EventId`, `LogLevel`, `Category`, `Message`, `State`, scopes). Applies to `Nexo.API` and the CLI daemon; other CLI commands keep plain console output | off (plain console) |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | Standard OTel variable. When set, `Nexo.API` calls `AddNexoOpenTelemetry` and exports **traces** (ASP.NET Core + HttpClient instrumentation) and **metrics** (the `Nexo` meter plus ASP.NET Core / HttpClient) over OTLP; `IMetricsCollector` becomes `OpenTelemetryMetricsCollector`. An unreachable collector never fails startup — the exporter batches in the background and logs failures via OTel self-diagnostics | unset (no export, in-process `MemoryMetricsCollector`) |
+| `OTEL_EXPORTER_OTLP_PROTOCOL`, `OTEL_EXPORTER_OTLP_HEADERS`, `OTEL_EXPORTER_OTLP_TIMEOUT`, `OTEL_SERVICE_NAME`, `OTEL_RESOURCE_ATTRIBUTES` | Honoured by the OpenTelemetry SDK as usual once export is on. `OTEL_SERVICE_NAME` defaults to `Nexo.API` when unset | SDK defaults (`grpc`, 10 s, `Nexo.API`) |
+
+Metric shape over OTLP: `IMetricsCollector` keys (for example `ncr.model_load.success`, `ncr.ollama.chat.duration`) are **not** individual OTLP instruments; they arrive as attribute values on two instruments from the `Nexo` meter — `nexo.operation.duration` (histogram, ms, attribute `operation`) and `nexo.operation.count` (counter, attribute `counter`). See `docs/NcrReleaseSLOs.md` for how the SLO names map, and `docs/DEPLOYMENT.md` § Observability for compose usage.
 
 ## Remote execution surface (`Nexo__Execution__*`)
 
@@ -287,7 +310,7 @@ Remote brick catalogs now use an in-memory stale capability snapshot fallback:
 
 ### NCR Telemetry SLO Suggestions (v1)
 
-Suggested starting SLOs/alerts using `ncr.*` metrics:
+Suggested starting SLOs/alerts using `ncr.*` metrics (these are `IMetricsCollector` keys; over OTLP they appear as `operation` / `counter` attribute values on `nexo.operation.duration` / `nexo.operation.count` — see "Observability" above and `docs/NcrReleaseSLOs.md`):
 - `ncr.model_resolution.target.Escalate`: alert if escalation ratio > 20% over 15 minutes for user-facing workloads.
 - `ncr.model_load.error` and `ncr.ollama.*.error`: alert on sustained non-zero error rate over 5 minutes.
 - `ncr.ollama.chat.duration`: track p95/p99; alert if p95 exceeds your interactive budget for 10+ minutes.
@@ -321,10 +344,10 @@ For a **layered breakdown** of mesh capabilities (identity, registry, transport,
 |----------|-------------|---------|
 | `NEXO_MESH_PEER_ID` | Mesh peer identifier | random GUID |
 | `NEXO_MESH_INSTANCES_PATH` | Path to file-based mesh instance registry | unset |
-| `NEXO_TRUSTED_PEER_IDS` | Comma-separated peer IDs trusted for execution | unset (all peers trusted) |
+| `NEXO_TRUSTED_PEER_IDS` | Comma-separated peer IDs trusted for execution (mesh + RunPod/peer capability routing) | unset (all peers trusted) |
 | `NEXO_UNTRUSTED_PEER_IDS` | Comma-separated peer IDs blocked from execution | unset |
-| `NEXO_MESH_TRUST_POLICY` | Mesh trust policy (`open`, `allowlist`, `denylist`) | `open` |
-| `NEXO_PEER_TRUST_POLICY` | Per-peer trust policy override | unset |
+| `NEXO_MESH_TRUST_POLICY` | Same variable as under **Core**: `any`, `allowlist`, `trusted-only`, `trusted-preferred` (unknown → `trusted-preferred`). There is no `open`/`denylist` value; use the peer-id lists above for that | unset (`any` for discovery, `trusted-preferred` for capability requests) |
+| `NEXO_PEER_TRUST_POLICY` | Fallback for `NEXO_MESH_TRUST_POLICY` when that is unset; same values | unset |
 | `NEXO_SHARED_ADAPTATIONS_PATH` | Path for shared adaptation artifacts across mesh | unset |
 
 ## RunPod + Capability Routing (`Nexo:RunPod:*`)
@@ -378,7 +401,14 @@ See `docs/runtime/ExecutionRouting.md` for detailed execution flow and resilienc
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `NEXO_BACKGROUND_AGENTS_CONFIG` | Path to background agent set JSON configuration | unset |
-| `NEXO_AGENT_MODE_PATH` | Path to file-based aggressiveness mode store | unset |
+| `NEXO_AGENT_MODE_PATH` | Path to the file-based aggressiveness mode store (`{"Mode":"passive"|"semi-active"|"active"|"ambient"}`). This file is what ARMS the extender: missing file, unreadable JSON, `{}` or an unknown value all read as **Passive** (observe only, fail-closed); the effective mode is logged when it changes | `~/.nexo/agent-mode.json` |
+| `NEXO_OBJECTIVES_ROOT` | Objective store root (`{status}/{id}.md` + witness/proposal siblings); read by `AddBackgroundAgents` and the Runtime Studio path resolver | `<cwd>/.nexo/runtime-studio/objectives` |
+| `NEXO_FORGE_ROOT` | Forge change-proposal queue root | `<cwd>/.nexo/runtime-studio/forge` |
+| `NEXO_OBSERVATIONS_PATH` | Path to the shared `observations.jsonl` | `<cwd>/.nexo/runtime-studio/observations.jsonl` |
+| `NEXO_CYCLE_EVENTS_PATH` | Path to `cycles.jsonl` (absolute or cwd-relative) | `<cwd>/.nexo/runtime-studio/cycles.jsonl` |
+| `NEXO_DASHBOARD_AUTH_TOKEN` | Shared secret for `nexo background-agent dashboard` (same as `--auth-token`); when set, requests need `?token=` or a Bearer header | unset (dashboard binds `127.0.0.1` only) |
+| `NEXO_SANDBOX_ROOT` | Sandbox root for confined tool paths (`PathAllowlist`, forge propose-change) when the world snapshot carries no `SandboxRoot`; also set by `nexo unity dev` | unset |
+| `NEXO_PATH_ALLOWLIST_EXTRA` | Comma/semicolon-separated extra path prefixes appended to the confined toolbox allowlist. Widening only — the default allowlist cannot be narrowed from here | unset |
 | `NEXO_EXTENSION_MAX_LINEAGE_DEPTH` | Extender ceiling (SX-AUDIT invariant D): max `ParentId` hops below a human-authored root an extender may sit and still extend. May only LOWER the built-in default. | 1 |
 | `NEXO_EXTENSION_MAX_UNATTENDED_CYCLES` | Extender ceiling: extend cycles since a human last armed the agent before it holds (re-arm: restart or `RearmExtension`). May only LOWER the default. | 8 |
 | `NEXO_EXTENSION_MAX_CYCLES_PER_HOUR` | Extender ceiling: extend cycles in any trailing hour. May only LOWER the default. | 4 |
@@ -386,14 +416,60 @@ See `docs/runtime/ExecutionRouting.md` for detailed execution flow and resilienc
 | `NEXO_OBSERVATION_FAIL_OPEN` | `1` = observation pipeline continues on store errors | unset |
 | `BING_SEARCH_KEY` | API key for Bing web search provider | unset (falls back to mock) |
 
-## Autonomy sessions (`Nexo__Autonomy__*`)
+## Autonomy loop and sessions (`Nexo:Autonomy:*`)
 
-Bound from the `Nexo:Autonomy` section (see `NexoAutonomyOptions` for the full set; the loop is off unless `Enabled=true`).
+Bound from the `Nexo:Autonomy` section by `AddNexoAutonomy(configuration)` — a host-composed surface: the shipped API/CLI hosts do not call it, so the configuration is whatever the composing host passes (the first-flight spike passes an in-memory set; a host that passes `builder.Configuration` gets `appsettings.json` + `Nexo__Autonomy__*`). See `NexoAutonomyOptions` for the full set and `ValidateNexoAutonomyOptions` for what refuses to boot. Nothing runs unless `Enabled=true`.
+
+**Recommended trio for anything beyond local development:** `UseSandboxSessions=true`, `BuildCandidateInSession=true`, `ExecuteCandidateInSession=true`, with a `SessionImage` (and, once you have read a certificate, its `SessionImageDigest`). All three default to **false** so that a bare `AddNexoAutonomy()` stays valid — but with `Enabled=true` and the execution leg off, the witness and mutation legs run model-proposed candidate and mutant code **in the host process**; `HoldAdmission` blocks the swap, not the execution. `AddNexoAutonomy` logs a warning at composition in that state, and the standing loop (`AddNexoAutonomyLoop`) additionally refuses to hand a proposer any "repair" for the resulting in-process refusal.
 
 | Variable / config key | Description | Default |
 |-----------------------|-------------|---------|
-| `Nexo__Autonomy__SessionImage` | Container image proposal sessions start from; required when `UseSandboxSessions=true`. Must already be present on the engine — sessions run with `--pull never` and never fetch an image | unset |
-| `Nexo__Autonomy__SessionImageDigest` | Optional pin on the session image's identity: the engine image ID (`sha256:…`) that `SessionImage` must resolve to — the same value attestation records and certificates carry as their `image-digest` input, so pin by copying it from a certificate you have read. When set, a session whose image resolves to anything else refuses to start (checked before `docker run` and again at attestation); a value not of the form `sha256:…` fails validation at boot | unset (capture only) |
+| `Nexo:Autonomy:Enabled` (`Nexo__Autonomy__Enabled`) | Master switch. Off means the standing loop's timer never starts and validation always passes | `false` |
+| `Nexo:Autonomy:UseSandboxSessions` (`Nexo__Autonomy__UseSandboxSessions`) | Open an attested container session per iteration. The standing loop builds a `SessionSpec` ONLY when this is true; requires `SessionImage` | `false` |
+| `Nexo:Autonomy:BuildCandidateInSession` (`Nexo__Autonomy__BuildCandidateInSession`) | Compile the candidate inside the session (`session-build` certificate input); iterations without a session then refuse fail-closed. Requires `UseSandboxSessions` | `false` |
+| `Nexo:Autonomy:ExecuteCandidateInSession` (`Nexo__Autonomy__ExecuteCandidateInSession`) | Run the witness, determinism and mutation legs inside the session (`session-execution` input) — untrusted candidate code never runs in-process. Requires `BuildCandidateInSession` | `false` |
+| `Nexo:Autonomy:SessionImage` (`Nexo__Autonomy__SessionImage`) | Container image proposal sessions start from; required when `UseSandboxSessions=true`. Must already be present on the engine — sessions run with `--pull never` and never fetch an image. The standing loop's own `AutonomyLoopSettings.SessionImage` takes precedence when set | unset |
+| `Nexo:Autonomy:SessionImageDigest` (`Nexo__Autonomy__SessionImageDigest`) | Optional pin on the session image's identity: the engine image ID (`sha256:…`) that `SessionImage` must resolve to — the same value attestation records and certificates carry as their `image-digest` input, so pin by copying it from a certificate you have read. When set, a session whose image resolves to anything else refuses to start (checked before `docker run` and again at attestation); a value not of the form `sha256:…` fails validation at boot | unset (capture only) |
+| `Nexo:Autonomy:HoldAdmission` (`Nexo__Autonomy__HoldAdmission`) | Certify fully, admit nothing without a human (`CertifiedButHeld` even at Tier 0). Enforced by the harness `AddNexoAutonomy` composes; the standing loop reports this same value and has no dial of its own | `true` |
+| `Nexo:Autonomy:IterationCeilingSeconds` (`Nexo__Autonomy__IterationCeilingSeconds`) | Absolute per-iteration wall-clock ceiling. The standing loop's session keepalive is this plus a 60 s margin, so the ceiling — not the container — ends a runaway iteration | `600` |
+| `Nexo:Autonomy:CadenceFloorSeconds`, `RetentionWindow`, `Watch*`, `LineageDemotionThreshold`, `ReaperSweepSeconds`, `DigestIntervalSeconds`, `ThroughputGuardFactor` | Swap cadence, rollback retention, watch-window thresholds, demotion, reaper and digest cadence — see `NexoAutonomyOptions` | see class |
+
+## Certification record signing (`NEXO_CERT_*`)
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `NEXO_CERT_DEV_HMAC_KEY` | HMAC key for signing **and verifying** brick and composition certification records (`CertificationRecordSigner`, `CompositionCertificationRecordSigner`, `Nexo.Certification.Contracts.CertificationRecordSigning`). **Unset means the COMMITTED, PUBLIC dev key** `CertificationRecordSigning.DefaultDevKey`: anyone with the source can forge a record that verifies, so certificates then prove integrity against accident, not against an adversary. Both signers log a warning at construction while the dev key is in effect (`UsesDevKey`). Same-owner cross-project reuse works by sharing this value; cross-organization trust needs the Ed25519 key below or PKI | unset (dev key; warns) |
+| `NEXO_CERT_ED25519_KEY` | Base64 Ed25519 private key; when set, records are dual-signed and carry the public key, and verification enforces the Ed25519 signature whenever a record has one | unset (HMAC-only) |
+
+## Workload scaling (`Nexo:WorkloadScaling:*`, `NEXO_WORKLOAD_*`)
+
+Kernel options (bound inside `AddNexo` — environment variables only in the shipped hosts). See [`WorkloadScaling.md`](WorkloadScaling.md).
+
+| Variable / config key | Description | Default |
+|-----------------------|-------------|---------|
+| `Nexo:WorkloadScaling:Provider` (`Nexo__WorkloadScaling__Provider`) | `null`, `kubernetes`/`k8s`, or `compose`/`docker-compose` | `null` (no-op scaler) |
+| `Nexo:WorkloadScaling:Enabled` (`Nexo__WorkloadScaling__Enabled`) | Enable scaling actions | `true` |
+| `NEXO_WORKLOAD_SCALER` | Env shortcut that overrides `Provider` after binding | unset |
+| `NEXO_WORKLOAD_SCALING_ENABLED` | `1`/`true` or `0`/`false` — overrides `Enabled` after binding; any other value leaves it alone | unset |
+| `NEXO_WORKLOAD_AUTOSCALE` | `1`/`true` starts `ElasticWorkloadAutoscaleService` (`Autoscale.Enabled`) | unset |
+
+## MCP and A2A protocol surfaces (`Nexo:Mcp:*`, `Nexo:A2A:*`)
+
+Host-owned options bound by Nexo.API from `builder.Configuration` (`appsettings.json` and `Nexo__Mcp__*` / `Nexo__A2A__*` alike). All four surfaces are **off by default** and expose nothing until enabled AND allowlisted; the agent-server compose passes the four `Enabled` flags through as `false`. Full reference: `docs/architecture/ProtocolIntegration-MCP-A2A.md`.
+
+| Section | Master switch | What else it needs |
+|---------|---------------|--------------------|
+| `Nexo:Mcp:Server` (`NexoMcpServerOptions`) | `Enabled` | `ExposedToolIds` allowlist (empty = zero tools), `ServerName`, `RepoRoot`/`OutputRoot`, `MaxConcurrentToolCalls`, per-tool `ArgumentOverrides` |
+| `Nexo:Mcp:Client` (`NexoMcpClientOptions`) | `Enabled` | `Servers[]` (`Name`, `Url`, optional `ApiKeyHeader` + `ApiKeyEnvVar` — the secret lives in the named env var, never in config, `AllowedTools`), `ConnectTimeout`, `ToolListRefreshInterval` |
+| `Nexo:A2A:Server` (`NexoA2AServerOptions`) | `Enabled` | `ExposedAgentIds` allowlist, `ExposeByCoordinationProtocol`, `PublicBaseUrl`, `PrimaryAgentId`, `AllowAnonymousAgentCard`, `DefaultExecutionTimeout` |
+| `Nexo:A2A:Transport` (`A2ATransportOptions`) | `Enabled` | `Endpoints[]` per remote URL prefix (API key env var names) |
+
+## Nexo.API host paths and license (`NEXO_DAILIES_PATH`, `NEXO_LICENSE_FILE`)
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `NEXO_DAILIES_PATH` | Directory the Director dailies endpoints read (`GET /api/director/dailies`); read from the API's configuration, so the config key `Nexo:DailiesPath` works too | `<app base directory>/dailies` (`/data/dailies` in the agent-server compose) |
+| `NEXO_LICENSE_FILE` | Path to the signed private-license JSON; overrides `Nexo:PrivateLicense:LicenseFilePath`. Relative paths resolve against the content root | unset (falls back to the config key) |
 
 ## Barriers (`Nexo__Barriers__*`)
 

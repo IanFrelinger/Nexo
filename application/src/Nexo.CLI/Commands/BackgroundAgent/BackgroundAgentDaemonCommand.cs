@@ -8,6 +8,7 @@ using Nexo.BackgroundAgents.HostRunners;
 using Nexo.BackgroundAgents.Optimization;
 using Nexo.BackgroundAgents.Testing;
 using Nexo.Hosting;
+using Nexo.Hosting.Sdk.Extensions;
 using Nexo.Runtime;
 using Nexo.Transport.Grpc;
 
@@ -61,6 +62,10 @@ public sealed class BackgroundAgentDaemonCommand
                         config.AddJsonFile(trimmedConfigPath!, optional: false, reloadOnChange: true);
                     }
                 })
+                // Host.CreateDefaultBuilder already wires the console provider; this only switches it
+                // to JSON lines when Nexo:Logging:Json=true or NEXO_LOG_JSON=1 (same flag as Nexo.API).
+                .ConfigureLogging((context, logging) =>
+                    logging.AddNexoJsonConsoleIfRequested(context.Configuration))
                 .ConfigureServices((context, services) =>
                 {
                     services.Configure<GrpcTransportOptions>(

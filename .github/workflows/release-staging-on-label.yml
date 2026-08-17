@@ -12,7 +12,8 @@ permissions:
 
 jobs:
   dispatch-staging-release:
-    if: github.event.label.name == 'release:staging'
+    # Owner guard: this job dispatches release.yml, which publishes GHCR images (docs/CiSecrets.md).
+    if: github.event.label.name == 'release:staging' && github.repository_owner == 'IanFrelinger'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7

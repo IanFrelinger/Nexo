@@ -17,7 +17,7 @@
 
 ### Required status checks
 
-- [ ] Branch protection on default branch requires: **`testing-strategy`**, **`domain-coverage`**, **`kernel-coverage`**, plus path-filtered gates (see `docs/GitHubBranchProtection.md`).
+- [ ] Branch protection on default branch requires: **`testing-strategy`**, **`kernel-coverage`**, plus path-filtered gates (see `docs/GitHubBranchProtection.md`).
 - [x] Check names documented for contributors — `docs/architecture/TestingModel.md`, `docs/GitHubBranchProtection.md`.
 
 ### RC workflows (before tag; not every PR)
@@ -32,7 +32,7 @@
 
 ### Coverage and quality
 
-- [x] Line coverage thresholds on critical kernel assemblies — see [Coverage gates v1](CoverageGates-v1.md) (`domain-coverage` 100%, `kernel-coverage` composite gate).
+- [x] Line coverage thresholds on critical kernel assemblies — see [Coverage gates v1](CoverageGates-v1.md) (`kernel-coverage` composite gate: Domain 100% + Infrastructure/Core.Application floors).
 - [ ] Branch coverage thresholds (optional ratchet; line floors enforced in CI today).
 - [ ] Static analysis or security scan in CI for appropriate components.
 

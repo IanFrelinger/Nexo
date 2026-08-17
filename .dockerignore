@@ -32,8 +32,7 @@ Thumbs.db
 # CI/CD (not needed in container)
 .github/
 
-# Docker files themselves
+# Docker files themselves (compose files live under deploy/compose/, not the repo root)
 .docker/
-docker-compose*.yml
 deploy/compose/
 Dockerfile*

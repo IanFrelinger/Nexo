@@ -79,6 +79,31 @@ LiteDB stores and snapshots (`nexo-patterns.db`, `nexo-adaptation.db`, `nexo-ada
 
 For an operations-level dry run—**same Compose topology and images** as the golden paths above—see **`docs/prod-dry-run.md`** and run **`make prod-dry-run`** or **`./scripts/prod-dry-run.sh`**.
 
+## Observability
+
+Out of the box the API container writes **human-readable console lines** (read them with `docker compose logs -f nexo-api`) and keeps metrics **in-process only** — nothing is exported. Both upgrades are opt-in through the host configuration (see `docs/Configuration.md` § Observability):
+
+| Want | Set on the `nexo-api` service (compose `environment:` or an override file) |
+|------|-------------------------------------------------------------------------------|
+| One JSON object per log line (for Loki / CloudWatch / Datadog agents) | `NEXO_LOG_JSON: "1"` — same flag works for `nexo background-agent daemon` |
+| Traces + metrics to an OpenTelemetry Collector | `OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317` (add `OTEL_SERVICE_NAME`, `OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf`, `OTEL_EXPORTER_OTLP_HEADERS` as your backend needs) |
+
+Example override next to the portal stack:
+
+```yaml
+# docker-compose.observability.override.yml
+services:
+  nexo-api:
+    environment:
+      NEXO_LOG_JSON: "1"
+      OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
+      OTEL_SERVICE_NAME: nexo-api
+```
+
+`docker compose -f deploy/compose/docker-compose.portal.yml -f docker-compose.observability.override.yml up -d`
+
+What is exported when the endpoint is set: ASP.NET Core request spans and HttpClient client spans (traces); ASP.NET Core / HttpClient metrics plus the `Nexo` meter, whose two instruments `nexo.operation.duration` and `nexo.operation.count` carry the `ncr.*` / `nexo.*` operation names as attributes (see `docs/NcrReleaseSLOs.md`). A collector that is down or unreachable does **not** fail startup or requests; the exporter drops batches and reports through OTel self-diagnostics. There is no Prometheus-style `/metrics` scrape endpoint in the shipped hosts (`GET /api/runtime-studio/metrics` is a backlog snapshot, not process telemetry) — use the collector's Prometheus exporter if you need pull-based scraping.
+
 ## CI vs production
 
 - **Green on `master`** does not imply every optional workflow gate ran (path filters). For a release, run **`runtime-release-gate`** (and your own smoke) on the **tag** you intend to ship.

@@ -48,6 +48,9 @@ services:
       NEXO_BACKGROUND_AGENTS_CONFIG: ${NEXO_BACKGROUND_AGENTS_CONFIG:-/work/apps/runtime-studio/config/agent_set.local.json}
       Nexo__Barriers__RequireExplicitBarrier: ${Nexo__Barriers__RequireExplicitBarrier:-false}
       NEXO_OBSERVATION_DEGRADED_MODE: ${NEXO_OBSERVATION_DEGRADED_MODE:-1}
+      # Self-extender arming file (Passive until it says otherwise). Empty = the in-container
+      # default ~/.nexo/agent-mode.json, which does not survive a restart; see docs/config/agent-server.env.example.
+      NEXO_AGENT_MODE_PATH: ${NEXO_AGENT_MODE_PATH:-}
       # MCP/A2A protocol ingress is OFF unless explicitly enabled (fail-closed defaults;
       # see docs/architecture/ProtocolIntegration-MCP-A2A.md before flipping any of these).
       Nexo__Mcp__Server__Enabled: ${Nexo__Mcp__Server__Enabled:-false}

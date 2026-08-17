@@ -9,7 +9,7 @@ Phase 10 aligns the **weekly stress gate** with the **PR mesh-lab gate** and add
 | Workflow | When | What runs |
 |----------|------|-----------|
 | [`mesh-lab-gate.yml`](../.github/workflows/mesh-lab-gate.yml) | PR / push (path filters) | `mesh-lab-verify.sh` + `mesh-lab-verify-deep.sh` |
-| [`mesh-lab-stress-gate.yml`](../.github/workflows/mesh-lab-stress-gate.yml) | Weekly + `workflow_dispatch` | Full verify + deep + stress ramp + **post-stress** |
+| [`mesh-lab-stress-gate.yml`](../.github/workflows/mesh-lab-stress-gate.yml) | `workflow_dispatch` (weekly schedule removed 2026-08-16) | Full verify + deep + stress ramp + **post-stress** |
 
 `mesh-lab-verify.sh` already invokes governance, trust, entitlements (workers), director CLI, and persistence sub-scripts.
 
