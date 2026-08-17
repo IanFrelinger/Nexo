@@ -40,7 +40,7 @@ The CLI project also references spine-adjacent packs: **`Nexo.Bricks.Owasp`**, *
 | `Nexo.Framework.Sdk` | Framework-facing SDK surface |
 | `Nexo.Client` | HTTP client (`INexoClient`) |
 | `Nexo.Lite` | Reduced surface distribution |
-| `Nexo.Compat/` | Source-only polyfills (no `.csproj`; linked by consuming projects) |
+| `Nexo.Compat/` | Source-only polyfills and the shared `DomainBrick` global-using alias (no `.csproj`; linked by consuming projects) |
 | `Nexo.Hosting.Bundle` | Kernel + `Nexo.Hosting` metapackage |
 | `Nexo.Runtime` | Runtime services, barriers, routing |
 | `Nexo.Runtime.Bundle` | Kernel libraries without `Nexo.Hosting` |

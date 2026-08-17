@@ -113,7 +113,6 @@
     <PackageVersion Include="Azure.ResourceManager.ContainerService" Version="1.2.0" />
     <PackageVersion Include="Azure.ResourceManager.AppService" Version="1.2.0" />
     <PackageVersion Include="Azure.ResourceManager.Resources" Version="1.11.0" />
-    <PackageVersion Include="Azure.Identity" Version="1.11.0" />
     <PackageVersion Include="Azure.Core" Version="1.46.2" />
   </ItemGroup>
   <!-- AWS Packages -->

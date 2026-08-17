@@ -3,7 +3,8 @@ root = true
 # All files
 [*]
 charset = utf-8
-end_of_line = crlf
+# The index is LF (.gitattributes: * text=auto); keep editors from writing CRLF into new files.
+end_of_line = lf
 insert_final_newline = true
 trim_trailing_whitespace = true
 
