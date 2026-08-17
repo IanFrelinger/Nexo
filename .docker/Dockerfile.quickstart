@@ -15,12 +15,22 @@ FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
 COPY --from=build /app/publish ./
 
-ENV ASPNETCORE_URLS=http://+:8080
-ENV NEXO_ALLOW_MOCK=1
-ENV DOTNET_NOLOGO=true
+# Runtime state (LiteDB stores, snapshots) and dailies live under /data so they survive container
+# recreation when a volume is mounted there (docs/DEPLOYMENT.md, "Runtime state"). /app stays
+# root-owned and read-only for the non-root user below.
+ENV ASPNETCORE_URLS=http://+:8080 \
+    NEXO_ALLOW_MOCK=1 \
+    DOTNET_NOLOGO=true \
+    NEXO_STATE_DIR=/data/state \
+    NEXO_DAILIES_PATH=/data/dailies
+RUN mkdir -p /data/state /data/dailies && chown -R app:app /data
 EXPOSE 8080
 
+# The aspnet image has no curl; probe /health with bash's /dev/tcp so the check can actually pass.
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD curl -f http://localhost:8080/health || exit 1
+  CMD bash -c 'exec 3<>/dev/tcp/127.0.0.1/8080 && printf "GET /health HTTP/1.0\r\nHost: localhost\r\n\r\n" >&3 && grep -q " 200 " <&3' || exit 1
+
+# Non-root: the aspnet 8+ images ship an unprivileged 'app' user (numeric $APP_UID so k8s runAsNonRoot can verify it).
+USER $APP_UID
 
 ENTRYPOINT ["dotnet", "Nexo.API.dll"]

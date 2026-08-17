@@ -34,6 +34,15 @@ WORKDIR /app
 
 COPY --from=build /app/publish/ /app/
 
+# Runtime state (LiteDB stores, snapshots) goes to /data/state instead of <mounted repo>/.nexo/state so a
+# read-only or foreign-owned workspace mount never blocks the CLI; mount a volume there to keep it.
+ENV NEXO_STATE_DIR=/data/state
+RUN mkdir -p /data/state && chown -R app:app /data
+
+# Non-root: the aspnet 8+ images ship an unprivileged 'app' user (numeric $APP_UID so k8s runAsNonRoot can
+# verify it). Commands that write into a mounted workspace need it writable by that uid (or run with --user).
+USER $APP_UID
+
 WORKDIR /app
 ENTRYPOINT ["dotnet", "/app/Nexo.CLI.dll"]
 CMD ["--help"]
