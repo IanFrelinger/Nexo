@@ -511,6 +511,99 @@ public class OrchestrationOrchestratorGapCoverageTests
     }
 
     [Fact]
+    public async Task OrchestrateAsync_surfaces_missing_barrier_context_as_a_distinct_escalation()
+    {
+        // Host never established a barrier context (what Nexo.API does: no barrier middleware),
+        // and RequireExplicitBarrier is on. Before the fix this was swallowed into the generic
+        // "AgentExecution" bucket and the caller only saw "0 agent(s) executed".
+        var hierarchy = new BarrierHierarchy([
+            new BarrierLevel("public", 0),
+            new BarrierLevel("private", 1),
+        ]);
+        var accessor = new Mock<IBarrierContextAccessor>();
+        accessor.SetupGet(x => x.Current).Returns((BarrierContext?)null);
+        var audit = new Mock<IBarrierAuditLog>();
+        audit.Setup(x => x.RecordAsync(It.IsAny<BarrierAuditEvent>(), It.IsAny<CancellationToken>()))
+            .Returns(ValueTask.CompletedTask);
+
+        var transportMock = new Mock<IAgentTransport>(MockBehavior.Strict);
+        var decomposition = new DecompositionResult
+        {
+            OriginalRequest = "barrier-missing",
+            Agents = [new AgentSpawnSpec { AgentId = "agent-1", Domain = "General", Goal = "Run" }],
+        };
+
+        var sut = CreateOrchestrator(
+            CreateArchitectMock(decomposition).Object,
+            transportMock.Object,
+            barrierAccessor: accessor.Object,
+            barrierAudit: audit.Object,
+            barrierHierarchy: hierarchy,
+            barrierOptions: new BarrierOptions { Levels = ["public", "private"], RequireExplicitBarrier = true },
+            metrics: new OrchestrationMetrics(NullLogger<OrchestrationMetrics>.Instance));
+
+        var result = await sut.OrchestrateAsync("barrier missing");
+
+        result.Success.Should().BeFalse();
+        result.IntegratedOutput!.AgentOutputs.Should().BeEmpty();
+        var escalation = result.Escalations.Should().ContainSingle().Subject;
+        escalation.IssueType.Should().Be("BARRIER_CONTEXT_MISSING");
+        escalation.Description.Should().Contain("agent-1")
+            .And.Contain("Barrier context is required but missing")
+            .And.Contain("RequireExplicitBarrier");
+        escalation.Context.Should().Be($"correlationId={result.CorrelationId}");
+        transportMock.Verify(
+            t => t.SendAsync(It.IsAny<AgentInvocationRequest>(), It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
+    [Fact]
+    public async Task OrchestrateAsync_defaults_to_floor_barrier_when_context_missing_and_not_required()
+    {
+        // The shipped Nexo.API default (RequireExplicitBarrier=false): no context -> floor level,
+        // DefaultApplied audit event, and the agent actually runs.
+        var hierarchy = new BarrierHierarchy([
+            new BarrierLevel("public", 0),
+            new BarrierLevel("private", 1),
+        ]);
+        var accessor = new Mock<IBarrierContextAccessor>();
+        accessor.SetupGet(x => x.Current).Returns((BarrierContext?)null);
+        var audit = new Mock<IBarrierAuditLog>();
+        audit.Setup(x => x.RecordAsync(It.IsAny<BarrierAuditEvent>(), It.IsAny<CancellationToken>()))
+            .Returns(ValueTask.CompletedTask);
+
+        var transportMock = new Mock<IAgentTransport>(MockBehavior.Strict);
+        transportMock
+            .Setup(t => t.SendAsync(It.IsAny<AgentInvocationRequest>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new AgentResult(Success: true, Output: new { ok = true }));
+        var decomposition = new DecompositionResult
+        {
+            OriginalRequest = "barrier-defaulted",
+            Agents = [new AgentSpawnSpec { AgentId = "agent-1", Domain = "General", Goal = "Run" }],
+        };
+
+        var sut = CreateOrchestrator(
+            CreateArchitectMock(decomposition).Object,
+            transportMock.Object,
+            barrierAccessor: accessor.Object,
+            barrierAudit: audit.Object,
+            barrierHierarchy: hierarchy,
+            barrierOptions: new BarrierOptions { Levels = ["public", "private"], RequireExplicitBarrier = false },
+            metrics: new OrchestrationMetrics(NullLogger<OrchestrationMetrics>.Instance));
+
+        var result = await sut.OrchestrateAsync("barrier defaulted");
+
+        result.Success.Should().BeTrue();
+        result.Escalations.Should().BeEmpty();
+        audit.Verify(
+            x => x.RecordAsync(
+                It.Is<BarrierAuditEvent>(e => e.EventType == BarrierAuditEventType.DefaultApplied && e.BarrierLevel == "public"),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+        transportMock.Verify(t => t.SendAsync(It.IsAny<AgentInvocationRequest>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
     public async Task OrchestrateAsync_rethrows_when_architect_decomposition_fails()
     {
         var architectMock = new Mock<IArchitectAgent>(MockBehavior.Strict);
