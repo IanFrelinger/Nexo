@@ -101,9 +101,14 @@ public static class SessionCandidateBuild
 
         var toolchain = probe.StdOut.Trim();
 
-        // 2. Clean room. rm -rf of our own constant path only.
+        // 2. Clean room: empty our own constant path only, then recreate it. Emptied rather
+        //    than removed because under a read-only rootfs the work directory IS a scratch
+        //    mountpoint (SessionScratchPaths) and unlinking a mountpoint fails; and if the
+        //    directory cannot be created at all the spec forgot to declare it — a loud
+        //    "read-only file system" here is the right shape.
         var reset = await session.ExecAsync(
-            new[] { "sh", "-c", $"rm -rf {WorkDir} && mkdir -p {WorkDir}/refs" }, cancellationToken)
+            new[] { "sh", "-c", $"mkdir -p {WorkDir} && find {WorkDir} -mindepth 1 -delete && mkdir -p {WorkDir}/refs" },
+            cancellationToken)
             .ConfigureAwait(false);
         if (!reset.Succeeded)
             return Failed(reset, "resetting the session work directory failed", toolchain);

@@ -275,7 +275,13 @@ public sealed class AutonomyLoopService : BackgroundService
                 Mounts: Array.Empty<Mount>(),
                 Network: NetworkAccess.None,
                 Command: new[] { "sleep", "600" },
-                Limits: new ResourceLimits(Memory: "512m", Pids: 128, Cpus: "1")),
+                Limits: new ResourceLimits(Memory: "512m", Pids: 128, Cpus: "1"))
+            {
+                // The declared write surface: the backend seals the rootfs read-only and
+                // gives back exactly these as ephemeral scratch, so the in-session build
+                // and execution legs work and anything writing elsewhere fails loudly.
+                ScratchPaths = SessionScratchPaths.Default,
+            },
         };
 
         var candidate = new ProposalCandidate

@@ -20,6 +20,17 @@ public sealed class NexoAutonomyOptions
     /// </summary>
     public string? SessionImage { get; set; }
 
+    /// <summary>
+    /// Optional pin on the session image's IDENTITY: the engine image ID
+    /// (<c>sha256:…</c>) that <see cref="SessionImage"/> must resolve to — the same value
+    /// attestation records and every certificate carries as its <c>image-digest</c> input,
+    /// so an operator pins by copying it from a certificate they have already read. When
+    /// set, a session whose image resolves to anything else refuses to start; null (the
+    /// default) keeps capture-only behaviour, where the resolved identity is recorded but
+    /// a retagged image is not refused.
+    /// </summary>
+    public string? SessionImageDigest { get; set; }
+
     /// <summary>Whether iterations open sandbox sessions at all (attestation + environment inputs).</summary>
     public bool UseSandboxSessions { get; set; }
 
