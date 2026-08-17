@@ -37,7 +37,7 @@ Everything else in [`index.md`](index.md) (director, chat/plan/edit, orgs, workl
 
 ## Compatibility with the typed client
 
-`Nexo.Client` (`INexoClient`) is a stable-tier NuGet package under [`SdkCompatibilityPolicy.md`](../SdkCompatibilityPolicy.md). Its typed methods wrap only endpoints on the documented surface, so a breaking HTTP change to one of them is also a breaking client change and follows both policies at once (one minor deprecation, `[Obsolete]` on the old method, **Breaking** entry). `InvokeAsync` deliberately takes a relative path, so calling an undocumented route through it does not extend the promise to that route.
+`Nexo.Client` (`INexoClient`) is a stable-tier NuGet package under [`SdkCompatibilityPolicy.md`](../SdkCompatibilityPolicy.md). Its typed methods wrap endpoints on the documented surface (except `QueryKnowledgeAsync`, a relative-path passthrough to a route that is not on it, treated like `InvokeAsync` below), so a breaking HTTP change to one of them is also a breaking client change and follows both policies at once (one minor deprecation, `[Obsolete]` on the old method, **Breaking** entry). `InvokeAsync` deliberately takes a relative path, so calling an undocumented route through it does not extend the promise to that route.
 
 ## Announcing a breaking change
 
