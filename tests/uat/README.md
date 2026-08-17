@@ -13,7 +13,15 @@ each case the code was fine.
 | 4 | `tier4.sh` | Does the reference brick build, and does the API actually fail closed? |
 | 5 | `tier5.sh` | Do the golden paths in `docs/DEPLOYMENT.md` describe the compose files an operator would run? |
 
+| 7 | `tier7.sh` | The security negatives `SECURITY.md` claims: what is unmapped, what refuses, what is credentialed |
 | 8 | `tier8.sh` | Do the docs still describe this repo — do the paths they name exist, and can the commands they print run? |
+
+`tier7.sh` tests what `SECURITY.md` **claims**, citing the claim in each check. One thing it deliberately
+does *not* assert is tenant isolation: that page says tenant/org/user headers are "client-asserted" and
+must be trusted only behind auth or an authenticating proxy, so a green on tenant isolation would be a
+green on a guarantee the project explicitly declines to make — worse than no check at all. It starts the
+API once per configuration, so it refuses to run at all if something already holds `:5000`, rather than
+reporting "API did not start" for every phase and blaming the product for a dirty environment.
 
 `tier8.sh` check 8.2 is the general form of the defect in #350: a documented `dotnet run --project X`
 cannot run if `X` multi-targets and the command omits `-f`, and the command still *looks* correct on
