@@ -105,6 +105,12 @@ src/studio/
 !.env.example
 !docs/config/agent-server.env.example
 
+# Personal compose overrides (docs/SelfHostedAgentServer.md, "Local compose overrides"). These carry
+# host paths and secrets-file mounts, so they must never be tracked. The shipped Docker Desktop
+# override deploy/compose/docker-compose.agent-server.local.yml is a different thing -- it is part of
+# the repo and deliberately not matched here.
+deploy/compose/local/
+
 
 # Generated local artifacts
 brick.pp
