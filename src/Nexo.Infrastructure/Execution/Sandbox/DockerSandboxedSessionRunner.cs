@@ -202,13 +202,25 @@ public sealed class DockerSandboxedSessionRunner : ISandboxedSessionRunner
     /// The <c>docker inspect</c> format string attestation reads, tab-separated: image
     /// identity, the effective memory/pids/cpu caps, then the containment actually applied
     /// — network mode, read-only rootfs, dropped capabilities, security options (the last
-    /// two comma-joined). The containment fields are what the certificate needs to say
-    /// "this is how the session was contained" rather than "this is what was asked for".
+    /// two rendered as Go's default "[a b]"). The containment fields are what the certificate
+    /// needs to say "this is how the session was contained" rather than "this is what was asked for".
     /// </summary>
+    /// <remarks>
+    /// The list fields are deliberately NOT read with the template's <c>join</c> function.
+    /// <c>join</c> requires <c>[]string</c> and hard-fails the whole inspect when the CLI
+    /// decodes the field as <c>[]interface{}</c> instead — which is exactly what happens to a
+    /// container created by an older CLI than the daemon it talks to (reproduced with CLI
+    /// 27.5.1 against daemon 29.7.2: "wrong type for value; expected []string; got
+    /// []interface {}"). Attestation is the one place that must not be brittle about how the
+    /// engine happened to type a field: a template error throws before
+    /// <see cref="ParseInspectLine"/> can apply its fail-closed reading, so an unattestable
+    /// session became a crashed process rather than a refused iteration. Plain rendering
+    /// prints identically for both shapes.
+    /// </remarks>
     public const string InspectFormat =
         "{{.Image}}\t{{.HostConfig.Memory}}\t{{.HostConfig.PidsLimit}}\t{{.HostConfig.NanoCpus}}"
         + "\t{{.HostConfig.NetworkMode}}\t{{.HostConfig.ReadonlyRootfs}}"
-        + "\t{{join .HostConfig.CapDrop \",\"}}\t{{join .HostConfig.SecurityOpt \",\"}}";
+        + "\t{{.HostConfig.CapDrop}}\t{{.HostConfig.SecurityOpt}}";
 
     /// <summary>
     /// The engine's network-mode name for "no network" — what <c>--network=none</c> reports
@@ -237,8 +249,19 @@ public sealed class DockerSandboxedSessionRunner : ISandboxedSessionRunner
             parts.Length > 6 ? SplitList(parts[6]) : Array.Empty<string>(),
             parts.Length > 7 ? SplitList(parts[7]) : Array.Empty<string>());
 
-        static IReadOnlyList<string> SplitList(string field) =>
-            field.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        // Docker renders a string slice as Go's default "[a b]" (and "[]" when empty), whether the CLI
+        // decoded it into []string or fell back to []interface{}. Both shapes print identically, which
+        // is the point: this parse cannot be broken by how the engine happened to type the field.
+        static IReadOnlyList<string> SplitList(string field)
+        {
+            var trimmed = (field ?? "").Trim();
+            if (trimmed.StartsWith('[') && trimmed.EndsWith(']'))
+                trimmed = trimmed[1..^1];
+
+            return trimmed.Split(
+                new[] { ' ', ',' },
+                StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        }
     }
 
     /// <summary>

@@ -86,6 +86,34 @@ public sealed class DockerSessionAttestationTests
         DockerSandboxedSessionRunner.InspectFormat.Should().Contain(".HostConfig.CapDrop");
         DockerSandboxedSessionRunner.InspectFormat.Should().Contain(".HostConfig.SecurityOpt");
         DockerSandboxedSessionRunner.InspectFormat.Should().StartWith("{{.Image}}", "the digest capture is unchanged");
+
+        DockerSandboxedSessionRunner.InspectFormat.Should().NotContain(
+            "join ",
+            "the template's join requires []string and hard-fails the whole inspect when the CLI decodes "
+            + "the field as []interface{} -- which is what a container created by an older CLI than its "
+            + "daemon reports. A template error throws before ParseInspectLine can read it fail-closed, "
+            + "so an unattestable session crashed the loop instead of refusing one iteration.");
+    }
+
+    [Fact]
+    public void ParseInspectLine_ReadsTheBracketedListsDockerActuallyPrints()
+    {
+        // Go renders a string slice as "[a b]" whether the CLI typed it as []string or fell back to
+        // []interface{}; both print identically, which is why the parse reads the rendered form.
+        var hardened = DockerSandboxedSessionRunner.ParseInspectLine(
+            "sha256:abc\t0\t0\t0\tnone\ttrue\t[ALL]\t[no-new-privileges]");
+        hardened.DroppedCapabilities.Should().Equal("ALL");
+        hardened.SecurityOptions.Should().Equal("no-new-privileges");
+
+        var several = DockerSandboxedSessionRunner.ParseInspectLine(
+            "sha256:abc\t0\t0\t0\tbridge\tfalse\t[NET_RAW SYS_ADMIN]\t[no-new-privileges seccomp=unconfined]");
+        several.DroppedCapabilities.Should().Equal("NET_RAW", "SYS_ADMIN");
+        several.SecurityOptions.Should().Equal("no-new-privileges", "seccomp=unconfined");
+
+        // An empty slice prints as "[]" and must read as "nothing dropped", not as a phantom entry.
+        var empty = DockerSandboxedSessionRunner.ParseInspectLine("sha256:abc\t0\t0\t0\tnone\ttrue\t[]\t[]");
+        empty.DroppedCapabilities.Should().BeEmpty();
+        empty.SecurityOptions.Should().BeEmpty();
     }
 
     [Fact]
