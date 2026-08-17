@@ -5,7 +5,8 @@ Self-hosted, MCP-exposed AI sidecar for game balance, map validation, and conten
 ## Quick start
 
 ```bash
-# From repo root
+# From repo root (the repo is mounted at /work by default: NEXO_REPO_ROOT defaults to ../..
+# relative to deploy/compose/, i.e. the repo root; set it only to mount another tree)
 docker compose -f deploy/compose/docker-compose.game-director.yml up -d --build
 docker compose -f deploy/compose/docker-compose.game-director.yml exec ollama ollama pull llama3.1:latest
 

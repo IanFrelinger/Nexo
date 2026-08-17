@@ -11,6 +11,64 @@ internal static class AstMutationCatalog
 {
     private const int MaxPerKind = 4;
 
+    /// <summary>Longest edit text carried on a <see cref="MutationSite"/> before truncation.</summary>
+    private const int MaxSiteTextLength = 80;
+
+    /// <summary>
+    /// Builds a mutation together with the <see cref="MutationSite"/> that describes it, so a
+    /// surviving mutant can be adjudicated (weak witness vs equivalent mutant) without decoding
+    /// the candidate by hand. The id format is unchanged: <c>{kind}-{line}</c>.
+    /// <c>lineAnchor</c> is the node whose position names the mutation; <c>replaced</c> is the
+    /// node handed to <c>ReplaceNode</c>, which is not always the anchor (statement removal
+    /// anchors on the statement and replaces its block).
+    /// </summary>
+    private static AstMutation Create(
+        SyntaxNode root,
+        string kind,
+        SyntaxNode lineAnchor,
+        SyntaxNode replaced,
+        SyntaxNode replacement,
+        string originalText,
+        string mutatedText)
+    {
+        var position = lineAnchor.GetLocation().GetLineSpan().StartLinePosition;
+        var line = position.Line + 1;
+        var site = new MutationSite(
+            line,
+            position.Character + 1,
+            Condense(originalText),
+            Condense(mutatedText),
+            LineTextOf(lineAnchor, position.Line));
+
+        return new AstMutation($"{kind}-{line}", root.ReplaceNode(replaced, replacement), site);
+    }
+
+    /// <summary>The common case: the anchor is the replaced node and its text is the edit.</summary>
+    private static AstMutation Create(
+        SyntaxNode root, string kind, SyntaxNode node, SyntaxNode replacement) =>
+        Create(root, kind, node, node, replacement, node.ToString(), replacement.ToString());
+
+    private static string LineTextOf(SyntaxNode anchor, int zeroBasedLine)
+    {
+        var text = anchor.SyntaxTree?.GetText();
+        if (text is null || zeroBasedLine < 0 || zeroBasedLine >= text.Lines.Count)
+            return string.Empty;
+
+        return Condense(text.Lines[zeroBasedLine].ToString());
+    }
+
+    /// <summary>Collapses whitespace and truncates, so a site stays one readable line.</summary>
+    private static string Condense(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return string.Empty;
+
+        var collapsed = string.Join(' ', value.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+        return collapsed.Length <= MaxSiteTextLength
+            ? collapsed
+            : collapsed[..MaxSiteTextLength] + "...";
+    }
+
     /// <summary>Collect mutations.</summary>
     public static IReadOnlyList<AstMutation> CollectMutations(string sourceCode)
     {
@@ -40,8 +98,14 @@ internal static class AstMutationCatalog
             if (!TryFlipComparisonOperator(node, out var flipped))
                 continue;
 
-            var id = $"flip-binary-op-{node.GetLocation().GetLineSpan().StartLinePosition.Line + 1}";
-            mutations.Add(new AstMutation(id, root.ReplaceNode(node, flipped)));
+            mutations.Add(Create(
+                root,
+                "flip-binary-op",
+                node,
+                node,
+                flipped,
+                node.OperatorToken.Text,
+                ((BinaryExpressionSyntax)flipped).OperatorToken.Text));
             count++;
         }
     }
@@ -63,8 +127,14 @@ internal static class AstMutationCatalog
                     SyntaxFactory.ParenthesizedExpression(node.Condition.WithoutTrivia())))
                 .WithTriviaFrom(node.Condition);
 
-            var id = $"negate-condition-{node.GetLocation().GetLineSpan().StartLinePosition.Line + 1}";
-            mutations.Add(new AstMutation(id, root.ReplaceNode(node, negated)));
+            mutations.Add(Create(
+                root,
+                "negate-condition",
+                node,
+                node,
+                negated,
+                node.Condition.ToString(),
+                "!(" + node.Condition.WithoutTrivia() + ")"));
             count++;
         }
     }
@@ -94,8 +164,7 @@ internal static class AstMutationCatalog
                 SyntaxKind.NumericLiteralExpression,
                 SyntaxFactory.Literal(mutatedValue));
 
-            var id = $"mutate-int-literal-{node.GetLocation().GetLineSpan().StartLinePosition.Line + 1}";
-            mutations.Add(new AstMutation(id, root.ReplaceNode(node, replacement)));
+            mutations.Add(Create(root, "mutate-int-literal", node, replacement));
             count++;
         }
     }
@@ -120,8 +189,7 @@ internal static class AstMutationCatalog
                 SyntaxKind.StringLiteralExpression,
                 SyntaxFactory.Literal(mutated));
 
-            var id = $"mutate-string-literal-{node.GetLocation().GetLineSpan().StartLinePosition.Line + 1}";
-            mutations.Add(new AstMutation(id, root.ReplaceNode(node, replacement)));
+            mutations.Add(Create(root, "mutate-string-literal", node, replacement));
             count++;
         }
     }
@@ -142,8 +210,14 @@ internal static class AstMutationCatalog
                 continue;
 
             var newBlock = block.WithStatements(SyntaxFactory.List(block.Statements.Skip(1)));
-            var id = $"remove-statement-{statement.GetLocation().GetLineSpan().StartLinePosition.Line + 1}";
-            mutations.Add(new AstMutation(id, root.ReplaceNode(block, newBlock)));
+            mutations.Add(Create(
+                root,
+                "remove-statement",
+                statement,
+                block,
+                newBlock,
+                statement.ToString(),
+                "(statement removed)"));
             count++;
         }
     }
@@ -170,8 +244,14 @@ internal static class AstMutationCatalog
                 continue;
 
             var flipped = node.WithOperatorToken(flippedToken.Value);
-            var id = $"swap-logical-op-{node.GetLocation().GetLineSpan().StartLinePosition.Line + 1}";
-            mutations.Add(new AstMutation(id, root.ReplaceNode(node, flipped)));
+            mutations.Add(Create(
+                root,
+                "swap-logical-op",
+                node,
+                node,
+                flipped,
+                node.OperatorToken.Text,
+                flippedToken.Value.Text));
             count++;
         }
     }
@@ -202,8 +282,14 @@ internal static class AstMutationCatalog
                     SyntaxFactory.Token(SyntaxKind.EqualsToken).WithTriviaFrom(node.OperatorToken),
                     node.Right)
                 .WithTriviaFrom(node);
-            var id = $"degrade-coalesce-assign-{node.GetLocation().GetLineSpan().StartLinePosition.Line + 1}";
-            mutations.Add(new AstMutation(id, root.ReplaceNode(node, degraded)));
+            mutations.Add(Create(
+                root,
+                "degrade-coalesce-assign",
+                node,
+                node,
+                degraded,
+                node.OperatorToken.Text,
+                "="));
             count++;
         }
     }

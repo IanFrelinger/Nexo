@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Nexo.Certification.Contracts;
@@ -235,7 +236,8 @@ public sealed class CertificationGate : ICertificationGate
         if (mutationResult.EscapeRate > 0)
         {
             var reason =
-                $"Mutation escape check failed: escape_rate={mutationResult.EscapeRate:F2}, survivors=[{string.Join(", ", mutationResult.SurvivingMutantIds)}]";
+                $"Mutation escape check failed: escape_rate={mutationResult.EscapeRate:F2}, survivors=[{string.Join(", ", mutationResult.SurvivingMutantIds)}]"
+                + DescribeSurvivors(mutationResult);
             _logger?.LogWarning("Certification REJECT {BrickId}: {Reason}", brickId, reason);
             return new CertificationDecision
             {
@@ -299,6 +301,31 @@ public sealed class CertificationGate : ICertificationGate
             Admitted = true,
             Record = admittedRecord
         };
+    }
+
+    /// <summary>
+    /// Spells out each surviving mutant: location, the edit, and the line it landed on.
+    /// </summary>
+    /// <remarks>
+    /// A mutant id names an operator and a line, which is enough to locate a survivor and not
+    /// enough to judge it. The two cases behind <c>escape_rate &gt; 0</c> need opposite
+    /// responses — a weak witness wants more cases, an EQUIVALENT MUTANT (a rewrite that cannot
+    /// change behaviour on any input) wants none, because no case can kill it and the candidate
+    /// may be perfectly correct. Ledger S5 hit the second twice on <c>semver-parse</c>, and
+    /// telling them apart meant decoding the recorded candidate by hand. The verdict is
+    /// deliberately unchanged: equivalence is undecidable, so the gate still rejects and a human
+    /// adjudicates — this only makes that adjudication a glance instead of an investigation.
+    /// </remarks>
+    private static string DescribeSurvivors(MutationTestResult mutation)
+    {
+        if (mutation.Survivors.Count == 0)
+            return string.Empty;
+
+        var sb = new StringBuilder();
+        foreach (var survivor in mutation.Survivors)
+            sb.Append("; ").Append(survivor.Describe());
+
+        return sb.ToString();
     }
 
     /// <summary>

@@ -14,11 +14,15 @@ cat <<EOF
 
 Ollama: http://127.0.0.1:${PORT}
 
-Start Nexo.API next (Ollama already up): bash scripts/start-nexo-api-dev.sh --skip-ollama
+Start Nexo.API next (Ollama already up; sets OLLAMA_* env + NCR URL, then dotnet run):
+  bash scripts/start-nexo-api-dev.sh --skip-ollama --model "${MODEL}" --ollama-port ${PORT}
+  powershell -File scripts/start-nexo-api-dev.ps1 -SkipOllama -Model "${MODEL}" -OllamaPort ${PORT}
 
-export OLLAMA_BASE_URL=http://127.0.0.1:${PORT}
-export OLLAMA_MODEL=${MODEL}
-export Nexo__NodeCapabilityRuntime__Ollama__BaseUrl=http://127.0.0.1:${PORT}
+Or manually:
+  export OLLAMA_BASE_URL=http://127.0.0.1:${PORT}
+  export OLLAMA_MODEL=${MODEL}
+  export Nexo__NodeCapabilityRuntime__Ollama__BaseUrl=http://127.0.0.1:${PORT}
+  dotnet run --project application/src/Nexo.API/Nexo.API.csproj
 
 Stop: docker compose -f deploy/compose/docker-compose.ollama.yml down
 EOF
