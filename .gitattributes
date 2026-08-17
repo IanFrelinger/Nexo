@@ -1,5 +1,13 @@
-# Shell used inside Linux containers must stay LF (CRLF breaks bash).
+# Normalize every text file to LF in the index regardless of the contributor's core.autocrlf;
+# working-tree line endings stay per-platform (see .editorconfig for what editors write).
+* text=auto
+
+# Files consumed inside Linux containers or by POSIX tools must stay LF on every checkout
+# (CRLF breaks bash, make and python shebangs).
+Makefile text eol=lf
+Dockerfile* text eol=lf
 *.sh text eol=lf
+*.py text eol=lf
 .devcontainer/post-create.sh text eol=lf
 scripts/start-nexo-api-dev.sh text eol=lf
 scripts/stop-nexo-api-dev.sh text eol=lf
