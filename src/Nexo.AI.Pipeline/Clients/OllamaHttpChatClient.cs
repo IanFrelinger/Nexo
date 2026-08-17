@@ -75,10 +75,17 @@ public sealed class OllamaHttpChatClient : IChatClient, IDisposable
 
         await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false);
         using var reader = new StreamReader(stream);
-        while (!reader.EndOfStream)
+        // CA2024 (.NET 10 analyzers): StreamReader.EndOfStream can block synchronously in an async
+        // method; ReadLineAsync returning null is the async end-of-stream signal.
+        while (true)
         {
             cancellationToken.ThrowIfCancellationRequested();
             var line = await reader.ReadLineAsync(cancellationToken).ConfigureAwait(false);
+            if (line is null)
+            {
+                yield break;
+            }
+
             if (string.IsNullOrWhiteSpace(line))
             {
                 continue;
