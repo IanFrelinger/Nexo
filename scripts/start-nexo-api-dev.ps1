@@ -105,6 +105,15 @@ if (-not $env:Nexo__Security__ExposureProfile) {
     }
 }
 
+# Nexo.API refuses to start off-loopback with AuthorizationMode=None (fail closed). This dev helper is
+# the one place that opts out explicitly: -ListenLan without an auth mode sets the documented escape
+# hatch and says so. Prefer setting Nexo__Security__AuthorizationMode=ApiKey + Nexo__Security__ApiKey.
+if ($ListenLan -and -not $env:Nexo__Security__AuthorizationMode -and -not $env:Nexo__Security__AllowUnauthenticatedNetworkExposure) {
+    $env:Nexo__Security__AllowUnauthenticatedNetworkExposure = "true"
+    Write-Warning "-ListenLan with no Nexo__Security__AuthorizationMode: the LAN portal/API is UNAUTHENTICATED (AllowUnauthenticatedNetworkExposure=true set for this run)."
+    Write-Warning "Set Nexo__Security__AuthorizationMode=ApiKey and Nexo__Security__ApiKey=<secret> to require a key instead."
+}
+
 Write-Host ""
 Write-Host "Nexo.API (this PC) -> http://127.0.0.1:$ApiPort  |  Ollama -> $ollamaUrl  |  Model -> $Model"
 if ($ListenLan) {

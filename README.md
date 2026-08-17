@@ -399,7 +399,7 @@ Start here:
 
 ## Security Defaults
 
-Out of the box, Nexo runs on **HTTP only** with **no authentication** on API endpoints. This is intentional for local development — the default `ExposureProfile` is `Localhost`.
+Out of the box, Nexo runs on **HTTP only** with **no authentication** on API endpoints. This is intentional for local development — the default `ExposureProfile` is `Localhost`. Declaring `Lan`, `Tailnet` or `Public` without built-in auth makes the API **refuse to start** (escape hatch: `Nexo__Security__AllowUnauthenticatedNetworkExposure=true`), and the remote container-execution routes are unmapped unless `Nexo__Execution__ServeRemoteExecution=true` — see [`SECURITY.md`](SECURITY.md#default-posture-and-in-scope-surfaces).
 
 For any network-exposed deployment:
 
@@ -421,7 +421,7 @@ See [`docs/Configuration.md`](docs/Configuration.md) for security options and [`
 ## Barrier Identity Resolution Notes
 
 - JWT barrier resolution reads pre-validated claims from host auth middleware.
-- API keys are stored as SHA-256 hashes, not plaintext.
+- Barrier-identity API keys (the trust-path resolver's key registry) are stored as SHA-256 hashes, not plaintext. This does **not** describe `Nexo:Security:ApiKey`, which the built-in auth middleware compares in constant time against the configured plaintext value — keep it in the environment or a secret store, not in committed `appsettings.json`.
 - Audit details never include full API key values.
 - Trust policy packs (`strict-enterprise`, `internal-only`, `air-gapped`) can be listed, described, and applied through `nexo trust pack ...`.
 - Observation can be paused and resumed through `nexo trust pause` / `nexo trust resume`.

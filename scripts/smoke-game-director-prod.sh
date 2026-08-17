@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 # Production-style smoke tests for Nexo Game Director Studio.
 # Usage: ./scripts/smoke-game-director-prod.sh [BASE_URL] [API_KEY]
+#   API_KEY falls back to $NEXO_API_KEY (the value the compose stack was started with); no dev key is shipped.
 set -euo pipefail
 
 BASE_URL="${1:-http://127.0.0.1:8080}"
-API_KEY="${2:-game-director-dev-key}"
+API_KEY="${2:-${NEXO_API_KEY:?Pass API_KEY as the second argument or export NEXO_API_KEY (no default key is shipped)}}"
 AUTH_HEADER="X-Nexo-Api-Key: ${API_KEY}"
 FAILURES=0
 PASSED=0
