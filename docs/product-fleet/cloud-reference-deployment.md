@@ -11,9 +11,12 @@ Local **staging shape** for Nexo Cloud: multiple orgs, membership enforcement, s
 
 ```bash
 export OLLAMA_MODEL=llama3.1:latest
+export NEXO_API_KEY="$(openssl rand -hex 32)"   # required: the stack refuses to start without it
 docker compose -f deploy/compose/docker-compose.cloud-multi-tenant.yml up --build -d
 curl -sS http://127.0.0.1:8080/health
 ```
+
+Every mutating call below also needs `-H "X-Nexo-Api-Key: $NEXO_API_KEY"` (built-in `AuthorizationMode=ApiKey`, `MutatingApi` scope).
 
 ## Control plane flow (Phase 2.3)
 
@@ -55,7 +58,7 @@ curl -sS -X POST http://127.0.0.1:8080/api/copilot/task \
 | `X-Nexo-User` | Optional | Required on copilot/usage |
 | `X-Nexo-Org` | N/A | Required on copilot/usage |
 
-Staging headers are **not** production auth — replace with SSO (Phase 3.1) before GA.
+Staging headers are **not** production auth — replace with SSO (Phase 3.1) before GA. `X-Nexo-Tenant` (and `X-Nexo-User` / `X-Nexo-Org`) is client-asserted: trust it only behind built-in auth or an authenticating proxy that sets it.
 
 ## Configuration
 

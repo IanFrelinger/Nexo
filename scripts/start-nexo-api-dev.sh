@@ -90,6 +90,15 @@ if [[ -z "${Nexo__Security__ExposureProfile:-}" ]]; then
   fi
 fi
 
+# Nexo.API refuses to start off-loopback with AuthorizationMode=None (fail closed). This dev helper is
+# the one place that opts out explicitly: --listen-lan without an auth mode sets the documented escape
+# hatch and says so. Prefer exporting Nexo__Security__AuthorizationMode=ApiKey + Nexo__Security__ApiKey.
+if [[ "${LISTEN_LAN}" -eq 1 && -z "${Nexo__Security__AuthorizationMode:-}" && -z "${Nexo__Security__AllowUnauthenticatedNetworkExposure:-}" ]]; then
+  export Nexo__Security__AllowUnauthenticatedNetworkExposure="true"
+  echo "WARNING: --listen-lan with no Nexo__Security__AuthorizationMode: the LAN portal/API is UNAUTHENTICATED (AllowUnauthenticatedNetworkExposure=true set for this run)." >&2
+  echo "         Set Nexo__Security__AuthorizationMode=ApiKey and Nexo__Security__ApiKey=<secret> to require a key instead." >&2
+fi
+
 LAN_IP=""
 if command -v hostname >/dev/null 2>&1; then
   LAN_IP="$(hostname -I 2>/dev/null | awk '{print $1}')"

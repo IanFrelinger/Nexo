@@ -17,11 +17,15 @@
 //     RegisterBackgroundAgentHostedService = true, which causes background
 //     agents to run as IHostedService instances inside this process rather
 //     than in a standalone daemon.
-//   • Security — NexoSecurityOptions controls an advisory exposure profile
-//     (Public / Lan / Tailnet / Local) that emits log warnings but does NOT
-//     enforce network policy. Optional built-in auth modes (ApiKey, Bearer,
-//     Basic, and composite OR-modes) protect mutating endpoints via
-//     UseNexoApiKeyAuth middleware.
+//   • Security — NexoSecurityOptions controls an exposure profile
+//     (Public / Lan / Tailnet / Localhost). It does NOT enforce network policy,
+//     but any off-loopback profile with AuthorizationMode=None refuses to start
+//     unless AllowUnauthenticatedNetworkExposure=true is set explicitly.
+//     Optional built-in auth modes (ApiKey, Bearer, Basic, and composite
+//     OR-modes) protect mutating endpoints via UseNexoApiKeyAuth middleware.
+//   • Remote execution — /api/execution/* (container build/run for
+//     RemoteExecutionPlatform) is mapped only when
+//     Nexo:Execution:ServeRemoteExecution=true and refuses AuthorizationMode=None.
 //   • Mesh correlation — UseNexoMeshCorrelation assigns / echoes X-Nexo-Correlation-Id
 //     for /api/mesh and brick execute (Phase 3).
 //   • MeshSecurityOptions — optional Nexo:Security:Mesh tokens, body size cap,
@@ -94,6 +98,8 @@ builder.Services.Configure<GrpcTransportOptions>(
     builder.Configuration.GetSection("Nexo:GrpcTransport"));
 builder.Services.Configure<NexoSecurityOptions>(
     builder.Configuration.GetSection(NexoSecurityOptions.SectionPath));
+builder.Services.Configure<NexoExecutionOptions>(
+    builder.Configuration.GetSection(NexoExecutionOptions.SectionPath));
 builder.Services.Configure<NexoProductOptions>(
     builder.Configuration.GetSection(NexoProductOptions.SectionPath));
 builder.Services.Configure<NexoEntitlementsOptions>(
@@ -214,16 +220,42 @@ app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseMiddleware<IngressEnvelopeMiddleware>();
 app.UseWebSockets();
 
-// --- Security: advisory exposure profile + optional built-in auth ---
+// --- Security: exposure profile (fails closed off-loopback) + optional built-in auth ---
 {
     var sec = app.Services.GetRequiredService<IOptions<NexoSecurityOptions>>().Value;
     var log = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Nexo.Security");
+    var hasConfiguredAuthMode = Enum.TryParse<NexoAuthorizationMode>(sec.AuthorizationMode, true, out var authMode)
+        && authMode != NexoAuthorizationMode.None;
+    // The legacy flag counts as "auth configured": with no key it now fails closed (401) instead of open.
+    var hasAnyBuiltInAuth = hasConfiguredAuthMode || sec.RequireApiKeyForMutatingEndpoints;
+
     if (Enum.TryParse<NexoExposureProfile>(sec.ExposureProfile, true, out var prof))
     {
+        var offLoopback = prof is NexoExposureProfile.Lan or NexoExposureProfile.Tailnet or NexoExposureProfile.Public;
+        if (offLoopback && !hasAnyBuiltInAuth)
+        {
+            // Off-loopback with AuthorizationMode=None means every mutating route under /api (and the
+            // opt-in execution surface) would answer unauthenticated callers on the network. Refuse to
+            // start unless the operator states that something in front of Nexo.API authenticates.
+            if (!sec.AllowUnauthenticatedNetworkExposure)
+            {
+                throw new InvalidOperationException(
+                    $"Nexo:Security:ExposureProfile is '{prof}' but no built-in auth is configured (Nexo:Security:AuthorizationMode=None). " +
+                    "Refusing to start: mutating routes under /api would be reachable from the network without credentials. " +
+                    "Set Nexo:Security:AuthorizationMode (ApiKey, BearerToken, Basic, ...) plus the matching credential, " +
+                    "or set Nexo:Security:AllowUnauthenticatedNetworkExposure=true only when an authenticating proxy or network ACL fronts this host " +
+                    "(see SECURITY.md, 'Default posture and in-scope surfaces').");
+            }
+
+            log.LogWarning(
+                "ExposureProfile is {Profile} with no built-in auth and AllowUnauthenticatedNetworkExposure=true: mutating routes under /api are unauthenticated. Ensure an authenticating proxy or network ACL fronts Nexo.API.",
+                prof);
+        }
+
         if (prof == NexoExposureProfile.Public)
         {
             log.LogWarning(
-                "ExposureProfile is Public: use TLS and authentication in front of Nexo.API; this setting is advisory only.");
+                "ExposureProfile is Public: use TLS and authentication in front of Nexo.API; the profile does not enforce network policy.");
         }
         else if (prof is NexoExposureProfile.Lan or NexoExposureProfile.Tailnet)
         {
@@ -231,8 +263,6 @@ app.UseWebSockets();
         }
     }
 
-    var hasConfiguredAuthMode = Enum.TryParse<NexoAuthorizationMode>(sec.AuthorizationMode, true, out var authMode)
-        && authMode != NexoAuthorizationMode.None;
     if (hasConfiguredAuthMode)
     {
         if (!Enum.TryParse<NexoAuthorizationScope>(sec.AuthorizationScope, true, out var authScope))
@@ -278,7 +308,7 @@ app.UseWebSockets();
     else if (sec.RequireApiKeyForMutatingEndpoints && string.IsNullOrWhiteSpace(sec.ApiKey))
     {
         log.LogWarning(
-            "Nexo API key auth is required for mutating endpoints, but no API key is configured. Mutating endpoints are effectively unauthenticated.");
+            "Nexo API key auth is required for mutating endpoints, but no API key is configured. Mutating endpoints will reject every request (401) until Nexo:Security:ApiKey is set.");
     }
 }
 

@@ -11,12 +11,20 @@ namespace Nexo.Commercial.Tests.Fleet.Host;
 [Trait("Category", "CommercialFleetHost")]
 public sealed class FleetHostEndpointTests : IClassFixture<WebApplicationFactory<FleetHostProgram>>
 {
+    // The shipped appsettings.json no longer carries a literal key (operators supply one via
+    // Nexo__Security__ApiKey); the test injects its own so the ApiKey mode has a credential.
+    private const string TestApiKey = "fleet-host-test-key";
+
     private readonly WebApplicationFactory<FleetHostProgram> _factory;
 
     /// <summary>Fleet host endpoint tests.</summary>
     /// <param name="factory">Factory.</param>
     public FleetHostEndpointTests(WebApplicationFactory<FleetHostProgram> factory) =>
-        _factory = factory.WithWebHostBuilder(builder => builder.UseEnvironment("Development"));
+        _factory = factory.WithWebHostBuilder(builder =>
+        {
+            builder.UseEnvironment("Development");
+            builder.UseSetting("Nexo:Security:ApiKey", TestApiKey);
+        });
 
     [Fact]
     public async Task Health_returns_ok()
@@ -44,7 +52,7 @@ public sealed class FleetHostEndpointTests : IClassFixture<WebApplicationFactory
         {
             Content = JsonContent.Create(new { name = "commercial-fleet-host-test-task", steps = 1 })
         };
-        request.Headers.Add("X-Nexo-Api-Key", "fleet-host-dev-key");
+        request.Headers.Add("X-Nexo-Api-Key", TestApiKey);
 
         var response = await client.SendAsync(request);
         response.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -63,7 +71,7 @@ public sealed class FleetHostEndpointTests : IClassFixture<WebApplicationFactory
                 trustTier = "Trusted"
             })
         };
-        request.Headers.Add("X-Nexo-Api-Key", "fleet-host-dev-key");
+        request.Headers.Add("X-Nexo-Api-Key", TestApiKey);
 
         var response = await client.SendAsync(request);
         response.StatusCode.Should().Be(HttpStatusCode.OK);

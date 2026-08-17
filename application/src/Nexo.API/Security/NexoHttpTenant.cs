@@ -2,6 +2,7 @@ namespace Nexo.API.Security;
 
 /// <summary>
 /// Resolves <see cref="NexoProductOptions.DefaultTenantId"/> vs optional <c>X-Nexo-Tenant</c> header.
+/// The header is client-asserted: trust it only behind built-in auth or an authenticating proxy that sets it.
 /// </summary>
 public static class NexoHttpTenant
 {

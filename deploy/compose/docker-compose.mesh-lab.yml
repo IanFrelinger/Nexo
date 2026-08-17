@@ -95,6 +95,9 @@ services:
       - mesh_lab
     environment:
       ASPNETCORE_ENVIRONMENT: ${MESH_LAB_WORKER_ASPNETCORE_ENVIRONMENT:-Development}
+      # Nexo.API's appsettings.Development.json narrows AllowedHosts to loopback; the worker is dialled
+      # by peer hostname / tailnet IP, so keep host filtering open here (override to narrow it).
+      AllowedHosts: "${MESH_LAB_WORKER_ALLOWED_HOSTS:-*}"
       ASPNETCORE_URLS: http://+:8080
       ASPNETCORE_CONTENTROOT: /app
       Nexo__Security__ExposureProfile: ${MESH_LAB_WORKER_EXPOSURE:-Public}

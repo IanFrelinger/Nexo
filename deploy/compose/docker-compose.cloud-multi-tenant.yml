@@ -1,5 +1,8 @@
 # Product Fleet Phase 2 — multi-tenant Cloud staging shape (local dev).
 # See docs/product-fleet/cloud-reference-deployment.md
+#
+# NEXO_API_KEY is REQUIRED (no default): tenant / org / user are client-asserted headers, so the
+# mutating API must at least be credentialed. Generate one, e.g. export NEXO_API_KEY="$(openssl rand -hex 32)"
 services:
   ollama:
     image: ollama/ollama:latest
@@ -25,6 +28,11 @@ services:
       Nexo__Meai__OllamaModel: ${OLLAMA_MODEL:-llama3.1:latest}
       Nexo__NodeCapabilityRuntime__Ollama__BaseUrl: http://ollama:11434
       NEXO_DAILIES_PATH: /data/dailies
+      # Built-in auth on the shared API process. X-Nexo-Tenant / X-Nexo-User / X-Nexo-Org are trusted
+      # only behind this credential (or an authenticating proxy that sets them).
+      Nexo__Security__AuthorizationMode: ${NEXO_AUTH_MODE:-ApiKey}
+      Nexo__Security__AuthorizationScope: ${NEXO_AUTH_SCOPE:-MutatingApi}
+      Nexo__Security__ApiKey: ${NEXO_API_KEY:?Set NEXO_API_KEY (X-Nexo-Api-Key secret for the cloud API); no default is shipped}
       Nexo__Product__RequireOrgMembership: "true"
       Nexo__Entitlements__DeploymentMode: Cloud
       Nexo__Entitlements__MaxCopilotSubmissionsPerHour: ${NEXO_MAX_COPILOT_PER_HOUR:-120}

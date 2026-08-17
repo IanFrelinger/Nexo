@@ -7,7 +7,7 @@ Tailscale is a **mesh VPN** (WireGuard-based). It does not run *inside* Nexo; yo
 | Layer | Responsibility |
 |--------|----------------|
 | **Tailscale** | Private connectivity (`100.x` addresses), **ACLs** for who can reach which ports on which nodes. |
-| **Nexo (`Nexo:Security`)** | User-set **ExposureProfile** (`Localhost`, `Lan`, `Tailnet`, `Public`), optional **CustomAdvisory**, portal banner. **Advisory only** — not a substitute for ACLs or TLS. |
+| **Nexo (`Nexo:Security`)** | User-set **ExposureProfile** (`Localhost`, `Lan`, `Tailnet`, `Public`), optional **CustomAdvisory**, portal banner. Not a substitute for ACLs or TLS — but off-loopback profiles **refuse to start** without built-in auth unless `AllowUnauthenticatedNetworkExposure=true` (see `SECURITY.md`). |
 
 ## Recommended layout (personal / small team)
 
@@ -17,13 +17,17 @@ Tailscale is a **mesh VPN** (WireGuard-based). It does not run *inside* Nexo; yo
    - **`0.0.0.0`**: reachable on all interfaces; **restrict who can connect** with host firewall **and** Tailscale ACLs.
    - **`127.0.0.1`**: only local; use **SSH / another hop** — usually unnecessary if Tailscale reaches the node and you bind appropriately.
 
-4. Set Nexo’s profile so the portal and logs match your intent:
+4. Set Nexo’s profile so the portal and logs match your intent, **plus** a built-in auth mode — `Tailnet` (like `Lan` and `Public`) refuses to start with `AuthorizationMode=None`:
 
 ```bash
 export Nexo__Security__ExposureProfile=Tailnet
+export Nexo__Security__AuthorizationMode=ApiKey
+export Nexo__Security__ApiKey="$(openssl rand -hex 32)"
 # optional:
 export Nexo__Security__CustomAdvisory="Team: use tag:nexo only"
 export Nexo__Security__ShowAdvisoryInPortal=true
+# only if Tailscale ACLs / an authenticating proxy are your whole auth story:
+# export Nexo__Security__AllowUnauthenticatedNetworkExposure=true
 ```
 
 See **`docs/config/security-exposure.env.example`** for all keys.
