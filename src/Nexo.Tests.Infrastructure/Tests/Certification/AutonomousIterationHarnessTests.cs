@@ -64,6 +64,26 @@ public sealed class AutonomousIterationHarnessTests
     }
 
     [Fact]
+    public async Task HoldAdmission_IsTheDefault_WhenTheCallerSaysNothing()
+    {
+        // A harness constructed with only its two required collaborators must hold: an
+        // unattended swap is the opt-in, never what a caller gets by omitting an argument.
+        var harness = new AutonomousIterationHarness(
+            new CertificationGate(new CertificationRecordSigner()),
+            new CertifiedBrickHotSwapHost(
+                hmacKey: null, drainTimeout: TimeSpan.FromSeconds(10),
+                revocations: new InMemoryCertificateRevocationList()));
+
+        var result = await harness.RunIterationAsync(Context("obj-default-hold"), Candidate());
+
+        result.Tier!.Tier.Should().Be(ObjectiveTier.Tier0Autonomous,
+            "only a Tier-0 objective could have swapped, so only it proves the default");
+        result.Outcome.Should().Be(IterationOutcome.CertifiedButHeld, result.Explanation);
+        result.Explanation.Should().Contain("hold mode");
+        result.Decision!.Admitted.Should().BeTrue("the default holds ADMISSION, not certification");
+    }
+
+    [Fact]
     public async Task IntakeGating_RefusesBeforeAnyWork()
     {
         var pause = new LoopPauseControl();
