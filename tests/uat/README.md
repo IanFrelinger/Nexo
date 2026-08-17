@@ -13,6 +13,16 @@ each case the code was fine.
 | 4 | `tier4.sh` | Does the reference brick build, and does the API actually fail closed? |
 | 5 | `tier5.sh` | Do the golden paths in `docs/DEPLOYMENT.md` describe the compose files an operator would run? |
 
+| 8 | `tier8.sh` | Do the docs still describe this repo — do the paths they name exist, and can the commands they print run? |
+
+`tier8.sh` check 8.2 is the general form of the defect in #350: a documented `dotnet run --project X`
+cannot run if `X` multi-targets and the command omits `-f`, and the command still *looks* correct on
+the page, which is why rereading never catches it. Check 8.1 is deliberately scoped to pages a reader
+is told to follow — swept across every page it produced ~85 hits and zero real defects, because
+documentation legitimately names paths that do not exist (plans name paths they intend to create,
+pages name files the reader creates, and `CONTRIBUTING` names one path in the negative to warn you off
+it). A check that cries wolf gets muted, so it asks the narrower question that actually matters.
+
 `tier5.sh` needs the docker CLI and so runs on the CI runner rather than inside the SDK container the
 other tiers use. It only calls `docker compose config`, which resolves a stack without building or
 starting anything; booting the portal stack and curling `/health` is a deliberate run, noted at the
