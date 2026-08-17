@@ -13,6 +13,8 @@ on:
       - "src/Nexo.Tests.Infrastructure/Tests/Safety/**"
       - "application/src/Nexo.API/Security/**"
       - "application/src/Nexo.CLI/Commands/TrustCommand.cs"
+      - "application/src/Nexo.CLI/Program.TrustCommands.cs"
+      - "application/src/Nexo.CLI/Program.CommandRegistration.cs"
       - "scripts/security-gate*.sh"
       - "Makefile"
       - ".github/workflows/security-gate.yml"
