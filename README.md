@@ -9,13 +9,19 @@
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![.NET 9](https://img.shields.io/badge/.NET-9.0-512BD4.svg)](global.json)
 
-> **Nexo is a local-first .NET AI runtime for running auditable AI workflows** — routing work across local, cloud, and peer execution targets, and extending its own capabilities under policy-controlled trust boundaries.
+> **Nexo: auditable AI workflows on infrastructure you control — every artifact certified, every action on the record.**
 
-**New here? Start with one of three lanes:** [**Try**](#lane-1--try-run-the-portal) (run the portal in Docker) · [**Develop**](#lane-2--develop-dev-container--cli) (dev container + CLI) · [**Deploy**](#lane-3--deploy-operators) (GHCR images + compose).
+Nexo is a self-hosted .NET runtime for AI workflows you can audit. Three things you get, each with a command behind it:
 
-It watches how teams build, test, release, and operate software; learns repeatable patterns; and improves automations over time — with built-in privacy controls such as pause/resume, local-first model routing, policy gates, and audit trails.
+1. **Auditable workflows.** Submit a task and you get the output **and** the record of what ran: the task is stored under an id, and the trust log carries an entry whose `sourceId` is that id (`POST /api/copilot/task` → `GET /api/trust/dashboard`).
+2. **Certified artifacts.** Code that Nexo — or a model — proposes only becomes trusted after the certification gate: analyzer fence → witness (correctness) → mutation testing (does the witness have teeth) → determinism. The gate is the one required CI check on `master` (`cert-gate`), and every ADMIT/REJECT it has proven is a row in [`docs/certification-evidence.md`](docs/certification-evidence.md).
+3. **Your infrastructure.** Runs as a CLI, an HTTP API, containers, or embedded in your own host. Local-first: local model routing (Ollama; mock/offline behind an explicit `NEXO_ALLOW_MOCK=1`) is the default route and cloud providers are opt-in targets; the API refuses to start on a network exposure profile without auth. There is no hosted Nexo service.
 
-In this repo it ships as a .NET runtime plus deployable hosts and app-level configurations: kernel libraries, observe/adapt/improve loops, mesh/federation, gRPC transport, AWS ingress, `Nexo.CLI`, `Nexo.API`, four `apps/` configurations, and NuGet/GHCR/compose distribution paths.
+**Start here:** [`docs/TesterQuickstart.md`](docs/TesterQuickstart.md) — clone, build `Nexo.Kernel.sln`, run the API on loopback, submit one task, read its audit trail, then run the gate and watch it admit and reject. About fifteen minutes; no Docker, no API keys.
+
+Other lanes: [**Try**](#lane-1--try-run-the-portal) (portal in Docker) · [**Develop**](#lane-2--develop-dev-container--cli) (dev container + CLI) · [**Deploy**](#lane-3--deploy-operators) (GHCR images + compose) · [**Integrate**](docs/IntegratorGuide.md) (embed Nexo in your host).
+
+The trust loop that makes "certified" checkable — and the experimental, hold-mode autonomy loop built on it — is described in [Trust loop / certification](#trust-loop--certification-experimental) below. The observe → adapt → improve engine that watches how teams build, test, release, and operate software is one subsystem among several, not the product.
 
 Repository: <https://github.com/IanFrelinger/Nexo>
 
@@ -64,9 +70,9 @@ For layer-by-layer detail see [`docs/Architecture.md`](docs/Architecture.md); fo
 
 | Reader | Start here | First command or artifact |
 |--------|------------|---------------------------|
-| **Evaluator** | [Quick Start](#quick-start-5-minutes), then [`docs/GettingStarted.md`](docs/GettingStarted.md) | `dotnet run --project application/src/Nexo.CLI -- doctor --json` or the quickstart Docker image |
-| **Contributor** | [`docs/ProjectTiers.md`](docs/ProjectTiers.md) — canonical repo map, then [`CONTRIBUTING.md`](CONTRIBUTING.md) | `dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore` |
-| **Integrator** | [`docs/DistributionModels.md`](docs/DistributionModels.md), [`docs/sdk.md`](docs/sdk.md), [`docs/SdkIntegrationGuide.md`](docs/SdkIntegrationGuide.md) | NuGet host embed, `Nexo.Client`, HTTP API, CLI image, compose, or source integration |
+| **Tester / evaluator** | [`docs/TesterQuickstart.md`](docs/TesterQuickstart.md), then [`docs/GettingStarted.md`](docs/GettingStarted.md) for the pipeline and CLI tour | `dotnet build Nexo.Kernel.sln`, then `dotnet run --project application/src/Nexo.CLI -- doctor`, then the API + `POST /api/copilot/task` |
+| **Contributor** | [`docs/ProjectTiers.md`](docs/ProjectTiers.md) — canonical repo map, then [`CONTRIBUTING.md`](CONTRIBUTING.md) | `dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj` (implicit restore; `--no-restore` only after `scripts/setup/setup.sh` or the dev container has restored) |
+| **Integrator** | [`docs/IntegratorGuide.md`](docs/IntegratorGuide.md), [`docs/DistributionModels.md`](docs/DistributionModels.md), [`docs/sdk.md`](docs/sdk.md), [`docs/SdkIntegrationGuide.md`](docs/SdkIntegrationGuide.md) | NuGet host embed, `Nexo.Client`, HTTP API, CLI image, compose, or source integration (`consumer-template/CONSUMING.md` for the feed template) |
 
 ## Scope in 30 seconds
 
@@ -100,22 +106,37 @@ For the canonical tier-by-tier project map, see [`docs/ProjectTiers.md`](docs/Pr
 | Trust architecture | Barrier identity, data sensitivity, audit, policy packs, local-first controls | [`docs/TrustAndInformationArchitecture.md`](docs/TrustAndInformationArchitecture.md), [`docs/Architecture.md`](docs/Architecture.md) |
 | Distribution | NuGet, HTTP/API, CLI image, compose, source, mesh/federation | [`docs/DistributionModels.md`](docs/DistributionModels.md), [`docs/RELEASE.md`](docs/RELEASE.md) |
 
-## Default workflow
+## Trust loop / certification (experimental)
 
-1. **Evaluate / develop** — [Quick Start](#quick-start-5-minutes) → **Lane 1 (Try)** or **Lane 2 (Develop)** for the portal, Dev Container, or CLI.
-2. **Deploy / operate** — [Deploy (operators)](#deploy-operators) for GHCR images and compose stacks.
-3. **Integrate** — [`docs/DistributionModels.md`](docs/DistributionModels.md) for NuGet, HTTP, CLI, compose, source, and mesh.
-4. **Understand repo shape** — [`docs/ProjectTiers.md`](docs/ProjectTiers.md) for the canonical tier map.
+The trust loop is *how* "auditable" and "certified" are true rather than asserted. Its core invariant: an artifact carries a certificate if and only if it passed every leg of the gate — analyzer fence, witness (correctness cases authored **before** the proposal exists and never shown to the proposer), mutation testing (a witness that lets mutants escape is rejected, so the certificate has teeth), determinism — and the certificate is signed and stored with the artifact's content hash. On top of the gate sits an autonomy loop that lets a model propose code against a human-authored objective, run it through the same gate inside an attested container session, and, if admitted, hot-swap it into a running host.
+
+Status, honestly:
+
+- **The gate is CI-proven.** `cert-gate` (`bash scripts/run-cert-gate.sh`) is the only required status check on `master`; each ADMIT/REJECT it has proven is a ledger row with the CI run in [`docs/certification-evidence.md`](docs/certification-evidence.md).
+- **The autonomy loop is spike-grade and ships in hold mode.** `HoldAdmission=true` by default: it certifies fully and admits nothing until you flip it. Its evidence is local spike runs (ledger rows P2 through S5), it needs Docker plus a local Ollama model, and the ledger records the holes it exposed (including an equivalent-mutant soundness gap in S5). Do not read "certified" as "safe to run unattended" yet.
+
+Where to read and what to run:
+
+| Want | Go to |
+|------|-------|
+| The invariants and the gate legs | [`docs/trust-loop/nexo-trust-loop-spec.md`](docs/trust-loop/nexo-trust-loop-spec.md) |
+| What has actually been proven, and how | [`docs/certification-evidence.md`](docs/certification-evidence.md) (rows cite the test or spike and the CI run; "Known v0 limitations" at the end) |
+| The governed model pipeline every proposal flows through | [`docs/governed-pipeline.md`](docs/governed-pipeline.md) |
+| A complete, tracked objective + witness + recorded proposal | [`samples/autonomy-objectives/README.md`](samples/autonomy-objectives/README.md) |
+| Fly one real iteration yourself (Docker + Ollama; a spike, not a supported entry point) | [`spikes/autonomy-first-flight/run-first-flight.ps1`](spikes/autonomy-first-flight/run-first-flight.ps1) — read [`spikes/README.md`](spikes/README.md) first |
+| Author a brick the gate can judge | [`samples/hello-brick/README.md`](samples/hello-brick/README.md), then [`docs/AuthoringBricks.md`](docs/AuthoringBricks.md) |
+| The background-agent self-extend safety audit | [`docs/SELF-EXTEND-AUDIT.md`](docs/SELF-EXTEND-AUDIT.md) |
 
 ## Why Nexo
 
-**ChatGPT is a calculator; Nexo is an autopilot panel.** A calculator answers the prompt in front of it. An autopilot panel observes the whole flight, keeps the route visible, applies policy, hands control back to the operator, and records what happened.
-
-- **Adaptive orchestration.** Nexo observes workflow signals, composes repeatable automations, and improves them under policy rather than treating every prompt as an isolated one-off.
-- **Operator control.** Pause observation, keep execution local-first, route work by trust tier, and make every automation inspectable.
-- **Data sovereignty.** Cloud providers are opt-in execution targets, not dependencies. Air-gapped and self-hosted deployments are first-class.
-- **Traceability.** Decisions, routing, sanitization, adaptation, and promoted outputs are recorded for review.
+- **Control before capability.** Nothing is trusted because a model said so: proposals pass a gate, execution can be confined to attested containers, and admission is held until an operator flips it. Trust tiers, policy packs, and pause/resume sit on the execution path, not beside it.
+- **Proof, not claims.** The audit trail is queryable (`/api/trust/dashboard`, `/api/copilot/tasks`), the certificate is checkable (`cert-gate`), and the evidence ledger cites the run that proved each row.
+- **Data sovereignty.** Cloud providers are opt-in execution targets, not dependencies. Air-gapped and self-hosted deployments are first-class; the API fails closed on network exposure without auth.
 - **Composable distribution.** Use the kernel via NuGet, run the CLI/API directly, deploy containers/compose, or federate trusted peers through mesh.
+
+### Observe / adapt / improve
+
+Nexo also ships an engine that watches how teams build, test, release, and operate software, learns repeatable patterns, and improves automations over time under policy — with pause/resume, local-first routing, and audit on every step. It is one subsystem (see the [subsystem map](#subsystem-map) and [`docs/DogfoodValidation.md`](docs/DogfoodValidation.md)); every adaptation it promotes goes through the same trust path as everything else.
 
 ## Quick Start (5 minutes)
 
