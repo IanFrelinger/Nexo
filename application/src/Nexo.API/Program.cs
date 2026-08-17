@@ -323,8 +323,23 @@ app.UseNexoCopilotScopedAuthorization();
 
 app.UseRateLimiter();
 
-app.UseSwagger();
-app.UseSwaggerUI(static c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Nexo.API v1"));
+// --- Swagger (OpenAPI document + UI): on in Development, otherwise opt-in via Nexo:Api:EnableSwagger ---
+// The document enumerates every mapped route and schema; keep it off the network by default and let
+// operators turn it on explicitly (Nexo__Api__EnableSwagger=true) when they front the host with auth.
+{
+    var enableSwagger = app.Configuration.GetValue<bool?>("Nexo:Api:EnableSwagger") ?? app.Environment.IsDevelopment();
+    if (enableSwagger)
+    {
+        app.UseSwagger();
+        app.UseSwaggerUI(static c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Nexo.API v1"));
+        if (!app.Environment.IsDevelopment())
+        {
+            app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Nexo.Security")
+                .LogInformation("Swagger UI is enabled outside Development (Nexo:Api:EnableSwagger=true): /swagger exposes the full route catalogue.");
+        }
+    }
+}
+
 app.MapNexoEndpoints();
 app.MapIngressEndpoints();
 
