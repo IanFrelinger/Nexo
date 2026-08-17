@@ -977,8 +977,9 @@ public sealed class CertifiedBrickHotSwapHost : IDisposable
         }
     }
 
-    /// <summary>Same collection-driving loop as the mutation engine: Unload only requests;
-    /// the allocator is freed once the last reference drops, which needs a collection.
+    /// <summary>Drives collection after Unload, which only requests it: the allocator is
+    /// freed once the last reference drops, and that needs a collection. (The mutation
+    /// engine still uses a synchronous back-to-back loop; bringing it to parity is a follow-up.)
     /// Bounded retry with a real yield between passes rather than back-to-back passes: the
     /// swap is often reached inline on the thread that just completed the last invocation
     /// of the retiring generation, and that thread's frames still root the finished
