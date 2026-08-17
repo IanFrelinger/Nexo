@@ -1,7 +1,8 @@
 # Ephemeral stack for nexo orchestrate/agent with Ollama.
 # From repo root:
-#   NEXO_EPHEMERAL_DB=postgres docker compose -f deploy/compose/docker-compose.ephemeral.yml run --rm nexo [args]
-# When NEXO_EPHEMERAL_DB is set, postgres service is included (--profile db).
+#   docker compose -f deploy/compose/docker-compose.ephemeral.yml run --rm nexo [args]
+# To include the postgres service, enable its profile (the env var alone does nothing):
+#   docker compose -f deploy/compose/docker-compose.ephemeral.yml --profile db run --rm nexo [args]
 # Requires Docker and the .NET SDK image for the nexo build.
 #
 # For in-process ephemeral (no container for nexo), use: nexo orchestrate "request" --ephemeral

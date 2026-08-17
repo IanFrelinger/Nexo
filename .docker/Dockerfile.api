@@ -14,8 +14,14 @@ COPY --from=build /app/publish ./
 # root-owned and read-only for the non-root user below.
 ENV ASPNETCORE_URLS=http://+:8080 \
     NEXO_STATE_DIR=/data/state \
-    NEXO_DAILIES_PATH=/data/dailies
-RUN mkdir -p /data/state /data/dailies && chown -R app:app /data
+    NEXO_DAILIES_PATH=/data/dailies \
+    NEXO_FORGE_ROOT=/data/state/runtime-studio/forge \
+    NEXO_OBJECTIVES_ROOT=/data/state/runtime-studio/objectives \
+    NEXO_OBSERVATIONS_PATH=/data/state/runtime-studio/observations
+# Runtime-studio stores follow the same rule; anything that still defaults to <cwd>/.nexo (cycle
+# telemetry, DataTaxonomy) gets a writable, non-persistent /app/.nexo instead of an
+# UnauthorizedAccessException under the non-root user.
+RUN mkdir -p /data/state/runtime-studio /data/dailies /app/.nexo && chown -R app:app /data /app/.nexo
 EXPOSE 8080
 
 # The aspnet image has no curl; probe /health with bash's /dev/tcp so the check can actually pass.
