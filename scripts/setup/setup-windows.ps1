@@ -40,7 +40,7 @@ function Get-DotnetMajor {
 }
 
 function Test-SupportedDotnet {
-    return (Get-DotnetMajor) -ge 9
+    return (Get-DotnetMajor) -ge 10
 }
 
 function Install-WingetPackage {
@@ -92,8 +92,8 @@ function Invoke-ApplyDependencies {
                 Write-Host "curl is bundled with modern Windows builds. Skipping auto-install."
             }
             "dotnet" {
-                Write-Host "Installing .NET SDK 9..."
-                Install-WingetPackage -Id "Microsoft.DotNet.SDK.9" -DisplayName ".NET SDK 9"
+                Write-Host "Installing .NET SDK 10..."
+                Install-WingetPackage -Id "Microsoft.DotNet.SDK.10" -DisplayName ".NET SDK 10"
             }
             default {
                 throw "Unsupported required dependency in apply mode: $dep"
@@ -138,7 +138,7 @@ function Ensure-RepoFiles {
 function Invoke-Restore {
     Ensure-RepoFiles
     if (-not (Test-CommandExists -Name "dotnet")) {
-        throw "dotnet not found. Install .NET SDK 9+ via your IDE, then re-run setup check/restore."
+        throw "dotnet not found. Install .NET SDK 10+ via your IDE, then re-run setup check/restore."
     }
 
     $restoreTargets = @(
@@ -175,9 +175,9 @@ function Invoke-DependencyCheck {
     }
 
     if (Test-SupportedDotnet) {
-        Write-Host "  [OK] dotnet SDK >= 9"
+        Write-Host "  [OK] dotnet SDK >= 10"
     } else {
-        Write-Host "  [MISSING] dotnet SDK >= 9"
+        Write-Host "  [MISSING] dotnet SDK >= 10"
         $missingRequired.Add("dotnet")
     }
 
@@ -200,7 +200,7 @@ function Invoke-DependencyCheck {
             switch ($dep) {
                 "git" { Write-Host "  - Install Git via your IDE or system installer." }
                 "curl" { Write-Host "  - Install curl via system tooling." }
-                "dotnet" { Write-Host "  - Install .NET SDK 9+ via your IDE installer (recommended)." }
+                "dotnet" { Write-Host "  - Install .NET SDK 10+ via your IDE installer (recommended)." }
                 default { Write-Host "  - Install $dep manually." }
             }
         }

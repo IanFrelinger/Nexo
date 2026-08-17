@@ -24,6 +24,10 @@
     <PackageVersion Include="PublicApiGenerator" Version="11.5.4" />
     <PackageVersion Include="Testcontainers.DynamoDb" Version="4.11.0" />
     <PackageVersion Include="Testcontainers.Neo4j" Version="4.11.0" />
+    <!-- Override transitive SSH.NET 2025.1.0 pulled by Testcontainers (NU1903 / GHSA-q939-rpr3-3284).
+         SDK 10 audits transitive packages by default, so the two Testcontainers consumers reference
+         the patched version directly (same pattern as SQLitePCLRaw below). -->
+    <PackageVersion Include="SSH.NET" Version="2026.0.0" />
     <PackageVersion Include="Neo4j.Driver" Version="5.28.1" />
   </ItemGroup>
   <!-- System Packages -->

@@ -8,7 +8,7 @@ Build everything:
 dotnet build Nexo.Demos.sln
 ```
 
-Run **`Nexo.API`** first (for example `dotnet run --project application/src/Nexo.API` or your usual host). Default base URL is **`http://localhost:5000`**.
+Run **`Nexo.API`** first (for example `dotnet run --project application/src/Nexo.API -f net10.0` or your usual host). Default base URL is **`http://localhost:5000`**.
 
 ## Console (`Nexo.Demos.ConsoleClient`)
 

@@ -33,7 +33,7 @@ jobs:
         with:
           dotnet-version: |
             8.0.x
-            9.0.x
+            10.0.x
 
       - name: Restore
         shell: bash
@@ -61,14 +61,14 @@ jobs:
             --logger "trx;LogFileName=gate-pipelines-net8.trx" \
             --results-directory test-results
 
-      - name: Pipeline tests (net9)
+      - name: Pipeline tests (net10)
         shell: bash
         run: |
           dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
-            -f net9.0 \
+            -f net10.0 \
             --filter "FullyQualifiedName~Pipelines" \
             --logger "console;verbosity=minimal" \
-            --logger "trx;LogFileName=gate-pipelines-net9.trx" \
+            --logger "trx;LogFileName=gate-pipelines-net10.trx" \
             --results-directory test-results
 
       - name: Host DI smoke

@@ -1,5 +1,5 @@
 # Dockerfile for running multi-platform tests on Android
-ARG DOTNET_VERSION=8.0
+ARG DOTNET_VERSION=10.0
 FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_VERSION}
 
 # Install Android SDK and dependencies
@@ -38,7 +38,8 @@ ENV DOTNET_RUNNING_IN_CONTAINER=true
 # Copy project files
 COPY . .
 
-# Install .NET 8.0 runtime for CLI and net8.0 test host (SDK image is 9.x)
+# Install the .NET 8.0 runtime so the net8.0 inner build of the multi-target test projects
+# runs on the real 8.0 runtime (net8 consumer story); the SDK image itself is 10.x.
 RUN curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh && \
     bash /tmp/dotnet-install.sh --channel 8.0 --runtime aspnetcore --install-dir /usr/share/dotnet --no-path && \
     bash /tmp/dotnet-install.sh --channel 8.0 --runtime dotnet --install-dir /usr/share/dotnet --no-path && \

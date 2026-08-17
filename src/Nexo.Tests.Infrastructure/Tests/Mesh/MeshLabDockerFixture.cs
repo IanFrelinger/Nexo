@@ -9,7 +9,7 @@ namespace Nexo.Tests.Infrastructure.Tests.Mesh;
 /// </summary>
 public sealed class MeshLabDockerFixture : IAsyncLifetime
 {
-    /// <summary>Serializes compose on one machine (dotnet test may run net8 + net9 hosts in parallel).</summary>
+    /// <summary>Serializes compose on one machine (dotnet test may run net8 + net10 hosts in parallel).</summary>
     private static readonly Mutex s_meshLabGate =
         new(initiallyOwned: false, name: "Nexo.MeshLab.DockerE2E.v1");
 

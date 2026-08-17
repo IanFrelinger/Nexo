@@ -20,7 +20,7 @@ running. NuGet packages persist in the same named volume the devcontainer uses
 xUnit filter expression. Defaults to the cert-gate namespace filter.
 
 .PARAMETER Framework
-Target framework to test. Defaults to net9.0 (the image carries the 9.x SDK;
+Target framework to test. Defaults to net10.0 (the image carries the 10.x SDK;
 DOTNET_ROLL_FORWARD=LatestMajor covers net8.0 test hosts too).
 
 .PARAMETER Project
@@ -34,7 +34,7 @@ pwsh scripts/test-in-container.ps1 -Filter "FullyQualifiedName~CertifiedBrickHot
 #>
 param(
     [string]$Filter = "FullyQualifiedName~Nexo.Tests.Infrastructure.Tests.Certification",
-    [string]$Framework = "net9.0",
+    [string]$Framework = "net10.0",
     [string]$Project = "src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj",
     [string]$Ref = "HEAD"
 )
@@ -46,7 +46,7 @@ if (-not $repoRoot) { throw "Not inside a git repository." }
 $sha = (git rev-parse $Ref)
 
 # Same image + roll-forward env as .devcontainer/devcontainer.json.
-$image = "mcr.microsoft.com/devcontainers/dotnet:9.0-bookworm"
+$image = "mcr.microsoft.com/devcontainers/dotnet:10.0-noble"
 
 Write-Host "== container test: $sha ($Framework) filter='$Filter' =="
 

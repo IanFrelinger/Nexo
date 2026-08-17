@@ -39,7 +39,7 @@ Or manually:
   `$env:OLLAMA_BASE_URL = 'http://127.0.0.1:$Port'
   `$env:OLLAMA_MODEL = '$Model'
   `$env:Nexo__NodeCapabilityRuntime__Ollama__BaseUrl = 'http://127.0.0.1:$Port'
-  dotnet run --project application/src/Nexo.API/Nexo.API.csproj
+  dotnet run --project application/src/Nexo.API/Nexo.API.csproj -f net10.0
 
 Stop Ollama: docker compose -f deploy/compose/docker-compose.ollama.yml down
 "@

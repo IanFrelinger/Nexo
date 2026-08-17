@@ -14,7 +14,7 @@ public static class TestTimeouts
     public const int Integration = 60_000;
 
     /// <summary>
-    /// FileSystemWatcher integration: parallel net8+net9 test hosts must serialize; the waiter polls until the lock is free.
+    /// FileSystemWatcher integration: parallel net8+net10 test hosts must serialize; the waiter polls until the lock is free.
     /// </summary>
     public const int FileSystemPipelineIntegration = 240_000;
 

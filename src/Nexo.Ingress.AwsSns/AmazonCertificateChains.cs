@@ -30,7 +30,13 @@ public static class AmazonCertificateChains
         using var custom = new X509Chain();
         custom.ChainPolicy.RevocationMode = revocationMode;
         custom.ChainPolicy.TrustMode = X509ChainTrustMode.CustomRootTrust;
+#if NET9_0_OR_GREATER
+        // The X509Certificate2(byte[]) constructor is obsolete from .NET 9 (SYSLIB0057); the loader
+        // is the exact replacement for DER-encoded certificate bytes.
+        custom.ChainPolicy.CustomTrustStore.Add(X509CertificateLoader.LoadCertificate(AmazonRootCa1.RawData));
+#else
         custom.ChainPolicy.CustomTrustStore.Add(new X509Certificate2(AmazonRootCa1.RawData));
+#endif
         return custom.Build(leaf);
     }
 

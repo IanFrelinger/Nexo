@@ -25,14 +25,14 @@ internal static class BootstrapRuntime
             "sudo apt-get update && sudo apt-get install -y curl",
             true,
             false),
-        // The SDK alone is not enough to RUN the CLI/API: they target net8.0 and need the
-        // Microsoft.AspNetCore.App shared runtime, 8.x or (via RollForward=Major) 9.x+.
+        // The SDK alone is not enough to RUN the CLI/API: they target net10.0 and need the
+        // Microsoft.AspNetCore.App shared runtime, 10.x or (via RollForward=Major) newer.
         // A host with only `dotnet` on PATH but no usable ASP.NET Core runtime must go red here.
         new(
             "dotnet",
             ".NET SDK",
-            """command -v dotnet >/dev/null && dotnet --list-runtimes 2>/dev/null | grep -Eq '^Microsoft\.AspNetCore\.App ([89]|[1-9][0-9])\.'""",
-            "sudo apt-get update && sudo apt-get install -y dotnet-sdk-9.0",
+            """command -v dotnet >/dev/null && dotnet --list-runtimes 2>/dev/null | grep -Eq '^Microsoft\.AspNetCore\.App [1-9][0-9]\.'""",
+            "sudo apt-get update && sudo apt-get install -y dotnet-sdk-10.0",
             true,
             false),
         new(
@@ -77,7 +77,7 @@ internal static class BootstrapRuntime
         new(
             "dotnet",
             ".NET SDK",
-            """command -v dotnet >/dev/null && dotnet --list-runtimes 2>/dev/null | grep -Eq '^Microsoft\.AspNetCore\.App ([89]|[1-9][0-9])\.'""",
+            """command -v dotnet >/dev/null && dotnet --list-runtimes 2>/dev/null | grep -Eq '^Microsoft\.AspNetCore\.App [1-9][0-9]\.'""",
             "brew install --cask dotnet-sdk",
             true,
             false),
@@ -116,8 +116,8 @@ internal static class BootstrapRuntime
         new(
             "dotnet",
             ".NET SDK",
-            """$v = dotnet --version 2>$null; if (-not $v) { exit 1 }; $major = [int](($v -split '\.')[0]); if ($major -lt 9) { exit 1 }; $rt = dotnet --list-runtimes 2>$null | Where-Object { $_ -match '^Microsoft\.AspNetCore\.App ([89]|[1-9][0-9])\.' }; if ($rt) { exit 0 } else { exit 1 }""",
-            """winget install --id Microsoft.DotNet.SDK.9 --exact --accept-package-agreements --accept-source-agreements --silent""",
+            """$v = dotnet --version 2>$null; if (-not $v) { exit 1 }; $major = [int](($v -split '\.')[0]); if ($major -lt 10) { exit 1 }; $rt = dotnet --list-runtimes 2>$null | Where-Object { $_ -match '^Microsoft\.AspNetCore\.App [1-9][0-9]\.' }; if ($rt) { exit 0 } else { exit 1 }""",
+            """winget install --id Microsoft.DotNet.SDK.10 --exact --accept-package-agreements --accept-source-agreements --silent""",
             true,
             false),
         new(

@@ -4,14 +4,15 @@
 #   docker run --rm -p 127.0.0.1:8080:8080 nexo:latest
 #   Open http://localhost:8080
 # No auth in this image: publish on 0.0.0.0 only behind auth + TLS (README.md "Security Defaults").
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 COPY . .
 RUN dotnet restore application/src/Nexo.API/Nexo.API.csproj
-RUN dotnet publish application/src/Nexo.API/Nexo.API.csproj -c Release -o /app/publish --no-restore
+# Nexo.API multi-targets net8.0;net10.0 (net8.0 only for in-repo library consumers); the image ships net10.0.
+RUN dotnet publish application/src/Nexo.API/Nexo.API.csproj -c Release -f net10.0 -o /app/publish --no-restore
 
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 COPY --from=build /app/publish ./
 

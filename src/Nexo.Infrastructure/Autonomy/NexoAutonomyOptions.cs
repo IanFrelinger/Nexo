@@ -42,7 +42,7 @@ public sealed class NexoAutonomyOptions
     /// Whether every iteration must compile its candidate INSIDE the attested session
     /// (the in-container toolchain leg). Requires <see cref="UseSandboxSessions"/> and a
     /// <see cref="SessionImage"/> whose SDK can target the candidate project (e.g.
-    /// <c>mcr.microsoft.com/dotnet/sdk:9.0</c>). Iterations without a session then refuse
+    /// <c>mcr.microsoft.com/dotnet/sdk:10.0</c>). Iterations without a session then refuse
     /// fail-closed rather than building on the host.
     /// </summary>
     public bool BuildCandidateInSession { get; set; }

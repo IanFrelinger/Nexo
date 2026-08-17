@@ -6,7 +6,7 @@
     Pack after runtime graph: scripts/pack-nexo-runtime-graph.sh (local feed + configfile, like Hosting.Bundle).
   -->
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <IsPackable>true</IsPackable>

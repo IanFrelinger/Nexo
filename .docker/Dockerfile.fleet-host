@@ -1,4 +1,6 @@
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+# Build stage follows global.json (SDK 10). The commercial Fleet.Host project still targets net8.0,
+# so the runtime stage stays on the 8.0 ASP.NET Core image (commercial/ is out of scope for the net10 move).
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 COPY . .

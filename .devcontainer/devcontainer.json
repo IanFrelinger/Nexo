@@ -1,6 +1,6 @@
 {
   "name": "Nexo",
-  "image": "mcr.microsoft.com/devcontainers/dotnet:9.0-bookworm",
+  "image": "mcr.microsoft.com/devcontainers/dotnet:10.0-noble",
   "containerEnv": {
     "DOTNET_ROLL_FORWARD": "LatestMajor"
   },

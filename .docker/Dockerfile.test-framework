@@ -1,5 +1,6 @@
-# Dockerfile for running Nexo framework tests on Ubuntu (SDK 9 restores net8 test graph)
-ARG DOTNET_SDK_VERSION=9.0
+# Dockerfile for running Nexo framework tests on Ubuntu (SDK 10 restores the net8 test graph;
+# the 8.0 runtime below keeps the -f net8.0 lane on the real 8.0 runtime)
+ARG DOTNET_SDK_VERSION=10.0
 FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_SDK_VERSION}
 
 RUN apt-get update && \
