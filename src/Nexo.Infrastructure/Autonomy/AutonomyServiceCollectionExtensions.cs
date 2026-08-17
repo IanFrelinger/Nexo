@@ -102,7 +102,11 @@ public static class AutonomyServiceCollectionExtensions
             sp.GetRequiredService<IProcessCommandRunner>(),
             clock: null,
             logger: sp.GetService<ILogger<DockerSandboxedSessionRunner>>(),
-            provenance: sp.GetRequiredService<ISessionProvenanceSink>()));
+            provenance: sp.GetRequiredService<ISessionProvenanceSink>(),
+            // The operator's digest pin, when set: sessions refuse to start in any image
+            // but the pinned identity. Null = capture only.
+            expectedImageDigest: sp.GetRequiredService<IOptions<NexoAutonomyOptions>>()
+                .Value.SessionImageDigest));
         services.TryAddSingleton(sp => new DockerSandboxSessionReaper(
             sp.GetRequiredService<IProcessCommandRunner>(),
             clock: null,

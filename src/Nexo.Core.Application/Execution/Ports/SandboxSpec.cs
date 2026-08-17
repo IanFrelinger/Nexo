@@ -82,4 +82,17 @@ public sealed record SandboxSpec(
     /// reach is certificate-relevant either way. Ignored for other network modes.
     /// </summary>
     public IReadOnlyList<string> AllowedEndpoints { get; init; } = Array.Empty<string>();
+
+    /// <summary>
+    /// The sandbox paths the workload needs to WRITE — its working directories plus whatever
+    /// its toolchain scribbles into (temp, home). Backends that seal the sandbox's root
+    /// filesystem read-only back each listed path with ephemeral, size-capped scratch
+    /// storage that dies with the sandbox; everything else stays read-only, so a write
+    /// outside the declared surface fails loudly instead of landing somewhere unrecorded.
+    /// Part of the spec, and therefore of the certificate's <c>sandbox-spec</c> input: what
+    /// a session was ALLOWED to write is evidence. Empty declares no write surface at all —
+    /// correct for a pure keepalive, and a loud failure for a workload that forgot to
+    /// declare its own.
+    /// </summary>
+    public IReadOnlyList<string> ScratchPaths { get; init; } = Array.Empty<string>();
 }

@@ -365,6 +365,15 @@ See `docs/runtime/ExecutionRouting.md` for detailed execution flow and resilienc
 | `NEXO_OBSERVATION_FAIL_OPEN` | `1` = observation pipeline continues on store errors | unset |
 | `BING_SEARCH_KEY` | API key for Bing web search provider | unset (falls back to mock) |
 
+## Autonomy sessions (`Nexo__Autonomy__*`)
+
+Bound from the `Nexo:Autonomy` section (see `NexoAutonomyOptions` for the full set; the loop is off unless `Enabled=true`).
+
+| Variable / config key | Description | Default |
+|-----------------------|-------------|---------|
+| `Nexo__Autonomy__SessionImage` | Container image proposal sessions start from; required when `UseSandboxSessions=true`. Must already be present on the engine — sessions run with `--pull never` and never fetch an image | unset |
+| `Nexo__Autonomy__SessionImageDigest` | Optional pin on the session image's identity: the engine image ID (`sha256:…`) that `SessionImage` must resolve to — the same value attestation records and certificates carry as their `image-digest` input, so pin by copying it from a certificate you have read. When set, a session whose image resolves to anything else refuses to start (checked before `docker run` and again at attestation); a value not of the form `sha256:…` fails validation at boot | unset (capture only) |
+
 ## Barriers (`Nexo__Barriers__*`)
 
 Bound from the `Nexo:Barriers` section (`appsettings.json` or `Nexo__Barriers__*` environment variables).

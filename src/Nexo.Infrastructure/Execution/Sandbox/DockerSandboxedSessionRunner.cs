@@ -35,24 +35,40 @@ public sealed class DockerSandboxedSessionRunner : ISandboxedSessionRunner
     private readonly TimeProvider _clock;
     private readonly ISessionProvenanceSink? _provenance;
     private readonly ILogger<DockerSandboxedSessionRunner>? _logger;
+    private readonly string? _expectedImageDigest;
 
-    /// <summary>Creates a Docker-backed session runner.</summary>
+    /// <summary>
+    /// Creates a Docker-backed session runner. <paramref name="expectedImageDigest"/>, when
+    /// set, PINS the session image: the image identity the spec's image reference must
+    /// resolve to (the engine's image ID, <c>sha256:…</c> — the same value attestation
+    /// records as the digest and the certificate carries as its <c>image-digest</c> input).
+    /// A session whose image resolves to anything else refuses to start. Null keeps
+    /// today's capture-only behaviour: the resolved identity is recorded, not checked.
+    /// </summary>
     public DockerSandboxedSessionRunner(
         IProcessCommandRunner processRunner,
         TimeProvider? clock = null,
         ILogger<DockerSandboxedSessionRunner>? logger = null,
-        ISessionProvenanceSink? provenance = null)
+        ISessionProvenanceSink? provenance = null,
+        string? expectedImageDigest = null)
     {
         _processRunner = processRunner ?? throw new ArgumentNullException(nameof(processRunner));
         _clock = clock ?? TimeProvider.System;
         _logger = logger;
         _provenance = provenance;
+        _expectedImageDigest = string.IsNullOrWhiteSpace(expectedImageDigest) ? null : expectedImageDigest.Trim();
     }
+
+    /// <summary>The pinned image identity, or null when the runner only captures it.</summary>
+    public string? ExpectedImageDigest => _expectedImageDigest;
 
     /// <inheritdoc />
     public async Task<ISandboxedSession> StartAsync(SandboxSpec spec, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(spec);
+
+        if (_expectedImageDigest is not null)
+            await RefuseUnlessImageMatchesPinAsync(spec, cancellationToken).ConfigureAwait(false);
 
         var sessionId = $"{NamePrefix}{Guid.NewGuid():N}";
         var deadline = _clock.GetUtcNow() + (spec.Limits?.Timeout is { } t && t > TimeSpan.Zero ? t : DefaultSessionLifetime);
@@ -75,7 +91,8 @@ public sealed class DockerSandboxedSessionRunner : ISandboxedSessionRunner
             Image = spec.Image,
         });
 
-        return new DockerSandboxedSession(sessionId, spec, _processRunner, _clock, RecordProvenance, _logger);
+        return new DockerSandboxedSession(
+            sessionId, spec, _processRunner, _clock, RecordProvenance, _logger, _expectedImageDigest);
     }
 
     private void RecordProvenance(SessionProvenanceEvent provenanceEvent)
@@ -92,6 +109,44 @@ public sealed class DockerSandboxedSessionRunner : ISandboxedSessionRunner
             // Contract mirror of the hot-swap sinks: a provenance sink failure must never
             // fail a session operation.
             _logger?.LogWarning(ex, "Session provenance sink threw; the session operation proceeds");
+        }
+    }
+
+    /// <summary>
+    /// The <c>docker image inspect</c> format string the digest pin resolves through: the
+    /// image ID, which is exactly what a running container's <c>{{.Image}}</c> reports.
+    /// </summary>
+    public const string ImageIdentityFormat = "{{.Id}}";
+
+    /// <summary>
+    /// Digest pin, checked BEFORE <c>docker run</c>: resolves the spec's image reference on
+    /// the engine and refuses when it is absent (nothing to compare — and <c>--pull never</c>
+    /// would refuse the start anyway) or resolves to an identity other than the pin.
+    /// Attestation re-checks the started container's own image against the pin, so a tag
+    /// retargeted between this probe and the start is still caught before any work runs.
+    /// </summary>
+    private async Task RefuseUnlessImageMatchesPinAsync(SandboxSpec spec, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrWhiteSpace(spec.Image))
+            throw new ArgumentException("SandboxSpec.Image is required for the Docker backend.", nameof(spec));
+
+        var resolve = await _processRunner
+            .RunAsync("docker", new[] { "image", "inspect", spec.Image!, "--format", ImageIdentityFormat }, cancellationToken)
+            .ConfigureAwait(false);
+        if (!resolve.Succeeded)
+        {
+            throw new InvalidOperationException(
+                $"Session image '{spec.Image}' is pinned to '{_expectedImageDigest}' but cannot be resolved on the "
+                + $"engine (image inspect exit {resolve.ExitCode}): {resolve.StdErr}. Refusing to start: an "
+                + "unresolvable image cannot be shown to be the pinned one.");
+        }
+
+        var resolved = resolve.StdOut.Trim();
+        if (!string.Equals(resolved, _expectedImageDigest, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                $"Session image '{spec.Image}' resolves to '{resolved}' but is pinned to '{_expectedImageDigest}'; "
+                + "refusing to start a session in an image other than the one the operator pinned.");
         }
     }
 
@@ -144,27 +199,68 @@ public sealed class DockerSandboxedSessionRunner : ISandboxedSessionRunner
     }
 
     /// <summary>
-    /// The <c>docker inspect</c> format string attestation reads: image identity plus the
-    /// effective memory/pids/cpu caps, tab-separated.
+    /// The <c>docker inspect</c> format string attestation reads, tab-separated: image
+    /// identity, the effective memory/pids/cpu caps, then the containment actually applied
+    /// — network mode, read-only rootfs, dropped capabilities, security options (the last
+    /// two comma-joined). The containment fields are what the certificate needs to say
+    /// "this is how the session was contained" rather than "this is what was asked for".
     /// </summary>
     public const string InspectFormat =
-        "{{.Image}}\t{{.HostConfig.Memory}}\t{{.HostConfig.PidsLimit}}\t{{.HostConfig.NanoCpus}}";
+        "{{.Image}}\t{{.HostConfig.Memory}}\t{{.HostConfig.PidsLimit}}\t{{.HostConfig.NanoCpus}}"
+        + "\t{{.HostConfig.NetworkMode}}\t{{.HostConfig.ReadonlyRootfs}}"
+        + "\t{{join .HostConfig.CapDrop \",\"}}\t{{join .HostConfig.SecurityOpt \",\"}}";
+
+    /// <summary>
+    /// The engine's network-mode name for "no network" — what <c>--network=none</c> reports
+    /// back through inspect.
+    /// </summary>
+    public const string NoNetworkMode = "none";
 
     /// <summary>
     /// Parses the <see cref="InspectFormat"/> output line. Unparsable numeric fields
     /// (docker renders unset values as <c>&lt;nil&gt;</c>) come back null — which the
-    /// attestation's shortfall check treats as unverified, fail-closed.
+    /// attestation's shortfall check treats as unverified, fail-closed. Missing trailing
+    /// fields (an older format, a truncated line) come back null/empty for the same reason:
+    /// absent evidence is never read as "contained".
     /// </summary>
-    public static (string? ImageDigest, long? MemoryBytes, long? PidsLimit, long? NanoCpus) ParseInspectLine(string line)
+    public static SessionInspection ParseInspectLine(string line)
     {
         var parts = (line ?? "").Trim().Split('\t');
         var digest = parts.Length > 0 && !string.IsNullOrWhiteSpace(parts[0]) ? parts[0].Trim() : null;
-        return (
+        return new SessionInspection(
             digest,
             parts.Length > 1 && long.TryParse(parts[1].Trim(), out var mem) ? mem : null,
             parts.Length > 2 && long.TryParse(parts[2].Trim(), out var pids) ? pids : null,
-            parts.Length > 3 && long.TryParse(parts[3].Trim(), out var nano) ? nano : null);
+            parts.Length > 3 && long.TryParse(parts[3].Trim(), out var nano) ? nano : null,
+            parts.Length > 4 && !string.IsNullOrWhiteSpace(parts[4]) ? parts[4].Trim() : null,
+            parts.Length > 5 && bool.TryParse(parts[5].Trim(), out var readOnly) ? readOnly : null,
+            parts.Length > 6 ? SplitList(parts[6]) : Array.Empty<string>(),
+            parts.Length > 7 ? SplitList(parts[7]) : Array.Empty<string>());
+
+        static IReadOnlyList<string> SplitList(string field) =>
+            field.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
     }
+
+    /// <summary>
+    /// One parsed <see cref="InspectFormat"/> line: what the engine says the container is.
+    /// </summary>
+    /// <param name="ImageDigest">Resolved image identity, or null when unreported.</param>
+    /// <param name="MemoryBytes">Effective memory cap in bytes; null when unparsable.</param>
+    /// <param name="PidsLimit">Effective pids cap; null when unparsable.</param>
+    /// <param name="NanoCpus">Effective cpu cap in nano-cpus; null when unparsable.</param>
+    /// <param name="NetworkMode">Effective network mode name; null when unreported.</param>
+    /// <param name="ReadOnlyRootFilesystem">Whether the rootfs is read-only; null when unreported.</param>
+    /// <param name="DroppedCapabilities">Capabilities dropped; empty when none or unreported.</param>
+    /// <param name="SecurityOptions">Security options applied; empty when none or unreported.</param>
+    public sealed record SessionInspection(
+        string? ImageDigest,
+        long? MemoryBytes,
+        long? PidsLimit,
+        long? NanoCpus,
+        string? NetworkMode,
+        bool? ReadOnlyRootFilesystem,
+        IReadOnlyList<string> DroppedCapabilities,
+        IReadOnlyList<string> SecurityOptions);
 
     private sealed class DockerSandboxedSession : ISandboxedSession
     {
@@ -173,6 +269,7 @@ public sealed class DockerSandboxedSessionRunner : ISandboxedSessionRunner
         private readonly TimeProvider _clock;
         private readonly Action<SessionProvenanceEvent> _recordProvenance;
         private readonly ILogger? _logger;
+        private readonly string? _expectedImageDigest;
         private int _stopped;
 
         public DockerSandboxedSession(
@@ -181,7 +278,8 @@ public sealed class DockerSandboxedSessionRunner : ISandboxedSessionRunner
             IProcessCommandRunner processRunner,
             TimeProvider clock,
             Action<SessionProvenanceEvent> recordProvenance,
-            ILogger? logger)
+            ILogger? logger,
+            string? expectedImageDigest)
         {
             SessionId = sessionId;
             _spec = spec;
@@ -189,6 +287,7 @@ public sealed class DockerSandboxedSessionRunner : ISandboxedSessionRunner
             _clock = clock;
             _recordProvenance = recordProvenance;
             _logger = logger;
+            _expectedImageDigest = expectedImageDigest;
         }
 
         public string SessionId { get; }
@@ -209,17 +308,44 @@ public sealed class DockerSandboxedSessionRunner : ISandboxedSessionRunner
                 .RunAsync("docker", new[] { "version", "--format", "{{.Server.Version}}" }, cancellationToken)
                 .ConfigureAwait(false);
 
-            var (digest, memory, pids, nano) = ParseInspectLine(inspect.StdOut);
+            var inspection = ParseInspectLine(inspect.StdOut);
+
+            if (_expectedImageDigest is not null
+                && !string.Equals(inspection.ImageDigest, _expectedImageDigest, StringComparison.Ordinal))
+            {
+                // The pin was checked before start; this closes the window in which the tag
+                // could have been retargeted between that probe and the container's start.
+                throw new InvalidOperationException(
+                    $"Sandbox session '{SessionId}' is running image '{inspection.ImageDigest ?? "<unresolved>"}' "
+                    + $"but the session image is pinned to '{_expectedImageDigest}'; refusing to attest a "
+                    + "session in an image other than the pinned one.");
+            }
+
+            if (_spec.Network == NetworkAccess.None
+                && !string.Equals(inspection.NetworkMode, NoNetworkMode, StringComparison.Ordinal))
+            {
+                // Same fail-closed shape as the resource-cap shortfalls: the spec asked for
+                // no network, and an engine that reports anything else (or nothing) has
+                // not demonstrably honored it.
+                throw new InvalidOperationException(
+                    $"Sandbox session '{SessionId}' requested no network but the engine reports network mode "
+                    + $"'{inspection.NetworkMode ?? "<unknown>"}'; refusing to attest an environment weaker than requested.");
+            }
+
             var attestation = new SessionAttestation
             {
                 SessionId = SessionId,
                 Image = _spec.Image ?? "",
-                ImageDigest = digest,
+                ImageDigest = inspection.ImageDigest,
                 EngineVersion = version.Succeeded ? version.StdOut.Trim() : null,
                 Requested = _spec.Limits ?? new ResourceLimits(),
-                EffectiveMemoryBytes = memory,
-                EffectivePidsLimit = pids,
-                EffectiveNanoCpus = nano,
+                EffectiveMemoryBytes = inspection.MemoryBytes,
+                EffectivePidsLimit = inspection.PidsLimit,
+                EffectiveNanoCpus = inspection.NanoCpus,
+                EffectiveNetworkMode = inspection.NetworkMode,
+                EffectiveReadOnlyRootFilesystem = inspection.ReadOnlyRootFilesystem,
+                EffectiveDroppedCapabilities = inspection.DroppedCapabilities,
+                EffectiveSecurityOptions = inspection.SecurityOptions,
                 AttestedAt = _clock.GetUtcNow(),
             };
 
