@@ -66,7 +66,7 @@ flowchart TB
 | `*GapCoverageTests` | Large volume (Transport, Orchestration, Infrastructure, …) | **Freeze scope**; grow only with touched files |
 | ProdStyle | `make test-prod-style`, prime-time | **Mandatory** for routing/hosting/API PRs |
 | Mesh / Docker | `mesh-lab-gate`, tier D gates | **Required** for mesh/fleet/deploy PRs |
-| Coverage CI | `domain-coverage`, `kernel-coverage` | **Required** branch checks |
+| Coverage CI | `kernel-coverage` (Domain leg + floors) | **Required** branch checks |
 | Contributor docs | Spread across `Testing.md`, `TestingModel.md` | **This doc** is the strategy; others stay operational |
 
 ---
@@ -90,7 +90,7 @@ make test-prod-style
 
 | Change type | Minimum proof |
 |-------------|----------------|
-| Domain types / invariants | Domain tests + `domain-coverage` |
+| Domain types / invariants | Domain tests + `kernel-coverage` (Domain 100% leg) |
 | Infrastructure adapter (small) | Gap or focused unit test + coverage floor |
 | Infrastructure adapter (Docker/DB/cloud) | ProdStyle or virtual host + tier gate; **no** new 100% gap file |
 | API / hosting | `application-gate-tier-c` or ProdStyle WAF tests |
@@ -128,9 +128,9 @@ Phases are **ordered by dependency**. Complete phase N sign-off in [Testing stra
 | # | Task | Done when |
 |---|------|-----------|
 | 1.1 | `kernel-coverage-gate.yml` + `scripts/ci/kernel-coverage-gate.sh` | Green on `master` |
-| 1.2 | `core-domain-coverage` threshold **100%** | Green |
+| 1.2 | Domain threshold **100%** (`core-domain-coverage`, folded into `kernel-coverage-gate` 2026-08-16) | Green |
 | 1.3 | Document exclusions (Docker/Postgres/Ollama) in [Coverage gates v1](../production-readiness/CoverageGates-v1.md) | Doc merged |
-| 1.4 | Branch protection: require `domain-coverage` + `kernel-coverage` | GitHub settings |
+| 1.4 | Branch protection: require `kernel-coverage` | GitHub settings |
 | 1.5 | Remove or rewrite any internal docs that imply **global 100% line** is the goal | Audit complete |
 
 ### Phase 2 — ProdStyle-first for new code
@@ -184,7 +184,7 @@ Phases are **ordered by dependency**. Complete phase N sign-off in [Testing stra
 
 | Layer | Local command | CI workflow (examples) | Required on `master` |
 |-------|---------------|------------------------|----------------------|
-| L2 Domain | `kernel-coverage-gate` (domain leg) | `core-domain-coverage.yml` | **Yes** (`domain-coverage`) |
+| L2 Domain | `kernel-coverage-gate` (domain leg) | `kernel-coverage-gate.yml` | **Yes** (`kernel-coverage`) |
 | L3 Ratchet | `kernel-coverage-gate` (full) | `kernel-coverage-gate.yml` | **Yes** (`kernel-coverage`) |
 | L4 ProdStyle | `make test-prod-style` | `kernel-gate-tier-c`, prime-time, `ci verify` | Path-dependent |
 | L4 Application | `make application-gate-tier-c` | application workflows | Path-dependent |

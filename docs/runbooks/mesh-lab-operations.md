@@ -78,7 +78,7 @@ There is **no distributed consensus** in the MVP director—last writer wins on 
 
 **Automated TLS:** `make mesh-lab-e2e-tls` or weekly **`mesh-lab-tls-gate.yml`**. **gRPC:** **`grpc-transport-gate.yml`** / `make test-prime-time`.
 
-**Tailscale / two physical hosts:** [`mesh-lab-verify-remote.sh`](../../scripts/mesh-lab-verify-remote.sh) + optional **`mesh-lab-remote-gate.yml`** (repository secrets). See [`MeshPhase12RemoteNetworkingAutomation.md`](../MeshPhase12RemoteNetworkingAutomation.md).
+**Tailscale / two physical hosts:** [`mesh-lab-verify-remote.sh`](../../scripts/mesh-lab-verify-remote.sh) run from a tailnet host (the `mesh-lab-remote-gate.yml` Actions wrapper was deleted 2026-08-16; it had never been dispatched). See [`MeshPhase12RemoteNetworkingAutomation.md`](../MeshPhase12RemoteNetworkingAutomation.md).
 
 ## Headless director CLI
 

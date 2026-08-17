@@ -8,10 +8,11 @@ Automated line-coverage floors for kernel assemblies. These gates complement fun
 
 | Workflow | Job id | Assemblies | Line threshold |
 |----------|--------|------------|----------------|
-| [Core domain coverage](../../.github/workflows/core-domain-coverage.yml) | `domain-coverage` | `Nexo.Core.Domain` | **100%** |
 | [Kernel coverage gate](../../.github/workflows/kernel-coverage-gate.yml) | `kernel-coverage` | Domain + Infrastructure + Core.Application | **100% / 83% / 67%** |
 
-Enable **`domain-coverage`** and **`kernel-coverage`** as required status checks on the default branch (see [TestingModel.md](../architecture/TestingModel.md)).
+The former `core-domain-coverage.yml` (`domain-coverage`, Domain 100%) was deleted 2026-08-16: it ran the identical `dotnet test src/Nexo.Tests.Domain ... /p:Threshold=100` step that `scripts/ci/kernel-coverage-gate.sh` runs first, on the same PR/push paths (see [CiGateInventory.md](../CiGateInventory.md), "Pruning").
+
+Enable **`kernel-coverage`** as a required status check on the default branch (see [TestingModel.md](../architecture/TestingModel.md)).
 
 ## Local verification
 

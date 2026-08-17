@@ -149,7 +149,7 @@ make mesh-lab-e2e-stress
 make mesh-lab-stress
 ```
 
-**CI:** [`.github/workflows/mesh-lab-stress-gate.yml`](../.github/workflows/mesh-lab-stress-gate.yml) runs weekly (Mondays 06:00 UTC) and on `workflow_dispatch` — full verify (same sub-checks as PR gate), deep, stress ramp (`4` workers, `15` requests/step), then [`mesh-lab-verify-post-stress.sh`](../scripts/mesh-lab-verify-post-stress.sh). Default PR gate remains [`mesh-lab-gate.yml`](../.github/workflows/mesh-lab-gate.yml) without stress. See [`MeshPhase10LabStressHardening.md`](MeshPhase10LabStressHardening.md).
+**CI:** [`.github/workflows/mesh-lab-stress-gate.yml`](../.github/workflows/mesh-lab-stress-gate.yml) runs on `workflow_dispatch` (the Monday 06:00 UTC schedule was removed 2026-08-16 after eight consecutive red runs; see the file header) — full verify (same sub-checks as PR gate), deep, stress ramp (`4` workers, `15` requests/step), then [`mesh-lab-verify-post-stress.sh`](../scripts/mesh-lab-verify-post-stress.sh). Default PR gate remains [`mesh-lab-gate.yml`](../.github/workflows/mesh-lab-gate.yml) without stress. See [`MeshPhase10LabStressHardening.md`](MeshPhase10LabStressHardening.md).
 
 ## Try the mesh CLI
 
@@ -181,7 +181,7 @@ Pre-production gaps that Docker bridge alone cannot cover are automated in **Pha
 |-------|-------|-----|
 | HTTPS director (Caddy → peer-a) | `make mesh-lab-e2e-tls` | `mesh-lab-tls-gate.yml` (weekly) |
 | gRPC transport (Kestrel round-trip) | `dotnet test … --filter Category=ProdStyle` | `grpc-transport-gate.yml` |
-| Two-host / tailnet | `scripts/mesh-lab-verify-remote.sh` + env | `mesh-lab-remote-gate.yml` (`workflow_dispatch` + secrets) |
+| Two-host / tailnet | `scripts/mesh-lab-verify-remote.sh` + env | none — the `mesh-lab-remote-gate.yml` wrapper was deleted 2026-08-16 (never dispatched); run the script from a host on the tailnet |
 
 ## CI
 
