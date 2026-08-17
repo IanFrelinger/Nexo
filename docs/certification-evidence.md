@@ -735,6 +735,27 @@ redundant guard is exactly what a careful proposer writes.
    to before. The **write** surface is confined separately, by `ProposerConfinement`'s
    single-declaration tool allowlist.
 
+   *Container hardening (M26).* Every session (and one-shot) container now runs with
+   `--cap-drop ALL`, `--security-opt no-new-privileges`, `--pull never` (the image must
+   already be present — a session never triggers the fetch of an unattested image), and
+   `--read-only`; the spec's `ScratchPaths` come back as capped tmpfs mounts
+   (`SessionScratchPaths.Default` = the candidate work dir, the execution root, `/tmp`,
+   `/root` — the SDK image's toolchain home), so the in-session build and execution legs
+   still work and any write outside the declared surface fails loudly. Attestation now
+   records the containment the engine reports it applied — network mode, read-only rootfs,
+   dropped capabilities, security options — inside the hashed attestation input, and the
+   Docker backend refuses to attest a session that requested no network but does not
+   report `none`. `Nexo:Autonomy:SessionImageDigest` optionally PINS the image identity
+   (refuse-to-start on mismatch; null = capture only, as before). Still on the host, and
+   deliberately: the container runs as **root** — the SDK image ships no unprivileged
+   user, and a numeric `--user` cannot own the tmpfs scratch the toolchain needs without
+   more staging work than this pass earns (follow-up, not a gap in what is attested).
+   The read-only leg was reasoned against the SDK image's write paths, not yet flown on a
+   live daemon; the first `-SweepLive` flight after this lands is its proof, and a
+   forgotten scratch path shows up as an explained `read-only file system` build failure,
+   never as a silent host-side fallback. Note that tmpfs pages are charged to the
+   session's memory cap: build output now counts toward `512m`.
+
 5. **Model proposing: CLOSED for the mechanism; the remaining boundary is scale.** Both
    legs have now flown: a recorded model proposal (P5) and a LIVE local-model proposal
    (P6 — ollama called at flight time, admitted on sample 4 with measured acceptance

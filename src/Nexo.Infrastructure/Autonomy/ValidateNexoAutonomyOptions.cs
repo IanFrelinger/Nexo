@@ -35,6 +35,16 @@ public sealed class ValidateNexoAutonomyOptions : IValidateOptions<NexoAutonomyO
                 + "attested, and an unattestable environment must never reach a certificate.");
         }
 
+        if (!string.IsNullOrWhiteSpace(options.SessionImageDigest)
+            && !options.SessionImageDigest.Trim().StartsWith("sha256:", StringComparison.Ordinal))
+        {
+            failures.Add(
+                $"{nameof(NexoAutonomyOptions.SessionImageDigest)} must be an image identity of the form "
+                + "'sha256:<hex>' (the value attestation records and certificates carry as image-digest), "
+                + $"not '{options.SessionImageDigest}': a pin that can never match would refuse every "
+                + "session, and a tag is not an identity.");
+        }
+
         if (options.BuildCandidateInSession && !options.UseSandboxSessions)
         {
             failures.Add(

@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Nexo.Core.Application.Execution.Ports;
+using Nexo.Infrastructure.Certification.HotSwap;
 using Nexo.Infrastructure.Execution.Sandbox;
 using Nexo.Infrastructure.Scaling;
 using Xunit;
@@ -37,6 +38,27 @@ public sealed class DockerSandboxSessionTests
         args.Should().Contain("--network=none");
         args.Should().Contain("/host/work:/work", "the session workspace mount is read-write");
         args.Should().ContainInOrder("proposer:latest", "sleep", "infinity");
+    }
+
+    [Fact]
+    public void BuildStartArguments_HardensTheSessionContainer_ExactlyLikeOneShotRuns()
+    {
+        // Sessions and one-shot runs share one translation; the hardening flags ride it,
+        // so a session container is never a softer container than a one-shot one.
+        var spec = KeepaliveSpec() with { ScratchPaths = new[] { "/nexo-candidate", "/tmp" } };
+
+        var args = DockerSandboxedSessionRunner.BuildStartArguments(spec, "nexo-session-abc", 0);
+
+        args.Should().ContainInOrder("--cap-drop", "ALL");
+        args.Should().ContainInOrder("--security-opt", "no-new-privileges");
+        args.Should().ContainInOrder(new[] { "--pull", "never" },
+            "the image must already be present and attested — a session never fetches one");
+        args.Should().Contain("--read-only");
+        args.Should().ContainInOrder("--tmpfs", $"/nexo-candidate:{DockerSandboxedCommandRunner.ScratchPathMountOptions}");
+        args.Should().ContainInOrder("--tmpfs", $"/tmp:{DockerSandboxedCommandRunner.ScratchPathMountOptions}");
+        var ordered = args.ToList();
+        ordered.IndexOf("--read-only").Should().BeLessThan(ordered.IndexOf("proposer:latest"));
+        ordered.IndexOf("--pull").Should().BeLessThan(ordered.IndexOf("proposer:latest"));
     }
 
     [Fact]
@@ -237,6 +259,28 @@ public sealed class DockerSandboxSessionTests
 
         args.Should().Contain("/repo:/workspace:ro", "context is read-only");
         args.Should().Contain("/repo/src:/workspace/src", "the declared surface is the only writable mount");
+    }
+
+    // --- write surface under a sealed rootfs -------------------------------------------
+
+    [Fact]
+    public void HarnessScratchPaths_CoverEveryDirectoryTheSessionLegsWrite_AndBecomeScratchMounts()
+    {
+        // The rootfs is sealed read-only; the legs can only work if the paths they write to
+        // are exactly the paths the spec declares. One catalog, checked against the legs'
+        // own constants so they cannot drift apart.
+        SessionScratchPaths.Default.Should().Contain(SessionCandidateBuild.WorkDir);
+        SessionScratchPaths.Default.Should().Contain(SessionExecutionBackend.ExecDir);
+        SessionScratchPaths.Default.Should().Contain("/tmp", "MSBuild and the compiler server keep pipes and temp files there");
+        SessionScratchPaths.Default.Should().Contain("/root", "the SDK image's toolchain writes under $HOME even for an offline restore");
+        SessionScratchPaths.Default.Should().OnlyHaveUniqueItems();
+
+        var spec = KeepaliveSpec() with { Mounts = Array.Empty<Mount>(), ScratchPaths = SessionScratchPaths.Default };
+        var args = DockerSandboxedSessionRunner.BuildStartArguments(spec, "nexo-session-x", 0);
+
+        args.Should().Contain("--read-only");
+        foreach (var path in SessionScratchPaths.Default)
+            args.Should().Contain($"{path}:{DockerSandboxedCommandRunner.ScratchPathMountOptions}");
     }
 
     // --- helpers -------------------------------------------------------------------------

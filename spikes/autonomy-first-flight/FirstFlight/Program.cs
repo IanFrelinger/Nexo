@@ -162,7 +162,12 @@ var context = new ProposalIterationContext
         Mounts: Array.Empty<Mount>(),
         Network: NetworkAccess.None,
         Command: new[] { "sleep", "600" },
-        Limits: new ResourceLimits(Memory: "256m", Pids: 64, Cpus: "1")),
+        Limits: new ResourceLimits(Memory: "256m", Pids: 64, Cpus: "1"))
+    {
+        // The rootfs is sealed read-only; these are the only writable paths, given back as
+        // ephemeral scratch, so -SessionBuild / -SessionExecute still work in-session.
+        ScratchPaths = SessionScratchPaths.Default,
+    },
 };
 
 var verdict = ObjectiveTierClassifier.Classify(objective.Touch!);

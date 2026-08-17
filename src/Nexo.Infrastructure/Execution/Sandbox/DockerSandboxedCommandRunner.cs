@@ -78,10 +78,41 @@ public sealed class DockerSandboxedCommandRunner : ISandboxedCommandRunner
     }
 
     /// <summary>
-    /// Appends the isolation-policy portion of a <c>docker run</c> argv (network, resource
-    /// limits, mounts, entrypoint) for <paramref name="spec"/>. Shared with
-    /// <see cref="DockerSandboxedSessionRunner"/> so one-shot commands and long-lived
-    /// sessions translate a spec identically — two translations would drift.
+    /// Capacity cap on every scratch path's tmpfs (<see cref="SandboxSpec.ScratchPaths"/>).
+    /// A cap on capacity, not a reservation: tmpfs pages are charged to the container's
+    /// memory cgroup like any other, so the spec's memory limit still bounds the total.
+    /// </summary>
+    public const string ScratchPathSizeLimit = "512m";
+
+    /// <summary>
+    /// Mount options for every scratch tmpfs: writable, no setuid, no device nodes, capped
+    /// at <see cref="ScratchPathSizeLimit"/>. <c>exec</c> is explicit because the engine's
+    /// tmpfs default is <c>noexec</c>, and the scratch surface exists precisely so a build
+    /// can write an assembly there and the runtime can then map it.
+    /// </summary>
+    public const string ScratchPathMountOptions = "rw,nosuid,nodev,exec,size=" + ScratchPathSizeLimit;
+
+    /// <summary>
+    /// The hardening flags every sandbox container gets, independent of the spec:
+    /// no Linux capabilities (the workloads are builds and keepalives, none of which need
+    /// one), no privilege escalation through setuid binaries, and no image fetch — the
+    /// image must already be present, so a session can never trigger the pull of an
+    /// image nobody attested (and <c>--network=none</c> could not have fetched anyway).
+    /// Ordered, so the argv is stable for tests and logs.
+    /// </summary>
+    public static readonly IReadOnlyList<string> HardeningArguments = new[]
+    {
+        "--cap-drop", "ALL",
+        "--security-opt", "no-new-privileges",
+        "--pull", "never",
+        "--read-only",
+    };
+
+    /// <summary>
+    /// Appends the isolation-policy portion of a <c>docker run</c> argv (network, hardening,
+    /// resource limits, scratch paths, mounts, entrypoint) for <paramref name="spec"/>.
+    /// Shared with <see cref="DockerSandboxedSessionRunner"/> so one-shot commands and
+    /// long-lived sessions translate a spec identically — two translations would drift.
     /// </summary>
     internal static void AppendSpecArguments(List<string> args, SandboxSpec spec)
     {
@@ -102,6 +133,19 @@ public sealed class DockerSandboxedCommandRunner : ISandboxedCommandRunner
 
         if (spec.Network == NetworkAccess.None)
             args.Add("--network=none");
+
+        args.AddRange(HardeningArguments);
+
+        // The root filesystem is sealed above; the declared write surface comes back as
+        // ephemeral scratch — one capped tmpfs per path, gone with the container.
+        foreach (var scratch in spec.ScratchPaths ?? Array.Empty<string>())
+        {
+            if (string.IsNullOrWhiteSpace(scratch))
+                continue;
+
+            args.Add("--tmpfs");
+            args.Add($"{scratch.Trim().Replace('\\', '/')}:{ScratchPathMountOptions}");
+        }
 
         var limits = spec.Limits;
         if (!string.IsNullOrWhiteSpace(limits?.Memory))

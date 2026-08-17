@@ -22,7 +22,9 @@ namespace Nexo.Infrastructure.Certification.HotSwap;
 /// </summary>
 public sealed class SessionExecutionBackend : ICandidateExecutionBackend
 {
-    private const string ExecDir = "/nexo-exec";
+    /// <summary>Session-side root for the runner build and the per-batch job files.</summary>
+    public const string ExecDir = "/nexo-exec";
+
     private const string RunnerDir = ExecDir + "/runner";
     private const string UnitsDir = ExecDir + "/units";
     private const string RunnerDll = RunnerDir + "/bin/Release/net9.0/SessionExecutionRunner.dll";
