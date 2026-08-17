@@ -2,6 +2,7 @@ using System.Text.Json;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Nexo.Infrastructure.Execution;
+using Nexo.Tests.Infrastructure.Helpers;
 using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Execution;
@@ -23,14 +24,11 @@ public class VisionModelIntegrationTests
     /// Calls the real vision model (Ollama + vision model) when NEXO_TEST_REAL_VISION=1.
     /// Validates that the response is parseable JSON with the expected understanding structure
     /// (screenType, currentContext, and/or availableActions).
-    /// Skipped when env var is not set so CI and local runs without Ollama still pass.
+    /// Reported as Skipped (not Passed) when the env var is not set, so CI and local runs without Ollama stay green honestly.
     /// </summary>
-    [Fact]
+    [OptInFact("NEXO_TEST_REAL_VISION", "Real Ollama vision model")]
     public async Task RealVisionModel_WhenOllamaAvailable_ReturnsValidUnderstandingJson()
     {
-        if (string.Equals(Environment.GetEnvironmentVariable("NEXO_TEST_REAL_VISION"), "1", StringComparison.OrdinalIgnoreCase) == false)
-            return;
-
         var baseUrl = Environment.GetEnvironmentVariable("OLLAMA_BASE_URL") ?? "http://localhost:11434";
         baseUrl = baseUrl.TrimEnd('/');
         using var probe = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };

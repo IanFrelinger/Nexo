@@ -92,17 +92,19 @@ dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore
 
 ## Required pre-PR checks
 
-Run the minimal local quality bar:
+Run the lanes CI actually runs on pull requests — the same scripts, filters and target frameworks — not `dotnet test Nexo.sln` (`make test`), which no CI lane executes and which drags in Docker/Ollama/GPU suites that only report as **Skipped** on a plain workstation:
 
 ```bash
-make test
-dotnet test src/Nexo.Tests.Domain/Nexo.Tests.Domain.csproj
-dotnet test src/Nexo.Tests.Application/Nexo.Tests.Application.csproj
-dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net8.0
-dotnet test application/src/Nexo.Tests.CLI/Nexo.Tests.CLI.csproj
-dotnet run --project application/src/Nexo.CLI -- --help
+bash scripts/ci/kernel-coverage-gate.sh   # kernel-coverage-gate.yml: Domain (100%), Infrastructure net9.0 (Category!=External), Core.Application coverage floors
+bash scripts/run-cert-gate.sh             # cert-gate.yml: hermetic certification + generation-safety tests (net8.0)
+make kernel-gate                          # kernel-gate.yml tier A (runtime graph build + hosting matrix + pipeline lifecycle)
+make application-gate-tier-a              # application-gate.yml: product sln build + CLI smoke (tier-c for the in-process API tests)
+make testing-strategy-gate                # testing-strategy-gate.yml: gap freeze / ProdStyle wiring rules on your diff
+dotnet run --project application/src/Nexo.CLI -- ci verify   # `make ci-verify`: build + C#-driven checks
 dotnet run --project application/src/Nexo.CLI -- pipeline validate --template <template.json>
 ```
+
+Pick the lanes that match what you changed (`make testing-strategy-gate` prints the suggested set for your diff). Optional external suites (Docker, Ollama, Mapbox, mesh lab) are opt-in by environment variable and are reported as **Skipped** until enabled — see `docs/Testing.md`, "Opt-in external suites".
 
 If you touch **`Nexo.Hosting`** project references or **`scripts/pack-nexo-hosting-graph.*`**, also run:
 
