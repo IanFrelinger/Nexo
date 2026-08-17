@@ -78,20 +78,23 @@ public static class NexoDefaults
     // ── Ollama ────────────────────────────────────────────────────────
 
     /// <summary>Base URL for a local Ollama instance.
-    /// Override: <c>NEXO_OLLAMA_BASE_URL</c> or <c>Nexo:Ollama:BaseUrl</c>.
-    /// Defaults to localhost because Ollama typically runs as a local sidecar.</summary>
+    /// Override (highest → lowest): <c>NEXO_OLLAMA_BASE_URL</c> →
+    /// <c>Nexo:Meai:OllamaBaseUrl</c> (MEAI path) / <c>Nexo:NodeCapabilityRuntime:Ollama:BaseUrl</c> (NCR probe) →
+    /// legacy <c>OLLAMA_BASE_URL</c> (also the only key the provider-factory path reads).
+    /// Defaults to localhost because Ollama typically runs as a local sidecar;
+    /// inside a container that is the container itself, so compose stacks must set one of the keys above.</summary>
     public const string OllamaDefaultBaseUrl = "http://localhost:11434";
 
     /// <summary>Default Ollama text model (tag form matches <c>ollama pull</c> / <c>ollama list</c>).
-    /// Override: <c>NEXO_OLLAMA_MODEL</c> or <c>Nexo:Ollama:Model</c>.</summary>
+    /// Override (highest → lowest): <c>NEXO_OLLAMA_MODEL</c> → <c>Nexo:Meai:OllamaModel</c> → legacy <c>OLLAMA_MODEL</c>.</summary>
     public const string OllamaDefaultModel = "llama3.1:latest";
 
     /// <summary>Default Ollama vision model for image-input tasks.
-    /// Override: <c>Nexo:Ollama:VisionModel</c>.</summary>
+    /// Override: <c>OLLAMA_VISION_MODEL</c> (provider-factory path).</summary>
     public const string OllamaDefaultVisionModel = "richardyoung/smolvlm2-2.2b-instruct";
 
     /// <summary>HTTP request timeout (seconds) for Ollama calls.
-    /// Override: <c>Nexo:Ollama:TimeoutSeconds</c>.  Set high (300 s)
+    /// Override: <c>OLLAMA_TIMEOUT_SECONDS</c> (provider-factory path).  Set high (300 s)
     /// because large-model first-load can be very slow.</summary>
     public const int OllamaDefaultTimeoutSeconds = 300;
 

@@ -4,6 +4,13 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
+export NEO4J_URI="${NEO4J_URI:-bolt://localhost:7687}"
+export NEO4J_USERNAME="${NEO4J_USERNAME:-neo4j}"
+export NEO4J_PASSWORD="${NEO4J_PASSWORD:-provenance-graph}"
+# The compose file has no shipped password: it requires NEO4J_AUTH (fails closed if unset).
+# Derive it from the demo credentials above unless the caller set it explicitly.
+export NEO4J_AUTH="${NEO4J_AUTH:-${NEO4J_USERNAME}/${NEO4J_PASSWORD}}"
+
 echo "==> Starting Neo4j (docker compose)..."
 docker compose -f deploy/compose/docker-compose.provenance.yml up -d
 
@@ -14,10 +21,6 @@ for i in $(seq 1 30); do
   fi
   sleep 2
 done
-
-export NEO4J_URI="${NEO4J_URI:-bolt://localhost:7687}"
-export NEO4J_USERNAME="${NEO4J_USERNAME:-neo4j}"
-export NEO4J_PASSWORD="${NEO4J_PASSWORD:-provenance-graph}"
 
 echo "==> Projecting cert artifacts and running ArtifactsUnderPolicy demo..."
 dotnet run --project tools/Nexo.Provenance.Demo/Nexo.Provenance.Demo.csproj -- "$ROOT"

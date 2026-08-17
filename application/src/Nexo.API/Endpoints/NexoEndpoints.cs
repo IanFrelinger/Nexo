@@ -358,10 +358,11 @@ public static class NexoEndpoints
             var result = await orchestrator.OrchestrateAsync(request.Request, cancellationToken);
             return Results.Ok(new OrchestrationResponse(
                 result.Success,
-                result.IntegratedOutput != null ? $"{result.IntegratedOutput.AgentOutputs.Count} agent(s) executed" : null,
+                BuildOrchestrationSummary(result),
                 result.IntegratedOutput?.IntegratedResults,
                 result.Conflicts.Count,
-                result.Escalations.Count));
+                result.Escalations.Count,
+                ResolveOrchestrationErrorCode(result)));
         }
         catch (Exception ex)
         {
@@ -415,7 +416,7 @@ public static class NexoEndpoints
             var result = await orchestrator.OrchestrateAsync(request.Task, cancellationToken);
             var auditCount = Math.Clamp(request.AuditCount <= 0 ? 25 : request.AuditCount, 1, 200);
             var recentAudit = auditLog?.GetRecent(auditCount) ?? [];
-            var summary = result.IntegratedOutput != null ? $"{result.IntegratedOutput.AgentOutputs.Count} agent(s) executed" : null;
+            var summary = BuildOrchestrationSummary(result);
             await copilotTaskStore.StoreAsync(new CopilotTaskRecord
             {
                 TenantId = tenantId,
@@ -1295,6 +1296,50 @@ public static class NexoEndpoints
         return true;
     }
 
+    // "N agent(s) executed" is meaningless on its own when N is 0. On failure, append the
+    // most recent escalation's description so the caller sees WHY (e.g. barrier context
+    // missing) instead of a bare count with escalations:N and no reason. Most recent, not
+    // first: EscalationManager is a host singleton, so the list spans earlier requests.
+    //
+    // Redaction: the generic "AgentExecution" escalation embeds the agent's ex.Message,
+    // and this endpoint's own catch deliberately hides exception text outside Development.
+    // Keep that posture — forward the description only for escalations whose text is
+    // ours and static (the barrier code), or when running in Development.
+    private static string? BuildOrchestrationSummary(OrchestrationResult result)
+    {
+        if (result.IntegratedOutput == null)
+            return null;
+
+        var summary = $"{result.IntegratedOutput.AgentOutputs.Count} agent(s) executed";
+        if (result.Success)
+            return summary;
+
+        var last = result.Escalations.LastOrDefault(e => !string.IsNullOrWhiteSpace(e.Description));
+        if (last is null)
+            return summary;
+
+        var safeToForward = IsDevelopment()
+            || string.Equals(last.IssueType, BarrierContextMissingIssueType, StringComparison.Ordinal);
+        return safeToForward
+            ? $"{summary}: {last.Description}"
+            : $"{summary}: see escalations ({last.IssueType})";
+    }
+
+    /// <summary>
+    /// Mirrors <c>BarrierContextMissingException.ErrorCode</c>, which is an instance property
+    /// and so cannot be used as a constant here.
+    /// </summary>
+    private const string BarrierContextMissingIssueType = "BARRIER_CONTEXT_MISSING";
+
+    // The escalation issue type is the closest thing to a canonical code the orchestrator
+    // emits (BarrierContextMissingException escalates under its own ErrorCode).
+    private static string? ResolveOrchestrationErrorCode(OrchestrationResult result) =>
+        result.Success
+            ? null
+            : result.Escalations
+                .Select(e => e.IssueType)
+                .LastOrDefault(t => !string.IsNullOrWhiteSpace(t));
+
     // Preferences file lives next to the config file so it survives Docker
     // container restarts when the config directory is on a volume mount.
     private static bool IsDevelopment() =>
@@ -1505,6 +1550,22 @@ public static class NexoEndpoints
         var sec = securityOptions.Value;
         var authActive = IsBuiltInAuthActive(sec);
 
+        // The default (MEAI) model path resolves its Ollama endpoint independently of the provider
+        // factory that produced the "ollama" ProviderStatus above; surface it so operators (and the
+        // prod-dry-run gate) can see when the two disagree. IOptions<T> always resolves (open generic),
+        // so registration of the keyed local Ollama client is the signal that the pipeline is enabled.
+        var meaiRegistered = httpContext.RequestServices.GetService<IServiceProviderIsKeyedService>()
+            ?.IsKeyedService(typeof(Microsoft.Extensions.AI.IChatClient), Nexo.AI.Pipeline.MeaiTargetKeys.LocalOllama) == true;
+        var meaiOptions = meaiRegistered
+            ? httpContext.RequestServices.GetService<IOptions<Nexo.AI.Pipeline.MeaiPipelineOptions>>()?.Value
+            : null;
+        var meaiOllamaBaseUrl = meaiRegistered
+            ? Nexo.AI.Pipeline.Clients.OllamaEndpointResolver.ResolveBaseUrl(meaiOptions)
+            : null;
+        var meaiOllamaModel = meaiRegistered
+            ? Nexo.AI.Pipeline.Clients.OllamaEndpointResolver.ResolveModel(meaiOptions)
+            : null;
+
         return Results.Ok(new OnboardingStatusResponse(
             IsFirstRun: !hasTasks && !hasDailies,
             ApiReachable: true,
@@ -1517,6 +1578,8 @@ public static class NexoEndpoints
             BuiltInCredentialsConfigured: AreBuiltInAuthCredentialsConfigured(sec),
             RequireAuthForCopilotReads: sec.RequireAuthForCopilotReadApis,
             CopilotScopedKeyConfigured: !string.IsNullOrWhiteSpace(sec.CopilotScopedApiKey),
-            ResolvedTenantId: tenantId));
+            ResolvedTenantId: tenantId,
+            MeaiOllamaBaseUrl: meaiOllamaBaseUrl,
+            MeaiOllamaModel: meaiOllamaModel));
     }
 }

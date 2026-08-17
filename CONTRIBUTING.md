@@ -69,7 +69,7 @@ High-level architecture notes: `docs/architecture/README.md`. SDK vs. `net8.0` /
 
 Use this only when you cannot use the dev container or other Docker workflows:
 
-- .NET SDK `9.x` (pinned by `global.json`)
+- .NET SDK `9.x` (pinned by `global.json`). The CLI and API target `net8.0` and roll forward onto the 9.x runtime (`RollForward=Major` in `Directory.Build.targets`), so an SDK-9-only machine runs them without a separate .NET 8 runtime.
 - Git
 - Optional: Docker (for multi-environment and compose-based test lanes)
 

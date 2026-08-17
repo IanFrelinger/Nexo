@@ -33,6 +33,8 @@ From the **repository root**:
 docker compose -f deploy/compose/docker-compose.agent-server.yml up -d --build
 ```
 
+No `NEXO_REPO_ROOT` is needed for the default layout: relative host paths in a compose file resolve against the compose file's own directory (`deploy/compose/`), and the mount default is `../..` — the repo root — regardless of your shell CWD. Set `NEXO_REPO_ROOT` only to mount a different tree.
+
 Pull the model referenced by your agent config (Runtime Studio default is **llama3.1:latest**):
 
 ```bash
@@ -60,7 +62,7 @@ Invoke-RestMethod "http://localhost:8080/api/status"
 Copy the template and edit:
 
 - Template: `docs/config/agent-server.env.example`
-- Typical usage: save as **`.env`** in the repo root (Compose loads it automatically), or:
+- Typical usage: save as **`deploy/compose/.env`** (Compose v2 loads `.env` from the directory of the first `-f` compose file, **not** the shell CWD or repo root), or pass any path explicitly:
 
 ```bash
 docker compose --env-file ./docs/config/agent-server.env.example -f deploy/compose/docker-compose.agent-server.yml up -d --build
@@ -72,7 +74,7 @@ Use **one `.env` per machine** or per environment (`dev`, `staging`) and swap `-
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `NEXO_REPO_ROOT` | `.` | Host path bind-mounted into the container (your Nexo tree or another project). |
+| `NEXO_REPO_ROOT` | `../..` (repo root, relative to `deploy/compose/`) | Host path bind-mounted into the container (your Nexo tree or another project). Relative values resolve against the compose file directory, not the shell CWD. |
 | `NEXO_CONTAINER_WORKDIR` | `/work` | Working directory inside the container; mount target must match. |
 | `NEXO_REPO_MOUNT_SUFFIX` | *(empty)* | Appended to the bind mount (e.g. **`:z`** or **`:Z`** on Linux with SELinux; **`:ro`** for read-only trees). |
 | `NEXO_AGENT_SERVER_HTTP_PORT` | `8080` | Published host port for Nexo.API. |
@@ -84,7 +86,7 @@ Use **one `.env` per machine** or per environment (`dev`, `staging`) and swap `-
 | `NEXO_DAILIES_PATH` | `/data/dailies` | App path for director dailies. Default compose keeps a **named volume** at `/data/dailies`; if you change this path, add a matching volume in a local override file. |
 | `Nexo__Barriers__RequireExplicitBarrier` | `false` | Hosted-friendly barrier default; tighten for stricter deployments. |
 | `NEXO_OBSERVATION_DEGRADED_MODE` | `1` | Safer observation pipeline on some bind-mount / network FS setups. |
-| `NEXO_BUILD_CONTEXT` | `.` | Docker build context (advanced monorepo layouts). |
+| `NEXO_BUILD_CONTEXT` | `../..` (repo root, relative to `deploy/compose/`) | Docker build context (advanced monorepo layouts). |
 | `NEXO_AGENT_SERVER_DOCKERFILE` | `.docker/Dockerfile.agent-server` | Alternate Dockerfile path. |
 | `COMPOSE_PROJECT_NAME` | *(compose default)* | Prefixes named volumes/networks so multiple stacks can coexist on one host. |
 

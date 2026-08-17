@@ -211,12 +211,24 @@ Per-request **`config.model`** overrides the vision model when set.
 
 ## Ollama
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `OLLAMA_BASE_URL` | Base URL | `http://localhost:11434` |
-| `OLLAMA_MODEL` | Text model | `llama3.1:latest` |
-| `OLLAMA_VISION_MODEL` | Vision model | `richardyoung/smolvlm2-2.2b-instruct` |
-| `OLLAMA_TIMEOUT_SECONDS` | Request timeout | `300` |
+Three code paths reach Ollama — the default MEAI model path, the NCR serving backend, and the legacy provider factory — and each has its own key family. They all resolve in the same order, so setting the legacy pair alone is enough on a single host; inside Compose set all three (the shipped stacks do) so no path can fall back to `localhost:11434`, which is the container itself.
+
+**Resolution order** (first non-empty value wins): `NEXO_OLLAMA_BASE_URL` / `NEXO_OLLAMA_MODEL` env → the path's own config key (`Nexo:Meai:*` or `Nexo:NodeCapabilityRuntime:Ollama:BaseUrl`) → legacy `OLLAMA_BASE_URL` / `OLLAMA_MODEL` env → the path's default (`http://localhost:11434` / `llama3.1:latest`; NCR uses `http://127.0.0.1:11434`). Blank values are treated as unset.
+
+| Variable / Key | Path | Description | Default |
+|----------------|------|-------------|---------|
+| `NEXO_USE_MEAI_PIPELINE` (`Nexo:UseMeaiPipeline`) | selector | `0`/`false` opts out of the default Microsoft.Extensions.AI (MEAI) model path and uses the legacy provider factory instead. Default: on. | on |
+| `NEXO_OLLAMA_BASE_URL` | MEAI + NCR | Highest-precedence Ollama base URL override. | unset |
+| `NEXO_OLLAMA_MODEL` | MEAI | Highest-precedence Ollama model override. | unset |
+| `Nexo:Meai:OllamaBaseUrl` (`Nexo__Meai__OllamaBaseUrl`) | MEAI | Base URL for the default `IModel` / `IChatClient` path (`local:ollama` target). | falls through |
+| `Nexo:Meai:OllamaModel` (`Nexo__Meai__OllamaModel`) | MEAI | Model for the default `IModel` / `IChatClient` path. | falls through |
+| `Nexo:NodeCapabilityRuntime:Ollama:BaseUrl` (`Nexo__NodeCapabilityRuntime__Ollama__BaseUrl`) | NCR | Base URL for the NCR serving backend, startup health probe and `/api/tags` model catalog (see below). | falls through |
+| `OLLAMA_BASE_URL` | all (legacy) | Base URL. The provider-factory path (`provider=ollama`, `/api/onboarding/status`, IDE endpoints) reads **only** this family; MEAI and NCR fall back to it. | `http://localhost:11434` |
+| `OLLAMA_MODEL` | all (legacy) | Text model. | `llama3.1:latest` |
+| `OLLAMA_VISION_MODEL` | provider factory | Vision model | `richardyoung/smolvlm2-2.2b-instruct` |
+| `OLLAMA_TIMEOUT_SECONDS` | provider factory | Request timeout | `300` |
+
+`GET /api/onboarding/status` reports `meaiOllamaBaseUrl` / `meaiOllamaModel` (what the default model path will dial) next to the provider-factory `ollama` availability, and `scripts/prod-dry-run.sh` fails when the former is a loopback address inside Compose.
 
 **Docker (models in containers):** `docker compose -f deploy/compose/docker-compose.ollama.yml up -d`, then `scripts/run-ollama-docker.ps1` / `scripts/run-ollama-docker.sh` to pull a tag. **Host-run Nexo.API with Ollama in Docker (all platforms):** `scripts/start-nexo-api-dev.ps1` or `scripts/start-nexo-api-dev.sh` (waits for Ollama, sets `OLLAMA_*` + NCR URL, runs `dotnet run`). Use `-Pull` / `--pull` when the model is not yet local. **Phone / another device on the same LAN:** `-ListenLan` / `--listen-lan` binds `http://0.0.0.0:<port>`; browse `http://<host-LAN-IP>:8080` and allow the port in the host firewall. Default bind is loopback-only (`127.0.0.1`). Stop: `scripts/stop-nexo-api-dev.ps1` / `.sh`.
 
@@ -226,7 +238,7 @@ Desktop NCR uses its own options-bound Ollama endpoint for model serving.
 
 | Key / Variable | Description | Default |
 |----------------|-------------|---------|
-| `Nexo:NodeCapabilityRuntime:Ollama:BaseUrl` (`Nexo__NodeCapabilityRuntime__Ollama__BaseUrl`) | NCR Ollama backend base URL used by desktop policy registrations | `http://127.0.0.1:11434` |
+| `Nexo:NodeCapabilityRuntime:Ollama:BaseUrl` (`Nexo__NodeCapabilityRuntime__Ollama__BaseUrl`) | NCR Ollama backend base URL used by desktop policy registrations. Overridden by `NEXO_OLLAMA_BASE_URL`; falls back to legacy `OLLAMA_BASE_URL` when unset (see resolution order above). | `http://127.0.0.1:11434` |
 
 Behavior notes:
 - On startup, NCR runs a health probe against the configured Ollama backend and logs a degraded warning if unreachable.
@@ -340,8 +352,19 @@ See `docs/runtime/ExecutionRouting.md` for detailed execution flow and resilienc
 | `NEXO_EXTENSION_MAX_CYCLES_PER_HOUR` | Extender ceiling: extend cycles in any trailing hour. May only LOWER the default. | 4 |
 | `NEXO_OBSERVATION_DEGRADED_MODE` | `1` = start observation pipeline in degraded mode | unset |
 | `NEXO_OBSERVATION_FAIL_OPEN` | `1` = observation pipeline continues on store errors | unset |
-| `NEXO_BARRIER_MIDDLEWARE_ENABLED` | `1` = enable HTTP barrier context middleware | unset |
 | `BING_SEARCH_KEY` | API key for Bing web search provider | unset (falls back to mock) |
+
+## Barriers (`Nexo__Barriers__*`)
+
+Bound from the `Nexo:Barriers` section (`appsettings.json` or `Nexo__Barriers__*` environment variables).
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `Nexo__Barriers__Levels__0`, `__1`, … | Ordered barrier levels, lowest (floor) to highest | `public, internal, confidential, restricted` in `Nexo.API/appsettings.json` |
+| `Nexo__Barriers__RequireExplicitBarrier` | `true` = an agent invocation with no explicit barrier context is refused and surfaces as escalation / `errorCode` `BARRIER_CONTEXT_MISSING` (the response says why `0 agent(s) executed`); `false` = missing context defaults to the floor level and records a `DefaultApplied` audit event | `false` (code default, `Nexo.API/appsettings.json`, agent-server compose, CLI daemon) |
+| `Nexo__Barriers__HostCeiling` | Highest level this host may process; unset disables the ceiling check | `confidential` in `Nexo.API/appsettings.json` |
+
+`Nexo.API` does not register an HTTP barrier-context middleware, so its requests never carry an explicit barrier context: leave `RequireExplicitBarrier` at `false` there, or opt in only from a host that establishes the context itself (`IBarrierContextAccessor.Initialize`, e.g. `nexo orchestrate --barrier <level>`). `HttpBarrierContextMiddleware` (gated by `NEXO_BARRIER_MIDDLEWARE_ENABLED`) exists in `Nexo.Runtime` but is not wired into any shipped host.
 
 ## Routing & Execution
 

@@ -20,7 +20,7 @@ make prod-dry-run
 ./scripts/prod-dry-run.sh --portal
 ```
 
-The script **builds**, **starts** services, waits until **`GET /health`** succeeds, checks **`GET /api/status`**, then **`docker compose down`** unless you pass **`--keep-up`**.
+The script **builds**, **starts** services, waits until **`GET /health`** succeeds, checks **`GET /api/status`**, checks **`GET /api/onboarding/status`** and fails if the default model path's resolved Ollama endpoint (`meaiOllamaBaseUrl`) is a loopback address (inside a container that is the container itself, not the `ollama` service — see `docs/Configuration.md`, "Ollama"), then **`docker compose down`** unless you pass **`--keep-up`**.
 
 ## Fuller path — agent server (mounted workspace + background agents)
 
@@ -32,7 +32,7 @@ make prod-dry-run-agent-server
 ./scripts/prod-dry-run.sh --agent-server
 ```
 
-Ensure **`NEXO_REPO_ROOT`** points at this repo on the host (defaults to the current directory when run from repo root). Optional env file: [`docs/config/agent-server.env.example`](config/agent-server.env.example).
+**`NEXO_REPO_ROOT`** (host tree bind-mounted at `/work`) needs no setting for the default layout: the script defaults it to the repo root, and the compose file itself defaults to `../..` relative to `deploy/compose/` (also the repo root, whatever the shell CWD). Set it only to mount a different tree. Optional env file: [`docs/config/agent-server.env.example`](config/agent-server.env.example) (pass with `--env-file`, or save as `deploy/compose/.env`; Compose does not read a repo-root `.env` when the compose file lives under `deploy/compose/`).
 
 ## First-time Ollama models
 

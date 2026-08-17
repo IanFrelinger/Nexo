@@ -2,9 +2,13 @@
 # How this differs from docker-compose.portal.yml and from the CLI daemon: apps/runtime-studio/README.md#how-runtime-studio-fits-with-nexo-api
 #
 # From repo root:
-#   docker compose -f docker-compose.agent-server.yml up -d --build
-#   docker compose -f docker-compose.agent-server.yml exec ollama ollama pull llama3.1:latest
+#   docker compose -f deploy/compose/docker-compose.agent-server.yml up -d --build
+#   docker compose -f deploy/compose/docker-compose.agent-server.yml exec ollama ollama pull llama3.1:latest
 #
+# Relative host paths (bind mount, build context) resolve against THIS file's directory, not the
+# shell CWD, so the defaults below are ../.. = repo root. Set NEXO_REPO_ROOT to mount another tree.
+# Compose also reads .env from this directory (deploy/compose/.env), not the repo root; use
+# --env-file <path> to load a file kept elsewhere.
 # Env: docs/config/agent-server.env.example
 # Portal: http://localhost:${NEXO_AGENT_SERVER_HTTP_PORT:-8080}/
 
@@ -30,8 +34,13 @@ services:
       # Without this, static portal 404s because wwwroot is not at /work/wwwroot.
       ASPNETCORE_CONTENTROOT: /app
       ASPNETCORE_URLS: http://+:8080
+      # All three Ollama families follow OLLAMA_BASE_URL / OLLAMA_MODEL so the default (MEAI) model path,
+      # the NCR probe and the provider factory dial the same host (docs/Configuration.md, "Ollama").
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
       OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1:latest}
+      Nexo__Meai__OllamaBaseUrl: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      Nexo__Meai__OllamaModel: ${OLLAMA_MODEL:-llama3.1:latest}
+      Nexo__NodeCapabilityRuntime__Ollama__BaseUrl: ${OLLAMA_BASE_URL:-http://ollama:11434}
       NEXO_DAILIES_PATH: ${NEXO_DAILIES_PATH:-/data/dailies}
       NEXO_BACKGROUND_AGENTS_CONFIG: ${NEXO_BACKGROUND_AGENTS_CONFIG:-/work/apps/runtime-studio/config/agent_set.local.json}
       Nexo__Barriers__RequireExplicitBarrier: ${Nexo__Barriers__RequireExplicitBarrier:-false}
@@ -47,7 +56,9 @@ services:
     volumes:
       # Named volume; keep mount path aligned with NEXO_DAILIES_PATH (default /data/dailies).
       - nexo-dailies:/data/dailies
-      - ${NEXO_REPO_ROOT:-.}:${NEXO_CONTAINER_WORKDIR:-/work}${NEXO_REPO_MOUNT_SUFFIX:-}
+      # Default ../.. is the repo root (relative to deploy/compose/); '.' would mount only deploy/compose/
+      # and NEXO_BACKGROUND_AGENTS_CONFIG would be missing -> Nexo.API throws at startup -> restart loop.
+      - ${NEXO_REPO_ROOT:-../..}:${NEXO_CONTAINER_WORKDIR:-/work}${NEXO_REPO_MOUNT_SUFFIX:-}
     restart: unless-stopped
 
 volumes:

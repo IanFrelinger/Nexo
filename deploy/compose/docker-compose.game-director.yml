@@ -1,7 +1,11 @@
 # Nexo Game Director Studio — portal + sidecar host + Ollama (air-gap friendly after image build).
 # From repo root:
-#   docker compose -f docker-compose.game-director.yml up -d --build
-#   docker compose -f docker-compose.game-director.yml exec ollama ollama pull llama3.1:latest
+#   docker compose -f deploy/compose/docker-compose.game-director.yml up -d --build
+#   docker compose -f deploy/compose/docker-compose.game-director.yml exec ollama ollama pull llama3.1:latest
+#
+# Relative host paths (bind mount, build context) resolve against THIS file's directory, not the
+# shell CWD, so the defaults below are ../.. = repo root. Set NEXO_REPO_ROOT to mount another tree.
+# Compose reads .env from this directory (deploy/compose/.env); use --env-file <path> otherwise.
 
 services:
   ollama:
@@ -23,8 +27,13 @@ services:
     environment:
       ASPNETCORE_CONTENTROOT: /app
       ASPNETCORE_URLS: http://+:8080
+      # All three Ollama families follow OLLAMA_BASE_URL / OLLAMA_MODEL so the default (MEAI) model path,
+      # the NCR probe and the provider factory dial the same host (docs/Configuration.md, "Ollama").
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
       OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1:latest}
+      Nexo__Meai__OllamaBaseUrl: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      Nexo__Meai__OllamaModel: ${OLLAMA_MODEL:-llama3.1:latest}
+      Nexo__NodeCapabilityRuntime__Ollama__BaseUrl: ${OLLAMA_BASE_URL:-http://ollama:11434}
       NEXO_BACKGROUND_AGENTS_CONFIG: ${NEXO_BACKGROUND_AGENTS_CONFIG:-/work/apps/game-director/agent_set.game_director.json}
       Nexo__Security__AuthorizationMode: ApiKey
       Nexo__Security__ApiKey: ${NEXO_API_KEY:-game-director-dev-key}
@@ -35,7 +44,9 @@ services:
     ports:
       - "127.0.0.1:${NEXO_GAME_DIRECTOR_HTTP_PORT:-8080}:8080"
     volumes:
-      - ${NEXO_REPO_ROOT:-.}:${NEXO_CONTAINER_WORKDIR:-/work}${NEXO_REPO_MOUNT_SUFFIX:-}
+      # Default ../.. is the repo root (relative to deploy/compose/); '.' would mount only deploy/compose/
+      # and NEXO_BACKGROUND_AGENTS_CONFIG would be missing -> host throws at startup -> restart loop.
+      - ${NEXO_REPO_ROOT:-../..}:${NEXO_CONTAINER_WORKDIR:-/work}${NEXO_REPO_MOUNT_SUFFIX:-}
     restart: unless-stopped
 
 volumes:
