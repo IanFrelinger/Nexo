@@ -237,6 +237,8 @@ docker compose -f deploy/compose/docker-compose.portal.yml exec ollama ollama pu
 
 Run these from the repo root. Stacks that bind-mount the repository (agent server, Game Director) default `NEXO_REPO_ROOT` to `../..` relative to `deploy/compose/` — the repo root — so no extra variables are needed; a `.env` for these stacks belongs in `deploy/compose/` (or pass `--env-file`), not the repo root.
 
+The self-extending agent in these stacks is **Passive by default** (observe only): it is armed by the aggressiveness mode file (`nexo background-agent mode set --value active`; path `NEXO_AGENT_MODE_PATH`), and a missing file or an unrecognised value reads as Passive. See [`docs/SelfHostedAgentServer.md`](docs/SelfHostedAgentServer.md).
+
 Validate a pipeline template from a mounted workspace with the published CLI image:
 
 ```bash
