@@ -27,7 +27,7 @@ jobs:
   uat:
     # Keep this in step with the tier steps below. A gate whose own label misstates what it covers is
     # the same class of defect this suite exists to catch.
-    name: uat (tiers 0-2, 4-9)
+    name: uat (tiers 0-2, 4-10)
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
@@ -95,6 +95,13 @@ jobs:
         shell: bash
         run: bash tests/uat/tier9.sh
 
+      - name: Tier 10 — the audit trail under concurrency
+        id: tier10
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: bash tests/uat/tier10.sh
+
       - name: Summary
         if: always()
         shell: bash
@@ -132,6 +139,59 @@ jobs:
             echo
             echo "A claim the documentation makes is no longer true, or a check needs correcting."
             echo "See tests/uat/README.md before assuming the product is at fault."
+            exit 1
+          fi
+          echo "every documented claim under test still holds"
+
+  # Tier 11 — the same claims, on the other platform a tester is told they can use.
+  # TesterQuickstart says its commands work on Windows and in bash on Linux/macOS, and the page was
+  # written on Windows 11, so "it passes on Linux" is not evidence for half its audience. Only the
+  # deterministic tiers run here: the API-starting tiers need process and port handling that differs
+  # per platform, and a cross-platform job that is flaky teaches people to ignore the whole gate.
+  # What this does catch is the platform-sensitive half -- path separators, casing, line endings, and
+  # any documented path that only resolves on one filesystem.
+  cross-platform:
+    name: uat cross-platform (tiers 8, 9)
+    runs-on: windows-latest
+    timeout-minutes: 30
+    env:
+      UAT_REPO_DIR: ${{ github.workspace }}
+      UAT_OUT: ${{ github.workspace }}/uat-out
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Tier 8 — do the docs still describe this repo, on Windows?
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: bash tests/uat/tier8.sh
+
+      - name: Tier 9 — the release path, on Windows
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: bash tests/uat/tier9.sh
+
+      - name: Verdict
+        if: always()
+        shell: bash
+        run: |
+          set -uo pipefail
+          if ! ls "${UAT_OUT}"/results*.tsv >/dev/null 2>&1; then
+            echo "no results were produced -- a tier died before recording anything"
+            exit 1
+          fi
+          FAILED=$(cat "${UAT_OUT}"/results*.tsv | awk -F'\t' '$1=="RESULT" && $4=="FAIL"' || true)
+          if [ -n "$FAILED" ]; then
+            echo "$FAILED"
+            echo
+            echo "A documented claim does not hold on Windows."
             exit 1
           fi
           echo "every documented claim under test still holds"

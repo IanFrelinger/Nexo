@@ -18,7 +18,18 @@ public sealed class LiteDbCopilotTaskStore : ICopilotTaskStore
         if (string.IsNullOrWhiteSpace(pathOrConnectionString))
             throw new ArgumentNullException(nameof(pathOrConnectionString));
         var trimmed = pathOrConnectionString.Trim();
-        _connectionString = trimmed.StartsWith("Filename=", StringComparison.OrdinalIgnoreCase) ? trimmed : $"Filename={trimmed}";
+        var withFilename = trimmed.StartsWith("Filename=", StringComparison.OrdinalIgnoreCase) ? trimmed : $"Filename={trimmed}";
+
+        // Shared, not LiteDB's default Direct. Direct takes an EXCLUSIVE file lock for the lifetime of
+        // the LiteDatabase instance, and every method here opens one per call, so two concurrent
+        // submissions raced: the second threw IOException ("used by another process") out of an API
+        // request that had already RUN the task. The work happened and its record was lost, which is
+        // the one failure the audit trail cannot absorb. Shared mode serialises through a named mutex
+        // instead — it also covers a second process (the CLI) touching the same file.
+        // An explicit Connection= supplied by the caller is left alone.
+        _connectionString = withFilename.Contains("Connection=", StringComparison.OrdinalIgnoreCase)
+            ? withFilename
+            : $"{withFilename};Connection=Shared";
     }
 
     /// <inheritdoc />

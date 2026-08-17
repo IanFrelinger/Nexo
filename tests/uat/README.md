@@ -92,3 +92,23 @@ Four rules, each of which this suite violated at least once before it stopped ly
 And pair every negative with its positive control. "POST without an API key returns 401" proves
 nothing on its own — an endpoint that is simply broken also fails to return 200. The paired check
 ("...and the same POST *with* the key returns 200") is what makes the first one mean *authentication*.
+
+| 10 | `tier10.sh` | Under concurrent submissions, is every task still on the record exactly once? |
+
+`tier10.sh` is a correctness check, not a benchmark. Timings are recorded for information and nothing
+passes or fails on them, because a shared runner cannot support a latency claim. What it does assert is
+the thing a load test usually misses: that a task which *ran* is on the record, once, under its own id.
+It was written that way on purpose and found a defect on its first run — the store took an exclusive
+file lock, so a second concurrent submission threw **after** the task had already executed, losing the
+record while returning nothing a status-code check would flag.
+
+Tier 11 is not a script. It is the `cross-platform` job in `uat-gate.yml`, which runs the deterministic
+tiers on `windows-latest`: `TesterQuickstart` promises its commands work on Windows *and* in bash on
+Linux/macOS, and the page was written on Windows, so a green on Linux alone is not evidence for half its
+audience. The API-starting tiers stay on Linux — process and port handling differ per platform, and a
+flaky cross-platform job would teach people to ignore the whole gate.
+
+On Windows locally, the API-starting tiers can leave a process holding `:5000` if a run is interrupted;
+Git Bash's `pkill` does not reliably kill it. `Get-NetTCPConnection -LocalPort 5000 | Stop-Process` does.
+The tiers abort rather than run against a dirty port, so the symptom is a clear refusal, not a false
+failure.
