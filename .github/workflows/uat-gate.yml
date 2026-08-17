@@ -27,7 +27,7 @@ jobs:
   uat:
     # Keep this in step with the tier steps below. A gate whose own label misstates what it covers is
     # the same class of defect this suite exists to catch.
-    name: uat (tiers 0-2, 4, 5)
+    name: uat (tiers 0-2, 4, 5, 8)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
@@ -66,6 +66,13 @@ jobs:
         continue-on-error: true
         shell: bash
         run: bash tests/uat/tier5.sh
+
+      - name: Tier 8 — do the docs still describe this repo?
+        id: tier8
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: bash tests/uat/tier8.sh
 
       - name: Summary
         if: always()
