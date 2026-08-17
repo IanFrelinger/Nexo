@@ -192,7 +192,7 @@ dotnet run --project application/src/Nexo.CLI -- pipeline diagnostics --format-j
 <details>
 <summary>Native SDK path (no Docker) and other escape hatches</summary>
 
-Use this only when containers are not an option. Requires .NET SDK 9.x.
+Use this only when containers are not an option. Requires .NET SDK 9.x. The CLI and API target `net8.0` and roll forward onto the 9.x runtime (`RollForward=Major`, set in `Directory.Build.targets`), so an SDK-9-only machine works without a separate .NET 8 runtime.
 
 ```bash
 git clone https://github.com/IanFrelinger/Nexo.git
