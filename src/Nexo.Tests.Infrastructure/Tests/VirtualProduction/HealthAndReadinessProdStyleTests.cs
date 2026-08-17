@@ -65,12 +65,19 @@ public sealed class HealthAndReadinessProdStyleTests
     }
 
     [Fact(Timeout = TestTimeouts.HostTouching)]
-    public void Ready_is_503_while_starting_200_once_started_and_503_again_once_stopping()
+    public async Task Ready_is_503_while_starting_200_once_started_and_503_again_once_stopping()
     {
         // The in-process host cannot show the drain window: WebApplicationFactory runs the real Program.Main,
         // whose app.Run() waits on ApplicationStopping and tears the DI root down as soon as StopApplication()
         // fires. So the lifetime transitions are pinned on the decision itself, fed the same tokens the route
         // reads from IHostApplicationLifetime.
+        //
+        // The body is synchronous, but the method returns Task because xunit only honours Timeout on
+        // Task-returning tests -- a [Fact(Timeout = N)] on a void test fails at run time with "Tests marked
+        // with Timeout are only supported for async tests". Every test in a ProdStyle class must carry a
+        // timeout (TimeoutConventionTests), so every test in one is async.
+        await Task.CompletedTask;
+
         using var started = new CancellationTokenSource();
         using var stopping = new CancellationTokenSource();
 
