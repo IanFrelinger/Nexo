@@ -1,4 +1,6 @@
-# North Star Gap Analysis
+# North Star Gap Analysis (historical)
+
+> **Historical document (marked 2026-08-16).** This analysis predates the trust loop (certification gate, attested sessions, hold-mode autonomy loop), which is now the mechanism behind "autonomous capability extension" and "all generated output is auditable". Do not use it as the current state: that is `docs/certification-evidence.md` (the proof ledger), `docs/ProjectTiers.md` (the repo map) and `CHANGELOG.md`. The only rows still marked MISSING when this banner was added are the Layer 9 application suite (Document Editor / Spreadsheet).
 
 **North Star:** Private, traceable AI computing with autonomous capability extension. Modular components with standardized contracts compose into execution pipelines and are generated autonomously under configurable policy constraints. Data remains on operator-controlled infrastructure. Trust enforcement is structural. All generated output is auditable, standards-compliant, and extractable. Capabilities federate across trusted .NET peers with policy-controlled routing.
 

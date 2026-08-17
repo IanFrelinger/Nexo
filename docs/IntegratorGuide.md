@@ -16,12 +16,14 @@ Add a project reference from your integrator assembly:
 </ItemGroup>
 ```
 
-Build and test from the repository root:
+Build and test from the repository root. `Nexo.Kernel.sln` is the kernel spine plus its tests (it also builds `Nexo.API`, which the infrastructure tests host in-process); the CLI is a separate project and restores on first use. `Nexo.sln` builds everything including the commercial satellites and is not needed for integration work:
 
 ```bash
-dotnet build Nexo.sln
-dotnet test Nexo.sln --filter "FullyQualifiedName~YourIntegrator.Tests"
+dotnet build Nexo.Kernel.sln
+dotnet test path/to/YourIntegrator.Tests/YourIntegrator.Tests.csproj
 ```
+
+`samples/hello-brick/HelloBrick.Tests/HelloBrick.Tests.csproj` is the smallest working example of that second line (a `ProjectReference` into `src/`, run from the repository root).
 
 Use the Nexo CLI for local validation and gates:
 
@@ -59,7 +61,7 @@ Match sensitivity and exfiltration settings to your deployment tier. For mesh-re
 
 | Nexo line | .NET / toolchain | Notes |
 |-----------|------------------|--------|
-| **Monorepo / source (`master`)** | **SDK 9.x** (`global.json`); **API & CLI** target **`net8.0`**; libraries and tests may use **`net8.0`** / **`net9.0`** (see **`docs/architecture/DotnetVersions.md`**) | You build from **`application/Nexo.Application.sln`** or **`Nexo.sln`**; no single “repo version” until you tag. |
+| **Monorepo / source (`master`)** | **SDK 9.x** (`global.json`); **API & CLI** target **`net8.0`**; libraries and tests may use **`net8.0`** / **`net9.0`** (see **`docs/architecture/DotnetVersions.md`**) | You build from **`Nexo.Kernel.sln`** (kernel + tests + `Nexo.API`), **`application/src/Nexo.CLI/Nexo.CLI.csproj`** (the CLI, on its own), or **`application/Nexo.Application.sln`** (both hosts + CLI tests); **`Nexo.sln`** only when you need the commercial satellites too. No single “repo version” until you tag. |
 | **Published NuGet + GHCR** | Same **semver** across packages and release images | Cut with **`docs/RELEASE.md`** / **`docs/RELEASE_RUNBOOK.md`**; consumer verify scripts in **`docs/PUBLISHING.md`** and **`docs/NuGetConsumerVerify.md`**. |
 
 After each **tagged release**, add a row for that **semver** (packages + `nexo-cli` / `nexo-api` digest pins) so integrators can copy known-good pins. Keep **`docs/DistributionModels.md`** in sync when channels or golden paths change.
