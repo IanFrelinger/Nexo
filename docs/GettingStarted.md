@@ -2,7 +2,7 @@
 
 This guide covers initial setup, trust configuration, and first pipeline validation. Nexo operates on local infrastructure with no external service dependencies. Trust controls are available but disabled by default — enable with `NEXO_TRUST_ENABLED=1`.
 
-The **default** path is **containers + CLI**: develop inside the **Dev Container** (or run published **GHCR** images / **compose** stacks). If you cannot use Docker at all, use **`scripts/setup/*`** on a machine with **.NET SDK 9** (no separate repo “installer” scripts). See `README.md` for the full map.
+The **default** path is **containers + CLI**: develop inside the **Dev Container** (or run published **GHCR** images / **compose** stacks). If you cannot use Docker at all, use **`scripts/setup/*`** on a machine with **.NET SDK 10** (no separate repo “installer” scripts). See `README.md` for the full map.
 
 ## Quickest path (recommended)
 
@@ -33,7 +33,7 @@ In ~10-15 minutes, you will:
 ## Prerequisites
 
 - **Default:** Docker (Desktop or Engine) and Git. You do **not** need a host .NET SDK for Dev Container, quickstart image, or `docker run … ghcr.io/ianfrelinger/nexo-cli`.
-- **Native lane:** .NET SDK **9.x** (repo is pinned in `global.json`). The CLI and API target `net8.0` and roll forward onto the 9.x runtime (`RollForward=Major`), so an SDK-9-only machine works; no separate .NET 8 runtime is needed.
+- **Native lane:** .NET SDK **10.x** (LTS; repo is pinned in `global.json`). The CLI and API ship on `net10.0`; libraries and the remaining `net8.0` test hosts roll forward onto the 10.x runtime (`RollForward=Major`), so an SDK-10-only machine works; no separate .NET 8 runtime is needed.
 - Optional: Ollama/OpenAI/Azure credentials (model-backed commands).
 
 ## 1) Choose your startup lane
@@ -108,7 +108,7 @@ Submit a coding task and receive output with an audit trail:
 
 ```bash
 # Via API (mock provider for testing):
-NEXO_ALLOW_MOCK=1 dotnet run --project application/src/Nexo.API &
+NEXO_ALLOW_MOCK=1 dotnet run --project application/src/Nexo.API -f net10.0 &
 curl -s http://localhost:5000/api/copilot/task \
   -H "Content-Type: application/json" \
   -d '{"task": "Analyze the security posture of this project"}' | jq .
@@ -245,7 +245,7 @@ Then resolve application ports from DI (analysis, validation, orchestration, etc
 
 ## Common pitfalls
 
-- If commands fail due to SDK mismatch, ensure your local SDK honors `global.json` (`9.x`).
+- If commands fail due to SDK mismatch, ensure your local SDK honors `global.json` (`10.x`).
 - **`dotnet build Nexo.sln`** should succeed on Linux with a stock .NET SDK; use **`Nexo.LocalDevCore.slnf`** or **`Nexo.PrimeTime.slnf`** when you want a smaller/faster slice.
 - Prefer running heavy validations sequentially (not in parallel terminals) to avoid resource pressure.
 - For CI parity, use the documented gate workflows under `.github/workflows/`.

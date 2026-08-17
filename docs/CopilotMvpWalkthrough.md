@@ -4,7 +4,7 @@ This guide walks you through submitting your first coding task through the Nexo 
 
 ## Prerequisites
 
-- .NET SDK 9.x (repo is pinned by `global.json`; the API project targets `net8.0` but requires the 9.x SDK to build)
+- .NET SDK 10.x (repo is pinned by `global.json`; the API project ships on `net10.0`)
 - Nexo repo cloned and built (`dotnet build application/src/Nexo.API/Nexo.API.csproj`)
 - An LLM provider configured (or `NEXO_ALLOW_MOCK=1` for local testing without API keys)
 
@@ -12,13 +12,13 @@ This guide walks you through submitting your first coding task through the Nexo 
 
 ```bash
 # With mock provider (no API keys needed):
-NEXO_ALLOW_MOCK=1 dotnet run --project application/src/Nexo.API
+NEXO_ALLOW_MOCK=1 dotnet run --project application/src/Nexo.API -f net10.0
 
 # With Ollama:
-OLLAMA_BASE_URL=http://localhost:11434 dotnet run --project application/src/Nexo.API
+OLLAMA_BASE_URL=http://localhost:11434 dotnet run --project application/src/Nexo.API -f net10.0
 
 # With OpenAI:
-OPENAI_API_KEY=sk-... dotnet run --project application/src/Nexo.API
+OPENAI_API_KEY=sk-... dotnet run --project application/src/Nexo.API -f net10.0
 ```
 
 The portal is available at `http://localhost:5000` (default Kestrel HTTP port). Docker compose stacks use port `8080` instead — see section 6.

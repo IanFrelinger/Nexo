@@ -59,7 +59,7 @@ Match sensitivity and exfiltration settings to your deployment tier. For mesh-re
 
 | Nexo line | .NET / toolchain | Notes |
 |-----------|------------------|--------|
-| **Monorepo / source (`master`)** | **SDK 9.x** (`global.json`); **API & CLI** target **`net8.0`**; libraries and tests may use **`net8.0`** / **`net9.0`** (see **`docs/architecture/DotnetVersions.md`**) | You build from **`application/Nexo.Application.sln`** or **`Nexo.sln`**; no single “repo version” until you tag. |
+| **Monorepo / source (`master`)** | **SDK 10.x** (`global.json`); **CLI** and hosts target **`net10.0`**; **API** and libraries multi-target **`net8.0;net10.0`**; tests use **`net8.0`** / **`net10.0`** (see **`docs/architecture/DotnetVersions.md`**) | You build from **`application/Nexo.Application.sln`** or **`Nexo.sln`**; no single “repo version” until you tag. |
 | **Published NuGet + GHCR** | Same **semver** across packages and release images | Cut with **`docs/RELEASE.md`** / **`docs/RELEASE_RUNBOOK.md`**; consumer verify scripts in **`docs/PUBLISHING.md`** and **`docs/NuGetConsumerVerify.md`**. |
 
 After each **tagged release**, add a row for that **semver** (packages + `nexo-cli` / `nexo-api` digest pins) so integrators can copy known-good pins. Keep **`docs/DistributionModels.md`** in sync when channels or golden paths change.
