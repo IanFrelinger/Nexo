@@ -2,6 +2,17 @@
 
 This document defines the minimum telemetry-backed SLOs for first NCR release.
 
+## What is actually emitted (read this before wiring alerts)
+
+The `ncr.*` names below are **`IMetricsCollector` keys** recorded by `NodeCapabilityRuntime`, `OllamaModelServingBackend` and `BehaviorExecutor` (`RecordExecutionTime(...)` for `*.duration`, `IncrementCounter(...)` for the rest). They are real and stable, but they are **not** exported as metrics named `ncr.*`, and by default they are not exported at all:
+
+- **Default (no `OTEL_EXPORTER_OTLP_ENDPOINT`):** the shipped hosts register the in-process `MemoryMetricsCollector`. Values live only in that process; no shipped host exposes the snapshot over HTTP or a scrape endpoint. Nothing in the tables below is observable from outside the process in this mode.
+- **With `OTEL_EXPORTER_OTLP_ENDPOINT` set (Nexo.API):** `AddNexoOpenTelemetry` swaps in `OpenTelemetryMetricsCollector`, whose `Nexo` meter emits exactly two instruments — `nexo.operation.duration` (histogram, unit `ms`, attribute `operation=<key>`) and `nexo.operation.count` (counter, attribute `counter=<key>`). Every `ncr.*` name in this document therefore appears as an **attribute value**, e.g. `nexo.operation.duration{operation="ncr.model_resolution.duration"}` or `nexo.operation.count{counter="ncr.model_load.error"}`. Write your PromQL / OTel queries against those two instruments filtered by attribute; the p95 targets refer to the `nexo.operation.duration` histogram sliced by `operation`.
+- **`ncr.execution.escalated.*` and `ncr.model_resolution.target.*` / `.reason.*`** are counter families with the enum value appended (`ncr.execution.escalated.EscalatedPolicyBlocked`, ...); they surface as distinct `counter` attribute values on `nexo.operation.count`.
+- **`CapabilitiesFetchResult.IsStale`** (item 6) is a return-value flag, not a metric; nothing emits it today. Treat that row as a suggested signal until a counter is added.
+
+Configuration for both modes is in `docs/Configuration.md` § Observability; compose usage in `docs/DEPLOYMENT.md` § Observability. The `nexo runtime gate` / `runtime release-gate` SLO evidence (`ncr.model_resolution.p95_ms`, `ncr.model_load.p95_ms`, `ncr.outcome.p95_ms`) is computed from persisted runtime history by the CLI and is unrelated to the exporter.
+
 ## Scope
 
 Applies to:

@@ -160,8 +160,37 @@ make test-prime-time-full    # ProdStyle gate then full slice excluding Category
   - `nexo validate`
   - `dotnet run --project application/src/Nexo.CLI -- validate`
 
+### What CI proves (run these first)
+
+No pull-request lane runs `dotnet test Nexo.sln`. The PR-triggered workflows run these exact commands; reproduce them locally instead of the whole solution:
+
 ```bash
-# Local (all tests, 30s blame-hang)
+bash scripts/ci/kernel-coverage-gate.sh   # kernel-coverage-gate.yml — Domain 100%, Infrastructure -f net9.0 --filter "FullyQualifiedName!~RuntimeStudioBlackBoxSmokeTests&Category!=External" (80% floor), Core.Application 67%
+bash scripts/run-cert-gate.sh             # cert-gate.yml — Certification + GenerationSafety + AstMutationEngine, -f net8.0, zero-test guard
+make kernel-gate                          # kernel-gate.yml — tier A (tier-b..e / kernel-gate-full also dispatchable)
+make application-gate-tier-a              # application-gate.yml — tier-c = in-process Nexo.API WebApplicationFactory tests
+make testing-strategy-gate                # testing-strategy-gate.yml — PR diff rules (gap freeze, ProdStyle wiring)
+make ci-verify                            # `nexo ci verify` — build + C#-driven checks used by ship-gate
+```
+
+`make test` (`dotnet test Nexo.sln`) still exists for a full local sweep, but treat a green result with care: it includes suites that need Docker, Ollama, Mapbox or the mesh lab, which are **opt-in by environment variable** and are reported as **Skipped** until enabled (see below).
+
+### Opt-in external suites (Skipped, not silently Passed)
+
+Tests that need an external dependency use `[OptInFact("<ENV>", "<dependency>")]` from `Nexo.Tests.Infrastructure.Helpers` instead of `if (!enabled) return;`. Without the variable the test shows up as **Skipped** with a reason naming the switch (xunit 2.x evaluates it at discovery time). Host-heavy tests that must not run on GitHub runners use `[NotOnCiFact("<reason>")]` (skipped when `CI` / `GITHUB_ACTIONS` is `true`).
+
+| Variable | Enables | Also needs |
+|----------|---------|------------|
+| `NEXO_TEST_REAL_VISION=1` | `VisionModelIntegrationTests` (Ollama vision model) | Ollama at `OLLAMA_BASE_URL` |
+| `NEXO_TEST_REAL_NCR_OLLAMA=1` | `NcrEngineOllamaIntegrationTests.LiveOllama_*` | Ollama at `NEXO_NODECAP_OLLAMA_URL` / `OLLAMA_BASE_URL` |
+| `NEXO_TEST_MAPBOX_TILES=1` | `MapboxTilesBlackBoxTests`, `MapboxTilesWhiteBoxRealDataTests` (`Category=External`) | `MAPBOX_ACCESS_TOKEN` for the valid-token tests (skipped with a reason when empty) |
+| `NEXO_RUN_DYNAMODB_CONTAINER=1` | `DynamoDbSmsIngressDockerTests` (Testcontainers) | Docker |
+| `NEXO_RUN_MESH_LAB=1` | `MeshLabDockerE2ETests` (`Category=MeshLab`; `make test-mesh-lab`) | Docker, bash, python3 |
+
+Still using the soft `return` (no discovery-time switch exists, so they cannot become Skips without changing what they gate on): `LocalModelProviderIntegrationTests` (downloads a GGUF or uses `NEXO_LOCAL_MODEL_PATH`), the OS-specific cases in `CodeAnalysisPlatformCompatibilityTests`, and the post-opt-in runtime guards inside the suites above (for example Ollama probed but unreachable). Prefer the attribute for any new dependency-gated test.
+
+```bash
+# Full local sweep (see caveat above)
 make test
 
 # Or directly (add --blame-hang-dump-type none to avoid 6GB dumps on hangs)

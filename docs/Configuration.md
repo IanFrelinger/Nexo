@@ -97,6 +97,18 @@ Notes:
 - `RequireApiKeyForMutatingEndpoints` remains for backward compatibility with existing deployments. Like every other mode it fails closed when its credential is missing.
 - `Nexo__Security__ApiKey` / `BearerToken` / `BasicAuthPassword` are compared in constant time against the configured plaintext value; they are not hashed at rest. Keep them in environment / secret stores, not in committed `appsettings.json`.
 
+## Observability (`NEXO_LOG_JSON`, `OTEL_*`)
+
+Shipped hosts (`Nexo.API`, `nexo background-agent daemon`) log human-readable console lines and keep metrics in an in-process `MemoryMetricsCollector` by default. Structured output and export are opt-in and read through the **host** configuration (`builder.Configuration` in `Program.cs`), so `appsettings.json`, environment variables and `UseSetting` all work for these keys, unlike the env-only kernel `Nexo:*` options.
+
+| Variable / config key | Description | Default |
+|------------------------|-------------|---------|
+| `NEXO_LOG_JSON` (or `Nexo:Logging:Json` / `Nexo__Logging__Json`) | `1` / `true` switches the console logger to `AddJsonConsole` (one JSON object per line: `Timestamp` (UTC, ISO-8601), `EventId`, `LogLevel`, `Category`, `Message`, `State`, scopes). Applies to `Nexo.API` and the CLI daemon; other CLI commands keep plain console output | off (plain console) |
+| `OTEL_EXPORTER_OTLP_ENDPOINT` | Standard OTel variable. When set, `Nexo.API` calls `AddNexoOpenTelemetry` and exports **traces** (ASP.NET Core + HttpClient instrumentation) and **metrics** (the `Nexo` meter plus ASP.NET Core / HttpClient) over OTLP; `IMetricsCollector` becomes `OpenTelemetryMetricsCollector`. An unreachable collector never fails startup — the exporter batches in the background and logs failures via OTel self-diagnostics | unset (no export, in-process `MemoryMetricsCollector`) |
+| `OTEL_EXPORTER_OTLP_PROTOCOL`, `OTEL_EXPORTER_OTLP_HEADERS`, `OTEL_EXPORTER_OTLP_TIMEOUT`, `OTEL_SERVICE_NAME`, `OTEL_RESOURCE_ATTRIBUTES` | Honoured by the OpenTelemetry SDK as usual once export is on. `OTEL_SERVICE_NAME` defaults to `Nexo.API` when unset | SDK defaults (`grpc`, 10 s, `Nexo.API`) |
+
+Metric shape over OTLP: `IMetricsCollector` keys (for example `ncr.model_load.success`, `ncr.ollama.chat.duration`) are **not** individual OTLP instruments; they arrive as attribute values on two instruments from the `Nexo` meter — `nexo.operation.duration` (histogram, ms, attribute `operation`) and `nexo.operation.count` (counter, attribute `counter`). See `docs/NcrReleaseSLOs.md` for how the SLO names map, and `docs/DEPLOYMENT.md` § Observability for compose usage.
+
 ## Remote execution surface (`Nexo__Execution__*`)
 
 `POST /api/execution/build` and `POST /api/execution/run` let a `RemoteExecutionPlatform` caller (`NEXO_EXECUTION_REMOTE_URL`) build images and run containers on this host's Docker daemon, including host bind mounts. They are **not mapped** unless opted in, and refuse `AuthorizationMode=None` (403) even when opted in.
@@ -277,7 +289,7 @@ Remote brick catalogs now use an in-memory stale capability snapshot fallback:
 
 ### NCR Telemetry SLO Suggestions (v1)
 
-Suggested starting SLOs/alerts using `ncr.*` metrics:
+Suggested starting SLOs/alerts using `ncr.*` metrics (these are `IMetricsCollector` keys; over OTLP they appear as `operation` / `counter` attribute values on `nexo.operation.duration` / `nexo.operation.count` — see "Observability" above and `docs/NcrReleaseSLOs.md`):
 - `ncr.model_resolution.target.Escalate`: alert if escalation ratio > 20% over 15 minutes for user-facing workloads.
 - `ncr.model_load.error` and `ncr.ollama.*.error`: alert on sustained non-zero error rate over 5 minutes.
 - `ncr.ollama.chat.duration`: track p95/p99; alert if p95 exceeds your interactive budget for 10+ minutes.

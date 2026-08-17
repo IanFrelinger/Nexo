@@ -1,6 +1,7 @@
 using System.Net;
 using FluentAssertions;
 using Nexo.Tests.Infrastructure.External;
+using Nexo.Tests.Infrastructure.Helpers;
 using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.External;
@@ -13,9 +14,10 @@ namespace Nexo.Tests.Infrastructure.Tests.External;
 /// Vector: default tileset <c>mapbox.mapbox-streets-v8</c> (<c>MAPBOX_VECTOR_TILESET_ID</c>), extension <c>.vector.pbf</c>.
 /// </para>
 /// Every test here reaches the public internet, so every test gates on <c>NEXO_TEST_MAPBOX_TILES=1</c>
-/// (the valid-token tests additionally require the token) and returns immediately otherwise, keeping CI
-/// and offline runs green. Before this gate covered the invalid-token tests they ran unconditionally and
-/// turned the kernel-coverage badge red on a transient egress failure (2026-08-15).
+/// (the valid-token tests additionally require the token) via <see cref="OptInFactAttribute"/> and is
+/// reported as Skipped otherwise, keeping CI and offline runs green without counting as Passed. Before
+/// this gate covered the invalid-token tests they ran unconditionally and turned the kernel-coverage
+/// badge red on a transient egress failure (2026-08-15).
 /// URL construction and response rules are white-box tested in <see cref="MapboxTileUrlsTests"/> and
 /// <see cref="MapboxTileResponseValidatorsTests"/>. Geography-driven URLs with real Mapbox responses are in
 /// <see cref="MapboxTilesWhiteBoxRealDataTests"/> (same env gate).
@@ -27,19 +29,12 @@ public sealed class MapboxTilesBlackBoxTests
     private const string TokenEnv = "MAPBOX_ACCESS_TOKEN";
     private const string RasterTilesetEnv = "MAPBOX_TILESET_ID";
     private const string VectorTilesetEnv = "MAPBOX_VECTOR_TILESET_ID";
+    private const string Dependency = "Mapbox Tiles API (public internet)";
 
-    private static bool IsExplicitlyEnabled() =>
-        string.Equals(Environment.GetEnvironmentVariable(EnableEnv), "1", StringComparison.OrdinalIgnoreCase);
-
-    [Fact(Timeout = 60000)]
+    [OptInFact(EnableEnv, Dependency, RequiredEnvironmentVariables = new[] { TokenEnv }, Timeout = 60000)]
     public async Task RasterTile_ValidToken_ReturnsRasterBytes()
     {
-        if (!IsExplicitlyEnabled())
-            return;
-
-        var token = Environment.GetEnvironmentVariable(TokenEnv);
-        if (string.IsNullOrWhiteSpace(token))
-            return;
+        var token = Environment.GetEnvironmentVariable(TokenEnv)!; // non-empty: enforced by RequiredEnvironmentVariables
 
         var tileset = Environment.GetEnvironmentVariable(RasterTilesetEnv)?.Trim();
         if (string.IsNullOrEmpty(tileset))
@@ -57,15 +52,10 @@ public sealed class MapboxTilesBlackBoxTests
             bytes);
     }
 
-    [Fact(Timeout = 60000)]
+    [OptInFact(EnableEnv, Dependency, RequiredEnvironmentVariables = new[] { TokenEnv }, Timeout = 60000)]
     public async Task VectorTile_ValidToken_ReturnsTileBytes()
     {
-        if (!IsExplicitlyEnabled())
-            return;
-
-        var token = Environment.GetEnvironmentVariable(TokenEnv);
-        if (string.IsNullOrWhiteSpace(token))
-            return;
+        var token = Environment.GetEnvironmentVariable(TokenEnv)!; // non-empty: enforced by RequiredEnvironmentVariables
 
         var tileset = Environment.GetEnvironmentVariable(VectorTilesetEnv)?.Trim();
         if (string.IsNullOrEmpty(tileset))
@@ -83,13 +73,10 @@ public sealed class MapboxTilesBlackBoxTests
             bytes);
     }
 
-    [Fact(Timeout = 30000)]
+    // No token needed (the point is the 401/403), but the request still needs egress.
+    [OptInFact(EnableEnv, Dependency, Timeout = 30000)]
     public async Task VectorTile_InvalidToken_IsUnauthorized()
     {
-        // No token needed (the point is the 401/403), but the request still needs egress.
-        if (!IsExplicitlyEnabled())
-            return;
-
         var url = MapboxTileUrls.BuildVectorTileUrl(
             MapboxTileUrls.DefaultVectorTilesetId,
             0,
@@ -103,13 +90,10 @@ public sealed class MapboxTilesBlackBoxTests
         response.StatusCode.Should().BeOneOf(HttpStatusCode.Unauthorized, HttpStatusCode.Forbidden);
     }
 
-    [Fact(Timeout = 30000)]
+    // No token needed (the point is the 401/403), but the request still needs egress.
+    [OptInFact(EnableEnv, Dependency, Timeout = 30000)]
     public async Task RasterTile_InvalidToken_IsUnauthorized()
     {
-        // No token needed (the point is the 401/403), but the request still needs egress.
-        if (!IsExplicitlyEnabled())
-            return;
-
         var url = MapboxTileUrls.BuildRasterTileUrl(
             MapboxTileUrls.DefaultRasterTilesetId,
             0,
