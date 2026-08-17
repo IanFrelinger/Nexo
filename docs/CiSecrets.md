@@ -88,7 +88,8 @@ lane) and `NEXO_MESH_REMOTE_RUNNER` (`mesh-lab-remote-gate.yml`, tailnet runner 
   set `NUGET_PUBLISH_MODE` plus the matching secret to also push NuGet.
 - **`release-nuget.yml`** dispatched on a fork: skipped by the guard. Upstream, with no
   `NUGET_PUBLISH_MODE`, it is the artifact-only dry run used to exercise the release harness
-  (first run on 2026-08-16, see the `ci/workflow-pruning` PR).
+  (first run ever on 2026-08-17 UTC: `0.1.0-ci.1`, 22 packages packed and hashed, consumer-sample
+  restore from the local feed green, every push step skipped - see the `ci/workflow-pruning` PR).
 - **`devlog-ghost-release.yml`**: inert on a fork unless someone sets `DEVLOG_GHOST_ENABLED` or
   dispatches it by hand.
 
