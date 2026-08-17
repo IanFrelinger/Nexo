@@ -80,11 +80,24 @@ if grep -qiE 'overall: *PASS' "$OUT/doctor.log"; then
 else
   result 0 doctor-pass FAIL "${DOC_S}s, no 'overall: PASS' (rc=$DOC_RC): $(tail -3 "$OUT/doctor.log" | tr '\n' ' ')"
 fi
-# The quickstart says container smoke warns (not fails) when Docker is absent. There is no Docker in here.
-if grep -qiE 'container smoke: *warn' "$OUT/doctor.log"; then
-  result 0 doctor-container-warn PASS "container smoke: warn, as documented for a Docker-less box"
+# Quickstart section 5 asks "does the doctor tell the truth?", and section 2 says container smoke warns
+# rather than fails when Docker is absent. So the claim is conditional on the machine, and the check has
+# to be too: assert the state that matches THIS box. Asserting "warn" unconditionally encodes the absence
+# of Docker -- a property of one test environment -- as though it were a product claim, and duly failed
+# on a CI runner that has Docker while doctor was reporting correctly.
+SMOKE=$(grep -ioE 'container smoke: *[a-z]+' "$OUT/doctor.log" | head -1 | sed 's/.*: *//' | tr 'A-Z' 'a-z')
+if docker info >/dev/null 2>&1; then
+  if [ "$SMOKE" = "pass" ]; then
+    result 0 doctor-container-truthful PASS "docker reachable and doctor says 'container smoke: pass'"
+  else
+    result 0 doctor-container-truthful FAIL "docker is reachable but doctor says 'container smoke: ${SMOKE:-<absent>}'"
+  fi
 else
-  result 0 doctor-container-warn FAIL "expected 'container smoke: warn' without Docker; got: $(grep -i 'container' "$OUT/doctor.log" | head -2 | tr '\n' ' ')"
+  if [ "$SMOKE" = "warn" ]; then
+    result 0 doctor-container-truthful PASS "no docker and doctor says 'container smoke: warn', as documented"
+  else
+    result 0 doctor-container-truthful FAIL "no docker, expected 'warn', got '${SMOKE:-<absent>}'"
+  fi
 fi
 
 say "0.6 doctor --json is machine-readable, as claimed"
