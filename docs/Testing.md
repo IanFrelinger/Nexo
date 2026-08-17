@@ -148,7 +148,7 @@ make test-prime-time-full    # ProdStyle gate then full slice excluding Category
 
 **Same checks via dotnet (optional):** `make test-mesh-lab` or `NEXO_RUN_MESH_LAB=1 dotnet test … --filter Category=MeshLab` — runs **`MeshLabDockerE2ETests`** (Compose + `mesh-lab-verify.sh` / deep script). Skipped by default; set **`NEXO_MESH_LAB_SKIP_DEEP=1`** for standard verify only.
 
-**Stress (workers scale + health bursts):** `make mesh-lab-e2e-stress` locally (verify + deep + ramp + post-stress director checks); CI weekly via **`mesh-lab-stress-gate.yml`** (`workflow_dispatch` also available). See **`docs/MeshPhase10LabStressHardening.md`**.
+**Stress (workers scale + health bursts):** `make mesh-lab-e2e-stress` locally (verify + deep + ramp + post-stress director checks); CI via **`mesh-lab-stress-gate.yml`** (`workflow_dispatch` only; the weekly schedule was removed 2026-08-16). See **`docs/MeshPhase10LabStressHardening.md`**.
 
 **Entitlements (CopilotScoped + hourly quota):** included in `make mesh-lab-verify` when workers are up; standalone `make mesh-lab-verify-entitlements` (requires `Nexo__Security__CopilotScopedApiKey` in `.env.mesh-lab`).
 

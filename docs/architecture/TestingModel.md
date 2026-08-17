@@ -22,7 +22,6 @@ Use **`[Trait("Category", "ProdStyle")]`** on xUnit classes that mirror producti
 
 **Virtual API stack (`FrameworkVirtualProdDemosTests`):** **`WebApplicationFactory&lt;Program&gt;`** spins up **`Nexo.API`** in-process (environment **`Testing`** → **`appsettings.Testing.json`**, background-agent **`IHostedService`** off). Requests hit the **same** minimal API endpoints as production — no fake route handlers. This matches **`docs/demos/`** (`GET /api/status`, **`NexoClient`**). These sources compile **only for `net8.0`** in **`Nexo.Tests.Infrastructure`** (`Nexo.API` is net8; ASP.NET Core TestHost + **`WriteAsJsonAsync`** on **`net9.0`** test TFMs can hit known **`PipeWriter`** incompatibilities).
 
-<｜tool▁sep｜>new_string
 Run **before** lighter smoke (`BaseFrameworkSmokeTests`) and full matrices — see **`make test-prod-style`**, **`make test-prime-time`** (**`Nexo.PrimeTime.slnf`**), **`make test-framework-prod-first`**, and **`nexo ci verify`** (ProdStyle runs after Infrastructure build, before smoke).
 
 ## Docker mesh virtual lab (multi-container HTTP)

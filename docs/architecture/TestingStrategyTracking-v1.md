@@ -19,7 +19,7 @@ Living checklist for [Testing strategy pivot v1](TestingStrategyPivot-v1.md). Up
 ## Phase 1 — Coverage policy
 
 - [x] `kernel-coverage-gate.yml` + `scripts/ci/kernel-coverage-gate.sh`
-- [x] `core-domain-coverage` at 100% threshold
+- [x] Domain at 100% threshold (`core-domain-coverage`, folded into `kernel-coverage-gate` 2026-08-16)
 - [x] `CoverageGates-v1.md` exclusions documented
 - [x] Branch protection documented (`docs/GitHubBranchProtection.md`) — enable in GitHub UI
 - [x] Doc audit: no spurious “global 100% line” goal (domain-only 100% is explicit)
@@ -41,7 +41,7 @@ Living checklist for [Testing strategy pivot v1](TestingStrategyPivot-v1.md). Up
 
 | Paths | PR workflows / local commands |
 |-------|------------------------------|
-| `src/Nexo.Core.Domain/**` | `domain-coverage`, `kernel-coverage` · `dotnet test src/Nexo.Tests.Domain` |
+| `src/Nexo.Core.Domain/**` | `kernel-coverage` · `dotnet test src/Nexo.Tests.Domain` |
 | `src/Nexo.Core.Application/**` | `kernel-coverage` · `Nexo.Tests.Application` |
 | `src/Nexo.Infrastructure/**`, `src/Nexo.Runtime/**`, `src/Nexo.Hosting/**` | `kernel-coverage`, `kernel-gate`, `cross-platform-tests` (path-filtered) |
 | Production wiring (routing, barriers, API host) | `testing-strategy` · `make test-prod-style` · `kernel-gate-tier-c` |
@@ -107,5 +107,5 @@ Living checklist for [Testing strategy pivot v1](TestingStrategyPivot-v1.md). Up
 
 ## Manual follow-up (org settings)
 
-- [ ] GitHub **branch protection** on `master`: require `testing-strategy`, `domain-coverage`, `kernel-coverage`
+- [ ] GitHub **branch protection** on `master`: require `testing-strategy`, `kernel-coverage`
 - [ ] Optional: label `needs-prod-style` for reviewer triage (manual label)

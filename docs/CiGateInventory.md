@@ -69,7 +69,6 @@ Six workflows carry a `schedule`: `distribution-matrix-gate` (Mon 10:00 UTC), `f
 | `cert-gate.yml` | Cert gate / `cert-gate` | **every PR** (no paths) | push `master`, dispatch — **required** |
 | `layer-boundary.yml` | layer-boundary / `verify` | every PR (`paths: "**"`, types opened/synchronize/reopened/edited) | — |
 | `application-gate.yml` | Application Gate / `application-gate` | paths: `application/**`, VirtualProduction tests, `scripts/application-gate*.sh`, `scripts/prod-dry-run.sh`, `Makefile`, … | dispatch |
-| `core-domain-coverage.yml` | Core domain coverage / `domain-coverage` | paths: `src/Nexo.Core.Domain/**`, `src/Nexo.Infrastructure/**`, kernel test projects, `Directory.*.props` | push (same paths) |
 | `dependency-boundary.yml` | dependency-boundary / `verify` | paths: `**/*.csproj`, `commercial/**`, `application/**`, `applications/**`, `src/**`, `LICENSING.md`, boundary scripts | push, dispatch |
 | `distribution-matrix-gate.yml` | Distribution Matrix Gate / 7 jobs | paths: same broad list as push (Dockerfiles, pack/verify scripts, Nexo.API/CLI, Client/Sdk/Hosting.Bundle/Authoring/Brick.Contracts, samples, VirtualProduction tests) | push (broad paths), weekly schedule, dispatch |
 | `docs-link-check.yml` | Docs Link Check / `lychee (README + docs)` | paths: `docs/**`, `README.md`, `.lycheeignore` | push, dispatch |
@@ -134,3 +133,37 @@ Despite their names, **`cross-platform-tests`** and **`prod-dry-run-pr`** do not
 - To promote a gate to required, first make it always report on PRs (always-report job or in-job path filtering), then add its context to branch protection and to the table at the top of this file in the same change.
 - Release workflows (`release*`, `runtime-release*`, `rc-gate`, `reusable-*`) are not PR branch-protection checks.
 - Branch protection is not represented by YAML; when the setting changes, update this file (and [`GitHubBranchProtection.md`](GitHubBranchProtection.md)) in the same PR.
+
+## Pruning (2026-08-16)
+
+Every workflow file was classified from `gh run list --workflow <file> --limit 15 --json conclusion,createdAt,event` plus its `on:` block (PR `ci/workflow-pruning`; the full 62-row table is in that PR's description). Classes: **active-green**, **active-flaky**, **dead** (no run in 60 days and no `push`/`pull_request`/`schedule` trigger that can fire), **duplicate**, **always-red**. Only `cert-gate` is required by branch protection (verified with `gh api repos/IanFrelinger/Nexo/branches/master/protection`), so none of the changes below affects merges.
+
+**Deleted (7)** — recoverable from git history at `71963059`:
+
+| File | Why |
+| --- | --- |
+| `core-domain-coverage.yml` | duplicate: identical `dotnet test src/Nexo.Tests.Domain … /p:Threshold=100` step to the first leg of `scripts/ci/kernel-coverage-gate.sh`, same PR/push paths |
+| `runtime-studio-playground.yml` | duplicate of `cross-platform-tests.yml` `scope=playground` (same 3-OS matrix, same filters); 4/4 red, last run 2026-05-11, dispatch-only |
+| `test-persistence-multi-os.yml` | duplicate of `cross-platform-tests.yml` `scope=persistence`; 15/15 red — tests pass, the `publish-unit-test-result-action` step 403s on `check-runs` |
+| `test-caching-multi-env.yml` | always-red (14 red + 1 cancelled of 15), muted 2026-08-11, dispatch-only; the `Dockerfile.test-caching*` images it built are still validated by `compose-gate.yml` |
+| `mapbox-tile-helpers-ci.yml` | always-red (15/15), dispatch-only; the job-level `if: secrets.MAPBOX_ACCESS_TOKEN != ''` is not a valid context there. Tests remain runnable locally with `NEXO_TEST_MAPBOX_TILES=1` |
+| `runtime-studio-forge-smoke.yml` | dead: dispatch-only, last run 2026-06-14, referenced nowhere |
+| `mesh-lab-remote-gate.yml` | dead: never dispatched, needs five repository secrets and a tailnet runner; `scripts/mesh-lab-verify-remote.sh` is the supported path |
+
+**Marked `# DORMANT:` (7)** — top-of-file comment with the reason and date; `workflow_dispatch` stays live:
+
+| File | Why |
+| --- | --- |
+| `cross-platform-tests.yml` | push trigger commented out 2026-08-11 (15/15 red on a product assertion, issue #252); only Windows/macOS matrix in the repo |
+| `mesh-lab-gate.yml` | push trigger commented out 2026-08-11 (15/15 red in the compose environment); mesh-lab entry point |
+| `mesh-lab-stress-gate.yml` | **weekly schedule removed** after eight consecutive red runs (2026-06-22 .. 2026-08-10) |
+| `runtime-release-promotion.yml` | 11 of last 14 red, last run 2026-05-11; kept because `scripts/rc-gate-tier-d.sh` lists it as an optional RC signal |
+| `test-air-gapped-no-network.yml` | never green (11/11 red since 2026-03-08; last failure is MSB1011 from the `nexo test multi-env` step); cited by hardening plans, so kept as an unproven claim |
+| `test-trust-multi-env.yml` | dead by the 60-day rule (last dispatch 2026-05-23, mostly green); cited by `KernelHardeningPlan-v1.md` C1 |
+| `workflow-regression-gate.yml` | dead by the 60-day rule (last dispatch 2026-06-14, green); only end-to-end run of `nexo workflow baseline|report|gate` |
+
+**Kept as-is although rarely run** (all have a live path/manual trigger and a Makefile/script/runbook that names them): `compat-gate`, `dr-gate` (path-triggered on their scripts, one green run each), `composition-mesh-gate`, `waterproofing-gate`, `perf-certification`, `installer-bruteforce-gate` (dispatched by `scripts/rc-gate-tier-d.sh`), `nuget-consumer-verify` (post-publish check, `docs/NuGetConsumerVerify.md`), `setup-smoke-suite` (`docs/CiFirstHardwareSecond.md`), `devlog-ghost-release`, `mesh-lab-tls-gate` (weekly, latest run green).
+
+**Not folded:** the CLI image is built by `container-image-gate` (local + multi-arch cache-only), `distribution-matrix-gate` (build + `--help` smoke), `full-platform-readiness-gate` and `reusable-container-publish` (push to GHCR). Each build differs in platform, output and smoke, and three of the four are on the protected list, so a shared reusable job is deferred to its own PR.
+
+**Fork safety (L10):** `container-image-publish.yml`, `release.yml`, `release-nuget.yml` and `release-staging-on-label.yml` now carry `if: github.repository_owner == 'IanFrelinger'`; every secret and repository variable a workflow reads, and what a fork gets without it, is in [`CiSecrets.md`](CiSecrets.md).

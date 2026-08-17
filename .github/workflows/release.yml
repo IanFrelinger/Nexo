@@ -35,6 +35,9 @@ concurrency:
 jobs:
   validate:
     name: Validate release inputs
+    # Forks: every downstream job needs validate to succeed, so this one guard keeps a fork's
+    # tag push from publishing images/packages under its own namespace (docs/CiSecrets.md).
+    if: github.repository_owner == 'IanFrelinger'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

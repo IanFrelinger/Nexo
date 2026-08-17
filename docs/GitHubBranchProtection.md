@@ -11,7 +11,6 @@ The upstream `master` rule (verified 2026-08-16 via `gh api repos/IanFrelinger/N
 1. **Require a pull request** before merging (disable direct pushes if your team can tolerate it).
 2. **Require status checks to pass** — keep **`cert-gate`** and add, once each gate always reports on PRs (see "Why the other gates are not required" in [`CiGateInventory.md`](CiGateInventory.md)):
    - **`testing-strategy`** — pivot policy (gap freeze, ProdStyle wiring hints); see [Testing strategy pivot v1](architecture/TestingStrategyPivot-v1.md)
-   - **`domain-coverage`** — `Nexo.Core.Domain` line coverage **100%**
    - **`kernel-coverage`** — composite floors as enforced by `scripts/ci/kernel-coverage-gate.sh` (Domain 100%, Infrastructure 80%, Application 67%)
    - **`layer-boundary / verify`** — already unfiltered (`paths: "**"`), the one gate that could be required today
    - Path-filtered gates as applicable: **Kernel Gate**, **Application Gate** (each needs an always-report job first)
