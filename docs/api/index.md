@@ -68,7 +68,7 @@ var result = await validationService.ValidateAsync(filter: null, progress: null,
 | Option | Description | Default |
 |--------|-------------|---------|
 | `DeploymentProfile` | Module profile (`Full`, `Server`, `Edge`, `AirGapped`, `System`) | `Full` (or `NEXO_DEPLOYMENT_PROFILE`) |
-| `PatternStorePath` | LiteDB pattern store file path | `nexo-patterns.db` |
+| `PatternStorePath` | LiteDB pattern store file path; sibling state files are co-located with it | `<state dir>/nexo-patterns.db` (`NEXO_STATE_DIR`, else `<repo root>/.nexo/state`) |
 | `TrustEnabled` | Enable trust & sanitization | `false` |
 | `RegisterBackgroundAgentHostedService` | Register background agent as hosted service | `false` |
 | `DisableObservationPipeline` | Skip observation pipeline registration | `false` |

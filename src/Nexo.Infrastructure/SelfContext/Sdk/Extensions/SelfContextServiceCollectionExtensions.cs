@@ -28,9 +28,11 @@ public static class SelfContextServiceCollectionExtensions
         else
             services.AddSingleton<IPatternStore, EmptyPatternStore>();
 
+        // Co-located with the pattern store; otherwise the state directory (NEXO_STATE_DIR, else
+        // <repo root>/.nexo/state) so LiteDB files never land in the CWD / repo root.
         var basePath = !string.IsNullOrEmpty(patternStorePath)
             ? Path.GetDirectoryName(patternStorePath) ?? "."
-            : RepoPathResolver.FindRepoRoot();
+            : RepoPathResolver.ResolveStateDirectory();
         var tracerDbPath = Path.Combine(basePath, "nexo-execution.db");
         var testFailuresDbPath = Path.Combine(basePath, "nexo-test-failures.db");
         services.AddSingleton<IExecutionTracer>(sp => new LiteDbExecutionTracer(tracerDbPath));

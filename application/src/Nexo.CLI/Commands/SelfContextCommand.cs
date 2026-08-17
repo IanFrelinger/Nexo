@@ -34,7 +34,7 @@ public sealed class SelfContextCommand : Command
     private static async Task ExecuteAsync(string? lookbackStr)
     {
         var repoRoot = RepoPathResolver.FindRepoRoot();
-        var storePath = Path.Combine(repoRoot, "nexo-patterns.db");
+        var storePath = Path.Combine(RepoPathResolver.ResolveStateDirectory(repoRoot), "nexo-patterns.db");
 
         var services = new ServiceCollection()
             .AddLogging(b => b.AddConsole())

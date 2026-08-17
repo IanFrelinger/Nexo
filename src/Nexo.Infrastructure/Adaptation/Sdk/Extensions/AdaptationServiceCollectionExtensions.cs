@@ -140,9 +140,12 @@ public static class AdaptationServiceCollectionExtensions
         services.AddSingleton<IImmutableCoreRegistry, ImmutableCoreRegistry>();
 
         // Block 4: inheritance system
-        var adaptationDbPath = !string.IsNullOrEmpty(patternStorePath)
-            ? Path.Combine(Path.GetDirectoryName(patternStorePath) ?? ".", "nexo-adaptation.db")
-            : Path.Combine(RepoPathResolver.FindRepoRoot(), "nexo-adaptation.db");
+        // State files are co-located with the pattern store; without one they go to the state
+        // directory (NEXO_STATE_DIR, else <repo root>/.nexo/state), never the CWD / repo root.
+        var stateBasePath = !string.IsNullOrEmpty(patternStorePath)
+            ? Path.GetDirectoryName(patternStorePath) ?? "."
+            : RepoPathResolver.ResolveStateDirectory();
+        var adaptationDbPath = Path.Combine(stateBasePath, "nexo-adaptation.db");
         services.AddSingleton<IAdaptationLog>(sp => new LiteDbAdaptationLog(adaptationDbPath));
         services.AddSingleton<IAdaptationPromoter, AdaptationPromoter>();
         services.AddSingleton<IInstanceResultAggregator, InstanceResultAggregator>();
@@ -151,16 +154,12 @@ public static class AdaptationServiceCollectionExtensions
         services.AddTransient<AdaptationRollbackHelper>();
 
         // Block 5: autonomy controls
-        var auditDbPath = !string.IsNullOrEmpty(patternStorePath)
-            ? Path.Combine(Path.GetDirectoryName(patternStorePath) ?? ".", "nexo-adaptation-audit.db")
-            : Path.Combine(RepoPathResolver.FindRepoRoot(), "nexo-adaptation-audit.db");
+        var auditDbPath = Path.Combine(stateBasePath, "nexo-adaptation-audit.db");
         services.AddSingleton<IAdaptationAuditLog>(sp => new LiteDbAdaptationAuditLog(auditDbPath));
         services.AddSingleton<IUserFeedbackCapture, CliUserFeedbackCapture>();
 
         // Rollback infrastructure (P0.3)
-        var snapshotPath = !string.IsNullOrEmpty(patternStorePath)
-            ? Path.Combine(Path.GetDirectoryName(patternStorePath) ?? ".", "nexo-snapshots")
-            : Path.Combine(RepoPathResolver.FindRepoRoot(), "nexo-snapshots");
+        var snapshotPath = Path.Combine(stateBasePath, "nexo-snapshots");
         services.AddRollbackInfrastructure(snapshotPath);
 
         return services;

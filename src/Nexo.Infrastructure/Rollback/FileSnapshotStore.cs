@@ -16,7 +16,7 @@ public sealed class FileSnapshotStore : ISnapshotStore
     /// <summary>Initializes a new file snapshot store.</summary>
     public FileSnapshotStore(string? basePath = null)
     {
-        _basePath = basePath ?? Path.Combine(RepoPathResolver.FindRepoRoot(), "nexo-snapshots");
+        _basePath = basePath ?? Path.Combine(RepoPathResolver.ResolveStateDirectory(), "nexo-snapshots");
     }
 
     /// <summary>Take snapshot asynchronously.</summary>

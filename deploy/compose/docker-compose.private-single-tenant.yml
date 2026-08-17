@@ -25,6 +25,8 @@ services:
       Nexo__Meai__OllamaModel: ${OLLAMA_MODEL:-llama3.1:latest}
       Nexo__NodeCapabilityRuntime__Ollama__BaseUrl: http://ollama:11434
       NEXO_DAILIES_PATH: /data/dailies
+      # Runtime state (LiteDB stores incl. copilot tasks, snapshots) on a named volume (docs/DEPLOYMENT.md, "Runtime state").
+      NEXO_STATE_DIR: /data/state
       Nexo__Product__DefaultTenantId: ${NEXO_DEFAULT_TENANT_ID:-default}
       Nexo__Product__AllowedTenantIds__0: ${NEXO_DEFAULT_TENANT_ID:-default}
       Nexo__Entitlements__MaxCopilotSubmissionsPerHour: ${NEXO_MAX_COPILOT_PER_HOUR:-0}
@@ -39,9 +41,11 @@ services:
     volumes:
       - nexo-dailies:/data/dailies
       - nexo-copilot-data:/data/copilot
+      - nexo-state:/data/state
     restart: unless-stopped
 
 volumes:
   ollama-models:
   nexo-dailies:
   nexo-copilot-data:
+  nexo-state:

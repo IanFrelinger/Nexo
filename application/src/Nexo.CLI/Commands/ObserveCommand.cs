@@ -68,7 +68,7 @@ public sealed class ObserveCommand : Command
     private static async Task ExecuteAsync(string? path, TimeSpan maxDuration, bool dump, bool verbose)
     {
         var repoRoot = path ?? RepoPathResolver.FindRepoRoot();
-        var storePath = Path.Combine(repoRoot, "nexo-patterns.db");
+        var storePath = Path.Combine(RepoPathResolver.ResolveStateDirectory(repoRoot), "nexo-patterns.db");
 
         var services = new ServiceCollection()
             .AddLogging(b =>

@@ -229,11 +229,12 @@ internal static partial class NexoKernelRegistrar
 
         // ── Copilot task store ──────────────────────────────────────────
         // LiteDB file is co-located with the pattern store directory
-        // (or the repo root as fallback) to keep all Nexo-generated
-        // state in one discoverable location.
+        // (or the resolved state directory — NEXO_STATE_DIR, else
+        // <repo root>/.nexo/state — as fallback) to keep all
+        // Nexo-generated state in one discoverable location.
         string copilotTasksBasePath = !string.IsNullOrEmpty(options.PatternStorePath)
             ? Path.GetDirectoryName(options.PatternStorePath) ?? "."
-            : RepoPathResolver.FindRepoRoot();
+            : RepoPathResolver.ResolveStateDirectory();
         string copilotTasksDbPath = Path.Combine(copilotTasksBasePath, "nexo-copilot-tasks.db");
         services.TryAddSingleton<ICopilotTaskStore>(_ => new LiteDbCopilotTaskStore(copilotTasksDbPath));
 
@@ -308,11 +309,14 @@ internal static partial class NexoKernelRegistrar
         if (modules.IncludeObservationPipeline && !options.DisableObservationPipeline)
         {
             string repoRoot = RepoPathResolver.FindRepoRoot();
+            // Watch paths stay repo-relative; the LiteDB pattern store lives in the state
+            // directory (NEXO_STATE_DIR, else <repo root>/.nexo/state) unless PatternStorePath is set.
+            string defaultPatternStorePath = Path.Combine(RepoPathResolver.ResolveStateDirectory(repoRoot), "nexo-patterns.db");
             bool observationFailOpen = options.ObservationFailOpen ?? NexoServiceCollectionExtensions.ParseBooleanEnvironmentVariable("NEXO_OBSERVATION_FAIL_OPEN");
             services.AddObservationPipeline(opts =>
             {
                 opts.RepoRoot = repoRoot;
-                opts.StorePath = options.PatternStorePath ?? "nexo-patterns.db";
+                opts.StorePath = options.PatternStorePath ?? defaultPatternStorePath;
                 opts.FailOpenOnStoreErrors = observationFailOpen;
             }, registerHostedService: options.RegisterBackgroundAgentHostedService);
         }
