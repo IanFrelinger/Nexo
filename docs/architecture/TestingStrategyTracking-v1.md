@@ -60,7 +60,7 @@ Living checklist for [Testing strategy pivot v1](TestingStrategyPivot-v1.md). Up
 - [x] Megaclass allow list (below)
 - [x] Review guide: prefer ProdStyle over gap megaclass edits
 - [x] Redundant gap suite reduction (JWT/middleware/domain/barriers; ProdStyle dedup in Makefile; `WorkflowExecutorEdgeCaseTests`)
-- [x] Dogfood Block 8 matrix tests skip on CI (`DogfoodCiSkip`; nested `dotnet test` is flaky on runners)
+- [x] Dogfood Block 8 matrix tests skip on CI (`[NotOnCiFact]` in `Nexo.Tests.Infrastructure.Helpers`, reported as Skipped rather than a silent pass; nested `dotnet test` is flaky on runners)
 - [ ] Optional backlog: PR Coverlet diff script (planned as `coverage-changed-files.sh` under `scripts/ci/`; not yet written)
 - [ ] Quarterly ratchet: bump `INFRA_COVERAGE_THRESHOLD` / `APP_COVERAGE_THRESHOLD` when justified
 

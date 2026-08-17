@@ -8,11 +8,9 @@ Automated line-coverage floors for kernel assemblies. These gates complement fun
 
 | Workflow | Job id | Assemblies | Line threshold |
 |----------|--------|------------|----------------|
-| [Kernel coverage gate](../../.github/workflows/kernel-coverage-gate.yml) | `kernel-coverage` | Domain + Infrastructure + Core.Application | **100% / 83% / 67%** |
+| [Kernel coverage gate](../../.github/workflows/kernel-coverage-gate.yml) | `kernel-coverage` | Domain + Infrastructure + Core.Application | **100% / 80% / 67%** |
 
-The former `core-domain-coverage.yml` (`domain-coverage`, Domain 100%) was deleted 2026-08-16: it ran the identical `dotnet test src/Nexo.Tests.Domain ... /p:Threshold=100` step that `scripts/ci/kernel-coverage-gate.sh` runs first, on the same PR/push paths (see [CiGateInventory.md](../CiGateInventory.md), "Pruning").
-
-Enable **`kernel-coverage`** as a required status check on the default branch (see [TestingModel.md](../architecture/TestingModel.md)).
+The Infrastructure floor is **80%** as enforced by `scripts/ci/kernel-coverage-gate.sh` (`INFRA_COVERAGE_THRESHOLD` default; measured ~80.3%, target 83 — the earlier 83% figure was never measured against a completed run, see [KernelCoverageGate-Findings.md](KernelCoverageGate-Findings.md)). Neither `domain-coverage` nor `kernel-coverage` is currently a required status check on `master`; branch protection requires only `cert-gate` (see [CiGateInventory.md](../CiGateInventory.md)). Both are path-filtered, so they need an always-report job before they can be required (see [TestingModel.md](../architecture/TestingModel.md)).
 
 ## Local verification
 
