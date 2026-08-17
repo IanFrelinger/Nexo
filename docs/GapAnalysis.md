@@ -1,4 +1,6 @@
-# Gap Analysis: Current State vs North Star
+# Gap Analysis: Current State vs North Star (historical)
+
+> **Historical document (marked 2026-08-16).** This analysis predates the trust loop (certification gate, attested sessions, hold-mode autonomy loop) and is kept as the record of the dogfood / observe→improve program. Do not use it as the current state: that is `docs/certification-evidence.md` (the proof ledger), `docs/ProjectTiers.md` (the repo map) and `CHANGELOG.md`. Of the items below, only rows 4 and 5 of the priority table were still open when this banner was added; row 4's README ↔ IntegratorGuide / DogfoodValidation cross-links landed with the README front-door pass the same day.
 
 **North Star:** Every capability must be used by Nexo on itself. Each block has a dogfood gate that must pass before moving on.
 
@@ -127,7 +129,7 @@ Keep CLI parity marked as resolved; prioritize documentation examples that map e
 | 1 | ~~Observe → improve integration~~ | — | Resolved (`--from-observation`, `--continuous`) |
 | 2 | ~~Trust in improve flow~~ | — | Resolved (`NEXO_TRUST_ENABLED=1` + `SanitizingProviderFactory` in improve DI) |
 | 3 | ~~Test failure ingestion~~ | — | Resolved (`nexo ingest-failures`, `TestFailureIngestionBridge`; `self-improver` role) |
-| 4 | Documentation cross-links (README/GettingStarted ↔ ExecutionPlan, IntegratorGuide, dogfood) | Low | Medium – discoverability |
+| 4 | Documentation cross-links (README/GettingStarted ↔ ExecutionPlan, IntegratorGuide, dogfood) | Low | Partly resolved 2026-08-16: README links `docs/IntegratorGuide.md` (Where to start, Integrate lane) and `docs/DogfoodValidation.md` (Observe / adapt / improve); `docs/DocsIndex.md` Start Here lists IntegratorGuide. ExecutionPlan is historical and is deliberately not linked from the front door. |
 | 5 | Composition & mesh production workflows (see Section 5) | Medium | Medium – operational adoption beyond tests |
 
 ---

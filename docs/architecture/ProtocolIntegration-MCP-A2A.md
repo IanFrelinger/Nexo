@@ -3,11 +3,19 @@
 Nexo speaks the two industry-standard agent protocols through Tier-2 adapter projects:
 
 - **MCP (Model Context Protocol)** — AI clients (Claude, IDEs, other agents) discover and call
-  tools. Nexo acts as an **MCP server** (exposing allowlisted Nexo tools) and, in a later phase,
-  as an **MCP client** (consuming external MCP servers' tools as `ITool`s).
+  tools. Nexo acts as an **MCP server** (exposing allowlisted Nexo tools) and as an
+  **MCP client** (consuming external MCP servers' tools as `ITool`s).
 - **A2A (Agent2Agent)** — peer agents discover each other via agent cards and delegate tasks.
-  Planned: Nexo as an **A2A server** (external agents delegate to allowlisted Nexo agents) and as
+  Nexo acts as an **A2A server** (external agents delegate to allowlisted Nexo agents) and as
   an **A2A client** (`A2AAgentTransport` behind the existing endpoint routing).
+
+**Status (2026-08-16):** all four directions and the `Nexo.API` wiring have landed (PRs #268,
+#266, #269, #270): `Program.cs` registers `AddNexoMcpServer(...).WithHttpTransport()`,
+`AddNexoMcpClient`, `AddNexoA2AServer`, `AddNexoA2ATransport` and maps `/api/mcp` and
+`/api/a2a/{agentId}` behind the API auth middleware and per-IP rate limits, with `IngressCatalog`
+rows `McpServer` and `A2AAgents`. Every surface is still **feature-flagged off by default**
+(`Nexo:Mcp:*`, `Nexo:A2A:*` in `application/src/Nexo.API/appsettings.json`). What remains
+deferred is listed at the end of this document.
 
 Both protocols use the official SDKs (`ModelContextProtocol` 2.x, stable; `A2A` 1.0 preview) —
 the hand-rolled JSON-RPC endpoint in the commercial Game Director vertical predates this layer
@@ -90,7 +98,7 @@ by the operator explicitly in their own host.
 ### HTTP exposure
 
 `AddNexoMcpServer(configuration).WithHttpTransport()` + `MapNexoMcpEndpoint()` (defaults to
-`/api/mcp`, streamable HTTP). The Nexo.API wiring lands in the application-layer phase; the
+`/api/mcp`, streamable HTTP). `Nexo.API` calls both (see "Nexo.API wiring" below); the
 mapping helper deliberately refuses the commercial endpoint's `AllowAnonymous()` pattern and maps
 nothing at all while disabled.
 
@@ -180,11 +188,16 @@ API keys are env-var named (`Nexo:A2A:Transport:Endpoints:0:ApiKeyHeader/ApiKeyE
 - **Tasks**: synchronous terminal tasks in an in-memory per-agent store — `tasks/get` works
   within the process lifetime; durable tasks/streaming are deferred.
 
-## Later phases (planned)
+## Nexo.API wiring (landed — PR #269, ProdStyle coverage in #270)
 
-- **Nexo.API wiring** — `/api/mcp` + `/api/a2a/*` behind an explicit all-verbs auth filter and
-  rate limiting; `IngressCatalog` rows; per-tenant capability allowlists; an
+- `/api/mcp` + `/api/a2a/{agentId}` (+ `/.well-known/agent-card.json` for the primary agent) are
+  mapped by `application/src/Nexo.API/Program.cs` behind `NexoApiKeyAuthMiddleware` (all verbs)
+  and the `nexo-mcp` / `nexo-a2a` per-IP rate-limit policies; nothing is mapped while a surface
+  is disabled.
+- `IngressCatalog` rows `McpServer` and `A2AAgents`; per-tenant capability allowlists via
+  `Nexo:MiddlewareIngress:TenantCapabilityAllowlists`; `AgentRegistryA2ACatalog` is the
   `INexoA2AAgentCatalog` adapter over `IAgentRegistry`.
+- Compose stacks under `deploy/compose/` set the MCP/A2A ingress explicitly off.
 
 ## Deliberately deferred
 

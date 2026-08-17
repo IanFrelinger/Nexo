@@ -1,4 +1,6 @@
-# CI: pre-existing failures (unrelated to certification)
+# CI: pre-existing failures (historical — resolved 2026-08-16)
+
+> **Historical (marked 2026-08-16).** The Full Platform Readiness Gate described below went **green on `master`** with PRs #317–#320 (skipped ≠ failed in `nexo validate`, per-project target framework, prebuilt CLI in the smoke, Docker `/health` smoke instead of the 90-minute hang) and the flake fixes in #335. It is path-filtered and has no PR trigger, so a red run there is now a real regression, not background noise. `docs/planning/LAND-STATUS.md` and `docs/planning/MERGE-READINESS.md` still cite this file for the 2026-06/07 landings; the text below is kept unchanged as that record.
 
 The certification tower (atom gate, generation safety, composition gate, dogfood) is gated by **`Cert gate`** (`.github/workflows/cert-gate.yml`). That workflow is independent of the jobs below.
 
@@ -6,7 +8,7 @@ The certification tower (atom gate, generation safety, composition gate, dogfood
 
 Workflow: `.github/workflows/full-platform-readiness-gate.yml`
 
-Jobs named **`Linux — setup · discover · dry-run`**, **`macOS — setup · discover · dry-run`**, and **`Windows — setup · discover · dry-run`** (and container variants) are **RED on `master`** as of 2026-06-21. This predates the certification work (PRs #186–#191) and is unrelated to cert-gate.
+Jobs named **`Linux — setup · discover · dry-run`**, **`macOS — setup · discover · dry-run`**, and **`Windows — setup · discover · dry-run`** (and container variants) were **RED on `master`** as of 2026-06-21 (see the banner above for the resolution). This predated the certification work (PRs #186–#191) and was unrelated to cert-gate.
 
 Example failing runs on `master`:
 

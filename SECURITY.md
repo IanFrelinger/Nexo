@@ -2,7 +2,7 @@
 
 ## Supported versions
 
-Nexo is pre-1.0. Security fixes land on `master` and ship in the next tagged release; only the most recent release and `master` are supported.
+Nexo is pre-1.0 and has no tagged release yet (`CHANGELOG.md` is all `[Unreleased]`). Security fixes land on `master`; today `master` is the only supported line. Once releases are tagged, only the most recent release and `master` will be supported.
 
 ## Reporting a vulnerability
 
