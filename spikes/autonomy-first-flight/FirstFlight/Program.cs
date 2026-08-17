@@ -103,6 +103,14 @@ services.AddNexoAutonomy(new ConfigurationBuilder()
     .AddInMemoryCollection(new Dictionary<string, string?>
     {
         ["Nexo:Autonomy:Enabled"] = "true",
+        // The shipped default is HoldAdmission=true (fail-closed: certify everything, admit
+        // nothing). This flight exists to fly the WHOLE loop, swap included, and it asserts
+        // AdmittedAndSwapped below and then proves the swapped generation serves -- so it has
+        // to opt out of the default deliberately and in the open. SweepMode leaves the default
+        // alone, because a campaign certifies without admitting. Do not copy this line into a
+        // host: it is the one place the loop is allowed to swap unattended, on a sample
+        // objective, inside a container, in a spike.
+        ["Nexo:Autonomy:HoldAdmission"] = "false",
         ["Nexo:Autonomy:UseSandboxSessions"] = "true",
         ["Nexo:Autonomy:BuildCandidateInSession"] = sessionBuild ? "true" : "false",
         ["Nexo:Autonomy:ExecuteCandidateInSession"] = sessionExecute ? "true" : "false",
