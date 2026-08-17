@@ -123,7 +123,7 @@ Where to read and what to run:
 | What has actually been proven, and how | [`docs/certification-evidence.md`](docs/certification-evidence.md) (rows cite the test or spike and the CI run; "Known v0 limitations" at the end) |
 | The governed model pipeline every proposal flows through | [`docs/governed-pipeline.md`](docs/governed-pipeline.md) |
 | A complete, tracked objective + witness + recorded proposal | [`samples/autonomy-objectives/README.md`](samples/autonomy-objectives/README.md) |
-| Fly one real iteration yourself (Docker + Ollama; a spike, not a supported entry point) | [`spikes/autonomy-first-flight/run-first-flight.ps1`](spikes/autonomy-first-flight/run-first-flight.ps1) — read [`spikes/README.md`](spikes/README.md) first |
+| Fly one real iteration yourself (Docker; Ollama only for `-Live`/`-SweepLive`; a spike, not a supported entry point) | [`spikes/autonomy-first-flight/run-first-flight.ps1`](spikes/autonomy-first-flight/run-first-flight.ps1) — read [`spikes/README.md`](spikes/README.md) first |
 | Author a brick the gate can judge | [`samples/hello-brick/README.md`](samples/hello-brick/README.md), then [`docs/AuthoringBricks.md`](docs/AuthoringBricks.md) |
 | The background-agent self-extend safety audit | [`docs/SELF-EXTEND-AUDIT.md`](docs/SELF-EXTEND-AUDIT.md) |
 

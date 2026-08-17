@@ -27,7 +27,7 @@ Run from the repository root (the doctor's CLI smoke check re-invokes `dotnet ru
 dotnet run --project application/src/Nexo.CLI -- doctor
 ```
 
-Expected last lines: `overall: PASS`. `container smoke: warn` is normal when Docker is absent; the container lane is optional. Add `--json` for machine-readable output.
+Look for the `overall: PASS` line (it is followed by a few "recommended next steps"). `container smoke: warn` is normal when Docker is absent; the container lane is optional. Add `--json` for machine-readable output.
 
 Known trap: `doctor` probes `docker info` with no timeout (`application/src/Nexo.CLI/Commands/BootstrapRuntime.cs`, the `docker` dependency probe). If Docker Desktop is installed but its daemon is wedged, `doctor` hangs at that probe; quit Docker Desktop (or run with the Docker CLI off `PATH`) and re-run.
 
