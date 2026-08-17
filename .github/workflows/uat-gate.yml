@@ -27,7 +27,7 @@ jobs:
   uat:
     # Keep this in step with the tier steps below. A gate whose own label misstates what it covers is
     # the same class of defect this suite exists to catch.
-    name: uat (tiers 0-2, 4, 5, 7, 8)
+    name: uat (tiers 0-2, 4-9)
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
@@ -67,6 +67,13 @@ jobs:
         shell: bash
         run: bash tests/uat/tier5.sh
 
+      - name: Tier 6 — MCP/A2A ingress when an operator turns it on
+        id: tier6
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: bash tests/uat/tier6.sh
+
       - name: Tier 7 — the security negatives SECURITY.md claims
         id: tier7
         if: always()
@@ -80,6 +87,13 @@ jobs:
         continue-on-error: true
         shell: bash
         run: bash tests/uat/tier8.sh
+
+      - name: Tier 9 — the release path
+        id: tier9
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: bash tests/uat/tier9.sh
 
       - name: Summary
         if: always()

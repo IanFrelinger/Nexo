@@ -13,8 +13,16 @@ each case the code was fine.
 | 4 | `tier4.sh` | Does the reference brick build, and does the API actually fail closed? |
 | 5 | `tier5.sh` | Do the golden paths in `docs/DEPLOYMENT.md` describe the compose files an operator would run? |
 
+| 6 | `tier6.sh` | Turning MCP/A2A on does not open a door: protocol ingress stays credentialed on every verb |
 | 7 | `tier7.sh` | The security negatives `SECURITY.md` claims: what is unmapped, what refuses, what is credentialed |
+| 9 | `tier9.sh` | The release path: public-API baselines, and that the experimental surface is not in the stable promise |
 | 8 | `tier8.sh` | Do the docs still describe this repo — do the paths they name exist, and can the commands they print run? |
+
+`tier6.sh` covers MCP ingress but **not** A2A ingress or agent-card anonymity: A2A refuses to start until
+an exposed agent is actually registered, which an out-of-process run of the shipped host cannot do
+(naming an unregistered id is still refused — verified). `McpA2AProtocolIngressProdStyleTests` covers
+that surface in-repo with a test agent. Written down rather than quietly dropped, because a tier that
+appears to cover something it does not is worse than one that says so.
 
 `tier7.sh` tests what `SECURITY.md` **claims**, citing the claim in each check. One thing it deliberately
 does *not* assert is tenant isolation: that page says tenant/org/user headers are "client-asserted" and
