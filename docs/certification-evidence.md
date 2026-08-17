@@ -715,7 +715,7 @@ redundant guard is exactly what a careful proposer writes.
 
 ## Known v0 limitations
 
-1. **Dev HMAC signer, not PKI.** `CertificationRecordSigner` uses a development HMAC key, not a public-key infrastructure. This becomes more load-bearing in the composition phase because trust chains from constituent atom signatures — a forged or weak constituent record undermines the whole composition admission path.
+1. **Dev HMAC signer, not PKI.** `CertificationRecordSigner` uses a development HMAC key, not a public-key infrastructure. This becomes more load-bearing in the composition phase because trust chains from constituent atom signatures — a forged or weak constituent record undermines the whole composition admission path. Unless `NEXO_CERT_DEV_HMAC_KEY` is set, the key is the COMMITTED constant `CertificationRecordSigning.DefaultDevKey`, so every record verifiable here is forgeable by anyone with the source; both signers now warn at construction while that is the case (`UsesDevKey`), and `NEXO_CERT_ED25519_KEY` adds a real signature on top.
 
 2. **Composition seam check is TYPE-level only.** The seam validator checks producer/consumer type compatibility (e.g. `string` vs `int`) but not semantic mismatches where types align (e.g. file path vs URL, both `string`). Graph-mutation teeth only partially compensate for this gap.
 
@@ -765,3 +765,5 @@ redundant guard is exactly what a careful proposer writes.
    remains is breadth, not mechanism: one objective and one task family so far; a
    standing proposer loop over many objectives with acceptance tracked per lineage is
    host-operations work on seams that all exist.
+
+6. **Kernel options bind from environment variables only in the shipped hosts.** `AddNexo` builds its own `IConfiguration` from `AddEnvironmentVariables()` (`src/Nexo.Hosting/NexoServiceCollectionExtensions.cs`), so `Nexo:Meai`, `Nexo:NodeCapabilityRuntime`, `Nexo:WorkloadScaling` and the other kernel sections read `Nexo__X__Y` variables and never `appsettings.json` in Nexo.API / Nexo.CLI (`Nexo:Autonomy` is host-composed and reads whatever configuration the composing host passes). Documented in `docs/Configuration.md`; the fix is architectural, not a docs fix.

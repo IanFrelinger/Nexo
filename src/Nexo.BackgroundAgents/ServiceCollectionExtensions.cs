@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using Nexo.Abstractions;
 using Nexo.BackgroundAgents.Configuration;
 using Nexo.BackgroundAgents.DataSensitivity;
@@ -46,9 +47,10 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<IAggressivenessModeStore>(sp =>
         {
             var path = Environment.GetEnvironmentVariable("NEXO_AGENT_MODE_PATH");
+            var logger = sp.GetService<ILogger<FileBasedAggressivenessModeStore>>();
             return string.IsNullOrWhiteSpace(path)
-                ? new FileBasedAggressivenessModeStore()
-                : new FileBasedAggressivenessModeStore(path.Trim());
+                ? new FileBasedAggressivenessModeStore(logger: logger)
+                : new FileBasedAggressivenessModeStore(path.Trim(), logger);
         });
         services.TryAddSingleton<IBackgroundAgentLogStore, InMemoryAgentLogStore>();
         services.TryAddSingleton<IScheduleExecutor, ScheduleExecutor>();
