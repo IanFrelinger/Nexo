@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Nexo.Certification.Contracts;
 using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Bricks.Ports;
@@ -51,6 +52,7 @@ public sealed record CertificationRequest
     /// candidate's actual reference graph against it, and an undeclared reference into the
     /// trust kernel is a certification FAIL. Null = no touch-set rules.
     /// </summary>
+    [Experimental(Autonomy.AutonomyExperimental.DiagnosticId, UrlFormat = Autonomy.AutonomyExperimental.UrlFormat)]
     public Autonomy.TouchSet? TouchSet { get; init; }
 
     /// <summary>
@@ -59,6 +61,7 @@ public sealed record CertificationRequest
     /// (laundering matrix) and enforces the depth ceiling before any other gate runs, and
     /// records the depth plus a parent-chain hash into the certificate's inputs.
     /// </summary>
+    [Experimental(Autonomy.AutonomyExperimental.DiagnosticId, UrlFormat = Autonomy.AutonomyExperimental.UrlFormat)]
     public Autonomy.GenerationLineage? Lineage { get; init; }
 
     /// <summary>

@@ -9,6 +9,9 @@
     <!-- Spike: deliberately outside Nexo.sln and every CI gate. Its output is a run
          recorded in docs/certification-evidence.md, not a shipped artifact. -->
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <!-- This spike IS the consumer of the experimental autonomy surface (harness, loop, proposal
+         sources); NEXOEXP001 is an error by design for everyone else - see docs/SdkCompatibilityPolicy.md. -->
+    <NoWarn>$(NoWarn);NEXOEXP001</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

@@ -1,6 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Nexo.Core.Application.Autonomy;
 using Nexo.Infrastructure.Certification.HotSwap;
 
 namespace Nexo.Infrastructure.Autonomy;
@@ -17,6 +19,7 @@ namespace Nexo.Infrastructure.Autonomy;
 /// Render failures are logged and the cadence continues: a digest that dies on one bad
 /// render is a digest nobody reads.</para>
 /// </summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public sealed class AutonomyDigestService : BackgroundService
 {
     private readonly RecordingBrickSwapProvenanceSink _sink;

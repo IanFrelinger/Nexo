@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Nexo.Certification.Contracts;
 using Nexo.Core.Application.Autonomy;
 using Nexo.Core.Application.Certification.Ports;
@@ -12,6 +13,7 @@ namespace Nexo.Infrastructure.Certification;
 /// depth-laundering defense. Pure read path: the scan flags, humans (or the quarantine
 /// flow) act.
 /// </summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public static class AutonomyLedgerScan
 {
     /// <summary>One scan's findings. Both lists empty = the ledger is clean.</summary>

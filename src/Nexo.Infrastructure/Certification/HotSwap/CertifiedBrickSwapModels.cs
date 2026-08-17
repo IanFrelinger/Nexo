@@ -1,4 +1,6 @@
+using System.Diagnostics.CodeAnalysis;
 using Nexo.Certification.Contracts;
+using Nexo.Core.Application.Autonomy;
 
 namespace Nexo.Infrastructure.Certification.HotSwap;
 
@@ -6,6 +8,7 @@ namespace Nexo.Infrastructure.Certification.HotSwap;
 /// One brick to load in a generation swap: exact source bytes plus the certification
 /// record the host re-verifies against them at load time.
 /// </summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public sealed record CertifiedBrickLoadRequest
 {
     /// <summary>Brick identifier the record was minted for; must match the instantiated brick's Id.</summary>
@@ -45,6 +48,7 @@ public sealed record CertifiedBrickLoadRequest
 /// at and the candidate's recursion pedigree. The swap host enforces both independently
 /// of the certifier (defense in depth, R3.2/R4.2).
 /// </summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public sealed record AutonomousAdmission
 {
     /// <summary>Tier the objective's touch-set classified at (only Tier 0 may auto-swap).</summary>
@@ -67,6 +71,7 @@ public sealed record AutonomousAdmission
 /// triggers automatic quarantine + rollback. Null thresholds on the host = no watch
 /// (the human-driven flow).
 /// </summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public sealed record WatchThresholds
 {
     /// <summary>Invocations of the new generation before verdicts are meaningful.</summary>
@@ -93,6 +98,7 @@ public sealed record WatchThresholds
 }
 
 /// <summary>Stage at which a brick (and therefore the whole swap) was refused.</summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public enum BrickSwapRefusalStage
 {
     /// <summary>Request shape was invalid (duplicate/mismatched brick id).</summary>
@@ -112,6 +118,7 @@ public enum BrickSwapRefusalStage
 }
 
 /// <summary>One refused brick within a refused swap.</summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public sealed record BrickSwapRefusal
 {
     /// <summary>Brick the refusal applies to.</summary>
@@ -128,6 +135,7 @@ public sealed record BrickSwapRefusal
 }
 
 /// <summary>Outcome of a swap attempt. A refused swap leaves the previous generation serving.</summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public sealed record CertifiedBrickSwapResult
 {
     /// <summary>Whether the new generation was committed.</summary>
@@ -157,6 +165,7 @@ public sealed record CertifiedBrickSwapResult
 /// for each generation lifecycle transition (spec §3: cert identity, content hash,
 /// generation, outcome).
 /// </summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public sealed record BrickSwapProvenanceEvent
 {
     /// <summary>Generation number the event concerns.</summary>
@@ -188,6 +197,7 @@ public sealed record BrickSwapProvenanceEvent
 }
 
 /// <summary>Well-known <see cref="BrickSwapProvenanceEvent.Outcome"/> values.</summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public static class BrickSwapProvenanceOutcomes
 {
     /// <summary>A brick passed verify-at-load and was loaded into the new generation.</summary>

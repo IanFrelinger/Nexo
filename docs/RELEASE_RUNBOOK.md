@@ -48,6 +48,7 @@ Trusted Publishing: register **`release.yml`** and **`release-nuget.yml`** as ne
 1. **Green CI** on the commit — run **`runtime-release-gate`** on that ref.
 2. **`python3 scripts/verify-pack-nexo-hosting-graph-alignment.py`** after changing `Nexo.Hosting` refs or pack scripts.
 3. **`bash scripts/verify-stable-sdk-host-sample-packages.sh`** with `NEXO_SDK_PACKAGE_VERSION` (isolated cache + `--force-evaluate` by default).
+4. **Promote the public API**: review each stable-tier project's `PublicAPI.Unshipped.txt`, move its lines into `PublicAPI.Shipped.txt`, commit on the release commit (`docs/SdkCompatibilityPolicy.md`, "Release step"). After the tag those lines are the promise.
 
 ## After `release.yml`
 

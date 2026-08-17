@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Nexo.Core.Application.Execution.Ports;
 
 namespace Nexo.Core.Application.Autonomy;
@@ -13,6 +14,7 @@ namespace Nexo.Core.Application.Autonomy;
 /// the most restrictive applicable tier (R1.4) and, having no writable surfaces, its
 /// session physically cannot write anywhere.
 /// </summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public sealed record TouchSet
 {
     /// <summary>Repo-relative directory prefixes the extension may write (ProposerConfinement grammar).</summary>

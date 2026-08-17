@@ -11,6 +11,7 @@
     <IsPackable>true</IsPackable>
     <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
     <NoDefaultExcludes>true</NoDefaultExcludes>
+    <NoWarn>$(NoWarn);RS0036;RS0037</NoWarn>
     <PackageId>Nexo.Hosting.Bundle</PackageId>
     <Title>Nexo Hosting (bundle)</Title>
     <Description>Metapackage that pulls the full Nexo.Hosting dependency graph at a single version. Prefer this over referencing only Nexo.Hosting when consuming from nuget.org.</Description>
@@ -38,5 +39,18 @@
     <PackageReference Include="Nexo.Orchestration" Version="$(PackageVersion)" />
     <PackageReference Include="Nexo.BackgroundAgents" Version="$(PackageVersion)" />
     <PackageReference Include="Nexo.Hosting" Version="$(PackageVersion)" />
+  </ItemGroup>
+  <!--
+    Public-API contract (docs/SdkCompatibilityPolicy.md). The bundle ships only an internal marker type, so the
+    declared surface is empty; the analyzer is here so any future public type in this package must be declared.
+    Explicit Version: this project opts out of central package management (see ManagePackageVersionsCentrally above);
+    keep it in step with Directory.Packages.props.
+  -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="3.3.4" PrivateAssets="all" />
+  </ItemGroup>
+  <ItemGroup>
+    <AdditionalFiles Include="PublicAPI.Shipped.txt" />
+    <AdditionalFiles Include="PublicAPI.Unshipped.txt" />
   </ItemGroup>
 </Project>

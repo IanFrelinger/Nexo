@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Nexo.Core.Application.Autonomy;
 
 /// <summary>
@@ -10,6 +12,7 @@ namespace Nexo.Core.Application.Autonomy;
 /// <param name="Title">Objective title.</param>
 /// <param name="Body">Objective body — the human-authored statement of intent.</param>
 /// <param name="Touch">Declared touch-set (blast radius), or null when undeclared.</param>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public sealed record ProposalRequest(
     string ObjectiveId,
     string Title,
@@ -26,6 +29,7 @@ public sealed record ProposalRequest(
 }
 
 /// <summary>What kind of rejection a repair answers — proposers may frame the two differently.</summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public enum RepairKind
 {
     /// <summary>The certification chain rejected a candidate that compiled (correctness, mutation, analyzer, …).</summary>
@@ -40,6 +44,7 @@ public enum RepairKind
 /// <param name="Feedback">Policy-projected feedback: locations and the proposer's own output, never the witness (unless the operator opted into full disclosure).</param>
 /// <param name="Attempt">1-based repair attempt number.</param>
 /// <param name="Kind">Whether this answers a certification rejection or a build failure.</param>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public sealed record RepairContext(string PreviousSource, string Feedback, int Attempt, RepairKind Kind = RepairKind.Certification);
 
 /// <summary>
@@ -52,6 +57,7 @@ public sealed record RepairContext(string PreviousSource, string Feedback, int A
 /// Provenance (R4.1). Rides the generation lineage and is hash-bound into the certificate's
 /// generation-depth input, so "which model produced this" is evidence rather than prose.
 /// </param>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public sealed record ProposedSource(
     string SourceCode,
     string TypeName,
@@ -66,6 +72,7 @@ public sealed record ProposedSource(
 /// and must leave the objective untouched. Throwing means the proposer itself failed;
 /// neither is ever evidence about a candidate.</para>
 /// </summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public interface IProposalSource
 {
     /// <summary>Proposes a candidate, or null when none is available.</summary>

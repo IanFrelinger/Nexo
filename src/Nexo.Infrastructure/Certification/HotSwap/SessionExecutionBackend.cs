@@ -1,5 +1,7 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.Json;
+using Nexo.Core.Application.Autonomy;
 using Nexo.Core.Application.Certification.Models;
 using Nexo.Core.Application.Certification.Ports;
 using Nexo.Core.Application.Execution.Ports;
@@ -20,6 +22,7 @@ namespace Nexo.Infrastructure.Certification.HotSwap;
 /// unparseable output) throws. Fabricating observations — in either direction — would let
 /// an infrastructure fault mint a verdict.</para>
 /// </summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public sealed class SessionExecutionBackend : ICandidateExecutionBackend
 {
     /// <summary>Session-side root for the runner build and the per-batch job files.</summary>

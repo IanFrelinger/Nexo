@@ -1,6 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
+using Nexo.Core.Application.Autonomy;
 using Nexo.Core.Application.Certification.Ports;
 using Nexo.Infrastructure.Certification.Composition;
 using Nexo.Infrastructure.Certification.HotSwap;
@@ -72,6 +74,7 @@ public static class CertificationServiceCollectionExtensions
     /// context per generation, fail-closed swaps, provenance events per swap outcome.
     /// TryAdd throughout so hosts can substitute their own provenance sink.
     /// </summary>
+    [Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
     public static IServiceCollection AddCertifiedBrickHotSwapHost(this IServiceCollection services)
     {
         services.TryAddSingleton<ICertifiedBrickSwapProvenanceSink, LoggingBrickSwapProvenanceSink>();

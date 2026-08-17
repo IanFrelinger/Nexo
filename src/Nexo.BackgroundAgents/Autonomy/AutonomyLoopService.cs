@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -19,6 +20,7 @@ namespace Nexo.BackgroundAgents.Autonomy;
 /// the harness; there is deliberately no second copy of those switches here, because a
 /// setting that is logged but not enforced is worse than none.
 /// </summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public sealed class AutonomyLoopSettings
 {
     /// <summary>Seconds between sweeps of the objective store. 0 disables the loop.</summary>
@@ -80,6 +82,7 @@ public sealed class AutonomyLoopSettings
 /// tests) can be swept directly through <see cref="SweepAsync"/>; the timer never starts
 /// for it, because a background loop with no host switch to turn it off is not fail-closed.</para>
 /// </summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public sealed class AutonomyLoopService : BackgroundService
 {
     /// <summary>

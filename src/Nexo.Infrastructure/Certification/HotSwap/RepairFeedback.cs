@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Nexo.Core.Application.Autonomy;
 using Nexo.Core.Application.Certification.Models;
@@ -18,6 +19,7 @@ namespace Nexo.Infrastructure.Certification.HotSwap;
 /// (check, case index, key, mutant line), which the evidence tonight says is enough for a
 /// small local model to repair a real defect.</para>
 /// </summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public static class RepairFeedback
 {
     /// <summary>

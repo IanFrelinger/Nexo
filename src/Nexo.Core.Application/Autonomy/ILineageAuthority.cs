@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Nexo.Core.Application.Autonomy;
 
 /// <summary>
@@ -6,6 +8,7 @@ namespace Nexo.Core.Application.Autonomy;
 /// (I-2): autonomy is LOST on evidence here, but it is never GAINED on evidence anywhere —
 /// there is intentionally no "promote" operation on this interface.
 /// </summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public interface ILineageAuthority
 {
     /// <summary>Records one rollback against a lineage and returns its total rollback count.</summary>
@@ -22,6 +25,7 @@ public interface ILineageAuthority
 }
 
 /// <summary>Shared default for how many rollbacks demote a lineage (spec default 2).</summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public static class LineageDemotion
 {
     /// <summary>Rollback count at which a lineage loses Tier-0 autonomy.</summary>

@@ -22,6 +22,10 @@ Initial public platform, heading toward the first tagged release (`v0.1.0`). No 
 - Distribution paths: NuGet packages, GHCR container images, and Docker Compose deployments.
 - CI gate suite covering kernel build/test/coverage, compose, container images, dependency and layer boundaries, cross-platform tests, docs link checking, and release readiness.
 
+**Contracts**
+
+- Public API contract: `Microsoft.CodeAnalysis.PublicApiAnalyzers` on every stable-tier package (`Nexo.Sdk`, `Nexo.Client`, `Nexo.Brick.Contracts`, `Nexo.Authoring`, `Nexo.Hosting.Bundle`) plus `Nexo.Abstractions`; the autonomy (self-extension) surface is `[Experimental("NEXOEXP001")]`; HTTP API versioning policy in `docs/api/versioning.md`; the v0.1.0 stability promise in `docs/SdkCompatibilityPolicy.md`.
+
 **Trust loop / certification gate**
 
 - Analyzer fence gate runs first in the brick gate chain; manifest-derived analyzer rules are enforced semantically at the gate; trust-loop analyzer catalog `NEXO0003`–`NEXO0009`; touch-set enforcement (`NEXO0013`/`NEXO0014`); generation-side analyzer fence validator (V3); diagnostic probes on gate failure (landed through #269).

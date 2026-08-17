@@ -1,4 +1,6 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
+using Nexo.Core.Application.Autonomy;
 
 namespace Nexo.Infrastructure.Certification.HotSwap;
 
@@ -10,6 +12,7 @@ namespace Nexo.Infrastructure.Certification.HotSwap;
 /// artifacts awaiting the human gate, supplied by the caller from the record store) —
 /// so held work is presented with evidence, never auto-expired into abandonment.
 /// </summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public static class AutonomyDigest
 {
     /// <summary>One held Tier-1 artifact awaiting human admission (R7.3).</summary>

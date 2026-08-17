@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using Nexo.BackgroundAgents.Observations;
 using Nexo.Core.Application.Autonomy;
@@ -14,6 +15,7 @@ namespace Nexo.BackgroundAgents.Objectives;
 /// timestamp/source/kind/severity so a human can look the free text up; the proposer
 /// never sees it through this channel.
 /// </summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public static class TelemetryObjectiveExtractor
 {
     /// <summary>

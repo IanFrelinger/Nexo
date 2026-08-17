@@ -1,3 +1,4 @@
+#pragma warning disable NEXOEXP001 // The gate enforces the experimental autonomy contract (touch-set, lineage) by design; see docs/SdkCompatibilityPolicy.md.
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;

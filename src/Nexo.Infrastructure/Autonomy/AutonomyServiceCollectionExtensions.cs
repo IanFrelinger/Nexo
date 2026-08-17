@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -24,6 +25,7 @@ namespace Nexo.Infrastructure.Autonomy;
 /// <see cref="NexoAutonomyOptions.Enabled"/> is true, and the swap host still refuses
 /// non-Tier-0 admissions on its own regardless of how it was registered.</para>
 /// </summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public static class AutonomyServiceCollectionExtensions
 {
     /// <summary>

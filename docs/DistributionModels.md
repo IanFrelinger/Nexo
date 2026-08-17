@@ -48,7 +48,7 @@ Use these as **stable entrypoints** when writing runbooks or samples; replace im
 
 - **Host SDK (stable):** `Nexo.Hosting.Sdk` — register bricks/agents before **`AddNexo`**. See **`docs/sdk.md`**.
 - **Client SDK (stable):** `Nexo.Client` / **`INexoClient`** — typed HTTP to a running API; use **`InvokeAsync`** for routes not yet wrapped. See **`docs/sdk.md`** and **`docs/api/index.md`**.
-- **HTTP:** stable routes and behavior for external clients; breaking changes should follow your HTTP/versioning policy (same major concern as mobile clients).
+- **HTTP:** stable routes and behavior for external clients; breaking changes follow **`docs/api/versioning.md`** (unversioned in `v0.x`, one-minor deprecation window, **Breaking** entries in `CHANGELOG.md`, `/api/v1` at `1.0`; that page also lists the endpoints on the documented surface).
 - **CLI:** treat breaking flags as **consumer-facing** changes; document in release notes.
 
 Breaking-change policy for packages: **`docs/SdkCompatibilityPolicy.md`**.

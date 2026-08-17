@@ -1,4 +1,6 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Logging;
+using Nexo.Core.Application.Autonomy;
 
 namespace Nexo.Infrastructure.Certification.HotSwap;
 
@@ -12,6 +14,7 @@ namespace Nexo.Infrastructure.Certification.HotSwap;
 /// a digest over a saturated ring says "showing the most recent N" rather than silently
 /// presenting a truncated history as complete.</para>
 /// </summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public sealed class RecordingBrickSwapProvenanceSink : ICertifiedBrickSwapProvenanceSink
 {
     private readonly object _gate = new();

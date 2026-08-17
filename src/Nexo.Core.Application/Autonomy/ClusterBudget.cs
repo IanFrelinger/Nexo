@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Nexo.Core.Application.Autonomy;
 
 /// <summary>
@@ -9,6 +11,7 @@ namespace Nexo.Core.Application.Autonomy;
 /// is meaningful (the integration doc's open question, resolved: median with the
 /// absolute ceiling as the floor-less fallback).
 /// </summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public sealed class ClusterBudget
 {
     /// <summary>Completions required before the throughput guard engages.</summary>

@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Nexo.Core.Application.Autonomy;
 
 /// <summary>
@@ -7,6 +9,7 @@ namespace Nexo.Core.Application.Autonomy;
 /// works fully offline (R6.3: no autonomy control depends on egress). Pause never
 /// corrupts state or loses artifacts; resume requires no reconstruction.
 /// </summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public sealed class LoopPauseControl
 {
     private readonly object _gate = new();

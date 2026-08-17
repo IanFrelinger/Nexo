@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using Nexo.Core.Application.Autonomy;
 
 namespace Nexo.Infrastructure.Certification.HotSwap;
@@ -9,6 +10,7 @@ namespace Nexo.Infrastructure.Certification.HotSwap;
 /// re-certifying a NEW candidate (whose fresh gates produce a fresh hash), never
 /// resurrecting the old hash (R5.3).
 /// </summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public sealed class InMemoryCertificateRevocationList : ICertificateRevocationList
 {
     private readonly ConcurrentDictionary<string, string> _revoked = new(StringComparer.OrdinalIgnoreCase);

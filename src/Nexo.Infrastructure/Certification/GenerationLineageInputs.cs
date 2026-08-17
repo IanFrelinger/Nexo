@@ -1,3 +1,4 @@
+#pragma warning disable NEXOEXP001 // Projects the experimental lineage contract into certificate evidence by design; see docs/SdkCompatibilityPolicy.md.
 using Nexo.Certification.Contracts;
 using Nexo.Core.Application.Autonomy;
 

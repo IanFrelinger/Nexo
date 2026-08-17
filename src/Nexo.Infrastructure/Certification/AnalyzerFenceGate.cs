@@ -1,3 +1,4 @@
+#pragma warning disable NEXOEXP001 // The gate enforces the experimental autonomy contract (touch-set, kernel prefixes) by design; see docs/SdkCompatibilityPolicy.md.
 using System.Collections.Immutable;
 using System.Text;
 using Microsoft.CodeAnalysis;
@@ -94,11 +95,21 @@ public sealed class AnalyzerFenceGate
             var syntaxTree = CSharpSyntaxTree.ParseText(wrapped, cancellationToken: cancellationToken);
 
             var references = RoslynCodeAnalysisService.BuildReferenceSet(compilationReferences);
+            // The autonomy surface is [Experimental]; a candidate that reaches into it would
+            // otherwise fail the compile-error guard below with NEXOEXP001 and never reach the
+            // analyzers - which is precisely the kernel-smuggling case the fence exists to NAME
+            // (NEXO0014). Suppress the opt-in diagnostic here so the fence judges the candidate on
+            // its rules; the certification build outside the fence still enforces it.
+            var fenceOptions = new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary)
+                .WithSpecificDiagnosticOptions(new Dictionary<string, ReportDiagnostic>
+                {
+                    [Nexo.Core.Application.Autonomy.AutonomyExperimental.DiagnosticId] = ReportDiagnostic.Suppress,
+                });
             var compilation = CSharpCompilation.Create(
                 "AnalyzerGateCandidate",
                 new[] { syntaxTree },
                 references,
-                new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+                fenceOptions);
 
             // Every brick-scoped rule anchors on the canonical Brick type and silently no-ops
             // without it. In a certification context that silence is fail-open; convert it to an
