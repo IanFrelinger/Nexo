@@ -30,7 +30,7 @@ Those should run as additional gates (v2+). For a **structured program** coverin
 
 ## 2) Required preconditions
 
-- .NET SDK 9.x installed (repository is pinned via `global.json`).
+- .NET SDK 10.x installed (repository is pinned via `global.json`).
 - .NET 8 runtime/targeting support available for `net8.0` test/build lanes.
 - Repository checked out cleanly.
 - No local uncommitted production code modifications.
@@ -56,7 +56,7 @@ Those should run as additional gates (v2+). For a **structured program** coverin
 ### B. Pipeline runtime correctness (required)
 
 1. Pipeline-focused infrastructure tests pass on `net8.0`.
-2. Pipeline-focused infrastructure tests pass on `net9.0`.
+2. Pipeline-focused infrastructure tests pass on `net10.0`.
 3. Host DI smoke checks pass for default `AddNexo` registration with pipeline layer present.
 
 **Fail conditions**
@@ -124,7 +124,7 @@ dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj
 
 ```bash
 dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net8.0 --filter "FullyQualifiedName~Pipelines"
-dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net9.0 --filter "FullyQualifiedName~Pipelines"
+dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net10.0 --filter "FullyQualifiedName~Pipelines"
 dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net8.0 --filter "FullyQualifiedName~HostingE2ESmokeTests.AddNexo_RegistersObservationPipeline_ByDefault|FullyQualifiedName~Pipelines.PipelineServiceCollectionExtensionsTests.AddNexo_RegistersPipelineCompositionLayerByDefault"
 ```
 

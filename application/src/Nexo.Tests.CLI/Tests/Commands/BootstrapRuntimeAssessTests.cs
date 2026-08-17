@@ -71,7 +71,7 @@ public sealed class BootstrapRuntimeAssessTests : UnitTestBase
 
     /// <summary>
     /// The dotnet probe must reflect whether the CLI can actually run, not just whether an SDK is on PATH:
-    /// Nexo.CLI/Nexo.API target net8.0 and need Microsoft.AspNetCore.App 8.x, or 9.x+ via RollForward=Major.
+    /// Nexo.CLI/Nexo.API target net10.0 and need Microsoft.AspNetCore.App 10.x, or newer via RollForward=Major.
     /// Compare the probe against ground truth from `dotnet --list-runtimes` on this host.
     /// </summary>
     private async Task TestAssessDemo_DotnetProbeTracksAspNetCoreRuntimeAsync(CancellationToken ct)
@@ -95,7 +95,7 @@ public sealed class BootstrapRuntimeAssessTests : UnitTestBase
             .Select(line => line.Trim())
             .Where(line => line.StartsWith("Microsoft.AspNetCore.App ", StringComparison.Ordinal))
             .Select(line => line.Split(' ', StringSplitOptions.RemoveEmptyEntries)[1].Split('.')[0])
-            .Any(major => int.TryParse(major, out var m) && m >= 8);
+            .Any(major => int.TryParse(major, out var m) && m >= 10);
 
         AssertEqual(hasRunnableAspNetCore, dotnet.Installed,
             $"dotnet probe should report installed={hasRunnableAspNetCore} given `dotnet --list-runtimes`:{Environment.NewLine}{stdout}");

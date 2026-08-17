@@ -1,6 +1,6 @@
 # Dockerfile for running multi-platform tests on Windows
 # Note: Requires Windows containers (not Linux containers)
-ARG DOTNET_VERSION=8.0
+ARG DOTNET_VERSION=10.0
 FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_VERSION}-nanoserver-ltsc2022
 
 # Set working directory

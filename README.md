@@ -7,7 +7,7 @@
 [![Kernel Gate](https://github.com/IanFrelinger/Nexo/actions/workflows/kernel-gate.yml/badge.svg?branch=master)](https://github.com/IanFrelinger/Nexo/actions/workflows/kernel-gate.yml)
 [![Kernel Coverage Gate](https://github.com/IanFrelinger/Nexo/actions/workflows/kernel-coverage-gate.yml/badge.svg?branch=master)](https://github.com/IanFrelinger/Nexo/actions/workflows/kernel-coverage-gate.yml)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![.NET 9](https://img.shields.io/badge/.NET-9.0-512BD4.svg)](global.json)
+[![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4.svg)](global.json)
 
 > **Nexo: auditable AI workflows on infrastructure you control — every artifact certified, every action on the record.**
 
@@ -216,7 +216,7 @@ dotnet run --project application/src/Nexo.CLI -- pipeline diagnostics --format-j
 <details>
 <summary>Native SDK path (no Docker) and other escape hatches</summary>
 
-Use this only when containers are not an option. Requires .NET SDK 9.x. The CLI and API target `net8.0` and roll forward onto the 9.x runtime (`RollForward=Major`, set in `Directory.Build.targets`), so an SDK-9-only machine works without a separate .NET 8 runtime.
+Use this only when containers are not an option. Requires .NET SDK 10.x (LTS). The CLI and API ship on `net10.0`; libraries and test hosts that still carry `net8.0` roll forward onto the 10.x runtime (`RollForward=Major`, set in `Directory.Build.targets`), so an SDK-10-only machine works without a separate .NET 8 runtime.
 
 ```bash
 git clone https://github.com/IanFrelinger/Nexo.git

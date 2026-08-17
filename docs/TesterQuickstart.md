@@ -2,11 +2,11 @@
 
 One lane, one command sequence, about fifteen minutes. You will build Nexo from source, run the API on loopback, submit one task and read its output **and** the audit trail it left, then watch the certification gate admit correct code and reject buggy code. No API keys, no model server, no Docker.
 
-Every command below was checked against the code and run from this checkout on Windows 11 with .NET SDK 9.0.317 before this page was written; the same commands work in bash on Linux/macOS. If a command on this page does not do what it says, that is a bug worth reporting (section 5).
+Every command below was checked against the code and run from this checkout on Windows 11 with .NET SDK 9.0.317 before this page was written (the repo has since moved to SDK 10; the commands are unchanged); the same commands work in bash on Linux/macOS. If a command on this page does not do what it says, that is a bug worth reporting (section 5).
 
 ## 0. Prerequisites
 
-- Git and the **.NET SDK 9.x** (`global.json` pins the 9.0 band; `dotnet --version` should print `9.0.x`). The hosts target `net8.0` and roll forward onto the 9.x runtime (`RollForward=Major`, set in `Directory.Build.targets`), so you do **not** need a separate .NET 8 runtime.
+- Git and the **.NET SDK 10.x** (`global.json` pins the 10.0 band; `dotnet --version` should print `10.0.x`). The CLI and API target `net10.0`; libraries multi-target `net8.0;net10.0`, and executables roll forward (`RollForward=Major`, set in `Directory.Build.targets`), so you do **not** need any other runtime.
 - **Docker is optional.** Nothing on this page needs it. It is required only for the experimental autonomy loop (section 6), which builds and runs model-proposed code inside attested containers.
 - No provider credentials. The walk-through uses the mock provider, which the runtime refuses to use unless you set `NEXO_ALLOW_MOCK=1` explicitly (a fail-closed default; see `src/Nexo.Infrastructure/Execution/ProviderFactory.cs`).
 
@@ -101,7 +101,7 @@ bash scripts/run-cert-gate.sh
 If you want the smallest slice (the two gate-teeth classes, 16 tests, under two minutes on a laptop), run them directly:
 
 ```bash
-dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net8.0 \
+dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net10.0 \
   --filter "FullyQualifiedName~CertificationGateTeethTests"
 ```
 

@@ -411,7 +411,9 @@ CLIENTCS
 fi
 
 SLN="${CONSUMER_ROOT}/ExternalProduct.sln"
-dotnet new sln -n ExternalProduct -o "${CONSUMER_ROOT}" --force
+# SDK 10 defaults `dotnet new sln` to the .slnx format; ask for the classic .sln explicitly so the
+# path below (and `dotnet sln add`) keep working.
+dotnet new sln -n ExternalProduct -o "${CONSUMER_ROOT}" --force --format sln
 dotnet sln "${SLN}" add \
   "${BRICK_PROJECT_DIR}/${BRICK_PROJECT_NAME}.csproj" \
   "${HOST_DIR}/ExternalProductHost.csproj" \

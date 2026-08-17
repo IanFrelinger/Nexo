@@ -11,13 +11,13 @@
       <CopyScriptDir>$(MSBuildThisFileDirectory)scripts</CopyScriptDir>
       <CopyScriptProj>$(CopyScriptDir)\copy-assemblies.csproj</CopyScriptProj>
       <CopyScriptProj Condition="'$(OS)' != 'Windows_NT'">$(CopyScriptDir)/copy-assemblies.csproj</CopyScriptProj>
-      <!-- Always net8.0 — see scripts/copy-assemblies.csproj (avoids NETSDK1005 when parent is net9.0). -->
-      <CopyAssemblyToolTfm>net8.0</CopyAssemblyToolTfm>
+      <!-- Always net10.0 — see scripts/copy-assemblies.csproj (avoids NETSDK1005 when the parent inner build is another TFM). -->
+      <CopyAssemblyToolTfm>net10.0</CopyAssemblyToolTfm>
       <CopyScriptExe>$(CopyScriptDir)\bin\Debug\$(CopyAssemblyToolTfm)\copy-assemblies.dll</CopyScriptExe>
       <CopyScriptExe Condition="'$(OS)' != 'Windows_NT'">$(CopyScriptDir)/bin/Debug/$(CopyAssemblyToolTfm)/copy-assemblies.dll</CopyScriptExe>
     </PropertyGroup>
     
-    <!-- Build the C# assembly copying tool (always net8.0; runs under any SDK that supports net8). -->
+    <!-- Build the C# assembly copying tool (always net10.0; runs under the pinned SDK 10). -->
     <MSBuild Projects="$(CopyScriptProj)" 
              Targets="Restore;Build" 
              Properties="Configuration=Debug;TargetFramework=$(CopyAssemblyToolTfm)"

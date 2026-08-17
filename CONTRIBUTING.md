@@ -77,13 +77,13 @@ For Infrastructure Sdk / Hosting registration changes, prefer **`dotnet build Ne
 - **xUnit** suites (for example `Nexo.Tests.Infrastructure`) run with normal `dotnet test` filters.
 - **`UnitTestBase`** tests are executed by **`ITestRunner`** / **`TestRunnerAdapter`** (same path as the CLI). **`UnitTestFrameworkBridge`** (in `Nexo.Infrastructure`) exposes **`UnitTestBridgeTests`** in **`Nexo.Tests.Domain`**, **`Nexo.Tests.Application`**, **`Nexo.Tests.Infrastructure`**, and **`Nexo.Tests.CLI`** so `dotnet test` on those projects runs most framework suites. A few types are skipped when they need a special layout or host (see `docs/architecture/TestingModel.md`).
 
-High-level architecture notes: `docs/architecture/README.md`. SDK vs. `net8.0` / `net9.0`: `docs/architecture/DotnetVersions.md`.
+High-level architecture notes: `docs/architecture/README.md`. SDK vs. `net8.0` / `net10.0`: `docs/architecture/DotnetVersions.md`.
 
 ## Prerequisites (native escape hatch)
 
 Use this only when you cannot use the dev container or other Docker workflows:
 
-- .NET SDK `9.x` (pinned by `global.json`). The CLI and API target `net8.0` and roll forward onto the 9.x runtime (`RollForward=Major` in `Directory.Build.targets`), so an SDK-9-only machine runs them without a separate .NET 8 runtime.
+- .NET SDK `10.x` (LTS; pinned by `global.json`). The CLI and API ship on `net10.0`; libraries multi-target `net8.0;net10.0` and the remaining `net8.0` test hosts roll forward onto the 10.x runtime (`RollForward=Major` in `Directory.Build.targets`), so an SDK-10-only machine runs everything without a separate .NET 8 runtime.
 - Git
 - Optional: Docker (for multi-environment and compose-based test lanes)
 
@@ -158,7 +158,7 @@ Optional [pre-commit](https://pre-commit.com/): `pip install pre-commit && pre-c
 ## Command style and paths in docs
 
 - Prefer **`dotnet run --project application/src/Nexo.CLI -- <subcommand>`** so commands work without a global `nexo` tool. The CLI project lives only under **`application/src/Nexo.CLI`** (not `src/Nexo.CLI`).
-- For **`Nexo.API`**, prefer **`dotnet run --project application/src/Nexo.API`** (see **`docs/architecture/runtime-vs-application.md`**).
+- For **`Nexo.API`**, prefer **`dotnet run --project application/src/Nexo.API -f net10.0`** (the project multi-targets `net8.0;net10.0`, so `dotnet run` needs the framework; see **`docs/architecture/runtime-vs-application.md`**).
 - If using `nexo <subcommand>`, include a `dotnet run --project application/src/Nexo.CLI -- …` equivalent when the audience is contributors cloning the repo.
 - Canonical doc index: **`docs/DocsIndex.md`**.
 

@@ -119,4 +119,4 @@ echo "Stop Ollama: docker compose -f deploy/compose/docker-compose.ollama.yml do
 echo "Or: bash scripts/stop-nexo-api-dev.sh"
 echo ""
 
-dotnet run --project "${ROOT}/application/src/Nexo.API/Nexo.API.csproj"
+dotnet run --project "${ROOT}/application/src/Nexo.API/Nexo.API.csproj" -f net10.0

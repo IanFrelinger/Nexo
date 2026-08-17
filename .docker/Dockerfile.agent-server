@@ -1,19 +1,16 @@
 # Nexo API + .NET SDK in the final image so background tester/optimizer agents can run `dotnet test` / builds against a mounted workspace.
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 COPY . .
 RUN dotnet restore application/src/Nexo.API/Nexo.API.csproj
-RUN dotnet publish application/src/Nexo.API/Nexo.API.csproj -c Release -o /app/publish --no-restore
+# Nexo.API multi-targets net8.0;net10.0 (net8.0 only for in-repo library consumers); the image ships net10.0.
+RUN dotnet publish application/src/Nexo.API/Nexo.API.csproj -c Release -f net10.0 -o /app/publish --no-restore
 
-FROM mcr.microsoft.com/dotnet/sdk:9.0
+# Nexo.API ships net10.0, and the SDK 10 image carries the 10.0 ASP.NET Core shared runtime,
+# so no extra runtime install is needed (the old image had to add the 8.0 runtime on SDK 9).
+FROM mcr.microsoft.com/dotnet/sdk:10.0
 WORKDIR /app
-
-# Nexo.API targets net8.0; SDK 9 images ship the 9.0 shared runtime only — install 8.0 ASP.NET Core runtime for the published app.
-RUN curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh \
-    && chmod +x /tmp/dotnet-install.sh \
-    && /tmp/dotnet-install.sh --channel 8.0 --runtime aspnetcore --install-dir /usr/share/dotnet \
-    && rm /tmp/dotnet-install.sh
 
 COPY --from=build /app/publish ./
 

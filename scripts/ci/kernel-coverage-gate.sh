@@ -54,7 +54,7 @@ echo "== Infrastructure (Nexo.Infrastructure) line coverage: ${INFRA_COVERAGE_TH
 # transient egress blip turned the README badge red on 2026-08-15. Their helpers
 # (MapboxTileUrls/Validators/TileMath) live in the test assembly, not
 # [Nexo.Infrastructure], so dropping them costs no measured coverage.
-dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net9.0 \
+dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net10.0 \
   --filter "FullyQualifiedName!~RuntimeStudioBlackBoxSmokeTests&Category!=External" \
   /p:CollectCoverage=true \
   /p:CoverletOutput="$ROOT/CoverageReports/infra" \

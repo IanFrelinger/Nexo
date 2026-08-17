@@ -1,5 +1,5 @@
 # Dockerfile for running multi-platform tests on Ubuntu
-ARG DOTNET_VERSION=9.0
+ARG DOTNET_VERSION=10.0
 FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_VERSION}
 
 # Install dependencies
@@ -21,7 +21,8 @@ ENV DOTNET_RUNNING_IN_CONTAINER=true
 # Copy project files
 COPY . .
 
-# Install .NET 8.0 runtime for CLI (targets net8.0)
+# Install the .NET 8.0 runtime so the net8.0 inner build of the multi-target test projects
+# runs on the real 8.0 runtime (net8 consumer story); the CLI itself is net10.0 on the SDK image.
 RUN curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh && \
     bash /tmp/dotnet-install.sh --channel 8.0 --runtime aspnetcore --install-dir /usr/share/dotnet --no-path && \
     bash /tmp/dotnet-install.sh --channel 8.0 --runtime dotnet --install-dir /usr/share/dotnet --no-path && \
@@ -33,9 +34,9 @@ RUN dotnet restore src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.cspro
     dotnet restore src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj && \
     dotnet restore application/src/Nexo.CLI/Nexo.CLI.csproj
 
-# Build test projects for net9.0 and CLI for net8.0
-RUN dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net9.0 --no-restore -p:TreatWarningsAsErrors=false && \
-    dotnet build src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj -f net9.0 --no-restore -p:TreatWarningsAsErrors=false && \
+# Build test projects for net10.0 and CLI (net10.0)
+RUN dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net10.0 --no-restore -p:TreatWarningsAsErrors=false && \
+    dotnet build src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj -f net10.0 --no-restore -p:TreatWarningsAsErrors=false && \
     dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
 
 # Default command: run base framework and Trust tests

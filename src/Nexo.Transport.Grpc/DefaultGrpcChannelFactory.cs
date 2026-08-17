@@ -98,7 +98,11 @@ public sealed class DefaultGrpcChannelFactory : IGrpcChannelFactory
         }
         else
         {
+            // SYSLIB0057 (.NET 9+): the file-path constructor is obsolete, but it is the only loader
+            // that auto-detects PFX vs DER/PEM, which this option relies on. Kept deliberately.
+#pragma warning disable SYSLIB0057
             certificate = new X509Certificate2(_options.ClientCertPath!);
+#pragma warning restore SYSLIB0057
         }
 
         handler.ClientCertificates.Add(certificate);
@@ -111,7 +115,10 @@ public sealed class DefaultGrpcChannelFactory : IGrpcChannelFactory
             return;
         }
 
+        // SYSLIB0057 (.NET 9+): see ConfigureClientCertificate — same auto-detecting file loader.
+#pragma warning disable SYSLIB0057
         var caCertificate = new X509Certificate2(_options.CaCertPath!);
+#pragma warning restore SYSLIB0057
         handler.ServerCertificateCustomValidationCallback = (_, certificate, chain, sslPolicyErrors) =>
         {
             if (certificate == null)

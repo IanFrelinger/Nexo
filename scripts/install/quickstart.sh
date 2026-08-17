@@ -94,20 +94,20 @@ info "Docker not found — using native .NET path"
 
 # Install .NET SDK if missing
 if ! command -v dotnet >/dev/null 2>&1; then
-  info "Installing .NET SDK 9..."
+  info "Installing .NET SDK 10..."
   if command -v curl >/dev/null 2>&1; then
     curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh
-    bash /tmp/dotnet-install.sh --channel 9.0
+    bash /tmp/dotnet-install.sh --channel 10.0
     export PATH="${HOME}/.dotnet:${PATH}"
     rm -f /tmp/dotnet-install.sh
   elif command -v wget >/dev/null 2>&1; then
     wget -qO /tmp/dotnet-install.sh https://dot.net/v1/dotnet-install.sh
-    bash /tmp/dotnet-install.sh --channel 9.0
+    bash /tmp/dotnet-install.sh --channel 10.0
     export PATH="${HOME}/.dotnet:${PATH}"
     rm -f /tmp/dotnet-install.sh
   else
     fail ".NET SDK not found and neither curl nor wget available to install it."
-    fail "Install .NET SDK 9 from https://dot.net and rerun."
+    fail "Install .NET SDK 10 from https://dot.net and rerun."
     exit 1
   fi
 fi
@@ -133,11 +133,11 @@ fi
 
 cd "$REPO_ROOT"
 info "Building API..."
-dotnet build application/src/Nexo.API/Nexo.API.csproj -v minimal
+dotnet build application/src/Nexo.API/Nexo.API.csproj -f net10.0 -v minimal
 
 info "Starting Nexo portal on port ${NEXO_PORT}..."
 NEXO_ALLOW_MOCK=1 ASPNETCORE_URLS="http://localhost:${NEXO_PORT}" \
-  dotnet run --project application/src/Nexo.API --no-build &
+  dotnet run --project application/src/Nexo.API -f net10.0 --no-build &
 NEXO_PID=$!
 
 # Bounded /health poll (up to 60s). The old `sleep 3` printed "Portal running" even when the
