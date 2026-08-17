@@ -233,6 +233,6 @@ else
 fi
 
 cleanup_test_peers
-restore_verify_pee
+restore_verify_peer
 
 echo "== Mesh lab verify-network-negative: OK =="

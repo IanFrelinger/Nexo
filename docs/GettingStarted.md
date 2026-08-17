@@ -13,9 +13,11 @@ The **default** path is **containers + CLI**: develop inside the **Dev Container
 ```bash
 git clone https://github.com/IanFrelinger/Nexo.git && cd Nexo
 docker build -f .docker/Dockerfile.quickstart -t nexo:quickstart .
-docker run --rm -p 8080:8080 nexo:quickstart
+docker run --rm -p 127.0.0.1:8080:8080 nexo:quickstart
 # Open http://localhost:8080 — mock provider; no API keys needed.
 ```
+
+The image has no auth; publish on all interfaces (`-p 8080:8080`) only behind auth + TLS — see `README.md` → *Security Defaults* and `SECURITY.md`.
 
 **One-command script** (uses Docker when present, otherwise tries a local SDK): `bash scripts/install/quickstart.sh` — see `scripts/install/quickstart.sh`.
 

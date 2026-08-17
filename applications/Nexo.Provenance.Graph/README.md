@@ -54,12 +54,14 @@ bash scripts/demo-provenance-graph.sh
 Or step by step:
 
 ```bash
-# 1. Start Neo4j
-docker compose -f deploy/compose/docker-compose.provenance.yml up -d
+# 1. Start Neo4j (publishes 7474/7687 on 127.0.0.1 only; NEO4J_AUTH is required -- no password ships in the compose file)
+NEO4J_AUTH=neo4j/<password> docker compose -f deploy/compose/docker-compose.provenance.yml up -d
 
-# 2. Project cert artifacts + run demo query
-dotnet run --project tools/Nexo.Provenance.Demo/Nexo.Provenance.Demo.csproj
+# 2. Project cert artifacts + run demo query (same password)
+NEO4J_PASSWORD=<password> dotnet run --project tools/Nexo.Provenance.Demo/Nexo.Provenance.Demo.csproj
 ```
+
+The one-command script derives `NEO4J_AUTH` from `NEO4J_USERNAME`/`NEO4J_PASSWORD` (demo defaults `neo4j`/`provenance-graph`); set them before running it to use different credentials.
 
 ## Demo queries
 

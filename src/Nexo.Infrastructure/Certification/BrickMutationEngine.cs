@@ -62,6 +62,14 @@ internal sealed class BrickMutationEngine
         var survivors = new List<string>();
         var killed = new List<string>();
         var mutations = AstMutationCatalog.CollectMutations(sourceCode);
+
+        // Survivors are reported by id, which encodes kind and line only. Keep each mutation's
+        // site so the rejection can say WHAT changed — the difference between "the witness is
+        // weak here" and "this mutant is equivalent and no witness could ever kill it".
+        // Two mutations of one kind on one line share an id (as they always have); first wins.
+        var siteById = new Dictionary<string, MutationSite>(StringComparer.Ordinal);
+        foreach (var mutation in mutations)
+            siteById.TryAdd(mutation.Id, mutation.Site);
         var pendingUnits = new List<CandidateExecutionUnit>();
         var pendingSources = new Dictionary<string, string>(StringComparer.Ordinal);
 
@@ -132,7 +140,12 @@ internal sealed class BrickMutationEngine
 
         var total = survivors.Count + killed.Count;
         var escapeRate = total == 0 ? 0d : (double)survivors.Count / total;
-        return new MutationTestResult(total, survivors, killed, escapeRate);
+        var survivorSites = survivors
+            .Where(siteById.ContainsKey)
+            .Select(id => new MutationSurvivor(id, siteById[id]))
+            .ToArray();
+
+        return new MutationTestResult(total, survivors, killed, escapeRate, survivorSites);
     }
 
     /// <summary>

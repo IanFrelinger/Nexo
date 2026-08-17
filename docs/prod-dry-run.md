@@ -32,7 +32,7 @@ make prod-dry-run-agent-server
 ./scripts/prod-dry-run.sh --agent-server
 ```
 
-Ensure **`NEXO_REPO_ROOT`** points at this repo on the host (defaults to the current directory when run from repo root). Optional env file: [`docs/config/agent-server.env.example`](config/agent-server.env.example).
+**`NEXO_REPO_ROOT`** (host tree bind-mounted at `/work`) needs no setting for the default layout: the script defaults it to the repo root, and the compose file itself defaults to `../..` relative to `deploy/compose/` (also the repo root, whatever the shell CWD). Set it only to mount a different tree. Optional env file: [`docs/config/agent-server.env.example`](config/agent-server.env.example) (pass with `--env-file`, or save as `deploy/compose/.env`; Compose does not read a repo-root `.env` when the compose file lives under `deploy/compose/`).
 
 ## First-time Ollama models
 

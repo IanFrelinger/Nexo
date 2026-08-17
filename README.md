@@ -136,9 +136,11 @@ The fastest way to see Nexo work. Uses the mock provider, so **no API keys are r
 ```bash
 git clone https://github.com/IanFrelinger/Nexo.git && cd Nexo
 docker build -f .docker/Dockerfile.quickstart -t nexo:quickstart .
-docker run --rm -p 8080:8080 nexo:quickstart
+docker run --rm -p 127.0.0.1:8080:8080 nexo:quickstart
 # Open http://localhost:8080
 ```
+
+The image has no auth; publish on all interfaces (`-p 8080:8080`) only behind auth + TLS — see [Security Defaults](#security-defaults) and `SECURITY.md`.
 
 Prefer the CLI? Pull the published image and run a command:
 
@@ -231,6 +233,8 @@ docker compose -f deploy/compose/docker-compose.portal.yml up -d --build
 docker compose -f deploy/compose/docker-compose.agent-server.yml up -d --build
 ```
 
+Run these from the repo root. Stacks that bind-mount the repository (agent server, Game Director) default `NEXO_REPO_ROOT` to `../..` relative to `deploy/compose/` — the repo root — so no extra variables are needed; a `.env` for these stacks belongs in `deploy/compose/` (or pass `--env-file`), not the repo root.
+
 Validate a pipeline template from a mounted workspace with the published CLI image:
 
 ```bash
@@ -299,6 +303,7 @@ Ship Nexo from published container images and compose files. Host-native scripts
 docker compose -f deploy/compose/docker-compose.portal.yml up -d --build
 
 # Full agent-server stack with mounted workspace and Runtime Studio config
+# (mounts the repo root by default; NEXO_REPO_ROOT only if you want another tree)
 docker compose -f deploy/compose/docker-compose.agent-server.yml up -d --build
 ```
 

@@ -15,9 +15,9 @@ on:
   workflow_dispatch:
     inputs:
       tier:
-        description: "Gate tier"
+        description: "Gate tier (a = multi-hour nexo-ready meta-gate; full = a+b+c+d)"
         required: false
-        default: "full"
+        default: "c"
         type: choice
         options:
           - a

@@ -1,14 +1,20 @@
 version: "3.8"
 
+# Neo4j for the provenance-graph demo (scripts/demo-provenance-graph.sh, applications/Nexo.Provenance.Graph/README.md).
+# From repo root:
+#   NEO4J_AUTH=neo4j/<password> docker compose -f deploy/compose/docker-compose.provenance.yml up -d
+# NEO4J_AUTH is required (no shipped default password); the demo script derives it from
+# NEO4J_USERNAME/NEO4J_PASSWORD. Ports publish on loopback only.
+
 services:
   neo4j-provenance:
     image: neo4j:5.26-community
     container_name: nexo-neo4j-provenance
     ports:
-      - "7474:7474"
-      - "7687:7687"
+      - "127.0.0.1:7474:7474"
+      - "127.0.0.1:7687:7687"
     environment:
-      NEO4J_AUTH: neo4j/provenance-graph
+      NEO4J_AUTH: ${NEO4J_AUTH:?set NEO4J_AUTH=neo4j/<password> (the demo script sets it from NEO4J_PASSWORD)}
       NEO4J_PLUGINS: '[]'
     volumes:
       - neo4j-provenance-data:/data
