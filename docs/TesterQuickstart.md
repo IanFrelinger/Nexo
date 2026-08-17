@@ -2,11 +2,11 @@
 
 One lane, one command sequence, about fifteen minutes. You will build Nexo from source, run the API on loopback, submit one task and read its output **and** the audit trail it left, then watch the certification gate admit correct code and reject buggy code. No API keys, no model server, no Docker.
 
-Every command below was checked against the code and run from this checkout on Windows 11 with .NET SDK 9.0.317 before this page was written (the repo has since moved to SDK 10; the commands are unchanged); the same commands work in bash on Linux/macOS. If a command on this page does not do what it says, that is a bug worth reporting (section 5).
+Every command below was last run end to end on 2026-08-17 against a clean clone of `master` inside `mcr.microsoft.com/dotnet/sdk:10.0` with a cold package cache -- clone to an audited job in under three minutes -- and the same commands work in bash on Linux/macOS and in PowerShell on Windows. That run is what caught the missing `-f net10.0` in section 3: the page had been verified on SDK 9 before `Nexo.API` began multi-targeting, and a command that used to work had rotted. If a command on this page does not do what it says, that is a bug worth reporting (section 5).
 
 ## 0. Prerequisites
 
-- Git and the **.NET SDK 10.x** (`global.json` pins the 10.0 band; `dotnet --version` should print `10.0.x`). The CLI and API target `net10.0`; libraries multi-target `net8.0;net10.0`, and executables roll forward (`RollForward=Major`, set in `Directory.Build.targets`), so you do **not** need any other runtime.
+- Git and the **.NET SDK 10.x** (`global.json` pins the 10.0 band; `dotnet --version` should print `10.0.x`). The CLI targets `net10.0`; libraries multi-target `net8.0;net10.0`, and executables roll forward (`RollForward=Major`, set in `Directory.Build.targets`), so you do **not** need any other runtime. `Nexo.API` multi-targets as well, because the `net8.0` leg of `src/Nexo.Tests.Infrastructure` links it, so **run it with `-f net10.0`** (section 3).
 - **Docker is optional.** Nothing on this page needs it. It is required only for the experimental autonomy loop (section 6), which builds and runs model-proposed code inside attested containers.
 - No provider credentials. The walk-through uses the mock provider, which the runtime refuses to use unless you set `NEXO_ALLOW_MOCK=1` explicitly (a fail-closed default; see `src/Nexo.Infrastructure/Execution/ProviderFactory.cs`).
 
@@ -37,14 +37,16 @@ Start the API in one terminal. It listens on `http://localhost:5000` (loopback),
 
 ```bash
 # bash
-NEXO_ALLOW_MOCK=1 dotnet run --project application/src/Nexo.API
+NEXO_ALLOW_MOCK=1 dotnet run --project application/src/Nexo.API -f net10.0
 ```
 
 ```powershell
 # PowerShell
 $env:NEXO_ALLOW_MOCK = '1'
-dotnet run --project application/src/Nexo.API
+dotnet run --project application/src/Nexo.API -f net10.0
 ```
+
+`-f net10.0` is required, not optional: `Nexo.API` multi-targets `net8.0;net10.0`, and `dotnet run` refuses to pick for you ("Your project targets multiple frameworks"). See section 0 for why the net8.0 target exists.
 
 Wait for `Now listening on: http://localhost:5000`. In a second terminal:
 
