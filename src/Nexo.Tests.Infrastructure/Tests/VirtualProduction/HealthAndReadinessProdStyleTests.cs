@@ -64,7 +64,7 @@ public sealed class HealthAndReadinessProdStyleTests
         ready.State.Should().Be("ready");
     }
 
-    [Fact]
+    [Fact(Timeout = TestTimeouts.HostTouching)]
     public void Ready_is_503_while_starting_200_once_started_and_503_again_once_stopping()
     {
         // The in-process host cannot show the drain window: WebApplicationFactory runs the real Program.Main,
