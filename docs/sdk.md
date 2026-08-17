@@ -27,9 +27,10 @@ Use the host surface when embedding Nexo into your own service. Use the client s
 
 ## Breaking-change policy
 
-- Stable SDK APIs follow semantic versioning for package changes.
-- Breaking changes to stable surfaces are only introduced in major version bumps.
-- Experimental APIs may change in minor versions; avoid hard dependencies unless you pin package versions.
+- Stable SDK APIs follow semantic versioning for package changes; the full policy, the packages it covers and the mechanism that enforces it (`PublicAPI.Shipped.txt` / `PublicAPI.Unshipped.txt` under `Microsoft.CodeAnalysis.PublicApiAnalyzers`, warnings-as-errors) are in `docs/SdkCompatibilityPolicy.md`.
+- `v0.1.x`: no breaking changes to stable surfaces within `0.1.x`; breaking changes only in `0.(x+1).0` after an `[Obsolete]` deprecation in the prior minor. From `1.0.0`: only in major version bumps.
+- Experimental APIs (`[Experimental("NEXOEXP001")]`, the autonomy loop) may change in any release; using them is a compile-time opt-in. Avoid hard dependencies unless you pin package versions.
+- The HTTP routes the client SDK calls have their own policy: `docs/api/versioning.md` (unversioned in `v0.x`, `/api/v1` at `1.0`, one-minor deprecation window, **Breaking** entries in `CHANGELOG.md`).
 
 ## Quick Start
 

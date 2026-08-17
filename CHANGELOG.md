@@ -19,3 +19,4 @@ Initial public platform, heading toward the first tagged release (`v0.1.0`).
 - Mesh/federation with gRPC transport and AWS ingress; four `apps/` host configurations.
 - Distribution paths: NuGet packages, GHCR container images, and Docker Compose deployments.
 - CI gate suite covering kernel build/test/coverage, compose, container images, dependency and layer boundaries, cross-platform tests, docs link checking, and release readiness.
+- Public API contract: `Microsoft.CodeAnalysis.PublicApiAnalyzers` on every stable-tier package (`Nexo.Sdk`, `Nexo.Client`, `Nexo.Brick.Contracts`, `Nexo.Authoring`, `Nexo.Hosting.Bundle`) plus `Nexo.Abstractions`; the autonomy (self-extension) surface is `[Experimental("NEXOEXP001")]`; HTTP API versioning policy in `docs/api/versioning.md`; the v0.1.0 stability promise in `docs/SdkCompatibilityPolicy.md`.

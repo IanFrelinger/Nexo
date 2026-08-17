@@ -23,7 +23,7 @@
   "build": {
     "content": [
       {
-        "files": ["api/*.yml", "index.md"]
+        "files": ["api/*.yml", "index.md", "versioning.md"]
       },
       {
         "files": ["GettingStarted.md", "Architecture.md", "Configuration.md", "Persistence.md"],

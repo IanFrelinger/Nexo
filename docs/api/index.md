@@ -17,7 +17,7 @@ API documentation for the Nexo AI-enhanced development orchestration platform.
 
 ## REST Endpoints
 
-Endpoints are registered via `MapNexoEndpoints()` in `Nexo.API`. Most live under `/api`; the health check is at the root.
+Endpoints are registered via `MapNexoEndpoints()` in `Nexo.API`. Most live under `/api`; the health check is at the root. The API is **unversioned in `v0.x`** (no `/v1/` prefix until `1.0`); which of these routes are the documented surface with a breaking-change promise, and how breaking changes are announced, is in [versioning.md](versioning.md).
 
 | Method | Path | Description |
 |--------|------|-------------|
