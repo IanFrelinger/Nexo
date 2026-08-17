@@ -16,6 +16,9 @@ permissions:
 
 jobs:
   nuget:
+    # Forks: without NUGET_PUBLISH_MODE this is artifact-only, but the guard keeps a fork from
+    # ever reaching the nuget.org push steps by accident (docs/CiSecrets.md).
+    if: github.repository_owner == 'IanFrelinger'
     uses: ./.github/workflows/reusable-release-nuget.yml
     secrets: inherit
     with:
