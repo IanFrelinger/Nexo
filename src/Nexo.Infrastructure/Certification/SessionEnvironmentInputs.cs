@@ -19,9 +19,12 @@ namespace Nexo.Infrastructure.Certification;
 /// themselves assert that the candidate was compiled or executed
 /// inside that environment: these three are provisioning evidence. Compilation containment
 /// is a SEPARATE claim carried by the <c>session-build</c> input, minted only when the
-/// harness's in-session build leg is enabled and passes
-/// (<c>SessionCandidateBuild</c>); witness and mutation execution are not yet contained
-/// by any input — see the harness's remarks for the honest boundary.</para>
+/// harness's in-session build leg is enabled and passes (<c>SessionCandidateBuild</c>);
+/// execution containment is another, the <c>session-execution</c> input the gate records
+/// when the witness, determinism, and mutation legs ran through
+/// <c>SessionExecutionBackend</c> (harness execution leg enabled). A certificate carrying
+/// only these three inputs was provisioned a session and executed nothing inside it —
+/// see the harness's remarks for the boundary.</para>
 /// </summary>
 public static class SessionEnvironmentInputs
 {

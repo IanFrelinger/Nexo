@@ -22,7 +22,6 @@ Use **`[Trait("Category", "ProdStyle")]`** on xUnit classes that mirror producti
 
 **Virtual API stack (`FrameworkVirtualProdDemosTests`):** **`WebApplicationFactory&lt;Program&gt;`** spins up **`Nexo.API`** in-process (environment **`Testing`** → **`appsettings.Testing.json`**, background-agent **`IHostedService`** off). Requests hit the **same** minimal API endpoints as production — no fake route handlers. This matches **`docs/demos/`** (`GET /api/status`, **`NexoClient`**). These sources compile **only for `net10.0`** in **`Nexo.Tests.Infrastructure`** (the 8.0 ASP.NET Core TestHost + **`WriteAsJsonAsync`** hits the known **`PipeWriter.UnflushedBytes`** incompatibility with System.Text.Json 9+; the 10.0 TestHost adds the override).
 
-<｜tool▁sep｜>new_string
 Run **before** lighter smoke (`BaseFrameworkSmokeTests`) and full matrices — see **`make test-prod-style`**, **`make test-prime-time`** (**`Nexo.PrimeTime.slnf`**), **`make test-framework-prod-first`**, and **`nexo ci verify`** (ProdStyle runs after Infrastructure build, before smoke).
 
 ## Docker mesh virtual lab (multi-container HTTP)
@@ -39,7 +38,7 @@ See **[`docs/MeshVirtualLab.md`](../MeshVirtualLab.md)** for compose layout, ver
 
 ## Merge policy (GitHub)
 
-To block merges when kernel line coverage regresses, in GitHub go to **Settings → Branches → Branch protection rule**, enable **Require status checks to pass**, and add **`domain-coverage`** (Core domain coverage) and **`kernel-coverage`** (composite gate: Domain 100%, Infrastructure 83%, Core.Application 67%). See [Coverage gates v1](../production-readiness/CoverageGates-v1.md). If the UI only shows the workflow name, pick the check that corresponds to each workflow’s latest green run.
+Today `master` branch protection requires only **`cert-gate`** (see [CI gate inventory](../CiGateInventory.md)); the coverage gates run on PRs that touch kernel paths but do not block merges. To block merges when kernel line coverage regresses, in GitHub go to **Settings → Branches → Branch protection rule**, enable **Require status checks to pass**, and add **`domain-coverage`** (Core domain coverage) and **`kernel-coverage`** (composite gate as enforced by `scripts/ci/kernel-coverage-gate.sh`: Domain 100%, Infrastructure 80%, Core.Application 67%). Both workflows are path-filtered, so give each an always-report job first or the required context will never appear on PRs outside those paths. See [Coverage gates v1](../production-readiness/CoverageGates-v1.md). If the UI only shows the workflow name, pick the check that corresponds to each workflow’s latest green run.
 
 ## Local commands
 

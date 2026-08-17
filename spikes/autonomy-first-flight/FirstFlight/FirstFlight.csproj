@@ -14,7 +14,7 @@
   <ItemGroup>
     <!-- The repo-wide DomainBrick alias arrives via per-tree Directory.Build.props;
          spikes/ has none, so include the shared global-usings file directly. -->
-    <Compile Include="..\..\..\build\GlobalUsings.DomainBrick.cs" Link="GlobalUsings.DomainBrick.cs" />
+    <Compile Include="..\..\..\src\Nexo.Compat\GlobalUsings.DomainBrick.cs" Link="GlobalUsings.DomainBrick.cs" />
   </ItemGroup>
 
   <ItemGroup>

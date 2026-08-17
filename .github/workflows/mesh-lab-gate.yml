@@ -1,5 +1,10 @@
 name: Mesh virtual lab gate
 
+# DORMANT: manual-only since 2026-08-11; last 15 automatic runs all red in the compose
+# environment (see DISABLED below). Kept as the entry point for the mesh virtual lab
+# (docs/MeshVirtualLab.md); the weekly stress schedule that depended on it was removed
+# from mesh-lab-stress-gate.yml on 2026-08-16 (PR ci/workflow-pruning).
+#
 # DISABLED (automatic triggers only) — 2026-08-11.
 #
 # Red on master; the lab job "Mesh lab (peers + worker profile) + verify" fails in its

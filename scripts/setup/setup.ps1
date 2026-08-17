@@ -3,6 +3,7 @@ param(
     [ValidateSet("check", "apply", "restore", "all")]
     [string]$Mode = "check",
     [switch]$IncludeOptional,
+    [switch]$Tune,
     [switch]$SkipRuntimeStudioTune
 )
 
@@ -16,6 +17,7 @@ if (-not (Test-Path $windowsSetup)) {
 
 $args = @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $windowsSetup, "-Mode", $Mode)
 if ($IncludeOptional) { $args += "-IncludeOptional" }
+if ($Tune) { $args += "-Tune" }
 if ($SkipRuntimeStudioTune) { $args += "-SkipRuntimeStudioTune" }
 
 Push-Location $repoRoot

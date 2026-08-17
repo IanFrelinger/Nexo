@@ -115,12 +115,20 @@ public sealed class NewCommand : Command
         if (!string.IsNullOrWhiteSpace(overrideVersion))
             return overrideVersion.Trim();
 
-        var info = typeof(NewCommand).Assembly
+        // Both attributes derive from <Version>, which Directory.Build.targets sets from the root
+        // VERSION file, so the scaffolded PackageReference tracks the packed CLI version. No release
+        // number is hard-coded here: "0.0.0" is an obviously-unreleased sentinel for the (unexpected)
+        // case where the assembly carries no version metadata at all.
+        var assembly = typeof(NewCommand).Assembly;
+        var info = assembly
             .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
             ?.InformationalVersion;
-        var version = (info ?? typeof(NewCommand).Assembly.GetName().Version?.ToString() ?? "1.0.0")
+        var assemblyVersion = assembly.GetName().Version;
+        var version = (info
+                       ?? (assemblyVersion is null ? null : $"{assemblyVersion.Major}.{assemblyVersion.Minor}.{Math.Max(assemblyVersion.Build, 0)}")
+                       ?? "0.0.0")
             .Split('+', 2)[0];
-        return string.IsNullOrWhiteSpace(version) ? "1.0.0" : version;
+        return string.IsNullOrWhiteSpace(version) ? "0.0.0" : version;
     }
 
     private static void CopyTemplate(

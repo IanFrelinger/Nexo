@@ -32,7 +32,7 @@ release-staging-and-verify:
 	$(MAKE) release-staging VERSION="$(VERSION)" DRY_RUN="$(DRY_RUN)"
 	@if [ "$(DRY_RUN)" != "1" ]; then $(MAKE) verify-staging VERSION="$(VERSION)"; fi
 
-# All automated test projects in Nexo.PrimeTime.slnf (nine Nexo.Tests.* assemblies).
+# All automated test projects in Nexo.PrimeTime.slnf (eight assemblies: seven Nexo.Tests.* + commercial Tests.GameDomain).
 PRIME_TIME_SLNF := Nexo.PrimeTime.slnf
 
 # Build the solution (root holds several .sln/.slnf; a bare `dotnet build` fails with MSB1011)
@@ -166,7 +166,7 @@ ci-verify:
 
 # Pre-application kernel gate: runtime graph build + hosting resolution matrix + pipeline tests.
 # Optional: KERNEL_GATE_MESH=1 (Docker mesh-lab-verify), KERNEL_GATE_PRODSTYLE=1 (full ProdStyle slice).
-# Coverlet floors: Domain 100%, Infrastructure 84%, Core.Application 67% (see docs/production-readiness/CoverageGates-v1.md).
+# Coverlet floors as enforced by scripts/ci/kernel-coverage-gate.sh: Domain 100%, Infrastructure 80%, Core.Application 67% (see docs/production-readiness/CoverageGates-v1.md).
 kernel-coverage-gate:
 	bash scripts/ci/kernel-coverage-gate.sh
 

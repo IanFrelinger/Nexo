@@ -16,9 +16,12 @@ namespace Nexo.BackgroundAgents.Autonomy;
 public static class AutonomyLoopServiceCollectionExtensions
 {
     /// <summary>
-    /// Adds the standing loop. Call after <c>AddNexoAutonomy</c>, which supplies the
-    /// harness. Requires an <see cref="IObjectiveStore"/>; one is registered here only if
-    /// the host has not already provided its own.
+    /// Adds the standing loop. Call after <c>AddNexoAutonomy(configuration)</c>, which supplies
+    /// the harness AND the <c>Nexo:Autonomy</c> options the loop obeys: it runs only under
+    /// <c>Enabled=true</c>, opens sessions only under <c>UseSandboxSessions=true</c> (falling
+    /// back to the options' <c>SessionImage</c>), and reports the <c>HoldAdmission</c> the
+    /// harness enforces. Requires an <see cref="IObjectiveStore"/>; one is registered here
+    /// only if the host has not already provided its own.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <param name="configure">Loop settings. Interval defaults to 0, i.e. off.</param>

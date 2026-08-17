@@ -1,6 +1,7 @@
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nexo.Core.Application.Autonomy;
 using Nexo.Core.Application.Certification.Ports;
@@ -169,6 +170,65 @@ public sealed class AutonomyCompositionTests
         options.CadenceFloorSeconds.Should().Be(42);
     }
 
+    [Theory]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    public void EnabledLoop_WarnsAtHarnessComposition_UnlessCandidatesExecuteInSession(
+        bool executeInSession, bool expectWarning)
+    {
+        // The three session flags default to false so a bare AddNexoAutonomy() stays valid,
+        // which means an ENABLED loop can quietly execute proposed code in-process. That
+        // configuration is allowed; being silent about it is not. The warning fires where
+        // the harness is composed — for the standing loop, host start.
+        var sink = new CapturingLoggerProvider();
+        var services = new ServiceCollection();
+        services.AddLogging(b => b.AddProvider(sink));
+        services.AddCertificationGate();
+        services.AddNexoAutonomy(new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Nexo:Autonomy:Enabled"] = "true",
+                ["Nexo:Autonomy:UseSandboxSessions"] = "true",
+                ["Nexo:Autonomy:BuildCandidateInSession"] = "true",
+                ["Nexo:Autonomy:ExecuteCandidateInSession"] = executeInSession ? "true" : "false",
+                ["Nexo:Autonomy:SessionImage"] = "proposer:latest",
+            })
+            .Build());
+        using var provider = services.BuildServiceProvider();
+
+        provider.GetRequiredService<AutonomousIterationHarness>().Should().NotBeNull();
+
+        var warnings = sink.Entries.Where(e => e.Level >= LogLevel.Warning).Select(e => e.Message).ToList();
+        if (expectWarning)
+        {
+            warnings.Should().ContainSingle(w => w.Contains("ExecuteCandidateInSession=false"))
+                .Which.Should().Contain("IN THIS PROCESS").And.Contain("HoldAdmission",
+                    "the operator must learn that hold blocks the swap, not the execution");
+        }
+        else
+        {
+            warnings.Should().NotContain(w => w.Contains("IN THIS PROCESS"),
+                "the recommended trio is exactly the configuration that must not be nagged");
+        }
+    }
+
+    [Fact]
+    public void DisabledLoop_NeverWarnsAboutContainment()
+    {
+        // Disabled runs nothing, so there is nothing to warn about — a host that merely
+        // composes the loop must stay quiet.
+        var sink = new CapturingLoggerProvider();
+        var services = new ServiceCollection();
+        services.AddLogging(b => b.AddProvider(sink));
+        services.AddCertificationGate();
+        services.AddNexoAutonomy();
+        using var provider = services.BuildServiceProvider();
+
+        provider.GetRequiredService<AutonomousIterationHarness>().Should().NotBeNull();
+
+        sink.Entries.Should().NotContain(e => e.Level >= LogLevel.Warning && e.Message.Contains("IN THIS PROCESS"));
+    }
+
     [Fact]
     public async Task ConfiguredDigestPin_ReachesTheComposedSessionRunner_AndRefusesAMismatch()
     {
@@ -202,6 +262,44 @@ public sealed class AutonomyCompositionTests
 
         await act.Should().ThrowAsync<InvalidOperationException>().WithMessage("*sha256:pinned*");
         calls.Should().NotContain(c => c[0] == "run", "a refused pin never starts a container");
+    }
+
+    private sealed class CapturingLoggerProvider : ILoggerProvider
+    {
+        private readonly List<(LogLevel Level, string Message)> _entries = new();
+        private readonly object _sync = new();
+
+        public IReadOnlyList<(LogLevel Level, string Message)> Entries
+        {
+            get { lock (_sync) { return _entries.ToList(); } }
+        }
+
+        public ILogger CreateLogger(string categoryName) => new Logger(this);
+
+        public void Dispose() { }
+
+        private void Add(LogLevel level, string message)
+        {
+            lock (_sync) { _entries.Add((level, message)); }
+        }
+
+        private sealed class Logger : ILogger
+        {
+            private readonly CapturingLoggerProvider _owner;
+            public Logger(CapturingLoggerProvider owner) => _owner = owner;
+            public IDisposable BeginScope<TState>(TState state) where TState : notnull => NullScope.Instance;
+            public bool IsEnabled(LogLevel logLevel) => true;
+            public void Log<TState>(
+                LogLevel logLevel, EventId eventId, TState state, Exception? exception,
+                Func<TState, Exception?, string> formatter) =>
+                _owner.Add(logLevel, formatter(state, exception));
+        }
+
+        private sealed class NullScope : IDisposable
+        {
+            public static readonly NullScope Instance = new();
+            public void Dispose() { }
+        }
     }
 
     private sealed class ScriptedProcessRunner : IProcessCommandRunner

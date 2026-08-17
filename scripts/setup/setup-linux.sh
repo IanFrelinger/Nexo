@@ -15,18 +15,21 @@ INCLUDE_OPTIONAL=false
 FULL_RESTORE=false
 AUTO_YES=false
 GUIDED=false
+TUNE=false
 PKG_MANAGER=""
 APT_UPDATED=false
 OS_RELEASE_ID=""
 OS_RELEASE_ID_LIKE=""
 
 usage() {
-  echo "Usage: scripts/setup/setup-linux.sh <check|restore|all|apply> [--include-optional] [--full-restore]"
+  echo "Usage: scripts/setup/setup-linux.sh <check|restore|all|apply> [--include-optional] [--full-restore] [--tune]"
   echo ""
   echo "Notes:"
   echo "  - 'apply' mode installs missing host dependencies where possible."
   echo "  - pass --yes for non-interactive fire-and-forget setup."
   echo "  - pass --guided to print plain-language setup explanations."
+  echo "  - pass --tune with 'all' to run the optional Runtime Studio hardware benchmark"
+  echo "    (multi-minute Ollama model benchmark; off by default; writes .nexo/runtime-studio/agent_set.local.json)."
 }
 
 while [[ $# -gt 0 ]]; do
@@ -42,6 +45,9 @@ while [[ $# -gt 0 ]]; do
       ;;
     --guided)
       GUIDED=true
+      ;;
+    --tune)
+      TUNE=true
       ;;
     -h|--help)
       usage
@@ -558,7 +564,15 @@ apply_dependencies() {
   check_dependencies
 }
 
+# Opt-in (--tune). The benchmark runs `nexo workflow optimize` against local Ollama models for
+# several minutes; the tuned ModelName values land in the gitignored
+# .nexo/runtime-studio/agent_set.local.json (seeded from the tracked
+# apps/runtime-studio/config/agent_set.local.json), so `setup all` never edits a tracked file.
 runtime_studio_auto_tune() {
+  if [[ "${TUNE}" != "true" ]]; then
+    echo "Runtime Studio hardware tune not requested (pass --tune to run the optional multi-minute Ollama benchmark)."
+    return 0
+  fi
   if [[ "${NEXO_SKIP_RUNTIME_STUDIO_TUNE:-}" == "1" ]]; then
     echo "Skipping Runtime Studio hardware tune (NEXO_SKIP_RUNTIME_STUDIO_TUNE=1)."
     return 0
@@ -579,7 +593,7 @@ runtime_studio_auto_tune() {
 
   echo ""
   echo "Runtime Studio: benchmarking local models/compositions (bounded budget). This may take several minutes."
-  echo "To skip: export NEXO_SKIP_RUNTIME_STUDIO_TUNE=1"
+  echo "Tuned agent set is written to .nexo/runtime-studio/agent_set.local.json (gitignored)."
   echo ""
   (cd "${REPO_ROOT}" && bash "${tune_script}" --skip-daemon --budget-runs 24) \
     || echo "Runtime Studio auto-tune finished with a non-zero exit (optional; re-run the script later)." >&2

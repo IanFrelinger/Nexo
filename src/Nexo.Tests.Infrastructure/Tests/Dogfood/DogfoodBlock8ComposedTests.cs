@@ -6,6 +6,7 @@ using Nexo.Core.Application.Paths;
 using Nexo.Infrastructure;
 using Nexo.Infrastructure.Composition;
 using Nexo.Tests.Application.Helpers;
+using Nexo.Tests.Infrastructure.Helpers;
 using Xunit;
 
 namespace Nexo.Tests.Infrastructure.Tests.Dogfood;
@@ -28,12 +29,9 @@ public sealed class DogfoodBlock8ComposedTests : IDisposable
 
     public void Dispose() => _tempDirCleanup.Dispose();
 
-    [Fact(Timeout = 60000)]
+    [NotOnCiFact("spawns nested dotnet test hosts against the repo checkout", Timeout = 60000)]
     public async Task ComposedTestRunner_RunNexoTestsViaComposition_CompletesAndAggregates()
     {
-        if (DogfoodCiSkip.ShouldSkip)
-            return;
-
         var repoRoot = RepoPathResolver.FindRepoRoot();
         var targetPath = Path.Combine(repoRoot, "src", "Nexo.Tests.Infrastructure", "Nexo.Tests.Infrastructure.csproj");
         Assert.True(File.Exists(targetPath), "Nexo.Tests.Infrastructure.csproj not found (run from Nexo repo)");
@@ -64,12 +62,9 @@ public sealed class DogfoodBlock8ComposedTests : IDisposable
     /// <summary>
     /// D4: Validates composed agent integrates with parallel test infra; golden path (BestCandidate) is discovered.
     /// </summary>
-    [Fact(Timeout = 90000)]
+    [NotOnCiFact("spawns nested dotnet test hosts against the repo checkout", Timeout = 90000)]
     public async Task ComposedTestRunner_WithMultipleInstances_AggregatesAndFindsGoldenPath()
     {
-        if (DogfoodCiSkip.ShouldSkip)
-            return;
-
         var repoRoot = RepoPathResolver.FindRepoRoot();
         var targetPath = Path.Combine(repoRoot, "src", "Nexo.Tests.Infrastructure", "Nexo.Tests.Infrastructure.csproj");
         Assert.True(File.Exists(targetPath), "Nexo.Tests.Infrastructure.csproj not found (run from Nexo repo)");

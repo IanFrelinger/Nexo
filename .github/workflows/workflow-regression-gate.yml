@@ -1,3 +1,6 @@
+# DORMANT: manual-only, last dispatched 2026-06-14 (green). No automatic trigger can fire it.
+# Kept as the only end-to-end exercise of `nexo workflow baseline promote|report|gate`.
+# 2026-08-16, PR ci/workflow-pruning.
 name: Workflow Regression Gate
 
 on:

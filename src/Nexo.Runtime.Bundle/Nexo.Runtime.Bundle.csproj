@@ -22,7 +22,7 @@
     <PackageTags>nexo;runtime;kernel;metapackage</PackageTags>
     <RepositoryUrl>https://github.com/IanFrelinger/Nexo</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <!-- PackageLicenseExpression (Apache-2.0) comes from Directory.Build.targets; do not restate it here. -->
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
   <ItemGroup>

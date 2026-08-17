@@ -17,7 +17,7 @@ Not the Cursor IDE remote stack — Nexo is the framework that hosts agents over
 | `GET /api/status` | API + aggressiveness mode |
 | Background agents | Loaded from JSON; configurable path (`NEXO_BACKGROUND_AGENTS_CONFIG`) |
 
-The API process registers the same **dogfood runners** as `nexo background-agent daemon` (analysis, tests, self-extend), so scheduled agents can act on the **mounted repository**.
+The API process registers the same **dogfood runners** as `nexo background-agent daemon` (analysis, tests, self-extend), so scheduled agents can act on the **mounted repository**. The self-extender is **Passive by default** (observe only): it is armed by the aggressiveness mode file (`{"Mode":"active"}` written by `nexo background-agent mode set --value active`, path `NEXO_AGENT_MODE_PATH`, default `~/.nexo/agent-mode.json` — inside the container that is ephemeral, so point it at the mounted tree, e.g. `/work/.nexo/agent-mode.json`); a missing file, `{}` or an unknown value all read as Passive.
 
 ## Prerequisites
 
@@ -84,6 +84,7 @@ Use **one `.env` per machine** or per environment (`dev`, `staging`) and swap `-
 | `OLLAMA_MODEL` | `llama3.1:latest` | Default model hint for providers (align with `ollama pull`). |
 | `NEXO_BACKGROUND_AGENTS_CONFIG` | `/work/apps/runtime-studio/config/agent_set.local.json` | JSON with `BackgroundAgents:Agents`. If you change `NEXO_CONTAINER_WORKDIR`, update this path to match. |
 | `NEXO_DAILIES_PATH` | `/data/dailies` | App path for director dailies. Default compose keeps a **named volume** at `/data/dailies`; if you change this path, add a matching volume in a local override file. |
+| `NEXO_STATE_DIR` | `/data/state` | Runtime state (LiteDB `nexo-*.db`, `nexo-snapshots/`). Default compose keeps a **named volume** at `/data/state` so state never lands in the mounted repo under `/work`; if you change this path, add a matching volume in a local override file (see `docs/DEPLOYMENT.md`, "Runtime state"). |
 | `Nexo__Barriers__RequireExplicitBarrier` | `false` | Hosted-friendly barrier default; tighten for stricter deployments. |
 | `NEXO_OBSERVATION_DEGRADED_MODE` | `1` | Safer observation pipeline on some bind-mount / network FS setups. |
 | `NEXO_BUILD_CONTEXT` | `../..` (repo root, relative to `deploy/compose/`) | Docker build context (advanced monorepo layouts). |

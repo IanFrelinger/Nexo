@@ -20,17 +20,65 @@ contract, and the certificate would then be a claim about nothing.
 
 ## Running it
 
+The shortest working path is the first-flight script, which composes everything below for
+you (a container engine must be reachable; a live proposer is optional):
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File spikes/autonomy-first-flight/run-first-flight.ps1 -SweepLive
+```
+
+To compose the loop in your own host, every one of these is load-bearing — the loop is
+fail-closed at each step, so leaving one out yields "nothing happens" or an explained
+refusal, never a quiet in-process run:
+
 ```bash
 cp samples/autonomy-objectives/tag-scan-classifier.* \
    .nexo/runtime-studio/objectives/pending/
 ```
 
-Then compose a host with `AddNexoAutonomy` + `AddNexoAutonomyLoop`. Keep
-`HoldAdmission` at its default (`true`) — the loop will certify fully and admit nothing,
-which is what you want until you have read a few digests and trust what the witnesses pin.
+```csharp
+services.AddLogging();
+services.AddCertificationGate();                       // the real gate + signer; without it AddNexoAutonomy has no ICertificationGate to resolve
+services.AddNexoAutonomy(configuration);              // binds Nexo:Autonomy — the loop and the harness both read it
+services.AddNexoAutonomyLoop(loop =>
+{
+    loop.IntervalSeconds = 300;                        // 0 (the default) means the loop never sweeps
+    loop.MaxObjectivesPerSweep = 5;
+    // CompilationReferences defaults to the brick contract assemblies (DomainBrick, BrickInput);
+    // add the assembly of anything the candidate delegates to, e.g. the physical-atom codec:
+    loop.CompilationReferences = AutonomyLoopSettings.DefaultCompilationReferences()
+        .Append(typeof(PhysicalAtomQrTagCodec).Assembly.Location).ToArray();
+});
+```
 
-Sessions are required: the loop builds and executes candidates inside an attested container,
-so a container engine must be reachable. Model-proposed code never runs in the host process.
+with, in the `configuration` you handed to `AddNexoAutonomy` — `Nexo:Autonomy` is a
+host-composed section, so it reads whatever that configuration contains (an in-memory set as
+the first-flight spike uses, `appsettings.json`, or `Nexo__Autonomy__*` environment variables;
+see "How `Nexo:*` options bind" in `docs/Configuration.md`):
+
+```text
+Nexo:Autonomy:Enabled=true                    # master switch; false = the timer never starts
+Nexo:Autonomy:UseSandboxSessions=true         # otherwise no SessionSpec is built at all
+Nexo:Autonomy:BuildCandidateInSession=true    # compile inside the attested session
+Nexo:Autonomy:ExecuteCandidateInSession=true  # witness/mutation/determinism inside it too
+Nexo:Autonomy:SessionImage=mcr.microsoft.com/dotnet/sdk:9.0   # must already be present on the engine (--pull never)
+Nexo:Autonomy:HoldAdmission=true              # the default: certify fully, admit nothing
+```
+
+Why the trio matters here specifically: the loop hands the gate an identity-only handle for
+the proposed brick (`ProposedBrickHandle`) — the real candidate exists only as source until
+the session builds it. With `ExecuteCandidateInSession=false` the gate would execute that
+handle in-process, it refuses (as it must), and every objective ends as an
+`ExplainedFailure` at `correctness` that the loop reports as host wiring and never hands to a
+proposer as repair feedback. `AddNexoAutonomy` warns at composition when an enabled loop is
+missing the execution leg.
+
+Keep `HoldAdmission` at its default (`true`) — the loop certifies fully and admits nothing,
+which is what you want until you have read a few digests and trust what the witnesses pin.
+The hold is enforced by the harness `AddNexoAutonomy` composes; the loop reports that same
+value and has no dial of its own.
+
+Model-proposed code never runs in the host process under this configuration.
 
 ## What this example demonstrates
 

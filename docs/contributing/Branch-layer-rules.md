@@ -4,10 +4,14 @@ CI workflow **`.github/workflows/layer-boundary.yml`** enforces:
 
 | Base branch | Rule |
 |-------------|------|
-| `master`, `main`, or `runtime/*` | PR must **not** change files under **`application/`**, unless the PR also changes **`commercial/`** (vertical integration merge) or coordinates **`Nexo.Authoring`** distribution (`src/Nexo.Authoring/` or `scripts/verify-standalone-brick-authoring.sh` alongside `application/`) |
+| `master`, `main`, or `runtime/*` | PR must **not** change files under **`application/`** (singular: the `Nexo.CLI` / `Nexo.API` hosts), unless one of four exemptions holds: the PR also changes **`commercial/`** (vertical integration merge); it coordinates **`Nexo.Authoring`** distribution (`src/Nexo.Authoring/` or `scripts/verify-standalone-brick-authoring.sh` alongside `application/`); every `application/` change is a pure removal of `<ProjectReference>` lines to `src/` projects that no longer exist on the head commit (forced kernel cleanup); or every changed `application/` path belongs to a project whose nearest `.csproj` contains `Microsoft.NET.Test.Sdk` (test-only change) |
 | `application/*` | PR must **not** change files under **`src/`** (kernel) |
 | `master` / `main` / `runtime/*` | Head branch must **not** be named `application/*` |
 | `application/*` | Head branch must **not** be named `runtime/*` |
+
+Plural `applications/` (products on the core) and `apps/` (host configs) are **not** covered by this gate; `dependency-boundary` guards `applications/`.
+
+**Enforcement status (2026-08-16):** `layer-boundary / verify` is **not** a required status check on `master` — branch protection requires only `cert-gate` — so host PRs without an exemption merge with a red, non-required `verify`. See [`CONTRIBUTING.md`](../../CONTRIBUTING.md) ("Layer boundary and what master actually enforces") and [`docs/CiGateInventory.md`](../CiGateInventory.md).
 
 ## Enable required check on GitHub
 

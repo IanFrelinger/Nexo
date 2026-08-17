@@ -1,11 +1,14 @@
 name: Mesh lab stress gate
 
+# DORMANT: weekly schedule (Mon 06:00 UTC) removed 2026-08-16 (PR ci/workflow-pruning) after
+# eight consecutive red scheduled runs (2026-06-22 .. 2026-08-10) in the same compose
+# environment that muted mesh-lab-gate.yml on 2026-08-11. workflow_dispatch stays live;
+# restore the schedule once mesh-lab-gate.yml is green again.
+#
 # Heavier than mesh-lab-gate: full verify + deep + worker scale/health burst + post-stress director checks.
 # PR path filters intentionally omit this workflow so default PRs stay fast.
 
 on:
-  schedule:
-    - cron: "0 6 * * 1"
   workflow_dispatch:
     inputs:
       max_workers:

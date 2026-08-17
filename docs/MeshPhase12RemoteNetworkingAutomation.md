@@ -94,7 +94,7 @@ Reuse [`scripts/bootstrap-cloud-mesh-lab.sh`](../scripts/bootstrap-cloud-mesh-la
 | Workflow | When | Covers |
 |----------|------|--------|
 | `mesh-lab-gate.yml` | PR | Bridge HTTP + negatives + persistence + Phase 13 data plane |
-| `mesh-lab-stress-gate.yml` | Weekly | Stress + post-stress |
+| `mesh-lab-stress-gate.yml` | Manual (`workflow_dispatch`; weekly schedule removed 2026-08-16) | Stress + post-stress |
 | `mesh-lab-tls-gate.yml` | Weekly | HTTPS director |
 | `grpc-transport-gate.yml` | PR | gRPC Kestrel round-trip |
 | `friend-mesh-prefab-gate.yml` | PR | Single-hub auth smoke |

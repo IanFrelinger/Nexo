@@ -14,10 +14,17 @@ WORKDIR /app
 
 COPY --from=build /app/publish ./
 
-ENV ASPNETCORE_URLS=http://+:8080
+# Runtime state (LiteDB stores, snapshots) goes to /data/state, not into the mounted workspace under
+# /work (docs/DEPLOYMENT.md, "Runtime state"). This image intentionally stays root: the tester/optimizer
+# agents run dotnet build/test against a host bind mount whose ownership the image cannot know.
+ENV ASPNETCORE_URLS=http://+:8080 \
+    NEXO_STATE_DIR=/data/state \
+    NEXO_DAILIES_PATH=/data/dailies
+RUN mkdir -p /data/state /data/dailies
 EXPOSE 8080
 
+# SDK image: curl is present here (unlike the aspnet runtime images).
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
-  CMD curl -f http://localhost:8080/health || exit 1
+  CMD curl -fsS http://127.0.0.1:8080/health || exit 1
 
 ENTRYPOINT ["dotnet", "Nexo.API.dll"]

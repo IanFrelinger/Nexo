@@ -1,3 +1,7 @@
+# DORMANT: manual-only; the schedule was removed after repeated failures and the last run
+# (2026-05-11) was red — 11 of the last 14 runs failed, none since. Kept (not deleted) because
+# scripts/rc-gate-tier-d.sh lists "Runtime Release Promotion" as an optional RC signal.
+# 2026-08-16, PR ci/workflow-pruning.
 name: Runtime Release Promotion
 
 on:

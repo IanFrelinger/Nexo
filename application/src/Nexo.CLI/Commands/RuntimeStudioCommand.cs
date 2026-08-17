@@ -25,8 +25,10 @@ public sealed class RuntimeStudioCommand : Command
 
         var agentSetOpt = new Option<string>(
             "--agent-set",
-            () => Path.Combine("apps", "runtime-studio", "config", "agent_set.local.json"),
-            "Background agent-set JSON to update (repo-relative or absolute).");
+            DefaultAgentSetRelativePath,
+            "Background agent-set JSON to update (repo-relative or absolute). Default: the gitignored " +
+            ".nexo/runtime-studio/agent_set.local.json when it exists (written by optimize_agent_cluster.sh), " +
+            "otherwise the tracked apps/runtime-studio/config/agent_set.local.json.");
 
         var dryRunOpt = new Option<bool>("--dry-run", () => false, "Print planned ModelName changes without writing.");
 
@@ -96,6 +98,25 @@ public sealed class RuntimeStudioCommand : Command
         AddCommand(statusCmd);
         AddCommand(metricsCmd);
         AddCommand(doctorCmd);
+    }
+
+    /// <summary>Tracked agent-set definitions (roles, schedules, policies); never the tune output target by default.</summary>
+    internal static readonly string TrackedAgentSetRelativePath =
+        Path.Combine("apps", "runtime-studio", "config", "agent_set.local.json");
+
+    /// <summary>Gitignored, hardware-tuned copy written by <c>optimize_agent_cluster.sh</c> / <c>setup --tune</c>.</summary>
+    internal static readonly string LocalAgentSetRelativePath =
+        Path.Combine(".nexo", "runtime-studio", "agent_set.local.json");
+
+    /// <summary>
+    /// Local tuned copy first, tracked definitions as the fallback (mirrors <c>run_agent_set_local.sh</c>).
+    /// </summary>
+    internal static string DefaultAgentSetRelativePath()
+    {
+        var repoRoot = RepoPathResolver.FindRepoRoot();
+        return File.Exists(Path.Combine(repoRoot, LocalAgentSetRelativePath))
+            ? LocalAgentSetRelativePath
+            : TrackedAgentSetRelativePath;
     }
 
     private static int ExecuteDoctor(bool formatJson, string agentSet, bool strict)

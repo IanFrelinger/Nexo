@@ -14,8 +14,8 @@
     <AssemblyCompany>Nexo</AssemblyCompany>
     <AssemblyProduct>Nexo CLI</AssemblyProduct>
     <AssemblyCopyright>Copyright © Nexo 2024</AssemblyCopyright>
-    <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <FileVersion>1.0.0.0</FileVersion>
+    <!-- AssemblyVersion / FileVersion / InformationalVersion derive from <Version>, which
+         Directory.Build.targets sets from the root VERSION file. Do not pin them here. -->
     <PackageId>Nexo.CLI</PackageId>
     <Description>Provider-agnostic LEGO-style feature factory CLI</Description>
     <PackageTags>nexo;ai;feature-factory;offline-first</PackageTags>

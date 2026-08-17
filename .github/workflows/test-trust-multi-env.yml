@@ -1,3 +1,8 @@
+# DORMANT: manual-only, last dispatched 2026-05-23 (12 of the last 15 runs green). No automatic
+# trigger can fire it. Kept because docs/production-readiness/KernelHardeningPlan-v1.md (C1) names
+# it and the Dockerfile.test-caching* images it uses are still validated by compose-gate.yml.
+# 2026-08-16, PR ci/workflow-pruning.
+#
 # Run Trust tests across Ubuntu, Alpine, and Debian Docker containers.
 # Validates Trust & Information Architecture features (sanitization, knowledge log, access boundary, audit).
 name: Trust Tests (Multi-Env Docker)

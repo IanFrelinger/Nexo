@@ -202,49 +202,29 @@ public sealed class DefaultGrpcChannelFactoryGapCoverageTests
 
     private static (string certPem, string keyPem, string caPem, string pfxPath) CreateTempCertificates(string dir)
     {
+        // Generated in-process (no openssl): the shell-out variant was PATH-dependent, capped at
+        // 10 s per invocation and flaked on the Windows readiness lane. Same shape as before:
+        // cert.pem, PKCS#1 key.pem, PKCS#8 key.pk8.pem, ca.pem (= cert), passwordless client.pfx.
         var certPem = Path.Combine(dir, "cert.pem");
         var keyPem = Path.Combine(dir, "key.pem");
+        var keyPkcs8 = Path.Combine(dir, "key.pk8.pem");
         var caPem = Path.Combine(dir, "ca.pem");
         var pfxPath = Path.Combine(dir, "client.pfx");
 
-        var gen = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-        {
-            FileName = "openssl",
-            Arguments = $"req -x509 -newkey rsa:2048 -nodes -keyout \"{keyPem}\" -out \"{certPem}\" -days 1 -subj /CN=localhost",
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-        });
-        gen.Should().NotBeNull();
-        gen!.WaitForExit(10_000).Should().BeTrue();
-        gen.ExitCode.Should().Be(0);
+        using var rsa = System.Security.Cryptography.RSA.Create(2048);
+        var request = new CertificateRequest(
+            "CN=localhost",
+            rsa,
+            System.Security.Cryptography.HashAlgorithmName.SHA256,
+            System.Security.Cryptography.RSASignaturePadding.Pkcs1);
+        var notBefore = DateTimeOffset.UtcNow.AddMinutes(-5);
+        using var cert = request.CreateSelfSigned(notBefore, notBefore.AddDays(1));
 
-        var keyPkcs8 = Path.Combine(dir, "key.pk8.pem");
-        var pkcs8 = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-        {
-            FileName = "openssl",
-            Arguments = $"pkcs8 -topk8 -inform PEM -outform PEM -nocrypt -in \"{keyPem}\" -out \"{keyPkcs8}\"",
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-        });
-        pkcs8.Should().NotBeNull();
-        pkcs8!.WaitForExit(10_000).Should().BeTrue();
-        pkcs8.ExitCode.Should().Be(0);
-
+        File.WriteAllText(certPem, cert.ExportCertificatePem());
+        File.WriteAllText(keyPem, rsa.ExportRSAPrivateKeyPem());
+        File.WriteAllText(keyPkcs8, rsa.ExportPkcs8PrivateKeyPem());
         File.Copy(certPem, caPem, overwrite: true);
-
-        var pfx = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-        {
-            FileName = "openssl",
-            Arguments = $"pkcs12 -export -out \"{pfxPath}\" -inkey \"{keyPem}\" -in \"{certPem}\" -passout pass:",
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-        });
-        pfx.Should().NotBeNull();
-        pfx!.WaitForExit(10_000).Should().BeTrue();
-        pfx.ExitCode.Should().Be(0);
+        File.WriteAllBytes(pfxPath, cert.Export(X509ContentType.Pfx));
 
         return (certPem, keyPem, caPem, pfxPath);
     }

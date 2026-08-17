@@ -20,6 +20,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v7
 
+      # global.json pins the 10.0.x SDK; the sample runs on it (RollForward=Major covers net8.0 consumers).
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
         with:
