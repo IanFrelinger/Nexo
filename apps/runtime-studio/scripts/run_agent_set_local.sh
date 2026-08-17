@@ -2,7 +2,12 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-CONFIG_PATH="${REPO_ROOT}/apps/runtime-studio/config/agent_set.local.json"
+# Prefer the gitignored, hardware-tuned copy written by optimize_agent_cluster.sh; fall back to
+# the tracked definitions when no tune has been run.
+CONFIG_PATH="${REPO_ROOT}/.nexo/runtime-studio/agent_set.local.json"
+if [[ ! -f "${CONFIG_PATH}" ]]; then
+  CONFIG_PATH="${REPO_ROOT}/apps/runtime-studio/config/agent_set.local.json"
+fi
 
 DURATION="10m"
 DISABLE_OBSERVATION=0
