@@ -105,6 +105,7 @@ The profile does not enforce firewalls or Tailscale ACLs, but it **fails closed*
 | `Nexo__Security__ExcludedApiKeyPaths` | Comma-separated API path prefixes exempted from key checks | none |
 | `Nexo__Security__AuthorizationMode` | Built-in auth mode: `None`, `ApiKey`, `BearerToken`, `Basic`, `ApiKeyOrBearerToken`, `ApiKeyOrBasic`, `BearerTokenOrBasic`, `Any` | `None` |
 | `Nexo__Security__AuthorizationScope` | Built-in auth scope: `MutatingApi` or `AllApi` | `MutatingApi` |
+| `Nexo__Security__RequireAuthForCopilotReadApis` | `true` / `false` — credential `GET /api/copilot/tasks*` even under `MutatingApi`, because task history carries the prompts and outputs of past runs. Set `false` only if that history is not sensitive to you | `true` |
 | `Nexo__Security__ExcludedAuthorizationPaths` | Comma-separated API path prefixes exempted from built-in auth checks | none |
 | `Nexo__Security__BearerToken` | Shared secret for bearer token authorization | unset |
 | `Nexo__Security__BearerTokenHeaderName` | Header used for bearer token checks | `Authorization` |

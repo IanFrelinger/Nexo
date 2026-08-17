@@ -27,9 +27,9 @@ jobs:
   uat:
     # Keep this in step with the tier steps below. A gate whose own label misstates what it covers is
     # the same class of defect this suite exists to catch.
-    name: uat (tiers 0-2, 4, 5, 8)
+    name: uat (tiers 0-2, 4, 5, 7, 8)
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     env:
       UAT_REPO_DIR: ${{ github.workspace }}
       UAT_OUT: ${{ github.workspace }}/uat-out
@@ -66,6 +66,13 @@ jobs:
         continue-on-error: true
         shell: bash
         run: bash tests/uat/tier5.sh
+
+      - name: Tier 7 — the security negatives SECURITY.md claims
+        id: tier7
+        if: always()
+        continue-on-error: true
+        shell: bash
+        run: bash tests/uat/tier7.sh
 
       - name: Tier 8 — do the docs still describe this repo?
         id: tier8

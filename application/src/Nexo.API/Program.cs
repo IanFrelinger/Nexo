@@ -399,6 +399,13 @@ if (a2aEndpoints is not null)
     }
 }
 
+// An unmatched path under /api is a missing endpoint, not a page. Without this, the SPA fallback below
+// answers every unknown /api path with 200 and index.html: a client that misspells a route, or calls a
+// surface that is feature-flagged off, parses an HTML page as its result. It also makes SECURITY.md's
+// "(404 otherwise)" true of the remote-execution routes, which were answering 405/200 instead.
+// This catch-all is less specific than every mapped API route, so real endpoints still win it.
+app.Map("/api/{**rest}", () => Results.NotFound(new { error = "No such endpoint." }));
+
 app.MapFallbackToFile("index.html");
 
 app.Run();
