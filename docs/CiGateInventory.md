@@ -71,7 +71,7 @@ Six workflows carry a `schedule`: `distribution-matrix-gate` (Mon 10:00 UTC), `f
 | `application-gate.yml` | Application Gate / `application-gate` | paths: `application/**`, VirtualProduction tests, `scripts/application-gate*.sh`, `scripts/prod-dry-run.sh`, `Makefile`, … | dispatch |
 | `core-domain-coverage.yml` | Core domain coverage / `domain-coverage` | paths: `src/Nexo.Core.Domain/**`, `src/Nexo.Infrastructure/**`, kernel test projects, `Directory.*.props` | push (same paths) |
 | `dependency-boundary.yml` | dependency-boundary / `verify` | paths: `**/*.csproj`, `commercial/**`, `application/**`, `applications/**`, `src/**`, `LICENSING.md`, boundary scripts | push, dispatch |
-| `distribution-matrix-gate.yml` | Distribution Matrix Gate / 7 jobs | paths: the workflow file and `scripts/ci/distribution-matrix-api-http-smoke.sh` only | push (broad paths), weekly schedule, dispatch |
+| `distribution-matrix-gate.yml` | Distribution Matrix Gate / 7 jobs | paths: same broad list as push (Dockerfiles, pack/verify scripts, Nexo.API/CLI, Client/Sdk/Hosting.Bundle/Authoring/Brick.Contracts, samples, VirtualProduction tests) | push (broad paths), weekly schedule, dispatch |
 | `docs-link-check.yml` | Docs Link Check / `lychee (README + docs)` | paths: `docs/**`, `README.md`, `.lycheeignore` | push, dispatch |
 | `kernel-coverage-gate.yml` | Kernel coverage gate / `kernel-coverage` | paths: kernel src + tests, `scripts/ci/kernel-coverage-gate.sh`, `scripts/ci/pr-testing-strategy-gate.sh` | push |
 | `kernel-gate.yml` | Kernel Gate / `kernel-gate` | paths: `src/Nexo.Hosting/**`, Infrastructure, Orchestration, Runtime, Core.Application, kernel tests, `docs/production-readiness/**`, `Makefile` | push (narrower paths), dispatch |
@@ -98,7 +98,7 @@ All of these also accept `workflow_dispatch`. Branch filters are `master`, `main
 | `full-platform-readiness-gate.yml` | Full Platform Readiness Gate | Dockerfiles, setup/install scripts, spine sources, StableSdkHostSample; **weekly schedule** |
 | `grpc-transport-gate.yml` | gRPC transport gate | `src/Nexo.Transport.Grpc/**`, `src/Nexo.Tests.Transport/**` |
 | `mcp-a2a-gate.yml` | MCP + A2A protocol gate | also `application/**` branches; `src/Nexo.Mcp.*`, `src/Nexo.Transport.A2A*`, `Nexo.API` |
-| `onboarding-docs-guard.yml` | Onboarding Docs Guard | README, `docs/**/*.md`, `scripts/*.sh|ps1`, `Makefile`, `**/*.csproj` (ProjectTiers guard) |
+| `onboarding-docs-guard.yml` | Onboarding Docs Guard | README, `docs/**/*.md`, `scripts/*.sh`, `scripts/*.ps1`, `Makefile`, `**/*.csproj` (ProjectTiers guard) |
 | `onboarding-quickstart-gate.yml` | onboarding-quickstart-gate | README, GettingStarted, setup/install scripts, CLI; **weekly schedule** |
 | `optimize-agent-cluster-gate.yml` | Optimize Agent Cluster Gate | `apps/runtime-studio/**`, `scripts/sandbox/**`, CLI |
 | `pack-hosting-graph-alignment.yml` | Pack hosting graph alignment | `master`/`main`; `src/**/*.csproj`, pack scripts, NugetOrgRestoreVerify sample |

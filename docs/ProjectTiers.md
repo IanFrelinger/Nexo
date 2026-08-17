@@ -165,7 +165,7 @@ The root holds several entry points; a bare `dotnet build` fails with MSB1011, s
 | `Nexo.Runtime.sln` | Publishing the embeddable kernel graph (no `application/`) | Runtime libraries + `Nexo.Tests.AI.Pipeline` (18 projects) |
 | `application/Nexo.Application.sln` | Application-gate style builds of the open hosts | `Nexo.API`, `Nexo.CLI`, `Nexo.Tests.CLI` (open only) |
 | `Nexo.Demos.sln` | The three demo clients | `docs/demos/*` |
-| `Nexo.sln` | Everything the CI matrix builds on Linux | 78 projects: all of `src/`, `application/`, `applications/`, 9 of the 17 `commercial/` projects (Game Director, GameDomain and three commercial test projects), `tools/Nexo.Provenance.Demo`. Samples, spikes, the other tools, and the commercial Fleet/MeshDirector projects are built from their own paths |
+| `Nexo.sln` | Everything the CI matrix builds on Linux | 78 projects: `src/` (except `Nexo.Hosting.Bundle`, `ValidationUtilities` and the `copy-assemblies` helper), `application/`, `applications/`, 9 of the 17 `commercial/` projects (Game Director, GameDomain and three commercial test projects), `tools/Nexo.Provenance.Demo`. Samples, spikes, the other tools, and the commercial Fleet/MeshDirector projects are built from their own paths |
 
 ## Minimal clone-to-run core
 
