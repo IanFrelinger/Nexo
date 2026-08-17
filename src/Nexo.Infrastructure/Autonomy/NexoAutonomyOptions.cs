@@ -1,3 +1,6 @@
+using System.Diagnostics.CodeAnalysis;
+using Nexo.Core.Application.Autonomy;
+
 namespace Nexo.Infrastructure.Autonomy;
 
 /// <summary>
@@ -5,6 +8,7 @@ namespace Nexo.Infrastructure.Autonomy;
 /// <c>Nexo:Autonomy</c>. Fail-closed: <see cref="Enabled"/> is false, so a host that
 /// merely references the package runs nothing until an operator opts in.
 /// </summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public sealed class NexoAutonomyOptions
 {
     /// <summary>Configuration section this binds from.</summary>

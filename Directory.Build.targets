@@ -23,6 +23,14 @@
     <RollForward Condition="'$(RollForward)' == ''">Major</RollForward>
   </PropertyGroup>
 
+  <!-- NEXOEXP001 is the [Experimental] diagnostic on the autonomy (self-extension) surface; it exists
+       for EXTERNAL consumers (docs/SdkCompatibilityPolicy.md, "Experimental tier"). The repo's own test
+       projects exercise that surface by design, so they opt in once here. Same .targets placement
+       rationale as RollForward above: IsTestProject is set by the project body. -->
+  <PropertyGroup Condition="'$(IsTestProject)' == 'true'">
+    <NoWarn>$(NoWarn);NEXOEXP001</NoWarn>
+  </PropertyGroup>
+
   <!-- NetStandard compatibility shims (Unity 2019+): required members, init-only, etc.
        Evaluated statically (not inside a <Target>) so IDE/language-server design-time builds
        also see the polyfills; a Target-added <Compile> item is invisible to design-time builds,

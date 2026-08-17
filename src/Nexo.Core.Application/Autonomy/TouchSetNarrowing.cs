@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Nexo.Core.Application.Autonomy;
 
 /// <summary>
@@ -7,6 +9,7 @@ namespace Nexo.Core.Application.Autonomy;
 /// <c>AgentPolicyNarrowingValidator</c> child⊆creator rule, expressed over touch-sets so
 /// the loop harness can refuse a widening child before it ever opens.
 /// </summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public static class TouchSetNarrowing
 {
     /// <summary>

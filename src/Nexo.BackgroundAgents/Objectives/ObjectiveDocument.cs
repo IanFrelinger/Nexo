@@ -1,3 +1,5 @@
+#pragma warning disable NEXOEXP001 // Serialises its own experimental tiering fields (Source, Touch); the attributes below still reach consumers.
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Nexo.Core.Application.Autonomy;
 
@@ -55,12 +57,14 @@ public sealed record ObjectiveDocument
     /// an operator-authored artifact — and machine intake paths stamp their source
     /// explicitly (the telemetry extractor always stamps <see cref="ObjectiveSource.Telemetry"/>).
     /// </summary>
+    [Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
     public ObjectiveSource Source { get; init; } = ObjectiveSource.Human;
 
     /// <summary>
     /// The declared blast radius (R1.3): what the extension is permitted to affect.
     /// Null = undeclared, which classifies at the most restrictive applicable tier (R1.4).
     /// </summary>
+    [Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
     public TouchSet? Touch { get; init; }
 
     /// <summary>UTC timestamp when the objective was first created (file mtime fallback).</summary>

@@ -1,6 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Nexo.Core.Application.Autonomy;
 using Nexo.Infrastructure.Execution.Sandbox;
 
 namespace Nexo.Infrastructure.Autonomy;
@@ -11,6 +13,7 @@ namespace Nexo.Infrastructure.Autonomy;
 /// reaper is the backstop that eventually kills them. Sweep failures never stop the
 /// service — the next sweep retries, which is the whole point of a periodic backstop.
 /// </summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public sealed class SandboxSessionReaperService : BackgroundService
 {
     private readonly DockerSandboxSessionReaper _reaper;

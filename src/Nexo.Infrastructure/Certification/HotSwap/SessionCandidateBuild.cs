@@ -1,10 +1,13 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using Nexo.Certification.Contracts;
+using Nexo.Core.Application.Autonomy;
 using Nexo.Core.Application.Execution.Ports;
 
 namespace Nexo.Infrastructure.Certification.HotSwap;
 
 /// <summary>One in-session candidate build: what ran, where, and how it ended.</summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public sealed record SessionBuildResult
 {
     /// <summary>Whether the candidate built cleanly inside the session.</summary>
@@ -59,6 +62,7 @@ public sealed record SessionBuildResult
 /// <c>mcr.microsoft.com/dotnet/sdk:9.0</c>) — an older SDK fails the build with NETSDK1045,
 /// which is the correct fail-closed shape, not a silent host-side fallback.</para>
 /// </summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public static class SessionCandidateBuild
 {
     /// <summary>Certificate input kind for a passed in-session build.</summary>

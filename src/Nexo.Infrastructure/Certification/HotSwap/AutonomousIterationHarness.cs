@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 using Nexo.Certification.Contracts;
 using Nexo.Core.Application.Autonomy;
@@ -11,6 +12,7 @@ using Nexo.Core.Domain.Bricks.Ports;
 namespace Nexo.Infrastructure.Certification.HotSwap;
 
 /// <summary>The four terminal states of one loop iteration (autonomy spec R2.3).</summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public enum IterationOutcome
 {
     /// <summary>Certified and hot-swapped without human involvement (Tier 0).</summary>
@@ -38,6 +40,7 @@ public enum IterationOutcome
 /// as REPAIRABLE — a proposer may be handed these, because they describe its own text and
 /// nothing of the witness. Null for every other outcome.
 /// </param>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public sealed record IterationResult(
     IterationOutcome Outcome,
     string Explanation,
@@ -47,6 +50,7 @@ public sealed record IterationResult(
     IReadOnlyList<string>? BuildDiagnostics = null);
 
 /// <summary>The context an iteration runs under: the objective's declarations, projected to core types.</summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public sealed record ProposalIterationContext
 {
     /// <summary>Objective id; doubles as the lineage key for demotion tracking (R5.5).</summary>
@@ -72,6 +76,7 @@ public sealed record ProposalIterationContext
 }
 
 /// <summary>What the proposer produced. Producing it (the model cluster) is outside this harness.</summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public sealed record ProposalCandidate
 {
     /// <summary>Brick instance for witness execution.</summary>
@@ -117,6 +122,7 @@ public sealed record ProposalCandidate
 /// compilation containment only, and nothing yet claims contained execution. The write
 /// surface IS confined separately, by <c>ProposerConfinement</c>'s tool allowlist.</para>
 /// </summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public sealed class AutonomousIterationHarness
 {
     private readonly ICertificationGate _gate;

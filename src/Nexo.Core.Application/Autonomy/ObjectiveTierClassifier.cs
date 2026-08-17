@@ -1,6 +1,9 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Nexo.Core.Application.Autonomy;
 
 /// <summary>Admission tier of one objective (autonomous self-extension spec §3).</summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public enum ObjectiveTier
 {
     /// <summary>Leaf-brick blast radius: certified artifacts may hot-swap without human approval.</summary>
@@ -14,6 +17,7 @@ public enum ObjectiveTier
 }
 
 /// <summary>One classification verdict: the tier plus every reason that produced it.</summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public sealed record TierClassification(ObjectiveTier Tier, IReadOnlyList<string> Reasons)
 {
     /// <summary>
@@ -30,6 +34,7 @@ public sealed record TierClassification(ObjectiveTier Tier, IReadOnlyList<string
 /// classifier is deliberately a pure function of the declaration; it never consults gate
 /// results, success streaks, or proposer self-assessment.
 /// </summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public static class ObjectiveTierClassifier
 {
     /// <summary>Classifies one declared touch-set (R3.1) fail-closed (R1.4).</summary>

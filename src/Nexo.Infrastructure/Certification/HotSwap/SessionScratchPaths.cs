@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+using Nexo.Core.Application.Autonomy;
 using Nexo.Core.Application.Execution.Ports;
 
 namespace Nexo.Infrastructure.Certification.HotSwap;
@@ -15,6 +17,7 @@ namespace Nexo.Infrastructure.Certification.HotSwap;
 /// runs as root there and writes under <c>$HOME</c> even for an offline, package-free
 /// restore. Everything else the toolchain touches lives on the image and is read.</para>
 /// </summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public static class SessionScratchPaths
 {
     /// <summary>Temp directory the toolchain's pipes and scratch files land in.</summary>

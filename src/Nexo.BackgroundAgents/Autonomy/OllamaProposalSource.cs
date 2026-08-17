@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
@@ -9,6 +10,7 @@ using Nexo.Core.Application.Autonomy;
 namespace Nexo.BackgroundAgents.Autonomy;
 
 /// <summary>Configuration for <see cref="OllamaProposalSource"/>. Everything model-shaped is here, not compiled in.</summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public sealed class OllamaProposalOptions
 {
     /// <summary>Base URL of the ollama daemon.</summary>
@@ -69,6 +71,7 @@ public sealed class OllamaProposalOptions
 }
 
 /// <summary>Prompt framings; see <see cref="OllamaProposalOptions.Style"/>.</summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public enum PromptStyle
 {
     /// <summary>Complete file with the method body missing; model fills the body.</summary>
@@ -89,6 +92,7 @@ public enum PromptStyle
 /// and rides the lineage into the certificate's <c>generation-depth</c> input — so "which
 /// model produced this, and was it a repair" is evidence, not prose.</para>
 /// </summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public sealed class OllamaProposalSource : IProposalSource
 {
     private static readonly JsonSerializerOptions Json = new() { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };

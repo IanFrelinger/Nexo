@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Nexo.Core.Application.Autonomy;
 
 /// <summary>
@@ -7,6 +9,7 @@ namespace Nexo.Core.Application.Autonomy;
 /// (certificates whose inputs include a revoked artifact become suspect) builds on this
 /// same list.
 /// </summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public interface ICertificateRevocationList
 {
     /// <summary>Whether the given certificate content hash is revoked.</summary>

@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Nexo.Core.Application.Autonomy;
 
 /// <summary>
@@ -5,6 +7,7 @@ namespace Nexo.Core.Application.Autonomy;
 /// The source is recorded on the objective and flows into the certificate's inputs —
 /// the loop's decision channel is an attack surface and is treated as one.
 /// </summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public enum ObjectiveSource
 {
     /// <summary>An explicit human objective (trust root; the only source permitted to open Tier 2 work).</summary>

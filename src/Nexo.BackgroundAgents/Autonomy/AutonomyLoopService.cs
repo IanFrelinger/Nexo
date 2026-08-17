@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Nexo.BackgroundAgents.Objectives;
@@ -9,6 +10,7 @@ using Nexo.Infrastructure.Certification.HotSwap;
 namespace Nexo.BackgroundAgents.Autonomy;
 
 /// <summary>Where the loop runs and what it may do — the operator's dial.</summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public sealed class AutonomyLoopSettings
 {
     /// <summary>Seconds between sweeps of the objective store. 0 disables the loop.</summary>
@@ -56,6 +58,7 @@ public sealed class AutonomyLoopSettings
 /// without them would be a claim about nothing. Proposal and iteration failures alike
 /// record an attempt and move on: one bad objective must not wedge the sweep.</para>
 /// </summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public sealed class AutonomyLoopService : BackgroundService
 {
     private readonly IObjectiveStore _objectives;

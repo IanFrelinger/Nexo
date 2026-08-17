@@ -1,3 +1,4 @@
+#pragma warning disable NEXOEXP001 // Parses the experimental tiering fields (source, touch-set) of an objective by design; see docs/SdkCompatibilityPolicy.md.
 using System.Globalization;
 using System.Text;
 using Nexo.Core.Application.Autonomy;

@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Nexo.Core.Application.Autonomy;
 
 /// <summary>
@@ -11,6 +13,7 @@ namespace Nexo.Core.Application.Autonomy;
 /// shrinking this list — is itself a Tier 2 change (R3.3), which is why this file's own
 /// path is inside the enumeration it defines.
 /// </summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public static class TrustKernel
 {
     /// <summary>Repo-relative path prefixes of the trust kernel (forward slashes).</summary>

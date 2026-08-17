@@ -1,3 +1,4 @@
+#pragma warning disable NEXOEXP001 // The gate enforces the experimental autonomy contract (touch-set, kernel prefixes) by design; see docs/SdkCompatibilityPolicy.md.
 using System.Collections.Immutable;
 using System.Text;
 using Microsoft.CodeAnalysis;

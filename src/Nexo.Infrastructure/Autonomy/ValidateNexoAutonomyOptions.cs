@@ -1,4 +1,6 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Options;
+using Nexo.Core.Application.Autonomy;
 
 namespace Nexo.Infrastructure.Autonomy;
 
@@ -14,6 +16,7 @@ namespace Nexo.Infrastructure.Autonomy;
 /// egress), and an air-gapped host running a local model is a legitimate, arguably ideal,
 /// deployment. Refusing it here would enforce the reverse of the invariant.</para>
 /// </summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public sealed class ValidateNexoAutonomyOptions : IValidateOptions<NexoAutonomyOptions>
 {
     /// <inheritdoc />

@@ -1,8 +1,10 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Nexo.Certification.Contracts;
+using Nexo.Core.Application.Autonomy;
 using Nexo.Core.Domain.Bricks;
 using Nexo.Core.Domain.Execution;
 using Nexo.Infrastructure.Testing.CodeAnalysis;
@@ -34,6 +36,7 @@ namespace Nexo.Infrastructure.Certification.HotSwap;
 /// drain generation N → unload → drive collection and report leak suspicion by context
 /// name (the <see cref="MutantAssemblyLoadContext"/> attribution trick).
 /// </remarks>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public sealed class CertifiedBrickHotSwapHost : IDisposable
 {
     private static readonly TimeSpan DefaultDrainTimeout = TimeSpan.FromSeconds(30);

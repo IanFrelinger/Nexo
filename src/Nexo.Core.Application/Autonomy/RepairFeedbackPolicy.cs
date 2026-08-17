@@ -1,9 +1,12 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Nexo.Core.Application.Autonomy;
 
 /// <summary>
 /// How much of a rejection a proposer may see when it is asked to repair its candidate.
 /// The levels are ordered by disclosure; each strictly contains the one before it.
 /// </summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public enum RepairDisclosure
 {
     /// <summary>
@@ -38,6 +41,7 @@ public enum RepairDisclosure
 /// A large hosted model and a 7B local one need different settings on the same loop, so
 /// nothing here is compiled in.
 /// </summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public sealed class RepairFeedbackPolicy
 {
     /// <summary>What a proposer may see. Default <see cref="RepairDisclosure.OwnOutput"/>.</summary>

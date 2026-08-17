@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Nexo.Core.Application.Autonomy;
 
 /// <summary>
@@ -8,6 +10,7 @@ namespace Nexo.Core.Application.Autonomy;
 /// its depth, because a depth above zero without named parents, or parents without a
 /// depth above zero, is refused before anything else runs.
 /// </summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public sealed record GenerationLineage
 {
     /// <summary>Recursion depth: 0 = human-authored proposer context; n+1 = produced using depth-n artifacts.</summary>
@@ -73,6 +76,7 @@ public sealed record GenerationLineage
 /// swap host. Default 2. Raising it is a Tier 2 change — which is why the environment
 /// variable can only LOWER it: a deployment may be stricter than this file, never looser.
 /// </summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public static class RecursionDiscipline
 {
     /// <summary>Environment variable that may LOWER the ceiling (stricter deployments only).</summary>

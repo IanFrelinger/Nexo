@@ -1,6 +1,8 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Nexo.BackgroundAgents.Objectives;
+using Nexo.Core.Application.Autonomy;
 
 namespace Nexo.BackgroundAgents.Autonomy;
 
@@ -13,6 +15,7 @@ namespace Nexo.BackgroundAgents.Autonomy;
 /// running it on a schedule against a live backlog are different decisions, and a host
 /// that wants one-shot iterations should not acquire a background sweeper by accident.</para>
 /// </summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public static class AutonomyLoopServiceCollectionExtensions
 {
     /// <summary>

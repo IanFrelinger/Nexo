@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using Nexo.Core.Application.Autonomy;
 using Nexo.Core.Application.Certification.Models;
@@ -16,6 +17,7 @@ namespace Nexo.BackgroundAgents.Autonomy;
 /// one would be a claim about nothing, which is precisely the failure the whole gate
 /// exists to prevent.</para>
 /// </summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public static class ObjectiveArtifacts
 {
     private static readonly JsonSerializerOptions Json = new()

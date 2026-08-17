@@ -1,3 +1,4 @@
+#pragma warning disable NEXOEXP001 // The gate enforces the experimental autonomy contract (touch-set) by design; see docs/SdkCompatibilityPolicy.md.
 using Nexo.Core.Application.Autonomy;
 using Nexo.Core.Application.Orchestration;
 using Nexo.Core.Domain.Bricks.Ports;

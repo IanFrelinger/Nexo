@@ -1,4 +1,6 @@
+using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Logging;
+using Nexo.Core.Application.Autonomy;
 
 namespace Nexo.Infrastructure.Certification.HotSwap;
 
@@ -7,6 +9,7 @@ namespace Nexo.Infrastructure.Certification.HotSwap;
 /// provenance graph; until that projection lands, the default sink writes structured logs.
 /// Implementations must not throw — a provenance sink failure must never fail a swap.
 /// </summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public interface ICertifiedBrickSwapProvenanceSink
 {
     /// <summary>Records one provenance event.</summary>
@@ -14,6 +17,7 @@ public interface ICertifiedBrickSwapProvenanceSink
 }
 
 /// <summary>Default sink: structured log lines, one per event.</summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public sealed class LoggingBrickSwapProvenanceSink : ICertifiedBrickSwapProvenanceSink
 {
     private readonly ILogger<LoggingBrickSwapProvenanceSink> _logger;

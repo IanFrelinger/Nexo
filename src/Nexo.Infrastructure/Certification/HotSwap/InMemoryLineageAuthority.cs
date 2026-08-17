@@ -1,9 +1,11 @@
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using Nexo.Core.Application.Autonomy;
 
 namespace Nexo.Infrastructure.Certification.HotSwap;
 
 /// <summary>Process-local lineage authority (R5.5). Demotion accumulates; there is no promotion.</summary>
+[Experimental(AutonomyExperimental.DiagnosticId, UrlFormat = AutonomyExperimental.UrlFormat)]
 public sealed class InMemoryLineageAuthority : ILineageAuthority
 {
     private readonly ConcurrentDictionary<string, int> _rollbacks = new(StringComparer.OrdinalIgnoreCase);
