@@ -86,7 +86,8 @@ public static class RepoPathResolver
         string stateDir;
         if (!string.IsNullOrWhiteSpace(configuredStateDirectory))
         {
-            var configured = configuredStateDirectory.Trim();
+            // netstandard2.0 has no nullable annotation on IsNullOrWhiteSpace; the '!' is safe here.
+            var configured = configuredStateDirectory!.Trim();
             stateDir = Path.GetFullPath(Path.IsPathRooted(configured) ? configured : Path.Combine(root, configured));
         }
         else

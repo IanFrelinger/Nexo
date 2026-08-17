@@ -40,7 +40,7 @@ ENV NEXO_STATE_DIR=/data/state \
     NEXO_FORGE_ROOT=/data/state/runtime-studio/forge \
     NEXO_OBJECTIVES_ROOT=/data/state/runtime-studio/objectives \
     NEXO_OBSERVATIONS_PATH=/data/state/runtime-studio/observations
-RUN mkdir -p /data/state/runtime-studio /app/.nexo && chown -R app:app /data /app/.nexo
+RUN mkdir -p /data/state/runtime-studio /app/.nexo /app/config && chown -R app:app /data /app/.nexo /app/config
 
 # Non-root: the aspnet 8+ images ship an unprivileged 'app' user (numeric $APP_UID so k8s runAsNonRoot can
 # verify it). Commands that write into a mounted workspace need it writable by that uid (or run with --user).
