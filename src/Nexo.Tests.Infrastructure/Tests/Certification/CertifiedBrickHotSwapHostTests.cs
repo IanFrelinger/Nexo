@@ -227,6 +227,9 @@ public sealed class HotSwapOtherBrick : DomainBrick
         (await Execute(host, ProbeBrickId)).Get<string>("marker").Should().Be("v2");
 
         second.PreviousGenerationContextName.Should().Be(first.GenerationContextName);
+        // Collection is driven by the host (WaitForContextReleaseAsync: bounded GC passes with a
+        // yield between them), not by this test — the flag below is what the host observed, so
+        // a test-side sweep could never turn it true; the retry has to live where the flag is set.
         second.PreviousGenerationCollected.Should().BeTrue(
             "the drained generation-1 context must be collected once its bricks are dropped");
         AssemblyLoadContext.All.Should().NotContain(

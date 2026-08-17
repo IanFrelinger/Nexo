@@ -16,9 +16,12 @@ namespace Nexo.Tests.Infrastructure.Tests.Hosting;
 /// <summary>
 /// E2E smoke tests for the AddNexo hosting API.
 /// Validates that the full kernel (orchestration, adaptation, persistence, validation) can be resolved and used.
+/// Two tests set process-wide env vars (NEXO_DEPLOYMENT_PROFILE, NEXO_USE_MEAI_PIPELINE) that
+/// AddNexo reads, so the class runs in the serialized "EnvironmentVariables" collection.
 /// </summary>
 [Trait("Category", "E2E")]
 [Trait("Category", "ProdStyle")]
+[Collection("EnvironmentVariables")]
 public sealed class HostingE2ESmokeTests
 {
     [Fact(Timeout = TestTimeouts.E2E)]

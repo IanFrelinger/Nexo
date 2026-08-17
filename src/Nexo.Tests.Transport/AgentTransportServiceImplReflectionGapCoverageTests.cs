@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using FluentAssertions;
 using Grpc.Core;
@@ -123,37 +124,25 @@ public sealed class AgentTransportServiceImplReflectionGapCoverageTests
         sans.Should().Contain(s => s.Contains("localhost", StringComparison.Ordinal));
     }
 
+    /// <summary>
+    /// Self-signed certificate with a DNS SAN, generated in-process (same shape as the
+    /// HttpBarrierContextMiddleware tests). No openssl: the tests only read Subject and the
+    /// 2.5.29.17 extension, and shelling out made the test depend on PATH, on a 10 s cap, and
+    /// on a temp-directory delete that could mask the timeout.
+    /// </summary>
     private static X509Certificate2 CreateCertificateWithSan(string commonName, string dnsName)
     {
-        var dir = Path.Combine(Path.GetTempPath(), "nexo-agent-transport-cert-" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(dir);
-        var certPem = Path.Combine(dir, "cert.pem");
-        var keyPem = Path.Combine(dir, "key.pem");
-
-        try
-        {
-            var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
-            {
-                FileName = "openssl",
-                Arguments =
-                    $"req -x509 -newkey rsa:2048 -nodes -keyout \"{keyPem}\" -out \"{certPem}\" -days 1 " +
-                    $"-subj /CN={commonName} -addext \"subjectAltName=DNS:{commonName},DNS:{dnsName}\"",
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-            });
-            process.Should().NotBeNull();
-            process!.WaitForExit(10_000).Should().BeTrue();
-            process.ExitCode.Should().Be(0);
-
-            /// <summary>X509 certificate2.</summary>
-            return new X509Certificate2(certPem);
-        }
-        finally
-        {
-            if (Directory.Exists(dir))
-                Directory.Delete(dir, recursive: true);
-        }
+        using var rsa = RSA.Create(2048);
+        var request = new CertificateRequest(
+            $"CN={commonName}",
+            rsa,
+            HashAlgorithmName.SHA256,
+            RSASignaturePadding.Pkcs1);
+        var sanBuilder = new SubjectAlternativeNameBuilder();
+        sanBuilder.AddDnsName(commonName);
+        sanBuilder.AddDnsName(dnsName);
+        request.CertificateExtensions.Add(sanBuilder.Build());
+        return request.CreateSelfSigned(DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddDays(1));
     }
 
     private static T? InvokeStatic<T>(string methodName, params object?[] args)

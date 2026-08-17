@@ -13,7 +13,7 @@ namespace Nexo.Runtime.Routing;
 public sealed class EndpointHealthMonitor : BackgroundService
 {
     private readonly IEndpointRegistry _endpointRegistry;
-    private readonly GrpcAgentTransport _grpcTransport;
+    private readonly GrpcAgentTransport? _grpcTransport;
     private readonly RoutingOptions _routingOptions;
     private readonly ILogger<EndpointHealthMonitor> _logger;
     private readonly Dictionary<string, int> _consecutiveFailures = new(StringComparer.OrdinalIgnoreCase);
@@ -23,27 +23,51 @@ public sealed class EndpointHealthMonitor : BackgroundService
         GrpcAgentTransport grpcTransport,
         IOptions<RoutingOptions> routingOptions,
         ILogger<EndpointHealthMonitor> logger)
+        : this(endpointRegistry, routingOptions, logger)
+    {
+        _grpcTransport = grpcTransport ?? throw new ArgumentNullException(nameof(grpcTransport));
+    }
+
+    /// <summary>
+    /// Transport-less constructor so the monitor resolves under every deployment profile:
+    /// <c>AddNexoRuntimeRouting</c> registers this hosted service unconditionally, while the
+    /// kernel registers <see cref="GrpcAgentTransport"/> only for profiles that include runtime
+    /// transport (Full/Server). DI picks the transport constructor whenever the transport is
+    /// registered and falls back to this one otherwise; without a transport there is nothing
+    /// to probe with, so the monitor stays idle instead of failing host start-up on an
+    /// unresolvable dependency.
+    /// </summary>
+    public EndpointHealthMonitor(
+        IEndpointRegistry endpointRegistry,
+        IOptions<RoutingOptions> routingOptions,
+        ILogger<EndpointHealthMonitor> logger)
     {
         _endpointRegistry = endpointRegistry ?? throw new ArgumentNullException(nameof(endpointRegistry));
-        _grpcTransport = grpcTransport ?? throw new ArgumentNullException(nameof(grpcTransport));
         _routingOptions = routingOptions?.Value ?? new RoutingOptions();
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        if (_grpcTransport is null)
+        {
+            _logger.LogInformation(
+                "Endpoint health monitor is idle: no gRPC agent transport is registered under this deployment profile.");
+            return;
+        }
+
         var intervalSeconds = Math.Max(1, _routingOptions.HealthCheckIntervalSeconds);
         using var timer = new PeriodicTimer(TimeSpan.FromSeconds(intervalSeconds));
 
-        await ProbeAllAsync(stoppingToken);
+        await ProbeAllAsync(_grpcTransport, stoppingToken);
 
         while (await timer.WaitForNextTickAsync(stoppingToken))
         {
-            await ProbeAllAsync(stoppingToken);
+            await ProbeAllAsync(_grpcTransport, stoppingToken);
         }
     }
 
-    private async Task ProbeAllAsync(CancellationToken cancellationToken)
+    private async Task ProbeAllAsync(GrpcAgentTransport grpcTransport, CancellationToken cancellationToken)
     {
         foreach (var descriptor in _endpointRegistry.GetAll())
         {
@@ -54,7 +78,7 @@ public sealed class EndpointHealthMonitor : BackgroundService
 
             try
             {
-                var health = await _grpcTransport.CheckEndpointHealthAsync(
+                var health = await grpcTransport.CheckEndpointHealthAsync(
                     descriptor.Endpoint,
                     cancellationToken);
                 _endpointRegistry.UpdateHealth(descriptor.Endpoint, health.IsHealthy);
