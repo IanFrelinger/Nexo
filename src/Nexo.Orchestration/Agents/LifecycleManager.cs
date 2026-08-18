@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using Nexo.Abstractions.Agents;
 
@@ -19,7 +20,14 @@ namespace Nexo.Orchestration.Agents;
 public sealed class LifecycleManager
 {
     private readonly ILogger<LifecycleManager> _logger;
-    private readonly Dictionary<string, AgentContainer> _activeAgents = new();
+
+    // Concurrent, because concurrent orchestrations share one manager. A plain Dictionary was mutated
+    // by one orchestration while another enumerated it, and ShutdownAllAsync then handed a null agent
+    // id to TryGetValue:
+    //   ArgumentNullException: Value cannot be null. (Parameter 'key')
+    //     at LifecycleManager.ShutdownAgentAsync -> ShutdownAllAsync -> Orchestrator.OrchestrateAsync
+    // Every task submitted in that burst came back success=False. Found by UAT tier 10.
+    private readonly ConcurrentDictionary<string, AgentContainer> _activeAgents = new();
     private readonly HealthMonitor _healthMonitor;
     private readonly CancellationTokenSource _shutdownCts = new();
 
@@ -132,6 +140,16 @@ public sealed class LifecycleManager
     /// <returns>A task that represents the asynchronous shutdown operation.</returns>
     public async Task ShutdownAgentAsync(string agentId, CancellationToken cancellationToken = default)
     {
+        // A concurrently-mutated Dictionary handed this method a null id, which TryGetValue turns into
+        // an ArgumentNullException that failed the whole orchestration. The map is concurrent now, so
+        // this should be unreachable — it stays because "shut down nothing" is the right answer to a
+        // missing id, and an orchestration must not die over one.
+        if (string.IsNullOrEmpty(agentId))
+        {
+            _logger.LogWarning("Attempted to shutdown an agent with no id");
+            return;
+        }
+
         if (!_activeAgents.TryGetValue(agentId, out var container))
         {
             _logger.LogWarning("Attempted to shutdown unregistered agent {AgentId}", agentId);
@@ -143,7 +161,7 @@ public sealed class LifecycleManager
         try
         {
             await container.ShutdownAsync(cancellationToken);
-            _activeAgents.Remove(agentId);
+            _activeAgents.TryRemove(agentId, out _);
             _healthMonitor.UnregisterAgent(agentId);
             _logger.LogInformation("Agent {AgentId} shut down successfully", agentId);
         }
@@ -152,7 +170,7 @@ public sealed class LifecycleManager
             _logger.LogError(ex, "Error shutting down agent {AgentId}", agentId);
             // Force termination if graceful shutdown fails
             container.Terminate();
-            _activeAgents.Remove(agentId);
+            _activeAgents.TryRemove(agentId, out _);
             _healthMonitor.UnregisterAgent(agentId);
             throw;
         }
@@ -170,7 +188,8 @@ public sealed class LifecycleManager
     {
         _logger.LogInformation("Shutting down all agents ({Count} agents)", _activeAgents.Count);
 
-        var shutdownTasks = _activeAgents.Keys
+        // Snapshot first: another orchestration may register or remove agents while this one shuts down.
+        var shutdownTasks = _activeAgents.Keys.ToArray()
             .Select(agentId => ShutdownAgentAsync(agentId, cancellationToken))
             .ToArray();
 
