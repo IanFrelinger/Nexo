@@ -60,15 +60,20 @@ API=$(grep -m1 -oE 'Now listening on: *http://[^ ]+' "$OUT/api-load.log" \
 say "10.1 submit $CONCURRENCY tasks at once"
 T0=$(date +%s)
 rm -f "$OUT/ids.txt" "$OUT/codes.txt"
+SUBMIT_PIDS=""
 for i in $(seq 1 "$CONCURRENCY"); do
   (
-    body=$(curl -s --max-time 300 "$API/api/copilot/task" -H 'Content-Type: application/json' \
+    body=$(curl -s --max-time 120 "$API/api/copilot/task" -H 'Content-Type: application/json' \
              -d "{\"task\": \"uat concurrent probe $i\", \"auditCount\": 1}")
     printf '%s\n' "$body" | grep -o '"taskId":"[^"]*"' | head -1 | cut -d'"' -f4 >>"$OUT/ids.txt"
     printf '%s\n' "$body" | grep -oq '"success":true' && echo ok >>"$OUT/codes.txt" || echo bad >>"$OUT/codes.txt"
   ) &
+  SUBMIT_PIDS="$SUBMIT_PIDS $!"
 done
-wait
+# Wait for the SUBMISSIONS, never a bare `wait`: the API is a background job of this same shell, so
+# `wait` with no arguments waits for a server that is designed never to exit. That hung the CI job for
+# twenty minutes and read as a product defect until the API's own log showed it idle and healthy.
+for p in $SUBMIT_PIDS; do wait "$p" 2>/dev/null; done
 ELAPSED=$(( $(date +%s) - T0 ))
 
 SUBMITTED=$(grep -c . "$OUT/ids.txt" 2>/dev/null || echo 0)

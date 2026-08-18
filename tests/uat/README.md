@@ -111,3 +111,12 @@ On Windows locally, the API-starting tiers can leave a process holding `:5000` i
 Git Bash's `pkill` does not reliably kill it. `Get-NetTCPConnection -LocalPort 5000 | Stop-Process` does.
 The tiers abort rather than run against a dirty port, so the symptom is a clear refusal, not a false
 failure.
+
+5. **Never `wait` with no arguments.** These tiers run the API as a background job of the same shell,
+   so a bare `wait` waits for a server designed never to exit. It hung a CI job for twenty minutes and
+   read as a product defect — the API's own log showed it idle and healthy the whole time. Collect the
+   PIDs you actually care about and wait on those.
+6. **Unset `ASPNETCORE_HTTP_PORTS` in anything that starts the API, including throwaway scripts.** The
+   SDK image sets it to 8080. A one-off reproduction written without it pointed `curl` at `:5000`,
+   got `000` on every request, and briefly looked like "the API is unreachable under concurrency on
+   Linux". Read the listen line out of the log rather than assuming a port.
