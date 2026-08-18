@@ -27,7 +27,21 @@ public sealed class LifecycleManager
     //   ArgumentNullException: Value cannot be null. (Parameter 'key')
     //     at LifecycleManager.ShutdownAgentAsync -> ShutdownAllAsync -> Orchestrator.OrchestrateAsync
     // Every task submitted in that burst came back success=False. Found by UAT tier 10.
-    private readonly ConcurrentDictionary<string, AgentContainer> _activeAgents = new();
+    private readonly ConcurrentDictionary<string, AgentContainer> _rootAgents = new();
+
+    // ...and scoped, because making the map thread-safe stopped the corruption without making
+    // concurrent orchestration CORRECT. Decomposition ids are not unique between runs -- the parser's
+    // fallback emits "fallback-1" every time -- so two runs registered different container instances
+    // under one id. The later registration won, GetAgent handed a run the OTHER run's container, and
+    // execution failed with "cannot execute from state Executing"; ShutdownAllAsync then tore down
+    // both runs' agents. Roughly half of every concurrent burst failed.
+    //
+    // A run scope flows with the async context, so the orchestrator AND anything it awaits (notably
+    // IAgentTransport, which resolves agents by id from this same manager) see that run's agents
+    // without a single signature changing. Outside a scope, behaviour is exactly as before.
+    private readonly AsyncLocal<ConcurrentDictionary<string, AgentContainer>?> _runScope = new();
+
+    private ConcurrentDictionary<string, AgentContainer> ActiveAgents => _runScope.Value ?? _rootAgents;
     private readonly HealthMonitor _healthMonitor;
     private readonly CancellationTokenSource _shutdownCts = new();
 
@@ -43,8 +57,44 @@ public sealed class LifecycleManager
     }
 
     /// <summary>
+    /// Isolates every agent registered inside the returned scope from other concurrent runs.
+    /// </summary>
+    /// <remarks>
+    /// Open one per orchestration. Registration, lookup, and <see cref="ShutdownAllAsync"/> then apply
+    /// to that run alone, so two runs can use the same agent ids — which they do, because decomposition
+    /// ids are not unique between runs — without overwriting each other's containers or shutting down
+    /// each other's agents. The scope flows with the async context, so anything the run awaits sees it
+    /// too. Disposing restores whatever was in effect before, so nesting is safe.
+    /// </remarks>
+    public IDisposable BeginRunScope()
+    {
+        var previous = _runScope.Value;
+        _runScope.Value = new ConcurrentDictionary<string, AgentContainer>();
+        return new RunScope(this, previous);
+    }
+
+    private sealed class RunScope : IDisposable
+    {
+        private readonly LifecycleManager _owner;
+        private readonly ConcurrentDictionary<string, AgentContainer>? _previous;
+        private int _disposed;
+
+        public RunScope(LifecycleManager owner, ConcurrentDictionary<string, AgentContainer>? previous)
+        {
+            _owner = owner;
+            _previous = previous;
+        }
+
+        public void Dispose()
+        {
+            if (Interlocked.Exchange(ref _disposed, 1) != 0) return;
+            _owner._runScope.Value = _previous;
+        }
+    }
+
+    /// <summary>
     /// Registers and initializes an agent.
-    /// 
+    ///
     /// Registers the agent in the active agents dictionary, initializes it,
     /// and registers it with the health monitor for health tracking.
     /// </summary>
@@ -71,7 +121,7 @@ public sealed class LifecycleManager
         try
         {
             await handle.InitializeAsync(cancellationToken);
-            _activeAgents[container.AgentId] = container;
+            ActiveAgents[container.AgentId] = container;
             _healthMonitor.RegisterAgent(container);
             
             _logger.LogInformation("Agent {AgentId} registered and initialized", container.AgentId);
@@ -108,7 +158,7 @@ public sealed class LifecycleManager
         IReadOnlyDictionary<string, object>? dependencyOutputs = null,
         CancellationToken cancellationToken = default)
     {
-        if (!_activeAgents.TryGetValue(agentId, out var container))
+        if (!ActiveAgents.TryGetValue(agentId, out var container))
         {
             throw new InvalidOperationException($"Agent {agentId} is not registered");
         }
@@ -150,7 +200,7 @@ public sealed class LifecycleManager
             return;
         }
 
-        if (!_activeAgents.TryGetValue(agentId, out var container))
+        if (!ActiveAgents.TryGetValue(agentId, out var container))
         {
             _logger.LogWarning("Attempted to shutdown unregistered agent {AgentId}", agentId);
             return;
@@ -161,7 +211,7 @@ public sealed class LifecycleManager
         try
         {
             await container.ShutdownAsync(cancellationToken);
-            _activeAgents.TryRemove(agentId, out _);
+            ActiveAgents.TryRemove(agentId, out _);
             _healthMonitor.UnregisterAgent(agentId);
             _logger.LogInformation("Agent {AgentId} shut down successfully", agentId);
         }
@@ -170,7 +220,7 @@ public sealed class LifecycleManager
             _logger.LogError(ex, "Error shutting down agent {AgentId}", agentId);
             // Force termination if graceful shutdown fails
             container.Terminate();
-            _activeAgents.TryRemove(agentId, out _);
+            ActiveAgents.TryRemove(agentId, out _);
             _healthMonitor.UnregisterAgent(agentId);
             throw;
         }
@@ -186,10 +236,10 @@ public sealed class LifecycleManager
     /// <returns>A task that represents the asynchronous shutdown operation.</returns>
     public async Task ShutdownAllAsync(CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Shutting down all agents ({Count} agents)", _activeAgents.Count);
+        _logger.LogInformation("Shutting down all agents ({Count} agents)", ActiveAgents.Count);
 
         // Snapshot first: another orchestration may register or remove agents while this one shuts down.
-        var shutdownTasks = _activeAgents.Keys.ToArray()
+        var shutdownTasks = ActiveAgents.Keys.ToArray()
             .Select(agentId => ShutdownAgentAsync(agentId, cancellationToken))
             .ToArray();
 
@@ -206,7 +256,7 @@ public sealed class LifecycleManager
     /// <returns>A read-only list of all active agent containers.</returns>
     public IReadOnlyList<AgentContainer> GetActiveAgents()
     {
-        return _activeAgents.Values.ToList();
+        return ActiveAgents.Values.ToList();
     }
 
     /// <summary>
@@ -216,7 +266,7 @@ public sealed class LifecycleManager
     /// <returns>The agent container if found, null otherwise.</returns>
     public AgentContainer? GetAgent(string agentId)
     {
-        return _activeAgents.TryGetValue(agentId, out var container) ? container : null;
+        return ActiveAgents.TryGetValue(agentId, out var container) ? container : null;
     }
 
     /// <summary>
@@ -243,7 +293,7 @@ public sealed class LifecycleManager
         _logger.LogInformation("Hot-reloading agent {AgentId}", agentId);
 
         // Shutdown old agent if it exists
-        if (_activeAgents.TryGetValue(agentId, out var oldContainer))
+        if (ActiveAgents.TryGetValue(agentId, out var oldContainer))
         {
             await ShutdownAgentAsync(agentId, cancellationToken);
         }

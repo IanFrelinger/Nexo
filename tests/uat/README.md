@@ -121,19 +121,25 @@ Git Bash's `pkill` does not reliably kill it. `Get-NetTCPConnection -LocalPort 5
 The tiers abort rather than run against a dirty port, so the symptom is a clear refusal, not a false
 failure.
 
-## Known open defect that this suite does not gate
+## Concurrency, and why tier 10 gates what it gates
 
-**Concurrent orchestrations share one agent instance.** `tier10.sh` check `10.1b` records the success
-rate of a concurrent burst and deliberately does **not** fail on it. Roughly half of a burst returns
-`success=false` with:
+Tier 10 found three defects stacked behind one another, each with the same user-visible symptom —
+"concurrent submissions don't work" — and each only reachable once the one in front of it was gone:
 
-```
-InvalidOperationException: Agent fallback-1 cannot execute from state Executing
-  at BaseAgent.ExecuteAsync -> AgentContainer.ExecuteAsync -> LifecycleManager.ExecuteAgentAsync
-```
+1. the task store held an **exclusive file lock**, so the second concurrent write threw *after* the
+   task had already run: the work happened and the record was lost;
+2. `LifecycleManager._activeAgents` was a plain `Dictionary` shared across orchestrations, so one run
+   mutated it while another enumerated and a null id reached `TryGetValue`;
+3. concurrent runs registered different containers under the **same decomposition id** (the parser's
+   fallback emits `fallback-1` every time), so a run executed the other run's container
+   (`cannot execute from state Executing`) and `ShutdownAllAsync` tore down both.
 
-Agents are registered under a fixed id in a process-wide map, and `BaseAgent` forbids re-entrant
-execution, so a second concurrent request finds the instance already `Executing`. Fixing it is a design
-decision — per-request instances, a pool, or serialised orchestration — not a missing lock, so it is
-recorded rather than gated. **Make `10.1b` a gating check the day that decision lands.** What tier 10
-does gate is the record: every task that ran appears exactly once, under its own id, retrievable.
+The third was fixed with an **ambient run scope**: `LifecycleManager` keeps its agent map in an
+`AsyncLocal`, and `OrchestrateAsync` opens one scope per run. Two runs may then reuse an id safely, and
+because the scope flows with the async context, `IAgentTransport` — which resolves agents from the same
+manager — sees the right run without a signature change. Serialising orchestration would have capped
+throughput at one; a pool would have kept the shared state and added lifecycle; renaming ids would have
+meant remapping dependency edges, execution order, outputs and the integrator consistently.
+
+Fixing any one of the three alone looks like success to a check that counts HTTP 200s. Tier 10 asks
+whether the **work reached the record**, which is why it kept failing until all three were gone.
