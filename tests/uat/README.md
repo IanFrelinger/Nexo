@@ -12,9 +12,18 @@ each case the code was fine.
 | 2 | `tier0-2.sh` | Does the certification gate admit correct code and reject a weak witness? |
 | 4 | `tier4.sh` | Does the reference brick build, and does the API actually fail closed? |
 | 5 | `tier5.sh` | Do the golden paths in `docs/DEPLOYMENT.md` describe the compose files an operator would run? |
-
+| 6 | `tier6.sh` | Turning MCP/A2A on does not open a door: protocol ingress stays credentialed on every verb |
 | 7 | `tier7.sh` | The security negatives `SECURITY.md` claims: what is unmapped, what refuses, what is credentialed |
 | 8 | `tier8.sh` | Do the docs still describe this repo — do the paths they name exist, and can the commands they print run? |
+| 9 | `tier9.sh` | The release path: public-API baselines, and that the experimental surface is not in the stable promise |
+| 10 | `tier10.sh` | Under concurrent submissions, is every task still on the record exactly once? |
+| 11 | *(no script)* | The `cross-platform` job: the deterministic tiers, on Windows |
+
+`tier6.sh` covers MCP ingress but **not** A2A ingress or agent-card anonymity: A2A refuses to start until
+an exposed agent is actually registered, which an out-of-process run of the shipped host cannot do
+(naming an unregistered id is still refused — verified). `McpA2AProtocolIngressProdStyleTests` covers
+that surface in-repo with a test agent. Written down rather than quietly dropped, because a tier that
+appears to cover something it does not is worse than one that says so.
 
 `tier7.sh` tests what `SECURITY.md` **claims**, citing the claim in each check. One thing it deliberately
 does *not* assert is tenant isolation: that page says tenant/org/user headers are "client-asserted" and
@@ -65,7 +74,7 @@ Assert a machine-verifiable outcome, and prefer running the documented thing ove
 The strongest check in the suite greps the API command **out of** `docs/TesterQuickstart.md` and runs
 it; that is what catches the page going stale, which no amount of testing the API itself would.
 
-Four rules, each of which this suite violated at least once before it stopped lying:
+Six rules, each of which this suite violated at least once before it stopped lying:
 
 1. **Never hardcode a verdict.** `time-to-first-audited-job` was written as an unconditional PASS and
    cheerfully reported "167s to a `CopilotTask` entry" during a run where no such entry existed. A
@@ -80,7 +89,51 @@ Four rules, each of which this suite violated at least once before it stopped ly
 4. **Separate the environment from the product.** The SDK image sets `ASPNETCORE_HTTP_PORTS=8080`,
    which made the documented `:5000` look like a defect. The scripts unset it so the container behaves
    like a tester's machine; when a check fails, rule out your own environment before filing anything.
+5. **Never `wait` with no arguments.** These tiers run the API as a background job of the same shell,
+   so a bare `wait` waits for a server designed never to exit. It hung a CI job for twenty minutes and
+   read as "tier 10 hangs under concurrency" — the API's own log showed it idle and healthy throughout.
+   Collect the PIDs you actually care about and wait on those.
+6. **Rule 4 applies to throwaway scripts too.** The one-off reproduction written to *diagnose* rule 5's
+   hang omitted the `unset`, so the API listened on 8080 while `curl` called 5000. Every request
+   returned `000` instantly, and the evidence briefly appeared to say the host became unreachable the
+   moment a second request arrived. Read the listen line out of the log; never assume the port.
 
 And pair every negative with its positive control. "POST without an API key returns 401" proves
 nothing on its own — an endpoint that is simply broken also fails to return 200. The paired check
 ("...and the same POST *with* the key returns 200") is what makes the first one mean *authentication*.
+
+`tier10.sh` is a correctness check, not a benchmark. Timings are recorded for information and nothing
+passes or fails on them, because a shared runner cannot support a latency claim. What it does assert is
+the thing a load test usually misses: that a task which *ran* is on the record, once, under its own id.
+It was written that way on purpose and found a defect on its first run — the store took an exclusive
+file lock, so a second concurrent submission threw **after** the task had already executed, losing the
+record while returning nothing a status-code check would flag.
+
+Tier 11 is not a script. It is the `cross-platform` job in `uat-gate.yml`, which runs the deterministic
+tiers on `windows-latest`: `TesterQuickstart` promises its commands work on Windows *and* in bash on
+Linux/macOS, and the page was written on Windows, so a green on Linux alone is not evidence for half its
+audience. The API-starting tiers stay on Linux — process and port handling differ per platform, and a
+flaky cross-platform job would teach people to ignore the whole gate.
+
+On Windows locally, the API-starting tiers can leave a process holding `:5000` if a run is interrupted;
+
+Git Bash's `pkill` does not reliably kill it. `Get-NetTCPConnection -LocalPort 5000 | Stop-Process` does.
+The tiers abort rather than run against a dirty port, so the symptom is a clear refusal, not a false
+failure.
+
+## Known open defect that this suite does not gate
+
+**Concurrent orchestrations share one agent instance.** `tier10.sh` check `10.1b` records the success
+rate of a concurrent burst and deliberately does **not** fail on it. Roughly half of a burst returns
+`success=false` with:
+
+```
+InvalidOperationException: Agent fallback-1 cannot execute from state Executing
+  at BaseAgent.ExecuteAsync -> AgentContainer.ExecuteAsync -> LifecycleManager.ExecuteAgentAsync
+```
+
+Agents are registered under a fixed id in a process-wide map, and `BaseAgent` forbids re-entrant
+execution, so a second concurrent request finds the instance already `Executing`. Fixing it is a design
+decision — per-request instances, a pool, or serialised orchestration — not a missing lock, so it is
+recorded rather than gated. **Make `10.1b` a gating check the day that decision lands.** What tier 10
+does gate is the record: every task that ran appears exactly once, under its own id, retrievable.
