@@ -120,3 +120,20 @@ On Windows locally, the API-starting tiers can leave a process holding `:5000` i
 Git Bash's `pkill` does not reliably kill it. `Get-NetTCPConnection -LocalPort 5000 | Stop-Process` does.
 The tiers abort rather than run against a dirty port, so the symptom is a clear refusal, not a false
 failure.
+
+## Known open defect that this suite does not gate
+
+**Concurrent orchestrations share one agent instance.** `tier10.sh` check `10.1b` records the success
+rate of a concurrent burst and deliberately does **not** fail on it. Roughly half of a burst returns
+`success=false` with:
+
+```
+InvalidOperationException: Agent fallback-1 cannot execute from state Executing
+  at BaseAgent.ExecuteAsync -> AgentContainer.ExecuteAsync -> LifecycleManager.ExecuteAgentAsync
+```
+
+Agents are registered under a fixed id in a process-wide map, and `BaseAgent` forbids re-entrant
+execution, so a second concurrent request finds the instance already `Executing`. Fixing it is a design
+decision — per-request instances, a pool, or serialised orchestration — not a missing lock, so it is
+recorded rather than gated. **Make `10.1b` a gating check the day that decision lands.** What tier 10
+does gate is the record: every task that ran appears exactly once, under its own id, retrievable.
