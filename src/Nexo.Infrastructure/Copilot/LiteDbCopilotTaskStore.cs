@@ -93,11 +93,19 @@ public sealed class LiteDbCopilotTaskStore : ICopilotTaskStore
         var col = db.GetCollection<CopilotTaskDoc>(CollectionName);
         ILiteQueryable<CopilotTaskDoc> query = col.Query();
         query = tid == "default"
-            ? query.Where(x => x.TenantId == "default" || x.TenantId == null || x.TenantId == "")
-            : query.Where(x => x.TenantId == tid);
+            // BsonExpression, not LINQ, for the same reason EnsureIndexes uses the string overload:
+            // LiteDB resolves a LINQ predicate through a BsonMapper that is not safe to drive from
+            // several threads at once, and a read concurrent with a write can throw
+            // NotSupportedException out of LinqExpressionVisitor.ResolveMember. Reads and writes here
+            // ARE concurrent -- the API queries history while other requests are storing. Parameters
+            // are bound rather than interpolated, so a tenant id cannot alter the filter.
+            ? query.Where("$.TenantId = 'default' OR $.TenantId = null OR $.TenantId = ''")
+            : query.Where("$.TenantId = @0", tid);
         if (since.HasValue)
-            query = query.Where(x => x.SubmittedAt >= since.Value);
-        var docs = query.OrderByDescending(x => x.SubmittedAt).Limit(limit).ToList();
+            // Serialize through the same mapper that wrote the documents, so the comparison is against
+            // the representation actually stored rather than whatever a DateTimeOffset converts to.
+            query = query.Where("$.SubmittedAt >= @0", BsonMapper.Global.Serialize(since.Value));
+        var docs = query.OrderByDescending("$.SubmittedAt").Limit(limit).ToList();
         var records = docs.Select(ToRecord).ToList();
         return Task.FromResult<IReadOnlyList<CopilotTaskRecord>>(records);
     }
