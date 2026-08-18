@@ -74,7 +74,7 @@ Assert a machine-verifiable outcome, and prefer running the documented thing ove
 The strongest check in the suite greps the API command **out of** `docs/TesterQuickstart.md` and runs
 it; that is what catches the page going stale, which no amount of testing the API itself would.
 
-Four rules, each of which this suite violated at least once before it stopped lying:
+Six rules, each of which this suite violated at least once before it stopped lying:
 
 1. **Never hardcode a verdict.** `time-to-first-audited-job` was written as an unconditional PASS and
    cheerfully reported "167s to a `CopilotTask` entry" during a run where no such entry existed. A
@@ -89,6 +89,14 @@ Four rules, each of which this suite violated at least once before it stopped ly
 4. **Separate the environment from the product.** The SDK image sets `ASPNETCORE_HTTP_PORTS=8080`,
    which made the documented `:5000` look like a defect. The scripts unset it so the container behaves
    like a tester's machine; when a check fails, rule out your own environment before filing anything.
+5. **Never `wait` with no arguments.** These tiers run the API as a background job of the same shell,
+   so a bare `wait` waits for a server designed never to exit. It hung a CI job for twenty minutes and
+   read as "tier 10 hangs under concurrency" — the API's own log showed it idle and healthy throughout.
+   Collect the PIDs you actually care about and wait on those.
+6. **Rule 4 applies to throwaway scripts too.** The one-off reproduction written to *diagnose* rule 5's
+   hang omitted the `unset`, so the API listened on 8080 while `curl` called 5000. Every request
+   returned `000` instantly, and the evidence briefly appeared to say the host became unreachable the
+   moment a second request arrived. Read the listen line out of the log; never assume the port.
 
 And pair every negative with its positive control. "POST without an API key returns 401" proves
 nothing on its own — an endpoint that is simply broken also fails to return 200. The paired check
@@ -108,15 +116,7 @@ audience. The API-starting tiers stay on Linux — process and port handling dif
 flaky cross-platform job would teach people to ignore the whole gate.
 
 On Windows locally, the API-starting tiers can leave a process holding `:5000` if a run is interrupted;
+
 Git Bash's `pkill` does not reliably kill it. `Get-NetTCPConnection -LocalPort 5000 | Stop-Process` does.
 The tiers abort rather than run against a dirty port, so the symptom is a clear refusal, not a false
 failure.
-
-5. **Never `wait` with no arguments.** These tiers run the API as a background job of the same shell,
-   so a bare `wait` waits for a server designed never to exit. It hung a CI job for twenty minutes and
-   read as a product defect — the API's own log showed it idle and healthy the whole time. Collect the
-   PIDs you actually care about and wait on those.
-6. **Unset `ASPNETCORE_HTTP_PORTS` in anything that starts the API, including throwaway scripts.** The
-   SDK image sets it to 8080. A one-off reproduction written without it pointed `curl` at `:5000`,
-   got `000` on every request, and briefly looked like "the API is unreachable under concurrency on
-   Linux". Read the listen line out of the log rather than assuming a port.
