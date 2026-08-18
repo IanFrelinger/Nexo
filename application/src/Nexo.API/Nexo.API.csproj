@@ -5,7 +5,7 @@
          also consumed as a library: the net8.0 inner build of Nexo.Tests.Infrastructure (Tests/API)
          and the commercial hosts (GameDirector.Host, Fleet.Api, Fleet.Host) reference this project.
          Multi-target means `dotnet run` on this project needs `-f net10.0` (see CONTRIBUTING.md). -->
-    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <TargetFramework>net10.0</TargetFramework>
     <LangVersion>12.0</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>

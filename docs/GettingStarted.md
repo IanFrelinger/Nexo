@@ -35,7 +35,7 @@ In ~10-15 minutes, you will:
 ## Prerequisites
 
 - **Default:** Docker (Desktop or Engine) and Git. You do **not** need a host .NET SDK for Dev Container, quickstart image, or `docker run … ghcr.io/ianfrelinger/nexo-cli`.
-- **Native lane:** .NET SDK **10.x** (LTS; repo is pinned in `global.json`). The CLI ships on `net10.0` and the API runs on `net10.0` (it multi-targets `net8.0;net10.0` for the `net8.0` test host that links it, so `dotnet run` needs `-f net10.0`); libraries and the remaining `net8.0` test hosts roll forward onto the 10.x runtime (`RollForward=Major`), so an SDK-10-only machine works; no separate .NET 8 runtime is needed.
+- **Native lane:** .NET SDK **10.x** (LTS; repo is pinned in `global.json`). The CLI and API ship on `net10.0`; libraries and the remaining `net8.0` test hosts roll forward onto the 10.x runtime (`RollForward=Major`), so an SDK-10-only machine works; no separate .NET 8 runtime is needed.
 - Optional: Ollama/OpenAI/Azure credentials (model-backed commands).
 
 ## 1) Choose your startup lane

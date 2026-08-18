@@ -87,19 +87,16 @@ else
   result 10 concurrent-submissions-all-answered FAIL "only $SUBMITTED/$CONCURRENCY returned a taskId"
 fi
 
-say "10.1b how many of those orchestrations actually succeeded"
-# KNOWN OPEN DEFECT, deliberately not gated. Concurrent orchestrations share one agent instance under a
-# fixed id, and BaseAgent forbids re-entrant execution:
-#   InvalidOperationException: Agent fallback-1 cannot execute from state Executing
-#     at BaseAgent.ExecuteAsync -> AgentContainer.ExecuteAsync -> LifecycleManager.ExecuteAgentAsync
-# So roughly half of a concurrent burst fails. Fixing it is a design decision -- per-request agent
-# instances, a pool, or serialised orchestration -- not a missing lock, so this records the rate and
-# does not fail. Turn it into a FAIL the day that decision lands; leaving it silent would let the
-# suite imply concurrent submissions work.
+say "10.1b every one of those orchestrations must succeed, not just be recorded"
+# This gates now. It did not always: concurrent runs registered different containers under the same
+# decomposition id (the parser's fallback emits "fallback-1" every time), so a run executed the other
+# run's container and failed with "cannot execute from state Executing", while ShutdownAllAsync tore
+# down both. Roughly half of every burst failed. LifecycleManager now scopes its agent map to the run
+# via BeginRunScope, and 8/8 succeed. A regression here means runs are sharing agents again.
 if [ "$OKS" -eq "$CONCURRENCY" ]; then
-  result 10 concurrent-orchestrations-succeed PASS "$OKS/$CONCURRENCY reported success -- the shared-agent race appears fixed; make this check gate"
+  result 10 concurrent-orchestrations-succeed PASS "$OKS/$CONCURRENCY reported success"
 else
-  result 10 concurrent-orchestrations-succeed PASS "KNOWN: only $OKS/$CONCURRENCY reported success (shared agent instance, 'cannot execute from state Executing'); the RECORD is still intact, which is what this tier gates"
+  result 10 concurrent-orchestrations-succeed FAIL "only $OKS/$CONCURRENCY reported success -- concurrent runs may be sharing agents again (look for 'cannot execute from state Executing' in api-load.log)"
 fi
 
 say "10.2 every id is distinct — no two concurrent tasks share an identity"

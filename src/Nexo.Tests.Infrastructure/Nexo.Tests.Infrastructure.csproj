@@ -36,9 +36,19 @@
        (transitively pulled by other 10.x packages) requires. We therefore run
        the in-process API tests on net10 only, and use the 10.0 TestHost there
        (which adds the missing override). On net8 these files are excluded. -->
+  <!-- Nexo.API ships on net10.0 only, so everything that links it compiles on net10.0 only. Tests/API
+       used to build on net8.0 as well, which forced Nexo.API to multi-target purely to satisfy this
+       reference. That is what made the documented run command in docs/TesterQuickstart fail with
+       "your project targets multiple frameworks" (#350), and those tests were covering a framework
+       the API never ships on. -->
   <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
     <Compile Remove="Helpers/VirtualProduction/**/*.cs" />
     <Compile Remove="Tests/VirtualProduction/**/*.cs" />
+    <Compile Remove="Tests/API/**/*.cs" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+    <ProjectReference Include="..\..\application\src\Nexo.API\Nexo.API.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing"
@@ -76,7 +86,6 @@
     <ProjectReference Include="..\Nexo.Agents.TestKit\Nexo.Agents.TestKit.csproj" />
     <!-- Autonomy campaign (spec §8): objective intake lives in BackgroundAgents. -->
     <ProjectReference Include="..\Nexo.BackgroundAgents\Nexo.BackgroundAgents.csproj" />
-    <ProjectReference Include="..\..\application\src\Nexo.API\Nexo.API.csproj" />
     <ProjectReference Include="..\Nexo.Policies.Dev\Nexo.Policies.Dev.csproj" />
     <ProjectReference Include="..\Nexo.Orchestration\Nexo.Orchestration.csproj" />
     <ProjectReference Include="..\Nexo.Tests.Application\Nexo.Tests.Application.csproj" />

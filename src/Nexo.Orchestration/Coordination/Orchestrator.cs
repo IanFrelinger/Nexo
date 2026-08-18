@@ -180,6 +180,15 @@ public sealed class Orchestrator
         CancellationToken cancellationToken = default)
     {
         var correlationId = Guid.NewGuid().ToString();
+
+        // Every agent this run registers belongs to this run. Decomposition ids are not unique between
+        // runs (the parser's fallback emits "fallback-1" every time), so without a scope two concurrent
+        // orchestrations register different containers under one id: the later wins, the earlier run
+        // executes the other's container and fails with "cannot execute from state Executing", and
+        // ShutdownAllAsync below tears down both. The scope flows with the async context, so the
+        // transport this method awaits resolves agents from the same run.
+        using var agentScope = _lifecycleManager.BeginRunScope();
+
         var rootSpanId = _metrics?.StartSpan("Orchestrate", null, new Dictionary<string, string>
         {
             ["correlationId"] = correlationId,
