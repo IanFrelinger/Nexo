@@ -1,4 +1,6 @@
-# Handoff — game-layer extraction and the Ashlar rename
+| ~~1~~ | — | **empty.** Everything previously here had inbound references. |
+| ~~3~~ | Playtest tree, TileMapRenderTool, DomainRecognizer game patterns, Combat/Economy/Gameplay/AI agents | **DONE.** Behind IDomainAgentProvider / IDomainPatternProvider / IToolSource; 0 blockers. |
+| **2** | `Orchestration/Assets/`, `Agents/Assets/` (generative image/audio/3D) | **OPEN — product decision.** Mechanical now the seam exists, but unlike AIAgent these are not obviously game-only. |# Handoff — game-layer extraction and the Ashlar rename
 
 **Revision 3. THE RENAME IS APPLIED AND GREEN** — commit `a0609ebe`.
 
@@ -287,7 +289,36 @@ The rename is idempotent and the script now refuses to run against a tree that
 already has `Ashlar`-named directories, so re-running `--apply` is a no-op that
 fails loudly rather than a second rename.
 
-**Next up is Step 2.**
+### ~~Step 2 — the provider refactor~~ DONE — `602ba229`, `5fbea7a7`, `8b5a91c5`, `2af96fb8`
+
+`extract-game-layer.sh` reports **0 blockers**. Four seams were introduced:
+
+| Seam | Replaces |
+|---|---|
+| `IToolSource` / `extraTools` (already existed) | `RepoFsToolboxFactory` hardcoding `TileMapRenderTool` |
+| `IDomainAgentProvider` + `IAgentCreationContext` | `AgentFactory`'s hardcoded playtest and game-domain switch arms |
+| `IDomainPatternProvider` | `DomainRecognizer`'s hardcoded Combat/Economy/Gameplay regex tables |
+| `AddGameDomain()` | — the one call an application installing the game layer makes |
+
+The kernel now knows: assets, planning, infrastructure, security, generic. Everything
+else arrives from a package.
+
+**Two things that bit, recorded so they do not bite again:**
+
+1. **`0 blockers` is necessary, not sufficient.** The check greps namespaces and type
+   names, so it proves the kernel still *compiles*. It cannot prove it still *behaves*,
+   because the coupling being removed is keyed on **domain strings**.
+   `OrchestrationRuntimeSpecTests` spawned `Domain = "Combat"` as a vehicle for testing
+   runtime-spec directives, named no game type, passed every grep — and failed at run
+   time, because "combat" now falls through to `GenericAgent`, which takes no model at
+   all. Always follow the check with the test suites, not just a build.
+2. **The AI domain is split on purpose.** `DomainRecognizer` keeps the general-purpose AI
+   vocabulary (agent, neural, learning, decision) because Ashlar is an agent framework;
+   the game half (npc, pathfinding, steering) moves. But `AIAgent` itself moves, because
+   its system prompt is *"an expert AI/ML engineer specializing in game AI"*. Recognising
+   a domain and having a specialist for it are separate concerns.
+
+**Next up is Step 3**, once the Tier 2 question below is settled.
 
 Run `verify-rename.sh` **before** the build: two of its four checks catch failures
 that surface at runtime rather than compile time.
