@@ -139,26 +139,72 @@ Given the extraction is now blocked pending a refactor, **do the rename first.**
 - **Git**, and **bash** (Git Bash is fine — the scripts are POSIX-ish bash).
 - No provider credentials. The kernel build and cert gate run offline.
 
-### The blocker you have to clear yourself
+### Tests must run in the dev container — `scripts/handoff/devbox.sh`
 
-`dotnet build Nexo.Kernel.sln` is **green** — 0 warnings, 0 errors, 80 seconds.
-
-`bash scripts/run-cert-gate.sh` **cannot run on this machine**:
+`dotnet build Nexo.Kernel.sln` is **green** on the host — 0 warnings, 0 errors, 80s.
+But `bash scripts/run-cert-gate.sh` **cannot run on the host at all**:
 
 ```
 Catastrophic failure: System.IO.FileLoadException: Could not load file or assembly
 '...Nexo.Tests.Infrastructure.dll'. An Application Control policy has blocked this file. (0x800711C7)
 ```
 
-Zero tests were discovered, zero ran. This is **Windows Application Control
-blocking the freshly-built unsigned test assembly** — a machine policy, not a code
-defect. Until it is resolved there is *no test signal at all*.
+Zero tests discovered, zero run. This is **Windows Application Control blocking the
+freshly-built unsigned test assembly** — a machine policy, not a code defect. It is
+not specific to the cert gate: **26 scripts under `scripts/` invoke `dotnet test`**
+and every one of them hits it.
 
-Options: allow the build output path in the Application Control / Smart App
-Control settings, or run the gate inside Docker or WSL where the host policy does
-not apply, or rely on CI.
+The policy does not apply inside a Linux container, so run those through:
 
-**Do not run a 4,000-file rename while the one required CI check cannot execute.**
+```bash
+bash scripts/handoff/devbox.sh bash scripts/run-cert-gate.sh
+bash scripts/handoff/devbox.sh dotnet build Nexo.Kernel.sln
+bash scripts/handoff/devbox.sh                                  # interactive shell
+```
+
+**Measured: 169/169 tests pass in the container** — 2.3 min cold, 1.4 min on a warm
+NuGet volume. That is the only green cert gate anyone has produced on this machine.
+
+`devbox.sh` uses the same image as `.devcontainer/devcontainer.json`
+(`mcr.microsoft.com/devcontainers/dotnet:10.0-noble`) and follows the conventions
+already established by `scripts/Verify-DevContainer.ps1`:
+
+- **Runs as root**, not `vscode`. Bind-mounted Windows files arrive with host-side
+  ownership; running as root avoids a UID mismatch when writing `bin/` and `obj/`.
+- **`DOTNET_ROLL_FORWARD=LatestMajor`** — load-bearing, not decoration. The image
+  ships only the 10.0 runtime and the cert gate runs `-f net8.0`. CI installs 8.0.x
+  separately; this does the equivalent.
+- **Payload is base64'd** into the container so quoting survives Git Bash.
+- **NuGet lives in a named volume**, so restores are cached between runs.
+
+Note the payload runs under `set -euo pipefail`: a non-zero exit anywhere aborts
+the rest. Correct for gates, surprising for compound commands — guard with
+`|| true` when you deliberately expect a failure.
+
+#### Run the file-heavy passes in the container too — they are ~9× faster there
+
+Strictly speaking, Application Control only blocks *loading freshly-built
+assemblies*; it does not touch `sed`, `git mv` or `grep`, so `rename-to-ashlar.sh`
+and `verify-rename.sh` *can* run on the host. Do not. They are dramatically slower
+there.
+
+Same script, same tree, `rename-to-ashlar.sh` dry run, two runs each:
+
+| Environment | Run 1 | Run 2 |
+|---|---|---|
+| Host (Windows) | 495s | 514s |
+| Dev container (incl. Docker start) | **57s** | **57s** |
+
+Roughly **9× faster in the container**, and reproducible. The intuition that a
+Windows↔Linux bind mount would make the container slower is wrong here: the
+dominant cost is Windows per-file I/O, with real-time AV scanning on every one of
+the 4,005 files. Linux reading the same mount pays far less.
+
+Results are **identical in both environments** — 4005 / 228 / 99, and the same 3
+extraction blockers — so this is a pure speed win with no behavioural difference.
+
+**Conclusion: run everything through `devbox.sh`.** There is no step in this
+handoff that is better off on the host.
 
 ### A pre-existing failure, unrelated to this work
 
@@ -177,21 +223,30 @@ predates the rename work. It matters here only because it means you cannot use
 
 ## 4. The sequence
 
+**Everything runs through `devbox.sh`** — required for anything that executes build
+output, and ~9× faster for everything else. See §3.
+
 ### Step 0 — baseline
 
 ```bash
-dotnet build Nexo.Kernel.sln     # expect: 0 Warning(s), 0 Error(s)
-bash scripts/run-cert-gate.sh    # blocked until you clear §3
+bash scripts/handoff/devbox.sh '
+  dotnet build Nexo.Kernel.sln          # green: 0 Warning(s), 0 Error(s)
+  bash scripts/run-cert-gate.sh         # green: 169/169 in ~1.5-2.5 min
+'
 ```
 
 ### Step 1 — the rename
 
 ```bash
-bash scripts/handoff/rename-to-ashlar.sh            # dry run: expect 4005 / 228 / 99
-bash scripts/handoff/rename-to-ashlar.sh --apply
-bash scripts/handoff/verify-rename.sh               # must print PASS
-dotnet build Ashlar.Kernel.sln
-bash scripts/run-cert-gate.sh
+bash scripts/handoff/devbox.sh bash scripts/handoff/rename-to-ashlar.sh
+# dry run, ~57s: expect 4005 / 228 / 99
+
+bash scripts/handoff/devbox.sh '
+  bash scripts/handoff/rename-to-ashlar.sh --apply
+  bash scripts/handoff/verify-rename.sh          # must print PASS
+  dotnet build Ashlar.Kernel.sln
+  bash scripts/run-cert-gate.sh                  # must still be 169/169
+'
 ```
 
 Run `verify-rename.sh` **before** the build: two of its four checks catch failures
@@ -239,12 +294,15 @@ Then delete `AddPlaytestServices` (empty no-op, zero callers), drop the moved fi
 from any `.csproj` that lists them explicitly, and verify:
 
 ```bash
-dotnet build Ashlar.Kernel.sln
-dotnet build src/Ashlar.BackgroundAgents.HostRunners/Ashlar.BackgroundAgents.HostRunners.csproj
-dotnet build src/Ashlar.Tests.BackgroundAgents/Ashlar.Tests.BackgroundAgents.csproj
+bash scripts/handoff/devbox.sh '
+  dotnet build Ashlar.Kernel.sln
+  dotnet build src/Ashlar.BackgroundAgents.HostRunners/Ashlar.BackgroundAgents.HostRunners.csproj
+  dotnet build src/Ashlar.Tests.BackgroundAgents/Ashlar.Tests.BackgroundAgents.csproj
+  bash scripts/run-cert-gate.sh
+'
 ```
 
-The last two are **not** in `Ashlar.Kernel.sln` and are exactly where revision 1's
+The middle two are **not** in `Ashlar.Kernel.sln` and are exactly where revision 1's
 breakage hid.
 
 ### Step 4 — make the game layer a repository
@@ -310,13 +368,19 @@ From the audit. Cheap during this work, genuinely worth doing.
    `ImplementationSelector.cs:50`, both pipeline stage adapters, the orchestration
    fallback agent, and `EnableParallel` (`LoopOptions.cs:16` /
    `ParallelLoopKernel.cs:34`). All fail by quietly doing nothing. Make them throw.
+4. **`cert-gate-config.sh` documents the wrong test count.** Its header carries a
+   per-class breakdown under the claim *"must match `--list-tests` output"*. That
+   breakdown sums to **99**. The gate actually runs **169**. The zero-test guard is
+   fine — it derives the expected count at runtime — but the comment has drifted by
+   70 tests and reads as authoritative. Either regenerate it or delete it; a stale
+   inventory of the one CI-proven subsystem is worse than none.
 
 ---
 
 ## 8. Checklist
 
-- [ ] Application Control cleared (or gate moved to Docker/WSL/CI) — **tests can run**
-- [ ] Baseline: `dotnet build Nexo.Kernel.sln` green, `run-cert-gate.sh` green
+- [x] Tests can run — via `scripts/handoff/devbox.sh`, **169/169 green in ~2 min**
+- [x] Baseline: `dotnet build Nexo.Kernel.sln` green on host (0/0); cert gate green in container
 - [ ] Rename applied; `verify-rename.sh` prints **PASS**
 - [ ] `dotnet build Ashlar.Kernel.sln` green; cert gate still green
 - [ ] Rename committed alone

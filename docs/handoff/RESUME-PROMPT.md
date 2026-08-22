@@ -32,11 +32,21 @@ Context you cannot recover from the source:
 
 Known state, already measured — do not re-derive:
 
-- `dotnet build Nexo.Kernel.sln` is GREEN (0 warnings, 0 errors).
-- `bash scripts/run-cert-gate.sh` CANNOT RUN on this machine. Windows Application
-  Control blocks loading the freshly-built test assembly (0x800711C7), so zero
-  tests are discovered. Until that is cleared there is no test signal. Clearing it
-  is a security setting and is mine to do, not yours — do not attempt it.
+- `dotnet build Nexo.Kernel.sln` is GREEN on the host (0 warnings, 0 errors).
+- Anything that EXECUTES build output must run in the dev container. Windows
+  Application Control blocks loading freshly-built unsigned test assemblies on this
+  host (0x800711C7), which hits all 26 scripts under scripts/ that call dotnet test,
+  not just the cert gate. Use:
+      bash scripts/handoff/devbox.sh bash scripts/run-cert-gate.sh
+  Measured: 169/169 cert-gate tests pass in the container in 1.4-2.3 minutes. That is a
+  real green baseline. Do not attempt to change the host security setting — it is
+  not yours to change and it is no longer on the critical path.
+- Run EVERYTHING through devbox.sh, including the file-heavy passes that do not
+  strictly need it. Measured twice each, same script and tree: rename-to-ashlar.sh
+  dry run takes 495s / 514s on the host and 57s / 57s in the container — about 9x
+  faster, because Windows per-file I/O plus real-time AV scanning across 4,005
+  files costs far more than the bind mount does. Results are identical in both
+  (4005 / 228 / 99, same 3 blockers). There is no step better off on the host.
 - `dotnet build Nexo.sln` fails at restore with NU1201 on a clean tree
   (GameDirector.Host targets net8.0, references net10.0-only Nexo.API). Pre-existing
   and unrelated. Do not treat it as something you caused.
@@ -60,8 +70,8 @@ The rename and the extraction are independent of the seven-wave cleanup plan.
 Waves 1–3 (documentation truth pass, making silent failures loud, sealing the
 write-allowlist escape) need no decisions and no rename.
 
-HANDOFF.md section 7 lists the three highest-value items with exact file paths and
-line numbers. The write-allowlist escape is the one to do first — and it is worth
+HANDOFF.md section 7 lists four items with exact file paths and line numbers. The
+write-allowlist escape is the one to do first — and it is worth
 doing *before* the rename, since it touches all 14 `Tools.Dev` schemas that the
 rename is about to rewrite anyway, and its diff stays readable in the vocabulary
 you already know.
