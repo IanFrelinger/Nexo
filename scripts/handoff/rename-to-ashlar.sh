@@ -55,8 +55,14 @@ if [[ $APPLY -eq 0 ]]; then
   echo "=== DRY RUN — nothing will be written. Pass --apply to execute. ==="
 else
   echo "=== APPLYING rename Nexo -> Ashlar in $REPO_ROOT ==="
-  if [[ -n "$(git status --porcelain)" ]]; then
-    echo "working tree is dirty — commit or stash first, so this rename is reviewable alone." >&2
+  # Tracked modifications only. Untracked files do not pollute the rename diff, and
+  # counting them makes this guard environment-dependent: the host filters .claude/
+  # via a global excludes file that root inside the dev container does not have, so
+  # `git status --porcelain` is clean on the host and dirty in the container for the
+  # same tree.
+  if [[ -n "$(git status --porcelain --untracked-files=no)" ]]; then
+    echo "tracked files have uncommitted changes — commit or stash first, so this rename is reviewable alone." >&2
+    git status --porcelain --untracked-files=no >&2
     exit 1
   fi
 fi
