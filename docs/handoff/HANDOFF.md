@@ -97,10 +97,15 @@ Verified dry run after the fix — matching revision 1's intended figures exactl
 with zero worktree or build-output hits:
 
 ```
-files with Nexo/NEXO/nexo in content: 4000
+files with Nexo/NEXO/nexo in content: 4000     # 4005 on this branch, see below
 files renamed: 228
 directories renamed: 99
 ```
+
+The filename and directory counts match revision 1 to the file. The content count
+is 4,000 measured on `master` and **4,005 on this branch** — the difference is the
+five handoff files themselves, which mention `Nexo` throughout. Not a discrepancy;
+just remember the number moves with whatever docs you add.
 
 ### 2.3 `verify-rename.sh` would have failed a correct rename
 
@@ -182,7 +187,7 @@ bash scripts/run-cert-gate.sh    # blocked until you clear §3
 ### Step 1 — the rename
 
 ```bash
-bash scripts/handoff/rename-to-ashlar.sh            # dry run: expect 4000 / 228 / 99
+bash scripts/handoff/rename-to-ashlar.sh            # dry run: expect 4005 / 228 / 99
 bash scripts/handoff/rename-to-ashlar.sh --apply
 bash scripts/handoff/verify-rename.sh               # must print PASS
 dotnet build Ashlar.Kernel.sln
