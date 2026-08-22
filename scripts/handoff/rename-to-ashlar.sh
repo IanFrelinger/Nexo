@@ -39,7 +39,8 @@
 # INexoClient. Plain token replacement is safe and needs no word-boundary guard.
 #
 # NOT covered, because git does not track them — handle by hand:
-#   .env files, local shell profiles, CI secrets, and the .nexo/ state directory.
+#   .env files, local shell profiles, and CI secrets.
+#   (.nexo/ and NEXO_AGENT_NOTES.md ARE handled — see the ignored-path block below.)
 
 set -euo pipefail
 
@@ -166,6 +167,7 @@ echo
 # invalidates a queued child path.
 echo "--- pass 3: directory names (deepest first) ---"
 DIR_RENAMES=0
+NEW_DIRS=()
 while IFS= read -r d; do
   [[ -d "$d" ]] || continue
   base="$(basename "$d")"; parent="$(dirname "$d")"
@@ -179,6 +181,7 @@ while IFS= read -r d; do
     exit 1
   fi
   mv -- "$d" "$parent/$new"
+  NEW_DIRS+=( "$parent/$new" )
 done < <(git ls-files | grep -v '^_handoff/' \
           | awk -F/ '{p=""; for(i=1;i<NF;i++){p=(i==1?$1:p"/"$i); print p}}' \
           | sort -u \
@@ -186,15 +189,54 @@ done < <(git ls-files | grep -v '^_handoff/' \
 echo "directories renamed: $DIR_RENAMES"
 echo
 
+# Pass 1 rewrote .gitignore, including two patterns whose targets are NOT tracked
+# and therefore were never renamed on disk by pass 3:
+#     .gitignore:97  .nexo/               -> .ashlar/
+#     .gitignore:85  /NEXO_AGENT_NOTES.md -> /ASHLAR_AGENT_NOTES.md
+# The pattern moved; the filesystem did not. Both paths become UN-IGNORED, and the
+# staging step below then sweeps them into the index. Measured on a real run: 213
+# files of the private .nexo/ agent workspace staged, after which verify-rename.sh
+# printed their contents to stdout as "residue" and failed a correct rename.
+#
+# The other nexo patterns in .gitignore are fine — they live under src/Nexo.*,
+# which pass 3 does rename, so pattern and directory move together.
+if [[ $APPLY -eq 1 ]]; then
+  for pair in ".nexo:.ashlar" "NEXO_AGENT_NOTES.md:ASHLAR_AGENT_NOTES.md"; do
+    src="${pair%%:*}"; dst="${pair##*:}"
+    [[ -e "$src" ]] || continue
+    if [[ -e "$dst" ]]; then
+      echo "REFUSING: both $src and $dst exist; merge by hand (mv would nest)." >&2
+      exit 1
+    fi
+    mv -- "$src" "$dst"
+    echo "  local ignored path: $src -> $dst"
+  done
+fi
+
 # Directory renames above use plain `mv`, which touches the filesystem but stages
 # nothing. Until the index is refreshed, `git ls-files` keeps reporting the OLD
 # paths — and verify-rename.sh reads git ls-files, so it reports thousands of
 # phantom residues for a rename that is in fact correct on disk. (Measured: 3,571
 # stale index paths, zero of which existed.) Sync the index before verifying.
+#
+# `git add -u` and NOT `git add -A`. -A stages untracked paths too, and in the dev
+# container that includes .claude/settings.local.json — 15 KB containing 58 `nexo`
+# lines, ignored on the host ONLY by the user's global excludes file, which root
+# inside the container does not have. Being untracked, pass 1 never rewrote it; -A
+# would stage it and verify-rename.sh would then fail on 58 residual tokens the
+# rename never touched, aborting the run on a correct rename. Same host/container
+# divergence as the dirty-tree guard above.
 if [[ $APPLY -eq 1 ]]; then
   echo "--- staging renames so the index matches the filesystem ---"
-  git add -A
-  echo "staged."
+  git add -u                       # content edits + deletions of tracked files
+  for d in ${NEW_DIRS[@]+"${NEW_DIRS[@]}"}; do
+    # Nested entries no longer exist under their recorded name once their parent
+    # was renamed; the parent's recursive add already covers them. An `if` rather
+    # than `[[ ]] && ...` because a false test as the last statement in a loop body
+    # returns non-zero and errexit would kill the script.
+    if [[ -e "$d" ]]; then git add -- "$d"; fi
+  done
+  echo "staged $(git diff --cached --name-only | wc -l | tr -d ' ') path(s)."
   echo
 fi
 
@@ -202,7 +244,8 @@ if [[ $APPLY -eq 1 ]]; then
   echo "=== done. Next: ==="
   echo "  bash scripts/handoff/verify-rename.sh"
   echo "  dotnet build Ashlar.Kernel.sln"
-  echo "  git add -A && git commit"
+  echo "  git status --short   # review, then:"
+  echo "  git commit"
 else
   echo "=== dry run complete. Re-run with --apply to execute. ==="
 fi
