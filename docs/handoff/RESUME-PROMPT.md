@@ -32,7 +32,13 @@ Context you cannot recover from the source:
 
 Known state, already measured — do not re-derive:
 
-- `dotnet build Nexo.Kernel.sln` is GREEN on the host (0 warnings, 0 errors).
+- THE RENAME IS DONE. Commit a0609ebe: 4,000 files by content, 228 filenames, 99
+  directories; 25,155 insertions and 25,155 deletions, exactly symmetric.
+  verify-rename.sh prints PASS, dotnet build Ashlar.Kernel.sln is 0/0, and the cert
+  gate is 169/169. Everything is Ashlar now EXCEPT scripts/handoff/ and
+  docs/handoff/, which are deliberately excluded because they are documentation
+  ABOUT the rename — rewriting them destroyed the verifier on the first attempt.
+  Do not "fix" the remaining Nexo tokens in those two directories.
 - Anything that EXECUTES build output must run in the dev container. Windows
   Application Control blocks loading freshly-built unsigned test assemblies on this
   host (0x800711C7), which hits all 26 scripts under scripts/ that call dotnet test,
@@ -54,12 +60,15 @@ Known state, already measured — do not re-derive:
   they are Tier 3 and need IDomainAgentProvider / IDomainPatternProvider plus a tool
   registry first. extract-game-layer.sh now refuses --apply and tells you why.
 
-The order is: rename first, then the provider refactor, then the extraction.
-HANDOFF.md section 4 has the sequence. Commit the rename alone — it touches ~4,000
-files and is unreviewable if mixed with anything else.
+The rename is done, so the next step is the provider refactor: turn AgentFactory
+and DomainRecognizer into IDomainAgentProvider / IDomainPatternProvider registries,
+and make RepoFsToolboxFactory take its tools from a registry instead of newing up
+concrete types. HANDOFF.md section 4 Step 2 has the detail. extract-game-layer.sh
+reports 0 blockers when that work is finished — that check IS the definition of done.
 
-Start by re-running the baseline and the two dry runs, and tell me what you find.
-Do not apply anything until I confirm.
+Start by confirming the tree is still green:
+    bash scripts/handoff/devbox.sh 'bash scripts/run-cert-gate.sh'
+then read HANDOFF.md section 4 Step 2 and tell me your plan before writing code.
 ```
 
 ---

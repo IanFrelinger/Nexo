@@ -1,9 +1,22 @@
 # Handoff — game-layer extraction and the Ashlar rename
 
-**Revision 2.** Revision 1 was written in a cloud session with **no .NET SDK**, so
-nothing in it had been compiled. It has now been run on a machine with the SDK.
-Three of its load-bearing claims were wrong, and two of them would have caused
-damage. This revision records what was measured, not what was inferred.
+**Revision 3. THE RENAME IS APPLIED AND GREEN** — commit `a0609ebe`.
+
+```
+verify-rename.sh                 PASS   content, paths, .sln refs, ProjectRefs all clean
+dotnet build Ashlar.Kernel.sln   0 Warning(s), 0 Error(s)
+scripts/run-cert-gate.sh         169/169 passed
+```
+
+4,000 files rewritten by content, 228 files renamed, 99 directories renamed;
+25,155 insertions and 25,155 deletions — exactly symmetric, as a pure token
+substitution should be.
+
+Revision 1 was written in a cloud session with **no .NET SDK**, so nothing in it
+had been compiled. Revision 2 recorded what compiling revealed: three load-bearing
+claims were wrong, two of them damaging. Revision 3 records what *actually running
+`--apply`* revealed — see §2.5. The short version: a dry run exercises the counting
+path, `--apply` exercises the mutation path, and every remaining bug lived there.
 
 ---
 
@@ -121,6 +134,36 @@ Two bugs, both fixed:
    3 phantom `MISSING` entries for `application/Nexo.Application.sln` **on a
    completely untouched tree.** Now resolved relative to each solution.
 
+### 2.5 What only `--apply` could reveal
+
+Six more bugs, none of which a dry run could have found. The dry run exercises the
+*counting* path; `--apply` exercises the *mutation* path. Recorded because the same
+traps apply to any large mechanical refactor, not just this one.
+
+| # | Bug | Consequence |
+|---|---|---|
+| 1 | Pass 1 rewrote the rename's **own tooling**. `verify-rename.sh` had its search tokens replaced and came out grepping for `Ashlar`. | The verifier reported the entire correctly-renamed tree as residue. Docs became `Nexo -> Ashlar` → `Ashlar -> Ashlar`. |
+| 2 | `mv A B` **nests** when `B` exists, rather than renaming. | 88 directories shaped `src/Ashlar.Foo/Nexo.Foo`. Nothing errored; the tree was quietly wrong. |
+| 3 | `git clean -fd` does **not** remove gitignored files. | `bin/`/`obj/` kept `Ashlar.*` directory shells alive through a revert, which caused #2. Needs `-x`. |
+| 4 | Pass 3 renames directories with plain `mv`, which stages nothing. | `git ls-files` reported 3,571 stale paths, **zero of which existed on disk**, and the verifier read the index rather than the tree. |
+| 5 | Pass 1 rewrites `.gitignore`, but pass 3 only renames directories derived from *tracked* paths. `.nexo/` has no tracked files. | The ignore pattern moved to `.ashlar/`; the directory did not. The private agent workspace became un-ignored and `git add -A` staged 213 of its files, whose contents the verifier then printed to stdout. |
+| 6 | `git add -A` stages untracked local state. `.claude/settings.local.json` is 15 KB with 58 `nexo` lines, ignored on the host **only** by the user's global excludes, which root in the container lacks. | Untracked, so pass 1 never rewrote it; `-A` staged it; the verifier failed on 58 tokens the rename never touched — aborting the run under `set -e` before the build or gate. |
+
+Fixes: exclude `scripts/handoff/` and `docs/handoff/`; a pre-flight that refuses
+`--apply` when any `Ashlar`-named directory already exists, plus per-`mv`
+destination guards; move `.nexo/` and `NEXO_AGENT_NOTES.md` on disk to match the
+rewritten patterns; and stage with `git add -u` plus an explicit add of only the
+directories pass 3 created, never `git add -A`.
+
+Bugs 5 and 6 were found by a 41-agent adversarial audit of the scripts, run after
+bug 2 made it clear the tooling needed more than incremental patching. Both were in
+code I had written an hour earlier *as a fix* for bug 4.
+
+**One trap that was mine, not the script's:** pass 2 uses `git mv`, which *stages*.
+A later `git commit` that looked like a two-file change actually carried 230 files,
+because `git commit` commits the whole index regardless of what you just `git add`ed.
+Check `git diff --cached --name-only` before committing anything near this script.
+
 ### 2.4 The ordering constraint was unnecessary
 
 Revision 1 insisted extraction must precede the rename, because the rename would
@@ -226,28 +269,25 @@ predates the rename work. It matters here only because it means you cannot use
 **Everything runs through `devbox.sh`** — required for anything that executes build
 output, and ~9× faster for everything else. See §3.
 
-### Step 0 — baseline
+### ~~Step 0 — baseline~~ DONE
+
+### ~~Step 1 — the rename~~ DONE — commit `a0609ebe`
+
+Kept for reference. To re-verify at any time:
 
 ```bash
 bash scripts/handoff/devbox.sh '
-  dotnet build Nexo.Kernel.sln          # green: 0 Warning(s), 0 Error(s)
-  bash scripts/run-cert-gate.sh         # green: 169/169 in ~1.5-2.5 min
+  bash scripts/handoff/verify-rename.sh          # PASS
+  dotnet build Ashlar.Kernel.sln                 # 0 Warning(s), 0 Error(s)
+  bash scripts/run-cert-gate.sh                  # 169/169
 '
 ```
 
-### Step 1 — the rename
+The rename is idempotent and the script now refuses to run against a tree that
+already has `Ashlar`-named directories, so re-running `--apply` is a no-op that
+fails loudly rather than a second rename.
 
-```bash
-bash scripts/handoff/devbox.sh bash scripts/handoff/rename-to-ashlar.sh
-# dry run, ~57s: expect 4005 / 228 / 99
-
-bash scripts/handoff/devbox.sh '
-  bash scripts/handoff/rename-to-ashlar.sh --apply
-  bash scripts/handoff/verify-rename.sh          # must print PASS
-  dotnet build Ashlar.Kernel.sln
-  bash scripts/run-cert-gate.sh                  # must still be 169/169
-'
-```
+**Next up is Step 2.**
 
 Run `verify-rename.sh` **before** the build: two of its four checks catch failures
 that surface at runtime rather than compile time.
@@ -380,11 +420,11 @@ From the audit. Cheap during this work, genuinely worth doing.
 ## 8. Checklist
 
 - [x] Tests can run — via `scripts/handoff/devbox.sh`, **169/169 green in ~2 min**
-- [x] Baseline: `dotnet build Nexo.Kernel.sln` green on host (0/0); cert gate green in container
-- [ ] Rename applied; `verify-rename.sh` prints **PASS**
-- [ ] `dotnet build Ashlar.Kernel.sln` green; cert gate still green
-- [ ] Rename committed alone
-- [ ] Env vars / config keys / `.env` files updated by hand
+- [x] Baseline: kernel build green (0/0); cert gate green in container
+- [x] Rename applied; `verify-rename.sh` prints **PASS**
+- [x] `dotnet build Ashlar.Kernel.sln` green (0/0); cert gate still **169/169**
+- [x] Rename committed alone — `a0609ebe`, 4,205 files, no tooling or local state in it
+- [ ] Env vars / config keys / `.env` files updated by hand — **your local setup is now broken until you do this** (see §6)
 - [ ] `IDomainAgentProvider` / `IDomainPatternProvider` / tool registry landed
 - [ ] `extract-game-layer.sh` reports **0 blockers**
 - [ ] Extraction applied; `AddPlaytestServices` deleted; kernel **and** HostRunners build
