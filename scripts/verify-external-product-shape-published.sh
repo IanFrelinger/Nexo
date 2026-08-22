@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# External product shape verification against an already-published Nexo.* feed (staging or private).
+# External product shape verification against an already-published Ashlar.* feed (staging or private).
 #
 # Usage:
 #   bash scripts/verify-external-product-shape-published.sh 1.2.3
 #   bash scripts/verify-external-product-shape-published.sh 1.2.3 https://nuget.pkg.github.com/Org/index.json
 #
 # Auth (optional, for private feeds):
-#   NEXO_NUGET_USERNAME + NEXO_NUGET_PASSWORD
+#   ASHLAR_NUGET_USERNAME + ASHLAR_NUGET_PASSWORD
 #   or NUGET_STAGING_READ_TOKEN (sets password; username defaults to 'token')
 set -euo pipefail
 
@@ -28,13 +28,13 @@ if [[ -z "${FEED_URL}" ]]; then
   exit 1
 fi
 
-if [[ -n "${NUGET_STAGING_READ_TOKEN:-}" && -z "${NEXO_NUGET_PASSWORD:-}" ]]; then
-  export NEXO_NUGET_USERNAME="${NEXO_NUGET_USERNAME:-token}"
-  export NEXO_NUGET_PASSWORD="${NUGET_STAGING_READ_TOKEN}"
+if [[ -n "${NUGET_STAGING_READ_TOKEN:-}" && -z "${ASHLAR_NUGET_PASSWORD:-}" ]]; then
+  export ASHLAR_NUGET_USERNAME="${ASHLAR_NUGET_USERNAME:-token}"
+  export ASHLAR_NUGET_PASSWORD="${NUGET_STAGING_READ_TOKEN}"
 fi
 
-export NEXO_EXTERNAL_PRODUCT_VERIFY_VERSION="${VERSION#v}"
-export NEXO_EXTERNAL_PRODUCT_PACKAGE_FEED="${FEED_URL}"
-export NEXO_VERIFY_SOURCE_KEY="${NEXO_VERIFY_SOURCE_KEY:-staging-published}"
+export ASHLAR_EXTERNAL_PRODUCT_VERIFY_VERSION="${VERSION#v}"
+export ASHLAR_EXTERNAL_PRODUCT_PACKAGE_FEED="${FEED_URL}"
+export ASHLAR_VERIFY_SOURCE_KEY="${ASHLAR_VERIFY_SOURCE_KEY:-staging-published}"
 
 bash "${ROOT}/scripts/verify-external-product-shape.sh"

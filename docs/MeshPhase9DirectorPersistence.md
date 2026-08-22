@@ -8,13 +8,13 @@ Phase 9 adds optional **durable** fleet and mesh task storage for the HTTP direc
 
 | Key | Default | Description |
 |-----|---------|-------------|
-| `Nexo:Mesh:Persistence:Provider` | `InMemory` | `InMemory` or `LiteDb` |
-| `Nexo:Mesh:Persistence:DatabasePath` | `mesh-director.db` | LiteDB file path or `Filename=…` connection string |
+| `Ashlar:Mesh:Persistence:Provider` | `InMemory` | `InMemory` or `LiteDb` |
+| `Ashlar:Mesh:Persistence:DatabasePath` | `mesh-director.db` | LiteDB file path or `Filename=…` connection string |
 
 Environment (compose / host):
 
-- `Nexo__Mesh__Persistence__Provider=LiteDb`
-- `Nexo__Mesh__Persistence__DatabasePath=/data/mesh-director.db`
+- `Ashlar__Mesh__Persistence__Provider=LiteDb`
+- `Ashlar__Mesh__Persistence__DatabasePath=/data/mesh-director.db`
 
 The virtual lab enables LiteDB on **peer-a** with a Docker volume (`mesh_lab_peer_a_data`).
 

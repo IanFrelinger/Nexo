@@ -4,8 +4,8 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 COPY . .
-RUN dotnet restore commercial/src/Nexo.Commercial.Fleet.Host/Nexo.Commercial.Fleet.Host.csproj
-RUN dotnet publish commercial/src/Nexo.Commercial.Fleet.Host/Nexo.Commercial.Fleet.Host.csproj -c Release -o /app/publish --no-restore -p:ErrorOnDuplicatePublishOutputFiles=false
+RUN dotnet restore commercial/src/Ashlar.Commercial.Fleet.Host/Ashlar.Commercial.Fleet.Host.csproj
+RUN dotnet publish commercial/src/Ashlar.Commercial.Fleet.Host/Ashlar.Commercial.Fleet.Host.csproj -c Release -o /app/publish --no-restore -p:ErrorOnDuplicatePublishOutputFiles=false
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
@@ -15,8 +15,8 @@ COPY --from=build /app/publish ./
 # recreation when a volume is mounted there (docs/DEPLOYMENT.md, "Runtime state"). /app stays
 # root-owned and read-only for the non-root user below.
 ENV ASPNETCORE_URLS=http://+:8080 \
-    NEXO_STATE_DIR=/data/state \
-    NEXO_DAILIES_PATH=/data/dailies
+    ASHLAR_STATE_DIR=/data/state \
+    ASHLAR_DAILIES_PATH=/data/dailies
 RUN mkdir -p /data/state /data/dailies && chown -R app:app /data
 EXPOSE 8080
 

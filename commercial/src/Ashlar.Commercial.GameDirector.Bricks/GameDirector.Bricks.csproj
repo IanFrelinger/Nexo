@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AshlarCommercialProject>true</AshlarCommercialProject>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>GameDirector.Bricks</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Ashlar.Commercial.GameDirector.Domain\GameDirector.Domain.csproj" />
+    <ProjectReference Include="..\..\..\src\Ashlar.Abstractions\Ashlar.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\src\Ashlar.Core.Domain\Ashlar.Core.Domain.csproj" />
+    <ProjectReference Include="..\..\..\src\Ashlar.Core.Application\Ashlar.Core.Application.csproj" />
+    <ProjectReference Include="..\..\..\src\Ashlar.Infrastructure\Ashlar.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <!-- Brick contract drift rule (ASHLAR0001/ASHLAR0002): keeps BrickInterface and the
+       Get/Set keys a brick actually uses from silently diverging. -->
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Ashlar.Analyzers\Ashlar.Analyzers.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false" />
+  </ItemGroup>
+</Project>

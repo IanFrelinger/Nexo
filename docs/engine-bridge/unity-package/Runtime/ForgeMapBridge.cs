@@ -4,9 +4,9 @@
 using System.Net.Http;
 using System.Text.Json;
 
-namespace Nexo.ForgeMapBridge
+namespace Ashlar.ForgeMapBridge
 {
-    /// <summary>Minimal HTTP helpers for Nexo Forge endpoints.</summary>
+    /// <summary>Minimal HTTP helpers for Ashlar Forge endpoints.</summary>
     public static class ForgeMapBridge
     {
         public static async Task<string?> FetchManifestJsonAsync(HttpClient http, string baseUrl, string engineId)

@@ -1,15 +1,15 @@
 using Microsoft.Extensions.DependencyInjection;
-using Nexo.Abstractions;
-using Nexo.Core.Domain.Agents;
-using Nexo.Core.Domain.Bricks;
-using Nexo.Core.Domain.Execution;
-using Nexo.Hosting;
-using Nexo.Hosting.Sdk;
-using Nexo.Hosting.Sdk.Extensions;
+using Ashlar.Abstractions;
+using Ashlar.Core.Domain.Agents;
+using Ashlar.Core.Domain.Bricks;
+using Ashlar.Core.Domain.Execution;
+using Ashlar.Hosting;
+using Ashlar.Hosting.Sdk;
+using Ashlar.Hosting.Sdk.Extensions;
 
 var services = new ServiceCollection();
 
-services.AddNexoSdk(sdk => sdk
+services.AddAshlarSdk(sdk => sdk
     .RegisterBrick<SampleHostBrick>()
     .RegisterAgent<SampleHostAgent>()
     .RegisterAgentCard(new AgentCard
@@ -21,7 +21,7 @@ services.AddNexoSdk(sdk => sdk
         Behaviors = ["analyze", "summarize"]
     }));
 
-services.AddNexo(options =>
+services.AddAshlar(options =>
 {
     options.RegisterBackgroundAgentHostedService = false;
 });

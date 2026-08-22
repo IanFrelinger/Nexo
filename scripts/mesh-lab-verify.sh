@@ -35,12 +35,12 @@ source_env_kv() {
 # shellcheck source=scripts/mesh-lab-fleet.sh
 source "${ROOT}/scripts/mesh-lab-fleet.sh"
 
-API_KEY="$(source_env_kv Nexo__Security__ApiKey)"
+API_KEY="$(source_env_kv Ashlar__Security__ApiKey)"
 MESH_LAB_PEER_REGISTRATION_KEY="$(source_env_kv MESH_LAB_PEER_REGISTRATION_KEY)"
 export MESH_LAB_PEER_REGISTRATION_KEY
-BEARER="$(source_env_kv Nexo__Security__PeerB__BearerToken)"
-BASIC_USER="$(source_env_kv Nexo__Security__Worker__BasicAuthUsername)"
-BASIC_PASS="$(source_env_kv Nexo__Security__Worker__BasicAuthPassword)"
+BEARER="$(source_env_kv Ashlar__Security__PeerB__BearerToken)"
+BASIC_USER="$(source_env_kv Ashlar__Security__Worker__BasicAuthUsername)"
+BASIC_PASS="$(source_env_kv Ashlar__Security__Worker__BasicAuthPassword)"
 WORKER_PUBLISH_FALLBACK="$(source_env_kv MESH_LAB_WORKER_PUBLISH)"
 [[ -n "$WORKER_PUBLISH_FALLBACK" ]] || WORKER_PUBLISH_FALLBACK="127.0.0.1:18083"
 
@@ -143,7 +143,7 @@ done
 
 echo "== Wait: host → peer-b ($PEER_B_HOST/health) =="
 for i in $(seq 1 90); do
-  if [[ -n "$API_KEY" ]] && curl -fsS -H "X-Nexo-Api-Key: ${API_KEY}" "http://${PEER_B_HOST}/health" >/dev/null 2>&1; then
+  if [[ -n "$API_KEY" ]] && curl -fsS -H "X-Ashlar-Api-Key: ${API_KEY}" "http://${PEER_B_HOST}/health" >/dev/null 2>&1; then
     echo "peer-b reachable (API key) after ${i} attempt(s)"
     break
   fi
@@ -192,7 +192,7 @@ echo
 
 if [[ -n "$API_KEY" ]]; then
   echo "== Mesh API: host → peer-a GET /api/mesh/elastic/status (fleet director) =="
-  ELASTIC_JSON="$(curl -fsS -H "X-Nexo-Api-Key: ${API_KEY}" "http://${PEER_A_HOST}/api/mesh/elastic/status")"
+  ELASTIC_JSON="$(curl -fsS -H "X-Ashlar-Api-Key: ${API_KEY}" "http://${PEER_A_HOST}/api/mesh/elastic/status")"
   echo "$ELASTIC_JSON" | head -c 500
   echo
   if [[ ! "$ELASTIC_JSON" =~ ^[[:space:]]*\{ ]]; then
@@ -205,7 +205,7 @@ if [[ -n "$API_KEY" ]]; then
   echo "== Mesh API: POST register fleet node → peer-b DNS name (mutating + ApiKey) =="
   curl -fsS -X POST \
     -H "Content-Type: application/json" \
-    -H "X-Nexo-Api-Key: ${API_KEY}" \
+    -H "X-Ashlar-Api-Key: ${API_KEY}" \
     -d "$(mesh_lab_fleet_register_json mesh-lab-verify-peer http://peer-b:8080 Trusted)" \
     "http://${PEER_A_HOST}/api/mesh/fleet/nodes" | head -c 500
   echo
@@ -221,18 +221,18 @@ if [[ -n "$API_KEY" ]]; then
     echo "== Mesh worker executor: schedule task → worker completes without manual PATCH =="
     EXEC_TASK_JSON="$(curl -fsS -X POST \
       -H "Content-Type: application/json" \
-      -H "X-Nexo-Api-Key: ${API_KEY}" \
+      -H "X-Ashlar-Api-Key: ${API_KEY}" \
       -d '{"name":"mesh-lab-worker-exec-task","steps":1,"requiredBrickIds":[]}' \
       "http://${PEER_A_HOST}/api/mesh/tasks")"
     EXEC_TASK_ID="$(echo "$EXEC_TASK_JSON" | python3 -c 'import json,sys; print(json.load(sys.stdin)["taskId"])')"
     curl -fsS -X POST \
       -H "Content-Type: application/json" \
-      -H "X-Nexo-Api-Key: ${API_KEY}" \
+      -H "X-Ashlar-Api-Key: ${API_KEY}" \
       -d '{}' \
       "http://${PEER_A_HOST}/api/mesh/tasks/${EXEC_TASK_ID}/schedule" >/dev/null
     EXEC_OK=false
     for _w in $(seq 1 90); do
-      EXEC_FINAL="$(curl -fsS -H "X-Nexo-Api-Key: ${API_KEY}" "http://${PEER_A_HOST}/api/mesh/tasks/${EXEC_TASK_ID}")"
+      EXEC_FINAL="$(curl -fsS -H "X-Ashlar-Api-Key: ${API_KEY}" "http://${PEER_A_HOST}/api/mesh/tasks/${EXEC_TASK_ID}")"
       if echo "$EXEC_FINAL" | python3 -c '
 import json, sys
 t = json.load(sys.stdin)
@@ -264,7 +264,7 @@ if t.get("leaseToken"):
   echo "== Mesh task placement: POST /tasks → POST /tasks/{id}/schedule → Assigned =="
   TASK_JSON="$(curl -fsS -X POST \
     -H "Content-Type: application/json" \
-    -H "X-Nexo-Api-Key: ${API_KEY}" \
+    -H "X-Ashlar-Api-Key: ${API_KEY}" \
     -d '{"name":"mesh-lab-verify-task","steps":1,"requiredBrickIds":[]}' \
     "http://${PEER_A_HOST}/api/mesh/tasks")"
   echo "$TASK_JSON" | head -c 500
@@ -272,7 +272,7 @@ if t.get("leaseToken"):
   TASK_ID="$(echo "$TASK_JSON" | python3 -c 'import json,sys; print(json.load(sys.stdin)["taskId"])')"
   SCHED_JSON="$(curl -fsS -X POST \
     -H "Content-Type: application/json" \
-    -H "X-Nexo-Api-Key: ${API_KEY}" \
+    -H "X-Ashlar-Api-Key: ${API_KEY}" \
     -d '{}' \
     "http://${PEER_A_HOST}/api/mesh/tasks/${TASK_ID}/schedule")"
   echo "$SCHED_JSON" | head -c 500
@@ -281,7 +281,7 @@ if t.get("leaseToken"):
     echo "Schedule response did not yield Assigned status (see JSON above)." >&2
     exit 1
   fi
-  GET_JSON="$(curl -fsS -H "X-Nexo-Api-Key: ${API_KEY}" "http://${PEER_A_HOST}/api/mesh/tasks/${TASK_ID}")"
+  GET_JSON="$(curl -fsS -H "X-Ashlar-Api-Key: ${API_KEY}" "http://${PEER_A_HOST}/api/mesh/tasks/${TASK_ID}")"
   echo "$GET_JSON" | python3 -c '
 import json, sys
 t = json.load(sys.stdin)
@@ -307,7 +307,7 @@ print("Mesh task placement OK — peerId=%r base=%r" % (t.get("assignedPeerId"),
   echo "== Mesh task lifecycle: PATCH Running → Succeeded (leaseToken on director) =="
   BAD_PATCH_CODE="$(curl -s -o /dev/null -w '%{http_code}' -X PATCH \
     -H "Content-Type: application/json" \
-    -H "X-Nexo-Api-Key: ${API_KEY}" \
+    -H "X-Ashlar-Api-Key: ${API_KEY}" \
     -d "{\"status\":2,\"leaseToken\":\"wrong-mesh-lab-token\"}" \
     "http://${PEER_A_HOST}/api/mesh/tasks/${TASK_ID}/status")"
   if [[ "$BAD_PATCH_CODE" != "409" ]]; then
@@ -318,7 +318,7 @@ print("Mesh task placement OK — peerId=%r base=%r" % (t.get("assignedPeerId"),
 
   RUN_JSON="$(curl -fsS -X PATCH \
     -H "Content-Type: application/json" \
-    -H "X-Nexo-Api-Key: ${API_KEY}" \
+    -H "X-Ashlar-Api-Key: ${API_KEY}" \
     -d "{\"status\":2,\"leaseToken\":\"${LEASE_TOKEN}\",\"reason\":\"mesh-lab-verify-running\"}" \
     "http://${PEER_A_HOST}/api/mesh/tasks/${TASK_ID}/status")"
   echo "$RUN_JSON" | head -c 400
@@ -330,12 +330,12 @@ print("Mesh task placement OK — peerId=%r base=%r" % (t.get("assignedPeerId"),
 
   DONE_JSON="$(curl -fsS -X PATCH \
     -H "Content-Type: application/json" \
-    -H "X-Nexo-Api-Key: ${API_KEY}" \
+    -H "X-Ashlar-Api-Key: ${API_KEY}" \
     -d "{\"status\":3,\"leaseToken\":\"${LEASE_TOKEN}\",\"resultSummary\":\"mesh-lab-verify-complete\"}" \
     "http://${PEER_A_HOST}/api/mesh/tasks/${TASK_ID}/status")"
   echo "$DONE_JSON" | head -c 400
   echo
-  FINAL_JSON="$(curl -fsS -H "X-Nexo-Api-Key: ${API_KEY}" "http://${PEER_A_HOST}/api/mesh/tasks/${TASK_ID}")"
+  FINAL_JSON="$(curl -fsS -H "X-Ashlar-Api-Key: ${API_KEY}" "http://${PEER_A_HOST}/api/mesh/tasks/${TASK_ID}")"
   echo "$FINAL_JSON" | python3 -c '
 import json, sys
 t = json.load(sys.stdin)
@@ -355,7 +355,7 @@ print("Mesh task lifecycle OK — Succeeded, lease cleared")
 
   VERIFY_BRICK_ID="${MESH_LAB_VERIFY_BRICK_ID:-}"
   echo "== Mesh brick HTTP: GET catalog + POST execute on peer-b (bridge) =="
-  BRICKS_JSON="$(curl_on_lab_net_extra -H "X-Nexo-Api-Key: ${API_KEY}" "http://peer-b:8080/api/bricks")"
+  BRICKS_JSON="$(curl_on_lab_net_extra -H "X-Ashlar-Api-Key: ${API_KEY}" "http://peer-b:8080/api/bricks")"
   echo "$BRICKS_JSON" | head -c 500
   echo
   if [[ -z "$VERIFY_BRICK_ID" ]]; then
@@ -378,19 +378,19 @@ print(bid)
     EXEC_BODY="$(VERIFY_BRICK_ID="$VERIFY_BRICK_ID" python3 -c 'import json,os; print(json.dumps({"brickId":os.environ["VERIFY_BRICK_ID"],"implementation":"Deterministic","input":{}}))')"
     curl_on_lab_net_extra -X POST \
       -H "Content-Type: application/json" \
-      -H "X-Nexo-Api-Key: ${API_KEY}" \
+      -H "X-Ashlar-Api-Key: ${API_KEY}" \
       -d "$EXEC_BODY" \
       "http://peer-b:8080/api/bricks/${VERIFY_BRICK_ID}/execute" | head -c 500
     echo
     echo "Brick execute HTTP round-trip OK — brickId=${VERIFY_BRICK_ID}"
   fi
 else
-  echo "(Skipping mesh fleet POST test: no Nexo__Security__ApiKey in env file)"
+  echo "(Skipping mesh fleet POST test: no Ashlar__Security__ApiKey in env file)"
 fi
 
 if [[ -n "$API_KEY" ]]; then
   echo "== Mesh API: cross-container GET elastic/status → peer-a (fleet director) =="
-  curl_on_lab_net_extra -H "X-Nexo-Api-Key: ${API_KEY}" "http://peer-a:8080/api/mesh/elastic/status" | head -c 500
+  curl_on_lab_net_extra -H "X-Ashlar-Api-Key: ${API_KEY}" "http://peer-a:8080/api/mesh/elastic/status" | head -c 500
   echo
 fi
 
@@ -483,16 +483,16 @@ if compose_workers ps -q worker 2>/dev/null | grep -q .; then
   fi
   echo
   if [[ -n "$API_KEY" ]]; then
-    echo "== Worker tier: GET /api/status with X-Nexo-Api-Key (open API; fleet routes live on peer-a) =="
+    echo "== Worker tier: GET /api/status with X-Ashlar-Api-Key (open API; fleet routes live on peer-a) =="
     if [[ "$WORKER_BRIDGE_MODE" == 1 ]]; then
-      curl_on_lab_net_extra -H "X-Nexo-Api-Key: ${API_KEY}" "${WORKER_HTTP}/api/status" | head -c 400
+      curl_on_lab_net_extra -H "X-Ashlar-Api-Key: ${API_KEY}" "${WORKER_HTTP}/api/status" | head -c 400
     else
-      curl -fsS -H "X-Nexo-Api-Key: ${API_KEY}" "${WORKER_HTTP}/api/status" | head -c 400
+      curl -fsS -H "X-Ashlar-Api-Key: ${API_KEY}" "${WORKER_HTTP}/api/status" | head -c 400
     fi
     echo
   fi
   if [[ -n "$BASIC_PASS" ]]; then
-    WUSER="${BASIC_USER:-nexo}"
+    WUSER="${BASIC_USER:-ashlar}"
     echo "== Worker tier: GET /api/status with Basic auth =="
     if [[ "$WORKER_BRIDGE_MODE" == 1 ]]; then
       curl_on_lab_net_extra -u "${WUSER}:${BASIC_PASS}" "${WORKER_HTTP}/api/status" | head -c 400
@@ -501,7 +501,7 @@ if compose_workers ps -q worker 2>/dev/null | grep -q .; then
     fi
     echo
   else
-    echo "(Skipping worker Basic-auth status read: Nexo__Security__Worker__BasicAuthPassword unset)"
+    echo "(Skipping worker Basic-auth status read: Ashlar__Security__Worker__BasicAuthPassword unset)"
   fi
 else
   echo "(worker tier not running; use --profile workers to include workers)"

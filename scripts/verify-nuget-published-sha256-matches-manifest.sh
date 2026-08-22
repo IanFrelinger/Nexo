@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # Download each package from nuget.org flat-container and assert sha256 matches nuget-publish-manifest.json from the pack step.
-# Env: NEXO_MANIFEST_JSON (path), NEXO_NUGET_VERIFY_VERSION (must match manifest entries)
+# Env: ASHLAR_MANIFEST_JSON (path), ASHLAR_NUGET_VERIFY_VERSION (must match manifest entries)
 set -euo pipefail
-MAN="${NEXO_MANIFEST_JSON:?set NEXO_MANIFEST_JSON}"
-VER="${NEXO_NUGET_VERIFY_VERSION:?set NEXO_NUGET_VERIFY_VERSION}"
+MAN="${ASHLAR_MANIFEST_JSON:?set ASHLAR_MANIFEST_JSON}"
+VER="${ASHLAR_NUGET_VERIFY_VERSION:?set ASHLAR_NUGET_VERIFY_VERSION}"
 VER="${VER#v}"
 WORKDIR="$(mktemp -d)"
 trap 'rm -rf "${WORKDIR}"' EXIT

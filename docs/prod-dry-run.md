@@ -24,7 +24,7 @@ The script **builds**, **starts** services, waits until **`GET /health`** succee
 
 ## Fuller path — agent server (mounted workspace + background agents)
 
-Matches **Golden path C**: `deploy/compose/docker-compose.agent-server.yml`, image from `.docker/Dockerfile.agent-server`, optional **`NEXO_BACKGROUND_AGENTS_CONFIG`**.
+Matches **Golden path C**: `deploy/compose/docker-compose.agent-server.yml`, image from `.docker/Dockerfile.agent-server`, optional **`ASHLAR_BACKGROUND_AGENTS_CONFIG`**.
 
 ```bash
 make prod-dry-run-agent-server
@@ -32,7 +32,7 @@ make prod-dry-run-agent-server
 ./scripts/prod-dry-run.sh --agent-server
 ```
 
-**`NEXO_REPO_ROOT`** (host tree bind-mounted at `/work`) needs no setting for the default layout: the script defaults it to the repo root, and the compose file itself defaults to `../..` relative to `deploy/compose/` (also the repo root, whatever the shell CWD). Set it only to mount a different tree. Optional env file: [`docs/config/agent-server.env.example`](config/agent-server.env.example) (pass with `--env-file`, or save as `deploy/compose/.env`; Compose does not read a repo-root `.env` when the compose file lives under `deploy/compose/`).
+**`ASHLAR_REPO_ROOT`** (host tree bind-mounted at `/work`) needs no setting for the default layout: the script defaults it to the repo root, and the compose file itself defaults to `../..` relative to `deploy/compose/` (also the repo root, whatever the shell CWD). Set it only to mount a different tree. Optional env file: [`docs/config/agent-server.env.example`](config/agent-server.env.example) (pass with `--env-file`, or save as `deploy/compose/.env`; Compose does not read a repo-root `.env` when the compose file lives under `deploy/compose/`).
 
 ## First-time Ollama models
 
@@ -48,9 +48,9 @@ docker compose -f deploy/compose/docker-compose.portal.yml exec ollama ollama pu
 
 | Variable | Purpose |
 |----------|---------|
-| `NEXO_AGENT_SERVER_HTTP_PORT` | Host port (default **8080**) |
-| `NEXO_PROD_DRY_RUN_HOST` | Bind address for curls (default **127.0.0.1**) |
-| `NEXO_REPO_ROOT` | Host path to repo for **agent-server** bind-mount |
+| `ASHLAR_AGENT_SERVER_HTTP_PORT` | Host port (default **8080**) |
+| `ASHLAR_PROD_DRY_RUN_HOST` | Bind address for curls (default **127.0.0.1**) |
+| `ASHLAR_REPO_ROOT` | Host path to repo for **agent-server** bind-mount |
 
 ## Options
 
@@ -63,13 +63,13 @@ docker compose -f deploy/compose/docker-compose.portal.yml exec ollama ollama pu
 
 ## CI
 
-Use the same commands in a Linux job after `docker build` caching: one job runs **`./scripts/prod-dry-run.sh --portal`**, another can run **`--agent-server`** with `NEXO_REPO_ROOT=$GITHUB_WORKSPACE` and **`--keep-up`** omitted so the stack is torn down automatically.
+Use the same commands in a Linux job after `docker build` caching: one job runs **`./scripts/prod-dry-run.sh --portal`**, another can run **`--agent-server`** with `ASHLAR_REPO_ROOT=$GITHUB_WORKSPACE` and **`--keep-up`** omitted so the stack is torn down automatically.
 
 ## Relationship to tests
 
 | Mechanism | What it proves |
 |-----------|----------------|
 | `make test-prime-time` / `Category=ProdStyle` | Framework + DI + HTTP factories in the test process |
-| **`scripts/prod-dry-run.sh`** | Published **Nexo.API** image and Compose **network + volumes + sidecars** |
+| **`scripts/prod-dry-run.sh`** | Published **Ashlar.API** image and Compose **network + volumes + sidecars** |
 
 Use **both** for “as close to prod as we can” on Linux.

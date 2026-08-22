@@ -166,7 +166,7 @@ dotnet_naming_style.begins_with_i.capitalization = pascal_case
 dotnet_style_namespace_match_folder = true:suggestion
 
 # Type-forwarder shims intentionally use Core.Domain namespaces from Brick.Contracts/Authoring
-[src/Nexo.Brick.Contracts/Authoring/**.cs]
+[src/Ashlar.Brick.Contracts/Authoring/**.cs]
 dotnet_style_namespace_match_folder = false
 dotnet_diagnostic.IDE0130.severity = none
 
@@ -181,6 +181,6 @@ dotnet_style_namespace_match_folder = false
 dotnet_diagnostic.IDE0130.severity = none
 
 # Code-gen template, not compiled
-[src/Nexo.Infrastructure/Execution/Templates/**.cs]
+[src/Ashlar.Infrastructure/Execution/Templates/**.cs]
 dotnet_style_namespace_match_folder = false
 dotnet_diagnostic.IDE0130.severity = none

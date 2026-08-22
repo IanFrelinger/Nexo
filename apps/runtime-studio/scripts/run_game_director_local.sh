@@ -9,8 +9,8 @@ DISABLE_OBSERVATION=0
 FORMAT_JSON=0
 TEST_FILTER=""
 OLLAMA_MODEL_OVERRIDE=""
-if [[ -n "${NEXO_GAME_TEST_FILTER:-}" ]]; then
-  TEST_FILTER="${NEXO_GAME_TEST_FILTER}"
+if [[ -n "${ASHLAR_GAME_TEST_FILTER:-}" ]]; then
+  TEST_FILTER="${ASHLAR_GAME_TEST_FILTER}"
 fi
 
 while [[ $# -gt 0 ]]; do
@@ -57,7 +57,7 @@ else
   export OLLAMA_MODEL="${OLLAMA_MODEL:-llama3.1:latest}"
 fi
 
-TMP_CONFIG="${REPO_ROOT}/.nexo/agents/workspaces/runtime-studio/agent_set.game_director.runtime.json"
+TMP_CONFIG="${REPO_ROOT}/.ashlar/agents/workspaces/runtime-studio/agent_set.game_director.runtime.json"
 cp "${CONFIG_PATH}" "${TMP_CONFIG}"
 
 if [[ -n "${TEST_FILTER}" ]]; then
@@ -84,7 +84,7 @@ PY
 fi
 
 DAEMON_CMD=(
-  dotnet run --project application/src/Nexo.CLI -- background-agent daemon
+  dotnet run --project application/src/Ashlar.CLI -- background-agent daemon
   --config "${TMP_CONFIG}"
   --duration "${DURATION}"
 )

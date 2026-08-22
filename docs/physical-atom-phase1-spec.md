@@ -70,6 +70,6 @@ Refuses inconsistent binding-scope inputs before registration (same policy as Ph
 
 ## Implementation
 
-- Resolution types: `applications/Nexo.Certification.Physical/Resolution/`
-- Pipeline: `src/Nexo.Infrastructure/Certification/Physical/AssetBundleCertificationPipeline.cs`
+- Resolution types: `applications/Ashlar.Certification.Physical/Resolution/`
+- Pipeline: `src/Ashlar.Infrastructure/Certification/Physical/AssetBundleCertificationPipeline.cs`
 - Tests: `PhysicalAtomResolutionVerifierTests`, `AssetBundleCertificationPipelineTests`, `PhysicalAtomCertBundleManifestTests`

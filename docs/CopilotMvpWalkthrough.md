@@ -1,24 +1,24 @@
 # Copilot MVP: First-Success Walkthrough
 
-This guide walks you through submitting your first coding task through the Nexo copilot, seeing the result with an auditable execution context, and verifying trust controls.
+This guide walks you through submitting your first coding task through the Ashlar copilot, seeing the result with an auditable execution context, and verifying trust controls.
 
 ## Prerequisites
 
 - .NET SDK 10.x (repo is pinned by `global.json`; the API project ships on `net10.0`)
-- Nexo repo cloned and built (`dotnet build application/src/Nexo.API/Nexo.API.csproj`)
-- An LLM provider configured (or `NEXO_ALLOW_MOCK=1` for local testing without API keys)
+- Ashlar repo cloned and built (`dotnet build application/src/Ashlar.API/Ashlar.API.csproj`)
+- An LLM provider configured (or `ASHLAR_ALLOW_MOCK=1` for local testing without API keys)
 
 ## 1. Start the API
 
 ```bash
 # With mock provider (no API keys needed):
-NEXO_ALLOW_MOCK=1 dotnet run --project application/src/Nexo.API -f net10.0
+ASHLAR_ALLOW_MOCK=1 dotnet run --project application/src/Ashlar.API -f net10.0
 
 # With Ollama:
-OLLAMA_BASE_URL=http://localhost:11434 dotnet run --project application/src/Nexo.API -f net10.0
+OLLAMA_BASE_URL=http://localhost:11434 dotnet run --project application/src/Ashlar.API -f net10.0
 
 # With OpenAI:
-OPENAI_API_KEY=sk-... dotnet run --project application/src/Nexo.API -f net10.0
+OPENAI_API_KEY=sk-... dotnet run --project application/src/Ashlar.API -f net10.0
 ```
 
 The portal is available at `http://localhost:5000` (default Kestrel HTTP port). Docker compose stacks use port `8080` instead — see section 6.
@@ -39,7 +39,7 @@ The portal is available at `http://localhost:5000` (default Kestrel HTTP port). 
 ```bash
 curl -s http://localhost:5000/api/copilot/task \
   -H "Content-Type: application/json" \
-  -d '{"task": "List the top 3 security findings in src/Nexo.Infrastructure"}' \
+  -d '{"task": "List the top 3 security findings in src/Ashlar.Infrastructure"}' \
   | jq .
 ```
 
@@ -67,26 +67,26 @@ curl -s http://localhost:5000/api/copilot/tasks | jq .
 curl -s http://localhost:5000/api/trust/dashboard | jq .
 
 # Or via CLI:
-dotnet run --project application/src/Nexo.CLI -- trust audit --json
-dotnet run --project application/src/Nexo.CLI -- trust dashboard
+dotnet run --project application/src/Ashlar.CLI -- trust audit --json
+dotnet run --project application/src/Ashlar.CLI -- trust dashboard
 ```
 
-Note: CLI trust commands require `NEXO_TRUST_ENABLED=1` in the environment for full trust service registration.
+Note: CLI trust commands require `ASHLAR_TRUST_ENABLED=1` in the environment for full trust service registration.
 
 ## 5. Control Trust Boundary
 
 ```bash
 # Apply strict enterprise policy pack:
-dotnet run --project application/src/Nexo.CLI -- trust pack apply --id strict-enterprise
+dotnet run --project application/src/Ashlar.CLI -- trust pack apply --id strict-enterprise
 
 # Pause observation (halt data collection):
-dotnet run --project application/src/Nexo.CLI -- trust pause
+dotnet run --project application/src/Ashlar.CLI -- trust pause
 
 # Resume:
-dotnet run --project application/src/Nexo.CLI -- trust resume
+dotnet run --project application/src/Ashlar.CLI -- trust resume
 
 # View boundary status:
-dotnet run --project application/src/Nexo.CLI -- trust boundary
+dotnet run --project application/src/Ashlar.CLI -- trust boundary
 ```
 
 ## 6. Docker Compose Launch

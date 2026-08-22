@@ -2,19 +2,19 @@
 
 **Status:** landed. The heterogeneous lab composes the commercial fleet director with open mesh/API worker primitives. See [`OpenCoreBoundary.md`](OpenCoreBoundary.md) for the authoritative open/commercial split.
 
-The lab runs **heterogeneous Nexo hosts** on one Docker bridge so you can test **different images and security configurations** together without extra hardware. **peer-a** is the commercial fleet director (`Fleet.Host`); **peer-b** and **worker** use open `Nexo.API`.
+The lab runs **heterogeneous Ashlar hosts** on one Docker bridge so you can test **different images and security configurations** together without extra hardware. **peer-a** is the commercial fleet director (`Fleet.Host`); **peer-b** and **worker** use open `Ashlar.API`.
 
 ## What runs by default
 
 | Role | Dockerfile (override) | Runtime / env highlights | Auth (override) |
 |------|-------------------------|---------------------------|-----------------|
-| **peer-a** | `MESH_LAB_PEER_A_DOCKERFILE` → **`.docker/Dockerfile.fleet-host`** | `ASPNETCORE_ENVIRONMENT` = Production (default); LiteDB director persistence | **ApiKey** (`Nexo__Security__ApiKey`) |
-| **peer-b** | `MESH_LAB_PEER_B_DOCKERFILE` → **`.docker/Dockerfile.quickstart`** | **`NEXO_ALLOW_MOCK=1`**, Staging | **ApiKeyOrBearerToken** — same **`Nexo__Security__ApiKey`** *or* **`Nexo__Security__PeerB__BearerToken`** |
-| **worker** (profile **`workers`**) | `MESH_LAB_WORKER_DOCKERFILE` → **`.docker/Dockerfile.api`** | Development by default (`MESH_LAB_WORKER_ASPNETCORE_ENVIRONMENT`), `ShowAdvisoryInPortal` off by default | **ApiKeyOrBasic** — API key *or* Basic (**`nexo`** + **`Nexo__Security__Worker__BasicAuthPassword`**) |
+| **peer-a** | `MESH_LAB_PEER_A_DOCKERFILE` → **`.docker/Dockerfile.fleet-host`** | `ASPNETCORE_ENVIRONMENT` = Production (default); LiteDB director persistence | **ApiKey** (`Ashlar__Security__ApiKey`) |
+| **peer-b** | `MESH_LAB_PEER_B_DOCKERFILE` → **`.docker/Dockerfile.quickstart`** | **`ASHLAR_ALLOW_MOCK=1`**, Staging | **ApiKeyOrBearerToken** — same **`Ashlar__Security__ApiKey`** *or* **`Ashlar__Security__PeerB__BearerToken`** |
+| **worker** (profile **`workers`**) | `MESH_LAB_WORKER_DOCKERFILE` → **`.docker/Dockerfile.api`** | Development by default (`MESH_LAB_WORKER_ASPNETCORE_ENVIRONMENT`), `ShowAdvisoryInPortal` off by default | **ApiKeyOrBasic** — API key *or* Basic (**`ashlar`** + **`Ashlar__Security__Worker__BasicAuthPassword`**) |
 
 **Optional heavier worker image:** set `MESH_LAB_WORKER_DOCKERFILE=.docker/Dockerfile.agent-server` (SDK-based final image; slower CI/build, richer for local soak tests).
 
-All **`Nexo__Security__*`** keys map to the same binding as production (`Nexo:Security`); see **`docs/Configuration.md`**.
+All **`Ashlar__Security__*`** keys map to the same binding as production (`Ashlar:Security`); see **`docs/Configuration.md`**.
 
 ## Prerequisites
 
@@ -39,7 +39,7 @@ make mesh-lab-e2e-workers
 # or: bash scripts/run-mesh-lab-e2e.sh --workers
 ```
 
-Requires Docker running (`docker info`). Uses project name **`nexo_mesh_lab_local`** by default.
+Requires Docker running (`docker info`). Uses project name **`ashlar_mesh_lab_local`** by default.
 
 On **Apple Silicon**, builds default to **`linux/amd64`** (same as CI) because `grpc.tools`/`protoc` can crash on `linux_arm64` inside Docker. Override with `DOCKER_DEFAULT_PLATFORM=linux/arm64` only if your setup handles it.
 
@@ -47,7 +47,7 @@ On **Apple Silicon**, builds default to **`linux/amd64`** (same as CI) because `
 
 ```bash
 cp docs/config/mesh-lab.env.example .env.mesh-lab
-# Set Nexo__Security__ApiKey, Nexo__Security__PeerB__BearerToken, Nexo__Security__Worker__BasicAuthPassword, MESH_LAB_PEER_REGISTRATION_KEY
+# Set Ashlar__Security__ApiKey, Ashlar__Security__PeerB__BearerToken, Ashlar__Security__Worker__BasicAuthPassword, MESH_LAB_PEER_REGISTRATION_KEY
 
 make mesh-lab-up
 make mesh-lab-verify
@@ -81,7 +81,7 @@ Requires **`python3`** on the host (parses mesh task JSON).
 - **Mesh control plane (JSON)**:
   - `GET /api/mesh/fleet/nodes` from the host and from inside the bridge (empty `[]` initially).
   - `GET /api/mesh/elastic/status` on peer-b (Bearer from host; unauthenticated GET from inside the bridge when mesh token is unset).
-  - `POST /api/mesh/fleet/nodes` on peer-a with `X-Nexo-Api-Key`, registering **`http://peer-b:8080`** as **`mesh-lab-verify-peer`**, then verifies the fleet list includes that peer id.
+  - `POST /api/mesh/fleet/nodes` on peer-a with `X-Ashlar-Api-Key`, registering **`http://peer-b:8080`** as **`mesh-lab-verify-peer`**, then verifies the fleet list includes that peer id.
   - **Mesh task placement** (same API key path): `POST /api/mesh/tasks` → `POST /api/mesh/tasks/{taskId}/schedule` → **`Assigned`** with **`assignedPeerId`** / **`assignedApiBaseUrl`**.
   - **Mesh task lifecycle** on the director (peer-a): wrong **`leaseToken`** → **409**; **`PATCH`** **`Running`** then **`Succeeded`** with valid lease; **`GET`** confirms terminal state and cleared lease.
   - **Brick HTTP** (optional): from the bridge, **`GET /api/bricks`** and **`POST /api/bricks/{id}/execute`** on **peer-b** (first catalog entry, or **`MESH_LAB_VERIFY_BRICK_ID`**); skipped if the catalog is empty.
@@ -95,17 +95,17 @@ make mesh-lab-verify-deep
 MESH_LAB_VERIFY_DEEP=1 make mesh-lab-e2e-workers
 ```
 
-That covers **Docker DNS, bridge connectivity, security headers, director placement, lease-gated lifecycle, federated brick HTTP, and (with the `workers` profile) an autonomous worker executor** on the worker container (`Nexo:MeshLab:WorkerExecutor:Enabled`). Tasks named with prefix **`mesh-lab-worker-exec`** are scheduled on the director and completed by the worker (Running → optional brick on assigned peer → Succeeded) without manual PATCH. Set **`MESH_LAB_SKIP_WORKER_EXECUTOR=1`** to skip that check.
+That covers **Docker DNS, bridge connectivity, security headers, director placement, lease-gated lifecycle, federated brick HTTP, and (with the `workers` profile) an autonomous worker executor** on the worker container (`Ashlar:MeshLab:WorkerExecutor:Enabled`). Tasks named with prefix **`mesh-lab-worker-exec`** are scheduled on the director and completed by the worker (Running → optional brick on assigned peer → Succeeded) without manual PATCH. Set **`MESH_LAB_SKIP_WORKER_EXECUTOR=1`** to skip that check.
 
-**Entitlements (worker tier):** [`scripts/mesh-lab-verify-entitlements.sh`](../scripts/mesh-lab-verify-entitlements.sh) (invoked from standard verify when workers are up) checks **CopilotScoped** API key → **403** on `POST /api/mesh/tasks`, full key → **200**, and **`Nexo:Entitlements:MaxCopilotSubmissionsPerHour`** → **429** after the configured limit. Configure **`Nexo__Security__CopilotScopedApiKey`** in `.env.mesh-lab`.
+**Entitlements (worker tier):** [`scripts/mesh-lab-verify-entitlements.sh`](../scripts/mesh-lab-verify-entitlements.sh) (invoked from standard verify when workers are up) checks **CopilotScoped** API key → **403** on `POST /api/mesh/tasks`, full key → **200**, and **`Ashlar:Entitlements:MaxCopilotSubmissionsPerHour`** → **429** after the configured limit. Configure **`Ashlar__Security__CopilotScopedApiKey`** in `.env.mesh-lab`.
 
-**Trust-tier placement (peer-a director):** default **`Nexo__Mesh__Placement__PeerTrustPolicy=trusted-only`**. [`scripts/mesh-lab-verify-trust.sh`](../scripts/mesh-lab-verify-trust.sh) registers trusted vs untrusted fleet nodes and asserts placement picks trusted peers only. Set **`MESH_LAB_SKIP_TRUST_VERIFY=1`** to skip.
+**Trust-tier placement (peer-a director):** default **`Ashlar__Mesh__Placement__PeerTrustPolicy=trusted-only`**. [`scripts/mesh-lab-verify-trust.sh`](../scripts/mesh-lab-verify-trust.sh) registers trusted vs untrusted fleet nodes and asserts placement picks trusted peers only. Set **`MESH_LAB_SKIP_TRUST_VERIFY=1`** to skip.
 
-**Fleet governance (peer-a director):** default **`Nexo__Mesh__Fleet__RequirePeerRegistrationKey=true`**. Each fleet register must include **`peerRegistrationKey`** in the JSON body (distinct from the operator **`Nexo__Security__ApiKey`**). Set **`MESH_LAB_PEER_REGISTRATION_KEY`** in `.env.mesh-lab`. [`scripts/mesh-lab-verify-governance.sh`](../scripts/mesh-lab-verify-governance.sh) (invoked from standard verify) checks registration policy, credential rotation (fingerprint change), **`POST /api/mesh/fleet/nodes/{peerId}/revoke`** → placement blocked, and **`/admit`** → placement restored. Set **`MESH_LAB_SKIP_GOV_VERIFY=1`** to skip.
+**Fleet governance (peer-a director):** default **`Ashlar__Mesh__Fleet__RequirePeerRegistrationKey=true`**. Each fleet register must include **`peerRegistrationKey`** in the JSON body (distinct from the operator **`Ashlar__Security__ApiKey`**). Set **`MESH_LAB_PEER_REGISTRATION_KEY`** in `.env.mesh-lab`. [`scripts/mesh-lab-verify-governance.sh`](../scripts/mesh-lab-verify-governance.sh) (invoked from standard verify) checks registration policy, credential rotation (fingerprint change), **`POST /api/mesh/fleet/nodes/{peerId}/revoke`** → placement blocked, and **`/admit`** → placement restored. Set **`MESH_LAB_SKIP_GOV_VERIFY=1`** to skip.
 
 **Director CLI (Product 5.3):** [`scripts/mesh-lab-verify-director-cli.sh`](../scripts/mesh-lab-verify-director-cli.sh) exercises **commercial mesh director CLI `register|revoke|admit`** against the running lab (requires .NET SDK on the host). Set **`MESH_LAB_SKIP_DIRECTOR_CLI_VERIFY=1`** to skip. Ops: [`docs/runbooks/mesh-lab-operations.md`](runbooks/mesh-lab-operations.md) (split-brain, upgrade order, director vs `instances.json`).
 
-**Director persistence (Phase 9):** peer-a uses **LiteDB** (`Nexo__Mesh__Persistence__Provider=LiteDb`, volume `mesh_lab_peer_a_data`). [`scripts/mesh-lab-verify-persistence.sh`](../scripts/mesh-lab-verify-persistence.sh) restarts peer-a and asserts fleet + tasks survive. Set **`MESH_LAB_SKIP_PERSISTENCE_VERIFY=1`** to skip. See [`MeshPhase9DirectorPersistence.md`](MeshPhase9DirectorPersistence.md).
+**Director persistence (Phase 9):** peer-a uses **LiteDB** (`Ashlar__Mesh__Persistence__Provider=LiteDb`, volume `mesh_lab_peer_a_data`). [`scripts/mesh-lab-verify-persistence.sh`](../scripts/mesh-lab-verify-persistence.sh) restarts peer-a and asserts fleet + tasks survive. Set **`MESH_LAB_SKIP_PERSISTENCE_VERIFY=1`** to skip. See [`MeshPhase9DirectorPersistence.md`](MeshPhase9DirectorPersistence.md).
 
 **Network negative (Phase 11):** [`scripts/mesh-lab-verify-network-negative.sh`](../scripts/mesh-lab-verify-network-negative.sh) exercises blackhole/DNS worker URLs, drained-only placement, **peer-b** stop/start partition, and director restart + lease when LiteDB is on. Set **`MESH_LAB_SKIP_NETWORK_NEGATIVE_VERIFY=1`** to skip. See [`MeshPhase11NetworkNegative.md`](MeshPhase11NetworkNegative.md).
 
@@ -154,18 +154,18 @@ make mesh-lab-stress
 ## Try the mesh CLI
 
 ```bash
-export NEXO_MESH_DIRECTOR_BASE_URL=http://127.0.0.1:18081
-export NEXO_MESH_API_KEY='your-key'
-dotnet run --project commercial/src/Nexo.Commercial.MeshDirector -- director get /health --json
+export ASHLAR_MESH_DIRECTOR_BASE_URL=http://127.0.0.1:18081
+export ASHLAR_MESH_API_KEY='your-key'
+dotnet run --project commercial/src/Ashlar.Commercial.MeshDirector -- director get /health --json
 
-export NEXO_MESH_DIRECTOR_BASE_URL=http://127.0.0.1:18082
+export ASHLAR_MESH_DIRECTOR_BASE_URL=http://127.0.0.1:18082
 # peer-b accepts Bearer OR same API key:
-dotnet run --project commercial/src/Nexo.Commercial.MeshDirector -- director get /health --json
+dotnet run --project commercial/src/Ashlar.Commercial.MeshDirector -- director get /health --json
 ```
 
 ## instances.json (optional)
 
-Use host URLs from above; list local peers with `nexo mesh peers` or fleet nodes with `director list-nodes`.
+Use host URLs from above; list local peers with `ashlar mesh peers` or fleet nodes with `director list-nodes`.
 
 ## Stop
 
@@ -187,7 +187,7 @@ Pre-production gaps that Docker bridge alone cannot cover are automated in **Pha
 
 **`.github/workflows/mesh-lab-gate.yml`** writes lab secrets, brings up peers **and** the **`workers`** profile, then runs **`mesh-lab-verify.sh`** and **`mesh-lab-verify-deep.sh`**.
 
-**Optional dotnet mirror:** set **`NEXO_RUN_MESH_LAB=1`** and run **`make test-mesh-lab`** (or `dotnet test … --filter Category=MeshLab`). **`MeshLabDockerE2ETests`** starts the same Compose stack and invokes the same verify scripts; skipped when the env var is unset.
+**Optional dotnet mirror:** set **`ASHLAR_RUN_MESH_LAB=1`** and run **`make test-mesh-lab`** (or `dotnet test … --filter Category=MeshLab`). **`MeshLabDockerE2ETests`** starts the same Compose stack and invokes the same verify scripts; skipped when the env var is unset.
 
 ## Revision history
 
@@ -197,9 +197,9 @@ Pre-production gaps that Docker bridge alone cannot cover are automated in **Pha
 | 2026-04-24 | Scalable workers + stress ramp. |
 | 2026-05-17 | Mesh verify: task create→schedule placement; worker profile in CI; stronger worker auth checks. |
 | 2026-05-18 | Lease lifecycle + brick execute in verify; mesh-lab-verify-deep (checkpoint/migrate/reschedule). |
-| 2026-05-18 | Optional `MeshLabDockerE2ETests` (`NEXO_RUN_MESH_LAB=1`, `make test-mesh-lab`). |
+| 2026-05-18 | Optional `MeshLabDockerE2ETests` (`ASHLAR_RUN_MESH_LAB=1`, `make test-mesh-lab`). |
 | 2026-05-18 | Fix GrpcAgentTransport DI (ambient barrier context); worker tier defaults to Development again. |
-| 2026-05-19 | Lab worker executor (`Nexo:MeshLab:WorkerExecutor`) on worker container; verify script autonomous task path. |
+| 2026-05-19 | Lab worker executor (`Ashlar:MeshLab:WorkerExecutor`) on worker container; verify script autonomous task path. |
 | 2026-05-19 | Stress gate workflow; bootstrap `--deep`; `make mesh-lab-e2e-stress` / `make mesh-lab-stress`. |
 | 2026-05-19 | Entitlements verify (CopilotScoped + hourly copilot quota on worker). |
 | 2026-05-19 | Fleet governance (registration key, admit/revoke); director CLI verify; expanded ops runbook. |

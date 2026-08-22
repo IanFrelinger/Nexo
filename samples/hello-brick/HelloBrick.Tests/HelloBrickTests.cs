@@ -1,6 +1,6 @@
 using FluentAssertions;
-using Nexo.Core.Domain.Bricks;
-using Nexo.Core.Domain.Execution;
+using Ashlar.Core.Domain.Bricks;
+using Ashlar.Core.Domain.Execution;
 using HelloBrick;
 using Xunit;
 
@@ -15,7 +15,7 @@ public sealed class HelloBrickTests
         var brick = new HelloBrick();
         var input = new BrickInput(new Dictionary<string, object>
         {
-            ["name"] = "Nexo"
+            ["name"] = "Ashlar"
         });
 
         var output = await brick.ExecuteAsync(
@@ -23,9 +23,9 @@ public sealed class HelloBrickTests
             ImplementationType.Deterministic,
             new TestExecutionContext());
 
-        output.Get<string>("message").Should().Be("Hello, Nexo!");
+        output.Get<string>("message").Should().Be("Hello, Ashlar!");
         output.Get<string>("implementation").Should().Be(nameof(ImplementationType.Deterministic));
-        output.Summary.Should().Contain("Nexo");
+        output.Summary.Should().Contain("Ashlar");
     }
 
     /// <summary>Test execution context.</summary>

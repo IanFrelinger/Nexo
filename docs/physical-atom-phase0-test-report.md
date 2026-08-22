@@ -50,7 +50,7 @@
 ## Execution
 
 ```bash
-dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj \
   -f net8.0 \
   --filter "FullyQualifiedName~PhysicalAtomCertificateVerifierTests|FullyQualifiedName~BundleCertificationBrickTests|FullyQualifiedName~PhysicalAtomSampleCertTests"
 ```

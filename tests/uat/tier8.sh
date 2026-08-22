@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Nexo UAT — Tier 8 (documentation truthfulness, swept across every page).
+# Ashlar UAT — Tier 8 (documentation truthfulness, swept across every page).
 #
 # Two of the defects this suite found were doc rot: a command that a build change quietly broke (#350)
 # and a path the docs called gitignored that was tracked (#354). Both were found by reading one page
@@ -34,7 +34,7 @@ say "8.1 every repo path a FOLLOW-ALONG page names still exists"
 #     paths they intend to CREATE; that is what a plan is
 #   - pages name paths the reader creates (deploy/compose/.env, deploy/compose/local/) or a run
 #     generates (spikes/**/generated/) -- all gitignored, which is the rule used to skip them
-#   - CONTRIBUTING names `src/Nexo.CLI` in the NEGATIVE, to warn that the CLI is not there
+#   - CONTRIBUTING names `src/Ashlar.CLI` in the NEGATIVE, to warn that the CLI is not there
 # A check that cries wolf gets muted, so this asks the narrower question that actually matters: on the
 # pages a tester or operator is told to FOLLOW, does every path they are pointed at exist?
 FOLLOW_ALONG="docs/TesterQuickstart.md docs/GettingStarted.md docs/IntegratorGuide.md docs/DEPLOYMENT.md

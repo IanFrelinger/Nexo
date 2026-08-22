@@ -3,7 +3,7 @@ param(
     [Parameter(Mandatory = $true)]
     [string] $Version,
     [string] $FeedUrl = "https://api.nuget.org/v3/index.json",
-    [string] $SourceKey = $(if ($env:NEXO_VERIFY_SOURCE_KEY) { $env:NEXO_VERIFY_SOURCE_KEY } else { "published" })
+    [string] $SourceKey = $(if ($env:ASHLAR_VERIFY_SOURCE_KEY) { $env:ASHLAR_VERIFY_SOURCE_KEY } else { "published" })
 )
 
 $ErrorActionPreference = "Stop"
@@ -14,8 +14,8 @@ $Cfg = Join-Path $WorkDir "NuGet.Config"
 if (Test-Path $WorkDir) { Remove-Item -Recurse -Force $WorkDir }
 New-Item -ItemType Directory -Path $WorkDir -Force | Out-Null
 
-$user = $env:NEXO_NUGET_USERNAME
-$pass = $env:NEXO_NUGET_PASSWORD
+$user = $env:ASHLAR_NUGET_USERNAME
+$pass = $env:ASHLAR_NUGET_PASSWORD
 $credBlock = ""
 if (-not [string]::IsNullOrWhiteSpace($user) -and -not [string]::IsNullOrWhiteSpace($pass)) {
     $credBlock = @"
@@ -42,7 +42,7 @@ $credBlock
 $Proj = Join-Path $Root "docs/samples/StableSdkHostSample/package-consumer/StableSdkHostSample.Package.csproj"
 
 Write-Host "verify-published-feed: restore $Version from $FeedUrl ..."
-dotnet restore $Proj --configfile $Cfg -p:NexoSdkPackageVersion=$Version -v minimal
+dotnet restore $Proj --configfile $Cfg -p:AshlarSdkPackageVersion=$Version -v minimal
 
 Write-Host "verify-published-feed: build ..."
 dotnet build $Proj -c Release --no-restore -v minimal

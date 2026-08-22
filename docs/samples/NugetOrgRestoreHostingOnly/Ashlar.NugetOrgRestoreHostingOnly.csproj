@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>Ashlar.NugetOrgRestoreHostingOnly</RootNamespace>
+    <AshlarPublishedVerifyVersion Condition="'$(AshlarPublishedVerifyVersion)' == ''">0.0.0</AshlarPublishedVerifyVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Ashlar.Hosting" Version="$(AshlarPublishedVerifyVersion)" />
+  </ItemGroup>
+</Project>

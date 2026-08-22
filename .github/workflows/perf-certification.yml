@@ -33,11 +33,11 @@ jobs:
           set -euo pipefail
           mkdir -p perf-results
           echo "{\"baseline\":\"${{ github.event.inputs.baseline }}\",\"runId\":\"${{ github.run_id }}\",\"sha\":\"${{ github.sha }}\",\"timestamp\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}" > perf-results/perf-certification-meta.json
-          dotnet test Nexo.sln \
+          dotnet test Ashlar.sln \
             --configuration Release \
             --logger "trx;LogFileName=perf-certification.trx" \
             --results-directory perf-results \
-            --filter "FullyQualifiedName~Nexo.Tests.Orchestration.Performance|FullyQualifiedName~Benchmark" \
+            --filter "FullyQualifiedName~Ashlar.Tests.Orchestration.Performance|FullyQualifiedName~Benchmark" \
             --verbosity minimal
 
       - name: Extract perf metrics and check thresholds

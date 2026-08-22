@@ -25,11 +25,11 @@ source_env_kv() {
   grep -E "^${key}=" "$COMPOSE_ENV_FILE" 2>/dev/null | head -1 | cut -d= -f2- | tr -d '\r' || true
 }
 
-API_KEY="$(source_env_kv Nexo__Security__ApiKey)"
+API_KEY="$(source_env_kv Ashlar__Security__ApiKey)"
 MESH_LAB_PEER_REGISTRATION_KEY="$(source_env_kv MESH_LAB_PEER_REGISTRATION_KEY)"
 export MESH_LAB_PEER_REGISTRATION_KEY
 if [[ -z "$API_KEY" ]]; then
-  echo "(Skipping retry/result verify: no Nexo__Security__ApiKey in env file)"
+  echo "(Skipping retry/result verify: no Ashlar__Security__ApiKey in env file)"
   exit 0
 fi
 
@@ -38,11 +38,11 @@ compose() {
 }
 
 mesh_post() {
-  curl -fsS -X POST -H "Content-Type: application/json" -H "X-Nexo-Api-Key: ${API_KEY}" "$@"
+  curl -fsS -X POST -H "Content-Type: application/json" -H "X-Ashlar-Api-Key: ${API_KEY}" "$@"
 }
 
 mesh_delete() {
-  curl -fsS -X DELETE -H "X-Nexo-Api-Key: ${API_KEY}" "$@" >/dev/null 2>&1 || true
+  curl -fsS -X DELETE -H "X-Ashlar-Api-Key: ${API_KEY}" "$@" >/dev/null 2>&1 || true
 }
 
 echo "== Mesh lab retry + result artifact =="
@@ -88,7 +88,7 @@ print("Retry placed on alternate peer — OK")
 '
 
 LEASE="$(echo "$RETRY_JSON" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("leaseToken") or "")')"
-curl -fsS -X PATCH -H "Content-Type: application/json" -H "X-Nexo-Api-Key: ${API_KEY}" \
+curl -fsS -X PATCH -H "Content-Type: application/json" -H "X-Ashlar-Api-Key: ${API_KEY}" \
   -d "{\"status\":2,\"leaseToken\":\"${LEASE}\"}" \
   "http://${PEER_A_HOST}/api/mesh/tasks/${TASK_ID}/status" >/dev/null
 
@@ -101,11 +101,11 @@ if [[ -z "$PEER_A_CID" ]]; then
 fi
 printf '%s' "$RESULT_BYTES" | docker exec -i "$PEER_A_CID" tee "$RESULT_FILE" >/dev/null
 
-curl -fsS -X PATCH -H "Content-Type: application/json" -H "X-Nexo-Api-Key: ${API_KEY}" \
+curl -fsS -X PATCH -H "Content-Type: application/json" -H "X-Ashlar-Api-Key: ${API_KEY}" \
   -d "{\"status\":3,\"leaseToken\":\"${LEASE}\",\"resultSummary\":\"mesh-lab-retry-result\",\"resultHandle\":\"${RESULT_FILE}\"}" \
   "http://${PEER_A_HOST}/api/mesh/tasks/${TASK_ID}/status" >/dev/null
 
-DOWNLOAD="$(curl -fsS -H "X-Nexo-Api-Key: ${API_KEY}" \
+DOWNLOAD="$(curl -fsS -H "X-Ashlar-Api-Key: ${API_KEY}" \
   "http://${PEER_A_HOST}/api/mesh/tasks/${TASK_ID}/result")"
 if [[ "$DOWNLOAD" != "$RESULT_BYTES" ]]; then
   echo "Result download mismatch (expected ${#RESULT_BYTES} bytes, got ${#DOWNLOAD})" >&2
@@ -117,7 +117,7 @@ echo "GET /api/mesh/tasks/{id}/result download — OK"
 TASK2="$(mesh_post -d '{"name":"mesh-lab-no-result","steps":1}' \
   "http://${PEER_A_HOST}/api/mesh/tasks")"
 TASK2_ID="$(echo "$TASK2" | python3 -c 'import json,sys; print(json.load(sys.stdin)["taskId"])')"
-BAD_CODE="$(curl -s -o /dev/null -w '%{http_code}' -H "X-Nexo-Api-Key: ${API_KEY}" \
+BAD_CODE="$(curl -s -o /dev/null -w '%{http_code}' -H "X-Ashlar-Api-Key: ${API_KEY}" \
   "http://${PEER_A_HOST}/api/mesh/tasks/${TASK2_ID}/result")"
 if [[ "$BAD_CODE" != "400" ]]; then
   echo "Expected 400 downloading result without handle, got ${BAD_CODE}" >&2

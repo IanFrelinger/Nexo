@@ -15,7 +15,7 @@ make security-gate-full
 
 | Tier | Focus | Command |
 |------|--------|---------|
-| A | Full `nexo-ready-gate` | `make rc-gate-tier-a` |
+| A | Full `ashlar-ready-gate` | `make rc-gate-tier-a` |
 | B | Ship gate + `ci release-bundle` | `make rc-gate-tier-b` |
 | C | Evidence audit (bundle, security, rollback docs) | `make rc-gate-tier-c` |
 | D | GitHub Actions RC workflows | `make rc-gate-tier-d` |
@@ -25,7 +25,7 @@ make security-gate-full
 | Variable | Effect |
 |----------|--------|
 | `RC_GATE_SKIP_PRIOR=1` | Skip tier A (default in `rc-gate-full`) |
-| `RC_GATE_SKIP_DOCKER=1` | Tier A: `NEXO_READY_SKIP_DOCKER=1` |
+| `RC_GATE_SKIP_DOCKER=1` | Tier A: `ASHLAR_READY_SKIP_DOCKER=1` |
 | `RC_GATE_RELEASE_BUNDLE_FULL=1` | Tier B: also `ci release-bundle --profile full` |
 | `RC_GATE_STRICT_EVIDENCE=1` | Tier C fails on bundle FAIL |
 | `RC_GATE_STRICT_SECURITY=1` | Tier C fails on High/Critical CVEs |

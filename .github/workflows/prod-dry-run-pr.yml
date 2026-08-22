@@ -27,7 +27,7 @@ jobs:
           - stack: agent-server
             args: "--agent-server"
     env:
-      NEXO_REPO_ROOT: ${{ github.workspace }}
+      ASHLAR_REPO_ROOT: ${{ github.workspace }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7

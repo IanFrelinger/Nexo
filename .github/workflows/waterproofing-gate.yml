@@ -20,7 +20,7 @@ jobs:
         with:
           name: waterproofing-gate-${{ github.run_id }}
           path: |
-            .nexo/perf/
-            .nexo/compat/
-            .nexo/dr-gate/
-            .nexo/rc-gate/
+            .ashlar/perf/
+            .ashlar/compat/
+            .ashlar/dr-gate/
+            .ashlar/rc-gate/

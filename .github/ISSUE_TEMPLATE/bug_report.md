@@ -26,5 +26,5 @@ labels: bug
 
 - OS:
 - .NET SDK version:
-- Nexo version/commit:
+- Ashlar version/commit:
 - Deployment mode (native/container):

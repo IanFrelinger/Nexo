@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Nexo UAT — Tier 10 (resilience under concurrency).
+# Ashlar UAT — Tier 10 (resilience under concurrency).
 #
 # The product's central claim is not throughput, it is the record: "every artifact certified, every
 # action on the record". A load test that only measured latency would miss the failure that would
@@ -30,9 +30,9 @@ say() { printf '\n=== %s ===\n' "$*"; }
 cd "$SRC" || exit 1
 
 unset ASPNETCORE_HTTP_PORTS
-export NEXO_ALLOW_MOCK=1
+export ASHLAR_ALLOW_MOCK=1
 
-pkill -f 'Nexo\.API' 2>/dev/null
+pkill -f 'Ashlar\.API' 2>/dev/null
 PORT_FREE=no
 for _ in $(seq 1 30); do
   curl -s -o /dev/null --max-time 2 "http://localhost:5000/health" 2>/dev/null || { PORT_FREE=yes; break; }
@@ -43,7 +43,7 @@ if [ "$PORT_FREE" != yes ]; then
   exit 2
 fi
 
-dotnet run --project application/src/Nexo.API -f net10.0 >"$OUT/api-load.log" 2>&1 &
+dotnet run --project application/src/Ashlar.API -f net10.0 >"$OUT/api-load.log" 2>&1 &
 API_PID=$!
 for _ in $(seq 1 90); do
   grep -q 'Now listening on:' "$OUT/api-load.log" 2>/dev/null && break
@@ -147,7 +147,7 @@ else
   result 10 healthy-after-load FAIL "host degraded after the burst: /health=$H /ready=$R"
 fi
 
-kill $API_PID 2>/dev/null; wait $API_PID 2>/dev/null; pkill -f 'Nexo\.API' 2>/dev/null
+kill $API_PID 2>/dev/null; wait $API_PID 2>/dev/null; pkill -f 'Ashlar\.API' 2>/dev/null
 
 say "summary"
 printf 'PASS=%d FAIL=%d\n' "$PASS" "$FAIL" | tee "$OUT/summary-tier10.txt"

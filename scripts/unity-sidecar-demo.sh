@@ -15,4 +15,4 @@ EOF
   exit 1
 fi
 
-dotnet run --project tools/Nexo.UnitySidecarDemo -- "$@"
+dotnet run --project tools/Ashlar.UnitySidecarDemo -- "$@"

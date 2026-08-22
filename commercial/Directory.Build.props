@@ -4,19 +4,19 @@
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
 
   <PropertyGroup>
-    <NexoIncludeDomainBrickGlobalUsing Condition="
+    <AshlarIncludeDomainBrickGlobalUsing Condition="
       '$(MSBuildProjectName)' == 'GameDirector.Mcp' OR
       '$(MSBuildProjectName)' == 'GameDirector.Bricks' OR
       '$(MSBuildProjectName)' == 'GameDirector.Agents' OR
-      '$(MSBuildProjectName)' == 'Nexo.Commercial.GameDomain' OR
-      '$(MSBuildProjectName)' == 'Nexo.Commercial.Fleet.Infrastructure' OR
-      '$(MSBuildProjectName)' == 'Nexo.Commercial.Fleet.Contracts' OR
-      '$(MSBuildProjectName)' == 'Nexo.Commercial.Tests.Fleet' OR
-      '$(MSBuildProjectName)' == 'Nexo.Tests.GameDirector'
-      ">true</NexoIncludeDomainBrickGlobalUsing>
+      '$(MSBuildProjectName)' == 'Ashlar.Commercial.GameDomain' OR
+      '$(MSBuildProjectName)' == 'Ashlar.Commercial.Fleet.Infrastructure' OR
+      '$(MSBuildProjectName)' == 'Ashlar.Commercial.Fleet.Contracts' OR
+      '$(MSBuildProjectName)' == 'Ashlar.Commercial.Tests.Fleet' OR
+      '$(MSBuildProjectName)' == 'Ashlar.Tests.GameDirector'
+      ">true</AshlarIncludeDomainBrickGlobalUsing>
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(NexoIncludeDomainBrickGlobalUsing)' == 'true'">
-    <Compile Include="$(MSBuildThisFileDirectory)../src/Nexo.Compat/GlobalUsings.DomainBrick.cs" Link="GlobalUsings.DomainBrick.cs" />
+  <ItemGroup Condition="'$(AshlarIncludeDomainBrickGlobalUsing)' == 'true'">
+    <Compile Include="$(MSBuildThisFileDirectory)../src/Ashlar.Compat/GlobalUsings.DomainBrick.cs" Link="GlobalUsings.DomainBrick.cs" />
   </ItemGroup>
 </Project>

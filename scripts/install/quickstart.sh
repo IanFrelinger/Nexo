@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Nexo Quickstart — one command to a working portal.
+# Ashlar Quickstart — one command to a working portal.
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/IanFrelinger/Nexo/master/scripts/install/quickstart.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/IanFrelinger/Ashlar/master/scripts/install/quickstart.sh | bash
 #
 # Or from a cloned repo:
 #   bash scripts/install/quickstart.sh
@@ -13,13 +13,13 @@
 #   3. Builds and starts the portal
 #   4. Opens the browser
 #
-# The portal starts with NEXO_ALLOW_MOCK=1 so it works without any API keys.
+# The portal starts with ASHLAR_ALLOW_MOCK=1 so it works without any API keys.
 # Add a real provider later via the setup wizard.
 set -euo pipefail
 
-NEXO_PORT="${NEXO_PORT:-8080}"
-REPO_URL="https://github.com/IanFrelinger/Nexo.git"
-INSTALL_DIR="${NEXO_INSTALL_DIR:-${HOME}/Nexo}"
+ASHLAR_PORT="${ASHLAR_PORT:-8080}"
+REPO_URL="https://github.com/IanFrelinger/Ashlar.git"
+INSTALL_DIR="${ASHLAR_INSTALL_DIR:-${HOME}/Ashlar}"
 
 info()  { echo "→ $*"; }
 ok()    { echo "✓ $*"; }
@@ -36,11 +36,11 @@ open_browser() {
   fi
 }
 
-# Detect if we're inside a Nexo repo already
+# Detect if we're inside a Ashlar repo already
 detect_repo_root() {
   local dir="${PWD}"
   while [[ "$dir" != "/" ]]; do
-    if [[ -f "$dir/Nexo.sln" && -f "$dir/global.json" ]]; then
+    if [[ -f "$dir/Ashlar.sln" && -f "$dir/global.json" ]]; then
       echo "$dir"
       return
     fi
@@ -58,7 +58,7 @@ if command -v docker >/dev/null 2>&1; then
   if [[ -n "$REPO_ROOT" ]]; then
     info "Building from local repo at ${REPO_ROOT}"
     cd "$REPO_ROOT"
-    docker build -f .docker/Dockerfile.quickstart -t nexo:quickstart . || {
+    docker build -f .docker/Dockerfile.quickstart -t ashlar:quickstart . || {
       fail "Docker build failed. Falling through to native path."
       REPO_ROOT=""
     }
@@ -66,26 +66,26 @@ if command -v docker >/dev/null 2>&1; then
 
   if [[ -z "$REPO_ROOT" ]]; then
     info "Cloning repo to build Docker image..."
-    if [[ -d "$INSTALL_DIR" && -f "$INSTALL_DIR/Nexo.sln" ]]; then
+    if [[ -d "$INSTALL_DIR" && -f "$INSTALL_DIR/Ashlar.sln" ]]; then
       info "Using existing repo at ${INSTALL_DIR}"
     else
       git clone --depth 1 "$REPO_URL" "$INSTALL_DIR"
     fi
     cd "$INSTALL_DIR"
-    docker build -f .docker/Dockerfile.quickstart -t nexo:quickstart .
+    docker build -f .docker/Dockerfile.quickstart -t ashlar:quickstart .
     REPO_ROOT="$INSTALL_DIR"
   fi
 
-  info "Starting Nexo portal on port ${NEXO_PORT}..."
+  info "Starting Ashlar portal on port ${ASHLAR_PORT}..."
   # Loopback only: the quickstart image runs with no auth (README.md "Security Defaults").
   docker run -d --rm \
-    --name nexo-quickstart \
-    -p "127.0.0.1:${NEXO_PORT}:8080" \
-    nexo:quickstart
+    --name ashlar-quickstart \
+    -p "127.0.0.1:${ASHLAR_PORT}:8080" \
+    ashlar:quickstart
 
-  ok "Portal running at http://localhost:${NEXO_PORT}"
-  info "Stop with: docker stop nexo-quickstart"
-  open_browser "http://localhost:${NEXO_PORT}"
+  ok "Portal running at http://localhost:${ASHLAR_PORT}"
+  info "Stop with: docker stop ashlar-quickstart"
+  open_browser "http://localhost:${ASHLAR_PORT}"
   exit 0
 fi
 
@@ -121,11 +121,11 @@ ok ".NET SDK $(dotnet --version) found"
 
 # Clone or find repo
 if [[ -z "$REPO_ROOT" ]]; then
-  if [[ -d "$INSTALL_DIR" && -f "$INSTALL_DIR/Nexo.sln" ]]; then
+  if [[ -d "$INSTALL_DIR" && -f "$INSTALL_DIR/Ashlar.sln" ]]; then
     info "Using existing repo at ${INSTALL_DIR}"
     REPO_ROOT="$INSTALL_DIR"
   else
-    info "Cloning Nexo..."
+    info "Cloning Ashlar..."
     git clone --depth 1 "$REPO_URL" "$INSTALL_DIR"
     REPO_ROOT="$INSTALL_DIR"
   fi
@@ -133,17 +133,17 @@ fi
 
 cd "$REPO_ROOT"
 info "Building API..."
-dotnet build application/src/Nexo.API/Nexo.API.csproj -f net10.0 -v minimal
+dotnet build application/src/Ashlar.API/Ashlar.API.csproj -f net10.0 -v minimal
 
-info "Starting Nexo portal on port ${NEXO_PORT}..."
-NEXO_ALLOW_MOCK=1 ASPNETCORE_URLS="http://localhost:${NEXO_PORT}" \
-  dotnet run --project application/src/Nexo.API -f net10.0 --no-build &
-NEXO_PID=$!
+info "Starting Ashlar portal on port ${ASHLAR_PORT}..."
+ASHLAR_ALLOW_MOCK=1 ASPNETCORE_URLS="http://localhost:${ASHLAR_PORT}" \
+  dotnet run --project application/src/Ashlar.API -f net10.0 --no-build &
+ASHLAR_PID=$!
 
 # Bounded /health poll (up to 60s). The old `sleep 3` printed "Portal running" even when the
 # host had already died (e.g. missing shared runtime), which is exactly the failure this lane
 # exists to surface. Poll 127.0.0.1 explicitly: ASPNETCORE_URLS=http://localhost:PORT binds loopback.
-health_url="http://127.0.0.1:${NEXO_PORT}/health"
+health_url="http://127.0.0.1:${ASHLAR_PORT}/health"
 probe_health() {
   if command -v curl >/dev/null 2>&1; then
     curl -fsS "$health_url" >/dev/null 2>&1
@@ -154,7 +154,7 @@ probe_health() {
 if ! command -v curl >/dev/null 2>&1 && ! command -v wget >/dev/null 2>&1; then
   # No HTTP client to probe with: the best we can do is confirm the process survived startup.
   sleep 3
-  if ! kill -0 "${NEXO_PID}" 2>/dev/null; then
+  if ! kill -0 "${ASHLAR_PID}" 2>/dev/null; then
     fail "Portal process exited during startup. See the dotnet output above."
     exit 1
   fi
@@ -163,7 +163,7 @@ else
   info "Waiting for ${health_url} (up to 60s)..."
   health_ok=0
   for _ in $(seq 1 30); do
-    if ! kill -0 "${NEXO_PID}" 2>/dev/null; then
+    if ! kill -0 "${ASHLAR_PID}" 2>/dev/null; then
       break
     fi
     if probe_health; then
@@ -173,13 +173,13 @@ else
     sleep 2
   done
   if [[ "${health_ok}" -ne 1 ]]; then
-    fail "Portal did not answer at ${health_url} within 60s (PID: ${NEXO_PID}). See the dotnet output above."
-    kill "${NEXO_PID}" 2>/dev/null || true
+    fail "Portal did not answer at ${health_url} within 60s (PID: ${ASHLAR_PID}). See the dotnet output above."
+    kill "${ASHLAR_PID}" 2>/dev/null || true
     exit 1
   fi
 fi
-ok "Portal running at http://localhost:${NEXO_PORT} (PID: ${NEXO_PID})"
-info "Stop with: kill ${NEXO_PID}"
-open_browser "http://localhost:${NEXO_PORT}"
+ok "Portal running at http://localhost:${ASHLAR_PORT} (PID: ${ASHLAR_PID})"
+info "Stop with: kill ${ASHLAR_PID}"
+open_browser "http://localhost:${ASHLAR_PORT}"
 
-wait "${NEXO_PID}" 2>/dev/null || true
+wait "${ASHLAR_PID}" 2>/dev/null || true

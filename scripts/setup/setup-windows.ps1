@@ -121,12 +121,12 @@ function Invoke-ApplyDependencies {
 
 function Ensure-RepoFiles {
     $required = @(
-        (Join-Path $RepoRoot "Nexo.sln"),
-        (Join-Path $RepoRoot "src\Nexo.Core.Application\Nexo.Core.Application.csproj"),
-        (Join-Path $RepoRoot "src\Nexo.Infrastructure\Nexo.Infrastructure.csproj"),
-        (Join-Path $RepoRoot "application\src\Nexo.CLI\Nexo.CLI.csproj"),
-        (Join-Path $RepoRoot "src\Nexo.Tests.Infrastructure\scripts\copy-assemblies.csproj"),
-        (Join-Path $RepoRoot "src\Nexo.Tests.Infrastructure\Nexo.Tests.Infrastructure.csproj")
+        (Join-Path $RepoRoot "Ashlar.sln"),
+        (Join-Path $RepoRoot "src\Ashlar.Core.Application\Ashlar.Core.Application.csproj"),
+        (Join-Path $RepoRoot "src\Ashlar.Infrastructure\Ashlar.Infrastructure.csproj"),
+        (Join-Path $RepoRoot "application\src\Ashlar.CLI\Ashlar.CLI.csproj"),
+        (Join-Path $RepoRoot "src\Ashlar.Tests.Infrastructure\scripts\copy-assemblies.csproj"),
+        (Join-Path $RepoRoot "src\Ashlar.Tests.Infrastructure\Ashlar.Tests.Infrastructure.csproj")
     )
     foreach ($file in $required) {
         if (-not (Test-Path $file)) {
@@ -142,11 +142,11 @@ function Invoke-Restore {
     }
 
     $restoreTargets = @(
-        (Join-Path $RepoRoot "src\Nexo.Core.Application\Nexo.Core.Application.csproj"),
-        (Join-Path $RepoRoot "src\Nexo.Infrastructure\Nexo.Infrastructure.csproj"),
-        (Join-Path $RepoRoot "application\src\Nexo.CLI\Nexo.CLI.csproj"),
-        (Join-Path $RepoRoot "src\Nexo.Tests.Infrastructure\scripts\copy-assemblies.csproj"),
-        (Join-Path $RepoRoot "src\Nexo.Tests.Infrastructure\Nexo.Tests.Infrastructure.csproj")
+        (Join-Path $RepoRoot "src\Ashlar.Core.Application\Ashlar.Core.Application.csproj"),
+        (Join-Path $RepoRoot "src\Ashlar.Infrastructure\Ashlar.Infrastructure.csproj"),
+        (Join-Path $RepoRoot "application\src\Ashlar.CLI\Ashlar.CLI.csproj"),
+        (Join-Path $RepoRoot "src\Ashlar.Tests.Infrastructure\scripts\copy-assemblies.csproj"),
+        (Join-Path $RepoRoot "src\Ashlar.Tests.Infrastructure\Ashlar.Tests.Infrastructure.csproj")
     )
     foreach ($target in $restoreTargets) {
         & dotnet restore $target
@@ -221,9 +221,9 @@ function Invoke-DependencyCheck {
     Write-Host "Dependency check passed."
 }
 
-# Opt-in (-Tune). The benchmark runs `nexo workflow optimize` against local Ollama models for
+# Opt-in (-Tune). The benchmark runs `ashlar workflow optimize` against local Ollama models for
 # several minutes (needs Git Bash); the tuned ModelName values land in the gitignored
-# .nexo\runtime-studio\agent_set.local.json (seeded from the tracked
+# .ashlar\runtime-studio\agent_set.local.json (seeded from the tracked
 # apps\runtime-studio\config\agent_set.local.json), so `-Mode all` never edits a tracked file.
 function Invoke-RuntimeStudioAutoTune {
     if (-not $Tune.IsPresent) {
@@ -236,8 +236,8 @@ function Invoke-RuntimeStudioAutoTune {
         return
     }
 
-    if ($env:NEXO_SKIP_RUNTIME_STUDIO_TUNE -eq '1') {
-        Write-Host "Skipping Runtime Studio hardware tune (NEXO_SKIP_RUNTIME_STUDIO_TUNE=1)."
+    if ($env:ASHLAR_SKIP_RUNTIME_STUDIO_TUNE -eq '1') {
+        Write-Host "Skipping Runtime Studio hardware tune (ASHLAR_SKIP_RUNTIME_STUDIO_TUNE=1)."
         return
     }
 
@@ -284,7 +284,7 @@ Install Git for Windows, or run manually from repo root:
 
     Write-Host ""
     Write-Host "Runtime Studio: benchmarking local models/compositions (bounded budget). This may take several minutes."
-    Write-Host "Tuned agent set is written to .nexo\runtime-studio\agent_set.local.json (gitignored)."
+    Write-Host "Tuned agent set is written to .ashlar\runtime-studio\agent_set.local.json (gitignored)."
     Write-Host ""
 
     Push-Location $RepoRoot

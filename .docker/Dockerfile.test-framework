@@ -1,4 +1,4 @@
-# Dockerfile for running Nexo framework tests on Ubuntu (SDK 10 restores the net8 test graph;
+# Dockerfile for running Ashlar framework tests on Ubuntu (SDK 10 restores the net8 test graph;
 # the 8.0 runtime below keeps the -f net8.0 lane on the real 8.0 runtime)
 ARG DOTNET_SDK_VERSION=10.0
 FROM mcr.microsoft.com/dotnet/sdk:${DOTNET_SDK_VERSION}
@@ -19,7 +19,7 @@ COPY application/ ./application/
 COPY coverage.runsettings ./
 
 # Framework gate runs Infrastructure tests only (net8.0)
-RUN dotnet restore src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj /p:TargetFramework=net8.0
-RUN dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj /p:TargetFramework=net8.0 --no-restore
+RUN dotnet restore src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj /p:TargetFramework=net8.0
+RUN dotnet build src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj /p:TargetFramework=net8.0 --no-restore
 
-CMD ["bash", "-c", "dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net8.0 --no-build --logger console;verbosity=minimal"]
+CMD ["bash", "-c", "dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -f net8.0 --no-build --logger console;verbosity=minimal"]

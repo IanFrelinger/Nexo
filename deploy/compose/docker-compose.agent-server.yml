@@ -1,34 +1,34 @@
-# Nexo.API + Ollama + Director portal + mounted workspace + background agents (default JSON: apps/runtime-studio/config/agent_set.local.json).
-# How this differs from docker-compose.portal.yml and from the CLI daemon: apps/runtime-studio/README.md#how-runtime-studio-fits-with-nexo-api
+# Ashlar.API + Ollama + Director portal + mounted workspace + background agents (default JSON: apps/runtime-studio/config/agent_set.local.json).
+# How this differs from docker-compose.portal.yml and from the CLI daemon: apps/runtime-studio/README.md#how-runtime-studio-fits-with-ashlar-api
 #
 # From repo root:
 #   docker compose -f deploy/compose/docker-compose.agent-server.yml up -d --build
 #   docker compose -f deploy/compose/docker-compose.agent-server.yml exec ollama ollama pull llama3.1:latest
 #
 # Relative host paths (bind mount, build context) resolve against THIS file's directory, not the
-# shell CWD, so the defaults below are ../.. = repo root. Set NEXO_REPO_ROOT to mount another tree.
+# shell CWD, so the defaults below are ../.. = repo root. Set ASHLAR_REPO_ROOT to mount another tree.
 # Compose also reads .env from this directory (deploy/compose/.env), not the repo root; use
 # --env-file <path> to load a file kept elsewhere.
 # Env: docs/config/agent-server.env.example
-# Portal: http://localhost:${NEXO_AGENT_SERVER_HTTP_PORT:-8080}/
+# Portal: http://localhost:${ASHLAR_AGENT_SERVER_HTTP_PORT:-8080}/
 
 services:
   ollama:
-    image: ${NEXO_OLLAMA_IMAGE:-ollama/ollama:latest}
+    image: ${ASHLAR_OLLAMA_IMAGE:-ollama/ollama:latest}
     ports:
-      - "127.0.0.1:${NEXO_OLLAMA_HOST_PORT:-11434}:11434"
+      - "127.0.0.1:${ASHLAR_OLLAMA_HOST_PORT:-11434}:11434"
     volumes:
       - ollama-models:/root/.ollama
     restart: unless-stopped
 
-  nexo-api:
+  ashlar-api:
     build:
-      context: ${NEXO_BUILD_CONTEXT:-../..}
-      dockerfile: ${NEXO_AGENT_SERVER_DOCKERFILE:-.docker/Dockerfile.agent-server}
+      context: ${ASHLAR_BUILD_CONTEXT:-../..}
+      dockerfile: ${ASHLAR_AGENT_SERVER_DOCKERFILE:-.docker/Dockerfile.agent-server}
     depends_on:
       - ollama
-    working_dir: ${NEXO_CONTAINER_WORKDIR:-/work}
-    entrypoint: ["dotnet", "/app/Nexo.API.dll"]
+    working_dir: ${ASHLAR_CONTAINER_WORKDIR:-/work}
+    entrypoint: ["dotnet", "/app/Ashlar.API.dll"]
     environment:
       # Published app + wwwroot live under /app; working_dir is /work for mounted repo + agents.
       # Without this, static portal 404s because wwwroot is not at /work/wwwroot.
@@ -38,38 +38,38 @@ services:
       # the NCR probe and the provider factory dial the same host (docs/Configuration.md, "Ollama").
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://ollama:11434}
       OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1:latest}
-      Nexo__Meai__OllamaBaseUrl: ${OLLAMA_BASE_URL:-http://ollama:11434}
-      Nexo__Meai__OllamaModel: ${OLLAMA_MODEL:-llama3.1:latest}
-      Nexo__NodeCapabilityRuntime__Ollama__BaseUrl: ${OLLAMA_BASE_URL:-http://ollama:11434}
-      NEXO_DAILIES_PATH: ${NEXO_DAILIES_PATH:-/data/dailies}
+      Ashlar__Meai__OllamaBaseUrl: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      Ashlar__Meai__OllamaModel: ${OLLAMA_MODEL:-llama3.1:latest}
+      Ashlar__NodeCapabilityRuntime__Ollama__BaseUrl: ${OLLAMA_BASE_URL:-http://ollama:11434}
+      ASHLAR_DAILIES_PATH: ${ASHLAR_DAILIES_PATH:-/data/dailies}
       # Runtime state (LiteDB stores, snapshots) on a named volume, NOT in the mounted repo under /work
-      # (docs/DEPLOYMENT.md, "Runtime state"). Keep aligned with the nexo-state mount below.
-      NEXO_STATE_DIR: ${NEXO_STATE_DIR:-/data/state}
-      NEXO_BACKGROUND_AGENTS_CONFIG: ${NEXO_BACKGROUND_AGENTS_CONFIG:-/work/apps/runtime-studio/config/agent_set.local.json}
-      Nexo__Barriers__RequireExplicitBarrier: ${Nexo__Barriers__RequireExplicitBarrier:-false}
-      NEXO_OBSERVATION_DEGRADED_MODE: ${NEXO_OBSERVATION_DEGRADED_MODE:-1}
+      # (docs/DEPLOYMENT.md, "Runtime state"). Keep aligned with the ashlar-state mount below.
+      ASHLAR_STATE_DIR: ${ASHLAR_STATE_DIR:-/data/state}
+      ASHLAR_BACKGROUND_AGENTS_CONFIG: ${ASHLAR_BACKGROUND_AGENTS_CONFIG:-/work/apps/runtime-studio/config/agent_set.local.json}
+      Ashlar__Barriers__RequireExplicitBarrier: ${Ashlar__Barriers__RequireExplicitBarrier:-false}
+      ASHLAR_OBSERVATION_DEGRADED_MODE: ${ASHLAR_OBSERVATION_DEGRADED_MODE:-1}
       # Self-extender arming file (Passive until it says otherwise). Empty = the in-container
-      # default ~/.nexo/agent-mode.json, which does not survive a restart; see docs/config/agent-server.env.example.
-      NEXO_AGENT_MODE_PATH: ${NEXO_AGENT_MODE_PATH:-}
+      # default ~/.ashlar/agent-mode.json, which does not survive a restart; see docs/config/agent-server.env.example.
+      ASHLAR_AGENT_MODE_PATH: ${ASHLAR_AGENT_MODE_PATH:-}
       # MCP/A2A protocol ingress is OFF unless explicitly enabled (fail-closed defaults;
       # see docs/architecture/ProtocolIntegration-MCP-A2A.md before flipping any of these).
-      Nexo__Mcp__Server__Enabled: ${Nexo__Mcp__Server__Enabled:-false}
-      Nexo__Mcp__Client__Enabled: ${Nexo__Mcp__Client__Enabled:-false}
-      Nexo__A2A__Server__Enabled: ${Nexo__A2A__Server__Enabled:-false}
-      Nexo__A2A__Transport__Enabled: ${Nexo__A2A__Transport__Enabled:-false}
+      Ashlar__Mcp__Server__Enabled: ${Ashlar__Mcp__Server__Enabled:-false}
+      Ashlar__Mcp__Client__Enabled: ${Ashlar__Mcp__Client__Enabled:-false}
+      Ashlar__A2A__Server__Enabled: ${Ashlar__A2A__Server__Enabled:-false}
+      Ashlar__A2A__Transport__Enabled: ${Ashlar__A2A__Transport__Enabled:-false}
     ports:
-      - "127.0.0.1:${NEXO_AGENT_SERVER_HTTP_PORT:-8080}:8080"
+      - "127.0.0.1:${ASHLAR_AGENT_SERVER_HTTP_PORT:-8080}:8080"
     volumes:
-      # Named volume; keep mount path aligned with NEXO_DAILIES_PATH (default /data/dailies).
-      - nexo-dailies:/data/dailies
-      # Named volume; keep mount path aligned with NEXO_STATE_DIR (default /data/state).
-      - nexo-state:/data/state
+      # Named volume; keep mount path aligned with ASHLAR_DAILIES_PATH (default /data/dailies).
+      - ashlar-dailies:/data/dailies
+      # Named volume; keep mount path aligned with ASHLAR_STATE_DIR (default /data/state).
+      - ashlar-state:/data/state
       # Default ../.. is the repo root (relative to deploy/compose/); '.' would mount only deploy/compose/
-      # and NEXO_BACKGROUND_AGENTS_CONFIG would be missing -> Nexo.API throws at startup -> restart loop.
-      - ${NEXO_REPO_ROOT:-../..}:${NEXO_CONTAINER_WORKDIR:-/work}${NEXO_REPO_MOUNT_SUFFIX:-}
+      # and ASHLAR_BACKGROUND_AGENTS_CONFIG would be missing -> Ashlar.API throws at startup -> restart loop.
+      - ${ASHLAR_REPO_ROOT:-../..}:${ASHLAR_CONTAINER_WORKDIR:-/work}${ASHLAR_REPO_MOUNT_SUFFIX:-}
     restart: unless-stopped
 
 volumes:
   ollama-models:
-  nexo-dailies:
-  nexo-state:
+  ashlar-dailies:
+  ashlar-state:

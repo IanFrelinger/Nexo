@@ -1,6 +1,6 @@
-.PHONY: build build-core build-demos prod-dry-run prod-dry-run-agent-server restore-core test test-prod-style test-framework-prod-first test-prime-time test-prime-time-full test-cross-platform test-portable test-multi-env test-all-platforms test-all-platforms-ephemeral ci-verify meai-pipeline-gate kernel-gate kernel-gate-tier-b kernel-gate-tier-c kernel-gate-tier-d kernel-gate-tier-e kernel-gate-full application-gate application-gate-tier-a application-gate-tier-b application-gate-tier-c application-gate-tier-d application-gate-full composition-mesh-gate composition-mesh-gate-tier-a composition-mesh-gate-tier-b composition-mesh-gate-tier-c composition-mesh-gate-tier-d composition-mesh-gate-full dependency-boundary-gate ship-gate ship-gate-tier-a ship-gate-tier-b ship-gate-tier-c ship-gate-tier-d ship-gate-full ops-gate ops-gate-tier-a ops-gate-tier-b ops-gate-tier-c ops-gate-tier-d ops-gate-tier-e ops-gate-full security-gate security-gate-tier-a security-gate-tier-b security-gate-tier-c security-gate-tier-d security-gate-tier-e security-gate-full rc-gate rc-gate-tier-a rc-gate-tier-b rc-gate-tier-c rc-gate-tier-d rc-gate-tier-e rc-gate-full perf-gate perf-gate-tier-a perf-gate-tier-b perf-gate-tier-c perf-gate-tier-d perf-gate-full compat-gate compat-gate-tier-a compat-gate-tier-b compat-gate-tier-c compat-gate-full dr-gate dr-gate-tier-a dr-gate-tier-b dr-gate-tier-c dr-gate-full waterproofing-gate-full nexo-ready-gate bootstrap-mesh-lab-env validate-safe review-summary clean-test-artifacts test-readiness-gate release-preflight release-gate release-dispatch release-staging verify-staging release-staging-and-verify verify-external-product-shape mesh-lab-e2e mesh-lab-e2e-workers mesh-lab-e2e-deep mesh-lab-e2e-stress mesh-lab-up mesh-lab-verify mesh-lab-verify-deep mesh-lab-verify-entitlements mesh-lab-verify-governance mesh-lab-verify-director-cli mesh-lab-verify-persistence mesh-lab-verify-network-negative mesh-lab-verify-post-stress mesh-lab-stress mesh-lab-down test-mesh-lab
+.PHONY: build build-core build-demos prod-dry-run prod-dry-run-agent-server restore-core test test-prod-style test-framework-prod-first test-prime-time test-prime-time-full test-cross-platform test-portable test-multi-env test-all-platforms test-all-platforms-ephemeral ci-verify meai-pipeline-gate kernel-gate kernel-gate-tier-b kernel-gate-tier-c kernel-gate-tier-d kernel-gate-tier-e kernel-gate-full application-gate application-gate-tier-a application-gate-tier-b application-gate-tier-c application-gate-tier-d application-gate-full composition-mesh-gate composition-mesh-gate-tier-a composition-mesh-gate-tier-b composition-mesh-gate-tier-c composition-mesh-gate-tier-d composition-mesh-gate-full dependency-boundary-gate ship-gate ship-gate-tier-a ship-gate-tier-b ship-gate-tier-c ship-gate-tier-d ship-gate-full ops-gate ops-gate-tier-a ops-gate-tier-b ops-gate-tier-c ops-gate-tier-d ops-gate-tier-e ops-gate-full security-gate security-gate-tier-a security-gate-tier-b security-gate-tier-c security-gate-tier-d security-gate-tier-e security-gate-full rc-gate rc-gate-tier-a rc-gate-tier-b rc-gate-tier-c rc-gate-tier-d rc-gate-tier-e rc-gate-full perf-gate perf-gate-tier-a perf-gate-tier-b perf-gate-tier-c perf-gate-tier-d perf-gate-full compat-gate compat-gate-tier-a compat-gate-tier-b compat-gate-tier-c compat-gate-full dr-gate dr-gate-tier-a dr-gate-tier-b dr-gate-tier-c dr-gate-full waterproofing-gate-full ashlar-ready-gate bootstrap-mesh-lab-env validate-safe review-summary clean-test-artifacts test-readiness-gate release-preflight release-gate release-dispatch release-staging verify-staging release-staging-and-verify verify-external-product-shape mesh-lab-e2e mesh-lab-e2e-workers mesh-lab-e2e-deep mesh-lab-e2e-stress mesh-lab-up mesh-lab-verify mesh-lab-verify-deep mesh-lab-verify-entitlements mesh-lab-verify-governance mesh-lab-verify-director-cli mesh-lab-verify-persistence mesh-lab-verify-network-negative mesh-lab-verify-post-stress mesh-lab-stress mesh-lab-down test-mesh-lab
 
-# External product shape: packed Nexo.* feed → authored brick + thin host + HTTP client (no repo refs).
+# External product shape: packed Ashlar.* feed → authored brick + thin host + HTTP client (no repo refs).
 verify-external-product-shape:
 	bash scripts/verify-external-product-shape.sh
 
@@ -11,7 +11,7 @@ release-preflight:
 
 # Trigger Runtime Release Gate in CI (requires: gh auth login)
 release-gate:
-	gh workflow run "Runtime Release Gate" --ref $${NEXO_RELEASE_PREFLIGHT_REF:-master}
+	gh workflow run "Runtime Release Gate" --ref $${ASHLAR_RELEASE_PREFLIGHT_REF:-master}
 
 # Trigger full Release workflow (GHCR + NuGet). Requires: gh auth login. Usage: make release-dispatch VERSION=1.2.3 REF=master
 release-dispatch:
@@ -21,7 +21,7 @@ release-dispatch:
 # Staging-only release dispatch (guarded; refuses when NUGET_PUBLISH_MODE enables nuget.org).
 release-staging:
 	@test -n "$(VERSION)" || (echo "Set VERSION=x.y.z"; exit 1)
-	DRY_RUN=$(DRY_RUN) NEXO_RELEASE_STAGING_REF=$${REF:-} bash scripts/release-staging.sh "$(VERSION)"
+	DRY_RUN=$(DRY_RUN) ASHLAR_RELEASE_STAGING_REF=$${REF:-} bash scripts/release-staging.sh "$(VERSION)"
 
 verify-staging:
 	@test -n "$(VERSION)" || (echo "Set VERSION=x.y.z"; exit 1)
@@ -32,23 +32,23 @@ release-staging-and-verify:
 	$(MAKE) release-staging VERSION="$(VERSION)" DRY_RUN="$(DRY_RUN)"
 	@if [ "$(DRY_RUN)" != "1" ]; then $(MAKE) verify-staging VERSION="$(VERSION)"; fi
 
-# All automated test projects in Nexo.PrimeTime.slnf (eight assemblies: seven Nexo.Tests.* + commercial Tests.GameDomain).
-PRIME_TIME_SLNF := Nexo.PrimeTime.slnf
+# All automated test projects in Ashlar.PrimeTime.slnf (eight assemblies: seven Ashlar.Tests.* + commercial Tests.GameDomain).
+PRIME_TIME_SLNF := Ashlar.PrimeTime.slnf
 
 # Build the solution (root holds several .sln/.slnf; a bare `dotnet build` fails with MSB1011)
 build:
-	dotnet build Nexo.sln
+	dotnet build Ashlar.sln
 
-# Restore/build a small slice (CLI + domain tests + infra tests) — avoids full Nexo.sln workload requirements
+# Restore/build a small slice (CLI + domain tests + infra tests) — avoids full Ashlar.sln workload requirements
 restore-core:
-	dotnet restore Nexo.LocalDevCore.slnf
+	dotnet restore Ashlar.LocalDevCore.slnf
 
 build-core:
-	dotnet build Nexo.LocalDevCore.slnf -v minimal
+	dotnet build Ashlar.LocalDevCore.slnf -v minimal
 
 # Workload-free client samples (console, Blazor, Avalonia) — see docs/demos/README.md
 build-demos:
-	dotnet build Nexo.Demos.sln -v minimal
+	dotnet build Ashlar.Demos.sln -v minimal
 
 # Production-shaped Compose dry run (portal or agent-server) — see docs/prod-dry-run.md
 prod-dry-run:
@@ -57,22 +57,22 @@ prod-dry-run:
 prod-dry-run-agent-server:
 	bash scripts/prod-dry-run.sh --agent-server
 
-# Production-like integration (Category=ProdStyle): Nexo.Tests.Infrastructure only — real DI hosts / graphs.
+# Production-like integration (Category=ProdStyle): Ashlar.Tests.Infrastructure only — real DI hosts / graphs.
 # Run this before the full suite when validating framework behaviour locally or in CI-style gates.
 test-prod-style:
-	dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -v minimal
-	NEXO_ALLOW_MOCK=1 dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net8.0 --no-build \
+	dotnet build src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -v minimal
+	ASHLAR_ALLOW_MOCK=1 dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -f net8.0 --no-build \
 	  --filter "Category=ProdStyle&FullyQualifiedName!~ForgeEndpointsTests&FullyQualifiedName!~FrameworkVirtualProdDemosTests" \
 	  --blame-hang-timeout 120s --blame-hang-dump-type none
 
 # Runs test-prod-style then the full LocalDevCore test slice (Domain + Infrastructure + CLI harness).
 # ProdStyle runs once in test-prod-style; the second pass excludes Category=ProdStyle.
 test-framework-prod-first: test-prod-style
-	dotnet test Nexo.LocalDevCore.slnf --no-build \
+	dotnet test Ashlar.LocalDevCore.slnf --no-build \
 	  --filter "Category!=ProdStyle" \
 	  --blame-hang-timeout 30s --blame-hang-dump-type none
 
-# Prime-time gate: Category=ProdStyle across Nexo.PrimeTime.slnf (all test assemblies).
+# Prime-time gate: Category=ProdStyle across Ashlar.PrimeTime.slnf (all test assemblies).
 test-prime-time:
 	dotnet build $(PRIME_TIME_SLNF) -v minimal
 	dotnet test $(PRIME_TIME_SLNF) --no-build \
@@ -87,44 +87,44 @@ test-prime-time-full: test-prime-time
 
 # Run tests locally (blame-hang-timeout prevents indefinite freeze from hung tests)
 # --blame-hang-dump-type none avoids 6GB+ hang dumps that accumulate in TestResults/
-# NEXO_ALLOW_MOCK=1 matches CI so ProviderFactory / mock-provider tests pass on net10.0.
+# ASHLAR_ALLOW_MOCK=1 matches CI so ProviderFactory / mock-provider tests pass on net10.0.
 test:
-	NEXO_ALLOW_MOCK=1 dotnet test Nexo.sln --blame-hang-timeout 120s --blame-hang-dump-type none
+	ASHLAR_ALLOW_MOCK=1 dotnet test Ashlar.sln --blame-hang-timeout 120s --blame-hang-dump-type none
 
 # Run tests on all target platforms: local + Docker (ubuntu, alpine, debian).
 # For native macOS/Windows/Linux use: make test-cross-platform (triggers CI).
 test-all-platforms:
 	@echo "=== Local (current OS) ==="
-	dotnet build Nexo.sln -v minimal
-	dotnet test Nexo.sln --no-build --verbosity minimal --blame-hang-timeout 30s --blame-hang-dump-type none
+	dotnet build Ashlar.sln -v minimal
+	dotnet test Ashlar.sln --no-build --verbosity minimal --blame-hang-timeout 30s --blame-hang-dump-type none
 	@echo "=== Docker: Ubuntu 8.0 ==="
-	docker build -f .docker/Dockerfile.test-caching --build-arg DOTNET_VERSION=8.0 -t nexo-test-ubuntu:8.0 .
+	docker build -f .docker/Dockerfile.test-caching --build-arg DOTNET_VERSION=8.0 -t ashlar-test-ubuntu:8.0 .
 	mkdir -p test-results
-	docker run --rm -v "$$(pwd)/test-results:/workspace/test-results" nexo-test-ubuntu:8.0 \
-		bash -c "dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --blame-hang-timeout 60s --filter 'FullyQualifiedName~BaseFrameworkSmokeTests' --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=ubuntu-8.0-base.trx' --results-directory /workspace/test-results"
+	docker run --rm -v "$$(pwd)/test-results:/workspace/test-results" ashlar-test-ubuntu:8.0 \
+		bash -c "dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj --blame-hang-timeout 60s --filter 'FullyQualifiedName~BaseFrameworkSmokeTests' --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=ubuntu-8.0-base.trx' --results-directory /workspace/test-results"
 	@echo "=== Docker: Alpine 8.0 ==="
-	docker build -f .docker/Dockerfile.test-caching-alpine --build-arg DOTNET_VERSION=8.0 -t nexo-test-alpine:8.0 .
-	docker run --rm -v "$$(pwd)/test-results:/workspace/test-results" nexo-test-alpine:8.0 \
-		bash -c "dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --blame-hang-timeout 60s --filter 'FullyQualifiedName~BaseFrameworkSmokeTests' --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=alpine-8.0-base.trx' --results-directory /workspace/test-results"
+	docker build -f .docker/Dockerfile.test-caching-alpine --build-arg DOTNET_VERSION=8.0 -t ashlar-test-alpine:8.0 .
+	docker run --rm -v "$$(pwd)/test-results:/workspace/test-results" ashlar-test-alpine:8.0 \
+		bash -c "dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj --blame-hang-timeout 60s --filter 'FullyQualifiedName~BaseFrameworkSmokeTests' --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=alpine-8.0-base.trx' --results-directory /workspace/test-results"
 	@echo "=== Docker: Debian 8.0 ==="
-	docker build -f .docker/Dockerfile.test-caching-debian --build-arg DOTNET_VERSION=8.0 -t nexo-test-debian:8.0 .
-	docker run --rm -v "$$(pwd)/test-results:/workspace/test-results" nexo-test-debian:8.0 \
-		bash -c "dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --blame-hang-timeout 60s --filter 'FullyQualifiedName~BaseFrameworkSmokeTests' --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=debian-8.0-base.trx' --results-directory /workspace/test-results"
+	docker build -f .docker/Dockerfile.test-caching-debian --build-arg DOTNET_VERSION=8.0 -t ashlar-test-debian:8.0 .
+	docker run --rm -v "$$(pwd)/test-results:/workspace/test-results" ashlar-test-debian:8.0 \
+		bash -c "dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj --blame-hang-timeout 60s --filter 'FullyQualifiedName~BaseFrameworkSmokeTests' --logger 'console;verbosity=minimal' --logger 'trx;LogFileName=debian-8.0-base.trx' --results-directory /workspace/test-results"
 	@echo "=== All target platforms (local + ubuntu + alpine + debian) completed ==="
 
 # Ephemeral: run tests in containers with no volume mounts; results discarded when container is removed
 test-all-platforms-ephemeral:
 	@echo "=== Ephemeral multi-platform tests (no host artifacts) ==="
-	dotnet build Nexo.sln -v minimal
-	dotnet run --project application/src/Nexo.CLI -- test --platforms ubuntu alpine debian --ephemeral
+	dotnet build Ashlar.sln -v minimal
+	dotnet run --project application/src/Ashlar.CLI -- test --platforms ubuntu alpine debian --ephemeral
 
 # Run tests on all platforms (C#-driven; works on Windows, macOS, Linux, mobile)
 test-all:
-	dotnet run --project application/src/Nexo.CLI -- test --platforms ubuntu alpine debian android ios unity windows
+	dotnet run --project application/src/Ashlar.CLI -- test --platforms ubuntu alpine debian android ios unity windows
 
 # Run tests on specific platform
 test-platform:
-	dotnet run --project application/src/Nexo.CLI -- test --platforms $(PLATFORM)
+	dotnet run --project application/src/Ashlar.CLI -- test --platforms $(PLATFORM)
 
 # Trigger cross-platform tests in CI (Mac, Windows, Linux from one place)
 # Requires: gh auth login. Workflows are manual-first — see .github/workflows/README.md
@@ -139,30 +139,30 @@ test-readiness-gate:
 	gh workflow run "Full Platform Readiness Gate" --ref master
 
 # Portable tests: C#-driven (replaces scripts/portable-test.sh). Works on Windows, macOS, Linux, mobile.
-# Usage: make test-portable [SCOPE=persistence|smoke|all]. Use --list to see targets: dotnet run --project application/src/Nexo.CLI -- test portable --list
+# Usage: make test-portable [SCOPE=persistence|smoke|all]. Use --list to see targets: dotnet run --project application/src/Ashlar.CLI -- test portable --list
 test-portable:
-	dotnet run --project application/src/Nexo.CLI -- test portable --scope $${SCOPE:-persistence}
+	dotnet run --project application/src/Ashlar.CLI -- test portable --scope $${SCOPE:-persistence}
 
 # Multi-env framework/caching/persistence tests (C#-driven; replaces test-framework-multi-env.sh etc.)
 test-multi-env:
-	dotnet run --project application/src/Nexo.CLI -- test multi-env --suite framework --all
+	dotnet run --project application/src/Ashlar.CLI -- test multi-env --suite framework --all
 
 # Air-gapped multi-env: run containers with --network none (no egress). Validates air-gapped deployment.
 test-multi-env-no-network:
-	dotnet run --project application/src/Nexo.CLI -- test multi-env --suite framework --all --no-network
+	dotnet run --project application/src/Ashlar.CLI -- test multi-env --suite framework --all --no-network
 
 # Air-gapped CI validation: framework + adaptation suites with zero network egress (ubuntu-8.0).
 test-airgapped:
-	dotnet run --project application/src/Nexo.CLI -- test multi-env --suite framework --env ubuntu-8.0 --no-network
-	dotnet run --project application/src/Nexo.CLI -- test multi-env --suite adaptation --env ubuntu-8.0 --no-network
+	dotnet run --project application/src/Ashlar.CLI -- test multi-env --suite framework --env ubuntu-8.0 --no-network
+	dotnet run --project application/src/Ashlar.CLI -- test multi-env --suite adaptation --env ubuntu-8.0 --no-network
 
 # Linear adaptation tests across all Docker environments
 test-adaptation-all-envs:
-	dotnet run --project application/src/Nexo.CLI -- test multi-env --suite adaptation --all
+	dotnet run --project application/src/Ashlar.CLI -- test multi-env --suite adaptation --all
 
 # CI verification: build + checks (C#-driven; replaces scripts/ci-verify.sh)
 ci-verify:
-	dotnet run --project application/src/Nexo.CLI -- ci verify
+	dotnet run --project application/src/Ashlar.CLI -- ci verify
 
 # Pre-application kernel gate: runtime graph build + hosting resolution matrix + pipeline tests.
 # Optional: KERNEL_GATE_MESH=1 (Docker mesh-lab-verify), KERNEL_GATE_PRODSTYLE=1 (full ProdStyle slice).
@@ -179,16 +179,16 @@ dependency-boundary-gate:
 
 # MEAI governed pipeline + VectorData RAG architecture tests (net8).
 meai-pipeline-gate:
-	dotnet test src/Nexo.Tests.AI.Pipeline/Nexo.Tests.AI.Pipeline.csproj -f net8.0 -c Release --nologo \
+	dotnet test src/Ashlar.Tests.AI.Pipeline/Ashlar.Tests.AI.Pipeline.csproj -f net8.0 -c Release --nologo \
 	  --blame-hang-timeout 120s --blame-hang-dump-type none
 
 kernel-gate:
-	dotnet build Nexo.Runtime.sln -v minimal
-	dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -v minimal
-	NEXO_ALLOW_MOCK=1 dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net8.0 --no-build \
+	dotnet build Ashlar.Runtime.sln -v minimal
+	dotnet build src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -v minimal
+	ASHLAR_ALLOW_MOCK=1 dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -f net8.0 --no-build \
 	  --filter "FullyQualifiedName~KernelPhaseResolutionTests|FullyQualifiedName~HostingDeploymentProfileTests|FullyQualifiedName~HostingE2ESmokeTests" \
 	  --blame-hang-timeout 120s --blame-hang-dump-type none
-	NEXO_ALLOW_MOCK=1 dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net8.0 --no-build \
+	ASHLAR_ALLOW_MOCK=1 dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -f net8.0 --no-build \
 	  --filter "FullyQualifiedName~PipelineTemplateValidatorTests|FullyQualifiedName~PipelineLifecycleE2ETests" \
 	  --blame-hang-timeout 120s --blame-hang-dump-type none
 	$(MAKE) meai-pipeline-gate
@@ -415,69 +415,69 @@ ops-gate-full:
 	@if [ "$${OPS_GATE_SKIP_TIER_D:-0}" != "1" ]; then $(MAKE) ops-gate-tier-d; fi
 	$(MAKE) ops-gate-tier-e
 
-# Meta gate: full readiness stack (skip Docker tiers with NEXO_READY_SKIP_DOCKER=1).
-nexo-ready-gate:
-	bash scripts/nexo-ready-gate.sh
+# Meta gate: full readiness stack (skip Docker tiers with ASHLAR_READY_SKIP_DOCKER=1).
+ashlar-ready-gate:
+	bash scripts/ashlar-ready-gate.sh
 
 # Safe validation: sequential, minimal memory. Run from external terminal to avoid Cursor memory explosion.
 # Equivalent to ci-verify but via shell script; use when ci-verify causes high memory usage.
 validate-safe:
 	@bash scripts/validate-safe.sh
 
-# Dogfood Block 1: verify observation pipeline watches Nexo's own dev workflow
+# Dogfood Block 1: verify observation pipeline watches Ashlar's own dev workflow
 dogfood-block1:
-	dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -v minimal
-	dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --filter "FullyQualifiedName~DogfoodBlock1Tests" --no-build -v minimal
+	dotnet build src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -v minimal
+	dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj --filter "FullyQualifiedName~DogfoodBlock1Tests" --no-build -v minimal
 
 # Dogfood Block 2: verify static analyzer runs against Block 1 (Observation) code
 dogfood-block2:
-	dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -v minimal
-	dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --filter "FullyQualifiedName~DogfoodBlock2Tests" --no-build -v minimal
+	dotnet build src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -v minimal
+	dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj --filter "FullyQualifiedName~DogfoodBlock2Tests" --no-build -v minimal
 
-# Dogfood Block 3: adaptation engine decomposes/recompiles Nexo brick
+# Dogfood Block 3: adaptation engine decomposes/recompiles Ashlar brick
 dogfood-block3:
-	dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -v minimal
-	dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --filter "FullyQualifiedName~DogfoodBlock3Tests" --no-build -v minimal
+	dotnet build src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -v minimal
+	dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj --filter "FullyQualifiedName~DogfoodBlock3Tests" --no-build -v minimal
 
-# Dogfood Block 4: promote Nexo fix via inheritance
+# Dogfood Block 4: promote Ashlar fix via inheritance
 dogfood-block4:
-	dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -v minimal
-	dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --filter "FullyQualifiedName~DogfoodBlock4Tests" --no-build -v minimal
+	dotnet build src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -v minimal
+	dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj --filter "FullyQualifiedName~DogfoodBlock4Tests" --no-build -v minimal
 
-# Dogfood Block 5: autonomy controls on Nexo dev workflow
+# Dogfood Block 5: autonomy controls on Ashlar dev workflow
 dogfood-block5:
-	dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -v minimal
-	dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --filter "FullyQualifiedName~DogfoodBlock5Tests" --no-build -v minimal
+	dotnet build src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -v minimal
+	dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj --filter "FullyQualifiedName~DogfoodBlock5Tests" --no-build -v minimal
 
 # Dogfood Block 6: SelfContextAssembler answers 24h question
 dogfood-block6:
-	dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -v minimal
-	dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --filter "FullyQualifiedName~DogfoodBlock6Tests" --no-build -v minimal
+	dotnet build src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -v minimal
+	dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj --filter "FullyQualifiedName~DogfoodBlock6Tests" --no-build -v minimal
 
-# Dogfood Block 7: Composition engine composes for Nexo problem
+# Dogfood Block 7: Composition engine composes for Ashlar problem
 dogfood-block7:
-	dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -v minimal
-	dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --filter "FullyQualifiedName~DogfoodBlock7Tests" --no-build -v minimal
+	dotnet build src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -v minimal
+	dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj --filter "FullyQualifiedName~DogfoodBlock7Tests" --no-build -v minimal
 
-# Dogfood Block 8: Parallel test matrix against Nexo tests
+# Dogfood Block 8: Parallel test matrix against Ashlar tests
 dogfood-block8:
-	dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -v minimal
-	dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --filter "FullyQualifiedName~DogfoodBlock8Tests" --no-build -v minimal
+	dotnet build src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -v minimal
+	dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj --filter "FullyQualifiedName~DogfoodBlock8Tests" --no-build -v minimal
 
 # Phase D: Composition-driven testing (Block 7–8)
 dogfood-block8-composed:
-	dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -v minimal
-	dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --filter "FullyQualifiedName~DogfoodBlock8ComposedTests" --no-build -v minimal
+	dotnet build src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -v minimal
+	dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj --filter "FullyQualifiedName~DogfoodBlock8ComposedTests" --no-build -v minimal
 
 # Dogfood Block 9: Instance mesh discover/advertise
 dogfood-block9:
-	dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -v minimal
-	dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --filter "FullyQualifiedName~DogfoodBlock9Tests" --no-build -v minimal
+	dotnet build src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -v minimal
+	dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj --filter "FullyQualifiedName~DogfoodBlock9Tests" --no-build -v minimal
 
 # Phase E: Local IPC mesh - two instances share capability
 dogfood-block9-ipc:
-	dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -v minimal
-	dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --filter "FullyQualifiedName~DogfoodBlock9LocalIpcTests" --no-build -v minimal
+	dotnet build src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -v minimal
+	dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj --filter "FullyQualifiedName~DogfoodBlock9LocalIpcTests" --no-build -v minimal
 
 # Dogfood Blocks 1–6 (Phase C validation)
 dogfood-phase-c:
@@ -494,15 +494,15 @@ dogfood-phase-de:
 	$(MAKE) dogfood-block8
 	$(MAKE) dogfood-block9
 
-# Dogfood Phase F: closed-loop improve on Nexo
+# Dogfood Phase F: closed-loop improve on Ashlar
 dogfood-closedloop:
-	dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -v minimal
-	dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --filter "FullyQualifiedName~DogfoodClosedLoopTests" --no-build -v minimal
+	dotnet build src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -v minimal
+	dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj --filter "FullyQualifiedName~DogfoodClosedLoopTests" --no-build -v minimal
 
 # Phase F: Continuous self-improvement loop (changelog, test failure store)
 dogfood-phasef:
-	dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -v minimal
-	dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --filter "FullyQualifiedName~DogfoodPhaseFTests" --no-build -v minimal
+	dotnet build src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -v minimal
+	dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj --filter "FullyQualifiedName~DogfoodPhaseFTests" --no-build -v minimal
 
 # All dogfood blocks (1–9) + Phase F closed-loop + Phase F
 dogfood-all:
@@ -513,7 +513,7 @@ dogfood-all:
 
 # Review summary Markdown from JSON (C#-driven; replaces scripts/review-summary-md.sh)
 review-summary:
-	dotnet run --project application/src/Nexo.CLI -- review summary
+	dotnet run --project application/src/Ashlar.CLI -- review summary
 
 # Mutation testing: validates tests catch deliberate bugs. Install: dotnet tool install -g dotnet-stryker
 mutation-test:
@@ -528,10 +528,10 @@ clean-test-artifacts:
 	@rm -rf test-results
 	@echo "Done."
 
-# Pack NuGet library packages (Nexo.Hosting, Nexo.CLI tool)
+# Pack NuGet library packages (Ashlar.Hosting, Ashlar.CLI tool)
 pack:
-	dotnet pack src/Nexo.Hosting/Nexo.Hosting.csproj -c Release -o dist/nuget
-	dotnet pack application/src/Nexo.CLI/Nexo.CLI.csproj -c Release -o dist/nuget
+	dotnet pack src/Ashlar.Hosting/Ashlar.Hosting.csproj -c Release -o dist/nuget
+	dotnet pack application/src/Ashlar.CLI/Ashlar.CLI.csproj -c Release -o dist/nuget
 
 # ── Mesh virtual lab (Docker bridge network; automated HTTP checks) ────────────
 # Full cycle: compose up → scripts/mesh-lab-verify.sh → compose down -v.
@@ -560,69 +560,69 @@ mesh-lab-e2e-tls:
 mesh-lab-up:
 	@test -f .env.mesh-lab || (echo "Missing .env.mesh-lab — cp docs/config/mesh-lab.env.example .env.mesh-lab && edit secrets"; exit 1)
 ifeq ($(strip $(MESH_LAB_WORKERS)),1)
-	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=nexo_mesh_lab_local docker compose --profile workers -f deploy/compose/docker-compose.mesh-lab.yml --env-file .env.mesh-lab up -d --build
+	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=ashlar_mesh_lab_local docker compose --profile workers -f deploy/compose/docker-compose.mesh-lab.yml --env-file .env.mesh-lab up -d --build
 else
-	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=nexo_mesh_lab_local docker compose -f deploy/compose/docker-compose.mesh-lab.yml --env-file .env.mesh-lab up -d --build
+	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=ashlar_mesh_lab_local docker compose -f deploy/compose/docker-compose.mesh-lab.yml --env-file .env.mesh-lab up -d --build
 endif
 
 mesh-lab-verify:
 	@test -f .env.mesh-lab || (echo "Missing .env.mesh-lab"; exit 1)
-	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=nexo_mesh_lab_local ./scripts/mesh-lab-verify.sh .env.mesh-lab
+	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=ashlar_mesh_lab_local ./scripts/mesh-lab-verify.sh .env.mesh-lab
 
 mesh-lab-verify-deep:
 	@test -f .env.mesh-lab || (echo "Missing .env.mesh-lab"; exit 1)
-	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=nexo_mesh_lab_local ./scripts/mesh-lab-verify-deep.sh .env.mesh-lab
+	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=ashlar_mesh_lab_local ./scripts/mesh-lab-verify-deep.sh .env.mesh-lab
 
 mesh-lab-verify-entitlements:
 	@test -f .env.mesh-lab || (echo "Missing .env.mesh-lab"; exit 1)
-	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=nexo_mesh_lab_local ./scripts/mesh-lab-verify-entitlements.sh .env.mesh-lab
+	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=ashlar_mesh_lab_local ./scripts/mesh-lab-verify-entitlements.sh .env.mesh-lab
 
 mesh-lab-verify-governance:
 	@test -f .env.mesh-lab || (echo "Missing .env.mesh-lab"; exit 1)
-	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=nexo_mesh_lab_local ./scripts/mesh-lab-verify-governance.sh .env.mesh-lab
+	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=ashlar_mesh_lab_local ./scripts/mesh-lab-verify-governance.sh .env.mesh-lab
 
 mesh-lab-verify-director-cli:
 	@test -f .env.mesh-lab || (echo "Missing .env.mesh-lab"; exit 1)
-	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=nexo_mesh_lab_local ./scripts/mesh-lab-verify-director-cli.sh .env.mesh-lab
+	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=ashlar_mesh_lab_local ./scripts/mesh-lab-verify-director-cli.sh .env.mesh-lab
 
 mesh-lab-verify-persistence:
 	@test -f .env.mesh-lab || (echo "Missing .env.mesh-lab"; exit 1)
-	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=nexo_mesh_lab_local ./scripts/mesh-lab-verify-persistence.sh .env.mesh-lab
+	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=ashlar_mesh_lab_local ./scripts/mesh-lab-verify-persistence.sh .env.mesh-lab
 
 mesh-lab-verify-network-negative:
 	@test -f .env.mesh-lab || (echo "Missing .env.mesh-lab"; exit 1)
-	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=nexo_mesh_lab_local ./scripts/mesh-lab-verify-network-negative.sh .env.mesh-lab
+	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=ashlar_mesh_lab_local ./scripts/mesh-lab-verify-network-negative.sh .env.mesh-lab
 
 mesh-lab-verify-tls:
 	@test -f .env.mesh-lab || (echo "Missing .env.mesh-lab"; exit 1)
-	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=nexo_mesh_lab_tls_local \
+	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=ashlar_mesh_lab_tls_local \
 		docker compose -f deploy/compose/docker-compose.mesh-lab.yml -f deploy/compose/docker-compose.mesh-lab-tls.override.yml --env-file .env.mesh-lab up -d
 	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} ./scripts/mesh-lab-verify-tls.sh .env.mesh-lab
 
 mesh-lab-verify-post-stress:
 	@test -f .env.mesh-lab || (echo "Missing .env.mesh-lab"; exit 1)
-	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=nexo_mesh_lab_local ./scripts/mesh-lab-verify-post-stress.sh .env.mesh-lab
+	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=ashlar_mesh_lab_local ./scripts/mesh-lab-verify-post-stress.sh .env.mesh-lab
 
 # Requires lab up with workers: MESH_LAB_WORKERS=1 make mesh-lab-up
 mesh-lab-stress:
 	@test -f .env.mesh-lab || (echo "Missing .env.mesh-lab"; exit 1)
-	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=nexo_mesh_lab_local ./scripts/mesh-lab-stress-ramp.sh .env.mesh-lab
+	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=ashlar_mesh_lab_local ./scripts/mesh-lab-stress-ramp.sh .env.mesh-lab
 
 mesh-lab-down:
 	@test -f .env.mesh-lab || (echo "Missing .env.mesh-lab"; exit 1)
-	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=nexo_mesh_lab_local docker compose --profile workers -f deploy/compose/docker-compose.mesh-lab.yml --env-file .env.mesh-lab down -v
+	DOCKER_DEFAULT_PLATFORM=$${DOCKER_DEFAULT_PLATFORM:-linux/amd64} COMPOSE_PROJECT_NAME=ashlar_mesh_lab_local docker compose --profile workers -f deploy/compose/docker-compose.mesh-lab.yml --env-file .env.mesh-lab down -v
 
 # Optional dotnet gate mirroring mesh-lab-gate (compose + mesh-lab-verify*.sh). Requires Docker + python3.
 test-mesh-lab:
-	NEXO_RUN_MESH_LAB=1 dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net8.0 \
+	ASHLAR_RUN_MESH_LAB=1 dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -f net8.0 \
 	  --filter "Category=MeshLab" \
 	  --blame-hang-timeout 2700s --blame-hang-dump-type none
 
 # Build CLI Docker image (linux/amd64 for portability)
 docker-cli:
-	docker build --platform linux/amd64 -f .docker/Dockerfile.cli -t nexo-cli:latest .
+	docker build --platform linux/amd64 -f .docker/Dockerfile.cli -t ashlar-cli:latest .
 
 # Generate API docs (requires: dotnet tool install -g docfx)
 docs-api:
-	dotnet build Nexo.sln -c Release
+	dotnet build Ashlar.sln -c Release
 	cd docs/api && docfx

@@ -3,10 +3,10 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-OUT="${NEXO_PORTABILITY_GENERATED_DIR:-${ROOT}/spikes/portability/generated}"
+OUT="${ASHLAR_PORTABILITY_GENERATED_DIR:-${ROOT}/spikes/portability/generated}"
 RECORD="${OUT}/certification-record.json"
-VERSION="${NEXO_PORTABILITY_PACK_VERSION:-$(tr -d '[:space:]' < "${ROOT}/VERSION")}"
-FEED="${NEXO_PORTABILITY_PACK_FEED:-${ROOT}/artifacts/nuget-local-portability}"
+VERSION="${ASHLAR_PORTABILITY_PACK_VERSION:-$(tr -d '[:space:]' < "${ROOT}/VERSION")}"
+FEED="${ASHLAR_PORTABILITY_PACK_FEED:-${ROOT}/artifacts/nuget-local-portability}"
 WITNESS="${ROOT}/spikes/portability/witness/error-summary-extractor.witness.json"
 GATE="${ROOT}/scripts/certify-brick-gate.sh"
 
@@ -31,15 +31,15 @@ fi
 
 echo "==> Packing local feed for certification restore @ ${VERSION}"
 mkdir -p "${FEED}"
-bash "${ROOT}/scripts/pack-nexo-hosting-graph.sh" "${VERSION}" "${FEED}"
-dotnet pack "${ROOT}/src/Nexo.Authoring/Nexo.Authoring.csproj" \
+bash "${ROOT}/scripts/pack-ashlar-hosting-graph.sh" "${VERSION}" "${FEED}"
+dotnet pack "${ROOT}/src/Ashlar.Authoring/Ashlar.Authoring.csproj" \
   -c Release \
   -o "${FEED}" \
   -p:PackageVersion="${VERSION}" \
   --configfile "${FEED}/PackBundle.NuGet.Config" \
   -v minimal
 
-export NEXO_CERT_NUGET_CONFIG="${FEED}/PackBundle.NuGet.Config"
+export ASHLAR_CERT_NUGET_CONFIG="${FEED}/PackBundle.NuGet.Config"
 
 echo "==> Running certification gate: ${GATE}"
 if bash "${GATE}" "${OUT}/ErrorSummaryExtractorBrick" "${WITNESS}" "${RECORD}"; then

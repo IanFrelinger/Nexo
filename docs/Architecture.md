@@ -1,13 +1,13 @@
 # Architecture Overview
 
-Nexo is a private AI platform built on modular, contract-based components (bricks) that compose into execution pipelines and extend autonomously under policy constraints. Trust enforcement is structural: data provenance, barrier identity resolution, and audit logging are integrated into the execution pipeline at the architectural level. The mesh layer federates capabilities across trusted .NET peers, enabling distributed execution with policy-controlled routing.
+Ashlar is a private AI platform built on modular, contract-based components (bricks) that compose into execution pipelines and extend autonomously under policy constraints. Trust enforcement is structural: data provenance, barrier identity resolution, and audit logging are integrated into the execution pipeline at the architectural level. The mesh layer federates capabilities across trusted .NET peers, enabling distributed execution with policy-controlled routing.
 
 ## Layers
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │  CLI / Host / UI                                                 │
-│  (Commands, System.CommandLine, AddNexo)                          │
+│  (Commands, System.CommandLine, AddAshlar)                          │
 ├─────────────────────────────────────────────────────────────────┤
 │  Core.Application (Use Cases)                                    │
 │  MediatR handlers, validation, analysis, agents, testing         │
@@ -60,7 +60,7 @@ Nexo is a private AI platform built on modular, contract-based components (brick
 - **Entry point**: `CapabilityRoutingBrick` (`generation.capability-routing`) is the default generation brick.
 - **Router**: `NcrCapabilityRouter` resolves targets from NCR capability snapshots and job requirements.
 - **Local path**: `ILocalExecutor` is selected when VRAM, compute class, and queue depth satisfy requirements.
-- **Peer path**: `NexoPeerBrickExecutor` dispatches to eligible peer Nexo nodes with timeout + failover.
+- **Peer path**: `AshlarPeerBrickExecutor` dispatches to eligible peer Ashlar nodes with timeout + failover.
 - **Cloud path**: `RunPodBrick` executes full RunPod lifecycle (spin up, dispatch, poll, pull, teardown).
 - **Policy controls**: job-level `RemoteExecutionPreference` plus system-level peer routing options.
 
@@ -69,23 +69,23 @@ Nexo is a private AI platform built on modular, contract-based components (brick
 - **SanitizingProviderFactory**: Wraps `IProviderFactory`, sanitizes prompts before cloud
 - **CloudSanitizationProxy**: PII checks, `ISensitiveContentFilter` (email, phone, SSN, API keys)
 - **Audit log**: Redactions and decisions
-- **Scope note**: Trust wiring is automatic in `AddNexo()` hosting registration; standalone CLI command DI graphs must explicitly opt in.
+- **Scope note**: Trust wiring is automatic in `AddAshlar()` hosting registration; standalone CLI command DI graphs must explicitly opt in.
 
 ### Hosting
 
-- **AddNexo()**: Registers all kernel services
-- **AddNexoProfile(...)**: Registers environment-specific module sets (`Full`, `Server`, `Edge`, `AirGapped`, `System`) to peel optional dependencies.
-- **AddNexoOpenTelemetry()**: Optional metrics export
+- **AddAshlar()**: Registers all kernel services
+- **AddAshlarProfile(...)**: Registers environment-specific module sets (`Full`, `Server`, `Edge`, `AirGapped`, `System`) to peel optional dependencies.
+- **AddAshlarOpenTelemetry()**: Optional metrics export
 
 ## Data Flow
 
-1. **CLI**: `nexo validate` → `ValidateCommand` → `RunValidationHandler` → `IValidationService`
-2. **Agent**: `nexo agent` → `AgentCommand` → `IAgentExecutor` → `IModel` (via `IProviderFactory`)
+1. **CLI**: `ashlar validate` → `ValidateCommand` → `RunValidationHandler` → `IValidationService`
+2. **Agent**: `ashlar agent` → `AgentCommand` → `IAgentExecutor` → `IModel` (via `IProviderFactory`)
 3. **LLM**: `ProviderFactory.ExecuteLLMAsync` → HTTP (OpenAI/Azure/Ollama) with retry
 4. **Trust**: `SanitizingProviderFactory` → `CloudSanitizationProxy.SanitizeForCloud` → inner factory
 
 ## Dependencies
 
-- **Nexo.Hosting** → Infrastructure, Orchestration, BackgroundAgents
-- **Nexo.CLI** (`application/src/Nexo.CLI`) → Nexo.Hosting, bricks, and test projects for CLI composition (see **`docs/architecture/runtime-vs-application.md`**)
-- **Nexo.Infrastructure** → Core.Application, Core.Domain, Abstractions
+- **Ashlar.Hosting** → Infrastructure, Orchestration, BackgroundAgents
+- **Ashlar.CLI** (`application/src/Ashlar.CLI`) → Ashlar.Hosting, bricks, and test projects for CLI composition (see **`docs/architecture/runtime-vs-application.md`**)
+- **Ashlar.Infrastructure** → Core.Application, Core.Domain, Abstractions

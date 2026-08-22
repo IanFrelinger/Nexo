@@ -27,21 +27,21 @@ source_env_kv() {
   grep -E "^${key}=" "$COMPOSE_ENV_FILE" 2>/dev/null | head -1 | cut -d= -f2- | tr -d '\r' || true
 }
 
-API_KEY="$(source_env_kv Nexo__Security__ApiKey)"
+API_KEY="$(source_env_kv Ashlar__Security__ApiKey)"
 MESH_LAB_PEER_REGISTRATION_KEY="$(source_env_kv MESH_LAB_PEER_REGISTRATION_KEY)"
 export MESH_LAB_PEER_REGISTRATION_KEY
 
 if [[ -z "$API_KEY" ]]; then
-  echo "(Skipping post-stress verify: no Nexo__Security__ApiKey in env file)"
+  echo "(Skipping post-stress verify: no Ashlar__Security__ApiKey in env file)"
   exit 0
 fi
 
 mesh_post() {
-  curl -fsS -X POST -H "Content-Type: application/json" -H "X-Nexo-Api-Key: ${API_KEY}" "$@"
+  curl -fsS -X POST -H "Content-Type: application/json" -H "X-Ashlar-Api-Key: ${API_KEY}" "$@"
 }
 
 mesh_delete() {
-  curl -fsS -X DELETE -H "X-Nexo-Api-Key: ${API_KEY}" "$@"
+  curl -fsS -X DELETE -H "X-Ashlar-Api-Key: ${API_KEY}" "$@"
 }
 
 echo "== Mesh lab post-stress: director placement (${PEER_A_HOST}) =="
@@ -68,7 +68,7 @@ if (t.get("assignedPeerId") or "") != sys.argv[1]:
 print("Post-stress placement OK")
 ' "$POST_STRESS_PEER"
 
-PERSIST_PROVIDER="$(source_env_kv Nexo__Mesh__Persistence__Provider)"
+PERSIST_PROVIDER="$(source_env_kv Ashlar__Mesh__Persistence__Provider)"
 [[ -n "$PERSIST_PROVIDER" ]] || PERSIST_PROVIDER="LiteDb"
 if [[ "$(echo "${PERSIST_PROVIDER}" | tr '[:upper:]' '[:lower:]')" == "litedb" ]]; then
   echo "== Mesh lab post-stress: persistence re-check =="

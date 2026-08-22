@@ -9,9 +9,9 @@ tags:
   - parsing
 touch:
   pathPrefixes:
-    - applications/Nexo.Samples.Dogfood/Versions/
+    - applications/Ashlar.Samples.Dogfood/Versions/
   namespaces:
-    - Nexo.Samples.Dogfood.Versions
+    - Ashlar.Samples.Dogfood.Versions
   capabilities:
     - repo.fs.write
 ---
@@ -19,7 +19,7 @@ touch:
 Provide a deterministic brick that parses a semantic version string of the form
 `MAJOR.MINOR.PATCH` with an optional `-PRERELEASE` suffix, and reports its parts.
 
-The brick is class `SemverParseBrick` in namespace `Nexo.Samples.Dogfood.Versions`, with
+The brick is class `SemverParseBrick` in namespace `Ashlar.Samples.Dogfood.Versions`, with
 `Id = "semver-parse"`.
 
 Contract:
@@ -42,10 +42,10 @@ Valid means, exactly:
 Skeleton (fill in `ExecuteAsync`; do not add, remove, or reorder members):
 
 ```csharp
-using Nexo.Core.Domain.Bricks;
-using Nexo.Core.Domain.Execution;
+using Ashlar.Core.Domain.Bricks;
+using Ashlar.Core.Domain.Execution;
 
-namespace Nexo.Samples.Dogfood.Versions;
+namespace Ashlar.Samples.Dogfood.Versions;
 
 public sealed class SemverParseBrick : DomainBrick
 {

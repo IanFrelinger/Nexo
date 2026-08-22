@@ -1,0 +1,7 @@
+# Optional: relative csproj paths (posix) that pack-ashlar-hosting-graph.{sh,ps1} may pack
+# even when they are not transitive ProjectReferences of Ashlar.Hosting.
+# Keep this file empty unless you intentionally ship extra Ashlar.* packages in the same graph.
+
+# Runtime dependency of Ashlar.Infrastructure (AnalyzerFenceGate instantiates the catalog),
+# but referenced with OutputItemType=Analyzer, which the closure walk deliberately skips.
+src/Ashlar.Analyzers/Ashlar.Analyzers.csproj

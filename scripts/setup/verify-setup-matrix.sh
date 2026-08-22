@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Brute-force style Nexo setup verification (Linux/macOS host + optional Docker).
+# Brute-force style Ashlar setup verification (Linux/macOS host + optional Docker).
 # For JSON report + full Windows matrix, use: pwsh ./scripts/setup/verify-setup-matrix.ps1
 
 set -euo pipefail
@@ -37,12 +37,12 @@ run_a "setup-unix.sh check" bash scripts/setup/setup-unix.sh check
 run_a "setup-unix.sh -Mode check (pwsh-style)" bash scripts/setup/setup-unix.sh -Mode check
 run_a "setup-unix.sh restore" bash scripts/setup/setup-unix.sh restore
 run_a "setup-unix.sh restore (repeat)" bash scripts/setup/setup-unix.sh restore
-run_a "dotnet build Nexo.CLI --no-restore" dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
+run_a "dotnet build Ashlar.CLI --no-restore" dotnet build application/src/Ashlar.CLI/Ashlar.CLI.csproj --no-restore -v minimal
 
-ISO_NUGET="$(mktemp -d 2>/dev/null || mktemp -d -t nexo-nuget)"
+ISO_NUGET="$(mktemp -d 2>/dev/null || mktemp -d -t ashlar-nuget)"
 export NUGET_PACKAGES="${ISO_NUGET}"
 run_a "setup-unix.sh restore (isolated NUGET_PACKAGES)" bash scripts/setup/setup-unix.sh restore
-run_a "dotnet build (isolated NUGET_PACKAGES)" dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
+run_a "dotnet build (isolated NUGET_PACKAGES)" dotnet build application/src/Ashlar.CLI/Ashlar.CLI.csproj --no-restore -v minimal
 unset NUGET_PACKAGES
 
 if [[ "${SKIP_DOCKER}" == "1" ]] || ! command -v docker >/dev/null 2>&1 || ! docker info >/dev/null 2>&1; then
@@ -59,8 +59,8 @@ else
     echo "SKIP docker-restore.ps1 (pwsh not installed)"
   fi
   if [[ "${SKIP_DOCKER_BUILD}" != "1" ]]; then
-    run_b "docker compose build agent-server" docker compose -f deploy/compose/docker-compose.agent-server.yml build nexo-api
-    run_b "docker compose build portal" docker compose -p mtx-portal -f deploy/compose/docker-compose.portal.yml build nexo-api
+    run_b "docker compose build agent-server" docker compose -f deploy/compose/docker-compose.agent-server.yml build ashlar-api
+    run_b "docker compose build portal" docker compose -p mtx-portal -f deploy/compose/docker-compose.portal.yml build ashlar-api
     if command -v pwsh >/dev/null 2>&1; then
       run_b "docker-restore.ps1 -Build" pwsh -NoProfile -ExecutionPolicy Bypass -File "${REPO_ROOT}/scripts/docker-restore.ps1" -RepoRoot "${REPO_ROOT}" -Build
     fi
@@ -78,7 +78,7 @@ else
       fi
       bash scripts/setup/setup-linux.sh check
       bash scripts/setup/setup-linux.sh restore
-      dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
+      dotnet build application/src/Ashlar.CLI/Ashlar.CLI.csproj --no-restore -v minimal
     '; then
       echo "OK  container ${tag}"
     else

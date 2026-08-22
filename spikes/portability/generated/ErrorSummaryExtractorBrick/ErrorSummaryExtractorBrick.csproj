@@ -6,7 +6,7 @@
     <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Nexo.Brick.Contracts" Version="0.1.0" />
-    <PackageReference Include="Nexo.Authoring" Version="0.1.0" />
+    <PackageReference Include="Ashlar.Brick.Contracts" Version="0.1.0" />
+    <PackageReference Include="Ashlar.Authoring" Version="0.1.0" />
   </ItemGroup>
 </Project>

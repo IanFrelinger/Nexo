@@ -1,0 +1,46 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Metapackage: embed Ashlar execution kernel without Hosting composition (AddAshlar lives in Ashlar.Hosting).
+    Uses ProjectReference so `dotnet build Ashlar.sln` works without a preseeded local feed; `dotnet pack`
+    still emits NuGet dependencies on the referenced package ids (same version as -p:PackageVersion).
+    Pack after runtime graph: scripts/pack-ashlar-runtime-graph.sh (local feed + configfile, like Hosting.Bundle).
+  -->
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>true</IsPackable>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+    <NoDefaultExcludes>true</NoDefaultExcludes>
+    <PackageId>Ashlar.Runtime.Bundle</PackageId>
+    <Title>Ashlar runtime kernel (bundle)</Title>
+    <Description>
+      Metapackage for the Ashlar execution kernel: abstractions, domain, application ports, infrastructure,
+      orchestration, agent runtime, and dev tools. Does not reference Ashlar.Hosting —
+      pull Ashlar.Hosting separately or compose DI in your application repository.
+    </Description>
+    <PackageTags>ashlar;runtime;kernel;metapackage</PackageTags>
+    <RepositoryUrl>https://github.com/IanFrelinger/Ashlar</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <!-- PackageLicenseExpression (Apache-2.0) comes from Directory.Build.targets; do not restate it here. -->
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Ashlar.Abstractions\Ashlar.Abstractions.csproj" />
+    <ProjectReference Include="..\Ashlar.Core.Domain\Ashlar.Core.Domain.csproj" />
+    <ProjectReference Include="..\Ashlar.Core.Application\Ashlar.Core.Application.csproj" />
+    <ProjectReference Include="..\Ashlar.Brick.Contracts\Ashlar.Brick.Contracts.csproj" />
+    <ProjectReference Include="..\Ashlar.Policies\Ashlar.Policies.csproj" />
+    <ProjectReference Include="..\Ashlar.Policies.Dev\Ashlar.Policies.Dev.csproj" />
+    <ProjectReference Include="..\Ashlar.Tools.Assembly\Ashlar.Tools.Assembly.csproj" />
+    <ProjectReference Include="..\Ashlar.Tools.Dev\Ashlar.Tools.Dev.csproj" />
+    <ProjectReference Include="..\Ashlar.Transport.Grpc\Ashlar.Transport.Grpc.csproj" />
+    <ProjectReference Include="..\Ashlar.Runtime\Ashlar.Runtime.csproj" />
+    <ProjectReference Include="..\Ashlar.Infrastructure\Ashlar.Infrastructure.csproj" />
+    <ProjectReference Include="..\Ashlar.Orchestration\Ashlar.Orchestration.csproj" />
+    <ProjectReference Include="..\Ashlar.BackgroundAgents\Ashlar.BackgroundAgents.csproj" />
+  </ItemGroup>
+</Project>

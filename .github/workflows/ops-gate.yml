@@ -33,19 +33,19 @@ jobs:
         if: inputs.tier == 'a' || inputs.tier == 'full'
         run: make ops-gate-tier-a
         env:
-          NEXO_ALLOW_MOCK: "1"
+          ASHLAR_ALLOW_MOCK: "1"
 
       - name: Tier B (dogfood 7–9 + IPC)
         if: inputs.tier == 'b' || inputs.tier == 'full'
         run: make ops-gate-tier-b
         env:
-          NEXO_ALLOW_MOCK: "1"
+          ASHLAR_ALLOW_MOCK: "1"
 
       - name: Tier C (closed-loop)
         if: inputs.tier == 'c' || inputs.tier == 'full'
         run: make ops-gate-tier-c
         env:
-          NEXO_ALLOW_MOCK: "1"
+          ASHLAR_ALLOW_MOCK: "1"
 
       - name: Tier D (mesh deep)
         if: inputs.tier == 'd'
@@ -58,4 +58,4 @@ jobs:
         if: inputs.tier == 'e' || inputs.tier == 'full'
         run: make ops-gate-tier-e
         env:
-          NEXO_ALLOW_MOCK: "1"
+          ASHLAR_ALLOW_MOCK: "1"

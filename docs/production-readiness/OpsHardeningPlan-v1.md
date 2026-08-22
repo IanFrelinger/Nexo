@@ -1,6 +1,6 @@
 # Operations & dogfood hardening plan v1
 
-Validates **Nexo on Nexo**: dogfood self-improvement blocks, optional mesh chaos/deep lab, and the operator demo script — after [Ship readiness v1](ShipReadiness-v1.md).
+Validates **Ashlar on Ashlar**: dogfood self-improvement blocks, optional mesh chaos/deep lab, and the operator demo script — after [Ship readiness v1](ShipReadiness-v1.md).
 
 **Automation:** `make ops-gate-full`
 

@@ -1,8 +1,8 @@
 # Kernel phase matrix
 
-Maps `NexoKernelRegistrar` phases (registration order in `NexoKernelRegistrar.cs`) to module flags, primary services, and automated proof.
+Maps `AshlarKernelRegistrar` phases (registration order in `AshlarKernelRegistrar.cs`) to module flags, primary services, and automated proof.
 
-**Module flags** come from `GetModuleSelection` in `NexoServiceCollectionExtensions.Deployment.cs`.
+**Module flags** come from `GetModuleSelection` in `AshlarServiceCollectionExtensions.Deployment.cs`.
 
 | Phase | Name | Module gates | Primary services | Automated proof |
 |-------|------|--------------|------------------|-----------------|
@@ -10,7 +10,7 @@ Maps `NexoKernelRegistrar` phases (registration order in `NexoKernelRegistrar.cs
 | 02 | CQRS & validation | Always | MediatR, `ValidationBehavior` | Build + `IValidationService` (Full) |
 | 03 | Configuration adapter | Always | `IConfigurationService` | All profiles in `HostingDeploymentProfileTests` |
 | 04 | Loop kernel | Always | `ILoopKernel` | `KernelPhaseResolutionTests` all profiles |
-| 05 | Orchestration & transport | `IncludeRuntimeTransport` | `IOrchestrationRuntimeSpecAccessor`, `IGrpcChannelFactory` | Transport: `Nexo.Tests.Transport` ProdStyle |
+| 05 | Orchestration & transport | `IncludeRuntimeTransport` | `IOrchestrationRuntimeSpecAccessor`, `IGrpcChannelFactory` | Transport: `Ashlar.Tests.Transport` ProdStyle |
 | 06 | Persistence | `IncludePersistence` | LiteDB / Postgres provisioner | Pipeline store tests; prod-readiness resume |
 | 07 | Adaptation | `IncludeAdaptation` | `IAdaptationLog`, `IBrickRegistry` | Adaptation Category tests |
 | 08 | Copilot task store | Always | `ICopilotTaskStore` | Resolve on Full (optional assert) |
@@ -19,7 +19,7 @@ Maps `NexoKernelRegistrar` phases (registration order in `NexoKernelRegistrar.cs
 | 11 | Background agents & RAG | `IncludeBackgroundAgents`, `IncludeBackgroundAgentRag` | `IBackgroundAgentRegistry` | Full only; absent Edge/System |
 | 12 | Observation | `IncludeObservationPipeline` && !`DisableObservationPipeline` | `IPatternStore` | `HostingE2ESmokeTests`, observation integration |
 | 13 | Model decorator chain | Always | `IModel`, `HotSwappableModel` | All profiles resolve `IModel` |
-| 14 | Ephemeral lifecycle | Env `NEXO_EPHEMERAL*` | `IEphemeralModelLifecycle` | Env-gated; manual |
+| 14 | Ephemeral lifecycle | Env `ASHLAR_EPHEMERAL*` | `IEphemeralModelLifecycle` | Env-gated; manual |
 | 15 | Trust & provider factory | `IncludeTrustServices`, env trust/load | `IProviderFactory`, `ICloudSanitizationProxy` | Trust tests; Full vs AirGapped |
 | 16 | Execution core | Always | `IBehaviorExecutor`, `ITextFileSystem` | Workflow executor tests |
 | 17 | Workflow executor | Always | `WorkflowExecutor` (scoped) | `WorkflowExecutorIntegrationTests` |
@@ -55,6 +55,6 @@ Maps `NexoKernelRegistrar` phases (registration order in `NexoKernelRegistrar.cs
 
 ```bash
 make kernel-gate
-dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj \
   --filter "FullyQualifiedName~KernelPhaseResolutionTests"
 ```

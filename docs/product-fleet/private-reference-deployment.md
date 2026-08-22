@@ -1,6 +1,6 @@
 # Private single-tenant reference deployment (Phase 0.4)
 
-This is the **smallest production-shaped** stack for Nexo Private pilots: one tenant, one API host, local Ollama, and entitlements driven from environment/config (no multi-tenant control plane).
+This is the **smallest production-shaped** stack for Ashlar Private pilots: one tenant, one API host, local Ollama, and entitlements driven from environment/config (no multi-tenant control plane).
 
 ## Prerequisites
 
@@ -11,7 +11,7 @@ This is the **smallest production-shaped** stack for Nexo Private pilots: one te
 
 ```bash
 export OLLAMA_MODEL=llama3.1:latest
-export NEXO_DEFAULT_TENANT_ID=acme-pilot
+export ASHLAR_DEFAULT_TENANT_ID=acme-pilot
 docker compose -f deploy/compose/docker-compose.private-single-tenant.yml up --build -d
 ```
 
@@ -26,18 +26,18 @@ curl -sS http://127.0.0.1:8080/api/status
 
 | Variable / config | Purpose |
 |-------------------|---------|
-| `NEXO_DEFAULT_TENANT_ID` | Default `X-Nexo-Tenant` when header omitted |
-| `Nexo__Product__AllowedTenantIds__0` | Allow-list (single tenant for Private) |
-| `Nexo__Entitlements__MaxCopilotSubmissionsPerHour` | Hourly copilot quota (`0` = unlimited) |
-| `Nexo__Entitlements__DeploymentMode` | License/profile hint (`Private`) |
-| `Nexo__Entitlements__Seats` / `MaxConcurrency` | Plan hooks (enforcement TBD) |
+| `ASHLAR_DEFAULT_TENANT_ID` | Default `X-Ashlar-Tenant` when header omitted |
+| `Ashlar__Product__AllowedTenantIds__0` | Allow-list (single tenant for Private) |
+| `Ashlar__Entitlements__MaxCopilotSubmissionsPerHour` | Hourly copilot quota (`0` = unlimited) |
+| `Ashlar__Entitlements__DeploymentMode` | License/profile hint (`Private`) |
+| `Ashlar__Entitlements__Seats` / `MaxConcurrency` | Plan hooks (enforcement TBD) |
 
 Example copilot call with explicit tenant:
 
 ```bash
 curl -sS -X POST http://127.0.0.1:8080/api/copilot/task \
   -H 'Content-Type: application/json' \
-  -H 'X-Nexo-Tenant: acme-pilot' \
+  -H 'X-Ashlar-Tenant: acme-pilot' \
   -d '{"task":"Summarize open PRs"}'
 ```
 
@@ -45,15 +45,15 @@ Usage summary (last 24h for resolved tenant):
 
 ```bash
 curl -sS 'http://127.0.0.1:8080/api/usage/summary?hours=24' \
-  -H 'X-Nexo-Tenant: acme-pilot'
+  -H 'X-Ashlar-Tenant: acme-pilot'
 ```
 
 ## Volumes
 
 | Volume | Mount | Data |
 |--------|-------|------|
-| `nexo-dailies` | `/data/dailies` | Director dailies / run artifacts |
-| `nexo-copilot-data` | `/data/copilot` | Reserved for copilot persistence profiles |
+| `ashlar-dailies` | `/data/dailies` | Director dailies / run artifacts |
+| `ashlar-copilot-data` | `/data/copilot` | Reserved for copilot persistence profiles |
 | `ollama-models` | Ollama | Model weights |
 
 ## License (Phase 1.2)
@@ -61,8 +61,8 @@ curl -sS 'http://127.0.0.1:8080/api/usage/summary?hours=24' \
 Copy [`sample-private-license.json`](./sample-private-license.json) and set expiry for the pilot:
 
 ```bash
-export NEXO_LICENSE_FILE=/path/to/license.json
-export Nexo__PrivateLicense__EnforceLicense=true
+export ASHLAR_LICENSE_FILE=/path/to/license.json
+export Ashlar__PrivateLicense__EnforceLicense=true
 ```
 
 When enforcement is on and the license expires, **mutating** `/api/*` routes return `402` while read-only routes (including `/api/support/diagnostics`) remain available if `AllowReadOnlyWhenExpired` is true (default).

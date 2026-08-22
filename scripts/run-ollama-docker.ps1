@@ -18,7 +18,7 @@ $ErrorActionPreference = "Stop"
 $RepoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
 $compose = Join-Path $RepoRoot "deploy/compose/docker-compose.ollama.yml"
 
-$env:NEXO_OLLAMA_HOST_PORT = "$Port"
+$env:ASHLAR_OLLAMA_HOST_PORT = "$Port"
 Set-Location $RepoRoot
 
 Write-Host "Starting Ollama container (port $Port)..."
@@ -31,15 +31,15 @@ Write-Host @"
 
 Ollama is listening at http://127.0.0.1:$Port
 
-Start Nexo.API next (Ollama already up; sets OLLAMA_* env + NCR URL, then dotnet run):
-  powershell -File scripts/start-nexo-api-dev.ps1 -SkipOllama -Model '$Model' -OllamaPort $Port
-  bash scripts/start-nexo-api-dev.sh --skip-ollama --model '$Model' --ollama-port $Port
+Start Ashlar.API next (Ollama already up; sets OLLAMA_* env + NCR URL, then dotnet run):
+  powershell -File scripts/start-ashlar-api-dev.ps1 -SkipOllama -Model '$Model' -OllamaPort $Port
+  bash scripts/start-ashlar-api-dev.sh --skip-ollama --model '$Model' --ollama-port $Port
 
 Or manually:
   `$env:OLLAMA_BASE_URL = 'http://127.0.0.1:$Port'
   `$env:OLLAMA_MODEL = '$Model'
-  `$env:Nexo__NodeCapabilityRuntime__Ollama__BaseUrl = 'http://127.0.0.1:$Port'
-  dotnet run --project application/src/Nexo.API/Nexo.API.csproj -f net10.0
+  `$env:Ashlar__NodeCapabilityRuntime__Ollama__BaseUrl = 'http://127.0.0.1:$Port'
+  dotnet run --project application/src/Ashlar.API/Ashlar.API.csproj -f net10.0
 
 Stop Ollama: docker compose -f deploy/compose/docker-compose.ollama.yml down
 "@

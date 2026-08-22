@@ -1,4 +1,4 @@
-# nexo brand kit
+# ashlar brand kit
 
 Palette: ink `#2B2420` · cream `#F7F2E5` · oat `#EFE8D8` · sage `#7E8F6E` · gold `#D1A23C` · clay `#C96F4A` · olive `#4A5540`
 
@@ -8,13 +8,13 @@ Type: Baloo 2 ExtraBold (wordmark) · Caveat SemiBold (annotations). Both embedd
 
 | File | Destination |
 |------|-------------|
-| `nexo-logo-chaos.svg` | README hero — **wired**, centred `<img>` at the top of `README.md` |
-| `nexo-icon-nuget-128.png` | NuGet package icon — **wired** repo-wide in `Directory.Build.props` (see below) |
-| `nexo-icon-github-512.png` | GitHub org/repo avatar — Settings → upload |
-| `nexo-social-card-1280x640.png` | Repo → Settings → General → Social preview (100 KB, under the 1 MB limit) |
-| `nexo-terminal-preview.svg` | docs/marketing use — mock CLI session |
+| `ashlar-logo-chaos.svg` | README hero — **wired**, centred `<img>` at the top of `README.md` |
+| `ashlar-icon-nuget-128.png` | NuGet package icon — **wired** repo-wide in `Directory.Build.props` (see below) |
+| `ashlar-icon-github-512.png` | GitHub org/repo avatar — Settings → upload |
+| `ashlar-social-card-1280x640.png` | Repo → Settings → General → Social preview (100 KB, under the 1 MB limit) |
+| `ashlar-terminal-preview.svg` | docs/marketing use — mock CLI session |
 | `*.svg` sources | keep in `assets/brand/` as the editable masters |
-| `NexoConsole.cs` | reference implementation, kept HERE not in the CLI: `application/**` changes need the application integration-branch flow. Wiring it into `Nexo.CLI` is an open follow-up; see `docs/nexo-terminal-style.md` |
+| `AshlarConsole.cs` | reference implementation, kept HERE not in the CLI: `application/**` changes need the application integration-branch flow. Wiring it into `Ashlar.CLI` is an open follow-up; see `docs/ashlar-terminal-style.md` |
 
 ## NuGet icon wiring — already done
 
@@ -22,10 +22,10 @@ Wired repo-wide in `Directory.Build.props`; every packable project picks it up, 
 change needed:
 
 ```xml
-<PackageIcon Condition="Exists('$(MSBuildThisFileDirectory)assets/brand/nexo-icon-nuget-128.png')">icon.png</PackageIcon>
+<PackageIcon Condition="Exists('$(MSBuildThisFileDirectory)assets/brand/ashlar-icon-nuget-128.png')">icon.png</PackageIcon>
 ...
-<ItemGroup Condition="'$(IsPackable)' == 'true' AND Exists('$(MSBuildThisFileDirectory)assets/brand/nexo-icon-nuget-128.png')">
-  <None Include="$(MSBuildThisFileDirectory)assets/brand/nexo-icon-nuget-128.png" Pack="true" PackagePath="icon.png" Visible="false" />
+<ItemGroup Condition="'$(IsPackable)' == 'true' AND Exists('$(MSBuildThisFileDirectory)assets/brand/ashlar-icon-nuget-128.png')">
+  <None Include="$(MSBuildThisFileDirectory)assets/brand/ashlar-icon-nuget-128.png" Pack="true" PackagePath="icon.png" Visible="false" />
 </ItemGroup>
 ```
 

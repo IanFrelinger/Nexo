@@ -1,0 +1,10 @@
+{
+  "stryker-config": {
+    "project": "Ashlar.Policies.Dev.csproj",
+    "test-project": "Ashlar.Tests.Infrastructure.csproj",
+    "reporters": ["html", "progress"],
+    "threshold-break": 0,
+    "threshold-low": 80,
+    "threshold-high": 100
+  }
+}

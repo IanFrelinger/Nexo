@@ -51,7 +51,7 @@ Post-publish: `nuget-consumer-verify.yml` against released version on nuget.org.
 
 ## Application work
 
-You may build on `application/src/` when `make kernel-gate-full` is green. Re-run after kernel (`src/`, `Nexo.Hosting`) changes.
+You may build on `application/src/` when `make kernel-gate-full` is green. Re-run after kernel (`src/`, `Ashlar.Hosting`) changes.
 
 ## Sign-off
 

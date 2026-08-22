@@ -14,8 +14,8 @@ Complete before tagging a release candidate.
 | Role | Name | Date | SHA |
 |------|------|------|-----|
 | Product | Ian Frelinger | 2026-05-22 | `bec2a6ed` |
-| Engineering | Nexo readiness gates (automated) | 2026-05-22 | `bec2a6ed` |
-| Security | Nexo security-gate (automated) | 2026-05-22 | `bec2a6ed` |
+| Engineering | Ashlar readiness gates (automated) | 2026-05-22 | `bec2a6ed` |
+| Security | Ashlar security-gate (automated) | 2026-05-22 | `bec2a6ed` |
 | Operations | DR gate + mesh-lab persistence | 2026-05-22 | `bec2a6ed` |
 
 ## Local gate evidence (2026-05-22)

@@ -35,7 +35,7 @@ flowchart TB
     Ratchet[kernel-coverage floors]
   end
   subgraph L2 [L2 — Domain invariants]
-    Dom[Nexo.Core.Domain — 100% line]
+    Dom[Ashlar.Core.Domain — 100% line]
   end
   L6 --> L5 --> L4 --> L3 --> L2
 ```
@@ -46,9 +46,9 @@ flowchart TB
 
 | # | Principle | Implication |
 |---|-----------|-------------|
-| P1 | **Domain is sacred** | `Nexo.Core.Domain` stays at **100% line** coverage; new domain types get tests in the same PR. |
+| P1 | **Domain is sacred** | `Ashlar.Core.Domain` stays at **100% line** coverage; new domain types get tests in the same PR. |
 | P2 | **Coverage floors ratchet, not chase** | Infrastructure (80% CI floor, enforced by scripts/ci/kernel-coverage-gate.sh) and Core.Application (~67%) use **minimum CI thresholds**; raise floors only when gap tests land in touched code. |
-| P3 | **ProdStyle is the default for new kernel features** | New bricks, barriers, pipelines, routing, or `AddNexo` wiring → at least one **ProdStyle** or **WebApplicationFactory** test before merge. |
+| P3 | **ProdStyle is the default for new kernel features** | New bricks, barriers, pipelines, routing, or `AddAshlar` wiring → at least one **ProdStyle** or **WebApplicationFactory** test before merge. |
 | P4 | **Environment code uses environment gates** | Docker, Postgres ephemeral, live Ollama/RunPod, Playwright → **mesh-lab**, **kernel-gate-tier-e**, **security-gate**, not Coverlet 100%. |
 | P5 | **Gap tests are a scalpel** | Add `*GapCoverageTests` for small branchy adapters; do **not** add gap suites for megaclasses already covered by ProdStyle/virtual hosts. |
 | P6 | **One scenario, one primary home** | Avoid duplicating the same assertion in gap + ProdStyle + bridge unless CLI parity (`UnitTestBase`) requires it. |
@@ -60,9 +60,9 @@ flowchart TB
 
 | Area | Today | Pivot stance |
 |------|--------|--------------|
-| `Nexo.Core.Domain` | **100%** line (CI) | Keep |
-| `Nexo.Infrastructure` | ~**83–84%** line (floor 80%), 1770+ xUnit tests | Floor + ProdStyle; no 100% goal |
-| `Nexo.Core.Application` | ~**68%** line | Floor ratchet on change |
+| `Ashlar.Core.Domain` | **100%** line (CI) | Keep |
+| `Ashlar.Infrastructure` | ~**83–84%** line (floor 80%), 1770+ xUnit tests | Floor + ProdStyle; no 100% goal |
+| `Ashlar.Core.Application` | ~**68%** line | Floor ratchet on change |
 | `*GapCoverageTests` | Large volume (Transport, Orchestration, Infrastructure, …) | **Freeze scope**; grow only with touched files |
 | ProdStyle | `make test-prod-style`, prime-time | **Mandatory** for routing/hosting/API PRs |
 | Mesh / Docker | `mesh-lab-gate`, tier D gates | **Required** for mesh/fleet/deploy PRs |
@@ -95,12 +95,12 @@ make test-prod-style
 | Infrastructure adapter (Docker/DB/cloud) | ProdStyle or virtual host + tier gate; **no** new 100% gap file |
 | API / hosting | `application-gate-tier-c` or ProdStyle WAF tests |
 | Mesh / fleet / trust | `composition-mesh-gate` + path-filtered CI |
-| CLI-only | `application-gate-tier-a/b`, `Nexo.Tests.CLI` |
+| CLI-only | `application-gate-tier-a/b`, `Ashlar.Tests.CLI` |
 
 ### Before release tag
 
 ```bash
-NEXO_READY_SKIP_DOCKER=1 make nexo-ready-gate   # or full with Docker
+ASHLAR_READY_SKIP_DOCKER=1 make ashlar-ready-gate   # or full with Docker
 make rc-gate-full
 # + GitHub workflows in ReleaseCandidateChecklist-v1.md
 ```
@@ -140,7 +140,7 @@ Phases are **ordered by dependency**. Complete phase N sign-off in [Testing stra
 | # | Task | Done when |
 |---|------|-----------|
 | 2.1 | **CONTRIBUTING.md** — “new kernel feature → ProdStyle test” rule | Merged |
-| 2.2 | PR label or checklist: `needs-prod-style` when paths match `Nexo.Hosting`, `Nexo.API`, `Execution/Routing`, barriers | Process live |
+| 2.2 | PR label or checklist: `needs-prod-style` when paths match `Ashlar.Hosting`, `Ashlar.API`, `Execution/Routing`, barriers | Process live |
 | 2.3 | `make test-prod-style` in `application-gate-tier-a` or `kernel-gate-tier-c` (already partially true) — document as **required local** for those paths | Doc + optional CI path filter job |
 | 2.4 | Audit new PRs for **gap-only** changes to megaclasses; request ProdStyle instead in review guide | Review norm |
 
@@ -220,7 +220,7 @@ Phases are **ordered by dependency**. Complete phase N sign-off in [Testing stra
 ## 9. Out of scope (explicit)
 
 - Replacing xUnit with another runner.
-- Removing `UnitTestBase` / CLI test bridge (still needed for `nexo test`).
+- Removing `UnitTestBase` / CLI test bridge (still needed for `ashlar test`).
 - Deleting existing gap tests en masse (only **freeze + redirect** new work).
 - 100% branch coverage repo-wide.
 

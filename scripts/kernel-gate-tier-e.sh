@@ -7,8 +7,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-INFRA="src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj"
-ORCH="src/Nexo.Tests.Orchestration/Nexo.Tests.Orchestration.csproj"
+INFRA="src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj"
+ORCH="src/Ashlar.Tests.Orchestration/Ashlar.Tests.Orchestration.csproj"
 
 echo "== Tier E: OpenTelemetry registration =="
 dotnet build "$INFRA" -v minimal
@@ -19,7 +19,7 @@ dotnet test "$INFRA" -f net8.0 --no-build \
 echo "== Tier E: orchestration performance-scoped tests =="
 dotnet build "$ORCH" -v minimal
 dotnet test "$ORCH" -f net8.0 --no-build \
-  --filter "FullyQualifiedName~Nexo.Tests.Orchestration.Performance" \
+  --filter "FullyQualifiedName~Ashlar.Tests.Orchestration.Performance" \
   --blame-hang-timeout 120s --blame-hang-dump-type none
 
 if command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then

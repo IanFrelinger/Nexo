@@ -12,7 +12,7 @@ Wire the tower end-to-end headlessly: HTTP-style resolution routing and tag→ve
 
 | In scope | Out of scope |
 |----------|--------------|
-| `HttpAssetResolutionRouter` (headless GET routing) | Kestrel host wiring in `Nexo.API` |
+| `HttpAssetResolutionRouter` (headless GET routing) | Kestrel host wiring in `Ashlar.API` |
 | `PhysicalAtomTagVerifyOrchestrator` | QR image rendering |
 | End-to-end pipeline test (certify → tag → verify) | Asset generation from 3D scans |
 | JSON cert responses | Release channel logic |
@@ -23,8 +23,8 @@ Headless request/response records — invoke `Handle(method, path, store)` direc
 
 | Route | Response |
 |-------|----------|
-| `GET /nexo/atoms/{atomId}/cert` | `200 application/json` certificate or `404 atom-unresolved` |
-| `GET /nexo/assets/{assetHash}/{assetVersion}` | `200` asset bytes or `404 asset-unresolved` |
+| `GET /ashlar/atoms/{atomId}/cert` | `200 application/json` certificate or `404 atom-unresolved` |
+| `GET /ashlar/assets/{assetHash}/{assetVersion}` | `200` asset bytes or `404 asset-unresolved` |
 | Other | `404 route-not-found` |
 | Non-GET | `405 method-not-allowed` |
 
@@ -44,6 +44,6 @@ Failure codes include: `tag-prefix-invalid`, `tag-issuer-fingerprint-mismatch`, 
 
 ## Implementation
 
-- HTTP: `applications/Nexo.Certification.Physical/Resolution/Http/`
-- Orchestrator: `applications/Nexo.Certification.Physical/Resolution/PhysicalAtomTagVerifyOrchestrator.cs`
+- HTTP: `applications/Ashlar.Certification.Physical/Resolution/Http/`
+- Orchestrator: `applications/Ashlar.Certification.Physical/Resolution/PhysicalAtomTagVerifyOrchestrator.cs`
 - Tests: `PhysicalAtomTagVerifyOrchestratorTests`, `HttpAssetResolutionRouterTests`, `PhysicalAtomEndToEndFlowTests`

@@ -45,15 +45,15 @@ on:
 #    branches: [ master, main ]
 #    paths:
 #      - '.github/workflows/cross-platform-tests.yml'
-#      - 'src/Nexo.Tests.Infrastructure/**'
-#      - 'src/Nexo.Tests.BackgroundAgents/**'
-#      - 'src/Nexo.Core.Application/**'
-#      - 'src/Nexo.Infrastructure/**'
-#      - 'src/Nexo.BackgroundAgents/**'
-#      - 'application/src/Nexo.CLI/**'
-#      - 'src/Nexo.Tests.Domain/**'
-#      - 'src/Nexo.Tests.Application/**'
-#      - 'application/src/Nexo.Tests.CLI/**'
+#      - 'src/Ashlar.Tests.Infrastructure/**'
+#      - 'src/Ashlar.Tests.BackgroundAgents/**'
+#      - 'src/Ashlar.Core.Application/**'
+#      - 'src/Ashlar.Infrastructure/**'
+#      - 'src/Ashlar.BackgroundAgents/**'
+#      - 'application/src/Ashlar.CLI/**'
+#      - 'src/Ashlar.Tests.Domain/**'
+#      - 'src/Ashlar.Tests.Application/**'
+#      - 'application/src/Ashlar.Tests.CLI/**'
 #
 jobs:
   cross-platform:
@@ -76,23 +76,23 @@ jobs:
             8.0.x
 
       - name: Restore
-        run: dotnet restore Nexo.sln
+        run: dotnet restore Ashlar.sln
 
       - name: Build
-        run: dotnet build Nexo.sln --no-restore -v minimal
+        run: dotnet build Ashlar.sln --no-restore -v minimal
 
       - name: Run tests (smoke)
         if: github.event.inputs.scope != 'persistence' && github.event.inputs.scope != 'trust' && github.event.inputs.scope != 'full' && github.event.inputs.scope != 'integration' && github.event.inputs.scope != 'e2e' && github.event.inputs.scope != 'dogfood' && github.event.inputs.scope != 'adaptation' && github.event.inputs.scope != 'playground'
         shell: bash
         run: |
-          dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+          dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj \
             --no-build \
             --blame-hang-timeout 180s \
             --filter "(FullyQualifiedName~BaseFrameworkSmokeTests|FullyQualifiedName~RuntimeStudioBlackBoxSmokeTests)" \
             --logger "console;verbosity=minimal" \
             --logger "trx;LogFileName=smoke-${{ matrix.os }}.trx" \
             --results-directory test-results
-          dotnet test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj \
+          dotnet test src/Ashlar.Tests.BackgroundAgents/Ashlar.Tests.BackgroundAgents.csproj \
             --no-build \
             --blame-hang-timeout 60s \
             --filter "FullyQualifiedName~RuntimeStudioWhiteBoxSmokeTests" \
@@ -104,14 +104,14 @@ jobs:
         if: github.event.inputs.scope == 'playground'
         shell: bash
         run: |
-          dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+          dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj \
             --no-build \
             --blame-hang-timeout 600s \
             --filter "Category=Playground" \
             --logger "console;verbosity=minimal" \
             --logger "trx;LogFileName=playground-infra-${{ matrix.os }}.trx" \
             --results-directory test-results
-          dotnet test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj \
+          dotnet test src/Ashlar.Tests.BackgroundAgents/Ashlar.Tests.BackgroundAgents.csproj \
             --no-build \
             --blame-hang-timeout 300s \
             --filter "Category=Playground" \
@@ -123,7 +123,7 @@ jobs:
         if: github.event.inputs.scope == 'dogfood'
         shell: bash
         run: |
-          dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+          dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj \
             --no-build \
             --blame-hang-timeout 120s \
             --filter "FullyQualifiedName~Dogfood" \
@@ -135,7 +135,7 @@ jobs:
         if: github.event.inputs.scope == 'integration' || github.event.inputs.scope == 'full'
         shell: bash
         run: |
-          dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+          dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj \
             --no-build \
             --blame-hang-timeout 60s \
             --filter "Category=Integration" \
@@ -147,7 +147,7 @@ jobs:
         if: github.event.inputs.scope == 'persistence' || github.event.inputs.scope == 'full'
         shell: bash
         run: |
-          dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+          dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj \
             --no-build \
             --blame-hang-timeout 60s \
             --filter "FullyQualifiedName~InMemoryPersistenceTests" \
@@ -159,7 +159,7 @@ jobs:
         if: github.event.inputs.scope == 'e2e' || github.event.inputs.scope == 'full'
         shell: bash
         run: |
-          dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+          dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj \
             --no-build \
             --blame-hang-timeout 180s \
             --filter "Category=E2E" \
@@ -171,7 +171,7 @@ jobs:
         if: github.event.inputs.scope == 'adaptation'
         shell: bash
         run: |
-          dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+          dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj \
             --no-build \
             --blame-hang-timeout 90s \
             --filter "Category=Adaptation" \
@@ -183,14 +183,14 @@ jobs:
         if: github.event.inputs.scope == 'trust' || github.event.inputs.scope == 'full'
         shell: bash
         run: |
-          dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+          dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj \
             --no-build \
             --blame-hang-timeout 60s \
             --filter "FullyQualifiedName~Trust" \
             --logger "console;verbosity=minimal" \
             --logger "trx;LogFileName=trust-infra-${{ matrix.os }}.trx" \
             --results-directory test-results
-          dotnet test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj \
+          dotnet test src/Ashlar.Tests.BackgroundAgents/Ashlar.Tests.BackgroundAgents.csproj \
             --no-build \
             --blame-hang-timeout 60s \
             --filter "FullyQualifiedName~Trust" \
@@ -202,7 +202,7 @@ jobs:
         if: github.event.inputs.scope == 'full'
         shell: bash
         run: |
-          dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+          dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj \
             --no-build \
             --blame-hang-timeout 120s \
             --logger "console;verbosity=minimal" \

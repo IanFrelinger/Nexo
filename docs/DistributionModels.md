@@ -1,6 +1,6 @@
 # Distribution models
 
-This page is for **maintainers and integrators**: how Nexo is shipped, how each channel is **pinned**, and which **automated gates** prove that channel still works.
+This page is for **maintainers and integrators**: how Ashlar is shipped, how each channel is **pinned**, and which **automated gates** prove that channel still works.
 
 For day-to-day embedding and extension work, start with **`docs/IntegratorGuide.md`**, **`docs/sdk.md`**, and **`docs/architecture/runtime-vs-application.md`**.
 
@@ -10,8 +10,8 @@ For the authoritative open-vs-commercial boundary, see **`docs/OpenCoreBoundary.
 
 Ship the **same semantic version** across artifacts that belong together:
 
-- **NuGet:** all `Nexo.*` packages for a release share one `PackageVersion`; consumers often reference **`Nexo.Hosting.Bundle`**. See **`docs/PUBLISHING.md`**.
-- **Containers:** GHCR images tagged **`X.Y.Z`** (no `v`) from the same **`vX.Y.Z`** git tag. The semver tag is a manifest retag of the smoke-tested immutable **`sha-<12>`** tag, not a rebuild, so it resolves to the same digest and the same platforms (`nexo-cli`: linux/amd64 + linux/arm64 on release tags, like `:latest`; `nexo-api`: linux/amd64). Pin digests for production. See **`docs/RELEASE.md`** and **`docs/DEPLOYMENT.md`**.
+- **NuGet:** all `Ashlar.*` packages for a release share one `PackageVersion`; consumers often reference **`Ashlar.Hosting.Bundle`**. See **`docs/PUBLISHING.md`**.
+- **Containers:** GHCR images tagged **`X.Y.Z`** (no `v`) from the same **`vX.Y.Z`** git tag. The semver tag is a manifest retag of the smoke-tested immutable **`sha-<12>`** tag, not a rebuild, so it resolves to the same digest and the same platforms (`ashlar-cli`: linux/amd64 + linux/arm64 on release tags, like `:latest`; `ashlar-api`: linux/amd64). Pin digests for production. See **`docs/RELEASE.md`** and **`docs/DEPLOYMENT.md`**.
 
 Release automation is summarized in **`docs/RELEASE.md`** (NuGet + GHCR from one tag when configured).
 
@@ -19,16 +19,16 @@ Release automation is summarized in **`docs/RELEASE.md`** (NuGet + GHCR from one
 
 | Channel | Primary artifacts | How consumers pin | First success (manual) |
 |--------|---------------------|-------------------|-------------------------|
-| **NuGet host embed** | `Nexo.Hosting` graph, **`Nexo.Hosting.Bundle`** | Package version on a feed | Build and run **`docs/samples/StableSdkHostSample/`** (see **`docs/SdkIntegrationGuide.md`**) |
-| **NuGet client** | **`Nexo.Client`** / **`Nexo.Sdk`** | Package version | **`docs/sdk.md`** (client quick start) |
-| **HTTP-only** | Running **`Nexo.API`** | Base URL + TLS + API key policy | **`curl`** `GET /health`, `GET /api/status` (see **`docs/SelfHostedAgentServer.md`**) |
-| **CLI** | **`Nexo.CLI`** .NET tool (`PackAsTool`; **not yet on nuget.org** — install from a local feed with `dotnet tool install --tool-path <dir> Nexo.CLI --add-source <feed>`, see **`docs/AuthoringBricks.md`**) or **GHCR `nexo-cli`** image | Image tag or digest; CLI `--version` / package | **`docs/GettingStarted.md`** (`doctor`, `pipeline`) |
+| **NuGet host embed** | `Ashlar.Hosting` graph, **`Ashlar.Hosting.Bundle`** | Package version on a feed | Build and run **`docs/samples/StableSdkHostSample/`** (see **`docs/SdkIntegrationGuide.md`**) |
+| **NuGet client** | **`Ashlar.Client`** / **`Ashlar.Sdk`** | Package version | **`docs/sdk.md`** (client quick start) |
+| **HTTP-only** | Running **`Ashlar.API`** | Base URL + TLS + API key policy | **`curl`** `GET /health`, `GET /api/status` (see **`docs/SelfHostedAgentServer.md`**) |
+| **CLI** | **`Ashlar.CLI`** .NET tool (`PackAsTool`; **not yet on nuget.org** — install from a local feed with `dotnet tool install --tool-path <dir> Ashlar.CLI --add-source <feed>`, see **`docs/AuthoringBricks.md`**) or **GHCR `ashlar-cli`** image | Image tag or digest; CLI `--version` / package | **`docs/GettingStarted.md`** (`doctor`, `pipeline`) |
 | **Compose / operators** | **`deploy/compose/docker-compose*.yml`** + operator docs | Compose file revision + image digests | **`docs/DEPLOYMENT.md`**, stack-specific guides |
 | **Source / monorepo** | `ProjectReference` into **`src/`** | Git commit / branch | **`docs/IntegratorGuide.md`** (project reference example) |
 | **Mesh / federation (open peers)** | Peer config, local mesh primitives, worker executor | `instances.json`, env vars | **`docs/IntegratorGuide.md`**, **`docs/FriendMeshPrefab.md`**, **`docs/MeshVirtualLab.md`** |
-| **Mesh fleet director (commercial)** | `Nexo.Commercial.Fleet.Host`, `/api/mesh/*` director APIs | Image tag + API key + peer registration key | **`.docker/Dockerfile.fleet-host`**, **`scripts/commercial-fleet-host-smoke.sh`**, mesh-lab peer-a |
+| **Mesh fleet director (commercial)** | `Ashlar.Commercial.Fleet.Host`, `/api/mesh/*` director APIs | Image tag + API key + peer registration key | **`.docker/Dockerfile.fleet-host`**, **`scripts/commercial-fleet-host-smoke.sh`**, mesh-lab peer-a |
 
-**Publication status:** as of this writing **no `Nexo.*` package (nor the `Nexo.CLI` tool) has been published to nuget.org** — no `v*` tag or GitHub release exists and the release workflows have not run. The NuGet rows above are proven only against **local folder feeds** (`nuget-local-pack-consumer`, `scripts/verify-standalone-brick-authoring.sh`); until a release ships, consumers need either such a feed or a **`ProjectReference`** into `src/` (the **Source / monorepo** row; `samples/hello-brick/` is the smallest example).
+**Publication status:** as of this writing **no `Ashlar.*` package (nor the `Ashlar.CLI` tool) has been published to nuget.org** — no `v*` tag or GitHub release exists and the release workflows have not run. The NuGet rows above are proven only against **local folder feeds** (`nuget-local-pack-consumer`, `scripts/verify-standalone-brick-authoring.sh`); until a release ships, consumers need either such a feed or a **`ProjectReference`** into `src/` (the **Source / monorepo** row; `samples/hello-brick/` is the smallest example).
 
 ## Golden reference pins (copy/paste)
 
@@ -37,17 +37,17 @@ Use these as **stable entrypoints** when writing runbooks or samples; replace im
 | Channel | Golden artifact / path |
 |--------|-------------------------|
 | **NuGet host sample (local pack)** | `docs/samples/StableSdkHostSample/package-consumer/StableSdkHostSample.Package.csproj` + **`scripts/verify-stable-sdk-host-sample-packages.sh`** |
-| **NuGet metapackage (consumers)** | **`Nexo.Hosting.Bundle`** at the release semver (see **`docs/PUBLISHING.md`**) |
+| **NuGet metapackage (consumers)** | **`Ashlar.Hosting.Bundle`** at the release semver (see **`docs/PUBLISHING.md`**) |
 | **HTTP / API container** | Build **`.docker/Dockerfile.api`**; container listens on **`8080`** (`ASPNETCORE_URLS=http://+:8080`). Smoke script: **`scripts/ci/distribution-matrix-api-http-smoke.sh`**. |
-| **CLI container (public)** | **`ghcr.io/ianfrelinger/nexo-cli:latest`** — smoke with **`--help`** and **`pipeline validate --help`** (not **`doctor`**, see **`docs/GettingStarted.md`**). |
+| **CLI container (public)** | **`ghcr.io/ianfrelinger/ashlar-cli:latest`** — smoke with **`--help`** and **`pipeline validate --help`** (not **`doctor`**, see **`docs/GettingStarted.md`**). |
 | **Compose (operator lab)** | **`deploy/compose/docker-compose.ephemeral.yml`** (light deps) or **`deploy/compose/docker-compose.portal.yml`** (Director stack) — hub **`docs/DEPLOYMENT.md`**. |
 | **Mesh prefab** | **`deploy/compose/docker-compose.friend-mesh.yml`** + **`docs/FriendMeshPrefab.md`** |
-| **Mesh lab (heterogeneous)** | **`deploy/compose/docker-compose.mesh-lab.yml`** — peer-a = commercial fleet host, peer-b/worker = open `Nexo.API` | **`docs/MeshVirtualLab.md`**, **`scripts/mesh-lab-verify.sh`** |
+| **Mesh lab (heterogeneous)** | **`deploy/compose/docker-compose.mesh-lab.yml`** — peer-a = commercial fleet host, peer-b/worker = open `Ashlar.API` | **`docs/MeshVirtualLab.md`**, **`scripts/mesh-lab-verify.sh`** |
 
 ## Contract boundaries
 
-- **Host SDK (stable):** `Nexo.Hosting.Sdk` — register bricks/agents before **`AddNexo`**. See **`docs/sdk.md`**.
-- **Client SDK (stable):** `Nexo.Client` / **`INexoClient`** — typed HTTP to a running API; use **`InvokeAsync`** for routes not yet wrapped. See **`docs/sdk.md`** and **`docs/api/index.md`**.
+- **Host SDK (stable):** `Ashlar.Hosting.Sdk` — register bricks/agents before **`AddAshlar`**. See **`docs/sdk.md`**.
+- **Client SDK (stable):** `Ashlar.Client` / **`IAshlarClient`** — typed HTTP to a running API; use **`InvokeAsync`** for routes not yet wrapped. See **`docs/sdk.md`** and **`docs/api/index.md`**.
 - **HTTP:** stable routes and behavior for external clients; breaking changes follow **`docs/api/versioning.md`** (unversioned in `v0.x`, one-minor deprecation window, **Breaking** entries in `CHANGELOG.md`, `/api/v1` at `1.0`; that page also lists the endpoints on the documented surface).
 - **CLI:** treat breaking flags as **consumer-facing** changes; document in release notes.
 
@@ -60,12 +60,12 @@ The workflow **`.github/workflows/distribution-matrix-gate.yml`** runs **in para
 | Matrix job | What it proves |
 |------------|----------------|
 | **nuget-local-pack-consumer** | Local pack → **`scripts/verify-stable-sdk-host-sample-packages.sh`** (isolated NuGet cache, sample restores from folder feed + nuget.org). |
-| **standalone-brick-authoring** | Tool-installed **`nexo new brick`** outside the repo; restore/build/test from local feed only. |
-| **external-product-shape** | **`scripts/verify-external-product-shape.sh`** — ephemeral consumer restores **`Nexo.Authoring`**, **`Nexo.Hosting.Bundle`**, **`Nexo.Sdk`**, boots a thin host with an authored brick, and round-trips via **`INexoClient.InvokeAsync`** (`POST /api/bricks/{id}/execute`). |
+| **standalone-brick-authoring** | Tool-installed **`ashlar new brick`** outside the repo; restore/build/test from local feed only. |
+| **external-product-shape** | **`scripts/verify-external-product-shape.sh`** — ephemeral consumer restores **`Ashlar.Authoring`**, **`Ashlar.Hosting.Bundle`**, **`Ashlar.Sdk`**, boots a thin host with an authored brick, and round-trips via **`IAshlarClient.InvokeAsync`** (`POST /api/bricks/{id}/execute`). |
 | **cli-image-smoke** | **`.docker/Dockerfile.cli`** builds; container runs **`--help`** and **`pipeline validate --help`** (runtime image has no git/curl, so **`doctor`** is not used here). |
 | **api-image-http-smoke** | **`.docker/Dockerfile.api`** builds; container serves **`/health`** and **`/api/status`** (host **`curl`** — HTTP-only consumer path). Script: **`scripts/ci/distribution-matrix-api-http-smoke.sh`**. |
-| **nexo-client-inprocess-test** | **`Nexo.Client`** `GetStatusAsync` against in-process **`Nexo.API`** (same pipeline as production; **`net10.0`** test filter). |
-| **pack-hosting-graph-alignment** | **`scripts/verify-pack-nexo-hosting-graph-alignment.py`** — pack allowlist matches **`Nexo.Hosting`** MSBuild graph. |
+| **ashlar-client-inprocess-test** | **`Ashlar.Client`** `GetStatusAsync` against in-process **`Ashlar.API`** (same pipeline as production; **`net10.0`** test filter). |
+| **pack-hosting-graph-alignment** | **`scripts/verify-pack-ashlar-hosting-graph-alignment.py`** — pack allowlist matches **`Ashlar.Hosting`** MSBuild graph. |
 
 **Post-publish NuGet** verification (nuget.org index + retries) stays in **`docs/PUBLISHING.md`**, **`docs/NuGetConsumerVerify.md`**, and the reusable workflow **`reusable-verify-nuget-consumer.yml`** (invoked from release flows).
 
@@ -73,7 +73,7 @@ Other related gates (not duplicated here): **`compose-gate.yml`**, **`devcontain
 
 ## Integrator compatibility matrix
 
-Release owners should keep the **version / runtime table** in **`docs/IntegratorGuide.md`** up to date when you cut a release (single source of truth for “which Nexo version on which .NET”).
+Release owners should keep the **version / runtime table** in **`docs/IntegratorGuide.md`** up to date when you cut a release (single source of truth for “which Ashlar version on which .NET”).
 
 ## See also
 

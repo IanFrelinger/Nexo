@@ -6,10 +6,10 @@ For reviewers enforcing [Testing strategy pivot v1](TestingStrategyPivot-v1.md).
 
 | PR changes | Approve if | Request changes if |
 |------------|------------|-------------------|
-| `Nexo.Core.Domain` | Domain tests present; `kernel-coverage` green | Missing tests or coverage drop on domain |
+| `Ashlar.Core.Domain` | Domain tests present; `kernel-coverage` green | Missing tests or coverage drop on domain |
 | Small Infrastructure adapter | Focused unit/gap tests in **existing** files | New `*GapCoverageTests.cs` without `gap-coverage-justify:` in PR body |
 | `ProviderFactory`, Docker, Postgres, mesh executors | ProdStyle / virtual NCR / mesh-lab evidence | Large gap-only diff with no wiring test |
-| API / `AddNexo` / barriers / routing | `make test-prod-style` or WAF tests run in CI | Only gap tests; no ProdStyle |
+| API / `AddAshlar` / barriers / routing | `make test-prod-style` or WAF tests run in CI | Only gap tests; no ProdStyle |
 | Mesh / fleet / trust | `mesh-lab-gate` or composition-mesh path green | Unit tests only |
 | Docs only | `docs-link-check` | N/A |
 

@@ -20,26 +20,26 @@ on:
       - "scripts/verify-stable-sdk-host-sample-packages.sh"
       - "scripts/verify-standalone-brick-authoring.sh"
       - "scripts/verify-external-product-shape.sh"
-      - "scripts/pack-nexo-hosting-graph.sh"
-      - "scripts/pack-nexo-hosting-graph.ps1"
-      - "scripts/pack-nexo-hosting-graph.allowlist.txt"
-      - "scripts/verify-pack-nexo-hosting-graph-alignment.py"
-      - "application/src/Nexo.API/**"
-      - "application/src/Nexo.CLI/**"
-      - "src/Nexo.Client/**"
-      - "src/Nexo.Sdk/**"
-      - "src/Nexo.Hosting.Bundle/**"
-      - "src/Nexo.Authoring/**"
-      - "src/Nexo.Brick.Contracts/**"
-      - "src/Nexo.Core.Domain/Bricks/**"
-      - "src/Nexo.Core.Domain/Execution/**"
-      - "src/Nexo.Core.Application/**"
-      - "src/Nexo.Hosting/**"
+      - "scripts/pack-ashlar-hosting-graph.sh"
+      - "scripts/pack-ashlar-hosting-graph.ps1"
+      - "scripts/pack-ashlar-hosting-graph.allowlist.txt"
+      - "scripts/verify-pack-ashlar-hosting-graph-alignment.py"
+      - "application/src/Ashlar.API/**"
+      - "application/src/Ashlar.CLI/**"
+      - "src/Ashlar.Client/**"
+      - "src/Ashlar.Sdk/**"
+      - "src/Ashlar.Hosting.Bundle/**"
+      - "src/Ashlar.Authoring/**"
+      - "src/Ashlar.Brick.Contracts/**"
+      - "src/Ashlar.Core.Domain/Bricks/**"
+      - "src/Ashlar.Core.Domain/Execution/**"
+      - "src/Ashlar.Core.Application/**"
+      - "src/Ashlar.Hosting/**"
       - "docs/samples/StableSdkHostSample/**"
       - "samples/templates/brick/**"
       - "samples/hello-brick/**"
-      - "src/Nexo.Tests.Infrastructure/Tests/VirtualProduction/**"
-      - "src/Nexo.Tests.Infrastructure/Helpers/VirtualProduction/**"
+      - "src/Ashlar.Tests.Infrastructure/Tests/VirtualProduction/**"
+      - "src/Ashlar.Tests.Infrastructure/Helpers/VirtualProduction/**"
   pull_request:
     paths:
       - ".github/workflows/distribution-matrix-gate.yml"
@@ -49,26 +49,26 @@ on:
       - "scripts/verify-stable-sdk-host-sample-packages.sh"
       - "scripts/verify-standalone-brick-authoring.sh"
       - "scripts/verify-external-product-shape.sh"
-      - "scripts/pack-nexo-hosting-graph.sh"
-      - "scripts/pack-nexo-hosting-graph.ps1"
-      - "scripts/pack-nexo-hosting-graph.allowlist.txt"
-      - "scripts/verify-pack-nexo-hosting-graph-alignment.py"
-      - "application/src/Nexo.API/**"
-      - "application/src/Nexo.CLI/**"
-      - "src/Nexo.Client/**"
-      - "src/Nexo.Sdk/**"
-      - "src/Nexo.Hosting.Bundle/**"
-      - "src/Nexo.Authoring/**"
-      - "src/Nexo.Brick.Contracts/**"
-      - "src/Nexo.Core.Domain/Bricks/**"
-      - "src/Nexo.Core.Domain/Execution/**"
-      - "src/Nexo.Core.Application/**"
-      - "src/Nexo.Hosting/**"
+      - "scripts/pack-ashlar-hosting-graph.sh"
+      - "scripts/pack-ashlar-hosting-graph.ps1"
+      - "scripts/pack-ashlar-hosting-graph.allowlist.txt"
+      - "scripts/verify-pack-ashlar-hosting-graph-alignment.py"
+      - "application/src/Ashlar.API/**"
+      - "application/src/Ashlar.CLI/**"
+      - "src/Ashlar.Client/**"
+      - "src/Ashlar.Sdk/**"
+      - "src/Ashlar.Hosting.Bundle/**"
+      - "src/Ashlar.Authoring/**"
+      - "src/Ashlar.Brick.Contracts/**"
+      - "src/Ashlar.Core.Domain/Bricks/**"
+      - "src/Ashlar.Core.Domain/Execution/**"
+      - "src/Ashlar.Core.Application/**"
+      - "src/Ashlar.Hosting/**"
       - "docs/samples/StableSdkHostSample/**"
       - "samples/templates/brick/**"
       - "samples/hello-brick/**"
-      - "src/Nexo.Tests.Infrastructure/Tests/VirtualProduction/**"
-      - "src/Nexo.Tests.Infrastructure/Helpers/VirtualProduction/**"
+      - "src/Ashlar.Tests.Infrastructure/Tests/VirtualProduction/**"
+      - "src/Ashlar.Tests.Infrastructure/Helpers/VirtualProduction/**"
 
 permissions:
   contents: read
@@ -91,7 +91,7 @@ jobs:
 
       - name: Verify package-consumer build (isolated cache)
         env:
-          NEXO_SDK_PACKAGE_VERSION: "9.9.9-ci-${{ github.run_id }}"
+          ASHLAR_SDK_PACKAGE_VERSION: "9.9.9-ci-${{ github.run_id }}"
         run: bash scripts/verify-stable-sdk-host-sample-packages.sh
 
   cli-image-smoke:
@@ -107,15 +107,15 @@ jobs:
         run: |
           docker build \
             --file .docker/Dockerfile.cli \
-            --tag nexo-cli:dist-matrix \
+            --tag ashlar-cli:dist-matrix \
             .
 
       - name: Smoke (--help)
-        run: docker run --rm nexo-cli:dist-matrix --help
+        run: docker run --rm ashlar-cli:dist-matrix --help
 
       # doctor --json expects git/curl and a dev-style host; the CLI image is aspnet runtime-only.
       - name: Smoke (pipeline validate --help)
-        run: docker run --rm nexo-cli:dist-matrix pipeline validate --help
+        run: docker run --rm ashlar-cli:dist-matrix pipeline validate --help
 
   standalone-brick-authoring:
     name: Standalone brick authoring scaffold
@@ -128,7 +128,7 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: Verify tool-installed nexo new brick outside repo
+      - name: Verify tool-installed ashlar new brick outside repo
         run: bash scripts/verify-standalone-brick-authoring.sh
 
   external-product-shape:
@@ -144,7 +144,7 @@ jobs:
 
       - name: Verify packed feed consumer (authored brick + thin host + HTTP client)
         env:
-          NEXO_EXTERNAL_PRODUCT_VERIFY_VERSION: "9.9.9-ci-${{ github.run_id }}"
+          ASHLAR_EXTERNAL_PRODUCT_VERIFY_VERSION: "9.9.9-ci-${{ github.run_id }}"
         run: bash scripts/verify-external-product-shape.sh
 
   api-image-http-smoke:
@@ -159,8 +159,8 @@ jobs:
       - name: Build, run API, curl smoke
         run: bash scripts/ci/distribution-matrix-api-http-smoke.sh
 
-  nexo-client-inprocess-test:
-    name: Nexo.Client ↔ in-process Nexo.API (net10)
+  ashlar-client-inprocess-test:
+    name: Ashlar.Client ↔ in-process Ashlar.API (net10)
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -170,21 +170,21 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: dotnet test (VirtualProduction INexoClient)
+      - name: dotnet test (VirtualProduction IAshlarClient)
         env:
-          NEXO_ALLOW_MOCK: "1"
+          ASHLAR_ALLOW_MOCK: "1"
         run: |
-          dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+          dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj \
             -f net10.0 \
-            --filter "FullyQualifiedName~Nexo.Tests.Infrastructure.Tests.VirtualProduction.FrameworkVirtualProdDemosTests.Virtual_prod_INexoClient_GetStatusAsync_matches_console_and_blazor_demos" \
+            --filter "FullyQualifiedName~Ashlar.Tests.Infrastructure.Tests.VirtualProduction.FrameworkVirtualProdDemosTests.Virtual_prod_IAshlarClient_GetStatusAsync_matches_console_and_blazor_demos" \
             --verbosity minimal
 
   pack-hosting-graph-alignment:
-    name: Pack script vs Nexo.Hosting graph
+    name: Pack script vs Ashlar.Hosting graph
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
 
-      - name: verify-pack-nexo-hosting-graph-alignment
-        run: python3 scripts/verify-pack-nexo-hosting-graph-alignment.py
+      - name: verify-pack-ashlar-hosting-graph-alignment
+        run: python3 scripts/verify-pack-ashlar-hosting-graph-alignment.py

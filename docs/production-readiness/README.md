@@ -17,7 +17,7 @@ This folder helps you **support every major production concern** in one place: r
 | **Compatibility** | [Compat hardening plan v1](CompatHardeningPlan-v1.md) · [Compat readiness](CompatReadiness-v1.md) | `make compat-gate-full` |
 | **Disaster recovery** | [DR hardening plan v1](DRHardeningPlan-v1.md) · [DR readiness](DRReadiness-v1.md) | `make dr-gate-full` |
 | **Post-RC waterproofing** | [Rollback drill](RollbackDrill-v1.md) · [Release sign-off](ReleaseSignOff-v1.md) | `make waterproofing-gate-full` |
-| **Full stack** | — | `make nexo-ready-gate` (`NEXO_READY_SKIP_DOCKER=1` for fast local) |
+| **Full stack** | — | `make ashlar-ready-gate` (`ASHLAR_READY_SKIP_DOCKER=1` for fast local) |
 | Release & promotion | [Release and promotion](ReleaseAndPromotion.md) | Reproducible versions, artifacts, rollback, one promotion path |
 | Security & trust | [Security and trust](SecurityAndTrust.md) | Secrets, threat model, supply chain, dependency risk |
 | Operations | [Operations and observability](OperationsAndObservability.md) | SLOs, alerting, health, capacity, runbooks |

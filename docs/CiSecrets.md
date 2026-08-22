@@ -17,7 +17,7 @@ These jobs carry `if: github.repository_owner == 'IanFrelinger'` (added 2026-08-
 
 | Workflow | Guarded job | Effect on a fork |
 | --- | --- | --- |
-| `.github/workflows/container-image-publish.yml` | `publish` (calls `reusable-container-publish.yml`) | a path-filtered push to `master`/`main` no longer tries to publish `nexo-cli` / `nexo-api` to the fork's GHCR |
+| `.github/workflows/container-image-publish.yml` | `publish` (calls `reusable-container-publish.yml`) | a path-filtered push to `master`/`main` no longer tries to publish `ashlar-cli` / `ashlar-api` to the fork's GHCR |
 | `.github/workflows/release.yml` | `validate` (every other job needs it) | a `v*.*.*` tag push produces skipped `images` / `nuget` / `github-release`; `summarize` and `notify` still run and print / no-op |
 | `.github/workflows/release-nuget.yml` | `nuget` (calls `reusable-release-nuget.yml`) | manual dispatch is a no-op |
 | `.github/workflows/release-staging-on-label.yml` | `dispatch-staging-release` | labelling a PR `release:staging` no longer dispatches `release.yml` |
@@ -48,9 +48,9 @@ permissions, which is what the `permissions:` blocks in those files ask for.
 
 Secrets that **used** to be referenced and are gone with the workflow that read them
 (2026-08-16 pruning, see `docs/CiGateInventory.md`, "Pruning"): `MAPBOX_ACCESS_TOKEN`
-(`mapbox-tile-helpers-ci.yml`; run the Mapbox tests locally with `NEXO_TEST_MAPBOX_TILES=1` and the
-token in the environment) and `NEXO_MESH_DIRECTOR_BASE_URL`, `NEXO_MESH_API_KEY`,
-`MESH_LAB_PEER_REGISTRATION_KEY`, `MESH_LAB_REMOTE_WORKER_URL`, `NEXO_MESH_TLS_INSECURE`
+(`mapbox-tile-helpers-ci.yml`; run the Mapbox tests locally with `ASHLAR_TEST_MAPBOX_TILES=1` and the
+token in the environment) and `ASHLAR_MESH_DIRECTOR_BASE_URL`, `ASHLAR_MESH_API_KEY`,
+`MESH_LAB_PEER_REGISTRATION_KEY`, `MESH_LAB_REMOTE_WORKER_URL`, `ASHLAR_MESH_TLS_INSECURE`
 (`mesh-lab-remote-gate.yml`; run `scripts/mesh-lab-verify-remote.sh` from a tailnet host instead).
 
 ## Repository variables (`vars.*`)
@@ -72,8 +72,8 @@ why every release-path run so far has been artifact-only.
 | `DEVLOG_GHOST_ENABLED` | `devlog-ghost-release.yml` | `true` lets a `release: published` event post a Ghost draft | release-event runs are skipped; manual dispatch still works (and still needs the Ghost secrets). |
 
 Variables that **used** to be referenced and are gone with their workflow:
-`NEXO_WINDOWS_DOCKER_PERSISTENCE` (`test-persistence-multi-os.yml`, self-hosted Windows Docker
-lane) and `NEXO_MESH_REMOTE_RUNNER` (`mesh-lab-remote-gate.yml`, tailnet runner label).
+`ASHLAR_WINDOWS_DOCKER_PERSISTENCE` (`test-persistence-multi-os.yml`, self-hosted Windows Docker
+lane) and `ASHLAR_MESH_REMOTE_RUNNER` (`mesh-lab-remote-gate.yml`, tailnet runner label).
 
 ## What a fork sees, in practice
 

@@ -1,0 +1,80 @@
+# Example worker Deployment for Ashlar KubernetesWorkloadScaler.
+# Scale with:
+#   kubectl -n ashlar scale deployment/ashlar-mesh-worker --replicas=3
+# or PUT /api/workloads/mesh-worker/replicas when Provider=kubernetes.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: ashlar
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ashlar-mesh-worker
+  namespace: ashlar
+  labels:
+    app.kubernetes.io/name: ashlar-mesh-worker
+    app.kubernetes.io/part-of: ashlar
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: ashlar-mesh-worker
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: ashlar-mesh-worker
+    spec:
+      containers:
+        - name: worker
+          # Ashlar.API image (.docker/Dockerfile.api). Local build shown; the published image is
+          # ghcr.io/ianfrelinger/ashlar-api:<tag> — pin a semver or sha-<12-char-commit> tag
+          # (docs/DEPLOYMENT.md, "Golden path A"), never :latest.
+          image: ashlar-api:local
+          # image: ghcr.io/ianfrelinger/ashlar-api:sha-<commit>
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: ASPNETCORE_URLS
+              value: http://+:8080
+            # Must be one of the values AddAshlar() accepts: full, server, edge, air-gapped, system
+            # (AshlarServiceCollectionExtensions.Deployment.cs). Anything else throws at startup ->
+            # CrashLoopBackOff. A mesh worker executes bricks over the runtime transport, so it needs
+            # the Server composition (same modules as Full); Edge strips NCR + agents.
+            - name: ASHLAR_DEPLOYMENT_PROFILE
+              value: server
+            # Runtime state (LiteDB stores) is per-replica scratch here; mount a PVC at /data/state
+            # to keep it (docs/DEPLOYMENT.md, "Runtime state").
+            - name: ASHLAR_STATE_DIR
+              value: /data/state
+          ports:
+            - name: http
+              containerPort: 8080
+          # /health is liveness (constant 200 while the process serves HTTP); /ready flips to 503 while the
+          # host is starting and once shutdown begins so the endpoint drains before Kestrel closes.
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          # The image runs as the aspnet 'app' user (uid 1654); /data is owned by it.
+          securityContext:
+            runAsNonRoot: true
+            allowPrivilegeEscalation: false
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: "1"
+              memory: 1Gi

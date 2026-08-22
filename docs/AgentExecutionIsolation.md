@@ -6,7 +6,7 @@ This is **orthogonal** to model routing (for example NCR / peer / cloud in `docs
 
 ## Isolation tiers
 
-Defined in `Nexo.Abstractions.Execution.AgentExecutionIsolationLevel`:
+Defined in `Ashlar.Abstractions.Execution.AgentExecutionIsolationLevel`:
 
 | Tier | Meaning (intent) |
 |------|-------------------|
@@ -28,22 +28,22 @@ Per agent object, optional field:
 
 If the field is missing, invalid, or not a defined enum value, the parser uses `InProcess` and logs a warning when the value is unusable.
 
-Parser: `Nexo.Orchestration.Architect.Parsers.DecompositionJsonParser`.
+Parser: `Ashlar.Orchestration.Architect.Parsers.DecompositionJsonParser`.
 
 ### Spawn specification
 
-`Nexo.Orchestration.Architect.Models.AgentSpawnSpec.ExecutionIsolation` defaults to `InProcess`.
+`Ashlar.Orchestration.Architect.Models.AgentSpawnSpec.ExecutionIsolation` defaults to `InProcess`.
 
 ## Invocation metadata (wire contract)
 
 When the orchestrator builds an `AgentInvocationRequest`, it sets:
 
-- **Key:** `nexo.execution.isolation` (constant `AgentExecutionIsolation.MetadataKey`)
+- **Key:** `ashlar.execution.isolation` (constant `AgentExecutionIsolation.MetadataKey`)
 - **Value:** enum name as formatted by `AgentExecutionIsolation.Format` (for example `ContainerPerAgent`).
 
-Helpers: `Nexo.Abstractions.Execution.AgentExecutionIsolation` (`Format`, `TryParse` on metadata, `GetEffective`).
+Helpers: `Ashlar.Abstractions.Execution.AgentExecutionIsolation` (`Format`, `TryParse` on metadata, `GetEffective`).
 
-Orchestrator: `Nexo.Orchestration.Coordination.Orchestrator` (metadata dictionary alongside `domain`, `goal`, `ollamaModel`, etc.).
+Orchestrator: `Ashlar.Orchestration.Coordination.Orchestrator` (metadata dictionary alongside `domain`, `goal`, `ollamaModel`, etc.).
 
 ### gRPC transport
 
@@ -59,5 +59,5 @@ The default **`InProcessAgentTransport`** does not spin containers; it exists so
 
 ## Tests
 
-- `Nexo.Tests.Orchestration.Architect.DecompositionJsonParserExecutionIsolationTests` — JSON parsing.
-- `Nexo.Tests.Orchestration.Coordination.OrchestratorTransportTests` — metadata propagation to `AgentInvocationRequest`.
+- `Ashlar.Tests.Orchestration.Architect.DecompositionJsonParserExecutionIsolationTests` — JSON parsing.
+- `Ashlar.Tests.Orchestration.Coordination.OrchestratorTransportTests` — metadata propagation to `AgentInvocationRequest`.

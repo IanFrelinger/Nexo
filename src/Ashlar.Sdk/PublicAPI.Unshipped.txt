@@ -1,0 +1,9 @@
+#nullable enable
+Ashlar.Sdk.Client.AshlarClientSdkBuilder
+Ashlar.Sdk.Client.AshlarClientSdkBuilder.AshlarClientSdkBuilder(Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> void
+Ashlar.Sdk.Client.AshlarClientSdkBuilder.Services.get -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+Ashlar.Sdk.Client.AshlarClientSdkServiceCollectionExtensions
+Ashlar.Sdk.AshlarSdkBuilder
+Ashlar.Sdk.AshlarSdkLegacyExtensions
+static Ashlar.Sdk.Client.AshlarClientSdkServiceCollectionExtensions.AddAshlarClientSdk(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, string! baseUrl, System.Action<Ashlar.Sdk.Client.AshlarClientSdkBuilder!>? configure = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Ashlar.Sdk.AshlarSdkLegacyExtensions.AddAshlarSdk(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, string! baseUrl, System.Action<Ashlar.Sdk.AshlarSdkBuilder!>? configure = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!

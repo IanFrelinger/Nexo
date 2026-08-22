@@ -1,8 +1,8 @@
-# Prefab: small shared Nexo.API for two (or a few) people over Tailscale / VPN / TLS reverse proxy.
+# Prefab: small shared Ashlar.API for two (or a few) people over Tailscale / VPN / TLS reverse proxy.
 #
 # Security model:
-#   - Nexo.API listens on HTTP inside the container; you terminate TLS at a reverse proxy OR bind only on Tailscale/LAN.
-#   - Set strong Nexo__Security__* secrets via docs/config/friend-mesh.env.example (copy to .env.friend-mesh).
+#   - Ashlar.API listens on HTTP inside the container; you terminate TLS at a reverse proxy OR bind only on Tailscale/LAN.
+#   - Set strong Ashlar__Security__* secrets via docs/config/friend-mesh.env.example (copy to .env.friend-mesh).
 #
 # From repo root:
 #   cp docs/config/friend-mesh.env.example .env.friend-mesh
@@ -10,27 +10,27 @@
 #   docker compose -f docker-compose.friend-mesh.yml --env-file .env.friend-mesh up -d --build
 #
 # Default publish: 127.0.0.1:8080 (loopback). For Tailscale on the same host, bind Tailscale to the host and
-# keep loopback, or set NEXO_FRIEND_MESH_PORT_PUBLISH to your tailnet bind pattern (see docs/FriendMeshPrefab.md).
+# keep loopback, or set ASHLAR_FRIEND_MESH_PORT_PUBLISH to your tailnet bind pattern (see docs/FriendMeshPrefab.md).
 
 services:
-  nexo-api:
+  ashlar-api:
     build:
-      context: ${NEXO_BUILD_CONTEXT:-../..}
-      dockerfile: ${NEXO_FRIEND_MESH_DOCKERFILE:-.docker/Dockerfile.api}
+      context: ${ASHLAR_BUILD_CONTEXT:-../..}
+      dockerfile: ${ASHLAR_FRIEND_MESH_DOCKERFILE:-.docker/Dockerfile.api}
     environment:
       ASPNETCORE_URLS: http://+:8080
       ASPNETCORE_CONTENTROOT: /app
-      Nexo__Security__ExposureProfile: ${Nexo__Security__ExposureProfile:-Tailnet}
-      Nexo__Security__AuthorizationMode: ${Nexo__Security__AuthorizationMode:-ApiKey}
-      Nexo__Security__AuthorizationScope: ${Nexo__Security__AuthorizationScope:-MutatingApi}
-      Nexo__Security__ApiKey: ${Nexo__Security__ApiKey}
-      Nexo__Security__ApiKeyHeaderName: ${Nexo__Security__ApiKeyHeaderName:-X-Nexo-Api-Key}
+      Ashlar__Security__ExposureProfile: ${Ashlar__Security__ExposureProfile:-Tailnet}
+      Ashlar__Security__AuthorizationMode: ${Ashlar__Security__AuthorizationMode:-ApiKey}
+      Ashlar__Security__AuthorizationScope: ${Ashlar__Security__AuthorizationScope:-MutatingApi}
+      Ashlar__Security__ApiKey: ${Ashlar__Security__ApiKey}
+      Ashlar__Security__ApiKeyHeaderName: ${Ashlar__Security__ApiKeyHeaderName:-X-Ashlar-Api-Key}
       # Quoted default — unquoted "Friend mesh: ..." breaks YAML (colon in flow context).
-      Nexo__Security__CustomAdvisory: "${Nexo__Security__CustomAdvisory:-Friend mesh — share secrets only out-of-band; use TLS or Tailscale.}"
-      Nexo__Security__ShowAdvisoryInPortal: ${Nexo__Security__ShowAdvisoryInPortal:-true}
-      # Optional: when mesh HTTP hardening is enabled in your Nexo build, set these to the same or distinct secrets.
-      Nexo__Security__Mesh__MeshMutatingToken: ${Nexo__Security__Mesh__MeshMutatingToken:-}
-      Nexo__Security__Mesh__BrickExecuteToken: ${Nexo__Security__Mesh__BrickExecuteToken:-}
+      Ashlar__Security__CustomAdvisory: "${Ashlar__Security__CustomAdvisory:-Friend mesh — share secrets only out-of-band; use TLS or Tailscale.}"
+      Ashlar__Security__ShowAdvisoryInPortal: ${Ashlar__Security__ShowAdvisoryInPortal:-true}
+      # Optional: when mesh HTTP hardening is enabled in your Ashlar build, set these to the same or distinct secrets.
+      Ashlar__Security__Mesh__MeshMutatingToken: ${Ashlar__Security__Mesh__MeshMutatingToken:-}
+      Ashlar__Security__Mesh__BrickExecuteToken: ${Ashlar__Security__Mesh__BrickExecuteToken:-}
     ports:
-      - "${NEXO_FRIEND_MESH_PORT_PUBLISH:-127.0.0.1:8080}:8080"
+      - "${ASHLAR_FRIEND_MESH_PORT_PUBLISH:-127.0.0.1:8080}:8080"
     restart: unless-stopped

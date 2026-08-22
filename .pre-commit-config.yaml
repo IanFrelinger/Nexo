@@ -2,9 +2,9 @@
 repos:
   - repo: local
     hooks:
-      - id: verify-pack-nexo-hosting-graph-alignment
-        name: verify pack-nexo-hosting-graph vs Nexo.Hosting MSBuild graph
-        entry: python3 scripts/verify-pack-nexo-hosting-graph-alignment.py
+      - id: verify-pack-ashlar-hosting-graph-alignment
+        name: verify pack-ashlar-hosting-graph vs Ashlar.Hosting MSBuild graph
+        entry: python3 scripts/verify-pack-ashlar-hosting-graph-alignment.py
         language: system
         pass_filenames: false
-        files: ^(scripts/pack-nexo-hosting-graph\.(sh|ps1)|scripts/pack-nexo-hosting-graph\.allowlist\.txt|scripts/verify-pack-nexo-hosting-graph-alignment\.py|src/Nexo\.Hosting/.*|src/Nexo\..*/.*\.csproj)$
+        files: ^(scripts/pack-ashlar-hosting-graph\.(sh|ps1)|scripts/pack-ashlar-hosting-graph\.allowlist\.txt|scripts/verify-pack-ashlar-hosting-graph-alignment\.py|src/Ashlar\.Hosting/.*|src/Ashlar\..*/.*\.csproj)$

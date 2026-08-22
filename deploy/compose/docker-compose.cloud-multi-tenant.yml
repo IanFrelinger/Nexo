@@ -1,8 +1,8 @@
 # Product Fleet Phase 2 — multi-tenant Cloud staging shape (local dev).
 # See docs/product-fleet/cloud-reference-deployment.md
 #
-# NEXO_API_KEY is REQUIRED (no default): tenant / org / user are client-asserted headers, so the
-# mutating API must at least be credentialed. Generate one, e.g. export NEXO_API_KEY="$(openssl rand -hex 32)"
+# ASHLAR_API_KEY is REQUIRED (no default): tenant / org / user are client-asserted headers, so the
+# mutating API must at least be credentialed. Generate one, e.g. export ASHLAR_API_KEY="$(openssl rand -hex 32)"
 services:
   ollama:
     image: ollama/ollama:latest
@@ -12,7 +12,7 @@ services:
       - ollama-models:/root/.ollama
     restart: unless-stopped
 
-  nexo-api:
+  ashlar-api:
     build:
       context: ../..
       dockerfile: .docker/Dockerfile.api
@@ -24,32 +24,32 @@ services:
       # NCR probe never dial the container's own localhost:11434 (docs/Configuration.md, "Ollama").
       OLLAMA_BASE_URL: http://ollama:11434
       OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1:latest}
-      Nexo__Meai__OllamaBaseUrl: http://ollama:11434
-      Nexo__Meai__OllamaModel: ${OLLAMA_MODEL:-llama3.1:latest}
-      Nexo__NodeCapabilityRuntime__Ollama__BaseUrl: http://ollama:11434
-      NEXO_DAILIES_PATH: /data/dailies
+      Ashlar__Meai__OllamaBaseUrl: http://ollama:11434
+      Ashlar__Meai__OllamaModel: ${OLLAMA_MODEL:-llama3.1:latest}
+      Ashlar__NodeCapabilityRuntime__Ollama__BaseUrl: http://ollama:11434
+      ASHLAR_DAILIES_PATH: /data/dailies
       # Runtime state (LiteDB stores incl. copilot tasks, snapshots) on a named volume (docs/DEPLOYMENT.md, "Runtime state").
-      NEXO_STATE_DIR: /data/state
-      # Built-in auth on the shared API process. X-Nexo-Tenant / X-Nexo-User / X-Nexo-Org are trusted
+      ASHLAR_STATE_DIR: /data/state
+      # Built-in auth on the shared API process. X-Ashlar-Tenant / X-Ashlar-User / X-Ashlar-Org are trusted
       # only behind this credential (or an authenticating proxy that sets them).
-      Nexo__Security__AuthorizationMode: ${NEXO_AUTH_MODE:-ApiKey}
-      Nexo__Security__AuthorizationScope: ${NEXO_AUTH_SCOPE:-MutatingApi}
-      Nexo__Security__ApiKey: ${NEXO_API_KEY:?Set NEXO_API_KEY (X-Nexo-Api-Key secret for the cloud API); no default is shipped}
-      Nexo__Product__RequireOrgMembership: "true"
-      Nexo__Entitlements__DeploymentMode: Cloud
-      Nexo__Entitlements__MaxCopilotSubmissionsPerHour: ${NEXO_MAX_COPILOT_PER_HOUR:-120}
-      Nexo__Entitlements__Seats: ${NEXO_SEATS:-25}
-      Nexo__Entitlements__MaxConcurrency: ${NEXO_MAX_CONCURRENCY:-3}
+      Ashlar__Security__AuthorizationMode: ${ASHLAR_AUTH_MODE:-ApiKey}
+      Ashlar__Security__AuthorizationScope: ${ASHLAR_AUTH_SCOPE:-MutatingApi}
+      Ashlar__Security__ApiKey: ${ASHLAR_API_KEY:?Set ASHLAR_API_KEY (X-Ashlar-Api-Key secret for the cloud API); no default is shipped}
+      Ashlar__Product__RequireOrgMembership: "true"
+      Ashlar__Entitlements__DeploymentMode: Cloud
+      Ashlar__Entitlements__MaxCopilotSubmissionsPerHour: ${ASHLAR_MAX_COPILOT_PER_HOUR:-120}
+      Ashlar__Entitlements__Seats: ${ASHLAR_SEATS:-25}
+      Ashlar__Entitlements__MaxConcurrency: ${ASHLAR_MAX_CONCURRENCY:-3}
     ports:
       - "127.0.0.1:8080:8080"
     volumes:
-      - nexo-cloud-dailies:/data/dailies
-      - nexo-cloud-data:/data/copilot
-      - nexo-cloud-state:/data/state
+      - ashlar-cloud-dailies:/data/dailies
+      - ashlar-cloud-data:/data/copilot
+      - ashlar-cloud-state:/data/state
     restart: unless-stopped
 
 volumes:
   ollama-models:
-  nexo-cloud-dailies:
-  nexo-cloud-data:
-  nexo-cloud-state:
+  ashlar-cloud-dailies:
+  ashlar-cloud-data:
+  ashlar-cloud-state:

@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-REPORT_DIR=".nexo/rc-gate"
+REPORT_DIR=".ashlar/rc-gate"
 mkdir -p "$REPORT_DIR"
 AUDIT="$REPORT_DIR/evidence-audit.txt"
 : >"$AUDIT"
@@ -15,7 +15,7 @@ note() { echo "$1" | tee -a "$AUDIT"; }
 warn() { echo "::warning::$1" | tee -a "$AUDIT"; }
 
 echo "== RC Tier C: release bundle report =="
-BUNDLE_JSON=".nexo/release-bundle/last-run/release-bundle-report.json"
+BUNDLE_JSON=".ashlar/release-bundle/last-run/release-bundle-report.json"
 if [ -f "$BUNDLE_JSON" ]; then
   if grep -q '"Verdict": "PASS"' "$BUNDLE_JSON" || grep -q '"verdict": "PASS"' "$BUNDLE_JSON"; then
     note "release-bundle: PASS ($BUNDLE_JSON)"
@@ -29,13 +29,13 @@ else
 fi
 
 echo "== RC Tier C: security supply-chain reports =="
-if [ -f ".nexo/security-gate/vulnerable-packages.txt" ]; then
-  if grep -qiE 'Severity:\s*(High|Critical)|critical|high severity' ".nexo/security-gate/vulnerable-packages.txt"; then
+if [ -f ".ashlar/security-gate/vulnerable-packages.txt" ]; then
+  if grep -qiE 'Severity:\s*(High|Critical)|critical|high severity' ".ashlar/security-gate/vulnerable-packages.txt"; then
     if [ "${RC_GATE_STRICT_SECURITY:-0}" = "1" ]; then
       note "security: High/Critical CVEs detected (strict)"
       fail=1
     else
-      warn "security: High/Critical CVEs detected — review .nexo/security-gate/"
+      warn "security: High/Critical CVEs detected — review .ashlar/security-gate/"
     fi
   else
     note "security: no High/Critical in vulnerable-packages.txt"
@@ -46,8 +46,8 @@ fi
 
 echo "== RC Tier C: runtime SLO evidence =="
 SLO_CANDIDATES=(
-  ".nexo/runtime/runtime-release-gate-slo.json"
-  ".nexo/runtime/release-gate/last-run/evidence.json"
+  ".ashlar/runtime/runtime-release-gate-slo.json"
+  ".ashlar/runtime/release-gate/last-run/evidence.json"
 )
 slo_found=0
 for slo in "${SLO_CANDIDATES[@]}"; do

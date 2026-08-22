@@ -1,0 +1,106 @@
+using System.Text.Json;
+using FluentAssertions;
+using Ashlar.Core.Domain.Execution;
+using Ashlar.Infrastructure.Execution;
+using Xunit;
+
+namespace Ashlar.Tests.Infrastructure.Tests.Execution;
+
+/// <summary>
+/// Tests for BrickValueSerializer: wire format for BrickInput/BrickOutput (including byte[] as base64).
+/// </summary>
+public class BrickValueSerializerTests
+{
+    [Fact]
+    public void ToWireDictionary_WithByteArray_WrapsAsBase64()
+    {
+        var input = new BrickInput();
+        input.Set("key", new byte[] { 1, 2, 3 });
+
+        var wire = BrickValueSerializer.ToWireDictionary(input);
+
+        wire.Should().ContainKey("key");
+        var value = wire["key"];
+        value.Should().BeOfType<Dictionary<string, object>>();
+        var dict = (Dictionary<string, object>)value;
+        dict.Should().ContainKey("__type");
+        dict["__type"].Should().Be("bytes");
+        dict.Should().ContainKey("base64");
+        Convert.FromBase64String(dict["base64"].ToString()!).Should().Equal(1, 2, 3);
+    }
+
+    [Fact]
+    public void FromWireToBrickInput_RoundTrip_PreservesData()
+    {
+        var input = new BrickInput();
+        input.Set("a", "hello");
+        input.Set("b", 42);
+        input.Set("c", new byte[] { 10, 20 });
+
+        var wire = BrickValueSerializer.ToWireDictionary(input);
+        var json = BrickValueSerializer.ToJson(wire);
+        var wireBack = BrickValueSerializer.FromJsonToWireDictionary(json);
+        var back = BrickValueSerializer.FromWireToBrickInput(wireBack);
+
+        back.Get<string>("a").Should().Be("hello");
+        back.Get<long>("b").Should().Be(42L); // JSON numbers deserialize as long
+        back.Get<byte[]>("c").Should().Equal(10, 20);
+    }
+
+    [Fact]
+    public void FromWireToBrickOutput_WithSummary_SetsSummary()
+    {
+        var wire = new Dictionary<string, object>
+        {
+            ["out1"] = "value1"
+        };
+        var output = BrickValueSerializer.FromWireToBrickOutput(wire, "Done");
+
+        output.Get<string>("out1").Should().Be("value1");
+        output.Summary.Should().Be("Done");
+    }
+
+    [Fact]
+    public void ToWireDictionary_handles_null_and_empty_inputs()
+    {
+        BrickValueSerializer.ToWireDictionary((BrickInput)null!).Should().BeEmpty();
+        BrickValueSerializer.ToWireDictionary((BrickOutput)null!).Should().BeEmpty();
+        BrickValueSerializer.ToWireDictionary((IReadOnlyDictionary<string, object>)null!).Should().BeEmpty();
+        BrickValueSerializer.ToWireDictionary(new Dictionary<string, object>()).Should().BeEmpty();
+    }
+
+    [Fact]
+    public void ToWireDictionary_output_includes_summary_and_nested_dict()
+    {
+        var output = new BrickOutput { Summary = "ok" };
+        output.Set("nested", new Dictionary<string, object> { ["k"] = new byte[] { 9 } });
+
+        var wire = BrickValueSerializer.ToWireDictionary(output);
+        wire.Should().ContainKey("Summary").WhoseValue.Should().Be("ok");
+        wire.Should().ContainKey("nested");
+    }
+
+    [Fact]
+    public void FromJsonToWireDictionary_parses_json_element_values()
+    {
+        var json = """{"flag":true,"count":3,"payload":{"__type":"bytes","base64":"AQID"}}""";
+        var wire = BrickValueSerializer.FromJsonToWireDictionary(json);
+        var input = BrickValueSerializer.FromWireToBrickInput(wire);
+
+        input.Get<bool>("flag").Should().BeTrue();
+        input.Get<byte[]>("payload").Should().Equal(1, 2, 3);
+    }
+
+    [Fact]
+    public void FromWireDictionary_skips_summary_key_for_output_payload()
+    {
+        var wire = new Dictionary<string, object>
+        {
+            ["Summary"] = "ignored-in-dict",
+            ["value"] = "x",
+        };
+        var dict = BrickValueSerializer.FromWireDictionary(wire);
+        dict.Should().ContainKey("value");
+        dict.Should().NotContainKey("Summary");
+    }
+}

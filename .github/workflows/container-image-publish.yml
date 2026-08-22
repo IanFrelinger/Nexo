@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       skip_multi_arch:
-        description: "Skip linux/arm64 for nexo-cli :latest (amd64 only)"
+        description: "Skip linux/arm64 for ashlar-cli :latest (amd64 only)"
         required: false
         default: false
         type: boolean
@@ -20,21 +20,21 @@ on:
       - ".github/workflows/reusable-container-publish.yml"
       - ".docker/**"
       - ".dockerignore"
-      - "application/src/Nexo.CLI/**"
-      - "application/src/Nexo.API/**"
-      - "src/Nexo.Core.Application/**"
-      - "src/Nexo.Infrastructure/**"
-      - "src/Nexo.Hosting/**"
-      - "src/Nexo.Runtime/**"
-      - "src/Nexo.Abstractions/**"
-      - "src/Nexo.Core.Domain/**"
-      - "src/Nexo.Brick.Contracts/**"
-      - "src/Nexo.Orchestration/**"
-      - "src/Nexo.BackgroundAgents/**"
-      - "src/Nexo.Transport.Grpc/**"
-      - "src/Nexo.Policies/**"
-      - "src/Nexo.Tools.Assembly/**"
-      - "src/Nexo.Tools.Dev/**"
+      - "application/src/Ashlar.CLI/**"
+      - "application/src/Ashlar.API/**"
+      - "src/Ashlar.Core.Application/**"
+      - "src/Ashlar.Infrastructure/**"
+      - "src/Ashlar.Hosting/**"
+      - "src/Ashlar.Runtime/**"
+      - "src/Ashlar.Abstractions/**"
+      - "src/Ashlar.Core.Domain/**"
+      - "src/Ashlar.Brick.Contracts/**"
+      - "src/Ashlar.Orchestration/**"
+      - "src/Ashlar.BackgroundAgents/**"
+      - "src/Ashlar.Transport.Grpc/**"
+      - "src/Ashlar.Policies/**"
+      - "src/Ashlar.Tools.Assembly/**"
+      - "src/Ashlar.Tools.Dev/**"
       - "Directory.Build.props"
       - "Directory.Packages.props"
       - "global.json"
@@ -45,7 +45,7 @@ permissions:
 
 jobs:
   publish:
-    # Forks: a push to master would otherwise try to publish nexo-cli / nexo-api to the
+    # Forks: a push to master would otherwise try to publish ashlar-cli / ashlar-api to the
     # fork's own GHCR namespace. Only the upstream owner publishes (see docs/CiSecrets.md).
     if: github.repository_owner == 'IanFrelinger'
     uses: ./.github/workflows/reusable-container-publish.yml

@@ -6,7 +6,7 @@ labels: sdk, integrator-feedback
 
 ## Integration Type
 
-<!-- e.g. Host SDK (Nexo.Hosting), Client SDK (Nexo.Sdk), Brick Provider, Background Agent -->
+<!-- e.g. Host SDK (Ashlar.Hosting), Client SDK (Ashlar.Sdk), Brick Provider, Background Agent -->
 
 ## SDK Version
 

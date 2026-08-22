@@ -1,5 +1,5 @@
-using Nexo.Core.Domain.Bricks;
-using Nexo.Core.Domain.Execution;
+using Ashlar.Core.Domain.Bricks;
+using Ashlar.Core.Domain.Execution;
 
 namespace ErrorSummaryExtractorBrick;
 

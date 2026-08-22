@@ -1,6 +1,6 @@
-# Nexo Trust & Information Architecture — Implementation Spec (Refactored)
+# Ashlar Trust & Information Architecture — Implementation Spec (Refactored)
 
-This spec refactors the Trust & Information Architecture to **maximize reuse** of existing Nexo systems and **minimize overlap**. It extends rather than replaces current components.
+This spec refactors the Trust & Information Architecture to **maximize reuse** of existing Ashlar systems and **minimize overlap**. It extends rather than replaces current components.
 
 ---
 
@@ -120,7 +120,7 @@ No overlap: policy controls *whether*; sanitization controls *what*.
 
 **Interface: `IUserKnowledgeLogStore`** (distinct from `IKnowledgeChunkStore`)
 
-Purpose: Transparent, user-editable log of what Nexo has learned about the user (preferences, patterns, workflow habits). Not for sync; for trust and audit.
+Purpose: Transparent, user-editable log of what Ashlar has learned about the user (preferences, patterns, workflow habits). Not for sync; for trust and audit.
 
 - **Storage:** LiteDB (query, versioning, relations)
 - **Schema:** Entries with Id, DataType, Content, SourceObservationIds (provenance), Version, CreatedAt, UpdatedAt, DeletedAt
@@ -129,7 +129,7 @@ Purpose: Transparent, user-editable log of what Nexo has learned about the user 
 - **Retention:** User-controlled; no auto-deletion
 - **Export:** JSON and Markdown on demand, including provenance
 
-**No replacement** of `IKnowledgeChunkStore` or `AgentMemory`. This is an additional store for user-facing "what Nexo knows about me."
+**No replacement** of `IKnowledgeChunkStore` or `AgentMemory`. This is an additional store for user-facing "what Ashlar knows about me."
 
 ---
 
@@ -180,7 +180,7 @@ bool ShouldObserve(string category, string sourceId, string? projectPath = null)
 
 ### Implemented: `ICloudAvailabilityResolver`
 
-`ICloudAvailabilityResolver` (`Nexo.Core.Application`) and `CloudAvailabilityResolver` (`Nexo.Infrastructure`) resolve air-gap status at runtime:
+`ICloudAvailabilityResolver` (`Ashlar.Core.Application`) and `CloudAvailabilityResolver` (`Ashlar.Infrastructure`) resolve air-gap status at runtime:
 - Sources (priority order): env var → config file → network probe
 - Used at startup and optionally before cloud calls to refresh
 - When cloud unavailable, inject/ensure `IsAirGapped = true` in context
@@ -248,8 +248,8 @@ The sections above define the target architecture. The phase list below reflects
 - Added versioned trust policy pack schema (`TrustPolicyPack`) and activation status model.
 - Added pack registry + activation persistence (`ITrustPolicyPackRegistry`, `TrustPolicyPackRegistry`).
 - Added one-step operator workflows:
-  - `nexo trust pack list`
-  - `nexo trust pack apply --id <pack-id>`
+  - `ashlar trust pack list`
+  - `ashlar trust pack apply --id <pack-id>`
 - Added default policy packs under `config/trust-packs/`:
   - `strict-enterprise`
   - `internal-only`
@@ -289,16 +289,16 @@ The sections above define the target architecture. The phase list below reflects
 
 ## Testing
 
-Trust tests run in **Nexo.Tests.Infrastructure** (AccessBoundary, ObservationGate, UserKnowledgeLogStore) and **Nexo.Tests.BackgroundAgents** (DataTaxonomy, CloudSanitizationProxy, DataDecisionAuditLog, SanitizingProviderFactory).
+Trust tests run in **Ashlar.Tests.Infrastructure** (AccessBoundary, ObservationGate, UserKnowledgeLogStore) and **Ashlar.Tests.BackgroundAgents** (DataTaxonomy, CloudSanitizationProxy, DataDecisionAuditLog, SanitizingProviderFactory).
 
 ### Local
 
 ```bash
 # Infrastructure Trust tests only
-dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --filter "FullyQualifiedName~Trust"
+dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj --filter "FullyQualifiedName~Trust"
 
 # BackgroundAgents Trust tests only
-dotnet test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj --filter "FullyQualifiedName~Trust"
+dotnet test src/Ashlar.Tests.BackgroundAgents/Ashlar.Tests.BackgroundAgents.csproj --filter "FullyQualifiedName~Trust"
 ```
 
 **Note:** The durable store uses LiteDB (pure managed C#), which runs on all platforms including macOS.
@@ -307,17 +307,17 @@ dotnet test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj -
 
 ```bash
 # Trust suite across Ubuntu, Alpine, Debian, and Unity
-nexo test multi-env --suite trust --all
+ashlar test multi-env --suite trust --all
 
 # Single environment
-nexo test multi-env --suite trust --env ubuntu-8.0
-nexo test multi-env --suite trust --env unity-8.0
+ashlar test multi-env --suite trust --env ubuntu-8.0
+ashlar test multi-env --suite trust --env unity-8.0
 ```
 
 ### Portable scope
 
 ```bash
-nexo test portable --scope trust
+ashlar test portable --scope trust
 ```
 
 ### CI

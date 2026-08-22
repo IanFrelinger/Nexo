@@ -18,7 +18,7 @@ One-shot (CI parity): `make mesh-lab-e2e-workers`, `make mesh-lab-e2e-deep`, `ma
 
 | Mechanism | Scope | Use when |
 |-----------|--------|----------|
-| **`nexo mesh admit` / `revoke`** | Local **`instances.json`** discovery file | gRPC/capability routing on this host |
+| **`ashlar mesh admit` / `revoke`** | Local **`instances.json`** discovery file | gRPC/capability routing on this host |
 | **`POST /api/mesh/fleet/nodes/{id}/admit|revoke`** | **Director** in-memory fleet (peer-a in lab) | HTTP mesh placement only |
 | **commercial mesh director CLI `admit|revoke`** | Same as HTTP above from headless hosts | CI scripts, workers without curl |
 
@@ -36,11 +36,11 @@ Do not scale workers and change peer-a placement policy in the same step without
 
 ## Split-brain and dual-writer risks
 
-**Task state is director-local.** Each `Nexo.API` that accepts `POST /api/mesh/tasks` has its own in-memory registry. In the lab, only **peer-a** is the director; peer-b and worker may still expose mesh routes for auth tests but must not be treated as source of truth for placement.
+**Task state is director-local.** Each `Ashlar.API` that accepts `POST /api/mesh/tasks` has its own in-memory registry. In the lab, only **peer-a** is the director; peer-b and worker may still expose mesh routes for auth tests but must not be treated as source of truth for placement.
 
 | Scenario | Symptom | Mitigation |
 |----------|---------|------------|
-| Two operators schedule against **different** directors | Duplicate task IDs possible; workers PATCH the wrong host | One canonical **`NEXO_MESH_DIRECTOR_BASE_URL`**; document hub DNS |
+| Two operators schedule against **different** directors | Duplicate task IDs possible; workers PATCH the wrong host | One canonical **`ASHLAR_MESH_DIRECTOR_BASE_URL`**; document hub DNS |
 | Worker holds lease, director restarted | Tasks may show **Pending** again; stale lease on worker | Short **`leaseSeconds`**; worker re-schedule; run verify-deep |
 | **Revoked** peer still running old work | Running task completes; **new** work not placed | Revoke is placement-only; drain peer before revoke in production |
 | Concurrent **PATCH** status with wrong `leaseToken` | **409** on director | Expected; extend lease or reschedule |
@@ -55,17 +55,17 @@ There is **no distributed consensus** in the MVP director—last writer wins on 
 |---------|----------------|--------|
 | `peer-a not reachable` on host | Compose not up or wrong port | `docker compose … ps`; check `MESH_LAB_PEER_A_PUBLISH` |
 | `peer-a container not running` in verify | Wrong `COMPOSE_PROJECT_NAME` | Export same project name for scripts and compose |
-| Worker executor timeout | Executor disabled or director URL wrong | Check worker logs; `Nexo__MeshLab__WorkerExecutor__*` env |
-| `placement.trust_policy_blocked` | Only untrusted workers registered | Register a **Trusted** fleet node or relax `Nexo__Mesh__Placement__PeerTrustPolicy` |
+| Worker executor timeout | Executor disabled or director URL wrong | Check worker logs; `Ashlar__MeshLab__WorkerExecutor__*` env |
+| `placement.trust_policy_blocked` | Only untrusted workers registered | Register a **Trusted** fleet node or relax `Ashlar__Mesh__Placement__PeerTrustPolicy` |
 | `placement.peer_not_admitted` | Peer revoked on director | `POST …/admit` or `commercial mesh director CLI `admit <id>`` |
-| Register **400** missing key | `RequirePeerRegistrationKey=true` | Set **`MESH_LAB_PEER_REGISTRATION_KEY`** / **`NEXO_MESH_PEER_REGISTRATION_KEY`** |
+| Register **400** missing key | `RequirePeerRegistrationKey=true` | Set **`MESH_LAB_PEER_REGISTRATION_KEY`** / **`ASHLAR_MESH_PEER_REGISTRATION_KEY`** |
 | Register **400** same as ApiKey | Policy rejects operator key as peer secret | Use a distinct registration secret |
 | Stress `port is already allocated` on scale | Host port publish on workers | Stress uses `deploy/compose/docker-compose.mesh-lab-stress.override.yml` |
 | Stress burst high `fail` rate | Workers still starting | Increase `MESH_LAB_STRESS_PAUSE_SEC`; check `docker logs` |
-| Copilot quota verify fails | Shared tenant bucket | Restart worker container or use fresh `X-Nexo-Tenant` |
+| Copilot quota verify fails | Shared tenant bucket | Restart worker container or use fresh `X-Ashlar-Tenant` |
 | Director CLI verify skipped | No dotnet SDK on host | Install SDK or `MESH_LAB_SKIP_DIRECTOR_CLI_VERIFY=1` |
-| Fleet/tasks empty after peer-a restart | Persistence not LiteDb or volume missing | Check `Nexo__Mesh__Persistence__*` and `mesh_lab_peer_a_data` volume |
-| Persistence verify skipped | Provider not LiteDb in env | Set `Nexo__Mesh__Persistence__Provider=LiteDb` on peer-a |
+| Fleet/tasks empty after peer-a restart | Persistence not LiteDb or volume missing | Check `Ashlar__Mesh__Persistence__*` and `mesh_lab_peer_a_data` volume |
+| Persistence verify skipped | Provider not LiteDb in env | Set `Ashlar__Mesh__Persistence__Provider=LiteDb` on peer-a |
 
 ## Network negative (automated)
 
@@ -83,15 +83,15 @@ There is **no distributed consensus** in the MVP director—last writer wins on 
 ## Headless director CLI
 
 ```bash
-export NEXO_MESH_DIRECTOR_BASE_URL=http://127.0.0.1:18081
-export NEXO_MESH_API_KEY='…'
-export NEXO_MESH_PEER_REGISTRATION_KEY='…'   # distinct from API key
+export ASHLAR_MESH_DIRECTOR_BASE_URL=http://127.0.0.1:18081
+export ASHLAR_MESH_API_KEY='…'
+export ASHLAR_MESH_PEER_REGISTRATION_KEY='…'   # distinct from API key
 
-dotnet run --project commercial/src/Nexo.Commercial.MeshDirector -- director register worker-1 \
+dotnet run --project commercial/src/Ashlar.Commercial.MeshDirector -- director register worker-1 \
   --api-base-url http://peer-b:8080 --trust-tier Trusted --json
 
-dotnet run --project commercial/src/Nexo.Commercial.MeshDirector -- director revoke worker-1
-dotnet run --project commercial/src/Nexo.Commercial.MeshDirector -- director admit worker-1
+dotnet run --project commercial/src/Ashlar.Commercial.MeshDirector -- director revoke worker-1
+dotnet run --project commercial/src/Ashlar.Commercial.MeshDirector -- director admit worker-1
 ```
 
 See [`MeshPhase7EdgeAlignment.md`](../MeshPhase7EdgeAlignment.md).

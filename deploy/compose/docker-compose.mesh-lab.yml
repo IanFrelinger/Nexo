@@ -1,14 +1,14 @@
-# Virtual multi-node lab: heterogeneous Nexo.API images + security modes on one Docker network.
+# Virtual multi-node lab: heterogeneous Ashlar.API images + security modes on one Docker network.
 #
 # Default image mix (override with MESH_LAB_*_DOCKERFILE):
 #   peer-a  → .docker/Dockerfile.fleet-host  (commercial fleet director host)
-#   peer-b  → .docker/Dockerfile.quickstart  (aspnet + NEXO_ALLOW_MOCK=1)
+#   peer-b  → .docker/Dockerfile.quickstart  (aspnet + ASHLAR_ALLOW_MOCK=1)
 #   worker  → .docker/Dockerfile.api         (set MESH_LAB_WORKER_DOCKERFILE to Dockerfile.agent-server locally for SDK-heavy image)
 #
-# Default auth mix (override Nexo__Security__* per role via env file):
+# Default auth mix (override Ashlar__Security__* per role via env file):
 #   peer-a  → API key, MutatingApi, Lan
 #   peer-b  → Bearer token, MutatingApi, Tailnet
-#   worker  → ApiKeyOrBasic, MutatingApi, Public (Basic user nexo + password from env)
+#   worker  → ApiKeyOrBasic, MutatingApi, Public (Basic user ashlar + password from env)
 #
 #   cp docs/config/mesh-lab.env.example .env.mesh-lab
 #   docker compose -f docker-compose.mesh-lab.yml --env-file .env.mesh-lab up -d --build
@@ -23,7 +23,7 @@ networks:
 services:
   peer-a:
     build:
-      context: ${NEXO_BUILD_CONTEXT:-../..}
+      context: ${ASHLAR_BUILD_CONTEXT:-../..}
       dockerfile: ${MESH_LAB_PEER_A_DOCKERFILE:-.docker/Dockerfile.fleet-host}
     networks:
       mesh_lab:
@@ -33,25 +33,25 @@ services:
       ASPNETCORE_ENVIRONMENT: ${MESH_LAB_PEER_A_ASPNETCORE_ENVIRONMENT:-Production}
       ASPNETCORE_URLS: http://+:8080
       ASPNETCORE_CONTENTROOT: /app
-      Nexo__Security__ExposureProfile: ${MESH_LAB_PEER_A_EXPOSURE:-Lan}
-      Nexo__Security__AuthorizationMode: ${MESH_LAB_PEER_A_AUTH_MODE:-ApiKey}
-      Nexo__Security__AuthorizationScope: ${MESH_LAB_PEER_A_AUTH_SCOPE:-MutatingApi}
-      Nexo__Security__ApiKey: ${Nexo__Security__ApiKey}
-      Nexo__Security__CopilotScopedApiKey: ${Nexo__Security__CopilotScopedApiKey:-}
-      Nexo__Security__ApiKeyHeaderName: ${Nexo__Security__ApiKeyHeaderName:-X-Nexo-Api-Key}
-      Nexo__Security__CustomAdvisory: "${MESH_LAB_PEER_A_ADVISORY:-Mesh lab peer-a (Dockerfile.fleet-host + ApiKey)}"
-      Nexo__Security__ShowAdvisoryInPortal: "${MESH_LAB_PEER_A_SHOW_ADVISORY:-true}"
-      Nexo__Mesh__Placement__PeerTrustPolicy: "${MESH_LAB_PLACEMENT_TRUST_POLICY:-trusted-only}"
-      Nexo__Mesh__Fleet__RequirePeerRegistrationKey: "${Nexo__Mesh__Fleet__RequirePeerRegistrationKey:-true}"
-      Nexo__Mesh__Persistence__Provider: "${Nexo__Mesh__Persistence__Provider:-LiteDb}"
-      Nexo__Mesh__Persistence__DatabasePath: "${Nexo__Mesh__Persistence__DatabasePath:-/data/mesh-director.db}"
-      Nexo__BrickHost__RemoteCatalogBaseUrls__0: "${MESH_LAB_REMOTE_CATALOG_URL:-http://peer-b:8080}"
-      Nexo__BrickHost__UseAuth: "${MESH_LAB_BRICKHOST_USE_AUTH:-true}"
-      Nexo__BrickHost__ApiKeyHeader: "${Nexo__Security__ApiKeyHeaderName:-X-Nexo-Api-Key}"
-      Nexo__BrickHost__ApiKeyValue: "${Nexo__Security__ApiKey}"
-      Nexo__Mesh__Elastic__Enabled: "${MESH_LAB_ELASTIC_REBALANCER:-false}"
-      Nexo__Mesh__Elastic__IntervalMinutes: "${MESH_LAB_ELASTIC_INTERVAL_MIN:-1}"
-      Nexo__Mesh__Elastic__PendingStaleSeconds: "${MESH_LAB_ELASTIC_STALE_SEC:-30}"
+      Ashlar__Security__ExposureProfile: ${MESH_LAB_PEER_A_EXPOSURE:-Lan}
+      Ashlar__Security__AuthorizationMode: ${MESH_LAB_PEER_A_AUTH_MODE:-ApiKey}
+      Ashlar__Security__AuthorizationScope: ${MESH_LAB_PEER_A_AUTH_SCOPE:-MutatingApi}
+      Ashlar__Security__ApiKey: ${Ashlar__Security__ApiKey}
+      Ashlar__Security__CopilotScopedApiKey: ${Ashlar__Security__CopilotScopedApiKey:-}
+      Ashlar__Security__ApiKeyHeaderName: ${Ashlar__Security__ApiKeyHeaderName:-X-Ashlar-Api-Key}
+      Ashlar__Security__CustomAdvisory: "${MESH_LAB_PEER_A_ADVISORY:-Mesh lab peer-a (Dockerfile.fleet-host + ApiKey)}"
+      Ashlar__Security__ShowAdvisoryInPortal: "${MESH_LAB_PEER_A_SHOW_ADVISORY:-true}"
+      Ashlar__Mesh__Placement__PeerTrustPolicy: "${MESH_LAB_PLACEMENT_TRUST_POLICY:-trusted-only}"
+      Ashlar__Mesh__Fleet__RequirePeerRegistrationKey: "${Ashlar__Mesh__Fleet__RequirePeerRegistrationKey:-true}"
+      Ashlar__Mesh__Persistence__Provider: "${Ashlar__Mesh__Persistence__Provider:-LiteDb}"
+      Ashlar__Mesh__Persistence__DatabasePath: "${Ashlar__Mesh__Persistence__DatabasePath:-/data/mesh-director.db}"
+      Ashlar__BrickHost__RemoteCatalogBaseUrls__0: "${MESH_LAB_REMOTE_CATALOG_URL:-http://peer-b:8080}"
+      Ashlar__BrickHost__UseAuth: "${MESH_LAB_BRICKHOST_USE_AUTH:-true}"
+      Ashlar__BrickHost__ApiKeyHeader: "${Ashlar__Security__ApiKeyHeaderName:-X-Ashlar-Api-Key}"
+      Ashlar__BrickHost__ApiKeyValue: "${Ashlar__Security__ApiKey}"
+      Ashlar__Mesh__Elastic__Enabled: "${MESH_LAB_ELASTIC_REBALANCER:-false}"
+      Ashlar__Mesh__Elastic__IntervalMinutes: "${MESH_LAB_ELASTIC_INTERVAL_MIN:-1}"
+      Ashlar__Mesh__Elastic__PendingStaleSeconds: "${MESH_LAB_ELASTIC_STALE_SEC:-30}"
     volumes:
       - mesh_lab_peer_a_data:/data
     ports:
@@ -60,7 +60,7 @@ services:
 
   peer-b:
     build:
-      context: ${NEXO_BUILD_CONTEXT:-../..}
+      context: ${ASHLAR_BUILD_CONTEXT:-../..}
       dockerfile: ${MESH_LAB_PEER_B_DOCKERFILE:-.docker/Dockerfile.quickstart}
     networks:
       mesh_lab:
@@ -70,17 +70,17 @@ services:
       ASPNETCORE_ENVIRONMENT: ${MESH_LAB_PEER_B_ASPNETCORE_ENVIRONMENT:-Staging}
       ASPNETCORE_URLS: http://+:8080
       ASPNETCORE_CONTENTROOT: /app
-      NEXO_ALLOW_MOCK: "${MESH_LAB_PEER_B_NEXO_ALLOW_MOCK:-1}"
-      Nexo__Security__ExposureProfile: ${MESH_LAB_PEER_B_EXPOSURE:-Tailnet}
-      Nexo__Security__AuthorizationMode: ${MESH_LAB_PEER_B_AUTH_MODE:-ApiKeyOrBearerToken}
-      Nexo__Security__AuthorizationScope: ${MESH_LAB_PEER_B_AUTH_SCOPE:-MutatingApi}
-      Nexo__Security__ApiKey: ${Nexo__Security__ApiKey}
-      Nexo__Security__ApiKeyHeaderName: ${Nexo__Security__ApiKeyHeaderName:-X-Nexo-Api-Key}
-      Nexo__Security__BearerToken: ${Nexo__Security__PeerB__BearerToken}
-      Nexo__Security__BearerTokenHeaderName: ${Nexo__Security__BearerTokenHeaderName:-Authorization}
-      Nexo__Security__BearerTokenScheme: ${Nexo__Security__BearerTokenScheme:-Bearer}
-      Nexo__Security__CustomAdvisory: "${MESH_LAB_PEER_B_ADVISORY:-Mesh lab peer-b (Dockerfile.quickstart + Bearer)}"
-      Nexo__Security__ShowAdvisoryInPortal: "${MESH_LAB_PEER_B_SHOW_ADVISORY:-true}"
+      ASHLAR_ALLOW_MOCK: "${MESH_LAB_PEER_B_ASHLAR_ALLOW_MOCK:-1}"
+      Ashlar__Security__ExposureProfile: ${MESH_LAB_PEER_B_EXPOSURE:-Tailnet}
+      Ashlar__Security__AuthorizationMode: ${MESH_LAB_PEER_B_AUTH_MODE:-ApiKeyOrBearerToken}
+      Ashlar__Security__AuthorizationScope: ${MESH_LAB_PEER_B_AUTH_SCOPE:-MutatingApi}
+      Ashlar__Security__ApiKey: ${Ashlar__Security__ApiKey}
+      Ashlar__Security__ApiKeyHeaderName: ${Ashlar__Security__ApiKeyHeaderName:-X-Ashlar-Api-Key}
+      Ashlar__Security__BearerToken: ${Ashlar__Security__PeerB__BearerToken}
+      Ashlar__Security__BearerTokenHeaderName: ${Ashlar__Security__BearerTokenHeaderName:-Authorization}
+      Ashlar__Security__BearerTokenScheme: ${Ashlar__Security__BearerTokenScheme:-Bearer}
+      Ashlar__Security__CustomAdvisory: "${MESH_LAB_PEER_B_ADVISORY:-Mesh lab peer-b (Dockerfile.quickstart + Bearer)}"
+      Ashlar__Security__ShowAdvisoryInPortal: "${MESH_LAB_PEER_B_SHOW_ADVISORY:-true}"
     ports:
       - "${MESH_LAB_PEER_B_PUBLISH:-127.0.0.1:18082}:8080"
     restart: unless-stopped
@@ -89,33 +89,33 @@ services:
     profiles:
       - workers
     build:
-      context: ${NEXO_BUILD_CONTEXT:-../..}
+      context: ${ASHLAR_BUILD_CONTEXT:-../..}
       dockerfile: ${MESH_LAB_WORKER_DOCKERFILE:-.docker/Dockerfile.api}
     networks:
       - mesh_lab
     environment:
       ASPNETCORE_ENVIRONMENT: ${MESH_LAB_WORKER_ASPNETCORE_ENVIRONMENT:-Development}
-      # Nexo.API's appsettings.Development.json narrows AllowedHosts to loopback; the worker is dialled
+      # Ashlar.API's appsettings.Development.json narrows AllowedHosts to loopback; the worker is dialled
       # by peer hostname / tailnet IP, so keep host filtering open here (override to narrow it).
       AllowedHosts: "${MESH_LAB_WORKER_ALLOWED_HOSTS:-*}"
       ASPNETCORE_URLS: http://+:8080
       ASPNETCORE_CONTENTROOT: /app
-      Nexo__Security__ExposureProfile: ${MESH_LAB_WORKER_EXPOSURE:-Public}
-      Nexo__Security__AuthorizationMode: ${MESH_LAB_WORKER_AUTH_MODE:-ApiKeyOrBasic}
-      Nexo__Security__AuthorizationScope: ${MESH_LAB_WORKER_AUTH_SCOPE:-MutatingApi}
-      Nexo__Security__ApiKey: ${Nexo__Security__ApiKey}
-      Nexo__Security__ApiKeyHeaderName: ${Nexo__Security__ApiKeyHeaderName:-X-Nexo-Api-Key}
-      Nexo__Security__BasicAuthUsername: ${Nexo__Security__Worker__BasicAuthUsername:-nexo}
-      Nexo__Security__BasicAuthPassword: ${Nexo__Security__Worker__BasicAuthPassword}
-      Nexo__Security__BasicAuthHeaderName: ${Nexo__Security__BasicAuthHeaderName:-Authorization}
-      Nexo__Security__CustomAdvisory: "${MESH_LAB_WORKER_ADVISORY:-Mesh lab worker (ApiKeyOrBasic)}"
-      Nexo__Security__ShowAdvisoryInPortal: "${MESH_LAB_WORKER_SHOW_ADVISORY:-false}"
-      Nexo__MeshLab__WorkerExecutor__Enabled: "${MESH_LAB_WORKER_EXECUTOR_ENABLED:-true}"
-      Nexo__MeshLab__WorkerExecutor__DirectorBaseUrl: "${MESH_LAB_WORKER_EXECUTOR_DIRECTOR_URL:-http://peer-a:8080}"
-      Nexo__MeshLab__WorkerExecutor__TaskNamePrefix: "${MESH_LAB_WORKER_EXECUTOR_TASK_PREFIX:-mesh-lab-worker-exec}"
-      Nexo__MeshLab__WorkerExecutor__ExecuteBrickOnAssignedPeer: "${MESH_LAB_WORKER_EXECUTOR_RUN_BRICK:-true}"
-      Nexo__Security__CopilotScopedApiKey: ${Nexo__Security__CopilotScopedApiKey:-}
-      Nexo__Entitlements__MaxCopilotSubmissionsPerHour: ${Nexo__Entitlements__MaxCopilotSubmissionsPerHour:-2}
+      Ashlar__Security__ExposureProfile: ${MESH_LAB_WORKER_EXPOSURE:-Public}
+      Ashlar__Security__AuthorizationMode: ${MESH_LAB_WORKER_AUTH_MODE:-ApiKeyOrBasic}
+      Ashlar__Security__AuthorizationScope: ${MESH_LAB_WORKER_AUTH_SCOPE:-MutatingApi}
+      Ashlar__Security__ApiKey: ${Ashlar__Security__ApiKey}
+      Ashlar__Security__ApiKeyHeaderName: ${Ashlar__Security__ApiKeyHeaderName:-X-Ashlar-Api-Key}
+      Ashlar__Security__BasicAuthUsername: ${Ashlar__Security__Worker__BasicAuthUsername:-ashlar}
+      Ashlar__Security__BasicAuthPassword: ${Ashlar__Security__Worker__BasicAuthPassword}
+      Ashlar__Security__BasicAuthHeaderName: ${Ashlar__Security__BasicAuthHeaderName:-Authorization}
+      Ashlar__Security__CustomAdvisory: "${MESH_LAB_WORKER_ADVISORY:-Mesh lab worker (ApiKeyOrBasic)}"
+      Ashlar__Security__ShowAdvisoryInPortal: "${MESH_LAB_WORKER_SHOW_ADVISORY:-false}"
+      Ashlar__MeshLab__WorkerExecutor__Enabled: "${MESH_LAB_WORKER_EXECUTOR_ENABLED:-true}"
+      Ashlar__MeshLab__WorkerExecutor__DirectorBaseUrl: "${MESH_LAB_WORKER_EXECUTOR_DIRECTOR_URL:-http://peer-a:8080}"
+      Ashlar__MeshLab__WorkerExecutor__TaskNamePrefix: "${MESH_LAB_WORKER_EXECUTOR_TASK_PREFIX:-mesh-lab-worker-exec}"
+      Ashlar__MeshLab__WorkerExecutor__ExecuteBrickOnAssignedPeer: "${MESH_LAB_WORKER_EXECUTOR_RUN_BRICK:-true}"
+      Ashlar__Security__CopilotScopedApiKey: ${Ashlar__Security__CopilotScopedApiKey:-}
+      Ashlar__Entitlements__MaxCopilotSubmissionsPerHour: ${Ashlar__Entitlements__MaxCopilotSubmissionsPerHour:-2}
     ports:
       - "${MESH_LAB_WORKER_PUBLISH:-127.0.0.1:18083}:8080"
     restart: unless-stopped

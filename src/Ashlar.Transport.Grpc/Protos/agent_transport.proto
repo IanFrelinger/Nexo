@@ -1,0 +1,38 @@
+syntax = "proto3";
+option csharp_namespace = "Ashlar.Transport.Grpc";
+
+package ashlar.transport.v1;
+
+service AgentTransportService {
+  rpc Invoke (InvokeRequest) returns (InvokeResponse);
+  rpc CheckHealth (HealthRequest) returns (HealthResponse);
+}
+
+message InvokeRequest {
+  string agent_name = 1;
+  string correlation_id = 2;
+  string span_id = 3;
+  string target_endpoint = 4;
+  map<string, string> payload = 5;
+  int32 timeout_ms = 6;
+  int32 max_retries = 7;
+  // Wire-level metadata (e.g. ashlar.execution.isolation) for transports that honor AgentInvocationRequest.Metadata.
+  map<string, string> metadata = 8;
+}
+
+message InvokeResponse {
+  bool success = 1;
+  string correlation_id = 2;
+  string span_id = 3;
+  map<string, string> output = 4;
+  string error_message = 5;
+  string error_code = 6;
+}
+
+message HealthRequest {}
+
+message HealthResponse {
+  bool is_healthy = 1;
+  string transport_type = 2;
+  string diagnostic_message = 3;
+}

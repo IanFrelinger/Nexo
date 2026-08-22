@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Smoke test for Nexo.Commercial.Fleet.Host fleet director endpoints.
+# Smoke test for Ashlar.Commercial.Fleet.Host fleet director endpoints.
 #
 #   ./scripts/commercial-fleet-host-smoke.sh
 #   FLEET_HOST_URL=http://127.0.0.1:18090 ./scripts/commercial-fleet-host-smoke.sh
 #
 # The host ships with AuthorizationMode=ApiKey and NO default key: FLEET_HOST_API_KEY is passed to the
-# host as Nexo__Security__ApiKey when this script starts it, and used for the mutating call either way.
+# host as Ashlar__Security__ApiKey when this script starts it, and used for the mutating call either way.
 # Defaults to a per-run random value when the script starts the host itself.
 
 set -euo pipefail
@@ -13,7 +13,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-HOST_PROJECT="commercial/src/Nexo.Commercial.Fleet.Host/Nexo.Commercial.Fleet.Host.csproj"
+HOST_PROJECT="commercial/src/Ashlar.Commercial.Fleet.Host/Ashlar.Commercial.Fleet.Host.csproj"
 BASE_URL="${FLEET_HOST_URL:-http://127.0.0.1:18090}"
 API_KEY="${FLEET_HOST_API_KEY:-}"
 PEER_ID="${FLEET_HOST_SMOKE_PEER_ID:-commercial-fleet-smoke-peer}"
@@ -33,7 +33,7 @@ if ! curl -fsS "${BASE_URL}/health" >/dev/null 2>&1; then
     API_KEY="fleet-smoke-$(od -An -N16 -tx1 /dev/urandom | tr -d ' \n')"
   fi
   echo "Starting commercial fleet host on ${BASE_URL} ..."
-  ASPNETCORE_URLS="${BASE_URL}" Nexo__Security__ApiKey="${API_KEY}" dotnet run --project "$HOST_PROJECT" --no-launch-profile >/tmp/commercial-fleet-host-smoke.log 2>&1 &
+  ASPNETCORE_URLS="${BASE_URL}" Ashlar__Security__ApiKey="${API_KEY}" dotnet run --project "$HOST_PROJECT" --no-launch-profile >/tmp/commercial-fleet-host-smoke.log 2>&1 &
   HOST_PID=$!
   STARTED_HOST=1
   for _ in $(seq 1 60); do
@@ -45,7 +45,7 @@ if ! curl -fsS "${BASE_URL}/health" >/dev/null 2>&1; then
 fi
 
 if [[ -z "$API_KEY" ]]; then
-  echo "Set FLEET_HOST_API_KEY to the Nexo__Security__ApiKey the running host was started with (no default key is shipped)." >&2
+  echo "Set FLEET_HOST_API_KEY to the Ashlar__Security__ApiKey the running host was started with (no default key is shipped)." >&2
   exit 2
 fi
 
@@ -57,7 +57,7 @@ python3 -c 'import json,sys; json.loads(sys.argv[1]); print("Fleet list JSON —
 
 curl -fsS -X POST \
   -H "Content-Type: application/json" \
-  -H "X-Nexo-Api-Key: ${API_KEY}" \
+  -H "X-Ashlar-Api-Key: ${API_KEY}" \
   -d "{\"peerId\":\"${PEER_ID}\",\"apiBaseUrl\":\"http://127.0.0.1:8080\",\"trustTier\":\"Trusted\"}" \
   "${BASE_URL}/api/mesh/fleet/nodes" >/dev/null
 echo "Fleet register — OK"

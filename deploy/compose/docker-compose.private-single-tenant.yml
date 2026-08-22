@@ -9,7 +9,7 @@ services:
       - ollama-models:/root/.ollama
     restart: unless-stopped
 
-  nexo-api:
+  ashlar-api:
     build:
       context: ../..
       dockerfile: .docker/Dockerfile.api
@@ -21,31 +21,31 @@ services:
       # NCR probe never dial the container's own localhost:11434 (docs/Configuration.md, "Ollama").
       OLLAMA_BASE_URL: http://ollama:11434
       OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1:latest}
-      Nexo__Meai__OllamaBaseUrl: http://ollama:11434
-      Nexo__Meai__OllamaModel: ${OLLAMA_MODEL:-llama3.1:latest}
-      Nexo__NodeCapabilityRuntime__Ollama__BaseUrl: http://ollama:11434
-      NEXO_DAILIES_PATH: /data/dailies
+      Ashlar__Meai__OllamaBaseUrl: http://ollama:11434
+      Ashlar__Meai__OllamaModel: ${OLLAMA_MODEL:-llama3.1:latest}
+      Ashlar__NodeCapabilityRuntime__Ollama__BaseUrl: http://ollama:11434
+      ASHLAR_DAILIES_PATH: /data/dailies
       # Runtime state (LiteDB stores incl. copilot tasks, snapshots) on a named volume (docs/DEPLOYMENT.md, "Runtime state").
-      NEXO_STATE_DIR: /data/state
-      Nexo__Product__DefaultTenantId: ${NEXO_DEFAULT_TENANT_ID:-default}
-      Nexo__Product__AllowedTenantIds__0: ${NEXO_DEFAULT_TENANT_ID:-default}
-      Nexo__Entitlements__MaxCopilotSubmissionsPerHour: ${NEXO_MAX_COPILOT_PER_HOUR:-0}
-      Nexo__Entitlements__DeploymentMode: Private
-      Nexo__Entitlements__Seats: ${NEXO_SEATS:-5}
-      Nexo__Entitlements__MaxConcurrency: ${NEXO_MAX_CONCURRENCY:-2}
-      NEXO_LICENSE_FILE: ${NEXO_LICENSE_FILE:-}
-      Nexo__PrivateLicense__EnforceLicense: ${NEXO_ENFORCE_LICENSE:-false}
-      Nexo__PrivateLicense__AllowReadOnlyWhenExpired: "true"
+      ASHLAR_STATE_DIR: /data/state
+      Ashlar__Product__DefaultTenantId: ${ASHLAR_DEFAULT_TENANT_ID:-default}
+      Ashlar__Product__AllowedTenantIds__0: ${ASHLAR_DEFAULT_TENANT_ID:-default}
+      Ashlar__Entitlements__MaxCopilotSubmissionsPerHour: ${ASHLAR_MAX_COPILOT_PER_HOUR:-0}
+      Ashlar__Entitlements__DeploymentMode: Private
+      Ashlar__Entitlements__Seats: ${ASHLAR_SEATS:-5}
+      Ashlar__Entitlements__MaxConcurrency: ${ASHLAR_MAX_CONCURRENCY:-2}
+      ASHLAR_LICENSE_FILE: ${ASHLAR_LICENSE_FILE:-}
+      Ashlar__PrivateLicense__EnforceLicense: ${ASHLAR_ENFORCE_LICENSE:-false}
+      Ashlar__PrivateLicense__AllowReadOnlyWhenExpired: "true"
     ports:
       - "127.0.0.1:8080:8080"
     volumes:
-      - nexo-dailies:/data/dailies
-      - nexo-copilot-data:/data/copilot
-      - nexo-state:/data/state
+      - ashlar-dailies:/data/dailies
+      - ashlar-copilot-data:/data/copilot
+      - ashlar-state:/data/state
     restart: unless-stopped
 
 volumes:
   ollama-models:
-  nexo-dailies:
-  nexo-copilot-data:
-  nexo-state:
+  ashlar-dailies:
+  ashlar-copilot-data:
+  ashlar-state:

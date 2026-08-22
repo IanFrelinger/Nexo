@@ -1,6 +1,6 @@
 # Marketing and deployment playbook
 
-How to **market** and **deploy** the product fleet (Nexo Cloud, Private, Enterprise, Automation, Mesh) described in [`ProductsAndBusinessPlan.md`](./ProductsAndBusinessPlan.md). This is operational guidance—adjust for your actual cloud provider, compliance posture, and ICP.
+How to **market** and **deploy** the product fleet (Ashlar Cloud, Private, Enterprise, Automation, Mesh) described in [`ProductsAndBusinessPlan.md`](./ProductsAndBusinessPlan.md). This is operational guidance—adjust for your actual cloud provider, compliance posture, and ICP.
 
 ---
 
@@ -27,11 +27,11 @@ Avoid leading with “we have agents.” Lead with **control + proof**.
 
 | Product | Primary promise | Proof you show |
 |---------|-----------------|----------------|
-| **Nexo Cloud** | “Production-shaped workflows in minutes.” | Short video: signup → BYOK → first task → audit line |
-| **Nexo Private** | “Same engine in your VPC or data center.” | Reference architecture PDF, air-gap note, upgrade path |
-| **Nexo Enterprise** | “Procurement-ready governance and support.” | SSO, audit export, SLA, security questionnaire excerpt |
-| **Nexo Automation** | “Headless runtime for your platform.” | OpenAPI snippet, webhook signing, rate-limit table |
-| **Nexo Mesh** | “Route work across trust boundaries on policy.” | Two-node diagram, failure-mode summary (when live) |
+| **Ashlar Cloud** | “Production-shaped workflows in minutes.” | Short video: signup → BYOK → first task → audit line |
+| **Ashlar Private** | “Same engine in your VPC or data center.” | Reference architecture PDF, air-gap note, upgrade path |
+| **Ashlar Enterprise** | “Procurement-ready governance and support.” | SSO, audit export, SLA, security questionnaire excerpt |
+| **Ashlar Automation** | “Headless runtime for your platform.” | OpenAPI snippet, webhook signing, rate-limit table |
+| **Ashlar Mesh** | “Route work across trust boundaries on policy.” | Two-node diagram, failure-mode summary (when live) |
 
 ---
 
@@ -59,7 +59,7 @@ Avoid leading with “we have agents.” Lead with **control + proof**.
 | Stage | Asset |
 |-------|--------|
 | **Aware** | Landing pages per motion (Cloud vs Private vs Enterprise) |
-| **Consider** | Comparison: “Nexo vs DIY agents + Lang* glue” (honest scope) |
+| **Consider** | Comparison: “Ashlar vs DIY agents + Lang* glue” (honest scope) |
 | **Try** | Cloud free/trial; Private “eval license” with clear limits |
 | **Buy** | Stripe checkout (Cloud); order form + invoice (Private/Enterprise) |
 | **Expand** | In-product upgrade nudges: SSO, export, environments, API |
@@ -87,7 +87,7 @@ Avoid leading with “we have agents.” Lead with **control + proof**.
 
 ---
 
-### B.2 Nexo Cloud (hosted multi-tenant)
+### B.2 Ashlar Cloud (hosted multi-tenant)
 
 | Layer | Typical pattern |
 |-------|-----------------|
@@ -106,7 +106,7 @@ Avoid leading with “we have agents.” Lead with **control + proof**.
 
 ---
 
-### B.3 Nexo Private (customer VPC / self-hosted)
+### B.3 Ashlar Private (customer VPC / self-hosted)
 
 | Layer | Typical pattern |
 |-------|-----------------|
@@ -114,7 +114,7 @@ Avoid leading with “we have agents.” Lead with **control + proof**.
 | **Customer network** | Their VPC; no inbound from internet if air-gapped; optional bastion |
 | **Data** | Customer-managed Postgres (RDS or self-run); backup is their runbook + your checklist |
 | **Secrets** | Their KMS/vault; BYOK for LLM; license key or activation endpoint |
-| **Upgrades** | Documented minor/major path; `nexo` CLI or image bump + `helm upgrade` |
+| **Upgrades** | Documented minor/major path; `ashlar` CLI or image bump + `helm upgrade` |
 | **Telemetry** | Optional usage counts for license compliance; **off** for strict air-gap |
 
 **Deployment flow (customer):** prerequisites check → pull images / helm repo → configure values (URL, DB, retention) → install → run **post-install verification** job → register license.
@@ -123,7 +123,7 @@ Avoid leading with “we have agents.” Lead with **control + proof**.
 
 ---
 
-### B.4 Nexo Enterprise (dedicated or hardened shared)
+### B.4 Ashlar Enterprise (dedicated or hardened shared)
 
 Two acceptable patterns—pick one and price for it:
 
@@ -138,7 +138,7 @@ Add: **SSO** via their IdP, **audit export** to their bucket (S3/GCS) on schedul
 
 ---
 
-### B.5 Nexo Automation (API-first)
+### B.5 Ashlar Automation (API-first)
 
 | Layer | Pattern |
 |-------|---------|
@@ -151,7 +151,7 @@ Add: **SSO** via their IdP, **audit export** to their bucket (S3/GCS) on schedul
 
 ---
 
-### B.6 Nexo Mesh (federation)
+### B.6 Ashlar Mesh (federation)
 
 | Layer | Pattern |
 |-------|---------|
@@ -194,4 +194,4 @@ Keep **one docs site** with **tabs by deployment mode** so marketing URLs do not
 | [`ProductsAndBusinessPlan.md`](./ProductsAndBusinessPlan.md) | SKUs and business model |
 | [`MonetizationProductDesign.md`](./MonetizationProductDesign.md) | Tiers and pricing |
 | [`ProductFleetImplementationRoadmap.md`](./ProductFleetImplementationRoadmap.md) | Build order and exit criteria |
-| Repo **README** / **Deploy** sections | Concrete Nexo container paths today |
+| Repo **README** / **Deploy** sections | Concrete Ashlar container paths today |

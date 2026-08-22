@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- net10.0: TestServer + System.Text.Json 10 JSON responses hit the known
+         PipeWriter.UnflushedBytes gap in TestHost 8 (same reason the VirtualProduction suites
+         in Ashlar.Tests.Infrastructure are net10-only). Production A2A projects multi-target net8.0;net10.0. -->
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Ashlar.Transport.A2A.Server\Ashlar.Transport.A2A.Server.csproj" />
+    <!-- Round-trip tests drive the mapped server through the real A2A client transport. -->
+    <ProjectReference Include="..\Ashlar.Transport.A2A\Ashlar.Transport.A2A.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentAssertions" />
+    <!-- TestHost 8.0 ResponseBodyPipeWriter does not override PipeWriter.UnflushedBytes,
+         which System.Text.Json 10 requires; the 10.0 TestHost adds it (same override pattern
+         as Ashlar.Tests.Infrastructure's Mvc.Testing reference). -->
+    <PackageReference Include="Microsoft.AspNetCore.TestHost" VersionOverride="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+</Project>

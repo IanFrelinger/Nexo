@@ -9,11 +9,11 @@ on:
     paths:
       - ".github/workflows/container-image-gate.yml"
       - ".docker/Dockerfile.cli"
-      - "application/src/Nexo.CLI/**"
-      - "src/Nexo.Core.Application/**"
-      - "src/Nexo.Infrastructure/**"
-      - "src/Nexo.Hosting/**"
-      - "src/Nexo.Runtime/**"
+      - "application/src/Ashlar.CLI/**"
+      - "src/Ashlar.Core.Application/**"
+      - "src/Ashlar.Infrastructure/**"
+      - "src/Ashlar.Hosting/**"
+      - "src/Ashlar.Runtime/**"
       - "Directory.Build.props"
       - "Directory.Packages.props"
       - "global.json"
@@ -35,13 +35,13 @@ jobs:
         run: |
           docker build \
             --file .docker/Dockerfile.cli \
-            --tag nexo-cli:gate-amd64 \
+            --tag ashlar-cli:gate-amd64 \
             .
 
       - name: Smoke run amd64 image
         shell: bash
         run: |
-          docker run --rm nexo-cli:gate-amd64 --help
+          docker run --rm ashlar-cli:gate-amd64 --help
 
       - name: Validate multi-arch buildability (no push)
         shell: bash
@@ -49,6 +49,6 @@ jobs:
           docker buildx build \
             --file .docker/Dockerfile.cli \
             --platform linux/amd64,linux/arm64 \
-            --tag nexo-cli:gate-multiarch \
+            --tag ashlar-cli:gate-multiarch \
             --output type=cacheonly \
             .

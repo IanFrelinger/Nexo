@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="PublicApiGenerator" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="coverlet.msbuild">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../src/Ashlar.Abstractions/Ashlar.Abstractions.csproj" />
+    <ProjectReference Include="../../../src/Ashlar.Core.Application/Ashlar.Core.Application.csproj" />
+    <ProjectReference Include="..\Ashlar.CLI\Ashlar.CLI.csproj" />
+    <ProjectReference Include="../../../src/Ashlar.Infrastructure/Ashlar.Infrastructure.csproj" />
+    <ProjectReference Include="../../../src/Ashlar.Sdk/Ashlar.Sdk.csproj" />
+    <ProjectReference Include="../../../src/Ashlar.Framework.Sdk/Ashlar.Framework.Sdk.csproj" />
+    <ProjectReference Include="../../../src/Ashlar.Authoring/Ashlar.Authoring.csproj" />
+  </ItemGroup>
+
+  <!-- Without this the file never reaches bin\ and xunit reads whatever stale copy
+       is already there — which is exactly how collection parallelism stayed on
+       despite the json saying otherwise. Matches Ashlar.Tests.Application. -->
+  <ItemGroup>
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

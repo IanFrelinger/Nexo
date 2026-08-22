@@ -1,6 +1,6 @@
 # HTTP API versioning policy
 
-This is the versioning and breaking-change policy for the Nexo HTTP API served by `Nexo.API` (`MapNexoEndpoints`), the surface that `Nexo.Client` / `INexoClient`, the CLI, the portal and non-.NET integrators (Unreal, curl, generated clients) talk to. The NuGet package policy is separate: [`../SdkCompatibilityPolicy.md`](../SdkCompatibilityPolicy.md).
+This is the versioning and breaking-change policy for the Ashlar HTTP API served by `Ashlar.API` (`MapAshlarEndpoints`), the surface that `Ashlar.Client` / `IAshlarClient`, the CLI, the portal and non-.NET integrators (Unreal, curl, generated clients) talk to. The NuGet package policy is separate: [`../SdkCompatibilityPolicy.md`](../SdkCompatibilityPolicy.md).
 
 ## The rule
 
@@ -20,24 +20,24 @@ The endpoints below are the "documented surface" for testers and integrators in 
 | Method | Path | Purpose | Notes |
 |--------|------|---------|-------|
 | GET | `/health` | Liveness (`{status, timestamp}`) | Root, not under `/api`; unauthenticated; excluded from the OpenAPI description. There is no separate `/ready` route in `v0.1`: readiness is `GET /api/onboarding/status` (below), which reports provider availability. |
-| GET | `/api/status` | Background-agent / node status | Also `INexoClient.GetStatusAsync` |
+| GET | `/api/status` | Background-agent / node status | Also `IAshlarClient.GetStatusAsync` |
 | GET | `/api/onboarding/status` | First-run setup status (provider availability) | The readiness probe for operators and the CLI |
 | POST | `/api/copilot/task` | Submit a copilot task; returns the trust-auditable context (decision, recent audit entries) | Body: `CopilotTaskRequest`; audit context is part of the documented response |
 | GET | `/api/copilot/tasks` | List copilot tasks | |
-| POST | `/api/orchestrate` | Run orchestration | Also `INexoClient.OrchestrateAsync` |
-| POST | `/api/agent` | Run an agent | Also `INexoClient.RunAgentAsync` |
-| POST | `/api/validate` | Run validation | Also `INexoClient.RunValidationAsync` |
+| POST | `/api/orchestrate` | Run orchestration | Also `IAshlarClient.OrchestrateAsync` |
+| POST | `/api/agent` | Run an agent | Also `IAshlarClient.RunAgentAsync` |
+| POST | `/api/validate` | Run validation | Also `IAshlarClient.RunValidationAsync` |
 | GET | `/api/trust/dashboard` | Trust boundary status plus recent **audit** events | The audit read surface in `v0.1`; `GET /api/activity/feed` merges audit with background-agent activity and is documented too |
 | GET | `/api/trust/status` | Trust boundary status | |
-| POST | `/api/execution/build`, `/api/execution/run` | Remote container build / run | **Opt-in**: served only when `Nexo:Execution:ServeRemoteExecution=true` **and** the built-in auth mode resolves to something other than `None` (otherwise 403 "Remote execution requires built-in auth"). Tightening this further is not a breaking change; loosening it would be. Also `INexoClient.BuildImageAsync` / `RunContainerAsync` |
-| POST | `/api/bricks/{brickId}/execute` | Execute an authored brick | The round-trip the `external-product-shape` distribution gate proves via `INexoClient.InvokeAsync` |
+| POST | `/api/execution/build`, `/api/execution/run` | Remote container build / run | **Opt-in**: served only when `Ashlar:Execution:ServeRemoteExecution=true` **and** the built-in auth mode resolves to something other than `None` (otherwise 403 "Remote execution requires built-in auth"). Tightening this further is not a breaking change; loosening it would be. Also `IAshlarClient.BuildImageAsync` / `RunContainerAsync` |
+| POST | `/api/bricks/{brickId}/execute` | Execute an authored brick | The round-trip the `external-product-shape` distribution gate proves via `IAshlarClient.InvokeAsync` |
 | GET | `/api/capabilities` | Node capability manifest | |
 
-Everything else in [`index.md`](index.md) (director, chat/plan/edit, orgs, workloads, preferences, knowledge query, changelog generation, runtime-studio metrics, support diagnostics) is **not** on the documented surface in `v0.1`. It stays reachable via `INexoClient.InvokeAsync`, but it may change in a patch.
+Everything else in [`index.md`](index.md) (director, chat/plan/edit, orgs, workloads, preferences, knowledge query, changelog generation, runtime-studio metrics, support diagnostics) is **not** on the documented surface in `v0.1`. It stays reachable via `IAshlarClient.InvokeAsync`, but it may change in a patch.
 
 ## Compatibility with the typed client
 
-`Nexo.Client` (`INexoClient`) is a stable-tier NuGet package under [`SdkCompatibilityPolicy.md`](../SdkCompatibilityPolicy.md). Its typed methods wrap endpoints on the documented surface (except `QueryKnowledgeAsync`, a relative-path passthrough to a route that is not on it, treated like `InvokeAsync` below), so a breaking HTTP change to one of them is also a breaking client change and follows both policies at once (one minor deprecation, `[Obsolete]` on the old method, **Breaking** entry). `InvokeAsync` deliberately takes a relative path, so calling an undocumented route through it does not extend the promise to that route.
+`Ashlar.Client` (`IAshlarClient`) is a stable-tier NuGet package under [`SdkCompatibilityPolicy.md`](../SdkCompatibilityPolicy.md). Its typed methods wrap endpoints on the documented surface (except `QueryKnowledgeAsync`, a relative-path passthrough to a route that is not on it, treated like `InvokeAsync` below), so a breaking HTTP change to one of them is also a breaking client change and follows both policies at once (one minor deprecation, `[Obsolete]` on the old method, **Breaking** entry). `InvokeAsync` deliberately takes a relative path, so calling an undocumented route through it does not extend the promise to that route.
 
 ## Announcing a breaking change
 

@@ -41,14 +41,14 @@ Living checklist for [Testing strategy pivot v1](TestingStrategyPivot-v1.md). Up
 
 | Paths | PR workflows / local commands |
 |-------|------------------------------|
-| `src/Nexo.Core.Domain/**` | `kernel-coverage` · `dotnet test src/Nexo.Tests.Domain` |
-| `src/Nexo.Core.Application/**` | `kernel-coverage` · `Nexo.Tests.Application` |
-| `src/Nexo.Infrastructure/**`, `src/Nexo.Runtime/**`, `src/Nexo.Hosting/**` | `kernel-coverage`, `kernel-gate`, `cross-platform-tests` (path-filtered) |
+| `src/Ashlar.Core.Domain/**` | `kernel-coverage` · `dotnet test src/Ashlar.Tests.Domain` |
+| `src/Ashlar.Core.Application/**` | `kernel-coverage` · `Ashlar.Tests.Application` |
+| `src/Ashlar.Infrastructure/**`, `src/Ashlar.Runtime/**`, `src/Ashlar.Hosting/**` | `kernel-coverage`, `kernel-gate`, `cross-platform-tests` (path-filtered) |
 | Production wiring (routing, barriers, API host) | `testing-strategy` · `make test-prod-style` · `kernel-gate-tier-c` |
-| `application/src/Nexo.API/**`, `application/src/Nexo.CLI/**` | `application-gate`, `testing-strategy` |
+| `application/src/Ashlar.API/**`, `application/src/Ashlar.CLI/**` | `application-gate`, `testing-strategy` |
 | `src/**/Mesh/**`, `src/**/Fleet/**`, `deploy/compose/docker-compose.mesh*` | `composition-mesh-gate`, `mesh-lab-gate` |
-| `src/Nexo.Ingress.*`, middleware ingress | `cross-platform-tests`, trust workflows |
-| `commercial/src/Nexo.Commercial.GameDirector.*`, `commercial/tests/Nexo.Commercial.Tests.GameDirector` | `application-gate`, relevant app tests |
+| `src/Ashlar.Ingress.*`, middleware ingress | `cross-platform-tests`, trust workflows |
+| `commercial/src/Ashlar.Commercial.GameDirector.*`, `commercial/tests/Ashlar.Commercial.Tests.GameDirector` | `application-gate`, relevant app tests |
 | Trust / security / barriers policy | `security-gate`, `test-trust-multi-env` |
 | Distribution / CLI packaging | `distribution-matrix-gate`, `ship-gate` |
 | `docs/**` only | `docs-link-check` |
@@ -60,7 +60,7 @@ Living checklist for [Testing strategy pivot v1](TestingStrategyPivot-v1.md). Up
 - [x] Megaclass allow list (below)
 - [x] Review guide: prefer ProdStyle over gap megaclass edits
 - [x] Redundant gap suite reduction (JWT/middleware/domain/barriers; ProdStyle dedup in Makefile; `WorkflowExecutorEdgeCaseTests`)
-- [x] Dogfood Block 8 matrix tests skip on CI (`[NotOnCiFact]` in `Nexo.Tests.Infrastructure.Helpers`, reported as Skipped rather than a silent pass; nested `dotnet test` is flaky on runners)
+- [x] Dogfood Block 8 matrix tests skip on CI (`[NotOnCiFact]` in `Ashlar.Tests.Infrastructure.Helpers`, reported as Skipped rather than a silent pass; nested `dotnet test` is flaky on runners)
 - [ ] Optional backlog: PR Coverlet diff script (planned as `coverage-changed-files.sh` under `scripts/ci/`; not yet written)
 - [ ] Quarterly ratchet: bump `INFRA_COVERAGE_THRESHOLD` / `APP_COVERAGE_THRESHOLD` when justified
 
@@ -71,7 +71,7 @@ Living checklist for [Testing strategy pivot v1](TestingStrategyPivot-v1.md). Up
 - `Persistence/PostgresDatabaseProvisioner.cs`
 - `Execution/BehaviorExecutor.cs`
 - `Execution/ClusterExecutor.cs`
-- `Execution/Routing/NexoPeerBrickExecutor.cs`
+- `Execution/Routing/AshlarPeerBrickExecutor.cs`
 - `Knowledge/KnowledgeQueryService.cs`
 
 ## Phase 5 — RC linkage
@@ -92,7 +92,7 @@ Living checklist for [Testing strategy pivot v1](TestingStrategyPivot-v1.md). Up
 | Container images | `container-image-gate.yml`, `container-image-publish.yml` |
 | Onboarding docs | `onboarding-docs-guard.yml` |
 | Cross-platform | `cross-platform-tests.yml`, `full-platform-readiness-gate.yml` |
-| Local RC stack | `make rc-gate-full` · `NEXO_READY_SKIP_DOCKER=1 make nexo-ready-gate` |
+| Local RC stack | `make rc-gate-full` · `ASHLAR_READY_SKIP_DOCKER=1 make ashlar-ready-gate` |
 | Kernel coverage evidence | `make kernel-coverage-gate` |
 
 ---

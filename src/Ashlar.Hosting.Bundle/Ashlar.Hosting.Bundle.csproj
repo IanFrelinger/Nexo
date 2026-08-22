@@ -1,0 +1,56 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    Metapackage: one PackageReference for consumers embedding Ashlar.Hosting from NuGet.
+    Pack after the hosting graph (scripts/pack-ashlar-hosting-graph.*) so all Ashlar.* versions exist on the feed.
+    Pack with: dotnet pack -p:PackageVersion=1.2.3 (same version as graph packages).
+  -->
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>true</IsPackable>
+    <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
+    <NoDefaultExcludes>true</NoDefaultExcludes>
+    <NoWarn>$(NoWarn);RS0036;RS0037</NoWarn>
+    <PackageId>Ashlar.Hosting.Bundle</PackageId>
+    <Title>Ashlar Hosting (bundle)</Title>
+    <Description>Metapackage that pulls the full Ashlar.Hosting dependency graph at a single version. Prefer this over referencing only Ashlar.Hosting when consuming from nuget.org.</Description>
+    <PackageTags>ashlar;hosting;metapackage</PackageTags>
+    <RepositoryUrl>https://github.com/IanFrelinger/Ashlar</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <!-- PackageLicenseExpression (Apache-2.0) comes from Directory.Build.targets; do not restate it here. -->
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Ashlar.Abstractions" Version="$(PackageVersion)" />
+    <PackageReference Include="Ashlar.Core.Domain" Version="$(PackageVersion)" />
+    <PackageReference Include="Ashlar.Core.Application" Version="$(PackageVersion)" />
+    <PackageReference Include="Ashlar.Brick.Contracts" Version="$(PackageVersion)" />
+    <PackageReference Include="Ashlar.Policies" Version="$(PackageVersion)" />
+    <PackageReference Include="Ashlar.Tools.Assembly" Version="$(PackageVersion)" />
+    <PackageReference Include="Ashlar.Tools.Dev" Version="$(PackageVersion)" />
+    <PackageReference Include="Ashlar.Transport.Grpc" Version="$(PackageVersion)" />
+    <PackageReference Include="Ashlar.Runtime" Version="$(PackageVersion)" />
+    <PackageReference Include="Ashlar.Certification.Contracts" Version="$(PackageVersion)" />
+    <PackageReference Include="Ashlar.Infrastructure" Version="$(PackageVersion)" />
+    <PackageReference Include="Ashlar.Orchestration" Version="$(PackageVersion)" />
+    <PackageReference Include="Ashlar.BackgroundAgents" Version="$(PackageVersion)" />
+    <PackageReference Include="Ashlar.Hosting" Version="$(PackageVersion)" />
+  </ItemGroup>
+  <!--
+    Public-API contract (docs/SdkCompatibilityPolicy.md). The bundle ships only an internal marker type, so the
+    declared surface is empty; the analyzer is here so any future public type in this package must be declared.
+    Explicit Version: this project opts out of central package management (see ManagePackageVersionsCentrally above);
+    keep it in step with Directory.Packages.props.
+  -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="3.3.4" PrivateAssets="all" />
+  </ItemGroup>
+  <ItemGroup>
+    <AdditionalFiles Include="PublicAPI.Shipped.txt" />
+    <AdditionalFiles Include="PublicAPI.Unshipped.txt" />
+  </ItemGroup>
+</Project>

@@ -79,6 +79,6 @@ jobs:
           set -euo pipefail
           bash scripts/setup/setup.sh check
           bash scripts/setup/setup.sh restore
-          dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
-          dotnet run --project application/src/Nexo.CLI -- --help >/dev/null
+          dotnet build application/src/Ashlar.CLI/Ashlar.CLI.csproj --no-restore -v minimal
+          dotnet run --project application/src/Ashlar.CLI -- --help >/dev/null
           echo "setup-smoke-suite native-ubuntu: ok"

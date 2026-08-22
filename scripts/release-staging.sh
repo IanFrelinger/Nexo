@@ -8,7 +8,7 @@
 #
 # Environment:
 #   DRY_RUN=1              Print plan + assert results; do not dispatch.
-#   NEXO_RELEASE_STAGING_REF Branch/ref for workflow_dispatch (default: current branch).
+#   ASHLAR_RELEASE_STAGING_REF Branch/ref for workflow_dispatch (default: current branch).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -17,7 +17,7 @@ source "${ROOT}/scripts/lib/release-staging-guards.sh"
 
 VERSION="${VERSION:-${1:-}}"
 DRY_RUN="${DRY_RUN:-0}"
-REF="${NEXO_RELEASE_STAGING_REF:-$(git -C "${ROOT}" rev-parse --abbrev-ref HEAD 2>/dev/null || echo master)}"
+REF="${ASHLAR_RELEASE_STAGING_REF:-$(git -C "${ROOT}" rev-parse --abbrev-ref HEAD 2>/dev/null || echo master)}"
 
 if [[ -z "${VERSION}" ]]; then
   echo "usage: release-staging.sh <semver>   or   make release-staging VERSION=x.y.z [DRY_RUN=1]" >&2

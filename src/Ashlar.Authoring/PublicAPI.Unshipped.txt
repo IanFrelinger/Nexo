@@ -1,0 +1,5 @@
+#nullable enable
+Ashlar.Authoring.AshlarAuthoringServiceCollectionExtensions
+static Ashlar.Authoring.AshlarAuthoringServiceCollectionExtensions.AddAshlarAgentProfile<TProfile>(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Ashlar.Authoring.AshlarAuthoringServiceCollectionExtensions.AddAshlarBrick<TBrick>(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Ashlar.Authoring.AshlarAuthoringServiceCollectionExtensions.AddAshlarGenerativeAgents(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!

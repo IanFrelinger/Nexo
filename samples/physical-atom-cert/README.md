@@ -24,7 +24,7 @@ SHA-256 hex (`assetHash` in the JSON): `18301e3630ca2816dcb1e23264aaec41d9ed4108
 ## Verify (headless)
 
 ```csharp
-using Nexo.Certification.Physical;
+using Ashlar.Certification.Physical;
 
 var cert = /* deserialize instance-scope.example.json */;
 var assetBytes = System.Text.Encoding.UTF8.GetBytes("sample-digital-twin-asset-v1");

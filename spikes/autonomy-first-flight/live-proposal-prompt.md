@@ -1,10 +1,10 @@
 You are proposing a C# brick implementation for a certification gate. Below is a complete file with one method body missing. Output the COMPLETE file — every line shown, byte-for-byte unchanged, including the constructor — with the `ExecuteAsync` body implemented. Output ONLY one ```csharp code block, nothing else.
 
 ```csharp
-using Nexo.Core.Domain.Bricks;
-using Nexo.Core.Domain.Execution;
+using Ashlar.Core.Domain.Bricks;
+using Ashlar.Core.Domain.Execution;
 
-namespace Nexo.Spikes.FirstFlight;
+namespace Ashlar.Spikes.FirstFlight;
 
 public sealed class LiveProposedLogScannerBrick : DomainBrick
 {

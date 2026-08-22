@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AshlarCommercialProject>true</AshlarCommercialProject>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Update="xunit.runner.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Moq" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="coverlet.msbuild">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <ProjectReference Include="..\..\src\Ashlar.Commercial.GameDirector.Agents\GameDirector.Agents.csproj" />
+    <ProjectReference Include="..\..\src\Ashlar.Commercial.GameDirector.Bricks\GameDirector.Bricks.csproj" />
+    <ProjectReference Include="..\..\src\Ashlar.Commercial.GameDirector.Domain\GameDirector.Domain.csproj" />
+    <ProjectReference Include="..\..\src\Ashlar.Commercial.GameDirector.Mcp\GameDirector.Mcp.csproj" />
+    <ProjectReference Include="..\..\src\Ashlar.Commercial.GameDomain\Ashlar.Commercial.GameDomain.csproj" />
+    <ProjectReference Include="..\..\..\src\Ashlar.BackgroundAgents\Ashlar.BackgroundAgents.csproj" />
+    <ProjectReference Include="..\..\..\src\Ashlar.Client\Ashlar.Client.csproj" />
+    <ProjectReference Include="..\..\..\src\Ashlar.Infrastructure\Ashlar.Infrastructure.csproj" />
+  </ItemGroup>
+</Project>

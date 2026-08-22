@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-INFRA="src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj"
+INFRA="src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj"
 
 echo "== Compat Tier A: mesh checkpoint migration =="
 dotnet build "$INFRA" -v minimal

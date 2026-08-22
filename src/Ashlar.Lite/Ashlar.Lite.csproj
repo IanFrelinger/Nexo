@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <LangVersion>12.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <IsPackable>true</IsPackable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+    <PackageId>Ashlar.Lite</PackageId>
+    <Title>Ashlar Lite</Title>
+    <Description>Slim Ashlar host for edge and air-gapped hosts. Orchestration + local provider (ONNX/LLamaSharp). No Roslyn, Docker, or code analysis. Designed for lightweight orchestration on Linux and constrained environments.</Description>
+    <PackageTags>ashlar;ai;lite;edge;air-gapped</PackageTags>
+    <RepositoryUrl>https://github.com/IanFrelinger/Ashlar</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Ashlar.Core.Domain\Ashlar.Core.Domain.csproj" />
+    <ProjectReference Include="..\Ashlar.Core.Application\Ashlar.Core.Application.csproj" />
+    <ProjectReference Include="..\Ashlar.Abstractions\Ashlar.Abstractions.csproj" />
+    <ProjectReference Include="..\Ashlar.Client\Ashlar.Client.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+</Project>

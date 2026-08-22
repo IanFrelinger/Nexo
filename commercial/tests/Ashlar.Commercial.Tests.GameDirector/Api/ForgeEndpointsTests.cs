@@ -1,0 +1,432 @@
+using System.Reflection;
+using FluentAssertions;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using GameDirector.Mcp.Endpoints;
+using GameDirector.Mcp.Forge;
+using Ashlar.Commercial.GameDomain.Aesthetics;
+using Ashlar.Commercial.GameDomain.Descriptors;
+using Ashlar.Commercial.GameDomain.Macros;
+using Ashlar.Commercial.GameDomain.Mapping;
+using Ashlar.Commercial.GameDomain.Materials;
+using Ashlar.Commercial.GameDomain.Scoping;
+using Ashlar.Commercial.GameDomain.Session;
+using Xunit;
+
+namespace Ashlar.Tests.GameDirector.Api;
+/// <summary>Tests for forge endpoints.</summary>
+[Trait("Category", "E2E")]
+[Trait("Category", "ProdStyle")]
+public sealed class ForgeEndpointsTests : IDisposable
+{
+    private static readonly InMemoryForgeStateService Forge = new();
+
+    private static readonly Lazy<MapPipelineRunner> PipelineRunner = new(() =>
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.Configure<ForgeSessionOptions>(_ => { _.AllowMapFetchWhenAllowedHostsEmpty = true; });
+        services.AddHttpClient("forge-map")
+            .ConfigurePrimaryHttpMessageHandler(static () => new HttpClientHandler());
+        services.AddSingleton<HeuristicVectorMapIntelligenceService>();
+        services.AddSingleton<IVectorMapIntelligenceService>(sp => sp.GetRequiredService<HeuristicVectorMapIntelligenceService>());
+        services.AddSingleton<IMapVerificationService, HeuristicMapVerificationService>();
+        services.AddSingleton<IForgeStateService>(Forge);
+        services.AddSingleton<MapPipelineRunner>();
+        return services.BuildServiceProvider().GetRequiredService<MapPipelineRunner>();
+    });
+
+    private static readonly Lazy<IMaterialIntelligenceService> MaterialIntel = new(() => new HeuristicMaterialIntelligenceService());
+
+    public ForgeEndpointsTests()
+    {
+        /// <summary>Reset store.</summary>
+        ResetStore();
+    }
+
+    public void Dispose()
+    {
+        /// <summary>Reset store.</summary>
+        ResetStore();
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task CreateSession_ReturnsNewSession()
+    {
+        var request = new ForgeCreateSessionRequest("TestSession", MaxPlayers: 4);
+        var handler = GetHandler("CreateSessionAsync");
+
+        var result = await InvokeAsync(handler, request);
+
+        var session = ExtractOkValue<SessionState>(result);
+        session.Should().NotBeNull();
+        session.Name.Should().Be("TestSession");
+        session.MaxPlayers.Should().Be(4);
+        session.SessionId.Should().NotBeNullOrWhiteSpace();
+        session.GameRules.Should().NotBeNull();
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task GetSession_AfterCreate_ReturnsState()
+    {
+        var createRequest = new ForgeCreateSessionRequest("GetTest", MaxPlayers: 6);
+        await InvokeAsync(GetHandler("CreateSessionAsync"), createRequest);
+
+        var handler = GetHandler("GetSessionAsync");
+        var result = await InvokeAsync(handler);
+
+        var session = ExtractOkValue<SessionState>(result);
+        session.Should().NotBeNull();
+        session.Name.Should().Be("GetTest");
+        session.MaxPlayers.Should().Be(6);
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task ExportSession_ReturnsJson()
+    {
+        var createRequest = new ForgeCreateSessionRequest("ExportTest");
+        await InvokeAsync(GetHandler("CreateSessionAsync"), createRequest);
+
+        var handler = GetHandler("ExportSessionAsync");
+        var result = await InvokeAsync(handler);
+
+        var export = ExtractOkValue<ForgeSessionExportResponse>(result);
+        export.Should().NotBeNull();
+        export.Json.Should().NotBeNullOrWhiteSpace();
+        export.Json.Should().Contain("ExportTest");
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task ImportSession_RestoresState()
+    {
+        var createRequest = new ForgeCreateSessionRequest("ImportSource", MaxPlayers: 10);
+        await InvokeAsync(GetHandler("CreateSessionAsync"), createRequest);
+
+        var exportResult = await InvokeAsync(GetHandler("ExportSessionAsync"));
+        var exported = ExtractOkValue<ForgeSessionExportResponse>(exportResult);
+
+        /// <summary>Reset store.</summary>
+        ResetStore();
+
+        var importRequest = new ForgeSessionImportRequest(exported.Json);
+        var handler = GetHandler("ImportSessionAsync");
+        var result = await InvokeAsync(handler, importRequest);
+
+        var session = ExtractOkValue<SessionState>(result);
+        session.Should().NotBeNull();
+        session.Name.Should().Be("ImportSource");
+        session.MaxPlayers.Should().Be(10);
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task AddSetting_AppearsInSession()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"),
+            new ForgeCreateSessionRequest("SettingTest"));
+
+        var setting = new ScopedSetting
+        {
+            SettingId = "gravity",
+            Value = 9.8,
+            Scope = new SettingScope { Type = SettingScopeType.Server },
+            CreatedBy = "test",
+            CreatedAt = DateTimeOffset.UtcNow
+        };
+
+        var handler = GetHandler("ApplySettingAsync");
+        var result = await InvokeAsync(handler, setting);
+
+        var session = ExtractOkValue<SessionState>(result);
+        session.ScopedSettings.Should().ContainSingle(s => s.SettingId == "gravity");
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task RemoveSetting_RemovesFromSession()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"),
+            new ForgeCreateSessionRequest("RemoveTest"));
+
+        var setting = new ScopedSetting
+        {
+            SettingId = "time_scale",
+            Value = 1.5,
+            Scope = new SettingScope { Type = SettingScopeType.Server },
+            CreatedBy = "test",
+            CreatedAt = DateTimeOffset.UtcNow
+        };
+        await InvokeAsync(GetHandler("ApplySettingAsync"), setting);
+
+        var handler = GetHandler("RemoveSettingAsync");
+        var result = await InvokeAsync(handler, "time_scale");
+
+        var session = ExtractOkValue<SessionState>(result);
+        session.ScopedSettings.Should().NotContain(s => s.SettingId == "time_scale");
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task ResolveSettings_ReturnsCorrectValues()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"),
+            new ForgeCreateSessionRequest("ResolveTest"));
+
+        var serverSetting = new ScopedSetting
+        {
+            SettingId = "speed",
+            Value = "slow",
+            Scope = new SettingScope { Type = SettingScopeType.Server },
+            CreatedBy = "test",
+            CreatedAt = DateTimeOffset.UtcNow
+        };
+        await InvokeAsync(GetHandler("ApplySettingAsync"), serverSetting);
+
+        var playerSetting = new ScopedSetting
+        {
+            SettingId = "speed",
+            Value = "fast",
+            Scope = new SettingScope { Type = SettingScopeType.Player, Target = "player-1" },
+            CreatedBy = "test",
+            CreatedAt = DateTimeOffset.UtcNow
+        };
+        await InvokeAsync(GetHandler("ApplySettingAsync"), playerSetting);
+
+        var handler = GetHandler("ResolveSettingsAsync");
+        var result = await InvokeAsync(handler, "player-1", null, null, null, null);
+
+        var response = ExtractOkValue<ForgeResolvedSettingsResponse>(result);
+        response.Should().NotBeNull();
+        response.ResolvedSettings.Should().ContainKey("speed");
+        response.ResolvedSettings["speed"].ToString().Should().Be("fast");
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task RegisterMacro_AppearsInList()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"),
+            new ForgeCreateSessionRequest("MacroTest"));
+
+        var macro = new MacroDefinition
+        {
+            MacroId = "test-macro-1",
+            DisplayName = "Test Macro",
+            Description = "A test macro",
+            Author = "tester"
+        };
+
+        await InvokeAsync(GetHandler("RegisterMacroAsync"), macro);
+
+        var listHandler = GetHandler("ListMacrosAsync");
+        var result = await InvokeAsync(listHandler);
+
+        var macros = ExtractOkValue<IReadOnlyList<MacroDefinition>>(result);
+        macros.Should().Contain(m => m.MacroId == "test-macro-1");
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task ListAesthetics_Returns6Packs()
+    {
+        var handler = GetHandler("GetAestheticsAsync");
+        var result = await InvokeAsync(handler);
+
+        var packs = ExtractOkValue<IReadOnlyList<AestheticPack>>(result);
+        packs.Should().HaveCount(6);
+        packs.Select(p => p.Id).Should().Contain(new[] { "voxel", "low_poly", "pixel_art", "pbr", "wireframe", "sketch" });
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task ApplyAesthetic_AddsScopedSetting()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"),
+            new ForgeCreateSessionRequest("AestheticTest"));
+
+        var request = new ForgeApplyAestheticRequest("voxel");
+        var handler = GetHandler("ApplyAestheticAsync");
+        var result = await InvokeAsync(handler, request);
+
+        var session = ExtractOkValue<SessionState>(result);
+        session.ScopedSettings.Should().Contain(s => s.SettingId == "aesthetic" && s.Value.ToString() == "voxel");
+        session.AestheticPacks.Should().Contain(a => a.Id == "voxel");
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task GetMapAdaptationPlan_ReturnsPlan()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"), new ForgeCreateSessionRequest("PlanTest"));
+        await InvokeAsync(GetHandler("ApplyAestheticAsync"), new ForgeApplyAestheticRequest("voxel"));
+
+        var result = await InvokeAsync(GetHandler("GetMapAdaptationPlanAsync"));
+        var plan = ExtractOkValue<MapAdaptationPlan>(result);
+        plan.EffectiveMapRenderingProfile.Should().Be(MapRenderingProfiles.VoxelGrid);
+        plan.PipelineStages.Should().Contain("voxel_rasterize");
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task GetTilePyramid_ReturnsTiers()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"), new ForgeCreateSessionRequest("PyrTest"));
+        await InvokeAsync(GetHandler("ApplyAestheticAsync"), new ForgeApplyAestheticRequest("voxel"));
+
+        var result = await InvokeAsync(GetHandler("GetTilePyramidAsync"), (int?)14);
+        var wrap = ExtractOkValue<ForgeTilePyramidResponse>(result);
+        wrap.FinestZoom.Should().Be(14);
+        wrap.Tiers.Should().HaveCountGreaterThan(1);
+        wrap.Tiers[0].Zoom.Should().Be(14);
+        wrap.Tiers[1].Zoom.Should().Be(13);
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task GetMaterialHints_ReturnsHints()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"), new ForgeCreateSessionRequest("MatTest"));
+        await InvokeAsync(GetHandler("ApplyAestheticAsync"), new ForgeApplyAestheticRequest("voxel"));
+
+        var result = await InvokeAsync(GetHandler("GetMaterialHintsAsync"), "mvt");
+        var hints = ExtractOkValue<ForgeMaterialHintsResponse>(result);
+        hints.Summary.Should().Contain("hint");
+        hints.Hints.Should().NotBeEmpty();
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task RunMapPipeline_DryRun_Succeeds()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"), new ForgeCreateSessionRequest("PipeTest"));
+        var body = new MapPipelineRunRequest(DryRun: true);
+        var result = await InvokeAsync(GetHandler("RunMapPipelineAsync"), body);
+        var run = ExtractOkValue<MapPipelineRunResult>(result);
+        run.Success.Should().BeTrue();
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task EngineManifest_ReturnsJson()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"), new ForgeCreateSessionRequest("ManTest"));
+        var result = await InvokeAsync(GetHandler("GetEngineAestheticManifestAsync"), "unity");
+        var wrap = ExtractOkValue<ForgeEngineManifestResponse>(result);
+        wrap.Json.Should().Contain("\"engineId\"");
+        wrap.Json.Should().Contain("unity");
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task ApplyCustomAestheticPack_ValidPack_ReplacesSessionPack()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"),
+            new ForgeCreateSessionRequest("CustomPackTest"));
+
+        var custom = new AestheticPack
+        {
+            Id = "studio_stylized",
+            Name = "Studio Stylized",
+            GeometryStrategy = GeometryStrategies.LowPoly,
+            MapRenderingProfile = MapRenderingProfiles.FlatShadedPolys,
+            RenderingPipelineKind = RenderingPipelineKinds.ForwardStylized,
+            EngineSurfaceBindings =
+            [
+                new EngineRenderingSurfaceBinding
+                {
+                    EngineId = GameEngines.Unity,
+                    Role = RenderingSurfaceRoles.WorldPrimary,
+                    MaterialSurfaceId = MaterialSurfaceIds.StylizedLit,
+                    AssetOrShaderHint = "Universal Render Pipeline/Lit",
+                },
+            ]
+        };
+
+        var req = new Ashlar.Commercial.GameDomain.Contracts.ForgeApplyCustomAestheticPackRequest(custom);
+        var result = await InvokeAsync(GetHandler("ApplyCustomAestheticPackAsync"), req);
+
+        var session = ExtractOkValue<SessionState>(result);
+        session.ScopedSettings.Should().Contain(s => s.SettingId == "aesthetic" && s.Value.ToString() == "studio_stylized");
+        session.AestheticPacks.Should().ContainSingle(a => a.Id == "studio_stylized");
+        session.AestheticPacks.Single(a => a.Id == "studio_stylized").EngineSurfaceBindings.Should().HaveCount(1);
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task ApplyCustomAestheticPack_InvalidGeometry_ReturnsBadRequest()
+    {
+        await InvokeAsync(GetHandler("CreateSessionAsync"),
+            new ForgeCreateSessionRequest("BadPack"));
+
+        var bad = new AestheticPack
+        {
+            Id = "bad",
+            Name = "Bad",
+            GeometryStrategy = "totally_unknown",
+            RenderingPipelineKind = RenderingPipelineKinds.Auto,
+        };
+
+        var result = await InvokeAsync(GetHandler("ApplyCustomAestheticPackAsync"),
+            new Ashlar.Commercial.GameDomain.Contracts.ForgeApplyCustomAestheticPackRequest(bad));
+
+        var status = result as IStatusCodeHttpResult;
+        status.Should().NotBeNull();
+        status!.StatusCode.Should().Be(StatusCodes.Status400BadRequest);
+    }
+
+    [Fact(Timeout = 15000)]
+    public async Task GenerateStub_ReturnsDescriptor()
+    {
+        var request = new ForgeGenerateRequest("Plasma Rifle", "weapon");
+        var handler = GetHandler("GenerateContentAsync");
+        var result = await InvokeAsync(handler, request);
+
+        var response = ExtractOkValue<ForgeGenerateResponse>(result);
+        response.Should().NotBeNull();
+        response.Prompt.Should().Be("Plasma Rifle");
+        response.Category.Should().Be("weapon");
+        response.Descriptor.Should().NotBeNull();
+        response.Descriptor.Should().BeOfType<WeaponDescriptor>();
+        var weapon = (WeaponDescriptor)response.Descriptor;
+        weapon.Name.Should().Contain("Plasma Rifle");
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────────────
+
+    private static MethodInfo GetHandler(string name)
+    {
+        var method = typeof(ForgeEndpoints).GetMethod(
+            name,
+            BindingFlags.NonPublic | BindingFlags.Static);
+        method.Should().NotBeNull($"handler '{name}' should exist on ForgeEndpoints");
+        return method!;
+    }
+
+    private static async Task<IResult> InvokeAsync(MethodInfo handler, params object?[] args)
+    {
+        var parameters = handler.GetParameters();
+        var merged = new object?[parameters.Length];
+        var argIdx = 0;
+        for (var i = 0; i < parameters.Length; i++)
+        {
+            var pt = parameters[i].ParameterType;
+            if (pt == typeof(IForgeStateService))
+                merged[i] = Forge;
+            else if (pt == typeof(MapPipelineRunner))
+                merged[i] = PipelineRunner.Value;
+            else if (pt == typeof(IMaterialIntelligenceService))
+                merged[i] = MaterialIntel.Value;
+            else
+            {
+                merged[i] = argIdx < args.Length ? args[argIdx] : Type.Missing;
+                argIdx++;
+            }
+        }
+
+        argIdx.Should().Be(args.Length, "argument count must match handler signature after injected services");
+
+        var task = (Task<IResult>)handler.Invoke(null, merged)!;
+        return await task;
+    }
+
+    private static T ExtractOkValue<T>(IResult result)
+    {
+        var valueProp = result.GetType().GetProperty("Value", BindingFlags.Instance | BindingFlags.Public);
+        valueProp.Should().NotBeNull();
+        var value = valueProp!.GetValue(result);
+        value.Should().BeAssignableTo<T>();
+        return (T)value!;
+    }
+
+    /// <summary>Reset store.</summary>
+    private static void ResetStore() => Forge.Reset();
+}

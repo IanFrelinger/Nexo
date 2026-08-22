@@ -1,13 +1,13 @@
 # Trust and execution boundaries
 
-Nexo separates **policy and trust** from **transport and UI**. The following boundaries are the usual mental model when reading the codebase.
+Ashlar separates **policy and trust** from **transport and UI**. The following boundaries are the usual mental model when reading the codebase.
 
 ## Layers
 
-1. **Domain (`Nexo.Core.Domain`)** — Entities, value objects, and domain rules. No knowledge of HTTP, gRPC, or hosting.
-2. **Application (`Nexo.Core.Application`)** — Use cases, ports (interfaces), and orchestration contracts. Mediates between domain and the outside world without binding to a specific host.
-3. **Infrastructure (`Nexo.Infrastructure`)** — Adapters: persistence, `ITestRunner` (reflection-based test discovery), external tools, and similar implementations of application ports.
-4. **Hosting (`Nexo.Hosting`, `Nexo.API`)** — Composition root for processes: dependency injection, HTTP APIs, and service registration (including `ITestRunner` → `TestRunnerAdapter`).
+1. **Domain (`Ashlar.Core.Domain`)** — Entities, value objects, and domain rules. No knowledge of HTTP, gRPC, or hosting.
+2. **Application (`Ashlar.Core.Application`)** — Use cases, ports (interfaces), and orchestration contracts. Mediates between domain and the outside world without binding to a specific host.
+3. **Infrastructure (`Ashlar.Infrastructure`)** — Adapters: persistence, `ITestRunner` (reflection-based test discovery), external tools, and similar implementations of application ports.
+4. **Hosting (`Ashlar.Hosting`, `Ashlar.API`)** — Composition root for processes: dependency injection, HTTP APIs, and service registration (including `ITestRunner` → `TestRunnerAdapter`).
 
 ## Trust and data flow
 

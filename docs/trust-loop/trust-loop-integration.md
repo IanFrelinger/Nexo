@@ -1,6 +1,6 @@
 # Trust Loop Integration — Dynamic Self-Extension via Certified Hot Reload
 
-Maps `nexo-trust-loop-spec.md` v1.0 onto the Nexo codebase as of master
+Maps `ashlar-trust-loop-spec.md` v1.0 onto the Ashlar codebase as of master
 `5fc48684` (Aug 12, 2026). Goal: agent clusters propose bricks; only
 certified artifacts hot-reload into a running host. "vibeOS shape,
 deterministic guts."
@@ -38,7 +38,7 @@ the honest version of the pitch-deck trust story.
 
 **G3 — Deterministic context assembly (§1, R1.2–R1.5).** No formal
 stage-1 component. Build `ProposalContextAssembler` in
-`Nexo.BackgroundAgents`: retrieval + closure walks + canonicalization,
+`Ashlar.BackgroundAgents`: retrieval + closure walks + canonicalization,
 per-source-class char budgets, records included/truncated/provenance-
 tier. Output is a hashable `ProposalContext` — its hash goes in the
 certificate's `inputs`.
@@ -68,12 +68,12 @@ provenance graph as first-class nodes. Failed candidates persist
 policies; the spec demands a scripted-adversary campaign against the
 *harness* (sandbox escapes, premature completion, anchor abuse,
 oscillation, garbage output, ends-bad run). New suite:
-`Nexo.Tests.BackgroundAgents/TrustLoop/AdversarialCampaignTests`.
+`Ashlar.Tests.BackgroundAgents/TrustLoop/AdversarialCampaignTests`.
 Acceptance: zero false certificates across all scenarios.
 
 ## 3. The hot-reload host (new)
 
-`CertifiedBrickHotSwapHost` in `Nexo.Runtime`:
+`CertifiedBrickHotSwapHost` in `Ashlar.Runtime`:
 
 1. **Verify-at-load, not just verify-at-admission.** Before loading
    any assembly/source, re-run `CertificationTrustVerifier` against
@@ -136,7 +136,7 @@ Dynamic ≠ unsupervised. Tier by blast radius:
    feed this directly).
    *Status: the analyzer half landed via the extension spec
    ("Analyzer Gate & Container Isolation" Part A): catalog v1
-   NEXO0003–0009 with per-rule triads in `Nexo.Analyzers`, and the
+   ASHLAR0003–0009 with per-rule triads in `Ashlar.Analyzers`, and the
    `analyzer-gate` running first in `CertificationGate` — fail-closed
    on non-compiling candidates, unresolvable brick anchors, and
    analyzer crashes (A1.4); A1.5 metadata recorded on `gates_passed`;
@@ -145,7 +145,7 @@ Dynamic ≠ unsupervised. Tier by blast radius:
    now also enforced semantically at certification (A2):
    `BrickConstraintManifestAnalyzer` is constructed with the manifest
    instance carried on `CertificationRequest.ConstraintManifest`
-   (NEXO0010–0012 — using allowlist, forbidden APIs, forbidden namespaces —
+   (ASHLAR0010–0012 — using allowlist, forbidden APIs, forbidden namespaces —
    symbol-resolved, so aliasing cannot dodge them). The diagnostic-probe
    half (`IDiagnosticProbe`) remains open.*
 5. **PR-E:** Harness progress discipline + ledger (G5, G6).

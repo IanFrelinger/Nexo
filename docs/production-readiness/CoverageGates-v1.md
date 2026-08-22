@@ -28,7 +28,7 @@ INFRA_COVERAGE_THRESHOLD=90 APP_COVERAGE_THRESHOLD=70 bash scripts/ci/kernel-cov
 
 ## Scope and exclusions
 
-- **In scope:** deterministic unit-testable kernel code under `src/Nexo.Core.Domain`, `src/Nexo.Core.Application`, and `src/Nexo.Infrastructure`.
+- **In scope:** deterministic unit-testable kernel code under `src/Ashlar.Core.Domain`, `src/Ashlar.Core.Application`, and `src/Ashlar.Infrastructure`.
 - **Out of scope for 100% line coverage (integration / environment):** Docker engine adapters, Postgres ephemeral provisioners, Ollama/RunPod live routing, Playwright hosts. These paths are exercised by tiered gates (`kernel-gate-tier-e`, mesh-lab, prod-style) rather than line-coverage alone.
 - **Ratchet policy:** Raise `INFRA_COVERAGE_THRESHOLD` and `APP_COVERAGE_THRESHOLD` in `scripts/ci/kernel-coverage-gate.sh` when gap tests land; do not lower floors without release sign-off.
 

@@ -90,13 +90,13 @@ run_case "container dispatcher unsupported os via uname override" "fail" \
   "uname(){ echo FreeBSD; }; export -f uname; ${REPO_ROOT}/scripts/install/container-bootstrap.sh --dry-run"
 
 run_case "dotnet restore CLI project" "pass" \
-  "dotnet restore ${REPO_ROOT}/application/src/Nexo.CLI/Nexo.CLI.csproj"
+  "dotnet restore ${REPO_ROOT}/application/src/Ashlar.CLI/Ashlar.CLI.csproj"
 
 run_case "dotnet restore copy-assemblies helper project" "pass" \
-  "dotnet restore ${REPO_ROOT}/src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.csproj"
+  "dotnet restore ${REPO_ROOT}/src/Ashlar.Tests.Infrastructure/scripts/copy-assemblies.csproj"
 
 run_case "dotnet build CLI project" "pass" \
-  "dotnet build ${REPO_ROOT}/application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal"
+  "dotnet build ${REPO_ROOT}/application/src/Ashlar.CLI/Ashlar.CLI.csproj --no-restore -v minimal"
 
 {
   echo "===== SUMMARY ====="

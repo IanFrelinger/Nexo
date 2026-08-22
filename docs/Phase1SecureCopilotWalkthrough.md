@@ -1,12 +1,12 @@
 # Phase 1 secure copilot walkthrough
 
-This walkthrough demonstrates the Phase 1 product pilot flow on top of the existing Nexo API portal.
+This walkthrough demonstrates the Phase 1 product pilot flow on top of the existing Ashlar API portal.
 
 ## Prerequisites
 
-- Start the API host (`application/src/Nexo.API`) with a workspace mounted via `deploy/compose/docker-compose.agent-server.yml`, or run it locally with equivalent environment.
+- Start the API host (`application/src/Ashlar.API`) with a workspace mounted via `deploy/compose/docker-compose.agent-server.yml`, or run it locally with equivalent environment.
 - Ensure trust services are enabled if you want live boundary controls and audit history:
-  - `NEXO_TRUST_ENABLED=1`
+  - `ASHLAR_TRUST_ENABLED=1`
   - optional persistence settings for trust/audit stores.
 
 ## First success flow

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Nexo UAT — Tier 9 (the release path).
+# Ashlar UAT — Tier 9 (the release path).
 #
 # v0.1.0 is "production-usable core, experimental autonomy" (D5), and the mechanism that makes that
 # more than a slogan is the public-API contract: stable-tier packages carry PublicAPI baselines, and
@@ -77,7 +77,7 @@ fi
 say "9.4 the runbook's own commands exist on the CLI"
 # The fastest path in the runbook is a CLI verb. If it has been renamed, the page sends an operator
 # into a dead end on the one day they cannot afford one.
-if timeout 600 dotnet run --project application/src/Nexo.CLI -- release --help >"$OUT/release-help.log" 2>&1; then
+if timeout 600 dotnet run --project application/src/Ashlar.CLI -- release --help >"$OUT/release-help.log" 2>&1; then
   MISSING_VERB=""
   for verb in preflight gate; do
     grep -qiE "(^|[^a-z])$verb([^a-z]|$)" "$OUT/release-help.log" || MISSING_VERB="$MISSING_VERB $verb"

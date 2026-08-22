@@ -8,7 +8,7 @@ Five defects had to be fixed to get a number, and **each was invisible until the
 |---|---|---|
 | 1 | Collectible-`AssemblyLoadContext` crash in the certification mutation engine | killed the process in ~21s |
 | 2 | DI cycle hanging API host startup (`registry → self-extend → registry`) | wedged 2 of 2 parallel slots |
-| 3 | `AddNexoFederatedBrickMesh` recursing into its own registration | a test never completed, so the host never exited |
+| 3 | `AddAshlarFederatedBrickMesh` recursing into its own registration | a test never completed, so the host never exited |
 | 4 | `ProviderFactory` doing blocking network I/O in its constructor | stalled a 1,000-iteration stress test |
 | 5 | Certification records held in a non-durable in-memory store | `adapt` could never find an admitted brick |
 
@@ -85,9 +85,9 @@ never produced a verdict.
 
 | Step | Target | Threshold | Behaviour |
 |---|---|---|---|
-| 1 | `Nexo.Tests.Domain` → `[Nexo.Core.Domain]` | 100% line | completes, ~1 min |
-| 2 | `Nexo.Tests.Infrastructure -f net9.0` → `[Nexo.Infrastructure]` | 83% line | **never returns** |
-| 3 | `Nexo.Tests.Application` → `[Nexo.Core.Application]` | 67% line | never reached |
+| 1 | `Ashlar.Tests.Domain` → `[Ashlar.Core.Domain]` | 100% line | completes, ~1 min |
+| 2 | `Ashlar.Tests.Infrastructure -f net9.0` → `[Ashlar.Infrastructure]` | 83% line | **never returns** |
+| 3 | `Ashlar.Tests.Application` → `[Ashlar.Core.Application]` | 67% line | never reached |
 
 Step 2 reproduced locally. The tests themselves are fine:
 
@@ -130,7 +130,7 @@ Until now the job had no `timeout-minutes`, so it inherited the 6-hour cap.
   described a truncated run, and the conclusion ruled out the very thing that is now
   the remaining blocker. Ruling a cause out on evidence from a crashed run is what
   kept the second defect invisible.
-- **Not the `xunit.runner.json` copy-directive trap** that made `Nexo.Tests.CLI`
+- **Not the `xunit.runner.json` copy-directive trap** that made `Ashlar.Tests.CLI`
   silently parallel. This project has the same missing directive, but its stale
   `bin\` copy and its source are behaviourally identical (the only delta is an
   explicit `parallelizeTestCollections: true`, which is also the default). The
@@ -150,13 +150,13 @@ Bounded and low-risk only:
 1. `timeout-minutes: 30` on the job. Converts a 6-hour burn into a 30-minute
    failure. Does **not** fix the crash.
 2. `<Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />`
-   in `Nexo.Tests.Infrastructure.csproj` — hygiene against config drift.
+   in `Ashlar.Tests.Infrastructure.csproj` — hygiene against config drift.
 
 ## Resolution applied
 
 **Option 2 (swap the collector) was tried first and rejected.** Added
 `coverlet.collector` plus a runsettings with `Format=cobertura` and
-`Include=[Nexo.Infrastructure]*`, mirroring the old `-p:Include` exactly:
+`Include=[Ashlar.Infrastructure]*`, mirroring the old `-p:Include` exactly:
 
 ```
 Passed! - Failed: 0, Passed: 452, Skipped: 1, Total: 453, Duration: 58 s
@@ -211,7 +211,7 @@ directories accumulated for the life of the process.
 
 ## Resolution: all five defects fixed, coverage measured
 
-**Defect 3 — mesh registration recursed into itself.** `AddNexoFederatedBrickMesh`
+**Defect 3 — mesh registration recursed into itself.** `AddAshlarFederatedBrickMesh`
 resolved `IBrickRegistry` as a fallback for the local registry, but that registration
 *is* the last `IBrickRegistry` descriptor, so it re-entered itself. The
 `InvalidOperationException` written three lines below to report a missing local
@@ -233,7 +233,7 @@ considered design decision to fix a placement bug.
 registered `InMemoryCertificationRecordStore` unconditionally, so every process began
 with an empty admission catalogue and nothing certified earlier could ever be found.
 Harmless for a single-process host that certifies as it goes; fatal for the CLI, where
-each invocation is a fresh process — `nexo adapt --store-path ...` could never locate
+each invocation is a fresh process — `ashlar adapt --store-path ...` could never locate
 an admitted brick, and the command's own error text advertises a flow that could not
 work. `FileCertificationRecordStore` already existed and was wired nowhere.
 
@@ -254,9 +254,9 @@ generated code may run:
 
 | assembly | line | branch | method |
 |---|---|---|---|
-| `Nexo.Core.Domain` | 100% | 73.36% | 100% |
-| **`Nexo.Infrastructure`** | **80.3%** | 64.48% | 84.92% |
-| `Nexo.Core.Application` | 68.31% | 64.84% | 40.37% |
+| `Ashlar.Core.Domain` | 100% | 73.36% | 100% |
+| **`Ashlar.Infrastructure`** | **80.3%** | 64.48% | 84.92% |
+| `Ashlar.Core.Application` | 68.31% | 64.84% | 40.37% |
 
 Job: 13m53s, Infrastructure step 11m45s — comfortably inside the 30-minute cap, which
 is therefore kept unchanged.
@@ -394,7 +394,7 @@ observed stall (~6m20s) with margin, per the sizing rule in `TestTimeouts`:
 - **Excluding `RoslynAnalyzeToolTests` / `BehaviorExecutorNcrEscalationTests` from
   the bridge matrix.** Deletes the proof and the coverage: the Infrastructure floor
   has 0.3pt of margin (80.3% measured against a floor of 80), and these suites cover
-  `RoslynAnalyzeTool` and the NCR escalation path in `[Nexo.Infrastructure]`.
+  `RoslynAnalyzeTool` and the NCR escalation path in `[Ashlar.Infrastructure]`.
 - **Scaling timeouts only under instrumentation (env var).** Two timing regimes and
   a hidden coupling, for no benefit: the doctrine already says a bound sized to
   healthy duration is wrong on any sufficiently loaded machine, instrumented or not.

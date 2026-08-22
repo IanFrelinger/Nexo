@@ -1,6 +1,6 @@
 # Forge map host integration (milestones)
 
-This document tracks **host-side** work that sits next to runtime types in **`Nexo.Commercial.GameDomain`** (`Nexo.Commercial.GameDomain` namespace) and HTTP endpoints in **`Nexo.Commercial.GameDirector.Host`** (`ForgeEndpoints` in `Nexo.Commercial.GameDirector.Mcp`).
+This document tracks **host-side** work that sits next to runtime types in **`Ashlar.Commercial.GameDomain`** (`Ashlar.Commercial.GameDomain` namespace) and HTTP endpoints in **`Ashlar.Commercial.GameDirector.Host`** (`ForgeEndpoints` in `Ashlar.Commercial.GameDirector.Mcp`).
 
 ## M1 — Engine aesthetic manifest
 
@@ -21,7 +21,7 @@ This document tracks **host-side** work that sits next to runtime types in **`Ne
 - **`VectorTileUrlBuilder.MapboxVectorTileUrl`** — Mapbox `v4` vector tile URL.
 - Sample wires **`POST /api/forge/map/pipeline/run`** with **`mvtTileX` / `mvtTileY`** aligned to the built URL.
 
-**Server-side:** configure **`Nexo:ForgeSession:AllowedMapFetchHosts`** for providers you use (e.g. `api.mapbox.com`).
+**Server-side:** configure **`Ashlar:ForgeSession:AllowedMapFetchHosts`** for providers you use (e.g. `api.mapbox.com`).
 
 ## M3 — Minimal geometry slice
 
@@ -49,7 +49,7 @@ This document tracks **host-side** work that sits next to runtime types in **`Ne
 **Implemented in-repo:**
 
 - **`IMapVerificationService`**, **`HeuristicMapVerificationService`**, **`MapVerificationResult`** / **`MapVerificationIssue`**.
-- **`MapPipelineRunner`** appends **`verify=…`** after parse when **`EnableMapVerification`** is true (**`Nexo:ForgeSession`**).
+- **`MapPipelineRunner`** appends **`verify=…`** after parse when **`EnableMapVerification`** is true (**`Ashlar:ForgeSession`**).
 - Optional **`MapVerificationFailsPipeline`**: when **`true`**, verification **Warning+** marks **`fetch_vector`** as **`error`** (`Success=false` on the run).
 - Unit tests in **`HeuristicMapVerificationServiceTests`** and pipeline strict-mode tests.
 
@@ -59,7 +59,7 @@ This document tracks **host-side** work that sits next to runtime types in **`Ne
 
 **Implemented in-repo:**
 
-- **`IMaterialIntelligenceService`** via **`ModelAugmentedMaterialIntelligenceService`** ( **`HeuristicMaterialIntelligenceService`** baseline ); **`GET /api/forge/map/material-hints`** — JSON hints for the active aesthetic (optional **`parseKind`** query). Optional **`Nexo:ForgeSession:EnableMaterialModel`** for **`IModel`** augmentation.
+- **`IMaterialIntelligenceService`** via **`ModelAugmentedMaterialIntelligenceService`** ( **`HeuristicMaterialIntelligenceService`** baseline ); **`GET /api/forge/map/material-hints`** — JSON hints for the active aesthetic (optional **`parseKind`** query). Optional **`Ashlar:ForgeSession:EnableMaterialModel`** for **`IModel`** augmentation.
 - Unit tests in **`HeuristicMaterialIntelligenceServiceTests`** and API coverage in **`ForgeEndpointsTests`**.
 
 ## Tile cache and reproducibility (phase B)
@@ -70,7 +70,7 @@ This document tracks **host-side** work that sits next to runtime types in **`Ne
 
 - **`MapTileCacheKey`** — sanitised path segments from aesthetic id, provider id, and **`z/x/y`**.
 - **`MapTileDiskCache`** — async read/write under a root directory.
-- Sample: set **`NEXO_TILE_CACHE_DIR`** in **`ForgeMapHostSample`** to exercise cache after building a Mapbox URL.
+- Sample: set **`ASHLAR_TILE_CACHE_DIR`** in **`ForgeMapHostSample`** to exercise cache after building a Mapbox URL.
 
 ## Engine bridge (phase C)
 
@@ -92,8 +92,8 @@ This document tracks **host-side** work that sits next to runtime types in **`Ne
 
 - **`TerrainTileUrlBuilder.MapboxTerrainRgbTileUrl`** — **`mapbox.terrain-rgb`** **`pngraw`** tiles for **`z/x/y`**.
 - **`TerrainPayloadInspector`**, **`TerrainPayloadSummarizer`**, **`TerrainHostImportHints`** — PNG IHDR dimensions when possible; JPEG/TIFF/WebP sniffing.
-- **`MapPipelineRunner`** — **`fetch_terrain`** detail includes **`parse=…`** when **`EnableTerrainPayloadParsing`** is true (**`Nexo:ForgeSession`**).
-- **`ModelAugmentedMaterialIntelligenceService`** registered as **`IMaterialIntelligenceService`**; enable **`Nexo:ForgeSession:EnableMaterialModel`** for bounded prompts (**`MaterialModelTimeoutMs`**).
+- **`MapPipelineRunner`** — **`fetch_terrain`** detail includes **`parse=…`** when **`EnableTerrainPayloadParsing`** is true (**`Ashlar:ForgeSession`**).
+- **`ModelAugmentedMaterialIntelligenceService`** registered as **`IMaterialIntelligenceService`**; enable **`Ashlar:ForgeSession:EnableMaterialModel`** for bounded prompts (**`MaterialModelTimeoutMs`**).
 - **`ForgeMapHostSample`** — passes **`terrainDataUrl`** (Terrain-RGB) with vector URLs when **`MAPBOX_ACCESS_TOKEN`** is set.
 
 ## Next steps (optional)

@@ -3,7 +3,7 @@
 set -euo pipefail
 
 # Must match tests exercised by scripts/run-cert-gate.sh and .github/workflows/cert-gate.yml
-readonly CERT_GATE_FILTER='FullyQualifiedName~Nexo.Tests.Infrastructure.Tests.Certification|FullyQualifiedName~Nexo.Tests.Infrastructure.Tests.Adaptation.GenerationSafety|FullyQualifiedName~AstMutationEngineTests'
+readonly CERT_GATE_FILTER='FullyQualifiedName~Ashlar.Tests.Infrastructure.Tests.Certification|FullyQualifiedName~Ashlar.Tests.Infrastructure.Tests.Adaptation.GenerationSafety|FullyQualifiedName~AstMutationEngineTests'
 
 # Documented breakdown (must match --list-tests output; guard derives count at runtime):
 #   CertificationGateTeethTests: 6
@@ -35,12 +35,12 @@ readonly CERT_GATE_FILTER='FullyQualifiedName~Nexo.Tests.Infrastructure.Tests.Ce
 
 cert_gate_list_tests() {
   local root="${1:?repo root required}"
-  dotnet test "${root}/src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj" \
+  dotnet test "${root}/src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj" \
     -f net8.0 \
     --no-build \
     --list-tests \
     --filter "${CERT_GATE_FILTER}" 2>/dev/null \
-    | grep -E '^[[:space:]]*Nexo\.Tests\.' || true
+    | grep -E '^[[:space:]]*Ashlar\.Tests\.' || true
 }
 
 cert_gate_expected_count() {

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DEFAULT_IMAGE="ghcr.io/ianfrelinger/nexo-cli:latest"
+DEFAULT_IMAGE="ghcr.io/ianfrelinger/ashlar-cli:latest"
 DEFAULT_SDK_IMAGE="mcr.microsoft.com/dotnet/sdk:10.0"
 IMAGE="${DEFAULT_IMAGE}"
 SDK_IMAGE="${DEFAULT_SDK_IMAGE}"
@@ -100,13 +100,13 @@ print_guided_intro() {
   fi
 
   echo "============================================="
-  echo " Nexo Container Setup (Guided)"
+  echo " Ashlar Container Setup (Guided)"
   echo "============================================="
   echo ""
   echo "This setup will:"
   echo "  1) ensure Docker Desktop is installed"
   echo "  2) ensure Docker is running"
-  echo "  3) pull Nexo runtime container images"
+  echo "  3) pull Ashlar runtime container images"
   echo "  4) run a quick health check"
   echo ""
   echo "You do NOT need to know Docker internals."
@@ -223,7 +223,7 @@ run_container_smoke() {
     fi
 
     run_cmd docker run --rm -v "$abs_workspace:/work" -w /work "$IMAGE" --help
-    run_cmd docker run --rm -v "$abs_workspace:/work" -w /work "$SDK_IMAGE" dotnet restore application/src/Nexo.CLI/Nexo.CLI.csproj
+    run_cmd docker run --rm -v "$abs_workspace:/work" -w /work "$SDK_IMAGE" dotnet restore application/src/Ashlar.CLI/Ashlar.CLI.csproj
   fi
 }
 
@@ -245,7 +245,7 @@ main() {
   echo "  docker run --rm $SDK_IMAGE dotnet --info"
   if [[ -n "$WORKSPACE_DIR" ]]; then
     echo "  docker run --rm -v \"$WORKSPACE_DIR:/work\" -w /work $IMAGE pipeline validate --template /work/path/to/template.json"
-    echo "  docker run --rm -v \"$WORKSPACE_DIR:/work\" -w /work $SDK_IMAGE dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj"
+    echo "  docker run --rm -v \"$WORKSPACE_DIR:/work\" -w /work $SDK_IMAGE dotnet build application/src/Ashlar.CLI/Ashlar.CLI.csproj"
   fi
 }
 

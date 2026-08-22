@@ -11,22 +11,22 @@ Target recovery objectives for pilot Private customers:
 
 | Asset | Location (reference compose) | Method |
 |-------|---------------------------|--------|
-| Dailies / run artifacts | Docker volume `nexo-dailies` | `docker run --rm -v nexo-dailies:/data -v $(pwd):/backup alpine tar czf /backup/nexo-dailies.tgz /data` |
-| Copilot persistence | Docker volume `nexo-copilot-data` | Same pattern as dailies |
-| LiteDB audit / pattern stores | Docker volume `nexo-state` (`NEXO_STATE_DIR=/data/state` in the reference images), or the host path from `Nexo:PatternStorePath` / agent config when set (`docs/Configuration.md`, "Runtime state") | Same pattern as dailies, or filesystem copy while API stopped |
-| License file | `NEXO_LICENSE_FILE` or `Nexo:PrivateLicense:LicenseFilePath` | Secure copy to secrets vault |
+| Dailies / run artifacts | Docker volume `ashlar-dailies` | `docker run --rm -v ashlar-dailies:/data -v $(pwd):/backup alpine tar czf /backup/ashlar-dailies.tgz /data` |
+| Copilot persistence | Docker volume `ashlar-copilot-data` | Same pattern as dailies |
+| LiteDB audit / pattern stores | Docker volume `ashlar-state` (`ASHLAR_STATE_DIR=/data/state` in the reference images), or the host path from `Ashlar:PatternStorePath` / agent config when set (`docs/Configuration.md`, "Runtime state") | Same pattern as dailies, or filesystem copy while API stopped |
+| License file | `ASHLAR_LICENSE_FILE` or `Ashlar:PrivateLicense:LicenseFilePath` | Secure copy to secrets vault |
 | Configuration | Compose env + `appsettings` overrides | Version in git or sealed customer config repo |
 
 ## Backup procedure (reference stack)
 
 ```bash
-docker compose -f deploy/compose/docker-compose.private-single-tenant.yml stop nexo-api
+docker compose -f deploy/compose/docker-compose.private-single-tenant.yml stop ashlar-api
 docker run --rm \
-  -v nexo-dailies:/data/dailies:ro \
-  -v nexo-copilot-data:/data/copilot:ro \
+  -v ashlar-dailies:/data/dailies:ro \
+  -v ashlar-copilot-data:/data/copilot:ro \
   -v "$(pwd)/backups:/backup" \
-  alpine sh -c 'tar czf /backup/nexo-private-$(date -u +%Y%m%dT%H%M%SZ).tgz /data'
-docker compose -f deploy/compose/docker-compose.private-single-tenant.yml start nexo-api
+  alpine sh -c 'tar czf /backup/ashlar-private-$(date -u +%Y%m%dT%H%M%SZ).tgz /data'
+docker compose -f deploy/compose/docker-compose.private-single-tenant.yml start ashlar-api
 ```
 
 Store archives off-host (S3-compatible object storage or customer backup appliance). Encrypt at rest.
@@ -38,9 +38,9 @@ Store archives off-host (S3-compatible object storage or customer backup applian
 3. Recreate volumes and extract archive:
 
 ```bash
-docker volume create nexo-dailies
-docker volume create nexo-copilot-data
-docker run --rm -v nexo-dailies:/data/dailies -v nexo-copilot-data:/data/copilot -v "$(pwd)/backups:/backup" alpine sh -c 'tar xzf /backup/<archive>.tgz -C /'
+docker volume create ashlar-dailies
+docker volume create ashlar-copilot-data
+docker run --rm -v ashlar-dailies:/data/dailies -v ashlar-copilot-data:/data/copilot -v "$(pwd)/backups:/backup" alpine sh -c 'tar xzf /backup/<archive>.tgz -C /'
 ```
 
 4. Restore license file and environment variables.

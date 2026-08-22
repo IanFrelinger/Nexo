@@ -26,10 +26,10 @@ source_env_kv() {
   grep -E "^${key}=" "$COMPOSE_ENV_FILE" 2>/dev/null | head -1 | cut -d= -f2- | tr -d '\r' || true
 }
 
-API_KEY="$(source_env_kv Nexo__Security__ApiKey)"
-BEARER="$(source_env_kv Nexo__Security__PeerB__BearerToken)"
+API_KEY="$(source_env_kv Ashlar__Security__ApiKey)"
+BEARER="$(source_env_kv Ashlar__Security__PeerB__BearerToken)"
 if [[ -z "$API_KEY" ]]; then
-  echo "(Skipping knowledge verify: no Nexo__Security__ApiKey in env file)"
+  echo "(Skipping knowledge verify: no Ashlar__Security__ApiKey in env file)"
   exit 0
 fi
 
@@ -71,7 +71,7 @@ payload = {
 print(json.dumps(payload))
 ')"
 
-A_AUTH="X-Nexo-Api-Key: ${API_KEY}"
+A_AUTH="X-Ashlar-Api-Key: ${API_KEY}"
 
 mesh_post_json "http://${PEER_A_HOST}" "$A_AUTH" "$SEED_PAYLOAD" "/api/mesh/knowledge/import" >/dev/null
 echo "Seeded knowledge on director (peer-a) — OK"

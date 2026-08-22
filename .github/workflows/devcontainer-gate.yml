@@ -13,11 +13,11 @@ on:
       - "global.json"
       - "Directory.Build.props"
       - "Directory.Packages.props"
-      - "application/src/Nexo.CLI/**"
-      - "src/Nexo.Core.Application/**"
-      - "src/Nexo.Infrastructure/**"
-      - "src/Nexo.Tests.Infrastructure/**"
-      - "Nexo.LocalDevCore.slnf"
+      - "application/src/Ashlar.CLI/**"
+      - "src/Ashlar.Core.Application/**"
+      - "src/Ashlar.Infrastructure/**"
+      - "src/Ashlar.Tests.Infrastructure/**"
+      - "Ashlar.LocalDevCore.slnf"
   workflow_dispatch:
 
 jobs:

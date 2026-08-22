@@ -19,11 +19,11 @@ Placement orders eligible nodes by **`ReportedQueueDepth` ascending**, then fres
 
 ## Background rebalancer
 
-When **`Nexo:Mesh:Elastic:Enabled`** is true, **`MeshPendingTaskRebalancerBackgroundService`** every **`IntervalMinutes`** calls **`TryScheduleAsync`** for each **`Pending`** task whose **`CreatedAtUtc`** is older than **`PendingStaleSeconds`** (re-tries placement when new workers appear or load shifts).
+When **`Ashlar:Mesh:Elastic:Enabled`** is true, **`MeshPendingTaskRebalancerBackgroundService`** every **`IntervalMinutes`** calls **`TryScheduleAsync`** for each **`Pending`** task whose **`CreatedAtUtc`** is older than **`PendingStaleSeconds`** (re-tries placement when new workers appear or load shifts).
 
 This does **not** migrate **Assigned** or **Running** tasks with **active** leases; see [MeshPhase6LeasesAndCheckpoints.md](MeshPhase6LeasesAndCheckpoints.md) for lease expiry, sweep, and migrate-for-checkpoint.
 
-## Configuration (`Nexo__Mesh__Elastic__*`)
+## Configuration (`Ashlar__Mesh__Elastic__*`)
 
 | Key | Default | Description |
 |-----|---------|-------------|

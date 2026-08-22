@@ -1,11 +1,11 @@
-// Starter: Unity / .NET host calling Nexo.API Forge endpoints.
+// Starter: Unity / .NET host calling Ashlar.API Forge endpoints.
 // Add assembly references to System.Net.Http / System.Text.Json as needed.
 
 using System.Net.Http;
 using System.Text.Json;
 
-/// <summary>Minimal loader — replace URLs with your Nexo.API base.</summary>
-public static class NexoForgeBridge
+/// <summary>Minimal loader — replace URLs with your Ashlar.API base.</summary>
+public static class AshlarForgeBridge
 {
     public static async Task<string?> FetchManifestJsonAsync(HttpClient http, string baseUrl, string engineId)
     {

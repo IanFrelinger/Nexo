@@ -1,38 +1,38 @@
 # Local Docker Desktop override for the full-stack agent server.
 # Host ports / Ollama URL come from the .env Compose loads -- deploy/compose/.env (next to the compose
 # files, NOT the repo root) or an explicit --env-file <path> (see scripts/Start-FullstackAgentServer.ps1):
-#   NEXO_AGENT_SERVER_HTTP_PORT   host port published for the API/portal (default 8088)
-#   NEXO_OLLAMA_HOST_PORT         host port for Ollama when using host or bundled ollama (default 11434)
+#   ASHLAR_AGENT_SERVER_HTTP_PORT   host port published for the API/portal (default 8088)
+#   ASHLAR_OLLAMA_HOST_PORT         host port for Ollama when using host or bundled ollama (default 11434)
 #   OLLAMA_BASE_URL               where the API reaches Ollama (host.docker.internal:<port> or http://ollama:11434)
 #   OLLAMA_MODEL                  model tag
-#   NEXO_REPO_ROOT                host tree mounted at /work (default ../.. relative to this file = repo root)
+#   ASHLAR_REPO_ROOT                host tree mounted at /work (default ../.. relative to this file = repo root)
 #
 # Usage (from repo root):
-#   docker compose -f deploy/compose/docker-compose.agent-server.yml -f deploy/compose/docker-compose.agent-server.local.yml up -d --build nexo-api --no-deps
+#   docker compose -f deploy/compose/docker-compose.agent-server.yml -f deploy/compose/docker-compose.agent-server.local.yml up -d --build ashlar-api --no-deps
 services:
-  nexo-api:
+  ashlar-api:
     working_dir: /app
     environment:
       ASPNETCORE_CONTENTROOT: /app
       ASPNETCORE_URLS: http://+:8080
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
       OLLAMA_MODEL: ${OLLAMA_MODEL:-codellama:7b}
-      Nexo__NodeCapabilityRuntime__Ollama__BaseUrl: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
-      Nexo__Meai__OllamaBaseUrl: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
-      Nexo__Meai__OllamaModel: ${OLLAMA_MODEL:-codellama:7b}
-      NEXO_DAILIES_PATH: /data/dailies
-      NEXO_BACKGROUND_AGENTS_CONFIG: ${NEXO_BACKGROUND_AGENTS_CONFIG:-/agents/agent_set.fullstack.local.json}
-      Nexo__Barriers__RequireExplicitBarrier: "false"
-      NEXO_OBSERVATION_DEGRADED_MODE: "1"
+      Ashlar__NodeCapabilityRuntime__Ollama__BaseUrl: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      Ashlar__Meai__OllamaBaseUrl: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      Ashlar__Meai__OllamaModel: ${OLLAMA_MODEL:-codellama:7b}
+      ASHLAR_DAILIES_PATH: /data/dailies
+      ASHLAR_BACKGROUND_AGENTS_CONFIG: ${ASHLAR_BACKGROUND_AGENTS_CONFIG:-/agents/agent_set.fullstack.local.json}
+      Ashlar__Barriers__RequireExplicitBarrier: "false"
+      ASHLAR_OBSERVATION_DEGRADED_MODE: "1"
       # Scheduler hangs host start on large Docker Desktop bind mounts; use on-demand
       # POST /api/agent|/api/orchestrate|/api/director/run. Flip to true under WSL path.
-      Nexo__RegisterBackgroundAgentHostedService: ${Nexo__RegisterBackgroundAgentHostedService:-false}
+      Ashlar__RegisterBackgroundAgentHostedService: ${Ashlar__RegisterBackgroundAgentHostedService:-false}
       Logging__LogLevel__Default: Information
       Logging__LogLevel__Microsoft.AspNetCore: Warning
     volumes:
-      - nexo-dailies:/data/dailies
+      - ashlar-dailies:/data/dailies
       - ../../apps/runtime-studio/config/agent_set.fullstack.local.json:/agents/agent_set.fullstack.local.json:ro
-      - ${NEXO_REPO_ROOT:-../..}:/work
+      - ${ASHLAR_REPO_ROOT:-../..}:/work
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
       interval: 10s

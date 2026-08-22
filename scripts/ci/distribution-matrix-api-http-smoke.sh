@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
-# Build Nexo.API image from .docker/Dockerfile.api, run with mock provider,
+# Build Ashlar.API image from .docker/Dockerfile.api, run with mock provider,
 # and assert /health and /api/status respond (HTTP-only consumer smoke).
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "${ROOT}"
 
-IMAGE_TAG="${DIST_MATRIX_API_IMAGE_TAG:-nexo-api:dist-matrix}"
+IMAGE_TAG="${DIST_MATRIX_API_IMAGE_TAG:-ashlar-api:dist-matrix}"
 HOST_PORT="${DIST_MATRIX_API_PORT:-18080}"
 WAIT_SECS="${DIST_MATRIX_API_WAIT_SECS:-120}"
 
 echo "Building API image ${IMAGE_TAG} ..."
 docker build -f .docker/Dockerfile.api --tag "${IMAGE_TAG}" .
 
-CONTAINER="nexo-api-dist-matrix-${RANDOM}"
+CONTAINER="ashlar-api-dist-matrix-${RANDOM}"
 cleanup() {
   docker rm -f "${CONTAINER}" >/dev/null 2>&1 || true
 }
@@ -20,7 +20,7 @@ trap cleanup EXIT
 
 echo "Starting container ${CONTAINER} on port ${HOST_PORT} ..."
 docker run -d --name "${CONTAINER}" -p "${HOST_PORT}:8080" \
-  -e NEXO_ALLOW_MOCK=1 \
+  -e ASHLAR_ALLOW_MOCK=1 \
   "${IMAGE_TAG}"
 
 start_ts=$(date +%s)

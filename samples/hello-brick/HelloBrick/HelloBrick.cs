@@ -1,10 +1,10 @@
-using Nexo.Core.Domain.Bricks;
-using Nexo.Core.Domain.Execution;
+using Ashlar.Core.Domain.Bricks;
+using Ashlar.Core.Domain.Execution;
 
 namespace HelloBrick;
 
 /// <summary>
-/// Example code-authored Nexo brick generated from the code-brick template.
+/// Example code-authored Ashlar brick generated from the code-brick template.
 /// </summary>
 public sealed class HelloBrick : DomainBrick
 {
@@ -15,7 +15,7 @@ public sealed class HelloBrick : DomainBrick
         Version = "1.0.0";
         Icon = "🧱";
         Category = BrickCategory.Transform;
-        Description = "A starter code-authored Nexo brick.";
+        Description = "A starter code-authored Ashlar brick.";
         Interface = new BrickInterface
         {
             Inputs =

@@ -1,6 +1,6 @@
 # Environment Setup Gate v1
 
-This gate verifies that each supported host platform can bootstrap a working Nexo development environment and restore required NuGet dependencies.
+This gate verifies that each supported host platform can bootstrap a working Ashlar development environment and restore required NuGet dependencies.
 
 ## Goal
 
@@ -32,7 +32,7 @@ Each matrix job performs:
    - Linux/macOS: `bash scripts/setup/setup.sh restore`
    - Windows: `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode restore`
 4. Verify post-restore build readiness:
-   - `dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal`
+   - `dotnet build application/src/Ashlar.CLI/Ashlar.CLI.csproj --no-restore -v minimal`
 
 Ephemeral container lanes perform:
 
@@ -40,13 +40,13 @@ Ephemeral container lanes perform:
 2. Execute:
    - `bash scripts/setup/setup-linux.sh check`
    - `bash scripts/setup/setup-linux.sh restore`
-   - `dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal`
+   - `dotnet build application/src/Ashlar.CLI/Ashlar.CLI.csproj --no-restore -v minimal`
 
 Additionally, ephemeral Linux container jobs run in fresh containers and execute:
 
 1. `bash scripts/setup/setup-linux.sh check`
 2. `bash scripts/setup/setup-linux.sh restore`
-3. `dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal`
+3. `dotnet build application/src/Ashlar.CLI/Ashlar.CLI.csproj --no-restore -v minimal`
 
 ## Local usage
 
@@ -68,11 +68,11 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -M
 
 - Dependency check completes with all required dependencies present.
 - NuGet restore succeeds for the setup baseline project set:
-  - `src/Nexo.Core.Application/Nexo.Core.Application.csproj`
-  - `src/Nexo.Infrastructure/Nexo.Infrastructure.csproj`
-  - `application/src/Nexo.CLI/Nexo.CLI.csproj`
-  - `src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.csproj`
-  - `src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj`
+  - `src/Ashlar.Core.Application/Ashlar.Core.Application.csproj`
+  - `src/Ashlar.Infrastructure/Ashlar.Infrastructure.csproj`
+  - `application/src/Ashlar.CLI/Ashlar.CLI.csproj`
+  - `src/Ashlar.Tests.Infrastructure/scripts/copy-assemblies.csproj`
+  - `src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj`
 - CLI project builds with `--no-restore` after restore.
 - Ephemeral container jobs pass for all configured Linux images.
 

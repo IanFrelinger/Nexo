@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Smoke checks for middleware ingress (correlation, catalog, Swagger, optional SMS lab, optional SNS webhook).
-# Usage from repo root against a running Nexo.API:
-#   NEXO_BASE_URL=http://127.0.0.1:8080 ./scripts/middleware-ingress-smoke.sh
+# Usage from repo root against a running Ashlar.API:
+#   ASHLAR_BASE_URL=http://127.0.0.1:8080 ./scripts/middleware-ingress-smoke.sh
 # Optional: RUN_SMS_SMOKE=1 and/or RUN_SNS_SMOKE=1 when the matching feature flags are enabled on the server.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-BASE="${NEXO_BASE_URL:-http://127.0.0.1:8080}"
+BASE="${ASHLAR_BASE_URL:-http://127.0.0.1:8080}"
 
 echo "== Base: $BASE =="
 

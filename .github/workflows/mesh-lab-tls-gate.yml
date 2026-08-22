@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      COMPOSE_PROJECT_NAME: nexo_mesh_lab_tls_ci
+      COMPOSE_PROJECT_NAME: ashlar_mesh_lab_tls_ci
       DOCKER_DEFAULT_PLATFORM: linux/amd64
     steps:
       - name: Checkout
@@ -30,11 +30,11 @@ jobs:
           KEY="mesh-lab-tls-${GITHUB_RUN_ID}-${GITHUB_SHA}"
           KEY="${KEY:0:64}"
           {
-            echo "Nexo__Security__ApiKey=${KEY}"
-            echo "Nexo__Security__PeerB__BearerToken=${KEY}-bearer"
-            echo "Nexo__Security__Worker__BasicAuthPassword=${KEY}-basic"
+            echo "Ashlar__Security__ApiKey=${KEY}"
+            echo "Ashlar__Security__PeerB__BearerToken=${KEY}-bearer"
+            echo "Ashlar__Security__Worker__BasicAuthPassword=${KEY}-basic"
             echo "MESH_LAB_PEER_REGISTRATION_KEY=${KEY}-peer-registration"
-            echo "Nexo__Mesh__Persistence__Provider=LiteDb"
+            echo "Ashlar__Mesh__Persistence__Provider=LiteDb"
             echo "MESH_LAB_PEER_A_PUBLISH=127.0.0.1:18081"
             echo "MESH_LAB_PEER_B_PUBLISH=127.0.0.1:18082"
             echo "MESH_LAB_TLS_PUBLISH=127.0.0.1:18443"

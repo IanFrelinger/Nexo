@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT="$(pwd)"
-SANDBOX_ROOT="${ROOT}/.nexo"
+SANDBOX_ROOT="${ROOT}/.ashlar"
 PROFILE="default"
 DRY_RUN=0
 
@@ -33,7 +33,7 @@ if [[ -z "${ROOT}" ]]; then
   exit 2
 fi
 
-SANDBOX_ROOT="${ROOT}/.nexo"
+SANDBOX_ROOT="${ROOT}/.ashlar"
 
 if [[ "${DRY_RUN}" -eq 0 ]]; then
   mkdir -p "${SANDBOX_ROOT}/agents/workspaces"
@@ -53,10 +53,10 @@ if [[ "${DRY_RUN}" -eq 1 ]]; then
 fi
 echo
 echo "Recommended environment exports:"
-echo "  export NEXO_SANDBOX_ROOT=\"${SANDBOX_ROOT}\""
-echo "  export NEXO_TOOL_ROOT=\"${SANDBOX_ROOT}/tools\""
-echo "  export NEXO_HOST_APP_PROJECT_ROOT=\"${SANDBOX_ROOT}/host_apps/projects\""
-echo "  export NEXO_HOST_APP_CACHE_ROOT=\"${SANDBOX_ROOT}/host_apps/cache\""
+echo "  export ASHLAR_SANDBOX_ROOT=\"${SANDBOX_ROOT}\""
+echo "  export ASHLAR_TOOL_ROOT=\"${SANDBOX_ROOT}/tools\""
+echo "  export ASHLAR_HOST_APP_PROJECT_ROOT=\"${SANDBOX_ROOT}/host_apps/projects\""
+echo "  export ASHLAR_HOST_APP_CACHE_ROOT=\"${SANDBOX_ROOT}/host_apps/cache\""
 echo
 echo "Optional cache/tool relocation (project-local):"
 echo "  export XDG_CACHE_HOME=\"${SANDBOX_ROOT}/tools/cache\""

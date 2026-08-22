@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Bootstrap a Linux host (e.g. cloud VM) for the virtual mesh lab: Docker + Compose,
-# env file, build/up, verify. Run from the Nexo repository root after clone.
+# env file, build/up, verify. Run from the Ashlar repository root after clone.
 #
 # Usage:
 #   chmod +x scripts/bootstrap-cloud-mesh-lab.sh
@@ -96,9 +96,9 @@ ensure_env_file() {
   b="$(openssl rand -hex 16 2>/dev/null || printf '%s' "lab-bearer-change-me")"
   w="$(openssl rand -hex 12 2>/dev/null || printf '%s' "lab-basic-change-me")"
   sed -i.bak \
-    -e "s/^Nexo__Security__ApiKey=.*/Nexo__Security__ApiKey=${k}/" \
-    -e "s/^Nexo__Security__PeerB__BearerToken=.*/Nexo__Security__PeerB__BearerToken=${b}/" \
-    -e "s/^Nexo__Security__Worker__BasicAuthPassword=.*/Nexo__Security__Worker__BasicAuthPassword=${w}/" \
+    -e "s/^Ashlar__Security__ApiKey=.*/Ashlar__Security__ApiKey=${k}/" \
+    -e "s/^Ashlar__Security__PeerB__BearerToken=.*/Ashlar__Security__PeerB__BearerToken=${b}/" \
+    -e "s/^Ashlar__Security__Worker__BasicAuthPassword=.*/Ashlar__Security__Worker__BasicAuthPassword=${w}/" \
     "${target}" && rm -f "${target}.bak"
   echo "Created ${target} with random lab secrets (review before production use)."
 }

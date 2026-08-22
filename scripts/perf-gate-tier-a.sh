@@ -4,16 +4,16 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-REPORT_DIR=".nexo/perf"
+REPORT_DIR=".ashlar/perf"
 mkdir -p "$REPORT_DIR"
 
-ORCH="src/Nexo.Tests.Orchestration/Nexo.Tests.Orchestration.csproj"
-BG="src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj"
+ORCH="src/Ashlar.Tests.Orchestration/Ashlar.Tests.Orchestration.csproj"
+BG="src/Ashlar.Tests.BackgroundAgents/Ashlar.Tests.BackgroundAgents.csproj"
 
 echo "== Perf Tier A: orchestration performance tests =="
 dotnet build "$ORCH" -v minimal
 dotnet test "$ORCH" -f net8.0 --no-build \
-  --filter "FullyQualifiedName~Nexo.Tests.Orchestration.Performance" \
+  --filter "FullyQualifiedName~Ashlar.Tests.Orchestration.Performance" \
   --logger "trx;LogFileName=perf-orchestration.trx" \
   --results-directory "$REPORT_DIR" \
   --blame-hang-timeout 120s --blame-hang-dump-type none
@@ -21,7 +21,7 @@ dotnet test "$ORCH" -f net8.0 --no-build \
 echo "== Perf Tier A: background agent performance tests =="
 dotnet build "$BG" -v minimal
 dotnet test "$BG" -f net8.0 --no-build \
-  --filter "FullyQualifiedName~Nexo.Tests.BackgroundAgents.Performance" \
+  --filter "FullyQualifiedName~Ashlar.Tests.BackgroundAgents.Performance" \
   --logger "trx;LogFileName=perf-background-agents.trx" \
   --results-directory "$REPORT_DIR" \
   --blame-hang-timeout 120s --blame-hang-dump-type none

@@ -1,15 +1,15 @@
 // Forge map host sample entry point.
 using System.Net.Http.Json;
 using System.Text.Json;
-using Nexo.Commercial.GameDomain.Mapping;
+using Ashlar.Commercial.GameDomain.Mapping;
 
-var baseUrl = (Environment.GetEnvironmentVariable("NEXO_API_BASE_URL") ?? "http://127.0.0.1:8080").TrimEnd('/');
+var baseUrl = (Environment.GetEnvironmentVariable("ASHLAR_API_BASE_URL") ?? "http://127.0.0.1:8080").TrimEnd('/');
 var engineId = Environment.GetEnvironmentVariable("FORGE_ENGINE_ID") ?? "unity";
 var mapboxToken = Environment.GetEnvironmentVariable("MAPBOX_ACCESS_TOKEN");
 var tileset = Environment.GetEnvironmentVariable("MAPBOX_TILESET_ID") ?? "mapbox.mapbox-streets-v8";
 var aestheticId = Environment.GetEnvironmentVariable("FORGE_AESTHETIC_ID") ?? "voxel";
 
-Console.WriteLine("=== Nexo Forge host sample (terrain parity + material model option + engine packages) ===");
+Console.WriteLine("=== Ashlar Forge host sample (terrain parity + material model option + engine packages) ===");
 Console.WriteLine($"API base: {baseUrl}");
 Console.WriteLine($"Engine id: {engineId}");
 Console.WriteLine($"Aesthetic id (cache key): {aestheticId}");
@@ -35,7 +35,7 @@ if (!string.IsNullOrWhiteSpace(mapboxToken))
     Console.WriteLine($"Vector URL (token redacted): https://api.mapbox.com/v4/{tileset}/{zoom}/{x}/{y}.vector.pbf?access_token=<secret>");
     Console.WriteLine($"Terrain-RGB URL (token redacted): https://api.mapbox.com/v4/mapbox.terrain-rgb/{zoom}/{x}/{y}.pngraw?access_token=<secret>");
 
-    var cacheDir = Environment.GetEnvironmentVariable("NEXO_TILE_CACHE_DIR");
+    var cacheDir = Environment.GetEnvironmentVariable("ASHLAR_TILE_CACHE_DIR");
     await RunTileCacheStep(http, cacheDir, aestheticId, "mapbox", zoom, x, y, vectorUrl).ConfigureAwait(false);
 
     await RunPipelineStep(http, baseUrl, vectorUrl, terrainUrl, zoom, x, y).ConfigureAwait(false);
@@ -88,7 +88,7 @@ static async Task RunTileCacheStep(
     if (string.IsNullOrWhiteSpace(cacheDir))
     {
         Console.WriteLine();
-        Console.WriteLine("(Tile cache) Set NEXO_TILE_CACHE_DIR to demo MapTileDiskCache.");
+        Console.WriteLine("(Tile cache) Set ASHLAR_TILE_CACHE_DIR to demo MapTileDiskCache.");
         return;
     }
 
@@ -227,7 +227,7 @@ static async Task RunManifestStep(HttpClient http, string baseUrl, string engine
     }
     catch (HttpRequestException ex)
     {
-        Console.WriteLine($"Request failed (is Nexo.API running?): {ex.Message}");
+        Console.WriteLine($"Request failed (is Ashlar.API running?): {ex.Message}");
     }
 }
 
@@ -258,7 +258,7 @@ static async Task RunPipelineStep(HttpClient http, string baseUrl, string vector
         if (!resp.IsSuccessStatusCode)
         {
             Console.WriteLine();
-            Console.WriteLine("If fetch failed with validation errors, configure Nexo:ForgeSession:AllowedMapFetchHosts");
+            Console.WriteLine("If fetch failed with validation errors, configure Ashlar:ForgeSession:AllowedMapFetchHosts");
             Console.WriteLine("to include api.mapbox.com (see appsettings / secrets).");
         }
     }

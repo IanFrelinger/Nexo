@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors />
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Ashlar.Hosting\Ashlar.Hosting.csproj" />
+    <ProjectReference Include="..\Ashlar.Transport.Grpc.Server\Ashlar.Transport.Grpc.Server.csproj" />
+  </ItemGroup>
+</Project>

@@ -1,12 +1,12 @@
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
-namespace Nexo.Spikes.FirstFlight;
+namespace Ashlar.Spikes.FirstFlight;
 
 /// <summary>
 /// A proposal produced by a model AT FLIGHT TIME. The run script called the local
 /// provider (ollama), recorded the raw exchange to the repo's recordings directory, and
-/// mounted the recording read-only at <c>/nexo-live</c>; this loader extracts the
+/// mounted the recording read-only at <c>/ashlar-live</c>; this loader extracts the
 /// proposed source from the model's raw response.
 ///
 /// <para>Extraction is deliberately mechanical (fenced code block, else first

@@ -1,6 +1,6 @@
 # Agent Sandbox Architecture (Host + Project-Scoped Tools)
 
-This guide describes how to run Nexo agents in a constrained sandbox while still
+This guide describes how to run Ashlar agents in a constrained sandbox while still
 allowing host-bound tools and dependency downloads.
 
 ## Goals
@@ -13,14 +13,14 @@ allowing host-bound tools and dependency downloads.
 
 `PathAllowlist` supports sandboxed writes in two ways:
 
-- Relative allowlisted prefixes (defaults): `src/`, `tests/`, `docs/`, `.nexo/`
-- Optional extra prefixes via env: `NEXO_PATH_ALLOWLIST_EXTRA`
-- Absolute paths only when inside sandbox root (`WorldSnapshot["SandboxRoot"]` or `NEXO_SANDBOX_ROOT`)
+- Relative allowlisted prefixes (defaults): `src/`, `tests/`, `docs/`, `.ashlar/`
+- Optional extra prefixes via env: `ASHLAR_PATH_ALLOWLIST_EXTRA`
+- Absolute paths only when inside sandbox root (`WorldSnapshot["SandboxRoot"]` or `ASHLAR_SANDBOX_ROOT`)
 
-When set, `NEXO_PATH_ALLOWLIST_EXTRA` extends relative write prefixes (comma-separated):
+When set, `ASHLAR_PATH_ALLOWLIST_EXTRA` extends relative write prefixes (comma-separated):
 
 ```bash
-export NEXO_PATH_ALLOWLIST_EXTRA=".nexo/host_apps/,.nexo/agents/workspaces/"
+export ASHLAR_PATH_ALLOWLIST_EXTRA=".ashlar/host_apps/,.ashlar/agents/workspaces/"
 ```
 
 The policy still blocks:
@@ -34,7 +34,7 @@ The policy still blocks:
 Create a per-project sandbox tree under repo root:
 
 ```text
-.nexo/
+.ashlar/
   agents/
     workspaces/    # agent-created artifacts and generated work trees
   tools/
@@ -60,7 +60,7 @@ Some tools cannot be containerized economically or by license.
 For these, use a split model:
 
 1. Keep editor/runtime host-installed by a human operator.
-2. Keep project-specific dependencies/caches under `.nexo/`.
+2. Keep project-specific dependencies/caches under `.ashlar/`.
 3. Restrict agent-generated files to sandbox + approved code folders.
 4. Trigger host apps through wrapper scripts that accept only sandboxed paths.
 
@@ -80,25 +80,25 @@ For these, use a split model:
 ## Minimal hardening checklist
 
 1. Run agent daemons as non-admin user.
-2. Set `NEXO_SANDBOX_ROOT` in daemon environment.
-3. Optionally set `NEXO_PATH_ALLOWLIST_EXTRA` for additional project-local prefixes.
-4. Route all temp/cache dirs (`TMPDIR`, package caches) to `.nexo/tools/cache` and `.nexo/host_apps/cache`.
+2. Set `ASHLAR_SANDBOX_ROOT` in daemon environment.
+3. Optionally set `ASHLAR_PATH_ALLOWLIST_EXTRA` for additional project-local prefixes.
+4. Route all temp/cache dirs (`TMPDIR`, package caches) to `.ashlar/tools/cache` and `.ashlar/host_apps/cache`.
 5. Keep network egress rules narrow for worker nodes where possible.
 6. Audit tool calls and denied writes.
 
 ## Example daemon env
 
 ```bash
-export NEXO_SANDBOX_ROOT="$PWD/.nexo"
-export NEXO_PATH_ALLOWLIST_EXTRA=".nexo/host_apps/,.nexo/agents/workspaces/"
-export TMPDIR="$PWD/.nexo/tools/cache/tmp"
-export NUGET_PACKAGES="$PWD/.nexo/tools/cache/nuget"
-export npm_config_cache="$PWD/.nexo/tools/cache/npm"
+export ASHLAR_SANDBOX_ROOT="$PWD/.ashlar"
+export ASHLAR_PATH_ALLOWLIST_EXTRA=".ashlar/host_apps/,.ashlar/agents/workspaces/"
+export TMPDIR="$PWD/.ashlar/tools/cache/tmp"
+export NUGET_PACKAGES="$PWD/.ashlar/tools/cache/nuget"
+export npm_config_cache="$PWD/.ashlar/tools/cache/npm"
 ```
 
 Then run:
 
 ```bash
-dotnet run --project application/src/Nexo.CLI -- background-agent daemon --duration 2h
+dotnet run --project application/src/Ashlar.CLI -- background-agent daemon --duration 2h
 ```
 

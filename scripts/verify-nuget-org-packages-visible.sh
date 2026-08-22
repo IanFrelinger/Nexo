@@ -1,30 +1,30 @@
 #!/usr/bin/env bash
 # Poll nuget.org flat container until all listed package versions return HTTP 200 (index lag after push).
 #
-# NEXO_NUGET_VERIFY_VERSION — required semver (no v prefix)
-# NEXO_NUGET_VERIFY_PACKAGE_IDS — comma-separated ids (default: Nexo.Hosting.Bundle,Nexo.Hosting,Nexo.Sdk,Nexo.CLI)
-# NEXO_NUGET_VERIFY_PACKAGE_ID — if set and NEXO_NUGET_VERIFY_PACKAGE_IDS unset, a single id (backward compat)
-# NEXO_NUGET_VERIFY_ATTEMPTS / NEXO_NUGET_VERIFY_SLEEP_SEC — optional (defaults 12 / 15)
+# ASHLAR_NUGET_VERIFY_VERSION — required semver (no v prefix)
+# ASHLAR_NUGET_VERIFY_PACKAGE_IDS — comma-separated ids (default: Ashlar.Hosting.Bundle,Ashlar.Hosting,Ashlar.Sdk,Ashlar.CLI)
+# ASHLAR_NUGET_VERIFY_PACKAGE_ID — if set and ASHLAR_NUGET_VERIFY_PACKAGE_IDS unset, a single id (backward compat)
+# ASHLAR_NUGET_VERIFY_ATTEMPTS / ASHLAR_NUGET_VERIFY_SLEEP_SEC — optional (defaults 12 / 15)
 set -euo pipefail
-VER="${NEXO_NUGET_VERIFY_VERSION:?set NEXO_NUGET_VERIFY_VERSION (semver, no v prefix)}"
+VER="${ASHLAR_NUGET_VERIFY_VERSION:?set ASHLAR_NUGET_VERIFY_VERSION (semver, no v prefix)}"
 VER="${VER#v}"
-ATTEMPTS="${NEXO_NUGET_VERIFY_ATTEMPTS:-12}"
-SLEEP_SEC="${NEXO_NUGET_VERIFY_SLEEP_SEC:-15}"
+ATTEMPTS="${ASHLAR_NUGET_VERIFY_ATTEMPTS:-12}"
+SLEEP_SEC="${ASHLAR_NUGET_VERIFY_SLEEP_SEC:-15}"
 # GitHub Actions may pass empty strings for unset repo variables; treat as defaults.
 [[ -z "${ATTEMPTS}" ]] && ATTEMPTS=12
 [[ -z "${SLEEP_SEC}" ]] && SLEEP_SEC=15
 
-# GitHub Actions may set NEXO_NUGET_VERIFY_PACKAGE_IDS to empty when the repo var is unset; treat as default.
-if [[ -n "${NEXO_NUGET_VERIFY_PACKAGE_IDS:-}" && "${NEXO_NUGET_VERIFY_PACKAGE_IDS}" != "" ]]; then
-  mapfile -t IDS < <(echo "${NEXO_NUGET_VERIFY_PACKAGE_IDS}" | tr ',' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep -v '^$' || true)
-elif [[ -n "${NEXO_NUGET_VERIFY_PACKAGE_ID:-}" ]]; then
-  IDS=("${NEXO_NUGET_VERIFY_PACKAGE_ID}")
+# GitHub Actions may set ASHLAR_NUGET_VERIFY_PACKAGE_IDS to empty when the repo var is unset; treat as default.
+if [[ -n "${ASHLAR_NUGET_VERIFY_PACKAGE_IDS:-}" && "${ASHLAR_NUGET_VERIFY_PACKAGE_IDS}" != "" ]]; then
+  mapfile -t IDS < <(echo "${ASHLAR_NUGET_VERIFY_PACKAGE_IDS}" | tr ',' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep -v '^$' || true)
+elif [[ -n "${ASHLAR_NUGET_VERIFY_PACKAGE_ID:-}" ]]; then
+  IDS=("${ASHLAR_NUGET_VERIFY_PACKAGE_ID}")
 else
-  IDS=(Nexo.Hosting.Bundle Nexo.Hosting Nexo.Sdk Nexo.CLI)
+  IDS=(Ashlar.Hosting.Bundle Ashlar.Hosting Ashlar.Sdk Ashlar.CLI)
 fi
 
 if [[ "${#IDS[@]}" -eq 0 ]]; then
-  echo "::error::No package ids to verify (set NEXO_NUGET_VERIFY_PACKAGE_IDS or NEXO_NUGET_VERIFY_PACKAGE_ID)."
+  echo "::error::No package ids to verify (set ASHLAR_NUGET_VERIFY_PACKAGE_IDS or ASHLAR_NUGET_VERIFY_PACKAGE_ID)."
   exit 1
 fi
 

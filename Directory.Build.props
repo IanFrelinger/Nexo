@@ -17,17 +17,17 @@
     <NoWarn>$(NoWarn);NU1510</NoWarn>
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
     <Deterministic>true</Deterministic>
-    <RepositoryUrl>https://github.com/IanFrelinger/Nexo</RepositoryUrl>
+    <RepositoryUrl>https://github.com/IanFrelinger/Ashlar</RepositoryUrl>
     <!-- Open packable projects resolve Apache-2.0 via Directory.Build.targets; commercial clears the expression. -->
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/IanFrelinger/Nexo</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/IanFrelinger/Ashlar</PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <PackageIcon Condition="Exists('$(MSBuildThisFileDirectory)assets/brand/nexo-icon-nuget-128.png')">icon.png</PackageIcon>
+    <PackageIcon Condition="Exists('$(MSBuildThisFileDirectory)assets/brand/ashlar-icon-nuget-128.png')">icon.png</PackageIcon>
   </PropertyGroup>
 
   <!-- Canonical package version source: root VERSION file (scripts/resolve-canonical-package-version.sh). -->
   <PropertyGroup Condition="Exists('$(MSBuildThisFileDirectory)VERSION')">
-    <NexoPackageVersion>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)VERSION').Trim())</NexoPackageVersion>
+    <AshlarPackageVersion>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)VERSION').Trim())</AshlarPackageVersion>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(IsTestProject)' == 'true'">
@@ -37,20 +37,20 @@
   <!-- Override transitive System.Text.Encodings.Web 4.5.x (NU1904 / GHSA-ghhp-997w-qr28). -->
   <!-- Override transitive System.Text.RegularExpressions 4.3.0 (NU1903 / GHSA-cmhx-cq75-c4mj). -->
   <!-- Skip for package-only SDK sample: uses explicit versions + local Directory.Packages.props (see docs/samples/.../package-consumer). -->
-  <ItemGroup Condition="'$(MSBuildProjectName)' != 'StableSdkHostSample.Package' AND '$(MSBuildProjectName)' != 'Nexo.Hosting.Bundle' AND '$(MSBuildProjectName)' != 'Nexo.Runtime.Bundle' AND '$(MSBuildProjectName)' != 'Nexo.NugetOrgRestoreVerify' AND '$(MSBuildProjectName)' != 'Nexo.NugetOrgRestoreHostingOnly' AND '$(MSBuildProjectName)' != 'Nexo.Brick.Contracts'">
+  <ItemGroup Condition="'$(MSBuildProjectName)' != 'StableSdkHostSample.Package' AND '$(MSBuildProjectName)' != 'Ashlar.Hosting.Bundle' AND '$(MSBuildProjectName)' != 'Ashlar.Runtime.Bundle' AND '$(MSBuildProjectName)' != 'Ashlar.NugetOrgRestoreVerify' AND '$(MSBuildProjectName)' != 'Ashlar.NugetOrgRestoreHostingOnly' AND '$(MSBuildProjectName)' != 'Ashlar.Brick.Contracts'">
     <PackageReference Include="System.Text.Encodings.Web" />
     <PackageReference Include="System.Text.RegularExpressions" />
   </ItemGroup>
 
   <!-- NuGet pack: README at repo root (NU5039 if only PackageReadmeFile without packed file). -->
-  <ItemGroup Condition="'$(IsPackable)' == 'true' AND '$(MSBuildProjectName)' != 'Nexo.Hosting.Bundle' AND '$(MSBuildProjectName)' != 'Nexo.Runtime.Bundle'">
+  <ItemGroup Condition="'$(IsPackable)' == 'true' AND '$(MSBuildProjectName)' != 'Ashlar.Hosting.Bundle' AND '$(MSBuildProjectName)' != 'Ashlar.Runtime.Bundle'">
     <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
   <!-- NuGet pack: brand icon from assets/brand (NU5046 if only PackageIcon without packed file).
        No bundle exclusion here, unlike README above: the bundles pack their OWN README.md, but
        no project packs its own icon, so every packable project takes this one. -->
-  <ItemGroup Condition="'$(IsPackable)' == 'true' AND Exists('$(MSBuildThisFileDirectory)assets/brand/nexo-icon-nuget-128.png')">
-    <None Include="$(MSBuildThisFileDirectory)assets/brand/nexo-icon-nuget-128.png" Pack="true" PackagePath="icon.png" Visible="false" />
+  <ItemGroup Condition="'$(IsPackable)' == 'true' AND Exists('$(MSBuildThisFileDirectory)assets/brand/ashlar-icon-nuget-128.png')">
+    <None Include="$(MSBuildThisFileDirectory)assets/brand/ashlar-icon-nuget-128.png" Pack="true" PackagePath="icon.png" Visible="false" />
   </ItemGroup>
 </Project>

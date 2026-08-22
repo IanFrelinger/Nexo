@@ -5,16 +5,16 @@ name: Security Gate
 on:
   pull_request:
     paths:
-      - "src/Nexo.Infrastructure/Trust/**"
-      - "src/Nexo.Core.Application/Trust/**"
-      - "src/Nexo.Tests.Infrastructure/Tests/Trust/**"
-      - "src/Nexo.Tests.Infrastructure/Tests/API/*Security*.cs"
-      - "src/Nexo.Tests.Infrastructure/Tests/API/NexoApi*.cs"
-      - "src/Nexo.Tests.Infrastructure/Tests/Safety/**"
-      - "application/src/Nexo.API/Security/**"
-      - "application/src/Nexo.CLI/Commands/TrustCommand.cs"
-      - "application/src/Nexo.CLI/Program.TrustCommands.cs"
-      - "application/src/Nexo.CLI/Program.CommandRegistration.cs"
+      - "src/Ashlar.Infrastructure/Trust/**"
+      - "src/Ashlar.Core.Application/Trust/**"
+      - "src/Ashlar.Tests.Infrastructure/Tests/Trust/**"
+      - "src/Ashlar.Tests.Infrastructure/Tests/API/*Security*.cs"
+      - "src/Ashlar.Tests.Infrastructure/Tests/API/AshlarApi*.cs"
+      - "src/Ashlar.Tests.Infrastructure/Tests/Safety/**"
+      - "application/src/Ashlar.API/Security/**"
+      - "application/src/Ashlar.CLI/Commands/TrustCommand.cs"
+      - "application/src/Ashlar.CLI/Program.TrustCommands.cs"
+      - "application/src/Ashlar.CLI/Program.CommandRegistration.cs"
       - "scripts/security-gate*.sh"
       - "Makefile"
       - ".github/workflows/security-gate.yml"
@@ -48,19 +48,19 @@ jobs:
         if: github.event_name != 'workflow_dispatch' || inputs.tier == 'a' || inputs.tier == 'full'
         run: make security-gate-tier-a
         env:
-          NEXO_ALLOW_MOCK: "1"
+          ASHLAR_ALLOW_MOCK: "1"
 
       - name: Tier B (API security)
         if: github.event_name != 'workflow_dispatch' || inputs.tier == 'b' || inputs.tier == 'full'
         run: make security-gate-tier-b
         env:
-          NEXO_ALLOW_MOCK: "1"
+          ASHLAR_ALLOW_MOCK: "1"
 
       - name: Tier C (trust CLI)
         if: github.event_name == 'workflow_dispatch' && (inputs.tier == 'c' || inputs.tier == 'full')
         run: make security-gate-tier-c
         env:
-          NEXO_ALLOW_MOCK: "1"
+          ASHLAR_ALLOW_MOCK: "1"
 
       - name: Tier D (supply chain)
         if: github.event_name == 'workflow_dispatch' && (inputs.tier == 'd' || inputs.tier == 'full')
@@ -70,13 +70,13 @@ jobs:
         if: github.event_name == 'workflow_dispatch' && (inputs.tier == 'e' || inputs.tier == 'full')
         run: make security-gate-tier-e
         env:
-          NEXO_ALLOW_MOCK: "1"
+          ASHLAR_ALLOW_MOCK: "1"
 
       - name: Upload supply-chain reports
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: security-gate-reports
-          path: .nexo/security-gate/**
+          path: .ashlar/security-gate/**
           if-no-files-found: ignore
           retention-days: 30

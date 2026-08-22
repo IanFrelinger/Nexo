@@ -9,9 +9,9 @@ tags:
   - parsing
 touch:
   pathPrefixes:
-    - applications/Nexo.Samples.Dogfood/Colours/
+    - applications/Ashlar.Samples.Dogfood/Colours/
   namespaces:
-    - Nexo.Samples.Dogfood.Colours
+    - Ashlar.Samples.Dogfood.Colours
   capabilities:
     - repo.fs.write
 ---
@@ -19,7 +19,7 @@ touch:
 Provide a deterministic brick that parses a 6-digit hexadecimal RGB colour, with or without a
 leading `#`, into its three channels and a normalized lowercase form.
 
-The brick is class `RgbHexParseBrick` in namespace `Nexo.Samples.Dogfood.Colours`, with
+The brick is class `RgbHexParseBrick` in namespace `Ashlar.Samples.Dogfood.Colours`, with
 `Id = "rgb-hex-parse"`.
 
 Contract:
@@ -36,10 +36,10 @@ Three-digit shorthand (`#abc`), whitespace, and eight-digit RGBA are all invalid
 Skeleton (fill in `ExecuteAsync`; do not add, remove, or reorder members):
 
 ```csharp
-using Nexo.Core.Domain.Bricks;
-using Nexo.Core.Domain.Execution;
+using Ashlar.Core.Domain.Bricks;
+using Ashlar.Core.Domain.Execution;
 
-namespace Nexo.Samples.Dogfood.Colours;
+namespace Ashlar.Samples.Dogfood.Colours;
 
 public sealed class RgbHexParseBrick : DomainBrick
 {

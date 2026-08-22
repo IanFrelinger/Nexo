@@ -4,8 +4,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-INFRA="src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj"
-CLI="application/src/Nexo.CLI/Nexo.CLI.csproj"
+INFRA="src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj"
+CLI="application/src/Ashlar.CLI/Ashlar.CLI.csproj"
 
 echo "== Compat Tier C: configuration override tests =="
 dotnet build "$INFRA" -v minimal
@@ -36,7 +36,7 @@ if not doc.get("ok", False):
 print("doctor smoke: PASS")
 '
 
-REPORT_DIR=".nexo/compat"
+REPORT_DIR=".ashlar/compat"
 mkdir -p "$REPORT_DIR"
 echo "$OUT" >"$REPORT_DIR/doctor.json"
 

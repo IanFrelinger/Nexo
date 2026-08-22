@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Nexo UAT — Tier 5 (deploy and operate).
+# Ashlar UAT — Tier 5 (deploy and operate).
 #
 # Checks the claims docs/DEPLOYMENT.md makes about the golden paths, against the compose files an
 # operator would actually run. These are cheap: `docker compose config` resolves and normalises the
@@ -30,7 +30,7 @@ say "5.1 every shipped compose file either resolves, or refuses for a stated rea
 # Three outcomes, and only one of them is a defect:
 #   resolves                        -- fine
 #   "required variable X is missing" -- fine, and deliberate: the secret-bearing stacks ship no default
-#                                       for NEXO_API_KEY / NEO4J_AUTH and say so. Refusing to start
+#                                       for ASHLAR_API_KEY / NEO4J_AUTH and say so. Refusing to start
 #                                       without a secret is the behaviour we want to keep.
 #   anything else                   -- schema or syntax breakage, which is the drift worth catching
 # Overrides are fragments that only resolve when merged, so they are identified by the role the

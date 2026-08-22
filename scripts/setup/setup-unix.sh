@@ -31,13 +31,13 @@ Options (GNU-style or PowerShell-style for parity with setup.ps1):
   --tune / -Tune
       Opt in to the Runtime Studio hardware benchmark during "all" (multi-minute
       Ollama model benchmark; off by default). Output goes to the gitignored
-      .nexo/runtime-studio/agent_set.local.json, never to the tracked config.
+      .ashlar/runtime-studio/agent_set.local.json, never to the tracked config.
   --skip-runtime-studio-tune / -SkipRuntimeStudioTune
       Legacy no-op kept for compatibility (the tune is already off unless --tune is passed);
-      still exports NEXO_SKIP_RUNTIME_STUDIO_TUNE=1 so it wins even when --tune is present.
+      still exports ASHLAR_SKIP_RUNTIME_STUDIO_TUNE=1 so it wins even when --tune is present.
 
 Environment:
-  NEXO_SKIP_RUNTIME_STUDIO_TUNE=1 — force-skip the Runtime Studio benchmark even with --tune.
+  ASHLAR_SKIP_RUNTIME_STUDIO_TUNE=1 — force-skip the Runtime Studio benchmark even with --tune.
 EOF
 }
 
@@ -133,7 +133,7 @@ if [[ "${OSTYPE:-}" == msys* || "${OSTYPE:-}" == cygwin* ]]; then
 fi
 
 if [[ "${SKIP_TUNE}" == "true" ]]; then
-  export NEXO_SKIP_RUNTIME_STUDIO_TUNE=1
+  export ASHLAR_SKIP_RUNTIME_STUDIO_TUNE=1
 fi
 
 FORWARD=("${MODE}")

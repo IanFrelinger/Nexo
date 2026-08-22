@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Nexo UAT — Tier 7 (security negatives).
+# Ashlar UAT — Tier 7 (security negatives).
 #
 # SECURITY.md is unusually specific about the default posture, so this tier tests what that page
 # CLAIMS rather than what a reviewer might wish were true. Each check cites the claim it pins.
@@ -25,14 +25,14 @@ say() { printf '\n=== %s ===\n' "$*"; }
 cd "$SRC" || exit 1
 
 unset ASPNETCORE_HTTP_PORTS
-export NEXO_ALLOW_MOCK=1
+export ASHLAR_ALLOW_MOCK=1
 API=""
 API_PID=""
 
 # Leftovers from an earlier run hold :5000, and every phase below then reports "API did not start" --
 # which reads exactly like a product failure. Refuse to run on a dirty port rather than emit results
 # that blame the product for the environment.
-pkill -f 'Nexo\.API' 2>/dev/null
+pkill -f 'Ashlar\.API' 2>/dev/null
 PORT_FREE=no
 for _ in $(seq 1 30); do
   curl -s -o /dev/null --max-time 2 "http://localhost:5000/health" 2>/dev/null || { PORT_FREE=yes; break; }
@@ -49,7 +49,7 @@ fi
 start_api() {
   local tag="$1"; shift
   local log="$OUT/api-$tag.log"
-  ( env "$@" dotnet run --project application/src/Nexo.API -f net10.0 >"$log" 2>&1 ) &
+  ( env "$@" dotnet run --project application/src/Ashlar.API -f net10.0 >"$log" 2>&1 ) &
   API_PID=$!
   for _ in $(seq 1 90); do
     grep -q 'Now listening on:' "$log" 2>/dev/null && break
@@ -66,7 +66,7 @@ start_api() {
 }
 stop_api() {
   [ -n "$API_PID" ] && { kill $API_PID 2>/dev/null; wait $API_PID 2>/dev/null; }
-  pkill -f 'Nexo\.API' 2>/dev/null
+  pkill -f 'Ashlar\.API' 2>/dev/null
   API_PID=""
   # This tier starts the API once per configuration, so the port must actually be free before the next
   # one binds. A fixed sleep is not enough -- release took several seconds in practice, and every later
@@ -84,7 +84,7 @@ if start_api default; then
   B=$(code -X POST "$API/api/execution/build" -H 'Content-Type: application/json' -d '{}')
   R=$(code -X POST "$API/api/execution/run"   -H 'Content-Type: application/json' -d '{}')
   if [ "$B" = "404" ] && [ "$R" = "404" ]; then
-    result 7 remote-execution-unmapped PASS "build=$B run=$R -- 'mapped only when Nexo:Execution:ServeRemoteExecution=true (404 otherwise)'"
+    result 7 remote-execution-unmapped PASS "build=$B run=$R -- 'mapped only when Ashlar:Execution:ServeRemoteExecution=true (404 otherwise)'"
   else
     result 7 remote-execution-unmapped FAIL "SECURITY: SECURITY.md says 404 by default; build=$B run=$R"
   fi
@@ -102,7 +102,7 @@ stop_api
 
 # ---------------------------------------------------------------- opted in, but unauthenticated
 say "7.3 remote execution opted in with AuthorizationMode=None must 403, not serve (SECURITY.md 'opt-in')"
-if start_api exec-none Nexo__Execution__ServeRemoteExecution=true; then
+if start_api exec-none Ashlar__Execution__ServeRemoteExecution=true; then
   B=$(code -X POST "$API/api/execution/build" -H 'Content-Type: application/json' -d '{}')
   if [ "$B" = "403" ]; then
     result 7 remote-execution-refuses-anonymous PASS "build=$B -- 'refuse AuthorizationMode=None with 403 even when opted in'"
@@ -117,9 +117,9 @@ stop_api
 # ---------------------------------------------------------------- scope semantics
 say "7.4/7.5 AuthorizationScope=MutatingApi credentials writes but not reads (SECURITY.md 'what needs auth')"
 if start_api scope-mutating \
-     Nexo__Security__AuthorizationMode=ApiKey \
-     Nexo__Security__ApiKey=uat-tier7-key \
-     Nexo__Security__AuthorizationScope=MutatingApi; then
+     Ashlar__Security__AuthorizationMode=ApiKey \
+     Ashlar__Security__ApiKey=uat-tier7-key \
+     Ashlar__Security__AuthorizationScope=MutatingApi; then
   # An ordinary read stays open under MutatingApi; a POST does not.
   G=$(code "$API/api/trust/status")
   P=$(code -X POST "$API/api/copilot/task" -H 'Content-Type: application/json' -d '{"task":"probe","auditCount":1}')
@@ -140,9 +140,9 @@ if start_api scope-mutating \
   fi
 
   W=$(code -X POST "$API/api/copilot/task" -H 'Content-Type: application/json' \
-        -H 'X-Nexo-Api-Key: not-the-key' -d '{"task":"probe","auditCount":1}')
+        -H 'X-Ashlar-Api-Key: not-the-key' -d '{"task":"probe","auditCount":1}')
   OK=$(code -X POST "$API/api/copilot/task" -H 'Content-Type: application/json' \
-        -H 'X-Nexo-Api-Key: uat-tier7-key' -d '{"task":"probe","auditCount":1}')
+        -H 'X-Ashlar-Api-Key: uat-tier7-key' -d '{"task":"probe","auditCount":1}')
   if [ "$W" = "401" ] && [ "$OK" = "200" ]; then
     result 7 wrong-key-rejected PASS "wrong key=$W, correct key=$OK -- rejection is authentication, not breakage"
   else
@@ -162,7 +162,7 @@ stop_api
 
 # ---------------------------------------------------------------- exposure, and its escape hatch
 say "7.6 Public exposure with no auth must refuse to start (SECURITY.md 'exposure fails closed')"
-if start_api public-none Nexo__Security__ExposureProfile=Public; then
+if start_api public-none Ashlar__Security__ExposureProfile=Public; then
   result 7 public-exposure-refused FAIL "SECURITY: API started with ExposureProfile=Public and AuthorizationMode=None"
 else
   result 7 public-exposure-refused PASS "refused to start: $(grep -iE 'exposure|Security' "$OUT/api-public-none.log" | head -1 | cut -c1-150)"
@@ -171,8 +171,8 @@ stop_api
 
 say "7.7 the documented escape hatch turns the refusal into a warning (SECURITY.md 'escape hatch')"
 if start_api public-hatch \
-     Nexo__Security__ExposureProfile=Public \
-     Nexo__Security__AllowUnauthenticatedNetworkExposure=true; then
+     Ashlar__Security__ExposureProfile=Public \
+     Ashlar__Security__AllowUnauthenticatedNetworkExposure=true; then
   if grep -qiE 'warn' "$OUT/api-public-hatch.log"; then
     result 7 exposure-escape-hatch PASS "starts with AllowUnauthenticatedNetworkExposure=true, and warns"
   else
@@ -184,7 +184,7 @@ fi
 stop_api
 
 # ---------------------------------------------------------------- static: the daemon socket
-say "7.8 no shipped compose file mounts docker.sock into Nexo.API (SECURITY.md 'remote execution')"
+say "7.8 no shipped compose file mounts docker.sock into Ashlar.API (SECURITY.md 'remote execution')"
 SOCK=""
 for f in deploy/compose/docker-compose.*.yml; do
   awk '

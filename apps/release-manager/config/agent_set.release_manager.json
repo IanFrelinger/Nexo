@@ -77,8 +77,8 @@
         ],
         "Parameters": {
           "EvidencePaths": [
-            ".nexo/runtime/release-gate/last-run/runtime-release-gate-slo.json",
-            ".nexo/release-bundle/last-run/release-bundle-report.json"
+            ".ashlar/runtime/release-gate/last-run/runtime-release-gate-slo.json",
+            ".ashlar/release-bundle/last-run/release-bundle-report.json"
           ]
         },
         "Schedule": {
@@ -112,7 +112,7 @@
         ],
         "Parameters": {
           "ReportTemplate": "release-readiness",
-          "OutputDir": ".nexo/release-manager/reports"
+          "OutputDir": ".ashlar/release-manager/reports"
         },
         "Schedule": {
           "Type": "Interval",

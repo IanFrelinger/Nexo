@@ -4,8 +4,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-CLI_PROJECT="application/src/Nexo.CLI/Nexo.CLI.csproj"
-TMP_ROOT="${TMPDIR:-/tmp}/nexo-perf-gate-$$"
+CLI_PROJECT="application/src/Ashlar.CLI/Ashlar.CLI.csproj"
+TMP_ROOT="${TMPDIR:-/tmp}/ashlar-perf-gate-$$"
 mkdir -p "$TMP_ROOT"
 trap 'rm -rf "$TMP_ROOT"' EXIT
 
@@ -30,14 +30,14 @@ dotnet build "$CLI_PROJECT" -v minimal >/dev/null
 
 START_MS=$(python3 -c 'import time; print(int(time.time()*1000))')
 for i in $(seq 1 "$ITERATIONS"); do
-  NEXO_ALLOW_MOCK=1 dotnet run --project "$CLI_PROJECT" --no-build -- \
+  ASHLAR_ALLOW_MOCK=1 dotnet run --project "$CLI_PROJECT" --no-build -- \
     pipeline run --template "$TEMPLATE" --run-id "perf-gate-$i" --format-json >/dev/null
 done
 END_MS=$(python3 -c 'import time; print(int(time.time()*1000))')
 ELAPSED=$((END_MS - START_MS))
 AVG=$((ELAPSED / ITERATIONS))
 
-REPORT_DIR=".nexo/perf"
+REPORT_DIR=".ashlar/perf"
 mkdir -p "$REPORT_DIR"
 cat >"$REPORT_DIR/pipeline-throughput.json" <<EOF
 {

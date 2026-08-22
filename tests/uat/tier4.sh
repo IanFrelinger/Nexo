@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# Nexo UAT — Tier 4 (authoring / integration) and the security negatives the quickstart asks testers to run.
+# Ashlar UAT — Tier 4 (authoring / integration) and the security negatives the quickstart asks testers to run.
 #
 # Section 5 of TesterQuickstart lists what is "worth your time", which makes each item a claim the page is
 # making about the product. Three of them are machine-checkable and are checked here.
 set -uo pipefail
 
-REPO_URL="${REPO_URL:-https://github.com/IanFrelinger/Nexo.git}"
+REPO_URL="${REPO_URL:-https://github.com/IanFrelinger/Ashlar.git}"
 WORK="${WORK:-/work}"
 # See tier0-2.sh: UAT_REPO_DIR runs against the workspace checkout so a gate tests the commit under review.
-SRC="${UAT_REPO_DIR:-$WORK/Nexo}"
+SRC="${UAT_REPO_DIR:-$WORK/Ashlar}"
 OUT="${UAT_OUT:-$WORK/out}"
 mkdir -p "$OUT"
 : >"$OUT/results-tier4.tsv"
@@ -37,15 +37,15 @@ fi
 
 say "4.2 the sample builds by ProjectReference into src/, as the page says (nothing on nuget.org yet)"
 if grep -rq "ProjectReference" samples/hello-brick/ 2>/dev/null; then
-  result 4 hello-brick-projectref PASS "sample consumes Nexo by ProjectReference"
+  result 4 hello-brick-projectref PASS "sample consumes Ashlar by ProjectReference"
 else
   result 4 hello-brick-projectref FAIL "no ProjectReference in samples/hello-brick"
 fi
 
 # ---------------------------------------------------------------- security negatives (quickstart section 5)
 say "4.3 'Does the API fail closed?' — Lan exposure with no auth mode must REFUSE TO START"
-export NEXO_ALLOW_MOCK=1
-Nexo__Security__ExposureProfile=Lan timeout 120 dotnet run --project application/src/Nexo.API -f net10.0 \
+export ASHLAR_ALLOW_MOCK=1
+Ashlar__Security__ExposureProfile=Lan timeout 120 dotnet run --project application/src/Ashlar.API -f net10.0 \
   >"$OUT/api-lan.log" 2>&1
 LAN_RC=$?
 if grep -q 'Now listening on:' "$OUT/api-lan.log"; then
@@ -55,10 +55,10 @@ else
 fi
 
 say "4.4 'Does the API fail closed?' — ApiKey mode must 401 a task POST with no key header"
-export Nexo__Security__AuthorizationMode=ApiKey
-export Nexo__Security__ApiKey=uat-probe-key
-export Nexo__Security__AuthorizationScope=AllApi
-dotnet run --project application/src/Nexo.API -f net10.0 >"$OUT/api-auth.log" 2>&1 &
+export Ashlar__Security__AuthorizationMode=ApiKey
+export Ashlar__Security__ApiKey=uat-probe-key
+export Ashlar__Security__AuthorizationScope=AllApi
+dotnet run --project application/src/Ashlar.API -f net10.0 >"$OUT/api-auth.log" 2>&1 &
 AUTH_PID=$!
 for _ in $(seq 1 90); do grep -q 'Now listening on:' "$OUT/api-auth.log" 2>/dev/null && break; kill -0 $AUTH_PID 2>/dev/null || break; sleep 2; done
 
@@ -71,14 +71,14 @@ if grep -q 'Now listening on:' "$OUT/api-auth.log"; then
   CODE=$(curl -s -o "$OUT/nokey.json" -w '%{http_code}' --max-time 60 "$API/api/copilot/task" \
           -H "Content-Type: application/json" -d '{"task":"probe","auditCount":1}')
   if [ "$CODE" = "401" ]; then
-    result 4 apikey-401-without-header PASS "POST /api/copilot/task without X-Nexo-Api-Key -> 401"
+    result 4 apikey-401-without-header PASS "POST /api/copilot/task without X-Ashlar-Api-Key -> 401"
   else
     result 4 apikey-401-without-header FAIL "SECURITY: expected 401, got $CODE ($(head -c 120 "$OUT/nokey.json"))"
   fi
 
   # And the same call WITH the key must be allowed, or the check above proves nothing.
   CODE2=$(curl -s -o "$OUT/withkey.json" -w '%{http_code}' --max-time 300 "$API/api/copilot/task" \
-           -H "Content-Type: application/json" -H "X-Nexo-Api-Key: uat-probe-key" \
+           -H "Content-Type: application/json" -H "X-Ashlar-Api-Key: uat-probe-key" \
            -d '{"task":"probe","auditCount":1}')
   if [ "$CODE2" = "200" ]; then
     result 4 apikey-200-with-header PASS "same POST with the key -> 200 (the 401 is auth, not breakage)"
@@ -97,18 +97,18 @@ if grep -q 'Now listening on:' "$OUT/api-auth.log"; then
 else
   result 4 apikey-401-without-header FAIL "API did not start in ApiKey mode: $(tail -3 "$OUT/api-auth.log" | tr '\n' ' ')"
 fi
-kill $AUTH_PID 2>/dev/null; wait $AUTH_PID 2>/dev/null; pkill -f 'Nexo\.API' 2>/dev/null
+kill $AUTH_PID 2>/dev/null; wait $AUTH_PID 2>/dev/null; pkill -f 'Ashlar\.API' 2>/dev/null
 
 say "4.5 a BLANK configured key must not authenticate anyone, least of all a blank one"
-# docker-compose.friend-mesh.yml interpolates Nexo__Security__ApiKey with no default, so an operator
+# docker-compose.friend-mesh.yml interpolates Ashlar__Security__ApiKey with no default, so an operator
 # who forgets the variable boots with AuthorizationMode=ApiKey and an empty key. Program.cs logs that
 # protected routes "will reject requests until configuration is complete"; this checks that they do.
 # The empty-header case is the one worth pinning: an empty presented credential must not compare equal
 # to an empty configured one, which is the trap that turns a misconfiguration into an open API.
-export Nexo__Security__AuthorizationMode=ApiKey
-export Nexo__Security__ApiKey=""
-export Nexo__Security__AuthorizationScope=AllApi
-dotnet run --project application/src/Nexo.API -f net10.0 >"$OUT/api-blank.log" 2>&1 &
+export Ashlar__Security__AuthorizationMode=ApiKey
+export Ashlar__Security__ApiKey=""
+export Ashlar__Security__AuthorizationScope=AllApi
+dotnet run --project application/src/Ashlar.API -f net10.0 >"$OUT/api-blank.log" 2>&1 &
 BLANK_PID=$!
 for _ in $(seq 1 90); do grep -q 'Now listening on:' "$OUT/api-blank.log" 2>/dev/null && break; kill -0 $BLANK_PID 2>/dev/null || break; sleep 2; done
 
@@ -118,8 +118,8 @@ if grep -q 'Now listening on:' "$OUT/api-blank.log"; then
   post() { curl -s -o /dev/null -w '%{http_code}' --max-time 60 "$BAPI/api/copilot/task" \
              -H 'Content-Type: application/json' "$@" -d '{"task":"probe","auditCount":1}'; }
   NONE=$(post)
-  EMPTY=$(post -H 'X-Nexo-Api-Key: ')
-  GUESS=$(post -H 'X-Nexo-Api-Key: anything')
+  EMPTY=$(post -H 'X-Ashlar-Api-Key: ')
+  GUESS=$(post -H 'X-Ashlar-Api-Key: anything')
   if [ "$NONE" = "401" ] && [ "$EMPTY" = "401" ] && [ "$GUESS" = "401" ]; then
     result 4 blank-key-authenticates-nobody PASS "blank configured key: no header=$NONE, empty header=$EMPTY, arbitrary=$GUESS"
   else
@@ -128,7 +128,7 @@ if grep -q 'Now listening on:' "$OUT/api-blank.log"; then
 else
   result 4 blank-key-authenticates-nobody FAIL "API did not start with a blank key: $(tail -3 "$OUT/api-blank.log" | tr '\n' ' ')"
 fi
-kill $BLANK_PID 2>/dev/null; wait $BLANK_PID 2>/dev/null; pkill -f 'Nexo\.API' 2>/dev/null
+kill $BLANK_PID 2>/dev/null; wait $BLANK_PID 2>/dev/null; pkill -f 'Ashlar\.API' 2>/dev/null
 
 say "summary"
 printf 'PASS=%d FAIL=%d\n' "$PASS" "$FAIL" | tee "$OUT/summary-tier4.txt"

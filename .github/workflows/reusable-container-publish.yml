@@ -1,27 +1,27 @@
-# Reusable: build and push nexo-cli + nexo-api to GHCR.
+# Reusable: build and push ashlar-cli + ashlar-api to GHCR.
 # Called from release.yml (tags / manual) or container-image-publish.yml (manual dispatch).
 #
 # Tag layout per image:
 #   sha-<12>  immutable, pushed on every run and smoke-tested before anything else is tagged
-#   latest    master/main only, rebuilt (nexo-cli: linux/amd64 + linux/arm64 unless skip_multi_arch)
+#   latest    master/main only, rebuilt (ashlar-cli: linux/amd64 + linux/arm64 unless skip_multi_arch)
 #   X.Y.Z     v* tags only; a manifest retag of the smoke-tested sha-<12> digest, never a rebuild,
-#             so it resolves to exactly the bytes that passed smoke (nexo-cli's sha tag is built
+#             so it resolves to exactly the bytes that passed smoke (ashlar-cli's sha tag is built
 #             multi-arch on v* tags so the semver tag covers the same platforms as :latest)
 
 on:
   workflow_call:
     inputs:
       skip_multi_arch:
-        description: "When true, publish nexo-cli :latest (main) and :X.Y.Z (tags) as amd64 only"
+        description: "When true, publish ashlar-cli :latest (main) and :X.Y.Z (tags) as amd64 only"
         type: boolean
         required: false
         default: false
     outputs:
       cli_sha_tag:
-        description: "Immutable GHCR tag for nexo-cli (sha-...)"
+        description: "Immutable GHCR tag for ashlar-cli (sha-...)"
         value: ${{ jobs.publish-cli.outputs.cli_sha_tag }}
       api_sha_tag:
-        description: "Immutable GHCR tag for nexo-api (sha-...)"
+        description: "Immutable GHCR tag for ashlar-api (sha-...)"
         value: ${{ jobs.publish-api.outputs.api_sha_tag }}
 
 permissions:
@@ -34,7 +34,7 @@ concurrency:
 
 jobs:
   publish-cli:
-    name: GHCR nexo-cli
+    name: GHCR ashlar-cli
     runs-on: ubuntu-latest
     timeout-minutes: 45
     outputs:
@@ -58,7 +58,7 @@ jobs:
         shell: bash
         run: |
           OWNER_LC="${GITHUB_REPOSITORY_OWNER,,}"
-          IMAGE="ghcr.io/${OWNER_LC}/nexo-cli"
+          IMAGE="ghcr.io/${OWNER_LC}/ashlar-cli"
           SHA_TAG="${IMAGE}:sha-${GITHUB_SHA::12}"
           echo "sha_tag=${SHA_TAG}" >> "$GITHUB_OUTPUT"
           echo "IMAGE=${IMAGE}" >> "${GITHUB_ENV}"
@@ -128,7 +128,7 @@ jobs:
           docker buildx imagetools inspect "${SEMVER_TAG}"
 
   publish-api:
-    name: GHCR nexo-api
+    name: GHCR ashlar-api
     runs-on: ubuntu-latest
     timeout-minutes: 45
     outputs:
@@ -152,7 +152,7 @@ jobs:
         shell: bash
         run: |
           OWNER_LC="${GITHUB_REPOSITORY_OWNER,,}"
-          IMAGE="ghcr.io/${OWNER_LC}/nexo-api"
+          IMAGE="ghcr.io/${OWNER_LC}/ashlar-api"
           SHA_TAG="${IMAGE}:sha-${GITHUB_SHA::12}"
           echo "sha_tag=${SHA_TAG}" >> "$GITHUB_OUTPUT"
           echo "IMAGE=${IMAGE}" >> "${GITHUB_ENV}"

@@ -34,7 +34,7 @@ jobs:
           VER="${{ inputs.package_version }}"
           VER="${VER#v}"
           echo "VERIFY_NUGET_VERSION=$VER" >> "$GITHUB_ENV"
-          echo "Verifying consumer install for Nexo.Hosting.Bundle **$VER** on nuget.org"
+          echo "Verifying consumer install for Ashlar.Hosting.Bundle **$VER** on nuget.org"
 
       - name: Restore sample from nuget.org (retry for index lag)
         shell: bash

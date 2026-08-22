@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Content Include="../../samples/physical-atom-cert/**/*" CopyToOutputDirectory="PreserveNewest" Link="physical-atom-cert/%(RecursiveDir)%(Filename)%(Extension)" />
+    <Content Include="../../samples/provenance-graph/**/*" CopyToOutputDirectory="PreserveNewest" Link="provenance-graph/%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Testcontainers.Neo4j" />
+    <!-- Transitive SSH.NET override (NU1903 / GHSA-q939-rpr3-3284); see Directory.Packages.props. -->
+    <PackageReference Include="SSH.NET" />
+    <PackageReference Include="NSec.Cryptography" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Ashlar.Provenance.Graph\Ashlar.Provenance.Graph.csproj" />
+    <ProjectReference Include="..\Ashlar.Certification.Physical\Ashlar.Certification.Physical.csproj" />
+  </ItemGroup>
+
+</Project>

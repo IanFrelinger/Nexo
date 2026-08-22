@@ -7,7 +7,7 @@ LIMIT="${1:-600}"
 
 status=0
 shopt -s globstar nullglob
-for file in "$ROOT"/application/src/Nexo.CLI/Commands/**/*.cs; do
+for file in "$ROOT"/application/src/Ashlar.CLI/Commands/**/*.cs; do
   lines="$(wc -l < "$file" | tr -d ' ')"
   if [ "$lines" -gt "$LIMIT" ]; then
     rel="${file#"$ROOT"/}"

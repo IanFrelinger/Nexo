@@ -6,15 +6,15 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-INFRA="src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj"
-TRANSPORT="src/Nexo.Tests.Transport/Nexo.Tests.Transport.csproj"
+INFRA="src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj"
+TRANSPORT="src/Ashlar.Tests.Transport/Ashlar.Tests.Transport.csproj"
 
 echo "== Tier C: ProdStyle Infrastructure (net8, FluentAssertions-safe filter) =="
 make test-prod-style
 
 echo "== Tier C: workflow executor integration =="
 dotnet build "$INFRA" -v minimal
-NEXO_ALLOW_MOCK=1 dotnet test "$INFRA" -f net8.0 --no-build \
+ASHLAR_ALLOW_MOCK=1 dotnet test "$INFRA" -f net8.0 --no-build \
   --filter "FullyQualifiedName~WorkflowExecutorIntegrationTests" \
   --blame-hang-timeout 120s --blame-hang-dump-type none
 
@@ -29,7 +29,7 @@ else
 fi
 
 echo "== Tier C: air-gapped profile smoke (in-process) =="
-NEXO_ALLOW_MOCK=1 dotnet test "$INFRA" -f net8.0 --no-build \
+ASHLAR_ALLOW_MOCK=1 dotnet test "$INFRA" -f net8.0 --no-build \
   --filter "FullyQualifiedName~AirGapped" \
   --blame-hang-timeout 120s --blame-hang-dump-type none
 

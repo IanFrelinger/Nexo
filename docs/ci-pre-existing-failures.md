@@ -1,6 +1,6 @@
 # CI: pre-existing failures (historical — resolved 2026-08-16)
 
-> **Historical (marked 2026-08-16).** The Full Platform Readiness Gate described below went **green on `master`** with PRs #317–#320 (skipped ≠ failed in `nexo validate`, per-project target framework, prebuilt CLI in the smoke, Docker `/health` smoke instead of the 90-minute hang) and the flake fixes in #335. It is path-filtered and has no PR trigger, so a red run there is now a real regression, not background noise. `docs/planning/LAND-STATUS.md` and `docs/planning/MERGE-READINESS.md` still cite this file for the 2026-06/07 landings; the text below is kept unchanged as that record.
+> **Historical (marked 2026-08-16).** The Full Platform Readiness Gate described below went **green on `master`** with PRs #317–#320 (skipped ≠ failed in `ashlar validate`, per-project target framework, prebuilt CLI in the smoke, Docker `/health` smoke instead of the 90-minute hang) and the flake fixes in #335. It is path-filtered and has no PR trigger, so a red run there is now a real regression, not background noise. `docs/planning/LAND-STATUS.md` and `docs/planning/MERGE-READINESS.md` still cite this file for the 2026-06/07 landings; the text below is kept unchanged as that record.
 
 The certification tower (atom gate, generation safety, composition gate, dogfood) is gated by **`Cert gate`** (`.github/workflows/cert-gate.yml`). That workflow is independent of the jobs below.
 
@@ -12,7 +12,7 @@ Jobs named **`Linux — setup · discover · dry-run`**, **`macOS — setup · d
 
 Example failing runs on `master`:
 
-- [Full Platform Readiness Gate (PR #173 merge)](https://github.com/IanFrelinger/Nexo/actions/runs/27722763291) — `conclusion: failure`
+- [Full Platform Readiness Gate (PR #173 merge)](https://github.com/IanFrelinger/Ashlar/actions/runs/27722763291) — `conclusion: failure`
 
 ### Recommendation (not performed here)
 

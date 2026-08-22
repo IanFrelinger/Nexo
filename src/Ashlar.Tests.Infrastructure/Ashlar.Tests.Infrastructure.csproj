@@ -1,0 +1,114 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+  
+  <!-- xUnit: limit parallelism to reduce memory usage (Cursor, CI) -->
+  <ItemGroup>
+    <Content Include="Certification/Dogfood/RecordedCompositionProposals/**/*.json" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="../../samples/physical-atom-cert/**/*" CopyToOutputDirectory="PreserveNewest" Link="physical-atom-cert/%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+  <!-- Workaround for Castle.Core net6.0 assembly loading issue on .NET 8.0 -->
+  <ItemGroup>
+    <Content Include="Ashlar.Tests.Infrastructure.runtimeconfig.template.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <TargetPath>Ashlar.Tests.Infrastructure.runtimeconfig.json</TargetPath>
+    </Content>
+  </ItemGroup>
+  
+  <!-- Import the targets file that handles copying assemblies -->
+  <Import Project="$(MSBuildThisFileDirectory)CopyAssemblies.targets" />
+
+  <!-- Exclude scripts directory from compilation -->
+  <ItemGroup>
+    <Compile Remove="scripts/**/*.cs" />
+  </ItemGroup>
+  <!-- Virtual in-process Ashlar.API host (WebApplicationFactory).
+       Microsoft.AspNetCore.TestHost / Mvc.Testing 8.0 ResponseBodyPipeWriter
+       does not override PipeWriter.UnflushedBytes, which System.Text.Json 9+
+       (transitively pulled by other 10.x packages) requires. We therefore run
+       the in-process API tests on net10 only, and use the 10.0 TestHost there
+       (which adds the missing override). On net8 these files are excluded. -->
+  <!-- Ashlar.API ships on net10.0 only, so everything that links it compiles on net10.0 only. Tests/API
+       used to build on net8.0 as well, which forced Ashlar.API to multi-target purely to satisfy this
+       reference. That is what made the documented run command in docs/TesterQuickstart fail with
+       "your project targets multiple frameworks" (#350), and those tests were covering a framework
+       the API never ships on. -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net8.0'">
+    <Compile Remove="Helpers/VirtualProduction/**/*.cs" />
+    <Compile Remove="Tests/VirtualProduction/**/*.cs" />
+    <Compile Remove="Tests/API/**/*.cs" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0'">
+    <ProjectReference Include="..\..\application\src\Ashlar.API\Ashlar.API.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing"
+                      VersionOverride="10.0.11"
+                      Condition="'$(TargetFramework)' == 'net10.0'" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing"
+                      Condition="'$(TargetFramework)' != 'net10.0'" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" />
+    <PackageReference Include="Moq" />
+    <PackageReference Include="Castle.Core" />
+    <PackageReference Include="Mono.Cecil" />
+    <PackageReference Include="Testcontainers.DynamoDb" />
+    <!-- Transitive SSH.NET override (NU1903 / GHSA-q939-rpr3-3284); see Directory.Packages.props. -->
+    <PackageReference Include="SSH.NET" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="CsCheck" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Docker.DotNet" />
+    <PackageReference Include="coverlet.msbuild">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Ashlar.Certification.Contracts\Ashlar.Certification.Contracts.csproj" />
+    <ProjectReference Include="..\Ashlar.Certification.State\Ashlar.Certification.State.csproj" />
+    <ProjectReference Include="..\Ashlar.Abstractions\Ashlar.Abstractions.csproj" />
+    <ProjectReference Include="..\Ashlar.Core.Application\Ashlar.Core.Application.csproj" />
+    <ProjectReference Include="..\Ashlar.Tests.Contracts\Ashlar.Tests.Contracts.csproj" />
+    <ProjectReference Include="..\Ashlar.Infrastructure\Ashlar.Infrastructure.csproj" />
+    <ProjectReference Include="..\Ashlar.Agents.TestKit\Ashlar.Agents.TestKit.csproj" />
+    <!-- Autonomy campaign (spec §8): objective intake lives in BackgroundAgents. -->
+    <ProjectReference Include="..\Ashlar.BackgroundAgents\Ashlar.BackgroundAgents.csproj" />
+    <ProjectReference Include="..\Ashlar.Policies.Dev\Ashlar.Policies.Dev.csproj" />
+    <ProjectReference Include="..\Ashlar.Orchestration\Ashlar.Orchestration.csproj" />
+    <ProjectReference Include="..\Ashlar.Tests.Application\Ashlar.Tests.Application.csproj" />
+    <ProjectReference Include="..\Ashlar.Runtime\Ashlar.Runtime.csproj" />
+    <ProjectReference Include="..\Ashlar.Bricks.Owasp\Ashlar.Bricks.Owasp.csproj" />
+    <ProjectReference Include="..\Ashlar.Hosting\Ashlar.Hosting.csproj" />
+    <ProjectReference Include="..\Ashlar.Ingress.DynamoDb\Ashlar.Ingress.DynamoDb.csproj" />
+    <ProjectReference Include="..\Ashlar.Client\Ashlar.Client.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Ashlar.Hosting\GlobalUsings.Infrastructure.Sdk.cs" Link="GlobalUsings.Infrastructure.Sdk.cs" />
+  </ItemGroup>
+
+  <!-- Hygiene, not a behaviour change: without this the json never reaches bin\ and
+       xunit reads whatever stale copy is already there. That drift is exactly what
+       kept Ashlar.Tests.CLI silently parallel (see 5fc20270). Here the stale copy and
+       the source are behaviourally identical — the only difference is an explicit
+       parallelizeTestCollections:true, which is also the default — so this changes
+       nothing today and prevents the same trap tomorrow. -->
+  <ItemGroup>
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>
+

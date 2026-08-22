@@ -1,9 +1,0 @@
-#nullable enable
-Nexo.Sdk.Client.NexoClientSdkBuilder
-Nexo.Sdk.Client.NexoClientSdkBuilder.NexoClientSdkBuilder(Microsoft.Extensions.DependencyInjection.IServiceCollection! services) -> void
-Nexo.Sdk.Client.NexoClientSdkBuilder.Services.get -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
-Nexo.Sdk.Client.NexoClientSdkServiceCollectionExtensions
-Nexo.Sdk.NexoSdkBuilder
-Nexo.Sdk.NexoSdkLegacyExtensions
-static Nexo.Sdk.Client.NexoClientSdkServiceCollectionExtensions.AddNexoClientSdk(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, string! baseUrl, System.Action<Nexo.Sdk.Client.NexoClientSdkBuilder!>? configure = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
-static Nexo.Sdk.NexoSdkLegacyExtensions.AddNexoSdk(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, string! baseUrl, System.Action<Nexo.Sdk.NexoSdkBuilder!>? configure = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!

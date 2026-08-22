@@ -1,16 +1,16 @@
 # Mesh agent setup — capability breakdown (“tear sheet”)
 
-This document **decomposes** everything that must exist—product, engineering, and operations—to run **agents (or any workload) across Nexo mesh peers** today and when you grow to WAN. It maps to **ports in `Nexo.Core.Application.Mesh`** and **infrastructure in `Nexo.Infrastructure.Mesh`**.
+This document **decomposes** everything that must exist—product, engineering, and operations—to run **agents (or any workload) across Ashlar mesh peers** today and when you grow to WAN. It maps to **ports in `Ashlar.Core.Application.Mesh`** and **infrastructure in `Ashlar.Infrastructure.Mesh`**.
 
 ---
 
 ## Tier 0 — Must exist before “mesh” means anything
 
-| Capability | What it is | Today in Nexo |
+| Capability | What it is | Today in Ashlar |
 |------------|------------|----------------|
-| **Stable peer identity** | Each runtime instance has a durable `peerId` for signing requests, inbox routing, and audit. | `NEXO_MESH_PEER_ID`; default random GUID in DI—**set explicitly** per agent/host. |
-| **Instance registry** | Authoritative list of peers, endpoints, capabilities, trust, admission. | `instances.json` (`NEXO_MESH_INSTANCES_PATH` or `~/.nexo/instances.json`). |
-| **Shared transport plane** | Peers can exchange request/response bytes. | **File-based inboxes** under `~/.nexo/mesh/` (same host or **shared filesystem** / synced folder). **No native WAN transport** in default stack. |
+| **Stable peer identity** | Each runtime instance has a durable `peerId` for signing requests, inbox routing, and audit. | `ASHLAR_MESH_PEER_ID`; default random GUID in DI—**set explicitly** per agent/host. |
+| **Instance registry** | Authoritative list of peers, endpoints, capabilities, trust, admission. | `instances.json` (`ASHLAR_MESH_INSTANCES_PATH` or `~/.ashlar/instances.json`). |
+| **Shared transport plane** | Peers can exchange request/response bytes. | **File-based inboxes** under `~/.ashlar/mesh/` (same host or **shared filesystem** / synced folder). **No native WAN transport** in default stack. |
 
 Without Tier 0, discovery and advertisement are inert.
 
@@ -18,22 +18,22 @@ Without Tier 0, discovery and advertisement are inert.
 
 ## Tier 1 — Discovery, advertisement, negotiation
 
-| Capability | What it is | Today in Nexo |
+| Capability | What it is | Today in Ashlar |
 |------------|------------|----------------|
-| **Discovery** | Enumerate peers from registry with effective trust tier. | `IInstanceDiscovery` → `FileBasedInstanceDiscovery`; CLI `nexo mesh --discover`. |
-| **Advertisement** | Publish which capabilities this peer offers. | `ICapabilityAdvertisement` → `FileBasedCapabilityAdvertisement`; CLI `nexo mesh --advertise` (CLI uses sample descriptors; apps register their own). |
-| **Capability lookup** | Find peers that expose a given capability id. | `FindPeersWithCapabilityAsync`; CLI `nexo mesh --capability <id>`. |
+| **Discovery** | Enumerate peers from registry with effective trust tier. | `IInstanceDiscovery` → `FileBasedInstanceDiscovery`; CLI `ashlar mesh --discover`. |
+| **Advertisement** | Publish which capabilities this peer offers. | `ICapabilityAdvertisement` → `FileBasedCapabilityAdvertisement`; CLI `ashlar mesh --advertise` (CLI uses sample descriptors; apps register their own). |
+| **Capability lookup** | Find peers that expose a given capability id. | `FindPeersWithCapabilityAsync`; CLI `ashlar mesh --capability <id>`. |
 | **Artifact negotiation** | Agree format/handling for returned payloads. | `IArtifactNegotiator`; `ArtifactFormat` on request/fulfill path. |
 
 ---
 
 ## Tier 2 — Trust, admission, policy
 
-| Capability | What it is | Today in Nexo |
+| Capability | What it is | Today in Ashlar |
 |------------|------------|----------------|
-| **Trust tiers** | Label peers (trusted / untrusted / unknown) for routing decisions. | JSON `trustTier`; CLI `nexo mesh --set-trust-tier peerId:tier`. |
-| **Mesh-wide trust policy** | Open vs allowlist vs denylist for discovery and for requests. | `NEXO_MESH_TRUST_POLICY`, `NEXO_PEER_TRUST_POLICY`; `NEXO_TRUSTED_PEER_IDS` / `NEXO_UNTRUSTED_PEER_IDS`. |
-| **Admission gate** | Explicit allow before a peer is treated as part of the mesh (operational control). | `admitted` in `instances.json`; `nexo mesh admit` / `revoke`. |
+| **Trust tiers** | Label peers (trusted / untrusted / unknown) for routing decisions. | JSON `trustTier`; CLI `ashlar mesh --set-trust-tier peerId:tier`. |
+| **Mesh-wide trust policy** | Open vs allowlist vs denylist for discovery and for requests. | `ASHLAR_MESH_TRUST_POLICY`, `ASHLAR_PEER_TRUST_POLICY`; `ASHLAR_TRUSTED_PEER_IDS` / `ASHLAR_UNTRUSTED_PEER_IDS`. |
+| **Admission gate** | Explicit allow before a peer is treated as part of the mesh (operational control). | `admitted` in `instances.json`; `ashlar mesh admit` / `revoke`. |
 
 Agents in a hostile or multi-tenant world **fail closed** here: wrong tier → requester filters peers out (`MeshCapabilityRequester` uses `PeerTrustPolicyResolver`).
 
@@ -41,7 +41,7 @@ Agents in a hostile or multi-tenant world **fail closed** here: wrong tier → r
 
 ## Tier 3 — Request / fulfill execution loop (the “agent” path)
 
-| Capability | What it is | Today in Nexo |
+| Capability | What it is | Today in Ashlar |
 |------------|------------|----------------|
 | **Connect transport** | Open inbox / session before send/receive. | `ILocalTransport.ConnectAsync` (file transport creates inbox dir). |
 | **Send request** | Serialized request (capability, format, requestId, requesterId) to chosen peer inbox. | `MeshCapabilityRequester.RequestAsync` → `SendAsync`. |
@@ -54,10 +54,10 @@ Agents in a hostile or multi-tenant world **fail closed** here: wrong tier → r
 
 ## Tier 4 — Data movement beyond one-shot artifacts
 
-| Capability | What it is | Today in Nexo |
+| Capability | What it is | Today in Ashlar |
 |------------|------------|----------------|
-| **Shared adaptations** | Propagate validated components across peers. | `NEXO_SHARED_ADAPTATIONS_PATH`; `nexo mesh sync` (pull + validate + adopt). |
-| **Disconnected transfer** | Move packages without live mesh connectivity. | `nexo mesh export` / `import` (`.nxpkg`, sneakernet). |
+| **Shared adaptations** | Propagate validated components across peers. | `ASHLAR_SHARED_ADAPTATIONS_PATH`; `ashlar mesh sync` (pull + validate + adopt). |
+| **Disconnected transfer** | Move packages without live mesh connectivity. | `ashlar mesh export` / `import` (`.nxpkg`, sneakernet). |
 
 Useful for **air-gapped** or **high-latency** meshes.
 
@@ -77,14 +77,14 @@ Useful for **air-gapped** or **high-latency** meshes.
 
 ## Minimal “two agents on one machine” checklist
 
-1. **One** `instances.json` path both processes use (`NEXO_MESH_INSTANCES_PATH`).  
-2. **Two** distinct `NEXO_MESH_PEER_ID` values (e.g. `peer-fulfiller`, `peer-requester`).  
+1. **One** `instances.json` path both processes use (`ASHLAR_MESH_INSTANCES_PATH`).  
+2. **Two** distinct `ASHLAR_MESH_PEER_ID` values (e.g. `peer-fulfiller`, `peer-requester`).  
 3. **Both** peers listed in `instances.json` with endpoints (can be placeholders for file transport) and `admitted: true` after review.  
 4. **Fulfiller** side: `AddMeshInfrastructure`, `AdvertiseAsync` for capability ids your agents implement, `RegisterHandler`, background loop calling `ProcessOneAsync`.  
 5. **Requester** side: `AddMeshInfrastructure`, `RequestAsync(capabilityId, format)`.  
 6. **Trust policy** set to match your test (`open` or allowlist both peer ids).
 
-Reference implementation: `DogfoodBlock9LocalIpcTests` in `src/Nexo.Tests.Infrastructure/Tests/Dogfood/DogfoodBlock9LocalIpcTests.cs`.
+Reference implementation: `DogfoodBlock9LocalIpcTests` in `src/Ashlar.Tests.Infrastructure/Tests/Dogfood/DogfoodBlock9LocalIpcTests.cs`.
 
 ---
 
@@ -92,20 +92,20 @@ Reference implementation: `DogfoodBlock9LocalIpcTests` in `src/Nexo.Tests.Infras
 
 | Command | Role |
 |---------|------|
-| `nexo mesh --discover` | List peers from registry |
-| `nexo mesh --advertise` | Publish sample capabilities (CLI demo) |
-| `nexo mesh --capability <id>` | Find peers advertising capability |
-| `nexo mesh capabilities` | Show **this** host’s capability summary |
-| `nexo mesh sync` | Pull shared adaptations (needs `NEXO_SHARED_ADAPTATIONS_PATH` etc.) |
-| `nexo mesh export` / `import` | Sneakernet packages |
-| `nexo mesh admit` / `revoke` | Toggle `admitted` |
-| `nexo dogfood block9` | Automated gate: mesh discover/advertise |
+| `ashlar mesh --discover` | List peers from registry |
+| `ashlar mesh --advertise` | Publish sample capabilities (CLI demo) |
+| `ashlar mesh --capability <id>` | Find peers advertising capability |
+| `ashlar mesh capabilities` | Show **this** host’s capability summary |
+| `ashlar mesh sync` | Pull shared adaptations (needs `ASHLAR_SHARED_ADAPTATIONS_PATH` etc.) |
+| `ashlar mesh export` / `import` | Sneakernet packages |
+| `ashlar mesh admit` / `revoke` | Toggle `admitted` |
+| `ashlar dogfood block9` | Automated gate: mesh discover/advertise |
 
 ---
 
 ## Related configuration
 
-See **Mesh** section in [`Configuration.md`](./Configuration.md) (`NEXO_MESH_*`, trust env vars, `NEXO_SHARED_ADAPTATIONS_PATH`).
+See **Mesh** section in [`Configuration.md`](./Configuration.md) (`ASHLAR_MESH_*`, trust env vars, `ASHLAR_SHARED_ADAPTATIONS_PATH`).
 
 ---
 
@@ -114,7 +114,7 @@ See **Mesh** section in [`Configuration.md`](./Configuration.md) (`NEXO_MESH_*`,
 ```
 [Tier 5: WAN / bus / certs / ops]     ← you add for decentralized fleet
         ↓
-[Tier 4: sync / export-import]      ← nexo mesh sync, export, import
+[Tier 4: sync / export-import]      ← ashlar mesh sync, export, import
         ↓
 [Tier 3: request ↔ fulfill loop]    ← ICapabilityRequester / Fulfiller + handlers = "agents"
         ↓

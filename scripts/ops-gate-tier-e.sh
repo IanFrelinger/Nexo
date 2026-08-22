@@ -5,8 +5,8 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
 echo "== Ops Tier E: oh-shit demo (quick) =="
-# No --no-build: Tiers A-C only build src/Nexo.Tests.Infrastructure and the
-# workflow has no CLI build step, so the demo must build application/src/Nexo.CLI itself.
+# No --no-build: Tiers A-C only build src/Ashlar.Tests.Infrastructure and the
+# workflow has no CLI build step, so the demo must build application/src/Ashlar.CLI itself.
 bash scripts/oh-shit-demo.sh --quick
 
 echo ""

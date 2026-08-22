@@ -1,14 +1,14 @@
 <Project>
   <PropertyGroup>
-    <PackageLicenseExpression Condition="'$(NexoCommercialProject)' == 'true'"></PackageLicenseExpression>
-    <PackageLicenseExpression Condition="'$(NexoCommercialProject)' != 'true'">Apache-2.0</PackageLicenseExpression>
+    <PackageLicenseExpression Condition="'$(AshlarCommercialProject)' == 'true'"></PackageLicenseExpression>
+    <PackageLicenseExpression Condition="'$(AshlarCommercialProject)' != 'true'">Apache-2.0</PackageLicenseExpression>
   </PropertyGroup>
 
   <!-- Override SDK default 1.0.0 after project evaluation (root VERSION file). -->
   <PropertyGroup Condition="Exists('$(MSBuildThisFileDirectory)VERSION') AND '$(IsPackable)' == 'true'">
-    <NexoPackageVersion>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)VERSION').Trim())</NexoPackageVersion>
-    <PackageVersion>$(NexoPackageVersion)</PackageVersion>
-    <Version>$(NexoPackageVersion)</Version>
+    <AshlarPackageVersion>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)VERSION').Trim())</AshlarPackageVersion>
+    <PackageVersion>$(AshlarPackageVersion)</PackageVersion>
+    <Version>$(AshlarPackageVersion)</Version>
   </PropertyGroup>
 
   <!-- Many test hosts (and the net8.0 inner build of multi-targeted ones) still target net8.0, but a
@@ -24,12 +24,12 @@
     <RollForward Condition="'$(RollForward)' == ''">Major</RollForward>
   </PropertyGroup>
 
-  <!-- NEXOEXP001 is the [Experimental] diagnostic on the autonomy (self-extension) surface; it exists
+  <!-- ASHLAREXP001 is the [Experimental] diagnostic on the autonomy (self-extension) surface; it exists
        for EXTERNAL consumers (docs/SdkCompatibilityPolicy.md, "Experimental tier"). The repo's own test
        projects exercise that surface by design, so they opt in once here. Same .targets placement
        rationale as RollForward above: IsTestProject is set by the project body. -->
   <PropertyGroup Condition="'$(IsTestProject)' == 'true'">
-    <NoWarn>$(NoWarn);NEXOEXP001</NoWarn>
+    <NoWarn>$(NoWarn);ASHLAREXP001</NoWarn>
   </PropertyGroup>
 
   <!-- NetStandard compatibility shims (Unity 2019+): required members, init-only, etc.
@@ -39,7 +39,7 @@
        Placed in Directory.Build.targets (not .props) because TargetFrameworkIdentifier is only
        resolved per inner build, which is available by the time this file is imported. -->
   <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == '.NETStandard'">
-    <Compile Include="$(MSBuildThisFileDirectory)src/Nexo.Compat/Polyfills/*.cs">
+    <Compile Include="$(MSBuildThisFileDirectory)src/Ashlar.Compat/Polyfills/*.cs">
       <Link>Polyfills/%(Filename)%(Extension)</Link>
     </Compile>
   </ItemGroup>

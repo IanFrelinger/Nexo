@@ -78,7 +78,7 @@ if ($Live) { $dryArg = "$dryArg --live".Trim() }
 $mode = if ($Dry) { "DRY" } else { "REAL (host daemon via docker.sock)" }
 if ($SweepLive) { $mode = "$mode + SWEEP with LIVE in-loop proposer (campaign)" }
 
-$seedCmd = "mkdir -p .nexo/runtime-studio/objectives/pending; cp samples/autonomy-objectives/tag-scan-classifier.* .nexo/runtime-studio/objectives/pending/ 2>/dev/null || true;"
+$seedCmd = "mkdir -p .ashlar/runtime-studio/objectives/pending; cp samples/autonomy-objectives/tag-scan-classifier.* .ashlar/runtime-studio/objectives/pending/ 2>/dev/null || true;"
 if ($SweepLive) {
     $seedCmd = ""  # objectives come from the mounted campaign store, not the clone
     Write-Host "== campaign models: $($Models -join ', ') =="
@@ -119,10 +119,10 @@ if ($Live) {
     $recPath = Join-Path $recDir "live-$stamp.json"
     [IO.File]::WriteAllText($recPath, $recording, [Text.UTF8Encoding]::new($false))
     Write-Host "== live proposal recorded: $recPath ($($sw.Elapsed.TotalSeconds.ToString('F0'))s) =="
-    $liveDir = Join-Path $env:TEMP "nexo-live-$stamp"
+    $liveDir = Join-Path $env:TEMP "ashlar-live-$stamp"
     New-Item -ItemType Directory -Path $liveDir | Out-Null
     Copy-Item $recPath (Join-Path $liveDir "recording.json")
-    $liveMount = @("-v", "${liveDir}:/nexo-live:ro")
+    $liveMount = @("-v", "${liveDir}:/ashlar-live:ro")
 }
 
 Write-Host "== autonomy first flight: $sha [$mode] =="
@@ -137,7 +137,7 @@ if ($SweepLive) {
     foreach ($model in $Models) {
         $stamp = Get-Date -Format "yyyyMMdd-HHmmss"
         $modelSlug = ($model -replace '[^A-Za-z0-9.-]', '-')
-        $campaignDir = Join-Path $repoRoot ".nexo/campaign/$stamp-$modelSlug"
+        $campaignDir = Join-Path $repoRoot ".ashlar/campaign/$stamp-$modelSlug"
         New-Item -ItemType Directory -Path (Join-Path $campaignDir "objectives/pending") -Force | Out-Null
         New-Item -ItemType Directory -Path (Join-Path $campaignDir "proposals") -Force | Out-Null
         Copy-Item (Join-Path $repoRoot "samples/autonomy-objectives/*.md") (Join-Path $campaignDir "objectives/pending/")
@@ -146,22 +146,22 @@ if ($SweepLive) {
         Remove-Item (Join-Path $campaignDir "objectives/pending/proposer-preamble.md") -ErrorAction SilentlyContinue
         Copy-Item (Join-Path $repoRoot "samples/autonomy-objectives/proposer-preamble.md") (Join-Path $campaignDir "proposer-preamble.md")
         $campaignEnv = @(
-            "-e", "NEXO_SWEEP_PROPOSER=ollama",
-            "-e", "NEXO_OLLAMA_BASE_URL=http://host.docker.internal:11434",
-            "-e", "NEXO_OLLAMA_MODEL=$model",
-            "-e", "NEXO_OBJECTIVES_ROOT=/campaign/objectives",
-            "-e", "NEXO_CAMPAIGN_DIR=/campaign/proposals",
-            "-e", "NEXO_OLLAMA_SYSTEM_PREAMBLE_FILE=/campaign/proposer-preamble.md",
-            "-e", "NEXO_SWEEP_MAX_OBJECTIVES=$MaxObjectives"
+            "-e", "ASHLAR_SWEEP_PROPOSER=ollama",
+            "-e", "ASHLAR_OLLAMA_BASE_URL=http://host.docker.internal:11434",
+            "-e", "ASHLAR_OLLAMA_MODEL=$model",
+            "-e", "ASHLAR_OBJECTIVES_ROOT=/campaign/objectives",
+            "-e", "ASHLAR_CAMPAIGN_DIR=/campaign/proposals",
+            "-e", "ASHLAR_OLLAMA_SYSTEM_PREAMBLE_FILE=/campaign/proposer-preamble.md",
+            "-e", "ASHLAR_SWEEP_MAX_OBJECTIVES=$MaxObjectives"
         )
-        if ($MaxTokens -gt 0) { $campaignEnv += @("-e", "NEXO_OLLAMA_MAX_TOKENS=$MaxTokens") }
-        if ($TimeoutMinutes -gt 0) { $campaignEnv += @("-e", "NEXO_OLLAMA_TIMEOUT_MINUTES=$TimeoutMinutes") }
-        if ($ThinkOff) { $campaignEnv += @("-e", "NEXO_OLLAMA_THINK=false") }
+        if ($MaxTokens -gt 0) { $campaignEnv += @("-e", "ASHLAR_OLLAMA_MAX_TOKENS=$MaxTokens") }
+        if ($TimeoutMinutes -gt 0) { $campaignEnv += @("-e", "ASHLAR_OLLAMA_TIMEOUT_MINUTES=$TimeoutMinutes") }
+        if ($ThinkOff) { $campaignEnv += @("-e", "ASHLAR_OLLAMA_THINK=false") }
         Write-Host "== campaign [$model]: $campaignDir =="
         $campaignCmd = "set -o pipefail; ( $runnerCmd ) 2>&1 | tee /campaign/sweep.log"
         docker run --rm --user root `
             -v "${repoRoot}:/src-mirror:ro" `
-            -v nexo-nuget-packages:/root/.nuget/packages `
+            -v ashlar-nuget-packages:/root/.nuget/packages `
             -v /var/run/docker.sock:/var/run/docker.sock `
             -v "${campaignDir}:/campaign" `
             @campaignEnv `
@@ -177,7 +177,7 @@ if ($SweepLive) {
 
 docker run --rm --user root `
     -v "${repoRoot}:/src-mirror:ro" `
-    -v nexo-nuget-packages:/root/.nuget/packages `
+    -v ashlar-nuget-packages:/root/.nuget/packages `
     -v /var/run/docker.sock:/var/run/docker.sock `
     @liveMount `
     -e DOTNET_ROLL_FORWARD=LatestMajor `

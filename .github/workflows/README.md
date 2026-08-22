@@ -50,5 +50,5 @@ Replace `<branch>` with your default branch name (`master`, `main`, or your fork
 
 ## Forge API and persistence
 
-Forge session state in **Nexo.API** can persist to LiteDB when `Nexo:ForgeSession:LiteDbPath`
+Forge session state in **Ashlar.API** can persist to LiteDB when `Ashlar:ForgeSession:LiteDbPath`
 is set. See `docs/Persistence.md`.

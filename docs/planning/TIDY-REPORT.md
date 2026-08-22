@@ -1,7 +1,7 @@
 # TIDY-REPORT — Post-landing cleanup (6118 arc)
 
 **Generated:** 2026-06-25  
-**Repo:** [IanFrelinger/Nexo](https://github.com/IanFrelinger/Nexo)  
+**Repo:** [IanFrelinger/Ashlar](https://github.com/IanFrelinger/Ashlar)  
 **Master HEAD:** `f3be445848e24785b64ea5f7580998884647ea5a` — `chore(repo): P3-CLEANUP hygiene pass — test doubles relocated, evidence consolidated (#198)`
 
 ---
@@ -11,7 +11,7 @@
 | Field | Value |
 |-------|-------|
 | Commit | `f3be445848e24785b64ea5f7580998884647ea5a` |
-| API | `GET /repos/IanFrelinger/Nexo/commits/f3be445848e24785b64ea5f7580998884647ea5a/check-runs?check_name=cert-gate` |
+| API | `GET /repos/IanFrelinger/Ashlar/commits/f3be445848e24785b64ea5f7580998884647ea5a/check-runs?check_name=cert-gate` |
 | **cert-gate `total_count`** | **0** |
 | **cert-gate `conclusion`** | **ABSENT** (no check run registered on master HEAD) |
 | **Gate result** | **FAIL — sprint stopped; no branches pruned** |
@@ -26,7 +26,7 @@ The `Cert gate` workflow (`.github/workflows/cert-gate.yml`) triggers only on `p
 |-------|-------|
 | PR #198 head | `04ffd8cccab7b60a9fce9a50c844ce4fc0839df2` |
 | cert-gate conclusion | `success` |
-| Run | [actions/runs/28137102010](https://github.com/IanFrelinger/Nexo/actions/runs/28137102010/job/83326229005) |
+| Run | [actions/runs/28137102010](https://github.com/IanFrelinger/Ashlar/actions/runs/28137102010/job/83326229005) |
 
 ### Required human action before pruning
 
@@ -37,7 +37,7 @@ Dispatch cert-gate on master (or add `push: branches: [master]` to the workflow)
 gh workflow run cert-gate.yml --ref master
 
 # Option B — after dispatch completes, verify:
-gh api 'repos/IanFrelinger/Nexo/commits/$(gh api repos/IanFrelinger/Nexo/commits/master --jq .sha)/check-runs?check_name=cert-gate' \
+gh api 'repos/IanFrelinger/Ashlar/commits/$(gh api repos/IanFrelinger/Ashlar/commits/master --jq .sha)/check-runs?check_name=cert-gate' \
   --jq '.check_runs[] | {name, conclusion, status}'
 ```
 
@@ -68,10 +68,10 @@ Evidence method: GitHub PR API (`merged` field) + `refs/tags/archive/landed-<nam
 When cert-gate is green on master HEAD, run only the four branches that pass both checks:
 
 ```bash
-gh api -X DELETE repos/IanFrelinger/Nexo/git/refs/heads/cursor/repo-hygiene-cleanup-6118
-gh api -X DELETE repos/IanFrelinger/Nexo/git/refs/heads/cursor/self-extend-audit-6118
-gh api -X DELETE repos/IanFrelinger/Nexo/git/refs/heads/cursor/self-extend-enforce-6118
-gh api -X DELETE repos/IanFrelinger/Nexo/git/refs/heads/cursor/self-extend-harden-6118
+gh api -X DELETE repos/IanFrelinger/Ashlar/git/refs/heads/cursor/repo-hygiene-cleanup-6118
+gh api -X DELETE repos/IanFrelinger/Ashlar/git/refs/heads/cursor/self-extend-audit-6118
+gh api -X DELETE repos/IanFrelinger/Ashlar/git/refs/heads/cursor/self-extend-enforce-6118
+gh api -X DELETE repos/IanFrelinger/Ashlar/git/refs/heads/cursor/self-extend-harden-6118
 ```
 
 **Do not delete** PRs #195–#197 branches until their PRs show `merged: true` via the API (archive tags alone are insufficient).
@@ -107,13 +107,13 @@ Agent token lacks admin access to branch-protection endpoints (`403 Resource not
 
 | Field | State |
 |-------|-------|
-| API read | `GET /repos/IanFrelinger/Nexo/branches/master/protection` → **403** |
-| Rulesets | `GET /repos/IanFrelinger/Nexo/rulesets` → `[]` (empty) |
+| API read | `GET /repos/IanFrelinger/Ashlar/branches/master/protection` → **403** |
+| Rulesets | `GET /repos/IanFrelinger/Ashlar/rulesets` → `[]` (empty) |
 | **Status** | **PENDING-HUMAN** |
 
 ```bash
 # Requires repo admin. Enables protection and requires cert-gate status check.
-gh api -X PUT repos/IanFrelinger/Nexo/branches/master/protection \
+gh api -X PUT repos/IanFrelinger/Ashlar/branches/master/protection \
   --input - <<'EOF'
 {
   "required_status_checks": {
@@ -134,7 +134,7 @@ gh api -X PUT repos/IanFrelinger/Nexo/branches/master/protection \
 EOF
 
 # Verify:
-gh api repos/IanFrelinger/Nexo/branches/master/protection \
+gh api repos/IanFrelinger/Ashlar/branches/master/protection \
   --jq '.required_status_checks.checks[] | select(.context == "cert-gate")'
 ```
 
@@ -144,15 +144,15 @@ gh api repos/IanFrelinger/Nexo/branches/master/protection \
 
 | Field | State |
 |-------|-------|
-| API read | `GET /repos/IanFrelinger/Nexo` → `delete_branch_on_merge: false` |
+| API read | `GET /repos/IanFrelinger/Ashlar` → `delete_branch_on_merge: false` |
 | **Status** | **PENDING-HUMAN** (confirmed off, not yet enabled) |
 
 ```bash
-gh api -X PATCH repos/IanFrelinger/Nexo \
+gh api -X PATCH repos/IanFrelinger/Ashlar \
   -f delete_branch_on_merge=true
 
 # Verify:
-gh api repos/IanFrelinger/Nexo --jq '.delete_branch_on_merge'
+gh api repos/IanFrelinger/Ashlar --jq '.delete_branch_on_merge'
 # Expected: true
 ```
 

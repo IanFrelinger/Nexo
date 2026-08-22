@@ -23,4 +23,4 @@ for i in $(seq 1 30); do
 done
 
 echo "==> Projecting cert artifacts and running ArtifactsUnderPolicy demo..."
-dotnet run --project tools/Nexo.Provenance.Demo/Nexo.Provenance.Demo.csproj -- "$ROOT"
+dotnet run --project tools/Ashlar.Provenance.Demo/Ashlar.Provenance.Demo.csproj -- "$ROOT"

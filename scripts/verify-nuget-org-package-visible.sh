@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 # Poll nuget.org flat container until a package version is visible (handles index lag after push).
-# Usage: NEXO_NUGET_VERIFY_PACKAGE_ID=Nexo.Hosting.Bundle NEXO_NUGET_VERIFY_VERSION=1.2.3 bash scripts/verify-nuget-org-package-visible.sh
+# Usage: ASHLAR_NUGET_VERIFY_PACKAGE_ID=Ashlar.Hosting.Bundle ASHLAR_NUGET_VERIFY_VERSION=1.2.3 bash scripts/verify-nuget-org-package-visible.sh
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-ID="${NEXO_NUGET_VERIFY_PACKAGE_ID:-Nexo.Hosting.Bundle}"
-VER="${NEXO_NUGET_VERIFY_VERSION:?set NEXO_NUGET_VERIFY_VERSION (semver, no v prefix)}"
+ID="${ASHLAR_NUGET_VERIFY_PACKAGE_ID:-Ashlar.Hosting.Bundle}"
+VER="${ASHLAR_NUGET_VERIFY_VERSION:?set ASHLAR_NUGET_VERIFY_VERSION (semver, no v prefix)}"
 VER="${VER#v}"
-ATTEMPTS="${NEXO_NUGET_VERIFY_ATTEMPTS:-12}"
-SLEEP_SEC="${NEXO_NUGET_VERIFY_SLEEP_SEC:-15}"
+ATTEMPTS="${ASHLAR_NUGET_VERIFY_ATTEMPTS:-12}"
+SLEEP_SEC="${ASHLAR_NUGET_VERIFY_SLEEP_SEC:-15}"
 
 id_lc="$(echo "$ID" | tr '[:upper:]' '[:lower:]')"
 ver_lc="$(echo "$VER" | tr '[:upper:]' '[:lower:]')"

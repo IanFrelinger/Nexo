@@ -9,14 +9,14 @@ Version pin: `0.1.0` (from `VERSION`)
 | Property | Proof mechanism | Result | CI run |
 |----------|-----------------|--------|--------|
 | Atom portability (spike steps 1–5) | `spikes/portability/run-portability-spike.sh` — generate, certify, pack, external consume, cross-project execute | **PASS** (all steps) | Local spike; re-run `run-portability-spike.sh` for fresh summary |
-| Atom gate teeth (strong witness) | `CertificationGateTeethTests.GoodBrick_StrongWitness_Admits_WithZeroEscapeRate` | **ADMIT**, `escape_rate=0` | [Cert gate 27918340788](https://github.com/IanFrelinger/Nexo/actions/runs/27918340788) |
-| Atom gate teeth (weak witness) | `CertificationGateTeethTests.WeakWitness_AllowsMutantEscapes_RejectsWithTeeth` | **REJECT**, `mutation`, `escape_rate > 0` | [Cert gate 27918340788](https://github.com/IanFrelinger/Nexo/actions/runs/27918340788) |
-| General generation 4b (buggy rejects) | `GenerationSafetyTests.BuggyGeneration_StrongWitness_Rejects` | **REJECT**, `correctness` \| `mutation` | [Cert gate 27918340788](https://github.com/IanFrelinger/Nexo/actions/runs/27918340788) |
-| General generation 4a (correct admits) | `GenerationSafetyTests.GoodGeneration_StrongWitness_Admits_WithZeroEscapeRate` | **ADMIT**, `escape_rate=0` | [Cert gate 27918340788](https://github.com/IanFrelinger/Nexo/actions/runs/27918340788) |
-| Composition gate 4b (broken seam) | `CompositionCertificationGateTeethTests.BrokenComposition_StrongWitness_Rejects` | **REJECT**, `seam` | [Cert gate 27918340788](https://github.com/IanFrelinger/Nexo/actions/runs/27918340788) |
-| Composition gate 4c (weak witness) | `CompositionCertificationGateTeethTests.CorrectComposition_WeakWitness_Rejects_WithStructuralTeeth` | **REJECT**, `mutation`, `composition_escape_rate > 0` | [Cert gate 27918340788](https://github.com/IanFrelinger/Nexo/actions/runs/27918340788) |
-| Damage-resolver dogfood (honest) | `DamageResolverDogfoodTests.HonestCursorGeneration_Admits_WithZeroEscapeRate` | **ADMIT**, `escape_rate=0`, `signed=true` | [Cert gate 27918244198](https://github.com/IanFrelinger/Nexo/actions/runs/27918244198) @ `802e6d18` |
-| Damage-resolver dogfood (buggy) | `DamageResolverDogfoodTests.BuggyCursorGeneration_Rejects` | **REJECT**, `correctness` \| `mutation` | [Cert gate 27918244198](https://github.com/IanFrelinger/Nexo/actions/runs/27918244198) @ `802e6d18` |
+| Atom gate teeth (strong witness) | `CertificationGateTeethTests.GoodBrick_StrongWitness_Admits_WithZeroEscapeRate` | **ADMIT**, `escape_rate=0` | [Cert gate 27918340788](https://github.com/IanFrelinger/Ashlar/actions/runs/27918340788) |
+| Atom gate teeth (weak witness) | `CertificationGateTeethTests.WeakWitness_AllowsMutantEscapes_RejectsWithTeeth` | **REJECT**, `mutation`, `escape_rate > 0` | [Cert gate 27918340788](https://github.com/IanFrelinger/Ashlar/actions/runs/27918340788) |
+| General generation 4b (buggy rejects) | `GenerationSafetyTests.BuggyGeneration_StrongWitness_Rejects` | **REJECT**, `correctness` \| `mutation` | [Cert gate 27918340788](https://github.com/IanFrelinger/Ashlar/actions/runs/27918340788) |
+| General generation 4a (correct admits) | `GenerationSafetyTests.GoodGeneration_StrongWitness_Admits_WithZeroEscapeRate` | **ADMIT**, `escape_rate=0` | [Cert gate 27918340788](https://github.com/IanFrelinger/Ashlar/actions/runs/27918340788) |
+| Composition gate 4b (broken seam) | `CompositionCertificationGateTeethTests.BrokenComposition_StrongWitness_Rejects` | **REJECT**, `seam` | [Cert gate 27918340788](https://github.com/IanFrelinger/Ashlar/actions/runs/27918340788) |
+| Composition gate 4c (weak witness) | `CompositionCertificationGateTeethTests.CorrectComposition_WeakWitness_Rejects_WithStructuralTeeth` | **REJECT**, `mutation`, `composition_escape_rate > 0` | [Cert gate 27918340788](https://github.com/IanFrelinger/Ashlar/actions/runs/27918340788) |
+| Damage-resolver dogfood (honest) | `DamageResolverDogfoodTests.HonestCursorGeneration_Admits_WithZeroEscapeRate` | **ADMIT**, `escape_rate=0`, `signed=true` | [Cert gate 27918244198](https://github.com/IanFrelinger/Ashlar/actions/runs/27918244198) @ `802e6d18` |
+| Damage-resolver dogfood (buggy) | `DamageResolverDogfoodTests.BuggyCursorGeneration_Rejects` | **REJECT**, `correctness` \| `mutation` | [Cert gate 27918244198](https://github.com/IanFrelinger/Ashlar/actions/runs/27918244198) @ `802e6d18` |
 | Autonomy first flight (live engine) | `spikes/autonomy-first-flight/run-first-flight.ps1` — one real iteration: attested Docker session → full chain → Tier-0 swap → watch window | **PASS**, `AdmittedAndSwapped`, `escape_rate=0` | Local spike @ `1afac86d`; re-run the script for a fresh flight |
 | Autonomy in-session build (P3) | Same flight with `-SessionBuild` — candidate compiles INSIDE the attested `dotnet/sdk:9.0` session over `ExecAsync`, offline | **PASS**, `session-build` input on the certificate | Local spike @ `d71d045f` |
 | Autonomy in-session execution (P5a) | Flight with `-SessionExecute` — witness, determinism, and every mutant EXECUTE inside the session; the gate judges raw observations | **PASS**, `session-execution` input, `escape_rate=0` | Local spike @ `bf8821db` |
@@ -25,8 +25,8 @@ Version pin: `0.1.0` (from `VERSION`)
 | Standing loop, first sweep (S1) | `run-first-flight.ps1 -Sweep` — an objective FILE in the store drives the loop: witness + proposal loaded, attested session, in-session compile, witness judged | **REJECT at `correctness` case 0** (`expected "" got <null>`) — hold mode, nothing swapped | Local spike @ `061c4f83`; example in `samples/autonomy-objectives/` |
 | Repair loop to ADMIT (S2) | S1 rejection fed back to the model as repair input; loop re-run under hold + full containment | model fixed its one defective line; **ADMIT, `escape_rate=0` → `CertifiedButHeld`** after two trust-machinery holes were closed (analyzer-dead mutants as kills; `$summary` witnessable) | Local spike @ `7cdf9e88`; sample in `samples/autonomy-objectives/` |
 | Repair channel as policy (S3) | `RepairFeedbackPolicy` + ablation on codellama:7b, then the shipped loop path (5 objectives × 2-attempt budget, two temperatures) | **redaction costs nothing (3/3 vs 3/3 in ablation); through the shipped path 3/5 objectives converge within the budget at temp 0.2 and 0.7 alike**; the necessary ingredient was contract precision ("NEVER null"), and single-shot rate on a 7B model swings with formatting noise — the bounded retry is what makes it usable | Local ablation @ this PR |
-| Dogfood campaign 1 (S4) | five human-authored objectives, live codellama:7b in the loop, hold mode, four campaigns | **compiled 0/5 → 1/5 → 3/5 → 2/5 as the loop was fixed; first full-chain success `door-lock-transition` CertifiedButHeld (escape_rate=0) on the FIRST proposal; text-slug held on a witness the proposer never saw**; a 7B model re-emits on repair — the loop is model-agnostic and the next lever is the model | `.nexo/campaign/*` recordings; `samples/autonomy-objectives/door-lock-transition.proposal.json` |
-| Dogfood campaign 2 (S5) | the same five objectives, witnesses, preamble and hold mode — only `NEXO_OLLAMA_MODEL` varies: `codellama:7b` vs `qwen2.5-coder:7b` vs `qwen3.8:27b` | **certified-held 1/5 → 2/5 → 3/5 on model swap alone; at 27B compiled 5/5 and the failures move down the pipeline** — and the survivor is a finding against the GATE: `semver-parse` passes every correctness case and is rejected at `mutation` on an **equivalent mutant** (`escape_rate=0.04`, a redundant length guard `0 => 2` that no witness case can kill), so a correct candidate can never certify. Repair re-emission is clean evidence at 7B (byte-identical on 6/6) but untested at 27B (2 of its 4 repairs had nothing to fix); every certified candidate certified on attempt 1 | `.nexo/campaign/*-qwen*` recordings; `samples/autonomy-objectives/rgb-hex-parse.proposal.json` |
+| Dogfood campaign 1 (S4) | five human-authored objectives, live codellama:7b in the loop, hold mode, four campaigns | **compiled 0/5 → 1/5 → 3/5 → 2/5 as the loop was fixed; first full-chain success `door-lock-transition` CertifiedButHeld (escape_rate=0) on the FIRST proposal; text-slug held on a witness the proposer never saw**; a 7B model re-emits on repair — the loop is model-agnostic and the next lever is the model | `.ashlar/campaign/*` recordings; `samples/autonomy-objectives/door-lock-transition.proposal.json` |
+| Dogfood campaign 2 (S5) | the same five objectives, witnesses, preamble and hold mode — only `ASHLAR_OLLAMA_MODEL` varies: `codellama:7b` vs `qwen2.5-coder:7b` vs `qwen3.8:27b` | **certified-held 1/5 → 2/5 → 3/5 on model swap alone; at 27B compiled 5/5 and the failures move down the pipeline** — and the survivor is a finding against the GATE: `semver-parse` passes every correctness case and is rejected at `mutation` on an **equivalent mutant** (`escape_rate=0.04`, a redundant length guard `0 => 2` that no witness case can kill), so a correct candidate can never certify. Repair re-emission is clean evidence at 7B (byte-identical on 6/6) but untested at 27B (2 of its 4 repairs had nothing to fix); every certified candidate certified on attempt 1 | `.ashlar/campaign/*-qwen*` recordings; `samples/autonomy-objectives/rgb-hex-parse.proposal.json` |
 
 **Dogfood summary:** `honest=ADMIT`, `buggy=REJECT`, `tests_executed=19` — CI-confirmed on PR #191.
 
@@ -53,7 +53,7 @@ Probe brick: `ErrorSummaryExtractor` (deterministic log scanner).
 |------|-------------|--------|
 | 1 | Generate deterministic probe brick via `INewBrickGenerator` | PASS |
 | 2 | Certify through S0–S2 gate (signed admission record) | PASS |
-| 3 | Pack Nexo.Brick.Contracts + Nexo.Authoring (+ Hosting.Bundle) @ 0.1.0 | PASS |
+| 3 | Pack Ashlar.Brick.Contracts + Ashlar.Authoring (+ Hosting.Bundle) @ 0.1.0 | PASS |
 | 4 | Consume generated brick from external template (package pins only) | PASS |
 | 5 | Cross-project HTTP execute assertion | PASS |
 
@@ -84,7 +84,7 @@ Model seam: `IGeneratorModel` with hermetic `FixtureGeneratorModel` (**test doub
 | 4a | `fixture:correct` | Strong | **ADMIT** | `escape_rate=0`, signed admission record |
 | 4b | `fixture:buggy` | Strong | **REJECT** | `correctness` — `firstMatchingLine` reports last match (`FOO line two`) instead of first |
 | 4c | `fixture:correct` | Weak (`matchCount` only) | **REJECT** | `mutation` — `escape_rate > 0` (AST mutants survive weak witness) |
-| 4d | `fixture:dependency-leak` | Strong | **REJECT** | `dependency` — source contains forbidden token `Nexo.Infrastructure` |
+| 4d | `fixture:dependency-leak` | Strong | **REJECT** | `dependency` — source contains forbidden token `Ashlar.Infrastructure` |
 
 Generated manifest carries `GenerationProvenance` (e.g. `fixture:correct`) marking model/fixture origin on the artifact.
 
@@ -110,7 +110,7 @@ Intent: **damage-resolver** — Cursor-authored `CursorGeneratorModel` (**test d
 
 | Fact | Value |
 |------|-------|
-| Workflow | [Cert gate run 27918244198](https://github.com/IanFrelinger/Nexo/actions/runs/27918244198) — `conclusion: success` |
+| Workflow | [Cert gate run 27918244198](https://github.com/IanFrelinger/Ashlar/actions/runs/27918244198) — `conclusion: success` |
 | Commit | `802e6d180bcae8cb7538d0497a644f67a5153893` |
 | Tests executed | **19** (TRX `Counters total="19" executed="19" passed="19"`) |
 | `HonestCursorGeneration_Admits_WithZeroEscapeRate` | **PASS** (CI TRX `outcome="Passed"`, 941 ms on `runnervm7b5n9`) |
@@ -132,7 +132,7 @@ honest=ADMIT, broken=REJECT, tests_reported=21
 
 Composition: **damage-resolver → health-applier** (`damage-to-health-pipeline`); witness in `CompositionDogfoodWitness.Spec` (6 end-to-end cases); broken wiring redirects `currentHealth` into `health.finalDamage` (rejects on `correctness`).
 
-cert-gate CI: **success**, run [27922375242](https://github.com/IanFrelinger/Nexo/actions/runs/27922375242) — TRX `total="21"`, guard `cert-gate reported 21 tests (expected>=21)`.
+cert-gate CI: **success**, run [27922375242](https://github.com/IanFrelinger/Ashlar/actions/runs/27922375242) — TRX `total="21"`, guard `cert-gate reported 21 tests (expected>=21)`.
 
 ## Phase 2: cross-project reuse
 
@@ -144,17 +144,17 @@ trusted-reuse=PASS, tamper-reject=PASS, forged-sig-reject=PASS, tests_reported=2
 | `TamperedBrick_ProjectB_RejectsContentHashMismatch` | **PASS** — `content-hash-mismatch`, refused |
 | `ForgedSignature_ProjectB_Rejects` | **PASS** — `signature-invalid`, refused |
 
-Project B (`samples/certified-brick-reuse/ProjectB`) references only `Nexo.Certification.Contracts`, `Nexo.Brick.Contracts`, `Nexo.Authoring`, and the packed `Nexo.Certified.DamageResolver` artifact — **no generator, no gate**. B verifies signature + content hash; it does not re-certify or regenerate.
+Project B (`samples/certified-brick-reuse/ProjectB`) references only `Ashlar.Certification.Contracts`, `Ashlar.Brick.Contracts`, `Ashlar.Authoring`, and the packed `Ashlar.Certified.DamageResolver` artifact — **no generator, no gate**. B verifies signature + content hash; it does not re-certify or regenerate.
 
-Content binding: `CertificationRecord.ContentHash` = SHA-256 (UTF-8) of canonical brick source, included in signed HMAC payload (`Nexo.Certification.Contracts`).
+Content binding: `CertificationRecord.ContentHash` = SHA-256 (UTF-8) of canonical brick source, included in signed HMAC payload (`Ashlar.Certification.Contracts`).
 
 Pack/export: `scripts/pack-certified-brick-reuse.sh` → local feed + `certification-record.json` sidecar.
 
-**v0 trust model:** same-owner cross-project reuse via shared dev HMAC key (`NEXO_CERT_DEV_HMAC_KEY`). Cross-organization trust requires PKI (out of scope).
+**v0 trust model:** same-owner cross-project reuse via shared dev HMAC key (`ASHLAR_CERT_DEV_HMAC_KEY`). Cross-organization trust requires PKI (out of scope).
 
 ## Agent-composer (proposer seam → real model → acceptance rate)
 
-Cumulative evidence from P3-S1 (controlled proposer), P3-S2 (real-model record/replay), and P3-S3 (acceptance-rate measurement). cert-gate: **41 tests** @ [run 28067778575](https://github.com/IanFrelinger/Nexo/actions/runs/28067778575) (`conclusion: success` @ `7f9cbdc3`).
+Cumulative evidence from P3-S1 (controlled proposer), P3-S2 (real-model record/replay), and P3-S3 (acceptance-rate measurement). cert-gate: **41 tests** @ [run 28067778575](https://github.com/IanFrelinger/Ashlar/actions/runs/28067778575) (`conclusion: success` @ `7f9cbdc3`).
 
 ### Proposer seam (P3-S1)
 
@@ -170,7 +170,7 @@ Cumulative evidence from P3-S1 (controlled proposer), P3-S2 (real-model record/r
 
 **v0 boundary:** Controlled proposer only for rejection teeth; real model is next layer below.
 
-CI: [run 28000451847](https://github.com/IanFrelinger/Nexo/actions/runs/28000451847) — 33 tests, 9 `CompositionProposer*` passed.
+CI: [run 28000451847](https://github.com/IanFrelinger/Ashlar/actions/runs/28000451847) — 33 tests, 9 `CompositionProposer*` passed.
 
 ### Real-model proposer dogfood (P3-S2)
 
@@ -186,7 +186,7 @@ CI: [run 28000451847](https://github.com/IanFrelinger/Nexo/actions/runs/28000451
 
 **v0 boundary:** Single recorded proposal (record/replay); live capture via `CompositionProposalRecorder` locally. S1 controlled rejection remains authoritative teeth.
 
-CI: [run 28028224579](https://github.com/IanFrelinger/Nexo/actions/runs/28028224579) — 37 tests.
+CI: [run 28028224579](https://github.com/IanFrelinger/Ashlar/actions/runs/28028224579) — 37 tests.
 
 ### Acceptance-rate measurement (P3-S3)
 
@@ -220,9 +220,9 @@ Headless cert + verifier core for binding physical objects to hosted digital-twi
 
 **Design decision:** `Design` binding_scope with populated `manufacture_meta` is an explicit error (`binding-scope-manufacture-meta-forbidden`), not silently ignored.
 
-**Crypto:** Ed25519 issuer signatures via `Nexo.Certification.Physical` (NSec 25.4.0). Sample issuer key is documentation-only.
+**Crypto:** Ed25519 issuer signatures via `Ashlar.Certification.Physical` (NSec 25.4.0). Sample issuer key is documentation-only.
 
-cert-gate: **69 tests** @ [run 28486193636](https://github.com/IanFrelinger/Nexo/actions/runs/28486193636) (`conclusion: success`, PR #210).
+cert-gate: **69 tests** @ [run 28486193636](https://github.com/IanFrelinger/Ashlar/actions/runs/28486193636) (`conclusion: success`, PR #210).
 
 ## Physical-atom asset resolution (Phase 1 — Prototype)
 
@@ -260,16 +260,16 @@ HTTP resolution routing + tag→verify orchestration. Spec: `docs/physical-atom-
 
 ## Spatial pose arc (P1 — Prototype, #220)
 
-Identity/pose seam landed on `master` via squash merge `4f550b03`. Duplicate `Nexo.Certification.PhysicalAtom` dropped; spatial runtime binds through `TagVerifyResolverAdapter` → `PhysicalAtomTagVerifyOrchestrator`.
+Identity/pose seam landed on `master` via squash merge `4f550b03`. Duplicate `Ashlar.Certification.PhysicalAtom` dropped; spatial runtime binds through `TagVerifyResolverAdapter` → `PhysicalAtomTagVerifyOrchestrator`.
 
 | Proof | Result |
 |-------|--------|
 | `SpatialBindingServiceRejectionTests` + `TagVerifyResolverAdapterSeamTests` | **PASS** — uncertified atom, issuer mismatch, mid-stream asset-hash change refused |
 | `ScopedPoseRelayRejectionTests` | **PASS** — host-only publish, non-member subscribe refused, no pose replay for late joiners |
 | `PoseStreamConsumerRejectionTests` | **PASS** — confidence/gap/velocity policies downstream of provider |
-| `dependency-boundary-gate` | **PASS** — only `Nexo.Spatial.Runtime` references `Nexo.Certification.Physical` |
+| `dependency-boundary-gate` | **PASS** — only `Ashlar.Spatial.Runtime` references `Ashlar.Certification.Physical` |
 
-Projects: `Nexo.Spatial.Contracts`, `Nexo.Spatial.Runtime`, `Nexo.Spatial.Multiplayer`. Doc: `docs/spatial-multiplayer.md`.
+Projects: `Ashlar.Spatial.Contracts`, `Ashlar.Spatial.Runtime`, `Ashlar.Spatial.Multiplayer`. Doc: `docs/spatial-multiplayer.md`.
 
 **Deferred:** 0c8b hash-chained bundle transitions (use `PhysicalAtomCertBundleVerifier` instead). Native SDK binding on device hosts (ARKit/NRSDK/RealityKit frame delegates) remains a manual hardware follow-up.
 
@@ -283,9 +283,9 @@ Real platform shells wired through injectable native-interop seams; headless CI 
 | `XrealSpatialAnchorProviderRejectionTests` | **PASS** — unsupported host, tether disconnect→`Lost`, unknown atom→`null` |
 | `VisionProSpatialAnchorProviderRejectionTests` | **PASS** — pre-immersive-space fail-closed; limited→`Occluded` |
 | `SpatialAnchorProviderSelectorRejectionTests` | **PASS** — unsupported host explicit unavailable; deterministic priority tie-break |
-| `dependency-boundary-gate` | **PASS** — zero `Nexo.Certification.*` in `Nexo.Spatial.Platform.*`; no sibling platform refs |
+| `dependency-boundary-gate` | **PASS** — zero `Ashlar.Certification.*` in `Ashlar.Spatial.Platform.*`; no sibling platform refs |
 
-Projects: `Nexo.Spatial.Platform.ARKit`, `Nexo.Spatial.Platform.XREAL`, `Nexo.Spatial.Platform.VisionPro`. Selection glue: `SpatialAnchorProviderSelector` in `Nexo.Spatial.Runtime`.
+Projects: `Ashlar.Spatial.Platform.ARKit`, `Ashlar.Spatial.Platform.XREAL`, `Ashlar.Spatial.Platform.VisionPro`. Selection glue: `SpatialAnchorProviderSelector` in `Ashlar.Spatial.Runtime`.
 
 **Architecture notes:** ARKit session lifecycle is host-owned via `IArKitNativeSession`. Vision Pro is a separate package (not an ARKit variant) for visionOS consumer isolation + immersive-space gating. Provider priority: `visionpro` → `arkit` → `xreal` (ordinal tie-break).
 
@@ -296,7 +296,7 @@ step previously recorded as outstanding under known limitation 5. Flown 2026-08-
 `1afac86d` via `spikes/autonomy-first-flight/run-first-flight.ps1` (devcontainer image +
 `/var/run/docker.sock` pass-through; only committed state flies).
 
-The spike composes `AddCertificationGate` + `AddNexoAutonomy` exactly as a host would
+The spike composes `AddCertificationGate` + `AddAshlarAutonomy` exactly as a host would
 (`ValidateOnBuild`/`ValidateScopes`), hand-authors a Triage objective, and runs one
 `AutonomousIterationHarness.RunIterationAsync` with a candidate whose source, witness, and clean
 project file mirror the proven gate-teeth shape.
@@ -309,7 +309,7 @@ project file mirror the proven gate-teeth shape.
 | Certificate inputs | `witness`, `image-digest`, `sandbox-spec`, `attestation`, `generation-depth` (depth 1) all recorded |
 | Autonomous Tier-0 swap (`AutonomousAdmission` with lineage key) | **`AdmittedAndSwapped`** as generation 1, 4.4 s end to end |
 | Post-swap serving | 3/3 invocations correct (`errorCount=1`, first message extracted) — watch window cleared |
-| Session teardown | `docker ps -a` on the host daemon shows **zero** `nexo-session-*` containers after the run |
+| Session teardown | `docker ps -a` on the host daemon shows **zero** `ashlar-session-*` containers after the run |
 | Digest | `AutonomyDigest` renders the swap-committed event; nothing held |
 
 A `--dry` leg (TestKit fake runner, same wiring) also passed, with an explicit zero-leaked-sessions
@@ -323,7 +323,7 @@ open: every flight candidate was hand-authored to the gate-teeth shape, not prod
 ### P3 acceptance: the candidate compiled inside the session
 
 Re-flown 2026-08-14 from commit `d71d045f` with `-SessionBuild`: the loop's iteration required the
-candidate to compile **inside** the attested session (`Nexo:Autonomy:BuildCandidateInSession=true`),
+candidate to compile **inside** the attested session (`Ashlar:Autonomy:BuildCandidateInSession=true`),
 against the pinned SDK image on the live daemon.
 
 | Step | Result |
@@ -331,7 +331,7 @@ against the pinned SDK image on the live daemon.
 | Session image | `mcr.microsoft.com/dotnet/sdk:9.0` @ `sha256:35048e3a81e6a07c316e7bbbd80d80d2ba705fe5f23a8ed42b6638c8f4c20d30`, engine `29.7.2`, same effective-caps verification as P2 |
 | In-session compile (`SessionCandidateBuild` over `ExecAsync`: base64-chunk uploads, zero-`PackageReference` project, cleared NuGet sources, `NetworkAccess.None`) | **PASS** — the exact `CandidateSourceWrapper.Wrap` bytes every certification-path compile sees |
 | Certificate inputs | Six kinds: `witness`, `image-digest`, `sandbox-spec`, `attestation`, **`session-build`**, `generation-depth` |
-| Outcome | **`AdmittedAndSwapped`** as generation 1, 7.0 s end to end; 3/3 post-swap invocations; digest rendered; zero `nexo-session-*` containers left on the daemon |
+| Outcome | **`AdmittedAndSwapped`** as generation 1, 7.0 s end to end; 3/3 post-swap invocations; digest rendered; zero `ashlar-session-*` containers left on the daemon |
 
 The dry `-Dry -SessionBuild` leg passed identically (fake sessions, same input kinds). In-container
 test suite: 20/20 (`AutonomousIterationHarnessTests` including the in-session-build facts,
@@ -459,7 +459,7 @@ re-run after each fix. Full campaign, all under hold mode with full session cont
 
 1. **Analyzer-dead mutants counted as escapes.** Mutants were judged only by the witness; the
    analyzer fence never ran on them. So a mutant that rewrites a declared key
-   (`Set("firstMatchingLine")` → `"firstMatchingLinX"`, NEXO0002) — which no proposer could ever
+   (`Set("firstMatchingLine")` → `"firstMatchingLinX"`, ASHLAR0002) — which no proposer could ever
    ship — was an "escape" no behavioural witness can observe. Fixed with precedent: a
    non-compiling mutant was already "dead on arrival"; a fence-rejected one is the same case at an
    earlier gate. Triage runs on survivors only and fails toward reporting the survivor.
@@ -578,7 +578,7 @@ lines. Feedback quality is not the constraint: the projections were precise and 
 throughout (`text-slug` saw its own `"café-olé"` and never `"cafe-ole"`, and the loop held). At 7B
 the loop reaches the witness for 2–3 of 5 shapes and repair convergence is ~0 for anything beyond
 a one-token fix; results also swing between runs (`semver-parse` compiled in campaign 3, not in 4).
-The loop is model-agnostic by construction (`NEXO_OLLAMA_MODEL`); the next lever is the model.
+The loop is model-agnostic by construction (`ASHLAR_OLLAMA_MODEL`); the next lever is the model.
 
 **And the first end-to-end success:** in campaign 4 `door-lock-transition`'s FIRST proposal —
 9.4 s from a 7B model, on an objective it had never seen — built in the attested session, passed
@@ -592,7 +592,7 @@ admitted, in four campaigns and 60 attempts, and every rejection says why.
 S4 ended with a claim rather than a measurement: the loop is model-agnostic by construction, so
 the next lever is the model and not the prompt. S5 tests exactly that. Everything else is pinned —
 the same five objectives and witnesses, the same operator preamble, hold mode, the same 2-attempt
-repair budget, the same attested session — and the only variable is `NEXO_OLLAMA_MODEL`. Two more
+repair budget, the same attested session — and the only variable is `ASHLAR_OLLAMA_MODEL`. Two more
 proposers, one campaign each, back to back on one box (`run-first-flight.ps1 -SweepLive -Models`).
 
 | Proposer | Compiled | Judged by the witness | Certified (held) | Where the survivors failed | Repair behaviour | s/proposal |
@@ -705,7 +705,7 @@ redundant guard is exactly what a careful proposer writes.
 
 ## Contract-stability gaps
 
-- Generated brick uses Nexo.Core.Domain.* namespaces (shipped via Nexo.Authoring/Nexo.Brick.Contracts but not the pinned package IDs)
+- Generated brick uses Ashlar.Core.Domain.* namespaces (shipped via Ashlar.Authoring/Ashlar.Brick.Contracts but not the pinned package IDs)
 
 ## Artifacts
 
@@ -715,7 +715,7 @@ redundant guard is exactly what a careful proposer writes.
 
 ## Known v0 limitations
 
-1. **Dev HMAC signer, not PKI.** `CertificationRecordSigner` uses a development HMAC key, not a public-key infrastructure. This becomes more load-bearing in the composition phase because trust chains from constituent atom signatures — a forged or weak constituent record undermines the whole composition admission path. Unless `NEXO_CERT_DEV_HMAC_KEY` is set, the key is the COMMITTED constant `CertificationRecordSigning.DefaultDevKey`, so every record verifiable here is forgeable by anyone with the source; both signers now warn at construction while that is the case (`UsesDevKey`), and `NEXO_CERT_ED25519_KEY` adds a real signature on top.
+1. **Dev HMAC signer, not PKI.** `CertificationRecordSigner` uses a development HMAC key, not a public-key infrastructure. This becomes more load-bearing in the composition phase because trust chains from constituent atom signatures — a forged or weak constituent record undermines the whole composition admission path. Unless `ASHLAR_CERT_DEV_HMAC_KEY` is set, the key is the COMMITTED constant `CertificationRecordSigning.DefaultDevKey`, so every record verifiable here is forgeable by anyone with the source; both signers now warn at construction while that is the case (`UsesDevKey`), and `ASHLAR_CERT_ED25519_KEY` adds a real signature on top.
 
 2. **Composition seam check is TYPE-level only.** The seam validator checks producer/consumer type compatibility (e.g. `string` vs `int`) but not semantic mismatches where types align (e.g. file path vs URL, both `string`). Graph-mutation teeth only partially compensate for this gap.
 
@@ -745,7 +745,7 @@ redundant guard is exactly what a careful proposer writes.
    records the containment the engine reports it applied — network mode, read-only rootfs,
    dropped capabilities, security options — inside the hashed attestation input, and the
    Docker backend refuses to attest a session that requested no network but does not
-   report `none`. `Nexo:Autonomy:SessionImageDigest` optionally PINS the image identity
+   report `none`. `Ashlar:Autonomy:SessionImageDigest` optionally PINS the image identity
    (refuse-to-start on mismatch; null = capture only, as before). Still on the host, and
    deliberately: the container runs as **root** — the SDK image ships no unprivileged
    user, and a numeric `--user` cannot own the tmpfs scratch the toolchain needs without
@@ -766,4 +766,4 @@ redundant guard is exactly what a careful proposer writes.
    standing proposer loop over many objectives with acceptance tracked per lineage is
    host-operations work on seams that all exist.
 
-6. **Kernel options bind from environment variables only in the shipped hosts.** `AddNexo` builds its own `IConfiguration` from `AddEnvironmentVariables()` (`src/Nexo.Hosting/NexoServiceCollectionExtensions.cs`), so `Nexo:Meai`, `Nexo:NodeCapabilityRuntime`, `Nexo:WorkloadScaling` and the other kernel sections read `Nexo__X__Y` variables and never `appsettings.json` in Nexo.API / Nexo.CLI (`Nexo:Autonomy` is host-composed and reads whatever configuration the composing host passes). Documented in `docs/Configuration.md`; the fix is architectural, not a docs fix.
+6. **Kernel options bind from environment variables only in the shipped hosts.** `AddAshlar` builds its own `IConfiguration` from `AddEnvironmentVariables()` (`src/Ashlar.Hosting/AshlarServiceCollectionExtensions.cs`), so `Ashlar:Meai`, `Ashlar:NodeCapabilityRuntime`, `Ashlar:WorkloadScaling` and the other kernel sections read `Ashlar__X__Y` variables and never `appsettings.json` in Ashlar.API / Ashlar.CLI (`Ashlar:Autonomy` is host-composed and reads whatever configuration the composing host passes). Documented in `docs/Configuration.md`; the fix is architectural, not a docs fix.

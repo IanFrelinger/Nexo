@@ -16,7 +16,7 @@ source "${ROOT}/scripts/mesh-lab-fleet.sh"
 COMPOSE_ENV_FILE="${1:-${COMPOSE_ENV_FILE:-.env.mesh-lab}}"
 PEER_A_HOST="${MESH_LAB_PEER_A_HOST:-127.0.0.1:18081}"
 CLI_PEER_ID="${MESH_LAB_CLI_GOV_PEER_ID:-mesh-lab-cli-gov-peer}"
-MESH_DIRECTOR_PROJECT="${MESH_LAB_MESH_DIRECTOR_PROJECT:-commercial/src/Nexo.Commercial.MeshDirector/Nexo.Commercial.MeshDirector.csproj}"
+MESH_DIRECTOR_PROJECT="${MESH_LAB_MESH_DIRECTOR_PROJECT:-commercial/src/Ashlar.Commercial.MeshDirector/Ashlar.Commercial.MeshDirector.csproj}"
 
 if [[ ! -f "$COMPOSE_ENV_FILE" ]]; then
   echo "Missing env file: $COMPOSE_ENV_FILE" >&2
@@ -28,7 +28,7 @@ source_env_kv() {
   grep -E "^${key}=" "$COMPOSE_ENV_FILE" 2>/dev/null | head -1 | cut -d= -f2- | tr -d '\r' || true
 }
 
-API_KEY="$(source_env_kv Nexo__Security__ApiKey)"
+API_KEY="$(source_env_kv Ashlar__Security__ApiKey)"
 MESH_LAB_PEER_REGISTRATION_KEY="$(source_env_kv MESH_LAB_PEER_REGISTRATION_KEY)"
 export MESH_LAB_PEER_REGISTRATION_KEY
 
@@ -37,20 +37,20 @@ if [[ -z "$API_KEY" || -z "$MESH_LAB_PEER_REGISTRATION_KEY" ]]; then
   exit 0
 fi
 
-export NEXO_MESH_DIRECTOR_BASE_URL="http://${PEER_A_HOST}"
-export NEXO_MESH_API_KEY="${API_KEY}"
-export NEXO_MESH_PEER_REGISTRATION_KEY="${MESH_LAB_PEER_REGISTRATION_KEY}"
+export ASHLAR_MESH_DIRECTOR_BASE_URL="http://${PEER_A_HOST}"
+export ASHLAR_MESH_API_KEY="${API_KEY}"
+export ASHLAR_MESH_PEER_REGISTRATION_KEY="${MESH_LAB_PEER_REGISTRATION_KEY}"
 
 director() {
   dotnet run --project "$MESH_DIRECTOR_PROJECT" -- director "$@"
 }
 
 mesh_post() {
-  curl -fsS -X POST -H "Content-Type: application/json" -H "X-Nexo-Api-Key: ${API_KEY}" "$@"
+  curl -fsS -X POST -H "Content-Type: application/json" -H "X-Ashlar-Api-Key: ${API_KEY}" "$@"
 }
 
 mesh_delete() {
-  curl -fsS -X DELETE -H "X-Nexo-Api-Key: ${API_KEY}" "$@"
+  curl -fsS -X DELETE -H "X-Ashlar-Api-Key: ${API_KEY}" "$@"
 }
 
 echo "== Mesh director CLI governance (${PEER_A_HOST}) =="
@@ -86,7 +86,7 @@ REV_JSON="$(mesh_post -d '{"name":"mesh-lab-cli-revoked","steps":1}' \
 REV_ID="$(echo "$REV_JSON" | python3 -c 'import json,sys; print(json.load(sys.stdin)["taskId"])')"
 REV_CODE="$(curl -s -o /dev/null -w '%{http_code}' -X POST \
   -H "Content-Type: application/json" \
-  -H "X-Nexo-Api-Key: ${API_KEY}" \
+  -H "X-Ashlar-Api-Key: ${API_KEY}" \
   -d '{}' \
   "http://${PEER_A_HOST}/api/mesh/tasks/${REV_ID}/schedule")"
 if [[ "$REV_CODE" != "400" ]]; then

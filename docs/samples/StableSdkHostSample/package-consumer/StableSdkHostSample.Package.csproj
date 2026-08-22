@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <!-- Standalone sample: do not inherit repo central package management (Nexo.Hosting version is local feed). -->
+    <!-- Standalone sample: do not inherit repo central package management (Ashlar.Hosting version is local feed). -->
     <!-- ManagePackageVersionsCentrally: see Directory.Packages.props in this folder -->
     <!-- Transitive advisories: pinned in package-consumer/Directory.Build.props -->
     <OutputType>Exe</OutputType>
@@ -9,12 +9,12 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <AssemblyName>StableSdkHostSamplePackage</AssemblyName>
     <RootNamespace>StableSdkHostSample</RootNamespace>
-    <NexoSdkPackageVersion Condition="'$(NexoSdkPackageVersion)' == ''">1.0.0</NexoSdkPackageVersion>
+    <AshlarSdkPackageVersion Condition="'$(AshlarSdkPackageVersion)' == ''">1.0.0</AshlarSdkPackageVersion>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="..\Program.cs" Link="Program.cs" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Nexo.Hosting.Bundle" Version="$(NexoSdkPackageVersion)" />
+    <PackageReference Include="Ashlar.Hosting.Bundle" Version="$(AshlarSdkPackageVersion)" />
   </ItemGroup>
 </Project>

@@ -1,0 +1,88 @@
+using System.Text.Json;
+using Microsoft.Extensions.Http;
+using Ashlar.Core.Application.ModelArtifacts;
+using Ashlar.Core.Application.ModelArtifacts.Ports;
+using Ashlar.Infrastructure.Execution.Ollama;
+
+namespace Ashlar.Infrastructure.ModelArtifacts;
+
+/// <summary>
+/// Lists Ollama models installed on the daemon via <c>GET /api/tags</c> (same as <c>ollama list</c>).
+/// </summary>
+public sealed class OllamaTagsModelArtifactCatalogSource : IModelArtifactCatalogSource
+{
+    /// <summary>http client name constant.</summary>
+    public const string HttpClientName = "Ashlar.ModelArtifactCatalog.OllamaTags";
+
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
+    private readonly IHttpClientFactory _httpClientFactory;
+
+    /// <summary>Initializes a new ollama tags model artifact catalog source.</summary>
+    public OllamaTagsModelArtifactCatalogSource(IHttpClientFactory httpClientFactory)
+    {
+        _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
+    }
+
+    /// <summary>Source id.</summary>
+    public string SourceId => "ollama-tags";
+
+    /// <summary>Is available asynchronously.</summary>
+    public async Task<bool> IsAvailableAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            var client = _httpClientFactory.CreateClient(HttpClientName);
+            using var response = await client.GetAsync("api/tags", cancellationToken).ConfigureAwait(false);
+            return response.IsSuccessStatusCode;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>List asynchronously.</summary>
+    public async Task<IReadOnlyList<ModelArtifactRecord>> ListAsync(CancellationToken cancellationToken = default)
+    {
+        var client = _httpClientFactory.CreateClient(HttpClientName);
+        using var response = await client.GetAsync("api/tags", cancellationToken).ConfigureAwait(false);
+        response.EnsureSuccessStatusCode();
+
+        OllamaTagsResponse? body;
+        await using (var stream = await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false))
+        {
+            body = await JsonSerializer.DeserializeAsync<OllamaTagsResponse>(stream, JsonOptions, cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        if (body?.Models is null || body.Models.Count == 0)
+        {
+            return [];
+        }
+
+        var list = new List<ModelArtifactRecord>(body.Models.Count);
+        foreach (var m in body.Models)
+        {
+            if (string.IsNullOrWhiteSpace(m.Name))
+            {
+                continue;
+            }
+
+            list.Add(new ModelArtifactRecord(
+                Id: m.Name.Trim(),
+                SourceId: SourceId,
+                Kind: ModelArtifactKind.OllamaModel,
+                SizeHintBytes: m.Size,
+                Metadata: new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                {
+                    ["modified_at"] = m.ModifiedAt?.ToString("O") ?? string.Empty
+                }));
+        }
+
+        return list;
+    }
+}

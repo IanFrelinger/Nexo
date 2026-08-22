@@ -1,0 +1,215 @@
+{
+  "name": "ashlar",
+  "displayName": "Ashlar",
+  "description": "Offline multi-agent coding assistant powered by the Ashlar local agent server (Ollama / LLamaSharp).",
+  "version": "0.5.3",
+  "publisher": "ashlar",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "AI",
+    "Chat",
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "ashlar.checkConnection",
+        "title": "Ashlar: Check Connection"
+      },
+      {
+        "command": "ashlar.configureConnection",
+        "title": "Ashlar: Configure Connection (Host / Port)"
+      },
+      {
+        "command": "ashlar.openChat",
+        "title": "Ashlar: Open Chat"
+      },
+      {
+        "command": "ashlar.askSelection",
+        "title": "Ashlar: Ask About Selection"
+      },
+      {
+        "command": "ashlar.planWithPrompt",
+        "title": "Ashlar: Plan With Prompt"
+      },
+      {
+        "command": "ashlar.editWithPrompt",
+        "title": "Ashlar: Edit With Prompt"
+      },
+      {
+        "command": "ashlar.directorGoal",
+        "title": "Ashlar: Director Goal (Multi-Agent)"
+      },
+      {
+        "command": "ashlar.cancelActiveRun",
+        "title": "Ashlar: Cancel Active Run"
+      },
+      {
+        "command": "ashlar.showRuns",
+        "title": "Ashlar: Show Run Timeline"
+      },
+      {
+        "command": "ashlar.showWorkloads",
+        "title": "Ashlar: Show Workloads"
+      },
+      {
+        "command": "ashlar.scaleWorkload",
+        "title": "Ashlar: Scale Workload"
+      },
+      {
+        "command": "ashlar.applyAllPatches",
+        "title": "Ashlar: Apply All Pending Patches"
+      },
+      {
+        "command": "ashlar.rejectAllPatches",
+        "title": "Ashlar: Reject All Pending Patches"
+      },
+      {
+        "command": "ashlar.undoLastApply",
+        "title": "Ashlar: Undo Last Apply"
+      },
+      {
+        "command": "ashlar.showPendingPatches",
+        "title": "Ashlar: Show Pending Patches"
+      },
+      {
+        "command": "ashlar.refreshModels",
+        "title": "Ashlar: Refresh Models"
+      },
+      {
+        "command": "ashlar.startLocalStack",
+        "title": "Ashlar: Start Local Stack"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "ashlar",
+          "title": "Ashlar",
+          "icon": "media/ashlar.svg"
+        }
+      ]
+    },
+    "views": {
+      "ashlar": [
+        {
+          "type": "webview",
+          "id": "ashlar.chatView",
+          "name": "Chat"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Ashlar",
+      "properties": {
+        "ashlar.apiHost": {
+          "type": "string",
+          "default": "127.0.0.1",
+          "description": "Agent-server host (used when ashlar.baseUrl is empty)."
+        },
+        "ashlar.apiPort": {
+          "type": "number",
+          "default": 8088,
+          "description": "Agent-server HTTP port (used when ashlar.baseUrl is empty). Match ASHLAR_AGENT_SERVER_HTTP_PORT in .env."
+        },
+        "ashlar.baseUrl": {
+          "type": "string",
+          "default": "",
+          "description": "Optional full API base URL override (e.g. http://127.0.0.1:8090). Empty = http://{apiHost}:{apiPort}."
+        },
+        "ashlar.ollamaHost": {
+          "type": "string",
+          "default": "127.0.0.1",
+          "description": "Host Ollama address for Start Local Stack (maps to ASHLAR_OLLAMA_HOST_PORT / OLLAMA_BASE_URL)."
+        },
+        "ashlar.ollamaPort": {
+          "type": "number",
+          "default": 11434,
+          "description": "Host Ollama port passed to Start-FullstackAgentServer.ps1."
+        },
+        "ashlar.defaultModel": {
+          "type": "string",
+          "default": "",
+          "description": "Default local model id (Ollama tag). Empty = server default. Also passed to Start Local Stack when set."
+        },
+        "ashlar.defaultAgent": {
+          "type": "string",
+          "default": "",
+          "description": "Optional default agent id from the configured agent set."
+        },
+        "ashlar.includeActiveFile": {
+          "type": "boolean",
+          "default": true,
+          "description": "Include the active editor file as chat/edit context."
+        },
+        "ashlar.includeOpenEditors": {
+          "type": "boolean",
+          "default": false,
+          "description": "Include all open text editors as additional context (capped)."
+        },
+        "ashlar.maxContextChars": {
+          "type": "number",
+          "default": 24000,
+          "description": "Max characters of file content sent per request."
+        },
+        "ashlar.autoOpenDiffs": {
+          "type": "boolean",
+          "default": true,
+          "description": "Open side-by-side diffs when a proposal arrives."
+        },
+        "ashlar.pollRunsMs": {
+          "type": "number",
+          "default": 3000,
+          "description": "How often to refresh the run timeline (ms). 0 disables."
+        },
+        "ashlar.pollWorkloadsMs": {
+          "type": "number",
+          "default": 10000,
+          "description": "How often to refresh workload scale status (ms). 0 disables."
+        },
+        "ashlar.streamingChat": {
+          "type": "boolean",
+          "default": true,
+          "description": "Stream chat tokens via /api/ide/chat/stream (falls back to non-streaming)."
+        },
+        "ashlar.startStackScript": {
+          "type": "string",
+          "default": "",
+          "description": "Optional path to Start-FullstackAgentServer.ps1 (auto-detected from workspace if empty)."
+        },
+        "ashlar.useBundledOllama": {
+          "type": "boolean",
+          "default": false,
+          "description": "When starting the local stack, use compose ollama service (OLLAMA_BASE_URL=http://ollama:11434) instead of host Ollama."
+        }
+      }
+    },
+    "menus": {
+      "editor/context": [
+        {
+          "command": "ashlar.askSelection",
+          "group": "ashlar@1",
+          "when": "editorHasSelection"
+        },
+        {
+          "command": "ashlar.planWithPrompt",
+          "group": "ashlar@2"
+        },
+        {
+          "command": "ashlar.editWithPrompt",
+          "group": "ashlar@3"
+        },
+        {
+          "command": "ashlar.directorGoal",
+          "group": "ashlar@4"
+        }
+      ]
+    }
+  }
+}

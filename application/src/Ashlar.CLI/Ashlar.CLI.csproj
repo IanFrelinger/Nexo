@@ -1,0 +1,76 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>12.0</LangVersion>
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>ashlar</ToolCommandName>
+    <IsPackable>true</IsPackable>
+    <AssemblyTitle>Ashlar CLI</AssemblyTitle>
+    <AssemblyDescription>AI-Enhanced Development Environment Orchestration Platform CLI</AssemblyDescription>
+    <AssemblyCompany>Ashlar</AssemblyCompany>
+    <AssemblyProduct>Ashlar CLI</AssemblyProduct>
+    <AssemblyCopyright>Copyright © Ashlar 2024</AssemblyCopyright>
+    <!-- AssemblyVersion / FileVersion / InformationalVersion derive from <Version>, which
+         Directory.Build.targets sets from the root VERSION file. Do not pin them here. -->
+    <PackageId>Ashlar.CLI</PackageId>
+    <Description>Provider-agnostic LEGO-style feature factory CLI</Description>
+    <PackageTags>ashlar;ai;feature-factory;offline-first</PackageTags>
+    <RepositoryUrl>https://github.com/IanFrelinger/Ashlar</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PackageProjectUrl>https://github.com/IanFrelinger/Ashlar</PackageProjectUrl>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.CommandLine" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" />
+    <PackageReference Include="MediatR" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../src/Ashlar.Core.Domain/Ashlar.Core.Domain.csproj" />
+    <ProjectReference Include="../../../src/Ashlar.Core.Application/Ashlar.Core.Application.csproj" />
+    <ProjectReference Include="../../../src/Ashlar.Adapters.Models/Ashlar.Adapters.Models.csproj" />
+    <ProjectReference Include="../../../src/Ashlar.Hosting/Ashlar.Hosting.csproj" />
+    <ProjectReference Include="../../../src/Ashlar.Infrastructure/Ashlar.Infrastructure.csproj" />
+    <ProjectReference Include="../../../src/Ashlar.Bricks.Owasp/Ashlar.Bricks.Owasp.csproj" />
+    <ProjectReference Include="../../../src/Ashlar.Orchestration/Ashlar.Orchestration.csproj" />
+    <ProjectReference Include="../../../src/Ashlar.BackgroundAgents/Ashlar.BackgroundAgents.csproj" />
+    <ProjectReference Include="../../../src/Ashlar.BackgroundAgents.HostRunners/Ashlar.BackgroundAgents.HostRunners.csproj" />
+    <ProjectReference Include="../../../src/Ashlar.Policies.Dev/Ashlar.Policies.Dev.csproj" />
+    <ProjectReference Include="../../../src/Ashlar.Tools.Dev/Ashlar.Tools.Dev.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Ashlar.Tests.CLI" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="../../../src/Ashlar.Hosting/GlobalUsings.Infrastructure.Sdk.cs" Link="GlobalUsings.Infrastructure.Sdk.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="../../../samples/templates/brick/**/*" LogicalName="Ashlar.CLI.Templates.Brick/%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(IncludeTestProjectReferences)' != 'false'">
+    <!-- Test projects for runtime discovery (excluding CLI to avoid circular dependency) -->
+    <ProjectReference Include="../../../src/Ashlar.Tests.Domain/Ashlar.Tests.Domain.csproj" />
+    <ProjectReference Include="../../../src/Ashlar.Tests.Application/Ashlar.Tests.Application.csproj" />
+    <ProjectReference Include="../../../src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj" />
+  </ItemGroup>
+  
+
+</Project>

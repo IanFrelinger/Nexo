@@ -57,15 +57,15 @@ Trees are otherwise disjoint (`Certification.Composition` vs `BackgroundAgents`)
 
 | PR | Branch | Base | Head | Mergeable | GH state | cert-gate | kernel-gate | application-gate | Stack gate verdict |
 |----|--------|------|------|-----------|----------|-----------|-------------|------------------|-------------------|
-| [#195](https://github.com/IanFrelinger/Nexo/pull/195) | `cursor/agent-composer-proposer-6118` | `master` | `dbd87e79` | MERGEABLE | BLOCKED† | **success** | **success** | n/a | ✅ **GREEN** (cert-gate) |
-| [#196](https://github.com/IanFrelinger/Nexo/pull/196) | `cursor/real-model-composer-6118` | `master` | `aecda581` | MERGEABLE | BLOCKED† | **success** | **success** | n/a | ✅ **GREEN** (cert-gate) |
-| [#197](https://github.com/IanFrelinger/Nexo/pull/197) | `cursor/acceptance-rate-measurement-6118` | `master` | `31f5a945` | MERGEABLE | BLOCKED† | **success** | **success** | n/a | ✅ **GREEN** (cert-gate) |
-| [#198](https://github.com/IanFrelinger/Nexo/pull/198) | `cursor/repo-hygiene-cleanup-6118` | `master` | `9420747d` | MERGEABLE | BLOCKED† | **success** | **success** | n/a | ✅ **GREEN** (cert-gate) |
-| [#199](https://github.com/IanFrelinger/Nexo/pull/199) | `cursor/self-extend-audit-6118` | `master` | `a8491640` | MERGEABLE | BLOCKED† | **success** | n/a | n/a | ✅ **GREEN** (cert-gate) |
-| [#200](https://github.com/IanFrelinger/Nexo/pull/200) | `cursor/self-extend-enforce-6118` | `self-extend-audit-6118` | `24d0fbb5` | MERGEABLE | UNSTABLE‡ | **success** | **success** | n/a | ✅ **GREEN** (cert-gate + kernel-gate) |
-| [#201](https://github.com/IanFrelinger/Nexo/pull/201) | `cursor/self-extend-harden-6118` | `self-extend-enforce-6118` | `e9438994` | MERGEABLE | UNSTABLE‡ | **success** | **success** | **success** | ✅ **GREEN** (all three) |
+| [#195](https://github.com/IanFrelinger/Ashlar/pull/195) | `cursor/agent-composer-proposer-6118` | `master` | `dbd87e79` | MERGEABLE | BLOCKED† | **success** | **success** | n/a | ✅ **GREEN** (cert-gate) |
+| [#196](https://github.com/IanFrelinger/Ashlar/pull/196) | `cursor/real-model-composer-6118` | `master` | `aecda581` | MERGEABLE | BLOCKED† | **success** | **success** | n/a | ✅ **GREEN** (cert-gate) |
+| [#197](https://github.com/IanFrelinger/Ashlar/pull/197) | `cursor/acceptance-rate-measurement-6118` | `master` | `31f5a945` | MERGEABLE | BLOCKED† | **success** | **success** | n/a | ✅ **GREEN** (cert-gate) |
+| [#198](https://github.com/IanFrelinger/Ashlar/pull/198) | `cursor/repo-hygiene-cleanup-6118` | `master` | `9420747d` | MERGEABLE | BLOCKED† | **success** | **success** | n/a | ✅ **GREEN** (cert-gate) |
+| [#199](https://github.com/IanFrelinger/Ashlar/pull/199) | `cursor/self-extend-audit-6118` | `master` | `a8491640` | MERGEABLE | BLOCKED† | **success** | n/a | n/a | ✅ **GREEN** (cert-gate) |
+| [#200](https://github.com/IanFrelinger/Ashlar/pull/200) | `cursor/self-extend-enforce-6118` | `self-extend-audit-6118` | `24d0fbb5` | MERGEABLE | UNSTABLE‡ | **success** | **success** | n/a | ✅ **GREEN** (cert-gate + kernel-gate) |
+| [#201](https://github.com/IanFrelinger/Ashlar/pull/201) | `cursor/self-extend-harden-6118` | `self-extend-enforce-6118` | `e9438994` | MERGEABLE | UNSTABLE‡ | **success** | **success** | **success** | ✅ **GREEN** (all three) |
 
-† **BLOCKED** on Phase-3 / audit PRs: non-stack checks failing (`lychee`, `Pack script vs Nexo.Hosting graph`, `Standalone brick authoring scaffold`, cross-platform `Linux/macOS/Windows — setup`, etc.). **Stack gates (`cert-gate`) are green on all seven PRs.**
+† **BLOCKED** on Phase-3 / audit PRs: non-stack checks failing (`lychee`, `Pack script vs Ashlar.Hosting graph`, `Standalone brick authoring scaffold`, cross-platform `Linux/macOS/Windows — setup`, etc.). **Stack gates (`cert-gate`) are green on all seven PRs.**
 
 ‡ **UNSTABLE** on enforce/harden: `kernel-coverage` failure + assorted informational workflow failures. **Stack gates (`cert-gate`, `kernel-gate`, `application-gate` on #201) are green.**
 
@@ -88,7 +88,7 @@ git merge --no-edit origin/cursor/self-extend-harden-6118      # Self-extend tip
 |------|--------|
 | Conflicts | **None** (`cert-gate-config.sh` touched only by Phase-3; clean 3-way merge) |
 | `bash scripts/run-cert-gate.sh` | **PASS** — 41/41 tests, exit 0 |
-| `dotnet test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj -f net8.0` | **PASS** — 423 passed, 1 skipped (invariant D), 0 failed |
+| `dotnet test src/Ashlar.Tests.BackgroundAgents/Ashlar.Tests.BackgroundAgents.csproj -f net8.0` | **PASS** — 423 passed, 1 skipped (invariant D), 0 failed |
 | Combined diff vs master | 72 files, +3579 / −194 lines |
 
 **Verdict: ✅ INTEGRATION CLEAN + GREEN** — safe to prescribe landing both stacks.
@@ -122,8 +122,8 @@ Merge #201 into `enforce` → #200 into `audit` → #199 into `master`. Merging 
 ```bash
 git fetch origin
 git rev-parse origin/master   # expect bc4e0e1c9a6ba4b6f212311bc5d7f5e601aea413
-gh pr checks 198 --repo IanFrelinger/Nexo | grep cert-gate
-gh pr checks 201 --repo IanFrelinger/Nexo | grep -E 'cert-gate|kernel-gate|application-gate'
+gh pr checks 198 --repo IanFrelinger/Ashlar | grep cert-gate
+gh pr checks 201 --repo IanFrelinger/Ashlar | grep -E 'cert-gate|kernel-gate|application-gate'
 ```
 
 ### Step 1 — Land Phase-3 (choose A or B)
@@ -131,28 +131,28 @@ gh pr checks 201 --repo IanFrelinger/Nexo | grep -E 'cert-gate|kernel-gate|appli
 #### Option A: tip merge (recommended)
 
 ```bash
-gh pr merge 198 --repo IanFrelinger/Nexo --merge --subject "Merge Phase-3 composition stack (S1–S3 + cleanup)"  # ⛔ IRREVERSIBLE — writes master
+gh pr merge 198 --repo IanFrelinger/Ashlar --merge --subject "Merge Phase-3 composition stack (S1–S3 + cleanup)"  # ⛔ IRREVERSIBLE — writes master
 # Close superseded PRs without merging (commits already on master):
-gh pr close 195 --repo IanFrelinger/Nexo --comment "Superseded by #198 tip merge"
-gh pr close 196 --repo IanFrelinger/Nexo --comment "Superseded by #198 tip merge"
-gh pr close 197 --repo IanFrelinger/Nexo --comment "Superseded by #198 tip merge"
+gh pr close 195 --repo IanFrelinger/Ashlar --comment "Superseded by #198 tip merge"
+gh pr close 196 --repo IanFrelinger/Ashlar --comment "Superseded by #198 tip merge"
+gh pr close 197 --repo IanFrelinger/Ashlar --comment "Superseded by #198 tip merge"
 ```
 
 #### Option B: base-up (four merge commits on master)
 
 ```bash
-gh pr merge 195 --repo IanFrelinger/Nexo --merge   # ⛔ IRREVERSIBLE
-gh pr merge 196 --repo IanFrelinger/Nexo --merge   # ⛔ IRREVERSIBLE
-gh pr merge 197 --repo IanFrelinger/Nexo --merge   # ⛔ IRREVERSIBLE
-gh pr merge 198 --repo IanFrelinger/Nexo --merge   # ⛔ IRREVERSIBLE
+gh pr merge 195 --repo IanFrelinger/Ashlar --merge   # ⛔ IRREVERSIBLE
+gh pr merge 196 --repo IanFrelinger/Ashlar --merge   # ⛔ IRREVERSIBLE
+gh pr merge 197 --repo IanFrelinger/Ashlar --merge   # ⛔ IRREVERSIBLE
+gh pr merge 198 --repo IanFrelinger/Ashlar --merge   # ⛔ IRREVERSIBLE
 ```
 
 ### Step 2 — Land self-extend (stacked, base-up)
 
 ```bash
-gh pr merge 201 --repo IanFrelinger/Nexo --merge --subject "Merge SX-HARDEN into enforce"   # ⛔ IRREVERSIBLE (updates enforce branch)
-gh pr merge 200 --repo IanFrelinger/Nexo --merge --subject "Merge SX-ENFORCE into audit"    # ⛔ IRREVERSIBLE (updates audit branch)
-gh pr merge 199 --repo IanFrelinger/Nexo --merge --subject "Merge self-extend stack to master"  # ⛔ IRREVERSIBLE — writes master
+gh pr merge 201 --repo IanFrelinger/Ashlar --merge --subject "Merge SX-HARDEN into enforce"   # ⛔ IRREVERSIBLE (updates enforce branch)
+gh pr merge 200 --repo IanFrelinger/Ashlar --merge --subject "Merge SX-ENFORCE into audit"    # ⛔ IRREVERSIBLE (updates audit branch)
+gh pr merge 199 --repo IanFrelinger/Ashlar --merge --subject "Merge self-extend stack to master"  # ⛔ IRREVERSIBLE — writes master
 ```
 
 After step 2, `master` contains both stacks. GitHub auto-closes #200 and #201 when their commits reach `master` via the chain.
@@ -163,7 +163,7 @@ After step 2, `master` contains both stacks. GitHub auto-closes #200 and #201 wh
 git fetch origin
 git checkout master && git pull origin master
 bash scripts/run-cert-gate.sh
-dotnet test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj -f net8.0
+dotnet test src/Ashlar.Tests.BackgroundAgents/Ashlar.Tests.BackgroundAgents.csproj -f net8.0
 ```
 
 ### Step 4 — Branch protection + auto-delete (GitHub UI or API)
@@ -176,7 +176,7 @@ dotnet test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj -
 
 ```bash
 # If using gh api (requires admin PAT):
-# gh api repos/IanFrelinger/Nexo/branches/master/protection ...   # ⛔ IRREVERSIBLE — changes branch policy
+# gh api repos/IanFrelinger/Ashlar/branches/master/protection ...   # ⛔ IRREVERSIBLE — changes branch policy
 ```
 
 ### Step 5 — Archive tags (before any branch deletion)

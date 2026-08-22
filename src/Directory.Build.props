@@ -4,36 +4,36 @@
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
 
   <PropertyGroup>
-    <NexoIncludeDomainBrickGlobalUsing Condition="
-      '$(MSBuildProjectName)' == 'Nexo.Infrastructure' OR
-      '$(MSBuildProjectName)' == 'Nexo.Core.Application' OR
-      '$(MSBuildProjectName)' == 'Nexo.Hosting' OR
-      '$(MSBuildProjectName)' == 'Nexo.BackgroundAgents' OR
-      '$(MSBuildProjectName)' == 'Nexo.Authoring' OR
-      '$(MSBuildProjectName)' == 'Nexo.Framework.Sdk' OR
-      '$(MSBuildProjectName)' == 'Nexo.BackgroundAgents' OR
-      '$(MSBuildProjectName)' == 'Nexo.Orchestration' OR
-      '$(MSBuildProjectName)' == 'Nexo.Bricks.Owasp' OR
-      '$(MSBuildProjectName)' == 'Nexo.Tests.Infrastructure' OR
-      '$(MSBuildProjectName)' == 'Nexo.Tests.Application' OR
-      '$(MSBuildProjectName)' == 'Nexo.Tests.Domain' OR
-      '$(MSBuildProjectName)' == 'Nexo.Tests.Kernel' OR
-      '$(MSBuildProjectName)' == 'Nexo.CLI' OR
-      '$(MSBuildProjectName)' == 'Nexo.API' OR
+    <AshlarIncludeDomainBrickGlobalUsing Condition="
+      '$(MSBuildProjectName)' == 'Ashlar.Infrastructure' OR
+      '$(MSBuildProjectName)' == 'Ashlar.Core.Application' OR
+      '$(MSBuildProjectName)' == 'Ashlar.Hosting' OR
+      '$(MSBuildProjectName)' == 'Ashlar.BackgroundAgents' OR
+      '$(MSBuildProjectName)' == 'Ashlar.Authoring' OR
+      '$(MSBuildProjectName)' == 'Ashlar.Framework.Sdk' OR
+      '$(MSBuildProjectName)' == 'Ashlar.BackgroundAgents' OR
+      '$(MSBuildProjectName)' == 'Ashlar.Orchestration' OR
+      '$(MSBuildProjectName)' == 'Ashlar.Bricks.Owasp' OR
+      '$(MSBuildProjectName)' == 'Ashlar.Tests.Infrastructure' OR
+      '$(MSBuildProjectName)' == 'Ashlar.Tests.Application' OR
+      '$(MSBuildProjectName)' == 'Ashlar.Tests.Domain' OR
+      '$(MSBuildProjectName)' == 'Ashlar.Tests.Kernel' OR
+      '$(MSBuildProjectName)' == 'Ashlar.CLI' OR
+      '$(MSBuildProjectName)' == 'Ashlar.API' OR
       '$(MSBuildProjectName)' == 'GameDirector.Mcp' OR
       '$(MSBuildProjectName)' == 'GameDirector.Bricks' OR
       '$(MSBuildProjectName)' == 'GameDirector.Agents' OR
-      '$(MSBuildProjectName)' == 'Nexo.Commercial.GameDomain' OR
-      '$(MSBuildProjectName)' == 'Nexo.Commercial.Fleet.Infrastructure' OR
-      '$(MSBuildProjectName)' == 'Nexo.Commercial.Fleet.Contracts' OR
-      '$(MSBuildProjectName)' == 'Nexo.Commercial.Tests.Fleet' OR
-      '$(MSBuildProjectName)' == 'Nexo.Tests.GameDirector' OR
+      '$(MSBuildProjectName)' == 'Ashlar.Commercial.GameDomain' OR
+      '$(MSBuildProjectName)' == 'Ashlar.Commercial.Fleet.Infrastructure' OR
+      '$(MSBuildProjectName)' == 'Ashlar.Commercial.Fleet.Contracts' OR
+      '$(MSBuildProjectName)' == 'Ashlar.Commercial.Tests.Fleet' OR
+      '$(MSBuildProjectName)' == 'Ashlar.Tests.GameDirector' OR
       '$(MSBuildProjectName)' == 'HelloBrick' OR
-      '$(MSBuildProjectName)' == 'Nexo.Certified.DamageResolver'
-      ">true</NexoIncludeDomainBrickGlobalUsing>
+      '$(MSBuildProjectName)' == 'Ashlar.Certified.DamageResolver'
+      ">true</AshlarIncludeDomainBrickGlobalUsing>
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(NexoIncludeDomainBrickGlobalUsing)' == 'true'">
-    <Compile Include="$(MSBuildThisFileDirectory)Nexo.Compat/GlobalUsings.DomainBrick.cs" Link="GlobalUsings.DomainBrick.cs" />
+  <ItemGroup Condition="'$(AshlarIncludeDomainBrickGlobalUsing)' == 'true'">
+    <Compile Include="$(MSBuildThisFileDirectory)Ashlar.Compat/GlobalUsings.DomainBrick.cs" Link="GlobalUsings.DomainBrick.cs" />
   </ItemGroup>
 </Project>

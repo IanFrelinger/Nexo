@@ -1,6 +1,6 @@
 # Kernel hardening plan v1
 
-Pre-application validation for the Nexo execution kernel (`src/`, `Nexo.Hosting`). Goal: prove DI contracts, deployment profiles, and core execution paths before building product features under `application/src/`.
+Pre-application validation for the Ashlar execution kernel (`src/`, `Ashlar.Hosting`). Goal: prove DI contracts, deployment profiles, and core execution paths before building product features under `application/src/`.
 
 **Tracking:** update [Kernel Readiness v1](KernelReadiness-v1.md) as tiers complete.
 
@@ -23,7 +23,7 @@ Pre-application validation for the Nexo execution kernel (`src/`, `Nexo.Hosting`
 
 **Tier C status (2026-05-19):** `make kernel-gate-tier-c` / `scripts/kernel-gate-tier-c.sh` — ProdStyle Infrastructure, workflow executor, gRPC transport, air-gapped profile; mesh when `.env.mesh-lab` exists (`make bootstrap-mesh-lab-env`).
 
-**Tier D status (2026-05-19):** `make kernel-gate-tier-d` / `scripts/kernel-gate-tier-d.sh` — `Nexo.Runtime.sln`, pack graph alignment, `StableSdkHostSample` consumer from local feed.
+**Tier D status (2026-05-19):** `make kernel-gate-tier-d` / `scripts/kernel-gate-tier-d.sh` — `Ashlar.Runtime.sln`, pack graph alignment, `StableSdkHostSample` consumer from local feed.
 
 ## Tier B — Execution and state
 
@@ -46,14 +46,14 @@ Pre-application validation for the Nexo execution kernel (`src/`, `Nexo.Hosting`
 | # | Item | Deliverable | Verification |
 |---|------|-------------|--------------|
 | D1 | NuGet consumer drill | `nuget-consumer-verify.yml` | Release + monthly |
-| D2 | Runtime vs application boundary | `layer-boundary.yml`, `Nexo.Runtime.sln` | `kernel-gate` build |
+| D2 | Runtime vs application boundary | `layer-boundary.yml`, `Ashlar.Runtime.sln` | `kernel-gate` build |
 
 ## Tier E — Operations (advisory until v2)
 
 | # | Item | Deliverable | Verification |
 |---|------|-------------|--------------|
 | E1 | Observability contract | `OpenTelemetryTests`, prod-dry-run | `make kernel-gate-tier-e` |
-| E2 | Perf budgets | `Nexo.Tests.Orchestration.Performance` in tier-e | `make kernel-gate-tier-e` |
+| E2 | Perf budgets | `Ashlar.Tests.Orchestration.Performance` in tier-e | `make kernel-gate-tier-e` |
 | E3 | Chaos / game day | [KernelChaosDrill-v1.md](KernelChaosDrill-v1.md) | Quarterly manual + optional `KERNEL_GATE_CHAOS_LITE=1` |
 
 **Tier E status:** `make kernel-gate-tier-e` / `scripts/kernel-gate-tier-e.sh` — OpenTelemetry, orchestration performance tests, `prod-dry-run.sh --portal`.

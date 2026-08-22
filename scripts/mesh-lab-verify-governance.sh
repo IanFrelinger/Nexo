@@ -3,7 +3,7 @@
 #
 #   ./scripts/mesh-lab-verify-governance.sh .env.mesh-lab
 #
-# Requires peer-a with Nexo__Mesh__Fleet__RequirePeerRegistrationKey=true (compose default).
+# Requires peer-a with Ashlar__Mesh__Fleet__RequirePeerRegistrationKey=true (compose default).
 
 set -euo pipefail
 
@@ -27,12 +27,12 @@ source_env_kv() {
   grep -E "^${key}=" "$COMPOSE_ENV_FILE" 2>/dev/null | head -1 | cut -d= -f2- | tr -d '\r' || true
 }
 
-API_KEY="$(source_env_kv Nexo__Security__ApiKey)"
+API_KEY="$(source_env_kv Ashlar__Security__ApiKey)"
 MESH_LAB_PEER_REGISTRATION_KEY="$(source_env_kv MESH_LAB_PEER_REGISTRATION_KEY)"
 ROTATED_KEY="$(source_env_kv MESH_LAB_PEER_REGISTRATION_KEY_ROTATED)"
 
 if [[ -z "$API_KEY" ]]; then
-  echo "(Skipping governance verify: no Nexo__Security__ApiKey in env file)"
+  echo "(Skipping governance verify: no Ashlar__Security__ApiKey in env file)"
   exit 0
 fi
 
@@ -44,15 +44,15 @@ fi
 [[ -n "$ROTATED_KEY" ]] || ROTATED_KEY="${MESH_LAB_PEER_REGISTRATION_KEY}-rotated-v2"
 
 mesh_post() {
-  curl -fsS -X POST -H "Content-Type: application/json" -H "X-Nexo-Api-Key: ${API_KEY}" "$@"
+  curl -fsS -X POST -H "Content-Type: application/json" -H "X-Ashlar-Api-Key: ${API_KEY}" "$@"
 }
 
 mesh_post_code() {
-  curl -s -o /dev/null -w '%{http_code}' -X POST -H "Content-Type: application/json" -H "X-Nexo-Api-Key: ${API_KEY}" "$@"
+  curl -s -o /dev/null -w '%{http_code}' -X POST -H "Content-Type: application/json" -H "X-Ashlar-Api-Key: ${API_KEY}" "$@"
 }
 
 mesh_delete() {
-  curl -fsS -X DELETE -H "X-Nexo-Api-Key: ${API_KEY}" "$@"
+  curl -fsS -X DELETE -H "X-Ashlar-Api-Key: ${API_KEY}" "$@"
 }
 
 echo "== Mesh fleet governance (director ${PEER_A_HOST}) =="
@@ -117,14 +117,14 @@ REV_TASK_JSON="$(mesh_post -d '{"name":"mesh-lab-gov-revoked","steps":1}' \
 REV_ID="$(echo "$REV_TASK_JSON" | python3 -c 'import json,sys; print(json.load(sys.stdin)["taskId"])')"
 REV_CODE="$(curl -s -o /dev/null -w '%{http_code}' -X POST \
   -H "Content-Type: application/json" \
-  -H "X-Nexo-Api-Key: ${API_KEY}" \
+  -H "X-Ashlar-Api-Key: ${API_KEY}" \
   -d '{}' \
   "http://${PEER_A_HOST}/api/mesh/tasks/${REV_ID}/schedule")"
 if [[ "$REV_CODE" != "400" ]]; then
   echo "Expected HTTP 400 scheduling after revoke, got ${REV_CODE}" >&2
   exit 1
 fi
-REV_GET="$(curl -fsS -H "X-Nexo-Api-Key: ${API_KEY}" "http://${PEER_A_HOST}/api/mesh/tasks/${REV_ID}")"
+REV_GET="$(curl -fsS -H "X-Ashlar-Api-Key: ${API_KEY}" "http://${PEER_A_HOST}/api/mesh/tasks/${REV_ID}")"
 echo "$REV_GET" | python3 -c '
 import json, sys
 t = json.load(sys.stdin)

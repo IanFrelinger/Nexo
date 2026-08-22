@@ -1,6 +1,6 @@
 # Workload scaling (Kubernetes-first, swappable)
 
-Nexo can **dynamically change container replica counts** through a first-class port:
+Ashlar can **dynamically change container replica counts** through a first-class port:
 
 | Port | Role |
 |------|------|
@@ -12,28 +12,28 @@ Providers are selected by config/env — **swap without changing call sites**.
 
 ## Providers
 
-| `Nexo:WorkloadScaling:Provider` / `NEXO_WORKLOAD_SCALER` | Implementation |
+| `Ashlar:WorkloadScaling:Provider` / `ASHLAR_WORKLOAD_SCALER` | Implementation |
 |----------------------------------------------------------|----------------|
 | `null` (default) | `NullWorkloadScaler` — safe no-op |
 | `kubernetes` / `k8s` | `KubernetesWorkloadScaler` — `kubectl scale deployment/...` |
 | `compose` / `docker-compose` | `ComposeWorkloadScaler` — `docker compose up --scale` |
 
-Add another adapter (ECS, Nomad, …) by implementing `IWorkloadScaler` and extending the switch in `AddNexoWorkloadScaling`.
+Add another adapter (ECS, Nomad, …) by implementing `IWorkloadScaler` and extending the switch in `AddAshlarWorkloadScaling`.
 
 ## Configuration
 
 ```json
 {
-  "Nexo": {
+  "Ashlar": {
     "WorkloadScaling": {
       "Provider": "kubernetes",
       "Enabled": true,
       "Kubernetes": {
         "KubectlPath": "kubectl",
-        "Namespace": "nexo",
+        "Namespace": "ashlar",
         "Workloads": {
           "mesh-worker": {
-            "Deployment": "nexo-mesh-worker",
+            "Deployment": "ashlar-mesh-worker",
             "MinReplicas": 1,
             "MaxReplicas": 20,
             "DisplayName": "Mesh Worker"
@@ -54,11 +54,11 @@ Add another adapter (ECS, Nomad, …) by implementing `IWorkloadScaler` and exte
 
 Env shortcuts:
 
-- `NEXO_WORKLOAD_SCALER=kubernetes|compose|null`
-- `NEXO_WORKLOAD_SCALING_ENABLED=true|false`
-- `NEXO_WORKLOAD_AUTOSCALE=true` — starts `ElasticWorkloadAutoscaleService`
+- `ASHLAR_WORKLOAD_SCALER=kubernetes|compose|null`
+- `ASHLAR_WORKLOAD_SCALING_ENABLED=true|false`
+- `ASHLAR_WORKLOAD_AUTOSCALE=true` — starts `ElasticWorkloadAutoscaleService`
 
-Sample Deployment: [`deploy/k8s/nexo-mesh-worker-deployment.yaml`](../deploy/k8s/nexo-mesh-worker-deployment.yaml).
+Sample Deployment: [`deploy/k8s/ashlar-mesh-worker-deployment.yaml`](../deploy/k8s/ashlar-mesh-worker-deployment.yaml).
 
 ## HTTP API
 
@@ -78,10 +78,10 @@ This module **creates/destroys capacity** (replicas). Wire them together by impl
 ## Manual scale (kubectl)
 
 ```bash
-kubectl -n nexo scale deployment/nexo-mesh-worker --replicas=3
+kubectl -n ashlar scale deployment/ashlar-mesh-worker --replicas=3
 ```
 
-Or via Nexo:
+Or via Ashlar:
 
 ```bash
 curl -X PUT http://localhost:8088/api/workloads/mesh-worker/replicas \

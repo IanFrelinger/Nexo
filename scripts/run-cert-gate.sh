@@ -13,20 +13,20 @@ RESULTS_DIR="${ROOT}/test-results"
 TRX="${RESULTS_DIR}/cert-gate.trx"
 
 # Hermetic tests: do not use portability NuGet config (forces Roslyn path in GeneratedBrickBuilder).
-unset NEXO_CERT_NUGET_CONFIG
+unset ASHLAR_CERT_NUGET_CONFIG
 
 mkdir -p "${RESULTS_DIR}"
 
 echo "== cert-gate: restore =="
-dotnet restore src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.csproj
-dotnet restore src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj
+dotnet restore src/Ashlar.Tests.Infrastructure/scripts/copy-assemblies.csproj
+dotnet restore src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj
 
 echo "== cert-gate: build =="
-dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net8.0 --no-restore -v minimal
+dotnet build src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -f net8.0 --no-restore -v minimal
 
 echo "== cert-gate: test =="
 set +e
-dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj \
   -f net8.0 \
   --no-build \
   --filter "${FILTER}" \

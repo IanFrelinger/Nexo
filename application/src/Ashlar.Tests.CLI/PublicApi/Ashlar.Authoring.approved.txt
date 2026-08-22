@@ -1,0 +1,13 @@
+[assembly: System.Reflection.AssemblyMetadata("RepositoryUrl", "https://github.com/IanFrelinger/Ashlar")]
+[assembly: System.Runtime.Versioning.TargetFramework(".NETCoreApp,Version=v10.0", FrameworkDisplayName=".NET 10.0")]
+namespace Ashlar.Authoring
+{
+    public static class AshlarAuthoringServiceCollectionExtensions
+    {
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddAshlarAgentProfile<TProfile>(this Microsoft.Extensions.DependencyInjection.IServiceCollection services)
+            where TProfile :  class, Ashlar.Core.Application.Generation.Ports.IAgentProfileFactory { }
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddAshlarBrick<TBrick>(this Microsoft.Extensions.DependencyInjection.IServiceCollection services)
+            where TBrick : Ashlar.Core.Domain.Bricks.Brick { }
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddAshlarGenerativeAgents(this Microsoft.Extensions.DependencyInjection.IServiceCollection services) { }
+    }
+}

@@ -1,6 +1,6 @@
 # Forge map adaptation and engine manifests
 
-Runtime types live in **`Nexo.Commercial.GameDomain`** (`Nexo.Commercial.GameDomain` namespace); HTTP surface in **`Nexo.Commercial.GameDirector.Host`** (`ForgeEndpoints` in `Nexo.Commercial.GameDirector.Mcp`).
+Runtime types live in **`Ashlar.Commercial.GameDomain`** (`Ashlar.Commercial.GameDomain` namespace); HTTP surface in **`Ashlar.Commercial.GameDirector.Host`** (`ForgeEndpoints` in `Ashlar.Commercial.GameDirector.Mcp`).
 
 ## Map adaptation plan
 
@@ -42,21 +42,21 @@ the session. The API uses **`BuiltInAestheticPacks.Catalog`** as the default bui
 
 ## Map verification (M5)
 
-When **`Nexo:ForgeSession:EnableMapVerification`** is true (default), **`MapPipelineRunner`** runs **`IMapVerificationService`**
+When **`Ashlar:ForgeSession:EnableMapVerification`** is true (default), **`MapPipelineRunner`** runs **`IMapVerificationService`**
 after **`VectorMapPayloadSummarizer`**. The default implementation is **`HeuristicMapVerificationService`**, which emits **info/warning**
 codes (transport/water hints for MVT, feature counts for GeoJSON, tagged-way stats for OSM XML) into the **`fetch_vector`** stage detail as **`verify=…`**.
 With **`MapVerificationFailsPipeline`** **`false`** (default), verification notes are advisory only. When **`true`**, any issue at **Warning** severity or higher marks **`fetch_vector`** as **`error`** and sets **`MapPipelineRunResult.Success`** to **`false`** (CI / strict QA).
 
 ## Multi-tenant isolation
 
-Send **`X-Forge-Tenant`** (configurable via **`Nexo:ForgeSession:TenantHeaderName`**) to isolate
+Send **`X-Forge-Tenant`** (configurable via **`Ashlar:ForgeSession:TenantHeaderName`**) to isolate
 Forge session and macro state per tenant. With LiteDB, each tenant gets a file under
 `<base>-tenants/<tenant>/forge.db` next to the configured root path.
 
 With **`BindTenantFromClaims`** and **`TenantClaimType`**, authenticated callers use the tenant id from
 that claim. When claims binding is enabled, unauthenticated callers cannot fall back to the header unless
 **`AllowTenantHeaderWhenClaimsBindingEnabled`** is true (otherwise **401**). Set **`RequireForgeAuthentication`**
-to require Nexo built-in auth for all **`/api/forge`** routes.
+to require Ashlar built-in auth for all **`/api/forge`** routes.
 
 ## Engine manifest
 
@@ -69,11 +69,11 @@ by `engineId`.
 `GET /api/forge/map/material-hints` returns **`ForgeMaterialHintsResponse`**: suggested procedural colours
 and surface-role bindings from **`IMaterialIntelligenceService`** (default **`ModelAugmentedMaterialIntelligenceService`**
 wrapping **`HeuristicMaterialIntelligenceService`**). Optional **`parseKind`** query (`mvt`, `geojson`, `osm_xml`, `unknown`).
-With **`Nexo:ForgeSession:EnableMaterialModel`** **`true`**, a bounded **`IModel`** prompt may append **`model_notes`** (latency capped via **`MaterialModelTimeoutMs`**).
+With **`Ashlar:ForgeSession:EnableMaterialModel`** **`true`**, a bounded **`IModel`** prompt may append **`model_notes`** (latency capped via **`MaterialModelTimeoutMs`**).
 
 ## Persistence
 
-Optional LiteDB for Forge session and macros: **`Nexo:ForgeSession:LiteDbPath`** (see
+Optional LiteDB for Forge session and macros: **`Ashlar:ForgeSession:LiteDbPath`** (see
 `docs/Persistence.md`). **`IForgeStateService`** is **`TenantPartitionedForgeStateService`**
 in **`Program.cs`** (per-tenant in-memory or per-tenant LiteDB files).
 

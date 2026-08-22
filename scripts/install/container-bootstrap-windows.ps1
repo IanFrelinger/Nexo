@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [string]$Image = "ghcr.io/ianfrelinger/nexo-cli:latest",
+    [string]$Image = "ghcr.io/ianfrelinger/ashlar-cli:latest",
     [string]$Workspace,
     [switch]$Yes,
     [switch]$DryRun

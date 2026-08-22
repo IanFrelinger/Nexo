@@ -31,7 +31,7 @@ Validates **pipeline composition** (templates, fan-out/fan-in, agentic/hybrid st
 
 **Tier A** — `PipelineTemplateValidator`, `PipelineDecomposer`, `PipelineScheduler`, `PipelineOrchestrator`, fan-in/join strategies, agentic fallback, lifecycle/resume.
 
-**Tier B** — `nexo pipeline validate/run` command wiring; mesh director URI builder; mesh CLI trust paths; optimize-agent-cluster script layout.
+**Tier B** — `ashlar pipeline validate/run` command wiring; mesh director URI builder; mesh CLI trust paths; optimize-agent-cluster script layout.
 
 **Tier C** — `MeshTaskRegistry`, placement (elastic, trust, idempotency), execution leases, checkpoint migration, director persistence.
 

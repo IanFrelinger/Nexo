@@ -9,6 +9,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Nexo.Authoring" Version="__NexoVersion__" />
+    <PackageReference Include="Ashlar.Authoring" Version="__AshlarVersion__" />
   </ItemGroup>
 </Project>

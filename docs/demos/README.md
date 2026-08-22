@@ -1,39 +1,39 @@
-# Nexo client demos
+# Ashlar client demos
 
-Three minimal **`net8.0`** samples under **`Nexo.Demos.sln`** that call **`Nexo.API`** through **`Nexo.Client`** (`GET api/status`). They build on **Linux** with a stock .NET SDK.
+Three minimal **`net8.0`** samples under **`Ashlar.Demos.sln`** that call **`Ashlar.API`** through **`Ashlar.Client`** (`GET api/status`). They build on **Linux** with a stock .NET SDK.
 
 Build everything:
 
 ```bash
-dotnet build Nexo.Demos.sln
+dotnet build Ashlar.Demos.sln
 ```
 
-Run **`Nexo.API`** first (for example `dotnet run --project application/src/Nexo.API -f net10.0` or your usual host). Default base URL is **`http://localhost:5000`**.
+Run **`Ashlar.API`** first (for example `dotnet run --project application/src/Ashlar.API -f net10.0` or your usual host). Default base URL is **`http://localhost:5000`**.
 
-## Console (`Nexo.Demos.ConsoleClient`)
+## Console (`Ashlar.Demos.ConsoleClient`)
 
 ```bash
-dotnet run --project docs/demos/Nexo.Demos.ConsoleClient
+dotnet run --project docs/demos/Ashlar.Demos.ConsoleClient
 # or
-NEXO_BASE_URL=http://localhost:5000 dotnet run --project docs/demos/Nexo.Demos.ConsoleClient
+ASHLAR_BASE_URL=http://localhost:5000 dotnet run --project docs/demos/Ashlar.Demos.ConsoleClient
 ```
 
-## Blazor Web (`Nexo.Demos.BlazorWeb`)
+## Blazor Web (`Ashlar.Demos.BlazorWeb`)
 
-Interactive Server UI. Configure URL in `appsettings.json` (`Nexo:BaseUrl`) or environment.
+Interactive Server UI. Configure URL in `appsettings.json` (`Ashlar:BaseUrl`) or environment.
 
 ```bash
-dotnet run --project docs/demos/Nexo.Demos.BlazorWeb
+dotnet run --project docs/demos/Ashlar.Demos.BlazorWeb
 ```
 
 Then open the URL from `Properties/launchSettings.json` (default **http://localhost:5288**).
 
-## Avalonia desktop (`Nexo.Demos.Avalonia`)
+## Avalonia desktop (`Ashlar.Demos.Avalonia`)
 
 Cross-platform desktop shell (Skia). Edit the base URL in the window if needed.
 
 ```bash
-dotnet run --project docs/demos/Nexo.Demos.Avalonia
+dotnet run --project docs/demos/Ashlar.Demos.Avalonia
 ```
 
 Headless/Linux servers without a display cannot open the Avalonia window; use the **Console** or **Blazor** demo there instead.

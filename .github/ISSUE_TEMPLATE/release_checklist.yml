@@ -11,8 +11,8 @@ body:
     attributes:
       label: Preflight (local)
       options:
-        - label: Ran `bash scripts/release-preflight-local.sh X.Y.Z` or `dotnet run --project application/src/Nexo.CLI -- release preflight X.Y.Z`
-        - label: "(Optional) Triggered Runtime Release Gate — `dotnet run --project application/src/Nexo.CLI -- release gate`"
+        - label: Ran `bash scripts/release-preflight-local.sh X.Y.Z` or `dotnet run --project application/src/Ashlar.CLI -- release preflight X.Y.Z`
+        - label: "(Optional) Triggered Runtime Release Gate — `dotnet run --project application/src/Ashlar.CLI -- release gate`"
   - type: checkboxes
     id: github_setup
     attributes:
@@ -35,4 +35,4 @@ body:
       label: Post-ship
       options:
         - label: Spot-checked packages on nuget.org at X.Y.Z
-        - label: Pinned `ghcr.io/.../nexo-cli:sha-…` / `nexo-api:sha-…` from Summary where needed
+        - label: Pinned `ghcr.io/.../ashlar-cli:sha-…` / `ashlar-api:sha-…` from Summary where needed

@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
 # Poll nuget.org registration5-gz-semver2 until each package lists VERSION.
-# Env: NEXO_NUGET_VERIFY_VERSION (required), NEXO_NUGET_VERIFY_PACKAGE_IDS (comma; default Bundle/Hosting/Sdk/CLI),
-#      NEXO_NUGET_VERIFY_ATTEMPTS, NEXO_NUGET_VERIFY_SLEEP_SEC
+# Env: ASHLAR_NUGET_VERIFY_VERSION (required), ASHLAR_NUGET_VERIFY_PACKAGE_IDS (comma; default Bundle/Hosting/Sdk/CLI),
+#      ASHLAR_NUGET_VERIFY_ATTEMPTS, ASHLAR_NUGET_VERIFY_SLEEP_SEC
 set -euo pipefail
-VER="${NEXO_NUGET_VERIFY_VERSION:?set NEXO_NUGET_VERIFY_VERSION}"
+VER="${ASHLAR_NUGET_VERIFY_VERSION:?set ASHLAR_NUGET_VERIFY_VERSION}"
 VER="${VER#v}"
-ATTEMPTS="${NEXO_NUGET_VERIFY_ATTEMPTS:-12}"
-SLEEP_SEC="${NEXO_NUGET_VERIFY_SLEEP_SEC:-15}"
+ATTEMPTS="${ASHLAR_NUGET_VERIFY_ATTEMPTS:-12}"
+SLEEP_SEC="${ASHLAR_NUGET_VERIFY_SLEEP_SEC:-15}"
 [[ -z "${ATTEMPTS}" ]] && ATTEMPTS=12
 [[ -z "${SLEEP_SEC}" ]] && SLEEP_SEC=15
 
-if [[ -n "${NEXO_NUGET_VERIFY_PACKAGE_IDS:-}" && "${NEXO_NUGET_VERIFY_PACKAGE_IDS}" != "" ]]; then
-  mapfile -t IDS < <(echo "${NEXO_NUGET_VERIFY_PACKAGE_IDS}" | tr ',' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep -v '^$' || true)
+if [[ -n "${ASHLAR_NUGET_VERIFY_PACKAGE_IDS:-}" && "${ASHLAR_NUGET_VERIFY_PACKAGE_IDS}" != "" ]]; then
+  mapfile -t IDS < <(echo "${ASHLAR_NUGET_VERIFY_PACKAGE_IDS}" | tr ',' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep -v '^$' || true)
 else
-  IDS=(Nexo.Hosting.Bundle Nexo.Hosting Nexo.Sdk Nexo.CLI)
+  IDS=(Ashlar.Hosting.Bundle Ashlar.Hosting Ashlar.Sdk Ashlar.CLI)
 fi
 
 reg_has_version() {

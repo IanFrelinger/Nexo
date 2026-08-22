@@ -4,6 +4,6 @@
 make dr-gate-full
 ```
 
-Artifacts: `.nexo/dr-gate/`
+Artifacts: `.ashlar/dr-gate/`
 
 **Next:** RC policy tier — `make rc-gate-tier-e` or `make waterproofing-gate-full`

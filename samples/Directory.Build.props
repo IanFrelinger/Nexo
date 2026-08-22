@@ -2,8 +2,8 @@
 <Project>
   <ItemGroup Condition="
     '$(MSBuildProjectName)' == 'HelloBrick' OR
-    '$(MSBuildProjectName)' == 'Nexo.Certified.DamageResolver'
+    '$(MSBuildProjectName)' == 'Ashlar.Certified.DamageResolver'
     ">
-    <Compile Include="$(MSBuildThisFileDirectory)../src/Nexo.Compat/GlobalUsings.DomainBrick.cs" Link="GlobalUsings.DomainBrick.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)../src/Ashlar.Compat/GlobalUsings.DomainBrick.cs" Link="GlobalUsings.DomainBrick.cs" />
   </ItemGroup>
 </Project>

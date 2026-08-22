@@ -25,7 +25,7 @@ Manual run: **Actions → Devlog Ghost publish → Run workflow** (optional titl
 ```bash
 export GHOST_URL="https://your-ghost-host.com"
 export GHOST_ADMIN_API_KEY="paste:id:here"
-echo "<p>Hello from Nexo tooling.</p>" | node publish.mjs --title "Test draft"
+echo "<p>Hello from Ashlar tooling.</p>" | node publish.mjs --title "Test draft"
 ```
 
 ## Video / interactive posts

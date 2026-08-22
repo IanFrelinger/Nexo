@@ -1,0 +1,43 @@
+using System.Globalization;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
+
+namespace Ashlar.API.Security;
+
+/// <summary>
+/// Fixed-window hourly quota per tenant using in-memory counters (single-process).
+/// </summary>
+public sealed class CopilotSubmissionQuota : ICopilotSubmissionQuota
+{
+    private readonly IMemoryCache _cache;
+    private readonly AshlarEntitlementsOptions _options;
+
+    /// <summary>Creates an in-memory hourly copilot submission quota tracker.</summary>
+    public CopilotSubmissionQuota(IMemoryCache cache, IOptions<AshlarEntitlementsOptions> optionsAccessor)
+    {
+        _cache = cache;
+        _options = optionsAccessor.Value;
+    }
+
+    /// <inheritdoc />
+    public bool TryConsume(string tenantId, out string? denialMessage)
+    {
+        denialMessage = null;
+        var max = _options.MaxCopilotSubmissionsPerHour;
+        if (max <= 0)
+            return true;
+
+        var tid = string.IsNullOrWhiteSpace(tenantId) ? "default" : tenantId.Trim();
+        var bucket = DateTime.UtcNow.ToString("yyyyMMddHH", CultureInfo.InvariantCulture);
+        var key = $"ashlar:copilotquota:{tid}:{bucket}";
+        var count = _cache.Get<int?>(key) ?? 0;
+        if (count >= max)
+        {
+            denialMessage = $"Hourly copilot submission limit ({max}) reached for tenant '{tid}'.";
+            return false;
+        }
+
+        _cache.Set(key, count + 1, new MemoryCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromHours(2) });
+        return true;
+    }
+}

@@ -71,7 +71,7 @@ Failure codes (kebab-case): `signature-invalid`, `asset-hash-mismatch`, `binding
 
 ## Issuance (`BundleCertificationBrick`)
 
-Deterministic brick in `Nexo.Infrastructure.Certification.Physical`. Computes `assetHash` from asset bytes, validates binding-scope policy, signs with issuer private key. Refuses inconsistent inputs before signing.
+Deterministic brick in `Ashlar.Infrastructure.Certification.Physical`. Computes `assetHash` from asset bytes, validates binding-scope policy, signs with issuer private key. Refuses inconsistent inputs before signing.
 
 ## Out of scope (Phase 0)
 
@@ -79,6 +79,6 @@ Asset generation, QR/NFC encoding, XR clients, hosting/resolution backend, relea
 
 ## Implementation
 
-- Library: `applications/Nexo.Certification.Physical/`
-- Issuance: `src/Nexo.Infrastructure/Certification/Physical/BundleCertificationBrick.cs`
-- Tests: `src/Nexo.Tests.Infrastructure/Tests/Certification/PhysicalAtomCertificateVerifierTests.cs`, `BundleCertificationBrickTests.cs`
+- Library: `applications/Ashlar.Certification.Physical/`
+- Issuance: `src/Ashlar.Infrastructure/Certification/Physical/BundleCertificationBrick.cs`
+- Tests: `src/Ashlar.Tests.Infrastructure/Tests/Certification/PhysicalAtomCertificateVerifierTests.cs`, `BundleCertificationBrickTests.cs`

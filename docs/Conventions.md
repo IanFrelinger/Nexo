@@ -1,10 +1,10 @@
 # Current code conventions
 
-This document describes the conventions Nexo practices today. It is intentionally descriptive, not aspirational: this sprint does not refactor code, change exception behavior, remove interfaces, or migrate inheritance patterns.
+This document describes the conventions Ashlar practices today. It is intentionally descriptive, not aspirational: this sprint does not refactor code, change exception behavior, remove interfaces, or migrate inheritance patterns.
 
 ## Mechanically enforced (Core.Domain)
 
-The following conventions are enforced by `src/Nexo.Tests.Domain/DomainConventionArchitectureTests.cs` and are scoped **only** to `Nexo.Core.Domain`:
+The following conventions are enforced by `src/Ashlar.Tests.Domain/DomainConventionArchitectureTests.cs` and are scoped **only** to `Ashlar.Core.Domain`:
 
 1. **No generic class/record/struct declarations in Core.Domain.** The domain assembly currently declares zero generic domain types. This keeps domain contracts concrete and easy to serialize, inspect, and reason about. This does not ban .NET generic framework types such as `Task<T>` or `IReadOnlyList<T>` in members.
 2. **Class inheritance stays within sanctioned domain families.** Domain classes may derive only from `object` or these existing, closed families:
@@ -19,14 +19,14 @@ These invariants intentionally do **not** apply to Infrastructure, CLI, Orchestr
 
 ## Error handling: values and exceptions both exist
 
-Nexo is partway toward errors-as-values, but it is not uniformly there.
+Ashlar is partway toward errors-as-values, but it is not uniformly there.
 
 ### Where errors-as-values is used
 
 `Result<T>` appears in focused execution-routing paths:
 
-- `src/Nexo.Core.Application/Execution/Routing/Result.cs`
-- `src/Nexo.Infrastructure/Execution/Ollama/Result.cs`
+- `src/Ashlar.Core.Application/Execution/Routing/Result.cs`
+- `src/Ashlar.Infrastructure/Execution/Ollama/Result.cs`
 - Routing and provider-adjacent code that models local/peer/cloud execution outcomes without using exceptions as the primary success/failure channel.
 
 These areas are good examples of recoverable outcomes represented explicitly as values.
@@ -45,7 +45,7 @@ The rough split today is: **recoverable routing/provider outcomes sometimes use 
 
 ## Interfaces and ports
 
-Nexo is interface-heavy today. Interfaces are used for dependency inversion, package boundaries, extension seams, and testable orchestration ports.
+Ashlar is interface-heavy today. Interfaces are used for dependency inversion, package boundaries, extension seams, and testable orchestration ports.
 
 Common examples include:
 
@@ -59,7 +59,7 @@ This is not a “no interfaces” codebase. The current architecture relies on i
 
 ## Abstract classes and inheritance
 
-Nexo also uses abstract classes where shared lifecycle or value-object behavior is centralized.
+Ashlar also uses abstract classes where shared lifecycle or value-object behavior is centralized.
 
 Examples include:
 
@@ -78,7 +78,7 @@ Generics are common and idiomatic throughout the repository:
 - Generic stores, handlers, options, and typed client/runtime surfaces.
 - Generic test and helper infrastructure.
 
-Avoid presenting Nexo as a generics-free or intentionally flat-only codebase. The actual code uses .NET generics where they make contracts and data flow explicit.
+Avoid presenting Ashlar as a generics-free or intentionally flat-only codebase. The actual code uses .NET generics where they make contracts and data flow explicit.
 
 ## Aspirational / partial (not gated)
 

@@ -6,19 +6,19 @@ set -e
 cd "$(dirname "$0")/.."
 mkdir -p mutation-reports
 
-# Use Nexo.Kernel.sln for a focused kernel graph (Stryker / mutation tooling).
-SOLUTION="Nexo.Kernel.sln"
+# Use Ashlar.Kernel.sln for a focused kernel graph (Stryker / mutation tooling).
+SOLUTION="Ashlar.Kernel.sln"
 
-echo "=== Mutation testing: Nexo.Policies.Dev (PathAllowlist, MaxWriteSize) ==="
-dotnet stryker --solution "$SOLUTION" --project src/Nexo.Policies.Dev/Nexo.Policies.Dev.csproj --test-project src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --output mutation-reports/policies
-
-echo ""
-echo "=== Mutation testing: Nexo.Runtime (AgentHost, PolicyEngine) ==="
-dotnet stryker --solution "$SOLUTION" --project src/Nexo.Runtime/Nexo.Runtime.csproj --test-project src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --output mutation-reports/runtime
+echo "=== Mutation testing: Ashlar.Policies.Dev (PathAllowlist, MaxWriteSize) ==="
+dotnet stryker --solution "$SOLUTION" --project src/Ashlar.Policies.Dev/Ashlar.Policies.Dev.csproj --test-project src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj --output mutation-reports/policies
 
 echo ""
-echo "=== Mutation testing: Nexo.Infrastructure (Rollback, ImmutableCoreRegistry) ==="
-dotnet stryker --solution "$SOLUTION" --project src/Nexo.Infrastructure/Nexo.Infrastructure.csproj --test-project src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --mutate "**/Rollback/**/*.cs" "**/Adaptation/ImmutableCoreRegistry.cs" --output mutation-reports/infrastructure
+echo "=== Mutation testing: Ashlar.Runtime (AgentHost, PolicyEngine) ==="
+dotnet stryker --solution "$SOLUTION" --project src/Ashlar.Runtime/Ashlar.Runtime.csproj --test-project src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj --output mutation-reports/runtime
+
+echo ""
+echo "=== Mutation testing: Ashlar.Infrastructure (Rollback, ImmutableCoreRegistry) ==="
+dotnet stryker --solution "$SOLUTION" --project src/Ashlar.Infrastructure/Ashlar.Infrastructure.csproj --test-project src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj --mutate "**/Rollback/**/*.cs" "**/Adaptation/ImmutableCoreRegistry.cs" --output mutation-reports/infrastructure
 
 echo ""
 echo "Open ./mutation-reports/*/reports/mutation-report.html to review surviving mutants."

@@ -2,7 +2,7 @@
 
 **Sprint:** SX-AUDIT (characterize) + SX-ENFORCE (A/B/C teeth) + SX-ENFORCE-D (D ceiling, 2026-08-16)  
 **Branch:** `cursor/self-extend-enforce-6118` (off `cursor/self-extend-audit-6118`); D on `feat/sx-invariant-d-extension-ceiling`  
-**Scope:** Background-agent self-extend path only (not CLI `nexo self-extend`, not orchestration `LifecycleManager`).
+**Scope:** Background-agent self-extend path only (not CLI `ashlar self-extend`, not orchestration `LifecycleManager`).
 
 ## Purpose
 
@@ -74,7 +74,7 @@ Runtime agent activation (separate from extend cycle):
 
 **Verdict: ENFORCED**
 
-Self-produced brick writes under `src/Nexo.Bricks*/` on the self-extend admission edge require an admitted, content-bound certification record. Uncertified, missing-record, and tampered content are refused by `SelfProducedBrickCertificationPolicy`.
+Self-produced brick writes under `src/Ashlar.Bricks*/` on the self-extend admission edge require an admitted, content-bound certification record. Uncertified, missing-record, and tampered content are refused by `SelfProducedBrickCertificationPolicy`.
 
 ### Invariant B — monotonic policy narrowing
 
@@ -92,7 +92,7 @@ Unconfigured aggressiveness defaults to **Passive** — extender cycles do not r
 
 **Verdict: ENFORCED**
 
-Within-cycle ReAct and build/test budgets exist. Across cycles, `ExtensionCeiling` refuses an extend cycle when any of three ceilings is reached — `MaxLineageDepth` (default 1: roots and their direct children may extend, machine-spawned grandchildren may not; depth = `ParentId` hops, an unresolvable parent still counts), `MaxUnattendedCycles` (default 8 since a human last armed the agent, then hold), `MaxCyclesPerHour` (default 4, trailing hour). The environment (`NEXO_EXTENSION_MAX_LINEAGE_DEPTH`, `NEXO_EXTENSION_MAX_UNATTENDED_CYCLES`, `NEXO_EXTENSION_MAX_CYCLES_PER_HOUR`) and an agent's own `Parameters` (`MaxLineageDepth`, `MaxUnattendedCycles`, `MaxCyclesPerHour`) may only lower these — the same posture as the certified loop's `RecursionDiscipline`; raising a default is a code change. Only cycles that actually reach the runner consume budget (a Passive skip or approval denial does not). Re-arm is an operator act: `BackgroundAgentRegistry.RearmExtension(agentId)` or a process restart; re-registration deliberately does not re-arm because agents can re-register themselves (`UpdateAgentConfigTool`), and re-arm clears the unattended count but not the trailing-hour rate. A CLI verb for re-arm is a follow-up on an `application/*` branch.
+Within-cycle ReAct and build/test budgets exist. Across cycles, `ExtensionCeiling` refuses an extend cycle when any of three ceilings is reached — `MaxLineageDepth` (default 1: roots and their direct children may extend, machine-spawned grandchildren may not; depth = `ParentId` hops, an unresolvable parent still counts), `MaxUnattendedCycles` (default 8 since a human last armed the agent, then hold), `MaxCyclesPerHour` (default 4, trailing hour). The environment (`ASHLAR_EXTENSION_MAX_LINEAGE_DEPTH`, `ASHLAR_EXTENSION_MAX_UNATTENDED_CYCLES`, `ASHLAR_EXTENSION_MAX_CYCLES_PER_HOUR`) and an agent's own `Parameters` (`MaxLineageDepth`, `MaxUnattendedCycles`, `MaxCyclesPerHour`) may only lower these — the same posture as the certified loop's `RecursionDiscipline`; raising a default is a code change. Only cycles that actually reach the runner consume budget (a Passive skip or approval denial does not). Re-arm is an operator act: `BackgroundAgentRegistry.RearmExtension(agentId)` or a process restart; re-registration deliberately does not re-arm because agents can re-register themselves (`UpdateAgentConfigTool`), and re-arm clears the unattended count but not the trailing-hour rate. A CLI verb for re-arm is a follow-up on an `application/*` branch.
 
 ## REORDER note (post SX-ENFORCE-D)
 
@@ -102,10 +102,10 @@ Invariants **A, B, C and D** are now enforced on the live path. Unattended multi
 
 | File | Role |
 |------|------|
-| `src/Nexo.Tests.BackgroundAgents/SelfExtend/SelfExtendInvariantACertGateTests.cs` | Invariant A |
-| `src/Nexo.Tests.BackgroundAgents/SelfExtend/SelfExtendInvariantBPolicyNarrowingTests.cs` | Invariant B |
-| `src/Nexo.Tests.BackgroundAgents/SelfExtend/SelfExtendInvariantCHumanAdmissionTests.cs` | Invariant C |
-| `src/Nexo.Tests.BackgroundAgents/SelfExtend/SelfExtendInvariantDRecursionCeilingTests.cs` | Invariant D |
-| `src/Nexo.Tests.BackgroundAgents/SelfExtend/SelfExtendAuditTestSupport.cs` | Shared helpers |
+| `src/Ashlar.Tests.BackgroundAgents/SelfExtend/SelfExtendInvariantACertGateTests.cs` | Invariant A |
+| `src/Ashlar.Tests.BackgroundAgents/SelfExtend/SelfExtendInvariantBPolicyNarrowingTests.cs` | Invariant B |
+| `src/Ashlar.Tests.BackgroundAgents/SelfExtend/SelfExtendInvariantCHumanAdmissionTests.cs` | Invariant C |
+| `src/Ashlar.Tests.BackgroundAgents/SelfExtend/SelfExtendInvariantDRecursionCeilingTests.cs` | Invariant D |
+| `src/Ashlar.Tests.BackgroundAgents/SelfExtend/SelfExtendAuditTestSupport.cs` | Shared helpers |
 
 The invariant D rejection test is live (no `Skip`); it was the last `GAP` marker in the suite.
