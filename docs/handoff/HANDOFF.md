@@ -424,7 +424,19 @@ From the audit. Cheap during this work, genuinely worth doing.
 - [x] Rename applied; `verify-rename.sh` prints **PASS**
 - [x] `dotnet build Ashlar.Kernel.sln` green (0/0); cert gate still **169/169**
 - [x] Rename committed alone — `a0609ebe`, 4,205 files, no tooling or local state in it
-- [ ] Env vars / config keys / `.env` files updated by hand — **your local setup is now broken until you do this** (see §6)
+- [x] Local setup swept. On *this* machine most of the warned-about state did not exist:
+      no `NEXO_*` env vars (user or machine), no shell profiles referencing it, no
+      `.env` files, no `.nexo/` state dir, no dotnet user-secrets. Two things did and
+      were fixed: a stale user **PATH** entry pointing at an empty
+      `%TEMP%\nexo-dotnet-home\.dotnet\tools`, and 83 dead `Nexo.*` paths in
+      `.claude/settings.local.json` (untracked, so the rename could not reach it).
+      Still open, deliberately: the git remote (see below) and the repo folder name.
+- [ ] GitHub repo renamed, then `git remote set-url origin <new>` — **your call**; the
+      local remote is only correct to change after the rename. GitHub redirects, so
+      pushing keeps working either way.
+- [ ] Repo folder `Nexo-Framework` — left alone on purpose. The parked worktree's
+      gitfile hardcodes the absolute path `C:/Users/icfre/Downloads/Nexo-Framework/.git/worktrees/...`,
+      so renaming the folder breaks that link. Fix the worktree first if you want it.
 - [ ] `IDomainAgentProvider` / `IDomainPatternProvider` / tool registry landed
 - [ ] `extract-game-layer.sh` reports **0 blockers**
 - [ ] Extraction applied; `AddPlaytestServices` deleted; kernel **and** HostRunners build
