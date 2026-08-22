@@ -156,11 +156,32 @@ staying() {
   # the exclusions by hand, which is a standing invitation for the two lists to
   # drift: add a file to MOVE_TESTS, forget the matching grep, and the blocker
   # check reports the file you are about to move as a blocker against itself.
-  local pat="" e
+  # _handoff/ is the DESTINATION. Once --apply has run and the result is committed,
+  # everything under it is tracked, and without this exclusion the check reports the
+  # extraction's own output as blockers against itself — 40-odd files "still
+  # referencing" namespaces that moved there with them.
+  local pat="^_handoff/" e
   for e in "${MOVE_DIRS[@]}"; do pat="${pat}|^$(esc "${e%%|*}")/"; done
   for e in "${MOVE_FILES[@]}" "${MOVE_TESTS[@]}"; do pat="${pat}|^$(esc "$e")\$"; done
-  git ls-files "*.cs" | grep -vE "${pat#|}"
+  git ls-files "*.cs" | grep -vE "$pat"
 }
+
+# Has --apply already run? Every source path being absent is the signal.
+already_extracted() {
+  local e
+  for e in "${MOVE_DIRS[@]}"; do [[ -e "${e%%|*}" ]] && return 1; done
+  for e in "${MOVE_FILES[@]}" "${MOVE_TESTS[@]}"; do [[ -e "$e" ]] && return 1; done
+  return 0
+}
+
+if already_extracted; then
+  echo "The game layer has already been extracted — every source path below is absent."
+  echo "Nothing to do. The extracted tree is at $DEST."
+  echo
+  echo "Re-running the blocker check here would be meaningless: the only remaining"
+  echo "references to the moved namespaces are inside the extracted tree itself."
+  exit 0
+fi
 
 for sym in "${KP}\.Orchestration\.Agents\.Playtest" \
            "${KP}\.Orchestration\.Playtest" \

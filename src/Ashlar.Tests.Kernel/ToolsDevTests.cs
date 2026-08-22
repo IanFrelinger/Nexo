@@ -1123,7 +1123,7 @@ public class ToolsDevTests
             // NB: bails with `return`, matching the OS guard above, which xUnit reports as
             // PASSED rather than skipped. A green run under root is not evidence this path
             // works. Same treatment as
-            // TileMapRenderToolCoverageTests.TileMapRenderTool_reports_render_error_when_output_directory_not_writable.
+            // the equivalent write-permission test in the extracted game layer.
             if (CanEnumerate(locked))
             {
                 return;
