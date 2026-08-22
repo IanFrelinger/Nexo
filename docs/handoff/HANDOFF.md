@@ -352,7 +352,7 @@ the kernel and register as providers like everything else.
 Re-run `extract-game-layer.sh` until the inbound-reference check reports `ok` on
 all three symbols. That check is the definition of done for this step.
 
-### Step 3 — the extraction
+### ~~Step 3 — the extraction~~ DONE — `302a5e02`
 
 ```bash
 bash scripts/handoff/extract-game-layer.sh          # must report 0 blockers
@@ -477,6 +477,6 @@ From the audit. Cheap during this work, genuinely worth doing.
       so renaming the folder breaks that link. Fix the worktree first if you want it.
 - [x] `IDomainAgentProvider` / `IDomainPatternProvider` / tool registry landed
 - [x] `extract-game-layer.sh` reports **0 blockers** — all tiers separated
-- [ ] Extraction applied; `AddPlaytestServices` deleted; kernel **and** HostRunners build
-- [ ] Extraction committed alone
-- [ ] `_handoff/game-layer/` given a real name and moved to its own repo
+- [x] Extraction applied; `AddPlaytestServices` deleted; kernel **and** HostRunners build
+- [x] Extraction committed alone — 48 renames, 0 deletions, 0 content changes
+- [ ] `_handoff/game-layer/` given a real name and moved to its own repo — **the only step left**. See its README: it has no .csproj, its namespaces still say `Ashlar.Orchestration.*`, and `GameToolSource.cs` has never been compiled.
