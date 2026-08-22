@@ -391,7 +391,16 @@ checkout, or a local folder feed. `consumer-template/` exists for this.
 |---|---|---|
 | ~~1~~ | — | **empty.** Everything previously here had inbound references. |
 | ~~3~~ | Playtest tree, `TileMapRenderTool`, `DomainRecognizer` game patterns, Combat/Economy/Gameplay/AI agents | **DONE** — behind `IDomainAgentProvider` / `IDomainPatternProvider` / `IToolSource`. 0 blockers. |
-| **2** | `Orchestration/Assets/`, `Agents/Assets/` (generative image/audio/3D) | **OPEN — a product decision, not a mechanical one.** The move is trivial now the seam exists, but unlike `AIAgent` (whose prompt says "specializing in game AI") these are not obviously game-only. |
+| ~~2~~ | `Agents/Assets/` — the three concrete agents only | **DONE, split.** Ports (`IImageGenerator`, `IAudioGenerator`, `IModel3DGenerator`, `IAssetStorage`), request/result types, `BaseAssetAgent` and the `Generated*Asset` models **stay in the kernel** — none carry a word of game vocabulary. Only `ImageAssetAgent`, `AudioAssetAgent` and `Model3DAssetAgent` move, because their own prompts ask for "a high-quality game asset" / "high-quality game audio". |
+
+**All tiers are now separated. `extract-game-layer.sh` reports 0 blockers across four
+symbols, and the game layer is one `AddGameDomain()` call away from being a package.**
+
+What the kernel kept, and why it is not an oversight: the *capability* to generate assets,
+recognise domains, and run agents is general. Only the game-flavoured *framings* of those
+capabilities moved. The clearest illustration is AI — `DomainRecognizer` still recognises
+"agent", "neural", "decision", but `AIAgent` left, because its prompt reads "specializing
+in game AI". Recognising a domain and having a specialist for it are separate concerns.
 
 **Certification fixtures — leave alone.** `DamageResolverSources.cs`,
 `HealthApplierSources.cs` and `DamageResolverBrickConstraints.cs` are game-*themed*
@@ -466,8 +475,8 @@ From the audit. Cheap during this work, genuinely worth doing.
 - [ ] Repo folder `Nexo-Framework` — left alone on purpose. The parked worktree's
       gitfile hardcodes the absolute path `C:/Users/icfre/Downloads/Nexo-Framework/.git/worktrees/...`,
       so renaming the folder breaks that link. Fix the worktree first if you want it.
-- [ ] `IDomainAgentProvider` / `IDomainPatternProvider` / tool registry landed
-- [ ] `extract-game-layer.sh` reports **0 blockers**
+- [x] `IDomainAgentProvider` / `IDomainPatternProvider` / tool registry landed
+- [x] `extract-game-layer.sh` reports **0 blockers** — all tiers separated
 - [ ] Extraction applied; `AddPlaytestServices` deleted; kernel **and** HostRunners build
 - [ ] Extraction committed alone
 - [ ] `_handoff/game-layer/` given a real name and moved to its own repo
