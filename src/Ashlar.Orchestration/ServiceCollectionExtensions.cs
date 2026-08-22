@@ -151,19 +151,6 @@ public static class ServiceCollectionExtensions
             => ValueTask.CompletedTask;
     }
 
-    /// <summary>
-    /// Adds playtest services to the service collection.
-    /// </summary>
-    public static IServiceCollection AddPlaytestServices(this IServiceCollection services)
-    {
-        // Telemetry store (default to in-memory for testing)
-        // services.AddSingleton<ITelemetryStore, InMemoryTelemetryStore>();
-
-        // Game runner (must be implemented per game engine)
-        // services.AddSingleton<IGameRunner, HeadlessGameRunner>();
-
-        return services;
-    }
 
     /// <summary>
     /// Adds asset generation services to the service collection.

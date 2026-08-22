@@ -12,7 +12,6 @@ using Ashlar.Abstractions.Database;
 using Ashlar.Core.Application.Common.Ports;
 using Ashlar.Orchestration.Agents;
 using Ashlar.Orchestration.Agents.Assets;
-using Ashlar.Orchestration.Agents.Playtest;
 using Ashlar.Orchestration.Agents.Planning;
 using Ashlar.Orchestration.Agents.Templates;
 using Ashlar.Orchestration.Architect;
@@ -21,7 +20,6 @@ using Ashlar.Orchestration.Assets.Ports;
 using Ashlar.Orchestration.Communication;
 using Ashlar.Orchestration.Communication.Models;
 using Ashlar.Orchestration.Health;
-using Ashlar.Orchestration.Playtest.Ports;
 using Ashlar.Orchestration.Resources;
 using Xunit;
 
@@ -52,9 +50,6 @@ public class OrchestrationFactoryAndCommunicationTests
     [InlineData("image", typeof(ImageAssetAgent))]
     [InlineData("audio", typeof(AudioAssetAgent))]
     [InlineData("model3d", typeof(Model3DAssetAgent))]
-    [InlineData("aiplayer", typeof(AIPlayerAgent))]
-    [InlineData("balance", typeof(BalanceAnalyzerAgent))]
-    [InlineData("feedback", typeof(FeedbackSynthesizerAgent))]
     [InlineData("planning", typeof(PlanningAgent))]
     [InlineData("Infrastructure", typeof(InfrastructureAgent))]
     [InlineData("Security", typeof(SecurityAgent))]
@@ -151,8 +146,6 @@ public class OrchestrationFactoryAndCommunicationTests
         services.AddSingleton(Mock.Of<IAudioGenerator>());
         services.AddSingleton(Mock.Of<IModel3DGenerator>());
         services.AddSingleton(Mock.Of<IAssetStorage>());
-        services.AddSingleton(Mock.Of<ITelemetryStore>());
-        services.AddSingleton(Mock.Of<IGameRunner>());
         services.AddSingleton(Mock.Of<IModel>());
         return services.BuildServiceProvider();
     }

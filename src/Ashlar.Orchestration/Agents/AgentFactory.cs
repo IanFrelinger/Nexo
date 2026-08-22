@@ -4,12 +4,10 @@ using Ashlar.Abstractions;
 using Ashlar.Abstractions.Agents;
 using Ashlar.Orchestration.Architect.Models;
 using Ashlar.Orchestration.Agents.Assets;
-using Ashlar.Orchestration.Agents.Playtest;
 using Ashlar.Orchestration.Agents.Planning;
 using Ashlar.Orchestration.Agents.Templates;
 using Ashlar.Orchestration.Models;
 using Ashlar.Orchestration.Assets.Ports;
-using Ashlar.Orchestration.Playtest.Ports;
 
 namespace Ashlar.Orchestration.Agents;
 
@@ -17,36 +15,61 @@ namespace Ashlar.Orchestration.Agents;
 /// Factory for creating specialized agents from AgentSpawnSpec.
 /// 
 /// Responsibilities:
-/// - Creates appropriate agent type based on domain (assets, playtest, etc.)
+/// - Asks registered <see cref="IDomainAgentProvider"/>s first, so domains the kernel
+///   does not know about (game domains, for instance) can be supplied by a package
+/// - Creates appropriate agent type based on domain for the kernel's built-in domains
 /// - Resolves dependencies from service provider
-/// - Instantiates domain-specific agents (ImageAssetAgent, etc.)
-/// - Falls back to PlanningAgent for unknown domains
+/// - Falls back to GenericAgent for unknown domains
 /// 
 /// Uses dependency injection to resolve agent dependencies (loggers, adapters, etc.).
 /// </summary>
-public sealed class AgentFactory : IAgentRuntimeFactory
+public sealed class AgentFactory : IAgentRuntimeFactory, IAgentCreationContext
 {
     private readonly ILogger<AgentFactory> _logger;
     private readonly IServiceProvider _serviceProvider;
+    private readonly IReadOnlyList<IDomainAgentProvider> _providers;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AgentFactory"/> class.
     /// </summary>
     /// <param name="logger">The logger instance.</param>
     /// <param name="serviceProvider">The service provider for dependency injection.</param>
-    public AgentFactory(ILogger<AgentFactory> logger, IServiceProvider serviceProvider)
+    /// <param name="domainAgentProviders">
+    /// Providers supplying agents for domains the kernel does not know about — see
+    /// <see cref="IDomainAgentProvider"/>. Optional so the many direct
+    /// <c>new AgentFactory(logger, sp)</c> call sites keep compiling; DI resolves it to an
+    /// empty sequence when nothing is registered.
+    /// </param>
+    public AgentFactory(
+        ILogger<AgentFactory> logger,
+        IServiceProvider serviceProvider,
+        IEnumerable<IDomainAgentProvider>? domainAgentProviders = null)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
+        _providers = domainAgentProviders?.ToList() ?? (IReadOnlyList<IDomainAgentProvider>)Array.Empty<IDomainAgentProvider>();
     }
+
+    /// <inheritdoc />
+    IServiceProvider IAgentCreationContext.Services => _serviceProvider;
+
+    /// <inheritdoc />
+    ILogger<BaseAgent> IAgentCreationContext.BaseLogger =>
+        _serviceProvider.GetService(typeof(ILogger<BaseAgent>)) as ILogger<BaseAgent>
+            ?? throw new InvalidOperationException("ILogger<BaseAgent> not registered");
+
+    /// <inheritdoc />
+    IModel IAgentCreationContext.ResolveModel(AgentSpawnSpec spec) =>
+        WrapModel(spec, _serviceProvider.GetService<IModel>());
 
     /// <summary>
     /// Creates a BaseAgent instance from an AgentSpawnSpec.
     /// 
     /// Determines agent type based on domain and creates appropriate specialized agent:
+    /// - Any domain claimed by a registered <see cref="IDomainAgentProvider"/> → that provider
     /// - Asset domains → ImageAssetAgent, AudioAssetAgent, Model3DAssetAgent
-    /// - Playtest domains → AIPlayerAgent, BalanceAnalyzerAgent, FeedbackSynthesizerAgent
-    /// - Unknown domains → PlanningAgent (generic fallback)
+    /// - Planning domains → PlanningAgent
+    /// - Unknown domains → GenericAgent (fallback)
     /// </summary>
     /// <param name="spec">Agent spawn specification from Architect</param>
     /// <returns>Specialized agent instance</returns>
@@ -60,16 +83,26 @@ public sealed class AgentFactory : IAgentRuntimeFactory
 
         _logger.LogInformation("Creating agent {AgentId} for domain {Domain}", spec.AgentId, spec.Domain);
 
+        // Registered providers first, so a package can supply domains the kernel does not
+        // know about (Playtest lives here now) and can also override a built-in if needed.
+        foreach (var provider in _providers)
+        {
+            if (!provider.Handles(spec.Domain))
+            {
+                continue;
+            }
+
+            _logger.LogDebug(
+                "Domain {Domain} claimed by provider {Provider}",
+                spec.Domain,
+                provider.GetType().Name);
+            return provider.Create(spec, this);
+        }
+
         // Check if this is an asset generation agent
         if (IsAssetDomain(spec.Domain))
         {
             return CreateAssetAgent(spec);
-        }
-
-        // Check if this is a playtest agent
-        if (IsPlaytestDomain(spec.Domain))
-        {
-            return CreatePlaytestAgent(spec);
         }
 
         // Check if this is a planning agent
@@ -205,42 +238,6 @@ public sealed class AgentFactory : IAgentRuntimeFactory
                 baseLogger),
 
             _ => throw new ArgumentException($"Unknown asset domain: {spec.Domain}")
-        };
-    }
-
-    private bool IsPlaytestDomain(string domain)
-    {
-        var playtestDomains = new[] { "playtest", "aiplayer", "balance", "telemetry", "feedback" };
-        return playtestDomains.Contains(domain.ToLowerInvariant());
-    }
-
-    private BaseAgent CreatePlaytestAgent(AgentSpawnSpec spec)
-    {
-        var baseLogger = _serviceProvider.GetService(typeof(ILogger<BaseAgent>)) as ILogger<BaseAgent>
-            ?? throw new InvalidOperationException("ILogger<BaseAgent> not registered");
-        var model = WrapModel(spec, _serviceProvider.GetService<IModel>());
-
-        return spec.Domain.ToLowerInvariant() switch
-        {
-            "aiplayer" or "playtest" => new AIPlayerAgent(
-                spec,
-                _serviceProvider.GetRequiredService<IGameRunner>(),
-                model,
-                spec.Constraints.FirstOrDefault(c => c.Type == "Profile")?.Description ?? "balanced",
-                baseLogger),
-
-            "balance" => new BalanceAnalyzerAgent(
-                spec,
-                _serviceProvider.GetRequiredService<ITelemetryStore>(),
-                model,
-                baseLogger),
-
-            "feedback" => new FeedbackSynthesizerAgent(
-                spec,
-                model,
-                baseLogger),
-
-            _ => throw new ArgumentException($"Unknown playtest domain: {spec.Domain}")
         };
     }
 

@@ -1,5 +1,6 @@
 using System.Text.Json;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -338,5 +339,94 @@ public class OrchestrationPlaytestCoordinationTests
         });
 
         return events;
+    }
+
+    // ---------------------------------------------------------------- provider routing
+    // These replace three InlineData rows deleted from
+    // OrchestrationFactoryAndCommunicationTests, which stays in the kernel and can no
+    // longer name the playtest agent types. Coverage moves here, with the rest of the
+    // game layer.
+
+    private static ServiceProvider PlaytestServices(bool withProvider)
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton(Mock.Of<IModel>());
+        services.AddSingleton(Mock.Of<IGameRunner>());
+        services.AddSingleton(Mock.Of<ITelemetryStore>());
+        if (withProvider)
+        {
+            services.AddPlaytestAgents();
+        }
+
+        return services.BuildServiceProvider();
+    }
+
+    private static AgentFactory FactoryFor(ServiceProvider provider) =>
+        new(NullLogger<AgentFactory>.Instance, provider, provider.GetServices<IDomainAgentProvider>());
+
+    [Theory]
+    [InlineData("aiplayer", typeof(AIPlayerAgent))]
+    [InlineData("playtest", typeof(AIPlayerAgent))]
+    [InlineData("balance", typeof(BalanceAnalyzerAgent))]
+    [InlineData("feedback", typeof(FeedbackSynthesizerAgent))]
+    public void PlaytestAgentProvider_routes_domains_through_AgentFactory(string domain, Type expected)
+    {
+        using var provider = PlaytestServices(withProvider: true);
+
+        FactoryFor(provider).CreateAgent(Spec(domain)).Should().BeOfType(expected);
+    }
+
+    [Fact]
+    public void AgentFactory_falls_back_to_generic_when_the_playtest_provider_is_absent()
+    {
+        // The kernel on its own has no knowledge of playtest domains. This is the whole
+        // point of the extraction: without the game package installed, "aiplayer" is just
+        // an unrecognised domain rather than a compile-time dependency.
+        using var provider = PlaytestServices(withProvider: false);
+
+        FactoryFor(provider).CreateAgent(Spec("aiplayer")).Should().BeOfType<GenericAgent>();
+    }
+
+    [Fact]
+    public void PlaytestAgentProvider_claims_telemetry_but_cannot_build_it()
+    {
+        // Pins pre-existing behaviour rather than endorsing it. IsPlaytestDomain listed
+        // "telemetry" while CreatePlaytestAgent had no arm for it, so the domain was
+        // advertised as supported and then rejected at runtime. Preserved verbatim through
+        // the extraction so no behaviour change hides inside a mechanical move; the
+        // assertion is here to make the oddity visible rather than silent.
+        using var provider = PlaytestServices(withProvider: true);
+        var sut = new PlaytestAgentProvider();
+
+        sut.Handles("telemetry").Should().BeTrue();
+
+        var act = () => FactoryFor(provider).CreateAgent(Spec("telemetry"));
+        act.Should().Throw<ArgumentException>();
+    }
+
+    [Fact]
+    public void AgentFactory_resolved_from_the_container_receives_registered_providers()
+    {
+        // The tests above construct AgentFactory by hand and pass the providers in
+        // explicitly, so every one of them would still pass if Microsoft.Extensions.
+        // DependencyInjection never populated the optional
+        // IEnumerable<IDomainAgentProvider> constructor parameter at all. Production does
+        // not build it by hand — ServiceCollectionExtensions registers
+        // AddSingleton<AgentFactory>() and lets the container pick the constructor. This
+        // test covers that path, and is the only one here that would catch DI selecting
+        // the two-argument constructor and silently leaving providers empty.
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton(Mock.Of<IModel>());
+        services.AddSingleton(Mock.Of<IGameRunner>());
+        services.AddSingleton(Mock.Of<ITelemetryStore>());
+        services.AddSingleton<AgentFactory>();
+        services.AddPlaytestAgents();
+        using var provider = services.BuildServiceProvider();
+
+        var factory = provider.GetRequiredService<AgentFactory>();
+
+        factory.CreateAgent(Spec("balance")).Should().BeOfType<BalanceAnalyzerAgent>();
     }
 }
