@@ -25,9 +25,17 @@ git rev-parse --git-dir >/dev/null 2>&1 || { echo "not a git repository: $REPO_R
 
 FAIL=0
 
-# _handoff/ is excluded on purpose: the extracted game layer keeps its own name
-# and consumes Ashlar as a package. It is untracked anyway once extracted.
-tracked() { git ls-files | grep -v "^_handoff/"; }
+# SCOPE MUST MATCH rename-to-ashlar.sh EXACTLY. If the verifier checks files the
+# rename deliberately skipped, it reports them as residue and fails a correct run —
+# which is what happened: 83 lines across docs/handoff/ and scripts/handoff/ were
+# flagged, every one of them a deliberate exclusion.
+#
+#   _handoff/         the extracted game layer keeps its own name
+#   scripts/handoff/  the rename's own tooling and documentation. Their Nexo
+#   docs/handoff/     tokens are the definition of the work, not instances of it.
+tracked() {
+  git ls-files | grep -v -e "^_handoff/" -e "^scripts/handoff/" -e "^docs/handoff/"
+}
 
 echo "=== verifying rename Nexo -> Ashlar ==="
 echo

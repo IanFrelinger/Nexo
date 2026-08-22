@@ -65,6 +65,32 @@ else
     git status --porcelain --untracked-files=no >&2
     exit 1
   fi
+
+  # PRE-FLIGHT: refuse if any Ashlar-named directory already exists.
+  #
+  # `mv A B` RENAMES A to B only when B does not exist. When B is an existing
+  # directory it MOVES A INSIDE IT. A previous half-reverted run left Ashlar.*
+  # directory shells on disk — alive because `git clean -fd` does NOT remove
+  # gitignored files, so bin/ and obj/ inside them survived — and pass 3 then
+  # produced 88 directories shaped src/Ashlar.Foo/Nexo.Foo. Nothing failed; the
+  # tree was quietly wrong.
+  #
+  # Fail before mutating anything. scripts/handoff/ and docs/handoff/ are excluded
+  # because they legitimately contain the target token (this file is called
+  # rename-to-ashlar.sh).
+  STALE="$(find . -type d \( -iname '*ashlar*' \) \
+             -not -path './.git/*' -not -path './.claude/*' \
+             -not -path './scripts/handoff/*' -not -path './docs/handoff/*' \
+             -not -path './_handoff/*' 2>/dev/null || true)"
+  if [[ -n "$STALE" ]]; then
+    echo "REFUSING: Ashlar-named directories already exist. A previous run was not fully reverted." >&2
+    printf '%s\n' "$STALE" | head -20 >&2
+    echo >&2
+    echo "mv would nest the Nexo.* directories INSIDE these rather than renaming them." >&2
+    echo "Clean first — note the -x, without it ignored bin/obj keep these shells alive:" >&2
+    echo "    git reset --hard && git clean -xdf -e .claude" >&2
+    exit 1
+  fi
 fi
 echo
 
@@ -126,6 +152,10 @@ while IFS= read -r -d '' f; do
   [[ "$new" == "$base" ]] && continue
   FILE_RENAMES=$((FILE_RENAMES + 1))
   [[ $APPLY -eq 0 ]] && { echo "  $f  ->  $dir/$new"; continue; }
+  if [[ -e "$dir/$new" ]]; then
+    echo "REFUSING: destination exists, would overwrite: $dir/$new" >&2
+    exit 1
+  fi
   git mv -- "$f" "$dir/$new"
 done < <(tracked)
 echo "files renamed: $FILE_RENAMES"
@@ -143,6 +173,11 @@ while IFS= read -r d; do
   [[ "$new" == "$base" ]] && continue
   DIR_RENAMES=$((DIR_RENAMES + 1))
   [[ $APPLY -eq 0 ]] && { echo "  $d  ->  $parent/$new"; continue; }
+  # Belt-and-braces to the pre-flight above: never let mv nest instead of rename.
+  if [[ -e "$parent/$new" ]]; then
+    echo "REFUSING: destination exists, mv would nest instead of rename: $parent/$new" >&2
+    exit 1
+  fi
   mv -- "$d" "$parent/$new"
 done < <(git ls-files | grep -v '^_handoff/' \
           | awk -F/ '{p=""; for(i=1;i<NF;i++){p=(i==1?$1:p"/"$i); print p}}' \
@@ -150,6 +185,18 @@ done < <(git ls-files | grep -v '^_handoff/' \
           | awk -F/ '{print NF"\t"$0}' | sort -rn -k1,1 | cut -f2-)
 echo "directories renamed: $DIR_RENAMES"
 echo
+
+# Directory renames above use plain `mv`, which touches the filesystem but stages
+# nothing. Until the index is refreshed, `git ls-files` keeps reporting the OLD
+# paths — and verify-rename.sh reads git ls-files, so it reports thousands of
+# phantom residues for a rename that is in fact correct on disk. (Measured: 3,571
+# stale index paths, zero of which existed.) Sync the index before verifying.
+if [[ $APPLY -eq 1 ]]; then
+  echo "--- staging renames so the index matches the filesystem ---"
+  git add -A
+  echo "staged."
+  echo
+fi
 
 if [[ $APPLY -eq 1 ]]; then
   echo "=== done. Next: ==="
