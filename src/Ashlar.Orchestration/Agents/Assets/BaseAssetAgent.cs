@@ -19,7 +19,7 @@ namespace Ashlar.Orchestration.Agents.Assets;
 /// - Retry logic with prompt refinement
 /// - Asset storage and metadata management
 /// 
-/// Derived classes (ImageAssetAgent, AudioAssetAgent, Model3DAssetAgent) implement
+/// Derived classes, supplied by whichever package owns the concrete asset agents, implement
 /// asset-type-specific generation and validation logic.
 /// </summary>
 public abstract class BaseAssetAgent : BaseAgent

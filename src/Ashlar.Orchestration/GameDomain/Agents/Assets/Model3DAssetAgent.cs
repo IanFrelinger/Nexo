@@ -5,7 +5,10 @@ using Ashlar.Orchestration.Assets.Models;
 using Ashlar.Orchestration.Assets.Ports;
 using System.Text.RegularExpressions;
 
-namespace Ashlar.Orchestration.Agents.Assets;
+using Ashlar.Orchestration.Agents;
+using Ashlar.Orchestration.Agents.Assets;
+
+namespace Ashlar.Orchestration.GameDomain.Agents.Assets;
 
 /// <summary>
 /// Agent that generates 3D model assets for games.

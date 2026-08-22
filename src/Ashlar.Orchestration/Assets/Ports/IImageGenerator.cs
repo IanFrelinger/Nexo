@@ -9,7 +9,8 @@ namespace Ashlar.Orchestration.Assets.Ports;
 /// - Support multiple sizes and styles
 /// 
 /// Implementations (DalleImageGenerator, LocalImageGenerator, etc.) provide
-/// specific image generation logic. Used by ImageAssetAgent.
+/// specific image generation logic. Consumed by whichever agent needs images —
+/// whichever agent a package supplies for image generation.
 /// </summary>
 public interface IImageGenerator
 {

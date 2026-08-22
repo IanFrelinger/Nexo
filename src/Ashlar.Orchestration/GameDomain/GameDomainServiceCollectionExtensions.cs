@@ -47,11 +47,30 @@ public static class GameDomainServiceCollectionExtensions
     }
 
     /// <summary>
-    /// Registers the whole game domain layer — recognition patterns and agents.
-    /// The one call an application installing the game layer is expected to make.
+    /// Registers <see cref="GameAssetAgentProvider"/> so <see cref="AgentFactory"/> routes the
+    /// image, audio and 3D model domains to the generative asset agents.
+    ///
+    /// <para>The asset PORTS stay in the kernel — this registers only the game-flavoured
+    /// agents that consume them. The caller must still register an
+    /// <c>IImageGenerator</c>/<c>IAudioGenerator</c>/<c>IModel3DGenerator</c> and an
+    /// <c>IAssetStorage</c>; without them a spawn throws, exactly as before.</para>
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <returns>The same collection, for chaining.</returns>
+    public static IServiceCollection AddGameAssetAgents(this IServiceCollection services)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        services.AddSingleton<IDomainAgentProvider, GameAssetAgentProvider>();
+        return services;
+    }
+
+    /// <summary>
+    /// Registers the whole game domain layer — recognition patterns, domain agents and
+    /// asset agents. The one call an application installing the game layer is expected to
+    /// make.
     /// </summary>
     /// <param name="services">The service collection.</param>
     /// <returns>The same collection, for chaining.</returns>
     public static IServiceCollection AddGameDomain(this IServiceCollection services) =>
-        services.AddGameDomainPatterns().AddGameDomainAgents();
+        services.AddGameDomainPatterns().AddGameDomainAgents().AddGameAssetAgents();
 }

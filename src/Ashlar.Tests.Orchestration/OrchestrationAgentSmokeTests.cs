@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Ashlar.Abstractions;
 using Ashlar.Orchestration.Agents.Assets;
+using Ashlar.Orchestration.GameDomain.Agents.Assets;
 using Ashlar.Orchestration.Architect.Models;
 using Ashlar.Orchestration.Assets.Models;
 using Ashlar.Orchestration.Assets.Ports;

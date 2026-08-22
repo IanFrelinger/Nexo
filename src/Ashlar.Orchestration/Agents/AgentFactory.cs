@@ -3,11 +3,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Ashlar.Abstractions;
 using Ashlar.Abstractions.Agents;
 using Ashlar.Orchestration.Architect.Models;
-using Ashlar.Orchestration.Agents.Assets;
 using Ashlar.Orchestration.Agents.Planning;
 using Ashlar.Orchestration.Agents.Templates;
 using Ashlar.Orchestration.Models;
-using Ashlar.Orchestration.Assets.Ports;
 
 namespace Ashlar.Orchestration.Agents;
 
@@ -67,7 +65,6 @@ public sealed class AgentFactory : IAgentRuntimeFactory, IAgentCreationContext
     /// 
     /// Determines agent type based on domain and creates appropriate specialized agent:
     /// - Any domain claimed by a registered <see cref="IDomainAgentProvider"/> → that provider
-    /// - Asset domains → ImageAssetAgent, AudioAssetAgent, Model3DAssetAgent
     /// - Planning domains → PlanningAgent
     /// - Unknown domains → GenericAgent (fallback)
     /// </summary>
@@ -99,11 +96,6 @@ public sealed class AgentFactory : IAgentRuntimeFactory, IAgentCreationContext
             return provider.Create(spec, this);
         }
 
-        // Check if this is an asset generation agent
-        if (IsAssetDomain(spec.Domain))
-        {
-            return CreateAssetAgent(spec);
-        }
 
         // Check if this is a planning agent
         if (IsPlanningDomain(spec.Domain))
@@ -163,46 +155,6 @@ public sealed class AgentFactory : IAgentRuntimeFactory, IAgentCreationContext
         var logger = _serviceProvider.GetService(typeof(ILogger<GenericAgent>)) as ILogger<GenericAgent>
             ?? throw new InvalidOperationException("ILogger<GenericAgent> not registered");
         return new GenericAgent(spec, logger);
-    }
-
-    private bool IsAssetDomain(string domain)
-    {
-        var assetDomains = new[] { "image", "audio", "model3d", "3d", "model", "shader", "texture", "animation", "sound", "music" };
-        return assetDomains.Contains(domain.ToLowerInvariant());
-    }
-
-    private BaseAgent CreateAssetAgent(AgentSpawnSpec spec)
-    {
-        var model = WrapModel(spec, _serviceProvider.GetService<IModel>());
-        var storage = _serviceProvider.GetRequiredService<IAssetStorage>();
-        var baseLogger = _serviceProvider.GetService(typeof(ILogger<BaseAgent>)) as ILogger<BaseAgent>
-            ?? throw new InvalidOperationException("ILogger<BaseAgent> not registered");
-
-        return spec.Domain.ToLowerInvariant() switch
-        {
-            "image" or "texture" => new ImageAssetAgent(
-                spec,
-                _serviceProvider.GetRequiredService<IImageGenerator>(),
-                model,
-                storage,
-                baseLogger),
-
-            "audio" or "sound" or "music" => new AudioAssetAgent(
-                spec,
-                _serviceProvider.GetRequiredService<IAudioGenerator>(),
-                model,
-                storage,
-                baseLogger),
-
-            "model3d" or "3d" or "model" => new Model3DAssetAgent(
-                spec,
-                _serviceProvider.GetRequiredService<IModel3DGenerator>(),
-                model,
-                storage,
-                baseLogger),
-
-            _ => throw new ArgumentException($"Unknown asset domain: {spec.Domain}")
-        };
     }
 
     private bool IsPlanningDomain(string domain)

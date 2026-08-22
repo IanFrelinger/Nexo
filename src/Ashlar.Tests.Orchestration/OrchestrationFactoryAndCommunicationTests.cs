@@ -47,9 +47,6 @@ public class OrchestrationFactoryAndCommunicationTests
     }
 
     [Theory]
-    [InlineData("image", typeof(ImageAssetAgent))]
-    [InlineData("audio", typeof(AudioAssetAgent))]
-    [InlineData("model3d", typeof(Model3DAssetAgent))]
     [InlineData("planning", typeof(PlanningAgent))]
     [InlineData("Infrastructure", typeof(InfrastructureAgent))]
     [InlineData("Security", typeof(SecurityAgent))]
@@ -59,14 +56,6 @@ public class OrchestrationFactoryAndCommunicationTests
         var factory = new AgentFactory(NullLogger<AgentFactory>.Instance, BuildServices());
         var agent = factory.CreateAgent(Spec(domain));
         agent.Should().BeOfType(expectedType);
-    }
-
-    [Fact]
-    public void CreateAgent_unknown_asset_domain_throws()
-    {
-        var factory = new AgentFactory(NullLogger<AgentFactory>.Instance, BuildServices());
-        var act = () => factory.CreateAgent(Spec("shader"));
-        act.Should().Throw<ArgumentException>();
     }
 
     [Fact]

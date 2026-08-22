@@ -9,7 +9,8 @@ namespace Ashlar.Orchestration.Assets.Ports;
 /// - Support multiple formats and quality levels
 /// 
 /// Implementations (TripoModelGenerator, MeshyModelGenerator, etc.) provide
-/// specific 3D model generation logic. Used by Model3DAssetAgent.
+/// specific 3D model generation logic. Consumed by whichever agent needs models —
+/// whichever agent a package supplies for 3D model generation.
 /// </summary>
 public interface IModel3DGenerator
 {

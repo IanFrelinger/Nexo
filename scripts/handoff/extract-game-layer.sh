@@ -118,6 +118,10 @@ MOVE_TESTS=(
   # Game-domain pattern coverage; names GameDomainPatternProvider so it moves with it.
   "src/$KP.Tests.Orchestration/GameDomainPatternTests.cs"
   "src/$KP.Tests.Orchestration/GameDomainAgentTests.cs"
+  # Asset agents: the smoke file is entirely asset-agent tests, the gap file was split
+  # out of OrchestrationAgentsGapCoverageTests (7 lifecycle tests stay behind).
+  "src/$KP.Tests.Orchestration/OrchestrationAgentSmokeTests.cs"
+  "src/$KP.Tests.Orchestration/GameAssetAgentGapTests.cs"
 )
 
 # --------------------------------------------------------------- blocker check

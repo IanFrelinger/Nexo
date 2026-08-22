@@ -104,15 +104,20 @@ public class GameDomainAgentTests
     }
 
     [Fact]
-    public void AddGameDomain_registers_both_agents_and_patterns()
+    public void AddGameDomain_registers_the_whole_game_layer()
     {
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddGameDomain();
         using var provider = services.BuildServiceProvider();
 
-        provider.GetServices<IDomainAgentProvider>()
-            .Should().ContainSingle().Which.Should().BeOfType<GameDomainAgentProvider>();
+        // Two agent providers: the domain agents (combat/economy/ai/gameplay) and the
+        // asset agents (image/audio/model3d). They are separate because the asset PORTS
+        // stay in the kernel while only the game-flavoured agents move, so an application
+        // can take one without the other via AddGameDomainAgents / AddGameAssetAgents.
+        provider.GetServices<IDomainAgentProvider>().Select(p => p.GetType())
+            .Should().BeEquivalentTo(new[] { typeof(GameDomainAgentProvider), typeof(GameAssetAgentProvider) });
+
         provider.GetServices<Ashlar.Orchestration.Architect.IDomainPatternProvider>()
             .Should().ContainSingle().Which.Should().BeOfType<GameDomainPatternProvider>();
     }

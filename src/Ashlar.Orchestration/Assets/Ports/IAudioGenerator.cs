@@ -9,7 +9,8 @@ namespace Ashlar.Orchestration.Assets.Ports;
 /// - Support multiple audio types and parameters
 /// 
 /// Implementations (BarkAudioGenerator, ElevenLabsAudioGenerator, etc.) provide
-/// specific audio generation logic. Used by AudioAssetAgent.
+/// specific audio generation logic. Consumed by whichever agent needs audio —
+/// whichever agent a package supplies for audio generation.
 /// </summary>
 public interface IAudioGenerator
 {
