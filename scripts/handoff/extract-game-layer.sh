@@ -107,6 +107,11 @@ MOVE_FILES=(
 MOVE_TESTS=(
   "src/$KP.Tests.Orchestration/OrchestrationPlaytestCoordinationTests.cs"
   "src/$KP.Tests.Orchestration/OrchestrationSecurityPlaytestTests.cs"
+  # TileMapRenderTool coverage. The first was split out of ToolsDevTests, where 10
+  # tile tests were interleaved with 40 unrelated kernel-tool tests and kept
+  # Ashlar.Tests.Kernel referencing the type.
+  "src/$KP.Tests.Kernel/TileMapRenderToolCoverageTests.cs"
+  "src/$KP.Tests.BackgroundAgents/Tools/TileMapRenderToolTests.cs"
 )
 
 # --------------------------------------------------------------- blocker check
@@ -114,14 +119,21 @@ MOVE_TESTS=(
 echo "--- inbound-reference check ---"
 BLOCKERS=0
 
+# Regex-escape a literal path. '.' is the only regex metacharacter that occurs in
+# these paths, and leaving it unescaped would let "Tools.Dev" match "ToolsXDev".
+esc() { printf '%s' "$1" | sed 's/\./\\./g'; }
+
 staying() {
-  # tracked .cs files that are NOT themselves being moved
-  git ls-files "*.cs" \
-    | grep -v "^src/${KP}\.Orchestration/Playtest/" \
-    | grep -v "^src/${KP}\.Orchestration/Agents/Playtest/" \
-    | grep -v "^src/${KP}\.Tools\.Dev/TileMapRenderTool\.cs$" \
-    | grep -v "^src/${KP}\.Tests\.Orchestration/OrchestrationPlaytestCoordinationTests\.cs$" \
-    | grep -v "^src/${KP}\.Tests\.Orchestration/OrchestrationSecurityPlaytestTests\.cs$"
+  # Tracked .cs files that are NOT themselves being moved.
+  #
+  # Derived from the MOVE_* arrays rather than restated. An earlier version listed
+  # the exclusions by hand, which is a standing invitation for the two lists to
+  # drift: add a file to MOVE_TESTS, forget the matching grep, and the blocker
+  # check reports the file you are about to move as a blocker against itself.
+  local pat="" e
+  for e in "${MOVE_DIRS[@]}"; do pat="${pat}|^$(esc "${e%%|*}")/"; done
+  for e in "${MOVE_FILES[@]}" "${MOVE_TESTS[@]}"; do pat="${pat}|^$(esc "$e")\$"; done
+  git ls-files "*.cs" | grep -vE "${pat#|}"
 }
 
 for sym in "${KP}\.Orchestration\.Agents\.Playtest" "${KP}\.Orchestration\.Playtest" "TileMapRenderTool"; do

@@ -183,7 +183,10 @@ public class HostRunnersGapCoverageTests
         ids.Should().Contain("repo.fs.list");
         ids.Should().Contain("repo.fs.read");
         ids.Should().Contain("repo.fs.write");
-        ids.Should().Contain("repo.tile_map.render");
+        // repo.tile_map.render is deliberately NOT built in. It is game-specific and
+        // arrives through IToolSource/extraTools from the game package, like any other
+        // domain tool. The kernel's default toolbox is domain-agnostic.
+        ids.Should().NotContain("repo.tile_map.render");
         policies.Should().NotBeNull();
     }
 

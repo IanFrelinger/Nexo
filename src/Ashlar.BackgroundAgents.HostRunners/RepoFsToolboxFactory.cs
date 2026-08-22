@@ -45,7 +45,6 @@ internal static class RepoFsToolboxFactory
         tools.Register(new RepoFsReadTool());
         tools.Register(new RepoFsWriteTool());
         tools.Register(new RepoFsSearchReplaceTool());
-        tools.Register(new TileMapRenderTool());
         RegisterExtraTools(tools, extraTools);
 
         var policies = new PolicyEngine(new IPolicy[]
@@ -92,7 +91,6 @@ internal static class RepoFsToolboxFactory
         tools.Register(new RepoFsReadTool());
         tools.Register(new RepoFsWriteTool());
         tools.Register(new RepoFsSearchReplaceTool());
-        tools.Register(new TileMapRenderTool());
         RegisterExtraTools(tools, extraTools);
 
         ITool buildTool = new DotnetBuildTool();

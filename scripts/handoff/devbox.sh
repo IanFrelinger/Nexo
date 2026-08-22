@@ -23,6 +23,14 @@
 #   - same image as .devcontainer/devcontainer.json
 #   - runs as ROOT, not vscode. Bind-mounted Windows files arrive with host-side
 #     ownership; running as root avoids a UID mismatch writing bin/ and obj/.
+#
+#     TRADE-OFF, not free: root bypasses DAC permission checks, so any test whose
+#     premise is "this path is not writable" cannot hold here. One exists —
+#     TileMapRenderTool_reports_render_error_when_output_directory_not_writable —
+#     and it failed in this container long before anyone noticed, because the host
+#     could not run tests at all. It now probes for the premise and skips when
+#     running privileged, so it still runs where it is meaningful (CI is non-root).
+#     If you add permission-sensitive tests, expect the same and guard them.
 #   - DOTNET_ROLL_FORWARD=LatestMajor. The cert gate runs `-f net8.0` and the
 #     image ships only the 10.0 runtime; CI installs 8.0.x separately, this does
 #     the equivalent by rolling forward.
