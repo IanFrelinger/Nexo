@@ -68,10 +68,33 @@ else
 fi
 echo
 
-# _handoff/ keeps its own identity (see extract-game-layer.sh). It is untracked
-# when the extraction creates it, so git ls-files already excludes it; this filter
-# is belt-and-braces for the case where it has been committed.
-tracked() { git ls-files -z | grep -zZv '^_handoff/' ; }
+# Paths excluded from the rename, and why:
+#
+#   _handoff/         the extracted game layer keeps its own identity (see
+#                     extract-game-layer.sh). Untracked once the extraction
+#                     creates it, so git ls-files already skips it; belt-and-braces
+#                     for the case where it has been committed.
+#
+#   scripts/handoff/  THE RENAME'S OWN TOOLING. This is not cosmetic — leaving it
+#   docs/handoff/     in the scope actively destroys it. A first attempt renamed
+#                     these too, and verify-rename.sh had its own search tokens
+#                     rewritten: it came out grepping for "Ashlar" and announcing
+#                     "verifying rename Ashlar -> Ashlar", so it reported the
+#                     entire correctly-renamed tree as residue. The docs fared no
+#                     better — "Full rename. Nexo -> Ashlar" became
+#                     "Full rename. Ashlar -> Ashlar", and every sentence
+#                     explaining what was renamed lost its meaning.
+#
+#                     These files are ABOUT the rename. Their Nexo tokens are the
+#                     definition of the work, not instances of it.
+#
+#                     extract-game-layer.sh used to depend on being rewritten,
+#                     because it hardcoded src/Nexo.Orchestration/... paths. It now
+#                     derives the prefix at runtime instead, so it works unchanged
+#                     before and after.
+tracked() {
+  git ls-files -z | grep -zZv -e '^_handoff/' -e '^scripts/handoff/' -e '^docs/handoff/'
+}
 
 is_text() {
   case "$1" in

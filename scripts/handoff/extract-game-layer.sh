@@ -80,19 +80,33 @@ DEST="_handoff/game-layer"
 APPLY=0
 [[ "${1:-}" == "--apply" ]] && APPLY=1
 
+# The kernel prefix is "Nexo" before the rename and "Ashlar" after it. Derive it at
+# runtime rather than hardcoding, because this script lives under scripts/handoff/
+# and rename-to-ashlar.sh deliberately does NOT rewrite that directory — the rename
+# tooling must not rewrite itself (a first attempt did, and left verify-rename.sh
+# grepping for the wrong token). So this cannot rely on being rewritten, and instead
+# works unchanged on both sides of the rename.
+# NB: no `head -1` here. Under `set -o pipefail`, head exiting early sends SIGPIPE
+# to git ls-files and the whole script dies with 141 before printing anything.
+# `sed -n` consumes all input, so nothing gets a broken pipe.
+KP="$(git ls-files 'src/*.Orchestration/*' | sed -n '1{s|^src/||; s|\.Orchestration/.*||; p;}')"
+[[ -n "$KP" ]] || { echo "could not derive kernel prefix from src/*.Orchestration" >&2; exit 1; }
+echo "kernel prefix: $KP"
+echo
+
 # source|destination. Destinations are spelled out rather than derived from the
 # basename: both Playtest directories share a basename and would otherwise
 # collide into one folder.
 MOVE_DIRS=(
-  "src/Nexo.Orchestration/Playtest|Playtest"
-  "src/Nexo.Orchestration/Agents/Playtest|Agents/Playtest"
+  "src/$KP.Orchestration/Playtest|Playtest"
+  "src/$KP.Orchestration/Agents/Playtest|Agents/Playtest"
 )
 MOVE_FILES=(
-  "src/Nexo.Tools.Dev/TileMapRenderTool.cs"
+  "src/$KP.Tools.Dev/TileMapRenderTool.cs"
 )
 MOVE_TESTS=(
-  "src/Nexo.Tests.Orchestration/OrchestrationPlaytestCoordinationTests.cs"
-  "src/Nexo.Tests.Orchestration/OrchestrationSecurityPlaytestTests.cs"
+  "src/$KP.Tests.Orchestration/OrchestrationPlaytestCoordinationTests.cs"
+  "src/$KP.Tests.Orchestration/OrchestrationSecurityPlaytestTests.cs"
 )
 
 # --------------------------------------------------------------- blocker check
@@ -103,14 +117,14 @@ BLOCKERS=0
 staying() {
   # tracked .cs files that are NOT themselves being moved
   git ls-files "*.cs" \
-    | grep -v "^src/Nexo\.Orchestration/Playtest/" \
-    | grep -v "^src/Nexo\.Orchestration/Agents/Playtest/" \
-    | grep -v "^src/Nexo\.Tools\.Dev/TileMapRenderTool\.cs$" \
-    | grep -v "^src/Nexo\.Tests\.Orchestration/OrchestrationPlaytestCoordinationTests\.cs$" \
-    | grep -v "^src/Nexo\.Tests\.Orchestration/OrchestrationSecurityPlaytestTests\.cs$"
+    | grep -v "^src/${KP}\.Orchestration/Playtest/" \
+    | grep -v "^src/${KP}\.Orchestration/Agents/Playtest/" \
+    | grep -v "^src/${KP}\.Tools\.Dev/TileMapRenderTool\.cs$" \
+    | grep -v "^src/${KP}\.Tests\.Orchestration/OrchestrationPlaytestCoordinationTests\.cs$" \
+    | grep -v "^src/${KP}\.Tests\.Orchestration/OrchestrationSecurityPlaytestTests\.cs$"
 }
 
-for sym in "Nexo\.Orchestration\.Agents\.Playtest" "Nexo\.Orchestration\.Playtest" "TileMapRenderTool"; do
+for sym in "${KP}\.Orchestration\.Agents\.Playtest" "${KP}\.Orchestration\.Playtest" "TileMapRenderTool"; do
   plain="${sym//\\/}"
   hits="$(staying | tr "\n" "\0" | xargs -0 grep -ln "$sym" 2>/dev/null || true)"
   if [[ -n "$hits" ]]; then
@@ -198,14 +212,14 @@ if [[ $APPLY -eq 1 ]]; then
 MD
 
   echo "=== done. Next: ==="
-  echo "  1. Remove AddPlaytestServices from src/Nexo.Orchestration/ServiceCollectionExtensions.cs"
+  echo "  1. Remove AddPlaytestServices from src/${KP}.Orchestration/ServiceCollectionExtensions.cs"
   echo "     (empty no-op, zero callers — safe deletion)"
   echo "  2. Drop the moved files from any .csproj that lists them explicitly"
-  echo "  3. Verify. Nexo.sln does not restore (NU1201, pre-existing), so build the"
+  echo "  3. Verify. ${KP}.sln does not restore (NU1201, pre-existing), so build the"
   echo "     affected projects directly:"
-  echo "       dotnet build Nexo.Kernel.sln"
-  echo "       dotnet build src/Nexo.BackgroundAgents.HostRunners/Nexo.BackgroundAgents.HostRunners.csproj"
-  echo "       dotnet build src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj"
+  echo "       dotnet build ${KP}.Kernel.sln"
+  echo "       dotnet build src/${KP}.BackgroundAgents.HostRunners/${KP}.BackgroundAgents.HostRunners.csproj"
+  echo "       dotnet build src/${KP}.Tests.BackgroundAgents/${KP}.Tests.BackgroundAgents.csproj"
 else
   echo "=== dry run complete. ==="
 fi
