@@ -20,6 +20,28 @@ public class ToolsDevTests
     private static ToolCall Call(string id, object args) =>
         new(id, JsonDocument.Parse(JsonSerializer.Serialize(args)).RootElement);
 
+    /// <summary>
+    /// True when <paramref name="dir"/> can actually be enumerated, whatever its mode bits
+    /// claim. Detects running with privileges that bypass permission checks (root), where a
+    /// "locked directory" test has no premise to stand on.
+    /// </summary>
+    private static bool CanEnumerate(string dir)
+    {
+        try
+        {
+            _ = Directory.EnumerateFileSystemEntries(dir).GetEnumerator().MoveNext();
+            return true;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return false;
+        }
+        catch (IOException)
+        {
+            return false;
+        }
+    }
+
     [Fact]
     public void FileEdit_and_RepoDelta_track_edits_and_logs()
     {
@@ -1090,6 +1112,22 @@ public class ToolsDevTests
         try
         {
             File.SetUnixFileMode(locked, UnixFileMode.None);
+
+            // Root bypasses DAC permission checks, so a mode-000 directory is still
+            // enumerable and this test's premise cannot hold. The dev container runs as root
+            // (scripts/handoff/devbox.sh, deliberately, to avoid a UID mismatch on the bind
+            // mount), so this has been failing there unnoticed — the host cannot execute
+            // tests at all, and nothing ran the full Tests.Kernel suite until the game-layer
+            // extraction. Probe for the premise rather than assuming it.
+            //
+            // NB: bails with `return`, matching the OS guard above, which xUnit reports as
+            // PASSED rather than skipped. A green run under root is not evidence this path
+            // works. Same treatment as
+            // TileMapRenderToolCoverageTests.TileMapRenderTool_reports_render_error_when_output_directory_not_writable.
+            if (CanEnumerate(locked))
+            {
+                return;
+            }
 
             var result = await new RepoFsListTool().InvokeAsync(
                 Call("repo.fs.list", new { root, path = ".", recursive = true }),
