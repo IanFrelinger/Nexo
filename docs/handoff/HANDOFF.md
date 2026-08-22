@@ -1,6 +1,4 @@
-| ~~1~~ | — | **empty.** Everything previously here had inbound references. |
-| ~~3~~ | Playtest tree, TileMapRenderTool, DomainRecognizer game patterns, Combat/Economy/Gameplay/AI agents | **DONE.** Behind IDomainAgentProvider / IDomainPatternProvider / IToolSource; 0 blockers. |
-| **2** | `Orchestration/Assets/`, `Agents/Assets/` (generative image/audio/3D) | **OPEN — product decision.** Mechanical now the seam exists, but unlike AIAgent these are not obviously game-only. |# Handoff — game-layer extraction and the Ashlar rename
+# Handoff — game-layer extraction and the Ashlar rename
 
 **Revision 3. THE RENAME IS APPLIED AND GREEN** — commit `a0609ebe`.
 
@@ -391,9 +389,9 @@ checkout, or a local folder feed. `consumer-template/` exists for this.
 
 | Tier | Contents | Status |
 |---|---|---|
-| ~~1~~ | — | **empty.** Everything previously here has inbound references. |
-| 2 | `Orchestration/Assets/`, `Agents/Assets/` (generative image/audio/3D) | Clean move, but `AgentFactory` constructs these types — cut over with Tier 3. |
-| 3 | `Agents/Templates/{Combat,Economy,Gameplay,AI}Agent.cs`, `Architect/DomainRecognizer.cs`, **plus the whole Playtest tree and `TileMapRenderTool`** | A refactor, not a move. Needs the registries in §4 Step 2. |
+| ~~1~~ | — | **empty.** Everything previously here had inbound references. |
+| ~~3~~ | Playtest tree, `TileMapRenderTool`, `DomainRecognizer` game patterns, Combat/Economy/Gameplay/AI agents | **DONE** — behind `IDomainAgentProvider` / `IDomainPatternProvider` / `IToolSource`. 0 blockers. |
+| **2** | `Orchestration/Assets/`, `Agents/Assets/` (generative image/audio/3D) | **OPEN — a product decision, not a mechanical one.** The move is trivial now the seam exists, but unlike `AIAgent` (whose prompt says "specializing in game AI") these are not obviously game-only. |
 
 **Certification fixtures — leave alone.** `DamageResolverSources.cs`,
 `HealthApplierSources.cs` and `DamageResolverBrickConstraints.cs` are game-*themed*
