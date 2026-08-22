@@ -1,4 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
+using Ashlar.Orchestration.Agents;
 using Ashlar.Orchestration.Architect;
 
 namespace Ashlar.Orchestration.GameDomain;
@@ -28,4 +29,29 @@ public static class GameDomainServiceCollectionExtensions
         services.AddSingleton<IDomainPatternProvider, GameDomainPatternProvider>();
         return services;
     }
+
+    /// <summary>
+    /// Registers <see cref="GameDomainAgentProvider"/> so <see cref="AgentFactory"/> routes
+    /// the combat, economy, ai and gameplay domains to the game design agents.
+    ///
+    /// <para>Without this, those domains fall through to GenericAgent. Note the kernel still
+    /// recognises the AI domain — only the specialised game-AI agent lives here.</para>
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <returns>The same collection, for chaining.</returns>
+    public static IServiceCollection AddGameDomainAgents(this IServiceCollection services)
+    {
+        ArgumentNullException.ThrowIfNull(services);
+        services.AddSingleton<IDomainAgentProvider, GameDomainAgentProvider>();
+        return services;
+    }
+
+    /// <summary>
+    /// Registers the whole game domain layer — recognition patterns and agents.
+    /// The one call an application installing the game layer is expected to make.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <returns>The same collection, for chaining.</returns>
+    public static IServiceCollection AddGameDomain(this IServiceCollection services) =>
+        services.AddGameDomainPatterns().AddGameDomainAgents();
 }

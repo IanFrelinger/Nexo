@@ -117,10 +117,27 @@ MOVE_TESTS=(
   "src/$KP.Tests.BackgroundAgents/Tools/TileMapRenderToolTests.cs"
   # Game-domain pattern coverage; names GameDomainPatternProvider so it moves with it.
   "src/$KP.Tests.Orchestration/GameDomainPatternTests.cs"
+  "src/$KP.Tests.Orchestration/GameDomainAgentTests.cs"
 )
 
 # --------------------------------------------------------------- blocker check
 # Anything that stays behind and still names what we are about to move.
+#
+# WHAT THIS CHECK CANNOT SEE — read before trusting "0 blockers".
+#
+# It greps for namespaces and type names, so it proves the kernel still COMPILES after the
+# move. It cannot prove the kernel still BEHAVES the same, because the coupling this whole
+# refactor is about is keyed on DOMAIN STRINGS, not types. AgentFactory dispatched on
+# "combat"/"ai"/"playtest", so anything else keyed on those strings is just as coupled while
+# never naming a type — and is invisible here.
+#
+# That is not hypothetical. Moving the game agents left OrchestrationRuntimeSpecTests green
+# on this check and red on the test run: it spawned Domain = "Combat" purely as a vehicle for
+# testing runtime-spec directives, fell through to GenericAgent once the game provider was
+# gone, and GenericAgent takes no model at all, so the directives had nothing to land on.
+#
+# 0 blockers is necessary, not sufficient. Always follow it with the test suites, not just a
+# build.
 echo "--- inbound-reference check ---"
 BLOCKERS=0
 

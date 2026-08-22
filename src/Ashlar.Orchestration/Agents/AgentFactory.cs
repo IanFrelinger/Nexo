@@ -114,12 +114,8 @@ public sealed class AgentFactory : IAgentRuntimeFactory, IAgentCreationContext
         // Create domain-specific agent based on domain
         var agent = spec.Domain.ToLowerInvariant() switch
         {
-            "combat" => CreateCombatAgent(spec),
-            "economy" => CreateEconomyAgent(spec),
-            "ai" => CreateAIAgent(spec),
             "infrastructure" => CreateInfrastructureAgent(spec),
             "security" => CreateSecurityAgent(spec),
-            "gameplay" => CreateGameplayAgent(spec),
             _ => CreateGenericAgent(spec)
         };
 
@@ -146,30 +142,6 @@ public sealed class AgentFactory : IAgentRuntimeFactory, IAgentCreationContext
     /// <inheritdoc />
     public IAgentHandle Spawn(AgentSpawnSpec spec) => new InProcessAgentHandle(CreateContainer(spec));
 
-    private BaseAgent CreateCombatAgent(AgentSpawnSpec spec)
-    {
-        var logger = _serviceProvider.GetService(typeof(ILogger<CombatAgent>)) as ILogger<CombatAgent>
-            ?? throw new InvalidOperationException("ILogger<CombatAgent> not registered");
-        var model = WrapModel(spec, _serviceProvider.GetService<IModel>());
-        return new CombatAgent(spec, logger, model);
-    }
-
-    private BaseAgent CreateEconomyAgent(AgentSpawnSpec spec)
-    {
-        var logger = _serviceProvider.GetService(typeof(ILogger<EconomyAgent>)) as ILogger<EconomyAgent>
-            ?? throw new InvalidOperationException("ILogger<EconomyAgent> not registered");
-        var model = WrapModel(spec, _serviceProvider.GetService<IModel>());
-        return new EconomyAgent(spec, logger, model);
-    }
-
-    private BaseAgent CreateAIAgent(AgentSpawnSpec spec)
-    {
-        var logger = _serviceProvider.GetService(typeof(ILogger<AIAgent>)) as ILogger<AIAgent>
-            ?? throw new InvalidOperationException("ILogger<AIAgent> not registered");
-        var model = WrapModel(spec, _serviceProvider.GetService<IModel>());
-        return new AIAgent(spec, logger, model);
-    }
-
     private BaseAgent CreateInfrastructureAgent(AgentSpawnSpec spec)
     {
         var logger = _serviceProvider.GetService(typeof(ILogger<InfrastructureAgent>)) as ILogger<InfrastructureAgent>
@@ -184,14 +156,6 @@ public sealed class AgentFactory : IAgentRuntimeFactory, IAgentCreationContext
             ?? throw new InvalidOperationException("ILogger<SecurityAgent> not registered");
         var model = WrapModel(spec, _serviceProvider.GetService<IModel>());
         return new SecurityAgent(spec, logger, model);
-    }
-
-    private BaseAgent CreateGameplayAgent(AgentSpawnSpec spec)
-    {
-        var logger = _serviceProvider.GetService(typeof(ILogger<GameplayAgent>)) as ILogger<GameplayAgent>
-            ?? throw new InvalidOperationException("ILogger<GameplayAgent> not registered");
-        var model = WrapModel(spec, _serviceProvider.GetService<IModel>());
-        return new GameplayAgent(spec, logger, model);
     }
 
     private BaseAgent CreateGenericAgent(AgentSpawnSpec spec)

@@ -29,7 +29,7 @@ public sealed class OrchestrationRuntimeSpecTests
         {
             Domains =
             {
-                ["combat"] = new ModelRuntimeSpec { Prefer = "agentic", Provider = "offline" }
+                ["security"] = new ModelRuntimeSpec { Prefer = "agentic", Provider = "offline" }
             }
         };
 
@@ -38,9 +38,9 @@ public sealed class OrchestrationRuntimeSpecTests
         var factory = new AgentFactory(sp.GetRequiredService<ILogger<AgentFactory>>(), sp);
         var agentSpec = new AgentSpawnSpec
         {
-            AgentId = "combat-1",
-            Domain = "Combat",
-            Goal = "Design weapon system"
+            AgentId = "security-1",
+            Domain = "Security",
+            Goal = "Design auth flow"
         };
 
         var agent = factory.CreateAgent(agentSpec);
@@ -48,8 +48,8 @@ public sealed class OrchestrationRuntimeSpecTests
         await agent.ExecuteAsync();
 
         capture.LastSystem.Should().NotBeNullOrWhiteSpace();
-        capture.LastSystem.Should().Contain("ashlar.agent.id=combat-1");
-        capture.LastSystem.Should().Contain("ashlar.agent.domain=Combat");
+        capture.LastSystem.Should().Contain("ashlar.agent.id=security-1");
+        capture.LastSystem.Should().Contain("ashlar.agent.domain=Security");
         capture.LastSystem.Should().Contain("ashlar.model.prefer=agentic");
         capture.LastSystem.Should().Contain("ashlar.model.provider=offline");
     }
@@ -68,9 +68,9 @@ public sealed class OrchestrationRuntimeSpecTests
         var factory = new AgentFactory(sp.GetRequiredService<ILogger<AgentFactory>>(), sp);
         var agentSpec = new AgentSpawnSpec
         {
-            AgentId = "ai-1",
-            Domain = "AI",
-            Goal = "Plan encounters",
+            AgentId = "infra-1",
+            Domain = "Infrastructure",
+            Goal = "Plan capacity",
             OllamaModel = "llama3.2:3b"
         };
 

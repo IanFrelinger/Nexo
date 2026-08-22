@@ -19,26 +19,6 @@ public class OrchestrationDomainTemplateTests
         Goal = $"Design {domain}",
     };
 
-    /// <summary>Gameplay agent_executes_with_mock_output.</summary>
-    [Fact]
-    public async Task GameplayAgent_executes_with_mock_output() =>
-        await RunDomainAgent(new GameplayAgent(Spec("Gameplay"), NullLogger<GameplayAgent>.Instance));
-
-    /// <summary>Combat agent_executes_with_mock_output.</summary>
-    [Fact]
-    public async Task CombatAgent_executes_with_mock_output() =>
-        await RunDomainAgent(new CombatAgent(Spec("Combat"), NullLogger<CombatAgent>.Instance));
-
-    /// <summary>Economy agent_executes_with_mock_output.</summary>
-    [Fact]
-    public async Task EconomyAgent_executes_with_mock_output() =>
-        await RunDomainAgent(new EconomyAgent(Spec("Economy"), NullLogger<EconomyAgent>.Instance));
-
-    /// <summary>Ai agent_executes_with_mock_output.</summary>
-    [Fact]
-    public async Task AIAgent_executes_with_mock_output() =>
-        await RunDomainAgent(new AIAgent(Spec("AI"), NullLogger<AIAgent>.Instance));
-
     /// <summary>Security agent_executes_with_mock_output.</summary>
     [Fact]
     public async Task SecurityAgent_executes_with_mock_output() =>

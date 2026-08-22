@@ -13,7 +13,8 @@ namespace Ashlar.Orchestration.Agents;
 /// - Structured output generation (JSON parsing with fallback)
 /// - Mock output generation when LLM is unavailable
 /// 
-/// Derived classes (GameplayAgent, SecurityAgent, etc.) implement domain-specific
+/// Derived classes (SecurityAgent, InfrastructureAgent, and game agents supplied by a
+/// package) implement domain-specific
 /// system prompts and mock outputs.
 /// Inherits from BaseAgent for lifecycle management.
 /// </summary>

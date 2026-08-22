@@ -53,7 +53,6 @@ public class OrchestrationFactoryAndCommunicationTests
     [InlineData("planning", typeof(PlanningAgent))]
     [InlineData("Infrastructure", typeof(InfrastructureAgent))]
     [InlineData("Security", typeof(SecurityAgent))]
-    [InlineData("Gameplay", typeof(GameplayAgent))]
     [InlineData("unknown-domain", typeof(GenericAgent))]
     public void CreateAgent_routes_domains_to_specialized_agents(string domain, Type expectedType)
     {

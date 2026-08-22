@@ -5,7 +5,7 @@ namespace Ashlar.Orchestration.Agents;
 /// <summary>
 /// Adapter to convert ILogger<T> to ILogger<BaseAgent>.
 /// 
-/// Allows domain-specific agents (e.g., GameplayAgent, SecurityAgent) to use
+/// Allows domain-specific agents (e.g., SecurityAgent) to use
 /// their specific logger type while BaseAgent requires ILogger<BaseAgent>.
 /// 
 /// Implements the Adapter pattern to bridge the logger type mismatch.

@@ -2,7 +2,9 @@ using Microsoft.Extensions.Logging;
 using Ashlar.Abstractions;
 using Ashlar.Orchestration.Architect.Models;
 
-namespace Ashlar.Orchestration.Agents.Templates;
+using Ashlar.Orchestration.Agents;
+
+namespace Ashlar.Orchestration.GameDomain.Agents;
 /// <summary>
 /// Specialized agent for AI domain tasks.
 /// 

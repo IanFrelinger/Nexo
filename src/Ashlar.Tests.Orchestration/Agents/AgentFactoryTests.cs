@@ -22,49 +22,6 @@ public class AgentFactoryTests
     }
 
     [Fact]
-    public void CreateAgent_CombatDomain_ReturnsCombatAgent()
-    {
-        // Arrange
-        var spec = new AgentSpawnSpec
-        {
-            AgentId = "combat-1",
-            Domain = "Combat",
-            Goal = "Design weapon system"
-        };
-
-        var logger = _serviceProvider.GetRequiredService<ILogger<AgentFactory>>();
-        var factory = new AgentFactory(logger, _serviceProvider);
-
-        // Act
-        var agent = factory.CreateAgent(spec);
-
-        // Assert
-        agent.Should().BeOfType<CombatAgent>();
-        agent.Name.Should().Be("combat-1");
-    }
-
-    [Fact]
-    public void CreateAgent_EconomyDomain_ReturnsEconomyAgent()
-    {
-        // Arrange
-        var spec = new AgentSpawnSpec
-        {
-            AgentId = "economy-1",
-            Domain = "Economy",
-            Goal = "Design economy system"
-        };
-
-        var logger = _serviceProvider.GetRequiredService<ILogger<AgentFactory>>();
-        var factory = new AgentFactory(logger, _serviceProvider);
-
-        // Act
-        var agent = factory.CreateAgent(spec);
-
-        // Assert
-        agent.Should().BeOfType<EconomyAgent>();
-    }
-
-    [Fact]
     public void CreateContainer_WrapsAgentInContainer()
     {
         // Arrange
