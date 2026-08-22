@@ -7,7 +7,8 @@ namespace Ashlar.Orchestration.Architect;
 /// Recognizes domains from request text using pattern matching.
 /// 
 /// Responsibilities:
-/// - Identifies domains (Combat, Economy, AI, etc.) from request text
+/// - Identifies domains from request text, using the kernel's own patterns plus any
+///   contributed by registered IDomainPatternProvider implementations
 /// - Extracts keywords for semantic matching
 /// - Uses regex patterns to match domain-specific terminology
 /// 
@@ -20,14 +21,41 @@ public sealed class DomainRecognizer
 
     /// <summary>
     /// Initializes a new instance of the <see cref="DomainRecognizer"/> class.
-    /// 
-    /// Initializes domain patterns for: Combat, Economy, AI, Infrastructure, Security, Gameplay.
+    ///
+    /// The kernel contributes Infrastructure, Security and general-purpose AI. Any further
+    /// domains — and any additional patterns for the kernel's own domains — come from the
+    /// registered <see cref="IDomainPatternProvider"/>s.
     /// </summary>
     /// <param name="logger">The logger instance.</param>
-    public DomainRecognizer(ILogger<DomainRecognizer> logger)
+    /// <param name="patternProviders">
+    /// Providers contributing further domain patterns. Optional so existing
+    /// <c>new DomainRecognizer(logger)</c> call sites keep compiling; DI resolves it to an
+    /// empty sequence when nothing is registered.
+    /// </param>
+    public DomainRecognizer(
+        ILogger<DomainRecognizer> logger,
+        IEnumerable<IDomainPatternProvider>? patternProviders = null)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _domainPatterns = InitializeDomainPatterns();
+
+        foreach (var provider in patternProviders ?? Enumerable.Empty<IDomainPatternProvider>())
+        {
+            foreach (var (domain, patterns) in provider.Patterns)
+            {
+                // Merge, do not replace: a provider extending a domain the kernel already
+                // knows about (the game half of "AI", say) must add to it rather than
+                // silently discard the kernel's own patterns for that domain.
+                if (_domainPatterns.TryGetValue(domain, out var existing))
+                {
+                    existing.AddRange(patterns);
+                }
+                else
+                {
+                    _domainPatterns[domain] = patterns.ToList();
+                }
+            }
+        }
     }
 
     /// <summary>
@@ -119,35 +147,24 @@ public sealed class DomainRecognizer
     }
 
     /// <summary>
-    /// Initializes domain recognition patterns.
-    /// 
-    /// Creates regex patterns for each domain:
-    /// - Combat: battle, weapon, damage, health, armor, attack, defense, enemy, etc.
-    /// - Economy: money, currency, price, cost, buy, sell, trade, market, shop, etc.
-    /// - AI: artificial intelligence, agent, behavior, decision, pathfinding, NPC, etc.
-    /// - Infrastructure: server, network, database, storage, API, service, cloud, etc.
-    /// - Security: auth, authentication, encryption, password, token, vulnerability, etc.
-    /// - Gameplay: game, player, level, quest, mission, objective, multiplayer, etc.
+    /// The domains the KERNEL itself recognises: Infrastructure, Security, and the
+    /// general-purpose half of AI.
+    ///
+    /// Combat, Economy and Gameplay used to live here too, along with the game half of AI
+    /// (pathfinding, npc, steering). They are game vocabulary, and a kernel that has no game
+    /// layer installed has no business recognising them, so they moved to
+    /// GameDomainPatternProvider. The 17 AI terms are split 11 here / 6 there and re-merged
+    /// by the constructor, so nothing is lost when both are present.
     /// </summary>
     /// <returns>A dictionary mapping domain names to their regex patterns.</returns>
     private static Dictionary<string, List<Regex>> InitializeDomainPatterns()
     {
         return new Dictionary<string, List<Regex>>(StringComparer.OrdinalIgnoreCase)
         {
-            ["Combat"] = new List<Regex>
-            {
-                new(@"\b(combat|battle|fight|weapon|damage|health|armor|attack|defense|enemy|player|kill|death)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled),
-                new(@"\b(shoot|gun|rifle|pistol|sword|melee|ranged|ammo|reload)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled)
-            },
-            ["Economy"] = new List<Regex>
-            {
-                new(@"\b(economy|economy|money|currency|price|cost|buy|sell|trade|market|shop|vendor|item|inventory)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled),
-                new(@"\b(resource|gold|silver|coin|transaction|purchase|payment|reward|loot)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled)
-            },
             ["AI"] = new List<Regex>
             {
-                new(@"\b(ai|artificial intelligence|agent|behavior|decision|pathfinding|navigation|steering)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled),
-                new(@"\b(npc|non-player|character|bot|automated|intelligent|learning|neural|network)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled)
+                new(@"\b(ai|artificial intelligence|agent|behavior|decision)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled),
+                new(@"\b(bot|automated|intelligent|learning|neural|network)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled)
             },
             ["Infrastructure"] = new List<Regex>
             {
@@ -158,11 +175,6 @@ public sealed class DomainRecognizer
             {
                 new(@"\b(security|auth|authentication|authorization|encryption|password|token|jwt|oauth)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled),
                 new(@"\b(vulnerability|threat|attack|defense|firewall|ssl|tls|certificate|permission)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled)
-            },
-            ["Gameplay"] = new List<Regex>
-            {
-                new(@"\b(gameplay|game|player|level|quest|mission|objective|achievement|progress|save|load)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled),
-                new(@"\b(multiplayer|singleplayer|coop|pvp|pve|matchmaking|lobby|session)\b", RegexOptions.IgnoreCase | RegexOptions.Compiled)
             }
         };
     }

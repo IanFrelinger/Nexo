@@ -100,6 +100,9 @@ echo
 MOVE_DIRS=(
   "src/$KP.Orchestration/Playtest|Playtest"
   "src/$KP.Orchestration/Agents/Playtest|Agents/Playtest"
+  # Game-domain recognition patterns (Combat, Economy, Gameplay, game-AI), lifted out of
+  # DomainRecognizer's hardcoded table via IDomainPatternProvider.
+  "src/$KP.Orchestration/GameDomain|GameDomain"
 )
 MOVE_FILES=(
   "src/$KP.Tools.Dev/TileMapRenderTool.cs"
@@ -112,6 +115,8 @@ MOVE_TESTS=(
   # Ashlar.Tests.Kernel referencing the type.
   "src/$KP.Tests.Kernel/TileMapRenderToolCoverageTests.cs"
   "src/$KP.Tests.BackgroundAgents/Tools/TileMapRenderToolTests.cs"
+  # Game-domain pattern coverage; names GameDomainPatternProvider so it moves with it.
+  "src/$KP.Tests.Orchestration/GameDomainPatternTests.cs"
 )
 
 # --------------------------------------------------------------- blocker check
@@ -136,7 +141,10 @@ staying() {
   git ls-files "*.cs" | grep -vE "${pat#|}"
 }
 
-for sym in "${KP}\.Orchestration\.Agents\.Playtest" "${KP}\.Orchestration\.Playtest" "TileMapRenderTool"; do
+for sym in "${KP}\.Orchestration\.Agents\.Playtest" \
+           "${KP}\.Orchestration\.Playtest" \
+           "${KP}\.Orchestration\.GameDomain" \
+           "TileMapRenderTool"; do
   plain="${sym//\\/}"
   hits="$(staying | tr "\n" "\0" | xargs -0 grep -ln "$sym" 2>/dev/null || true)"
   if [[ -n "$hits" ]]; then
