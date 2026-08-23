@@ -64,9 +64,14 @@ public class InfrastructureBehaviorGapCoverageTests
             [
                 new BehaviorStep
                 {
+                    // "false" is a recognised condition → deliberate skip. This used to say
+                    // "never", which worked only because the old evaluator silently mapped every
+                    // unrecognised string to false. That silent-skip was the bug: an authoring
+                    // typo would vanish. Unsupported syntax is now a StepError, so a genuine
+                    // skip must use a real false condition.
                     Id = "skip-me",
                     BrickId = brick.Id,
-                    Condition = "never",
+                    Condition = "false",
                     Implementation = ImplementationType.Deterministic,
                     InputMapping = new Dictionary<string, string>(),
                     OutputMapping = new Dictionary<string, string>(),
@@ -206,6 +211,48 @@ public class InfrastructureBehaviorGapCoverageTests
 
         events.OfType<StepErrorEvent>().Should().NotBeEmpty();
         events.OfType<StepCompletedEvent>().Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task BehaviorExecutor_unsupported_condition_syntax_errors_rather_than_silently_skipping()
+    {
+        // Pins the C4 fix: a condition that is neither "true" nor "false" is an authoring error,
+        // surfaced as a StepError (honouring OnStepFailure), not a silent StepSkipped.
+        var brick = new EchoBehaviorBrick("present");
+        var executor = CreateExecutor(brick);
+        var behavior = new Behavior
+        {
+            Id = "behavior-bad-cond",
+            Name = "BadCondition",
+            Description = "test",
+            Steps =
+            [
+                new BehaviorStep
+                {
+                    Id = "typo",
+                    BrickId = brick.Id,
+                    Condition = "environment.airGaped",   // typo / unsupported syntax
+                    Implementation = ImplementationType.Deterministic,
+                    InputMapping = new Dictionary<string, string>(),
+                    OutputMapping = new Dictionary<string, string>(),
+                },
+            ],
+            OnStepFailure = FailurePolicy.Continue,
+        };
+
+        var events = new List<ExecutionEvent>();
+        await foreach (var evt in executor.ExecuteWithEventsAsync(
+                           new AgentCard { Id = "agent-bc", Name = "Agent", Description = "desc", Behaviors = [behavior.Id] },
+                           behavior,
+                           new BehaviorInput(),
+                           new ExecutionOptions { Provider = "mock" }))
+        {
+            events.Add(evt);
+        }
+
+        events.Should().Contain(e => e is StepErrorEvent);
+        events.Should().NotContain(e => e is StepSkippedEvent);
+        events.OfType<BehaviorCompletedEvent>().Single().Success.Should().BeFalse();
     }
 
     private static BehaviorExecutor CreateExecutor(DomainBrick brick)

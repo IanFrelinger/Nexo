@@ -37,14 +37,25 @@ public sealed class GenericAgent : BaseAgent
         IReadOnlyDictionary<string, object>? dependencyOutputs,
         CancellationToken cancellationToken)
     {
-        // Generic execution - returns a placeholder result
-        // In a real implementation, this would use the model to generate output
+        // This is the AgentFactory fallback for a domain with no specialized agent. It performs
+        // NO work. It used to return Output "…completed task: {Goal}", which reads as success —
+        // telemetry and callers could not distinguish a real result from a domain that simply
+        // had no handler. It now logs a warning and flags the result as a placeholder so that
+        // is detectable. It does NOT throw: GenericAgent is a legitimate, widely-relied-on
+        // fallback (fail-loud, if wanted, belongs as an opt-in policy at the AgentFactory
+        // fallback, not in every generic execution).
+        Logger.LogWarning(
+            "No specialized agent matched domain '{Domain}' for agent {AgentId}; GenericAgent performed no work.",
+            Spec.Domain,
+            Spec.AgentId);
+
         var result = new
         {
             AgentId = Spec.AgentId,
             Domain = Spec.Domain,
             Goal = Spec.Goal,
-            Output = $"Generic agent {Spec.AgentId} completed task: {Spec.Goal}"
+            Placeholder = true,
+            Output = $"No specialized agent for domain '{Spec.Domain}'; no work performed for goal: {Spec.Goal}"
         };
 
         return Task.FromResult<object>(result);
