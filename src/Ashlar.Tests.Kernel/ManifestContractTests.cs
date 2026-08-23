@@ -211,4 +211,47 @@ public sealed class ManifestContractTests
         p.Should().BeNull();
         reason.Should().Contain("REJECTED");
     }
+
+    // ── mutation-run harvest: gaps the Stryker survivors correctly exposed ──
+
+    [Fact]
+    public void Policy_with_unknown_apiVersion_is_rejected()
+    {
+        // The manifest had this test; the policy did not — a real gap the mutation run found.
+        var yaml = ValidPolicy.Replace("ashlar/v1", "ashlar/v2");
+
+        PolicyLoader.TryLoad(yaml, out _, out var reason).Should().BeFalse();
+        reason.Should().Contain("apiVersion");
+    }
+
+    [Fact]
+    public void Policy_with_wrong_kind_is_rejected()
+    {
+        var yaml = ValidPolicy.Replace("kind: Policy", "kind: Application");
+
+        PolicyLoader.TryLoad(yaml, out _, out var reason).Should().BeFalse();
+        reason.Should().Contain("kind");
+    }
+
+    [Fact]
+    public void Manifest_with_wrong_kind_is_rejected()
+    {
+        var yaml = ValidManifest.Replace("kind: Application", "kind: Policy");
+
+        ManifestLoader.TryLoad(yaml, out _, out var reason).Should().BeFalse();
+        reason.Should().Contain("kind");
+    }
+
+    [Theory]
+    [InlineData("null")]
+    [InlineData("~")]
+    public void A_yaml_null_document_is_rejected_as_contentless_by_both_loaders(string yaml)
+    {
+        // YAML "null"/"~" parses successfully to a null object — the parsed-is-null branch,
+        // previously untested in both loaders.
+        PolicyLoader.TryLoad(yaml, out _, out var pReason).Should().BeFalse();
+        pReason.Should().Contain("no content");
+        ManifestLoader.TryLoad(yaml, out _, out var mReason).Should().BeFalse();
+        mReason.Should().Contain("no content");
+    }
 }

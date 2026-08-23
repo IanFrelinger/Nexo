@@ -69,6 +69,17 @@ public sealed class AdmissionGateTests : IDisposable
     // ─────────────────────────── mode semantics ───────────────────────────
 
     [Fact]
+    public void Null_arguments_are_refused_not_dereferenced()
+    {
+        // Mutation-run harvest: the ThrowIfNull guards had no covering test.
+        var decideNullPolicy = () => AdmissionGate.Decide(null!, Proposal(), 0);
+        var decideNullProposal = () => AdmissionGate.Decide(Policy(SelfExtendMode.Proposing), null!, 0);
+
+        decideNullPolicy.Should().Throw<ArgumentNullException>();
+        decideNullProposal.Should().Throw<ArgumentNullException>();
+    }
+
+    [Fact]
     public void Sealed_rejects_before_anything_else_is_consulted()
     {
         var outcome = AdmissionGate.Decide(Policy(SelfExtendMode.Sealed), Proposal(), admittedInWindow: 0);
