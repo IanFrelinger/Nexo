@@ -1,0 +1,83 @@
+# The product promise is "fully portable": the loop runs the same on Linux, Windows and
+# macOS, offline, with no cloud in the trust path. Everything else in CI proves the code on
+# ubuntu; this gate proves the PRODUCT LOOP on all three OSes — real `ashlar init`, real
+# `ashlar verify`, the failure path's exact exit code, and the overwrite refusal.
+# Portability that is not gated regresses.
+name: portability-gate
+
+on:
+  pull_request:
+    paths:
+      - "application/src/Ashlar.CLI/**"
+      - "src/Ashlar.Manifest/**"
+      - "scripts/e2e-loop.sh"
+      - ".github/workflows/portability-gate.yml"
+  push:
+    branches: [master, "application/**"]
+    paths:
+      - "application/src/Ashlar.CLI/**"
+      - "src/Ashlar.Manifest/**"
+      - "scripts/e2e-loop.sh"
+      - ".github/workflows/portability-gate.yml"
+
+jobs:
+  loop:
+    name: loop (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          # 10.0.x builds (global.json); 8.0.x keeps net8.0-targeted deps on the real runtime.
+          dotnet-version: |
+            10.0.x
+            8.0.x
+
+      - name: init → verify → break → refuse, on ${{ matrix.os }}
+        shell: bash
+        env:
+          NO_COLOR: "1"
+        run: |
+          set -uo pipefail
+          CLI="$GITHUB_WORKSPACE/application/src/Ashlar.CLI"
+          WORK="$RUNNER_TEMP/portability-demo"
+          rm -rf "$WORK" && mkdir -p "$WORK" && cd "$WORK"
+
+          echo "== init =="
+          dotnet run --project "$CLI" -- init portable-demo
+          test -f ashlar.yaml && test -f ashlar.policy.yaml
+
+          echo "== verify: must pass, exit 0, honest about being unsigned =="
+          out=$(dotnet run --project "$CLI" -- verify) && rc=0 || rc=$?
+          echo "$out"
+          [ "$rc" -eq 0 ] || { echo "::error::verify exited $rc, expected 0"; exit 1; }
+          echo "$out" | grep -q "VERIFIED" || { echo "::error::no VERIFIED verdict"; exit 1; }
+          echo "$out" | grep -q "unsigned" || { echo "::error::verdict must say unsigned until real keys exist"; exit 1; }
+
+          echo "== break the envelope: proposing with zero budget must fail with exit 65 =="
+          sed -e "s/mode: sealed/mode: proposing/" -e "s/gatesRequired: \[\]/gatesRequired: [tests]/" \
+            ashlar.policy.yaml > p2 && mv p2 ashlar.policy.yaml
+          out=$(dotnet run --project "$CLI" -- verify) && rc=0 || rc=$?
+          echo "$out"
+          [ "$rc" -eq 65 ] || { echo "::error::broken policy exited $rc, expected 65 (SPEC-009)"; exit 1; }
+          echo "$out" | grep -q "seal it or fund it" || { echo "::error::missing envelope failure reason"; exit 1; }
+
+          echo "== init over an existing project must refuse, exit 1 =="
+          if dotnet run --project "$CLI" -- init portable-demo; then
+            echo "::error::init overwrote an existing project"; exit 1
+          fi
+
+          echo "portable: the loop holds on ${{ matrix.os }}"
+
+      - name: scenario sweep — 44 behavioural claims on ${{ matrix.os }}
+        shell: bash
+        env:
+          NO_COLOR: "1"
+        run: bash scripts/e2e-loop.sh
