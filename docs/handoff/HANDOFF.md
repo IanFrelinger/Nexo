@@ -412,6 +412,29 @@ a cosmetic gain. Rename later if the theming bothers you; do not relocate.
 
 ## 6. Gotchas
 
+### 6.0 External identifiers the rename must NOT touch
+
+A token substitution cannot tell a *name of a thing in the code* from a *name of a
+thing that lives outside the repository*. The second kind must survive the rename
+unchanged, because renaming a reference does not rename the thing it points at — it
+just points at nothing. CI caught four of these **after** the rename was applied and
+merged onto the branch; every one had to be reverted by hand:
+
+| Identifier | Points at | What renaming it broke |
+|---|---|---|
+| `github.com/IanFrelinger/Nexo` | the GitHub repository (still named Nexo) | 61 links across 29 files 404'd, incl. `RepositoryUrl` in 11 `.csproj` — the link checker failed |
+| `nexo.provenance.v1` | a key inside a **signed certificate** | the signature covers the key; renaming it forged the cert — `unit-tests` failed |
+| `nexo.portal.prefs.v1` | a browser `localStorage` key | would silently discard every user's saved portal preferences |
+| `ghcr.io/ianfrelinger/nexo-cli` | a **published container image** on ghcr | `docker run` pulled a non-existent image — `doctor` smoke test warned, `uat` failed |
+
+The rule: **an identifier that addresses a resource outside this git repo keeps its
+old name until that resource is deliberately renamed, in a separate coordinated
+step.** The repo, the published image, and any signed/persisted wire keys all fall
+under this. If you ever run a rename again — including giving the extracted game
+layer its own name — grep for these classes first: `github.com/`, `ghcr.io/`,
+`localStorage`, any `*.vN` wire key, and anything base64 next to a "signature"
+field. `verify-rename.sh` does not catch them; only CI did.
+
 | Gotcha | Detail |
 |---|---|
 | **Parked git worktree** | `.claude/worktrees/` holds a full 1.5 GB checkout, git-excluded and unrecoverable by `reset --hard`. Both scripts now skip it. If you add tooling that walks the tree, skip it there too. |
