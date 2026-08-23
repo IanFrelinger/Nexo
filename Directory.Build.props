@@ -18,6 +18,13 @@
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
     <Deterministic>true</Deterministic>
     <RepositoryUrl>https://github.com/IanFrelinger/Nexo</RepositoryUrl>
+    <!-- Package author/provenance. Without these, `dotnet pack` writes the assembly id into
+         <authors> (e.g. authors=Ashlar.Sdk), which reads as broken provenance on a public
+         feed. Set once here so all packable projects inherit it. MAINTAINER: confirm the
+         author/company/copyright string is how you want it to appear on nuget.org. -->
+    <Authors>Ian Frelinger</Authors>
+    <Company>Ian Frelinger</Company>
+    <Copyright>Copyright (c) Ian Frelinger</Copyright>
     <!-- Open packable projects resolve Apache-2.0 via Directory.Build.targets; commercial clears the expression. -->
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/IanFrelinger/Nexo</PackageProjectUrl>
