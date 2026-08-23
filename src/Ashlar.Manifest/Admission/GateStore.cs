@@ -34,7 +34,7 @@ public sealed record GateRecord
 /// admitted and rejected records are immutable history, so there is no way to re-decide a
 /// refusal or quietly edit an admission, including for the vendor.</para>
 /// </summary>
-public sealed class GateStore
+public sealed partial class GateStore
 {
     private static readonly JsonSerializerOptions Json = new()
     {
@@ -194,7 +194,8 @@ public sealed class GateStore
         return decided;
     }
 
-    /// <summary>Fetches one record, or null.</summary>
+    /// <summary>Fetches one record, or null when absent. A file that exists but cannot be
+    /// read as a record is an error, never a null.</summary>
     public async Task<GateRecord?> GetAsync(string proposalId, CancellationToken ct = default)
     {
         var path = PathFor(proposalId);
@@ -202,8 +203,7 @@ public sealed class GateStore
         {
             return null;
         }
-        await using var stream = File.OpenRead(path);
-        return await JsonSerializer.DeserializeAsync<GateRecord>(stream, Json, ct).ConfigureAwait(false);
+        return await ReadRecordAsync(path, ct).ConfigureAwait(false);
     }
 
     /// <summary>Lists records, newest first, optionally filtered by state.</summary>
@@ -212,14 +212,42 @@ public sealed class GateStore
         var records = new List<GateRecord>();
         foreach (var file in Directory.EnumerateFiles(_dir, "*.json"))
         {
-            await using var stream = File.OpenRead(file);
-            var record = await JsonSerializer.DeserializeAsync<GateRecord>(stream, Json, ct).ConfigureAwait(false);
-            if (record is not null && (state is null || record.State == state))
+            var record = await ReadRecordAsync(file, ct).ConfigureAwait(false);
+            if (state is null || record.State == state)
             {
                 records.Add(record);
             }
         }
         return records.OrderByDescending(r => r.Proposal.ProposedAt).ToList();
+    }
+
+    /// <summary>
+    /// Reads one record file, FAIL-CLOSED. This used to skip records that deserialized to
+    /// null and let JsonException escape raw — and a corrupt HELD record silently vanishing
+    /// from the queue is an invisible pending decision, the worst possible failure shape
+    /// for an admission store. A store this class cannot fully read is a store it refuses
+    /// to summarize.
+    /// </summary>
+    private static async Task<GateRecord> ReadRecordAsync(string path, CancellationToken ct)
+    {
+        try
+        {
+            await using var stream = File.OpenRead(path);
+            var record = await JsonSerializer.DeserializeAsync<GateRecord>(stream, Json, ct).ConfigureAwait(false);
+            if (record is null)
+            {
+                throw new InvalidOperationException(
+                    $"Corrupt gate record: {Path.GetFileName(path)} contains no record. "
+                    + "Refusing to operate on a store that cannot be fully read — inspect or remove the file.");
+            }
+            return record;
+        }
+        catch (JsonException ex)
+        {
+            throw new InvalidOperationException(
+                $"Corrupt gate record: {Path.GetFileName(path)} is not valid JSON ({ex.Message}). "
+                + "Refusing to operate on a store that cannot be fully read — inspect or remove the file.");
+        }
     }
 
     /// <summary>
@@ -235,13 +263,40 @@ public sealed class GateStore
 
     private string PathFor(string proposalId)
     {
-        // Fail closed on ids that would escape the store directory.
-        if (proposalId.Any(c => c == '/' || c == '\\' || c == '.'))
+        // ALLOWLIST, not blocklist. The old check blocked '/', '\' and '.' — and admitted
+        // the entire Windows hazard alphabet: reserved names (CON, NUL), trailing dots and
+        // spaces (Win32 strips them silently, so 'ext' and 'ext ' collide and append-once
+        // is bypassed), ':' (NTFS alternate data streams), and unicode confusables. Ids are
+        // machine-generated in this system; there is no reason to accept anything beyond
+        // this shape, so nothing beyond it is accepted.
+        if (!IdShape().IsMatch(proposalId))
         {
-            throw new ArgumentException($"Illegal proposal id '{proposalId}'.", nameof(proposalId));
+            throw new ArgumentException(
+                $"Illegal proposal id '{proposalId}'. Ids are 1-64 characters of [A-Za-z0-9_-], starting alphanumeric.",
+                nameof(proposalId));
+        }
+        // Win32 reserved device names are perfectly alphanumeric, so the shape check passes
+        // them — and they are denied on EVERY OS, not just Windows: a store written on Linux
+        // with a CON.json breaks the moment it syncs to a Windows machine. Portability means
+        // the same ids are legal everywhere.
+        if (Win32Reserved.Contains(proposalId))
+        {
+            throw new ArgumentException(
+                $"Illegal proposal id '{proposalId}': a Win32 reserved device name cannot be a store filename on any OS.",
+                nameof(proposalId));
         }
         return Path.Combine(_dir, proposalId + ".json");
     }
+
+    private static readonly HashSet<string> Win32Reserved = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "CON", "PRN", "AUX", "NUL",
+        "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+        "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
+    };
+
+    [System.Text.RegularExpressions.GeneratedRegex("^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$")]
+    private static partial System.Text.RegularExpressions.Regex IdShape();
 
     private static async Task WriteAsync(string path, GateRecord record, CancellationToken ct)
     {
