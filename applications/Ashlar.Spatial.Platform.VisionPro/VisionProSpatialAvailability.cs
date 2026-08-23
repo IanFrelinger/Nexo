@@ -28,12 +28,14 @@ public static class VisionProSpatialAvailability
 #if NET5_0_OR_GREATER
     private static bool IsVisionOsRuntime()
     {
-#if NET9_0_OR_GREATER
-        return OperatingSystem.IsVisionOS();
-#else
+        // NOT gated on NET9_0_OR_GREATER. OperatingSystem.IsVisionOS() exists only when the
+        // TFM carries the visionOS platform (net10.0-ios and friends); on the plain net10.0
+        // leg this project multi-targets, the method is absent and the call was a hard
+        // CS0117 — which went unnoticed because Ashlar.sln never restored, so this leg was
+        // never compiled. The portable heuristic below builds on every TFM here (netstandard2.0
+        // excluded by the outer #if) and matches the behaviour the net8.0 leg already shipped.
         return OperatingSystem.IsIOSVersionAtLeast(1)
             && RuntimeInformation.OSDescription.Contains("visionOS", StringComparison.OrdinalIgnoreCase);
-#endif
     }
 #endif
 }
