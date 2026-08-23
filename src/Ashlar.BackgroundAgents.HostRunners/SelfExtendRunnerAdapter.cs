@@ -249,13 +249,23 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
             var summary = $"{cycle.ToolCallsExecuted} tool call(s) executed, {cycle.ToolCallsDenied} denied " +
                           $"(iter={cycle.Iterations}, stopped={cycle.StoppedReason}).";
             _logger.LogInformation("Self-extend cycle ({Agent}): {Summary}", resolvedAgentName, summary);
+
+            // The producer wiring: inside an ashlar project, the cycle's outcome is recorded
+            // through the admission gate — the same store `ashlar gates` reads. No-op
+            // elsewhere. See SelfExtendAdmissionBridge for the honest-scope note.
+            var gateOutcome = await SelfExtendAdmissionBridge
+                .TryRecordAsync(repoRoot!, resolvedAgentName, effectiveObjective, writePaths,
+                    cycle.ToolCallsExecuted, cycle.ToolCallsDenied, _logger, cancellationToken)
+                .ConfigureAwait(false);
+
             return new SelfExtendRunResult(
                 cycle.ToolCallsDenied == 0,
                 cycle.ToolCallsExecuted,
                 cycle.ToolCallsDenied,
-                summary,
+                gateOutcome is null ? summary : $"{summary} {gateOutcome}",
                 cycle.Iterations,
-                cycle.StoppedReason);
+                cycle.StoppedReason,
+                gateOutcome);
         }
         catch (Exception ex)
         {

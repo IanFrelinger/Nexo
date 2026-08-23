@@ -12,4 +12,8 @@ public record SelfExtendRunResult(
     int ToolCallsDenied,
     string Summary,
     int Iterations = 0,
-    string? StoppedReason = null) : BackgroundAgentRunResult(Success, Summary);
+    string? StoppedReason = null,
+    string? GateOutcome = null) : BackgroundAgentRunResult(Success, Summary);
+// GateOutcome: when the cycle ran inside an ashlar project, the admission gate's one-line
+// verdict ("GATE: held as ext-…"); null outside ashlar projects. Additive with a default so
+// every existing construction site and pattern-match keeps compiling.
