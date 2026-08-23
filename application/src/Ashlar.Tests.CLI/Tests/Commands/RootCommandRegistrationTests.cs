@@ -37,6 +37,17 @@ public sealed class RootCommandRegistrationTests
     }
 
     [Fact(Timeout = 15000)]
+    public async Task RootCommand_RegistersVerifyCommand()
+    {
+        await Task.CompletedTask;
+        var root = Ashlar.CLI.Program.BuildRootCommand();
+        var subcommands = root.Subcommands.Select(s => s.Name).ToList();
+
+        // The wall. Same guard as init: the loop's verbs stay registered.
+        subcommands.Should().Contain("verify");
+    }
+
+    [Fact(Timeout = 15000)]
     public async Task TrustCommand_HasDocumentedSubcommands()
     {
         await Task.CompletedTask;
