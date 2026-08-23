@@ -58,6 +58,17 @@ public sealed class RootCommandRegistrationTests
         subcommands.Should().Contain("gates");
     }
 
+    [Fact(Timeout = 15000)]
+    public async Task RootCommand_RegistersRunCommand()
+    {
+        await Task.CompletedTask;
+        var root = Ashlar.CLI.Program.BuildRootCommand();
+        var subcommands = root.Subcommands.Select(s => s.Name).ToList();
+
+        // The loop's fourth verb. Same guard as init, verify, and gates.
+        subcommands.Should().Contain("run");
+    }
+
 
     [Fact(Timeout = 15000)]
     public async Task TrustCommand_HasDocumentedSubcommands()
