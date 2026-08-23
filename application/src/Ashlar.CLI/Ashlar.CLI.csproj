@@ -49,6 +49,7 @@
     <ProjectReference Include="../../../src/Ashlar.Orchestration/Ashlar.Orchestration.csproj" />
     <ProjectReference Include="../../../src/Ashlar.BackgroundAgents/Ashlar.BackgroundAgents.csproj" />
     <ProjectReference Include="../../../src/Ashlar.BackgroundAgents.HostRunners/Ashlar.BackgroundAgents.HostRunners.csproj" />
+    <ProjectReference Include="../../../src/Ashlar.Manifest/Ashlar.Manifest.csproj" />
     <ProjectReference Include="../../../src/Ashlar.Policies.Dev/Ashlar.Policies.Dev.csproj" />
     <ProjectReference Include="../../../src/Ashlar.Tools.Dev/Ashlar.Tools.Dev.csproj" />
   </ItemGroup>
