@@ -1,6 +1,6 @@
 # Provenance graph sample bundle
 
-Input fixture for the read-only certification provenance projection in [`applications/Ashlar.Provenance.Graph/`](../../applications/Ashlar.Provenance.Graph/README.md). It is one signed physical-atom certified bundle whose certificate carries the `ashlar.provenance.v1` extension claim, i.e. the smallest input from which the projector can derive `Artifact -CERTIFIED_BY-> Certificate -ISSUED_UNDER-> PolicyVersion` and `Artifact -PRODUCED_BY-> Agent` and answer `ArtifactsUnderPolicy`.
+Input fixture for the read-only certification provenance projection in [`applications/Ashlar.Provenance.Graph/`](../../applications/Ashlar.Provenance.Graph/README.md). It is one signed physical-atom certified bundle whose certificate carries the `nexo.provenance.v1` extension claim, i.e. the smallest input from which the projector can derive `Artifact -CERTIFIED_BY-> Certificate -ISSUED_UNDER-> PolicyVersion` and `Artifact -PRODUCED_BY-> Agent` and answer `ArtifactsUnderPolicy`.
 
 ## `demo.bundle.json`
 
@@ -10,7 +10,7 @@ Input fixture for the read-only certification provenance projection in [`applica
 |-------|-------|---------|
 | `certificate.bindingScope` | `Design` | Phase 1 design-scope certificate (`schemaVersion` 1, `maturity` Prototype). |
 | `assetBytesBase64` | `ashlar-provenance-demo-asset-v1` (UTF-8) | The bound asset; SHA-256 = `8f168a714d1b9833b60055ba3d3b0da110198c5672a1ec73e4baf52c126a02e6` = `certificate.assetHash` = the graph `Artifact` id. |
-| `certificate.extensions["ashlar.provenance.v1"]` | base64 JSON | Signed graph claims: `artifactKind: atom`, `policyName: SelfProducedBrickCertificationPolicy`, `policyVersion: 1.0.0`, `producerAgentId: ashlar-demo-agent`, `producerAgentKind: self`, `dependsOnArtifactIds: []`, `issuedAt: 2026-07-13T12:00:00+00:00`. |
+| `certificate.extensions["nexo.provenance.v1"]` | base64 JSON | Signed graph claims: `artifactKind: atom`, `policyName: SelfProducedBrickCertificationPolicy`, `policyVersion: 1.0.0`, `producerAgentId: ashlar-demo-agent`, `producerAgentKind: self`, `dependsOnArtifactIds: []`, `issuedAt: 2026-07-13T12:00:00+00:00`. |
 | `issuerPublicKeyBase64` / `certificate.issuerSignature` | Ed25519 | Sample issuer key (documentation and CI only, not production PKI). |
 
 Because the claims live inside the signed certificate, editing any of them invalidates the signature and the projector rejects the batch; that is the point.

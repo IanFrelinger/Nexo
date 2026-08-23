@@ -89,7 +89,7 @@ public sealed class ProvenanceProjectorHardeningTests
             Keys.PublicKey);
         var extensions = new Dictionary<string, byte[]>(bundle.Certificate.Extensions, StringComparer.Ordinal)
         {
-            ["ashlar.provenance.v1"] = "{not-json"u8.ToArray()
+            ["nexo.provenance.v1"] = "{not-json"u8.ToArray()
         };
         var unsigned = bundle.Certificate with { Extensions = extensions, IssuerSignature = null };
         var signed = WitnessCertificateBuilder.Sign(unsigned, Keys.PrivateKey);

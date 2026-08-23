@@ -9,7 +9,7 @@ namespace Ashlar.Provenance.Graph.Models;
 /// </summary>
 public sealed record ProvenanceClaims
 {
-    public const string ExtensionKey = "ashlar.provenance.v1";
+    public const string ExtensionKey = "nexo.provenance.v1";
 
     public ArtifactKind ArtifactKind { get; init; } = ArtifactKind.Atom;
 

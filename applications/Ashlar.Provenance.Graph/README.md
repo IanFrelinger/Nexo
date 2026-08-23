@@ -26,7 +26,7 @@ Constraints are applied idempotently via `Neo4j/Neo4jSchemaMigration.cypher`.
 
 ## Trust and edge authority
 
-The projector never accepts free-form relationship metadata. Optional graph claims are encoded under the `ashlar.provenance.v1` certificate extension and therefore covered by the certificate's Ed25519 signature:
+The projector never accepts free-form relationship metadata. Optional graph claims are encoded under the `nexo.provenance.v1` certificate extension and therefore covered by the certificate's Ed25519 signature:
 
 ```json
 {
