@@ -32,7 +32,7 @@ public sealed class GatesCommand : Command
             description: "Who is deciding. Recorded in the ledger.",
             getDefaultValue: () => Environment.UserName);
 
-        AddOption(pathOpt); AddOption(showOpt); AddOption(admitOpt);
+        AddGlobalOption(pathOpt); AddOption(showOpt); AddOption(admitOpt);
         AddOption(refuseOpt); AddOption(reasonOpt); AddOption(actorOpt);
 
         // Hidden: the runtime's entry. A proposal arrives as JSON, the policy decides its
