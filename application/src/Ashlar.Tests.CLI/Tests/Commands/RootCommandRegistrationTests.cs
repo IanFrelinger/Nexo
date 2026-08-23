@@ -48,6 +48,18 @@ public sealed class RootCommandRegistrationTests
     }
 
     [Fact(Timeout = 15000)]
+    public async Task RootCommand_RegistersGatesCommand()
+    {
+        await Task.CompletedTask;
+        var root = Ashlar.CLI.Program.BuildRootCommand();
+        var subcommands = root.Subcommands.Select(s => s.Name).ToList();
+
+        // The human half of admission. Same guard as init and verify.
+        subcommands.Should().Contain("gates");
+    }
+
+
+    [Fact(Timeout = 15000)]
     public async Task TrustCommand_HasDocumentedSubcommands()
     {
         await Task.CompletedTask;
