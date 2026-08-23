@@ -81,13 +81,23 @@ public sealed class RollbackManager : IRollbackManager
     /// <summary>Rollback asynchronously.</summary>
     public async Task RollbackAsync(string adaptationId, CancellationToken ct = default)
     {
-        string snapshotId;
+        string? snapshotId;
         lock (_lock)
         {
-            if (!_adaptationSnapshots.TryGetValue(adaptationId, out var entry) || string.IsNullOrEmpty(entry.SnapshotId))
-                throw new InvalidOperationException($"No snapshot found for adaptation {adaptationId}");
+            _adaptationSnapshots.TryGetValue(adaptationId, out var entry);
             snapshotId = entry.SnapshotId;
         }
+
+        // The dictionary only knows adaptations from THIS process. The CLI builds a fresh
+        // service provider per invocation, so before this fallback existed
+        // `ashlar rollback <adaptation-id>` could never succeed from a cold start — the
+        // snapshot was on disk the whole time, filed under the label BeforeInheritAsync
+        // wrote, and nothing looked. Resolve from the persistent store when memory misses.
+        snapshotId ??= await ResolveSnapshotFromStoreAsync(adaptationId, ct).ConfigureAwait(false);
+        if (string.IsNullOrEmpty(snapshotId))
+            throw new InvalidOperationException(
+                $"No snapshot found for adaptation {adaptationId} — not in this process and no "
+                + $"'before-inherit-{adaptationId}' snapshot exists in the store.");
 
         await _snapshotStore.RestoreSnapshotAsync(snapshotId, ct).ConfigureAwait(false);
 
@@ -111,6 +121,22 @@ public sealed class RollbackManager : IRollbackManager
         }
 
         _logger?.LogInformation("Rolled back adaptation {AdaptationId} via snapshot {SnapshotId}", adaptationId, snapshotId);
+    }
+
+    /// <summary>
+    /// Resolves an adaptation's snapshot from the persistent store by the label
+    /// <c>before-inherit-{adaptationId}</c> that <see cref="BeforeInheritAsync"/> writes.
+    /// Newest wins when an adaptation was snapshotted more than once.
+    /// </summary>
+    private async Task<string?> ResolveSnapshotFromStoreAsync(string adaptationId, CancellationToken ct)
+    {
+        var label = $"before-inherit-{adaptationId}";
+        var entries = await _snapshotStore.ListSnapshotsAsync(ct).ConfigureAwait(false);
+        return entries
+            .Where(e => string.Equals(e.Label, label, StringComparison.OrdinalIgnoreCase))
+            .OrderByDescending(e => e.TakenAt)
+            .Select(e => e.SnapshotId)
+            .FirstOrDefault();
     }
 
     /// <summary>Rollback to snapshot asynchronously.</summary>
