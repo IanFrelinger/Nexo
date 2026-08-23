@@ -56,10 +56,48 @@ public sealed class GateStore
     }
 
     /// <summary>
+    /// Serializes every read-check-write against the store, ACROSS PROCESSES. The lock is a
+    /// FileShare.None handle on a well-known file: the OS enforces exclusivity and releases
+    /// it when the holder dies, so a crash cannot leave a stale lock. Without this, two
+    /// humans could decide the same held proposal and both "win" — an admit silently
+    /// erasing a refusal — and two racing self-extending proposals could both read a spent
+    /// budget of zero and both admit. On an admission boundary those are security bugs.
+    /// </summary>
+    private async Task<FileStream> AcquireLockAsync(CancellationToken ct)
+    {
+        var lockPath = Path.Combine(_dir, ".lock");
+        var deadline = Environment.TickCount64 + 15_000;
+        while (true)
+        {
+            ct.ThrowIfCancellationRequested();
+            try
+            {
+                return new FileStream(lockPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+            }
+            catch (IOException) when (Environment.TickCount64 < deadline)
+            {
+                await Task.Delay(25, ct).ConfigureAwait(false);
+            }
+            catch (IOException)
+            {
+                throw new TimeoutException(
+                    "Could not acquire the gate-store lock within 15s. Another process is holding it unusually long.");
+            }
+        }
+    }
+
+    /// <summary>
     /// Records the gate's automatic outcome for an evaluated proposal. Refuses to overwrite
-    /// an existing record — a proposal is recorded once.
+    /// an existing record — a proposal is recorded once, and the check holds under
+    /// concurrency because it runs inside the store lock.
     /// </summary>
     public async Task<GateRecord> RecordAsync(ExtensionProposal proposal, AdmissionOutcome outcome, DateTimeOffset now, CancellationToken ct = default)
+    {
+        using var _ = await AcquireLockAsync(ct).ConfigureAwait(false);
+        return await RecordLockedAsync(proposal, outcome, now, ct).ConfigureAwait(false);
+    }
+
+    private async Task<GateRecord> RecordLockedAsync(ExtensionProposal proposal, AdmissionOutcome outcome, DateTimeOffset now, CancellationToken ct)
     {
         var path = PathFor(proposal.Id);
         if (File.Exists(path))
@@ -80,6 +118,44 @@ public sealed class GateStore
     }
 
     /// <summary>
+    /// The full propose transaction — count admissions in the window, decide under the
+    /// policy, record — as ONE atomic step under the store lock. This lives here rather
+    /// than in callers precisely so the budget check and the recording cannot be separated
+    /// by another process's admission: budget 1 admits one, under any concurrency.
+    /// An unparseable budget window fails closed to Held — never an unlimited allowance.
+    /// </summary>
+    public async Task<GateRecord> ProposeAsync(AshlarPolicy policy, ExtensionProposal proposal, DateTimeOffset now, CancellationToken ct = default)
+    {
+        ArgumentNullException.ThrowIfNull(policy);
+        ArgumentNullException.ThrowIfNull(proposal);
+
+        using var _ = await AcquireLockAsync(ct).ConfigureAwait(false);
+
+        AdmissionOutcome outcome;
+        if (policy.SelfExtend.Mode == SelfExtendMode.SelfExtending
+            && !AdmissionGate.TryParseWindow(policy.SelfExtend.Budget.Window, out var window))
+        {
+            outcome = new AdmissionOutcome
+            {
+                State = ProposalState.Held,
+                Reason = $"budget window '{policy.SelfExtend.Budget.Window}' is unparseable — failing closed to a "
+                       + "human decision rather than treating it as unlimited.",
+            };
+        }
+        else
+        {
+            var admittedInWindow = 0;
+            if (AdmissionGate.TryParseWindow(policy.SelfExtend.Budget.Window, out var w))
+            {
+                admittedInWindow = await AdmittedInWindowAsync(w, now, ct).ConfigureAwait(false);
+            }
+            outcome = AdmissionGate.Decide(policy, proposal, admittedInWindow);
+        }
+
+        return await RecordLockedAsync(proposal, outcome, now, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// A human decides a HELD proposal. The only legal transitions are Held → Admitted and
     /// Held → Refused; anything else is refused with the rule spelled out. A refusal
     /// requires a reason — a refusal that does not teach produces the same proposal again.
@@ -94,6 +170,8 @@ public sealed class GateStore
         {
             throw new ArgumentException("A refusal requires a reason — it is recorded and fed back to the proposer.", nameof(reason));
         }
+
+        using var _ = await AcquireLockAsync(ct).ConfigureAwait(false);
 
         var existing = await GetAsync(proposalId, ct).ConfigureAwait(false)
             ?? throw new InvalidOperationException($"No proposal '{proposalId}' in the store.");
