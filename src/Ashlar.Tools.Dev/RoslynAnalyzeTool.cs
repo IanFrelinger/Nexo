@@ -17,9 +17,8 @@ public sealed class RoslynAnalyzeTool : ITool
     public ToolSchema Schema => new(Id, "Analyze C# source files via Roslyn (consistency rules)", """
     {
       "type":"object",
-      "required":["root","files","rules"],
+      "required":["files","rules"],
       "properties":{
-        "root":{"type":"string"},
         "files":{"type":"array","items":{"type":"string"}},
         "rules":{
           "type":"object",
@@ -37,7 +36,8 @@ public sealed class RoslynAnalyzeTool : ITool
     }
     """);
 
-    private sealed record Args(string root, string[] files, Rules rules);
+    // No `root` — see ToolSandbox.
+    private sealed record Args(string[] files, Rules rules);
 
     private sealed record Rules
     {
@@ -54,14 +54,36 @@ public sealed class RoslynAnalyzeTool : ITool
     {
         var args = System.Text.Json.JsonSerializer.Deserialize<Args>(call.Arguments)!;
 
-        var root = args.root;
+        if (!ToolSandbox.TryResolveRoot(s, out var root, out var reason))
+        {
+            var rejected = new RepoDelta { TickFrom = s.Tick, TickTo = s.Tick + 1 };
+            rejected.AddLog($"roslyn:{reason}");
+            return new ToolResult(rejected, new { analyzed = false, error = reason });
+        }
+
         var violations = new List<object>();
 
         foreach (var rel in args.files ?? Array.Empty<string>())
         {
             ct.ThrowIfCancellationRequested();
 
-            var filePath = Path.IsPathRooted(rel) ? rel : Path.Combine(root, rel);
+            // Previously: Path.IsPathRooted(rel) ? rel : Path.Combine(root, rel) — which
+            // honoured absolute paths in the model-supplied files array, so `files:
+            // ["/etc/passwd"]` was read regardless of the root. Every entry now resolves
+            // through the sandbox and anything landing outside it is refused.
+            if (!ToolSandbox.TryResolvePath(s, rel, out var filePath, out var pathReason))
+            {
+                violations.Add(new
+                {
+                    rule = "Roslyn.PathRejected",
+                    message = pathReason,
+                    filePath = rel,
+                    lineNumber = (int?)null,
+                    severity = "High"
+                });
+                continue;
+            }
+
             if (!File.Exists(filePath))
             {
                 violations.Add(new

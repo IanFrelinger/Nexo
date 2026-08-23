@@ -16,15 +16,23 @@ public sealed class DocsUpdateTool : ITool
 {
     public string Id => "docs.update";
     public ToolSchema Schema => new(Id, "Append to CHANGELOG.md", """
-    {"type":"object","required":["root","entry"],"properties":{"root":{"type":"string"},"entry":{"type":"string"}}}
+    {"type":"object","required":["entry"],"properties":{"entry":{"type":"string"}}}
     """);
 
-    private sealed record Args(string root, string entry);
+    // No `root` — see ToolSandbox. This tool appends to a file, so it is a write path.
+    private sealed record Args(string entry);
 
     public async Task<ToolResult> InvokeAsync(ToolCall call, WorldSnapshot s, CancellationToken ct)
     {
         var args = System.Text.Json.JsonSerializer.Deserialize<Args>(call.Arguments)!;
-        var path = Path.Combine(args.root, "CHANGELOG.md");
+
+        if (!ToolSandbox.TryResolvePath(s, "CHANGELOG.md", out var path, out var reason))
+        {
+            var rejected = new RepoDelta { TickFrom = s.Tick, TickTo = s.Tick + 1 };
+            rejected.AddLog($"docs:update {reason}");
+            return new ToolResult(rejected, new { updated = false, error = reason });
+        }
+
         await File.AppendAllTextAsync(path, $"- {DateTimeOffset.UtcNow:u} {args.entry}\n", new UTF8Encoding(false), ct);
 
         var delta = new RepoDelta { TickFrom = s.Tick, TickTo = s.Tick + 1 };

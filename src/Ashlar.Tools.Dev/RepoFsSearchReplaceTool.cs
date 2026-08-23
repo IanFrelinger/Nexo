@@ -16,15 +16,23 @@ public sealed class RepoFsSearchReplaceTool : ITool
 {
     public string Id => "repo.fs.search_replace";
     public ToolSchema Schema => new(Id, "Search/replace within a file (UTF-8)", """
-    {"type":"object","required":["root","path","find","replace"],"properties":{"root":{"type":"string"},"path":{"type":"string"},"find":{"type":"string"},"replace":{"type":"string"}}}
+    {"type":"object","required":["path","find","replace"],"properties":{"path":{"type":"string","description":"Path relative to the sandbox root"},"find":{"type":"string"},"replace":{"type":"string"}}}
     """);
 
-    private sealed record Args(string root, string path, string find, string replace);
+    // No `root` — see ToolSandbox.
+    private sealed record Args(string path, string find, string replace);
 
     public async Task<ToolResult> InvokeAsync(ToolCall call, WorldSnapshot s, CancellationToken ct)
     {
         var args = System.Text.Json.JsonSerializer.Deserialize<Args>(call.Arguments)!;
-        var full = Path.Combine(args.root, args.path);
+
+        if (!ToolSandbox.TryResolvePath(s, args.path, out var full, out var reason))
+        {
+            var rejected = new RepoDelta { TickFrom = s.Tick, TickTo = s.Tick + 1 };
+            rejected.AddLog($"search_replace:{args.path} {reason}");
+            return new ToolResult(rejected, new { path = args.path, replaced = false, error = reason });
+        }
+
         if (!File.Exists(full)) throw new FileNotFoundException(full);
 
         var before = await File.ReadAllTextAsync(full, ct);

@@ -15,10 +15,9 @@ public sealed class DotnetBuildTool : ITool
 {
     public string Id => "dotnet.build";
     public ToolSchema Schema => new(Id, "Run dotnet build -c Release", """
-    {"type":"object","required":["root"],"properties":{"root":{"type":"string"}}}
+    {"type":"object","properties":{}}
     """);
 
-    private sealed record Args(string root);
 
     /// <summary>
     /// Shared implementation for <see cref="DotnetBuildTool"/>, <see cref="ForgeBuildTool"/>,
@@ -70,8 +69,17 @@ public sealed class DotnetBuildTool : ITool
 
     public async Task<ToolResult> InvokeAsync(ToolCall call, WorldSnapshot s, CancellationToken ct)
     {
-        var args = System.Text.Json.JsonSerializer.Deserialize<Args>(call.Arguments)!;
-        var (code, stdout, stderr, timedOut) = await RunReleaseBuildAsync(args.root, ct).ConfigureAwait(false);
+        // The working directory is the sandbox root, never a model argument. `dotnet build`
+        // on a model-chosen directory is arbitrary code execution — MSBuild runs whatever
+        // targets it finds there — so this is a code-execution boundary, not just a read.
+        if (!ToolSandbox.TryResolveRoot(s, out var root, out var reason))
+        {
+            var rejected = new RepoDelta { TickFrom = s.Tick, TickTo = s.Tick + 1 };
+            rejected.AddLog($"build:{reason}");
+            return new ToolResult(rejected, new { ok = false, error = reason });
+        }
+
+        var (code, stdout, stderr, timedOut) = await RunReleaseBuildAsync(root, ct).ConfigureAwait(false);
         var delta = new RepoDelta { TickFrom = s.Tick, TickTo = s.Tick + 1 };
         delta.AddLog($"build:exit={code}");
         if (timedOut) delta.AddLog("build:timeout");

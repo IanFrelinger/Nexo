@@ -69,12 +69,18 @@ public class ToolsDevTests
     }
 
     [Fact]
-    public async Task CleanArtifactsTool_uses_explicit_repo_root_and_reports_cleanup_errors()
+    public async Task CleanArtifactsTool_takes_its_repo_root_from_the_sandbox_not_the_arguments()
     {
+        // Renamed from CleanArtifactsTool_uses_explicit_repo_root_...: the tool no longer
+        // accepts an explicit repoRoot. It used to prefer the model's over the snapshot's
+        // (`args.repoRoot ?? snapshot`), which pointed a delete operation wherever the model
+        // liked. The argument below is left in deliberately, to assert it is ignored.
+        var root = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "ashlar-clean-" + Guid.NewGuid().ToString("N")));
+
         var cleanup = new Mock<IArtifactCleanupService>();
         cleanup.Setup(s => s.CleanAsync(
                 "incomplete-blobs",
-                It.Is<ArtifactCleanupContext?>(c => c!.RepoRoot == "/explicit/root"),
+                It.Is<ArtifactCleanupContext?>(c => c!.RepoRoot == root),
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ArtifactCleanupResult(
                 "incomplete-blobs",
@@ -88,7 +94,7 @@ public class ToolsDevTests
 
         var result = await tool.InvokeAsync(
             Call(CleanArtifactsTool.IdConstant, new { strategyId = "incomplete-blobs", repoRoot = "/explicit/root" }),
-            new WorldSnapshot(0, new Dictionary<string, object?>()),
+            WorldSnapshot.ForRepo(root),
             CancellationToken.None);
 
         result.Delta.Log.Should().ContainSingle().Which.Should().Contain("reclaimed=5");
@@ -123,6 +129,7 @@ public class ToolsDevTests
     [Fact]
     public async Task CleanArtifactsTool_handles_invalid_json_arguments()
     {
+        var root = Path.GetFullPath(Path.Combine(Path.GetTempPath(), "ashlar-clean-bad-" + Guid.NewGuid().ToString("N")));
         var cleanup = new Mock<IArtifactCleanupService>();
         cleanup.Setup(s => s.CleanAsync(
                 null,
@@ -132,7 +139,7 @@ public class ToolsDevTests
 
         var tool = new CleanArtifactsTool(cleanup.Object);
         var call = new ToolCall(CleanArtifactsTool.IdConstant, JsonDocument.Parse("[]").RootElement);
-        var result = await tool.InvokeAsync(call, new WorldSnapshot(0, new Dictionary<string, object?>()), CancellationToken.None);
+        var result = await tool.InvokeAsync(call, WorldSnapshot.ForRepo(root), CancellationToken.None);
         result.Delta.Log.Should().NotBeEmpty();
     }
 
@@ -145,7 +152,7 @@ public class ToolsDevTests
         try
         {
             var tool = new RepoFsListTool();
-            var snap = new WorldSnapshot(0, new Dictionary<string, object?>());
+            var snap = WorldSnapshot.ForRepo(root);
             var result = await tool.InvokeAsync(
                 Call("repo.fs.list", new { root, path = ".", recursive = false }),
                 snap,
@@ -169,7 +176,7 @@ public class ToolsDevTests
             var tool = new RepoFsListTool();
             var result = await tool.InvokeAsync(
                 Call("repo.fs.list", new { root, path = "../outside" }),
-                new WorldSnapshot(0, new Dictionary<string, object?>()),
+                WorldSnapshot.ForRepo(root),
                 CancellationToken.None);
             result.Delta.Log.Should().ContainSingle().Which.Should().Contain("REJECTED");
         }
@@ -193,7 +200,7 @@ public class ToolsDevTests
             tool.Schema.Id.Should().Be("repo.fs.read");
             var result = await tool.InvokeAsync(
                 Call("repo.fs.read", new { root, path = "big.txt", max_bytes = 10 }),
-                new WorldSnapshot(0, new Dictionary<string, object?>()),
+                WorldSnapshot.ForRepo(root),
                 CancellationToken.None);
             result.Delta.Log.Should().ContainSingle();
         }
@@ -213,7 +220,7 @@ public class ToolsDevTests
             var tool = new RepoFsWriteTool();
             var result = await tool.InvokeAsync(
                 Call("repo.fs.write", new { root, path = "sub/out.txt", content = "line1\nline2" }),
-                new WorldSnapshot(0, new Dictionary<string, object?>()),
+                WorldSnapshot.ForRepo(root),
                 CancellationToken.None);
             var full = Path.Combine(root, "sub/out.txt");
             File.Exists(full).Should().BeTrue();
@@ -239,14 +246,14 @@ public class ToolsDevTests
             tool.Schema.Description.Should().Contain("Create file");
             var created = await tool.InvokeAsync(
                 Call("repo.fs.ensure_file", new { root, path = "nested/deep/new.txt", content = "hello" }),
-                new WorldSnapshot(0, new Dictionary<string, object?>()),
+                WorldSnapshot.ForRepo(root),
                 CancellationToken.None);
             created.Delta.Log.Should().ContainSingle().Which.Should().Contain("created");
             File.Exists(Path.Combine(root, "nested", "deep", "new.txt")).Should().BeTrue();
 
             var exists = await tool.InvokeAsync(
                 Call("repo.fs.ensure_file", new { root, path = "nested/deep/new.txt", content = "other" }),
-                new WorldSnapshot(1, new Dictionary<string, object?>()),
+                WorldSnapshot.ForRepo(root, tick: 1),
                 CancellationToken.None);
             exists.Delta.Log.Should().ContainSingle().Which.Should().Contain("exists");
         }
@@ -268,7 +275,7 @@ public class ToolsDevTests
             var tool = new RepoFsSearchReplaceTool();
             var result = await tool.InvokeAsync(
                 Call("repo.fs.search_replace", new { root, path = "file.txt", find = "foo", replace = "baz" }),
-                new WorldSnapshot(0, new Dictionary<string, object?>()),
+                WorldSnapshot.ForRepo(root),
                 CancellationToken.None);
             (await File.ReadAllTextAsync(path)).Should().Be("baz bar baz");
             result.Delta.Log.Should().ContainSingle().Which.Should().Contain("s&r:");
@@ -288,7 +295,7 @@ public class ToolsDevTests
         {
             var result = await new DotnetRunTool().InvokeAsync(
                 Call("dotnet.run", new { root, args = "--version", timeoutSeconds = 30 }),
-                new WorldSnapshot(0, new Dictionary<string, object?>()),
+                WorldSnapshot.ForRepo(root),
                 CancellationToken.None);
             result.Delta.Log.Should().Contain(l => l.Contains("dotnet:exit="));
         }
@@ -315,11 +322,11 @@ public class ToolsDevTests
         {
             await new DotnetBuildTool().InvokeAsync(
                 Call("dotnet.build", new { root }),
-                new WorldSnapshot(0, new Dictionary<string, object?>()),
+                WorldSnapshot.ForRepo(root),
                 CancellationToken.None);
             var result = await new DotnetTestTool().InvokeAsync(
                 Call("dotnet.test", new { root }),
-                new WorldSnapshot(1, new Dictionary<string, object?>()),
+                WorldSnapshot.ForRepo(root, tick: 1),
                 CancellationToken.None);
             result.Delta.Log.Should().Contain(l => l.Contains("test:exit="));
         }
@@ -345,7 +352,7 @@ public class ToolsDevTests
         {
             var result = await new DotnetBuildTool().InvokeAsync(
                 Call("dotnet.build", new { root }),
-                new WorldSnapshot(0, new Dictionary<string, object?>()),
+                WorldSnapshot.ForRepo(root),
                 CancellationToken.None);
             result.Delta.Log.Should().Contain(l => l.Contains("build:exit="));
         }
@@ -396,7 +403,7 @@ public class ToolsDevTests
 
             var result = await new DotnetBuildTool().InvokeAsync(
                 Call("dotnet.build", new { root }),
-                new WorldSnapshot(0, new Dictionary<string, object?>()),
+                WorldSnapshot.ForRepo(root),
                 CancellationToken.None);
 
             result.Delta.Log.Should().Contain(l => l.Contains("build:exit=0"));
@@ -425,7 +432,7 @@ public class ToolsDevTests
             tool.Id.Should().Be("forge.build");
             var result = await tool.InvokeAsync(
                 Call("forge.build", new { root }),
-                new WorldSnapshot(0, new Dictionary<string, object?>()),
+                WorldSnapshot.ForRepo(root),
                 CancellationToken.None);
             result.Delta.Log.Should().Contain(l => l.Contains("forge.build:exit="));
         }
@@ -452,13 +459,13 @@ public class ToolsDevTests
         {
             await new DotnetBuildTool().InvokeAsync(
                 Call("dotnet.build", new { root }),
-                new WorldSnapshot(0, new Dictionary<string, object?>()),
+                WorldSnapshot.ForRepo(root),
                 CancellationToken.None);
             var tool = new ForgeTestTool();
             tool.Id.Should().Be("forge.test");
             var result = await tool.InvokeAsync(
                 Call("forge.test", new { root }),
-                new WorldSnapshot(1, new Dictionary<string, object?>()),
+                WorldSnapshot.ForRepo(root, tick: 1),
                 CancellationToken.None);
             result.Delta.Log.Should().Contain(l => l.Contains("forge.test:exit="));
         }
@@ -481,7 +488,7 @@ public class ToolsDevTests
             tool.Schema.Description.Should().Contain("pseudo-commit");
             var result = await tool.InvokeAsync(
                 Call("repo.git.commit", new { root, message = "feat: kernel coverage" }),
-                new WorldSnapshot(0, new Dictionary<string, object?>()),
+                WorldSnapshot.ForRepo(root),
                 CancellationToken.None);
 
             var logPath = Path.Combine(root, "COMMIT_LOG.txt");
@@ -506,7 +513,7 @@ public class ToolsDevTests
             tool.Id.Should().Be("docs.update");
             tool.Schema.Id.Should().Be("docs.update");
             tool.Schema.Description.Should().Contain("CHANGELOG");
-            var snap = new WorldSnapshot(0, new Dictionary<string, object?>());
+            var snap = WorldSnapshot.ForRepo(root);
             var result = await tool.InvokeAsync(
                 Call("docs.update", new { root, entry = "ship feature" }),
                 snap,
@@ -551,7 +558,7 @@ public class ToolsDevTests
                         requiredClassName = "Cmd",
                     },
                 }),
-                new WorldSnapshot(0, new Dictionary<string, object?>()),
+                WorldSnapshot.ForRepo(root),
                 CancellationToken.None);
 
             missing.Payload.Should().NotBeNull();
@@ -573,7 +580,7 @@ public class ToolsDevTests
         {
             var invalid = await new DotnetRunTool().InvokeAsync(
                 Call("dotnet.run", new { root, args = "not-a-real-subcommand" }),
-                new WorldSnapshot(0, new Dictionary<string, object?>()),
+                WorldSnapshot.ForRepo(root),
                 CancellationToken.None);
             invalid.Delta.Log.Should().Contain(l => l.Contains("dotnet:exit="));
             invalid.Delta.Log.Should().Contain(l => l.Contains("dotnet:stderr"));
@@ -581,7 +588,7 @@ public class ToolsDevTests
             using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(50));
             var timedOut = await new DotnetRunTool().InvokeAsync(
                 Call("dotnet.run", new { root, args = "restore", timeoutSeconds = 1 }),
-                new WorldSnapshot(1, new Dictionary<string, object?>()),
+                WorldSnapshot.ForRepo(root, tick: 1),
                 cts.Token);
             timedOut.Delta.Log.Should().Contain(l => l.Contains("dotnet:exit=") || l.Contains("dotnet:timeout"));
         }
@@ -623,7 +630,7 @@ public class ToolsDevTests
         {
             var result = await new DocsUpdateTool().InvokeAsync(
                 Call("docs.update", new { root, entry = "second entry" }),
-                new WorldSnapshot(0, new Dictionary<string, object?>()),
+                WorldSnapshot.ForRepo(root),
                 CancellationToken.None);
 
             var text = await File.ReadAllTextAsync(Path.Combine(root, "CHANGELOG.md"));
@@ -646,7 +653,7 @@ public class ToolsDevTests
         {
             var result = await new RepoFsReadTool().InvokeAsync(
                 Call("repo.fs.read", new { root, path = "missing.txt" }),
-                new WorldSnapshot(0, new Dictionary<string, object?>()),
+                WorldSnapshot.ForRepo(root),
                 CancellationToken.None);
             result.Delta.Log.Should().ContainSingle().Which.Should().Contain("not_found");
         }
@@ -667,7 +674,7 @@ public class ToolsDevTests
         {
             var result = await new RepoFsListTool().InvokeAsync(
                 Call("repo.fs.list", new { root, path = ".", recursive = true, max_entries = 5 }),
-                new WorldSnapshot(0, new Dictionary<string, object?>()),
+                WorldSnapshot.ForRepo(root),
                 CancellationToken.None);
             result.Delta.Log.Should().ContainSingle().Which.Should().Contain("list");
         }
@@ -707,7 +714,7 @@ public class ToolsDevTests
                         requiredClassName = "Cmd",
                     },
                 }),
-                new WorldSnapshot(0, new Dictionary<string, object?>()),
+                WorldSnapshot.ForRepo(root),
                 CancellationToken.None);
 
             result.Delta.Log.Should().Contain(l => l.Contains("violations=0"));
@@ -770,7 +777,7 @@ public class ToolsDevTests
                         requiredCommandName = "expected-name",
                     },
                 }),
-                new WorldSnapshot(0, new Dictionary<string, object?>()),
+                WorldSnapshot.ForRepo(root),
                 CancellationToken.None);
             ok.Delta.Log.Should().Contain(l => l.Contains("violations=0"));
 
@@ -786,7 +793,7 @@ public class ToolsDevTests
                     files = new[] { "Bad.cs" },
                     rules = new { requireFileScopedNamespace = false, requirePublic = true, requireSealed = true },
                 }),
-                new WorldSnapshot(0, new Dictionary<string, object?>()),
+                WorldSnapshot.ForRepo(root),
                 CancellationToken.None);
             bad.Delta.Log.Should().Contain(l => l.Contains("violations=") && !l.Contains("violations=0"));
         }
@@ -812,7 +819,7 @@ public class ToolsDevTests
         {
             var result = await new RepoFsListTool().InvokeAsync(
                 Call("repo.fs.list", new { root, path = ".", recursive = true, max_entries = 500 }),
-                new WorldSnapshot(0, new Dictionary<string, object?>()),
+                WorldSnapshot.ForRepo(root),
                 CancellationToken.None);
 
             result.Delta.Log.Should().Contain(l => l.Contains("entries="));
@@ -837,25 +844,27 @@ public class ToolsDevTests
 
             var missing = await tool.InvokeAsync(
                 Call("repo.fs.list", new { root, path = "missing-dir" }),
-                new WorldSnapshot(0, new Dictionary<string, object?>()),
+                WorldSnapshot.ForRepo(root),
                 CancellationToken.None);
             missing.Delta.Log.Should().Contain(l => l.Contains("not_found"));
 
-            var noRoot = await tool.InvokeAsync(
-                Call("repo.fs.list", new { root = "", path = "." }),
+            // Was: root = "" in the arguments must be rejected. See the equivalent note in
+            // RepoFsReadTool_rejects_invalid_paths_and_empty_arguments.
+            var noSandboxRoot = await tool.InvokeAsync(
+                Call("repo.fs.list", new { path = "." }),
                 new WorldSnapshot(0, new Dictionary<string, object?>()),
                 CancellationToken.None);
-            noRoot.Delta.Log.Should().Contain(l => l.Contains("REJECTED"));
+            noSandboxRoot.Delta.Log.Should().Contain(l => l.Contains("REJECTED"));
 
             var absolute = await tool.InvokeAsync(
                 Call("repo.fs.list", new { root, path = "/etc" }),
-                new WorldSnapshot(0, new Dictionary<string, object?>()),
+                WorldSnapshot.ForRepo(root),
                 CancellationToken.None);
             absolute.Delta.Log.Should().Contain(l => l.Contains("REJECTED"));
 
             var traversal = await tool.InvokeAsync(
                 Call("repo.fs.list", new { root, path = "../outside" }),
-                new WorldSnapshot(0, new Dictionary<string, object?>()),
+                WorldSnapshot.ForRepo(root),
                 CancellationToken.None);
             traversal.Delta.Log.Should().Contain(l => l.Contains("REJECTED"));
         }
@@ -877,7 +886,7 @@ public class ToolsDevTests
         {
             var result = await new RepoFsListTool().InvokeAsync(
                 Call("repo.fs.list", new { root, path = ".", max_entries = 5 }),
-                new WorldSnapshot(0, new Dictionary<string, object?>()),
+                WorldSnapshot.ForRepo(root),
                 CancellationToken.None);
 
             result.Delta.Log.Should().ContainSingle().Which.Should().Contain("(truncated)");
@@ -900,7 +909,7 @@ public class ToolsDevTests
 
             var act = () => new RepoFsListTool().InvokeAsync(
                 Call("repo.fs.list", new { root, path = "." }),
-                new WorldSnapshot(0, new Dictionary<string, object?>()),
+                WorldSnapshot.ForRepo(root),
                 cts.Token);
 
             await act.Should().ThrowAsync<OperationCanceledException>();
@@ -924,7 +933,7 @@ public class ToolsDevTests
         {
             var result = await new RepoFsListTool().InvokeAsync(
                 Call("repo.fs.list", new { root, path = ".", recursive = true, max_entries = 10 }),
-                new WorldSnapshot(0, new Dictionary<string, object?>()),
+                WorldSnapshot.ForRepo(root),
                 CancellationToken.None);
 
             result.Delta.Log.Should().Contain(l => l.Contains("entries="));
@@ -944,21 +953,24 @@ public class ToolsDevTests
         {
             var tool = new RepoFsReadTool();
 
-            var emptyRoot = await tool.InvokeAsync(
-                Call("repo.fs.read", new { root = "", path = "x.txt" }),
+            // Was: root = "" in the arguments must be rejected. The tools no longer accept a
+            // root at all, so the equivalent invariant is that a snapshot WITHOUT a RepoRoot
+            // fails closed rather than guessing one.
+            var noSandboxRoot = await tool.InvokeAsync(
+                Call("repo.fs.read", new { path = "x.txt" }),
                 new WorldSnapshot(0, new Dictionary<string, object?>()),
                 CancellationToken.None);
-            emptyRoot.Delta.Log.Should().Contain(l => l.Contains("REJECTED"));
+            noSandboxRoot.Delta.Log.Should().Contain(l => l.Contains("REJECTED"));
 
             var traversal = await tool.InvokeAsync(
                 Call("repo.fs.read", new { root, path = "../secret.txt" }),
-                new WorldSnapshot(0, new Dictionary<string, object?>()),
+                WorldSnapshot.ForRepo(root),
                 CancellationToken.None);
             traversal.Delta.Log.Should().Contain(l => l.Contains("REJECTED"));
 
             var absolute = await tool.InvokeAsync(
                 Call("repo.fs.read", new { root, path = "/etc/passwd" }),
-                new WorldSnapshot(0, new Dictionary<string, object?>()),
+                WorldSnapshot.ForRepo(root),
                 CancellationToken.None);
             absolute.Delta.Log.Should().Contain(l => l.Contains("REJECTED"));
 
@@ -967,7 +979,7 @@ public class ToolsDevTests
 
             var emptyPath = await tool.InvokeAsync(
                 Call("repo.fs.read", new { root, path = "   " }),
-                new WorldSnapshot(0, new Dictionary<string, object?>()),
+                WorldSnapshot.ForRepo(root),
                 CancellationToken.None);
             emptyPath.Delta.Log.Should().Contain(l => l.Contains("REJECTED"));
         }
@@ -987,7 +999,7 @@ public class ToolsDevTests
         {
             var result = await new RepoFsReadTool().InvokeAsync(
                 Call("repo.fs.read", new { root, path = "big.txt", max_bytes = 50 }),
-                new WorldSnapshot(0, new Dictionary<string, object?>()),
+                WorldSnapshot.ForRepo(root),
                 CancellationToken.None);
 
             result.Delta.Log.Should().ContainSingle().Which.Should().Contain("(truncated)");
@@ -1019,7 +1031,7 @@ public class ToolsDevTests
             await File.WriteAllTextAsync(Path.Combine(root, fileName), source);
             var result = await new RoslynAnalyzeTool().InvokeAsync(
                 Call("roslyn.analyze", new { root, files = new[] { fileName }, rules }),
-                new WorldSnapshot(0, new Dictionary<string, object?>()),
+                WorldSnapshot.ForRepo(root),
                 CancellationToken.None);
             var log = result.Delta.Log.First(l => l.StartsWith("roslyn:violations="));
             return int.Parse(log.Split('=')[1]);
@@ -1084,7 +1096,7 @@ public class ToolsDevTests
 
             var missing = await new RoslynAnalyzeTool().InvokeAsync(
                 Call("roslyn.analyze", new { root, files = new[] { "ghost.cs" }, rules = new { } }),
-                new WorldSnapshot(0, new Dictionary<string, object?>()),
+                WorldSnapshot.ForRepo(root),
                 CancellationToken.None);
             missing.Delta.Log.Should().Contain(l => l.Contains("violations=1"));
         }
@@ -1131,7 +1143,7 @@ public class ToolsDevTests
 
             var result = await new RepoFsListTool().InvokeAsync(
                 Call("repo.fs.list", new { root, path = ".", recursive = true }),
-                new WorldSnapshot(0, new Dictionary<string, object?>()),
+                WorldSnapshot.ForRepo(root),
                 CancellationToken.None);
 
             result.Delta.Log.Should().Contain(l => l.Contains("FAILED"));
@@ -1159,7 +1171,7 @@ public class ToolsDevTests
 
             var act = () => new RepoFsReadTool().InvokeAsync(
                 Call("repo.fs.read", new { root, path = "note.txt" }),
-                new WorldSnapshot(0, new Dictionary<string, object?>()),
+                WorldSnapshot.ForRepo(root),
                 cts.Token);
 
             await act.Should().ThrowAsync<OperationCanceledException>();
@@ -1186,7 +1198,7 @@ public class ToolsDevTests
 
             var result = await tool.InvokeAsync(
                 Call("repo.fs.read", new { root, path = "hello.txt" }),
-                new WorldSnapshot(0, new Dictionary<string, object?>()),
+                WorldSnapshot.ForRepo(root),
                 CancellationToken.None);
 
             result.Delta.Log.Should().ContainSingle().Which.Should().Contain("bytes=5");

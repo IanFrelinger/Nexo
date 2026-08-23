@@ -101,11 +101,21 @@ public sealed class RepoFsReadToolTests : IDisposable
     }
 
     [Fact]
-    public async Task Rejects_missing_root()
+    public async Task Rejects_a_snapshot_with_no_sandbox_root()
     {
+        // Was Rejects_missing_root, which passed root = "  " in the ARGUMENTS. The tools no
+        // longer accept a root at all — it was model-supplied and unvalidated, which is what
+        // made arbitrary writes outside the repo possible. The invariant that replaces it:
+        // a snapshot that declares no RepoRoot fails closed rather than guessing one. The
+        // root argument below is left in place to assert it is ignored.
         var args = JsonSerializer.SerializeToElement(new { root = "  ", path = "file.txt" });
-        var result = await _tool.InvokeAsync(new ToolCall(_tool.Id, args), WorldSnapshot.ForRepo(_root, _root), CancellationToken.None);
-        ParsePayload(result).GetProperty("error").GetString().Should().Contain("root and path are required");
+
+        var result = await _tool.InvokeAsync(
+            new ToolCall(_tool.Id, args),
+            new WorldSnapshot(0, new Dictionary<string, object?>()),
+            CancellationToken.None);
+
+        ParsePayload(result).GetProperty("error").GetString().Should().Contain("RepoRoot");
     }
 
     private async Task<ToolResult> Invoke(string relPath, int? maxBytes = null)

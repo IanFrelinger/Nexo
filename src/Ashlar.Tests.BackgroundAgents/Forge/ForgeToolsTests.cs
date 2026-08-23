@@ -134,10 +134,14 @@ public class ForgeToolsTests : IDisposable
             </Project>
             """);
         File.WriteAllText(Path.Combine(projDir, "Program.cs"), "System.Console.WriteLine(1);");
-        var snap = new WorldSnapshot(0, new Dictionary<string, object?> { ["RepoRoot"] = _repoRoot });
+        // The working directory is now the sandbox root from the snapshot, not a `root`
+        // argument — that argument was model-supplied and unvalidated, which made
+        // `dotnet build` on an arbitrary directory reachable. Point the sandbox at the
+        // project instead of passing it alongside.
+        var snap = WorldSnapshot.ForRepo(projDir);
         var tool = new ForgeBuildTool();
         var result = await tool.InvokeAsync(
-            new ToolCall(tool.Id, JsonSerializer.SerializeToElement(new { root = projDir })),
+            new ToolCall(tool.Id, JsonSerializer.SerializeToElement(new { })),
             snap,
             default);
         var doc = JsonDocument.Parse(JsonSerializer.Serialize(result.Payload));
@@ -175,17 +179,17 @@ public class ForgeToolsTests : IDisposable
             using Xunit;
             public class T { [Fact] public void One() => Assert.True(true); }
             """);
-        var snap = new WorldSnapshot(0, new Dictionary<string, object?> { ["RepoRoot"] = _repoRoot });
+        var snap = WorldSnapshot.ForRepo(testDir);   // sandbox root IS the working directory now
         var build = new DotnetBuildTool();
         var buildResult = await build.InvokeAsync(
-            new ToolCall(build.Id, JsonSerializer.SerializeToElement(new { root = testDir })),
+            new ToolCall(build.Id, JsonSerializer.SerializeToElement(new { })),
             snap,
             default);
         JsonDocument.Parse(JsonSerializer.Serialize(buildResult.Payload)).RootElement.GetProperty("ok").GetBoolean().Should().BeTrue();
 
         var tool = new ForgeTestTool();
         var result = await tool.InvokeAsync(
-            new ToolCall(tool.Id, JsonSerializer.SerializeToElement(new { root = testDir })),
+            new ToolCall(tool.Id, JsonSerializer.SerializeToElement(new { })),
             snap,
             default);
         var doc = JsonDocument.Parse(JsonSerializer.Serialize(result.Payload));

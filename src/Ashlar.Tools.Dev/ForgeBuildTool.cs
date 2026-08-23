@@ -17,16 +17,21 @@ public sealed class ForgeBuildTool : ITool
     public ToolSchema Schema => new(Id,
         "Run dotnet build -c Release to verify the repo after forge proposal work (same as dotnet.build)",
         """
-        {"type":"object","required":["root"],"properties":{"root":{"type":"string","description":"Working directory passed to dotnet (usually RepoRoot)"}}}
+        {"type":"object","properties":{}}
         """);
 
-    private sealed record Args(string root);
 
     public async Task<ToolResult> InvokeAsync(ToolCall call, WorldSnapshot s, CancellationToken ct)
     {
-        var args = JsonSerializer.Deserialize<Args>(call.Arguments)
-                   ?? throw new InvalidOperationException("forge.build: empty arguments");
-        var (code, stdout, stderr, timedOut) = await DotnetBuildTool.RunReleaseBuildAsync(args.root, ct)
+        // Working directory from the sandbox, not the model — see DotnetBuildTool.
+        if (!ToolSandbox.TryResolveRoot(s, out var root, out var reason))
+        {
+            var rejected = new RepoDelta { TickFrom = s.Tick, TickTo = s.Tick + 1 };
+            rejected.AddLog($"forge.build:{reason}");
+            return new ToolResult(rejected, new { ok = false, error = reason });
+        }
+
+        var (code, stdout, stderr, timedOut) = await DotnetBuildTool.RunReleaseBuildAsync(root, ct)
             .ConfigureAwait(false);
         var delta = new RepoDelta { TickFrom = s.Tick, TickTo = s.Tick + 1 };
         delta.AddLog($"forge.build:exit={code}");

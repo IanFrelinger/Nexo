@@ -84,6 +84,10 @@
     <ProjectReference Include="..\Ashlar.Tests.Contracts\Ashlar.Tests.Contracts.csproj" />
     <ProjectReference Include="..\Ashlar.Infrastructure\Ashlar.Infrastructure.csproj" />
     <ProjectReference Include="..\Ashlar.Agents.TestKit\Ashlar.Agents.TestKit.csproj" />
+    <!-- Needed so the sandbox-root escape regression tests can exercise the tools
+         themselves, not only the policy layer. Those tests live under Tests/Certification
+         so the cert gate enforces them. -->
+    <ProjectReference Include="..\Ashlar.Tools.Dev\Ashlar.Tools.Dev.csproj" />
     <!-- Autonomy campaign (spec §8): objective intake lives in BackgroundAgents. -->
     <ProjectReference Include="..\Ashlar.BackgroundAgents\Ashlar.BackgroundAgents.csproj" />
     <ProjectReference Include="..\Ashlar.Policies.Dev\Ashlar.Policies.Dev.csproj" />

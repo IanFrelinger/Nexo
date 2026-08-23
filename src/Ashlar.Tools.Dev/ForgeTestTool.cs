@@ -16,16 +16,21 @@ public sealed class ForgeTestTool : ITool
     public ToolSchema Schema => new(Id,
         "Run dotnet test (TRX, --no-build) to verify tests after forge work (same as dotnet.test)",
         """
-        {"type":"object","required":["root"],"properties":{"root":{"type":"string","description":"Working directory passed to dotnet (usually RepoRoot; must be built first)"}}}
+        {"type":"object","properties":{}}
         """);
 
-    private sealed record Args(string root);
 
     public async Task<ToolResult> InvokeAsync(ToolCall call, WorldSnapshot s, CancellationToken ct)
     {
-        var args = JsonSerializer.Deserialize<Args>(call.Arguments)
-                   ?? throw new InvalidOperationException("forge.test: empty arguments");
-        var (code, stdout, stderr, timedOut) = await DotnetTestTool.RunTrxTestsNoBuildAsync(args.root, ct)
+        // Working directory from the sandbox, not the model — see DotnetBuildTool.
+        if (!ToolSandbox.TryResolveRoot(s, out var root, out var reason))
+        {
+            var rejected = new RepoDelta { TickFrom = s.Tick, TickTo = s.Tick + 1 };
+            rejected.AddLog($"forge.test:{reason}");
+            return new ToolResult(rejected, new { ok = false, error = reason });
+        }
+
+        var (code, stdout, stderr, timedOut) = await DotnetTestTool.RunTrxTestsNoBuildAsync(root, ct)
             .ConfigureAwait(false);
         var delta = new RepoDelta { TickFrom = s.Tick, TickTo = s.Tick + 1 };
         delta.AddLog($"forge.test:exit={code}");

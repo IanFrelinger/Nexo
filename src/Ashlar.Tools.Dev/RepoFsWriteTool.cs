@@ -17,15 +17,25 @@ public sealed class RepoFsWriteTool : ITool
 {
     public string Id => "repo.fs.write";
     public ToolSchema Schema => new(Id, "Write a file under the repo root", """
-    {"type":"object","required":["root","path","content"],"properties":{"root":{"type":"string"},"path":{"type":"string"},"content":{"type":"string"}}}
+    {"type":"object","required":["path","content"],"properties":{"path":{"type":"string","description":"Path relative to the sandbox root"},"content":{"type":"string"}}}
     """);
 
-    private sealed record Args(string root, string path, string content);
+    // No `root`. It used to be here, model-supplied, and Path.Combine'd with `path` — see
+    // ToolSandbox for why that was an arbitrary-write escape. The root now comes from the
+    // world snapshot, which the model cannot reach.
+    private sealed record Args(string path, string content);
 
     public async Task<ToolResult> InvokeAsync(ToolCall call, WorldSnapshot s, CancellationToken ct)
     {
         var args = System.Text.Json.JsonSerializer.Deserialize<Args>(call.Arguments)!;
-        var full = Path.Combine(args.root, args.path);
+
+        if (!ToolSandbox.TryResolvePath(s, args.path, out var full, out var reason))
+        {
+            var rejected = new RepoDelta { TickFrom = s.Tick, TickTo = s.Tick + 1 };
+            rejected.AddLog($"write:{args.path} {reason}");
+            return new ToolResult(rejected, new { path = args.path, written = false, error = reason });
+        }
+
         Directory.CreateDirectory(Path.GetDirectoryName(full)!);
         var before = File.Exists(full) ? await File.ReadAllTextAsync(full, ct) : "";
         await File.WriteAllTextAsync(full, args.content, new UTF8Encoding(false), ct);

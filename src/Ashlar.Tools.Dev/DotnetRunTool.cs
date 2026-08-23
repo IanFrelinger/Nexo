@@ -11,27 +11,36 @@ public sealed class DotnetRunTool : ITool
 {
     public string Id => "dotnet.run";
 
-    public ToolSchema Schema => new(Id, "Run dotnet <args> in a working directory", """
+    public ToolSchema Schema => new(Id, "Run dotnet <args> in the sandbox root", """
     {
       "type":"object",
-      "required":["root","args"],
+      "required":["args"],
       "properties":{
-        "root":{"type":"string"},
         "args":{"type":"string"},
         "timeoutSeconds":{"type":"integer"}
       }
     }
     """);
 
-    private sealed record Args(string root, string args, int? timeoutSeconds);
+    // No `root` — see ToolSandbox. This runs dotnet with model-supplied arguments; letting
+    // the model also choose the working directory made it arbitrary code execution anywhere
+    // on disk rather than inside the sandbox.
+    private sealed record Args(string args, int? timeoutSeconds);
 
     public async Task<ToolResult> InvokeAsync(ToolCall call, WorldSnapshot s, CancellationToken ct)
     {
         var args = System.Text.Json.JsonSerializer.Deserialize<Args>(call.Arguments)!;
         var timeout = TimeSpan.FromSeconds(args.timeoutSeconds ?? 300);
 
+        if (!ToolSandbox.TryResolveRoot(s, out var root, out var reason))
+        {
+            var rejected = new RepoDelta { TickFrom = s.Tick, TickTo = s.Tick + 1 };
+            rejected.AddLog($"dotnet:{reason}");
+            return new ToolResult(rejected, new { ok = false, error = reason });
+        }
+
         var (code, stdout, stderr, timedOut) = await DotnetRunner.RunAsync(
-            args.root,
+            root,
             args.args,
             timeout,
             ct);

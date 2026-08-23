@@ -23,24 +23,34 @@ public sealed class CleanArtifactsTool : ITool
 
     public string Id => IdConstant;
     public ToolSchema Schema => new(Id, "Clean disk artifacts (test-artifacts, incomplete-blobs). Use strategyId to target a specific strategy.", """
-    {"type":"object","properties":{"strategyId":{"type":"string","description":"Strategy ID (test-artifacts, incomplete-blobs) or omit for all"},"repoRoot":{"type":"string","description":"Repo root for context"}}}
+    {"type":"object","properties":{"strategyId":{"type":"string","description":"Strategy ID (test-artifacts, incomplete-blobs) or omit for all"}}}
     """);
 
-    private sealed record Args(string? strategyId, string? repoRoot);
+    // No `repoRoot`. It used to be accepted and PREFERRED over the snapshot
+    // (`args.repoRoot ?? snapshot`), which let a model aim a delete-everything-under-here
+    // operation anywhere on disk. This tool removes files; it is the highest-consequence
+    // member of the family. See ToolSandbox.
+    private sealed record Args(string? strategyId);
 
     public async Task<ToolResult> InvokeAsync(ToolCall call, WorldSnapshot s, CancellationToken ct)
     {
         Args args;
         try
         {
-            args = JsonSerializer.Deserialize<Args>(call.Arguments) ?? new Args(null, null);
+            args = JsonSerializer.Deserialize<Args>(call.Arguments) ?? new Args(null);
         }
         catch
         {
-            args = new Args(null, null);
+            args = new Args(null);
         }
 
-        var repoRoot = args.repoRoot ?? (s.Data.TryGetValue("RepoRoot", out var r) && r is string sr ? sr : null);
+        if (!ToolSandbox.TryResolveRoot(s, out var repoRoot, out var reason))
+        {
+            var rejected = new RepoDelta { TickFrom = s.Tick, TickTo = s.Tick + 1 };
+            rejected.AddLog($"clean_artifacts {reason}");
+            return new ToolResult(rejected, new { cleaned = false, error = reason });
+        }
+
         var context = new ArtifactCleanupContext(RepoRoot: repoRoot);
 
         var result = await _cleanupService.CleanAsync(args.strategyId, context, ct).ConfigureAwait(false);

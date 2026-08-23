@@ -21,10 +21,9 @@ public sealed class DotnetTestTool : ITool
 
     public string Id => "dotnet.test";
     public ToolSchema Schema => new(Id, "Run dotnet test -c Release --no-build --logger trx --blame-hang-timeout 60s --blame-hang-dump-type none", """
-    {"type":"object","required":["root"],"properties":{"root":{"type":"string"}}}
+    {"type":"object","properties":{}}
     """);
 
-    private sealed record Args(string root);
 
     /// <summary>Shared implementation for <see cref="DotnetTestTool"/>, <see cref="ForgeTestTool"/>, and operator CLIs.</summary>
     public static Task<(int exitCode, string stdout, string stderr, bool timedOut)> RunTrxTestsNoBuildAsync(
@@ -34,8 +33,15 @@ public sealed class DotnetTestTool : ITool
 
     public async Task<ToolResult> InvokeAsync(ToolCall call, WorldSnapshot s, CancellationToken ct)
     {
-        var args = System.Text.Json.JsonSerializer.Deserialize<Args>(call.Arguments)!;
-        var (code, stdout, stderr, timedOut) = await RunTrxTestsNoBuildAsync(args.root, ct).ConfigureAwait(false);
+        // Working directory from the sandbox, not the model — see DotnetBuildTool.
+        if (!ToolSandbox.TryResolveRoot(s, out var root, out var reason))
+        {
+            var rejected = new RepoDelta { TickFrom = s.Tick, TickTo = s.Tick + 1 };
+            rejected.AddLog($"test:{reason}");
+            return new ToolResult(rejected, new { ok = false, error = reason });
+        }
+
+        var (code, stdout, stderr, timedOut) = await RunTrxTestsNoBuildAsync(root, ct).ConfigureAwait(false);
         var delta = new RepoDelta { TickFrom = s.Tick, TickTo = s.Tick + 1 };
         delta.AddLog($"test:exit={code}");
         if (timedOut) delta.AddLog("test:timeout");

@@ -84,7 +84,7 @@ public sealed class BadCommand : Command
             }
         }));
 
-        var res = await tool.InvokeAsync(call, new WorldSnapshot(0, new Dictionary<string, object?>()), ct);
+        var res = await tool.InvokeAsync(call, WorldSnapshot.ForRepo(tmp), ct);
         var json = JsonSerializer.Serialize(res.Payload);
         using var doc = JsonDocument.Parse(json);
         AssertTrue(doc.RootElement.GetProperty("ok").GetBoolean() == false, "Expected ok=false for wrong namespace/style");
@@ -135,7 +135,7 @@ public sealed class HelloGen123Command : Command
             }
         }));
 
-        var res = await tool.InvokeAsync(call, new WorldSnapshot(0, new Dictionary<string, object?>()), ct);
+        var res = await tool.InvokeAsync(call, WorldSnapshot.ForRepo(tmp), ct);
         var json = JsonSerializer.Serialize(res.Payload);
         using var doc = JsonDocument.Parse(json);
         AssertTrue(doc.RootElement.GetProperty("ok").GetBoolean(), "Expected ok=true for valid generated command");

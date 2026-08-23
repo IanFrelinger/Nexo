@@ -24,17 +24,19 @@ public sealed class RepoFsReadTool : ITool
     public string Id => "repo.fs.read";
 
     public ToolSchema Schema => new(Id, "Read a text file under the repo root", """
-    {"type":"object","required":["root","path"],"properties":{"root":{"type":"string"},"path":{"type":"string","description":"Path relative to root"},"max_bytes":{"type":"integer","description":"Optional cap on returned bytes (default 65536)"}}}
+    {"type":"object","required":["path"],"properties":{"path":{"type":"string","description":"Path relative to the sandbox root"},"max_bytes":{"type":"integer","description":"Optional cap on returned bytes (default 65536)"}}}
     """);
 
-    private sealed record Args(string root, string path, int? max_bytes);
+    // No `root` — see ToolSandbox. Read-only, but a model-chosen root made it an
+    // arbitrary-file-disclosure primitive.
+    private sealed record Args(string path, int? max_bytes);
 
     public async Task<ToolResult> InvokeAsync(ToolCall call, WorldSnapshot s, CancellationToken ct)
     {
         var args = JsonSerializer.Deserialize<Args>(call.Arguments)!;
         var maxBytes = args.max_bytes is > 0 ? args.max_bytes.Value : DefaultMaxBytes;
 
-        if (!TryResolveRelative(args.root, args.path, out var full, out var error))
+        if (!ToolSandbox.TryResolvePath(s, args.path, out var full, out var error))
         {
             var errDelta = new RepoDelta { TickFrom = s.Tick, TickTo = s.Tick + 1 };
             errDelta.AddLog($"read:{args.path} REJECTED ({error})");

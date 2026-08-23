@@ -132,6 +132,16 @@ public sealed class RoslynBrickStaticAnalyzerGapCoverageTests
             await File.WriteAllTextAsync(file, "public class X {}");
             File.SetUnixFileMode(file, UnixFileMode.None);
 
+            // Root bypasses DAC permission checks, so a mode-000 file is still readable and
+            // this test's premise cannot hold. The dev container runs as root
+            // (scripts/handoff/devbox.sh), which is why this failed there. Probe rather than
+            // assume. NB: bails with `return`, matching the OS guard above, which xUnit
+            // reports as PASSED — a green run under root is not evidence this path works.
+            if (CanReadFile(file))
+            {
+                return;
+            }
+
             var result = await _analyzer.AnalyzeSourceAsync(tempDir);
 
             result.Passed.Should().BeFalse();
@@ -142,6 +152,28 @@ public sealed class RoslynBrickStaticAnalyzerGapCoverageTests
             try { File.SetUnixFileMode(file, UnixFileMode.UserRead | UnixFileMode.UserWrite); } catch { /* best effort */ }
             /// <summary>Cleanup.</summary>
             Cleanup(tempDir);
+        }
+    }
+
+    /// <summary>
+    /// True when the file can actually be read, whatever its mode bits claim. Detects
+    /// running with privileges that bypass permission checks (root), where an
+    /// "unreadable file" test has no premise to stand on.
+    /// </summary>
+    private static bool CanReadFile(string path)
+    {
+        try
+        {
+            using var _ = File.OpenRead(path);
+            return true;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return false;
+        }
+        catch (IOException)
+        {
+            return false;
         }
     }
 

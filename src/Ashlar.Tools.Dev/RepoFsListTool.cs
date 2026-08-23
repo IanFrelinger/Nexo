@@ -31,10 +31,11 @@ public sealed class RepoFsListTool : ITool
     public string Id => "repo.fs.list";
 
     public ToolSchema Schema => new(Id, "List files and directories under the repo root", """
-    {"type":"object","required":["root"],"properties":{"root":{"type":"string"},"path":{"type":"string","description":"Relative subpath (default '.')"},"recursive":{"type":"boolean","description":"Recurse into subdirectories (default false)"},"max_entries":{"type":"integer","description":"Cap on returned entries (default 200)"}}}
+    {"type":"object","properties":{"path":{"type":"string","description":"Relative subpath (default '.')"},"recursive":{"type":"boolean","description":"Recurse into subdirectories (default false)"},"max_entries":{"type":"integer","description":"Cap on returned entries (default 200)"}}}
     """);
 
-    private sealed record Args(string root, string? path, bool? recursive, int? max_entries);
+    // No `root` — see ToolSandbox.
+    private sealed record Args(string? path, bool? recursive, int? max_entries);
 
     public Task<ToolResult> InvokeAsync(ToolCall call, WorldSnapshot s, CancellationToken ct)
     {
@@ -43,7 +44,7 @@ public sealed class RepoFsListTool : ITool
         var recursive = args.recursive ?? false;
         var maxEntries = args.max_entries is > 0 ? args.max_entries.Value : DefaultMaxEntries;
 
-        if (!TryResolveRelative(args.root, subpath, out var full, out var error))
+        if (!ToolSandbox.TryResolvePath(s, subpath, out var full, out var error))
         {
             var errDelta = new RepoDelta { TickFrom = s.Tick, TickTo = s.Tick + 1 };
             errDelta.AddLog($"list:{subpath} REJECTED ({error})");
@@ -57,7 +58,7 @@ public sealed class RepoFsListTool : ITool
             return Task.FromResult(new ToolResult(missDelta, new { path = subpath, exists = false }));
         }
 
-        var rootFull = Path.GetFullPath(args.root);
+        ToolSandbox.TryResolveRoot(s, out var rootFull, out _);
         var entries = new List<object>();
         var truncated = false;
         try
