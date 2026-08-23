@@ -1,0 +1,12 @@
+{
+  "stryker-config": {
+    "project": "Ashlar.Manifest.csproj",
+    "mutate": [
+      "**/Admission/AdmissionGate.cs",
+      "**/PolicyLoader.cs",
+      "**/ManifestLoader.cs"
+    ],
+    "coverage-analysis": "off",
+    "reporters": ["progress", "json"]
+  }
+}

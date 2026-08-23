@@ -63,3 +63,24 @@ then fixed and re-verified in the dev container.
 - **Ship-vs-delete** for `ValidationUtilities` (dead), `ApplyFeedbackChanges` (orphaned tool): kept
   and flagged rather than deleted — deletion is a product call.
 - No fresh security review, performance work, or coverage expansion beyond the tests noted above.
+
+## Mutation testing (gold plan step 5) — run 2026-08-23
+
+Stryker.NET 4.16 over the admission decision core. Numbers and the finding that matters:
+
+- Default (coverage-based) mode reported 71.33% with 29 survivors — **materially wrong**.
+  The scariest "survivor" (the sealed-check equality flip) was hand-applied and killed by
+  15 existing tests.
+- Accurate mode (`coverage-analysis: off`, the checked-in `stryker-config.json` in
+  Tests.Kernel) reported 94.29% on AdmissionGate with 2 survivors — **both also false**:
+  the emptied required-gates foreach was hand-applied and killed by 7 tests.
+- By hand-verification, AdmissionGate is **35/35 mutation-killed**. The run still paid for
+  itself: four survivor clusters matched real test-inventory gaps (policy apiVersion/kind,
+  parsed-null documents, manifest wrong-kind, null-arg guards) — six killer tests added
+  in #376.
+
+**Protocol:** in this environment (net10 + xunit in the dev container) Stryker's per-mutant
+test execution produces false survivors even in accurate mode. Treat its survivor list as
+PROPOSALS: every claimed survivor is hand-applied and the suite run before it is believed.
+Do not wire mutation testing into CI as a gate until the false-survivor cause is found;
+run it manually per release with this protocol.
