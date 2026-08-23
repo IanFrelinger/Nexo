@@ -53,7 +53,7 @@ jobs:
           test -f ashlar.yaml && test -f ashlar.policy.yaml
 
           echo "== verify: must pass, exit 0, honest about being unsigned =="
-          out=$(dotnet run --project "$CLI" -- verify); rc=$?
+          out=$(dotnet run --project "$CLI" -- verify) && rc=0 || rc=$?
           echo "$out"
           [ "$rc" -eq 0 ] || { echo "::error::verify exited $rc, expected 0"; exit 1; }
           echo "$out" | grep -q "VERIFIED" || { echo "::error::no VERIFIED verdict"; exit 1; }
@@ -62,7 +62,7 @@ jobs:
           echo "== break the envelope: proposing with zero budget must fail with exit 65 =="
           sed -e "s/mode: sealed/mode: proposing/" -e "s/gatesRequired: \[\]/gatesRequired: [tests]/" \
             ashlar.policy.yaml > p2 && mv p2 ashlar.policy.yaml
-          out=$(dotnet run --project "$CLI" -- verify); rc=$?
+          out=$(dotnet run --project "$CLI" -- verify) && rc=0 || rc=$?
           echo "$out"
           [ "$rc" -eq 65 ] || { echo "::error::broken policy exited $rc, expected 65 (SPEC-009)"; exit 1; }
           echo "$out" | grep -q "seal it or fund it" || { echo "::error::missing envelope failure reason"; exit 1; }
