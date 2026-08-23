@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Ashlar.Core.Application.Pipelines.Models;
 using Ashlar.Infrastructure.Pipelines;
 using Ashlar.Infrastructure.Pipelines.Sdk.Extensions;
+using Ashlar.Tests.Infrastructure.Helpers;
 using Xunit;
 
 namespace Ashlar.Tests.Infrastructure.Tests.VirtualProduction;
@@ -21,7 +22,7 @@ namespace Ashlar.Tests.Infrastructure.Tests.VirtualProduction;
 [Trait("Category", "E2E")]
 public sealed class PipelineDefaultAdapterProdStyleTests
 {
-    [Fact]
+    [Fact(Timeout = TestTimeouts.E2E)]
     public async Task Default_deterministic_adapter_from_real_composition_reports_failure_not_fabricated_success()
     {
         var services = new ServiceCollection();
