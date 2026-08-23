@@ -237,6 +237,19 @@ proposal_json ext-a2 brick > "$D/p.json"
 run_cli gates propose --file "$D/p.json" --path "$D"
 claim "selfextend-exhausted-degrades-to-held" 0 "HELD" "budget"
 
+# ───────────────────────────── run ─────────────────────────────
+D=$(fresh); run_cli init demo --path "$D"
+sed -e "s/mode: sealed/mode: proposing/" -e "s/gatesRequired: \[\]/gatesRequired: [tests]/" "$D/ashlar.policy.yaml" > "$D/.p" && mv "$D/.p" "$D/ashlar.policy.yaml"
+run_cli run "test request" --path "$D"
+claim "run-refuses-unverified" 65 "you cannot run what does not verify"
+
+sed -e "s/mode: proposing/mode: sealed/" -e "s/gatesRequired: \[tests\]/gatesRequired: []/" "$D/ashlar.policy.yaml" > "$D/.p" && mv "$D/.p" "$D/ashlar.policy.yaml"
+run_cli run "classify one sample invoice" --path "$D"
+claim "run-mock-completes" 0 "provider mock"
+
+run_cli run "x" --path "$WORK"
+claim "run-not-a-project" 1 "not an ashlar project"
+
 # ───────────────────────────── verdict ─────────────────────────────
 echo
 echo "==================== e2e-loop verdict ===================="

@@ -612,6 +612,7 @@ static partial class Program
         root.AddCommand(new InitCommand());
         root.AddCommand(new VerifyCommand());
         root.AddCommand(new GatesCommand());
+        root.AddCommand(new RunCommand(() => ServiceProvider.GetRequiredService<OrchestrateCommand>()));
         root.AddCommand(new RollbackCommand());
         root.AddCommand(new ComposeCommand());
         var meshCmd = new MeshCommand();
