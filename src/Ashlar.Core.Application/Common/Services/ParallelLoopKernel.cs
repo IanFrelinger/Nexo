@@ -3,8 +3,14 @@ using Ashlar.Core.Application.Common.Ports;
 namespace Ashlar.Core.Application.Common.Services;
 
 /// <summary>
-/// Optional loop kernel that can run iterations in parallel when enabled via LoopOptions.
-/// Preserves sequential semantics when parallelism is disabled.
+/// Loop kernel that can fan iterations out in parallel — but ONLY on the async path.
+///
+/// <para><see cref="ForEachAsync{T}"/> honours <c>LoopOptions.EnableParallel</c>. The two
+/// synchronous overloads (<see cref="ForEach{T}"/>, <see cref="SelectToList{T,TResult}"/>)
+/// always run sequentially by delegating to the fallback, regardless of the flag. This is by
+/// design — there is no ambient async context to parallelise a synchronous body safely — and
+/// is contract-compliant with the "may run in parallel" wording on <c>EnableParallel</c>.
+/// Do not expect the flag to have any effect on the sync overloads.</para>
 /// </summary>
 public sealed class ParallelLoopKernel : ILoopKernel
 {
@@ -17,6 +23,10 @@ public sealed class ParallelLoopKernel : ILoopKernel
         _fallback = fallback;
     }
 
+    /// <summary>
+    /// Runs sequentially. <c>EnableParallel</c> is IGNORED on this synchronous overload — only
+    /// <see cref="ForEachAsync{T}"/> fans out. Delegates to the fallback kernel.
+    /// </summary>
     public LoopResult ForEach<T>(
         IEnumerable<T> items,
         Func<T, int, CancellationToken, LoopAction> body,

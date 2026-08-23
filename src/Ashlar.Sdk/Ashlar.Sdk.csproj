@@ -11,7 +11,7 @@
     <NoWarn>$(NoWarn);1591;RS0036;RS0037</NoWarn>
     <PackageId>Ashlar.Sdk</PackageId>
     <Title>Ashlar SDK</Title>
-    <Description>Slim client for Unity/Unreal and embedded use. Implements IAshlarClient with optional adaptive routing (local model or server).</Description>
+    <Description>Slim HTTP client SDK for Unity/Unreal and embedded hosts talking to an Ashlar API server. Registers the IAshlarClient (implemented in Ashlar.Client) via AddAshlarClientSdk.</Description>
     <PackageTags>ashlar;ai;sdk;unity;unreal;client</PackageTags>
     <RepositoryUrl>https://github.com/IanFrelinger/Nexo</RepositoryUrl>
     <RepositoryType>git</RepositoryType>

@@ -123,6 +123,11 @@ public class BehaviorExecutor : Ashlar.Core.Domain.Execution.IBehaviorExecutor
 
                 await writer.WriteAsync(new BehaviorStartedEvent(behavior.Id, behavior.Name, DateTime.UtcNow), cancellationToken);
 
+                // Tracks steps that errored, so the final BehaviorCompletedEvent.Success reflects
+                // reality. It used to be hardcoded true — a behavior reported success even when
+                // steps failed. Captured by the loop closure below.
+                var stepFailures = 0;
+
                 await _loops.ForEachAsync(behavior.Steps, async (step, stepIndex, ct) =>
                 {
                     if (ct.IsCancellationRequested)
@@ -131,17 +136,30 @@ public class BehaviorExecutor : Ashlar.Core.Domain.Execution.IBehaviorExecutor
                         return LoopAction.Break;
                     }
 
-                    // Check step condition
-                    if (step.Condition != null && !EvaluateCondition(step.Condition, context))
+                    // Check step condition. Distinguish a recognised-false condition (a legitimate
+                    // skip) from unsupported syntax. The latter used to silently map to false and
+                    // skip the step with no signal — an authoring error that vanished. Now it is
+                    // surfaced as a step error and honours OnStepFailure.
+                    if (step.Condition != null)
                     {
-                        await writer.WriteAsync(new StepSkippedEvent(step.Id, step.Condition), ct);
-                        return LoopAction.Continue;
+                        if (!TryEvaluateCondition(step.Condition, out var conditionMet))
+                        {
+                            await writer.WriteAsync(new StepErrorEvent(step.Id, $"Unsupported step condition syntax: '{step.Condition}'"), ct);
+                            stepFailures++;
+                            return behavior.OnStepFailure == FailurePolicy.Abort ? LoopAction.Break : LoopAction.Continue;
+                        }
+                        if (!conditionMet)
+                        {
+                            await writer.WriteAsync(new StepSkippedEvent(step.Id, step.Condition), ct);
+                            return LoopAction.Continue;
+                        }
                     }
 
                     var brick = _brickRegistry.GetBrick(step.BrickId);
                     if (brick == null)
                     {
                         await writer.WriteAsync(new StepErrorEvent(step.Id, $"DomainBrick not found: {step.BrickId}"), ct);
+                        stepFailures++;
                         return behavior.OnStepFailure == FailurePolicy.Abort ? LoopAction.Break : LoopAction.Continue;
                     }
 
@@ -154,6 +172,7 @@ public class BehaviorExecutor : Ashlar.Core.Domain.Execution.IBehaviorExecutor
                     if (chain.Count == 0)
                     {
                         await writer.WriteAsync(new StepErrorEvent(step.Id, "No available implementation"), ct);
+                        stepFailures++;
                         return behavior.OnStepFailure == FailurePolicy.Abort ? LoopAction.Break : LoopAction.Continue;
                     }
 
@@ -297,15 +316,20 @@ public class BehaviorExecutor : Ashlar.Core.Domain.Execution.IBehaviorExecutor
                         return LoopAction.Continue;
                     }, new LoopOptions { Name = "behavior-step-impl-chain" }, ct);
 
-                    if (error != null && output == null && behavior.OnStepFailure == FailurePolicy.Abort)
+                    // The step failed if no implementation in the chain produced output.
+                    if (error != null && output == null)
                     {
-                        return LoopAction.Break;
+                        stepFailures++;
+                        if (behavior.OnStepFailure == FailurePolicy.Abort)
+                        {
+                            return LoopAction.Break;
+                        }
                     }
 
                     return LoopAction.Continue;
                 }, new LoopOptions { Name = "behavior-steps" }, cancellationToken);
 
-                var success = EvaluateSuccessCriteria(behavior.SuccessCriteria, context);
+                var success = EvaluateSuccessCriteria(behavior.SuccessCriteria, stepFailures == 0);
                 await writer.WriteAsync(new BehaviorCompletedEvent(behavior.Id, success, context.Variables), cancellationToken);
             }
             catch (Exception ex)
@@ -440,16 +464,20 @@ public class BehaviorExecutor : Ashlar.Core.Domain.Execution.IBehaviorExecutor
         };
     }
     
-    private static bool EvaluateCondition(string condition, ExecutionContext context)
+    /// <summary>
+    /// Evaluates a step condition. Returns whether the syntax was RECOGNISED; the boolean
+    /// result is in <paramref name="result"/>. Only the literals "true"/"false" are supported.
+    /// Returning false (unrecognised) lets the caller surface an authoring error instead of
+    /// silently skipping the step, which is what the old <c>_ => false</c> arm did.
+    /// </summary>
+    private static bool TryEvaluateCondition(string condition, out bool result)
     {
-        // Simple condition evaluation - extend as needed
-        // For now, just check for simple boolean expressions
-        return condition.Trim().ToLowerInvariant() switch
+        switch (condition.Trim().ToLowerInvariant())
         {
-            "true" => true,
-            "false" => false,
-            _ => false
-        };
+            case "true": result = true; return true;
+            case "false": result = false; return true;
+            default: result = false; return false;
+        }
     }
     
     private static BrickInput MapInputs(
@@ -498,16 +526,20 @@ public class BehaviorExecutor : Ashlar.Core.Domain.Execution.IBehaviorExecutor
         return $"{brickId}:{implementation}:{inputHash}";
     }
     
-    private static bool EvaluateSuccessCriteria(SuccessCriteria criteria, ExecutionContext context)
+    /// <summary>
+    /// Computes whether the behavior succeeded. When <see cref="SuccessCriteria.AllStepsComplete"/>
+    /// is required, success means every step actually completed without error
+    /// (<paramref name="allStepsSucceeded"/>). It used to return true unconditionally, so a
+    /// behavior reported success even when steps errored.
+    /// </summary>
+    private static bool EvaluateSuccessCriteria(SuccessCriteria criteria, bool allStepsSucceeded)
     {
         if (criteria.AllStepsComplete)
         {
-            // This is evaluated by checking if we completed all steps
-            // For now, assume success if we got here
-            return true;
+            return allStepsSucceeded;
         }
-        
-        // Additional validation logic can be added here
+
+        // The behavior does not gate on per-step success.
         return true;
     }
 }

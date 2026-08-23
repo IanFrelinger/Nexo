@@ -18,10 +18,14 @@ public class InfrastructurePipelinesGapCoverageTests
         adapter.AdapterKey.Should().Be("default");
         adapter.WorkerType.Should().Be(PipelineWorkerType.Agentic);
 
+        // The default adapter is a placeholder that performs no work. It must report FAILURE,
+        // not fabricated success — otherwise `ashlar pipeline run` claims stages ran when they
+        // did not. (Was: Succeeded=true, Output "...:ok".)
         var result = await adapter.ExecuteAsync(SampleRequest("stage-a"), CancellationToken.None);
-        result.Succeeded.Should().BeTrue();
+        result.Succeeded.Should().BeFalse();
         result.WorkerId.Should().Be("agentic-default");
-        result.Output.Should().Contain("agentic:stage-a:ok");
+        result.Output.Should().Contain("agentic:stage-a:no-op");
+        result.Error.Should().Contain("No agentic pipeline adapter is configured");
     }
 
     [Fact]
@@ -32,9 +36,11 @@ public class InfrastructurePipelinesGapCoverageTests
 
         adapter.WorkerType.Should().Be(PipelineWorkerType.Deterministic);
 
+        // Placeholder → must fail, not fabricate success. (Was: Succeeded=true, "...:ok".)
         var result = await adapter.ExecuteAsync(SampleRequest("stage-d"), CancellationToken.None);
-        result.Succeeded.Should().BeTrue();
-        result.Output.Should().Contain("deterministic:stage-d:ok");
+        result.Succeeded.Should().BeFalse();
+        result.Output.Should().Contain("deterministic:stage-d:no-op");
+        result.Error.Should().Contain("No deterministic pipeline adapter is configured");
     }
 
     [Fact]

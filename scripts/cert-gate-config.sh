@@ -5,32 +5,12 @@ set -euo pipefail
 # Must match tests exercised by scripts/run-cert-gate.sh and .github/workflows/cert-gate.yml
 readonly CERT_GATE_FILTER='FullyQualifiedName~Ashlar.Tests.Infrastructure.Tests.Certification|FullyQualifiedName~Ashlar.Tests.Infrastructure.Tests.Adaptation.GenerationSafety|FullyQualifiedName~AstMutationEngineTests'
 
-# Documented breakdown (must match --list-tests output; guard derives count at runtime):
-#   CertificationGateTeethTests: 6
-#   AstMutationEngineTests: 2
-#   GenerationSafetyTests: 4
-#   CompositionCertificationGateTeethTests: 5
-#   DamageResolverDogfoodTests: 2
-#   CompositionDogfoodTests: 2
-#   CrossProjectReuseTests: 3
-#   CompositionProposerDogfoodTests: 8
-#   CompositionProposerIndependenceTests: 3
-#   RealModelCompositionProposerDogfoodTests: 2
-#   CompositionAcceptanceRateMeasurementTests: 3
-#   CompositionAcceptanceRateProtocolTests: 1
-#   AttestedStateLogBindingTests: 10
-#   PhysicalAtomCertificateVerifierTests: 11
-#   BundleCertificationBrickTests: 6
-#   PhysicalAtomSampleCertTests: 1
-#   PhysicalAtomResolutionVerifierTests: 6
-#   AssetBundleCertificationPipelineTests: 2
-#   PhysicalAtomCertBundleManifestTests: 1
-#   PhysicalAtomTagCodecTests: 8
-#   PhysicalAtomTagIssuingTests: 2
-#   PhysicalAtomTagSampleTests: 1
-#   PhysicalAtomTagVerifyOrchestratorTests: 5
-#   HttpAssetResolutionRouterTests: 4
-#   PhysicalAtomEndToEndFlowTests: 1
+# The expected test count is derived at RUNTIME from `dotnet test --list-tests` (see
+# cert_gate_expected_count below); there is no hardcoded total to keep in sync. A previous
+# per-class enumeration here summed to 99 while the gate actually ran 178 — it had drifted
+# by 79 and read as authoritative, so it was removed rather than re-pinned. Do not re-add a
+# static count: the zero-test guard fails loudly if discovery ever returns nothing.
+#
 # Excluded from cert-gate filter: LocalFixtures.CompositionAcceptanceRateBatchFixtureGeneratorTests (local fixture regen only)
 
 cert_gate_list_tests() {

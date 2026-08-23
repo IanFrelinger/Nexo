@@ -31,17 +31,27 @@ public sealed class DefaultDeterministicStageExecutionAdapter : IPipelineStageEx
         cancellationToken.ThrowIfCancellationRequested();
         if (request == null) throw new ArgumentNullException(nameof(request));
 
-        _logger.LogInformation(
-            "Deterministic adapter '{AdapterKey}' executed stage {StageId}.",
+        // This is a PLACEHOLDER, not a working engine. It used to return Succeeded=true doing
+        // no work, so `ashlar pipeline run` reported success for stages that never executed.
+        // It now fails, which flows through the orchestrator's failure path and finalizes the
+        // run as Failed (non-zero exit) — the honest outcome for an unconfigured adapter.
+        // Register a real IPipelineStageExecutionAdapter under this key to do actual work.
+        // (Not thrown from the constructor: that would crash DI for every `ashlar pipeline`
+        // subcommand, including validate/diagnostics, which legitimately resolve this type.)
+        _logger.LogWarning(
+            "Deterministic pipeline adapter '{AdapterKey}' is the default placeholder and performs no work; " +
+            "stage {StageId} is reported as failed. Register a concrete deterministic adapter " +
+            "(e.g. via ASHLAR_PIPELINE_DETERMINISTIC_ADAPTER) to execute stages.",
             AdapterKey,
             request.StageId);
 
         return Task.FromResult(new PipelineStageExecutionResult
         {
-            Succeeded = true,
+            Succeeded = false,
             Retryable = false,
             WorkerId = "deterministic-default",
-            Output = $"deterministic:{request.StageId}:ok"
+            Output = $"deterministic:{request.StageId}:no-op",
+            Error = "No deterministic pipeline adapter is configured; the default placeholder performs no work."
         });
     }
 }
