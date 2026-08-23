@@ -177,6 +177,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ashlar.Commercial.MeshDirec
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ashlar.Commercial.Tests.MeshDirector", "commercial\tests\Ashlar.Commercial.Tests.MeshDirector\Ashlar.Commercial.Tests.MeshDirector.csproj", "{5DC932F9-9D11-4876-8359-8E942358BB99}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Ashlar.Manifest", "src\Ashlar.Manifest\Ashlar.Manifest.csproj", "{F56F6E41-313A-4189-98F5-7BC1ED443426}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1147,6 +1149,18 @@ Global
 		{5DC932F9-9D11-4876-8359-8E942358BB99}.Release|x64.Build.0 = Release|Any CPU
 		{5DC932F9-9D11-4876-8359-8E942358BB99}.Release|x86.ActiveCfg = Release|Any CPU
 		{5DC932F9-9D11-4876-8359-8E942358BB99}.Release|x86.Build.0 = Release|Any CPU
+		{F56F6E41-313A-4189-98F5-7BC1ED443426}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F56F6E41-313A-4189-98F5-7BC1ED443426}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F56F6E41-313A-4189-98F5-7BC1ED443426}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{F56F6E41-313A-4189-98F5-7BC1ED443426}.Debug|x64.Build.0 = Debug|Any CPU
+		{F56F6E41-313A-4189-98F5-7BC1ED443426}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{F56F6E41-313A-4189-98F5-7BC1ED443426}.Debug|x86.Build.0 = Debug|Any CPU
+		{F56F6E41-313A-4189-98F5-7BC1ED443426}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F56F6E41-313A-4189-98F5-7BC1ED443426}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F56F6E41-313A-4189-98F5-7BC1ED443426}.Release|x64.ActiveCfg = Release|Any CPU
+		{F56F6E41-313A-4189-98F5-7BC1ED443426}.Release|x64.Build.0 = Release|Any CPU
+		{F56F6E41-313A-4189-98F5-7BC1ED443426}.Release|x86.ActiveCfg = Release|Any CPU
+		{F56F6E41-313A-4189-98F5-7BC1ED443426}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1235,6 +1249,7 @@ Global
 		{956BF976-EC70-9262-D6AE-E090735B13BE} = {6941732A-EE8F-0657-99DC-FA435846C4C2}
 		{8491EE98-74CB-4D49-940B-93ED5FAEE69C} = {956BF976-EC70-9262-D6AE-E090735B13BE}
 		{5DC932F9-9D11-4876-8359-8E942358BB99} = {8904A032-99F3-AFCD-AFBD-12F878AC12DB}
+		{F56F6E41-313A-4189-98F5-7BC1ED443426} = {9D4F8B1A-0B6E-4A3E-8A6A-0DE12C7C6E2F}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {12345678-1234-1234-1234-123456789ABC}
