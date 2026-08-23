@@ -34,7 +34,7 @@ In ~10-15 minutes, you will:
 
 ## Prerequisites
 
-- **Default:** Docker (Desktop or Engine) and Git. You do **not** need a host .NET SDK for Dev Container, quickstart image, or `docker run … ghcr.io/ianfrelinger/ashlar-cli`.
+- **Default:** Docker (Desktop or Engine) and Git. You do **not** need a host .NET SDK for Dev Container, quickstart image, or `docker run … ghcr.io/ianfrelinger/nexo-cli`.
 - **Native lane:** .NET SDK **10.x** (LTS; repo is pinned in `global.json`). The CLI and API ship on `net10.0`; libraries and the remaining `net8.0` test hosts roll forward onto the 10.x runtime (`RollForward=Major`), so an SDK-10-only machine works; no separate .NET 8 runtime is needed.
 - Optional: Ollama/OpenAI/Azure credentials (model-backed commands).
 
@@ -52,14 +52,14 @@ dotnet run --project application/src/Ashlar.CLI -- --help
 ### Lane B: published CLI image (minimal host)
 
 ```bash
-docker pull ghcr.io/ianfrelinger/ashlar-cli:latest
-docker run --rm ghcr.io/ianfrelinger/ashlar-cli:latest --help
+docker pull ghcr.io/ianfrelinger/nexo-cli:latest
+docker run --rm ghcr.io/ianfrelinger/nexo-cli:latest --help
 ```
 
 With workspace mount:
 
 ```bash
-docker run --rm -v "$PWD:/work" -w /work ghcr.io/ianfrelinger/ashlar-cli:latest --help
+docker run --rm -v "$PWD:/work" -w /work ghcr.io/ianfrelinger/nexo-cli:latest --help
 ```
 
 The published **`ashlar-cli`** image is **runtime-only** (no `git`/`curl` in the container OS), so **`ashlar doctor --json`** is expected to report missing host tools there. Run **`doctor`** on your workstation or inside the **Dev Container** for a full dependency check; CI validates the image with **`--help`** and **`pipeline validate --help`** instead (see **`docs/DistributionModels.md`**).

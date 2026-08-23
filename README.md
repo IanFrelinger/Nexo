@@ -169,8 +169,8 @@ The image has no auth; publish on all interfaces (`-p 8080:8080`) only behind au
 Prefer the CLI? Pull the published image and run a command:
 
 ```bash
-docker pull ghcr.io/ianfrelinger/ashlar-cli:latest
-docker run --rm ghcr.io/ianfrelinger/ashlar-cli:latest --help
+docker pull ghcr.io/ianfrelinger/nexo-cli:latest
+docker run --rm ghcr.io/ianfrelinger/nexo-cli:latest --help
 ```
 
 ### Lane 2 — Develop (dev container + CLI)
@@ -269,7 +269,7 @@ Validate a pipeline template from a mounted workspace with the published CLI ima
 
 ```bash
 docker run --rm -v "$PWD:/work" -w /work \
-  ghcr.io/ianfrelinger/ashlar-cli:latest \
+  ghcr.io/ianfrelinger/nexo-cli:latest \
   pipeline validate --template /work/path/to/template.json
 ```
 
@@ -322,7 +322,7 @@ Ship Ashlar from published container images and compose files. Host-native scrip
 
 | Image | Use |
 |-------|-----|
-| `ghcr.io/ianfrelinger/ashlar-cli:latest` | Automation, agents, validation, release preflight, and mounted-workspace commands. |
+| `ghcr.io/ianfrelinger/nexo-cli:latest` | Automation, agents, validation, release preflight, and mounted-workspace commands. |
 | Build from `.docker/Dockerfile.quickstart` | Single-container API + portal smoke path with mock-friendly defaults. |
 | Build from `.docker/Dockerfile.api` | API image used by compose stacks. |
 

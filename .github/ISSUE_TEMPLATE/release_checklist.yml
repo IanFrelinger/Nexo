@@ -35,4 +35,4 @@ body:
       label: Post-ship
       options:
         - label: Spot-checked packages on nuget.org at X.Y.Z
-        - label: Pinned `ghcr.io/.../ashlar-cli:sha-…` / `ashlar-api:sha-…` from Summary where needed
+        - label: Pinned `ghcr.io/.../nexo-cli:sha-…` / `nexo-api:sha-…` from Summary where needed

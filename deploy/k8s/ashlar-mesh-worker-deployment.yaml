@@ -28,10 +28,10 @@ spec:
       containers:
         - name: worker
           # Ashlar.API image (.docker/Dockerfile.api). Local build shown; the published image is
-          # ghcr.io/ianfrelinger/ashlar-api:<tag> — pin a semver or sha-<12-char-commit> tag
+          # ghcr.io/ianfrelinger/nexo-api:<tag> — pin a semver or sha-<12-char-commit> tag
           # (docs/DEPLOYMENT.md, "Golden path A"), never :latest.
           image: ashlar-api:local
-          # image: ghcr.io/ianfrelinger/ashlar-api:sha-<commit>
+          # image: ghcr.io/ianfrelinger/nexo-api:sha-<commit>
           imagePullPolicy: IfNotPresent
           env:
             - name: ASPNETCORE_URLS

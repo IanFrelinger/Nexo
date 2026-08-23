@@ -60,7 +60,7 @@ public sealed class DoctorCommand : Command
         var osSupported = OperatingSystem.IsLinux() || OperatingSystem.IsMacOS() || OperatingSystem.IsWindows();
         var dependencyOk = dependencyAssessment.Supported && !dependencyAssessment.MissingRequired.Any();
         var cliCommand = "dotnet run --project application/src/Ashlar.CLI -- --help";
-        var containerCommand = "docker run --rm ghcr.io/ianfrelinger/ashlar-cli:latest --help";
+        var containerCommand = "docker run --rm ghcr.io/ianfrelinger/nexo-cli:latest --help";
 
         var (cliExitCode, _, cliStderr) = await RunShellCaptureAsync(cliCommand, ct).ConfigureAwait(false);
         var cliSmokePassed = cliExitCode == 0;
@@ -134,7 +134,7 @@ public sealed class DoctorCommand : Command
                 nextSteps = new
                 {
                     devContainer = "Open repo in Cursor/VS Code → Dev Containers: Reopen in Container",
-                    containerRun = "docker run --rm ghcr.io/ianfrelinger/ashlar-cli:latest --help",
+                    containerRun = "docker run --rm ghcr.io/ianfrelinger/nexo-cli:latest --help",
                     doctorFix = "dotnet run --project application/src/Ashlar.CLI -- doctor --fix --yes"
                 }
             };
@@ -186,7 +186,7 @@ public sealed class DoctorCommand : Command
             Console.WriteLine($"overall: {(overallOk ? "PASS" : "FAIL")}");
             Console.WriteLine("recommended next steps:");
             Console.WriteLine("  - dev container: Reopen in Container (.devcontainer/)");
-            Console.WriteLine("  - container lane: docker run --rm ghcr.io/ianfrelinger/ashlar-cli:latest --help");
+            Console.WriteLine("  - container lane: docker run --rm ghcr.io/ianfrelinger/nexo-cli:latest --help");
             Console.WriteLine("  - remediation lane: dotnet run --project application/src/Ashlar.CLI -- doctor --fix --yes");
         }
 

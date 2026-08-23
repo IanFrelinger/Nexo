@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-DEFAULT_IMAGE="ghcr.io/ianfrelinger/ashlar-cli:latest"
+DEFAULT_IMAGE="ghcr.io/ianfrelinger/nexo-cli:latest"
 DEFAULT_SDK_IMAGE="mcr.microsoft.com/dotnet/sdk:10.0"
 IMAGE="${DEFAULT_IMAGE}"
 SDK_IMAGE="${DEFAULT_SDK_IMAGE}"

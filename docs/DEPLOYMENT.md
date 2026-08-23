@@ -14,23 +14,23 @@ This document is the **default “what do I run in production?”** map. Other c
 **Pin a version (recommended):**
 
 1. Build and tag images yourself in CI or locally, **or** use GHCR images once you publish them with **semver or digest** tags (see below).
-2. In `deploy/compose/docker-compose.portal.yml`, replace `build:` with `image: ghcr.io/<owner>/ashlar-api:<tag>` (and pin `ollama/ollama` to a digest if you need full reproducibility).
+2. In `deploy/compose/docker-compose.portal.yml`, replace `build:` with `image: ghcr.io/<owner>/nexo-api:<tag>` (and pin `ollama/ollama` to a digest if you need full reproducibility).
 3. Never rely on **`latest`** for production unless you accept silent upgrades.
 
 ## Golden path B — CLI only (agents, CI, minimal host)
 
 **Use when:** you need `ashlar` in a container with no portal stack.
 
-- **Image:** `ghcr.io/<owner>/ashlar-cli` (built by `.github/workflows/container-image-publish.yml` from `.docker/Dockerfile.cli`)
+- **Image:** `ghcr.io/<owner>/nexo-cli` (built by `.github/workflows/container-image-publish.yml` from `.docker/Dockerfile.cli`)
 - **Pin:** use tag **`sha-<12-char-commit>`** (always pushed) or a **semver tag** `v1.2.3` / `1.2.3` when you cut a Git **annotated tag** `v1.2.3` on `master`/`main` (workflow publishes those tags in addition to `latest`).
-- **Example:** `docker pull ghcr.io/ianfrelinger/ashlar-cli:sha-abc123def456`
+- **Example:** `docker pull ghcr.io/ianfrelinger/nexo-cli:sha-abc123def456`
 
 ## Golden path C — Agent server (mounted workspace)
 
 **Use when:** background agents with a host-mounted repo (see `docs/SelfHostedAgentServer.md`).
 
 - **Compose file:** `deploy/compose/docker-compose.agent-server.yml`
-- **Pin:** same rules as A — prefer **immutable image references** for `ashlar-api` (or your wrapper image).
+- **Pin:** same rules as A — prefer **immutable image references** for `nexo-api` (or your wrapper image).
 
 ## Other compose files (not default production)
 
@@ -66,7 +66,7 @@ LiteDB stores and snapshots (`ashlar-patterns.db`, `ashlar-adaptation.db`, `ashl
 ## One-button release (recommended)
 
 1. **Tag** `vX.Y.Z` on the commit you want to ship and **push the tag**.
-2. GitHub runs **`.github/workflows/release.yml`**: **GHCR** `ashlar-cli` + `ashlar-api` (sha + semver tags) and **NuGet** pack/push (per `NUGET_PUBLISH_MODE`).
+2. GitHub runs **`.github/workflows/release.yml`**: **GHCR** `nexo-cli` + `nexo-api` (sha + semver tags) and **NuGet** pack/push (per `NUGET_PUBLISH_MODE`).
 3. Open the workflow run **Summary** for copy-paste **pin lines** (sha + semver + NuGet version), NuGet **manifest** artifact, and optional **GHCR re-pull smoke** result.
 
 **Which workflow?** **`docs/RELEASE.md`** (hub) → **`docs/RELEASE_RUNBOOK.md`** (checklist + decision table).
@@ -81,9 +81,9 @@ For an operations-level dry run—**same Compose topology and images** as the go
 
 ## Observability
 
-Out of the box the API container writes **human-readable console lines** (read them with `docker compose logs -f ashlar-api`) and keeps metrics **in-process only** — nothing is exported. Both upgrades are opt-in through the host configuration (see `docs/Configuration.md` § Observability):
+Out of the box the API container writes **human-readable console lines** (read them with `docker compose logs -f nexo-api`) and keeps metrics **in-process only** — nothing is exported. Both upgrades are opt-in through the host configuration (see `docs/Configuration.md` § Observability):
 
-| Want | Set on the `ashlar-api` service (compose `environment:` or an override file) |
+| Want | Set on the `nexo-api` service (compose `environment:` or an override file) |
 |------|-------------------------------------------------------------------------------|
 | One JSON object per log line (for Loki / CloudWatch / Datadog agents) | `ASHLAR_LOG_JSON: "1"` — same flag works for `ashlar background-agent daemon` |
 | Traces + metrics to an OpenTelemetry Collector | `OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317` (add `OTEL_SERVICE_NAME`, `OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf`, `OTEL_EXPORTER_OTLP_HEADERS` as your backend needs) |
@@ -93,11 +93,11 @@ Example override next to the portal stack:
 ```yaml
 # docker-compose.observability.override.yml
 services:
-  ashlar-api:
+  nexo-api:
     environment:
       ASHLAR_LOG_JSON: "1"
       OTEL_EXPORTER_OTLP_ENDPOINT: http://otel-collector:4317
-      OTEL_SERVICE_NAME: ashlar-api
+      OTEL_SERVICE_NAME: nexo-api
 ```
 
 `docker compose -f deploy/compose/docker-compose.portal.yml -f docker-compose.observability.override.yml up -d`

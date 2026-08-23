@@ -132,7 +132,7 @@ jobs:
           set -o pipefail
           mkdir -p "${RUNNER_TEMP}/onboarding"
           LOG_FILE="${RUNNER_TEMP}/onboarding/container-linux.log"
-          IMAGE="ghcr.io/ianfrelinger/ashlar-cli:latest"
+          IMAGE="ghcr.io/ianfrelinger/nexo-cli:latest"
           {
             docker pull "${IMAGE}"
             docker run --rm "${IMAGE}" --help

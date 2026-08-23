@@ -123,7 +123,7 @@ internal static class DoctorRemediation
                 "Host operating system is unsupported for the bootstrap automation.",
                 "echo \"Unsupported host OS.\"" ,
                 RequiresExplicitConfirmation: false,
-                "Use container lane: docker run --rm ghcr.io/ianfrelinger/ashlar-cli:latest --help"));
+                "Use container lane: docker run --rm ghcr.io/ianfrelinger/nexo-cli:latest --help"));
             return actions;
         }
 

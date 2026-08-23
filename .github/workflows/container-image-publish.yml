@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       skip_multi_arch:
-        description: "Skip linux/arm64 for ashlar-cli :latest (amd64 only)"
+        description: "Skip linux/arm64 for nexo-cli :latest (amd64 only)"
         required: false
         default: false
         type: boolean
@@ -45,7 +45,7 @@ permissions:
 
 jobs:
   publish:
-    # Forks: a push to master would otherwise try to publish ashlar-cli / ashlar-api to the
+    # Forks: a push to master would otherwise try to publish nexo-cli / nexo-api to the
     # fork's own GHCR namespace. Only the upstream owner publishes (see docs/CiSecrets.md).
     if: github.repository_owner == 'IanFrelinger'
     uses: ./.github/workflows/reusable-container-publish.yml

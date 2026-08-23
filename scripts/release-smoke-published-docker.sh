@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Smoke published GHCR images by immutable sha tag: CLI --help, API /health (ephemeral container).
 set -euo pipefail
-CLI_IMAGE="${RELEASE_SMOKE_CLI_IMAGE:?set RELEASE_SMOKE_CLI_IMAGE (e.g. ghcr.io/org/ashlar-cli:sha-abc)}"
+CLI_IMAGE="${RELEASE_SMOKE_CLI_IMAGE:?set RELEASE_SMOKE_CLI_IMAGE (e.g. ghcr.io/org/nexo-cli:sha-abc)}"
 API_IMAGE="${RELEASE_SMOKE_API_IMAGE:?set RELEASE_SMOKE_API_IMAGE}"
 
 echo "CLI: ${CLI_IMAGE}"
