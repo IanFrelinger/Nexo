@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # Security Tier D: supply-chain — vulnerable + deprecated package scan.
-# Scans application + key kernel projects (avoids Nexo.Core YamlDotNet registration bug on some NuGet clients).
+# Scans application + key kernel projects (avoids Ashlar.Core YamlDotNet registration bug on some NuGet clients).
 # Strict mode (SECURITY_GATE_STRICT_SUPPLY_CHAIN=1) fails on any vulnerable package or scan failure.
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-REPORT_DIR=".nexo/security-gate"
+REPORT_DIR=".ashlar/security-gate"
 mkdir -p "$REPORT_DIR"
 VULN_REPORT="$REPORT_DIR/vulnerable-packages.txt"
 DEPRECATED_REPORT="$REPORT_DIR/deprecated-packages.txt"
@@ -51,19 +51,19 @@ scan_deprecated() {
 : >"$DEPRECATED_REPORT"
 
 echo "== Security Tier D: restore =="
-dotnet restore application/Nexo.Application.sln >/dev/null
-dotnet restore src/Nexo.Hosting/Nexo.Hosting.csproj >/dev/null
-dotnet restore src/Nexo.Infrastructure/Nexo.Infrastructure.csproj >/dev/null
+dotnet restore application/Ashlar.Application.sln >/dev/null
+dotnet restore src/Ashlar.Hosting/Ashlar.Hosting.csproj >/dev/null
+dotnet restore src/Ashlar.Infrastructure/Ashlar.Infrastructure.csproj >/dev/null
 
 echo "== Security Tier D: dotnet list package --vulnerable =="
-scan_vulnerable application/Nexo.Application.sln
-scan_vulnerable src/Nexo.Hosting/Nexo.Hosting.csproj
-scan_vulnerable src/Nexo.Infrastructure/Nexo.Infrastructure.csproj
+scan_vulnerable application/Ashlar.Application.sln
+scan_vulnerable src/Ashlar.Hosting/Ashlar.Hosting.csproj
+scan_vulnerable src/Ashlar.Infrastructure/Ashlar.Infrastructure.csproj
 
 echo "== Security Tier D: dotnet list package --deprecated =="
-scan_deprecated application/Nexo.Application.sln
-scan_deprecated src/Nexo.Hosting/Nexo.Hosting.csproj
-scan_deprecated src/Nexo.Infrastructure/Nexo.Infrastructure.csproj
+scan_deprecated application/Ashlar.Application.sln
+scan_deprecated src/Ashlar.Hosting/Ashlar.Hosting.csproj
+scan_deprecated src/Ashlar.Infrastructure/Ashlar.Infrastructure.csproj
 
 if [ "$VULN_FOUND" -eq 1 ]; then
   if [ "${SECURITY_GATE_STRICT_SUPPLY_CHAIN:-0}" = "1" ]; then
@@ -80,7 +80,7 @@ if [ "$SCAN_FAIL" -eq 1 ] && [ "${SECURITY_GATE_STRICT_SUPPLY_CHAIN:-0}" = "1" ]
 fi
 
 if [ "$SCAN_FAIL" -eq 1 ]; then
-  echo "::warning::Some scans failed — see reports in $REPORT_DIR (Nexo.Core/YamlDotNet may need manual audit)"
+  echo "::warning::Some scans failed — see reports in $REPORT_DIR (Ashlar.Core/YamlDotNet may need manual audit)"
 fi
 
 echo ""

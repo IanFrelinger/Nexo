@@ -3,7 +3,7 @@
 #
 #   ./scripts/mesh-lab-verify-entitlements.sh .env.mesh-lab
 #
-# Requires: worker profile running; env must define Nexo__Security__ApiKey and Nexo__Security__CopilotScopedApiKey.
+# Requires: worker profile running; env must define Ashlar__Security__ApiKey and Ashlar__Security__CopilotScopedApiKey.
 
 set -euo pipefail
 
@@ -23,17 +23,17 @@ source_env_kv() {
   grep -E "^${key}=" "$COMPOSE_ENV_FILE" 2>/dev/null | head -1 | cut -d= -f2- | tr -d '\r' || true
 }
 
-API_KEY="$(source_env_kv Nexo__Security__ApiKey)"
-COPILOT_KEY="$(source_env_kv Nexo__Security__CopilotScopedApiKey)"
+API_KEY="$(source_env_kv Ashlar__Security__ApiKey)"
+COPILOT_KEY="$(source_env_kv Ashlar__Security__CopilotScopedApiKey)"
 PEER_A_HOST="${MESH_LAB_PEER_A_HOST:-127.0.0.1:18081}"
 DIRECTOR_HTTP="http://${PEER_A_HOST}"
 WORKER_PUBLISH_FALLBACK="$(source_env_kv MESH_LAB_WORKER_PUBLISH)"
 [[ -n "$WORKER_PUBLISH_FALLBACK" ]] || WORKER_PUBLISH_FALLBACK="127.0.0.1:18083"
-QUOTA_MAX="$(source_env_kv Nexo__Entitlements__MaxCopilotSubmissionsPerHour)"
+QUOTA_MAX="$(source_env_kv Ashlar__Entitlements__MaxCopilotSubmissionsPerHour)"
 [[ -n "$QUOTA_MAX" ]] || QUOTA_MAX="2"
 
 if [[ -z "$COPILOT_KEY" ]]; then
-  echo "(Skipping entitlements verify: Nexo__Security__CopilotScopedApiKey not set in env file)"
+  echo "(Skipping entitlements verify: Ashlar__Security__CopilotScopedApiKey not set in env file)"
   exit 0
 fi
 
@@ -103,7 +103,7 @@ http_code() {
 }
 
 echo "-- CopilotScoped key: GET /api/status (allowed) --"
-SC_STATUS="$(http_code -H "X-Nexo-Api-Key: ${COPILOT_KEY}" "${WORKER_HTTP}/api/status")"
+SC_STATUS="$(http_code -H "X-Ashlar-Api-Key: ${COPILOT_KEY}" "${WORKER_HTTP}/api/status")"
 if [[ "$SC_STATUS" != "200" ]]; then
   echo "Expected 200 for copilot-scoped GET /api/status, got ${SC_STATUS}" >&2
   exit 1
@@ -112,7 +112,7 @@ fi
 echo "-- CopilotScoped key: POST /api/mesh/tasks on director (forbidden) --"
 SC_MESH="$(http_code -X POST \
   -H "Content-Type: application/json" \
-  -H "X-Nexo-Api-Key: ${COPILOT_KEY}" \
+  -H "X-Ashlar-Api-Key: ${COPILOT_KEY}" \
   -d '{"name":"mesh-lab-entitlements-deny","steps":1}' \
   "${DIRECTOR_HTTP}/api/mesh/tasks")"
 # Director may return 403 (recognized copilot key, route denied) or 401 (key not configured on fleet host).
@@ -124,7 +124,7 @@ fi
 echo "-- Full API key: POST /api/mesh/tasks on director (allowed) --"
 FULL_MESH="$(http_code -X POST \
   -H "Content-Type: application/json" \
-  -H "X-Nexo-Api-Key: ${API_KEY}" \
+  -H "X-Ashlar-Api-Key: ${API_KEY}" \
   -d '{"name":"mesh-lab-entitlements-allow","steps":1}' \
   "${DIRECTOR_HTTP}/api/mesh/tasks")"
 if [[ "$FULL_MESH" != "200" ]]; then
@@ -133,8 +133,8 @@ if [[ "$FULL_MESH" != "200" ]]; then
 fi
 
 echo "-- CopilotScoped: hourly submission quota (tenant mesh-lab-quota) --"
-TENANT_HDR=(-H "X-Nexo-Tenant: mesh-lab-quota")
-COPILOT_POST=( -X POST -H "Content-Type: application/json" -H "X-Nexo-Api-Key: ${COPILOT_KEY}" "${TENANT_HDR[@]}"
+TENANT_HDR=(-H "X-Ashlar-Tenant: mesh-lab-quota")
+COPILOT_POST=( -X POST -H "Content-Type: application/json" -H "X-Ashlar-Api-Key: ${COPILOT_KEY}" "${TENANT_HDR[@]}"
   -d '{"task":"mesh-lab entitlements quota probe","auditCount":1}' )
 ALLOWED=0
 DENIED=false

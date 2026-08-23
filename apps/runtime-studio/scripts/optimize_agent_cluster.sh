@@ -6,14 +6,14 @@ REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 AGENT_SET_SOURCE="${REPO_ROOT}/apps/runtime-studio/config/agent_set.local.json"
 # Local, gitignored copy that receives the tuned Ollama ModelName values and drives the daemon.
 # Seeded from AGENT_SET_SOURCE on first use. Override with --config.
-AGENT_SET_CONFIG="${REPO_ROOT}/.nexo/runtime-studio/agent_set.local.json"
+AGENT_SET_CONFIG="${REPO_ROOT}/.ashlar/runtime-studio/agent_set.local.json"
 AGENT_SET_CONFIG_EXPLICIT=0
 SPEC_PATH=""
 OBJECTIVE=""
 OBJECTIVE_FILE=""
 SEARCH_STRATEGY="successive-halving"
 MAX_CANDIDATES=24
-# Cap total measured runs across optimize candidates (passed to `nexo workflow optimize --budget-runs`).
+# Cap total measured runs across optimize candidates (passed to `ashlar workflow optimize --budget-runs`).
 # Use --budget-runs 0 to omit the flag (unbounded measured runs; can be very slow on laptops).
 BUDGET_RUNS=48
 DURATION=""
@@ -38,10 +38,10 @@ hardware → (optionally) launch the background agent daemon with the tuned conf
 Steps executed:
   1. Bootstrap Runtime Studio sandbox (idempotent).
   2. Scaffold a workflow lab spec if none exists.
-  3. Run \`nexo workflow optimize\` to benchmark composition/model candidates
+  3. Run \`ashlar workflow optimize\` to benchmark composition/model candidates
      on local hardware, select a winner, and emit a recommendation report.
-  4. Apply the winner to the agent-set JSON (\`nexo runtime-studio apply-tune\`) unless skipped.
-     Writes the gitignored .nexo/runtime-studio/agent_set.local.json (seeded from the tracked
+  4. Apply the winner to the agent-set JSON (\`ashlar runtime-studio apply-tune\`) unless skipped.
+     Writes the gitignored .ashlar/runtime-studio/agent_set.local.json (seeded from the tracked
      apps/runtime-studio/config/agent_set.local.json on first use); the tracked file is not touched.
   5. (Optional) Start the background agent daemon with the agent-set config.
 
@@ -49,7 +49,7 @@ Options:
   --objective <text>          High-level objective for candidate prioritisation.
   --objective-file <path>     File containing objective text.
   --spec <path>               Workflow lab runtime spec JSON
-                              (default: .nexo/workflow/workflow_lab.runtime.json).
+                              (default: .ashlar/workflow/workflow_lab.runtime.json).
   --search-strategy <name>    successive-halving | objective-first | exhaustive
                               (default: successive-halving).
   --max-candidates <n>        Maximum candidates to evaluate (default: 24).
@@ -61,7 +61,7 @@ Options:
   --duration <dur>            Daemon duration (e.g. 5m, 1h). If omitted the
                               daemon step is skipped.
   --config <path>             Agent-set JSON that apply-tune writes and the daemon step reads
-                              (default: .nexo/runtime-studio/agent_set.local.json, seeded from
+                              (default: .ashlar/runtime-studio/agent_set.local.json, seeded from
                               apps/runtime-studio/config/agent_set.local.json when missing).
                               Pass the tracked path explicitly to tune it in place.
   --skip-optimize             Skip the optimize step (bootstrap + daemon only).
@@ -142,7 +142,7 @@ bash "${REPO_ROOT}/apps/runtime-studio/scripts/bootstrap_runtime_studio.sh"
 echo
 
 # ── Step 2: Scaffold + Optimize ──────────────────────────────────────────
-DEFAULT_SPEC="${REPO_ROOT}/.nexo/workflow/workflow_lab.runtime.json"
+DEFAULT_SPEC="${REPO_ROOT}/.ashlar/workflow/workflow_lab.runtime.json"
 RESOLVED_SPEC="${SPEC_PATH:-${DEFAULT_SPEC}}"
 
 if [[ "${SKIP_OPTIMIZE}" -eq 0 ]]; then
@@ -153,13 +153,13 @@ if [[ "${SKIP_OPTIMIZE}" -eq 0 ]]; then
   # Scaffold the spec file if it doesn't exist yet so optimize has input.
   if [[ ! -f "${RESOLVED_SPEC}" ]]; then
     echo "Scaffolding default workflow lab spec → ${RESOLVED_SPEC}"
-    dotnet run --project "${REPO_ROOT}/application/src/Nexo.CLI" -- workflow scaffold \
+    dotnet run --project "${REPO_ROOT}/application/src/Ashlar.CLI" -- workflow scaffold \
       --output "${RESOLVED_SPEC}"
     echo
   fi
 
   OPTIMIZE_CMD=(
-    dotnet run --project "${REPO_ROOT}/application/src/Nexo.CLI" -- workflow optimize
+    dotnet run --project "${REPO_ROOT}/application/src/Ashlar.CLI" -- workflow optimize
     --spec "${RESOLVED_SPEC}"
     --search-strategy "${SEARCH_STRATEGY}"
     --max-candidates "${MAX_CANDIDATES}"
@@ -213,7 +213,7 @@ if [[ "${SKIP_OPTIMIZE}" -eq 0 ]]; then
     echo "═══════════════════════════════════════════════════════════════"
     ensure_local_agent_set
     APPLY_CMD=(
-      dotnet run --project "${REPO_ROOT}/application/src/Nexo.CLI" -- runtime-studio apply-tune
+      dotnet run --project "${REPO_ROOT}/application/src/Ashlar.CLI" -- runtime-studio apply-tune
       --spec "${RESOLVED_SPEC}"
       --agent-set "${AGENT_SET_CONFIG}"
     )
@@ -247,7 +247,7 @@ if [[ "${SKIP_DAEMON}" -eq 0 ]]; then
   fi
 
   DAEMON_CMD=(
-    dotnet run --project "${REPO_ROOT}/application/src/Nexo.CLI" -- background-agent daemon
+    dotnet run --project "${REPO_ROOT}/application/src/Ashlar.CLI" -- background-agent daemon
     --config "${AGENT_SET_CONFIG}"
     --duration "${DURATION}"
   )

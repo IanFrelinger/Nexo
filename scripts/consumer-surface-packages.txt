@@ -1,9 +1,9 @@
-# Nexo consumer-surface packages verified by:
+# Ashlar consumer-surface packages verified by:
 #   scripts/verify-external-product-shape.sh
 #   scripts/verify-external-product-shape-published.sh
 # Keep consumer-template/ pins aligned with this list.
-Nexo.Brick.Contracts
-Nexo.Authoring
-Nexo.Hosting.Bundle
-Nexo.Sdk
-Nexo.Client
+Ashlar.Brick.Contracts
+Ashlar.Authoring
+Ashlar.Hosting.Bundle
+Ashlar.Sdk
+Ashlar.Client

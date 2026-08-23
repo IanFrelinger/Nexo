@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Record/compare perf metrics under .nexo/perf/baseline.json
+# Record/compare perf metrics under .ashlar/perf/baseline.json
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-REPORT_DIR=".nexo/perf"
+REPORT_DIR=".ashlar/perf"
 BASELINE="$REPORT_DIR/baseline.json"
 LAST="$REPORT_DIR/last-run.json"
 mkdir -p "$REPORT_DIR"
@@ -13,7 +13,7 @@ python3 - <<'PY'
 import json, os, glob
 from datetime import datetime, timezone
 
-report_dir = ".nexo/perf"
+report_dir = ".ashlar/perf"
 metrics = {"timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"), "metrics": {}}
 
 for name in ("pipeline-throughput.json", "cold-start.json", "soak.json"):

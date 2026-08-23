@@ -21,14 +21,14 @@ jobs:
 
       - name: Restore
         run: |
-          dotnet restore application/src/Nexo.CLI/Nexo.CLI.csproj
-          dotnet restore src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.csproj
+          dotnet restore application/src/Ashlar.CLI/Ashlar.CLI.csproj
+          dotnet restore src/Ashlar.Tests.Infrastructure/scripts/copy-assemblies.csproj
 
       - name: Build CLI
-        run: dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
+        run: dotnet build application/src/Ashlar.CLI/Ashlar.CLI.csproj --no-restore -v minimal
 
       - name: Core promotion gate (strict)
-        run: dotnet run --project application/src/Nexo.CLI -- runtime release-gate --repo-root . --mode core --lane-repetitions 3 --core-min-pass-rate 0.9 --core-min-total 9 --core-history-window 9
+        run: dotnet run --project application/src/Ashlar.CLI -- runtime release-gate --repo-root . --mode core --lane-repetitions 3 --core-min-pass-rate 0.9 --core-min-total 9 --core-history-window 9
 
       - name: Upload core promotion SLO evidence
         if: always()
@@ -36,8 +36,8 @@ jobs:
         with:
           name: runtime-release-promotion-core-evidence
           path: |
-            .nexo/runtime/release-gate/last-run/evidence.json
-            .nexo/runtime/release-gate/last-run/evidence.md
+            .ashlar/runtime/release-gate/last-run/evidence.json
+            .ashlar/runtime/release-gate/last-run/evidence.md
           if-no-files-found: warn
 
   release-promotion-visual-strict:
@@ -53,14 +53,14 @@ jobs:
 
       - name: Restore
         run: |
-          dotnet restore application/src/Nexo.CLI/Nexo.CLI.csproj
-          dotnet restore src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.csproj
+          dotnet restore application/src/Ashlar.CLI/Ashlar.CLI.csproj
+          dotnet restore src/Ashlar.Tests.Infrastructure/scripts/copy-assemblies.csproj
 
       - name: Build CLI
-        run: dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
+        run: dotnet build application/src/Ashlar.CLI/Ashlar.CLI.csproj --no-restore -v minimal
 
       - name: Visual promotion gate (strict, advisory until infra ready)
-        run: dotnet run --project application/src/Nexo.CLI -- runtime release-gate --repo-root . --mode visual --lane-repetitions 3 --visual-required-mode true --visual-min-pass-rate 0.85 --visual-min-total 9 --visual-history-window 9 --visual-promotion-streak 3
+        run: dotnet run --project application/src/Ashlar.CLI -- runtime release-gate --repo-root . --mode visual --lane-repetitions 3 --visual-required-mode true --visual-min-pass-rate 0.85 --visual-min-total 9 --visual-history-window 9 --visual-promotion-streak 3
 
       - name: Upload visual promotion SLO evidence
         if: always()
@@ -68,8 +68,8 @@ jobs:
         with:
           name: runtime-release-promotion-visual-evidence
           path: |
-            .nexo/runtime/release-gate/last-run/evidence.json
-            .nexo/runtime/release-gate/last-run/evidence.md
+            .ashlar/runtime/release-gate/last-run/evidence.json
+            .ashlar/runtime/release-gate/last-run/evidence.md
           if-no-files-found: warn
 
   release-promotion-chaos:
@@ -85,14 +85,14 @@ jobs:
 
       - name: Restore
         run: |
-          dotnet restore application/src/Nexo.CLI/Nexo.CLI.csproj
-          dotnet restore src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.csproj
+          dotnet restore application/src/Ashlar.CLI/Ashlar.CLI.csproj
+          dotnet restore src/Ashlar.Tests.Infrastructure/scripts/copy-assemblies.csproj
 
       - name: Build CLI
-        run: dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
+        run: dotnet build application/src/Ashlar.CLI/Ashlar.CLI.csproj --no-restore -v minimal
 
       - name: Chaos observation lane
-        run: dotnet run --project application/src/Nexo.CLI -- runtime release-gate --repo-root . --mode chaos
+        run: dotnet run --project application/src/Ashlar.CLI -- runtime release-gate --repo-root . --mode chaos
 
       - name: Upload chaos promotion SLO evidence
         if: always()
@@ -100,6 +100,6 @@ jobs:
         with:
           name: runtime-release-promotion-chaos-evidence
           path: |
-            .nexo/runtime/release-gate/last-run/evidence.json
-            .nexo/runtime/release-gate/last-run/evidence.md
+            .ashlar/runtime/release-gate/last-run/evidence.json
+            .ashlar/runtime/release-gate/last-run/evidence.md
           if-no-files-found: warn

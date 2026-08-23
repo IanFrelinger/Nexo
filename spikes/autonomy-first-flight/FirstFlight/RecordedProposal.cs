@@ -1,7 +1,7 @@
-using Nexo.Core.Domain.Bricks;
-using Nexo.Core.Domain.Execution;
+using Ashlar.Core.Domain.Bricks;
+using Ashlar.Core.Domain.Execution;
 
-namespace Nexo.Spikes.FirstFlight;
+namespace Ashlar.Spikes.FirstFlight;
 
 /// <summary>
 /// A RECORDED model proposal — the first candidate in this repository authored by a model
@@ -27,14 +27,14 @@ public static class RecordedProposal
     public const string ProposerSignature = "model:claude-fable-5:recorded:2026-08-14";
 
     /// <summary>Fully-qualified type name of the proposed brick.</summary>
-    public const string TypeName = "Nexo.Spikes.FirstFlight.ProposedLogScannerBrick";
+    public const string TypeName = "Ashlar.Spikes.FirstFlight.ProposedLogScannerBrick";
 
     /// <summary>The proposal, verbatim as recorded.</summary>
     public const string Source = """
-using Nexo.Core.Domain.Bricks;
-using Nexo.Core.Domain.Execution;
+using Ashlar.Core.Domain.Bricks;
+using Ashlar.Core.Domain.Execution;
 
-namespace Nexo.Spikes.FirstFlight;
+namespace Ashlar.Spikes.FirstFlight;
 
 public sealed class ProposedLogScannerBrick : DomainBrick
 {

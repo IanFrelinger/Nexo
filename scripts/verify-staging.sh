@@ -46,8 +46,8 @@ if [[ -z "${NUGET_STAGING_READ_TOKEN:-}" ]]; then
 fi
 
 # GitHub Packages / private feeds: username + token (never logged).
-export NEXO_NUGET_USERNAME="${NEXO_NUGET_USERNAME:-token}"
-export NEXO_NUGET_PASSWORD="${NEXO_STAGING_READ_TOKEN}"
+export ASHLAR_NUGET_USERNAME="${ASHLAR_NUGET_USERNAME:-token}"
+export ASHLAR_NUGET_PASSWORD="${ASHLAR_STAGING_READ_TOKEN}"
 
 echo "verify-staging: version=${VERSION} feed=${FEED_URL}"
 bash "${PUBLISHED_SCRIPT}" "${VERSION}" "${FEED_URL}"

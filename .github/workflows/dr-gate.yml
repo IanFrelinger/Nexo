@@ -23,4 +23,4 @@ jobs:
         if: always()
         with:
           name: dr-gate-${{ github.run_id }}
-          path: .nexo/dr-gate/
+          path: .ashlar/dr-gate/

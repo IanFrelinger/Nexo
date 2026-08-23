@@ -227,14 +227,14 @@
     <PackageVersion Include="pocketken.H3" Version="4.0.0" />
   </ItemGroup>
   <!-- MCP / A2A protocol adapters (Tier-2 adapter projects and hosts only; the kernel
-       spine — Nexo.Abstractions / Nexo.Core.* / Nexo.Contracts / Nexo.Hosting — must
-       never reference these packages, or every AddNexo consumer inherits them. -->
+       spine — Ashlar.Abstractions / Ashlar.Core.* / Ashlar.Contracts / Ashlar.Hosting — must
+       never reference these packages, or every AddAshlar consumer inherits them. -->
   <ItemGroup>
     <PackageVersion Include="ModelContextProtocol" Version="2.2.0" />
     <PackageVersion Include="ModelContextProtocol.AspNetCore" Version="2.2.0" />
     <!-- A2A has no stable release yet (spec v1.0 is implemented by 1.0.0-preview2).
          Consuming projects are IsPackable=false until A2A 1.0.0 stable ships - packing a
-         stable Nexo version over a prerelease dependency raises NU5104. Do not NoWarn it. -->
+         stable Ashlar version over a prerelease dependency raises NU5104. Do not NoWarn it. -->
     <PackageVersion Include="A2A" Version="1.0.0-preview2" />
     <PackageVersion Include="A2A.AspNetCore" Version="1.0.0-preview2" />
   </ItemGroup>

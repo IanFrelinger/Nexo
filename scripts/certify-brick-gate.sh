@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Thin entrypoint for brick certification gate (logic lives in src via Nexo.CertifyBrick).
+# Thin entrypoint for brick certification gate (logic lives in src via Ashlar.CertifyBrick).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -8,7 +8,7 @@ WITNESS="${2:-${ROOT}/spikes/portability/witness/error-summary-extractor.witness
 RECORD="${3:-}"
 
 if [[ -n "${RECORD}" ]]; then
-  dotnet run --project "${ROOT}/tools/Nexo.CertifyBrick/Nexo.CertifyBrick.csproj" -c Release -- "${BRICK_DIR}" "${WITNESS}" "${RECORD}"
+  dotnet run --project "${ROOT}/tools/Ashlar.CertifyBrick/Ashlar.CertifyBrick.csproj" -c Release -- "${BRICK_DIR}" "${WITNESS}" "${RECORD}"
 else
-  dotnet run --project "${ROOT}/tools/Nexo.CertifyBrick/Nexo.CertifyBrick.csproj" -c Release -- "${BRICK_DIR}" "${WITNESS}"
+  dotnet run --project "${ROOT}/tools/Ashlar.CertifyBrick/Ashlar.CertifyBrick.csproj" -c Release -- "${BRICK_DIR}" "${WITNESS}"
 fi

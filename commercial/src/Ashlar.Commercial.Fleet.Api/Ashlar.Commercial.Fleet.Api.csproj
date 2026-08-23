@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AshlarCommercialProject>true</AshlarCommercialProject>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <ProjectReference Include="../Ashlar.Commercial.Fleet.Contracts/Ashlar.Commercial.Fleet.Contracts.csproj" />
+    <ProjectReference Include="../Ashlar.Commercial.Fleet.Infrastructure/Ashlar.Commercial.Fleet.Infrastructure.csproj" />
+    <ProjectReference Include="../../../application/src/Ashlar.API/Ashlar.API.csproj" />
+  </ItemGroup>
+</Project>

@@ -7,21 +7,21 @@
 #   bash scripts/verify-stable-sdk-host-sample-published-feed.sh 1.2.3 https://api.nuget.org/v3/index.json
 #
 # Environment:
-#   NEXO_NUGET_USERNAME / NEXO_NUGET_PASSWORD — optional; if both set, added to NuGet.Config
+#   ASHLAR_NUGET_USERNAME / ASHLAR_NUGET_PASSWORD — optional; if both set, added to NuGet.Config
 #     packageSourceCredentials for the single feed (e.g. GitHub Packages PAT as password).
 #
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 VERSION="${1:?usage: verify-stable-sdk-host-sample-published-feed.sh <PackageVersion> [feed-url]}"
 FEED_URL="${2:-https://api.nuget.org/v3/index.json}"
-SOURCE_KEY="${NEXO_VERIFY_SOURCE_KEY:-published}"
+SOURCE_KEY="${ASHLAR_VERIFY_SOURCE_KEY:-published}"
 
 WORKDIR="${ROOT}/artifacts/nuget-published-verify"
 CFG="${WORKDIR}/NuGet.Config"
 rm -rf "${WORKDIR}"
 mkdir -p "${WORKDIR}"
 
-if [[ -n "${NEXO_NUGET_USERNAME:-}" && -n "${NEXO_NUGET_PASSWORD:-}" ]]; then
+if [[ -n "${ASHLAR_NUGET_USERNAME:-}" && -n "${ASHLAR_NUGET_PASSWORD:-}" ]]; then
   cat > "${CFG}" <<EOF
 <?xml version="1.0" encoding="utf-8"?>
 <configuration>
@@ -31,8 +31,8 @@ if [[ -n "${NEXO_NUGET_USERNAME:-}" && -n "${NEXO_NUGET_PASSWORD:-}" ]]; then
   </packageSources>
   <packageSourceCredentials>
     <${SOURCE_KEY}>
-      <add key="Username" value="${NEXO_NUGET_USERNAME}" />
-      <add key="ClearTextPassword" value="${NEXO_NUGET_PASSWORD}" />
+      <add key="Username" value="${ASHLAR_NUGET_USERNAME}" />
+      <add key="ClearTextPassword" value="${ASHLAR_NUGET_PASSWORD}" />
     </${SOURCE_KEY}>
   </packageSourceCredentials>
 </configuration>
@@ -54,7 +54,7 @@ PROJ="${ROOT}/docs/samples/StableSdkHostSample/package-consumer/StableSdkHostSam
 echo "verify-published-feed: restore ${VERSION} from ${FEED_URL} ..."
 dotnet restore "${PROJ}" \
   --configfile "${CFG}" \
-  -p:NexoSdkPackageVersion="${VERSION}" \
+  -p:AshlarSdkPackageVersion="${VERSION}" \
   -v minimal
 
 echo "verify-published-feed: build ..."

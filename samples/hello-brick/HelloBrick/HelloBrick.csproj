@@ -8,6 +8,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../../src/Nexo.Core.Domain/Nexo.Core.Domain.csproj" />
+    <ProjectReference Include="../../../src/Ashlar.Core.Domain/Ashlar.Core.Domain.csproj" />
   </ItemGroup>
 </Project>

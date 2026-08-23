@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Verify the Nexo open-core / commercial project boundary.
+Verify the Ashlar open-core / commercial project boundary.
 
 Checks:
   1. No OPEN .csproj may ProjectReference a COMMERCIAL .csproj.
@@ -28,8 +28,8 @@ from pathlib import Path
 
 
 EXCLUDED_CSPROJ: set[str] = {
-    "src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.csproj",
-    # Template project uses tokenized ProjectReference replaced by `nexo new brick`.
+    "src/Ashlar.Tests.Infrastructure/scripts/copy-assemblies.csproj",
+    # Template project uses tokenized ProjectReference replaced by `ashlar new brick`.
     "samples/templates/brick/__BrickName__Brick/__BrickName__Brick.csproj",
     "samples/templates/brick/__BrickName__Brick.Tests/__BrickName__Brick.Tests.csproj",
 }
@@ -49,8 +49,8 @@ PROJECT_REF_RE = re.compile(
 
 CS_COMMENT_RE = re.compile(r"//.*?$|/\*.*?\*/", re.MULTILINE | re.DOTALL)
 
-NEXO_COMMERCIAL_RE = re.compile(
-    r"<NexoCommercialProject>\s*true\s*</NexoCommercialProject>",
+ASHLAR_COMMERCIAL_RE = re.compile(
+    r"<AshlarCommercialProject>\s*true\s*</AshlarCommercialProject>",
     re.IGNORECASE,
 )
 
@@ -60,13 +60,13 @@ IS_PACKABLE_TRUE_RE = re.compile(
 )
 
 OPEN_MESH_GUARD_PATHS = (
-    "src/Nexo.Infrastructure/Mesh/",
-    "src/Nexo.Infrastructure/MeshLab/",
-    "src/Nexo.Core.Application/Mesh/",
+    "src/Ashlar.Infrastructure/Mesh/",
+    "src/Ashlar.Infrastructure/MeshLab/",
+    "src/Ashlar.Core.Application/Mesh/",
 )
 
 OPEN_MESH_COMMERCIAL_CONCEPT_RE = re.compile(
-    r"\b(Nexo\.Commercial|Fleet|Governance|RBAC|Tenant|ControlPlane|Organization)\b",
+    r"\b(Ashlar\.Commercial|Fleet|Governance|RBAC|Tenant|ControlPlane|Organization)\b",
     re.IGNORECASE,
 )
 
@@ -135,7 +135,7 @@ def classify_project(path: Path, root: Path) -> ProjectInfo:
     rel = rel_posix(path, root)
     text = path.read_text(encoding="utf-8", errors="replace")
     commercial = any(marker in rel for marker in COMMERCIAL_PATH_MARKERS)
-    commercial = commercial or bool(NEXO_COMMERCIAL_RE.search(text))
+    commercial = commercial or bool(ASHLAR_COMMERCIAL_RE.search(text))
     packable = bool(IS_PACKABLE_TRUE_RE.search(text))
     return ProjectInfo(rel=rel, path=path, commercial=commercial, packable=packable)
 

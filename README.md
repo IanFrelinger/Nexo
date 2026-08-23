@@ -1,25 +1,25 @@
 <p align="center">
-  <img src="assets/brand/nexo-logo-chaos.svg" alt="Nexo" width="520">
+  <img src="assets/brand/ashlar-logo-chaos.svg" alt="Ashlar" width="520">
 </p>
 
-# Nexo
+# Ashlar
 
 [![Kernel Gate](https://github.com/IanFrelinger/Nexo/actions/workflows/kernel-gate.yml/badge.svg?branch=master)](https://github.com/IanFrelinger/Nexo/actions/workflows/kernel-gate.yml)
 [![Kernel Coverage Gate](https://github.com/IanFrelinger/Nexo/actions/workflows/kernel-coverage-gate.yml/badge.svg?branch=master)](https://github.com/IanFrelinger/Nexo/actions/workflows/kernel-coverage-gate.yml)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4.svg)](global.json)
 
-> **Nexo: auditable AI workflows on infrastructure you control — every artifact certified, every action on the record.**
+> **Ashlar: auditable AI workflows on infrastructure you control — every artifact certified, every action on the record.**
 
-Nexo is a self-hosted .NET runtime for AI workflows you can audit. Three things you get, each with a command behind it:
+Ashlar is a self-hosted .NET runtime for AI workflows you can audit. Three things you get, each with a command behind it:
 
 1. **Auditable workflows.** Submit a task and you get the output **and** the record of what ran: the task is stored under an id, and the trust log carries an entry whose `sourceId` is that id (`POST /api/copilot/task` → `GET /api/trust/dashboard`).
-2. **Certified artifacts.** Code that Nexo — or a model — proposes only becomes trusted after the certification gate: analyzer fence → witness (correctness) → mutation testing (does the witness have teeth) → determinism. The gate is the one required CI check on `master` (`cert-gate`), and every ADMIT/REJECT it has proven is a row in [`docs/certification-evidence.md`](docs/certification-evidence.md).
-3. **Your infrastructure.** Runs as a CLI, an HTTP API, containers, or embedded in your own host. Local-first: local model routing (Ollama; mock/offline behind an explicit `NEXO_ALLOW_MOCK=1`) is the default route and cloud providers are opt-in targets; the API refuses to start on a network exposure profile without auth. There is no hosted Nexo service.
+2. **Certified artifacts.** Code that Ashlar — or a model — proposes only becomes trusted after the certification gate: analyzer fence → witness (correctness) → mutation testing (does the witness have teeth) → determinism. The gate is the one required CI check on `master` (`cert-gate`), and every ADMIT/REJECT it has proven is a row in [`docs/certification-evidence.md`](docs/certification-evidence.md).
+3. **Your infrastructure.** Runs as a CLI, an HTTP API, containers, or embedded in your own host. Local-first: local model routing (Ollama; mock/offline behind an explicit `ASHLAR_ALLOW_MOCK=1`) is the default route and cloud providers are opt-in targets; the API refuses to start on a network exposure profile without auth. There is no hosted Ashlar service.
 
-**Start here:** [`docs/TesterQuickstart.md`](docs/TesterQuickstart.md) — clone, build `Nexo.Kernel.sln`, run the API on loopback, submit one task, read its audit trail, then run the gate and watch it admit and reject. About fifteen minutes; no Docker, no API keys.
+**Start here:** [`docs/TesterQuickstart.md`](docs/TesterQuickstart.md) — clone, build `Ashlar.Kernel.sln`, run the API on loopback, submit one task, read its audit trail, then run the gate and watch it admit and reject. About fifteen minutes; no Docker, no API keys.
 
-Other lanes: [**Try**](#lane-1--try-run-the-portal) (portal in Docker) · [**Develop**](#lane-2--develop-dev-container--cli) (dev container + CLI) · [**Deploy**](#lane-3--deploy-operators) (GHCR images + compose) · [**Integrate**](docs/IntegratorGuide.md) (embed Nexo in your host).
+Other lanes: [**Try**](#lane-1--try-run-the-portal) (portal in Docker) · [**Develop**](#lane-2--develop-dev-container--cli) (dev container + CLI) · [**Deploy**](#lane-3--deploy-operators) (GHCR images + compose) · [**Integrate**](docs/IntegratorGuide.md) (embed Ashlar in your host).
 
 The trust loop that makes "certified" checkable — and the experimental, hold-mode autonomy loop built on it — is described in [Trust loop / certification](#trust-loop--certification-experimental) below. The observe → adapt → improve engine that watches how teams build, test, release, and operate software is one subsystem among several, not the product.
 
@@ -30,12 +30,12 @@ Repository: <https://github.com/IanFrelinger/Nexo>
 ```mermaid
 flowchart TB
     subgraph Surfaces["Entry surfaces"]
-        CLI["Nexo.CLI (nexo)"]
-        API["Nexo.API (HTTP + portal)"]
+        CLI["Ashlar.CLI (ashlar)"]
+        API["Ashlar.API (HTTP + portal)"]
         EMBED["Embedded host (NuGet)"]
     end
 
-    ADD["AddNexo() — DI composition root"]
+    ADD["AddAshlar() — DI composition root"]
 
     subgraph Kernel["Kernel spine (src/)"]
         APPUC["Core.Application — use cases, ports (MediatR)"]
@@ -70,9 +70,9 @@ For layer-by-layer detail see [`docs/Architecture.md`](docs/Architecture.md); fo
 
 | Reader | Start here | First command or artifact |
 |--------|------------|---------------------------|
-| **Tester / evaluator** | [`docs/TesterQuickstart.md`](docs/TesterQuickstart.md), then [`docs/GettingStarted.md`](docs/GettingStarted.md) for the pipeline and CLI tour | `dotnet build Nexo.Kernel.sln`, then `dotnet run --project application/src/Nexo.CLI -- doctor`, then the API + `POST /api/copilot/task` |
-| **Contributor** | [`docs/ProjectTiers.md`](docs/ProjectTiers.md) — canonical repo map, then [`CONTRIBUTING.md`](CONTRIBUTING.md) | `dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj` (implicit restore; `--no-restore` only after `scripts/setup/setup.sh` or the dev container has restored) |
-| **Integrator** | [`docs/IntegratorGuide.md`](docs/IntegratorGuide.md), [`docs/DistributionModels.md`](docs/DistributionModels.md), [`docs/sdk.md`](docs/sdk.md), [`docs/SdkIntegrationGuide.md`](docs/SdkIntegrationGuide.md) | NuGet host embed, `Nexo.Client`, HTTP API, CLI image, compose, or source integration (`consumer-template/CONSUMING.md` for the feed template) |
+| **Tester / evaluator** | [`docs/TesterQuickstart.md`](docs/TesterQuickstart.md), then [`docs/GettingStarted.md`](docs/GettingStarted.md) for the pipeline and CLI tour | `dotnet build Ashlar.Kernel.sln`, then `dotnet run --project application/src/Ashlar.CLI -- doctor`, then the API + `POST /api/copilot/task` |
+| **Contributor** | [`docs/ProjectTiers.md`](docs/ProjectTiers.md) — canonical repo map, then [`CONTRIBUTING.md`](CONTRIBUTING.md) | `dotnet build application/src/Ashlar.CLI/Ashlar.CLI.csproj` (implicit restore; `--no-restore` only after `scripts/setup/setup.sh` or the dev container has restored) |
+| **Integrator** | [`docs/IntegratorGuide.md`](docs/IntegratorGuide.md), [`docs/DistributionModels.md`](docs/DistributionModels.md), [`docs/sdk.md`](docs/sdk.md), [`docs/SdkIntegrationGuide.md`](docs/SdkIntegrationGuide.md) | NuGet host embed, `Ashlar.Client`, HTTP API, CLI image, compose, or source integration (`consumer-template/CONSUMING.md` for the feed template) |
 
 ## Scope in 30 seconds
 
@@ -80,18 +80,18 @@ For layer-by-layer detail see [`docs/Architecture.md`](docs/Architecture.md); fo
 - **Trust:** data classification, sanitization before cloud calls, barrier identity resolution, local-first defaults, pause/resume controls, structured audit sinks.
 - **Mesh:** peer discovery, capability advertisement, director/hub flows, trust-tier placement, virtual labs, and phase docs for federation.
 - **Transport, protocols and ingress:** optional gRPC transport, MCP server/client and A2A transport ([`docs/architecture/ProtocolIntegration-MCP-A2A.md`](docs/architecture/ProtocolIntegration-MCP-A2A.md)), plus AWS SNS and DynamoDB ingress adapters.
-- **Hosts:** `application/src/Nexo.CLI` (`nexo`) and `application/src/Nexo.API` (ASP.NET Core HTTP/portal host).
+- **Hosts:** `application/src/Ashlar.CLI` (`ashlar`) and `application/src/Ashlar.API` (ASP.NET Core HTTP/portal host).
 - **Applications on the core:** `applications/` (plural) holds open Apache-2.0 products built on the kernel — physical-atom certification, provenance graph, spatial anchors ([`applications/README.md`](applications/README.md)).
-- **Apps:** `apps/game-director`, `apps/nexo-forge`, `apps/release-manager`, and `apps/runtime-studio` are application-level agent-set/configuration surfaces (listed as commercial in [`LICENSING.md`](LICENSING.md)).
-- **Distribution:** NuGet packages (`Nexo.Hosting`, bundles, SDK/client/lite/runtime packages), GHCR images, Dockerfiles, compose stacks, and source/monorepo integration.
+- **Apps:** `apps/game-director`, `apps/ashlar-forge`, `apps/release-manager`, and `apps/runtime-studio` are application-level agent-set/configuration surfaces (listed as commercial in [`LICENSING.md`](LICENSING.md)).
+- **Distribution:** NuGet packages (`Ashlar.Hosting`, bundles, SDK/client/lite/runtime packages), GHCR images, Dockerfiles, compose stacks, and source/monorepo integration.
 
 For the canonical tier-by-tier project map, see [`docs/ProjectTiers.md`](docs/ProjectTiers.md). For distribution channels and their validation gates, see [`docs/DistributionModels.md`](docs/DistributionModels.md).
 
-## What Nexo is not
+## What Ashlar is not
 
-- **Not a hosted SaaS or chatbot.** You run it (CLI, API, container, or embedded in your app); nothing is sent to a Nexo-operated service.
+- **Not a hosted SaaS or chatbot.** You run it (CLI, API, container, or embedded in your app); nothing is sent to a Ashlar-operated service.
 - **Not cloud-dependent.** Cloud providers are opt-in execution targets, not requirements. Air-gapped and local-only deployments are first-class.
-- **Not a drop-in IDE plugin.** Nexo is a runtime and orchestration layer, not an editor extension.
+- **Not a drop-in IDE plugin.** Ashlar is a runtime and orchestration layer, not an editor extension.
 - **Local-first by default.** Production network exposure requires auth + TLS; the shipped defaults are HTTP-only with no auth for local use (see the [Quick Start note](#quick-start-5-minutes)).
 
 ## Subsystem map
@@ -101,11 +101,11 @@ For the canonical tier-by-tier project map, see [`docs/ProjectTiers.md`](docs/Pr
 | Kernel spine | Abstractions, core/domain/application, contracts, policies, infrastructure, orchestration, background agents, hosting | [`src/`](src/), [`docs/ProjectTiers.md`](docs/ProjectTiers.md) |
 | Observe/adapt/improve | Pattern observation, analysis, adaptation, self-improvement, changelog, dogfood gates | [`docs/GapAnalysis.md`](docs/GapAnalysis.md), [`docs/DogfoodValidation.md`](docs/DogfoodValidation.md) |
 | Mesh/federation | Mesh phases, virtual lab, friend mesh prefab, trust-tier placement, leases/checkpoints | [`docs/MeshPhase0NorthStar.md`](docs/MeshPhase0NorthStar.md), [`docs/MeshVirtualLab.md`](docs/MeshVirtualLab.md) |
-| gRPC transport | Transport contracts, server, standalone host | `src/Nexo.Transport.Grpc*` |
-| MCP + A2A protocols | Nexo as MCP server (stdio/HTTP) and MCP client; A2A client transport and server core mounted by `Nexo.API` | `src/Nexo.Mcp.*`, `src/Nexo.Transport.A2A*`, [`docs/architecture/ProtocolIntegration-MCP-A2A.md`](docs/architecture/ProtocolIntegration-MCP-A2A.md) |
-| AWS ingress | SNS and DynamoDB adapters | `src/Nexo.Ingress.AwsSns`, `src/Nexo.Ingress.DynamoDb`, [`docs/MiddlewareIngress.md`](docs/MiddlewareIngress.md) |
+| gRPC transport | Transport contracts, server, standalone host | `src/Ashlar.Transport.Grpc*` |
+| MCP + A2A protocols | Ashlar as MCP server (stdio/HTTP) and MCP client; A2A client transport and server core mounted by `Ashlar.API` | `src/Ashlar.Mcp.*`, `src/Ashlar.Transport.A2A*`, [`docs/architecture/ProtocolIntegration-MCP-A2A.md`](docs/architecture/ProtocolIntegration-MCP-A2A.md) |
+| AWS ingress | SNS and DynamoDB adapters | `src/Ashlar.Ingress.AwsSns`, `src/Ashlar.Ingress.DynamoDb`, [`docs/MiddlewareIngress.md`](docs/MiddlewareIngress.md) |
 | Applications on the core | Physical-atom certification, provenance graph, spatial anchor contracts/runtime/platform providers (open, Apache-2.0) | [`applications/`](applications/), [`applications/README.md`](applications/README.md) |
-| App surfaces | Game Director, Nexo Forge, Release Manager, Runtime Studio agent sets and operator scripts | [`apps/`](apps/), [`docs/GameDirectorStudio.md`](docs/GameDirectorStudio.md), [`apps/runtime-studio/README.md`](apps/runtime-studio/README.md) |
+| App surfaces | Game Director, Ashlar Forge, Release Manager, Runtime Studio agent sets and operator scripts | [`apps/`](apps/), [`docs/GameDirectorStudio.md`](docs/GameDirectorStudio.md), [`apps/runtime-studio/README.md`](apps/runtime-studio/README.md) |
 | Trust architecture | Barrier identity, data sensitivity, audit, policy packs, local-first controls | [`docs/TrustAndInformationArchitecture.md`](docs/TrustAndInformationArchitecture.md), [`docs/Architecture.md`](docs/Architecture.md) |
 | Distribution | NuGet, HTTP/API, CLI image, compose, source, mesh/federation | [`docs/DistributionModels.md`](docs/DistributionModels.md), [`docs/RELEASE.md`](docs/RELEASE.md) |
 
@@ -122,7 +122,7 @@ Where to read and what to run:
 
 | Want | Go to |
 |------|-------|
-| The invariants and the gate legs | [`docs/trust-loop/nexo-trust-loop-spec.md`](docs/trust-loop/nexo-trust-loop-spec.md) |
+| The invariants and the gate legs | [`docs/trust-loop/ashlar-trust-loop-spec.md`](docs/trust-loop/ashlar-trust-loop-spec.md) |
 | What has actually been proven, and how | [`docs/certification-evidence.md`](docs/certification-evidence.md) (rows cite the test or spike and the CI run; "Known v0 limitations" at the end) |
 | The governed model pipeline every proposal flows through | [`docs/governed-pipeline.md`](docs/governed-pipeline.md) |
 | A complete, tracked objective + witness + recorded proposal | [`samples/autonomy-objectives/README.md`](samples/autonomy-objectives/README.md) |
@@ -130,7 +130,7 @@ Where to read and what to run:
 | Author a brick the gate can judge | [`samples/hello-brick/README.md`](samples/hello-brick/README.md), then [`docs/AuthoringBricks.md`](docs/AuthoringBricks.md) |
 | The background-agent self-extend safety audit | [`docs/SELF-EXTEND-AUDIT.md`](docs/SELF-EXTEND-AUDIT.md) |
 
-## Why Nexo
+## Why Ashlar
 
 - **Control before capability.** Nothing is trusted because a model said so: proposals pass a gate, execution can be confined to attested containers, and admission is held until an operator flips it. Trust tiers, policy packs, and pause/resume sit on the execution path, not beside it.
 - **Proof, not claims.** The audit trail is queryable (`/api/trust/dashboard`, `/api/copilot/tasks`), the certificate is checkable (`cert-gate`), and the evidence ledger cites the run that proved each row.
@@ -139,28 +139,28 @@ Where to read and what to run:
 
 ### Observe / adapt / improve
 
-Nexo also ships an engine that watches how teams build, test, release, and operate software, learns repeatable patterns, and improves automations over time under policy — with pause/resume, local-first routing, and audit on every step. It is one subsystem (see the [subsystem map](#subsystem-map) and [`docs/DogfoodValidation.md`](docs/DogfoodValidation.md)); every adaptation it promotes goes through the same trust path as everything else.
+Ashlar also ships an engine that watches how teams build, test, release, and operate software, learns repeatable patterns, and improves automations over time under policy — with pause/resume, local-first routing, and audit on every step. It is one subsystem (see the [subsystem map](#subsystem-map) and [`docs/DogfoodValidation.md`](docs/DogfoodValidation.md)); every adaptation it promotes goes through the same trust path as everything else.
 
 ## Quick Start (5 minutes)
 
-> ⚠️ **Not safe for public exposure as shipped.** Defaults are tuned for local dev: **HTTP-only, no authentication** (`ExposureProfile: Localhost`, `AuthorizationMode: None`, `AllowedHosts: "*"`). Before exposing Nexo to any network, configure **auth + TLS** — see [Security Defaults](#security-defaults).
+> ⚠️ **Not safe for public exposure as shipped.** Defaults are tuned for local dev: **HTTP-only, no authentication** (`ExposureProfile: Localhost`, `AuthorizationMode: None`, `AllowedHosts: "*"`). Before exposing Ashlar to any network, configure **auth + TLS** — see [Security Defaults](#security-defaults).
 
 Pick the lane that matches your goal. Most people should start with **Try**.
 
 | Lane | Goal | You need |
 |------|------|----------|
-| [**1. Try**](#lane-1--try-run-the-portal) | See Nexo running in one command | Docker |
+| [**1. Try**](#lane-1--try-run-the-portal) | See Ashlar running in one command | Docker |
 | [**2. Develop**](#lane-2--develop-dev-container--cli) | Build/extend the code, run the CLI | Docker + Dev Container (or native .NET SDK) |
 | [**3. Deploy**](#lane-3--deploy-operators) | Run it as a service you operate | Docker + compose |
 
 ### Lane 1 — Try (run the portal)
 
-The fastest way to see Nexo work. Uses the mock provider, so **no API keys are required**.
+The fastest way to see Ashlar work. Uses the mock provider, so **no API keys are required**.
 
 ```bash
-git clone https://github.com/IanFrelinger/Nexo.git && cd Nexo
-docker build -f .docker/Dockerfile.quickstart -t nexo:quickstart .
-docker run --rm -p 127.0.0.1:8080:8080 nexo:quickstart
+git clone https://github.com/IanFrelinger/Nexo.git && cd Ashlar
+docker build -f .docker/Dockerfile.quickstart -t ashlar:quickstart .
+docker run --rm -p 127.0.0.1:8080:8080 ashlar:quickstart
 # Open http://localhost:8080
 ```
 
@@ -184,16 +184,16 @@ Recommended path uses the **Dev Container** (no host .NET SDK needed).
 From the integrated terminal:
 
 ```bash
-dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore
-dotnet run --project application/src/Nexo.CLI -- --help
-dotnet run --project application/src/Nexo.CLI -- doctor --json
+dotnet build application/src/Ashlar.CLI/Ashlar.CLI.csproj --no-restore
+dotnet run --project application/src/Ashlar.CLI -- --help
+dotnet run --project application/src/Ashlar.CLI -- doctor --json
 ```
 
 Run your first pipeline (create a template, validate it, run it):
 
 ```bash
 tmp_dir="$(mktemp -d)"
-template_path="$tmp_dir/nexo_pipeline_quickstart.json"
+template_path="$tmp_dir/ashlar_pipeline_quickstart.json"
 cat > "$template_path" <<'JSON'
 {
   "templateId": "quickstart",
@@ -208,9 +208,9 @@ cat > "$template_path" <<'JSON'
 }
 JSON
 
-dotnet run --project application/src/Nexo.CLI -- pipeline validate --template "$template_path"
-dotnet run --project application/src/Nexo.CLI -- pipeline run --template "$template_path" --run-id quickstart-run --format-json
-dotnet run --project application/src/Nexo.CLI -- pipeline diagnostics --format-json
+dotnet run --project application/src/Ashlar.CLI -- pipeline validate --template "$template_path"
+dotnet run --project application/src/Ashlar.CLI -- pipeline run --template "$template_path" --run-id quickstart-run --format-json
+dotnet run --project application/src/Ashlar.CLI -- pipeline diagnostics --format-json
 ```
 
 <details>
@@ -220,36 +220,36 @@ Use this only when containers are not an option. Requires .NET SDK 10.x (LTS). T
 
 ```bash
 git clone https://github.com/IanFrelinger/Nexo.git
-cd Nexo
+cd Ashlar
 bash scripts/setup/setup.sh all
-dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore
-dotnet run --project application/src/Nexo.CLI -- doctor --json
+dotnet build application/src/Ashlar.CLI/Ashlar.CLI.csproj --no-restore
+dotnet run --project application/src/Ashlar.CLI -- doctor --json
 ```
 
 Windows PowerShell:
 
 ```powershell
 git clone https://github.com/IanFrelinger/Nexo.git
-Set-Location Nexo
+Set-Location Ashlar
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode all
-dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore
-dotnet run --project application/src/Nexo.CLI -- doctor --json
+dotnet build application/src/Ashlar.CLI/Ashlar.CLI.csproj --no-restore
+dotnet run --project application/src/Ashlar.CLI -- doctor --json
 ```
 
-`setup … all` installs missing host tools and restores the build graph; it does **not** benchmark models. The optional Runtime Studio hardware tune (a multi-minute `nexo workflow optimize` run against local Ollama models) is opt-in: add `--tune` (`bash scripts/setup/setup.sh all --tune`) or `-Tune` (`setup.ps1 -Mode all -Tune`, needs Git Bash). Its output goes to the gitignored `.nexo/runtime-studio/agent_set.local.json`; the tracked `apps/runtime-studio/config/agent_set.local.json` is never modified by setup.
+`setup … all` installs missing host tools and restores the build graph; it does **not** benchmark models. The optional Runtime Studio hardware tune (a multi-minute `ashlar workflow optimize` run against local Ollama models) is opt-in: add `--tune` (`bash scripts/setup/setup.sh all --tune`) or `-Tune` (`setup.ps1 -Mode all -Tune`, needs Git Bash). Its output goes to the gitignored `.ashlar/runtime-studio/agent_set.local.json`; the tracked `apps/runtime-studio/config/agent_set.local.json` is never modified by setup.
 
 Other bootstrap helpers: `scripts/install/quickstart.sh`, `scripts/setup/setup-unix.sh`, `scripts/docker-restore.ps1`. Headless dev-container check: `pwsh -NoProfile -ExecutionPolicy Bypass -File ./scripts/Verify-DevContainer.ps1`.
 
-`nexo validate` runs a broader architecture/test sweep and can be heavy on constrained hosts.
+`ashlar validate` runs a broader architecture/test sweep and can be heavy on constrained hosts.
 </details>
 
 ### Lane 3 — Deploy (operators)
 
-Run Nexo as a service using compose stacks on a host you control. Review the [security warning](#quick-start-5-minutes) above first.
+Run Ashlar as a service using compose stacks on a host you control. Review the [security warning](#quick-start-5-minutes) above first.
 
 | File | Purpose |
 |------|---------|
-| `deploy/compose/docker-compose.portal.yml` | Director portal + `nexo-api` + Ollama. |
+| `deploy/compose/docker-compose.portal.yml` | Director portal + `ashlar-api` + Ollama. |
 | `deploy/compose/docker-compose.agent-server.yml` | Portal + API + Ollama + mounted workspace + default Runtime Studio agent set. |
 | `deploy/compose/docker-compose.game-director.yml` | Game Director sidecar and MCP-facing workflow. |
 | `deploy/compose/docker-compose.ephemeral.yml` | Disposable local dependencies for tests and labs. |
@@ -261,9 +261,9 @@ docker compose -f deploy/compose/docker-compose.agent-server.yml up -d --build
 docker compose -f deploy/compose/docker-compose.portal.yml exec ollama ollama pull llama3.1:latest
 ```
 
-Run these from the repo root. Stacks that bind-mount the repository (agent server, Game Director) default `NEXO_REPO_ROOT` to `../..` relative to `deploy/compose/` — the repo root — so no extra variables are needed; a `.env` for these stacks belongs in `deploy/compose/` (or pass `--env-file`), not the repo root.
+Run these from the repo root. Stacks that bind-mount the repository (agent server, Game Director) default `ASHLAR_REPO_ROOT` to `../..` relative to `deploy/compose/` — the repo root — so no extra variables are needed; a `.env` for these stacks belongs in `deploy/compose/` (or pass `--env-file`), not the repo root.
 
-The self-extending agent in these stacks is **Passive by default** (observe only): it is armed by the aggressiveness mode file (`nexo background-agent mode set --value active`; path `NEXO_AGENT_MODE_PATH`), and a missing file or an unrecognised value reads as Passive. See [`docs/SelfHostedAgentServer.md`](docs/SelfHostedAgentServer.md).
+The self-extending agent in these stacks is **Passive by default** (observe only): it is armed by the aggressiveness mode file (`ashlar background-agent mode set --value active`; path `ASHLAR_AGENT_MODE_PATH`), and a missing file or an unrecognised value reads as Passive. See [`docs/SelfHostedAgentServer.md`](docs/SelfHostedAgentServer.md).
 
 Validate a pipeline template from a mounted workspace with the published CLI image:
 
@@ -279,44 +279,44 @@ For operator runbooks, images, and hardening, see [Deploy (operators)](#deploy-o
 
 | Goal | Command |
 |------|---------|
-| Show all commands | `dotnet run --project application/src/Nexo.CLI -- --help` |
-| Onboarding doctor | `dotnet run --project application/src/Nexo.CLI -- doctor --json` |
-| Validate architecture/contracts | `dotnet run --project application/src/Nexo.CLI -- validate` |
-| Analyze source/assemblies | `dotnet run --project application/src/Nexo.CLI -- analyze --path .` |
-| Validate a pipeline | `dotnet run --project application/src/Nexo.CLI -- pipeline validate --template <file>` |
-| Run a pipeline | `dotnet run --project application/src/Nexo.CLI -- pipeline run --template <file>` |
-| Pipeline diagnostics | `dotnet run --project application/src/Nexo.CLI -- pipeline diagnostics --format-json` |
-| Orchestrate a request | `dotnet run --project application/src/Nexo.CLI -- orchestrate "<request>"` |
-| Interactive chat | `dotnet run --project application/src/Nexo.CLI -- chat` |
-| Observe / adapt / improve | `dotnet run --project application/src/Nexo.CLI -- observe` / `adapt` / `improve` |
-| Dogfood validation | `dotnet run --project application/src/Nexo.CLI -- dogfood all` |
-| Trust dashboard | `dotnet run --project application/src/Nexo.CLI -- trust dashboard` |
-| Apply a trust policy pack | `dotnet run --project application/src/Nexo.CLI -- trust pack apply --id strict-enterprise` |
-| Background-agent daemon | `dotnet run --project application/src/Nexo.CLI -- background-agent daemon --duration 10m` |
-| Runtime Studio status | `dotnet run --project application/src/Nexo.CLI -- runtime-studio status` |
-| Mesh sync/capabilities | `dotnet run --project application/src/Nexo.CLI -- mesh sync` |
-| gRPC/runtime execution | `dotnet run --project application/src/Nexo.CLI -- runtime execute --runtime-manifest <file>` |
-| CI verification bundle | `dotnet run --project application/src/Nexo.CLI -- ci verify` |
-| Release preflight | `dotnet run --project application/src/Nexo.CLI -- release preflight <semver>` |
-| Trigger release workflow | `dotnet run --project application/src/Nexo.CLI -- release dispatch <semver> [--ref master]` |
-| Metrics report | `dotnet run --project application/src/Nexo.CLI -- metrics report` |
-| Config management | `dotnet run --project application/src/Nexo.CLI -- config show` |
-| Docker management | `dotnet run --project application/src/Nexo.CLI -- docker build` / `run` / `clean` |
-| Changelog generation | `dotnet run --project application/src/Nexo.CLI -- changelog` |
-| Maintenance cleanup | `dotnet run --project application/src/Nexo.CLI -- maintenance clean` |
+| Show all commands | `dotnet run --project application/src/Ashlar.CLI -- --help` |
+| Onboarding doctor | `dotnet run --project application/src/Ashlar.CLI -- doctor --json` |
+| Validate architecture/contracts | `dotnet run --project application/src/Ashlar.CLI -- validate` |
+| Analyze source/assemblies | `dotnet run --project application/src/Ashlar.CLI -- analyze --path .` |
+| Validate a pipeline | `dotnet run --project application/src/Ashlar.CLI -- pipeline validate --template <file>` |
+| Run a pipeline | `dotnet run --project application/src/Ashlar.CLI -- pipeline run --template <file>` |
+| Pipeline diagnostics | `dotnet run --project application/src/Ashlar.CLI -- pipeline diagnostics --format-json` |
+| Orchestrate a request | `dotnet run --project application/src/Ashlar.CLI -- orchestrate "<request>"` |
+| Interactive chat | `dotnet run --project application/src/Ashlar.CLI -- chat` |
+| Observe / adapt / improve | `dotnet run --project application/src/Ashlar.CLI -- observe` / `adapt` / `improve` |
+| Dogfood validation | `dotnet run --project application/src/Ashlar.CLI -- dogfood all` |
+| Trust dashboard | `dotnet run --project application/src/Ashlar.CLI -- trust dashboard` |
+| Apply a trust policy pack | `dotnet run --project application/src/Ashlar.CLI -- trust pack apply --id strict-enterprise` |
+| Background-agent daemon | `dotnet run --project application/src/Ashlar.CLI -- background-agent daemon --duration 10m` |
+| Runtime Studio status | `dotnet run --project application/src/Ashlar.CLI -- runtime-studio status` |
+| Mesh sync/capabilities | `dotnet run --project application/src/Ashlar.CLI -- mesh sync` |
+| gRPC/runtime execution | `dotnet run --project application/src/Ashlar.CLI -- runtime execute --runtime-manifest <file>` |
+| CI verification bundle | `dotnet run --project application/src/Ashlar.CLI -- ci verify` |
+| Release preflight | `dotnet run --project application/src/Ashlar.CLI -- release preflight <semver>` |
+| Trigger release workflow | `dotnet run --project application/src/Ashlar.CLI -- release dispatch <semver> [--ref master]` |
+| Metrics report | `dotnet run --project application/src/Ashlar.CLI -- metrics report` |
+| Config management | `dotnet run --project application/src/Ashlar.CLI -- config show` |
+| Docker management | `dotnet run --project application/src/Ashlar.CLI -- docker build` / `run` / `clean` |
+| Changelog generation | `dotnet run --project application/src/Ashlar.CLI -- changelog` |
+| Maintenance cleanup | `dotnet run --project application/src/Ashlar.CLI -- maintenance clean` |
 
 ## Application surfaces
 
 | App | What it is | First doc |
 |-----|------------|-----------|
 | `apps/game-director` | Self-hosted, MCP-exposed AI sidecar for game balance, map validation, and content generation. | [`apps/game-director/README.md`](apps/game-director/README.md) |
-| `apps/nexo-forge` | Vertical agent-set configuration for adaptive multiplayer FPS prototyping. | [`apps/nexo-forge/README.md`](apps/nexo-forge/README.md) |
+| `apps/ashlar-forge` | Vertical agent-set configuration for adaptive multiplayer FPS prototyping. | [`apps/ashlar-forge/README.md`](apps/ashlar-forge/README.md) |
 | `apps/release-manager` | Release-readiness automation agent set for repo monitoring, tests, SLO evidence, and reports. | [`apps/release-manager/README.md`](apps/release-manager/README.md) |
 | `apps/runtime-studio` | Planner/worker Runtime Studio agent set and operator scripts hosted by CLI or API. | [`apps/runtime-studio/README.md`](apps/runtime-studio/README.md) |
 
 ## Deploy (operators)
 
-Ship Nexo from published container images and compose files. Host-native scripts are escape hatches for development or constrained environments, not the default production path.
+Ship Ashlar from published container images and compose files. Host-native scripts are escape hatches for development or constrained environments, not the default production path.
 
 **Images**
 
@@ -333,7 +333,7 @@ Ship Nexo from published container images and compose files. Host-native scripts
 docker compose -f deploy/compose/docker-compose.portal.yml up -d --build
 
 # Full agent-server stack with mounted workspace and Runtime Studio config
-# (mounts the repo root by default; NEXO_REPO_ROOT only if you want another tree)
+# (mounts the repo root by default; ASHLAR_REPO_ROOT only if you want another tree)
 docker compose -f deploy/compose/docker-compose.agent-server.yml up -d --build
 ```
 
@@ -366,11 +366,11 @@ See [`docs/Configuration.md`](docs/Configuration.md).
 The canonical repo map is [`docs/ProjectTiers.md`](docs/ProjectTiers.md). Use it to understand which projects are kernel spine, deployable hosts, distribution packages, optional transport/protocols/ingress, applications on the core, commercial satellites, and tests. Three similarly named folders mean three different things: singular **`application/`** = the CLI/API hosts, plural **`applications/`** = open products built on the core, **`apps/`** = agent-set/host configuration (see [`applications/README.md`](applications/README.md)).
 
 ```text
-Nexo/
+Ashlar/
 ├── src/                          # kernel spine, runtime, distribution/SDK, transport (gRPC, MCP, A2A), ingress, tests
-├── application/src/              # Nexo.CLI, Nexo.API hosts + Nexo.Tests.CLI (open)
+├── application/src/              # Ashlar.CLI, Ashlar.API hosts + Ashlar.Tests.CLI (open)
 ├── applications/                 # open products on the core: physical-atom cert, provenance graph, spatial (Apache-2.0)
-├── apps/                         # runtime-studio, nexo-forge, game-director, release-manager configs
+├── apps/                         # runtime-studio, ashlar-forge, game-director, release-manager configs
 ├── commercial/                   # Game Director, GameDomain, Fleet, MeshDirector + tests (not Apache-2.0; LICENSING.md)
 ├── docs/                         # architecture, operations, mesh, release, SDK, demos/, samples/, runbooks
 ├── samples/                      # hello-brick, brick template, certified-brick-reuse, provenance/physical-atom inputs
@@ -378,33 +378,33 @@ Nexo/
 ├── tools/                        # certify/export brick, provenance demo, sidecar demo, repo tools
 ├── deploy/                       # compose/ stacks and k8s/ manifests
 ├── infra/                        # terraform
-├── extensions/                   # nexo-vscode
+├── extensions/                   # ashlar-vscode
 ├── consumer-template/            # nuget.config + Directory.Packages.props for external consumers
 ├── config/                       # trust policy packs
 ├── scripts/                      # setup, install, CI, release helpers
 ├── .devcontainer/
 ├── .docker/
 ├── .github/
-├── Nexo.sln                      # everything open + 9 commercial projects (78 projects)
-├── Nexo.Kernel.sln               # kernel libraries + kernel tests (no CLI/API)
-├── Nexo.Runtime.sln              # embeddable runtime graph (no application/)
-├── Nexo.Demos.sln                # docs/demos/* clients
-├── Nexo.Core.slnf                # Tier 0 spine + CLI/API hosts
-├── Nexo.LocalDevCore.slnf        # fast local CLI + core test slice
-├── Nexo.PrimeTime.slnf           # ProdStyle test gate (open + commercial GameDomain tests)
-└── application/Nexo.Application.sln  # CLI, API, Tests.CLI (open only)
+├── Ashlar.sln                      # everything open + 9 commercial projects (78 projects)
+├── Ashlar.Kernel.sln               # kernel libraries + kernel tests (no CLI/API)
+├── Ashlar.Runtime.sln              # embeddable runtime graph (no application/)
+├── Ashlar.Demos.sln                # docs/demos/* clients
+├── Ashlar.Core.slnf                # Tier 0 spine + CLI/API hosts
+├── Ashlar.LocalDevCore.slnf        # fast local CLI + core test slice
+├── Ashlar.PrimeTime.slnf           # ProdStyle test gate (open + commercial GameDomain tests)
+└── application/Ashlar.Application.sln  # CLI, API, Tests.CLI (open only)
 ```
 
 ### Which solution do I open?
 
 | Goal | Open | Notes |
 |------|------|-------|
-| CLI / API / core dev loop | `Nexo.LocalDevCore.slnf` (`make build-core`) or `Nexo.Core.slnf` | Fastest restore; no `commercial/`. Add `Nexo.Kernel.sln` when you edit kernel libraries and their tests without the hosts. |
-| Everything open, one solution | `Nexo.sln` | Also pulls the Game Director / GameDomain commercial projects that ship in the sln (see [`docs/ProjectTiers.md`](docs/ProjectTiers.md)). |
-| Kernel libraries only | `Nexo.Kernel.sln` / `Nexo.Runtime.sln` | Kernel.sln adds kernel test projects; Runtime.sln is the NuGet-publishable graph. |
-| ProdStyle test gate | `Nexo.PrimeTime.slnf` (`make test-prime-time`) | Eight test assemblies, deliberately including `commercial/tests/Nexo.Commercial.Tests.GameDomain`. |
-| Hosts as the application gate builds them | `application/Nexo.Application.sln` | `Nexo.API`, `Nexo.CLI`, `Nexo.Tests.CLI` — open only. |
-| Demos | `Nexo.Demos.sln` | Avalonia, Blazor, console clients. |
+| CLI / API / core dev loop | `Ashlar.LocalDevCore.slnf` (`make build-core`) or `Ashlar.Core.slnf` | Fastest restore; no `commercial/`. Add `Ashlar.Kernel.sln` when you edit kernel libraries and their tests without the hosts. |
+| Everything open, one solution | `Ashlar.sln` | Also pulls the Game Director / GameDomain commercial projects that ship in the sln (see [`docs/ProjectTiers.md`](docs/ProjectTiers.md)). |
+| Kernel libraries only | `Ashlar.Kernel.sln` / `Ashlar.Runtime.sln` | Kernel.sln adds kernel test projects; Runtime.sln is the NuGet-publishable graph. |
+| ProdStyle test gate | `Ashlar.PrimeTime.slnf` (`make test-prime-time`) | Eight test assemblies, deliberately including `commercial/tests/Ashlar.Commercial.Tests.GameDomain`. |
+| Hosts as the application gate builds them | `application/Ashlar.Application.sln` | `Ashlar.API`, `Ashlar.CLI`, `Ashlar.Tests.CLI` — open only. |
+| Demos | `Ashlar.Demos.sln` | Avalonia, Blazor, console clients. |
 | Commercial verticals | project paths under `commercial/` | Not in the quickstart; see [`LICENSING.md`](LICENSING.md). |
 
 ## Testing
@@ -413,16 +413,16 @@ For this repo, prefer focused validation first, then broaden only when the chang
 
 ```bash
 # CLI smoke
-dotnet run --project application/src/Nexo.CLI -- --help
+dotnet run --project application/src/Ashlar.CLI -- --help
 
 # focused pipeline tests
-dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --filter "FullyQualifiedName~Pipelines"
+dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj --filter "FullyQualifiedName~Pipelines"
 
 # certification + generation safety gate (same filter as CI cert-gate workflow)
 bash scripts/run-cert-gate.sh
 
 # broader local CLI test runner path
-dotnet run --project application/src/Nexo.CLI -- test local
+dotnet run --project application/src/Ashlar.CLI -- test local
 ```
 
 Testing strategy and guard rails:
@@ -449,33 +449,33 @@ Start here:
 
 ## Security Defaults
 
-Out of the box, Nexo runs on **HTTP only** with **no authentication** on API endpoints. This is intentional for local development — the default `ExposureProfile` is `Localhost`. Declaring `Lan`, `Tailnet` or `Public` without built-in auth makes the API **refuse to start** (escape hatch: `Nexo__Security__AllowUnauthenticatedNetworkExposure=true`), and the remote container-execution routes are unmapped unless `Nexo__Execution__ServeRemoteExecution=true` — see [`SECURITY.md`](SECURITY.md#default-posture-and-in-scope-surfaces).
+Out of the box, Ashlar runs on **HTTP only** with **no authentication** on API endpoints. This is intentional for local development — the default `ExposureProfile` is `Localhost`. Declaring `Lan`, `Tailnet` or `Public` without built-in auth makes the API **refuse to start** (escape hatch: `Ashlar__Security__AllowUnauthenticatedNetworkExposure=true`), and the remote container-execution routes are unmapped unless `Ashlar__Execution__ServeRemoteExecution=true` — see [`SECURITY.md`](SECURITY.md#default-posture-and-in-scope-surfaces).
 
 For any network-exposed deployment:
 
 ```bash
 # Set API key auth for mutating endpoints:
-export Nexo__Security__AuthorizationMode=ApiKey
-export Nexo__Security__ApiKey=your-secret-key
-export Nexo__Security__AuthorizationScope=AllApi
+export Ashlar__Security__AuthorizationMode=ApiKey
+export Ashlar__Security__ApiKey=your-secret-key
+export Ashlar__Security__AuthorizationScope=AllApi
 
 # Or use bearer token:
-export Nexo__Security__AuthorizationMode=BearerToken
-export Nexo__Security__BearerToken=your-token
+export Ashlar__Security__AuthorizationMode=BearerToken
+export Ashlar__Security__BearerToken=your-token
 ```
 
-For HTTPS, configure `ASPNETCORE_URLS=https://+:8443` with a certificate, or place Nexo behind a reverse proxy such as nginx, Caddy, or Traefik.
+For HTTPS, configure `ASPNETCORE_URLS=https://+:8443` with a certificate, or place Ashlar behind a reverse proxy such as nginx, Caddy, or Traefik.
 
-See [`docs/Configuration.md`](docs/Configuration.md) for security options and [`docs/TailscaleAndNexo.md`](docs/TailscaleAndNexo.md) for Tailnet deployment.
+See [`docs/Configuration.md`](docs/Configuration.md) for security options and [`docs/TailscaleAndAshlar.md`](docs/TailscaleAndAshlar.md) for Tailnet deployment.
 
 ## Barrier Identity Resolution Notes
 
 - JWT barrier resolution reads pre-validated claims from host auth middleware.
-- Barrier-identity API keys (the trust-path resolver's key registry) are stored as SHA-256 hashes, not plaintext. This does **not** describe `Nexo:Security:ApiKey`, which the built-in auth middleware compares in constant time against the configured plaintext value — keep it in the environment or a secret store, not in committed `appsettings.json`.
+- Barrier-identity API keys (the trust-path resolver's key registry) are stored as SHA-256 hashes, not plaintext. This does **not** describe `Ashlar:Security:ApiKey`, which the built-in auth middleware compares in constant time against the configured plaintext value — keep it in the environment or a secret store, not in committed `appsettings.json`.
 - Audit details never include full API key values.
-- Trust policy packs (`strict-enterprise`, `internal-only`, `air-gapped`) can be listed, described, and applied through `nexo trust pack ...`.
-- Observation can be paused and resumed through `nexo trust pause` / `nexo trust resume`.
+- Trust policy packs (`strict-enterprise`, `internal-only`, `air-gapped`) can be listed, described, and applied through `ashlar trust pack ...`.
+- Observation can be paused and resumed through `ashlar trust pause` / `ashlar trust resume`.
 
 ## License
 
-Nexo uses an open-core model: single-node, inspectable runtime/SDK/trust surfaces are Apache-2.0, while fleet-scale governance and vertical app packaging are commercial. See [LICENSE](LICENSE) for Apache-2.0 terms and [LICENSING.md](LICENSING.md) for the authoritative tier map and CI-enforced project boundary (`make dependency-boundary-gate`).
+Ashlar uses an open-core model: single-node, inspectable runtime/SDK/trust surfaces are Apache-2.0, while fleet-scale governance and vertical app packaging are commercial. See [LICENSE](LICENSE) for Apache-2.0 terms and [LICENSING.md](LICENSING.md) for the authoritative tier map and CI-enforced project boundary (`make dependency-boundary-gate`).

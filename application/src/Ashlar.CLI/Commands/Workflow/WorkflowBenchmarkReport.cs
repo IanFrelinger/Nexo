@@ -1,0 +1,28 @@
+namespace Ashlar.CLI.Commands.Workflow;
+
+internal sealed record WorkflowBenchmarkReport(
+    DateTimeOffset GeneratedAtUtc,
+    int TotalRuns,
+    int SuccessRuns,
+    int FailedRuns,
+    double SuccessRate,
+    long AverageElapsedMs,
+    long P95ElapsedMs,
+    double AverageScore,
+    double AverageConflicts,
+    double AverageEscalations,
+    long AverageCpuTimeDeltaMs,
+    long P95WorkingSetMb,
+    long P95PrivateMemoryMb,
+    long P95ManagedMemoryMb,
+    long MaxThreadCount,
+    string HardwareProfile,
+    IReadOnlyList<WorkflowScenarioBenchmark> TopScenarios,
+    IReadOnlyList<WorkflowScenarioBenchmark> Bottlenecks,
+    IReadOnlyList<WorkflowFailureCategoryStat> FailureCategories,
+    IReadOnlyList<string> RunIds,
+    string? LatestRunId,
+    string? GitSha,
+    string? SpecHash,
+    string? ProviderSnapshot,
+    IReadOnlyList<WorkflowRecommendation> Recommendations);

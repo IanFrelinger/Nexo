@@ -1,7 +1,7 @@
 #!/usr/bin/env pwsh
 <#
 .SYNOPSIS
-  One-shot verification of the Dev Container path: post-create restore + Nexo.CLI build + --help.
+  One-shot verification of the Dev Container path: post-create restore + Ashlar.CLI build + --help.
 
 .DESCRIPTION
   Same checks as opening the repo in a Dev Container, without VS Code/Cursor.
@@ -25,12 +25,12 @@ function Resolve-RepoRoot {
     $dir = if ([string]::IsNullOrWhiteSpace($Start)) { (Get-Location).Path } else { $Start }
     $d = [System.IO.DirectoryInfo]::new((Resolve-Path $dir).Path)
     while ($null -ne $d) {
-        if (Test-Path (Join-Path $d.FullName "Nexo.sln")) {
+        if (Test-Path (Join-Path $d.FullName "Ashlar.sln")) {
             return $d.FullName.TrimEnd('\')
         }
         $d = $d.Parent
     }
-    throw "Could not find Nexo.sln from: $Start"
+    throw "Could not find Ashlar.sln from: $Start"
 }
 
 try {
@@ -57,8 +57,8 @@ $bashPayload = @'
 set -euo pipefail
 export DOTNET_ROLL_FORWARD=LatestMajor
 bash .devcontainer/post-create.sh
-dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
-dotnet run --project application/src/Nexo.CLI -- --help >/dev/null
+dotnet build application/src/Ashlar.CLI/Ashlar.CLI.csproj --no-restore -v minimal
+dotnet run --project application/src/Ashlar.CLI -- --help >/dev/null
 echo "Verify-DevContainer: ok"
 '@
 $bashPayload = ($bashPayload -replace "`r`n", "`n") -replace "`r", ""

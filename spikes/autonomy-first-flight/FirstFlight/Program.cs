@@ -16,24 +16,24 @@
 
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Nexo.Agents.TestKit;
-using Nexo.BackgroundAgents.Objectives;
-using Nexo.Certification.Contracts;
-using Nexo.Core.Application.Autonomy;
-using Nexo.Core.Application.Certification.Models;
-using Nexo.Core.Application.Execution.Ports;
-using Nexo.Core.Domain.Bricks;
-using Nexo.Core.Domain.Execution;
-using Nexo.Infrastructure.Autonomy;
-using Nexo.Infrastructure.Certification.HotSwap;
-using Nexo.Infrastructure.Certification.Sdk.Extensions;
-using Nexo.Spikes.FirstFlight;
+using Ashlar.Agents.TestKit;
+using Ashlar.BackgroundAgents.Objectives;
+using Ashlar.Certification.Contracts;
+using Ashlar.Core.Application.Autonomy;
+using Ashlar.Core.Application.Certification.Models;
+using Ashlar.Core.Application.Execution.Ports;
+using Ashlar.Core.Domain.Bricks;
+using Ashlar.Core.Domain.Execution;
+using Ashlar.Infrastructure.Autonomy;
+using Ashlar.Infrastructure.Certification.HotSwap;
+using Ashlar.Infrastructure.Certification.Sdk.Extensions;
+using Ashlar.Spikes.FirstFlight;
 
 // --sweep: drive ONE sweep of the standing loop against the real objective store.
 if (args.Contains("--sweep", StringComparer.OrdinalIgnoreCase))
 {
-    var root = Environment.GetEnvironmentVariable("NEXO_OBJECTIVES_ROOT")
-        ?? Path.Combine(Directory.GetCurrentDirectory(), ".nexo/runtime-studio/objectives");
+    var root = Environment.GetEnvironmentVariable("ASHLAR_OBJECTIVES_ROOT")
+        ?? Path.Combine(Directory.GetCurrentDirectory(), ".ashlar/runtime-studio/objectives");
     return await SweepMode.RunAsync(root, "mcr.microsoft.com/dotnet/sdk:10.0");
 }
 
@@ -49,7 +49,7 @@ var sessionExecute = args.Contains("--session-execute", StringComparer.OrdinalIg
 // containment — its in-process handle throws if anything tries to execute it here.
 var proposed = args.Contains("--proposed", StringComparer.OrdinalIgnoreCase);
 // --live: fly a proposal produced by a model AT FLIGHT TIME (the run script called the
-// local provider and mounted the raw recording at /nexo-live). Same containment rules
+// local provider and mounted the raw recording at /ashlar-live). Same containment rules
 // as --proposed; the loop's verdict on it — either way — is the evidence.
 var live = args.Contains("--live", StringComparer.OrdinalIgnoreCase);
 if (sessionExecute && !sessionBuild)
@@ -76,7 +76,7 @@ if (proposed && live)
 LiveProposal? liveProposal = null;
 if (live)
 {
-    liveProposal = LiveProposal.Load("/nexo-live/recording.json");
+    liveProposal = LiveProposal.Load("/ashlar-live/recording.json");
     if (liveProposal is null)
         return 1; // Load printed the reason: a garbled recording never reaches the gate.
 }
@@ -99,10 +99,10 @@ if (dry)
 }
 
 services.AddCertificationGate();
-services.AddNexoAutonomy(new ConfigurationBuilder()
+services.AddAshlarAutonomy(new ConfigurationBuilder()
     .AddInMemoryCollection(new Dictionary<string, string?>
     {
-        ["Nexo:Autonomy:Enabled"] = "true",
+        ["Ashlar:Autonomy:Enabled"] = "true",
         // The shipped default is HoldAdmission=true (fail-closed: certify everything, admit
         // nothing). This flight exists to fly the WHOLE loop, swap included, and it asserts
         // AdmittedAndSwapped below and then proves the swapped generation serves -- so it has
@@ -110,13 +110,13 @@ services.AddNexoAutonomy(new ConfigurationBuilder()
         // alone, because a campaign certifies without admitting. Do not copy this line into a
         // host: it is the one place the loop is allowed to swap unattended, on a sample
         // objective, inside a container, in a spike.
-        ["Nexo:Autonomy:HoldAdmission"] = "false",
-        ["Nexo:Autonomy:UseSandboxSessions"] = "true",
-        ["Nexo:Autonomy:BuildCandidateInSession"] = sessionBuild ? "true" : "false",
-        ["Nexo:Autonomy:ExecuteCandidateInSession"] = sessionExecute ? "true" : "false",
-        ["Nexo:Autonomy:SessionImage"] = sessionImage,
-        ["Nexo:Autonomy:CadenceFloorSeconds"] = "0",
-        ["Nexo:Autonomy:WatchMinInvocations"] = "2",
+        ["Ashlar:Autonomy:HoldAdmission"] = "false",
+        ["Ashlar:Autonomy:UseSandboxSessions"] = "true",
+        ["Ashlar:Autonomy:BuildCandidateInSession"] = sessionBuild ? "true" : "false",
+        ["Ashlar:Autonomy:ExecuteCandidateInSession"] = sessionExecute ? "true" : "false",
+        ["Ashlar:Autonomy:SessionImage"] = sessionImage,
+        ["Ashlar:Autonomy:CadenceFloorSeconds"] = "0",
+        ["Ashlar:Autonomy:WatchMinInvocations"] = "2",
     })
     .Build());
 
@@ -138,7 +138,7 @@ var objective = new ObjectiveDocument
     Touch = new TouchSet
     {
         PathPrefixes = new[] { "spikes/autonomy-first-flight/generated/" },
-        Namespaces = new[] { "Nexo.Spikes.FirstFlight" },
+        Namespaces = new[] { "Ashlar.Spikes.FirstFlight" },
         Capabilities = new[] { "repo.fs.write" },
     },
     CreatedAt = DateTimeOffset.UtcNow,

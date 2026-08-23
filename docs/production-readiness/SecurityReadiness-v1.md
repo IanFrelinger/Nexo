@@ -37,5 +37,5 @@ See [RC hardening plan v1](RCHardeningPlan-v1.md) and [Release candidate checkli
 ## Sign-off
 
 - [x] `security-gate-full` green (2026-05-19)
-- [x] Tier D reports in `.nexo/security-gate/` (no High/Critical in scanned surfaces)
+- [x] Tier D reports in `.ashlar/security-gate/` (no High/Critical in scanned surfaces)
 - [x] Air-gapped tier verified (in-process safety + profile tests)

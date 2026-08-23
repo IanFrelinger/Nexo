@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Ops Tier C: closed-loop self-improvement on Nexo codebase.
+# Ops Tier C: closed-loop self-improvement on Ashlar codebase.
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"

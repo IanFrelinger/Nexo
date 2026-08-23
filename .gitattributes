@@ -9,5 +9,5 @@ Dockerfile* text eol=lf
 *.sh text eol=lf
 *.py text eol=lf
 .devcontainer/post-create.sh text eol=lf
-scripts/start-nexo-api-dev.sh text eol=lf
-scripts/stop-nexo-api-dev.sh text eol=lf
+scripts/start-ashlar-api-dev.sh text eol=lf
+scripts/stop-ashlar-api-dev.sh text eol=lf

@@ -8,7 +8,7 @@ Track after [Ship readiness v1](ShipReadiness-v1.md). **Plan:** [Ops hardening p
 
 ```bash
 make ops-gate-full
-make nexo-ready-gate   # full stack (use NEXO_READY_SKIP_DOCKER=1 locally for speed)
+make ashlar-ready-gate   # full stack (use ASHLAR_READY_SKIP_DOCKER=1 locally for speed)
 ```
 
 ## Record

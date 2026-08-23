@@ -1,14 +1,14 @@
 extends Node
-## Minimal Godot 4 example: fetch LOD tile pyramid JSON from Nexo.API.
-## Set nexo_base_url export before running.
+## Minimal Godot 4 example: fetch LOD tile pyramid JSON from Ashlar.API.
+## Set ashlar_base_url export before running.
 
-@export var nexo_base_url: String = "http://localhost:5000"
+@export var ashlar_base_url: String = "http://localhost:5000"
 
 func _ready() -> void:
 	var http := HTTPRequest.new()
 	add_child(http)
 	http.request_completed.connect(_on_pyramid_done)
-	var err := http.request("%s/api/forge/map/tile-pyramid?finestZoom=14" % nexo_base_url.rstrip("/"))
+	var err := http.request("%s/api/forge/map/tile-pyramid?finestZoom=14" % ashlar_base_url.rstrip("/"))
 	if err != OK:
 		push_error("HTTP request failed: %s" % err)
 

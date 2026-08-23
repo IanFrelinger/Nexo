@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # Production-shaped container dry run: build & start existing Compose stacks (portal or agent-server),
-# wait until Nexo.API responds, hit /health + /api/status, then tear down unless --keep-up.
+# wait until Ashlar.API responds, hit /health + /api/status, then tear down unless --keep-up.
 #
 # Usage:
 #   ./scripts/prod-dry-run.sh [--portal|--agent-server] [--keep-up] [--no-build]
 #
 # Env:
-#   NEXO_AGENT_SERVER_HTTP_PORT   Host port (default 8080; matches compose defaults)
-#   NEXO_PROD_DRY_RUN_HOST        Loopback host (default 127.0.0.1)
-#   NEXO_REPO_ROOT                  For agent-server: host path to repo root (default: script parent dir)
+#   ASHLAR_AGENT_SERVER_HTTP_PORT   Host port (default 8080; matches compose defaults)
+#   ASHLAR_PROD_DRY_RUN_HOST        Loopback host (default 127.0.0.1)
+#   ASHLAR_REPO_ROOT                  For agent-server: host path to repo root (default: script parent dir)
 
 set -euo pipefail
 
@@ -42,10 +42,10 @@ cd "$REPO_ROOT"
 # grpc.tools protoc may segfault on linux_arm64; amd64 build is CI-default (QEMU on ARM Macs).
 export DOCKER_DEFAULT_PLATFORM="${DOCKER_DEFAULT_PLATFORM:-linux/amd64}"
 
-export NEXO_REPO_ROOT="${NEXO_REPO_ROOT:-$REPO_ROOT}"
+export ASHLAR_REPO_ROOT="${ASHLAR_REPO_ROOT:-$REPO_ROOT}"
 
-PORT="${NEXO_AGENT_SERVER_HTTP_PORT:-8080}"
-HOST="${NEXO_PROD_DRY_RUN_HOST:-127.0.0.1}"
+PORT="${ASHLAR_AGENT_SERVER_HTTP_PORT:-8080}"
+HOST="${ASHLAR_PROD_DRY_RUN_HOST:-127.0.0.1}"
 BASE_URL="http://${HOST}:${PORT}"
 
 DC=(docker compose -f "$COMPOSE_FILE")
@@ -85,8 +85,8 @@ if [[ "$WAIT_RC" -ne 0 ]]; then
     sleep 2
   done
   if [[ -z "$ok" ]]; then
-    echo "Timed out waiting for API. Recent nexo-api logs:" >&2
-    "${DC[@]}" logs --tail 80 nexo-api >&2 || true
+    echo "Timed out waiting for API. Recent ashlar-api logs:" >&2
+    "${DC[@]}" logs --tail 80 ashlar-api >&2 || true
     exit 1
   fi
 fi
@@ -94,7 +94,7 @@ fi
 echo "Checking /health ..."
 curl -sfS "${BASE_URL}/health" | head -c 500 || {
   echo "FAIL: /health" >&2
-  "${DC[@]}" logs --tail 80 nexo-api >&2 || true
+  "${DC[@]}" logs --tail 80 ashlar-api >&2 || true
   exit 1
 }
 echo ""
@@ -124,7 +124,7 @@ else
   case "$MODEL_BASE_URL" in
     *://localhost|*://localhost:*|*://localhost/*|*://127.0.0.1|*://127.0.0.1:*|*://127.0.0.1/*|*://\[::1\]*)
       echo "FAIL: default model path would dial the container's own loopback (${MODEL_BASE_URL})." >&2
-      echo "      Set Nexo__Meai__OllamaBaseUrl (or OLLAMA_BASE_URL) to the ollama service in ${COMPOSE_FILE}." >&2
+      echo "      Set Ashlar__Meai__OllamaBaseUrl (or OLLAMA_BASE_URL) to the ollama service in ${COMPOSE_FILE}." >&2
       exit 1 ;;
   esac
 fi

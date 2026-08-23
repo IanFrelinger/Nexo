@@ -29,9 +29,9 @@ Optional **`leaseSeconds`** on schedule/retry bodies overrides the default (clam
 
 ## Background lease sweep
 
-When **`Nexo:Mesh:Checkpoint:SweepEnabled`** is true, **`MeshLeaseSweepBackgroundService`** periodically moves **Assigned** or **Running** tasks with expired **`leaseExpiresUtc`** back to **Pending** (same fields cleared as reclaim in placement). Disabled by default.
+When **`Ashlar:Mesh:Checkpoint:SweepEnabled`** is true, **`MeshLeaseSweepBackgroundService`** periodically moves **Assigned** or **Running** tasks with expired **`leaseExpiresUtc`** back to **Pending** (same fields cleared as reclaim in placement). Disabled by default.
 
-## Configuration (`Nexo__Mesh__Checkpoint__*`)
+## Configuration (`Ashlar__Mesh__Checkpoint__*`)
 
 | Key | Default | Description |
 |-----|---------|-------------|
@@ -49,7 +49,7 @@ See **`docs/Configuration.md`**.
 
 ## Tests
 
-- `Nexo.Tests.Infrastructure` → `Tests/Fleet/MeshTaskPlacementServiceTests.cs`, `MeshTaskExecutionServiceTests.cs`
+- `Ashlar.Tests.Infrastructure` → `Tests/Fleet/MeshTaskPlacementServiceTests.cs`, `MeshTaskExecutionServiceTests.cs`
 
 ## Revision history
 

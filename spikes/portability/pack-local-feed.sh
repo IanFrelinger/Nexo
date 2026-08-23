@@ -3,8 +3,8 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-VERSION="${NEXO_PORTABILITY_PACK_VERSION:-$(tr -d '[:space:]' < "${ROOT}/VERSION")}"
-FEED="${NEXO_PORTABILITY_PACK_FEED:-${ROOT}/artifacts/nuget-local-portability}"
+VERSION="${ASHLAR_PORTABILITY_PACK_VERSION:-$(tr -d '[:space:]' < "${ROOT}/VERSION")}"
+FEED="${ASHLAR_PORTABILITY_PACK_FEED:-${ROOT}/artifacts/nuget-local-portability}"
 
 mkdir -p "${FEED}"
 
@@ -20,9 +20,9 @@ pack() {
 }
 
 echo "==> Packing portability feed as version ${VERSION} into ${FEED}"
-bash "${ROOT}/scripts/pack-nexo-hosting-graph.sh" "${VERSION}" "${FEED}"
-pack src/Nexo.Authoring/Nexo.Authoring.csproj
-pack src/Nexo.Sdk/Nexo.Sdk.csproj
-pack src/Nexo.Client/Nexo.Client.csproj
+bash "${ROOT}/scripts/pack-ashlar-hosting-graph.sh" "${VERSION}" "${FEED}"
+pack src/Ashlar.Authoring/Ashlar.Authoring.csproj
+pack src/Ashlar.Sdk/Ashlar.Sdk.csproj
+pack src/Ashlar.Client/Ashlar.Client.csproj
 
 echo "pack-local-feed: OK (${FEED})"

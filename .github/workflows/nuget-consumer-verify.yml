@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Semver of Nexo.Hosting.Bundle on nuget.org (e.g. 1.0.0)"
+        description: "Semver of Ashlar.Hosting.Bundle on nuget.org (e.g. 1.0.0)"
         required: true
         type: string
 
@@ -26,7 +26,7 @@ jobs:
 
       - name: Pack + restore sample (same as pre-push)
         env:
-          NEXO_SDK_PACKAGE_VERSION: "9.9.9-ci-${{ github.run_id }}"
+          ASHLAR_SDK_PACKAGE_VERSION: "9.9.9-ci-${{ github.run_id }}"
         run: bash scripts/verify-stable-sdk-host-sample-packages.sh
 
   verify-published:

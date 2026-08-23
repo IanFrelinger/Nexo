@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AshlarCommercialProject>true</AshlarCommercialProject>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RootNamespace>GameDirector.Agents</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Ashlar.Commercial.GameDirector.Bricks\GameDirector.Bricks.csproj" />
+    <ProjectReference Include="..\Ashlar.Commercial.GameDirector.Domain\GameDirector.Domain.csproj" />
+    <ProjectReference Include="..\..\..\src\Ashlar.Abstractions\Ashlar.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\src\Ashlar.Core.Domain\Ashlar.Core.Domain.csproj" />
+    <ProjectReference Include="..\..\..\src\Ashlar.Client\Ashlar.Client.csproj" />
+    <ProjectReference Include="..\..\..\src\Ashlar.Core.Application\Ashlar.Core.Application.csproj" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Options" />
+  </ItemGroup>
+</Project>

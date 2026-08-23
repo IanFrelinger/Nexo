@@ -1,18 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <NexoCommercialProject>true</NexoCommercialProject>
+    <AshlarCommercialProject>true</AshlarCommercialProject>
     <OutputType>Exe</OutputType>
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <RootNamespace>Nexo.Samples.ForgeMapHost</RootNamespace>
+    <RootNamespace>Ashlar.Samples.ForgeMapHost</RootNamespace>
     <IsPackable>false</IsPackable>
     <NoWarn>$(NoWarn);1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../src/Nexo.Commercial.GameDomain/Nexo.Commercial.GameDomain.csproj" />
+    <ProjectReference Include="../../src/Ashlar.Commercial.GameDomain/Ashlar.Commercial.GameDomain.csproj" />
   </ItemGroup>
 
 </Project>

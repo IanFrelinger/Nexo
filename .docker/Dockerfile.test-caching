@@ -29,15 +29,15 @@ RUN curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh &&
     rm /tmp/dotnet-install.sh
 
 # Restore dependencies for test projects and CLI
-RUN dotnet restore src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj && \
-    dotnet restore src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.csproj && \
-    dotnet restore src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj && \
-    dotnet restore application/src/Nexo.CLI/Nexo.CLI.csproj
+RUN dotnet restore src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj && \
+    dotnet restore src/Ashlar.Tests.Infrastructure/scripts/copy-assemblies.csproj && \
+    dotnet restore src/Ashlar.Tests.BackgroundAgents/Ashlar.Tests.BackgroundAgents.csproj && \
+    dotnet restore application/src/Ashlar.CLI/Ashlar.CLI.csproj
 
 # Build test projects for net10.0 and CLI (net10.0)
-RUN dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net10.0 --no-restore -p:TreatWarningsAsErrors=false && \
-    dotnet build src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj -f net10.0 --no-restore -p:TreatWarningsAsErrors=false && \
-    dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
+RUN dotnet build src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -f net10.0 --no-restore -p:TreatWarningsAsErrors=false && \
+    dotnet build src/Ashlar.Tests.BackgroundAgents/Ashlar.Tests.BackgroundAgents.csproj -f net10.0 --no-restore -p:TreatWarningsAsErrors=false && \
+    dotnet build application/src/Ashlar.CLI/Ashlar.CLI.csproj --no-restore -v minimal
 
 # Default command: run base framework and Trust tests
-CMD ["bash", "-c", "dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --filter '(FullyQualifiedName~BaseFrameworkSmokeTests|FullyQualifiedName~RuntimeStudioBlackBoxSmokeTests)' --logger 'console;verbosity=normal' && dotnet test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj --filter 'FullyQualifiedName~RuntimeStudioWhiteBoxSmokeTests' --logger 'console;verbosity=normal' && dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj --filter 'FullyQualifiedName~Trust' --logger 'console;verbosity=normal' && dotnet test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj --filter 'FullyQualifiedName~Trust' --logger 'console;verbosity=normal'"]
+CMD ["bash", "-c", "dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj --filter '(FullyQualifiedName~BaseFrameworkSmokeTests|FullyQualifiedName~RuntimeStudioBlackBoxSmokeTests)' --logger 'console;verbosity=normal' && dotnet test src/Ashlar.Tests.BackgroundAgents/Ashlar.Tests.BackgroundAgents.csproj --filter 'FullyQualifiedName~RuntimeStudioWhiteBoxSmokeTests' --logger 'console;verbosity=normal' && dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj --filter 'FullyQualifiedName~Trust' --logger 'console;verbosity=normal' && dotnet test src/Ashlar.Tests.BackgroundAgents/Ashlar.Tests.BackgroundAgents.csproj --filter 'FullyQualifiedName~Trust' --logger 'console;verbosity=normal'"]

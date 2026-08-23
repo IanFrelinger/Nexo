@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-REPORT_DIR=".nexo/rc-gate"
+REPORT_DIR=".ashlar/rc-gate"
 mkdir -p "$REPORT_DIR"
 AUDIT="$REPORT_DIR/policy-audit.txt"
 : >"$AUDIT"

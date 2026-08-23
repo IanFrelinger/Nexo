@@ -5,8 +5,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-CLI="application/src/Nexo.CLI/Nexo.CLI.csproj"
-INFRA_TESTS="src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj"
+CLI="application/src/Ashlar.CLI/Ashlar.CLI.csproj"
+INFRA_TESTS="src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj"
 
 if ! command -v python3 >/dev/null 2>&1; then
   echo "python3 is required for JSON assertions in ship-gate-tier-a" >&2
@@ -14,14 +14,14 @@ if ! command -v python3 >/dev/null 2>&1; then
 fi
 
 echo "== Ship Tier A: build checks =="
-dotnet build src/Nexo.Core.Application/Nexo.Core.Application.csproj -f netstandard2.0 -v minimal
-dotnet build src/Nexo.Infrastructure/Nexo.Infrastructure.csproj -v minimal
+dotnet build src/Ashlar.Core.Application/Ashlar.Core.Application.csproj -f netstandard2.0 -v minimal
+dotnet build src/Ashlar.Infrastructure/Ashlar.Infrastructure.csproj -v minimal
 dotnet build "$CLI" -v minimal
 
 echo "== Ship Tier A: host DI smoke =="
 dotnet build "$INFRA_TESTS" -f net8.0 -v minimal
-NEXO_ALLOW_MOCK=1 dotnet test "$INFRA_TESTS" -f net8.0 --no-build \
-  --filter "FullyQualifiedName~HostingE2ESmokeTests.AddNexo_RegistersObservationPipeline_ByDefault|FullyQualifiedName~PipelineServiceCollectionExtensionsTests.AddNexo_RegistersPipelineCompositionLayerByDefault" \
+ASHLAR_ALLOW_MOCK=1 dotnet test "$INFRA_TESTS" -f net8.0 --no-build \
+  --filter "FullyQualifiedName~HostingE2ESmokeTests.AddAshlar_RegistersObservationPipeline_ByDefault|FullyQualifiedName~PipelineServiceCollectionExtensionsTests.AddAshlar_RegistersPipelineCompositionLayerByDefault" \
   --blame-hang-timeout 120s --blame-hang-dump-type none
 
 TMP="$(mktemp -d)"
@@ -43,17 +43,17 @@ cat > "$TEMPLATE_PATH" <<'JSON'
 JSON
 
 echo "== Ship Tier A: CLI pipeline validate / run / fallback =="
-NEXO_ALLOW_MOCK=1 dotnet run --project "$CLI" --no-build -- \
+ASHLAR_ALLOW_MOCK=1 dotnet run --project "$CLI" --no-build -- \
   pipeline validate --template "$TEMPLATE_PATH"
 
 SUCCESS_LOG="$TMP/gate-run-success.log"
 FALLBACK_LOG="$TMP/gate-run-fallback.log"
-NEXO_ALLOW_MOCK=1 dotnet run --project "$CLI" --no-build -- \
+ASHLAR_ALLOW_MOCK=1 dotnet run --project "$CLI" --no-build -- \
   pipeline run --template "$TEMPLATE_PATH" --run-id gate-run-success --format-json | tee "$SUCCESS_LOG"
-NEXO_ALLOW_MOCK=1 NEXO_PIPELINE_ENABLE_TEST_HOOKS=1 NEXO_PIPELINE_COMPLETION_POLICY=AllowNonCriticalStageFailures \
+ASHLAR_ALLOW_MOCK=1 ASHLAR_PIPELINE_ENABLE_TEST_HOOKS=1 ASHLAR_PIPELINE_COMPLETION_POLICY=AllowNonCriticalStageFailures \
   dotnet run --project "$CLI" --no-build -- \
   pipeline run --template "$TEMPLATE_PATH" --run-id gate-run-fallback --input "fail:hybrid:deterministic=true" --format-json | tee "$FALLBACK_LOG"
-NEXO_ALLOW_MOCK=1 dotnet run --project "$CLI" --no-build -- pipeline diagnostics --format-json >/dev/null
+ASHLAR_ALLOW_MOCK=1 dotnet run --project "$CLI" --no-build -- pipeline diagnostics --format-json >/dev/null
 
 python3 - <<PY
 import json, os, sys
@@ -75,11 +75,11 @@ if hybrid is None or hybrid.get("workerType") != "Agentic":
 PY
 
 echo "== Ship Tier A: LiteDB cross-process resume =="
-RESUME_DB="$TMP/nexo_pipeline_gate_resume.db"
+RESUME_DB="$TMP/ashlar_pipeline_gate_resume.db"
 RESUME_SOURCE_LOG="$TMP/gate-resume-source.log"
 RESUME_TARGET_LOG="$TMP/gate-resume-target.log"
 set +e
-NEXO_ALLOW_MOCK=1 NEXO_PIPELINE_STORE_PROVIDER=LiteDb NEXO_PIPELINE_STORE_PATH="$RESUME_DB" NEXO_PIPELINE_ENABLE_TEST_HOOKS=1 \
+ASHLAR_ALLOW_MOCK=1 ASHLAR_PIPELINE_STORE_PROVIDER=LiteDb ASHLAR_PIPELINE_STORE_PATH="$RESUME_DB" ASHLAR_PIPELINE_ENABLE_TEST_HOOKS=1 \
   dotnet run --project "$CLI" --no-build -- \
   pipeline run --template "$TEMPLATE_PATH" --run-id gate-resume-source --input "fail:ingest:deterministic=true" --format-json | tee "$RESUME_SOURCE_LOG"
 source_exit=$?
@@ -88,7 +88,7 @@ if [ "$source_exit" -eq 0 ]; then
   echo "Expected source run to fail for resume scenario" >&2
   exit 1
 fi
-NEXO_ALLOW_MOCK=1 NEXO_PIPELINE_STORE_PROVIDER=LiteDb NEXO_PIPELINE_STORE_PATH="$RESUME_DB" \
+ASHLAR_ALLOW_MOCK=1 ASHLAR_PIPELINE_STORE_PROVIDER=LiteDb ASHLAR_PIPELINE_STORE_PATH="$RESUME_DB" \
   dotnet run --project "$CLI" --no-build -- \
   pipeline run --template "$TEMPLATE_PATH" --run-id gate-resume-target --resume-run-id gate-resume-source --resume-failed-stages --format-json | tee "$RESUME_TARGET_LOG"
 

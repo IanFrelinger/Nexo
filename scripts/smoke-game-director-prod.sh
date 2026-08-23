@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Production-style smoke tests for Nexo Game Director Studio.
+# Production-style smoke tests for Ashlar Game Director Studio.
 # Usage: ./scripts/smoke-game-director-prod.sh [BASE_URL] [API_KEY]
-#   API_KEY falls back to $NEXO_API_KEY (the value the compose stack was started with); no dev key is shipped.
+#   API_KEY falls back to $ASHLAR_API_KEY (the value the compose stack was started with); no dev key is shipped.
 set -euo pipefail
 
 BASE_URL="${1:-http://127.0.0.1:8080}"
-API_KEY="${2:-${NEXO_API_KEY:?Pass API_KEY as the second argument or export NEXO_API_KEY (no default key is shipped)}}"
-AUTH_HEADER="X-Nexo-Api-Key: ${API_KEY}"
+API_KEY="${2:-${ASHLAR_API_KEY:?Pass API_KEY as the second argument or export ASHLAR_API_KEY (no default key is shipped)}}"
+AUTH_HEADER="X-Ashlar-Api-Key: ${API_KEY}"
 FAILURES=0
 PASSED=0
 
@@ -38,7 +38,7 @@ CODE=$(curl -s -o /dev/null -w "%{http_code}" -X POST "${BASE_URL}/api/bricks/ba
 if [[ "$CODE" == "401" || "$CODE" == "403" ]]; then pass "mutating endpoint rejects missing API key ($CODE)"; else fail "expected 401/403 without key" "got $CODE"; fi
 
 WRONG=$(curl -s -o /dev/null -w "%{http_code}" -X POST "${BASE_URL}/api/bricks/balance.analysis/execute" \
-  -H "Content-Type: application/json" -H "X-Nexo-Api-Key: wrong-key" -d '{"implementation":"Deterministic","input":{}}')
+  -H "Content-Type: application/json" -H "X-Ashlar-Api-Key: wrong-key" -d '{"implementation":"Deterministic","input":{}}')
 if [[ "$WRONG" == "401" || "$WRONG" == "403" ]]; then pass "mutating endpoint rejects invalid API key ($WRONG)"; else fail "expected 401/403 for wrong key" "got $WRONG"; fi
 
 # --- 3. Trust status ---

@@ -1,6 +1,6 @@
 # DORMANT: manual-only and never green — all 11 recorded runs (2026-03-08 .. 2026-05-23) failed,
 # most recently with MSB1011 ("more than one project or solution file") raised by the
-# `nexo test multi-env` step, i.e. a CLI/harness defect rather than an air-gap regression.
+# `ashlar test multi-env` step, i.e. a CLI/harness defect rather than an air-gap regression.
 # Kept because docs/production-readiness/*HardeningPlan-v1.md cite it; treat it as an unproven
 # claim until a dispatch is green. 2026-08-16, PR ci/workflow-pruning.
 #
@@ -38,11 +38,11 @@ jobs:
             8.0.x
 
       - name: Restore
-        run: dotnet restore Nexo.sln
+        run: dotnet restore Ashlar.sln
 
       - name: Build
-        run: dotnet build Nexo.sln --no-restore -v minimal
+        run: dotnet build Ashlar.sln --no-restore -v minimal
 
       - name: Run multi-env with --no-network
         run: |
-          dotnet run --project application/src/Nexo.CLI -- test multi-env --suite ${{ github.event.inputs.suite || 'framework' }} --env ubuntu-8.0 --no-network
+          dotnet run --project application/src/Ashlar.CLI -- test multi-env --suite ${{ github.event.inputs.suite || 'framework' }} --env ubuntu-8.0 --no-network

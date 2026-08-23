@@ -19,7 +19,7 @@ usage() {
   echo "  --image <ref>            Container image to pull/run (default: ${DEFAULT_IMAGE})"
   echo "  --sdk-image <ref>        SDK container image to pull/run (default: ${DEFAULT_SDK_IMAGE})"
   echo "  --workspace <path>       Optional host workspace to mount at /work"
-  echo "  --start-daemon <dur>     After bootstrap prep, run: nexo-cli background-agent daemon --duration <dur> in a container (e.g. 30s)"
+  echo "  --start-daemon <dur>     After bootstrap prep, run: ashlar-cli background-agent daemon --duration <dur> in a container (e.g. 30s)"
   echo "  --include-optional       Also install optional host dependencies when possible"
   echo "  --yes                    Auto-confirm install prompts"
   echo "  --guided                 Print beginner-friendly setup explanations"
@@ -124,13 +124,13 @@ print_guided_banner() {
   fi
   cat <<'TXT'
 =============================================
- Nexo Container One-Click Setup (Linux)
+ Ashlar Container One-Click Setup (Linux)
 =============================================
 
 This setup will:
   1) install Docker if missing
   2) start Docker daemon if needed
-  3) pull Nexo runtime + SDK images
+  3) pull Ashlar runtime + SDK images
   4) run smoke checks so you can use it immediately
 
 You do NOT need to know container tooling details.
@@ -270,10 +270,10 @@ run_container_smoke() {
     run_cmd docker run --rm -v "$abs_workspace:/work" -w /work "$IMAGE" --help
     run_cmd docker run --rm -v "$abs_workspace:/work" -w /work "$SDK_IMAGE" dotnet --info
     if [[ "$DRY_RUN" == "true" ]]; then
-      echo "[dry-run] if [ -f application/src/Nexo.CLI/Nexo.CLI.csproj ]; then dotnet restore application/src/Nexo.CLI/Nexo.CLI.csproj; else echo skip; fi"
+      echo "[dry-run] if [ -f application/src/Ashlar.CLI/Ashlar.CLI.csproj ]; then dotnet restore application/src/Ashlar.CLI/Ashlar.CLI.csproj; else echo skip; fi"
     else
       run_cmd docker run --rm -v "$abs_workspace:/work" -w /work "$SDK_IMAGE" bash -lc \
-        'if [ -f application/src/Nexo.CLI/Nexo.CLI.csproj ]; then dotnet restore application/src/Nexo.CLI/Nexo.CLI.csproj; else echo "No Nexo CLI project found under mounted /work; skipping SDK restore smoke."; fi'
+        'if [ -f application/src/Ashlar.CLI/Ashlar.CLI.csproj ]; then dotnet restore application/src/Ashlar.CLI/Ashlar.CLI.csproj; else echo "No Ashlar CLI project found under mounted /work; skipping SDK restore smoke."; fi'
     fi
   fi
 }
@@ -301,7 +301,7 @@ main() {
   echo "  docker run --rm -v \"\$PWD:/work\" -w /work $SDK_IMAGE dotnet --info"
   if [[ -n "$WORKSPACE_DIR" ]]; then
     echo "  docker run --rm -v \"$WORKSPACE_DIR:/work\" -w /work $IMAGE pipeline validate --template /work/path/to/template.json"
-    echo "  docker run --rm -v \"$WORKSPACE_DIR:/work\" -w /work $SDK_IMAGE dotnet restore application/src/Nexo.CLI/Nexo.CLI.csproj"
+    echo "  docker run --rm -v \"$WORKSPACE_DIR:/work\" -w /work $SDK_IMAGE dotnet restore application/src/Ashlar.CLI/Ashlar.CLI.csproj"
   fi
 }
 

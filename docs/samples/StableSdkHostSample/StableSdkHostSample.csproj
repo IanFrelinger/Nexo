@@ -8,6 +8,6 @@
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="../../../src/Nexo.Hosting/Nexo.Hosting.csproj" />
+    <ProjectReference Include="../../../src/Ashlar.Hosting/Ashlar.Hosting.csproj" />
   </ItemGroup>
 </Project>

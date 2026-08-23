@@ -1,6 +1,6 @@
 # Unity Sidecar Demo (Ubuntu-Testable)
 
-This demo scaffolds a Unity-facing generation loop **outside kernel core** by reusing existing Nexo CLI orchestration.
+This demo scaffolds a Unity-facing generation loop **outside kernel core** by reusing existing Ashlar CLI orchestration.
 
 ## Fast path (recommended)
 
@@ -10,17 +10,17 @@ Use the script entrypoint from repo root:
 bash scripts/unity-sidecar-demo.sh run-demo --prompt "add a dash ability"
 ```
 
-You do **not** need a globally installed `nexo` tool for this path; the script runs:
+You do **not** need a globally installed `ashlar` tool for this path; the script runs:
 
 ```bash
-dotnet run --project tools/Nexo.UnitySidecarDemo -- <args>
+dotnet run --project tools/Ashlar.UnitySidecarDemo -- <args>
 ```
 
 ## What it does
 
-`tools/Nexo.UnitySidecarDemo` provides three commands:
+`tools/Ashlar.UnitySidecarDemo` provides three commands:
 
-- `generate` – takes a gameplay prompt, calls Nexo orchestration, and writes Unity-style generated scripts
+- `generate` – takes a gameplay prompt, calls Ashlar orchestration, and writes Unity-style generated scripts
 - `validate` – compiles generated scripts in Ubuntu using Unity stubs
 - `run-demo` – runs `generate` + `validate` + dogfood block1 checks
 - `supervise` – runs a supervisor loop across Gameplay/Combat/Economy/AI roles and validates each iteration
@@ -44,7 +44,7 @@ Ubuntu cannot run Unity Editor hot-reload, but it can validate the sidecar loop:
 2. orchestration invocation (via the sidecar tool command path)
 3. code generation output
 4. compile viability (via stubs + `dotnet build`)
-5. nexo self-check (`dogfood block1`)
+5. ashlar self-check (`dogfood block1`)
 
 ## Commands
 

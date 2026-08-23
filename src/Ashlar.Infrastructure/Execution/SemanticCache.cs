@@ -1,0 +1,41 @@
+using Microsoft.Extensions.Logging;
+using Ashlar.Core.Domain.Execution;
+
+namespace Ashlar.Infrastructure.Execution;
+
+/// <summary>
+/// In-memory semantic cache for brick execution results.
+/// </summary>
+public class SemanticCache : ISemanticCache
+{
+    private readonly Dictionary<string, BrickOutput> _cache = new();
+    private readonly ILogger<SemanticCache> _logger;
+    
+    /// <summary>Initializes a new semantic cache.</summary>
+    public SemanticCache(ILogger<SemanticCache> logger)
+    {
+        _logger = logger;
+    }
+    
+    /// <summary>Get asynchronously.</summary>
+    public Task<BrickOutput?> GetAsync(string cacheKey, CancellationToken cancellationToken = default)
+    {
+        if (_cache.TryGetValue(cacheKey, out var output))
+        {
+            _logger.LogDebug("Cache hit for key {CacheKey}", cacheKey);
+            return Task.FromResult<BrickOutput?>(output);
+        }
+        
+        _logger.LogDebug("Cache miss for key {CacheKey}", cacheKey);
+        return Task.FromResult<BrickOutput?>(null);
+    }
+    
+    /// <summary>Set asynchronously.</summary>
+    public Task SetAsync(string cacheKey, BrickOutput output, CancellationToken cancellationToken = default)
+    {
+        _cache[cacheKey] = output;
+        _logger.LogDebug("Cached output for key {CacheKey}", cacheKey);
+        return Task.CompletedTask;
+    }
+}
+

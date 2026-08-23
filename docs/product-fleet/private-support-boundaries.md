@@ -1,6 +1,6 @@
 # Private support boundaries (Phase 1.6)
 
-Published severity levels and response targets for **paid Nexo Private** pilots. Adjust in contract exhibits as needed.
+Published severity levels and response targets for **paid Ashlar Private** pilots. Adjust in contract exhibits as needed.
 
 ## Severity definitions
 
@@ -22,7 +22,7 @@ Business hours: **09:00–17:00 customer local time**, Mon–Fri, excluding publ
 
 ## In scope
 
-- Nexo API, CLI, and reference compose stack from order form version
+- Ashlar API, CLI, and reference compose stack from order form version
 - License validation and tenant-scoped copilot/usage APIs
 - Diagnostics bundle review (`GET /api/support/diagnostics`)
 - Upgrade guidance for **one minor** version jump

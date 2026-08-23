@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Nexo UAT — Tier 6 (MCP / A2A protocol ingress).
+# Ashlar UAT — Tier 6 (MCP / A2A protocol ingress).
 #
 # Tier 7 pins that these surfaces are OFF by default. This tier asks the harder question: when an
 # operator turns them on, do they behave the way SECURITY.md says? The claim that matters is not
@@ -23,10 +23,10 @@ say() { printf '\n=== %s ===\n' "$*"; }
 cd "$SRC" || exit 1
 
 unset ASPNETCORE_HTTP_PORTS
-export NEXO_ALLOW_MOCK=1
+export ASHLAR_ALLOW_MOCK=1
 API=""; API_PID=""
 
-pkill -f 'Nexo\.API' 2>/dev/null
+pkill -f 'Ashlar\.API' 2>/dev/null
 PORT_FREE=no
 for _ in $(seq 1 30); do
   curl -s -o /dev/null --max-time 2 "http://localhost:5000/health" 2>/dev/null || { PORT_FREE=yes; break; }
@@ -40,7 +40,7 @@ fi
 start_api() {
   local tag="$1"; shift
   local log="$OUT/api-$tag.log"
-  ( env "$@" dotnet run --project application/src/Nexo.API -f net10.0 >"$log" 2>&1 ) &
+  ( env "$@" dotnet run --project application/src/Ashlar.API -f net10.0 >"$log" 2>&1 ) &
   API_PID=$!
   for _ in $(seq 1 90); do
     grep -q 'Now listening on:' "$log" 2>/dev/null && break
@@ -54,7 +54,7 @@ start_api() {
 }
 stop_api() {
   [ -n "$API_PID" ] && { kill $API_PID 2>/dev/null; wait $API_PID 2>/dev/null; }
-  pkill -f 'Nexo\.API' 2>/dev/null
+  pkill -f 'Ashlar\.API' 2>/dev/null
   API_PID=""
   for _ in $(seq 1 30); do
     curl -s -o /dev/null --max-time 2 "http://localhost:5000/health" 2>/dev/null || return 0
@@ -64,10 +64,10 @@ stop_api() {
 code() { curl -s -o /dev/null -w '%{http_code}' --max-time 60 "$@"; }
 
 say "6.1 the MCP flag actually maps the surface (tier 7 pins that it is 404 while off)"
-if start_api mcp-on Nexo__Mcp__Server__Enabled=true; then
+if start_api mcp-on Ashlar__Mcp__Server__Enabled=true; then
   M=$(code -X POST "$API/api/mcp" -H 'Content-Type: application/json' -d '{}')
   if [ "$M" != "404" ]; then
-    result 6 mcp-flag-maps PASS "/api/mcp=$M with Nexo:Mcp:Server:Enabled=true (was 404 while off)"
+    result 6 mcp-flag-maps PASS "/api/mcp=$M with Ashlar:Mcp:Server:Enabled=true (was 404 while off)"
   else
     result 6 mcp-flag-maps FAIL "/api/mcp still 404 with the server enabled; the flag does not map the surface"
   fi
@@ -82,10 +82,10 @@ say "6.2 enabling a protocol surface does not open a door: every verb stays cred
 # treated as ordinary the GET below would be 200 -- an anonymous read of a surface an operator just
 # turned on, under the DEFAULT scope. That is the regression this check exists for.
 if start_api mcp-auth \
-     Nexo__Mcp__Server__Enabled=true \
-     Nexo__Security__AuthorizationMode=ApiKey \
-     Nexo__Security__ApiKey=uat-tier6-key \
-     Nexo__Security__AuthorizationScope=MutatingApi; then
+     Ashlar__Mcp__Server__Enabled=true \
+     Ashlar__Security__AuthorizationMode=ApiKey \
+     Ashlar__Security__ApiKey=uat-tier6-key \
+     Ashlar__Security__AuthorizationScope=MutatingApi; then
   OPEN=$(code "$API/api/trust/status")
   MG=$(code "$API/api/mcp")
   MP=$(code -X POST "$API/api/mcp" -H 'Content-Type: application/json' -d '{}')
@@ -110,7 +110,7 @@ say "6.3 enabling A2A without a public base URL refuses to start, and names the 
 # Found by getting this wrong: an agent card carries a base URL that REMOTE agents will call, so a
 # card built from a guessed or empty URL would publish a wrong address to the ecosystem. The host
 # refuses instead, which is the behaviour to keep -- and the message names the exact setting.
-if start_api a2a-nourl Nexo__A2A__Server__Enabled=true; then
+if start_api a2a-nourl Ashlar__A2A__Server__Enabled=true; then
   result 6 a2a-requires-public-url FAIL "SECURITY/CORRECTNESS: A2A started with no PublicBaseUrl; agent cards would advertise a guess"
 else
   if grep -qi 'PublicBaseUrl' "$OUT/api-a2a-nourl.log"; then
@@ -126,8 +126,8 @@ say "6.4 enabling A2A with a base URL but no exposed agents also refuses"
 # An allow-list that defaulted to "everything" would publish every registered agent to the ecosystem
 # the moment an operator flipped one flag.
 if start_api a2a-noagents \
-     Nexo__A2A__Server__Enabled=true \
-     Nexo__A2A__Server__PublicBaseUrl=http://localhost:5000; then
+     Ashlar__A2A__Server__Enabled=true \
+     Ashlar__A2A__Server__PublicBaseUrl=http://localhost:5000; then
   result 6 a2a-requires-exposed-agents FAIL "SECURITY: A2A started with no ExposedAgentIds; exposure defaults must not be implicit"
 else
   if grep -qi 'ExposedAgentIds\|no agents are exposed' "$OUT/api-a2a-noagents.log"; then
@@ -140,8 +140,8 @@ stop_api
 
 say "6.5 an enabled MCP server exposes no tools unless an operator names them"
 # ExposedToolIds is an explicit allow-list. Enabled with an empty list must mean "no tools", not "all".
-if grep -qE 'ExposedToolIds' src/Nexo.Mcp.Server/NexoMcpServerOptions.cs 2>/dev/null; then
-  if grep -qiE 'fail-closed|defaults? to (false|empty)|no tools' src/Nexo.Mcp.Server/NexoMcpServerOptions.cs 2>/dev/null; then
+if grep -qE 'ExposedToolIds' src/Ashlar.Mcp.Server/AshlarMcpServerOptions.cs 2>/dev/null; then
+  if grep -qiE 'fail-closed|defaults? to (false|empty)|no tools' src/Ashlar.Mcp.Server/AshlarMcpServerOptions.cs 2>/dev/null; then
     result 6 exposed-tools-allowlist PASS "ExposedToolIds is an explicit allow-list on a fail-closed options type"
   else
     result 6 exposed-tools-allowlist FAIL "ExposedToolIds exists but the options type does not document a fail-closed default"

@@ -25,11 +25,11 @@
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| Observation Pipeline | RESOLVED | `AddObservationPipeline` called from `AddNexo()` by default (disabled only when `DisableObservationPipeline = true`). |
-| PathAllowlist | RESOLVED | Unit tests in [PathAllowlistTests.cs](../src/Nexo.Tests.Infrastructure/Tests/Policies/PathAllowlistTests.cs). |
-| MaxWriteSize | RESOLVED | Unit tests in [MaxWriteSizeTests.cs](../src/Nexo.Tests.Infrastructure/Tests/Policies/MaxWriteSizeTests.cs). |
-| Immutability Tests | RESOLVED | [ImmutableCoreAdaptationTests.cs](../src/Nexo.Tests.Infrastructure/Tests/Adaptation/ImmutableCoreAdaptationTests.cs) and [ImmutableCoreTests.cs](../src/Nexo.Tests.Infrastructure/Tests/Adaptation/ImmutableCoreTests.cs) prove adaptation cannot target core components. |
-| Adversarial Scope Escape | RESOLVED | [AdversarialScopeEscapeTests](../src/Nexo.Tests.Infrastructure/Tests/Adaptation/AdversarialScopeEscapeTests.cs) prove PolicyEngine validates each call; no batch skip. |
+| Observation Pipeline | RESOLVED | `AddObservationPipeline` called from `AddAshlar()` by default (disabled only when `DisableObservationPipeline = true`). |
+| PathAllowlist | RESOLVED | Unit tests in [PathAllowlistTests.cs](../src/Ashlar.Tests.Infrastructure/Tests/Policies/PathAllowlistTests.cs). |
+| MaxWriteSize | RESOLVED | Unit tests in [MaxWriteSizeTests.cs](../src/Ashlar.Tests.Infrastructure/Tests/Policies/MaxWriteSizeTests.cs). |
+| Immutability Tests | RESOLVED | [ImmutableCoreAdaptationTests.cs](../src/Ashlar.Tests.Infrastructure/Tests/Adaptation/ImmutableCoreAdaptationTests.cs) and [ImmutableCoreTests.cs](../src/Ashlar.Tests.Infrastructure/Tests/Adaptation/ImmutableCoreTests.cs) prove adaptation cannot target core components. |
+| Adversarial Scope Escape | RESOLVED | [AdversarialScopeEscapeTests](../src/Ashlar.Tests.Infrastructure/Tests/Adaptation/AdversarialScopeEscapeTests.cs) prove PolicyEngine validates each call; no batch skip. |
 
 ---
 
@@ -47,9 +47,9 @@
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| Observe → Improve Path | RESOLVED | SelfImprovementLoop queries IPatternStore for `repeated-edits` and `edit-then-build`; [SelfImprovementLoopPatternTests](../src/Nexo.Tests.Infrastructure/Tests/SelfImprovement/SelfImprovementLoopPatternTests.cs) validates. |
-| Holdout Test Set | RESOLVED | HoldoutTestOptions, `nexo improve --self --holdout-filter`, [SelfImprovementLoopHoldoutTests](../src/Nexo.Tests.Infrastructure/Tests/SelfImprovement/SelfImprovementLoopHoldoutTests.cs). |
-| Aggressiveness Dial | RESOLVED | Four modes with distinct behavior: Passive (skip), SemiActive (approval gate), Active (run), Ambient (run silently). See [IApprovalGate](../src/Nexo.Core.Application/Trust/Ports/IApprovalGate.cs). |
+| Observe → Improve Path | RESOLVED | SelfImprovementLoop queries IPatternStore for `repeated-edits` and `edit-then-build`; [SelfImprovementLoopPatternTests](../src/Ashlar.Tests.Infrastructure/Tests/SelfImprovement/SelfImprovementLoopPatternTests.cs) validates. |
+| Holdout Test Set | RESOLVED | HoldoutTestOptions, `ashlar improve --self --holdout-filter`, [SelfImprovementLoopHoldoutTests](../src/Ashlar.Tests.Infrastructure/Tests/SelfImprovement/SelfImprovementLoopHoldoutTests.cs). |
+| Aggressiveness Dial | RESOLVED | Four modes with distinct behavior: Passive (skip), SemiActive (approval gate), Active (run), Ambient (run silently). See [IApprovalGate](../src/Ashlar.Core.Application/Trust/Ports/IApprovalGate.cs). |
 
 ---
 
@@ -66,8 +66,8 @@
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| Port Definitions | RESOLVED | Core ports in `Nexo.Abstractions`; breaking-change and stability expectations documented in [SdkCompatibilityPolicy.md](SdkCompatibilityPolicy.md) alongside [sdk.md](sdk.md). |
-| SDK & External Registration | RESOLVED | `AddNexoSdk`, [sdk.md](sdk.md); reference host `docs/samples/StableSdkHostSample/`; `NexoSdkBuilder.UseAdaptiveRouting()` marked `[Obsolete]` (experimental). The sample is built by the **Full Platform Readiness Gate** workflow when run manually. |
+| Port Definitions | RESOLVED | Core ports in `Ashlar.Abstractions`; breaking-change and stability expectations documented in [SdkCompatibilityPolicy.md](SdkCompatibilityPolicy.md) alongside [sdk.md](sdk.md). |
+| SDK & External Registration | RESOLVED | `AddAshlarSdk`, [sdk.md](sdk.md); reference host `docs/samples/StableSdkHostSample/`; `AshlarSdkBuilder.UseAdaptiveRouting()` marked `[Obsolete]` (experimental). The sample is built by the **Full Platform Readiness Gate** workflow when run manually. |
 
 ---
 
@@ -77,8 +77,8 @@
 |-----------|--------|-------|
 | Unit Tests (PathAllowlist, MaxWriteSize) | RESOLVED | Both have comprehensive unit tests. |
 | Immutability Tests | RESOLVED | ImmutableCoreAdaptationTests, ImmutableCoreTests. |
-| CLI Dogfood Parity | RESOLVED | `nexo dogfood block1`–`block9`, `closedloop`, `phasef`, `all` exposed. |
-| Adversarial Scope Escape Tests | RESOLVED | [AdversarialScopeEscapeTests](../src/Nexo.Tests.Infrastructure/Tests/Adaptation/AdversarialScopeEscapeTests.cs). |
+| CLI Dogfood Parity | RESOLVED | `ashlar dogfood block1`–`block9`, `closedloop`, `phasef`, `all` exposed. |
+| Adversarial Scope Escape Tests | RESOLVED | [AdversarialScopeEscapeTests](../src/Ashlar.Tests.Infrastructure/Tests/Adaptation/AdversarialScopeEscapeTests.cs). |
 | Air-Gapped Test Mode | RESOLVED | `--no-network` wired in TestMultiEnvCommand; `make test-multi-env-no-network`; [test-air-gapped-no-network.yml](../.github/workflows/test-air-gapped-no-network.yml) CI workflow. |
 
 ---
@@ -87,7 +87,7 @@
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| Composition Engine | EXISTS | CompositionEngine, ComposedTestRunner, `nexo compose`. |
+| Composition Engine | EXISTS | CompositionEngine, ComposedTestRunner, `ashlar compose`. |
 | Capability Component Registry | RESOLVED | `CapabilityComponentRegistry` / `ComponentDescriptorValidator`; `InputSchema` and `OutputSchema` required when `SupportLevel` is Stable; seed descriptors carry schemas (see [SeedComponentLibraryAudit.md](SeedComponentLibraryAudit.md)). |
 | Seed Component Library | RESOLVED | [SeedComponentLibraryAudit.md](SeedComponentLibraryAudit.md); placeholder descriptors in CapabilityComponentRegistry. |
 
@@ -97,10 +97,10 @@
 
 | Component | Status | Notes |
 |-----------|--------|-------|
-| Shared Adaptation Cache | RESOLVED | FileBasedSharedAdaptationStore, `nexo mesh sync`, SharedAdaptationCacheTests, DogfoodBlock10SharedAdaptationTests. |
-| Sneakernet CLI | RESOLVED | `nexo mesh export --to <path>`, `nexo mesh import <path>`. |
-| Mesh Capabilities | RESOLVED | `nexo mesh capabilities` subcommand exists. |
-| Instance Discovery | EXISTS | `nexo mesh`, FileBasedCapabilityAdvertisement. |
+| Shared Adaptation Cache | RESOLVED | FileBasedSharedAdaptationStore, `ashlar mesh sync`, SharedAdaptationCacheTests, DogfoodBlock10SharedAdaptationTests. |
+| Sneakernet CLI | RESOLVED | `ashlar mesh export --to <path>`, `ashlar mesh import <path>`. |
+| Mesh Capabilities | RESOLVED | `ashlar mesh capabilities` subcommand exists. |
+| Instance Discovery | EXISTS | `ashlar mesh`, FileBasedCapabilityAdvertisement. |
 
 ---
 
@@ -120,14 +120,14 @@
 - (Resolved: Adversarial scope escape tests added.)
 
 ### P1 — Core Loop
-- **Runtime mode switch:** RESOLVED. `FileBasedAggressivenessModeStore` persists to ~/.nexo/agent-mode.json. CLI and background agent (separate processes) share the file; mode changes take effect on next execution cycle without restart.
+- **Runtime mode switch:** RESOLVED. `FileBasedAggressivenessModeStore` persists to ~/.ashlar/agent-mode.json. CLI and background agent (separate processes) share the file; mode changes take effect on next execution cycle without restart.
 
 ### P2 — Product Completeness
 - (Resolved: Seed library audited; air-gapped CI workflow added.)
 
 ### P3 — Vision Completion
 - **Application suite:** Future work.
-- **Inter-instance trust tiers:** RESOLVED — `PeerTrustTier`, `PeerTrustPolicyResolver`, mesh routing; `nexo mesh admit` / `nexo mesh revoke` for peer admission state.
+- **Inter-instance trust tiers:** RESOLVED — `PeerTrustTier`, `PeerTrustPolicyResolver`, mesh routing; `ashlar mesh admit` / `ashlar mesh revoke` for peer admission state.
 
 ---
 

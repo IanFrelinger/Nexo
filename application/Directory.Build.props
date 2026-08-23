@@ -4,13 +4,13 @@
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
 
   <PropertyGroup>
-    <NexoIncludeDomainBrickGlobalUsing Condition="
-      '$(MSBuildProjectName)' == 'Nexo.CLI' OR
-      '$(MSBuildProjectName)' == 'Nexo.API'
-      ">true</NexoIncludeDomainBrickGlobalUsing>
+    <AshlarIncludeDomainBrickGlobalUsing Condition="
+      '$(MSBuildProjectName)' == 'Ashlar.CLI' OR
+      '$(MSBuildProjectName)' == 'Ashlar.API'
+      ">true</AshlarIncludeDomainBrickGlobalUsing>
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(NexoIncludeDomainBrickGlobalUsing)' == 'true'">
-    <Compile Include="$(MSBuildThisFileDirectory)../src/Nexo.Compat/GlobalUsings.DomainBrick.cs" Link="GlobalUsings.DomainBrick.cs" />
+  <ItemGroup Condition="'$(AshlarIncludeDomainBrickGlobalUsing)' == 'true'">
+    <Compile Include="$(MSBuildThisFileDirectory)../src/Ashlar.Compat/GlobalUsings.DomainBrick.cs" Link="GlobalUsings.DomainBrick.cs" />
   </ItemGroup>
 </Project>

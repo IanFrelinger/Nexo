@@ -13,7 +13,7 @@ on:
       - ".docker/Dockerfile.test-caching"
       - ".docker/Dockerfile.test-caching-alpine"
       - ".docker/Dockerfile.test-caching-debian"
-      - "application/src/Nexo.CLI/**"
+      - "application/src/Ashlar.CLI/**"
       - "README.md"
       - "docs/DocsIndex.md"
   workflow_dispatch:

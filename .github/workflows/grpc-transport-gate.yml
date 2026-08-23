@@ -8,9 +8,9 @@ on:
       - "cursor/**"
     paths:
       - ".github/workflows/grpc-transport-gate.yml"
-      - "src/Nexo.Tests.Transport/**"
-      - "src/Nexo.Transport.Grpc/**"
-      - "src/Nexo.Abstractions/**"
+      - "src/Ashlar.Tests.Transport/**"
+      - "src/Ashlar.Transport.Grpc/**"
+      - "src/Ashlar.Abstractions/**"
   workflow_dispatch:
 
 jobs:
@@ -33,6 +33,6 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          dotnet test src/Nexo.Tests.Transport/Nexo.Tests.Transport.csproj \
+          dotnet test src/Ashlar.Tests.Transport/Ashlar.Tests.Transport.csproj \
             --filter "Category=ProdStyle" \
             --blame-hang-timeout 120s

@@ -43,9 +43,9 @@ fi
 
 echo "==> Steps 3–5: pack ${VERSION}, consume externally, assert execution"
 set +e
-NEXO_EXTERNAL_PRODUCT_VERIFY_VERSION="${VERSION}" \
-NEXO_EXTERNAL_PRODUCT_PROBE_BRICK=1 \
-NEXO_EXTERNAL_PRODUCT_PROBE_BRICK_SOURCE="${GENERATED}/ErrorSummaryExtractorBrick" \
+ASHLAR_EXTERNAL_PRODUCT_VERIFY_VERSION="${VERSION}" \
+ASHLAR_EXTERNAL_PRODUCT_PROBE_BRICK=1 \
+ASHLAR_EXTERNAL_PRODUCT_PROBE_BRICK_SOURCE="${GENERATED}/ErrorSummaryExtractorBrick" \
   bash "${ROOT}/scripts/verify-external-product-shape.sh"
 verify_exit=$?
 set -e
@@ -63,11 +63,11 @@ fi
 
 # Scan generated brick for repo-internal leaks
 if [[ -f "${GENERATED}/ErrorSummaryExtractorBrick/ErrorSummaryExtractorBrick.cs" ]]; then
-  if rg -q "Nexo\\.Infrastructure|Nexo\\.Core\\.Application|ProjectReference|src/Nexo" "${GENERATED}/ErrorSummaryExtractorBrick"; then
+  if rg -q "Ashlar\\.Infrastructure|Ashlar\\.Core\\.Application|ProjectReference|src/Ashlar" "${GENERATED}/ErrorSummaryExtractorBrick"; then
     record_leak "Generated source references repo-internal namespaces or paths"
   fi
-  if rg -q "using Nexo\\.Core\\.Domain" "${GENERATED}/ErrorSummaryExtractorBrick/ErrorSummaryExtractorBrick.cs"; then
-    record_leak "Generated brick uses Nexo.Core.Domain.* namespaces (shipped via Nexo.Authoring/Nexo.Brick.Contracts but not the pinned package IDs)"
+  if rg -q "using Ashlar\\.Core\\.Domain" "${GENERATED}/ErrorSummaryExtractorBrick/ErrorSummaryExtractorBrick.cs"; then
+    record_leak "Generated brick uses Ashlar.Core.Domain.* namespaces (shipped via Ashlar.Authoring/Ashlar.Brick.Contracts but not the pinned package IDs)"
   fi
 fi
 
@@ -90,7 +90,7 @@ mkdir -p "$(dirname "${REPORT}")"
   echo "|------|-------------|--------|"
   echo "| 1 | Generate deterministic probe brick via \`INewBrickGenerator\` | ${step1_status} |"
   echo "| 2 | Certify through S0–S2 gate (signed admission record) | ${step2_status} |"
-  echo "| 3 | Pack Nexo.Brick.Contracts + Nexo.Authoring (+ Hosting.Bundle) @ ${VERSION} | ${step3_status} |"
+  echo "| 3 | Pack Ashlar.Brick.Contracts + Ashlar.Authoring (+ Hosting.Bundle) @ ${VERSION} | ${step3_status} |"
   echo "| 4 | Consume generated brick from external template (package pins only) | ${step4_status} |"
   echo "| 5 | Cross-project HTTP execute assertion | ${step5_status} |"
   echo

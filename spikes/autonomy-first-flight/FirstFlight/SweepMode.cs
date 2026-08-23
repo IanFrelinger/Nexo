@@ -1,16 +1,16 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Nexo.BackgroundAgents.Autonomy;
-using Nexo.BackgroundAgents.Objectives;
-using Nexo.Core.Application.Autonomy;
-using Nexo.Core.Domain.Bricks;
-using Nexo.Core.Domain.Execution;
-using Nexo.Infrastructure.Autonomy;
-using Nexo.Infrastructure.Certification.HotSwap;
-using Nexo.Infrastructure.Certification.Sdk.Extensions;
+using Ashlar.BackgroundAgents.Autonomy;
+using Ashlar.BackgroundAgents.Objectives;
+using Ashlar.Core.Application.Autonomy;
+using Ashlar.Core.Domain.Bricks;
+using Ashlar.Core.Domain.Execution;
+using Ashlar.Infrastructure.Autonomy;
+using Ashlar.Infrastructure.Certification.HotSwap;
+using Ashlar.Infrastructure.Certification.Sdk.Extensions;
 
-namespace Nexo.Spikes.FirstFlight;
+namespace Ashlar.Spikes.FirstFlight;
 
 /// <summary>
 /// Drives ONE sweep of the standing loop against the real objective store — the path that
@@ -44,17 +44,17 @@ public static class SweepMode
         var services = new ServiceCollection();
         services.AddLogging(b => b.AddSimpleConsole(o => o.SingleLine = true).SetMinimumLevel(LogLevel.Information));
         services.AddCertificationGate();
-        services.AddNexoAutonomy(new ConfigurationBuilder()
+        services.AddAshlarAutonomy(new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["Nexo:Autonomy:Enabled"] = "true",
-                ["Nexo:Autonomy:UseSandboxSessions"] = "true",
-                ["Nexo:Autonomy:BuildCandidateInSession"] = "true",
-                ["Nexo:Autonomy:ExecuteCandidateInSession"] = "true",
+                ["Ashlar:Autonomy:Enabled"] = "true",
+                ["Ashlar:Autonomy:UseSandboxSessions"] = "true",
+                ["Ashlar:Autonomy:BuildCandidateInSession"] = "true",
+                ["Ashlar:Autonomy:ExecuteCandidateInSession"] = "true",
                 // The whole point of the first run: certify everything, admit nothing.
-                ["Nexo:Autonomy:HoldAdmission"] = "true",
-                ["Nexo:Autonomy:SessionImage"] = sessionImage,
-                ["Nexo:Autonomy:CadenceFloorSeconds"] = "0",
+                ["Ashlar:Autonomy:HoldAdmission"] = "true",
+                ["Ashlar:Autonomy:SessionImage"] = sessionImage,
+                ["Ashlar:Autonomy:CadenceFloorSeconds"] = "0",
             })
             .Build());
 
@@ -72,7 +72,7 @@ public static class SweepMode
                 typeof(BrickInput).Assembly.Location,
                 // The candidate delegates to the physical-atom codec, so its assembly
                 // has to travel into the session with the rest of the references.
-                typeof(Nexo.Certification.Physical.Tagging.PhysicalAtomQrTagCodec).Assembly.Location,
+                typeof(Ashlar.Certification.Physical.Tagging.PhysicalAtomQrTagCodec).Assembly.Location,
             },
         };
 
@@ -81,34 +81,34 @@ public static class SweepMode
         // Every proposal, and the exact projected feedback the model was handed for a repair,
         // is recorded to the campaign directory: that is the evidence ledger's raw material.
         IProposalSource? proposals = null;
-        var proposerKind = Environment.GetEnvironmentVariable("NEXO_SWEEP_PROPOSER");
+        var proposerKind = Environment.GetEnvironmentVariable("ASHLAR_SWEEP_PROPOSER");
         if (string.Equals(proposerKind, "ollama", StringComparison.OrdinalIgnoreCase))
         {
             var options = new OllamaProposalOptions
             {
-                BaseUrl = Environment.GetEnvironmentVariable("NEXO_OLLAMA_BASE_URL") ?? "http://host.docker.internal:11434",
-                Model = Environment.GetEnvironmentVariable("NEXO_OLLAMA_MODEL") ?? "codellama:7b",
+                BaseUrl = Environment.GetEnvironmentVariable("ASHLAR_OLLAMA_BASE_URL") ?? "http://host.docker.internal:11434",
+                Model = Environment.GetEnvironmentVariable("ASHLAR_OLLAMA_MODEL") ?? "codellama:7b",
             };
             // Per-model dials, all optional: a 27B with CPU offload needs a longer timeout; a
             // thinking model needs think=false (or a much larger token budget) to reach the code.
-            if (int.TryParse(Environment.GetEnvironmentVariable("NEXO_OLLAMA_MAX_TOKENS"), out var maxTokens) && maxTokens > 0)
+            if (int.TryParse(Environment.GetEnvironmentVariable("ASHLAR_OLLAMA_MAX_TOKENS"), out var maxTokens) && maxTokens > 0)
                 options.MaxTokens = maxTokens;
-            if (int.TryParse(Environment.GetEnvironmentVariable("NEXO_OLLAMA_TIMEOUT_MINUTES"), out var timeoutMinutes) && timeoutMinutes > 0)
+            if (int.TryParse(Environment.GetEnvironmentVariable("ASHLAR_OLLAMA_TIMEOUT_MINUTES"), out var timeoutMinutes) && timeoutMinutes > 0)
                 options.Timeout = TimeSpan.FromMinutes(timeoutMinutes);
-            if (double.TryParse(Environment.GetEnvironmentVariable("NEXO_OLLAMA_TEMPERATURE"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var temperature))
+            if (double.TryParse(Environment.GetEnvironmentVariable("ASHLAR_OLLAMA_TEMPERATURE"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var temperature))
                 options.Temperature = temperature;
-            if (bool.TryParse(Environment.GetEnvironmentVariable("NEXO_OLLAMA_THINK"), out var think))
+            if (bool.TryParse(Environment.GetEnvironmentVariable("ASHLAR_OLLAMA_THINK"), out var think))
                 options.Think = think;
             Console.WriteLine($"proposer dials: max_tokens={options.MaxTokens} timeout={options.Timeout.TotalMinutes:F0}m temperature={options.Temperature} think={(options.Think is null ? "(model default)" : options.Think.ToString())}");
             // Operator preamble (house rules — here, the brick API a small model does not know).
             // Data the proposer is handed, never a witness; the same knob a deployment would set.
-            var preamblePath = Environment.GetEnvironmentVariable("NEXO_OLLAMA_SYSTEM_PREAMBLE_FILE");
+            var preamblePath = Environment.GetEnvironmentVariable("ASHLAR_OLLAMA_SYSTEM_PREAMBLE_FILE");
             if (!string.IsNullOrWhiteSpace(preamblePath) && File.Exists(preamblePath))
             {
                 options.SystemPreamble = File.ReadAllText(preamblePath).Trim();
                 Console.WriteLine($"preamble: {preamblePath} ({options.SystemPreamble.Length} chars)");
             }
-            var campaignDir = Environment.GetEnvironmentVariable("NEXO_CAMPAIGN_DIR")
+            var campaignDir = Environment.GetEnvironmentVariable("ASHLAR_CAMPAIGN_DIR")
                 ?? Path.Combine(Path.GetDirectoryName(Path.GetFullPath(objectivesRoot))!, "campaign");
             Directory.CreateDirectory(campaignDir);
             var live = new OllamaProposalSource(
@@ -120,10 +120,10 @@ public static class SweepMode
         }
         else
         {
-            Console.WriteLine("proposer: recorded proposals beside each objective (set NEXO_SWEEP_PROPOSER=ollama for live)");
+            Console.WriteLine("proposer: recorded proposals beside each objective (set ASHLAR_SWEEP_PROPOSER=ollama for live)");
         }
 
-        if (int.TryParse(Environment.GetEnvironmentVariable("NEXO_SWEEP_MAX_OBJECTIVES"), out var maxObjectives) && maxObjectives > 0)
+        if (int.TryParse(Environment.GetEnvironmentVariable("ASHLAR_SWEEP_MAX_OBJECTIVES"), out var maxObjectives) && maxObjectives > 0)
             settings.MaxObjectivesPerSweep = maxObjectives;
 
         var loop = new AutonomyLoopService(

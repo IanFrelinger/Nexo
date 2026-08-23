@@ -3,7 +3,7 @@
 #
 #   ./scripts/mesh-lab-verify-trust.sh .env.mesh-lab
 #
-# Requires peer-a with Nexo__Mesh__Placement__PeerTrustPolicy=trusted-only (compose default).
+# Requires peer-a with Ashlar__Mesh__Placement__PeerTrustPolicy=trusted-only (compose default).
 
 set -euo pipefail
 
@@ -26,26 +26,26 @@ source_env_kv() {
   grep -E "^${key}=" "$COMPOSE_ENV_FILE" 2>/dev/null | head -1 | cut -d= -f2- | tr -d '\r' || true
 }
 
-API_KEY="$(source_env_kv Nexo__Security__ApiKey)"
+API_KEY="$(source_env_kv Ashlar__Security__ApiKey)"
 MESH_LAB_PEER_REGISTRATION_KEY="$(source_env_kv MESH_LAB_PEER_REGISTRATION_KEY)"
 export MESH_LAB_PEER_REGISTRATION_KEY
 if [[ -z "$API_KEY" ]]; then
-  echo "(Skipping trust verify: no Nexo__Security__ApiKey in env file)"
+  echo "(Skipping trust verify: no Ashlar__Security__ApiKey in env file)"
   exit 0
 fi
 
 mesh_post() {
-  curl -fsS -X POST -H "Content-Type: application/json" -H "X-Nexo-Api-Key: ${API_KEY}" "$@"
+  curl -fsS -X POST -H "Content-Type: application/json" -H "X-Ashlar-Api-Key: ${API_KEY}" "$@"
 }
 
 mesh_delete() {
-  curl -fsS -X DELETE -H "X-Nexo-Api-Key: ${API_KEY}" "$@"
+  curl -fsS -X DELETE -H "X-Ashlar-Api-Key: ${API_KEY}" "$@"
 }
 
 echo "== Mesh trust placement (director ${PEER_A_HOST}, trusted-only) =="
 
 for peer_id in mesh-lab-verify-peer mesh-lab-trust-untrusted mesh-lab-trust-trusted; do
-  curl -fsS -X DELETE -H "X-Nexo-Api-Key: ${API_KEY}" \
+  curl -fsS -X DELETE -H "X-Ashlar-Api-Key: ${API_KEY}" \
     "http://${PEER_A_HOST}/api/mesh/fleet/nodes/${peer_id}" >/dev/null 2>&1 || true
 done
 
@@ -79,14 +79,14 @@ BLOCK_JSON="$(mesh_post -d '{"name":"mesh-lab-trust-blocked","steps":1}' \
 BLOCK_ID="$(echo "$BLOCK_JSON" | python3 -c 'import json,sys; print(json.load(sys.stdin)["taskId"])')"
 BLOCK_CODE="$(curl -s -o /dev/null -w '%{http_code}' -X POST \
   -H "Content-Type: application/json" \
-  -H "X-Nexo-Api-Key: ${API_KEY}" \
+  -H "X-Ashlar-Api-Key: ${API_KEY}" \
   -d '{}' \
   "http://${PEER_A_HOST}/api/mesh/tasks/${BLOCK_ID}/schedule")"
 if [[ "$BLOCK_CODE" != "400" ]]; then
   echo "Expected HTTP 400 scheduling with only untrusted peer, got ${BLOCK_CODE}" >&2
   exit 1
 fi
-GET_JSON="$(curl -fsS -H "X-Nexo-Api-Key: ${API_KEY}" "http://${PEER_A_HOST}/api/mesh/tasks/${BLOCK_ID}")"
+GET_JSON="$(curl -fsS -H "X-Ashlar-Api-Key: ${API_KEY}" "http://${PEER_A_HOST}/api/mesh/tasks/${BLOCK_ID}")"
 echo "$GET_JSON" | python3 -c '
 import json, sys
 t = json.load(sys.stdin)
@@ -98,7 +98,7 @@ print("Untrusted-only fleet blocked by trust policy — OK")
 '
 
 for peer_id in mesh-lab-trust-untrusted mesh-lab-trust-trusted; do
-  curl -fsS -X DELETE -H "X-Nexo-Api-Key: ${API_KEY}" \
+  curl -fsS -X DELETE -H "X-Ashlar-Api-Key: ${API_KEY}" \
     "http://${PEER_A_HOST}/api/mesh/fleet/nodes/${peer_id}" >/dev/null 2>&1 || true
 done
 mesh_post -d "$(mesh_lab_fleet_register_json mesh-lab-verify-peer http://peer-b:8080 Trusted)" \

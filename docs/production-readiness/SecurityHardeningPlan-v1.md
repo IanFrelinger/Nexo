@@ -1,6 +1,6 @@
 # Security & trust hardening plan v1
 
-Validates the **trust boundary** (policy packs, audit log, access boundary), **API auth & mesh security middleware**, **CLI trust surfaces**, **supply chain**, and **air-gapped operation** — the production "waterproofing" layer before exposing Nexo to the internet.
+Validates the **trust boundary** (policy packs, audit log, access boundary), **API auth & mesh security middleware**, **CLI trust surfaces**, **supply chain**, and **air-gapped operation** — the production "waterproofing" layer before exposing Ashlar to the internet.
 
 **Automation:** `make security-gate-full`
 
@@ -32,13 +32,13 @@ make ship-gate-full
 
 ## What each tier proves
 
-**A** — `TrustPolicyPackRegistryTests`, `NexoPeerBrickExecutorTrustTests`, audit log retention, `AccessBoundary` rules.
+**A** — `TrustPolicyPackRegistryTests`, `AshlarPeerBrickExecutorTrustTests`, audit log retention, `AccessBoundary` rules.
 
-**B** — `NexoApiKeyAuthMiddlewareTests`, `MeshSecurityMiddlewareTests`, `NexoApiOpenInternetReadinessTests`, `SecurityAdvisoryEndpointTests`, `SecurityAnalysisRuleTests`.
+**B** — `AshlarApiKeyAuthMiddlewareTests`, `MeshSecurityMiddlewareTests`, `AshlarApiOpenInternetReadinessTests`, `SecurityAdvisoryEndpointTests`, `SecurityAnalysisRuleTests`.
 
-**C** — TrustCommand unit suite + `nexo trust boundary --format-json` and `nexo trust dashboard --format-json` smoke.
+**C** — TrustCommand unit suite + `ashlar trust boundary --format-json` and `ashlar trust dashboard --format-json` smoke.
 
-**D** — `dotnet list package --vulnerable` / `--deprecated` on `application/Nexo.Application.sln` plus `Nexo.Hosting` and `Nexo.Infrastructure` (avoids a known NuGet client issue with YamlDotNet registration on `Nexo.Core`). Reports in `.nexo/security-gate/`.
+**D** — `dotnet list package --vulnerable` / `--deprecated` on `application/Ashlar.Application.sln` plus `Ashlar.Hosting` and `Ashlar.Infrastructure` (avoids a known NuGet client issue with YamlDotNet registration on `Ashlar.Core`). Reports in `.ashlar/security-gate/`.
 
 **E** — air-gapped profile resolution + `LocalModelProviderSafetyTests`. Optional `--network none` container suite.
 

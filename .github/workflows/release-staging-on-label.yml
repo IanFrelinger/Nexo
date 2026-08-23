@@ -46,7 +46,7 @@ jobs:
           if [[ -f VERSION ]]; then
             V="$(tr -d '[:space:]' < VERSION)"
           else
-            V="$(sed -n 's:.*<PackageVersion>\([^<]*\)</PackageVersion>.*:\1:p' src/Nexo.Hosting.Bundle/Nexo.Hosting.Bundle.csproj | head -1)"
+            V="$(sed -n 's:.*<PackageVersion>\([^<]*\)</PackageVersion>.*:\1:p' src/Ashlar.Hosting.Bundle/Ashlar.Hosting.Bundle.csproj | head -1)"
           fi
           if [[ ! "${V}" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.]+)?$ ]]; then
             echo "::error::Could not resolve valid semver (VERSION file or Hosting.Bundle PackageVersion)."

@@ -3,7 +3,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-OUT="${NEXO_PORTABILITY_GENERATED_DIR:-${ROOT}/spikes/portability/generated}"
+OUT="${ASHLAR_PORTABILITY_GENERATED_DIR:-${ROOT}/spikes/portability/generated}"
 VERSION="$(tr -d '[:space:]' < "${ROOT}/VERSION")"
 
 mkdir -p "${OUT}"

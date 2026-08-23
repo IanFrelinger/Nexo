@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFrameworks>netstandard2.0;net8.0;net10.0</TargetFrameworks>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <NoWarn>$(NoWarn);1591</NoWarn>
+        <LangVersion>12.0</LangVersion>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+        <WarningsAsErrors />
+    </PropertyGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Ashlar.Core.Domain\Ashlar.Core.Domain.csproj" />
+        <!-- Certification evidence types (gates-passed/inputs/proposer/attempts) are
+             shared with the portable wire record so the two cannot drift. Contracts
+             is a zero-dependency leaf package, not an outer layer. -->
+        <ProjectReference Include="..\Ashlar.Certification.Contracts\Ashlar.Certification.Contracts.csproj" />
+    </ItemGroup>
+
+    <!-- Package references -->
+    <ItemGroup>
+        <PackageReference Include="System.Text.Json" />
+        <PackageReference Include="Microsoft.Extensions.Logging" />
+        <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
+        <PackageReference Include="Microsoft.Extensions.Options" />
+        <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
+        <PackageReference Include="MediatR" />
+        <PackageReference Include="FluentValidation" />
+        <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+        <PackageReference Include="System.Reactive" />
+    </ItemGroup>
+
+    <!-- Brick contract drift rule (ASHLAR0001/ASHLAR0002): keeps BrickInterface and the
+         Get/Set keys a brick actually uses from silently diverging. -->
+    <ItemGroup>
+        <ProjectReference Include="..\Ashlar.Analyzers\Ashlar.Analyzers.csproj"
+                          OutputItemType="Analyzer"
+                          ReferenceOutputAssembly="false"
+                          UndefineProperties="TargetFramework" />
+    </ItemGroup>
+
+</Project>

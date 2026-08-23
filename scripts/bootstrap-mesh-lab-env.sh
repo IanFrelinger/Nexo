@@ -18,11 +18,11 @@ fi
 
 cp "$EXAMPLE" "$TARGET"
 sed -i.bak \
-  -e 's/CHANGE_ME_LAB_API_KEY/nexo-mesh-lab-api-key-local/g' \
-  -e 's/CHANGE_ME_LAB_PEER_REGISTRATION_KEY/nexo-mesh-lab-peer-reg-local/g' \
-  -e 's/CHANGE_ME_LAB_COPILOT_SCOPED_KEY/nexo-mesh-lab-copilot-scoped-local/g' \
-  -e 's/CHANGE_ME_LAB_BEARER_OR_SAME_AS_API_KEY/nexo-mesh-lab-api-key-local/g' \
-  -e 's/CHANGE_ME_LAB_BASIC_PASSWORD/nexo-mesh-lab-basic-local/g' \
+  -e 's/CHANGE_ME_LAB_API_KEY/ashlar-mesh-lab-api-key-local/g' \
+  -e 's/CHANGE_ME_LAB_PEER_REGISTRATION_KEY/ashlar-mesh-lab-peer-reg-local/g' \
+  -e 's/CHANGE_ME_LAB_COPILOT_SCOPED_KEY/ashlar-mesh-lab-copilot-scoped-local/g' \
+  -e 's/CHANGE_ME_LAB_BEARER_OR_SAME_AS_API_KEY/ashlar-mesh-lab-api-key-local/g' \
+  -e 's/CHANGE_ME_LAB_BASIC_PASSWORD/ashlar-mesh-lab-basic-local/g' \
   "$TARGET"
 rm -f "$TARGET.bak"
 echo "Created $TARGET from example (lab-only secrets; not for production)"

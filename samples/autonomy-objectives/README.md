@@ -1,6 +1,6 @@
 # Autonomy objectives — worked example
 
-The objective store lives at `.nexo/runtime-studio/objectives/`, which is gitignored
+The objective store lives at `.ashlar/runtime-studio/objectives/`, which is gitignored
 because it is runtime state. This directory holds a tracked copy of one complete objective
 so the loop can be exercised reproducibly.
 
@@ -33,14 +33,14 @@ refusal, never a quiet in-process run:
 
 ```bash
 cp samples/autonomy-objectives/tag-scan-classifier.* \
-   .nexo/runtime-studio/objectives/pending/
+   .ashlar/runtime-studio/objectives/pending/
 ```
 
 ```csharp
 services.AddLogging();
-services.AddCertificationGate();                       // the real gate + signer; without it AddNexoAutonomy has no ICertificationGate to resolve
-services.AddNexoAutonomy(configuration);              // binds Nexo:Autonomy — the loop and the harness both read it
-services.AddNexoAutonomyLoop(loop =>
+services.AddCertificationGate();                       // the real gate + signer; without it AddAshlarAutonomy has no ICertificationGate to resolve
+services.AddAshlarAutonomy(configuration);              // binds Ashlar:Autonomy — the loop and the harness both read it
+services.AddAshlarAutonomyLoop(loop =>
 {
     loop.IntervalSeconds = 300;                        // 0 (the default) means the loop never sweeps
     loop.MaxObjectivesPerSweep = 5;
@@ -51,18 +51,18 @@ services.AddNexoAutonomyLoop(loop =>
 });
 ```
 
-with, in the `configuration` you handed to `AddNexoAutonomy` — `Nexo:Autonomy` is a
+with, in the `configuration` you handed to `AddAshlarAutonomy` — `Ashlar:Autonomy` is a
 host-composed section, so it reads whatever that configuration contains (an in-memory set as
-the first-flight spike uses, `appsettings.json`, or `Nexo__Autonomy__*` environment variables;
-see "How `Nexo:*` options bind" in `docs/Configuration.md`):
+the first-flight spike uses, `appsettings.json`, or `Ashlar__Autonomy__*` environment variables;
+see "How `Ashlar:*` options bind" in `docs/Configuration.md`):
 
 ```text
-Nexo:Autonomy:Enabled=true                    # master switch; false = the timer never starts
-Nexo:Autonomy:UseSandboxSessions=true         # otherwise no SessionSpec is built at all
-Nexo:Autonomy:BuildCandidateInSession=true    # compile inside the attested session
-Nexo:Autonomy:ExecuteCandidateInSession=true  # witness/mutation/determinism inside it too
-Nexo:Autonomy:SessionImage=mcr.microsoft.com/dotnet/sdk:9.0   # must already be present on the engine (--pull never)
-Nexo:Autonomy:HoldAdmission=true              # the default: certify fully, admit nothing
+Ashlar:Autonomy:Enabled=true                    # master switch; false = the timer never starts
+Ashlar:Autonomy:UseSandboxSessions=true         # otherwise no SessionSpec is built at all
+Ashlar:Autonomy:BuildCandidateInSession=true    # compile inside the attested session
+Ashlar:Autonomy:ExecuteCandidateInSession=true  # witness/mutation/determinism inside it too
+Ashlar:Autonomy:SessionImage=mcr.microsoft.com/dotnet/sdk:9.0   # must already be present on the engine (--pull never)
+Ashlar:Autonomy:HoldAdmission=true              # the default: certify fully, admit nothing
 ```
 
 Why the trio matters here specifically: the loop hands the gate an identity-only handle for
@@ -70,12 +70,12 @@ the proposed brick (`ProposedBrickHandle`) — the real candidate exists only as
 the session builds it. With `ExecuteCandidateInSession=false` the gate would execute that
 handle in-process, it refuses (as it must), and every objective ends as an
 `ExplainedFailure` at `correctness` that the loop reports as host wiring and never hands to a
-proposer as repair feedback. `AddNexoAutonomy` warns at composition when an enabled loop is
+proposer as repair feedback. `AddAshlarAutonomy` warns at composition when an enabled loop is
 missing the execution leg.
 
 Keep `HoldAdmission` at its default (`true`) — the loop certifies fully and admits nothing,
 which is what you want until you have read a few digests and trust what the witnesses pin.
-The hold is enforced by the harness `AddNexoAutonomy` composes; the loop reports that same
+The hold is enforced by the harness `AddAshlarAutonomy` composes; the loop reports that same
 value and has no dial of its own.
 
 Model-proposed code never runs in the host process under this configuration.
@@ -120,7 +120,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File spikes/autonomy-first-flight
 ```
 
 One sweep of the standing loop with a live ollama proposer composed inside it, all objectives
-seeded, hold admission on. The host-mounted campaign directory (`.nexo/campaign/<stamp>/`) keeps
+seeded, hold admission on. The host-mounted campaign directory (`.ashlar/campaign/<stamp>/`) keeps
 the objectives, every recorded proposal with the exact projected feedback the model was handed
 (`proposals/{id}.attempt{N}.json`), and the full log — the ledger's raw material.
-`NEXO_OLLAMA_MODEL` selects the model; the loop is model-agnostic by construction.
+`ASHLAR_OLLAMA_MODEL` selects the model; the loop is model-agnostic by construction.

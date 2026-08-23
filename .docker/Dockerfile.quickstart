@@ -1,16 +1,16 @@
-# All-in-one Nexo quickstart image: API + portal + mock provider enabled.
+# All-in-one Ashlar quickstart image: API + portal + mock provider enabled.
 # Usage:
-#   docker build -f .docker/Dockerfile.quickstart -t nexo:latest .
-#   docker run --rm -p 127.0.0.1:8080:8080 nexo:latest
+#   docker build -f .docker/Dockerfile.quickstart -t ashlar:latest .
+#   docker run --rm -p 127.0.0.1:8080:8080 ashlar:latest
 #   Open http://localhost:8080
 # No auth in this image: publish on 0.0.0.0 only behind auth + TLS (README.md "Security Defaults").
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 COPY . .
-RUN dotnet restore application/src/Nexo.API/Nexo.API.csproj
-# Nexo.API multi-targets net8.0;net10.0 (net8.0 only for in-repo library consumers); the image ships net10.0.
-RUN dotnet publish application/src/Nexo.API/Nexo.API.csproj -c Release -f net10.0 -o /app/publish --no-restore
+RUN dotnet restore application/src/Ashlar.API/Ashlar.API.csproj
+# Ashlar.API multi-targets net8.0;net10.0 (net8.0 only for in-repo library consumers); the image ships net10.0.
+RUN dotnet publish application/src/Ashlar.API/Ashlar.API.csproj -c Release -f net10.0 -o /app/publish --no-restore
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
@@ -20,16 +20,16 @@ COPY --from=build /app/publish ./
 # recreation when a volume is mounted there (docs/DEPLOYMENT.md, "Runtime state"). /app stays
 # root-owned and read-only for the non-root user below.
 ENV ASPNETCORE_URLS=http://+:8080 \
-    NEXO_ALLOW_MOCK=1 \
+    ASHLAR_ALLOW_MOCK=1 \
     DOTNET_NOLOGO=true \
-    NEXO_STATE_DIR=/data/state \
-    NEXO_DAILIES_PATH=/data/dailies \
-    NEXO_FORGE_ROOT=/data/state/runtime-studio/forge \
-    NEXO_OBJECTIVES_ROOT=/data/state/runtime-studio/objectives \
-    NEXO_OBSERVATIONS_PATH=/data/state/runtime-studio/observations
-# Runtime-studio stores follow the same rule; anything that still defaults to <cwd>/.nexo gets a
-# writable, non-persistent /app/.nexo instead of an UnauthorizedAccessException under the non-root user.
-RUN mkdir -p /data/state/runtime-studio /data/dailies /app/.nexo /app/config && chown -R app:app /data /app/.nexo /app/config
+    ASHLAR_STATE_DIR=/data/state \
+    ASHLAR_DAILIES_PATH=/data/dailies \
+    ASHLAR_FORGE_ROOT=/data/state/runtime-studio/forge \
+    ASHLAR_OBJECTIVES_ROOT=/data/state/runtime-studio/objectives \
+    ASHLAR_OBSERVATIONS_PATH=/data/state/runtime-studio/observations
+# Runtime-studio stores follow the same rule; anything that still defaults to <cwd>/.ashlar gets a
+# writable, non-persistent /app/.ashlar instead of an UnauthorizedAccessException under the non-root user.
+RUN mkdir -p /data/state/runtime-studio /data/dailies /app/.ashlar /app/config && chown -R app:app /data /app/.ashlar /app/config
 EXPOSE 8080
 
 # The aspnet image has no curl; probe /health with bash's /dev/tcp so the check can actually pass.
@@ -39,4 +39,4 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
 # Non-root: the aspnet 8+ images ship an unprivileged 'app' user (numeric $APP_UID so k8s runAsNonRoot can verify it).
 USER $APP_UID
 
-ENTRYPOINT ["dotnet", "Nexo.API.dll"]
+ENTRYPOINT ["dotnet", "Ashlar.API.dll"]

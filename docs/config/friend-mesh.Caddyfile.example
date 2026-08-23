@@ -1,12 +1,12 @@
-# Example Caddy v2 site for TLS in front of friend-mesh when Nexo.API is published on loopback:8080.
+# Example Caddy v2 site for TLS in front of friend-mesh when Ashlar.API is published on loopback:8080.
 # Install Caddy on the host (or run caddy in its own container with host network / correct upstream).
 #
-# 1. Copy to /etc/caddy/Caddyfile (or your path) and replace nexo.example.com with your DNS name.
+# 1. Copy to /etc/caddy/Caddyfile (or your path) and replace ashlar.example.com with your DNS name.
 # 2. Point DNS A/AAAA at this host.
 # 3. Ensure deploy/compose/docker-compose.friend-mesh.yml publishes 127.0.0.1:8080 (default).
 # 4. `caddy run` (or systemctl start caddy).
 
-nexo.example.com {
+ashlar.example.com {
     encode gzip
     reverse_proxy 127.0.0.1:8080
 }

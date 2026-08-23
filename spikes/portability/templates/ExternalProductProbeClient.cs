@@ -1,9 +1,9 @@
-// Portability spike: external product client that probes a hosted brick via Nexo.Sdk.Client.
+// Portability spike: external product client that probes a hosted brick via Ashlar.Sdk.Client.
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
-using Nexo.Client;
-using Nexo.Sdk.Client;
+using Ashlar.Client;
+using Ashlar.Sdk.Client;
 
 if (args.Length < 1 || string.IsNullOrWhiteSpace(args[0]))
 {
@@ -13,9 +13,9 @@ if (args.Length < 1 || string.IsNullOrWhiteSpace(args[0]))
 
 var hostBaseUrl = args[0].TrimEnd('/');
 var services = new ServiceCollection();
-services.AddNexoClientSdk(hostBaseUrl);
+services.AddAshlarClientSdk(hostBaseUrl);
 await using var provider = services.BuildServiceProvider();
-var client = provider.GetRequiredService<INexoClient>();
+var client = provider.GetRequiredService<IAshlarClient>();
 
 const string probeLogText =
     "2024-01-01 INFO Started\n" +

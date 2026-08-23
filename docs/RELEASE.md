@@ -4,8 +4,8 @@ One page that points to everything you need to ship **NuGet + GHCR** from this r
 
 ## Do this (happy path)
 
-1. **Local preflight** — `bash scripts/release-preflight-local.sh X.Y.Z` or `dotnet run --project application/src/Nexo.CLI -- release preflight X.Y.Z`
-2. **Trigger CI release** (optional instead of tag) — `dotnet run --project application/src/Nexo.CLI -- release dispatch X.Y.Z --ref master` (needs `gh auth login`)
+1. **Local preflight** — `bash scripts/release-preflight-local.sh X.Y.Z` or `dotnet run --project application/src/Ashlar.CLI -- release preflight X.Y.Z`
+2. **Trigger CI release** (optional instead of tag) — `dotnet run --project application/src/Ashlar.CLI -- release dispatch X.Y.Z --ref master` (needs `gh auth login`)
 3. **Ship** — push **`vX.Y.Z`** on the commit you want (runs **`.github/workflows/release.yml`**)
 4. **Track** — open a **Release checklist** issue (GitHub → New issue)
 
@@ -24,14 +24,14 @@ One page that points to everything you need to ship **NuGet + GHCR** from this r
 ## CLI shortcuts
 
 ```text
-dotnet run --project application/src/Nexo.CLI -- release preflight <semver>
-dotnet run --project application/src/Nexo.CLI -- release dispatch <semver> [--ref branch] [--skip-multi-arch]
-dotnet run --project application/src/Nexo.CLI -- release gate [--ref branch]
+dotnet run --project application/src/Ashlar.CLI -- release preflight <semver>
+dotnet run --project application/src/Ashlar.CLI -- release dispatch <semver> [--ref branch] [--skip-multi-arch]
+dotnet run --project application/src/Ashlar.CLI -- release gate [--ref branch]
 ```
 
 ## Automation you get from `release.yml` (tag push)
 
-- GHCR **`nexo-cli`** / **`nexo-api`** with **`sha-*`** (+ semver `X.Y.Z` on tags — a retag of the smoke-tested `sha-*` digest, multi-arch for `nexo-cli`)
+- GHCR **`ashlar-cli`** / **`ashlar-api`** with **`sha-*`** (+ semver `X.Y.Z` on tags — a retag of the smoke-tested `sha-*` digest, multi-arch for `ashlar-cli`)
 - NuGet pack/push per **`NUGET_PUBLISH_MODE`**
 - **`validate`** job: **`global.json`** SDK pin vs installed SDKs (`scripts/verify-release-sdk-pin.sh`); on tags, the tag version must equal the root **`VERSION`** file (`assert_version_matches_canonical`)
 - Optional **draft GitHub Release** with recent commits (`RELEASE_CREATE_GITHUB_RELEASE`; body includes `scripts/changelog-snippet-for-release.sh` output) with the `.nupkg` / `.snupkg` files, `nuget-publish-manifest.json` and per-package `.sha256.txt` attached as assets

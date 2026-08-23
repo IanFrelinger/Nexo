@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-REPORT_DIR=".nexo/dr-gate"
+REPORT_DIR=".ashlar/dr-gate"
 mkdir -p "$REPORT_DIR"
 
 if [ -f ".env.mesh-lab" ] && command -v docker >/dev/null 2>&1 && docker info >/dev/null 2>&1; then
@@ -34,11 +34,11 @@ if [ -f ".env.mesh-lab" ] && command -v docker >/dev/null 2>&1 && docker info >/
 fi
 
 echo "== DR Tier C: advisory — mesh lab not available; file-copy LiteDB sanity =="
-TMP="${TMPDIR:-/tmp}/nexo-dr-tier-c-$$"
+TMP="${TMPDIR:-/tmp}/ashlar-dr-tier-c-$$"
 mkdir -p "$TMP"
 trap 'rm -rf "$TMP"' EXIT
 FAKE="$TMP/fake.litedb"
-echo "nexo-dr-placeholder" >"$FAKE"
+echo "ashlar-dr-placeholder" >"$FAKE"
 cp "$FAKE" "$TMP/backup.litedb"
 rm -f "$FAKE"
 cp "$TMP/backup.litedb" "$FAKE"

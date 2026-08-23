@@ -54,9 +54,9 @@ These are automated by running **`scripts/install/container-bootstrap.*`** (or e
    - setup `check`/`restore`,
    - CLI build smoke,
    - optional hero flow checks (`--help`, `doctor`, quickstart pipeline).
-2. Added `nexo doctor` command with a single pass/fail onboarding summary (machine-readable via `--json`).
+2. Added `ashlar doctor` command with a single pass/fail onboarding summary (machine-readable via `--json`).
 3. Added CI gate (`onboarding-quickstart-gate`) to validate first-run docs commands end-to-end in ephemeral jobs.
-4. Added `nexo doctor --fix` remediation mode for a safe subset of common onboarding failures.
+4. Added `ashlar doctor --fix` remediation mode for a safe subset of common onboarding failures.
    - Requires explicit consent (`--yes`) before any remediation runs.
    - Emits remediation attempts/results in JSON output for auditability.
 5. Expanded `onboarding-quickstart-gate` with taxonomy artifacts (manual runs):

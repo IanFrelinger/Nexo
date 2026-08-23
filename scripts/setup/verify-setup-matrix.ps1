@@ -1,7 +1,7 @@
 #!/usr/bin/env pwsh
 <#
 .SYNOPSIS
-  Brute-force style verification of Nexo setup paths (native + Docker + compose).
+  Brute-force style verification of Ashlar setup paths (native + Docker + compose).
 
 .DESCRIPTION
   Runs many independent scenarios (fresh cwd, NuGet cache isolation, repeat restores,
@@ -9,7 +9,7 @@
   Docker-dependent cases skip with a clear reason when Docker is unavailable.
 
   In GitHub Actions (GITHUB_ACTIONS=true), Docker image builds are skipped unless
-  NEXO_MATRIX_DOCKER_BUILD=1 is set (saves minutes; compose `config` still runs when Docker exists).
+  ASHLAR_MATRIX_DOCKER_BUILD=1 is set (saves minutes; compose `config` still runs when Docker exists).
 #>
 [CmdletBinding()]
 param(
@@ -28,10 +28,10 @@ function Resolve-RepoRoot {
     $dir = if ([string]::IsNullOrWhiteSpace($Start)) { (Get-Location).Path } else { $Start }
     $d = [System.IO.DirectoryInfo]::new((Resolve-Path $dir).Path)
     while ($null -ne $d) {
-        if (Test-Path (Join-Path $d.FullName "Nexo.sln")) { return $d.FullName }
+        if (Test-Path (Join-Path $d.FullName "Ashlar.sln")) { return $d.FullName }
         $d = $d.Parent
     }
-    throw "Could not find Nexo.sln from: $Start"
+    throw "Could not find Ashlar.sln from: $Start"
 }
 
 $repo = Resolve-RepoRoot $RepoRoot
@@ -40,7 +40,7 @@ $setupWin = Join-Path $repo "scripts/setup/setup-windows.ps1"
 $dockerRestore = Join-Path $repo "scripts/docker-restore.ps1"
 
 $skipDockerBuildEffective = $SkipDockerBuild.IsPresent
-if ($env:GITHUB_ACTIONS -eq "true" -and -not $env:NEXO_MATRIX_DOCKER_BUILD) {
+if ($env:GITHUB_ACTIONS -eq "true" -and -not $env:ASHLAR_MATRIX_DOCKER_BUILD) {
     $skipDockerBuildEffective = $true
 }
 
@@ -129,16 +129,16 @@ Invoke-Case -Tier "A" -Name "setup.ps1 -Mode restore (repeat / idempotent)" -Act
     finally { Pop-Location }
 }
 
-Invoke-Case -Tier "A" -Name "dotnet build Nexo.CLI --no-restore (default NuGet cache)" -Action {
+Invoke-Case -Tier "A" -Name "dotnet build Ashlar.CLI --no-restore (default NuGet cache)" -Action {
     Push-Location $repo
     try {
-        & dotnet build "application/src/Nexo.CLI/Nexo.CLI.csproj" --no-restore -v minimal
+        & dotnet build "application/src/Ashlar.CLI/Ashlar.CLI.csproj" --no-restore -v minimal
         if ($LASTEXITCODE -ne 0) { throw "exit $LASTEXITCODE" }
     }
     finally { Pop-Location }
 }
 
-$isolatedNuget = Join-Path $env:TEMP ("nexo-matrix-nuget-" + [Guid]::NewGuid().ToString("n"))
+$isolatedNuget = Join-Path $env:TEMP ("ashlar-matrix-nuget-" + [Guid]::NewGuid().ToString("n"))
 Invoke-Case -Tier "A" -Name "restore + build with isolated NUGET_PACKAGES" -Action {
     Push-Location $repo
     try {
@@ -148,7 +148,7 @@ Invoke-Case -Tier "A" -Name "restore + build with isolated NUGET_PACKAGES" -Acti
         try {
             & powershell -NoProfile -ExecutionPolicy Bypass -File $setupPs1 -Mode restore
             if ($LASTEXITCODE -ne 0) { throw "setup restore exit $LASTEXITCODE" }
-            & dotnet build "application/src/Nexo.CLI/Nexo.CLI.csproj" --no-restore -v minimal
+            & dotnet build "application/src/Ashlar.CLI/Ashlar.CLI.csproj" --no-restore -v minimal
             if ($LASTEXITCODE -ne 0) { throw "build exit $LASTEXITCODE" }
         }
         finally {
@@ -208,18 +208,18 @@ else {
     }
 
     if (-not $skipDockerBuildEffective) {
-        Invoke-Case -Tier "B" -Name "docker compose build (agent-server nexo-api)" -Action {
+        Invoke-Case -Tier "B" -Name "docker compose build (agent-server ashlar-api)" -Action {
             Push-Location $repo
             try {
-                & docker compose -f "deploy/compose/docker-compose.agent-server.yml" build nexo-api
+                & docker compose -f "deploy/compose/docker-compose.agent-server.yml" build ashlar-api
                 if ($LASTEXITCODE -ne 0) { throw "exit $LASTEXITCODE" }
             }
             finally { Pop-Location }
         }
-        Invoke-Case -Tier "B" -Name "docker compose build (portal nexo-api)" -Action {
+        Invoke-Case -Tier "B" -Name "docker compose build (portal ashlar-api)" -Action {
             Push-Location $repo
             try {
-                & docker compose -p "mtx-portal" -f "deploy/compose/docker-compose.portal.yml" build nexo-api
+                & docker compose -p "mtx-portal" -f "deploy/compose/docker-compose.portal.yml" build ashlar-api
                 if ($LASTEXITCODE -ne 0) { throw "exit $LASTEXITCODE" }
             }
             finally { Pop-Location }
@@ -254,7 +254,7 @@ if command -v apt-get >/dev/null 2>&1; then
 fi
 bash scripts/setup/setup-linux.sh check
 bash scripts/setup/setup-linux.sh restore
-dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
+dotnet build application/src/Ashlar.CLI/Ashlar.CLI.csproj --no-restore -v minimal
 '@
             & docker pull $img.Tag 2>&1 | Out-Host
             & docker run --rm -v "${repo}:/repo" -w /repo $img.Tag bash -lc $bash
@@ -271,7 +271,7 @@ elseif (-not $SkipDocker.IsPresent) {
 $failed = @($results | Where-Object { -not $_.Ok })
 Write-Host "`n========== SETUP MATRIX SUMMARY ==========" -ForegroundColor Cyan
 $results | Format-Table -AutoSize
-$reportPath = Join-Path $repo (Join-Path ".nexo" "setup-matrix-report.json")
+$reportPath = Join-Path $repo (Join-Path ".ashlar" "setup-matrix-report.json")
 New-Item -ItemType Directory -Force -Path (Split-Path $reportPath) | Out-Null
 $results | ConvertTo-Json -Depth 4 | Set-Content -Encoding UTF8 $reportPath
 Write-Host "Wrote $reportPath"
@@ -289,7 +289,7 @@ if ($failed.Count -gt 0) {
 }
 
 if ($CiStrict.IsPresent -and $skipDockerBuildEffective -and -not $SkipDocker.IsPresent -and (Test-DockerCli)) {
-    Write-Warning "CiStrict: Docker was available but image builds were skipped (CI default). Set NEXO_MATRIX_DOCKER_BUILD=1 for full Docker build coverage in CI."
+    Write-Warning "CiStrict: Docker was available but image builds were skipped (CI default). Set ASHLAR_MATRIX_DOCKER_BUILD=1 for full Docker build coverage in CI."
 }
 
 Write-Host "`nAll executed matrix cases passed." -ForegroundColor Green

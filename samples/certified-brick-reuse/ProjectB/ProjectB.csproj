@@ -10,10 +10,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Nexo.Brick.Contracts" Version="0.1.0" />
-    <PackageReference Include="Nexo.Authoring" Version="0.1.0" />
-    <PackageReference Include="Nexo.Certification.Contracts" Version="0.1.0" />
-    <PackageReference Include="Nexo.Certified.DamageResolver" Version="0.1.0" />
+    <PackageReference Include="Ashlar.Brick.Contracts" Version="0.1.0" />
+    <PackageReference Include="Ashlar.Authoring" Version="0.1.0" />
+    <PackageReference Include="Ashlar.Certification.Contracts" Version="0.1.0" />
+    <PackageReference Include="Ashlar.Certified.DamageResolver" Version="0.1.0" />
   </ItemGroup>
 
 </Project>

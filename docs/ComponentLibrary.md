@@ -50,4 +50,4 @@
 
 ## Stub Components
 
-Placeholder descriptors in `CapabilityComponentRegistry.SeedPlaceholderComponents()` ensure `nexo compose` does not fail with "no component found" for any family. Stubs use `ImplementationType = "TBD"` until real implementations exist.
+Placeholder descriptors in `CapabilityComponentRegistry.SeedPlaceholderComponents()` ensure `ashlar compose` does not fail with "no component found" for any family. Stubs use `ImplementationType = "TBD"` until real implementations exist.

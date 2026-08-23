@@ -1,0 +1,43 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <LangVersion>12.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <IsPackable>true</IsPackable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageId>Ashlar.Hosting</PackageId>
+    <Title>Ashlar Hosting</Title>
+    <Description>Hosting extensions for embedding the Ashlar kernel in applications. Call AddAshlar() to register orchestration, adaptation, persistence, trust, and agent services.</Description>
+    <PackageTags>ashlar;ai;hosting;di;orchestration;agents</PackageTags>
+    <RepositoryUrl>https://github.com/IanFrelinger/Nexo</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Ashlar.AI.Pipeline\Ashlar.AI.Pipeline.csproj" />
+    <ProjectReference Include="..\Ashlar.Infrastructure\Ashlar.Infrastructure.csproj" />
+    <ProjectReference Include="..\Ashlar.Orchestration\Ashlar.Orchestration.csproj" />
+    <ProjectReference Include="..\Ashlar.BackgroundAgents\Ashlar.BackgroundAgents.csproj" />
+    <ProjectReference Include="..\Ashlar.Contracts\Ashlar.Contracts.csproj" />
+    <ProjectReference Include="..\Ashlar.Transport.Grpc\Ashlar.Transport.Grpc.csproj" />
+    <ProjectReference Include="..\Ashlar.Runtime\Ashlar.Runtime.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+    <PackageReference Include="MediatR" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.Extensions.Http" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="OpenTelemetry" />
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+  </ItemGroup>
+
+</Project>

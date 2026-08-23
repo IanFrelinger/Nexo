@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Same as verify-nuget-org-restore-published-version but for Nexo.NugetOrgRestoreHostingOnly (direct Nexo.Hosting ref).
+# Same as verify-nuget-org-restore-published-version but for Ashlar.NugetOrgRestoreHostingOnly (direct Ashlar.Hosting ref).
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-VER="${NEXO_NUGET_RESTORE_VERIFY_VERSION:?set NEXO_NUGET_RESTORE_VERIFY_VERSION}"
+VER="${ASHLAR_NUGET_RESTORE_VERIFY_VERSION:?set ASHLAR_NUGET_RESTORE_VERIFY_VERSION}"
 VER="${VER#v}"
 CFG_DIR="${ROOT}/artifacts/nuget-org-restore-hosting-only"
 CFG="${CFG_DIR}/NuGet.Config"
@@ -16,9 +16,9 @@ cat > "${CFG}" <<EOF
   </packageSources>
 </configuration>
 EOF
-dotnet restore "${ROOT}/docs/samples/NugetOrgRestoreHostingOnly/Nexo.NugetOrgRestoreHostingOnly.csproj" \
+dotnet restore "${ROOT}/docs/samples/NugetOrgRestoreHostingOnly/Ashlar.NugetOrgRestoreHostingOnly.csproj" \
   --configfile "${CFG}" \
   --force-evaluate \
-  -p:NexoPublishedVerifyVersion="${VER}" \
+  -p:AshlarPublishedVerifyVersion="${VER}" \
   -v minimal
 echo "verify-nuget-org-restore-hosting-only: OK"

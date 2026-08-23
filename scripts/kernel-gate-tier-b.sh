@@ -6,22 +6,22 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-CLI_PROJECT="application/src/Nexo.CLI/Nexo.CLI.csproj"
-TMP_ROOT="${TMPDIR:-/tmp}/nexo-kernel-gate-$$"
+CLI_PROJECT="application/src/Ashlar.CLI/Ashlar.CLI.csproj"
+TMP_ROOT="${TMPDIR:-/tmp}/ashlar-kernel-gate-$$"
 export TMP_ROOT
 mkdir -p "$TMP_ROOT"
 trap 'rm -rf "$TMP_ROOT"' EXIT
 
 TEMPLATE_PATH="$TMP_ROOT/pipeline_gate_demo.json"
-RESUME_DB="$TMP_ROOT/nexo_pipeline_gate_resume.db"
+RESUME_DB="$TMP_ROOT/ashlar_pipeline_gate_resume.db"
 
 echo "== Tier B: build checks =="
-dotnet build src/Nexo.Core.Application/Nexo.Core.Application.csproj -f netstandard2.0 -v minimal
-dotnet build src/Nexo.Infrastructure/Nexo.Infrastructure.csproj -v minimal
+dotnet build src/Ashlar.Core.Application/Ashlar.Core.Application.csproj -f netstandard2.0 -v minimal
+dotnet build src/Ashlar.Infrastructure/Ashlar.Infrastructure.csproj -v minimal
 dotnet build "$CLI_PROJECT" -v minimal
 
 echo "== Tier B: pipeline lifecycle tests (net8) =="
-NEXO_ALLOW_MOCK=1 dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net8.0 \
+ASHLAR_ALLOW_MOCK=1 dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -f net8.0 \
   --filter "FullyQualifiedName~PipelineTemplateValidatorTests|FullyQualifiedName~PipelineLifecycleE2ETests" \
   --blame-hang-timeout 120s --blame-hang-dump-type none \
   --logger "console;verbosity=minimal"
@@ -61,7 +61,7 @@ DIAGNOSTICS_LOG="$TMP_ROOT/gate-diagnostics.log"
 
 dotnet run --project "$CLI_PROJECT" -- pipeline validate --template "$TEMPLATE_PATH" | tee "$VALIDATE_LOG"
 dotnet run --project "$CLI_PROJECT" -- pipeline run --template "$TEMPLATE_PATH" --run-id gate-run-success --format-json | tee "$SUCCESS_LOG"
-NEXO_PIPELINE_ENABLE_TEST_HOOKS=1 NEXO_PIPELINE_COMPLETION_POLICY=AllowNonCriticalStageFailures \
+ASHLAR_PIPELINE_ENABLE_TEST_HOOKS=1 ASHLAR_PIPELINE_COMPLETION_POLICY=AllowNonCriticalStageFailures \
   dotnet run --project "$CLI_PROJECT" -- pipeline run --template "$TEMPLATE_PATH" --run-id gate-run-fallback \
   --input "fail:hybrid:deterministic=true" --format-json | tee "$FALLBACK_LOG"
 dotnet run --project "$CLI_PROJECT" -- pipeline diagnostics --format-json | tee "$DIAGNOSTICS_LOG"
@@ -92,7 +92,7 @@ RESUME_TARGET_LOG="$TMP_ROOT/gate-resume-target.log"
 rm -f "$RESUME_DB"
 
 set +e
-NEXO_PIPELINE_STORE_PROVIDER=LiteDb NEXO_PIPELINE_STORE_PATH="$RESUME_DB" NEXO_PIPELINE_ENABLE_TEST_HOOKS=1 \
+ASHLAR_PIPELINE_STORE_PROVIDER=LiteDb ASHLAR_PIPELINE_STORE_PATH="$RESUME_DB" ASHLAR_PIPELINE_ENABLE_TEST_HOOKS=1 \
   dotnet run --project "$CLI_PROJECT" -- pipeline run --template "$TEMPLATE_PATH" \
   --run-id gate-resume-source --input "fail:ingest:deterministic=true" --format-json | tee "$RESUME_SOURCE_LOG"
 source_exit=$?
@@ -103,7 +103,7 @@ if [ "$source_exit" -eq 0 ]; then
   exit 1
 fi
 
-NEXO_PIPELINE_STORE_PROVIDER=LiteDb NEXO_PIPELINE_STORE_PATH="$RESUME_DB" \
+ASHLAR_PIPELINE_STORE_PROVIDER=LiteDb ASHLAR_PIPELINE_STORE_PATH="$RESUME_DB" \
   dotnet run --project "$CLI_PROJECT" -- pipeline run --template "$TEMPLATE_PATH" \
   --run-id gate-resume-target --resume-run-id gate-resume-source --resume-failed-stages --format-json | tee "$RESUME_TARGET_LOG"
 

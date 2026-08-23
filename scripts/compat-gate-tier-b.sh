@@ -7,7 +7,7 @@ cd "$ROOT"
 # Reuse kernel Tier B resume scenario (same CLI + store contract).
 bash scripts/kernel-gate-tier-b.sh | tee /tmp/compat-gate-tier-b.log
 
-REPORT_DIR=".nexo/compat"
+REPORT_DIR=".ashlar/compat"
 mkdir -p "$REPORT_DIR"
 cp /tmp/compat-gate-tier-b.log "$REPORT_DIR/cli-resume.log" 2>/dev/null || true
 

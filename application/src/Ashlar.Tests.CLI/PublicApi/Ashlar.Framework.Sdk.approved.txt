@@ -1,0 +1,16 @@
+[assembly: System.Reflection.AssemblyMetadata("RepositoryUrl", "https://github.com/IanFrelinger/Nexo")]
+[assembly: System.Runtime.Versioning.TargetFramework(".NETCoreApp,Version=v10.0", FrameworkDisplayName=".NET 10.0")]
+namespace Ashlar.Framework.Sdk
+{
+    public sealed class AshlarFrameworkOptions
+    {
+        public AshlarFrameworkOptions() { }
+        public System.Action<Ashlar.Hosting.AshlarHostingOptions>? ConfigureHost { get; set; }
+        public bool RegisterKernel { get; set; }
+        public string? RemoteApiBaseUrl { get; set; }
+    }
+    public static class AshlarFrameworkServiceCollectionExtensions
+    {
+        public static Microsoft.Extensions.DependencyInjection.IServiceCollection AddAshlarFramework(this Microsoft.Extensions.DependencyInjection.IServiceCollection services, System.Action<Ashlar.Framework.Sdk.AshlarFrameworkOptions>? configure = null) { }
+    }
+}

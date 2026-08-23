@@ -19,5 +19,5 @@
   "survivingMutantIds": [],
   "signature": "BDhhvUVXQK2UeXjOttgQUhEQpbfbl\u002BZcgYt91b0fEYo=",
   "reason": null,
-  "gate": "Nexo.Infrastructure.Certification.CertificationGate"
+  "gate": "Ashlar.Infrastructure.Certification.CertificationGate"
 }

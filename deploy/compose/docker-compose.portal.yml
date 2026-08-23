@@ -7,7 +7,7 @@ services:
       - ollama-models:/root/.ollama
     restart: unless-stopped
 
-  nexo-api:
+  ashlar-api:
     build:
       context: ../..
       dockerfile: .docker/Dockerfile.api
@@ -20,31 +20,31 @@ services:
       # localhost:11434 (see docs/Configuration.md, "Ollama").
       OLLAMA_BASE_URL: http://ollama:11434
       OLLAMA_MODEL: ${OLLAMA_MODEL:-llama3.1:latest}
-      Nexo__Meai__OllamaBaseUrl: http://ollama:11434
-      Nexo__Meai__OllamaModel: ${OLLAMA_MODEL:-llama3.1:latest}
-      Nexo__NodeCapabilityRuntime__Ollama__BaseUrl: http://ollama:11434
-      NEXO_DAILIES_PATH: /data/dailies
+      Ashlar__Meai__OllamaBaseUrl: http://ollama:11434
+      Ashlar__Meai__OllamaModel: ${OLLAMA_MODEL:-llama3.1:latest}
+      Ashlar__NodeCapabilityRuntime__Ollama__BaseUrl: http://ollama:11434
+      ASHLAR_DAILIES_PATH: /data/dailies
       # Runtime state (LiteDB stores, snapshots) on a named volume so it survives `up --force-recreate`
-      # (docs/DEPLOYMENT.md, "Runtime state"). Keep aligned with the nexo-state mount below.
-      NEXO_STATE_DIR: /data/state
-      # Optional: match portal advisory + startup logs to how you expose the API (see docs/TailscaleAndNexo.md).
-      # Nexo__Security__ExposureProfile: Tailnet
-      # Nexo__Security__ShowAdvisoryInPortal: "true"
-      # Nexo__Security__CustomAdvisory: "Restrict with Tailscale ACLs; Ollama not on funnel."
+      # (docs/DEPLOYMENT.md, "Runtime state"). Keep aligned with the ashlar-state mount below.
+      ASHLAR_STATE_DIR: /data/state
+      # Optional: match portal advisory + startup logs to how you expose the API (see docs/TailscaleAndAshlar.md).
+      # Ashlar__Security__ExposureProfile: Tailnet
+      # Ashlar__Security__ShowAdvisoryInPortal: "true"
+      # Ashlar__Security__CustomAdvisory: "Restrict with Tailscale ACLs; Ollama not on funnel."
       # MCP/A2A protocol ingress is OFF unless explicitly enabled (fail-closed defaults;
       # see docs/architecture/ProtocolIntegration-MCP-A2A.md before flipping any of these).
-      Nexo__Mcp__Server__Enabled: ${Nexo__Mcp__Server__Enabled:-false}
-      Nexo__Mcp__Client__Enabled: ${Nexo__Mcp__Client__Enabled:-false}
-      Nexo__A2A__Server__Enabled: ${Nexo__A2A__Server__Enabled:-false}
-      Nexo__A2A__Transport__Enabled: ${Nexo__A2A__Transport__Enabled:-false}
+      Ashlar__Mcp__Server__Enabled: ${Ashlar__Mcp__Server__Enabled:-false}
+      Ashlar__Mcp__Client__Enabled: ${Ashlar__Mcp__Client__Enabled:-false}
+      Ashlar__A2A__Server__Enabled: ${Ashlar__A2A__Server__Enabled:-false}
+      Ashlar__A2A__Transport__Enabled: ${Ashlar__A2A__Transport__Enabled:-false}
     ports:
       - "127.0.0.1:8080:8080"
     volumes:
-      - nexo-dailies:/data/dailies
-      - nexo-state:/data/state
+      - ashlar-dailies:/data/dailies
+      - ashlar-state:/data/state
     restart: unless-stopped
 
 volumes:
   ollama-models:
-  nexo-dailies:
-  nexo-state:
+  ashlar-dailies:
+  ashlar-state:

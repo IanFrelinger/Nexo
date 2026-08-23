@@ -1,4 +1,4 @@
-# Nexo Execution Plan
+# Ashlar Execution Plan
 
 Comprehensive execution plan derived from the 30/60/90 roadmap, North Star gap analysis, and current codebase state. Each work item includes what already exists, what remains, dependencies, risks, and concrete implementation tasks.
 
@@ -11,28 +11,28 @@ Snapshot of this plan versus the repo today. **Implemented** = code exists; **Te
 | Item | Status | Notes |
 |------|--------|-------|
 | 1.1 Secure Engineering Copilot MVP | Remaining work | Task persistence, authz, portal history, and onboarding still outstanding (see §1.1). |
-| 1.2 Wire Observe → Improve Integration | Implemented | `nexo improve --from-observation`, `--continuous`, `IPatternStore` in improve path; `nexo ingest-failures` + `TestFailureIngestionBridge`. |
+| 1.2 Wire Observe → Improve Integration | Implemented | `ashlar improve --from-observation`, `--continuous`, `IPatternStore` in improve path; `ashlar ingest-failures` + `TestFailureIngestionBridge`. |
 | 1.2 (tests / auto TRX) | Remaining work | Optional: bridge TRX directly from `dotnet test` tooling; broaden integration tests if desired. |
 | 1.3 Mesh Trust Tiers — Routing Policy Enforcement | Partially implemented | `PeerTrustTier`, `PeerTrustPolicyResolver`, CLI `--set-trust-tier`; verify audit/tier display and policy env surfacing end-to-end. |
 | 1.4 SDK and Port Stabilization v1 | Partially implemented | [SdkCompatibilityPolicy.md](SdkCompatibilityPolicy.md), `UseAdaptiveRouting()` obsolete; sample under `docs/samples/StableSdkHostSample/` (standalone csproj — add an explicit CI `dotnet build` step to gate it). |
 | 1.5 SLO Evidence Pipeline Hardening | Remaining work | Broader gate aggregation, RC checklist links, baseline compare (see §1.5). |
-| 2.1 Capability Component Registry Completion | Partially implemented | Stable `InputSchema`/`OutputSchema` enforced in `ComponentDescriptorValidator` ([ComponentDescriptorValidatorSchemaTests.cs](../src/Nexo.Tests.Infrastructure/Tests/Composition/ComponentDescriptorValidatorSchemaTests.cs)); CLI filters / `compose audit` still open. |
+| 2.1 Capability Component Registry Completion | Partially implemented | Stable `InputSchema`/`OutputSchema` enforced in `ComponentDescriptorValidator` ([ComponentDescriptorValidatorSchemaTests.cs](../src/Ashlar.Tests.Infrastructure/Tests/Composition/ComponentDescriptorValidatorSchemaTests.cs)); CLI filters / `compose audit` still open. |
 | 2.2 Doctor `--fix` Remediation Hardening | Remaining work | See §2.2. |
 | 2.3 Onboarding Reliability Gate Expansion | Remaining work | See §2.3. |
 | 2.4 Release Gate Orchestration — Unified Reports | Remaining work | See §2.4. |
 | 2.5 Trust Policy Pack Maturation | Remaining work | See §2.5. |
 | 3.1 First Application-Suite Vertical | Remaining work | See §3.1. |
-| 3.2 Multi-Instance Mesh Governance | Partially implemented | `nexo mesh admit` / `nexo mesh revoke` and trust tiers landed; policy propagation / audit trail depth may remain. |
+| 3.2 Multi-Instance Mesh Governance | Partially implemented | `ashlar mesh admit` / `ashlar mesh revoke` and trust tiers landed; policy propagation / audit trail depth may remain. |
 | 3.3 Load/Performance Certification Lane | Partially implemented | [perf-certification.yml](../.github/workflows/perf-certification.yml) runs benchmark-scoped tests; formal harness/regression policy still expandable. |
 | 3.4 External Integrator Program | Remaining work | [IntegratorGuide.md](IntegratorGuide.md) exists; extra reference integrations and compatibility matrix still open. |
-| C.1 HttpBarrierContextMiddleware | Implemented | Resolves barrier context via `IBarrierIdentityResolverPipeline` when `NEXO_BARRIER_MIDDLEWARE_ENABLED` is `1`/`true`. |
-| C.1 (tests) | Tested | [HttpBarrierContextMiddlewareTests.cs](../src/Nexo.Tests.Infrastructure/Tests/Barriers/HttpBarrierContextMiddlewareTests.cs). |
+| C.1 HttpBarrierContextMiddleware | Implemented | Resolves barrier context via `IBarrierIdentityResolverPipeline` when `ASHLAR_BARRIER_MIDDLEWARE_ENABLED` is `1`/`true`. |
+| C.1 (tests) | Tested | [HttpBarrierContextMiddlewareTests.cs](../src/Ashlar.Tests.Infrastructure/Tests/Barriers/HttpBarrierContextMiddlewareTests.cs). |
 | C.2 PerfHeadroom Policy | Implemented | Enforces per-tool cumulative time budget via `WorldSnapshot` keys. |
 | C.2 (tests) | Remaining work | Confirm dedicated unit tests cover approve/reject paths. |
 | C.3 CI `continue-on-error` (test caching workflow) | Implemented | Docker build/test steps are gating; summary job fails on `test-caching` failure. |
 | C.4 PR / Issue Templates | Implemented | `.github/PULL_REQUEST_TEMPLATE.md` and `ISSUE_TEMPLATE/*.md` present. |
 | C.5 Self-Improvement as Background Agent | Implemented | `self-improver` role in `BackgroundAgentRegistry`. |
-| C.6 Trust Wiring in ImproveCommand | Implemented | `NEXO_TRUST_ENABLED=1` registers `SanitizingProviderFactory` in improve DI. |
+| C.6 Trust Wiring in ImproveCommand | Implemented | `ASHLAR_TRUST_ENABLED=1` registers `SanitizingProviderFactory` in improve DI. |
 | C.6 (tests) | Remaining work | Add CLI test asserting sanitizing factory when trust + cloud provider configured, if missing. |
 
 ---
@@ -46,7 +46,7 @@ These items establish the first end-to-end product experience and close the most
 ### 1.1 Secure Engineering Copilot MVP
 
 **What exists:**
-- `POST /api/copilot/task` endpoint with orchestration + audit trail (`NexoEndpoints.cs`).
+- `POST /api/copilot/task` endpoint with orchestration + audit trail (`AshlarEndpoints.cs`).
 - Portal UI in `wwwroot/index.html` with chat-style copilot task flow.
 - Trust dashboard/pause/rules endpoints (`/api/trust/*`).
 - `deploy/compose/docker-compose.agent-server.yml` for local deployment.
@@ -59,7 +59,7 @@ These items establish the first end-to-end product experience and close the most
 - No operator onboarding wizard or guided first-run experience.
 
 **Implementation tasks:**
-1. Add task persistence: store copilot task submissions and results in LiteDB with correlation IDs. Define `ICopilotTaskStore` port in `Nexo.Core.Application`, implement in `Nexo.Infrastructure`.
+1. Add task persistence: store copilot task submissions and results in LiteDB with correlation IDs. Define `ICopilotTaskStore` port in `Ashlar.Core.Application`, implement in `Ashlar.Infrastructure`.
 2. Add execution history endpoint: `GET /api/copilot/tasks` with pagination, filtering by status/date.
 3. Add correlation ID propagation: generate a `copilotTaskId` on submission, thread it through `OrchestrateAsync` and into audit log entries so the audit trail is filterable per task.
 4. Enhance portal UI: add task history sidebar, audit timeline per task, trust boundary status indicator.
@@ -68,11 +68,11 @@ These items establish the first end-to-end product experience and close the most
 7. Add E2E smoke test: submit task via API, verify result + audit entries + history retrieval.
 
 **Files to modify:**
-- `src/Nexo.Core.Application/` — new port `ICopilotTaskStore`
-- `src/Nexo.Infrastructure/` — LiteDB implementation
-- `application/src/Nexo.API/Endpoints/NexoEndpoints.cs` — history endpoint, correlation IDs
-- `application/src/Nexo.API/wwwroot/index.html` — portal UI enhancements
-- `src/Nexo.Hosting/NexoServiceCollectionExtensions.cs` — register new services
+- `src/Ashlar.Core.Application/` — new port `ICopilotTaskStore`
+- `src/Ashlar.Infrastructure/` — LiteDB implementation
+- `application/src/Ashlar.API/Endpoints/AshlarEndpoints.cs` — history endpoint, correlation IDs
+- `application/src/Ashlar.API/wwwroot/index.html` — portal UI enhancements
+- `src/Ashlar.Hosting/AshlarServiceCollectionExtensions.cs` — register new services
 - `docs/Phase1SecureCopilotWalkthrough.md`
 
 **Dependencies:** None — this is the first item to start.  
@@ -83,29 +83,29 @@ These items establish the first end-to-end product experience and close the most
 ### 1.2 Wire Observe → Improve Integration
 
 **What exists:**
-- `nexo observe` populates `IPatternStore` (LiteDB) with patterns (`repeated-edits`, `edit-then-build`).
-- `nexo improve` runs static analysis → adaptation on a fixed or user-specified path.
-- `nexo improve --self` runs `SelfImprovementLoop` which reads both `ITestFailureStore` and `IPatternStore`.
+- `ashlar observe` populates `IPatternStore` (LiteDB) with patterns (`repeated-edits`, `edit-then-build`).
+- `ashlar improve` runs static analysis → adaptation on a fixed or user-specified path.
+- `ashlar improve --self` runs `SelfImprovementLoop` which reads both `ITestFailureStore` and `IPatternStore`.
 - `SelfImprovementLoop` already queries `repeated-edits` and `edit-then-build` patterns.
 
 **What remains:**
-- Default `nexo improve` (without `--self` or `--from-observation`) still targets a fixed or explicit `--path`; only `--from-observation` / `--continuous` pull from `IPatternStore`.
-- Optional: auto-ingest TRX from the same process as `dotnet test` (today: `nexo ingest-failures` after tests produce `.trx` files).
+- Default `ashlar improve` (without `--self` or `--from-observation`) still targets a fixed or explicit `--path`; only `--from-observation` / `--continuous` pull from `IPatternStore`.
+- Optional: auto-ingest TRX from the same process as `dotnet test` (today: `ashlar ingest-failures` after tests produce `.trx` files).
 - Optional: broader integration tests for `--from-observation` / `--continuous` and CI recipes (ingest → `--self`).
 
 **Implementation tasks:** *(largely complete — keep for history)*
 1. ~~Add `--from-observation` option to `ImproveCommand`~~ **Done.**
 2. ~~Register `IPatternStore` in the `ImproveCommand` service collection~~ **Done** (as needed for improve path).
-3. ~~TRX → `ITestFailureStore`~~ **`TestFailureIngestionBridge` + `nexo ingest-failures`** **Done.**
-4. ~~`nexo improve --continuous`~~ **Done** (`--observe-minutes`, `--interval-minutes`).
+3. ~~TRX → `ITestFailureStore`~~ **`TestFailureIngestionBridge` + `ashlar ingest-failures`** **Done.**
+4. ~~`ashlar improve --continuous`~~ **Done** (`--observe-minutes`, `--interval-minutes`).
 5. Add integration tests validating the observe → improve → self-context pipeline with pattern-driven targeting (expand coverage as needed).
 6. ~~Document the wired flow in `docs/GapAnalysis.md`~~ **Done** (keep in sync with CLI flags).
 
 **Files to modify:**
-- `application/src/Nexo.CLI/Commands/ImproveCommand.cs` — add `--from-observation`, wire `IPatternStore`
-- `src/Nexo.Infrastructure/SelfImprovement/` — `TestFailureIngestionBridge`
-- `src/Nexo.Infrastructure/Validation/` — bridge from `TrxTestResultParser` to `ITestFailureStore`
-- `src/Nexo.Tests.Infrastructure/` — integration tests
+- `application/src/Ashlar.CLI/Commands/ImproveCommand.cs` — add `--from-observation`, wire `IPatternStore`
+- `src/Ashlar.Infrastructure/SelfImprovement/` — `TestFailureIngestionBridge`
+- `src/Ashlar.Infrastructure/Validation/` — bridge from `TrxTestResultParser` to `ITestFailureStore`
+- `src/Ashlar.Tests.Infrastructure/` — integration tests
 - `docs/GapAnalysis.md`
 
 **Dependencies:** None — can be done in parallel with 1.1.  
@@ -118,27 +118,27 @@ These items establish the first end-to-end product experience and close the most
 **What exists:**
 - `PeerTrustTier` enum (`Unknown`, `Untrusted`, `Trusted`) on `PeerInfo`.
 - CLI `--set-trust-tier` updates peer trust tier in `instances.json` with metadata preservation.
-- `PeerTrustPolicyResolver`, `NcrCapabilityRouter`, `NexoPeerBrickExecutor` in routing infrastructure.
+- `PeerTrustPolicyResolver`, `NcrCapabilityRouter`, `AshlarPeerBrickExecutor` in routing infrastructure.
 
 **What remains:**
 - Verify routing policy actually blocks execution to disallowed tiers (audit the `NcrCapabilityRouter` behavior).
 - Add routing policy options surface: `trusted-only`, `trusted-preferred`, `any` — confirm these are configurable and enforced.
-- Surface trust tier in `nexo mesh` status output and API status endpoints.
+- Surface trust tier in `ashlar mesh` status output and API status endpoints.
 - Add audit events for trust-tier routing decisions (accepted/rejected with reason).
 
 **Implementation tasks:**
 1. Audit `NcrCapabilityRouter` and `PeerTrustPolicyResolver` to confirm tier enforcement end-to-end. Document findings.
-2. If routing policy options are not yet configurable via CLI/env, add config: `NEXO_MESH_TRUST_POLICY=trusted-only|trusted-preferred|any`.
-3. Add tier display to `nexo mesh` list output (show tier next to each peer).
+2. If routing policy options are not yet configurable via CLI/env, add config: `ASHLAR_MESH_TRUST_POLICY=trusted-only|trusted-preferred|any`.
+3. Add tier display to `ashlar mesh` list output (show tier next to each peer).
 4. Add audit log entries when a peer is skipped due to trust tier policy.
 5. Add integration tests: mixed-tier peer snapshots, `trusted-only` blocks `untrusted`, `trusted-preferred` falls back correctly.
 6. Add smoke test for policy toggle + routing outcomes.
 
 **Files to modify:**
-- `src/Nexo.Infrastructure/Execution/Routing/` — policy enforcement, audit
-- `src/Nexo.Infrastructure/Mesh/` — status display
-- `application/src/Nexo.CLI/Commands/MeshCommand.cs` — tier display
-- `src/Nexo.Tests.Infrastructure/` and `application/src/Nexo.Tests.CLI/` — tests
+- `src/Ashlar.Infrastructure/Execution/Routing/` — policy enforcement, audit
+- `src/Ashlar.Infrastructure/Mesh/` — status display
+- `application/src/Ashlar.CLI/Commands/MeshCommand.cs` — tier display
+- `src/Ashlar.Tests.Infrastructure/` and `application/src/Ashlar.Tests.CLI/` — tests
 
 **Dependencies:** None — can be done in parallel with 1.1 and 1.2.  
 **Risks:** Low. The data model and CLI surface already exist; this is mostly wiring and verification.
@@ -148,38 +148,38 @@ These items establish the first end-to-end product experience and close the most
 ### 1.4 SDK and Port Stabilization v1
 
 **What exists:**
-- `Nexo.Sdk` with `NexoSdkBuilder` (thin wrapper over `Nexo.Client`).
+- `Ashlar.Sdk` with `AshlarSdkBuilder` (thin wrapper over `Ashlar.Client`).
 - `docs/sdk.md` with stable/experimental/internal classification.
 - `docs/samples/StableSdkHostSample/` with `Program.cs` showing brick/agent registration.
-- `Nexo.Abstractions` contains core port definitions.
+- `Ashlar.Abstractions` contains core port definitions.
 
 **What remains:**
-- Add an explicit CI step/workflow that `dotnet build` (and optionally `dotnet run`) `docs/samples/StableSdkHostSample/StableSdkHostSample.csproj` — the sample is not in `Nexo.sln`, so it is not built by default solution builds.
+- Add an explicit CI step/workflow that `dotnet build` (and optionally `dotnet run`) `docs/samples/StableSdkHostSample/StableSdkHostSample.csproj` — the sample is not in `Ashlar.sln`, so it is not built by default solution builds.
 - Full public-surface audit: explicit `[Stable]` / `[Experimental]` attributes and a complete classification table in `docs/sdk.md` (policy doc exists; table may still be partial).
 
 **Implementation tasks:**
 1. ~~Add CI lane that builds and runs `StableSdkHostSample` in isolation (verify it compiles against published/local NuGet only — no project references to internals).~~ **Done** — `package-consumer/StableSdkHostSample.Package.csproj` + `scripts/verify-stable-sdk-host-sample-packages.*` + readiness gate step **Setup — verify SDK sample consumes local NuGet graph**.
 2. Add `docs/SdkCompatibilityPolicy.md`: semver rules, deprecation process, breaking-change notification. **Done** — see [SdkCompatibilityPolicy.md](SdkCompatibilityPolicy.md).
-3. Audit all public types in `Nexo.Sdk`, `Nexo.Client`, `Nexo.Abstractions`, `Nexo.Brick.Contracts` — classify each as Stable / Experimental / Internal. Add classification table to `docs/sdk.md`. **Ongoing.**
+3. Audit all public types in `Ashlar.Sdk`, `Ashlar.Client`, `Ashlar.Abstractions`, `Ashlar.Brick.Contracts` — classify each as Stable / Experimental / Internal. Add classification table to `docs/sdk.md`. **Ongoing.**
 4. Add XML doc comments indicating stability level on key public interfaces. **Ongoing.**
-5. Remove or clearly mark `UseAdaptiveRouting()` as experimental in `NexoSdkBuilder`. **Done** — `[Obsolete]` with rationale in XML doc.
+5. Remove or clearly mark `UseAdaptiveRouting()` as experimental in `AshlarSdkBuilder`. **Done** — `[Obsolete]` with rationale in XML doc.
 
 **Files to modify:**
 - `.github/workflows/` — new or extended workflow for SDK sample CI
 - `docs/sdk.md` — classification table
 - `docs/SdkCompatibilityPolicy.md` — new
-- `src/Nexo.Sdk/NexoSdkBuilder.cs` — stability annotations
-- `src/Nexo.Abstractions/` — stability annotations on ports
+- `src/Ashlar.Sdk/AshlarSdkBuilder.cs` — stability annotations
+- `src/Ashlar.Abstractions/` — stability annotations on ports
 
 **Dependencies:** None — can be done in parallel.  
-**Risks:** Premature stabilization of APIs that may need to change. Mitigate by keeping the stable surface minimal (only `Nexo.Sdk`, `Nexo.Client`, `Nexo.Brick.Contracts`).
+**Risks:** Premature stabilization of APIs that may need to change. Mitigate by keeping the stable surface minimal (only `Ashlar.Sdk`, `Ashlar.Client`, `Ashlar.Brick.Contracts`).
 
 ---
 
 ### 1.5 SLO Evidence Pipeline Hardening
 
 **What exists:**
-- `RuntimeCommand` with `--emit-slo-evidence`, `--slo-warning-only`, env thresholds (`NEXO_RELEASE_SLO_*`).
+- `RuntimeCommand` with `--emit-slo-evidence`, `--slo-warning-only`, env thresholds (`ASHLAR_RELEASE_SLO_*`).
 - `RuntimeSloEvidence` / `RuntimeLaneSloEvidence` models.
 - `ci release-bundle` includes runtime-gate step.
 - Tests in `RuntimeCommandTests` validating SLO JSON output.
@@ -197,10 +197,10 @@ These items establish the first end-to-end product experience and close the most
 5. Add test for forced SLO threshold violation → promotion failure.
 
 **Files to modify:**
-- `application/src/Nexo.CLI/Commands/CiCommand.cs` — extend release-bundle SLO collection
-- `application/src/Nexo.CLI/Commands/RuntimeCommand.cs` — baseline comparison
+- `application/src/Ashlar.CLI/Commands/CiCommand.cs` — extend release-bundle SLO collection
+- `application/src/Ashlar.CLI/Commands/RuntimeCommand.cs` — baseline comparison
 - `docs/ReleaseCandidateChecklist-v1.md`
-- `application/src/Nexo.Tests.CLI/` — threshold violation test
+- `application/src/Ashlar.Tests.CLI/` — threshold violation test
 
 **Dependencies:** Lightweight dependency on 1.1 (copilot MVP may inform which SLO metrics matter most).  
 **Risks:** Low. SLO infrastructure is already functional; this is extension and documentation.
@@ -227,17 +227,17 @@ These items deepen the framework's reliability, developer experience, and operat
 
 **Implementation tasks:**
 1. ~~Add `InputSchema` / `OutputSchema` validation to `ComponentDescriptorValidator` (non-empty when `SupportLevel` is `Stable`).~~ **Done.**
-2. Add `nexo compose --filter-capability <cap>` to filter components by capability during composition.
-3. Add `nexo compose --list-components` to show registry contents with metadata completeness indicators.
+2. Add `ashlar compose --filter-capability <cap>` to filter components by capability during composition.
+3. Add `ashlar compose --list-components` to show registry contents with metadata completeness indicators.
 4. Replace or remove `PlaceholderCapabilityComponent` entries that have real implementations.
-5. Add registry audit report command: `nexo compose audit` showing completeness per component.
+5. Add registry audit report command: `ashlar compose audit` showing completeness per component.
 6. Add unit tests for schema validation and composition filtering.
 
 **Files to modify:**
-- `src/Nexo.Infrastructure/Composition/ComponentDescriptorValidator.cs`
-- `src/Nexo.Infrastructure/Composition/CapabilityComponentRegistry.cs`
-- `application/src/Nexo.CLI/` — compose subcommands
-- `src/Nexo.Tests.Infrastructure/`
+- `src/Ashlar.Infrastructure/Composition/ComponentDescriptorValidator.cs`
+- `src/Ashlar.Infrastructure/Composition/CapabilityComponentRegistry.cs`
+- `application/src/Ashlar.CLI/` — compose subcommands
+- `src/Ashlar.Tests.Infrastructure/`
 
 **Dependencies:** Benefits from 1.4 (SDK stabilization clarifies which components are stable).  
 **Risks:** Schema validation may break existing tests that use minimal descriptors. Add migration path with warnings before hard enforcement.
@@ -261,14 +261,14 @@ These items deepen the framework's reliability, developer experience, and operat
 1. Audit `DoctorRemediation.cs` — catalog which failure types are handled and which are not.
 2. Add before/after state to JSON remediation output for each action.
 3. Add mocked-failure integration tests: simulate missing tools, wrong SDK version, broken config — verify `--fix` resolves them.
-4. Add `nexo doctor --fix --dry-run` mode that reports what would be fixed without acting.
+4. Add `ashlar doctor --fix --dry-run` mode that reports what would be fixed without acting.
 5. Update `docs/GettingStarted.md` with `doctor --fix` as part of the setup flow.
 6. Align `failure-taxonomy.sh` categories with `DoctorRemediation` problem taxonomy.
 
 **Files to modify:**
-- `application/src/Nexo.CLI/Commands/DoctorCommand.cs`
-- `application/src/Nexo.CLI/Commands/DoctorRemediation.cs`
-- `application/src/Nexo.Tests.CLI/` — remediation integration tests
+- `application/src/Ashlar.CLI/Commands/DoctorCommand.cs`
+- `application/src/Ashlar.CLI/Commands/DoctorRemediation.cs`
+- `application/src/Ashlar.Tests.CLI/` — remediation integration tests
 - `scripts/onboarding/failure-taxonomy.sh`
 - `docs/GettingStarted.md`
 
@@ -327,8 +327,8 @@ These items deepen the framework's reliability, developer experience, and operat
 6. Update `docs/ReleaseCandidateChecklist-v1.md` to reference `ci release-bundle --profile full`.
 
 **Files to modify:**
-- `application/src/Nexo.CLI/Commands/CiCommand.cs` — profiles, steps, report format
-- `application/src/Nexo.Tests.CLI/` — integration tests
+- `application/src/Ashlar.CLI/Commands/CiCommand.cs` — profiles, steps, report format
+- `application/src/Ashlar.Tests.CLI/` — integration tests
 - `docs/ReleaseCandidateChecklist-v1.md`
 
 **Dependencies:** Benefits from 1.5 (SLO evidence feeds into release report).  
@@ -347,19 +347,19 @@ These items deepen the framework's reliability, developer experience, and operat
 **What remains:**
 - Verify pack behavior actually enforces the described boundaries (not just metadata).
 - No trust integration tests that run across all packs.
-- Pack version visibility in `nexo status` or API status output may be incomplete.
+- Pack version visibility in `ashlar status` or API status output may be incomplete.
 
 **Implementation tasks:**
 1. Add trust integration tests for each pack: apply pack, attempt operations that should be blocked, verify enforcement.
 2. Add pack version and active status to `GET /api/status` response.
-3. Add `nexo trust pack describe --id <id>` to show pack rules in human-readable form.
+3. Add `ashlar trust pack describe --id <id>` to show pack rules in human-readable form.
 4. Add pack migration guidance: document how to transition between packs.
 5. Add operator docs mapping deployment scenarios to recommended packs.
 
 **Files to modify:**
-- `src/Nexo.Tests.Infrastructure/` — trust pack integration tests
-- `application/src/Nexo.API/Endpoints/NexoEndpoints.cs` — status enrichment
-- `application/src/Nexo.CLI/Commands/TrustCommand.cs` — `describe` subcommand
+- `src/Ashlar.Tests.Infrastructure/` — trust pack integration tests
+- `application/src/Ashlar.API/Endpoints/AshlarEndpoints.cs` — status enrichment
+- `application/src/Ashlar.CLI/Commands/TrustCommand.cs` — `describe` subcommand
 - `docs/` — operator pack selection guide
 
 **Dependencies:** None.  
@@ -369,7 +369,7 @@ These items deepen the framework's reliability, developer experience, and operat
 
 ## Phase 3 — Production Readiness & Vision (Phase-90 items)
 
-These items push Nexo toward production use and external adoption. Start after Phase 2 core items are stable.
+These items push Ashlar toward production use and external adoption. Start after Phase 2 core items are stable.
 
 ---
 
@@ -399,8 +399,8 @@ These items push Nexo toward production use and external adoption. Start after P
 
 **Files to modify:**
 - `apps/` — new `release-manager/` directory with agent configs
-- `application/src/Nexo.API/` — release-specific endpoints or views
-- `src/Nexo.BackgroundAgents/` — release monitor agent role
+- `application/src/Ashlar.API/` — release-specific endpoints or views
+- `src/Ashlar.BackgroundAgents/` — release monitor agent role
 - `docs/` — vertical docs
 
 **Dependencies:** 1.1 (copilot MVP), 1.5 (SLO pipeline), 2.4 (release gate orchestration).  
@@ -411,7 +411,7 @@ These items push Nexo toward production use and external adoption. Start after P
 ### 3.2 Multi-Instance Mesh Governance
 
 **What exists:**
-- Mesh discovery, `nexo mesh` commands, peer trust tiers (from 1.3).
+- Mesh discovery, `ashlar mesh` commands, peer trust tiers (from 1.3).
 - Shared adaptation cache, sneakernet export/import.
 - `FileBasedInstanceDiscovery`, `FileBasedCapabilityAdvertisement`.
 
@@ -422,18 +422,18 @@ These items push Nexo toward production use and external adoption. Start after P
 
 **Implementation tasks:**
 1. Design peer admission state machine: `pending` → `admitted` → `active` (or `rejected`). **Partial** — today: `admitted` boolean via CLI.
-2. Implement admission workflow in `MeshCommand`: `nexo mesh admit <peerId>`, `nexo mesh revoke <peerId>`. **Done.**
+2. Implement admission workflow in `MeshCommand`: `ashlar mesh admit <peerId>`, `ashlar mesh revoke <peerId>`. **Done.**
 3. Wire revocation into routing: revoked peers are immediately excluded from `NcrCapabilityRouter`. **Done** (verify in tests as needed).
 4. Add policy version field to mesh advertisements; receiving peers can detect and warn on mismatched policy versions. **Remaining.**
 5. Add governance audit trail: all admission/revocation events logged. **Remaining / extend.**
 6. Add integration tests for admission → routing → revocation → routing-exclusion flow. **Ongoing.**
 
 **Files to modify:**
-- `src/Nexo.Core.Application/Mesh/` — admission models
-- `src/Nexo.Infrastructure/Mesh/` — admission state persistence
-- `src/Nexo.Infrastructure/Execution/Routing/` — revocation enforcement
-- `application/src/Nexo.CLI/Commands/MeshCommand.cs`
-- `src/Nexo.Tests.Infrastructure/` and `application/src/Nexo.Tests.CLI/`
+- `src/Ashlar.Core.Application/Mesh/` — admission models
+- `src/Ashlar.Infrastructure/Mesh/` — admission state persistence
+- `src/Ashlar.Infrastructure/Execution/Routing/` — revocation enforcement
+- `application/src/Ashlar.CLI/Commands/MeshCommand.cs`
+- `src/Ashlar.Tests.Infrastructure/` and `application/src/Ashlar.Tests.CLI/`
 
 **Dependencies:** 1.3 (mesh trust tiers provide the trust model that governance builds on).  
 **Risks:** Distributed state consistency. Keep it simple: file-based state with eventual consistency, not distributed consensus.
@@ -461,7 +461,7 @@ These items push Nexo toward production use and external adoption. Start after P
 5. Add trend report generation: markdown summary with throughput/latency/error rates across recent runs.
 
 **Files to modify:**
-- `src/` — new `Nexo.Benchmarks` project or extend `Nexo.Tests.Infrastructure`
+- `src/` — new `Ashlar.Benchmarks` project or extend `Ashlar.Tests.Infrastructure`
 - `.github/workflows/` — `perf-certification.yml`
 - `docs/runtime/benchmarks/` — workload profiles and trend docs
 
@@ -476,7 +476,7 @@ These items push Nexo toward production use and external adoption. Start after P
 - `docs/sdk.md` with stability tiers.
 - [IntegratorGuide.md](IntegratorGuide.md) onboarding and patterns.
 - `StableSdkHostSample` reference integration.
-- `Nexo.Brick.Contracts` for plugin wire format.
+- `Ashlar.Brick.Contracts` for plugin wire format.
 
 **What remains:**
 - Only one reference integration exists.
@@ -510,7 +510,7 @@ These are smaller items that should be addressed opportunistically alongside the
 
 ### C.1 Fix `HttpBarrierContextMiddleware`
 
-**Current state:** **Implemented** — middleware injects `IBarrierIdentityResolverPipeline`, builds `BarrierResolutionContext` from `HttpContext`, runs the pipeline, and initializes `IBarrierContextAccessor` when enabled. Gated by `NEXO_BARRIER_MIDDLEWARE_ENABLED` (`1` or `true`).
+**Current state:** **Implemented** — middleware injects `IBarrierIdentityResolverPipeline`, builds `BarrierResolutionContext` from `HttpContext`, runs the pipeline, and initializes `IBarrierContextAccessor` when enabled. Gated by `ASHLAR_BARRIER_MIDDLEWARE_ENABLED` (`1` or `true`).
 
 **Tasks:** *(complete; optional test hardening)*
 1. ~~Inject `IBarrierIdentityResolverPipeline`~~ **Done.**
@@ -518,7 +518,7 @@ These are smaller items that should be addressed opportunistically alongside the
 3. ~~Call pipeline and handle results~~ **Done.**
 4. Add integration test with mock pipeline if not already covered.
 
-**Files:** `src/Nexo.Runtime/Barriers/Identity/HttpBarrierContextMiddleware.cs`  
+**Files:** `src/Ashlar.Runtime/Barriers/Identity/HttpBarrierContextMiddleware.cs`  
 **Risk:** Low when flag is off (default passes through to `next`).
 
 ---
@@ -532,7 +532,7 @@ These are smaller items that should be addressed opportunistically alongside the
 2. ~~Reject when cumulative tool time exceeds `_maxPerTool`.~~ **Done.**
 3. Add unit tests for approval and rejection paths if not already present.
 
-**Files:** `src/Nexo.Policies/PerfHeadroom.cs`  
+**Files:** `src/Ashlar.Policies/PerfHeadroom.cs`  
 **Risk:** Low. Policy is opt-in.
 
 ---
@@ -577,20 +577,20 @@ These are smaller items that should be addressed opportunistically alongside the
 3. Add sample agent config in `apps/runtime-studio/config/`. **Optional.**
 4. Document in `docs/Configuration.md`. **Optional.**
 
-**Files:** `src/Nexo.BackgroundAgents/Registry/BackgroundAgentRegistry.cs`, `apps/runtime-studio/config/`  
+**Files:** `src/Ashlar.BackgroundAgents/Registry/BackgroundAgentRegistry.cs`, `apps/runtime-studio/config/`  
 **Risk:** Self-improvement running automatically requires safety guardrails. Use `SemiActive` aggressiveness mode by default (requires approval gate).
 
 ---
 
 ### C.6 Trust Wiring in `ImproveCommand`
 
-**Current state:** **Implemented** — when `NEXO_TRUST_ENABLED=1`, `ImproveCommand` registers `SanitizingProviderFactory` wrapping the inner `IProviderFactory`.
+**Current state:** **Implemented** — when `ASHLAR_TRUST_ENABLED=1`, `ImproveCommand` registers `SanitizingProviderFactory` wrapping the inner `IProviderFactory`.
 
 **Tasks:** *(wiring complete; tests optional)*
-1. Conditionally register `SanitizingProviderFactory` in `ImproveCommand`'s DI graph when trust is enabled. **Done** (`NEXO_TRUST_ENABLED` == `1`).
+1. Conditionally register `SanitizingProviderFactory` in `ImproveCommand`'s DI graph when trust is enabled. **Done** (`ASHLAR_TRUST_ENABLED` == `1`).
 2. Add a test that validates sanitization is active when improve is configured for cloud-backed fix generation. **Remaining** if not present.
 
-**Files:** `application/src/Nexo.CLI/Commands/ImproveCommand.cs`, `application/src/Nexo.Tests.CLI/`  
+**Files:** `application/src/Ashlar.CLI/Commands/ImproveCommand.cs`, `application/src/Ashlar.Tests.CLI/`  
 **Risk:** Low. Defensive wiring.
 
 ---
@@ -628,7 +628,7 @@ Phase 3 (after Phase 2 core stable):
 | Phase | Metric | Target |
 |-------|--------|--------|
 | 1 | Copilot E2E flow works in compose | User submits task, gets result with audit trail |
-| 1 | Observe→improve connected | `nexo improve --from-observation` targets pattern-affected files |
+| 1 | Observe→improve connected | `ashlar improve --from-observation` targets pattern-affected files |
 | 1 | Mesh trust enforcement | Routing blocks untrusted peers under `trusted-only` policy |
 | 2 | Release bundle covers all gates | `ci release-bundle --profile full` runs ≥6 gate steps |
 | 2 | Doctor fixes common issues | ≥3 failure categories have automated remediation |

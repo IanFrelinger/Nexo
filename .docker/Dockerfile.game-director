@@ -4,8 +4,8 @@
 FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 COPY . .
-RUN dotnet restore commercial/src/Nexo.Commercial.GameDirector.Host/GameDirector.Host.csproj
-RUN dotnet publish commercial/src/Nexo.Commercial.GameDirector.Host/GameDirector.Host.csproj -c Release -o /app/publish --no-restore
+RUN dotnet restore commercial/src/Ashlar.Commercial.GameDirector.Host/GameDirector.Host.csproj
+RUN dotnet publish commercial/src/Ashlar.Commercial.GameDirector.Host/GameDirector.Host.csproj -c Release -o /app/publish --no-restore
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0
 WORKDIR /app

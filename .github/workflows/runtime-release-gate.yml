@@ -6,13 +6,13 @@ on:
     branches: [ master, main ]
     paths:
       - '.github/workflows/runtime-release-gate.yml'
-      - 'application/src/Nexo.CLI/Commands/RuntimeCommand.cs'
-      - 'application/src/Nexo.CLI/Commands/SelfExtendCommand.cs'
-      - 'application/src/Nexo.CLI/Commands/BootstrapCommand.cs'
-      - 'application/src/Nexo.CLI/Commands/CiCommand.cs'
-      - 'application/src/Nexo.CLI/Nexo.CLI.csproj'
-      - 'application/src/Nexo.CLI/Runtime/**'
-      - 'application/src/Nexo.Tests.CLI/**'
+      - 'application/src/Ashlar.CLI/Commands/RuntimeCommand.cs'
+      - 'application/src/Ashlar.CLI/Commands/SelfExtendCommand.cs'
+      - 'application/src/Ashlar.CLI/Commands/BootstrapCommand.cs'
+      - 'application/src/Ashlar.CLI/Commands/CiCommand.cs'
+      - 'application/src/Ashlar.CLI/Ashlar.CLI.csproj'
+      - 'application/src/Ashlar.CLI/Runtime/**'
+      - 'application/src/Ashlar.Tests.CLI/**'
       - 'docs/runtime/benchmarks/**'
 
 jobs:
@@ -32,24 +32,24 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: Restore
-        run: dotnet restore application/src/Nexo.CLI/Nexo.CLI.csproj
+        run: dotnet restore application/src/Ashlar.CLI/Ashlar.CLI.csproj
 
       - name: Restore copy-assemblies helper
-        run: dotnet restore src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.csproj
+        run: dotnet restore src/Ashlar.Tests.Infrastructure/scripts/copy-assemblies.csproj
 
       - name: Build
-        run: dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
+        run: dotnet build application/src/Ashlar.CLI/Ashlar.CLI.csproj --no-restore -v minimal
 
       - name: Runtime release lane gate
-        run: dotnet run --project application/src/Nexo.CLI -- runtime release-gate --repo-root . --mode ${{ matrix.lane }} --allow-mock --core-min-total 3 --core-history-window 3 --visual-required-mode true --visual-min-total 3 --visual-history-window 3 --lane-repetitions 1 --emit-slo-evidence --slo-warning-only --ncr-resolution-ms-slo 250 --ncr-load-ms-slo 1000 --ncr-outcome-ms-slo 1500 --ncr-failure-rate-slo 0.2
+        run: dotnet run --project application/src/Ashlar.CLI -- runtime release-gate --repo-root . --mode ${{ matrix.lane }} --allow-mock --core-min-total 3 --core-history-window 3 --visual-required-mode true --visual-min-total 3 --visual-history-window 3 --lane-repetitions 1 --emit-slo-evidence --slo-warning-only --ncr-resolution-ms-slo 250 --ncr-load-ms-slo 1000 --ncr-outcome-ms-slo 1500 --ncr-failure-rate-slo 0.2
       - name: Upload runtime SLO evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: runtime-slo-evidence-${{ matrix.lane }}
           path: |
-            .nexo/runtime/release-gate/last-run/evidence.json
-            .nexo/runtime/release-gate/last-run/evidence.md
+            .ashlar/runtime/release-gate/last-run/evidence.json
+            .ashlar/runtime/release-gate/last-run/evidence.md
           if-no-files-found: warn
 
   runtime-release-chaos:
@@ -64,23 +64,23 @@ jobs:
           dotnet-version: '10.0.x'
 
       - name: Restore
-        run: dotnet restore application/src/Nexo.CLI/Nexo.CLI.csproj
+        run: dotnet restore application/src/Ashlar.CLI/Ashlar.CLI.csproj
 
       - name: Restore copy-assemblies helper
-        run: dotnet restore src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.csproj
+        run: dotnet restore src/Ashlar.Tests.Infrastructure/scripts/copy-assemblies.csproj
 
       - name: Build
-        run: dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
+        run: dotnet build application/src/Ashlar.CLI/Ashlar.CLI.csproj --no-restore -v minimal
 
       - name: Runtime chaos lane (non-gating)
         continue-on-error: true
-        run: dotnet run --project application/src/Nexo.CLI -- runtime release-gate --repo-root . --mode chaos
+        run: dotnet run --project application/src/Ashlar.CLI -- runtime release-gate --repo-root . --mode chaos
       - name: Upload runtime SLO evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: runtime-slo-evidence-chaos
           path: |
-            .nexo/runtime/release-gate/last-run/evidence.json
-            .nexo/runtime/release-gate/last-run/evidence.md
+            .ashlar/runtime/release-gate/last-run/evidence.json
+            .ashlar/runtime/release-gate/last-run/evidence.md
           if-no-files-found: warn

@@ -1,3 +1,3 @@
-namespace Nexo.NugetOrgRestoreHostingOnly;
+namespace Ashlar.NugetOrgRestoreHostingOnly;
 
 internal static class Placeholder { }

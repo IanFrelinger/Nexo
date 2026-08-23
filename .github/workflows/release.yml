@@ -18,7 +18,7 @@ on:
         required: true
         type: string
       skip_multi_arch:
-        description: "Skip arm64 for nexo-cli :latest (master/main) and :X.Y.Z (tags)"
+        description: "Skip arm64 for ashlar-cli :latest (master/main) and :X.Y.Z (tags)"
         required: false
         default: false
         type: boolean
@@ -174,12 +174,12 @@ jobs:
             echo ""
             echo "| Item | Pin |"
             echo "|------|-----|"
-            echo "| nexo-cli | \`${{ needs.images.outputs.cli_sha_tag }}\` |"
-            echo "| nexo-api | \`${{ needs.images.outputs.api_sha_tag }}\` |"
+            echo "| ashlar-cli | \`${{ needs.images.outputs.cli_sha_tag }}\` |"
+            echo "| ashlar-api | \`${{ needs.images.outputs.api_sha_tag }}\` |"
             if [ "${{ github.ref_type }}" = "tag" ]; then
               echo "| semver (tags) | \`:${VER}\` |"
             fi
-            echo "| NuGet | \`Nexo.Hosting.Bundle\` **${VER}** (+ graph, Client, Sdk) |"
+            echo "| NuGet | \`Ashlar.Hosting.Bundle\` **${VER}** (+ graph, Client, Sdk) |"
             echo ""
             echo "NuGet artifact: **nuget-packages-${VER}** (includes \`nuget-publish-manifest.json\` + per-package \`.sha256.txt\` when built from this workflow)."
             echo ""
@@ -224,7 +224,7 @@ jobs:
             echo "Automated draft for **${TAG}**."
             echo ""
             echo "- Workflow: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-            echo "- NuGet: \`Nexo.Hosting.Bundle\` **${VER}** (+ graph). Packages, symbols, \`nuget-publish-manifest.json\` and per-package \`.sha256.txt\` are attached as release assets (also in the \`nuget-packages-${VER}\` workflow artifact)."
+            echo "- NuGet: \`Ashlar.Hosting.Bundle\` **${VER}** (+ graph). Packages, symbols, \`nuget-publish-manifest.json\` and per-package \`.sha256.txt\` are attached as release assets (also in the \`nuget-packages-${VER}\` workflow artifact)."
             echo "- Images: \`${{ needs.images.outputs.cli_sha_tag }}\`, \`${{ needs.images.outputs.api_sha_tag }}\`"
             echo ""
             cat "$SNIP"

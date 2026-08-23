@@ -1,4 +1,4 @@
-# Nexo 30/60/90 Gap-Closure Issue Batch
+# Ashlar 30/60/90 Gap-Closure Issue Batch
 
 Use this file to create GitHub issues in the recommended execution order.
 
@@ -28,7 +28,7 @@ Use this file to create GitHub issues in the recommended execution order.
 
 ## 2) [Phase 30] Mesh trust tiers (trusted vs untrusted peers) — ✅ COMPLETE
 
-**Status:** Implemented. `PeerTrustTier` on `PeerInfo`, `PeerTrustPolicyResolver`, `nexo mesh admit` / `nexo mesh revoke`, `--set-trust-tier` CLI support. Routing honors trust policy under all peer availability states.
+**Status:** Implemented. `PeerTrustTier` on `PeerInfo`, `PeerTrustPolicyResolver`, `ashlar mesh admit` / `ashlar mesh revoke`, `--set-trust-tier` CLI support. Routing honors trust policy under all peer availability states.
 
 **Evidence:** Tests in `DogfoodBlock9Tests`, `PeerToPeerRoutingSmokeTests`. North Star gap analysis marks this RESOLVED.
 
@@ -38,13 +38,13 @@ Use this file to create GitHub issues in the recommended execution order.
 
 **Status:** Implemented. `IKnowledgeQueryService` / `KnowledgeQueryService` aggregates adaptation log, pattern store, and user knowledge. Exposed as `GET /api/knowledge/query` in API. Supports filters, pagination, provenance.
 
-**Evidence:** Registered in `NexoServiceCollectionExtensions.AddNexo()`, used by self-context and copilot flows.
+**Evidence:** Registered in `AshlarServiceCollectionExtensions.AddAshlar()`, used by self-context and copilot flows.
 
 ---
 
 ## 4) [Phase 30] SDK and port stabilization v1 — ✅ COMPLETE
 
-**Status:** Implemented. `AddNexoSdk` builder, reference sample at `docs/samples/StableSdkHostSample/`, compatibility policy in `docs/SdkCompatibilityPolicy.md`. SDK sample built in CI via readiness gate workflow. Integration guide at `docs/SdkIntegrationGuide.md`.
+**Status:** Implemented. `AddAshlarSdk` builder, reference sample at `docs/samples/StableSdkHostSample/`, compatibility policy in `docs/SdkCompatibilityPolicy.md`. SDK sample built in CI via readiness gate workflow. Integration guide at `docs/SdkIntegrationGuide.md`.
 
 **Evidence:** SDK sample builds and runs standalone. Three reference integration archetypes documented (CLI tool, background service, air-gapped).
 
@@ -68,7 +68,7 @@ Use this file to create GitHub issues in the recommended execution order.
 
 ## 7) [Phase 60] `doctor --fix` safe remediation mode — ✅ COMPLETE
 
-**Status:** Implemented. `nexo doctor --fix` with `--dry-run`, `--json`, `--yes` options. Consent-gated remediation actions. JSON output includes attempted fixes and outcomes. `DoctorRemediation.cs` implements fixable problem taxonomy.
+**Status:** Implemented. `ashlar doctor --fix` with `--dry-run`, `--json`, `--yes` options. Consent-gated remediation actions. JSON output includes attempted fixes and outcomes. `DoctorRemediation.cs` implements fixable problem taxonomy.
 
 **Evidence:** `DoctorCommandTests` in CLI test suite. Readiness gate workflow runs `doctor --fix --dry-run`.
 
@@ -84,7 +84,7 @@ Use this file to create GitHub issues in the recommended execution order.
 
 ## 9) [Phase 60] Single-shot release gate orchestration command — ✅ COMPLETE
 
-**Status:** Implemented. `nexo ci release-bundle --profile <default|quick|full> --output-dir <path>` runs configured gate bundle and produces unified `release-bundle-report.json` + `.md`.
+**Status:** Implemented. `ashlar ci release-bundle --profile <default|quick|full> --output-dir <path>` runs configured gate bundle and produces unified `release-bundle-report.json` + `.md`.
 
 **Evidence:** `CiCommand.ExecuteReleaseBundleAsync` in CLI. Documented in `docs/ReleaseCandidateChecklist-v1.md`.
 
@@ -92,7 +92,7 @@ Use this file to create GitHub issues in the recommended execution order.
 
 ## 10) [Phase 60] Regulated-environment trust policy packs — ✅ COMPLETE
 
-**Status:** Implemented. Three predefined policy packs in `config/trust-packs/`: `strict-enterprise.json`, `internal-only.json`, `air-gapped.json`. CLI `nexo trust pack list | describe | apply --id <pack>`. Active pack status visible in trust dashboard.
+**Status:** Implemented. Three predefined policy packs in `config/trust-packs/`: `strict-enterprise.json`, `internal-only.json`, `air-gapped.json`. CLI `ashlar trust pack list | describe | apply --id <pack>`. Active pack status visible in trust dashboard.
 
 **Evidence:** `TrustPolicyPackRegistryTests` in test suite.
 
@@ -100,7 +100,7 @@ Use this file to create GitHub issues in the recommended execution order.
 
 ## 11) [Phase 90] First application-suite vertical — ✅ COMPLETE
 
-**Status:** Implemented. Engineering release manager at `apps/release-manager/` with four background agents (repo-monitor, test-runner, slo-collector, report-generator). Runs as daemon via `nexo background-agent daemon --config`. Uses kernel primitives (background agents, trust controls, pipelines) without bypasses.
+**Status:** Implemented. Engineering release manager at `apps/release-manager/` with four background agents (repo-monitor, test-runner, slo-collector, report-generator). Runs as daemon via `ashlar background-agent daemon --config`. Uses kernel primitives (background agents, trust controls, pipelines) without bypasses.
 
 **Evidence:** Agent set config, operator docs in `apps/release-manager/README.md`. All agents configured with exfiltration policy and data sensitivity controls.
 
@@ -108,7 +108,7 @@ Use this file to create GitHub issues in the recommended execution order.
 
 ## 12) [Phase 90] Multi-instance mesh governance — ✅ COMPLETE
 
-**Status:** Core implementation done. `nexo mesh admit` / `nexo mesh revoke` for peer admission/revocation. `PeerTrustTier` classification. Trust tier in routing decisions. Audit events for governance actions.
+**Status:** Core implementation done. `ashlar mesh admit` / `ashlar mesh revoke` for peer admission/revocation. `PeerTrustTier` classification. Trust tier in routing decisions. Audit events for governance actions.
 
 **Evidence:** `MeshCommand` admit/revoke handlers, `PeerTrustPolicyResolver`, mesh routing tests.
 

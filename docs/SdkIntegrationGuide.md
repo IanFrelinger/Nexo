@@ -1,6 +1,6 @@
 # SDK Integration Guide
 
-This guide covers building external integrations against the stable Nexo SDK surface. For packaging, pinning, and per-channel CI validation, see **`docs/DistributionModels.md`**.
+This guide covers building external integrations against the stable Ashlar SDK surface. For packaging, pinning, and per-channel CI validation, see **`docs/DistributionModels.md`**.
 
 ## Stability Tiers
 
@@ -17,12 +17,12 @@ See `docs/SdkCompatibilityPolicy.md` for the full versioning policy.
 ### Registration
 
 ```csharp
-services.AddNexoSdk(sdk => sdk
+services.AddAshlarSdk(sdk => sdk
     .RegisterBrick<MyBrick>()
     .RegisterAgent<MyAgent>()
     .RegisterAgentCard(new AgentCard { ... }));
 
-services.AddNexo(options =>
+services.AddAshlar(options =>
 {
     options.StrictMode.Enabled = true; // fail-fast during development
 });
@@ -32,12 +32,12 @@ services.AddNexo(options =>
 
 | Interface | Package | Purpose |
 |-----------|---------|---------|
-| `IModel` | `Nexo.Abstractions` | LLM execution |
-| `IProviderFactory` | `Nexo.Infrastructure` | Provider selection and execution |
-| `IConfigurationService` | `Nexo.Core.Application` | Configuration management |
-| `IPatternStore` | `Nexo.Core.Application` | Pattern storage for adaptation |
-| `IKnowledgeQueryService` | `Nexo.Core.Application` | Cross-store knowledge queries |
-| `ICopilotTaskStore` | `Nexo.Core.Application` | Copilot task persistence |
+| `IModel` | `Ashlar.Abstractions` | LLM execution |
+| `IProviderFactory` | `Ashlar.Infrastructure` | Provider selection and execution |
+| `IConfigurationService` | `Ashlar.Core.Application` | Configuration management |
+| `IPatternStore` | `Ashlar.Core.Application` | Pattern storage for adaptation |
+| `IKnowledgeQueryService` | `Ashlar.Core.Application` | Cross-store knowledge queries |
+| `ICopilotTaskStore` | `Ashlar.Core.Application` | Copilot task persistence |
 
 ### Extension Points
 
@@ -58,43 +58,43 @@ dotnet run
 
 This sample:
 - Registers a custom brick and agent using only stable APIs
-- Bootstraps the full Nexo kernel with `AddNexo()`
+- Bootstraps the full Ashlar kernel with `AddAshlar()`
 - Does not depend on internal namespaces
 
 ## Reference Integration Archetypes
 
 ### 1. CLI Tool Extension
 
-Build a standalone CLI tool that uses Nexo for code analysis:
+Build a standalone CLI tool that uses Ashlar for code analysis:
 
 ```csharp
-services.AddNexoSdk(sdk => sdk.RegisterBrick<MyAnalyzerBrick>());
-services.AddNexoProfile(NexoDeploymentProfile.System); // minimal
+services.AddAshlarSdk(sdk => sdk.RegisterBrick<MyAnalyzerBrick>());
+services.AddAshlarProfile(AshlarDeploymentProfile.System); // minimal
 ```
 
 ### 2. Background Service
 
-Embed Nexo agents in a long-running service:
+Embed Ashlar agents in a long-running service:
 
 ```csharp
-services.AddNexo(opts =>
+services.AddAshlar(opts =>
 {
     opts.RegisterBackgroundAgentHostedService = true;
-    opts.DeploymentProfile = NexoDeploymentProfile.Server;
+    opts.DeploymentProfile = AshlarDeploymentProfile.Server;
 });
 ```
 
 ### 3. Air-Gapped Deployment
 
-Run Nexo with no cloud connectivity:
+Run Ashlar with no cloud connectivity:
 
 ```csharp
-services.AddNexoProfile(NexoDeploymentProfile.AirGapped, opts =>
+services.AddAshlarProfile(AshlarDeploymentProfile.AirGapped, opts =>
 {
     opts.StrictMode.Enabled = true;
     opts.TrustEnabled = true;
 });
-// Set NEXO_ALLOW_MOCK=1 or use Ollama locally
+// Set ASHLAR_ALLOW_MOCK=1 or use Ollama locally
 ```
 
 ## CI Validation
@@ -102,16 +102,16 @@ services.AddNexoProfile(NexoDeploymentProfile.AirGapped, opts =>
 The readiness gate builds the **project-reference** sample and then verifies **NuGet-only** consumption:
 
 1. `dotnet build docs/samples/StableSdkHostSample/StableSdkHostSample.csproj` (in-repo references).
-2. `scripts/verify-stable-sdk-host-sample-packages.sh` (POSIX) or `scripts/verify-stable-sdk-host-sample-packages.ps1` (Windows): packs the `Nexo.Hosting` dependency graph to a local feed, restores `docs/samples/StableSdkHostSample/package-consumer/StableSdkHostSample.Package.csproj` with **`--force-evaluate`** and an **empty package cache** by default (avoids masking from `~/.nuget/packages`), builds, and runs.
+2. `scripts/verify-stable-sdk-host-sample-packages.sh` (POSIX) or `scripts/verify-stable-sdk-host-sample-packages.ps1` (Windows): packs the `Ashlar.Hosting` dependency graph to a local feed, restores `docs/samples/StableSdkHostSample/package-consumer/StableSdkHostSample.Package.csproj` with **`--force-evaluate`** and an **empty package cache** by default (avoids masking from `~/.nuget/packages`), builds, and runs.
 
 See `.github/workflows/full-platform-readiness-gate.yml` (steps **Setup — build SDK sample** and **Setup — verify SDK sample consumes local NuGet graph**).
 
-## Publishing `Nexo.Hosting` for external repos
+## Publishing `Ashlar.Hosting` for external repos
 
-`Nexo.Hosting` depends on other `Nexo.*` projects; publish **the same `PackageVersion`** for the whole graph before pushing to a feed:
+`Ashlar.Hosting` depends on other `Ashlar.*` projects; publish **the same `PackageVersion`** for the whole graph before pushing to a feed:
 
 ```bash
-bash scripts/pack-nexo-hosting-graph.sh 1.2.3 /path/to/output
+bash scripts/pack-ashlar-hosting-graph.sh 1.2.3 /path/to/output
 ```
 
-Then push `*.nupkg` from that folder to **nuget.org** or **GitHub Packages**. External hosts reference **`Nexo.Hosting`** only; NuGet resolves the matching versions of transitive `Nexo.*` packages from the same feed.
+Then push `*.nupkg` from that folder to **nuget.org** or **GitHub Packages**. External hosts reference **`Ashlar.Hosting`** only; NuGet resolves the matching versions of transitive `Ashlar.*` packages from the same feed.

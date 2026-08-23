@@ -4,11 +4,11 @@
       "src": [
         {
           "files": [
-            "Nexo.Hosting/Nexo.Hosting.csproj",
-            "Nexo.Core.Application/Nexo.Core.Application.csproj",
-            "Nexo.Abstractions/Nexo.Abstractions.csproj",
-            "Nexo.Core.Domain/Nexo.Core.Domain.csproj",
-            "Nexo.Infrastructure/Nexo.Infrastructure.csproj"
+            "Ashlar.Hosting/Ashlar.Hosting.csproj",
+            "Ashlar.Core.Application/Ashlar.Core.Application.csproj",
+            "Ashlar.Abstractions/Ashlar.Abstractions.csproj",
+            "Ashlar.Core.Domain/Ashlar.Core.Domain.csproj",
+            "Ashlar.Infrastructure/Ashlar.Infrastructure.csproj"
           ],
           "src": "../../src"
         }
@@ -32,8 +32,8 @@
     ],
     "output": "_site",
     "globalMetadata": {
-      "_appTitle": "Nexo API Reference",
-      "_appName": "Nexo"
+      "_appTitle": "Ashlar API Reference",
+      "_appName": "Ashlar"
     }
   }
 }

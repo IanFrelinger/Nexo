@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Nexo.Core.Application.Adaptation.Models;
-using Nexo.Infrastructure.Adaptation;
+using Ashlar.Core.Application.Adaptation.Models;
+using Ashlar.Infrastructure.Adaptation;
 
 var root = args.Length > 0 ? Path.GetFullPath(args[0]) : Path.GetFullPath("spikes/portability/generated");
 var version = args.Length > 1 ? args[1] : File.ReadAllText(Path.Combine(FindRepoRoot(), "VERSION")).Trim();
@@ -31,8 +31,8 @@ await File.WriteAllTextAsync(csprojPath, $"""
     <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Nexo.Brick.Contracts" Version="{version}" />
-    <PackageReference Include="Nexo.Authoring" Version="{version}" />
+    <PackageReference Include="Ashlar.Brick.Contracts" Version="{version}" />
+    <PackageReference Include="Ashlar.Authoring" Version="{version}" />
   </ItemGroup>
 </Project>
 """).ConfigureAwait(false);
@@ -50,12 +50,12 @@ static string FindRepoRoot()
     var dir = Directory.GetCurrentDirectory();
     while (!string.IsNullOrEmpty(dir))
     {
-        if (File.Exists(Path.Combine(dir, "VERSION")) && File.Exists(Path.Combine(dir, "Nexo.sln")))
+        if (File.Exists(Path.Combine(dir, "VERSION")) && File.Exists(Path.Combine(dir, "Ashlar.sln")))
             return dir;
         dir = Directory.GetParent(dir)?.FullName ?? string.Empty;
     }
 
     /// <summary>Invalid operation exception.</summary>
     /// <param name="root."">Root.".</param>
-    throw new InvalidOperationException("Could not locate Nexo repo root.");
+    throw new InvalidOperationException("Could not locate Ashlar repo root.");
 }

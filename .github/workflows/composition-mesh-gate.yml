@@ -32,19 +32,19 @@ jobs:
         if: github.event_name != 'workflow_dispatch' || inputs.tier == 'a' || inputs.tier == 'full'
         run: make composition-mesh-gate-tier-a
         env:
-          NEXO_ALLOW_MOCK: "1"
+          ASHLAR_ALLOW_MOCK: "1"
 
       - name: Tier B (CLI pipeline + mesh)
         if: github.event_name == 'workflow_dispatch' && (inputs.tier == 'b' || inputs.tier == 'full')
         run: make composition-mesh-gate-tier-b
         env:
-          NEXO_ALLOW_MOCK: "1"
+          ASHLAR_ALLOW_MOCK: "1"
 
       - name: Tier C (mesh fleet in-process)
         if: github.event_name == 'workflow_dispatch' && (inputs.tier == 'c' || inputs.tier == 'full')
         run: make composition-mesh-gate-tier-c
         env:
-          NEXO_ALLOW_MOCK: "1"
+          ASHLAR_ALLOW_MOCK: "1"
 
       - name: Tier D (mesh lab workers E2E)
         if: github.event_name == 'workflow_dispatch' && inputs.tier == 'd'
@@ -56,4 +56,4 @@ jobs:
         if: github.event_name == 'pull_request'
         run: make composition-mesh-gate
         env:
-          NEXO_ALLOW_MOCK: "1"
+          ASHLAR_ALLOW_MOCK: "1"

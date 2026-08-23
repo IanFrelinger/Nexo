@@ -1,0 +1,31 @@
+#nullable enable
+Ashlar.Client.IAshlarClient
+Ashlar.Client.IAshlarClient.BuildImageAsync(Ashlar.Contracts.ExecutionBuildRequest! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Ashlar.Contracts.ExecutionBuildResponse!>!
+Ashlar.Client.IAshlarClient.GetStatusAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Ashlar.Contracts.StatusResponse!>!
+Ashlar.Client.IAshlarClient.InvokeAsync(System.Net.Http.HttpMethod! method, string! relativeUri, System.Net.Http.HttpContent? content = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage!>!
+Ashlar.Client.IAshlarClient.OrchestrateAsync(Ashlar.Contracts.OrchestrationRequest! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Ashlar.Contracts.OrchestrationResponse!>!
+Ashlar.Client.IAshlarClient.QueryKnowledgeAsync(string! relativeQuery, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Text.Json.JsonElement>!
+Ashlar.Client.IAshlarClient.RunAgentAsync(Ashlar.Contracts.AgentRequest! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Ashlar.Contracts.AgentResponse!>!
+Ashlar.Client.IAshlarClient.RunContainerAsync(Ashlar.Contracts.ExecutionRunRequest! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Ashlar.Contracts.ExecutionRunResponse!>!
+Ashlar.Client.IAshlarClient.RunValidationAsync(Ashlar.Contracts.ValidationRequest? request = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Ashlar.Contracts.ValidationResponse!>!
+Ashlar.Client.AshlarClient
+Ashlar.Client.AshlarClient.BuildImageAsync(Ashlar.Contracts.ExecutionBuildRequest! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Ashlar.Contracts.ExecutionBuildResponse!>!
+Ashlar.Client.AshlarClient.GetStatusAsync(System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Ashlar.Contracts.StatusResponse!>!
+Ashlar.Client.AshlarClient.InvokeAsync(System.Net.Http.HttpMethod! method, string! relativeUri, System.Net.Http.HttpContent? content = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Net.Http.HttpResponseMessage!>!
+Ashlar.Client.AshlarClient.AshlarClient(System.Net.Http.HttpClient! httpClient) -> void
+Ashlar.Client.AshlarClient.OrchestrateAsync(Ashlar.Contracts.OrchestrationRequest! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Ashlar.Contracts.OrchestrationResponse!>!
+Ashlar.Client.AshlarClient.QueryKnowledgeAsync(string! relativeQuery, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<System.Text.Json.JsonElement>!
+Ashlar.Client.AshlarClient.RunAgentAsync(Ashlar.Contracts.AgentRequest! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Ashlar.Contracts.AgentResponse!>!
+Ashlar.Client.AshlarClient.RunContainerAsync(Ashlar.Contracts.ExecutionRunRequest! request, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Ashlar.Contracts.ExecutionRunResponse!>!
+Ashlar.Client.AshlarClient.RunValidationAsync(Ashlar.Contracts.ValidationRequest? request = null, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken)) -> System.Threading.Tasks.Task<Ashlar.Contracts.ValidationResponse!>!
+Ashlar.Client.AshlarClientOptions
+Ashlar.Client.AshlarClientOptions.ApiKey.get -> string?
+Ashlar.Client.AshlarClientOptions.ApiKey.set -> void
+Ashlar.Client.AshlarClientOptions.BaseUrl.get -> string!
+Ashlar.Client.AshlarClientOptions.BaseUrl.set -> void
+Ashlar.Client.AshlarClientOptions.AshlarClientOptions() -> void
+Ashlar.Client.AshlarClientOptions.Timeout.get -> System.TimeSpan
+Ashlar.Client.AshlarClientOptions.Timeout.set -> void
+Ashlar.Client.ServiceCollectionExtensions
+static Ashlar.Client.ServiceCollectionExtensions.AddAshlarClient(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, string! baseUrl, string? apiKey = null) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!
+static Ashlar.Client.ServiceCollectionExtensions.AddAshlarClient(this Microsoft.Extensions.DependencyInjection.IServiceCollection! services, System.Action<Ashlar.Client.AshlarClientOptions!>! configure) -> Microsoft.Extensions.DependencyInjection.IServiceCollection!

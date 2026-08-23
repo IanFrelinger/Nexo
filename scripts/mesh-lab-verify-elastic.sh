@@ -25,20 +25,20 @@ source_env_kv() {
   grep -E "^${key}=" "$COMPOSE_ENV_FILE" 2>/dev/null | head -1 | cut -d= -f2- | tr -d '\r' || true
 }
 
-API_KEY="$(source_env_kv Nexo__Security__ApiKey)"
+API_KEY="$(source_env_kv Ashlar__Security__ApiKey)"
 MESH_LAB_PEER_REGISTRATION_KEY="$(source_env_kv MESH_LAB_PEER_REGISTRATION_KEY)"
 export MESH_LAB_PEER_REGISTRATION_KEY
 if [[ -z "$API_KEY" ]]; then
-  echo "(Skipping elastic verify: no Nexo__Security__ApiKey in env file)"
+  echo "(Skipping elastic verify: no Ashlar__Security__ApiKey in env file)"
   exit 0
 fi
 
 mesh_post() {
-  curl -fsS -X POST -H "Content-Type: application/json" -H "X-Nexo-Api-Key: ${API_KEY}" "$@"
+  curl -fsS -X POST -H "Content-Type: application/json" -H "X-Ashlar-Api-Key: ${API_KEY}" "$@"
 }
 
 mesh_delete() {
-  curl -fsS -X DELETE -H "X-Nexo-Api-Key: ${API_KEY}" "$@" >/dev/null 2>&1 || true
+  curl -fsS -X DELETE -H "X-Ashlar-Api-Key: ${API_KEY}" "$@" >/dev/null 2>&1 || true
 }
 
 echo "== Mesh lab elastic placement (queue depth + heartbeat) =="
@@ -65,10 +65,10 @@ if [[ "$PICK" != "mesh-lab-elastic-low" ]]; then
 fi
 echo "Queue-depth placement picked mesh-lab-elastic-low — OK"
 
-curl -fsS -X POST -H "Content-Type: application/json" -H "X-Nexo-Api-Key: ${API_KEY}" \
+curl -fsS -X POST -H "Content-Type: application/json" -H "X-Ashlar-Api-Key: ${API_KEY}" \
   -d '{"queueDepth":0}' \
   "http://${PEER_A_HOST}/api/mesh/fleet/nodes/mesh-lab-elastic-high/heartbeat" >/dev/null
-curl -fsS -X POST -H "Content-Type: application/json" -H "X-Nexo-Api-Key: ${API_KEY}" \
+curl -fsS -X POST -H "Content-Type: application/json" -H "X-Ashlar-Api-Key: ${API_KEY}" \
   -d '{"queueDepth":80}' \
   "http://${PEER_A_HOST}/api/mesh/fleet/nodes/mesh-lab-elastic-low/heartbeat" >/dev/null
 
@@ -83,7 +83,7 @@ if [[ "$PICK2" != "mesh-lab-elastic-high" ]]; then
 fi
 echo "Heartbeat queueDepth influences placement — OK"
 
-ELASTIC_JSON="$(curl -fsS -H "X-Nexo-Api-Key: ${API_KEY}" \
+ELASTIC_JSON="$(curl -fsS -H "X-Ashlar-Api-Key: ${API_KEY}" \
   "http://${PEER_A_HOST}/api/mesh/elastic/status")"
 echo "$ELASTIC_JSON" | python3 -c '
 import json, sys
@@ -105,7 +105,7 @@ if [[ "${REBALANCER:-}" == "1" || "${REBALANCER:-}" == "true" ]]; then
     "http://${PEER_A_HOST}/api/mesh/tasks")"
   PEND_ID="$(echo "$PEND_JSON" | python3 -c 'import json,sys; print(json.load(sys.stdin)["taskId"])')"
   BLOCK="$(curl -s -o /dev/null -w '%{http_code}' -X POST \
-    -H "Content-Type: application/json" -H "X-Nexo-Api-Key: ${API_KEY}" \
+    -H "Content-Type: application/json" -H "X-Ashlar-Api-Key: ${API_KEY}" \
     -d '{}' "http://${PEER_A_HOST}/api/mesh/tasks/${PEND_ID}/schedule")"
   if [[ "$BLOCK" != "400" ]]; then
     echo "Expected 400 schedule with empty fleet, got ${BLOCK}" >&2
@@ -117,7 +117,7 @@ if [[ "${REBALANCER:-}" == "1" || "${REBALANCER:-}" == "true" ]]; then
 
   ASSIGNED=false
   for _i in $(seq 1 45); do
-    GET="$(curl -fsS -H "X-Nexo-Api-Key: ${API_KEY}" \
+    GET="$(curl -fsS -H "X-Ashlar-Api-Key: ${API_KEY}" \
       "http://${PEER_A_HOST}/api/mesh/tasks/${PEND_ID}")"
     ST="$(echo "$GET" | python3 -c 'import json,sys; print(json.load(sys.stdin).get("status"))')"
     if [[ "$ST" == "1" || "$ST" == "Assigned" ]]; then

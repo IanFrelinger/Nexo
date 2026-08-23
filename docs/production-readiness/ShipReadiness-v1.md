@@ -31,7 +31,7 @@ make ship-gate-full
 make ops-gate-full
 ```
 
-See [Ops readiness v1](OpsReadiness-v1.md). Full stack: `make nexo-ready-gate`.
+See [Ops readiness v1](OpsReadiness-v1.md). Full stack: `make ashlar-ready-gate`.
 
 ## Sign-off
 

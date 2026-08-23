@@ -31,16 +31,16 @@ source_env_kv() {
   grep -E "^${key}=" "$COMPOSE_ENV_FILE" 2>/dev/null | head -1 | cut -d= -f2- | tr -d '\r' || true
 }
 
-API_KEY="$(source_env_kv Nexo__Security__ApiKey)"
+API_KEY="$(source_env_kv Ashlar__Security__ApiKey)"
 MESH_LAB_PEER_REGISTRATION_KEY="$(source_env_kv MESH_LAB_PEER_REGISTRATION_KEY)"
 export MESH_LAB_PEER_REGISTRATION_KEY
 if [[ -z "$API_KEY" ]]; then
-  echo "Nexo__Security__ApiKey required in $COMPOSE_ENV_FILE" >&2
+  echo "Ashlar__Security__ApiKey required in $COMPOSE_ENV_FILE" >&2
   exit 1
 fi
 
 mesh_curl() {
-  curl -fsS -H "X-Nexo-Api-Key: ${API_KEY}" -H "Content-Type: application/json" "$@"
+  curl -fsS -H "X-Ashlar-Api-Key: ${API_KEY}" -H "Content-Type: application/json" "$@"
 }
 
 status_ok() {

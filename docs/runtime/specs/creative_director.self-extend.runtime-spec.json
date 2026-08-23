@@ -16,7 +16,7 @@
     "visualQaFallbackPolicy": "degrade",
     "functionalTestFilter": "SelfExtendGenerated",
     "aestheticTestFilter": "UiDomainKnowledgeRetentionTests",
-    "uiSmokeProjectPath": "docs/UiDomainDemoGenerated/avalonia/Nexo.Ui.AvaloniaHost/Nexo.Ui.AvaloniaHost.csproj",
+    "uiSmokeProjectPath": "docs/UiDomainDemoGenerated/avalonia/Ashlar.Ui.AvaloniaHost/Ashlar.Ui.AvaloniaHost.csproj",
     "requirePreflight": true
   }
 }

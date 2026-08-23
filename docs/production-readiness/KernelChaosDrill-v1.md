@@ -13,9 +13,9 @@ KERNEL_GATE_CHAOS_LITE=1 make kernel-gate-tier-e   # mesh network-negative (requ
 
 | Scenario | Command / action | Expected | Pass |
 |----------|------------------|----------|------|
-| Single API container loss | `docker compose -f deploy/compose/docker-compose.portal.yml restart nexo-api` | `/health` recovers &lt; 2 min | [ ] |
+| Single API container loss | `docker compose -f deploy/compose/docker-compose.portal.yml restart ashlar-api` | `/health` recovers &lt; 2 min | [ ] |
 | Ollama unavailable | Stop `ollama` service in compose; API degrades gracefully | `/health` or status shows dependency issue, no hang | [ ] |
-| Disk full on pipeline store | Fill volume or bad `NEXO_PIPELINE_STORE_PATH` | Clear error, no silent corruption | [ ] |
+| Disk full on pipeline store | Fill volume or bad `ASHLAR_PIPELINE_STORE_PATH` | Clear error, no silent corruption | [ ] |
 | Mesh peer partition | `make mesh-lab-e2e` then `mesh-lab-verify-network-negative` | Director survives; placement blocks bad peers | [ ] |
 | LiteDB resume after crash | Tier B script / production-readiness gate resume | Second process completes run | [ ] |
 

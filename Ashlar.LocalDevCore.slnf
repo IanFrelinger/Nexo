@@ -1,0 +1,10 @@
+{
+  "solution": {
+    "path": "Ashlar.sln",
+    "projects": [
+      "application/src/Ashlar.CLI/Ashlar.CLI.csproj",
+      "src/Ashlar.Tests.Domain/Ashlar.Tests.Domain.csproj",
+      "src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj"
+    ]
+  }
+}

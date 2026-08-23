@@ -23,9 +23,9 @@ source_env_kv() {
   grep -E "^${key}=" "$COMPOSE_ENV_FILE" 2>/dev/null | head -1 | cut -d= -f2- | tr -d '\r' || true
 }
 
-API_KEY="$(source_env_kv Nexo__Security__ApiKey)"
+API_KEY="$(source_env_kv Ashlar__Security__ApiKey)"
 if [[ -z "$API_KEY" ]]; then
-  echo "(Skipping federation verify: no Nexo__Security__ApiKey in env file)"
+  echo "(Skipping federation verify: no Ashlar__Security__ApiKey in env file)"
   exit 0
 fi
 
@@ -55,7 +55,7 @@ curl_on_lab_net() {
 echo "== Mesh lab brick federation (peer-a RemoteCatalog → peer-b) =="
 
 # Catalog on peer-b (direct)
-B_REMOTE="$(curl_on_lab_net -fsS -H "X-Nexo-Api-Key: ${API_KEY}" "http://peer-b:8080/api/bricks")"
+B_REMOTE="$(curl_on_lab_net -fsS -H "X-Ashlar-Api-Key: ${API_KEY}" "http://peer-b:8080/api/bricks")"
 REMOTE_ID="$(echo "$B_REMOTE" | python3 -c '
 import json, sys
 data = json.load(sys.stdin)
@@ -75,7 +75,7 @@ if [[ -z "$REMOTE_ID" ]]; then
 fi
 
 # Catalog on peer-a should include remote brick id when federation is configured
-A_CATALOG="$(curl_on_lab_net -fsS -H "X-Nexo-Api-Key: ${API_KEY}" "http://peer-a:8080/api/bricks")"
+A_CATALOG="$(curl_on_lab_net -fsS -H "X-Ashlar-Api-Key: ${API_KEY}" "http://peer-a:8080/api/bricks")"
 echo "$A_CATALOG" | REMOTE_ID="$REMOTE_ID" python3 -c '
 import json, os, sys
 remote_id = os.environ["REMOTE_ID"]
@@ -84,7 +84,7 @@ bricks = data.get("bricks") or []
 ids = {str(b.get("id") or b.get("Id") or "") for b in bricks}
 if remote_id not in ids:
     sys.stderr.write(f"peer-a catalog missing remote brick {remote_id!r} (have {len(ids)} entries)\n")
-    sys.stderr.write("Ensure Nexo__BrickHost__RemoteCatalogBaseUrls points at peer-b with auth.\n")
+    sys.stderr.write("Ensure Ashlar__BrickHost__RemoteCatalogBaseUrls points at peer-b with auth.\n")
     sys.exit(1)
 print(f"peer-a federated catalog includes {remote_id!r} — OK")
 '
@@ -92,7 +92,7 @@ print(f"peer-a federated catalog includes {remote_id!r} — OK")
 EXEC_BODY="$(REMOTE_ID="$REMOTE_ID" python3 -c 'import json,os; print(json.dumps({"brickId":os.environ["REMOTE_ID"],"implementation":"Deterministic","input":{}}))')"
 curl_on_lab_net -fsS -X POST \
   -H "Content-Type: application/json" \
-  -H "X-Nexo-Api-Key: ${API_KEY}" \
+  -H "X-Ashlar-Api-Key: ${API_KEY}" \
   -d "$EXEC_BODY" \
   "http://peer-a:8080/api/bricks/${REMOTE_ID}/execute" | python3 -c '
 import json, sys
@@ -108,7 +108,7 @@ print("Federated execute via peer-a (RemoteBrick → peer-b) — OK")
 }
 
 # Host-published peer-a catalog sanity
-curl -fsS -H "X-Nexo-Api-Key: ${API_KEY}" "http://${PEER_A_HOST}/api/bricks" | REMOTE_ID="$REMOTE_ID" python3 -c '
+curl -fsS -H "X-Ashlar-Api-Key: ${API_KEY}" "http://${PEER_A_HOST}/api/bricks" | REMOTE_ID="$REMOTE_ID" python3 -c '
 import json, os, sys
 remote_id = os.environ["REMOTE_ID"]
 data = json.load(sys.stdin)

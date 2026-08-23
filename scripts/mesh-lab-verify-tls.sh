@@ -34,17 +34,17 @@ source_env_kv() {
   grep -E "^${key}=" "$COMPOSE_ENV_FILE" 2>/dev/null | head -1 | cut -d= -f2- | tr -d '\r' || true
 }
 
-API_KEY="$(source_env_kv Nexo__Security__ApiKey)"
+API_KEY="$(source_env_kv Ashlar__Security__ApiKey)"
 MESH_LAB_PEER_REGISTRATION_KEY="$(source_env_kv MESH_LAB_PEER_REGISTRATION_KEY)"
 export MESH_LAB_PEER_REGISTRATION_KEY
 
 if [[ -z "$API_KEY" ]]; then
-  echo "(Skipping TLS verify: no Nexo__Security__ApiKey in env file)"
+  echo "(Skipping TLS verify: no Ashlar__Security__ApiKey in env file)"
   exit 0
 fi
 
 mesh_post_tls() {
-  mesh_lab_tls_curl -X POST -H "Content-Type: application/json" -H "X-Nexo-Api-Key: ${API_KEY}" "$@"
+  mesh_lab_tls_curl -X POST -H "Content-Type: application/json" -H "X-Ashlar-Api-Key: ${API_KEY}" "$@"
 }
 
 echo "== Mesh lab TLS director (${DIRECTOR_BASE}, self-signed via mesh-lab-tls-certs.sh) =="

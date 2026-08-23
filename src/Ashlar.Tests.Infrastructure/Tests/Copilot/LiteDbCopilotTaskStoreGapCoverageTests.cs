@@ -1,0 +1,195 @@
+using FluentAssertions;
+using Ashlar.Core.Application.Copilot.Models;
+using Ashlar.Infrastructure.Copilot;
+using Xunit;
+
+namespace Ashlar.Tests.Infrastructure.Tests.Copilot;
+
+/// <summary>Tests for lite db copilot task store gap coverage.</summary>
+public sealed class LiteDbCopilotTaskStoreGapCoverageTests
+{
+    [Fact]
+    public void Constructor_rejects_blank_database_path()
+    {
+        var act = () => new LiteDbCopilotTaskStore("   ");
+
+        act.Should().Throw<ArgumentNullException>().WithParameterName("pathOrConnectionString");
+    }
+
+    [Fact]
+    public async Task GetByIdAsync_returns_null_for_blank_task_id()
+    {
+        var path = CreateTempDbPath();
+        try
+        {
+            var store = new LiteDbCopilotTaskStore(path);
+
+            (await store.GetByIdAsync("  ")).Should().BeNull();
+        }
+        finally
+        {
+            /// <summary>Attempts to delete; returns false on failure.</summary>
+            TryDelete(path);
+        }
+    }
+
+    [Fact]
+    public async Task QueryAsync_clamps_max_count_and_filters_by_since()
+    {
+        var path = CreateTempDbPath();
+        try
+        {
+            var store = new LiteDbCopilotTaskStore(path);
+            var now = DateTimeOffset.UtcNow;
+            await store.StoreAsync(new CopilotTaskRecord
+            {
+                TaskId = "recent",
+                Task = "recent task",
+                SubmittedAt = now,
+                Success = true,
+            });
+            await store.StoreAsync(new CopilotTaskRecord
+            {
+                TaskId = "old",
+                Task = "old task",
+                SubmittedAt = now.AddDays(-2),
+                Success = false,
+            });
+
+            var results = await store.QueryAsync(maxCount: 0, since: now.AddHours(-1));
+
+            results.Should().ContainSingle(r => r.TaskId == "recent");
+        }
+        finally
+        {
+            /// <summary>Attempts to delete; returns false on failure.</summary>
+            TryDelete(path);
+        }
+    }
+
+    [Fact]
+    public async Task QueryAsync_isolates_records_by_tenant()
+    {
+        var path = CreateTempDbPath();
+        try
+        {
+            var store = new LiteDbCopilotTaskStore(path);
+            var now = DateTimeOffset.UtcNow;
+            await store.StoreAsync(new CopilotTaskRecord
+            {
+                TaskId = "a-task",
+                Task = "tenant a",
+                SubmittedAt = now,
+                TenantId = "tenant-a",
+                Success = true,
+            });
+            await store.StoreAsync(new CopilotTaskRecord
+            {
+                TaskId = "b-task",
+                Task = "tenant b",
+                SubmittedAt = now,
+                TenantId = "tenant-b",
+                Success = true,
+            });
+
+            var aResults = await store.QueryAsync(tenantId: "tenant-a");
+            var bResults = await store.QueryAsync(tenantId: "tenant-b");
+
+            aResults.Should().ContainSingle(r => r.TaskId == "a-task");
+            bResults.Should().ContainSingle(r => r.TaskId == "b-task");
+            aResults.Should().NotContain(r => r.TaskId == "b-task");
+            bResults.Should().NotContain(r => r.TaskId == "a-task");
+        }
+        finally
+        {
+            /// <summary>Attempts to delete; returns false on failure.</summary>
+            TryDelete(path);
+        }
+    }
+
+    [Fact]
+    public async Task QueryAsync_includes_default_tenant_records_with_null_or_empty_tenant()
+    {
+        var path = CreateTempDbPath();
+        try
+        {
+            var store = new LiteDbCopilotTaskStore(path);
+            await store.StoreAsync(new CopilotTaskRecord
+            {
+                TaskId = "default-row",
+                Task = "task",
+                SubmittedAt = DateTimeOffset.UtcNow,
+                TenantId = "",
+            });
+
+            var results = await store.QueryAsync(tenantId: "default");
+
+            results.Should().ContainSingle(r => r.TaskId == "default-row");
+        }
+        finally
+        {
+            /// <summary>Attempts to delete; returns false on failure.</summary>
+            TryDelete(path);
+        }
+    }
+
+    [Fact]
+    public async Task StoreAsync_trims_long_tenant_id()
+    {
+        var path = CreateTempDbPath();
+        try
+        {
+            var store = new LiteDbCopilotTaskStore(path);
+            var longTenant = new string('t', 200);
+            var record = new CopilotTaskRecord
+            {
+                TaskId = "tenant-trim",
+                Task = "task",
+                SubmittedAt = DateTimeOffset.UtcNow,
+                TenantId = longTenant,
+            };
+
+            await store.StoreAsync(record);
+
+            (await store.GetByIdAsync("tenant-trim"))!.TenantId.Should().HaveLength(128);
+        }
+        finally
+        {
+            /// <summary>Attempts to delete; returns false on failure.</summary>
+            TryDelete(path);
+        }
+    }
+
+    [Fact]
+    public void Accepts_filename_connection_string()
+    {
+        var path = CreateTempDbPath();
+        try
+        {
+            var store = new LiteDbCopilotTaskStore($"Filename={path}");
+
+            store.Should().NotBeNull();
+        }
+        finally
+        {
+            /// <summary>Attempts to delete; returns false on failure.</summary>
+            TryDelete(path);
+        }
+    }
+
+    private static string CreateTempDbPath()
+        => Path.Combine(Path.GetTempPath(), "ashlar-copilot-" + Guid.NewGuid().ToString("N") + ".db");
+
+    private static void TryDelete(string path)
+    {
+        try
+        {
+            if (File.Exists(path))
+                File.Delete(path);
+        }
+        catch
+        {
+            // best-effort temp cleanup
+        }
+    }
+}

@@ -1,6 +1,6 @@
 # Aesthetic and engine adaptation glossary
 
-Nexo carries **portable visual intent** in `AestheticPack`. Game engines (Unity, Unreal, Godot, custom) **interpret** these fields and map them to native shaders, materials, and render features.
+Ashlar carries **portable visual intent** in `AestheticPack`. Game engines (Unity, Unreal, Godot, custom) **interpret** these fields and map them to native shaders, materials, and render features.
 
 ## Fields (engine-neutral)
 
@@ -26,7 +26,7 @@ Nexo carries **portable visual intent** in `AestheticPack`. Game engines (Unity,
 
 ## Mapbox tiles (shared kernel)
 
-`Nexo.Commercial.GameDomain` (`Nexo.Commercial.GameDomain.Maps`) provides **`MapboxTileUrls`**, **`MapboxWebMercatorTileMath`**, and **`MapboxTileResponseValidators`** for host-agnostic URL construction and HTTP response checks. **Never** embed access tokens in source; use environment variables or secret stores.
+`Ashlar.Commercial.GameDomain` (`Ashlar.Commercial.GameDomain.Maps`) provides **`MapboxTileUrls`**, **`MapboxWebMercatorTileMath`**, and **`MapboxTileResponseValidators`** for host-agnostic URL construction and HTTP response checks. **Never** embed access tokens in source; use environment variables or secret stores.
 
 ## Precedence (recommended)
 
@@ -35,4 +35,4 @@ Nexo carries **portable visual intent** in `AestheticPack`. Game engines (Unity,
 
 ## Unity-specific descriptors
 
-Types under `Nexo.Commercial.GameDomain` (`Nexo.Commercial.GameDomain.Assets`, `Descriptors`, etc.) still mention Unity in comments. Treat them as **legacy host projections**; new cross-engine work should prefer `AestheticPack` + neutral descriptors or parallel DTOs in a consuming repo.
+Types under `Ashlar.Commercial.GameDomain` (`Ashlar.Commercial.GameDomain.Assets`, `Descriptors`, etc.) still mention Unity in comments. Treat them as **legacy host projections**; new cross-engine work should prefer `AestheticPack` + neutral descriptors or parallel DTOs in a consuming repo.

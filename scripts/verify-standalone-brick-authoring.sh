@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Verifies `nexo new brick` works from a tool install outside a Nexo checkout.
+# Verifies `ashlar new brick` works from a tool install outside a Ashlar checkout.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-VERSION="${NEXO_AUTHORING_VERIFY_VERSION:-9.9.9-local}"
-WORK="${NEXO_AUTHORING_VERIFY_WORK:-$(mktemp -d)}"
+VERSION="${ASHLAR_AUTHORING_VERIFY_VERSION:-9.9.9-local}"
+WORK="${ASHLAR_AUTHORING_VERIFY_WORK:-$(mktemp -d)}"
 FEED="${WORK}/feed"
 TOOL_PATH="${WORK}/tools"
 BRICK_OUT="${WORK}/standalone"
@@ -21,29 +21,29 @@ pack() {
     -v minimal
 }
 
-bash "${ROOT}/scripts/pack-nexo-hosting-graph.sh" "${VERSION}" "${FEED}"
-pack src/Nexo.Adapters.Models/Nexo.Adapters.Models.csproj
-pack src/Nexo.Bricks.Owasp/Nexo.Bricks.Owasp.csproj
-pack src/Nexo.BackgroundAgents.HostRunners/Nexo.BackgroundAgents.HostRunners.csproj
-pack src/Nexo.Policies.Dev/Nexo.Policies.Dev.csproj
-pack src/Nexo.Authoring/Nexo.Authoring.csproj
-pack application/src/Nexo.CLI/Nexo.CLI.csproj
+bash "${ROOT}/scripts/pack-ashlar-hosting-graph.sh" "${VERSION}" "${FEED}"
+pack src/Ashlar.Adapters.Models/Ashlar.Adapters.Models.csproj
+pack src/Ashlar.Bricks.Owasp/Ashlar.Bricks.Owasp.csproj
+pack src/Ashlar.BackgroundAgents.HostRunners/Ashlar.BackgroundAgents.HostRunners.csproj
+pack src/Ashlar.Policies.Dev/Ashlar.Policies.Dev.csproj
+pack src/Ashlar.Authoring/Ashlar.Authoring.csproj
+pack application/src/Ashlar.CLI/Ashlar.CLI.csproj
 
 dotnet tool install \
   --tool-path "${TOOL_PATH}" \
-  Nexo.CLI \
+  Ashlar.CLI \
   --version "${VERSION}" \
   --add-source "${FEED}" \
   --ignore-failed-sources
 
-"${TOOL_PATH}/nexo" new brick SampleThing \
+"${TOOL_PATH}/ashlar" new brick SampleThing \
   --output "${BRICK_OUT}" \
-  --nexo-version "${VERSION}" \
+  --ashlar-version "${VERSION}" \
   --json
 
-if rg "Nexo\\.Core\\.Domain\\.csproj|/workspace|src/Nexo" "${BRICK_OUT}" >/dev/null; then
-  echo "Generated brick contains repo-relative Nexo paths." >&2
-  rg "Nexo\\.Core\\.Domain\\.csproj|/workspace|src/Nexo" "${BRICK_OUT}" >&2
+if rg "Ashlar\\.Core\\.Domain\\.csproj|/workspace|src/Ashlar" "${BRICK_OUT}" >/dev/null; then
+  echo "Generated brick contains repo-relative Ashlar paths." >&2
+  rg "Ashlar\\.Core\\.Domain\\.csproj|/workspace|src/Ashlar" "${BRICK_OUT}" >&2
   exit 1
 fi
 

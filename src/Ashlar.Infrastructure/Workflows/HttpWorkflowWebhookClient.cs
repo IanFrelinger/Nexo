@@ -1,0 +1,47 @@
+using System.Net.Http.Json;
+using System.Text.Json;
+using Microsoft.Extensions.Logging;
+using Ashlar.Core.Application.Common.Ports;
+
+namespace Ashlar.Infrastructure.Workflows;
+
+/// <summary>
+/// HTTP implementation of workflow webhook client.
+/// </summary>
+public sealed class HttpWorkflowWebhookClient : IWorkflowWebhookClient
+{
+    private readonly IHttpClientFactory _httpClientFactory;
+    private readonly ILogger<HttpWorkflowWebhookClient>? _logger;
+
+    /// <summary>Initializes a new http workflow webhook client.</summary>
+    public HttpWorkflowWebhookClient(
+        IHttpClientFactory httpClientFactory,
+        ILogger<HttpWorkflowWebhookClient>? logger = null)
+    {
+        _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
+        _logger = logger;
+    }
+
+    /// <summary>Get asynchronously.</summary>
+    public async Task<string> GetAsync(string url, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+            throw new ArgumentException("Webhook URL is required", nameof(url));
+
+        using var client = _httpClientFactory.CreateClient();
+        var response = await client.GetAsync(url, ct);
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadAsStringAsync(ct);
+    }
+
+    /// <summary>Post asynchronously.</summary>
+    public async Task PostAsync(string url, object data, CancellationToken ct = default)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+            throw new ArgumentException("Webhook URL is required", nameof(url));
+
+        using var client = _httpClientFactory.CreateClient();
+        var response = await client.PostAsJsonAsync(url, data, ct);
+        response.EnsureSuccessStatusCode();
+    }
+}

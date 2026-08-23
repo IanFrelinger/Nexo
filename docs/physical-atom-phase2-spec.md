@@ -31,14 +31,14 @@ CRC32 (IEEE) over all bytes except the trailing CRC field. Integrity check only 
 ## QR encoding (`PhysicalAtomQrTagCodec`)
 
 ```
-nexo-atom:v1:<base64url(binary-payload)>
+ashlar-atom:v1:<base64url(binary-payload)>
 ```
 
 ## NFC encoding (`PhysicalAtomNfcNdefCodec`)
 
 Simplified NDEF **external type** short record:
 
-- Type: `nexo:atom`
+- Type: `ashlar:atom`
 - Payload: binary v1 payload above
 
 Headless byte layout suitable for NTAG213-class tags (~127 byte payload fits).
@@ -53,6 +53,6 @@ QR image rasterization, NFC writer hardware, HTTP resolution backend, XR clients
 
 ## Implementation
 
-- Codecs: `applications/Nexo.Certification.Physical/Tagging/`
-- Issuer: `src/Nexo.Infrastructure/Certification/Physical/PhysicalAtomTagIssuingBrick.cs`
+- Codecs: `applications/Ashlar.Certification.Physical/Tagging/`
+- Issuer: `src/Ashlar.Infrastructure/Certification/Physical/PhysicalAtomTagIssuingBrick.cs`
 - Sample: `samples/physical-atom-cert/design-scope.tag-qr.txt`

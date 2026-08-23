@@ -1,6 +1,6 @@
 # Private order form template (Phase 1.5)
 
-Use this skeleton for the first annual **Nexo Private** pilot. Adapt with counsel before signature.
+Use this skeleton for the first annual **Ashlar Private** pilot. Adapt with counsel before signature.
 
 ## Order summary
 
@@ -9,7 +9,7 @@ Use this skeleton for the first annual **Nexo Private** pilot. Adapt with counse
 | Customer legal name | |
 | Billing contact | |
 | Technical contact | |
-| Deployment mode | **Nexo Private** (single-tenant, customer-controlled host) |
+| Deployment mode | **Ashlar Private** (single-tenant, customer-controlled host) |
 | Contract term | 12 months |
 | Renewal | Auto-renew annual unless 60-day written notice |
 | Currency | USD |
@@ -18,7 +18,7 @@ Use this skeleton for the first annual **Nexo Private** pilot. Adapt with counse
 
 | Line | Qty | Unit | Annual price | Notes |
 |------|-----|------|--------------|-------|
-| Nexo Private — Team Self-Host seats | | seat | per [`MonetizationProductDesign.md`](../MonetizationProductDesign.md) | Includes copilot + audit baseline |
+| Ashlar Private — Team Self-Host seats | | seat | per [`MonetizationProductDesign.md`](../MonetizationProductDesign.md) | Includes copilot + audit baseline |
 | Priority support add-on (optional) | 1 | org | | Next-business-day email |
 | Professional services — production readiness (optional) | | fixed SOW | | Deploy + policy workshop |
 

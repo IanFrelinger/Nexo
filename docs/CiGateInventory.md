@@ -12,7 +12,7 @@ Snapshot: **62 workflow files** under `.github/workflows/` (`git ls-files ".gith
 | --- | --- | --- |
 | `cert-gate` | `.github/workflows/cert-gate.yml` (job `cert-gate`) | every `pull_request`, every push to `master`, `workflow_dispatch` — no path filter |
 
-Verified with `gh api repos/IanFrelinger/Nexo/branches/master/protection` (`required_status_checks.contexts == ["cert-gate"]`, `strict: true`, `enforce_admins: true`). Everything else in this document is **advisory**: a red `layer-boundary / verify`, `Kernel Gate / kernel-gate`, or `Docs Link Check / lychee` does not block a merge. Earlier revisions of this file listed 15 required contexts; that was never the repository setting.
+Verified with `gh api repos/IanFrelinger/Ashlar/branches/master/protection` (`required_status_checks.contexts == ["cert-gate"]`, `strict: true`, `enforce_admins: true`). Everything else in this document is **advisory**: a red `layer-boundary / verify`, `Kernel Gate / kernel-gate`, or `Docs Link Check / lychee` does not block a merge. Earlier revisions of this file listed 15 required contexts; that was never the repository setting.
 
 ### Why the other gates are not required (and cannot simply be added)
 
@@ -30,10 +30,10 @@ Human runs this; agents cannot change repository settings. The `contexts` array 
 
 ```bash
 OWNER="IanFrelinger"
-REPO="Nexo"
+REPO="Ashlar"
 BRANCH="master"
 
-cat > /tmp/nexo-required-checks.json <<'JSON'
+cat > /tmp/ashlar-required-checks.json <<'JSON'
 {
   "required_status_checks": {
     "strict": true,
@@ -44,7 +44,7 @@ cat > /tmp/nexo-required-checks.json <<'JSON'
 }
 JSON
 
-gh api --method PATCH -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" "/repos/$OWNER/$REPO/branches/$BRANCH/protection" --input /tmp/nexo-required-checks.json
+gh api --method PATCH -H "Accept: application/vnd.github+json" -H "X-GitHub-Api-Version: 2022-11-28" "/repos/$OWNER/$REPO/branches/$BRANCH/protection" --input /tmp/ashlar-required-checks.json
 ```
 
 ## Trigger map
@@ -70,11 +70,11 @@ Six workflows carry a `schedule`: `distribution-matrix-gate` (Mon 10:00 UTC), `f
 | `layer-boundary.yml` | layer-boundary / `verify` | every PR (`paths: "**"`, types opened/synchronize/reopened/edited) | — |
 | `application-gate.yml` | Application Gate / `application-gate` | paths: `application/**`, VirtualProduction tests, `scripts/application-gate*.sh`, `scripts/prod-dry-run.sh`, `Makefile`, … | dispatch |
 | `dependency-boundary.yml` | dependency-boundary / `verify` | paths: `**/*.csproj`, `commercial/**`, `application/**`, `applications/**`, `src/**`, `LICENSING.md`, boundary scripts | push, dispatch |
-| `distribution-matrix-gate.yml` | Distribution Matrix Gate / 7 jobs | paths: same broad list as push (Dockerfiles, pack/verify scripts, Nexo.API/CLI, Client/Sdk/Hosting.Bundle/Authoring/Brick.Contracts, samples, VirtualProduction tests) | push (broad paths), weekly schedule, dispatch |
+| `distribution-matrix-gate.yml` | Distribution Matrix Gate / 7 jobs | paths: same broad list as push (Dockerfiles, pack/verify scripts, Ashlar.API/CLI, Client/Sdk/Hosting.Bundle/Authoring/Brick.Contracts, samples, VirtualProduction tests) | push (broad paths), weekly schedule, dispatch |
 | `docs-link-check.yml` | Docs Link Check / `lychee (README + docs)` | paths: `docs/**`, `README.md`, `.lycheeignore` | push, dispatch |
 | `kernel-coverage-gate.yml` | Kernel coverage gate / `kernel-coverage` | paths: kernel src + tests, `scripts/ci/kernel-coverage-gate.sh`, `scripts/ci/pr-testing-strategy-gate.sh` | push |
-| `kernel-gate.yml` | Kernel Gate / `kernel-gate` | paths: `src/Nexo.Hosting/**`, Infrastructure, Orchestration, Runtime, Core.Application, kernel tests, `docs/production-readiness/**`, `Makefile` | push (narrower paths), dispatch |
-| `provenance-graph-gate.yml` | Provenance Graph CI / `unit-tests`, `integration-tests` | paths: `applications/Nexo.Provenance.Graph*/**`, `deploy/compose/docker-compose.provenance.yml` | dispatch |
+| `kernel-gate.yml` | Kernel Gate / `kernel-gate` | paths: `src/Ashlar.Hosting/**`, Infrastructure, Orchestration, Runtime, Core.Application, kernel tests, `docs/production-readiness/**`, `Makefile` | push (narrower paths), dispatch |
+| `provenance-graph-gate.yml` | Provenance Graph CI / `unit-tests`, `integration-tests` | paths: `applications/Ashlar.Provenance.Graph*/**`, `deploy/compose/docker-compose.provenance.yml` | dispatch |
 | `security-gate.yml` | Security Gate / `security-gate` | paths: Trust/Security sources and tests, `scripts/security-gate*.sh`, `Makefile` | dispatch |
 | `shell-lint.yml` | Shell lint / `shell-lint` | paths: `scripts/**` | dispatch |
 | `testing-strategy-gate.yml` | Testing strategy gate / `testing-strategy` | paths: `src/**`, `application/**`, `scripts/**`, `.github/**`, `Makefile`, `docs/architecture/TestingStrategy*.md` | — |
@@ -90,13 +90,13 @@ All of these also accept `workflow_dispatch`. Branch filters are `master`, `main
 | `compose-gate.yml` | Compose Gate | compose test stacks, `.docker/Dockerfile.test-caching*`, CLI, README |
 | `container-image-gate.yml` | Container Image Gate | `.docker/Dockerfile.cli`, CLI + spine sources |
 | `container-image-publish.yml` | Container Image Publish | `master`/`main`; `.docker/**`, hosts, spine sources — publishes GHCR images |
-| `devcontainer-gate.yml` | Dev Container Gate | `.devcontainer/**`, `Nexo.LocalDevCore.slnf`, CLI |
+| `devcontainer-gate.yml` | Dev Container Gate | `.devcontainer/**`, `Ashlar.LocalDevCore.slnf`, CLI |
 | `dr-gate.yml` | dr-gate | `master` only; `scripts/dr-gate*.sh` |
 | `environment-setup-gate-v1.yml` | Environment Setup Gate v1 | `master`/`main`; `scripts/setup/**`, CLI |
-| `friend-mesh-prefab-gate.yml` | Friend mesh prefab gate | friend-mesh compose, `.docker/Dockerfile.api`, `Nexo.API` |
+| `friend-mesh-prefab-gate.yml` | Friend mesh prefab gate | friend-mesh compose, `.docker/Dockerfile.api`, `Ashlar.API` |
 | `full-platform-readiness-gate.yml` | Full Platform Readiness Gate | Dockerfiles, setup/install scripts, spine sources, StableSdkHostSample; **weekly schedule** |
-| `grpc-transport-gate.yml` | gRPC transport gate | `src/Nexo.Transport.Grpc/**`, `src/Nexo.Tests.Transport/**` |
-| `mcp-a2a-gate.yml` | MCP + A2A protocol gate | also `application/**` branches; `src/Nexo.Mcp.*`, `src/Nexo.Transport.A2A*`, `Nexo.API` |
+| `grpc-transport-gate.yml` | gRPC transport gate | `src/Ashlar.Transport.Grpc/**`, `src/Ashlar.Tests.Transport/**` |
+| `mcp-a2a-gate.yml` | MCP + A2A protocol gate | also `application/**` branches; `src/Ashlar.Mcp.*`, `src/Ashlar.Transport.A2A*`, `Ashlar.API` |
 | `onboarding-docs-guard.yml` | Onboarding Docs Guard | README, `docs/**/*.md`, `scripts/*.sh`, `scripts/*.ps1`, `Makefile`, `**/*.csproj` (ProjectTiers guard) |
 | `onboarding-quickstart-gate.yml` | onboarding-quickstart-gate | README, GettingStarted, setup/install scripts, CLI; **weekly schedule** |
 | `optimize-agent-cluster-gate.yml` | Optimize Agent Cluster Gate | `apps/runtime-studio/**`, `scripts/sandbox/**`, CLI |
@@ -136,17 +136,17 @@ Despite their names, **`cross-platform-tests`** and **`prod-dry-run-pr`** do not
 
 ## Pruning (2026-08-16)
 
-Every workflow file was classified from `gh run list --workflow <file> --limit 15 --json conclusion,createdAt,event` plus its `on:` block (PR `ci/workflow-pruning`; the full 62-row table is in that PR's description). Classes: **active-green**, **active-flaky**, **dead** (no run in 60 days and no `push`/`pull_request`/`schedule` trigger that can fire), **duplicate**, **always-red**. Only `cert-gate` is required by branch protection (verified with `gh api repos/IanFrelinger/Nexo/branches/master/protection`), so none of the changes below affects merges.
+Every workflow file was classified from `gh run list --workflow <file> --limit 15 --json conclusion,createdAt,event` plus its `on:` block (PR `ci/workflow-pruning`; the full 62-row table is in that PR's description). Classes: **active-green**, **active-flaky**, **dead** (no run in 60 days and no `push`/`pull_request`/`schedule` trigger that can fire), **duplicate**, **always-red**. Only `cert-gate` is required by branch protection (verified with `gh api repos/IanFrelinger/Ashlar/branches/master/protection`), so none of the changes below affects merges.
 
 **Deleted (7)** — recoverable from git history at `71963059`:
 
 | File | Why |
 | --- | --- |
-| `core-domain-coverage.yml` | duplicate: identical `dotnet test src/Nexo.Tests.Domain … /p:Threshold=100` step to the first leg of `scripts/ci/kernel-coverage-gate.sh`, same PR/push paths |
+| `core-domain-coverage.yml` | duplicate: identical `dotnet test src/Ashlar.Tests.Domain … /p:Threshold=100` step to the first leg of `scripts/ci/kernel-coverage-gate.sh`, same PR/push paths |
 | `runtime-studio-playground.yml` | duplicate of `cross-platform-tests.yml` `scope=playground` (same 3-OS matrix, same filters); 4/4 red, last run 2026-05-11, dispatch-only |
 | `test-persistence-multi-os.yml` | duplicate of `cross-platform-tests.yml` `scope=persistence`; 15/15 red — tests pass, the `publish-unit-test-result-action` step 403s on `check-runs` |
 | `test-caching-multi-env.yml` | always-red (14 red + 1 cancelled of 15), muted 2026-08-11, dispatch-only; the `Dockerfile.test-caching*` images it built are still validated by `compose-gate.yml` |
-| `mapbox-tile-helpers-ci.yml` | always-red (15/15), dispatch-only; the job-level `if: secrets.MAPBOX_ACCESS_TOKEN != ''` is not a valid context there. Tests remain runnable locally with `NEXO_TEST_MAPBOX_TILES=1` |
+| `mapbox-tile-helpers-ci.yml` | always-red (15/15), dispatch-only; the job-level `if: secrets.MAPBOX_ACCESS_TOKEN != ''` is not a valid context there. Tests remain runnable locally with `ASHLAR_TEST_MAPBOX_TILES=1` |
 | `runtime-studio-forge-smoke.yml` | dead: dispatch-only, last run 2026-06-14, referenced nowhere |
 | `mesh-lab-remote-gate.yml` | dead: never dispatched, needs five repository secrets and a tailnet runner; `scripts/mesh-lab-verify-remote.sh` is the supported path |
 
@@ -158,9 +158,9 @@ Every workflow file was classified from `gh run list --workflow <file> --limit 1
 | `mesh-lab-gate.yml` | push trigger commented out 2026-08-11 (15/15 red in the compose environment); mesh-lab entry point |
 | `mesh-lab-stress-gate.yml` | **weekly schedule removed** after eight consecutive red runs (2026-06-22 .. 2026-08-10) |
 | `runtime-release-promotion.yml` | 11 of last 14 red, last run 2026-05-11; kept because `scripts/rc-gate-tier-d.sh` lists it as an optional RC signal |
-| `test-air-gapped-no-network.yml` | never green (11/11 red since 2026-03-08; last failure is MSB1011 from the `nexo test multi-env` step); cited by hardening plans, so kept as an unproven claim |
+| `test-air-gapped-no-network.yml` | never green (11/11 red since 2026-03-08; last failure is MSB1011 from the `ashlar test multi-env` step); cited by hardening plans, so kept as an unproven claim |
 | `test-trust-multi-env.yml` | dead by the 60-day rule (last dispatch 2026-05-23, mostly green); cited by `KernelHardeningPlan-v1.md` C1 |
-| `workflow-regression-gate.yml` | dead by the 60-day rule (last dispatch 2026-06-14, green); only end-to-end run of `nexo workflow baseline|report|gate` |
+| `workflow-regression-gate.yml` | dead by the 60-day rule (last dispatch 2026-06-14, green); only end-to-end run of `ashlar workflow baseline|report|gate` |
 
 **Kept as-is although rarely run** (all have a live path/manual trigger and a Makefile/script/runbook that names them): `compat-gate`, `dr-gate` (path-triggered on their scripts, one green run each), `composition-mesh-gate`, `waterproofing-gate`, `perf-certification`, `installer-bruteforce-gate` (dispatched by `scripts/rc-gate-tier-d.sh`), `nuget-consumer-verify` (post-publish check, `docs/NuGetConsumerVerify.md`), `setup-smoke-suite` (`docs/CiFirstHardwareSecond.md`), `devlog-ghost-release`, `mesh-lab-tls-gate` (weekly, latest run green).
 

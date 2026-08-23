@@ -4,7 +4,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-CLI_PROJECT="application/src/Nexo.CLI/Nexo.CLI.csproj"
+CLI_PROJECT="application/src/Ashlar.CLI/Ashlar.CLI.csproj"
 MAX_MS="${PERF_GATE_COLD_START_MAX_MS:-45000}"
 
 echo "== Perf Tier C: CLI cold-start (--help) =="
@@ -15,7 +15,7 @@ dotnet run --project "$CLI_PROJECT" --no-build -- --help >/dev/null
 END_MS=$(python3 -c 'import time; print(int(time.time()*1000))')
 ELAPSED=$((END_MS - START_MS))
 
-REPORT_DIR=".nexo/perf"
+REPORT_DIR=".ashlar/perf"
 mkdir -p "$REPORT_DIR"
 cat >"$REPORT_DIR/cold-start.json" <<EOF
 {

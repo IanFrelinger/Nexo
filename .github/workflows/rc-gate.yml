@@ -15,7 +15,7 @@ on:
   workflow_dispatch:
     inputs:
       tier:
-        description: "Gate tier (a = multi-hour nexo-ready meta-gate; full = a+b+c+d)"
+        description: "Gate tier (a = multi-hour ashlar-ready meta-gate; full = a+b+c+d)"
         required: false
         default: "c"
         type: choice
@@ -42,18 +42,18 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: Tier A (nexo-ready)
+      - name: Tier A (ashlar-ready)
         if: github.event_name == 'workflow_dispatch' && (inputs.tier == 'a' || inputs.tier == 'full')
         run: make rc-gate-tier-a
         env:
-          NEXO_ALLOW_MOCK: "1"
+          ASHLAR_ALLOW_MOCK: "1"
           RC_GATE_SKIP_DOCKER: "1"
 
       - name: Tier B (ship + release bundle)
         if: github.event_name == 'workflow_dispatch' && (inputs.tier == 'b' || inputs.tier == 'full')
         run: make rc-gate-tier-b
         env:
-          NEXO_ALLOW_MOCK: "1"
+          ASHLAR_ALLOW_MOCK: "1"
 
       - name: Tier C (evidence)
         if: github.event_name == 'schedule' || github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && (inputs.tier == 'c' || inputs.tier == 'full'))
@@ -71,6 +71,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: rc-gate-reports
-          path: .nexo/rc-gate/**
+          path: .ashlar/rc-gate/**
           if-no-files-found: ignore
           retention-days: 30

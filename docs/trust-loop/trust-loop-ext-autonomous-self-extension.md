@@ -1,9 +1,9 @@
-# Nexo Trust Loop — Extension Spec: Autonomous Self-Extension
+# Ashlar Trust Loop — Extension Spec: Autonomous Self-Extension
 
-Specification v1.0 — companion to `nexo-trust-loop-spec.md` v1.0 and
+Specification v1.0 — companion to `ashlar-trust-loop-spec.md` v1.0 and
 the Analyzer Gate & Container Isolation extension spec.
 Status: Draft for integration
-Scope: The closed loop in which Nexo detects a need, proposes an
+Scope: The closed loop in which Ashlar detects a need, proposes an
 extension to itself, certifies it, admits it, hot-swaps it into the
 running system, observes it, and rolls it back — with human authority
 positioned exactly where it is load-bearing and nowhere else.

@@ -26,10 +26,10 @@ on:
 #      - ".docker/Dockerfile.api"
 #      - ".docker/Dockerfile.fleet-host"
 #      - ".docker/Dockerfile.quickstart"
-#      - "commercial/src/Nexo.Commercial.Fleet.Host/**"
-#      - "commercial/src/Nexo.Commercial.Fleet.Api/**"
-#      - "commercial/src/Nexo.Commercial.Fleet.Infrastructure/**"
-#      - "commercial/src/Nexo.Commercial.Fleet.Contracts/**"
+#      - "commercial/src/Ashlar.Commercial.Fleet.Host/**"
+#      - "commercial/src/Ashlar.Commercial.Fleet.Api/**"
+#      - "commercial/src/Ashlar.Commercial.Fleet.Infrastructure/**"
+#      - "commercial/src/Ashlar.Commercial.Fleet.Contracts/**"
 #      - "docs/config/mesh-lab.env.example"
 #      - "docs/MeshVirtualLab.md"
 #      - "scripts/mesh-lab-verify.sh"
@@ -52,23 +52,23 @@ on:
 #      - "docs/MeshPhase13DataPlaneFederation.md"
 #      - ".github/workflows/mesh-lab-stress-gate.yml"
 #      - "scripts/mesh-lab-fleet.sh"
-#      - "application/src/Nexo.CLI/**"
-#      - "application/src/Nexo.Tests.CLI/**"
+#      - "application/src/Ashlar.CLI/**"
+#      - "application/src/Ashlar.Tests.CLI/**"
 #      - "docs/runbooks/mesh-lab-operations.md"
-#      - "src/Nexo.Infrastructure/MeshLab/**"
-#      - "src/Nexo.Tests.Infrastructure/Tests/MeshLab/**"
-#      - "commercial/tests/Nexo.Commercial.Tests.Fleet/**"
-#      - "src/Nexo.Hosting/**"
-#      - "src/Nexo.Infrastructure/Execution/**"
+#      - "src/Ashlar.Infrastructure/MeshLab/**"
+#      - "src/Ashlar.Tests.Infrastructure/Tests/MeshLab/**"
+#      - "commercial/tests/Ashlar.Commercial.Tests.Fleet/**"
+#      - "src/Ashlar.Hosting/**"
+#      - "src/Ashlar.Infrastructure/Execution/**"
 #      - "scripts/run-mesh-lab-e2e.sh"
 #      - "scripts/mesh-lab-stress-ramp.sh"
-#      - "src/Nexo.Abstractions/Barriers/**"
-#      - "src/Nexo.Runtime/**"
-#      - "src/Nexo.Transport.Grpc/**"
-#      - "src/Nexo.Tests.Infrastructure/Tests/API/ApiDevelopmentHostDiTests.cs"
-#      - "src/Nexo.Tests.Infrastructure/Tests/Mesh/**"
-#      - "src/Nexo.Tests.Infrastructure/Helpers/MeshLabProcessRunner.cs"
-#      - "application/src/Nexo.API/**"
+#      - "src/Ashlar.Abstractions/Barriers/**"
+#      - "src/Ashlar.Runtime/**"
+#      - "src/Ashlar.Transport.Grpc/**"
+#      - "src/Ashlar.Tests.Infrastructure/Tests/API/ApiDevelopmentHostDiTests.cs"
+#      - "src/Ashlar.Tests.Infrastructure/Tests/Mesh/**"
+#      - "src/Ashlar.Tests.Infrastructure/Helpers/MeshLabProcessRunner.cs"
+#      - "application/src/Ashlar.API/**"
   workflow_dispatch:
 
 jobs:
@@ -77,7 +77,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
-      COMPOSE_PROJECT_NAME: nexo_mesh_lab_ci
+      COMPOSE_PROJECT_NAME: ashlar_mesh_lab_ci
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -100,13 +100,13 @@ jobs:
           COPILOT="${KEY}-copilot-scoped"
           PEER_REG="${KEY}-peer-registration"
           {
-            echo "Nexo__Security__ApiKey=${KEY}"
-            echo "Nexo__Security__PeerB__BearerToken=${BEARER}"
-            echo "Nexo__Security__Worker__BasicAuthPassword=${BASIC}"
-            echo "Nexo__Security__CopilotScopedApiKey=${COPILOT}"
-            echo "Nexo__Entitlements__MaxCopilotSubmissionsPerHour=2"
+            echo "Ashlar__Security__ApiKey=${KEY}"
+            echo "Ashlar__Security__PeerB__BearerToken=${BEARER}"
+            echo "Ashlar__Security__Worker__BasicAuthPassword=${BASIC}"
+            echo "Ashlar__Security__CopilotScopedApiKey=${COPILOT}"
+            echo "Ashlar__Entitlements__MaxCopilotSubmissionsPerHour=2"
             echo "MESH_LAB_PEER_REGISTRATION_KEY=${PEER_REG}"
-            echo "Nexo__Mesh__Persistence__Provider=LiteDb"
+            echo "Ashlar__Mesh__Persistence__Provider=LiteDb"
             echo "MESH_LAB_PEER_A_PUBLISH=127.0.0.1:18081"
             echo "MESH_LAB_PEER_B_PUBLISH=127.0.0.1:18082"
           } > .env.mesh-lab.ci

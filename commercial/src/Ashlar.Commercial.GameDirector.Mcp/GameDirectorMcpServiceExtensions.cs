@@ -1,0 +1,21 @@
+using GameDirector.Mcp.Tools;
+using Microsoft.Extensions.DependencyInjection;
+using Ashlar.Core.Domain.Execution;
+
+namespace GameDirector.Mcp;
+
+/// <summary>Game director mcp service extensions.</summary>
+public static class GameDirectorMcpServiceExtensions
+{
+    public static IServiceCollection AddGameDirectorMcp(this IServiceCollection services)
+    {
+        services.AddSingleton<McpBrickExecutor>();
+        services.AddSingleton<AnalyzeBalanceTool>();
+        services.AddSingleton<ValidateMapTool>();
+        services.AddSingleton<GenerateContentTool>();
+        services.AddSingleton<GetAuditTrailTool>();
+        services.AddSingleton<QueryPatternsTool>();
+        services.AddSingleton<McpToolRegistry>();
+        return services;
+    }
+}

@@ -3,7 +3,7 @@
 #
 #   ./scripts/mesh-lab-verify-persistence.sh .env.mesh-lab
 #
-# Requires peer-a with Nexo__Mesh__Persistence__Provider=LiteDb (compose default).
+# Requires peer-a with Ashlar__Mesh__Persistence__Provider=LiteDb (compose default).
 
 set -euo pipefail
 
@@ -28,19 +28,19 @@ source_env_kv() {
   grep -E "^${key}=" "$COMPOSE_ENV_FILE" 2>/dev/null | head -1 | cut -d= -f2- | tr -d '\r' || true
 }
 
-API_KEY="$(source_env_kv Nexo__Security__ApiKey)"
+API_KEY="$(source_env_kv Ashlar__Security__ApiKey)"
 MESH_LAB_PEER_REGISTRATION_KEY="$(source_env_kv MESH_LAB_PEER_REGISTRATION_KEY)"
 export MESH_LAB_PEER_REGISTRATION_KEY
-PERSIST_PROVIDER="$(source_env_kv Nexo__Mesh__Persistence__Provider)"
+PERSIST_PROVIDER="$(source_env_kv Ashlar__Mesh__Persistence__Provider)"
 [[ -n "$PERSIST_PROVIDER" ]] || PERSIST_PROVIDER="LiteDb"
 
 if [[ -z "$API_KEY" ]]; then
-  echo "(Skipping persistence verify: no Nexo__Security__ApiKey in env file)"
+  echo "(Skipping persistence verify: no Ashlar__Security__ApiKey in env file)"
   exit 0
 fi
 
 if [[ "$(echo "${PERSIST_PROVIDER}" | tr '[:upper:]' '[:lower:]')" != "litedb" ]]; then
-  echo "(Skipping persistence verify: Nexo__Mesh__Persistence__Provider is not LiteDb)"
+  echo "(Skipping persistence verify: Ashlar__Mesh__Persistence__Provider is not LiteDb)"
   exit 0
 fi
 
@@ -49,11 +49,11 @@ compose() {
 }
 
 mesh_post() {
-  curl -fsS -X POST -H "Content-Type: application/json" -H "X-Nexo-Api-Key: ${API_KEY}" "$@"
+  curl -fsS -X POST -H "Content-Type: application/json" -H "X-Ashlar-Api-Key: ${API_KEY}" "$@"
 }
 
 mesh_delete() {
-  curl -fsS -X DELETE -H "X-Nexo-Api-Key: ${API_KEY}" "$@"
+  curl -fsS -X DELETE -H "X-Ashlar-Api-Key: ${API_KEY}" "$@"
 }
 
 wait_peer_a() {
@@ -83,14 +83,14 @@ echo "Seeded fleet node ${PERSIST_PEER_ID} and task ${TASK_ID} — restarting pe
 compose restart peer-a >/dev/null
 wait_peer_a
 
-NODES_JSON="$(curl -fsS -H "X-Nexo-Api-Key: ${API_KEY}" "http://${PEER_A_HOST}/api/mesh/fleet/nodes")"
+NODES_JSON="$(curl -fsS -H "X-Ashlar-Api-Key: ${API_KEY}" "http://${PEER_A_HOST}/api/mesh/fleet/nodes")"
 if [[ "$NODES_JSON" != *"${PERSIST_PEER_ID}"* ]]; then
   echo "Fleet node missing after restart (got: ${NODES_JSON:0:300}…)" >&2
   exit 1
 fi
 echo "Fleet registry survived restart — OK"
 
-TASK_GET="$(curl -fsS -H "X-Nexo-Api-Key: ${API_KEY}" "http://${PEER_A_HOST}/api/mesh/tasks/${TASK_ID}")"
+TASK_GET="$(curl -fsS -H "X-Ashlar-Api-Key: ${API_KEY}" "http://${PEER_A_HOST}/api/mesh/tasks/${TASK_ID}")"
 echo "$TASK_GET" | python3 -c '
 import json, sys
 t = json.load(sys.stdin)

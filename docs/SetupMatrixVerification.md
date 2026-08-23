@@ -31,7 +31,7 @@ Skip all Docker tiers (Tier B/C):
 
 Artifacts:
 
-- `.nexo/setup-matrix-report.json` — machine-readable case results.
+- `.ashlar/setup-matrix-report.json` — machine-readable case results.
 
 Exit codes:
 
@@ -55,4 +55,4 @@ Environment:
 
 ## CI
 
-`environment-setup-gate-v1` runs the verifier on **Windows** with `-SkipDockerBuild` so PRs get broader coverage without doubling image-build time. Set `NEXO_MATRIX_DOCKER_BUILD=1` on a workflow dispatch run if you need full Docker image builds in GitHub Actions.
+`environment-setup-gate-v1` runs the verifier on **Windows** with `-SkipDockerBuild` so PRs get broader coverage without doubling image-build time. Set `ASHLAR_MATRIX_DOCKER_BUILD=1` on a workflow dispatch run if you need full Docker image builds in GitHub Actions.

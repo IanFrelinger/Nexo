@@ -6,8 +6,8 @@ on:
     branches: [master]
     paths:
       - 'scripts/perf-gate*.sh'
-      - 'src/Nexo.Tests.Orchestration/**'
-      - 'src/Nexo.Tests.BackgroundAgents/**'
+      - 'src/Ashlar.Tests.Orchestration/**'
+      - 'src/Ashlar.Tests.BackgroundAgents/**'
 
 jobs:
   perf-gate:
@@ -25,4 +25,4 @@ jobs:
         if: always()
         with:
           name: perf-gate-${{ github.run_id }}
-          path: .nexo/perf/
+          path: .ashlar/perf/

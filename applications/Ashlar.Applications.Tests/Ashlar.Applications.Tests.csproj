@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <!-- Sample fixtures are located via AppContext.BaseDirectory, so they are copied
+       to the output rather than reached by a source-relative path. -->
+  <ItemGroup>
+    <Content Include="../../samples/physical-atom-cert/**/*" CopyToOutputDirectory="PreserveNewest" Link="physical-atom-cert/%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="NSec.Cryptography" />
+    <PackageReference Include="System.Reactive" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Ashlar.Certification.Physical\Ashlar.Certification.Physical.csproj" />
+    <ProjectReference Include="..\Ashlar.Spatial.Contracts\Ashlar.Spatial.Contracts.csproj" />
+    <ProjectReference Include="..\Ashlar.Spatial.Runtime\Ashlar.Spatial.Runtime.csproj" />
+    <ProjectReference Include="..\Ashlar.Spatial.Multiplayer\Ashlar.Spatial.Multiplayer.csproj" />
+    <ProjectReference Include="..\Ashlar.Spatial.Platform.ARKit\Ashlar.Spatial.Platform.ARKit.csproj" />
+    <ProjectReference Include="..\Ashlar.Spatial.Platform.VisionPro\Ashlar.Spatial.Platform.VisionPro.csproj" />
+    <ProjectReference Include="..\Ashlar.Spatial.Platform.XREAL\Ashlar.Spatial.Platform.XREAL.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -2,7 +2,7 @@
 
 This document closes **Phase 0** of the federated mesh plan: a single primary workload, a **capability matrix** by deployment profile, an explicit **trust boundary**, and **measurable SLOs**. It is the contract for Phases 1–7 (control plane, transport, distributed execution, knowledge sync, elasticity, preemption, edge alignment).
 
-**Status:** Adopted for integrator projects that compose Nexo nodes across hosts (see also [NorthStarGapAnalysis.md](NorthStarGapAnalysis.md) for product-wide north star, and [runtime/ExecutionRouting.md](runtime/ExecutionRouting.md) for NCR generation routing).
+**Status:** Adopted for integrator projects that compose Ashlar nodes across hosts (see also [NorthStarGapAnalysis.md](NorthStarGapAnalysis.md) for product-wide north star, and [runtime/ExecutionRouting.md](runtime/ExecutionRouting.md) for NCR generation routing).
 
 ---
 
@@ -10,7 +10,7 @@ This document closes **Phase 0** of the federated mesh plan: a single primary wo
 
 **North Star A — Federated bricks and traceable cross-node execution**
 
-- **User-visible outcome:** An operator runs **Nexo.API** (or equivalent host) on **multiple machines**; each node **publishes** its brick catalog (`GET /api/bricks`) and can **execute** bricks on behalf of a trusted peer (`POST /api/bricks/{id}/execute`). Consumers resolve bricks via **`BrickHost:RemoteCatalogBaseUrls`** so **domain metadata** (`DomainKnowledge` in catalog DTOs) and **execution** are available across the fleet without copying arbitrary C# assemblies to every host.
+- **User-visible outcome:** An operator runs **Ashlar.API** (or equivalent host) on **multiple machines**; each node **publishes** its brick catalog (`GET /api/bricks`) and can **execute** bricks on behalf of a trusted peer (`POST /api/bricks/{id}/execute`). Consumers resolve bricks via **`BrickHost:RemoteCatalogBaseUrls`** so **domain metadata** (`DomainKnowledge` in catalog DTOs) and **execution** are available across the fleet without copying arbitrary C# assemblies to every host.
 - **Why first:** It aligns with **shared domain knowledge** and **delegated compute** at brick granularity, reuses **HttpRemoteBrickCatalog** / **RemoteBrick**, and does not require GPU checkpoint migration on day one.
 - **Explicit non-goals for this north star:** Live migration of in-flight GPU jobs; full CRDT merge of all adaptation stores across nodes; treating phones as full adaptation workers.
 
@@ -27,15 +27,15 @@ This document closes **Phase 0** of the federated mesh plan: a single primary wo
 
 Rows are **roles** in a mesh; columns are **capabilities** operators care about. “Via” indicates required wiring (env, compose, or code).
 
-| Capability | Full worker (`Nexo.API` + `AddNexo` Full/Server, adaptation on) | Headless worker (CLI + same kernel profile, no portal) | Director / control node (orchestrates others; may be same binary) | Edge / Lite (`Nexo.Lite`, mobile MAUI) |
+| Capability | Full worker (`Ashlar.API` + `AddAshlar` Full/Server, adaptation on) | Headless worker (CLI + same kernel profile, no portal) | Director / control node (orchestrates others; may be same binary) | Edge / Lite (`Ashlar.Lite`, mobile MAUI) |
 |------------|-------------------------------------------------------------------|----------------------------------------------------------|-------------------------------------|----------------------------------------|
-| Advertise in mesh (`instances.json` / `NEXO_MESH_*`) | Yes — `nexo mesh`, `ICapabilityAdvertisement` | Yes | Yes | Optional; often **client only** |
+| Advertise in mesh (`instances.json` / `ASHLAR_MESH_*`) | Yes — `ashlar mesh`, `ICapabilityAdvertisement` | Yes | Yes | Optional; often **client only** |
 | Publish brick catalog (`GET /api/bricks`) | Yes | Only if host exposes HTTP (not default CLI) | Yes if API hosted | No — not full **Brick** host |
 | Remote brick execute (`POST /api/bricks/.../execute`) | Yes — **must** be policy-gated in production | Same as left if HTTP exposed | Typically **no** (or admin-only) | No |
 | Consume peer catalogs (`BrickHost:RemoteCatalogBaseUrls`) | Yes | Yes when DI includes federated mesh | Yes | No — use **API client** to director / worker |
-| Generation capability routing (NCR, peers, RunPod) | Yes — `AddRunPodCapabilityRouting`, `Nexo:RemoteCapabilities` | Profile-dependent | Optional | Lite-local models only unless thin-client |
+| Generation capability routing (NCR, peers, RunPod) | Yes — `AddRunPodCapabilityRouting`, `Ashlar:RemoteCapabilities` | Profile-dependent | Optional | Lite-local models only unless thin-client |
 | Adaptation / pattern persistence | Yes — pattern store path | Yes | Hub or per-node (see Phase 4 gap) | Not in Lite |
-| Background agents | Yes on **Nexo.API** host | `nexo background-agent daemon` | Optional | Not applicable |
+| Background agents | Yes on **Ashlar.API** host | `ashlar background-agent daemon` | Optional | Not applicable |
 
 **Interpretation:** **Phones and Lite** are **participants** (submit tasks, show results, local small models), not drop-in replacements for **Full worker** unless you scope a dedicated **edge brick** set and HTTP surface.
 
@@ -45,8 +45,8 @@ Rows are **roles** in a mesh; columns are **capabilities** operators care about.
 
 ### 3.1 Identity and tiers
 
-- **Peer identity:** Stable **`NEXO_MESH_PEER_ID`** per node; **`instances.json`** (or **`NEXO_MESH_INSTANCES_PATH`**) lists peers with **`trustTier`** and **`admitted`** (see [IntegratorGuide.md](IntegratorGuide.md), [Configuration.md](Configuration.md)).
-- **Mesh discovery policy:** **`NEXO_MESH_TRUST_POLICY`** / **`NEXO_PEER_TRUST_POLICY`** — treat **`allowlist`** as the default for any deployment that exposes **`POST /api/bricks/.../execute`** beyond localhost.
+- **Peer identity:** Stable **`ASHLAR_MESH_PEER_ID`** per node; **`instances.json`** (or **`ASHLAR_MESH_INSTANCES_PATH`**) lists peers with **`trustTier`** and **`admitted`** (see [IntegratorGuide.md](IntegratorGuide.md), [Configuration.md](Configuration.md)).
+- **Mesh discovery policy:** **`ASHLAR_MESH_TRUST_POLICY`** / **`ASHLAR_PEER_TRUST_POLICY`** — treat **`allowlist`** as the default for any deployment that exposes **`POST /api/bricks/.../execute`** beyond localhost.
 
 ### 3.2 Remote brick execution (North Star A)
 
@@ -54,7 +54,7 @@ Rows are **roles** in a mesh; columns are **capabilities** operators care about.
 |--------|------------------|---------------|
 | Another Full worker in same trust zone | `POST /api/bricks/{id}/execute` for bricks in **allowlist** (integrator-defined) | TLS + **mTLS or API key / Bearer**; caller peer **admitted** and **trusted** |
 | Internet / unknown | **Deny by default** | No public exposure without front proxy and auth |
-| Director UI / human | Same as API auth for mutating routes | **Nexo** built-in auth modes for mutating API (see `NexoSecurityOptions`) |
+| Director UI / human | Same as API auth for mutating routes | **Ashlar** built-in auth modes for mutating API (see `AshlarSecurityOptions`) |
 
 ### 3.3 Data residency
 
@@ -65,7 +65,7 @@ Rows are **roles** in a mesh; columns are **capabilities** operators care about.
 
 - [ ] Written allowlist of **which brick ids** may run remotely in v1.
 - [ ] Production stance: **no** anonymous brick execute; **TLS** termination documented.
-- [ ] **`NEXO_MESH_TRUST_POLICY=allowlist`** for multi-tenant or internet-adjacent fleets.
+- [ ] **`ASHLAR_MESH_TRUST_POLICY=allowlist`** for multi-tenant or internet-adjacent fleets.
 
 ---
 
@@ -103,7 +103,7 @@ Targets are **defaults for a first internal mesh**; tighten per environment.
 
 **Next step (Phase 1):** Implemented — see [MeshPhase1ControlPlane.md](MeshPhase1ControlPlane.md) (`/api/mesh`, in-memory fleet + task placement).
 
-**Next step (Phase 2):** Implemented — see [MeshPhase2TransportAndAuth.md](MeshPhase2TransportAndAuth.md) (`Nexo:Security:Mesh`, middleware before built-in API auth).
+**Next step (Phase 2):** Implemented — see [MeshPhase2TransportAndAuth.md](MeshPhase2TransportAndAuth.md) (`Ashlar:Security:Mesh`, middleware before built-in API auth).
 
 **Next step (Phase 3):** Implemented — see [MeshPhase3DistributedExecution.md](MeshPhase3DistributedExecution.md) (correlation, idempotency, result handles).
 

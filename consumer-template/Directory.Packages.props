@@ -2,14 +2,14 @@
   <!-- Copy into your solution root as Directory.Packages.props (central package management). -->
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-    <!-- Must match a published Nexo release (repo root VERSION when consuming from your fork). -->
-    <NexoConsumerPackageVersion>0.1.0</NexoConsumerPackageVersion>
+    <!-- Must match a published Ashlar release (repo root VERSION when consuming from your fork). -->
+    <AshlarConsumerPackageVersion>0.1.0</AshlarConsumerPackageVersion>
   </PropertyGroup>
   <ItemGroup>
-    <PackageVersion Include="Nexo.Brick.Contracts" Version="$(NexoConsumerPackageVersion)" />
-    <PackageVersion Include="Nexo.Authoring" Version="$(NexoConsumerPackageVersion)" />
-    <PackageVersion Include="Nexo.Hosting.Bundle" Version="$(NexoConsumerPackageVersion)" />
-    <PackageVersion Include="Nexo.Sdk" Version="$(NexoConsumerPackageVersion)" />
-    <PackageVersion Include="Nexo.Client" Version="$(NexoConsumerPackageVersion)" />
+    <PackageVersion Include="Ashlar.Brick.Contracts" Version="$(AshlarConsumerPackageVersion)" />
+    <PackageVersion Include="Ashlar.Authoring" Version="$(AshlarConsumerPackageVersion)" />
+    <PackageVersion Include="Ashlar.Hosting.Bundle" Version="$(AshlarConsumerPackageVersion)" />
+    <PackageVersion Include="Ashlar.Sdk" Version="$(AshlarConsumerPackageVersion)" />
+    <PackageVersion Include="Ashlar.Client" Version="$(AshlarConsumerPackageVersion)" />
   </ItemGroup>
 </Project>

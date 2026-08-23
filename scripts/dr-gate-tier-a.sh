@@ -4,8 +4,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-CLI_PROJECT="application/src/Nexo.CLI/Nexo.CLI.csproj"
-TMP_ROOT="${TMPDIR:-/tmp}/nexo-dr-gate-$$"
+CLI_PROJECT="application/src/Ashlar.CLI/Ashlar.CLI.csproj"
+TMP_ROOT="${TMPDIR:-/tmp}/ashlar-dr-gate-$$"
 mkdir -p "$TMP_ROOT"
 trap 'rm -rf "$TMP_ROOT"' EXIT
 
@@ -30,7 +30,7 @@ dotnet build "$CLI_PROJECT" -v minimal >/dev/null
 echo "== DR Tier A: seed failed run in LiteDB =="
 rm -f "$DB" "$BACKUP"
 set +e
-NEXO_ALLOW_MOCK=1 NEXO_PIPELINE_STORE_PROVIDER=LiteDb NEXO_PIPELINE_STORE_PATH="$DB" NEXO_PIPELINE_ENABLE_TEST_HOOKS=1 \
+ASHLAR_ALLOW_MOCK=1 ASHLAR_PIPELINE_STORE_PROVIDER=LiteDb ASHLAR_PIPELINE_STORE_PATH="$DB" ASHLAR_PIPELINE_ENABLE_TEST_HOOKS=1 \
   dotnet run --project "$CLI_PROJECT" --no-build -- pipeline run --template "$TEMPLATE" \
   --run-id dr-source --input "fail:ingest:deterministic=true" --format-json >/dev/null
 set -e
@@ -45,7 +45,7 @@ rm -f "$DB"
 
 echo "== DR Tier A: restore backup and resume =="
 cp "$BACKUP" "$DB"
-NEXO_ALLOW_MOCK=1 NEXO_PIPELINE_STORE_PROVIDER=LiteDb NEXO_PIPELINE_STORE_PATH="$DB" \
+ASHLAR_ALLOW_MOCK=1 ASHLAR_PIPELINE_STORE_PROVIDER=LiteDb ASHLAR_PIPELINE_STORE_PATH="$DB" \
   dotnet run --project "$CLI_PROJECT" --no-build -- pipeline run --template "$TEMPLATE" \
   --run-id dr-target --resume-run-id dr-source --resume-failed-stages --format-json \
   >"$TMP_ROOT/dr-resume.json"
@@ -60,7 +60,7 @@ if not payload.get("ok") or payload.get("data", {}).get("state") != "Completed":
 print("pipeline DR restore+resume: PASS")
 PY
 
-REPORT_DIR=".nexo/dr-gate"
+REPORT_DIR=".ashlar/dr-gate"
 mkdir -p "$REPORT_DIR"
 cat >"$REPORT_DIR/pipeline-restore.json" <<EOF
 {"ok": true, "store": "LiteDb", "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)"}

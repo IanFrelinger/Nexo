@@ -1,6 +1,6 @@
 # On-call playbook v0.1 (Product Fleet Phase 0.5)
 
-Minimal first-response guide for a single-tenant **Nexo Private** deployment.
+Minimal first-response guide for a single-tenant **Ashlar Private** deployment.
 
 ## Severity guide
 
@@ -15,22 +15,22 @@ Minimal first-response guide for a single-tenant **Nexo Private** deployment.
 1. **Health** — `GET /health` should return `healthy`.
 2. **Status** — `GET /api/status` shows background-agent mode and counts.
 3. **Diagnostics** — `GET /api/support/diagnostics` returns a redacted config bundle (no secrets). Attach this JSON to the incident ticket.
-4. **Usage** — `GET /api/usage/summary?hours=24` with `X-Nexo-Tenant` confirms whether jobs are being recorded.
-5. **Logs** — search for `NexoUsage`, `Nexo.Security`, and `Private license` warnings.
+4. **Usage** — `GET /api/usage/summary?hours=24` with `X-Ashlar-Tenant` confirms whether jobs are being recorded.
+5. **Logs** — search for `AshlarUsage`, `Ashlar.Security`, and `Private license` warnings.
 
 ## Common scenarios
 
 ### Copilot returns 429
 
-Hourly quota (`Nexo:Entitlements:MaxCopilotSubmissionsPerHour`) is enforced per tenant. Raise the limit in config or wait for the rolling window.
+Hourly quota (`Ashlar:Entitlements:MaxCopilotSubmissionsPerHour`) is enforced per tenant. Raise the limit in config or wait for the rolling window.
 
 ### Copilot returns 402 / license errors
 
-Private license enforcement is on (`Nexo:PrivateLicense:EnforceLicense`). Check `license.state` in diagnostics. Renew the license file and restart the API container. Read-only GET routes remain available when `AllowReadOnlyWhenExpired` is true.
+Private license enforcement is on (`Ashlar:PrivateLicense:EnforceLicense`). Check `license.state` in diagnostics. Renew the license file and restart the API container. Read-only GET routes remain available when `AllowReadOnlyWhenExpired` is true.
 
 ### Cross-tenant data concern
 
-Copilot task history and usage are scoped by `X-Nexo-Tenant`. Verify `Nexo:Product:AllowedTenantIds` matches the customer contract. Run `ProductFleetTenantIsolationTests` in CI after config changes.
+Copilot task history and usage are scoped by `X-Ashlar-Tenant`. Verify `Ashlar:Product:AllowedTenantIds` matches the customer contract. Run `ProductFleetTenantIsolationTests` in CI after config changes.
 
 ### Ollama / model unavailable
 

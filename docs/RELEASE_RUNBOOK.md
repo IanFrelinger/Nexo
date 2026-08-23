@@ -7,7 +7,7 @@ From repo root, with the **semver you are about to ship** (no `v`):
 ```bash
 bash scripts/release-preflight-local.sh 1.2.3
 # or:  make release-preflight VERSION=1.2.3
-# or:  dotnet run --project application/src/Nexo.CLI -- release preflight 1.2.3
+# or:  dotnet run --project application/src/Ashlar.CLI -- release preflight 1.2.3
 ```
 
 That runs **pack-graph alignment** + **NuGet consumer sample** (isolated cache). Then push tag **`v1.2.3`** so **`release.yml`** runs (see table below).
@@ -15,15 +15,15 @@ That runs **pack-graph alignment** + **NuGet consumer sample** (isolated cache).
 Optional: also fire CI **`Runtime Release Gate`** from your machine (needs **`gh auth login`**):
 
 ```bash
-NEXO_RELEASE_PREFLIGHT_TRIGGER_GATE=1 NEXO_RELEASE_PREFLIGHT_REF=master bash scripts/release-preflight-local.sh 1.2.3
-# or:  dotnet run --project application/src/Nexo.CLI -- release preflight 1.2.3 --trigger-gate --gate-ref master
-# or anytime:  make release-gate   /   dotnet run --project application/src/Nexo.CLI -- release gate
+ASHLAR_RELEASE_PREFLIGHT_TRIGGER_GATE=1 ASHLAR_RELEASE_PREFLIGHT_REF=master bash scripts/release-preflight-local.sh 1.2.3
+# or:  dotnet run --project application/src/Ashlar.CLI -- release preflight 1.2.3 --trigger-gate --gate-ref master
+# or anytime:  make release-gate   /   dotnet run --project application/src/Ashlar.CLI -- release gate
 ```
 
 **Dispatch without a tag** (same workflow as tag, from a branch; needs `gh auth login`):
 
 ```bash
-dotnet run --project application/src/Nexo.CLI -- release dispatch 1.2.3 --ref master
+dotnet run --project application/src/Ashlar.CLI -- release dispatch 1.2.3 --ref master
 # or:  make release-dispatch VERSION=1.2.3 REF=master
 ```
 
@@ -46,8 +46,8 @@ Trusted Publishing: register **`release.yml`** and **`release-nuget.yml`** as ne
 ## Before you tag
 
 1. **Green CI** on the commit — run **`runtime-release-gate`** on that ref.
-2. **`python3 scripts/verify-pack-nexo-hosting-graph-alignment.py`** after changing `Nexo.Hosting` refs or pack scripts.
-3. **`bash scripts/verify-stable-sdk-host-sample-packages.sh`** with `NEXO_SDK_PACKAGE_VERSION` (isolated cache + `--force-evaluate` by default).
+2. **`python3 scripts/verify-pack-ashlar-hosting-graph-alignment.py`** after changing `Ashlar.Hosting` refs or pack scripts.
+3. **`bash scripts/verify-stable-sdk-host-sample-packages.sh`** with `ASHLAR_SDK_PACKAGE_VERSION` (isolated cache + `--force-evaluate` by default).
 4. **Promote the public API**: review each stable-tier project's `PublicAPI.Unshipped.txt`, move its lines into `PublicAPI.Shipped.txt`, commit on the release commit (`docs/SdkCompatibilityPolicy.md`, "Release step"). After the tag those lines are the promise.
 
 ## After `release.yml`

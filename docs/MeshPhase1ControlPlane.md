@@ -1,6 +1,6 @@
 # Phase 1 — Mesh control plane (MVP)
 
-Phase 1 adds an **in-process director** on any host that runs **`AddNexo()`**: fleet node registry, mesh task store, and **greedy placement** (no migration, no external etcd).
+Phase 1 adds an **in-process director** on any host that runs **`AddAshlar()`**: fleet node registry, mesh task store, and **greedy placement** (no migration, no external etcd).
 
 **Depends on:** [MeshPhase0NorthStar.md](MeshPhase0NorthStar.md).
 
@@ -11,7 +11,7 @@ Phase 1 adds an **in-process director** on any host that runs **`AddNexo()`**: f
 | **`IFleetNodeRegistry`** | In-memory register/update/list/remove workers; heartbeat timestamp; **drained** flag excludes node from new placements. |
 | **`IMeshTaskRegistry`** | In-memory tasks with `Pending → Assigned → Running → Succeeded/Failed`; server-generated `taskId`. |
 | **`IMeshTaskPlacementService`** | Picks a node with **non-empty `ApiBaseUrl`**, not drained, **affinity** label match, and **all `RequiredBrickIds`** present in `AdvertisedBrickIds` (or label value `brick:{id}`). **Retry** skips the previously assigned peer when another candidate exists. |
-| **HTTP API** (`Nexo.API`) | Under **`/api/mesh`** — see table below. |
+| **HTTP API** (`Ashlar.API`) | Under **`/api/mesh`** — see table below. |
 
 ## HTTP routes
 
@@ -71,11 +71,11 @@ Then `POST /api/mesh/tasks/{taskId}/schedule`. Response includes `assignedPeerId
 - **Transport/auth** — see [MeshPhase2TransportAndAuth.md](MeshPhase2TransportAndAuth.md) for optional mesh tokens, body caps, and rate limits on `/api/mesh` and brick execute.
 - **Correlation / idempotency / results** — see [MeshPhase3DistributedExecution.md](MeshPhase3DistributedExecution.md).
 - **Leases / checkpoints** — see [MeshPhase6LeasesAndCheckpoints.md](MeshPhase6LeasesAndCheckpoints.md).
-- **In-memory by default** — restart loses registry unless `Nexo:Mesh:Persistence:Provider=LiteDb` (see [MeshPhase9DirectorPersistence.md](MeshPhase9DirectorPersistence.md)).
+- **In-memory by default** — restart loses registry unless `Ashlar:Mesh:Persistence:Provider=LiteDb` (see [MeshPhase9DirectorPersistence.md](MeshPhase9DirectorPersistence.md)).
 - **Placement does not invoke bricks** — it only **chooses** a node; the caller must dispatch.
 - **No global fairness queue** — simple greedy ordering by heartbeat recency.
 - **Affinity** is exact string match on node labels.
 
 ## Tests
 
-- `Nexo.Tests.Infrastructure` → `Tests/Fleet/MeshTaskPlacementServiceTests.cs`
+- `Ashlar.Tests.Infrastructure` → `Tests/Fleet/MeshTaskPlacementServiceTests.cs`

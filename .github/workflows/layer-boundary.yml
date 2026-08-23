@@ -51,10 +51,10 @@ jobs:
 
           DISTRIBUTION_AUTHORING=0
           if echo "$CHANGED" | grep -q '^application/' && \
-             { echo "$CHANGED" | grep -q '^src/Nexo.Authoring/' || \
+             { echo "$CHANGED" | grep -q '^src/Ashlar.Authoring/' || \
                echo "$CHANGED" | grep -q '^scripts/verify-standalone-brick-authoring.sh'; }; then
             DISTRIBUTION_AUTHORING=1
-            echo "Nexo.Authoring distribution paths changed — allowing coordinated application/ + src/ integration merge."
+            echo "Ashlar.Authoring distribution paths changed — allowing coordinated application/ + src/ integration merge."
           fi
 
           # --- Forced cleanup after a kernel project is deleted ---

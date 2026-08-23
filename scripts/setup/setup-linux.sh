@@ -29,7 +29,7 @@ usage() {
   echo "  - pass --yes for non-interactive fire-and-forget setup."
   echo "  - pass --guided to print plain-language setup explanations."
   echo "  - pass --tune with 'all' to run the optional Runtime Studio hardware benchmark"
-  echo "    (multi-minute Ollama model benchmark; off by default; writes .nexo/runtime-studio/agent_set.local.json)."
+  echo "    (multi-minute Ollama model benchmark; off by default; writes .ashlar/runtime-studio/agent_set.local.json)."
 }
 
 while [[ $# -gt 0 ]]; do
@@ -114,7 +114,7 @@ load_os_release() {
 }
 
 persist_homebrew_shellenv() {
-  local marker="# Added by Nexo setup (linuxbrew)"
+  local marker="# Added by Ashlar setup (linuxbrew)"
   local export_line='eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"'
   local target_profile=""
 
@@ -313,7 +313,7 @@ install_system_dependency() {
 ensure_dotnet_path() {
   export PATH="${HOME}/.dotnet:${HOME}/.dotnet/tools:${PATH}"
 
-  local marker="# Added by Nexo setup (dotnet)"
+  local marker="# Added by Ashlar setup (dotnet)"
   local export_line='export PATH="$HOME/.dotnet:$HOME/.dotnet/tools:$PATH"'
   local target_profile=""
 
@@ -410,11 +410,11 @@ install_optional_dependency() {
 
 ensure_repo_files() {
   local restore_targets=(
-    "src/Nexo.Core.Application/Nexo.Core.Application.csproj"
-    "src/Nexo.Infrastructure/Nexo.Infrastructure.csproj"
-    "application/src/Nexo.CLI/Nexo.CLI.csproj"
-    "src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.csproj"
-    "src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj"
+    "src/Ashlar.Core.Application/Ashlar.Core.Application.csproj"
+    "src/Ashlar.Infrastructure/Ashlar.Infrastructure.csproj"
+    "application/src/Ashlar.CLI/Ashlar.CLI.csproj"
+    "src/Ashlar.Tests.Infrastructure/scripts/copy-assemblies.csproj"
+    "src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj"
   )
 
   for target in "${restore_targets[@]}"; do
@@ -425,7 +425,7 @@ ensure_repo_files() {
   done
 
   if [[ "${FULL_RESTORE}" == "true" ]]; then
-    if [[ ! -f "${REPO_ROOT}/Nexo.sln" || ! -f "${REPO_ROOT}/Nexo.Kernel.sln" ]]; then
+    if [[ ! -f "${REPO_ROOT}/Ashlar.sln" || ! -f "${REPO_ROOT}/Ashlar.Kernel.sln" ]]; then
       echo "Expected full-restore solution files were not found in ${REPO_ROOT}" >&2
       exit 1
     fi
@@ -440,16 +440,16 @@ run_restore() {
   fi
 
   if [[ "${FULL_RESTORE}" == "true" ]]; then
-    dotnet restore "${REPO_ROOT}/Nexo.sln"
-    dotnet restore "${REPO_ROOT}/Nexo.Kernel.sln"
+    dotnet restore "${REPO_ROOT}/Ashlar.sln"
+    dotnet restore "${REPO_ROOT}/Ashlar.Kernel.sln"
     return
   fi
 
-  dotnet restore "${REPO_ROOT}/src/Nexo.Core.Application/Nexo.Core.Application.csproj"
-  dotnet restore "${REPO_ROOT}/src/Nexo.Infrastructure/Nexo.Infrastructure.csproj"
-  dotnet restore "${REPO_ROOT}/application/src/Nexo.CLI/Nexo.CLI.csproj"
-  dotnet restore "${REPO_ROOT}/src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.csproj"
-  dotnet restore "${REPO_ROOT}/src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj"
+  dotnet restore "${REPO_ROOT}/src/Ashlar.Core.Application/Ashlar.Core.Application.csproj"
+  dotnet restore "${REPO_ROOT}/src/Ashlar.Infrastructure/Ashlar.Infrastructure.csproj"
+  dotnet restore "${REPO_ROOT}/application/src/Ashlar.CLI/Ashlar.CLI.csproj"
+  dotnet restore "${REPO_ROOT}/src/Ashlar.Tests.Infrastructure/scripts/copy-assemblies.csproj"
+  dotnet restore "${REPO_ROOT}/src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj"
 }
 
 print_missing_guidance() {
@@ -564,17 +564,17 @@ apply_dependencies() {
   check_dependencies
 }
 
-# Opt-in (--tune). The benchmark runs `nexo workflow optimize` against local Ollama models for
+# Opt-in (--tune). The benchmark runs `ashlar workflow optimize` against local Ollama models for
 # several minutes; the tuned ModelName values land in the gitignored
-# .nexo/runtime-studio/agent_set.local.json (seeded from the tracked
+# .ashlar/runtime-studio/agent_set.local.json (seeded from the tracked
 # apps/runtime-studio/config/agent_set.local.json), so `setup all` never edits a tracked file.
 runtime_studio_auto_tune() {
   if [[ "${TUNE}" != "true" ]]; then
     echo "Runtime Studio hardware tune not requested (pass --tune to run the optional multi-minute Ollama benchmark)."
     return 0
   fi
-  if [[ "${NEXO_SKIP_RUNTIME_STUDIO_TUNE:-}" == "1" ]]; then
-    echo "Skipping Runtime Studio hardware tune (NEXO_SKIP_RUNTIME_STUDIO_TUNE=1)."
+  if [[ "${ASHLAR_SKIP_RUNTIME_STUDIO_TUNE:-}" == "1" ]]; then
+    echo "Skipping Runtime Studio hardware tune (ASHLAR_SKIP_RUNTIME_STUDIO_TUNE=1)."
     return 0
   fi
   if [[ "${CI:-}" == "true" || "${GITHUB_ACTIONS:-}" == "true" ]]; then
@@ -593,7 +593,7 @@ runtime_studio_auto_tune() {
 
   echo ""
   echo "Runtime Studio: benchmarking local models/compositions (bounded budget). This may take several minutes."
-  echo "Tuned agent set is written to .nexo/runtime-studio/agent_set.local.json (gitignored)."
+  echo "Tuned agent set is written to .ashlar/runtime-studio/agent_set.local.json (gitignored)."
   echo ""
   (cd "${REPO_ROOT}" && bash "${tune_script}" --skip-daemon --budget-runs 24) \
     || echo "Runtime Studio auto-tune finished with a non-zero exit (optional; re-run the script later)." >&2

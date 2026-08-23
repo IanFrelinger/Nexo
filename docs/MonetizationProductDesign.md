@@ -8,7 +8,7 @@ This document defines a **dual-motion** model: a **Cursor-style hosted lane** fo
 
 **Primary narrative (unchanged):** private, traceable AI workflows on infrastructure the customer trusts—with enforced standards and an audit trail.
 
-**Secondary lane (additive):** **Nexo Cloud** as an *opt-in* hosted product for individuals and small teams who want speed more than VPC isolation on day one. Enterprise buyers should never feel that “cloud-only” is the only serious product.
+**Secondary lane (additive):** **Ashlar Cloud** as an *opt-in* hosted product for individuals and small teams who want speed more than VPC isolation on day one. Enterprise buyers should never feel that “cloud-only” is the only serious product.
 
 **Principle:** charge for **software + operational responsibility + scale**. Treat **LLM tokens** as either **BYOK** (you take little token risk) or **metered credits** (you take token risk but cap exposure).
 
@@ -18,9 +18,9 @@ This document defines a **dual-motion** model: a **Cursor-style hosted lane** fo
 
 | Surface | Who | Where compute runs | Your COGS risk |
 |--------|-----|---------------------|-----------------|
-| **Nexo Cloud** | Individuals, startups, small teams | Your AWS (multi-tenant) | Medium (compute, egress, logs); **high if you fund tokens** |
-| **Nexo Team (BYOC)** | Same segment, security-minded | Customer cloud / VPC | Low (they pay cloud + LLM) |
-| **Nexo Enterprise** | Mid-market and regulated orgs | Dedicated VPC, their VPC, or air-gapped | Depends on offer; price for **people + SLA** |
+| **Ashlar Cloud** | Individuals, startups, small teams | Your AWS (multi-tenant) | Medium (compute, egress, logs); **high if you fund tokens** |
+| **Ashlar Team (BYOC)** | Same segment, security-minded | Customer cloud / VPC | Low (they pay cloud + LLM) |
+| **Ashlar Enterprise** | Mid-market and regulated orgs | Dedicated VPC, their VPC, or air-gapped | Depends on offer; price for **people + SLA** |
 
 You can ship **one codebase** with **feature flags + entitlements** and different **deployment templates** (shared vs dedicated).
 
@@ -28,7 +28,7 @@ You can ship **one codebase** with **feature flags + entitlements** and differen
 
 ## 3. Packaging matrix (tiers)
 
-### 3.1 Nexo Cloud (Cursor-style self-serve)
+### 3.1 Ashlar Cloud (Cursor-style self-serve)
 
 | Tier | Buyer | Price (USD) | Billing | Seats | Core value |
 |------|--------|-------------|---------|-------|------------|
@@ -54,7 +54,7 @@ You can ship **one codebase** with **feature flags + entitlements** and differen
 
 ---
 
-### 3.2 Nexo Team (self-hosted / customer infra)
+### 3.2 Ashlar Team (self-hosted / customer infra)
 
 For teams that want the sovereignty story without enterprise procurement.
 
@@ -67,7 +67,7 @@ For teams that want the sovereignty story without enterprise procurement.
 
 ---
 
-### 3.3 Nexo Enterprise
+### 3.3 Ashlar Enterprise
 
 | Element | Guidance |
 |--------|------------|

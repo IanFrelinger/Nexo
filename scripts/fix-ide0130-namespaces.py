@@ -9,10 +9,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SKIP_PARTS = {"obj", "bin", "node_modules", "artifacts"}
 EXCLUDE_PATH_PREFIXES = (
-    "src/Nexo.Brick.Contracts/Authoring/",
+    "src/Ashlar.Brick.Contracts/Authoring/",
     "samples/templates/",
     "tools/unity-demo-output/",
-    "src/Nexo.Infrastructure/Execution/Templates/",
+    "src/Ashlar.Infrastructure/Execution/Templates/",
 )
 
 NS_DECL = re.compile(
@@ -81,39 +81,39 @@ def replace_namespace_declaration(text: str, expected: str) -> str:
 
 def apply_global_replacements(text: str) -> str:
     pairs = [
-        ("Nexo.BrickContracts.Capabilities", "Nexo.Brick.Contracts.Capabilities"),
-        ("Nexo.BrickContracts", "Nexo.Brick.Contracts"),
-        ("Nexo.Core.Application.Networking.Models", "Nexo.Commercial.Fleet.Contracts.Networking.Models"),
-        ("Nexo.Core.Application.Networking.Ports", "Nexo.Commercial.Fleet.Contracts.Networking.Ports"),
-        ("Nexo.Infrastructure.Networking", "Nexo.Commercial.Fleet.Infrastructure.Networking"),
-        ("Nexo.Tests.GameDomain.Discord", "Nexo.Commercial.Tests.GameDomain.Discord"),
-        ("Nexo.Tests.GameDomain.Playtest", "Nexo.Commercial.Tests.GameDomain.Playtest"),
-        ("Nexo.Tests.GameDomain", "Nexo.Commercial.Tests.GameDomain"),
-        ("Nexo.API.Forge", "GameDirector.Mcp.Forge"),
-        ("Nexo.API.Endpoints", "GameDirector.Mcp.Endpoints"),
-        ("Nexo.GameDomain", "Nexo.Commercial.GameDomain"),
-        ("Nexo.Tests.Infrastructure.Tests.Sdk", "Nexo.Tests.Infrastructure.Tests.SDK"),
-        ("Nexo.Tests.Infrastructure.NexoClientInvokeTests", "Nexo.Tests.Infrastructure.Tests.Client"),
-        ("Nexo.Infrastructure.Sdk.Adaptation", "Nexo.Infrastructure.Adaptation.Sdk.Extensions"),
-        ("Nexo.Infrastructure.Sdk.Analysis", "Nexo.Infrastructure.Analysis.BrickAnalyzer.Sdk.Extensions"),
-        ("Nexo.Infrastructure.Sdk.Composition", "Nexo.Infrastructure.Composition.Sdk.Extensions"),
-        ("Nexo.Infrastructure.Execution.Routing.Sdk", "Nexo.Infrastructure.Execution.Routing.Sdk.Extensions"),
-        ("Nexo.Infrastructure.Execution.Sdk", "Nexo.Infrastructure.Execution.Sdk.Extensions"),
-        ("Nexo.Infrastructure.Sdk.Maintenance", "Nexo.Infrastructure.Maintenance.Sdk.Extensions"),
-        ("Nexo.Infrastructure.Mesh.Sdk", "Nexo.Infrastructure.Mesh.Sdk.Extensions"),
-        ("Nexo.Infrastructure.Sdk.ModelArtifacts", "Nexo.Infrastructure.ModelArtifacts.Sdk.Extensions"),
-        ("Nexo.Infrastructure.NodeCapabilityRuntime.Sdk", "Nexo.Infrastructure.NodeCapabilityRuntime.Sdk.Extensions"),
-        ("Nexo.Infrastructure.Sdk.Observation", "Nexo.Infrastructure.Observation.Sdk.Extensions"),
-        ("Nexo.Infrastructure.Sdk.ParallelTesting", "Nexo.Infrastructure.ParallelTesting.Sdk.Extensions"),
-        ("Nexo.Infrastructure.Sdk.Persistence", "Nexo.Infrastructure.Persistence.Sdk.Extensions"),
-        ("Nexo.Infrastructure.Sdk.Pipelines", "Nexo.Infrastructure.Pipelines.Sdk.Extensions"),
-        ("Nexo.Infrastructure.Sdk.Rollback", "Nexo.Infrastructure.Rollback.Sdk.Extensions"),
-        ("Nexo.Infrastructure.Sdk.SelfContext", "Nexo.Infrastructure.SelfContext.Sdk.Extensions"),
-        ("Nexo.Infrastructure.Sdk.SelfImprovement", "Nexo.Infrastructure.SelfImprovement.Sdk.Extensions"),
-        ("Nexo.Infrastructure.Sdk.Trust", "Nexo.Infrastructure.Trust.Sdk.Extensions"),
-        ("Nexo.Hosting.Sdk.Options", "Nexo.Hosting.Sdk.Options"),
-        ("Nexo.Orchestration.Agents.Templates", "Nexo.Orchestration.Agents.Templates"),
-        ("GeneratedBricks", "Nexo.Certified.DamageResolver"),
+        ("Ashlar.BrickContracts.Capabilities", "Ashlar.Brick.Contracts.Capabilities"),
+        ("Ashlar.BrickContracts", "Ashlar.Brick.Contracts"),
+        ("Ashlar.Core.Application.Networking.Models", "Ashlar.Commercial.Fleet.Contracts.Networking.Models"),
+        ("Ashlar.Core.Application.Networking.Ports", "Ashlar.Commercial.Fleet.Contracts.Networking.Ports"),
+        ("Ashlar.Infrastructure.Networking", "Ashlar.Commercial.Fleet.Infrastructure.Networking"),
+        ("Ashlar.Tests.GameDomain.Discord", "Ashlar.Commercial.Tests.GameDomain.Discord"),
+        ("Ashlar.Tests.GameDomain.Playtest", "Ashlar.Commercial.Tests.GameDomain.Playtest"),
+        ("Ashlar.Tests.GameDomain", "Ashlar.Commercial.Tests.GameDomain"),
+        ("Ashlar.API.Forge", "GameDirector.Mcp.Forge"),
+        ("Ashlar.API.Endpoints", "GameDirector.Mcp.Endpoints"),
+        ("Ashlar.GameDomain", "Ashlar.Commercial.GameDomain"),
+        ("Ashlar.Tests.Infrastructure.Tests.Sdk", "Ashlar.Tests.Infrastructure.Tests.SDK"),
+        ("Ashlar.Tests.Infrastructure.AshlarClientInvokeTests", "Ashlar.Tests.Infrastructure.Tests.Client"),
+        ("Ashlar.Infrastructure.Sdk.Adaptation", "Ashlar.Infrastructure.Adaptation.Sdk.Extensions"),
+        ("Ashlar.Infrastructure.Sdk.Analysis", "Ashlar.Infrastructure.Analysis.BrickAnalyzer.Sdk.Extensions"),
+        ("Ashlar.Infrastructure.Sdk.Composition", "Ashlar.Infrastructure.Composition.Sdk.Extensions"),
+        ("Ashlar.Infrastructure.Execution.Routing.Sdk", "Ashlar.Infrastructure.Execution.Routing.Sdk.Extensions"),
+        ("Ashlar.Infrastructure.Execution.Sdk", "Ashlar.Infrastructure.Execution.Sdk.Extensions"),
+        ("Ashlar.Infrastructure.Sdk.Maintenance", "Ashlar.Infrastructure.Maintenance.Sdk.Extensions"),
+        ("Ashlar.Infrastructure.Mesh.Sdk", "Ashlar.Infrastructure.Mesh.Sdk.Extensions"),
+        ("Ashlar.Infrastructure.Sdk.ModelArtifacts", "Ashlar.Infrastructure.ModelArtifacts.Sdk.Extensions"),
+        ("Ashlar.Infrastructure.NodeCapabilityRuntime.Sdk", "Ashlar.Infrastructure.NodeCapabilityRuntime.Sdk.Extensions"),
+        ("Ashlar.Infrastructure.Sdk.Observation", "Ashlar.Infrastructure.Observation.Sdk.Extensions"),
+        ("Ashlar.Infrastructure.Sdk.ParallelTesting", "Ashlar.Infrastructure.ParallelTesting.Sdk.Extensions"),
+        ("Ashlar.Infrastructure.Sdk.Persistence", "Ashlar.Infrastructure.Persistence.Sdk.Extensions"),
+        ("Ashlar.Infrastructure.Sdk.Pipelines", "Ashlar.Infrastructure.Pipelines.Sdk.Extensions"),
+        ("Ashlar.Infrastructure.Sdk.Rollback", "Ashlar.Infrastructure.Rollback.Sdk.Extensions"),
+        ("Ashlar.Infrastructure.Sdk.SelfContext", "Ashlar.Infrastructure.SelfContext.Sdk.Extensions"),
+        ("Ashlar.Infrastructure.Sdk.SelfImprovement", "Ashlar.Infrastructure.SelfImprovement.Sdk.Extensions"),
+        ("Ashlar.Infrastructure.Sdk.Trust", "Ashlar.Infrastructure.Trust.Sdk.Extensions"),
+        ("Ashlar.Hosting.Sdk.Options", "Ashlar.Hosting.Sdk.Options"),
+        ("Ashlar.Orchestration.Agents.Templates", "Ashlar.Orchestration.Agents.Templates"),
+        ("GeneratedBricks", "Ashlar.Certified.DamageResolver"),
     ]
     for old, new in pairs:
         if old != new:
@@ -123,52 +123,52 @@ def apply_global_replacements(text: str) -> str:
 
 def apply_commercial_execution_replacements(text: str, rel_posix: str) -> str:
     if rel_posix.startswith(
-        ("commercial/src/Nexo.Commercial.Fleet/", "commercial/tests/Nexo.Commercial.Tests.Fleet/")
+        ("commercial/src/Ashlar.Commercial.Fleet/", "commercial/tests/Ashlar.Commercial.Tests.Fleet/")
     ):
         text = text.replace(
-            "Nexo.Infrastructure.Execution",
-            "Nexo.Commercial.Fleet.Infrastructure.Execution",
+            "Ashlar.Infrastructure.Execution",
+            "Ashlar.Commercial.Fleet.Infrastructure.Execution",
         )
     return text
 
 
 def patch_hosting_sdk_namespaces(text: str, rel_posix: str) -> str:
-    if not rel_posix.startswith("src/Nexo.Hosting/Sdk/"):
+    if not rel_posix.startswith("src/Ashlar.Hosting/Sdk/"):
         return text
-    if rel_posix.startswith("src/Nexo.Hosting/Sdk/Options/"):
-        return replace_namespace_declaration(text, "Nexo.Hosting.Sdk.Options")
-    if rel_posix.startswith("src/Nexo.Hosting/Sdk/Extensions/"):
-        return replace_namespace_declaration(text, "Nexo.Hosting.Sdk.Extensions")
-    if rel_posix.startswith("src/Nexo.Hosting/Sdk/Builders/"):
-        return replace_namespace_declaration(text, "Nexo.Hosting.Sdk.Builders")
+    if rel_posix.startswith("src/Ashlar.Hosting/Sdk/Options/"):
+        return replace_namespace_declaration(text, "Ashlar.Hosting.Sdk.Options")
+    if rel_posix.startswith("src/Ashlar.Hosting/Sdk/Extensions/"):
+        return replace_namespace_declaration(text, "Ashlar.Hosting.Sdk.Extensions")
+    if rel_posix.startswith("src/Ashlar.Hosting/Sdk/Builders/"):
+        return replace_namespace_declaration(text, "Ashlar.Hosting.Sdk.Builders")
     return text
 
 
 def patch_pipelines_options(text: str, rel_posix: str) -> str:
-    if rel_posix.startswith("src/Nexo.Infrastructure/Pipelines/Sdk/Options/"):
-        return replace_namespace_declaration(text, "Nexo.Infrastructure.Pipelines.Sdk.Options")
+    if rel_posix.startswith("src/Ashlar.Infrastructure/Pipelines/Sdk/Options/"):
+        return replace_namespace_declaration(text, "Ashlar.Infrastructure.Pipelines.Sdk.Options")
     return text
 
 
 def patch_orchestration_templates(text: str, rel_posix: str) -> str:
-    if rel_posix.startswith("src/Nexo.Orchestration/Agents/Templates/"):
-        return replace_namespace_declaration(text, "Nexo.Orchestration.Agents.Templates")
+    if rel_posix.startswith("src/Ashlar.Orchestration/Agents/Templates/"):
+        return replace_namespace_declaration(text, "Ashlar.Orchestration.Agents.Templates")
     return text
 
 
 def patch_cli_subfolders(text: str, rel_posix: str) -> str:
-    if rel_posix.startswith("application/src/Nexo.CLI/Commands/Runtime/"):
-        return replace_namespace_declaration(text, "Nexo.CLI.Commands.Runtime")
-    if rel_posix.startswith("application/src/Nexo.CLI/Commands/Workflow/"):
-        return replace_namespace_declaration(text, "Nexo.CLI.Commands.Workflow")
-    if rel_posix.startswith("application/src/Nexo.CLI/Commands/Unity/"):
-        return replace_namespace_declaration(text, "Nexo.CLI.Commands.Unity")
+    if rel_posix.startswith("application/src/Ashlar.CLI/Commands/Runtime/"):
+        return replace_namespace_declaration(text, "Ashlar.CLI.Commands.Runtime")
+    if rel_posix.startswith("application/src/Ashlar.CLI/Commands/Workflow/"):
+        return replace_namespace_declaration(text, "Ashlar.CLI.Commands.Workflow")
+    if rel_posix.startswith("application/src/Ashlar.CLI/Commands/Unity/"):
+        return replace_namespace_declaration(text, "Ashlar.CLI.Commands.Unity")
     return text
 
 
 def patch_sdk_legacy(text: str, rel_posix: str) -> str:
-    if rel_posix == "src/Nexo.Sdk/Legacy/NexoSdkLegacyApiAliases.cs":
-        return replace_namespace_declaration(text, "Nexo.Sdk.Legacy")
+    if rel_posix == "src/Ashlar.Sdk/Legacy/AshlarSdkLegacyApiAliases.cs":
+        return replace_namespace_declaration(text, "Ashlar.Sdk.Legacy")
     return text
 
 

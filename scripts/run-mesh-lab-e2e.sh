@@ -22,7 +22,7 @@ if ! docker info >/dev/null 2>&1; then
   exit 1
 fi
 
-COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-nexo_mesh_lab_local}"
+COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-ashlar_mesh_lab_local}"
 export COMPOSE_PROJECT_NAME
 
 WORKERS_PROFILE_ARGS=()
@@ -45,19 +45,19 @@ done
 ENV_FILE=""
 TEMP_ENV=false
 if [[ "${POSITIONAL[0]:-}" == "" ]]; then
-  ENV_FILE="$(mktemp "${TMPDIR:-/tmp}/nexo-mesh-lab.XXXXXX.env")"
+  ENV_FILE="$(mktemp "${TMPDIR:-/tmp}/ashlar-mesh-lab.XXXXXX.env")"
   TEMP_ENV=true
   KEY="$(openssl rand -hex 24 2>/dev/null || printf 'meshlab%d%s' "$RANDOM" "$$")"
   BEARER="${KEY}-bearer"
   BASIC="${KEY}-basic"
   {
-    echo "Nexo__Security__ApiKey=${KEY}"
-    echo "Nexo__Security__PeerB__BearerToken=${BEARER}"
-    echo "Nexo__Security__Worker__BasicAuthPassword=${BASIC}"
-    echo "Nexo__Security__CopilotScopedApiKey=${KEY}-copilot-scoped"
-    echo "Nexo__Entitlements__MaxCopilotSubmissionsPerHour=2"
+    echo "Ashlar__Security__ApiKey=${KEY}"
+    echo "Ashlar__Security__PeerB__BearerToken=${BEARER}"
+    echo "Ashlar__Security__Worker__BasicAuthPassword=${BASIC}"
+    echo "Ashlar__Security__CopilotScopedApiKey=${KEY}-copilot-scoped"
+    echo "Ashlar__Entitlements__MaxCopilotSubmissionsPerHour=2"
     echo "MESH_LAB_PEER_REGISTRATION_KEY=${KEY}-peer-registration"
-    echo "Nexo__Mesh__Persistence__Provider=LiteDb"
+    echo "Ashlar__Mesh__Persistence__Provider=LiteDb"
     echo "MESH_LAB_PEER_A_PUBLISH=127.0.0.1:18081"
     echo "MESH_LAB_PEER_B_PUBLISH=127.0.0.1:18082"
   } >"$ENV_FILE"

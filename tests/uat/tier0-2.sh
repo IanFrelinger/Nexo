@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Nexo UAT — Tiers 0-2, run inside mcr.microsoft.com/dotnet/sdk:10.0 as a "tester's machine".
+# Ashlar UAT — Tiers 0-2, run inside mcr.microsoft.com/dotnet/sdk:10.0 as a "tester's machine".
 #
 # Tier 0  first fifteen minutes : clean clone -> build -> doctor, exactly as docs/TesterQuickstart.md says
 # Tier 1  the audit trail       : one task submitted; its record and its trust-log entry are retrievable by id
@@ -17,7 +17,7 @@ OUT="${UAT_OUT:-$WORK/out}"
 # minutes, cold. In CI: UAT_REPO_DIR points at the workspace checkout, because a gate must test the
 # commit under review; a gate that clones master would pass while the PR in front of it breaks the
 # quickstart, which is exactly the failure this suite exists to prevent.
-SRC="${UAT_REPO_DIR:-$WORK/Nexo}"
+SRC="${UAT_REPO_DIR:-$WORK/Ashlar}"
 mkdir -p "$OUT"
 
 PASS=0; FAIL=0
@@ -52,9 +52,9 @@ case "$VER" in
   *)      result 0 sdk-version FAIL "dotnet --version = $VER, quickstart promises 10.0.x";;
 esac
 
-say "0.3 dotnet build Nexo.Kernel.sln  (the quickstart's step 1)"
+say "0.3 dotnet build Ashlar.Kernel.sln  (the quickstart's step 1)"
 t0=$(now)
-if dotnet build Nexo.Kernel.sln >"$OUT/build.log" 2>&1; then
+if dotnet build Ashlar.Kernel.sln >"$OUT/build.log" 2>&1; then
   BUILD_S=$(( $(now) - t0 ))
   WARN=$(grep -cE ' warning [A-Z]+[0-9]+' "$OUT/build.log")
   result 0 build PASS "${BUILD_S}s, ${WARN} warning lines"
@@ -63,16 +63,16 @@ else
   result 0 build FAIL "${BUILD_S}s, exit!=0: $(grep -m3 -E ' error [A-Z]+[0-9]+' "$OUT/build.log" | tr '\n' ' ')"
 fi
 
-say "0.4 the quickstart's claim that Nexo.Kernel.sln also builds Nexo.API"
-if find . -path '*Nexo.API/bin/*/Nexo.API.dll' -newermt "-1 day" | grep -q .; then
-  result 0 kernel-sln-builds-api PASS "Nexo.API.dll present after building the kernel solution"
+say "0.4 the quickstart's claim that Ashlar.Kernel.sln also builds Ashlar.API"
+if find . -path '*Ashlar.API/bin/*/Ashlar.API.dll' -newermt "-1 day" | grep -q .; then
+  result 0 kernel-sln-builds-api PASS "Ashlar.API.dll present after building the kernel solution"
 else
-  result 0 kernel-sln-builds-api FAIL "no Nexo.API.dll after dotnet build Nexo.Kernel.sln"
+  result 0 kernel-sln-builds-api FAIL "no Ashlar.API.dll after dotnet build Ashlar.Kernel.sln"
 fi
 
 say "0.5 doctor"
 t0=$(now)
-timeout 600 dotnet run --project application/src/Nexo.CLI -- doctor >"$OUT/doctor.log" 2>&1
+timeout 600 dotnet run --project application/src/Ashlar.CLI -- doctor >"$OUT/doctor.log" 2>&1
 DOC_RC=$?
 DOC_S=$(( $(now) - t0 ))
 if grep -qiE 'overall: *PASS' "$OUT/doctor.log"; then
@@ -101,7 +101,7 @@ else
 fi
 
 say "0.6 doctor --json is machine-readable, as claimed"
-if timeout 600 dotnet run --project application/src/Nexo.CLI -- doctor --json >"$OUT/doctor.json" 2>"$OUT/doctor-json.err"; then
+if timeout 600 dotnet run --project application/src/Ashlar.CLI -- doctor --json >"$OUT/doctor.json" 2>"$OUT/doctor-json.err"; then
   if head -c 200 "$OUT/doctor.json" | grep -q '{'; then
     result 0 doctor-json PASS "emits JSON"
   else
@@ -114,7 +114,7 @@ fi
 # ---------------------------------------------------------------- Tier 1
 say "Tier 1 — submit one task, read the record it left"
 
-export NEXO_ALLOW_MOCK=1
+export ASHLAR_ALLOW_MOCK=1
 API=http://localhost:5000
 
 # The SDK image ships ASPNETCORE_HTTP_PORTS=8080, which is the image's opinion, not the product's or the
@@ -125,9 +125,9 @@ unset ASPNETCORE_HTTP_PORTS
 # 1.0 The documented command, run exactly as TesterQuickstart section 3 prints it. This is the claim a
 # tester actually meets, so it is scored on its own. Keep this in sync with the page by copying the line
 # out of it verbatim -- that is the point of the check. It failed on 2026-08-17 (the page omitted
-# -f net10.0 while Nexo.API multi-targets) and now guards against the same rot.
+# -f net10.0 while Ashlar.API multi-targets) and now guards against the same rot.
 say "1.0 the hero command, verbatim from the docs"
-DOC_CMD=$(grep -m1 -E '^NEXO_ALLOW_MOCK=1 dotnet run --project application/src/Nexo\.API' docs/TesterQuickstart.md)
+DOC_CMD=$(grep -m1 -E '^ASHLAR_ALLOW_MOCK=1 dotnet run --project application/src/Ashlar\.API' docs/TesterQuickstart.md)
 echo "doc prints: $DOC_CMD"
 timeout 180 env $DOC_CMD >"$OUT/api-verbatim.log" 2>&1 &
 V_PID=$!
@@ -141,11 +141,11 @@ if grep -q 'Now listening on:' "$OUT/api-verbatim.log" 2>/dev/null; then
 else
   result 1 doc-command-verbatim FAIL "documented command does not start the API: $(head -3 "$OUT/api-verbatim.log" | tr '\n' ' ')"
 fi
-kill $V_PID 2>/dev/null; wait $V_PID 2>/dev/null; pkill -f 'Nexo\.API' 2>/dev/null
+kill $V_PID 2>/dev/null; wait $V_PID 2>/dev/null; pkill -f 'Ashlar\.API' 2>/dev/null
 
 # Everything below measures whether the PRODUCT works, using the framework selector the documented
 # command is missing. Two different questions: "does the doc work" and "does the thing work".
-dotnet run --project application/src/Nexo.API -f net10.0 >"$OUT/api.log" 2>&1 &
+dotnet run --project application/src/Ashlar.API -f net10.0 >"$OUT/api.log" 2>&1 &
 API_PID=$!
 
 say "1.1 API comes up on loopback"
@@ -267,13 +267,13 @@ fi
 
 # `dotnet run` launches the host as a child, so killing the runner alone can leave :5000 held.
 kill $API_PID 2>/dev/null; wait $API_PID 2>/dev/null
-pkill -f 'Nexo\.API' 2>/dev/null
+pkill -f 'Ashlar\.API' 2>/dev/null
 sleep 2
 
 # ---------------------------------------------------------------- Tier 2
 say "Tier 2 — the certification gate has teeth"
 t0=$(now)
-dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net10.0 \
+dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -f net10.0 \
   --filter "FullyQualifiedName~CertificationGateTeethTests" >"$OUT/teeth.log" 2>&1
 TEETH_RC=$?
 TEETH_S=$(( $(now) - t0 ))
@@ -286,7 +286,7 @@ fi
 
 # The quickstart names these two as the pair that defines the gate. `dotnet test` prints names only for
 # failures at default verbosity, so presence is established by discovery, not by scraping the run log.
-dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net10.0 \
+dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -f net10.0 \
   --filter "FullyQualifiedName~CertificationGateTeethTests" --list-tests >"$OUT/teeth-list.log" 2>&1
 for t in GoodBrick_StrongWitness_Admits_WithZeroEscapeRate WeakWitness_AllowsMutantEscapes_RejectsWithTeeth; do
   if grep -q "$t" "$OUT/teeth-list.log"; then

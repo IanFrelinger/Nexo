@@ -6,7 +6,7 @@ on:
     branches: [master, main]
     paths:
       - "scripts/setup/**"
-      - "application/src/Nexo.CLI/**"
+      - "application/src/Ashlar.CLI/**"
       - ".github/workflows/environment-setup-gate-v1.yml"
 
 jobs:
@@ -62,7 +62,7 @@ jobs:
         shell: bash
         run: |
           dotnet --info
-          dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
+          dotnet build application/src/Ashlar.CLI/Ashlar.CLI.csproj --no-restore -v minimal
 
       - name: Emit setup gate summary
         if: always()
@@ -126,7 +126,7 @@ jobs:
               fi
               bash scripts/setup/setup-linux.sh check
               bash scripts/setup/setup-linux.sh restore
-              dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
+              dotnet build application/src/Ashlar.CLI/Ashlar.CLI.csproj --no-restore -v minimal
             '
 
       - name: Emit ephemeral setup summary

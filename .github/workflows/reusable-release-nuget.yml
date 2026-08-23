@@ -1,4 +1,4 @@
-# Reusable: pack and optionally push Nexo.* NuGet packages (+ symbols, manifest, optional SBOM/staging).
+# Reusable: pack and optionally push Ashlar.* NuGet packages (+ symbols, manifest, optional SBOM/staging).
 # Called from release.yml or standalone release-nuget.yml (workflow_dispatch).
 
 on:
@@ -33,9 +33,9 @@ jobs:
             10.0.x
             8.0.x
 
-      - name: Verify pack script matches Nexo.Hosting MSBuild graph
+      - name: Verify pack script matches Ashlar.Hosting MSBuild graph
         shell: bash
-        run: python3 scripts/verify-pack-nexo-hosting-graph-alignment.py
+        run: python3 scripts/verify-pack-ashlar-hosting-graph-alignment.py
 
       - name: Resolve version
         id: resolve
@@ -56,25 +56,25 @@ jobs:
         run: |
           OUT="${{ runner.temp }}/nuget-release"
           mkdir -p "$OUT"
-          bash scripts/pack-nexo-hosting-graph.sh "${PACKAGE_VERSION}" "$OUT"
-          dotnet pack src/Nexo.Client/Nexo.Client.csproj -c Release -o "$OUT" \
+          bash scripts/pack-ashlar-hosting-graph.sh "${PACKAGE_VERSION}" "$OUT"
+          dotnet pack src/Ashlar.Client/Ashlar.Client.csproj -c Release -o "$OUT" \
             -p:PackageVersion="${PACKAGE_VERSION}" \
             -p:IncludeSymbols=true \
             -p:SymbolPackageFormat=snupkg \
             -v minimal
-          dotnet pack src/Nexo.Sdk/Nexo.Sdk.csproj -c Release -o "$OUT" \
+          dotnet pack src/Ashlar.Sdk/Ashlar.Sdk.csproj -c Release -o "$OUT" \
             -p:PackageVersion="${PACKAGE_VERSION}" \
             -p:IncludeSymbols=true \
             -p:SymbolPackageFormat=snupkg \
             -v minimal
-          dotnet pack src/Nexo.Authoring/Nexo.Authoring.csproj -c Release -o "$OUT" \
+          dotnet pack src/Ashlar.Authoring/Ashlar.Authoring.csproj -c Release -o "$OUT" \
             -p:PackageVersion="${PACKAGE_VERSION}" \
             -p:IncludeSymbols=true \
             -p:SymbolPackageFormat=snupkg \
             -v minimal
-          # Nexo.CLI is a PackAsTool package (embeds its ProjectReference outputs); without this line a
-          # release ships the authoring packages but not the `nexo` tool that scaffolds against them.
-          dotnet pack application/src/Nexo.CLI/Nexo.CLI.csproj -c Release -o "$OUT" \
+          # Ashlar.CLI is a PackAsTool package (embeds its ProjectReference outputs); without this line a
+          # release ships the authoring packages but not the `ashlar` tool that scaffolds against them.
+          dotnet pack application/src/Ashlar.CLI/Ashlar.CLI.csproj -c Release -o "$OUT" \
             -p:PackageVersion="${PACKAGE_VERSION}" \
             -p:IncludeTestProjectReferences=false \
             -v minimal
@@ -89,8 +89,8 @@ jobs:
       - name: Pre-publish feed verification (consumer sample)
         shell: bash
         env:
-          NEXO_SDK_PACKAGE_VERSION: ${{ env.PACKAGE_VERSION }}
-          NEXO_SDK_PACKAGE_FEED: ${{ runner.temp }}/nuget-release
+          ASHLAR_SDK_PACKAGE_VERSION: ${{ env.PACKAGE_VERSION }}
+          ASHLAR_SDK_PACKAGE_FEED: ${{ runner.temp }}/nuget-release
         run: bash scripts/verify-stable-sdk-host-sample-packages.sh
 
       - name: Upload NuGet packages + manifest
@@ -218,40 +218,40 @@ jobs:
         if: (vars.NUGET_PUBLISH_MODE == 'oidc' || vars.NUGET_PUBLISH_MODE == 'apikey') && vars.NUGET_POST_PUSH_VERIFY != 'false'
         shell: bash
         env:
-          NEXO_NUGET_VERIFY_VERSION: ${{ env.PACKAGE_VERSION }}
-          NEXO_NUGET_VERIFY_PACKAGE_IDS: ${{ vars.NUGET_POST_PUSH_VERIFY_PACKAGE_IDS }}
-          NEXO_NUGET_VERIFY_ATTEMPTS: ${{ vars.NUGET_POST_PUSH_ATTEMPTS }}
-          NEXO_NUGET_VERIFY_SLEEP_SEC: ${{ vars.NUGET_POST_PUSH_SLEEP_SEC }}
+          ASHLAR_NUGET_VERIFY_VERSION: ${{ env.PACKAGE_VERSION }}
+          ASHLAR_NUGET_VERIFY_PACKAGE_IDS: ${{ vars.NUGET_POST_PUSH_VERIFY_PACKAGE_IDS }}
+          ASHLAR_NUGET_VERIFY_ATTEMPTS: ${{ vars.NUGET_POST_PUSH_ATTEMPTS }}
+          ASHLAR_NUGET_VERIFY_SLEEP_SEC: ${{ vars.NUGET_POST_PUSH_SLEEP_SEC }}
         run: bash scripts/verify-nuget-org-packages-visible.sh
 
       - name: Post-push — registration API lists version
         if: (vars.NUGET_PUBLISH_MODE == 'oidc' || vars.NUGET_PUBLISH_MODE == 'apikey') && vars.NUGET_POST_PUSH_VERIFY != 'false'
         shell: bash
         env:
-          NEXO_NUGET_VERIFY_VERSION: ${{ env.PACKAGE_VERSION }}
-          NEXO_NUGET_VERIFY_PACKAGE_IDS: ${{ vars.NUGET_POST_PUSH_VERIFY_PACKAGE_IDS }}
-          NEXO_NUGET_VERIFY_ATTEMPTS: ${{ vars.NUGET_POST_PUSH_ATTEMPTS }}
-          NEXO_NUGET_VERIFY_SLEEP_SEC: ${{ vars.NUGET_POST_PUSH_SLEEP_SEC }}
+          ASHLAR_NUGET_VERIFY_VERSION: ${{ env.PACKAGE_VERSION }}
+          ASHLAR_NUGET_VERIFY_PACKAGE_IDS: ${{ vars.NUGET_POST_PUSH_VERIFY_PACKAGE_IDS }}
+          ASHLAR_NUGET_VERIFY_ATTEMPTS: ${{ vars.NUGET_POST_PUSH_ATTEMPTS }}
+          ASHLAR_NUGET_VERIFY_SLEEP_SEC: ${{ vars.NUGET_POST_PUSH_SLEEP_SEC }}
         run: bash scripts/verify-nuget-org-registration-versions.sh
 
       - name: Post-push — downloaded bytes match manifest SHA-256
         if: (vars.NUGET_PUBLISH_MODE == 'oidc' || vars.NUGET_PUBLISH_MODE == 'apikey') && vars.NUGET_POST_PUSH_VERIFY != 'false'
         shell: bash
         env:
-          NEXO_MANIFEST_JSON: ${{ runner.temp }}/nuget-release/nuget-publish-manifest.json
-          NEXO_NUGET_VERIFY_VERSION: ${{ env.PACKAGE_VERSION }}
+          ASHLAR_MANIFEST_JSON: ${{ runner.temp }}/nuget-release/nuget-publish-manifest.json
+          ASHLAR_NUGET_VERIFY_VERSION: ${{ env.PACKAGE_VERSION }}
         run: bash scripts/verify-nuget-published-sha256-matches-manifest.sh
 
       - name: NuGet.org restore-only (published graph)
         if: (vars.NUGET_PUBLISH_MODE == 'oidc' || vars.NUGET_PUBLISH_MODE == 'apikey') && vars.NUGET_POST_PUSH_VERIFY != 'false'
         shell: bash
         env:
-          NEXO_NUGET_RESTORE_VERIFY_VERSION: ${{ env.PACKAGE_VERSION }}
+          ASHLAR_NUGET_RESTORE_VERIFY_VERSION: ${{ env.PACKAGE_VERSION }}
         run: bash scripts/verify-nuget-org-restore-with-isolated-cache.sh
 
-      - name: Post-push — nuget.org restore (Nexo.Hosting only, isolated)
+      - name: Post-push — nuget.org restore (Ashlar.Hosting only, isolated)
         if: (vars.NUGET_PUBLISH_MODE == 'oidc' || vars.NUGET_PUBLISH_MODE == 'apikey') && vars.NUGET_POST_PUSH_VERIFY != 'false'
         shell: bash
         env:
-          NEXO_NUGET_RESTORE_VERIFY_VERSION: ${{ env.PACKAGE_VERSION }}
+          ASHLAR_NUGET_RESTORE_VERIFY_VERSION: ${{ env.PACKAGE_VERSION }}
         run: bash scripts/verify-nuget-org-restore-hosting-only-isolated.sh

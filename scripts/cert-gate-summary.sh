@@ -17,7 +17,7 @@ fi
 outcome_for() {
   local short_name="$1"
   local line
-  line="$(grep -F "testName=\"Nexo.Tests.Infrastructure.Tests.Adaptation.GenerationSafetyTests.${short_name}\"" "${TRX}" | head -1 || true)"
+  line="$(grep -F "testName=\"Ashlar.Tests.Infrastructure.Tests.Adaptation.GenerationSafetyTests.${short_name}\"" "${TRX}" | head -1 || true)"
   if [[ -z "${line}" ]]; then
     echo "not found"
     return

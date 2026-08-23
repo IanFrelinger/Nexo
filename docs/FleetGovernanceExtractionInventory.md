@@ -20,14 +20,14 @@ Classification terms:
 
 | Module | Purpose |
 |--------|---------|
-| `commercial/src/Nexo.Commercial.Fleet.Contracts` | Fleet DTOs and ports that commercial infrastructure and control-plane hosts consume. |
-| `commercial/src/Nexo.Commercial.Fleet.Core` | Task placement, fleet trust policy, elastic scheduling, lease/checkpoint policy, knowledge replication orchestration. |
-| `commercial/src/Nexo.Commercial.Fleet.Infrastructure` | LiteDB registries, worker executor client/background service, director persistence, import/export implementations, sweep/rebalance services. |
-| `commercial/src/Nexo.Commercial.Fleet.Api` | Commercial `/api/mesh` fleet/task/knowledge endpoint extension seeded from open `Nexo.API`. |
-| `commercial/src/Nexo.Commercial.Fleet.Host` | Commercial operator host wiring `AddNexoCommercialFleetDirector()` and `MapCommercialFleetEndpoints()`. |
-| `commercial/src/Nexo.Commercial.MeshDirector` | Mesh director CLI/API/control-plane operations and HTTP client surfaces. |
-| `commercial/src/Nexo.Commercial.Governance` | Future RBAC/SSO, centralized policy management, aggregate tamper-evident audit, org-scale entitlements. |
-| `commercial/tests/Nexo.Commercial.Tests.Fleet` | Fleet/director/governance tests moved out of open test projects. |
+| `commercial/src/Ashlar.Commercial.Fleet.Contracts` | Fleet DTOs and ports that commercial infrastructure and control-plane hosts consume. |
+| `commercial/src/Ashlar.Commercial.Fleet.Core` | Task placement, fleet trust policy, elastic scheduling, lease/checkpoint policy, knowledge replication orchestration. |
+| `commercial/src/Ashlar.Commercial.Fleet.Infrastructure` | LiteDB registries, worker executor client/background service, director persistence, import/export implementations, sweep/rebalance services. |
+| `commercial/src/Ashlar.Commercial.Fleet.Api` | Commercial `/api/mesh` fleet/task/knowledge endpoint extension seeded from open `Ashlar.API`. |
+| `commercial/src/Ashlar.Commercial.Fleet.Host` | Commercial operator host wiring `AddAshlarCommercialFleetDirector()` and `MapCommercialFleetEndpoints()`. |
+| `commercial/src/Ashlar.Commercial.MeshDirector` | Mesh director CLI/API/control-plane operations and HTTP client surfaces. |
+| `commercial/src/Ashlar.Commercial.Governance` | Future RBAC/SSO, centralized policy management, aggregate tamper-evident audit, org-scale entitlements. |
+| `commercial/tests/Ashlar.Commercial.Tests.Fleet` | Fleet/director/governance tests moved out of open test projects. |
 
 ## OPEN primitive inventory
 
@@ -37,52 +37,52 @@ These files should remain open unless a later extraction finds unavoidable fleet
 
 | Path | Reason |
 |------|--------|
-| `src/Nexo.Core.Application/Mesh/Models/Artifact.cs` | Portable artifact descriptor for local/import/export flows. |
-| `src/Nexo.Core.Application/Mesh/Models/CapabilityDescriptor.cs` | Inspectable capability metadata used by local nodes and SDK consumers. |
-| `src/Nexo.Core.Application/Mesh/Models/InstanceCapabilities.cs` | Local instance capability snapshot; useful without fleet control plane. |
-| `src/Nexo.Core.Application/Mesh/Models/MeshOptions.cs` | Local mesh configuration primitive. |
-| `src/Nexo.Core.Application/Mesh/Models/PeerInfo.cs` | Peer descriptor used by discovery and local operator inspection. |
-| `src/Nexo.Core.Application/Mesh/MeshTrustPolicyConfiguration.cs` | Trust primitive; trust rules should remain inspectable/open. |
-| `src/Nexo.Core.Application/Mesh/Ports/IArtifactNegotiator.cs` | Local artifact negotiation primitive. |
-| `src/Nexo.Core.Application/Mesh/Ports/ICapabilityAdvertisement.cs` | Local capability advertisement primitive. |
-| `src/Nexo.Core.Application/Mesh/Ports/ICapabilityFulfiller.cs` | Local capability fulfillment abstraction. |
-| `src/Nexo.Core.Application/Mesh/Ports/ICapabilityRequester.cs` | Request-side abstraction for open mesh primitives. |
-| `src/Nexo.Core.Application/Mesh/Ports/IInstanceCapabilitiesProvider.cs` | Local capability provider. |
-| `src/Nexo.Core.Application/Mesh/Ports/IInstanceDiscovery.cs` | Local/discoverable peer primitive. |
-| `src/Nexo.Core.Application/Mesh/Ports/ILocalTransport.cs` | Local transport primitive. |
+| `src/Ashlar.Core.Application/Mesh/Models/Artifact.cs` | Portable artifact descriptor for local/import/export flows. |
+| `src/Ashlar.Core.Application/Mesh/Models/CapabilityDescriptor.cs` | Inspectable capability metadata used by local nodes and SDK consumers. |
+| `src/Ashlar.Core.Application/Mesh/Models/InstanceCapabilities.cs` | Local instance capability snapshot; useful without fleet control plane. |
+| `src/Ashlar.Core.Application/Mesh/Models/MeshOptions.cs` | Local mesh configuration primitive. |
+| `src/Ashlar.Core.Application/Mesh/Models/PeerInfo.cs` | Peer descriptor used by discovery and local operator inspection. |
+| `src/Ashlar.Core.Application/Mesh/MeshTrustPolicyConfiguration.cs` | Trust primitive; trust rules should remain inspectable/open. |
+| `src/Ashlar.Core.Application/Mesh/Ports/IArtifactNegotiator.cs` | Local artifact negotiation primitive. |
+| `src/Ashlar.Core.Application/Mesh/Ports/ICapabilityAdvertisement.cs` | Local capability advertisement primitive. |
+| `src/Ashlar.Core.Application/Mesh/Ports/ICapabilityFulfiller.cs` | Local capability fulfillment abstraction. |
+| `src/Ashlar.Core.Application/Mesh/Ports/ICapabilityRequester.cs` | Request-side abstraction for open mesh primitives. |
+| `src/Ashlar.Core.Application/Mesh/Ports/IInstanceCapabilitiesProvider.cs` | Local capability provider. |
+| `src/Ashlar.Core.Application/Mesh/Ports/IInstanceDiscovery.cs` | Local/discoverable peer primitive. |
+| `src/Ashlar.Core.Application/Mesh/Ports/ILocalTransport.cs` | Local transport primitive. |
 
 ### Infrastructure mesh primitives
 
 | Path | Reason |
 |------|--------|
-| `src/Nexo.Infrastructure/Mesh/ArtifactNegotiator.cs` | Implements open artifact negotiation. |
-| `src/Nexo.Infrastructure/Mesh/FileBasedCapabilityAdvertisement.cs` | Local file-based advertisement; inspectable and useful for single-node labs. |
-| `src/Nexo.Infrastructure/Mesh/FileBasedInstanceDiscovery.cs` | File-based discovery primitive. |
-| `src/Nexo.Infrastructure/Mesh/FileBasedLocalTransport.cs` | Local transport primitive. |
-| `src/Nexo.Infrastructure/Mesh/LocalNexoInstanceCapabilitiesProvider.cs` | Local capability snapshot provider. |
-| `src/Nexo.Infrastructure/Mesh/MeshCapabilityFulfiller.cs` | Capability fulfillment primitive. |
-| `src/Nexo.Infrastructure/Mesh/MeshCapabilityRequester.cs` | Capability requester primitive. |
-| `src/Nexo.Infrastructure/Mesh/Sdk/Extensions/MeshServiceCollectionExtensions.cs` | Open DI entrypoint for primitive mesh services. |
+| `src/Ashlar.Infrastructure/Mesh/ArtifactNegotiator.cs` | Implements open artifact negotiation. |
+| `src/Ashlar.Infrastructure/Mesh/FileBasedCapabilityAdvertisement.cs` | Local file-based advertisement; inspectable and useful for single-node labs. |
+| `src/Ashlar.Infrastructure/Mesh/FileBasedInstanceDiscovery.cs` | File-based discovery primitive. |
+| `src/Ashlar.Infrastructure/Mesh/FileBasedLocalTransport.cs` | Local transport primitive. |
+| `src/Ashlar.Infrastructure/Mesh/LocalAshlarInstanceCapabilitiesProvider.cs` | Local capability snapshot provider. |
+| `src/Ashlar.Infrastructure/Mesh/MeshCapabilityFulfiller.cs` | Capability fulfillment primitive. |
+| `src/Ashlar.Infrastructure/Mesh/MeshCapabilityRequester.cs` | Capability requester primitive. |
+| `src/Ashlar.Infrastructure/Mesh/Sdk/Extensions/MeshServiceCollectionExtensions.cs` | Open DI entrypoint for primitive mesh services. |
 
 ### Open CLI/API mesh and trust surfaces
 
 | Path | Reason |
 |------|--------|
-| `application/src/Nexo.CLI/Commands/MeshCommand.cs` | Keep local `discover`, `advertise`, `capabilities`, `sync`, import/export, and local trust-tier edits open. Split only if future owner decision makes `sync` a commercial fleet feature. |
-| `application/src/Nexo.API/Security/MeshCorrelationApplicationBuilderExtensions.cs` | Correlation ID middleware is an audit/trust primitive. |
-| `application/src/Nexo.API/Security/MeshCorrelationMiddleware.cs` | Correlation ID middleware is an audit/trust primitive. |
-| `application/src/Nexo.API/Security/MeshSecurityApplicationBuilderExtensions.cs` | Token/body/rate-limit middleware registration should remain inspectable. |
-| `application/src/Nexo.API/Security/MeshSecurityMiddleware.cs` | Mesh/brick-execute protection is a trust primitive. |
-| `application/src/Nexo.API/Security/MeshSecurityOptions.cs` | Open security configuration options. |
+| `application/src/Ashlar.CLI/Commands/MeshCommand.cs` | Keep local `discover`, `advertise`, `capabilities`, `sync`, import/export, and local trust-tier edits open. Split only if future owner decision makes `sync` a commercial fleet feature. |
+| `application/src/Ashlar.API/Security/MeshCorrelationApplicationBuilderExtensions.cs` | Correlation ID middleware is an audit/trust primitive. |
+| `application/src/Ashlar.API/Security/MeshCorrelationMiddleware.cs` | Correlation ID middleware is an audit/trust primitive. |
+| `application/src/Ashlar.API/Security/MeshSecurityApplicationBuilderExtensions.cs` | Token/body/rate-limit middleware registration should remain inspectable. |
+| `application/src/Ashlar.API/Security/MeshSecurityMiddleware.cs` | Mesh/brick-execute protection is a trust primitive. |
+| `application/src/Ashlar.API/Security/MeshSecurityOptions.cs` | Open security configuration options. |
 
 ### Open tests that should remain open
 
 | Path | Reason |
 |------|--------|
-| `src/Nexo.Tests.Infrastructure/Tests/Mesh/ArtifactNegotiatorTests.cs` | Tests open artifact negotiation primitive. |
-| `src/Nexo.Tests.Infrastructure/Tests/Mesh/FileBasedCapabilityAdvertisementTests.cs` | Tests open local advertisement primitive. |
-| `src/Nexo.Tests.Infrastructure/Tests/Mesh/FileBasedInstanceDiscoveryTests.cs` | Tests open local discovery primitive. |
-| `application/src/Nexo.Tests.CLI/Tests/Commands/MeshCommandTests.cs` | Tests open CLI mesh primitive behavior. |
+| `src/Ashlar.Tests.Infrastructure/Tests/Mesh/ArtifactNegotiatorTests.cs` | Tests open artifact negotiation primitive. |
+| `src/Ashlar.Tests.Infrastructure/Tests/Mesh/FileBasedCapabilityAdvertisementTests.cs` | Tests open local advertisement primitive. |
+| `src/Ashlar.Tests.Infrastructure/Tests/Mesh/FileBasedInstanceDiscoveryTests.cs` | Tests open local discovery primitive. |
+| `application/src/Ashlar.Tests.CLI/Tests/Commands/MeshCommandTests.cs` | Tests open CLI mesh primitive behavior. |
 
 ## COMMERCIAL fleet/governance inventory
 
@@ -90,110 +90,110 @@ These files should move to commercial modules.
 
 ### Fleet contracts and models
 
-Target module: `commercial/src/Nexo.Commercial.Fleet.Contracts`.
+Target module: `commercial/src/Ashlar.Commercial.Fleet.Contracts`.
 
 | Path | Target / reason |
 |------|-----------------|
-| `src/Nexo.Core.Application/Fleet/Models/MeshFleetNodeState.cs` | Fleet node lifecycle model. |
-| `src/Nexo.Core.Application/Fleet/Models/MeshFleetTrustTier.cs` | Fleet placement trust tier, not primitive trust policy. |
-| `src/Nexo.Core.Application/Fleet/Models/MeshKnowledgeExportPayload.cs` | Fleet knowledge replication payload. |
-| `src/Nexo.Core.Application/Fleet/Models/MeshTaskCreateSpec.cs` | Fleet task creation DTO. |
-| `src/Nexo.Core.Application/Fleet/Models/MeshTaskState.cs` | Fleet task state DTO. |
-| `src/Nexo.Core.Application/Fleet/Models/MeshTaskStatus.cs` | Fleet task lifecycle enum. |
-| `src/Nexo.Core.Application/Fleet/Ports/IFleetNodeRegistry.cs` | Fleet registry port. |
-| `src/Nexo.Core.Application/Fleet/Ports/IMeshTaskPlacementService.cs` | Commercial placement port. |
-| `src/Nexo.Core.Application/Fleet/Ports/IMeshTaskRegistry.cs` | Fleet task registry port. |
+| `src/Ashlar.Core.Application/Fleet/Models/MeshFleetNodeState.cs` | Fleet node lifecycle model. |
+| `src/Ashlar.Core.Application/Fleet/Models/MeshFleetTrustTier.cs` | Fleet placement trust tier, not primitive trust policy. |
+| `src/Ashlar.Core.Application/Fleet/Models/MeshKnowledgeExportPayload.cs` | Fleet knowledge replication payload. |
+| `src/Ashlar.Core.Application/Fleet/Models/MeshTaskCreateSpec.cs` | Fleet task creation DTO. |
+| `src/Ashlar.Core.Application/Fleet/Models/MeshTaskState.cs` | Fleet task state DTO. |
+| `src/Ashlar.Core.Application/Fleet/Models/MeshTaskStatus.cs` | Fleet task lifecycle enum. |
+| `src/Ashlar.Core.Application/Fleet/Ports/IFleetNodeRegistry.cs` | Fleet registry port. |
+| `src/Ashlar.Core.Application/Fleet/Ports/IMeshTaskPlacementService.cs` | Commercial placement port. |
+| `src/Ashlar.Core.Application/Fleet/Ports/IMeshTaskRegistry.cs` | Fleet task registry port. |
 
 ### Fleet infrastructure and director persistence
 
-Target module: `commercial/src/Nexo.Commercial.Fleet.Infrastructure`.
+Target module: `commercial/src/Ashlar.Commercial.Fleet.Infrastructure`.
 
 | Path | Target / reason |
 |------|-----------------|
-| `src/Nexo.Infrastructure/Fleet/FleetServiceCollectionExtensions.cs` | Commercial DI entrypoint. |
-| `src/Nexo.Infrastructure/Fleet/InMemoryFleetNodeRegistry.cs` | Fleet registry implementation. |
-| `src/Nexo.Infrastructure/Fleet/InMemoryMeshTaskRegistry.cs` | Fleet task registry implementation. |
-| `src/Nexo.Infrastructure/Fleet/LiteDbFleetNodeRegistry.cs` | Director/fleet persistence. |
-| `src/Nexo.Infrastructure/Fleet/LiteDbMeshDirectorDocuments.cs` | Director persistence documents. |
-| `src/Nexo.Infrastructure/Fleet/LiteDbMeshTaskRegistry.cs` | Fleet task persistence. |
-| `src/Nexo.Infrastructure/Fleet/MeshCheckpointOptions.cs` | Lease/checkpoint policy. |
-| `src/Nexo.Infrastructure/Fleet/MeshElasticSchedulingOptions.cs` | Commercial elastic scheduling. |
-| `src/Nexo.Infrastructure/Fleet/MeshFleetRegistrationKeys.cs` | Fleet registration key management. |
-| `src/Nexo.Infrastructure/Fleet/MeshFleetRegistrationOptions.cs` | Fleet registration configuration. |
-| `src/Nexo.Infrastructure/Fleet/MeshFleetTrustPolicy.cs` | Fleet trust-tier placement policy. |
-| `src/Nexo.Infrastructure/Fleet/MeshKnowledgeExportService.cs` | Fleet knowledge export. |
-| `src/Nexo.Infrastructure/Fleet/MeshKnowledgeImportService.cs` | Fleet knowledge import. |
-| `src/Nexo.Infrastructure/Fleet/MeshLeaseSweepBackgroundService.cs` | Lease management. |
-| `src/Nexo.Infrastructure/Fleet/MeshPeerKnowledgePullBackgroundService.cs` | Peer knowledge replication. |
-| `src/Nexo.Infrastructure/Fleet/MeshPeerKnowledgeSyncOptions.cs` | Peer knowledge replication options. |
-| `src/Nexo.Infrastructure/Fleet/MeshPendingTaskRebalancerBackgroundService.cs` | Commercial task rebalancing. |
-| `src/Nexo.Infrastructure/Fleet/MeshPersistenceOptions.cs` | Fleet persistence options. |
-| `src/Nexo.Infrastructure/Fleet/MeshPlacementTrustOptions.cs` | Fleet placement trust options. |
-| `src/Nexo.Infrastructure/Fleet/MeshTaskExecutionService.cs` | Fleet task execution. |
-| `src/Nexo.Infrastructure/Fleet/MeshTaskPlacementService.cs` | Fleet task placement implementation. |
-| `src/Nexo.Infrastructure/Fleet/MeshLab/MeshLabWorkerExecutorBackgroundService.cs` | Fleet worker loop for lab/operator use. |
-| `src/Nexo.Infrastructure/Fleet/MeshLab/MeshLabWorkerExecutorClient.cs` | Fleet worker executor client. |
-| `src/Nexo.Infrastructure/Fleet/MeshLab/MeshLabWorkerExecutorOptions.cs` | Fleet worker executor configuration. |
+| `src/Ashlar.Infrastructure/Fleet/FleetServiceCollectionExtensions.cs` | Commercial DI entrypoint. |
+| `src/Ashlar.Infrastructure/Fleet/InMemoryFleetNodeRegistry.cs` | Fleet registry implementation. |
+| `src/Ashlar.Infrastructure/Fleet/InMemoryMeshTaskRegistry.cs` | Fleet task registry implementation. |
+| `src/Ashlar.Infrastructure/Fleet/LiteDbFleetNodeRegistry.cs` | Director/fleet persistence. |
+| `src/Ashlar.Infrastructure/Fleet/LiteDbMeshDirectorDocuments.cs` | Director persistence documents. |
+| `src/Ashlar.Infrastructure/Fleet/LiteDbMeshTaskRegistry.cs` | Fleet task persistence. |
+| `src/Ashlar.Infrastructure/Fleet/MeshCheckpointOptions.cs` | Lease/checkpoint policy. |
+| `src/Ashlar.Infrastructure/Fleet/MeshElasticSchedulingOptions.cs` | Commercial elastic scheduling. |
+| `src/Ashlar.Infrastructure/Fleet/MeshFleetRegistrationKeys.cs` | Fleet registration key management. |
+| `src/Ashlar.Infrastructure/Fleet/MeshFleetRegistrationOptions.cs` | Fleet registration configuration. |
+| `src/Ashlar.Infrastructure/Fleet/MeshFleetTrustPolicy.cs` | Fleet trust-tier placement policy. |
+| `src/Ashlar.Infrastructure/Fleet/MeshKnowledgeExportService.cs` | Fleet knowledge export. |
+| `src/Ashlar.Infrastructure/Fleet/MeshKnowledgeImportService.cs` | Fleet knowledge import. |
+| `src/Ashlar.Infrastructure/Fleet/MeshLeaseSweepBackgroundService.cs` | Lease management. |
+| `src/Ashlar.Infrastructure/Fleet/MeshPeerKnowledgePullBackgroundService.cs` | Peer knowledge replication. |
+| `src/Ashlar.Infrastructure/Fleet/MeshPeerKnowledgeSyncOptions.cs` | Peer knowledge replication options. |
+| `src/Ashlar.Infrastructure/Fleet/MeshPendingTaskRebalancerBackgroundService.cs` | Commercial task rebalancing. |
+| `src/Ashlar.Infrastructure/Fleet/MeshPersistenceOptions.cs` | Fleet persistence options. |
+| `src/Ashlar.Infrastructure/Fleet/MeshPlacementTrustOptions.cs` | Fleet placement trust options. |
+| `src/Ashlar.Infrastructure/Fleet/MeshTaskExecutionService.cs` | Fleet task execution. |
+| `src/Ashlar.Infrastructure/Fleet/MeshTaskPlacementService.cs` | Fleet task placement implementation. |
+| `src/Ashlar.Infrastructure/Fleet/MeshLab/MeshLabWorkerExecutorBackgroundService.cs` | Fleet worker loop for lab/operator use. |
+| `src/Ashlar.Infrastructure/Fleet/MeshLab/MeshLabWorkerExecutorClient.cs` | Fleet worker executor client. |
+| `src/Ashlar.Infrastructure/Fleet/MeshLab/MeshLabWorkerExecutorOptions.cs` | Fleet worker executor configuration. |
 
 ### Networking / knowledge sync
 
-Target module: `commercial/src/Nexo.Commercial.Fleet.Contracts` for ports/models and `commercial/src/Nexo.Commercial.Fleet.Infrastructure` for HTTP/in-memory implementations unless the owner defines a smaller open networking primitive.
+Target module: `commercial/src/Ashlar.Commercial.Fleet.Contracts` for ports/models and `commercial/src/Ashlar.Commercial.Fleet.Infrastructure` for HTTP/in-memory implementations unless the owner defines a smaller open networking primitive.
 
 | Path | Target / reason |
 |------|-----------------|
-| `src/Nexo.Core.Application/Networking/Models/AdaptiveBrickCacheStats.cs` | Fleet/adaptive cache metric. |
-| `src/Nexo.Core.Application/Networking/Models/BrickUsageRecord.cs` | Cross-node usage tracking. |
-| `src/Nexo.Core.Application/Networking/Models/BrickUsageStats.cs` | Cross-node usage stats. |
-| `src/Nexo.Core.Application/Networking/Models/KnowledgeChunk.cs` | Knowledge replication payload. |
-| `src/Nexo.Core.Application/Networking/Models/KnowledgeSyncStatus.cs` | Knowledge replication status. |
-| `src/Nexo.Core.Application/Networking/Models/NetworkAgentEntry.cs` | Network agent directory entry. |
-| `src/Nexo.Core.Application/Networking/Models/NetworkEvent.cs` | Network bus event. |
-| `src/Nexo.Core.Application/Networking/Models/NetworkEventTypes.cs` | Network bus event types. |
-| `src/Nexo.Core.Application/Networking/Models/PlasticityMetrics.cs` | Adaptive/fleet plasticity metric. |
-| `src/Nexo.Core.Application/Networking/Ports/IAdaptiveBrickCache.cs` | Cross-node adaptive cache. |
-| `src/Nexo.Core.Application/Networking/Ports/IBrickUsageTracker.cs` | Cross-node usage tracking. |
-| `src/Nexo.Core.Application/Networking/Ports/IKnowledgeChunkStore.cs` | Knowledge replication store. |
-| `src/Nexo.Core.Application/Networking/Ports/IKnowledgeSyncService.cs` | Knowledge sync service. |
-| `src/Nexo.Core.Application/Networking/Ports/INetworkAgentDirectory.cs` | Network/fleet directory. |
-| `src/Nexo.Core.Application/Networking/Ports/INetworkBus.cs` | Network bus. |
-| `src/Nexo.Core.Application/Networking/Ports/INetworkNegotiationService.cs` | Cross-node negotiation. |
-| `src/Nexo.Core.Application/Networking/Ports/IPlasticityService.cs` | Adaptive plasticity service. |
-| `src/Nexo.Infrastructure/Networking/HttpKnowledgeSyncService.cs` | HTTP knowledge sync implementation. |
-| `src/Nexo.Infrastructure/Networking/HttpNetworkAgentDirectory.cs` | HTTP network directory implementation. |
-| `src/Nexo.Infrastructure/Networking/HttpNetworkBus.cs` | HTTP network bus implementation. |
-| `src/Nexo.Infrastructure/Networking/InMemoryKnowledgeChunkStore.cs` | Knowledge chunk store implementation. |
-| `src/Nexo.Infrastructure/Networking/KnowledgeSyncServiceOptions.cs` | Commercial knowledge sync options. |
-| `src/Nexo.Infrastructure/Networking/NetworkAgentDirectoryOptions.cs` | Commercial network directory options. |
-| `src/Nexo.Infrastructure/Networking/NetworkBusOptions.cs` | Commercial network bus options. |
-| `src/Nexo.Infrastructure/Networking/NetworkNegotiationService.cs` | Cross-node negotiation implementation. |
-| `src/Nexo.Infrastructure/Networking/PlasticityOptions.cs` | Commercial plasticity options. |
-| `src/Nexo.Infrastructure/Networking/PlasticityService.cs` | Adaptive plasticity implementation. |
+| `src/Ashlar.Core.Application/Networking/Models/AdaptiveBrickCacheStats.cs` | Fleet/adaptive cache metric. |
+| `src/Ashlar.Core.Application/Networking/Models/BrickUsageRecord.cs` | Cross-node usage tracking. |
+| `src/Ashlar.Core.Application/Networking/Models/BrickUsageStats.cs` | Cross-node usage stats. |
+| `src/Ashlar.Core.Application/Networking/Models/KnowledgeChunk.cs` | Knowledge replication payload. |
+| `src/Ashlar.Core.Application/Networking/Models/KnowledgeSyncStatus.cs` | Knowledge replication status. |
+| `src/Ashlar.Core.Application/Networking/Models/NetworkAgentEntry.cs` | Network agent directory entry. |
+| `src/Ashlar.Core.Application/Networking/Models/NetworkEvent.cs` | Network bus event. |
+| `src/Ashlar.Core.Application/Networking/Models/NetworkEventTypes.cs` | Network bus event types. |
+| `src/Ashlar.Core.Application/Networking/Models/PlasticityMetrics.cs` | Adaptive/fleet plasticity metric. |
+| `src/Ashlar.Core.Application/Networking/Ports/IAdaptiveBrickCache.cs` | Cross-node adaptive cache. |
+| `src/Ashlar.Core.Application/Networking/Ports/IBrickUsageTracker.cs` | Cross-node usage tracking. |
+| `src/Ashlar.Core.Application/Networking/Ports/IKnowledgeChunkStore.cs` | Knowledge replication store. |
+| `src/Ashlar.Core.Application/Networking/Ports/IKnowledgeSyncService.cs` | Knowledge sync service. |
+| `src/Ashlar.Core.Application/Networking/Ports/INetworkAgentDirectory.cs` | Network/fleet directory. |
+| `src/Ashlar.Core.Application/Networking/Ports/INetworkBus.cs` | Network bus. |
+| `src/Ashlar.Core.Application/Networking/Ports/INetworkNegotiationService.cs` | Cross-node negotiation. |
+| `src/Ashlar.Core.Application/Networking/Ports/IPlasticityService.cs` | Adaptive plasticity service. |
+| `src/Ashlar.Infrastructure/Networking/HttpKnowledgeSyncService.cs` | HTTP knowledge sync implementation. |
+| `src/Ashlar.Infrastructure/Networking/HttpNetworkAgentDirectory.cs` | HTTP network directory implementation. |
+| `src/Ashlar.Infrastructure/Networking/HttpNetworkBus.cs` | HTTP network bus implementation. |
+| `src/Ashlar.Infrastructure/Networking/InMemoryKnowledgeChunkStore.cs` | Knowledge chunk store implementation. |
+| `src/Ashlar.Infrastructure/Networking/KnowledgeSyncServiceOptions.cs` | Commercial knowledge sync options. |
+| `src/Ashlar.Infrastructure/Networking/NetworkAgentDirectoryOptions.cs` | Commercial network directory options. |
+| `src/Ashlar.Infrastructure/Networking/NetworkBusOptions.cs` | Commercial network bus options. |
+| `src/Ashlar.Infrastructure/Networking/NetworkNegotiationService.cs` | Cross-node negotiation implementation. |
+| `src/Ashlar.Infrastructure/Networking/PlasticityOptions.cs` | Commercial plasticity options. |
+| `src/Ashlar.Infrastructure/Networking/PlasticityService.cs` | Adaptive plasticity implementation. |
 
 ### CLI/API control plane surfaces
 
 | Path | Classification |
 |------|----------------|
-| `commercial/src/Nexo.Commercial.MeshDirector/MeshDirectorCommand.cs` | **COMMERCIAL** — direct client for fleet director API. The open CLI duplicate has been removed after mesh-lab scripts/operator packaging moved to the commercial module. |
-| ~~`application/src/Nexo.CLI/Commands/MeshHubCommand.cs`~~ | **Resolved:** removed; open **`mesh peers`** / **`mesh health`**; commercial **`director list-nodes`** / **`director health`**. |
+| `commercial/src/Ashlar.Commercial.MeshDirector/MeshDirectorCommand.cs` | **COMMERCIAL** — direct client for fleet director API. The open CLI duplicate has been removed after mesh-lab scripts/operator packaging moved to the commercial module. |
+| ~~`application/src/Ashlar.CLI/Commands/MeshHubCommand.cs`~~ | **Resolved:** removed; open **`mesh peers`** / **`mesh health`**; commercial **`director list-nodes`** / **`director health`**. |
 
 ### Fleet tests to move commercial
 
-Target module: `commercial/tests/Nexo.Commercial.Tests.Fleet`.
+Target module: `commercial/tests/Ashlar.Commercial.Tests.Fleet`.
 
 | Path group | Target / reason |
 |------------|-----------------|
-| `src/Nexo.Tests.Infrastructure/Tests/Fleet/*.cs` | Move all fleet registry, placement, persistence, lease/checkpoint, knowledge replication, worker executor, and trust policy tests with fleet code. |
-| `commercial/tests/Nexo.Commercial.Tests.MeshDirector/MeshDirectorCommandUriTests.cs` | **COMMERCIAL** — URI-building tests for the commercial mesh director client. The open CLI duplicate has been removed. |
+| `src/Ashlar.Tests.Infrastructure/Tests/Fleet/*.cs` | Move all fleet registry, placement, persistence, lease/checkpoint, knowledge replication, worker executor, and trust policy tests with fleet code. |
+| `commercial/tests/Ashlar.Commercial.Tests.MeshDirector/MeshDirectorCommandUriTests.cs` | **COMMERCIAL** — URI-building tests for the commercial mesh director client. The open CLI duplicate has been removed. |
 
 ## SPLIT / owner decision inventory
 
 | Path | Decision needed |
 |------|-----------------|
-| `application/src/Nexo.CLI/Commands/MeshCommand.cs` | **Resolved:** `discover`, `advertise`, `capabilities`, `sync`, import/export, `peers`, `health`, `--set-trust-tier`, and local `admit`/`revoke` (instances.json) stay open. Fleet director ops use `Nexo.Commercial.MeshDirector`. |
+| `application/src/Ashlar.CLI/Commands/MeshCommand.cs` | **Resolved:** `discover`, `advertise`, `capabilities`, `sync`, import/export, `peers`, `health`, `--set-trust-tier`, and local `admit`/`revoke` (instances.json) stay open. Fleet director ops use `Ashlar.Commercial.MeshDirector`. |
 | ~~`MeshHubCommand`~~ | **Resolved** — see open `mesh peers`/`mesh health` vs commercial `director list-nodes`/`director health`. |
-| `src/Nexo.Tests.Infrastructure/Tests/Mesh/MeshLabDockerFixture.cs`, `MeshLabDockerEnv.cs`, `MeshLabDockerE2ETests.cs` | Virtual lab may remain open if it validates primitive two-node behavior; move commercial if it validates fleet worker/director placement. |
-| `src/Nexo.Tests.Infrastructure/Tests/Networking/NetworkBusOptionsTests.cs` | Options-only test can remain open only if owner keeps a minimal open network bus. Otherwise move with commercial networking. |
-| `src/Nexo.Tests.Infrastructure/Tests/Networking/InfrastructureNetworkingGapCoverageTests.cs` | Move if networking is commercial; split if any low-level open networking primitive remains. |
+| `src/Ashlar.Tests.Infrastructure/Tests/Mesh/MeshLabDockerFixture.cs`, `MeshLabDockerEnv.cs`, `MeshLabDockerE2ETests.cs` | Virtual lab may remain open if it validates primitive two-node behavior; move commercial if it validates fleet worker/director placement. |
+| `src/Ashlar.Tests.Infrastructure/Tests/Networking/NetworkBusOptionsTests.cs` | Options-only test can remain open only if owner keeps a minimal open network bus. Otherwise move with commercial networking. |
+| `src/Ashlar.Tests.Infrastructure/Tests/Networking/InfrastructureNetworkingGapCoverageTests.cs` | Move if networking is commercial; split if any low-level open networking primitive remains. |
 
 ## Updated extraction sequence
 
@@ -205,31 +205,31 @@ This document. No code moves.
 
 Create the commercial contracts module and seed it with copied fleet contract DTOs/ports while open consumers are still being migrated:
 
-- `commercial/src/Nexo.Commercial.Fleet.Contracts`
-- Seed from `src/Nexo.Core.Application/Fleet/**`
+- `commercial/src/Ashlar.Commercial.Fleet.Contracts`
+- Seed from `src/Ashlar.Core.Application/Fleet/**`
 - Keep the original open files temporarily until commercial infrastructure/API consumers move in later PRs.
 
 Then move:
 
-- commercial-classified `src/Nexo.Core.Application/Networking/**` ports/models, if owner confirms those are not part of a smaller open networking substrate.
+- commercial-classified `src/Ashlar.Core.Application/Networking/**` ports/models, if owner confirms those are not part of a smaller open networking substrate.
 
 ### PR 6 — commercial fleet infrastructure
 
 Create the commercial fleet infrastructure module and seed it with copied fleet implementation code while open consumers are still being migrated:
 
-- `commercial/src/Nexo.Commercial.Fleet.Infrastructure`
-- Seed from `src/Nexo.Infrastructure/Fleet/**`
+- `commercial/src/Ashlar.Commercial.Fleet.Infrastructure`
+- Seed from `src/Ashlar.Infrastructure/Fleet/**`
 - Keep the original open files temporarily until commercial API/CLI consumers move in later PRs.
 
 Then move:
 
-- commercial-classified `src/Nexo.Infrastructure/Networking/**`
-- fleet tests from `src/Nexo.Tests.Infrastructure/Tests/Fleet/**`
+- commercial-classified `src/Ashlar.Infrastructure/Networking/**`
+- fleet tests from `src/Ashlar.Tests.Infrastructure/Tests/Fleet/**`
 
 Create:
 
-- `commercial/src/Nexo.Commercial.Fleet.Infrastructure`
-- `commercial/tests/Nexo.Commercial.Tests.Fleet`
+- `commercial/src/Ashlar.Commercial.Fleet.Infrastructure`
+- `commercial/tests/Ashlar.Commercial.Tests.Fleet`
 
 ### PR 7 — commercial mesh director / CLI surface
 
@@ -241,39 +241,39 @@ Seed commercial module and then move or split:
 
 Create:
 
-- `commercial/src/Nexo.Commercial.MeshDirector`
+- `commercial/src/Ashlar.Commercial.MeshDirector`
 
 ### PR 8 — commercial fleet API baseline
 
 Seed commercial endpoint module:
 
-- `commercial/src/Nexo.Commercial.Fleet.Api`
-- copy `/api/mesh/fleet/**`, `/api/mesh/tasks/**`, and `/api/mesh/knowledge/**` endpoint mappings/handlers/DTOs from open `Nexo.API`;
+- `commercial/src/Ashlar.Commercial.Fleet.Api`
+- copy `/api/mesh/fleet/**`, `/api/mesh/tasks/**`, and `/api/mesh/knowledge/**` endpoint mappings/handlers/DTOs from open `Ashlar.API`;
 - use commercial fleet contracts/infrastructure namespaces.
 
 ### PR 9 — commercial fleet host wiring (done)
 
 Added:
 
-- `commercial/src/Nexo.Commercial.Fleet.Host` — operator host registering `AddNexoCommercialFleetDirector()` and mapping `MapCommercialFleetEndpoints()`;
-- `commercial/src/Nexo.Commercial.Fleet.Api/CommercialFleetHostExtensions.cs` — shared DI/endpoint wiring helper;
-- `commercial/tests/Nexo.Commercial.Tests.Fleet.Host` and `scripts/commercial-fleet-host-smoke.sh` — host build/smoke validation;
+- `commercial/src/Ashlar.Commercial.Fleet.Host` — operator host registering `AddAshlarCommercialFleetDirector()` and mapping `MapCommercialFleetEndpoints()`;
+- `commercial/src/Ashlar.Commercial.Fleet.Api/CommercialFleetHostExtensions.cs` — shared DI/endpoint wiring helper;
+- `commercial/tests/Ashlar.Commercial.Tests.Fleet.Host` and `scripts/commercial-fleet-host-smoke.sh` — host build/smoke validation;
 ### PR 10 — open fleet endpoint cleanup (done)
 
 Completed:
 
-- removed open `/api/mesh/fleet/**`, `/api/mesh/tasks/**`, and `/api/mesh/knowledge/**` endpoint handlers from `Nexo.API`;
-- migrated mesh-lab **peer-a** to `.docker/Dockerfile.fleet-host` (`Nexo.Commercial.Fleet.Host`);
+- removed open `/api/mesh/fleet/**`, `/api/mesh/tasks/**`, and `/api/mesh/knowledge/**` endpoint handlers from `Ashlar.API`;
+- migrated mesh-lab **peer-a** to `.docker/Dockerfile.fleet-host` (`Ashlar.Commercial.Fleet.Host`);
 - mesh-lab verify scripts unchanged (same HTTP paths; director is now the commercial host).
 
 ### PR 11 — open fleet infrastructure cleanup (done)
 
 Completed:
 
-- removed `src/Nexo.Core.Application/Fleet/**` and `src/Nexo.Infrastructure/Fleet/**`;
-- extracted mesh-lab worker executor to `src/Nexo.Infrastructure/MeshLab/**` (open HTTP client only);
-- moved fleet unit tests to `commercial/tests/Nexo.Commercial.Tests.Fleet`;
-- kept mesh-lab worker executor tests under `src/Nexo.Tests.Infrastructure/Tests/MeshLab/**`.
+- removed `src/Ashlar.Core.Application/Fleet/**` and `src/Ashlar.Infrastructure/Fleet/**`;
+- extracted mesh-lab worker executor to `src/Ashlar.Infrastructure/MeshLab/**` (open HTTP client only);
+- moved fleet unit tests to `commercial/tests/Ashlar.Commercial.Tests.Fleet`;
+- kept mesh-lab worker executor tests under `src/Ashlar.Tests.Infrastructure/Tests/MeshLab/**`.
 
 ### PR 12 — dependency-boundary scanner (done)
 

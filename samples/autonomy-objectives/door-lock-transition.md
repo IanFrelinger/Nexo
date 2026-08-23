@@ -9,9 +9,9 @@ tags:
   - state-machine
 touch:
   pathPrefixes:
-    - applications/Nexo.Samples.Dogfood/Locks/
+    - applications/Ashlar.Samples.Dogfood/Locks/
   namespaces:
-    - Nexo.Samples.Dogfood.Locks
+    - Ashlar.Samples.Dogfood.Locks
   capabilities:
     - repo.fs.write
 ---
@@ -19,7 +19,7 @@ touch:
 A door lock has three states and four triggers. (The input is named `trigger`, not `event` — `event` is a C# keyword and cannot be a variable name.) Provide a deterministic brick that, given the
 current state and one trigger, reports the next state and whether the event was accepted.
 
-The brick is class `DoorLockTransitionBrick` in namespace `Nexo.Samples.Dogfood.Locks`, with
+The brick is class `DoorLockTransitionBrick` in namespace `Ashlar.Samples.Dogfood.Locks`, with
 `Id = "door-lock-transition"`.
 
 Contract:
@@ -43,10 +43,10 @@ is echoed back as given).
 Skeleton (fill in `ExecuteAsync`; do not add, remove, or reorder members):
 
 ```csharp
-using Nexo.Core.Domain.Bricks;
-using Nexo.Core.Domain.Execution;
+using Ashlar.Core.Domain.Bricks;
+using Ashlar.Core.Domain.Execution;
 
-namespace Nexo.Samples.Dogfood.Locks;
+namespace Ashlar.Samples.Dogfood.Locks;
 
 public sealed class DoorLockTransitionBrick : DomainBrick
 {

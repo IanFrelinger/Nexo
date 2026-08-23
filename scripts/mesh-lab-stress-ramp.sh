@@ -87,7 +87,7 @@ parallel_health_burst() {
   local i
   local -a ips=()
   local tmpdir ok fail max_fail_pct min_ok
-  tmpdir="$(mktemp -d "${TMPDIR:-/tmp}/nexo-stress.XXXXXX")"
+  tmpdir="$(mktemp -d "${TMPDIR:-/tmp}/ashlar-stress.XXXXXX")"
   max_fail_pct="${MESH_LAB_STRESS_MAX_FAIL_PERCENT:-25}"
   min_ok="${MESH_LAB_STRESS_MIN_OK:-1}"
   while IFS= read -r ip; do

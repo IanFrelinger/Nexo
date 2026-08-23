@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <LangVersion>12.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Moq" />
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="coverlet.msbuild">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Ashlar.Orchestration\Ashlar.Orchestration.csproj" />
+    <ProjectReference Include="..\Ashlar.Core.Application\Ashlar.Core.Application.csproj" />
+    <ProjectReference Include="..\Ashlar.Abstractions\Ashlar.Abstractions.csproj" />
+    <ProjectReference Include="..\Ashlar.Runtime\Ashlar.Runtime.csproj" />
+    <ProjectReference Include="..\Ashlar.Transport.Grpc\Ashlar.Transport.Grpc.csproj" />
+    <ProjectReference Include="..\Ashlar.Transport.Grpc.Server\Ashlar.Transport.Grpc.Server.csproj" />
+  </ItemGroup>
+
+</Project>

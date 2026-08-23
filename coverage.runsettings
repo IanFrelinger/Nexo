@@ -8,7 +8,7 @@
           <Exclude>[*.Tests]*,[*.Test]*</Exclude>
           <ExcludeByAttribute>Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute</ExcludeByAttribute>
           <ExcludeByFile>**/Migrations/**</ExcludeByFile>
-          <IncludeDirectory>../Nexo.Core.Domain,../Nexo.Core.Application,../Nexo.Infrastructure,../Nexo.Orchestration</IncludeDirectory>
+          <IncludeDirectory>../Ashlar.Core.Domain,../Ashlar.Core.Application,../Ashlar.Infrastructure,../Ashlar.Orchestration</IncludeDirectory>
           <SingleHit>false</SingleHit>
           <UseSourceLink>true</UseSourceLink>
           <IncludeTestAssembly>false</IncludeTestAssembly>

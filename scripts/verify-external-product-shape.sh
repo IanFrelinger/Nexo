@@ -1,22 +1,22 @@
 #!/usr/bin/env bash
 # Verifies the external product consumption shape: authored brick + thin host + HTTP client,
-# restoring only from a temp local Nexo.* feed (+ nuget.org) with no repo project references.
+# restoring only from a temp local Ashlar.* feed (+ nuget.org) with no repo project references.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-VERSION="${NEXO_EXTERNAL_PRODUCT_VERIFY_VERSION:-9.9.9-local}"
-WORK="${NEXO_EXTERNAL_PRODUCT_VERIFY_WORK:-$(mktemp -d)}"
+VERSION="${ASHLAR_EXTERNAL_PRODUCT_VERIFY_VERSION:-9.9.9-local}"
+WORK="${ASHLAR_EXTERNAL_PRODUCT_VERIFY_WORK:-$(mktemp -d)}"
 FEED="${WORK}/feed"
 TOOL_PATH="${WORK}/tools"
 CONSUMER_ROOT="${WORK}/consumer"
 CFG="${WORK}/NuGet.Config"
-HOST_PORT="${NEXO_EXTERNAL_PRODUCT_VERIFY_PORT:-0}"
-WAIT_SECS="${NEXO_EXTERNAL_PRODUCT_VERIFY_WAIT_SECS:-120}"
-SOURCE_KEY="${NEXO_VERIFY_SOURCE_KEY:-nexo-local}"
+HOST_PORT="${ASHLAR_EXTERNAL_PRODUCT_VERIFY_PORT:-0}"
+WAIT_SECS="${ASHLAR_EXTERNAL_PRODUCT_VERIFY_WAIT_SECS:-120}"
+SOURCE_KEY="${ASHLAR_VERIFY_SOURCE_KEY:-ashlar-local}"
 ISOL_CLEANUP=""
 USE_PUBLISHED_FEED=0
-PROBE_BRICK_SOURCE="${NEXO_EXTERNAL_PRODUCT_PROBE_BRICK_SOURCE:-}"
-if [[ -n "${NEXO_EXTERNAL_PRODUCT_PROBE_BRICK:-}" && -z "${PROBE_BRICK_SOURCE}" ]]; then
+PROBE_BRICK_SOURCE="${ASHLAR_EXTERNAL_PRODUCT_PROBE_BRICK_SOURCE:-}"
+if [[ -n "${ASHLAR_EXTERNAL_PRODUCT_PROBE_BRICK:-}" && -z "${PROBE_BRICK_SOURCE}" ]]; then
   PROBE_BRICK_SOURCE="${ROOT}/spikes/portability/generated/ErrorSummaryExtractorBrick"
 fi
 USE_PROBE_BRICK=0
@@ -24,9 +24,9 @@ if [[ -n "${PROBE_BRICK_SOURCE}" ]]; then
   USE_PROBE_BRICK=1
 fi
 
-if [[ -n "${NEXO_EXTERNAL_PRODUCT_PACKAGE_FEED:-}" ]]; then
+if [[ -n "${ASHLAR_EXTERNAL_PRODUCT_PACKAGE_FEED:-}" ]]; then
   USE_PUBLISHED_FEED=1
-  FEED="${NEXO_EXTERNAL_PRODUCT_PACKAGE_FEED}"
+  FEED="${ASHLAR_EXTERNAL_PRODUCT_PACKAGE_FEED}"
 fi
 
 mkdir -p "${TOOL_PATH}" "${CONSUMER_ROOT}"
@@ -49,23 +49,23 @@ echo "==> Packing consumer surface as version ${VERSION} into ${FEED}"
 if [[ "${USE_PUBLISHED_FEED}" -eq 1 ]]; then
   echo "==> Using published feed at ${FEED}; skipping local pack."
 else
-bash "${ROOT}/scripts/pack-nexo-hosting-graph.sh" "${VERSION}" "${FEED}"
-pack src/Nexo.Authoring/Nexo.Authoring.csproj
-pack src/Nexo.Sdk/Nexo.Sdk.csproj
-pack src/Nexo.Client/Nexo.Client.csproj
+bash "${ROOT}/scripts/pack-ashlar-hosting-graph.sh" "${VERSION}" "${FEED}"
+pack src/Ashlar.Authoring/Ashlar.Authoring.csproj
+pack src/Ashlar.Sdk/Ashlar.Sdk.csproj
+pack src/Ashlar.Client/Ashlar.Client.csproj
 
-# CLI + dependencies for `nexo new brick` (same extras as verify-standalone-brick-authoring.sh).
+# CLI + dependencies for `ashlar new brick` (same extras as verify-standalone-brick-authoring.sh).
 if [[ "${USE_PROBE_BRICK}" -eq 0 ]]; then
-pack src/Nexo.Adapters.Models/Nexo.Adapters.Models.csproj
-pack src/Nexo.Bricks.Owasp/Nexo.Bricks.Owasp.csproj
-pack src/Nexo.BackgroundAgents.HostRunners/Nexo.BackgroundAgents.HostRunners.csproj
-pack src/Nexo.Policies.Dev/Nexo.Policies.Dev.csproj
-pack application/src/Nexo.CLI/Nexo.CLI.csproj
+pack src/Ashlar.Adapters.Models/Ashlar.Adapters.Models.csproj
+pack src/Ashlar.Bricks.Owasp/Ashlar.Bricks.Owasp.csproj
+pack src/Ashlar.BackgroundAgents.HostRunners/Ashlar.BackgroundAgents.HostRunners.csproj
+pack src/Ashlar.Policies.Dev/Ashlar.Policies.Dev.csproj
+pack application/src/Ashlar.CLI/Ashlar.CLI.csproj
 fi
 fi
 
-if [[ -z "${NEXO_EXTERNAL_PRODUCT_VERIFY_NO_ISOLATED_CACHE:-}" ]]; then
-  ISOL_BASE="${NEXO_EXTERNAL_PRODUCT_VERIFY_ISOLATED_ROOT:-$(mktemp -d "${WORK}/nuget-cache-XXXXXX")}"
+if [[ -z "${ASHLAR_EXTERNAL_PRODUCT_VERIFY_NO_ISOLATED_CACHE:-}" ]]; then
+  ISOL_BASE="${ASHLAR_EXTERNAL_PRODUCT_VERIFY_ISOLATED_ROOT:-$(mktemp -d "${WORK}/nuget-cache-XXXXXX")}"
   ISOL_CLEANUP="${ISOL_BASE}"
   mkdir -p "${ISOL_BASE}/packages" "${ISOL_BASE}/cli-home"
   export NUGET_PACKAGES="${ISOL_BASE}/packages"
@@ -73,7 +73,7 @@ if [[ -z "${NEXO_EXTERNAL_PRODUCT_VERIFY_NO_ISOLATED_CACHE:-}" ]]; then
   echo "Isolated restore: NUGET_PACKAGES=${NUGET_PACKAGES} DOTNET_CLI_HOME=${DOTNET_CLI_HOME}"
 fi
 
-if [[ -n "${NEXO_NUGET_USERNAME:-}" && -n "${NEXO_NUGET_PASSWORD:-}" ]]; then
+if [[ -n "${ASHLAR_NUGET_USERNAME:-}" && -n "${ASHLAR_NUGET_PASSWORD:-}" ]]; then
   cat > "${CFG}" <<EOF
 <?xml version="1.0" encoding="utf-8"?>
 <configuration>
@@ -84,8 +84,8 @@ if [[ -n "${NEXO_NUGET_USERNAME:-}" && -n "${NEXO_NUGET_PASSWORD:-}" ]]; then
   </packageSources>
   <packageSourceCredentials>
     <${SOURCE_KEY}>
-      <add key="Username" value="${NEXO_NUGET_USERNAME}" />
-      <add key="ClearTextPassword" value="${NEXO_NUGET_PASSWORD}" />
+      <add key="Username" value="${ASHLAR_NUGET_USERNAME}" />
+      <add key="ClearTextPassword" value="${ASHLAR_NUGET_PASSWORD}" />
     </${SOURCE_KEY}>
   </packageSourceCredentials>
 </configuration>
@@ -106,7 +106,7 @@ fi
 if [[ "${USE_PROBE_BRICK}" -eq 0 ]]; then
 dotnet tool install \
   --tool-path "${TOOL_PATH}" \
-  Nexo.CLI \
+  Ashlar.CLI \
   --version "${VERSION}" \
   --add-source "${FEED}" \
   --ignore-failed-sources
@@ -143,22 +143,22 @@ if [[ "${USE_PROBE_BRICK}" -eq 1 ]]; then
     <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Nexo.Brick.Contracts" Version="${VERSION}" />
-    <PackageReference Include="Nexo.Authoring" Version="${VERSION}" />
+    <PackageReference Include="Ashlar.Brick.Contracts" Version="${VERSION}" />
+    <PackageReference Include="Ashlar.Authoring" Version="${VERSION}" />
   </ItemGroup>
 </Project>
 EOF
 else
-echo "==> Scaffolding authored brick via nexo new brick"
-"${TOOL_PATH}/nexo" new brick Intensity \
+echo "==> Scaffolding authored brick via ashlar new brick"
+"${TOOL_PATH}/ashlar" new brick Intensity \
   --output "${BRICK_OUT}" \
-  --nexo-version "${VERSION}" \
+  --ashlar-version "${VERSION}" \
   --json >/dev/null
 
 INTENSITY_BRICK_CS="${BRICK_OUT}/IntensityBrick/IntensityBrick.cs"
 cat > "${INTENSITY_BRICK_CS}" <<'CS'
-using Nexo.Core.Domain.Bricks;
-using Nexo.Core.Domain.Execution;
+using Ashlar.Core.Domain.Bricks;
+using Ashlar.Core.Domain.Execution;
 
 namespace IntensityBrick;
 
@@ -220,8 +220,8 @@ cat > "${HOST_DIR}/ExternalProductHost.csproj" <<EOF
     <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Nexo.Authoring" Version="${VERSION}" />
-    <PackageReference Include="Nexo.Hosting.Bundle" Version="${VERSION}" />
+    <PackageReference Include="Ashlar.Authoring" Version="${VERSION}" />
+    <PackageReference Include="Ashlar.Hosting.Bundle" Version="${VERSION}" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="../../brick/${BRICK_PROJECT_NAME}/${BRICK_PROJECT_NAME}.csproj" />
@@ -230,13 +230,13 @@ cat > "${HOST_DIR}/ExternalProductHost.csproj" <<EOF
 EOF
 
 cat > "${HOST_DIR}/Program.cs" <<'HOSTCS'
-using Nexo.Authoring;
-using Nexo.Brick.Contracts;
-using Nexo.Core.Application.Bricks;
-using Nexo.Core.Domain.Bricks;
-using Nexo.Core.Domain.Execution;
-using Nexo.Hosting;
-using Nexo.Infrastructure.Execution;
+using Ashlar.Authoring;
+using Ashlar.Brick.Contracts;
+using Ashlar.Core.Application.Bricks;
+using Ashlar.Core.Domain.Bricks;
+using Ashlar.Core.Domain.Execution;
+using Ashlar.Hosting;
+using Ashlar.Infrastructure.Execution;
 HOSTCS
 
 if [[ "${USE_PROBE_BRICK}" -eq 1 ]]; then
@@ -245,7 +245,7 @@ using ${BRICK_NAMESPACE};
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddNexoBrick<${BRICK_NAMESPACE}.${BRICK_CLASS}>();
+builder.Services.AddAshlarBrick<${BRICK_NAMESPACE}.${BRICK_CLASS}>();
 HOSTCS
 else
   cat >> "${HOST_DIR}/Program.cs" <<'HOSTCS'
@@ -253,12 +253,12 @@ using IntensityBrick;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddNexoBrick<IntensityBrick.IntensityBrick>();
+builder.Services.AddAshlarBrick<IntensityBrick.IntensityBrick>();
 HOSTCS
 fi
 
 cat >> "${HOST_DIR}/Program.cs" <<'HOSTCS'
-builder.Services.AddNexo(options =>
+builder.Services.AddAshlar(options =>
 {
     options.RegisterBackgroundAgentHostedService = false;
 });
@@ -316,12 +316,12 @@ app.MapPost("/api/bricks/{brickId}/execute", async (
 
 app.Run();
 
-static Nexo.Infrastructure.Execution.ExecutionContext ToExecutionContext(ExecutionContextDto? dto)
+static Ashlar.Infrastructure.Execution.ExecutionContext ToExecutionContext(ExecutionContextDto? dto)
 {
     if (dto is null)
-        return new Nexo.Infrastructure.Execution.ExecutionContext();
+        return new Ashlar.Infrastructure.Execution.ExecutionContext();
 
-    return new Nexo.Infrastructure.Execution.ExecutionContext
+    return new Ashlar.Infrastructure.Execution.ExecutionContext
     {
         AgentId = dto.AgentId ?? string.Empty,
         BehaviorId = dto.BehaviorId ?? string.Empty,
@@ -345,7 +345,7 @@ cat > "${CLIENT_DIR}/ExternalProductClient.csproj" <<EOF
     <ManagePackageVersionsCentrally>false</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Nexo.Sdk" Version="${VERSION}" />
+    <PackageReference Include="Ashlar.Sdk" Version="${VERSION}" />
   </ItemGroup>
 </Project>
 EOF
@@ -357,8 +357,8 @@ cat > "${CLIENT_DIR}/Program.cs" <<'CLIENTCS'
 using System.Net.Http.Json;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
-using Nexo.Client;
-using Nexo.Sdk.Client;
+using Ashlar.Client;
+using Ashlar.Sdk.Client;
 
 if (args.Length < 1 || string.IsNullOrWhiteSpace(args[0]))
 {
@@ -368,9 +368,9 @@ if (args.Length < 1 || string.IsNullOrWhiteSpace(args[0]))
 
 var hostBaseUrl = args[0].TrimEnd('/');
 var services = new ServiceCollection();
-services.AddNexoClientSdk(hostBaseUrl);
+services.AddAshlarClientSdk(hostBaseUrl);
 await using var provider = services.BuildServiceProvider();
-var client = provider.GetRequiredService<INexoClient>();
+var client = provider.GetRequiredService<IAshlarClient>();
 
 var requestBody = new Dictionary<string, object?>
 {
@@ -431,9 +431,9 @@ dotnet build "${SLN}" \
   --no-restore \
   -v minimal
 
-if rg "Nexo\\.Core\\.Domain\\.csproj|/workspace|src/Nexo" "${CONSUMER_ROOT}" >/dev/null; then
-  echo "Generated consumer tree contains repo-relative Nexo paths." >&2
-  rg "Nexo\\.Core\\.Domain\\.csproj|/workspace|src/Nexo" "${CONSUMER_ROOT}" >&2
+if rg "Ashlar\\.Core\\.Domain\\.csproj|/workspace|src/Ashlar" "${CONSUMER_ROOT}" >/dev/null; then
+  echo "Generated consumer tree contains repo-relative Ashlar paths." >&2
+  rg "Ashlar\\.Core\\.Domain\\.csproj|/workspace|src/Ashlar" "${CONSUMER_ROOT}" >&2
   exit 1
 fi
 

@@ -4,8 +4,8 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
 
-CLI_PROJECT="application/src/Nexo.CLI/Nexo.CLI.csproj"
-TMP_ROOT="${TMPDIR:-/tmp}/nexo-perf-soak-$$"
+CLI_PROJECT="application/src/Ashlar.CLI/Ashlar.CLI.csproj"
+TMP_ROOT="${TMPDIR:-/tmp}/ashlar-perf-soak-$$"
 mkdir -p "$TMP_ROOT"
 trap 'rm -rf "$TMP_ROOT"' EXIT
 
@@ -31,7 +31,7 @@ if [ "$SOAK_MINUTES" -gt 0 ]; then
   FAILS=0
   while [ "$(date +%s)" -lt "$END" ]; do
     RUNS=$((RUNS + 1))
-    if ! NEXO_ALLOW_MOCK=1 dotnet run --project "$CLI_PROJECT" --no-build -- \
+    if ! ASHLAR_ALLOW_MOCK=1 dotnet run --project "$CLI_PROJECT" --no-build -- \
       pipeline run --template "$TEMPLATE" --run-id "soak-$RUNS" --format-json >/dev/null 2>&1; then
       FAILS=$((FAILS + 1))
     fi
@@ -41,14 +41,14 @@ else
   RUNS=$ITERATIONS
   FAILS=0
   for i in $(seq 1 "$ITERATIONS"); do
-    if ! NEXO_ALLOW_MOCK=1 dotnet run --project "$CLI_PROJECT" --no-build -- \
+    if ! ASHLAR_ALLOW_MOCK=1 dotnet run --project "$CLI_PROJECT" --no-build -- \
       pipeline run --template "$TEMPLATE" --run-id "soak-$i" --format-json >/dev/null 2>&1; then
       FAILS=$((FAILS + 1))
     fi
   done
 fi
 
-REPORT_DIR=".nexo/perf"
+REPORT_DIR=".ashlar/perf"
 mkdir -p "$REPORT_DIR"
 cat >"$REPORT_DIR/soak.json" <<EOF
 {

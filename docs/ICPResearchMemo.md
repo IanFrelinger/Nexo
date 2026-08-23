@@ -1,6 +1,6 @@
-# ICP research memo — who should Nexo sell to first?
+# ICP research memo — who should Ashlar sell to first?
 
-**Purpose:** Turn “we don’t know our ICP” into **testable hypotheses** grounded in **how buyers are pressured** (governance, sovereignty, platform ownership) and **how Nexo is positioned** (private/traceable workflows, air-gap capable, optional cloud targets).
+**Purpose:** Turn “we don’t know our ICP” into **testable hypotheses** grounded in **how buyers are pressured** (governance, sovereignty, platform ownership) and **how Ashlar is positioned** (private/traceable workflows, air-gap capable, optional cloud targets).
 
 **Method:** review of **public regulatory framing** and **common enterprise buying patterns** for internal AI and platform tooling—not proprietary market sizing. Validate with **10–15 customer discovery calls** before locking marketing spend.
 
@@ -12,7 +12,7 @@
 
 The **EU AI Act** is an explicit, risk-based framework: higher-risk uses face **stronger obligations**, including **traceability/logging**, **documentation**, **human oversight**, and **cybersecurity/robustness** expectations for systems placed on the EU market or affecting people in the EU. Official overview: [European Commission — AI Act / regulatory framework for AI](https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai).
 
-**Implication for ICP:** organizations that **deploy AI inside regulated workflows** (or EU-facing products) need **runtime evidence**, not a policy PDF. That aligns with Nexo’s **audit trail + policy constraints** story.
+**Implication for ICP:** organizations that **deploy AI inside regulated workflows** (or EU-facing products) need **runtime evidence**, not a policy PDF. That aligns with Ashlar’s **audit trail + policy constraints** story.
 
 ### 1.2 “Internal AI platform” buyers already exist
 
@@ -22,7 +22,7 @@ Enterprises increasingly centralize developer experience and internal services u
 
 ### 1.3 Sovereignty and deployment location remain differentiators
 
-Nexo’s README emphasizes **customer-controlled infrastructure**, **optional** cloud model providers, and **air-gapped** deployment. That is not the default posture of consumer-style AI SaaS.
+Ashlar’s README emphasizes **customer-controlled infrastructure**, **optional** cloud model providers, and **air-gapped** deployment. That is not the default posture of consumer-style AI SaaS.
 
 **Implication for ICP:** prioritize buyers where **data residency, vendor egress, or offline operation** is non-negotiable (regulated, national-critical, defense-adjacent, certain EU enterprises)—*if* you can support the sales cycle and deployment expectations.
 
@@ -38,7 +38,7 @@ Nexo’s README emphasizes **customer-controlled infrastructure**, **optional** 
 | **Trigger** | AI governance program, EU AI Act readiness, vendor risk review, internal ban on “shadow AI” |
 | **Champion** | **Head of platform engineering**, **Director of IT / infrastructure**, sometimes **CISO office** (risk), **Legal/Privacy** (DPA) |
 | **Economic buyer** | CIO/CTO/CISO + procurement |
-| **Why Nexo fits** | Auditability, policy constraints, deployment in **their** environment, air-gap story |
+| **Why Ashlar fits** | Auditability, policy constraints, deployment in **their** environment, air-gap story |
 | **Risk** | Long sales cycles, security questionnaires, proof of isolation |
 
 **Validation questions:** “What evidence do you need for an internal AI workflow in production?” “Who blocks a new AI vendor today?” “What is your EU AI Act / risk-tier stance for this use case?”
@@ -53,7 +53,7 @@ Nexo’s README emphasizes **customer-controlled infrastructure**, **optional** 
 | **Trigger** | Customer security review asks how AI features are governed; engineering wants internal agent standardization |
 | **Champion** | **VP Eng**, **Security architect**, **Principal engineer** for platform |
 | **Economic buyer** | VP Eng / CTO |
-| **Why Nexo fits** | “Same engine in our VPC” narrative; API-first path for productized AI workflows |
+| **Why Ashlar fits** | “Same engine in our VPC” narrative; API-first path for productized AI workflows |
 | **Risk** | They may prefer hyperscaler marketplace models unless you are clearly cheaper/faster to **prove control** |
 
 **Validation questions:** “Do you ship AI features to customers today?” “What does your pentest / customer questionnaire ask about generative AI?”
@@ -68,7 +68,7 @@ Nexo’s README emphasizes **customer-controlled infrastructure**, **optional** 
 | **Trigger** | Too many one-off agent demos; need internal “golden path” for copilots/automation |
 | **Champion** | **Staff/Principal platform engineer**, **DevEx lead** |
 | **Economic buyer** | VP Eng |
-| **Why Nexo fits** | Container-first deploy, composable workflows, internal standard |
+| **Why Ashlar fits** | Container-first deploy, composable workflows, internal standard |
 | **Risk** | Competes with “we’ll glue LangGraph + logs” unless you win on **governance + time-to-standard** |
 
 **Validation questions:** “What is your internal ‘approved AI stack’ today?” “What would ‘done’ look like for an internal copilot platform?”
@@ -83,7 +83,7 @@ Nexo’s README emphasizes **customer-controlled infrastructure**, **optional** 
 | **Trigger** | Customers asking for private AI platforms; they need repeatable deploy packages |
 | **Champion** | Practice lead |
 | **Economic buyer** | Partner leadership + joint customer |
-| **Why Nexo fits** | Private/Enterprise deployment story maps to **services-led** GTM |
+| **Why Ashlar fits** | Private/Enterprise deployment story maps to **services-led** GTM |
 | **Risk** | Requires enablement, margin rules, and partner pipeline management |
 
 Treat this as a **route-to-market** to A/B/C, not the first “end user” ICP unless you are explicitly building a channel-first company.
@@ -107,7 +107,7 @@ If you must pick **one** to sequence GTM:
 2. **Start with Hypothesis A (regulated enterprise)** if you can tolerate **6–18 month** sales and want **large ARR** and defensible differentiation.  
 3. **Start with Hypothesis C** if your near-term product is strongest on **developer ergonomics** and **Cloud** onboarding.
 
-Nexo’s README strengths suggest **A or B** will feel the most “native” story; **C** is viable if messaging emphasizes **golden-path internal automation** rather than compliance depth.
+Ashlar’s README strengths suggest **A or B** will feel the most “native” story; **C** is viable if messaging emphasizes **golden-path internal automation** rather than compliance depth.
 
 ---
 
@@ -132,7 +132,7 @@ Discovery script (minimum):
 ## 6. Sources (non-exhaustive)
 
 - European Commission — **AI Act** overview and timelines: [Regulatory framework for AI](https://digital-strategy.ec.europa.eu/en/policies/regulatory-framework-ai)  
-- Nexo positioning (sovereignty, air-gap, audit): repository [`README.md`](../README.md)  
+- Ashlar positioning (sovereignty, air-gap, audit): repository [`README.md`](../README.md)  
 - Internal portal / platform buyer dynamics (examples): [OpsLevel buyer guide](https://www.opslevel.com/resources/internal-developer-portal-the-buyers-guide), [CodeBrewTools — AI-native IDP roundup](https://codebrewtools.com/blogs/ai-native-internal-developer-portals-2026)
 
 ---

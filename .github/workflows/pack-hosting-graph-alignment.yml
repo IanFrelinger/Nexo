@@ -1,4 +1,4 @@
-# Ensures scripts/pack-nexo-hosting-graph.{sh,ps1} match the transitive Nexo.* graph from Nexo.Hosting (+ optional allowlist).
+# Ensures scripts/pack-ashlar-hosting-graph.{sh,ps1} match the transitive Ashlar.* graph from Ashlar.Hosting (+ optional allowlist).
 name: Pack hosting graph alignment
 
 on:
@@ -6,10 +6,10 @@ on:
     branches: [master, main]
     paths:
       - "src/**/*.csproj"
-      - "scripts/pack-nexo-hosting-graph.sh"
-      - "scripts/pack-nexo-hosting-graph.ps1"
-      - "scripts/pack-nexo-hosting-graph.allowlist.txt"
-      - "scripts/verify-pack-nexo-hosting-graph-alignment.py"
+      - "scripts/pack-ashlar-hosting-graph.sh"
+      - "scripts/pack-ashlar-hosting-graph.ps1"
+      - "scripts/pack-ashlar-hosting-graph.allowlist.txt"
+      - "scripts/verify-pack-ashlar-hosting-graph-alignment.py"
       - "scripts/verify-nuget-org-packages-visible.sh"
       - "scripts/verify-nuget-org-restore-published-version.sh"
       - "scripts/verify-nuget-org-restore-with-isolated-cache.sh"
@@ -32,4 +32,4 @@ jobs:
             8.0.x
 
       - name: Verify pack list vs MSBuild graph
-        run: python3 scripts/verify-pack-nexo-hosting-graph-alignment.py
+        run: python3 scripts/verify-pack-ashlar-hosting-graph-alignment.py

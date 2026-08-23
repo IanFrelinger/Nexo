@@ -1,6 +1,6 @@
 # Production Readiness Gate v1
 
-This document defines a strict, repeatable gate for deciding whether Nexo is ready for production deployment in a given environment.
+This document defines a strict, repeatable gate for deciding whether Ashlar is ready for production deployment in a given environment.
 
 The gate is intentionally binary:
 
@@ -34,7 +34,7 @@ Those should run as additional gates (v2+). For a **structured program** coverin
 - .NET 8 runtime/targeting support available for `net8.0` test/build lanes.
 - Repository checked out cleanly.
 - No local uncommitted production code modifications.
-- Optional: `NEXO_PIPELINE_STORE_PROVIDER` and `NEXO_PIPELINE_STORE_PATH` available for durable resume validation.
+- Optional: `ASHLAR_PIPELINE_STORE_PROVIDER` and `ASHLAR_PIPELINE_STORE_PATH` available for durable resume validation.
 
 ---
 
@@ -42,9 +42,9 @@ Those should run as additional gates (v2+). For a **structured program** coverin
 
 ### A. Build and compatibility (required)
 
-1. `Nexo.Core.Application` builds for `netstandard2.0`.
-2. `Nexo.Infrastructure` builds.
-3. `Nexo.CLI` builds.
+1. `Ashlar.Core.Application` builds for `netstandard2.0`.
+2. `Ashlar.Infrastructure` builds.
+3. `Ashlar.CLI` builds.
 
 **Fail conditions**
 
@@ -57,7 +57,7 @@ Those should run as additional gates (v2+). For a **structured program** coverin
 
 1. Pipeline-focused infrastructure tests pass on `net8.0`.
 2. Pipeline-focused infrastructure tests pass on `net10.0`.
-3. Host DI smoke checks pass for default `AddNexo` registration with pipeline layer present.
+3. Host DI smoke checks pass for default `AddAshlar` registration with pipeline layer present.
 
 **Fail conditions**
 
@@ -115,17 +115,17 @@ Run from repo root.
 ### 4.1 Build checks
 
 ```bash
-dotnet build src/Nexo.Core.Application/Nexo.Core.Application.csproj -f netstandard2.0
-dotnet build src/Nexo.Infrastructure/Nexo.Infrastructure.csproj
-dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj
+dotnet build src/Ashlar.Core.Application/Ashlar.Core.Application.csproj -f netstandard2.0
+dotnet build src/Ashlar.Infrastructure/Ashlar.Infrastructure.csproj
+dotnet build application/src/Ashlar.CLI/Ashlar.CLI.csproj
 ```
 
 ### 4.2 Pipeline correctness checks
 
 ```bash
-dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net8.0 --filter "FullyQualifiedName~Pipelines"
-dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net10.0 --filter "FullyQualifiedName~Pipelines"
-dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net8.0 --filter "FullyQualifiedName~HostingE2ESmokeTests.AddNexo_RegistersObservationPipeline_ByDefault|FullyQualifiedName~Pipelines.PipelineServiceCollectionExtensionsTests.AddNexo_RegistersPipelineCompositionLayerByDefault"
+dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -f net8.0 --filter "FullyQualifiedName~Pipelines"
+dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -f net10.0 --filter "FullyQualifiedName~Pipelines"
+dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -f net8.0 --filter "FullyQualifiedName~HostingE2ESmokeTests.AddAshlar_RegistersObservationPipeline_ByDefault|FullyQualifiedName~Pipelines.PipelineServiceCollectionExtensionsTests.AddAshlar_RegistersPipelineCompositionLayerByDefault"
 ```
 
 ### 4.3 CLI operational checks
@@ -151,27 +151,27 @@ JSON
 Validate and run:
 
 ```bash
-dotnet run --project application/src/Nexo.CLI -- pipeline validate --template /tmp/pipeline_gate_demo.json
-dotnet run --project application/src/Nexo.CLI -- pipeline run --template /tmp/pipeline_gate_demo.json --run-id gate-run-success --format-json
-NEXO_PIPELINE_ENABLE_TEST_HOOKS=1 NEXO_PIPELINE_COMPLETION_POLICY=AllowNonCriticalStageFailures dotnet run --project application/src/Nexo.CLI -- pipeline run --template /tmp/pipeline_gate_demo.json --run-id gate-run-fallback --input "fail:hybrid:deterministic=true" --format-json
-dotnet run --project application/src/Nexo.CLI -- pipeline diagnostics --format-json
+dotnet run --project application/src/Ashlar.CLI -- pipeline validate --template /tmp/pipeline_gate_demo.json
+dotnet run --project application/src/Ashlar.CLI -- pipeline run --template /tmp/pipeline_gate_demo.json --run-id gate-run-success --format-json
+ASHLAR_PIPELINE_ENABLE_TEST_HOOKS=1 ASHLAR_PIPELINE_COMPLETION_POLICY=AllowNonCriticalStageFailures dotnet run --project application/src/Ashlar.CLI -- pipeline run --template /tmp/pipeline_gate_demo.json --run-id gate-run-fallback --input "fail:hybrid:deterministic=true" --format-json
+dotnet run --project application/src/Ashlar.CLI -- pipeline diagnostics --format-json
 ```
 
 ### 4.4 Durable resume checks (LiteDb)
 
 ```bash
-NEXO_PIPELINE_STORE_PROVIDER=LiteDb NEXO_PIPELINE_STORE_PATH=/tmp/nexo_pipeline_gate_resume.db \
-NEXO_PIPELINE_ENABLE_TEST_HOOKS=1 \
-dotnet run --project application/src/Nexo.CLI -- pipeline run --template /tmp/pipeline_gate_demo.json --run-id gate-resume-source --input "fail:ingest:deterministic=true" --format-json
+ASHLAR_PIPELINE_STORE_PROVIDER=LiteDb ASHLAR_PIPELINE_STORE_PATH=/tmp/ashlar_pipeline_gate_resume.db \
+ASHLAR_PIPELINE_ENABLE_TEST_HOOKS=1 \
+dotnet run --project application/src/Ashlar.CLI -- pipeline run --template /tmp/pipeline_gate_demo.json --run-id gate-resume-source --input "fail:ingest:deterministic=true" --format-json
 
-NEXO_PIPELINE_STORE_PROVIDER=LiteDb NEXO_PIPELINE_STORE_PATH=/tmp/nexo_pipeline_gate_resume.db \
-dotnet run --project application/src/Nexo.CLI -- pipeline run --template /tmp/pipeline_gate_demo.json --run-id gate-resume-target --resume-run-id gate-resume-source --resume-failed-stages --format-json
+ASHLAR_PIPELINE_STORE_PROVIDER=LiteDb ASHLAR_PIPELINE_STORE_PATH=/tmp/ashlar_pipeline_gate_resume.db \
+dotnet run --project application/src/Ashlar.CLI -- pipeline run --template /tmp/pipeline_gate_demo.json --run-id gate-resume-target --resume-run-id gate-resume-source --resume-failed-stages --format-json
 ```
 
 Cleanup:
 
 ```bash
-rm -f /tmp/pipeline_gate_demo.json /tmp/nexo_pipeline_gate_resume.db
+rm -f /tmp/pipeline_gate_demo.json /tmp/ashlar_pipeline_gate_resume.db
 ```
 
 ---

@@ -4,7 +4,7 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 # Prefer the gitignored, hardware-tuned copy written by optimize_agent_cluster.sh; fall back to
 # the tracked definitions when no tune has been run.
-CONFIG_PATH="${REPO_ROOT}/.nexo/runtime-studio/agent_set.local.json"
+CONFIG_PATH="${REPO_ROOT}/.ashlar/runtime-studio/agent_set.local.json"
 if [[ ! -f "${CONFIG_PATH}" ]]; then
   CONFIG_PATH="${REPO_ROOT}/apps/runtime-studio/config/agent_set.local.json"
 fi
@@ -46,7 +46,7 @@ export OLLAMA_BASE_URL="${OLLAMA_BASE_URL:-http://127.0.0.1:11434}"
 export OLLAMA_MODEL="${OLLAMA_MODEL:-llama3.1:latest}"
 
 DAEMON_CMD=(
-  dotnet run --project application/src/Nexo.CLI -- background-agent daemon
+  dotnet run --project application/src/Ashlar.CLI -- background-agent daemon
   --config "${CONFIG_PATH}"
   --duration "${DURATION}"
 )

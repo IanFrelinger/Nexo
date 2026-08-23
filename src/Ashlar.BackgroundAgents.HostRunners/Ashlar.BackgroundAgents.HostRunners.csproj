@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>12.0</LangVersion>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Ashlar.Abstractions\Ashlar.Abstractions.csproj" />
+    <ProjectReference Include="..\Ashlar.BackgroundAgents\Ashlar.BackgroundAgents.csproj" />
+    <ProjectReference Include="..\Ashlar.Core.Application\Ashlar.Core.Application.csproj" />
+    <ProjectReference Include="..\Ashlar.Policies.Dev\Ashlar.Policies.Dev.csproj" />
+    <ProjectReference Include="..\Ashlar.Runtime\Ashlar.Runtime.csproj" />
+    <ProjectReference Include="..\Ashlar.Tools.Dev\Ashlar.Tools.Dev.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MediatR" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+  </ItemGroup>
+
+</Project>

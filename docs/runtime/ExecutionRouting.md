@@ -1,9 +1,9 @@
 # Execution Routing (NCR + Peer Network + RunPod)
 
-Nexo generation execution uses a capability-driven router that chooses one of three targets:
+Ashlar generation execution uses a capability-driven router that chooses one of three targets:
 
 - local execution on the current node
-- peer execution on another Nexo node in the mesh
+- peer execution on another Ashlar node in the mesh
 - cloud execution through RunPod
 
 The default brick entry point is `generation.capability-routing`.
@@ -13,8 +13,8 @@ The default brick entry point is `generation.capability-routing`.
 - `CapabilityRoutingBrick`: default generation entry point, delegates to resolved target.
 - `NcrCapabilityRouter`: resolves local vs remote target using NCR and job requirements.
 - `NCRCapabilityPoller`: keeps local capability snapshot current (VRAM, compute class, queue depth).
-- `PeerCapabilitySnapshotPoller`: discovers peer Nexo nodes and snapshots peer capabilities.
-- `NexoPeerBrickExecutor`: dispatches routed jobs to peer nodes with retry/failover behavior.
+- `PeerCapabilitySnapshotPoller`: discovers peer Ashlar nodes and snapshots peer capabilities.
+- `AshlarPeerBrickExecutor`: dispatches routed jobs to peer nodes with retry/failover behavior.
 - `RunPodBrick`: handles full RunPod lifecycle (spin up, dispatch, poll, pull, teardown).
 
 ## Routing Inputs
@@ -61,7 +61,7 @@ Peer execution includes:
 
 ## Configuration
 
-RunPod and routing options live under `Nexo:RunPod:*`:
+RunPod and routing options live under `Ashlar:RunPod:*`:
 
 - cloud options (`ApiKey`, `BaseUrl`, `PreferredGpuTier`, `Timeout`, `PollingInterval`, `OutputStagingPath`)
 - local routing threshold (`QueueDepthThreshold`)

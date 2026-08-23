@@ -6,7 +6,7 @@ cd "$ROOT"
 
 BRANCH="${RC_GATE_GH_BRANCH:-$(git branch --show-current)}"
 MAX_AGE_HOURS="${RC_GATE_GH_MAX_AGE_HOURS:-168}"
-REPORT_DIR=".nexo/rc-gate"
+REPORT_DIR=".ashlar/rc-gate"
 mkdir -p "$REPORT_DIR"
 GH_REPORT="$REPORT_DIR/github-workflows.txt"
 : >"$GH_REPORT"

@@ -122,10 +122,10 @@ function Run-ContainerSmoke {
         if ($WithSdk.IsPresent) {
             Invoke-Step "docker run --rm -v \"$resolvedWorkspace:/work\" -w /work $SdkImage dotnet --info"
             if ($DryRun.IsPresent) {
-                Write-Host "[dry-run] docker run --rm -v `"$resolvedWorkspace:/work`" -w /work $SdkImage bash -lc 'if [ -f application/src/Nexo.CLI/Nexo.CLI.csproj ]; then dotnet restore application/src/Nexo.CLI/Nexo.CLI.csproj; else echo no_cli_project_found; fi'"
+                Write-Host "[dry-run] docker run --rm -v `"$resolvedWorkspace:/work`" -w /work $SdkImage bash -lc 'if [ -f application/src/Ashlar.CLI/Ashlar.CLI.csproj ]; then dotnet restore application/src/Ashlar.CLI/Ashlar.CLI.csproj; else echo no_cli_project_found; fi'"
             }
             else {
-                Invoke-Step "docker run --rm -v \"$resolvedWorkspace:/work\" -w /work $SdkImage sh -lc 'if [ -f application/src/Nexo.CLI/Nexo.CLI.csproj ]; then dotnet restore application/src/Nexo.CLI/Nexo.CLI.csproj; else echo no_cli_project_found; fi'"
+                Invoke-Step "docker run --rm -v \"$resolvedWorkspace:/work\" -w /work $SdkImage sh -lc 'if [ -f application/src/Ashlar.CLI/Ashlar.CLI.csproj ]; then dotnet restore application/src/Ashlar.CLI/Ashlar.CLI.csproj; else echo no_cli_project_found; fi'"
             }
         }
     }
@@ -135,13 +135,13 @@ Ensure-Windows
 
 if ($Guided.IsPresent) {
     Write-Host "============================================="
-    Write-Host " Nexo Guided Container Bootstrap (Windows)"
+    Write-Host " Ashlar Guided Container Bootstrap (Windows)"
     Write-Host "============================================="
     Write-Host ""
     Write-Host "This setup will:"
     Write-Host "  1) ensure Docker Desktop is installed"
     Write-Host "  2) verify Docker is running"
-    Write-Host "  3) pull Nexo CLI and SDK images"
+    Write-Host "  3) pull Ashlar CLI and SDK images"
     Write-Host "  4) run smoke checks"
     Write-Host ""
     Write-Host "You do NOT need to know containers to continue."
@@ -165,6 +165,6 @@ Write-Host "  docker run --rm $Image --help"
 if (-not [string]::IsNullOrWhiteSpace($Workspace)) {
     Write-Host "  docker run --rm -v \"$Workspace:/work\" -w /work $Image pipeline validate --template /work/path/to/template.json"
     if ($WithSdk.IsPresent) {
-        Write-Host "  docker run --rm -v \"$Workspace:/work\" -w /work $SdkImage dotnet restore application/src/Nexo.CLI/Nexo.CLI.csproj"
+        Write-Host "  docker run --rm -v \"$Workspace:/work\" -w /work $SdkImage dotnet restore application/src/Ashlar.CLI/Ashlar.CLI.csproj"
     }
 }

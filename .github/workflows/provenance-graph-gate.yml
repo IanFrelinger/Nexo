@@ -4,8 +4,8 @@ on:
   workflow_dispatch:
   pull_request:
     paths:
-      - 'applications/Nexo.Provenance.Graph/**'
-      - 'applications/Nexo.Provenance.Graph.Tests/**'
+      - 'applications/Ashlar.Provenance.Graph/**'
+      - 'applications/Ashlar.Provenance.Graph.Tests/**'
       - 'deploy/compose/docker-compose.provenance.yml'
       - '.github/workflows/provenance-graph-gate.yml'
 
@@ -24,7 +24,7 @@ jobs:
             10.0.x
             8.0.x
       - name: Run provenance graph unit tests
-        run: dotnet test applications/Nexo.Provenance.Graph.Tests/Nexo.Provenance.Graph.Tests.csproj --filter "Category!=Integration" --configuration Release
+        run: dotnet test applications/Ashlar.Provenance.Graph.Tests/Ashlar.Provenance.Graph.Tests.csproj --filter "Category!=Integration" --configuration Release
 
   integration-tests:
     runs-on: ubuntu-latest
@@ -38,5 +38,5 @@ jobs:
             8.0.x
       - name: Run provenance graph Neo4j integration tests
         env:
-          NEXO_RUN_NEO4J_CONTAINER: "1"
-        run: dotnet test applications/Nexo.Provenance.Graph.Tests/Nexo.Provenance.Graph.Tests.csproj --filter "Category=Integration" --configuration Release
+          ASHLAR_RUN_NEO4J_CONTAINER: "1"
+        run: dotnet test applications/Ashlar.Provenance.Graph.Tests/Ashlar.Provenance.Graph.Tests.csproj --filter "Category=Integration" --configuration Release

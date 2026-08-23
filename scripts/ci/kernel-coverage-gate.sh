@@ -5,25 +5,25 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 cd "$ROOT"
 mkdir -p CoverageReports
 
-echo "== Domain (Nexo.Core.Domain) line coverage: 100% required =="
-dotnet test src/Nexo.Tests.Domain/Nexo.Tests.Domain.csproj \
+echo "== Domain (Ashlar.Core.Domain) line coverage: 100% required =="
+dotnet test src/Ashlar.Tests.Domain/Ashlar.Tests.Domain.csproj \
   /p:CollectCoverage=true \
   /p:CoverletOutput="$ROOT/CoverageReports/domain" \
   /p:CoverletOutputFormat=cobertura \
-  /p:Include="[Nexo.Core.Domain]*" \
+  /p:Include="[Ashlar.Core.Domain]*" \
   /p:Threshold="${DOMAIN_COVERAGE_THRESHOLD:-100}" \
   /p:ThresholdType=line \
   --verbosity minimal
 
 
-# == Infrastructure (Nexo.Infrastructure) ==
+# == Infrastructure (Ashlar.Infrastructure) ==
 #
 # RESTORED. Four defects blocked this step, each hidden by the one before it, all now
 # fixed:
 #
 #   1. Collectible-AssemblyLoadContext crash in the certification mutation engine.
 #   2. A DI cycle that hung API host startup (registry -> self-extend -> registry).
-#   3. AddNexoFederatedBrickMesh recursing into its own registration, so a test never
+#   3. AddAshlarFederatedBrickMesh recursing into its own registration, so a test never
 #      completed and the test host never exited -- which is what actually starved this
 #      step, since coverlet writes its report only after the host exits.
 #   4. ProviderFactory doing blocking network I/O in its constructor.
@@ -47,29 +47,29 @@ dotnet test src/Nexo.Tests.Domain/Nexo.Tests.Domain.csproj \
 # Related: TestRunnerAdapter.ExecuteTestAsync abandons its runTask on the timeout path
 # (latent, separate); OllamaProvider still blocks in its constructor (separate).
 echo ""
-echo "== Infrastructure (Nexo.Infrastructure) line coverage: ${INFRA_COVERAGE_THRESHOLD:-80}% floor (measured 80.3%; target 83) =="
+echo "== Infrastructure (Ashlar.Infrastructure) line coverage: ${INFRA_COVERAGE_THRESHOLD:-80}% floor (measured 80.3%; target 83) =="
 # Daemon black-box tests excluded from the COVERAGE run only: ~7.5 min of spawned-
-# process timeouts whose work cannot be attributed to [Nexo.Infrastructure] anyway.
+# process timeouts whose work cannot be attributed to [Ashlar.Infrastructure] anyway.
 # Category=External (Mapbox etc.) excluded too: those hit the public internet, so a
 # transient egress blip turned the README badge red on 2026-08-15. Their helpers
 # (MapboxTileUrls/Validators/TileMath) live in the test assembly, not
-# [Nexo.Infrastructure], so dropping them costs no measured coverage.
-dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -f net10.0 \
+# [Ashlar.Infrastructure], so dropping them costs no measured coverage.
+dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -f net10.0 \
   --filter "FullyQualifiedName!~RuntimeStudioBlackBoxSmokeTests&Category!=External" \
   /p:CollectCoverage=true \
   /p:CoverletOutput="$ROOT/CoverageReports/infra" \
   /p:CoverletOutputFormat=cobertura \
-  /p:Include="[Nexo.Infrastructure]*" \
+  /p:Include="[Ashlar.Infrastructure]*" \
   /p:Threshold="${INFRA_COVERAGE_THRESHOLD:-80}" \
   /p:ThresholdType=line \
   --verbosity minimal
 echo ""
 echo "== Core.Application line coverage: ${APP_COVERAGE_THRESHOLD:-67}% floor =="
-dotnet test src/Nexo.Tests.Application/Nexo.Tests.Application.csproj \
+dotnet test src/Ashlar.Tests.Application/Ashlar.Tests.Application.csproj \
   /p:CollectCoverage=true \
   /p:CoverletOutput="$ROOT/CoverageReports/app" \
   /p:CoverletOutputFormat=cobertura \
-  /p:Include="[Nexo.Core.Application]*" \
+  /p:Include="[Ashlar.Core.Application]*" \
   /p:Threshold="${APP_COVERAGE_THRESHOLD:-67}" \
   /p:ThresholdType=line \
   --verbosity minimal

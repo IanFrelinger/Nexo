@@ -4,7 +4,7 @@ Thin integration patterns so **Unity**, **Godot**, or other hosts consume the sa
 
 - **`GET /api/forge/engine/{engineId}/aesthetic-manifest`** — bind surface roles to materials/shaders.
 - **`GET /api/forge/map/tile-pyramid`** — drive prefetch distance / streaming zoom.
-- **`GET /api/forge/map/material-hints`** — procedural colours + LOD notes without tessellation in Nexo.API.
+- **`GET /api/forge/map/material-hints`** — procedural colours + LOD notes without tessellation in Ashlar.API.
 
 On-disk layouts (copy into a game repo):
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SmolVLM2 Video Understanding API for Nexo. Model runs in Docker; C# service calls this."""
+"""SmolVLM2 Video Understanding API for Ashlar. Model runs in Docker; C# service calls this."""
 import os
 import tempfile
 import time

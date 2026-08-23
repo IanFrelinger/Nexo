@@ -1,26 +1,26 @@
 # Middleware ingress (HTTP, MediatR, WebSocket lab, SMS lab, AWS follow-on)
 
-This document closes the operational gaps around **multi-transport middleware**: how headers flow into Nexo, how MediatR sees them, what is implemented in-process versus what belongs in AWS, and how to gate spend.
+This document closes the operational gaps around **multi-transport middleware**: how headers flow into Ashlar, how MediatR sees them, what is implemented in-process versus what belongs in AWS, and how to gate spend.
 
 ## In-repo surfaces
 
 | Surface | Route / artifact | Purpose |
 |--------|-------------------|---------|
-| Correlation | `X-Correlation-Id` (in + out), `Activity` tag `nexo.correlation_id` | End-to-end tracing. |
-| Ingress envelope | `X-Nexo-Tenant`, `X-Nexo-App-Id`, `X-Idempotency-Key`, `X-Nexo-Payload-Version` | Adapter-agnostic metadata on HTTP requests. |
+| Correlation | `X-Correlation-Id` (in + out), `Activity` tag `ashlar.correlation_id` | End-to-end tracing. |
+| Ingress envelope | `X-Ashlar-Tenant`, `X-Ashlar-App-Id`, `X-Idempotency-Key`, `X-Ashlar-Payload-Version` | Adapter-agnostic metadata on HTTP requests. |
 | Operator echo | `GET /api/middleware/correlation-echo` | Quick sanity check. |
 | Operator snapshot | `GET /api/middleware/ingress-context` | JSON view of mapped ingress (tests + debugging). |
 | Catalog | `GET /api/middleware/ingress-catalog` | Static list of ingress seams (HTTP, Forge, WS lab, SMS lab, Swagger). |
-| OpenAPI | `/swagger/v1/swagger.json`, Swagger UI | Contract visibility for integrators. Served only in `Development` or with `Nexo__Api__EnableSwagger=true` (`docs/Configuration.md`, "Nexo.API host"). |
+| OpenAPI | `/swagger/v1/swagger.json`, Swagger UI | Contract visibility for integrators. Served only in `Development` or with `Ashlar__Api__EnableSwagger=true` (`docs/Configuration.md`, "Ashlar.API host"). |
 | WebSocket lab | `GET /ws/v1/echo` | Feature-flagged echo (JSON hello + text echo). |
 | SMS lab | `POST /api/ingress/sms/simulate` | Parses `YES <token>`; in-memory idempotent store. **Not** signed AWS callbacks. |
-| AWS SNS webhook | `POST /api/ingress/sms/sns` | Optional signed SNS → same approval store (`Nexo.Ingress.AwsSns` helpers). |
+| AWS SNS webhook | `POST /api/ingress/sms/sns` | Optional signed SNS → same approval store (`Ashlar.Ingress.AwsSns` helpers). |
 
-Configuration: `Nexo:MiddlewareIngress` (`EnableWebSocketIngress`, `EnableSmsSimulationIngress`, `SmsSimulationAllowedAppIds`, `SmsIngressApprovalStore`, `EnableAwsSnsSmsWebhook`, `AwsSnsAllowedTopicArnPrefixes`, `AwsSnsAllowedAppIds`, `AwsSnsAutoConfirmSubscription`, `AwsSnsSkipSignatureVerification`, `AwsSnsSigningCertificateRevocationMode`, `IngressSmsPostRateLimitPermitLimit`, `IngressSmsPostRateLimitWindowSeconds`, `DisabledCapabilities`, `TenantCapabilityAllowlists`) and `Nexo:SmsIngressDynamoDb` (`TableName` when using DynamoDB).
+Configuration: `Ashlar:MiddlewareIngress` (`EnableWebSocketIngress`, `EnableSmsSimulationIngress`, `SmsSimulationAllowedAppIds`, `SmsIngressApprovalStore`, `EnableAwsSnsSmsWebhook`, `AwsSnsAllowedTopicArnPrefixes`, `AwsSnsAllowedAppIds`, `AwsSnsAutoConfirmSubscription`, `AwsSnsSkipSignatureVerification`, `AwsSnsSigningCertificateRevocationMode`, `IngressSmsPostRateLimitPermitLimit`, `IngressSmsPostRateLimitWindowSeconds`, `DisabledCapabilities`, `TenantCapabilityAllowlists`) and `Ashlar:SmsIngressDynamoDb` (`TableName` when using DynamoDB).
 
-## `Nexo.Ingress.AwsSns` (library)
+## `Ashlar.Ingress.AwsSns` (library)
 
-Small helpers used by Nexo.API (not AWS SDK–heavy):
+Small helpers used by Ashlar.API (not AWS SDK–heavy):
 
 - **`SnsCanonicalStringBuilder`** — builds the SNS string-to-sign for `Notification` and subscription handshake types.
 - **`SnsRsaSignatureVerifier`** — downloads the PEM from `SigningCertURL` (HTTPS + `*.amazonaws.com` host allowlist), validates an **Amazon-anchored X.509 chain** (system trust first, then **Amazon Root CA 1** embedded as a custom root fallback; revocation mode from `AwsSnsSigningCertificateRevocationMode`), and verifies `SignatureVersion` 1 (SHA-1) or 2 (SHA-256).
@@ -28,21 +28,21 @@ Small helpers used by Nexo.API (not AWS SDK–heavy):
 
 `AwsSnsSkipSignatureVerification` is honored **only** when `IHostEnvironment.EnvironmentName` is `Testing` (integration tests). Outside `Testing`, if `EnableAwsSnsSmsWebhook` is **true**, **`AwsSnsAllowedTopicArnPrefixes` must be non-empty** or the host fails `ValidateOnStart` (fail-closed against open-ended topic acceptance).
 
-Optional **`AwsSnsAllowedAppIds`** enforces `X-Nexo-App-Id` on the SNS route (parity with SMS simulation app allowlists).
+Optional **`AwsSnsAllowedAppIds`** enforces `X-Ashlar-App-Id` on the SNS route (parity with SMS simulation app allowlists).
 
 ## Approval storage (`ISmsIngressApprovalStore`)
 
 - **`Memory`** (default) — process-local `ConcurrentDictionary` for labs and CI.
-- **`DynamoDb`** — set `SmsIngressApprovalStore` to `DynamoDb` and `Nexo:SmsIngressDynamoDb:TableName`. Table uses string keys **`pk`** (constant `NexoSmsIngress`) and **`sk`** (idempotency key from `SmsIngressExternalIds`). Grant the runtime identity `dynamodb:PutItem` and `dynamodb:GetItem`.
-- **`UnsupportedSmsIngressApprovalStore`** — registered via `TryAddSingleton` in `AddNexo()` when no host-specific store is configured (e.g. CLI). Nexo.API replaces this with Memory or DynamoDB.
+- **`DynamoDb`** — set `SmsIngressApprovalStore` to `DynamoDb` and `Ashlar:SmsIngressDynamoDb:TableName`. Table uses string keys **`pk`** (constant `AshlarSmsIngress`) and **`sk`** (idempotency key from `SmsIngressExternalIds`). Grant the runtime identity `dynamodb:PutItem` and `dynamodb:GetItem`.
+- **`UnsupportedSmsIngressApprovalStore`** — registered via `TryAddSingleton` in `AddAshlar()` when no host-specific store is configured (e.g. CLI). Ashlar.API replaces this with Memory or DynamoDB.
 
-**Optional end-to-end check (DynamoDB Local in Docker):** `Nexo.Tests.Infrastructure` includes `DynamoDbSmsIngressDockerTests` (Testcontainers, trait `DockerOptional`). Set **`NEXO_RUN_DYNAMODB_CONTAINER=1`** and run tests with Docker available to exercise `DynamoDbSmsIngressApprovalStore` against a real DynamoDB Local process (no AWS account). Default CI runs skip this (no env set).
+**Optional end-to-end check (DynamoDB Local in Docker):** `Ashlar.Tests.Infrastructure` includes `DynamoDbSmsIngressDockerTests` (Testcontainers, trait `DockerOptional`). Set **`ASHLAR_RUN_DYNAMODB_CONTAINER=1`** and run tests with Docker available to exercise `DynamoDbSmsIngressApprovalStore` against a real DynamoDB Local process (no AWS account). Default CI runs skip this (no env set).
 
-The interface lives in **`Nexo.Contracts`** so Lambda workers can share the contract without referencing `Nexo.API`.
+The interface lives in **`Ashlar.Contracts`** so Lambda workers can share the contract without referencing `Ashlar.API`.
 
 ## MediatR command
 
-`RecordSmsYesApprovalCommand` / `RecordSmsYesApprovalHandler` (in `Nexo.API`) record approvals through **MediatR** so pipeline behaviors (ingress logging, validation) apply consistently. `POST /api/ingress/sms/simulate` and SNS `Notification` handling both dispatch this command.
+`RecordSmsYesApprovalCommand` / `RecordSmsYesApprovalHandler` (in `Ashlar.API`) record approvals through **MediatR** so pipeline behaviors (ingress logging, validation) apply consistently. `POST /api/ingress/sms/simulate` and SNS `Notification` handling both dispatch this command.
 
 ## Rate limiting and revocation
 
@@ -51,7 +51,7 @@ The interface lives in **`Nexo.Contracts`** so Lambda workers can share the cont
 
 ## Terraform and WAF
 
-`infra/terraform/nexo-sms-ingress/` provisions the DynamoDB table and an **optional** regional WAFv2 Web ACL with a rate-based rule (`create_waf` + `alb_arn`). Tune limits for your traffic.
+`infra/terraform/ashlar-sms-ingress/` provisions the DynamoDB table and an **optional** regional WAFv2 Web ACL with a rate-based rule (`create_waf` + `alb_arn`). Tune limits for your traffic.
 
 ## Step Functions sample
 
@@ -59,13 +59,13 @@ The interface lives in **`Nexo.Contracts`** so Lambda workers can share the cont
 
 ## Sample Lambda forwarder
 
-See **`samples/aws-sns-nexo-lambda/`** — minimal Node.js Lambda that reshapes SNS subscription events into the HTTP JSON document Nexo verifies, then `POST`s to `NEXO_SMS_URL`.
+See **`samples/aws-sns-ashlar-lambda/`** — minimal Node.js Lambda that reshapes SNS subscription events into the HTTP JSON document Ashlar verifies, then `POST`s to `ASHLAR_SMS_URL`.
 
-## MediatR and `INexoIngressAccessor`
+## MediatR and `IAshlarIngressAccessor`
 
-- **`INexoIngressAccessor`** exposes correlation, transport, tenant, app id, idempotency, and payload version. Nexo.API registers **`HttpNexoIngressAccessor`** before `AddNexo()` so it overrides the default no-op.
-- **`IngressLoggingPipelineBehavior`** (registered in `AddNexo`) wraps every MediatR request in a logging scope when `CorrelationId` is present, so handlers and validators inherit structured logging fields without changing individual commands.
-- CLI and non-web hosts keep **`NoOpNexoIngressAccessor`** via `TryAddSingleton` when no HTTP implementation is registered.
+- **`IAshlarIngressAccessor`** exposes correlation, transport, tenant, app id, idempotency, and payload version. Ashlar.API registers **`HttpAshlarIngressAccessor`** before `AddAshlar()` so it overrides the default no-op.
+- **`IngressLoggingPipelineBehavior`** (registered in `AddAshlar`) wraps every MediatR request in a logging scope when `CorrelationId` is present, so handlers and validators inherit structured logging fields without changing individual commands.
+- CLI and non-web hosts keep **`NoOpAshlarIngressAccessor`** via `TryAddSingleton` when no HTTP implementation is registered.
 
 Handlers that need full detail can also call `HttpContext.GetIngressEnvelope()` in the API layer.
 
@@ -79,9 +79,9 @@ The lab endpoint exists to **parse and unit-test** approval keywords. A producti
 4. **IAM**: OIDC from GitHub Actions to a **least-privilege role**; never long-lived keys in the repo.
 5. **Cost**: **AWS Budgets** + billing alarms; fixed **EC2** or **Lambda** memory/timeouts for workers that apply approvals.
 
-Wire contract: treat Lambda’s normalized payload as the same conceptual shape as `SmsInboundSimulationRequest` (from, body, stable external id for idempotency) and map into your approval store interface in application code **outside** Nexo.API if you want strict network boundaries.
+Wire contract: treat Lambda’s normalized payload as the same conceptual shape as `SmsInboundSimulationRequest` (from, body, stable external id for idempotency) and map into your approval store interface in application code **outside** Ashlar.API if you want strict network boundaries.
 
-For HTTP(S) subscriptions directly to Nexo.API, **`POST /api/ingress/sms/sns`** reuses **`ISmsIngressApprovalStore`** after signature verification. Prefer a dedicated Lambda (see `samples/aws-sns-nexo-lambda/`) or private networking in front of Nexo when the API is not meant to be Internet-exposed.
+For HTTP(S) subscriptions directly to Ashlar.API, **`POST /api/ingress/sms/sns`** reuses **`ISmsIngressApprovalStore`** after signature verification. Prefer a dedicated Lambda (see `samples/aws-sns-ashlar-lambda/`) or private networking in front of Ashlar when the API is not meant to be Internet-exposed.
 
 ## GitHub approval without SMS
 
@@ -92,19 +92,19 @@ Use **GitHub Environments** with required reviewers on the job that assumes AWS 
 From repo root against a running API:
 
 ```bash
-NEXO_BASE_URL=http://127.0.0.1:8080 ./scripts/middleware-ingress-smoke.sh
+ASHLAR_BASE_URL=http://127.0.0.1:8080 ./scripts/middleware-ingress-smoke.sh
 ```
 
-Set `RUN_SMS_SMOKE=1` only when `EnableSmsSimulationIngress` is true on the server. The Swagger step needs the server started in `Development` or with `Nexo__Api__EnableSwagger=true`.
+Set `RUN_SMS_SMOKE=1` only when `EnableSmsSimulationIngress` is true on the server. The Swagger step needs the server started in `Development` or with `Ashlar__Api__EnableSwagger=true`.
 
 ## Tests
 
-Integration coverage lives in `Nexo.Tests.Infrastructure` → `MiddlewareIngressIntegrationTests` (net8.0 `WebApplicationFactory` host).
+Integration coverage lives in `Ashlar.Tests.Infrastructure` → `MiddlewareIngressIntegrationTests` (net8.0 `WebApplicationFactory` host).
 
 From repo root, full solution tests (matches `make test`):
 
 ```bash
-NEXO_ALLOW_MOCK=1 dotnet test Nexo.sln --blame-hang-timeout 120s --blame-hang-dump-type none
+ASHLAR_ALLOW_MOCK=1 dotnet test Ashlar.sln --blame-hang-timeout 120s --blame-hang-dump-type none
 ```
 
-`NEXO_ALLOW_MOCK=1` is required for mock-provider integration tests; `make test` sets this automatically.
+`ASHLAR_ALLOW_MOCK=1` is required for mock-provider integration tests; `make test` sets this automatically.

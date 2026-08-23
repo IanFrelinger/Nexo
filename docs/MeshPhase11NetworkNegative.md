@@ -28,7 +28,7 @@ Skip: `MESH_LAB_SKIP_NETWORK_NEGATIVE_VERIFY=1`
 ## What this does not replace
 
 - **TLS / Tailscale / two physical hosts** — see [`docs/runbooks/mesh-lab-operations.md`](runbooks/mesh-lab-operations.md) manual checklist.
-- **gRPC capability transport** — `dotnet test src/Nexo.Tests.Transport`.
+- **gRPC capability transport** — `dotnet test src/Ashlar.Tests.Transport`.
 
 ## Revision history
 

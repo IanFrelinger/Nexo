@@ -24,7 +24,7 @@ If that segment is too narrow for your network, the same playbook works for **mi
 
 | Element | Recommendation |
 |---------|------------------|
-| **SKU** | **Nexo Private — Team** annual prepay at a **founder discount** (example band: **$3k–$12k ARR** for first 3 logos if you need logos more than margin) |
+| **SKU** | **Ashlar Private — Team** annual prepay at a **founder discount** (example band: **$3k–$12k ARR** for first 3 logos if you need logos more than margin) |
 | **Includes** | Email support, upgrade path, license for N seats, documented limits |
 | **They bring** | Their AWS/GCP, their Postgres, **BYOK** for models |
 

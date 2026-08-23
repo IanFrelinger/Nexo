@@ -1,6 +1,6 @@
 # Products and business plan (runtime-first)
 
-This document assumes **one underlying Nexo runtime** (composable AI workflows, trust boundaries, audit trail, optional federation, self-extending capabilities). **Products** are how that runtime is **packaged, deployed, sold, and supported**—not separate engines. Tiered pricing detail lives in [`MonetizationProductDesign.md`](./MonetizationProductDesign.md); here we define **what you sell**, **who buys it**, and **how the business operates around it**.
+This document assumes **one underlying Ashlar runtime** (composable AI workflows, trust boundaries, audit trail, optional federation, self-extending capabilities). **Products** are how that runtime is **packaged, deployed, sold, and supported**—not separate engines. Tiered pricing detail lives in [`MonetizationProductDesign.md`](./MonetizationProductDesign.md); here we define **what you sell**, **who buys it**, and **how the business operates around it**.
 
 ---
 
@@ -31,7 +31,7 @@ This document assumes **one underlying Nexo runtime** (composable AI workflows, 
 
 Below are **five** coherent SKUs. You can launch with **two** (Cloud + Self-host) and add the rest as the same runtime matures.
 
-### Product A — **Nexo Cloud** (hosted multi-tenant)
+### Product A — **Ashlar Cloud** (hosted multi-tenant)
 
 | Dimension | Choice |
 |-----------|--------|
@@ -42,7 +42,7 @@ Below are **five** coherent SKUs. You can launch with **two** (Cloud + Self-host
 | **You invest in** | Onboarding UX, abuse prevention, metering, status page, lightweight support |
 | **Runtime branch** | Full portal + cloud control plane; federation optional/off |
 
-### Product B — **Nexo Private** (customer VPC / self-hosted license)
+### Product B — **Ashlar Private** (customer VPC / self-hosted license)
 
 | Dimension | Choice |
 |-----------|--------|
@@ -53,7 +53,7 @@ Below are **five** coherent SKUs. You can launch with **two** (Cloud + Self-host
 | **You invest in** | Installers, upgrade path, air-gap docs, license telemetry (counts only, configurable off) |
 | **Runtime branch** | Full runtime + portal on their infra; billing may be external (invoice) |
 
-### Product C — **Nexo Enterprise** (contract + SLA + PS)
+### Product C — **Ashlar Enterprise** (contract + SLA + PS)
 
 | Dimension | Choice |
 |-----------|--------|
@@ -64,7 +64,7 @@ Below are **five** coherent SKUs. You can launch with **two** (Cloud + Self-host
 | **You invest in** | Security questionnaire pack, architecture reviews, CSM/part-time SRE on largest deals |
 | **Runtime branch** | Same as B with **hard isolation** profiles, SSO, audit export guarantees, optional federation for mesh |
 
-### Product D — **Nexo Automation** (API-first / headless for builders)
+### Product D — **Ashlar Automation** (API-first / headless for builders)
 
 | Dimension | Choice |
 |-----------|--------|
@@ -73,9 +73,9 @@ Below are **five** coherent SKUs. You can launch with **two** (Cloud + Self-host
 | **Delivery** | Container image + API keys; Cloud or Private pricing applies |
 | **Revenue** | Bundled into A/B/C or **usage-based API** tier (environments + monthly job bundles) |
 | **You invest in** | API versioning, SDKs, rate limits, partner docs |
-| **Runtime branch** | Thin UI; same execution and audit; marketing as “headless Nexo” |
+| **Runtime branch** | Thin UI; same execution and audit; marketing as “headless Ashlar” |
 
-### Product E — **Nexo Mesh** (federated capability network) *[optional second act]*
+### Product E — **Ashlar Mesh** (federated capability network) *[optional second act]*
 
 | Dimension | Choice |
 |-----------|--------|
@@ -112,7 +112,7 @@ Become the **default runtime** for teams that need **structured, auditable AI wo
 
 ### 5.2 Positioning (one sentence)
 
-**“Nexo is the trust-first AI workflow runtime: run it in our cloud for speed, or in yours for control—the same engine, policies, and audit trail.”**
+**“Ashlar is the trust-first AI workflow runtime: run it in our cloud for speed, or in yours for control—the same engine, policies, and audit trail.”**
 
 ### 5.3 Year-one objectives (outcomes, not dates)
 
@@ -129,7 +129,7 @@ Become the **default runtime** for teams that need **structured, auditable AI wo
 | **PLG / self-serve** | A | Product-led signup, docs, templates, community |
 | **Bottom-up + land** | A → C | Team starts on Cloud; procurement upgrades to Private/Enterprise |
 | **Top-down** | C, B | Outbound to security-conscious eng leaders; design partner pilots |
-| **Partner** | B, C | MSPs and consultancies implement Nexo Private for clients (rev-share or referral later) |
+| **Partner** | B, C | MSPs and consultancies implement Ashlar Private for clients (rev-share or referral later) |
 
 **ICP (primary):** treat this as a **hypothesis** until validated; see [`ICPResearchMemo.md`](./ICPResearchMemo.md) for ranked segments (regulated internal AI platform, security-first SaaS vendors, mid-market platform engineering) and a 30-day discovery plan. The previous one-line summary was: software engineering organizations (roughly 50–2000 engineers) in regulated or security-sensitive industries **or** vendors building **customer-facing** AI features who need an internal “compliance-ready” execution layer.
 

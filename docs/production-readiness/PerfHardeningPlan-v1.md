@@ -20,7 +20,7 @@ Regression backstop after **RC gate** — latency/throughput baselines before ta
 | `PERF_GATE_SKIP_PRIOR=1` | Skip RC prerequisite (default in `perf-gate-full`) |
 | `PERF_GATE_SKIP_TIER_D=1` | Skip soak tier |
 | `PERF_GATE_SOAK_MINUTES=30` | Tier D: run 30-minute soak |
-| `PERF_GATE_STRICT_BASELINE=1` | Fail on regression vs `.nexo/perf/baseline.json` |
+| `PERF_GATE_STRICT_BASELINE=1` | Fail on regression vs `.ashlar/perf/baseline.json` |
 | `PERF_GATE_UPDATE_BASELINE=1` | Refresh baseline after run |
 
 ## Related

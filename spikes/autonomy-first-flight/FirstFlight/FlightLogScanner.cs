@@ -1,8 +1,8 @@
-using Nexo.Core.Application.Certification.Models;
-using Nexo.Core.Domain.Bricks;
-using Nexo.Core.Domain.Execution;
+using Ashlar.Core.Application.Certification.Models;
+using Ashlar.Core.Domain.Bricks;
+using Ashlar.Core.Domain.Execution;
 
-namespace Nexo.Spikes.FirstFlight;
+namespace Ashlar.Spikes.FirstFlight;
 
 /// <summary>
 /// The flight's scratch brick — the same deterministic log-scanner shape the gate-teeth
@@ -70,10 +70,10 @@ public static class FlightLogScannerSource
     public const string BrickId = "first-flight-log-scanner";
 
     public const string Code = """
-using Nexo.Core.Domain.Bricks;
-using Nexo.Core.Domain.Execution;
+using Ashlar.Core.Domain.Bricks;
+using Ashlar.Core.Domain.Execution;
 
-namespace Nexo.Spikes.FirstFlight;
+namespace Ashlar.Spikes.FirstFlight;
 
 public sealed class FlightLogScannerBrick : DomainBrick
 {
@@ -212,7 +212,7 @@ public sealed class FlightLogScannerBrick : DomainBrick
         File.WriteAllText(path, """
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
-    <PackageReference Include="Nexo.Brick.Contracts" Version="0.1.0" />
+    <PackageReference Include="Ashlar.Brick.Contracts" Version="0.1.0" />
   </ItemGroup>
 </Project>
 """);

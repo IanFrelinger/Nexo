@@ -34,25 +34,25 @@ source_env_kv() {
   grep -E "^${key}=" "$COMPOSE_ENV_FILE" 2>/dev/null | head -1 | cut -d= -f2- | tr -d '\r' || true
 }
 
-API_KEY="$(source_env_kv Nexo__Security__ApiKey)"
+API_KEY="$(source_env_kv Ashlar__Security__ApiKey)"
 MESH_LAB_PEER_REGISTRATION_KEY="$(source_env_kv MESH_LAB_PEER_REGISTRATION_KEY)"
 export MESH_LAB_PEER_REGISTRATION_KEY
 
 if [[ -z "$API_KEY" ]]; then
-  echo "(Skipping network-negative verify: no Nexo__Security__ApiKey in env file)"
+  echo "(Skipping network-negative verify: no Ashlar__Security__ApiKey in env file)"
   exit 0
 fi
 
 mesh_post() {
-  curl -fsS -X POST -H "Content-Type: application/json" -H "X-Nexo-Api-Key: ${API_KEY}" "$@"
+  curl -fsS -X POST -H "Content-Type: application/json" -H "X-Ashlar-Api-Key: ${API_KEY}" "$@"
 }
 
 mesh_post_code() {
-  curl -s -o /dev/null -w '%{http_code}' -X POST -H "Content-Type: application/json" -H "X-Nexo-Api-Key: ${API_KEY}" "$@"
+  curl -s -o /dev/null -w '%{http_code}' -X POST -H "Content-Type: application/json" -H "X-Ashlar-Api-Key: ${API_KEY}" "$@"
 }
 
 mesh_delete() {
-  curl -fsS -X DELETE -H "X-Nexo-Api-Key: ${API_KEY}" "$@"
+  curl -fsS -X DELETE -H "X-Ashlar-Api-Key: ${API_KEY}" "$@"
 }
 
 cleanup_test_peers() {
@@ -63,7 +63,7 @@ cleanup_test_peers() {
 }
 
 mesh_patch() {
-  curl -fsS -X PATCH -H "Content-Type: application/json" -H "X-Nexo-Api-Key: ${API_KEY}" "$@"
+  curl -fsS -X PATCH -H "Content-Type: application/json" -H "X-Ashlar-Api-Key: ${API_KEY}" "$@"
 }
 
 restore_verify_peer() {
@@ -141,7 +141,7 @@ if [[ "$DRAIN_CODE" != "400" ]]; then
   echo "Expected HTTP 400 scheduling with only drained peer, got ${DRAIN_CODE}" >&2
   exit 1
 fi
-DRAIN_GET="$(curl -fsS -H "X-Nexo-Api-Key: ${API_KEY}" "http://${PEER_A_HOST}/api/mesh/tasks/${DRAIN_ID}")"
+DRAIN_GET="$(curl -fsS -H "X-Ashlar-Api-Key: ${API_KEY}" "http://${PEER_A_HOST}/api/mesh/tasks/${DRAIN_ID}")"
 echo "$DRAIN_GET" | python3 -c '
 import json, sys
 reason = json.load(sys.stdin).get("placementReason") or ""
@@ -191,7 +191,7 @@ mesh_patch -d "{\"status\":3,\"leaseToken\":\"${LEASE_TOKEN}\",\"resultSummary\"
 echo "Director PATCH after peer-b recovery — OK"
 
 # --- 5) Director restart: LiteDB task + lease survive (when persistence enabled) ---
-PERSIST_PROVIDER="$(source_env_kv Nexo__Mesh__Persistence__Provider)"
+PERSIST_PROVIDER="$(source_env_kv Ashlar__Mesh__Persistence__Provider)"
 [[ -n "$PERSIST_PROVIDER" ]] || PERSIST_PROVIDER="LiteDb"
 if [[ "$(echo "${PERSIST_PROVIDER}" | tr '[:upper:]' '[:lower:]')" == "litedb" ]]; then
   mesh_delete "http://${PEER_A_HOST}/api/mesh/fleet/nodes/mesh-lab-net-live" >/dev/null 2>&1 || true
@@ -209,7 +209,7 @@ if [[ "$(echo "${PERSIST_PROVIDER}" | tr '[:upper:]' '[:lower:]')" == "litedb" ]
   mesh_lab_compose restart peer-a >/dev/null
   mesh_lab_wait_peer_a
 
-  RST_GET="$(curl -fsS -H "X-Nexo-Api-Key: ${API_KEY}" "http://${PEER_A_HOST}/api/mesh/tasks/${RST_ID}")"
+  RST_GET="$(curl -fsS -H "X-Ashlar-Api-Key: ${API_KEY}" "http://${PEER_A_HOST}/api/mesh/tasks/${RST_ID}")"
   echo "$RST_GET" | python3 -c '
 import json, sys
 t = json.load(sys.stdin)
@@ -222,7 +222,7 @@ if not (t.get("leaseToken") or "").strip():
 print("Task + lease survived director restart — OK")
 '
 
-  curl -fsS -X PATCH -H "Content-Type: application/json" -H "X-Nexo-Api-Key: ${API_KEY}" \
+  curl -fsS -X PATCH -H "Content-Type: application/json" -H "X-Ashlar-Api-Key: ${API_KEY}" \
     -d "{\"status\":2,\"leaseToken\":\"${RST_LEASE}\",\"reason\":\"mesh-lab-net-after-restart\"}" \
     "http://${PEER_A_HOST}/api/mesh/tasks/${RST_ID}/status" >/dev/null
   echo "Lease still valid for PATCH after director restart — OK"

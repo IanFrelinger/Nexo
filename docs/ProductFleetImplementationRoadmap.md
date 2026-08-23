@@ -1,6 +1,6 @@
 # Product fleet — implementation roadmap
 
-This is the **engineering, operations, and go-to-market sequence** for turning the single Nexo runtime into the product lines described in [`ProductsAndBusinessPlan.md`](./ProductsAndBusinessPlan.md). Phases overlap; order is **risk-reduction first** (sellable Private path before multi-tenant Cloud unless you explicitly bet on PLG first).
+This is the **engineering, operations, and go-to-market sequence** for turning the single Ashlar runtime into the product lines described in [`ProductsAndBusinessPlan.md`](./ProductsAndBusinessPlan.md). Phases overlap; order is **risk-reduction first** (sellable Private path before multi-tenant Cloud unless you explicitly bet on PLG first).
 
 ---
 
@@ -17,9 +17,9 @@ This is the **engineering, operations, and go-to-market sequence** for turning t
 
 | Step | What to implement | Done means | Status |
 |------|-------------------|------------|--------|
-| 0.1 | **Tenant model** end-to-end: stable `tenant_id` (or org id) on every job, audit row, artifact, and API key | Cross-tenant access tests fail in CI | **Done:** `X-Nexo-Tenant`; `ProductFleetTenantIsolationTests` + `NexoHttpTenantTests` |
-| 0.2 | **Entitlements configuration** (file or DB) keyed by plan: seats, `included_jobs`, `max_concurrency`, `retention_days`, `sso_enabled`, `audit_export`, `deployment_mode` | Same binary runs with different config profiles (dev/staging/prod) | **Done:** `NexoEntitlementsOptions`; copilot hourly quota enforced |
-| 0.3 | **Usage counters** (jobs submitted, jobs succeeded, tokens optional if BYOK proxy) emitted to logs or metrics table | You can answer “how many jobs per tenant last 24h?” | **Done:** `ITenantUsageStore`, `GET /api/usage/summary`, `NexoUsage` logs |
+| 0.1 | **Tenant model** end-to-end: stable `tenant_id` (or org id) on every job, audit row, artifact, and API key | Cross-tenant access tests fail in CI | **Done:** `X-Ashlar-Tenant`; `ProductFleetTenantIsolationTests` + `AshlarHttpTenantTests` |
+| 0.2 | **Entitlements configuration** (file or DB) keyed by plan: seats, `included_jobs`, `max_concurrency`, `retention_days`, `sso_enabled`, `audit_export`, `deployment_mode` | Same binary runs with different config profiles (dev/staging/prod) | **Done:** `AshlarEntitlementsOptions`; copilot hourly quota enforced |
+| 0.3 | **Usage counters** (jobs submitted, jobs succeeded, tokens optional if BYOK proxy) emitted to logs or metrics table | You can answer “how many jobs per tenant last 24h?” | **Done:** `ITenantUsageStore`, `GET /api/usage/summary`, `AshlarUsage` logs |
 | 0.4 | **Reference deployment** documented: compose (or Helm) for “single-tenant production shape” matching what you sell as Private | New hire reproduces deploy from docs in one session | **Done:** `deploy/compose/docker-compose.private-single-tenant.yml` + [`private-reference-deployment.md`](./product-fleet/private-reference-deployment.md) |
 | 0.5 | **Observability baseline**: structured logs, health checks, redacted config export for support | On-call playbook v0.1 exists | **Done:** `GET /api/support/diagnostics`, copilot audit `TenantId`, [`on-call-playbook-v0.1.md`](./product-fleet/on-call-playbook-v0.1.md) |
 | 0.6 | **Legal/commercial shell**: entity, basic ToS/Privacy for a website, DPA template if Cloud will hold customer data | Counsel-reviewed drafts (timing varies) |
@@ -28,14 +28,14 @@ This is the **engineering, operations, and go-to-market sequence** for turning t
 
 ---
 
-## Phase 1 — **Nexo Private** (Product B) — ship first if enterprise is near
+## Phase 1 — **Ashlar Private** (Product B) — ship first if enterprise is near
 
 Private is usually **less COGS risk** and forces **install, upgrade, and air-gap** clarity early.
 
 | Step | What to implement | Done means | Status |
 |------|-------------------|------------|--------|
 | 1.1 | **Install path**: pinned images, versioned release artifacts, migration notes | Customer upgrades one minor version without data loss | **Started:** install/upgrade table in [`private-reference-deployment.md`](./product-fleet/private-reference-deployment.md) |
-| 1.2 | **License or subscription check** (even v0: signed JWT license file or online activation with **air-gap fallback**) | Expired license degrades gracefully (read-only or block execution—your policy, documented) | **Started:** `NexoPrivateLicenseOptions`, `PrivateLicenseMiddleware`, sample [`sample-private-license.json`](./product-fleet/sample-private-license.json) |
+| 1.2 | **License or subscription check** (even v0: signed JWT license file or online activation with **air-gap fallback**) | Expired license degrades gracefully (read-only or block execution—your policy, documented) | **Started:** `AshlarPrivateLicenseOptions`, `PrivateLicenseMiddleware`, sample [`sample-private-license.json`](./product-fleet/sample-private-license.json) |
 | 1.3 | **Secrets**: BYOK storage for provider keys; document what never leaves host | Security one-pager accurate | **Started:** [`private-byok-security.md`](./product-fleet/private-byok-security.md) |
 | 1.4 | **Backup/restore** runbook + tested restore for DB and object stores you use | RPO/RTO stated on support page | **Started:** [`private-backup-restore.md`](./product-fleet/private-backup-restore.md) (RPO 24h / RTO 4h pilot defaults) |
 | 1.5 | **Private pricing + invoice flow** (Stripe Invoicing, Paddle, or manual) + **order form template** | First paying Private customer can be billed without heroics | **Started:** [`private-order-form-template.md`](./product-fleet/private-order-form-template.md) |
@@ -45,7 +45,7 @@ Private is usually **less COGS risk** and forces **install, upgrade, and air-gap
 
 ---
 
-## Phase 2 — **Nexo Cloud** (Product A) — multi-tenant hosted
+## Phase 2 — **Ashlar Cloud** (Product A) — multi-tenant hosted
 
 Only start when Phase 0 is solid; overlap Phase 1 if you have capacity.
 
@@ -65,7 +65,7 @@ Only start when Phase 0 is solid; overlap Phase 1 if you have capacity.
 
 ---
 
-## Phase 3 — **Nexo Enterprise** (Product C) — productize what Private pilots asked for
+## Phase 3 — **Ashlar Enterprise** (Product C) — productize what Private pilots asked for
 
 | Step | What to implement | Done means |
 |------|-------------------|------------|
@@ -81,7 +81,7 @@ Only start when Phase 0 is solid; overlap Phase 1 if you have capacity.
 
 ---
 
-## Phase 4 — **Nexo Automation** (Product D) — API-first / headless
+## Phase 4 — **Ashlar Automation** (Product D) — API-first / headless
 
 | Step | What to implement | Done means |
 |------|-------------------|------------|
@@ -96,7 +96,7 @@ Only start when Phase 0 is solid; overlap Phase 1 if you have capacity.
 
 ---
 
-## Phase 5 — **Nexo Mesh** (Product E) — federation as premium
+## Phase 5 — **Ashlar Mesh** (Product E) — federation as premium
 
 | Step | What to implement | Done means |
 |------|-------------------|------------|

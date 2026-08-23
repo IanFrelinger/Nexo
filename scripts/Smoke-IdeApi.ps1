@@ -1,9 +1,9 @@
-# Smoke-test the Nexo IDE bridge (/api/ide/* + /api/workloads/*).
+# Smoke-test the Ashlar IDE bridge (/api/ide/* + /api/workloads/*).
 # Usage:
 #   .\scripts\Smoke-IdeApi.ps1
 #   .\scripts\Smoke-IdeApi.ps1 -BaseUrl http://127.0.0.1:8090
 #   .\scripts\Smoke-IdeApi.ps1 -ApiPort 8090
-# Reads NEXO_API_HOST / NEXO_AGENT_SERVER_HTTP_PORT from repo .env when -BaseUrl omitted.
+# Reads ASHLAR_API_HOST / ASHLAR_AGENT_SERVER_HTTP_PORT from repo .env when -BaseUrl omitted.
 param(
     [string]$BaseUrl = "",
     [string]$ApiHost = "",
@@ -11,20 +11,20 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-. "$PSScriptRoot\_NexoEnv.ps1"
+. "$PSScriptRoot\_AshlarEnv.ps1"
 
-$root = Get-NexoRepoRoot
+$root = Get-AshlarRepoRoot
 $envPath = Join-Path $root.Path ".env"
-$map = Read-NexoDotEnv -Path $envPath
+$map = Read-AshlarDotEnv -Path $envPath
 
 if (-not $BaseUrl) {
     if (-not $ApiHost) {
-        $ApiHost = if ($map["NEXO_API_HOST"]) { $map["NEXO_API_HOST"] } else { "127.0.0.1" }
+        $ApiHost = if ($map["ASHLAR_API_HOST"]) { $map["ASHLAR_API_HOST"] } else { "127.0.0.1" }
     }
     if ($ApiPort -le 0) {
-        $ApiPort = Get-NexoEnvInt -Map $map -Key "NEXO_AGENT_SERVER_HTTP_PORT" -Default 8088
+        $ApiPort = Get-AshlarEnvInt -Map $map -Key "ASHLAR_AGENT_SERVER_HTTP_PORT" -Default 8088
     }
-    $BaseUrl = Get-NexoApiBaseUrl -HostName $ApiHost -Port $ApiPort
+    $BaseUrl = Get-AshlarApiBaseUrl -HostName $ApiHost -Port $ApiPort
 }
 
 $BaseUrl = $BaseUrl.TrimEnd("/")
@@ -42,7 +42,7 @@ function Assert-Ok([string]$Name, [scriptblock]$Block) {
     }
 }
 
-Write-Host "Nexo IDE smoke against $BaseUrl"
+Write-Host "Ashlar IDE smoke against $BaseUrl"
 
 $health = Assert-Ok "GET /api/ide/health" {
     $r = Invoke-WebRequest "$BaseUrl/api/ide/health" -TimeoutSec 10 -UseBasicParsing
@@ -70,7 +70,7 @@ Assert-Ok "GET /api/ide/agents" {
 } | Out-Null
 
 Assert-Ok "POST /api/ide/session" {
-    $body = @{ workspaceRoot = "C:/tmp/nexo-ide-smoke"; ideName = "smoke" } | ConvertTo-Json
+    $body = @{ workspaceRoot = "C:/tmp/ashlar-ide-smoke"; ideName = "smoke" } | ConvertTo-Json
     Invoke-RestMethod "$BaseUrl/api/ide/session" -Method Post -ContentType "application/json" -Body $body -TimeoutSec 10
 } | Out-Null
 

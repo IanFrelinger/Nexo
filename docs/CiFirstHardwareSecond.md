@@ -6,9 +6,9 @@ Use GitHub Actions to catch **restore, compose, and dev-container** failures bef
 
 In GitHub: **Actions → Setup Smoke Suite → Run workflow** (pick your branch). That workflow runs **in parallel**:
 
-1. **Dev container path** — same commands as `.devcontainer/post-create.sh`, then `Nexo.CLI` build and `--help`.
+1. **Dev container path** — same commands as `.devcontainer/post-create.sh`, then `Ashlar.CLI` build and `--help`.
 2. **Deploy / test compose syntax** — `docker compose … config` on the main compose files (portal, agent-server, ephemeral, test, ollama) so merge errors surface without starting full stacks.
-3. **Native Ubuntu lane** — `scripts/setup/setup.sh check` + `restore`, then `dotnet build` on `Nexo.CLI` (matches a common Linux laptop path).
+3. **Native Ubuntu lane** — `scripts/setup/setup.sh check` + `restore`, then `dotnet build` on `Ashlar.CLI` (matches a common Linux laptop path).
 
 Workflow file: `.github/workflows/setup-smoke-suite.yml`.
 

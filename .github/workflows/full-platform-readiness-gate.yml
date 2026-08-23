@@ -3,8 +3,8 @@
 # Verifies setup, discovery, and dry-run on every target platform.
 # Stages per platform:
 #   1. Setup  — environment bootstrap (setup scripts + dotnet restore + build)
-#   2. Discovery — `nexo doctor --json` + `nexo bootstrap check --json` + `nexo pipeline diagnostics --format-json`
-#   3. Dry-run — `nexo doctor --fix --dry-run --json` + `nexo bootstrap apply --dry-run --json` + smoke tests
+#   2. Discovery — `ashlar doctor --json` + `ashlar bootstrap check --json` + `ashlar pipeline diagnostics --format-json`
+#   3. Dry-run — `ashlar doctor --fix --dry-run --json` + `ashlar bootstrap apply --dry-run --json` + smoke tests
 #
 # Native runners: ubuntu, macOS, Windows
 # Container runners: Ubuntu, Alpine, Debian (Docker on ubuntu-latest)
@@ -22,23 +22,23 @@ on:
       - ".docker/Dockerfile.*"
       - "scripts/setup/**"
       - "scripts/install/**"
-      - "application/src/Nexo.CLI/**"
-      - "src/Nexo.Hosting/**"
-      - "src/Nexo.Abstractions/**"
-      - "src/Nexo.Core.Domain/**"
-      - "src/Nexo.Core.Application/**"
-      - "src/Nexo.Brick.Contracts/**"
-      - "src/Nexo.Policies/**"
-      - "src/Nexo.Tools.Assembly/**"
-      - "src/Nexo.Tools.Dev/**"
-      - "src/Nexo.Transport.Grpc/**"
-      - "src/Nexo.Runtime/**"
-      - "src/Nexo.Infrastructure/**"
-      - "src/Nexo.Orchestration/**"
-      - "src/Nexo.BackgroundAgents/**"
-      - "src/Nexo.Tests.BackgroundAgents/**"
-      - "scripts/pack-nexo-hosting-graph.sh"
-      - "scripts/pack-nexo-hosting-graph.ps1"
+      - "application/src/Ashlar.CLI/**"
+      - "src/Ashlar.Hosting/**"
+      - "src/Ashlar.Abstractions/**"
+      - "src/Ashlar.Core.Domain/**"
+      - "src/Ashlar.Core.Application/**"
+      - "src/Ashlar.Brick.Contracts/**"
+      - "src/Ashlar.Policies/**"
+      - "src/Ashlar.Tools.Assembly/**"
+      - "src/Ashlar.Tools.Dev/**"
+      - "src/Ashlar.Transport.Grpc/**"
+      - "src/Ashlar.Runtime/**"
+      - "src/Ashlar.Infrastructure/**"
+      - "src/Ashlar.Orchestration/**"
+      - "src/Ashlar.BackgroundAgents/**"
+      - "src/Ashlar.Tests.BackgroundAgents/**"
+      - "scripts/pack-ashlar-hosting-graph.sh"
+      - "scripts/pack-ashlar-hosting-graph.ps1"
       - "scripts/verify-stable-sdk-host-sample-packages.sh"
       - "scripts/verify-stable-sdk-host-sample-packages.ps1"
       - "docs/samples/StableSdkHostSample/**"
@@ -53,8 +53,8 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  NEXO_STRICT_MODE: 1
-  NEXO_ALLOW_MOCK: 1
+  ASHLAR_STRICT_MODE: 1
+  ASHLAR_ALLOW_MOCK: 1
   DOTNET_NOLOGO: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
 
@@ -93,7 +93,7 @@ jobs:
           dotnet-version: 10.0.x
 
       - name: "Setup — verify hosting pack graph consistency"
-        run: python3 scripts/verify-pack-nexo-hosting-graph-alignment.py
+        run: python3 scripts/verify-pack-ashlar-hosting-graph-alignment.py
 
       # ── Stage 1: Setup ──────────────────────────────────────────────
       - name: "Setup — check environment"
@@ -115,14 +115,14 @@ jobs:
           fi
 
       - name: "Setup — build CLI"
-        run: dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
+        run: dotnet build application/src/Ashlar.CLI/Ashlar.CLI.csproj --no-restore -v minimal
 
       # Hosted runner images may still carry a preinstalled 8.0 runtime, so "it ran" alone would not
       # prove the roll-forward policy survived. Assert the generated runtimeconfig directly.
       - name: "Setup — verify CLI runtimeconfig rolls forward across majors"
         shell: bash
         run: |
-          cfg=application/src/Nexo.CLI/bin/Debug/net10.0/Nexo.CLI.runtimeconfig.json
+          cfg=application/src/Ashlar.CLI/bin/Debug/net10.0/Ashlar.CLI.runtimeconfig.json
           grep -q '"rollForward": "Major"' "$cfg" || {
             echo "::error::$cfg lacks \"rollForward\": \"Major\" — a machine with only a newer major runtime cannot run the CLI"
             cat "$cfg"
@@ -130,7 +130,7 @@ jobs:
           }
 
       - name: "Setup — verify CLI starts"
-        run: dotnet run --project application/src/Nexo.CLI --no-build -- --help
+        run: dotnet run --project application/src/Ashlar.CLI --no-build -- --help
 
       - name: "Setup — build SDK sample"
         run: dotnet build docs/samples/StableSdkHostSample/StableSdkHostSample.csproj -v minimal
@@ -138,10 +138,10 @@ jobs:
       - name: "Setup — verify SDK sample consumes local NuGet graph"
         shell: bash
         env:
-          NEXO_SDK_PACKAGE_VERSION: 1.0.0-ci
+          ASHLAR_SDK_PACKAGE_VERSION: 1.0.0-ci
         run: |
           if [[ "${{ runner.os }}" == "Windows" ]]; then
-            pwsh -NoProfile -File scripts/verify-stable-sdk-host-sample-packages.ps1 -Version "${NEXO_SDK_PACKAGE_VERSION}"
+            pwsh -NoProfile -File scripts/verify-stable-sdk-host-sample-packages.ps1 -Version "${ASHLAR_SDK_PACKAGE_VERSION}"
           else
             bash scripts/verify-stable-sdk-host-sample-packages.sh
           fi
@@ -151,49 +151,49 @@ jobs:
         shell: bash
         run: |
           set +e
-          dotnet run --project application/src/Nexo.CLI --no-build -- doctor --json \
+          dotnet run --project application/src/Ashlar.CLI --no-build -- doctor --json \
             2>&1 | tee "${{ runner.temp }}/doctor-report.json"
           echo "doctor_exit=$?" >> "$GITHUB_ENV"
 
       - name: "Discover — bootstrap check"
         shell: bash
         run: |
-          dotnet run --project application/src/Nexo.CLI --no-build -- bootstrap check --json \
+          dotnet run --project application/src/Ashlar.CLI --no-build -- bootstrap check --json \
             2>&1 | tee "${{ runner.temp }}/bootstrap-check.json"
 
       - name: "Discover — pipeline diagnostics"
         shell: bash
         run: |
           set +e
-          dotnet run --project application/src/Nexo.CLI --no-build -- pipeline diagnostics --format-json \
+          dotnet run --project application/src/Ashlar.CLI --no-build -- pipeline diagnostics --format-json \
             2>&1 | tee "${{ runner.temp }}/pipeline-diagnostics.json"
           true  # pipeline diagnostics may fail without a template; non-fatal
 
       - name: "Discover — ci verify (build + smoke + arch)"
         shell: bash
         run: |
-          dotnet run --project application/src/Nexo.CLI --no-build -- ci verify
+          dotnet run --project application/src/Ashlar.CLI --no-build -- ci verify
 
       # ── Stage 3: Dry-run ────────────────────────────────────────────
       - name: "Dry-run — doctor remediation"
         shell: bash
         run: |
-          dotnet run --project application/src/Nexo.CLI --no-build -- doctor --fix --dry-run --json \
+          dotnet run --project application/src/Ashlar.CLI --no-build -- doctor --fix --dry-run --json \
             2>&1 | tee "${{ runner.temp }}/doctor-dryrun.json"
 
       - name: "Dry-run — bootstrap apply"
         shell: bash
         run: |
-          dotnet run --project application/src/Nexo.CLI --no-build -- bootstrap apply --dry-run --json \
+          dotnet run --project application/src/Ashlar.CLI --no-build -- bootstrap apply --dry-run --json \
             2>&1 | tee "${{ runner.temp }}/bootstrap-dryrun.json"
 
       - name: "Dry-run — build + run smoke tests"
         shell: bash
         run: |
-          rm -f src/Nexo.Tests.Infrastructure/scripts/obj/project.assets.json
-          dotnet build src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj -v minimal
-          dotnet build src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj -v minimal
-          dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+          rm -f src/Ashlar.Tests.Infrastructure/scripts/obj/project.assets.json
+          dotnet build src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj -v minimal
+          dotnet build src/Ashlar.Tests.BackgroundAgents/Ashlar.Tests.BackgroundAgents.csproj -v minimal
+          dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj \
             --no-build \
             --blame-hang-timeout 180s \
             --blame-hang-dump-type none \
@@ -201,7 +201,7 @@ jobs:
             --logger "console;verbosity=minimal" \
             --logger "trx;LogFileName=smoke-${{ matrix.label }}.trx" \
             --results-directory "${{ runner.temp }}/test-results"
-          dotnet test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj \
+          dotnet test src/Ashlar.Tests.BackgroundAgents/Ashlar.Tests.BackgroundAgents.csproj \
             --no-build \
             --blame-hang-timeout 60s \
             --blame-hang-dump-type none \
@@ -263,7 +263,7 @@ jobs:
           docker build \
             -f ${{ matrix.dockerfile }} \
             --build-arg ${{ matrix.build_arg }} \
-            -t nexo-readiness:${{ matrix.label }} \
+            -t ashlar-readiness:${{ matrix.label }} \
             .
 
       # ── Stage 2 + 3: Discovery + Dry-run inside container ──────────
@@ -272,27 +272,27 @@ jobs:
         run: |
           mkdir -p "${{ runner.temp }}/container-results"
           docker run --rm \
-            -e NEXO_STRICT_MODE=1 \
-            -e NEXO_ALLOW_MOCK=1 \
+            -e ASHLAR_STRICT_MODE=1 \
+            -e ASHLAR_ALLOW_MOCK=1 \
             -e DOTNET_RUNNING_IN_CONTAINER=true \
             -v "${{ runner.temp }}/container-results:/results" \
-            nexo-readiness:${{ matrix.label }} \
+            ashlar-readiness:${{ matrix.label }} \
             bash -c '
               set -euo pipefail
 
               echo "=== CLI smoke ==="
-              dotnet run --project application/src/Nexo.CLI --no-build -- --help
+              dotnet run --project application/src/Ashlar.CLI --no-build -- --help
 
               echo "=== Discover: bootstrap check ==="
-              dotnet run --project application/src/Nexo.CLI --no-build -- bootstrap check --json \
+              dotnet run --project application/src/Ashlar.CLI --no-build -- bootstrap check --json \
                 2>&1 | tee /results/bootstrap-check.json
 
               echo "=== Dry-run: bootstrap apply ==="
-              dotnet run --project application/src/Nexo.CLI --no-build -- bootstrap apply --dry-run --json \
+              dotnet run --project application/src/Ashlar.CLI --no-build -- bootstrap apply --dry-run --json \
                 2>&1 | tee /results/bootstrap-dryrun.json
 
               echo "=== Smoke tests ==="
-              dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+              dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj \
                 -f net10.0 \
                 --no-build \
                 --blame-hang-timeout 180s \
@@ -301,7 +301,7 @@ jobs:
                 --logger "console;verbosity=minimal" \
                 --logger "trx;LogFileName=smoke.trx" \
                 --results-directory /results/test-results
-              dotnet test src/Nexo.Tests.BackgroundAgents/Nexo.Tests.BackgroundAgents.csproj \
+              dotnet test src/Ashlar.Tests.BackgroundAgents/Ashlar.Tests.BackgroundAgents.csproj \
                 -f net10.0 \
                 --no-build \
                 --blame-hang-timeout 60s \
@@ -334,23 +334,23 @@ jobs:
         uses: actions/checkout@v7
 
       - name: "Setup — build CLI Docker image"
-        run: docker build -f .docker/Dockerfile.cli -t nexo-cli:readiness .
+        run: docker build -f .docker/Dockerfile.cli -t ashlar-cli:readiness .
 
       - name: "Discover — CLI help"
-        run: docker run --rm nexo-cli:readiness --help
+        run: docker run --rm ashlar-cli:readiness --help
 
       - name: "Discover — doctor"
         run: |
           docker run --rm \
-            -e NEXO_STRICT_MODE=1 \
-            -e NEXO_ALLOW_MOCK=1 \
-            nexo-cli:readiness doctor --json || true
+            -e ASHLAR_STRICT_MODE=1 \
+            -e ASHLAR_ALLOW_MOCK=1 \
+            ashlar-cli:readiness doctor --json || true
 
       - name: "Discover — bootstrap check"
         run: |
           docker run --rm \
-            -e NEXO_ALLOW_MOCK=1 \
-            nexo-cli:readiness bootstrap check --json
+            -e ASHLAR_ALLOW_MOCK=1 \
+            ashlar-cli:readiness bootstrap check --json
 
   # ─────────────────────────────────────────────────────────────────────
   # All production Docker images: build + smoke
@@ -377,10 +377,10 @@ jobs:
         uses: actions/checkout@v7
 
       - name: "Build ${{ matrix.label }}"
-        run: docker build -f ${{ matrix.dockerfile }} -t nexo-${{ matrix.label }}:gate .
+        run: docker build -f ${{ matrix.dockerfile }} -t ashlar-${{ matrix.label }}:gate .
 
-      # All three images ENTRYPOINT `dotnet Nexo.API.dll` on :8080 with a /health HEALTHCHECK.
-      # The old smoke ran `dotnet Nexo.API.dll --help || true` — an ASP.NET host does not treat
+      # All three images ENTRYPOINT `dotnet Ashlar.API.dll` on :8080 with a /health HEALTHCHECK.
+      # The old smoke ran `dotnet Ashlar.API.dll --help || true` — an ASP.NET host does not treat
       # --help as a switch, it starts the server and runs forever, so the step hung until the
       # job timeout on every run. Smoke the thing the image is for instead: start it with the
       # mock provider and require /health to answer, the same shape as
@@ -388,9 +388,9 @@ jobs:
       - name: "Smoke ${{ matrix.label }} — start, /health"
         run: |
           set -euo pipefail
-          name="nexo-${{ matrix.label }}-gate"
+          name="ashlar-${{ matrix.label }}-gate"
           trap 'docker rm -f "$name" >/dev/null 2>&1 || true' EXIT
-          docker run -d --name "$name" -p 18080:8080 -e NEXO_ALLOW_MOCK=1 "nexo-${{ matrix.label }}:gate"
+          docker run -d --name "$name" -p 18080:8080 -e ASHLAR_ALLOW_MOCK=1 "ashlar-${{ matrix.label }}:gate"
           start=$(date +%s)
           until curl -fsS http://127.0.0.1:18080/health >/dev/null 2>&1; do
             if (( $(date +%s) - start > 120 )); then

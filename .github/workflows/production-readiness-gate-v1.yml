@@ -10,11 +10,11 @@ on:
       - ".github/workflows/production-readiness-gate-v1.yml"
       - "docs/ProductionReadinessGate-v1.md"
       - "docs/ReleaseCandidateChecklist-v1.md"
-      - "src/Nexo.Core.Application/Pipelines/**"
-      - "src/Nexo.Infrastructure/Pipelines/**"
-      - "application/src/Nexo.CLI/**"
-      - "src/Nexo.Tests.Infrastructure/Tests/Pipelines/**"
-      - "application/src/Nexo.Tests.CLI/**"
+      - "src/Ashlar.Core.Application/Pipelines/**"
+      - "src/Ashlar.Infrastructure/Pipelines/**"
+      - "application/src/Ashlar.CLI/**"
+      - "src/Ashlar.Tests.Infrastructure/Tests/Pipelines/**"
+      - "application/src/Ashlar.Tests.CLI/**"
   workflow_dispatch:
 jobs:
   gate-v1:
@@ -38,23 +38,23 @@ jobs:
       - name: Restore
         shell: bash
         run: |
-          dotnet restore src/Nexo.Core.Application/Nexo.Core.Application.csproj
-          dotnet restore src/Nexo.Infrastructure/Nexo.Infrastructure.csproj
-          dotnet restore application/src/Nexo.CLI/Nexo.CLI.csproj
-          dotnet restore src/Nexo.Tests.Infrastructure/scripts/copy-assemblies.csproj
-          dotnet restore src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj
+          dotnet restore src/Ashlar.Core.Application/Ashlar.Core.Application.csproj
+          dotnet restore src/Ashlar.Infrastructure/Ashlar.Infrastructure.csproj
+          dotnet restore application/src/Ashlar.CLI/Ashlar.CLI.csproj
+          dotnet restore src/Ashlar.Tests.Infrastructure/scripts/copy-assemblies.csproj
+          dotnet restore src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj
 
       - name: Build checks
         shell: bash
         run: |
-          dotnet build src/Nexo.Core.Application/Nexo.Core.Application.csproj -f netstandard2.0 --no-restore -v minimal
-          dotnet build src/Nexo.Infrastructure/Nexo.Infrastructure.csproj --no-restore -v minimal
-          dotnet build application/src/Nexo.CLI/Nexo.CLI.csproj --no-restore -v minimal
+          dotnet build src/Ashlar.Core.Application/Ashlar.Core.Application.csproj -f netstandard2.0 --no-restore -v minimal
+          dotnet build src/Ashlar.Infrastructure/Ashlar.Infrastructure.csproj --no-restore -v minimal
+          dotnet build application/src/Ashlar.CLI/Ashlar.CLI.csproj --no-restore -v minimal
 
       - name: Pipeline tests (net8)
         shell: bash
         run: |
-          dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+          dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj \
             -f net8.0 \
             --filter "FullyQualifiedName~Pipelines" \
             --logger "console;verbosity=minimal" \
@@ -64,7 +64,7 @@ jobs:
       - name: Pipeline tests (net10)
         shell: bash
         run: |
-          dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+          dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj \
             -f net10.0 \
             --filter "FullyQualifiedName~Pipelines" \
             --logger "console;verbosity=minimal" \
@@ -74,9 +74,9 @@ jobs:
       - name: Host DI smoke
         shell: bash
         run: |
-          dotnet test src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj \
+          dotnet test src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj \
             -f net8.0 \
-            --filter "FullyQualifiedName~HostingE2ESmokeTests.AddNexo_RegistersObservationPipeline_ByDefault|FullyQualifiedName~Pipelines.PipelineServiceCollectionExtensionsTests.AddNexo_RegistersPipelineCompositionLayerByDefault" \
+            --filter "FullyQualifiedName~HostingE2ESmokeTests.AddAshlar_RegistersObservationPipeline_ByDefault|FullyQualifiedName~Pipelines.PipelineServiceCollectionExtensionsTests.AddAshlar_RegistersPipelineCompositionLayerByDefault" \
             --logger "console;verbosity=minimal" \
             --logger "trx;LogFileName=gate-host-di.trx" \
             --results-directory test-results
@@ -105,11 +105,11 @@ jobs:
           }
           JSON
 
-          dotnet run --project application/src/Nexo.CLI/Nexo.CLI.csproj -- pipeline validate --template "$TEMPLATE_PATH" | tee "$VALIDATE_LOG"
-          dotnet run --project application/src/Nexo.CLI/Nexo.CLI.csproj -- pipeline run --template "$TEMPLATE_PATH" --run-id gate-run-success --format-json | tee "$SUCCESS_LOG"
-          NEXO_PIPELINE_ENABLE_TEST_HOOKS=1 NEXO_PIPELINE_COMPLETION_POLICY=AllowNonCriticalStageFailures \
-          dotnet run --project application/src/Nexo.CLI/Nexo.CLI.csproj -- pipeline run --template "$TEMPLATE_PATH" --run-id gate-run-fallback --input "fail:hybrid:deterministic=true" --format-json | tee "$FALLBACK_LOG"
-          dotnet run --project application/src/Nexo.CLI/Nexo.CLI.csproj -- pipeline diagnostics --format-json | tee "$DIAGNOSTICS_LOG"
+          dotnet run --project application/src/Ashlar.CLI/Ashlar.CLI.csproj -- pipeline validate --template "$TEMPLATE_PATH" | tee "$VALIDATE_LOG"
+          dotnet run --project application/src/Ashlar.CLI/Ashlar.CLI.csproj -- pipeline run --template "$TEMPLATE_PATH" --run-id gate-run-success --format-json | tee "$SUCCESS_LOG"
+          ASHLAR_PIPELINE_ENABLE_TEST_HOOKS=1 ASHLAR_PIPELINE_COMPLETION_POLICY=AllowNonCriticalStageFailures \
+          dotnet run --project application/src/Ashlar.CLI/Ashlar.CLI.csproj -- pipeline run --template "$TEMPLATE_PATH" --run-id gate-run-fallback --input "fail:hybrid:deterministic=true" --format-json | tee "$FALLBACK_LOG"
+          dotnet run --project application/src/Ashlar.CLI/Ashlar.CLI.csproj -- pipeline diagnostics --format-json | tee "$DIAGNOSTICS_LOG"
 
           python - <<'PY'
           import os
@@ -145,13 +145,13 @@ jobs:
         run: |
           TMP_ROOT="$RUNNER_TEMP"
           TEMPLATE_PATH="$TMP_ROOT/pipeline_gate_demo.json"
-          RESUME_DB="$TMP_ROOT/nexo_pipeline_gate_resume.db"
+          RESUME_DB="$TMP_ROOT/ashlar_pipeline_gate_resume.db"
           RESUME_SOURCE_LOG="$TMP_ROOT/gate-resume-source.log"
           RESUME_TARGET_LOG="$TMP_ROOT/gate-resume-target.log"
 
           set +e
-          NEXO_PIPELINE_STORE_PROVIDER=LiteDb NEXO_PIPELINE_STORE_PATH="$RESUME_DB" NEXO_PIPELINE_ENABLE_TEST_HOOKS=1 \
-          dotnet run --project application/src/Nexo.CLI/Nexo.CLI.csproj -- pipeline run --template "$TEMPLATE_PATH" --run-id gate-resume-source --input "fail:ingest:deterministic=true" --format-json | tee "$RESUME_SOURCE_LOG"
+          ASHLAR_PIPELINE_STORE_PROVIDER=LiteDb ASHLAR_PIPELINE_STORE_PATH="$RESUME_DB" ASHLAR_PIPELINE_ENABLE_TEST_HOOKS=1 \
+          dotnet run --project application/src/Ashlar.CLI/Ashlar.CLI.csproj -- pipeline run --template "$TEMPLATE_PATH" --run-id gate-resume-source --input "fail:ingest:deterministic=true" --format-json | tee "$RESUME_SOURCE_LOG"
           source_exit=$?
           set -e
 
@@ -160,8 +160,8 @@ jobs:
             exit 1
           fi
 
-          NEXO_PIPELINE_STORE_PROVIDER=LiteDb NEXO_PIPELINE_STORE_PATH="$RESUME_DB" \
-          dotnet run --project application/src/Nexo.CLI/Nexo.CLI.csproj -- pipeline run --template "$TEMPLATE_PATH" --run-id gate-resume-target --resume-run-id gate-resume-source --resume-failed-stages --format-json | tee "$RESUME_TARGET_LOG"
+          ASHLAR_PIPELINE_STORE_PROVIDER=LiteDb ASHLAR_PIPELINE_STORE_PATH="$RESUME_DB" \
+          dotnet run --project application/src/Ashlar.CLI/Ashlar.CLI.csproj -- pipeline run --template "$TEMPLATE_PATH" --run-id gate-resume-target --resume-run-id gate-resume-source --resume-failed-stages --format-json | tee "$RESUME_TARGET_LOG"
 
           python - <<'PY'
           import os
@@ -190,7 +190,7 @@ jobs:
       - name: Cleanup temp artifacts
         if: always()
         shell: bash
-        run: rm -f "$RUNNER_TEMP/pipeline_gate_demo.json" "$RUNNER_TEMP/nexo_pipeline_gate_resume.db"
+        run: rm -f "$RUNNER_TEMP/pipeline_gate_demo.json" "$RUNNER_TEMP/ashlar_pipeline_gate_resume.db"
 
       - name: Upload test and gate artifacts
         if: always()

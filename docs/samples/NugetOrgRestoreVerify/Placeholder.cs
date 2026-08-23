@@ -1,4 +1,4 @@
-namespace Nexo.NugetOrgRestoreVerify;
+namespace Ashlar.NugetOrgRestoreVerify;
 
 internal static class Placeholder
 {

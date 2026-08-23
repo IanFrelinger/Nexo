@@ -1,30 +1,30 @@
-# Publishing Nexo for external consumption
+# Publishing Ashlar for external consumption
 
 This document describes how to **produce** and **publish** the .NET packages that external repos (for example game tooling) consume. CI already **verifies** NuGet-only consumption locally; publishing to a feed is an operator step.
 
-**Minimal local preflight (one command):** `bash scripts/release-preflight-local.sh X.Y.Z`, `make release-preflight VERSION=X.Y.Z`, or `dotnet run --project application/src/Nexo.CLI -- release preflight X.Y.Z` — then push **`vX.Y.Z`** for **`release.yml`** (or **`release dispatch`** / **`make release-dispatch`**). Hub: **`docs/RELEASE.md`**. Checklist: **`docs/RELEASE_RUNBOOK.md`**. GitHub **variables**: **`docs/GitHubRepoVariables.md`**.
+**Minimal local preflight (one command):** `bash scripts/release-preflight-local.sh X.Y.Z`, `make release-preflight VERSION=X.Y.Z`, or `dotnet run --project application/src/Ashlar.CLI -- release preflight X.Y.Z` — then push **`vX.Y.Z`** for **`release.yml`** (or **`release dispatch`** / **`make release-dispatch`**). Hub: **`docs/RELEASE.md`**. Checklist: **`docs/RELEASE_RUNBOOK.md`**. GitHub **variables**: **`docs/GitHubRepoVariables.md`**.
 
 ## What gets published
 
-Embedding the Nexo kernel from another .NET app uses **`Nexo.Hosting`**, which depends on other **`Nexo.*`** packages built from this repo. Publish **all of them with the same semantic version** (for example `1.2.3`).
+Embedding the Ashlar kernel from another .NET app uses **`Ashlar.Hosting`**, which depends on other **`Ashlar.*`** packages built from this repo. Publish **all of them with the same semantic version** (for example `1.2.3`).
 
 Use:
 
 ```bash
-bash scripts/pack-nexo-hosting-graph.sh 1.2.3 ./artifacts/nuget-release
+bash scripts/pack-ashlar-hosting-graph.sh 1.2.3 ./artifacts/nuget-release
 ```
 
-(or `scripts/pack-nexo-hosting-graph.ps1` on Windows). Output is a folder of `*.nupkg` / `*.snupkg` files, including **`Nexo.Hosting.Bundle`** — a **metapackage** so consumers can add **one** `PackageReference` instead of chasing transitive versions manually.
+(or `scripts/pack-ashlar-hosting-graph.ps1` on Windows). Output is a folder of `*.nupkg` / `*.snupkg` files, including **`Ashlar.Hosting.Bundle`** — a **metapackage** so consumers can add **one** `PackageReference` instead of chasing transitive versions manually.
 
-**Consumer recommendation:** reference **`Nexo.Hosting.Bundle`** at version `1.2.3` (same as the graph). **`Nexo.Hosting`** remains the real assembly package; the bundle only pulls the graph.
+**Consumer recommendation:** reference **`Ashlar.Hosting.Bundle`** at version `1.2.3` (same as the graph). **`Ashlar.Hosting`** remains the real assembly package; the bundle only pulls the graph.
 
-**Note:** `Nexo.Hosting.Bundle` is **not** part of `Nexo.sln` — it only restores after the graph exists on a feed. CI packs it via `scripts/pack-nexo-hosting-graph.*`; local `dotnet build` of the repo does not need it.
+**Note:** `Ashlar.Hosting.Bundle` is **not** part of `Ashlar.sln` — it only restores after the graph exists on a feed. CI packs it via `scripts/pack-ashlar-hosting-graph.*`; local `dotnet build` of the repo does not need it.
 
-Stable **client** surface (HTTP) is documented in `docs/sdk.md` (`Nexo.Sdk` / `Nexo.Client`); pack those separately if you publish them to the same feed:
+Stable **client** surface (HTTP) is documented in `docs/sdk.md` (`Ashlar.Sdk` / `Ashlar.Client`); pack those separately if you publish them to the same feed:
 
 ```bash
-dotnet pack src/Nexo.Client/Nexo.Client.csproj -c Release -o ./artifacts/nuget-release -p:PackageVersion=1.2.3
-dotnet pack src/Nexo.Sdk/Nexo.Sdk.csproj -c Release -o ./artifacts/nuget-release -p:PackageVersion=1.2.3
+dotnet pack src/Ashlar.Client/Ashlar.Client.csproj -c Release -o ./artifacts/nuget-release -p:PackageVersion=1.2.3
+dotnet pack src/Ashlar.Sdk/Ashlar.Sdk.csproj -c Release -o ./artifacts/nuget-release -p:PackageVersion=1.2.3
 ```
 
 ## Verify before you push
@@ -32,17 +32,17 @@ dotnet pack src/Nexo.Sdk/Nexo.Sdk.csproj -c Release -o ./artifacts/nuget-release
 From a clean machine or CI artifact:
 
 ```bash
-export NEXO_SDK_PACKAGE_VERSION=1.2.3
+export ASHLAR_SDK_PACKAGE_VERSION=1.2.3
 bash scripts/verify-stable-sdk-host-sample-packages.sh
 ```
 
-This packs the graph to `artifacts/nuget-verify/packages`, restores `docs/samples/StableSdkHostSample/package-consumer/` against **only** that folder + nuget.org, builds, and runs the sample. Restore uses **`--force-evaluate`** and, by default, an **empty `NUGET_PACKAGES` + `DOTNET_CLI_HOME`** under `artifacts/nuget-verify/isolated-*` so a stale user/global cache cannot mask a bad graph (set **`NEXO_SDK_VERIFY_NO_ISOLATED_CACHE=1`** to opt out; **`NEXO_SDK_VERIFY_ISOLATED_ROOT`** to reuse a fixed directory).
+This packs the graph to `artifacts/nuget-verify/packages`, restores `docs/samples/StableSdkHostSample/package-consumer/` against **only** that folder + nuget.org, builds, and runs the sample. Restore uses **`--force-evaluate`** and, by default, an **empty `NUGET_PACKAGES` + `DOTNET_CLI_HOME`** under `artifacts/nuget-verify/isolated-*` so a stale user/global cache cannot mask a bad graph (set **`ASHLAR_SDK_VERIFY_NO_ISOLATED_CACHE=1`** to opt out; **`ASHLAR_SDK_VERIFY_ISOLATED_ROOT`** to reuse a fixed directory).
 
 To verify an **unpacked** CI artifact folder without re-packing:
 
 ```bash
-export NEXO_SDK_PACKAGE_VERSION=1.2.3
-export NEXO_SDK_PACKAGE_FEED=/path/to/unpacked/nuget-packages
+export ASHLAR_SDK_PACKAGE_VERSION=1.2.3
+export ASHLAR_SDK_PACKAGE_FEED=/path/to/unpacked/nuget-packages
 bash scripts/verify-stable-sdk-host-sample-packages.sh
 ```
 
@@ -83,15 +83,15 @@ When **`NUGET_PUBLISH_MODE`** is **`oidc`** or **`apikey`** (and **`NUGET_POST_P
 1. **Flat-container** — `scripts/verify-nuget-org-packages-visible.sh` (HEAD on `.nupkg` URLs).
 2. **Registration API** — `scripts/verify-nuget-org-registration-versions.sh` (version listed in `registration5-gz-semver2`).
 3. **Byte match** — `scripts/verify-nuget-published-sha256-matches-manifest.sh` downloads each package from nuget.org and checks **SHA-256** against **`nuget-publish-manifest.json`** produced at pack time (artifact includes manifest + `.sha256.txt` files).
-4. **Restore (bundle)** — `scripts/verify-nuget-org-restore-with-isolated-cache.sh` — `Nexo.Hosting.Bundle` on nuget.org only, **isolated** package cache.
-5. **Restore (hosting only)** — `scripts/verify-nuget-org-restore-hosting-only-isolated.sh` — direct **`Nexo.Hosting`** reference (second consumer path).
+4. **Restore (bundle)** — `scripts/verify-nuget-org-restore-with-isolated-cache.sh` — `Ashlar.Hosting.Bundle` on nuget.org only, **isolated** package cache.
+5. **Restore (hosting only)** — `scripts/verify-nuget-org-restore-hosting-only-isolated.sh` — direct **`Ashlar.Hosting`** reference (second consumer path).
 
 **Repository variables** (optional):
 
 | Variable | Purpose |
 |----------|---------|
 | **`NUGET_POST_PUSH_VERIFY`** | Set to **`false`** to skip steps 1–5. |
-| **`NUGET_POST_PUSH_VERIFY_PACKAGE_IDS`** | Comma-separated ids for steps 1–2 (default: `Nexo.Hosting.Bundle,Nexo.Hosting,Nexo.Sdk,Nexo.CLI`). |
+| **`NUGET_POST_PUSH_VERIFY_PACKAGE_IDS`** | Comma-separated ids for steps 1–2 (default: `Ashlar.Hosting.Bundle,Ashlar.Hosting,Ashlar.Sdk,Ashlar.CLI`). |
 | **`NUGET_POST_PUSH_ATTEMPTS`** / **`NUGET_POST_PUSH_SLEEP_SEC`** | Poll tuning (empty uses defaults in scripts). |
 | **`NUGET_RELEASE_SBOM`** | Set to **`true`** to generate SPDX JSON per `.nupkg` with **Syft** and upload artifact **`nuget-sbom-<version>`**. |
 | **`NUGET_RELEASE_GRYPE`** | With **`NUGET_RELEASE_SBOM`**, run **Grype** on each SBOM (reports only; **`continue-on-error`** so vuln data does not fail the release). |
@@ -105,7 +105,7 @@ Webhook: set secret **`RELEASE_NOTIFICATION_WEBHOOK_URL`** (not a variable) — 
 
 ### Option B — Manual from your machine
 
-1. Create a **NuGet.org** account (if needed) and an **API key** with scope **Push** for the `Nexo.*` package IDs (or org-owned IDs).
+1. Create a **NuGet.org** account (if needed) and an **API key** with scope **Push** for the `Ashlar.*` package IDs (or org-owned IDs).
 2. Locally: `dotnet nuget push "artifacts/nuget-release/*.nupkg" --api-key <KEY> --source https://api.nuget.org/v3/index.json`
 3. Optionally push symbols: `*.snupkg` to the same source (NuGet accepts symbols alongside).
 4. Tag the git repo **`v1.2.3`** to match the package version you pushed.
@@ -120,11 +120,11 @@ Webhook: set secret **`RELEASE_NOTIFICATION_WEBHOOK_URL`** (not a variable) — 
 
 ## Container image (separate track)
 
-The CLI image is published by `.github/workflows/container-image-publish.yml` to **GHCR**. Tag releases also build images via **`release.yml`**. **`reusable-container-publish.yml`** smoke-tests **nexo-cli** (`--help`) and **nexo-api** (`/health`) on the **immutable `sha-*`** image after push.
+The CLI image is published by `.github/workflows/container-image-publish.yml` to **GHCR**. Tag releases also build images via **`release.yml`**. **`reusable-container-publish.yml`** smoke-tests **ashlar-cli** (`--help`) and **ashlar-api** (`/health`) on the **immutable `sha-*`** image after push.
 
 ## What you must maintain over time
 
-- When `Nexo.Hosting` gains a **new project reference** to another in-repo `Nexo.*` project, add that project to **`scripts/pack-nexo-hosting-graph.sh`** / **`.ps1`**. CI runs **`python3 scripts/verify-pack-nexo-hosting-graph-alignment.py`** (workflow **`pack-hosting-graph-alignment.yml`**). Rare extras: **`scripts/pack-nexo-hosting-graph.allowlist.txt`**.
+- When `Ashlar.Hosting` gains a **new project reference** to another in-repo `Ashlar.*` project, add that project to **`scripts/pack-ashlar-hosting-graph.sh`** / **`.ps1`**. CI runs **`python3 scripts/verify-pack-ashlar-hosting-graph-alignment.py`** (workflow **`pack-hosting-graph-alignment.yml`**). Rare extras: **`scripts/pack-ashlar-hosting-graph.allowlist.txt`**.
 - Keep **`PackageVersion`** in sync across the graph for a given release (the scripts pass one version to every `dotnet pack`).
 
 ## Operator checklist

@@ -15,8 +15,8 @@ Invoked from [`mesh-lab-verify.sh`](../scripts/mesh-lab-verify.sh) after network
 
 ## Compose defaults (peer-a director)
 
-- `Nexo__BrickHost__RemoteCatalogBaseUrls__0=http://peer-b:8080` with API key auth for catalog fetch
-- `Nexo__Mesh__Elastic__*` disabled by default; set `MESH_LAB_ELASTIC_REBALANCER=1` in env to run rebalancer wait in verify-elastic (also set `MESH_LAB_ELASTIC_REBALANCER=true` in compose for `Elastic:Enabled`)
+- `Ashlar__BrickHost__RemoteCatalogBaseUrls__0=http://peer-b:8080` with API key auth for catalog fetch
+- `Ashlar__Mesh__Elastic__*` disabled by default; set `MESH_LAB_ELASTIC_REBALANCER=1` in env to run rebalancer wait in verify-elastic (also set `MESH_LAB_ELASTIC_REBALANCER=true` in compose for `Elastic:Enabled`)
 
 ## Skip flags
 

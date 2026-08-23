@@ -3,13 +3,13 @@ services:
     build:
       context: ../..
       dockerfile: .docker/Dockerfile.test-caching
-    image: nexo-test:ubuntu
+    image: ashlar-test:ubuntu
     volumes:
       - ../../test-results:/workspace/test-results
     environment:
       - DOTNET_VERSION=10.0
     command: >
-      bash -lc "dotnet test /workspace/src/Nexo.Tests.Infrastructure/Nexo.Tests.Infrastructure.csproj
+      bash -lc "dotnet test /workspace/src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj
       -f net10.0
       --filter 'FullyQualifiedName~BaseFrameworkSmokeTests'
       --logger 'trx;LogFileName=ubuntu-baseframework.trx'

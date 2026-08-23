@@ -10,16 +10,16 @@ tags:
   - under-specified-on-purpose
 touch:
   pathPrefixes:
-    - applications/Nexo.Samples.Dogfood/Text/
+    - applications/Ashlar.Samples.Dogfood/Text/
   namespaces:
-    - Nexo.Samples.Dogfood.Text
+    - Ashlar.Samples.Dogfood.Text
   capabilities:
     - repo.fs.write
 ---
 
 Provide a deterministic brick that turns free text into a URL slug.
 
-The brick is class `TextSlugBrick` in namespace `Nexo.Samples.Dogfood.Text`, with
+The brick is class `TextSlugBrick` in namespace `Ashlar.Samples.Dogfood.Text`, with
 `Id = "text-slug"`.
 
 Contract:
@@ -32,10 +32,10 @@ Contract:
 Skeleton (fill in `ExecuteAsync`; do not add, remove, or reorder members):
 
 ```csharp
-using Nexo.Core.Domain.Bricks;
-using Nexo.Core.Domain.Execution;
+using Ashlar.Core.Domain.Bricks;
+using Ashlar.Core.Domain.Execution;
 
-namespace Nexo.Samples.Dogfood.Text;
+namespace Ashlar.Samples.Dogfood.Text;
 
 public sealed class TextSlugBrick : DomainBrick
 {

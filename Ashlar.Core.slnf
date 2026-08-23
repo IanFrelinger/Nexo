@@ -1,0 +1,21 @@
+{
+  "solution": {
+    "path": "Ashlar.sln",
+    "projects": [
+      "src/Ashlar.Abstractions/Ashlar.Abstractions.csproj",
+      "src/Ashlar.Core.Domain/Ashlar.Core.Domain.csproj",
+      "src/Ashlar.Core.Application/Ashlar.Core.Application.csproj",
+      "src/Ashlar.Contracts/Ashlar.Contracts.csproj",
+      "src/Ashlar.Brick.Contracts/Ashlar.Brick.Contracts.csproj",
+      "src/Ashlar.Policies/Ashlar.Policies.csproj",
+      "src/Ashlar.Infrastructure/Ashlar.Infrastructure.csproj",
+      "src/Ashlar.Orchestration/Ashlar.Orchestration.csproj",
+      "src/Ashlar.BackgroundAgents/Ashlar.BackgroundAgents.csproj",
+      "src/Ashlar.BackgroundAgents.HostRunners/Ashlar.BackgroundAgents.HostRunners.csproj",
+      "src/Ashlar.Adapters.Models/Ashlar.Adapters.Models.csproj",
+      "src/Ashlar.Hosting/Ashlar.Hosting.csproj",
+      "application/src/Ashlar.CLI/Ashlar.CLI.csproj",
+      "application/src/Ashlar.API/Ashlar.API.csproj"
+    ]
+  }
+}

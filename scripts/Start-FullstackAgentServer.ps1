@@ -1,4 +1,4 @@
-# Start the local self-hosted Nexo agent server (full-stack lane) on Windows.
+# Start the local self-hosted Ashlar agent server (full-stack lane) on Windows.
 # Prerequisites: Docker Desktop; Ollama on host OR bundled compose ollama service.
 #
 # Examples:
@@ -21,32 +21,32 @@ param(
 )
 
 $ErrorActionPreference = "Stop"
-. "$PSScriptRoot\_NexoEnv.ps1"
+. "$PSScriptRoot\_AshlarEnv.ps1"
 
-$root = Get-NexoRepoRoot
+$root = Get-AshlarRepoRoot
 Set-Location $root
 
 $defaults = @{
-    COMPOSE_PROJECT_NAME                              = "nexo-fullstack-agent"
-    NEXO_REPO_ROOT                                    = ($root.Path -replace '\\', '/')
-    NEXO_AGENT_SERVER_HTTP_PORT                       = "8088"
-    NEXO_OLLAMA_HOST_PORT                             = "11434"
-    NEXO_API_HOST                                     = "127.0.0.1"
+    COMPOSE_PROJECT_NAME                              = "ashlar-fullstack-agent"
+    ASHLAR_REPO_ROOT                                    = ($root.Path -replace '\\', '/')
+    ASHLAR_AGENT_SERVER_HTTP_PORT                       = "8088"
+    ASHLAR_OLLAMA_HOST_PORT                             = "11434"
+    ASHLAR_API_HOST                                     = "127.0.0.1"
     OLLAMA_BASE_URL                                   = "http://host.docker.internal:11434"
     OLLAMA_MODEL                                      = "codellama:7b"
-    NEXO_BACKGROUND_AGENTS_CONFIG                     = "/agents/agent_set.fullstack.local.json"
-    Nexo__RegisterBackgroundAgentHostedService        = "false"
-    Nexo__NodeCapabilityRuntime__Ollama__BaseUrl      = "http://host.docker.internal:11434"
-    Nexo__Meai__OllamaBaseUrl                         = "http://host.docker.internal:11434"
-    Nexo__Meai__OllamaModel                           = "codellama:7b"
+    ASHLAR_BACKGROUND_AGENTS_CONFIG                     = "/agents/agent_set.fullstack.local.json"
+    Ashlar__RegisterBackgroundAgentHostedService        = "false"
+    Ashlar__NodeCapabilityRuntime__Ollama__BaseUrl      = "http://host.docker.internal:11434"
+    Ashlar__Meai__OllamaBaseUrl                         = "http://host.docker.internal:11434"
+    Ashlar__Meai__OllamaModel                           = "codellama:7b"
 }
 
-$envPath = Ensure-NexoDotEnvFile -RepoRoot $root.Path -Defaults $defaults
-$map = Read-NexoDotEnv -Path $envPath
+$envPath = Ensure-AshlarDotEnvFile -RepoRoot $root.Path -Defaults $defaults
+$map = Read-AshlarDotEnv -Path $envPath
 
-if ($ApiPort -le 0) { $ApiPort = Get-NexoEnvInt -Map $map -Key "NEXO_AGENT_SERVER_HTTP_PORT" -Default 8088 }
-if ($OllamaHostPort -le 0) { $OllamaHostPort = Get-NexoEnvInt -Map $map -Key "NEXO_OLLAMA_HOST_PORT" -Default 11434 }
-if (-not $ApiHost) { $ApiHost = if ($map["NEXO_API_HOST"]) { $map["NEXO_API_HOST"] } else { "127.0.0.1" } }
+if ($ApiPort -le 0) { $ApiPort = Get-AshlarEnvInt -Map $map -Key "ASHLAR_AGENT_SERVER_HTTP_PORT" -Default 8088 }
+if ($OllamaHostPort -le 0) { $OllamaHostPort = Get-AshlarEnvInt -Map $map -Key "ASHLAR_OLLAMA_HOST_PORT" -Default 11434 }
+if (-not $ApiHost) { $ApiHost = if ($map["ASHLAR_API_HOST"]) { $map["ASHLAR_API_HOST"] } else { "127.0.0.1" } }
 if (-not $OllamaModel) { $OllamaModel = if ($map["OLLAMA_MODEL"]) { $map["OLLAMA_MODEL"] } else { "codellama:7b" } }
 
 if ($UseBundledOllama) {
@@ -56,18 +56,18 @@ if ($UseBundledOllama) {
 }
 
 # Persist effective config so compose / smoke / IDE stay aligned
-Set-NexoDotEnvValue -Path $envPath -Key "NEXO_API_HOST" -Value $ApiHost
-Set-NexoDotEnvValue -Path $envPath -Key "NEXO_AGENT_SERVER_HTTP_PORT" -Value "$ApiPort"
-Set-NexoDotEnvValue -Path $envPath -Key "NEXO_OLLAMA_HOST_PORT" -Value "$OllamaHostPort"
-Set-NexoDotEnvValue -Path $envPath -Key "OLLAMA_BASE_URL" -Value $OllamaBaseUrl
-Set-NexoDotEnvValue -Path $envPath -Key "OLLAMA_MODEL" -Value $OllamaModel
-Set-NexoDotEnvValue -Path $envPath -Key "Nexo__NodeCapabilityRuntime__Ollama__BaseUrl" -Value $OllamaBaseUrl
-Set-NexoDotEnvValue -Path $envPath -Key "Nexo__Meai__OllamaBaseUrl" -Value $OllamaBaseUrl
-Set-NexoDotEnvValue -Path $envPath -Key "Nexo__Meai__OllamaModel" -Value $OllamaModel
-Set-NexoDotEnvValue -Path $envPath -Key "COMPOSE_PROJECT_NAME" -Value "nexo-fullstack-agent"
-Set-NexoDotEnvValue -Path $envPath -Key "NEXO_REPO_ROOT" -Value ($root.Path -replace '\\', '/')
-Set-NexoDotEnvValue -Path $envPath -Key "NEXO_BACKGROUND_AGENTS_CONFIG" -Value "/agents/agent_set.fullstack.local.json"
-Set-NexoDotEnvValue -Path $envPath -Key "Nexo__RegisterBackgroundAgentHostedService" -Value "false"
+Set-AshlarDotEnvValue -Path $envPath -Key "ASHLAR_API_HOST" -Value $ApiHost
+Set-AshlarDotEnvValue -Path $envPath -Key "ASHLAR_AGENT_SERVER_HTTP_PORT" -Value "$ApiPort"
+Set-AshlarDotEnvValue -Path $envPath -Key "ASHLAR_OLLAMA_HOST_PORT" -Value "$OllamaHostPort"
+Set-AshlarDotEnvValue -Path $envPath -Key "OLLAMA_BASE_URL" -Value $OllamaBaseUrl
+Set-AshlarDotEnvValue -Path $envPath -Key "OLLAMA_MODEL" -Value $OllamaModel
+Set-AshlarDotEnvValue -Path $envPath -Key "Ashlar__NodeCapabilityRuntime__Ollama__BaseUrl" -Value $OllamaBaseUrl
+Set-AshlarDotEnvValue -Path $envPath -Key "Ashlar__Meai__OllamaBaseUrl" -Value $OllamaBaseUrl
+Set-AshlarDotEnvValue -Path $envPath -Key "Ashlar__Meai__OllamaModel" -Value $OllamaModel
+Set-AshlarDotEnvValue -Path $envPath -Key "COMPOSE_PROJECT_NAME" -Value "ashlar-fullstack-agent"
+Set-AshlarDotEnvValue -Path $envPath -Key "ASHLAR_REPO_ROOT" -Value ($root.Path -replace '\\', '/')
+Set-AshlarDotEnvValue -Path $envPath -Key "ASHLAR_BACKGROUND_AGENTS_CONFIG" -Value "/agents/agent_set.fullstack.local.json"
+Set-AshlarDotEnvValue -Path $envPath -Key "Ashlar__RegisterBackgroundAgentHostedService" -Value "false"
 
 Write-Host "Config: api=$ApiHost`:$ApiPort  ollamaHostPort=$OllamaHostPort  model=$OllamaModel"
 Write-Host "        OLLAMA_BASE_URL=$OllamaBaseUrl"
@@ -80,7 +80,7 @@ $compose = @(
 
 $upArgs = @("up", "-d")
 if (-not $NoBuild) { $upArgs += "--build" }
-$upArgs += @("nexo-api", "--no-deps")
+$upArgs += @("ashlar-api", "--no-deps")
 if ($UseBundledOllama) {
     # Bring ollama + api; drop --no-deps
     $upArgs = @("up", "-d")
@@ -89,7 +89,7 @@ if ($UseBundledOllama) {
 
 docker compose @compose @upArgs
 
-$baseUrl = Get-NexoApiBaseUrl -HostName $ApiHost -Port $ApiPort
+$baseUrl = Get-AshlarApiBaseUrl -HostName $ApiHost -Port $ApiPort
 $deadline = (Get-Date).AddMinutes(5)
 while ((Get-Date) -lt $deadline) {
     try {
@@ -101,7 +101,7 @@ while ((Get-Date) -lt $deadline) {
         Write-Host "Agent set: apps/runtime-studio/config/agent_set.fullstack.local.json"
         if (-not $SkipSmokeHint) {
             Write-Host "Smoke:   .\scripts\Smoke-IdeApi.ps1 -BaseUrl $baseUrl"
-            Write-Host "IDE:     set nexo.apiHost=$ApiHost nexo.apiPort=$ApiPort (or nexo.baseUrl=$baseUrl)"
+            Write-Host "IDE:     set ashlar.apiHost=$ApiHost ashlar.apiPort=$ApiPort (or ashlar.baseUrl=$baseUrl)"
         }
         exit 0
     } catch {
@@ -110,5 +110,5 @@ while ((Get-Date) -lt $deadline) {
 }
 
 Write-Host "Timed out waiting for $baseUrl/health. Logs:"
-docker compose @compose logs --tail 80 nexo-api
+docker compose @compose logs --tail 80 ashlar-api
 exit 1

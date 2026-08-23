@@ -1,23 +1,23 @@
-# Nexo API Reference
+# Ashlar API Reference
 
-API documentation for the Nexo AI-enhanced development orchestration platform.
+API documentation for the Ashlar AI-enhanced development orchestration platform.
 
 ## Libraries
 
 | Library | Description |
 |---------|-------------|
-| **Nexo.Hosting** | Hosting extensions for embedding the Nexo kernel. Call `AddNexo()` to register orchestration, adaptation, persistence, trust, and agent services. |
-| **Nexo.API** | ASP.NET Core host with minimal API endpoints, static file serving (SPA), and optional API-key auth. |
-| **Nexo.Sdk** | Client SDK registration (`AddNexoSdk(baseUrl, ...)`). |
-| **Nexo.Client** | HTTP client (`INexoClient`) for calling a running Nexo API. |
-| **Nexo.Core.Application** | Use cases (MediatR handlers), validation, analysis, and ports. |
-| **Nexo.Core.Domain** | Domain entities, bricks, behaviors, agents. |
-| **Nexo.Abstractions** | Core interfaces and abstractions. |
-| **Nexo.Infrastructure** | ProviderFactory (LLM), persistence, adaptation, IO, execution. |
+| **Ashlar.Hosting** | Hosting extensions for embedding the Ashlar kernel. Call `AddAshlar()` to register orchestration, adaptation, persistence, trust, and agent services. |
+| **Ashlar.API** | ASP.NET Core host with minimal API endpoints, static file serving (SPA), and optional API-key auth. |
+| **Ashlar.Sdk** | Client SDK registration (`AddAshlarSdk(baseUrl, ...)`). |
+| **Ashlar.Client** | HTTP client (`IAshlarClient`) for calling a running Ashlar API. |
+| **Ashlar.Core.Application** | Use cases (MediatR handlers), validation, analysis, and ports. |
+| **Ashlar.Core.Domain** | Domain entities, bricks, behaviors, agents. |
+| **Ashlar.Abstractions** | Core interfaces and abstractions. |
+| **Ashlar.Infrastructure** | ProviderFactory (LLM), persistence, adaptation, IO, execution. |
 
 ## REST Endpoints
 
-Endpoints are registered via `MapNexoEndpoints()` in `Nexo.API`. Most live under `/api`; the health check is at the root. The API is **unversioned in `v0.x`** (no `/v1/` prefix until `1.0`); which of these routes are the documented surface with a breaking-change promise, and how breaking changes are announced, is in [versioning.md](versioning.md).
+Endpoints are registered via `MapAshlarEndpoints()` in `Ashlar.API`. Most live under `/api`; the health check is at the root. The API is **unversioned in `v0.x`** (no `/v1/` prefix until `1.0`); which of these routes are the documented surface with a breaking-change promise, and how breaking changes are announced, is in [versioning.md](versioning.md).
 
 | Method | Path | Description |
 |--------|------|-------------|
@@ -51,24 +51,24 @@ Endpoints are registered via `MapNexoEndpoints()` in `Nexo.API`. Most live under
 
 ```csharp
 using Microsoft.Extensions.Hosting;
-using Nexo.Hosting;
+using Ashlar.Hosting;
 
 var host = Host.CreateDefaultBuilder(args)
-    .ConfigureServices(services => services.AddNexo())
+    .ConfigureServices(services => services.AddAshlar())
     .Build();
 
 var validationService = host.Services.GetRequiredService<IValidationService>();
 var result = await validationService.ValidateAsync(filter: null, progress: null, CancellationToken.None);
 ```
 
-## NexoHostingOptions
+## AshlarHostingOptions
 
-`AddNexo()` accepts an optional configuration callback:
+`AddAshlar()` accepts an optional configuration callback:
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `DeploymentProfile` | Module profile (`Full`, `Server`, `Edge`, `AirGapped`, `System`) | `Full` (or `NEXO_DEPLOYMENT_PROFILE`) |
-| `PatternStorePath` | LiteDB pattern store file path; sibling state files are co-located with it | `<state dir>/nexo-patterns.db` (`NEXO_STATE_DIR`, else `<repo root>/.nexo/state`) |
+| `DeploymentProfile` | Module profile (`Full`, `Server`, `Edge`, `AirGapped`, `System`) | `Full` (or `ASHLAR_DEPLOYMENT_PROFILE`) |
+| `PatternStorePath` | LiteDB pattern store file path; sibling state files are co-located with it | `<state dir>/ashlar-patterns.db` (`ASHLAR_STATE_DIR`, else `<repo root>/.ashlar/state`) |
 | `TrustEnabled` | Enable trust & sanitization | `false` |
 | `RegisterBackgroundAgentHostedService` | Register background agent as hosted service | `false` |
 | `DisableObservationPipeline` | Skip observation pipeline registration | `false` |

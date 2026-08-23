@@ -9,11 +9,11 @@ if [ "${APPLICATION_GATE_SKIP_KERNEL:-0}" != "1" ]; then
   make kernel-gate
 fi
 
-echo "== Application Tier A: build Nexo.Application.sln =="
-dotnet build application/Nexo.Application.sln -v minimal
+echo "== Application Tier A: build Ashlar.Application.sln =="
+dotnet build application/Ashlar.Application.sln -v minimal
 
 echo "== Application Tier A: CLI --help =="
-dotnet run --project application/src/Nexo.CLI/Nexo.CLI.csproj --no-build -- --help >/dev/null
+dotnet run --project application/src/Ashlar.CLI/Ashlar.CLI.csproj --no-build -- --help >/dev/null
 
 echo "== Application Tier A: pipeline validate smoke =="
 TMP="$(mktemp -d)"
@@ -25,7 +25,7 @@ cat > "$TMP/smoke.json" <<'JSON'
   "stages": [{ "id": "s1", "name": "S1", "mode": "Deterministic" }]
 }
 JSON
-NEXO_ALLOW_MOCK=1 dotnet run --project application/src/Nexo.CLI/Nexo.CLI.csproj --no-build -- \
+ASHLAR_ALLOW_MOCK=1 dotnet run --project application/src/Ashlar.CLI/Ashlar.CLI.csproj --no-build -- \
   pipeline validate --template "$TMP/smoke.json"
 
 echo ""

@@ -43,11 +43,11 @@ done
 needs_prod_style=0
 for f in "${ALL_CHANGED[@]}"; do
   case "$f" in
-    src/Nexo.Hosting/*|application/src/Nexo.API/*|src/Nexo.Runtime/Barriers/*|src/Nexo.Runtime/Identity/*)
+    src/Ashlar.Hosting/*|application/src/Ashlar.API/*|src/Ashlar.Runtime/Barriers/*|src/Ashlar.Runtime/Identity/*)
       needs_prod_style=1 ;;
-    src/Nexo.Infrastructure/Execution/Routing/*|src/Nexo.Infrastructure/Barriers/*|src/Nexo.Infrastructure/Pipelines/*)
+    src/Ashlar.Infrastructure/Execution/Routing/*|src/Ashlar.Infrastructure/Barriers/*|src/Ashlar.Infrastructure/Pipelines/*)
       needs_prod_style=1 ;;
-    src/Nexo.Infrastructure/Tests/VirtualProduction/*|src/Nexo.Infrastructure/Tests/Hosting/*)
+    src/Ashlar.Infrastructure/Tests/VirtualProduction/*|src/Ashlar.Infrastructure/Tests/Hosting/*)
       : ;;
   esac
 done
@@ -89,10 +89,10 @@ for f in "${ALL_CHANGED[@]}"; do
       docs_only=0 ;;
   esac
   case "$f" in
-    src/Nexo.Core.Domain/*) needs_domain=1; needs_kernel_cov=1 ;;
-    src/Nexo.Core.Application/*|src/Nexo.Infrastructure/*|src/Nexo.Runtime/*) needs_kernel_cov=1 ;;
-    src/Nexo.Hosting/*|src/Nexo.Infrastructure/Pipelines/*) needs_kernel_gate=1 ;;
-    src/Nexo.Infrastructure/Mesh/*|src/Nexo.Infrastructure/MeshLab/*|commercial/src/Nexo.Commercial.Fleet.*|docker-compose*fleet*|scripts/mesh-lab*)
+    src/Ashlar.Core.Domain/*) needs_domain=1; needs_kernel_cov=1 ;;
+    src/Ashlar.Core.Application/*|src/Ashlar.Infrastructure/*|src/Ashlar.Runtime/*) needs_kernel_cov=1 ;;
+    src/Ashlar.Hosting/*|src/Ashlar.Infrastructure/Pipelines/*) needs_kernel_gate=1 ;;
+    src/Ashlar.Infrastructure/Mesh/*|src/Ashlar.Infrastructure/MeshLab/*|commercial/src/Ashlar.Commercial.Fleet.*|docker-compose*fleet*|scripts/mesh-lab*)
       needs_mesh=1 ;;
     application/*) needs_app_gate=1 ;;
     commercial/*) needs_dependency_boundary=1 ;;
@@ -107,7 +107,7 @@ if [[ "$docs_only" -eq 1 ]]; then
 else
   [[ "$needs_kernel_cov" -eq 1 ]] && note "  make kernel-coverage-gate"
   [[ "$needs_kernel_gate" -eq 1 ]] && note "  make kernel-gate && make test-prod-style"
-  [[ "$needs_domain" -eq 1 ]] && note "  dotnet test src/Nexo.Tests.Domain/Nexo.Tests.Domain.csproj"
+  [[ "$needs_domain" -eq 1 ]] && note "  dotnet test src/Ashlar.Tests.Domain/Ashlar.Tests.Domain.csproj"
   [[ "$needs_app_gate" -eq 1 ]] && note "  make application-gate-tier-a (or tier-c for API)"
   [[ "$needs_mesh" -eq 1 ]] && note "  make composition-mesh-gate-tier-c (or mesh-lab-e2e with Docker)"
   [[ "$needs_dependency_boundary" -eq 1 ]] && note "  make dependency-boundary-gate"
