@@ -24,6 +24,19 @@ public sealed class RootCommandRegistrationTests
     }
 
     [Fact(Timeout = 15000)]
+    public async Task RootCommand_RegistersInitCommand()
+    {
+        await Task.CompletedTask;
+        var root = Ashlar.CLI.Program.BuildRootCommand();
+        var subcommands = root.Subcommands.Select(s => s.Name).ToList();
+
+        // `ashlar init` is the front door of the product loop (init -> verify -> run ->
+        // deploy); docs and the quickstart lead with it, so it must never silently
+        // disappear from the root the way `trust` did in #162.
+        subcommands.Should().Contain("init");
+    }
+
+    [Fact(Timeout = 15000)]
     public async Task TrustCommand_HasDocumentedSubcommands()
     {
         await Task.CompletedTask;
