@@ -90,6 +90,11 @@ public static class ProjectScaffold
 
         agents:
           - id: main
+            # mock runs offline with canned responses, so `ashlar run` works before any
+            # provider is configured. Point this at a real provider when you have one,
+            # with provider: ollama and id: llama3, for example.
+            model:
+              provider: mock
             # Tools are named grants, added with `ashlar add`. An agent cannot define a tool
             # and never carries a filesystem root — the sandbox comes from the policy.
             tools: []

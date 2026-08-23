@@ -39,6 +39,18 @@ public sealed record ManifestMetadata
     public string Version { get; init; } = string.Empty;
 }
 
+/// <summary>The model an agent runs on.</summary>
+public sealed record ManifestModel
+{
+    /// <summary>Provider name, e.g. <c>ollama</c>, <c>openai</c>, <c>azure</c>, or
+    /// <c>mock</c> (runs offline with canned responses — the zero-setup default).</summary>
+    public string Provider { get; init; } = string.Empty;
+
+    /// <summary>Model identifier within the provider, e.g. <c>llama3</c>. Optional; the
+    /// provider's default is used when absent.</summary>
+    public string? Id { get; init; }
+}
+
 /// <summary>
 /// An agent in the composition.
 /// </summary>
@@ -46,6 +58,10 @@ public sealed record ManifestAgent
 {
     /// <summary>Agent identifier, unique within the manifest.</summary>
     public string Id { get; init; } = string.Empty;
+
+    /// <summary>The model this agent runs on. Optional; <c>ashlar run</c> falls back to the
+    /// zero-setup <c>mock</c> provider when absent, and says so.</summary>
+    public ManifestModel? Model { get; init; }
 
     /// <summary>
     /// Tools this agent may call, BY NAME ONLY. An agent references a tool it has been

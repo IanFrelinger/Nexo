@@ -242,6 +242,38 @@ public sealed class ManifestContractTests
         reason.Should().Contain("kind");
     }
 
+    [Fact]
+    public void Agent_model_parses_and_is_optional()
+    {
+        // The run-verb slice: agents may declare the model they run on; absent means the
+        // zero-setup mock fallback (decided by the CLI, not the loader).
+        var yaml = ValidManifest.Replace(
+            "  - id: classifier",
+            "  - id: classifier\n    model:\n      provider: ollama\n      id: llama3");
+
+        ManifestLoader.TryLoad(yaml, out var m, out var reason).Should().BeTrue(reason);
+        var agent = m!.Agents.Single();
+        agent.Model.Should().NotBeNull();
+        agent.Model!.Provider.Should().Be("ollama");
+        agent.Model.Id.Should().Be("llama3");
+
+        // And the original, model-less form still loads with a null Model.
+        ManifestLoader.TryLoad(ValidManifest, out var plain, out _).Should().BeTrue();
+        plain!.Agents.Single().Model.Should().BeNull();
+    }
+
+    [Fact]
+    public void Scaffolded_agent_declares_the_mock_provider()
+    {
+        // `ashlar run` must work on a fresh project before any API key exists; the scaffold
+        // pins that by shipping the offline mock provider explicitly, with the pointer to a
+        // real one in the comment.
+        ProjectScaffold.TryScaffold("demo", out var manifestYaml, out _, out _).Should().BeTrue();
+        ManifestLoader.TryLoad(manifestYaml, out var m, out var reason).Should().BeTrue(reason);
+
+        m!.Agents.Single().Model!.Provider.Should().Be("mock");
+    }
+
     [Theory]
     [InlineData("null")]
     [InlineData("~")]
