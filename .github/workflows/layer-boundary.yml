@@ -31,6 +31,7 @@ jobs:
           HEAD_REF: ${{ github.head_ref }}
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_BODY: ${{ github.event.pull_request.body }}
         run: |
           set -euo pipefail
           if [ -z "${BASE_SHA:-}" ] || [ -z "${HEAD_SHA:-}" ]; then
@@ -47,6 +48,19 @@ jobs:
           if echo "$CHANGED" | grep -q '^commercial/'; then
             COMMERCIAL_INTEGRATION=1
             echo "Commercial paths changed — allowing coordinated application/ + src/ integration merges."
+          fi
+
+          # --- Explicit coordinated integration (application/* branch -> master) ---
+          # The hatches above assumed integration merges always ride commercial work; a PURE
+          # application-layer integration (e.g. landing an application/* integration branch's
+          # accumulated verbs onto master) had no legal path. This token is that path, made
+          # explicit and auditable: the PR body must carry [coordinated-integration] plus a
+          # rationale humans can review. Mirrors the [skip-prod-style] convention in the
+          # testing-strategy gate.
+          COORDINATED_INTEGRATION=0
+          if [[ "${PR_BODY:-}" == *"[coordinated-integration]"* ]]; then
+            COORDINATED_INTEGRATION=1
+            echo "::notice::[coordinated-integration] declared in the PR body — allowing application/ paths into '$BASE_REF'. Reviewers: the PR body must justify this."
           fi
 
           DISTRIBUTION_AUTHORING=0
@@ -153,7 +167,7 @@ jobs:
           # --- Runtime bases: no application/ (except coordinated integration merges) ---
           case "$BASE_REF" in
             master|main|runtime/*)
-              if [[ "$COMMERCIAL_INTEGRATION" -eq 0 && "$DISTRIBUTION_AUTHORING" -eq 0 && "$FORCED_KERNEL_CLEANUP" -eq 0 && "$TEST_ONLY_CHANGE" -eq 0 ]] && echo "$CHANGED" | grep -q '^application/'; then
+              if [[ "$COMMERCIAL_INTEGRATION" -eq 0 && "$DISTRIBUTION_AUTHORING" -eq 0 && "$FORCED_KERNEL_CLEANUP" -eq 0 && "$TEST_ONLY_CHANGE" -eq 0 && "$COORDINATED_INTEGRATION" -eq 0 ]] && echo "$CHANGED" | grep -q '^application/'; then
                 echo "::error::Base branch '$BASE_REF' is runtime/kernel-first. This PR changes application/ — retarget or remove those paths."
                 exit 1
               fi
