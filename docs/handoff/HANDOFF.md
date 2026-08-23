@@ -420,7 +420,7 @@ a cosmetic gain. Rename later if the theming bothers you; do not relocate.
 | **Config key break** | `Nexo:Security:ExposureProfile` → `Ashlar:Security:ExposureProfile`, and every other `Nexo:*` key. |
 | **State directory** | `.nexo/` → `.ashlar/`, matching the brand materials. Existing local state will not be found afterwards. |
 | **Container images** | `ghcr.io/ianfrelinger/nexo-cli` → `ashlar-cli`. Does not exist under the new name until published; the audit could not confirm the old one exists either. |
-| **Git remote** | The script rewrites the repo URL in docs. It does **not** touch `.git/config`. Rename the GitHub repository separately. |
+| **Git remote / repo URLs** | The script rewrote `github.com/IanFrelinger/Nexo` to `.../Ashlar` in 61 places across 29 files, including `RepositoryUrl` in eleven `.csproj`. That URL names the REPOSITORY, which is still Nexo, so every link 404d and CI's link checker failed. Reverted by hand. Rewrite them only when the GitHub repo is actually renamed, in the same commit. `.git/config` is untouched either way. |
 | **`_handoff/` is skipped** | Both scripts exclude it, so the extracted game layer keeps its own identity. It is untracked anyway, so `git ls-files` excludes it for free. |
 | **PublicAPI files** | `PublicAPI.Unshipped.txt` holds fully-qualified type names and is rewritten by pass 1. All entries are `Unshipped`, so no baseline breaks. |
 

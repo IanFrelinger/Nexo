@@ -4,8 +4,8 @@
 
 # Ashlar
 
-[![Kernel Gate](https://github.com/IanFrelinger/Ashlar/actions/workflows/kernel-gate.yml/badge.svg?branch=master)](https://github.com/IanFrelinger/Ashlar/actions/workflows/kernel-gate.yml)
-[![Kernel Coverage Gate](https://github.com/IanFrelinger/Ashlar/actions/workflows/kernel-coverage-gate.yml/badge.svg?branch=master)](https://github.com/IanFrelinger/Ashlar/actions/workflows/kernel-coverage-gate.yml)
+[![Kernel Gate](https://github.com/IanFrelinger/Nexo/actions/workflows/kernel-gate.yml/badge.svg?branch=master)](https://github.com/IanFrelinger/Nexo/actions/workflows/kernel-gate.yml)
+[![Kernel Coverage Gate](https://github.com/IanFrelinger/Nexo/actions/workflows/kernel-coverage-gate.yml/badge.svg?branch=master)](https://github.com/IanFrelinger/Nexo/actions/workflows/kernel-coverage-gate.yml)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![.NET 10](https://img.shields.io/badge/.NET-10.0-512BD4.svg)](global.json)
 
@@ -23,7 +23,7 @@ Other lanes: [**Try**](#lane-1--try-run-the-portal) (portal in Docker) · [**Dev
 
 The trust loop that makes "certified" checkable — and the experimental, hold-mode autonomy loop built on it — is described in [Trust loop / certification](#trust-loop--certification-experimental) below. The observe → adapt → improve engine that watches how teams build, test, release, and operate software is one subsystem among several, not the product.
 
-Repository: <https://github.com/IanFrelinger/Ashlar>
+Repository: <https://github.com/IanFrelinger/Nexo>
 
 ## Architecture at a glance
 
@@ -158,7 +158,7 @@ Pick the lane that matches your goal. Most people should start with **Try**.
 The fastest way to see Ashlar work. Uses the mock provider, so **no API keys are required**.
 
 ```bash
-git clone https://github.com/IanFrelinger/Ashlar.git && cd Ashlar
+git clone https://github.com/IanFrelinger/Nexo.git && cd Ashlar
 docker build -f .docker/Dockerfile.quickstart -t ashlar:quickstart .
 docker run --rm -p 127.0.0.1:8080:8080 ashlar:quickstart
 # Open http://localhost:8080
@@ -219,7 +219,7 @@ dotnet run --project application/src/Ashlar.CLI -- pipeline diagnostics --format
 Use this only when containers are not an option. Requires .NET SDK 10.x (LTS). The CLI and API ship on `net10.0`; libraries and test hosts that still carry `net8.0` roll forward onto the 10.x runtime (`RollForward=Major`, set in `Directory.Build.targets`), so an SDK-10-only machine works without a separate .NET 8 runtime.
 
 ```bash
-git clone https://github.com/IanFrelinger/Ashlar.git
+git clone https://github.com/IanFrelinger/Nexo.git
 cd Ashlar
 bash scripts/setup/setup.sh all
 dotnet build application/src/Ashlar.CLI/Ashlar.CLI.csproj --no-restore
@@ -229,7 +229,7 @@ dotnet run --project application/src/Ashlar.CLI -- doctor --json
 Windows PowerShell:
 
 ```powershell
-git clone https://github.com/IanFrelinger/Ashlar.git
+git clone https://github.com/IanFrelinger/Nexo.git
 Set-Location Ashlar
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode all
 dotnet build application/src/Ashlar.CLI/Ashlar.CLI.csproj --no-restore

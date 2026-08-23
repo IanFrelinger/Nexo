@@ -17,10 +17,10 @@
     <NoWarn>$(NoWarn);NU1510</NoWarn>
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
     <Deterministic>true</Deterministic>
-    <RepositoryUrl>https://github.com/IanFrelinger/Ashlar</RepositoryUrl>
+    <RepositoryUrl>https://github.com/IanFrelinger/Nexo</RepositoryUrl>
     <!-- Open packable projects resolve Apache-2.0 via Directory.Build.targets; commercial clears the expression. -->
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/IanFrelinger/Ashlar</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/IanFrelinger/Nexo</PackageProjectUrl>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon Condition="Exists('$(MSBuildThisFileDirectory)assets/brand/ashlar-icon-nuget-128.png')">icon.png</PackageIcon>
   </PropertyGroup>

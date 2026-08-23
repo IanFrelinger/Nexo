@@ -8,7 +8,7 @@ Ashlar is pre-1.0 and has no tagged release yet (`CHANGELOG.md` is all `[Unrelea
 
 Please do **not** open a public issue for a security vulnerability.
 
-- Preferred: report privately via [GitHub Security Advisories](https://github.com/IanFrelinger/Ashlar/security/advisories/new).
+- Preferred: report privately via [GitHub Security Advisories](https://github.com/IanFrelinger/Nexo/security/advisories/new).
 - Alternatively: contact the maintainer, [@IanFrelinger](https://github.com/IanFrelinger).
 
 Include the affected component (project or path), a reproduction or proof of concept, and your assessment of the impact. You should receive an acknowledgement within 7 days.

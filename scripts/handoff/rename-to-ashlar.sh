@@ -41,6 +41,18 @@
 # NOT covered, because git does not track them — handle by hand:
 #   .env files, local shell profiles, and CI secrets.
 #   (.nexo/ and NEXO_AGENT_NOTES.md ARE handled — see the ignored-path block below.)
+#
+# COVERED BUT SHOULD NOT HAVE BEEN: the GitHub repository URL.
+#
+# Pass 1 rewrites `github.com/IanFrelinger/Nexo` to `.../Ashlar` in 61 places across 29
+# files — README badges, SECURITY.md, docs, install scripts, and the RepositoryUrl /
+# PackageProjectUrl metadata of eleven .csproj files. That URL names the REPOSITORY, not
+# the product, and the repository is still called Nexo. Every one of those links 404s, CI's
+# link checker fails, and the .csproj ones would ship to a NuGet feed pointing at nothing.
+#
+# They were reverted by hand after the fact. If the GitHub repository is ever renamed,
+# rewrite them again then — deliberately, and in the same commit as the rename, so the
+# links are never pointing at a repository that does not exist.
 
 set -euo pipefail
 

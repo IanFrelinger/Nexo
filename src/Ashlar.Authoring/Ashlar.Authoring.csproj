@@ -13,7 +13,7 @@
     <Title>Ashlar Authoring</Title>
     <Description>Minimal package for code-authored Ashlar bricks: Brick base types, execution contracts, and host registration helpers.</Description>
     <PackageTags>ashlar;authoring;bricks;sdk</PackageTags>
-    <RepositoryUrl>https://github.com/IanFrelinger/Ashlar</RepositoryUrl>
+    <RepositoryUrl>https://github.com/IanFrelinger/Nexo</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 

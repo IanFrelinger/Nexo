@@ -12,7 +12,7 @@ Jobs named **`Linux — setup · discover · dry-run`**, **`macOS — setup · d
 
 Example failing runs on `master`:
 
-- [Full Platform Readiness Gate (PR #173 merge)](https://github.com/IanFrelinger/Ashlar/actions/runs/27722763291) — `conclusion: failure`
+- [Full Platform Readiness Gate (PR #173 merge)](https://github.com/IanFrelinger/Nexo/actions/runs/27722763291) — `conclusion: failure`
 
 ### Recommendation (not performed here)
 

@@ -5,7 +5,7 @@
 # making about the product. Three of them are machine-checkable and are checked here.
 set -uo pipefail
 
-REPO_URL="${REPO_URL:-https://github.com/IanFrelinger/Ashlar.git}"
+REPO_URL="${REPO_URL:-https://github.com/IanFrelinger/Nexo.git}"
 WORK="${WORK:-/work}"
 # See tier0-2.sh: UAT_REPO_DIR runs against the workspace checkout so a gate tests the commit under review.
 SRC="${UAT_REPO_DIR:-$WORK/Ashlar}"

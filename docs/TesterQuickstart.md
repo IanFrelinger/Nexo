@@ -13,7 +13,7 @@ Every command below was last run end to end on 2026-08-17 against a clean clone 
 ## 1. Clone and build the kernel
 
 ```bash
-git clone https://github.com/IanFrelinger/Ashlar.git && cd Ashlar
+git clone https://github.com/IanFrelinger/Nexo.git && cd Ashlar
 dotnet build Ashlar.Kernel.sln
 ```
 

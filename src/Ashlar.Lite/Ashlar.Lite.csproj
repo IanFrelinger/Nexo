@@ -13,7 +13,7 @@
     <Title>Ashlar Lite</Title>
     <Description>Slim Ashlar host for edge and air-gapped hosts. Orchestration + local provider (ONNX/LLamaSharp). No Roslyn, Docker, or code analysis. Designed for lightweight orchestration on Linux and constrained environments.</Description>
     <PackageTags>ashlar;ai;lite;edge;air-gapped</PackageTags>
-    <RepositoryUrl>https://github.com/IanFrelinger/Ashlar</RepositoryUrl>
+    <RepositoryUrl>https://github.com/IanFrelinger/Nexo</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 

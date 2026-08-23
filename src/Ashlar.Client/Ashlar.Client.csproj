@@ -13,7 +13,7 @@
     <Title>Ashlar Client</Title>
     <Description>HTTP client for Ashlar API. Used by CLI, demos, and other remote clients.</Description>
     <PackageTags>ashlar;ai;client;sdk</PackageTags>
-    <RepositoryUrl>https://github.com/IanFrelinger/Ashlar</RepositoryUrl>
+    <RepositoryUrl>https://github.com/IanFrelinger/Nexo</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 

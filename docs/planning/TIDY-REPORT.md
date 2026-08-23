@@ -1,7 +1,7 @@
 # TIDY-REPORT — Post-landing cleanup (6118 arc)
 
 **Generated:** 2026-06-25  
-**Repo:** [IanFrelinger/Ashlar](https://github.com/IanFrelinger/Ashlar)  
+**Repo:** [IanFrelinger/Ashlar](https://github.com/IanFrelinger/Nexo)  
 **Master HEAD:** `f3be445848e24785b64ea5f7580998884647ea5a` — `chore(repo): P3-CLEANUP hygiene pass — test doubles relocated, evidence consolidated (#198)`
 
 ---
@@ -26,7 +26,7 @@ The `Cert gate` workflow (`.github/workflows/cert-gate.yml`) triggers only on `p
 |-------|-------|
 | PR #198 head | `04ffd8cccab7b60a9fce9a50c844ce4fc0839df2` |
 | cert-gate conclusion | `success` |
-| Run | [actions/runs/28137102010](https://github.com/IanFrelinger/Ashlar/actions/runs/28137102010/job/83326229005) |
+| Run | [actions/runs/28137102010](https://github.com/IanFrelinger/Nexo/actions/runs/28137102010/job/83326229005) |
 
 ### Required human action before pruning
 

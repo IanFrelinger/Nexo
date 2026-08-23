@@ -57,13 +57,13 @@ Trees are otherwise disjoint (`Certification.Composition` vs `BackgroundAgents`)
 
 | PR | Branch | Base | Head | Mergeable | GH state | cert-gate | kernel-gate | application-gate | Stack gate verdict |
 |----|--------|------|------|-----------|----------|-----------|-------------|------------------|-------------------|
-| [#195](https://github.com/IanFrelinger/Ashlar/pull/195) | `cursor/agent-composer-proposer-6118` | `master` | `dbd87e79` | MERGEABLE | BLOCKED† | **success** | **success** | n/a | ✅ **GREEN** (cert-gate) |
-| [#196](https://github.com/IanFrelinger/Ashlar/pull/196) | `cursor/real-model-composer-6118` | `master` | `aecda581` | MERGEABLE | BLOCKED† | **success** | **success** | n/a | ✅ **GREEN** (cert-gate) |
-| [#197](https://github.com/IanFrelinger/Ashlar/pull/197) | `cursor/acceptance-rate-measurement-6118` | `master` | `31f5a945` | MERGEABLE | BLOCKED† | **success** | **success** | n/a | ✅ **GREEN** (cert-gate) |
-| [#198](https://github.com/IanFrelinger/Ashlar/pull/198) | `cursor/repo-hygiene-cleanup-6118` | `master` | `9420747d` | MERGEABLE | BLOCKED† | **success** | **success** | n/a | ✅ **GREEN** (cert-gate) |
-| [#199](https://github.com/IanFrelinger/Ashlar/pull/199) | `cursor/self-extend-audit-6118` | `master` | `a8491640` | MERGEABLE | BLOCKED† | **success** | n/a | n/a | ✅ **GREEN** (cert-gate) |
-| [#200](https://github.com/IanFrelinger/Ashlar/pull/200) | `cursor/self-extend-enforce-6118` | `self-extend-audit-6118` | `24d0fbb5` | MERGEABLE | UNSTABLE‡ | **success** | **success** | n/a | ✅ **GREEN** (cert-gate + kernel-gate) |
-| [#201](https://github.com/IanFrelinger/Ashlar/pull/201) | `cursor/self-extend-harden-6118` | `self-extend-enforce-6118` | `e9438994` | MERGEABLE | UNSTABLE‡ | **success** | **success** | **success** | ✅ **GREEN** (all three) |
+| [#195](https://github.com/IanFrelinger/Nexo/pull/195) | `cursor/agent-composer-proposer-6118` | `master` | `dbd87e79` | MERGEABLE | BLOCKED† | **success** | **success** | n/a | ✅ **GREEN** (cert-gate) |
+| [#196](https://github.com/IanFrelinger/Nexo/pull/196) | `cursor/real-model-composer-6118` | `master` | `aecda581` | MERGEABLE | BLOCKED† | **success** | **success** | n/a | ✅ **GREEN** (cert-gate) |
+| [#197](https://github.com/IanFrelinger/Nexo/pull/197) | `cursor/acceptance-rate-measurement-6118` | `master` | `31f5a945` | MERGEABLE | BLOCKED† | **success** | **success** | n/a | ✅ **GREEN** (cert-gate) |
+| [#198](https://github.com/IanFrelinger/Nexo/pull/198) | `cursor/repo-hygiene-cleanup-6118` | `master` | `9420747d` | MERGEABLE | BLOCKED† | **success** | **success** | n/a | ✅ **GREEN** (cert-gate) |
+| [#199](https://github.com/IanFrelinger/Nexo/pull/199) | `cursor/self-extend-audit-6118` | `master` | `a8491640` | MERGEABLE | BLOCKED† | **success** | n/a | n/a | ✅ **GREEN** (cert-gate) |
+| [#200](https://github.com/IanFrelinger/Nexo/pull/200) | `cursor/self-extend-enforce-6118` | `self-extend-audit-6118` | `24d0fbb5` | MERGEABLE | UNSTABLE‡ | **success** | **success** | n/a | ✅ **GREEN** (cert-gate + kernel-gate) |
+| [#201](https://github.com/IanFrelinger/Nexo/pull/201) | `cursor/self-extend-harden-6118` | `self-extend-enforce-6118` | `e9438994` | MERGEABLE | UNSTABLE‡ | **success** | **success** | **success** | ✅ **GREEN** (all three) |
 
 † **BLOCKED** on Phase-3 / audit PRs: non-stack checks failing (`lychee`, `Pack script vs Ashlar.Hosting graph`, `Standalone brick authoring scaffold`, cross-platform `Linux/macOS/Windows — setup`, etc.). **Stack gates (`cert-gate`) are green on all seven PRs.**
 

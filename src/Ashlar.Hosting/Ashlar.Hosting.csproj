@@ -12,7 +12,7 @@
     <Title>Ashlar Hosting</Title>
     <Description>Hosting extensions for embedding the Ashlar kernel in applications. Call AddAshlar() to register orchestration, adaptation, persistence, trust, and agent services.</Description>
     <PackageTags>ashlar;ai;hosting;di;orchestration;agents</PackageTags>
-    <RepositoryUrl>https://github.com/IanFrelinger/Ashlar</RepositoryUrl>
+    <RepositoryUrl>https://github.com/IanFrelinger/Nexo</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>

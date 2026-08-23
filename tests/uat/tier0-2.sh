@@ -10,7 +10,7 @@
 # does not hide the rest.
 set -uo pipefail
 
-REPO_URL="${REPO_URL:-https://github.com/IanFrelinger/Ashlar.git}"
+REPO_URL="${REPO_URL:-https://github.com/IanFrelinger/Nexo.git}"
 WORK="${WORK:-/work}"
 OUT="${UAT_OUT:-$WORK/out}"
 # Two ways to run. Locally: clone fresh, which is the point of tier 0 -- a tester's first fifteen

@@ -17,7 +17,7 @@
     <Title>Ashlar API</Title>
     <Description>HTTP API for Ashlar kernel. Exposes agent, validate, improve, observe, and execution endpoints.</Description>
     <PackageTags>ashlar;ai;api;orchestration</PackageTags>
-    <RepositoryUrl>https://github.com/IanFrelinger/Ashlar</RepositoryUrl>
+    <RepositoryUrl>https://github.com/IanFrelinger/Nexo</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 
