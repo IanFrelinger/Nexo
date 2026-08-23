@@ -141,4 +141,65 @@ public sealed class RollbackManagerTests : IDisposable
         (await File.ReadAllTextAsync(file1)).Should().Be("a-original");
         (await File.ReadAllTextAsync(file2)).Should().Be("b-original");
     }
+
+    [Fact]
+    public async Task Rollback_ByAdaptationId_SucceedsFromAColdProcess()
+    {
+        // The demo landmine (roadmap audit SHT 08.3): the CLI builds a fresh service
+        // provider per invocation, so a RollbackManager that resolves adaptation -> snapshot
+        // only from its in-process dictionary can NEVER roll back from a cold start, even
+        // though the snapshot sits on disk under the before-inherit label. This test builds
+        // a SECOND manager over the same store — the cold CLI, simulated — and requires the
+        // rollback to succeed.
+        var testFile = Path.Combine(_tempDir, "src", "cold.cs");
+        Directory.CreateDirectory(Path.GetDirectoryName(testFile)!);
+        await File.WriteAllTextAsync(testFile, "original");
+
+        var snapshotPath = Path.Combine(_tempDir, "snapshots");
+        var auditPath = Path.Combine(_tempDir, "audit.db");
+        IServiceProvider BuildProcess() => new ServiceCollection()
+            .AddLogging(b => b.AddConsole().SetMinimumLevel(LogLevel.Warning))
+            .AddSingleton<IAdaptationAuditLog>(sp => new LiteDbAdaptationAuditLog(auditPath))
+            .AddSingleton<IDependencyGraph, DependencyGraph>()
+            .AddSingleton<ISnapshotStore>(_ => new FileSnapshotStore(snapshotPath))
+            .AddSingleton<IRollbackManager, RollbackManager>()
+            .BuildServiceProvider();
+
+        var adaptationId = Guid.NewGuid().ToString("N");
+
+        // process 1: the adaptation runs, snapshot taken, file mutated
+        var warm = BuildProcess().GetRequiredService<IRollbackManager>();
+        warm.PrepareForInherit(adaptationId, new[] { testFile });
+        await warm.BeforeInheritAsync(adaptationId);
+        await File.WriteAllTextAsync(testFile, "mutated by the adaptation");
+
+        // process 2: a cold CLI invocation — brand-new manager, empty dictionary
+        var cold = BuildProcess().GetRequiredService<IRollbackManager>();
+        await cold.RollbackAsync(adaptationId);
+
+        (await File.ReadAllTextAsync(testFile)).Should().Be(
+            "original",
+            "the snapshot was on disk the whole time; a cold process must find it by label");
+    }
+
+    [Fact]
+    public async Task Rollback_ByUnknownAdaptationId_StillFailsClosed()
+    {
+        var snapshotPath = Path.Combine(_tempDir, "snapshots");
+        var auditPath = Path.Combine(_tempDir, "audit.db");
+        var services = new ServiceCollection()
+            .AddLogging(b => b.AddConsole().SetMinimumLevel(LogLevel.Warning))
+            .AddSingleton<IAdaptationAuditLog>(sp => new LiteDbAdaptationAuditLog(auditPath))
+            .AddSingleton<IDependencyGraph, DependencyGraph>()
+            .AddSingleton<ISnapshotStore>(_ => new FileSnapshotStore(snapshotPath))
+            .AddSingleton<IRollbackManager, RollbackManager>()
+            .BuildServiceProvider();
+
+        var manager = services.GetRequiredService<IRollbackManager>();
+
+        // The disk fallback must not turn "nothing to restore" into a silent no-op.
+        var act = () => manager.RollbackAsync("never-existed");
+        await act.Should().ThrowAsync<InvalidOperationException>()
+            .WithMessage("*No snapshot found*never-existed*");
+    }
 }
