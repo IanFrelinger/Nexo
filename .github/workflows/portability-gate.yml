@@ -10,12 +10,14 @@ on:
     paths:
       - "application/src/Ashlar.CLI/**"
       - "src/Ashlar.Manifest/**"
+      - "scripts/e2e-loop.sh"
       - ".github/workflows/portability-gate.yml"
   push:
     branches: [master, "application/**"]
     paths:
       - "application/src/Ashlar.CLI/**"
       - "src/Ashlar.Manifest/**"
+      - "scripts/e2e-loop.sh"
       - ".github/workflows/portability-gate.yml"
 
 jobs:
@@ -73,3 +75,9 @@ jobs:
           fi
 
           echo "portable: the loop holds on ${{ matrix.os }}"
+
+      - name: scenario sweep — 44 behavioural claims on ${{ matrix.os }}
+        shell: bash
+        env:
+          NO_COLOR: "1"
+        run: bash scripts/e2e-loop.sh

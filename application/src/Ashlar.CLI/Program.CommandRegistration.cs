@@ -611,6 +611,7 @@ static partial class Program
         root.AddCommand(new ChangelogCommand());
         root.AddCommand(new InitCommand());
         root.AddCommand(new VerifyCommand());
+        root.AddCommand(new GatesCommand());
         root.AddCommand(new RollbackCommand());
         root.AddCommand(new ComposeCommand());
         var meshCmd = new MeshCommand();
