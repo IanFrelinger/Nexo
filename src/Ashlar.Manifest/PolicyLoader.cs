@@ -62,6 +62,12 @@ public static class PolicyLoader
             return false;
         }
 
+        if (!YamlGuard.Check(yaml!, "policy", out var guardReason))
+        {
+            reason = guardReason;
+            return false;
+        }
+
         AshlarPolicy? parsed;
         try
         {

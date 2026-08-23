@@ -60,6 +60,12 @@ public static class ManifestLoader
             return false;
         }
 
+        if (!YamlGuard.Check(yaml!, "manifest", out var guardReason))
+        {
+            reason = guardReason;
+            return false;
+        }
+
         // Read the top-level keys first, so a policy-owned key gets a precise explanation
         // rather than a generic schema error.
         Dictionary<string, object>? raw;
