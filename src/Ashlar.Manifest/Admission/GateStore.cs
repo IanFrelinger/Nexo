@@ -72,7 +72,9 @@ public sealed partial class GateStore
             ct.ThrowIfCancellationRequested();
             try
             {
-                return new FileStream(lockPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+                var handle = new FileStream(lockPath, FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+                SweepStrayTmp();
+                return handle;
             }
             catch (IOException) when (Environment.TickCount64 < deadline)
             {
@@ -82,6 +84,27 @@ public sealed partial class GateStore
             {
                 throw new TimeoutException(
                     "Could not acquire the gate-store lock within 15s. Another process is holding it unusually long.");
+            }
+        }
+    }
+
+    /// <summary>
+    /// A crash between write and move leaves a stray <c>.json.tmp</c>. It can never be
+    /// mistaken for a record (listings enumerate <c>*.json</c>, and the extension is four
+    /// characters so the Windows legacy three-char pattern quirk does not apply) — but it
+    /// would sit there forever. Swept here, under the lock, where no writer can be mid-move.
+    /// </summary>
+    private void SweepStrayTmp()
+    {
+        foreach (var stray in Directory.EnumerateFiles(_dir, "*.json.tmp"))
+        {
+            try
+            {
+                File.Delete(stray);
+            }
+            catch (IOException)
+            {
+                // A stray we cannot delete right now is swept on a later acquisition.
             }
         }
     }
