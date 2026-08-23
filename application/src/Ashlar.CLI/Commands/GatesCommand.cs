@@ -139,25 +139,21 @@ public sealed class GatesCommand : Command
         }
 
         var store = new GateStore(Path.Combine(directory.FullName, ".ashlar"));
-        var now = DateTimeOffset.UtcNow;
 
-        var admittedInWindow = 0;
-        if (AdmissionGate.TryParseWindow(policy!.SelfExtend.Budget.Window, out var window))
+        // One call, one transaction. The count-decide-record sequence lives kernel-side
+        // under the store lock (#373) so a racing process can never separate the budget
+        // check from the recording — this command must not reassemble that race by calling
+        // the pieces itself.
+        var record = await store.ProposeAsync(policy!, proposal, DateTimeOffset.UtcNow);
+
+        var line = record.State switch
         {
-            admittedInWindow = await store.AdmittedInWindowAsync(window, now);
-        }
-
-        var outcome = AdmissionGate.Decide(policy, proposal, admittedInWindow);
-        await store.RecordAsync(proposal, outcome, now);
-
-        var line = outcome.State switch
-        {
-            ProposalState.Held => Clay($"! HELD — {outcome.Reason}"),
-            ProposalState.Admitted => Gold($"✓ ADMITTED — {outcome.Reason}"),
-            _ => Bad($"× REJECTED — {outcome.Reason}"),
+            ProposalState.Held => Clay($"! HELD — {record.Reason}"),
+            ProposalState.Admitted => Gold($"✓ ADMITTED — {record.Reason}"),
+            _ => Bad($"× REJECTED — {record.Reason}"),
         };
         Console.WriteLine($"  {line}");
-        return outcome.State == ProposalState.Rejected ? 65 : 0;
+        return record.State == ProposalState.Rejected ? 65 : 0;
     }
 
     private static async Task<int> ListAsync(GateStore store)
