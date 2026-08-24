@@ -27,11 +27,12 @@ public sealed record ProjectVerification
 /// Verifies a project — the engine behind <c>ashlar verify</c>.
 ///
 /// <para>Runs the courses that can be honestly checked from the two documents and the
-/// filesystem today: the contract loads, the composition is coherent, and the envelope is
-/// enforceable. It does NOT claim signature verification — nothing signs yet (record signing
-/// still defaults to a dev HMAC), and this verifier will not pretend otherwise. When the
-/// instance-ledger slice brings real keys, a <c>provenance</c> course joins; until then the
-/// verdict a caller renders must say <em>unsigned</em>.</para>
+/// filesystem: the contract loads, the composition is coherent, and the envelope is
+/// enforceable. When the project has a signed instance ledger (once <c>ashlar keys init</c>
+/// and a signed verify have run), a fourth <c>provenance</c> course joins and checks that
+/// history's chain, fail-closed. A project with no ledger stays at three courses, and the
+/// verdict a caller renders then says <em>unsigned</em>; with a valid signed head it says
+/// <em>signed</em>.</para>
 /// </summary>
 public static class ProjectVerifier
 {
@@ -72,7 +73,47 @@ public static class ProjectVerifier
         // ── course 3 · envelope ─────────────────────────────────────────────
         courses.Add(VerifyEnvelope(policy!, projectDirectory));
 
+        // ── course 4 · provenance (only once a signed ledger exists) ────────
+        var provenance = VerifyProvenance(projectDirectory);
+        if (provenance is not null)
+        {
+            courses.Add(provenance);
+        }
+
         return new ProjectVerification { Courses = courses };
+    }
+
+    /// <summary>
+    /// Verifies the project's instance ledger, when it has one. Returns null — no course — for a
+    /// project that has never been certified, so a keyless, zero-setup project stays at three
+    /// courses and reads <em>unsigned</em>. Once a signed history exists, this course checks the
+    /// whole chain and FAILS LOUD on any break, so a run over a tampered ledger is refused: the
+    /// signed record of what was certified is itself part of what "verified" means.
+    /// </summary>
+    private static CourseResult? VerifyProvenance(string projectDirectory)
+    {
+        var stateRoot = Path.Combine(projectDirectory, ".ashlar");
+        var ledgerDir = Path.Combine(stateRoot, "ledger");
+        var hasEntries = Directory.Exists(ledgerDir)
+            && Directory.EnumerateFiles(ledgerDir, "*.json").Any(f => !f.EndsWith(".json.tmp", StringComparison.Ordinal));
+        if (!hasEntries)
+        {
+            return null;
+        }
+        try
+        {
+            var chain = new Ledger.InstanceLedger(stateRoot).VerifyChain();
+            return new CourseResult
+            {
+                Name = "provenance",
+                Passed = true,
+                Detail = $"{chain.Count} signed entr{(chain.Count == 1 ? "y" : "ies")} · chain intact",
+            };
+        }
+        catch (InvalidOperationException ex)
+        {
+            return new CourseResult { Name = "provenance", Passed = false, Detail = ex.Message };
+        }
     }
 
     private static CourseResult VerifyComposition(AshlarManifest manifest)

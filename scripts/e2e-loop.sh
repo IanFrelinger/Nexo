@@ -303,6 +303,26 @@ claim "show-signed-admitted-reads-back" 0 "ADMITTED by tester"
 run_cli gates --show ext-signed --path "$D"
 claim "signed-record-survives-process-death" 0 "ADMITTED"
 
+# ── verify now CERTIFIES when a key is present, signing into the instance ledger ──
+DV=$(fresh); run_cli init cert-demo --path "$DV"
+run_cli verify --path "$DV"
+claim "verify-certifies-with-key" 0 "CERTIFIED" "ed25519:" "ledger #1"
+[ -f "$DV/.ashlar/ledger/000001.json" ] \
+  && result "verify-writes-a-ledger-entry" PASS "entry on disk" \
+  || result "verify-writes-a-ledger-entry" FAIL "no ledger entry written"
+grep -q '"Sig"' "$DV/.ashlar/ledger/000001.json" \
+  && result "ledger-entry-is-signed" PASS "Sig present" \
+  || result "ledger-entry-is-signed" FAIL "ledger entry not signed"
+
+# second verify: the provenance course appears and the chain extends to #2
+run_cli verify --path "$DV"
+claim "verify-second-run-adds-provenance" 0 "CERTIFIED" "provenance" "ledger #2"
+
+# a tampered ledger fails verification via the provenance course, fail-closed
+printf '{ not a valid entry' > "$DV/.ashlar/ledger/000001.json"
+run_cli verify --path "$DV"
+claim "verify-refuses-a-corrupt-ledger" 65 "provenance" "Corrupt ledger"
+
 # A CORRUPT operator key must fail loud and CLEAN on write paths, and never block reads.
 DSIGNED="$D"
 printf 'not-valid-base64!!!' > "$ASHLAR_KEY_DIR/operator.key"
