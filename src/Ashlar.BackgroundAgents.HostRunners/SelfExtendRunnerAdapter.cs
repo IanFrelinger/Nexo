@@ -171,12 +171,31 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
 
         try
         {
+            // M1 enforcement: inside an ashlar project, writes are MEDIATED — the project-
+            // local forge store holds them and only a gate admission applies them. This
+            // overrides both the host's proposal store (admission must read the same queue
+            // `ashlar gates` does) and the host's aggressiveness mode (mediation is the
+            // project's law, not the host's mood). Outside ashlar projects: unchanged.
+            var isAshlarProject = AshlarProjectMediation.IsAshlarProject(repoRoot!);
+            var effectiveProposals = _proposals;
+            var effectiveModeStore = _modeStore;
+            Ashlar.BackgroundAgents.Forge.ChangeProposalStore? projectForge = null;
+            IReadOnlySet<string>? forgeIdsBefore = null;
+            if (isAshlarProject)
+            {
+                projectForge = AshlarProjectMediation.ProjectStore(repoRoot!);
+                effectiveProposals = projectForge;
+                effectiveModeStore = new FixedAggressivenessModeStore(
+                    Ashlar.Abstractions.BackgroundAgentAggressivenessMode.Passive);
+                forgeIdsBefore = AshlarProjectMediation.SnapshotIds(projectForge);
+            }
+
             var (tools, policies, budget) = RepoFsToolboxFactory.CreateWithBuildTest(
                 observations: _observations,
                 source: resolvedAgentId,
                 objectiveId: claimed?.Id,
-                proposals: _proposals,
-                modeStore: _modeStore,
+                proposals: effectiveProposals,
+                modeStore: effectiveModeStore,
                 certificationStore: _certificationStore,
                 // .Value here, not in the constructor: by the time a self-extend run
                 // executes, the registry is fully built and resolving it is a no-op.
@@ -251,11 +270,21 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
             _logger.LogInformation("Self-extend cycle ({Agent}): {Summary}", resolvedAgentName, summary);
 
             // The producer wiring: inside an ashlar project, the cycle's outcome is recorded
-            // through the admission gate — the same store `ashlar gates` reads. No-op
-            // elsewhere. See SelfExtendAdmissionBridge for the honest-scope note.
+            // through the admission gate — the same store `ashlar gates` reads. With M1
+            // mediation, the cycle's writes are the NEW forge proposals (parked, not on
+            // disk); the gate decides their application. No-op elsewhere.
+            IReadOnlyList<string> newForgeIds = [];
+            if (projectForge is not null && forgeIdsBefore is not null)
+            {
+                newForgeIds = AshlarProjectMediation.SnapshotIds(projectForge)
+                    .Except(forgeIdsBefore, StringComparer.Ordinal)
+                    .OrderBy(id => id, StringComparer.Ordinal)
+                    .ToList();
+            }
             var gateOutcome = await SelfExtendAdmissionBridge
                 .TryRecordAsync(repoRoot!, resolvedAgentName, effectiveObjective, writePaths,
-                    cycle.ToolCallsExecuted, cycle.ToolCallsDenied, _logger, cancellationToken)
+                    cycle.ToolCallsExecuted, cycle.ToolCallsDenied, _logger, cancellationToken,
+                    newForgeIds)
                 .ConfigureAwait(false);
 
             return new SelfExtendRunResult(

@@ -38,14 +38,16 @@ public static class SelfExtendAdmissionBridge
         int toolCallsExecuted,
         int toolCallsDenied,
         ILogger logger,
-        CancellationToken ct = default)
+        CancellationToken ct = default,
+        IReadOnlyList<string>? forgeProposalIds = null)
     {
         var policyPath = Path.Combine(repoRoot, "ashlar.policy.yaml");
         if (!File.Exists(policyPath))
         {
             return null;   // not an ashlar project; the runner is unchanged
         }
-        if (writePaths.Count == 0)
+        forgeProposalIds ??= [];
+        if (writePaths.Count == 0 && forgeProposalIds.Count == 0)
         {
             return null;   // nothing to propose
         }
@@ -69,13 +71,34 @@ public static class SelfExtendAdmissionBridge
             return $"GATE ERROR: {reason}";
         }
 
-        var proposal = BuildProposal(agentName, objective, writePaths, toolCallsExecuted, toolCallsDenied);
+        var forge = forgeProposalIds.Count > 0 ? AshlarProjectMediation.ProjectStore(repoRoot) : null;
+
+        var proposal = BuildProposal(agentName, objective, writePaths, toolCallsExecuted, toolCallsDenied,
+            forgeProposalIds, forge);
         var store = new GateStore(Path.Combine(repoRoot, ".ashlar"));
         var record = await store.ProposeAsync(policy!, proposal, DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
 
         logger.LogInformation(
             "Self-extend gate: proposal {Id} -> {State} ({Reason})",
             proposal.Id, record.State, record.Reason);
+
+        // M1 propose → hold → APPLY: the gate's verdict decides what happens to the parked
+        // forge proposals. Held leaves them parked for `gates --admit`; a rejection rejects
+        // them (sealed thereby truly seals — nothing was on disk, nothing ever lands); an
+        // automatic self-extending admission applies them now, within budget, as decided.
+        if (forge is not null)
+        {
+            switch (record.State)
+            {
+                case ProposalState.Rejected:
+                    ForgeApplier.RejectAll(forge, forgeProposalIds, "gate", record.Reason);
+                    break;
+                case ProposalState.Admitted:
+                    var applied = ForgeApplier.ApplyAll(forge, forgeProposalIds, repoRoot, "gate");
+                    logger.LogInformation("Self-extend gate: applied {Count} mediated write(s)", applied.Count);
+                    break;
+            }
+        }
 
         return record.State switch
         {
@@ -95,29 +118,48 @@ public static class SelfExtendAdmissionBridge
         string? objective,
         IReadOnlyList<string> writePaths,
         int toolCallsExecuted,
-        int toolCallsDenied)
+        int toolCallsDenied,
+        IReadOnlyList<string>? forgeProposalIds = null,
+        Ashlar.BackgroundAgents.Forge.ChangeProposalStore? forge = null)
     {
-        var confined = toolCallsDenied == 0;
+        forgeProposalIds ??= [];
+        var mediated = forgeProposalIds.Count > 0;
+
+        // Mediated: the sandbox claim is STRUCTURAL — every write is a parked proposal and
+        // nothing touched disk, so confinement holds by construction regardless of denial
+        // count (mediation denials are steering, not violations). Unmediated: the claim
+        // rests on the policy engine's denial count, as before.
+        var confined = mediated || toolCallsDenied == 0;
+        var sandboxDetail = mediated
+            ? $"writes mediated: {forgeProposalIds.Count} proposal(s) parked, nothing touched disk"
+            : confined
+                ? $"{toolCallsExecuted} tool call(s), 0 denied"
+                : $"{toolCallsDenied} tool call(s) DENIED by the policy engine";
+
+        var diffLines = mediated && forge is not null
+            ? forgeProposalIds.Select(id =>
+                forge.Find(id) is { } p ? $"~ {p.TargetPath}  ({Truncate(p.Summary, 60)})" : $"~ {id}")
+            : writePaths.Select(p => "~ " + p);
+
         return new ExtensionProposal
         {
             // Matches the store's id allowlist: alphanumeric start, [A-Za-z0-9_-].
             Id = "ext-" + Guid.NewGuid().ToString("N")[..12],
             Kind = "brick",
             Summary = string.IsNullOrWhiteSpace(objective)
-                ? $"self-extend cycle by {agentName}: {writePaths.Count} file(s) changed"
+                ? $"self-extend cycle by {agentName}: {(mediated ? forgeProposalIds.Count : writePaths.Count)} change(s)"
                 : Truncate(objective!, 120),
             ProposedBy = agentName,
             ProposedAt = DateTimeOffset.UtcNow,
-            Diff = string.Join("\n", writePaths.Select(p => "~ " + p)),
+            Diff = string.Join("\n", diffLines),
+            ForgeProposalIds = forgeProposalIds,
             Courses =
             [
                 new CourseResult
                 {
                     Name = "sandbox",
                     Passed = confined,
-                    Detail = confined
-                        ? $"{toolCallsExecuted} tool call(s), 0 denied"
-                        : $"{toolCallsDenied} tool call(s) DENIED by the policy engine",
+                    Detail = sandboxDetail,
                 },
             ],
         };
