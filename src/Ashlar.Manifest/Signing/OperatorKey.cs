@@ -82,9 +82,28 @@ public static class OperatorKey
         {
             return null;
         }
-        return new SigningIdentity(
-            File.ReadAllText(pubPath).Trim(),
-            Convert.FromBase64String(File.ReadAllText(privPath).Trim()));
+        // A key that is PRESENT but unreadable is corrupt, not absent: it must fail loud, never
+        // degrade to unsigned (silently dropping signatures the moment a key file is mangled is
+        // the worst outcome). Convert.FromBase64String throws FormatException on garbled text and
+        // NSec's Key.Import throws on a wrong-length seed; normalise both to the same
+        // InvalidOperationException the mismatch case (SigningIdentity's ctor) already raises, so
+        // every caller — the CLI included — sees ONE corrupt-key contract, not a raw parse
+        // exception that escapes its InvalidOperationException/ArgumentException guards as a stack
+        // trace. (IOException from a locked file is a different, transient failure and is left to
+        // propagate as itself.)
+        try
+        {
+            return new SigningIdentity(
+                File.ReadAllText(pubPath).Trim(),
+                Convert.FromBase64String(File.ReadAllText(privPath).Trim()));
+        }
+        catch (Exception ex) when (ex is FormatException or ArgumentException)
+        {
+            throw new InvalidOperationException(
+                $"Corrupt operator key in {dir}: the files are not a readable Ed25519 keypair ({ex.Message}). "
+                + "Re-run key generation with rotation to write a fresh pair; records signed by earlier keys keep "
+                + "verifying via the public keys retained under trusted/.");
+        }
     }
 
     /// <summary>SPEC-006 §3 fingerprint: <c>ed25519:</c> + first 16 lowercase hex chars of
