@@ -63,17 +63,12 @@ public sealed class VerifyCommand : Command
         var policyYaml = File.ReadAllText(policyPath);
         var result = ProjectVerifier.Verify(manifestYaml, policyYaml, directory.FullName);
 
-        RenderCourses(result);
+        // The provenance course fails when the documents no longer match the certification. For
+        // an operator holding the key that is not a dead end — it is a re-certification: the base
+        // courses (everything but provenance) pass, so signing a fresh entry over the CURRENT
+        // documents makes them the certified ones again. Split that out here.
+        var baseOk = result.Courses.Where(c => c.Name != "provenance").All(c => c.Passed);
 
-        if (!result.Verified)
-        {
-            RenderFailed(result);
-            return ExitVerificationFailed;
-        }
-
-        // Verified. If an operator key is present, sign this verification into the instance
-        // ledger and render CERTIFIED; with no key, stay honestly unsigned. A corrupt operator
-        // key fails closed — we do not fall back to unsigned, which would hide that a key exists.
         SigningIdentity? signer;
         try
         {
@@ -81,36 +76,52 @@ public sealed class VerifyCommand : Command
         }
         catch (InvalidOperationException ex)
         {
+            // A corrupt operator key fails closed — never a silent fall-back to unsigned.
             Console.Error.WriteLine(ex.Message);
             return ExitUsage;
         }
 
-        if (signer is null)
+        if (signer is not null && baseOk)
         {
-            RenderUnsigned(result);
-            return ExitVerified;
+            try
+            {
+                var ledger = new InstanceLedger(Path.Combine(directory.FullName, ".ashlar"));
+                var entry = await ledger.AppendVerificationAsync(
+                    signer,
+                    InstanceLedger.Subject(manifestYaml, policyYaml),
+                    verified: true,
+                    result.Courses.Where(c => c.Name != "provenance")
+                        .Select(c => new LedgerCourse { Name = c.Name, Passed = c.Passed, Detail = c.Detail }).ToList(),
+                    DateTimeOffset.UtcNow);
+
+                // Re-verify so the rendered provenance course reflects the entry just written —
+                // the head now covers these documents, so it reads as certified, not stale.
+                result = ProjectVerifier.Verify(manifestYaml, policyYaml, directory.FullName);
+                RenderCourses(result);
+                RenderCertified(result, signer.Fingerprint, entry.Seq);
+                return ExitVerified;
+            }
+            catch (InvalidOperationException ex)
+            {
+                // A corrupt ledger cannot be re-certified over — append verifies the chain first.
+                RenderCourses(result);
+                Console.WriteLine($"  {Bad("× FAILED")}  {Dim(ex.Message)}");
+                Console.WriteLine($"  {Dim("exit 65")}");
+                return ExitVerificationFailed;
+            }
         }
 
-        try
+        // No key to re-certify with, or a base course failed. The result — including a provenance
+        // course that fails on a tampered/altered application — stands, fail-closed. This is what
+        // refuses a downloaded bundle whose documents were changed after it was signed.
+        RenderCourses(result);
+        if (!result.Verified)
         {
-            var ledger = new InstanceLedger(Path.Combine(directory.FullName, ".ashlar"));
-            var entry = await ledger.AppendVerificationAsync(
-                signer,
-                InstanceLedger.Subject(manifestYaml, policyYaml),
-                verified: true,
-                result.Courses.Select(c => new LedgerCourse { Name = c.Name, Passed = c.Passed, Detail = c.Detail }).ToList(),
-                DateTimeOffset.UtcNow);
-            RenderCertified(result, signer.Fingerprint, entry.Seq);
-            return ExitVerified;
-        }
-        catch (InvalidOperationException ex)
-        {
-            // The ledger turned corrupt between the provenance course and this append (or a
-            // racing process): refuse to certify onto a broken history.
-            Console.WriteLine($"  {Bad("× FAILED")}  {Dim(ex.Message)}");
-            Console.WriteLine($"  {Dim("exit 65")}");
+            RenderFailed(result);
             return ExitVerificationFailed;
         }
+        RenderUnsigned(result);
+        return ExitVerified;
     }
 
     // ── rendering ───────────────────────────────────────────────────────────

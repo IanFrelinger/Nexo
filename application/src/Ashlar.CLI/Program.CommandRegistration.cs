@@ -614,6 +614,7 @@ static partial class Program
         root.AddCommand(new GatesCommand());
         root.AddCommand(new KeysCommand());
         root.AddCommand(new PkgCommand());
+        root.AddCommand(new ExportCommand());
         root.AddCommand(new RunCommand(() => ServiceProvider.GetRequiredService<OrchestrateCommand>()));
         root.AddCommand(new RollbackCommand());
         root.AddCommand(new ComposeCommand());

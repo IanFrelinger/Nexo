@@ -97,6 +97,19 @@ public sealed class RootCommandRegistrationTests
     }
 
     [Fact(Timeout = 15000)]
+    public async Task RootCommand_RegistersExportCommand()
+    {
+        await Task.CompletedTask;
+        var root = Ashlar.CLI.Program.BuildRootCommand();
+        var export = root.Subcommands.SingleOrDefault(s => s.Name == "export");
+
+        // Turning a certified project into a portable, self-proving download. Same guard as the
+        // other verbs: it must never silently vanish.
+        export.Should().NotBeNull("`ashlar export` must stay registered");
+        export!.Subcommands.Select(s => s.Name).Should().Contain("native");
+    }
+
+    [Fact(Timeout = 15000)]
     public async Task TrustCommand_HasDocumentedSubcommands()
     {
         await Task.CompletedTask;
