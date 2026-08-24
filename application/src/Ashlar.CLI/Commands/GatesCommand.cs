@@ -105,6 +105,29 @@ public sealed class GatesCommand : Command
                 var decided = await OpenSigningStore(directory).DecideAsync(admit, admit: true, actor, reason ?? "seated after review", DateTimeOffset.UtcNow);
                 Console.WriteLine($"  {Gold("✓ seated")}  {decided.Proposal.Summary}");
                 Console.WriteLine($"  {Dim($"admitted by {decided.Actor} · recorded")}");
+
+                // M1 apply: seating the stone is what puts the held writes on disk. The
+                // decision is already recorded above; an apply failure is reported loudly
+                // and the operator re-runs the apply — it must never look like the writes
+                // landed when they did not.
+                if (decided.Proposal.ForgeProposalIds.Count > 0)
+                {
+                    try
+                    {
+                        var forge = Ashlar.BackgroundAgents.HostRunners.AshlarProjectMediation.ProjectStore(directory.FullName);
+                        var applied = Ashlar.BackgroundAgents.HostRunners.ForgeApplier.ApplyAll(
+                            forge, decided.Proposal.ForgeProposalIds, directory.FullName, actor);
+                        foreach (var path in applied)
+                        {
+                            Console.WriteLine($"  {Ok("✓ applied")}  {path}");
+                        }
+                    }
+                    catch (InvalidOperationException ex)
+                    {
+                        Console.Error.WriteLine($"  APPLY FAILED — the admission is recorded but the writes are NOT on disk: {ex.Message}");
+                        return 1;
+                    }
+                }
                 return 0;
             }
             if (refuse is not null)
@@ -112,6 +135,15 @@ public sealed class GatesCommand : Command
                 var decided = await OpenSigningStore(directory).DecideAsync(refuse, admit: false, actor, reason ?? string.Empty, DateTimeOffset.UtcNow);
                 Console.WriteLine($"  {Clay("! refused")}  {decided.Proposal.Summary}");
                 Console.WriteLine($"  {Dim($"reason recorded and fed back: {decided.Reason}")}");
+
+                // The refusal rejects the parked writes too — no orphaned pending work.
+                if (decided.Proposal.ForgeProposalIds.Count > 0)
+                {
+                    var forge = Ashlar.BackgroundAgents.HostRunners.AshlarProjectMediation.ProjectStore(directory.FullName);
+                    Ashlar.BackgroundAgents.HostRunners.ForgeApplier.RejectAll(
+                        forge, decided.Proposal.ForgeProposalIds, actor, decided.Reason);
+                    Console.WriteLine($"  {Dim($"{decided.Proposal.ForgeProposalIds.Count} parked write(s) rejected — disk untouched")}");
+                }
                 return 0;
             }
             if (show is not null)
