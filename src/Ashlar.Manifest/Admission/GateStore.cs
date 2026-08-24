@@ -20,6 +20,14 @@ public sealed record GateRecord
 
     /// <summary>When the state was last decided (UTC).</summary>
     public required DateTimeOffset DecidedAt { get; init; }
+
+    /// <summary>Base64 Ed25519 signature over the canonical record with the two signature
+    /// fields null (SPEC-006 §4). Null when the record was written without keys — and a
+    /// renderer MUST NOT print a fingerprint for a null sig (rule S-3).</summary>
+    public string? Sig { get; init; }
+
+    /// <summary>Base64 raw public key of the signer; null when unsigned.</summary>
+    public string? Signer { get; init; }
 }
 
 /// <summary>
@@ -43,15 +51,19 @@ public sealed partial class GateStore
     };
 
     private readonly string _dir;
+    private readonly Signing.SigningIdentity? _signer;
 
-    /// <summary>Creates a store rooted at <paramref name="stateRoot"/>/gates.</summary>
-    public GateStore(string stateRoot)
+    /// <summary>Creates a store rooted at <paramref name="stateRoot"/>/gates. When a
+    /// <paramref name="signer"/> is supplied, every record written is signed (SPEC-006);
+    /// without one, records are written unsigned — presence-activated, never half-on.</summary>
+    public GateStore(string stateRoot, Signing.SigningIdentity? signer = null)
     {
         if (string.IsNullOrWhiteSpace(stateRoot))
         {
             throw new ArgumentException("A state root is required.", nameof(stateRoot));
         }
         _dir = Path.Combine(stateRoot, "gates");
+        _signer = signer;
         Directory.CreateDirectory(_dir);
     }
 
@@ -263,6 +275,20 @@ public sealed partial class GateStore
                     $"Corrupt gate record: {Path.GetFileName(path)} contains no record. "
                     + "Refusing to operate on a store that cannot be fully read — inspect or remove the file.");
             }
+            // SPEC-006 rule S-1: a record carrying a signature that does not verify is
+            // corrupt — same loud fail-closed path as truncation, because a forged verdict
+            // is worse than a missing one.
+            if (record.Sig is not null)
+            {
+                var unsigned = record with { Sig = null, Signer = null };
+                if (record.Signer is null
+                    || !Signing.OperatorKey.Verify(record.Signer, Signing.CanonicalJson.Bytes(unsigned), record.Sig))
+                {
+                    throw new InvalidOperationException(
+                        $"Corrupt gate record: {Path.GetFileName(path)} carries a signature that does not verify. "
+                        + "Refusing to operate — a forged verdict is worse than a missing one.");
+                }
+            }
             return record;
         }
         catch (JsonException ex)
@@ -321,8 +347,26 @@ public sealed partial class GateStore
     [System.Text.RegularExpressions.GeneratedRegex("^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$")]
     private static partial System.Text.RegularExpressions.Regex IdShape();
 
-    private static async Task WriteAsync(string path, GateRecord record, CancellationToken ct)
+    private async Task WriteAsync(string path, GateRecord record, CancellationToken ct)
     {
+        // SPEC-006, applied SYMMETRICALLY: always start from the unsigned form, then sign
+        // it iff a key is present. The stripping is not optional on the keyless path — a
+        // record that was read, mutated, and is now being rewritten (DecideAsync: Held →
+        // Admitted) still carries the signature that covered its PRE-mutation content. If a
+        // keyless store wrote it back verbatim, that stale signature would cover the wrong
+        // bytes, and the very next fail-closed read would reject a legitimate verdict as
+        // forged — bricking not just that record but every ListAsync over the store. The
+        // rule is absolute: never persist a signature we did not just compute over exactly
+        // these bytes. No key ⇒ no signature (S-2), never a half-signed inheritance.
+        var unsigned = record with { Sig = null, Signer = null };
+        record = _signer is null
+            ? unsigned
+            : unsigned with
+            {
+                Sig = _signer.Sign(Signing.CanonicalJson.Bytes(unsigned)),
+                Signer = _signer.PublicKeyBase64,
+            };
+
         // Write-then-move so a crash mid-write never leaves a truncated record.
         var tmp = path + ".tmp";
         await using (var stream = File.Create(tmp))
