@@ -1,12 +1,15 @@
 using FluentAssertions;
 using Ashlar.Manifest;
+using Ashlar.Manifest.Ledger;
+using Ashlar.Manifest.Signing;
 using Xunit;
 
 namespace Ashlar.Tests.Kernel;
 
 /// <summary>
-/// Pins the courses <c>ashlar verify</c> runs and, as importantly, what it refuses to claim:
-/// there is no provenance course and no signature output until real signing exists.
+/// Pins the courses <c>ashlar verify</c> runs: the three that always run (contract, composition,
+/// envelope), and the <c>provenance</c> course that joins ONLY once a signed instance ledger
+/// exists — checking that history's chain fail-closed, so a tampered ledger fails verification.
 /// </summary>
 public sealed class ProjectVerifierTests : IDisposable
 {
@@ -46,15 +49,51 @@ public sealed class ProjectVerifierTests : IDisposable
     }
 
     [Fact]
-    public void No_course_claims_provenance_or_a_signature_yet()
+    public void A_project_with_no_ledger_has_no_provenance_course()
     {
-        // Honesty pin: until real keys exist, verify must not pretend to check signatures.
+        // Presence-activated: a keyless, never-certified project stays at three courses and the
+        // caller renders it unsigned — provenance appears only once there is a signed history.
         var (m, p) = Scaffolded();
 
         var result = ProjectVerifier.Verify(m, p, _dir);
 
         result.Courses.Should().NotContain(c => c.Name == "provenance");
-        result.Courses.Should().OnlyContain(c => !c.Detail.Contains("ed25519"));
+    }
+
+    [Fact]
+    public async Task A_clean_ledger_adds_a_passing_provenance_course()
+    {
+        var (m, p) = Scaffolded();
+        var signer = OperatorKey.Generate(Path.Combine(_dir, "keys"));
+        var ledger = new InstanceLedger(Path.Combine(_dir, ".ashlar"));
+        await ledger.AppendVerificationAsync(signer, InstanceLedger.Subject(m, p), verified: true,
+            [new LedgerCourse { Name = "contract", Passed = true, Detail = "ok" }], DateTimeOffset.UtcNow);
+
+        var result = ProjectVerifier.Verify(m, p, _dir);
+
+        result.Verified.Should().BeTrue();
+        result.Courses.Should().Contain(c => c.Name == "provenance" && c.Passed);
+        result.Courses.Single(c => c.Name == "provenance").Detail.Should().Contain("chain intact");
+    }
+
+    [Fact]
+    public async Task A_corrupt_ledger_fails_verification_via_the_provenance_course()
+    {
+        var (m, p) = Scaffolded();
+        var signer = OperatorKey.Generate(Path.Combine(_dir, "keys"));
+        var ledger = new InstanceLedger(Path.Combine(_dir, ".ashlar"));
+        await ledger.AppendVerificationAsync(signer, InstanceLedger.Subject(m, p), verified: true,
+            [new LedgerCourse { Name = "contract", Passed = true, Detail = "ok" }], DateTimeOffset.UtcNow);
+
+        // Corrupt the single entry on disk: the provenance course must catch it and fail the whole
+        // verification, so a run over a forged history is refused — the ledger is part of "verified".
+        var entryFile = Path.Combine(_dir, ".ashlar", "ledger", "000001.json");
+        await File.WriteAllTextAsync(entryFile, "{ not a valid ledger entry");
+
+        var result = ProjectVerifier.Verify(m, p, _dir);
+
+        result.Verified.Should().BeFalse("a tampered ledger fails verification");
+        result.Courses.Single(c => c.Name == "provenance").Passed.Should().BeFalse();
     }
 
     [Fact]

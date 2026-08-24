@@ -139,7 +139,7 @@ public sealed partial class InstanceLedger
 
         // Verify what is already there, then extend it. This is the append-time half of
         // fail-closed: you cannot bury a broken chain under a fresh, valid-looking entry.
-        var existing = await ReadChainAsync(ct).ConfigureAwait(false);
+        var existing = ReadChain();
         VerifyChainLocked(existing);
         var head = existing.Count > 0 ? existing[^1] : null;
 
@@ -218,9 +218,18 @@ public sealed partial class InstanceLedger
     /// signs later entries, and each entry verifies against its own embedded key. (Distinguishing
     /// the operator's key from an attacker's needs an external trust root — v2.)
     /// </summary>
-    public async Task<LedgerVerification> VerifyChainAsync(CancellationToken ct = default)
+    public Task<LedgerVerification> VerifyChainAsync(CancellationToken ct = default)
     {
-        var entries = await ReadChainAsync(ct).ConfigureAwait(false);
+        ct.ThrowIfCancellationRequested();
+        return Task.FromResult(VerifyChain());
+    }
+
+    /// <summary>The synchronous form of <see cref="VerifyChainAsync"/>. Reading and verifying a
+    /// handful of tiny local JSON files needs no async machinery, and the verifier
+    /// (<c>ProjectVerifier</c>) runs its courses synchronously — this is the shape it calls.</summary>
+    public LedgerVerification VerifyChain()
+    {
+        var entries = ReadChain();
         VerifyChainLocked(entries);
         return new LedgerVerification
         {
@@ -262,7 +271,7 @@ public sealed partial class InstanceLedger
 
     /// <summary>Reads every entry in sequence order. A file that exists but cannot be read as an
     /// entry is corruption, never a skipped record.</summary>
-    private async Task<IReadOnlyList<LedgerEntry>> ReadChainAsync(CancellationToken ct)
+    private IReadOnlyList<LedgerEntry> ReadChain()
     {
         if (!Directory.Exists(_dir))
         {
@@ -296,8 +305,7 @@ public sealed partial class InstanceLedger
             LedgerEntry? entry;
             try
             {
-                await using var stream = File.OpenRead(file);
-                entry = await JsonSerializer.DeserializeAsync<LedgerEntry>(stream, Json, ct).ConfigureAwait(false);
+                entry = JsonSerializer.Deserialize<LedgerEntry>(File.ReadAllBytes(file), Json);
             }
             catch (JsonException ex)
             {
