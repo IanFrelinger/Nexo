@@ -93,7 +93,7 @@ public sealed class RootCommandRegistrationTests
 
         // Certified extension packages — admissions that travel. Same guard as the other verbs.
         pkg.Should().NotBeNull("`ashlar pkg` must stay registered");
-        pkg!.Subcommands.Select(s => s.Name).Should().Contain(new[] { "export", "import", "show" });
+        pkg!.Subcommands.Select(s => s.Name).Should().Contain(new[] { "export", "import", "show", "publish", "pull" });
     }
 
     [Fact(Timeout = 15000)]
