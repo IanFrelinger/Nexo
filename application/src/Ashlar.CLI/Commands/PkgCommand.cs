@@ -22,11 +22,13 @@ namespace Ashlar.CLI.Commands;
 public sealed class PkgCommand : Command
 {
     /// <summary>Creates a new PkgCommand instance.</summary>
-    public PkgCommand() : base("pkg", "Export, inspect, and import certified extension packages (.ashpkg).")
+    public PkgCommand() : base("pkg", "Export, inspect, share, and import certified extension packages (.ashpkg).")
     {
         AddCommand(BuildExport());
         AddCommand(BuildImport());
         AddCommand(BuildShow());
+        AddCommand(BuildPublish());
+        AddCommand(BuildPull());
     }
 
     private static Option<DirectoryInfo> PathOption() => new(
@@ -139,82 +141,52 @@ public sealed class PkgCommand : Command
             return 1;
         }
 
-        // Intrinsic verification: both signatures check against keys the package carries.
-        // Failing ANY check is refusal — a package that half-verifies is treated as forged.
-        if (!ExtensionPackaging.TryOpen(await File.ReadAllTextAsync(file.FullName), out var pkg, out var reason))
+        // Verify + submit is shared with `mesh pull` — how a package arrived must not change how
+        // it is admitted. A peek first, so the operator sees the origin's evidence before the verdict.
+        if (!ExtensionPackaging.TryOpen(await File.ReadAllTextAsync(file.FullName), out var peek, out var peekReason))
         {
-            Console.Error.WriteLine(reason);
+            Console.Error.WriteLine(peekReason);
             return 65;
         }
-
-        if (!PolicyLoader.TryLoad(await File.ReadAllTextAsync(policyPath), out var policy, out var policyReason))
-        {
-            Console.Error.WriteLine(policyReason);
-            return 1;
-        }
-
         Console.WriteLine();
-        Console.WriteLine($"  {pkg!.Record.Proposal.Summary}");
-        Console.WriteLine($"  {Dim($"origin verdict {Fp(pkg.Record.Signer)} · seal {Fp(pkg.SealSigner)} · {pkg.Files.Count} file(s)")}");
-        foreach (var course in pkg.Record.Proposal.Courses)
+        Console.WriteLine($"  {peek!.Record.Proposal.Summary}");
+        Console.WriteLine($"  {Dim($"origin verdict {Fp(peek.Record.Signer)} · seal {Fp(peek.SealSigner)} · {peek.Files.Count} file(s)")}");
+        foreach (var course in peek.Record.Proposal.Courses)
         {
             var glyph = course.Passed ? Ok("✓") : Bad("×");
             Console.WriteLine($"  {glyph} {course.Name,-12} {Dim($"{course.Detail} (evidence from origin)")}");
         }
         Console.WriteLine();
 
-        try
+        var result = await PackageImport.SubmitAsync(directory.FullName, await File.ReadAllTextAsync(file.FullName));
+        switch (result.Outcome)
         {
-            // Park the files as LOCAL forge proposals — nothing touches the project tree until
-            // THIS gate admits. Propose → hold → apply holds for imports exactly as for local
-            // cycles: sealed seals against remote code by construction.
-            var forge = AshlarProjectMediation.ProjectStore(directory.FullName);
-            var localForgeIds = new List<string>();
-            foreach (var pf in pkg.Files)
-            {
-                var parked = forge.Add(new ChangeProposal
+            case PackageAdmission.Admitted:
+                Console.WriteLine($"  {Gold($"✓ ADMITTED — {result.Message}")}");
+                foreach (var path in result.AppliedPaths)
                 {
-                    Id = "pkg-" + Guid.NewGuid().ToString("N")[..12],
-                    TargetPath = pf.Path,
-                    NewContent = pf.Content,
-                    Summary = $"imported: {pkg.Record.Proposal.Summary}",
-                    Reason = $"package sealed by {Fp(pkg.SealSigner)}",
-                    CreatedAt = DateTimeOffset.UtcNow,
-                });
-                localForgeIds.Add(parked.Id);
-            }
-
-            var proposal = pkg.Record.Proposal with { ForgeProposalIds = localForgeIds };
-            var store = new GateStore(Path.Combine(directory.FullName, ".ashlar"), OperatorKey.TryLoad());
-            var record = await store.ProposeAsync(policy!, proposal, DateTimeOffset.UtcNow);
-
-            switch (record.State)
-            {
-                case ProposalState.Admitted:
-                    var applied = ForgeApplier.ApplyAll(forge, localForgeIds, directory.FullName, "gate");
-                    Console.WriteLine($"  {Gold($"✓ ADMITTED — {record.Reason}")}");
-                    foreach (var path in applied)
-                    {
-                        Console.WriteLine($"  {Ok("✓ applied")}  {path}");
-                    }
-                    return 0;
-                case ProposalState.Held:
-                    Console.WriteLine($"  {Clay($"! HELD — {record.Reason}")}");
-                    Console.WriteLine($"  {Dim("nothing is on disk. review:  ashlar gates --show " + record.Proposal.Id)}");
-                    return 0;
-                default:
-                    ForgeApplier.RejectAll(forge, localForgeIds, "gate", record.Reason);
-                    Console.WriteLine($"  {Bad($"× REJECTED — {record.Reason}")}");
-                    Console.WriteLine($"  {Dim("disk untouched")}");
-                    return 65;
-            }
-        }
-        catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
-        {
-            // Append-once id collisions, corrupt local key, forge/apply refusals: the kernel's
-            // wording is the contract; pass it through.
-            Console.Error.WriteLine(ex.Message);
-            return 1;
+                    Console.WriteLine($"  {Ok("✓ applied")}  {path}");
+                }
+                if (result.Warning is not null)
+                {
+                    Console.Error.WriteLine($"  {Bad("! " + result.Warning)}");
+                    return 1;   // admission recorded, but the disk state is not what was intended
+                }
+                return 0;
+            case PackageAdmission.Held:
+                Console.WriteLine($"  {Clay($"! HELD — {result.Message}")}");
+                Console.WriteLine($"  {Dim("nothing is on disk. review:  ashlar gates --show " + result.LocalProposalId)}");
+                return 0;
+            case PackageAdmission.AlreadyImported:
+                Console.WriteLine($"  {Dim("− already imported: " + result.Message)}");
+                return 0;
+            case PackageAdmission.Rejected:
+                Console.WriteLine($"  {Bad($"× REJECTED — {result.Message}")}");
+                Console.WriteLine($"  {Dim("disk untouched")}");
+                return 65;
+            default:
+                Console.Error.WriteLine(result.Message);
+                return 1;
         }
     }
 
@@ -263,6 +235,167 @@ public sealed class PkgCommand : Command
         Console.WriteLine($"  {Gold("✓ package verifies")}  {Dim($"verdict signed {Fp(r.Signer)} · sealed {Fp(pkg.SealSigner)} · admitted by {r.Actor}")}");
         Console.WriteLine($"  {Dim("importing runs it through YOUR gate:  ashlar pkg import <file>")}");
         return 0;
+    }
+
+    // ─────────────────────────── publish (to the mesh) ───────────────────────────
+
+    private static Option<DirectoryInfo?> StoreOption() => new(
+        name: "--store",
+        description: "Mesh package store (defaults to $ASHLAR_MESH_DIR, else ~/.ashlar/mesh/published).");
+
+    private static string ResolveStore(DirectoryInfo? store)
+    {
+        if (store is not null)
+        {
+            return store.FullName;
+        }
+        if (Environment.GetEnvironmentVariable("ASHLAR_MESH_DIR") is { Length: > 0 } env)
+        {
+            return Path.Combine(Path.GetFullPath(env), "published");
+        }
+        return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".ashlar", "mesh", "published");
+    }
+
+    private static Command BuildPublish()
+    {
+        var fileArg = new Argument<FileInfo>("package", "The .ashpkg to publish to the mesh.");
+        var storeOpt = StoreOption();
+        var cmd = new Command("publish", "Verify a package and place it in the mesh store for peers to pull.") { fileArg, storeOpt };
+        cmd.SetHandler(async (InvocationContext ctx) =>
+        {
+            ctx.ExitCode = await PublishAsync(
+                ctx.ParseResult.GetValueForArgument(fileArg),
+                ctx.ParseResult.GetValueForOption(storeOpt));
+        });
+        return cmd;
+    }
+
+    private static async Task<int> PublishAsync(FileInfo file, DirectoryInfo? store)
+    {
+        if (!file.Exists)
+        {
+            Console.Error.WriteLine($"no such package: {file.FullName}");
+            return 1;
+        }
+        var json = await File.ReadAllTextAsync(file.FullName);
+
+        // Never publish what does not verify — the mesh carries certified packages only, so a
+        // forged one is refused at the source rather than propagated to every peer.
+        if (!ExtensionPackaging.TryOpen(json, out var pkg, out var reason))
+        {
+            Console.Error.WriteLine(reason);
+            return 65;
+        }
+
+        var storeDir = ResolveStore(store);
+        Directory.CreateDirectory(storeDir);
+        // Name by content hash so identical packages dedupe across republishes, prefixed by the
+        // proposal id so a human browsing the store can read what is there.
+        var sha = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
+            System.Text.Encoding.UTF8.GetBytes(json)))[..12].ToLowerInvariant();
+        var name = $"{Safe(pkg!.Record.Proposal.Id)}-{sha}.ashpkg";
+        var dest = Path.Combine(storeDir, name);
+        await File.WriteAllTextAsync(dest, json);
+
+        Console.WriteLine($"  {Gold("✓ published to the mesh")}  {pkg.Record.Proposal.Summary}");
+        Console.WriteLine($"  {Dim($"sealed {Fp(pkg.SealSigner)} · {pkg.Files.Count} file(s)")}");
+        Console.WriteLine($"  {Dim($"→ {dest}")}");
+        Console.WriteLine($"  {Dim("peers pull with:  ashlar pkg pull --from " + storeDir)}");
+        return 0;
+    }
+
+    // ─────────────────────────── pull (from a peer) ───────────────────────────
+
+    private static Command BuildPull()
+    {
+        var fromOpt = new Option<DirectoryInfo>("--from", "A peer's mesh store to pull certified packages from.") { IsRequired = true };
+        var pathOpt = PathOption();
+        var cmd = new Command("pull", "Pull certified packages from a peer and run each through THIS project's gate.") { fromOpt, pathOpt };
+        cmd.SetHandler(async (InvocationContext ctx) =>
+        {
+            ctx.ExitCode = await PullAsync(
+                ctx.ParseResult.GetValueForOption(fromOpt)!,
+                ctx.ParseResult.GetValueForOption(pathOpt)!);
+        });
+        return cmd;
+    }
+
+    private static async Task<int> PullAsync(DirectoryInfo from, DirectoryInfo directory)
+    {
+        if (!File.Exists(Path.Combine(directory.FullName, "ashlar.yaml"))
+            || !File.Exists(Path.Combine(directory.FullName, "ashlar.policy.yaml")))
+        {
+            Console.Error.WriteLine($"not an ashlar project: {directory.FullName}");
+            return 1;
+        }
+        if (!from.Exists)
+        {
+            Console.Error.WriteLine($"no such peer store: {from.FullName}");
+            return 1;
+        }
+
+        var packages = Directory.EnumerateFiles(from.FullName, "*.ashpkg").OrderBy(p => p, StringComparer.Ordinal).ToList();
+        if (packages.Count == 0)
+        {
+            Console.WriteLine($"  {Dim($"the peer store is empty — nothing to pull from {from.FullName}")}");
+            return 0;
+        }
+
+        Console.WriteLine();
+        Console.WriteLine($"  {Dim($"pulling {packages.Count} package(s) from {from.FullName} — each faces YOUR gate")}");
+        Console.WriteLine();
+
+        int admitted = 0, held = 0, refused = 0, skipped = 0, warned = 0;
+        foreach (var path in packages)
+        {
+            var result = await PackageImport.SubmitAsync(directory.FullName, await File.ReadAllTextAsync(path));
+            var summary = result.Package?.Record.Proposal.Summary ?? Path.GetFileName(path);
+            switch (result.Outcome)
+            {
+                case PackageAdmission.Admitted:
+                    admitted++;
+                    Console.WriteLine($"  {Gold("✓ ADMITTED")}  {summary} {Dim($"· {result.AppliedPaths.Count} file(s)")}");
+                    if (result.Warning is not null)
+                    {
+                        warned++;
+                        Console.WriteLine($"    {Bad("! " + result.Warning)}");
+                    }
+                    break;
+                case PackageAdmission.Held:
+                    held++;
+                    Console.WriteLine($"  {Clay("! HELD")}     {summary} {Dim("· review with `ashlar gates`")}");
+                    break;
+                case PackageAdmission.AlreadyImported:
+                    skipped++;
+                    Console.WriteLine($"  {Dim("− already have  " + summary)}");
+                    break;
+                case PackageAdmission.Rejected:
+                    refused++;
+                    Console.WriteLine($"  {Bad("× REJECTED")} {summary} {Dim($"· {result.Message}")}");
+                    break;
+                default:
+                    refused++;
+                    Console.WriteLine($"  {Bad("× REFUSED")}  {summary} {Dim($"· {result.Message}")}");
+                    break;
+            }
+        }
+
+        Console.WriteLine();
+        Console.WriteLine($"  {Dim($"pulled {packages.Count} · admitted {admitted} · held {held} · already-have {skipped} · refused/rejected {refused}")}");
+        // A partial apply (admitted but not fully written) is a non-zero exit so a script notices.
+        if (warned > 0)
+        {
+            return 1;
+        }
+        // A pull where nothing new was accepted AND nothing was already-had is worth a non-zero exit
+        // so a script notices a peer sending only things this gate refuses.
+        return admitted + held + skipped > 0 ? 0 : 65;
+    }
+
+    private static string Safe(string id)
+    {
+        var chars = id.Where(c => char.IsLetterOrDigit(c) || c is '-' or '_').ToArray();
+        return chars.Length > 0 ? new string(chars) : "pkg";
     }
 
     private static string Fp(string? publicKeyBase64) =>
