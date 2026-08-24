@@ -144,6 +144,25 @@ public sealed class OperatorKeyTests : IDisposable
     }
 
     [Fact]
+    public void TryLoad_reports_an_unreadable_key_as_corrupt_not_absent()
+    {
+        // A present-but-mangled key must fail loud, never look like "no key" (which would
+        // silently drop signing). Garbled base64 and a valid-base64-but-wrong-length seed are
+        // the two shapes; both must surface as the one corrupt-key InvalidOperationException,
+        // not a raw FormatException that a caller's guard would miss.
+        OperatorKey.Generate(_keyDir);
+
+        File.WriteAllText(Path.Combine(_keyDir, "operator.key"), "not-valid-base64!!!");
+        var garbled = () => OperatorKey.TryLoad(_keyDir);
+        garbled.Should().Throw<InvalidOperationException>().WithMessage("*Corrupt operator key*");
+
+        // Valid base64, but far too short to be a 32-byte Ed25519 seed.
+        File.WriteAllText(Path.Combine(_keyDir, "operator.key"), Convert.ToBase64String(new byte[8]));
+        var wrongLength = () => OperatorKey.TryLoad(_keyDir);
+        wrongLength.Should().Throw<InvalidOperationException>().WithMessage("*Corrupt operator key*");
+    }
+
+    [Fact]
     public void Rotate_keeps_the_old_public_key_so_old_records_still_verify()
     {
         var oldId = OperatorKey.Generate(_keyDir);

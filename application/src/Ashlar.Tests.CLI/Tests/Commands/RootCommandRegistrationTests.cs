@@ -71,6 +71,20 @@ public sealed class RootCommandRegistrationTests
 
 
     [Fact(Timeout = 15000)]
+    public async Task RootCommand_RegistersKeysCommand()
+    {
+        await Task.CompletedTask;
+        var root = Ashlar.CLI.Program.BuildRootCommand();
+        var keys = root.Subcommands.SingleOrDefault(s => s.Name == "keys");
+
+        // The operator's signing identity (SPEC-006). Same guard as the loop's verbs: it must
+        // never silently vanish from the root — a project whose `keys init` disappeared would
+        // fall back to unsigned verdicts with no signal that signing was ever available.
+        keys.Should().NotBeNull("`ashlar keys` must stay registered");
+        keys!.Subcommands.Select(s => s.Name).Should().Contain(new[] { "init", "show" });
+    }
+
+    [Fact(Timeout = 15000)]
     public async Task TrustCommand_HasDocumentedSubcommands()
     {
         await Task.CompletedTask;
