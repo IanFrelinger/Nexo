@@ -402,13 +402,59 @@ sed 's/shared brick v1/backdoored/' "$WORK/shared.ashpkg" > "$WORK/tampered.ashp
 run_cli pkg import "$WORK/tampered.ashpkg" --path "$C"
 claim "pkg-import-tampered-refused" 65 "seal does not verify"
 
-# importing the same package twice hits append-once
+# importing the same package twice is idempotent — already-decided is skipped, not re-parked
 run_cli pkg import "$WORK/shared.ashpkg" --path "$B"
-claim "pkg-import-duplicate-refused" 1 "append-once"
+claim "pkg-import-duplicate-skipped" 0 "already imported"
 
 # exporting without an operator key is refused — a seal is a signature
 ASHLAR_KEY_DIR="$WORK/nokeys" run_cli pkg export --id ext-pkg --out "$WORK/x.ashpkg" --path "$A"
 claim "pkg-export-keyless-refused" 1 "requires an operator key"
+
+unset ASHLAR_KEY_DIR
+
+# ───────────────────────────── pkg mesh: publish + pull between peers ─────────────────────────────
+# The origin publishes its certified package to a mesh store; a peer pulls the whole store and
+# each package faces the peer's OWN gate. Reuses the shared package from the pkg block above.
+export ASHLAR_KEY_DIR="$WORK/pkgkeys"
+MESH="$WORK/mesh-store"
+
+run_cli pkg publish "$WORK/shared.ashpkg" --store "$MESH"
+claim "pkg-publish-to-mesh" 0 "published to the mesh" "ed25519:"
+ls "$MESH"/*.ashpkg >/dev/null 2>&1 \
+  && result "pkg-publish-lands-in-store" PASS "package in the mesh store" \
+  || result "pkg-publish-lands-in-store" FAIL "nothing in the store"
+
+# publishing a tampered package to the mesh is refused at the source
+run_cli pkg publish "$WORK/tampered.ashpkg" --store "$MESH"
+claim "pkg-publish-refuses-forged" 65 "seal does not verify"
+
+# a proposing peer pulls the store: the package is HELD (nothing on disk until it seats it)
+PP=$(fresh); run_cli init pull-node --path "$PP"; set_proposing "$PP"
+run_cli pkg pull --from "$MESH" --path "$PP"
+claim "pkg-pull-holds-under-proposing" 0 "HELD" "faces YOUR gate" "pulled 1"
+[ ! -f "$PP/src/Shared.cs" ] \
+  && result "pkg-pull-held-not-on-disk" PASS "pulled code holds before the gate" \
+  || result "pkg-pull-held-not-on-disk" FAIL "pulled file landed before admission"
+
+# re-pulling the same store is idempotent: already-decided packages are skipped, not re-parked
+run_cli pkg pull --from "$MESH" --path "$PP"
+claim "pkg-pull-idempotent" 0 "already have" "already-have 1"
+FORGE_COUNT=$(ls "$PP/.ashlar/forge/proposed"/*.json 2>/dev/null | wc -l)
+[ "$FORGE_COUNT" -le 1 ] \
+  && result "pkg-repull-does-not-leak-forge" PASS "no orphaned parked proposals" \
+  || result "pkg-repull-does-not-leak-forge" FAIL "forge queue grew on re-pull ($FORGE_COUNT)"
+
+# a sealed peer pulls the same store: every package rejected, nothing lands, non-zero exit
+PS=$(fresh); run_cli init sealed-pull --path "$PS"
+run_cli pkg pull --from "$MESH" --path "$PS"
+claim "pkg-pull-sealed-rejects-all" 65 "REJECTED" "refused/rejected 1"
+[ ! -f "$PS/src/Shared.cs" ] \
+  && result "pkg-pull-sealed-nothing-lands" PASS "receiver sovereignty holds over the mesh" \
+  || result "pkg-pull-sealed-nothing-lands" FAIL "sealed peer accepted mesh code"
+
+# pulling from an empty store is a clean no-op
+run_cli pkg pull --from "$WORK/nostore-$RANDOM" --path "$PP"
+claim "pkg-pull-missing-store" 1 "no such peer store"
 
 unset ASHLAR_KEY_DIR
 
