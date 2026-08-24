@@ -250,6 +250,100 @@ claim "run-mock-completes" 0 "provider mock"
 run_cli run "x" --path "$WORK"
 claim "run-not-a-project" 1 "not an ashlar project"
 
+# ───────────────────────────── keys / signing ─────────────────────────────
+# Isolate the operator identity into the scratch tree — never touch the real ~/.ashlar/keys.
+# Exported so both `keys` and the `gates` signing path (which loads the machine-global key)
+# resolve the SAME directory, which is the whole point of presence-activation.
+export ASHLAR_KEY_DIR="$WORK/keys"
+
+run_cli keys show
+claim "keys-show-none" 0 "no operator key"
+echo "$OUT" | grep -q "ed25519" \
+  && result "keys-show-none-hides-fingerprint" FAIL "printed a fingerprint with no key (S-3)" \
+  || result "keys-show-none-hides-fingerprint" PASS "no fingerprint for an absent key"
+
+run_cli keys init
+claim "keys-init-generates" 0 "operator key ready" "ed25519:"
+[ -f "$ASHLAR_KEY_DIR/operator.key" ] && [ -f "$ASHLAR_KEY_DIR/operator.pub" ] \
+  && result "keys-init-writes-both-halves" PASS "seed + pub on disk" \
+  || result "keys-init-writes-both-halves" FAIL "missing key files"
+
+run_cli keys init
+claim "keys-init-refuses-overwrite" 1 "already exists" "rotate"
+
+run_cli keys show
+claim "keys-show-fingerprint" 0 "ed25519:" "operator key"
+
+run_cli keys init --rotate
+claim "keys-init-rotate" 0 "operator key rotated"
+ls "$ASHLAR_KEY_DIR"/trusted/*.pub >/dev/null 2>&1 \
+  && result "keys-rotate-retains-old-pub" PASS "old pub kept in trusted/" \
+  || result "keys-rotate-retains-old-pub" FAIL "old pub not retained"
+
+# The integration: with a key present, the gate SIGNS the verdicts it records.
+D=$(fresh); run_cli init demo --path "$D"; set_proposing "$D"
+proposal_json ext-signed brick > "$D/p.json"
+run_cli gates propose --file "$D/p.json" --path "$D"
+claim "propose-with-key-holds" 0 "HELD"
+grep -q '"Sig"' "$D/.ashlar/gates/ext-signed.json" \
+  && result "held-record-is-signed" PASS "Sig present" \
+  || result "held-record-is-signed" FAIL "no Sig in the held record"
+grep -q '"Signer"' "$D/.ashlar/gates/ext-signed.json" \
+  && result "held-record-names-signer" PASS "Signer embedded" \
+  || result "held-record-names-signer" FAIL "no Signer in the held record"
+
+# Admit re-signs over the NEW content; the show reads it back fail-closed, so a green read is
+# the proof the verdict was NOT bricked by a stale signature (the bug the review caught).
+run_cli gates --admit ext-signed --as tester --path "$D"
+claim "admit-signed-record" 0 "seated"
+run_cli gates --show ext-signed --path "$D"
+claim "show-signed-admitted-reads-back" 0 "ADMITTED by tester"
+
+# A record signed at rest still reads back after a fresh process — durability plus signature.
+run_cli gates --show ext-signed --path "$D"
+claim "signed-record-survives-process-death" 0 "ADMITTED"
+
+# ── verify now CERTIFIES when a key is present, signing into the instance ledger ──
+DV=$(fresh); run_cli init cert-demo --path "$DV"
+run_cli verify --path "$DV"
+claim "verify-certifies-with-key" 0 "CERTIFIED" "ed25519:" "ledger #1"
+[ -f "$DV/.ashlar/ledger/000001.json" ] \
+  && result "verify-writes-a-ledger-entry" PASS "entry on disk" \
+  || result "verify-writes-a-ledger-entry" FAIL "no ledger entry written"
+grep -q '"Sig"' "$DV/.ashlar/ledger/000001.json" \
+  && result "ledger-entry-is-signed" PASS "Sig present" \
+  || result "ledger-entry-is-signed" FAIL "ledger entry not signed"
+
+# second verify: the provenance course appears and the chain extends to #2
+run_cli verify --path "$DV"
+claim "verify-second-run-adds-provenance" 0 "CERTIFIED" "provenance" "ledger #2"
+
+# a tampered ledger fails verification via the provenance course, fail-closed
+printf '{ not a valid entry' > "$DV/.ashlar/ledger/000001.json"
+run_cli verify --path "$DV"
+claim "verify-refuses-a-corrupt-ledger" 65 "provenance" "Corrupt ledger"
+
+# A CORRUPT operator key must fail loud and CLEAN on write paths, and never block reads.
+DSIGNED="$D"
+printf 'not-valid-base64!!!' > "$ASHLAR_KEY_DIR/operator.key"
+
+run_cli keys show
+claim "keys-show-corrupt-fails-clean" 1 "Corrupt operator key"
+echo "$OUT" | grep -qE "Unhandled exception|System.FormatException|^   at " \
+  && result "keys-corrupt-no-raw-stack-trace" FAIL "leaked a stack trace instead of a clean message" \
+  || result "keys-corrupt-no-raw-stack-trace" PASS "clean message, no stack trace"
+
+DC=$(fresh); run_cli init demo --path "$DC"; set_proposing "$DC"
+proposal_json ext-corrupt brick > "$DC/p.json"
+run_cli gates propose --file "$DC/p.json" --path "$DC"
+claim "propose-corrupt-key-fails-clean" 1 "Corrupt operator key"
+
+# Reads verify via the record's OWN embedded key, so a corrupt operator key must NOT block them.
+run_cli gates --show ext-signed --path "$DSIGNED"
+claim "read-survives-a-corrupt-operator-key" 0 "ADMITTED"
+
+unset ASHLAR_KEY_DIR
+
 # ───────────────────────────── verdict ─────────────────────────────
 echo
 echo "==================== e2e-loop verdict ===================="

@@ -26,6 +26,10 @@ public sealed class DoctorCommand : Command
         var fixOpt = new Option<bool>("--fix", () => false, "Attempt safe remediation for fixable onboarding failures.");
         var dryRunOpt = new Option<bool>("--dry-run", () => false, "With --fix, list remediation actions without running them.");
         var yesOpt = new Option<bool>("--yes", () => false, "Auto-approve remediation actions when --fix is enabled.");
+        var pathOpt = new Option<DirectoryInfo>(
+            "--path",
+            () => new DirectoryInfo(Environment.CurrentDirectory),
+            "Project directory to also report readiness for (defaults to current). Ignored when not an ashlar project.");
 
         AddOption(includeOptionalOpt);
         AddOption(profileOpt);
@@ -33,6 +37,7 @@ public sealed class DoctorCommand : Command
         AddOption(fixOpt);
         AddOption(dryRunOpt);
         AddOption(yesOpt);
+        AddOption(pathOpt);
 
         this.SetHandler(async (InvocationContext ctx) =>
         {
@@ -42,7 +47,8 @@ public sealed class DoctorCommand : Command
             var fix = ctx.ParseResult.GetValueForOption(fixOpt);
             var dryRun = ctx.ParseResult.GetValueForOption(dryRunOpt);
             var yes = ctx.ParseResult.GetValueForOption(yesOpt);
-            ctx.ExitCode = await ExecuteAsync(profile, includeOptional, json, fix, dryRun, yes, ctx.GetCancellationToken()).ConfigureAwait(false);
+            var path = ctx.ParseResult.GetValueForOption(pathOpt)?.FullName;
+            ctx.ExitCode = await ExecuteAsync(profile, includeOptional, json, fix, dryRun, yes, ctx.GetCancellationToken(), path).ConfigureAwait(false);
         });
     }
 
@@ -53,8 +59,14 @@ public sealed class DoctorCommand : Command
         bool fix,
         bool dryRun,
         bool autoApproveFixes,
-        CancellationToken ct)
+        CancellationToken ct,
+        string? projectPath = null)
     {
+        // Project readiness is a SEPARATE question from environment health, reported alongside it
+        // but never folded into the environment exit code. It is null when the path is not an
+        // ashlar project, and the block is then omitted entirely.
+        var readiness = DoctorProjectReadiness.Assess(projectPath ?? Environment.CurrentDirectory);
+
         var dependencyAssessment = await BootstrapRuntime.AssessDemoAsync(profile, includeOptional, ct).ConfigureAwait(false);
         var hostOs = RuntimeInformation.OSDescription;
         var osSupported = OperatingSystem.IsLinux() || OperatingSystem.IsMacOS() || OperatingSystem.IsWindows();
@@ -131,6 +143,17 @@ public sealed class DoctorCommand : Command
                     },
                     remediation = remediation
                 },
+                projectReadiness = readiness is null ? null : new
+                {
+                    verdict = readiness.Verdict,
+                    ready = readiness.Ready,
+                    verified = readiness.Verified,
+                    key = readiness.KeyStatus,
+                    fingerprint = readiness.Fingerprint,
+                    ledger = readiness.LedgerStatus,
+                    ledgerEntries = readiness.LedgerEntries,
+                    nextStep = readiness.NextStep
+                },
                 nextSteps = new
                 {
                     devContainer = "Open repo in Cursor/VS Code → Dev Containers: Reopen in Container",
@@ -188,6 +211,18 @@ public sealed class DoctorCommand : Command
             Console.WriteLine("  - dev container: Reopen in Container (.devcontainer/)");
             Console.WriteLine("  - container lane: docker run --rm ghcr.io/ianfrelinger/nexo-cli:latest --help");
             Console.WriteLine("  - remediation lane: dotnet run --project application/src/Ashlar.CLI -- doctor --fix --yes");
+
+            if (readiness is not null)
+            {
+                Console.WriteLine();
+                Console.WriteLine($"project readiness: {readiness.Verdict}");
+                Console.WriteLine($"  verify: {(readiness.Verified ? "pass" : "fail")}");
+                Console.WriteLine($"  operator key: {readiness.KeyStatus}"
+                    + (readiness.Fingerprint is { } fp ? $" ({fp})" : string.Empty));
+                Console.WriteLine($"  ledger: {readiness.LedgerStatus}"
+                    + (readiness.LedgerStatus == "intact" ? $" ({readiness.LedgerEntries} signed)" : string.Empty));
+                Console.WriteLine($"  next: {readiness.NextStep}");
+            }
         }
 
         return overallOk ? 0 : 1;

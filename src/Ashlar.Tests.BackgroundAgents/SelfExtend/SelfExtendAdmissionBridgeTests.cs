@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Ashlar.BackgroundAgents.HostRunners;
 using Ashlar.Manifest;
 using Ashlar.Manifest.Admission;
+using Ashlar.Manifest.Signing;
 using Xunit;
 
 namespace Ashlar.Tests.BackgroundAgents.SelfExtend;
@@ -86,6 +87,30 @@ public sealed class SelfExtendAdmissionBridgeTests : IDisposable
         held.Should().ContainSingle();
         held[0].Proposal.ProposedBy.Should().Be("night-agent");
         held[0].Proposal.Courses.Should().ContainSingle(c => c.Name == "sandbox" && c.Passed);
+    }
+
+    [Fact]
+    public async Task With_an_operator_key_the_runtimes_own_proposal_is_signed()
+    {
+        // A self-extend cycle's recorded verdict carries the same provenance as a manual gate
+        // decision. The identity is injected here (a machine-key TryLoad would make the test
+        // depend on the developer's ~/.ashlar/keys); production loads it from the machine.
+        WritePolicy("proposing");
+        var signer = OperatorKey.Generate(Path.Combine(_repo, "keys"));
+
+        var outcome = await SelfExtendAdmissionBridge.TryRecordAsync(
+            _repo, "night-agent", "handle the failing invoices",
+            ["src/Fix.cs"], toolCallsExecuted: 5, toolCallsDenied: 0,
+            NullLogger.Instance, default, forgeProposalIds: null, signer: signer);
+
+        outcome.Should().Contain("held");
+
+        // ListAsync verifies fail-closed, so a returned record with a signature is proof the
+        // runtime signed it AND that it verifies — read here by a keyless store, via the
+        // record's own embedded key.
+        var held = (await new GateStore(Path.Combine(_repo, ".ashlar")).ListAsync(ProposalState.Held)).Single();
+        held.Signer.Should().Be(signer.PublicKeyBase64);
+        held.Sig.Should().NotBeNullOrEmpty("the runtime's proposal is signed with the operator identity");
     }
 
     [Fact]

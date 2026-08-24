@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <PackageReference Include="YamlDotNet" />
+    <PackageReference Include="NSec.Cryptography" />
   </ItemGroup>
 
 </Project>
