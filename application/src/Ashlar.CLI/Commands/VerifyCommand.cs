@@ -1,6 +1,8 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using Ashlar.Manifest;
+using Ashlar.Manifest.Ledger;
+using Ashlar.Manifest.Signing;
 
 namespace Ashlar.CLI.Commands;
 
@@ -30,10 +32,10 @@ public sealed class VerifyCommand : Command
 
         AddOption(pathOpt);
 
-        this.SetHandler((InvocationContext ctx) =>
+        this.SetHandler(async (InvocationContext ctx) =>
         {
             var path = ctx.ParseResult.GetValueForOption(pathOpt)!;
-            ctx.ExitCode = Execute(path);
+            ctx.ExitCode = await ExecuteAsync(path);
         });
     }
 
@@ -41,7 +43,7 @@ public sealed class VerifyCommand : Command
     private const int ExitVerificationFailed = 65;
     private const int ExitUsage = 1;
 
-    private static int Execute(DirectoryInfo directory)
+    private static async Task<int> ExecuteAsync(DirectoryInfo directory)
     {
         var manifestPath = Path.Combine(directory.FullName, "ashlar.yaml");
         var policyPath = Path.Combine(directory.FullName, "ashlar.policy.yaml");
@@ -57,13 +59,58 @@ public sealed class VerifyCommand : Command
             return ExitUsage;
         }
 
-        var result = ProjectVerifier.Verify(
-            File.ReadAllText(manifestPath),
-            File.ReadAllText(policyPath),
-            directory.FullName);
+        var manifestYaml = File.ReadAllText(manifestPath);
+        var policyYaml = File.ReadAllText(policyPath);
+        var result = ProjectVerifier.Verify(manifestYaml, policyYaml, directory.FullName);
 
-        Render(result);
-        return result.Verified ? ExitVerified : ExitVerificationFailed;
+        RenderCourses(result);
+
+        if (!result.Verified)
+        {
+            RenderFailed(result);
+            return ExitVerificationFailed;
+        }
+
+        // Verified. If an operator key is present, sign this verification into the instance
+        // ledger and render CERTIFIED; with no key, stay honestly unsigned. A corrupt operator
+        // key fails closed — we do not fall back to unsigned, which would hide that a key exists.
+        SigningIdentity? signer;
+        try
+        {
+            signer = OperatorKey.TryLoad();
+        }
+        catch (InvalidOperationException ex)
+        {
+            Console.Error.WriteLine(ex.Message);
+            return ExitUsage;
+        }
+
+        if (signer is null)
+        {
+            RenderUnsigned(result);
+            return ExitVerified;
+        }
+
+        try
+        {
+            var ledger = new InstanceLedger(Path.Combine(directory.FullName, ".ashlar"));
+            var entry = await ledger.AppendVerificationAsync(
+                signer,
+                InstanceLedger.Subject(manifestYaml, policyYaml),
+                verified: true,
+                result.Courses.Select(c => new LedgerCourse { Name = c.Name, Passed = c.Passed, Detail = c.Detail }).ToList(),
+                DateTimeOffset.UtcNow);
+            RenderCertified(result, signer.Fingerprint, entry.Seq);
+            return ExitVerified;
+        }
+        catch (InvalidOperationException ex)
+        {
+            // The ledger turned corrupt between the provenance course and this append (or a
+            // racing process): refuse to certify onto a broken history.
+            Console.WriteLine($"  {Bad("× FAILED")}  {Dim(ex.Message)}");
+            Console.WriteLine($"  {Dim("exit 65")}");
+            return ExitVerificationFailed;
+        }
     }
 
     // ── rendering ───────────────────────────────────────────────────────────
@@ -79,7 +126,7 @@ public sealed class VerifyCommand : Command
     private static string Gold(string t) => Paint("33", t);    // gold — the verdict, nothing else
     private static string Dim(string t) => Paint("90", t);
 
-    private static void Render(ProjectVerification result)
+    private static void RenderCourses(ProjectVerification result)
     {
         Console.WriteLine();
         var index = 1;
@@ -90,20 +137,25 @@ public sealed class VerifyCommand : Command
             Console.WriteLine($"  {glyph} {label,-26} {Dim(course.Detail)}");
             index++;
         }
-
         Console.WriteLine();
-        if (result.Verified)
-        {
-            // VERIFIED, not CERTIFIED: no signature exists to claim. The unsigned note is
-            // load-bearing honesty, not a TODO.
-            Console.WriteLine(
-                $"  {Gold("✓ VERIFIED")}  {Dim($"{result.Courses.Count} courses · unsigned — signing arrives with the ledger")}");
-        }
-        else
-        {
-            var failed = result.Courses.First(c => !c.Passed);
-            Console.WriteLine($"  {Bad("× FAILED")}  {Dim($"course '{failed.Name}': {failed.Detail}")}");
-            Console.WriteLine($"  {Dim("exit 65")}");
-        }
+    }
+
+    // VERIFIED, not CERTIFIED: with no operator key there is no signature to claim. The unsigned
+    // note is load-bearing honesty — `ashlar keys init` upgrades this to CERTIFIED.
+    private static void RenderUnsigned(ProjectVerification result) =>
+        Console.WriteLine(
+            $"  {Gold("✓ VERIFIED")}  {Dim($"{result.Courses.Count} courses · unsigned — run `ashlar keys init` to certify")}");
+
+    // CERTIFIED means signed: a real Ed25519 signature over this verification is now the head of
+    // the project's instance ledger.
+    private static void RenderCertified(ProjectVerification result, string fingerprint, int seq) =>
+        Console.WriteLine(
+            $"  {Gold("✓ CERTIFIED")}  {Dim($"{result.Courses.Count} courses · signed {fingerprint} · ledger #{seq}")}");
+
+    private static void RenderFailed(ProjectVerification result)
+    {
+        var failed = result.Courses.First(c => !c.Passed);
+        Console.WriteLine($"  {Bad("× FAILED")}  {Dim($"course '{failed.Name}': {failed.Detail}")}");
+        Console.WriteLine($"  {Dim("exit 65")}");
     }
 }

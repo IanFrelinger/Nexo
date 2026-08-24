@@ -2,6 +2,7 @@ using System.CommandLine;
 using System.CommandLine.Invocation;
 using Ashlar.Manifest;
 using Ashlar.Manifest.Admission;
+using Ashlar.Manifest.Signing;
 
 namespace Ashlar.CLI.Commands;
 
@@ -65,6 +66,29 @@ public sealed class GatesCommand : Command
         });
     }
 
+    private static string StateRoot(DirectoryInfo directory) => Path.Combine(directory.FullName, ".ashlar");
+
+    /// <summary>
+    /// Opens the store for a WRITE (admit / refuse / propose) with the operator's local signing
+    /// identity, when one exists. Presence-activated (SPEC-006): a key means the verdict this
+    /// command records is signed; no key means unsigned, exactly as before — zero-setup keeps
+    /// working. The identity is the machine-global operator key (<c>ASHLAR_KEY_DIR</c> /
+    /// <c>~/.ashlar/keys</c>), not a per-project one. <see cref="OperatorKey.TryLoad(string?)"/>
+    /// throws on a corrupt key rather than sign with a mismatched or unreadable identity; callers
+    /// run this inside their try so refusal reaches the user as a clean message, not a stack trace.
+    /// </summary>
+    private static GateStore OpenSigningStore(DirectoryInfo directory) =>
+        new(StateRoot(directory), OperatorKey.TryLoad());
+
+    /// <summary>
+    /// Opens the store for a READ (list / show). Reads verify each record against its OWN embedded
+    /// public key, so they need no operator identity — and must not require one: a mangled or
+    /// missing operator key must never block an operator from seeing the queue. Only writes, which
+    /// have to sign, load the key and so fail closed when it is corrupt.
+    /// </summary>
+    private static GateStore OpenReadStore(DirectoryInfo directory) =>
+        new(StateRoot(directory));
+
     private static async Task<int> ExecuteAsync(
         DirectoryInfo directory, string? show, string? admit, string? refuse, string? reason, string actor)
     {
@@ -73,29 +97,28 @@ public sealed class GatesCommand : Command
             Console.Error.WriteLine($"not an ashlar project: no ashlar.yaml in {directory.FullName}");
             return 1;
         }
-        var store = new GateStore(Path.Combine(directory.FullName, ".ashlar"));
 
         try
         {
             if (admit is not null)
             {
-                var decided = await store.DecideAsync(admit, admit: true, actor, reason ?? "seated after review", DateTimeOffset.UtcNow);
+                var decided = await OpenSigningStore(directory).DecideAsync(admit, admit: true, actor, reason ?? "seated after review", DateTimeOffset.UtcNow);
                 Console.WriteLine($"  {Gold("✓ seated")}  {decided.Proposal.Summary}");
                 Console.WriteLine($"  {Dim($"admitted by {decided.Actor} · recorded")}");
                 return 0;
             }
             if (refuse is not null)
             {
-                var decided = await store.DecideAsync(refuse, admit: false, actor, reason ?? string.Empty, DateTimeOffset.UtcNow);
+                var decided = await OpenSigningStore(directory).DecideAsync(refuse, admit: false, actor, reason ?? string.Empty, DateTimeOffset.UtcNow);
                 Console.WriteLine($"  {Clay("! refused")}  {decided.Proposal.Summary}");
                 Console.WriteLine($"  {Dim($"reason recorded and fed back: {decided.Reason}")}");
                 return 0;
             }
             if (show is not null)
             {
-                return await ShowAsync(store, show);
+                return await ShowAsync(OpenReadStore(directory), show);
             }
-            return await ListAsync(store);
+            return await ListAsync(OpenReadStore(directory));
         }
         catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
         {
@@ -138,13 +161,24 @@ public sealed class GatesCommand : Command
             return 1;
         }
 
-        var store = new GateStore(Path.Combine(directory.FullName, ".ashlar"));
+        GateRecord record;
+        try
+        {
+            var store = OpenSigningStore(directory);
 
-        // One call, one transaction. The count-decide-record sequence lives kernel-side
-        // under the store lock (#373) so a racing process can never separate the budget
-        // check from the recording — this command must not reassemble that race by calling
-        // the pieces itself.
-        var record = await store.ProposeAsync(policy!, proposal, DateTimeOffset.UtcNow);
+            // One call, one transaction. The count-decide-record sequence lives kernel-side
+            // under the store lock (#373) so a racing process can never separate the budget
+            // check from the recording — this command must not reassemble that race by calling
+            // the pieces itself.
+            record = await store.ProposeAsync(policy!, proposal, DateTimeOffset.UtcNow);
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
+        {
+            // The kernel's rules speaking (append-once ids, illegal id shapes) or a corrupt
+            // operator key refusing to sign. Their wording is the contract; pass it through.
+            Console.Error.WriteLine(ex.Message);
+            return 1;
+        }
 
         var line = record.State switch
         {

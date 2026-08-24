@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Ashlar.Manifest;
 using Ashlar.Manifest.Admission;
+using Ashlar.Manifest.Signing;
 
 namespace Ashlar.BackgroundAgents.HostRunners;
 
@@ -39,7 +40,8 @@ public static class SelfExtendAdmissionBridge
         int toolCallsDenied,
         ILogger logger,
         CancellationToken ct = default,
-        IReadOnlyList<string>? forgeProposalIds = null)
+        IReadOnlyList<string>? forgeProposalIds = null,
+        SigningIdentity? signer = null)
     {
         var policyPath = Path.Combine(repoRoot, "ashlar.policy.yaml");
         if (!File.Exists(policyPath))
@@ -75,7 +77,26 @@ public static class SelfExtendAdmissionBridge
 
         var proposal = BuildProposal(agentName, objective, writePaths, toolCallsExecuted, toolCallsDenied,
             forgeProposalIds, forge);
-        var store = new GateStore(Path.Combine(repoRoot, ".ashlar"));
+
+        // Sign the runtime's own proposals with the operator identity, when one is present, so a
+        // self-extend cycle's recorded verdict carries the same provenance as an operator's manual
+        // decision (SPEC-006). Tests inject the identity; production loads the machine key. A
+        // corrupt key fails the record LOUD — the same GATE ERROR shape as an unreadable policy —
+        // rather than silently recording unsigned, which would hide that signing was ever expected.
+        if (signer is null)
+        {
+            try
+            {
+                signer = OperatorKey.TryLoad();
+            }
+            catch (InvalidOperationException ex)
+            {
+                logger.LogError(ex, "Self-extend gate: operator key is corrupt");
+                return $"GATE ERROR: {ex.Message}";
+            }
+        }
+
+        var store = new GateStore(Path.Combine(repoRoot, ".ashlar"), signer);
         var record = await store.ProposeAsync(policy!, proposal, DateTimeOffset.UtcNow, ct).ConfigureAwait(false);
 
         logger.LogInformation(
