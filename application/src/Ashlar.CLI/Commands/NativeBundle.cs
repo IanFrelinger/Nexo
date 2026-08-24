@@ -69,22 +69,49 @@ public static class NativeBundle
     }
 
     /// <summary>
+    /// Stages the governed app itself into <paramref name="bundleDir"/>/app — its contract, its
+    /// operator-owned policy, its signed ledger (the proof it carries), and its bricks. Copies only
+    /// these, never bin/obj/.git or the output itself. Shared by every exporter (native, cloud):
+    /// what travels is the same regardless of where it lands.
+    ///
+    /// <para>What is deliberately EXCLUDED from <c>.ashlar/</c>: <c>keys/</c> (an operator who
+    /// pointed <c>ASHLAR_KEY_DIR</c> inside the project must never find their PRIVATE key inside a
+    /// shipped bundle — SPEC-006's first rule), <c>forge/</c> (raw held/rejected proposal content
+    /// is working state, not something to distribute), and lock/temp files. The gates records and
+    /// the signed ledger — the governance history the bundle exists to carry — stay.</para>
+    /// </summary>
+    public static List<string> StageApp(string projectDir, string bundleDir)
+    {
+        var appDir = Path.Combine(bundleDir, "app");
+        Directory.CreateDirectory(appDir);
+        var written = new List<string>();
+        CopyFile(Path.Combine(projectDir, "ashlar.yaml"), Path.Combine(appDir, "ashlar.yaml"), written, bundleDir);
+        CopyFile(Path.Combine(projectDir, "ashlar.policy.yaml"), Path.Combine(appDir, "ashlar.policy.yaml"), written, bundleDir);
+        CopyTreeIfPresent(Path.Combine(projectDir, ".ashlar"), Path.Combine(appDir, ".ashlar"), written, bundleDir,
+            exclude: rel =>
+            {
+                var top = rel.Split('/', '\\')[0];
+                if (string.Equals(top, "keys", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(top, "forge", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+                var name = Path.GetFileName(rel);
+                return name is ".lock" || name.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase)
+                    || name.EndsWith(".key", StringComparison.OrdinalIgnoreCase);
+            });
+        CopyTreeIfPresent(Path.Combine(projectDir, "src"), Path.Combine(appDir, "src"), written, bundleDir);
+        return written;
+    }
+
+    /// <summary>
     /// Stages the project into <paramref name="bundleDir"/>/app and writes the launchers, the
     /// bundle descriptor, and a README. Returns the relative paths written. The runtime binary is
     /// added separately (see the export command's publish step).
     /// </summary>
     public static IReadOnlyList<string> Stage(string projectDir, string bundleDir, BundleInfo info)
     {
-        var appDir = Path.Combine(bundleDir, "app");
-        Directory.CreateDirectory(appDir);
-        var written = new List<string>();
-
-        // The governed app: its contract, its policy, its signed ledger (the proof it carries),
-        // and its bricks. Copy only these — never bin/obj/.git or the output itself.
-        CopyFile(Path.Combine(projectDir, "ashlar.yaml"), Path.Combine(appDir, "ashlar.yaml"), written, bundleDir);
-        CopyFile(Path.Combine(projectDir, "ashlar.policy.yaml"), Path.Combine(appDir, "ashlar.policy.yaml"), written, bundleDir);
-        CopyTreeIfPresent(Path.Combine(projectDir, ".ashlar"), Path.Combine(appDir, ".ashlar"), written, bundleDir);
-        CopyTreeIfPresent(Path.Combine(projectDir, "src"), Path.Combine(appDir, "src"), written, bundleDir);
+        var written = StageApp(projectDir, bundleDir);
 
         var exe = "ashlar" + (info.Rid.StartsWith("win", StringComparison.Ordinal) ? ".exe" : string.Empty);
 
@@ -177,7 +204,7 @@ public static class NativeBundle
         }
     }
 
-    private static void CopyTreeIfPresent(string srcDir, string destDir, List<string> written, string bundleRoot)
+    private static void CopyTreeIfPresent(string srcDir, string destDir, List<string> written, string bundleRoot, Func<string, bool>? exclude = null)
     {
         if (!Directory.Exists(srcDir))
         {
@@ -186,6 +213,10 @@ public static class NativeBundle
         foreach (var file in Directory.EnumerateFiles(srcDir, "*", SearchOption.AllDirectories))
         {
             var rel = Path.GetRelativePath(srcDir, file);
+            if (exclude?.Invoke(rel) == true)
+            {
+                continue;
+            }
             CopyFile(file, Path.Combine(destDir, rel), written, bundleRoot);
         }
     }

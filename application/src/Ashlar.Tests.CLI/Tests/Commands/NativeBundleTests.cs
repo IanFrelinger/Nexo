@@ -112,6 +112,32 @@ public sealed class NativeBundleTests : IDisposable
     }
 
     [Fact]
+    public async Task Stage_never_ships_keys_forge_state_or_locks()
+    {
+        // SPEC-006's first rule: the private key never appears inside a bundle. An operator who
+        // pointed ASHLAR_KEY_DIR inside the project (.ashlar/keys) must still be safe, and the
+        // forge queue (raw held/rejected proposal content) is working state, not cargo.
+        Scaffold();
+        await Certify();
+        var stateDir = Path.Combine(_dir, ".ashlar");
+        Directory.CreateDirectory(Path.Combine(stateDir, "keys"));
+        File.WriteAllText(Path.Combine(stateDir, "keys", "operator.key"), "SEED-MUST-NOT-TRAVEL");
+        File.WriteAllText(Path.Combine(stateDir, "keys", "operator.pub"), "pub");
+        Directory.CreateDirectory(Path.Combine(stateDir, "forge", "rejected"));
+        File.WriteAllText(Path.Combine(stateDir, "forge", "rejected", "r1.json"), "{ \"NewContent\": \"secret draft\" }");
+        File.WriteAllText(Path.Combine(stateDir, ".lock"), "");
+        var bundle = Path.Combine(_dir, "out-secrets");
+
+        var written = NativeBundle.Stage(_dir, bundle, NativeBundle.Describe(_dir, "linux-x64"));
+
+        Directory.Exists(Path.Combine(bundle, "app", ".ashlar", "keys")).Should().BeFalse("the private key must never travel");
+        Directory.Exists(Path.Combine(bundle, "app", ".ashlar", "forge")).Should().BeFalse("forge state is not cargo");
+        File.Exists(Path.Combine(bundle, "app", ".ashlar", ".lock")).Should().BeFalse();
+        written.Should().NotContain(p => p.Contains("operator.key"));
+        Directory.Exists(Path.Combine(bundle, "app", ".ashlar", "ledger")).Should().BeTrue("the signed ledger DOES travel");
+    }
+
+    [Fact]
     public void Stage_uses_the_windows_exe_name_and_launcher_for_a_win_rid()
     {
         Scaffold();

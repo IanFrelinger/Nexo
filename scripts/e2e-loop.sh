@@ -503,6 +503,30 @@ echo "kind: Nonsense" > "$DBAD/ashlar.yaml"
 run_cli export native --path "$DBAD" --out "$WORK/bundles" --rid linux-x64 --no-runtime
 claim "export-native-refuses-unverified" 65 "does not verify"
 
+# ───────────────────────────── export aws / azure: one-command cloud bundles ─────────────────────────────
+# Same certified project, staged for the cloud: the runtime image + this app + a verify-then-run
+# entrypoint + a one-command deploy script. Nothing here touches a cloud — the scripts do, when run.
+run_cli export aws --path "$DE" --out "$WORK/bundles"
+claim "export-aws-stages-bundle" 0 "CERTIFIED cloud bundle" "aws"
+AWSB="$WORK/bundles/exportdemo-aws"
+{ [ -f "$AWSB/Dockerfile" ] && [ -f "$AWSB/entrypoint.sh" ] && [ -f "$AWSB/deploy-aws.sh" ] \
+  && [ -f "$AWSB/app/ashlar.yaml" ] && [ -d "$AWSB/app/.ashlar" ] && [ -f "$AWSB/bundle.json" ]; } \
+  && result "export-aws-bundle-complete" PASS "Dockerfile + entrypoint + deploy + app + ledger" \
+  || result "export-aws-bundle-complete" FAIL "aws bundle incomplete"
+grep -q "verify --path /work/app" "$AWSB/entrypoint.sh" \
+  && result "export-aws-container-self-proves" PASS "the container verifies before it runs" \
+  || result "export-aws-container-self-proves" FAIL "entrypoint does not verify first"
+
+run_cli export azure --path "$DE" --out "$WORK/bundles"
+claim "export-azure-stages-bundle" 0 "CERTIFIED cloud bundle" "azure"
+AZB="$WORK/bundles/exportdemo-azure"
+{ [ -f "$AZB/deploy-azure.sh" ] && grep -q "az acr build" "$AZB/deploy-azure.sh" && grep -q "az container create" "$AZB/deploy-azure.sh"; } \
+  && result "export-azure-deploy-script" PASS "ACR build + ACI one-shot" \
+  || result "export-azure-deploy-script" FAIL "azure deploy script wrong"
+
+run_cli export aws --path "$DBAD" --out "$WORK/bundles"
+claim "export-aws-refuses-unverified" 65 "does not verify"
+
 unset ASHLAR_KEY_DIR
 
 # ───────────────────────────── verdict ─────────────────────────────

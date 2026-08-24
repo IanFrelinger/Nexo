@@ -20,6 +20,62 @@ public sealed class ExportCommand : Command
     public ExportCommand() : base("export", "Export a certified project as a portable application bundle.")
     {
         AddCommand(BuildNative());
+        AddCommand(BuildCloud(CloudTarget.Aws));
+        AddCommand(BuildCloud(CloudTarget.Azure));
+    }
+
+    private static Command BuildCloud(CloudTarget target)
+    {
+        var (name, desc) = target == CloudTarget.Aws
+            ? ("aws", "Build a one-command AWS deploy bundle (ECS Fargate one-shot task via ECR).")
+            : ("azure", "Build a one-command Azure deploy bundle (Container Instances via ACR).");
+        var pathOpt = new Option<DirectoryInfo>(
+            name: "--path",
+            description: "Project directory to export (defaults to current).",
+            getDefaultValue: () => new DirectoryInfo(Environment.CurrentDirectory));
+        var outOpt = new Option<DirectoryInfo>("--out", $"Output directory; the bundle lands in <out>/<name>-{name}.") { IsRequired = true };
+
+        var cmd = new Command(name, desc) { pathOpt, outOpt };
+        cmd.SetHandler((InvocationContext ctx) =>
+        {
+            ctx.ExitCode = ExecuteCloud(
+                ctx.ParseResult.GetValueForOption(pathOpt)!,
+                ctx.ParseResult.GetValueForOption(outOpt)!,
+                target);
+        });
+        return cmd;
+    }
+
+    private static int ExecuteCloud(DirectoryInfo directory, DirectoryInfo outDir, CloudTarget target)
+    {
+        if (!File.Exists(Path.Combine(directory.FullName, "ashlar.yaml")) || !File.Exists(Path.Combine(directory.FullName, "ashlar.policy.yaml")))
+        {
+            Console.Error.WriteLine($"not an ashlar project: {directory.FullName}");
+            return 1;
+        }
+
+        var targetName = target == CloudTarget.Aws ? "aws" : "azure";
+        var info = NativeBundle.Describe(directory.FullName, targetName);
+        if (!info.Verified)
+        {
+            Console.Error.WriteLine("refusing to export: the project does not verify. fix it, then:  ashlar verify");
+            return 65;
+        }
+
+        var bundleDir = Path.Combine(outDir.FullName, $"{Safe(info.Name)}-{targetName}");
+        if (Directory.Exists(bundleDir))
+        {
+            Directory.Delete(bundleDir, recursive: true);
+        }
+        CloudBundle.Stage(directory.FullName, bundleDir, info, target);
+
+        Console.WriteLine();
+        var verdict = info.Certified ? Gold("✓ CERTIFIED cloud bundle") : Gold("✓ VERIFIED cloud bundle");
+        Console.WriteLine($"  {verdict}  {info.Name} · {targetName}");
+        Console.WriteLine($"  {Dim(info.Certified ? $"signed {info.SignerFingerprint} · {info.LedgerEntries} ledger entr{(info.LedgerEntries == 1 ? "y" : "ies")}" : "unsigned — run `ashlar keys init` and re-export to certify")}");
+        Console.WriteLine($"  {Dim($"→ {bundleDir}")}");
+        Console.WriteLine($"  {Dim($"deploy + run it:  ./deploy-{targetName}.sh \"<request>\"  (the container verifies before it runs)")}");
+        return 0;
     }
 
     private static Command BuildNative()
