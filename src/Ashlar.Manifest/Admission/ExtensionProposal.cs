@@ -29,6 +29,13 @@ public sealed record ExtensionProposal
 
     /// <summary>Compact diff or change description, for the review surface.</summary>
     public string Diff { get; init; } = string.Empty;
+
+    /// <summary>
+    /// Forge proposal ids holding this extension's actual file changes (M1 propose → hold →
+    /// apply). Empty when the extension carries no mediated writes. Seating the stone
+    /// applies these; refusing rejects them.
+    /// </summary>
+    public IReadOnlyList<string> ForgeProposalIds { get; init; } = [];
 }
 
 /// <summary>Terminal and intermediate states of a proposal. See SPEC-004: transition
