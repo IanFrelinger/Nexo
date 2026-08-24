@@ -85,6 +85,18 @@ public sealed class RootCommandRegistrationTests
     }
 
     [Fact(Timeout = 15000)]
+    public async Task RootCommand_RegistersPkgCommand()
+    {
+        await Task.CompletedTask;
+        var root = Ashlar.CLI.Program.BuildRootCommand();
+        var pkg = root.Subcommands.SingleOrDefault(s => s.Name == "pkg");
+
+        // Certified extension packages — admissions that travel. Same guard as the other verbs.
+        pkg.Should().NotBeNull("`ashlar pkg` must stay registered");
+        pkg!.Subcommands.Select(s => s.Name).Should().Contain(new[] { "export", "import", "show" });
+    }
+
+    [Fact(Timeout = 15000)]
     public async Task TrustCommand_HasDocumentedSubcommands()
     {
         await Task.CompletedTask;

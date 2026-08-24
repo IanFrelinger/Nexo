@@ -148,8 +148,7 @@ public sealed partial class GateStore
             Actor = "gate",
             DecidedAt = now,
         };
-        await WriteAsync(path, record, ct).ConfigureAwait(false);
-        return record;
+        return await WriteAsync(path, record, ct).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -225,8 +224,7 @@ public sealed partial class GateStore
             Actor = actor,
             DecidedAt = now,
         };
-        await WriteAsync(PathFor(proposalId), decided, ct).ConfigureAwait(false);
-        return decided;
+        return await WriteAsync(PathFor(proposalId), decided, ct).ConfigureAwait(false);
     }
 
     /// <summary>Fetches one record, or null when absent. A file that exists but cannot be
@@ -347,7 +345,11 @@ public sealed partial class GateStore
     [System.Text.RegularExpressions.GeneratedRegex("^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$")]
     private static partial System.Text.RegularExpressions.Regex IdShape();
 
-    private async Task WriteAsync(string path, GateRecord record, CancellationToken ct)
+    /// <summary>Persists the record and RETURNS EXACTLY WHAT WAS PERSISTED — signature included.
+    /// Callers hand the result to their own callers, and a returned record that differed from the
+    /// disk record (unsigned, or carrying a stale signature over pre-decision content) would hand
+    /// consumers — the packaging exporter above all — a verdict that fails its own verification.</summary>
+    private async Task<GateRecord> WriteAsync(string path, GateRecord record, CancellationToken ct)
     {
         // SPEC-006, applied SYMMETRICALLY: always start from the unsigned form, then sign
         // it iff a key is present. The stripping is not optional on the keyless path — a
@@ -374,5 +376,6 @@ public sealed partial class GateStore
             await JsonSerializer.SerializeAsync(stream, record, Json, ct).ConfigureAwait(false);
         }
         File.Move(tmp, path, overwrite: true);
+        return record;
     }
 }
