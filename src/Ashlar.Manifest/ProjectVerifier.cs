@@ -74,7 +74,7 @@ public static class ProjectVerifier
         courses.Add(VerifyEnvelope(policy!, projectDirectory));
 
         // ── course 4 · provenance (only once a signed ledger exists) ────────
-        var provenance = VerifyProvenance(projectDirectory);
+        var provenance = VerifyProvenance(projectDirectory, manifestYaml, policyYaml);
         if (provenance is not null)
         {
             courses.Add(provenance);
@@ -86,11 +86,15 @@ public static class ProjectVerifier
     /// <summary>
     /// Verifies the project's instance ledger, when it has one. Returns null — no course — for a
     /// project that has never been certified, so a keyless, zero-setup project stays at three
-    /// courses and reads <em>unsigned</em>. Once a signed history exists, this course checks the
-    /// whole chain and FAILS LOUD on any break, so a run over a tampered ledger is refused: the
-    /// signed record of what was certified is itself part of what "verified" means.
+    /// courses and reads <em>unsigned</em>. Once a signed history exists, this course checks two
+    /// things and FAILS LOUD on either: the whole chain is intact (no signature, link, or sequence
+    /// break), AND the latest entry attests THESE documents. The second half is what makes the
+    /// certification bind to the contract: editing ashlar.yaml or ashlar.policy.yaml after signing
+    /// leaves an intact chain whose head covers different bytes, and that is a provenance failure —
+    /// a downloaded, tampered application is refused before it runs, and only re-certifying (a
+    /// signed <c>verify</c>) makes the current documents the certified ones again.
     /// </summary>
-    private static CourseResult? VerifyProvenance(string projectDirectory)
+    private static CourseResult? VerifyProvenance(string projectDirectory, string? manifestYaml, string? policyYaml)
     {
         var stateRoot = Path.Combine(projectDirectory, ".ashlar");
         var ledgerDir = Path.Combine(stateRoot, "ledger");
@@ -103,11 +107,22 @@ public static class ProjectVerifier
         try
         {
             var chain = new Ledger.InstanceLedger(stateRoot).VerifyChain();
+            var currentSubject = Ledger.InstanceLedger.Subject(manifestYaml, policyYaml);
+            if (!string.Equals(chain.Head?.Subject, currentSubject, StringComparison.Ordinal))
+            {
+                return new CourseResult
+                {
+                    Name = "provenance",
+                    Passed = false,
+                    Detail = "the documents do not match the certification — ashlar.yaml or ashlar.policy.yaml "
+                           + "changed since it was signed. re-certify with a signed `ashlar verify`.",
+                };
+            }
             return new CourseResult
             {
                 Name = "provenance",
                 Passed = true,
-                Detail = $"{chain.Count} signed entr{(chain.Count == 1 ? "y" : "ies")} · chain intact",
+                Detail = $"{chain.Count} signed entr{(chain.Count == 1 ? "y" : "ies")} · chain intact · covers these documents",
             };
         }
         catch (InvalidOperationException ex)

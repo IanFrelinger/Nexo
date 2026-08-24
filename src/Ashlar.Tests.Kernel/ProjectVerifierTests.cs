@@ -77,6 +77,32 @@ public sealed class ProjectVerifierTests : IDisposable
     }
 
     [Fact]
+    public async Task Editing_the_documents_after_certification_fails_provenance()
+    {
+        // The integrity binding: the signed ledger attests specific bytes. A project certified for
+        // documents D, then edited to D' (still structurally valid), has an intact chain whose head
+        // covers D — not D'. That must fail provenance, or "certified" would mean nothing about the
+        // contract you are actually running.
+        var (m, p) = Scaffolded();
+        var signer = OperatorKey.Generate(Path.Combine(_dir, "keys"));
+        var ledger = new InstanceLedger(Path.Combine(_dir, ".ashlar"));
+        await ledger.AppendVerificationAsync(signer, InstanceLedger.Subject(m, p), verified: true,
+            [new LedgerCourse { Name = "contract", Passed = true, Detail = "ok" }], DateTimeOffset.UtcNow);
+
+        // A comment keeps the manifest valid (courses 1-3 still pass) but changes its bytes.
+        var edited = m + "\n# a harmless-looking edit after signing\n";
+
+        var result = ProjectVerifier.Verify(edited, p, _dir);
+
+        result.Courses.Where(c => c.Name != "provenance").Should().OnlyContain(c => c.Passed,
+            "the edit is structurally valid — only provenance should catch it");
+        var provenance = result.Courses.Single(c => c.Name == "provenance");
+        provenance.Passed.Should().BeFalse();
+        provenance.Detail.Should().Contain("do not match the certification");
+        result.Verified.Should().BeFalse("a project whose documents are not the certified ones is not verified");
+    }
+
+    [Fact]
     public async Task A_corrupt_ledger_fails_verification_via_the_provenance_course()
     {
         var (m, p) = Scaffolded();

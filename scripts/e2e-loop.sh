@@ -458,6 +458,53 @@ claim "pkg-pull-missing-store" 1 "no such peer store"
 
 unset ASHLAR_KEY_DIR
 
+# ───────────────────────────── export native: the agentic-app bundle ─────────────────────────────
+# A certified project becomes a portable, self-proving bundle. The runtime binary is a separate
+# (slow) publish, so here we prove the deterministic staging and that the staged app self-verifies
+# offline with NO origin key — the download proving its own certification.
+export ASHLAR_KEY_DIR="$WORK/exportkeys"
+run_cli keys init >/dev/null
+
+DE=$(fresh); run_cli init exportdemo --path "$DE"
+run_cli verify --path "$DE" >/dev/null      # certify: ledger #1
+run_cli export native --path "$DE" --out "$WORK/bundles" --rid linux-x64 --no-runtime
+claim "export-native-stages-bundle" 0 "CERTIFIED bundle" "exportdemo" "linux-x64"
+
+BUN="$WORK/bundles/exportdemo-linux-x64"
+{ [ -f "$BUN/app/ashlar.yaml" ] && [ -f "$BUN/app/ashlar.policy.yaml" ] && [ -d "$BUN/app/.ashlar" ] \
+  && [ -f "$BUN/run.sh" ] && [ -f "$BUN/run.cmd" ] && [ -f "$BUN/bundle.json" ] && [ -f "$BUN/README.md" ]; } \
+  && result "export-native-bundle-complete" PASS "app + ledger + launchers + descriptor" \
+  || result "export-native-bundle-complete" FAIL "bundle incomplete"
+
+grep -q '"certified": true' "$BUN/bundle.json" \
+  && result "export-native-descriptor-certified" PASS "descriptor records the certification" \
+  || result "export-native-descriptor-certified" FAIL "descriptor missing certification"
+
+# the launcher verifies before it runs — the self-proving contract, checked in the staged script
+grep -q "verify --path" "$BUN/run.sh" \
+  && result "export-native-launcher-self-proves" PASS "run.sh verifies before running" \
+  || result "export-native-launcher-self-proves" FAIL "launcher does not self-verify"
+
+# a DOWNLOADER with NO origin key still confirms the app's certification chain, offline
+DVOUT=$(ASHLAR_KEY_DIR="$WORK/emptykeys" NO_COLOR=1 dotnet run --project "$CLI_PROJ" --no-build -- verify --path "$BUN/app" 2>&1); DVRC=$?
+OUT="$DVOUT"; RC="$DVRC"
+claim "export-native-app-self-verifies-keyless" 0 "provenance" "chain intact"
+
+# tamper the staged contract after export: a keyless downloader's verify REFUSES it (the whole
+# point of self-proving — an altered app does not run)
+echo "# tampered after signing" >> "$BUN/app/ashlar.yaml"
+DTOUT=$(ASHLAR_KEY_DIR="$WORK/emptykeys" NO_COLOR=1 dotnet run --project "$CLI_PROJ" --no-build -- verify --path "$BUN/app" 2>&1); DTRC=$?
+OUT="$DTOUT"; RC="$DTRC"
+claim "export-native-tampered-app-refused" 65 "do not match the certification" "provenance"
+
+# refuses to export a project that does not verify
+DBAD=$(fresh); run_cli init badexport --path "$DBAD"
+echo "kind: Nonsense" > "$DBAD/ashlar.yaml"
+run_cli export native --path "$DBAD" --out "$WORK/bundles" --rid linux-x64 --no-runtime
+claim "export-native-refuses-unverified" 65 "does not verify"
+
+unset ASHLAR_KEY_DIR
+
 # ───────────────────────────── verdict ─────────────────────────────
 echo
 echo "==================== e2e-loop verdict ===================="
