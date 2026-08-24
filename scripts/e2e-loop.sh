@@ -344,6 +344,74 @@ claim "read-survives-a-corrupt-operator-key" 0 "ADMITTED"
 
 unset ASHLAR_KEY_DIR
 
+# ───────────────────────────── pkg: certified extensions travel ─────────────────────────────
+# Two nodes sharing one extension: the origin admits it, seals it into a package; the receiver
+# verifies it intrinsically and runs it through ITS OWN gate. Fresh key dir — the corrupt-key
+# block above deliberately mangled the previous one.
+export ASHLAR_KEY_DIR="$WORK/pkgkeys"
+run_cli keys init >/dev/null
+
+A=$(fresh); run_cli init origin-node --path "$A"; set_proposing "$A"
+mkdir -p "$A/.ashlar/forge/proposed"
+cat > "$A/.ashlar/forge/proposed/fpkg1.json" <<'EOF'
+{"Id":"fpkg1","TargetPath":"src/Shared.cs","NewContent":"// shared brick v1","Summary":"add brick shared.classify","CreatedAt":"2026-08-24T06:00:00Z","UpdatedAt":"2026-08-24T06:00:00Z"}
+EOF
+cat > "$A/p.json" <<'EOF'
+{"id":"ext-pkg","kind":"brick","summary":"add brick shared.classify","proposedBy":"night-agent",
+ "proposedAt":"2026-08-24T06:00:00Z","diff":"+ 1 file",
+ "forgeProposalIds":["fpkg1"],
+ "courses":[{"name":"sandbox","passed":true,"detail":"confined"},{"name":"tests","passed":true,"detail":"14 passed"},{"name":"security","passed":true,"detail":"0 findings"}]}
+EOF
+run_cli gates propose --file "$A/p.json" --path "$A" >/dev/null
+run_cli gates --admit ext-pkg --as origin-op --path "$A"
+claim "pkg-origin-admit-applies" 0 "seated" "applied"
+[ -f "$A/src/Shared.cs" ] \
+  && result "pkg-origin-file-on-disk" PASS "the admitted write landed" \
+  || result "pkg-origin-file-on-disk" FAIL "admitted write missing"
+
+run_cli pkg export --id ext-pkg --out "$WORK/shared.ashpkg" --path "$A"
+claim "pkg-export-seals" 0 "packaged" "ed25519:"
+
+run_cli pkg show "$WORK/shared.ashpkg"
+claim "pkg-show-verifies-keyless" 0 "package verifies" "shared.classify" "ed25519:"
+
+# receiver in proposing mode: held, nothing on disk until THIS operator seats it
+B=$(fresh); run_cli init receiver-node --path "$B"; set_proposing "$B"
+run_cli pkg import "$WORK/shared.ashpkg" --path "$B"
+claim "pkg-import-held-under-proposing" 0 "HELD" "origin verdict"
+[ ! -f "$B/src/Shared.cs" ] \
+  && result "pkg-import-held-not-on-disk" PASS "hold before write, for remote code too" \
+  || result "pkg-import-held-not-on-disk" FAIL "imported file landed before admission"
+
+run_cli gates --admit ext-pkg --as receiver-op --path "$B"
+claim "pkg-receiver-admit-applies" 0 "seated" "applied"
+grep -q "shared brick v1" "$B/src/Shared.cs" 2>/dev/null \
+  && result "pkg-received-content-matches" PASS "the sealed bytes landed" \
+  || result "pkg-received-content-matches" FAIL "content mismatch or missing"
+
+# a sealed receiver rejects it and nothing ever lands
+C=$(fresh); run_cli init sealed-node --path "$C"
+run_cli pkg import "$WORK/shared.ashpkg" --path "$C"
+claim "pkg-import-sealed-rejects" 65 "REJECTED" "sealed"
+[ ! -f "$C/src/Shared.cs" ] \
+  && result "pkg-sealed-nothing-lands" PASS "sender certification is not authority" \
+  || result "pkg-sealed-nothing-lands" FAIL "sealed project accepted remote code"
+
+# a tampered package is refused as forged, before any gate is consulted
+sed 's/shared brick v1/backdoored/' "$WORK/shared.ashpkg" > "$WORK/tampered.ashpkg"
+run_cli pkg import "$WORK/tampered.ashpkg" --path "$C"
+claim "pkg-import-tampered-refused" 65 "seal does not verify"
+
+# importing the same package twice hits append-once
+run_cli pkg import "$WORK/shared.ashpkg" --path "$B"
+claim "pkg-import-duplicate-refused" 1 "append-once"
+
+# exporting without an operator key is refused — a seal is a signature
+ASHLAR_KEY_DIR="$WORK/nokeys" run_cli pkg export --id ext-pkg --out "$WORK/x.ashpkg" --path "$A"
+claim "pkg-export-keyless-refused" 1 "requires an operator key"
+
+unset ASHLAR_KEY_DIR
+
 # ───────────────────────────── verdict ─────────────────────────────
 echo
 echo "==================== e2e-loop verdict ===================="

@@ -173,6 +173,28 @@ public sealed class SignedGateStoreTests : IDisposable
         read.Signer.Should().Be(signer.PublicKeyBase64);
     }
 
+    [Fact]
+    public async Task Returned_records_are_exactly_what_was_persisted_signature_included()
+    {
+        // The wart the packaging tests caught: WriteAsync used to sign a local copy and persist
+        // it while callers returned THEIR unsigned/stale copy — so RecordAsync returned Sig=null
+        // and DecideAsync returned the pre-decision signature over post-decision content. Any
+        // consumer of a returned record (the package exporter above all) would hand out a verdict
+        // that fails its own verification. The API contract now: what returns is what persisted.
+        var signer = OperatorKey.Generate(_keyDir);
+        var store = new GateStore(_root, signer);
+
+        var recorded = await store.RecordAsync(Proposal("ext-returned"), Held("holding"), Now);
+        recorded.Sig.Should().NotBeNullOrEmpty("RecordAsync must return the signed record it wrote");
+        recorded.Should().BeEquivalentTo(await store.GetAsync("ext-returned"));
+
+        var decided = await store.DecideAsync("ext-returned", admit: true, "alice", "ok", Now.AddMinutes(1));
+        decided.Sig.Should().NotBe(recorded.Sig, "the decision re-signs over the NEW content");
+        decided.Should().BeEquivalentTo(await store.GetAsync("ext-returned"),
+            "the returned decision must be byte-for-byte what a re-read sees — GetAsync verifies "
+            + "fail-closed, so equivalence here proves the returned signature covers the returned content");
+    }
+
     // ─────────────────────────── S-2: no key, unsigned ───────────────────────────
 
     [Fact]

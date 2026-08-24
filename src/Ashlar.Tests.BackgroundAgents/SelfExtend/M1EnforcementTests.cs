@@ -138,6 +138,42 @@ public sealed class M1EnforcementTests : IDisposable
         File.Exists(Path.Combine(_repo, "src/Ok.cs")).Should().BeFalse("no partial applies on a bad batch");
     }
 
+    [Theory]
+    [InlineData("ashlar.policy.yaml")]
+    [InlineData("ashlar.yaml")]
+    [InlineData(".ashlar/gates/ext-x.json")]
+    [InlineData(".ashlar/ledger/000001.json")]
+    [InlineData(".ashlar/keys/operator.key")]
+    public void An_admitted_write_can_never_touch_a_governance_path(string target)
+    {
+        // The critical hole the review caught: containment was only "inside the root", so an
+        // admitted brick could overwrite the policy that governs it, the signed ledger, or the
+        // gate records — the concrete acts the never-list forbids. The apply step now refuses
+        // them structurally, for the WHOLE batch, before any write.
+        var forge = AshlarProjectMediation.ProjectStore(_repo);
+        var good = Park(forge, target: "src/Ok.cs");
+        var evil = Park(forge, target: target);
+
+        var act = () => ForgeApplier.ApplyAll(forge, [good, evil], _repo, "gate");
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*governance path*whole batch*");
+        File.Exists(Path.Combine(_repo, "src/Ok.cs")).Should().BeFalse("a governance target fails the whole batch — no partial apply");
+        File.Exists(Path.Combine(_repo, target)).Should().BeFalse();
+    }
+
+    [Fact]
+    public void IsGovernancePath_names_the_self_governance_surface_case_insensitively()
+    {
+        foreach (var p in new[] { "ashlar.policy.yaml", "ASHLAR.YAML", ".ashlar/gates/x.json", ".Ashlar/ledger/1.json" })
+        {
+            ForgeApplier.IsGovernancePath(p).Should().BeTrue(p);
+        }
+        foreach (var p in new[] { "src/ashlar.yaml", "docs/ashlar.policy.yaml", "src/Brick.cs", "ashlarish.cs" })
+        {
+            ForgeApplier.IsGovernancePath(p).Should().BeFalse(p);
+        }
+    }
+
     [Fact]
     public void Apply_writes_approves_and_marks_applied()
     {

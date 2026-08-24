@@ -1,0 +1,286 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using Ashlar.Manifest.Admission;
+using Ashlar.Manifest.Signing;
+
+namespace Ashlar.Manifest.Packaging;
+
+/// <summary>One file carried by a package: a project-relative path and its full content.</summary>
+public sealed record PackageFile
+{
+    /// <summary>Project-relative path, forward or back slashes; never rooted, never escaping.</summary>
+    public required string Path { get; init; }
+
+    /// <summary>The complete new file content.</summary>
+    public required string Content { get; init; }
+}
+
+/// <summary>
+/// A certified extension package (<c>.ashpkg</c>): an admitted extension, its evidence, and the
+/// signatures that make both portable.
+/// </summary>
+public sealed record ExtensionPackage
+{
+    /// <summary>The only accepted format version.</summary>
+    public const string ExpectedFormatVersion = "ashpkg/v1";
+
+    /// <summary>Format tag, <c>ashpkg/v1</c>.</summary>
+    public required string FormatVersion { get; init; }
+
+    /// <summary>The origin gate record: the proposal (with its course evidence) plus the SIGNED
+    /// Admitted verdict. Its own Ed25519 signature travels inside it and verifies intrinsically.</summary>
+    public required GateRecord Record { get; init; }
+
+    /// <summary>The extension's files — the parked writes the origin gate admitted.</summary>
+    public required IReadOnlyList<PackageFile> Files { get; init; }
+
+    /// <summary>Base64 Ed25519 seal over the canonical package with the two seal fields null.
+    /// The record's signature covers the verdict but not the file bytes; the seal binds the two.
+    /// A seal alone is not enough — an attacker can mint a fresh seal over swapped files with
+    /// their own key — so the verifier additionally REQUIRES the sealer to be the same operator
+    /// whose key signed the admission (<see cref="SealSigner"/> == <c>Record.Signer</c>). Only the
+    /// operator who admitted may seal, which is what actually prevents transplanting a genuine
+    /// verdict onto foreign code.</summary>
+    public string? Seal { get; init; }
+
+    /// <summary>Base64 raw public key of the sealer. Must equal the record's signer.</summary>
+    public string? SealSigner { get; init; }
+}
+
+/// <summary>
+/// Packs and opens certified extension packages. The trust story, stated honestly:
+///
+/// <para>PACK requires an <em>Admitted</em>, <em>signed</em> gate record — an unsigned admission
+/// proves nothing to a receiver, so it does not travel (run <c>ashlar keys init</c> at the origin
+/// first). The exporter seals record+files together with their own key.</para>
+///
+/// <para>OPEN verifies fail-closed with NO local keys and NO network — both signatures are
+/// checked against the public keys the package itself carries (SPEC-006 intrinsic verification).
+/// What that proves: the verdict has not been altered since the key inside it signed it, and the
+/// files are the ones the sealer sealed against that verdict. What it deliberately does NOT
+/// prove (v1): WHO owns those keys — identity binding is the receiving operator's judgement, by
+/// fingerprint, until v2 trust roots. Opening a package admits NOTHING: the receiver's own gate,
+/// policy, and budget decide admission, exactly as for a local proposal.</para>
+/// </summary>
+public static class ExtensionPackaging
+{
+    private static readonly JsonSerializerOptions Json = new()
+    {
+        WriteIndented = true,
+        Converters = { new JsonStringEnumConverter() },
+    };
+
+    /// <summary>
+    /// Builds and seals a package. Throws <see cref="InvalidOperationException"/> with a precise
+    /// reason when the record or files are not shareable — a package that cannot prove its claim
+    /// is refused at the source, not discovered broken at the destination.
+    /// </summary>
+    public static string Pack(GateRecord record, IReadOnlyList<PackageFile> files, SigningIdentity sealer)
+    {
+        ArgumentNullException.ThrowIfNull(record);
+        ArgumentNullException.ThrowIfNull(files);
+        ArgumentNullException.ThrowIfNull(sealer);
+
+        if (record.State != ProposalState.Admitted)
+        {
+            throw new InvalidOperationException(
+                $"Only an ADMITTED extension can be packaged; '{record.Proposal.Id}' is {record.State}. "
+                + "Seat the stone first — a package is a portable admission, and there is no admission to carry.");
+        }
+        if (record.Sig is null || record.Signer is null)
+        {
+            throw new InvalidOperationException(
+                "The gate record is unsigned, so it proves nothing to a receiver and cannot travel. "
+                + "Create an operator key at the origin (ashlar keys init) and decide the proposal signed.");
+        }
+        if (files.Count == 0)
+        {
+            throw new InvalidOperationException(
+                $"Proposal '{record.Proposal.Id}' carries no files — nothing to package.");
+        }
+        foreach (var file in files)
+        {
+            if (!IsSafeRelativePath(file.Path))
+            {
+                throw new InvalidOperationException(
+                    $"Illegal package path '{file.Path}': paths must be project-relative and must not escape the project root.");
+            }
+        }
+
+        var unsealed = new ExtensionPackage
+        {
+            FormatVersion = ExtensionPackage.ExpectedFormatVersion,
+            Record = record,
+            Files = files,
+        };
+        var sealed_ = unsealed with
+        {
+            Seal = sealer.Sign(CanonicalJson.Bytes(unsealed)),
+            SealSigner = sealer.PublicKeyBase64,
+        };
+        return JsonSerializer.Serialize(sealed_, Json);
+    }
+
+    /// <summary>
+    /// Parses and VERIFIES a package, fail-closed. True only when the seal covers exactly these
+    /// record+files, the record's own signature verifies, and the verdict is Admitted. Requires
+    /// no local keys: verification is intrinsic. On false, <paramref name="reason"/> says
+    /// precisely what failed — a package that fails any check is treated as forged, not as
+    /// slightly damaged.
+    /// </summary>
+    public static bool TryOpen(string? json, out ExtensionPackage? package, out string reason)
+    {
+        package = null;
+
+        if (string.IsNullOrWhiteSpace(json))
+        {
+            reason = "REFUSED: the package is empty.";
+            return false;
+        }
+
+        ExtensionPackage? parsed;
+        try
+        {
+            parsed = JsonSerializer.Deserialize<ExtensionPackage>(json, Json);
+        }
+        catch (JsonException ex)
+        {
+            reason = $"REFUSED: the package is not valid ashpkg JSON ({ex.Message}).";
+            return false;
+        }
+        if (parsed is null)
+        {
+            reason = "REFUSED: the package contains no document.";
+            return false;
+        }
+
+        if (!string.Equals(parsed.FormatVersion, ExtensionPackage.ExpectedFormatVersion, StringComparison.Ordinal))
+        {
+            reason = $"REFUSED: unsupported package format '{parsed.FormatVersion}'; expected '{ExtensionPackage.ExpectedFormatVersion}'.";
+            return false;
+        }
+
+        // 1. The seal: binds files to the record. Without it, a valid verdict could be
+        //    transplanted onto arbitrary code.
+        if (parsed.Seal is null || parsed.SealSigner is null)
+        {
+            reason = "REFUSED: the package carries no seal — record and files are not bound. Refusing an unsealed package.";
+            return false;
+        }
+        var unsealed = parsed with { Seal = null, SealSigner = null };
+        if (!OperatorKey.Verify(parsed.SealSigner, CanonicalJson.Bytes(unsealed), parsed.Seal))
+        {
+            reason = "REFUSED: the seal does not verify — the files or the record were altered after sealing. "
+                   + "A package that fails its seal is treated as forged.";
+            return false;
+        }
+
+        // 2. The record's own signature: the seal proves the sealer sealed THIS content, but the
+        //    sealer's key is not the verdict's authority. The admission must verify under the key
+        //    embedded in the record itself — an attacker re-sealing a doctored record with their
+        //    own key passes check 1 and fails here.
+        if (parsed.Record.Sig is null || parsed.Record.Signer is null)
+        {
+            reason = "REFUSED: the packaged gate record is unsigned — there is no admission to trust.";
+            return false;
+        }
+        var unsignedRecord = parsed.Record with { Sig = null, Signer = null };
+        if (!OperatorKey.Verify(parsed.Record.Signer, CanonicalJson.Bytes(unsignedRecord), parsed.Record.Sig))
+        {
+            reason = "REFUSED: the gate record's signature does not verify — the verdict was altered. "
+                   + "A forged admission is worse than a missing one.";
+            return false;
+        }
+
+        // 3. Bind the two: the SEALER must be the operator who ADMITTED. The record signature does
+        //    not cover the file bytes — only the seal does — so a seal by any other key would let
+        //    an attacker keep a genuine, untouched verdict and re-seal it over their OWN files with
+        //    their OWN key (both checks above pass). Requiring seal-signer == record-signer closes
+        //    that: only the admitting operator's key can vouch for the payload. (This is an
+        //    intrinsic equality of two keys already in the package — it needs no trust root.)
+        if (!string.Equals(parsed.SealSigner, parsed.Record.Signer, StringComparison.Ordinal))
+        {
+            reason = "REFUSED: the package was sealed by a different key than the one that signed the admission. "
+                   + "Only the operator who admitted an extension may seal it — a seal from another key over a "
+                   + "genuine verdict is exactly how foreign code is smuggled under a real admission.";
+            return false;
+        }
+
+        // 3. The verdict itself.
+        if (parsed.Record.State != ProposalState.Admitted)
+        {
+            reason = $"REFUSED: the packaged verdict is {parsed.Record.State}, not Admitted — only admitted extensions travel.";
+            return false;
+        }
+
+        // 4. Payload shape: files exist and stay inside a project root.
+        if (parsed.Files.Count == 0)
+        {
+            reason = "REFUSED: the package carries no files.";
+            return false;
+        }
+        foreach (var file in parsed.Files)
+        {
+            if (!IsSafeRelativePath(file.Path))
+            {
+                reason = $"REFUSED: package path '{file.Path}' is not a safe project-relative path.";
+                return false;
+            }
+        }
+
+        package = parsed;
+        reason = string.Empty;
+        return true;
+    }
+
+    /// <summary>
+    /// A path is safe when it is relative, contains no <c>..</c> segment under either separator,
+    /// names no NTFS alternate stream, and is not rooted on any OS's spelling (a leading slash or
+    /// a drive letter). Checked at BOTH ends — pack refuses to create an escaping package, and
+    /// open refuses to accept one, so a hand-crafted package gains nothing.
+    /// </summary>
+    public static bool IsSafeRelativePath(string? path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return false;
+        }
+        if (path.Contains(':', StringComparison.Ordinal))
+        {
+            return false;   // drive letters and NTFS alternate data streams
+        }
+        if (path[0] is '/' or '\\')
+        {
+            return false;   // rooted on any OS's spelling
+        }
+        var segments = path.Split('/', '\\');
+        foreach (var segment in segments)
+        {
+            if (segment.Length == 0 || segment == "." || segment == "..")
+            {
+                return false;
+            }
+            // A trailing dot/space is stripped by Win32 (so 'x.' and 'x' collide), and a reserved
+            // device name (con, nul, aux, com1…) is not a real file on Windows even inside a
+            // subdirectory. Deny both on EVERY OS so a package that is legal at the origin cannot
+            // become an unwritable or aliased path the moment it is applied on Windows.
+            if (segment.EndsWith('.') || segment.EndsWith(' '))
+            {
+                return false;
+            }
+            var stem = segment.Split('.')[0];
+            if (Win32Reserved.Contains(stem))
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private static readonly HashSet<string> Win32Reserved = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "CON", "PRN", "AUX", "NUL",
+        "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
+        "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9",
+    };
+}
