@@ -34,19 +34,23 @@ public sealed class ExportCommand : Command
             description: "Project directory to export (defaults to current).",
             getDefaultValue: () => new DirectoryInfo(Environment.CurrentDirectory));
         var outOpt = new Option<DirectoryInfo>("--out", $"Output directory; the bundle lands in <out>/<name>-{name}.") { IsRequired = true };
+        var imageOpt = new Option<string?>(
+            "--runtime-image",
+            $"Runtime image the bundle layers the app onto (default {CloudBundle.RuntimeImage}). Pin a version or digest so the verifier that runs the app is the one you tested.");
 
-        var cmd = new Command(name, desc) { pathOpt, outOpt };
+        var cmd = new Command(name, desc) { pathOpt, outOpt, imageOpt };
         cmd.SetHandler((InvocationContext ctx) =>
         {
             ctx.ExitCode = ExecuteCloud(
                 ctx.ParseResult.GetValueForOption(pathOpt)!,
                 ctx.ParseResult.GetValueForOption(outOpt)!,
-                target);
+                target,
+                ctx.ParseResult.GetValueForOption(imageOpt));
         });
         return cmd;
     }
 
-    private static int ExecuteCloud(DirectoryInfo directory, DirectoryInfo outDir, CloudTarget target)
+    private static int ExecuteCloud(DirectoryInfo directory, DirectoryInfo outDir, CloudTarget target, string? runtimeImage)
     {
         if (!File.Exists(Path.Combine(directory.FullName, "ashlar.yaml")) || !File.Exists(Path.Combine(directory.FullName, "ashlar.policy.yaml")))
         {
@@ -67,12 +71,27 @@ public sealed class ExportCommand : Command
         {
             Directory.Delete(bundleDir, recursive: true);
         }
-        CloudBundle.Stage(directory.FullName, bundleDir, info, target);
+        try
+        {
+            CloudBundle.Stage(directory.FullName, bundleDir, info, target, runtimeImage);
+        }
+        catch (InvalidOperationException ex)
+        {
+            Console.Error.WriteLine(ex.Message);
+            return 65;
+        }
 
+        var effectiveImage = string.IsNullOrWhiteSpace(runtimeImage) ? CloudBundle.RuntimeImage : runtimeImage;
         Console.WriteLine();
         var verdict = info.Certified ? Gold("✓ CERTIFIED cloud bundle") : Gold("✓ VERIFIED cloud bundle");
         Console.WriteLine($"  {verdict}  {info.Name} · {targetName}");
         Console.WriteLine($"  {Dim(info.Certified ? $"signed {info.SignerFingerprint} · {info.LedgerEntries} ledger entr{(info.LedgerEntries == 1 ? "y" : "ies")}" : "unsigned — run `ashlar keys init` and re-export to certify")}");
+        if (effectiveImage.EndsWith(":latest", StringComparison.Ordinal))
+        {
+            // Honesty over polish: the verifier inside the container is whatever :latest resolves
+            // to when the operator builds. Say so, and say how to pin it.
+            Console.WriteLine($"  {Dim($"runtime image: {effectiveImage} (mutable tag — pass --runtime-image with a version or digest to pin the verifier)")}");
+        }
         Console.WriteLine($"  {Dim($"→ {bundleDir}")}");
         Console.WriteLine($"  {Dim($"deploy + run it:  ./deploy-{targetName}.sh \"<request>\"  (the container verifies before it runs)")}");
         return 0;
@@ -134,7 +153,15 @@ public sealed class ExportCommand : Command
             Directory.Delete(bundleDir, recursive: true);
         }
         Directory.CreateDirectory(bundleDir);
-        NativeBundle.Stage(directory.FullName, bundleDir, info);
+        try
+        {
+            NativeBundle.Stage(directory.FullName, bundleDir, info);
+        }
+        catch (InvalidOperationException ex)
+        {
+            Console.Error.WriteLine(ex.Message);
+            return 65;
+        }
 
         var exeName = rid.StartsWith("win", StringComparison.Ordinal) ? "ashlar.exe" : "ashlar";
         var runtimeBuilt = false;

