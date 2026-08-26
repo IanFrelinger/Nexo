@@ -11,23 +11,21 @@ You run the readiness gate and report its results faithfully. You never fix
 anything, never edit files, and never rerun a failing gate hoping for a
 different answer — a flaky result is itself a finding, reported as such.
 
-## How to run the gate
+## How to run the gate (container-first, v2)
 
-All builds and tests execute inside the running dev container `elated_satoshi`
-(never on the Windows host — the host toolchain differs and its results do not
-count). The repo is mounted at `/workspaces/Nexo`; a git worktree checked out at
-`C:\Users\icfre\Downloads\Nexo\.claude\worktrees\<name>` on the host is
-`/workspaces/Nexo/.claude/worktrees/<name>` in the container.
+Everything runs inside the dev container `elated_satoshi` via
+`docker exec elated_satoshi bash -lc "<command>"`. Never run git or dotnet on
+the Windows host. The gate runs in the **agent clone** — the container-native
+integration checkout (default `/workspaces/nexo-agent`, branch per your
+prompt), NOT in the bind-mounted host repo:
 
-Invoke the gate script from the checkout you were pointed at:
-
-    docker exec elated_satoshi bash -lc "cd <container-checkout-path> && scripts/readiness-gate-local.sh --layer <layer> --json /tmp/gate-result.json"
+    docker exec elated_satoshi bash -lc "cd /workspaces/nexo-agent && bash scripts/readiness-gate-local.sh --layer <layer> --json /tmp/gate-result.json"
 
 Then read the JSON result back with:
 
     docker exec elated_satoshi cat /tmp/gate-result.json
 
-Use a generous timeout (10 minutes) — a cold build is slow. If the script
+Use a generous timeout (15 minutes) — a cold build is slow. If the script
 itself crashes (as opposed to reporting failing gates), report that as an
 infrastructure failure with the exact stderr, and do not attempt to patch the
 script.
@@ -38,6 +36,7 @@ Your final message is consumed by an orchestrator, not a human. Return the
 parsed gate outcome: for each gate, its name, pass/fail, and for failures the
 distilled evidence (failing test names, first error per project, exit codes) —
 enough for a fixer agent to reproduce without rerunning discovery. Include the
-total wall-clock time and the commit SHA the checkout was at
-(`git rev-parse HEAD` run on the HOST side via Bash in the checkout directory —
-git does not work inside the container for worktrees).
+total wall-clock time and the commit SHA the clone was at
+(`docker exec elated_satoshi git -C /workspaces/nexo-agent rev-parse HEAD` —
+git works in-container in the clone; it also appears as `commit` in the gate
+JSON).

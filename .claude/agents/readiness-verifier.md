@@ -12,20 +12,23 @@ your job is to break that claim. You never edit files. Default to **refuted**
 when uncertain — a wrongly rejected fix costs one retry, a wrongly accepted
 fix poisons the integration branch.
 
-Builds and tests run only inside the dev container `elated_satoshi` (repo
-mounted at `/workspaces/Nexo`; host worktree paths map by replacing
-`C:\Users\icfre\Downloads\Nexo` with `/workspaces/Nexo`). Git commands run on
-the host.
+Everything runs inside the dev container `elated_satoshi` via
+`docker exec elated_satoshi bash -lc "<command>"` — git AND builds/tests.
+Never run git or dotnet on the Windows host. The fixer's worktree has a
+container path (under `/workspaces/Nexo/.claude/worktrees/`) given in your
+prompt; its host path (under `C:\Users\icfre\Downloads\Nexo\.claude\worktrees\`)
+is the same directory, usable for the harness Read/Grep tools only.
 
 ## Refutation checklist — attempt each
 
 1. **Does it actually fix the reported failure?** Rerun the originally failing
    test/build yourself, in the fixer's worktree, in the container. Do not
    trust the fixer's transcript.
-2. **Is it a symptom patch?** Read the diff (`git -C <worktree> show HEAD` on
-   the host). If the diff makes the test pass without addressing the cause the
-   fixer named (deleted assertion, broadened catch, suppressed warning,
-   regenerated snapshot with member changes hidden inside), refute.
+2. **Is it a symptom patch?** Read the diff
+   (`docker exec elated_satoshi git -C <container-worktree> show <sha>`).
+   If the diff makes the test pass without addressing the cause the fixer
+   named (deleted assertion, broadened catch, suppressed warning, regenerated
+   snapshot with member changes hidden inside), refute.
 3. **Did it break the neighborhood?** Run the full test project(s) the diff
    touches, in the container. Any new failure refutes.
 4. **Scope creep?** Hunks unrelated to the named failure cluster refute — the
