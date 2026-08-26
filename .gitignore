@@ -114,3 +114,6 @@ deploy/compose/local/
 
 # Generated local artifacts
 brick.pp
+
+# Claude Code machine-local permission grants (overnight autonomy)
+.claude/settings.local.json

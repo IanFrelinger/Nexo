@@ -33,8 +33,74 @@ public sealed class BrickAuthoringPublicApiSnapshotTests
             }
 
             var approved = File.ReadAllText(path);
-            current.ReplaceLineEndings("\n").Should().Be(approved.ReplaceLineEndings("\n"), fileName);
+            Normalize(current).Should().Be(Normalize(approved), fileName);
         }
+    }
+
+    /// <summary>Makes PublicApiGenerator output comparable across toolchains. Different
+    /// CodeDOM versions emit namespaces in a different order and wrap long attribute string
+    /// literals into "…" + "…" concatenations at different widths while the member surface
+    /// is identical, so both the generated and the approved text pass through this.</summary>
+    private static string Normalize(string api)
+        => SortNamespaceBlocks(JoinWrappedStringLiterals(api.ReplaceLineEndings("\n")));
+
+    /// <summary>Rejoins string literals that CodeDOM wrapped across lines
+    /// ("abc" + newline "def" becomes "abcdef").</summary>
+    private static string JoinWrappedStringLiterals(string text)
+    {
+        var lines = new List<string>(text.Split('\n'));
+        for (var i = 0; i < lines.Count - 1;)
+        {
+            var next = lines[i + 1].TrimStart();
+            if (lines[i].EndsWith("\" +", StringComparison.Ordinal) && next.StartsWith('"'))
+            {
+                lines[i] = lines[i][..^3] + next[1..];
+
+                // Do not advance: a literal wrapped over three or more lines merges fully.
+                lines.RemoveAt(i + 1);
+            }
+            else
+            {
+                i++;
+            }
+        }
+
+        return string.Join('\n', lines);
+    }
+
+    /// <summary>Reassembles the text with the top-level namespace blocks in ordinal order,
+    /// keeping the assembly-attribute preamble in place and pinning a single trailing
+    /// newline.</summary>
+    private static string SortNamespaceBlocks(string text)
+    {
+        var preamble = new List<string>();
+        var blocks = new List<(string Name, List<string> Lines)>();
+        List<string>? block = null;
+
+        foreach (var line in text.TrimEnd('\n').Split('\n'))
+        {
+            if (line.StartsWith("namespace ", StringComparison.Ordinal))
+            {
+                block = new List<string> { line };
+                blocks.Add((line["namespace ".Length..], block));
+            }
+            else if (block is null)
+            {
+                preamble.Add(line);
+            }
+            else
+            {
+                block.Add(line);
+                if (line == "}")
+                {
+                    block = null;
+                }
+            }
+        }
+
+        var ordered = preamble.Concat(
+            blocks.OrderBy(b => b.Name, StringComparer.Ordinal).SelectMany(b => b.Lines));
+        return string.Join('\n', ordered) + "\n";
     }
 
     private static string FindSnapshotRoot()
