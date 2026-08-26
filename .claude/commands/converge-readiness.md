@@ -26,8 +26,10 @@ the ledger.
   Reconciliation — fast-forwarding the real branch from the staging ref — is
   an ATTENDED step, never done overnight.
 - Fresh container or missing clone? Run
-  `docker exec elated_satoshi bash /workspaces/Nexo/.claude/worktrees/recursing-franklin-cbb828/scripts/readiness-container-setup.sh`
-  first (idempotent: net8 runtime, git identity, clone).
+  `docker exec elated_satoshi bash -lc "bash /workspaces/Nexo/.claude/worktrees/recursing-franklin-cbb828/scripts/readiness-container-setup.sh"`
+  first (idempotent: net8 runtime, git identity, clone). Always use the
+  `bash -lc "<cmd>"` form for docker exec — Git Bash mangles bare
+  `/workspaces/...` arguments into `C:/Program Files/Git/...` paths.
 
 ## One cycle
 

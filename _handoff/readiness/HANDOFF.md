@@ -14,7 +14,9 @@ unattended. Everything below is committed on branch
    `C:\Users\icfre\Downloads\Nexo\.claude\worktrees\recursing-franklin-cbb828`
    (a git worktree; expected branch `claude/recursing-franklin-cbb828`).
 2. Ensure the container side is provisioned (idempotent, safe to re-run):
-   `docker exec elated_satoshi bash /workspaces/Nexo/.claude/worktrees/recursing-franklin-cbb828/scripts/readiness-container-setup.sh`
+   `docker exec elated_satoshi bash -lc "bash /workspaces/Nexo/.claude/worktrees/recursing-franklin-cbb828/scripts/readiness-container-setup.sh"`
+   (always the `bash -lc "<cmd>"` form — Git Bash on the host mangles bare
+   `/workspaces/...` arguments into `C:/Program Files/Git/...` paths).
 3. Read the CLONE's ledger (`docker exec elated_satoshi cat /workspaces/nexo-agent/_handoff/readiness/LEDGER.md`)
    and `_handoff/readiness/README.md` (architecture, one page).
 4. Run `/converge-readiness` for one cycle, or `/loop /converge-readiness`
