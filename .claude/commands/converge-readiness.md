@@ -64,6 +64,11 @@ the ledger.
 
 - One cycle per wake. If the previous cycle's Workflow is still running in the
   background, do nothing and reschedule (noop, 20–30 min).
+- If `docker exec` reports the container is not running (a Docker
+  daemon/WSL recycle kills it with exit 255 — observed 2026-08-26), run
+  `docker start elated_satoshi` once and verify with a trivial exec before
+  proceeding; container state (clone, runtimes) survives stop/start. Only if
+  the start itself fails is it an infrastructure failure.
 - Stop conditions: all three layers converged (report and stop); or 3
   consecutive wakes ending in infrastructure failure (stop with a loud
   report). Otherwise keep cycling.
