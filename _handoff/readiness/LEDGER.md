@@ -196,3 +196,30 @@ Incident this window: a Docker daemon/WSL recycle killed the dev container
 `applications-coverage` and drive the fix pipeline to write the earning
 tests (XrealTrackingStateMapper 0%, validation-policy branches, hasher,
 fail-closed stubs). First product-code work through fix→verify→integrate.
+
+## Cycle 6 — applications (2026-08-26T14:39:14Z) — first product-code fix cycle
+
+Layer: `applications` · Pipeline v2, native agent roles · Gate in the clone
+at `eac117fa` (the ratchet-raise commit — this cycle was DISPATCHED to fail).
+
+| Gate | Status |
+| --- | --- |
+| applications-build | PASS |
+| applications-tests-full | PASS |
+| applications-provenance-unit | PASS |
+| applications-dependency-boundary | PASS |
+| applications-coverage | FAIL → fixed |
+
+**Fix landed:** `87486be3` (cherry-picked as `e6f5153a`) — seven behavioral
+test files, 73 tests, 767 insertions, test-only, targeting exactly the
+audit's named gaps: XREAL frame→PoseSample mapping driven through the public
+provider seam, fail-closed session halves, pose-frame record, the validation
+policy's 8 unexercised rejection codes, GeoAnchorValidator bounds/shape
+rejections, hasher guards, HTTP router error responses, tag-reference
+equality. Android-only NRSDK branches left unsimulated per the audit's
+"partially by design" note. **Coverage: Certification.Physical 82.1→91.6%,
+XREAL 31.3→86.7%.** Verifier confirmed; integrator regate **PASS 5/5**,
+full suite 167/167, sync-pushed. ~19 min, 4 agents, no retry needed.
+
+**Ratchet completed:** floors move to just under the new measurements —
+Certification.Physical 85→90, XREAL 55→85 — locking the earned gains.

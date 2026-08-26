@@ -12,6 +12,8 @@
 # COVERAGE-AUDIT.md targets. A raise is only committed together with the
 # work that earns it (or dispatched to the fix pipeline in the same cycle) —
 # never as an aspiration left red.
+# 2026-08-26 ratchet after earning (fix e6f5153a, 73 tests): measured
+# Cert.Physical 91.6 and XREAL 86.7 — floors move to 90 and 85.
 set -euo pipefail
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT"
@@ -45,11 +47,11 @@ cov_dir = sys.argv[1]
 FLOORS = {
     "Ashlar.Spatial.Contracts": 90.0,
     "Ashlar.Spatial.Runtime": 90.0,
-    "Ashlar.Certification.Physical": 85.0,
+    "Ashlar.Certification.Physical": 90.0,
     "Ashlar.Spatial.Multiplayer": 79.0,
     "Ashlar.Spatial.Platform.ARKit": 59.0,
     "Ashlar.Spatial.Platform.VisionPro": 56.0,
-    "Ashlar.Spatial.Platform.XREAL": 55.0,
+    "Ashlar.Spatial.Platform.XREAL": 85.0,
     "Ashlar.Provenance.Graph": 48.0,
 }
 # An assembly referenced by both suites (Certification.Physical) is judged by
