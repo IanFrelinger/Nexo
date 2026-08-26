@@ -34,8 +34,11 @@ post-review script fixes (guarded JSON write, caller-relative --json paths).
 Same checkout state as Cycle 0 — the two-consecutive-green condition is met
 for this checkout, pending the baseline commit landing.
 
+Update 2026-08-26: baseline committed — `fcbbcacd` (snapshot fix),
+`a61af4ad` (pipeline). Fixer worktrees now share the measured baseline.
+
 Open items for the human:
-- Commit/PR the snapshot fix + scaffolding on this branch (blocks Cycle 1's
-  fixer worktrees from sharing the baseline).
+- Open the PR for `claude/recursing-franklin-cbb828` → master (bare master
+  fails application-tests-cli-full until the snapshot fix lands).
 - Decide gate lists for `--layer applications` and `--layer apps`
   (which CI workflows own those layers).
