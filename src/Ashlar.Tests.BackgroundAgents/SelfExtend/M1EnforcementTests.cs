@@ -70,7 +70,9 @@ public sealed class M1EnforcementTests : IDisposable
         SelfExtendAdmissionBridge.TryRecordAsync(
             _repo, "night-agent", "improve the classifier", writePaths: [],
             toolCallsExecuted: 4, toolCallsDenied: 1 /* mediation steering, not a violation */,
-            NullLogger.Instance, default, forgeIds);
+            // autoShare pinned OFF: with the null default, an exported ASHLAR_MESH_AUTOSHARE=1 on
+            // the machine would make this test publish into the developer's REAL mesh store.
+            NullLogger.Instance, default, forgeIds, autoShare: false);
 
     // ─────────────────────────── the three modes ───────────────────────────
 
