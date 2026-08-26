@@ -30,6 +30,24 @@ else
   bash /tmp/dotnet-install.sh --runtime aspnetcore --channel 8.0 --install-dir /usr/share/dotnet
 fi
 
+echo "-- python stdlib (dependency-boundary gate) --"
+if python3 -c 'import dataclasses' 2>/dev/null; then
+  echo "python3 stdlib complete"
+else
+  # Image ships python3-minimal only; the boundary script needs the full stdlib.
+  PYVER="$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')"
+  apt-get update -qq && apt-get install -y -qq "libpython${PYVER}-stdlib"
+  python3 -c 'import dataclasses' && echo "python3 stdlib installed"
+fi
+
+echo "-- docker socket (tier-D lanes) --"
+if command -v docker >/dev/null 2>&1 && docker version >/dev/null 2>&1; then
+  echo "docker reachable: tier-D lanes (prod dry run, Neo4j integration) available"
+else
+  echo "no docker socket — tier-D lanes unavailable (recreate the container from"
+  echo "the branch .devcontainer config with the docker-outside-of-docker feature)"
+fi
+
 echo "-- git config --"
 git config --global user.name "$GIT_NAME"
 git config --global user.email "$GIT_EMAIL"

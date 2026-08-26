@@ -1,6 +1,9 @@
 {
   "name": "Ashlar",
   "image": "mcr.microsoft.com/devcontainers/dotnet:10.0-noble",
+  "features": {
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
+  },
   "containerEnv": {
     "DOTNET_ROLL_FORWARD": "LatestMajor"
   },
