@@ -112,6 +112,74 @@ public sealed class NativeBundleTests : IDisposable
     }
 
     [Fact]
+    public async Task Stage_never_ships_keys_forge_state_or_locks()
+    {
+        // SPEC-006's first rule: the private key never appears inside a bundle. An operator who
+        // pointed ASHLAR_KEY_DIR inside the project (.ashlar/keys) must still be safe, and the
+        // forge queue (raw held/rejected proposal content) is working state, not cargo.
+        Scaffold();
+        await Certify();
+        var stateDir = Path.Combine(_dir, ".ashlar");
+        Directory.CreateDirectory(Path.Combine(stateDir, "keys"));
+        File.WriteAllText(Path.Combine(stateDir, "keys", "operator.key"), "SEED-MUST-NOT-TRAVEL");
+        File.WriteAllText(Path.Combine(stateDir, "keys", "operator.pub"), "pub");
+        Directory.CreateDirectory(Path.Combine(stateDir, "forge", "rejected"));
+        File.WriteAllText(Path.Combine(stateDir, "forge", "rejected", "r1.json"), "{ \"NewContent\": \"secret draft\" }");
+        File.WriteAllText(Path.Combine(stateDir, ".lock"), "");
+        // src/ is inside the project too — an operator can point ASHLAR_KEY_DIR there just as
+        // easily, and build output must not ride along either.
+        Directory.CreateDirectory(Path.Combine(_dir, "src", "keys"));
+        File.WriteAllText(Path.Combine(_dir, "src", "keys", "operator.key"), "SEED-MUST-NOT-TRAVEL");
+        Directory.CreateDirectory(Path.Combine(_dir, "src", "bin"));
+        File.WriteAllText(Path.Combine(_dir, "src", "bin", "junk.dll"), "not cargo");
+        File.WriteAllText(Path.Combine(_dir, "src", "brick.cs"), "// legit cargo");
+        var bundle = Path.Combine(_dir, "out-secrets");
+
+        var written = NativeBundle.Stage(_dir, bundle, NativeBundle.Describe(_dir, "linux-x64"));
+
+        Directory.Exists(Path.Combine(bundle, "app", ".ashlar", "keys")).Should().BeFalse("the private key must never travel");
+        Directory.Exists(Path.Combine(bundle, "app", ".ashlar", "forge")).Should().BeFalse("forge state is not cargo");
+        File.Exists(Path.Combine(bundle, "app", ".ashlar", ".lock")).Should().BeFalse();
+        Directory.Exists(Path.Combine(bundle, "app", "src", "keys")).Should().BeFalse("keys under src/ must not travel either");
+        Directory.Exists(Path.Combine(bundle, "app", "src", "bin")).Should().BeFalse("build output is not cargo");
+        File.Exists(Path.Combine(bundle, "app", "src", "brick.cs")).Should().BeTrue("real source still travels");
+        written.Should().NotContain(p => p.Contains("operator.key"));
+        Directory.Exists(Path.Combine(bundle, "app", ".ashlar", "ledger")).Should().BeTrue("the signed ledger DOES travel");
+    }
+
+    [Fact]
+    public async Task Stage_refuses_a_symlink_inside_the_project()
+    {
+        // A link defeats every name-based filter: it can pull any file on the machine — including
+        // a private key — into the bundle under an innocent name. Same rule as ForgeApplier on the
+        // write side: refuse, and teach.
+        Scaffold();
+        await Certify();
+        var outside = Path.Combine(Path.GetTempPath(), "outside-" + Guid.NewGuid().ToString("N") + ".txt");
+        File.WriteAllText(outside, "smuggled");
+        try
+        {
+            Directory.CreateDirectory(Path.Combine(_dir, "src"));
+            try
+            {
+                File.CreateSymbolicLink(Path.Combine(_dir, "src", "innocent.cs"), outside);
+            }
+            catch (Exception e) when (e is IOException or UnauthorizedAccessException)
+            {
+                return; // creating symlinks needs privilege on Windows — the Linux CI lanes cover this path
+            }
+
+            Action act = () => NativeBundle.Stage(_dir, Path.Combine(_dir, "out-link"), NativeBundle.Describe(_dir, "linux-x64"));
+
+            act.Should().Throw<InvalidOperationException>().WithMessage("*symlink or junction*");
+        }
+        finally
+        {
+            File.Delete(outside);
+        }
+    }
+
+    [Fact]
     public void Stage_uses_the_windows_exe_name_and_launcher_for_a_win_rid()
     {
         Scaffold();

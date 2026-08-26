@@ -69,24 +69,72 @@ public static class NativeBundle
     }
 
     /// <summary>
+    /// Stages the governed app itself into <paramref name="bundleDir"/>/app — its contract, its
+    /// operator-owned policy, its signed ledger (the proof it carries), and its bricks. Copies only
+    /// these, never bin/obj/.git or the output itself. Shared by every exporter (native, cloud):
+    /// what travels is the same regardless of where it lands.
+    ///
+    /// <para>What is deliberately EXCLUDED from <c>.ashlar/</c>: <c>keys/</c> (an operator who
+    /// pointed <c>ASHLAR_KEY_DIR</c> inside the project must never find their PRIVATE key inside a
+    /// shipped bundle — SPEC-006's first rule), <c>forge/</c> (raw held/rejected proposal content
+    /// is working state, not something to distribute), and lock/temp files. The gates records and
+    /// the signed ledger — the governance history the bundle exists to carry — stay.</para>
+    /// </summary>
+    public static List<string> StageApp(string projectDir, string bundleDir)
+    {
+        var appDir = Path.Combine(bundleDir, "app");
+        Directory.CreateDirectory(appDir);
+        var written = new List<string>();
+        CopyFile(Path.Combine(projectDir, "ashlar.yaml"), Path.Combine(appDir, "ashlar.yaml"), written, bundleDir);
+        CopyFile(Path.Combine(projectDir, "ashlar.policy.yaml"), Path.Combine(appDir, "ashlar.policy.yaml"), written, bundleDir);
+        CopyTreeIfPresent(Path.Combine(projectDir, ".ashlar"), Path.Combine(appDir, ".ashlar"), written, bundleDir,
+            exclude: rel =>
+            {
+                var top = rel.Split('/', '\\')[0];
+                if (string.Equals(top, "keys", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(top, "forge", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+                var name = Path.GetFileName(rel);
+                return name is ".lock" || name.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase)
+                    || name.EndsWith(".key", StringComparison.OrdinalIgnoreCase);
+            });
+        // src/ is inside the project too: the same operator who pointed ASHLAR_KEY_DIR at
+        // .ashlar/keys can point it at src/keys, and build output is not cargo. Same rule,
+        // same filter shape as the .ashlar tree above.
+        CopyTreeIfPresent(Path.Combine(projectDir, "src"), Path.Combine(appDir, "src"), written, bundleDir,
+            exclude: rel =>
+            {
+                var parts = rel.Split('/', '\\');
+                if (parts[0] is "bin" or "obj" or ".git")
+                {
+                    return true;
+                }
+                if (parts.Any(p => string.Equals(p, "keys", StringComparison.OrdinalIgnoreCase)))
+                {
+                    return true;
+                }
+                var name = Path.GetFileName(rel);
+                return name is ".lock" || name.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase)
+                    || name.EndsWith(".key", StringComparison.OrdinalIgnoreCase);
+            });
+        return written;
+    }
+
+    /// <summary>
     /// Stages the project into <paramref name="bundleDir"/>/app and writes the launchers, the
     /// bundle descriptor, and a README. Returns the relative paths written. The runtime binary is
     /// added separately (see the export command's publish step).
     /// </summary>
     public static IReadOnlyList<string> Stage(string projectDir, string bundleDir, BundleInfo info)
     {
-        var appDir = Path.Combine(bundleDir, "app");
-        Directory.CreateDirectory(appDir);
-        var written = new List<string>();
-
-        // The governed app: its contract, its policy, its signed ledger (the proof it carries),
-        // and its bricks. Copy only these — never bin/obj/.git or the output itself.
-        CopyFile(Path.Combine(projectDir, "ashlar.yaml"), Path.Combine(appDir, "ashlar.yaml"), written, bundleDir);
-        CopyFile(Path.Combine(projectDir, "ashlar.policy.yaml"), Path.Combine(appDir, "ashlar.policy.yaml"), written, bundleDir);
-        CopyTreeIfPresent(Path.Combine(projectDir, ".ashlar"), Path.Combine(appDir, ".ashlar"), written, bundleDir);
-        CopyTreeIfPresent(Path.Combine(projectDir, "src"), Path.Combine(appDir, "src"), written, bundleDir);
+        var written = StageApp(projectDir, bundleDir);
 
         var exe = "ashlar" + (info.Rid.StartsWith("win", StringComparison.Ordinal) ? ".exe" : string.Empty);
+        // The launcher must not overclaim: "certified" is only true when a signed ledger attests
+        // these exact documents — bundle.json and the README already say it honestly.
+        var readiness = info.Certified ? "certified and ready." : "verified and ready (unsigned).";
 
         // run.sh — verify (self-prove), then run whatever the user asked for.
         var runSh =
@@ -98,7 +146,7 @@ public static class NativeBundle
             + "  exec \"$DIR/" + exe + "\" run \"$@\" --path \"$DIR/app\"\n"
             + "else\n"
             + "  echo\n"
-            + "  echo \"certified and ready. run a request with:  ./run.sh \\\"classify the invoices in ./inbox\\\"\"\n"
+            + "  echo \"" + readiness + " run a request with:  ./run.sh \\\"classify the invoices in ./inbox\\\"\"\n"
             + "fi\n";
         WriteText(Path.Combine(bundleDir, "run.sh"), runSh, written, bundleDir);
 
@@ -111,7 +159,7 @@ public static class NativeBundle
             + "if errorlevel 1 exit /b %errorlevel%\r\n"
             + "if \"%~1\"==\"\" (\r\n"
             + "  echo.\r\n"
-            + "  echo certified and ready. run a request with:  run.cmd \"classify the invoices in .\\inbox\"\r\n"
+            + "  echo " + readiness + " run a request with:  run.cmd \"classify the invoices in .\\inbox\"\r\n"
             + ") else (\r\n"
             + "  \"%DIR%" + exe + "\" run %* --path \"%DIR%app\"\r\n"
             + ")\r\n";
@@ -177,16 +225,41 @@ public static class NativeBundle
         }
     }
 
-    private static void CopyTreeIfPresent(string srcDir, string destDir, List<string> written, string bundleRoot)
+    private static void CopyTreeIfPresent(string srcDir, string destDir, List<string> written, string bundleRoot, Func<string, bool>? exclude = null)
     {
         if (!Directory.Exists(srcDir))
         {
             return;
         }
-        foreach (var file in Directory.EnumerateFiles(srcDir, "*", SearchOption.AllDirectories))
+        CopyTreeCore(srcDir, srcDir, destDir, written, bundleRoot, exclude);
+    }
+
+    private static void CopyTreeCore(string root, string dir, string destDir, List<string> written, string bundleRoot, Func<string, bool>? exclude)
+    {
+        foreach (var entry in Directory.EnumerateFileSystemEntries(dir))
         {
-            var rel = Path.GetRelativePath(srcDir, file);
-            CopyFile(file, Path.Combine(destDir, rel), written, bundleRoot);
+            var rel = Path.GetRelativePath(root, entry);
+            if (exclude?.Invoke(rel) == true)
+            {
+                continue;
+            }
+            var attributes = File.GetAttributes(entry);
+            if ((attributes & FileAttributes.ReparsePoint) != 0)
+            {
+                // Same rule ForgeApplier enforces on the write side: lexical containment is not
+                // enough when a link is in the way. A link can pull content from outside the
+                // project — including a private key — into the bundle, past every name filter.
+                throw new InvalidOperationException(
+                    $"refusing to stage '{rel}': it is a symlink or junction, and a link can pull content from outside the project into the bundle. Replace it with the real file, or remove it, and re-export.");
+            }
+            if ((attributes & FileAttributes.Directory) != 0)
+            {
+                CopyTreeCore(root, entry, destDir, written, bundleRoot, exclude);
+            }
+            else
+            {
+                CopyFile(entry, Path.Combine(destDir, rel), written, bundleRoot);
+            }
         }
     }
 }
