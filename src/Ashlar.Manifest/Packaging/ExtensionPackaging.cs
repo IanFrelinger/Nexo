@@ -114,6 +114,13 @@ public static class ExtensionPackaging
                     $"Illegal package path '{file.Path}': paths must be project-relative and must not escape the project root.");
             }
         }
+        // The record's signature covers the CLAIMS, and the seal binds THESE bytes to the record —
+        // sealing content that fails the record's own claims would mint a package every honest
+        // receiver refuses. Refuse at the source, whatever path fed the files in.
+        if (!VerifyFileClaims(record.Proposal, files, out var claimReason))
+        {
+            throw new InvalidOperationException(claimReason);
+        }
 
         var unsealed = new ExtensionPackage
         {
@@ -236,8 +243,66 @@ public static class ExtensionPackaging
             }
         }
 
+        // 5. The record's own content claims. The seal proves the sealer sealed THESE bytes and
+        //    check 3 proves the sealer had admission authority — but neither proves the bytes are
+        //    the ones the GATE decided over. When the signed proposal carries claims, the files
+        //    must hash to them: an origin whose forge rows were edited between admission and
+        //    packaging is refused here even if its packer was bypassed. (Absent claims are a
+        //    pre-claims record — nothing was claimed, and the signature guarantees claims were
+        //    never stripped to get here.)
+        if (!VerifyFileClaims(parsed.Record.Proposal, parsed.Files, out var claimReason))
+        {
+            reason = claimReason;
+            return false;
+        }
+
         package = parsed;
         reason = string.Empty;
+        return true;
+    }
+
+    /// <summary>
+    /// Verifies file content against the proposal's signed claims, multiset-exact: every file
+    /// must consume a claim matching on (path, content-hash), and every claim must be consumed.
+    /// Order-independent, and duplicate paths are legal (two admitted writes to one file are two
+    /// claims). A null claim list is a record from before claims existed — nothing was claimed,
+    /// so nothing verifies and the result is true; the field sits under the record's signature,
+    /// so that path is unreachable by stripping claims off a claims-bearing record. On false,
+    /// <paramref name="reason"/> names the first offending path precisely.
+    /// </summary>
+    public static bool VerifyFileClaims(ExtensionProposal proposal, IReadOnlyList<PackageFile> files, out string reason)
+    {
+        ArgumentNullException.ThrowIfNull(proposal);
+        ArgumentNullException.ThrowIfNull(files);
+
+        reason = string.Empty;
+        if (proposal.Files is null)
+        {
+            return true;
+        }
+
+        var unclaimed = proposal.Files.ToList();
+        foreach (var file in files)
+        {
+            var match = unclaimed.FindIndex(c =>
+                string.Equals(c.Path, file.Path, StringComparison.Ordinal) && c.Matches(file.Content));
+            if (match < 0)
+            {
+                reason = proposal.Files.Any(c => string.Equals(c.Path, file.Path, StringComparison.Ordinal))
+                    ? $"REFUSED: content of '{file.Path}' does not match the signed claim — "
+                      + "the bytes are not the ones the gate admitted."
+                    : $"REFUSED: file '{file.Path}' matches no signed content claim — "
+                      + "the admission never covered it.";
+                return false;
+            }
+            unclaimed.RemoveAt(match);
+        }
+        if (unclaimed.Count > 0)
+        {
+            reason = $"REFUSED: the signed claim for '{unclaimed[0].Path}' has no matching file — "
+                   + "an admitted write is missing from what was gathered.";
+            return false;
+        }
         return true;
     }
 

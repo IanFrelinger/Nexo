@@ -525,6 +525,17 @@ grep -q "coprod v2" "$CA/src/Coprod.cs" 2>/dev/null \
   && result "coprod-a-holds-v2" PASS "A's file holds v2 — both gates, both directions" \
   || result "coprod-a-holds-v2" FAIL "v2 did not land on A"
 
+# content claims: the admission signed (path, sha256) for its rows at propose time, so a forge
+# row edited AFTER the gate decided fails verification — the doctored bytes never travel under
+# the origin's signature. Refusal is a 65, the same family as a package that fails its seal.
+sed 's|// coprod v1|// tampered after admission|' "$CA/.ashlar/forge/applied/fco1.json" > "$CA/.t" \
+  && mv "$CA/.t" "$CA/.ashlar/forge/applied/fco1.json"
+run_cli pkg export --id ext-co1 --out "$WORK/tampered-row.ashpkg" --path "$CA"
+claim "pkg-claims-refuse-edited-row" 65 "does not match the signed claim"
+[ ! -f "$WORK/tampered-row.ashpkg" ] \
+  && result "pkg-claims-nothing-written" PASS "a refused export writes no package" \
+  || result "pkg-claims-nothing-written" FAIL "a package landed despite the failed claim"
+
 unset ASHLAR_KEY_DIR
 
 # ───────────────────────────── export native: the agentic-app bundle ─────────────────────────────

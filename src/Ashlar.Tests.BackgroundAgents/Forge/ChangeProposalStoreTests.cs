@@ -67,6 +67,23 @@ public class ChangeProposalStoreTests : IDisposable
     }
 
     [Fact]
+    public void Add_refuses_a_duplicate_id_in_any_status()
+    {
+        // Ids are append-once ACROSS statuses: re-adding a decided id would park a shadow row
+        // that by-id lookups (packaging above all) could confuse with the content the gate
+        // actually admitted — and a same-status re-add would silently overwrite a pending row.
+        _store.Add(NewProposal("dup"));
+        var samestatus = () => _store.Add(NewProposal("dup", summary: "overwrite attempt"));
+        samestatus.Should().Throw<InvalidOperationException>().WithMessage("*'dup' already exists (Proposed)*");
+
+        _store.Approve("dup");
+        _store.MarkApplied("dup");
+        var shadow = () => _store.Add(NewProposal("dup", target: "src/Shadow.cs", summary: "shadow the applied row"));
+        shadow.Should().Throw<InvalidOperationException>().WithMessage("*'dup' already exists (Applied)*");
+        _store.Find("dup")!.TargetPath.Should().Be("src/X.cs", "the decided row is untouched");
+    }
+
+    [Fact]
     public void List_filters_by_status_and_round_trip_preserves_metadata()
     {
         _store.Add(NewProposal("p7", target: "src/Foo.cs", summary: "alpha"));

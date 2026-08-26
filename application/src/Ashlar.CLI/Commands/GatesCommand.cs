@@ -193,6 +193,20 @@ public sealed class GatesCommand : Command
             return 1;
         }
 
+        // Claim the content being admitted, the same way a self-extend cycle does: (path,
+        // sha256) per referenced forge row, signed into the record, so packaging can later
+        // prove the rows it re-reads are the bytes THIS gate decided over. A file that
+        // authored its own claims keeps them — they are verified at pack time regardless.
+        if (proposal.Files is null && proposal.ForgeProposalIds.Count > 0)
+        {
+            proposal = proposal with
+            {
+                Files = Ashlar.BackgroundAgents.HostRunners.SelfExtendAdmissionBridge.ClaimFiles(
+                    Ashlar.BackgroundAgents.HostRunners.AshlarProjectMediation.ProjectStore(directory.FullName),
+                    proposal.ForgeProposalIds),
+            };
+        }
+
         GateRecord record;
         try
         {

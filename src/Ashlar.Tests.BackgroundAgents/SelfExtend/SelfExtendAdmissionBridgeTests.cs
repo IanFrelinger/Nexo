@@ -212,6 +212,64 @@ public sealed class SelfExtendAdmissionBridgeTests : IDisposable
             "what travels is exactly the admitted, applied write");
         File.ReadAllText(Path.Combine(_repo, "src", "Coprod.cs")).Should().Be("// coprod v1",
             "the admission applied before the share");
+        // The signed record inside the package claims the content, not just the row ids — the
+        // receiving side (and any re-export there) can prove these are the admitted bytes.
+        var claim = pkg.Record.Proposal.Files.Should().ContainSingle().Which;
+        claim.Path.Should().Be("src/Coprod.cs");
+        claim.Matches("// coprod v1").Should().BeTrue();
+    }
+
+    [Fact]
+    public void BuildProposal_claims_the_content_of_parked_rows_and_nothing_when_unmediated()
+    {
+        var forge = AshlarProjectMediation.ProjectStore(_repo);
+        var forgeId = ParkForgeWrite("// exact admitted bytes");
+
+        var mediated = SelfExtendAdmissionBridge.BuildProposal(
+            "night-agent", "objective", [], 1, 0, [forgeId], forge);
+        var claim = mediated.Files.Should().ContainSingle().Which;
+        claim.Path.Should().Be("src/Coprod.cs");
+        claim.Matches("// exact admitted bytes").Should().BeTrue();
+        claim.Matches("// different bytes").Should().BeFalse();
+
+        // Unmediated cycles claim nothing — null, not empty, so the canonical signing bytes
+        // stay identical to records from before claims existed (SPEC-006 S-5).
+        SelfExtendAdmissionBridge.BuildProposal("night-agent", "objective", ["a.cs"], 1, 0)
+            .Files.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Auto_share_refuses_a_row_edited_after_the_admission_was_signed()
+    {
+        // THE slice-5 review finding, at the auto-share door: the claims were signed over the
+        // parked content, then someone edits applied/<id>.json before the share re-reads it.
+        // The tampered bytes must not travel under the origin's signature — and best-effort
+        // holds: nothing reaches the mesh, the refusal only annotates.
+        WritePolicy("self-extending");
+        var signer = OperatorKey.Generate(Path.Combine(_repo, "keys"));
+        var forge = AshlarProjectMediation.ProjectStore(_repo);
+        var forgeId = ParkForgeWrite("// admitted");
+        var mesh = Path.Combine(_repo, "mesh");
+
+        var proposal = SelfExtendAdmissionBridge.BuildProposal(
+            "night-agent", "co-produce", [], 1, 0, [forgeId], forge);
+        var store = new GateStore(Path.Combine(_repo, ".ashlar"), signer);
+        var record = await store.RecordAsync(
+            proposal, new AdmissionOutcome { State = ProposalState.Admitted, Reason = "within budget" }, DateTimeOffset.UtcNow);
+        ForgeApplier.ApplyAll(forge, [forgeId], _repo, "gate");
+
+        // The attack: edit the applied row's content directly on disk (the store has no API for
+        // this — that is the point), then let the share path re-read it.
+        var rowPath = Path.Combine(_repo, ".ashlar", "forge", "applied", forgeId + ".json");
+        var row = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(rowPath))!;
+        row["NewContent"] = "// swapped after admission";
+        File.WriteAllText(rowPath, row.ToJsonString());
+
+        var note = SelfExtendAdmissionBridge.TryAutoShare(
+            record, forge, [forgeId], signer, autoShare: true, meshDir: mesh, NullLogger.Instance);
+
+        note.Should().Contain("auto-share refused").And.Contain("does not match the signed claim");
+        Directory.Exists(mesh).Should().BeFalse("tampered content must never reach the mesh");
     }
 
     [Fact]

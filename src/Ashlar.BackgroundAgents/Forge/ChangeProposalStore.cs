@@ -100,6 +100,16 @@ public sealed class ChangeProposalStore : IChangeProposalStore
 
         lock (_gate)
         {
+            // Ids are written once, across EVERY status folder. Re-adding a decided id would
+            // park a second row that lookups-by-id (packaging above all) could confuse with the
+            // content an admission actually covered — a shadow. The same-status case matters
+            // too: silently overwriting a pending proposal is a lost write, not an update.
+            if (Find(proposal.Id) is { } existing)
+            {
+                throw new InvalidOperationException(
+                    $"Proposal '{proposal.Id}' already exists ({existing.Status}). Ids are append-once "
+                    + "across every status — propose under a new id.");
+            }
             var stamped = proposal with
             {
                 Status = ChangeProposalStatus.Proposed,

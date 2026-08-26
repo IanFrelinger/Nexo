@@ -145,7 +145,7 @@ public static class SelfExtendAdmissionBridge
     /// share failure logs a warning and annotates the outcome string, nothing more. The
     /// admission and its applied writes stand regardless.
     /// </summary>
-    private static string TryAutoShare(
+    internal static string TryAutoShare(
         GateRecord record,
         Ashlar.BackgroundAgents.Forge.ChangeProposalStore forge,
         IReadOnlyList<string> forgeProposalIds,
@@ -183,6 +183,15 @@ public static class SelfExtendAdmissionBridge
                         $"forge proposal '{id}' is {proposal.Status}, not Applied — only content the gate admitted AND applied may travel.");
                 }
                 files.Add(new PackageFile { Path = proposal.TargetPath, Content = proposal.NewContent });
+            }
+            // The rows just re-read from the mutable forge store must hash to the claims the
+            // signed admission carries — a row edited since the gate decided must not travel
+            // under the origin's signature. Refusing is still best-effort: the admission and
+            // its applied writes stand, only the share is withheld.
+            if (!ExtensionPackaging.VerifyFileClaims(record.Proposal, files, out var claimReason))
+            {
+                logger.LogWarning("Self-extend gate: auto-share refused — {Reason}", claimReason);
+                return $"; auto-share refused: {claimReason}";
             }
             var json = ExtensionPackaging.Pack(record, files, signer);
             var dest = MeshStore.Publish(MeshStore.Resolve(meshDir), json);
@@ -243,6 +252,7 @@ public static class SelfExtendAdmissionBridge
             ProposedAt = DateTimeOffset.UtcNow,
             Diff = string.Join("\n", diffLines),
             ForgeProposalIds = forgeProposalIds,
+            Files = ClaimFiles(forge, forgeProposalIds),
             Courses =
             [
                 new CourseResult
@@ -253,6 +263,34 @@ public static class SelfExtendAdmissionBridge
                 },
             ],
         };
+    }
+
+    /// <summary>
+    /// Content claims for parked forge rows: (TargetPath, sha256(NewContent)) per row, read at
+    /// proposal time so the gate's signature covers WHAT is admitted, not just which mutable
+    /// rows to re-read later. Shared with <c>ashlar gates propose</c> so every producer claims
+    /// the same way. Null when there are no rows or no store to read them from (an unmediated
+    /// cycle claims nothing — and canonical signing bytes must stay identical to pre-claims
+    /// records for it). A row missing from the store is skipped, never invented: the claim list
+    /// then cannot cover the rows gathered at pack time, and packaging refuses — the correct
+    /// fail-closed shape for a row that vanished mid-cycle.
+    /// </summary>
+    public static IReadOnlyList<FileClaim>? ClaimFiles(
+        Ashlar.BackgroundAgents.Forge.ChangeProposalStore? forge, IReadOnlyList<string> forgeProposalIds)
+    {
+        if (forge is null || forgeProposalIds.Count == 0)
+        {
+            return null;
+        }
+        var claims = new List<FileClaim>(forgeProposalIds.Count);
+        foreach (var id in forgeProposalIds)
+        {
+            if (forge.Find(id) is { } row)
+            {
+                claims.Add(FileClaim.For(row.TargetPath, row.NewContent));
+            }
+        }
+        return claims;
     }
 
     private static string Truncate(string s, int max) =>

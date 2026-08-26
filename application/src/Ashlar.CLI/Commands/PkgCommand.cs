@@ -79,12 +79,12 @@ public sealed class PkgCommand : Command
                 return 1;
             }
 
-            var gathered = await GatherAsync(id, directory);
-            if (gathered is null)
+            var (code, gathered, gatheredFiles) = await GatherAsync(id, directory);
+            if (code != 0)
             {
-                return 1;
+                return code;
             }
-            var (record, files) = gathered.Value;
+            var (record, files) = (gathered!, gatheredFiles!);
 
             var json = ExtensionPackaging.Pack(record, files, sealer);
             await File.WriteAllTextAsync(outFile.FullName, json);
@@ -104,16 +104,18 @@ public sealed class PkgCommand : Command
     /// <summary>
     /// The record and its files — the parked writes the gate admitted, straight from the forge
     /// queue. Shared by <c>export</c> and <c>share</c>: what travels must be identical however it
-    /// leaves. Prints the reason and returns null when the extension cannot be packaged whole.
+    /// leaves. On failure, prints the reason and returns the exit code with no record: 1 when the
+    /// extension cannot be packaged whole, 65 when the rows fail the admission's signed content
+    /// claims — a verification refusal, same family as a package that fails its seal.
     /// </summary>
-    private static async Task<(GateRecord Record, List<PackageFile> Files)?> GatherAsync(string id, DirectoryInfo directory)
+    private static async Task<(int Code, GateRecord? Record, List<PackageFile>? Files)> GatherAsync(string id, DirectoryInfo directory)
     {
         var store = new GateStore(Path.Combine(directory.FullName, ".ashlar"));
         var record = await store.GetAsync(id);
         if (record is null)
         {
             Console.Error.WriteLine($"no proposal '{id}' in the store.");
-            return null;
+            return (1, null, null);
         }
 
         var forge = AshlarProjectMediation.ProjectStore(directory.FullName);
@@ -124,18 +126,26 @@ public sealed class PkgCommand : Command
             if (proposal is null)
             {
                 Console.Error.WriteLine($"forge proposal '{forgeId}' referenced by '{id}' is missing from the forge store — cannot package an incomplete extension.");
-                return null;
+                return (1, null, null);
             }
             // An admitted record's rows are Applied. Anything else under this id is a row the
             // gate did not admit-and-apply (a shadow, a replacement) — refuse to seal it.
             if (proposal.Status != ChangeProposalStatus.Applied)
             {
                 Console.Error.WriteLine($"forge proposal '{forgeId}' is {proposal.Status}, not Applied — only content the gate admitted AND applied may travel.");
-                return null;
+                return (1, null, null);
             }
             files.Add(new PackageFile { Path = proposal.TargetPath, Content = proposal.NewContent });
         }
-        return (record, files);
+        // The rows just re-read are mutable disk; the claims inside the record are signed. When
+        // the admission carries claims, the rows must hash to them — a row edited between
+        // admission and packaging must not travel under the origin's signature.
+        if (!ExtensionPackaging.VerifyFileClaims(record.Proposal, files, out var claimReason))
+        {
+            Console.Error.WriteLine(claimReason);
+            return (65, null, null);
+        }
+        return (0, record, files);
     }
 
     // ─────────────────────────── import ───────────────────────────
@@ -350,12 +360,12 @@ public sealed class PkgCommand : Command
                 return 1;
             }
 
-            var gathered = await GatherAsync(id, directory);
-            if (gathered is null)
+            var (code, gathered, gatheredFiles) = await GatherAsync(id, directory);
+            if (code != 0)
             {
-                return 1;
+                return code;
             }
-            var (record, files) = gathered.Value;
+            var (record, files) = (gathered!, gatheredFiles!);
 
             var json = ExtensionPackaging.Pack(record, files, sealer);
             // Same refusal shape as `pkg publish`: a package that does not verify is a 65, not an

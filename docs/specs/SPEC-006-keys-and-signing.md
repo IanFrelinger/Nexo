@@ -66,6 +66,16 @@ Rules:
 - **S-4** The dev-HMAC default in `CertificationRecordSigning` is DEPRECATED on acceptance:
   new records dual-write Ed25519 when keys exist; the HMAC-only path emits a warning and is
   removed in the release after keys ship.
+- **S-5** *Content claims.* A gate decision over mediated writes MUST carry, inside the
+  signed proposal, one `(path, sha256)` claim per forge row (`files`), computed over the
+  UTF-8 bytes of the row's full new content at propose time — the signature thereby covers
+  WHAT was admitted, not merely which mutable rows to re-read. Every packager MUST verify
+  the gathered content against the claims (multiset-exact on path + hash) and refuse a
+  mismatch as it would a failed seal. Compatibility is carried by the canonical form's
+  null-omission: a record with a **null** claim list is a pre-claims record and MUST keep
+  verifying (nothing was claimed, so nothing is checked — the field sits under the
+  signature, so claims cannot be stripped); an **empty** list is a different value that
+  enters the canonical bytes, so writers MUST use null, never empty, to mean "no claims".
 
 ## 5. What v1 explicitly does not claim
 
