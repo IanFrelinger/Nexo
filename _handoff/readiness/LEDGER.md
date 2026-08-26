@@ -112,3 +112,22 @@ surfaces; CI covers only `runtime-studio`'s optimizer script. Question for
 the human: should `ashlar-forge`, `game-director`, `release-manager` have
 readiness gates at all, and what should they assert? Until answered, the
 `apps` readiness gate is the runtime-studio lane only.
+
+## Cycle 3 — apps (2026-08-26T02:53:39Z)
+
+Layer: `apps` · Pipeline v2 · Gate in the agent clone at `e89b75fc` —
+first-ever run of the apps gate list.
+
+| Gate | Status |
+| --- | --- |
+| apps-cli-build | PASS |
+| apps-script-interface | PASS |
+| apps-bootstrap | PASS |
+| apps-scaffold-optimize | PASS |
+| apps-daemon-launch | PASS |
+| apps-flag-combinations | PASS |
+
+No failures — no fixers dispatched (~2.5 min). First fully-green cycle for
+`apps`; convergence needs one more consecutive green. The parked product
+question about gates for ashlar-forge / game-director / release-manager
+stands (see "apps layer bring-up" above).
