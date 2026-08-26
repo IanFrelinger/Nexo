@@ -72,8 +72,21 @@ case "$LAYER" in
     fi
     ;;
   apps)
-    echo "readiness-gate-local: layer 'apps' not implemented yet (applications converges first)" >&2
-    exit 64
+    # Mirrors CI for this layer: optimize-agent-cluster-gate.yml is the ONLY
+    # CI workflow owning apps/ paths (it exercises apps/runtime-studio's
+    # optimize_agent_cluster.sh). scripts/apps-gate-checks.sh reproduces its
+    # five jobs. ashlar-forge, game-director and release-manager have no CI
+    # coverage and no csproj — what "ready" means for them is parked in the
+    # ledger as a product question, not guessed here.
+    GATE_NAMES=(apps-cli-build apps-script-interface apps-bootstrap apps-scaffold-optimize apps-daemon-launch apps-flag-combinations)
+    GATE_CMDS=(
+      "dotnet restore src/Ashlar.Tests.Infrastructure/scripts/copy-assemblies.csproj && dotnet build application/src/Ashlar.CLI/Ashlar.CLI.csproj -v minimal"
+      "bash scripts/apps-gate-checks.sh interface"
+      "bash scripts/apps-gate-checks.sh bootstrap"
+      "bash scripts/apps-gate-checks.sh scaffold"
+      "bash scripts/apps-gate-checks.sh daemon"
+      "bash scripts/apps-gate-checks.sh combos"
+    )
     ;;
   *)
     echo "readiness-gate-local: unknown layer: $LAYER" >&2

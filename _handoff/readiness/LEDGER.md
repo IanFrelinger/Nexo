@@ -78,3 +78,37 @@ the ledger is now the authoritative one; the host repo receives commits via
 staging ref `container/claude/recursing-franklin-cbb828` only. The .NET 8
 runtime the layer's net8.0 test projects need was installed in the container
 (and `scripts/readiness-container-setup.sh` reprovisions it).
+
+## Cycle 2 — applications (2026-08-26T02:47:47Z)
+
+Layer: `applications` · Pipeline v2, first fully container-native cycle ·
+Gate in the agent clone `/workspaces/nexo-agent` at `bb332f98`.
+
+| Gate | Status |
+| --- | --- |
+| applications-build | PASS |
+| applications-tests-full | PASS |
+| applications-provenance-unit | PASS |
+| applications-dependency-boundary | PASS |
+
+No failures — no fixers dispatched (cycle wall-clock ~2 min on the clone's
+native FS vs ~4.5 min over the bind mount).
+
+**CONVERGED: `applications` is production-ready by the pipeline's definition**
+— two consecutive fully-green cycles (cycle 1's post-fix regate at `febd7686`,
+cycle 2 at `bb332f98`). The loop keeps it green from here.
+
+## apps layer bring-up (2026-08-26, attended)
+
+Gate list defined, mirroring `optimize-agent-cluster-gate.yml` — the only CI
+workflow that owns `apps/` paths: `apps-cli-build`, then five checks via
+`scripts/apps-gate-checks.sh` (script interface, bootstrap, scaffold
+lifecycle, daemon launch, flag matrix), env `ASHLAR_STRICT_MODE=1
+ASHLAR_ALLOW_MOCK=1` as in CI. The optimizer's Ollama preflight failure is
+expected and not asserted against, exactly as in CI.
+
+**Parked (product decision, do not guess):** `apps/` holds four config
+surfaces; CI covers only `runtime-studio`'s optimizer script. Question for
+the human: should `ashlar-forge`, `game-director`, `release-manager` have
+readiness gates at all, and what should they assert? Until answered, the
+`apps` readiness gate is the runtime-studio lane only.
