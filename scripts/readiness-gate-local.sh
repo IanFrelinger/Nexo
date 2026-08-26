@@ -5,6 +5,8 @@
 # APPLICATION_GATE_SKIP_KERNEL=1, per .github/workflows/application-gate.yml),
 # plus the complete Ashlar.Tests.CLI suite as a strictly stronger local gate
 # (CI tier B only samples three command-test classes).
+# --layer applications mirrors provenance-graph-gate.yml + dependency-boundary.yml
+# and adds the full Ashlar.Applications.Tests suite and a per-project build.
 # Emits RESULT lines (e2e-loop.sh convention) and, with --json, a
 # machine-readable verdict for orchestrating agents.
 # Canonical environment: the dotnet 10 dev container / CI runner. Works under
@@ -48,8 +50,29 @@ case "$LAYER" in
       GATE_CMDS+=("bash scripts/application-gate-tier-d.sh")
     fi
     ;;
-  applications|apps)
-    echo "readiness-gate-local: layer '$LAYER' not implemented yet (application converges first)" >&2
+  applications)
+    # Mirrors CI for this layer: provenance-graph-gate.yml's unit lane and
+    # dependency-boundary.yml (paths include applications/**), plus strictly
+    # stronger local coverage CI lacks: a per-project build of every
+    # applications/ csproj and the full Ashlar.Applications.Tests suite (no CI
+    # workflow runs it). The provenance Neo4j integration lane
+    # (Testcontainers, needs a Docker daemon) rides behind --include-tier-d
+    # like application's tier D. Test projects target net8.0 — the container
+    # needs the .NET 8 runtime alongside SDK 10 (CI installs 10.0.x + 8.0.x).
+    GATE_NAMES=(applications-build applications-tests-full applications-provenance-unit applications-dependency-boundary)
+    GATE_CMDS=(
+      'for p in applications/*/*.csproj; do dotnet build "$p" --configuration Release -v minimal || exit 1; done'
+      "dotnet test applications/Ashlar.Applications.Tests/Ashlar.Applications.Tests.csproj --configuration Release --no-build --blame-hang-timeout 120s --blame-hang-dump-type none"
+      'dotnet test applications/Ashlar.Provenance.Graph.Tests/Ashlar.Provenance.Graph.Tests.csproj --filter "Category!=Integration" --configuration Release'
+      "bash scripts/dependency-boundary-gate.sh"
+    )
+    if [ "$INCLUDE_TIER_D" = "1" ]; then
+      GATE_NAMES+=(applications-provenance-integration)
+      GATE_CMDS+=('ASHLAR_RUN_NEO4J_CONTAINER=1 dotnet test applications/Ashlar.Provenance.Graph.Tests/Ashlar.Provenance.Graph.Tests.csproj --filter "Category=Integration" --configuration Release')
+    fi
+    ;;
+  apps)
+    echo "readiness-gate-local: layer 'apps' not implemented yet (applications converges first)" >&2
     exit 64
     ;;
   *)
