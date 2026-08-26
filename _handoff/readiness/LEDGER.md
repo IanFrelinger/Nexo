@@ -131,3 +131,43 @@ No failures — no fixers dispatched (~2.5 min). First fully-green cycle for
 `apps`; convergence needs one more consecutive green. The parked product
 question about gates for ashlar-forge / game-director / release-manager
 stands (see "apps layer bring-up" above).
+
+## Cycle 4 — apps (2026-08-26T02:56:37Z)
+
+Layer: `apps` · Pipeline v2 · Gate in the agent clone at `fc463028`.
+
+| Gate | Status |
+| --- | --- |
+| apps-cli-build | PASS |
+| apps-script-interface | PASS |
+| apps-bootstrap | PASS |
+| apps-scaffold-optimize | PASS |
+| apps-daemon-launch | PASS |
+| apps-flag-combinations | PASS |
+
+No failures (~11 min, cold CLI build). **CONVERGED: second consecutive
+fully-green cycle for `apps`.**
+
+## Mission status (2026-08-26): all three layers converged
+
+- `application` — converged (two greens 2026-08-26; snapshot-test fix
+  `fcbbcacd` carried on this branch).
+- `applications` — converged (cycles 1–2; dependency-boundary environment
+  fix `febd7686` landed by the pipeline).
+- `apps` — converged (cycles 3–4; runtime-studio lane).
+
+The convergence loop stopped itself on this condition. Remaining items for
+the human:
+
+1. **Open the PR** `claude/recursing-franklin-cbb828` → `master` (bare
+   master still fails `application-tests-cli-full` until `fcbbcacd` lands).
+2. **Parked product question:** should `ashlar-forge`, `game-director`,
+   `release-manager` (no CI coverage, no csproj) have readiness gates, and
+   what should they assert?
+3. Tier-D-style lanes (`--include-tier-d`: application prod dry run;
+   applications provenance Neo4j integration) need a Docker daemon and were
+   not exercised locally — matching CI, where they are dispatch-only.
+
+To keep converged layers green after future changes, run
+`/converge-readiness <layer>` for one attended cycle, or restart the loop
+with `/loop /converge-readiness`.
