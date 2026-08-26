@@ -50,6 +50,14 @@ unattended. Everything below is committed on branch
   test failed only under the container toolchain (fixed on this branch,
   commit "toolchain-stable comparison"). Container results are the only ones
   that count.
+- **Tier-D lanes are runnable (2026-08-26):** the container is created from
+  the BRANCH devcontainer config (docker-outside-of-docker feature → host
+  docker socket inside). Recreate with
+  `devcontainer up --workspace-folder <repo> --config <this-checkout>/.devcontainer/devcontainer.json --remove-existing-container`,
+  rename to `elated_satoshi`, run the setup script. Testcontainers under
+  DooD needs `TESTCONTAINERS_RYUK_DISABLED=true` and
+  `TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal` — already baked into
+  the gate script's tier-D command. Run with `--include-tier-d`.
 
 ## The pipeline (all committed on this branch)
 

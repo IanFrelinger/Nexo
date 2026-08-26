@@ -99,3 +99,22 @@ build):
 
 Nothing was wired into the gate by this audit; the proposal awaits a human
 go-ahead.
+
+## Addendum — proposal executed (2026-08-26, same day)
+
+All three levers landed, in the recommended order:
+
+1. **Gate wired** (`eb745124`) and proven green at the measured baseline.
+2. **Floors raised and earned through the fix pipeline** (`eac117fa` →
+   fix `e6f5153a`): 73 behavioral tests targeting exactly the named gaps.
+   Certification.Physical 82.1 → **91.6%** (floor now 90), XREAL 31.3 →
+   **86.7%** (floor now 85); Contracts drifted up to 93.0. Full suite 167.
+3. **Docker lever** (`30f51d78`, `c098cc9f`): container recreated from the
+   branch devcontainer config with docker-outside-of-docker; Testcontainers
+   needed Ryuk disabled + host-gateway override under DooD (first run
+   failed in the reaper, fixed in the gate script). The Neo4j integration
+   slice now runs locally: 4/4 green. **Provenance.Graph with integration:
+   49.9 → 67.1% line** (56.4 branch) — the async query/store paths are no
+   longer dark; remaining gap is mostly their error branches. The always-on
+   coverage floor stays at 48 (unit slice, must pass without Docker); 67.1
+   is the tier-D-verified number of record.

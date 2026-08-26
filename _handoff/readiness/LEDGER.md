@@ -223,3 +223,29 @@ full suite 167/167, sync-pushed. ~19 min, 4 agents, no retry needed.
 
 **Ratchet completed:** floors move to just under the new measurements —
 Certification.Physical 85→90, XREAL 55→85 — locking the earned gains.
+
+## Tier-D bring-up — applications (2026-08-26, attended)
+
+Docker lever executed. Container recreated from the BRANCH devcontainer
+config (docker-outside-of-docker feature, `30f51d78`); the old container is
+parked stopped as `elated_satoshi_old` (safe to remove).
+`readiness-container-setup.sh` reprovisioned the new container from scratch
+— net8 runtime, python stdlib, git identity, clone — proving the
+recreation-resilience design. First integration run FAILED in
+Testcontainers' Ryuk reaper (under docker-outside-of-docker its published
+port lives on the host daemon, unreachable from the container's localhost);
+fixed in the gate script (`c098cc9f`: reaper disabled, host-gateway
+override).
+
+**Full gate WITH tier-D at `c098cc9f`: PASS 6/6** — build, tests-full,
+provenance-unit (4s), dependency-boundary (10s), coverage (10s),
+provenance-integration (15s; Neo4j 4/4). **Provenance.Graph
+integration-inclusive coverage: 49.9 → 67.1% line** (56.4 branch) — the
+Neo4j query/store async paths are no longer dark; the remaining gap is
+mostly their error branches. The always-on coverage floor stays 48 (unit
+slice, must pass without Docker); 67.1 is the tier-D-verified figure of
+record.
+
+Operational note: gate invocations that pipe output through `tail` must
+echo `${PIPESTATUS[0]}` — one masked exit code was caught and corrected
+this session.
