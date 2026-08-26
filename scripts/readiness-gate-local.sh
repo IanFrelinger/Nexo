@@ -68,8 +68,12 @@ case "$LAYER" in
       "bash scripts/applications-coverage-gate.sh"
     )
     if [ "$INCLUDE_TIER_D" = "1" ]; then
+      # Under docker-outside-of-docker the test process cannot reach Ryuk (its
+      # port publishes on the host daemon, not this container's localhost), so
+      # the reaper is disabled — the fixture disposes its own container — and
+      # published ports are reached via the host gateway.
       GATE_NAMES+=(applications-provenance-integration)
-      GATE_CMDS+=('ASHLAR_RUN_NEO4J_CONTAINER=1 dotnet test applications/Ashlar.Provenance.Graph.Tests/Ashlar.Provenance.Graph.Tests.csproj --filter "Category=Integration" --configuration Release')
+      GATE_CMDS+=('ASHLAR_RUN_NEO4J_CONTAINER=1 TESTCONTAINERS_RYUK_DISABLED=true TESTCONTAINERS_HOST_OVERRIDE=host.docker.internal dotnet test applications/Ashlar.Provenance.Graph.Tests/Ashlar.Provenance.Graph.Tests.csproj --filter "Category=Integration" --configuration Release')
     fi
     ;;
   apps)
