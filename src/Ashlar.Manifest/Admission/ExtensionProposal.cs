@@ -38,21 +38,27 @@ public sealed record ExtensionProposal
     public IReadOnlyList<string> ForgeProposalIds { get; init; } = [];
 
     /// <summary>
-    /// Content claims for the mediated writes: one (path, sha256) per forge row, recorded when
-    /// the proposal is built and thereafter covered by the record's signature. The forge ids
-    /// above name WHERE packaging re-reads content from — a mutable, unsigned store — and these
-    /// claims pin WHAT must be there, so a row edited between admission and export/share fails
-    /// verification instead of travelling under the origin's signature.
+    /// Content claims for the mediated writes: one (path, sha256) per forge row, in
+    /// <see cref="ForgeProposalIds"/> order, recorded when the proposal is built and thereafter
+    /// covered by the record's signature. The forge ids name WHERE packaging re-reads content
+    /// from — a mutable, unsigned store — and these claims pin WHAT must be there, so a row
+    /// edited after the gate decided fails verification instead of travelling under the
+    /// origin's signature.
     ///
-    /// <para>Null — never empty — when nothing was claimed: records signed before claims
-    /// existed, and proposals with no mediated writes. The distinction is normative (SPEC-006):
-    /// the canonical signing form omits null fields, so pre-claims signatures keep verifying
-    /// byte-for-byte, whereas defaulting to an empty list would enter the canonical form and
-    /// invalidate every existing ledger. Verifiers skip a null claim list; they can afford to,
-    /// because the field sits under the signature — a claims-bearing record cannot be quietly
-    /// downgraded to a claimless one.</para>
+    /// <para>Null means "nothing claimed": records signed before claims existed, and proposals
+    /// with no mediated writes. Null — never an empty list — is the normative spelling
+    /// (SPEC-006 S-5): the canonical signing form omits null, keeping every pre-claims
+    /// signature verifying byte-for-byte, while an empty list would enter the signed bytes.
+    /// The accessor enforces the rule mechanically, so the empty spelling cannot be
+    /// constructed, deserialized, or signed.</para>
     /// </summary>
-    public IReadOnlyList<FileClaim>? Files { get; init; }
+    public IReadOnlyList<FileClaim>? Files
+    {
+        get => _files;
+        init => _files = value is { Count: 0 } ? null : value;
+    }
+
+    private readonly IReadOnlyList<FileClaim>? _files;
 }
 
 /// <summary>

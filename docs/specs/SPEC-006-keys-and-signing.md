@@ -67,15 +67,23 @@ Rules:
   new records dual-write Ed25519 when keys exist; the HMAC-only path emits a warning and is
   removed in the release after keys ship.
 - **S-5** *Content claims.* A gate decision over mediated writes MUST carry, inside the
-  signed proposal, one `(path, sha256)` claim per forge row (`files`), computed over the
-  UTF-8 bytes of the row's full new content at propose time — the signature thereby covers
-  WHAT was admitted, not merely which mutable rows to re-read. Every packager MUST verify
-  the gathered content against the claims (multiset-exact on path + hash) and refuse a
-  mismatch as it would a failed seal. Compatibility is carried by the canonical form's
-  null-omission: a record with a **null** claim list is a pre-claims record and MUST keep
-  verifying (nothing was claimed, so nothing is checked — the field sits under the
-  signature, so claims cannot be stripped); an **empty** list is a different value that
-  enters the canonical bytes, so writers MUST use null, never empty, to mean "no claims".
+  signed proposal, one `(path, sha256)` claim per forge row (`files`), in forge-id order,
+  computed over the UTF-8 bytes of the row's full new content at propose time — the
+  signature thereby covers WHAT was admitted, not merely which mutable rows to re-read.
+  Every verifier (packagers AND the seat-time pre-flight) MUST check the gathered content
+  against the claims **sequence-exact** on path + hash — order is signed, because apply is
+  last-write-wins per path and an order-blind check would let two admitted writes to one
+  path be swapped — and refuse a mismatch as it would a failed seal. Compatibility is
+  carried by the canonical form's null-omission: a record with a **null** claim list is a
+  pre-claims record and MUST keep verifying (nothing was claimed, so nothing is checked —
+  the field sits under the signature, so claims cannot be stripped); an **empty** list is a
+  different value that would enter the canonical bytes, so null, never empty, means "no
+  claims" — and the proposal type enforces this mechanically by normalizing empty to null
+  on construction and deserialization. The skew is one-way: a pre-claims binary reading a
+  store that holds even one claims-bearing record fails closed on the WHOLE store (its
+  reader drops the unknown field, the signature no longer verifies, and the fail-closed
+  listing refuses to summarize) — upgrade every reader of a store before its writers start
+  claiming.
 
 ## 5. What v1 explicitly does not claim
 

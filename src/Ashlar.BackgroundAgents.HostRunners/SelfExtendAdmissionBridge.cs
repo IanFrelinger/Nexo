@@ -82,8 +82,20 @@ public static class SelfExtendAdmissionBridge
 
         var forge = forgeProposalIds.Count > 0 ? AshlarProjectMediation.ProjectStore(repoRoot) : null;
 
-        var proposal = BuildProposal(agentName, objective, writePaths, toolCallsExecuted, toolCallsDenied,
-            forgeProposalIds, forge);
+        ExtensionProposal proposal;
+        try
+        {
+            proposal = BuildProposal(agentName, objective, writePaths, toolCallsExecuted, toolCallsDenied,
+                forgeProposalIds, forge);
+        }
+        catch (InvalidOperationException ex)
+        {
+            // A cycle that references a row the store does not hold cannot claim its content, and
+            // a record signed without the claim is unrepairable (append-once). Same loud GATE
+            // ERROR shape as an unreadable policy — never a silently under-claimed record.
+            logger.LogError(ex, "Self-extend gate: cycle references a forge row that is not in the store");
+            return $"GATE ERROR: {ex.Message}";
+        }
 
         // Sign the runtime's own proposals with the operator identity, when one is present, so a
         // self-extend cycle's recorded verdict carries the same provenance as an operator's manual
@@ -208,9 +220,15 @@ public static class SelfExtendAdmissionBridge
     }
 
     /// <summary>
-    /// Maps cycle facts onto a proposal. Public and pure so tests pin the mapping without a
-    /// filesystem. The courses claim ONLY what the cycle evidences: the sandbox course from
-    /// the policy engine's own denial count.
+    /// Maps cycle facts onto a proposal. Public and pure-over-the-store so tests pin the
+    /// mapping. The courses claim ONLY what the cycle evidences: the sandbox course from the
+    /// policy engine's own denial count. When a store is supplied, each referenced row is
+    /// resolved exactly once and yields BOTH its diff line and its content claim (path,
+    /// sha256(NewContent)) — the claims are signed with the record, so packaging can later
+    /// prove the rows it re-reads are the bytes this gate decided over. A referenced row
+    /// missing from the store throws: the claim it would sign covers nothing, the record is
+    /// append-once, and a silently under-claimed admission could never travel — refusing loud
+    /// at propose is the only repairable shape.
     /// </summary>
     public static ExtensionProposal BuildProposal(
         string agentName,
@@ -224,6 +242,18 @@ public static class SelfExtendAdmissionBridge
         forgeProposalIds ??= [];
         var mediated = forgeProposalIds.Count > 0;
 
+        List<Ashlar.BackgroundAgents.Forge.ChangeProposal>? rows = null;
+        if (mediated && forge is not null)
+        {
+            rows = new List<Ashlar.BackgroundAgents.Forge.ChangeProposal>(forgeProposalIds.Count);
+            foreach (var id in forgeProposalIds)
+            {
+                rows.Add(forge.Find(id) ?? throw new InvalidOperationException(
+                    $"forge proposal '{id}' is not in the store — park the write before proposing; "
+                    + "a record cannot claim content the store does not hold."));
+            }
+        }
+
         // Mediated: the sandbox claim is STRUCTURAL — every write is a parked proposal and
         // nothing touched disk, so confinement holds by construction regardless of denial
         // count (mediation denials are steering, not violations). Unmediated: the claim
@@ -235,9 +265,8 @@ public static class SelfExtendAdmissionBridge
                 ? $"{toolCallsExecuted} tool call(s), 0 denied"
                 : $"{toolCallsDenied} tool call(s) DENIED by the policy engine";
 
-        var diffLines = mediated && forge is not null
-            ? forgeProposalIds.Select(id =>
-                forge.Find(id) is { } p ? $"~ {p.TargetPath}  ({Truncate(p.Summary, 60)})" : $"~ {id}")
+        var diffLines = rows is not null
+            ? rows.Select(p => $"~ {p.TargetPath}  ({Truncate(p.Summary, 60)})")
             : writePaths.Select(p => "~ " + p);
 
         return new ExtensionProposal
@@ -252,7 +281,7 @@ public static class SelfExtendAdmissionBridge
             ProposedAt = DateTimeOffset.UtcNow,
             Diff = string.Join("\n", diffLines),
             ForgeProposalIds = forgeProposalIds,
-            Files = ClaimFiles(forge, forgeProposalIds),
+            Files = rows?.Select(p => FileClaim.For(p.TargetPath, p.NewContent)).ToList(),
             Courses =
             [
                 new CourseResult
@@ -263,34 +292,6 @@ public static class SelfExtendAdmissionBridge
                 },
             ],
         };
-    }
-
-    /// <summary>
-    /// Content claims for parked forge rows: (TargetPath, sha256(NewContent)) per row, read at
-    /// proposal time so the gate's signature covers WHAT is admitted, not just which mutable
-    /// rows to re-read later. Shared with <c>ashlar gates propose</c> so every producer claims
-    /// the same way. Null when there are no rows or no store to read them from (an unmediated
-    /// cycle claims nothing — and canonical signing bytes must stay identical to pre-claims
-    /// records for it). A row missing from the store is skipped, never invented: the claim list
-    /// then cannot cover the rows gathered at pack time, and packaging refuses — the correct
-    /// fail-closed shape for a row that vanished mid-cycle.
-    /// </summary>
-    public static IReadOnlyList<FileClaim>? ClaimFiles(
-        Ashlar.BackgroundAgents.Forge.ChangeProposalStore? forge, IReadOnlyList<string> forgeProposalIds)
-    {
-        if (forge is null || forgeProposalIds.Count == 0)
-        {
-            return null;
-        }
-        var claims = new List<FileClaim>(forgeProposalIds.Count);
-        foreach (var id in forgeProposalIds)
-        {
-            if (forge.Find(id) is { } row)
-            {
-                claims.Add(FileClaim.For(row.TargetPath, row.NewContent));
-            }
-        }
-        return claims;
     }
 
     private static string Truncate(string s, int max) =>

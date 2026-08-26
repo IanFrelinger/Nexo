@@ -2,6 +2,7 @@ using System.CommandLine;
 using System.CommandLine.Invocation;
 using Ashlar.Manifest;
 using Ashlar.Manifest.Admission;
+using Ashlar.Manifest.Packaging;
 using Ashlar.Manifest.Signing;
 
 namespace Ashlar.CLI.Commands;
@@ -102,6 +103,42 @@ public sealed class GatesCommand : Command
         {
             if (admit is not null)
             {
+                // Pre-flight the signed content claims BEFORE any decision is recorded: the
+                // forge rows are mutable disk and the proposal may have sat Held for days — a
+                // row edited in that window must not be seated, let alone applied. Refusing
+                // HERE leaves the record Held and the tree untouched; discovering the mismatch
+                // after DecideAsync would strand an admitted-but-unapplied record. Only a HELD
+                // record is pre-flighted — anything else falls through so the kernel's
+                // transition-authority wording stays the contract for re-decides.
+                var held = await OpenReadStore(directory).GetAsync(admit);
+                if (held is { State: ProposalState.Held, Proposal: { Files: not null, ForgeProposalIds.Count: > 0 } })
+                {
+                    var preflightForge = Ashlar.BackgroundAgents.HostRunners.AshlarProjectMediation.ProjectStore(directory.FullName);
+                    var rows = new List<PackageFile>(held.Proposal.ForgeProposalIds.Count);
+                    string? missing = null;
+                    foreach (var id in held.Proposal.ForgeProposalIds)
+                    {
+                        var row = preflightForge.Find(id);
+                        if (row is null) { missing = id; break; }
+                        rows.Add(new PackageFile { Path = row.TargetPath, Content = row.NewContent });
+                    }
+                    if (missing is not null)
+                    {
+                        Console.Error.WriteLine(
+                            $"REFUSED: forge proposal '{missing}' referenced by '{admit}' is missing from the forge store. "
+                            + "The proposal stays Held, nothing was decided, and nothing is on disk.");
+                        return 65;
+                    }
+                    if (!ExtensionPackaging.VerifyFileClaims(held.Proposal, rows, out var claimReason))
+                    {
+                        Console.Error.WriteLine(claimReason);
+                        Console.Error.WriteLine(
+                            "  The parked rows are not the bytes this admission's signature claims — the proposal "
+                            + "stays Held, nothing was decided, and nothing is on disk.");
+                        return 65;
+                    }
+                }
+
                 var decided = await OpenSigningStore(directory).DecideAsync(admit, admit: true, actor, reason ?? "seated after review", DateTimeOffset.UtcNow);
                 Console.WriteLine($"  {Gold("✓ seated")}  {decided.Proposal.Summary}");
                 Console.WriteLine($"  {Dim($"admitted by {decided.Actor} · recorded")}");
@@ -152,10 +189,11 @@ public sealed class GatesCommand : Command
             }
             return await ListAsync(OpenReadStore(directory));
         }
-        catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
+        catch (Exception ex) when (ex is InvalidOperationException or ArgumentException or IOException or UnauthorizedAccessException)
         {
             // The kernel's rules speaking (only Held can be decided; refusals need reasons;
-            // unknown ids). Their wording is the contract; pass it through.
+            // unknown ids) — or store I/O failing (an unreadable .ashlar or forge tree while
+            // pre-flighting claims). Their wording is the contract; pass it through.
             Console.Error.WriteLine(ex.Message);
             return 1;
         }
@@ -193,23 +231,49 @@ public sealed class GatesCommand : Command
             return 1;
         }
 
-        // Claim the content being admitted, the same way a self-extend cycle does: (path,
-        // sha256) per referenced forge row, signed into the record, so packaging can later
-        // prove the rows it re-reads are the bytes THIS gate decided over. A file that
-        // authored its own claims keeps them — they are verified at pack time regardless.
-        if (proposal.Files is null && proposal.ForgeProposalIds.Count > 0)
-        {
-            proposal = proposal with
-            {
-                Files = Ashlar.BackgroundAgents.HostRunners.SelfExtendAdmissionBridge.ClaimFiles(
-                    Ashlar.BackgroundAgents.HostRunners.AshlarProjectMediation.ProjectStore(directory.FullName),
-                    proposal.ForgeProposalIds),
-            };
-        }
-
         GateRecord record;
         try
         {
+            // Settle the content claims BEFORE the record is minted — records are append-once,
+            // so a claim wrong at propose time is wrong forever (the admission could never
+            // export). Every referenced row must exist NOW: park-then-propose is the M1 order,
+            // and a record referencing content the store does not hold would sign a claim over
+            // nothing. Inside the try: the store constructor and row reads are I/O, and their
+            // failures must reach the user as the command's clean message, not a stack trace.
+            if (proposal.ForgeProposalIds.Count > 0)
+            {
+                var forge = Ashlar.BackgroundAgents.HostRunners.AshlarProjectMediation.ProjectStore(directory.FullName);
+                var rows = new List<PackageFile>(proposal.ForgeProposalIds.Count);
+                foreach (var id in proposal.ForgeProposalIds)
+                {
+                    var row = forge.Find(id);
+                    if (row is null)
+                    {
+                        Console.Error.WriteLine(
+                            $"REJECTED: forge proposal '{id}' is not in the store — park the write first, then propose. "
+                            + "A record that referenced missing content would sign a claim over nothing, and records are append-once.");
+                        return 1;
+                    }
+                    rows.Add(new PackageFile { Path = row.TargetPath, Content = row.NewContent });
+                }
+                if (proposal.Files is null)
+                {
+                    // Claim the content being admitted, the same way a self-extend cycle does:
+                    // (path, sha256) per row, in id order, signed into the record.
+                    proposal = proposal with
+                    {
+                        Files = rows.Select(r => FileClaim.For(r.Path, r.Content)).ToList(),
+                    };
+                }
+                else if (!ExtensionPackaging.VerifyFileClaims(proposal, rows, out var claimReason))
+                {
+                    // A file that authors its own claims must author them TRUE: signing claims
+                    // the parked rows already fail would mint a permanently unexportable record.
+                    Console.Error.WriteLine("REJECTED: the proposal's own file claims do not match the parked rows. " + claimReason);
+                    return 1;
+                }
+            }
+
             var store = OpenSigningStore(directory);
 
             // One call, one transaction. The count-decide-record sequence lives kernel-side
@@ -218,10 +282,12 @@ public sealed class GatesCommand : Command
             // the pieces itself.
             record = await store.ProposeAsync(policy!, proposal, DateTimeOffset.UtcNow);
         }
-        catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
+        catch (Exception ex) when (ex is InvalidOperationException or ArgumentException or IOException or UnauthorizedAccessException)
         {
-            // The kernel's rules speaking (append-once ids, illegal id shapes) or a corrupt
-            // operator key refusing to sign. Their wording is the contract; pass it through.
+            // The kernel's rules speaking (append-once ids, illegal id shapes), a corrupt
+            // operator key refusing to sign, or forge-store I/O failing (an unreadable or
+            // read-only .ashlar while resolving the referenced rows). Their wording is the
+            // contract; pass it through as the command's clean refusal shape.
             Console.Error.WriteLine(ex.Message);
             return 1;
         }

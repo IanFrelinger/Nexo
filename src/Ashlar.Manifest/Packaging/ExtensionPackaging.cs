@@ -262,13 +262,16 @@ public static class ExtensionPackaging
     }
 
     /// <summary>
-    /// Verifies file content against the proposal's signed claims, multiset-exact: every file
-    /// must consume a claim matching on (path, content-hash), and every claim must be consumed.
-    /// Order-independent, and duplicate paths are legal (two admitted writes to one file are two
-    /// claims). A null claim list is a record from before claims existed — nothing was claimed,
-    /// so nothing verifies and the result is true; the field sits under the record's signature,
-    /// so that path is unreachable by stripping claims off a claims-bearing record. On false,
-    /// <paramref name="reason"/> names the first offending path precisely.
+    /// Verifies file content against the proposal's signed claims, SEQUENCE-exact: file i must
+    /// match claim i on both path and content hash. Order is part of what the gate decided —
+    /// claims are recorded in forge-id order and every consumer gathers, seals, parks, and
+    /// applies in that same order with last-write-wins per path, so an order-blind check would
+    /// let two admitted writes to one path be swapped, flipping the final applied content while
+    /// every hash still matches. A null claim list is a record from before claims existed —
+    /// nothing was claimed, so nothing verifies and the result is true; the field sits under
+    /// the record's signature, so that path is unreachable by stripping claims off a
+    /// claims-bearing record (SPEC-006 S-5). On false, <paramref name="reason"/> names the
+    /// offense precisely.
     /// </summary>
     public static bool VerifyFileClaims(ExtensionProposal proposal, IReadOnlyList<PackageFile> files, out string reason)
     {
@@ -276,32 +279,31 @@ public static class ExtensionPackaging
         ArgumentNullException.ThrowIfNull(files);
 
         reason = string.Empty;
-        if (proposal.Files is null)
+        if (proposal.Files is not { } claims)
         {
             return true;
         }
 
-        var unclaimed = proposal.Files.ToList();
-        foreach (var file in files)
+        if (claims.Count != files.Count)
         {
-            var match = unclaimed.FindIndex(c =>
-                string.Equals(c.Path, file.Path, StringComparison.Ordinal) && c.Matches(file.Content));
-            if (match < 0)
+            reason = $"REFUSED: the admission signed {claims.Count} content claim(s) but {files.Count} file(s) were gathered — "
+                   + "what travels must be exactly what the gate decided over, nothing more and nothing less.";
+            return false;
+        }
+        for (var i = 0; i < claims.Count; i++)
+        {
+            if (!string.Equals(claims[i].Path, files[i].Path, StringComparison.Ordinal))
             {
-                reason = proposal.Files.Any(c => string.Equals(c.Path, file.Path, StringComparison.Ordinal))
-                    ? $"REFUSED: content of '{file.Path}' does not match the signed claim — "
-                      + "the bytes are not the ones the gate admitted."
-                    : $"REFUSED: file '{file.Path}' matches no signed content claim — "
-                      + "the admission never covered it.";
+                reason = $"REFUSED: file {i + 1} of {files.Count} is '{files[i].Path}' where the signed claim names "
+                       + $"'{claims[i].Path}' — the admitted writes were replaced or reordered.";
                 return false;
             }
-            unclaimed.RemoveAt(match);
-        }
-        if (unclaimed.Count > 0)
-        {
-            reason = $"REFUSED: the signed claim for '{unclaimed[0].Path}' has no matching file — "
-                   + "an admitted write is missing from what was gathered.";
-            return false;
+            if (!claims[i].Matches(files[i].Content))
+            {
+                reason = $"REFUSED: content of '{files[i].Path}' does not match the signed claim — "
+                       + "the bytes are not the ones the gate admitted.";
+                return false;
+            }
         }
         return true;
     }

@@ -536,6 +536,37 @@ claim "pkg-claims-refuse-edited-row" 65 "does not match the signed claim"
   && result "pkg-claims-nothing-written" PASS "a refused export writes no package" \
   || result "pkg-claims-nothing-written" FAIL "a package landed despite the failed claim"
 
+# claims at the SEAT door: a held row edited between propose and admit is refused BEFORE any
+# decision is recorded — the proposal stays held, nothing is decided, nothing lands on disk.
+cat > "$CA/.ashlar/forge/proposed/fco3.json" <<'EOF'
+{"Id":"fco3","TargetPath":"src/Held.cs","NewContent":"// held v1","Summary":"held work","CreatedAt":"2026-08-25T08:00:00Z","UpdatedAt":"2026-08-25T08:00:00Z"}
+EOF
+cat > "$CA/pco3.json" <<'EOF'
+{"id":"ext-co3","kind":"brick","summary":"add brick held.work","proposedBy":"night-agent",
+ "proposedAt":"2026-08-25T08:00:00Z","diff":"+ 1 file",
+ "forgeProposalIds":["fco3"],
+ "courses":[{"name":"sandbox","passed":true,"detail":"confined"},{"name":"tests","passed":true,"detail":"14 passed"},{"name":"security","passed":true,"detail":"0 findings"}]}
+EOF
+run_cli gates propose --file "$CA/pco3.json" --path "$CA" >/dev/null
+sed 's|// held v1|// swapped while held|' "$CA/.ashlar/forge/proposed/fco3.json" > "$CA/.t" \
+  && mv "$CA/.t" "$CA/.ashlar/forge/proposed/fco3.json"
+run_cli gates --admit ext-co3 --as coprod-a-op --path "$CA"
+claim "gates-admit-refuses-edited-row" 65 "does not match the signed claim" "stays Held"
+[ ! -f "$CA/src/Held.cs" ] \
+  && result "gates-admit-refusal-nothing-lands" PASS "tampered bytes never reach the tree" \
+  || result "gates-admit-refusal-nothing-lands" FAIL "tampered content landed"
+
+# a proposal may not reference rows the store does not hold — the claim it would sign would
+# cover nothing, and records are append-once, so the refusal comes at propose time.
+cat > "$CA/pco4.json" <<'EOF'
+{"id":"ext-co4","kind":"brick","summary":"add brick dangling.ref","proposedBy":"night-agent",
+ "proposedAt":"2026-08-25T09:00:00Z","diff":"+ 1 file",
+ "forgeProposalIds":["fco-nowhere"],
+ "courses":[{"name":"sandbox","passed":true,"detail":"confined"}]}
+EOF
+run_cli gates propose --file "$CA/pco4.json" --path "$CA"
+claim "gates-propose-refuses-dangling-row" 1 "not in the store" "park the write first"
+
 unset ASHLAR_KEY_DIR
 
 # ───────────────────────────── export native: the agentic-app bundle ─────────────────────────────

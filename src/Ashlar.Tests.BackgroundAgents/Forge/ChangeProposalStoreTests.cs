@@ -84,6 +84,21 @@ public class ChangeProposalStoreTests : IDisposable
     }
 
     [Fact]
+    public void Add_refuses_an_id_whose_existing_row_is_corrupt()
+    {
+        // Existence is ownership: a row whose JSON was mangled (a crash, a half-edit) still
+        // owns its id. A parseability-based check would report it absent and let Add park a
+        // shadow row that by-id lookups then resolve first.
+        _store.Add(NewProposal("mangled"));
+        _store.Approve("mangled");
+        _store.MarkApplied("mangled");
+        File.WriteAllText(Path.Combine(_tempDir, "applied", "mangled.json"), "{ not json");
+
+        var act = () => _store.Add(NewProposal("mangled", summary: "shadow attempt"));
+        act.Should().Throw<InvalidOperationException>().WithMessage("*'mangled' already exists (Applied)*");
+    }
+
+    [Fact]
     public void List_filters_by_status_and_round_trip_preserves_metadata()
     {
         _store.Add(NewProposal("p7", target: "src/Foo.cs", summary: "alpha"));

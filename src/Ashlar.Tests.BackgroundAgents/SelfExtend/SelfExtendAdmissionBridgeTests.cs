@@ -239,6 +239,20 @@ public sealed class SelfExtendAdmissionBridgeTests : IDisposable
     }
 
     [Fact]
+    public void BuildProposal_refuses_a_referenced_row_that_is_not_in_the_store()
+    {
+        // A record signed without a claim for a referenced row is unrepairable (append-once)
+        // and could never travel — the only honest shape is a loud refusal at propose time,
+        // never a silently under-claimed record.
+        var forge = AshlarProjectMediation.ProjectStore(_repo);
+
+        var act = () => SelfExtendAdmissionBridge.BuildProposal(
+            "night-agent", "objective", [], 1, 0, ["forge-vanished"], forge);
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*'forge-vanished' is not in the store*");
+    }
+
+    [Fact]
     public async Task Auto_share_refuses_a_row_edited_after_the_admission_was_signed()
     {
         // THE slice-5 review finding, at the auto-share door: the claims were signed over the
