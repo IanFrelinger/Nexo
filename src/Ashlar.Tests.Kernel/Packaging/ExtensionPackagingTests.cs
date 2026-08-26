@@ -95,6 +95,19 @@ public sealed class ExtensionPackagingTests : IDisposable
     }
 
     [Fact]
+    public async Task Pack_refuses_a_sealer_that_is_not_the_admissions_signer()
+    {
+        // TryOpen refuses SealSigner != Record.Signer, so packing with a different key would
+        // mint a package no receiver can ever open — refused at the source instead.
+        var record = await AdmittedRecordAsync("ext-otherkey");
+        var otherKey = OperatorKey.Generate(Path.Combine(_dir, "other-keys"));
+
+        var act = () => ExtensionPackaging.Pack(record, Files(), otherKey);
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("REFUSED*does not match*");
+    }
+
+    [Fact]
     public async Task Pack_refuses_an_unsigned_record()
     {
         // An unsigned admission proves nothing to a receiver — it must not travel.

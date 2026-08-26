@@ -93,6 +93,14 @@ public static class ExtensionPackaging
                 "The gate record is unsigned, so it proves nothing to a receiver and cannot travel. "
                 + "Create an operator key at the origin (ashlar keys init) and decide the proposal signed.");
         }
+        if (!string.Equals(sealer.PublicKeyBase64, record.Signer, StringComparison.Ordinal))
+        {
+            // TryOpen refuses SealSigner != Record.Signer, so a mismatched sealer here would
+            // produce a package no receiver can ever open — refuse at the source, and teach.
+            throw new InvalidOperationException(
+                "REFUSED: the operator key does not match the key that signed this admission — only the "
+                + "operator who admitted may seal. Re-admit under the current key, or restore the admitting key.");
+        }
         if (files.Count == 0)
         {
             throw new InvalidOperationException(

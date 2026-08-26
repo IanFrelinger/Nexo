@@ -18,6 +18,10 @@ namespace Ashlar.CLI.Commands;
 /// certification is evidence, never authority. Sealed here rejects it; proposing holds it for
 /// this operator; self-extending admits within this project's budget. <c>show</c> inspects a
 /// package without touching any project.</para>
+///
+/// <para><c>publish</c> and <c>pull</c> move packages through a mesh store, and <c>share</c> is
+/// export + publish in one verb — all through the kernel's one door
+/// (<see cref="MeshStore"/>), the same door a self-extend cycle's auto-share uses.</para>
 /// </summary>
 public sealed class PkgCommand : Command
 {
@@ -29,6 +33,7 @@ public sealed class PkgCommand : Command
         AddCommand(BuildShow());
         AddCommand(BuildPublish());
         AddCommand(BuildPull());
+        AddCommand(BuildShare());
     }
 
     private static Option<DirectoryInfo> PathOption() => new(
@@ -74,27 +79,12 @@ public sealed class PkgCommand : Command
                 return 1;
             }
 
-            var store = new GateStore(Path.Combine(directory.FullName, ".ashlar"));
-            var record = await store.GetAsync(id);
-            if (record is null)
+            var gathered = await GatherAsync(id, directory);
+            if (gathered is null)
             {
-                Console.Error.WriteLine($"no proposal '{id}' in the store.");
                 return 1;
             }
-
-            // The files are the parked writes the gate admitted, straight from the forge queue.
-            var forge = AshlarProjectMediation.ProjectStore(directory.FullName);
-            var files = new List<PackageFile>();
-            foreach (var forgeId in record.Proposal.ForgeProposalIds)
-            {
-                var proposal = forge.Find(forgeId);
-                if (proposal is null)
-                {
-                    Console.Error.WriteLine($"forge proposal '{forgeId}' referenced by '{id}' is missing from the forge store — cannot package an incomplete extension.");
-                    return 1;
-                }
-                files.Add(new PackageFile { Path = proposal.TargetPath, Content = proposal.NewContent });
-            }
+            var (record, files) = gathered.Value;
 
             var json = ExtensionPackaging.Pack(record, files, sealer);
             await File.WriteAllTextAsync(outFile.FullName, json);
@@ -109,6 +99,43 @@ public sealed class PkgCommand : Command
             Console.Error.WriteLine(ex.Message);
             return 1;
         }
+    }
+
+    /// <summary>
+    /// The record and its files — the parked writes the gate admitted, straight from the forge
+    /// queue. Shared by <c>export</c> and <c>share</c>: what travels must be identical however it
+    /// leaves. Prints the reason and returns null when the extension cannot be packaged whole.
+    /// </summary>
+    private static async Task<(GateRecord Record, List<PackageFile> Files)?> GatherAsync(string id, DirectoryInfo directory)
+    {
+        var store = new GateStore(Path.Combine(directory.FullName, ".ashlar"));
+        var record = await store.GetAsync(id);
+        if (record is null)
+        {
+            Console.Error.WriteLine($"no proposal '{id}' in the store.");
+            return null;
+        }
+
+        var forge = AshlarProjectMediation.ProjectStore(directory.FullName);
+        var files = new List<PackageFile>();
+        foreach (var forgeId in record.Proposal.ForgeProposalIds)
+        {
+            var proposal = forge.Find(forgeId);
+            if (proposal is null)
+            {
+                Console.Error.WriteLine($"forge proposal '{forgeId}' referenced by '{id}' is missing from the forge store — cannot package an incomplete extension.");
+                return null;
+            }
+            // An admitted record's rows are Applied. Anything else under this id is a row the
+            // gate did not admit-and-apply (a shadow, a replacement) — refuse to seal it.
+            if (proposal.Status != ChangeProposalStatus.Applied)
+            {
+                Console.Error.WriteLine($"forge proposal '{forgeId}' is {proposal.Status}, not Applied — only content the gate admitted AND applied may travel.");
+                return null;
+            }
+            files.Add(new PackageFile { Path = proposal.TargetPath, Content = proposal.NewContent });
+        }
+        return (record, files);
     }
 
     // ─────────────────────────── import ───────────────────────────
@@ -243,18 +270,9 @@ public sealed class PkgCommand : Command
         name: "--store",
         description: "Mesh package store (defaults to $ASHLAR_MESH_DIR, else ~/.ashlar/mesh/published).");
 
-    private static string ResolveStore(DirectoryInfo? store)
-    {
-        if (store is not null)
-        {
-            return store.FullName;
-        }
-        if (Environment.GetEnvironmentVariable("ASHLAR_MESH_DIR") is { Length: > 0 } env)
-        {
-            return Path.Combine(Path.GetFullPath(env), "published");
-        }
-        return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".ashlar", "mesh", "published");
-    }
+    // Resolution and placement live in the kernel (MeshStore), so this verb and a self-extend
+    // cycle's auto-share go through the same door with the same rule.
+    private static string ResolveStore(DirectoryInfo? store) => MeshStore.Resolve(store?.FullName);
 
     private static Command BuildPublish()
     {
@@ -287,21 +305,79 @@ public sealed class PkgCommand : Command
             return 65;
         }
 
-        var storeDir = ResolveStore(store);
-        Directory.CreateDirectory(storeDir);
-        // Name by content hash so identical packages dedupe across republishes, prefixed by the
-        // proposal id so a human browsing the store can read what is there.
-        var sha = Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
-            System.Text.Encoding.UTF8.GetBytes(json)))[..12].ToLowerInvariant();
-        var name = $"{Safe(pkg!.Record.Proposal.Id)}-{sha}.ashpkg";
-        var dest = Path.Combine(storeDir, name);
-        await File.WriteAllTextAsync(dest, json);
+        var dest = MeshStore.Publish(ResolveStore(store), json);
 
-        Console.WriteLine($"  {Gold("✓ published to the mesh")}  {pkg.Record.Proposal.Summary}");
+        Console.WriteLine($"  {Gold("✓ published to the mesh")}  {pkg!.Record.Proposal.Summary}");
         Console.WriteLine($"  {Dim($"sealed {Fp(pkg.SealSigner)} · {pkg.Files.Count} file(s)")}");
         Console.WriteLine($"  {Dim($"→ {dest}")}");
-        Console.WriteLine($"  {Dim("peers pull with:  ashlar pkg pull --from " + storeDir)}");
+        Console.WriteLine($"  {Dim("peers pull with:  ashlar pkg pull --from " + Path.GetDirectoryName(dest))}");
         return 0;
+    }
+
+    // ─────────────────────────── share (export + publish, one verb) ───────────────────────────
+
+    private static Command BuildShare()
+    {
+        var idOpt = new Option<string>("--id", "The admitted proposal to share.") { IsRequired = true };
+        var storeOpt = StoreOption();
+        var pathOpt = PathOption();
+        var cmd = new Command("share", "Seal an admitted extension and place it in the mesh store, in one step.") { idOpt, storeOpt, pathOpt };
+        cmd.SetHandler(async (InvocationContext ctx) =>
+        {
+            ctx.ExitCode = await ShareAsync(
+                ctx.ParseResult.GetValueForOption(idOpt)!,
+                ctx.ParseResult.GetValueForOption(storeOpt),
+                ctx.ParseResult.GetValueForOption(pathOpt)!);
+        });
+        return cmd;
+    }
+
+    private static async Task<int> ShareAsync(string id, DirectoryInfo? store, DirectoryInfo directory)
+    {
+        if (!File.Exists(Path.Combine(directory.FullName, "ashlar.yaml")))
+        {
+            Console.Error.WriteLine($"not an ashlar project: no ashlar.yaml in {directory.FullName}");
+            return 1;
+        }
+
+        try
+        {
+            var sealer = OperatorKey.TryLoad();
+            if (sealer is null)
+            {
+                Console.Error.WriteLine("sharing requires an operator key — the seal is a signature.");
+                Console.Error.WriteLine("create one with:  ashlar keys init");
+                return 1;
+            }
+
+            var gathered = await GatherAsync(id, directory);
+            if (gathered is null)
+            {
+                return 1;
+            }
+            var (record, files) = gathered.Value;
+
+            var json = ExtensionPackaging.Pack(record, files, sealer);
+            // Same refusal shape as `pkg publish`: a package that does not verify is a 65, not an
+            // operational error — share must hold every property export + publish had separately.
+            if (!ExtensionPackaging.TryOpen(json, out _, out var reason))
+            {
+                Console.Error.WriteLine(reason);
+                return 65;
+            }
+            var dest = MeshStore.Publish(ResolveStore(store), json);
+
+            Console.WriteLine($"  {Gold("✓ shared to the mesh")}  {record.Proposal.Summary}");
+            Console.WriteLine($"  {Dim($"{files.Count} file(s) · admitted by {record.Actor} · verdict {Fp(record.Signer)} · seal {Fp(sealer.PublicKeyBase64)}")}");
+            Console.WriteLine($"  {Dim($"→ {dest}")}");
+            Console.WriteLine($"  {Dim("peers pull with:  ashlar pkg pull --from " + Path.GetDirectoryName(dest))}");
+            return 0;
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)
+        {
+            Console.Error.WriteLine(ex.Message);
+            return 1;
+        }
     }
 
     // ─────────────────────────── pull (from a peer) ───────────────────────────
@@ -390,12 +466,6 @@ public sealed class PkgCommand : Command
         // A pull where nothing new was accepted AND nothing was already-had is worth a non-zero exit
         // so a script notices a peer sending only things this gate refuses.
         return admitted + held + skipped > 0 ? 0 : 65;
-    }
-
-    private static string Safe(string id)
-    {
-        var chars = id.Where(c => char.IsLetterOrDigit(c) || c is '-' or '_').ToArray();
-        return chars.Length > 0 ? new string(chars) : "pkg";
     }
 
     private static string Fp(string? publicKeyBase64) =>

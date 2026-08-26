@@ -458,6 +458,75 @@ claim "pkg-pull-missing-store" 1 "no such peer store"
 
 unset ASHLAR_KEY_DIR
 
+# ───────────────────────────── pkg mesh 2: two-node co-production ─────────────────────────────
+# The loop the mesh exists for: node A admits and SHARES v1 in one verb; node B pulls it through
+# ITS OWN gate, builds v2 on top, admits, shares back; node A pulls v2 through ITS gate. Both
+# gates exercised in both directions, and the store dedupes what each side already decided.
+export ASHLAR_KEY_DIR="$WORK/pkgkeys"
+MESH2="$WORK/mesh-coprod"
+
+CA=$(fresh); run_cli init coprod-a --path "$CA"; set_proposing "$CA"
+CB=$(fresh); run_cli init coprod-b --path "$CB"; set_proposing "$CB"
+
+# node A: admit v1 (a parked forge write + its gate proposal), then share = seal + publish
+mkdir -p "$CA/.ashlar/forge/proposed"
+cat > "$CA/.ashlar/forge/proposed/fco1.json" <<'EOF'
+{"Id":"fco1","TargetPath":"src/Coprod.cs","NewContent":"// coprod v1","Summary":"add brick coprod.classify","CreatedAt":"2026-08-25T06:00:00Z","UpdatedAt":"2026-08-25T06:00:00Z"}
+EOF
+cat > "$CA/pco1.json" <<'EOF'
+{"id":"ext-co1","kind":"brick","summary":"add brick coprod.classify","proposedBy":"night-agent",
+ "proposedAt":"2026-08-25T06:00:00Z","diff":"+ 1 file",
+ "forgeProposalIds":["fco1"],
+ "courses":[{"name":"sandbox","passed":true,"detail":"confined"},{"name":"tests","passed":true,"detail":"14 passed"},{"name":"security","passed":true,"detail":"0 findings"}]}
+EOF
+run_cli gates propose --file "$CA/pco1.json" --path "$CA" >/dev/null
+run_cli gates --admit ext-co1 --as coprod-a-op --path "$CA"
+claim "coprod-a-admit-applies-v1" 0 "seated" "applied"
+run_cli pkg share --id ext-co1 --store "$MESH2" --path "$CA"
+claim "coprod-share-one-verb" 0 "shared to the mesh" "ed25519:"
+[ "$(ls "$MESH2"/*.ashpkg 2>/dev/null | wc -l)" -eq 1 ] \
+  && result "coprod-share-lands-in-store" PASS "seal + publish in one step" \
+  || result "coprod-share-lands-in-store" FAIL "share did not land exactly one package"
+
+# node B: pull v1 — held by B's OWN gate, nothing on disk until B seats it
+run_cli pkg pull --from "$MESH2" --path "$CB"
+claim "coprod-b-pull-holds" 0 "HELD" "pulled 1"
+[ ! -f "$CB/src/Coprod.cs" ] \
+  && result "coprod-b-held-not-on-disk" PASS "B's gate holds A's work before it lands" \
+  || result "coprod-b-held-not-on-disk" FAIL "pulled file landed before admission"
+run_cli gates --admit ext-co1 --as coprod-b-op --path "$CB"
+claim "coprod-b-admit-applies-v1" 0 "seated" "applied"
+grep -q "coprod v1" "$CB/src/Coprod.cs" 2>/dev/null \
+  && result "coprod-b-holds-v1" PASS "v1 landed on B through B's gate" \
+  || result "coprod-b-holds-v1" FAIL "v1 content missing on B"
+
+# node B: build v2 ON TOP of v1, admit through B's gate, share back to the same store
+mkdir -p "$CB/.ashlar/forge/proposed"
+cat > "$CB/.ashlar/forge/proposed/fco2.json" <<'EOF'
+{"Id":"fco2","TargetPath":"src/Coprod.cs","NewContent":"// coprod v2 (builds on v1)","Summary":"improve brick coprod.classify","CreatedAt":"2026-08-25T07:00:00Z","UpdatedAt":"2026-08-25T07:00:00Z"}
+EOF
+cat > "$CB/pco2.json" <<'EOF'
+{"id":"ext-co2","kind":"brick","summary":"improve brick coprod.classify","proposedBy":"night-agent",
+ "proposedAt":"2026-08-25T07:00:00Z","diff":"~ 1 file",
+ "forgeProposalIds":["fco2"],
+ "courses":[{"name":"sandbox","passed":true,"detail":"confined"},{"name":"tests","passed":true,"detail":"15 passed"},{"name":"security","passed":true,"detail":"0 findings"}]}
+EOF
+run_cli gates propose --file "$CB/pco2.json" --path "$CB" >/dev/null
+run_cli gates --admit ext-co2 --as coprod-b-op --path "$CB" >/dev/null
+run_cli pkg share --id ext-co2 --store "$MESH2" --path "$CB"
+claim "coprod-b-shares-v2-back" 0 "shared to the mesh"
+
+# node A: pull the store — v1 is already-have (A's gate decided it), v2 holds, A seats it
+run_cli pkg pull --from "$MESH2" --path "$CA"
+claim "coprod-a-pull-dedupes-and-holds" 0 "already have" "HELD" "pulled 2"
+run_cli gates --admit ext-co2 --as coprod-a-op --path "$CA"
+claim "coprod-a-admit-applies-v2" 0 "seated" "applied"
+grep -q "coprod v2" "$CA/src/Coprod.cs" 2>/dev/null \
+  && result "coprod-a-holds-v2" PASS "A's file holds v2 — both gates, both directions" \
+  || result "coprod-a-holds-v2" FAIL "v2 did not land on A"
+
+unset ASHLAR_KEY_DIR
+
 # ───────────────────────────── export native: the agentic-app bundle ─────────────────────────────
 # A certified project becomes a portable, self-proving bundle. The runtime binary is a separate
 # (slow) publish, so here we prove the deterministic staging and that the staged app self-verifies

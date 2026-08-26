@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Ashlar.Manifest;
 using Ashlar.Manifest.Admission;
+using Ashlar.Manifest.Packaging;
 using Ashlar.Manifest.Signing;
 
 namespace Ashlar.BackgroundAgents.HostRunners;
@@ -31,6 +32,10 @@ public static class SelfExtendAdmissionBridge
     /// </summary>
     /// <returns>A one-line gate outcome for the run summary, or null when not an ashlar
     /// project or nothing was written.</returns>
+    /// <remarks><paramref name="autoShare"/> opts an ADMITTED cycle into sharing its sealed
+    /// package to the mesh (null defaults from <c>ASHLAR_MESH_AUTOSHARE=1</c>);
+    /// <paramref name="meshDir"/> overrides the store (null resolves via
+    /// <see cref="MeshStore.Resolve"/>). Tests inject both; they never mutate env.</remarks>
     public static async Task<string?> TryRecordAsync(
         string repoRoot,
         string agentName,
@@ -41,7 +46,9 @@ public static class SelfExtendAdmissionBridge
         ILogger logger,
         CancellationToken ct = default,
         IReadOnlyList<string>? forgeProposalIds = null,
-        SigningIdentity? signer = null)
+        SigningIdentity? signer = null,
+        bool? autoShare = null,
+        string? meshDir = null)
     {
         var policyPath = Path.Combine(repoRoot, "ashlar.policy.yaml");
         if (!File.Exists(policyPath))
@@ -107,6 +114,7 @@ public static class SelfExtendAdmissionBridge
         // forge proposals. Held leaves them parked for `gates --admit`; a rejection rejects
         // them (sealed thereby truly seals — nothing was on disk, nothing ever lands); an
         // automatic self-extending admission applies them now, within budget, as decided.
+        var shareNote = string.Empty;
         if (forge is not null)
         {
             switch (record.State)
@@ -117,6 +125,7 @@ public static class SelfExtendAdmissionBridge
                 case ProposalState.Admitted:
                     var applied = ForgeApplier.ApplyAll(forge, forgeProposalIds, repoRoot, "gate");
                     logger.LogInformation("Self-extend gate: applied {Count} mediated write(s)", applied.Count);
+                    shareNote = TryAutoShare(record, forge, forgeProposalIds, signer, autoShare, meshDir, logger);
                     break;
             }
         }
@@ -124,9 +133,69 @@ public static class SelfExtendAdmissionBridge
         return record.State switch
         {
             ProposalState.Held => $"GATE: held as {proposal.Id} — review with `ashlar gates`",
-            ProposalState.Admitted => $"GATE: admitted as {proposal.Id} — {record.Reason}",
+            ProposalState.Admitted => $"GATE: admitted as {proposal.Id} — {record.Reason}{shareNote}",
             _ => $"GATE: rejected — {record.Reason}",
         };
+    }
+
+    /// <summary>
+    /// Best-effort auto-share of an admitted, applied extension into the mesh (co-production:
+    /// peers pull what this cycle produced, through THEIR OWN gates). Opt-in — the autoShare
+    /// parameter, or <c>ASHLAR_MESH_AUTOSHARE=1</c> when it is null. Never fails the cycle: a
+    /// share failure logs a warning and annotates the outcome string, nothing more. The
+    /// admission and its applied writes stand regardless.
+    /// </summary>
+    private static string TryAutoShare(
+        GateRecord record,
+        Ashlar.BackgroundAgents.Forge.ChangeProposalStore forge,
+        IReadOnlyList<string> forgeProposalIds,
+        SigningIdentity? signer,
+        bool? autoShare,
+        string? meshDir,
+        ILogger logger)
+    {
+        var enabled = autoShare ?? Environment.GetEnvironmentVariable("ASHLAR_MESH_AUTOSHARE") == "1";
+        if (!enabled)
+        {
+            return string.Empty;
+        }
+
+        // A package's seal is a signature (SPEC-006): an unsigned admission cannot travel.
+        // Skipping is honest and non-fatal — the annotation says why nothing reached the mesh.
+        if (signer is null || record.Sig is null || record.Signer is null)
+        {
+            logger.LogWarning("Self-extend gate: auto-share skipped — the admission is unsigned (run `ashlar keys init`)");
+            return "; auto-share skipped: unsigned admission (run `ashlar keys init`)";
+        }
+
+        try
+        {
+            var files = new List<PackageFile>();
+            foreach (var id in forgeProposalIds)
+            {
+                var proposal = forge.Find(id)
+                    ?? throw new InvalidOperationException($"forge proposal '{id}' is missing — cannot package an incomplete extension.");
+                // ApplyAll just marked these rows Applied. Anything else under this id is a row
+                // the gate did not admit-and-apply (a shadow, a replacement) — refuse to seal it.
+                if (proposal.Status != Ashlar.BackgroundAgents.Forge.ChangeProposalStatus.Applied)
+                {
+                    throw new InvalidOperationException(
+                        $"forge proposal '{id}' is {proposal.Status}, not Applied — only content the gate admitted AND applied may travel.");
+                }
+                files.Add(new PackageFile { Path = proposal.TargetPath, Content = proposal.NewContent });
+            }
+            var json = ExtensionPackaging.Pack(record, files, signer);
+            var dest = MeshStore.Publish(MeshStore.Resolve(meshDir), json);
+            logger.LogInformation("Self-extend gate: shared to the mesh → {Dest}", dest);
+            return $"; shared → {dest}";
+        }
+        catch (Exception ex)
+        {
+            // Best-effort means BEST-EFFORT: no exception class thrown in here may destroy a
+            // successful cycle — an escape would replace the whole run result with a failure.
+            logger.LogWarning(ex, "Self-extend gate: auto-share failed — the admission stands, the share did not happen");
+            return $"; auto-share failed: {ex.Message}";
+        }
     }
 
     /// <summary>
