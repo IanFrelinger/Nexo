@@ -171,3 +171,28 @@ the human:
 To keep converged layers green after future changes, run
 `/converge-readiness <layer>` for one attended cycle, or restart the loop
 with `/loop /converge-readiness`.
+
+## Cycle 5 — applications (2026-08-26T14:36:41Z)
+
+Layer: `applications` · Pipeline v2 · Gate in the agent clone at `550b6a58` —
+first run with the new `applications-coverage` ratchet gate
+(COVERAGE-AUDIT.md wiring, commit `eb745124`).
+
+| Gate | Status |
+| --- | --- |
+| applications-build | PASS |
+| applications-tests-full | PASS |
+| applications-provenance-unit | PASS |
+| applications-dependency-boundary | PASS |
+| applications-coverage | PASS |
+
+Green 5/5 (~80 s); floors hold at the measured baseline by construction.
+Incident this window: a Docker daemon/WSL recycle killed the dev container
+(exit 255, state intact on restart); loop hardened to auto-recover
+(`550b6a58`).
+
+**Ratchet raise dispatched:** Certification.Physical 80→85, XREAL 29→55
+(the audit's targets). The next cycle is EXPECTED to fail
+`applications-coverage` and drive the fix pipeline to write the earning
+tests (XrealTrackingStateMapper 0%, validation-policy branches, hasher,
+fail-closed stubs). First product-code work through fix→verify→integrate.
