@@ -59,12 +59,13 @@ case "$LAYER" in
     # (Testcontainers, needs a Docker daemon) rides behind --include-tier-d
     # like application's tier D. Test projects target net8.0 — the container
     # needs the .NET 8 runtime alongside SDK 10 (CI installs 10.0.x + 8.0.x).
-    GATE_NAMES=(applications-build applications-tests-full applications-provenance-unit applications-dependency-boundary)
+    GATE_NAMES=(applications-build applications-tests-full applications-provenance-unit applications-dependency-boundary applications-coverage)
     GATE_CMDS=(
       'for p in applications/*/*.csproj; do dotnet build "$p" --configuration Release -v minimal || exit 1; done'
       "dotnet test applications/Ashlar.Applications.Tests/Ashlar.Applications.Tests.csproj --configuration Release --no-build --blame-hang-timeout 120s --blame-hang-dump-type none"
       'dotnet test applications/Ashlar.Provenance.Graph.Tests/Ashlar.Provenance.Graph.Tests.csproj --filter "Category!=Integration" --configuration Release'
       "bash scripts/dependency-boundary-gate.sh"
+      "bash scripts/applications-coverage-gate.sh"
     )
     if [ "$INCLUDE_TIER_D" = "1" ]; then
       GATE_NAMES+=(applications-provenance-integration)
