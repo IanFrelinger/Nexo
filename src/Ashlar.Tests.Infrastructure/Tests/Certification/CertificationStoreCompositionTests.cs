@@ -23,6 +23,7 @@ namespace Ashlar.Tests.Infrastructure.Tests.Certification;
 /// moving the silent failure rather than removing it, so both directions are pinned.</para>
 /// </summary>
 [Trait("Category", "Certification")]
+[Trait("Category", "ProdStyle")]
 public sealed class CertificationStoreCompositionTests : TempDirTestBase
 {
     public CertificationStoreCompositionTests()

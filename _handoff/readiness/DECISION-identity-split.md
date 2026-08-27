@@ -9,7 +9,11 @@ is obtainable in the authoring environment.*
 
 ## The recommendation
 
-**One identity: certification records sign with the operator keypair.** But take the answer
+**One identity: certification records sign with the operator keypair.** *(Decided
+2026-08-27 by the maintainer; recorded in `LEDGER.md`. Scope caveat: this covers the
+certification and operator paths. `applications/Ashlar.Certification.Physical` is a third
+live Ed25519 path, scoped out below and not yet ratified — until it is, "one identity"
+is an overclaim.)* But take the answer
 without the architecture that was proposed to carry it, and **ship the security fix first,
 separately, because it does not depend on this decision at all.**
 
@@ -30,10 +34,16 @@ if (record.SchemaVersion is null)
     return BuildLegacyPayload(record);        // CertificationRecordSigning.cs:106
 ```
 
-`BuildLegacyPayload` (`:144-163`) contains **zero Ed25519 references**. So the downgrade
-does not require stripping `ed25519Signature` as previously documented — setting
-`schemaVersion` to null is enough, and lands the record on a payload the strong signature
-never covered. Recompute the HMAC under the committed public constant and it verifies.
+`BuildLegacyPayload` (`:144-163`) drops `SchemaVersion`, `Gate`, `GatesPassed`, `Inputs`,
+`Proposer`, `Attempts` and `Ed25519PublicKey` out of the signed bytes.
+
+This **compounds** limitation 7's strip rather than replacing it.
+`CertificationRecordEd25519.VerifySignature` builds its payload with the same
+`BuildPayload` (`CertificationRecordEd25519.cs:72`), so nulling `schemaVersion` also changes
+the bytes the Ed25519 signature is checked against — a signature left in place fails. The
+strip is still required. What the legacy lane adds is *scope*: an attacker who has already
+stripped the signature can then rewrite **the gate name and the list of gates that passed**
+under a valid HMAC. A record can claim to have passed gates it never ran.
 
 **No minimum schema version is checked anywhere.** Repo-wide grep for `SchemaVersion >=`,
 `SchemaVersion <`, `MinimumSchema`, `MinSchema`: zero non-test hits. The only non-test
@@ -62,8 +72,8 @@ project, a throw-on-missing-key default, and HMAC-free v3 records. All three are
 
 - The leaf adds an 18th project to the `Ashlar.Hosting` pack graph and silently drops
   `src/Ashlar.Manifest/**` from the cross-OS portability gate's trigger paths.
-- Throwing on a missing key breaks 17 `new CertificationGate(` sites, 18
-  `AddCertificationGate` registrations, both shipped tools, and
+- Throwing on a missing key breaks 18 `new CertificationGate(` sites, 13
+  `.AddCertificationGate(` call sites (7 of them on `master`), both shipped tools, and
   `scripts/pack-certified-brick-reuse.sh` on any keyless runner.
 - HMAC-free v3 records are rejected *before* the Ed25519 check ever runs
   (`CertificationTrustVerifier.cs:29-30`, `CertificationRecordSigner.cs:79`) and would be
@@ -111,6 +121,13 @@ does file I/O. Note `SigningIdentity` deliberately exposes **no seed accessor**
 (`OperatorKey.cs:145-188`) — so route around it by reading the file, and never add a
 private-key export API.
 
+**One cost of routing around it, which the implementer must pay back:** reading the seed
+directly also skips the `SigningIdentity` invariant that throws when `operator.key` and
+`operator.pub` disagree (`OperatorKey.cs:160,:171`). That check is what `OperatorKey` relies
+on so a crash between its two atomic writes "is caught loudly at load … rather than silently
+producing unverifiable records" (`:62-67`). Any certification identity that reads the seed
+MUST re-derive the public key, compare it to `operator.pub`, and refuse on mismatch.
+
 ---
 
 ## What the CLI currently claims that is not true
@@ -121,7 +138,7 @@ hits. Yet:
 
 - `KeysCommand.cs:58` — "gate decisions on this machine are now signed". True of `GateStore`;
   false of `CertificationGate`, which `README.md:17` calls "the gate".
-- `VerifyCommand.cs:157` — "unsigned — run `ashlar keys init` to certify".
+- `VerifyCommand.cs:158` — "unsigned — run `ashlar keys init` to certify".
 - `ExportCommand.cs:213-215` — stamps `✓ CERTIFIED bundle · signed ed25519:…` over bundles
   whose brick records are dev-HMAC signed.
 
@@ -137,8 +154,11 @@ Steps 1–2 are the security fix and **do not depend on the identity decision**.
 except step 6 needs a .NET SDK.
 
 0. **Fix `CompositionCertificationRecordSigner`, alone.** It discards its injected signer
-   (`_ = brickSigner;`) and reads the env var directly, and computes `UsesDevKey()` with no
-   argument so the flag reports ambient state rather than its own key. SPEC-006 S-4's only
+   (`_ = brickSigner;`) and reads the env var directly, so a host that supplies a real key
+   still mints under the committed constant. It also computes `UsesDevKey()` with no
+   argument, so the flag can never report an explicitly supplied key; the outright false
+   statement is the class's own XML doc (`:10-13`) claiming it "resolves its key exactly as
+   `CertificationRecordSigner` does", which honours an explicit key where this does not. SPEC-006 S-4's only
    stated migration path is already broken for compositions. Also give
    `FileCertificationRecordStore` a logger — it currently returns null on a verification
    failure, so any later strictness change presents as "my brick vanished".
@@ -175,11 +195,15 @@ except step 6 needs a .NET SDK.
 
 - **The identity decision was described as "the gate on the remaining trust work". It is
   not.** Every security gain is separable from it. The floor should ship first.
-- **Limitation 7's attack was understated.** Stripping the signature is the *harder* path;
-  nulling `schemaVersion` is easier and defeats more. Recorded as limitation 8.
+- **Limitation 7's attack was understated in scope, not in steps.** Stripping the signature
+  is still required — Ed25519 verification runs over the same `BuildPayload`, so a retained
+  signature fails. But nulling `schemaVersion` additionally frees `Gate`, `GatesPassed`,
+  `Inputs`, `Proposer`, `Attempts` and `Ed25519PublicKey` from the HMAC-covered bytes.
+  Recorded as limitation 8. *(An earlier draft of this memo claimed the schema downgrade
+  replaced the strip and "defeats more". That was wrong, and is corrected here.)*
 - **SPEC-006 §4's canonical-form claim was false** and is now corrected in the spec: the two
-  sides never shared a canonical form (`CanonicalJson.cs:29-36` ordinal-sorts and omits
-  nulls; `CertificationRecordSigning.cs:91,:141` is camelCase, declaration-ordered, nulls
+  sides never shared a canonical form (`CanonicalJson.cs:29-36` ordinal-sorts, and `:17`
+  omits nulls; `CertificationRecordSigning.cs:91,:141` is camelCase, declaration-ordered, nulls
   written). Converging them would invalidate every record and every signature at once.
 - **"~30 call sites must opt in" overstated production cost tenfold** — 28 of 31 are tests;
   three are production. It *understated* the test cost of any throw-on-missing-key design.

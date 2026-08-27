@@ -79,6 +79,7 @@ Initial public platform, heading toward the first tagged release (`v0.1.0`). No 
 - Pack graph: `Certification.Physical` dropped from the hosting pack graph and the `Hosting.Bundle` metapackage after the application split (#313); `Ashlar.Analyzers` packed as a runtime dependency of Infrastructure.
 - Kernel-coverage-gate timeout hang nets sized so the gate is deterministic (#260).
 - Flight runner: ASCII-only strings for PowerShell 5.1, comma-joined `-Models` token split, `\uXXXX` unescaped when extracting model proposals (#323, #324).
+- Certification composition: `AddCertificationGate` takes and forwards `recordStorePath`, so the gate can be composed with a durable record store; the in-memory store and `CertificationRecordSigner` are registered with `TryAdd` so a default cannot displace an explicit choice, and an explicit path removes a default already registered. `AddCertificationInfrastructure(recordStorePath: path)` followed by `AddCertificationGate()` silently reverted the store to in-memory — fatal for the CLI, a fresh process per invocation, where nothing certified could then be admitted. Composition records remain in-memory only.
 
 ### Security
 

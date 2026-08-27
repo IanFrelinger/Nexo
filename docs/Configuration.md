@@ -440,7 +440,7 @@ Bound from the `Ashlar:Autonomy` section by `AddAshlarAutonomy(configuration)` â
 | Variable | Description | Default |
 |----------|-------------|---------|
 | `ASHLAR_CERT_DEV_HMAC_KEY` | HMAC key for signing **and verifying** brick and composition certification records (`CertificationRecordSigner`, `CompositionCertificationRecordSigner`, `Ashlar.Certification.Contracts.CertificationRecordSigning`). **Unset means the COMMITTED, PUBLIC dev key** `CertificationRecordSigning.DefaultDevKey`: anyone with the source can forge a record that verifies, so certificates then prove integrity against accident, not against an adversary. Both signers log a warning at construction while the dev key is in effect (`UsesDevKey`). Same-owner cross-project reuse works by sharing this value; cross-organization trust needs the Ed25519 key below or PKI | unset (dev key; warns) |
-| `ASHLAR_CERT_ED25519_KEY` | Base64 Ed25519 private key; when set, records are dual-signed and carry the public key, and verification enforces the Ed25519 signature whenever a record has one | unset (HMAC-only) |
+| `ASHLAR_CERT_ED25519_KEY` | Base64 Ed25519 private key; when set, records are dual-signed and carry the public key, and verification enforces the Ed25519 signature whenever a record has one â€” **which is not a strictness control**: presence is attacker-controlled, and a null `schemaVersion` selects a payload lane covering no Ed25519 field at all (limitations 7 and 8 in `docs/certification-evidence.md`). There is no require-signature mode and no trusted-key pinning yet | unset (HMAC-only) |
 
 ## Workload scaling (`Ashlar:WorkloadScaling:*`, `ASHLAR_WORKLOAD_*`)
 

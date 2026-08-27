@@ -715,7 +715,7 @@ redundant guard is exactly what a careful proposer writes.
 
 ## Known v0 limitations
 
-1. **Dev HMAC signer, not PKI.** `CertificationRecordSigner` uses a development HMAC key, not a public-key infrastructure. This becomes more load-bearing in the composition phase because trust chains from constituent atom signatures — a forged or weak constituent record undermines the whole composition admission path. Unless `ASHLAR_CERT_DEV_HMAC_KEY` is set, the key is the COMMITTED constant `CertificationRecordSigning.DefaultDevKey`, so every record verifiable here is forgeable by anyone with the source; both signers now warn at construction while that is the case (`UsesDevKey`), and `ASHLAR_CERT_ED25519_KEY` adds a real signature on top.
+1. **Dev HMAC signer, not PKI.** `CertificationRecordSigner` uses a development HMAC key, not a public-key infrastructure. This becomes more load-bearing in the composition phase because trust chains from constituent atom signatures — a forged or weak constituent record undermines the whole composition admission path. Unless `ASHLAR_CERT_DEV_HMAC_KEY` is set, the key is the COMMITTED constant `CertificationRecordSigning.DefaultDevKey`, so every record verifiable here is forgeable by anyone with the source; both signers now warn at construction while that is the case (`UsesDevKey`), and `ASHLAR_CERT_ED25519_KEY` adds a real signature on top. **That Ed25519 signature is not yet a control an operator can rely on**: it is enforced only when the record carries it (limitation 7), the legacy payload lane covers no Ed25519 field at all (limitation 8), and the composition signer discards an explicitly supplied key (limitation 9).
 
 2. **Composition seam check is TYPE-level only.** The seam validator checks producer/consumer type compatibility (e.g. `string` vs `int`) but not semantic mismatches where types align (e.g. file path vs URL, both `string`). Graph-mutation teeth only partially compensate for this gap.
 
@@ -797,22 +797,49 @@ redundant guard is exactly what a careful proposer writes.
      attacker to sign rather than strip, which costs them nothing. Pinning needs the trust
      root that SPEC-006 §3 defers (`~/.ashlar/keys/trusted/` is described for rotation but
      is not consulted by the certification path, which reads `ASHLAR_CERT_ED25519_KEY` — the
-     two-operator-identity split that remains an open decision).
+     two-operator-identity split — **resolved 2026-08-27 to a single identity**, see
+     `_handoff/readiness/DECISION-identity-split.md`).
+
+     **Pin against `operator.pub` only.** Do *not* enumerate `~/.ashlar/keys/trusted/`:
+     `OperatorKey.Generate(rotate: true)` writes the *previous* public key into it
+     (`src/Ashlar.Manifest/Signing/OperatorKey.cs:45-52`) and there is no revocation (`:28`),
+     so using it as an allowlist would make `ashlar keys init --rotate` after a suspected key
+     theft permanently re-authorize the stolen key — an action that reads as remediation and
+     is worse than doing nothing.
 
    Not yet fixed. SPEC-006 is ACCEPTED as of 2026-08-27 and lists this as an unmet
    obligation under S-1: that rule covers a signature that fails verification and is silent
    about one that was removed.
 
+   *Established 2026-08-27 by reading the cited sources. No .NET SDK was available in the
+   authoring environment, so nothing in this row was executed — it is a code-reading result,
+   not a CI result.*
+
 8. **Schema downgrade: the payload lane is chosen by an attacker-supplied field, and the
-   legacy lane covers no Ed25519 at all.** This is strictly worse than limitation 7 and
-   subsumes it. `CertificationRecordSigning.BuildPayload` opens with
+   legacy lane signs far less.** This **compounds limitation 7 rather than replacing it.**
+   `CertificationRecordSigning.BuildPayload` opens with
    `if (record.SchemaVersion is null) return BuildLegacyPayload(record);`
-   (`CertificationRecordSigning.cs:106`). `BuildLegacyPayload` (`:144-163`) contains **zero
-   references to any Ed25519 field** — not the signature, not the public key. So an attacker
-   does not need to strip `ed25519Signature` as described in limitation 7; setting
-   `schemaVersion` to null is sufficient, and drops the record onto a payload the strong
-   signature never covered in the first place. Recompute the HMAC under the committed
-   constant and the record verifies.
+   (`src/Ashlar.Certification.Contracts/CertificationRecordSigning.cs:106`).
+
+   *Correction, 2026-08-27.* An earlier draft of this row claimed the schema downgrade was
+   "strictly worse than limitation 7 and subsumes it", and that an attacker "does not need to
+   strip `ed25519Signature`". **Both were wrong.**
+   `CertificationRecordEd25519.VerifySignature` builds its payload with the *same*
+   `BuildPayload` (`src/Ashlar.Certification.Contracts/CertificationRecordEd25519.cs:72`), so
+   nulling `schemaVersion` also changes the bytes the Ed25519 signature is checked against: a
+   signature left in place fails, and the record is refused
+   (`CertificationTrustVerifier` returns `ed25519-signature-invalid`;
+   `CertificationRecordSigner.Verify` returns false). **Stripping the signature is still
+   required.**
+
+   What the legacy lane adds is not a cheaper attack but a **wider one**. Comparing the two
+   payload builders (`:109-140` versus `:144-163`), the legacy lane drops `SchemaVersion`,
+   `Gate`, `GatesPassed`, `Inputs`, `Proposer`, `Attempts` **and** `Ed25519PublicKey` out of
+   the signed bytes entirely. So an attacker who has already performed limitation 7's strip
+   can then rewrite **the gate name and the list of gates that passed** under a valid HMAC —
+   which reaches the core invariant of the trust-loop spec. A record can claim to have passed
+   gates it never ran. On netstandard2.0 the Ed25519 block is compiled out entirely, so
+   nothing needs downgrading there at all.
 
    **There is no minimum accepted schema version anywhere in the repository.** A repo-wide
    grep for `SchemaVersion >=`, `SchemaVersion <`, `MinimumSchema` and `MinSchema` returns
@@ -825,9 +852,13 @@ redundant guard is exactly what a careful proposer writes.
    missing control is a version floor — `SPEC-006` S-5 as of 2026-08-27 — and it is
    independent of the operator-identity question.
 
+   *Established 2026-08-27 by reading the cited sources. No .NET SDK was available in the
+   authoring environment, so nothing in this row was executed — it is a code-reading result,
+   not a CI result.*
+
    Note also that `record.Signed` is not a backstop: it is a plain `required bool ... init`
-   data field (`CertificationRecordData.cs:26`) that the minter sets and the JSON carries
-   literally (see `samples/certified-brick-reuse/.../certification-record.json`). An attacker
+   data field (`src/Ashlar.Certification.Contracts/CertificationRecordData.cs:26`) that the minter sets and the JSON carries
+   literally (see `samples/certified-brick-reuse/Ashlar.Certified.DamageResolver/certification-record.json`). An attacker
    leaves it `true`. `FileCertificationRecordStore`'s own remarks already say the flags on a
    persisted record are a claim and not evidence; the same is true of this one.
 
@@ -836,14 +867,22 @@ redundant guard is exactly what a careful proposer writes.
    documents it as "Unused; kept so existing composition wiring compiles unchanged", and
    drops it with `_ = brickSigner;`. It then resolves its own key from
    `ASHLAR_CERT_DEV_HMAC_KEY` or the committed constant, and computes its honesty flag as
-   `CertificationRecordSigning.UsesDevKey()` — **with no argument**, so the flag reports
-   ambient environment state rather than the key this instance actually uses
-   (`Composition/CompositionCertificationRecordSigner.cs:20,:26,:27-28,:30`). Compare
-   `CertificationRecordSigner.cs:37-41`, which honours an explicit key.
+   `CertificationRecordSigning.UsesDevKey()` — **with no argument**, so the flag can never
+   report an explicitly supplied key
+   (`src/Ashlar.Infrastructure/Certification/Composition/CompositionCertificationRecordSigner.cs:20,:26,:27-28,:30`).
+   In practice flag and key agree, because this class resolves both the same way; the false
+   statement is the class's own XML doc, which claims it "resolves its key exactly as
+   `CertificationRecordSigner` does" (`:10-13`). It does not:
+   `src/Ashlar.Infrastructure/Certification/CertificationRecordSigner.cs:37-41` honours an
+   explicit key, and this class discards one via `_ = brickSigner;`.
 
    The effect is that SPEC-006 S-4's only stated migration path — supply a real key — is
    already broken for compositions: a host that passes one still mints composition records
-   under the committed public constant, and `UsesDevKey` may tell it otherwise. Since
+   under the committed public constant. Since
    composition admission chains trust from constituent atom signatures (limitation 1), this
    undercuts the composition path specifically. Fixing it is a prerequisite under every
    identity option and should land on its own.
+
+   *Established 2026-08-27 by reading the cited sources. No .NET SDK was available in the
+   authoring environment, so nothing in this row was executed — it is a code-reading result,
+   not a CI result.*

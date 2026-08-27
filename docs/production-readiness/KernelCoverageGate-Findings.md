@@ -237,6 +237,15 @@ each invocation is a fresh process — `ashlar adapt --store-path ...` could nev
 an admitted brick, and the command's own error text advertises a flow that could not
 work. `FileCertificationRecordStore` already existed and was wired nowhere.
 
+*Correction, 2026-08-27: the fix was incomplete.*
+`AddCertificationInfrastructure(recordStorePath)` did select the durable store, but the
+in-memory fallback was still registered with `AddSingleton` and `AddCertificationGate()`
+forwarded no path at all. Because last-registration-wins for `GetRequiredService`, any host
+that composed durability and *then* added the gate was reverted to in-memory with no error
+and no log line — so defect 5 remained live for every `AddCertificationGate()` caller from
+`f43ffcd5` until it was closed by making the fallback `TryAdd` and giving the gate its own
+`recordStorePath`.
+
 Durability did not weaken admission, which matters because these records decide whether
 generated code may run:
 

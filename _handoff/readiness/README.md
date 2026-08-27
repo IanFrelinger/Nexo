@@ -37,6 +37,12 @@ architecture 2026-08-26 for unattended overnight runs.
   clone** (`/workspaces/nexo-agent/_handoff/readiness/LEDGER.md`); the host
   copy is only as fresh as the last attended reconciliation.
 
+**`_handoff/` is tracked but sits outside every docs gate.** `docs-link-check` runs over
+`README.md` and `docs/**/*.md` only, the onboarding-docs-guard's referenced-path step
+scans README/Makefile/docs/scripts, and `docs/DocsIndex.md` has no `_handoff` entry
+(`grep -rn '_handoff' .github/` returns nothing). Links and paths written here are never
+verified by CI, and readers arrive only via this README — so cite carefully.
+
 ## Ground rules baked into the roles (v2, container-first)
 
 Everything repo-related — git and builds/tests — runs inside the dotnet-10

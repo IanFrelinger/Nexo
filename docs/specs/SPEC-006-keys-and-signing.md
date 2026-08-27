@@ -1,10 +1,12 @@
 # SPEC-006 — Keys & Signing, v1
 
-**Status: ACCEPTED — 2026-08-27, by the maintainer.** Every "signed" in every other spec
+**Status: ACCEPTED — 2026-08-27, by the maintainer (@IanFrelinger).** The decision, and the
+two others taken with it, are recorded in `_handoff/readiness/LEDGER.md` under
+*Owner decisions (2026-08-27, attended)*. Every "signed" in every other spec
 resolves to this document; five audit pillars flagged its absence independently.
 
-The rules below are in force. Acceptance was blocking real work: three merged commits
-already implement items 1–4 of the implementation order, and S-4 — retiring the forgeable
+The rules below are in force. Acceptance was blocking real work: items 1–2 of the
+implementation order are already merged (see §6), and S-4 — retiring the forgeable
 committed dev-HMAC — was worded as conditional on this line, so a status field was parking
 the project's largest security gap. Per the conformance rule, a MUST is *enforced* only
 where it names a passing test; the rules are now normative, and the ones without tests are
@@ -56,9 +58,9 @@ Canonical form: **one key, per-artifact canonical forms.** v1 reuses the crypto 
 (NSec, already pinned) rather than adding a second path, but the two serializations are
 deliberately NOT the same bytes and must not be converged:
 
-- Operator artifacts (`Ashlar.Manifest/Signing/CanonicalJson.cs`) recursively ordinal-sort
+- Operator artifacts (`src/Ashlar.Manifest/Signing/CanonicalJson.cs`) recursively ordinal-sort
   keys at every depth, use default (Pascal) casing, and omit nulls.
-- Certification records (`CertificationRecordSigning.BuildPayload`) serialize a positional
+- Certification records (`src/Ashlar.Certification.Contracts/CertificationRecordSigning.cs`, `BuildPayload`) serialize a positional
   DTO in declaration order, camelCase, writing nulls.
 
 *Corrected 2026-08-27.* This paragraph previously asserted that certification records
@@ -71,7 +73,7 @@ New signed bytes get a context tag instead.
 | Artifact | Signed bytes | Where the signature lives |
 |---|---|---|
 | **Gate decision** (`DecideAsync`) | canonical GateRecord minus the sig fields | `sig`, `signer` fields on the record |
-| **Ledger course record** (SPEC-003) | canonical record + `prevSig` chain link | in the record; genesis = deploy course |
+| **Ledger course record** (SPEC-003 — not yet written) | canonical record + `prevSig` chain link | in the record; genesis = deploy course |
 | **Verify verdict** | digest of (manifest bytes, policy bytes, course results) | printed: `✓ VERIFIED · ed25519:9f3c…` |
 | **Certification record** (brick admission) | canonical `BuildPayload` minus both sig fields | `signature` (HMAC) + `ed25519Signature` / `ed25519PublicKey` |
 
@@ -86,7 +88,8 @@ Rules:
   say `unsigned`, nothing breaks. Signing is presence-activated, never half-on.
 - **S-3** A renderer MUST NOT print a fingerprint for an absent or unverified signature
   (already pinned by the e2e sweep's never-fakes-a-signature scenario).
-- **S-4** The dev-HMAC default in `CertificationRecordSigning` is DEPRECATED on acceptance:
+- **S-4** The dev-HMAC default in `CertificationRecordSigning` is DEPRECATED (as of
+  acceptance, 2026-08-27):
   new records dual-write Ed25519 when keys exist; the HMAC-only path emits a warning and is
   removed in the release after keys ship.
 
@@ -121,9 +124,16 @@ gap tracked rather than deniable. Currently unmet:
   test files and exactly three are production**: `FileCertificationRecordStore.cs:31`,
   `tools/Ashlar.CertifyBrick/Program.cs:23`, `tools/Ashlar.ExportCertifiedBrick/Program.cs:21`.
   The production cost was overstated by an order of magnitude. The *test* cost of any
-  design that throws on a missing key was understated: it additionally hits 17
-  `new CertificationGate(` sites and 18 `AddCertificationGate` registrations, and breaks
+  design that throws on a missing key was understated: it additionally hits **18**
+  `new CertificationGate(` sites and **13** `.AddCertificationGate(` call sites, and breaks
   `scripts/pack-certified-brick-reuse.sh` on any keyless runner.
+
+  *Basis for these counts (measured 2026-08-27):* 31 constructions of
+  `CertificationRecordSigner` on this branch, 30 on `master` at `ea43e84` — the 31st is the
+  composition test file added alongside this correction. `new CertificationGate(` is 18 on
+  both trees. `.AddCertificationGate(` is 13 here and 7 on `master`; an earlier figure of 18
+  was a raw grep count that included the method definition, its doc comments, and this
+  branch's own tests.
 
   Retirement is therefore by **raising a schema-version floor**, not by deleting the
   constant — deleting it silently un-admits every record already on disk.
