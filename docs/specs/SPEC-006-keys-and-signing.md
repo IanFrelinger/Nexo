@@ -141,7 +141,16 @@ gap tracked rather than deniable. Currently unmet:
 - **S-5 (new, 2026-08-27) — minimum accepted schema version.** A verifier MUST be able to
   refuse a record below a configured `SchemaVersion` floor. This is the rule that actually
   closes the downgrade described below; without it, hardening a new schema version achieves
-  nothing because an attacker simply mints an old one. Not yet implemented.
+  nothing because an attacker simply mints an old one.
+
+  *Mechanism implemented 2026-08-27* as `CertificationVerifyOptions.MinimumSchemaVersion`,
+  applied by both verification tiers (`CertificationTrustVerifier.Verify` and
+  `CertificationRecordSigner.Verify`) before any signature is examined. Conformance tests:
+  `SchemaVersionFloorTests.DowngradedRecord_IsRefused_UnderTheFloor` and
+  `LegitimateV2Record_StillVerifies_UnderTheFloor`.
+  **The default floor is 0**, so nothing refuses yet — S-2 keeps the default permissive, and
+  raising the floor is a separate, deliberate step once records have migrated. The MUST is
+  therefore *satisfiable*, not yet *enforced*.
 - **S-1, applied to a *missing* signature, and to a downgraded schema.** S-1 covers a `sig`
   that fails verification. It does not cover one that was simply removed, and every
   verification path enforces Ed25519 only `when present` — a condition the record's own

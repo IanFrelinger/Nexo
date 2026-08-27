@@ -786,7 +786,17 @@ redundant guard is exactly what a careful proposer writes.
    caller to say *this deployment requires a signature*, so the window cannot be closed even
    by a host that has keys and wants strictness.
 
-   Two distinct fixes are needed, and the first is worthless without the second:
+   *Update, 2026-08-27: the mechanism now exists, opt-in.*
+   `CertificationVerifyOptions.RequireEd25519Signature` turns a missing signature into a
+   refusal (`ed25519-signature-required`), and `TrustedEd25519PublicKeys` pins the acceptable
+   signers (`ed25519-key-not-trusted`); pinning implies the signature it pins. Both are
+   threaded through **both** verification tiers, and on netstandard2.0 — which cannot evaluate
+   Ed25519 at all — requesting either causes a refusal (`ed25519-verification-unavailable`)
+   rather than an unchecked pass. **Every default is unchanged**, so for an unconfigured
+   deployment this row is downgraded from an open hole to a *configurable* one, not closed.
+   Not compiled — see the provenance note below.
+
+   Two distinct fixes were needed, and the first is worthless without the second:
 
    - A require-signature mode, so a missing Ed25519 signature is a refusal rather than a
      downgrade. This closes stripping.
@@ -841,9 +851,14 @@ redundant guard is exactly what a careful proposer writes.
    gates it never ran. On netstandard2.0 the Ed25519 block is compiled out entirely, so
    nothing needs downgrading there at all.
 
-   **There is no minimum accepted schema version anywhere in the repository.** A repo-wide
-   grep for `SchemaVersion >=`, `SchemaVersion <`, `MinimumSchema` and `MinSchema` returns
-   zero non-test hits. The only non-test site that *stamps* a version is
+   **There was no minimum accepted schema version anywhere in the repository** when this row
+   was written — a repo-wide grep for `SchemaVersion >=`, `SchemaVersion <`, `MinimumSchema`
+   and `MinSchema` returned zero non-test hits. *Added 2026-08-27* as
+   `CertificationVerifyOptions.MinimumSchemaVersion`, checked by both verification tiers
+   before any signature, and demonstrated end to end by `SchemaVersionFloorTests`: the same
+   forged record with a rewritten gate name verifies at floor 0 and is refused
+   (`schema-version-below-floor`) at floor 2. **The default floor is 0**, so an unconfigured
+   deployment is unchanged; raising it is the remediation. The only non-test site that *stamps* a version is
    `CertificationGate.cs:424`, and no verifier ever compares against it.
 
    The consequence for planning is the important part: **hardening a new schema version
