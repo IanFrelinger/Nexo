@@ -10,7 +10,10 @@ namespace Ashlar.Certification.Contracts;
 /// Strictness is opt-in, and turning it on is the remediation, not the declaration.</para>
 ///
 /// <para>This type deliberately declares no cryptography, so it compiles on netstandard2.0
-/// where NSec is unavailable. What a netstandard2.0 consumer cannot do is <em>evaluate</em>
+/// where NSec is unavailable. For the same reason it must not <c>cref</c> anything inside
+/// <c>CertificationRecordEd25519</c>, whose whole file is fenced behind
+/// <c>#if NET8_0_OR_GREATER</c> — an unresolvable cref is CS1574, and this project builds
+/// with <c>TreatWarningsAsErrors</c>. What a netstandard2.0 consumer cannot do is <em>evaluate</em>
 /// Ed25519 strictness — see <see cref="RequireEd25519Signature"/>.</para>
 /// </remarks>
 public sealed class CertificationVerifyOptions
@@ -54,7 +57,7 @@ public sealed class CertificationVerifyOptions
     /// </summary>
     /// <remarks>
     /// <b>Requiring a signature without pinning is close to worthless.</b>
-    /// <see cref="CertificationRecordEd25519.VerifySignature"/> verifies against the public
+    /// <c>CertificationRecordEd25519.VerifySignature</c> verifies against the public
     /// key carried by the record, so a record signed with an attacker's own keypair is
     /// self-consistent and verifies. Pinning is what makes "signed" mean "signed by someone
     /// we accept". Setting this implies <see cref="RequireEd25519Signature"/>: an unsigned
