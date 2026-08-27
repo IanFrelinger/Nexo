@@ -1,15 +1,22 @@
 # SPEC-006 — Keys & Signing, v1
 
-**Status: PROPOSAL — awaiting maintainer approval. Nothing below is implemented until the
-status line reads ACCEPTED.** Every "signed" in every other spec resolves to this document;
-five audit pillars flagged its absence independently.
+**Status: ACCEPTED — 2026-08-27, by the maintainer.** Every "signed" in every other spec
+resolves to this document; five audit pillars flagged its absence independently.
+
+The rules below are in force. Acceptance was blocking real work: three merged commits
+already implement items 1–4 of the implementation order, and S-4 — retiring the forgeable
+committed dev-HMAC — was worded as conditional on this line, so a status field was parking
+the project's largest security gap. Per the conformance rule, a MUST is *enforced* only
+where it names a passing test; the rules are now normative, and the ones without tests are
+debts against this spec rather than drafts of it. `docs/certification-evidence.md` tracks
+which are which.
 
 Normative language per RFC 2119. Conformance rule (sheet 9): a MUST here is *enforced* only
 when it names a passing test.
 
 ---
 
-## 1. The decision being proposed
+## 1. The decision
 
 **v1 trust is a single local operator keypair.** One Ed25519 keypair, generated explicitly
 by the operator, held on the operator's machine, signing three things: gate decisions,
@@ -74,7 +81,7 @@ multi-operator attribution beyond fingerprints. No transparency log. No timestam
 authority. The certificate claim stays SPEC-007's honest sentence: *these gates ran against
 this content and passed, witnessed by this key at this time* — nothing more.
 
-## 6. Implementation order on acceptance
+## 6. Implementation order
 
 1. `Ashlar.Manifest.Signing`: keygen, fingerprint, canonical-sign/verify over the existing
    NSec machinery (kernel, testable, ~S).
@@ -82,5 +89,19 @@ this content and passed, witnessed by this key at this time* — nothing more.
 3. Ledger write-side lands signed from day one (SPEC-003 work, ~L).
 4. `verify` gains the provenance course when keys are present (~S).
 
-Conformance tests named per rule at implementation time; until then every rule above is
-*drafted*, not enforced.
+Items 1–2 have landed (`ashlar keys init` ships; `Ashlar.Manifest.Signing` carries keygen,
+fingerprint and canonical sign/verify). Items 3–4 are outstanding.
+
+Conformance tests are named per rule as each is enforced. Rules without a named test are
+now *unmet obligations* of an accepted spec, not drafts — the distinction that makes the
+gap tracked rather than deniable. Currently unmet:
+
+- **S-4** — the committed dev-HMAC is still the silent fallback in
+  `CertificationRecordSigning.ResolveKey`, so an unconfigured signer mints records anyone
+  with the source can forge. Deprecated as of this acceptance; removal is scheduled for the
+  release after keys ship, and needs the ~30 call sites that construct
+  `CertificationRecordSigner` with no key updated to opt in explicitly.
+- **S-1, applied to a *missing* signature.** S-1 covers a `sig` that fails verification. It
+  does not cover one that was simply removed, and every verification path enforces Ed25519
+  only `when present` — a condition the record's own bytes control. See
+  `docs/certification-evidence.md` for the downgrade note.

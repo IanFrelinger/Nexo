@@ -767,3 +767,38 @@ redundant guard is exactly what a careful proposer writes.
    host-operations work on seams that all exist.
 
 6. **Kernel options bind from environment variables only in the shipped hosts.** `AddAshlar` builds its own `IConfiguration` from `AddEnvironmentVariables()` (`src/Ashlar.Hosting/AshlarServiceCollectionExtensions.cs`), so `Ashlar:Meai`, `Ashlar:NodeCapabilityRuntime`, `Ashlar:WorkloadScaling` and the other kernel sections read `Ashlar__X__Y` variables and never `appsettings.json` in Ashlar.API / Ashlar.CLI (`Ashlar:Autonomy` is host-composed and reads whatever configuration the composing host passes). Documented in `docs/Configuration.md`; the fix is architectural, not a docs fix.
+
+7. **Signature downgrade: the Ed25519 check is conditional on a field the record controls.**
+   Every verification path enforces the Ed25519 signature *only when the record carries one*.
+   `CertificationRecordSigner.Verify` reduces to
+   `string.IsNullOrWhiteSpace(data.Ed25519Signature) || CertificationRecordEd25519.VerifySignature(data)`,
+   and `CertificationTrustVerifier.Verify` guards its Ed25519 block with
+   `if (!string.IsNullOrWhiteSpace(record.Ed25519Signature))`. Presence is therefore
+   attacker-controlled: **deleting** the `ed25519Signature` field — not forging it — drops
+   verification to HMAC alone, and per limitation 1 the HMAC key is a committed public
+   constant unless `ASHLAR_CERT_DEV_HMAC_KEY` is set. Strip the field, recompute the HMAC
+   from the source, and a forged record verifies through all four non-test entry points.
+   `FileCertificationRecordStore` re-verifies on load through the same signer, so a record
+   edited on disk this way loads as admitted.
+
+   The conditional is not itself a mistake — it is the documented dual-write window for
+   netstandard2.0 consumers that have no NSec target. What is missing is any way for a
+   caller to say *this deployment requires a signature*, so the window cannot be closed even
+   by a host that has keys and wants strictness.
+
+   Two distinct fixes are needed, and the first is worthless without the second:
+
+   - A require-signature mode, so a missing Ed25519 signature is a refusal rather than a
+     downgrade. This closes stripping.
+   - Trusted-key pinning. `CertificationRecordEd25519.VerifySignature` verifies the
+     signature against `record.Ed25519PublicKey` — **the public key carried by the record
+     itself** — so a self-consistent record signed with an attacker-generated keypair
+     verifies. Requiring a signature without pinning the acceptable signers only forces an
+     attacker to sign rather than strip, which costs them nothing. Pinning needs the trust
+     root that SPEC-006 §3 defers (`~/.ashlar/keys/trusted/` is described for rotation but
+     is not consulted by the certification path, which reads `ASHLAR_CERT_ED25519_KEY` — the
+     two-operator-identity split that remains an open decision).
+
+   Not yet fixed. SPEC-006 is ACCEPTED as of 2026-08-27 and lists this as an unmet
+   obligation under S-1: that rule covers a signature that fails verification and is silent
+   about one that was removed.
