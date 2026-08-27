@@ -52,15 +52,31 @@ real asymmetric signatures whose private half never leaves the operator's disk.
 
 ## 4. What gets signed, and how
 
-Canonical form: UTF-8 JSON, object keys sorted ordinally, no insignificant whitespace —
-the convention `CertificationRecordEd25519` already establishes; v1 REUSES that machinery
-(NSec, already pinned) rather than adding a second crypto path.
+Canonical form: **one key, per-artifact canonical forms.** v1 reuses the crypto machinery
+(NSec, already pinned) rather than adding a second path, but the two serializations are
+deliberately NOT the same bytes and must not be converged:
+
+- Operator artifacts (`Ashlar.Manifest/Signing/CanonicalJson.cs`) recursively ordinal-sort
+  keys at every depth, use default (Pascal) casing, and omit nulls.
+- Certification records (`CertificationRecordSigning.BuildPayload`) serialize a positional
+  DTO in declaration order, camelCase, writing nulls.
+
+*Corrected 2026-08-27.* This paragraph previously asserted that certification records
+already established the ordinal-sorted convention and that v1 "REUSES that machinery". That
+was false in both directions and is byte-pinned against by
+`TrustLoopRecordSchemaTests.cs:27-39`. Converging the two forms would invalidate every
+existing certification record and every gate, ledger and package signature simultaneously.
+New signed bytes get a context tag instead.
 
 | Artifact | Signed bytes | Where the signature lives |
 |---|---|---|
 | **Gate decision** (`DecideAsync`) | canonical GateRecord minus the sig fields | `sig`, `signer` fields on the record |
 | **Ledger course record** (SPEC-003) | canonical record + `prevSig` chain link | in the record; genesis = deploy course |
 | **Verify verdict** | digest of (manifest bytes, policy bytes, course results) | printed: `✓ VERIFIED · ed25519:9f3c…` |
+| **Certification record** (brick admission) | canonical `BuildPayload` minus both sig fields | `signature` (HMAC) + `ed25519Signature` / `ed25519PublicKey` |
+
+The certification-record row was missing until 2026-08-27, which is how S-4 came to govern
+an artifact class this table did not list.
 
 Rules:
 
@@ -98,10 +114,27 @@ gap tracked rather than deniable. Currently unmet:
 
 - **S-4** — the committed dev-HMAC is still the silent fallback in
   `CertificationRecordSigning.ResolveKey`, so an unconfigured signer mints records anyone
-  with the source can forge. Deprecated as of this acceptance; removal is scheduled for the
-  release after keys ship, and needs the ~30 call sites that construct
-  `CertificationRecordSigner` with no key updated to opt in explicitly.
-- **S-1, applied to a *missing* signature.** S-1 covers a `sig` that fails verification. It
-  does not cover one that was simply removed, and every verification path enforces Ed25519
-  only `when present` — a condition the record's own bytes control. See
-  `docs/certification-evidence.md` for the downgrade note.
+  with the source can forge. Deprecated as of this acceptance.
+
+  *Cost corrected 2026-08-27.* An earlier draft of this section said "~30 call sites must
+  opt in explicitly". Of the 31 constructions of `CertificationRecordSigner`, **28 are in
+  test files and exactly three are production**: `FileCertificationRecordStore.cs:31`,
+  `tools/Ashlar.CertifyBrick/Program.cs:23`, `tools/Ashlar.ExportCertifiedBrick/Program.cs:21`.
+  The production cost was overstated by an order of magnitude. The *test* cost of any
+  design that throws on a missing key was understated: it additionally hits 17
+  `new CertificationGate(` sites and 18 `AddCertificationGate` registrations, and breaks
+  `scripts/pack-certified-brick-reuse.sh` on any keyless runner.
+
+  Retirement is therefore by **raising a schema-version floor**, not by deleting the
+  constant — deleting it silently un-admits every record already on disk.
+
+- **S-5 (new, 2026-08-27) — minimum accepted schema version.** A verifier MUST be able to
+  refuse a record below a configured `SchemaVersion` floor. This is the rule that actually
+  closes the downgrade described below; without it, hardening a new schema version achieves
+  nothing because an attacker simply mints an old one. Not yet implemented.
+- **S-1, applied to a *missing* signature, and to a downgraded schema.** S-1 covers a `sig`
+  that fails verification. It does not cover one that was simply removed, and every
+  verification path enforces Ed25519 only `when present` — a condition the record's own
+  bytes control. Worse, the *payload lane itself* is chosen by an attacker-supplied field
+  (`if (record.SchemaVersion is null)`), and the legacy lane covers no Ed25519 fields at
+  all. See limitations 7 and 8 in `docs/certification-evidence.md`.

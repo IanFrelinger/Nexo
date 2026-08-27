@@ -29,6 +29,9 @@ architecture 2026-08-26 for unattended overnight runs.
   six definitions of "done", the critical path in dependency order, the work
   that looks urgent but is not, and the decisions only the owner can make.
   Start here if you are picking the project up cold.
+- `DECISION-identity-split.md` — the one-identity-or-two decision (open decision 2),
+  researched against the code: the recommendation, the two rejected options and why, and
+  the finding that the security fix never depended on this decision at all.
 - `LEDGER.md` — append-only cycle log: gate tables, fixes landed, items
   parked for a human decision. **The authoritative copy lives in the agent
   clone** (`/workspaces/nexo-agent/_handoff/readiness/LEDGER.md`); the host

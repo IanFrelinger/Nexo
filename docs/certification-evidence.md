@@ -802,3 +802,48 @@ redundant guard is exactly what a careful proposer writes.
    Not yet fixed. SPEC-006 is ACCEPTED as of 2026-08-27 and lists this as an unmet
    obligation under S-1: that rule covers a signature that fails verification and is silent
    about one that was removed.
+
+8. **Schema downgrade: the payload lane is chosen by an attacker-supplied field, and the
+   legacy lane covers no Ed25519 at all.** This is strictly worse than limitation 7 and
+   subsumes it. `CertificationRecordSigning.BuildPayload` opens with
+   `if (record.SchemaVersion is null) return BuildLegacyPayload(record);`
+   (`CertificationRecordSigning.cs:106`). `BuildLegacyPayload` (`:144-163`) contains **zero
+   references to any Ed25519 field** — not the signature, not the public key. So an attacker
+   does not need to strip `ed25519Signature` as described in limitation 7; setting
+   `schemaVersion` to null is sufficient, and drops the record onto a payload the strong
+   signature never covered in the first place. Recompute the HMAC under the committed
+   constant and the record verifies.
+
+   **There is no minimum accepted schema version anywhere in the repository.** A repo-wide
+   grep for `SchemaVersion >=`, `SchemaVersion <`, `MinimumSchema` and `MinSchema` returns
+   zero non-test hits. The only non-test site that *stamps* a version is
+   `CertificationGate.cs:424`, and no verifier ever compares against it.
+
+   The consequence for planning is the important part: **hardening a new schema version
+   closes nothing on its own.** Any design that adds a stricter v3 lane while v1 and v2
+   remain verifiable under the committed constant is bypassed by minting a v1 record. The
+   missing control is a version floor — `SPEC-006` S-5 as of 2026-08-27 — and it is
+   independent of the operator-identity question.
+
+   Note also that `record.Signed` is not a backstop: it is a plain `required bool ... init`
+   data field (`CertificationRecordData.cs:26`) that the minter sets and the JSON carries
+   literally (see `samples/certified-brick-reuse/.../certification-record.json`). An attacker
+   leaves it `true`. `FileCertificationRecordStore`'s own remarks already say the flags on a
+   persisted record are a claim and not evidence; the same is true of this one.
+
+9. **`CompositionCertificationRecordSigner` discards the signer it is given and reads the
+   environment instead.** Its constructor takes a `CertificationRecordSigner? brickSigner`,
+   documents it as "Unused; kept so existing composition wiring compiles unchanged", and
+   drops it with `_ = brickSigner;`. It then resolves its own key from
+   `ASHLAR_CERT_DEV_HMAC_KEY` or the committed constant, and computes its honesty flag as
+   `CertificationRecordSigning.UsesDevKey()` — **with no argument**, so the flag reports
+   ambient environment state rather than the key this instance actually uses
+   (`Composition/CompositionCertificationRecordSigner.cs:20,:26,:27-28,:30`). Compare
+   `CertificationRecordSigner.cs:37-41`, which honours an explicit key.
+
+   The effect is that SPEC-006 S-4's only stated migration path — supply a real key — is
+   already broken for compositions: a host that passes one still mints composition records
+   under the committed public constant, and `UsesDevKey` may tell it otherwise. Since
+   composition admission chains trust from constituent atom signatures (limitation 1), this
+   undercuts the composition path specifically. Fixing it is a prerequisite under every
+   identity option and should land on its own.
