@@ -31,8 +31,10 @@ architecture 2026-08-26 for unattended overnight runs.
   Start here if you are picking the project up cold.
 - `HARDWARE-BRINGUP.md` — **start here if you are standing in front of the machines.** How to get
   what exists today onto your own hardware, a five-layer testing plan (does it run / does state
-  survive / does the suite pass / does the product loop work / two machines), and a catalogue of
-  the failures that are expected so you do not debug them.
+  survive / does the suite pass / does the product loop work / two machines), a recipe for a node
+  that runs by itself, and a catalogue of the failures that are expected so you do not debug them.
+  Executed on an x86_64 host on 2026-08-28 and revised against what actually happened; **nothing
+  arm64 has run any of it.**
 - `CLOSING-PLAN.md` — the plan from here to the goal: a self-sustaining, self-extending runtime
   across the apartment's hardware. Eight phases, sixty steps, each marked agent/human/CI and
   whether it needs a .NET SDK. Read **Where to stop** first — Phase 1 is the point after which
