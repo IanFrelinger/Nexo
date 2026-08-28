@@ -29,6 +29,10 @@ architecture 2026-08-26 for unattended overnight runs.
   six definitions of "done", the critical path in dependency order, the work
   that looks urgent but is not, and the decisions only the owner can make.
   Start here if you are picking the project up cold.
+- `HARDWARE-BRINGUP.md` — **start here if you are standing in front of the machines.** How to get
+  what exists today onto your own hardware, a five-layer testing plan (does it run / does state
+  survive / does the suite pass / does the product loop work / two machines), and a catalogue of
+  the failures that are expected so you do not debug them.
 - `CLOSING-PLAN.md` — the plan from here to the goal: a self-sustaining, self-extending runtime
   across the apartment's hardware. Eight phases, sixty steps, each marked agent/human/CI and
   whether it needs a .NET SDK. Read **Where to stop** first — Phase 1 is the point after which
