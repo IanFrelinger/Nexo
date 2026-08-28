@@ -1,16 +1,18 @@
 # Hardware bring-up — getting Ashlar running on your own machines
 
-*Written 2026-08-28 against `master` @ `0983d74`.*
+*Written 2026-08-28 against `master` @ `0983d74`. **Revised the same day after actually running it**,
+on a Windows 11 / Docker Desktop box, against `master` @ `e254bc79`.*
 
 **Read this before the closing plan.** `CLOSING-PLAN.md` says what to *build*. This says how to
 get what exists onto your hardware today, and how to *verify* each layer so you know which
 failures are expected and which are news.
 
-> **Nothing in this document has been executed.** It was written from reading the code, in an
-> environment with no .NET SDK, no Docker and no hardware. Commands and paths are real and were
-> checked against the tree; the *outcomes* are predictions. Where I expect something to fail, it
-> says so and says why — that is the most useful part of this document, and it is also the part
-> most likely to be wrong. Trust the machine over this file.
+> **What is measured and what is not.** The first draft of this document was written from reading
+> the code, and said so. It has since been executed on one machine — an x86_64 Windows host running
+> Docker Desktop in Linux-container mode — and **four of its claims turned out to be wrong**. Those
+> are corrected below and marked *measured*. What remains unverified is **anything arm64**: no
+> Raspberry Pi and no Apple Silicon Mac has run any of this. Where this document and your machine
+> disagree, your machine is right.
 
 ---
 
@@ -25,7 +27,7 @@ uname -m
 
 | Output | Meaning |
 |---|---|
-| `aarch64` | Good. The published image has a `linux/arm64` manifest. Continue. |
+| `aarch64` | Good. The published image has a `linux/arm64` manifest — *measured*: `:latest` is an OCI index carrying both `linux/amd64` and `linux/arm64`. Continue. |
 | `armv7l` | **Stop.** You are on 32-bit Raspberry Pi OS. There is no armv7 image and no plan to build one. Either reimage the Pi with 64-bit Raspberry Pi OS, or drop the Pi from the fleet. Nothing downstream works around this. |
 
 ```bash
@@ -40,22 +42,53 @@ echo $DOCKER_DEFAULT_PLATFORM
 
 Write both answers down. They are inputs to decisions 1 and 5 in `CLOSING-PLAN.md`.
 
+### On Windows, one more line before anything
+
+*Measured, and it will waste an hour if you skip it.* Git Bash rewrites POSIX-looking paths in
+command arguments into Windows paths before `docker.exe` sees them, so
+`-e ASHLAR_KEY_DIR=/data/state/keys` arrives as a `C:\...` string and the CLI dies on
+`Access to the path '/app/C:' is denied`. It looks exactly like a product bug and is not one.
+
+```bash
+export MSYS_NO_PATHCONV=1 MSYS2_ARG_CONV_EXCL='*'
+```
+
+With conversion off, `docker build`/`compose -f` then need **Windows-style** paths
+(`C:/Users/...`), because nothing is translating for you any more. Both directions bite.
+
 ---
 
 ## 1. Ground truth before you start
 
-Four things are true today that will otherwise waste an evening. All were verified by direct code
-read; the file references are so you can check me.
+Five things that will otherwise waste an evening. Each says whether it was **read** from the code
+or **measured** by running it.
 
 | What you might expect | What is actually true |
 |---|---|
-| The daemon runs agents | **It runs zero.** `find application/src/Ashlar.CLI -iname 'appsettings*'` returns nothing, and `BackgroundAgentConfigLoader` binds only `BackgroundAgents:Agents`. With no config the daemon reaches `Task.Delay(Timeout.Infinite)` and sleeps. It will look alive and do nothing. |
-| A container keeps its identity | **It does not.** `.docker/Dockerfile.cli` sets `ASHLAR_STATE_DIR` and three siblings, but **not** the key dir or mesh dir, so those land in the container's `HOME`. `docker rm` destroys the node's operator key and every package it published. |
+| The daemon runs agents | **It runs none — until you give it a config.** *Measured.* No `appsettings*` ships in the CLI image, and `BackgroundAgentConfigLoader` binds only `BackgroundAgents:Agents`, so out of the box it creates zero agents. Pass `--config` and it registers, schedules and executes them. See §2b. |
+| The daemon otherwise idles | **It does not idle.** *Measured, and the first draft got this wrong.* It runs an observation pipeline and a filesystem event source, and probes a model backend at `127.0.0.1:11434` — which inside a container is *the container itself*, so it can never reach a model server on your host or LAN. Set `ASHLAR_OLLAMA_BASE_URL`. |
+| A container keeps its identity | **It does not — and it fails quietly.** *Measured.* `.docker/Dockerfile.cli` sets `ASHLAR_STATE_DIR` and three siblings but **not** `ASHLAR_KEY_DIR` or `ASHLAR_MESH_DIR`, so `keys init` reports `stored in /home/app/.ashlar/keys`. The next container does not report a *different* key — it reports **no key**, and says `gate decisions are recorded unsigned`. A containerised node silently stops signing. |
 | The installer sets you up as a node | It runs `docker run --rm … background-agent daemon` (`scripts/install/container-bootstrap-linux.sh:248`) — **`--rm`, no state volume**. It is a smoke test, not a deployment. |
-| `ashlar keys trust` exists | **It does not.** `KeysCommand` has `init` and `show` only. There is no trust root anywhere yet; that is `CLOSING-PLAN.md` Phase 3. **A node cannot currently refuse a package from an unknown signer.** |
+| `ashlar keys trust` exists | **It does not**, and a node still cannot tell one signer from another. But it is not defenceless, and the first draft overstated this — see below. |
 
-None of these are blockers for the bring-up below. They are the reason the bring-up stops where it
-does.
+### What "no trust root" actually means
+
+*Measured.* `KeysCommand` has `init` and `show` only. A `trusted/` directory **does** exist
+(`OperatorKey.cs:45`), but it holds **your own** superseded public keys after `keys init --rotate`
+so previously-signed records still verify. It is not a peer trust store.
+
+The accurate statement is narrower than "a node cannot refuse a package from an unknown signer":
+
+- A **sealed** node refuses everything outright — `× REJECTED … mode is sealed`, nothing written.
+- A **proposing** node **holds** everything at its own gate before anything touches disk, remote
+  code included.
+- A **tampered** package is refused before any gate is consulted.
+
+What is missing is *discrimination*: a node cannot auto-admit Alice while refusing Bob, and
+**the operator is not shown which key signed a held package** — the prompt says
+`! HELD  add brick rogue.exfil · review with 'ashlar gates'` and no fingerprint. You are asked for
+a trust decision with the identity withheld. That is `CLOSING-PLAN.md` Phase 1 (print the signer)
+and Phase 3 (a trust root), and it is the real gap.
 
 ---
 
@@ -73,134 +106,194 @@ garbage-collectable, so a node pinned to `:latest` silently changes under you an
 an old `:latest` digest eventually 404s. Take the immutable tag instead:
 
 ```bash
-docker buildx imagetools inspect ghcr.io/ianfrelinger/nexo-cli:latest    # note the digest + platforms
-# then pin: ghcr.io/ianfrelinger/nexo-cli@sha256:<digest>
+docker buildx imagetools inspect ghcr.io/ianfrelinger/nexo-cli:latest
 ```
 
 > The `sha-<12>` tags only became multi-arch on master builds as of `0983d74`. **Any `sha-` tag
 > published before that is amd64-only** and will fail on the Pi with `no matching manifest for
 > linux/arm64`. Use a `sha-` tag from a build after that commit, or the current `:latest` digest.
 
-**Give it a state volume — the installer does not.**
+**Give it a state volume, and name the key and mesh directories.** *Measured*: with these two
+variables set, one fingerprint survived three separate containers and an explicit `docker rm`.
 
 ```bash
 docker volume create ashlar-state
-docker run --rm -v ashlar-state:/data/state ghcr.io/ianfrelinger/nexo-cli:latest keys init
-docker run --rm -v ashlar-state:/data/state ghcr.io/ianfrelinger/nexo-cli:latest keys show
-```
-
-Run `keys show` twice. **If the fingerprint changes between runs, the volume is not holding the
-key** — expected today, because `ASHLAR_KEY_DIR` is unset in the image and the key lands in the
-container `HOME` rather than `/data/state`. Workaround until Phase 1:
-
-```bash
 docker run --rm -v ashlar-state:/data/state \
   -e ASHLAR_KEY_DIR=/data/state/keys \
   -e ASHLAR_MESH_DIR=/data/state/mesh \
   ghcr.io/ianfrelinger/nexo-cli:latest keys init
 ```
 
-Those two variables are the whole of Phase 1 step 1. Setting them by hand now tells you whether the
-theory holds before anyone edits a Dockerfile.
+Run `keys show` twice in different containers. Same fingerprint means Phase 1's theory holds
+before anyone edits a Dockerfile. **No key at all** means you left the variables out.
+
+### The volume-ownership trap
+
+*Measured, and it is not obvious.* The image runs as `app` (uid 1654). Docker Desktop resets a
+named volume's **root** ownership to `root:root` on every mount, so `chown` on the mountpoint
+looks like it worked and has reverted by the next container — but ownership of **subdirectories
+inside** the volume does persist. So every path you hand the app must be a seeded subdirectory:
+
+```bash
+docker run --rm -u 0:0 -v ashlar-work:/vol --entrypoint sh IMAGE \
+  -c 'mkdir -p /vol/proj && chown 1654:1654 /vol/proj'
+```
+
+Without this, `ashlar init` fails with `Access to the path '/work/ashlar.yaml' is denied` and it
+looks like a permissions bug in the product.
+
+---
+
+## 2b. A node that actually runs by itself
+
+*Measured end to end.* The daemon runs agents when it is given them. `ModelProvider` defaults to
+`deterministic`, so **a node is autonomous with no model server at all**.
+
+`agents.json`:
+
+```json
+{
+  "BackgroundAgents": {
+    "Agents": [
+      {
+        "Id": "gate-watch",
+        "Name": "Gate Watcher",
+        "Role": "observer",
+        "ModelProvider": "deterministic",
+        "Commands": ["observe"],
+        "Enabled": true,
+        "MaxDataSensitivity": "Public",
+        "Schedule": { "Type": "Interval", "Interval": "00:05:00", "InitialDelay": "00:00:10" }
+      }
+    ]
+  }
+}
+```
+
+```bash
+docker run --rm -v ashlar-state:/data \
+  -e ASHLAR_STATE_DIR=/data/state -e ASHLAR_KEY_DIR=/data/keys -e ASHLAR_MESH_DIR=/data/mesh \
+  -v ./agents.json:/etc/ashlar/agents.json:ro \
+  IMAGE background-agent daemon --config /etc/ashlar/agents.json
+```
+
+Expect, in the log:
+
+```
+Loaded 1 background agent configurations
+Creating 1 enabled background agents
+Started schedule for agent: gate-watch
+Executing background agent: gate-watch (role=observer, cycle #1)
+```
+
+A three-service Compose stack that seeds directory ownership, commissions the identity
+idempotently, and restarts the daemon unless stopped is the deployable form of this. Its
+commissioning step must be idempotent — `keys init` and `ashlar init` both correctly refuse to
+overwrite — and its identity must survive `docker compose down`. *Measured*: it does.
+
+**Required, or the node lies to you:** `ASHLAR_KEY_DIR`, `ASHLAR_MESH_DIR`, `ASHLAR_STATE_DIR`,
+and `ASHLAR_OLLAMA_BASE_URL` if you want the model probe to reach anything. On a plain Linux host
+add `--add-host host.docker.internal:host-gateway`; Docker Desktop resolves it natively.
 
 ---
 
 ## 3. Track B — from source, if you want to develop
 
 Needs the **.NET 10 SDK** (`global.json` pins `10.0.100`, `rollForward: latestFeature`).
+SDK 10.0.400 satisfies it.
 
 ```bash
 git clone https://github.com/IanFrelinger/Nexo.git && cd Nexo
-dotnet --version          # must satisfy global.json
-dotnet build Ashlar.sln   # NOTE: no CI job does this — expect surprises
+dotnet build Ashlar.sln
 ```
 
-> `dotnet build Ashlar.sln` is **not** run by any automatically-triggered workflow. The four
-> workflows that name it are `workflow_dispatch`-only. It may not build. If it fails, that is a
-> genuine finding worth recording, not something you did wrong.
+*Measured*: it builds. The first draft flagged this as possibly-broken because no automatic
+workflow runs it; that was caution, not a defect.
 
-Faster inner loop — the kernel only:
+### The dev container could not run this repo's net8.0 targets
 
-```bash
-dotnet build Ashlar.Kernel.sln
-```
+*Measured.* `mcr.microsoft.com/devcontainers/dotnet:10.0-noble` ships **only** .NET 10 runtimes.
+`devcontainer.json` set `DOTNET_ROLL_FORWARD=LatestMajor` to compensate — but `LatestMajor` rolls
+`net8.0` onto ASP.NET Core 10 **even when the 8.0 runtime is installed**, and ASP.NET Core 8's
+`ResponseBodyPipeWriter` predates `PipeWriter.UnflushedBytes`, which System.Text.Json 10 requires.
+Every HTTP-hosting test then fails with an exception that reads exactly like a product bug:
+
+| GameDirector net8.0 suite, 8.0.30 present | result |
+|---|---|
+| `DOTNET_ROLL_FORWARD=LatestMajor` | 10 failed |
+| unset | **167 passed** |
+
+Fixed in **#407**: `post-create.sh` installs the real ASP.NET Core 8 runtime and the variable is
+gone. If you build your own test image, install the 8.0 runtime and do **not** set roll-forward.
+
+> Still outstanding: `scripts/test-in-container.ps1`, `scripts/handoff/devbox.sh`,
+> `scripts/Verify-DevContainer.ps1` and `spikes/autonomy-first-flight/run-first-flight.ps1` set
+> `LatestMajor` themselves. Harmless for cert-gate, wrong for anything hosting HTTP.
 
 ---
 
 ## 4. The testing plan
 
 Five layers, each answering one question. **Run them in order** — a failure at L1 makes L3 results
-meaningless. Record the result of each; the "if it fails" column tells you whether to stop.
+meaningless. The right-hand column is what one x86_64 Windows box actually produced.
 
 ### L0 — Does the artifact run at all?
 
-| # | Command | Expected | If it fails |
+| # | Command | Expected | Measured on `pc` |
 |---|---|---|---|
-| 0.1 | `uname -m` on each box | `x86_64` or `aarch64` | `armv7l` → that box is out until reimaged |
-| 0.2 | `docker run --rm <image> --help` | Verb list incl. `keys`, `pkg`, `verify`, `gates`, `doctor` | On the Pi, a native-load error means NSec's arm64 libsodium does not load. **This has never been executed by anything** — the publish workflow's only smoke test runs on an amd64 runner. A failure here is a real discovery; capture the full stderr. |
-| 0.3 | `docker run --rm <image> doctor --json` | JSON, non-fatal exit | Read the JSON before concluding anything; `doctor` reports environment gaps by design |
+| 0.1 | `uname -m` | `x86_64` or `aarch64` | **PASS** `x86_64`, Linux-container mode |
+| 0.2 | `docker run --rm <image> --help` | verbs incl. `keys`, `pkg`, `verify`, `gates`, `doctor` | **PASS**, exit 0. On the Pi a native-load error would mean NSec's arm64 libsodium does not load — **still never executed by anything**; capture full stderr if it fails |
+| 0.3 | `doctor --json` | JSON | **exit 1, and that is correct.** Run inside the shipped image, `doctor` audits a *developer workstation*: it reports `hostOs: Ubuntu 24.04.4` (the container), fails `cliSmoke` with "No .NET SDKs were found" and `containerSmoke` with "docker: command not found". Do not treat its exit code as node health |
 
 ### L1 — Does state survive?
 
-This is the layer everything else rests on, and the layer most likely to fail today.
-
-| # | Command | Expected | If it fails |
+| # | Check | Expected | Measured on `pc` |
 |---|---|---|---|
-| 1.1 | `keys init` then `keys show` on a fresh volume | A fingerprint | — |
-| 1.2 | `keys show` again in a **new container**, same volume | **The same fingerprint** | Expected to fail without `ASHLAR_KEY_DIR` (§2). Re-run with the env var. If it still changes, the volume mount is wrong — check with `docker run --rm -v ashlar-state:/data/state <image> --help` and `docker volume inspect ashlar-state`. |
-| 1.3 | Repeat 1.2 after `docker rm` of the container | Same fingerprint | Same cause and same fix as 1.2 |
-| 1.4 | `ashlar init` a project dir, `gates` something, re-run in a new container | The gate record is still there | The gate store lives at `<projectDir>/.ashlar` and has **no environment variable** — it is persisted by where you mount the *workspace*, not by `ASHLAR_STATE_DIR`. Mount the project dir explicitly. |
+| 1.1 | `keys init` then `keys show`, fresh volume | a fingerprint | **PASS** |
+| 1.2 | `keys show` in a **new container** | the same fingerprint | **PASS with `ASHLAR_KEY_DIR`**; without it, **no key at all** and gate decisions go unsigned |
+| 1.3 | repeat after `docker rm` | same fingerprint | **PASS** |
+| 1.4 | `init`, `verify`, re-run in a new container | the ledger is still there | **PASS** — ledger `000001` → `000002`, "2 signed entries · chain intact" |
 
 **Do not proceed to L3 until 1.2 passes.** A node that forgets its identity makes every downstream
 result meaningless.
 
 ### L2 — Does the repo's own suite pass on your machine?
 
-Needs the SDK (Track B).
+| # | Command | Measured on `pc` |
+|---|---|---|
+| 2.1 | `bash scripts/run-cert-gate.sh` | **PASS 194/194** — but see the worktree note below |
+| 2.2 | `make test-prime-time` | not run locally; green in CI |
+| 2.3 | `make kernel-coverage-gate` | not run locally; green in CI |
+| 2.4 | `dotnet test Ashlar.sln` | **ANSWERED — it builds and is effectively green.** ~7,336 tests across 27 assemblies, ~25 min. Two reds, both explained: 10 GameDirector failures were the roll-forward artifact above, and one `NullModelServingBackend_supports_full_lifecycle` failure passed 3/3 in isolation — a load-sensitive flake |
 
-| # | Command | Expected | If it fails |
-|---|---|---|---|
-| 2.1 | `bash scripts/run-cert-gate.sh` | Green. This is the **only required check** on master. | Should be green — it is green in CI on `0983d74`. A local-only failure points at your environment, not the code. |
-| 2.2 | `make test-prime-time` | `Category=ProdStyle` across the PrimeTime filter | — |
-| 2.3 | `make kernel-coverage-gate` | Green | Slow (~10 min). Coverage-instrumented; be patient before calling a hang. |
-| 2.4 | `dotnet test Ashlar.sln` | **Unknown** | Genuinely unmeasured — nothing in CI does this. Whatever it prints is new information. Record the failing project names; several test projects are registered `UNOWNED` in `ci/test-ownership.tsv` precisely because no gate runs them. |
+> **cert-gate and nested worktrees.** Before #406, `TestOwnershipConventionTests` walked every
+> `*.csproj` under the repo and skipped only `bin/` and `obj/`, so any `git worktree` inside the
+> tree — including the ones this repo's own tooling creates under `.claude/worktrees/` — turned
+> the only required check on master red locally while CI stayed green. Fixed in **#406**.
 
 ### L3 — Does the product loop work end to end?
 
 ```bash
-bash scripts/e2e-loop.sh      # from repo root; builds the CLI once, then --no-build
+bash scripts/e2e-loop.sh
 ```
 
-This is the repo's own behavioural suite: `init → verify → gates`, real binaries, **a fresh process
-per invocation** — which is itself the persistence test. It prints `RESULT <n> <name> PASS|FAIL
-<detail>` per scenario and exits non-zero if any fail.
-
-| Expected | If it fails |
-|---|---|
-| Every `RESULT` line `PASS`, exit 0 | Capture the `RESULT` lines. A `FAIL` here is a product-loop regression and is worth reporting verbatim — this suite is the closest thing the repo has to "does the thing work". |
+*Measured*: **119/119, exit 0.** Scenarios 94–104 are a full two-node co-production round trip, so
+L4's *logic* is already proven; what is untested is two physical machines.
 
 ### L4 — Two machines
 
-**What you can do today**, and what you cannot:
+Everything below was **measured with two containers holding separate key volumes and a shared
+mesh volume** — a faithful model of two machines, short of being two machines.
 
-```bash
-# Box A — a package leaves the machine
-ashlar pkg export ...        # produce the .ashpkg
-ashlar pkg publish ...       # write it into the mesh store (a directory)
-# move the directory: Syncthing, a mounted share, a USB stick — MeshStore is transport-naive
-# Box B
-ashlar pkg pull --from <shared-dir>
-```
-
-| # | Check | Expected today |
+| # | Check | Result |
 |---|---|---|
-| 4.1 | B imports A's package | Should work — the `.ashpkg` envelope is fail-closed and path-allowlisted at both ends |
-| 4.2 | B prints A's key fingerprint | **Probably not.** Phase 1 adds the print. |
-| 4.3 | **B refuses a package from an unknown third key** | **No. This does not work.** There is no trust root; `ashlar keys trust` does not exist. This is Phase 3, and it is the thing that makes the fleet mean something. |
-| 4.4 | Both boxes have distinct identities | Only if you gave each its own `ASHLAR_KEY_DIR`. Note every existing "two-node" scenario in `scripts/e2e-loop.sh` exports **one shared** `ASHLAR_KEY_DIR` and runs both nodes as the same actor. |
+| 4.1 | B imports A's package | **works** |
+| 4.2 | B is shown A's fingerprint | **no** — Phase 1 |
+| 4.3 | B refuses a package from an unknown third key | **no discrimination**, but it is *held*, not applied; sealed refuses outright |
+| 4.4 | both boxes have distinct identities | **works** with per-node `ASHLAR_KEY_DIR`. Note every "two-node" scenario in `scripts/e2e-loop.sh` shares **one** key dir and runs both nodes as the same actor |
 
-**Stop at 4.1/4.2.** Getting a certified package from one machine to another, with both keeping
-their own identity across restarts, is a real milestone and is where today's code ends.
+Also measured: a node survived container destruction between receiving a package and deciding on
+it, and still admitted it afterwards with content intact.
 
 ---
 
@@ -208,13 +301,20 @@ their own identity across restarts, is a real milestone and is where today's cod
 
 | Symptom | Why | Fix lives in |
 |---|---|---|
-| Daemon runs, does nothing, forever | No agent config ships in the image | Phase 1 |
-| Key fingerprint changes after `docker rm` | `ASHLAR_KEY_DIR` unset in the image | Phase 1 (workaround in §2) |
-| `pkg pull` says `not an ashlar project` | The verb requires `ashlar.yaml` + `ashlar.policy.yaml` in `--path`; a bare node has neither | Phase 1 — `ashlar init` the node's dir |
-| `pkg pull` says `the peer store is empty` | Also what it says when the peer is **off** — the two are indistinguishable | Phase 4 |
+| Daemon creates no agents | No agent config ships in the image | give it `--config` (§2b) |
+| `Connection refused (127.0.0.1:11434)` in the daemon | The model probe defaults to the container's own loopback | set `ASHLAR_OLLAMA_BASE_URL` |
+| Key fingerprint gone after `docker rm` | `ASHLAR_KEY_DIR` unset in the image | Phase 1 (workaround in §2) |
+| `Access to the path '.../ashlar.yaml' is denied` | Volume root is `root:root`; app is uid 1654 | seed an app-owned subdirectory (§2) |
+| `Access to the path '/app/C:' is denied` | Git Bash rewrote a container path | `export MSYS_NO_PATHCONV=1` |
+| `pkg pull` says `not an ashlar project` | The verb needs `ashlar.yaml` + `ashlar.policy.yaml` in `--path` | `ashlar init` the node's dir |
+| `pkg pull` says `the peer store is empty` | Also what it says when the peer is **off** — indistinguishable | Phase 4 |
 | No `ashlar` command on the host | There is no host wrapper; the installers print `docker run` examples | Phase 1 |
-| Full Platform Readiness Gate red | Was red 20 consecutive runs; root-caused and fixed in `c22916b`. Should now pass — **if it is still red, that is news.** | fixed |
-| `/health` returns OK on a broken node | It is a hardcoded literal, by design, today | Phase 1 |
+| `/health` returns OK on a broken node | Hardcoded literal, by design, today | Phase 1 |
+
+**Fixed since the first draft — if you still see these, that is news:** cert-gate red because of a
+nested worktree (#406); `pkg pull` exiting 0 while refusing a forged package (#407); the daemon
+discarding barrier audit events and ignoring `Ashlar:Audit:Sinks` entirely (#407); the daemon
+burying its own output in repeated HTTP connect stack traces (#407).
 
 ---
 
@@ -223,22 +323,21 @@ their own identity across restarts, is a real milestone and is where today's cod
 Keep a file per machine. It is the input to `CLOSING-PLAN.md` Phase 1 and to decisions 1, 2 and 5.
 
 ```
-box:            <name>
-arch:           <uname -m>
-os:             <uname -a>
-docker:         <docker --version>
-image digest:   <sha256:...>
-RAM / disk:     <free -h ; df -h>
-L0 result:      pass / fail + detail
-L1.2 result:    fingerprint stable across containers?  yes / no
-L2.1 cert-gate: pass / fail
-L3 e2e-loop:    N pass / M fail  + the RESULT lines for any FAIL
-key fingerprint: ed25519:...
+box:            pc
+arch:           x86_64            (MINGW64_NT-10.0-26200, Docker Desktop, linux containers)
+docker:         29.7.2
+image digest:   sha256:baaa9b5d85cbaad2850c70326ab8762e2fe2c5eee713708cd52d3cf30a0c99f7
+L0 result:      pass  (0.3 exits 1 by design inside the image)
+L1.2 result:    yes, with ASHLAR_KEY_DIR — no key at all without it
+L2.1 cert-gate: pass 194/194
+L2.4 sln tests: ~7,336 tests, effectively green
+L3 e2e-loop:    119 pass / 0 fail
+autonomy:       daemon executes agents on interval with --config; identity survives compose down
 ```
 
-The two most valuable data points for the plan: **whether the arm64 image runs on the Pi at all**
+The two most valuable outstanding data points: **whether the arm64 image runs on the Pi at all**
 (L0.2 — never executed by anything, ever) and **the Pi's real RAM headroom** under the daemon,
-which decides owner decision 12 (per-node inference vs one box serving the LAN).
+which decides owner decision 12 — per-node inference vs one box serving the LAN.
 
 ---
 
@@ -247,7 +346,7 @@ which decides owner decision 12 (per-node inference vs one box serving the LAN).
 - `CLOSING-PLAN.md` — the eight phases. Read **Where to stop** first.
 - `STATE-2026-08-27.md` — the project-wide audit this all came from.
 - `DECISION-identity-split.md` — why there is one operator identity and what it costs.
-- `ci/cert-gate-assertions.md` — what the one required check enforces, before you ever consider muting it.
+- `ci/cert-gate-assertions.md` — what the one required check enforces, before you consider muting it.
 
 If L0.2 fails on the Pi, say so before doing anything else in the plan. Phases 1 through 5 assume
-that image runs.
+that image runs, and no arm64 machine has ever run it.
