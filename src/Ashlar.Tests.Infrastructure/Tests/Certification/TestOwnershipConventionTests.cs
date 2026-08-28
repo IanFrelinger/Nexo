@@ -55,6 +55,68 @@ public sealed class TestOwnershipConventionTests
             TestSdkMarker, RegistryRelativePath, string.Join(", ", unregistered));
     }
 
+    /// <summary>
+    /// A nested checkout carries a full copy of every test project, and those copies belong to
+    /// another tree. Reporting them made a single <c>git worktree</c> inside the repository turn
+    /// the only required check on master red on the developer's machine, while CI — which has no
+    /// worktrees — stayed green. Pruning is by structure (a <c>.git</c> entry), so a vendored
+    /// clone this repository never names is caught too.
+    /// </summary>
+    [Fact]
+    public void DiscoverTestProjects_SkipsNestedCheckoutsAndBuildOutput()
+    {
+        const string TestProject =
+            "<Project Sdk=\"Microsoft.NET.Sdk\"><ItemGroup>"
+            + "<PackageReference Include=\"" + TestSdkMarker + "\" Version=\"17.0.0\" />"
+            + "</ItemGroup></Project>";
+
+        var root = Path.Combine(
+            Path.GetTempPath(), "ashlar-ownership-walk-" + Guid.NewGuid().ToString("n"));
+
+        try
+        {
+            // The only project that genuinely belongs to this tree.
+            Write(Path.Combine(root, "src", "Real.Tests", "Real.Tests.csproj"), TestProject);
+
+            // A git worktree under .claude, as the repository's own tooling creates.
+            var agentWorktree = Path.Combine(root, ".claude", "worktrees", "copy");
+            Write(Path.Combine(agentWorktree, ".git"), "gitdir: /elsewhere/.git/worktrees/copy");
+            Write(Path.Combine(agentWorktree, "src", "Real.Tests", "Real.Tests.csproj"), TestProject);
+
+            // A worktree outside .claude, so the .git file is what prunes it, not the name.
+            var sibling = Path.Combine(root, "scratch", "sibling-worktree");
+            Write(Path.Combine(sibling, ".git"), "gitdir: /elsewhere/.git/worktrees/sibling");
+            Write(Path.Combine(sibling, "src", "Real.Tests", "Real.Tests.csproj"), TestProject);
+
+            // A nested clone, which carries a .git directory rather than a file.
+            var clone = Path.Combine(root, "vendor", "thirdparty");
+            Directory.CreateDirectory(Path.Combine(clone, ".git"));
+            Write(Path.Combine(clone, "Their.Tests", "Their.Tests.csproj"), TestProject);
+
+            // Build output stays excluded, as it always was.
+            Write(Path.Combine(root, "src", "Real.Tests", "obj", "Real.Tests.csproj"), TestProject);
+            Write(Path.Combine(root, "src", "Real.Tests", "bin", "Real.Tests.csproj"), TestProject);
+
+            var discovered = DiscoverTestProjects(root);
+
+            discovered.Should().BeEquivalentTo(
+                new[] { "src/Real.Tests/Real.Tests.csproj" },
+                "a copy of a project inside another checkout is not this repository's project, "
+                + "and build output is not a project at all");
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
+
+        static void Write(string path, string content)
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            File.WriteAllText(path, content);
+        }
+    }
+
     [Fact]
     public void EveryRegisteredProject_StillExists()
     {
@@ -138,27 +200,60 @@ public sealed class TestOwnershipConventionTests
     /// Every csproj under the repo that pulls in the test SDK. Enumerated from the working tree
     /// rather than from a solution file — enumerating from a solution is precisely what could
     /// never have found the project that was in no solution.
+    ///
+    /// <para>The walk descends a directory at a time rather than using
+    /// <c>SearchOption.AllDirectories</c>, so whole subtrees can be pruned. It prunes build
+    /// output and nested checkouts. A nested checkout holds a second copy of every test project
+    /// in the repository, and those copies are not this repository's projects: the registry
+    /// stores repo-root-relative paths, so a copy can never match a row. Counting them turned
+    /// the only required check on master red on any working tree containing a worktree, while
+    /// CI — which has none — stayed green.</para>
     /// </summary>
     private static List<string> DiscoverTestProjects(string root)
     {
         var found = new List<string>();
-        foreach (var file in Directory.EnumerateFiles(root, "*.csproj", SearchOption.AllDirectories))
-        {
-            var relative = Normalize(Path.GetRelativePath(root, file));
-            if (relative.Contains("/bin/", StringComparison.Ordinal)
-                || relative.Contains("/obj/", StringComparison.Ordinal)
-                || relative.StartsWith("bin/", StringComparison.Ordinal)
-                || relative.StartsWith("obj/", StringComparison.Ordinal))
-            {
-                continue;
-            }
-
-            if (File.ReadAllText(file).Contains(TestSdkMarker, StringComparison.Ordinal))
-                found.Add(relative);
-        }
-
+        Collect(root, root, found);
         found.Sort(StringComparer.Ordinal);
         return found;
+    }
+
+    private static void Collect(string root, string directory, List<string> found)
+    {
+        foreach (var file in Directory.EnumerateFiles(directory, "*.csproj"))
+        {
+            if (File.ReadAllText(file).Contains(TestSdkMarker, StringComparison.Ordinal))
+                found.Add(Normalize(Path.GetRelativePath(root, file)));
+        }
+
+        foreach (var child in Directory.EnumerateDirectories(directory))
+        {
+            if (IsPruned(child))
+                continue;
+
+            Collect(root, child, found);
+        }
+    }
+
+    /// <summary>
+    /// True for a directory the walk must not enter: build output, agent scratch space, or the
+    /// root of a nested checkout. Only ever called on directories below the repo root, so the
+    /// root's own <c>.git</c> can never prune the entire walk.
+    /// </summary>
+    private static bool IsPruned(string directory)
+    {
+        var name = Path.GetFileName(directory);
+
+        if (string.Equals(name, "bin", StringComparison.Ordinal)
+            || string.Equals(name, "obj", StringComparison.Ordinal)
+            || string.Equals(name, ".claude", StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        // `git worktree add` writes a .git FILE; a nested clone has a .git DIRECTORY. Either
+        // marks a tree that is not this one, including vendored copies this repo never names.
+        var git = Path.Combine(directory, ".git");
+        return File.Exists(git) || Directory.Exists(git);
     }
 
     private static string Normalize(string path) => path.Replace('\\', '/').Trim();
