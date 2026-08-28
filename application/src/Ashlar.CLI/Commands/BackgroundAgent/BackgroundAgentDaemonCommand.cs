@@ -50,10 +50,25 @@ public sealed class BackgroundAgentDaemonCommand
                         InitialData = new Dictionary<string, string?>
                         {
                             // Provide safe defaults so daemon mode can run even when host-level
-                            // barrier configuration is not explicitly supplied.
+                            // barrier configuration is not explicitly supplied. This source is
+                            // inserted first, so later sources — an operator's JSON file, or the
+                            // environment — override every value here.
                             ["Ashlar:Barriers:Levels:0"] = "public",
                             ["Ashlar:Barriers:Levels:1"] = "internal",
-                            ["Ashlar:Barriers:RequireExplicitBarrier"] = "false"
+                            ["Ashlar:Barriers:RequireExplicitBarrier"] = "false",
+
+                            // A daemon is the one host that runs unattended for weeks, so it is
+                            // the last place barrier decisions should go unrecorded. Default it
+                            // to the structured-log sink rather than leaving the audit log with
+                            // nowhere to write.
+                            ["Ashlar:Audit:Sinks:0"] = "StructuredLog",
+
+                            // The node capability runtime probes a model backend on startup. With
+                            // no backend reachable, HttpClient's Information-level logging emits a
+                            // full multi-line connect stack trace per attempt and buries the
+                            // daemon's own output. Warning keeps the failure visible without the
+                            // trace.
+                            ["Logging:LogLevel:System.Net.Http.HttpClient"] = "Warning"
                         }
                     });
 
@@ -71,6 +86,12 @@ public sealed class BackgroundAgentDaemonCommand
                     services.Configure<GrpcTransportOptions>(
                         context.Configuration.GetSection("Ashlar:GrpcTransport"));
                     services.AddAshlarRuntimeRouting(context.Configuration);
+
+                    // AddAshlarRuntimeRouting does not register audit sinks — AddBarrierAuditSinks
+                    // is what reads Ashlar:Audit:Sinks. Without this call the daemon ignored that
+                    // section entirely: an operator could configure the File sink and every barrier
+                    // audit event would still be discarded, with only a startup warning to say so.
+                    services.AddBarrierAuditSinks(context.Configuration);
                     services.AddAshlar(options =>
                     {
                         options.PatternStorePath = string.IsNullOrWhiteSpace(patternStorePath)

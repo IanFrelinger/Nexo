@@ -463,9 +463,15 @@ public sealed class PkgCommand : Command
         {
             return 1;
         }
-        // A pull where nothing new was accepted AND nothing was already-had is worth a non-zero exit
-        // so a script notices a peer sending only things this gate refuses.
-        return admitted + held + skipped > 0 ? 0 : 65;
+        // A refusal is never masked by another package in the same pull succeeding.
+        //
+        // The mesh store is a plain directory, so anyone who can write to the share can plant a
+        // package; refusing it is only half the job, because the operator still has to find out.
+        // A fleet pulling on a timer reaches a steady state where every legitimate package is
+        // already-had, so a rule that treats "something succeeded" as success is true on every
+        // run — and a planted forgery would report `refused/rejected 1` in the body while exiting
+        // 0 forever. `pkg pull … && echo ok` must not print ok when this gate refused something.
+        return refused > 0 ? 65 : 0;
     }
 
     private static string Fp(string? publicKeyBase64) =>
