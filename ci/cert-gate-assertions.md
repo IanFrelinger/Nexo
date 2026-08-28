@@ -1,0 +1,57 @@
+# What `cert-gate` carries
+
+**Read this before you switch off a required check.**
+
+`cert-gate` is the **only required status check on `master`** (`CONTRIBUTING.md`,
+`docs/GitHubBranchProtection.md`). It runs on every pull request with **no path filter**, and it
+selects tests by substring from `scripts/cert-gate-config.sh:6`:
+
+```
+FullyQualifiedName~Ashlar.Tests.Infrastructure.Tests.Certification
+|FullyQualifiedName~Ashlar.Tests.Infrastructure.Tests.Adaptation.GenerationSafety
+|FullyQualifiedName~AstMutationEngineTests
+```
+
+Because it is the only thing that blocks a merge, it is where every merge-blocking convention in
+this repository has to live. That concentration is deliberate and it is also a risk: **one
+branch-protection toggle disables all of it at once**, and this repository's demonstrated response
+to a red gate is a mute — eight workflows were deleted or de-triggered after going red
+(`docs/CiGateInventory.md`).
+
+This file exists so that a returning owner, facing a red required check with the toggle one click
+away, can see what they would be turning off.
+
+## Conventions that block a merge
+
+| Assertion | Lives in | What breaks without it |
+|---|---|---|
+| **Every test project is registered.** Every csproj containing `Microsoft.NET.Test.Sdk` has exactly one row in `ci/test-ownership.tsv`; every row points at a project that still exists; no `UNOWNED` row is past its expiry. | `TestOwnershipConventionTests` | A test project no gate runs re-enters the repo silently. This is exactly how `Ashlar.Commercial.Tests.Fleet.Host` failed for ten days across twenty consecutive runs with no pull request ever running it. |
+| **Composition order cannot decide durability.** `AddCertificationGate` and `AddCertificationInfrastructure` resolve to a durable store in either composition order; a host-supplied signer survives. | `CertificationStoreCompositionTests` | Admissions silently revert to in-memory, and for the CLI — a fresh process per invocation — nothing certified can ever be admitted again. |
+| **The schema floor refuses a downgraded record.** A forged record with a rewritten gate name verifies at floor 0 and is refused at floor 2. | `SchemaVersionFloorTests` | A record can claim to have passed gates it never ran: the legacy payload lane leaves `Gate`, `GatesPassed`, `Inputs`, `Proposer`, `Attempts` and `Ed25519PublicKey` outside the signed bytes. |
+| **The dev key is loud.** A signer falling back to the committed HMAC constant warns, and never logs the key itself. | `CertificationRecordSignerDevKeyTests` | Production admissions run on a key anyone with the source can forge, with nothing on the record saying so. |
+| **v1/v2 record bytes are frozen.** The legacy payload is byte-pinned. | `TrustLoopRecordSchemaTests` | Every signature ever written becomes unverifiable, silently. |
+
+The gate also carries the certification gate's own teeth, the hot-swap host, the adversarial
+campaigns, the analyzer fence, sandbox-escape tests and the dogfood suites — 31 files in
+`src/Ashlar.Tests.Infrastructure/Tests/Certification/`. The table above is only the
+*conventions*: assertions about how the repository is allowed to be shaped, which have no other
+home and which nothing else would catch.
+
+## Rules
+
+1. **A convention that must block a merge goes in the
+   `Ashlar.Tests.Infrastructure.Tests.Certification` namespace.** Anywhere else and it is
+   advisory, whatever its author intended. Moving or renaming that namespace silently disarms
+   every row above.
+2. **Add a row here in the same pull request that adds the assertion.** A convention nobody can
+   find is a convention that gets deleted the first time it is inconvenient.
+3. **Keep them hermetic.** These run on every PR. Pure file reads — no build, no network, no SDK,
+   no clock dependence beyond a dated allowlist. A convention test that flakes will be muted, and
+   it will take the whole required check with it.
+4. **Never set an expiry that lands inside a few months.** `NoUnownedRow_IsPastItsExpiry` compares
+   against `DateTime.UtcNow` inside the required check, so a passed expiry blocks *every* pull
+   request in the repository on a date chosen months earlier. See the header of
+   `ci/test-ownership.tsv`; the first version of that file made this mistake with seven rows at
+   once and it was defused before it tripped.
+5. **If this gate is red, fix it or date it.** Muting it removes every row above simultaneously.
+   That is the failure mode this file is written against.

@@ -63,21 +63,33 @@ jobs:
           echo "sha_tag=${SHA_TAG}" >> "$GITHUB_OUTPUT"
           echo "IMAGE=${IMAGE}" >> "${GITHUB_ENV}"
           echo "SHA_TAG=${SHA_TAG}" >> "${GITHUB_ENV}"
-          # The semver tag is a retag of the sha digest (below), so on v* tags the sha tag itself
-          # carries every platform :latest offers; on branch builds it stays amd64-only (fast path).
+          # The sha tag is the only IMMUTABLE reference this workflow publishes. :latest is
+          # republished on every master push, and its previous manifest becomes untagged and
+          # GC-eligible — so if the sha tag is amd64-only, there is NO digest that is both
+          # multi-arch and permanent. An arm64 node then has nothing it can pin: pin the sha
+          # digest and it fails "no matching manifest for linux/arm64"; pin the :latest index
+          # digest and it 404s after a few merges. Hence arm64 on master as well as on v* tags.
+          #
+          # This costs almost nothing: the "Publish latest (amd64 + arm64) on main" step below
+          # already builds arm64 on every master push, so widening here only moves when those
+          # layers are built — buildx serves the later step from cache.
           SHA_PLATFORMS="linux/amd64"
+          if [[ "${{ inputs.skip_multi_arch }}" != "true" ]]; then
+            case "${GITHUB_REF}" in
+              refs/tags/v*|refs/heads/master|refs/heads/main)
+                SHA_PLATFORMS="linux/amd64,linux/arm64"
+                ;;
+            esac
+          fi
           if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
             SEMVER="${GITHUB_REF_NAME#v}"
             echo "SEMVER_TAG=${IMAGE}:${SEMVER}" >> "${GITHUB_ENV}"
-            if [[ "${{ inputs.skip_multi_arch }}" != "true" ]]; then
-              SHA_PLATFORMS="linux/amd64,linux/arm64"
-            fi
           else
             echo "SEMVER_TAG=" >> "${GITHUB_ENV}"
           fi
           echo "SHA_PLATFORMS=${SHA_PLATFORMS}" >> "${GITHUB_ENV}"
 
-      - name: Build and push immutable sha tag (amd64; + arm64 on release tags)
+      - name: Build and push immutable sha tag (+ arm64 on master and release tags)
         timeout-minutes: 35
         shell: bash
         run: |

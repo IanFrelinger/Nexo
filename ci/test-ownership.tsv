@@ -21,6 +21,19 @@
 #   UNOWNED means: no pull-request check runs this project's tests. It is a dated debt,
 #   not a permanent state. The list may shrink; adding to it needs a reason.
 #
+# ON PICKING AN EXPIRY DATE — read this before you set one.
+#   TestOwnershipConventionTests.NoUnownedRow_IsPastItsExpiry compares against DateTime.UtcNow,
+#   and it runs inside cert-gate, the ONLY required status check on master. An expiry that
+#   passes therefore blocks EVERY pull request in the repository, with no code change and no
+#   warning, on a date chosen months earlier. That is a scheduled outage, not a ratchet.
+#
+#   The first version of this file used 2026-10-27 — sixty days out — for seven rows at once.
+#   Re-dated to 2027-03-31 on 2026-08-28, before anything tripped, per the rule below. Prefer
+#   dates that are generous and STAGGERED: seven rows expiring on one day is one bad morning,
+#   the same seven spread across months is seven small nudges.
+#
+#   The pressure this file applies should come from the weekly review, not from a cliff.
+#
 # The runner column is documentation until a lane-deriving suite gate exists; the assertion
 # that bites today is completeness. Do not treat a runner name here as proof a gate runs it.
 #
@@ -28,22 +41,22 @@ project	runner	expires	note
 application/src/Ashlar.Tests.CLI/Ashlar.Tests.CLI.csproj	security-gate-tier-c	-	CLI surface; also in Ashlar.PrimeTime.slnf
 applications/Ashlar.Applications.Tests/Ashlar.Applications.Tests.csproj	applications-coverage-gate	-	applications layer
 applications/Ashlar.Provenance.Graph.Tests/Ashlar.Provenance.Graph.Tests.csproj	applications-coverage-gate	-	provenance graph
-commercial/tests/Ashlar.Commercial.Tests.Fleet.Host/Ashlar.Commercial.Tests.Fleet.Host.csproj	UNOWNED	2026-10-27	THE MOTIVATING CASE. Not in any solution. Add to Ashlar.sln and a lane before this date.
+commercial/tests/Ashlar.Commercial.Tests.Fleet.Host/Ashlar.Commercial.Tests.Fleet.Host.csproj	UNOWNED	2027-03-31	THE MOTIVATING CASE. Not in any solution. Add to Ashlar.sln and a lane before this date. [re-dated 2026-08-28: original 60-day expiry was a scheduled outage, see header]
 commercial/tests/Ashlar.Commercial.Tests.Fleet/Ashlar.Commercial.Tests.Fleet.csproj	composition-mesh-gate-tier-c	-	commercial fleet
-commercial/tests/Ashlar.Commercial.Tests.GameDirector/Ashlar.Tests.GameDirector.csproj	UNOWNED	2026-10-27	in Ashlar.sln only; no gate runs it
+commercial/tests/Ashlar.Commercial.Tests.GameDirector/Ashlar.Tests.GameDirector.csproj	UNOWNED	2027-03-31	in Ashlar.sln only; no gate runs it [re-dated 2026-08-28: original 60-day expiry was a scheduled outage, see header]
 commercial/tests/Ashlar.Commercial.Tests.GameDomain/Ashlar.Commercial.Tests.GameDomain.csproj	test-prime-time	-	in Ashlar.PrimeTime.slnf
-commercial/tests/Ashlar.Commercial.Tests.MeshDirector/Ashlar.Commercial.Tests.MeshDirector.csproj	UNOWNED	2026-10-27	in Ashlar.sln only; no gate runs it
+commercial/tests/Ashlar.Commercial.Tests.MeshDirector/Ashlar.Commercial.Tests.MeshDirector.csproj	UNOWNED	2027-03-31	in Ashlar.sln only; no gate runs it [re-dated 2026-08-28: original 60-day expiry was a scheduled outage, see header]
 samples/hello-brick/HelloBrick.Tests/HelloBrick.Tests.csproj	full-platform-readiness-gate	-	sample; reached by ashlar validate, not by any solution
-samples/templates/brick/__BrickName__Brick.Tests/__BrickName__Brick.Tests.csproj	UNOWNED	2026-12-31	scaffolding template, not a real suite; long expiry is deliberate
-src/Ashlar.Analyzers.Tests/Ashlar.Analyzers.Tests.csproj	UNOWNED	2026-10-27	in Ashlar.sln only; no gate runs it
-src/Ashlar.Ingress.AwsSns.Tests/Ashlar.Ingress.AwsSns.Tests.csproj	UNOWNED	2026-10-27	in Ashlar.sln only; no gate runs it
-src/Ashlar.Ingress.DynamoDb.Tests/Ashlar.Ingress.DynamoDb.Tests.csproj	UNOWNED	2026-10-27	in Ashlar.sln only; no gate runs it
+samples/templates/brick/__BrickName__Brick.Tests/__BrickName__Brick.Tests.csproj	UNOWNED	2027-06-30	scaffolding template with placeholder identifiers, not a real suite; deliberately the longest expiry and staggered clear of the 2027-03-31 group
+src/Ashlar.Analyzers.Tests/Ashlar.Analyzers.Tests.csproj	UNOWNED	2027-03-31	in Ashlar.sln only; no gate runs it [re-dated 2026-08-28: original 60-day expiry was a scheduled outage, see header]
+src/Ashlar.Ingress.AwsSns.Tests/Ashlar.Ingress.AwsSns.Tests.csproj	UNOWNED	2027-03-31	in Ashlar.sln only; no gate runs it [re-dated 2026-08-28: original 60-day expiry was a scheduled outage, see header]
+src/Ashlar.Ingress.DynamoDb.Tests/Ashlar.Ingress.DynamoDb.Tests.csproj	UNOWNED	2027-03-31	in Ashlar.sln only; no gate runs it [re-dated 2026-08-28: original 60-day expiry was a scheduled outage, see header]
 src/Ashlar.Mcp.Client.Tests/Ashlar.Mcp.Client.Tests.csproj	mcp-a2a-gate	-	MCP client
 src/Ashlar.Mcp.Server.Tests/Ashlar.Mcp.Server.Tests.csproj	mcp-a2a-gate	-	MCP server
 src/Ashlar.Tests.AI.Pipeline/Ashlar.Tests.AI.Pipeline.csproj	make-test	-	in Kernel and Runtime solutions
 src/Ashlar.Tests.Application/Ashlar.Tests.Application.csproj	kernel-coverage-gate	-	application layer
 src/Ashlar.Tests.BackgroundAgents/Ashlar.Tests.BackgroundAgents.csproj	perf-gate-tier-a	-	background agents
-src/Ashlar.Tests.Contracts/Ashlar.Tests.Contracts.csproj	UNOWNED	2026-10-27	in Kernel and Ashlar solutions; no gate runs it
+src/Ashlar.Tests.Contracts/Ashlar.Tests.Contracts.csproj	UNOWNED	2027-03-31	in Kernel and Ashlar solutions; no gate runs it [re-dated 2026-08-28: original 60-day expiry was a scheduled outage, see header]
 src/Ashlar.Tests.Domain/Ashlar.Tests.Domain.csproj	kernel-coverage-gate	-	domain, 100% line coverage target
 src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj	cert-gate	-	carries the required check
 src/Ashlar.Tests.Kernel/Ashlar.Tests.Kernel.csproj	kernel-gate	-	kernel
