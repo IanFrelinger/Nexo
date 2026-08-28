@@ -39,6 +39,7 @@ cp samples/autonomy-objectives/tag-scan-classifier.* \
 ```csharp
 services.AddLogging();
 services.AddCertificationGate();                       // the real gate + signer; without it AddAshlarAutonomy has no ICertificationGate to resolve
+                                                      // pass recordStorePath: "<dir>" for records that survive the process; parameterless keeps the in-memory store
 services.AddAshlarAutonomy(configuration);              // binds Ashlar:Autonomy — the loop and the harness both read it
 services.AddAshlarAutonomyLoop(loop =>
 {

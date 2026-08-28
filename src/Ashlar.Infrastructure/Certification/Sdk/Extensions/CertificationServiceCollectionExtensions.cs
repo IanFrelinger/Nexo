@@ -34,15 +34,28 @@ public static class CertificationServiceCollectionExtensions
         this IServiceCollection services,
         string? recordStorePath = null)
     {
-        services.AddSingleton<CertificationRecordSigner>();
+        // TryAdd for the same reason as the store below: a host that supplied its own signer
+        // (the only way to hold a real HMAC key, per SPEC-006 S-4) must not have it replaced
+        // by a parameterless one, which would silently drop it back to the committed dev key.
+        services.TryAddSingleton<CertificationRecordSigner>();
 
         if (string.IsNullOrWhiteSpace(recordStorePath))
         {
-            services.AddSingleton<ICertificationRecordStore, InMemoryCertificationRecordStore>();
+            // TryAdd, not Add: this is the fallback, and a fallback must never displace a
+            // durable store an earlier call already chose. Registering it unconditionally is
+            // what let AddCertificationGate() silently revert a host to in-memory.
+            services.TryAddSingleton<ICertificationRecordStore, InMemoryCertificationRecordStore>();
         }
         else
         {
             var directory = recordStorePath;
+
+            // A path is an explicit decision, so it wins over any default already present —
+            // otherwise TryAdd would just move the silent failure to the other composition
+            // order, where asking for durability would be quietly ignored instead. Explicit
+            // beats default in both directions; only two explicit paths race, and there the
+            // last one stated wins.
+            services.RemoveAll<ICertificationRecordStore>();
             services.AddSingleton<ICertificationRecordStore>(sp =>
                 new FileCertificationRecordStore(
                     directory,
@@ -57,9 +70,27 @@ public static class CertificationServiceCollectionExtensions
     }
 
     /// <summary>Adds certification gate.</summary>
-    public static IServiceCollection AddCertificationGate(this IServiceCollection services)
+    /// <param name="services">The service collection.</param>
+    /// <param name="recordStorePath">
+    /// Directory for DURABLE certification records, forwarded to
+    /// <see cref="AddCertificationInfrastructure"/>. Null keeps the in-memory default.
+    /// </param>
+    /// <remarks>
+    /// Until this parameter existed the gate could only ever be composed with the in-memory
+    /// store, and because that store was registered unconditionally, a host that had already
+    /// asked for durability got it taken away again with no error:
+    /// <code>
+    /// services.AddCertificationInfrastructure(recordStorePath: path);
+    /// services.AddCertificationGate();   // reverted the store to in-memory
+    /// </code>
+    /// Admissions then vanished at process exit, which for the CLI — a fresh process per
+    /// invocation — means nothing certified could ever be admitted afterwards.
+    /// </remarks>
+    public static IServiceCollection AddCertificationGate(
+        this IServiceCollection services,
+        string? recordStorePath = null)
     {
-        services.AddCertificationInfrastructure();
+        services.AddCertificationInfrastructure(recordStorePath);
         services.AddSingleton<CertifiedBrickRegistry>();
         services.AddSingleton<ICertifiedBrickAdmission, CertifiedBrickAdmission>();
         services.AddSingleton<CertifiedCompositionRegistry>();

@@ -249,3 +249,45 @@ record.
 Operational note: gate invocations that pipe output through `tail` must
 echo `${PIPESTATUS[0]}` — one masked exit code was caught and corrected
 this session.
+
+## Owner decisions (2026-08-27, attended)
+
+No convergence cycle ran, so there is no gate JSON and no gate table; the date is
+the commit date of the branch `claude/readiness-audit-handoff-d57n1e`. The
+authoritative copy of this ledger lives in the agent clone and has **not** been
+reconciled with this entry.
+
+Three decisions previously parked here as "do not guess" were put to the owner
+and answered. They are recorded so that documents asserting them have something
+to cite:
+
+1. **May a shipped `ashlar` verb build, load and execute code from a user-named
+   directory in its own process?** → **Yes, behind an opt-in flag, off by
+   default.** Sets the default flag and the sandbox posture for every verb below
+   it, including the not-yet-written `ashlar certify`.
+2. **One operator identity or two?** → **One.** Certification records sign with
+   the operator keypair, implemented by reading `~/.ashlar/keys/operator.key` in
+   `Ashlar.Infrastructure` and passing it to the `ed25519PrivateKeyBase64`
+   parameter `CertificationRecordSigner` already has — no new project, no
+   `Infrastructure -> Manifest` edge, no new package. Reasoning, the two rejected
+   options and the sequencing: `DECISION-identity-split.md`. *Scope caveat:*
+   `applications/Ashlar.Certification.Physical` is a third live Ed25519 path,
+   scoped out and **not yet ratified**, so "one identity" is an overclaim until
+   it is.
+3. **Is SPEC-006 ACCEPTED?** → **Yes, accepted 2026-08-27.** The banner is
+   flipped, the acceptance-conditional language in §6 is removed, S-4 is
+   de-conditioned, and S-5 (minimum accepted schema version) is added. Rules
+   without a named passing test are now recorded as unmet obligations of an
+   accepted spec rather than drafts.
+
+**Still parked (unchanged):** decisions 4–11 of
+`STATE-2026-08-27.md` — degrade-to-unsigned vs require-signature as the default,
+the v0.1.0 package set, local LLM inference in the export bundle, behavioural
+gates for `ashlar-forge` / `game-director` / `release-manager`, the Unity and
+`ext-*` commands, commercial terms, whether this repo keeps a numbered-spec
+system, and who owns the `Ashlar.*` prefix on nuget.org.
+
+**Newly parked:** should `.github/workflows/security-gate.yml` cover
+`Certification/**`? It does not today, which leaves the trust surface outside the
+security gate's paths. Changing which gate guards it is a CI/product decision, not
+an agent's.

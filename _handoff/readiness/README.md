@@ -25,10 +25,23 @@ architecture 2026-08-26 for unattended overnight runs.
 - `.claude/commands/converge-readiness.md` — the orchestrator prompt. Run
   `/converge-readiness` for one cycle, or `/loop /converge-readiness` for
   autonomous convergence with stop conditions.
+- `STATE-2026-08-27.md` — completion audit: how done the project is against
+  six definitions of "done", the critical path in dependency order, the work
+  that looks urgent but is not, and the decisions only the owner can make.
+  Start here if you are picking the project up cold.
+- `DECISION-identity-split.md` — the one-identity-or-two decision (open decision 2),
+  researched against the code: the recommendation, the two rejected options and why, and
+  the finding that the security fix never depended on this decision at all.
 - `LEDGER.md` — append-only cycle log: gate tables, fixes landed, items
   parked for a human decision. **The authoritative copy lives in the agent
   clone** (`/workspaces/nexo-agent/_handoff/readiness/LEDGER.md`); the host
   copy is only as fresh as the last attended reconciliation.
+
+**`_handoff/` is tracked but sits outside every docs gate.** `docs-link-check` runs over
+`README.md` and `docs/**/*.md` only, the onboarding-docs-guard's referenced-path step
+scans README/Makefile/docs/scripts, and `docs/DocsIndex.md` has no `_handoff` entry
+(`grep -rn '_handoff' .github/` returns nothing). Links and paths written here are never
+verified by CI, and readers arrive only via this README — so cite carefully.
 
 ## Ground rules baked into the roles (v2, container-first)
 
