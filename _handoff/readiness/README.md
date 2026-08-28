@@ -29,6 +29,10 @@ architecture 2026-08-26 for unattended overnight runs.
   six definitions of "done", the critical path in dependency order, the work
   that looks urgent but is not, and the decisions only the owner can make.
   Start here if you are picking the project up cold.
+- `CLOSING-PLAN.md` — the plan from here to the goal: a self-sustaining, self-extending runtime
+  across the apartment's hardware. Eight phases, sixty steps, each marked agent/human/CI and
+  whether it needs a .NET SDK. Read **Where to stop** first — Phase 1 is the point after which
+  you own something worth having even if you never continue.
 - `DECISION-identity-split.md` — the one-identity-or-two decision (open decision 2),
   researched against the code: the recommendation, the two rejected options and why, and
   the finding that the security fix never depended on this decision at all.
