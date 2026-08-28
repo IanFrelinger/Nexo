@@ -131,7 +131,7 @@ Two bugs, both fixed:
    residue reported as INFO rather than failure.
 2. Its solution-integrity check resolved project paths from the repo root, but
    paths inside a `.sln` are relative to *that solution's* directory. It reported
-   3 phantom `MISSING` entries for `application/Nexo.Application.sln` **on a
+   3 phantom `MISSING` entries for the then-named `Nexo.Application.sln` **on a
    completely untouched tree.** Now resolved relative to each solution.
 
 ### 2.5 What only `--apply` could reveal
