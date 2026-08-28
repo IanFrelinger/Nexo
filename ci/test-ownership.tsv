@@ -1,0 +1,53 @@
+# Test ownership registry.
+#
+# WHY THIS FILE EXISTS
+#   On 2026-08-28, Ashlar.Commercial.Tests.Fleet.Host was found to be in no solution,
+#   named by no gate script, and absent from Ashlar.sln. Its four tests had been failing
+#   for at least ten days across twenty consecutive runs of a manual-first weekly gate,
+#   and no pull request had ever run them. Membership in a solution looked like coverage
+#   and delivered none.
+#
+#   TestOwnershipConventionTests asserts that every csproj containing Microsoft.NET.Test.Sdk
+#   has exactly one row here. That test lives in the Ashlar.Tests.Infrastructure.Tests.
+#   Certification namespace, which is what cert-gate selects — the ONE required status check
+#   on master. So a new test project that is not registered here cannot merge.
+#
+# COLUMNS  project <TAB> runner <TAB> expires <TAB> note
+#   project  repo-relative path to the .csproj
+#   runner   the gate, script or workflow that executes it, or UNOWNED
+#   expires  YYYY-MM-DD for UNOWNED rows (the date the debt must be resolved); "-" otherwise
+#   note     why, in a few words
+#
+#   UNOWNED means: no pull-request check runs this project's tests. It is a dated debt,
+#   not a permanent state. The list may shrink; adding to it needs a reason.
+#
+# The runner column is documentation until a lane-deriving suite gate exists; the assertion
+# that bites today is completeness. Do not treat a runner name here as proof a gate runs it.
+#
+project	runner	expires	note
+application/src/Ashlar.Tests.CLI/Ashlar.Tests.CLI.csproj	security-gate-tier-c	-	CLI surface; also in Ashlar.PrimeTime.slnf
+applications/Ashlar.Applications.Tests/Ashlar.Applications.Tests.csproj	applications-coverage-gate	-	applications layer
+applications/Ashlar.Provenance.Graph.Tests/Ashlar.Provenance.Graph.Tests.csproj	applications-coverage-gate	-	provenance graph
+commercial/tests/Ashlar.Commercial.Tests.Fleet.Host/Ashlar.Commercial.Tests.Fleet.Host.csproj	UNOWNED	2026-10-27	THE MOTIVATING CASE. Not in any solution. Add to Ashlar.sln and a lane before this date.
+commercial/tests/Ashlar.Commercial.Tests.Fleet/Ashlar.Commercial.Tests.Fleet.csproj	composition-mesh-gate-tier-c	-	commercial fleet
+commercial/tests/Ashlar.Commercial.Tests.GameDirector/Ashlar.Tests.GameDirector.csproj	UNOWNED	2026-10-27	in Ashlar.sln only; no gate runs it
+commercial/tests/Ashlar.Commercial.Tests.GameDomain/Ashlar.Commercial.Tests.GameDomain.csproj	test-prime-time	-	in Ashlar.PrimeTime.slnf
+commercial/tests/Ashlar.Commercial.Tests.MeshDirector/Ashlar.Commercial.Tests.MeshDirector.csproj	UNOWNED	2026-10-27	in Ashlar.sln only; no gate runs it
+samples/hello-brick/HelloBrick.Tests/HelloBrick.Tests.csproj	full-platform-readiness-gate	-	sample; reached by ashlar validate, not by any solution
+samples/templates/brick/__BrickName__Brick.Tests/__BrickName__Brick.Tests.csproj	UNOWNED	2026-12-31	scaffolding template, not a real suite; long expiry is deliberate
+src/Ashlar.Analyzers.Tests/Ashlar.Analyzers.Tests.csproj	UNOWNED	2026-10-27	in Ashlar.sln only; no gate runs it
+src/Ashlar.Ingress.AwsSns.Tests/Ashlar.Ingress.AwsSns.Tests.csproj	UNOWNED	2026-10-27	in Ashlar.sln only; no gate runs it
+src/Ashlar.Ingress.DynamoDb.Tests/Ashlar.Ingress.DynamoDb.Tests.csproj	UNOWNED	2026-10-27	in Ashlar.sln only; no gate runs it
+src/Ashlar.Mcp.Client.Tests/Ashlar.Mcp.Client.Tests.csproj	mcp-a2a-gate	-	MCP client
+src/Ashlar.Mcp.Server.Tests/Ashlar.Mcp.Server.Tests.csproj	mcp-a2a-gate	-	MCP server
+src/Ashlar.Tests.AI.Pipeline/Ashlar.Tests.AI.Pipeline.csproj	make-test	-	in Kernel and Runtime solutions
+src/Ashlar.Tests.Application/Ashlar.Tests.Application.csproj	kernel-coverage-gate	-	application layer
+src/Ashlar.Tests.BackgroundAgents/Ashlar.Tests.BackgroundAgents.csproj	perf-gate-tier-a	-	background agents
+src/Ashlar.Tests.Contracts/Ashlar.Tests.Contracts.csproj	UNOWNED	2026-10-27	in Kernel and Ashlar solutions; no gate runs it
+src/Ashlar.Tests.Domain/Ashlar.Tests.Domain.csproj	kernel-coverage-gate	-	domain, 100% line coverage target
+src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj	cert-gate	-	carries the required check
+src/Ashlar.Tests.Kernel/Ashlar.Tests.Kernel.csproj	kernel-gate	-	kernel
+src/Ashlar.Tests.Orchestration/Ashlar.Tests.Orchestration.csproj	perf-gate-tier-a	-	orchestration
+src/Ashlar.Tests.Transport/Ashlar.Tests.Transport.csproj	kernel-gate-tier-c	-	transport
+src/Ashlar.Transport.A2A.Server.Tests/Ashlar.Transport.A2A.Server.Tests.csproj	mcp-a2a-gate	-	A2A server
+src/Ashlar.Transport.A2A.Tests/Ashlar.Transport.A2A.Tests.csproj	mcp-a2a-gate	-	A2A client
