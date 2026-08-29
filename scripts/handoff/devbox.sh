@@ -31,9 +31,15 @@
 #     could not run tests at all. It now probes for the premise and skips when
 #     running privileged, so it still runs where it is meaningful (CI is non-root).
 #     If you add permission-sensitive tests, expect the same and guard them.
-#   - DOTNET_ROLL_FORWARD=LatestMajor. The cert gate runs `-f net8.0` and the
-#     image ships only the 10.0 runtime; CI installs 8.0.x separately, this does
-#     the equivalent by rolling forward.
+#   - the real ASP.NET Core 8 runtime, via .docker/Dockerfile.devtest. This USED to
+#     be DOTNET_ROLL_FORWARD=LatestMajor, described here as "the equivalent" of the
+#     8.0.x install CI does. It is not equivalent: LatestMajor rolls net8.0 onto
+#     ASP.NET Core 10 even when 8.0 IS installed, and ASP.NET Core 8's
+#     ResponseBodyPipeWriter predates PipeWriter.UnflushedBytes, which
+#     System.Text.Json 10 requires — so every HTTP-hosting test fails with an
+#     exception that reads like a product bug. Measured on the GameDirector net8.0
+#     suite: LatestMajor -> 10 failed, real 8.0 runtime -> 167 passed. cert-gate
+#     never noticed because it hosts no HTTP.
 #   - the payload is base64'd into the container, so quoting survives the trip.
 #
 # NuGet packages live in a named volume, so restores are cached between runs.
@@ -41,7 +47,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-IMAGE="mcr.microsoft.com/devcontainers/dotnet:10.0-noble"
+IMAGE="$(bash "${REPO_ROOT}/scripts/ensure-devtest-image.sh")"
 NUGET_VOLUME="nexo-nuget-packages-root"
 
 command -v docker >/dev/null 2>&1 || { echo "docker not found. Start Docker Desktop." >&2; exit 1; }
@@ -64,7 +70,6 @@ if [[ $# -eq 0 ]]; then
     -v "${MOUNT_SRC}:/workspace:rw" \
     -v "${NUGET_VOLUME}:/root/.nuget/packages" \
     -w "$WORKDIR" \
-    -e DOTNET_ROLL_FORWARD=LatestMajor \
     -e DOTNET_CLI_TELEMETRY_OPTOUT=1 \
     "$IMAGE" bash -l
 fi
@@ -73,7 +78,6 @@ fi
 # match root), then run whatever was asked for.
 PAYLOAD="$(cat <<'PRE'
 set -euo pipefail
-export DOTNET_ROLL_FORWARD=LatestMajor
 export DOTNET_CLI_TELEMETRY_OPTOUT=1
 git config --global --add safe.directory /workspace 2>/dev/null || true
 PRE
@@ -86,7 +90,6 @@ exec docker run --rm \
   -v "${MOUNT_SRC}:/workspace:rw" \
   -v "${NUGET_VOLUME}:/root/.nuget/packages" \
   -w "$WORKDIR" \
-  -e DOTNET_ROLL_FORWARD=LatestMajor \
   -e DOTNET_CLI_TELEMETRY_OPTOUT=1 \
   "$IMAGE" \
   bash -lc "echo $B64 | base64 -d | bash"
