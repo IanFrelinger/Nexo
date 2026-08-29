@@ -1,3 +1,4 @@
+using Ashlar.Tests.Infrastructure.Helpers;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Ashlar.Core.Application.Analysis.Models;
@@ -218,7 +219,7 @@ public class AnalysisServiceAdapterComprehensiveTests : UnitTestBase
 
         var progressReports = new List<ProgressReport>();
         var progressLock = new object();
-        var progress = new Progress<ProgressReport>(report =>
+        var progress = new SyncProgress<ProgressReport>(report =>
         {
             lock (progressLock)
             {

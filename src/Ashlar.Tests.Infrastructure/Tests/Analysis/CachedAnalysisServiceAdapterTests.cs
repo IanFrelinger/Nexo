@@ -1,3 +1,4 @@
+using Ashlar.Tests.Infrastructure.Helpers;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Ashlar.Core.Application.Analysis.Models;
@@ -203,7 +204,7 @@ public class CachedAnalysisServiceAdapterTests : UnitTestBase
             .ReturnsAsync(cachedResult);
 
         var progressReports = new List<ProgressReport>();
-        var progress = new Progress<ProgressReport>(report => 
+        var progress = new SyncProgress<ProgressReport>(report => 
         {
             progressReports.Add(report);
         });
@@ -251,7 +252,7 @@ public class CachedAnalysisServiceAdapterTests : UnitTestBase
             .ReturnsAsync((AnalysisResult?)null);
 
         var progressReports = new List<ProgressReport>();
-        var progress = new Progress<ProgressReport>(report => progressReports.Add(report));
+        var progress = new SyncProgress<ProgressReport>(report => progressReports.Add(report));
 
         // Set up the inner service to report progress synchronously
         mockInner
