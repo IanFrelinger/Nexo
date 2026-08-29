@@ -94,6 +94,9 @@
     <ProjectReference Include="..\Ashlar.Orchestration\Ashlar.Orchestration.csproj" />
     <ProjectReference Include="..\Ashlar.Tests.Application\Ashlar.Tests.Application.csproj" />
     <ProjectReference Include="..\Ashlar.Runtime\Ashlar.Runtime.csproj" />
+    <!-- Carries GateStore/AshlarPolicy so the self-extension budget's clock behaviour can be
+         asserted inside Tests/Certification, which is the namespace cert-gate selects. -->
+    <ProjectReference Include="..\Ashlar.Manifest\Ashlar.Manifest.csproj" />
     <ProjectReference Include="..\Ashlar.Bricks.Owasp\Ashlar.Bricks.Owasp.csproj" />
     <ProjectReference Include="..\Ashlar.Hosting\Ashlar.Hosting.csproj" />
     <ProjectReference Include="..\Ashlar.Ingress.DynamoDb\Ashlar.Ingress.DynamoDb.csproj" />
