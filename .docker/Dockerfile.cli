@@ -36,11 +36,44 @@ COPY --from=build /app/publish/ /app/
 
 # Runtime state (LiteDB stores, snapshots) goes to /data/state instead of <mounted repo>/.ashlar/state so a
 # read-only or foreign-owned workspace mount never blocks the CLI; mount a volume there to keep it.
+#
+# ASHLAR_KEY_DIR and ASHLAR_MESH_DIR are the node's IDENTITY and its published packages. Without
+# them OperatorKey.ResolveKeyDir() falls back to ~/.ashlar/keys and MeshStore.Resolve to
+# ~/.ashlar/mesh/published — both inside the container HOME — so `docker rm` destroys the operator
+# key and every package the node ever published. Measured: the replacement container does not
+# report a DIFFERENT key, it reports NO key, and then records gate decisions UNSIGNED. A node that
+# silently stops signing is worse than one that visibly changes name.
+#
+# NOTE: MeshStore.Resolve APPENDS '/published' to ASHLAR_MESH_DIR (MeshStore.cs:31). The directory
+# to hand a sync tool is therefore $ASHLAR_MESH_DIR/published — one level off here yields an empty
+# peer store with no error, which reads identically to a peer that is simply switched off.
+#
+# The gate store is deliberately absent from this block: no environment variable reaches it. It
+# lives at <projectDir>/.ashlar/gates and is persisted only by working_dir — see deploy/node.yml.
 ENV ASHLAR_STATE_DIR=/data/state \
     ASHLAR_FORGE_ROOT=/data/state/runtime-studio/forge \
     ASHLAR_OBJECTIVES_ROOT=/data/state/runtime-studio/objectives \
-    ASHLAR_OBSERVATIONS_PATH=/data/state/runtime-studio/observations
+    ASHLAR_OBSERVATIONS_PATH=/data/state/runtime-studio/observations \
+    ASHLAR_KEY_DIR=/data/state/keys \
+    ASHLAR_MESH_DIR=/data/state/mesh \
+    ASHLAR_CYCLE_EVENTS_PATH=/data/state/runtime-studio/cycles.jsonl
 RUN mkdir -p /data/state/runtime-studio /app/.ashlar /app/config && chown -R app:app /data /app/.ashlar /app/config
+
+# A default agent set, so a node does WORK instead of idling. Without a config the daemon binds
+# BackgroundAgents:Agents to an empty list and creates zero agents — the node stays up, logs
+# nothing interesting, and any soak charts a flat line by construction.
+#
+# The shipped agent is an EXTENDER, but the node still ships SAFE: aggressiveness mode defaults to
+# Passive (FileBasedAggressivenessModeStore), and in Passive the extender branch logs
+# "observe only" and returns WITHOUT running a self-extend cycle. It does still increment the
+# cycle count, which is the difference between "the agent set loaded" and "the node rewrites
+# itself" — the first is Phase 1's exit criterion, the second is a deliberate operator act
+# (`ashlar background-agent mode`, persisted via ASHLAR_AGENT_MODE_PATH).
+#
+# Parameters.RepoRoot is REQUIRED, not decoration: BackgroundAgentRegistry only takes the extender
+# branch when TryGetParameter finds RepoRoot or Path, so omitting it silently downgrades the agent
+# to a no-op with no error anywhere.
+COPY .docker/node-agents.json /app/config/agents.json
 
 # Non-root: the aspnet 8+ images ship an unprivileged 'app' user (numeric $APP_UID so k8s runAsNonRoot can
 # verify it). Commands that write into a mounted workspace need it writable by that uid (or run with --user).
