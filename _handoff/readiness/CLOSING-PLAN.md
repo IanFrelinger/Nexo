@@ -39,11 +39,38 @@ End of Phase 1. With the repairs applied it is no longer 'a node that survives d
 
 ---
 
+## The fleet, corrected (2026-08-28)
+
+**This plan was written assuming a Raspberry Pi. There is no Pi.** The hardware is a **Windows
+box** and an **M-series MacBook** (plus Docker Desktop's WSL2 backend on Windows; there is no
+user distro installed unless you run `wsl --install -d Ubuntu`).
+
+Phase 0 has been corrected for this and got *cheaper*: the MacBook is itself an arm64 machine, so
+the never-executed arm64 probe runs natively on hardware you already own, with no 32-bit-OS branch
+to worry about.
+
+**Phases 1 and 3–8 have not been rewritten, and several of their conclusions do not survive the
+change.** They are not find-and-replace errors — they are engineering judgements that were correct
+for a 4-core board with an SD card and are not obviously correct for a MacBook. Revisit at least:
+
+| Where | What assumed a Pi |
+|---|---|
+| Phase 5 soak (step 2) and Phase 6 (step 7) | The soak is specified **on the Pi** because it is "the constraint", and tracks `/sys/block/mmcblk0/stat` sector-writes against SD-card death. Neither the constraint nor the failure mode is the same on a Mac. |
+| Phase 7 (step 4) and owner decisions 6 and 7 | "The Pi can hold and refuse; on a 4-core board against an SD card it can never be a re-certifying receiver." An M-series Mac plausibly **can**, which reopens the receiver-side re-certification question the plan defers. |
+| Owner decision 3 | Physical recovery assumes a spare imaged SD card and a UART console after swap thrash kills sshd. |
+| Owner decision 12 | Per-node inference vs one box serving the LAN was framed around a Pi's RAM headroom. A MacBook's is a different order of magnitude. |
+| Phase 4 (step 1) | The "honest always-on pair" was the Pi plus a laptop. With two machines and no always-on box, this needs a real answer — the Mac sleeps without `caffeinate`, the Windows box has no sshd by default. |
+
+Do not treat those as corrected simply because Phase 0 is. `HARDWARE-BRINGUP.md` carries the
+measured results from the Windows box and is accurate as of this date.
+
+---
+
 ## Phases at a glance
 
 | # | Phase | Wall clock | Safe to stop after? |
 |---|---|---|---|
-| 0 | Remove the fuses and learn whether the Pi can run this at all | 2 days focused; do it in one sitting | yes |
+| 0 | Remove the fuses and learn whether the arm64 artifact runs at all | 2 days focused; do it in one sitting | yes |
 | 1 | The node: it boots, it keeps its name, it does work, and it tells you who sealed things | 6–8 focused days; 2 weeks calendar at this repo's demonstrated burst rate | yes |
 | 2 | The write floor | 3 focused days | yes |
 | 3 | Refusal, proven on one box | 5–7 focused days | yes |
@@ -57,31 +84,45 @@ none, so CI is the first compiler) · **[agent / human / CI]** who performs it.
 
 ---
 
-## Phase 0 — Remove the fuses and learn whether the Pi can run this at all
+## Phase 0 — Remove the fuses and learn whether the arm64 artifact runs at all
 
 *2 days focused; do it in one sitting · safe to stop after: **yes***
 
-> **STATUS: the three agent-executable items landed with this document** (2026-08-28).
-> The seven `UNOWNED` rows are re-dated to 2027-03-31 and the brick template staggered to
-> 2027-06-30, so no row expires within 180 days; `reusable-container-publish.yml` now builds the
-> immutable `sha-<12>` tag for `linux/amd64,linux/arm64` on master as well as on `v*` tags; and
-> `ci/cert-gate-assertions.md` exists. **What remains in Phase 0 is the two hardware probes, and
-> only you can run them** — `uname -m` on the Pi (if it prints `armv7l` this plan changes shape)
-> and `echo $DOCKER_DEFAULT_PLATFORM` on the Mac.
+> **STATUS (revised 2026-08-28): this phase is nearly closed, and it got cheaper.**
+> The three agent-executable items landed with this document: the seven `UNOWNED` rows are
+> re-dated to 2027-03-31 and the brick template staggered to 2027-06-30, so no row expires
+> within 180 days; `reusable-container-publish.yml` now builds the immutable `sha-<12>` tag for
+> `linux/amd64,linux/arm64` on master as well as on `v*` tags; and `ci/cert-gate-assertions.md`
+> exists.
+>
+> **The fleet is a Windows box and an M-series MacBook. There is no Raspberry Pi.** That is the
+> single biggest change to this phase, because the Mac is itself an arm64 machine: Docker Desktop
+> on Apple Silicon runs `linux/arm64` natively, with the same `linux-arm64` RID and the same
+> native libsodium a Pi would have loaded. The arm64 question is answered on hardware you already
+> own, on the same day, with no 32-bit-OS branch to worry about.
+>
+> **Already measured on the Windows box (2026-08-28):** the amd64 path is green end to end — L0
+> and L1 pass, cert-gate 194/194, `e2e-loop` 119/119, `dotnet test Ashlar.sln` ~7,336 tests and
+> effectively green. And the **arm64 image was executed for the first time**, under QEMU
+> emulation: `--help` exits 0, `/app/runtimes/linux-arm64/native/libsodium.so` is present, and
+> `keys init` produced `ed25519:76f8c74a6c63477e`. That is strong evidence against the feared
+> native-load failure, but it is emulation, not hardware — see `HARDWARE-BRINGUP.md`.
+>
+> **What remains is one probe on the Mac, and only you can run it.**
 
 **Goal.** Spend two days on the things that cost nothing, need no compiler, and either defuse a scheduled outage or tell you the whole plan is built on an artifact that does not work. Nothing here changes runtime behaviour; every item strictly reduces risk.
 
 1. **[S]** · *agent* — Re-date the seven UNOWNED rows in ci/test-ownership.tsv from 2026-10-27 to 2027-03-31, in a commit of its own, with the reason written into the note column. VERIFIED: the rows are Commercial.Tests.Fleet.Host, Commercial.Tests.GameDirector, Commercial.Tests.MeshDirector, Ashlar.Analyzers.Tests, Ashlar.Ingress.AwsSns.Tests, Ashlar.Ingress.DynamoDb.Tests, Ashlar.Tests.Contracts. TestOwnershipConventionTests.cs:82 reads `DateTime.UtcNow.Date` and rides cert-gate, the ONLY required status check — so on 2026-10-27 every PR in the repo blocks with no code change and no warning. The file's own header rule ('do not extend a date in the change that trips it') is honoured because nothing is tripping yet. Ten minutes today; a dead end in two months.
 
-2. **[S]** · *human* — On the Raspberry Pi, physically: `uname -m`. If it prints armv7l the published image is unusable and this plan changes shape — Raspberry Pi OS 32-bit is still widely installed and there is no armv7 variant. Then `docker run --rm --platform linux/arm64 ghcr.io/ianfrelinger/nexo-cli:latest --help` and `... keys init`, which is the first execution of the arm64 artifact by anything, ever. It proves NSec.Cryptography 25.4.0's per-RID native libsodium loads from a framework-dependent publish on linux-arm64 — never validated, and the repo already documents native-toolchain trouble on this platform (docs/prod-dry-run.md:11, docs/MeshVirtualLab.md:44).
+2. **[S]** · *human* — On the MacBook, in this order. First `echo $DOCKER_DEFAULT_PLATFORM`: the repo's own docs tell Apple Silicon users to set it to `linux/amd64`, and if it is set the Mac silently runs the **amd64** image under emulation — no error, 3–5× slower, NSec in a configuration nobody has tested, and the arm64 question goes unanswered while looking answered. Unset it. Then `uname -m` (expect `arm64`), then `docker run --rm ghcr.io/ianfrelinger/nexo-cli:latest --help` and `... keys init` — with the variable unset, Docker selects `linux/arm64` natively and no `--platform` flag is needed. This is the first execution of the arm64 artifact **on real hardware**, and it proves NSec.Cryptography 25.4.0's per-RID native libsodium loads from a framework-dependent publish on linux-arm64 — the repo documents native-toolchain trouble on this platform (docs/prod-dry-run.md:11, docs/MeshVirtualLab.md:44). Note the container runs as uid 1654 and a fresh volume's root comes back `root:root`, so seed an app-owned subdirectory first; `HARDWARE-BRINGUP.md` §2 has the exact commands.
 
-3. **[S]** · *human* — On the Mac: `echo $DOCKER_DEFAULT_PLATFORM`. The repo's own docs tell Apple Silicon users to set it to linux/amd64, in which case the Mac node silently runs the amd64 image under emulation — no error, 3-5x slower, NSec in a configuration nobody has tested. Record the answer in deploy/README.md.
+3. **[S]** · *human* — Record the Mac's answers, and the Windows box's, in deploy/README.md. On Windows, prefer a real WSL distro over Git Bash: Git Bash rewrites POSIX-looking paths in arguments into Windows paths before `docker.exe` sees them, so `-e ASHLAR_KEY_DIR=/data/keys` arrives as a `C:\...` string and the CLI dies on `Access to the path '/app/C:' is denied` — a failure that looks exactly like a product bug and is not one. `export MSYS_NO_PATHCONV=1 MSYS2_ARG_CONV_EXCL='*'` is the workaround if you stay in Git Bash. Docker Desktop's WSL2 backend does **not** give you a usable shell on its own; `wsl --install -d Ubuntu` does.
 
-4. **[S]** · *agent* — Edit .github/workflows/reusable-container-publish.yml so master branch builds set SHA_PLATFORMS="linux/amd64,linux/arm64", not only on refs/tags/v*. VERIFIED at the 'Define image metadata' step: the immutable per-commit `sha-<12>` tag is amd64-ONLY on every master build, and the only multi-arch digest today is `:latest`, which is mutable, republished on every matching master push, and whose prior manifest becomes untagged and GHCR-GC-eligible. Without this edit there is NO digest that is both multi-arch and permanent: pin the sha digest and the Pi fails 'no matching manifest for linux/arm64'; pin the :latest index digest and it 404s after a few merges, surfacing on the Pi at exactly the reboot Phase 1 exists to survive.
+4. **[S]** · *agent* — Edit .github/workflows/reusable-container-publish.yml so master branch builds set SHA_PLATFORMS="linux/amd64,linux/arm64", not only on refs/tags/v*. VERIFIED at the 'Define image metadata' step: the immutable per-commit `sha-<12>` tag is amd64-ONLY on every master build, and the only multi-arch digest today is `:latest`, which is mutable, republished on every matching master push, and whose prior manifest becomes untagged and GHCR-GC-eligible. Without this edit there is NO digest that is both multi-arch and permanent: pin the sha digest and the arm64 node fails 'no matching manifest for linux/arm64'; pin the :latest index digest and it 404s after a few merges, surfacing at exactly the reboot Phase 1 exists to survive. OBSERVED 2026-08-28: `:latest` moved twice inside a single working session — `sha256:baaa9b5d…` to `sha256:e851f223…` — as #406 and #407 merged. The mutability is not theoretical.
 
 5. **[S]** · *agent* — Write ci/cert-gate-assertions.md: one line per merge-blocking convention test cert-gate carries and why it exists, updated as each lands. When you come back after three weeks to a red required check with a branch-protection toggle one click away, this is the only artifact that tells you what you would be switching off. Given eight already-muted workflows in this repo, it is the highest-leverage paragraph in the plan.
 
-**Exit criterion (an observable event, not a status).** `awk -F'\t' '$2=="UNOWNED"' ci/test-ownership.tsv` shows no row expiring within 180 days; a master build has published a `sha-<12>` tag whose manifest list contains linux/arm64; and on the Pi, `docker run --rm --platform linux/arm64 ghcr.io/ianfrelinger/nexo-cli@sha256:<that digest> keys init` prints a fingerprint instead of a native-load failure.
+**Exit criterion (an observable event, not a status).** `awk -F'\t' '$2=="UNOWNED"' ci/test-ownership.tsv` shows no row expiring within 180 days; a master build has published a `sha-<12>` tag whose manifest list contains linux/arm64; and on the MacBook, with `DOCKER_DEFAULT_PLATFORM` unset, `docker run --rm ghcr.io/ianfrelinger/nexo-cli@sha256:<that digest> keys init` prints a fingerprint instead of a native-load failure. (Under QEMU on the Windows box this already passes — see the STATUS note above — but the criterion is real arm64 hardware.)
 
 ---
 

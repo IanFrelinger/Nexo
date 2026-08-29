@@ -10,37 +10,50 @@ failures are expected and which are news.
 > **What is measured and what is not.** The first draft of this document was written from reading
 > the code, and said so. It has since been executed on one machine — an x86_64 Windows host running
 > Docker Desktop in Linux-container mode — and **four of its claims turned out to be wrong**. Those
-> are corrected below and marked *measured*. What remains unverified is **anything arm64**: no
-> Raspberry Pi and no Apple Silicon Mac has run any of this. Where this document and your machine
-> disagree, your machine is right.
+> are corrected below and marked *measured*.
+>
+> **The arm64 artifact has now been executed once, under QEMU emulation on that same Windows box:**
+> `--help` exits 0, `/app/runtimes/linux-arm64/native/libsodium.so` is present in the image, and
+> `keys init` produced `ed25519:76f8c74a6c63477e`. That is real evidence against the feared
+> native-load failure — but emulation is not hardware, and **no arm64 machine has run any of
+> this.** Running it on the MacBook is what closes the question. Where this document and your
+> machine disagree, your machine is right.
 
 ---
 
-## 0. Two probes first — ten seconds, and one of them can invalidate the plan
+## 0. The fleet, and one probe that matters
 
-Run these before anything else. They are the only things that can change the shape of the work.
+**The fleet is a Windows box and an M-series MacBook.** Earlier drafts of this document and of
+`CLOSING-PLAN.md` assumed a Raspberry Pi; there isn't one. That makes the plan's oldest unknown
+*cheaper*, not harder — an M-series Mac is an arm64 machine, so it exercises the same
+`linux-arm64` RID and the same native libsodium a Pi would have. There is no 32-bit-OS branch to
+worry about and no `armv7l` cliff.
+
+One probe still matters, on the Mac, and it must come first:
 
 ```bash
-# On the Raspberry Pi:
-uname -m
+echo "${DOCKER_DEFAULT_PLATFORM:-unset}"
 ```
 
 | Output | Meaning |
 |---|---|
-| `aarch64` | Good. The published image has a `linux/arm64` manifest — *measured*: `:latest` is an OCI index carrying both `linux/amd64` and `linux/arm64`. Continue. |
-| `armv7l` | **Stop.** You are on 32-bit Raspberry Pi OS. There is no armv7 image and no plan to build one. Either reimage the Pi with 64-bit Raspberry Pi OS, or drop the Pi from the fleet. Nothing downstream works around this. |
+| `unset` | Good — Docker selects `linux/arm64` natively. No `--platform` flag needed anywhere below. |
+| `linux/amd64` | **Unset it before you test anything.** The repo's own docs tell Apple Silicon users to set this. Left set, the Mac silently runs the **amd64** image under emulation: no error, several times slower, NSec in a configuration nobody has tested — and the arm64 question goes unanswered while appearing answered. |
+
+Then confirm the machine is what you think it is, and that the image really is multi-arch:
 
 ```bash
-# On the Mac:
-echo $DOCKER_DEFAULT_PLATFORM
+uname -m && docker buildx imagetools inspect ghcr.io/ianfrelinger/nexo-cli:latest
 ```
 
-| Output | Meaning |
-|---|---|
-| empty | Good — Docker picks `linux/arm64` natively on Apple Silicon. |
-| `linux/amd64` | The Mac will silently run the **amd64** image under emulation: no error, several times slower, and NSec's native crypto in a configuration nobody has tested. Unset it for Ashlar work, or accept it knowingly. |
+Expect `arm64`, and an OCI index listing both `linux/amd64` and `linux/arm64` — *measured*.
 
-Write both answers down. They are inputs to decisions 1 and 5 in `CLOSING-PLAN.md`.
+### On Windows: use WSL if you can
+
+Docker Desktop's WSL2 backend does **not** give you a usable Linux shell on its own — the only
+distro it installs is `docker-desktop`, its own utility VM. `wsl --install -d Ubuntu` gives you a
+real one, and from there every path in this document is a native Linux path and the Git Bash trap
+below does not exist. If you stay in Git Bash, read the next section first.
 
 ### On Windows, one more line before anything
 
@@ -110,7 +123,7 @@ docker buildx imagetools inspect ghcr.io/ianfrelinger/nexo-cli:latest
 ```
 
 > The `sha-<12>` tags only became multi-arch on master builds as of `0983d74`. **Any `sha-` tag
-> published before that is amd64-only** and will fail on the Pi with `no matching manifest for
+> published before that is amd64-only** and will fail on the Mac with `no matching manifest for
 > linux/arm64`. Use a `sha-` tag from a build after that commit, or the current `:latest` digest.
 
 **Give it a state volume, and name the key and mesh directories.** *Measured*: with these two
@@ -242,7 +255,7 @@ meaningless. The right-hand column is what one x86_64 Windows box actually produ
 | # | Command | Expected | Measured on `pc` |
 |---|---|---|---|
 | 0.1 | `uname -m` | `x86_64` or `aarch64` | **PASS** `x86_64`, Linux-container mode |
-| 0.2 | `docker run --rm <image> --help` | verbs incl. `keys`, `pkg`, `verify`, `gates`, `doctor` | **PASS**, exit 0. On the Pi a native-load error would mean NSec's arm64 libsodium does not load — **still never executed by anything**; capture full stderr if it fails |
+| 0.2 | `docker run --rm <image> --help` | verbs incl. `keys`, `pkg`, `verify`, `gates`, `doctor` | **PASS**, exit 0 on amd64, and exit 0 on arm64 under QEMU. On the Mac a native-load error would mean NSec's arm64 libsodium does not load on real hardware — capture full stderr if it fails |
 | 0.3 | `doctor --json` | JSON | **exit 1, and that is correct.** Run inside the shipped image, `doctor` audits a *developer workstation*: it reports `hostOs: Ubuntu 24.04.4` (the container), fails `cliSmoke` with "No .NET SDKs were found" and `containerSmoke` with "docker: command not found". Do not treat its exit code as node health |
 
 ### L1 — Does state survive?
@@ -335,9 +348,13 @@ L3 e2e-loop:    119 pass / 0 fail
 autonomy:       daemon executes agents on interval with --config; identity survives compose down
 ```
 
-The two most valuable outstanding data points: **whether the arm64 image runs on the Pi at all**
-(L0.2 — never executed by anything, ever) and **the Pi's real RAM headroom** under the daemon,
-which decides owner decision 12 — per-node inference vs one box serving the LAN.
+The most valuable outstanding data point is **L0.2 on the MacBook** — the arm64 artifact on real
+hardware rather than under emulation. It is one command and it closes `CLOSING-PLAN.md` Phase 0.
+
+The second is the Mac's **RAM headroom under the daemon**, which feeds owner decision 12
+(per-node inference vs one box serving the LAN). Note that decision was framed around a
+Raspberry Pi's headroom; an M-series Mac's is a different order of magnitude, so the answer may
+not be the one the plan anticipates.
 
 ---
 
@@ -348,5 +365,8 @@ which decides owner decision 12 — per-node inference vs one box serving the LA
 - `DECISION-identity-split.md` — why there is one operator identity and what it costs.
 - `ci/cert-gate-assertions.md` — what the one required check enforces, before you consider muting it.
 
-If L0.2 fails on the Pi, say so before doing anything else in the plan. Phases 1 through 5 assume
-that image runs, and no arm64 machine has ever run it.
+If L0.2 fails on the MacBook, say so before doing anything else in the plan. Phases 1 through 5
+assume that image runs, and no arm64 *machine* has ever run it — only QEMU has.
+
+`CLOSING-PLAN.md` also carries Pi-specific reasoning in Phases 4–8 and in owner decisions 3, 6, 7
+and 12 that has **not** been revised; its "The fleet, corrected" section lists exactly which.
