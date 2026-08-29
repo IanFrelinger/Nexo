@@ -1,0 +1,32 @@
+# Dev/test image: the devcontainer base, plus the runtime this repo's net8.0 targets need.
+#
+# WHY THIS EXISTS. mcr.microsoft.com/devcontainers/dotnet:10.0-noble ships ONLY the .NET 10
+# runtimes, but this repo multi-targets net8.0. The container scripts used to compensate with
+# DOTNET_ROLL_FORWARD=LatestMajor, which is not equivalent to installing 8.0: LatestMajor rolls
+# net8.0 onto ASP.NET Core 10 *even when the 8.0 runtime is present*, and ASP.NET Core 8's
+# ResponseBodyPipeWriter predates PipeWriter.UnflushedBytes, which System.Text.Json 10 requires.
+# Every HTTP-hosting test then fails with an exception that reads exactly like a product bug.
+#
+# Measured on the GameDirector net8.0 suite in this image, with 8.0.30 installed:
+#   DOTNET_ROLL_FORWARD=LatestMajor -> 10 failed
+#   unset                           -> 167 passed
+#
+# CI does the right thing already (actions/setup-dotnet installs 10.0.x AND 8.0.x); this image is
+# how the container scripts reach the same state. Build it with scripts/ensure-devtest-image.sh.
+FROM mcr.microsoft.com/devcontainers/dotnet:10.0-noble
+
+RUN curl -sSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh \
+ && bash /tmp/dotnet-install.sh --channel 8.0 --runtime aspnetcore \
+      --install-dir /usr/share/dotnet --no-path \
+ && rm -f /tmp/dotnet-install.sh \
+ && dotnet --list-runtimes | grep -q '^Microsoft\.AspNetCore\.App 8\.'
+
+# jq, for asserting on --format-json output from scenario scripts.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends jq \
+ && rm -rf /var/lib/apt/lists/*
+
+# DOTNET_ROLL_FORWARD is deliberately NOT set here. With 8.0 present, rolling forward is the
+# behaviour this image exists to avoid.
+ENV DOTNET_NOLOGO=1 \
+    DOTNET_CLI_TELEMETRY_OPTOUT=1
