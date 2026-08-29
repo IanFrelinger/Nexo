@@ -34,5 +34,9 @@ Thumbs.db
 
 # Docker files themselves (compose files live under deploy/compose/, not the repo root)
 .docker/
+# ...except payloads a Dockerfile COPYs. The Dockerfile itself reaches the daemon via -f, outside
+# the context, so excluding .docker/ costs nothing — but a file COPYd from it must be IN the
+# context or the build fails with "not found" pointing at the COPY line rather than at this rule.
+!.docker/node-agents.json
 deploy/compose/
 Dockerfile*
