@@ -25,3 +25,5 @@ Build contexts and repo bind mounts inside these files point at the repository r
 | `docker-compose.ephemeral.yml` | Disposable Ollama (+ optional Postgres, `--profile db`) plus a `ashlar` CLI service built from `.docker/Dockerfile.cli` (`run --rm ashlar ...`) | `docs/DistributionModels.md` |
 | `docker-compose.provenance.yml` | Provenance graph demo | `scripts/demo-provenance-graph.sh` |
 | `docker-compose.test.yml` | Cached test-runner image | `.docker/Dockerfile.test-caching` |
+
+> **Looking for a node to deploy?** None of these is one. `deploy/node.yml` is THE node — pinned by digest, state on a named volume, restart-durable. The stacks here are labs, demos and development stacks.

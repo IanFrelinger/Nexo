@@ -57,7 +57,13 @@ ENV ASHLAR_STATE_DIR=/data/state \
     ASHLAR_KEY_DIR=/data/state/keys \
     ASHLAR_MESH_DIR=/data/state/mesh \
     ASHLAR_CYCLE_EVENTS_PATH=/data/state/runtime-studio/cycles.jsonl
-RUN mkdir -p /data/state/runtime-studio /app/.ashlar /app/config && chown -R app:app /data /app/.ashlar /app/config
+# /data/state/project is the node's project directory, and it must exist HERE, owned by app, not
+# be created by Docker at run time. The gate store lands at <working_dir>/.ashlar/gates and no
+# environment variable reaches it, so deploy/node.yml persists it with `working_dir`. Docker
+# creates a missing working_dir as ROOT, and this image runs as uid 1654 — measured: the gate
+# store is then silently unwritable ("Permission denied" on first write). Creating it in the image
+# means the named volume is seeded with the right ownership instead.
+RUN mkdir -p /data/state/runtime-studio /data/state/project /app/.ashlar /app/config && chown -R app:app /data /app/.ashlar /app/config
 
 # A default agent set, so a node does WORK instead of idling. Without a config the daemon binds
 # BackgroundAgents:Agents to an empty list and creates zero agents — the node stays up, logs
