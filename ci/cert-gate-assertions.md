@@ -30,6 +30,7 @@ away, can see what they would be turning off.
 | **The schema floor refuses a downgraded record.** A forged record with a rewritten gate name verifies at floor 0 and is refused at floor 2. | `SchemaVersionFloorTests` | A record can claim to have passed gates it never ran: the legacy payload lane leaves `Gate`, `GatesPassed`, `Inputs`, `Proposer`, `Attempts` and `Ed25519PublicKey` outside the signed bytes. |
 | **The dev key is loud.** A signer falling back to the committed HMAC constant warns, and never logs the key itself. | `CertificationRecordSignerDevKeyTests` | Production admissions run on a key anyone with the source can forge, with nothing on the record saying so. |
 | **v1/v2 record bytes are frozen.** The legacy payload is byte-pinned. | `TrustLoopRecordSchemaTests` | Every signature ever written becomes unverifiable, silently. |
+| **No eighth unbounded appender.** Every production `File.AppendAllText` / `AppendAllLines` / `AppendText` sits in a frozen allowlist of the seven that exist; a stale allowlist row fails too, so the inventory can only shrink honestly. | `AppendOnlyWriterConventionTests` | An appender on a path that never rotates grows until the disk does not — weeks later, on an unattended node, long after the change that caused it. `CLOSING-PLAN.md` Phase 5 bounds these at the write path; this stops the count going up in the meantime. |
 
 The gate also carries the certification gate's own teeth, the hot-swap host, the adversarial
 campaigns, the analyzer fence, sandbox-escape tests and the dogfood suites — 31 files in
