@@ -11,13 +11,45 @@ public sealed class DocumentationUpdater : IDocumentationUpdater
 {
     private readonly IAdaptationLog _adaptationLog;
     private readonly IChangelogGenerator _changelogGenerator;
+    private readonly string? _docsRoot;
 
-    /// <summary>Initializes a new documentation updater.</summary>
+    /// <summary>
+    /// Initializes a new documentation updater writing under the repository root. This is the
+    /// constructor dependency injection selects: <c>docsRoot</c> is not a registered service, so
+    /// the three-argument overload is never resolvable from the container.
+    /// </summary>
     public DocumentationUpdater(IAdaptationLog adaptationLog, IChangelogGenerator changelogGenerator)
+        : this(adaptationLog, changelogGenerator, null)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new documentation updater writing under an explicit root.
+    /// </summary>
+    /// <param name="adaptationLog">Adaptation log to read promoted records from.</param>
+    /// <param name="changelogGenerator">Changelog generator for the document body.</param>
+    /// <param name="docsRoot">
+    /// Directory to write <c>docs/bricks/</c> beneath. Null means the repository root, which is
+    /// the dogfooding behaviour: Ashlar documents itself in its own tree.
+    /// <para>Tests MUST pass a temporary directory. Writing under the repo root means a test
+    /// mutates tracked files in the developer's working tree, and cleanup in a <c>finally</c> is
+    /// not enough — a run killed partway through (a cancelled CI job, Ctrl+C, a stopped container)
+    /// leaves the residue behind, which is how docs/bricks/unknown.md turned up modified with no
+    /// obvious author.</para>
+    /// </param>
+    public DocumentationUpdater(
+        IAdaptationLog adaptationLog,
+        IChangelogGenerator changelogGenerator,
+        string? docsRoot)
     {
         _adaptationLog = adaptationLog ?? throw new ArgumentNullException(nameof(adaptationLog));
         _changelogGenerator = changelogGenerator ?? throw new ArgumentNullException(nameof(changelogGenerator));
+        _docsRoot = docsRoot;
     }
+
+    /// <summary>Resolved lazily so the repo-root walk happens at write time, not construction.</summary>
+    private string BricksDirectory =>
+        Path.Combine(_docsRoot ?? RepoPathResolver.FindRepoRoot(), "docs", "bricks");
 
     /// <summary>Update for adaptation asynchronously.</summary>
     public async Task UpdateForAdaptationAsync(string adaptationId, CancellationToken ct = default)
@@ -27,7 +59,7 @@ public sealed class DocumentationUpdater : IDocumentationUpdater
         if (record == null) return;
 
         var brickId = record.BrickId ?? "unknown";
-        var docPath = Path.Combine(RepoPathResolver.FindRepoRoot(), "docs", "bricks", $"{brickId}.md");
+        var docPath = Path.Combine(BricksDirectory, $"{brickId}.md");
         Directory.CreateDirectory(Path.GetDirectoryName(docPath)!);
 
         var changelog = await _changelogGenerator.GenerateAsync(DateTimeOffset.UtcNow.AddDays(-1), null, ct).ConfigureAwait(false);
@@ -51,7 +83,7 @@ Adapted from promotion {adaptationId}.
     /// <summary>Generate stub asynchronously.</summary>
     public Task GenerateStubAsync(string componentId, CancellationToken ct = default)
     {
-        var docPath = Path.Combine(RepoPathResolver.FindRepoRoot(), "docs", "bricks", $"{componentId}.md");
+        var docPath = Path.Combine(BricksDirectory, $"{componentId}.md");
         Directory.CreateDirectory(Path.GetDirectoryName(docPath)!);
 
         if (File.Exists(docPath))
