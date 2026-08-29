@@ -1,3 +1,4 @@
+using Ashlar.Tests.Infrastructure.Helpers;
 using FluentAssertions;
 using Ashlar.Core.Application.NodeCapabilityRuntime.Models;
 using Ashlar.Infrastructure.NodeCapabilityRuntime.Backends;
@@ -17,7 +18,7 @@ public class NullModelServingBackendGapCoverageTests
         (await backend.IsAvailableAsync()).Should().BeTrue();
 
         var progressReports = new List<PullProgress>();
-        await backend.PullModelAsync("m1", new Progress<PullProgress>(progressReports.Add));
+        await backend.PullModelAsync("m1", new SyncProgress<PullProgress>(progressReports.Add));
 
         progressReports.Should().ContainSingle(p => p.ModelId == "m1" && p.TotalBytes == 1);
         (await backend.ListLoadedModelsAsync()).Should().BeEmpty();

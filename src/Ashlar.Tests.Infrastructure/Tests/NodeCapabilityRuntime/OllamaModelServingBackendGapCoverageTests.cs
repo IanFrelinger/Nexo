@@ -1,3 +1,4 @@
+using Ashlar.Tests.Infrastructure.Helpers;
 using Ashlar.Agents.TestKit;
 using System.Net;
 using System.Text;
@@ -147,7 +148,7 @@ public sealed class OllamaModelServingBackendGapCoverageTests
             Options.Create(new OllamaBackendOptions { BaseUrl = "http://127.0.0.1:11434" }),
             metrics);
 
-        await sut.PullModelAsync("phi3:mini", new Progress<PullProgress>(progressReports.Add));
+        await sut.PullModelAsync("phi3:mini", new SyncProgress<PullProgress>(progressReports.Add));
 
         progressReports.Should().ContainSingle(p => p.ModelId == "phi3:mini");
         metrics.Counters.Should().ContainKey("ncr.ollama.pull.success");
