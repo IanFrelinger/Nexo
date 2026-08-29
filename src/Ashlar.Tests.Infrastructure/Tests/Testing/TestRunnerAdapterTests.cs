@@ -1,3 +1,4 @@
+using Ashlar.Tests.Infrastructure.Helpers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Moq;
@@ -118,7 +119,7 @@ public class TestRunnerAdapterTests : UnitTestBase
         var runner = new TestRunnerAdapter(mockLogger.Object, serviceProvider);
 
         var progressReports = new List<ProgressReport>();
-        var progress = new Progress<ProgressReport>(report => progressReports.Add(report));
+        var progress = new SyncProgress<ProgressReport>(report => progressReports.Add(report));
 
         await runner.RunTestsAsync("SimpleTestForRunner", progress, CancellationToken.None);
 

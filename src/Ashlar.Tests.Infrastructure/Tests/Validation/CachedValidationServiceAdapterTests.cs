@@ -1,3 +1,4 @@
+using Ashlar.Tests.Infrastructure.Helpers;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Ashlar.Core.Application.Common.Models;
@@ -196,7 +197,7 @@ public class CachedValidationServiceAdapterTests : UnitTestBase
             .ReturnsAsync(cachedResult);
 
         var progressReports = new List<ProgressReport>();
-        var progress = new Progress<ProgressReport>(report => progressReports.Add(report));
+        var progress = new SyncProgress<ProgressReport>(report => progressReports.Add(report));
 
         var adapter = new CachedValidationServiceAdapter(mockInner.Object, mockCache.Object, mockLogger.Object);
         await adapter.ValidateAsync(null, progress, CancellationToken.None);
@@ -240,7 +241,7 @@ public class CachedValidationServiceAdapterTests : UnitTestBase
             .ReturnsAsync((ValidationResult?)null);
 
         var progressReports = new List<ProgressReport>();
-        var progress = new Progress<ProgressReport>(report => progressReports.Add(report));
+        var progress = new SyncProgress<ProgressReport>(report => progressReports.Add(report));
 
         mockInner
             .Setup(s => s.ValidateAsync(It.IsAny<string?>(), It.IsAny<IProgress<ProgressReport>>(), It.IsAny<CancellationToken>()))
