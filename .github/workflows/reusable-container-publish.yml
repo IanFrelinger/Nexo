@@ -95,6 +95,7 @@ jobs:
         run: |
           docker buildx build \
             --file .docker/Dockerfile.cli \
+            --build-arg IMAGE_BUILD_EPOCH="$(date -u +%s)" \
             --platform "${SHA_PLATFORMS}" \
             --tag "${SHA_TAG}" \
             --push \
@@ -114,6 +115,7 @@ jobs:
         run: |
           docker buildx build \
             --file .docker/Dockerfile.cli \
+            --build-arg IMAGE_BUILD_EPOCH="$(date -u +%s)" \
             --platform linux/amd64,linux/arm64 \
             --tag "${IMAGE}:latest" \
             --push \
@@ -127,6 +129,7 @@ jobs:
         run: |
           docker buildx build \
             --file .docker/Dockerfile.cli \
+            --build-arg IMAGE_BUILD_EPOCH="$(date -u +%s)" \
             --platform linux/amd64 \
             --tag "${IMAGE}:latest" \
             --push \
