@@ -93,7 +93,7 @@ public static class PackageImport
                 var parked = forge.Add(new ChangeProposal
                 {
                     Id = "pkg-" + Guid.NewGuid().ToString("N")[..12],
-                    TargetPath = pf.Path,
+                    TargetPath = pf.Path.Replace('\\', '/'),
                     NewContent = pf.Content,
                     Summary = $"imported: {pkg.Record.Proposal.Summary}",
                     Reason = $"package sealed by {Fingerprint(pkg.SealSigner)}",
@@ -113,7 +113,8 @@ public static class PackageImport
                     // WARNING that no green "admitted" line may swallow.
                     try
                     {
-                        var applied = ForgeApplier.ApplyAll(forge, localForgeIds, projectDir, "gate");
+                        var applied = ForgeApplier.ApplyAll(forge, localForgeIds, projectDir, "gate",
+                            policy!.Sandbox.EnforceWritableAllowlist ? policy.Sandbox.Writable : null);
                         return new(PackageAdmission.Admitted, record.Reason, pkg, record.Proposal.Id, applied);
                     }
                     catch (Exception ex) when (ex is InvalidOperationException or ArgumentException)

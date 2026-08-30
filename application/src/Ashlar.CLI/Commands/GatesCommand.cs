@@ -18,6 +18,24 @@ namespace Ashlar.CLI.Commands;
 /// </summary>
 public sealed class GatesCommand : Command
 {
+    /// <summary>
+    /// The writable allowlist to enforce at apply time, or null when the project has not opted in.
+    /// The governance floor is always enforced inside ForgeApplier regardless; this only adds the
+    /// opt-in <c>sandbox.enforceWritableAllowlist</c> confinement so a manual seat honours the same
+    /// policy the automatic admit paths do.
+    /// </summary>
+    private static IReadOnlyList<string>? LoadWritableAllowlist(DirectoryInfo directory)
+    {
+        var policyPath = Path.Combine(directory.FullName, "ashlar.policy.yaml");
+        if (File.Exists(policyPath)
+            && PolicyLoader.TryLoad(File.ReadAllText(policyPath), out var policy, out _)
+            && policy!.Sandbox.EnforceWritableAllowlist)
+        {
+            return policy.Sandbox.Writable;
+        }
+        return null;
+    }
+
     /// <summary>Creates a new GatesCommand instance.</summary>
     public GatesCommand() : base("gates", "List held proposals; seat the stone or refuse, with a reason.")
     {
@@ -153,7 +171,8 @@ public sealed class GatesCommand : Command
                     {
                         var forge = Ashlar.BackgroundAgents.HostRunners.AshlarProjectMediation.ProjectStore(directory.FullName);
                         var applied = Ashlar.BackgroundAgents.HostRunners.ForgeApplier.ApplyAll(
-                            forge, decided.Proposal.ForgeProposalIds, directory.FullName, actor);
+                            forge, decided.Proposal.ForgeProposalIds, directory.FullName, actor,
+                            LoadWritableAllowlist(directory));
                         foreach (var path in applied)
                         {
                             Console.WriteLine($"  {Ok("✓ applied")}  {path}");
