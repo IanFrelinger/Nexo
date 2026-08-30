@@ -115,5 +115,15 @@ HEALTHCHECK --interval=60s --timeout=10s --start-period=120s --retries=3 \
       grep -qE "\"status\"[[:space:]]*:[[:space:]]*\"running\"" "$f" || exit 1; \
       [ $(( $(date +%s) - $(stat -c %Y "$f") )) -lt 300 ] || exit 1'
 
-ENTRYPOINT ["dotnet", "/app/Ashlar.CLI.dll"]
+# The image build time as a Unix epoch, for the entrypoint's clock floor. Empty on local
+# builds (the wait is skipped); CI passes --build-arg IMAGE_BUILD_EPOCH="$(date -u +%s)".
+ARG IMAGE_BUILD_EPOCH=""
+ENV IMAGE_BUILD_EPOCH=${IMAGE_BUILD_EPOCH}
+
+# Boot-vs-CLI dispatch lives in the entrypoint: `docker run <image> keys show` behaves exactly
+# as it did when the ENTRYPOINT was the bare CLI, while the daemon path (what deploy/node.yml
+# passes) gets a bounded clock floor and a first-run project scaffold — without which the
+# pkg/admission surface of a fresh node answers "not an ashlar project" forever.
+COPY --chmod=0755 .docker/node-entrypoint.sh /app/node-entrypoint.sh
+ENTRYPOINT ["/app/node-entrypoint.sh"]
 CMD ["--help"]
