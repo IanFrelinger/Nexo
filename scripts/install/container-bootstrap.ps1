@@ -131,6 +131,28 @@ function Run-ContainerSmoke {
     }
 }
 
+# Install the `ashlar` host wrapper: docker exec into the running node, so the box has ONE
+# operator identity (a host build would mint a second one under ~/.ashlar). Phase 1 step 8.
+function Install-HostWrapper {
+    $src = Join-Path $PSScriptRoot "ashlar-wrapper.ps1"
+    if (-not (Test-Path $src)) {
+        Write-Host "ashlar-wrapper.ps1 not found next to this script; skipping host command install"
+        return
+    }
+    if ($DryRun.IsPresent) {
+        Write-Host "[dry-run] would install the ashlar host command"
+        return
+    }
+    $binDir = Join-Path $env:LOCALAPPDATA "Ashlar\bin"
+    New-Item -ItemType Directory -Force -Path $binDir | Out-Null
+    Copy-Item $src (Join-Path $binDir "ashlar.ps1") -Force
+    Set-Content -Path (Join-Path $binDir "ashlar.cmd") -Encoding Ascii -Value "@powershell -NoProfile -ExecutionPolicy Bypass -File `"%~dp0ashlar.ps1`" %*"
+    Write-Host "Installed host command: $binDir\ashlar.cmd"
+    if ((($env:Path -split ';') | Where-Object { $_ -eq $binDir }).Count -eq 0) {
+        Write-Host "  PATH does not include it yet; add once with:  setx PATH `"%PATH%;$binDir`""
+    }
+}
+
 Ensure-Windows
 
 if ($Guided.IsPresent) {
@@ -152,6 +174,7 @@ Ensure-Docker
 Ensure-DockerDaemon
 Run-ContainerSmoke
 Run-OptionalDaemonSmoke
+Install-HostWrapper
 
 Write-Host ""
 Write-Host "Container bootstrap complete."
@@ -160,7 +183,12 @@ if ($WithSdk.IsPresent) {
     Write-Host "SDK image: $SdkImage"
 }
 Write-Host ""
-Write-Host "Examples:"
+Write-Host "THE NODE - durable: identity, packages and trust history survive docker rm:"
+Write-Host "  docker compose -f deploy/node.yml up -d      # from this checkout's root"
+Write-Host "  docker ps                                    # heartbeat-backed health: a parked node shows unhealthy"
+Write-Host "  ashlar keys show                             # this box's operator identity, via the installed wrapper"
+Write-Host ""
+Write-Host "One-off CLI (stateless):"
 Write-Host "  docker run --rm $Image --help"
 if (-not [string]::IsNullOrWhiteSpace($Workspace)) {
     Write-Host "  docker run --rm -v \"$Workspace:/work\" -w /work $Image pipeline validate --template /work/path/to/template.json"
