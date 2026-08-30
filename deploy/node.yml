@@ -42,6 +42,10 @@ services:
       - daemon
       - --config
       - /app/config/agents.json
+      # Observation is the highest-rate unbounded appender in the daemon; it stays off on
+      # unattended nodes until Phase 5's rotating bounded writer lands (CLOSING-PLAN Phase 1
+      # step 3 / Phase 5 step 5 — that step removes this flag).
+      - --disable-observation
 
     volumes:
       - ashlar-state:/data/state
