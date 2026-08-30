@@ -21,6 +21,7 @@ public sealed class FileBasedSharedAdaptationStore : ISharedAdaptationBroadcaste
     private readonly ILogger<FileBasedSharedAdaptationStore>? _logger;
     private readonly string? _sourcePeerId;
     private readonly IReadOnlyCollection<string>? _trustedPeerIds;
+    private readonly string? _repoRoot;
 
     /// <summary>Initializes a new file based shared adaptation store.</summary>
     public FileBasedSharedAdaptationStore(
@@ -30,7 +31,8 @@ public sealed class FileBasedSharedAdaptationStore : ISharedAdaptationBroadcaste
         IImmutableCoreRegistry immutableCore,
         ILogger<FileBasedSharedAdaptationStore>? logger = null,
         string? sourcePeerId = null,
-        IReadOnlyCollection<string>? trustedPeerIds = null)
+        IReadOnlyCollection<string>? trustedPeerIds = null,
+        string? repoRoot = null)
     {
         _basePath = basePath ?? Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
@@ -41,6 +43,7 @@ public sealed class FileBasedSharedAdaptationStore : ISharedAdaptationBroadcaste
         _logger = logger;
         _sourcePeerId = sourcePeerId;
         _trustedPeerIds = trustedPeerIds;
+        _repoRoot = repoRoot;
     }
 
     /// <inheritdoc />
@@ -66,6 +69,11 @@ public sealed class FileBasedSharedAdaptationStore : ISharedAdaptationBroadcaste
         Directory.CreateDirectory(filesDir);
         foreach (var (path, content) in entry.Files)
         {
+            // Even an outbound broadcast must not let a '..' or rooted entry escape the staging dir
+            // into a sibling entry or ~/.ashlar state.
+            if (!MediatedWritePath.IsSafeRelativePath(path))
+                throw new InvalidOperationException(
+                    $"Refusing to broadcast adaptation {entry.Id}: file path '{path}' is not a safe relative path.");
             var safePath = Path.Combine(filesDir, path.Replace('\\', Path.DirectorySeparatorChar));
             var parent = Path.GetDirectoryName(safePath);
             if (!string.IsNullOrEmpty(parent))
@@ -147,7 +155,7 @@ public sealed class FileBasedSharedAdaptationStore : ISharedAdaptationBroadcaste
             }
         }
 
-        var repoRoot = RepoPathResolver.FindRepoRoot();
+        var repoRoot = _repoRoot ?? RepoPathResolver.FindRepoRoot();
         var slnPath = Path.Combine(repoRoot, "Ashlar.sln");
         if (!File.Exists(slnPath))
         {
@@ -155,14 +163,30 @@ public sealed class FileBasedSharedAdaptationStore : ISharedAdaptationBroadcaste
             return false;
         }
 
-        foreach (var (path, content) in entry.Files)
+        // Validate EVERY file before writing ANY — a peer's adaptation is untrusted content, so it
+        // is judged by the same MediatedWritePath floor as a forge apply or a package import: it may
+        // not escape the repo, touch a governance/build-executed path, or run through a symlink. The
+        // immutable-core registry is an additional, narrower engine-source guard. Nothing is written
+        // until the whole batch passes, so a rejected adoption leaves the tree untouched — closing
+        // the path that used to Path.Combine attacker input straight into File.WriteAllBytes and then
+        // build it.
+        foreach (var (path, _) in entry.Files)
         {
             if (_immutableCore.IsInImmutableCore(path))
             {
                 _logger?.LogWarning("Rejecting shared adaptation: targets immutable core {Path}", path);
                 return false;
             }
+            var refusal = MediatedWritePath.Refuse(repoRoot, path);
+            if (refusal is not null)
+            {
+                _logger?.LogWarning("Rejecting shared adaptation {Id}: {Reason}", entry.Id, refusal);
+                return false;
+            }
+        }
 
+        foreach (var (path, content) in entry.Files)
+        {
             var fullPath = Path.Combine(repoRoot, path);
             var parent = Path.GetDirectoryName(fullPath);
             if (!string.IsNullOrEmpty(parent))
