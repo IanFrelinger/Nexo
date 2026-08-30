@@ -86,5 +86,44 @@ COPY .docker/node-agents.json /app/config/agents.json
 USER $APP_UID
 
 WORKDIR /app
-ENTRYPOINT ["dotnet", "/app/Ashlar.CLI.dll"]
+
+# The node's first HEALTHCHECK. It reads the heartbeat the daemon rewrites on a fixed timer, so
+# `docker ps` can tell a working node from a parked or wedged one after three weeks away — which
+# nothing could before.
+#
+# Three ways to be unhealthy, and the third is the one that matters most: a heartbeat that has
+# STOPPED being rewritten means the process is alive but no longer running its own loop, and that
+# is invisible to every other signal Docker has.
+#
+#   missing file      the daemon never got far enough to describe itself
+#   status != running the daemon parked, and the file says why
+#   stale mtime       the daemon stopped rewriting it
+#
+# start-period is generous because a first run scaffolds a project and restores state; retries
+# absorb a single slow rewrite rather than flapping on one.
+#
+# NOTE: `restart: unless-stopped` does NOT act on this. Docker restarts on EXIT only, so a parked
+# node stays up and reports unhealthy — deliberately. That is the whole point of parking instead of
+# exiting: an unthrottled restart loop writes to the disk as fast as the machine allows.
+#
+# lastAdmissionAt is deliberately NOT checked. Agent schedules are operator-configured (the shipped
+# set uses a 15-minute interval, and an hourly one is perfectly reasonable), so any fixed staleness
+# threshold here would report a correctly-idle node as unhealthy.
+HEALTHCHECK --interval=60s --timeout=10s --start-period=120s --retries=3 \
+  CMD sh -c 'f="${ASHLAR_STATE_DIR:-/data/state}/heartbeat.json"; \
+      [ -f "$f" ] || exit 1; \
+      grep -qE "\"status\"[[:space:]]*:[[:space:]]*\"running\"" "$f" || exit 1; \
+      [ $(( $(date +%s) - $(stat -c %Y "$f") )) -lt 300 ] || exit 1'
+
+# The image build time as a Unix epoch, for the entrypoint's clock floor. Empty on local
+# builds (the wait is skipped); CI passes --build-arg IMAGE_BUILD_EPOCH="$(date -u +%s)".
+ARG IMAGE_BUILD_EPOCH=""
+ENV IMAGE_BUILD_EPOCH=${IMAGE_BUILD_EPOCH}
+
+# Boot-vs-CLI dispatch lives in the entrypoint: `docker run <image> keys show` behaves exactly
+# as it did when the ENTRYPOINT was the bare CLI, while the daemon path (what deploy/node.yml
+# passes) gets a bounded clock floor and a first-run project scaffold — without which the
+# pkg/admission surface of a fresh node answers "not an ashlar project" forever.
+COPY --chmod=0755 .docker/node-entrypoint.sh /app/node-entrypoint.sh
+ENTRYPOINT ["/app/node-entrypoint.sh"]
 CMD ["--help"]
