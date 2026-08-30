@@ -70,6 +70,21 @@ public static class PackageImport
             return new(PackageAdmission.Refused, policyReason, pkg, null, []);
         }
 
+        // TRUST ROOT (Phase 3): a package sealed by a key this project does not trust never parks
+        // anything — the refusal comes BEFORE the forge queue, so a stranger cannot fill the disk by
+        // spamming pulls, and `× REFUSED` names the fingerprint to trust. The check is the sealer's
+        // fingerprint against the project policy's trustedSigners UNION the operator's local peers
+        // keychain (`ashlar keys trust <fp>`). Empty trust set ⇒ every import refused (fail-closed).
+        var sealer = Fingerprint(pkg!.SealSigner);
+        if (!OperatorKey.IsSignerTrusted(sealer, policy!.SelfExtend.TrustedSigners))
+        {
+            return new(PackageAdmission.Refused,
+                $"sealed by {sealer}, which is not a trusted signer. Read the fingerprint off the origin "
+                + "box's `ashlar keys show`, then `ashlar keys trust " + sealer + "` here — or list it under "
+                + "selfExtend.trustedSigners in ashlar.policy.yaml.",
+                pkg, null, []);
+        }
+
         var forge = AshlarProjectMediation.ProjectStore(projectDir);
         var store = new GateStore(Path.Combine(projectDir, ".ashlar"), OperatorKey.TryLoad());
         // Declared out here so the catch can clean up anything parked before a failure — otherwise

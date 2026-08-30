@@ -22,6 +22,9 @@ public sealed class KeysCommand : Command
     {
         AddCommand(BuildInit());
         AddCommand(BuildShow());
+        AddCommand(BuildTrust());
+        AddCommand(BuildUntrust());
+        AddCommand(BuildPeers());
     }
 
     private static Option<string?> KeyDirOption() => new(
@@ -103,6 +106,84 @@ public sealed class KeysCommand : Command
 
         Console.WriteLine($"  {Gold("operator key")}  {Dim(id.Fingerprint)}");
         Console.WriteLine($"  {Dim($"stored in {dir}")}");
+        return 0;
+    }
+
+    private static Command BuildTrust()
+    {
+        var fpArg = new Argument<string>("fingerprint", "Operator fingerprint to trust (ed25519:… — read it off the origin box's `keys show`).");
+        var keyDirOpt = KeyDirOption();
+        var cmd = new Command("trust", "Trust a signer's packages on this machine.") { fpArg, keyDirOpt };
+        cmd.SetHandler((InvocationContext ctx) =>
+            ctx.ExitCode = Trust(ctx.ParseResult.GetValueForArgument(fpArg), ctx.ParseResult.GetValueForOption(keyDirOpt)));
+        return cmd;
+    }
+
+    private static int Trust(string fingerprint, string? keyDir)
+    {
+        var dir = string.IsNullOrWhiteSpace(keyDir) ? OperatorKey.ResolveKeyDir() : Path.GetFullPath(keyDir);
+        if (!OperatorKey.IsValidFingerprint(fingerprint))
+        {
+            Console.Error.WriteLine($"REJECTED: '{fingerprint}' is not a valid operator fingerprint (expected ed25519: + 16 hex).");
+            Console.Error.WriteLine("  Read it off the ORIGIN box with `ashlar keys show`, then type it here — sourcing the");
+            Console.Error.WriteLine("  pin from the artifact you are authorizing is consent-by-fatigue, not a control.");
+            return 1;
+        }
+        OperatorKey.Trust(fingerprint, dir);
+        Console.WriteLine($"  {Gold("✓ trusted")}  {Dim(fingerprint)}");
+        Console.WriteLine($"  {Dim("its sealed packages may now be admitted at this machine's gates. remove with `keys untrust`.")}");
+        return 0;
+    }
+
+    private static Command BuildUntrust()
+    {
+        var fpArg = new Argument<string>("fingerprint", "Operator fingerprint to stop trusting.");
+        var keyDirOpt = KeyDirOption();
+        var cmd = new Command("untrust", "Stop trusting a signer's packages.") { fpArg, keyDirOpt };
+        cmd.SetHandler((InvocationContext ctx) =>
+            ctx.ExitCode = Untrust(ctx.ParseResult.GetValueForArgument(fpArg), ctx.ParseResult.GetValueForOption(keyDirOpt)));
+        return cmd;
+    }
+
+    private static int Untrust(string fingerprint, string? keyDir)
+    {
+        var dir = string.IsNullOrWhiteSpace(keyDir) ? OperatorKey.ResolveKeyDir() : Path.GetFullPath(keyDir);
+        if (OperatorKey.Untrust(fingerprint, dir))
+        {
+            Console.WriteLine($"  {Gold("✓ untrusted")}  {Dim(fingerprint)}");
+            return 0;
+        }
+        Console.Error.WriteLine($"  {Dim($"{fingerprint} was not in the trust keychain — nothing to remove.")}");
+        return 1;
+    }
+
+    private static Command BuildPeers()
+    {
+        var keyDirOpt = KeyDirOption();
+        var cmd = new Command("peers", "List trusted signer fingerprints and the trust-set digest.") { keyDirOpt };
+        cmd.SetHandler((InvocationContext ctx) =>
+            ctx.ExitCode = Peers(ctx.ParseResult.GetValueForOption(keyDirOpt)));
+        return cmd;
+    }
+
+    private static int Peers(string? keyDir)
+    {
+        var dir = string.IsNullOrWhiteSpace(keyDir) ? OperatorKey.ResolveKeyDir() : Path.GetFullPath(keyDir);
+        var trusted = OperatorKey.ListTrusted(dir);
+        if (trusted.Count == 0)
+        {
+            Console.WriteLine($"  {Dim("no trusted signers — imported packages are refused until you `keys trust <fp>`.")}");
+            Console.WriteLine($"  {Dim($"trust-set digest {OperatorKey.TrustSetDigest(trusted)}")}");
+            return 0;
+        }
+        Console.WriteLine($"  {Gold("trusted signers")}");
+        foreach (var fp in trusted)
+        {
+            Console.WriteLine($"    {Dim(fp)}");
+        }
+        Console.WriteLine();
+        Console.WriteLine($"  {Dim($"trust-set digest {OperatorKey.TrustSetDigest(trusted)}")}");
+        Console.WriteLine($"  {Dim("compare this across boxes; a box off during a revocation still trusts the removed key.")}");
         return 0;
     }
 

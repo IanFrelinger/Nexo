@@ -71,6 +71,16 @@ public sealed record PolicySelfExtend
 
     /// <summary>Gates every proposed extension must clear before it can be admitted.</summary>
     public List<string> GatesRequired { get; init; } = [];
+
+    /// <summary>
+    /// Operator fingerprints (<c>ed25519:…</c>) whose sealed packages this project will admit.
+    /// Empty means trust nothing imported — an imported package is refused before it parks unless
+    /// its sealer is listed here OR in the operator's local peers keychain
+    /// (<c>keys trust &lt;fp&gt;</c>). This is the portable, checked-in half of the trust root;
+    /// the keychain is the local half. Neither is a load-time obligation — an empty list is a
+    /// valid, fail-closed posture, not a rejection.
+    /// </summary>
+    public List<string> TrustedSigners { get; init; } = [];
 }
 
 /// <summary>Extension budget.</summary>
