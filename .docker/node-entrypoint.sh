@@ -40,6 +40,13 @@ if [ "${1:-}" = "background-agent" ]; then
     fi
   fi
 
+  if [ -d "${PROJECT_DIR}" ] && [ ! -w "${PROJECT_DIR}" ]; then
+    echo "node-entrypoint: ${PROJECT_DIR} is not writable by uid $(id -u)." >&2
+    echo "node-entrypoint: this happens when the state volume predates the image's seeded project dir —" >&2
+    echo "node-entrypoint: Docker created working_dir as root. Fix from the host, then restart:" >&2
+    echo "node-entrypoint:   docker exec -u 0 <node-container> sh -c 'chown $(id -u):$(id -g) ${PROJECT_DIR}'" >&2
+  fi
+
   if [ ! -f "${PROJECT_DIR}/ashlar.yaml" ] || [ ! -f "${PROJECT_DIR}/ashlar.policy.yaml" ]; then
     echo "node-entrypoint: no project at ${PROJECT_DIR}; scaffolding (ashlar init node)" >&2
     dotnet "${CLI}" init node --path "${PROJECT_DIR}" >&2 \
