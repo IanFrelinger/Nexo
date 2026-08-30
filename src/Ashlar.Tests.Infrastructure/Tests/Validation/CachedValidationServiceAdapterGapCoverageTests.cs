@@ -1,3 +1,4 @@
+using Ashlar.Tests.Infrastructure.Helpers;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -79,7 +80,7 @@ public sealed class CachedValidationServiceAdapterGapCoverageTests
             NullLogger<CachedValidationServiceAdapter>.Instance);
 
         var reports = new List<Ashlar.Core.Application.Common.Models.ProgressReport>();
-        await sut.ValidateAsync(null, new Progress<Ashlar.Core.Application.Common.Models.ProgressReport>(reports.Add), CancellationToken.None);
+        await sut.ValidateAsync(null, new SyncProgress<Ashlar.Core.Application.Common.Models.ProgressReport>(reports.Add), CancellationToken.None);
 
         reports.Should().ContainSingle(r => r.Message.Contains("cached", StringComparison.OrdinalIgnoreCase));
     }

@@ -1,3 +1,4 @@
+using Ashlar.Tests.Infrastructure.Helpers;
 using FluentAssertions;
 using Moq;
 using Ashlar.Core.Application.NodeCapabilityRuntime.Models;
@@ -63,7 +64,7 @@ public class DefaultModelLifecycleManagerGapCoverageTests
             .Returns(Task.CompletedTask);
 
         var manager = new DefaultModelLifecycleManager(backend.Object);
-        var progress = new Progress<PullProgress>();
+        var progress = new SyncProgress<PullProgress>();
 
         await manager.UnloadAsync(Model);
         await manager.EvictAsync(Model);

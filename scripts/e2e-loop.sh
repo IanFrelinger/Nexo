@@ -444,6 +444,20 @@ FORGE_COUNT=$(ls "$PP/.ashlar/forge/proposed"/*.json 2>/dev/null | wc -l)
   && result "pkg-repull-does-not-leak-forge" PASS "no orphaned parked proposals" \
   || result "pkg-repull-does-not-leak-forge" FAIL "forge queue grew on re-pull ($FORGE_COUNT)"
 
+# Someone with write access plants a forged package straight into the shared folder — the mesh
+# store is a plain directory, so no publish is needed. The legitimate package is already-have by
+# now, which is the steady state of any fleet pulling on a timer. The refusal must still reach the
+# EXIT CODE: an operator watching `pkg pull … && echo ok` learns nothing from a body they never read.
+cp "$WORK/tampered.ashpkg" "$MESH/planted.ashpkg"
+run_cli pkg pull --from "$MESH" --path "$PP"
+claim "pkg-pull-forgery-not-masked-by-already-have" 65 "REFUSED" "already-have 1" "refused/rejected 1"
+if grep -rq "backdoored" "$PP" 2>/dev/null; then
+  result "pkg-pull-planted-forgery-never-lands" FAIL "forged content reached the project"
+else
+  result "pkg-pull-planted-forgery-never-lands" PASS "refused before any write"
+fi
+rm -f "$MESH/planted.ashpkg"
+
 # a sealed peer pulls the same store: every package rejected, nothing lands, non-zero exit
 PS=$(fresh); run_cli init sealed-pull --path "$PS"
 run_cli pkg pull --from "$MESH" --path "$PS"

@@ -93,6 +93,15 @@ jobs:
             path="${token#\`}"; path="${path%\`}"
             # Placeholders such as `scripts/<name>.sh` or `docs/{a,b}.md` are not real paths.
             case "$path" in *'<'*|*'{'*) continue ;; esac
+            # A path git is configured to ignore cannot exist in a clean checkout, and a doc
+            # telling the reader to CREATE one is correct precisely because it is absent.
+            # docs/SelfHostedAgentServer.md names `deploy/compose/local/agent-server.yml` and
+            # says in the same sentence that deploy/compose/local/ is ignored for this purpose;
+            # without this the guard reads that instruction as a broken link. check-ignore is
+            # asked about the path itself, so an ignored parent directory covers its children.
+            if git check-ignore -q -- "$path" 2>/dev/null; then
+              continue
+            fi
             if [ ! -e "$path" ]; then
               echo "::error::referenced path does not exist: $path"
               grep -lF -- "$token" "${files[@]}" | sed 's/^/    referenced by: /'

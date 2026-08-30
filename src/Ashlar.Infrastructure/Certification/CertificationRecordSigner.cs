@@ -72,13 +72,51 @@ public sealed class CertificationRecordSigner
         return record with { Signature = hmacSignature, Ed25519Signature = ed25519Signature };
     }
 
-    /// <summary>Verify. Enforces the Ed25519 signature whenever the record carries one.</summary>
-    public bool Verify(CertificationRecord record)
+    /// <summary>
+    /// Verify. Enforces the Ed25519 signature whenever the record carries one, and applies
+    /// any additional strictness in <paramref name="options"/> (SPEC-006 S-1 and S-5).
+    /// </summary>
+    /// <param name="record">Record to verify.</param>
+    /// <param name="options">
+    /// Strictness to apply. Null uses <see cref="CertificationVerifyOptions.Default"/>, which
+    /// reproduces the behaviour this method had before the parameter existed.
+    /// </param>
+    /// <remarks>
+    /// This is the SECOND verification tier, and the busier one: it gates
+    /// <see cref="FileCertificationRecordStore"/>, <c>CertifiedBrickRegistry</c>,
+    /// <c>CertifiedCompositionRegistry</c>, <c>CompositionConstituentChecker</c> and the
+    /// adaptation wiring. Strictness has to be available here, not only on
+    /// <see cref="CertificationTrustVerifier"/>, or the store whose whole security claim is
+    /// re-verification on load would keep admitting records a strict host would refuse.
+    /// </remarks>
+    public bool Verify(CertificationRecord record, CertificationVerifyOptions? options = null)
     {
+        var strictness = options ?? CertificationVerifyOptions.Default;
         var data = CertificationRecordMapper.ToData(record);
+
+        // Floor first: the schema version selects which canonical payload the signature
+        // covers, so a downgraded record can carry a valid HMAC over a payload that omits
+        // Gate, GatesPassed, Inputs, Proposer, Attempts and Ed25519PublicKey.
+        if ((data.SchemaVersion ?? 0) < strictness.MinimumSchemaVersion)
+            return false;
+
         if (!CertificationRecordSigning.VerifySignature(data, _hmacKey))
             return false;
-        return string.IsNullOrWhiteSpace(data.Ed25519Signature) || CertificationRecordEd25519.VerifySignature(data);
+
+        if (string.IsNullOrWhiteSpace(data.Ed25519Signature))
+        {
+            // Absent is only acceptable when nothing stricter was asked for. Presence is
+            // controlled by the record's own bytes, so an attacker strips rather than forges.
+            return !strictness.RequireEd25519Signature && !strictness.PinningEnabled;
+        }
+
+        if (!CertificationRecordEd25519.VerifySignature(data))
+            return false;
+
+        // The signature is checked against the key the RECORD carries, so without pinning a
+        // record signed with an attacker's own keypair is self-consistent and passes.
+        return !strictness.PinningEnabled
+            || strictness.TrustedEd25519PublicKeys!.Contains(data.Ed25519PublicKey!, StringComparer.Ordinal);
     }
 
     /// <summary>

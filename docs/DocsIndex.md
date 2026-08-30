@@ -21,6 +21,8 @@ Setup helpers (escape hatches, not the first-run path): `scripts/setup/setup.sh`
 
 The trust loop is how "certified" is a checkable claim: analyzer fence → witness → mutation testing → determinism, then a signed certificate bound to the artifact's content hash. The gate is CI-proven (`cert-gate` is the only required check on `master`); the autonomy loop on top of it is **experimental and ships in hold mode** (`HoldAdmission=true` — it certifies fully and admits nothing), and its evidence is local spike runs.
 
+- `docs/specs/SPEC-006-keys-and-signing.md` — keys and signing (**ACCEPTED** 2026-08-27); every "signed" claim in every other spec resolves here. `docs/specs/` currently holds this one file.
+- `docs/InstanceLedger.md` — the instance ledger: durable course records and their signing story.
 - `docs/certification-evidence.md` — the **falsifiable proof ledger**: every ADMIT/REJECT with the test or spike and the CI run that proved it; "Known v0 limitations" at the end. Read this before judging any "certified" claim.
 - `docs/trust-loop/ashlar-trust-loop-spec.md` — the specification: core invariant, gate legs, proposer/witness separation, tier placement.
 - `docs/trust-loop/trust-loop-integration.md` and `docs/trust-loop/trust-loop-ext-autonomous-self-extension.md` — how the loop lands in the runtime, and the autonomous self-extension extension.

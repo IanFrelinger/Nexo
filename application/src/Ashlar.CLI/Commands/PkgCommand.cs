@@ -420,7 +420,25 @@ public sealed class PkgCommand : Command
             return 1;
         }
 
-        var packages = Directory.EnumerateFiles(from.FullName, "*.ashpkg").OrderBy(p => p, StringComparer.Ordinal).ToList();
+        // A mesh store is a plain directory that people sync, so it collects things that are not
+        // packages. macOS writes AppleDouble sidecars (._name.ashpkg) beside every file on a
+        // non-HFS share; they are resource forks, never packages, and they never parse — so
+        // without this every pull from a Mac-touched share prints a screen of `× REFUSED` that
+        // buries the sealer fingerprints below, which are the part worth reading.
+        //
+        // DELIBERATELY NOT filtering on mtime. Skipping recently-written files to avoid catching
+        // an scp or Syncthing transfer mid-flight sounds right and is not: it cannot distinguish
+        // "still arriving" from "just written", so a synchronous publish-then-pull — a scripted
+        // fleet, or e2e-loop's own co-production scenario — silently defers a good package and the
+        // admission never happens. Measured: a 3-second window failed three e2e scenarios. An
+        // in-flight file is already handled safely, if noisily, by being refused as unparseable
+        // and succeeding on the next pull; a deferred good package is a silent drop, which is
+        // strictly worse.
+        var packages = Directory.EnumerateFiles(from.FullName, "*.ashpkg")
+            .Where(candidate => !Path.GetFileName(candidate).StartsWith('.'))
+            .OrderBy(p => p, StringComparer.Ordinal)
+            .ToList();
+
         if (packages.Count == 0)
         {
             Console.WriteLine($"  {Dim($"the peer store is empty — nothing to pull from {from.FullName}")}");
@@ -436,11 +454,27 @@ public sealed class PkgCommand : Command
         {
             var result = await PackageImport.SubmitAsync(directory.FullName, await File.ReadAllTextAsync(path));
             var summary = result.Package?.Record.Proposal.Summary ?? Path.GetFileName(path);
+
+            // WHO SEALED THIS. The summary beside it is attacker-chosen text — it is whatever the
+            // sender typed — so a gold checkmark next to a friendly sentence is not evidence of
+            // anything. The fingerprint is the only part of the line the sender cannot choose.
+            //
+            // A node cannot yet DISTINGUISH signers (there is no trust root; `ashlar keys trust`
+            // is Phase 3), so the operator making the call is the control. Asking them to decide
+            // while withholding the identity is the gap this closes.
+            //
+            // Deliberately not printed when the package did not parse: there is no verified
+            // sealer to name, and "(unsigned)" there would read as a claim about a package that
+            // was never opened.
+            var sealedBy = result.Package?.SealSigner is { } signer
+                ? $" · sealed by {Fp(signer)}"
+                : string.Empty;
+
             switch (result.Outcome)
             {
                 case PackageAdmission.Admitted:
                     admitted++;
-                    Console.WriteLine($"  {Gold("✓ ADMITTED")}  {summary} {Dim($"· {result.AppliedPaths.Count} file(s)")}");
+                    Console.WriteLine($"  {Gold("✓ ADMITTED")}  {summary} {Dim($"{sealedBy} · {result.AppliedPaths.Count} file(s)")}");
                     if (result.Warning is not null)
                     {
                         warned++;
@@ -449,19 +483,19 @@ public sealed class PkgCommand : Command
                     break;
                 case PackageAdmission.Held:
                     held++;
-                    Console.WriteLine($"  {Clay("! HELD")}     {summary} {Dim("· review with `ashlar gates`")}");
+                    Console.WriteLine($"  {Clay("! HELD")}     {summary} {Dim($"{sealedBy} · review with `ashlar gates`")}");
                     break;
                 case PackageAdmission.AlreadyImported:
                     skipped++;
-                    Console.WriteLine($"  {Dim("− already have  " + summary)}");
+                    Console.WriteLine($"  {Dim("− already have  " + summary + sealedBy)}");
                     break;
                 case PackageAdmission.Rejected:
                     refused++;
-                    Console.WriteLine($"  {Bad("× REJECTED")} {summary} {Dim($"· {result.Message}")}");
+                    Console.WriteLine($"  {Bad("× REJECTED")} {summary} {Dim($"{sealedBy} · {result.Message}")}");
                     break;
                 default:
                     refused++;
-                    Console.WriteLine($"  {Bad("× REFUSED")}  {summary} {Dim($"· {result.Message}")}");
+                    Console.WriteLine($"  {Bad("× REFUSED")}  {summary} {Dim($"{sealedBy} · {result.Message}")}");
                     break;
             }
         }
@@ -473,9 +507,15 @@ public sealed class PkgCommand : Command
         {
             return 1;
         }
-        // A pull where nothing new was accepted AND nothing was already-had is worth a non-zero exit
-        // so a script notices a peer sending only things this gate refuses.
-        return admitted + held + skipped > 0 ? 0 : 65;
+        // A refusal is never masked by another package in the same pull succeeding.
+        //
+        // The mesh store is a plain directory, so anyone who can write to the share can plant a
+        // package; refusing it is only half the job, because the operator still has to find out.
+        // A fleet pulling on a timer reaches a steady state where every legitimate package is
+        // already-had, so a rule that treats "something succeeded" as success is true on every
+        // run — and a planted forgery would report `refused/rejected 1` in the body while exiting
+        // 0 forever. `pkg pull … && echo ok` must not print ok when this gate refused something.
+        return refused > 0 ? 65 : 0;
     }
 
     private static string Fp(string? publicKeyBase64) =>

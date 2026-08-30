@@ -6,7 +6,9 @@ using Microsoft.Extensions.Hosting;
 using Ashlar.BackgroundAgents.Extending;
 using Ashlar.BackgroundAgents.HostRunners;
 using Ashlar.BackgroundAgents.Optimization;
+using Ashlar.BackgroundAgents.Registry;
 using Ashlar.BackgroundAgents.Testing;
+using Ashlar.Core.Application.Paths;
 using Ashlar.Hosting;
 using Ashlar.Hosting.Sdk.Extensions;
 using Ashlar.Runtime;
@@ -29,17 +31,135 @@ public sealed class BackgroundAgentDaemonCommand
         bool formatJson,
         CancellationToken cancellationToken = default)
     {
-        try
+        // PARK, NEVER EXIT.
+        //
+        // This method's return value reaches Environment.Exit (Program.BackgroundAgentCommands.cs).
+        // Under `restart: unless-stopped` a non-zero exit is an UNTHROTTLED CRASHLOOP: Docker
+        // restarts immediately, the same precondition fails again, and the loop writes to the disk
+        // as fast as the machine allows. On a node left alone for weeks that is how a card dies,
+        // and the repo already documents that outcome against itself
+        // (deploy/compose/docker-compose.agent-server.yml:66-68).
+        //
+        // So a failed precondition parks: the reason goes into the heartbeat, the process stays
+        // alive, and it re-evaluates on a backoff. Docker does not restart on HEALTHCHECK — it
+        // restarts on EXIT only — so a parked node stays up and is reported unhealthy, which is
+        // exactly the state an operator can see from `docker ps` and act on.
+        var backoff = TimeSpan.FromSeconds(5);
+        var maxBackoff = TimeSpan.FromMinutes(1);
+
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            try
+            {
+                return await RunOnceAsync(
+                    configPath, duration, patternStorePath, disableObservation, formatJson, cancellationToken)
+                    .ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                WriteStopped(formatJson, timedOut: false);
+                return 0;
+            }
+            catch (NodeParkedException parked)
+            {
+                Park(parked.Message, formatJson, backoff);
+            }
+            catch (Exception ex)
+            {
+                // An unexpected failure is still not a reason to exit into a restart storm. It is
+                // a reason to say so, loudly and repeatedly, somewhere an operator will look.
+                Park($"daemon failed to start: {ex.Message}", formatJson, backoff);
+            }
+
+            try
+            {
+                await Task.Delay(backoff, cancellationToken).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                WriteStopped(formatJson, timedOut: false);
+                return 0;
+            }
+
+            backoff = backoff < maxBackoff
+                ? TimeSpan.FromTicks(Math.Min(backoff.Ticks * 2, maxBackoff.Ticks))
+                : maxBackoff;
+        }
+
+        WriteStopped(formatJson, timedOut: false);
+        return 0;
+    }
+
+    /// <summary>Raised when a precondition fails in a way that parks the node rather than ending it.</summary>
+    private sealed class NodeParkedException(string message) : Exception(message);
+
+    /// <summary>
+    /// Records a parked state and says why, on stderr and in the heartbeat. Both matter: the
+    /// console is what an operator standing at the machine sees, the heartbeat is what
+    /// `docker ps` and the HEALTHCHECK see three weeks later.
+    /// </summary>
+    private static void Park(string reason, bool formatJson, TimeSpan retryIn)
+    {
+        new NodeHeartbeat
+        {
+            Status = "parked",
+            Reason = reason,
+            UpdatedAt = DateTimeOffset.UtcNow,
+            KeyFingerprint = NodeHeartbeat.TryFingerprint(),
+            NodeId = NodeHeartbeat.TryFingerprint(),
+        }.Write();
+
+        if (formatJson)
+        {
+            Console.Out.WriteLine(System.Text.Json.JsonSerializer.Serialize(new
+            {
+                ok = false,
+                status = "parked",
+                reason,
+                retryInSeconds = (int)retryIn.TotalSeconds,
+            }));
+        }
+        else
+        {
+            Console.Error.WriteLine($"PARKED: {reason}");
+            Console.Error.WriteLine($"  the node stays up and reports unhealthy; retrying in {retryIn.TotalSeconds:F0}s");
+        }
+    }
+
+    private async Task<int> RunOnceAsync(
+        string? configPath,
+        string? duration,
+        string? patternStorePath,
+        bool disableObservation,
+        bool formatJson,
+        CancellationToken cancellationToken)
+    {
         {
             var trimmedConfigPath = string.IsNullOrWhiteSpace(configPath) ? null : configPath.Trim();
+
+            // The state directory holds the identity, the mesh store and the heartbeat itself. On a
+            // Pi the obvious move is a bind mount to an external SSD, which arrives root-owned and
+            // breaks a container running as USER $APP_UID — so name the fix rather than failing with
+            // "Access to the path ... is denied" from somewhere deeper.
+            var stateDir = RepoPathResolver.ResolveStateDirectory();
+            if (!IsWritable(stateDir))
+            {
+                throw new NodeParkedException(
+                    $"state directory is not writable: {stateDir}. The container runs as an unprivileged "
+                    + $"user; fix ownership on the host with:  sudo chown -R 1654:1654 <host path mounted at {stateDir}>");
+            }
+
             if (!string.IsNullOrWhiteSpace(trimmedConfigPath) && !File.Exists(trimmedConfigPath))
             {
-                return WriteError(formatJson, $"Config file not found: {trimmedConfigPath}");
+                // Not necessarily an error: a config on a volume that has not finished mounting is
+                // the same symptom, and it resolves itself.
+                throw new NodeParkedException($"config file not found: {trimmedConfigPath}");
             }
 
             if (!TryParseDuration(duration, out var runDuration))
             {
-                return WriteError(formatJson, $"Invalid --duration value '{duration}'. Use formats like 30s, 5m, or 1h.");
+                throw new NodeParkedException(
+                    $"invalid --duration value '{duration}'. Use formats like 30s, 5m, or 1h.");
             }
 
             var builder = Host.CreateDefaultBuilder()
@@ -50,10 +170,25 @@ public sealed class BackgroundAgentDaemonCommand
                         InitialData = new Dictionary<string, string?>
                         {
                             // Provide safe defaults so daemon mode can run even when host-level
-                            // barrier configuration is not explicitly supplied.
+                            // barrier configuration is not explicitly supplied. This source is
+                            // inserted first, so later sources — an operator's JSON file, or the
+                            // environment — override every value here.
                             ["Ashlar:Barriers:Levels:0"] = "public",
                             ["Ashlar:Barriers:Levels:1"] = "internal",
-                            ["Ashlar:Barriers:RequireExplicitBarrier"] = "false"
+                            ["Ashlar:Barriers:RequireExplicitBarrier"] = "false",
+
+                            // A daemon is the one host that runs unattended for weeks, so it is
+                            // the last place barrier decisions should go unrecorded. Default it
+                            // to the structured-log sink rather than leaving the audit log with
+                            // nowhere to write.
+                            ["Ashlar:Audit:Sinks:0"] = "StructuredLog",
+
+                            // The node capability runtime probes a model backend on startup. With
+                            // no backend reachable, HttpClient's Information-level logging emits a
+                            // full multi-line connect stack trace per attempt and buries the
+                            // daemon's own output. Warning keeps the failure visible without the
+                            // trace.
+                            ["Logging:LogLevel:System.Net.Http.HttpClient"] = "Warning"
                         }
                     });
 
@@ -71,6 +206,12 @@ public sealed class BackgroundAgentDaemonCommand
                     services.Configure<GrpcTransportOptions>(
                         context.Configuration.GetSection("Ashlar:GrpcTransport"));
                     services.AddAshlarRuntimeRouting(context.Configuration);
+
+                    // AddAshlarRuntimeRouting does not register audit sinks — AddBarrierAuditSinks
+                    // is what reads Ashlar:Audit:Sinks. Without this call the daemon ignored that
+                    // section entirely: an operator could configure the File sink and every barrier
+                    // audit event would still be discarded, with only a startup warning to say so.
+                    services.AddBarrierAuditSinks(context.Configuration);
                     services.AddAshlar(options =>
                     {
                         options.PatternStorePath = string.IsNullOrWhiteSpace(patternStorePath)
@@ -92,6 +233,11 @@ public sealed class BackgroundAgentDaemonCommand
             await host.StartAsync(cancellationToken).ConfigureAwait(false);
             WriteStarted(formatJson, runDuration, disableObservation);
 
+            // The heartbeat is written on a FIXED timer, never per cycle. ScheduleExecutor ticks
+            // once a second, so "every cycle" would be ~86,000 small writes a day added to a card
+            // that already carries seven unbounded appenders.
+            using var heartbeat = StartHeartbeat(host.Services, cancellationToken);
+
             if (runDuration.HasValue)
             {
                 await Task.Delay(runDuration.Value, cancellationToken).ConfigureAwait(false);
@@ -104,14 +250,84 @@ public sealed class BackgroundAgentDaemonCommand
             WriteStopped(formatJson, timedOut: false);
             return 0;
         }
-        catch (OperationCanceledException)
+    }
+
+    /// <summary>Minimum heartbeat interval. Lower would trade real disk life for no new information.</summary>
+    private static readonly TimeSpan HeartbeatInterval = TimeSpan.FromSeconds(60);
+
+    /// <summary>
+    /// Rewrites the status document every <see cref="HeartbeatInterval"/>, and once immediately so
+    /// a node is describable the moment it starts rather than a minute later.
+    /// </summary>
+    private static Timer StartHeartbeat(IServiceProvider services, CancellationToken cancellationToken)
+    {
+        var startedAt = DateTimeOffset.UtcNow;
+
+        void Beat(object? _)
         {
-            WriteStopped(formatJson, timedOut: false);
-            return 0;
+            if (cancellationToken.IsCancellationRequested)
+                return;
+
+            var cycles = 0;
+            DateTimeOffset? lastCompleted = null;
+            try
+            {
+                // Reported from the registry rather than counted here, so the number cannot drift
+                // from what the agents actually did.
+                var registry = services.GetService<IBackgroundAgentRegistry>();
+                foreach (var instance in registry?.GetAll() ?? [])
+                {
+                    cycles += instance.ExecutionCount;
+                    if (instance.LastCompletedAt is { } completed
+                        && (lastCompleted is null || completed > lastCompleted))
+                    {
+                        lastCompleted = completed;
+                    }
+                }
+            }
+            catch (ObjectDisposedException)
+            {
+                // Racing a shutdown. The document simply goes stale, which the HEALTHCHECK reads
+                // as unhealthy — the correct answer for a node that is going away.
+                return;
+            }
+
+            var fingerprint = NodeHeartbeat.TryFingerprint();
+            new NodeHeartbeat
+            {
+                Status = "running",
+                Reason = null,
+                UpdatedAt = DateTimeOffset.UtcNow,
+                NodeId = fingerprint,
+                KeyFingerprint = fingerprint,
+                CyclesSinceStart = cycles,
+                LastAdmissionAt = lastCompleted,
+            }.Write();
+
+            _ = startedAt;
         }
-        catch (Exception ex)
+
+        return new Timer(Beat, null, TimeSpan.Zero, HeartbeatInterval);
+    }
+
+    /// <summary>
+    /// Probes the state directory by actually writing to it. Checking existence or permission bits
+    /// would miss the case that matters — a root-owned bind mount, where the directory is present
+    /// and readable and simply not ours.
+    /// </summary>
+    private static bool IsWritable(string directory)
+    {
+        try
         {
-            return WriteError(formatJson, $"Background agent daemon failed: {ex.Message}");
+            Directory.CreateDirectory(directory);
+            var probe = Path.Combine(directory, $".writable-probe-{Guid.NewGuid():N}");
+            File.WriteAllText(probe, string.Empty);
+            File.Delete(probe);
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            return false;
         }
     }
 
