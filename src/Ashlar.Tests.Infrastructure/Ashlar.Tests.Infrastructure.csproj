@@ -90,6 +90,8 @@
     <ProjectReference Include="..\Ashlar.Tools.Dev\Ashlar.Tools.Dev.csproj" />
     <!-- Autonomy campaign (spec §8): objective intake lives in BackgroundAgents. -->
     <ProjectReference Include="..\Ashlar.BackgroundAgents\Ashlar.BackgroundAgents.csproj" />
+    <!-- Write-floor governance (Phase 2): ForgeApplier is the mediated-write choke point. -->
+    <ProjectReference Include="..\Ashlar.BackgroundAgents.HostRunners\Ashlar.BackgroundAgents.HostRunners.csproj" />
     <ProjectReference Include="..\Ashlar.Policies.Dev\Ashlar.Policies.Dev.csproj" />
     <ProjectReference Include="..\Ashlar.Orchestration\Ashlar.Orchestration.csproj" />
     <ProjectReference Include="..\Ashlar.Tests.Application\Ashlar.Tests.Application.csproj" />

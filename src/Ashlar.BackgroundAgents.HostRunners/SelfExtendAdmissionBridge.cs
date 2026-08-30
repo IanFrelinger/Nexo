@@ -135,7 +135,8 @@ public static class SelfExtendAdmissionBridge
                     ForgeApplier.RejectAll(forge, forgeProposalIds, "gate", record.Reason);
                     break;
                 case ProposalState.Admitted:
-                    var applied = ForgeApplier.ApplyAll(forge, forgeProposalIds, repoRoot, "gate");
+                    var applied = ForgeApplier.ApplyAll(forge, forgeProposalIds, repoRoot, "gate",
+                        policy!.Sandbox.EnforceWritableAllowlist ? policy.Sandbox.Writable : null);
                     logger.LogInformation("Self-extend gate: applied {Count} mediated write(s)", applied.Count);
                     shareNote = TryAutoShare(record, forge, forgeProposalIds, signer, autoShare, meshDir, logger);
                     break;

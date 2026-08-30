@@ -43,6 +43,14 @@ public sealed record PolicySandbox
 
     /// <summary>Paths beneath <see cref="Root"/> that may be written.</summary>
     public List<string> Writable { get; init; } = [];
+
+    /// <summary>
+    /// When true, a mediated apply is additionally confined to <see cref="Writable"/>: a target
+    /// outside every writable entry is refused, on top of the always-on governance floor. Default
+    /// false, so existing projects keep the floor-only behaviour they were written against;
+    /// opting in turns <see cref="Writable"/> from advisory metadata into an enforced allowlist.
+    /// </summary>
+    public bool EnforceWritableAllowlist { get; init; }
 }
 
 /// <summary>Runtime self-extension settings.</summary>

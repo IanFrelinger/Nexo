@@ -28,7 +28,8 @@ public static class ForgeApplier
     /// </summary>
     /// <returns>The applied target paths, repo-relative.</returns>
     public static IReadOnlyList<string> ApplyAll(
-        ChangeProposalStore store, IReadOnlyList<string> proposalIds, string repoRoot, string actor)
+        ChangeProposalStore store, IReadOnlyList<string> proposalIds, string repoRoot, string actor,
+        IReadOnlyList<string>? writableAllowlist = null)
     {
         var rootFull = Path.GetFullPath(repoRoot);
         var rootWithSep = rootFull.EndsWith(Path.DirectorySeparatorChar)
@@ -49,20 +50,35 @@ public static class ForgeApplier
                 throw new InvalidOperationException(
                     $"Forge proposal '{id}' targets '{target}', which escapes the project root. Refusing the whole batch.");
             }
-            if (IsGovernancePath(target))
+
+            // Governance is checked on the NORMALIZED, root-relative form — never the raw target.
+            // Path.GetFullPath above already collapsed '.', '..' and mixed separators, so
+            // './ashlar.policy.yaml', 'a/../.ashlar/x' and '.\\ashlar.yaml' all reduce to the same
+            // canonical path the write will actually hit. Checking the raw string let every one of
+            // those spellings slip past a denylist keyed on the first segment.
+            var normalizedRel = Path.GetRelativePath(rootFull, fullPath).Replace('\\', '/');
+            if (IsGovernancePath(normalizedRel))
             {
                 throw new InvalidOperationException(
-                    $"Forge proposal '{id}' targets '{target}', a governance path (the project contract, the "
-                    + "operator-owned policy, or .ashlar/ state). An admitted brick may never rewrite the "
-                    + "envelope that governs it — refusing the whole batch. (never: modify_gate/widen_sandbox/"
-                    + "truncate_ledger/access_signing_keys.)");
+                    $"Forge proposal '{id}' targets '{target}' (resolves to '{normalizedRel}'), a governance or "
+                    + "build-integrity path. An admitted brick may never rewrite the envelope that governs it, nor a "
+                    + "build file the receiver's next `dotnet build` would execute — refusing the whole batch. "
+                    + "(never: modify_gate/widen_sandbox/truncate_ledger/access_signing_keys.)");
             }
-            if (TraversesReparsePoint(fullPath, rootFull))
+            if (writableAllowlist is { Count: > 0 } && !IsUnderWritableAllowlist(normalizedRel, writableAllowlist))
             {
                 throw new InvalidOperationException(
-                    $"Forge proposal '{id}' targets '{target}', whose path runs through a symlink or junction "
-                    + "that could leave the project root. Lexical containment is not enough when a link is in the "
-                    + "way — refusing the whole batch.");
+                    $"Forge proposal '{id}' targets '{target}' (resolves to '{normalizedRel}'), outside the policy's "
+                    + "writable allowlist. This project set sandbox.enforceWritableAllowlist, so a mediated write must "
+                    + "land under one of sandbox.writable — refusing the whole batch.");
+            }
+            if (TraversesReparsePoint(fullPath, rootFull) || PathIsReparsePoint(fullPath))
+            {
+                throw new InvalidOperationException(
+                    $"Forge proposal '{id}' targets '{target}', whose path runs through — or ends at — a symlink or "
+                    + "junction that could leave the project root. Lexical containment is not enough when a link is in "
+                    + "the way, and a File.WriteAllText through a leaf symlink truncates the link's target — refusing "
+                    + "the whole batch.");
             }
             resolved.Add((proposal, fullPath));
         }
@@ -107,14 +123,92 @@ public static class ForgeApplier
     public static bool IsGovernancePath(string relativePath)
     {
         var segments = relativePath.Split('/', '\\');
-        if (segments.Length > 0 && string.Equals(segments[0], ".ashlar", StringComparison.OrdinalIgnoreCase))
+        if (segments.Length == 0)
         {
-            return true;
+            return false;
         }
-        if (segments.Length == 1)
+
+        // Directory prefixes: everything beneath these is governance state, version control, CI,
+        // editor/devcontainer config, or the project's own scripts — none of which a mediated
+        // write may touch. Keyed on the FIRST segment of the normalized path.
+        foreach (var dir in GovernanceDirPrefixes)
         {
-            return string.Equals(segments[0], "ashlar.yaml", StringComparison.OrdinalIgnoreCase)
-                || string.Equals(segments[0], "ashlar.policy.yaml", StringComparison.OrdinalIgnoreCase);
+            if (string.Equals(segments[0], dir, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        // Files dangerous at ANY depth. MSBuild, NuGet, the .NET SDK, make, pre-commit and the
+        // analyzer config are all discovered by walking the tree (or sit at a well-known name), so
+        // a governed/executed file dropped anywhere below the root runs or is honoured on the
+        // receiver's next build/commit — code execution or a silenced control outside the loader,
+        // the gate and the registry entirely. The project contract and the operator policy are
+        // denied at any depth for the same reason: a brick has no business authoring either name.
+        var fileName = segments[^1];
+        foreach (var name in GovernanceFileNames)
+        {
+            if (string.Equals(fileName, name, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        // Suffix families, any depth. MSBuild imports Directory.Build.*, Directory.Packages.props,
+        // Directory.Solution.*, before./after.<sln>.sln.targets AND any custom-<Import>ed file —
+        // they all end in .props/.targets, so the whole family is denied rather than an enumerated
+        // list an attacker can step around (the write-floor's original miss: Directory.Solution.targets).
+        // Project and solution files carry <Target>s, analyzers and PackageReferences that run at
+        // build time; .slnx is the new XML solution format.
+        foreach (var suffix in GovernanceFileSuffixes)
+        {
+            if (fileName.EndsWith(suffix, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static readonly string[] GovernanceDirPrefixes =
+    {
+        ".ashlar", ".git", ".github", ".vscode", ".devcontainer", "scripts",
+    };
+
+    private static readonly string[] GovernanceFileNames =
+    {
+        "ashlar.yaml", "ashlar.policy.yaml",
+        "nuget.config", "global.json",
+        "Makefile", "GNUmakefile",           // GNU make reads GNUmakefile before Makefile; OIC covers makefile/MAKEFILE
+        ".editorconfig",                      // a nested one can set analyzer severity=none, silencing the repo's own gates
+        ".pre-commit-config.yaml",            // a `repo: local` hook runs on the next git commit
+    };
+
+    private static readonly string[] GovernanceFileSuffixes =
+    {
+        ".props", ".targets",                                   // every MSBuild import, incl. Directory.Solution.*
+        ".csproj", ".fsproj", ".vbproj", ".proj", ".sln", ".slnx",
+    };
+
+    /// <summary>
+    /// True when <paramref name="normalizedRel"/> (forward-slash, root-relative) is an allowlist
+    /// entry itself or sits beneath one. Entries are normalized the same way so 'src', 'src/' and
+    /// 'src\\x' compare alike.
+    /// </summary>
+    private static bool IsUnderWritableAllowlist(string normalizedRel, IReadOnlyList<string> allowlist)
+    {
+        foreach (var entry in allowlist)
+        {
+            var e = entry.Replace('\\', '/').Trim('/');
+            if (e.Length == 0)
+            {
+                continue;
+            }
+            if (string.Equals(normalizedRel, e, StringComparison.OrdinalIgnoreCase)
+                || normalizedRel.StartsWith(e + "/", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
         }
         return false;
     }
@@ -126,6 +220,22 @@ public static class ForgeApplier
     /// lexically-in-root write to a real location outside the root. A governed write never
     /// traverses a link, so the presence of one on the path fails the batch.
     /// </summary>
+    /// <summary>
+    /// True when the target path itself already exists and is a symlink/junction. The ancestor
+    /// walk in <see cref="TraversesReparsePoint"/> stops at the parent, so without this a
+    /// pre-planted leaf link (e.g. docs/site.yaml -> ../ashlar.policy.yaml) would be followed by
+    /// File.WriteAllText and truncate the link's target — a write onto a governance path that the
+    /// lexical, link-blind normalization cannot see.
+    /// </summary>
+    private static bool PathIsReparsePoint(string fullPath)
+    {
+        if (!File.Exists(fullPath) && !Directory.Exists(fullPath))
+        {
+            return false;
+        }
+        return (File.GetAttributes(fullPath) & FileAttributes.ReparsePoint) != 0;
+    }
+
     private static bool TraversesReparsePoint(string targetFullPath, string rootFull)
     {
         var dir = Path.GetDirectoryName(targetFullPath);

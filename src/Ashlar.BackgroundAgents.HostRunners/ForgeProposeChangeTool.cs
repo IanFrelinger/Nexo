@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using Ashlar.Abstractions;
 using Ashlar.BackgroundAgents.Forge;
+using Ashlar.Manifest.Packaging;
 using Ashlar.Tools.Dev.Deltas;
 
 namespace Ashlar.BackgroundAgents.HostRunners;
@@ -61,6 +62,11 @@ public sealed class ForgeProposeChangeTool : ITool
                 throw new ArgumentException("new_content is required");
 
             var rel = args.target_path.Replace('\\', '/').TrimStart('/');
+            if (!ExtensionPackaging.IsSafeRelativePath(rel))
+                throw new ArgumentException(
+                    $"target_path '{args.target_path}' is not a safe repo-relative path: no '.', '..', "
+                    + "empty, rooted, drive-letter, reserved-device or trailing-dot/space segments. The apply "
+                    + "choke point enforces the same floor; this refuses the malformed proposal at the door.");
             // Compute base sha against the existing file (when it exists) so the
             // operator can detect drift between proposal time and apply time.
             string? baseSha = null;
