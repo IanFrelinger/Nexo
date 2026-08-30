@@ -12,6 +12,11 @@
 #      what deploy/node.yml pins.
 set -euo pipefail
 
+# Git Bash on Windows rewrites arguments that look like POSIX paths (/app/Ashlar.CLI.dll ->
+# C:/Program Files/Git/app/Ashlar.CLI.dll) before docker sees them. Inert everywhere else.
+export MSYS_NO_PATHCONV=1
+export MSYS2_ARG_CONV_EXCL='*'
+
 TTY_FLAGS=(-i)
 if [ -t 0 ] && [ -t 1 ]; then
   TTY_FLAGS=(-it)
