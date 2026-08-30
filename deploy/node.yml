@@ -42,6 +42,10 @@ services:
       - daemon
       - --config
       - /app/config/agents.json
+      # Observation is the highest-rate unbounded appender in the daemon; it stays off on
+      # unattended nodes until Phase 5's rotating bounded writer lands (CLOSING-PLAN Phase 1
+      # step 3 / Phase 5 step 5 — that step removes this flag).
+      - --disable-observation
 
     volumes:
       - ashlar-state:/data/state
@@ -87,4 +91,8 @@ services:
     # rule and the heartbeat exist rather than an exit-and-be-restarted design.
 
 volumes:
+  # Pinned literal name: the host wrapper's fallback (`docker run -v ashlar-state:...`) and
+  # NodeUnitConventionTests both address this volume by name; without `name:` compose would
+  # prefix the project name and every consumer would have to guess it.
   ashlar-state:
+    name: ashlar-state

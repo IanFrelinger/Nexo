@@ -278,6 +278,34 @@ run_container_smoke() {
   fi
 }
 
+# Install the `ashlar` host wrapper: docker exec into the running node, so the box has ONE
+# operator identity (a host build would mint a second one under ~/.ashlar and the two-machine
+# key ceremony would fail in the most confusing way available). CLOSING-PLAN Phase 1 step 8.
+install_host_wrapper() {
+  local script_dir src dest
+  script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+  src="${script_dir}/ashlar-wrapper.sh"
+  if [[ ! -f "${src}" ]]; then
+    echo "ashlar-wrapper.sh not found next to this script; skipping host command install"
+    return 0
+  fi
+  if [[ "${DRY_RUN:-false}" == "true" ]]; then
+    echo "[dry-run] would install ${src} as the \`ashlar\` host command"
+    return 0
+  fi
+  dest="/usr/local/bin/ashlar"
+  if install -m 0755 "${src}" "${dest}" 2>/dev/null; then
+    echo "Installed host command: ${dest}"
+  elif sudo -n install -m 0755 "${src}" "${dest}" 2>/dev/null; then
+    echo "Installed host command: ${dest}"
+  else
+    dest="${HOME}/.local/bin/ashlar"
+    mkdir -p "${HOME}/.local/bin"
+    install -m 0755 "${src}" "${dest}"
+    echo "Installed host command: ${dest}  (ensure ~/.local/bin is on PATH)"
+  fi
+}
+
 main() {
   require_linux
   print_guided_banner
@@ -290,13 +318,19 @@ main() {
 
   run_container_smoke
   run_optional_daemon_smoke
+  install_host_wrapper
 
   echo ""
   echo "Container bootstrap complete."
   echo "CLI image: $IMAGE"
   echo "SDK image: $SDK_IMAGE"
   echo ""
-  echo "Examples:"
+  echo "THE NODE — durable: identity, packages and trust history survive docker rm:"
+  echo "  docker compose -f deploy/node.yml up -d      # from this checkout's root"
+  echo "  docker ps                                    # heartbeat-backed health: a parked node shows unhealthy"
+  echo "  ashlar keys show                             # this box's operator identity, via the installed wrapper"
+  echo ""
+  echo "One-off CLI (stateless):"
   echo "  docker run --rm $IMAGE --help"
   echo "  docker run --rm -v \"\$PWD:/work\" -w /work $SDK_IMAGE dotnet --info"
   if [[ -n "$WORKSPACE_DIR" ]]; then
