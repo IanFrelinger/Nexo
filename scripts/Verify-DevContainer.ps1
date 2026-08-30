@@ -53,10 +53,19 @@ if ($LASTEXITCODE -ne 0) {
 # Git for Windows rewrites /workspace; Linux accepts /workspace.
 $workDir = if ($IsWindows) { "//workspace" } else { "/workspace" }
 
+# DOTNET_ROLL_FORWARD is deliberately NOT exported here, and the stock devcontainer image
+# is deliberately kept: this script's job is to verify the dev container as a developer
+# actually gets it. post-create.sh installs the real ASP.NET Core 8 runtime, so asserting
+# it is present afterwards is what proves that install still works — rolling forward would
+# mask its absence, which is exactly how net8.0 HTTP-hosting tests started failing.
 $bashPayload = @'
 set -euo pipefail
-export DOTNET_ROLL_FORWARD=LatestMajor
 bash .devcontainer/post-create.sh
+dotnet --list-runtimes | grep -q '^Microsoft\.AspNetCore\.App 8\.' || {
+  echo "Verify-DevContainer: post-create did not leave an ASP.NET Core 8 runtime installed;" >&2
+  echo "  net8.0 targets would roll forward onto ASP.NET Core 10 and HTTP-hosting tests would fail." >&2
+  exit 1
+}
 dotnet build application/src/Ashlar.CLI/Ashlar.CLI.csproj --no-restore -v minimal
 dotnet run --project application/src/Ashlar.CLI -- --help >/dev/null
 echo "Verify-DevContainer: ok"
@@ -69,7 +78,6 @@ Write-Host "Verify-DevContainer: post-create + build + CLI smoke (in container) 
 & docker run --rm `
     -v "${mountSrc}:/workspace:rw" `
     -w $workDir `
-    -e DOTNET_ROLL_FORWARD=LatestMajor `
     $image `
     bash -lc $linuxCmd
 

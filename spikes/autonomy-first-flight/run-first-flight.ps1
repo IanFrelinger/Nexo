@@ -67,7 +67,10 @@ $repoRoot = (git rev-parse --show-toplevel)
 if (-not $repoRoot) { throw "Not inside a git repository." }
 $sha = (git rev-parse $Ref)
 
-$image = "mcr.microsoft.com/devcontainers/dotnet:10.0-noble"
+# The devcontainer base plus the real ASP.NET Core 8 runtime. This previously used the stock
+# image with DOTNET_ROLL_FORWARD=LatestMajor; that rolls net8.0 onto ASP.NET Core 10 even when
+# 8.0 is installed, which silently breaks anything hosting HTTP. See .docker/Dockerfile.devtest.
+$image = & (Join-Path $repoRoot "scripts/ensure-devtest-image.ps1")
 $dryArg = if ($Dry) { "--dry" } else { "" }
 if ($SessionBuild) { $dryArg = "$dryArg --session-build".Trim() }
 if ($SessionExecute) { $dryArg = "$dryArg --session-execute".Trim() }
@@ -165,7 +168,6 @@ if ($SweepLive) {
             -v /var/run/docker.sock:/var/run/docker.sock `
             -v "${campaignDir}:/campaign" `
             @campaignEnv `
-            -e DOTNET_ROLL_FORWARD=LatestMajor `
             $image `
             bash -lc $campaignCmd
         $code = $LASTEXITCODE
@@ -180,7 +182,6 @@ docker run --rm --user root `
     -v ashlar-nuget-packages:/root/.nuget/packages `
     -v /var/run/docker.sock:/var/run/docker.sock `
     @liveMount `
-    -e DOTNET_ROLL_FORWARD=LatestMajor `
     $image `
     bash -lc $runnerCmd
 

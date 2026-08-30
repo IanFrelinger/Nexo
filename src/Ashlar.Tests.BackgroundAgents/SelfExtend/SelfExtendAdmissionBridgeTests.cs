@@ -1,8 +1,10 @@
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
+using Ashlar.BackgroundAgents.Forge;
 using Ashlar.BackgroundAgents.HostRunners;
 using Ashlar.Manifest;
 using Ashlar.Manifest.Admission;
+using Ashlar.Manifest.Packaging;
 using Ashlar.Manifest.Signing;
 using Xunit;
 
@@ -57,7 +59,9 @@ public sealed class SelfExtendAdmissionBridgeTests : IDisposable
         SelfExtendAdmissionBridge.TryRecordAsync(
             _repo, "night-agent", "handle the failing invoices",
             writes ?? ["src/Fix.cs"], toolCallsExecuted: 5, toolCallsDenied: denied,
-            NullLogger.Instance);
+            // autoShare pinned OFF so an exported ASHLAR_MESH_AUTOSHARE=1 cannot leak test
+            // packages into the developer's real mesh store; the env path is pinned separately.
+            NullLogger.Instance, autoShare: false);
 
     [Fact]
     public async Task Outside_an_ashlar_project_the_bridge_is_a_no_op()
@@ -171,5 +175,153 @@ public sealed class SelfExtendAdmissionBridgeTests : IDisposable
         proposal.Kind.Should().Be("brick");
         proposal.Courses.Should().ContainSingle().Which.Name.Should().Be("sandbox");
         proposal.Diff.Should().Contain("~ a.cs").And.Contain("~ b.cs");
+    }
+
+    // ─────────────────────────── auto-share (co-production) ───────────────────────────
+
+    private string ParkForgeWrite(string content = "// coprod v1")
+    {
+        var forge = AshlarProjectMediation.ProjectStore(_repo);
+        return forge.Add(new ChangeProposal
+        {
+            Id = "forge-" + Guid.NewGuid().ToString("N")[..8],
+            TargetPath = "src/Coprod.cs",
+            NewContent = content,
+            Summary = "parked by the cycle",
+            CreatedAt = DateTimeOffset.UtcNow,
+        }).Id;
+    }
+
+    [Fact]
+    public async Task An_admitted_cycle_auto_shares_a_sealed_package_to_the_mesh()
+    {
+        WritePolicy("self-extending");
+        var signer = OperatorKey.Generate(Path.Combine(_repo, "keys"));
+        var forgeId = ParkForgeWrite();
+        var mesh = Path.Combine(_repo, "mesh");
+
+        var outcome = await SelfExtendAdmissionBridge.TryRecordAsync(
+            _repo, "night-agent", "co-produce the classifier", writePaths: [],
+            toolCallsExecuted: 4, toolCallsDenied: 0, NullLogger.Instance,
+            forgeProposalIds: [forgeId], signer: signer, autoShare: true, meshDir: mesh);
+
+        outcome.Should().Contain("admitted").And.Contain("shared");
+        var package = Directory.EnumerateFiles(mesh, "*.ashpkg").Should().ContainSingle().Which;
+        ExtensionPackaging.TryOpen(File.ReadAllText(package), out var pkg, out var reason).Should().BeTrue(reason);
+        pkg!.Files.Should().ContainSingle().Which.Content.Should().Be("// coprod v1",
+            "what travels is exactly the admitted, applied write");
+        File.ReadAllText(Path.Combine(_repo, "src", "Coprod.cs")).Should().Be("// coprod v1",
+            "the admission applied before the share");
+        // The signed record inside the package claims the content, not just the row ids — the
+        // receiving side (and any re-export there) can prove these are the admitted bytes.
+        var claim = pkg.Record.Proposal.Files.Should().ContainSingle().Which;
+        claim.Path.Should().Be("src/Coprod.cs");
+        claim.Matches("// coprod v1").Should().BeTrue();
+    }
+
+    [Fact]
+    public void BuildProposal_claims_the_content_of_parked_rows_and_nothing_when_unmediated()
+    {
+        var forge = AshlarProjectMediation.ProjectStore(_repo);
+        var forgeId = ParkForgeWrite("// exact admitted bytes");
+
+        var mediated = SelfExtendAdmissionBridge.BuildProposal(
+            "night-agent", "objective", [], 1, 0, [forgeId], forge);
+        var claim = mediated.Files.Should().ContainSingle().Which;
+        claim.Path.Should().Be("src/Coprod.cs");
+        claim.Matches("// exact admitted bytes").Should().BeTrue();
+        claim.Matches("// different bytes").Should().BeFalse();
+
+        // Unmediated cycles claim nothing — null, not empty, so the canonical signing bytes
+        // stay identical to records from before claims existed (SPEC-006 S-5).
+        SelfExtendAdmissionBridge.BuildProposal("night-agent", "objective", ["a.cs"], 1, 0)
+            .Files.Should().BeNull();
+    }
+
+    [Fact]
+    public void BuildProposal_refuses_a_referenced_row_that_is_not_in_the_store()
+    {
+        // A record signed without a claim for a referenced row is unrepairable (append-once)
+        // and could never travel — the only honest shape is a loud refusal at propose time,
+        // never a silently under-claimed record.
+        var forge = AshlarProjectMediation.ProjectStore(_repo);
+
+        var act = () => SelfExtendAdmissionBridge.BuildProposal(
+            "night-agent", "objective", [], 1, 0, ["forge-vanished"], forge);
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*'forge-vanished' is not in the store*");
+    }
+
+    [Fact]
+    public async Task Auto_share_refuses_a_row_edited_after_the_admission_was_signed()
+    {
+        // THE slice-5 review finding, at the auto-share door: the claims were signed over the
+        // parked content, then someone edits applied/<id>.json before the share re-reads it.
+        // The tampered bytes must not travel under the origin's signature — and best-effort
+        // holds: nothing reaches the mesh, the refusal only annotates.
+        WritePolicy("self-extending");
+        var signer = OperatorKey.Generate(Path.Combine(_repo, "keys"));
+        var forge = AshlarProjectMediation.ProjectStore(_repo);
+        var forgeId = ParkForgeWrite("// admitted");
+        var mesh = Path.Combine(_repo, "mesh");
+
+        var proposal = SelfExtendAdmissionBridge.BuildProposal(
+            "night-agent", "co-produce", [], 1, 0, [forgeId], forge);
+        var store = new GateStore(Path.Combine(_repo, ".ashlar"), signer);
+        var record = await store.RecordAsync(
+            proposal, new AdmissionOutcome { State = ProposalState.Admitted, Reason = "within budget" }, DateTimeOffset.UtcNow);
+        ForgeApplier.ApplyAll(forge, [forgeId], _repo, "gate");
+
+        // The attack: edit the applied row's content directly on disk (the store has no API for
+        // this — that is the point), then let the share path re-read it.
+        var rowPath = Path.Combine(_repo, ".ashlar", "forge", "applied", forgeId + ".json");
+        var row = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(rowPath))!;
+        row["NewContent"] = "// swapped after admission";
+        File.WriteAllText(rowPath, row.ToJsonString());
+
+        var note = SelfExtendAdmissionBridge.TryAutoShare(
+            record, forge, [forgeId], signer, autoShare: true, meshDir: mesh, NullLogger.Instance);
+
+        note.Should().Contain("auto-share refused").And.Contain("does not match the signed claim");
+        Directory.Exists(mesh).Should().BeFalse("tampered content must never reach the mesh");
+    }
+
+    [Fact]
+    public async Task A_share_failure_annotates_the_outcome_but_never_fails_the_cycle()
+    {
+        WritePolicy("self-extending");
+        var signer = OperatorKey.Generate(Path.Combine(_repo, "keys"));
+        var forgeId = ParkForgeWrite();
+        // A FILE where the store directory should be: CreateDirectory refuses, the share fails —
+        // best-effort means the admission and its applied write survive that untouched.
+        var blocked = Path.Combine(_repo, "not-a-dir");
+        File.WriteAllText(blocked, "occupied");
+
+        var outcome = await SelfExtendAdmissionBridge.TryRecordAsync(
+            _repo, "night-agent", "co-produce the classifier", writePaths: [],
+            toolCallsExecuted: 4, toolCallsDenied: 0, NullLogger.Instance,
+            forgeProposalIds: [forgeId], signer: signer, autoShare: true, meshDir: blocked);
+
+        outcome.Should().Contain("admitted", "the admission stands whatever the share does")
+            .And.Contain("auto-share failed");
+        File.Exists(Path.Combine(_repo, "src", "Coprod.cs")).Should().BeTrue(
+            "the applied write is untouched by the share failure");
+    }
+
+    [Fact]
+    public async Task Auto_share_stays_off_unless_opted_in()
+    {
+        WritePolicy("self-extending");
+        var signer = OperatorKey.Generate(Path.Combine(_repo, "keys"));
+        var forgeId = ParkForgeWrite();
+        var mesh = Path.Combine(_repo, "mesh");
+
+        var outcome = await SelfExtendAdmissionBridge.TryRecordAsync(
+            _repo, "night-agent", "co-produce the classifier", writePaths: [],
+            toolCallsExecuted: 4, toolCallsDenied: 0, NullLogger.Instance,
+            forgeProposalIds: [forgeId], signer: signer, autoShare: false, meshDir: mesh);
+
+        outcome.Should().Contain("admitted").And.NotContain("shared");
+        Directory.Exists(mesh).Should().BeFalse("nothing leaves the project without opt-in");
     }
 }

@@ -1,9 +1,15 @@
 {
   "name": "Ashlar",
   "image": "mcr.microsoft.com/devcontainers/dotnet:10.0-noble",
-  "containerEnv": {
-    "DOTNET_ROLL_FORWARD": "LatestMajor"
+  "features": {
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
   },
+  // DOTNET_ROLL_FORWARD is deliberately NOT set. "LatestMajor" rolls net8.0 assemblies onto
+  // ASP.NET Core 10 even when the 8.0 runtime is installed, and ASP.NET Core 8's
+  // ResponseBodyPipeWriter predates PipeWriter.UnflushedBytes, which System.Text.Json 10
+  // requires — so every HTTP-hosting test fails in a way that reads as a product bug.
+  // Measured on this image, net8.0 GameDirector suite: LatestMajor -> 10 failures,
+  // unset -> 167/167. post-create.sh installs the real 8.0 runtime so net8.0 runs as net8.0.
   "remoteUser": "vscode",
   "mounts": [
     "source=ashlar-nuget-packages,target=/home/vscode/.nuget/packages,type=volume"

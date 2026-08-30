@@ -1,0 +1,36 @@
+{
+  "BackgroundAgents": {
+    "Agents": [
+      {
+        "Id": "node-extender",
+        "Name": "Node Extender",
+        "Role": "extender",
+        "ModelProvider": "deterministic",
+        "Commands": ["self_extend"],
+        "Parameters": {
+          "RepoRoot": "/data/state/project"
+        },
+        "Schedule": {
+          "Type": "Interval",
+          "Interval": "00:15:00",
+          "InitialDelay": "00:01:00"
+        },
+        "Enabled": true,
+        "MaxDataSensitivity": "Public"
+      }
+    ]
+  },
+
+  "Ashlar": {
+    "Audit": {
+      "Sinks": ["StructuredLog"]
+    }
+  },
+
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "System.Net.Http.HttpClient": "Warning"
+    }
+  }
+}

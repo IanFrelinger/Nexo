@@ -131,7 +131,7 @@ Two bugs, both fixed:
    residue reported as INFO rather than failure.
 2. Its solution-integrity check resolved project paths from the repo root, but
    paths inside a `.sln` are relative to *that solution's* directory. It reported
-   3 phantom `MISSING` entries for `application/Nexo.Application.sln` **on a
+   3 phantom `MISSING` entries for the then-named `Nexo.Application.sln` **on a
    completely untouched tree.** Now resolved relative to each solution.
 
 ### 2.5 What only `--apply` could reveal
@@ -444,7 +444,7 @@ field. `verify-rename.sh` does not catch them; only CI did.
 | **State directory** | `.nexo/` → `.ashlar/`, matching the brand materials. Existing local state will not be found afterwards. |
 | **Container images** | `ghcr.io/ianfrelinger/nexo-cli` → `ashlar-cli`. Does not exist under the new name until published; the audit could not confirm the old one exists either. |
 | **Git remote / repo URLs** | The script rewrote `github.com/IanFrelinger/Nexo` to `.../Ashlar` in 61 places across 29 files, including `RepositoryUrl` in eleven `.csproj`. That URL names the REPOSITORY, which is still Nexo, so every link 404d and CI's link checker failed. Reverted by hand. Rewrite them only when the GitHub repo is actually renamed, in the same commit. `.git/config` is untouched either way. |
-| **`_handoff/` is skipped** | Both scripts exclude it, so the extracted game layer keeps its own identity. It is untracked anyway, so `git ls-files` excludes it for free. |
+| **`_handoff/` is skipped** | Both scripts exclude it, so the extracted game layer keeps its own identity. *(Corrected 2026-08-27: `_handoff/` is **tracked** — `git ls-files _handoff` returns 56 files; the extracted game layer and the readiness handoff set landed on master in #399. Both rename scripts exclude it by explicit path, not because git does. It also sits outside the docs link checker and `docs/DocsIndex.md`.)* |
 | **PublicAPI files** | `PublicAPI.Unshipped.txt` holds fully-qualified type names and is rewritten by pass 1. All entries are `Unshipped`, so no baseline breaks. |
 
 ---

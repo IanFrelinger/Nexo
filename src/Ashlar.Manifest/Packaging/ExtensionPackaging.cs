@@ -93,6 +93,14 @@ public static class ExtensionPackaging
                 "The gate record is unsigned, so it proves nothing to a receiver and cannot travel. "
                 + "Create an operator key at the origin (ashlar keys init) and decide the proposal signed.");
         }
+        if (!string.Equals(sealer.PublicKeyBase64, record.Signer, StringComparison.Ordinal))
+        {
+            // TryOpen refuses SealSigner != Record.Signer, so a mismatched sealer here would
+            // produce a package no receiver can ever open — refuse at the source, and teach.
+            throw new InvalidOperationException(
+                "REFUSED: the operator key does not match the key that signed this admission — only the "
+                + "operator who admitted may seal. Re-admit under the current key, or restore the admitting key.");
+        }
         if (files.Count == 0)
         {
             throw new InvalidOperationException(
@@ -105,6 +113,13 @@ public static class ExtensionPackaging
                 throw new InvalidOperationException(
                     $"Illegal package path '{file.Path}': paths must be project-relative and must not escape the project root.");
             }
+        }
+        // The record's signature covers the CLAIMS, and the seal binds THESE bytes to the record —
+        // sealing content that fails the record's own claims would mint a package every honest
+        // receiver refuses. Refuse at the source, whatever path fed the files in.
+        if (!VerifyFileClaims(record.Proposal, files, out var claimReason))
+        {
+            throw new InvalidOperationException(claimReason);
         }
 
         var unsealed = new ExtensionPackage
@@ -228,8 +243,68 @@ public static class ExtensionPackaging
             }
         }
 
+        // 5. The record's own content claims. The seal proves the sealer sealed THESE bytes and
+        //    check 3 proves the sealer had admission authority — but neither proves the bytes are
+        //    the ones the GATE decided over. When the signed proposal carries claims, the files
+        //    must hash to them: an origin whose forge rows were edited between admission and
+        //    packaging is refused here even if its packer was bypassed. (Absent claims are a
+        //    pre-claims record — nothing was claimed, and the signature guarantees claims were
+        //    never stripped to get here.)
+        if (!VerifyFileClaims(parsed.Record.Proposal, parsed.Files, out var claimReason))
+        {
+            reason = claimReason;
+            return false;
+        }
+
         package = parsed;
         reason = string.Empty;
+        return true;
+    }
+
+    /// <summary>
+    /// Verifies file content against the proposal's signed claims, SEQUENCE-exact: file i must
+    /// match claim i on both path and content hash. Order is part of what the gate decided —
+    /// claims are recorded in forge-id order and every consumer gathers, seals, parks, and
+    /// applies in that same order with last-write-wins per path, so an order-blind check would
+    /// let two admitted writes to one path be swapped, flipping the final applied content while
+    /// every hash still matches. A null claim list is a record from before claims existed —
+    /// nothing was claimed, so nothing verifies and the result is true; the field sits under
+    /// the record's signature, so that path is unreachable by stripping claims off a
+    /// claims-bearing record (SPEC-006 S-5). On false, <paramref name="reason"/> names the
+    /// offense precisely.
+    /// </summary>
+    public static bool VerifyFileClaims(ExtensionProposal proposal, IReadOnlyList<PackageFile> files, out string reason)
+    {
+        ArgumentNullException.ThrowIfNull(proposal);
+        ArgumentNullException.ThrowIfNull(files);
+
+        reason = string.Empty;
+        if (proposal.Files is not { } claims)
+        {
+            return true;
+        }
+
+        if (claims.Count != files.Count)
+        {
+            reason = $"REFUSED: the admission signed {claims.Count} content claim(s) but {files.Count} file(s) were gathered — "
+                   + "what travels must be exactly what the gate decided over, nothing more and nothing less.";
+            return false;
+        }
+        for (var i = 0; i < claims.Count; i++)
+        {
+            if (!string.Equals(claims[i].Path, files[i].Path, StringComparison.Ordinal))
+            {
+                reason = $"REFUSED: file {i + 1} of {files.Count} is '{files[i].Path}' where the signed claim names "
+                       + $"'{claims[i].Path}' — the admitted writes were replaced or reordered.";
+                return false;
+            }
+            if (!claims[i].Matches(files[i].Content))
+            {
+                reason = $"REFUSED: content of '{files[i].Path}' does not match the signed claim — "
+                       + "the bytes are not the ones the gate admitted.";
+                return false;
+            }
+        }
         return true;
     }
 

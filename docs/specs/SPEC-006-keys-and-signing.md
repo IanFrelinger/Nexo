@@ -1,15 +1,24 @@
 # SPEC-006 — Keys & Signing, v1
 
-**Status: PROPOSAL — awaiting maintainer approval. Nothing below is implemented until the
-status line reads ACCEPTED.** Every "signed" in every other spec resolves to this document;
-five audit pillars flagged its absence independently.
+**Status: ACCEPTED — 2026-08-27, by the maintainer (@IanFrelinger).** The decision, and the
+two others taken with it, are recorded in `_handoff/readiness/LEDGER.md` under
+*Owner decisions (2026-08-27, attended)*. Every "signed" in every other spec
+resolves to this document; five audit pillars flagged its absence independently.
+
+The rules below are in force. Acceptance was blocking real work: items 1–2 of the
+implementation order are already merged (see §6), and S-4 — retiring the forgeable
+committed dev-HMAC — was worded as conditional on this line, so a status field was parking
+the project's largest security gap. Per the conformance rule, a MUST is *enforced* only
+where it names a passing test; the rules are now normative, and the ones without tests are
+debts against this spec rather than drafts of it. `docs/certification-evidence.md` tracks
+which are which.
 
 Normative language per RFC 2119. Conformance rule (sheet 9): a MUST here is *enforced* only
 when it names a passing test.
 
 ---
 
-## 1. The decision being proposed
+## 1. The decision
 
 **v1 trust is a single local operator keypair.** One Ed25519 keypair, generated explicitly
 by the operator, held on the operator's machine, signing three things: gate decisions,
@@ -45,15 +54,31 @@ real asymmetric signatures whose private half never leaves the operator's disk.
 
 ## 4. What gets signed, and how
 
-Canonical form: UTF-8 JSON, object keys sorted ordinally, no insignificant whitespace —
-the convention `CertificationRecordEd25519` already establishes; v1 REUSES that machinery
-(NSec, already pinned) rather than adding a second crypto path.
+Canonical form: **one key, per-artifact canonical forms.** v1 reuses the crypto machinery
+(NSec, already pinned) rather than adding a second path, but the two serializations are
+deliberately NOT the same bytes and must not be converged:
+
+- Operator artifacts (`src/Ashlar.Manifest/Signing/CanonicalJson.cs`) recursively ordinal-sort
+  keys at every depth, use default (Pascal) casing, and omit nulls.
+- Certification records (`src/Ashlar.Certification.Contracts/CertificationRecordSigning.cs`, `BuildPayload`) serialize a positional
+  DTO in declaration order, camelCase, writing nulls.
+
+*Corrected 2026-08-27.* This paragraph previously asserted that certification records
+already established the ordinal-sorted convention and that v1 "REUSES that machinery". That
+was false in both directions and is byte-pinned against by
+`TrustLoopRecordSchemaTests.cs:27-39`. Converging the two forms would invalidate every
+existing certification record and every gate, ledger and package signature simultaneously.
+New signed bytes get a context tag instead.
 
 | Artifact | Signed bytes | Where the signature lives |
 |---|---|---|
 | **Gate decision** (`DecideAsync`) | canonical GateRecord minus the sig fields | `sig`, `signer` fields on the record |
-| **Ledger course record** (SPEC-003) | canonical record + `prevSig` chain link | in the record; genesis = deploy course |
+| **Ledger course record** (SPEC-003 — not yet written) | canonical record + `prevSig` chain link | in the record; genesis = deploy course |
 | **Verify verdict** | digest of (manifest bytes, policy bytes, course results) | printed: `✓ VERIFIED · ed25519:9f3c…` |
+| **Certification record** (brick admission) | canonical `BuildPayload` minus both sig fields | `signature` (HMAC) + `ed25519Signature` / `ed25519PublicKey` |
+
+The certification-record row was missing until 2026-08-27, which is how S-4 came to govern
+an artifact class this table did not list.
 
 Rules:
 
@@ -63,9 +88,28 @@ Rules:
   say `unsigned`, nothing breaks. Signing is presence-activated, never half-on.
 - **S-3** A renderer MUST NOT print a fingerprint for an absent or unverified signature
   (already pinned by the e2e sweep's never-fakes-a-signature scenario).
-- **S-4** The dev-HMAC default in `CertificationRecordSigning` is DEPRECATED on acceptance:
+- **S-4** The dev-HMAC default in `CertificationRecordSigning` is DEPRECATED (as of
+  acceptance, 2026-08-27):
   new records dual-write Ed25519 when keys exist; the HMAC-only path emits a warning and is
   removed in the release after keys ship.
+- **S-5** *Content claims.* A gate decision over mediated writes MUST carry, inside the
+  signed proposal, one `(path, sha256)` claim per forge row (`files`), in forge-id order,
+  computed over the UTF-8 bytes of the row's full new content at propose time — the
+  signature thereby covers WHAT was admitted, not merely which mutable rows to re-read.
+  Every verifier (packagers AND the seat-time pre-flight) MUST check the gathered content
+  against the claims **sequence-exact** on path + hash — order is signed, because apply is
+  last-write-wins per path and an order-blind check would let two admitted writes to one
+  path be swapped — and refuse a mismatch as it would a failed seal. Compatibility is
+  carried by the canonical form's null-omission: a record with a **null** claim list is a
+  pre-claims record and MUST keep verifying (nothing was claimed, so nothing is checked —
+  the field sits under the signature, so claims cannot be stripped); an **empty** list is a
+  different value that would enter the canonical bytes, so null, never empty, means "no
+  claims" — and the proposal type enforces this mechanically by normalizing empty to null
+  on construction and deserialization. The skew is one-way: a pre-claims binary reading a
+  store that holds even one claims-bearing record fails closed on the WHOLE store (its
+  reader drops the unknown field, the signature no longer verifies, and the fail-closed
+  listing refuses to summarize) — upgrade every reader of a store before its writers start
+  claiming.
 
 ## 5. What v1 explicitly does not claim
 
@@ -74,7 +118,7 @@ multi-operator attribution beyond fingerprints. No transparency log. No timestam
 authority. The certificate claim stays SPEC-007's honest sentence: *these gates ran against
 this content and passed, witnessed by this key at this time* — nothing more.
 
-## 6. Implementation order on acceptance
+## 6. Implementation order
 
 1. `Ashlar.Manifest.Signing`: keygen, fingerprint, canonical-sign/verify over the existing
    NSec machinery (kernel, testable, ~S).
@@ -82,5 +126,52 @@ this content and passed, witnessed by this key at this time* — nothing more.
 3. Ledger write-side lands signed from day one (SPEC-003 work, ~L).
 4. `verify` gains the provenance course when keys are present (~S).
 
-Conformance tests named per rule at implementation time; until then every rule above is
-*drafted*, not enforced.
+Items 1–2 have landed (`ashlar keys init` ships; `Ashlar.Manifest.Signing` carries keygen,
+fingerprint and canonical sign/verify). Items 3–4 are outstanding.
+
+Conformance tests are named per rule as each is enforced. Rules without a named test are
+now *unmet obligations* of an accepted spec, not drafts — the distinction that makes the
+gap tracked rather than deniable. Currently unmet:
+
+- **S-4** — the committed dev-HMAC is still the silent fallback in
+  `CertificationRecordSigning.ResolveKey`, so an unconfigured signer mints records anyone
+  with the source can forge. Deprecated as of this acceptance.
+
+  *Cost corrected 2026-08-27.* An earlier draft of this section said "~30 call sites must
+  opt in explicitly". Of the 31 constructions of `CertificationRecordSigner`, **28 are in
+  test files and exactly three are production**: `FileCertificationRecordStore.cs:31`,
+  `tools/Ashlar.CertifyBrick/Program.cs:23`, `tools/Ashlar.ExportCertifiedBrick/Program.cs:21`.
+  The production cost was overstated by an order of magnitude. The *test* cost of any
+  design that throws on a missing key was understated: it additionally hits **18**
+  `new CertificationGate(` sites and **13** `.AddCertificationGate(` call sites, and breaks
+  `scripts/pack-certified-brick-reuse.sh` on any keyless runner.
+
+  *Basis for these counts (measured 2026-08-27):* 31 constructions of
+  `CertificationRecordSigner` on this branch, 30 on `master` at `ea43e84` — the 31st is the
+  composition test file added alongside this correction. `new CertificationGate(` is 18 on
+  both trees. `.AddCertificationGate(` is 13 here and 7 on `master`; an earlier figure of 18
+  was a raw grep count that included the method definition, its doc comments, and this
+  branch's own tests.
+
+  Retirement is therefore by **raising a schema-version floor**, not by deleting the
+  constant — deleting it silently un-admits every record already on disk.
+
+- **S-5 (new, 2026-08-27) — minimum accepted schema version.** A verifier MUST be able to
+  refuse a record below a configured `SchemaVersion` floor. This is the rule that actually
+  closes the downgrade described below; without it, hardening a new schema version achieves
+  nothing because an attacker simply mints an old one.
+
+  *Mechanism implemented 2026-08-27* as `CertificationVerifyOptions.MinimumSchemaVersion`,
+  applied by both verification tiers (`CertificationTrustVerifier.Verify` and
+  `CertificationRecordSigner.Verify`) before any signature is examined. Conformance tests:
+  `SchemaVersionFloorTests.DowngradedRecord_IsRefused_UnderTheFloor` and
+  `LegitimateV2Record_StillVerifies_UnderTheFloor`.
+  **The default floor is 0**, so nothing refuses yet — S-2 keeps the default permissive, and
+  raising the floor is a separate, deliberate step once records have migrated. The MUST is
+  therefore *satisfiable*, not yet *enforced*.
+- **S-1, applied to a *missing* signature, and to a downgraded schema.** S-1 covers a `sig`
+  that fails verification. It does not cover one that was simply removed, and every
+  verification path enforces Ed25519 only `when present` — a condition the record's own
+  bytes control. Worse, the *payload lane itself* is chosen by an attacker-supplied field
+  (`if (record.SchemaVersion is null)`), and the legacy lane covers no Ed25519 fields at
+  all. See limitations 7 and 8 in `docs/certification-evidence.md`.

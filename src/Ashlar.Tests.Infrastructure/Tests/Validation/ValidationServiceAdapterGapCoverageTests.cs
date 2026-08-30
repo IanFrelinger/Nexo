@@ -1,3 +1,4 @@
+using Ashlar.Tests.Infrastructure.Helpers;
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -47,7 +48,7 @@ public class ValidationServiceAdapterGapCoverageTests
         try
         {
             Directory.SetCurrentDirectory(temp);
-            await adapter.ValidateAsync(null, new Progress<ProgressReport>(r => reports.Add(r)), CancellationToken.None);
+            await adapter.ValidateAsync(null, new SyncProgress<ProgressReport>(r => reports.Add(r)), CancellationToken.None);
             reports.Should().NotBeEmpty();
             reports.Should().Contain(r => r.Percentage == 100 || r.Message.Contains("skipped", StringComparison.OrdinalIgnoreCase));
         }
@@ -123,7 +124,7 @@ public class ValidationServiceAdapterGapCoverageTests
             var reports = new List<ProgressReport>();
             var result = await adapter.ValidateAsync(
                 "FullyQualifiedName~Ok",
-                new Progress<ProgressReport>(r => reports.Add(r)),
+                new SyncProgress<ProgressReport>(r => reports.Add(r)),
                 CancellationToken.None);
 
             result.Passed.Should().BeTrue();

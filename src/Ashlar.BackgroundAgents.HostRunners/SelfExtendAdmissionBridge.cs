@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Ashlar.Manifest;
 using Ashlar.Manifest.Admission;
+using Ashlar.Manifest.Packaging;
 using Ashlar.Manifest.Signing;
 
 namespace Ashlar.BackgroundAgents.HostRunners;
@@ -31,6 +32,10 @@ public static class SelfExtendAdmissionBridge
     /// </summary>
     /// <returns>A one-line gate outcome for the run summary, or null when not an ashlar
     /// project or nothing was written.</returns>
+    /// <remarks><paramref name="autoShare"/> opts an ADMITTED cycle into sharing its sealed
+    /// package to the mesh (null defaults from <c>ASHLAR_MESH_AUTOSHARE=1</c>);
+    /// <paramref name="meshDir"/> overrides the store (null resolves via
+    /// <see cref="MeshStore.Resolve"/>). Tests inject both; they never mutate env.</remarks>
     public static async Task<string?> TryRecordAsync(
         string repoRoot,
         string agentName,
@@ -41,7 +46,9 @@ public static class SelfExtendAdmissionBridge
         ILogger logger,
         CancellationToken ct = default,
         IReadOnlyList<string>? forgeProposalIds = null,
-        SigningIdentity? signer = null)
+        SigningIdentity? signer = null,
+        bool? autoShare = null,
+        string? meshDir = null)
     {
         var policyPath = Path.Combine(repoRoot, "ashlar.policy.yaml");
         if (!File.Exists(policyPath))
@@ -75,8 +82,20 @@ public static class SelfExtendAdmissionBridge
 
         var forge = forgeProposalIds.Count > 0 ? AshlarProjectMediation.ProjectStore(repoRoot) : null;
 
-        var proposal = BuildProposal(agentName, objective, writePaths, toolCallsExecuted, toolCallsDenied,
-            forgeProposalIds, forge);
+        ExtensionProposal proposal;
+        try
+        {
+            proposal = BuildProposal(agentName, objective, writePaths, toolCallsExecuted, toolCallsDenied,
+                forgeProposalIds, forge);
+        }
+        catch (InvalidOperationException ex)
+        {
+            // A cycle that references a row the store does not hold cannot claim its content, and
+            // a record signed without the claim is unrepairable (append-once). Same loud GATE
+            // ERROR shape as an unreadable policy — never a silently under-claimed record.
+            logger.LogError(ex, "Self-extend gate: cycle references a forge row that is not in the store");
+            return $"GATE ERROR: {ex.Message}";
+        }
 
         // Sign the runtime's own proposals with the operator identity, when one is present, so a
         // self-extend cycle's recorded verdict carries the same provenance as an operator's manual
@@ -107,6 +126,7 @@ public static class SelfExtendAdmissionBridge
         // forge proposals. Held leaves them parked for `gates --admit`; a rejection rejects
         // them (sealed thereby truly seals — nothing was on disk, nothing ever lands); an
         // automatic self-extending admission applies them now, within budget, as decided.
+        var shareNote = string.Empty;
         if (forge is not null)
         {
             switch (record.State)
@@ -117,6 +137,7 @@ public static class SelfExtendAdmissionBridge
                 case ProposalState.Admitted:
                     var applied = ForgeApplier.ApplyAll(forge, forgeProposalIds, repoRoot, "gate");
                     logger.LogInformation("Self-extend gate: applied {Count} mediated write(s)", applied.Count);
+                    shareNote = TryAutoShare(record, forge, forgeProposalIds, signer, autoShare, meshDir, logger);
                     break;
             }
         }
@@ -124,15 +145,90 @@ public static class SelfExtendAdmissionBridge
         return record.State switch
         {
             ProposalState.Held => $"GATE: held as {proposal.Id} — review with `ashlar gates`",
-            ProposalState.Admitted => $"GATE: admitted as {proposal.Id} — {record.Reason}",
+            ProposalState.Admitted => $"GATE: admitted as {proposal.Id} — {record.Reason}{shareNote}",
             _ => $"GATE: rejected — {record.Reason}",
         };
     }
 
     /// <summary>
-    /// Maps cycle facts onto a proposal. Public and pure so tests pin the mapping without a
-    /// filesystem. The courses claim ONLY what the cycle evidences: the sandbox course from
-    /// the policy engine's own denial count.
+    /// Best-effort auto-share of an admitted, applied extension into the mesh (co-production:
+    /// peers pull what this cycle produced, through THEIR OWN gates). Opt-in — the autoShare
+    /// parameter, or <c>ASHLAR_MESH_AUTOSHARE=1</c> when it is null. Never fails the cycle: a
+    /// share failure logs a warning and annotates the outcome string, nothing more. The
+    /// admission and its applied writes stand regardless.
+    /// </summary>
+    internal static string TryAutoShare(
+        GateRecord record,
+        Ashlar.BackgroundAgents.Forge.ChangeProposalStore forge,
+        IReadOnlyList<string> forgeProposalIds,
+        SigningIdentity? signer,
+        bool? autoShare,
+        string? meshDir,
+        ILogger logger)
+    {
+        var enabled = autoShare ?? Environment.GetEnvironmentVariable("ASHLAR_MESH_AUTOSHARE") == "1";
+        if (!enabled)
+        {
+            return string.Empty;
+        }
+
+        // A package's seal is a signature (SPEC-006): an unsigned admission cannot travel.
+        // Skipping is honest and non-fatal — the annotation says why nothing reached the mesh.
+        if (signer is null || record.Sig is null || record.Signer is null)
+        {
+            logger.LogWarning("Self-extend gate: auto-share skipped — the admission is unsigned (run `ashlar keys init`)");
+            return "; auto-share skipped: unsigned admission (run `ashlar keys init`)";
+        }
+
+        try
+        {
+            var files = new List<PackageFile>();
+            foreach (var id in forgeProposalIds)
+            {
+                var proposal = forge.Find(id)
+                    ?? throw new InvalidOperationException($"forge proposal '{id}' is missing — cannot package an incomplete extension.");
+                // ApplyAll just marked these rows Applied. Anything else under this id is a row
+                // the gate did not admit-and-apply (a shadow, a replacement) — refuse to seal it.
+                if (proposal.Status != Ashlar.BackgroundAgents.Forge.ChangeProposalStatus.Applied)
+                {
+                    throw new InvalidOperationException(
+                        $"forge proposal '{id}' is {proposal.Status}, not Applied — only content the gate admitted AND applied may travel.");
+                }
+                files.Add(new PackageFile { Path = proposal.TargetPath, Content = proposal.NewContent });
+            }
+            // The rows just re-read from the mutable forge store must hash to the claims the
+            // signed admission carries — a row edited since the gate decided must not travel
+            // under the origin's signature. Refusing is still best-effort: the admission and
+            // its applied writes stand, only the share is withheld.
+            if (!ExtensionPackaging.VerifyFileClaims(record.Proposal, files, out var claimReason))
+            {
+                logger.LogWarning("Self-extend gate: auto-share refused — {Reason}", claimReason);
+                return $"; auto-share refused: {claimReason}";
+            }
+            var json = ExtensionPackaging.Pack(record, files, signer);
+            var dest = MeshStore.Publish(MeshStore.Resolve(meshDir), json);
+            logger.LogInformation("Self-extend gate: shared to the mesh → {Dest}", dest);
+            return $"; shared → {dest}";
+        }
+        catch (Exception ex)
+        {
+            // Best-effort means BEST-EFFORT: no exception class thrown in here may destroy a
+            // successful cycle — an escape would replace the whole run result with a failure.
+            logger.LogWarning(ex, "Self-extend gate: auto-share failed — the admission stands, the share did not happen");
+            return $"; auto-share failed: {ex.Message}";
+        }
+    }
+
+    /// <summary>
+    /// Maps cycle facts onto a proposal. Public and pure-over-the-store so tests pin the
+    /// mapping. The courses claim ONLY what the cycle evidences: the sandbox course from the
+    /// policy engine's own denial count. When a store is supplied, each referenced row is
+    /// resolved exactly once and yields BOTH its diff line and its content claim (path,
+    /// sha256(NewContent)) — the claims are signed with the record, so packaging can later
+    /// prove the rows it re-reads are the bytes this gate decided over. A referenced row
+    /// missing from the store throws: the claim it would sign covers nothing, the record is
+    /// append-once, and a silently under-claimed admission could never travel — refusing loud
+    /// at propose is the only repairable shape.
     /// </summary>
     public static ExtensionProposal BuildProposal(
         string agentName,
@@ -146,6 +242,18 @@ public static class SelfExtendAdmissionBridge
         forgeProposalIds ??= [];
         var mediated = forgeProposalIds.Count > 0;
 
+        List<Ashlar.BackgroundAgents.Forge.ChangeProposal>? rows = null;
+        if (mediated && forge is not null)
+        {
+            rows = new List<Ashlar.BackgroundAgents.Forge.ChangeProposal>(forgeProposalIds.Count);
+            foreach (var id in forgeProposalIds)
+            {
+                rows.Add(forge.Find(id) ?? throw new InvalidOperationException(
+                    $"forge proposal '{id}' is not in the store — park the write before proposing; "
+                    + "a record cannot claim content the store does not hold."));
+            }
+        }
+
         // Mediated: the sandbox claim is STRUCTURAL — every write is a parked proposal and
         // nothing touched disk, so confinement holds by construction regardless of denial
         // count (mediation denials are steering, not violations). Unmediated: the claim
@@ -157,9 +265,8 @@ public static class SelfExtendAdmissionBridge
                 ? $"{toolCallsExecuted} tool call(s), 0 denied"
                 : $"{toolCallsDenied} tool call(s) DENIED by the policy engine";
 
-        var diffLines = mediated && forge is not null
-            ? forgeProposalIds.Select(id =>
-                forge.Find(id) is { } p ? $"~ {p.TargetPath}  ({Truncate(p.Summary, 60)})" : $"~ {id}")
+        var diffLines = rows is not null
+            ? rows.Select(p => $"~ {p.TargetPath}  ({Truncate(p.Summary, 60)})")
             : writePaths.Select(p => "~ " + p);
 
         return new ExtensionProposal
@@ -174,6 +281,7 @@ public static class SelfExtendAdmissionBridge
             ProposedAt = DateTimeOffset.UtcNow,
             Diff = string.Join("\n", diffLines),
             ForgeProposalIds = forgeProposalIds,
+            Files = rows?.Select(p => FileClaim.For(p.TargetPath, p.NewContent)).ToList(),
             Courses =
             [
                 new CourseResult

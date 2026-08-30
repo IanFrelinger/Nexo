@@ -444,6 +444,20 @@ FORGE_COUNT=$(ls "$PP/.ashlar/forge/proposed"/*.json 2>/dev/null | wc -l)
   && result "pkg-repull-does-not-leak-forge" PASS "no orphaned parked proposals" \
   || result "pkg-repull-does-not-leak-forge" FAIL "forge queue grew on re-pull ($FORGE_COUNT)"
 
+# Someone with write access plants a forged package straight into the shared folder — the mesh
+# store is a plain directory, so no publish is needed. The legitimate package is already-have by
+# now, which is the steady state of any fleet pulling on a timer. The refusal must still reach the
+# EXIT CODE: an operator watching `pkg pull … && echo ok` learns nothing from a body they never read.
+cp "$WORK/tampered.ashpkg" "$MESH/planted.ashpkg"
+run_cli pkg pull --from "$MESH" --path "$PP"
+claim "pkg-pull-forgery-not-masked-by-already-have" 65 "REFUSED" "already-have 1" "refused/rejected 1"
+if grep -rq "backdoored" "$PP" 2>/dev/null; then
+  result "pkg-pull-planted-forgery-never-lands" FAIL "forged content reached the project"
+else
+  result "pkg-pull-planted-forgery-never-lands" PASS "refused before any write"
+fi
+rm -f "$MESH/planted.ashpkg"
+
 # a sealed peer pulls the same store: every package rejected, nothing lands, non-zero exit
 PS=$(fresh); run_cli init sealed-pull --path "$PS"
 run_cli pkg pull --from "$MESH" --path "$PS"
@@ -455,6 +469,117 @@ claim "pkg-pull-sealed-rejects-all" 65 "REJECTED" "refused/rejected 1"
 # pulling from an empty store is a clean no-op
 run_cli pkg pull --from "$WORK/nostore-$RANDOM" --path "$PP"
 claim "pkg-pull-missing-store" 1 "no such peer store"
+
+unset ASHLAR_KEY_DIR
+
+# ───────────────────────────── pkg mesh 2: two-node co-production ─────────────────────────────
+# The loop the mesh exists for: node A admits and SHARES v1 in one verb; node B pulls it through
+# ITS OWN gate, builds v2 on top, admits, shares back; node A pulls v2 through ITS gate. Both
+# gates exercised in both directions, and the store dedupes what each side already decided.
+export ASHLAR_KEY_DIR="$WORK/pkgkeys"
+MESH2="$WORK/mesh-coprod"
+
+CA=$(fresh); run_cli init coprod-a --path "$CA"; set_proposing "$CA"
+CB=$(fresh); run_cli init coprod-b --path "$CB"; set_proposing "$CB"
+
+# node A: admit v1 (a parked forge write + its gate proposal), then share = seal + publish
+mkdir -p "$CA/.ashlar/forge/proposed"
+cat > "$CA/.ashlar/forge/proposed/fco1.json" <<'EOF'
+{"Id":"fco1","TargetPath":"src/Coprod.cs","NewContent":"// coprod v1","Summary":"add brick coprod.classify","CreatedAt":"2026-08-25T06:00:00Z","UpdatedAt":"2026-08-25T06:00:00Z"}
+EOF
+cat > "$CA/pco1.json" <<'EOF'
+{"id":"ext-co1","kind":"brick","summary":"add brick coprod.classify","proposedBy":"night-agent",
+ "proposedAt":"2026-08-25T06:00:00Z","diff":"+ 1 file",
+ "forgeProposalIds":["fco1"],
+ "courses":[{"name":"sandbox","passed":true,"detail":"confined"},{"name":"tests","passed":true,"detail":"14 passed"},{"name":"security","passed":true,"detail":"0 findings"}]}
+EOF
+run_cli gates propose --file "$CA/pco1.json" --path "$CA" >/dev/null
+run_cli gates --admit ext-co1 --as coprod-a-op --path "$CA"
+claim "coprod-a-admit-applies-v1" 0 "seated" "applied"
+run_cli pkg share --id ext-co1 --store "$MESH2" --path "$CA"
+claim "coprod-share-one-verb" 0 "shared to the mesh" "ed25519:"
+[ "$(ls "$MESH2"/*.ashpkg 2>/dev/null | wc -l)" -eq 1 ] \
+  && result "coprod-share-lands-in-store" PASS "seal + publish in one step" \
+  || result "coprod-share-lands-in-store" FAIL "share did not land exactly one package"
+
+# node B: pull v1 — held by B's OWN gate, nothing on disk until B seats it
+run_cli pkg pull --from "$MESH2" --path "$CB"
+claim "coprod-b-pull-holds" 0 "HELD" "pulled 1"
+[ ! -f "$CB/src/Coprod.cs" ] \
+  && result "coprod-b-held-not-on-disk" PASS "B's gate holds A's work before it lands" \
+  || result "coprod-b-held-not-on-disk" FAIL "pulled file landed before admission"
+run_cli gates --admit ext-co1 --as coprod-b-op --path "$CB"
+claim "coprod-b-admit-applies-v1" 0 "seated" "applied"
+grep -q "coprod v1" "$CB/src/Coprod.cs" 2>/dev/null \
+  && result "coprod-b-holds-v1" PASS "v1 landed on B through B's gate" \
+  || result "coprod-b-holds-v1" FAIL "v1 content missing on B"
+
+# node B: build v2 ON TOP of v1, admit through B's gate, share back to the same store
+mkdir -p "$CB/.ashlar/forge/proposed"
+cat > "$CB/.ashlar/forge/proposed/fco2.json" <<'EOF'
+{"Id":"fco2","TargetPath":"src/Coprod.cs","NewContent":"// coprod v2 (builds on v1)","Summary":"improve brick coprod.classify","CreatedAt":"2026-08-25T07:00:00Z","UpdatedAt":"2026-08-25T07:00:00Z"}
+EOF
+cat > "$CB/pco2.json" <<'EOF'
+{"id":"ext-co2","kind":"brick","summary":"improve brick coprod.classify","proposedBy":"night-agent",
+ "proposedAt":"2026-08-25T07:00:00Z","diff":"~ 1 file",
+ "forgeProposalIds":["fco2"],
+ "courses":[{"name":"sandbox","passed":true,"detail":"confined"},{"name":"tests","passed":true,"detail":"15 passed"},{"name":"security","passed":true,"detail":"0 findings"}]}
+EOF
+run_cli gates propose --file "$CB/pco2.json" --path "$CB" >/dev/null
+run_cli gates --admit ext-co2 --as coprod-b-op --path "$CB" >/dev/null
+run_cli pkg share --id ext-co2 --store "$MESH2" --path "$CB"
+claim "coprod-b-shares-v2-back" 0 "shared to the mesh"
+
+# node A: pull the store — v1 is already-have (A's gate decided it), v2 holds, A seats it
+run_cli pkg pull --from "$MESH2" --path "$CA"
+claim "coprod-a-pull-dedupes-and-holds" 0 "already have" "HELD" "pulled 2"
+run_cli gates --admit ext-co2 --as coprod-a-op --path "$CA"
+claim "coprod-a-admit-applies-v2" 0 "seated" "applied"
+grep -q "coprod v2" "$CA/src/Coprod.cs" 2>/dev/null \
+  && result "coprod-a-holds-v2" PASS "A's file holds v2 — both gates, both directions" \
+  || result "coprod-a-holds-v2" FAIL "v2 did not land on A"
+
+# content claims: the admission signed (path, sha256) for its rows at propose time, so a forge
+# row edited AFTER the gate decided fails verification — the doctored bytes never travel under
+# the origin's signature. Refusal is a 65, the same family as a package that fails its seal.
+sed 's|// coprod v1|// tampered after admission|' "$CA/.ashlar/forge/applied/fco1.json" > "$CA/.t" \
+  && mv "$CA/.t" "$CA/.ashlar/forge/applied/fco1.json"
+run_cli pkg export --id ext-co1 --out "$WORK/tampered-row.ashpkg" --path "$CA"
+claim "pkg-claims-refuse-edited-row" 65 "does not match the signed claim"
+[ ! -f "$WORK/tampered-row.ashpkg" ] \
+  && result "pkg-claims-nothing-written" PASS "a refused export writes no package" \
+  || result "pkg-claims-nothing-written" FAIL "a package landed despite the failed claim"
+
+# claims at the SEAT door: a held row edited between propose and admit is refused BEFORE any
+# decision is recorded — the proposal stays held, nothing is decided, nothing lands on disk.
+cat > "$CA/.ashlar/forge/proposed/fco3.json" <<'EOF'
+{"Id":"fco3","TargetPath":"src/Held.cs","NewContent":"// held v1","Summary":"held work","CreatedAt":"2026-08-25T08:00:00Z","UpdatedAt":"2026-08-25T08:00:00Z"}
+EOF
+cat > "$CA/pco3.json" <<'EOF'
+{"id":"ext-co3","kind":"brick","summary":"add brick held.work","proposedBy":"night-agent",
+ "proposedAt":"2026-08-25T08:00:00Z","diff":"+ 1 file",
+ "forgeProposalIds":["fco3"],
+ "courses":[{"name":"sandbox","passed":true,"detail":"confined"},{"name":"tests","passed":true,"detail":"14 passed"},{"name":"security","passed":true,"detail":"0 findings"}]}
+EOF
+run_cli gates propose --file "$CA/pco3.json" --path "$CA" >/dev/null
+sed 's|// held v1|// swapped while held|' "$CA/.ashlar/forge/proposed/fco3.json" > "$CA/.t" \
+  && mv "$CA/.t" "$CA/.ashlar/forge/proposed/fco3.json"
+run_cli gates --admit ext-co3 --as coprod-a-op --path "$CA"
+claim "gates-admit-refuses-edited-row" 65 "does not match the signed claim" "stays Held"
+[ ! -f "$CA/src/Held.cs" ] \
+  && result "gates-admit-refusal-nothing-lands" PASS "tampered bytes never reach the tree" \
+  || result "gates-admit-refusal-nothing-lands" FAIL "tampered content landed"
+
+# a proposal may not reference rows the store does not hold — the claim it would sign would
+# cover nothing, and records are append-once, so the refusal comes at propose time.
+cat > "$CA/pco4.json" <<'EOF'
+{"id":"ext-co4","kind":"brick","summary":"add brick dangling.ref","proposedBy":"night-agent",
+ "proposedAt":"2026-08-25T09:00:00Z","diff":"+ 1 file",
+ "forgeProposalIds":["fco-nowhere"],
+ "courses":[{"name":"sandbox","passed":true,"detail":"confined"}]}
+EOF
+run_cli gates propose --file "$CA/pco4.json" --path "$CA"
+claim "gates-propose-refuses-dangling-row" 1 "not in the store" "park the write first"
 
 unset ASHLAR_KEY_DIR
 
@@ -502,6 +627,30 @@ DBAD=$(fresh); run_cli init badexport --path "$DBAD"
 echo "kind: Nonsense" > "$DBAD/ashlar.yaml"
 run_cli export native --path "$DBAD" --out "$WORK/bundles" --rid linux-x64 --no-runtime
 claim "export-native-refuses-unverified" 65 "does not verify"
+
+# ───────────────────────────── export aws / azure: one-command cloud bundles ─────────────────────────────
+# Same certified project, staged for the cloud: the runtime image + this app + a verify-then-run
+# entrypoint + a one-command deploy script. Nothing here touches a cloud — the scripts do, when run.
+run_cli export aws --path "$DE" --out "$WORK/bundles"
+claim "export-aws-stages-bundle" 0 "CERTIFIED cloud bundle" "aws"
+AWSB="$WORK/bundles/exportdemo-aws"
+{ [ -f "$AWSB/Dockerfile" ] && [ -f "$AWSB/entrypoint.sh" ] && [ -f "$AWSB/deploy-aws.sh" ] \
+  && [ -f "$AWSB/app/ashlar.yaml" ] && [ -d "$AWSB/app/.ashlar" ] && [ -f "$AWSB/bundle.json" ]; } \
+  && result "export-aws-bundle-complete" PASS "Dockerfile + entrypoint + deploy + app + ledger" \
+  || result "export-aws-bundle-complete" FAIL "aws bundle incomplete"
+grep -q "verify --path /work/app" "$AWSB/entrypoint.sh" \
+  && result "export-aws-container-self-proves" PASS "the container verifies before it runs" \
+  || result "export-aws-container-self-proves" FAIL "entrypoint does not verify first"
+
+run_cli export azure --path "$DE" --out "$WORK/bundles"
+claim "export-azure-stages-bundle" 0 "CERTIFIED cloud bundle" "azure"
+AZB="$WORK/bundles/exportdemo-azure"
+{ [ -f "$AZB/deploy-azure.sh" ] && grep -q "az acr build" "$AZB/deploy-azure.sh" && grep -q "az container create" "$AZB/deploy-azure.sh"; } \
+  && result "export-azure-deploy-script" PASS "ACR build + ACI one-shot" \
+  || result "export-azure-deploy-script" FAIL "azure deploy script wrong"
+
+run_cli export aws --path "$DBAD" --out "$WORK/bundles"
+claim "export-aws-refuses-unverified" 65 "does not verify"
 
 unset ASHLAR_KEY_DIR
 

@@ -1,3 +1,4 @@
+using Ashlar.Tests.Infrastructure.Helpers;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Ashlar.Core.Application.Common.Models;
@@ -100,7 +101,7 @@ public class ValidationServiceAdapterTests : UnitTestBase
         var adapter = new ValidationServiceAdapter(mockLogger.Object, mockParser.Object);
 
         ProgressReport? capturedReport = null;
-        var progress = new Progress<ProgressReport>(report => capturedReport = report);
+        var progress = new SyncProgress<ProgressReport>(report => capturedReport = report);
 
         // Change to a directory that likely has no test projects
         var originalDir = Directory.GetCurrentDirectory();

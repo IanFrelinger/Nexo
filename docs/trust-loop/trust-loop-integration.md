@@ -15,7 +15,7 @@ deterministic guts."
 | R2.2 hash binding | `CertificationTrustVerifier.Verify(record, content)` re-checks content hash + signature | ✅ |
 | R2.3 fail-closed | Policy refuses on missing record, missing content, un-inferable brick id | ✅ |
 | R4.6 budgets (partial) | `ToolCallingAgent.DefaultMaxIterations = 5`; recursion ceiling (Invariant D) | ⚠️ iterations only — no wall-clock, no throughput guard |
-| Cross-process durability | `FileCertificationRecordStore` wired as of `f43ffcd5` (yesterday) | ✅ prerequisite for hot reload just landed |
+| Cross-process durability | `FileCertificationRecordStore` wired as of `f43ffcd5` (yesterday); **corrected 2026-08-27** — `AddCertificationGate()` forwarded no store path and the in-memory fallback was registered unconditionally, so gate-composing hosts silently fell back to in-memory until that was fixed | ✅ prerequisite for hot reload landed; durable only for hosts that pass `recordStorePath` |
 | Hot-load primitive | `MutantAssemblyLoadContext` — collectible ALC, named for leak attribution, loads serialized via `MutantContextGate` semaphore | ✅ reusable pattern |
 | HITL | Invariant C human-admission gate | ✅ keep — see §5 tiering |
 
