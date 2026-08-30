@@ -38,5 +38,6 @@ Thumbs.db
 # the context, so excluding .docker/ costs nothing — but a file COPYd from it must be IN the
 # context or the build fails with "not found" pointing at the COPY line rather than at this rule.
 !.docker/node-agents.json
+!.docker/node-entrypoint.sh
 deploy/compose/
 Dockerfile*

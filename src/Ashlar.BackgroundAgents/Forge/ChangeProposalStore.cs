@@ -100,6 +100,21 @@ public sealed class ChangeProposalStore : IChangeProposalStore
 
         lock (_gate)
         {
+            // Ids are written once, across EVERY status folder. Re-adding a decided id would
+            // park a second row that lookups-by-id (packaging above all) could confuse with the
+            // content an admission actually covered — a shadow. The same-status case matters
+            // too: silently overwriting a pending proposal is a lost write, not an update.
+            // The check is EXISTENCE, not parseability — a corrupt row still owns its id
+            // (Find would report it null and invite the exact overwrite this guard forbids).
+            foreach (var status in Enum.GetValues<ChangeProposalStatus>())
+            {
+                if (File.Exists(PathFor(proposal.Id, status)))
+                {
+                    throw new InvalidOperationException(
+                        $"Proposal '{proposal.Id}' already exists ({status}). Ids are append-once "
+                        + "across every status — propose under a new id.");
+                }
+            }
             var stamped = proposal with
             {
                 Status = ChangeProposalStatus.Proposed,
@@ -107,7 +122,22 @@ public sealed class ChangeProposalStore : IChangeProposalStore
                 UpdatedAt = DateTimeOffset.UtcNow
             };
             var path = PathFor(stamped.Id, ChangeProposalStatus.Proposed);
-            File.WriteAllText(path, JsonSerializer.Serialize(stamped, Json));
+            try
+            {
+                // CreateNew makes the OS enforce append-once against a RACING PROCESS too —
+                // _gate only serializes threads in this process, and the store directory is
+                // shared by the CLI and the agent runner. Losing the race surfaces as the same
+                // refusal as a duplicate, never as a silent lost write.
+                using var stream = new FileStream(path, FileMode.CreateNew, FileAccess.Write, FileShare.None);
+                using var writer = new StreamWriter(stream);
+                writer.Write(JsonSerializer.Serialize(stamped, Json));
+            }
+            catch (IOException) when (File.Exists(path))
+            {
+                throw new InvalidOperationException(
+                    $"Proposal '{proposal.Id}' already exists (Proposed) — another process parked it first. "
+                    + "Ids are append-once across every status — propose under a new id.");
+            }
             return stamped;
         }
     }

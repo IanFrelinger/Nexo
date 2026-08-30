@@ -2,7 +2,7 @@
 
 This is the canonical repository map for contributors and reviewers. Use it with [`README.md`](../README.md) for orientation and [`DistributionModels.md`](DistributionModels.md) for how each surface is consumed or shipped.
 
-The monorepo tracks **109** `.csproj` files (`git ls-files "*.csproj"`): **58** under `src/`, **3** under `application/`, **10** under `applications/`, **17** under `commercial/`, **7** under `docs/` (demos + samples), **6** under `samples/`, **3** under `spikes/`, and **5** under `tools/`. Everything outside `commercial/` is **open (Apache-2.0)**; the 17 `commercial/` projects are commercial (see [`LICENSING.md`](../LICENSING.md) and `make dependency-boundary-gate`). The **runnable open product** is roughly **17 projects** (Tiers **0** and **0b**): kernel libraries plus the two deployable hosts (`Ashlar.CLI`, `Ashlar.API`).
+The monorepo tracks **110** `.csproj` files (`git ls-files "*.csproj"`): **59** under `src/`, **3** under `application/`, **10** under `applications/`, **17** under `commercial/`, **7** under `docs/` (demos + samples), **6** under `samples/`, **3** under `spikes/`, and **5** under `tools/`. Everything outside `commercial/` is **open (Apache-2.0)**; the 17 `commercial/` projects are commercial (see [`LICENSING.md`](../LICENSING.md) and `make dependency-boundary-gate`). The **runnable open product** is roughly **17 projects** (Tiers **0** and **0b**): kernel libraries plus the two deployable hosts (`Ashlar.CLI`, `Ashlar.API`).
 
 Tiers depend **inward** only (satellites reference the spine, not the reverse). The **`layer-boundary`** CI gate enforces the `src/` vs `application/` split and **`dependency-boundary`** enforces open -> commercial and `src/` -> `applications/` reference direction.
 
@@ -19,6 +19,7 @@ Every tracked `.csproj` file name must appear in this document — the **Onboard
 | `src/Ashlar.Brick.Contracts/Ashlar.Brick.Contracts.csproj` | Brick extension contracts and wire DTOs |
 | `src/Ashlar.Certification.Contracts/Ashlar.Certification.Contracts.csproj` | Content-bound certification record verification (referenced by `Ashlar.Core.Application`) |
 | `src/Ashlar.Policies/Ashlar.Policies.csproj` | Policy primitives |
+| `src/Ashlar.Manifest/Ashlar.Manifest.csproj` | Extension packaging: sealing, signing, admission records, the gate store |
 | `src/Ashlar.Infrastructure/Ashlar.Infrastructure.csproj` | Execution, persistence, adapters; open `MeshLab` worker executor (polls commercial fleet director) |
 | `src/Ashlar.Orchestration/Ashlar.Orchestration.csproj` | Orchestrator, routing, coordination |
 | `src/Ashlar.BackgroundAgents/Ashlar.BackgroundAgents.csproj` | Scheduler, RAG, tools |
