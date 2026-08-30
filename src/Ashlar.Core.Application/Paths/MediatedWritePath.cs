@@ -17,6 +17,10 @@ namespace Ashlar.Core.Application.Paths;
 ///   <item>when an allowlist is supplied, it lands under one of its entries;</item>
 ///   <item>no symlink/junction on the path — or at the leaf — could carry the write elsewhere.</item>
 /// </list>
+///
+/// <para>Lives in <c>Ashlar.Core.Application</c>, which multi-targets <c>netstandard2.0</c>, so this
+/// is written to the ns2.0 API surface deliberately: no <c>Path.GetRelativePath</c>, no
+/// <c>string.Contains(char, …)</c>/<c>EndsWith(char)</c>, no <c>System.Index</c> (<c>[^1]</c>).</para>
 /// </summary>
 public static class MediatedWritePath
 {
@@ -34,17 +38,17 @@ public static class MediatedWritePath
         {
             return "an empty target is not a safe repo-relative path.";
         }
-        if (target.Contains(':', StringComparison.Ordinal))
+        if (target.IndexOf(':') >= 0)
         {
             return $"'{target}' is not a safe repo-relative path: a ':' is a drive letter or NTFS alternate data stream.";
         }
-        if (target[0] is '/' or '\\')
+        if (target[0] == '/' || target[0] == '\\')
         {
             return $"'{target}' is rooted and escapes the project root.";
         }
 
         var rootFull = Path.GetFullPath(repoRoot);
-        var rootWithSep = rootFull.EndsWith(Path.DirectorySeparatorChar)
+        var rootWithSep = rootFull.EndsWith(Path.DirectorySeparatorChar.ToString())
             ? rootFull
             : rootFull + Path.DirectorySeparatorChar;
         var fullPath = Path.GetFullPath(Path.Combine(rootFull, target));
@@ -54,10 +58,11 @@ public static class MediatedWritePath
             return $"'{target}' escapes the project root.";
         }
 
-        // Governance is judged on the NORMALIZED, root-relative form — Path.GetFullPath has already
+        // Governance is judged on the NORMALIZED, root-relative form. Path.GetFullPath has already
         // collapsed '.', '..' and mixed separators, so every spelling ('./x', 'a/../.ashlar/y')
-        // reduces to the path the write will actually hit.
-        var normalizedRel = Path.GetRelativePath(rootFull, fullPath).Replace('\\', '/');
+        // reduces to the path the write will actually hit. fullPath is known to be under
+        // rootWithSep, so the substring is the clean relative form (ns2.0 has no GetRelativePath).
+        var normalizedRel = fullPath.Substring(rootWithSep.Length).Replace('\\', '/');
         if (IsGovernancePath(normalizedRel))
         {
             return $"'{target}' (resolves to '{normalizedRel}') is a governance path — the project "
@@ -73,7 +78,7 @@ public static class MediatedWritePath
                 + "or trailing dot/space segments.";
         }
 
-        if (writableAllowlist is { Count: > 0 } && !IsUnderAllowlist(normalizedRel, writableAllowlist))
+        if (writableAllowlist != null && writableAllowlist.Count > 0 && !IsUnderAllowlist(normalizedRel, writableAllowlist))
         {
             return $"'{target}' (resolves to '{normalizedRel}') is outside the policy's writable allowlist.";
         }
@@ -88,10 +93,11 @@ public static class MediatedWritePath
     }
 
     /// <summary>
-    /// A repo-relative target is a governance path when it is the project contract, the operator
-    /// policy, anything under a governance/CI/tooling directory, or any file the receiver's build
-    /// toolchain executes or honours. Comparison is case-insensitive because the filesystems this
-    /// runs on are, and an admitted write must not reach these under any spelling.
+    /// A repo-relative target is a governance path when it is the project contract or operator
+    /// policy (at the repo ROOT only — the loader reads exactly <c>./ashlar.yaml</c> and
+    /// <c>./ashlar.policy.yaml</c>), anything under a governance/CI/tooling directory, or any file
+    /// the receiver's build toolchain executes or honours (at ANY depth). Case-insensitive because
+    /// the filesystems this runs on are, and an admitted write must not reach these under any spelling.
     /// </summary>
     public static bool IsGovernancePath(string relativePath)
     {
@@ -101,10 +107,9 @@ public static class MediatedWritePath
             return false;
         }
 
-        // The project contract and the operator policy are governance ONLY at the repo root: the
-        // loader reads exactly ./ashlar.yaml and ./ashlar.policy.yaml, so a nested file of the same
-        // name is inert and a mediated write may legitimately create it. Denying it anywhere would
-        // over-block, and the loader's real behaviour is the honest surface to protect.
+        // Contract/policy: governance ONLY at the repo root. A nested file of the same name is
+        // inert to the loader, so a mediated write may legitimately create it; denying it anywhere
+        // would over-block.
         if (segments.Length == 1
             && (string.Equals(segments[0], "ashlar.yaml", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(segments[0], "ashlar.policy.yaml", StringComparison.OrdinalIgnoreCase)))
@@ -123,10 +128,8 @@ public static class MediatedWritePath
         }
 
         // Files dangerous at ANY depth: MSBuild, NuGet, the .NET SDK, make, pre-commit and the
-        // analyzer config are all discovered by walking the tree (or sit at a well-known name), so
-        // a governed/executed file dropped anywhere below the root runs or is honoured on the
-        // receiver's next build/commit.
-        var fileName = segments[^1];
+        // analyzer config are all discovered by walking the tree (or sit at a well-known name).
+        var fileName = segments[segments.Length - 1];
         foreach (var name in GovernanceFileNames)
         {
             if (string.Equals(fileName, name, StringComparison.OrdinalIgnoreCase))
@@ -161,11 +164,11 @@ public static class MediatedWritePath
         {
             return false;
         }
-        if (path.Contains(':', StringComparison.Ordinal))
+        if (path!.IndexOf(':') >= 0)
         {
             return false;
         }
-        if (path[0] is '/' or '\\')
+        if (path[0] == '/' || path[0] == '\\')
         {
             return false;
         }
@@ -176,7 +179,8 @@ public static class MediatedWritePath
             {
                 return false;
             }
-            if (segment.EndsWith('.') || segment.EndsWith(' '))
+            var last = segment[segment.Length - 1];
+            if (last == '.' || last == ' ')
             {
                 return false;
             }
@@ -216,7 +220,7 @@ public static class MediatedWritePath
     private static bool TraversesReparsePoint(string targetFullPath, string rootFull)
     {
         var dir = Path.GetDirectoryName(targetFullPath);
-        while (dir is not null && dir.Length > rootFull.Length && dir.StartsWith(rootFull, StringComparison.Ordinal))
+        while (dir != null && dir.Length > rootFull.Length && dir.StartsWith(rootFull, StringComparison.Ordinal))
         {
             if (Directory.Exists(dir) && (File.GetAttributes(dir) & FileAttributes.ReparsePoint) != 0)
             {
@@ -231,8 +235,7 @@ public static class MediatedWritePath
     /// True when the target itself already exists and is a symlink/junction. The ancestor walk in
     /// <see cref="TraversesReparsePoint"/> stops at the parent, so without this a pre-planted leaf
     /// link (e.g. docs/site.yaml -&gt; ../ashlar.policy.yaml) would be followed by the write and
-    /// truncate the link's target — a write onto a governance path the lexical, link-blind
-    /// normalization cannot see.
+    /// truncate the link's target.
     /// </summary>
     private static bool PathIsReparsePoint(string fullPath)
     {
@@ -264,7 +267,7 @@ public static class MediatedWritePath
         ".csproj", ".fsproj", ".vbproj", ".proj", ".sln", ".slnx",
     };
 
-    private static readonly HashSet<string> Win32Reserved = new(StringComparer.OrdinalIgnoreCase)
+    private static readonly HashSet<string> Win32Reserved = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
         "CON", "PRN", "AUX", "NUL",
         "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9",
