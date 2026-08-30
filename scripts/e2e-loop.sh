@@ -410,6 +410,45 @@ claim "pkg-import-duplicate-skipped" 0 "already imported"
 ASHLAR_KEY_DIR="$WORK/nokeys" run_cli pkg export --id ext-pkg --out "$WORK/x.ashpkg" --path "$A"
 claim "pkg-export-keyless-refused" 1 "requires an operator key"
 
+# ── trust root: an untrusted signer's package is REFUSED before it parks (the refusal, on one box) ──
+# Every import above shared ONE key, so each was SELF-trusted (a node trusts the key it signs with).
+# Here a STRANGER — a separate key dir — seals a package; receiver B refuses it, naming the
+# fingerprint, until told to trust that key, then holds it. Deleting the trust comparison in
+# PackageImport turns pkg-import-refuses-untrusted-signer red (it becomes HELD, exit 0).
+SK="$WORK/strangerkeys"
+XFP=$(ASHLAR_KEY_DIR="$SK" NO_COLOR=1 dotnet run --project "$CLI_PROJ" --no-build -- keys init 2>&1 | grep -oE 'ed25519:[0-9a-f]{16}' | head -1)
+XA=$(fresh)
+ASHLAR_KEY_DIR="$SK" NO_COLOR=1 dotnet run --project "$CLI_PROJ" --no-build -- init stranger-node --path "$XA" >/dev/null
+set_proposing "$XA"
+mkdir -p "$XA/.ashlar/forge/proposed"
+cat > "$XA/.ashlar/forge/proposed/fstr.json" <<'JSON'
+{"Id":"fstr","TargetPath":"src/Stranger.cs","NewContent":"// stranger brick","Summary":"stranger brick","CreatedAt":"2026-08-24T06:00:00Z","UpdatedAt":"2026-08-24T06:00:00Z"}
+JSON
+cat > "$XA/px.json" <<'JSON'
+{"id":"ext-stranger","kind":"brick","summary":"stranger brick","proposedBy":"stranger",
+ "proposedAt":"2026-08-24T06:00:00Z","diff":"+ 1 file","forgeProposalIds":["fstr"],
+ "courses":[{"name":"sandbox","passed":true,"detail":"confined"},{"name":"tests","passed":true,"detail":"ok"},{"name":"security","passed":true,"detail":"0 findings"}]}
+JSON
+ASHLAR_KEY_DIR="$SK" NO_COLOR=1 dotnet run --project "$CLI_PROJ" --no-build -- gates propose --file "$XA/px.json" --path "$XA" >/dev/null
+ASHLAR_KEY_DIR="$SK" NO_COLOR=1 dotnet run --project "$CLI_PROJ" --no-build -- gates --admit ext-stranger --as stranger-op --path "$XA" >/dev/null
+ASHLAR_KEY_DIR="$SK" NO_COLOR=1 dotnet run --project "$CLI_PROJ" --no-build -- pkg export --id ext-stranger --out "$WORK/stranger.ashpkg" --path "$XA" >/dev/null
+
+# B (pkgkeys) does not trust X: refused before parking, naming X's fingerprint
+run_cli pkg import "$WORK/stranger.ashpkg" --path "$B"
+claim "pkg-import-refuses-untrusted-signer" 1 "not a trusted signer" "$XFP"
+[ ! -f "$B/src/Stranger.cs" ] \
+  && result "pkg-untrusted-nothing-parks" PASS "an untrusted package parks nothing" \
+  || result "pkg-untrusted-nothing-parks" FAIL "untrusted package wrote to disk"
+
+# trust X off the origin fingerprint, and the same package now HELD at B's gate
+run_cli keys trust "$XFP" >/dev/null
+run_cli pkg import "$WORK/stranger.ashpkg" --path "$B"
+claim "pkg-import-held-after-trust" 0 "HELD"
+[ ! -f "$B/src/Stranger.cs" ] \
+  && result "pkg-trusted-holds-before-write" PASS "trust admits to the gate, not to disk" \
+  || result "pkg-trusted-holds-before-write" FAIL "trusted import wrote before admission"
+run_cli keys untrust "$XFP" >/dev/null
+
 unset ASHLAR_KEY_DIR
 
 # ───────────────────────────── pkg mesh: publish + pull between peers ─────────────────────────────

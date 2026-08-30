@@ -111,6 +111,104 @@ public static class OperatorKey
     public static string Fingerprint(byte[] rawPublicKey) =>
         "ed25519:" + Convert.ToHexString(SHA256.HashData(rawPublicKey))[..16].ToLowerInvariant();
 
+    // ─────────────────────────── the peers trust keychain (Phase 3) ───────────────────────────
+    // The set of signer fingerprints this operator trusts to admit imported packages, kept as
+    // marker files under <keyDir>/peers/. Deliberately SEPARATE from trusted/ (the rotation
+    // retention of the operator's OWN superseded public keys): an admission allowlist must never
+    // be wired onto the rotation directory, or rotating after a theft would re-authorize the stolen
+    // key. Fingerprints, not public keys, are enough — a package is intrinsically signed and
+    // verifies against the key it carries; trust is only the decision to accept that fingerprint.
+
+    private const string FpPrefix = "ed25519:";
+    private const int FpHexLen = 16;
+
+    /// <summary>The peers keychain directory: <c>&lt;keyDir&gt;/peers</c>.</summary>
+    public static string PeersDir(string? keyDir = null) => Path.Combine(keyDir ?? ResolveKeyDir(), "peers");
+
+    /// <summary>True for a well-formed <c>ed25519:</c> + 16-lowercase-hex fingerprint.</summary>
+    public static bool IsValidFingerprint(string? fingerprint)
+    {
+        if (fingerprint is null || fingerprint.Length != FpPrefix.Length + FpHexLen) return false;
+        if (!fingerprint.StartsWith(FpPrefix, StringComparison.Ordinal)) return false;
+        foreach (var c in fingerprint.AsSpan(FpPrefix.Length))
+        {
+            if (!((c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'))) return false;
+        }
+        return true;
+    }
+
+    /// <summary>Adds a fingerprint to the peers keychain. Idempotent; validates the format.</summary>
+    public static void Trust(string fingerprint, string? keyDir = null)
+    {
+        if (!IsValidFingerprint(fingerprint))
+            throw new ArgumentException($"'{fingerprint}' is not a valid operator fingerprint (expected ed25519: + 16 hex).");
+        var dir = PeersDir(keyDir);
+        Directory.CreateDirectory(dir);
+        File.WriteAllText(Path.Combine(dir, fingerprint.Replace(':', '-') + ".pub"), fingerprint);
+    }
+
+    /// <summary>Removes a fingerprint from the keychain. Returns false if it was not trusted.</summary>
+    public static bool Untrust(string fingerprint, string? keyDir = null)
+    {
+        if (!IsValidFingerprint(fingerprint)) return false;
+        var path = Path.Combine(PeersDir(keyDir), fingerprint.Replace(':', '-') + ".pub");
+        if (!File.Exists(path)) return false;
+        File.Delete(path);
+        return true;
+    }
+
+    /// <summary>The trusted fingerprints in the keychain, sorted, deduplicated.</summary>
+    public static IReadOnlyList<string> ListTrusted(string? keyDir = null)
+    {
+        var dir = PeersDir(keyDir);
+        if (!Directory.Exists(dir)) return Array.Empty<string>();
+        return Directory.GetFiles(dir, "*.pub")
+            .Select(f => Path.GetFileNameWithoutExtension(f).Replace('-', ':'))
+            .Where(IsValidFingerprint)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(x => x, StringComparer.Ordinal)
+            .ToList();
+    }
+
+    /// <summary>
+    /// A short digest of a trust set (sorted fingerprints), so two boxes — or one box before and
+    /// after a revocation — can be compared at a glance. A box that was off during a revocation is
+    /// the one still trusting the removed key, and nothing else makes that divergence visible.
+    /// </summary>
+    public static string TrustSetDigest(IEnumerable<string> fingerprints)
+    {
+        var joined = string.Join("\n", fingerprints.Distinct(StringComparer.OrdinalIgnoreCase).OrderBy(x => x, StringComparer.Ordinal));
+        return "sha256:" + Convert.ToHexString(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(joined)))[..16].ToLowerInvariant();
+    }
+
+    /// <summary>
+    /// Whether an imported package's sealer is trusted to admit: its fingerprint is listed by the
+    /// project's policy OR in the operator's local peers keychain. An unsigned package
+    /// (<c>(unsigned)</c>) is never trusted — the fail-closed default once a key exists.
+    /// </summary>
+    public static bool IsSignerTrusted(string sealerFingerprint, IEnumerable<string> policyTrustedSigners, string? keyDir = null)
+    {
+        if (!IsValidFingerprint(sealerFingerprint)) return false;
+        // Self-trust: a node always trusts its OWN operator key. Publishing and re-importing your
+        // own package needs no ceremony, and trusting the key you sign with adds no attack surface
+        // — the threat this gate exists for is a STRANGER's key, never your own.
+        try
+        {
+            if (TryLoad(keyDir) is { } self && string.Equals(self.Fingerprint, sealerFingerprint, StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+        catch (InvalidOperationException) { /* a corrupt local key is not a trust source */ }
+        foreach (var s in policyTrustedSigners)
+        {
+            if (string.Equals(s, sealerFingerprint, StringComparison.OrdinalIgnoreCase)) return true;
+        }
+        foreach (var p in ListTrusted(keyDir))
+        {
+            if (string.Equals(p, sealerFingerprint, StringComparison.OrdinalIgnoreCase)) return true;
+        }
+        return false;
+    }
+
     /// <summary>Verifies a signature made by <see cref="SigningIdentity.Sign"/>.</summary>
     public static bool Verify(string publicKeyBase64, byte[] data, string signatureBase64)
     {
