@@ -83,7 +83,13 @@ High-level architecture notes: `docs/architecture/README.md`. SDK vs. `net8.0` /
 
 Use this only when you cannot use the dev container or other Docker workflows:
 
-- .NET SDK `10.x` (LTS; pinned by `global.json`). The CLI and API ship on `net10.0`; libraries multi-target `net8.0;net10.0` and the remaining `net8.0` test hosts roll forward onto the 10.x runtime (`RollForward=Major` in `Directory.Build.targets`), so an SDK-10-only machine runs everything without a separate .NET 8 runtime.
+- .NET SDK `10.x` (LTS; pinned by `global.json`). The CLI and API ship on `net10.0`; libraries multi-target `net8.0;net10.0`.
+- **The ASP.NET Core `8.0` runtime, as well.** `RollForward=Major` (`Directory.Build.targets`) does let an SDK-10-only machine *start* the `net8.0` test hosts, but rolling forward is not a substitute for the runtime: ASP.NET Core 8's `ResponseBodyPipeWriter` predates `PipeWriter.UnflushedBytes`, which System.Text.Json 10 requires, so every HTTP-hosting test fails with an exception that reads like a product bug. Measured on the GameDirector `net8.0` suite: rolled forward → 10 failed; real 8.0 runtime → 167 passed. `cert-gate` does not catch this because it hosts no HTTP. CI installs `10.0.x` and `8.0.x`; `.docker/Dockerfile.devtest` is how the container lanes reach the same state.
+  ```bash
+  curl -sSL https://dot.net/v1/dotnet-install.sh | bash -s -- --channel 8.0 --runtime aspnetcore
+  dotnet --list-runtimes | grep 'AspNetCore.App 8\.'   # must print a line
+  ```
+  Do **not** set `DOTNET_ROLL_FORWARD=LatestMajor` as a workaround — with 8.0 installed it re-creates the very failure it looks like it would fix.
 - Git
 - Optional: Docker (for multi-environment and compose-based test lanes)
 

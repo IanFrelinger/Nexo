@@ -97,11 +97,15 @@ The accurate statement is narrower than "a node cannot refuse a package from an 
   code included.
 - A **tampered** package is refused before any gate is consulted.
 
-What is missing is *discrimination*: a node cannot auto-admit Alice while refusing Bob, and
-**the operator is not shown which key signed a held package** — the prompt says
-`! HELD  add brick rogue.exfil · review with 'ashlar gates'` and no fingerprint. You are asked for
-a trust decision with the identity withheld. That is `CLOSING-PLAN.md` Phase 1 (print the signer)
-and Phase 3 (a trust root), and it is the real gap.
+What is missing is *discrimination*: a node cannot auto-admit Alice while refusing Bob. That is
+`CLOSING-PLAN.md` Phase 3 (a trust root), and it is the real remaining gap.
+
+**The identity is no longer withheld, as of #417.** This section previously said the operator is
+shown no fingerprint when asked for a trust decision. `PkgCommand.cs:460` now appends
+`· sealed by {Fp(signer)}` on every branch with a verified sealer, so the prompt reads
+`! HELD  add brick s.classify · sealed by ed25519:272814b1f3f0f42d · review with \`ashlar gates\``.
+The fingerprint is the one part of that line the sender cannot choose — the summary next to it is
+still attacker-supplied text. Phase 1 step 10, done.
 
 ---
 

@@ -35,6 +35,11 @@ architecture 2026-08-26 for unattended overnight runs.
   that runs by itself, and a catalogue of the failures that are expected so you do not debug them.
   Executed on an x86_64 host on 2026-08-28 and revised against what actually happened; **nothing
   arm64 has run any of it.**
+- `DEV-MIGRATION.md` — **start here if you want to build and test the repo on your own machine**
+  rather than in a cloud session. Three toolchain lanes (dev container / `devbox.sh` / native), a
+  six-rung verification ladder from `dotnet --version` to `make test`, the traps that already cost
+  someone an evening (Git Bash path rewriting, roll-forward, root-in-container), and an honest
+  account of how little the one required check actually runs — ~178 tests of ~4,315.
 - `CLOSING-PLAN.md` — the plan from here to the goal: a self-sustaining, self-extending runtime
   across the apartment's hardware. Eight phases, sixty steps, each marked agent/human/CI and
   whether it needs a .NET SDK. Read **Where to stop** first — Phase 1 is the point after which
