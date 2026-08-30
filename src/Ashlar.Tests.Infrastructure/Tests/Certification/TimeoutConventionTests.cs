@@ -1,7 +1,7 @@
 using System.Reflection;
 using Xunit;
 
-namespace Ashlar.Tests.Infrastructure.Tests.Testing;
+namespace Ashlar.Tests.Infrastructure.Tests.Certification;
 
 /// <summary>
 /// Sanity test: Integration and E2E tests must have explicit [Fact(Timeout = N)] to prevent blame-hang.
