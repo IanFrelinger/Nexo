@@ -66,9 +66,16 @@ public static class AdaptationServiceCollectionExtensions
         // adaptation log, audit log and snapshots do below. Supplying a store path is
         // what makes admissions durable: without it the records are in-memory and no
         // brick certified in an earlier process can ever be found again.
-        var certificationRecordPath = !string.IsNullOrEmpty(patternStorePath)
-            ? Path.Combine(Path.GetDirectoryName(patternStorePath) ?? ".", "ashlar-certifications")
-            : null;
+        //
+        // The no-pattern-store branch used to pass null, which AddCertificationInfrastructure
+        // documents as "keeps the in-memory default" — so the comment above described exactly
+        // the failure the code then chose. It matters most for the CLI, which is a fresh process
+        // per invocation: certify in one `ashlar` command, and the next command cannot see it.
+        // Resolve to the state directory instead, mirroring stateBasePath ~70 lines below.
+        var certificationBasePath = !string.IsNullOrEmpty(patternStorePath)
+            ? Path.GetDirectoryName(patternStorePath) ?? "."
+            : RepoPathResolver.ResolveStateDirectory();
+        var certificationRecordPath = Path.Combine(certificationBasePath, "ashlar-certifications");
         services.AddCertificationInfrastructure(certificationRecordPath);
 
         services.AddSingleton<CertifiedBrickRegistry>(sp =>
