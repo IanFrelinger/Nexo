@@ -79,12 +79,12 @@ public sealed class PkgCommand : Command
                 return 1;
             }
 
-            var gathered = await GatherAsync(id, directory);
-            if (gathered is null)
+            var (code, gathered, gatheredFiles) = await GatherAsync(id, directory);
+            if (code != 0)
             {
-                return 1;
+                return code;
             }
-            var (record, files) = gathered.Value;
+            var (record, files) = (gathered!, gatheredFiles!);
 
             var json = ExtensionPackaging.Pack(record, files, sealer);
             await File.WriteAllTextAsync(outFile.FullName, json);
@@ -104,16 +104,18 @@ public sealed class PkgCommand : Command
     /// <summary>
     /// The record and its files — the parked writes the gate admitted, straight from the forge
     /// queue. Shared by <c>export</c> and <c>share</c>: what travels must be identical however it
-    /// leaves. Prints the reason and returns null when the extension cannot be packaged whole.
+    /// leaves. On failure, prints the reason and returns the exit code with no record: 1 when the
+    /// extension cannot be packaged whole, 65 when the rows fail the admission's signed content
+    /// claims — a verification refusal, same family as a package that fails its seal.
     /// </summary>
-    private static async Task<(GateRecord Record, List<PackageFile> Files)?> GatherAsync(string id, DirectoryInfo directory)
+    private static async Task<(int Code, GateRecord? Record, List<PackageFile>? Files)> GatherAsync(string id, DirectoryInfo directory)
     {
         var store = new GateStore(Path.Combine(directory.FullName, ".ashlar"));
         var record = await store.GetAsync(id);
         if (record is null)
         {
             Console.Error.WriteLine($"no proposal '{id}' in the store.");
-            return null;
+            return (1, null, null);
         }
 
         var forge = AshlarProjectMediation.ProjectStore(directory.FullName);
@@ -124,18 +126,26 @@ public sealed class PkgCommand : Command
             if (proposal is null)
             {
                 Console.Error.WriteLine($"forge proposal '{forgeId}' referenced by '{id}' is missing from the forge store — cannot package an incomplete extension.");
-                return null;
+                return (1, null, null);
             }
             // An admitted record's rows are Applied. Anything else under this id is a row the
             // gate did not admit-and-apply (a shadow, a replacement) — refuse to seal it.
             if (proposal.Status != ChangeProposalStatus.Applied)
             {
                 Console.Error.WriteLine($"forge proposal '{forgeId}' is {proposal.Status}, not Applied — only content the gate admitted AND applied may travel.");
-                return null;
+                return (1, null, null);
             }
             files.Add(new PackageFile { Path = proposal.TargetPath, Content = proposal.NewContent });
         }
-        return (record, files);
+        // The rows just re-read are mutable disk; the claims inside the record are signed. When
+        // the admission carries claims, the rows must hash to them — a row edited between
+        // admission and packaging must not travel under the origin's signature.
+        if (!ExtensionPackaging.VerifyFileClaims(record.Proposal, files, out var claimReason))
+        {
+            Console.Error.WriteLine(claimReason);
+            return (65, null, null);
+        }
+        return (0, record, files);
     }
 
     // ─────────────────────────── import ───────────────────────────
@@ -350,12 +360,12 @@ public sealed class PkgCommand : Command
                 return 1;
             }
 
-            var gathered = await GatherAsync(id, directory);
-            if (gathered is null)
+            var (code, gathered, gatheredFiles) = await GatherAsync(id, directory);
+            if (code != 0)
             {
-                return 1;
+                return code;
             }
-            var (record, files) = gathered.Value;
+            var (record, files) = (gathered!, gatheredFiles!);
 
             var json = ExtensionPackaging.Pack(record, files, sealer);
             // Same refusal shape as `pkg publish`: a package that does not verify is a 65, not an
@@ -410,7 +420,25 @@ public sealed class PkgCommand : Command
             return 1;
         }
 
-        var packages = Directory.EnumerateFiles(from.FullName, "*.ashpkg").OrderBy(p => p, StringComparer.Ordinal).ToList();
+        // A mesh store is a plain directory that people sync, so it collects things that are not
+        // packages. macOS writes AppleDouble sidecars (._name.ashpkg) beside every file on a
+        // non-HFS share; they are resource forks, never packages, and they never parse — so
+        // without this every pull from a Mac-touched share prints a screen of `× REFUSED` that
+        // buries the sealer fingerprints below, which are the part worth reading.
+        //
+        // DELIBERATELY NOT filtering on mtime. Skipping recently-written files to avoid catching
+        // an scp or Syncthing transfer mid-flight sounds right and is not: it cannot distinguish
+        // "still arriving" from "just written", so a synchronous publish-then-pull — a scripted
+        // fleet, or e2e-loop's own co-production scenario — silently defers a good package and the
+        // admission never happens. Measured: a 3-second window failed three e2e scenarios. An
+        // in-flight file is already handled safely, if noisily, by being refused as unparseable
+        // and succeeding on the next pull; a deferred good package is a silent drop, which is
+        // strictly worse.
+        var packages = Directory.EnumerateFiles(from.FullName, "*.ashpkg")
+            .Where(candidate => !Path.GetFileName(candidate).StartsWith('.'))
+            .OrderBy(p => p, StringComparer.Ordinal)
+            .ToList();
+
         if (packages.Count == 0)
         {
             Console.WriteLine($"  {Dim($"the peer store is empty — nothing to pull from {from.FullName}")}");
@@ -426,11 +454,27 @@ public sealed class PkgCommand : Command
         {
             var result = await PackageImport.SubmitAsync(directory.FullName, await File.ReadAllTextAsync(path));
             var summary = result.Package?.Record.Proposal.Summary ?? Path.GetFileName(path);
+
+            // WHO SEALED THIS. The summary beside it is attacker-chosen text — it is whatever the
+            // sender typed — so a gold checkmark next to a friendly sentence is not evidence of
+            // anything. The fingerprint is the only part of the line the sender cannot choose.
+            //
+            // A node cannot yet DISTINGUISH signers (there is no trust root; `ashlar keys trust`
+            // is Phase 3), so the operator making the call is the control. Asking them to decide
+            // while withholding the identity is the gap this closes.
+            //
+            // Deliberately not printed when the package did not parse: there is no verified
+            // sealer to name, and "(unsigned)" there would read as a claim about a package that
+            // was never opened.
+            var sealedBy = result.Package?.SealSigner is { } signer
+                ? $" · sealed by {Fp(signer)}"
+                : string.Empty;
+
             switch (result.Outcome)
             {
                 case PackageAdmission.Admitted:
                     admitted++;
-                    Console.WriteLine($"  {Gold("✓ ADMITTED")}  {summary} {Dim($"· {result.AppliedPaths.Count} file(s)")}");
+                    Console.WriteLine($"  {Gold("✓ ADMITTED")}  {summary} {Dim($"{sealedBy} · {result.AppliedPaths.Count} file(s)")}");
                     if (result.Warning is not null)
                     {
                         warned++;
@@ -439,19 +483,19 @@ public sealed class PkgCommand : Command
                     break;
                 case PackageAdmission.Held:
                     held++;
-                    Console.WriteLine($"  {Clay("! HELD")}     {summary} {Dim("· review with `ashlar gates`")}");
+                    Console.WriteLine($"  {Clay("! HELD")}     {summary} {Dim($"{sealedBy} · review with `ashlar gates`")}");
                     break;
                 case PackageAdmission.AlreadyImported:
                     skipped++;
-                    Console.WriteLine($"  {Dim("− already have  " + summary)}");
+                    Console.WriteLine($"  {Dim("− already have  " + summary + sealedBy)}");
                     break;
                 case PackageAdmission.Rejected:
                     refused++;
-                    Console.WriteLine($"  {Bad("× REJECTED")} {summary} {Dim($"· {result.Message}")}");
+                    Console.WriteLine($"  {Bad("× REJECTED")} {summary} {Dim($"{sealedBy} · {result.Message}")}");
                     break;
                 default:
                     refused++;
-                    Console.WriteLine($"  {Bad("× REFUSED")}  {summary} {Dim($"· {result.Message}")}");
+                    Console.WriteLine($"  {Bad("× REFUSED")}  {summary} {Dim($"{sealedBy} · {result.Message}")}");
                     break;
             }
         }

@@ -53,11 +53,18 @@ public sealed class ExtensionPackagingTests : IDisposable
     };
 
     /// <summary>An Admitted record signed by the origin key — built through the real store so the
-    /// signature is exactly what production writes.</summary>
-    private async Task<GateRecord> AdmittedRecordAsync(string id = "ext-share")
+    /// signature is exactly what production writes. With <paramref name="claimed"/> files, the
+    /// signed proposal carries their content claims (path + sha256), the shape every new producer
+    /// records; with none, the proposal is claimless — Files normalizes to null, the pre-claims
+    /// shape.</summary>
+    private async Task<GateRecord> AdmittedRecordAsync(string id = "ext-share", params (string Path, string Content)[] claimed)
     {
+        var proposal = Proposal(id) with
+        {
+            Files = claimed.Select(f => FileClaim.For(f.Path, f.Content)).ToList(),
+        };
         var store = new GateStore(Path.Combine(_dir, ".ashlar-" + id), _origin);
-        await store.RecordAsync(Proposal(id), new AdmissionOutcome { State = ProposalState.Held, Reason = "held" }, Now);
+        await store.RecordAsync(proposal, new AdmissionOutcome { State = ProposalState.Held, Reason = "held" }, Now);
         return await store.DecideAsync(id, admit: true, "origin-operator", "reviewed", Now.AddMinutes(1));
     }
 
@@ -79,6 +86,145 @@ public sealed class ExtensionPackagingTests : IDisposable
         pkg.Files.Should().ContainSingle().Which.Content.Should().Be("// admitted code");
         pkg.SealSigner.Should().Be(_origin.PublicKeyBase64);
         pkg.Record.Signer.Should().Be(_origin.PublicKeyBase64);
+    }
+
+    // ─────────────────────────── content claims: the signature finally covers the bytes ───────────────────────────
+
+    [Fact]
+    public async Task Claimed_content_round_trips_and_the_claims_travel_inside_the_signed_record()
+    {
+        var record = await AdmittedRecordAsync("ext-claimed", ("src/Shared.cs", "// admitted code"));
+        var json = ExtensionPackaging.Pack(record, Files(), _origin);
+
+        ExtensionPackaging.TryOpen(json, out var pkg, out var reason).Should().BeTrue(reason);
+        var claim = pkg!.Record.Proposal.Files.Should().ContainSingle().Which;
+        claim.Path.Should().Be("src/Shared.cs");
+        claim.Matches("// admitted code").Should().BeTrue("the claim rides inside the signed record");
+    }
+
+    [Fact]
+    public async Task Pack_refuses_files_that_fail_the_records_signed_claims()
+    {
+        // THE slice-5 review finding. The record's signature covers the claims; the files are
+        // re-read from the mutable forge store at pack time. Content edited after admission —
+        // same path, different bytes — must not be sealed under the origin's signature.
+        var record = await AdmittedRecordAsync("ext-drift", ("src/Shared.cs", "// admitted code"));
+
+        var act = () => ExtensionPackaging.Pack(record, Files("// edited after admission"), _origin);
+
+        act.Should().Throw<InvalidOperationException>().WithMessage("*does not match the signed claim*");
+    }
+
+    [Fact]
+    public async Task Pack_refuses_when_the_gather_diverges_from_the_signed_claims()
+    {
+        var record = await AdmittedRecordAsync("ext-cover",
+            ("src/Shared.cs", "// admitted code"), ("src/Other.cs", "// also admitted"));
+
+        // A claimed file missing from the gather, or an extra file smuggled in beside the
+        // claimed ones, is a count divergence: what travels must be exactly what the gate
+        // decided over, nothing more and nothing less.
+        var missing = () => ExtensionPackaging.Pack(record, Files(), _origin);
+        missing.Should().Throw<InvalidOperationException>().WithMessage("*signed 2 content claim(s) but 1 file(s)*");
+
+        var extra = () => ExtensionPackaging.Pack(record,
+            [.. Files(), new PackageFile { Path = "src/Other.cs", Content = "// also admitted" },
+             new PackageFile { Path = "src/Smuggled.cs", Content = "// never admitted" }], _origin);
+        extra.Should().Throw<InvalidOperationException>().WithMessage("*signed 2 content claim(s) but 3 file(s)*");
+
+        // Same count, wrong path at a position: the writes were replaced or reordered.
+        var replaced = () => ExtensionPackaging.Pack(record,
+            [.. Files(), new PackageFile { Path = "src/Elsewhere.cs", Content = "// also admitted" }], _origin);
+        replaced.Should().Throw<InvalidOperationException>().WithMessage("*replaced or reordered*");
+    }
+
+    [Fact]
+    public async Task Order_is_signed_two_admitted_writes_to_one_path_cannot_be_swapped()
+    {
+        // Apply is last-write-wins per path, so ORDER decides the final bytes. An order-blind
+        // (multiset) check would verify a package whose two same-path files were swapped — every
+        // hash still matches, but the receiver would end with the wrong final content. The
+        // sequence-exact check refuses the swap.
+        var record = await AdmittedRecordAsync("ext-order",
+            ("src/Shared.cs", "// first write"), ("src/Shared.cs", "// final write"));
+
+        var straight = ExtensionPackaging.Pack(record,
+            [new PackageFile { Path = "src/Shared.cs", Content = "// first write" },
+             new PackageFile { Path = "src/Shared.cs", Content = "// final write" }], _origin);
+        ExtensionPackaging.TryOpen(straight, out _, out var openReason).Should().BeTrue(openReason);
+
+        var swapped = () => ExtensionPackaging.Pack(record,
+            [new PackageFile { Path = "src/Shared.cs", Content = "// final write" },
+             new PackageFile { Path = "src/Shared.cs", Content = "// first write" }], _origin);
+        swapped.Should().Throw<InvalidOperationException>().WithMessage("*does not match the signed claim*");
+    }
+
+    [Fact]
+    public async Task Open_refuses_a_package_whose_files_fail_the_records_own_claims()
+    {
+        // Defense in depth for a BYPASSED packer: the origin operator's own key seals swapped
+        // bytes under an untouched claims-bearing record. Seal verifies (their bytes), record
+        // verifies (untouched), sealer == signer (same operator) — the claims must still refuse:
+        // the sealed bytes are not the bytes the gate decided over.
+        var record = await AdmittedRecordAsync("ext-bypass", ("src/Shared.cs", "// admitted code"));
+        var unsealed = new ExtensionPackage
+        {
+            FormatVersion = ExtensionPackage.ExpectedFormatVersion,
+            Record = record,
+            Files = [new PackageFile { Path = "src/Shared.cs", Content = "// swapped at the origin" }],
+        };
+        var sealed_ = unsealed with { Seal = _origin.Sign(CanonicalJson.Bytes(unsealed)), SealSigner = _origin.PublicKeyBase64 };
+        var json = System.Text.Json.JsonSerializer.Serialize(sealed_, new System.Text.Json.JsonSerializerOptions
+        {
+            Converters = { new System.Text.Json.Serialization.JsonStringEnumConverter() },
+        });
+
+        ExtensionPackaging.TryOpen(json, out _, out var reason).Should().BeFalse(
+            "a receiver must not trust bytes the admission's own claims disown");
+        reason.Should().Contain("does not match the signed claim");
+    }
+
+    [Fact]
+    public async Task A_record_signed_before_claims_existed_still_verifies_and_still_packs()
+    {
+        // Wire-format compatibility, proven the honest way: persist a signed record, then strip
+        // the Files property from the stored JSON — byte-for-byte what a pre-claims binary wrote.
+        // The fail-closed reader must still verify it, and packaging must still accept it (its
+        // rows simply travel unclaimed, exactly as they did before claims existed).
+        var storeDir = Path.Combine(_dir, ".ashlar-legacy");
+        var store = new GateStore(storeDir, _origin);
+        await store.RecordAsync(Proposal("ext-legacy"), new AdmissionOutcome { State = ProposalState.Held, Reason = "held" }, Now);
+        await store.DecideAsync("ext-legacy", admit: true, "origin-operator", "reviewed", Now.AddMinutes(1));
+
+        var path = Path.Combine(storeDir, "gates", "ext-legacy.json");
+        var node = JsonNode.Parse(File.ReadAllText(path))!;
+        ((JsonObject)node["Proposal"]!).Remove("Files").Should().BeTrue("the stored record carries the property to strip");
+        File.WriteAllText(path, node.ToJsonString());
+
+        var reread = await new GateStore(storeDir).GetAsync("ext-legacy");
+        reread.Should().NotBeNull("a record signed without claims must keep verifying");
+        reread!.Proposal.Files.Should().BeNull();
+
+        var json = ExtensionPackaging.Pack(reread, Files(), _origin);
+        ExtensionPackaging.TryOpen(json, out _, out var reason).Should().BeTrue(reason);
+    }
+
+    [Fact]
+    public void Null_claims_stay_out_of_the_canonical_bytes_and_empty_normalizes_to_null()
+    {
+        // The compatibility mechanism itself (SPEC-006 S-5). Null must vanish from the signed
+        // bytes — that is what keeps every pre-claims signature verifying — and the empty
+        // spelling, which WOULD enter the canonical form and diverge, is unrepresentable: the
+        // type normalizes it to null on construction and deserialization alike, so no producer
+        // can ever sign it.
+        var claimless = Proposal("ext-canon");
+        System.Text.Encoding.UTF8.GetString(CanonicalJson.Bytes(claimless))
+            .Should().NotContain("\"Files\"", "a null claim list must serialize exactly like a pre-claims record");
+
+        var normalized = claimless with { Files = [] };
+        normalized.Files.Should().BeNull("empty is not a spelling of 'no claims' — the type normalizes it away");
+        System.Text.Encoding.UTF8.GetString(CanonicalJson.Bytes(normalized))
+            .Should().NotContain("\"Files\"", "the normalized value must sign identically to the pre-claims shape");
     }
 
     // ─────────────────────────── pack refusals ───────────────────────────

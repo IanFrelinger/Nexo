@@ -1,0 +1,98 @@
+# THE NODE.
+#
+# One Ashlar node, deployable and restart-durable. This is the file to copy to a machine you want
+# in the fleet; everything under deploy/compose/ is a lab, a demo or a dev stack.
+#
+#   docker compose -f deploy/node.yml up -d
+#   docker compose -f deploy/node.yml logs -f
+#
+# Update the pin with scripts/node-update.sh rather than by hand.
+
+services:
+  node:
+    # PINNED BY DIGEST, and to a `sha-<12>` tag rather than `:latest`.
+    #
+    # `:latest` is republished on every master push and its previous manifest becomes untagged and
+    # eligible for GHCR garbage collection — so a node pinned to the :latest INDEX digest 404s
+    # after a few merges, and one pinned to the moving tag silently changes under you. Observed
+    # 2026-08-28: :latest moved twice inside a single working session.
+    #
+    # The `sha-<12>` tags only became multi-arch on master builds as of 0983d74. Anything older is
+    # amd64-only and fails on an arm64 node with "no matching manifest for linux/arm64".
+    #
+    # sha-39cf3f9274df, verified to carry both linux/amd64 and linux/arm64.
+    image: ghcr.io/ianfrelinger/nexo-cli@sha256:6537e41cab5ae3f48866d8d625423ae0a3ea779ad997b9b0f5e5b3eec078bc0c
+
+    # No `build:` key, deliberately. A node runs a published, signed artifact that CI produced —
+    # not whatever happens to be in the working tree of the machine it is standing on.
+
+    # THE GATE STORE. No environment variable reaches it: GateStore's constructor takes a
+    # stateRoot and every call site passes a projectDir, so the store lands at
+    # <working_dir>/.ashlar/gates. Left at the image default (/app) it lives in the container
+    # layer and `docker rm` destroys every durable trust decision, the entire held queue and the
+    # whole admission history — while a criterion that only checks keys and mesh would still pass.
+    #
+    # /data/state/project must EXIST IN THE IMAGE owned by the app user. Docker creates a missing
+    # working_dir as root, and the container runs as uid 1654, so without that the gate store is
+    # silently unwritable. Measured: touch -> "Permission denied".
+    working_dir: /data/state/project
+
+    command:
+      - background-agent
+      - daemon
+      - --config
+      - /app/config/agents.json
+      # Observation is the highest-rate unbounded appender in the daemon; it stays off on
+      # unattended nodes until Phase 5's rotating bounded writer lands (CLOSING-PLAN Phase 1
+      # step 3 / Phase 5 step 5 — that step removes this flag).
+      - --disable-observation
+
+    volumes:
+      - ashlar-state:/data/state
+      # The mesh store is how packages reach this node. Point it at a folder your sync tool owns —
+      # Syncthing, a mounted share, a USB stick — and uncomment. MeshStore.Resolve APPENDS
+      # '/published' to ASHLAR_MESH_DIR, so the directory to hand the sync tool is
+      # /data/state/mesh/published. One level off yields an empty peer store with no error, which
+      # reads exactly like a peer that is switched off.
+      # - /srv/ashlar-share:/data/state/mesh
+
+    restart: unless-stopped
+
+    # Log rotation. Nothing in deploy/, .docker/ or scripts/install/ configured this before, and
+    # the default json-file driver grows without bound — on a node left alone for weeks that is
+    # the disk filling for no reason anyone will connect to a container they last touched in
+    # August.
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+    # A clean OOM kill beats swap thrash. On a small board the alternative is thrashing that takes
+    # sshd down before the container, leaving a physical power pull as the only remedy — into
+    # LiteDB and ext4 on a card that was just thrashed. Raise these on a bigger machine.
+    mem_limit: 1g
+    cpus: 1.5
+
+    # host.docker.internal resolves natively on Docker Desktop; this makes it work on a plain
+    # Linux host too, which is what a small always-on box actually is.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    environment:
+      # The node capability runtime probes a model backend on startup and defaults to
+      # 127.0.0.1:11434 — inside a container that is the container itself, so it can never reach a
+      # model server on the host or the LAN. Unset this only if you genuinely run one as a sidecar.
+      ASHLAR_OLLAMA_BASE_URL: ${ASHLAR_OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+
+    # NOTE: `restart: unless-stopped` does NOT act on HEALTHCHECK. Docker restarts a container on
+    # EXIT, never on unhealthy. A node that parks or wedges while still running stays up and
+    # unhealthy forever, and `docker ps` is where you find out — which is why the park-don't-exit
+    # rule and the heartbeat exist rather than an exit-and-be-restarted design.
+
+volumes:
+  # Pinned literal name: the host wrapper's fallback (`docker run -v ashlar-state:...`) and
+  # NodeUnitConventionTests both address this volume by name; without `name:` compose would
+  # prefix the project name and every consumer would have to guess it.
+  ashlar-state:
+    name: ashlar-state

@@ -36,16 +36,94 @@ COPY --from=build /app/publish/ /app/
 
 # Runtime state (LiteDB stores, snapshots) goes to /data/state instead of <mounted repo>/.ashlar/state so a
 # read-only or foreign-owned workspace mount never blocks the CLI; mount a volume there to keep it.
+#
+# ASHLAR_KEY_DIR and ASHLAR_MESH_DIR are the node's IDENTITY and its published packages. Without
+# them OperatorKey.ResolveKeyDir() falls back to ~/.ashlar/keys and MeshStore.Resolve to
+# ~/.ashlar/mesh/published — both inside the container HOME — so `docker rm` destroys the operator
+# key and every package the node ever published. Measured: the replacement container does not
+# report a DIFFERENT key, it reports NO key, and then records gate decisions UNSIGNED. A node that
+# silently stops signing is worse than one that visibly changes name.
+#
+# NOTE: MeshStore.Resolve APPENDS '/published' to ASHLAR_MESH_DIR (MeshStore.cs:31). The directory
+# to hand a sync tool is therefore $ASHLAR_MESH_DIR/published — one level off here yields an empty
+# peer store with no error, which reads identically to a peer that is simply switched off.
+#
+# The gate store is deliberately absent from this block: no environment variable reaches it. It
+# lives at <projectDir>/.ashlar/gates and is persisted only by working_dir — see deploy/node.yml.
 ENV ASHLAR_STATE_DIR=/data/state \
     ASHLAR_FORGE_ROOT=/data/state/runtime-studio/forge \
     ASHLAR_OBJECTIVES_ROOT=/data/state/runtime-studio/objectives \
-    ASHLAR_OBSERVATIONS_PATH=/data/state/runtime-studio/observations
-RUN mkdir -p /data/state/runtime-studio /app/.ashlar /app/config && chown -R app:app /data /app/.ashlar /app/config
+    ASHLAR_OBSERVATIONS_PATH=/data/state/runtime-studio/observations \
+    ASHLAR_KEY_DIR=/data/state/keys \
+    ASHLAR_MESH_DIR=/data/state/mesh \
+    ASHLAR_CYCLE_EVENTS_PATH=/data/state/runtime-studio/cycles.jsonl
+# /data/state/project is the node's project directory, and it must exist HERE, owned by app, not
+# be created by Docker at run time. The gate store lands at <working_dir>/.ashlar/gates and no
+# environment variable reaches it, so deploy/node.yml persists it with `working_dir`. Docker
+# creates a missing working_dir as ROOT, and this image runs as uid 1654 — measured: the gate
+# store is then silently unwritable ("Permission denied" on first write). Creating it in the image
+# means the named volume is seeded with the right ownership instead.
+RUN mkdir -p /data/state/runtime-studio /data/state/project /app/.ashlar /app/config && chown -R app:app /data /app/.ashlar /app/config
+
+# A default agent set, so a node does WORK instead of idling. Without a config the daemon binds
+# BackgroundAgents:Agents to an empty list and creates zero agents — the node stays up, logs
+# nothing interesting, and any soak charts a flat line by construction.
+#
+# The shipped agent is an EXTENDER, but the node still ships SAFE: aggressiveness mode defaults to
+# Passive (FileBasedAggressivenessModeStore), and in Passive the extender branch logs
+# "observe only" and returns WITHOUT running a self-extend cycle. It does still increment the
+# cycle count, which is the difference between "the agent set loaded" and "the node rewrites
+# itself" — the first is Phase 1's exit criterion, the second is a deliberate operator act
+# (`ashlar background-agent mode`, persisted via ASHLAR_AGENT_MODE_PATH).
+#
+# Parameters.RepoRoot is REQUIRED, not decoration: BackgroundAgentRegistry only takes the extender
+# branch when TryGetParameter finds RepoRoot or Path, so omitting it silently downgrades the agent
+# to a no-op with no error anywhere.
+COPY .docker/node-agents.json /app/config/agents.json
 
 # Non-root: the aspnet 8+ images ship an unprivileged 'app' user (numeric $APP_UID so k8s runAsNonRoot can
 # verify it). Commands that write into a mounted workspace need it writable by that uid (or run with --user).
 USER $APP_UID
 
 WORKDIR /app
-ENTRYPOINT ["dotnet", "/app/Ashlar.CLI.dll"]
+
+# The node's first HEALTHCHECK. It reads the heartbeat the daemon rewrites on a fixed timer, so
+# `docker ps` can tell a working node from a parked or wedged one after three weeks away — which
+# nothing could before.
+#
+# Three ways to be unhealthy, and the third is the one that matters most: a heartbeat that has
+# STOPPED being rewritten means the process is alive but no longer running its own loop, and that
+# is invisible to every other signal Docker has.
+#
+#   missing file      the daemon never got far enough to describe itself
+#   status != running the daemon parked, and the file says why
+#   stale mtime       the daemon stopped rewriting it
+#
+# start-period is generous because a first run scaffolds a project and restores state; retries
+# absorb a single slow rewrite rather than flapping on one.
+#
+# NOTE: `restart: unless-stopped` does NOT act on this. Docker restarts on EXIT only, so a parked
+# node stays up and reports unhealthy — deliberately. That is the whole point of parking instead of
+# exiting: an unthrottled restart loop writes to the disk as fast as the machine allows.
+#
+# lastAdmissionAt is deliberately NOT checked. Agent schedules are operator-configured (the shipped
+# set uses a 15-minute interval, and an hourly one is perfectly reasonable), so any fixed staleness
+# threshold here would report a correctly-idle node as unhealthy.
+HEALTHCHECK --interval=60s --timeout=10s --start-period=120s --retries=3 \
+  CMD sh -c 'f="${ASHLAR_STATE_DIR:-/data/state}/heartbeat.json"; \
+      [ -f "$f" ] || exit 1; \
+      grep -qE "\"status\"[[:space:]]*:[[:space:]]*\"running\"" "$f" || exit 1; \
+      [ $(( $(date +%s) - $(stat -c %Y "$f") )) -lt 300 ] || exit 1'
+
+# The image build time as a Unix epoch, for the entrypoint's clock floor. Empty on local
+# builds (the wait is skipped); CI passes --build-arg IMAGE_BUILD_EPOCH="$(date -u +%s)".
+ARG IMAGE_BUILD_EPOCH=""
+ENV IMAGE_BUILD_EPOCH=${IMAGE_BUILD_EPOCH}
+
+# Boot-vs-CLI dispatch lives in the entrypoint: `docker run <image> keys show` behaves exactly
+# as it did when the ENTRYPOINT was the bare CLI, while the daemon path (what deploy/node.yml
+# passes) gets a bounded clock floor and a first-run project scaffold — without which the
+# pkg/admission surface of a fresh node answers "not an ashlar project" forever.
+COPY --chmod=0755 .docker/node-entrypoint.sh /app/node-entrypoint.sh
+ENTRYPOINT ["/app/node-entrypoint.sh"]
 CMD ["--help"]

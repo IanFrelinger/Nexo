@@ -36,6 +36,61 @@ public sealed record ExtensionProposal
     /// applies these; refusing rejects them.
     /// </summary>
     public IReadOnlyList<string> ForgeProposalIds { get; init; } = [];
+
+    /// <summary>
+    /// Content claims for the mediated writes: one (path, sha256) per forge row, in
+    /// <see cref="ForgeProposalIds"/> order, recorded when the proposal is built and thereafter
+    /// covered by the record's signature. The forge ids name WHERE packaging re-reads content
+    /// from — a mutable, unsigned store — and these claims pin WHAT must be there, so a row
+    /// edited after the gate decided fails verification instead of travelling under the
+    /// origin's signature.
+    ///
+    /// <para>Null means "nothing claimed": records signed before claims existed, and proposals
+    /// with no mediated writes. Null — never an empty list — is the normative spelling
+    /// (SPEC-006 S-5): the canonical signing form omits null, keeping every pre-claims
+    /// signature verifying byte-for-byte, while an empty list would enter the signed bytes.
+    /// The accessor enforces the rule mechanically, so the empty spelling cannot be
+    /// constructed, deserialized, or signed.</para>
+    /// </summary>
+    public IReadOnlyList<FileClaim>? Files
+    {
+        get => _files;
+        init => _files = value is { Count: 0 } ? null : value;
+    }
+
+    private readonly IReadOnlyList<FileClaim>? _files;
+}
+
+/// <summary>
+/// One signed content claim: the project-relative path of an admitted write and the SHA-256 of
+/// the exact content the gate decided over. Rides inside <see cref="ExtensionProposal.Files"/>.
+/// </summary>
+public sealed record FileClaim
+{
+    /// <summary>Project-relative target path, exactly as the forge row records it.</summary>
+    public required string Path { get; init; }
+
+    /// <summary>Lowercase hex SHA-256 over the UTF-8 bytes of the file's full new content.</summary>
+    public required string Sha256 { get; init; }
+
+    /// <summary>Builds the claim for one file's content.</summary>
+    public static FileClaim For(string path, string content) => new()
+    {
+        Path = path,
+        Sha256 = HashContent(content),
+    };
+
+    /// <summary>The claim hash for <paramref name="content"/>: lowercase hex SHA-256 of its
+    /// UTF-8 bytes. One definition, used by claimers and verifiers alike — the two sides must
+    /// never disagree on what "the content's hash" means.</summary>
+    public static string HashContent(string content) =>
+        Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
+            System.Text.Encoding.UTF8.GetBytes(content))).ToLowerInvariant();
+
+    /// <summary>True when <paramref name="content"/> hashes to this claim's <see cref="Sha256"/>.
+    /// Hex comparison is case-insensitive — spelling is presentation, the digest is the claim.</summary>
+    public bool Matches(string content) =>
+        string.Equals(Sha256, HashContent(content), StringComparison.OrdinalIgnoreCase);
 }
 
 /// <summary>Terminal and intermediate states of a proposal. See SPEC-004: transition
