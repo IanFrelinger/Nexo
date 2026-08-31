@@ -85,6 +85,17 @@ services:
       # model server on the host or the LAN. Unset this only if you genuinely run one as a sidecar.
       ASHLAR_OLLAMA_BASE_URL: ${ASHLAR_OLLAMA_BASE_URL:-http://host.docker.internal:11434}
 
+      # A5 cross-machine sharing (consumer auto-pull). OFF by default. Uncomment to auto-pull
+      # TRUSTED signed .ashpkg a peer published into the shared mesh folder, on a timer. You MUST
+      # trust the peer's signer first (`ashlar keys trust <fingerprint>` — read it off the origin's
+      # `ashlar keys show`), or every package is refused (fail-closed). With the mesh mount above,
+      # the peer's published folder arrives as /data/state/mesh/published. Imported code is re-gated
+      # by THIS node's policy: a `proposing` policy HOLDS it for review (the safe default); only a
+      # `self-extending` policy auto-applies it.
+      # ASHLAR_MESH_PULL_DIR: /data/state/mesh/published
+      # ASHLAR_MESH_PULL_INTERVAL_SECONDS: "300"
+      # ASHLAR_MESH_PULL_PROJECT: /data/state/project
+
     # NOTE: `restart: unless-stopped` does NOT act on HEALTHCHECK. Docker restarts a container on
     # EXIT, never on unhealthy. A node that parks or wedges while still running stays up and
     # unhealthy forever, and `docker ps` is where you find out — which is why the park-don't-exit
