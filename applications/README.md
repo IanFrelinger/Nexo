@@ -6,11 +6,11 @@ Three similarly named folders in this repository mean three different things:
 |--------|------------------|---------|
 | **`application/`** (singular) | The two deployable hosts, `application/src/Ashlar.CLI` and `application/src/Ashlar.API`, plus `application/src/Ashlar.Tests.CLI`. Built by `application/Ashlar.Application.sln`. | Apache-2.0 |
 | **`applications/`** (plural, this folder) | Products **on top of** the kernel: they reference `src/` and are never referenced by it. | Apache-2.0 |
-| **`apps/`** | Agent-set / host **configuration** surfaces (`runtime-studio`, `ashlar-forge`, `game-director`, `release-manager`) — no `.csproj`. | Listed as commercial in [`LICENSING.md`](../LICENSING.md) |
+| **`apps/`** | Agent-set / host **configuration** surfaces — no `.csproj`. | `release-manager` and `runtime-studio` are open (graduated 2026-08-31); `ashlar-forge` and `game-director` are commercial — see [`LICENSING.md`](../LICENSING.md) |
 
 ## Licensing
 
-Everything under `applications/` is **Apache-2.0** by rule: `Directory.Build.targets` sets `PackageLicenseExpression=Apache-2.0` for every project that does not declare `AshlarCommercialProject=true`, and no project here declares it. Commercial code lives only under `commercial/`.
+Everything under `applications/` is **Apache-2.0** by rule: `Directory.Build.targets` sets `PackageLicenseExpression=Apache-2.0` for every project that does not declare `AshlarCommercialProject=true`, and no project here declares it. Commercial *projects* (`.csproj` with `AshlarCommercialProject=true`) live only under `commercial/`; two `apps/` configuration surfaces — `ashlar-forge` and `game-director` — are also commercial. See [`LICENSING.md`](../LICENSING.md).
 
 ## Boundary rules
 

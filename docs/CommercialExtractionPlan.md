@@ -212,4 +212,4 @@ Do not combine large refactors retroactively. The dependency graph and licensing
 
 ## Open questions (post-extraction)
 
-See [`LICENSING.md`](../LICENSING.md) — CLI mesh-hub split and `apps/release-manager` open-source candidacy.
+All post-extraction questions are resolved — see the struck-through list in [`LICENSING.md`](../LICENSING.md) (`apps/release-manager` and `apps/runtime-studio` graduated to Tier 1 OPEN on 2026-08-31).

@@ -110,7 +110,7 @@ Plural **`applications/`** holds open products built **on top of** the kernel: t
 | Game domain | `commercial/src/Ashlar.Commercial.GameDomain/Ashlar.Commercial.GameDomain.csproj` |
 | Fleet | `commercial/src/Ashlar.Commercial.Fleet.Contracts/Ashlar.Commercial.Fleet.Contracts.csproj`, `commercial/src/Ashlar.Commercial.Fleet.Infrastructure/Ashlar.Commercial.Fleet.Infrastructure.csproj`, `commercial/src/Ashlar.Commercial.Fleet.Api/Ashlar.Commercial.Fleet.Api.csproj`, `commercial/src/Ashlar.Commercial.Fleet.Host/Ashlar.Commercial.Fleet.Host.csproj`, `commercial/src/Ashlar.Commercial.MeshDirector/Ashlar.Commercial.MeshDirector.csproj` |
 | Commercial samples | `commercial/samples/ForgeMapHostSample/ForgeMapHostSample.csproj` |
-| App configs (no `.csproj`) | `apps/runtime-studio`, `apps/ashlar-forge`, `apps/game-director`, `apps/release-manager` — agent-set / host configuration surfaces, listed as commercial in `LICENSING.md` |
+| App configs (no `.csproj`) | `apps/release-manager` and `apps/runtime-studio` are OPEN (graduated 2026-08-31); `apps/ashlar-forge` and `apps/game-director` remain commercial — see `LICENSING.md` |
 
 ### Tier 3c — demos, samples, tools, spikes (open)
 

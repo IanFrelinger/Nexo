@@ -1,6 +1,6 @@
 # Open-core boundary
 
-This page is the source of truth for Ashlar's open-core split. It describes the boundary as it exists in code, not as an aspiration. Older phase and extraction docs should point here when they discuss open vs. commercial placement.
+This page is the source of truth for Ashlar's open-core split. It describes the boundary as it exists in code, not as an aspiration. Older phase and extraction docs should point here when they discuss open vs. commercial placement. Licensing tiers, the seven **covenants**, and the in-force **evaluation grant** live in [`/LICENSING.md`](../LICENSING.md); this page covers placement and enforcement.
 
 ## Boundary rule
 
@@ -38,8 +38,21 @@ Commercial code covers:
 - `Ashlar.Commercial.MeshDirector`
 - Game Director / Forge commercial verticals under `commercial/src/Ashlar.Commercial.GameDirector.*`
 - `Ashlar.Commercial.GameDomain`
+- two `apps/` configuration surfaces (no `.csproj`): `apps/game-director/` and `apps/ashlar-forge/`
 
 Commercial concerns include fleet director behavior, fleet-scale mesh orchestration, commercial governance/RBAC, organization-scale control plane, leases/checkpoints, commercial worker execution, commercial API packaging, and vertical commercial app packaging.
+
+## `apps/` classification
+
+The `apps/` directories are agent-set/host **configuration** surfaces with no `.csproj`, so the project-path rule below does not classify them; `LICENSING.md` does, explicitly:
+
+- **Open:** `apps/release-manager/` and `apps/runtime-studio/` — graduated commercial → open on 2026-08-31 (the one-way ratchet's trust-building direction). The game-director run-mode config and launcher moved to `apps/game-director/` as part of that graduation.
+- **Commercial:** `apps/game-director/` and `apps/ashlar-forge/` — each carries a `COMMERCIAL-LICENSE.md` with the in-force evaluation grant.
+
+## Tracked boundary follow-ups
+
+- **Extract the private-license gate from the open API host.** `application/src/Ashlar.API/Security/PrivateLicense*` is the default-off license-enforcement seam commercial deployments enable. It restricts nothing unless configured, and its lapsed floor (expired = read-only) is pinned in code — but per covenant 3 the wall should be architectural, so the gate belongs in the commercial host, behind an open extension seam.
+- **Move commercial license files to Ed25519.** License signatures are HMAC-SHA256 today, so the verification key is also a signing key and can never be published. Re-signing licenses with the Ed25519 pattern from `src/Ashlar.Certification.Contracts/` lets the open tooling verify license files too, completing covenant 1's enumeration.
 
 ## Namespace and project convention
 

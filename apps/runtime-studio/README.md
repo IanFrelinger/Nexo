@@ -38,7 +38,6 @@ Kernel packages stay reusable; Runtime Studio defines product workflow, operator
 Config file:
 
 - `apps/runtime-studio/config/agent_set.local.json`
-- `apps/runtime-studio/config/agent_set.game_director.local.json` (director mode for game projects)
 
 Agent roles included:
 
@@ -46,14 +45,12 @@ Agent roles included:
 - `runtime-worker-optimizer` (`optimizer`) - code analysis worker
 - `runtime-worker-tester` (`tester`) - test verification worker
 
-Game director mode roles included:
-
-- `game-director-planner` (`extender`) - plans iterations and delegates technical execution
-- `game-worker-asset-pipeline` (`extender`) - drives asset pipeline tasks and integration
-- `game-worker-level-layout` (`extender`) - executes level layout / blockout iteration tasks
-- `game-worker-systems-designer` (`extender`) - implements and tunes game systems
-- `game-worker-code-optimizer` (`optimizer`) - static analysis / optimization sweeps
-- `game-worker-test-automation` (`tester`) - recurring automated test execution
+The game-director run mode (a commercial vertical) lives in
+[`apps/game-director/`](../game-director/) — config
+`apps/game-director/config/agent_set.game_director.local.json`, launcher
+`apps/game-director/scripts/run_game_director_local.sh`. It moved there on
+2026-08-31 when `runtime-studio` graduated to the open tier, so the open app
+carries no Game Director material (see `/LICENSING.md`).
 
 ## Operator CLI quick reference
 
@@ -68,18 +65,18 @@ bash apps/runtime-studio/scripts/bootstrap_runtime_studio.sh
 bash apps/runtime-studio/scripts/run_agent_set_local.sh --duration 5m --disable-observation
 ```
 
-Game director quick start:
+Game director quick start (commercial vertical — see [`apps/game-director/`](../game-director/)):
 
 ```bash
 bash apps/runtime-studio/scripts/bootstrap_runtime_studio.sh
-bash apps/runtime-studio/scripts/run_game_director_local.sh --duration 10m --disable-observation
+bash apps/game-director/scripts/run_game_director_local.sh --duration 10m --disable-observation
 ```
 
 Set a test filter for your project lane before starting:
 
 ```bash
 export ASHLAR_GAME_TEST_FILTER="FullyQualifiedName~YourGameNamespace"
-bash apps/runtime-studio/scripts/run_game_director_local.sh --duration 10m
+bash apps/game-director/scripts/run_game_director_local.sh --duration 10m
 ```
 
 The run script configures:

@@ -8,7 +8,9 @@ At release time, move the `[Unreleased]` notes under a new `[X.Y.Z] - YYYY-MM-DD
 
 ## [Unreleased]
 
-_Nothing yet — the tree is at 0.1.0._
+### Changed
+
+- **Licensing: the open-core boundary now has teeth.** `LICENSING.md` gains seven published **covenants** (verify-free-forever, one-way ratchet, architectural walls, buyer-based placement, no commercial trust exceptions, no telemetry in open packages, data freedom). The evaluation grant for commercial sources is **in force** (it was a draft marked "needs owner sign-off"), all 19 remaining `COMMERCIAL-LICENSE.md` files replace "Commercial terms TBD" with real terms (evaluation grant, commercial contact, lapsed-license degrades-to-read-only commitment), and `apps/release-manager` + `apps/runtime-studio` **graduate commercial → open** — the ratchet exercised in its trust-building direction, resolving the Tier 3 listing that contradicted the headline "single-node + inspectable = open" rule.
 
 ## [0.1.0] - 2026-08-30
 
