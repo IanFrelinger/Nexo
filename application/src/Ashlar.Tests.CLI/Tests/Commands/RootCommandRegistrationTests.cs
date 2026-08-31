@@ -110,6 +110,23 @@ public sealed class RootCommandRegistrationTests
     }
 
     [Fact(Timeout = 15000)]
+    public async Task RootCommand_RegistersUnityDevCommand()
+    {
+        await Task.CompletedTask;
+        var root = Ashlar.CLI.Program.BuildRootCommand();
+        var unityDev = root.Subcommands.SingleOrDefault(s => s.Name == "unity-dev");
+
+        // `ashlar unity-dev` is a fully built feature (init/generate/iterate/list/assets/qa/
+        // fullstack/pin/compose) whose own hint text tells users to run `ashlar unity-dev
+        // generate ...`. It was built but never added to the root — the exact `trust`-in-#162
+        // failure this suite exists to catch. Guard the whole verb and its subcommands so it
+        // can't silently drop again.
+        unityDev.Should().NotBeNull("`ashlar unity-dev` must stay registered");
+        unityDev!.Subcommands.Select(s => s.Name)
+            .Should().Contain(new[] { "init", "generate", "iterate", "list", "assets", "qa", "fullstack", "pin", "compose" });
+    }
+
+    [Fact(Timeout = 15000)]
     public async Task TrustCommand_HasDocumentedSubcommands()
     {
         await Task.CompletedTask;
