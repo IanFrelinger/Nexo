@@ -17,6 +17,8 @@ public sealed class AshlarPrivateLicenseOptions
     /// <summary>Optional HMAC secret for verifying the <c>signature</c> field in the license file.</summary>
     public string? HmacSecret { get; set; }
 
-    /// <summary>When license is expired, allow GET/read APIs but block mutating routes.</summary>
+    /// <summary>When the license is <b>Invalid</b>, allow GET/read APIs but block mutating
+    /// routes. An <b>Expired</b> license always degrades to read-only regardless of this
+    /// flag — the lapsed floor is a <c>LICENSING.md</c> commitment, not a configuration.</summary>
     public bool AllowReadOnlyWhenExpired { get; set; } = true;
 }

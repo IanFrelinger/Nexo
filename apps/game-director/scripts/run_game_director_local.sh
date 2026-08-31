@@ -2,7 +2,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-CONFIG_PATH="${REPO_ROOT}/apps/runtime-studio/config/agent_set.game_director.local.json"
+CONFIG_PATH="${REPO_ROOT}/apps/game-director/config/agent_set.game_director.local.json"
 
 DURATION="15m"
 DISABLE_OBSERVATION=0

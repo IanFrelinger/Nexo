@@ -39,7 +39,9 @@ public sealed class PrivateLicenseMiddleware
             return;
         }
 
-        if (_options.AllowReadOnlyWhenExpired &&
+        // The lapsed floor is read-only and is a LICENSING.md commitment, so an Expired
+        // license always admits reads — AllowReadOnlyWhenExpired only governs Invalid.
+        if ((status.State == PrivateLicenseState.Expired || _options.AllowReadOnlyWhenExpired) &&
             !IsMutatingMethod(context.Request.Method) &&
             context.Request.Path.StartsWithSegments("/api", StringComparison.OrdinalIgnoreCase))
         {

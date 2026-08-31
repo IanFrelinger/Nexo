@@ -8,6 +8,47 @@ Ashlar uses an open-core boundary:
 
 The repository root license is Apache-2.0. See [`LICENSE`](LICENSE).
 
+## Covenants
+
+The boundary is kept honest by these standing commitments. They are load-bearing for the
+product's trust story; changing any of them is a breaking change to the project's social
+contract, not a routine edit.
+
+1. **The verify verb is free forever.** Anything Ashlar signs — certification verdicts,
+   evidence bundles, `.ashpkg` seals, asset certificates — can be verified with
+   Apache-2.0 tooling, offline, free, forever. If verifying ever costs money, every claim
+   this project makes is void. (Commercial license files will join this list when license
+   signing moves to Ed25519 — tracked in `docs/OpenCoreBoundary.md`; the current HMAC
+   scheme's verification key would also be a signing key, so no public-verification claim
+   is made for it yet.)
+2. **The ratchet turns one way.** A capability may graduate commercial → open (see
+   `apps/release-manager` and `apps/runtime-studio`, graduated 2026-08-31); a capability
+   shipped open never moves behind the paywall. New commercial value comes from new
+   fleet-scale capability, never from reclaiming open ground. Tier 1 stays Apache-2.0 —
+   no future relicensing (BSL/SSPL-style) of anything already shipped open.
+3. **Walls are architectural.** Commercial capability is a separate deliverable (separate
+   projects, separate feed); open binaries never contain hidden capability a license key
+   unlocks, and open capability is never gated behind a key. On nuget.org, `Ashlar.*` is
+   Apache-2.0 by definition; `Ashlar.Commercial.*` is never published there. (Known seam,
+   tracked in `docs/OpenCoreBoundary.md`: the open `Ashlar.API` host compiles in the
+   default-off license-enforcement gate used by commercial deployments — it restricts
+   nothing unless an operator enables it, its lapsed floor is pinned read-only in code,
+   and extracting it into the commercial host is planned.)
+4. **The buyer-based test decides placement.** A feature is commercial only when its
+   natural buyer is an organization coordinating many nodes or many people (directors,
+   aggregation, RBAC/SSO, org-wide policy, compliance packaging). Anything an individual
+   operator of one node needs — including full self-extension and hub-less peer
+   federation — is open.
+5. **No commercial trust exceptions.** No paid component bypasses, weakens, or fast-lanes
+   the admission gate. Paid buys scale and management, never a different answer from the
+   gate. The safe posture (propose-and-hold, the second pair of eyes) is never paywalled.
+6. **No telemetry in open packages.** Open code never phones home — no usage pings, no
+   license checks that call out. Verifiable by reading the source, which air-gapped
+   adopters are expected to do.
+7. **Data freedom.** Evidence-bundle, ledger, and `.ashpkg` formats are documented open
+   specs; commercial tools import and export them without proprietary lock-in, so leaving
+   the commercial tier never strands your own governance history.
+
 Extraction **Phases A–E** are complete (see [`docs/CommercialExtractionPlan.md`](docs/CommercialExtractionPlan.md)). The open/commercial project graph is enforced in CI by [`scripts/dependency-boundary-gate.sh`](scripts/dependency-boundary-gate.sh). Optional follow-up extractions (for example `src/**/Networking/**`) are classified in [`docs/FleetGovernanceExtractionInventory.md`](docs/FleetGovernanceExtractionInventory.md).
 
 ## Tier 1 — OPEN (Apache-2.0)
@@ -78,6 +119,8 @@ Rationale: this tier protects two moats at once — an extensible SDK and a sing
 | OPEN | `samples/**` |
 | OPEN | `applications/**` — open products on the core (physical-atom certification, provenance graph, spatial); Apache-2.0 by the `Directory.Build.targets` rule, no `AshlarCommercialProject` flag; see [`applications/README.md`](applications/README.md) |
 | OPEN | `tools/**`, `spikes/**` — repo tools and evidence spikes, same rule |
+| OPEN | `apps/release-manager/` — agent-set config + docs for release-readiness automation; **graduated commercial → open 2026-08-31** (covenant 2), the minimal SDK reference app |
+| OPEN | `apps/runtime-studio/` — single-node planner/worker agent-set config + docs; **graduated commercial → open 2026-08-31** (covenant 2). Single-node operator tooling belongs open by the headline rule; the open `setup all` lane already seeds from its config |
 
 Open mesh **primitives** (local discovery, capability advertisement, trust middleware) remain under `src/Ashlar.Core.Application/Mesh/**` and `src/Ashlar.Infrastructure/Mesh/**`. Mesh-lab **workers** poll the commercial fleet director via open `src/Ashlar.Infrastructure/MeshLab/**`.
 
@@ -140,24 +183,46 @@ Tier 3 is the commercial product/vertical layer.
 | COMMERCIAL | `commercial/tests/Ashlar.Commercial.Tests.GameDirector/` |
 | COMMERCIAL | `apps/game-director/` |
 | COMMERCIAL | `apps/ashlar-forge/` |
-| COMMERCIAL | `apps/release-manager/` |
-| COMMERCIAL | `apps/runtime-studio/` |
 
-Stub text in each `COMMERCIAL-LICENSE.md`:
+`apps/release-manager/` and `apps/runtime-studio/` were **graduated to Tier 1 OPEN on
+2026-08-31** — the one-way ratchet (covenant 2) exercised in its trust-building direction.
+Both are single-node agent-set configuration + docs with no fleet capability, so the
+headline rule (single-node + inspectable = open) always applied to them; the Tier 3
+listing was the contradiction, and this diff is its resolution. As part of the
+graduation, the game-director run-mode config and launcher that lived under
+`apps/runtime-studio/` moved to `apps/game-director/`, so the opened directories carry
+no Game Director material.
 
-> Not licensed under Apache-2.0. Commercial terms TBD. See /LICENSING.md.
+Each remaining commercial directory carries a `COMMERCIAL-LICENSE.md` with the in-force
+text: all rights reserved except the evaluation grant below, contact for commercial terms,
+lapsed-license behavior, and a pointer back to the covenants.
 
 Commercial vertical projects may reference each other and the open core; open projects must not reference commercial projects.
 
-### Evaluation use of `commercial/` sources — PROPOSED TEXT, needs owner sign-off
+### Evaluation use of commercial sources — IN FORCE since 2026-08-31
 
-> **Status: draft, not in force.** The 21 `COMMERCIAL-LICENSE.md` stubs say "terms TBD", so today the `commercial/` sources in this public repository carry **no grant at all** beyond what copyright law and GitHub's terms allow (viewing and forking the repository). The paragraph below is a proposal for the repository owner to accept, edit, or reject; nothing here is a license until the stubs are replaced.
->
-> *Proposed:* "Source code under `commercial/` is made visible for evaluation. You may build and run it locally, in CI on your own fork, and in non-production test environments, solely to evaluate Ashlar. You may not deploy it in production, offer it as a service, or redistribute it (in source or binary form) without a separate written agreement. The open core under `src/`, `application/`, `applications/`, `samples/`, `tools/`, `docs/`, and `spikes/` remains Apache-2.0 and is unaffected by this paragraph."
->
-> Until the owner signs off and updates each `COMMERCIAL-LICENSE.md`, contributors and evaluators should treat `commercial/` as **all rights reserved** and keep the tester quickstart (`Ashlar.LocalDevCore.slnf`, `application/Ashlar.Application.sln`, `Ashlar.Core.slnf`) free of it, which it now is.
+Source code under `commercial/`, `apps/game-director/`, and `apps/ashlar-forge/` is made
+visible for evaluation. You may build and run it locally, in CI on your own fork, and in
+non-production test environments, solely to evaluate Ashlar. You may not deploy it in
+production, offer it as a service, or redistribute it (in source or binary form) without a
+separate written agreement. Forking this repository on GitHub, and modifying your fork,
+for the evaluation uses permitted above is not redistribution for purposes of this
+paragraph. The open core under `src/`, `application/`, `applications/`,
+`apps/release-manager/`, `apps/runtime-studio/`, `samples/`, `tools/`, `docs/`, and
+`spikes/` is Apache-2.0 and unaffected by this paragraph.
 
-Recommended future open-source candidate: `apps/release-manager` is the best single app to open later as a minimal SDK reference because it demonstrates generic release-readiness automation without making the defense-adjacent Game Director wedge open.
+Production use, or any use beyond evaluation, requires a written commercial agreement:
+contact **icfrelinger@gmail.com** with "Ashlar commercial" in the subject line.
+
+**Lapsed-license behavior (commitment).** A commercial deployment whose license expires
+degrades to read-only: it stops accepting new fleet configuration and new commercial-tier
+operations. It never disables running nodes, never withholds or deletes already-recorded
+evidence or audit history, and never changes an answer the admission gate would give.
+Ashlar never ships a kill switch.
+
+The former recommendation to open `apps/release-manager` as the minimal SDK reference was
+**executed on 2026-08-31** — it and `apps/runtime-studio` are now Tier 1 OPEN (see the
+graduation note under Tier 3).
 
 ## Dependency-direction safety
 
@@ -175,6 +240,6 @@ make dependency-boundary-gate
 
 - ~~Should `src/**/Networking/**` move to commercial?~~ **Done (Phase F):** under `Ashlar.Commercial.Fleet.*`.
 - ~~Should open `MeshHubCommand` split further?~~ **Done:** open `ashlar mesh peers` / `mesh health` (local probe); fleet `list-nodes` / director `health` on `Ashlar.Commercial.MeshDirector`.
-- Should `apps/release-manager` become the future minimal open SDK reference app?
+- ~~Should `apps/release-manager` become the future minimal open SDK reference app?~~ **Done (2026-08-31):** graduated to Tier 1 OPEN together with `apps/runtime-studio`.
 
 See [`docs/CommercialExtractionPlan.md`](docs/CommercialExtractionPlan.md) for the completed extraction sequence and validation gates.

@@ -40,3 +40,20 @@ API key: the value you set as `ASHLAR_API_KEY` (header `X-Ashlar-Api-Key`)
 ```
 
 See [docs/GameDirectorStudio.md](../../docs/GameDirectorStudio.md) for full operator guide.
+
+## Local run mode (agent set)
+
+A local, compose-free run mode drives the game-director agent set directly through the
+open `background-agent` daemon:
+
+- config: [`config/agent_set.game_director.local.json`](config/agent_set.game_director.local.json)
+- launcher: [`scripts/run_game_director_local.sh`](scripts/run_game_director_local.sh)
+
+```bash
+bash apps/runtime-studio/scripts/bootstrap_runtime_studio.sh   # shared open bootstrap
+bash apps/game-director/scripts/run_game_director_local.sh --duration 10m --disable-observation
+```
+
+Both files moved here from `apps/runtime-studio/` on 2026-08-31, when `runtime-studio`
+graduated to the open tier: Game Director material is commercial (see `/LICENSING.md`),
+so it lives with the vertical, not in an open app.
