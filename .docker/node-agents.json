@@ -5,11 +5,12 @@
         "Id": "node-extender",
         "Name": "Node Extender",
         "Role": "extender",
-        "ModelProvider": "deterministic",
+        "ModelProvider": "ollama",
         "Commands": ["self_extend"],
         "Parameters": {
           "RepoRoot": "/data/state/project"
         },
+        "ModelName": "qwen2.5-coder:7b",
         "Schedule": {
           "Type": "Interval",
           "Interval": "00:15:00",
