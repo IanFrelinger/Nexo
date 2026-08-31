@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Ashlar.Abstractions;
+using Ashlar.Infrastructure.Execution;
 
 namespace Ashlar.Orchestration.Models;
 
@@ -35,6 +36,12 @@ public sealed class OrchestrationHotSwappableModel : IModel
         // - Otherwise, use the deterministic echo fallback.
         if (_primary == null)
         {
+            if (!AllowMock())
+            {
+                throw new ModelUnavailableException(
+                    "No primary model is registered and the deterministic echo fallback is disabled "
+                    + "(ASHLAR_ALLOW_MOCK != 1). This is a model-wiring gap, not a run to report as success.");
+            }
             return await _fallback.CompleteAsync(input, ct);
         }
         if (string.Equals(prefer, "deterministic", StringComparison.OrdinalIgnoreCase) && string.IsNullOrWhiteSpace(provider))
@@ -48,10 +55,20 @@ public sealed class OrchestrationHotSwappableModel : IModel
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Primary IModel failed; falling back to deterministic model");
+            if (!AllowMock())
+            {
+                throw new ModelUnavailableException(
+                    "The primary model failed and the deterministic echo fallback is disabled "
+                    + "(ASHLAR_ALLOW_MOCK != 1). Point the node at a reachable provider, or set "
+                    + "ASHLAR_ALLOW_MOCK=1 to permit the echo model.", ex);
+            }
+            _logger.LogWarning(ex, "Primary IModel failed; falling back to deterministic model (ASHLAR_ALLOW_MOCK=1)");
             return await _fallback.CompleteAsync(input, ct);
         }
     }
+
+    private static bool AllowMock() =>
+        string.Equals(Environment.GetEnvironmentVariable("ASHLAR_ALLOW_MOCK"), "1", StringComparison.Ordinal);
 
     private static string? ParsePrefer(ModelInput input)
     {
