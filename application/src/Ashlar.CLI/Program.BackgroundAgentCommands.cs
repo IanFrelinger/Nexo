@@ -225,6 +225,25 @@ static partial class Program
             statsAgentOpt, statsRoleOpt, statsSinceOpt, jsonOpt);
         backgroundAgentCmd.AddCommand(statsBgCmd);
 
+        // ashlar background-agent report — the "what did the node do overnight" trust report (A4).
+        // Joins cycle activity (cycles.jsonl) with admission outcomes (<project>/.ashlar/gates) over
+        // a window, so an operator can leave the node unattended and see what it proposed and what
+        // the gate decided. Read-only and offline.
+        var reportSinceOpt = new Option<double?>("--since-hours", () => null, "Window in hours (default 24)");
+        var reportProjectOpt = new Option<string?>("--project", () => null, "Project root whose .ashlar/gates to read (default: current directory)");
+        var reportBgCmd = new Command("report", "Overnight report: cycle activity joined with admission-gate outcomes over a window")
+        {
+            reportSinceOpt, reportProjectOpt
+        };
+        reportBgCmd.SetHandler(
+            async (double? since, string? project, bool formatJson) =>
+            {
+                var cmd = ServiceProvider.GetRequiredService<Ashlar.CLI.Commands.BackgroundAgent.ReportBackgroundAgentCommand>();
+                Environment.Exit(await cmd.ExecuteAsync(since, project, formatJson));
+            },
+            reportSinceOpt, reportProjectOpt, jsonOpt);
+        backgroundAgentCmd.AddCommand(reportBgCmd);
+
         // ashlar background-agent observations — read the structured observations log.
         // Companion to `stats`: where stats summarises agent execution, observations
         // surfaces the *facts* agents collectively published (build/test outcomes,
@@ -509,6 +528,24 @@ static partial class Program
             modeSetValueOpt, jsonOpt);
         modeCmd.AddCommand(modeSetCmd);
         backgroundAgentCmd.AddCommand(modeCmd);
+
+        // ashlar background-agent disarm — the emergency stop. Forces mode → Passive so every
+        // extender halts on its next cycle (no restart; the mode file is re-read each cycle). A named
+        // front door for the "stop it NOW" moment, distinct from `mode set --value passive` only in
+        // intent and its loud confirmation.
+        var disarmReasonOpt = new Option<string?>("--reason", () => null, "Optional reason, logged for the operator trail");
+        var disarmCmd = new Command("disarm", "Emergency stop: disarm all background agents now (mode → Passive)")
+        {
+            disarmReasonOpt
+        };
+        disarmCmd.SetHandler(
+            async (string? reason, bool formatJson) =>
+            {
+                var cmd = ServiceProvider.GetRequiredService<Ashlar.CLI.Commands.BackgroundAgent.ModeBackgroundAgentCommand>();
+                Environment.Exit(await cmd.DisarmAsync(reason, formatJson));
+            },
+            disarmReasonOpt, jsonOpt);
+        backgroundAgentCmd.AddCommand(disarmCmd);
 
         // ashlar background-agent sensitivity
         var sensitivityCmd = new Command("sensitivity", "Manage data sensitivity levels");
