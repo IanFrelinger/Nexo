@@ -96,7 +96,8 @@ public sealed record ManifestBrick
 /// <summary>A deployment target.</summary>
 public sealed record ManifestTarget
 {
-    /// <summary>Target name, referenced by <c>ashlar deploy &lt;name&gt;</c>.</summary>
+    /// <summary>Target name (e.g. <c>native</c>, <c>aws</c>, <c>azure</c>), built into a deploy bundle
+    /// by <c>ashlar export &lt;name&gt;</c>.</summary>
     public string Name { get; init; } = string.Empty;
 
     /// <summary>Platform identifier, e.g. <c>aws.fargate</c> or <c>native.edge</c>.</summary>

@@ -27,6 +27,7 @@ The trust loop is how "certified" is a checkable claim: analyzer fence → witne
 - `docs/trust-loop/ashlar-trust-loop-spec.md` — the specification: core invariant, gate legs, proposer/witness separation, tier placement.
 - `docs/trust-loop/trust-loop-integration.md` and `docs/trust-loop/trust-loop-ext-autonomous-self-extension.md` — how the loop lands in the runtime, and the autonomous self-extension extension.
 - `docs/governed-pipeline.md` — the governed MEAI model pipeline every proposal flows through.
+- **`docs/RunningASelfExtendingNode.md`** — the **operator guide** to running a node that extends itself unattended (A0–A5): the two dials, `ashlar policy set self_extend` / `policy show`, the build course + post-apply canary/rollback, budgets, and the `background-agent report` / `disarm` safety front doors.
 - `docs/SELF-EXTEND-AUDIT.md` — background-agent self-extend safety audit (four invariants, all enforced on the live path as of 2026-08-16).
 - `docs/AuthoringBricks.md` + `samples/hello-brick/README.md` — author a brick the gate can judge (`ProjectReference` into `src/`; no NuGet feed needed).
 - `samples/autonomy-objectives/README.md` — a complete tracked objective + witness + recorded model proposal, and how to feed it to the loop.
@@ -120,6 +121,7 @@ The trust loop is how "certified" is a checkable claim: analyzer fence → witne
 - `apps/runtime-studio/README.md` — **hub** for the Runtime Studio agent-set JSON, CLI vs API-hosted background agents, and how the Director portal fits; anchor [How this fits](../apps/runtime-studio/README.md#how-runtime-studio-fits-with-ashlar-api).
 - `docs/SelfHostedGameServerPortal.md` — `deploy/compose/docker-compose.portal.yml`: Director portal + dailies API (lighter stack).
 - `docs/SelfHostedAgentServer.md` — `deploy/compose/docker-compose.agent-server.yml`: mounted workspace + env template `docs/config/agent-server.env.example`.
+- **`docs/Federation.md`** — hub-less **peer-to-peer sharing** of signed `.ashpkg` extensions (F1–F4): serve (`/mesh/v1/…`), pull from configured peers / a tailnet / LAN multicast discovery (`ashlar mesh lan`), and TLS/mTLS for a private fleet. Distinct from the commercial director/hub mesh. Config lives in `deploy/node.yml`.
 - `docs/GrpcHost.md` — `src/Ashlar.Transport.Grpc.Server.Host`: listen address, HTTP/2 (h2c vs TLS), the client-side `Ashlar:GrpcTransport` `/run/secrets/*` defaults, compose secrets shape.
 - `docs/ide/AshlarVscode.md` — VS Code / Cursor extension + `/api/ide/*` bridge (chat, patches, runs, workloads, streaming).
 - `docs/Phase1SecureCopilotWalkthrough.md` — first-success secure copilot MVP walkthrough using `deploy/compose/docker-compose.agent-server.yml`.

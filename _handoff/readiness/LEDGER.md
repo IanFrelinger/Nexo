@@ -291,3 +291,24 @@ system, and who owns the `Ashlar.*` prefix on nuget.org.
 `Certification/**`? It does not today, which leaves the trust surface outside the
 security gate's paths. Changing which gate guards it is a CI/product decision, not
 an agent's.
+
+---
+
+## 2026-08-31 — the goal, reached
+
+Since the 2026-08-30 entries, the closing plan is substantially done and documented:
+
+- **Phases 2–3 landed:** the write floor (#425–#427) and the trust-root refusal (#428).
+- **v0.1.0 released** (GHCR `nexo-cli:0.1.0`, multi-arch; `deploy/node.yml` re-pinned, #429).
+- **Autonomy A0–A5** (#430–#436): honest model failure → reachable model → Roslyn build course →
+  unattended extender → post-apply canary + `report`/`disarm` → cross-machine auto-pull.
+- **Staged arming** (#437): `ashlar policy set self_extend <mode>` + `policy show`.
+- **Federation F1–F4** (#438–#441): hub-less peer serve/pull, zero-config LAN discovery
+  (`ashlar mesh lan`), a tailnet source, and TLS/mTLS for a private fleet — the "instances
+  collaborate and share bricks" goal, verified live multi-node against a fresh image.
+- **Release-readiness lab** (#442) under `scripts/lab/`; verdict: release-ready, 0 blockers.
+- **Docs updated to fit** (this entry's PR): README (deploy/node.yml, autonomy + federation,
+  `:0.1.0`, `cd Nexo`), CHANGELOG cut to `[0.1.0]`, new `docs/Federation.md` +
+  `docs/RunningASelfExtendingNode.md`, and phantom-command help text corrected.
+
+Do not edit history above — this is an append.

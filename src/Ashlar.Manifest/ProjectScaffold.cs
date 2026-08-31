@@ -95,8 +95,9 @@ public static class ProjectScaffold
             # with provider: ollama and id: llama3, for example.
             model:
               provider: mock
-            # Tools are named grants, added with `ashlar add`. An agent cannot define a tool
-            # and never carries a filesystem root — the sandbox comes from the policy.
+            # Tools are named grants declared here — never self-addable (only bricks are, and only
+            # when the policy allows). An agent cannot define a tool, and never carries a filesystem
+            # root — the sandbox comes from the policy.
             tools: []
             gates: [tests]
 

@@ -2,6 +2,17 @@
 
 *Written 2026-08-28 against `master` @ `c22916b`.*
 
+> **STATUS UPDATE (2026-08-31): the goal below is substantially achieved.** Phase 1 (the deployable
+> node), Phase 2 (the write floor, #425–#427), and Phase 3 (the trust-root refusal, #428) all landed;
+> **v0.1.0 released** (GHCR `nexo-cli:0.1.0`, `deploy/node.yml` re-pinned, #429). On top of it the
+> **A0–A5 autonomy roadmap** (#430–#436) made the node self-extend unattended behind a build course
+> and a post-apply canary, the **staged arming verb** shipped (#437), and **F1–F4 federation**
+> (#438–#441) delivered exactly the "each instance collaborate and share bricks" goal — hub-less peer
+> sharing of signed `.ashpkg` over LAN / tailnet / mTLS. A reproducible release-readiness lab lives in
+> `scripts/lab/` (#442). Operator docs: [`docs/RunningASelfExtendingNode.md`](../../docs/RunningASelfExtendingNode.md),
+> [`docs/Federation.md`](../../docs/Federation.md). The phase-by-phase text below is preserved as the
+> record of how it was planned; read it as history, not as open work.
+
 **The goal, in the owner's words:** "a self sustaining, self extending runtime with multiple
 agents embedded in it, that I can host across all my hardware I have lying around my apartment,
 and have each instance collaborate and share bricks etc."
