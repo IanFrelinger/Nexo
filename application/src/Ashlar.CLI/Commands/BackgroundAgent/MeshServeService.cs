@@ -93,6 +93,12 @@ public sealed class MeshServeService : BackgroundService
     private readonly MeshServeSettings _settings;
     private readonly ILogger<MeshServeService> _logger;
 
+    /// <summary>Cap on in-flight requests, so a connection flood cannot exhaust the node.</summary>
+    private const int MaxConcurrentRequests = 32;
+
+    /// <summary>Per-request deadline — bounds the response write so a non-reading client frees its slot.</summary>
+    private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(30);
+
     /// <summary>Creates the mesh serve service.</summary>
     public MeshServeService(MeshServeSettings settings, ILogger<MeshServeService> logger)
     {
@@ -126,7 +132,11 @@ public sealed class MeshServeService : BackgroundService
             "Mesh serve armed on :{Port} — offering {Dir} to the network (read-only, signed packages; trust is enforced by the puller).",
             _settings.Port, _settings.PublishedDir);
 
-        await using var _ = stoppingToken.Register(() => { try { listener.Stop(); } catch { /* shutting down */ } });
+        // Requests are dispatched CONCURRENTLY and bounded: a slow or non-reading client can no
+        // longer wedge the accept loop (each request runs off the loop), and the semaphore caps how
+        // many can be in flight so a connection flood cannot exhaust threads. Excess is refused fast.
+        using var slots = new SemaphoreSlim(MaxConcurrentRequests);
+        await using var stopReg = stoppingToken.Register(() => { try { listener.Stop(); } catch { /* shutting down */ } });
         try
         {
             while (!stoppingToken.IsCancellationRequested)
@@ -140,15 +150,22 @@ public sealed class MeshServeService : BackgroundService
                 {
                     break;   // listener stopped by shutdown
                 }
-                try
-                {
-                    await HandleAsync(ctx).ConfigureAwait(false);
-                }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Mesh serve request failed");
-                    TryClose(ctx, 500);
+                    // A transient accept error must NOT escape ExecuteAsync — an unhandled throw here
+                    // would fault the BackgroundService and (default StopHost) take the whole daemon
+                    // down. Log, breathe, keep serving. HandleAsync's errors are already contained.
+                    _logger.LogWarning(ex, "Mesh serve accept failed — continuing.");
+                    try { await Task.Delay(200, stoppingToken).ConfigureAwait(false); } catch { break; }
+                    continue;
                 }
+
+                if (!await slots.WaitAsync(0, stoppingToken).ConfigureAwait(false))
+                {
+                    TryClose(ctx, 503);   // at capacity — refuse fast rather than queue unboundedly
+                    continue;
+                }
+                _ = DispatchAsync(ctx, slots, stoppingToken);
             }
         }
         finally
@@ -157,7 +174,31 @@ public sealed class MeshServeService : BackgroundService
         }
     }
 
-    private async Task HandleAsync(HttpListenerContext ctx)
+    private async Task DispatchAsync(HttpListenerContext ctx, SemaphoreSlim slots, CancellationToken stoppingToken)
+    {
+        // A per-request deadline bounds the response WRITE, so a client that stops draining the socket
+        // frees its slot on the timeout instead of holding it forever.
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
+        timeout.CancelAfter(RequestTimeout);
+        try
+        {
+            await HandleAsync(ctx, timeout.Token).ConfigureAwait(false);
+        }
+        catch (Exception ex)
+        {
+            if (!stoppingToken.IsCancellationRequested)
+            {
+                _logger.LogWarning(ex, "Mesh serve request failed");
+            }
+            TryClose(ctx, 500);
+        }
+        finally
+        {
+            slots.Release();
+        }
+    }
+
+    private async Task HandleAsync(HttpListenerContext ctx, CancellationToken ct)
     {
         var path = ctx.Request.Url?.AbsolutePath ?? string.Empty;
         if (!string.Equals(ctx.Request.HttpMethod, "GET", StringComparison.Ordinal))
@@ -177,13 +218,13 @@ public sealed class MeshServeService : BackgroundService
                 name = _settings.NodeName,
                 fingerprint,
                 packages = ListPackages().Count,
-            }).ConfigureAwait(false);
+            }, ct).ConfigureAwait(false);
             return;
         }
 
         if (path is "/mesh/v1/index")
         {
-            await WriteJsonAsync(ctx, ListPackages()).ConfigureAwait(false);
+            await WriteJsonAsync(ctx, ListPackages(), ct).ConfigureAwait(false);
             return;
         }
 
@@ -205,10 +246,10 @@ public sealed class MeshServeService : BackgroundService
                 TryClose(ctx, 404);
                 return;
             }
-            var bytes = await File.ReadAllBytesAsync(full).ConfigureAwait(false);
+            var bytes = await File.ReadAllBytesAsync(full, ct).ConfigureAwait(false);
             ctx.Response.ContentType = "application/json";
             ctx.Response.ContentLength64 = bytes.Length;
-            await ctx.Response.OutputStream.WriteAsync(bytes).ConfigureAwait(false);
+            await ctx.Response.OutputStream.WriteAsync(bytes, ct).ConfigureAwait(false);
             ctx.Response.Close();
             return;
         }
@@ -230,12 +271,12 @@ public sealed class MeshServeService : BackgroundService
             .ToList();
     }
 
-    private static async Task WriteJsonAsync(HttpListenerContext ctx, object payload)
+    private static async Task WriteJsonAsync(HttpListenerContext ctx, object payload, CancellationToken ct)
     {
         var bytes = JsonSerializer.SerializeToUtf8Bytes(payload, new JsonSerializerOptions { WriteIndented = true });
         ctx.Response.ContentType = "application/json";
         ctx.Response.ContentLength64 = bytes.Length;
-        await ctx.Response.OutputStream.WriteAsync(bytes).ConfigureAwait(false);
+        await ctx.Response.OutputStream.WriteAsync(bytes, ct).ConfigureAwait(false);
         ctx.Response.Close();
     }
 

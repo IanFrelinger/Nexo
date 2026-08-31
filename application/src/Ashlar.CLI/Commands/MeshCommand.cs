@@ -115,6 +115,12 @@ public sealed class MeshCommand : Command
         AddCommand(admitCmd);
         AddCommand(revokeCmd);
 
+        // ashlar mesh lan — who's at the party. Reads the peer table the daemon's F3 multicast
+        // discovery persists (mesh-peers.json under the state dir); read-only, safe beside a live node.
+        var lanCmd = new Command("lan", "List peers discovered on the local network (F3 multicast beacon)");
+        lanCmd.SetHandler(() => Environment.Exit(ExecuteLan(Console.Out)));
+        AddCommand(lanCmd);
+
         this.SetHandler(async (InvocationContext ctx) =>
         {
             var discover = ctx.ParseResult.GetValueForOption(discoverOpt);
@@ -280,6 +286,56 @@ public sealed class MeshCommand : Command
         }
 
         Environment.ExitCode = 0;
+    }
+
+    /// <summary>
+    /// Prints the LAN-party peer table the daemon's F3 discovery persists. A fingerprint marked
+    /// trusted is one in this operator's keychain (or their own key) — presence on the list grants
+    /// nothing; it only says who is announcing. Testable via the injected writer.
+    /// </summary>
+    internal static int ExecuteLan(TextWriter stdout)
+    {
+        var path = Path.Combine(
+            Ashlar.Core.Application.Paths.RepoPathResolver.ResolveStateDirectory(), "mesh-peers.json");
+        if (!File.Exists(path))
+        {
+            stdout.WriteLine("No one at the party yet — no mesh-peers.json. Is the daemon running with ASHLAR_MESH_DISCOVERY=1?");
+            return 0;
+        }
+
+        List<Ashlar.CLI.Commands.BackgroundAgent.DiscoveredPeer>? peers;
+        try
+        {
+            peers = System.Text.Json.JsonSerializer.Deserialize<List<Ashlar.CLI.Commands.BackgroundAgent.DiscoveredPeer>>(
+                File.ReadAllText(path));
+        }
+        catch (Exception ex)
+        {
+            stdout.WriteLine($"mesh-peers.json could not be read ({ex.Message}).");
+            return 1;
+        }
+
+        peers ??= [];
+        stdout.WriteLine($"Peers on the local network ({peers.Count}):");
+        var now = DateTimeOffset.UtcNow;
+        foreach (var p in peers)
+        {
+            bool trusted;
+            try { trusted = Ashlar.Manifest.Signing.OperatorKey.IsSignerTrusted(p.Fingerprint, Array.Empty<string>()); }
+            catch { trusted = false; }
+            var age = now - p.LastSeenUtc;
+            // Defense-in-depth: strip control characters before printing an untrusted, network-sourced
+            // name to the terminal — a beacon field must never inject escape sequences or fake rows.
+            var safeName = new string((p.Name ?? string.Empty).Where(c => !char.IsControl(c)).ToArray());
+            stdout.WriteLine(
+                $"  {safeName,-20} {p.Fingerprint,-26} {p.Address}:{p.Port,-6} seen {Math.Max(0, (int)age.TotalSeconds)}s ago"
+                + (trusted ? "  [keychain-trusted]" : "  [not trusted — `ashlar keys trust " + p.Fingerprint + "`]"));
+        }
+        if (peers.Count == 0)
+        {
+            stdout.WriteLine("  (empty — beacons expire after 90s of silence)");
+        }
+        return 0;
     }
 
     private static async Task ExecuteHealthAsync(string? baseUrl, int timeoutSeconds)

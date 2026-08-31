@@ -235,6 +235,9 @@ public sealed class BackgroundAgentDaemonCommand
                     // F1 the LAN party (producer): opt-in read-only serving of this node's published
                     // signed packages, so peers can pull directly — no hub, no shared folder.
                     TryAddMeshServe(services);
+                    // F3 zero-config presence: opt-in multicast discovery feeding auto-pull as one
+                    // IPeerSource among any others. Presence, never trust.
+                    TryAddMeshDiscovery(services);
                 });
 
             using var host = builder.Build();
@@ -327,12 +330,15 @@ public sealed class BackgroundAgentDaemonCommand
     private static void TryAddMeshAutoPull(IServiceCollection services)
     {
         var pullDir = Environment.GetEnvironmentVariable("ASHLAR_MESH_PULL_DIR");
-        // F2: peer base URLs (comma-separated, e.g. "http://192.168.1.20:7420") — pulled directly,
-        // through the same trust-gated import as the folder. Either source arms the service.
+        // F2: peer base URLs (comma-separated) — any routable address: LAN, a Tailscale/VPN
+        // tailnet, the internet. The transport doesn't care and neither does the trust model.
+        // Registered as an IPeerSource — the strategy seam more sources (multicast, tailnet,
+        // rendezvous) plug into without touching the pull or the gate.
         var peers = (Environment.GetEnvironmentVariable("ASHLAR_MESH_PEERS") ?? string.Empty)
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .ToList();
-        if (string.IsNullOrWhiteSpace(pullDir) && peers.Count == 0)
+        var discoveryOn = Environment.GetEnvironmentVariable("ASHLAR_MESH_DISCOVERY") == "1";
+        if (string.IsNullOrWhiteSpace(pullDir) && peers.Count == 0 && !discoveryOn)
         {
             return;   // consumer auto-pull is opt-in
         }
@@ -349,8 +355,40 @@ public sealed class BackgroundAgentDaemonCommand
             project = Path.Combine(RepoPathResolver.ResolveStateDirectory(), "project");
         }
 
-        services.AddSingleton(new MeshAutoPullSettings(pullDir?.Trim() ?? string.Empty, project, interval, peers));
+        if (peers.Count > 0)
+        {
+            services.AddSingleton<IPeerSource>(new ConfiguredPeerSource(peers));
+        }
+        services.AddSingleton(new MeshAutoPullSettings(pullDir?.Trim() ?? string.Empty, project, interval));
         services.AddHostedService<MeshAutoPullService>();
+    }
+
+    /// <summary>
+    /// Registers F3 LAN discovery when <c>ASHLAR_MESH_DISCOVERY=1</c>: the multicast beacon service,
+    /// the discovered-peer registry, and a <see cref="MulticastPeerSource"/> feeding auto-pull.
+    /// Discovery is presence, not trust — and it is opt-in, so a default node announces nothing.
+    /// </summary>
+    private static void TryAddMeshDiscovery(IServiceCollection services)
+    {
+        if (Environment.GetEnvironmentVariable("ASHLAR_MESH_DISCOVERY") != "1")
+        {
+            return;
+        }
+        var name = Environment.GetEnvironmentVariable("ASHLAR_NODE_NAME");
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            name = Environment.MachineName;
+        }
+        string? fingerprint = null;
+        try { fingerprint = Ashlar.Manifest.Signing.OperatorKey.TryLoad()?.Fingerprint; }
+        catch { /* corrupt key: announce nothing, still listen */ }
+        int? servePort = int.TryParse(Environment.GetEnvironmentVariable("ASHLAR_MESH_SERVE_PORT"), out var sp) && sp is >= 1 and <= 65535
+            ? sp : null;
+
+        services.AddSingleton<MeshDiscoveryRegistry>();
+        services.AddSingleton(new MeshDiscoverySettings(name!, fingerprint, servePort, RepoPathResolver.ResolveStateDirectory()));
+        services.AddHostedService<MeshDiscoveryService>();
+        services.AddSingleton<IPeerSource, MulticastPeerSource>();
     }
 
     /// <summary>
