@@ -1,11 +1,14 @@
+using System.Text.Json;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace Ashlar.CLI.Commands.BackgroundAgent;
 
-/// <summary>How a mesh auto-pull node is configured: the shared folder to pull trusted
-/// <c>.ashpkg</c> from, the project whose gate/policy decides them, and the poll interval.</summary>
-public sealed record MeshAutoPullSettings(string PullDir, string ProjectDir, int IntervalSeconds);
+/// <summary>How a mesh auto-pull node is configured: an optional shared folder to pull trusted
+/// <c>.ashpkg</c> from, optional PEER base URLs to pull from directly (F2, the LAN party), the
+/// project whose gate/policy decides them, and the poll interval.</summary>
+public sealed record MeshAutoPullSettings(
+    string PullDir, string ProjectDir, int IntervalSeconds, IReadOnlyList<string>? Peers = null);
 
 /// <summary>The outcome of one pull pass, aggregated across every package scanned.</summary>
 public sealed record MeshPullSummary(
@@ -13,6 +16,11 @@ public sealed record MeshPullSummary(
 {
     /// <summary>Nothing to pull — the dir was absent or empty.</summary>
     public static MeshPullSummary Empty { get; } = new(0, 0, 0, 0, 0, 0, 0);
+
+    /// <summary>Component-wise sum, so a tick can aggregate the folder pass and every peer pass.</summary>
+    public static MeshPullSummary operator +(MeshPullSummary a, MeshPullSummary b) => new(
+        a.Scanned + b.Scanned, a.Admitted + b.Admitted, a.Held + b.Held, a.Rejected + b.Rejected,
+        a.Refused + b.Refused, a.AlreadyImported + b.AlreadyImported, a.Errors + b.Errors);
 }
 
 /// <summary>
@@ -35,6 +43,9 @@ public sealed class MeshAutoPullService : BackgroundService
     private readonly MeshAutoPullSettings _settings;
     private readonly ILogger<MeshAutoPullService> _logger;
 
+    /// <summary>One shared client for peer pulls; a slow peer times out instead of stalling the tick.</summary>
+    private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(15) };
+
     /// <summary>Creates the mesh auto-pull service.</summary>
     public MeshAutoPullService(MeshAutoPullSettings settings, ILogger<MeshAutoPullService> logger)
     {
@@ -45,15 +56,17 @@ public sealed class MeshAutoPullService : BackgroundService
     /// <inheritdoc />
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        if (_settings.IntervalSeconds <= 0 || string.IsNullOrWhiteSpace(_settings.PullDir))
+        var hasDir = !string.IsNullOrWhiteSpace(_settings.PullDir);
+        var peers = _settings.Peers ?? Array.Empty<string>();
+        if (_settings.IntervalSeconds <= 0 || (!hasDir && peers.Count == 0))
         {
-            _logger.LogInformation("Mesh auto-pull disabled (no pull dir or non-positive interval).");
+            _logger.LogInformation("Mesh auto-pull disabled (no pull dir, no peers, or non-positive interval).");
             return;
         }
 
         _logger.LogInformation(
-            "Mesh auto-pull armed: {Dir} every {Interval}s → project {Project}. Only signers this node trusts are admitted.",
-            _settings.PullDir, _settings.IntervalSeconds, _settings.ProjectDir);
+            "Mesh auto-pull armed: {Dir} + {PeerCount} peer(s) every {Interval}s → project {Project}. Only signers this node trusts are admitted.",
+            hasDir ? _settings.PullDir : "(no folder)", peers.Count, _settings.IntervalSeconds, _settings.ProjectDir);
 
         using var timer = new PeriodicTimer(TimeSpan.FromSeconds(_settings.IntervalSeconds));
         try
@@ -76,8 +89,17 @@ public sealed class MeshAutoPullService : BackgroundService
     {
         try
         {
-            var s = await PullOnceAsync(_settings.PullDir, _settings.ProjectDir, ct).ConfigureAwait(false);
-            if (s.Scanned > 0)
+            var s = MeshPullSummary.Empty;
+            if (!string.IsNullOrWhiteSpace(_settings.PullDir))
+            {
+                s += await PullOnceAsync(_settings.PullDir, _settings.ProjectDir, ct).ConfigureAwait(false);
+            }
+            foreach (var peer in _settings.Peers ?? Array.Empty<string>())
+            {
+                ct.ThrowIfCancellationRequested();
+                s += await PullPeerOnceAsync(Http, peer, _settings.ProjectDir, ct).ConfigureAwait(false);
+            }
+            if (s.Scanned > 0 || s.Errors > 0)
             {
                 _logger.LogInformation(
                     "Mesh auto-pull: scanned {Scanned} — {Admitted} admitted, {Held} held (awaiting review), "
@@ -118,6 +140,11 @@ public sealed class MeshAutoPullService : BackgroundService
         foreach (var file in files)
         {
             ct.ThrowIfCancellationRequested();
+            if (new FileInfo(file).Length > MeshWire.MaxPackageBytes)
+            {
+                errors++;   // an oversized package is never buffered — local or remote, same bound
+                continue;
+            }
             try
             {
                 var json = await File.ReadAllTextAsync(file, ct).ConfigureAwait(false);
@@ -142,5 +169,103 @@ public sealed class MeshAutoPullService : BackgroundService
         }
 
         return new MeshPullSummary(files.Count, admitted, held, rejected, refused, already, errors);
+    }
+
+    /// <summary>
+    /// One pull pass against a PEER (F2, the LAN party): fetch its <c>/mesh/v1/index</c>, download each
+    /// package (bounded — a hostile or buggy peer cannot make this node buffer more than
+    /// <see cref="MeshWire.MaxPackageBytes"/>), and submit every one through the SAME trust-gated
+    /// import as a folder pull. The network is transport, the seal is the trust: an untrusted signer
+    /// is refused before anything parks, exactly as if the file had arrived on a USB stick.
+    /// A peer that is offline, slow, or malformed yields an error count — never an exception; a
+    /// LAN-party guest that left the room is not an incident.
+    /// </summary>
+    public static async Task<MeshPullSummary> PullPeerOnceAsync(
+        HttpClient http, string peerBaseUrl, string projectDir, CancellationToken ct = default)
+    {
+        if (!Uri.TryCreate(peerBaseUrl?.Trim(), UriKind.Absolute, out var baseUri)
+            || (baseUri.Scheme != Uri.UriSchemeHttp && baseUri.Scheme != Uri.UriSchemeHttps))
+        {
+            return MeshPullSummary.Empty with { Errors = 1 };
+        }
+
+        List<MeshWire.IndexEntry> entries;
+        try
+        {
+            using var idxResp = await http.GetAsync(new Uri(baseUri, "/mesh/v1/index"),
+                HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
+            if (!idxResp.IsSuccessStatusCode)
+            {
+                return MeshPullSummary.Empty with { Errors = 1 };
+            }
+            var idxJson = await MeshWire.ReadBoundedTextAsync(
+                await idxResp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false),
+                MeshWire.MaxPackageBytes, ct).ConfigureAwait(false);
+            entries = idxJson is null
+                ? null!
+                : JsonSerializer.Deserialize<List<MeshWire.IndexEntry>>(idxJson) ?? [];
+            if (entries is null)
+            {
+                return MeshPullSummary.Empty with { Errors = 1 };
+            }
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception)
+        {
+            return MeshPullSummary.Empty with { Errors = 1 };   // peer offline / timeout / bad index
+        }
+
+        int admitted = 0, held = 0, rejected = 0, refused = 0, already = 0, errors = 0;
+        foreach (var entry in entries)
+        {
+            ct.ThrowIfCancellationRequested();
+            // The client re-checks the wire rules independently — a peer's index is DATA, not a promise.
+            if (entry is null || !MeshWire.IsSafePackageName(entry.File) || entry.Size > MeshWire.MaxPackageBytes)
+            {
+                errors++;
+                continue;
+            }
+            try
+            {
+                using var pkgResp = await http.GetAsync(
+                    new Uri(baseUri, "/mesh/v1/pkg/" + Uri.EscapeDataString(entry.File)),
+                    HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
+                if (!pkgResp.IsSuccessStatusCode)
+                {
+                    errors++;
+                    continue;
+                }
+                var json = await MeshWire.ReadBoundedTextAsync(
+                    await pkgResp.Content.ReadAsStreamAsync(ct).ConfigureAwait(false),
+                    MeshWire.MaxPackageBytes, ct).ConfigureAwait(false);
+                if (json is null)
+                {
+                    errors++;   // response exceeded the bound — hostile or corrupt, never buffered
+                    continue;
+                }
+                var result = await PackageImport.SubmitAsync(projectDir, json).ConfigureAwait(false);
+                switch (result.Outcome)
+                {
+                    case PackageAdmission.Admitted: admitted++; break;
+                    case PackageAdmission.Held: held++; break;
+                    case PackageAdmission.Rejected: rejected++; break;
+                    case PackageAdmission.Refused: refused++; break;
+                    case PackageAdmission.AlreadyImported: already++; break;
+                }
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception)
+            {
+                errors++;
+            }
+        }
+
+        return new MeshPullSummary(entries.Count, admitted, held, rejected, refused, already, errors);
     }
 }
