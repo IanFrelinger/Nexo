@@ -40,6 +40,9 @@ public static class CertificationServiceCollectionExtensions
         services.TryAddSingleton<CertificationRecordSigner>();
         // A2: real executed-evidence compile check for autonomous admissions (Roslyn, in-process).
         services.TryAddSingleton<IExtensionCompileCheck, RoslynExtensionCompileCheck>();
+        // A4: post-apply canary — recompiles admitted writes as they landed, so a bad auto-admission
+        // is rolled back instead of left on an unattended node (Roslyn, in-process, no .NET SDK).
+        services.TryAddSingleton<IPostApplyVerification, RoslynPostApplyVerification>();
 
         if (string.IsNullOrWhiteSpace(recordStorePath))
         {

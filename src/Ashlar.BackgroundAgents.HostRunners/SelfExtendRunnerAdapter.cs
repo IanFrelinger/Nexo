@@ -78,7 +78,8 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
         Lazy<IBackgroundAgentRegistry>? agentRegistry = null,
         IDataSensitivityRegistry? sensitivityRegistry = null,
         IEnumerable<IToolSource>? toolSources = null,
-        IExtensionCompileCheck? compileCheck = null)
+        IExtensionCompileCheck? compileCheck = null,
+        IPostApplyVerification? verification = null)
     {
         _model = model ?? throw new ArgumentNullException(nameof(model));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -92,10 +93,12 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
         _sensitivityRegistry = sensitivityRegistry;
         _toolSources = toolSources;
         _compileCheck = compileCheck;
+        _verification = verification;
     }
 
     private readonly IEnumerable<IToolSource>? _toolSources;
     private readonly IExtensionCompileCheck? _compileCheck;
+    private readonly IPostApplyVerification? _verification;
 
     /// <inheritdoc />
     public async Task<SelfExtendRunResult> RunAsync(string repoRoot, CancellationToken cancellationToken = default)
@@ -287,7 +290,7 @@ public sealed class SelfExtendRunnerAdapter : ISelfExtendRunner
             var gateOutcome = await SelfExtendAdmissionBridge
                 .TryRecordAsync(repoRoot!, resolvedAgentName, effectiveObjective, writePaths,
                     cycle.ToolCallsExecuted, cycle.ToolCallsDenied, _logger, cancellationToken,
-                    newForgeIds, compileCheck: _compileCheck)
+                    newForgeIds, compileCheck: _compileCheck, verification: _verification)
                 .ConfigureAwait(false);
 
             return new SelfExtendRunResult(
