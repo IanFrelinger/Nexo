@@ -100,7 +100,8 @@ For the canonical tier-by-tier project map, see [`docs/ProjectTiers.md`](docs/Pr
 |------|------------------|---------------|
 | Kernel spine | Abstractions, core/domain/application, contracts, policies, infrastructure, orchestration, background agents, hosting | [`src/`](src/), [`docs/ProjectTiers.md`](docs/ProjectTiers.md) |
 | Observe/adapt/improve | Pattern observation, analysis, adaptation, self-improvement, changelog, dogfood gates | [`docs/GapAnalysis.md`](docs/GapAnalysis.md), [`docs/DogfoodValidation.md`](docs/DogfoodValidation.md) |
-| Mesh/federation | Mesh phases, virtual lab, friend mesh prefab, trust-tier placement, leases/checkpoints | [`docs/MeshPhase0NorthStar.md`](docs/MeshPhase0NorthStar.md), [`docs/MeshVirtualLab.md`](docs/MeshVirtualLab.md) |
+| Federation (peer mesh) | Hub-less, symmetric peer-to-peer sharing of signed `.ashpkg` extensions: a node serves its packages (`GET /mesh/v1/…`), pulls from configured peers / a tailnet / LAN multicast discovery, all re-gated through its own trust root; TLS/mTLS for a private fleet | [`docs/Federation.md`](docs/Federation.md), [`deploy/node.yml`](deploy/node.yml) |
+| Mesh (director/hub) | The older instance mesh: capability advertisement, director/hub flows, trust-tier placement, virtual labs, phase docs | [`docs/MeshPhase0NorthStar.md`](docs/MeshPhase0NorthStar.md), [`docs/MeshVirtualLab.md`](docs/MeshVirtualLab.md) |
 | gRPC transport | Transport contracts, server, standalone host | `src/Ashlar.Transport.Grpc*` |
 | MCP + A2A protocols | Ashlar as MCP server (stdio/HTTP) and MCP client; A2A client transport and server core mounted by `Ashlar.API` | `src/Ashlar.Mcp.*`, `src/Ashlar.Transport.A2A*`, [`docs/architecture/ProtocolIntegration-MCP-A2A.md`](docs/architecture/ProtocolIntegration-MCP-A2A.md) |
 | AWS ingress | SNS and DynamoDB adapters | `src/Ashlar.Ingress.AwsSns`, `src/Ashlar.Ingress.DynamoDb`, [`docs/MiddlewareIngress.md`](docs/MiddlewareIngress.md) |
@@ -116,7 +117,8 @@ The trust loop is *how* "auditable" and "certified" are true rather than asserte
 Status, honestly:
 
 - **The gate is CI-proven.** `cert-gate` (`bash scripts/run-cert-gate.sh`) is the only required status check on `master`; each ADMIT/REJECT it has proven is a ledger row with the CI run in [`docs/certification-evidence.md`](docs/certification-evidence.md).
-- **The autonomy loop is spike-grade and ships in hold mode.** `HoldAdmission=true` by default: it certifies fully and admits nothing until you flip it. Its evidence is local spike runs (ledger rows P2 through S5), it needs Docker plus a local Ollama model, and the ledger records the holes it exposed (including an equivalent-mutant soundness gap in S5). Do not read "certified" as "safe to run unattended" yet.
+- **The in-process autonomy loop is spike-grade and ships in hold mode.** `HoldAdmission=true` by default: it certifies fully and admits nothing until you flip it. Its evidence is local spike runs (ledger rows P2 through S5), it needs Docker plus a local Ollama model, and the ledger records the holes it exposed (including an equivalent-mutant soundness gap in S5). Do not read "certified" as "safe to run unattended" yet.
+- **The operator-governed self-extend path (A0–A5) is the supported one.** A node's background-agent extender proposes changes against its own policy, and every proposal faces the same admission gate — with a real in-process **build course** (a proposal that does not compile is never admissible) and, when applied, a **post-apply canary that auto-rolls-back** a change that fails verification. It ships **sealed** (a fresh project changes nothing after deploy). You raise the dial deliberately, one node at a time, with `ashlar policy set self_extend proposing` (propose & hold for review) or `self-extending` (auto-admit within budget, canary-gated). Two safety front doors: `ashlar background-agent report` (what ran overnight, and what was held/admitted/reverted) and `ashlar background-agent disarm` (emergency stop → Passive, no restart). See [`docs/RunningASelfExtendingNode.md`](docs/RunningASelfExtendingNode.md).
 
 Where to read and what to run:
 
@@ -158,7 +160,7 @@ Pick the lane that matches your goal. Most people should start with **Try**.
 The fastest way to see Ashlar work. Uses the mock provider, so **no API keys are required**.
 
 ```bash
-git clone https://github.com/IanFrelinger/Nexo.git && cd Ashlar
+git clone https://github.com/IanFrelinger/Nexo.git && cd Nexo
 docker build -f .docker/Dockerfile.quickstart -t ashlar:quickstart .
 docker run --rm -p 127.0.0.1:8080:8080 ashlar:quickstart
 # Open http://localhost:8080
@@ -220,7 +222,7 @@ Use this only when containers are not an option. Requires .NET SDK 10.x (LTS). T
 
 ```bash
 git clone https://github.com/IanFrelinger/Nexo.git
-cd Ashlar
+cd Nexo
 bash scripts/setup/setup.sh all
 dotnet build application/src/Ashlar.CLI/Ashlar.CLI.csproj --no-restore
 dotnet run --project application/src/Ashlar.CLI -- doctor --json
@@ -230,7 +232,7 @@ Windows PowerShell:
 
 ```powershell
 git clone https://github.com/IanFrelinger/Nexo.git
-Set-Location Ashlar
+Set-Location Nexo
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\setup\setup.ps1 -Mode all
 dotnet build application/src/Ashlar.CLI/Ashlar.CLI.csproj --no-restore
 dotnet run --project application/src/Ashlar.CLI -- doctor --json
@@ -245,7 +247,16 @@ Other bootstrap helpers: `scripts/install/quickstart.sh`, `scripts/setup/setup-u
 
 ### Lane 3 — Deploy (operators)
 
-Run Ashlar as a service using compose stacks on a host you control. Review the [security warning](#quick-start-5-minutes) above first.
+Run Ashlar as a service on a host you control. Review the [security warning](#quick-start-5-minutes) above first.
+
+**The node.** For a single Ashlar node you want in a fleet — restart-durable, identity-persistent, mesh-capable — the canonical file is [`deploy/node.yml`](deploy/node.yml). It pins the published image by digest (`0.1.0`, multi-arch), keeps the gate store on a durable volume so `docker rm` can't destroy trust decisions, and documents the whole federation config (serve / peers / discovery / tailnet / mTLS) inline. Everything under `deploy/compose/` is a lab, demo, or dev stack.
+
+```bash
+docker compose -f deploy/node.yml up -d          # the node
+ashlar keys init                                 # give it an operator identity (once)
+```
+
+**Lab / demo stacks:**
 
 | File | Purpose |
 |------|---------|
@@ -269,7 +280,7 @@ Validate a pipeline template from a mounted workspace with the published CLI ima
 
 ```bash
 docker run --rm -v "$PWD:/work" -w /work \
-  ghcr.io/ianfrelinger/nexo-cli:latest \
+  ghcr.io/ianfrelinger/nexo-cli:0.1.0 \
   pipeline validate --template /work/path/to/template.json
 ```
 
@@ -293,6 +304,11 @@ For operator runbooks, images, and hardening, see [Deploy (operators)](#deploy-o
 | Trust dashboard | `dotnet run --project application/src/Ashlar.CLI -- trust dashboard` |
 | Apply a trust policy pack | `dotnet run --project application/src/Ashlar.CLI -- trust pack apply --id strict-enterprise` |
 | Background-agent daemon | `dotnet run --project application/src/Ashlar.CLI -- background-agent daemon --duration 10m` |
+| Show / set the self-extend dial | `dotnet run --project application/src/Ashlar.CLI -- policy show` / `policy set self_extend proposing` |
+| Overnight report / emergency stop | `dotnet run --project application/src/Ashlar.CLI -- background-agent report` / `background-agent disarm` |
+| Trust a peer's signer | `dotnet run --project application/src/Ashlar.CLI -- keys trust <ed25519:…>` |
+| Share / pull signed packages | `dotnet run --project application/src/Ashlar.CLI -- pkg share <id>` / `pkg pull --from <dir>` |
+| Who's on the LAN (federation) | `dotnet run --project application/src/Ashlar.CLI -- mesh lan` |
 | Runtime Studio status | `dotnet run --project application/src/Ashlar.CLI -- runtime-studio status` |
 | Mesh sync/capabilities | `dotnet run --project application/src/Ashlar.CLI -- mesh sync` |
 | gRPC/runtime execution | `dotnet run --project application/src/Ashlar.CLI -- runtime execute --runtime-manifest <file>` |
@@ -322,7 +338,8 @@ Ship Ashlar from published container images and compose files. Host-native scrip
 
 | Image | Use |
 |-------|-----|
-| `ghcr.io/ianfrelinger/nexo-cli:latest` | Automation, agents, validation, release preflight, and mounted-workspace commands. |
+| `ghcr.io/ianfrelinger/nexo-cli:0.1.0` | **Recommended for operators** — the immutable, smoke-tested, multi-arch release tag. Automation, agents, validation, and mounted-workspace commands. (`deploy/node.yml` pins its digest.) |
+| `ghcr.io/ianfrelinger/nexo-cli:latest` | Rolling tag, republished on every `master` push — fine for "just try it", but it moves and can be GC'd, so pin `:0.1.0` (or a digest) for anything durable. |
 | Build from `.docker/Dockerfile.quickstart` | Single-container API + portal smoke path with mock-friendly defaults. |
 | Build from `.docker/Dockerfile.api` | API image used by compose stacks. |
 
@@ -366,7 +383,7 @@ See [`docs/Configuration.md`](docs/Configuration.md).
 The canonical repo map is [`docs/ProjectTiers.md`](docs/ProjectTiers.md). Use it to understand which projects are kernel spine, deployable hosts, distribution packages, optional transport/protocols/ingress, applications on the core, commercial satellites, and tests. Three similarly named folders mean three different things: singular **`application/`** = the CLI/API hosts, plural **`applications/`** = open products built on the core, **`apps/`** = agent-set/host configuration (see [`applications/README.md`](applications/README.md)).
 
 ```text
-Ashlar/
+Nexo/                             # the repo/clone directory (github.com/IanFrelinger/Nexo; the product is Ashlar)
 ├── src/                          # kernel spine, runtime, distribution/SDK, transport (gRPC, MCP, A2A), ingress, tests
 ├── application/src/              # Ashlar.CLI, Ashlar.API hosts + Ashlar.Tests.CLI (open)
 ├── applications/                 # open products on the core: physical-atom cert, provenance graph, spatial (Apache-2.0)

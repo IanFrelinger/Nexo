@@ -8,9 +8,50 @@ At release time, move the `[Unreleased]` notes under a new `[X.Y.Z] - YYYY-MM-DD
 
 ## [Unreleased]
 
-Initial public platform, heading toward the first tagged release (`v0.1.0`). No version has been cut yet; everything below is unreleased. Backfilled on 2026-08-16 from `git log e6682152..master` (the commit that added this file, 2026-08-13, through PR #337); PR numbers are given where a change landed as one PR. Wave 1/2 of the readiness pass are PRs #325–#337.
+_Nothing yet — the tree is at 0.1.0._
+
+## [0.1.0] - 2026-08-30
+
+**Ashlar v0.1.0 — "the refusing node."** The first tagged release: a governed, self-extending, single-node runtime, published as `ghcr.io/ianfrelinger/nexo-cli:0.1.0` (multi-arch; `deploy/node.yml` pins its digest). The baseline below was backfilled on 2026-08-16 from `git log e6682152..master` (this file's first commit, 2026-08-13, through PR #337); the release-cycle work — Phases 2–3, packaging, autonomy A0–A5, arming, and federation F1–F4 — is listed first under **### Added**. PR numbers are given where a change landed as one PR.
 
 ### Added
+
+**The refusing node (Phases 2–3): write floor + trust root**
+
+- **Phase 2 — the write floor.** `ForgeApplier` / `MediatedWritePath` refuse any mediated write to the project contract, the operator policy, anything under `.ashlar/`, or a build-executed file — normalized so no spelling (`./ashlar.policy.yaml`, `a/../.ashlar/x`, leaf symlinks) slips the denylist; an opt-in writable allowlist; 60-case `ForgeApplierGovernanceTests` on cert-gate (#425). One shared write floor across local self-extend, package import, and mesh adopt, closing a mesh-adopt RCE (#426, #427).
+- **Phase 3 — the refusal.** A node refuses a `.ashpkg` sealed by a signer it does not trust, before anything is parked. The trust root is `selfExtend.trustedSigners` (portable, in policy) ∪ the operator's local peers keychain (`ashlar keys trust` / `untrust` / `peers`) ∪ self-trust; an empty trust set refuses everything, fail-closed (#428).
+
+**Certified extension packages**
+
+- `.ashpkg` sealed extension packages (Ed25519 seal + signed gate record); `ashlar pkg export` / `import` / `publish` / `pull` / `share`; `MeshStore` publish/resolve; the sealer fingerprint is printed on the pull path; opt-in auto-share of an admitted extension to a mesh folder (`ASHLAR_MESH_AUTOSHARE`) (#392, #393).
+
+**Autonomy (A0–A5): the node extends itself, unattended**
+
+- **A0 — honest model failure.** A missing or failing model backend now exits non-zero rather than silently echoing a canned answer and reporting success (`--allow-mock false`) (#430).
+- **A1 — a reachable real model.** One env var (`ASHLAR_OLLAMA_BASE_URL`) reaches an Ollama model on both model paths; verified in containers (#431).
+- **A2 — real executed-evidence courses.** An in-process Roslyn **build course** (no .NET SDK on the node) — a proposal that does not compile earns a failed course and is never admissible (#432).
+- **A3 — unattended self-extension.** The daemon extender proposes on its own timer, armed and durable across a redeploy (`.docker/node-agents.json`, mode path on the state volume) (#433).
+- **A4 — the safety envelope.** A transactional apply with a **post-apply canary + auto-rollback** (`RoslynPostApplyVerification`); the overnight audit `ashlar background-agent report`; and the emergency stop `ashlar background-agent disarm` (#434, #435).
+- **A5 — cross-machine sharing.** A node auto-pulls trusted signed `.ashpkg` from a folder or peer and re-gates it through its own trust root (#436).
+
+**Staged arming**
+
+- `ashlar policy set self_extend <sealed|proposing|self-extending>` and `ashlar policy show` — the only supported post-`init` policy edit; it changes only the mode, preserves the rest, validates the result (won't arm without `gatesRequired`), and fails closed on a duplicate `mode` key or an unsupported key (#437).
+
+**Federation (F1–F4): a hub-less peer mesh**
+
+- **F1 + F2.** Nodes serve their signed packages over a Kestrel `/mesh/v1/hello|index|pkg` endpoint (`ASHLAR_MESH_SERVE_PORT`) and pull from peers (`ASHLAR_MESH_PEERS`) — every package re-gated through the receiver's own trust root and policy (#438).
+- **F3.** Zero-config LAN discovery over multicast (`ASHLAR_MESH_DISCOVERY`, surfaced by `ashlar mesh lan`), and the `IPeerSource` strategy seam that lets discovery mechanisms swap without touching the pull or the gate (#439).
+- **F4.** A Tailscale tailnet peer source for internet-wide P2P without a LAN (`ASHLAR_MESH_TAILNET`) (#440); TLS/mTLS serving for a private fleet, validated against the fleet CA and **fail-closed** on a half-specified cert config (#441).
+
+**Node deployment, release, and lab**
+
+- The deployable node: `deploy/node.yml` (digest-pinned, restart-durable, gate store on a durable volume), `.docker/node-entrypoint.sh` (boot-vs-CLI dispatch, first-run scaffold, clock floor), a `HEALTHCHECK` on the heartbeat, the `ashlar` host wrapper, and `scripts/node-update.sh` / `fleet-update.sh` (Phase 1, #419–#424).
+- **v0.1.0 released** — `release.yml` cut the tag and published GHCR `nexo-cli:0.1.0` (multi-arch, smoke-tested) plus a draft GitHub Release with the `Ashlar.*` NuGet packages; `deploy/node.yml` re-pinned to the 0.1.0 digest (#428, #429).
+- A reproducible on-machine release-readiness lab under `scripts/lab/` (#442).
+
+<!-- Baseline (backfill through PR #337) -->
+
 
 **Baseline platform (before 2026-08-13)**
 

@@ -43,7 +43,8 @@ public sealed record PackageImportResult(
 /// <summary>
 /// The receiver-sovereign import: verify a certified package INTRINSICALLY (no local keys, no
 /// network), then submit it to THIS project's gate under THIS project's policy. Shared by
-/// <c>ashlar pkg import</c> (one file) and <c>ashlar mesh pull</c> (many from a peer), because
+/// <c>ashlar pkg import</c> (one file), <c>ashlar pkg pull</c> (many from a folder), and the daemon's
+/// mesh auto-pull (many from peers), because
 /// how a package arrived must never change how it is admitted — the transport is not the trust.
 ///
 /// <para>Never throws for an expected outcome: a forged package, a full budget, a sealed project,

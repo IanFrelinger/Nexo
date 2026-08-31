@@ -22,7 +22,9 @@ namespace Ashlar.CLI.Commands;
 public sealed class MeshCommand : Command
 {
     /// <summary>Creates a new MeshCommand instance.</summary>
-    public MeshCommand() : base("mesh", "Discover and advertise capabilities (Block 9).")
+    public MeshCommand() : base("mesh",
+        "Peer discovery and the local instance mesh: `mesh lan` lists LAN-discovered peers (F3); "
+        + "sneakernet export/import; peer health, admit, and revoke.")
     {
         var discoverOpt = new Option<bool>("--discover", () => false, "Discover peer instances");
         var advertiseOpt = new Option<bool>("--advertise", () => false, "Advertise this instance's capabilities");
