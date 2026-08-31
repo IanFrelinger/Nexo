@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Ashlar.Core.Application.Certification.Ports;
 using Ashlar.Manifest;
 using Ashlar.Manifest.Admission;
 using Ashlar.Manifest.Packaging;
@@ -48,7 +49,8 @@ public static class SelfExtendAdmissionBridge
         IReadOnlyList<string>? forgeProposalIds = null,
         SigningIdentity? signer = null,
         bool? autoShare = null,
-        string? meshDir = null)
+        string? meshDir = null,
+        IExtensionCompileCheck? compileCheck = null)
     {
         var policyPath = Path.Combine(repoRoot, "ashlar.policy.yaml");
         if (!File.Exists(policyPath))
@@ -82,11 +84,40 @@ public static class SelfExtendAdmissionBridge
 
         var forge = forgeProposalIds.Count > 0 ? AshlarProjectMediation.ProjectStore(repoRoot) : null;
 
+        // A2 — executed evidence. Compile the proposed source (Roslyn, in-process) so the gate
+        // admits on RUN evidence, not a self-reported claim. A change that does not compile earns a
+        // FAILED build course and is rejected by any policy that requires `build`. Fail-closed: a
+        // verifier error is a failed course, never a pass. Skipped only when no compile check is
+        // wired or there is nothing mediated to compile (behaviour then matches pre-A2 exactly).
+        CourseResult? buildCourse = null;
+        if (compileCheck is not null && forge is not null && forgeProposalIds.Count > 0)
+        {
+            var proposedFiles = new List<ProposedFileContent>(forgeProposalIds.Count);
+            foreach (var id in forgeProposalIds)
+            {
+                var row = forge.Find(id);
+                if (row is not null)
+                {
+                    proposedFiles.Add(new ProposedFileContent(row.TargetPath, row.NewContent));
+                }
+            }
+            try
+            {
+                var result = await compileCheck.CheckAsync(proposedFiles, ct).ConfigureAwait(false);
+                buildCourse = new CourseResult { Name = "build", Passed = result.Passed, Detail = result.Detail };
+            }
+            catch (Exception ex)
+            {
+                logger.LogWarning(ex, "Self-extend gate: build compile-check errored");
+                buildCourse = new CourseResult { Name = "build", Passed = false, Detail = $"compile check errored: {ex.Message}" };
+            }
+        }
+
         ExtensionProposal proposal;
         try
         {
             proposal = BuildProposal(agentName, objective, writePaths, toolCallsExecuted, toolCallsDenied,
-                forgeProposalIds, forge);
+                forgeProposalIds, forge, buildCourse is null ? null : new[] { buildCourse });
         }
         catch (InvalidOperationException ex)
         {
@@ -238,7 +269,8 @@ public static class SelfExtendAdmissionBridge
         int toolCallsExecuted,
         int toolCallsDenied,
         IReadOnlyList<string>? forgeProposalIds = null,
-        Ashlar.BackgroundAgents.Forge.ChangeProposalStore? forge = null)
+        Ashlar.BackgroundAgents.Forge.ChangeProposalStore? forge = null,
+        IReadOnlyList<CourseResult>? extraCourses = null)
     {
         forgeProposalIds ??= [];
         var mediated = forgeProposalIds.Count > 0;
@@ -283,16 +315,22 @@ public static class SelfExtendAdmissionBridge
             Diff = string.Join("\n", diffLines),
             ForgeProposalIds = forgeProposalIds,
             Files = rows?.Select(p => FileClaim.For(p.TargetPath, p.NewContent)).ToList(),
-            Courses =
-            [
-                new CourseResult
-                {
-                    Name = "sandbox",
-                    Passed = confined,
-                    Detail = sandboxDetail,
-                },
-            ],
+            Courses = BuildCourses(confined, sandboxDetail, extraCourses),
         };
+    }
+
+    private static List<CourseResult> BuildCourses(
+        bool confined, string sandboxDetail, IReadOnlyList<CourseResult>? extraCourses)
+    {
+        var courses = new List<CourseResult>
+        {
+            new CourseResult { Name = "sandbox", Passed = confined, Detail = sandboxDetail },
+        };
+        if (extraCourses is not null)
+        {
+            courses.AddRange(extraCourses);
+        }
+        return courses;
     }
 
     private static string Truncate(string s, int max) =>
