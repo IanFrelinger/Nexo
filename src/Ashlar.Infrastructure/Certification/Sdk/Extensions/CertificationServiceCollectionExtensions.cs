@@ -38,6 +38,8 @@ public static class CertificationServiceCollectionExtensions
         // (the only way to hold a real HMAC key, per SPEC-006 S-4) must not have it replaced
         // by a parameterless one, which would silently drop it back to the committed dev key.
         services.TryAddSingleton<CertificationRecordSigner>();
+        // A2: real executed-evidence compile check for autonomous admissions (Roslyn, in-process).
+        services.TryAddSingleton<IExtensionCompileCheck, RoslynExtensionCompileCheck>();
 
         if (string.IsNullOrWhiteSpace(recordStorePath))
         {

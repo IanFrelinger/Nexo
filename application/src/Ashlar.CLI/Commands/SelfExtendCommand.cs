@@ -149,8 +149,9 @@ public sealed class SelfExtendCommand : Command
         var previousProvider = Environment.GetEnvironmentVariable("ASHLAR_MODEL_PROVIDER");
         try
         {
-            if (allowMock)
-                Environment.SetEnvironmentVariable("ASHLAR_ALLOW_MOCK", "1");
+            // Authoritative, both directions: --allow-mock false sets "0" so the model wrappers fail
+            // hard on an unreachable/unconfigured provider instead of silently echoing success.
+            Environment.SetEnvironmentVariable("ASHLAR_ALLOW_MOCK", allowMock ? "1" : "0");
             if (!string.IsNullOrWhiteSpace(provider))
                 Environment.SetEnvironmentVariable("ASHLAR_MODEL_PROVIDER", provider.Trim());
 
@@ -350,8 +351,9 @@ public sealed class SelfExtendCommand : Command
         var previousProvider = Environment.GetEnvironmentVariable("ASHLAR_MODEL_PROVIDER");
         try
         {
-            if (allowMock)
-                Environment.SetEnvironmentVariable("ASHLAR_ALLOW_MOCK", "1");
+            // Authoritative, both directions: --allow-mock false sets "0" so the model wrappers fail
+            // hard on an unreachable/unconfigured provider instead of silently echoing success.
+            Environment.SetEnvironmentVariable("ASHLAR_ALLOW_MOCK", allowMock ? "1" : "0");
             if (!string.IsNullOrWhiteSpace(provider))
                 Environment.SetEnvironmentVariable("ASHLAR_MODEL_PROVIDER", provider.Trim());
 
