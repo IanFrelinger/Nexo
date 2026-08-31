@@ -613,6 +613,7 @@ static partial class Program
         root.AddCommand(new VerifyCommand());
         root.AddCommand(new GatesCommand());
         root.AddCommand(new KeysCommand());
+        root.AddCommand(new PolicyCommand());
         root.AddCommand(new PkgCommand());
         root.AddCommand(new ExportCommand());
         root.AddCommand(new RunCommand(() => ServiceProvider.GetRequiredService<OrchestrateCommand>()));
