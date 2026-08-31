@@ -47,6 +47,11 @@ services:
       # step 3 / Phase 5 step 5 — that step removes this flag).
       - --disable-observation
 
+    # Publish the mesh serve port so LAN peers can pull from this node (pairs with
+    # ASHLAR_MESH_SERVE_PORT below; keep both commented to expose nothing — the default).
+    # ports:
+    #   - "7420:7420"
+
     volumes:
       - ashlar-state:/data/state
       # The mesh store is how packages reach this node. Point it at a folder your sync tool owns —
@@ -95,6 +100,16 @@ services:
       # ASHLAR_MESH_PULL_DIR: /data/state/mesh/published
       # ASHLAR_MESH_PULL_INTERVAL_SECONDS: "300"
       # ASHLAR_MESH_PULL_PROJECT: /data/state/project
+
+      # The LAN party (federated, no hub, no shared folder). Every node is a symmetric peer:
+      # SERVE offers this node's published signed .ashpkg read-only on a port (uncomment the
+      # matching `ports:` entry below so the LAN can reach it); PEERS pulls directly from other
+      # nodes' serve endpoints, through the SAME trust gate as any import — an untrusted signer
+      # is refused before anything parks, and a `proposing` policy HOLDS what it admits for
+      # review. A peer being offline is not an error; it just isn't at the party.
+      # ASHLAR_MESH_SERVE_PORT: "7420"
+      # ASHLAR_NODE_NAME: study-node
+      # ASHLAR_MESH_PEERS: "http://192.168.1.20:7420,http://192.168.1.21:7420"
 
     # NOTE: `restart: unless-stopped` does NOT act on HEALTHCHECK. Docker restarts a container on
     # EXIT, never on unhealthy. A node that parks or wedges while still running stays up and

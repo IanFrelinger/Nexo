@@ -229,9 +229,12 @@ public sealed class BackgroundAgentDaemonCommand
                         sp.GetRequiredService<SelfExtendRunnerAdapter>());
 
                     // A5 cross-machine sharing (consumer): opt-in mesh auto-pull. OFF unless a shared
-                    // folder is configured, so the default node is unchanged. Trust is the operator's
-                    // (`ashlar keys trust <fp>`) — an empty trust set refuses every package.
+                    // folder OR peer URLs are configured, so the default node is unchanged. Trust is
+                    // the operator's (`ashlar keys trust <fp>`) — an empty trust set refuses every package.
                     TryAddMeshAutoPull(services);
+                    // F1 the LAN party (producer): opt-in read-only serving of this node's published
+                    // signed packages, so peers can pull directly — no hub, no shared folder.
+                    TryAddMeshServe(services);
                 });
 
             using var host = builder.Build();
@@ -324,7 +327,12 @@ public sealed class BackgroundAgentDaemonCommand
     private static void TryAddMeshAutoPull(IServiceCollection services)
     {
         var pullDir = Environment.GetEnvironmentVariable("ASHLAR_MESH_PULL_DIR");
-        if (string.IsNullOrWhiteSpace(pullDir))
+        // F2: peer base URLs (comma-separated, e.g. "http://192.168.1.20:7420") — pulled directly,
+        // through the same trust-gated import as the folder. Either source arms the service.
+        var peers = (Environment.GetEnvironmentVariable("ASHLAR_MESH_PEERS") ?? string.Empty)
+            .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .ToList();
+        if (string.IsNullOrWhiteSpace(pullDir) && peers.Count == 0)
         {
             return;   // consumer auto-pull is opt-in
         }
@@ -341,8 +349,28 @@ public sealed class BackgroundAgentDaemonCommand
             project = Path.Combine(RepoPathResolver.ResolveStateDirectory(), "project");
         }
 
-        services.AddSingleton(new MeshAutoPullSettings(pullDir.Trim(), project, interval));
+        services.AddSingleton(new MeshAutoPullSettings(pullDir?.Trim() ?? string.Empty, project, interval, peers));
         services.AddHostedService<MeshAutoPullService>();
+    }
+
+    /// <summary>
+    /// Registers the F1 mesh-serve hosted service when <c>ASHLAR_MESH_SERVE_PORT</c> is set — otherwise
+    /// a no-op, so a default node exposes nothing. Serves the node's own published dir (the same one
+    /// auto-share writes to), read-only. The announced name is <c>ASHLAR_NODE_NAME</c> or the machine name.
+    /// </summary>
+    private static void TryAddMeshServe(IServiceCollection services)
+    {
+        if (!int.TryParse(Environment.GetEnvironmentVariable("ASHLAR_MESH_SERVE_PORT"), out var port) || port is < 1 or > 65535)
+        {
+            return;   // serving is opt-in
+        }
+        var name = Environment.GetEnvironmentVariable("ASHLAR_NODE_NAME");
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            name = Environment.MachineName;
+        }
+        services.AddSingleton(new MeshServeSettings(port, Ashlar.Manifest.Packaging.MeshStore.Resolve(null), name!));
+        services.AddHostedService<MeshServeService>();
     }
 
     /// <summary>
