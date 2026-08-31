@@ -46,11 +46,44 @@ public sealed class MeshAutoPullService : BackgroundService
     /// <summary>One shared client for peer pulls; a slow peer times out instead of stalling the tick.</summary>
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(15) };
 
-    /// <summary>Creates the mesh auto-pull service.</summary>
-    public MeshAutoPullService(MeshAutoPullSettings settings, ILogger<MeshAutoPullService> logger)
+    /// <summary>Creates the mesh auto-pull service. <paramref name="peerSources"/> is the strategy
+    /// seam: every registered source (configured, multicast, a future tailnet or rendezvous source)
+    /// contributes peer addresses each tick, and all of them feed the same trust-gated pull.</summary>
+    public MeshAutoPullService(
+        MeshAutoPullSettings settings, ILogger<MeshAutoPullService> logger,
+        IEnumerable<IPeerSource>? peerSources = null)
     {
         _settings = settings ?? throw new ArgumentNullException(nameof(settings));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _peerSources = (peerSources ?? []).ToList();
+    }
+
+    private readonly IReadOnlyList<IPeerSource> _peerSources;
+
+    /// <summary>Peers pulled per tick are capped so a beacon-spammer cannot turn one tick into an
+    /// unbounded dial-out; the trust gate already makes each individual pull safe.</summary>
+    public const int MaxPeersPerTick = 16;
+
+    /// <summary>
+    /// The tick's peer list: configured settings peers ∪ every source's current peers, trimmed,
+    /// de-duplicated (case-insensitive), capped at <see cref="MaxPeersPerTick"/>. Static and pure for
+    /// direct testing.
+    /// </summary>
+    public static IReadOnlyList<string> MergePeerUrls(
+        IReadOnlyList<string>? configured, IEnumerable<IPeerSource>? sources)
+    {
+        var urls = new List<string>(configured ?? []);
+        foreach (var source in sources ?? [])
+        {
+            try { urls.AddRange(source.CurrentPeerBaseUrls()); }
+            catch { /* one broken source never blocks the others */ }
+        }
+        return urls
+            .Select(u => u?.Trim() ?? string.Empty)
+            .Where(u => u.Length > 0)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .Take(MaxPeersPerTick)
+            .ToList();
     }
 
     /// <inheritdoc />
@@ -58,15 +91,16 @@ public sealed class MeshAutoPullService : BackgroundService
     {
         var hasDir = !string.IsNullOrWhiteSpace(_settings.PullDir);
         var peers = _settings.Peers ?? Array.Empty<string>();
-        if (_settings.IntervalSeconds <= 0 || (!hasDir && peers.Count == 0))
+        if (_settings.IntervalSeconds <= 0 || (!hasDir && peers.Count == 0 && _peerSources.Count == 0))
         {
-            _logger.LogInformation("Mesh auto-pull disabled (no pull dir, no peers, or non-positive interval).");
+            _logger.LogInformation("Mesh auto-pull disabled (no pull dir, no peers, no peer sources, or non-positive interval).");
             return;
         }
 
         _logger.LogInformation(
-            "Mesh auto-pull armed: {Dir} + {PeerCount} peer(s) every {Interval}s → project {Project}. Only signers this node trusts are admitted.",
-            hasDir ? _settings.PullDir : "(no folder)", peers.Count, _settings.IntervalSeconds, _settings.ProjectDir);
+            "Mesh auto-pull armed: {Dir} + {PeerCount} configured peer(s) + sources [{Sources}] every {Interval}s → project {Project}. Only signers this node trusts are admitted.",
+            hasDir ? _settings.PullDir : "(no folder)", peers.Count,
+            string.Join(", ", _peerSources.Select(s => s.Describe())), _settings.IntervalSeconds, _settings.ProjectDir);
 
         using var timer = new PeriodicTimer(TimeSpan.FromSeconds(_settings.IntervalSeconds));
         try
@@ -94,7 +128,7 @@ public sealed class MeshAutoPullService : BackgroundService
             {
                 s += await PullOnceAsync(_settings.PullDir, _settings.ProjectDir, ct).ConfigureAwait(false);
             }
-            foreach (var peer in _settings.Peers ?? Array.Empty<string>())
+            foreach (var peer in MergePeerUrls(_settings.Peers, _peerSources))
             {
                 ct.ThrowIfCancellationRequested();
                 s += await PullPeerOnceAsync(Http, peer, _settings.ProjectDir, ct).ConfigureAwait(false);

@@ -111,6 +111,18 @@ services:
       # ASHLAR_NODE_NAME: study-node
       # ASHLAR_MESH_PEERS: "http://192.168.1.20:7420,http://192.168.1.21:7420"
 
+      # PEERS accepts ANY routable address — a LAN IP, a Tailscale/VPN address, a hostname. The
+      # transport doesn't care and neither does the trust model (the seal is the trust). Peer
+      # sources are a strategy seam: configured (here), multicast discovery (below), and future
+      # sources (tailnet enumeration, rendezvous) all feed the same trust-gated pull.
+
+      # Zero-config discovery (F3): announce + hear peers via multicast (239.7.42.1:7421), shown by
+      # `ashlar mesh lan`. Presence, not trust — a stranger's beacon only gets it pulled FROM, and
+      # its untrusted packages are refused before anything parks. Reaches the physical LAN from
+      # native/host-network nodes; Docker Desktop's bridge does NOT forward multicast to the LAN
+      # (containers on one bridge still hear each other) — use ASHLAR_MESH_PEERS there.
+      # ASHLAR_MESH_DISCOVERY: "1"
+
     # NOTE: `restart: unless-stopped` does NOT act on HEALTHCHECK. Docker restarts a container on
     # EXIT, never on unhealthy. A node that parks or wedges while still running stays up and
     # unhealthy forever, and `docker ps` is where you find out — which is why the park-don't-exit
