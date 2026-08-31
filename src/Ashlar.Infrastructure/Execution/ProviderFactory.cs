@@ -739,7 +739,12 @@ public class ProviderFactory : IProviderFactory
     {
         if (_ephemeralLifecycle != null)
             return await _ephemeralLifecycle.GetBaseUrlAsync(ct);
-        var url = Environment.GetEnvironmentVariable("OLLAMA_BASE_URL") ?? AshlarDefaults.OllamaDefaultBaseUrl;
+        // Honor ASHLAR_OLLAMA_BASE_URL first, matching the MEAI OllamaEndpointResolver precedence,
+        // so a single env var points BOTH model paths at the same endpoint. Fall back to the legacy
+        // OLLAMA_BASE_URL that compose stacks and older docs set, then the default.
+        var url = Environment.GetEnvironmentVariable("ASHLAR_OLLAMA_BASE_URL")
+                  ?? Environment.GetEnvironmentVariable("OLLAMA_BASE_URL")
+                  ?? AshlarDefaults.OllamaDefaultBaseUrl;
         return url.TrimEnd('/');
     }
 
