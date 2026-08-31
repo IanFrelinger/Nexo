@@ -73,6 +73,31 @@ public sealed class PrivateLicenseMiddlewareTests
         nextCalled.Should().BeTrue();
     }
 
+    [Fact]
+    public async Task InvokeAsync_WhenLicenseExpired_ReadOnlyFloorHoldsEvenWhenFlagDisabled()
+    {
+        // The lapsed floor is a LICENSING.md commitment: an expired license always admits
+        // reads. AllowReadOnlyWhenExpired=false must not be able to lower the floor.
+        var nextCalled = false;
+        var middleware = new PrivateLicenseMiddleware(
+            _ =>
+            {
+                nextCalled = true;
+                return Task.CompletedTask;
+            },
+            Options.Create(new AshlarPrivateLicenseOptions
+            {
+                EnforceLicense = true,
+                AllowReadOnlyWhenExpired = false,
+            }),
+            new StubValidator(new PrivateLicenseStatus { State = PrivateLicenseState.Expired }));
+
+        var context = CreateContext("/api/gates", "GET");
+        await middleware.InvokeAsync(context);
+
+        nextCalled.Should().BeTrue();
+    }
+
     private static DefaultHttpContext CreateContext(string path, string method)
     {
         var context = new DefaultHttpContext();
