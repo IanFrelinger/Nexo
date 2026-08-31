@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using Ashlar.Abstractions;
+using Ashlar.Infrastructure.Execution;
 using Ashlar.Runtime;
 
 namespace Ashlar.BackgroundAgents.Agents;
@@ -111,6 +112,12 @@ public sealed class ToolCallingAgent : IAgent
             var (toolCalls, rationale) = ParseResponse(text);
             LogModelTurn(text, toolCalls, rationale);
             return toolCalls.Count == 0 ? AgentActions.None : new AgentActions(toolCalls);
+        }
+        catch (ModelUnavailableException)
+        {
+            // A genuinely unavailable model is a hard infra failure, not "the model chose to do
+            // nothing." Propagate it so the run fails honestly instead of reporting no actions.
+            throw;
         }
         catch (Exception ex)
         {
@@ -252,6 +259,13 @@ public sealed class ToolCallingAgent : IAgent
         catch (OperationCanceledException)
         {
             stoppedReason = "cancelled";
+            throw;
+        }
+        catch (ModelUnavailableException)
+        {
+            // The model was genuinely unreachable/unconfigured. Do NOT fall through to a returned
+            // AgentCycleResult with executed=0 (which reads as a successful empty cycle) — let it
+            // propagate so the runner marks the cycle FAILED and the caller exits non-zero.
             throw;
         }
         catch (Exception ex)

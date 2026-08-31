@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Ashlar.Abstractions;
+using Ashlar.Infrastructure.Execution;
 
 namespace Ashlar.Infrastructure.Execution.Models;
 
@@ -77,13 +78,33 @@ public sealed class HotSwappableModel : IModel
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Agentic model failed; falling back to deterministic");
+                if (!AllowMock())
+                {
+                    throw new ModelUnavailableException(
+                        $"Model provider '{provider}' failed and the deterministic echo fallback is disabled "
+                        + "(ASHLAR_ALLOW_MOCK != 1). Point the node at a reachable provider, or set "
+                        + "ASHLAR_ALLOW_MOCK=1 to permit the echo model. Refusing to report success over an "
+                        + "unreachable model.", ex);
+                }
+                _logger.LogWarning(ex, "Agentic model failed; falling back to deterministic (ASHLAR_ALLOW_MOCK=1)");
                 return await _deterministic.CompleteAsync(input, ct);
             }
         }
 
+        // No provider and no explicit deterministic preference: this is an UNCONFIGURED model, not a
+        // choice. Echoing here is what let an unwired node report "passed QA gates" over zero work.
+        if (!AllowMock())
+        {
+            throw new ModelUnavailableException(
+                "No model provider is configured (ASHLAR_MODEL_PROVIDER unset and no ashlar.model.provider "
+                + "directive) and the deterministic echo fallback is disabled (ASHLAR_ALLOW_MOCK != 1). "
+                + "Configure a provider, or set ASHLAR_ALLOW_MOCK=1 to run the echo model.");
+        }
         return await _deterministic.CompleteAsync(input, ct);
     }
+
+    private static bool AllowMock() =>
+        string.Equals(Environment.GetEnvironmentVariable("ASHLAR_ALLOW_MOCK"), "1", StringComparison.Ordinal);
 
     private static (string? prefer, string? provider) ParseRuntime(ModelInput input)
     {
