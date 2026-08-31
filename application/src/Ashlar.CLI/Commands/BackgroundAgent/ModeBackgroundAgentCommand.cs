@@ -86,6 +86,48 @@ public class ModeBackgroundAgentCommand
         }
     }
 
+    /// <summary>
+    /// Emergency stop: force the mode to Passive so every extender is disarmed on its next cycle
+    /// (the mode file is re-read each cycle — no restart needed). This is the "stop it NOW" front
+    /// door, distinct from <c>mode set --value passive</c> only in intent and in the loud,
+    /// unambiguous confirmation it prints. The optional reason is logged for the operator's trail.
+    /// Fail-closed by construction: the store already defaults to Passive on any read failure, so a
+    /// disarm that half-writes still leaves the node disarmed.
+    /// </summary>
+    public Task<int> DisarmAsync(string? reason, bool formatJson, CancellationToken ct = default)
+    {
+        try
+        {
+            _modeStore.SetMode(BackgroundAgentAggressivenessMode.Passive);
+            _logger.LogWarning("Background agents DISARMED (mode → Passive){Reason}",
+                string.IsNullOrWhiteSpace(reason) ? string.Empty : $": {reason}");
+            if (formatJson)
+            {
+                var options = new JsonSerializerOptions { WriteIndented = true };
+                Console.Out.WriteLine(JsonSerializer.Serialize(new { ok = true, mode = "passive", disarmed = true, reason }, options));
+            }
+            else
+            {
+                Console.Out.WriteLine("DISARMED — background agents set to Passive; every extender stops at its next cycle.");
+                if (!string.IsNullOrWhiteSpace(reason))
+                {
+                    Console.Out.WriteLine($"Reason: {reason}");
+                }
+                Console.Out.WriteLine("Re-arm with: ashlar background-agent mode set --value active");
+            }
+            return Task.FromResult(0);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Disarm failed");
+            if (formatJson)
+                Console.Out.WriteLine(JsonSerializer.Serialize(new { ok = false, error = ex.Message }));
+            else
+                Console.Error.WriteLine(ex.Message);
+            return Task.FromResult(1);
+        }
+    }
+
     private static BackgroundAgentAggressivenessMode ParseMode(string mode)
     {
         return mode?.ToLowerInvariant() switch

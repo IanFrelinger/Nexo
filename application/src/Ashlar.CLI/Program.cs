@@ -104,6 +104,7 @@ static partial class Program
         services.AddScoped<Ashlar.CLI.Commands.BackgroundAgent.LogsBackgroundAgentCommand>();
         services.AddScoped<Ashlar.CLI.Commands.BackgroundAgent.MetricsBackgroundAgentCommand>();
         services.AddScoped<Ashlar.CLI.Commands.BackgroundAgent.StatsBackgroundAgentCommand>();
+        services.AddScoped<Ashlar.CLI.Commands.BackgroundAgent.ReportBackgroundAgentCommand>();
         services.AddScoped<Ashlar.CLI.Commands.BackgroundAgent.ObservationsBackgroundAgentCommand>();
         services.AddScoped<Ashlar.CLI.Commands.BackgroundAgent.ObjectivesBackgroundAgentCommand>();
         services.AddScoped<Ashlar.CLI.Commands.BackgroundAgent.ProposalsBackgroundAgentCommand>();
