@@ -1,16 +1,25 @@
-using System.Net;
 using System.Text;
-using System.Text.Json;
 using System.Text.RegularExpressions;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Ashlar.Manifest.Signing;
 
 namespace Ashlar.CLI.Commands.BackgroundAgent;
 
-/// <summary>How a node serves its published packages to the LAN: the port to listen on, the
-/// published-dir to serve (read-only), and the name it announces.</summary>
-public sealed record MeshServeSettings(int Port, string PublishedDir, string NodeName);
+/// <summary>How a node serves its published packages: the port, the read-only published dir, the name
+/// it announces, and optional TLS/mTLS for a private fleet (a PEM server cert, and — for mutual TLS —
+/// a requirement that clients present a cert the fleet CA signed).</summary>
+public sealed record MeshServeSettings(
+    int Port, string PublishedDir, string NodeName,
+    string? TlsCertPath = null, string? TlsKeyPath = null, bool RequireClientCert = false, string? CaPath = null)
+{
+    /// <summary>True when a server certificate is configured (endpoint is HTTPS).</summary>
+    public bool Tls => !string.IsNullOrWhiteSpace(TlsCertPath) && !string.IsNullOrWhiteSpace(TlsKeyPath);
+}
 
 /// <summary>
 /// Shared wire rules for the federated mesh (F1): what a package file may be called, how large it may
@@ -41,6 +50,11 @@ public static class MeshWire
 
     /// <summary>One row of a peer's package index.</summary>
     public sealed record IndexEntry(string File, long Size);
+
+    /// <summary>Shared JSON options for the index round-trip. Case-insensitive so the client is robust
+    /// to either casing on the wire — Kestrel's <c>Results.Json</c> emits camelCase by default.</summary>
+    public static readonly System.Text.Json.JsonSerializerOptions JsonOptions =
+        new(System.Text.Json.JsonSerializerDefaults.Web);
 
     /// <summary>
     /// Reads at most <paramref name="maxBytes"/> from <paramref name="stream"/> and returns the text,
@@ -78,26 +92,25 @@ public static class MeshWire
 ///   <item><c>GET /mesh/v1/pkg/{file}</c> — one package's content.</item>
 /// </list>
 ///
-/// <para>Serving is safe by construction: everything offered is already sealed and Ed25519-signed
-/// (MeshStore.Publish refuses to store what does not verify), the surface is read-only GET, file
-/// names are validated against a traversal-free pattern AND resolved-path containment, and oversized
-/// files are excluded. Trust still lives entirely on the RECEIVING side — a peer that pulls from here
-/// runs every package through its own trust root and gate. The transport is not the trust.</para>
+/// <para>Built on Kestrel, so the same endpoint serves plaintext HTTP on the LAN or TLS/mTLS for a
+/// private fleet (a PEM server cert; optionally requiring a client cert the fleet CA signed) — and
+/// Kestrel's connection limits, header timeout, and minimum-response-data-rate give the DoS
+/// protections a raw socket loop had to hand-roll: a slow or non-reading client is dropped, not able
+/// to wedge serving.</para>
 ///
-/// <para>Opt-in (registered only when <c>ASHLAR_MESH_SERVE_PORT</c> is set) and daemon-safe: a failed
-/// bind or a request that throws is logged and never takes the node down. HttpListener keeps this
-/// dependency-free — the same machinery the operator dashboard already uses.</para>
+/// <para>Safe by construction: everything offered is already sealed and Ed25519-signed (MeshStore
+/// refuses to store what does not verify), the surface is read-only GET, file names are validated
+/// against a traversal-free pattern AND resolved-path containment, oversized files are excluded, and a
+/// failed bind is logged and never takes the daemon down. Trust still lives entirely on the RECEIVING
+/// side — a peer that pulls from here runs every package through its own trust root and gate; TLS is
+/// access control and confidentiality on top, not a substitute for the seal.</para>
+///
+/// <para>Opt-in (registered only when <c>ASHLAR_MESH_SERVE_PORT</c> is set).</para>
 /// </summary>
 public sealed class MeshServeService : BackgroundService
 {
     private readonly MeshServeSettings _settings;
     private readonly ILogger<MeshServeService> _logger;
-
-    /// <summary>Cap on in-flight requests, so a connection flood cannot exhaust the node.</summary>
-    private const int MaxConcurrentRequests = 32;
-
-    /// <summary>Per-request deadline — bounds the response write so a non-reading client frees its slot.</summary>
-    private static readonly TimeSpan RequestTimeout = TimeSpan.FromSeconds(30);
 
     /// <summary>Creates the mesh serve service.</summary>
     public MeshServeService(MeshServeSettings settings, ILogger<MeshServeService> logger)
@@ -115,146 +128,149 @@ public sealed class MeshServeService : BackgroundService
             return;
         }
 
-        var listener = new HttpListener();
-        listener.Prefixes.Add($"http://+:{_settings.Port}/");
+        // Fail CLOSED on a half-configured private-fleet TLS setup. A node asked to require client
+        // certs — or given only one of cert/key — must NEVER silently fall back to plaintext, which
+        // would expose the package index/files to any client with no cert. Refuse to serve instead.
+        var configError = ConfigError(_settings);
+        if (configError is not null)
+        {
+            _logger.LogError(
+                "Mesh serve refusing to start on :{Port} — {Error} Not serving (fail-closed; no plaintext fallback).",
+                _settings.Port, configError);
+            return;
+        }
+
+        WebApplication app;
         try
         {
-            listener.Start();
+            app = BuildApp();
+            await app.StartAsync(stoppingToken).ConfigureAwait(false);
         }
-        catch (Exception ex) when (ex is HttpListenerException or PlatformNotSupportedException)
+        catch (Exception ex)
         {
-            // A node that cannot serve is still a node — log loud, keep running everything else.
-            _logger.LogError(ex, "Mesh serve could not bind port {Port} — serving disabled for this run.", _settings.Port);
+            // A node that cannot serve is still a node — log loud, keep everything else running. A
+            // mis-configured cert (unreadable PEM, wrong key) surfaces HERE, not as silent plaintext.
+            _logger.LogError(ex, "Mesh serve could not start on :{Port} — serving disabled for this run.", _settings.Port);
             return;
         }
 
         _logger.LogInformation(
-            "Mesh serve armed on :{Port} — offering {Dir} to the network (read-only, signed packages; trust is enforced by the puller).",
-            _settings.Port, _settings.PublishedDir);
+            "Mesh serve armed on :{Port} ({Scheme}) — offering {Dir} to the network (read-only, signed packages; trust is enforced by the puller).",
+            _settings.Port, _settings.Tls ? (_settings.RequireClientCert ? "mTLS" : "TLS") : "http", _settings.PublishedDir);
 
-        // Requests are dispatched CONCURRENTLY and bounded: a slow or non-reading client can no
-        // longer wedge the accept loop (each request runs off the loop), and the semaphore caps how
-        // many can be in flight so a connection flood cannot exhaust threads. Excess is refused fast.
-        using var slots = new SemaphoreSlim(MaxConcurrentRequests);
-        await using var stopReg = stoppingToken.Register(() => { try { listener.Stop(); } catch { /* shutting down */ } });
         try
         {
-            while (!stoppingToken.IsCancellationRequested)
-            {
-                HttpListenerContext ctx;
-                try
-                {
-                    ctx = await listener.GetContextAsync().ConfigureAwait(false);
-                }
-                catch (Exception) when (stoppingToken.IsCancellationRequested)
-                {
-                    break;   // listener stopped by shutdown
-                }
-                catch (Exception ex)
-                {
-                    // A transient accept error must NOT escape ExecuteAsync — an unhandled throw here
-                    // would fault the BackgroundService and (default StopHost) take the whole daemon
-                    // down. Log, breathe, keep serving. HandleAsync's errors are already contained.
-                    _logger.LogWarning(ex, "Mesh serve accept failed — continuing.");
-                    try { await Task.Delay(200, stoppingToken).ConfigureAwait(false); } catch { break; }
-                    continue;
-                }
-
-                if (!await slots.WaitAsync(0, stoppingToken).ConfigureAwait(false))
-                {
-                    TryClose(ctx, 503);   // at capacity — refuse fast rather than queue unboundedly
-                    continue;
-                }
-                _ = DispatchAsync(ctx, slots, stoppingToken);
-            }
+            await Task.Delay(Timeout.Infinite, stoppingToken).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException)
+        {
+            // Normal shutdown.
         }
         finally
         {
-            try { listener.Close(); } catch { /* best effort */ }
+            try { await app.StopAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false); } catch { /* best effort */ }
+            await app.DisposeAsync().ConfigureAwait(false);
         }
     }
 
-    private async Task DispatchAsync(HttpListenerContext ctx, SemaphoreSlim slots, CancellationToken stoppingToken)
+    /// <summary>
+    /// Returns a message when the TLS/mTLS settings are half-specified in a way that must NOT degrade
+    /// to plaintext, or null when the config is coherent (including the intended no-TLS LAN default:
+    /// cert, key, require, and CA all unset). Pure, so the fail-closed rules are directly testable.
+    /// </summary>
+    public static string? ConfigError(MeshServeSettings s)
     {
-        // A per-request deadline bounds the response WRITE, so a client that stops draining the socket
-        // frees its slot on the timeout instead of holding it forever.
-        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(stoppingToken);
-        timeout.CancelAfter(RequestTimeout);
-        try
+        var certSet = !string.IsNullOrWhiteSpace(s.TlsCertPath);
+        var keySet = !string.IsNullOrWhiteSpace(s.TlsKeyPath);
+        if (certSet != keySet)
         {
-            await HandleAsync(ctx, timeout.Token).ConfigureAwait(false);
+            return "TLS needs BOTH a cert and a key (ASHLAR_MESH_SERVE_TLS_CERT + _TLS_KEY).";
         }
-        catch (Exception ex)
+        if (s.RequireClientCert && !s.Tls)
         {
-            if (!stoppingToken.IsCancellationRequested)
+            return "client-cert (mTLS) was required (ASHLAR_MESH_SERVE_REQUIRE_CLIENT_CERT=1) but no server cert/key is set.";
+        }
+        if (s.RequireClientCert && string.IsNullOrWhiteSpace(s.CaPath))
+        {
+            return "client-cert (mTLS) was required but no CA (ASHLAR_MESH_SERVE_CA) is set to validate client certs against.";
+        }
+        return null;
+    }
+
+    private WebApplication BuildApp()
+    {
+        var builder = WebApplication.CreateSlimBuilder();
+        builder.Logging.ClearProviders();   // the daemon owns logging; don't double up
+        builder.WebHost.ConfigureKestrel(k =>
+        {
+            k.AddServerHeader = false;
+            k.Limits.MaxConcurrentConnections = 100;
+            k.Limits.MaxRequestBodySize = 0;                          // GET only
+            k.Limits.RequestHeadersTimeout = TimeSpan.FromSeconds(15);
+            k.Limits.KeepAliveTimeout = TimeSpan.FromSeconds(30);
+            // Kestrel aborts a connection that reads slower than its default MinResponseDataRate —
+            // this is the built-in defence against the slow/non-reading client that a raw HttpListener
+            // loop had to guard by hand.
+            k.ListenAnyIP(_settings.Port, listen =>
             {
-                _logger.LogWarning(ex, "Mesh serve request failed");
-            }
-            TryClose(ctx, 500);
-        }
-        finally
-        {
-            slots.Release();
-        }
-    }
+                if (_settings.Tls)
+                {
+                    var serverCert = MeshTls.LoadCertWithKey(_settings.TlsCertPath!, _settings.TlsKeyPath!);
+                    listen.UseHttps(https =>
+                    {
+                        https.ServerCertificate = serverCert;
+                        if (_settings.RequireClientCert)
+                        {
+                            if (string.IsNullOrWhiteSpace(_settings.CaPath))
+                            {
+                                throw new InvalidOperationException(
+                                    "mTLS requires a CA bundle (ASHLAR_MESH_SERVE_CA) to validate client certs against.");
+                            }
+                            var ca = MeshTls.LoadCaBundle(_settings.CaPath);
+                            https.ClientCertificateMode = ClientCertificateMode.RequireCertificate;
+                            https.ClientCertificateValidation = (cert, _, _) => MeshTls.ChainsToCa(cert, ca);
+                        }
+                    });
+                }
+            });
+        });
 
-    private async Task HandleAsync(HttpListenerContext ctx, CancellationToken ct)
-    {
-        var path = ctx.Request.Url?.AbsolutePath ?? string.Empty;
-        if (!string.Equals(ctx.Request.HttpMethod, "GET", StringComparison.Ordinal))
-        {
-            TryClose(ctx, 405);
-            return;
-        }
+        var app = builder.Build();
 
-        if (path is "/mesh/v1/hello")
+        app.MapGet("/mesh/v1/hello", () =>
         {
             string fingerprint;
             try { fingerprint = OperatorKey.TryLoad()?.Fingerprint ?? "(unsigned)"; }
             catch { fingerprint = "(unsigned)"; }
-            await WriteJsonAsync(ctx, new
+            return Results.Json(new
             {
                 version = MeshWire.Version,
                 name = _settings.NodeName,
                 fingerprint,
                 packages = ListPackages().Count,
-            }, ct).ConfigureAwait(false);
-            return;
-        }
+            });
+        });
 
-        if (path is "/mesh/v1/index")
-        {
-            await WriteJsonAsync(ctx, ListPackages(), ct).ConfigureAwait(false);
-            return;
-        }
+        app.MapGet("/mesh/v1/index", () => Results.Json(ListPackages()));
 
-        const string pkgPrefix = "/mesh/v1/pkg/";
-        if (path.StartsWith(pkgPrefix, StringComparison.Ordinal))
+        app.MapGet("/mesh/v1/pkg/{file}", (string file) =>
         {
-            var name = Uri.UnescapeDataString(path[pkgPrefix.Length..]);
-            if (!MeshWire.IsSafePackageName(name))
+            if (!MeshWire.IsSafePackageName(file))
             {
-                TryClose(ctx, 404);
-                return;
+                return Results.NotFound();
             }
-            var full = Path.GetFullPath(Path.Combine(_settings.PublishedDir, name));
+            var full = Path.GetFullPath(Path.Combine(_settings.PublishedDir, file));
             // Containment on the RESOLVED path, independent of the name check.
             if (!string.Equals(Path.GetDirectoryName(full), Path.GetFullPath(_settings.PublishedDir), StringComparison.Ordinal)
                 || !File.Exists(full)
                 || new FileInfo(full).Length > MeshWire.MaxPackageBytes)
             {
-                TryClose(ctx, 404);
-                return;
+                return Results.NotFound();
             }
-            var bytes = await File.ReadAllBytesAsync(full, ct).ConfigureAwait(false);
-            ctx.Response.ContentType = "application/json";
-            ctx.Response.ContentLength64 = bytes.Length;
-            await ctx.Response.OutputStream.WriteAsync(bytes, ct).ConfigureAwait(false);
-            ctx.Response.Close();
-            return;
-        }
+            return Results.File(full, "application/json");   // Kestrel streams it under its own limits
+        });
 
-        TryClose(ctx, 404);
+        return app;
     }
 
     private List<MeshWire.IndexEntry> ListPackages()
@@ -269,24 +285,5 @@ public sealed class MeshServeService : BackgroundService
             .OrderBy(fi => fi.Name, StringComparer.Ordinal)
             .Select(fi => new MeshWire.IndexEntry(fi.Name, fi.Length))
             .ToList();
-    }
-
-    private static async Task WriteJsonAsync(HttpListenerContext ctx, object payload, CancellationToken ct)
-    {
-        var bytes = JsonSerializer.SerializeToUtf8Bytes(payload, new JsonSerializerOptions { WriteIndented = true });
-        ctx.Response.ContentType = "application/json";
-        ctx.Response.ContentLength64 = bytes.Length;
-        await ctx.Response.OutputStream.WriteAsync(bytes, ct).ConfigureAwait(false);
-        ctx.Response.Close();
-    }
-
-    private static void TryClose(HttpListenerContext ctx, int status)
-    {
-        try
-        {
-            ctx.Response.StatusCode = status;
-            ctx.Response.Close();
-        }
-        catch { /* client gone */ }
     }
 }

@@ -30,6 +30,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Kestrel + minimal APIs for the mesh serve endpoint (portable HTTPS/mTLS; HttpListener
+         cannot serve TLS on Linux). The aspnet shared framework is already present at runtime
+         (Dockerfile.cli base image mcr.microsoft.com/dotnet/aspnet); this makes it compile-time. -->
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="System.CommandLine" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />

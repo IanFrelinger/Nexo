@@ -45,9 +45,30 @@ public sealed class MeshAutoPullService : BackgroundService
 
     /// <summary>One shared client for peer pulls. A slow peer times out instead of stalling the tick,
     /// and auto-redirect is OFF: an untrusted peer must not be able to bounce this node's request to an
-    /// internal/link-local address (a 3xx is treated as a failed fetch, not followed).</summary>
-    private static readonly HttpClient Http =
-        new(new SocketsHttpHandler { AllowAutoRedirect = false }) { Timeout = TimeSpan.FromSeconds(15) };
+    /// internal/link-local address (a 3xx is treated as a failed fetch, not followed). For a private
+    /// mTLS fleet, ASHLAR_MESH_CLIENT_CERT/_KEY present this node's cert and ASHLAR_MESH_CA pins the
+    /// fleet CA for validating https peers — applied only to TLS connections, http peers are unchanged.</summary>
+    private static readonly HttpClient Http = BuildHttp();
+
+    private static HttpClient BuildHttp()
+    {
+        var handler = new SocketsHttpHandler { AllowAutoRedirect = false };
+        var clientCert = Environment.GetEnvironmentVariable("ASHLAR_MESH_CLIENT_CERT");
+        var clientKey = Environment.GetEnvironmentVariable("ASHLAR_MESH_CLIENT_KEY");
+        var ca = Environment.GetEnvironmentVariable("ASHLAR_MESH_CA");
+        if (!string.IsNullOrWhiteSpace(clientCert) && !string.IsNullOrWhiteSpace(clientKey))
+        {
+            handler.SslOptions.ClientCertificates =
+                new System.Security.Cryptography.X509Certificates.X509CertificateCollection { MeshTls.LoadCertWithKey(clientCert, clientKey) };
+        }
+        if (!string.IsNullOrWhiteSpace(ca))
+        {
+            var caBundle = MeshTls.LoadCaBundle(ca);
+            handler.SslOptions.RemoteCertificateValidationCallback =
+                (_, cert, _, _) => MeshTls.ChainsToCa(MeshTls.AsCert2(cert), caBundle);
+        }
+        return new HttpClient(handler) { Timeout = TimeSpan.FromSeconds(15) };
+    }
 
     /// <summary>Cap on packages fetched from one peer per tick, so a peer serving a huge index cannot
     /// turn one tick into an unbounded sequential dial-out that starves honest peers.</summary>
@@ -244,7 +265,7 @@ public sealed class MeshAutoPullService : BackgroundService
                 MeshWire.MaxPackageBytes, ct).ConfigureAwait(false);
             entries = idxJson is null
                 ? null!
-                : JsonSerializer.Deserialize<List<MeshWire.IndexEntry>>(idxJson) ?? [];
+                : JsonSerializer.Deserialize<List<MeshWire.IndexEntry>>(idxJson, MeshWire.JsonOptions) ?? [];
             if (entries is null)
             {
                 return MeshPullSummary.Empty with { Errors = 1 };
