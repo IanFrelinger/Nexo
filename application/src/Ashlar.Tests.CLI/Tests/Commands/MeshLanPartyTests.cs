@@ -135,6 +135,63 @@ public sealed class MeshLanPartyTests : IDisposable
     }
 
     [Fact]
+    public async Task PeerPull_capsPackagesPerPeer()
+    {
+        for (var i = 0; i < MeshAutoPullService.MaxPackagesPerPeer + 5; i++)
+        {
+            await File.WriteAllTextAsync(Path.Combine(_published, $"p{i:D6}-abcdef.ashpkg"), "{ bad");
+        }
+        var (service, port, client) = await StartServeAsync();
+        try
+        {
+            var s = await MeshAutoPullService.PullPeerOnceAsync(client, $"http://127.0.0.1:{port}", _project);
+            s.Scanned.Should().Be(MeshAutoPullService.MaxPackagesPerPeer, "a peer cannot make one tick dial out unbounded");
+        }
+        finally { await service.StopAsync(CancellationToken.None); client.Dispose(); }
+    }
+
+    [Fact]
+    public async Task PeerPull_doesNotFollowRedirects_noSsrf()
+    {
+        // A hostile peer 302s the index to another path that WOULD yield a package. If the client
+        // followed the redirect it would fetch it (Refused=1); not following means Errors=1, Scanned=0.
+        var port = FreePort();
+        using var listener = new HttpListener();
+        listener.Prefixes.Add($"http://127.0.0.1:{port}/");
+        listener.Start();
+        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        var serverLoop = Task.Run(async () =>
+        {
+            while (!cts.IsCancellationRequested)
+            {
+                HttpListenerContext c;
+                try { c = await listener.GetContextAsync().WaitAsync(cts.Token); } catch { break; }
+                var p = c.Request.Url!.AbsolutePath;
+                if (p == "/mesh/v1/index")
+                {
+                    c.Response.StatusCode = 302;
+                    c.Response.RedirectLocation = $"http://127.0.0.1:{port}/real-index";
+                }
+                else if (p == "/real-index")
+                {
+                    var body = Encoding.UTF8.GetBytes("[{\"File\":\"x-abc123.ashpkg\",\"Size\":5}]");
+                    await c.Response.OutputStream.WriteAsync(body);
+                }
+                else { c.Response.StatusCode = 404; }
+                c.Response.Close();
+            }
+        });
+
+        using var client = new HttpClient(new SocketsHttpHandler { AllowAutoRedirect = false }) { Timeout = TimeSpan.FromSeconds(5) };
+        var s = await MeshAutoPullService.PullPeerOnceAsync(client, $"http://127.0.0.1:{port}", _project);
+
+        cts.Cancel();
+        listener.Stop();
+        s.Scanned.Should().Be(0, "a redirected index is a failed fetch, never followed to an internal address");
+        s.Errors.Should().Be(1);
+    }
+
+    [Fact]
     public async Task PeerPull_offlinePeer_isAnErrorCount_neverAThrow()
     {
         using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(2) };

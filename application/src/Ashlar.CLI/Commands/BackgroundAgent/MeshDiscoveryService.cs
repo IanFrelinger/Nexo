@@ -75,6 +75,7 @@ public static class MeshBeacon
         if (parsed is null
             || !string.Equals(parsed.V, MeshWire.Version, StringComparison.Ordinal)
             || string.IsNullOrWhiteSpace(parsed.Name) || parsed.Name.Length > MaxNameLength
+            || parsed.Name.Any(char.IsControl)   // no ESC/newline/control: a name is printed by `mesh lan`
             || !OperatorKey.IsValidFingerprint(parsed.Fp)
             || parsed.Port is < 1 or > 65535)
         {
@@ -95,6 +96,11 @@ public sealed class MeshDiscoveryRegistry
     /// <summary>Upper bound on remembered peers; beyond it the stalest is evicted.</summary>
     public const int MaxPeers = 64;
 
+    /// <summary>Per-source-IP cap. A node serves on ONE port, so many ports from one address is a
+    /// spoofing attempt; capping per address means a single hostile host can only ever churn its OWN
+    /// few slots — it can never evict honest peers at other addresses out of the table.</summary>
+    public const int MaxPerAddress = 4;
+
     private readonly object _lock = new();
     private readonly Dictionary<string, DiscoveredPeer> _peers = new(StringComparer.Ordinal);
 
@@ -104,10 +110,19 @@ public sealed class MeshDiscoveryRegistry
         var key = $"{peer.Address}:{peer.Port}";
         lock (_lock)
         {
-            if (!_peers.ContainsKey(key) && _peers.Count >= MaxPeers)
+            if (!_peers.ContainsKey(key))
             {
-                var stalest = _peers.OrderBy(kv => kv.Value.LastSeenUtc).First().Key;
-                _peers.Remove(stalest);
+                // Contain a single hostile source first: if this address already holds its quota,
+                // evict the stalest of ITS OWN entries — never an honest peer at another address.
+                var sameAddress = _peers.Where(kv => string.Equals(kv.Value.Address, peer.Address, StringComparison.Ordinal)).ToList();
+                if (sameAddress.Count >= MaxPerAddress)
+                {
+                    _peers.Remove(sameAddress.OrderBy(kv => kv.Value.LastSeenUtc).First().Key);
+                }
+                else if (_peers.Count >= MaxPeers)
+                {
+                    _peers.Remove(_peers.OrderBy(kv => kv.Value.LastSeenUtc).First().Key);
+                }
             }
             _peers[key] = peer;
         }
@@ -254,16 +269,27 @@ public sealed class MeshDiscoveryService : BackgroundService
         }
     }
 
+    private string? _lastMembership;
+
     private void PersistSnapshot()
     {
         try
         {
+            var snapshot = _registry.Snapshot(DateTimeOffset.UtcNow);
+            // Only rewrite when MEMBERSHIP changes — not on every 15s tick and not on every refreshed
+            // timestamp — so a stable network (and, with the per-address cap, a beacon-spammer) does
+            // not amplify writes on the flash media the node runs on.
+            var membership = string.Join("|", snapshot.Select(p => $"{p.Address}:{p.Port}:{p.Fingerprint}:{p.Name}"));
+            if (membership == _lastMembership)
+            {
+                return;
+            }
             var path = Path.Combine(_settings.StateDir, "mesh-peers.json");
             var tmp = path + ".tmp";
             Directory.CreateDirectory(_settings.StateDir);
-            File.WriteAllText(tmp, JsonSerializer.Serialize(
-                _registry.Snapshot(DateTimeOffset.UtcNow), new JsonSerializerOptions { WriteIndented = true }));
+            File.WriteAllText(tmp, JsonSerializer.Serialize(snapshot, new JsonSerializerOptions { WriteIndented = true }));
             File.Move(tmp, path, overwrite: true);
+            _lastMembership = membership;
         }
         catch (Exception ex)
         {

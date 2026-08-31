@@ -324,8 +324,11 @@ public sealed class MeshCommand : Command
             try { trusted = Ashlar.Manifest.Signing.OperatorKey.IsSignerTrusted(p.Fingerprint, Array.Empty<string>()); }
             catch { trusted = false; }
             var age = now - p.LastSeenUtc;
+            // Defense-in-depth: strip control characters before printing an untrusted, network-sourced
+            // name to the terminal — a beacon field must never inject escape sequences or fake rows.
+            var safeName = new string((p.Name ?? string.Empty).Where(c => !char.IsControl(c)).ToArray());
             stdout.WriteLine(
-                $"  {p.Name,-20} {p.Fingerprint,-26} {p.Address}:{p.Port,-6} seen {Math.Max(0, (int)age.TotalSeconds)}s ago"
+                $"  {safeName,-20} {p.Fingerprint,-26} {p.Address}:{p.Port,-6} seen {Math.Max(0, (int)age.TotalSeconds)}s ago"
                 + (trusted ? "  [keychain-trusted]" : "  [not trusted — `ashlar keys trust " + p.Fingerprint + "`]"));
         }
         if (peers.Count == 0)

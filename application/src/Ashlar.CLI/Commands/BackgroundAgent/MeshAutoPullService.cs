@@ -43,8 +43,15 @@ public sealed class MeshAutoPullService : BackgroundService
     private readonly MeshAutoPullSettings _settings;
     private readonly ILogger<MeshAutoPullService> _logger;
 
-    /// <summary>One shared client for peer pulls; a slow peer times out instead of stalling the tick.</summary>
-    private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(15) };
+    /// <summary>One shared client for peer pulls. A slow peer times out instead of stalling the tick,
+    /// and auto-redirect is OFF: an untrusted peer must not be able to bounce this node's request to an
+    /// internal/link-local address (a 3xx is treated as a failed fetch, not followed).</summary>
+    private static readonly HttpClient Http =
+        new(new SocketsHttpHandler { AllowAutoRedirect = false }) { Timeout = TimeSpan.FromSeconds(15) };
+
+    /// <summary>Cap on packages fetched from one peer per tick, so a peer serving a huge index cannot
+    /// turn one tick into an unbounded sequential dial-out that starves honest peers.</summary>
+    public const int MaxPackagesPerPeer = 64;
 
     /// <summary>Creates the mesh auto-pull service. <paramref name="peerSources"/> is the strategy
     /// seam: every registered source (configured, multicast, a future tailnet or rendezvous source)
@@ -252,8 +259,11 @@ public sealed class MeshAutoPullService : BackgroundService
             return MeshPullSummary.Empty with { Errors = 1 };   // peer offline / timeout / bad index
         }
 
-        int admitted = 0, held = 0, rejected = 0, refused = 0, already = 0, errors = 0;
-        foreach (var entry in entries)
+        // Bound the per-peer work: a hostile peer's 4MB index could name ~100k packages; take only
+        // the first MaxPackagesPerPeer so one peer cannot monopolise the tick.
+        var capped = entries.Count > MaxPackagesPerPeer;
+        int admitted = 0, held = 0, rejected = 0, refused = 0, already = 0, errors = capped ? 1 : 0;
+        foreach (var entry in entries.Take(MaxPackagesPerPeer))
         {
             ct.ThrowIfCancellationRequested();
             // The client re-checks the wire rules independently — a peer's index is DATA, not a promise.
@@ -300,6 +310,6 @@ public sealed class MeshAutoPullService : BackgroundService
             }
         }
 
-        return new MeshPullSummary(entries.Count, admitted, held, rejected, refused, already, errors);
+        return new MeshPullSummary(Math.Min(entries.Count, MaxPackagesPerPeer), admitted, held, rejected, refused, already, errors);
     }
 }

@@ -93,6 +93,35 @@ public sealed class MeshDiscoveryTests : IDisposable
         live.Should().NotContain(p => p.Name == "p0", "the stalest entry is the one evicted");
     }
 
+    [Fact]
+    public void Beacon_rejectsControlCharsInName()
+    {
+        var wire = System.Text.Encoding.UTF8.GetBytes(
+            "{\"v\":\"mesh/v1\",\"name\":\"node\\u001b[31mred\",\"fp\":\"" + FpA + "\",\"port\":7420}");
+        MeshBeacon.TryParse(wire, out _).Should().BeFalse("a name with an escape sequence must never be admitted");
+    }
+
+    [Fact]
+    public void Registry_perAddressCap_containsOneHostileSource_neverEvictsOtherAddresses()
+    {
+        var reg = new MeshDiscoveryRegistry();
+        var now = DateTimeOffset.UtcNow;
+        // An honest peer at its own address.
+        reg.Report(new DiscoveredPeer("honest", FpB, "10.0.0.9", 7420, now));
+        // One hostile source floods varied ports (same IP); millisecond spacing keeps them all within
+        // the TTL so the test isolates EVICTION behaviour from expiry.
+        for (var port = 1; port <= 200; port++)
+        {
+            reg.Report(new DiscoveredPeer("evil", FpA, "10.0.0.1", port, now.AddMilliseconds(port)));
+        }
+
+        var live = reg.Snapshot(now.AddSeconds(1));
+
+        live.Should().Contain(p => p.Address == "10.0.0.9", "an honest peer at another address is never evicted by a flood");
+        live.Count(p => p.Address == "10.0.0.1").Should().Be(MeshDiscoveryRegistry.MaxPerAddress,
+            "one source is capped to its own quota of slots");
+    }
+
     // ---- the strategy seam ---------------------------------------------------------------------
 
     [Fact]
