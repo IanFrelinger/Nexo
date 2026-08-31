@@ -123,6 +123,14 @@ services:
       # (containers on one bridge still hear each other) — use ASHLAR_MESH_PEERS there.
       # ASHLAR_MESH_DISCOVERY: "1"
 
+      # Internet-wide P2P over a Tailscale/WireGuard tailnet — NO LAN required, works across
+      # networks and NAT. Reads `tailscale status --json` for online peers and pulls from
+      # http://<tailnet-ip>:<port> through the same trust gate. The node (or its host) must be on
+      # the tailnet; peers serve on the same port (ASHLAR_TAILNET_PEER_PORT, default the serve port).
+      # ASHLAR_MESH_TAILNET: "1"
+      # ASHLAR_TAILNET_PEER_PORT: "7420"
+      # ASHLAR_TAILNET_CMD: tailscale          # path/wrapper for the tailscale CLI
+
     # NOTE: `restart: unless-stopped` does NOT act on HEALTHCHECK. Docker restarts a container on
     # EXIT, never on unhealthy. A node that parks or wedges while still running stays up and
     # unhealthy forever, and `docker ps` is where you find out — which is why the park-don't-exit
