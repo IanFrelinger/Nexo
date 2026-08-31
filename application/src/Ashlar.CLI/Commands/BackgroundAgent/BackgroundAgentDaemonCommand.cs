@@ -227,6 +227,11 @@ public sealed class BackgroundAgentDaemonCommand
                     services.TryAddSingleton<SelfExtendRunnerAdapter>();
                     services.TryAddSingleton<ISelfExtendRunner>(sp =>
                         sp.GetRequiredService<SelfExtendRunnerAdapter>());
+
+                    // A5 cross-machine sharing (consumer): opt-in mesh auto-pull. OFF unless a shared
+                    // folder is configured, so the default node is unchanged. Trust is the operator's
+                    // (`ashlar keys trust <fp>`) — an empty trust set refuses every package.
+                    TryAddMeshAutoPull(services);
                 });
 
             using var host = builder.Build();
@@ -308,6 +313,36 @@ public sealed class BackgroundAgentDaemonCommand
         }
 
         return new Timer(Beat, null, TimeSpan.Zero, HeartbeatInterval);
+    }
+
+    /// <summary>
+    /// Registers the A5 mesh auto-pull hosted service when <c>ASHLAR_MESH_PULL_DIR</c> is set —
+    /// otherwise a no-op, so a default node is unchanged. Interval defaults to 300s; the project whose
+    /// gate decides pulled packages defaults to <c>&lt;state&gt;/project</c> (the extender's project),
+    /// both overridable via <c>ASHLAR_MESH_PULL_INTERVAL_SECONDS</c> / <c>ASHLAR_MESH_PULL_PROJECT</c>.
+    /// </summary>
+    private static void TryAddMeshAutoPull(IServiceCollection services)
+    {
+        var pullDir = Environment.GetEnvironmentVariable("ASHLAR_MESH_PULL_DIR");
+        if (string.IsNullOrWhiteSpace(pullDir))
+        {
+            return;   // consumer auto-pull is opt-in
+        }
+
+        var interval = 300;
+        if (int.TryParse(Environment.GetEnvironmentVariable("ASHLAR_MESH_PULL_INTERVAL_SECONDS"), out var parsed) && parsed > 0)
+        {
+            interval = parsed;
+        }
+
+        var project = Environment.GetEnvironmentVariable("ASHLAR_MESH_PULL_PROJECT");
+        if (string.IsNullOrWhiteSpace(project))
+        {
+            project = Path.Combine(RepoPathResolver.ResolveStateDirectory(), "project");
+        }
+
+        services.AddSingleton(new MeshAutoPullSettings(pullDir.Trim(), project, interval));
+        services.AddHostedService<MeshAutoPullService>();
     }
 
     /// <summary>
