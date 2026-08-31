@@ -74,19 +74,6 @@ For layer-by-layer detail see [`docs/Architecture.md`](docs/Architecture.md); fo
 | **Contributor** | [`docs/ProjectTiers.md`](docs/ProjectTiers.md) — canonical repo map, then [`CONTRIBUTING.md`](CONTRIBUTING.md) | `dotnet build application/src/Ashlar.CLI/Ashlar.CLI.csproj` (implicit restore; `--no-restore` only after `scripts/setup/setup.sh` or the dev container has restored) |
 | **Integrator** | [`docs/IntegratorGuide.md`](docs/IntegratorGuide.md), [`docs/DistributionModels.md`](docs/DistributionModels.md), [`docs/sdk.md`](docs/sdk.md), [`docs/SdkIntegrationGuide.md`](docs/SdkIntegrationGuide.md) | NuGet host embed, `Ashlar.Client`, HTTP API, CLI image, compose, or source integration (`consumer-template/CONSUMING.md` for the feed template) |
 
-## Scope in 30 seconds
-
-- **Kernel:** observe → adapt → improve loops, component/brick contracts, policy, persistence, orchestration, runtime routing, background agents.
-- **Trust:** data classification, sanitization before cloud calls, barrier identity resolution, local-first defaults, pause/resume controls, structured audit sinks.
-- **Mesh:** peer discovery, capability advertisement, director/hub flows, trust-tier placement, virtual labs, and phase docs for federation.
-- **Transport, protocols and ingress:** optional gRPC transport, MCP server/client and A2A transport ([`docs/architecture/ProtocolIntegration-MCP-A2A.md`](docs/architecture/ProtocolIntegration-MCP-A2A.md)), plus AWS SNS and DynamoDB ingress adapters.
-- **Hosts:** `application/src/Ashlar.CLI` (`ashlar`) and `application/src/Ashlar.API` (ASP.NET Core HTTP/portal host).
-- **Applications on the core:** `applications/` (plural) holds open Apache-2.0 products built on the kernel — physical-atom certification, provenance graph, spatial anchors ([`applications/README.md`](applications/README.md)).
-- **Apps:** `apps/game-director`, `apps/ashlar-forge`, `apps/release-manager`, and `apps/runtime-studio` are application-level agent-set/configuration surfaces (listed as commercial in [`LICENSING.md`](LICENSING.md)).
-- **Distribution:** NuGet packages (`Ashlar.Hosting`, bundles, SDK/client/lite/runtime packages), GHCR images, Dockerfiles, compose stacks, and source/monorepo integration.
-
-For the canonical tier-by-tier project map, see [`docs/ProjectTiers.md`](docs/ProjectTiers.md). For distribution channels and their validation gates, see [`docs/DistributionModels.md`](docs/DistributionModels.md).
-
 ## What Ashlar is not
 
 - **Not a hosted SaaS or chatbot.** You run it (CLI, API, container, or embedded in your app); nothing is sent to a Ashlar-operated service.
@@ -288,38 +275,22 @@ For operator runbooks, images, and hardening, see [Deploy (operators)](#deploy-o
 
 ## Common CLI workflows
 
+Run these via `dotnet run --project application/src/Ashlar.CLI -- <command>` (shown below as just the `<command>`), or as `ashlar <command>` from an installed image. `--help` lists every command.
+
 | Goal | Command |
 |------|---------|
-| Show all commands | `dotnet run --project application/src/Ashlar.CLI -- --help` |
-| Onboarding doctor | `dotnet run --project application/src/Ashlar.CLI -- doctor --json` |
-| Validate architecture/contracts | `dotnet run --project application/src/Ashlar.CLI -- validate` |
-| Analyze source/assemblies | `dotnet run --project application/src/Ashlar.CLI -- analyze --path .` |
-| Validate a pipeline | `dotnet run --project application/src/Ashlar.CLI -- pipeline validate --template <file>` |
-| Run a pipeline | `dotnet run --project application/src/Ashlar.CLI -- pipeline run --template <file>` |
-| Pipeline diagnostics | `dotnet run --project application/src/Ashlar.CLI -- pipeline diagnostics --format-json` |
-| Orchestrate a request | `dotnet run --project application/src/Ashlar.CLI -- orchestrate "<request>"` |
-| Interactive chat | `dotnet run --project application/src/Ashlar.CLI -- chat` |
-| Observe / adapt / improve | `dotnet run --project application/src/Ashlar.CLI -- observe` / `adapt` / `improve` |
-| Dogfood validation | `dotnet run --project application/src/Ashlar.CLI -- dogfood all` |
-| Trust dashboard | `dotnet run --project application/src/Ashlar.CLI -- trust dashboard` |
-| Apply a trust policy pack | `dotnet run --project application/src/Ashlar.CLI -- trust pack apply --id strict-enterprise` |
-| Background-agent daemon | `dotnet run --project application/src/Ashlar.CLI -- background-agent daemon --duration 10m` |
-| Show / set the self-extend dial | `dotnet run --project application/src/Ashlar.CLI -- policy show` / `policy set self_extend proposing` |
-| Overnight report / emergency stop | `dotnet run --project application/src/Ashlar.CLI -- background-agent report` / `background-agent disarm` |
-| Trust a peer's signer | `dotnet run --project application/src/Ashlar.CLI -- keys trust <ed25519:…>` |
-| Share / pull signed packages | `dotnet run --project application/src/Ashlar.CLI -- pkg share <id>` / `pkg pull --from <dir>` |
-| Who's on the LAN (federation) | `dotnet run --project application/src/Ashlar.CLI -- mesh lan` |
-| Runtime Studio status | `dotnet run --project application/src/Ashlar.CLI -- runtime-studio status` |
-| Mesh sync/capabilities | `dotnet run --project application/src/Ashlar.CLI -- mesh sync` |
-| gRPC/runtime execution | `dotnet run --project application/src/Ashlar.CLI -- runtime execute --runtime-manifest <file>` |
-| CI verification bundle | `dotnet run --project application/src/Ashlar.CLI -- ci verify` |
-| Release preflight | `dotnet run --project application/src/Ashlar.CLI -- release preflight <semver>` |
-| Trigger release workflow | `dotnet run --project application/src/Ashlar.CLI -- release dispatch <semver> [--ref master]` |
-| Metrics report | `dotnet run --project application/src/Ashlar.CLI -- metrics report` |
-| Config management | `dotnet run --project application/src/Ashlar.CLI -- config show` |
-| Docker management | `dotnet run --project application/src/Ashlar.CLI -- docker build` / `run` / `clean` |
-| Changelog generation | `dotnet run --project application/src/Ashlar.CLI -- changelog` |
-| Maintenance cleanup | `dotnet run --project application/src/Ashlar.CLI -- maintenance clean` |
+| Onboarding doctor | `doctor --json` |
+| Validate architecture / analyze source | `validate` · `analyze --path .` |
+| Validate / run a pipeline | `pipeline validate --template <file>` · `pipeline run --template <file>` |
+| Orchestrate a request / chat | `orchestrate "<request>"` · `chat` |
+| Observe → adapt → improve | `observe` · `adapt` · `improve` |
+| Trust dashboard / apply a policy pack | `trust dashboard` · `trust pack apply --id strict-enterprise` |
+| Run the background-agent daemon | `background-agent daemon --duration 10m` |
+| Show / arm the self-extend dial | `policy show` · `policy set self_extend proposing` |
+| Overnight report / emergency stop | `background-agent report` · `background-agent disarm` |
+| Trust a peer, share / pull packages | `keys trust <ed25519:…>` · `pkg share <id>` · `pkg pull --from <dir>` |
+| Who's on the LAN (federation) | `mesh lan` |
+| Release preflight | `release preflight <semver>` |
 
 ## Application surfaces
 
