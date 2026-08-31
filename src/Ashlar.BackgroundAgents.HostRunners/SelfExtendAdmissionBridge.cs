@@ -50,7 +50,8 @@ public static class SelfExtendAdmissionBridge
         SigningIdentity? signer = null,
         bool? autoShare = null,
         string? meshDir = null,
-        IExtensionCompileCheck? compileCheck = null)
+        IExtensionCompileCheck? compileCheck = null,
+        IPostApplyVerification? verification = null)
     {
         var policyPath = Path.Combine(repoRoot, "ashlar.policy.yaml");
         if (!File.Exists(policyPath))
@@ -158,25 +159,69 @@ public static class SelfExtendAdmissionBridge
         // them (sealed thereby truly seals — nothing was on disk, nothing ever lands); an
         // automatic self-extending admission applies them now, within budget, as decided.
         var shareNote = string.Empty;
+        string? rollbackNote = null;
         if (forge is not null)
         {
+            var allowlist = policy!.Sandbox.EnforceWritableAllowlist ? policy.Sandbox.Writable : null;
+            try
+            {
             switch (record.State)
             {
                 case ProposalState.Rejected:
                     ForgeApplier.RejectAll(forge, forgeProposalIds, "gate", record.Reason);
                     break;
+                case ProposalState.Admitted when verification is not null:
+                    // A4 — post-apply canary. Apply, verify the files as they landed, and revert if
+                    // the canary fails: an auto-admitted change that does not survive verification
+                    // must never be left on an unattended node. The gate record stands (append-once,
+                    // the admission decision was made) but the writes are rolled back.
+                    var outcome = await ForgeApplier.ApplyAllWithVerificationAsync(
+                        forge, forgeProposalIds, repoRoot, "gate", verification, allowlist, ct).ConfigureAwait(false);
+                    if (outcome.DidApply)
+                    {
+                        logger.LogInformation("Self-extend gate: applied {Count} mediated write(s), post-apply canary passed", outcome.AppliedPaths.Count);
+                        shareNote = TryAutoShare(record, forge, forgeProposalIds, signer, autoShare, meshDir, logger);
+                    }
+                    else
+                    {
+                        rollbackNote = outcome.Reason;
+                        if (outcome.UnrestoredPaths.Count == 0)
+                        {
+                            logger.LogWarning("Self-extend gate: post-apply canary REJECTED {Id} — reverted ({Reason})", proposal.Id, outcome.Reason);
+                        }
+                        else
+                        {
+                            // A rollback that could not fully restore is a node-integrity anomaly, not a routine revert.
+                            logger.LogError("Self-extend gate: post-apply canary REJECTED {Id} but ROLLBACK WAS INCOMPLETE — these files remain changed: {Files}",
+                                proposal.Id, string.Join(", ", outcome.UnrestoredPaths));
+                        }
+                    }
+                    break;
                 case ProposalState.Admitted:
-                    var applied = ForgeApplier.ApplyAll(forge, forgeProposalIds, repoRoot, "gate",
-                        policy!.Sandbox.EnforceWritableAllowlist ? policy.Sandbox.Writable : null);
+                    // No canary wired: pre-A4 behaviour — apply and share. (The apply is still
+                    // transactional against a mid-batch write failure.)
+                    var applied = ForgeApplier.ApplyAll(forge, forgeProposalIds, repoRoot, "gate", allowlist);
                     logger.LogInformation("Self-extend gate: applied {Count} mediated write(s)", applied.Count);
                     shareNote = TryAutoShare(record, forge, forgeProposalIds, signer, autoShare, meshDir, logger);
                     break;
+            }
+            }
+            catch (Exception ex)
+            {
+                // The apply/canary path may throw only in genuinely exceptional cases (a snapshot it
+                // could not take, a batch that failed to write and rolled back, a store fault). Never
+                // let that escape and kill the cycle silently — surface it LOUD, the same GATE ERROR
+                // shape as an unreadable policy. Anything written was already rolled back by ForgeApplier.
+                logger.LogError(ex, "Self-extend gate: applying admitted proposal {Id} failed", proposal.Id);
+                return $"GATE ERROR: apply failed for {proposal.Id} — {ex.Message}";
             }
         }
 
         return record.State switch
         {
             ProposalState.Held => $"GATE: held as {proposal.Id} — review with `ashlar gates`",
+            ProposalState.Admitted when rollbackNote is not null =>
+                $"GATE: admitted as {proposal.Id} but REVERTED by post-apply canary — {rollbackNote}",
             ProposalState.Admitted => $"GATE: admitted as {proposal.Id} — {record.Reason}{shareNote}",
             _ => $"GATE: rejected — {record.Reason}",
         };
