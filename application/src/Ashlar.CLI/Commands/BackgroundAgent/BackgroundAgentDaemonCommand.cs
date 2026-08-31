@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Ashlar.BackgroundAgents.Extending;
 using Ashlar.BackgroundAgents.HostRunners;
 using Ashlar.BackgroundAgents.Optimization;
@@ -338,7 +339,8 @@ public sealed class BackgroundAgentDaemonCommand
             .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
             .ToList();
         var discoveryOn = Environment.GetEnvironmentVariable("ASHLAR_MESH_DISCOVERY") == "1";
-        if (string.IsNullOrWhiteSpace(pullDir) && peers.Count == 0 && !discoveryOn)
+        var tailnetOn = Environment.GetEnvironmentVariable("ASHLAR_MESH_TAILNET") == "1";
+        if (string.IsNullOrWhiteSpace(pullDir) && peers.Count == 0 && !discoveryOn && !tailnetOn)
         {
             return;   // consumer auto-pull is opt-in
         }
@@ -358,6 +360,20 @@ public sealed class BackgroundAgentDaemonCommand
         if (peers.Count > 0)
         {
             services.AddSingleton<IPeerSource>(new ConfiguredPeerSource(peers));
+        }
+        if (tailnetOn)
+        {
+            // Internet-wide P2P over a tailnet — no LAN required. The serve port is the fleet
+            // convention (peers serve on the same port); override with ASHLAR_TAILNET_PEER_PORT.
+            var tailnetPort = int.TryParse(Environment.GetEnvironmentVariable("ASHLAR_TAILNET_PEER_PORT"), out var tp) && tp is >= 1 and <= 65535
+                ? tp
+                : (int.TryParse(Environment.GetEnvironmentVariable("ASHLAR_MESH_SERVE_PORT"), out var sp2) && sp2 is >= 1 and <= 65535 ? sp2 : 7420);
+            var refresh = int.TryParse(Environment.GetEnvironmentVariable("ASHLAR_TAILNET_REFRESH_SECONDS"), out var rs) && rs > 0
+                ? TimeSpan.FromSeconds(rs) : TimeSpan.FromSeconds(30);
+            var cmd = Environment.GetEnvironmentVariable("ASHLAR_TAILNET_CMD");
+            if (string.IsNullOrWhiteSpace(cmd)) { cmd = "tailscale"; }
+            services.AddSingleton<IPeerSource>(sp => new TailnetPeerSource(
+                tailnetPort, refresh, cmd!, sp.GetService<ILoggerFactory>()?.CreateLogger<TailnetPeerSource>()));
         }
         services.AddSingleton(new MeshAutoPullSettings(pullDir?.Trim() ?? string.Empty, project, interval));
         services.AddHostedService<MeshAutoPullService>();
