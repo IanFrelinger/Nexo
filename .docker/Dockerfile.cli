@@ -56,7 +56,8 @@ ENV ASHLAR_STATE_DIR=/data/state \
     ASHLAR_OBSERVATIONS_PATH=/data/state/runtime-studio/observations \
     ASHLAR_KEY_DIR=/data/state/keys \
     ASHLAR_MESH_DIR=/data/state/mesh \
-    ASHLAR_CYCLE_EVENTS_PATH=/data/state/runtime-studio/cycles.jsonl
+    ASHLAR_CYCLE_EVENTS_PATH=/data/state/runtime-studio/cycles.jsonl \
+    ASHLAR_AGENT_MODE_PATH=/data/state/agent-mode.json
 # /data/state/project is the node's project directory, and it must exist HERE, owned by app, not
 # be created by Docker at run time. The gate store lands at <working_dir>/.ashlar/gates and no
 # environment variable reaches it, so deploy/node.yml persists it with `working_dir`. Docker
