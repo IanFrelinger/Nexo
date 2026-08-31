@@ -423,7 +423,18 @@ public sealed class BackgroundAgentDaemonCommand
         {
             name = Environment.MachineName;
         }
-        services.AddSingleton(new MeshServeSettings(port, Ashlar.Manifest.Packaging.MeshStore.Resolve(null), name!));
+        // Optional TLS/mTLS for a private fleet. A cert path with a key makes the endpoint HTTPS;
+        // requiring a client cert (+ a CA to validate it against) makes it mutual TLS.
+        var tlsCert = Environment.GetEnvironmentVariable("ASHLAR_MESH_SERVE_TLS_CERT");
+        var tlsKey = Environment.GetEnvironmentVariable("ASHLAR_MESH_SERVE_TLS_KEY");
+        var requireClient = Environment.GetEnvironmentVariable("ASHLAR_MESH_SERVE_REQUIRE_CLIENT_CERT") == "1";
+        var ca = Environment.GetEnvironmentVariable("ASHLAR_MESH_SERVE_CA");
+        services.AddSingleton(new MeshServeSettings(
+            port, Ashlar.Manifest.Packaging.MeshStore.Resolve(null), name!,
+            string.IsNullOrWhiteSpace(tlsCert) ? null : tlsCert,
+            string.IsNullOrWhiteSpace(tlsKey) ? null : tlsKey,
+            requireClient,
+            string.IsNullOrWhiteSpace(ca) ? null : ca));
         services.AddHostedService<MeshServeService>();
     }
 

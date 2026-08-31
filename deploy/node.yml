@@ -109,6 +109,20 @@ services:
       # review. A peer being offline is not an error; it just isn't at the party.
       # ASHLAR_MESH_SERVE_PORT: "7420"
       # ASHLAR_NODE_NAME: study-node
+
+      # Private-fleet TLS / mTLS (defence in depth on top of the package seal — access control +
+      # encryption on the wire). Give the serve endpoint a PEM cert+key to make it HTTPS; require a
+      # client cert the fleet CA signed to make it mutual TLS (only fleet members can list/download).
+      # Peers then pull over https:// presenting their own cert (ASHLAR_MESH_CLIENT_CERT/_KEY) and
+      # pinning the fleet CA (ASHLAR_MESH_CA). Mount the PEMs read-only (e.g. docker secrets). mTLS
+      # pairs with configured/tailnet peers (a known roster); LAN multicast stays the plaintext path.
+      # ASHLAR_MESH_SERVE_TLS_CERT: /run/secrets/mesh-cert.pem
+      # ASHLAR_MESH_SERVE_TLS_KEY: /run/secrets/mesh-key.pem
+      # ASHLAR_MESH_SERVE_REQUIRE_CLIENT_CERT: "1"
+      # ASHLAR_MESH_SERVE_CA: /run/secrets/fleet-ca.pem
+      # ASHLAR_MESH_CLIENT_CERT: /run/secrets/mesh-cert.pem   # this node's cert, for pulling from https peers
+      # ASHLAR_MESH_CLIENT_KEY: /run/secrets/mesh-key.pem
+      # ASHLAR_MESH_CA: /run/secrets/fleet-ca.pem             # pin the fleet CA when validating https peers
       # ASHLAR_MESH_PEERS: "http://192.168.1.20:7420,http://192.168.1.21:7420"
 
       # PEERS accepts ANY routable address — a LAN IP, a Tailscale/VPN address, a hostname. The

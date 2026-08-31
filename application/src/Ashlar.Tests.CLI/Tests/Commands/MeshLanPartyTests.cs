@@ -15,6 +15,7 @@ namespace Ashlar.Tests.CLI.Tests.Commands;
 /// bounds, containment) are pinned on BOTH sides, because a puller must never rely on a server having
 /// been polite.
 /// </summary>
+[Xunit.Collection("MeshIntegration")]
 public sealed class MeshLanPartyTests : IDisposable
 {
     private readonly string _dir;
@@ -96,8 +97,10 @@ public sealed class MeshLanPartyTests : IDisposable
 
             (await client.GetAsync($"http://127.0.0.1:{port}/mesh/v1/pkg/missing.ashpkg")).StatusCode
                 .Should().Be(HttpStatusCode.NotFound);
+            // A traversal-shaped name must never resolve — the server rejects it (404 by the name/path
+            // checks, or 400 where Kestrel refuses the encoded slash outright). Never 200.
             (await client.GetAsync($"http://127.0.0.1:{port}/mesh/v1/pkg/..%2fsecret.ashpkg")).StatusCode
-                .Should().Be(HttpStatusCode.NotFound, "a traversal-shaped name must never resolve");
+                .Should().BeOneOf(HttpStatusCode.NotFound, HttpStatusCode.BadRequest);
             (await client.GetAsync($"http://127.0.0.1:{port}/somewhere/else")).StatusCode
                 .Should().Be(HttpStatusCode.NotFound);
         }

@@ -13,6 +13,7 @@ namespace Ashlar.Tests.CLI.Tests.Commands;
 /// round-trip is exercised best-effort: environments that do not deliver multicast (some CI runners)
 /// pass vacuously; the logic above the socket is pinned strictly either way.
 /// </summary>
+[Xunit.Collection("MeshIntegration")]
 public sealed class MeshDiscoveryTests : IDisposable
 {
     private readonly string _dir;
