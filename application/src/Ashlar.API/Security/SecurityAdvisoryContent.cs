@@ -19,7 +19,7 @@ internal static class SecurityAdvisoryContent
                 [
                     "Restrict with host firewall rules to your subnet if possible.",
                     "Do not use LAN binding on untrusted Wi‑Fi; anyone on that network may reach the API.",
-                    "See docs/SelfHostedGameServerPortal.md for the security checklist."
+                    "See docs/SelfHostedAgentServer.md for the security checklist."
                 ]),
             AshlarExposureProfile.Tailnet => (
                 "Exposure profile: tailnet — reachable only over your Tailscale (or similar) private network.",
@@ -33,7 +33,7 @@ internal static class SecurityAdvisoryContent
                 [
                     "You must terminate TLS and enforce authentication in front of Ashlar (reverse proxy, Cloudflare Access, etc.).",
                     "Do not expose Ollama (11434) or Docker sockets publicly.",
-                    "See docs/SelfHostedGameServerPortal.md → Exposing Ashlar on the public Internet."
+                    "See docs/SelfHostedAgentServer.md → Exposing Ashlar on the public Internet."
                 ]),
             _ => For(AshlarExposureProfile.Localhost)
         };

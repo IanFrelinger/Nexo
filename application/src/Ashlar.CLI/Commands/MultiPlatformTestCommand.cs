@@ -21,7 +21,7 @@ public class MultiPlatformTestCommand : Command
         var platformsOption = new Option<string[]>(
             "--platforms",
             () => Array.Empty<string>(),
-            "Platforms to test (ubuntu, alpine, debian, android, ios, unity, windows, macos). Default: all")
+            "Platforms to test (ubuntu, alpine, debian, android, ios, windows, macos). Default: all")
         {
             AllowMultipleArgumentsPerToken = true
         };
@@ -129,7 +129,7 @@ public class MultiPlatformTestCommand : Command
                 testProject = testProject ?? "Ashlar.Tests.Infrastructure";
                 if (platforms.Length == 0)
                 {
-                    platforms = new[] { "ubuntu", "alpine", "debian", "android", "ios", "unity" };
+                    platforms = new[] { "ubuntu", "alpine", "debian", "android", "ios" };
                 }
             }
 
@@ -166,7 +166,7 @@ public class MultiPlatformTestCommand : Command
             // Determine platforms to test
             var platformsToTest = platforms.Length > 0 
                 ? platforms 
-                : new[] { "ubuntu", "alpine", "debian", "android", "ios", "unity", "windows", "macos" };
+                : new[] { "ubuntu", "alpine", "debian", "android", "ios", "windows", "macos" };
 
             var results = new List<PlatformTestResult>();
             var totalPassed = 0;
@@ -493,7 +493,6 @@ public class MultiPlatformTestCommand : Command
             ["debian"] = ".docker/Dockerfile.test-caching-debian",
             ["android"] = ".docker/Dockerfile.test-caching-android",
             ["windows"] = ".docker/Dockerfile.test-caching-windows",
-            ["unity"] = ".docker/Dockerfile.test-framework-unity"
         };
 
         if (dockerfileMap.TryGetValue(platformLower, out var dockerfile))

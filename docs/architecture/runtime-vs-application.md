@@ -1,6 +1,6 @@
 # Runtime vs application boundary
 
-This monorepo keeps **kernel/runtime libraries** under `src/`, **open application surfaces** under `application/src/` (CLI, HTTP API), and **open products built on the core** under `applications/`. Forge/game descriptors and the Game Director host live under **`commercial/`**. The same split matters when you consume Ashlar as **NuGet packages** from another repository.
+This monorepo keeps **kernel/runtime libraries** under `src/` and **open application surfaces** under `application/src/` (CLI, HTTP API). The commercial fleet-governance tier (Fleet, MeshDirector) lives under **`commercial/`**. Products built on top of the core live in their **own repositories** consuming the published packages (the former in-tree `applications/` layer and game vertical moved out in the 2026-08-31 native-responsibility slim; archive branch `archive/verticals-2026-08-31`). The same split matters when you consume Ashlar as **NuGet packages** from another repository.
 
 ## Layout in this repository
 
@@ -8,8 +8,7 @@ This monorepo keeps **kernel/runtime libraries** under `src/`, **open applicatio
 |----------|------|
 | `src/` | Execution kernel: abstractions, core, hosting library, infrastructure, orchestration, runtime, agents, transport/protocol adapters (gRPC, MCP, A2A), ingress adapters, and tests for the kernel graph |
 | `application/src/` | Open product hosts: `Ashlar.API`, `Ashlar.CLI`, plus `Ashlar.Tests.CLI` |
-| `applications/` | Open (Apache-2.0) products on top of the kernel — physical-atom certification, provenance graph, spatial contracts/runtime/platform providers. They reference `src/`; `src/` never references them (`dependency-boundary` check 4). Layout carries the autonomy tier (`TrustKernel.KernelPathPrefixes` lists `src/` prefixes), which is why these live outside `src/`. See [`applications/README.md`](../../applications/README.md). |
-| `commercial/` | Commercial vertical: `Ashlar.Commercial.GameDomain`, Game Director host/MCP, Fleet, MeshDirector, and their tests |
+| `commercial/` | Commercial fleet-governance tier: Fleet, MeshDirector, and their tests |
 
 ## Runtime layer (NuGet / embeddable graph)
 

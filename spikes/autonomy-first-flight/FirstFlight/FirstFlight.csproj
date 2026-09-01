@@ -24,7 +24,6 @@
     <ProjectReference Include="..\..\..\src\Ashlar.Infrastructure\Ashlar.Infrastructure.csproj" />
     <ProjectReference Include="..\..\..\src\Ashlar.BackgroundAgents\Ashlar.BackgroundAgents.csproj" />
     <ProjectReference Include="..\..\..\src\Ashlar.Agents.TestKit\Ashlar.Agents.TestKit.csproj" />
-    <ProjectReference Include="../../../applications/Ashlar.Certification.Physical/Ashlar.Certification.Physical.csproj" />
   </ItemGroup>
 
 </Project>

@@ -16,7 +16,6 @@ on:
       - "src/Ashlar.Certification.State/**"
       - "src/Ashlar.Infrastructure/Certification/**"
       - "src/Ashlar.Tests.Infrastructure/Tests/Certification/**"
-      - "applications/Ashlar.Certification.Physical/**"
       - "application/src/Ashlar.API/Security/**"
       - "application/src/Ashlar.CLI/Commands/PkgCommand.cs"
       - "application/src/Ashlar.CLI/Commands/PackageImport.cs"

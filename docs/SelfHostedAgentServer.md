@@ -152,7 +152,6 @@ Never commit secrets; keep overrides local or in your deployment pipeline.
 
 For anything beyond a trusted LAN, put **TLS + authentication** in front of the published HTTP port, restrict network access, and treat the mounted repo as **read/write** within agent policy.
 
-**Practical baseline:** `docs/SelfHostedGameServerPortal.md` → *§3 Remote access and hardening* → *Basic checklist* and *Exposing Ashlar on the public Internet*.
 
 ## Stop
 

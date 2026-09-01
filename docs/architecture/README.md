@@ -11,9 +11,6 @@ High-level maps of how Ashlar is structured. For day-to-day commands, see the re
 | [Runtime vs application layout](runtime-vs-application.md) | `src/` kernel vs `application/src/` hosts; `Ashlar.Runtime.sln`, `Ashlar.Runtime.Bundle`, NuGet metapackages, and packing scripts. |
 | [Protocol integration: MCP + A2A](ProtocolIntegration-MCP-A2A.md) | MCP server bridge over `ITool` (allowlists, policy gate, stdio host) and the planned MCP client / A2A phases. |
 | [Shipping and consumption (all audiences)](../DistributionModels.md) | How Ashlar is packaged (NuGet, containers, HTTP); pinning; **distribution-matrix** CI jobs per channel. |
-| [Forge map adaptation](forge-map-adaptation.md) | `MapAdaptationPlanner`, dry-run pipeline, engine manifest JSON, and Forge persistence options. |
-| [Forge map host integration](forge-map-host-integration.md) | Milestones M1–M6; terrain payload summaries; optional material **`IModel`** augmentation; tile cache; Unity/Godot package layouts. |
-| [Aesthetic and engine adaptation](aesthetic-engine-adaptation.md) | Cross-engine `AestheticPack` fields, validation, Forge `apply-pack`, and shared Mapbox tile helpers. |
 | [SDK-style layout](SdkStructure.md) | Ports vs options vs builders; `Ashlar.Hosting.Sdk` vs `Ashlar.Sdk.Client`; folder conventions. |
 | [SDK migration plan (remaining gaps)](SdkMigrationPlan.md) | **Execution status** at top; **[Plan: close remaining gaps](#plan-close-remaining-gaps-post-migration)** (D1–D6: docs, sweep, consumers, optional `Sdk/Options`, hosting polish, CI clarity). |
 | **`Ashlar.Framework.Sdk`** | Optional megaproject in `src/Ashlar.Framework.Sdk/` — `AddAshlarFramework` combines HTTP client + `AddAshlar`. |

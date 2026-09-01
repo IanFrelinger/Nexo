@@ -8,9 +8,6 @@ so the loop can be exercised reproducibly.
 
 | File | Authored by | Purpose |
 |------|-------------|---------|
-| `tag-scan-classifier.md` | human | The objective: intent, contract, and declared touch-set |
-| `tag-scan-classifier.witness.json` | human | Acceptance criteria — **written before any proposal existed** |
-| `tag-scan-classifier.proposal.json` | model | A candidate, recorded for replay |
 
 The ordering in that table is the discipline, not a coincidence. The witness is authored
 from the objective's contract *before* a proposal exists, and the proposer never sees it —
@@ -32,7 +29,6 @@ fail-closed at each step, so leaving one out yields "nothing happens" or an expl
 refusal, never a quiet in-process run:
 
 ```bash
-cp samples/autonomy-objectives/tag-scan-classifier.* \
    .ashlar/runtime-studio/objectives/pending/
 ```
 
@@ -98,7 +94,6 @@ plausible-looking implementation introduced, and it catches it because it existe
 ## The campaign set
 
 Since dogfood campaign 1 (evidence ledger S4) this directory holds five objectives, chosen for
-shape: `tag-scan-classifier` (a classifier over an existing codec), `door-lock-transition` (a
 state machine), `semver-parse` and `rgb-hex-parse` (parsers with integer outputs), and
 `text-slug`, which is under-specified **on purpose** — its contract never addresses diacritics
 while its witness pins them, so a run shows the repair channel holding rather than converging on

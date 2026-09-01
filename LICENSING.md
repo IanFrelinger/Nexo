@@ -117,7 +117,6 @@ Rationale: this tier protects two moats at once — an extensible SDK and a sing
 | OPEN | `docs/samples/StableSdkHostSample/StableSdkHostSample.csproj` |
 | OPEN | `docs/samples/StableSdkHostSample/package-consumer/StableSdkHostSample.Package.csproj` |
 | OPEN | `samples/**` |
-| OPEN | `applications/**` — open products on the core (physical-atom certification, provenance graph, spatial); Apache-2.0 by the `Directory.Build.targets` rule, no `AshlarCommercialProject` flag; see [`applications/README.md`](applications/README.md) |
 | OPEN | `tools/**`, `spikes/**` — repo tools and evidence spikes, same rule |
 | OPEN | `apps/release-manager/` — agent-set config + docs for release-readiness automation; **graduated commercial → open 2026-08-31** (covenant 2), the minimal SDK reference app |
 | OPEN | `apps/runtime-studio/` — single-node planner/worker agent-set config + docs; **graduated commercial → open 2026-08-31** (covenant 2). Single-node operator tooling belongs open by the headline rule; the open `setup all` lane already seeds from its config |
@@ -172,17 +171,15 @@ Tier 3 is the commercial product/vertical layer.
 
 | Allocation | Path |
 |------------|------|
-| COMMERCIAL | `commercial/src/Ashlar.Commercial.GameDomain/` |
-| COMMERCIAL | `commercial/tests/Ashlar.Commercial.Tests.GameDomain/` |
-| COMMERCIAL | `commercial/samples/ForgeMapHostSample/` |
-| COMMERCIAL | `commercial/src/Ashlar.Commercial.GameDirector.Domain/` |
-| COMMERCIAL | `commercial/src/Ashlar.Commercial.GameDirector.Agents/` |
-| COMMERCIAL | `commercial/src/Ashlar.Commercial.GameDirector.Bricks/` |
-| COMMERCIAL | `commercial/src/Ashlar.Commercial.GameDirector.Mcp/` |
-| COMMERCIAL | `commercial/src/Ashlar.Commercial.GameDirector.Host/` |
-| COMMERCIAL | `commercial/tests/Ashlar.Commercial.Tests.GameDirector/` |
-| COMMERCIAL | `apps/game-director/` |
-| COMMERCIAL | `apps/ashlar-forge/` |
+
+Tier 3 is empty in this repository as of 2026-08-31: the Game Director / GameDomain /
+Forge vertical (nine commercial projects, two `apps/` configuration surfaces, game data,
+and their docs) was removed from the monorepo in the native-responsibility slim. The
+runtime repository carries the platform and its own fleet-governance tier only; verticals
+live in their own repositories consuming the published packages. The removed vertical is
+preserved intact on the archive branch `archive/verticals-2026-08-31` for extraction, and
+its commercial status travels with it. This removal is not a licensing event: nothing
+open moved behind a paywall (covenant 2 is untouched).
 
 `apps/release-manager/` and `apps/runtime-studio/` were **graduated to Tier 1 OPEN on
 2026-08-31** — the one-way ratchet (covenant 2) exercised in its trust-building direction.
@@ -190,8 +187,8 @@ Both are single-node agent-set configuration + docs with no fleet capability, so
 headline rule (single-node + inspectable = open) always applied to them; the Tier 3
 listing was the contradiction, and this diff is its resolution. As part of the
 graduation, the game-director run-mode config and launcher that lived under
-`apps/runtime-studio/` moved to `apps/game-director/`, so the opened directories carry
-no Game Director material.
+`apps/runtime-studio/` moved to `apps/game-director/` (now on the archive branch with the
+rest of the vertical), so the opened directories carry no Game Director material.
 
 Each remaining commercial directory carries a `COMMERCIAL-LICENSE.md` with the in-force
 text: all rights reserved except the evaluation grant below, contact for commercial terms,
@@ -201,15 +198,15 @@ Commercial vertical projects may reference each other and the open core; open pr
 
 ### Evaluation use of commercial sources — IN FORCE since 2026-08-31
 
-Source code under `commercial/`, `apps/game-director/`, and `apps/ashlar-forge/` is made
+Source code under `commercial/` is made
 visible for evaluation. You may build and run it locally, in CI on your own fork, and in
 non-production test environments, solely to evaluate Ashlar. You may not deploy it in
 production, offer it as a service, or redistribute it (in source or binary form) without a
 separate written agreement. Forking this repository on GitHub, and modifying your fork,
 for the evaluation uses permitted above is not redistribution for purposes of this
-paragraph. The open core under `src/`, `application/`, `applications/`,
-`apps/release-manager/`, `apps/runtime-studio/`, `samples/`, `tools/`, `docs/`, and
-`spikes/` is Apache-2.0 and unaffected by this paragraph.
+paragraph. The open core under `src/`, `application/`, `apps/release-manager/`,
+`apps/runtime-studio/`, `samples/`, `tools/`, `docs/`, and `spikes/` is Apache-2.0 and
+unaffected by this paragraph.
 
 Production use, or any use beyond evaluation, requires a written commercial agreement:
 contact **icfrelinger@gmail.com** with "Ashlar commercial" in the subject line.

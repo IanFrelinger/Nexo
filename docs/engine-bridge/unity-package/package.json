@@ -1,8 +1,0 @@
-{
-  "name": "com.ashlar.forge-map-bridge",
-  "version": "0.1.0",
-  "displayName": "Ashlar Forge Map Bridge",
-  "description": "Starter scripts that call Ashlar.API Forge endpoints (manifest + material hints). Copy HttpClient usage into your gameplay assemblies.",
-  "unity": "2021.3",
-  "author": { "name": "Ashlar", "url": "https://github.com/IanFrelinger/Nexo" }
-}

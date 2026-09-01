@@ -45,4 +45,4 @@ What a fresh checkout does when you run it, and what you must turn on before it 
 
 **Commercial hosts**
 
-- `Ashlar.Commercial.Fleet.Host` and `Ashlar.Commercial.GameDirector.Host` run `AuthorizationMode=ApiKey` and ship **no** key: supply `Ashlar__Security__ApiKey` (compose: `ASHLAR_API_KEY`, required with no default) or every mutating request is rejected.
+- `Ashlar.Commercial.Fleet.Host` runs `AuthorizationMode=ApiKey` and ships **no** key: supply `Ashlar__Security__ApiKey` (compose: `ASHLAR_API_KEY`, required with no default) or every mutating request is rejected.

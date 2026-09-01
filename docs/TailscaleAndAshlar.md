@@ -70,10 +70,8 @@ Ashlar’s Dockerfiles do **not** embed `tailscale`; keep upgrades and keys in y
 
 ## When exposure is `Public`
 
-If you set `Ashlar__Security__ExposureProfile=Public`, Ashlar logs a **warning** at startup. You must still place **TLS + authentication** in front of the API for real Internet exposure — see `docs/SelfHostedGameServerPortal.md`.
 
 ## Related
 
 - `docs/config/security-exposure.env.example`
-- `docs/SelfHostedGameServerPortal.md` — checklists and Internet patterns
 - `scripts/start-ashlar-api-dev.ps1` / `.sh` — sets `Localhost` or `Lan` automatically unless you override

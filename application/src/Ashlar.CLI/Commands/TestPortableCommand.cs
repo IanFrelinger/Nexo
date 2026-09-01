@@ -98,7 +98,7 @@ public class TestPortableCommand
             var run = new List<string>();
             var skip = new List<string>();
             if (host == "windows") { run.Add("windows"); run.Add("linux (Docker)"); run.Add("android (Docker)"); skip.Add("ios"); skip.Add("macos"); }
-            else if (host == "macos") { run.Add("ios"); run.Add("macos"); run.Add("unity"); run.Add("linux (Docker)"); run.Add("android (Docker)"); skip.Add("windows (use CI windows-latest)"); }
+            else if (host == "macos") { run.Add("ios"); run.Add("macos"); run.Add("linux (Docker)"); run.Add("android (Docker)"); skip.Add("windows (use CI windows-latest)"); }
             else { run.Add("linux (Ubuntu, Alpine, Debian)"); run.Add("android (Docker)"); skip.Add("windows (use CI)"); skip.Add("ios"); skip.Add("macos"); }
             Console.WriteLine(JsonSerializer.Serialize(new { host, run, skip }));
             return;

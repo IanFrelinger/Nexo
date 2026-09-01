@@ -92,8 +92,7 @@ For layer-by-layer detail see [`docs/Architecture.md`](docs/Architecture.md); fo
 | gRPC transport | Transport contracts, server, standalone host | `src/Ashlar.Transport.Grpc*` |
 | MCP + A2A protocols | Ashlar as MCP server (stdio/HTTP) and MCP client; A2A client transport and server core mounted by `Ashlar.API` | `src/Ashlar.Mcp.*`, `src/Ashlar.Transport.A2A*`, [`docs/architecture/ProtocolIntegration-MCP-A2A.md`](docs/architecture/ProtocolIntegration-MCP-A2A.md) |
 | AWS ingress | SNS and DynamoDB adapters | `src/Ashlar.Ingress.AwsSns`, `src/Ashlar.Ingress.DynamoDb`, [`docs/MiddlewareIngress.md`](docs/MiddlewareIngress.md) |
-| Applications on the core | Physical-atom certification, provenance graph, spatial anchor contracts/runtime/platform providers (open, Apache-2.0) | [`applications/`](applications/), [`applications/README.md`](applications/README.md) |
-| App surfaces | Game Director, Ashlar Forge, Release Manager, Runtime Studio agent sets and operator scripts | [`apps/`](apps/), [`docs/GameDirectorStudio.md`](docs/GameDirectorStudio.md), [`apps/runtime-studio/README.md`](apps/runtime-studio/README.md) |
+| App surfaces | Release Manager and Runtime Studio agent sets and operator scripts (scheduled for extraction to their own repos) | [`apps/`](apps/), [`apps/runtime-studio/README.md`](apps/runtime-studio/README.md) |
 | Trust architecture | Barrier identity, data sensitivity, audit, policy packs, local-first controls | [`docs/TrustAndInformationArchitecture.md`](docs/TrustAndInformationArchitecture.md), [`docs/Architecture.md`](docs/Architecture.md) |
 | Distribution | NuGet, HTTP/API, CLI image, compose, source, mesh/federation | [`docs/DistributionModels.md`](docs/DistributionModels.md), [`docs/RELEASE.md`](docs/RELEASE.md) |
 
@@ -249,7 +248,6 @@ ashlar keys init                                 # give it an operator identity 
 |------|---------|
 | `deploy/compose/docker-compose.portal.yml` | Director portal + `ashlar-api` + Ollama. |
 | `deploy/compose/docker-compose.agent-server.yml` | Portal + API + Ollama + mounted workspace + default Runtime Studio agent set. |
-| `deploy/compose/docker-compose.game-director.yml` | Game Director sidecar and MCP-facing workflow. |
 | `deploy/compose/docker-compose.ephemeral.yml` | Disposable local dependencies for tests and labs. |
 
 ```bash
@@ -296,7 +294,6 @@ Run these via `dotnet run --project application/src/Ashlar.CLI -- <command>` (sh
 
 | App | What it is | First doc |
 |-----|------------|-----------|
-| `apps/game-director` | Self-hosted, MCP-exposed AI sidecar for game balance, map validation, and content generation. | [`apps/game-director/README.md`](apps/game-director/README.md) |
 | `apps/ashlar-forge` | Vertical agent-set configuration for adaptive multiplayer FPS prototyping. | [`apps/ashlar-forge/README.md`](apps/ashlar-forge/README.md) |
 | `apps/release-manager` | Release-readiness automation agent set for repo monitoring, tests, SLO evidence, and reports. | [`apps/release-manager/README.md`](apps/release-manager/README.md) |
 | `apps/runtime-studio` | Planner/worker Runtime Studio agent set and operator scripts hosted by CLI or API. | [`apps/runtime-studio/README.md`](apps/runtime-studio/README.md) |
@@ -351,14 +348,13 @@ See [`docs/Configuration.md`](docs/Configuration.md).
 
 ## Project layout
 
-The canonical repo map is [`docs/ProjectTiers.md`](docs/ProjectTiers.md). Use it to understand which projects are kernel spine, deployable hosts, distribution packages, optional transport/protocols/ingress, applications on the core, commercial satellites, and tests. Three similarly named folders mean three different things: singular **`application/`** = the CLI/API hosts, plural **`applications/`** = open products built on the core, **`apps/`** = agent-set/host configuration (see [`applications/README.md`](applications/README.md)).
+The canonical repo map is [`docs/ProjectTiers.md`](docs/ProjectTiers.md). Use it to understand which projects are kernel spine, deployable hosts, distribution packages, optional transport/protocols/ingress, commercial satellites, and tests. Two similarly named folders mean two different things: singular **`application/`** = the CLI/API hosts, **`apps/`** = agent-set/host configuration.
 
 ```text
 Nexo/                             # the repo/clone directory (github.com/IanFrelinger/Nexo; the product is Ashlar)
 ├── src/                          # kernel spine, runtime, distribution/SDK, transport (gRPC, MCP, A2A), ingress, tests
 ├── application/src/              # Ashlar.CLI, Ashlar.API hosts + Ashlar.Tests.CLI (open)
-├── applications/                 # open products on the core: physical-atom cert, provenance graph, spatial (Apache-2.0)
-├── apps/                         # runtime-studio, ashlar-forge, game-director, release-manager configs
+├── apps/                         # runtime-studio + release-manager configs (extraction scheduled)
 ├── commercial/                   # Game Director, GameDomain, Fleet, MeshDirector + tests (not Apache-2.0; LICENSING.md)
 ├── docs/                         # architecture, operations, mesh, release, SDK, demos/, samples/, runbooks
 ├── samples/                      # hello-brick, brick template, certified-brick-reuse, provenance/physical-atom inputs

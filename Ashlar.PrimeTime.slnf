@@ -6,7 +6,6 @@
       "src/Ashlar.Tests.BackgroundAgents/Ashlar.Tests.BackgroundAgents.csproj",
       "application/src/Ashlar.Tests.CLI/Ashlar.Tests.CLI.csproj",
       "src/Ashlar.Tests.Domain/Ashlar.Tests.Domain.csproj",
-      "commercial/tests/Ashlar.Commercial.Tests.GameDomain/Ashlar.Commercial.Tests.GameDomain.csproj",
       "src/Ashlar.Tests.Infrastructure/Ashlar.Tests.Infrastructure.csproj",
       "src/Ashlar.Tests.Orchestration/Ashlar.Tests.Orchestration.csproj",
       "src/Ashlar.Tests.Transport/Ashlar.Tests.Transport.csproj"
