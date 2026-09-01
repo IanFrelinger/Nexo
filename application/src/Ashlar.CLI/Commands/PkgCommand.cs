@@ -164,6 +164,30 @@ public sealed class PkgCommand : Command
         return cmd;
     }
 
+    // Read a .ashpkg with a size guard BEFORE the whole file lands in a string. A mesh store
+    // is a plain synced directory (MeshStore's transport-naive model), so a .ashpkg there is
+    // attacker-influenceable; an unbounded read-to-string of a several-hundred-MB planted file
+    // is an OOM before ExtensionPackaging.TryOpen's own char cap ever runs. Refuse fail-closed.
+    // Matches ExtensionPackaging's own parse ceiling: a .ashpkg over this is not a certified
+    // extension. Kept as a local constant so this guard has no cross-package version coupling.
+    private const long MaxPackageBytes = 16L * 1024 * 1024;
+
+    private static bool TryReadPackage(FileInfo file, out string json, out string reason)
+    {
+        json = string.Empty;
+        var length = file.Length;
+        if (length > MaxPackageBytes)
+        {
+            reason = $"REFUSED: {file.Name} is {length:N0} bytes; the limit is "
+                   + $"{MaxPackageBytes:N0}. "
+                   + "A package this large is not a certified extension — refusing before reading it.";
+            return false;
+        }
+        json = File.ReadAllText(file.FullName);
+        reason = string.Empty;
+        return true;
+    }
+
     private static async Task<int> ImportAsync(FileInfo file, DirectoryInfo directory)
     {
         var policyPath = Path.Combine(directory.FullName, "ashlar.policy.yaml");
@@ -180,7 +204,12 @@ public sealed class PkgCommand : Command
 
         // Verify + submit is shared with `mesh pull` — how a package arrived must not change how
         // it is admitted. A peek first, so the operator sees the origin's evidence before the verdict.
-        if (!ExtensionPackaging.TryOpen(await File.ReadAllTextAsync(file.FullName), out var peek, out var peekReason))
+        if (!TryReadPackage(file, out var packageJson, out var readReason))
+        {
+            Console.Error.WriteLine(readReason);
+            return 65;
+        }
+        if (!ExtensionPackaging.TryOpen(packageJson, out var peek, out var peekReason))
         {
             Console.Error.WriteLine(peekReason);
             return 65;
@@ -195,7 +224,7 @@ public sealed class PkgCommand : Command
         }
         Console.WriteLine();
 
-        var result = await PackageImport.SubmitAsync(directory.FullName, await File.ReadAllTextAsync(file.FullName));
+        var result = await PackageImport.SubmitAsync(directory.FullName, packageJson);
         switch (result.Outcome)
         {
             case PackageAdmission.Admitted:
@@ -255,7 +284,12 @@ public sealed class PkgCommand : Command
             Console.Error.WriteLine($"no such package: {file.FullName}");
             return 1;
         }
-        if (!ExtensionPackaging.TryOpen(await File.ReadAllTextAsync(file.FullName), out var pkg, out var reason))
+        if (!TryReadPackage(file, out var showJson, out var showReadReason))
+        {
+            Console.Error.WriteLine(showReadReason);
+            return 65;
+        }
+        if (!ExtensionPackaging.TryOpen(showJson, out var pkg, out var reason))
         {
             Console.Error.WriteLine(reason);
             return 65;
